@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.6.0
+version: 0.7.0
 ---
 
 # fankeel
@@ -196,6 +196,29 @@ adds a fresh copy to the transcript each time.
 A `style` field on this session's entry is that skill's doing, not yours. It
 carries a four-line digest of the chosen style until the real one is in force.
 Do not set it by hand.
+
+## Subagents
+
+A subagent starts with its own context and none of this one's, so a
+`SubagentStart` hook hands it a brief: which task it belongs to, the scope, and
+what its return value costs. Background subagents get the same brief.
+
+You do not write that brief and you do not repeat it. What it is worth knowing
+here is what it says, because it changes how to use a subagent while the mode is
+on:
+
+- **The return value is the expensive part.** Everything a subagent reads is
+  spent in a context that gets thrown away; what it returns lands in this one and
+  stays for the rest of the session. Delegating a wide search is a saving.
+  Delegating something that has to report at length is not.
+- **A subagent has no entry in the registry and must not be given one.** It is
+  not a session and it does not own a task. Writing one would put a second
+  claimant on this task's own files.
+- **The scope guard still applies to it.** A subagent editing a file another live
+  session claimed hits the same block this session would.
+
+If a subagent reports touching a file outside the scope — the brief asks it to —
+treat that the same as reaching one yourself: say so, and update `scope`.
 
 ## The scope guard
 
