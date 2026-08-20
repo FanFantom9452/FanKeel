@@ -58,6 +58,24 @@ the JSON by hand. And when both sessions declared the file, the older claim
 holds and the newer yields, so two sessions that both named it cannot block each
 other into a stalemate.
 
+## The registry is found by walking up, not fixed at the launch directory
+
+The nearest `.fankeel/` at or above where Claude Code was opened wins, the way
+git finds `.git`, stopping below the home directory — a registry picked up from
+the directory that holds every user account would be a surprise nobody could
+explain from what they typed.
+
+This is what answers "sometimes one project, sometimes several" without a second
+mechanism. Put the directory at the workspace and every session opened in any
+child joins one registry; put it in a project and it covers that project. The
+decision moves from "where did I launch" to "where did I create it", which is
+made once instead of every time.
+
+It has to be visible, though. Scope paths are relative to the registry rather
+than to the launch directory, so when the two differ the injected block names
+both. A registry the user cannot see from what they typed is one they will
+misread.
+
 ## Scripts where discipline text would have been
 
 Twice the first cut was a rule asking the model to remember something, and twice
@@ -77,6 +95,22 @@ and cannot go out of date.
 The declaration patterns are one shallow regex per language on purpose. A missed
 declaration costs one line of a report; a real parser costs a dependency, and
 this plugin has none.
+
+### git was not enough, and the reasoning that said it was had a blind spot
+
+`git ls-files` was the only source at first, on the reasoning that a repository
+already carries an ignore list and a second one is waste to maintain. Run against
+a real working directory, six of seven projects turned out not to be repositories
+at all — and the scanner did not fail there, it found the one that was and
+reported success. A wrong answer that looks right is the failure this whole
+plugin exists to prevent, and it was coming from the plugin.
+
+So: git inside a repository, a directory walk anywhere else, the better source
+per subtree, and the report names which was used. The walk needs a skip list
+after all, and it also skips spreadsheets, archives and binaries — the first real
+run returned eleven thousand files whose visible portion was entirely
+spreadsheets. That asymmetry is deliberate: inside a repository a tracked file is
+tracked on purpose, and outside one nothing has said what belongs.
 
 ## Voice goes in the system prompt, not in the injection
 

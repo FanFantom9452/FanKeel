@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.7.1
+version: 0.8.0
 ---
 
 # fankeel
@@ -11,6 +11,23 @@ The keel of a project: the one structural member a hull cannot lose.
 A session is **in fankeel mode exactly when it owns an active task**. There is no
 separate on/off flag. Starting a task switches the mode on; standing it down
 switches it off; nothing else ever does.
+
+## Where the registry is
+
+The nearest `.fankeel/` at or above where Claude Code was opened, found the way
+git finds `.git`, stopping below the home directory. If there is none, it is the
+directory Claude Code was opened in, and that is where a new one gets created.
+
+That is the whole answer to "sometimes one project, sometimes several":
+
+| `.fankeel/` sits at | Effect |
+|---|---|
+| the workspace holding several projects | every session opened in any of them joins one registry, and collisions between them are visible |
+| one project | that project only |
+
+Scope paths are relative to the registry, not to where the session was opened. If
+the two differ, the injected block names both — do not guess which one a path is
+relative to.
 
 ## The registry
 
@@ -82,11 +99,16 @@ have searched for, and quote what came back:
 node <plugin>/scripts/survey.js badge colour ramp
 ```
 
-It reads `git ls-files` and the working tree on every run, so there is no index
-to go stale. A root that is not a repository but holds several is read through to
-them, with paths prefixed by the repository name — that is the root a
-cross-project task gets opened at, and it is the case that needs the scanner
-most. It reports files whose name matches, the declarations it can see —
+It reads the working tree on every run, so there is no index to go stale. Inside
+a repository it uses `git ls-files`; anywhere else it walks the directory,
+skipping dot-directories, dependencies, build output and binary documents. A tree
+holding a mix of both — which is what a workspace usually is — gets the better
+source per subtree.
+
+**The report says which source it used. Repeat that.** A walk only knows a fixed
+skip list where git knows the project's own ignore rules, so the two do not cover
+the same ground, and a coverage claim that hides the difference is worth less than
+no claim. It reports files whose name matches, the declarations it can see —
 JavaScript, TypeScript, Vue and Svelte, PowerShell, Python, shell, Go, Rust,
 C#/Java/Kotlin/Swift, Ruby, and CSS classes, custom properties and mixins — and
 markdown headings. Anything else is matched on filename alone, so say so rather

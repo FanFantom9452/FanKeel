@@ -192,12 +192,69 @@ test('matching is case-insensitive', () => {
   assert.match(run(root, 'WIDGET'), /WidgetFactory/);
 });
 
-test('outside a git repository, with none inside it either, it says so', () => {
+test('a root with nothing readable under it says so', () => {
   const bare = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-nogit-'));
-  fs.mkdirSync(path.join(bare, 'notarepo'));
+  fs.mkdirSync(path.join(bare, 'empty'));
   const out = run(bare, 'widget');
-  assert.match(out, /not a git repository/);
+  assert.match(out, /nothing readable under that root/);
   assert.match(out, /Search by hand/);
+});
+
+// Six of seven projects in a real working directory had no `.git` at all. The
+// answer there used to be "not a git repository, search by hand", which took the
+// scanner away from the environment that needed it most.
+test('a directory that is not a repository is walked rather than given up on', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  fs.mkdirSync(path.join(root, 'Trovara', 'backend'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'Trovara', 'backend', 'validators.py'), 'def check_widget():\n    pass\n');
+  const out = run(root, 'widget');
+  assert.match(out, /source: .*directory walk/);
+  assert.match(out, /Trovara\/backend\/validators\.py:1 {2}def check_widget/);
+});
+
+test('dependencies and build output are skipped by the walk', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  for (const d of ['node_modules', 'dist', '__pycache__', '.venv']) {
+    fs.mkdirSync(path.join(root, d), { recursive: true });
+    fs.writeFileSync(path.join(root, d, 'a.js'), 'function widgetGhost() {}\n');
+  }
+  fs.writeFileSync(path.join(root, 'real.js'), 'function widgetReal() {}\n');
+  const out = run(root, 'widget');
+  assert.match(out, /widgetReal/);
+  assert.equal(out.includes('widgetGhost'), false, 'a skipped directory was walked');
+});
+
+test('spreadsheets are skipped by the walk, but not inside a repository', () => {
+  // A repository's own ignore rules already say what belongs to it, so a file
+  // tracked there is tracked on purpose. A working directory has no such rules,
+  // and the first real run returned eleven thousand files whose visible portion
+  // was entirely spreadsheets.
+  const walked = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  fs.writeFileSync(path.join(walked, 'widget-data.xlsx'), 'x');
+  fs.writeFileSync(path.join(walked, 'widget.js'), 'function widgetReal() {}\n');
+  const out = run(walked, 'widget');
+  assert.equal(out.includes('widget-data.xlsx'), false);
+  assert.match(out, /widget\.js/);
+
+  const tracked = repo({ 'widget-data.xlsx': 'x', 'widget.js': 'function widgetReal() {}\n' });
+  assert.match(run(tracked, 'widget'), /widget-data\.xlsx/);
+});
+
+test('a repository inside a walked tree is read with git, and the report says so', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-mixed-'));
+  fs.writeFileSync(path.join(root, 'loose.js'), 'function widgetLoose() {}\n');
+  fs.mkdirSync(path.join(root, 'plain'));
+  fs.writeFileSync(path.join(root, 'plain', 'p.js'), 'function widgetPlain() {}\n');
+  const inner = path.join(root, 'tracked');
+  fs.mkdirSync(inner);
+  execFileSync('git', ['init', '-q'], { cwd: inner });
+  fs.writeFileSync(path.join(inner, 't.js'), 'function widgetTracked() {}\n');
+  execFileSync('git', ['add', '-A'], { cwd: inner });
+  const out = run(root, 'widget');
+  assert.match(out, /source: git in tracked; a directory walk elsewhere/);
+  for (const name of ['widgetLoose', 'widgetPlain', 'widgetTracked']) {
+    assert.ok(out.includes(name), name + ' was missed');
+  }
 });
 
 // A directory holding several repositories is how related projects get kept
@@ -220,15 +277,15 @@ test('a parent of several repositories is read through to its children', () => {
     execFileSync('git', ['add', '-A'], { cwd: root });
   }
   const out = run(parent, 'widget');
-  assert.match(out, /across 2 repositories \(alpha, beta\)/);
+  assert.match(out, /source: git in alpha, beta/);
   assert.match(out, /alpha\/lib\/a\.js:1 {2}function widgetOne/);
   assert.match(out, /beta\/lib\/b\.js:1 {2}function widgetTwo/);
 });
 
-test('a repository of its own is read directly, with no repository list', () => {
+test('a repository of its own reports git as its source and nothing else', () => {
   const root = repo({ 'lib/a.js': 'function widgetOne() {}\n' });
   const out = run(root, 'widget');
-  assert.equal(out.includes('repositories ('), false, 'a plain repository was described as a group');
+  assert.match(out, /^source: git$/m);
   assert.match(out, /lib\/a\.js:1 {2}function widgetOne/);
 });
 
@@ -275,7 +332,7 @@ test('with every match named, the split is not mentioned at all', () => {
 });
 
 test('report says nothing matched rather than throwing on a null scan', () => {
-  assert.match(survey.report(null, ['x']), /not a git repository/);
+  assert.match(survey.report(null, ['x']), /nothing readable under that root/);
 });
 
 test('the scanner has no dependencies to install', () => {

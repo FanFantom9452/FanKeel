@@ -2,7 +2,7 @@
 name: fankeel-style
 description: Set the Claude Code output style without opening /config. Use when the user asks for shorter answers, less preamble, a fixed reply format, fewer output tokens, a review voice, or says replies have got long-winded — and when they ask what style is active or to go back to normal. Also for "講短一點", "省 token", "輸出風格", "換回原本的".
 argument-hint: "[terse|pipeline|review|off]"
-version: 0.7.0
+version: 0.8.0
 ---
 
 # fankeel-style

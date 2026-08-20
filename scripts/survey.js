@@ -112,47 +112,97 @@ function gitFiles(dir) {
     }
 }
 
-// One level down, sorted, so two runs read the same repositories in the same
-// order. Deeper is guesswork: a directory three levels below the root is not
-// what anybody means by "this project".
-function childRepos(root) {
+// Directories a walk never descends into. Everything beginning with a dot is
+// skipped as a rule, so this only has to name the ones that do not.
+//
+// `git ls-files` was the original and only source, on the reasoning that a
+// repository already carries an ignore list and maintaining a second one is
+// waste. That reasoning does not survive contact with a working directory where
+// six of seven projects are not repositories: there, git found one of them and
+// reported success, which is worse than reporting nothing. So the list gets
+// maintained after all, and it is the price of working where git is not.
+const SKIP_DIRS = new Set([
+    'node_modules', 'venv', 'env', '__pycache__', 'site-packages',
+    'dist', 'build', 'out', 'target', 'coverage', 'vendor',
+    'bin', 'obj', 'Debug', 'Release', 'binaries',
+]);
+
+// Skipped when walking, and only when walking. A repository's own ignore rules
+// already say what belongs to the project, and inside one a `.png` in the tree
+// is there on purpose. A working directory has no such rules, and the first run
+// against a real one returned eleven thousand files whose visible portion was
+// entirely spreadsheets — the question being asked is what code already exists,
+// and a document cannot answer it.
+const SKIP_EXT = new Set([
+    '.zip', '.7z', '.rar', '.tar', '.gz', '.xz', '.bz2',
+    '.xlsx', '.xls', '.xlsm', '.docx', '.doc', '.pptx', '.ppt', '.pdf', '.odt', '.ods',
+    '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.ico', '.mp4', '.mov', '.mp3', '.wav', '.avi',
+    '.exe', '.dll', '.so', '.dylib', '.bin', '.msi', '.pyc', '.pyo', '.class', '.jar', '.o', '.a', '.lib', '.pdb',
+    '.ttf', '.otf', '.woff', '.woff2', '.eot',
+    '.db', '.sqlite', '.sqlite3', '.parquet', '.pkl', '.npy', '.onnx', '.safetensors',
+]);
+
+// A backstop, not a policy. Somebody's home directory would otherwise take
+// minutes and produce a report nobody could read.
+const MAX_WALK_FILES = 20000;
+
+const isRepo = (dir) => fs.existsSync(path.join(dir, '.git'));
+
+// Depth-first, alphabetical, so two runs over one tree list the same files in
+// the same order. A subdirectory that *is* a repository is read with git rather
+// than walked — the best available source per subtree, which is what makes a
+// workspace holding a mix of both come out whole.
+function walk(root, rel, state) {
+    if (state.files.length >= MAX_WALK_FILES) return;
     let entries;
     try {
-        entries = fs.readdirSync(root, { withFileTypes: true });
+        entries = fs.readdirSync(path.join(root, rel), { withFileTypes: true });
     } catch (e) {
-        return [];
+        return;
     }
-    return entries
-        .filter((e) => e.isDirectory() && !e.name.startsWith('.'))
-        .map((e) => e.name)
-        .sort()
-        .filter((name) => fs.existsSync(path.join(root, name, '.git')));
+    entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+
+    for (const entry of entries) {
+        if (state.files.length >= MAX_WALK_FILES) {
+            state.truncated = true;
+            return;
+        }
+        const sub = rel ? rel + '/' + entry.name : entry.name;
+        if (entry.isDirectory()) {
+            if (entry.name.startsWith('.') || SKIP_DIRS.has(entry.name)) continue;
+            const full = path.join(root, sub);
+            if (isRepo(full)) {
+                const list = gitFiles(full);
+                if (list) {
+                    state.repos.push(sub);
+                    for (const f of list) state.files.push(sub + '/' + f);
+                    continue;
+                }
+            }
+            walk(root, sub, state);
+        } else if (entry.isFile()) {
+            if (SKIP_EXT.has(path.extname(entry.name).toLowerCase())) continue;
+            state.files.push(sub);
+        }
+    }
 }
 
-// Every tracked file under the root, and which repositories they came from.
+// Every file under the root worth looking at, and an honest account of where the
+// list came from.
 //
-// A root that is not itself a repository but holds several is a normal way to
-// keep related projects together, and it is exactly the root a cross-project
-// task gets opened at — the collision warnings and the scope guard only reach
-// across two repositories when the session sits at their common parent. Giving
-// up there would take the scanner away from the one case that needs it most, so
-// the children are read instead and their paths are prefixed.
+// A root that is not itself a repository is normal — it is how related projects
+// get kept together, and it is exactly the root a cross-project task opens at,
+// because the collision warnings and the scope guard only reach across two
+// projects from their common parent. Giving up there would take the scanner away
+// from the case that needs it most.
 function trackedFiles(root) {
     const direct = gitFiles(root);
-    if (direct) return { files: direct, repos: null };
+    if (direct) return { files: direct, repos: [], walked: false, truncated: false };
 
-    const repos = childRepos(root);
-    if (!repos.length) return null;
-
-    const files = [];
-    const read = [];
-    for (const repo of repos) {
-        const list = gitFiles(path.join(root, repo));
-        if (!list) continue;
-        read.push(repo);
-        for (const f of list) files.push(repo + '/' + f);
-    }
-    return read.length ? { files, repos: read } : null;
+    const state = { files: [], repos: [], truncated: false };
+    walk(root, '', state);
+    if (!state.files.length) return null;
+    return { files: state.files, repos: state.repos, walked: true, truncated: state.truncated };
 }
 
 // Substring, case-insensitive, against the declared name and the path both. A
@@ -167,7 +217,7 @@ function matches(terms, ...fields) {
 function scan(root, terms) {
     const tracked = trackedFiles(root);
     if (tracked === null) return null;
-    const { files, repos } = tracked;
+    const { files, repos, walked, truncated } = tracked;
 
     const decls = [];
     const docs = [];
@@ -224,7 +274,7 @@ function scan(root, terms) {
     // Sort is stable, so file order survives inside each group.
     decls.sort((a, b) => (b.named ? 1 : 0) - (a.named ? 1 : 0));
 
-    return { total: files.length, repos, decls, docs, named };
+    return { total: files.length, repos, walked, truncated, decls, docs, named };
 }
 
 function section(title, rows, render) {
@@ -240,16 +290,28 @@ function section(title, rows, render) {
 
 function report(result, terms) {
     if (result === null) {
-        return 'fankeel survey: not a git repository, and no repositories directly inside it.\n'
+        return 'fankeel survey: nothing readable under that root — no repository, and no files.\n'
              + 'Search by hand and say what you searched for.';
     }
-    const { total, repos, decls, docs, named } = result;
-    const where = repos
-        ? total + ' tracked files across ' + repos.length + ' repositories (' + repos.join(', ') + ')'
-        : total + ' tracked files';
+    const { total, repos, walked, truncated, decls, docs, named } = result;
     const head = terms.length
-        ? 'fankeel survey — ' + where + ', matching: ' + terms.join(', ')
-        : 'fankeel survey — ' + where + ', everything declared';
+        ? 'fankeel survey — ' + total + ' files, matching: ' + terms.join(', ')
+        : 'fankeel survey — ' + total + ' files, everything declared';
+
+    // Where the list came from, always. Two sources cover different things —
+    // git knows the project's own ignore rules, a walk only knows a fixed list —
+    // and a report that hides which one it used invites its coverage to be
+    // trusted further than it should be.
+    const source = [];
+    if (!walked) source.push('git');
+    else {
+        if (repos.length) source.push('git in ' + repos.join(', '));
+        source.push('a directory walk elsewhere (dot-directories, dependencies and build output skipped)');
+    }
+    const note = ['source: ' + source.join('; ')];
+    if (truncated) {
+        note.push('the walk stopped at ' + MAX_WALK_FILES + ' files — narrow it with --root before trusting this.');
+    }
 
     // The split is said out loud rather than left for the reader to infer from
     // the ordering. A section that silently mixes two kinds of match is a
@@ -259,7 +321,7 @@ function report(result, terms) {
         ? 'declarations:  (' + namedCount + ' by name, then ' + (decls.length - namedCount) + ' more in files that match)'
         : 'declarations:';
 
-    const lines = [head, ''];
+    const lines = [head, ...note, ''];
     lines.push(...section('files whose name matches:', named, (f) => f));
     lines.push(...section(declTitle, decls, (d) => d.file + ':' + d.line + '  ' + d.text));
     lines.push(...section('documentation:', docs, (d) => d.file + ':' + d.line + '  ' + d.text));

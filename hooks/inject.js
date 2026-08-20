@@ -38,6 +38,7 @@ function main(raw) {
     if (!payload || typeof payload !== 'object') return;
 
     const sessionId = payload.session_id;
+    const launch = registry.launchRoot(payload);
     const root = registry.rootFor(payload);
 
     // The mode is on for this session exactly when this session owns an active
@@ -55,7 +56,7 @@ function main(raw) {
     process.stdout.write(JSON.stringify({
         hookSpecificOutput: {
             hookEventName: 'UserPromptSubmit',
-            additionalContext: render({ mine: { sessionId, data: mine }, others, now }),
+            additionalContext: render({ mine: { sessionId, data: mine }, others, now, root, launch }),
         },
     }));
 

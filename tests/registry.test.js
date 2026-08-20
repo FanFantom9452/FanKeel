@@ -295,3 +295,61 @@ test('the memory a task can hold is small by construction', () => {
   const budget = registry.MAX_NOTES * registry.MAX_NOTE_LEN + registry.MAX_NEXT_LEN;
   assert.ok(budget <= 700, 'task memory budget is ' + budget + ' chars');
 });
+
+// ---- where the registry lives --------------------------------------------
+
+test('with no .fankeel anywhere, the registry is where Claude Code was opened', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-root-'));
+  const deep = path.join(dir, 'a', 'b');
+  fs.mkdirSync(deep, { recursive: true });
+  assert.equal(registry.findStateRoot(deep), null);
+  assert.equal(registry.rootFor({ cwd: deep }), deep);
+});
+
+test('an existing .fankeel in an ancestor is what a session inside it joins', () => {
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-root-'));
+  fs.mkdirSync(path.join(parent, '.fankeel'));
+  const child = path.join(parent, 'Trovara', 'backend');
+  fs.mkdirSync(child, { recursive: true });
+  assert.equal(registry.findStateRoot(child), path.resolve(parent));
+  assert.equal(registry.rootFor({ cwd: child }), path.resolve(parent));
+});
+
+test('the nearest one wins, the way git picks the nearest .git', () => {
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-root-'));
+  fs.mkdirSync(path.join(parent, '.fankeel'));
+  const child = path.join(parent, 'Trovara');
+  fs.mkdirSync(path.join(child, '.fankeel'), { recursive: true });
+  const deeper = path.join(child, 'backend');
+  fs.mkdirSync(deeper);
+  assert.equal(registry.findStateRoot(deeper), path.resolve(child));
+});
+
+test('the walk stops below the home directory rather than picking one up there', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-home-'));
+  fs.mkdirSync(path.join(home, '.fankeel'));
+  const project = path.join(home, 'projects', 'thing');
+  fs.mkdirSync(project, { recursive: true });
+  const saved = { HOME: process.env.HOME, USERPROFILE: process.env.USERPROFILE };
+  process.env.HOME = home;
+  process.env.USERPROFILE = home;
+  try {
+    // A registry sitting in the home directory would silently capture every
+    // project underneath it, and nothing the user typed would explain why.
+    assert.equal(registry.findStateRoot(project), null);
+  } finally {
+    if (saved.HOME === undefined) delete process.env.HOME; else process.env.HOME = saved.HOME;
+    if (saved.USERPROFILE === undefined) delete process.env.USERPROFILE; else process.env.USERPROFILE = saved.USERPROFILE;
+  }
+});
+
+test('CLAUDE_PROJECT_DIR is preferred over the payload cwd', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-root-'));
+  const saved = process.env.CLAUDE_PROJECT_DIR;
+  process.env.CLAUDE_PROJECT_DIR = dir;
+  try {
+    assert.equal(registry.launchRoot({ cwd: 'X:/somewhere/else' }), dir);
+  } finally {
+    if (saved === undefined) delete process.env.CLAUDE_PROJECT_DIR; else process.env.CLAUDE_PROJECT_DIR = saved;
+  }
+});
