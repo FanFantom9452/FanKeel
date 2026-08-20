@@ -1,0 +1,25 @@
+{
+  "name": "fankeel",
+  "version": "0.1.0",
+  "description": "Development discipline for long-running projects: a per-session task registry, scope-overlap warnings between live sessions, and stage rules restated on every prompt.",
+  "author": {
+    "name": "FanFantom9452",
+    "url": "https://github.com/FanFantom9452"
+  },
+  "skills": "./skills/",
+  "commands": "./commands/",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/inject.js\"",
+            "timeout": 5,
+            "statusMessage": "Reading the fankeel registry..."
+          }
+        ]
+      }
+    ]
+  }
+}

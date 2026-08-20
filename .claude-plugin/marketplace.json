@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "fankeel",
+  "description": "Development discipline for long-running projects. Puts a session into a named task, tells every prompt what that task is, and shows which other live sessions are in the same files.",
+  "owner": {
+    "name": "FanFantom9452",
+    "url": "https://github.com/FanFantom9452"
+  },
+  "plugins": [
+    {
+      "name": "fankeel",
+      "description": "A keel for a project: one entry command, a per-session task registry, and rules restated on every prompt instead of pointed at.",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}
