@@ -10,6 +10,7 @@ the same change.
 - Sub-project 3, the discipline — requirements captured in [docs/superpowers/specs/2026-08-20-discipline-requirements.md](docs/superpowers/specs/2026-08-20-discipline-requirements.md); the stage list is the open question.
 - `PreToolUse` hard blocking on scope overlap — specified and deferred in [docs/superpowers/specs/2026-08-20-fankeel-shell-design.md](docs/superpowers/specs/2026-08-20-fankeel-shell-design.md), under "Rejected for now".
 - A fankeel hue in TokenBar's `$badgeColors` — optional polish; the default ramp renders correctly without it.
+- Publishing — the marketplace is currently a `directory` source pointing at this working tree, so `claude plugin marketplace remove fankeel` has to run before a GitHub one is added, or two marketplaces will offer the same plugin name. Joining claude-kit is task 8 steps 2–5 of [docs/superpowers/plans/2026-08-21-fankeel-shell.md](docs/superpowers/plans/2026-08-21-fankeel-shell.md).
 
 ## Closed by sub-project 3
 
