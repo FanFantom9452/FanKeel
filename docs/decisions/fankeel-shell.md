@@ -78,6 +78,41 @@ The declaration patterns are one shallow regex per language on purpose. A missed
 declaration costs one line of a report; a real parser costs a dependency, and
 this plugin has none.
 
+## Voice goes in the system prompt, not in the injection
+
+A ruleset injected at `SessionStart` lands in the conversation, which is exactly
+what compaction rewrites and what a long session pushes into the distance. That
+is the mechanism behind every "it worked at first and then faded" report about
+this kind of plugin.
+
+Claude Code has a native place for it. An output style is appended to the system
+prompt — sent verbatim on every request, never touched by compaction, and inside
+the cached prefix after the first turn. So fankeel ships `outputStyles/` rather
+than injecting a voice, and the split is:
+
+| | Where | Cost |
+|---|---|---|
+| How to talk — fixed for the session | output style, system prompt | Once, then cached |
+| What is being done now — changes | the per-turn injection | ~200 tokens a turn |
+
+Style does not go in the injection: that is paying every turn for something the
+system prompt carries for free.
+
+The dynamic half is the one line of output *shape* on each stage. A system prompt
+is fixed for the session and the stage is not, so "quote the scanner" at `survey`
+and "say almost nothing" at `build` can only live in the injection.
+
+Not done, and why: no slash command to switch styles, because `/output-style` was
+removed from Claude Code and a command writing `settings.json` would duplicate the
+native `/config` picker while not reliably taking effect in the running session.
+No `force-for-plugin: true`, because it overrides whatever the user chose and
+fankeel is opt-in per session.
+
+The three always-on rules stay in the injection even though `fankeel-pipeline`
+repeats them. A style is the user's choice, a hook cannot see which one is active,
+and losing the rules whenever the user picks something else costs more than three
+duplicated lines a turn.
+
 ## Task memory is two capped fields, and the caps are in code
 
 Planned as a versioned `.fankeel/memory/`; cancelled. Claude Code already

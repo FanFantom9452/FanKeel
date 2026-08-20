@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.4.0
+version: 0.5.0
 ---
 
 # fankeel
@@ -171,6 +171,23 @@ decide. Do not silently proceed.
 
 If the work reaches a file nobody declared, say so and update `scope`. An
 out-of-date scope is the one thing that makes the collision warning useless.
+
+## Output styles
+
+fankeel ships three, chosen in `/config` → Output style. They are not part of the
+mode and do not switch with it — a style is a Claude Code setting the user picks,
+and nothing here can set it for them.
+
+| Style | For |
+|---|---|
+| `fankeel-terse` | Everyday work. Result first, no preamble, no tool narration. |
+| `fankeel-pipeline` | Running this pipeline. Adds the question discipline: never wrap up silently, every question carries its own background and its trade-offs. |
+| `fankeel-review` | Reviews and audits. Findings only, one line each, no praise and no redesigns. |
+
+If the user asks for shorter answers, a fixed format, or says the style has faded
+over a long session, point them here rather than promising to remember. A style
+lives in the system prompt and is sent verbatim on every request, so unlike
+anything injected into the conversation it cannot be diluted by compaction.
 
 ## The scope guard
 

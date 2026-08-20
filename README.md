@@ -119,8 +119,63 @@ staying put, or pausing — never told a stage is complete and left there. Short
 tasks may skip forward, but the skip is said out loud, because skipping silently
 is how `verify` gets skipped.
 
+Each stage also carries one line about the **shape** of its output — `survey`
+quotes the scanner rather than paraphrasing it, `build` says almost nothing
+because the diff is the output, `verify` quotes the command and the line that
+decided it. This is the dynamic half that an output style cannot do: the system
+prompt is fixed for the session, and the stage is not.
+
 `land` has no successor. What follows it is a new task, which is a decision rather
 than a transition.
+
+## Output styles
+
+Three, chosen in `/config` → Output style:
+
+| Style | For |
+|---|---|
+| `fankeel-terse` | Everyday work. Result first, no preamble, no tool narration, every identifier and error string verbatim. |
+| `fankeel-pipeline` | Running the pipeline. Adds the question discipline — never wrap up silently, every question carries its own background and every option its trade-off. |
+| `fankeel-review` | Reviews and audits. Findings only, one line each, most severe first, no praise and no redesigns. |
+
+### Why a style rather than an injected ruleset
+
+A plugin that sets your voice by injecting a ruleset at `SessionStart` is putting
+it in the **conversation** — the part that gets compacted, summarised and pushed
+back by hundreds of thousands of tokens. That is why such rulesets fade on a long
+session.
+
+An output style is appended to the **system prompt**:
+
+```
+You are an interactive agent that helps users according to your "Output Style"
+below, which describes how you should respond to user queries.
+
+# Output Style: fankeel-terse
+...
+```
+
+Every request carries it verbatim. Compaction rewrites the conversation and never
+the system prompt, so it cannot be diluted — and after the first request it is
+inside the cached prefix, so it is close to free.
+
+Claude Code also injects its own per-turn reminder while a style is active, which
+is the other half of what an injected ruleset was doing, at no cost here.
+
+### What is deliberately not done
+
+- **No slash command to switch.** `/output-style` was removed from Claude Code;
+  styles are picked in `/config`. A command that wrote `outputStyle` into
+  `settings.json` would duplicate the native picker and might not take effect
+  until the next session.
+- **No `force-for-plugin: true`.** That flag applies a plugin's style
+  automatically and overrides whatever the user chose. fankeel is opt-in per
+  session and does not get to seize the voice of every session on the machine.
+
+The three always-on rules in the per-turn injection overlap `fankeel-pipeline` on
+purpose. A style is the user's choice and a hook cannot see which one is active,
+so moving those rules into the style would mean losing them whenever the user
+picked something else. Three lines a turn is the cheaper price.
 
 ## Task memory
 
