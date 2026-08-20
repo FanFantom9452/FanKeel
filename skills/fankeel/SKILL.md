@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.8.0
+version: 0.9.0
 ---
 
 # fankeel
@@ -39,6 +39,12 @@ relative to.
 ```
 
 One file per session, named for the session that owns it.
+
+A `scope` entry is a **file, a directory, or a glob**, whichever says the least
+that is still true. A directory covers everything under it, so `Waypoint/web/src`
+is one entry and not two hundred. Do not ask for a list of files when the user has
+pointed at a directory — the overlap check reads a bare directory name as covering
+its subtree, and so does the guard.
 
 ```json
 {
@@ -97,7 +103,12 @@ have searched for, and quote what came back:
 
 ```
 node <plugin>/scripts/survey.js badge colour ramp
+node <plugin>/scripts/survey.js --root Waypoint badge     # one project of several
 ```
+
+Pass `--root` whenever the registry covers more than one project and the terms
+concern one of them. Without it the scan is the whole workspace, and the answer
+comes back buried in projects nobody asked about.
 
 It reads the working tree on every run, so there is no index to go stale. Inside
 a repository it uses `git ls-files`; anywhere else it walks the directory,
@@ -177,12 +188,40 @@ corrupt entry is visible.
 Show the active ones: task, stage, scope, and — for any last touched more than 12
 hours ago — how long ago that was. Mark this session's own.
 
+## Before offering anything, look
+
+```
+node <plugin>/scripts/orient.js                    # where am I, what is under it
+node <plugin>/scripts/orient.js Waypoint web      # the user already named a place
+```
+
+`<plugin>` is two directories up from this file — resolve `../../scripts/orient.js`
+against it rather than searching for the path.
+
+It reports where the registry is or would be, and then either the projects under
+this directory or, for a single project, the directories inside it — each with its
+git branch, how dirty it is, and how many files. It writes nothing.
+
+Run it before the options below, and show what came back. Two rules about how it
+feeds the next step:
+
+- **If the user named a place** — an `@` path, a directory in the prompt, "the
+  frontend" — pass it through and work from there. They have already answered the
+  question; asking again is the thing this is here to stop.
+- **If they named nothing**, show the listing and ask which part. In a workspace of
+  five projects "give me a scope" is not answerable, and a scope answered anyway is
+  the guessed scope invariant 3 exists to prevent.
+
+If the directory holds nothing readable, say so plainly and ask what they meant to
+open — a registry created in the wrong directory is one every later session
+inherits.
+
 Then ask, with these options and no others:
 
 | | |
 |---|---|
 | **Carry on** | This session already owns an active task. Nothing to write. |
-| **Start** | Ask for a one-line `task` and a `scope`. Write this session's file with `active: true`, `stage: "survey"`, `started` and `updated` at now. |
+| **Start** | Ask for a one-line `task`, and take the `scope` from what orient showed — a directory is a complete answer. Write this session's file with `active: true`, `stage: "survey"`, `started` and `updated` at now. |
 | **Adopt** | Copy `task`, `scope`, `stage`, `notes` and `next` from another entry into this session's file, then set the source's `active` to `false`. From a **stale** entry, offer it plainly. From a **live** one, confirm first with the other session named — that is exactly the case this registry exists to make visible. |
 | **Stand down** | Set this session's `active` to `false`. Ask first whether anything in `notes` belongs somewhere more durable. |
 | **Clear out** | List the stale entries with their ages, let the user pick, set `active: false` on the ones picked. Never on ones they did not pick. |

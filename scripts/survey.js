@@ -365,4 +365,4 @@ if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
 
-module.exports = { scan, report, main, parseArgs, declPatterns, matches };
+module.exports = { scan, report, main, parseArgs, declPatterns, matches, trackedFiles, isRepo, gitFiles };

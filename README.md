@@ -33,6 +33,48 @@ It lists what every live session in this repository is working on and asks what
 you want to do — carry on, start a task, adopt one, stand it down, or clear out
 entries whose terminal is long gone.
 
+Before it asks anything it looks. Opening with "give me a task and a scope" and
+nothing on screen is answerable in a repository you just opened and useless in a
+directory holding five projects, where the honest reply is another question — and
+a scope guessed to avoid that question is what makes the collision warnings
+untrustworthy later. So `/fankeel` runs a scanner first:
+
+```
+$ node <plugin>/scripts/orient.js
+
+fankeel orient — F:\workspace
+
+registry: none at or above here. Starting a task creates one at F:\workspace.
+
+5 under it:
+  TypeDesk  git main, clean               370 files
+  Waypoint     git feat/task-board, 1 untracked  463 files
+  Roster        no git                         77 files
+  KB            git main, 1 untracked         910 files
+  notebin    git main, clean                97 files
+```
+
+Name a place and it goes there instead, breaking that one down to the level a
+scope actually gets written at:
+
+```
+$ node <plugin>/scripts/orient.js Waypoint
+
+named:
+  Waypoint  git feat/task-board, 1 untracked  463 files
+
+inside it:
+  Waypoint/api/     134 files
+  Waypoint/e2e/      93 files
+  Waypoint/web/     199 files
+  ...
+  (and 12 files loose at the top)
+```
+
+It writes nothing. A `scope` entry may be a file, a directory or a glob — a
+directory covers everything under it, so `Waypoint/web/src` is one entry rather
+than two hundred.
+
 Starting a task puts this session in fankeel mode. From then on every prompt
 carries the task, what has been tried, the other live sessions, and the rules for
 the stage you are in:
