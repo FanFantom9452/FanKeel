@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.7.0
+version: 0.7.1
 ---
 
 # fankeel
@@ -83,11 +83,19 @@ node <plugin>/scripts/survey.js badge colour ramp
 ```
 
 It reads `git ls-files` and the working tree on every run, so there is no index
-to go stale. It reports files whose name matches, the declarations it can see —
+to go stale. A root that is not a repository but holds several is read through to
+them, with paths prefixed by the repository name — that is the root a
+cross-project task gets opened at, and it is the case that needs the scanner
+most. It reports files whose name matches, the declarations it can see —
 JavaScript, TypeScript, Vue and Svelte, PowerShell, Python, shell, Go, Rust,
 C#/Java/Kotlin/Swift, Ruby, and CSS classes, custom properties and mixins — and
 markdown headings. Anything else is matched on filename alone, so say so rather
 than reporting a clean sweep.
+
+Declarations whose **name** carries the term are listed before ones that only
+share a path with it, and the report says how many of each. The list is capped,
+so on a large repository the tail is cut — if the count is far above the cap, say
+so rather than treating what you can see as the whole answer.
 
 "Nothing matched" is a finding — report it, and say which terms were tried,
 because the next person needs to know a synonym was already ruled out.

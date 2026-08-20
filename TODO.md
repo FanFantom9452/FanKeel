@@ -11,6 +11,7 @@ written here instead of where it belongs.
 ## Deferred
 
 - Default the scope guard on, once there is evidence that `scope` is declared accurately enough — [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md), "The guard blocks".
+- The declarations cap in [scripts/survey.js](scripts/survey.js). Ranking got boilerplate off the top, but 142 named matches still do not fit in 25, and tests rank alongside the code they test.
 - Language patterns beyond the ten [scripts/survey.js](scripts/survey.js) knows. Anything else falls back to filename matching; add a row when one is actually needed.
 - Settle `SETTINGS_RELOAD_IS_LIVE` in [scripts/style.js](scripts/style.js) by observing whether a running session picks up a settings change. If it does, the injected digest comes out.
 - A per-`agent_type` subagent brief — the `SubagentStart` matcher allows it; which types earn one is a question real use answers.

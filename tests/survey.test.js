@@ -192,11 +192,86 @@ test('matching is case-insensitive', () => {
   assert.match(run(root, 'WIDGET'), /WidgetFactory/);
 });
 
-test('outside a git repository it says so instead of pretending to have looked', () => {
+test('outside a git repository, with none inside it either, it says so', () => {
   const bare = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-nogit-'));
+  fs.mkdirSync(path.join(bare, 'notarepo'));
   const out = run(bare, 'widget');
   assert.match(out, /not a git repository/);
   assert.match(out, /Search by hand/);
+});
+
+// A directory holding several repositories is how related projects get kept
+// together, and it is exactly the root a cross-project session opens at — the
+// collision warnings and the scope guard only reach across two repositories
+// from their common parent.
+test('a parent of several repositories is read through to its children', () => {
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-multi-'));
+  for (const [name, files] of Object.entries({
+    alpha: { 'lib/a.js': 'function widgetOne() {}\n' },
+    beta: { 'lib/b.js': 'function widgetTwo() {}\n' },
+  })) {
+    const root = path.join(parent, name);
+    fs.mkdirSync(root);
+    execFileSync('git', ['init', '-q'], { cwd: root });
+    for (const [f, body] of Object.entries(files)) {
+      fs.mkdirSync(path.dirname(path.join(root, f)), { recursive: true });
+      fs.writeFileSync(path.join(root, f), body);
+    }
+    execFileSync('git', ['add', '-A'], { cwd: root });
+  }
+  const out = run(parent, 'widget');
+  assert.match(out, /across 2 repositories \(alpha, beta\)/);
+  assert.match(out, /alpha\/lib\/a\.js:1 {2}function widgetOne/);
+  assert.match(out, /beta\/lib\/b\.js:1 {2}function widgetTwo/);
+});
+
+test('a repository of its own is read directly, with no repository list', () => {
+  const root = repo({ 'lib/a.js': 'function widgetOne() {}\n' });
+  const out = run(root, 'widget');
+  assert.equal(out.includes('repositories ('), false, 'a plain repository was described as a group');
+  assert.match(out, /lib\/a\.js:1 {2}function widgetOne/);
+});
+
+test('git’s complaint about a non-repository never reaches the report', () => {
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-multi-'));
+  const root = path.join(parent, 'alpha');
+  fs.mkdirSync(root);
+  execFileSync('git', ['init', '-q'], { cwd: root });
+  fs.writeFileSync(path.join(root, 'a.js'), 'function widgetOne() {}\n');
+  execFileSync('git', ['add', '-A'], { cwd: root });
+  // stderr is captured here on purpose: inheriting it put `fatal: not a git
+  // repository` at the top of a report that then worked perfectly, and it got
+  // read as though it meant something.
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', parent, 'widget'],
+    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  assert.equal(out.includes('fatal:'), false, 'git wrote to the report');
+  assert.match(out, /alpha\/a\.js/);
+});
+
+test('a declaration whose name matches ranks above one that only shares a path', () => {
+  const root = repo({
+    'zzz.js': 'function widgetMaker() {}\n',
+    'widget/helpers.js': 'function unrelated() {}\n',
+  });
+  const out = run(root, 'widget');
+  const decls = out.split('\n').filter((l) => /^ {2}\S+\.js:\d+/.test(l));
+  assert.ok(decls[0].includes('widgetMaker'),
+    'the path-only match came first: ' + JSON.stringify(decls));
+  assert.ok(decls.some((l) => l.includes('unrelated')), 'the path match was dropped, not demoted');
+});
+
+test('the two kinds of match are counted out loud, not left to be inferred', () => {
+  const root = repo({
+    'zzz.js': 'function widgetMaker() {}\n',
+    'widget/helpers.js': 'function unrelated() {}\n',
+  });
+  assert.match(run(root, 'widget'), /declarations: {2}\(1 by name, then 1 more in files that match\)/);
+});
+
+test('with every match named, the split is not mentioned at all', () => {
+  const root = repo({ 'zzz.js': 'function widgetMaker() {}\n' });
+  const out = run(root, 'widget');
+  assert.match(out, /^declarations:$/m);
 });
 
 test('report says nothing matched rather than throwing on a null scan', () => {
