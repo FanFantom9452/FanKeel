@@ -10,3 +10,7 @@ tasks with their stage, scope and — for anything last seen more than 12 hours 
 
 `$ARGUMENTS`, when present, is the one-line task name for a new task. Ask for the
 scope; never guess it.
+
+A task moves through `survey` → `design` → `build` → `verify` → `land`. At the end
+of a stage, offer the next stage, staying put, and pausing — never announce a
+stage complete and stop.

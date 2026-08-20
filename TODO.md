@@ -6,13 +6,13 @@ the same change.
 
 ## Deferred
 
-- Sub-project 2, project memory — not yet designed. `.fankeel/memory/`, versioned, carries progress and decisions across sessions.
-- Sub-project 3, the discipline — requirements captured in [docs/superpowers/specs/2026-08-20-discipline-requirements.md](docs/superpowers/specs/2026-08-20-discipline-requirements.md); the stage list is the open question.
-- `PreToolUse` hard blocking on scope overlap — specified and deferred in [docs/superpowers/specs/2026-08-20-fankeel-shell-design.md](docs/superpowers/specs/2026-08-20-fankeel-shell-design.md), under "Rejected for now".
+- `PreToolUse` hard blocking on scope overlap — specified and deferred in [docs/superpowers/specs/2026-08-20-fankeel-shell-design.md](docs/superpowers/specs/2026-08-20-fankeel-shell-design.md), under "Rejected for now". Waiting on evidence of how accurately people declare scope.
 - A fankeel hue in TokenBar's `$badgeColors` — optional polish; the default ramp renders correctly without it.
 - Publishing — the marketplace is currently a `directory` source pointing at this working tree, so `claude plugin marketplace remove fankeel` has to run before a GitHub one is added, or two marketplaces will offer the same plugin name. Joining claude-kit is task 8 steps 2–5 of [docs/superpowers/plans/2026-08-21-fankeel-shell.md](docs/superpowers/plans/2026-08-21-fankeel-shell.md).
+- R5's own open question — where deferred detail lives, one convention rather than a free choice per entry — is still unanswered in [docs/superpowers/specs/2026-08-20-discipline-requirements.md](docs/superpowers/specs/2026-08-20-discipline-requirements.md). This file is currently the only convention, and it points into `docs/`.
+- R7's open question — whether a failed audit reports or blocks the stage transition — same document. It reports, for now, because nothing enforces stage transitions yet.
 
-## Closed by sub-project 3
+## Owed after first real use
 
-- This file's own conventions are provisional. R5 in the requirements document owes an answer on where detail lives and what removes an entry.
-- Both spec files in `docs/superpowers/specs/` are working documents governed by R6, and are to be rewritten into decision records when their work lands.
+- The stage list is a first guess. Whether five is right, whether `survey` earns its place, and whether the rules fire at the right moments are questions only real use answers.
+- Both spec files and the plan in `docs/superpowers/` are working documents governed by R6. When this settles, they are rewritten into one short decision record and deleted.

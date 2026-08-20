@@ -3,7 +3,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { render, STAGE_RULES } = require('../lib/render.js');
+const { render } = require('../lib/render.js');
+const { ALWAYS, byName, rulesFor } = require('../lib/stages.js');
 
 const NOW = Date.parse('2026-08-21T12:00:00.000Z');
 const ago = (ms) => new Date(NOW - ms).toISOString();
@@ -120,15 +121,77 @@ test('an other session with no scope is listed without a scope clause', () => {
   assert.match(out, /^ {2}- no scope @ implement$/m);
 });
 
-test('every render ends with the stage rules', () => {
+test('every render ends with the rules for the stage it is in', () => {
   for (const others of [[], [entry(THEIRS, { scope: ['statusline.ps1'] })]]) {
-    const out = render({ mine: entry(MINE), others, now: NOW });
+    const out = render({ mine: entry(MINE, { stage: 'build' }), others, now: NOW });
     assert.match(out, /^stage rules:$/m);
-    for (const rule of STAGE_RULES) assert.ok(out.includes('  - ' + rule), rule);
+    for (const rule of rulesFor('build')) assert.ok(out.includes('  - ' + rule), rule);
   }
 });
 
-test('the stage rules are the agreed discipline, not a placeholder string', () => {
-  assert.ok(STAGE_RULES.length >= 4);
-  assert.equal(STAGE_RULES.some((r) => /TODO|TBD|placeholder/i.test(r)), false);
+test('the rules sent are this stage’s, not another stage’s', () => {
+  const out = render({ mine: entry(MINE, { stage: 'survey' }), others: [], now: NOW });
+  for (const rule of byName('survey').rules) assert.ok(out.includes(rule), rule);
+  for (const rule of byName('land').rules) assert.equal(out.includes(rule), false, rule);
+});
+
+test('an unknown stage still gets the always-on rules', () => {
+  const out = render({ mine: entry(MINE, { stage: 'nonsense' }), others: [], now: NOW });
+  for (const rule of ALWAYS) assert.ok(out.includes(rule), rule);
+});
+
+test('next is rendered as one line when set', () => {
+  const out = render({ mine: entry(MINE, { next: 'wire the badge into TokenBar' }), others: [], now: NOW });
+  assert.match(out, /^next: wire the badge into TokenBar$/m);
+});
+
+test('next is absent rather than empty when unset', () => {
+  const out = render({ mine: entry(MINE), others: [], now: NOW });
+  assert.equal(out.includes('next:'), false);
+});
+
+test('notes render as a so-far block', () => {
+  const notes = ['ANSI 256 has no true mid green', 'decided 12h for stale, not 24h'];
+  const out = render({ mine: entry(MINE, { notes }), others: [], now: NOW });
+  assert.match(out, /^so far:$/m);
+  for (const n of notes) assert.ok(out.includes('  - ' + n), n);
+});
+
+test('an empty notes list produces no so-far block', () => {
+  const out = render({ mine: entry(MINE, { notes: [] }), others: [], now: NOW });
+  assert.equal(out.includes('so far:'), false);
+});
+
+test('the render never carries more than the capped number of notes', () => {
+  const notes = Array.from({ length: 20 }, (_, i) => 'note ' + i);
+  const out = render({ mine: entry(MINE, { notes }), others: [], now: NOW });
+  const shown = out.split('\n').filter((l) => /^ {2}- note \d+$/.test(l));
+  assert.equal(shown.length, 5);
+  assert.ok(shown[shown.length - 1].includes('note 19'), 'the newest note was evicted');
+});
+
+test('malformed notes are dropped rather than rendered', () => {
+  const out = render({ mine: entry(MINE, { notes: ['real', null, 42, '  '] }), others: [], now: NOW });
+  assert.match(out, /^ {2}- real$/m);
+  assert.equal(out.includes('undefined'), false);
+  assert.equal(out.includes('null'), false);
+  assert.equal(out.includes('42'), false);
+});
+
+test('notes is not an array does not throw', () => {
+  const out = render({ mine: entry(MINE, { notes: 'oops' }), others: [], now: NOW });
+  assert.equal(out.includes('so far:'), false);
+});
+
+test('the whole injection stays a readable size with everything populated', () => {
+  const out = render({
+    mine: entry(MINE, {
+      stage: 'build',
+      next: 'wire the badge into TokenBar',
+      notes: Array.from({ length: 5 }, (_, i) => 'a lesson learned number ' + i),
+    }),
+    others: [entry(THEIRS, { task: 'retune the 5h ramp', scope: ['statusline.ps1'] })],
+    now: NOW,
+  });
+  assert.ok(out.length < 1600, 'injection is ' + out.length + ' chars');
 });

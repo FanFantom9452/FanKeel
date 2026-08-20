@@ -185,3 +185,113 @@ test('ageText reports hours under a day and days over', () => {
   assert.equal(registry.ageText(at(19 * 24 * 3600e3), now), '19d');
   assert.equal(registry.ageText({}, now), null);
 });
+
+// ---- task memory ----------------------------------------------------------
+// Two capped fields on the entry rather than a store of its own. The caps are the
+// point: Claude Code already remembers in four other places, and the one thing a
+// fifth can add is the state of a task in flight, which is small by nature.
+
+test('a note is appended and read back', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task());
+  assert.equal(registry.addNote(root, SID, 'ANSI 256 has no true mid green'), true);
+  assert.deepEqual(registry.notesOf(registry.readSession(root, SID)), ['ANSI 256 has no true mid green']);
+});
+
+test('notes stop at the cap, evicting the oldest', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task());
+  for (let i = 0; i < 12; i++) registry.addNote(root, SID, 'note ' + i);
+  const notes = registry.notesOf(registry.readSession(root, SID));
+  assert.equal(notes.length, registry.MAX_NOTES);
+  assert.equal(notes[notes.length - 1], 'note 11');
+  assert.equal(notes.includes('note 0'), false);
+});
+
+test('a note is truncated rather than allowed to grow', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task());
+  registry.addNote(root, SID, 'x'.repeat(400));
+  assert.equal(registry.notesOf(registry.readSession(root, SID))[0].length, registry.MAX_NOTE_LEN);
+});
+
+test('a note is collapsed to one line', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task());
+  registry.addNote(root, SID, '  two\n\nlines   here  ');
+  assert.equal(registry.notesOf(registry.readSession(root, SID))[0], 'two lines here');
+});
+
+test('a repeated note does not push a useful one out', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task());
+  registry.addNote(root, SID, 'first');
+  for (let i = 0; i < 10; i++) registry.addNote(root, SID, 'same lesson');
+  const notes = registry.notesOf(registry.readSession(root, SID));
+  assert.deepEqual(notes, ['first', 'same lesson']);
+});
+
+test('an empty note is refused', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task());
+  assert.equal(registry.addNote(root, SID, '   '), false);
+  assert.equal(registry.addNote(root, SID, null), false);
+  assert.deepEqual(registry.notesOf(registry.readSession(root, SID)), []);
+});
+
+test('a note on a session with no entry creates nothing', () => {
+  const root = tmpRoot();
+  assert.equal(registry.addNote(root, SID, 'orphan'), false);
+  assert.equal(fs.existsSync(path.join(root, '.fankeel')), false);
+});
+
+test('adding a note leaves every other field alone', () => {
+  const root = tmpRoot();
+  const before = task();
+  registry.writeSession(root, SID, before);
+  registry.addNote(root, SID, 'a lesson');
+  const after = registry.readSession(root, SID);
+  for (const k of Object.keys(before)) assert.deepEqual(after[k], before[k], 'field ' + k);
+});
+
+test('next replaces rather than accumulating', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task());
+  registry.setNext(root, SID, 'first thing');
+  registry.setNext(root, SID, 'second thing');
+  assert.equal(registry.nextOf(registry.readSession(root, SID)), 'second thing');
+});
+
+test('next is truncated and collapsed to one line', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task());
+  registry.setNext(root, SID, 'y'.repeat(400));
+  assert.equal(registry.nextOf(registry.readSession(root, SID)).length, registry.MAX_NEXT_LEN);
+});
+
+test('clearing next removes the field rather than leaving it empty', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task());
+  registry.setNext(root, SID, 'something');
+  registry.setNext(root, SID, '');
+  const data = registry.readSession(root, SID);
+  assert.equal('next' in data, false);
+  assert.equal(registry.nextOf(data), null);
+});
+
+test('notesOf tolerates a malformed notes field', () => {
+  assert.deepEqual(registry.notesOf({ notes: 'oops' }), []);
+  assert.deepEqual(registry.notesOf({ notes: ['ok', null, 42, '  '] }), ['ok']);
+  assert.deepEqual(registry.notesOf({}), []);
+  assert.deepEqual(registry.notesOf(null), []);
+});
+
+test('notesOf caps a file that was hand-edited past the limit', () => {
+  const many = Array.from({ length: 30 }, (_, i) => 'n' + i);
+  assert.equal(registry.notesOf({ notes: many }).length, registry.MAX_NOTES);
+});
+
+test('the memory a task can hold is small by construction', () => {
+  const budget = registry.MAX_NOTES * registry.MAX_NOTE_LEN + registry.MAX_NEXT_LEN;
+  assert.ok(budget <= 700, 'task memory budget is ' + budget + ' chars');
+});

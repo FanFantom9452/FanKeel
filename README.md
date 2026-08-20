@@ -9,9 +9,9 @@ and then quietly stop. And two terminals open on the same repository will happil
 edit the same file, because neither knows the other is there.
 
 fankeel is a Claude Code plugin that carries a development discipline and states
-it on every prompt. This first release is the shell and the registry: the mode, the
-task, and who else is in your files. The discipline itself is being designed —
-see [TODO.md](TODO.md).
+it on every prompt rather than once at the top of a session. It holds a task, moves
+it through five stages, keeps a capped note of what has been tried, and shows which
+other live sessions are in the same files.
 
 ## Install
 
@@ -34,27 +34,77 @@ you want to do — carry on, start a task, adopt one, stand it down, or clear ou
 entries whose terminal is long gone.
 
 Starting a task puts this session in fankeel mode. From then on every prompt
-carries the task, the stage rules, and the other live sessions:
+carries the task, what has been tried, the other live sessions, and the rules for
+the stage you are in:
 
 ```
-FANKEEL ACTIVE — rework the 7d deviation colour ramp @ implement
+FANKEEL ACTIVE — rework the 7d deviation colour ramp @ build
 scope: statusline.ps1, statusline.sh, preview.ps1
+next: wire the badge word into TokenBar
+
+so far:
+  - ANSI 256 has no true mid green; 46 to 83 to 120 is the only clean run
+  - decided 12h for stale, not 24h - survives a night, not a forgotten window
 
 also in progress:
-  - rewrite the installer @ design  (scope: install.ps1, install.sh)
-  - retune the 5h ramp @ implement  (scope: statusline.ps1)  << overlaps: statusline.ps1
-  - triage the colour issues @ investigate  (scope: README.md)  (last seen 14h ago)
+  - retune the 5h ramp @ design  (scope: statusline.ps1)  << overlaps: statusline.ps1
+  - triage the colour issues @ survey  (scope: README.md)  (last seen 16d ago)
 
 stage rules:
-  - Finish the step you are on. Do not stop where the happy path works and the rest is "later".
-  - When a step completes, ask the next question instead of wrapping up. Always offer a pause option.
-  - Put a question’s background inside the question itself, not in the message above it.
-  - Give every option its trade-off, recommended one first.
+  - Never stop silently mid-stage. End every step by asking what comes next, and always offer a pause.
+  - Put a question’s background inside the question itself. Give every option its trade-off, recommended first.
+  - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
+  - Finish what you start. Do not stop where the happy path works and the rest is "later".
+  - Follow the patterns already in this repository rather than your own defaults.
+  - Anything genuinely deferred goes in TODO.md as one line pointing at where the detail lives — never as a comment nobody will find.
 ```
 
 The rules are restated in full every turn rather than pointed at. A pointer is
 only as strong as the salience of what it points at, and what it points at recedes
-by thousands of tokens a turn.
+by thousands of tokens a turn. Only the current stage's rules are sent, never all
+five stages', which is what keeps a per-turn restatement affordable — around 300
+tokens loaded as above.
+
+## Stages
+
+| Stage | Produces |
+|---|---|
+| `survey` | a statement of what already exists |
+| `design` | an approach someone agreed to |
+| `build` | the change itself |
+| `verify` | evidence, not confidence |
+| `land` | a repository no dirtier than you found it |
+
+A task starts at `survey`. At the end of a stage you are offered the next one,
+staying put, or pausing — never told a stage is complete and left there. Short
+tasks may skip forward, but the skip is said out loud, because skipping silently
+is how `verify` gets skipped.
+
+`land` has no successor. What follows it is a new task, which is a decision rather
+than a transition.
+
+## Task memory
+
+Two fields on the task, both capped in code: at most five notes of 100
+characters, and one `next` line of 120.
+
+```json
+"notes": ["ANSI 256 has no true mid green; 46 to 83 to 120 is the only clean run"],
+"next":  "wire the badge word into TokenBar"
+```
+
+The caps are the design, not a limitation. Claude Code already remembers in four
+places — `CLAUDE.md` for project conventions, its own memory directory for durable
+facts, git history for what landed and why, the compaction summary for earlier in
+the session. A fifth store would overlap all of them while being the one nobody
+reviews, which is how a memory file turns into a source of confident wrong
+answers.
+
+What none of the four holds is the state of a task **in flight**: what was tried
+and failed, what was decided along the way, what to pick up next. That is all this
+keeps. It is never version-controlled and it dies when the task is stood down; if
+a note still matters after the task lands, it was never a note, and `land` is
+where it moves to one of the four.
 
 ## The mode never switches itself off
 
@@ -90,7 +140,7 @@ A terminal killed outright leaves an entry claiming to be in progress. Rather th
 expire it — which would mean the mode switching itself off — fankeel annotates it:
 
 ```
-  - retune the 5h ramp @ implement  (last seen 19d ago)
+  - retune the 5h ramp @ build  (last seen 19d ago)
 ```
 
 That is the whole mechanism. Being stale writes nothing, deactivates nothing and
@@ -105,7 +155,7 @@ fankeel writes one word to `~/.claude/modes/<session_id>/fankeel`.
 flag it finds there, so no change is needed on that side:
 
 ```
-[FANKEEL:DESIGN]      [FANKEEL:IMPLEMENT]      [FANKEEL:CLASH]
+[FANKEEL:SURVEY]   [FANKEEL:DESIGN]   [FANKEEL:BUILD]   [FANKEEL:VERIFY]   [FANKEEL:LAND]   [FANKEEL:CLASH]
 ```
 
 The word is the stage, not an intensity. An intensity is a constant you set once
@@ -122,10 +172,11 @@ injected text.
 | `.fankeel/.gitignore` | Yes | Created with the directory |
 | `~/.claude/modes/{session_id}/fankeel` | n/a | The hook, every prompt |
 
-State lives in the project rather than under `~/.claude/` so that project memory —
-the next piece — travels with the repository instead of being lost on the next
-machine. Only the volatile half is excluded, so anything added under `.fankeel/`
-later is versioned by default.
+State lives in the project rather than under `~/.claude/` so that a repository
+checked out twice on one machine gets one registry rather than two. Only the
+volatile half is excluded, so anything added under `.fankeel/` later is versioned
+by default — but task memory is deliberately not one of those things, and lives on
+the entry inside `sessions/`.
 
 The hook writes exactly one registry file: this session's own. It never writes
 another session's, and never deletes one.
