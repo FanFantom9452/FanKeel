@@ -130,7 +130,17 @@ than a transition.
 
 ## Output styles
 
-Three, chosen in `/config` → Output style:
+Three, set with the `fankeel-style` skill:
+
+```
+/fankeel:fankeel-style terse      # everyday
+/fankeel:fankeel-style review     # audits
+/fankeel:fankeel-style off        # back to Claude Code's default
+```
+
+Or just say it — "answers are too long", "省 token", "give me a review voice" —
+and the skill picks itself up. That is the whole point of it existing: an output
+style is the right mechanism and `/config` is where people never go.
 
 | Style | For |
 |---|---|
@@ -162,15 +172,34 @@ inside the cached prefix, so it is close to free.
 Claude Code also injects its own per-turn reminder while a style is active, which
 is the other half of what an injected ruleset was doing, at no cost here.
 
+### Setting it without /config
+
+`scripts/style.js` writes `outputStyle` into `settings.json` — the same field
+`/config` writes, and nothing fankeel-specific: a style set this way survives
+uninstalling the plugin, because it is the user's setting rather than this
+plugin's state.
+
+The script is careful with that file, because other tools write it too. Every
+other key is preserved, the first change backs it up, a file that does not parse
+is reported instead of overwritten, and the write goes through a temporary file
+so an interruption cannot leave half a settings file.
+
+**The gap.** Whether a running session picks up a `settings.json` change without
+restarting is recorded as `SETTINGS_RELOAD_IS_LIVE` in that script. While it is
+false, setting a style also puts a four-line digest on the fankeel session entry
+and the hook injects it each prompt, so the voice starts immediately; the full
+style takes over next session. Four lines rather than the whole file, because a
+digest injected every turn accumulates — paying that to enforce brevity would be
+self-defeating.
+
 ### What is deliberately not done
 
-- **No slash command to switch.** `/output-style` was removed from Claude Code;
-  styles are picked in `/config`. A command that wrote `outputStyle` into
-  `settings.json` would duplicate the native picker and might not take effect
-  until the next session.
 - **No `force-for-plugin: true`.** That flag applies a plugin's style
   automatically and overrides whatever the user chose. fankeel is opt-in per
   session and does not get to seize the voice of every session on the machine.
+- **No style is set for the user.** The skill offers the three and waits. This
+  changes the voice of every session on the machine, including ones they are not
+  looking at.
 
 The three always-on rules in the per-turn injection overlap `fankeel-pipeline` on
 purpose. A style is the user's choice and a hook cannot see which one is active,

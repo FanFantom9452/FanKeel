@@ -1,6 +1,6 @@
 {
   "name": "fankeel",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Development discipline for long-running projects: a five-stage pipeline restated on every prompt, a per-session task registry, capped task memory, and scope-overlap warnings — optionally blocks — between live sessions.",
   "author": {
     "name": "FanFantom9452",

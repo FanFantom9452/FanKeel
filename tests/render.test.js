@@ -216,17 +216,42 @@ test('notes is not an array does not throw', () => {
   assert.equal(out.includes('so far:'), false);
 });
 
+test('a style set on the entry renders its digest last', () => {
+  const out = render({ mine: entry(MINE, { style: 'terse' }), others: [], now: NOW });
+  const lines = out.split('\n').filter(Boolean);
+  assert.match(out, /^voice \(terse\):$/m);
+  assert.match(lines[lines.length - 1], /language the user writes in/);
+  // Last on purpose: it is the block closest to what gets generated next.
+  assert.ok(out.indexOf('voice (') > out.indexOf('stage rules:'));
+});
+
+test('no style on the entry means no voice block at all', () => {
+  const out = render({ mine: entry(MINE), others: [], now: NOW });
+  assert.equal(out.includes('voice ('), false);
+});
+
+test('a style name nothing matches renders nothing rather than an empty block', () => {
+  const out = render({ mine: entry(MINE, { style: 'shouty' }), others: [], now: NOW });
+  assert.equal(out.includes('voice ('), false);
+  assert.equal(out.includes('undefined'), false);
+});
+
 test('the whole injection stays a readable size with everything populated', () => {
+  // The worst case on purpose: the longest stage, both memory fields full, a
+  // second session to report, and the voice digest present. This rides on every
+  // prompt, so the number it produces is the per-turn rent the whole design
+  // pays and it should be looked at when it moves.
   const out = render({
     mine: entry(MINE, {
-      stage: 'build',
+      stage: 'land',
+      style: 'pipeline',
       next: 'wire the badge into TokenBar',
       notes: Array.from({ length: 5 }, (_, i) => 'a lesson learned number ' + i),
     }),
     others: [entry(THEIRS, { task: 'retune the 5h ramp', scope: ['statusline.ps1'] })],
     now: NOW,
   });
-  assert.ok(out.length < 1600, 'injection is ' + out.length + ' chars');
+  assert.ok(out.length < 1900, 'injection is ' + out.length + ' chars');
 });
 
 test('no stage’s rules cost more than a readable preamble', () => {

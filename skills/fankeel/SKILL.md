@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.5.0
+version: 0.6.0
 ---
 
 # fankeel
@@ -174,9 +174,11 @@ out-of-date scope is the one thing that makes the collision warning useless.
 
 ## Output styles
 
-fankeel ships three, chosen in `/config` → Output style. They are not part of the
-mode and do not switch with it — a style is a Claude Code setting the user picks,
-and nothing here can set it for them.
+fankeel ships three. They are not part of the mode and do not switch with it — a
+style is a Claude Code setting, not this plugin's state.
+
+Set one with the **fankeel-style** skill rather than sending the user to
+`/config`. People do not go and change settings; they ask.
 
 | Style | For |
 |---|---|
@@ -185,9 +187,15 @@ and nothing here can set it for them.
 | `fankeel-review` | Reviews and audits. Findings only, one line each, no praise and no redesigns. |
 
 If the user asks for shorter answers, a fixed format, or says the style has faded
-over a long session, point them here rather than promising to remember. A style
+over a long session, use that skill rather than promising to remember. A style
 lives in the system prompt and is sent verbatim on every request, so unlike
-anything injected into the conversation it cannot be diluted by compaction.
+anything injected into the conversation it cannot be diluted by compaction — and
+it is one copy however long the session runs, where anything injected per turn
+adds a fresh copy to the transcript each time.
+
+A `style` field on this session's entry is that skill's doing, not yours. It
+carries a four-line digest of the chosen style until the real one is in force.
+Do not set it by hand.
 
 ## The scope guard
 

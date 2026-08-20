@@ -102,11 +102,32 @@ The dynamic half is the one line of output *shape* on each stage. A system promp
 is fixed for the session and the stage is not, so "quote the scanner" at `survey`
 and "say almost nothing" at `build` can only live in the injection.
 
-Not done, and why: no slash command to switch styles, because `/output-style` was
-removed from Claude Code and a command writing `settings.json` would duplicate the
-native `/config` picker while not reliably taking effect in the running session.
+### The style is set by a skill, not by sending people to /config
+
+An output style is the right mechanism and `/config` is where people never go.
+They do not change settings; they say "answers are too long". So `fankeel-style`
+is a skill over a script that writes the same `outputStyle` field `/config`
+writes.
+
+Nothing about it is fankeel-specific, deliberately: a style set this way survives
+uninstalling the plugin, because it is the user's setting rather than this
+plugin's state. The script is defensive about `settings.json` for the same
+reason — other tools write that file, so unknown keys are preserved, the first
+change is backed up, a file that does not parse is reported rather than
+overwritten, and the write goes through a rename.
+
+**The gap.** A `settings.json` change may not reach a session already running.
+Rather than shipping a tool that says "it's set" when the user will not see it
+until they restart, one constant — `SETTINGS_RELOAD_IS_LIVE` — records the
+observed answer, and while it is false the script also writes a four-line digest
+onto the session entry for the hook to inject. Four lines rather than the whole
+style: a digest injected every turn accumulates in the transcript, and paying
+that to enforce brevity would be self-defeating.
+
 No `force-for-plugin: true`, because it overrides whatever the user chose and
-fankeel is opt-in per session.
+fankeel is opt-in per session. And the skill never picks a style on the user's
+behalf — it changes the voice of every session on the machine, including the
+ones they are not looking at.
 
 The three always-on rules stay in the injection even though `fankeel-pipeline`
 repeats them. A style is the user's choice, a hook cannot see which one is active,
