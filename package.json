@@ -5,6 +5,6 @@
   "description": "Claude Code plugin: per-session task registry and development discipline.",
   "license": "MIT",
   "scripts": {
-    "test": "node --test tests/"
+    "test": "node --test"
   }
 }
