@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns when another live session shares your files.
-version: 0.2.0
+version: 0.3.0
 ---
 
 # fankeel
@@ -69,6 +69,20 @@ worse than none because people stop reading it.
 
 Each stage's rules are injected on every prompt while you are in it, and only
 that stage's. A task starts at `survey`.
+
+`survey` carries a scanner rather than an instruction to search. The injected
+rule names the script with its resolved path; run it with the terms you would
+have searched for, and quote what came back:
+
+```
+node <plugin>/scripts/survey.js badge colour ramp
+```
+
+It reads `git ls-files` and the working tree on every run, so there is no index
+to go stale. It reports files whose name matches, declarations it can see
+(JavaScript, TypeScript, PowerShell, Python, shell) and markdown headings.
+"Nothing matched" is a finding — report it, and say which terms were tried,
+because the next person needs to know a synonym was already ruled out.
 
 Short tasks may skip forward — a one-line typo fix does not need a design stage —
 but say which stages you are skipping and why. Skipping silently is how `verify`

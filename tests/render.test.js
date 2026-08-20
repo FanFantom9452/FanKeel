@@ -3,8 +3,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { render } = require('../lib/render.js');
-const { ALWAYS, byName, rulesFor } = require('../lib/stages.js');
+const { render, SURVEY_SCRIPT } = require('../lib/render.js');
+const { ALWAYS, byName, rulesFor, SURVEY_TOKEN } = require('../lib/stages.js');
+
+const sub = (stage) => rulesFor(stage, { survey: SURVEY_SCRIPT });
 
 const NOW = Date.parse('2026-08-21T12:00:00.000Z');
 const ago = (ms) => new Date(NOW - ms).toISOString();
@@ -125,14 +127,29 @@ test('every render ends with the rules for the stage it is in', () => {
   for (const others of [[], [entry(THEIRS, { scope: ['statusline.ps1'] })]]) {
     const out = render({ mine: entry(MINE, { stage: 'build' }), others, now: NOW });
     assert.match(out, /^stage rules:$/m);
-    for (const rule of rulesFor('build')) assert.ok(out.includes('  - ' + rule), rule);
+    for (const rule of sub('build')) assert.ok(out.includes('  - ' + rule), rule);
   }
 });
 
 test('the rules sent are this stage’s, not another stage’s', () => {
   const out = render({ mine: entry(MINE, { stage: 'survey' }), others: [], now: NOW });
-  for (const rule of byName('survey').rules) assert.ok(out.includes(rule), rule);
+  for (const rule of sub('survey')) assert.ok(out.includes(rule), rule);
+  // land's own rules only. The always-on three belong to every stage, so
+  // comparing the whole list would assert they are absent from the stage that
+  // must carry them.
   for (const rule of byName('land').rules) assert.equal(out.includes(rule), false, rule);
+});
+
+test('the survey rule names a runnable path, not a placeholder', () => {
+  const out = render({ mine: entry(MINE, { stage: 'survey' }), others: [], now: NOW });
+  assert.equal(out.includes(SURVEY_TOKEN), false, 'the token survived into the output');
+  assert.match(out, /node .*survey\.js/);
+  assert.ok(require('node:fs').existsSync(SURVEY_SCRIPT), SURVEY_SCRIPT + ' does not exist');
+});
+
+test('an unsubstituted rulesFor still returns the token, so callers cannot forget silently', () => {
+  assert.ok(byName('survey').rules.some((r) => r.includes(SURVEY_TOKEN)));
+  assert.ok(rulesFor('survey').some((r) => r.includes(SURVEY_TOKEN)));
 });
 
 test('an unknown stage still gets the always-on rules', () => {

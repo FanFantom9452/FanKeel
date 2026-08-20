@@ -75,6 +75,42 @@ tokens loaded as above.
 | `verify` | evidence, not confidence |
 | `land` | a repository no dirtier than you found it |
 
+### survey carries a scanner, not an instruction
+
+The rule that says "check whether this already exists" is the kind that gets
+agreed with and skipped, which is exactly why components get built twice. So
+`survey` names a script instead, with its resolved path, and the rule requires
+quoting the output:
+
+```
+$ node <plugin>/scripts/survey.js badge
+
+fankeel survey — 23 tracked files, matching: badge
+
+files whose name matches:
+  lib/badge.js
+  tests/badge.test.js
+
+declarations:
+  lib/badge.js:22  function badgeWord(stage, clash) {
+  lib/badge.js:36  function writeBadge(claudeDir, sessionId, word) {
+  ...
+
+documentation:
+  docs/superpowers/specs/2026-08-20-fankeel-shell-design.md:243  ## Statusline badge
+```
+
+It reads `git ls-files` and the working tree on every run, so **nothing is
+stored and nothing can go stale**. A written index of "what this project already
+has" disagrees with the code within months and is then read back with confidence,
+which is worse than having none. Declarations are found in JavaScript,
+TypeScript, PowerShell, Python and shell, plus markdown headings; the patterns
+are deliberately shallow, because the goal is to notice a name exists, not to
+parse the language.
+
+"Nothing matched" is a finding, and the rule asks for the terms that were tried —
+so the next person knows which synonyms were already ruled out.
+
 A task starts at `survey`. At the end of a stage you are offered the next one,
 staying put, or pausing — never told a stage is complete and left there. Short
 tasks may skip forward, but the skip is said out loud, because skipping silently

@@ -11,6 +11,7 @@ the same change.
 - Publishing — the marketplace is currently a `directory` source pointing at this working tree, so `claude plugin marketplace remove fankeel` has to run before a GitHub one is added, or two marketplaces will offer the same plugin name. Joining claude-kit is task 8 steps 2–5 of [docs/superpowers/plans/2026-08-21-fankeel-shell.md](docs/superpowers/plans/2026-08-21-fankeel-shell.md).
 - R5's own open question — where deferred detail lives, one convention rather than a free choice per entry — is still unanswered in [docs/superpowers/specs/2026-08-20-discipline-requirements.md](docs/superpowers/specs/2026-08-20-discipline-requirements.md). This file is currently the only convention, and it points into `docs/`.
 - R7's open question — whether a failed audit reports or blocks the stage transition — same document. It reports, for now, because nothing enforces stage transitions yet.
+- `scripts/survey.js` covers JavaScript, TypeScript, PowerShell, Python, shell and markdown. Other languages fall back to filename matching only; add a pattern row when one is actually needed.
 
 ## Owed after first real use
 
