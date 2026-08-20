@@ -3,10 +3,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { render, SURVEY_SCRIPT } = require('../lib/render.js');
-const { ALWAYS, byName, rulesFor, SURVEY_TOKEN } = require('../lib/stages.js');
+const { render, SCRIPTS, SURVEY_SCRIPT, TODO_CHECK_SCRIPT } = require('../lib/render.js');
+const { ALWAYS, byName, rulesFor, SURVEY_TOKEN, TOKENS } = require('../lib/stages.js');
 
-const sub = (stage) => rulesFor(stage, { survey: SURVEY_SCRIPT });
+const sub = (stage) => rulesFor(stage, SCRIPTS);
 
 const NOW = Date.parse('2026-08-21T12:00:00.000Z');
 const ago = (ms) => new Date(NOW - ms).toISOString();
@@ -147,9 +147,25 @@ test('the survey rule names a runnable path, not a placeholder', () => {
   assert.ok(require('node:fs').existsSync(SURVEY_SCRIPT), SURVEY_SCRIPT + ' does not exist');
 });
 
+test('the land rule names a runnable todo-check path, not a placeholder', () => {
+  const out = render({ mine: entry(MINE, { stage: 'land' }), others: [], now: NOW });
+  assert.equal(out.includes(TOKENS.todoCheck), false, 'the token survived into the output');
+  assert.match(out, /node .*todo-check\.js/);
+  assert.ok(require('node:fs').existsSync(TODO_CHECK_SCRIPT), TODO_CHECK_SCRIPT + ' does not exist');
+});
+
+test('every token this file knows about is substituted somewhere', () => {
+  // A token added to stages.js without a script added to render.js would
+  // otherwise ship as literal `{{...}}` in the injected text.
+  for (const key of Object.keys(TOKENS)) {
+    assert.ok(SCRIPTS[key], 'no script supplied for token ' + key);
+  }
+});
+
 test('an unsubstituted rulesFor still returns the token, so callers cannot forget silently', () => {
   assert.ok(byName('survey').rules.some((r) => r.includes(SURVEY_TOKEN)));
   assert.ok(rulesFor('survey').some((r) => r.includes(SURVEY_TOKEN)));
+  assert.ok(rulesFor('land').some((r) => r.includes(TOKENS.todoCheck)));
 });
 
 test('an unknown stage still gets the always-on rules', () => {
@@ -211,4 +227,14 @@ test('the whole injection stays a readable size with everything populated', () =
     now: NOW,
   });
   assert.ok(out.length < 1600, 'injection is ' + out.length + ' chars');
+});
+
+test('no stage’s rules cost more than a readable preamble', () => {
+  // survey and land both name a script by absolute path, so they are the two
+  // that can quietly grow. Checked per stage rather than only on the one the
+  // fixture happens to sit in.
+  for (const stage of ['survey', 'design', 'build', 'verify', 'land']) {
+    const out = render({ mine: entry(MINE, { stage }), others: [], now: NOW });
+    assert.ok(out.length < 1600, stage + ' injection is ' + out.length + ' chars');
+  }
 });

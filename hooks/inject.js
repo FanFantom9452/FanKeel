@@ -28,13 +28,6 @@ function claudeConfigDir() {
     return home ? path.join(home, '.claude') : null;
 }
 
-// CLAUDE_PROJECT_DIR first: the shell's cwd drifts into subdirectories during a
-// session, and the registry belongs to the project root. Same order the ILS hook
-// uses, for the same reason.
-function projectRoot(payload) {
-    return process.env.CLAUDE_PROJECT_DIR || (payload && payload.cwd) || process.cwd();
-}
-
 function main(raw) {
     let payload;
     try {
@@ -45,7 +38,7 @@ function main(raw) {
     if (!payload || typeof payload !== 'object') return;
 
     const sessionId = payload.session_id;
-    const root = projectRoot(payload);
+    const root = registry.rootFor(payload);
 
     // The mode is on for this session exactly when this session owns an active
     // entry. There is no second flag to disagree with, and no way to be in the

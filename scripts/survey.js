@@ -29,12 +29,22 @@ const MAX_FILE_BYTES = 512 * 1024;
 // the point is to notice that something with that name exists, not to parse the
 // language. A missed declaration costs one line of a report; a parser costs a
 // dependency and a maintenance burden.
+//
+// Adding a language is adding a row. Extension lists must stay disjoint, because
+// the first row whose list contains the extension wins.
+const JS_PATTERNS = [
+    // The alternation, not `\s*\*?\s+`: that form needs whitespace after the
+    // star and so misses every plain `function foo`.
+    /^\s*(?:export\s+)?(?:async\s+)?function(?:\s*\*\s*|\s+)([A-Za-z_$][\w$]*)/,
+    /^\s*(?:export\s+)?(?:abstract\s+)?class\s+([A-Za-z_$][\w$]*)/,
+    /^\s*(?:export\s+)?(?:interface|type|enum)\s+([A-Za-z_$][\w$]*)/,
+    /^\s*(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\(|function|[A-Za-z_$][\w$]*\s*=>)/,
+];
+
 const DECLARATIONS = [
-    { ext: ['.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx'], patterns: [
-        /^\s*(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/,
-        /^\s*(?:export\s+)?class\s+([A-Za-z_$][\w$]*)/,
-        /^\s*(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\(|function|[A-Za-z_$][\w$]*\s*=>)/,
-    ] },
+    // `.vue` and `.svelte` are here for their script block. The component itself
+    // is the file, so the filename section is what actually finds it.
+    { ext: ['.js', '.mjs', '.cjs', '.ts', '.mts', '.cts', '.tsx', '.jsx', '.vue', '.svelte'], patterns: JS_PATTERNS },
     { ext: ['.ps1', '.psm1'], patterns: [/^\s*function\s+([A-Za-z_][\w-]*)/i] },
     { ext: ['.py'], patterns: [
         /^\s*def\s+([A-Za-z_]\w*)/,
@@ -42,6 +52,34 @@ const DECLARATIONS = [
     ] },
     { ext: ['.sh', '.bash'], patterns: [
         /^\s*(?:function\s+)?([A-Za-z_]\w*)\s*\(\)\s*\{/,
+    ] },
+    { ext: ['.go'], patterns: [
+        // The optional group is the receiver, so methods are found by their own
+        // name rather than by the type they hang off.
+        /^\s*func\s+(?:\([^)]*\)\s*)?([A-Za-z_]\w*)/,
+        /^\s*type\s+([A-Za-z_]\w*)/,
+    ] },
+    { ext: ['.rs'], patterns: [
+        /^\s*(?:pub(?:\([^)]*\))?\s+)?(?:async\s+)?(?:unsafe\s+)?fn\s+([A-Za-z_]\w*)/,
+        /^\s*(?:pub(?:\([^)]*\))?\s+)?(?:struct|enum|trait|type|union)\s+([A-Za-z_]\w*)/,
+    ] },
+    { ext: ['.cs', '.java', '.kt', '.swift'], patterns: [
+        /^\s*(?:[\w@]+\s+)*?(?:class|interface|enum|record|struct|protocol|object)\s+([A-Za-z_]\w*)/,
+        // A visibility keyword is required for methods. Without one this matches
+        // every `if (`, `for (` and bare call in the file.
+        /^\s*(?:public|private|protected|internal|open|override|fileprivate)\s+[\w<>\[\],.?\s]*?([A-Za-z_]\w*)\s*\(/,
+        /^\s*(?:fun|func)\s+([A-Za-z_]\w*)/,
+    ] },
+    { ext: ['.rb'], patterns: [
+        /^\s*def\s+(?:self\.)?([A-Za-z_]\w*[?!]?)/,
+        /^\s*(?:class|module)\s+([A-Za-z_]\w*)/,
+    ] },
+    // Stylesheets earn a row because a duplicated button style is the same
+    // failure as a duplicated component, and nothing else here would see it.
+    { ext: ['.css', '.scss', '.sass', '.less'], patterns: [
+        /^\s*\.([A-Za-z_-][\w-]*)/,
+        /^\s*(--[A-Za-z][\w-]*)\s*:/,
+        /^\s*@(?:mixin|function)\s+([\w-]+)/,
     ] },
     { ext: ['.md'], patterns: [/^(#{1,3})\s+(.+?)\s*$/] },
 ];

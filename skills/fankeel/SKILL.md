@@ -1,7 +1,7 @@
 ---
 name: fankeel
-description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns when another live session shares your files.
-version: 0.3.0
+description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns — optionally blocks — when another live session shares your files.
+version: 0.4.0
 ---
 
 # fankeel
@@ -31,6 +31,7 @@ One file per session, named for the session that owns it.
   "active": true,
   "notes": ["ANSI 256 has no true mid green; the 46→83→120 run is the only clean path"],
   "next": "wire the badge word into TokenBar",
+  "guard": "ask",
   "started": "2026-08-21T15:00:00.000Z",
   "updated": "2026-08-21T16:30:00.000Z"
 }
@@ -56,6 +57,9 @@ worse than none because people stop reading it.
 5. **Never delete a session file.** Standing down sets `active: false`.
 6. **Never advance `stage` without saying so.** The stage decides which rules
    are injected, so a wrong stage silently swaps the discipline.
+7. **Never set or clear `guard` on your own.** It decides whether an edit gets
+   refused. Turning it on unasked locks the user out of their own repository;
+   turning it off unasked removes a guard they chose to have.
 
 ## The stages
 
@@ -79,8 +83,12 @@ node <plugin>/scripts/survey.js badge colour ramp
 ```
 
 It reads `git ls-files` and the working tree on every run, so there is no index
-to go stale. It reports files whose name matches, declarations it can see
-(JavaScript, TypeScript, PowerShell, Python, shell) and markdown headings.
+to go stale. It reports files whose name matches, the declarations it can see —
+JavaScript, TypeScript, Vue and Svelte, PowerShell, Python, shell, Go, Rust,
+C#/Java/Kotlin/Swift, Ruby, and CSS classes, custom properties and mixins — and
+markdown headings. Anything else is matched on filename alone, so say so rather
+than reporting a clean sweep.
+
 "Nothing matched" is a finding — report it, and say which terms were tried,
 because the next person needs to know a synonym was already ruled out.
 
@@ -113,7 +121,7 @@ instead:
 | A project convention that will outlive this task | `CLAUDE.md` |
 | A durable fact about the user or the repository | the memory directory |
 | Why a change was made | the commit message |
-| Work deliberately deferred | `TODO.md`, one line, pointing at the detail |
+| Work deliberately deferred | `TODO.md`, one line, linking to the detail |
 | What was tried and failed, mid-task | a **note** |
 | What to pick up next | **next** |
 
@@ -124,6 +132,11 @@ pausing, and whenever what comes next stops being obvious.
 Notes are never version-controlled and die with the task. If a note still matters
 after the task lands, it was never a note — move it to one of the four above
 during `land`.
+
+`TODO.md` is an index and only an index: the bullet is short and the detail lives
+in a file it links to. `node <plugin>/scripts/todo-check.js` says when that has
+stopped being true, and the `land` rules call for it — a plan deleted at `land`
+is a link that just died.
 
 ## On `/fankeel`
 
@@ -154,8 +167,34 @@ stage's rules before every prompt. Follow the stage rules; they are not advisory
 
 `[FANKEEL:CLASH]` means another live session declared a file this task also
 declared. Say so before editing that file, name the other task, and let the user
-decide. Do not silently proceed, and do not refuse — the hook warns, it does not
-block.
+decide. Do not silently proceed.
 
 If the work reaches a file nobody declared, say so and update `scope`. An
 out-of-date scope is the one thing that makes the collision warning useless.
+
+## The scope guard
+
+By default the collision is a warning and nothing more. A session can ask for it
+to be enforced by putting `guard` on its own entry:
+
+| | |
+|---|---|
+| absent | Warning only. This is the default and it is what most tasks want. |
+| `"ask"` | An edit to a file another live session claimed raises a permission prompt naming that task. |
+| `"deny"` | The same edit is refused outright. |
+
+Offer this when two sessions are genuinely working the same repository at once,
+and say which of the two values you are offering. `"ask"` is the one to
+recommend: it puts the collision in front of the user at the moment of the edit
+and still lets them go ahead.
+
+Two things it deliberately does not do, so do not describe it as a lock. A claim
+last seen more than twelve hours ago never blocks — an abandoned terminal would
+otherwise hold a file shut. And when both sessions declared the file, the older
+claim holds and the newer yields, so two sessions that both named it cannot block
+each other into a stalemate.
+
+When an edit is refused, do not work around it — not by a different tool, not by
+a shell command. Report which task holds the file and ask the user what they want
+to do. Working around the guard is worse than never having had one, because they
+now believe they have one.

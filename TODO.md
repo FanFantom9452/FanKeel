@@ -1,19 +1,20 @@
 # TODO
 
-An index. Every entry is one line pointing at where the detail lives — never the
-detail itself. An entry is removed by whoever finishes the work it points at, in
-the same change.
+An index. One bullet per deferred thing, short enough to scan, with any detail
+behind it living in a file in this repository that the bullet links to. Whoever
+finishes the work removes the entry in the same change.
+
+`node scripts/todo-check.js` enforces both halves: a link that no longer resolves
+is an entry someone forgot to close, and an entry over the length cap is detail
+written here instead of where it belongs.
 
 ## Deferred
 
-- `PreToolUse` hard blocking on scope overlap — specified and deferred in [docs/superpowers/specs/2026-08-20-fankeel-shell-design.md](docs/superpowers/specs/2026-08-20-fankeel-shell-design.md), under "Rejected for now". Waiting on evidence of how accurately people declare scope.
-- A fankeel hue in TokenBar's `$badgeColors` — optional polish; the default ramp renders correctly without it.
-- Publishing — the marketplace is currently a `directory` source pointing at this working tree, so `claude plugin marketplace remove fankeel` has to run before a GitHub one is added, or two marketplaces will offer the same plugin name. Joining claude-kit is task 8 steps 2–5 of [docs/superpowers/plans/2026-08-21-fankeel-shell.md](docs/superpowers/plans/2026-08-21-fankeel-shell.md).
-- R5's own open question — where deferred detail lives, one convention rather than a free choice per entry — is still unanswered in [docs/superpowers/specs/2026-08-20-discipline-requirements.md](docs/superpowers/specs/2026-08-20-discipline-requirements.md). This file is currently the only convention, and it points into `docs/`.
-- R7's open question — whether a failed audit reports or blocks the stage transition — same document. It reports, for now, because nothing enforces stage transitions yet.
-- `scripts/survey.js` covers JavaScript, TypeScript, PowerShell, Python, shell and markdown. Other languages fall back to filename matching only; add a pattern row when one is actually needed.
+- Default the scope guard on, once there is evidence that `scope` is declared accurately enough — [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md), "The guard blocks".
+- Language patterns beyond the ten [scripts/survey.js](scripts/survey.js) knows. Anything else falls back to filename matching; add a row when one is actually needed.
+- Publishing. `claude plugin marketplace remove fankeel` has to run first — the marketplace currently points at this working tree, and two sources cannot offer one plugin name.
+- Ship the stage colours in TokenBar itself rather than as a paste-in for `tokenbar-config.ps1`. Blocked on publishing: naming an unpublished plugin in a public repo announces it.
 
 ## Owed after first real use
 
-- The stage list is a first guess. Whether five is right, whether `survey` earns its place, and whether the rules fire at the right moments are questions only real use answers.
-- Both spec files and the plan in `docs/superpowers/` are working documents governed by R6. When this settles, they are rewritten into one short decision record and deleted.
+- Whether five stages is right, and whether `survey` earns its place — [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md), "What is still a guess".

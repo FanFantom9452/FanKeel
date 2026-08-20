@@ -97,16 +97,19 @@ declarations:
   ...
 
 documentation:
-  docs/superpowers/specs/2026-08-20-fankeel-shell-design.md:243  ## Statusline badge
+  docs/decisions/fankeel-shell.md:96  ## Smaller calls, with their reasons
 ```
 
 It reads `git ls-files` and the working tree on every run, so **nothing is
 stored and nothing can go stale**. A written index of "what this project already
 has" disagrees with the code within months and is then read back with confidence,
 which is worse than having none. Declarations are found in JavaScript,
-TypeScript, PowerShell, Python and shell, plus markdown headings; the patterns
-are deliberately shallow, because the goal is to notice a name exists, not to
-parse the language.
+TypeScript, Vue and Svelte script blocks, PowerShell, Python, shell, Go, Rust,
+C#/Java/Kotlin/Swift, Ruby, and CSS classes, custom properties and mixins, plus
+markdown headings. Anything else is matched on filename alone. The patterns are
+deliberately shallow, because the goal is to notice a name exists, not to parse
+the language — a missed declaration costs one line of a report, and a real parser
+would cost a dependency this plugin does not have.
 
 "Nothing matched" is a finding, and the rule asks for the terms that were tried —
 so the next person knows which synonyms were already ruled out.
@@ -164,11 +167,33 @@ Scope entries are globs. `src/**` and `src/a.ts` overlap whichever was declared
 first, `src/*.ts` stops at one path segment, and a bare directory name covers what
 is under it.
 
-An overlap is **reported, not blocked**. Blocking every edit that lands in another
-session's scope is the obvious next step and is deliberately not here yet: its
-value rests entirely on scope being declared accurately, and nobody knows yet how
-accurately people declare it. Shipping the block first would mean spending the
-early weeks unlocking yourself instead of working.
+By default an overlap is **reported, not blocked** — the warning rides on every
+prompt and `[FANKEEL:CLASH]` sits in the statusline.
+
+### Making it block
+
+A warning that only ever warns is an instruction, and instructions get agreed
+with and skipped. So a session can ask for the overlap to be enforced, by putting
+one field on its own entry:
+
+| `guard` | What an edit inside another live session's scope does |
+|---|---|
+| absent | Nothing. The warning is all you get. This is the default. |
+| `"ask"` | Raises a permission prompt naming the task that holds the file. |
+| `"deny"` | Is refused outright. |
+
+It is off by default on purpose. A block is only as good as the `scope` field it
+reads, nobody yet knows how accurately scope gets declared, and a plugin whose
+first act is to lock you out of your own repository does not get a second chance.
+Turn it on for the sessions that need it, and `"ask"` before `"deny"`.
+
+Two rules keep it from becoming a lockout:
+
+- **A stale claim never blocks.** A terminal killed yesterday would otherwise
+  hold a file shut until someone edited the JSON by hand.
+- **The older claim holds.** When both sessions declared the file, the newer one
+  yields — so two sessions that both named it cannot block each other into a
+  stalemate.
 
 ## Stale entries
 
@@ -199,6 +224,26 @@ and then stop noticing; a statusline earns its space by showing what changes.
 `clash` takes the slot when another live session is in your files, because at that
 moment the collision matters more than the stage — and the stage is still in the
 injected text.
+
+TokenBar renders an unknown flag on a neutral gray-to-white ramp, which makes
+every stage the same colour. To have the badge brighten as the work moves along,
+add the words to your own TokenBar config — it matches an exact mode word before
+it falls back to the four intensity tiers:
+
+```powershell
+# ~/.claude/tokenbar-config.ps1
+$badgeColors.fankeel = @{ off = 240; lite = 62; full = 68; ultra = 81
+                          survey = 60; design = 62; build = 68; verify = 75; land = 81
+                          clash = 196 }
+```
+
+```sh
+# ~/.claude/tokenbar-config.sh
+WORD_COLORS="fankeel:survey=60 fankeel:design=62 fankeel:build=68 fankeel:verify=75 fankeel:land=81 fankeel:clash=196"
+```
+
+Dark slate through to sky blue as the stage advances, and `clash` in red — the one
+badge on that line that is a warning rather than a state.
 
 ## Files it writes
 
@@ -236,10 +281,18 @@ npm test
 claude plugin validate .
 ```
 
-`lib/` is pure logic, tested directly. `hooks/inject.js` is the only file that
-touches stdin, stdout and process exit, and is tested as a subprocess with real
-payloads.
+`lib/` is pure logic, tested directly. `hooks/` is where stdin, stdout and process
+exit live, and both hooks are tested as subprocesses with real payloads.
 
-The hook exits 0 on every path, including every error path. A `UserPromptSubmit`
-hook that throws blocks the prompt it was called for, and a plugin that can wedge
-your terminal is worse than no plugin.
+Both exit 0 on every path, including every error path. A `UserPromptSubmit` hook
+that throws blocks the prompt it was called for and a `PreToolUse` hook that
+throws blocks the edit, and a plugin that can wedge your terminal is worse than no
+plugin.
+
+`node scripts/todo-check.js` says whether [TODO.md](TODO.md) is still an index —
+every link resolving, no entry carrying detail that belongs in the file it points
+at. The `land` stage rules call for it, because a plan deleted at `land` is a link
+that just died.
+
+Why things are the way they are is in
+[docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md).

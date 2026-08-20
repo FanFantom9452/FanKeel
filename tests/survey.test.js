@@ -59,6 +59,79 @@ test('a shell function is found', () => {
   assert.match(run(root, 'widget'), /render_widget/);
 });
 
+test('a plain function is still found now that generators are too', () => {
+  const root = repo({ 'lib/a.js': 'function plainWidget() {}\nfunction* widgetStream() {}\n' });
+  const out = run(root, 'widget');
+  assert.match(out, /plainWidget/);
+  assert.match(out, /widgetStream/);
+});
+
+test('a TypeScript interface and type alias are found', () => {
+  const root = repo({ 'lib/a.ts': 'export interface WidgetProps {}\nexport type WidgetKind = string;\n' });
+  const out = run(root, 'widget');
+  assert.match(out, /WidgetProps/);
+  assert.match(out, /WidgetKind/);
+});
+
+test('a Go func, method and type are found', () => {
+  const root = repo({ 'main.go': 'func NewWidget() {}\nfunc (w *Bag) AddWidget() {}\ntype WidgetBag struct{}\n' });
+  const out = run(root, 'widget');
+  assert.match(out, /NewWidget/);
+  assert.match(out, /AddWidget/, 'the receiver must not hide the method name');
+  assert.match(out, /WidgetBag/);
+});
+
+test('a Rust fn, struct and trait are found', () => {
+  const root = repo({ 'src/lib.rs': 'pub async fn build_widget() {}\npub struct WidgetBag;\ntrait WidgetLike {}\n' });
+  const out = run(root, 'widget');
+  assert.match(out, /build_widget/);
+  assert.match(out, /WidgetBag/);
+  assert.match(out, /WidgetLike/);
+});
+
+test('a C# class and method are found', () => {
+  const root = repo({ 'Widgets.cs': 'public sealed class WidgetStore {\n  public static void MakeWidget(int n) {}\n}\n' });
+  const out = run(root, 'widget');
+  assert.match(out, /WidgetStore/);
+  assert.match(out, /MakeWidget/);
+});
+
+test('a bare control-flow line is not mistaken for a method', () => {
+  const root = repo({ 'A.java': 'class Thing {\n  void go() {\n    if (widgetReady) {}\n    for (int i = 0; i < 3; i++) {}\n  }\n}\n' });
+  const out = run(root, 'widget');
+  assert.equal(out.includes('if ('), false, 'an if without a visibility keyword was read as a declaration');
+});
+
+test('a Kotlin fun and a Swift func are found', () => {
+  const root = repo({ 'A.kt': 'fun makeWidget() {}\n', 'B.swift': 'func drawWidget() {}\n' });
+  const out = run(root, 'widget');
+  assert.match(out, /makeWidget/);
+  assert.match(out, /drawWidget/);
+});
+
+test('a Ruby def and class are found', () => {
+  const root = repo({ 'widgets.rb': 'class WidgetBag\n  def self.build_widget?\n  end\nend\n' });
+  const out = run(root, 'widget');
+  assert.match(out, /WidgetBag/);
+  assert.match(out, /build_widget\?/, 'self. must not swallow the method name');
+});
+
+test('a stylesheet class, custom property and mixin are found', () => {
+  const root = repo({ 'app.css': '.widget-card { color: red }\n', 'theme.scss': '  --widget-gap: 4px;\n@mixin widget-frame {}\n' });
+  const out = run(root, 'widget');
+  assert.match(out, /widget-card/);
+  assert.match(out, /--widget-gap/);
+  assert.match(out, /widget-frame/);
+});
+
+test('a single-file component is found by its name, and its script block is read', () => {
+  const root = repo({ 'src/WidgetCard.vue': '<script>\nexport function useWidget() {}\n</script>\n' });
+  const out = run(root, 'widget');
+  assert.match(out, /files whose name matches:/);
+  assert.match(out, /WidgetCard\.vue/);
+  assert.match(out, /useWidget/);
+});
+
 test('a markdown heading is reported as documentation, not a declaration', () => {
   const root = repo({ 'README.md': '# Widgets\n\ntext\n' });
   const out = run(root, 'widget');
