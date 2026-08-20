@@ -1,6 +1,6 @@
 ---
 name: fankeel
-description: Development discipline for long-running projects. Use when the user says /fankeel, "開工", "start a task", "what am I working on", "who else is in this repo", "next stage", "pause this task", or "stand down" — and whenever a FANKEEL ACTIVE block is in context and the user asks what to do next. Manages the per-session task registry at .fankeel/sessions/, moves a task through survey → design → build → verify → land, records what was tried, and shows which other live sessions share your files.
+description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns when another live session shares your files.
 version: 0.2.0
 ---
 

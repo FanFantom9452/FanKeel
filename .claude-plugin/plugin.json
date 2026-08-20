@@ -7,7 +7,6 @@
     "url": "https://github.com/FanFantom9452"
   },
   "skills": "./skills/",
-  "commands": "./commands/",
   "hooks": {
     "UserPromptSubmit": [
       {
