@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.17.0
+version: 0.18.0
 ---
 
 # fankeel
@@ -234,13 +234,19 @@ which is the exact waste the tool exists to remove.
 
 The shape is the same every time, so it can be recognised without being read:
 
-| | |
-|---|---|
-| header | the stage that just finished |
-| question | what it produced, in one line, then what comes next |
-| option 1 | the next stage on the route. **Its description is where the approval happens** — say what accepting it accepts, not just which stage comes next. |
-| option 2 | stay in this stage. The description says what is still open. |
-| option 3 | pause. The description says what `next` will be set to. |
+| field | holds | length |
+|---|---|---|
+| header | the stage that just finished | 12 characters, 6 if CJK |
+| question | the decision being made, and nothing else | ~40 characters, 20 if CJK |
+| option 1 | the next stage on the route. **Its description is where the approval happens** — say what accepting it accepts, not just which stage comes next. | one sentence |
+| option 2 | stay in this stage. The description says what is still open. | one sentence |
+| option 3 | pause. The description says what `next` will be set to. | one sentence |
+
+The lengths are there because "one line" was already the rule and a design stage
+still asked a 491-character question: a paragraph with no newline in it is one
+line. The background belongs in the descriptions, beside the option each part is
+about — a stem carrying the whole summary says the same thing to every option and
+renders as a wall.
 
 Picking option one *is* the approval, so the description has to name what is
 being approved. "Build it" is a stage; "build this approach — due-rules.js
@@ -262,6 +268,19 @@ finished route is a new task, which is a decision rather than a transition.
 
 One question per call. A second belongs in the same call only when it is
 genuinely independent — a decision the answer to the first would not change.
+
+**When the user's language is not English**, two failures show up in tool input
+before they show up in prose, because tool input is where the writing is
+quickest:
+
+- Write the characters, never `\uXXXX` escapes. Seventeen questions in one real
+  session; the two that escaped their Chinese both corrupted mid-word — `\u9privately\u9375`
+  where a word should have been — and neither parsed. The fifteen written in
+  characters all went through.
+- Name a code concept in code. `overdue`, not a translation of it: a translated
+  identifier drifts to a homophone the second time it is typed, and the two
+  spellings then read as two concepts. Same session, one identifier: 35 times one
+  way, 8 the other.
 
 The question is not conditional on there being something to decide. A route runs
 in order, so the end of a stage is the moment the next decision exists — and the

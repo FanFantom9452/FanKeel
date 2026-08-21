@@ -10,8 +10,19 @@ const DIR = path.join(ROOT, 'output-styles');
 
 // A style is appended to the system prompt on every single request, which is the
 // whole reason it does not decay — and also why a bloated one is paid for on
-// every request. Roughly 1000 tokens is already generous for "how to talk".
-const MAX_BYTES = 4096;
+// every request.
+//
+// One cap per style rather than one shared cap. `fankeel-pipeline` is the
+// largest because it carries three disciplines the other two do not — the gate,
+// the shape of a question, and what goes wrong writing a language that is not
+// English — and a shared cap sized for it would let the small two triple without
+// anyone noticing.
+const MAX_BYTES = {
+  'fankeel-terse.md': 3072,
+  'fankeel-review.md': 3072,
+  'fankeel-pipeline.md': 5632,
+};
+const DEFAULT_MAX = 4096;
 
 const files = fs.readdirSync(DIR).filter((f) => f.endsWith('.md'));
 
@@ -91,8 +102,9 @@ for (const file of files) {
   });
 
   test(label + ': stays small enough to ride on every request', () => {
+    const cap = MAX_BYTES[file] || DEFAULT_MAX;
     const bytes = Buffer.byteLength(read(file));
-    assert.ok(bytes <= MAX_BYTES, bytes + ' bytes, cap is ' + MAX_BYTES);
+    assert.ok(bytes <= cap, file + ' is ' + bytes + ' bytes, cap is ' + cap);
   });
 
   test(label + ': has a body under the frontmatter', () => {

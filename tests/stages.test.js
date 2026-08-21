@@ -31,18 +31,24 @@ test('every stage says what it produces and carries its own rules', () => {
   }
 });
 
+// Four, not three. The fourth arrived on evidence rather than taste: two of one
+// session's seventeen AskUserQuestion calls failed to parse outright. A rule that
+// prevents a failed tool call cannot live in an output style, because a style is
+// a setting the user might not have chosen.
 test('the always-on block stays short enough to ride every prompt', () => {
-  assert.ok(ALWAYS.length <= 3, 'ALWAYS grew to ' + ALWAYS.length);
+  assert.ok(ALWAYS.length <= 4, 'ALWAYS grew to ' + ALWAYS.length);
 });
 
 test('a full injection of rules stays under a few hundred characters', () => {
-  // 950. It went 900 to 1000 when the always-on block took on naming the tool
-  // and the three options a stage ends with, then back down once every stage's
-  // last rule became a format with a number in it — several rules said the same
-  // thing twice, and `land` was still telling you to run the audit stage's tool.
+  // 1250. It went 900 to 1000 when the always-on block took on naming the tool
+  // and the three options a stage ends with, then back down to 950 once every
+  // stage's last rule became a format with a number in it. It went up again for
+  // the fourth always-on rule and for line formats replacing word counts — both
+  // paid for, and both paid for on every prompt, which is why there is a number
+  // here at all.
   for (const name of NAMES) {
     const size = rulesFor(name).join('\n').length;
-    assert.ok(size < 950, name + ' rules are ' + size + ' chars');
+    assert.ok(size < 1250, name + ' rules are ' + size + ' chars');
   }
 });
 
@@ -116,6 +122,36 @@ test('the always-on block names the tool, not just the act of asking', () => {
 
 test('the stage that produced the wall of text now carries a length', () => {
   assert.match(byName('design').rules.join(' '), /Under 200 words/);
+});
+
+// The failure: two of seventeen AskUserQuestion calls in one session serialised
+// their Chinese as unicode escapes, corrupted mid-word, and did not parse. The
+// fifteen written in characters all went through.
+test('tool input is written in characters, not escapes', () => {
+  const text = ALWAYS.join(' ');
+  assert.match(text, /literal characters/);
+  assert.match(text, /\\uXXXX/);
+  // And the drift one level up: a translated identifier becomes a homophone.
+  assert.match(text, /Name a code concept in code/);
+});
+
+// The failure: `background inside the question` was read as `inside the question
+// stem`, and a design stage asked a 491-character question. The background was
+// always meant to sit beside the option it is about.
+test('the background sits in the descriptions, not in the stem', () => {
+  const text = ALWAYS.join(' ');
+  assert.match(text, /in the option descriptions/);
+  assert.match(text, /never as a paragraph in the stem/);
+  assert.match(text, /The stem is one line/);
+});
+
+// A word count bounds how much is written and says nothing about what has to be
+// read to find one line. Every stage names the shape of a line as well.
+test('every output rule names a line format, not only a length', () => {
+  for (const s of STAGES) {
+    const last = s.rules[s.rules.length - 1];
+    assert.match(last, /one line per|as a table|in a code block|three lines/, s.name);
+  }
 });
 
 // The shape every stage shares: the thing it produced, then the question. What
