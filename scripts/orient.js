@@ -83,6 +83,32 @@ function stateText(state) {
     return bits.join(', ');
 }
 
+// The last few commits, which say what the project is in the middle of. Two runs
+// of the entry skill both reached for `git log` by hand within a minute of
+// starting, which is the signal that it belongs in the script rather than in
+// whatever the model happens to think of typing.
+function recent(dir, n) {
+    if (!isRepo(dir)) return [];
+    const out = git(dir, ['log', '--oneline', '--no-decorate', '-n', String(n)]);
+    return String(out || '').split('\n').filter(Boolean);
+}
+
+// Files that say how this project expects to be worked on. Reading CLAUDE.md
+// before touching anything is not optional, and it is the one thing a listing of
+// directories does not make obvious — so its absence is worth saying as plainly
+// as its presence.
+const SIGNPOSTS = ['CLAUDE.md', 'AGENTS.md', 'README.md', 'TODO.md', 'CONTRIBUTING.md'];
+
+function signposts(dir) {
+    return SIGNPOSTS.filter((name) => {
+        try {
+            return fs.statSync(path.join(dir, name)).isFile();
+        } catch (e) {
+            return false;
+        }
+    });
+}
+
 function countFiles(dir) {
     let result;
     try {
@@ -161,6 +187,11 @@ function scan(root, named) {
     const dropped = Math.max(0, targets.length - MAX_ROWS);
     const shown = targets.slice(0, MAX_ROWS);
 
+    // The inventory below is gathered for one target only. Five projects would be
+    // five git logs and a screen nobody reads, and a workspace listing is still a
+    // question about which project rather than an inventory of one.
+    const deep = shown.length === 1;
+
     const entries = shown.map((rel) => {
         const full = path.resolve(resolved, rel);
         const exists = fs.existsSync(full);
@@ -170,6 +201,8 @@ function scan(root, named) {
             exists,
             state: exists ? gitState(full) : null,
             count: exists ? countFiles(full) : null,
+            recent: exists && deep ? recent(full, 5) : [],
+            signposts: exists && deep ? signposts(full) : [],
         };
     });
 
@@ -242,6 +275,26 @@ function report(result) {
         }
     }
 
+    if (found.length === 1) {
+        const one = found[0];
+
+        if (one.signposts.length) {
+            lines.push('');
+            lines.push('read first: ' + one.signposts.join(', '));
+        } else if (one.count) {
+            lines.push('');
+            lines.push('read first: nothing — no CLAUDE.md, AGENTS.md or README.md here.');
+        }
+
+        // What the project is in the middle of. A task started without this gets
+        // designed against the branch as it was described rather than as it is.
+        if (one.recent.length) {
+            lines.push('');
+            lines.push('last ' + one.recent.length + ' commits:');
+            for (const line of one.recent) lines.push('  ' + line);
+        }
+    }
+
     lines.push('');
     lines.push('Pick the scope from this, or ask which part. Do not guess it —');
     lines.push('a scope nobody confirmed produces collision warnings nobody trusts.');
@@ -273,4 +326,4 @@ if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
 
-module.exports = { scan, report, main, parseArgs, gitState, stateText, topLevel, children };
+module.exports = { scan, report, main, parseArgs, gitState, stateText, topLevel, children, recent, signposts };

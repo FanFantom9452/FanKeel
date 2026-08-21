@@ -169,6 +169,36 @@ test('topLevel counts by first segment and marks directories with a slash', () =
   assert.deepEqual(rows, [['README.md', 1], ['api/', 1], ['web/', 2]]);
 });
 
+test('signposts are reported, and their absence is reported too', () => {
+  const root = workspace({ 'CLAUDE.md': 'x', 'README.md': 'x', 'web/a.js': 'x' });
+  fs.mkdirSync(path.join(root, '.git'), { recursive: true });
+  const out = run(['--root', root]);
+  assert.match(out, /read first: CLAUDE[.]md, README[.]md/);
+
+  const bare = workspace({ 'web/a.js': 'x' });
+  fs.mkdirSync(path.join(bare, '.git'), { recursive: true });
+  assert.match(run(['--root', bare]), /read first: nothing/);
+});
+
+test('signposts must be files, not directories with the same name', () => {
+  const root = workspace({ 'web/a.js': 'x' });
+  fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'README.md'), { recursive: true });
+  assert.deepEqual(orient.signposts(root), []);
+});
+
+test('a workspace listing gathers no commits — five git logs is a screen nobody reads', () => {
+  const root = workspace({ 'alpha/a.js': 'x', 'beta/b.js': 'x' });
+  const out = run(['--root', root]);
+  assert.doesNotMatch(out, /last \d+ commits:/);
+  assert.doesNotMatch(out, /read first:/);
+});
+
+test('recent returns nothing for a directory that is not a repository', () => {
+  const root = workspace({ 'a.js': 'x' });
+  assert.deepEqual(orient.recent(root, 5), []);
+});
+
 test('it writes nothing — orientation that changes the tree is not orientation', () => {
   const root = workspace({ 'alpha/a.js': 'x' });
   const before = fs.readdirSync(root).sort();

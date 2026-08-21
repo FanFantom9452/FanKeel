@@ -71,9 +71,19 @@ inside it:
   (and 12 files loose at the top)
 ```
 
+For a single project it also says which of `CLAUDE.md`, `AGENTS.md`, `README.md`,
+`TODO.md` and `CONTRIBUTING.md` are there — and says so plainly when none are —
+and prints the last five commits, because what a project is in the middle of is
+not visible in a listing of directories.
+
 It writes nothing. A `scope` entry may be a file, a directory or a glob — a
 directory covers everything under it, so `Waypoint/web/src` is one entry rather
 than two hundred.
+
+Starting a task does not then stop to ask whether to begin. The entry goes in at
+`survey`, and taking stock is what `survey` is for, so it happens in the same
+turn — otherwise the badge reads `[FANKEEL:SURVEY]` at the exact moment nothing
+has been surveyed.
 
 Starting a task puts this session in fankeel mode. From then on every prompt
 carries the task, what has been tried, the other live sessions, and the rules for

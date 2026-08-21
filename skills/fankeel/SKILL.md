@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.9.0
+version: 0.9.1
 ---
 
 # fankeel
@@ -228,6 +228,16 @@ Then ask, with these options and no others:
 
 Every one of these ends by saying what changed and offering the next step. Do not
 finish a `/fankeel` turn with a bare confirmation.
+
+**Start does not stop there.** Writing the entry puts the session at `survey`, and
+taking stock is what `survey` is for — so do it in the same turn rather than
+asking permission to begin. Read the signposts orient named, say what the recent
+commits show the project is in the middle of, and run the scanner on the terms the
+task implies. Then ask, with something on screen to ask about.
+
+Stopping after "entry written, shall I start?" spends a turn on a question whose
+answer is always yes, and the badge changes to `[FANKEEL:SURVEY]` at exactly the
+moment nothing has been surveyed.
 
 ## While the mode is on
 
