@@ -1,0 +1,345 @@
+#!/usr/bin/env node
+'use strict';
+
+// What the documents claim, checked against what is there.
+//
+//   node docs-check.js [--root <dir>] [--role reference,plan] [--quiet]
+//
+// This reports only what can be decided mechanically: a path that no longer
+// exists, a `file:line` past the end of the file, a symbol nothing declares, a
+// link to a document that has gone. Whether two documents contradict each other,
+// or whether a page is merely out of date in its prose, is not mechanical, and a
+// script that guessed at it would produce findings nobody could act on. That
+// judgement belongs to the `audit` stage; this gives it the facts to start from.
+//
+// The role a document holds decides what is checked, which is the whole reason
+// the tree is declared. An archive that names deleted code is an archive doing
+// its job. A reference page that does the same is the bug this exists to find,
+// and it arrives unread if the two are reported alike.
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const docs = require('../lib/docs.js');
+const { trackedFiles } = require('./survey.js');
+
+const MAX_FINDINGS = 200;
+
+// A markdown link or an inline-code span is where a document names something in
+// the repository. Prose that merely mentions a filename is deliberately not
+// matched: `see the registry` is not a claim that can go stale, and treating it
+// as one is how a checker starts crying wolf.
+const LINK = /\[[^\]]*\]\(([^)\s#]+)(?:#[^)\s]*)?\)/g;
+const CODE = /`([^`\n]{2,120})`/g;
+
+// Inside a code span, the things that are checkable claims about *this*
+// repository. A separator is required and the first segment has to be something
+// this tree actually has.
+//
+// Both conditions were learned by running it. A bare `settings.json` or
+// `CLAUDE.md` in prose is naming a kind of file, not pointing at one, and
+// `Waypoint/web/src` in an example is describing somebody else's tree. Reported
+// as broken references they were nine findings out of ten, and a report that is
+// nine parts noise gets read once.
+const PATHISH = /^(?:\.\/)?([\w.-]+\/[\w./-]+)(?::(\d+))?$/;
+
+// A declaration this repository makes somewhere. Deliberately shallow, the same
+// bargain survey.js makes: the goal is to notice a name exists, not to parse
+// six languages.
+const DECL = [
+    /(?:^|\s)(?:export\s+)?(?:async\s+)?function(?:\s*\*\s*|\s+)([A-Za-z_$][\w$]*)/g,
+    /(?:^|\s)(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=/g,
+    /(?:^|\s)(?:export\s+)?class\s+([A-Za-z_$][\w$]*)/g,
+    /(?:^|\s)def\s+([A-Za-z_][\w]*)/g,
+    /(?:^|\s)(?:type|interface|struct|enum)\s+([A-Za-z_][\w]*)/g,
+    /(?:^|\s)function\s+([A-Za-z-][\w-]*)\s*\{/g,     // PowerShell
+];
+
+const CODE_EXT = new Set([
+    '.js', '.ts', '.tsx', '.jsx', '.mjs', '.cjs', '.py', '.sh', '.ps1',
+    '.go', '.rs', '.rb', '.java', '.cs', '.vue', '.svelte', '.php', '.kt', '.swift',
+]);
+
+const isMarkdown = (p) => p.toLowerCase().endsWith('.md');
+
+function readFile(root, rel) {
+    try {
+        return fs.readFileSync(path.join(root, rel.split('/').join(path.sep)), 'utf8');
+    } catch (e) {
+        return null;
+    }
+}
+
+// Every symbol the repository declares, gathered once. A per-document search
+// would re-read the tree for each page, and the answer is the same every time.
+function declaredSymbols(root, files) {
+    const names = new Set();
+    for (const rel of files) {
+        if (!CODE_EXT.has(path.extname(rel).toLowerCase())) continue;
+        const text = readFile(root, rel);
+        if (text === null) continue;
+        for (const re of DECL) {
+            re.lastIndex = 0;
+            let m;
+            while ((m = re.exec(text)) !== null) names.add(m[1]);
+        }
+    }
+    return names;
+}
+
+function lineCount(root, rel) {
+    const text = readFile(root, rel);
+    if (text === null) return null;
+    return text.split('\n').length;
+}
+
+// Resolve a reference the way a reader would: relative to the document it is
+// written in, then from the repository root. Both, because both conventions are
+// in use and guessing wrong turns a working link into a finding.
+function resolveRef(root, fromRel, ref) {
+    const base = path.posix.dirname(fromRel.replace(/\\/g, '/'));
+    const candidates = [];
+    if (ref.startsWith('/')) candidates.push(ref.slice(1));
+    else {
+        candidates.push(path.posix.normalize(path.posix.join(base, ref)));
+        candidates.push(path.posix.normalize(ref));
+    }
+    for (const c of candidates) {
+        if (c.startsWith('..')) continue;
+        try {
+            if (fs.existsSync(path.join(root, c.split('/').join(path.sep)))) return c;
+        } catch (e) { /* unreadable is not found */ }
+    }
+    return null;
+}
+
+const external = (ref) => /^[a-z][a-z0-9+.-]*:/i.test(ref) || ref.startsWith('#');
+
+// One document's claims. `role` decides which of them are worth making.
+function checkDoc(root, rel, role, symbols, roots) {
+    const text = readFile(root, rel);
+    if (text === null) return [];
+    const out = [];
+    const lines = text.split('\n');
+
+    // Archive is checked for one thing only, and not here: that nothing current
+    // points *at* it. What it points at itself is history.
+    if (role === 'archive' || role === 'report') return out;
+
+    const lineOf = (index) => text.slice(0, index).split('\n').length;
+
+    LINK.lastIndex = 0;
+    let m;
+    while ((m = LINK.exec(text)) !== null) {
+        const ref = m[1];
+        if (external(ref)) continue;
+        if (resolveRef(root, rel, ref) === null) {
+            out.push({ file: rel, line: lineOf(m.index), tag: 'gone', what: 'links to ' + ref });
+        }
+    }
+
+    CODE.lastIndex = 0;
+    while ((m = CODE.exec(text)) !== null) {
+        const span = m[1].trim();
+        const hit = PATHISH.exec(span);
+        if (!hit) continue;
+        const ref = hit[1];
+        const wanted = hit[2] ? parseInt(hit[2], 10) : null;
+        const found = resolveRef(root, rel, ref);
+        if (found === null) {
+            // Only when the first segment is something this repository has. A
+            // path rooted somewhere that does not exist here is an example, and
+            // an example is not a claim.
+            //
+            // Never for a plan or a decision, and for opposite reasons that
+            // land in the same place. A plan names files that do not exist yet;
+            // a decision names files that existed when it was written. Neither
+            // is a broken reference, and both were reported as one on the first
+            // real run — a month-old plan for `shared/repositories.py` that was
+            // never built, and this repository's own decision record for naming
+            // a `.fankeel/memory/` that was considered and rejected.
+            //
+            // Links are still checked in both. A document nobody can navigate is
+            // broken whatever its role; what it says about code is history.
+            if (role !== 'plan' && role !== 'decision' && roots.has(ref.split('/')[0])) {
+                out.push({ file: rel, line: lineOf(m.index), tag: 'gone', what: 'names ' + ref });
+            }
+            continue;
+        }
+        if (wanted !== null) {
+            const n = lineCount(root, found);
+            if (n !== null && wanted > n) {
+                out.push({ file: rel, line: lineOf(m.index), tag: 'past-end', what: found + ':' + wanted + ' but the file ends at ' + n });
+            }
+        }
+    }
+
+    // Symbols are checked in reference documents only. A decision record naming
+    // a function that was later renamed is not wrong — it is a record of the day
+    // it was written, and rewriting it to match would destroy the only thing it
+    // was for.
+    if (role === 'reference') {
+        CODE.lastIndex = 0;
+        while ((m = CODE.exec(text)) !== null) {
+            const span = m[1].trim();
+            const call = /^([A-Za-z_$][\w$]{2,})\(\)$/.exec(span);
+            if (!call) continue;
+            if (!symbols.has(call[1])) {
+                out.push({ file: rel, line: lineOf(m.index), tag: 'orphan', what: call[1] + '() is not declared anywhere' });
+            }
+        }
+    }
+
+    void lines;
+    return out;
+}
+
+function scan(root, roles) {
+    const result = trackedFiles(root);
+    if (!result) return null;
+
+    const { tree, error } = docs.read(root);
+    const files = result.files;
+    const roots = new Set(files.map((f) => f.split('/')[0]));
+    const markdown = files.filter(isMarkdown);
+    const symbols = declaredSymbols(root, files);
+
+    // Where documentation is expected to live, so "filed nowhere" can mean
+    // something. A README beside code is not misfiled; a page under docs/ that
+    // no bucket claims is.
+    const docRoot = (tree ? tree.index : 'docs/README.md').split('/')[0];
+
+    const findings = [];
+    const counts = {};
+    const undeclared = [];
+    const archived = new Set(
+        tree ? markdown.filter((f) => docs.roleOf(tree, f) === 'archive') : [],
+    );
+
+    for (const rel of markdown) {
+        const declared = docs.roleOf(tree, rel);
+        // Undeclared markdown is still checked, as reference — a page that
+        // describes code and nobody filed is exactly the page most likely to be
+        // wrong. It is only *reported* as unfiled when it sits where documents
+        // are supposed to be filed.
+        const role = declared || 'reference';
+        if (!declared && rel.split('/')[0] === docRoot) undeclared.push(rel);
+        counts[role] = (counts[role] || 0) + 1;
+        for (const f of checkDoc(root, rel, role, symbols, roots)) findings.push(Object.assign({ role }, f));
+    }
+
+    // The one thing an archive is checked for, and it is checked from the other
+    // side: a current document pointing into the archive is quietly telling its
+    // reader that retired material is current.
+    if (archived.size) {
+        for (const rel of markdown) {
+            const role = docs.roleOf(tree, rel);
+            if (role !== 'reference') continue;
+            const text = readFile(root, rel);
+            if (text === null) continue;
+            LINK.lastIndex = 0;
+            let m;
+            while ((m = LINK.exec(text)) !== null) {
+                if (external(m[1])) continue;
+                const target = resolveRef(root, rel, m[1]);
+                if (target && archived.has(target)) {
+                    findings.push({
+                        role, file: rel, line: text.slice(0, m.index).split('\n').length,
+                        tag: 'into-archive', what: 'points at retired ' + target,
+                    });
+                }
+            }
+        }
+    }
+
+    const wanted = roles && roles.length ? roles : null;
+    const kept = wanted ? findings.filter((f) => wanted.includes(f.role)) : findings;
+
+    return {
+        tree, error, counts, undeclared,
+        markdown: markdown.length,
+        findings: kept,
+        truncated: kept.length > MAX_FINDINGS,
+    };
+}
+
+const ORDER = ['gone', 'past-end', 'orphan', 'into-archive'];
+
+function report(result) {
+    if (!result) return 'fankeel docs-check: nothing readable under this directory.';
+
+    const lines = [];
+    const shape = result.tree ? result.tree.preset : 'none declared';
+    lines.push('fankeel docs-check — ' + result.markdown + ' markdown files, tree: ' + shape);
+    if (result.error) lines.push('  ' + result.error + ' — falling back to root files only.');
+
+    const roles = Object.keys(result.counts).sort();
+    if (roles.length) lines.push('  ' + roles.map((r) => result.counts[r] + ' ' + r).join(', '));
+
+    // Said before the findings, because an undeclared document is the one whose
+    // lifetime nobody decided, and those are the ones that rot unnoticed.
+    if (result.undeclared.length) {
+        lines.push('');
+        lines.push(result.undeclared.length + ' in no bucket — nobody has said how long these stay true:');
+        for (const rel of result.undeclared.slice(0, 20)) lines.push('  ' + rel);
+        if (result.undeclared.length > 20) lines.push('  (' + (result.undeclared.length - 20) + ' more)');
+    }
+
+    const findings = result.findings.slice()
+        .sort((a, b) => ORDER.indexOf(a.tag) - ORDER.indexOf(b.tag) || (a.file < b.file ? -1 : a.file > b.file ? 1 : a.line - b.line));
+
+    if (!findings.length) {
+        lines.push('');
+        lines.push('Every reference resolves. Whether the prose is still true is not something');
+        lines.push('this can see — that is the reading you still have to do.');
+        return lines.join('\n');
+    }
+
+    lines.push('');
+    lines.push(findings.length + (findings.length === 1 ? ' reference that no longer resolves:' : ' references that no longer resolve:'));
+    for (const f of findings.slice(0, MAX_FINDINGS)) {
+        lines.push('  ' + f.tag + ': ' + f.file + ':' + f.line + '  ' + f.what + '  [' + f.role + ']');
+    }
+    if (result.truncated) lines.push('  (' + (findings.length - MAX_FINDINGS) + ' more not listed)');
+
+    lines.push('');
+    lines.push('These are facts, not judgements. A document can have every link working');
+    lines.push('and still describe a system that no longer exists.');
+    return lines.join('\n');
+}
+
+function parseArgs(argv) {
+    let root = process.cwd();
+    let roles = [];
+    let quiet = false;
+    for (let i = 0; i < argv.length; i++) {
+        if (argv[i] === '--root') {
+            if (argv[i + 1]) root = argv[++i];
+            continue;
+        }
+        if (argv[i] === '--role') {
+            if (argv[i + 1]) roles = String(argv[++i]).split(',').map((r) => r.trim()).filter(Boolean);
+            continue;
+        }
+        if (argv[i] === '--quiet') { quiet = true; continue; }
+    }
+    return { root, roles, quiet };
+}
+
+function main(argv) {
+    const { root, roles, quiet } = parseArgs(argv);
+    const result = scan(root, roles);
+    const text = report(result);
+    // Non-zero when something does not resolve, so a stage rule that runs this
+    // cannot pass by not reading the output.
+    const bad = !result || result.findings.length > 0;
+    return { text: quiet && !bad ? '' : text, code: bad ? 1 : 0 };
+}
+
+if (require.main === module) {
+    const { text, code } = main(process.argv.slice(2));
+    if (text) process.stdout.write(text + '\n');
+    process.exit(code);
+}
+
+module.exports = { scan, report, main, parseArgs, checkDoc, declaredSymbols, resolveRef };

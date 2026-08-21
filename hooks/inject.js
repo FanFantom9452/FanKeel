@@ -18,6 +18,7 @@ const registry = require('../lib/registry.js');
 const badge = require('../lib/badge.js');
 const { render } = require('../lib/render.js');
 const { overlapPaths } = require('../lib/overlap.js');
+const { positionIn } = require('../lib/stages.js');
 
 // Flags belonging to sessions that ended a month ago are litter, not state.
 const BADGE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -56,6 +57,7 @@ function main(raw) {
             if (dir) {
                 try {
                     badge.clearBadge(dir, sessionId);
+                    badge.clearLead(dir, sessionId);
                 } catch (e) { /* housekeeping */ }
             }
         }
@@ -86,7 +88,23 @@ function main(raw) {
     const cfg = claudeConfigDir();
     if (cfg) {
         try {
-            badge.writeBadge(cfg, sessionId, badge.badgeWord(mine.stage, clash));
+            const word = badge.badgeWord(mine.stage, clash);
+            badge.writeBadge(cfg, sessionId, word);
+            // The lead line, kept current from here because only this hook sees
+            // a collision that appeared after the task was last touched. The
+            // count is of live sessions actually overlapping, not of live
+            // sessions — a number nobody can act on is decoration.
+            const at = positionIn(mine.route, mine.stage) || {};
+            const overlapping = others.filter((o) => overlapPaths(mine.scope, o.data && o.data.scope).length > 0).length;
+            badge.writeLead(cfg, sessionId, {
+                word,
+                step: at.step,
+                steps: at.steps,
+                title: mine.task,
+                where: Array.isArray(mine.scope) ? mine.scope.join(' ') : '',
+                guard: mine.guard,
+                others: overlapping > 0 ? overlapping : '',
+            });
             badge.pruneBadges(cfg, sessionId, BADGE_TTL_MS);
         } catch (e) { /* housekeeping */ }
     }

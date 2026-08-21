@@ -1,0 +1,27 @@
+{
+  "preset": "flat",
+  "index": "docs/README.md",
+  "buckets": [
+    {
+      "path": "docs",
+      "role": "reference",
+      "depth": 1
+    },
+    {
+      "path": "docs/decisions",
+      "role": "decision"
+    },
+    {
+      "path": "docs/plans",
+      "role": "plan"
+    },
+    {
+      "path": "docs/reports",
+      "role": "report"
+    },
+    {
+      "path": "docs/archive",
+      "role": "archive"
+    }
+  ]
+}

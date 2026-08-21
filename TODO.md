@@ -22,4 +22,5 @@ written here instead of where it belongs.
 
 ## Owed after first real use
 
-- Whether five stages is right, and whether `survey` earns its place — [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md), "What is still a guess".
+- Whether `audit` earns a place on routes that are not documentation work — [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md), "What is still a guess".
+- Contradiction between two documents is still the model's reading, not the checker's — [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md), "What is still a guess".

@@ -24,9 +24,25 @@ const path = require('node:path');
 const registry = require('../lib/registry.js');
 const badge = require('../lib/badge.js');
 const { overlapPaths } = require('../lib/overlap.js');
-const { byName: stageByName, NAMES: STAGE_NAMES } = require('../lib/stages.js');
+const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, normaliseRoute, positionIn } = require('../lib/stages.js');
 
 const GUARDS = ['ask', 'deny', 'off'];
+
+// A refusal is often two sentences: what was wrong, and what to do instead.
+// Named because it is built into message strings all through this file.
+const NL = String.fromCharCode(10);
+
+// What to do first, named for the stage the route actually begins at. A route
+// that starts at `build` was told to survey, which is both wrong and the kind
+// of wrong that teaches people to skim the output.
+const FIRST_STEP = {
+    survey: 'Now survey: read what orient named, then run the scanner. Do not stop to ask first.',
+    design: 'Now design: one approach and what it costs, then wait for a yes.',
+    build:  'Now build. The change is the output; say little until there is something to show.',
+    verify: 'Now verify: run it and quote the line that decided it.',
+    audit:  'Now audit: run the documents check and quote it before judging anything.',
+    land:   'Now land: commit the reason, close the TODO entries, leave nothing dangling.',
+};
 
 // The badge is written here as well as by the hook, and the reason is a full
 // prompt of latency otherwise.
@@ -47,12 +63,28 @@ function claudeDir(opts) {
     return home ? path.join(home, '.claude') : null;
 }
 
-function showBadge(opts, sessionId, word) {
+function showBadge(opts, sessionId, word, data) {
     const dir = claudeDir(opts);
     if (!dir) return;
     try {
         badge.writeBadge(dir, sessionId, word);
     } catch (e) { /* housekeeping; never worth failing a write that succeeded */ }
+    if (!data) return;
+    // The lead line carries what a one-word badge cannot: which task, how far
+    // along its own route, and who else is in the way. Written from the same
+    // place so the two can never disagree about the stage.
+    try {
+        const at = positionIn(data.route, data.stage) || {};
+        badge.writeLead(dir, sessionId, {
+            word,
+            step: at.step,
+            steps: at.steps,
+            title: data.task,
+            where: Array.isArray(data.scope) ? data.scope.join(' ') : '',
+            guard: data.guard,
+            others: data.others > 0 ? data.others : '',
+        });
+    } catch (e) { /* housekeeping */ }
 }
 
 function hideBadge(opts, sessionId) {
@@ -60,6 +92,7 @@ function hideBadge(opts, sessionId) {
     if (!dir) return;
     try {
         badge.clearBadge(dir, sessionId);
+        badge.clearLead(dir, sessionId);
     } catch (e) { /* housekeeping */ }
 }
 
@@ -85,6 +118,11 @@ function parseArgs(argv) {
         if (arg === '--session' || arg === '--root' || arg === '--task' || arg === '--scope') {
             if (argv[i + 1] === undefined) fail(arg + ' needs a value.');
             opts[arg.slice(2)] = argv[++i];
+            continue;
+        }
+        if (arg === '--route') {
+            if (argv[i + 1] === undefined) fail('--route needs a value.');
+            opts.route = argv[++i];
             continue;
         }
         if (arg === '--claude-dir') {
@@ -122,7 +160,11 @@ const now = () => new Date().toISOString();
 function describe(root, sessionId, data) {
     const lines = [];
     lines.push('task:  ' + (data.task || 'untitled'));
-    lines.push('stage: ' + (data.stage || '?') + (data.active === true ? '' : '  (stood down)'));
+    const route = normaliseRoute(data.route) || FULL_ROUTE;
+    const at = positionIn(route, data.stage);
+    lines.push('stage: ' + (data.stage || '?') + (at ? '  (' + at.step + ' of ' + at.steps + ')' : '')
+        + (data.active === true ? '' : '  (stood down)'));
+    lines.push('route: ' + route.map((r) => (r === data.stage ? '[' + r + ']' : r)).join(' → '));
     if (Array.isArray(data.scope) && data.scope.length) lines.push('scope: ' + data.scope.join(', '));
     if (data.guard) lines.push('guard: ' + data.guard);
     if (data.next) lines.push('next:  ' + data.next);
@@ -202,11 +244,22 @@ function cmdStart(root, opts) {
     // ignored.
     if (!scope.length) fail('--scope is required. Ask for it; a directory is a complete answer. Never invent it.');
 
+    // The route this task will take. Not every task is six stages: a typo fix is
+    // `build,verify` and a documentation sweep is `survey,audit,land`. A fixed
+    // six makes the progress indicator lie in both directions, so it is chosen
+    // per task and only checked for being a route at all.
+    const route = opts.route ? normaliseRoute(splitScope(opts.route)) : FULL_ROUTE.slice();
+    if (!route) {
+        fail('--route must be stages from: ' + STAGE_NAMES.join(', ')
+            + NL + 'No repeats, and land last if it is there at all.');
+    }
+
     const stamp = now();
     const data = {
         task: String(opts.task).replace(/\s+/g, ' ').trim(),
         scope,
-        stage: 'survey',
+        route,
+        stage: route[0],
         active: true,
         started: stamp,
         updated: stamp,
@@ -214,9 +267,9 @@ function cmdStart(root, opts) {
     if (!registry.writeSession(root, id, data)) fail('Could not write the entry under ' + root);
 
     const clash = collisions(root, id, scope);
-    showBadge(opts, id, badge.badgeWord('survey', clash.length > 0));
+    showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data));
 
-    const lines = ['fankeel — started, at survey'];
+    const lines = ['fankeel — started, at ' + data.stage + '   route: ' + route.join(' → ')];
     lines.push('');
     for (const line of describe(root, id, data)) lines.push('  ' + line);
     if (clash.length) {
@@ -227,7 +280,7 @@ function cmdStart(root, opts) {
     }
 
     lines.push('');
-    lines.push('Now survey: read what orient named, then run the scanner. Do not stop to ask first.');
+    lines.push(FIRST_STEP[data.stage] || 'Begin at ' + data.stage + '. Do not stop to ask whether to start.');
     return lines.join('\n');
 }
 
@@ -238,11 +291,24 @@ function cmdStage(root, opts) {
 
     const data = registry.readSession(root, id);
     if (!data || data.active !== true) fail('No active entry for this session under ' + root);
+
+    // A stage off the route is refused rather than silently added. The route was
+    // agreed at Start, and a task that quietly grew two stages is a task whose
+    // progress nobody can read.
+    const route = normaliseRoute(data.route) || FULL_ROUTE;
+    if (!route.includes(name)) {
+        fail('`' + name + '` is not on the route for this task: ' + route.join(' → ')
+            + NL + 'Re-route with `route` if the task really changed shape.');
+    }
+
     const from = data.stage;
     data.stage = name;
     if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
-    showBadge(opts, id, badge.badgeWord(name, collisions(root, id, data.scope || []).length > 0));
-    return 'fankeel — ' + from + ' to ' + name;
+    const clash = collisions(root, id, data.scope || []);
+    showBadge(opts, id, badge.badgeWord(name, clash.length > 0), Object.assign({ others: clash.length }, data));
+
+    const at = positionIn(route, name);
+    return 'fankeel — ' + from + ' to ' + name + (at ? '   ' + at.step + ' of ' + at.steps : '');
 }
 
 function cmdScope(root, opts) {
@@ -258,7 +324,7 @@ function cmdScope(root, opts) {
     if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
 
     const clash = collisions(root, id, data.scope);
-    showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0));
+    showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data));
 
     const lines = ['fankeel — scope: ' + data.scope.join(', ')];
     if (clash.length) {
@@ -341,6 +407,7 @@ function cmdAdopt(root, opts) {
     const data = {
         task: source.task,
         scope: Array.isArray(source.scope) ? source.scope : [],
+        route: normaliseRoute(source.route) || FULL_ROUTE.slice(),
         stage: source.stage || 'survey',
         active: true,
         started: stamp,
@@ -361,7 +428,8 @@ function cmdAdopt(root, opts) {
         fail('Adopted, but could not stand the source down. Two sessions now claim these files — stand ' + from + ' down by hand.');
     }
 
-    showBadge(opts, id, badge.badgeWord(data.stage, collisions(root, id, data.scope).length > 0));
+    const adoptClash = collisions(root, id, data.scope);
+    showBadge(opts, id, badge.badgeWord(data.stage, adoptClash.length > 0), Object.assign({ others: adoptClash.length }, data));
 
     const lines = ['fankeel — adopted: ' + (data.task || 'untitled') + ' @ ' + data.stage];
     lines.push('  ' + from + ' is now stood down.');
@@ -370,8 +438,42 @@ function cmdAdopt(root, opts) {
     return lines.join('\n');
 }
 
+// Re-routing is a separate command from `stage` on purpose. Moving along a route
+// is routine; changing what the route *is* is a decision about the shape of the
+// task, and the two should not be one keystroke apart.
+function cmdRoute(root, opts) {
+    const id = requireSession(opts);
+    const data = registry.readSession(root, id);
+    if (!data || data.active !== true) fail('No active entry for this session under ' + root);
+
+    const given = normaliseRoute(splitScope(opts.positional[0] || opts.route));
+    if (!given) {
+        fail('A route is stages from: ' + STAGE_NAMES.join(', ')
+            + NL + 'No repeats, and land last if it is there at all.');
+    }
+    // The stage this task is actually in has to survive the change, or the badge
+    // would show a stage the route does not contain and no progress could be
+    // read from either.
+    if (!given.includes(data.stage)) {
+        fail('This task is at `' + data.stage + '`, which that route does not contain.'
+            + NL + 'Move to a stage on the new route first, or include it.');
+    }
+
+    const before = normaliseRoute(data.route) || FULL_ROUTE;
+    data.route = given;
+    if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
+    const clash = collisions(root, id, data.scope || []);
+    showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data));
+
+    const at = positionIn(given, data.stage);
+    const shown = 'fankeel — route: ' + before.join(' → ') + NL + '           now: ' + given.join(' → ');
+    if (!at) return shown;
+    return shown + NL + '           at ' + data.stage + ', ' + at.step + ' of ' + at.steps;
+}
+
 const COMMANDS = {
     show: cmdShow,
+    route: cmdRoute,
     start: cmdStart,
     stage: cmdStage,
     scope: cmdScope,
@@ -386,8 +488,10 @@ const USAGE = [
     'fankeel task — the registry entry for this session.',
     '',
     '  show                              what this session owns, and who else is live',
-    '  start --task "..." --scope "a,b"  begin, at survey',
-    '  stage <survey|design|build|verify|land>',
+    '  start --task "..." --scope "a,b" [--route "survey,build,verify"]',
+    '                                    begin, at the first stage of the route',
+    '  stage <name>                      move along the route',
+    '  route "a,b,c"                     re-route a task that changed shape',
     '  scope "a,b" [--add]               replace, or add to, the declared paths',
     '  note "..."                        a dead end or a decision, capped at five',
     '  next "..."                        one line; empty clears it',

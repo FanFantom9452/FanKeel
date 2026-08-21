@@ -167,10 +167,22 @@ test('with no terms everything declared is listed', () => {
   assert.match(out, /two/);
 });
 
-test('an untracked file is invisible', () => {
+// The behaviour this replaces, and why it changed. `git ls-files` alone is
+// tracked files only, which made the scanner blind to exactly the work in
+// progress it is most often asked about. It caught itself: docs-check reported a
+// function as declared nowhere while the file declaring it sat uncommitted in
+// the working tree. A scanner that cannot see the file you just wrote gives the
+// confident wrong answer this plugin exists to prevent.
+test('a file written but not yet committed is visible', () => {
   const root = repo({ 'lib/a.js': 'function tracked() {}\n' });
   fs.writeFileSync(path.join(root, 'untracked.js'), 'function widgetGhost() {}\n');
-  assert.equal(run(root, 'widget').includes('widgetGhost'), false);
+  assert.match(run(root, 'widget'), /widgetGhost/);
+});
+
+test('an ignored file stays invisible — the repository already said so', () => {
+  const root = repo({ 'lib/a.js': 'function tracked() {}\n', '.gitignore': 'secret.js\n' });
+  fs.writeFileSync(path.join(root, 'secret.js'), 'function widgetSecret() {}\n');
+  assert.equal(run(root, 'widget').includes('widgetSecret'), false);
 });
 
 test('--root takes its value with it rather than leaving it as a term', () => {

@@ -222,6 +222,57 @@ sees it. Anything that should cross machines belongs in a commit message,
 | Five stages | Each has to earn its own rules, and a list nobody can hold in their head is a list nobody follows. `land` has no successor: what follows it is a new task, which is a decision rather than a transition. |
 | A failed audit at `land` reports rather than blocks | Nothing enforces stage transitions, so "block" would have nothing to block with — discipline text wearing a gate. Revisit if transitions ever become enforced. |
 
+## The route is per task, not a fixed list
+
+Five fixed stages made the progress indicator lie in both directions. A one-line
+typo fix sat at 2 of 5 looking permanently unfinished, and work that genuinely
+needed a documentation pass got no stage to do it in.
+
+So a task carries a `route`: the stages it will go through, in order, assembled
+at the start from what the task is. The vocabulary stays closed — six stages,
+each with rules that had to be earned — but the sequence is the task's. `stage`
+refuses a step off the route rather than silently adding one, because a task that
+quietly grew two stages is a task whose progress nobody can read.
+
+`audit` is the sixth. It asks what stopped being true, which is a different
+question from `verify` — verify asks whether the change works, audit asks whether
+the things that describe it still match.
+
+## Documents have roles, and the role says what may be stale
+
+A checker that treats every markdown file alike is a checker nobody keeps. An
+archive is supposed to name code that no longer exists; a plan is supposed to name
+code that does not exist yet; a decision record is supposed to name code as it was
+on the day it was written. Only a reference page is claiming to describe the
+system now.
+
+Both of the false positives that killed the first run were this: a month-old plan
+in Waypoint for naming files that were never built, and this repository's own
+decision record for naming a `.fankeel/memory/` that was considered and rejected.
+Reported alike, the one finding that mattered arrived buried.
+
+So `.fankeel/docs.json` declares buckets as path plus role, and it is
+version-controlled because it is a fact about the project rather than about a
+session. Two shapes ship, both copied from repositories that already existed
+rather than invented, and neither is imposed.
+
+## Other people's plugins get used when they are there
+
+`audit` covers documents, which nothing else does. For the code half, ponytail
+already does it better than a reimplementation would, and graphify and codegraph
+answer a question this scanner cannot.
+
+Reading `installed_plugins.json` costs one file and makes the rule honest in both
+directions: use theirs when theirs is installed, say plainly when it is not.
+Depending on them outright would break for anyone without them; reimplementing
+them would be worse at it and would put fankeel in the business of being a plugin
+directory.
+
+Their *shape* was worth taking and their text was not — tags, one line per
+finding, an explicit boundary, and a sentence for when nothing was found. That is
+a way of writing a report, not anybody's property, and the subject differs enough
+that copying would not have helped.
+
 ## What is still a guess
 
 The stage list. Five, named for what they produce, is a first cut; whether

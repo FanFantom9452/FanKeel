@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.11.0
+version: 0.12.0
 ---
 
 # fankeel
@@ -113,7 +113,7 @@ worse than none because people stop reading it.
    refused. Turning it on unasked locks the user out of their own repository;
    turning it off unasked removes a guard they chose to have.
 
-## The stages
+## The stages, and the route through them
 
 | Stage | Produces |
 |---|---|
@@ -121,10 +121,30 @@ worse than none because people stop reading it.
 | `design` | an approach someone agreed to |
 | `build` | the change itself |
 | `verify` | evidence, not confidence |
+| `audit` | a list of what is no longer true |
 | `land` | a repository no dirtier than you found it |
 
 Each stage's rules are injected on every prompt while you are in it, and only
-that stage's. A task starts at `survey`.
+that stage's.
+
+**A task's route is these stages in some order, chosen for that task.** Not every
+task is six stages. A typo fix is `build,verify`. A documentation sweep is
+`survey,audit,land`. A feature is all six. Assemble the route at Start the way you
+would work out an approach — from what the task actually is, not from a menu — and
+have it confirmed with the task line.
+
+```
+node <plugin>/scripts/task.js start --session <id> --task "..." --scope "..." --route "build,verify"
+```
+
+Omit `--route` and it is all six. The rules: every step must be a stage above, no
+repeats, and `land` last if it is there at all. `task.js stage` refuses a stage
+that is not on the route, and `task.js route` changes the route when the task
+turns out to be a different shape than it looked.
+
+A fixed six made the progress indicator lie in both directions — a two-stage task
+sat at 2 of 6 looking permanently unfinished, and a long one got no credit for the
+stages it invented. The route is what `●●●○○` on the statusline counts.
 
 `survey` carries a scanner rather than an instruction to search. The injected
 rule names the script with its resolved path; run it with the terms you would
@@ -174,6 +194,62 @@ advance, run `task.js stage <name>`; the statusline badge reads it, so
 `land` has no successor. What follows it is a new task, which is a decision, not
 a transition.
 
+## The `audit` stage, and other people's plugins
+
+`audit` asks one question: what is no longer true? Documents outlive the code they
+describe, and a document read as current when it is not produces a confident wrong
+answer — the failure this whole plugin exists to prevent.
+
+```
+node <plugin>/scripts/docs-check.js [--root <dir>] [--role reference,plan]
+```
+
+It reports only what can be decided mechanically: a link that no longer resolves,
+a `path:line` past the end of a file, a symbol nothing declares. Whether two
+documents contradict each other is not mechanical — that is your reading, and this
+gives it a place to start.
+
+**What is checked depends on the document's role**, which is why the tree below is
+declared. An archive naming deleted code is an archive doing its job. A reference
+page doing the same is the bug.
+
+For the *code* half, use what is installed:
+
+| | |
+|---|---|
+| ponytail installed | `/ponytail-audit` for the repository, `/ponytail-review` for a diff. Its scope is over-engineering only — it says nothing about documents. |
+| graphify or codegraph installed | query the graph rather than grepping. |
+| none of them | say so plainly and read the diff yourself. Do not pretend a check ran. |
+
+`node <plugin>/scripts/task.js show` is not the place to look for this; the audit
+rules name the tools, and the rules are injected while you are in that stage.
+
+## Where documents live
+
+`.fankeel/docs.json`, version-controlled — `.fankeel/.gitignore` excludes only
+`sessions/`, and this is what that exception was left open for.
+
+Each bucket is a path and a **role**, and the role is the point: it says how long
+a document is meant to stay true, and therefore what is worth checking.
+
+| Role | |
+|---|---|
+| `reference` | describes the system as it is now. Must match the code. |
+| `decision` | why something is the way it is. Written once, not maintained. May name code that has since gone — that is the record being honest about its date. |
+| `plan` | what is about to be done. Stops being true the moment it lands. |
+| `report` | a dated snapshot: an audit, a benchmark, a meeting. Never edited after. |
+| `archive` | retired. Checked for one thing only — that nothing current still points at it. |
+
+Two shapes ship, both taken from real repositories: `flat` (one `docs/` with a
+numbered series) and `phased` (`01-vision` through `99-archive`). Neither is
+imposed. At Start, if there is no `docs.json`, look at what the repository already
+does — `lib/docs.js` will say which shape it resembles — and offer that one,
+adjusted to what is actually there. A project that has its own habits keeps them;
+the roles are what fankeel needs, not the paths.
+
+A markdown file in no bucket is reported. Not as an error — as the thing nobody
+decided the lifetime of, which is the one most likely to rot unnoticed.
+
 ## Task memory
 
 Two fields, both capped in code: at most five notes of 100 characters, and one
@@ -192,6 +268,7 @@ instead:
 | A durable fact about the user or the repository | the memory directory |
 | Why a change was made | the commit message |
 | Work deliberately deferred | `TODO.md`, one line, linking to the detail |
+| A plan whose work has landed | the `archive` bucket, after asking |
 | What was tried and failed, mid-task | a **note** |
 | What to pick up next | **next** |
 

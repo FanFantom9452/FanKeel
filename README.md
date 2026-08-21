@@ -139,7 +139,7 @@ by thousands of tokens a turn. Only the current stage's rules are sent, never al
 five stages', which is what keeps a per-turn restatement affordable — around 300
 tokens loaded as above.
 
-## Stages
+## Stages, and the route through them
 
 | Stage | Produces |
 |---|---|
@@ -147,7 +147,84 @@ tokens loaded as above.
 | `design` | an approach someone agreed to |
 | `build` | the change itself |
 | `verify` | evidence, not confidence |
+| `audit` | a list of what is no longer true |
 | `land` | a repository no dirtier than you found it |
+
+**A task's route is these stages in some order, chosen for that task.** A typo fix
+is `build,verify`. A documentation sweep is `survey,audit,land`. A feature is all
+six. The route is assembled at the start from what the task actually is, not
+picked off a menu, and confirmed along with the task line:
+
+```
+$ node <plugin>/scripts/task.js start --session <id>       --task "fix the 7d ramp" --scope statusline.ps1 --route "build,verify"
+
+fankeel — started, at build   route: build → verify
+```
+
+Every step must be one of the stages above, no repeats, `land` last if it is
+there at all. `stage` refuses a stage that is not on the route; `route` changes
+the route when the task turns out to be a different shape than it looked.
+
+A fixed five made the progress indicator lie in both directions — two-stage work
+sat at 2 of 5 looking permanently unfinished, and longer work got no credit for
+the stages it invented. The route is what `●●●○○` on the statusline counts.
+
+### audit checks what stopped being true
+
+Documents outlive the code they describe, and a document read as current when it
+is not produces exactly the confident wrong answer this plugin exists to prevent.
+
+```
+$ node <plugin>/scripts/docs-check.js
+
+fankeel docs-check — 17 markdown files, tree: flat
+  1 decision, 2 plan, 14 reference
+
+12 in no bucket — nobody has said how long these stay true:
+  docs/00-overview.md
+  ...
+
+3 references that no longer resolve:
+  gone: docs/02-database.md:556  names docs/a.md  [reference]
+  orphan: docs/03-api.md:88  createSession() is not declared anywhere  [reference]
+  into-archive: docs/01-architecture.md:14  points at retired docs/archive/2026-01-01-old.md  [reference]
+```
+
+Only what can be decided mechanically. Whether two documents contradict each
+other is not mechanical, and a script that guessed would produce findings nobody
+could act on — that judgement is the stage's, and this gives it somewhere to
+start.
+
+**What gets checked depends on the document's role.** An archive naming deleted
+code is an archive doing its job; a reference page doing the same is the bug. A
+plan naming files that do not exist yet is a plan. Reporting the three alike is
+how a checker ends up nine parts noise and read once.
+
+For the code half, `audit` uses what is installed — `/ponytail-audit` if ponytail
+is there, a graph query if graphify or codegraph is — and says plainly when none
+of them are rather than implying a check ran.
+
+## Where documents live
+
+`.fankeel/docs.json`, version-controlled. Each bucket is a path and a **role**,
+and the role says how long a document is meant to stay true:
+
+| Role | | Allowed to be out of date |
+|---|---|---|
+| `reference` | describes the system as it is now | no |
+| `decision` | why something is the way it is, written once | yes — it is dated by definition |
+| `plan` | what is about to be done | until it lands, then it is archived |
+| `report` | a dated snapshot: audit, benchmark, meeting | yes |
+| `archive` | retired; checked only that nothing current points at it | yes |
+
+Two shapes ship, both taken from real repositories rather than invented: `flat`
+(one `docs/` with a numbered series) and `phased` (`01-vision` through
+`99-archive`). Neither is imposed — a repository that already has habits keeps
+them, and `detect()` says which shape it resembles so the question can be "this
+one?" rather than "which of these?".
+
+A markdown file in no bucket is reported. Not as an error, but as the one nobody
+decided the lifetime of, which is the one most likely to rot unnoticed.
 
 ### survey carries a scanner, not an instruction
 

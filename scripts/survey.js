@@ -92,9 +92,17 @@ function declPatterns(file) {
 
 const isDoc = (file) => path.extname(file).toLowerCase() === '.md';
 
+// `--others --exclude-standard` alongside the cached list, so a file written
+// this session is visible before it is committed.
+//
+// Plain `git ls-files` is tracked files only, which made the scanner blind to
+// exactly the work in progress it is most often asked about. It caught itself:
+// docs-check reported `detect()` as declared nowhere while `lib/docs.js` sat in
+// the working tree, uncommitted. A scanner that cannot see the file you just
+// wrote is the confident wrong answer this plugin exists to prevent.
 function gitFiles(dir) {
     try {
-        return execFileSync('git', ['ls-files', '-z'], {
+        return execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], {
             cwd: dir,
             encoding: 'utf8',
             maxBuffer: 32 * 1024 * 1024,

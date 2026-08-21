@@ -6,8 +6,8 @@ const assert = require('node:assert/strict');
 const { ALWAYS, STAGES, NAMES, byName, nextStage, rulesFor } = require('../lib/stages.js');
 const { MAX_WORD } = require('../lib/badge.js');
 
-test('the stages are the five the design fixes, in order', () => {
-  assert.deepEqual(NAMES, ['survey', 'design', 'build', 'verify', 'land']);
+test('the stages are the six a route is assembled from, in canonical order', () => {
+  assert.deepEqual(NAMES, ['survey', 'design', 'build', 'verify', 'audit', 'land']);
 });
 
 test('every stage name survives what the statusline will read', () => {
@@ -42,11 +42,12 @@ test('a full injection of rules stays under a few hundred characters', () => {
   }
 });
 
-test('nextStage walks forward and stops at land', () => {
+test('nextStage walks the full route by default and stops at land', () => {
   assert.equal(nextStage('survey'), 'design');
   assert.equal(nextStage('design'), 'build');
   assert.equal(nextStage('build'), 'verify');
-  assert.equal(nextStage('verify'), 'land');
+  assert.equal(nextStage('verify'), 'audit');
+  assert.equal(nextStage('audit'), 'land');
   assert.equal(nextStage('land'), null);
 });
 
@@ -58,7 +59,8 @@ test('nextStage on an unknown stage returns null rather than guessing', () => {
 
 test('stage lookup is case-insensitive', () => {
   assert.equal(byName('BUILD').name, 'build');
-  assert.equal(nextStage('Verify'), 'land');
+  assert.equal(byName(' verify ').name, 'verify');
+  assert.equal(nextStage('Audit'), 'land');
 });
 
 test('rulesFor returns the always-on rules plus the stage rules', () => {
@@ -93,7 +95,8 @@ test('the discipline covers the captured requirements', () => {
   assert.match(text, /background inside the question/);
   assert.match(text, /do not stop where the happy path works/);
   assert.match(text, /todo\.md as one line pointing at where the detail lives/);
-  assert.match(text, /rewritten into a short decision record/);
+  assert.match(text, /leaves a decision record behind/);
+  assert.match(text, /is then archived, after asking/);
   assert.match(text, /ponytail-audit/);
 });
 
