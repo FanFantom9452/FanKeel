@@ -23,6 +23,11 @@ claude plugin install fankeel@fankeel
 Restart Claude Code afterwards. Nothing else is installed: no dependencies, and
 the tests run on `node --test`, which is built in.
 
+It is also one of the plugins [claude-kit](https://github.com/FanFantom9452/claude-kit)
+sets up, if you would rather take a whole machine's worth in one command. That
+kit also wires the statusline this plugin draws its badge on — see
+[Statusline](#statusline) below.
+
 ## Use
 
 ```
@@ -112,7 +117,8 @@ carries the task, what has been tried, the other live sessions, and the rules fo
 the stage you are in:
 
 ```
-FANKEEL ACTIVE — rework the 7d deviation colour ramp @ build
+FANKEEL ACTIVE — rework the 7d deviation colour ramp @ build  (3 of 6)
+route: survey → design → [build] → verify → audit → land
 scope: statusline.ps1, statusline.sh, preview.ps1
 next: wire the badge word into TokenBar
 
@@ -126,19 +132,33 @@ also in progress:
 
 stage rules:
   - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, or pause, never dropping the pause. Option one is the approval: say what it approves.
-  - The background goes inside the question, not above it. Every option states its trade-off in its description, and the recommended one comes first.
+  - The background goes inside the question call — in the option descriptions, beside the option each belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
   - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
+  - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
   - Follow the patterns already in this repository rather than your own defaults.
   - Anything deferred goes in TODO.md as one line pointing at the detail — never as a comment nobody will find.
-  - Output: one line per file changed, then the question. Under 80 words. The diff is the output; prose is for what it cannot show.
+  - Output: one line per file as `path +n/-m — what changed`, then the question. Under 80 words. The diff is the output; prose is for what it cannot show.
+
+output shape:
+  - path +12/-3 — what changed
+  - path (new) — what it is
+
+  deferred: <TODO.md line, or omit this line>
+  then AskUserQuestion
 ```
 
 The rules are restated in full every turn rather than pointed at. A pointer is
 only as strong as the salience of what it points at, and what it points at recedes
 by thousands of tokens a turn. Only the current stage's rules are sent, never all
-six stages', which is what keeps a per-turn restatement affordable — around 300
-tokens loaded as above.
+six stages', which is what keeps a per-turn restatement affordable — 1832
+characters loaded as above, about 460 tokens.
+
+It grows when growing it is worth something, because the two sides of that trade
+are not priced the same. This block is read once a turn by the model and never by
+the user; the answer it shapes is read by the user every time. The only limit
+worth keeping is whether the block still gets read to the end — past that point a
+preamble is skimmed, and skimmed rules are no rules.
 
 Every stage's last rule is the shape of its output, and they are all the same
 shape: what the stage produced, then the question. What differs is the form and
@@ -552,7 +572,7 @@ fankeel writes one word to `~/.claude/modes/<session_id>/fankeel`.
 flag it finds there, so no change is needed on that side:
 
 ```
-[FANKEEL:SURVEY]   [FANKEEL:DESIGN]   [FANKEEL:BUILD]   [FANKEEL:VERIFY]   [FANKEEL:LAND]   [FANKEEL:CLASH]
+[FANKEEL:SURVEY]  [FANKEEL:DESIGN]  [FANKEEL:BUILD]  [FANKEEL:VERIFY]  [FANKEEL:AUDIT]  [FANKEEL:LAND]  [FANKEEL:CLASH]
 ```
 
 The word is the stage, not an intensity. An intensity is a constant you set once
@@ -569,7 +589,8 @@ it falls back to the four intensity tiers:
 ```powershell
 # ~/.claude/tokenbar-config.ps1
 $badgeColors.fankeel = @{ off = 240; lite = 62; full = 68; ultra = 81
-                          survey = 60; design = 62; build = 68; verify = 75; land = 81
+                          survey = 60; design = 62; build = 68
+                          verify = 75; audit = 78; land = 81
                           clash = 196 }
 ```
 
