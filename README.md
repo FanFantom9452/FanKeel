@@ -1,4 +1,4 @@
-# fankeel
+# FanKeel
 
 A keel is the one structural member a hull cannot lose.
 
@@ -16,12 +16,18 @@ tried, and shows which other live sessions are in the same files.
 ## Install
 
 ```
-claude plugin marketplace add FanFantom9452/fankeel
+claude plugin marketplace add FanFantom9452/FanKeel
 claude plugin install fankeel@fankeel
 ```
 
 Restart Claude Code afterwards. Nothing else is installed: no dependencies, and
 the tests run on `node --test`, which is built in.
+
+The repository is `FanKeel` and everything you type is `fankeel`. Plugin and
+marketplace ids have to be kebab-case — Claude Code accepts anything else, and
+the Claude.ai marketplace sync does not — so the id, the command, the badge word
+and the `.fankeel/` directory are all lowercase. GitHub does not care which case
+the repository is written in.
 
 It is also one of the plugins [claude-kit](https://github.com/FanFantom9452/claude-kit)
 sets up, if you would rather take a whole machine's worth in one command. That
