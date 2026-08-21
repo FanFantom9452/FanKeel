@@ -312,7 +312,12 @@ test('without --root the registry is found the way the hooks find it', () => {
   const dir = root();
   const inner = path.join(dir, 'Waypoint', 'web');
   fs.mkdirSync(inner, { recursive: true });
-  execFileSync(process.execPath, [SCRIPT, 'start', '--session', A, '--task', 'x', '--scope', 'Waypoint/web'], {
+  // --root is deliberately absent — the walk-up is the subject. --claude-dir is
+  // not optional even so: `start` writes the statusline badge, and without it
+  // this test leaves a flag file in the real ~/.claude/modes named for a session
+  // that never existed. It did, until this comment was written.
+  execFileSync(process.execPath, [SCRIPT, 'start', '--session', A, '--task', 'x',
+    '--scope', 'Waypoint/web', '--claude-dir', path.join(dir, 'cfg')], {
     encoding: 'utf8', cwd: dir,
   });
 
@@ -321,4 +326,12 @@ test('without --root the registry is found the way the hooks find it', () => {
   const out = execFileSync(process.execPath, [SCRIPT, 'show', '--session', A], { encoding: 'utf8', cwd: inner });
   assert.match(out, /task:  x/);
   assert.equal(fs.existsSync(path.join(inner, '.fankeel')), false);
+
+  // The guard for the leak above, kept because the only reason it was found was
+  // someone happening to list the directory.
+  const home = process.env.USERPROFILE || process.env.HOME;
+  if (home) {
+    assert.equal(fs.existsSync(path.join(home, '.claude', 'modes', A)), false,
+      'a test wrote a statusline flag into the real ~/.claude/modes');
+  }
 });
