@@ -45,7 +45,22 @@ function main(raw) {
     // entry. There is no second flag to disagree with, and no way to be in the
     // mode without having said what you are working on.
     const mine = registry.readSession(root, sessionId);
-    if (!mine || mine.active !== true) return;
+    if (!mine || mine.active !== true) {
+        // An entry that exists but is stood down means this session *was* in the
+        // mode. Its badge is still on the statusline saying otherwise, and only
+        // this hook runs often enough to notice. A session with no entry at all
+        // is skipped without touching the filesystem, which is what keeps a
+        // session that never used the plugin free.
+        if (mine) {
+            const dir = claudeConfigDir();
+            if (dir) {
+                try {
+                    badge.clearBadge(dir, sessionId);
+                } catch (e) { /* housekeeping */ }
+            }
+        }
+        return;
+    }
 
     const others = registry.readActive(root).filter((e) => e.sessionId !== sessionId);
     const now = Date.now();

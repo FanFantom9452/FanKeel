@@ -22,10 +22,46 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const registry = require('../lib/registry.js');
+const badge = require('../lib/badge.js');
 const { overlapPaths } = require('../lib/overlap.js');
 const { byName: stageByName, NAMES: STAGE_NAMES } = require('../lib/stages.js');
 
 const GUARDS = ['ask', 'deny', 'off'];
+
+// The badge is written here as well as by the hook, and the reason is a full
+// prompt of latency otherwise.
+//
+// The hook runs on UserPromptSubmit, which is *before* the turn that creates the
+// entry. So starting a task wrote nothing to the statusline: the flag only
+// appeared when the user submitted their next prompt, and until then turning the
+// mode on looked exactly like failing to turn it on. Someone watching for the
+// badge concludes it is broken, and they are not being unreasonable.
+//
+// The hook still owns the badge from then on, because only the hook knows about
+// a collision that appeared after this ran. This is the first value, not the
+// authority.
+function claudeDir(opts) {
+    if (opts && opts.claudeDir) return opts.claudeDir;
+    if (process.env.CLAUDE_CONFIG_DIR) return process.env.CLAUDE_CONFIG_DIR;
+    const home = process.env.HOME || process.env.USERPROFILE;
+    return home ? path.join(home, '.claude') : null;
+}
+
+function showBadge(opts, sessionId, word) {
+    const dir = claudeDir(opts);
+    if (!dir) return;
+    try {
+        badge.writeBadge(dir, sessionId, word);
+    } catch (e) { /* housekeeping; never worth failing a write that succeeded */ }
+}
+
+function hideBadge(opts, sessionId) {
+    const dir = claudeDir(opts);
+    if (!dir) return;
+    try {
+        badge.clearBadge(dir, sessionId);
+    } catch (e) { /* housekeeping */ }
+}
 
 function fail(message) {
     process.stdout.write(message + '\n');
@@ -49,6 +85,11 @@ function parseArgs(argv) {
         if (arg === '--session' || arg === '--root' || arg === '--task' || arg === '--scope') {
             if (argv[i + 1] === undefined) fail(arg + ' needs a value.');
             opts[arg.slice(2)] = argv[++i];
+            continue;
+        }
+        if (arg === '--claude-dir') {
+            if (argv[i + 1] === undefined) fail('--claude-dir needs a value.');
+            opts.claudeDir = argv[++i];
             continue;
         }
         if (arg === '--add') {
@@ -172,11 +213,12 @@ function cmdStart(root, opts) {
     };
     if (!registry.writeSession(root, id, data)) fail('Could not write the entry under ' + root);
 
+    const clash = collisions(root, id, scope);
+    showBadge(opts, id, badge.badgeWord('survey', clash.length > 0));
+
     const lines = ['fankeel — started, at survey'];
     lines.push('');
     for (const line of describe(root, id, data)) lines.push('  ' + line);
-
-    const clash = collisions(root, id, scope);
     if (clash.length) {
         lines.push('');
         lines.push('already claimed by another live session:');
@@ -185,7 +227,6 @@ function cmdStart(root, opts) {
     }
 
     lines.push('');
-    lines.push('The badge appears on the next prompt — the hook writes it, not this.');
     lines.push('Now survey: read what orient named, then run the scanner. Do not stop to ask first.');
     return lines.join('\n');
 }
@@ -200,7 +241,8 @@ function cmdStage(root, opts) {
     const from = data.stage;
     data.stage = name;
     if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
-    return 'fankeel — ' + from + ' to ' + name + '\nThe badge follows on the next prompt.';
+    showBadge(opts, id, badge.badgeWord(name, collisions(root, id, data.scope || []).length > 0));
+    return 'fankeel — ' + from + ' to ' + name;
 }
 
 function cmdScope(root, opts) {
@@ -215,8 +257,10 @@ function cmdScope(root, opts) {
     data.scope = opts.add ? before.concat(given.filter((s) => !before.includes(s))) : given;
     if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
 
-    const lines = ['fankeel — scope: ' + data.scope.join(', ')];
     const clash = collisions(root, id, data.scope);
+    showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0));
+
+    const lines = ['fankeel — scope: ' + data.scope.join(', ')];
     if (clash.length) {
         lines.push('');
         lines.push('now overlapping:');
@@ -267,6 +311,7 @@ function cmdDown(root, opts) {
     if (data.active !== true) return 'fankeel — already stood down.';
     data.active = false;
     if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
+    hideBadge(opts, id);
 
     const lines = ['fankeel — stood down: ' + (data.task || 'untitled')];
     const notes = registry.notesOf(data);
@@ -307,9 +352,16 @@ function cmdAdopt(root, opts) {
     if (!registry.writeSession(root, id, data)) fail('Could not write this session\'s entry.');
 
     source.active = false;
+    // The source's badge goes too. Reaching into another session's state is
+    // already what adopt is, and a badge still reading `build` for a task this
+    // session took over is the statusline telling that window a lie it has no
+    // way to notice.
+    hideBadge(opts, from);
     if (!registry.writeSession(root, from, source)) {
         fail('Adopted, but could not stand the source down. Two sessions now claim these files — stand ' + from + ' down by hand.');
     }
+
+    showBadge(opts, id, badge.badgeWord(data.stage, collisions(root, id, data.scope).length > 0));
 
     const lines = ['fankeel — adopted: ' + (data.task || 'untitled') + ' @ ' + data.stage];
     lines.push('  ' + from + ' is now stood down.');
@@ -346,6 +398,10 @@ const USAGE = [
     'Every command takes --session <id>, and --root <dir> to override where the',
     'registry is. Without --root it is found the way the hooks find it: the nearest',
     '.fankeel above the working directory, or the working directory itself.',
+    '',
+    'start, stage, scope, adopt and down also set the statusline badge, so it is',
+    'there on this turn rather than on the next prompt. The hook keeps it current',
+    'from then on.',
 ].join('\n');
 
 function main(argv) {

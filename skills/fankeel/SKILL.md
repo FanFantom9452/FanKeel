@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.10.0
+version: 0.10.1
 ---
 
 # fankeel
@@ -86,6 +86,12 @@ It creates `.fankeel/.gitignore` along with the directory, enforces the caps and
 the invariants below, and refuses rather than guessing. It exits non-zero when it
 refuses, so read the output. Hand-written JSON gets the `.gitignore` wrong every
 time, and a `sessions/` directory that is not ignored ends up committed.
+
+`start`, `stage`, `scope`, `adopt` and `down` also set the statusline badge, so it
+is there on the turn the change happened. The hook keeps it current from then on —
+it runs *before* a prompt, so a badge left to the hook alone would not appear
+until the user typed again, and until then turning the mode on looks exactly like
+failing to.
 
 ## Invariants
 

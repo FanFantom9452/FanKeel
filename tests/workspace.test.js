@@ -205,6 +205,26 @@ test('a session with no entry stays silent and writes nothing', () => {
     assert.equal(fs.existsSync(path.join(root, 'cfg', 'modes')), false);
 });
 
+test('a stood-down entry is not in the mode, and its badge is taken down', () => {
+    const root = workspace();
+    entry(root, A, { task: 'tidy the project cards', scope: ['Waypoint/web'], stage: 'build' });
+    hook(INJECT, root, { session_id: A });
+    assert.equal(badge(root, A), 'build');
+
+    // Standing down elsewhere leaves the flag behind. This hook is the only thing
+    // that runs often enough to notice, and a badge reading `build` for a task
+    // that no longer exists is the statusline lying all day.
+    entry(root, A, { task: 'tidy the project cards', scope: ['Waypoint/web'], stage: 'build', active: false });
+    assert.equal(hook(INJECT, root, { session_id: A }), null);
+    assert.equal(badge(root, A), null);
+});
+
+test('a session that never had an entry is skipped without touching anything', () => {
+    const root = workspace();
+    assert.equal(hook(INJECT, root, { session_id: A }), null);
+    assert.equal(fs.existsSync(path.join(root, 'cfg', 'modes')), false);
+});
+
 test('a stood-down entry is not in the mode', () => {
     const root = workspace();
     entry(root, A, { task: 'tidy the project cards', scope: ['Waypoint/web'], active: false });

@@ -22,13 +22,29 @@ const root = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-task-'));
 
 // A refusal is a normal outcome here, so it has to be caught to be read. What is
 // being asserted is the message and the code together.
+//
+// --claude-dir is always passed. These commands write the statusline badge now,
+// and a test suite that dropped flag files for made-up session ids into the real
+// ~/.claude would be leaving litter on the machine it runs on.
 function run(dir, args) {
+  const cfg = path.join(dir, 'cfg');
   try {
-    return { out: execFileSync(process.execPath, [SCRIPT, ...args, '--root', dir], { encoding: 'utf8' }), code: 0 };
+    return {
+      out: execFileSync(process.execPath, [SCRIPT, ...args, '--root', dir, '--claude-dir', cfg], { encoding: 'utf8' }),
+      code: 0,
+    };
   } catch (e) {
     return { out: String(e.stdout || ''), code: e.status };
   }
 }
+
+const badgeOf = (dir, id) => {
+  try {
+    return fs.readFileSync(path.join(dir, 'cfg', 'modes', id, 'fankeel'), 'utf8').trim();
+  } catch (e) {
+    return null;
+  }
+};
 
 const entry = (dir, id) => registry.readSession(dir, id);
 
@@ -217,6 +233,58 @@ test('adopt refuses when this session already owns something', () => {
   assert.equal(code, 1);
   assert.match(out, /already owns an active task/);
   assert.equal(entry(dir, A).active, true);
+});
+
+// The complaint that produced this: start the mode, and the statusline showed
+// nothing. The hook runs on UserPromptSubmit, which is before the turn that
+// creates the entry, so the badge only arrived when the user typed again — and
+// until then turning the mode on looked exactly like failing to turn it on.
+test('start writes the badge, so it is there on this turn and not the next', () => {
+  const dir = root();
+  started(dir, A, 'tidy the project cards', 'Waypoint/web');
+  assert.equal(badgeOf(dir, A), 'survey');
+});
+
+test('the badge follows the stage', () => {
+  const dir = root();
+  started(dir, A, 'x', 'Waypoint/web');
+  run(dir, ['stage', 'verify', '--session', A]);
+  assert.equal(badgeOf(dir, A), 'verify');
+});
+
+test('starting into a collision says clash on the badge, not the stage', () => {
+  const dir = root();
+  started(dir, A, 'tidy the project cards', 'Waypoint/web');
+  started(dir, B, 'fix the card link', 'Waypoint/web/src/Card.jsx');
+  assert.equal(badgeOf(dir, B), 'clash');
+});
+
+test('narrowing the scope out of a collision clears the badge back to the stage', () => {
+  const dir = root();
+  started(dir, A, 'tidy the project cards', 'Waypoint/web');
+  started(dir, B, 'fix the api', 'Waypoint/web');
+  assert.equal(badgeOf(dir, B), 'clash');
+
+  run(dir, ['scope', 'Waypoint/api', '--session', B]);
+  assert.equal(badgeOf(dir, B), 'survey');
+});
+
+test('standing down removes the badge — the mode is off and must look off', () => {
+  const dir = root();
+  started(dir, A, 'x', 'Waypoint/web');
+  assert.equal(badgeOf(dir, A), 'survey');
+  run(dir, ['down', '--session', A]);
+  assert.equal(badgeOf(dir, A), null);
+});
+
+test('adopting shows the badge for the stage taken over', () => {
+  const dir = root();
+  started(dir, A, 'x', 'Waypoint/web');
+  run(dir, ['stage', 'build', '--session', A]);
+  run(dir, ['adopt', A, '--session', B]);
+  assert.equal(badgeOf(dir, B), 'build');
+  // The source is stood down, so its badge goes with it.
+  assert.equal(badgeOf(dir, A), null);
 });
 
 test('show reports no entry rather than pretending the mode is on', () => {
