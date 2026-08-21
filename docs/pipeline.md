@@ -154,6 +154,65 @@ the options were on screen and the reader still had to type one back. Naming
 `AskUserQuestion` in the skill file was not enough, because a skill file is read
 once at session start and this rides every prompt.
 
+# The answer is not a prompt
+
+That last claim had a hole in it, and a real session found it. *Every prompt*
+means every prompt somebody types. An answer to an AskUserQuestion comes back as
+a tool result, and `UserPromptSubmit` does not fire for a tool result — so a
+session driven the way this pipeline asks to be driven is the one session where
+the block never returns. One run spent 511 transcript entries and forty-four
+minutes on a single injection.
+
+The step that broke was the one where another skill's output contract — *End
+with the only metric that matters: `net: -<N> lines possible.`* — was loaded
+twelve entries before generation, competing with rules five hundred entries
+behind it. It ended in prose with no question at all, and the user had to type
+`CONTINUE` to get the pipeline moving again. The turn after that had the block
+back, and gated properly. Eleven of the twelve steps in that session ended in an
+AskUserQuestion; the twelfth is the one that had a competing contract nearer to
+hand than its own rules.
+
+So there is a second hook. `PostToolUse` matched to `AskUserQuestion` — and to
+nothing else — sends a short form back the moment an answer lands:
+
+```
+FANKEEL ACTIVE — rework the 7d deviation colour ramp @ build  (3 of 6)
+route: survey → design → [build] → verify → audit → land
+
+stage rules:
+  - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, or pause, never dropping the pause. Option one is the approval: say what it approves.
+  ...
+
+output shape:
+  - path +12/-3 — what changed
+  - path (new) — what it is
+
+  deferred: <TODO.md line, or omit this line>
+  then AskUserQuestion
+```
+
+Where the task is, the rules for the stage, the shape — 1336 to 1614 characters
+depending on the stage, around 350 tokens. Deliberately not the full block: the
+scope, the notes and the other live sessions cannot have moved between a question
+going out and its answer coming back, they are already in the context a few
+thousand tokens up, and a stage runs through several questions. Repeating them
+each time leaves a pile of copies disagreeing about which stage this is.
+
+The cost is not what it looks like. The whole conversation is sent on every model
+call whether or not anything is injected, and a prompt cache is a prefix — text
+appended at the end never invalidates it. A real turn in that session billed
+`cache_read 243,455` against `cache_creation 788`: the history at a tenth of the
+price, and only the new tail written. Twelve answers at ~350 tokens is about
+4,200 tokens of cache write across a whole session, which buys back the one
+thing this plugin exists to hold.
+
+The other way to close it was a `Stop` hook returning `decision: block` when a
+turn ends without a question. That is a harder gate and it was not taken: it
+costs a whole extra model turn every time it fires, which is output rather than
+input and therefore the expensive half; it loops if the hook forgets to check
+`stop_hook_active`; and it blocks the legitimate case where somebody asks a
+plain question mid-task and gets a plain answer.
+
 # Stages, and the route through them
 
 | Stage | Produces |

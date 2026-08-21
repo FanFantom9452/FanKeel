@@ -9,7 +9,8 @@ and then quietly stop. And two terminals open on the same repository will happil
 edit the same file, because neither knows the other is there.
 
 fankeel is a Claude Code plugin that carries a development discipline and states
-it on every prompt rather than once at the top of a session. It holds a task, moves
+it on every prompt — and again on every answer — rather than once at the top of a
+session. It holds a task, moves
 it along a route it picked through six stages, keeps a capped note of what has been
 tried, and shows which other live sessions are in the same files.
 
@@ -173,12 +174,13 @@ claude plugin validate .
 ```
 
 `lib/` is pure logic, tested directly. `hooks/` is where stdin, stdout and process
-exit live, and all three hooks are tested as subprocesses with real payloads.
+exit live, and all four hooks are tested as subprocesses with real payloads.
 
 Every hook exits 0 on every path, including every error path. A `UserPromptSubmit`
 hook that throws blocks the prompt it was called for and a `PreToolUse` hook that
 throws blocks the edit, and a plugin that can wedge your terminal is worse than no
-plugin.
+plugin. The other two are not load-bearing that way, but a stack trace in front of
+the user in the middle of somebody else's turn is its own kind of broken.
 
 `node scripts/todo-check.js` says whether [TODO.md](TODO.md) is still an index —
 every link resolving, no entry carrying detail that belongs in the file it points

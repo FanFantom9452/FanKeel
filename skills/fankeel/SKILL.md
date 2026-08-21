@@ -165,8 +165,9 @@ worse than none because people stop reading it.
 | `audit` | a list of what is no longer true |
 | `land` | a repository no dirtier than you found it |
 
-Each stage's rules are injected on every prompt while you are in it, and only
-that stage's — followed by an `output shape:` block, which is the skeleton the
+Each stage's rules are injected on every prompt while you are in it — and again
+each time an AskUserQuestion of yours is answered, because an answer is a tool
+result and not a prompt — and only that stage's — followed by an `output shape:` block, which is the skeleton the
 report is meant to fill in rather than a description of it. Fill it in. Prose is
 for the things the skeleton cannot hold, and there is less of that than it
 feels like.
@@ -515,8 +516,10 @@ moment nothing has been surveyed.
 ## While the mode is on
 
 The hook injects the task, its notes, the other live sessions, the current
-stage's rules and the shape its report takes, before every prompt. Follow them;
-they are not advisory.
+stage's rules and the shape its report takes, before every prompt. A second hook
+sends the stage and its rules back after every answered question, because that is
+the other half of how this pipeline moves and no prompt is typed there. Follow
+them; they are not advisory.
 
 That block is long on purpose and will get longer. Input is cheap and output is
 not — every word of instruction that buys a shorter, better-shaped answer is a

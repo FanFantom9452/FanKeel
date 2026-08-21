@@ -21,11 +21,11 @@ workspace/                     <- Claude Code opened here
 
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`, and the hook for `updated` |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`, and `inject.js` / `resume.js` for `updated` |
 | `.fankeel/.gitignore` | Yes | Created with the directory |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
-| `~/.claude/modes/{session_id}/fankeel` | n/a | The hook, every prompt |
-| `~/.claude/modes/{session_id}/fankeel.lead` | n/a | The hook, every prompt |
+| `~/.claude/modes/{session_id}/fankeel` | n/a | `inject.js`, every prompt |
+| `~/.claude/modes/{session_id}/fankeel.lead` | n/a | `inject.js`, every prompt |
 
 The registry is found by walking up for **`.fankeel/sessions/`**, not for
 `.fankeel/`. The marker has to be the thing the registry owns, because the two

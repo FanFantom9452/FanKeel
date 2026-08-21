@@ -1,7 +1,7 @@
 {
   "name": "fankeel",
-  "version": "0.20.0",
-  "description": "Development discipline for long-running projects: a six-stage pipeline restated on every prompt with the shape its report takes, a per-session task registry, capped task memory, a brief for every subagent, and scope-overlap warnings — optionally blocks — between live sessions.",
+  "version": "0.21.0",
+  "description": "Development discipline for long-running projects: a six-stage pipeline restated on every prompt and after every answer with the shape its report takes, a per-session task registry, capped task memory, a brief for every subagent, and scope-overlap warnings — optionally blocks — between live sessions.",
   "author": {
     "name": "FanFantom9452",
     "url": "https://github.com/FanFantom9452"
@@ -17,6 +17,19 @@
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/inject.js\"",
             "timeout": 5,
             "statusMessage": "Reading the fankeel registry..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/resume.js\"",
+            "timeout": 5,
+            "statusMessage": "Restating the fankeel stage..."
           }
         ]
       }
