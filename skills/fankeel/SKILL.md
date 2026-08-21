@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.16.1
+version: 0.17.0
 ---
 
 # fankeel
@@ -238,9 +238,23 @@ The shape is the same every time, so it can be recognised without being read:
 |---|---|
 | header | the stage that just finished |
 | question | what it produced, in one line, then what comes next |
-| option 1 | the next stage on the route. Recommended once this stage's product exists; the description says what it will do first. |
+| option 1 | the next stage on the route. **Its description is where the approval happens** — say what accepting it accepts, not just which stage comes next. |
 | option 2 | stay in this stage. The description says what is still open. |
 | option 3 | pause. The description says what `next` will be set to. |
+
+Picking option one *is* the approval, so the description has to name what is
+being approved. "Build it" is a stage; "build this approach — due-rules.js
+first, then the four pages" is a decision someone can actually make. The
+difference matters most after `design`, where the product is a proposal and the
+gate is the only place it gets accepted:
+
+| after | option one approves |
+|---|---|
+| `survey` | the picture of what is already there |
+| `design` | the approach, named in the description |
+| `build` | that the change is the one that was asked for |
+| `verify` | that the evidence is enough |
+| `audit` | the findings, and what is being done about them |
 
 At the **last stage on the route** there is no next stage, so option 1 becomes
 standing the task down and option 2 becomes starting a new one. What follows a

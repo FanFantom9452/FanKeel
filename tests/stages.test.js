@@ -109,7 +109,9 @@ test('the discipline covers the captured requirements', () => {
 // only in SKILL.md, which is read once and then buried.
 test('the always-on block names the tool, not just the act of asking', () => {
   assert.match(ALWAYS.join(' '), /AskUserQuestion/);
-  assert.match(ALWAYS.join(' '), /never leave the pause out/);
+  assert.match(ALWAYS.join(' '), /never dropping the pause/);
+  // Picking the first option is the approval, so it has to say what it approves.
+  assert.match(ALWAYS.join(' '), /Option one is the approval/);
 });
 
 test('the stage that produced the wall of text now carries a length', () => {

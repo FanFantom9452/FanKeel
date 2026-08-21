@@ -125,7 +125,7 @@ also in progress:
   - triage the colour issues @ survey  (scope: README.md)  (last seen 16d ago)
 
 stage rules:
-  - Never end a step silently or in prose. Ask with AskUserQuestion: the next stage on the route, staying in this one, or pausing — never leave the pause out.
+  - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, or pause, never dropping the pause. Option one is the approval: say what it approves.
   - The background goes inside the question, not above it. Every option states its trade-off in its description, and the recommended one comes first.
   - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
@@ -146,6 +146,12 @@ how much room it gets — 120 words for a survey, 200 for a design, 80 for a bui
 one line per finding for an audit, one paragraph for a land. A number can be
 missed; a direction cannot be, and *in the fewest words that let someone say yes
 or no* let a design stage run to nine hundred.
+
+Picking the first option *is* the approval, which is why the rule says the option
+has to name what it approves. "Build it" is a stage; "build this approach —
+due-rules.js first, then the four pages" is a decision someone can make. It
+matters most after `design`, where the product is a proposal and the gate is the
+only place it gets accepted.
 
 The first rule names the tool, and that is the point of it. It used to say *end
 every step by asking what comes next*, and a real design stage duly ended with
