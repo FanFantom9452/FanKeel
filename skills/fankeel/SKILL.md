@@ -17,13 +17,13 @@ switches it off; nothing else ever does.
 Two things live under `.fankeel/`, and they have different homes.
 
 ```
-production/                       <- Claude Code opened here
+workspace/                        <- Claude Code opened here
 ├── .fankeel/
 │   ├── .gitignore             sessions/
 │   └── sessions/              THE REGISTRY. one for the whole workspace.
 │       └── <session_id>.json    never committed
 │
-├── Waypoint/                 a repository
+├── Waypoint/                  a repository
 │   ├── .fankeel/
 │   │   └── docs.json          THE DOCS TREE. committed, with the docs.
 │   └── docs/

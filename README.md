@@ -47,11 +47,11 @@ fankeel orient — F:\workspace
 registry: none at or above here. Starting a task creates one at F:\workspace.
 
 5 under it:
-  Waypoint     git feat/task-board, 1 untracked  463 files  today
-  KB            git main, 1 untracked         910 files  3d ago
-  TypeDesk  git main, clean               370 files  1mo ago
-  notebin    git main, clean                97 files  1mo ago
-  Roster        no git                         77 files
+  Waypoint  git feat/task-board, 1 untracked  463 files  today
+  KB        git main, 1 untracked             910 files  3d ago
+  TypeDesk  git main, clean                   370 files  1mo ago
+  notebin   git main, clean                    97 files  1mo ago
+  Roster    no git                             77 files
 ```
 
 Most recently committed first, with the age on every row so the order is
@@ -586,11 +586,11 @@ badge on that line that is a warning rather than a state.
 One registry for the workspace, one docs tree per repository:
 
 ```
-production/                    <- Claude Code opened here
+workspace/                     <- Claude Code opened here
 ├── .fankeel/
 │   ├── .gitignore          sessions/
 │   └── sessions/           the registry, one file per session, never committed
-├── Waypoint/              a repository
+├── Waypoint/               a repository
 │   ├── .fankeel/
 │   │   └── docs.json       its docs tree, committed with the documents
 │   └── docs/
