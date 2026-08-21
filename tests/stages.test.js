@@ -36,9 +36,12 @@ test('the always-on block stays short enough to ride every prompt', () => {
 });
 
 test('a full injection of rules stays under a few hundred characters', () => {
+  // 1000, raised from 900 when the always-on block took on naming the tool and
+  // the three options a stage ends with. That gate is the one line that must not
+  // be skimmed, and the whole injected block is still about 250 tokens a turn.
   for (const name of NAMES) {
     const size = rulesFor(name).join('\n').length;
-    assert.ok(size < 900, name + ' rules are ' + size + ' chars');
+    assert.ok(size < 1000, name + ' rules are ' + size + ' chars');
   }
 });
 
@@ -91,13 +94,25 @@ test('the discipline covers the captured requirements', () => {
   const text = (ALWAYS.join(' ') + ' ' + STAGES.map((s) => s.rules.join(' ')).join(' ')).toLowerCase();
   // R2 never stop, R3 questions carry context, R4 finish it,
   // R5 TODO is an index, R6 rewrite not move, R7 use the audit skills.
-  assert.match(text, /never stop silently/);
-  assert.match(text, /background inside the question/);
+  assert.match(text, /never end a step silently or in prose/);
+  assert.match(text, /background goes inside the question/);
   assert.match(text, /do not stop where the happy path works/);
   assert.match(text, /todo\.md as one line pointing at where the detail lives/);
   assert.match(text, /leaves a decision record behind/);
   assert.match(text, /is then archived, after asking/);
   assert.match(text, /ponytail-audit/);
+});
+
+// The failure that produced this test: a design stage ended with three numbered
+// options in a paragraph. Asking was in the rules; asking *with the tool* was
+// only in SKILL.md, which is read once and then buried.
+test('the always-on block names the tool, not just the act of asking', () => {
+  assert.match(ALWAYS.join(' '), /AskUserQuestion/);
+  assert.match(ALWAYS.join(' '), /never leave the pause out/);
+});
+
+test('the stage that produced the wall of text now carries a length', () => {
+  assert.match(byName('design').rules.join(' '), /under 200 words/);
 });
 
 test('no rule is a placeholder', () => {

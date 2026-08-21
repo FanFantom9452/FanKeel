@@ -1,7 +1,7 @@
 ---
 name: fankeel
-description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.12.0
+description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
+version: 0.14.0
 ---
 
 # fankeel
@@ -186,10 +186,26 @@ Short tasks may skip forward — a one-line typo fix does not need a design stag
 but say which stages you are skipping and why. Skipping silently is how `verify`
 gets skipped.
 
-**At the end of a stage, ask.** Never announce a stage complete and stop. Offer
-the next stage, staying put, and pausing, and let the user pick. When they
-advance, run `task.js stage <name>`; the statusline badge reads it, so
-`[FANKEEL:DESIGN]` becoming `[FANKEEL:BUILD]` is how they see the move.
+**At the end of a stage, ask — with `AskUserQuestion`, never in prose.** A stage
+that ends in a paragraph of numbered options is a stage that ended silently. The
+options are already on screen and the user still has to type one of them back,
+which is the exact waste the tool exists to remove.
+
+The shape is the same every time, so it can be recognised without being read:
+
+| | |
+|---|---|
+| header | the stage that just finished |
+| question | what it produced, in one line, then what comes next |
+| option 1 | the next stage on the route. Recommended once this stage's product exists; the description says what it will do first. |
+| option 2 | stay in this stage. The description says what is still open. |
+| option 3 | pause. The description says what `next` will be set to. |
+
+One question per call. A second belongs in the same call only when it is
+genuinely independent — a decision the answer to the first would not change.
+
+When they advance, run `task.js stage <name>`; the statusline badge reads it, so
+`▌FANKEEL DESIGN` becoming `▌FANKEEL BUILD` is how they see the move.
 
 `land` has no successor. What follows it is a new task, which is a decision, not
 a transition.

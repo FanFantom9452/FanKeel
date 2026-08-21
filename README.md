@@ -10,8 +10,8 @@ edit the same file, because neither knows the other is there.
 
 fankeel is a Claude Code plugin that carries a development discipline and states
 it on every prompt rather than once at the top of a session. It holds a task, moves
-it through five stages, keeps a capped note of what has been tried, and shows which
-other live sessions are in the same files.
+it along a route it picked through six stages, keeps a capped note of what has been
+tried, and shows which other live sessions are in the same files.
 
 ## Install
 
@@ -104,7 +104,7 @@ from failing to turn it on.
 
 Starting a task does not then stop to ask whether to begin. The entry goes in at
 `survey`, and taking stock is what `survey` is for, so it happens in the same
-turn — otherwise the badge reads `[FANKEEL:SURVEY]` at the exact moment nothing
+turn — otherwise the badge reads `▌FANKEEL SURVEY` at the exact moment nothing
 has been surveyed.
 
 Starting a task puts this session in fankeel mode. From then on every prompt
@@ -125,8 +125,8 @@ also in progress:
   - triage the colour issues @ survey  (scope: README.md)  (last seen 16d ago)
 
 stage rules:
-  - Never stop silently mid-stage. End every step by asking what comes next, and always offer a pause.
-  - Put a question’s background inside the question itself. Give every option its trade-off, recommended first.
+  - Never end a step silently or in prose. Ask with AskUserQuestion: the next stage on the route, staying in this one, or pausing — never leave the pause out.
+  - The background goes inside the question, not above it. Every option states its trade-off in its description, and the recommended one comes first.
   - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
   - Follow the patterns already in this repository rather than your own defaults.
@@ -136,8 +136,15 @@ stage rules:
 The rules are restated in full every turn rather than pointed at. A pointer is
 only as strong as the salience of what it points at, and what it points at recedes
 by thousands of tokens a turn. Only the current stage's rules are sent, never all
-five stages', which is what keeps a per-turn restatement affordable — around 300
+six stages', which is what keeps a per-turn restatement affordable — around 300
 tokens loaded as above.
+
+The first rule names the tool, and that is the point of it. It used to say *end
+every step by asking what comes next*, and a real design stage duly ended with
+three numbered options in a paragraph — which is asking, and is also the failure:
+the options were on screen and the reader still had to type one back. Naming
+`AskUserQuestion` in the skill file was not enough, because a skill file is read
+once at session start and this rides every prompt.
 
 ## Stages, and the route through them
 

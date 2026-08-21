@@ -251,7 +251,9 @@ test('the whole injection stays a readable size with everything populated', () =
     others: [entry(THEIRS, { task: 'retune the 5h ramp', scope: ['statusline.ps1'] })],
     now: NOW,
   });
-  assert.ok(out.length < 1900, 'injection is ' + out.length + ' chars');
+  // 2000, raised from 1900 with the always-on gate. About 500 tokens a turn
+  // with a long task line, notes and another live session all present at once.
+  assert.ok(out.length < 2000, 'injection is ' + out.length + ' chars');
 });
 
 test('no stage’s rules cost more than a readable preamble', () => {

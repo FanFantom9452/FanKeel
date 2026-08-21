@@ -27,8 +27,12 @@ the style, not the language.
 The failure this exists to fix: finish a chunk of work, list the open questions,
 stop. The user is left holding a list and no momentum.
 
-Every completed step ends by asking what comes next. A pause option is always
-among the choices.
+Every completed step ends by asking what comes next, **with `AskUserQuestion`
+and never in prose**. A pause option is always among the choices.
+
+Options written out as a numbered paragraph are the failure this is about, not a
+lighter form of it: they are already on screen, and the reader still has to type
+one of them back.
 
 Two guard rails, because the rule is *never stop silently*, not *never stop*:
 
