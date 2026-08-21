@@ -216,22 +216,12 @@ test('notes is not an array does not throw', () => {
   assert.equal(out.includes('so far:'), false);
 });
 
-test('a style set on the entry renders its digest last', () => {
+// A style used to be restated here as a digest, because a skill could set one
+// and there was a gap before it took effect. With that skill gone a style is
+// only ever picked in /config, which puts it in the system prompt on every
+// request — restating it per turn would be paying twice for the same words.
+test('a style is never restated in the injected block', () => {
   const out = render({ mine: entry(MINE, { style: 'terse' }), others: [], now: NOW });
-  const lines = out.split('\n').filter(Boolean);
-  assert.match(out, /^voice \(terse\):$/m);
-  assert.match(lines[lines.length - 1], /language the user writes in/);
-  // Last on purpose: it is the block closest to what gets generated next.
-  assert.ok(out.indexOf('voice (') > out.indexOf('stage rules:'));
-});
-
-test('no style on the entry means no voice block at all', () => {
-  const out = render({ mine: entry(MINE), others: [], now: NOW });
-  assert.equal(out.includes('voice ('), false);
-});
-
-test('a style name nothing matches renders nothing rather than an empty block', () => {
-  const out = render({ mine: entry(MINE, { style: 'shouty' }), others: [], now: NOW });
   assert.equal(out.includes('voice ('), false);
   assert.equal(out.includes('undefined'), false);
 });

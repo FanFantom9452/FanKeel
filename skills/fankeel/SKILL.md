@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.19.1
+version: 0.20.0
 ---
 
 # fankeel
@@ -321,6 +321,11 @@ page doing the same is the bug.
 
 ### Every fortnight or so — the sweep
 
+**`/fankeel-audit` is the whole pass**: it runs both scanners, reads the
+shortlist they produce, and ends by offering the cleanup. Use it here, and use it
+on its own — it does not need a task, so it is also the way to audit a repository
+nobody is in the middle of.
+
 ```
 node <plugin>/scripts/docs-audit.js [--root <dir>] [--since <days>]
 ```
@@ -359,6 +364,11 @@ For the *code* half, use what is installed:
 
 `node <plugin>/scripts/task.js show` is not the place to look for this; the audit
 rules name the tools, and the rules are injected while you are in that stage.
+
+**Offer the cleanup at the gate, not before it.** A deep pass that archives
+plans, merges two pages into one source of truth and deletes orphans is a large
+change to something people navigate by memory. Report first, then ask, and let
+the first option name the files rather than the intent.
 
 ## Where documents live
 
@@ -531,10 +541,8 @@ exactly when it stops being nagging.
 ## Output styles
 
 fankeel ships three. They are not part of the mode and do not switch with it — a
-style is a Claude Code setting, not this plugin's state.
-
-Set one with the **fankeel-style** skill rather than sending the user to
-`/config`. People do not go and change settings; they ask.
+style is a Claude Code setting, not this plugin's state — and they are chosen in
+`/config` like any other.
 
 | Style | For |
 |---|---|
@@ -542,16 +550,11 @@ Set one with the **fankeel-style** skill rather than sending the user to
 | `fankeel-pipeline` | Running this pipeline. Adds the question discipline: never wrap up silently, every question carries its own background and its trade-offs. |
 | `fankeel-review` | Reviews and audits. Findings only, one line each, no praise and no redesigns. |
 
-If the user asks for shorter answers, a fixed format, or says the style has faded
-over a long session, use that skill rather than promising to remember. A style
-lives in the system prompt and is sent verbatim on every request, so unlike
-anything injected into the conversation it cannot be diluted by compaction — and
-it is one copy however long the session runs, where anything injected per turn
-adds a fresh copy to the transcript each time.
-
-A `style` field on this session's entry is that skill's doing, not yours. It
-carries a four-line digest of the chosen style until the real one is in force.
-Do not set it by hand.
+If the user asks for shorter answers or a fixed format, name the style that does
+it and let them pick it — do not promise to remember instead. A style lives in
+the system prompt and is sent verbatim on every request, so unlike anything
+injected into the conversation it cannot be diluted by compaction, and it is one
+copy however long the session runs.
 
 ## Subagents
 

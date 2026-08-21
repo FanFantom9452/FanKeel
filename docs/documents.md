@@ -1,0 +1,78 @@
+# Where documents live
+
+The docs tree, the role each bucket carries, and why a role decides what is allowed to be out of date.
+
+`.fankeel/docs.json`, version-controlled. Each bucket is a path and a **role**,
+and the role says how long a document is meant to stay true:
+
+| Role | | Allowed to be out of date |
+|---|---|---|
+| `reference` | describes the system as it is now | no |
+| `decision` | why something is the way it is, written once | yes — it is dated by definition |
+| `plan` | what is about to be done | until it lands, then it is archived |
+| `report` | a dated snapshot: audit, benchmark, meeting | yes |
+| `archive` | retired; checked only that nothing current points at it | yes |
+
+Two shapes ship, both taken from real repositories rather than invented: `flat`
+(one `docs/` with a numbered series) and `phased` (`01-vision` through
+`99-archive`). Neither is imposed — a repository that already has habits keeps
+them, and `detect()` says which shape it resembles so the question can be "this
+one?" rather than "which of these?".
+
+A markdown file in no bucket is reported. Not as an error, but as the one nobody
+decided the lifetime of, which is the one most likely to rot unnoticed.
+
+## survey carries a scanner, not an instruction
+
+The rule that says "check whether this already exists" is the kind that gets
+agreed with and skipped, which is exactly why components get built twice. So
+`survey` names a script instead, with its resolved path, and the rule requires
+quoting the output:
+
+```
+$ node <plugin>/scripts/survey.js badge
+
+fankeel survey — 23 tracked files, matching: badge
+
+files whose name matches:
+  lib/badge.js
+  tests/badge.test.js
+
+declarations:
+  lib/badge.js:22  function badgeWord(stage, clash) {
+  lib/badge.js:36  function writeBadge(claudeDir, sessionId, word) {
+  ...
+
+documentation:
+  docs/decisions/fankeel-shell.md:96  ## Smaller calls, with their reasons
+```
+
+It reads `git ls-files` and the working tree on every run, so **nothing is
+stored and nothing can go stale**. A written index of "what this project already
+has" disagrees with the code within months and is then read back with confidence,
+which is worse than having none. Declarations are found in JavaScript,
+TypeScript, Vue and Svelte script blocks, PowerShell, Python, shell, Go, Rust,
+C#/Java/Kotlin/Swift, Ruby, and CSS classes, custom properties and mixins, plus
+markdown headings. Anything else is matched on filename alone. The patterns are
+deliberately shallow, because the goal is to notice a name exists, not to parse
+the language — a missed declaration costs one line of a report, and a real parser
+would cost a dependency this plugin does not have.
+
+"Nothing matched" is a finding, and the rule asks for the terms that were tried —
+so the next person knows which synonyms were already ruled out.
+
+A task starts at `survey`. At the end of a stage you are offered the next one,
+staying put, or pausing — never told a stage is complete and left there. Short
+tasks may skip forward, but the skip is said out loud, because skipping silently
+is how `verify` gets skipped.
+
+Each stage also carries one line about the **shape** of its output — `survey`
+quotes the scanner rather than paraphrasing it, `build` says almost nothing
+because the diff is the output, `verify` quotes the command and the line that
+decided it. This is the dynamic half that an output style cannot do: the system
+prompt is fixed for the session, and the stage is not.
+
+`land` has no successor. What follows it is a new task, which is a decision rather
+than a transition.
+
+[Back to the index](README.md) · [Back to the front page](../README.md)

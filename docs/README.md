@@ -1,0 +1,48 @@
+# FanKeel documentation
+
+Seven pages, one question each. The front page has install, the pipeline
+diagram, and the statusline; everything that needs more than a paragraph is
+here.
+
+| I want to know | Page |
+|---|---|
+| What `/fankeel` asks me, and what each answer does | [pipeline.md](pipeline.md) |
+| What the six stages are and what each produces | [pipeline.md](pipeline.md) |
+| Why my task is only three stages and not six | [pipeline.md](pipeline.md) — *a route per task* |
+| What gets written to disk, and what is committed | [registry.md](registry.md) |
+| What `notes` and `next` are for, and why they are capped | [registry.md](registry.md) |
+| Why the mode never switches itself off | [registry.md](registry.md) |
+| What the `context:` line in the injected block means | [registry.md](registry.md) |
+| What `[FANKEEL:CLASH]` means | [collisions.md](collisions.md) |
+| How to make a file collision block an edit rather than warn | [collisions.md](collisions.md) — *the scope guard* |
+| Why an abandoned terminal does not hold a file shut | [collisions.md](collisions.md) — *stale entries* |
+| What `.fankeel/docs.json` declares | [documents.md](documents.md) |
+| Why an archive naming deleted code is not a bug | [documents.md](documents.md) — *roles* |
+| What a subagent is told when it starts | [subagents.md](subagents.md) |
+| Why delegating a wide search saves and delegating a long report does not | [subagents.md](subagents.md) |
+| What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
+| Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
+| Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
+
+## The two audits
+
+| | |
+|---|---|
+| `node scripts/docs-check.js` | every reference still resolves. A second to run, before every land. |
+| `/fankeel-audit` | the fortnightly sweep: what has stopped being true, and which two pages disagree. Runs both scanners, reads the shortlist, offers the cleanup. |
+
+## Roles
+
+`.fankeel/docs.json` declares this tree. Every page above is `reference`, which
+means it is expected to be true right now — [documents.md](documents.md) is where
+that is explained, and it is the one thing to know before adding a page here.
+
+| Directory | Role | May be out of date |
+|---|---|---|
+| `docs/` | reference | no |
+| `docs/decisions/` | decision | it records what was decided then, so yes |
+| `docs/plans/` | plan | until the work lands, then it is archived |
+| `docs/reports/` | report | it is a dated snapshot |
+| `docs/archive/` | archive | that is the point of it |
+
+[Back to the front page](../README.md)

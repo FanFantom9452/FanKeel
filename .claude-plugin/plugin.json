@@ -1,6 +1,6 @@
 {
   "name": "fankeel",
-  "version": "0.19.1",
+  "version": "0.20.0",
   "description": "Development discipline for long-running projects: a six-stage pipeline restated on every prompt with the shape its report takes, a per-session task registry, capped task memory, a brief for every subagent, and scope-overlap warnings — optionally blocks — between live sessions.",
   "author": {
     "name": "FanFantom9452",

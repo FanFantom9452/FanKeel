@@ -139,6 +139,11 @@ and "say almost nothing" at `build` can only live in the injection.
 ### The style is set by a skill, not by sending people to /config
 
 An output style is the right mechanism and `/config` is where people never go.
+*(Superseded in 0.20.0: the `fankeel-style` skill was removed. The three styles
+still ship and are picked in `/config`; what came out was the skill that set one
+for you, and the entry field and injected digest that existed to cover the gap
+before it took effect.)*
+
 They do not change settings; they say "answers are too long". So `fankeel-style`
 is a skill over a script that writes the same `outputStyle` field `/config`
 writes.

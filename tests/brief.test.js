@@ -8,7 +8,6 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const { renderBrief, RETURN_RULES } = require('../lib/render.js');
-const { byName: styleByName } = require('../lib/styles.js');
 const { byName: stageByName } = require('../lib/stages.js');
 
 const HOOK = path.join(__dirname, '..', 'hooks', 'brief.js');
@@ -109,7 +108,7 @@ test('a payload that is not JSON does not stop the subagent', () => {
 
 test('the brief stays small — it is read by every subagent that starts', () => {
   const root = tmp();
-  seed(root, { style: 'terse' });
+  seed(root);
   const text = contextOf(run(root, start(root)));
   assert.ok(text.length < 1400, 'brief is ' + text.length + ' chars');
 });
@@ -133,14 +132,12 @@ test('the brief is not the stage rules', () => {
   for (const rule of stageByName('land').rules) assert.equal(text.includes(rule), false, rule);
 });
 
-test('the voice digest rides along when the user picked a style', () => {
-  const text = renderBrief({ mine: entry({ style: 'review' }) });
-  assert.match(text, /^voice \(review\):$/m);
-  for (const rule of styleByName('review').digest) assert.ok(text.includes(rule), rule);
-});
-
-test('no style means no voice block', () => {
-  assert.equal(renderBrief({ mine: entry() }).includes('voice ('), false);
+// The brief used to carry a digest of the chosen output style. That whole
+// mechanism existed to bridge the gap between a skill setting a style and the
+// style being in force, and the skill is gone — a style is picked in /config and
+// arrives in the system prompt, where nothing here has to restate it.
+test('a style is never restated in the brief', () => {
+  assert.equal(renderBrief({ mine: entry({ style: 'review' }) }).includes('voice ('), false);
 });
 
 test('an empty scope drops the scope line and the rule that depends on it', () => {
