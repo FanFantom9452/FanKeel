@@ -80,6 +80,14 @@ It writes nothing. A `scope` entry may be a file, a directory or a glob — a
 directory covers everything under it, so `Waypoint/web/src` is one entry rather
 than two hundred.
 
+Every change to a registry entry goes through one script rather than being
+hand-written — `task.js start`, `stage`, `scope`, `note`, `next`, `guard`, `down`,
+`adopt`. It creates `.fankeel/.gitignore` with the directory, enforces the caps,
+names a collision at the moment a scope is declared, and refuses rather than
+guessing: no scope, no start. It was the last operation without a script, and it
+failed the way unsupported steps fail — quietly, leaving no registry at all, with
+the missing badge as the only symptom.
+
 Starting a task does not then stop to ask whether to begin. The entry goes in at
 `survey`, and taking stock is what `survey` is for, so it happens in the same
 turn — otherwise the badge reads `[FANKEEL:SURVEY]` at the exact moment nothing

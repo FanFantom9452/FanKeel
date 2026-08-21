@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.9.2
+version: 0.10.0
 ---
 
 # fankeel
@@ -63,6 +63,29 @@ its subtree, and so does the guard.
 The current session id is in the `FANKEEL ACTIVE` block when the mode is on. When
 it is not, read it from the transcript path — never guess, and never write a file
 whose name you invented.
+
+**Never write that file by hand.** Every change to it goes through one script:
+
+```
+node <plugin>/scripts/task.js show    --session <id>
+node <plugin>/scripts/task.js start   --session <id> --task "..." --scope "Waypoint/web"
+node <plugin>/scripts/task.js stage   build --session <id>
+node <plugin>/scripts/task.js scope   "a,b" [--add] --session <id>
+node <plugin>/scripts/task.js note    "..." --session <id>
+node <plugin>/scripts/task.js next    "..." --session <id>
+node <plugin>/scripts/task.js guard   ask|deny|off --session <id>
+node <plugin>/scripts/task.js down    --session <id>
+node <plugin>/scripts/task.js adopt   <other-session-id> --session <id>
+```
+
+`<plugin>` is two directories up from this file — resolve `../../scripts/task.js`
+against it. Add `--root <dir>` only to override where the registry is; without it
+the script finds it exactly the way the hooks do, which is the point.
+
+It creates `.fankeel/.gitignore` along with the directory, enforces the caps and
+the invariants below, and refuses rather than guessing. It exits non-zero when it
+refuses, so read the output. Hand-written JSON gets the `.gitignore` wrong every
+time, and a `sessions/` directory that is not ignored ends up committed.
 
 ## Invariants
 
@@ -139,7 +162,7 @@ gets skipped.
 
 **At the end of a stage, ask.** Never announce a stage complete and stop. Offer
 the next stage, staying put, and pausing, and let the user pick. When they
-advance, rewrite `stage` in this session's file; the statusline badge reads it, so
+advance, run `task.js stage <name>`; the statusline badge reads it, so
 `[FANKEEL:DESIGN]` becoming `[FANKEEL:BUILD]` is how they see the move.
 
 `land` has no successor. What follows it is a new task, which is a decision, not
@@ -166,9 +189,10 @@ instead:
 | What was tried and failed, mid-task | a **note** |
 | What to pick up next | **next** |
 
-Write a note when a dead end is reached or a decision is made that would
-otherwise have to be rediscovered. One line, no preamble. Set `next` before
-pausing, and whenever what comes next stops being obvious.
+Write a note with `task.js note "..."` when a dead end is reached or a decision is
+made that would otherwise have to be rediscovered. One line, no preamble. Set
+`task.js next "..."` before pausing, and whenever what comes next stops being
+obvious.
 
 Notes are never version-controlled and die with the task. If a note still matters
 after the task lands, it was never a note — move it to one of the four above
@@ -181,8 +205,9 @@ is a link that just died.
 
 ## On `/fankeel`
 
-Read every `.fankeel/sessions/*.json`. Skip any that does not parse, and say how
-many you skipped — the hook drops them silently, so this is the only place a
+Run `task.js show --session <id>`, which lists this session's entry and every
+other live one. Then read the directory yourself once to count any file that does
+not parse, and say how many you skipped — the hook drops them silently, so this is the only place a
 corrupt entry is visible.
 
 Show the active ones: task, stage, scope, and — for any last touched more than 12
@@ -221,10 +246,10 @@ Then ask, with these options and no others:
 | | |
 |---|---|
 | **Carry on** | This session already owns an active task. Nothing to write. |
-| **Start** | Ask for a one-line `task`, and take the `scope` from what orient showed — a directory is a complete answer. Write this session's file with `active: true`, `stage: "survey"`, `started` and `updated` at now. |
-| **Adopt** | Copy `task`, `scope`, `stage`, `notes` and `next` from another entry into this session's file, then set the source's `active` to `false`. From a **stale** entry, offer it plainly. From a **live** one, confirm first with the other session named — that is exactly the case this registry exists to make visible. |
-| **Stand down** | Set this session's `active` to `false`. Ask first whether anything in `notes` belongs somewhere more durable. |
-| **Clear out** | List the stale entries with their ages, let the user pick, set `active: false` on the ones picked. Never on ones they did not pick. |
+| **Start** | Ask for a one-line `task`, and take the `scope` from what orient showed — a directory is a complete answer. Then `task.js start`. |
+| **Adopt** | `task.js adopt <other-session-id>`, which copies the task over and stands the source down in one run. From a **stale** entry, offer it plainly. From a **live** one, confirm first with the other session named — that is exactly the case this registry exists to make visible. |
+| **Stand down** | `task.js down`. Ask first whether anything in `notes` belongs somewhere more durable; the script prints them, and they die with the task. |
+| **Clear out** | List the stale entries with their ages, let the user pick, then `task.js down --session <that id>` for each one picked. Never for ones they did not pick. |
 
 Every one of these ends by saying what changed and offering the next step. Do not
 finish a `/fankeel` turn with a bare confirmation.
@@ -248,7 +273,7 @@ stage's rules before every prompt. Follow the stage rules; they are not advisory
 declared. Say so before editing that file, name the other task, and let the user
 decide. Do not silently proceed.
 
-If the work reaches a file nobody declared, say so and update `scope`. An
+If the work reaches a file nobody declared, say so and run `task.js scope "<path>" --add`. An
 out-of-date scope is the one thing that makes the collision warning useless.
 
 ## Output styles
@@ -297,12 +322,13 @@ on:
   session claimed hits the same block this session would.
 
 If a subagent reports touching a file outside the scope — the brief asks it to —
-treat that the same as reaching one yourself: say so, and update `scope`.
+treat that the same as reaching one yourself: say so, and run `task.js scope "<path>" --add`.
 
 ## The scope guard
 
 By default the collision is a warning and nothing more. A session can ask for it
-to be enforced by putting `guard` on its own entry:
+to be enforced with `task.js guard ask|deny|off`, which sets `guard` on its own
+entry:
 
 | | |
 |---|---|
