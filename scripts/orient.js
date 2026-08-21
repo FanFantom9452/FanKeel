@@ -93,6 +93,27 @@ function recent(dir, n) {
     return String(out || '').split('\n').filter(Boolean);
 }
 
+// When this project was last committed to, as milliseconds, or null. It is one
+// git call per project, which is what buys the listing an order worth reading:
+// in a directory of five, the one touched this morning is almost always the one
+// being asked about, and alphabetical puts it wherever its name falls.
+function lastCommit(dir) {
+    if (!isRepo(dir)) return null;
+    const out = git(dir, ['log', '-1', '--format=%cI']);
+    const t = Date.parse(String(out || '').trim());
+    return Number.isNaN(t) ? null : t;
+}
+
+function ageText(then, now) {
+    if (then === null) return '';
+    const days = Math.floor(Math.max(0, now - then) / 86400e3);
+    if (days < 1) return 'today';
+    if (days === 1) return 'yesterday';
+    if (days < 30) return days + 'd ago';
+    if (days < 365) return Math.floor(days / 30) + 'mo ago';
+    return Math.floor(days / 365) + 'y ago';
+}
+
 // Files that say how this project expects to be worked on. Reading CLAUDE.md
 // before touching anything is not optional, and it is the one thing a listing of
 // directories does not make obvious — so its absence is worth saying as plainly
@@ -155,13 +176,23 @@ function pad(s, width) {
 
 const files = (n) => n + (n === 1 ? ' file' : ' files');
 
-// Rows are padded to the widest name so the columns line up, which is the only
-// reason this is worth doing at all — an unaligned list of five projects is
-// harder to read than a paragraph.
+// Every column padded to its widest, not just the first. Five projects with
+// ragged branch and file-count columns is harder to read than a paragraph, and
+// this listing exists to be scanned down rather than read across.
 function table(rows) {
     if (!rows.length) return [];
-    const width = Math.max(...rows.map((r) => r[0].length));
-    return rows.map((r) => '  ' + pad(r[0], width) + '  ' + r.slice(1).join('  '));
+    const columns = Math.max(...rows.map((r) => r.length));
+    const widths = [];
+    for (let i = 0; i < columns; i++) {
+        widths.push(Math.max(...rows.map((r) => String(r[i] == null ? '' : r[i]).length)));
+    }
+    return rows.map((r) => {
+        let line = '  ';
+        for (let i = 0; i < columns; i++) {
+            line += pad(String(r[i] == null ? '' : r[i]), widths[i]) + '  ';
+        }
+        return line.replace(/\s+$/, '');
+    });
 }
 
 function scan(root, named) {
@@ -201,12 +232,26 @@ function scan(root, named) {
             exists,
             state: exists ? gitState(full) : null,
             count: exists ? countFiles(full) : null,
+            touched: exists ? lastCommit(full) : null,
             recent: exists && deep ? recent(full, 5) : [],
             signposts: exists && deep ? signposts(full) : [],
         };
     });
 
-    return { root: resolved, stateRoot, active, mode, entries, dropped };
+    // Most recently committed first. The order still comes entirely from data on
+    // screen — the age is printed on every row — so it is explicable rather than
+    // just different each run. Anything with no commit date keeps its alphabetical
+    // place at the end, which is where a directory nobody has touched belongs.
+    if (mode === 'workspace') {
+        entries.sort((a, b) => {
+            if (a.touched === b.touched) return a.rel < b.rel ? -1 : a.rel > b.rel ? 1 : 0;
+            if (a.touched === null) return 1;
+            if (b.touched === null) return -1;
+            return b.touched - a.touched;
+        });
+    }
+
+    return { root: resolved, stateRoot, active, mode, entries, dropped, now: Date.now() };
 }
 
 function report(result) {
@@ -237,10 +282,12 @@ function report(result) {
         lines.push('one project:');
     }
 
+    const stamp = result.now;
     lines.push(...table(found.map((e) => [
         e.rel,
         stateText(e.state),
         e.count ? files(e.count.files) + (e.count.truncated ? '+ (capped)' : '') : 'nothing readable',
+        ageText(e.touched, stamp),
     ])));
 
     // Named but absent is the one thing here that is an error rather than a
@@ -326,4 +373,4 @@ if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
 
-module.exports = { scan, report, main, parseArgs, gitState, stateText, topLevel, children, recent, signposts };
+module.exports = { scan, report, main, parseArgs, gitState, stateText, topLevel, children, recent, signposts, lastCommit, ageText };

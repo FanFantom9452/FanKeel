@@ -158,6 +158,24 @@ test('active entries are counted, and only the active ones', () => {
   assert.match(out, /registry: here, 1 active/);
 });
 
+test('ageText reads in the unit the number deserves', () => {
+  const now = Date.parse('2026-08-21T12:00:00Z');
+  const day = 86400e3;
+  assert.equal(orient.ageText(now - 3600e3, now), 'today');
+  assert.equal(orient.ageText(now - day, now), 'yesterday');
+  assert.equal(orient.ageText(now - 3 * day, now), '3d ago');
+  assert.equal(orient.ageText(now - 40 * day, now), '1mo ago');
+  assert.equal(orient.ageText(now - 400 * day, now), '1y ago');
+  assert.equal(orient.ageText(null, now), '');
+});
+
+test('a project with no commit date sorts last rather than first', () => {
+  const root = workspace({ 'alpha/a.js': 'x', 'beta/b.js': 'x' });
+  const result = orient.scan(root, []);
+  // Neither is a repository, so both are null and the tie falls back to the name.
+  assert.deepEqual(result.entries.map((e) => e.rel), ['alpha', 'beta']);
+});
+
 test('stateText says clean rather than saying nothing', () => {
   assert.equal(orient.stateText({ branch: 'main', changed: 0, untracked: 0 }), 'git main, clean');
   assert.equal(orient.stateText({ branch: 'x', changed: 2, untracked: 1 }), 'git x, 2 uncommitted, 1 untracked');

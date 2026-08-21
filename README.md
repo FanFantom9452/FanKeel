@@ -47,12 +47,21 @@ fankeel orient — F:\workspace
 registry: none at or above here. Starting a task creates one at F:\workspace.
 
 5 under it:
-  TypeDesk  git main, clean               370 files
-  Waypoint     git feat/task-board, 1 untracked  463 files
+  Waypoint     git feat/task-board, 1 untracked  463 files  today
+  KB            git main, 1 untracked         910 files  3d ago
+  TypeDesk  git main, clean               370 files  1mo ago
+  notebin    git main, clean                97 files  1mo ago
   Roster        no git                         77 files
-  KB            git main, 1 untracked         910 files
-  notebin    git main, clean                97 files
 ```
+
+Most recently committed first, with the age on every row so the order is
+explicable rather than merely different. In a directory of five, the one touched
+this morning is almost always the one being asked about.
+
+The skill asks with `AskUserQuestion` rather than in prose — which project, which
+part of it, and what the task is, in one call with the options already on screen.
+Making someone retype a row of a listing they can see is the same waste as asking
+with nothing on screen at all.
 
 Name a place and it goes there instead, breaking that one down to the level a
 scope actually gets written at:

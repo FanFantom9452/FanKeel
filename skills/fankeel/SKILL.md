@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through survey, design, build, verify and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.10.1
+version: 0.11.0
 ---
 
 # fankeel
@@ -239,9 +239,27 @@ feeds the next step:
 - **If the user named a place** — an `@` path, a directory in the prompt, "the
   frontend" — pass it through and work from there. They have already answered the
   question; asking again is the thing this is here to stop.
-- **If they named nothing**, show the listing and ask which part. In a workspace of
-  five projects "give me a scope" is not answerable, and a scope answered anyway is
-  the guessed scope invariant 3 exists to prevent.
+- **If they named nothing**, ask with **AskUserQuestion**, not with prose. Every
+  option is already on screen; making someone retype one of them is the same waste
+  as asking with nothing on screen.
+
+### Asking
+
+One `AskUserQuestion` call, up to three questions in it, all from what orient
+returned:
+
+| Question | Options |
+|---|---|
+| Which project? | Only when more than one is listed and none was named. Orient sorts by last commit, so the first rows are the live ones — take the top four and let **Other** carry the rest. Put the branch, how dirty it is and the age in each description. |
+| Which part of it? | The directories from `inside it`, biggest first. The whole project is a legitimate option; say what it costs — a scope of everything collides with every other session in that repository. |
+| What is the task? | Guess from the recent commits, one option each, phrased as a task and not as a commit subject. **Other** is always there for the real answer. |
+
+A guessed *task* offered as an option is not the guessing invariant 3 forbids —
+the user confirms it before it is written. A guessed **scope** is, so never
+pre-select one when they said nothing: put it as an option, and let them pick.
+
+Skip any question already answered. If they named the project and the part, only
+the task is left, and one question is one question.
 
 If the directory holds nothing readable, say so plainly and ask what they meant to
 open — a registry created in the wrong directory is one every later session
