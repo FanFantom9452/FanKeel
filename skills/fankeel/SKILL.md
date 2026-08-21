@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.15.0
+version: 0.16.0
 ---
 
 # fankeel
@@ -524,6 +524,29 @@ on:
 
 If a subagent reports touching a file outside the scope — the brief asks it to —
 treat that the same as reaching one yourself: say so, and run `task.js scope "<path>" --add`.
+
+### Do not route the pipeline through subagents
+
+The tempting version of this is to run whole stages in background agents to keep
+the context small. Measured on this repository, that is the wrong tool for the
+thing it is aimed at:
+
+```
+node --test, full output          34,150 characters
+the line that decides it              24 characters
+```
+
+A subagent would read all 34,150 in a context that gets thrown away, and cost its
+own system prompt to do it. `| grep -E '^ℹ (pass|fail)'` costs nothing and is
+1,400 times better. **What stacks up a context is raw output arriving in it, not
+work being done** — and the fix for that is at the source, which is what every
+stage's `Output:` rule is for.
+
+Delegate when reading is wide, the answer is narrow, and no filter can pick it
+out — *read these six documents and say whether any of them contradicts the
+code*. That is a judgement, so it cannot be grepped, and it is 60,000 characters
+of reading for two lines of answer. Verify, build and land are none of those
+things: their output is machine-shaped and already filterable.
 
 ## The scope guard
 

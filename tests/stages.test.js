@@ -36,12 +36,13 @@ test('the always-on block stays short enough to ride every prompt', () => {
 });
 
 test('a full injection of rules stays under a few hundred characters', () => {
-  // 1000, raised from 900 when the always-on block took on naming the tool and
-  // the three options a stage ends with. That gate is the one line that must not
-  // be skimmed, and the whole injected block is still about 250 tokens a turn.
+  // 950. It went 900 to 1000 when the always-on block took on naming the tool
+  // and the three options a stage ends with, then back down once every stage's
+  // last rule became a format with a number in it — several rules said the same
+  // thing twice, and `land` was still telling you to run the audit stage's tool.
   for (const name of NAMES) {
     const size = rulesFor(name).join('\n').length;
-    assert.ok(size < 1000, name + ' rules are ' + size + ' chars');
+    assert.ok(size < 950, name + ' rules are ' + size + ' chars');
   }
 });
 
@@ -97,9 +98,9 @@ test('the discipline covers the captured requirements', () => {
   assert.match(text, /never end a step silently or in prose/);
   assert.match(text, /background goes inside the question/);
   assert.match(text, /do not stop where the happy path works/);
-  assert.match(text, /todo\.md as one line pointing at where the detail lives/);
+  assert.match(text, /todo\.md as one line pointing at the detail/);
   assert.match(text, /leaves a decision record behind/);
-  assert.match(text, /is then archived, after asking/);
+  assert.match(text, /then is archived, after asking/);
   assert.match(text, /ponytail-audit/);
 });
 
@@ -112,7 +113,24 @@ test('the always-on block names the tool, not just the act of asking', () => {
 });
 
 test('the stage that produced the wall of text now carries a length', () => {
-  assert.match(byName('design').rules.join(' '), /under 200 words/);
+  assert.match(byName('design').rules.join(' '), /Under 200 words/);
+});
+
+// The shape every stage shares: the thing it produced, then the question. What
+// differs is the form and how much room it gets.
+test('every stage ends by stating the shape of its output', () => {
+  for (const s of STAGES) {
+    const last = s.rules[s.rules.length - 1];
+    assert.match(last, /^Output: /, s.name);
+    assert.match(last, /question|stop/, s.name + ' does not end at a question');
+  }
+});
+
+// `land` used to carry "run /ponytail-audit if the change was large enough",
+// which is the audit stage's own rule arriving one stage late.
+test('no stage repeats another stage tool', () => {
+  assert.doesNotMatch(byName('land').rules.join(' '), /ponytail/);
+  assert.match(byName('audit').rules.join(' '), /ponytail/);
 });
 
 test('no rule is a placeholder', () => {

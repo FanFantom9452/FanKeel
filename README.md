@@ -130,7 +130,8 @@ stage rules:
   - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
   - Follow the patterns already in this repository rather than your own defaults.
-  - Anything genuinely deferred goes in TODO.md as one line pointing at where the detail lives — never as a comment nobody will find.
+  - Anything deferred goes in TODO.md as one line pointing at the detail — never as a comment nobody will find.
+  - Output: one line per file changed, then the question. Under 80 words. The diff is the output; prose is for what it cannot show.
 ```
 
 The rules are restated in full every turn rather than pointed at. A pointer is
@@ -138,6 +139,13 @@ only as strong as the salience of what it points at, and what it points at reced
 by thousands of tokens a turn. Only the current stage's rules are sent, never all
 six stages', which is what keeps a per-turn restatement affordable — around 300
 tokens loaded as above.
+
+Every stage's last rule is the shape of its output, and they are all the same
+shape: what the stage produced, then the question. What differs is the form and
+how much room it gets — 120 words for a survey, 200 for a design, 80 for a build,
+one line per finding for an audit, one paragraph for a land. A number can be
+missed; a direction cannot be, and *in the fewest words that let someone say yes
+or no* let a design stage run to nine hundred.
 
 The first rule names the tool, and that is the point of it. It used to say *end
 every step by asking what comes next*, and a real design stage duly ended with

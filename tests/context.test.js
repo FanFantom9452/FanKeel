@@ -109,3 +109,19 @@ test('the render block carries the line only when there is one', () => {
   // directly, and it must not change what comes out.
   assert.doesNotMatch(render(base), /context:/);
 });
+
+// Waiting for the first compaction means the warning always arrives after the
+// loss. 400k is the line, set from a session that sat around 300k doing ordinary
+// work.
+test('a busy session is warned before it loses anything', () => {
+  assert.equal(ctx.contextLine({ dropped: 0, used: 308000 }), null);
+  const line = ctx.contextLine({ dropped: 0, used: ctx.BUSY });
+  assert.match(line, /400k in play, nothing dropped yet/);
+  assert.match(line, /\/fankeel → Adopt/);
+});
+
+test('once something has been dropped, that is what gets reported', () => {
+  const line = ctx.contextLine({ dropped: 326893, used: 420000 });
+  assert.match(line, /327k tokens dropped/);
+  assert.doesNotMatch(line, /nothing dropped yet/);
+});
