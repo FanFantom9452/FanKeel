@@ -9,8 +9,10 @@ const ROOT = path.join(__dirname, '..');
 const DIR = path.join(ROOT, 'output-styles');
 
 // A style is appended to the system prompt on every single request, which is the
-// whole reason it does not decay — and also why a bloated one is paid for on
-// every request.
+// whole reason it does not decay. It is also the cheapest instruction there is:
+// one copy per request, read by the model and never by the user, where anything
+// injected per turn stacks a fresh copy into the transcript each time. A cap here
+// is about whether it still gets read to the end, not about what it costs.
 //
 // One cap per style rather than one shared cap. `fankeel-pipeline` is the
 // largest because it carries three disciplines the other two do not — the gate,

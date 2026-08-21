@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { ALWAYS, STAGES, NAMES, byName, nextStage, rulesFor } = require('../lib/stages.js');
+const { ALWAYS, STAGES, NAMES, byName, nextStage, rulesFor, templateFor } = require('../lib/stages.js');
 const { MAX_WORD } = require('../lib/badge.js');
 
 test('the stages are the six a route is assembled from, in canonical order', () => {
@@ -35,21 +35,39 @@ test('every stage says what it produces and carries its own rules', () => {
 // session's seventeen AskUserQuestion calls failed to parse outright. A rule that
 // prevents a failed tool call cannot live in an output style, because a style is
 // a setting the user might not have chosen.
+//
+// The number is not a token budget. Input is cheap and output is not, so paying
+// more here to get a shorter answer is the trade this file makes deliberately.
+// What a limit buys is that the block is still read to the end.
 test('the always-on block stays short enough to ride every prompt', () => {
   assert.ok(ALWAYS.length <= 4, 'ALWAYS grew to ' + ALWAYS.length);
 });
 
 test('a full injection of rules stays under a few hundred characters', () => {
   // 1250. It went 900 to 1000 when the always-on block took on naming the tool
-  // and the three options a stage ends with, then back down to 950 once every
-  // stage's last rule became a format with a number in it. It went up again for
-  // the fourth always-on rule and for line formats replacing word counts — both
-  // paid for, and both paid for on every prompt, which is why there is a number
-  // here at all.
+  // and the three options a stage ends with, back to 950 once every stage's last
+  // rule became a format with a number in it, then up again for the fourth
+  // always-on rule and for line formats replacing word counts.
+  //
+  // The templates are deliberately not counted here — they are a separate block
+  // and a separate trade. This number is about the prose the model has to read
+  // before it reaches the shape it is being asked to fill in.
   for (const name of NAMES) {
     const size = rulesFor(name).join('\n').length;
     assert.ok(size < 1250, name + ' rules are ' + size + ' chars');
   }
+});
+
+// A template that describes the shape in words is the rule again, not a
+// skeleton. Each has to be something that can be filled in and handed back.
+test('every stage carries a skeleton that ends at the gate', () => {
+  for (const s of STAGES) {
+    assert.ok(s.template && s.template.length > 40, s.name + ' has no template');
+    assert.match(s.template, /then AskUserQuestion$/, s.name + ' does not end at the gate');
+    assert.match(s.template, /</, s.name + ' template has no slot to fill in');
+  }
+  assert.equal(templateFor('nonesuch'), null);
+  assert.equal(templateFor(undefined), null);
 });
 
 test('nextStage walks the full route by default and stops at land', () => {

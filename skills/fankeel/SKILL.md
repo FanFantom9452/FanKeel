@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.18.0
+version: 0.19.0
 ---
 
 # fankeel
@@ -166,7 +166,10 @@ worse than none because people stop reading it.
 | `land` | a repository no dirtier than you found it |
 
 Each stage's rules are injected on every prompt while you are in it, and only
-that stage's.
+that stage's — followed by an `output shape:` block, which is the skeleton the
+report is meant to fill in rather than a description of it. Fill it in. Prose is
+for the things the skeleton cannot hold, and there is less of that than it
+feels like.
 
 **A task's route is these stages in some order, chosen for that task.** Not every
 task is six stages. A typo fix is `build,verify`. A documentation sweep is
@@ -501,8 +504,14 @@ moment nothing has been surveyed.
 
 ## While the mode is on
 
-The hook injects the task, its notes, the other live sessions, and the current
-stage's rules before every prompt. Follow the stage rules; they are not advisory.
+The hook injects the task, its notes, the other live sessions, the current
+stage's rules and the shape its report takes, before every prompt. Follow them;
+they are not advisory.
+
+That block is long on purpose and will get longer. Input is cheap and output is
+not — every word of instruction that buys a shorter, better-shaped answer is a
+word the user does not have to read. The only limit worth keeping is whether it
+still gets read to the end.
 
 `[FANKEEL:CLASH]` means another live session declared a file this task also
 declared. Say so before editing that file, name the other task, and let the user

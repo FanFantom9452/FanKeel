@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { render, SCRIPTS, SURVEY_SCRIPT, TODO_CHECK_SCRIPT } = require('../lib/render.js');
-const { ALWAYS, byName, rulesFor, SURVEY_TOKEN, TOKENS } = require('../lib/stages.js');
+const { ALWAYS, NAMES, byName, rulesFor, SURVEY_TOKEN, TOKENS } = require('../lib/stages.js');
 
 const sub = (stage) => rulesFor(stage, SCRIPTS);
 
@@ -237,32 +237,58 @@ test('a style name nothing matches renders nothing rather than an empty block', 
 });
 
 test('the whole injection stays a readable size with everything populated', () => {
-  // The worst case on purpose: the longest stage, both memory fields full, a
-  // second session to report, and the voice digest present. This rides on every
-  // prompt, so the number it produces is the per-turn rent the whole design
-  // pays and it should be looked at when it moves.
-  const out = render({
-    mine: entry(MINE, {
-      stage: 'land',
-      style: 'pipeline',
-      next: 'wire the badge into TokenBar',
-      notes: Array.from({ length: 5 }, (_, i) => 'a lesson learned number ' + i),
-    }),
-    others: [entry(THEIRS, { task: 'retune the 5h ramp', scope: ['statusline.ps1'] })],
-    now: NOW,
-  });
-  // 2200, raised from 2000 with the fourth always-on rule and the line formats
-  // that replaced the stages' word counts. About 550 tokens a turn with a long
-  // task line, notes and another live session all present at once.
-  assert.ok(out.length < 2200, 'injection is ' + out.length + ' chars');
+  // The worst case on purpose, and found rather than named: every stage, both
+  // memory fields full, a second session to report, the voice digest present.
+  // Naming `land` as the longest is what this used to do, and it stopped being
+  // true the moment the output templates arrived.
+  //
+  // The number is not a budget. Input is cheap and output is not, so a longer
+  // preamble that buys a shorter answer is the trade this whole file is making
+  // on purpose. What the number guards is that the block still gets read to the
+  // end — past a point a preamble is skimmed, and skimmed rules are no rules.
+  let worst = 0;
+  let name = '';
+  for (const stage of NAMES) {
+    const out = render({
+      mine: entry(MINE, {
+        stage,
+        style: 'pipeline',
+        next: 'wire the badge into TokenBar',
+        notes: Array.from({ length: 5 }, (_, i) => 'a lesson learned number ' + i),
+      }),
+      others: [entry(THEIRS, { task: 'retune the 5h ramp', scope: ['statusline.ps1'] })],
+      now: NOW,
+    });
+    if (out.length > worst) { worst = out.length; name = stage; }
+  }
+  assert.ok(worst < 2600, 'worst injection is ' + name + ' at ' + worst + ' chars');
 });
 
 test('no stage’s rules cost more than a readable preamble', () => {
   // survey and land both name a script by absolute path, so they are the two
   // that can quietly grow. Checked per stage rather than only on the one the
   // fixture happens to sit in.
-  for (const stage of ['survey', 'design', 'build', 'verify', 'land']) {
+  for (const stage of NAMES) {
     const out = render({ mine: entry(MINE, { stage }), others: [], now: NOW });
-    assert.ok(out.length < 1600, stage + ' injection is ' + out.length + ' chars');
+    assert.ok(out.length < 1900, stage + ' injection is ' + out.length + ' chars');
   }
+});
+
+// A rule describes a shape; a template is the shape. The stage rules survived a
+// design stage writing nine hundred words, which is the evidence that describing
+// and showing are not the same instruction.
+test('every stage ships the skeleton, not only a description of it', () => {
+  for (const stage of NAMES) {
+    const out = render({ mine: entry(MINE, { stage }), others: [], now: NOW });
+    assert.match(out, /\noutput shape:\n/, stage + ' has no template block');
+    assert.match(out, /then AskUserQuestion/, stage + ' template does not end at the gate');
+  }
+});
+
+// An unknown stage already degrades to the always-on rules. It must not also
+// pick up some other stage's skeleton, because a template is followed.
+test('an unrecognised stage gets rules but no shape', () => {
+  const out = render({ mine: entry(MINE, { stage: 'polish' }), others: [], now: NOW });
+  assert.match(out, /stage rules:/);
+  assert.equal(out.includes('output shape:'), false);
 });
