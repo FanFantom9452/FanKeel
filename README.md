@@ -569,17 +569,74 @@ badge on that line that is a warning rather than a state.
 
 ## Files it writes
 
+One registry for the workspace, one docs tree per repository:
+
+```
+production/                    <- Claude Code opened here
+├── .fankeel/
+│   ├── .gitignore          sessions/
+│   └── sessions/           the registry, one file per session, never committed
+├── Waypoint/              a repository
+│   ├── .fankeel/
+│   │   └── docs.json       its docs tree, committed with the documents
+│   └── docs/
+└── KB/
+    └── .fankeel/docs.json  its own
+```
+
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `/fankeel`, and the hook for `updated` |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`, and the hook for `updated` |
 | `.fankeel/.gitignore` | Yes | Created with the directory |
+| `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
 | `~/.claude/modes/{session_id}/fankeel` | n/a | The hook, every prompt |
+| `~/.claude/modes/{session_id}/fankeel.lead` | n/a | The hook, every prompt |
+
+The registry is found by walking up for **`.fankeel/sessions/`**, not for
+`.fankeel/`. The marker has to be the thing the registry owns, because the two
+things under that directory belong at different levels: one registry at the level
+the projects share, so two sessions in two repositories can see each other, and
+one docs tree per repository, version-controlled with the documents it describes.
+
+Looking for the parent directory found both, and declaring a docs tree for one
+project quietly created a second registry for anyone who opened a session inside
+it — with the first still live one level above. Neither side could see the other
+and both looked healthy, which is the worst way for a collision warning to fail.
+
+Which docs tree applies comes from the task's **scope**, not from where the
+session is open: a scope of `Waypoint/web` means `Waypoint/.fankeel/docs.json`.
 
 State lives in the project rather than under `~/.claude/` so that a repository
-checked out twice on one machine gets one registry rather than two. Only the
-volatile half is excluded, so anything added under `.fankeel/` later is versioned
-by default — but task memory is deliberately not one of those things, and lives on
-the entry inside `sessions/`.
+checked out twice on one machine gets one registry rather than two.
+
+## When compaction has already cost something
+
+```
+context: 1.1M tokens dropped to compaction so far, 308k in play now. Start a
+fresh session before the next one. A new terminal and /fankeel → Adopt carries
+this task over with its notes and its route.
+```
+
+Read from the transcript, which records what every compaction cost:
+
+```json
+"compactMetadata": { "trigger": "manual", "preTokens": 479852,
+                     "postTokens": 24905, "cumulativeDroppedTokens": 1120198 }
+```
+
+Cumulative, so the most recent entry is the whole answer — no counting, and no
+need for the window size, which neither the hook payload nor the transcript
+carries. The trigger is that a compaction happened at all: one is already proof
+the window filled, which is what a percentage would only be a proxy for.
+
+Only the last 512KB of the transcript is read, before every prompt, so a
+thirteen-megabyte session costs the same as a fresh one. A compaction older than
+that window reads as none — which is the right failure, since it means a great
+deal has happened since without another one.
+
+A statusline can show the percentage. What it cannot know is that there is a task
+in flight, or that **Adopt** moves it — task, scope, stage, route, notes and
+`next` — into a fresh session in one step.
 
 The hook writes exactly one registry file: this session's own. It never writes
 another session's, and never deletes one.

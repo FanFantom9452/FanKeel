@@ -73,7 +73,7 @@ function main(raw) {
     process.stdout.write(JSON.stringify({
         hookSpecificOutput: {
             hookEventName: 'UserPromptSubmit',
-            additionalContext: render({ mine: { sessionId, data: mine }, others, now, root, launch }),
+            additionalContext: render({ mine: { sessionId, data: mine }, others, now, root, launch, transcript: payload.transcript_path }),
         },
     }));
 

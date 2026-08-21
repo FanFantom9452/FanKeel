@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.14.0
+version: 0.15.0
 ---
 
 # fankeel
@@ -12,15 +12,42 @@ A session is **in fankeel mode exactly when it owns an active task**. There is n
 separate on/off flag. Starting a task switches the mode on; standing it down
 switches it off; nothing else ever does.
 
-## Where the registry is
+## Where the files are
 
-The nearest `.fankeel/` at or above where Claude Code was opened, found the way
-git finds `.git`, stopping below the home directory. If there is none, it is the
-directory Claude Code was opened in, and that is where a new one gets created.
+Two things live under `.fankeel/`, and they have different homes.
 
-That is the whole answer to "sometimes one project, sometimes several":
+```
+production/                       <- Claude Code opened here
+├── .fankeel/
+│   ├── .gitignore             sessions/
+│   └── sessions/              THE REGISTRY. one for the whole workspace.
+│       └── <session_id>.json    never committed
+│
+├── Waypoint/                 a repository
+│   ├── .fankeel/
+│   │   └── docs.json          THE DOCS TREE. committed, with the docs.
+│   └── docs/
+│       ├── README.md          the index
+│       └── plans/ decisions/ reports/ archive/
+│
+├── KB/
+│   └── .fankeel/docs.json     its own, in its own repository
+└── TypeDesk/  notebin/  Roster/
+```
 
-| `.fankeel/` sits at | Effect |
+**The registry** is the nearest `.fankeel/sessions/` at or above where Claude Code
+was opened, found the way git finds `.git`, stopping below the home directory. If
+there is none, it is the directory Claude Code was opened in, and that is where a
+new one gets created. One of it, at the level the projects share, so that two
+sessions in two projects can see each other.
+
+The marker is `sessions/` and not `.fankeel/` for a reason worth knowing: a
+project that declares a docs tree gets a `.fankeel/` of its own, and a walk-up
+looking for the directory would stop there — giving a session opened inside that
+project a second registry while the first stayed live one level above. Neither
+side can see the other and both look healthy.
+
+| `.fankeel/sessions/` sits at | Effect |
 |---|---|
 | the workspace holding several projects | every session opened in any of them joins one registry, and collisions between them are visible |
 | one project | that project only |
@@ -28,6 +55,20 @@ That is the whole answer to "sometimes one project, sometimes several":
 Scope paths are relative to the registry, not to where the session was opened. If
 the two differ, the injected block names both — do not guess which one a path is
 relative to.
+
+**The docs tree** is per project, and which one applies comes from the task's
+scope rather than from where the session is open. A scope of `Waypoint/web`
+means `Waypoint/.fankeel/docs.json`; a scope reaching two projects means two
+trees, and each is checked against its own. Pass the project as `--root`:
+
+```
+node <plugin>/scripts/docs-check.js --root Waypoint
+node <plugin>/scripts/docs-audit.js --root Waypoint
+```
+
+Read it when the task needs it. Do not copy a tree up to the workspace — it
+belongs in the repository whose documents it describes, and it is version
+controlled there.
 
 ## The registry
 
@@ -276,8 +317,9 @@ rules name the tools, and the rules are injected while you are in that stage.
 
 ## Where documents live
 
-`.fankeel/docs.json`, version-controlled — `.fankeel/.gitignore` excludes only
-`sessions/`, and this is what that exception was left open for.
+`<project>/.fankeel/docs.json`, version-controlled — `.fankeel/.gitignore`
+excludes only `sessions/`, and this is what that exception was left open for. One
+per repository, found from the task's scope; see **Where the files are** above.
 
 Each bucket is a path and a **role**, and the role is the point: it says how long
 a document is meant to stay true, and therefore what is worth checking.
@@ -426,6 +468,14 @@ decide. Do not silently proceed.
 
 If the work reaches a file nobody declared, say so and run `task.js scope "<path>" --add`. An
 out-of-date scope is the one thing that makes the collision warning useless.
+
+A `context:` line means this session has already lost work to compaction, and
+says how much. Pass it on rather than ignoring it: the statusline shows a
+percentage, but only this knows there is a task in flight and that `/fankeel` →
+**Adopt** carries it — task, scope, stage, route, notes and `next` — into a fresh
+session in one step. Say it once when the line first appears, and again when its
+wording hardens. Repeating it every turn is nagging, and nagging gets ignored
+exactly when it stops being nagging.
 
 ## Output styles
 

@@ -249,3 +249,49 @@ test('resolveRef tries the document directory and the repository root', () => {
   assert.equal(check.resolveRef(root, 'docs/sub/x.md', 'docs/a.md'), 'docs/a.md');
   assert.equal(check.resolveRef(root, 'docs/a.md', 'nowhere.md'), null);
 });
+
+// --- which project a scope points at ---------------------------------------
+
+// The other half of the registry living at the workspace: one registry so that
+// two sessions can see each other, one docs tree per repository so it can be
+// version-controlled with the documents it describes. The scope is what joins
+// them.
+test('a scope names the project whose docs tree applies', () => {
+  const root = tree({ 'Waypoint/web/a.js': 'x', 'KB/src/b.js': 'x', 'notes.md': 'x' });
+  assert.deepEqual(docs.projectRootsFor(root, ['Waypoint/web']), [path.join(root, 'Waypoint')]);
+  assert.deepEqual(docs.projectRootsFor(root, ['Waypoint/web', 'Waypoint/api', 'KB/src']),
+    [path.join(root, 'Waypoint'), path.join(root, 'KB')]);
+});
+
+test('a file loose at the workspace root is its own project', () => {
+  const root = tree({ 'notes.md': 'x' });
+  assert.deepEqual(docs.projectRootsFor(root, ['notes.md']), [root]);
+});
+
+test('a scope that tries to leave the workspace names nothing', () => {
+  const root = tree({ 'a.js': 'x' });
+  assert.deepEqual(docs.projectRootsFor(root, ['../elsewhere', '/etc/passwd']), []);
+  assert.deepEqual(docs.projectRootsFor(root, null), []);
+});
+
+// This repository's own SKILL.md was the first thing reported for this: a
+// sentence about `.fankeel/sessions/`, a directory the software creates in
+// somebody else's workspace at run time. The trailing slash is what separates a
+// shape from a claim.
+test('a path written with a trailing slash is a shape, not a claim', () => {
+  const root = withTree(tree({
+    'docs/01-x.md': 'the registry lives in `.fankeel/sessions/`, retired pages in `docs/archive/`\n',
+    '.fankeel/docs.json': '{}',
+  }), 'flat');
+  const { out, code } = run(root);
+  assert.equal(code, 0);
+  assert.doesNotMatch(out, /sessions/);
+});
+
+test('the same path without the slash is still a claim', () => {
+  const root = withTree(tree({
+    'docs/01-x.md': 'defined in `lib/gone.js`\n',
+    'lib/a.js': 'x\n',
+  }), 'flat');
+  assert.match(run(root).out, /gone: .*names lib\/gone\.js/);
+});

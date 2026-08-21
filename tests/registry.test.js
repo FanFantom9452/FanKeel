@@ -306,9 +306,9 @@ test('with no .fankeel anywhere, the registry is where Claude Code was opened', 
   assert.equal(registry.rootFor({ cwd: deep }), deep);
 });
 
-test('an existing .fankeel in an ancestor is what a session inside it joins', () => {
+test('an existing registry in an ancestor is what a session inside it joins', () => {
   const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-root-'));
-  fs.mkdirSync(path.join(parent, '.fankeel'));
+  fs.mkdirSync(path.join(parent, '.fankeel', 'sessions'), { recursive: true });
   const child = path.join(parent, 'Trovara', 'backend');
   fs.mkdirSync(child, { recursive: true });
   assert.equal(registry.findStateRoot(child), path.resolve(parent));
@@ -317,17 +317,36 @@ test('an existing .fankeel in an ancestor is what a session inside it joins', ()
 
 test('the nearest one wins, the way git picks the nearest .git', () => {
   const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-root-'));
-  fs.mkdirSync(path.join(parent, '.fankeel'));
+  fs.mkdirSync(path.join(parent, '.fankeel', 'sessions'), { recursive: true });
   const child = path.join(parent, 'Trovara');
-  fs.mkdirSync(path.join(child, '.fankeel'), { recursive: true });
+  fs.mkdirSync(path.join(child, '.fankeel', 'sessions'), { recursive: true });
   const deeper = path.join(child, 'backend');
   fs.mkdirSync(deeper);
   assert.equal(registry.findStateRoot(deeper), path.resolve(child));
 });
 
+// The bug this replaces, and the reason the marker is `sessions/` rather than
+// `.fankeel/`. Declaring a docs tree for one project writes its `.fankeel/`, and
+// the walk-up used to stop there — so a session opened inside that project got a
+// second registry with the first still live one level above. Neither could see
+// the other and both looked healthy, which is the worst way for a collision
+// warning to fail.
+test('a project holding only a docs tree does not become a second registry', () => {
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-root-'));
+  fs.mkdirSync(path.join(workspace, '.fankeel', 'sessions'), { recursive: true });
+  const project = path.join(workspace, 'Waypoint');
+  fs.mkdirSync(path.join(project, '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(project, '.fankeel', 'docs.json'), '{}');
+  const deeper = path.join(project, 'web', 'src');
+  fs.mkdirSync(deeper, { recursive: true });
+
+  assert.equal(registry.findStateRoot(project), path.resolve(workspace));
+  assert.equal(registry.findStateRoot(deeper), path.resolve(workspace));
+});
+
 test('the walk stops below the home directory rather than picking one up there', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-home-'));
-  fs.mkdirSync(path.join(home, '.fankeel'));
+  fs.mkdirSync(path.join(home, '.fankeel', 'sessions'), { recursive: true });
   const project = path.join(home, 'projects', 'thing');
   fs.mkdirSync(project, { recursive: true });
   const saved = { HOME: process.env.HOME, USERPROFILE: process.env.USERPROFILE };

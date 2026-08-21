@@ -141,6 +141,13 @@ function checkDoc(root, rel, role, symbols, roots) {
     CODE.lastIndex = 0;
     while ((m = CODE.exec(text)) !== null) {
         const span = m[1].trim();
+        // A trailing slash makes it a shape, not a file. `.fankeel/sessions/`
+        // is a directory this software creates in someone else's workspace at
+        // run time, and `docs/archive/` is a convention a project may not have
+        // filled yet. Neither is a claim that the path is here, and this
+        // repository's own SKILL.md was the first thing reported for it — the
+        // checker's own author writing the sentence the checker misreads.
+        if (span.endsWith('/')) continue;
         const hit = PATHISH.exec(span);
         if (!hit) continue;
         const ref = hit[1];
