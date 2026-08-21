@@ -120,6 +120,20 @@ function ageText(then, now) {
 // as its presence.
 const SIGNPOSTS = ['CLAUDE.md', 'AGENTS.md', 'README.md', 'TODO.md', 'CONTRIBUTING.md'];
 
+// How much of a named project's CLAUDE.md to bring back, and why any of it.
+//
+// Claude Code loads the CLAUDE.md of the directory it was opened in. Opened on a
+// workspace holding five projects, that is the workspace's — and the one inside
+// the project about to be worked on is the one nobody has read. Naming it in a
+// listing does not help; a listing is not a map.
+//
+// What gets taken is the first table, because a CLAUDE.md that has a table at the
+// top almost always has the same table: where to find what. Failing that, the
+// opening prose, which is the next most likely place for it. Bounded either way —
+// this is a pointer at the map, not the map.
+const MAP_LINES = 18;
+const MAP_WIDTH = 160;
+
 function signposts(dir) {
     return SIGNPOSTS.filter((name) => {
         try {
@@ -128,6 +142,42 @@ function signposts(dir) {
             return false;
         }
     });
+}
+
+// The first markdown table in a document, or its opening prose if it has none.
+// Never throws: a project with no CLAUDE.md, an unreadable one, or one that is
+// pure prose all return an empty list, and the caller prints nothing.
+function mapFrom(dir, name) {
+    let text;
+    try {
+        text = fs.readFileSync(path.join(dir, name), 'utf8');
+    } catch (e) {
+        return [];
+    }
+    const lines = text.split(/\r?\n/).map((l) => l.replace(/\s+$/, ''));
+
+    const start = lines.findIndex((l) => /^\s*\|.*\|\s*$/.test(l));
+    if (start !== -1) {
+        const out = [];
+        for (let i = start; i < lines.length && out.length < MAP_LINES; i++) {
+            if (!/^\s*\|/.test(lines[i])) break;
+            out.push(lines[i]);
+        }
+        // A one-row table is a formatting accident, not a map.
+        if (out.length >= 3) return out.map((l) => l.slice(0, MAP_WIDTH));
+    }
+
+    const out = [];
+    for (const line of lines) {
+        if (out.length >= MAP_LINES) break;
+        if (!line.trim()) {
+            if (out.length) break;      // one paragraph, not the whole file
+            continue;
+        }
+        if (/^#{1,6}\s/.test(line) && !out.length) continue;
+        out.push(line.slice(0, MAP_WIDTH));
+    }
+    return out;
 }
 
 function countFiles(dir) {
@@ -235,6 +285,7 @@ function scan(root, named) {
             touched: exists ? lastCommit(full) : null,
             recent: exists && deep ? recent(full, 5) : [],
             signposts: exists && deep ? signposts(full) : [],
+            map: exists && deep ? mapFrom(full, 'CLAUDE.md') : [],
         };
     });
 
@@ -328,6 +379,13 @@ function report(result) {
         if (one.signposts.length) {
             lines.push('');
             lines.push('read first: ' + one.signposts.join(', '));
+            // Claude Code has already loaded the CLAUDE.md where it was opened.
+            // In a workspace of several projects that is not this one's.
+            if (one.map.length) {
+                lines.push('');
+                lines.push('from ' + one.base + '/CLAUDE.md:');
+                for (const l of one.map) lines.push('  ' + l);
+            }
         } else if (one.count) {
             lines.push('');
             lines.push('read first: nothing — no CLAUDE.md, AGENTS.md or README.md here.');

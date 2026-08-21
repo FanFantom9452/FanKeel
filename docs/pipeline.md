@@ -1,3 +1,9 @@
+---
+status: current
+last_verified: 2026-08-22
+source_of_truth: lib/stages.js
+---
+
 # The pipeline
 
 What `/fankeel` does, the six stages, and how a route through them is chosen for one task rather than picked from a menu.

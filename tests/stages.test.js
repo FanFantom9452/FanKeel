@@ -54,8 +54,21 @@ test('a full injection of rules stays under a few hundred characters', () => {
   // before it reaches the shape it is being asked to fill in.
   for (const name of NAMES) {
     const size = rulesFor(name).join('\n').length;
-    assert.ok(size < 1250, name + ' rules are ' + size + ' chars');
+    assert.ok(size < 1400, name + ' rules are ' + size + ' chars');
   }
+});
+
+// Documentation rots because nothing forces it to stay true, and the cheap place
+// to spend is the gate at which a document is created rather than the audit three
+// months later. Measured in one real repository: 62 contradictions found by a
+// sweep, four closed in a quarter. So the gate lives in the stage that writes
+// files, not only in the stage that reads them.
+test('the stage that writes documents carries the gate for creating one', () => {
+  const text = byName('build').rules.join(' ');
+  assert.match(text, /A new document is the last resort/);
+  assert.match(text, /write a generator/, 'derivable content should not be a document');
+  assert.match(text, /status, last_verified and source_of_truth/);
+  assert.match(text, /a plan is not filed as reference/);
 });
 
 // A template that describes the shape in words is the rule again, not a

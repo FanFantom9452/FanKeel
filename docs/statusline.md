@@ -1,3 +1,9 @@
+---
+status: current
+last_verified: 2026-08-22
+source_of_truth: lib/badge.js
+---
+
 # The statusline badge
 
 The one word fankeel writes, how TokenBar renders it, and how to give each stage its own colour.

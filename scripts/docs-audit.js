@@ -37,6 +37,34 @@ const MAX_PAIRS = 12;              // a reading list, and one of 25 is not read
 const LANDMARK = 4;                // documents naming a file, above which it is common ground
 const HISTORY = 4000;              // commits walked for dates; plenty, and bounded
 
+// A mermaid graph naming source files is an inventory somebody typed, and an
+// inventory somebody typed is the first thing to fall behind. These two numbers
+// decide when a graph is claiming to list a directory rather than to draw three
+// interesting things out of it: at least this many of the directory's files, and
+// at least this share of them. A real case that motivated it named thirteen of
+// seventeen route modules, and the four it missed were the three subsystems the
+// same document said had not been started.
+const DIAGRAM_MIN = 3;
+const DIAGRAM_SHARE = 0.6;
+const DIAGRAM_SMALL = 4;           // directories below this are too small to be an inventory
+const INDEX_MANIFEST_MIN = 40;     // below this, an index really can list everything
+const INDEX_MANIFEST_SHARE = 0.5;  // an index listing less than half of a large tree is navigation
+
+// Files a diagram leaves out on purpose. The first run of the diagram check
+// against a real repository reported six findings and every one of them was
+// `__init__.py` or `constants.py` — a diagram of eight modules that draws the
+// same five files from each and skips the same three is not behind, it is
+// drawing the interesting ones.
+//
+// So the rule is statistical rather than a list: a filename missing from most of
+// the directories one diagram covers is that diagram's convention. The short
+// list below is only for the case the statistics cannot see — a diagram covering
+// one directory, where there is no "most" to compare against.
+const BOILERPLATE = new Set(['__init__.py', '__main__.py', 'index.js', 'index.ts', 'mod.rs']);
+const CONVENTION_SHARE = 0.5;
+const MERMAID_FENCE = /^ {0,3}(?:```|~~~)+\s*mermaid\b/i;
+const FENCE_END = /^ {0,3}(?:```|~~~)+\s*$/;
+
 const CODE_EXT = new Set([
     '.js', '.ts', '.tsx', '.jsx', '.mjs', '.cjs', '.py', '.sh', '.ps1',
     '.go', '.rs', '.rb', '.java', '.cs', '.vue', '.svelte', '.php', '.kt', '.swift',
@@ -144,6 +172,33 @@ function pointsAt(root, rel, roots) {
     return { code: [...code], markdown: [...markdown], unbuilt: [...unbuilt] };
 }
 
+// --- diagrams ---------------------------------------------------------------
+
+// Every mermaid block in a document, with the line it starts on and the source
+// filenames named inside it. Filenames only: node ids, labels and arrows are the
+// diagram's own business, and a token with a code extension on it is the one
+// thing that can be checked against a directory listing.
+function diagramsIn(text) {
+    if (!text) return [];
+    const lines = text.split(/\r?\n/);
+    const out = [];
+    let open = null;
+    for (let i = 0; i < lines.length; i++) {
+        if (open === null) {
+            if (MERMAID_FENCE.test(lines[i])) open = { line: i + 1, names: new Set() };
+            continue;
+        }
+        if (FENCE_END.test(lines[i])) {
+            if (open.names.size) out.push(open);
+            open = null;
+            continue;
+        }
+        const found = lines[i].match(/[A-Za-z0-9_][\w.-]*\.[A-Za-z0-9]+/g) || [];
+        for (const name of found) if (isCode(name)) open.names.add(name);
+    }
+    return out;
+}
+
 // --- the sweep --------------------------------------------------------------
 
 function sweep(root, since, now) {
@@ -163,10 +218,40 @@ function sweep(root, since, now) {
     const dates = dateSource(root);
     const docRoot = (tree ? tree.index : 'docs/README.md').split('/')[0];
 
-    const roleOf = (rel) => docs.roleOf(tree, rel) || 'reference';
+    // A markdown file outside every bucket has no declared role, and guessing
+    // `reference` for it is not a safe default — it is the loudest possible one.
+    // A real project keeps its plans in `工作區/plans/` deliberately, outside
+    // `docs/`; grading them as reference documents produced twelve drift
+    // findings in one run, every one of them a plan doing exactly its job.
+    //
+    // The fallback survives only where there is no tree at all. With nothing
+    // filed anywhere, treating markdown as reference is the only reading
+    // available, and a project in that state wants the checks more than it wants
+    // the precision.
+    const roleOf = (rel) => docs.roleOf(tree, rel) || (tree ? null : 'reference');
     const roots = new Set(files.map((f) => f.split('/')[0]));
     const points = new Map();
-    for (const rel of markdown) points.set(rel, pointsAt(root, rel, roots));
+    const bodies = new Map();
+    const contracts = new Map();
+    for (const rel of markdown) {
+        points.set(rel, pointsAt(root, rel, roots));
+        const text = readFile(root, rel);
+        bodies.set(rel, text);
+        contracts.set(rel, docs.contractOf(text));
+    }
+
+    // A document's own declaration beats anything inferred about it. `roleOf`
+    // is the project's filing decision and applies to a whole directory;
+    // frontmatter is per file and a person wrote it deliberately.
+    const claims = (rel) => docs.claimsCurrent(contracts.get(rel)) && !docs.isGenerated(contracts.get(rel));
+    const current = (rel) => roleOf(rel) === 'reference' && claims(rel);
+
+    // When a document says when it was last read, that is the date. git mtime
+    // says somebody touched the file, which a whitespace fix also does.
+    const verifiedOrTouched = (rel) => {
+        const c = contracts.get(rel);
+        return (c && c.verified) || dates.at(rel);
+    };
 
     // 1. Drift. A reference document whose subject moved under it.
     //
@@ -178,8 +263,8 @@ function sweep(root, since, now) {
     // was not one commit sweeping both.
     const drift = [];
     for (const rel of markdown) {
-        if (roleOf(rel) !== 'reference') continue;
-        const docAt = dates.at(rel);
+        if (!current(rel)) continue;
+        const docAt = verifiedOrTouched(rel);
         if (!docAt) continue;
         let worst = null;
         for (const target of points.get(rel).code) {
@@ -190,9 +275,11 @@ function sweep(root, since, now) {
             if (!worst || gap > worst.gap) worst = { target, gap, at };
         }
         if (worst) {
+            const c = contracts.get(rel);
             drift.push({
                 file: rel, target: worst.target, gap: worst.gap,
                 docAge: daysBetween(now, docAt),
+                declared: Boolean(c && c.verified),
             });
         }
     }
@@ -205,9 +292,22 @@ function sweep(root, since, now) {
     // file are where a contradiction can live, and the shortlist is short enough
     // to actually read. Ordered by how much they overlap, because two pages
     // sharing five files disagree in more interesting ways than two sharing one.
+    // Two documents describing one file is only a defect when neither of them
+    // defers. A `source_of_truth` naming the other page, or naming a generator,
+    // is that deferral written down — and once it is written down there is
+    // nothing left to read against anything.
+    const defers = (a, b) => {
+        const ca = contracts.get(a);
+        const cb = contracts.get(b);
+        if (docs.isGenerated(ca) || docs.isGenerated(cb)) return true;
+        const sa = (ca && ca.source) || '';
+        const sb = (cb && cb.source) || '';
+        return sa.includes(b) || sb.includes(a);
+    };
+
     const byTarget = new Map();
     for (const rel of markdown) {
-        if (roleOf(rel) !== 'reference') continue;
+        if (!current(rel)) continue;
         for (const target of points.get(rel).code) {
             if (!byTarget.has(target)) byTarget.set(target, []);
             byTarget.get(target).push(rel);
@@ -223,6 +323,7 @@ function sweep(root, since, now) {
         if (holders.length > LANDMARK) continue;
         for (let i = 0; i < holders.length; i++) {
             for (let j = i + 1; j < holders.length; j++) {
+                if (defers(holders[i], holders[j])) continue;
                 const key = holders[i] + ' ' + holders[j];
                 if (!pairs.has(key)) pairs.set(key, { a: holders[i], b: holders[j], shared: [] });
                 pairs.get(key).shared.push(target);
@@ -310,12 +411,86 @@ function sweep(root, since, now) {
         if (roleOf(rel) !== 'reference') continue;
         for (const target of points.get(rel).code) described.add(target.split('/')[0]);
     }
+
+    // 9. Markdown nobody filed. One line: the fix is a bucket in docs.json, not
+    // twenty edits, and naming twenty files at somebody obscures that.
+    const unfiled = markdown.filter((rel) => roleOf(rel) === null);
     const codeDirs = new Set(files.filter((f) => isCode(f) && f.includes('/')).map((f) => f.split('/')[0]));
     const uncovered = [...codeDirs].filter((d) => !described.has(d)).sort();
 
+    // 7. Diagrams that have stopped listing what is there.
+    //
+    // The check is deliberately narrow. A graph drawing three interesting things
+    // out of a directory is not an inventory and is left alone; a graph naming
+    // most of a directory is claiming to be one, and then the files it does not
+    // name are a claim that they do not exist.
+    const dirFiles = new Map();
+    for (const f of files) {
+        if (!isCode(f) || !f.includes('/')) continue;
+        const cut = f.lastIndexOf('/');
+        const dir = f.slice(0, cut);
+        if (!dirFiles.has(dir)) dirFiles.set(dir, new Set());
+        dirFiles.get(dir).add(f.slice(cut + 1));
+    }
+    let diagrams = [];
+    for (const rel of markdown) {
+        if (!current(rel)) continue;
+        for (const graph of diagramsIn(bodies.get(rel))) {
+            for (const [dir, all] of dirFiles) {
+                if (all.size < DIAGRAM_SMALL) continue;
+                let named = 0;
+                for (const name of all) if (graph.names.has(name)) named++;
+                if (named < DIAGRAM_MIN || named / all.size < DIAGRAM_SHARE) continue;
+                const missing = [...all].filter((n) => !graph.names.has(n)).sort();
+                if (!missing.length) continue;
+                diagrams.push({ file: rel, line: graph.line, dir, named, total: all.size, missing });
+            }
+        }
+    }
+    // A name missing from half the directories one diagram covers is that
+    // diagram's convention, not an omission. Counted per document, because two
+    // documents can draw the same tree to different depths.
+    const byDoc = new Map();
+    for (const d of diagrams) {
+        if (!byDoc.has(d.file)) byDoc.set(d.file, []);
+        byDoc.get(d.file).push(d);
+    }
+    for (const group of byDoc.values()) {
+        const seen = new Map();
+        for (const d of group) for (const name of d.missing) seen.set(name, (seen.get(name) || 0) + 1);
+        for (const d of group) {
+            d.missing = d.missing.filter((name) => !BOILERPLATE.has(name)
+                && !(group.length > 1 && seen.get(name) / group.length >= CONVENTION_SHARE));
+        }
+    }
+    diagrams = diagrams.filter((d) => d.missing.length);
+    diagrams.sort((a, b) => b.missing.length - a.missing.length);
+
+    // 8. Documents that never said what they are.
+    //
+    // Context rather than a defect, and reported as one line rather than a list:
+    // a project that has not adopted the convention does not want every page
+    // named at it, it wants to be told the convention exists. Once adopted, the
+    // line disappears and the checks above get sharper.
+    // Root files are excluded. `README.md` and `CLAUDE.md` are the front door
+    // rather than pages in a tree, and GitHub renders a frontmatter block on a
+    // README as a stray table at the top of the page.
+    const undeclared = markdown.filter((rel) => rel.includes('/')
+        && roleOf(rel) === 'reference'
+        && !(contracts.get(rel) || {}).declared);
+
+    // An index of 182 documents that lists 73 of them is a navigation page, not
+    // a manifest, and reporting the other 109 as missing is the check misreading
+    // what it is looking at. Below this share it says so once instead.
+    const inIndex = markdown.length - index.missing.length - 1;
+    index.navigation = Boolean(indexRel && index.exists && markdown.length > INDEX_MANIFEST_MIN
+        && inIndex / markdown.length < INDEX_MANIFEST_SHARE);
+
     return {
         tree, error, since, implied, markdown: markdown.length, dates: dates.kind,
-        drift, overlaps, landed, index, orphans, uncovered,
+        drift, overlaps, landed, index, orphans, uncovered, diagrams,
+        undeclared: undeclared.length, declaredOf: markdown.length,
+        unfiled: unfiled.length,
     };
 }
 
@@ -345,7 +520,7 @@ function report(r) {
 
     section(lines, plural(r.drift.length, 'reference document has', 'reference documents have')
         + ' fallen behind the code they describe:',
-    r.drift.map((d) => d.file + '  (last touched ' + d.docAge + 'd ago; '
+    r.drift.map((d) => d.file + '  (' + (d.declared ? 'verified' : 'last touched') + ' ' + d.docAge + 'd ago; '
         + d.target + ' changed ' + d.gap + 'd after it)'));
 
     section(lines, plural(r.landed.length, 'plan looks', 'plans look') + ' landed — everything named now exists:',
@@ -358,8 +533,16 @@ function report(r) {
         } else {
             section(lines, plural(r.index.dead.length, 'index entry points', 'index entries point') + ' at nothing:',
                 r.index.dead);
-            section(lines, plural(r.index.missing.length, 'document is', 'documents are') + ' missing from ' + r.index.path + ':',
-                r.index.missing);
+            if (r.index.navigation) {
+                lines.push('');
+                lines.push(r.index.path + ' links ' + (r.markdown - r.index.missing.length - 1)
+                    + ' of ' + r.markdown + ' documents — a navigation page rather than a manifest,');
+                lines.push('  so the rest are not reported as missing. Nothing is wrong with that; it');
+                lines.push('  only means this check cannot tell you what is unreachable.');
+            } else {
+                section(lines, plural(r.index.missing.length, 'document is', 'documents are') + ' missing from ' + r.index.path + ':',
+                    r.index.missing);
+            }
         }
     }
 
@@ -371,28 +554,63 @@ function report(r) {
 
     section(lines, plural(r.orphans.length, 'document is', 'documents are') + ' linked from nowhere:', r.orphans);
 
+    section(lines, plural(r.diagrams.length, 'diagram lists a directory and has', 'diagrams list a directory and have') + ' fallen behind it:',
+        r.diagrams.map((d) => d.file + ':' + d.line + '  names ' + d.named + ' of ' + d.total + ' in ' + d.dir
+            + '/ — missing ' + d.missing.slice(0, 4).join(', ')
+            + (d.missing.length > 4 ? ' +' + (d.missing.length - 4) : '')));
+
     section(lines, plural(r.uncovered.length, 'directory has', 'directories have') + ' no reference document naming anything inside:',
         r.uncovered);
 
-    if (lines.length === 1 || (r.error && lines.length === 2)) {
+    // Decided before the advisories below, which are footnotes rather than
+    // findings: a sweep that found nothing still found nothing, whatever else
+    // there is to say about how the tree is filed.
+    const quiet = lines.length === 1 || (r.error && lines.length === 2);
+
+    if (r.unfiled) {
         lines.push('');
-        lines.push('Nothing drifted, nothing stranded, nothing missing from the index.');
+        lines.push(plural(r.unfiled, 'markdown file sits', 'markdown files sit')
+            + ' outside every bucket in the tree, so nothing above checked them.');
+        lines.push('  Give them a bucket in .fankeel/docs.json if they are documentation.');
+    }
+
+    // One line, not a list. A project that has not adopted the convention wants
+    // to hear that it exists, not to have every page named at it.
+    if (r.undeclared) {
+        lines.push('');
+        lines.push(plural(r.undeclared, 'reference document has', 'reference documents have')
+            + ' no frontmatter contract, so their dates come from git rather than from anyone');
+        lines.push('  saying they read it: status / last_verified / source_of_truth. Declaring them');
+        lines.push('  narrows every check above.');
+    }
+
+    if (quiet) {
+        lines.push('');
+        lines.push('Nothing drifted, nothing stranded, nothing missing from the index, no diagram behind its directory.');
         lines.push('Whether the prose is true is still the reading only you can do.');
         return lines.join('\n');
     }
 
     lines.push('');
-    lines.push('The first three are defects. The last three are context: a pair sharing a');
-    lines.push('file is where a contradiction could live, not evidence that one does.');
+    lines.push('Drift, landed plans, a broken index and a diagram behind its directory are');
+    lines.push('defects. Pairs, orphans, uncovered directories and the undeclared count are');
+    lines.push('context — a pair sharing a file is where a contradiction could live, not');
+    lines.push('evidence that one does.');
     return lines.join('\n');
 }
 
 // Only the first three sections fail the run. Overlapping pairs, orphans and
 // uncovered directories are true of almost every healthy repository, and a
 // command that always exits non-zero is a command whose exit code means nothing.
+// What makes the run fail. Drift, landed plans, a broken index and a diagram
+// that has stopped listing its directory are all things that are wrong. Pairs,
+// orphans, uncovered directories and the undeclared count are context, and a
+// command that always exits non-zero has an exit code that means nothing.
 function defects(r) {
     if (!r) return 1;
-    return r.drift.length + r.landed.length + r.index.dead.length + r.index.missing.length
+    return r.drift.length + r.landed.length + r.index.dead.length
+        + (r.index.navigation ? 0 : r.index.missing.length)
+        + r.diagrams.length
         + (r.index.path && !r.index.exists ? 1 : 0);
 }
 

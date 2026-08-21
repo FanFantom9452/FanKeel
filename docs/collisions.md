@@ -1,3 +1,9 @@
+---
+status: current
+last_verified: 2026-08-22
+source_of_truth: lib/overlap.js, lib/guard.js
+---
+
 # Two sessions, one repository
 
 What happens when another live terminal declares a file this task also declared, and what happens to a claim whose terminal is long gone.

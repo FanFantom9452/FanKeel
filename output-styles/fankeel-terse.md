@@ -2,6 +2,9 @@
 name: fankeel-terse
 description: Leads with the result, drops preamble and tool narration, keeps every technical term exact
 keep-coding-instructions: true
+status: current
+last_verified: 2026-08-22
+source_of_truth: this file is the prompt, no upstream
 ---
 
 # Voice

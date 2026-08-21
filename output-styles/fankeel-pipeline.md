@@ -2,6 +2,9 @@
 name: fankeel-pipeline
 description: fankeel-terse plus the question discipline — never wrap up silently, every question carries its own background
 keep-coding-instructions: true
+status: current
+last_verified: 2026-08-22
+source_of_truth: this file is the prompt, no upstream
 ---
 
 # Voice

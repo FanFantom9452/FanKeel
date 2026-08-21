@@ -22,6 +22,14 @@
     {
       "path": "docs/archive",
       "role": "archive"
+    },
+    {
+      "path": "skills",
+      "role": "reference"
+    },
+    {
+      "path": "output-styles",
+      "role": "reference"
     }
   ]
 }

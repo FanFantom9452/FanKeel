@@ -1,3 +1,9 @@
+---
+status: current
+last_verified: 2026-08-22
+source_of_truth: lib/registry.js, lib/render.js, lib/context.js
+---
+
 # The registry, and what it remembers
 
 Where the files live, what is in version control, the two capped memory fields, and what the injected block says when a session has been compacting.

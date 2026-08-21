@@ -1,3 +1,9 @@
+---
+status: current
+last_verified: 2026-08-22
+source_of_truth: this file, no upstream — a decision record is not derived from anything
+---
+
 # fankeel — the decisions and why
 
 What was decided while building this, and the reasoning that would otherwise have

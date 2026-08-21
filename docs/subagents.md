@@ -1,3 +1,9 @@
+---
+status: current
+last_verified: 2026-08-22
+source_of_truth: hooks/brief.js, lib/render.js
+---
+
 # Subagents
 
 What a subagent is told when it starts, and why the return value is the expensive half.

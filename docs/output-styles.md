@@ -1,3 +1,9 @@
+---
+status: current
+last_verified: 2026-08-22
+source_of_truth: output-styles/
+---
+
 # Output styles
 
 Three styles ship with the plugin. Why a style rather than a ruleset injected at the top of a session.

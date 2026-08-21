@@ -1,3 +1,9 @@
+---
+status: current
+last_verified: 2026-08-22
+source_of_truth: lib/docs.js
+---
+
 # Where documents live
 
 The docs tree, the role each bucket carries, and why a role decides what is allowed to be out of date.
@@ -74,5 +80,62 @@ prompt is fixed for the session, and the stage is not.
 
 `land` has no successor. What follows it is a new task, which is a decision rather
 than a transition.
+
+## What a document says about itself
+
+A role is the project's filing decision and it covers a directory. A **contract**
+is the document's own, declared in its frontmatter, and it wins — it is per file
+and somebody wrote it deliberately.
+
+```yaml
+---
+status: current | design-intent | superseded-by <path> | archived | generated
+last_verified: 2026-08-22
+source_of_truth: lib/badge.js        # or: generated-by scripts/gen.sh
+---
+```
+
+Every key is optional. A project that declares none is not broken; it gets the
+weaker inference instead, which is a file's modification date. The three exist
+because each replaces a guess with a statement:
+
+| Key | Replaces | Why the guess was weak |
+|---|---|---|
+| `last_verified` | git mtime | mtime says somebody touched the file. A whitespace fix does that and verifies nothing. `last_verified` says somebody read it and it was true. |
+| `status` | the directory it sits in | `design-intent` is the word that was missing. A page describing what a system is *meant* to become is not drifting when the code does not match it — it is doing its job. Without somewhere to say that, a roadmap gets written into an architecture page and then read as a description of what exists. |
+| `source_of_truth` | nothing | Two pages describing one file is only a defect when neither defers to the other. Declaring the source settles it, and `generated-by` says the file is rewritten rather than maintained, which makes its age meaningless. |
+
+The vocabulary is wider than those five words — `定案`, `活躍`, `draft`, `草稿`,
+`deprecated`, `historical`, `merged-into <path>` are all understood, and anything
+unrecognised reads as `current`. Being wrong towards checking is the safe
+direction.
+
+### Why this is worth the frontmatter
+
+Taken from a repository of 121 documents where all three keys appear on every
+single one, and where the reason is written down in its `CLAUDE.md`:
+documentation rots because nothing forces it to stay true, so the gate at which a
+document is created is cheaper than the audit three months later. That project
+measured the alternative — a sweep found 62 contradictions and four were closed
+in a quarter.
+
+So the `build` stage rules carry the gate, not only the `audit` stage:
+
+> A new document is the last resort: put it in an existing page, or write a
+> generator when the content is derivable from code. One that is written carries
+> status, last_verified and source_of_truth — and a plan is not filed as
+> reference.
+
+### Filing, and what happens when you do not
+
+A markdown file that falls outside every bucket has **no role**, and the sweep
+says so once rather than guessing. Guessing `reference` is not a safe default,
+it is the loudest one: a real project keeps its plans in a directory outside
+`docs/` on purpose, and grading them as reference documents produced twelve drift
+findings in one run, every one of them a plan doing exactly its job.
+
+The exception is a project with no tree at all. With nothing filed anywhere,
+reading markdown as reference is the only reading available, and a project in
+that state wants the checks more than it wants the precision.
 
 [Back to the index](README.md) · [Back to the front page](../README.md)

@@ -2,7 +2,10 @@
 name: fankeel-audit
 description: Audit documentation against the code it describes — dead references, pages that stopped being true, two pages describing one thing, plans whose work has landed, orphans. Use for /fankeel-audit, "check the docs", "what is out of date", "文件審查", before a release, or when two documents disagree.
 argument-hint: "[--root <dir>] [--since <days>]"
-version: 0.20.0
+version: 0.22.0
+status: current
+last_verified: 2026-08-22
+source_of_truth: scripts/docs-check.js, scripts/docs-audit.js
 ---
 
 # fankeel-audit
@@ -32,17 +35,28 @@ Quote what came back. A description of what a scanner said is not what it said.
 
 ## What the sweep reports
 
-The first three are defects. The last three are places a contradiction could
-live, which is not evidence that one does.
+Four sections are defects and the run fails on them. The rest are places a
+contradiction could live, which is not evidence that one does.
 
-| Section | What it means | What to do |
+| Section | Defect | What it means |
 |---|---|---|
-| **fallen behind the code they describe** | a reference page is older than a file it names, by more than the window | read it; the claim it makes about that file is the one to check first |
-| **plans look landed** | every file the plan named now exists and nobody has touched the plan | it is a record, not a plan — offer to archive it |
-| **index** | declared but not written, or entries pointing at nothing, or documents missing from it | a page nothing links to is a page nobody will find |
-| **pairs describing the same code** | two reference pages both name the same file | read them against each other — this is where single source of truth breaks |
-| **linked from nowhere** | reported only when there is no index | orphan, or the index is the real gap |
-| **directories with no reference document** | code nobody wrote a page about | a gap, or deliberately internal — say which |
+| **fallen behind the code they describe** | yes | a reference page is older than a file it names. `verified` in the line means the page declared the date; `last touched` means it came from git, which is the weaker claim |
+| **plans look landed** | yes | every file the plan named now exists and nobody has touched the plan. It is a record, not a plan — offer to archive it |
+| **index** | yes | declared but not written, or entries pointing at nothing, or documents missing from it |
+| **diagrams behind their directory** | yes | a mermaid graph naming most of a directory is claiming to list it, so the files it does not name read as files that do not exist |
+| **pairs describing the same code** | no | two reference pages both name the same file and neither defers. This is where single source of truth breaks |
+| **linked from nowhere** | no | reported only when there is no index. Orphan, or the index is the real gap |
+| **directories with no reference document** | no | code nobody wrote a page about — a gap, or deliberately internal. Say which |
+| **unfiled** | no | markdown outside every bucket. Nothing above checked it; the fix is a bucket in `docs.json`, not an edit per file |
+| **undeclared** | no | reference pages with no frontmatter contract, so their dates come from git rather than from anyone saying they read them |
+
+The last two are the ones to act on first when they appear, because every check
+above gets sharper once they are gone. A page that declares
+`status: design-intent` stops being reported as drifting; one that declares
+`last_verified` is dated by when somebody read it rather than by when somebody
+touched it; a pair where one page declares the other as its `source_of_truth`
+stops being a pair. The shape of that contract is in
+[docs/documents.md](../../docs/documents.md).
 
 ## The part only reading finds
 

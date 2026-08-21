@@ -1,3 +1,9 @@
+---
+status: current
+last_verified: 2026-08-22
+source_of_truth: this file is the index; each page below is its own source
+---
+
 # FanKeel documentation
 
 Seven pages, one question each. The front page has install, the pipeline
