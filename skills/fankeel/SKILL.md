@@ -200,18 +200,52 @@ a transition.
 describe, and a document read as current when it is not produces a confident wrong
 answer — the failure this whole plugin exists to prevent.
 
+There are two of these, and the difference between them is how often they are
+worth running.
+
+### Every time — the check
+
 ```
 node <plugin>/scripts/docs-check.js [--root <dir>] [--role reference,plan]
 ```
 
-It reports only what can be decided mechanically: a link that no longer resolves,
-a `path:line` past the end of a file, a symbol nothing declares. Whether two
-documents contradict each other is not mechanical — that is your reading, and this
-gives it a place to start.
+A second to run, and it reports only what can be decided mechanically: a link
+that no longer resolves, a `path:line` past the end of a file, a symbol nothing
+declares. Cheap enough to sit in front of every land.
 
 **What is checked depends on the document's role**, which is why the tree below is
 declared. An archive naming deleted code is an archive doing its job. A reference
 page doing the same is the bug.
+
+### Every fortnight or so — the sweep
+
+```
+node <plugin>/scripts/docs-audit.js [--root <dir>] [--since <days>]
+```
+
+The documentation half of the pass whose code half is `/ponytail-audit`, and the
+same cadence: not on a typo fix, not skipped for a quarter. It asks the question
+the check cannot — a page where every reference resolves and every symbol exists
+can still describe a system that was replaced last month.
+
+| | |
+|---|---|
+| **drift** | a reference document whose subject changed after it did, by more than the window. The finding worth the fortnight. |
+| **landed plans** | a plan where everything named now exists and nobody has touched it since. Offer to archive; never move one unasked. |
+| **the index** | entries pointing at nothing, and documents the index never learned about. Both directions, because the index is maintained by hand. |
+| **pairs** | two reference documents describing the same source file. Not a contradiction — the shortlist of places one could live. |
+| **orphans, uncovered** | documents nothing links to, and directories no document names. Context, not defects. |
+
+Only the first three fail the run. A command that always exits non-zero has an
+exit code that means nothing.
+
+**It narrows; it does not judge.** Nothing mechanical can decide that two pages
+disagree. What this does is turn "read all forty documents looking for
+disagreements" into "read these two — they both describe `lib/badge.js`, and one
+has not been touched since before it changed". Then you read them.
+
+Where no `docs.json` exists it infers the tree from the directories, so it is
+worth running on a project that never opted in.
 
 For the *code* half, use what is installed:
 

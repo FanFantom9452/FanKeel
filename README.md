@@ -190,15 +190,58 @@ fankeel docs-check — 17 markdown files, tree: flat
   into-archive: docs/01-architecture.md:14  points at retired docs/archive/2026-01-01-old.md  [reference]
 ```
 
-Only what can be decided mechanically. Whether two documents contradict each
-other is not mechanical, and a script that guessed would produce findings nobody
-could act on — that judgement is the stage's, and this gives it somewhere to
-start.
+Only what can be decided mechanically, and fast enough to sit in front of every
+land. Whether two documents contradict each other is not mechanical, and a script
+that guessed would produce findings nobody could act on.
 
 **What gets checked depends on the document's role.** An archive naming deleted
 code is an archive doing its job; a reference page doing the same is the bug. A
 plan naming files that do not exist yet is a plan. Reporting the three alike is
 how a checker ends up nine parts noise and read once.
+
+### the sweep, roughly fortnightly
+
+A page where every reference resolves can still describe a system that was
+replaced last month, and finding those costs a reading session — so the deep pass
+runs on the cadence `/ponytail-audit` runs on, and is the documentation half of
+the same fortnight.
+
+```
+$ node <plugin>/scripts/docs-audit.js
+
+fankeel docs-audit — 18 markdown files, tree: flat (implied by the directories, not declared), window: 14 days
+
+3 reference documents have fallen behind the code they describe:
+  docs/01-architecture.md  (last touched 23d ago; web/src/pages/editor-page.js changed 22d after it)
+  CLAUDE.md  (last touched 22d ago; e2e/helpers.js changed 21d after it)
+  ...
+
+1 plan looks landed — everything named now exists:
+  docs/plans/2026-07-27-waypoint-mvp.md  (25 files, untouched 23d)
+
+2 documents are missing from docs/README.md:
+  docs/plans/2026-08-21-due-rules-unify.md
+  ...
+
+12 pairs describe the same code — read these against each other, strongest first:
+  docs/01-architecture.md  ×  docs/06-config.md  (shared/canvas_rules.py, web/src/lib/canvas-rules.js +2)
+  ...
+```
+
+It narrows rather than judges. Nothing mechanical decides that two pages
+disagree; this turns *read all forty documents looking for disagreements* into
+*read these two*. Only the first three sections fail the run — pairs, orphans and
+uncovered directories are true of almost every healthy repository, and a command
+that always exits non-zero has an exit code that means nothing.
+
+A file half the documentation mentions is common ground, not a subject:
+`api/entrypoint.sh` named in five pages produced ten pairs on the first real run,
+none worth reading, and they pushed the pair sharing four files off the list.
+
+Dates come from the commit log in one `git log`, not one per file, and fall back
+to mtime for a working tree with no history. Where no `docs.json` exists the tree
+is inferred from the directories, so it is worth running on a project that never
+opted in.
 
 For the code half, `audit` uses what is installed — `/ponytail-audit` if ponytail
 is there, a graph query if graphify or codegraph is — and says plainly when none
