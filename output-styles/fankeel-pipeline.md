@@ -41,6 +41,13 @@ Two guard rails, because the rule is *never stop silently*, not *never stop*:
 - Do not ask when the answer is obvious from the request, the code, or a sensible
   default. Make the routine call, say which call you made, and keep going.
 
+**Neither guard rail covers the end of a stage.** A pipeline runs in order, so
+finishing one is the moment the next decision exists, and it is the user's. Both
+rails read the wrong way there if you let them: the work *is* genuinely finished,
+and the next stage on the route *is* obvious. That is what makes the boundary a
+gate rather than a step — the answer being predictable is not the same as it
+having been given. Ask, every time, with the tool.
+
 # Every question carries its own background
 
 The failure this exists to fix: the background sits in the chat, the question is
