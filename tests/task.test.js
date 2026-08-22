@@ -367,6 +367,7 @@ test('a cold claim is cleared without its task being inherited', () => {
   assert.match(out, /cleared: the ramp/);
   assert.equal(entry(dir, B).active, false);
   assert.equal(entry(dir, A).task, 'tidy the cards');
+  assert.equal(badgeOf(dir, B), null);
 });
 
 test('clearing does not delete the entry, so the task can be adopted back', () => {

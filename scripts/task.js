@@ -487,7 +487,8 @@ function cmdClear(root, opts) {
     // that died four minutes ago. Ask before deny, the same as `guard`.
     const at = Date.now();
     if (!registry.isStale(data, at) && opts.force !== true) {
-        fail('That entry was last seen ' + (registry.ageText(data, at) || 'just now') + ' ago: '
+        const age = registry.ageText(data, at);
+        fail('That entry was last seen ' + (age ? age + ' ago' : 'recently') + ': '
             + (data.task || 'untitled') + ' @ ' + (data.stage || '?')
             + NL + 'Pass --force if you know the terminal is gone.');
     }
@@ -567,7 +568,7 @@ const USAGE = [
     'registry is. Without --root it is found the way the hooks find it: the nearest',
     '.fankeel above the working directory, or the working directory itself.',
     '',
-    'start, stage, scope, adopt and down also set the statusline badge, so it is',
+    'start, stage, scope, adopt, down and clear also set the statusline badge, so it is',
     'there on this turn rather than on the next prompt. The hook keeps it current',
     'from then on.',
 ].join('\n');

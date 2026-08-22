@@ -243,5 +243,5 @@ test('decide says nothing at all when the guard is off', () => {
 
 test('the refusal names the command that clears a claim nobody is behind', () => {
   const text = guard.reasonFor('web/a.js', [{ sessionId: THEIRS, data: { task: 't', stage: 'build' } }]);
-  assert.match(text, /clear/);
+  assert.match(text, /task\.js clear/);
 });

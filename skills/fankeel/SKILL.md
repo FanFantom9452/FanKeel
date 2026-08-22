@@ -132,7 +132,7 @@ the invariants below, and refuses rather than guessing. It exits non-zero when i
 refuses, so read the output. Hand-written JSON gets the `.gitignore` wrong every
 time, and a `sessions/` directory that is not ignored ends up committed.
 
-`start`, `stage`, `scope`, `adopt` and `down` also set the statusline badge, so it
+`start`, `stage`, `scope`, `adopt`, `down` and `clear` also set the statusline badge, so it
 is there on the turn the change happened. The hook keeps it current from then on —
 it runs *before* a prompt, so a badge left to the hook alone would not appear
 until the user typed again, and until then turning the mode on looks exactly like
@@ -143,8 +143,9 @@ failing to.
 Breaking any one of these makes the registry lie, and a registry that lies is
 worse than none because people stop reading it.
 
-1. **Never write another session's file.** The single exception is the adopt
-   step below, which deactivates the source in the same change.
+1. **Never write another session's file.** The exceptions are the adopt step
+   below, which deactivates the source in the same change, and `clear`, which
+   deactivates it without taking the task.
 2. **Never set `active: false` without the user asking.** No timer, no session
    end, no tidying up.
 3. **Never invent `scope`.** Ask. A guessed scope produces false collision
