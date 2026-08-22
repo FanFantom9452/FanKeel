@@ -200,3 +200,32 @@ test('names come back without the marketplace suffix', () => {
   assert.equal(plugins.has('never-installed', env), false, 'an empty install list is not installed');
   assert.deepEqual(plugins.available(env).map((k) => k.name), ['ponytail']);
 });
+
+// The classification superpowers makes before its first question, with the
+// stations named. It is not new machinery — a route was already a field — it is
+// the decision that picks one, which was being made silently or not at all.
+test('the three classes are routes, not a separate mechanism', () => {
+  const { CLASSES, routeForClass } = require('../lib/stages.js');
+  assert.deepEqual(Object.keys(CLASSES), ['spike', 'bounded', 'architectural']);
+  assert.deepEqual(routeForClass('spike'), ['survey', 'build']);
+  assert.deepEqual(routeForClass('bounded'), ['survey', 'design', 'build', 'verify', 'land']);
+  assert.deepEqual(routeForClass('architectural'), FULL_ROUTE);
+  // Every preset must survive the same validation a typed route does.
+  for (const name of Object.keys(CLASSES)) {
+    assert.deepEqual(normaliseRoute(routeForClass(name)), routeForClass(name), name);
+  }
+});
+
+test('an unknown class is refused rather than defaulting to the long route', () => {
+  const { routeForClass } = require('../lib/stages.js');
+  assert.equal(routeForClass('medium'), null);
+  assert.equal(routeForClass(''), null);
+  assert.equal(routeForClass(undefined), null);
+});
+
+test('every class says what it means, because the word alone does not', () => {
+  const { CLASSES } = require('../lib/stages.js');
+  for (const name of Object.keys(CLASSES)) {
+    assert.ok(CLASSES[name].means.length > 30, name + ' has no explanation');
+  }
+});
