@@ -75,41 +75,41 @@ Generated from this repository via `node scripts/map.js`, `package.json` and the
 
 - [ ] **Step 1: Write the failing tests**
 
-Add to `tests/registry.test.js`:
+Add to `tests/registry.test.js`. **Use the helpers that file already defines** — `tmpRoot()`, `seed(root, sessionId, data)` which writes `data` verbatim, the `task(over)` defaults builder, and the ids `SID` and `OTHER`. There is no `tmp()` and no `MINE` in this file.
 
 ```js
 test('drift records a path outside the declared scope, newest last', () => {
-  const root = tmp();
-  seed(root, MINE, { scope: ['web'] });
-  assert.equal(registry.addDrift(root, MINE, 'api/routes.js'), true);
-  assert.equal(registry.addDrift(root, MINE, 'config/flags.json'), true);
-  assert.deepEqual(registry.readSession(root, MINE).drift, ['api/routes.js', 'config/flags.json']);
+  const root = tmpRoot();
+  seed(root, SID, task({ scope: ['web'] }));
+  assert.equal(registry.addDrift(root, SID, 'api/routes.js'), true);
+  assert.equal(registry.addDrift(root, SID, 'config/flags.json'), true);
+  assert.deepEqual(registry.readSession(root, SID).drift, ['api/routes.js', 'config/flags.json']);
 });
 
 test('a repeated path is dropped rather than pushing a still-useful one out', () => {
-  const root = tmp();
-  seed(root, MINE, { scope: ['web'] });
-  registry.addDrift(root, MINE, 'api/a.js');
-  registry.addDrift(root, MINE, 'api/b.js');
-  registry.addDrift(root, MINE, 'api/a.js');
-  assert.deepEqual(registry.readSession(root, MINE).drift, ['api/a.js', 'api/b.js']);
+  const root = tmpRoot();
+  seed(root, SID, task({ scope: ['web'] }));
+  registry.addDrift(root, SID, 'api/a.js');
+  registry.addDrift(root, SID, 'api/b.js');
+  registry.addDrift(root, SID, 'api/a.js');
+  assert.deepEqual(registry.readSession(root, SID).drift, ['api/a.js', 'api/b.js']);
 });
 
 test('drift is capped at five, oldest evicted', () => {
-  const root = tmp();
-  seed(root, MINE, { scope: ['web'] });
-  for (const n of [1, 2, 3, 4, 5, 6]) registry.addDrift(root, MINE, 'api/' + n + '.js');
-  const held = registry.readSession(root, MINE).drift;
+  const root = tmpRoot();
+  seed(root, SID, task({ scope: ['web'] }));
+  for (const n of [1, 2, 3, 4, 5, 6]) registry.addDrift(root, SID, 'api/' + n + '.js');
+  const held = registry.readSession(root, SID).drift;
   assert.equal(held.length, registry.MAX_DRIFT);
   assert.equal(held[0], 'api/2.js');
   assert.equal(held[4], 'api/6.js');
 });
 
 test('a path too long to paste into scope --add is not recorded at all', () => {
-  const root = tmp();
-  seed(root, MINE, { scope: ['web'] });
-  assert.equal(registry.addDrift(root, MINE, 'api/' + 'x'.repeat(registry.MAX_DRIFT_LEN)), false);
-  assert.equal(registry.readSession(root, MINE).drift, undefined);
+  const root = tmpRoot();
+  seed(root, SID, task({ scope: ['web'] }));
+  assert.equal(registry.addDrift(root, SID, 'api/' + 'x'.repeat(registry.MAX_DRIFT_LEN)), false);
+  assert.equal(registry.readSession(root, SID).drift, undefined);
 });
 
 test('driftOf hides what the current scope now covers', () => {
@@ -507,55 +507,53 @@ git commit -m "feat: notice when an edit lands outside the scope the task declar
 
 - [ ] **Step 1: Write the failing tests**
 
-Add to `tests/render.test.js`:
+Add to `tests/render.test.js`. **Declare nothing new at the top of that file** — `MINE`, `THEIRS`, `NOW`, `ago` and the fixture builder `entry(sessionId, over)` are already there, and re-declaring any of them is a `SyntaxError`. Import `TASK_SCRIPT` by adding it to the existing destructured require on line 6.
 
 ```js
 test('a session working where it said it would gets no drift block', () => {
-  const out = render({
-    mine: { sessionId: MINE, data: { task: 't', stage: 'build', scope: ['web'] } },
-    others: [], now: Date.now(),
-  });
+  const out = render({ mine: entry(MINE, { scope: ['web'] }), others: [], now: NOW });
   assert.equal(/scope drift/.test(out), false);
 });
 
 test('the drift block names the paths and a command that carries the session id', () => {
   const out = render({
-    mine: { sessionId: MINE, data: { task: 't', stage: 'build', scope: ['web'], drift: ['api/routes.js'] } },
-    others: [], now: Date.now(),
+    mine: entry(MINE, { scope: ['web'], drift: ['api/routes.js'] }),
+    others: [], now: NOW,
   });
   assert.match(out, /scope drift — 1 file this task edited outside its declared scope:/);
   assert.match(out, /api\/routes\.js/);
-  assert.match(out, /--session aaaaaaaa-0000-4000-8000-000000000001/);
+  assert.match(out, new RegExp('--session ' + MINE));
+});
+
+test('two paths are counted and listed on one line', () => {
+  const out = render({
+    mine: entry(MINE, { scope: ['web'], drift: ['api/routes.js', 'config/flags.json'] }),
+    others: [], now: NOW,
+  });
+  assert.match(out, /scope drift — 2 files this task edited outside its declared scope:/);
+  assert.match(out, /api\/routes\.js, config\/flags\.json/);
 });
 
 // The whole argument of the block is that the remedy is there at the moment it
 // matters. A command that needs a substitution the reader cannot make is not one.
 test('the command it prints carries no unresolved placeholder', () => {
   const out = render({
-    mine: { sessionId: MINE, data: { task: 't', stage: 'build', scope: ['web'], drift: ['api/routes.js'] } },
-    others: [], now: Date.now(),
+    mine: entry(MINE, { scope: ['web'], drift: ['api/routes.js'] }),
+    others: [], now: NOW,
   });
   const line = out.split('\n').find((l) => l.includes('scope "<path>" --add'));
   assert.ok(line, 'no remedy line');
   assert.equal(/<plugin>/.test(line), false);
-  assert.match(line, /task\.js/);
-  assert.ok(path.isAbsolute(line.trim().split(' ')[1]), 'the script path is not absolute');
+  assert.ok(line.includes(TASK_SCRIPT), 'the resolved script path is not in the line');
 });
 
 test('widening the scope takes the block away', () => {
   const out = render({
-    mine: { sessionId: MINE, data: { task: 't', stage: 'build', scope: ['web', 'api'], drift: ['api/routes.js'] } },
-    others: [], now: Date.now(),
+    mine: entry(MINE, { scope: ['web', 'api'], drift: ['api/routes.js'] }),
+    others: [], now: NOW,
   });
   assert.equal(/scope drift/.test(out), false);
 });
-```
-
-If `tests/render.test.js` has no `MINE` constant or `path` import, add them at the top:
-
-```js
-const path = require('node:path');
-const MINE = 'aaaaaaaa-0000-4000-8000-000000000001';
 ```
 
 - [ ] **Step 2: Run them and watch them fail**
@@ -575,6 +573,12 @@ Add a seventh constant beside the six already there:
 
 ```js
 const TASK_SCRIPT = path.join(__dirname, '..', 'scripts', 'task.js');
+```
+
+Export it beside the two script constants already exported, so a test can assert the printed path is the resolved one rather than pattern-matching a substring. The line becomes:
+
+```js
+module.exports = { render, renderResume, renderBrief, RETURN_RULES, SCRIPTS, SURVEY_SCRIPT, TASK_SCRIPT, TODO_CHECK_SCRIPT, DOCS_CHECK_SCRIPT, DOCS_AUDIT_SCRIPT };
 ```
 
 In `render()`, after the `notes` block and before the `also in progress:` block:
@@ -605,7 +609,7 @@ Expected: PASS.
 - [ ] **Step 5: Run the full suite**
 
 Run: `npm test`
-Expected: **529 pass, 0 fail**.
+Expected: **530 pass, 0 fail**.
 
 - [ ] **Step 6: Commit**
 
@@ -628,17 +632,20 @@ git commit -m "feat: put the remedy for a drifted scope where the drift is repor
 
 - [ ] **Step 1: Write the failing test**
 
-Add to `tests/task.test.js`:
+Add to `tests/task.test.js`. **That file has no `seed` and no `tmp`** — entries are made with `started(dir, id, task, scope)`, the temp root comes from `root()`, and the two session ids are `A` and `B`. `run(dir, args)` returns `{ out, code }` and passes `--root` and `--claude-dir` for you.
 
 ```js
 // Drift answers "is this entry still describing where the work is". That is a
 // property of the task, and adopt is exactly the moment a task moves to a session
 // with no other way of knowing.
 test('adopting a task carries the record that its scope went stale', () => {
-  const root = tmp();
-  seed(root, THEIRS, { scope: ['web'], drift: ['api/routes.js'] });
-  run(root, ['adopt', THEIRS, '--session', MINE]);
-  assert.deepEqual(registry.readSession(root, MINE).drift, ['api/routes.js']);
+  const dir = root();
+  started(dir, B, 'rework the ramp', 'web');
+  registry.addDrift(dir, B, 'api/routes.js');
+
+  const { code } = run(dir, ['adopt', B, '--session', A]);
+  assert.equal(code, 0);
+  assert.deepEqual(entry(dir, A).drift, ['api/routes.js']);
 });
 ```
 
@@ -688,53 +695,79 @@ git commit -m "feat: a task's drift moves with it when the task is adopted"
 
 - [ ] **Step 1: Write the failing tests**
 
-Add to `tests/task.test.js`:
+Add to `tests/task.test.js`. **`run()` never throws** — `scripts/task.js` `fail()` writes its message to **stdout** and exits 1, and `run()` catches that and returns `{ out, code }`. `assert.throws` here would be green while testing nothing, so every refusal is asserted on the pair, the way the rest of that file already does it. There is no `seed` in this file; add the one helper below beside the others at the top.
 
 ```js
+// Backdating the heartbeat is the only way to make an entry stale without
+// waiting twelve hours. `started` writes `updated` to now.
+const chill = (dir, id, ms) => {
+  const data = registry.readSession(dir, id);
+  data.updated = new Date(Date.now() - ms).toISOString();
+  registry.writeSession(dir, id, data);
+};
+
 const DAY = 24 * 3600e3;
 
 test('a cold claim is cleared without its task being inherited', () => {
-  const root = tmp();
-  seed(root, MINE, { scope: ['web'] });
-  seed(root, THEIRS, { task: 'the ramp', scope: ['web'], updated: new Date(Date.now() - 3 * DAY).toISOString() });
-  const out = run(root, ['clear', THEIRS, '--session', MINE]);
-  assert.equal(registry.readSession(root, THEIRS).active, false);
-  assert.equal(registry.readSession(root, MINE).task, 'fix the ramp');
+  const dir = root();
+  started(dir, A, 'tidy the cards', 'web');
+  started(dir, B, 'the ramp', 'web');
+  chill(dir, B, 3 * DAY);
+
+  const { out, code } = run(dir, ['clear', B, '--session', A]);
+  assert.equal(code, 0);
   assert.match(out, /cleared: the ramp/);
+  assert.equal(entry(dir, B).active, false);
+  assert.equal(entry(dir, A).task, 'tidy the cards');
 });
 
 test('clearing does not delete the entry, so the task can be adopted back', () => {
-  const root = tmp();
-  seed(root, MINE, { scope: ['web'] });
-  seed(root, THEIRS, { task: 'the ramp', notes: ['46 to 83 to 120'], updated: new Date(Date.now() - 3 * DAY).toISOString() });
-  run(root, ['clear', THEIRS, '--session', MINE]);
-  run(root, ['down', '--session', MINE]);
-  run(root, ['adopt', THEIRS, '--session', MINE]);
-  assert.deepEqual(registry.readSession(root, MINE).notes, ['46 to 83 to 120']);
+  const dir = root();
+  started(dir, A, 'tidy the cards', 'web');
+  started(dir, B, 'the ramp', 'web');
+  run(dir, ['note', '46 to 83 to 120', '--session', B]);
+  chill(dir, B, 3 * DAY);
+
+  run(dir, ['clear', B, '--session', A]);
+  run(dir, ['down', '--session', A]);
+  assert.equal(run(dir, ['adopt', B, '--session', A]).code, 0);
+  assert.deepEqual(entry(dir, A).notes, ['46 to 83 to 120']);
 });
 
 test('a claim that is not cold is refused, and the refusal says what it is protecting', () => {
-  const root = tmp();
-  seed(root, MINE, { scope: ['web'] });
-  seed(root, THEIRS, { task: 'the ramp', stage: 'verify', updated: new Date().toISOString() });
-  assert.throws(() => run(root, ['clear', THEIRS, '--session', MINE]), /the ramp @ verify/);
-  assert.equal(registry.readSession(root, THEIRS).active, true);
+  const dir = root();
+  started(dir, A, 'tidy the cards', 'web');
+  started(dir, B, 'the ramp', 'web');
+  run(dir, ['stage', 'design', '--session', B]);
+
+  const { out, code } = run(dir, ['clear', B, '--session', A]);
+  assert.equal(code, 1);
+  assert.match(out, /the ramp @ design/);
+  assert.match(out, /--force/);
+  assert.equal(entry(dir, B).active, true);
 });
 
 test('--force is for the terminal the reader watched die', () => {
-  const root = tmp();
-  seed(root, MINE, { scope: ['web'] });
-  seed(root, THEIRS, { updated: new Date().toISOString() });
-  run(root, ['clear', THEIRS, '--session', MINE, '--force']);
-  assert.equal(registry.readSession(root, THEIRS).active, false);
+  const dir = root();
+  started(dir, A, 'tidy the cards', 'web');
+  started(dir, B, 'the ramp', 'web');
+
+  assert.equal(run(dir, ['clear', B, '--session', A, '--force']).code, 0);
+  assert.equal(entry(dir, B).active, false);
 });
 
 test('clearing this session is refused, and names the command that exists for it', () => {
-  const root = tmp();
-  seed(root, MINE, { scope: ['web'] });
-  assert.throws(() => run(root, ['clear', MINE, '--session', MINE]), /`down`/);
+  const dir = root();
+  started(dir, A, 'tidy the cards', 'web');
+
+  const { out, code } = run(dir, ['clear', A, '--session', A]);
+  assert.equal(code, 1);
+  assert.match(out, /`down`/);
+  assert.equal(entry(dir, A).active, true);
 });
 ```
+
+`run(dir, ['stage', 'design', ...])` is how the third test gives B a stage to be named in the refusal — the default route starts at `survey`, and `design` is the next stage on it.
 
 Add to `tests/guard.test.js`:
 
@@ -879,7 +912,7 @@ because below that the silence is not evidence of anything.
 - [ ] **Step 8: Run everything**
 
 Run: `npm test && node scripts/docs-check.js && node scripts/docs-audit.js`
-Expected: **535 pass, 0 fail**; both scanners exit 0.
+Expected: **536 pass, 0 fail**; both scanners exit 0.
 
 - [ ] **Step 9: Commit**
 
@@ -902,21 +935,19 @@ git commit -m "feat: clear a claim whose terminal is gone without inheriting its
 
 - [ ] **Step 1: Write the failing tests**
 
-Add to `tests/render.test.js`:
+Add to `tests/render.test.js`. **`MINE`, `THEIRS` and `THIRD` are already declared in that file** (lines 37-39), as are `NOW`, `ago` and `entry(sessionId, over)` — declare none of them again. `ago` is relative to `NOW`, and every call below passes `now: NOW`, so the fixtures cannot drift with the wall clock.
 
 ```js
-const THEIRS = 'bbbbbbbb-0000-4000-8000-000000000002';
-const cold = (over) => Object.assign({
-  task: 'the ramp', stage: 'build', scope: ['web'],
-  updated: new Date(Date.now() - 3 * 24 * 3600e3).toISOString(),
-}, over);
+const COLD = 3 * 24 * 3600e3;
 
 test('when the only overlapping neighbour is cold, the block says so and offers clear', () => {
   const out = render({
-    mine: { sessionId: MINE, data: { task: 't', stage: 'build', scope: ['web'] } },
-    others: [{ sessionId: THEIRS, data: cold() }], now: Date.now(),
+    mine: entry(MINE, { scope: ['web'] }),
+    others: [entry(THEIRS, { task: 'the ramp', scope: ['web'], updated: ago(COLD) })],
+    now: NOW,
   });
   assert.match(out, /every session overlapping your scope is cold/);
+  assert.match(out, /the ramp @ implement — last seen 3d ago/);
   assert.match(out, new RegExp('clear ' + THEIRS + ' --session ' + MINE));
 });
 
@@ -924,24 +955,32 @@ test('when the only overlapping neighbour is cold, the block says so and offers 
 // sits on its own line.
 test('a live neighbour keeps the block away', () => {
   const out = render({
-    mine: { sessionId: MINE, data: { task: 't', stage: 'build', scope: ['web'] } },
+    mine: entry(MINE, { scope: ['web'] }),
     others: [
-      { sessionId: THEIRS, data: cold() },
-      { sessionId: 'cccccccc-0000-4000-8000-000000000003', data: cold({ updated: new Date().toISOString() }) },
+      entry(THEIRS, { scope: ['web'], updated: ago(COLD) }),
+      entry(THIRD, { scope: ['web'], updated: ago(60e3) }),
     ],
-    now: Date.now(),
+    now: NOW,
   });
   assert.equal(/every session overlapping your scope is cold/.test(out), false);
 });
 
 test('a cold neighbour that does not overlap is not a ghost of yours', () => {
   const out = render({
-    mine: { sessionId: MINE, data: { task: 't', stage: 'build', scope: ['web'] } },
-    others: [{ sessionId: THEIRS, data: cold({ scope: ['api'] }) }], now: Date.now(),
+    mine: entry(MINE, { scope: ['web'] }),
+    others: [entry(THEIRS, { scope: ['api'], updated: ago(COLD) })],
+    now: NOW,
   });
   assert.equal(/every session overlapping your scope is cold/.test(out), false);
 });
+
+test('no neighbours at all is not a ghost problem either', () => {
+  const out = render({ mine: entry(MINE, { scope: ['web'] }), others: [], now: NOW });
+  assert.equal(/every session overlapping your scope is cold/.test(out), false);
+});
 ```
+
+`implement` is the stage `entry()`'s defaults carry, and `3d` is what `ageText` returns for three days — both are what the assertions above match on.
 
 - [ ] **Step 2: Run them and watch them fail**
 
@@ -1076,7 +1115,7 @@ node scripts/todo-check.js
 claude plugin validate .
 ```
 
-Expected: **536 pass, 0 fail**; all four scanners exit 0.
+Expected: **541 pass, 0 fail**; all four scanners exit 0.
 
 - [ ] **Step 5: Verify on a clean clone**
 
@@ -1105,4 +1144,6 @@ git commit -m "chore: 0.25.0 — a registry that notices when it has gone stale"
 
 **Type consistency.** `addDrift` / `driftOf` / `MAX_DRIFT` / `MAX_DRIFT_LEN` are named identically in Tasks 1, 2, 3 and 6. `TASK_SCRIPT` is defined in Task 3 and reused in Task 6. `cmdClear` and `opts.force` are named identically in Task 5's steps 3, 4 and its tests. `covers` and `relPath` are the names `lib/guard.js` already exports.
 
-**Test counts.** 509 today; +8 (T1), +8 (T2, of which one replaces an existing assertion body), +4 (T3), +1 (T4), +6 (T5), +3 (T6), +1 (T7) = **536**. A count below that at Task 8 means something was dropped.
+**Test counts.** 509 today; +8 (T1), +8 (T2 — seven in `tests/touch.test.js` plus one in `tests/resume.test.js`; the manifest assertion is a rewritten body, not a new test), +5 (T3), +1 (T4), +5 (T5), +4 (T6), +1 (T7) = **541**. A count below that at Task 8 means something was dropped.
+
+**Fixture helpers.** Every test block above was checked against the file it is added to. `tests/registry.test.js` has `tmpRoot`, `seed`, `task`, `SID`, `OTHER` — no `tmp`, no `MINE`. `tests/task.test.js` has `root`, `run`, `started`, `entry`, `A`, `B` — no `seed`, and `run` returns `{ out, code }` rather than throwing, because `fail()` writes to stdout. `tests/render.test.js` already declares `MINE`, `THEIRS`, `THIRD`, `NOW`, `ago` and `entry` — re-declaring any of them is a `SyntaxError`. `tests/touch.test.js` is new and carries its own.
