@@ -1,0 +1,119 @@
+---
+name: fankeel-land
+description: The land stage — a green suite, the documents closed, the map rewritten, and the integration decision left to the user. Use for the land stage of a fankeel task, finishing a development branch, deciding between merge and PR, or cleaning up a worktree when work is complete.
+version: 0.24.0
+status: current
+last_verified: 2026-08-22
+source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js
+---
+
+# fankeel-land
+
+Produces a repository no dirtier than you found it.
+
+## 1. The full suite, on the tree you are about to integrate
+
+`npm test` / `cargo test` / `pytest` / `go test ./...` — whatever this project
+uses.
+
+**Red stops everything.** Report the failures and stop; the menu comes after a
+green run. A green run earlier in the session only proves the tree it ran on.
+
+## 2. Close the documents
+
+```
+node <plugin>/scripts/todo-check.js [--root <dir>]
+```
+
+Close the `TODO.md` entries this work finished — whoever finishes the work removes
+the entry in the same change. A plan that just moved is a link that just changed
+address, so run this after anything moves.
+
+Update `last_verified` on every page you re-read and found true. That date is the
+difference between "somebody touched this file" and "somebody read it and it was
+true"; a whitespace fix does the first and proves nothing.
+
+A landed plan leaves a decision record behind — what was decided and why — and is
+then archived, **after asking**. An unarchived plan gets read as current.
+
+## 3. Rewrite the map
+
+```
+node <plugin>/scripts/map.js [--root <dir>]
+```
+
+The project looks different now, and the next task starts from this file.
+
+## 4. Land the notes
+
+Task notes die with the task. If a note still matters after the work lands, it
+was never a note:
+
+| | |
+|---|---|
+| a project convention | `CLAUDE.md` |
+| a durable fact about the user or repository | the memory directory |
+| why a change was made | the commit message |
+| work deliberately deferred | `TODO.md`, one line, linking to the detail |
+
+Commit the reason, not the diff. The diff is already in the commit.
+
+## 5. Detect the workspace, confirm the base
+
+```bash
+GIT_DIR=$(cd "$(git rev-parse --git-dir)" && pwd -P)
+GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" && pwd -P)
+WORKTREE_PATH=$(git rev-parse --show-toplevel)
+```
+
+`GIT_DIR == GIT_COMMON` is a normal repository with no worktree to clean up.
+Otherwise it is a worktree; a detached HEAD is externally managed, so leave it in
+place and offer only the PR and keep-as-is options.
+
+The base branch is whatever this work forked from. If it is not already known,
+ask — merging into the wrong base is expensive to undo.
+
+## 6. The menu
+
+Present exactly these, and wait. Integration is the user's decision.
+
+```
+1. Merge back to <base> locally
+2. Push and create a Pull Request
+3. Keep the branch as-is
+```
+
+**Discarding is not on the menu.** It happens only when the user asks for it in
+so many words, and then only against the typed word `discard`.
+
+## 7. Execute
+
+**Merge:** from the main repo root, checkout base, pull, merge, then **re-run the
+suite on the merged result**. A failure there stops everything — nothing has been
+pushed, so it is recoverable; leave the branch and worktree in place and
+investigate. Green, then clean the worktree, then `git branch -d`.
+
+**PR:** push, open it against the base, report the URL. **Keep the worktree** —
+PR feedback gets fixed there.
+
+**Keep:** say where the branch and worktree are.
+
+Worktree removal refused for uncommitted files never gets `--force` on your own
+initiative. Those files exist nowhere else. Show the user
+`git status --porcelain -uall` and ask whether to commit them, move them, or
+delete them.
+
+Clean up only worktrees the project created under `.worktrees/` or `worktrees/`.
+Anything else belongs to the host environment.
+
+## Output
+
+```
+<sha> <subject>
+cost: <what it took>
+open: <what is still not done>
+then AskUserQuestion
+```
+
+Three lines. Not a tour of the diff. `land` has no successor — what follows a
+finished route is a new task, which is a decision rather than a transition.

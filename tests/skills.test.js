@@ -81,3 +81,34 @@ test('nothing still offers a skill that was removed', () => {
     assert.equal(fs.existsSync(path.join(ROOT, f)), false, f + ' outlived the skill it served');
   }
 });
+
+// Seven stages, and the skill layer carries what the injected layer cannot: the
+// formats. A rule that is a principle compresses; a rule that is a literal
+// template does not, and an abbreviated template produces something that looks
+// like the format and is not it.
+test('every stage on the full route has a skill', () => {
+  const { FULL_ROUTE } = require('../lib/stages.js');
+  for (const stage of FULL_ROUTE) {
+    const want = stage === 'audit' ? 'fankeel-audit' : 'fankeel-' + stage;
+    assert.ok(names.includes(want), 'no skill for ' + stage);
+  }
+});
+
+test('each stage skill ends at the gate rather than trailing off', () => {
+  const { FULL_ROUTE } = require('../lib/stages.js');
+  for (const stage of FULL_ROUTE) {
+    const want = stage === 'audit' ? 'fankeel-audit' : 'fankeel-' + stage;
+    assert.match(read(want), /AskUserQuestion/, want + ' never names the gate');
+  }
+});
+
+test('the survey skill names the map generator, which is the step that was missing', () => {
+  assert.match(read('fankeel-survey'), /scripts\/map\.js/);
+  assert.match(read('fankeel-survey'), /design-intent/);
+});
+
+test('the plan skill refuses placeholders by listing them', () => {
+  const text = read('fankeel-plan');
+  assert.match(text, /TBD/);
+  assert.match(text, /Global Constraints/);
+});
