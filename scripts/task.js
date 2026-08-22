@@ -24,7 +24,7 @@ const path = require('node:path');
 const registry = require('../lib/registry.js');
 const badge = require('../lib/badge.js');
 const { overlapPaths } = require('../lib/overlap.js');
-const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, normaliseRoute, positionIn } = require('../lib/stages.js');
+const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass } = require('../lib/stages.js');
 
 const GUARDS = ['ask', 'deny', 'off'];
 
@@ -116,7 +116,7 @@ function parseArgs(argv) {
     const opts = { positional: [] };
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i];
-        if (arg === '--session' || arg === '--root' || arg === '--task' || arg === '--scope') {
+        if (arg === '--session' || arg === '--root' || arg === '--task' || arg === '--scope' || arg === '--class') {
             if (argv[i + 1] === undefined) fail(arg + ' needs a value.');
             opts[arg.slice(2)] = argv[++i];
             continue;
@@ -249,7 +249,22 @@ function cmdStart(root, opts) {
     // `build,verify` and a documentation sweep is `survey,audit,land`. A fixed
     // six makes the progress indicator lie in both directions, so it is chosen
     // per task and only checked for being a route at all.
-    const route = opts.route ? normaliseRoute(splitScope(opts.route)) : FULL_ROUTE.slice();
+    // A class is the route said out loud. Both at once is refused rather than
+    // ranked: whichever one lost would be a decision the user made and cannot
+    // see, and this is the field the progress indicator is drawn from.
+    if (opts.class && opts.route) {
+        fail('--class or --route, not both. A class already names a route.');
+    }
+    let route;
+    if (opts.class) {
+        route = routeForClass(opts.class);
+        if (!route) {
+            fail('Not a class: ' + opts.class + NL
+                + Object.keys(CLASSES).map((c) => '  ' + c + '  ' + CLASSES[c].means).join(NL));
+        }
+    } else {
+        route = opts.route ? normaliseRoute(splitScope(opts.route)) : FULL_ROUTE.slice();
+    }
     if (!route) {
         fail('--route must be stages from: ' + STAGE_NAMES.join(', ')
             + NL + 'No repeats, and land last if it is there at all.');
@@ -260,6 +275,7 @@ function cmdStart(root, opts) {
         task: String(opts.task).replace(/\s+/g, ' ').trim(),
         scope,
         route,
+        class: opts.class ? String(opts.class).trim().toLowerCase() : undefined,
         stage: route[0],
         active: true,
         started: stamp,
@@ -270,7 +286,9 @@ function cmdStart(root, opts) {
     const clash = collisions(root, id, scope);
     showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data));
 
-    const lines = ['fankeel — started, at ' + data.stage + '   route: ' + route.join(' → ')];
+    const lines = ['fankeel — started, at ' + data.stage
+        + (data.class ? '   class: ' + data.class : '')
+        + '   route: ' + route.join(' → ')];
     lines.push('');
     for (const line of describe(root, id, data)) lines.push('  ' + line);
     if (clash.length) {

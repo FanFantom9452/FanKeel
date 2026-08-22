@@ -229,3 +229,38 @@ test('every class says what it means, because the word alone does not', () => {
     assert.ok(CLASSES[name].means.length > 30, name + ' has no explanation');
   }
 });
+
+test('a class picks the route and is recorded on the entry', () => {
+  const dir = root();
+  const r = run(dir, ['start', '--session', A, '--task', 'probe the ramp', '--scope', 'lib', '--class', 'spike']);
+  assert.equal(r.code, 0, r.out);
+  const data = registry.readSession(dir, A);
+  assert.deepEqual(data.route, ['survey', 'build']);
+  assert.equal(data.class, 'spike');
+  assert.match(r.out, /spike/);
+});
+
+test('a class and an explicit route together are refused, not silently ranked', () => {
+  const dir = root();
+  const r = run(dir, ['start', '--session', A, '--task', 't', '--scope', 'lib',
+    '--class', 'spike', '--route', 'survey,design,build']);
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /--class or --route, not both/);
+});
+
+test('an unknown class lists the three rather than guessing', () => {
+  const dir = root();
+  const r = run(dir, ['start', '--session', A, '--task', 't', '--scope', 'lib', '--class', 'medium']);
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /spike/);
+  assert.match(r.out, /bounded/);
+  assert.match(r.out, /architectural/);
+});
+
+test('neither given still works, and still records no class', () => {
+  const dir = root();
+  const r = run(dir, ['start', '--session', A, '--task', 't', '--scope', 'lib']);
+  assert.equal(r.code, 0, r.out);
+  assert.deepEqual(registry.readSession(dir, A).route, FULL_ROUTE);
+  assert.equal(registry.readSession(dir, A).class, undefined);
+});
