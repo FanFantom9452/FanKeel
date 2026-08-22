@@ -336,3 +336,14 @@ test('build says what stops it, so that nothing else does', () => {
   assert.match(text, /irreversible/);
   assert.match(text, /Ruling:/);
 });
+
+// Two layers. The injected one carries what compresses — the iron law, the red
+// flag words, the surgical rule — and rides every prompt. The skill carries what
+// does not: the task template, the ledger's header contract, the menus. An
+// abbreviated format produces something that looks like the format and is not it.
+test('every stage points at the skill holding the part that does not compress', () => {
+  for (const name of NAMES) {
+    const want = name === 'audit' ? 'fankeel-audit' : 'fankeel-' + name;
+    assert.match(byName(name).rules.join(' '), new RegExp(want), name + ' points at no skill');
+  }
+});

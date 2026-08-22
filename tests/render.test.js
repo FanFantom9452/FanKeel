@@ -258,9 +258,16 @@ test('no stage’s rules cost more than a readable preamble', () => {
   // survey and land both name a script by absolute path, so they are the two
   // that can quietly grow. Checked per stage rather than only on the one the
   // fixture happens to sit in.
+  //
+  // 2400 is the third raise on this branch and should be the last. `build` is
+  // the binding stage at about 2300 of it, and the two before it were paid for
+  // by content that had to exist: the ledger, without which a compacted session
+  // redoes committed work, and the four things that stop the loop, without which
+  // the default is to stop and ask. What stops a fourth raise is that `build`
+  // now has to displace a rule to gain one.
   for (const stage of NAMES) {
     const out = render({ mine: entry(MINE, { stage }), others: [], now: NOW });
-    assert.ok(out.length < 2300, stage + ' injection is ' + out.length + ' chars');
+    assert.ok(out.length < 2400, stage + ' injection is ' + out.length + ' chars');
   }
 });
 
