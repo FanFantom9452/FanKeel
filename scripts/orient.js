@@ -24,6 +24,7 @@ const { execFileSync } = require('node:child_process');
 
 const { trackedFiles, isRepo } = require('./survey.js');
 const registry = require('../lib/registry.js');
+const { firstTable } = require('../lib/map.js');
 
 // A workspace with more children than this is not being read row by row, and a
 // listing nobody finishes is a listing nobody acts on. The count of what was
@@ -156,16 +157,10 @@ function mapFrom(dir, name) {
     }
     const lines = text.split(/\r?\n/).map((l) => l.replace(/\s+$/, ''));
 
-    const start = lines.findIndex((l) => /^\s*\|.*\|\s*$/.test(l));
-    if (start !== -1) {
-        const out = [];
-        for (let i = start; i < lines.length && out.length < MAP_LINES; i++) {
-            if (!/^\s*\|/.test(lines[i])) break;
-            out.push(lines[i]);
-        }
-        // A one-row table is a formatting accident, not a map.
-        if (out.length >= 3) return out.map((l) => l.slice(0, MAP_WIDTH));
-    }
+    // Shared with lib/map.js rather than copied: two extractors would be two
+    // answers to "what is this project's map", and they would drift apart.
+    const table = firstTable(lines, MAP_LINES, MAP_WIDTH);
+    if (table.length) return table;
 
     const out = [];
     for (const line of lines) {
