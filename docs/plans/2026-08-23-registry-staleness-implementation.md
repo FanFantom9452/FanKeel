@@ -912,7 +912,7 @@ because below that the silence is not evidence of anything.
 - [ ] **Step 8: Run everything**
 
 Run: `npm test && node scripts/docs-check.js && node scripts/docs-audit.js`
-Expected: **537 pass, 0 fail**; both scanners exit 0.
+Expected: **538 pass, 0 fail**; both scanners exit 0.
 
 - [ ] **Step 9: Commit**
 
@@ -1115,7 +1115,7 @@ node scripts/todo-check.js
 claude plugin validate .
 ```
 
-Expected: **542 pass, 0 fail**; all four scanners exit 0.
+Expected: **543 pass, 0 fail**; all four scanners exit 0.
 
 - [ ] **Step 5: Verify on a clean clone**
 
