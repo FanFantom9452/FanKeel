@@ -1,7 +1,7 @@
 ---
-status: design-intent
+status: superseded-by docs/plans/2026-08-22-seven-stage-pipeline.md
 last_verified: 2026-08-22
-source_of_truth: this file, until the work lands
+source_of_truth: lib/stages.js, lib/map.js, lib/ledger.js
 ---
 
 # Seven-Stage Pipeline Implementation Plan

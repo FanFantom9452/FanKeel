@@ -1,5 +1,9 @@
 'use strict';
 
+// A subagent starts with none of the parent's context, so the map is the one
+// thing worth naming: reading a file costs a context that gets thrown away,
+// where asking the parent costs one that does not.
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');

@@ -151,6 +151,15 @@ function checkDoc(root, rel, role, symbols, roots) {
         const hit = PATHISH.exec(span);
         if (!hit) continue;
         const ref = hit[1];
+        // The trailing slash above covers `.fankeel/sessions/` and misses
+        // `.fankeel/map.md`, which is generated and git-ignored. Six of this
+        // repository's own documents named it, and every one was reported the
+        // moment it was cloned somewhere the file had never been generated.
+        // A check that passes only in the working tree it was written in is a
+        // check nobody can trust anywhere else, so the whole state directory is
+        // runtime: naming a path in it says where the software writes, not that
+        // the path is here.
+        if (ref === docs.STATE_DIR || ref.startsWith(docs.STATE_DIR + '/')) continue;
         const wanted = hit[2] ? parseInt(hit[2], 10) : null;
         const found = resolveRef(root, rel, ref);
         if (found === null) {

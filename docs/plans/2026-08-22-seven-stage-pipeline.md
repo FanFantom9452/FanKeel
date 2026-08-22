@@ -1,7 +1,7 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-08-22
-source_of_truth: this file, until the work lands
+source_of_truth: lib/stages.js, lib/map.js, lib/ledger.js
 ---
 
 # Seven stages, and what happens inside each
@@ -374,8 +374,12 @@ looks like the format and is not it. Those stay in the skill layer.
 
 ## What would prove this done
 
-- `task.js start` refuses to open a task without a classification, and the three
-  presets produce exactly the routes in the table above.
+- `task.js start --class <c>` produces exactly the routes in the table above, and
+  refuses one it does not know by listing the three with what each means.
+  **Amended while building:** it does not *require* a class. Making it mandatory
+  contradicts this document's own rule that `--class` and `--route` are
+  alternatives, so the discipline of classifying out loud lives in the
+  fankeel-survey skill rather than in the CLI.
 - `scripts/map.js` run against `F:\ymlab\SBIR\ProjectWorkspace\Trovara` names its
   navigation table and reports which of its 121 documents are `design-intent` —
   a project whose documents are already in order is the one where a wrong map is

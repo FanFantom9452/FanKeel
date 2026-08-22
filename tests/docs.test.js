@@ -288,6 +288,28 @@ test('a path written with a trailing slash is a shape, not a claim', () => {
   assert.doesNotMatch(out, /sessions/);
 });
 
+// The trailing slash covered `.fankeel/sessions/` and left `.fankeel/map.md`,
+// which is generated and git-ignored. Six documents named it and every one was
+// reported the moment this repository was cloned somewhere the file had never
+// been generated — a check that is green only in the working tree it was
+// written in is a check nobody can trust in CI.
+//
+// The fixture has to be a git repository. A path is only checked when its first
+// segment is one the repository has, and that set is built from tracked files —
+// so without `git add` this passes whether the fix is in or not, which is how it
+// was first written and why it caught nothing.
+test('a path inside the state directory is runtime, not a reference', () => {
+  const root = withTree(tree({
+    'docs/01-x.md': 'the map is written to `.fankeel/map.md` and the ledger to `.fankeel/build/x/progress.md`\n',
+  }), 'flat');
+  execFileSync('git', ['init', '-q'], { cwd: root, stdio: 'ignore' });
+  execFileSync('git', ['add', '-A'], { cwd: root, stdio: 'ignore' });
+  const { out, code } = run(root);
+  assert.equal(code, 0, out);
+  assert.doesNotMatch(out, /map\.md/);
+  assert.doesNotMatch(out, /progress\.md/);
+});
+
 test('the same path without the slash is still a claim', () => {
   const root = withTree(tree({
     'docs/01-x.md': 'defined in `lib/gone.js`\n',
