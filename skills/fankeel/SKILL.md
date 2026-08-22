@@ -517,7 +517,7 @@ returned:
 | Question | Options |
 |---|---|
 | Which project? | Only when more than one is listed and none was named. Orient sorts by last commit, so the first rows are the live ones — take the top four and let **Other** carry the rest. Put the branch, how dirty it is and the age in each description. |
-| Which part of it? | The directories from `inside it`, biggest first. The whole project is a legitimate option; say what it costs — a scope of everything collides with every other session in that repository. |
+| Which part of it? | The directories from `inside it`, narrowest useful first. Say the choice is not final: `task.js scope "<path>" --add` widens it the moment the work reaches somewhere it did not name, which is most tasks. The whole project is a legitimate answer for work that really is project-wide — price it honestly rather than warning: every other session in that repository then overlaps you, so the badge reads `clash` for as long as the task runs and stops showing the stage. Nothing is blocked either way. |
 | What is the task? | Guess from the recent commits, one option each, phrased as a task and not as a commit subject. **Other** is always there for the real answer. |
 
 A guessed *task* offered as an option is not the guessing invariant 3 forbids —

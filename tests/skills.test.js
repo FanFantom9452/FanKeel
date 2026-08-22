@@ -112,3 +112,13 @@ test('the plan skill refuses placeholders by listing them', () => {
   assert.match(text, /TBD/);
   assert.match(text, /Global Constraints/);
 });
+
+// The opening question is where a scope gets chosen, and it was priced as if the
+// choice were final. It is not: scope --add widens it at any time.
+test('the scope question offers narrow first and says the choice is not final', () => {
+  const text = read('fankeel');
+  const row = text.split('\n').find((l) => l.includes('Which part of it?'));
+  assert.ok(row, 'the scope question is gone');
+  assert.match(row, /--add/, 'it never says the scope can be widened later');
+  assert.equal(/collides with every other session/.test(row), false, 'it still prices a collision without saying what one does');
+});
