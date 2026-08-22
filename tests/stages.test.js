@@ -53,15 +53,20 @@ test('a full injection of rules stays under a few hundred characters', () => {
   // and a separate trade. This number is about the prose the model has to read
   // before it reaches the shape it is being asked to fill in.
   //
-  // 1800, not 1600. Seven stages now, and each carries a pointer to the skill
-  // holding the part of its protocol that does not compress. The ALWAYS block
-  // is 655 of whatever the number is, so a stage's own rules get 1144. `build`
-  // was the binding one at 852, which is 92 characters of headroom under the
-  // old cap — a cap that would have been hit by the first rule added rather
-  // than by the rule that deserved to hit it.
+  // 2000. It went 1600 — 1800 when the seventh stage arrived, and 1800 — 2000
+  // when `build` gained the ledger. Both moves were made before the rules that
+  // needed them, not after, because a cap raised to fit a rule already written
+  // is a cap that decides nothing.
+  //
+  // The ALWAYS block is 655 of whatever the number is, so a stage's own rules
+  // get 1344. `build` is the binding one and always will be: it is the only
+  // stage that runs a loop without stopping, so it is the only one carrying
+  // both the discipline and the means of recovering its place after a
+  // compaction. It sits near 1250, which leaves under a hundred characters —
+  // the next rule added to `build` has to displace one, and that is the point.
   for (const name of NAMES) {
     const size = rulesFor(name).join('\n').length;
-    assert.ok(size < 1800, name + ' rules are ' + size + ' chars');
+    assert.ok(size < 2000, name + ' rules are ' + size + ' chars');
   }
 });
 
@@ -310,4 +315,24 @@ test('land closes the documents and rewrites the map', () => {
   const text = byName('land').rules.join(' ');
   assert.match(text, /last_verified/);
   assert.match(text, /\{\{MAP\}\}/);
+});
+
+// Build is the one stage that does not stop at a question, so it is the one
+// stage whose place has to be written down somewhere other than the context.
+test('build opens a ledger and resumes from it rather than from memory', () => {
+  const text = byName('build').rules.join(' ');
+  assert.match(text, /\{\{LEDGER\}\}/);
+  assert.match(text, /never redo a task it lists complete/);
+});
+
+test('build reviews each task rather than saving it all for the end', () => {
+  assert.match(byName('build').rules.join(' '), /reviewer/);
+});
+
+// Four things stop the loop and only these. Named in the rules because the
+// default when a rule is missing is to stop and ask, which is the failure.
+test('build says what stops it, so that nothing else does', () => {
+  const text = byName('build').rules.join(' ');
+  assert.match(text, /irreversible/);
+  assert.match(text, /Ruling:/);
 });
