@@ -284,3 +284,30 @@ test('the plan stage shows its skeleton rather than describing one', () => {
   assert.ok(t, 'no template');
   assert.match(t, /then AskUserQuestion/);
 });
+
+// The map is generated at survey and rewritten at land, and read in between. A
+// stage that reads it without anything regenerating it is reading a snapshot of
+// a project that has since changed.
+test('survey generates the map and reads what it says about intent', () => {
+  const text = byName('survey').rules.join(' ');
+  assert.match(text, /\{\{MAP\}\}/);
+  assert.match(text, /planned but not built/);
+});
+
+test('design is checked against the map rather than only against itself', () => {
+  assert.match(byName('design').rules.join(' '), /map\.md/);
+});
+
+// Nothing in superpowers has a counterpart for this. A change that is correct and
+// leaves three pages describing the old behaviour has been half verified.
+test('verify covers the documents the change just falsified', () => {
+  const text = byName('verify').rules.join(' ');
+  assert.match(text, /\{\{DOCS_CHECK\}\}/);
+  assert.match(text, /no longer true/);
+});
+
+test('land closes the documents and rewrites the map', () => {
+  const text = byName('land').rules.join(' ');
+  assert.match(text, /last_verified/);
+  assert.match(text, /\{\{MAP\}\}/);
+});
