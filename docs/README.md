@@ -32,6 +32,7 @@ here.
 | Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
 | How the seven-stage work is being built, task by task | [plans/2026-08-22-seven-stage-implementation.md](plans/2026-08-22-seven-stage-implementation.md) — *design intent, not built* |
 | Where the seven-stage decomposition is heading | [plans/2026-08-22-seven-stage-pipeline.md](plans/2026-08-22-seven-stage-pipeline.md) — *design intent, not built* |
+| Why the registry goes stale, and what is meant to notice | [plans/2026-08-23-registry-staleness-design.md](plans/2026-08-23-registry-staleness-design.md) — *design intent, not built* |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 
 ## The two audits
