@@ -76,6 +76,29 @@ test('the map names what was planned but not built, because nothing else does', 
   assert.match(text, /docs\/roadmap\.md/);
 });
 
+// The filing is half of what a map is for, and the bug this caught was silent:
+// `docs.read` returns { tree, error }, so reading `.buckets` off the wrapper
+// produced "nothing declared" for a project with seven buckets. Nothing failed —
+// the map was just wrong, which is the only failure mode that matters here.
+test('a project that declared its filing gets it listed, not "nothing declared"', () => {
+  const dir = root();
+  write(dir, '.fankeel/docs.json', JSON.stringify({
+    preset: 'flat',
+    index: 'docs/README.md',
+    buckets: [{ path: 'docs', role: 'reference', depth: 1 }, { path: 'docs/plans', role: 'plan' }],
+  }));
+  const text = map.buildMap(dir);
+  assert.match(text, /docs\/plans — plan/);
+  assert.match(text, /index: docs\/README\.md/);
+  assert.doesNotMatch(text, /nothing declared/);
+});
+
+test('a docs.json that does not parse is said out loud, not read as absent', () => {
+  const dir = root();
+  write(dir, '.fankeel/docs.json', '{ not json');
+  assert.match(map.buildMap(dir), /does not parse as JSON/);
+});
+
 test('the map declares itself generated so the sweep skips it', () => {
   const text = map.buildMap(root());
   assert.match(text, /^---\r?\nstatus: generated\r?\n/);
