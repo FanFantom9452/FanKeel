@@ -226,6 +226,14 @@ test('a claim with no readable start time cannot win the tie-break', () => {
   assert.equal(guard.claimedFirst({ started: when }, { started: when }), false, 'an exact tie blocks nobody');
 });
 
+test('targetOf reads file_path, falls back to notebook_path, and gives up on neither', () => {
+  assert.equal(guard.targetOf({ tool_input: { file_path: 'a.ts' } }), 'a.ts');
+  assert.equal(guard.targetOf({ tool_input: { notebook_path: 'a.ipynb' } }), 'a.ipynb');
+  assert.equal(guard.targetOf({ tool_input: { command: 'ls' } }), null);
+  assert.equal(guard.targetOf({ tool_input: {} }), null);
+  assert.equal(guard.targetOf({}), null);
+});
+
 test('decide says nothing at all when the guard is off', () => {
   const root = path.join(os.tmpdir(), 'fankeel-decide');
   const mine = { scope: ['README.md'] };

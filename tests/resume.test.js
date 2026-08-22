@@ -216,9 +216,11 @@ test('the manifest runs it on AskUserQuestion and on nothing else', () => {
 test('the drift hook runs on writes and on nothing else', () => {
   const plugin = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
   const post = plugin.hooks.PostToolUse;
+  assert.equal(post.length, 2, 'an unreviewed third PostToolUse entry has appeared');
   const touch = post.filter((e) => e.hooks.some((h) => /hooks\/touch\.js/.test(h.command)));
   assert.equal(touch.length, 1);
   assert.equal(touch[0].matcher, 'Edit|Write|NotebookEdit');
+  assert.equal(touch[0].hooks.length, 1);
   assert.equal(touch[0].hooks[0].timeout, 5);
 });
 

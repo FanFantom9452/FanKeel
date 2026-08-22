@@ -12,17 +12,7 @@
 // guarded.
 
 const registry = require('../lib/registry.js');
-const { decide } = require('../lib/guard.js');
-
-// Edit and Write carry `file_path`; NotebookEdit carries `notebook_path`. A tool
-// with neither is not a write this can reason about.
-function targetOf(payload) {
-    const input = (payload && payload.tool_input) || {};
-    for (const key of ['file_path', 'notebook_path']) {
-        if (typeof input[key] === 'string' && input[key]) return input[key];
-    }
-    return null;
-}
+const { decide, targetOf } = require('../lib/guard.js');
 
 function main(raw) {
     let payload;
