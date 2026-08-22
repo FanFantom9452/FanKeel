@@ -13,8 +13,10 @@ here.
 | I want to know | Page |
 |---|---|
 | What `/fankeel` asks me, and what each answer does | [pipeline.md](pipeline.md) |
-| What the six stages are and what each produces | [pipeline.md](pipeline.md) |
-| Why my task is only three stages and not six | [pipeline.md](pipeline.md) — *a route per task* |
+| What the seven stages are and what each produces | [pipeline.md](pipeline.md) |
+| Why my task is only three stages and not seven | [pipeline.md](pipeline.md) — *a route per task* |
+| What spike, bounded and architectural mean | [pipeline.md](pipeline.md) — *three classes, three routes* |
+| What `.fankeel/map.md` holds and why it is generated | [pipeline.md](pipeline.md) — *the project map* |
 | What gets written to disk, and what is committed | [registry.md](registry.md) |
 | What `notes` and `next` are for, and why they are capped | [registry.md](registry.md) |
 | Why the mode never switches itself off | [registry.md](registry.md) |

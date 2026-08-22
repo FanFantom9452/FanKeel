@@ -6,7 +6,7 @@ source_of_truth: lib/stages.js
 
 # The pipeline
 
-What `/fankeel` does, the six stages, and how a route through them is chosen for one task rather than picked from a menu.
+What `/fankeel` does, the seven stages, and how a route through them is chosen for one task rather than picked from a menu.
 
 # Use
 
@@ -97,8 +97,8 @@ carries the task, what has been tried, the other live sessions, and the rules fo
 the stage you are in:
 
 ```
-FANKEEL ACTIVE — rework the 7d deviation colour ramp @ build  (3 of 6)
-route: survey → design → [build] → verify → audit → land
+FANKEEL ACTIVE — rework the 7d deviation colour ramp @ build  (4 of 7)
+route: survey → design → plan → [build] → verify → audit → land
 scope: statusline.ps1, statusline.sh, preview.ps1
 next: wire the badge word into TokenBar
 
@@ -116,7 +116,9 @@ stage rules:
   - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
-  - Every changed line traces to the ask: follow the patterns already here rather than your own defaults, and do not improve adjacent code, comments or formatting on the way past. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
+  - From a plan (the fankeel-build skill has the loop): `node F:\ymlab\fankeel\scripts\ledger.js --plan <f> show` first and never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction trust it over memory.
+  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, or every path forward a guess.
+  - Every changed line traces to the ask. Follow the patterns already here; do not improve adjacent code, comments or formatting on the way past. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
   - Anything deferred goes in TODO.md as one line pointing at the detail — never as a comment nobody will find.
   - A new document is the last resort: put it in an existing page, or write a generator when the content is derivable from code. One that is written carries status, last_verified and source_of_truth — and a plan is not filed as reference.
   - Output: one line per file as `path +n/-m — what changed`, then the question. Under 80 words. The diff is the output; prose is for what it cannot show.
@@ -132,8 +134,8 @@ output shape:
 The rules are restated in full every turn rather than pointed at. A pointer is
 only as strong as the salience of what it points at, and what it points at recedes
 by thousands of tokens a turn. Only the current stage's rules are sent, never all
-six stages', which is what keeps a per-turn restatement affordable — 2266
-characters loaded as above, about 570 tokens.
+seven stages', which is what keeps a per-turn restatement affordable — 2715
+characters loaded as above, about 680 tokens.
 
 It grows when growing it is worth something, because the two sides of that trade
 are not priced the same. This block is read once a turn by the model and never by
@@ -183,12 +185,21 @@ So there is a second hook. `PostToolUse` matched to `AskUserQuestion` — and to
 nothing else — sends a short form back the moment an answer lands:
 
 ```
-FANKEEL ACTIVE — rework the 7d deviation colour ramp @ build  (3 of 6)
-route: survey → design → [build] → verify → audit → land
+FANKEEL ACTIVE — rework the 7d deviation colour ramp @ build  (4 of 7)
+route: survey → design → plan → [build] → verify → audit → land
 
 stage rules:
   - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, or pause, never dropping the pause. Option one is the approval: say what it approves.
-  ...
+  - The background goes inside the question call — in the option descriptions, beside the option each belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
+  - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
+  - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
+  - Finish what you start. Do not stop where the happy path works and the rest is "later".
+  - From a plan (the fankeel-build skill has the loop): `node F:\ymlab\fankeel\scripts\ledger.js --plan <f> show` first and never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction trust it over memory.
+  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, or every path forward a guess.
+  - Every changed line traces to the ask. Follow the patterns already here; do not improve adjacent code, comments or formatting on the way past. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
+  - Anything deferred goes in TODO.md as one line pointing at the detail — never as a comment nobody will find.
+  - A new document is the last resort: put it in an existing page, or write a generator when the content is derivable from code. One that is written carries status, last_verified and source_of_truth — and a plan is not filed as reference.
+  - Output: one line per file as `path +n/-m — what changed`, then the question. Under 80 words. The diff is the output; prose is for what it cannot show.
 
 output shape:
   - path +12/-3 — what changed
@@ -226,10 +237,66 @@ plain question mid-task and gets a plain answer.
 |---|---|
 | `survey` | a statement of what already exists |
 | `design` | an approach someone agreed to |
+| `plan` | a decomposition someone with no context could execute |
 | `build` | the change itself |
 | `verify` | evidence, not confidence |
 | `audit` | a list of what is no longer true |
 | `land` | a repository no dirtier than you found it |
+
+### Three classes, three routes
+
+Assembling a route by hand is a decision made silently. A class is the same
+decision made out loud, which is what lets somebody disagree with it before four
+stages of work hang off it.
+
+| Class | Route | What it means |
+|---|---|---|
+| `spike` | `survey,build` | a feasibility question whose output is an answer. Anything built is labelled throwaway |
+| `bounded` | `survey,design,build,verify,land` | a scoped change to a flow already in this repository. Design happens in chat: no spec file, no plan file |
+| `architectural` | all seven | a new subsystem, or a change to an interface something else depends on |
+
+```
+node <plugin>/scripts/task.js start --session <id> --task "..." --scope "..." --class bounded
+```
+
+`--class` and `--route` together are refused rather than ranked: whichever one
+lost would be a decision the user made and cannot see. Bounded measures the
+repository rather than your familiarity with it — it means the flow being changed
+is already here to read, so a new project is architectural however well you know
+the kind of thing it is. When in doubt, take the heavier one.
+
+## The project map
+
+```
+node <plugin>/scripts/map.js   —>   .fankeel/map.md
+```
+
+Written at `survey`, rewritten at `land`, read by everything in between.
+Generated rather than maintained, git-ignored, and carrying `status: generated`
+so the documentation sweep skips it.
+
+It holds the signpost file's navigation table, the filing declared in
+`docs.json`, and — the part nothing else reports — **every page's declared
+status**. That last section is the one the rest was built for:
+
+```
+planned, not built — 2:
+  docs/plans/2026-08-22-seven-stage-pipeline.md
+  docs/roadmap.md
+```
+
+A page marked `status: design-intent` describes what the system is *meant* to
+become. It is not drifting when the code does not match it; it is doing its job.
+Without somewhere to read that, a roadmap gets written into an architecture page
+and then read as a description of what exists — which is how a stage designs
+against a system nobody has built yet.
+
+Three properties, each a requirement rather than a nicety. It is a **file**, so a
+subagent is handed a path instead of a paste — everything pasted into a dispatch
+prompt stays resident and is re-read every later turn. It is **generated**, so it
+cannot rot into the failure `/fankeel-audit` exists to catch. And it is **per
+project rather than per task**, so two sessions in one repository read the same
+map and it outlives the task that built it.
 
 **A task's route is these stages in some order, chosen for that task.** A typo fix
 is `build,verify`. A documentation sweep is `survey,audit,land`. A feature is all

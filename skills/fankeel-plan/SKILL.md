@@ -114,7 +114,7 @@ These are **plan failures**, not shorthand:
 
 1. **Spec coverage** — skim each requirement. Point at the task implementing it. List gaps.
 2. **Placeholder scan** — the list above.
-3. **Type consistency** — `clearLayers()` in Task 3 and `clearFullLayers()` in Task 7 is a bug.
+3. **Type consistency** — a helper named `clearLayers` in Task 3 and `clearFullLayers` in Task 7 is a bug, and only the implementer of Task 7 will meet both names.
 
 Fix inline. If a requirement has no task, add the task.
 

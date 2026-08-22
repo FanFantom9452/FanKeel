@@ -1,6 +1,6 @@
 ---
 name: fankeel
-description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
+description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.23.0
 status: current
 last_verified: 2026-08-22
@@ -163,6 +163,7 @@ worse than none because people stop reading it.
 |---|---|
 | `survey` | a statement of what already exists |
 | `design` | an approach someone agreed to |
+| `plan` | a decomposition someone with no context could execute |
 | `build` | the change itself |
 | `verify` | evidence, not confidence |
 | `audit` | a list of what is no longer true |
@@ -176,23 +177,38 @@ for the things the skeleton cannot hold, and there is less of that than it
 feels like.
 
 **A task's route is these stages in some order, chosen for that task.** Not every
-task is six stages. A typo fix is `build,verify`. A documentation sweep is
-`survey,audit,land`. A feature is all six. Assemble the route at Start the way you
-would work out an approach — from what the task actually is, not from a menu — and
-have it confirmed with the task line.
+task is seven stages. A typo fix is `build,verify`. A documentation sweep is
+`survey,audit,land`. A feature is all seven.
+
+Pick it with a **class** rather than typing it out, and say the class out loud so
+the user can disagree with it:
+
+| Class | Route | What it means |
+|---|---|---|
+| `spike` | `survey,build` | a feasibility question whose output is an answer. Anything built is labelled throwaway |
+| `bounded` | `survey,design,build,verify,land` | a scoped change to a flow already here. Design happens in chat: no spec file, no plan file |
+| `architectural` | all seven | a new subsystem, or a change to an interface something else depends on |
+
+Bounded measures the repository, not your familiarity with it: it means the flow
+being changed is already here to read. When in doubt take the heavier one, and
+the ratchet is one-way — complexity found mid-task upgrades the route and says
+so, and nothing downgrades mid-task.
 
 ```
+node <plugin>/scripts/task.js start --session <id> --task "..." --scope "..." --class bounded
 node <plugin>/scripts/task.js start --session <id> --task "..." --scope "..." --route "build,verify"
 ```
 
-Omit `--route` and it is all six. The rules: every step must be a stage above, no
+Omit both and it is all seven; passing both is refused rather than ranked, because
+whichever one lost would be a decision the user made and cannot see. The rules for
+a hand-written route: every step must be a stage above, no
 repeats, and `land` last if it is there at all. `task.js stage` refuses a stage
 that is not on the route, and `task.js route` changes the route when the task
 turns out to be a different shape than it looked.
 
-A fixed six made the progress indicator lie in both directions — a two-stage task
-sat at 2 of 6 looking permanently unfinished, and a long one got no credit for the
-stages it invented. The route is what `●●●○○` on the statusline counts.
+A fixed route made the progress indicator lie in both directions — a two-stage
+task sat at 2 of 7 looking permanently unfinished, and a long one got no credit
+for the stages it invented. The route is what `●●●○○` on the statusline counts.
 
 `survey` carries a scanner rather than an instruction to search. The injected
 rule names the script with its resolved path; run it with the terms you would
@@ -324,6 +340,26 @@ declared. An archive naming deleted code is an archive doing its job. A referenc
 page doing the same is the bug.
 
 ### Every fortnight or so — the sweep
+
+## One skill per stage
+
+These rules ride every prompt because they compress. What does not compress — a
+task template, the ledger's header contract, a claim-to-evidence table, an
+integration menu — lives in a skill per stage, read once on entering it. An
+abbreviated format produces something that looks like the format and is not it.
+
+| Stage | Skill | What only it holds |
+|---|---|---|
+| `survey` | **fankeel-survey** | reading the map, and the three classes |
+| `design` | **fankeel-design** | the success criterion, and checking against the map |
+| `plan` | **fankeel-plan** | the task template, and the placeholders that are plan failures |
+| `build` | **fankeel-build** | the ledger, the conflict scan, the four things that stop the loop |
+| `verify` | **fankeel-verify** | the claim-to-evidence table |
+| `audit` | **fankeel-audit** | the defect table, and what only reading finds |
+| `land` | **fankeel-land** | the integration menu, and the cleanup rules |
+
+The stage rules name their own skill, so this table is for the reader rather
+than for the pipeline.
 
 **`/fankeel-audit` is the whole pass**: it runs both scanners, reads the
 shortlist they produce, and ends by offering the cleanup. Use it here, and use it

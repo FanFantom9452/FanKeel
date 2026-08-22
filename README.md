@@ -47,24 +47,29 @@ that kit wires up TokenBar, which is what draws the badge.
 
 ## The pipeline
 
-Six stages, each named for what it produces rather than how it feels.
+Seven stages, each named for what it produces rather than how it feels.
 
 ```mermaid
 flowchart LR
     S["<b>survey</b><br/>what already exists"]
     D["<b>design</b><br/>an approach someone agreed to"]
+    P["<b>plan</b><br/>a decomposition someone<br/>with no context could execute"]
     B["<b>build</b><br/>the change itself"]
     V["<b>verify</b><br/>evidence, not confidence"]
     A["<b>audit</b><br/>what is no longer true"]
     L["<b>land</b><br/>a repository no dirtier<br/>than you found it"]
 
-    S --> D --> B --> V --> A --> L
+    S --> D --> P --> B --> V --> A --> L
 ```
 
 **A route is the stages one task actually needs, in order.** Not every task is
-six. A typo fix is `build, verify`. A documentation sweep is `survey, audit,
+seven. A typo fix is `build, verify`. A documentation sweep is `survey, audit,
 land`. The route is assembled when the task starts and shown in every injected
-block, so a two-stage task is not reported as permanently unfinished at 2 of 6.
+block, so a two-stage task is not reported as permanently unfinished at 2 of 7.
+
+It is assembled from a **class** rather than typed out: `spike` is
+`survey,build`, `bounded` is `survey,design,build,verify,land`, and
+`architectural` is all seven.
 
 Only the current stage's rules are sent, and they are sent again every turn — a
 pointer is only as strong as the salience of what it points at, and what it points
@@ -102,7 +107,8 @@ then AskUserQuestion
 
 | I want to know | Page |
 |---|---|
-| What `/fankeel` asks me, the six stages, and how a route is chosen | [docs/pipeline.md](docs/pipeline.md) |
+| What `/fankeel` asks me, the seven stages, and how a route is chosen | [docs/pipeline.md](docs/pipeline.md) |
+| What `.fankeel/map.md` holds, and why a page marked design-intent is not drift | [docs/pipeline.md](docs/pipeline.md) |
 | What gets written to disk, what is committed, and what `notes` and `next` are for | [docs/registry.md](docs/registry.md) |
 | What `[FANKEEL:CLASH]` means, and how to make a collision block rather than warn | [docs/collisions.md](docs/collisions.md) |
 | What `docs.json` declares, and why an archive naming deleted code is not a bug | [docs/documents.md](docs/documents.md) |

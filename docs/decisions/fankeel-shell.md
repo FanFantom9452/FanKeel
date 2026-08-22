@@ -249,6 +249,12 @@ quietly grew two stages is a task whose progress nobody can read.
 question from `verify` — verify asks whether the change works, audit asks whether
 the things that describe it still match.
 
+*(Extended in 0.24.0: `plan` became the seventh, between `design` and `build`.
+Approving a plan is a human gate and `build`'s own discipline is that it does not
+stop to ask, so a plan written inside `build` puts a gate in the one stage that
+must not have one. The vocabulary is still closed, and the routes are now picked
+from three named classes rather than assembled by hand.)*
+
 ## Documents have roles, and the role says what may be stale
 
 A checker that treats every markdown file alike is a checker nobody keeps. An
