@@ -116,8 +116,9 @@ stage rules:
   - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
-  - Follow the patterns already in this repository rather than your own defaults.
+  - Every changed line traces to the ask: follow the patterns already here rather than your own defaults, and do not improve adjacent code, comments or formatting on the way past. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
   - Anything deferred goes in TODO.md as one line pointing at the detail — never as a comment nobody will find.
+  - A new document is the last resort: put it in an existing page, or write a generator when the content is derivable from code. One that is written carries status, last_verified and source_of_truth — and a plan is not filed as reference.
   - Output: one line per file as `path +n/-m — what changed`, then the question. Under 80 words. The diff is the output; prose is for what it cannot show.
 
 output shape:
@@ -131,8 +132,8 @@ output shape:
 The rules are restated in full every turn rather than pointed at. A pointer is
 only as strong as the salience of what it points at, and what it points at recedes
 by thousands of tokens a turn. Only the current stage's rules are sent, never all
-six stages', which is what keeps a per-turn restatement affordable — 1832
-characters loaded as above, about 460 tokens.
+six stages', which is what keeps a per-turn restatement affordable — 2266
+characters loaded as above, about 570 tokens.
 
 It grows when growing it is worth something, because the two sides of that trade
 are not priced the same. This block is read once a turn by the model and never by

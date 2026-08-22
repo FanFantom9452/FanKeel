@@ -54,8 +54,37 @@ test('a full injection of rules stays under a few hundred characters', () => {
   // before it reaches the shape it is being asked to fill in.
   for (const name of NAMES) {
     const size = rulesFor(name).join('\n').length;
-    assert.ok(size < 1400, name + ' rules are ' + size + ' chars');
+    assert.ok(size < 1600, name + ' rules are ' + size + ' chars');
   }
+});
+
+// Two rules taken from Karpathy's guidelines after checking them against these
+// line by line. Most of that list was already here in one form or another, and
+// the delegation is deliberate where it is not: over-engineering is ponytail's
+// subject, and the audit rules name it rather than restating it.
+//
+// These two were the gaps. A stage that names the files it will touch has said
+// what will happen and not what would prove it happened, and "make it work" is
+// the weak criterion that turns an independent loop into constant clarification.
+test('design says what would prove the work done, not only what it touches', () => {
+  const text = byName('design').rules.join(' ');
+  assert.match(text, /the test that fails now and passes after/);
+  assert.match(text, /"Make it work" is not a criterion/);
+  // Pushing back is not covered by "cut what the ask does not require", which is
+  // about scope rather than about the ask being wrong.
+  assert.match(text, /the ask itself looks wrong, say so before building it/);
+});
+
+// The gap that this repository walked into while the rule was missing: removing
+// one skill left `scripts/style.js`, `lib/styles.js`, `lib/settings.js` and two
+// test files behind, and each was found in a separate round rather than with the
+// change that orphaned it.
+test('build says to clean up after itself, and only after itself', () => {
+  const text = byName('build').rules.join(' ');
+  assert.match(text, /Every changed line traces to the ask/);
+  assert.match(text, /do not improve adjacent code/);
+  assert.match(text, /Remove what your own change orphaned/);
+  assert.match(text, /dead code you did not create gets mentioned, not deleted/);
 });
 
 // Documentation rots because nothing forces it to stay true, and the cheap place
