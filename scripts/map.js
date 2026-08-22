@@ -34,8 +34,11 @@ function keepIgnored(stateDir) {
         text = fs.readFileSync(file, 'utf8');
     } catch (e) { /* first run */ }
     const lines = text.split(/\r?\n/).filter(Boolean);
-    if (!lines.includes('sessions/')) lines.push('sessions/');
-    if (!lines.includes(IGNORE_LINE)) lines.push(IGNORE_LINE);
+    // sessions/ is the registry, build/ is one plan's ledger and scratch, and
+    // map.md is generated. None of the three is a file anybody should review.
+    for (const want of ['sessions/', 'build/', IGNORE_LINE]) {
+        if (!lines.includes(want)) lines.push(want);
+    }
     fs.writeFileSync(file, lines.join('\n') + '\n');
 }
 

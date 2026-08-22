@@ -32,6 +32,7 @@ test('it keeps the generated map out of git', () => {
   const ignore = fs.readFileSync(path.join(dir, '.fankeel', '.gitignore'), 'utf8');
   assert.match(ignore, /^map\.md$/m);
   assert.match(ignore, /^sessions\/$/m);
+  assert.match(ignore, /^build\/$/m);
 });
 
 test('running twice does not duplicate the ignore line', () => {
