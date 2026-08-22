@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-08-22
-source_of_truth: lib/overlap.js, lib/guard.js
+last_verified: 2026-08-23
+source_of_truth: lib/overlap.js, lib/guard.js, lib/registry.js, scripts/task.js
 ---
 
 # Two sessions, one repository
@@ -59,5 +59,22 @@ That is the whole mechanism. Being stale writes nothing, deactivates nothing and
 hides nothing. If the owning session comes back, its next prompt refreshes the
 timestamp and it stops being stale. `/fankeel` offers to clear genuinely dead
 entries, and only ever on your say-so.
+
+## A claim outlives its terminal
+
+`lib/registry.js` is explicit that nothing deactivates anything: a session ending,
+a timer expiring and a terminal dying all leave the entry exactly as it was. That
+is right — a terminal that dies at midnight has to find its task at nine, and a
+registry that expires claims on a timer is one that quietly loses work.
+
+The cost is a claim nobody will ever withdraw. Close the window without standing
+down and every session overlapping that scope shows `clash` for good, softened
+after twelve hours by an age note and never removed.
+
+`task.js clear <session-id>` puts that claim down. It does not take the task over
+the way `adopt` does, and it does not delete the entry — `adopt` still reads a
+cleared entry, so the task comes back with its notes if it turns out somebody
+wanted it. It refuses an entry seen in the last twelve hours unless `--force`,
+because below that the silence is not evidence of anything.
 
 [Back to the index](README.md) · [Back to the front page](../README.md)

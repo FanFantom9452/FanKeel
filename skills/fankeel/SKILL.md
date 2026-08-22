@@ -3,7 +3,7 @@ name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.24.0
 status: current
-last_verified: 2026-08-22
+last_verified: 2026-08-23
 source_of_truth: lib/stages.js, lib/registry.js, scripts/task.js
 ---
 
@@ -120,6 +120,7 @@ node <plugin>/scripts/task.js next    "..." --session <id>
 node <plugin>/scripts/task.js guard   ask|deny|off --session <id>
 node <plugin>/scripts/task.js down    --session <id>
 node <plugin>/scripts/task.js adopt   <other-session-id> --session <id>
+node <plugin>/scripts/task.js clear   <session-id> [--force] --session <id>
 ```
 
 `<plugin>` is two directories up from this file — resolve `../../scripts/task.js`
@@ -537,7 +538,7 @@ Then ask, with these options and no others:
 | **Start** | Ask for a one-line `task`, and take the `scope` from what orient showed — a directory is a complete answer. Then `task.js start`. |
 | **Adopt** | `task.js adopt <other-session-id>`, which copies the task over and stands the source down in one run. From a **stale** entry, offer it plainly. From a **live** one, confirm first with the other session named — that is exactly the case this registry exists to make visible. |
 | **Stand down** | `task.js down`. Ask first whether anything in `notes` belongs somewhere more durable; the script prints them, and they die with the task. |
-| **Clear out** | List the stale entries with their ages, let the user pick, then `task.js down --session <that id>` for each one picked. Never for ones they did not pick. |
+| **Clear out** | List the stale entries with their ages, let the user pick, then `task.js clear <that id>` for each one picked — `down` prints text addressed to the owner about notes that are not the caller's, which `clear` does not. Never for ones they did not pick. |
 
 Every one of these ends by saying what changed and offering the next step. Do not
 finish a `/fankeel` turn with a bare confirmation.

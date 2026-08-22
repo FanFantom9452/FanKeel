@@ -51,6 +51,16 @@ const entry = (dir, id) => registry.readSession(dir, id);
 const started = (dir, id, task, scope) =>
   run(dir, ['start', '--session', id, '--task', task, '--scope', scope]);
 
+// Backdating the heartbeat is the only way to make an entry stale without
+// waiting twelve hours. `started` writes `updated` to now.
+const chill = (dir, id, ms) => {
+  const data = registry.readSession(dir, id);
+  data.updated = new Date(Date.now() - ms).toISOString();
+  registry.writeSession(dir, id, data);
+};
+
+const DAY = 24 * 3600e3;
+
 test('start writes the entry, at survey, active', () => {
   const dir = root();
   const { out, code } = started(dir, A, 'tidy the project cards', 'Waypoint/web');
@@ -344,4 +354,62 @@ test('adopting a task carries the record that its scope went stale', () => {
   const { code } = run(dir, ['adopt', B, '--session', A]);
   assert.equal(code, 0);
   assert.deepEqual(entry(dir, A).drift, ['api/routes.js']);
+});
+
+test('a cold claim is cleared without its task being inherited', () => {
+  const dir = root();
+  started(dir, A, 'tidy the cards', 'web');
+  started(dir, B, 'the ramp', 'web');
+  chill(dir, B, 3 * DAY);
+
+  const { out, code } = run(dir, ['clear', B, '--session', A]);
+  assert.equal(code, 0);
+  assert.match(out, /cleared: the ramp/);
+  assert.equal(entry(dir, B).active, false);
+  assert.equal(entry(dir, A).task, 'tidy the cards');
+});
+
+test('clearing does not delete the entry, so the task can be adopted back', () => {
+  const dir = root();
+  started(dir, A, 'tidy the cards', 'web');
+  started(dir, B, 'the ramp', 'web');
+  run(dir, ['note', '46 to 83 to 120', '--session', B]);
+  chill(dir, B, 3 * DAY);
+
+  run(dir, ['clear', B, '--session', A]);
+  run(dir, ['down', '--session', A]);
+  assert.equal(run(dir, ['adopt', B, '--session', A]).code, 0);
+  assert.deepEqual(entry(dir, A).notes, ['46 to 83 to 120']);
+});
+
+test('a claim that is not cold is refused, and the refusal says what it is protecting', () => {
+  const dir = root();
+  started(dir, A, 'tidy the cards', 'web');
+  started(dir, B, 'the ramp', 'web');
+  run(dir, ['stage', 'design', '--session', B]);
+
+  const { out, code } = run(dir, ['clear', B, '--session', A]);
+  assert.equal(code, 1);
+  assert.match(out, /the ramp @ design/);
+  assert.match(out, /--force/);
+  assert.equal(entry(dir, B).active, true);
+});
+
+test('--force is for the terminal the reader watched die', () => {
+  const dir = root();
+  started(dir, A, 'tidy the cards', 'web');
+  started(dir, B, 'the ramp', 'web');
+
+  assert.equal(run(dir, ['clear', B, '--session', A, '--force']).code, 0);
+  assert.equal(entry(dir, B).active, false);
+});
+
+test('clearing this session is refused, and names the command that exists for it', () => {
+  const dir = root();
+  started(dir, A, 'tidy the cards', 'web');
+
+  const { out, code } = run(dir, ['clear', A, '--session', A]);
+  assert.equal(code, 1);
+  assert.match(out, /`down`/);
+  assert.equal(entry(dir, A).active, true);
 });

@@ -193,7 +193,7 @@ test('the reason says how to get out of it', () => {
   seed(root, THEIRS, { scope: ['statusline.ps1'] });
   const reason = reasonOf(run(root, edit(root, path.join(root, 'statusline.ps1'))));
   assert.match(reason, /narrow its scope/);
-  assert.match(reason, /\/fankeel/);
+  assert.match(reason, /task\.js clear/);
   assert.match(reason, /remove `guard`/);
 });
 
@@ -239,4 +239,9 @@ test('decide says nothing at all when the guard is off', () => {
   const mine = { scope: ['README.md'] };
   const others = [{ sessionId: THEIRS, data: { scope: ['a.ts'], updated: ago(60e3), started: ago(3600e3) } }];
   assert.equal(guard.decide({ mine, others, root, file: path.join(root, 'a.ts'), now: Date.now() }), null);
+});
+
+test('the refusal names the command that clears a claim nobody is behind', () => {
+  const text = guard.reasonFor('web/a.js', [{ sessionId: THEIRS, data: { task: 't', stage: 'build' } }]);
+  assert.match(text, /clear/);
 });

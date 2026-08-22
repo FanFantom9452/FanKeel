@@ -135,6 +135,10 @@ function parseArgs(argv) {
             opts.add = true;
             continue;
         }
+        if (arg === '--force') {
+            opts.force = true;
+            continue;
+        }
         if (arg.startsWith('--')) continue;
         opts.positional.push(arg);
     }
@@ -458,6 +462,44 @@ function cmdAdopt(root, opts) {
     return lines.join('\n');
 }
 
+// The second place another session's file is written, and the smaller one.
+// `adopt` takes a task over; this only puts a claim down. Wanting a stale badge
+// gone is not wanting somebody else's work.
+//
+// It never deletes. `cmdAdopt` reads a source entry without requiring it to be
+// active, so a claim cleared by mistake can still be adopted back with its notes
+// and its `next` intact.
+function cmdClear(root, opts) {
+    const id = requireSession(opts);
+    const target = opts.positional[0];
+    if (!target) fail('Give the session id to clear.');
+    if (target === id) fail('That is this session. Use `down`, which prints the notes that are about to die.');
+    if (!registry.sessionPath(root, target)) fail('Not a session id: ' + target);
+
+    const data = registry.readSession(root, target);
+    if (!data) fail('No entry for ' + target + ' under ' + root);
+    if (data.active !== true) return 'fankeel — already stood down.';
+
+    // Twelve hours of silence is the only evidence the registry has that nobody
+    // is behind a claim, and below that the entry may belong to somebody who
+    // stepped away. So the refusal names what it is protecting, and --force is
+    // there for the case the reader can see and the registry cannot: a terminal
+    // that died four minutes ago. Ask before deny, the same as `guard`.
+    const at = Date.now();
+    if (!registry.isStale(data, at) && opts.force !== true) {
+        fail('That entry was last seen ' + (registry.ageText(data, at) || 'just now') + ' ago: '
+            + (data.task || 'untitled') + ' @ ' + (data.stage || '?')
+            + NL + 'Pass --force if you know the terminal is gone.');
+    }
+
+    data.active = false;
+    if (!registry.writeSession(root, target, data)) fail('Could not write the entry.');
+    hideBadge(opts, target);
+
+    return 'fankeel — cleared: ' + (data.task || 'untitled') + ' @ ' + (data.stage || '?')
+        + NL + 'The entry is still there. `adopt ' + target + '` takes the task back, notes and all.';
+}
+
 // Re-routing is a separate command from `stage` on purpose. Moving along a route
 // is routine; changing what the route *is* is a decision about the shape of the
 // task, and the two should not be one keystroke apart.
@@ -502,6 +544,7 @@ const COMMANDS = {
     guard: cmdGuard,
     down: cmdDown,
     adopt: cmdAdopt,
+    clear: cmdClear,
 };
 
 const USAGE = [
@@ -518,6 +561,7 @@ const USAGE = [
     '  guard <ask|deny|off>              only when the user asked for it',
     '  down                              stand the task down; never deletes',
     '  adopt <session-id>                take another entry over, standing it down',
+    '  clear <session-id> [--force]      put down a claim nobody is behind; never deletes',
     '',
     'Every command takes --session <id>, and --root <dir> to override where the',
     'registry is. Without --root it is found the way the hooks find it: the nearest',
