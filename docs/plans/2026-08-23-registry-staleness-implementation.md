@@ -1,5 +1,5 @@
 ---
-status: current
+status: design-intent
 last_verified: 2026-08-23
 source_of_truth: lib/registry.js, lib/render.js, scripts/task.js, hooks/touch.js
 ---
