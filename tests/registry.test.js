@@ -372,3 +372,59 @@ test('CLAUDE_PROJECT_DIR is preferred over the payload cwd', () => {
     if (saved === undefined) delete process.env.CLAUDE_PROJECT_DIR; else process.env.CLAUDE_PROJECT_DIR = saved;
   }
 });
+
+// ---- drift ------------------------------------------------------------
+
+test('drift records a path outside the declared scope, newest last', () => {
+  const root = tmpRoot();
+  seed(root, SID, task({ scope: ['web'] }));
+  assert.equal(registry.addDrift(root, SID, 'api/routes.js'), true);
+  assert.equal(registry.addDrift(root, SID, 'config/flags.json'), true);
+  assert.deepEqual(registry.readSession(root, SID).drift, ['api/routes.js', 'config/flags.json']);
+});
+
+test('a repeated path is dropped rather than pushing a still-useful one out', () => {
+  const root = tmpRoot();
+  seed(root, SID, task({ scope: ['web'] }));
+  registry.addDrift(root, SID, 'api/a.js');
+  registry.addDrift(root, SID, 'api/b.js');
+  registry.addDrift(root, SID, 'api/a.js');
+  assert.deepEqual(registry.readSession(root, SID).drift, ['api/a.js', 'api/b.js']);
+});
+
+test('drift is capped at five, oldest evicted', () => {
+  const root = tmpRoot();
+  seed(root, SID, task({ scope: ['web'] }));
+  for (const n of [1, 2, 3, 4, 5, 6]) registry.addDrift(root, SID, 'api/' + n + '.js');
+  const held = registry.readSession(root, SID).drift;
+  assert.equal(held.length, registry.MAX_DRIFT);
+  assert.equal(held[0], 'api/2.js');
+  assert.equal(held[4], 'api/6.js');
+});
+
+test('a path too long to paste into scope --add is not recorded at all', () => {
+  const root = tmpRoot();
+  seed(root, SID, task({ scope: ['web'] }));
+  assert.equal(registry.addDrift(root, SID, 'api/' + 'x'.repeat(registry.MAX_DRIFT_LEN)), false);
+  assert.equal(registry.readSession(root, SID).drift, undefined);
+});
+
+test('driftOf hides what the current scope now covers', () => {
+  const data = { scope: ['web'], drift: ['api/routes.js', 'web/late.js'] };
+  assert.deepEqual(registry.driftOf(data), ['api/routes.js']);
+});
+
+test('widening the scope clears the line with no second code path', () => {
+  const data = { scope: ['web', 'api'], drift: ['api/routes.js'] };
+  assert.deepEqual(registry.driftOf(data), []);
+});
+
+test('a glob in scope covers the path it matches', () => {
+  const data = { scope: ['api/**'], drift: ['api/routes.js'] };
+  assert.deepEqual(registry.driftOf(data), []);
+});
+
+test('an entry written before drift existed reads as no drift', () => {
+  assert.deepEqual(registry.driftOf({ scope: ['web'] }), []);
+  assert.deepEqual(registry.driftOf(null), []);
+});

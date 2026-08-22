@@ -73,6 +73,12 @@ keeps. It is never version-controlled and it dies when the task is stood down; i
 a note still matters after the task lands, it was never a note, and `land` is
 where it moves to one of the four.
 
+A third field is written by nobody the user talks to. `drift` holds the paths this
+task edited that its declared `scope` does not cover — at most five, each recorded
+whole, never truncated, because a truncated path cannot be pasted into
+`scope --add`. It is read through a filter against the current scope, so widening
+the scope clears it without anything having to delete it.
+
 # The mode never switches itself off
 
 A session is in fankeel mode exactly when it owns an active task. There is no
