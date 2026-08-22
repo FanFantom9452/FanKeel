@@ -32,6 +32,17 @@
             "statusMessage": "Restating the fankeel stage..."
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/touch.js\"",
+            "timeout": 5,
+            "statusMessage": "Noting where the work went..."
+          }
+        ]
       }
     ],
     "SubagentStart": [

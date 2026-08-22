@@ -180,12 +180,12 @@ claude plugin validate .
 ```
 
 `lib/` is pure logic, tested directly. `hooks/` is where stdin, stdout and process
-exit live, and all four hooks are tested as subprocesses with real payloads.
+exit live, and all five hooks are tested as subprocesses with real payloads.
 
 Every hook exits 0 on every path, including every error path. A `UserPromptSubmit`
 hook that throws blocks the prompt it was called for and a `PreToolUse` hook that
 throws blocks the edit, and a plugin that can wedge your terminal is worse than no
-plugin. The other two are not load-bearing that way, but a stack trace in front of
+plugin. The other three are not load-bearing that way, but a stack trace in front of
 the user in the middle of somebody else's turn is its own kind of broken.
 
 `node scripts/todo-check.js` says whether [TODO.md](TODO.md) is still an index —

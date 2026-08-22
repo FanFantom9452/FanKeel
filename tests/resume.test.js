@@ -206,11 +206,20 @@ test('a malformed session_id says nothing', () => {
 test('the manifest runs it on AskUserQuestion and on nothing else', () => {
   const plugin = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
   const post = plugin.hooks.PostToolUse;
-  assert.equal(post.length, 1);
-  assert.equal(post[0].matcher, 'AskUserQuestion');
-  assert.equal(post[0].hooks.length, 1);
-  assert.match(post[0].hooks[0].command, /hooks\/resume\.js/);
-  assert.equal(post[0].hooks[0].timeout, 5);
+  const mine = post.filter((e) => e.hooks.some((h) => /hooks\/resume\.js/.test(h.command)));
+  assert.equal(mine.length, 1, 'resume.js is registered more than once');
+  assert.equal(mine[0].matcher, 'AskUserQuestion');
+  assert.equal(mine[0].hooks.length, 1);
+  assert.equal(mine[0].hooks[0].timeout, 5);
+});
+
+test('the drift hook runs on writes and on nothing else', () => {
+  const plugin = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
+  const post = plugin.hooks.PostToolUse;
+  const touch = post.filter((e) => e.hooks.some((h) => /hooks\/touch\.js/.test(h.command)));
+  assert.equal(touch.length, 1);
+  assert.equal(touch[0].matcher, 'Edit|Write|NotebookEdit');
+  assert.equal(touch[0].hooks[0].timeout, 5);
 });
 
 test('every hook the manifest names is a file that exists', () => {
