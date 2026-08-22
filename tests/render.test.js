@@ -334,3 +334,44 @@ test('widening the scope takes the block away', () => {
   });
   assert.equal(/scope drift/.test(out), false);
 });
+
+const COLD = 3 * 24 * 3600e3;
+
+test('when the only overlapping neighbour is cold, the block says so and offers clear', () => {
+  const out = render({
+    mine: entry(MINE, { scope: ['web'] }),
+    others: [entry(THEIRS, { task: 'the ramp', scope: ['web'], updated: ago(COLD) })],
+    now: NOW,
+  });
+  assert.match(out, /every session overlapping your scope is cold/);
+  assert.match(out, /the ramp @ implement — last seen 3d ago/);
+  assert.match(out, new RegExp('clear ' + THEIRS + ' --session ' + MINE));
+});
+
+// One cold claim beside a live one is not a ghost problem, and its age already
+// sits on its own line.
+test('a live neighbour keeps the block away', () => {
+  const out = render({
+    mine: entry(MINE, { scope: ['web'] }),
+    others: [
+      entry(THEIRS, { scope: ['web'], updated: ago(COLD) }),
+      entry(THIRD, { scope: ['web'], updated: ago(60e3) }),
+    ],
+    now: NOW,
+  });
+  assert.equal(/every session overlapping your scope is cold/.test(out), false);
+});
+
+test('a cold neighbour that does not overlap is not a ghost of yours', () => {
+  const out = render({
+    mine: entry(MINE, { scope: ['web'] }),
+    others: [entry(THEIRS, { scope: ['api'], updated: ago(COLD) })],
+    now: NOW,
+  });
+  assert.equal(/every session overlapping your scope is cold/.test(out), false);
+});
+
+test('no neighbours at all is not a ghost problem either', () => {
+  const out = render({ mine: entry(MINE, { scope: ['web'] }), others: [], now: NOW });
+  assert.equal(/every session overlapping your scope is cold/.test(out), false);
+});
