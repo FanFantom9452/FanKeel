@@ -1,12 +1,12 @@
 ---
 status: current
 last_verified: 2026-08-23
-source_of_truth: lib/overlap.js, lib/guard.js, lib/registry.js, scripts/task.js
+source_of_truth: lib/overlap.js, lib/guard.js, lib/registry.js, scripts/task.js, hooks/touch.js
 ---
 
 # Two sessions, one repository
 
-What happens when another live terminal declares a file this task also declared, and what happens to a claim whose terminal is long gone.
+What happens when another live terminal declares a file this task also declared, what happens when the work moves somewhere neither of them declared, and what happens to a claim whose terminal is long gone.
 
 # Collisions are about files, not names
 
@@ -20,6 +20,40 @@ is under it.
 
 By default an overlap is **reported, not blocked** — the warning rides on every
 prompt and `[FANKEEL:CLASH]` sits in the statusline.
+
+## The scope goes out of date, and something notices
+
+Every one of those checks reads `scope`, so a scope that no longer describes where
+the work is makes the whole thing silent. Two sessions scoped `web` and `api` do
+not overlap; the moment the first one follows a bug into `api/routes.js` they are
+writing the same directory and neither is told. That is not the rare case. A bug
+in the frontend turns out to be in the backend, somebody asks for one more thing,
+one component serves three areas.
+
+`skills/fankeel/SKILL.md` has always said an out-of-date scope is the one thing
+that makes the collision warning useless. Saying it was all that happened, and an
+instruction several hundred lines from the moment it matters is an instruction
+that gets agreed with and skipped — the same argument that put the guard on a hook
+rather than in prose.
+
+So `hooks/touch.js` watches. It is `PostToolUse` on the same tools the guard
+matches, and after an edit lands outside the declared scope it records the path on
+the entry's `drift` field. Nothing is blocked and nothing is guessed: drift is not
+a permission question, and the hook never edits `scope`, because a guessed scope
+produces false collision warnings and a false warning is worse than a missing one.
+
+The next prompt carries the list and the command that resolves it:
+
+```
+scope drift — 2 files this task edited outside its declared scope:
+  LevelMark/api/routes.js, LevelMark/config/flags.json
+  node <abs>/scripts/task.js scope "<path>" --add --session <id>
+```
+
+Running it clears the line, because `drift` is filtered against the current scope
+at read time rather than deleted — no second code path, and no bookkeeping that
+can disagree with itself. A session working inside the scope it declared sees
+nothing at all, and the hook writes nothing.
 
 ## Making it block
 

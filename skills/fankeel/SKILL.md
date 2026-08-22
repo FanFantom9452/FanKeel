@@ -90,6 +90,11 @@ is one entry and not two hundred. Do not ask for a list of files when the user h
 pointed at a directory — the overlap check reads a bare directory name as covering
 its subtree, and so does the guard.
 
+The first scope is rarely the last one. `scope --add` widens it at any point, and
+`hooks/touch.js` records every edit that lands outside it on the entry's `drift`
+field, so the injected block names the files that have already left the scope
+instead of waiting for someone to remember.
+
 ```json
 {
   "task": "rework the 7d deviation colour ramp",
@@ -132,11 +137,15 @@ the invariants below, and refuses rather than guessing. It exits non-zero when i
 refuses, so read the output. Hand-written JSON gets the `.gitignore` wrong every
 time, and a `sessions/` directory that is not ignored ends up committed.
 
-`start`, `stage`, `scope`, `adopt`, `down` and `clear` also set the statusline badge, so it
-is there on the turn the change happened. The hook keeps it current from then on —
-it runs *before* a prompt, so a badge left to the hook alone would not appear
-until the user typed again, and until then turning the mode on looks exactly like
-failing to.
+`start`, `stage`, `scope`, `adopt` and `down` also set this session's statusline
+badge, so it is there on the turn the change happened. The hook keeps it current
+from then on — it runs *before* a prompt, so a badge left to the hook alone would
+not appear until the user typed again, and until then turning the mode on looks
+exactly like failing to.
+
+`clear` is the one that does not. It takes the badge down on the session being
+cleared and never touches this one, so a `clash` it resolves stays on this
+statusline until the next prompt. Say so rather than promising it has gone.
 
 ## Invariants
 
@@ -151,7 +160,10 @@ worse than none because people stop reading it.
 3. **Never invent `scope`.** Ask. A guessed scope produces false collision
    warnings, and two false warnings are enough for someone to start ignoring
    real ones.
-4. **Never edit `updated`.** The hook owns it.
+4. **Never edit `updated` or `drift`.** The hooks own both — `updated` from every
+   prompt, `drift` from every edit that lands outside the declared scope.
+   `scope --add` is what clears `drift`, and it clears it by widening the scope
+   rather than by deleting anything.
 5. **Never delete a session file.** Standing down sets `active: false`.
 6. **Never advance `stage` without saying so.** The stage decides which rules
    are injected, so a wrong stage silently swaps the discipline.
@@ -573,6 +585,19 @@ decide. Do not silently proceed.
 
 If the work reaches a file nobody declared, say so and run `task.js scope "<path>" --add`. An
 out-of-date scope is the one thing that makes the collision warning useless.
+
+A `scope drift —` block is that same thing noticed for you. It lists the files
+this task has already edited outside its declared scope, and prints the
+`scope --add` command whole, with the session id in it — run it exactly as
+printed, or say why the scope should stay as it is. It is `hooks/touch.js` that
+records those paths, so they are what happened rather than what anyone remembers,
+and widening the scope is the only thing that clears the block.
+
+`every session overlapping your scope is cold` means every other claim on these
+files was last seen more than twelve hours ago. That is evidence about age and not
+about people, so treat it as a question rather than a finding: name the tasks it
+lists, and run the `clear` command printed under each one only for the ones the
+user picks.
 
 A `context:` line means this session has already lost work to compaction, and
 says how much. Pass it on rather than ignoring it: the statusline shows a

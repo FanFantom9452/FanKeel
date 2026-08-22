@@ -31,7 +31,10 @@ function main(raw) {
     if (!file) return;
 
     const others = registry.readActive(root).filter((e) => e.sessionId !== payload.session_id);
-    const verdict = decide({ mine, others, root, file, now: Date.now() });
+    // The session id goes in so the refusal can print a command that runs as
+    // printed. Nothing reaches here without one: `readSession` returns null for a
+    // missing id and the entry check above has already returned.
+    const verdict = decide({ mine, sessionId: payload.session_id, others, root, file, now: Date.now() });
     if (!verdict) return;
 
     process.stdout.write(JSON.stringify({

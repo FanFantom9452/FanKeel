@@ -242,6 +242,18 @@ test('decide says nothing at all when the guard is off', () => {
 });
 
 test('the refusal names the command that clears a claim nobody is behind', () => {
-  const text = guard.reasonFor('web/a.js', [{ sessionId: THEIRS, data: { task: 't', stage: 'build' } }]);
+  const text = guard.reasonFor('web/a.js', [{ sessionId: THEIRS, data: { task: 't', stage: 'build' } }], MINE);
   assert.match(text, /task\.js clear/);
+});
+
+// `blockers` drops stale entries, so every holder this text can ever name is one
+// `clear` refuses on its own. Printed without --force it is a recommendation that
+// fails on the first try, one hundred percent of the time.
+test('the refusal prints the clear command whole, and says why --force is part of it', () => {
+  const text = guard.reasonFor('web/a.js', [{ sessionId: THEIRS, data: { task: 't', stage: 'build' } }], MINE);
+  assert.match(text, new RegExp('node .*task\\.js clear ' + THEIRS + ' --force --session ' + MINE));
+  assert.match(text, /`--force` is required there rather than optional/);
+  // adopt is named only with the precondition attached: a guarded session owns an
+  // active task, which is exactly the caller cmdAdopt refuses.
+  assert.match(text, /adoptable, though not by this session/);
 });

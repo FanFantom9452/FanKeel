@@ -497,8 +497,14 @@ function cmdClear(root, opts) {
     if (!registry.writeSession(root, target, data)) fail('Could not write the entry.');
     hideBadge(opts, target);
 
+    // Prose rather than a command, because the command would not run for the
+    // caller who typically types this one: `adopt` refuses a session that already
+    // owns an active task, and a session tidying up other claims usually does.
     return 'fankeel — cleared: ' + (data.task || 'untitled') + ' @ ' + (data.stage || '?')
-        + NL + 'The entry is still there. `adopt ' + target + '` takes the task back, notes and all.';
+        + NL + 'That badge is down. This one is not: the clash clears on the next prompt.'
+        + NL + 'The entry is still there, notes and all, and `adopt` takes the task back —'
+        + NL + 'from a session owning no active task of its own, which is the only caller'
+        + NL + 'it accepts.';
 }
 
 // Re-routing is a separate command from `stage` on purpose. Moving along a route
@@ -568,9 +574,13 @@ const USAGE = [
     'registry is. Without --root it is found the way the hooks find it: the nearest',
     '.fankeel above the working directory, or the working directory itself.',
     '',
-    'start, stage, scope, adopt, down and clear also set the statusline badge, so it is',
+    'start, stage, scope, adopt and down set the badge for this session, so it is',
     'there on this turn rather than on the next prompt. The hook keeps it current',
     'from then on.',
+    '',
+    'clear is the exception. It takes the badge down on the session being cleared',
+    'and never touches this one, so a clash it resolves goes on showing until the',
+    'next prompt.',
 ].join('\n');
 
 function main(argv) {

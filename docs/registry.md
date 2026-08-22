@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-08-22
-source_of_truth: lib/registry.js, lib/render.js, lib/context.js
+last_verified: 2026-08-23
+source_of_truth: lib/registry.js, lib/render.js, lib/context.js, hooks/touch.js
 ---
 
 # The registry, and what it remembers
@@ -27,7 +27,7 @@ workspace/                     <- Claude Code opened here
 
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`, and `inject.js` / `resume.js` for `updated` |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated`; `touch.js` for `drift` |
 | `.fankeel/.gitignore` | Yes | Created with the directory |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
 | `~/.claude/modes/{session_id}/fankeel` | n/a | `inject.js`, every prompt |
@@ -76,8 +76,12 @@ where it moves to one of the four.
 A third field is written by nobody the user talks to. `drift` holds the paths this
 task edited that its declared `scope` does not cover — at most five, each recorded
 whole, never truncated, because a truncated path cannot be pasted into
-`scope --add`. It is read through a filter against the current scope, so widening
-the scope clears it without anything having to delete it.
+`scope --add`. `hooks/touch.js` appends to it after an out-of-scope edit has
+landed, which is why the table above lists a hook rather than a command as its
+writer; no subcommand sets it, and `adopt` carries it across because the question
+it answers — does the scope still describe where the work is — belongs to the task
+rather than to the session. It is read through a filter against the current scope,
+so widening the scope clears it without anything having to delete it.
 
 # The mode never switches itself off
 

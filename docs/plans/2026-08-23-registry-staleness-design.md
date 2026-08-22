@@ -239,7 +239,10 @@ which `.fankeel/.gitignore` already excludes.
 read time, dropping anything now covered. Running `scope --add` therefore clears
 the line for free — no second code path, no bookkeeping that can disagree with
 itself, and no way for a cleared entry to come back. Stored entries that no longer
-render are pruned on the next write.
+render stay on disk, and nothing prunes them: `addDrift` filters only for the
+value being a string. Nothing needs to. `driftOf` hides anything the current scope
+covers, and `slice(-MAX_DRIFT)` evicts the oldest as new paths arrive, so a
+covered entry is invisible until it falls off the end.
 
 This also means widening scope by any route clears it, including replacing the
 scope wholesale, which is correct: the question `drift` answers is "is the entry
