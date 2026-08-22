@@ -335,3 +335,13 @@ test('without --root the registry is found the way the hooks find it', () => {
       'a test wrote a statusline flag into the real ~/.claude/modes');
   }
 });
+
+test('adopting a task carries the record that its scope went stale', () => {
+  const dir = root();
+  started(dir, B, 'rework the ramp', 'web');
+  registry.addDrift(dir, B, 'api/routes.js');
+
+  const { code } = run(dir, ['adopt', B, '--session', A]);
+  assert.equal(code, 0);
+  assert.deepEqual(entry(dir, A).drift, ['api/routes.js']);
+});

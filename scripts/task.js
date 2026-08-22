@@ -435,6 +435,7 @@ function cmdAdopt(root, opts) {
     if (source.notes) data.notes = source.notes;
     if (source.next) data.next = source.next;
     if (source.guard) data.guard = source.guard;
+    if (source.drift) data.drift = source.drift;
     if (!registry.writeSession(root, id, data)) fail('Could not write this session\'s entry.');
 
     source.active = false;
