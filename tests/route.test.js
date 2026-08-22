@@ -1,7 +1,7 @@
 'use strict';
 
 // Routes: the stages a particular task will go through, in the order it will go
-// through them. The fixed six made the progress indicator lie in both directions,
+// through them. A fixed route made the progress indicator lie in both directions,
 // so what matters here is that a route is either valid and honest about where it
 // is, or refused.
 
@@ -68,11 +68,11 @@ test('a route without land is fine — not every task ends by landing', () => {
   assert.deepEqual(normaliseRoute(['survey', 'audit']), ['survey', 'audit']);
 });
 
-test('position is along the route, not along the full six', () => {
+test('position is along the route, not along the full seven', () => {
   assert.deepEqual(positionIn(['build', 'verify'], 'verify'), { step: 2, steps: 2 });
   assert.deepEqual(positionIn(['survey', 'audit', 'land'], 'audit'), { step: 2, steps: 3 });
   // The failure this replaces: two-stage work sitting at 2 of 6 forever.
-  assert.deepEqual(positionIn(null, 'verify'), { step: 4, steps: 6 });
+  assert.deepEqual(positionIn(null, 'verify'), { step: 5, steps: 7 });
 });
 
 test('a stage off the route has no position rather than an invented one', () => {
@@ -97,7 +97,7 @@ test('start takes a route and begins at its first stage, not at survey', () => {
   assert.equal(data.stage, 'build');
 });
 
-test('start without a route gets all six', () => {
+test('start without a route gets all seven', () => {
   const dir = root();
   run(dir, ['start', '--session', A, '--task', 'a feature', '--scope', 'a.js']);
   assert.deepEqual(registry.readSession(dir, A).route, FULL_ROUTE);
@@ -136,7 +136,7 @@ test('route re-routes, and refuses to strand the stage the task is in', () => {
   assert.deepEqual(registry.readSession(dir, A).route, ['survey', 'build', 'verify', 'land']);
 });
 
-test('the lead file counts along the route, not along the full six', () => {
+test('the lead file counts along the route, not along the full seven', () => {
   const dir = root();
   run(dir, ['start', '--session', A, '--task', 'fix a typo', '--scope', 'a.js', '--route', 'build,verify']);
 

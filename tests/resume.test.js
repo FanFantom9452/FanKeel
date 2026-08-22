@@ -86,7 +86,7 @@ test('an answered question brings the stage rules back', () => {
   seed(root, MINE);
   const ctx = context(run({ session_id: MINE, cwd: root }));
   assert.match(ctx, /FANKEEL ACTIVE — rework the colour ramp @ build/);
-  assert.match(ctx, /route: survey → design → \[build\] → verify → audit → land/);
+  assert.match(ctx, /route: survey → design → plan → \[build\] → verify → audit → land/);
   assert.match(ctx, /stage rules:/);
   assert.match(ctx, /AskUserQuestion/);
   assert.match(ctx, /output shape:/);

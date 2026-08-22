@@ -38,6 +38,7 @@ const NL = String.fromCharCode(10);
 const FIRST_STEP = {
     survey: 'Now survey: read what orient named, then run the scanner. Do not stop to ask first.',
     design: 'Now design: one approach and what it costs, then wait for a yes.',
+    plan:   'Now plan: decompose it into tasks a stranger could execute, then stop at the gate.',
     build:  'Now build. The change is the output; say little until there is something to show.',
     verify: 'Now verify: run it and quote the line that decided it.',
     audit:  'Now audit: run the documents check and quote it before judging anything.',

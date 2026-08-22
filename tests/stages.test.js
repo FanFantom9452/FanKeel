@@ -6,8 +6,8 @@ const assert = require('node:assert/strict');
 const { ALWAYS, STAGES, NAMES, byName, nextStage, rulesFor, templateFor } = require('../lib/stages.js');
 const { MAX_WORD } = require('../lib/badge.js');
 
-test('the stages are the six a route is assembled from, in canonical order', () => {
-  assert.deepEqual(NAMES, ['survey', 'design', 'build', 'verify', 'audit', 'land']);
+test('the stages are the seven a route is assembled from, in canonical order', () => {
+  assert.deepEqual(NAMES, ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land']);
 });
 
 test('every stage name survives what the statusline will read', () => {
@@ -52,9 +52,16 @@ test('a full injection of rules stays under a few hundred characters', () => {
   // The templates are deliberately not counted here — they are a separate block
   // and a separate trade. This number is about the prose the model has to read
   // before it reaches the shape it is being asked to fill in.
+  //
+  // 1800, not 1600. Seven stages now, and each carries a pointer to the skill
+  // holding the part of its protocol that does not compress. The ALWAYS block
+  // is 655 of whatever the number is, so a stage's own rules get 1144. `build`
+  // was the binding one at 852, which is 92 characters of headroom under the
+  // old cap — a cap that would have been hit by the first rule added rather
+  // than by the rule that deserved to hit it.
   for (const name of NAMES) {
     const size = rulesFor(name).join('\n').length;
-    assert.ok(size < 1600, name + ' rules are ' + size + ' chars');
+    assert.ok(size < 1800, name + ' rules are ' + size + ' chars');
   }
 });
 
@@ -114,7 +121,8 @@ test('every stage carries a skeleton that ends at the gate', () => {
 
 test('nextStage walks the full route by default and stops at land', () => {
   assert.equal(nextStage('survey'), 'design');
-  assert.equal(nextStage('design'), 'build');
+  assert.equal(nextStage('design'), 'plan');
+  assert.equal(nextStage('plan'), 'build');
   assert.equal(nextStage('build'), 'verify');
   assert.equal(nextStage('verify'), 'audit');
   assert.equal(nextStage('audit'), 'land');
@@ -234,7 +242,45 @@ test('no stage repeats another stage tool', () => {
 test('no rule is a placeholder', () => {
   // TODO.md is a filename a rule legitimately names, so the word only counts as
   // a placeholder when it is not followed by an extension.
+  //
+  // Double-quoted spans are dropped first. The plan stage's rule refuses these
+  // words by listing them, and a guard that cannot tell naming a word from using
+  // one would make the rule unwritable — which would leave the actual failure,
+  // a plan full of TBDs, with nothing forbidding it.
+  const unquoted = (r) => r.replace(/"[^"]*"/g, '');
   for (const r of ALWAYS.concat(...STAGES.map((s) => s.rules))) {
-    assert.equal(/\bTODO\b(?!\.)|\bTBD\b|placeholder|fill in/i.test(r), false, r);
+    assert.equal(/\bTODO\b(?!\.)|\bTBD\b|placeholder|fill in/i.test(unquoted(r)), false, r);
   }
+});
+
+// Plan is its own stage rather than the head of build, because the approval of a
+// plan is a human gate and build's own discipline is that it does not stop to
+// ask. A gate inside a stage that must not stop is a contradiction that resolves
+// itself by being ignored.
+test('plan is a stage, and it sits between design and build', () => {
+  const { FULL_ROUTE } = require('../lib/stages.js');
+  assert.deepEqual(FULL_ROUTE, ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land']);
+  assert.equal(nextStage('design'), 'plan');
+  assert.equal(nextStage('plan'), 'build');
+});
+
+test('the plan stage refuses the placeholders that make a plan unexecutable', () => {
+  const text = byName('plan').rules.join(' ');
+  assert.match(text, /the actual code, not a description of it/);
+  assert.match(text, /TBD/);
+});
+
+// The container superpowers already had; what changes is who fills it. Copied by
+// hand, it carries whatever a person remembered from the spec, so anything true
+// of the project but absent from the spec never reaches the work.
+test('Global Constraints are generated from the project, not copied by hand', () => {
+  const text = byName('plan').rules.join(' ');
+  assert.match(text, /\{\{MAP\}\}/);
+  assert.match(text, /Global Constraints/);
+});
+
+test('the plan stage shows its skeleton rather than describing one', () => {
+  const t = templateFor('plan');
+  assert.ok(t, 'no template');
+  assert.match(t, /then AskUserQuestion/);
 });

@@ -251,7 +251,7 @@ test('the whole injection stays a readable size with everything populated', () =
     });
     if (out.length > worst) { worst = out.length; name = stage; }
   }
-  assert.ok(worst < 2600, 'worst injection is ' + name + ' at ' + worst + ' chars');
+  assert.ok(worst < 3000, 'worst injection is ' + name + ' at ' + worst + ' chars');
 });
 
 test('no stage’s rules cost more than a readable preamble', () => {
@@ -260,7 +260,7 @@ test('no stage’s rules cost more than a readable preamble', () => {
   // fixture happens to sit in.
   for (const stage of NAMES) {
     const out = render({ mine: entry(MINE, { stage }), others: [], now: NOW });
-    assert.ok(out.length < 1900, stage + ' injection is ' + out.length + ' chars');
+    assert.ok(out.length < 2300, stage + ' injection is ' + out.length + ' chars');
   }
 });
 
