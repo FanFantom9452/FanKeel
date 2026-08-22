@@ -609,7 +609,7 @@ Expected: PASS.
 - [ ] **Step 5: Run the full suite**
 
 Run: `npm test`
-Expected: **530 pass, 0 fail**.
+Expected: **531 pass, 0 fail**.
 
 - [ ] **Step 6: Commit**
 
@@ -912,7 +912,7 @@ because below that the silence is not evidence of anything.
 - [ ] **Step 8: Run everything**
 
 Run: `npm test && node scripts/docs-check.js && node scripts/docs-audit.js`
-Expected: **536 pass, 0 fail**; both scanners exit 0.
+Expected: **537 pass, 0 fail**; both scanners exit 0.
 
 - [ ] **Step 9: Commit**
 
@@ -1115,7 +1115,7 @@ node scripts/todo-check.js
 claude plugin validate .
 ```
 
-Expected: **541 pass, 0 fail**; all four scanners exit 0.
+Expected: **542 pass, 0 fail**; all four scanners exit 0.
 
 - [ ] **Step 5: Verify on a clean clone**
 
@@ -1145,5 +1145,7 @@ git commit -m "chore: 0.25.0 — a registry that notices when it has gone stale"
 **Type consistency.** `addDrift` / `driftOf` / `MAX_DRIFT` / `MAX_DRIFT_LEN` are named identically in Tasks 1, 2, 3 and 6. `TASK_SCRIPT` is defined in Task 3 and reused in Task 6. `cmdClear` and `opts.force` are named identically in Task 5's steps 3, 4 and its tests. `covers` and `relPath` are the names `lib/guard.js` already exports.
 
 **Test counts.** 509 today; +8 (T1), +8 (T2 — seven in `tests/touch.test.js` plus one in `tests/resume.test.js`; the manifest assertion is a rewritten body, not a new test), +5 (T3), +1 (T4), +5 (T5), +4 (T6), +1 (T7) = **541**. A count below that at Task 8 means something was dropped.
+
+Amended during execution: Task 2's review ruled the duplicated `targetOf` into `lib/guard.js` and added one test for it in `tests/guard.test.js`, so every count from Task 3 onward is one higher than the arithmetic above. The landing figure is **542**.
 
 **Fixture helpers.** Every test block above was checked against the file it is added to. `tests/registry.test.js` has `tmpRoot`, `seed`, `task`, `SID`, `OTHER` — no `tmp`, no `MINE`. `tests/task.test.js` has `root`, `run`, `started`, `entry`, `A`, `B` — no `seed`, and `run` returns `{ out, code }` rather than throwing, because `fail()` writes to stdout. `tests/render.test.js` already declares `MINE`, `THEIRS`, `THIRD`, `NOW`, `ago` and `entry` — re-declaring any of them is a `SyntaxError`. `tests/touch.test.js` is new and carries its own.
