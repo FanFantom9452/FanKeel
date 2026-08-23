@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 'use strict';
 
-// PostToolUse on Edit|Write|NotebookEdit. It records the edits that landed
-// outside the scope this task declared, and does nothing else.
+// PostToolUse on Edit|Write|NotebookEdit. It records the files this task has
+// actually touched, and does nothing else.
 //
 // It is not on PreToolUse, where guard.js already sits, and the reason is that
 // hook's own discipline: silence everywhere except a live collision on a session
 // that asked to be guarded, because a PreToolUse hook answering on edits it has
-// no opinion about overrides the user's own permission rules. Drift is not a
+// no opinion about overrides the user's own permission rules. A claim is not a
 // permission question and must never gate an edit. This observes something that
 // already happened.
 //
@@ -35,16 +35,18 @@ function main(raw) {
     const file = targetOf(payload);
     if (!file) return;
 
-    // Outside the registry root is not this registry's business, and a scope
-    // entry could not have named it anyway.
+    // Outside the registry root is not this registry's business, and nothing
+    // reading this registry could resolve a claim on it.
     const rel = relPath(root, file);
     if (!rel) return;
 
-    // The common case, and it ends here without a write.
-    if (covers(mine.scope, rel)) return;
+    // The common case, and it ends here without a write. A task editing one file
+    // two hundred times touches the registry once, which is what makes this
+    // affordable on a hook that fires for every edit in every session.
+    if (covers(registry.claimsOf(mine), rel)) return;
 
     try {
-        registry.addDrift(root, payload.session_id, rel);
+        registry.addClaim(root, payload.session_id, rel);
     } catch (e) { /* housekeeping */ }
 }
 

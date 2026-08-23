@@ -13,11 +13,13 @@ const MINE = 'aaaaaaaa-0000-4000-8000-000000000001';
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-touch-'));
 
+// No `claims` and no `scope` by default: what a task holds is what it touched,
+// and a fresh entry has touched nothing. Tests that need either field say so.
 function seed(root, sessionId, over) {
   const dir = path.join(root, '.fankeel', 'sessions');
   fs.mkdirSync(dir, { recursive: true });
   const data = Object.assign({
-    task: 'fix the ramp', scope: ['web'], stage: 'build', active: true,
+    task: 'fix the ramp', project: 'web', stage: 'build', active: true,
     started: new Date(Date.now() - 3600e3).toISOString(),
     updated: new Date().toISOString(),
   }, over);
@@ -38,36 +40,50 @@ const edit = (root, file, session) => ({
   tool_name: 'Edit', tool_input: { file_path: path.join(root, file) },
 });
 
-test('an edit outside the declared scope is recorded', () => {
+const entryFile = (root) => path.join(root, '.fankeel', 'sessions', MINE + '.json');
+const claims = (root) => registry.claimsOf(registry.readSession(root, MINE));
+
+test('a file the task had not touched is claimed', () => {
   const root = tmp();
-  seed(root, MINE, { scope: ['web'] });
+  seed(root, MINE);
   run(root, edit(root, 'api/routes.js'));
-  assert.deepEqual(registry.readSession(root, MINE).drift, ['api/routes.js']);
+  assert.deepEqual(claims(root), ['api/routes.js']);
 });
 
-test('an edit inside the declared scope writes nothing at all', () => {
+// A task editing one file two hundred times writes here once.
+test('a file already claimed is not written again', () => {
+  const root = tmp();
+  seed(root, MINE, { claims: ['web/page.js'] });
+  const before = fs.readFileSync(entryFile(root), 'utf8');
+  run(root, edit(root, 'web/page.js'));
+  assert.equal(fs.readFileSync(entryFile(root), 'utf8'), before);
+});
+
+// The old record shape. Its declared scope is read as its claim list, which is
+// what it was being used as, so a file it already covered is not claimed again.
+test('an old record has its scope read as its claims', () => {
   const root = tmp();
   seed(root, MINE, { scope: ['web'] });
-  const before = fs.readFileSync(path.join(root, '.fankeel', 'sessions', MINE + '.json'), 'utf8');
+  const before = fs.readFileSync(entryFile(root), 'utf8');
   run(root, edit(root, 'web/page.js'));
-  assert.equal(fs.readFileSync(path.join(root, '.fankeel', 'sessions', MINE + '.json'), 'utf8'), before);
+  assert.equal(fs.readFileSync(entryFile(root), 'utf8'), before);
 });
 
 test('NotebookEdit carries its path under another key', () => {
   const root = tmp();
-  seed(root, MINE, { scope: ['web'] });
+  seed(root, MINE);
   run(root, {
     session_id: MINE, cwd: root, tool_name: 'NotebookEdit',
     tool_input: { notebook_path: path.join(root, 'api/explore.ipynb') },
   });
-  assert.deepEqual(registry.readSession(root, MINE).drift, ['api/explore.ipynb']);
+  assert.deepEqual(claims(root), ['api/explore.ipynb']);
 });
 
 test('a file outside the registry root is not this registry\'s business', () => {
   const root = tmp();
-  seed(root, MINE, { scope: ['web'] });
+  seed(root, MINE);
   run(root, { session_id: MINE, cwd: root, tool_name: 'Edit', tool_input: { file_path: path.join(os.tmpdir(), 'elsewhere.js') } });
-  assert.equal(registry.readSession(root, MINE).drift, undefined);
+  assert.deepEqual(claims(root), []);
 });
 
 test('a session with no entry is left alone', () => {
@@ -77,18 +93,26 @@ test('a session with no entry is left alone', () => {
   assert.equal(fs.readdirSync(path.join(root, '.fankeel', 'sessions')).length, 0);
 });
 
-test('a stood-down entry records nothing', () => {
+test('a stood-down entry claims nothing', () => {
   const root = tmp();
-  seed(root, MINE, { scope: ['web'], active: false });
+  seed(root, MINE, { active: false });
   run(root, edit(root, 'api/routes.js'));
-  assert.equal(registry.readSession(root, MINE).drift, undefined);
+  assert.deepEqual(claims(root), []);
 });
 
 test('it exits 0 on a malformed payload and on a tool with no path', () => {
   const root = tmp();
-  seed(root, MINE, { scope: ['web'] });
+  seed(root, MINE);
   const env = Object.assign({}, process.env, { CLAUDE_PROJECT_DIR: root });
   execFileSync(process.execPath, [HOOK], { input: 'not json', env, encoding: 'utf8' });
   run(root, { session_id: MINE, cwd: root, tool_name: 'Bash', tool_input: { command: 'ls' } });
-  assert.equal(registry.readSession(root, MINE).drift, undefined);
+  assert.deepEqual(claims(root), []);
+});
+
+// A PostToolUse hook that speaks appends to the transcript, and this one fires
+// on every edit in every session on the machine.
+test('it writes nothing to stdout on the path that does write', () => {
+  const root = tmp();
+  seed(root, MINE);
+  assert.equal(run(root, edit(root, 'api/routes.js')), '');
 });

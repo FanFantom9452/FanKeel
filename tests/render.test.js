@@ -290,51 +290,6 @@ test('an unrecognised stage gets rules but no shape', () => {
   assert.equal(out.includes('output shape:'), false);
 });
 
-test('a session working where it said it would gets no drift block', () => {
-  const out = render({ mine: entry(MINE, { scope: ['web'] }), others: [], now: NOW });
-  assert.equal(/scope drift/.test(out), false);
-});
-
-test('the drift block names the paths and a command that carries the session id', () => {
-  const out = render({
-    mine: entry(MINE, { scope: ['web'], drift: ['api/routes.js'] }),
-    others: [], now: NOW,
-  });
-  assert.match(out, /scope drift — 1 file this task edited outside its declared scope:/);
-  assert.match(out, /api\/routes\.js/);
-  assert.match(out, new RegExp('--session ' + MINE));
-});
-
-test('two paths are counted and listed on one line', () => {
-  const out = render({
-    mine: entry(MINE, { scope: ['web'], drift: ['api/routes.js', 'config/flags.json'] }),
-    others: [], now: NOW,
-  });
-  assert.match(out, /scope drift — 2 files this task edited outside its declared scope:/);
-  assert.match(out, /api\/routes\.js, config\/flags\.json/);
-});
-
-// The whole argument of the block is that the remedy is there at the moment it
-// matters. A command that needs a substitution the reader cannot make is not one.
-test('the command it prints carries no unresolved placeholder', () => {
-  const out = render({
-    mine: entry(MINE, { scope: ['web'], drift: ['api/routes.js'] }),
-    others: [], now: NOW,
-  });
-  const line = out.split('\n').find((l) => l.includes('scope "<path>" --add'));
-  assert.ok(line, 'no remedy line');
-  assert.equal(/<plugin>/.test(line), false);
-  assert.ok(line.includes(TASK_SCRIPT), 'the resolved script path is not in the line');
-});
-
-test('widening the scope takes the block away', () => {
-  const out = render({
-    mine: entry(MINE, { scope: ['web', 'api'], drift: ['api/routes.js'] }),
-    others: [], now: NOW,
-  });
-  assert.equal(/scope drift/.test(out), false);
-});
-
 const COLD = 3 * 24 * 3600e3;
 
 test('when the only overlapping neighbour is cold, the block says so and offers clear', () => {

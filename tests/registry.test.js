@@ -412,58 +412,101 @@ test('CLAUDE_PROJECT_DIR is preferred over the payload cwd', () => {
   }
 });
 
-// ---- drift ------------------------------------------------------------
+// ---- claims and project ------------------------------------------------
 
-test('drift records a path outside the declared scope, newest last', () => {
+// The shared fixture still declares a `scope`, and `claimsOf` reads it when
+// `claims` is absent — which is the compat path two tests below are about and
+// noise in every other one. These start from a record that declares nothing.
+const observed = (over) => { const t = task(over); delete t.scope; return t; };
+
+test('claimsOf reads the paths the task has been observed in', () => {
+  const data = observed({ claims: ['web/src/Card.jsx', 'api/routes.js'] });
+  assert.deepEqual(registry.claimsOf(data), ['web/src/Card.jsx', 'api/routes.js']);
+});
+
+// Sessions live for days, so a record written before this change is read after
+// it. Its declared scope was already being used as a collision claim, which is
+// exactly what a claim is, so it is read as one rather than migrated.
+test('claimsOf reads an old record scope as its claims', () => {
+  assert.deepEqual(registry.claimsOf({ scope: ['web', 'api'] }), ['web', 'api']);
+});
+
+test('claimsOf is empty for a record with neither, and drops junk in either', () => {
+  assert.deepEqual(registry.claimsOf({}), []);
+  assert.deepEqual(registry.claimsOf(null), []);
+  assert.deepEqual(registry.claimsOf({ claims: 'oops' }), []);
+  assert.deepEqual(registry.claimsOf({ claims: ['ok', null, 42, '  '] }), ['ok']);
+});
+
+test('projectOf reads the project a person declared', () => {
+  assert.equal(registry.projectOf({ project: '  LevelMark  ', claims: ['web/a.js'] }), 'LevelMark');
+});
+
+// It reports what is on the record and derives nothing. Whether a first path
+// segment names a repository is a question about the disk, and the only place
+// that can answer it is `projectRootsFor`, which stats the directory anyway.
+test('projectOf invents no project for a record that declares none', () => {
+  assert.equal(registry.projectOf({ claims: ['Waypoint/web/a.js'] }), '');
+  assert.equal(registry.projectOf({ scope: ['Waypoint/web'] }), '');
+  assert.equal(registry.projectOf({ project: '   ' }), '');
+  assert.equal(registry.projectOf({}), '');
+  assert.equal(registry.projectOf(null), '');
+});
+
+test('addClaim records a path the task had not touched, newest last', () => {
   const root = tmpRoot();
-  seed(root, SID, task({ scope: ['web'] }));
-  assert.equal(registry.addDrift(root, SID, 'api/routes.js'), true);
-  assert.equal(registry.addDrift(root, SID, 'config/flags.json'), true);
-  assert.deepEqual(registry.readSession(root, SID).drift, ['api/routes.js', 'config/flags.json']);
+  seed(root, SID, observed({ claims: ['web/src/Card.jsx'] }));
+  assert.equal(registry.addClaim(root, SID, 'api/routes.js'), true);
+  assert.deepEqual(registry.readSession(root, SID).claims, ['web/src/Card.jsx', 'api/routes.js']);
 });
 
-test('a repeated path is dropped rather than pushing a still-useful one out', () => {
+// The common case, and the reason a hook on every edit is affordable. The
+// fixture is written compact and `writeSession` writes it indented, so any write
+// at all changes these bytes.
+test('a path already claimed returns true and writes nothing', () => {
   const root = tmpRoot();
-  seed(root, SID, task({ scope: ['web'] }));
-  registry.addDrift(root, SID, 'api/a.js');
-  registry.addDrift(root, SID, 'api/b.js');
-  registry.addDrift(root, SID, 'api/a.js');
-  assert.deepEqual(registry.readSession(root, SID).drift, ['api/a.js', 'api/b.js']);
+  seed(root, SID, observed({ claims: ['web/src/Card.jsx'] }));
+  const file = registry.sessionPath(root, SID);
+  const before = fs.readFileSync(file);
+  assert.equal(registry.addClaim(root, SID, 'web/src/Card.jsx'), true);
+  assert.deepEqual(fs.readFileSync(file), before);
 });
 
-test('drift is capped at five, oldest evicted', () => {
+test('claims are capped at sixty, oldest evicted', () => {
   const root = tmpRoot();
-  seed(root, SID, task({ scope: ['web'] }));
-  for (const n of [1, 2, 3, 4, 5, 6]) registry.addDrift(root, SID, 'api/' + n + '.js');
-  const held = registry.readSession(root, SID).drift;
-  assert.equal(held.length, registry.MAX_DRIFT);
-  assert.equal(held[0], 'api/2.js');
-  assert.equal(held[4], 'api/6.js');
+  seed(root, SID, observed({ claims: [] }));
+  for (let n = 1; n <= 61; n++) registry.addClaim(root, SID, 'lib/' + n + '.js');
+  const held = registry.readSession(root, SID).claims;
+  assert.equal(registry.MAX_CLAIMS, 60);
+  assert.equal(held.length, registry.MAX_CLAIMS);
+  assert.equal(held[0], 'lib/2.js');
+  assert.equal(held[59], 'lib/61.js');
 });
 
-test('a path too long to paste into scope --add is not recorded at all', () => {
+test('a claim on a session with no entry creates nothing', () => {
   const root = tmpRoot();
-  seed(root, SID, task({ scope: ['web'] }));
-  assert.equal(registry.addDrift(root, SID, 'api/' + 'x'.repeat(registry.MAX_DRIFT_LEN)), false);
-  assert.equal(registry.readSession(root, SID).drift, undefined);
+  assert.equal(registry.addClaim(root, SID, 'api/routes.js'), false);
+  assert.equal(fs.existsSync(path.join(root, '.fankeel')), false);
 });
 
-test('driftOf hides what the current scope now covers', () => {
-  const data = { scope: ['web'], drift: ['api/routes.js', 'web/late.js'] };
-  assert.deepEqual(registry.driftOf(data), ['api/routes.js']);
+// `MAX_DRIFT_LEN` refused a path over 200 characters because a truncated one
+// could not be pasted into `scope --add`. Nobody runs a command off this list.
+test('a path too long for the old drift cap is recorded whole', () => {
+  const root = tmpRoot();
+  seed(root, SID, observed({ claims: [] }));
+  const long = 'lib/' + 'x'.repeat(300) + '.js';
+  assert.equal(registry.addClaim(root, SID, long), true);
+  assert.deepEqual(registry.readSession(root, SID).claims, [long]);
 });
 
-test('widening the scope clears the line with no second code path', () => {
-  const data = { scope: ['web', 'api'], drift: ['api/routes.js'] };
-  assert.deepEqual(registry.driftOf(data), []);
-});
-
-test('a glob in scope covers the path it matches', () => {
-  const data = { scope: ['api/**'], drift: ['api/routes.js'] };
-  assert.deepEqual(registry.driftOf(data), []);
-});
-
-test('an entry written before drift existed reads as no drift', () => {
-  assert.deepEqual(registry.driftOf({ scope: ['web'] }), []);
-  assert.deepEqual(registry.driftOf(null), []);
+test('claiming leaves every other field alone', () => {
+  const root = tmpRoot();
+  const before = observed({ claims: [] });
+  registry.writeSession(root, SID, before);
+  registry.addClaim(root, SID, 'api/routes.js');
+  const after = registry.readSession(root, SID);
+  for (const k of Object.keys(before)) {
+    if (k === 'claims') continue;
+    assert.deepEqual(after[k], before[k], 'field ' + k);
+  }
 });
