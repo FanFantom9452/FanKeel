@@ -24,7 +24,7 @@ function seed(root, over) {
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, SESSION + '.json'), JSON.stringify(Object.assign({
     task: 'rework the colour ramp',
-    scope: ['statusline.ps1', 'statusline.sh'],
+    claims: ['statusline.ps1', 'statusline.sh'],
     stage: 'build',
     active: true,
     started: new Date(Date.now() - 3600e3).toISOString(),
@@ -58,7 +58,7 @@ const entry = (over) => ({
   sessionId: SESSION,
   data: Object.assign({
     task: 'rework the colour ramp',
-    scope: ['statusline.ps1'],
+    claims: ['statusline.ps1'],
     stage: 'build',
     active: true,
   }, over),
@@ -77,12 +77,12 @@ test('a stood-down task briefs nobody', () => {
   assert.equal(run(root, start(root)), '');
 });
 
-test('a live task names itself and its scope to the subagent', () => {
+test('a live task names itself and the files it is already in to the subagent', () => {
   const root = tmp();
   seed(root);
   const text = contextOf(run(root, start(root)));
   assert.match(text, /^FANKEEL — you are a subagent of: rework the colour ramp @ build$/m);
-  assert.match(text, /^scope: statusline\.ps1, statusline\.sh$/m);
+  assert.match(text, /^touched: statusline\.ps1, statusline\.sh$/m);
 });
 
 test('the brief says what the return value costs', () => {
@@ -144,15 +144,21 @@ test('a style is never restated in the brief', () => {
   assert.equal(renderBrief({ mine: entry({ style: 'review' }) }).includes('voice ('), false);
 });
 
-test('an empty scope drops the scope line and the rule that depends on it', () => {
-  const text = renderBrief({ mine: entry({ scope: [] }) });
-  assert.equal(text.includes('scope:'), false);
-  assert.equal(text.includes('outside that scope'), false);
+test('a task that has touched nothing yet drops the line rather than rendering an empty one', () => {
+  const text = renderBrief({ mine: entry({ claims: [] }) });
+  assert.equal(text.includes('touched:'), false);
   assert.equal(text.includes('undefined'), false);
 });
 
-test('a scope brings the rule that tells the subagent to report leaving it', () => {
-  assert.match(renderBrief({ mine: entry() }), /outside that scope, name the file and say why/);
+// A rule used to sit here telling the subagent to name any file it wrote outside
+// the declared scope. Nothing declares a scope now, the write is recorded under
+// the parent's session id by `hooks/touch.js` whoever made it, and nothing in this
+// plugin reads a return value — so the sentence only ever lengthened the one output
+// the brief exists to keep short.
+test('the brief asks for no report about which files were written', () => {
+  const text = renderBrief({ mine: entry() });
+  assert.equal(text.includes('outside that scope'), false);
+  assert.equal(text.includes('name the file and say why'), false);
 });
 
 test('no entry renders nothing rather than a header with holes in it', () => {

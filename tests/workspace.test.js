@@ -86,8 +86,8 @@ test('a session opened inside a project finds the registry above it', () => {
     const text = context(res);
 
     assert.match(text, /FANKEEL ACTIVE — tidy the project cards @ build/);
-    assert.match(text, /scope: Waypoint\/web/);
-    // The one line that stops a scope path being read against the wrong
+    assert.match(text, /touched: Waypoint\/web/);
+    // The one line that stops a claimed path being read against the wrong
     // directory. Without it `Waypoint/web` looks wrong from inside Waypoint.
     assert.match(text, /registry: /);
     assert.match(text, /this session opened in /);
@@ -170,7 +170,7 @@ test('the guard leaves a file outside the root alone', () => {
     assert.equal(res, null);
 });
 
-test('a subagent brief carries the parent task and the scope, from inside the project', () => {
+test('a subagent brief carries the parent task and the files it is in, from inside the project', () => {
     const root = workspace();
     entry(root, A, { task: 'tidy the project cards', scope: ['Waypoint/web'] });
 
@@ -181,7 +181,7 @@ test('a subagent brief carries the parent task and the scope, from inside the pr
     }, path.join(root, 'Waypoint')));
 
     assert.match(text, /you are a subagent of: tidy the project cards/);
-    assert.match(text, /scope: Waypoint\/web/);
+    assert.match(text, /touched: Waypoint\/web/);
     assert.match(text, /final message is the return value/);
     assert.match(text, /agent type: Explore/);
 });

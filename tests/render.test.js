@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { render, SCRIPTS, SURVEY_SCRIPT, TASK_SCRIPT, TODO_CHECK_SCRIPT } = require('../lib/render.js');
+const { render, SCRIPTS, SURVEY_SCRIPT, TODO_CHECK_SCRIPT } = require('../lib/render.js');
 const { ALWAYS, NAMES, byName, rulesFor, SURVEY_TOKEN, TOKENS } = require('../lib/stages.js');
 
 const sub = (stage) => rulesFor(stage, SCRIPTS);
@@ -15,7 +15,7 @@ const entry = (sessionId, over) => ({
   sessionId,
   data: Object.assign({
     task: 'rework the colour ramp',
-    scope: ['statusline.ps1', 'statusline.sh'],
+    claims: ['statusline.ps1', 'statusline.sh'],
     stage: 'implement',
     active: true,
     started: ago(2 * 3600e3),
@@ -43,9 +43,9 @@ test('the header names the task and its stage', () => {
   assert.match(out, /^FANKEEL ACTIVE — rework the colour ramp @ implement$/m);
 });
 
-test('the scope is listed under the header', () => {
+test('the files this task has touched are listed under the header', () => {
   const out = render({ mine: entry(MINE), others: [], now: NOW });
-  assert.match(out, /^scope: statusline\.ps1, statusline\.sh$/m);
+  assert.match(out, /^touched: statusline\.ps1, statusline\.sh$/m);
 });
 
 test('with no other sessions there is no also-in-progress block', () => {
@@ -53,40 +53,72 @@ test('with no other sessions there is no also-in-progress block', () => {
   assert.equal(out.includes('also in progress'), false);
 });
 
-test('an empty scope omits the scope line rather than rendering an empty one', () => {
-  const out = render({ mine: entry(MINE, { scope: [] }), others: [], now: NOW });
-  assert.equal(out.includes('scope:'), false);
+test('a task that has touched nothing yet omits the line rather than rendering an empty one', () => {
+  const out = render({ mine: entry(MINE, { claims: [] }), others: [], now: NOW });
+  assert.equal(out.includes('touched:'), false);
   assert.equal(out.includes('undefined'), false);
 });
 
-test('a missing scope does not render undefined', () => {
-  const out = render({ mine: entry(MINE, { scope: undefined }), others: [], now: NOW });
+test('a record with no claims at all does not render undefined', () => {
+  const out = render({ mine: entry(MINE, { claims: undefined }), others: [], now: NOW });
   assert.equal(out.includes('undefined'), false);
+});
+
+test('the project is named above the files it holds', () => {
+  const out = render({
+    mine: entry(MINE, { project: 'LevelMark', claims: ['web/src/Card.jsx'] }),
+    others: [], now: NOW,
+  });
+  const lines = out.split('\n');
+  assert.ok(lines.includes('project: LevelMark'), 'no project line');
+  assert.ok(lines.indexOf('project: LevelMark') < lines.indexOf('touched: web/src/Card.jsx'),
+    'the files were named before the repository holding them');
+});
+
+test('a task with no project and nothing touched renders no project line', () => {
+  const out = render({ mine: entry(MINE, { claims: [] }), others: [], now: NOW });
+  assert.equal(out.includes('project:'), false);
+  assert.equal(out.includes('undefined'), false);
+});
+
+// `projectOf` reads `project` and nothing else. It could have guessed one from the
+// first segment of the first claim and deliberately does not: the spec's guess is
+// only sound when the segment names a real directory under the root, and a pure
+// function of the record cannot check that. The one place the check already exists
+// is `projectRootsFor`, so the derivation lives there and the injected line stays
+// silent rather than putting an unchecked directory name on screen.
+test('a record written before the split lists its files and names no project', () => {
+  const out = render({
+    mine: entry(MINE, { claims: undefined, scope: ['web/src', 'api'] }),
+    others: [], now: NOW,
+  });
+  assert.match(out, /^touched: web\/src, api$/m);
+  assert.equal(out.includes('project:'), false);
 });
 
 test('a disjoint other session is listed without an overlap marker', () => {
-  const others = [entry(THEIRS, { task: 'rewrite the installer', stage: 'design', scope: ['install.ps1'] })];
+  const others = [entry(THEIRS, { task: 'rewrite the installer', stage: 'design', claims: ['install.ps1'] })];
   const out = render({ mine: entry(MINE), others, now: NOW });
   assert.match(out, /^also in progress:$/m);
-  assert.match(out, /^ {2}- rewrite the installer @ design {2}\(scope: install\.ps1\)$/m);
+  assert.match(out, /^ {2}- rewrite the installer @ design {2}\(touched: install\.ps1\)$/m);
   assert.equal(out.includes('overlaps'), false);
 });
 
 test('an overlapping other session is marked and names the shared paths', () => {
-  const others = [entry(THEIRS, { task: 'retune the 5h ramp', scope: ['statusline.ps1'] })];
+  const others = [entry(THEIRS, { task: 'retune the 5h ramp', claims: ['statusline.ps1'] })];
   const out = render({ mine: entry(MINE), others, now: NOW });
   assert.match(out, /<< overlaps: statusline\.ps1$/m);
 });
 
 test('a stale disjoint session carries its age and no marker', () => {
-  const others = [entry(THEIRS, { task: 'triage', stage: 'investigate', scope: ['README.md'], updated: ago(14 * 3600e3) })];
+  const others = [entry(THEIRS, { task: 'triage', stage: 'investigate', claims: ['README.md'], updated: ago(14 * 3600e3) })];
   const out = render({ mine: entry(MINE), others, now: NOW });
   assert.match(out, /\(last seen 14h ago\)$/m);
   assert.equal(out.includes('overlaps'), false);
 });
 
 test('a stale overlapping session carries both the age and the marker', () => {
-  const others = [entry(THEIRS, { task: 'triage', scope: ['statusline.sh'], updated: ago(19 * 24 * 3600e3) })];
+  const others = [entry(THEIRS, { task: 'triage', claims: ['statusline.sh'], updated: ago(19 * 24 * 3600e3) })];
   const out = render({ mine: entry(MINE), others, now: NOW });
   const line = out.split('\n').find((l) => l.includes('triage'));
   assert.match(line, /\(last seen 19d ago\)/);
@@ -95,8 +127,8 @@ test('a stale overlapping session carries both the age and the marker', () => {
 
 test('two other sessions render one line each, in the order given', () => {
   const others = [
-    entry(THEIRS, { task: 'first', scope: ['a.ts'] }),
-    entry(THIRD, { task: 'second', scope: ['b.ts'] }),
+    entry(THEIRS, { task: 'first', claims: ['a.ts'] }),
+    entry(THIRD, { task: 'second', claims: ['b.ts'] }),
   ];
   const out = render({ mine: entry(MINE), others, now: NOW });
   const lines = blockAfter(out, 'also in progress:');
@@ -106,10 +138,10 @@ test('two other sessions render one line each, in the order given', () => {
 });
 
 test('a missing stage renders as ? rather than throwing', () => {
-  const others = [entry(THEIRS, { task: 'nameless', stage: undefined, scope: ['a.ts'] })];
+  const others = [entry(THEIRS, { task: 'nameless', stage: undefined, claims: ['a.ts'] })];
   const out = render({ mine: entry(MINE, { stage: undefined }), others, now: NOW });
   assert.match(out, /^FANKEEL ACTIVE — rework the colour ramp @ \?$/m);
-  assert.match(out, /^ {2}- nameless @ \? {2}\(scope: a\.ts\)$/m);
+  assert.match(out, /^ {2}- nameless @ \? {2}\(touched: a\.ts\)$/m);
 });
 
 test('a missing task name renders as untitled', () => {
@@ -117,14 +149,14 @@ test('a missing task name renders as untitled', () => {
   assert.match(out, /^FANKEEL ACTIVE — untitled @ implement$/m);
 });
 
-test('an other session with no scope is listed without a scope clause', () => {
-  const others = [entry(THEIRS, { task: 'no scope', scope: [] })];
+test('an other session that has touched nothing is listed without the clause', () => {
+  const others = [entry(THEIRS, { task: 'nothing yet', claims: [] })];
   const out = render({ mine: entry(MINE), others, now: NOW });
-  assert.match(out, /^ {2}- no scope @ implement$/m);
+  assert.match(out, /^ {2}- nothing yet @ implement$/m);
 });
 
 test('every render ends with the rules for the stage it is in', () => {
-  for (const others of [[], [entry(THEIRS, { scope: ['statusline.ps1'] })]]) {
+  for (const others of [[], [entry(THEIRS, { claims: ['statusline.ps1'] })]]) {
     const out = render({ mine: entry(MINE, { stage: 'build' }), others, now: NOW });
     assert.match(out, /^stage rules:$/m);
     for (const rule of sub('build')) assert.ok(out.includes('  - ' + rule), rule);
@@ -242,11 +274,12 @@ test('the whole injection stays a readable size with everything populated', () =
     const out = render({
       mine: entry(MINE, {
         stage,
+        project: 'LevelMark',
         style: 'pipeline',
         next: 'wire the badge into TokenBar',
         notes: Array.from({ length: 5 }, (_, i) => 'a lesson learned number ' + i),
       }),
-      others: [entry(THEIRS, { task: 'retune the 5h ramp', scope: ['statusline.ps1'] })],
+      others: [entry(THEIRS, { task: 'retune the 5h ramp', claims: ['statusline.ps1'] })],
       now: NOW,
     });
     if (out.length > worst) { worst = out.length; name = stage; }
@@ -290,43 +323,19 @@ test('an unrecognised stage gets rules but no shape', () => {
   assert.equal(out.includes('output shape:'), false);
 });
 
-const COLD = 3 * 24 * 3600e3;
-
-test('when the only overlapping neighbour is cold, the block says so and offers clear', () => {
+// The block that used to sit here announced that every overlapping session had
+// gone cold and printed a `clear` command under each. Nothing replaced it, and
+// this pins that. A long-quiet neighbour keeps its age, which is a fact about the
+// entry offered to a reader, and gets no verdict on whether anyone is behind it —
+// age was measured not to carry that, and by the time Task 6 lands the liveness
+// filter this list holds no dead session to have a verdict about.
+test('a long-quiet neighbour is listed like any other, with no verdict on whether it is still there', () => {
   const out = render({
-    mine: entry(MINE, { scope: ['web'] }),
-    others: [entry(THEIRS, { task: 'the ramp', scope: ['web'], updated: ago(COLD) })],
+    mine: entry(MINE, { claims: ['web'] }),
+    others: [entry(THEIRS, { task: 'the ramp', claims: ['web'], updated: ago(3 * 24 * 3600e3) })],
     now: NOW,
   });
-  assert.match(out, /every session overlapping your scope is cold/);
-  assert.match(out, /the ramp @ implement — last seen 3d ago/);
-  assert.match(out, new RegExp('clear ' + THEIRS + ' --session ' + MINE));
-});
-
-// One cold claim beside a live one is not a ghost problem, and its age already
-// sits on its own line.
-test('a live neighbour keeps the block away', () => {
-  const out = render({
-    mine: entry(MINE, { scope: ['web'] }),
-    others: [
-      entry(THEIRS, { scope: ['web'], updated: ago(COLD) }),
-      entry(THIRD, { scope: ['web'], updated: ago(60e3) }),
-    ],
-    now: NOW,
-  });
-  assert.equal(/every session overlapping your scope is cold/.test(out), false);
-});
-
-test('a cold neighbour that does not overlap is not a ghost of yours', () => {
-  const out = render({
-    mine: entry(MINE, { scope: ['web'] }),
-    others: [entry(THEIRS, { scope: ['api'], updated: ago(COLD) })],
-    now: NOW,
-  });
-  assert.equal(/every session overlapping your scope is cold/.test(out), false);
-});
-
-test('no neighbours at all is not a ghost problem either', () => {
-  const out = render({ mine: entry(MINE, { scope: ['web'] }), others: [], now: NOW });
-  assert.equal(/every session overlapping your scope is cold/.test(out), false);
+  assert.match(out, /^ {2}- the ramp @ implement {2}\(touched: web\) {2}\(last seen 3d ago\) {2}<< overlaps: web$/m);
+  assert.equal(/cold/.test(out), false);
+  assert.equal(/ clear /.test(out), false);
 });
