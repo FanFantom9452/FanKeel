@@ -128,6 +128,31 @@ test('writeSession then readSession round-trips every field', () => {
   assert.deepEqual(registry.readSession(root, SID), t);
 });
 
+// The spy is the point: readdir alone cannot tell an atomic write from an
+// in-place one, because both leave the same one file behind afterwards.
+test('writeSession renames a temp file into place and leaves nothing behind', (t) => {
+  const root = tmpRoot();
+  const dir = path.join(root, '.fankeel', 'sessions');
+  const target = path.join(dir, SID + '.json');
+  const spy = t.mock.method(fs, 'writeFileSync');
+
+  const rec = task();
+  assert.equal(registry.writeSession(root, SID, rec), true);
+  const written = spy.mock.calls.map((c) => String(c.arguments[0]));
+  assert.ok(!written.includes(target), 'the entry was written in place: ' + written.join(', '));
+  assert.deepEqual(fs.readdirSync(dir), [SID + '.json']);
+  assert.deepEqual(registry.readSession(root, SID), rec);
+
+  const again = task({ task: 'second write' });
+  assert.equal(registry.writeSession(root, SID, again), true);
+  assert.deepEqual(fs.readdirSync(dir), [SID + '.json']);
+  assert.deepEqual(registry.readSession(root, SID), again);
+
+  const clean = tmpRoot();
+  assert.equal(registry.writeSession(clean, '../escape', rec), false);
+  assert.equal(fs.existsSync(path.join(clean, '.fankeel')), false);
+});
+
 test('writing an entry lays down .fankeel/.gitignore so only sessions/ is excluded', () => {
   const root = tmpRoot();
   registry.writeSession(root, SID, task());
