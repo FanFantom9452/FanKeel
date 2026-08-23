@@ -153,6 +153,20 @@ test('writeSession renames a temp file into place and leaves nothing behind', (t
   assert.equal(fs.existsSync(path.join(clean, '.fankeel')), false);
 });
 
+// A rename that fails for a reason other than the transient Windows EPERM/EBUSY
+// (a full disk, a permissions error, anything) is not retried, so the temp file
+// written just before it must still be cleaned up rather than left orphaned in
+// a directory every session lists on every prompt.
+test('a rename that fails for good does not leave the temp file behind', (t) => {
+  const root = tmpRoot();
+  const dir = path.join(root, '.fankeel', 'sessions');
+  t.mock.method(fs, 'renameSync', () => {
+    throw Object.assign(new Error('simulated failure'), { code: 'EACCES' });
+  });
+  assert.equal(registry.writeSession(root, SID, task()), false);
+  assert.deepEqual(fs.readdirSync(dir), []);
+});
+
 test('writing an entry lays down .fankeel/.gitignore so only sessions/ is excluded', () => {
   const root = tmpRoot();
   registry.writeSession(root, SID, task());
