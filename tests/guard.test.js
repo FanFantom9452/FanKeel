@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawn, spawnSync } = require('node:child_process');
 
 const guard = require('../lib/guard.js');
 const HOOK = path.join(__dirname, '..', 'hooks', 'guard.js');
@@ -22,7 +22,7 @@ function seed(root, sessionId, over) {
   fs.mkdirSync(dir, { recursive: true });
   const data = Object.assign({
     task: 'rework the colour ramp',
-    scope: ['statusline.ps1'],
+    claims: ['statusline.ps1'],
     stage: 'build',
     active: true,
     started: ago(2 * 3600e3),
@@ -32,11 +32,48 @@ function seed(root, sessionId, over) {
   return data;
 }
 
-// The real hook, driven the way Claude Code drives it. CLAUDE_PROJECT_DIR is set
-// explicitly rather than inherited: a stray one from the session running these
-// tests would send the hook off to read a different repository's registry.
-function run(root, payload) {
-  const env = Object.assign({}, process.env, { CLAUDE_PROJECT_DIR: root });
+// The official Claude Code registry, which is the only thing liveness is
+// measured from: one file per pid, carrying the session that pid is running.
+// Written into a temp CLAUDE_CONFIG_DIR so nothing here depends on which
+// sessions happen to be open on the machine running the tests.
+function seedLive(pairs) {
+  const cfg = tmp();
+  const dir = path.join(cfg, 'sessions');
+  fs.mkdirSync(dir, { recursive: true });
+  for (const [pid, sessionId] of pairs) {
+    fs.writeFileSync(path.join(dir, pid + '.json'), JSON.stringify({ pid, sessionId }) + '\n');
+  }
+  return cfg;
+}
+
+// A pid that has certainly exited: `spawnSync` returned, so the process it
+// names is already gone.
+const deadPid = () => spawnSync(process.execPath, ['-e', '0']).pid;
+
+// A pid that is certainly running. This process is `MINE` by definition, and
+// the other sessions need pids of their own — a pid is the only handle
+// `readLive` has, so there is nothing to fake and a real child is the cheapest
+// way to own one.
+const sleepers = [];
+function livePid() {
+  const child = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 120e3)'], { stdio: 'ignore' });
+  child.unref();
+  sleepers.push(child);
+  return child.pid;
+}
+test.after(() => { for (const child of sleepers) child.kill(); });
+
+const LIVE = seedLive([[process.pid, MINE], [livePid(), THEIRS]]);
+
+// The real hook, driven the way Claude Code drives it. Both directories are set
+// explicitly rather than inherited: a stray CLAUDE_PROJECT_DIR would send the
+// hook off to read a different repository's registry, and the real
+// CLAUDE_CONFIG_DIR would make every liveness answer depend on the machine.
+function run(root, payload, cfg) {
+  const env = Object.assign({}, process.env, {
+    CLAUDE_PROJECT_DIR: root,
+    CLAUDE_CONFIG_DIR: cfg || LIVE,
+  });
   return execFileSync(process.execPath, [HOOK], {
     input: typeof payload === 'string' ? payload : JSON.stringify(payload),
     encoding: 'utf8',
@@ -63,125 +100,142 @@ test('a session with no entry is not guarded', () => {
 
 test('an active session that did not ask for the guard is not guarded', () => {
   const root = tmp();
-  seed(root, MINE, { scope: ['README.md'] });
-  seed(root, THEIRS, { task: 'retune the ramp', scope: ['statusline.ps1'] });
+  seed(root, MINE, { claims: ['README.md'] });
+  seed(root, THEIRS, { task: 'retune the ramp', claims: ['statusline.ps1'] });
   assert.equal(run(root, edit(root, path.join(root, 'statusline.ps1'))), '');
 });
 
 test('a guarded session editing a file nobody else claimed is not stopped', () => {
   const root = tmp();
-  seed(root, MINE, { guard: 'ask', scope: ['README.md'] });
-  seed(root, THEIRS, { task: 'retune the ramp', scope: ['statusline.ps1'] });
+  seed(root, MINE, { guard: 'ask', claims: ['README.md'] });
+  seed(root, THEIRS, { task: 'retune the ramp', claims: ['statusline.ps1'] });
   assert.equal(run(root, edit(root, path.join(root, 'README.md'))), '');
 });
 
 test('another live session’s file is put in front of the user', () => {
   const root = tmp();
-  seed(root, MINE, { guard: 'ask', scope: ['README.md'] });
-  seed(root, THEIRS, { task: 'retune the 5h ramp', stage: 'verify', scope: ['statusline.ps1'] });
+  seed(root, MINE, { guard: 'ask', claims: ['README.md'] });
+  seed(root, THEIRS, { task: 'retune the 5h ramp', stage: 'verify', claims: ['statusline.ps1'] });
   const out = run(root, edit(root, path.join(root, 'statusline.ps1')));
   assert.equal(decisionOf(out), 'ask');
   const reason = reasonOf(out);
-  assert.match(reason, /statusline\.ps1 is inside the declared scope of another live session/);
+  assert.match(reason, /statusline\.ps1 is claimed by another live session/);
   assert.match(reason, /retune the 5h ramp @ verify/);
 });
 
 test('guard: "deny" refuses outright', () => {
   const root = tmp();
-  seed(root, MINE, { guard: 'deny', scope: ['README.md'] });
-  seed(root, THEIRS, { scope: ['statusline.ps1'] });
+  seed(root, MINE, { guard: 'deny', claims: ['README.md'] });
+  seed(root, THEIRS, { claims: ['statusline.ps1'] });
   assert.equal(decisionOf(run(root, edit(root, path.join(root, 'statusline.ps1')))), 'deny');
 });
 
 test('a bare guard: true asks rather than denies', () => {
   const root = tmp();
-  seed(root, MINE, { guard: true, scope: ['README.md'] });
-  seed(root, THEIRS, { scope: ['statusline.ps1'] });
+  seed(root, MINE, { guard: true, claims: ['README.md'] });
+  seed(root, THEIRS, { claims: ['statusline.ps1'] });
   assert.equal(decisionOf(run(root, edit(root, path.join(root, 'statusline.ps1')))), 'ask');
 });
 
-test('a stale claim warns but never blocks', () => {
+// The entry is identical in both halves and only the pid behind it differs,
+// which is the whole point: age said nothing and the process says everything.
+test('a claim whose process is gone does not block, and the same claim from a live one does', () => {
   const root = tmp();
-  seed(root, MINE, { guard: 'deny', scope: ['README.md'] });
-  seed(root, THEIRS, { scope: ['statusline.ps1'], updated: ago(20 * 3600e3) });
-  assert.equal(run(root, edit(root, path.join(root, 'statusline.ps1'))), '');
+  seed(root, MINE, { guard: 'deny', claims: ['README.md'] });
+  seed(root, THEIRS, { claims: ['statusline.ps1'] });
+  const file = path.join(root, 'statusline.ps1');
+
+  const gone = seedLive([[process.pid, MINE], [deadPid(), THEIRS]]);
+  assert.equal(run(root, edit(root, file), gone), '',
+    'the pid exited, so nothing is behind that claim');
+
+  assert.equal(decisionOf(run(root, edit(root, file))), 'deny',
+    'the same claim, from a pid that is still running');
+});
+
+test('when liveness cannot be measured, every active claim blocks', () => {
+  const root = tmp();
+  seed(root, MINE, { guard: 'deny', claims: ['README.md'] });
+  seed(root, THEIRS, { claims: ['statusline.ps1'] });
+  // This session's own id is absent from the directory being read, so that
+  // directory is not the one this machine uses and every answer from it would
+  // be wrong in the dangerous direction. Unknown warns rather than suppresses,
+  // even over a pid that is certainly gone.
+  const blind = seedLive([[deadPid(), THEIRS]]);
+  assert.equal(decisionOf(run(root, edit(root, path.join(root, 'statusline.ps1')), blind)), 'deny');
 });
 
 test('a stood-down claim does not block', () => {
   const root = tmp();
-  seed(root, MINE, { guard: 'deny', scope: ['README.md'] });
-  seed(root, THEIRS, { scope: ['statusline.ps1'], active: false });
+  seed(root, MINE, { guard: 'deny', claims: ['README.md'] });
+  seed(root, THEIRS, { claims: ['statusline.ps1'], active: false });
   assert.equal(run(root, edit(root, path.join(root, 'statusline.ps1'))), '');
 });
 
-test('when both declared the file, the older claim holds and the newer yields', () => {
-  const root = tmp();
-  const file = path.join(root, 'statusline.ps1');
-
+test('when both hold the file, the older claim holds and the newer yields', () => {
   const early = tmp();
-  seed(early, MINE, { guard: 'deny', scope: ['statusline.ps1'], started: ago(5 * 3600e3) });
-  seed(early, THEIRS, { scope: ['statusline.ps1'], started: ago(1 * 3600e3) });
+  seed(early, MINE, { guard: 'deny', claims: ['statusline.ps1'], started: ago(5 * 3600e3) });
+  seed(early, THEIRS, { claims: ['statusline.ps1'], started: ago(1 * 3600e3) });
   assert.equal(run(early, edit(early, path.join(early, 'statusline.ps1'))), '',
     'the older claim is mine, so nothing stops me');
 
   const late = tmp();
-  seed(late, MINE, { guard: 'deny', scope: ['statusline.ps1'], started: ago(1 * 3600e3) });
-  seed(late, THEIRS, { scope: ['statusline.ps1'], started: ago(5 * 3600e3) });
+  seed(late, MINE, { guard: 'deny', claims: ['statusline.ps1'], started: ago(1 * 3600e3) });
+  seed(late, THEIRS, { claims: ['statusline.ps1'], started: ago(5 * 3600e3) });
   assert.equal(decisionOf(run(late, edit(late, path.join(late, 'statusline.ps1')))), 'deny',
     'they claimed it first, so I yield');
-
-  assert.ok(file);
 });
 
 test('a file outside the project root is none of its business', () => {
   const root = tmp();
   const elsewhere = tmp();
-  seed(root, MINE, { guard: 'deny', scope: ['statusline.ps1'] });
-  seed(root, THEIRS, { scope: ['statusline.ps1'], started: ago(9 * 3600e3) });
+  seed(root, MINE, { guard: 'deny', claims: ['statusline.ps1'] });
+  seed(root, THEIRS, { claims: ['statusline.ps1'], started: ago(9 * 3600e3) });
   assert.equal(run(root, edit(root, path.join(elsewhere, 'statusline.ps1'))), '');
 });
 
-test('a glob scope covers what is under it', () => {
+test('a glob claim covers what is under it', () => {
   const root = tmp();
-  seed(root, MINE, { guard: 'deny', scope: ['README.md'] });
-  seed(root, THEIRS, { scope: ['src/**'] });
+  seed(root, MINE, { guard: 'deny', claims: ['README.md'] });
+  seed(root, THEIRS, { claims: ['src/**'] });
   assert.equal(decisionOf(run(root, edit(root, path.join(root, 'src', 'a.ts')))), 'deny');
 });
 
-test('a bare directory scope covers what is under it', () => {
+test('a bare directory claim covers what is under it', () => {
   const root = tmp();
-  seed(root, MINE, { guard: 'deny', scope: ['README.md'] });
-  seed(root, THEIRS, { scope: ['src'] });
+  seed(root, MINE, { guard: 'deny', claims: ['README.md'] });
+  seed(root, THEIRS, { claims: ['src'] });
   assert.equal(decisionOf(run(root, edit(root, path.join(root, 'src', 'a.ts')))), 'deny');
 });
 
 test('NotebookEdit’s own path field is read', () => {
   const root = tmp();
-  seed(root, MINE, { guard: 'deny', scope: ['README.md'] });
-  seed(root, THEIRS, { scope: ['analysis.ipynb'] });
+  seed(root, MINE, { guard: 'deny', claims: ['README.md'] });
+  seed(root, THEIRS, { claims: ['analysis.ipynb'] });
   const out = run(root, edit(root, path.join(root, 'analysis.ipynb'), 'NotebookEdit'));
   assert.equal(decisionOf(out), 'deny');
 });
 
 test('a tool call carrying no path says nothing', () => {
   const root = tmp();
-  seed(root, MINE, { guard: 'deny', scope: ['statusline.ps1'] });
-  seed(root, THEIRS, { scope: ['statusline.ps1'], started: ago(9 * 3600e3) });
+  seed(root, MINE, { guard: 'deny', claims: ['statusline.ps1'] });
+  seed(root, THEIRS, { claims: ['statusline.ps1'], started: ago(9 * 3600e3) });
   assert.equal(run(root, { session_id: MINE, cwd: root, tool_name: 'Bash', tool_input: { command: 'ls' } }), '');
 });
 
 test('a payload that is not JSON does not block the edit', () => {
   const root = tmp();
-  seed(root, MINE, { guard: 'deny', scope: ['statusline.ps1'] });
+  seed(root, MINE, { guard: 'deny', claims: ['statusline.ps1'] });
   assert.equal(run(root, 'not json at all'), '');
 });
 
 test('two holders are both named', () => {
   const root = tmp();
-  seed(root, MINE, { guard: 'ask', scope: ['README.md'] });
-  seed(root, THEIRS, { task: 'first task', scope: ['statusline.ps1'] });
-  seed(root, THIRD, { task: 'second task', scope: ['statusline.*'] });
-  const reason = reasonOf(run(root, edit(root, path.join(root, 'statusline.ps1'))));
+  seed(root, MINE, { guard: 'ask', claims: ['README.md'] });
+  seed(root, THEIRS, { task: 'first task', claims: ['statusline.ps1'] });
+  seed(root, THIRD, { task: 'second task', claims: ['statusline.*'] });
+  const cfg = seedLive([[process.pid, MINE], [livePid(), THEIRS], [livePid(), THIRD]]);
+  const reason = reasonOf(run(root, edit(root, path.join(root, 'statusline.ps1')), cfg));
   assert.match(reason, /2 other live sessions/);
   assert.match(reason, /first task/);
   assert.match(reason, /second task/);
@@ -189,10 +243,10 @@ test('two holders are both named', () => {
 
 test('the reason says how to get out of it', () => {
   const root = tmp();
-  seed(root, MINE, { guard: 'deny', scope: ['README.md'] });
-  seed(root, THEIRS, { scope: ['statusline.ps1'] });
+  seed(root, MINE, { guard: 'deny', claims: ['README.md'] });
+  seed(root, THEIRS, { claims: ['statusline.ps1'] });
   const reason = reasonOf(run(root, edit(root, path.join(root, 'statusline.ps1'))));
-  assert.match(reason, /narrow its scope/);
+  assert.match(reason, /move off the file/);
   assert.match(reason, /task\.js clear/);
   assert.match(reason, /remove `guard`/);
 });
@@ -218,6 +272,16 @@ test('relPath normalises to forward slashes and refuses anything outside the roo
   assert.equal(guard.relPath('', 'a.ts'), null);
 });
 
+// The clock is gone from this signature entirely. Unknown is the only state
+// that adds a blocker rather than removing one.
+test('blockers reads liveness, not age', () => {
+  const mine = { claims: ['README.md'] };
+  const others = [{ sessionId: THEIRS, data: { claims: ['a.ts'] } }];
+  assert.equal(guard.blockers(mine, others, 'a.ts', { known: true, ids: new Set([THEIRS]) }).length, 1);
+  assert.equal(guard.blockers(mine, others, 'a.ts', { known: true, ids: new Set() }).length, 0);
+  assert.equal(guard.blockers(mine, others, 'a.ts', { known: false, ids: new Set() }).length, 1);
+});
+
 test('a claim with no readable start time cannot win the tie-break', () => {
   const when = ago(3600e3);
   assert.equal(guard.claimedFirst({}, { started: when }), false);
@@ -234,11 +298,15 @@ test('targetOf reads file_path, falls back to notebook_path, and gives up on nei
   assert.equal(guard.targetOf({}), null);
 });
 
+// The hook asks this question too, one line above the directory read it guards.
+// `decide` still asks it on its own, so the module stays answerable without the
+// hook and this stays the test of that.
 test('decide says nothing at all when the guard is off', () => {
   const root = path.join(os.tmpdir(), 'fankeel-decide');
-  const mine = { scope: ['README.md'] };
-  const others = [{ sessionId: THEIRS, data: { scope: ['a.ts'], updated: ago(60e3), started: ago(3600e3) } }];
-  assert.equal(guard.decide({ mine, others, root, file: path.join(root, 'a.ts'), now: Date.now() }), null);
+  const mine = { claims: ['README.md'] };
+  const others = [{ sessionId: THEIRS, data: { claims: ['a.ts'], started: ago(3600e3) } }];
+  const liveState = { known: true, ids: new Set([THEIRS]) };
+  assert.equal(guard.decide({ mine, others, root, file: path.join(root, 'a.ts'), liveState }), null);
 });
 
 test('the refusal names the command that clears a claim nobody is behind', () => {
@@ -246,9 +314,10 @@ test('the refusal names the command that clears a claim nobody is behind', () =>
   assert.match(text, /task\.js clear/);
 });
 
-// `blockers` drops stale entries, so every holder this text can ever name is one
-// `clear` refuses on its own. Printed without --force it is a recommendation that
-// fails on the first try, one hundred percent of the time.
+// `blockers` drops the sessions whose process is gone, so every holder this
+// text can ever name is one `clear` refuses on its own. Printed without --force
+// it is a recommendation that fails on the first try, one hundred percent of
+// the time.
 test('the refusal prints the clear command whole, and says why --force is part of it', () => {
   const text = guard.reasonFor('web/a.js', [{ sessionId: THEIRS, data: { task: 't', stage: 'build' } }], MINE);
   assert.match(text, new RegExp('node .*task\\.js clear ' + THEIRS + ' --force --session ' + MINE));
