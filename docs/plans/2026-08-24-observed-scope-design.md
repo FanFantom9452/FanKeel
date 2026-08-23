@@ -355,17 +355,29 @@ migration off, and adding one now would not help records that already exist.
 One normaliser at read, in `lib/registry.js`:
 
 ```
-scope present, claims absent  → claims = scope
-project absent                → project = first segment of scope[0], if it
-                                names a directory under the root
+claimsOf(data)   claims when present, else scope, else []
+projectOf(data)  project when present, else ''
 ```
 
 An old record therefore keeps working: its declared scope becomes its claim
-list, which is what it was being used as, and its project is recovered from
-the same place `lib/docs.js` was already reading it from. Nothing is written
-back until the session's next edit, and nothing needs to be.
+list, which is what it was already being used as. Nothing is written back
+until the session's next edit, and nothing needs to be.
 
-`drift` on an old record is ignored and dropped on the next write.
+`projectOf` deliberately does **not** recover a project from the first claim.
+The recovery a pre-split record needs is real, but it belongs one layer down:
+`projectRootsFor` already reads the first path segment of every entry it is
+given and already confirms with `statSync` that the segment names a directory
+under the root. A pure function of the record cannot make that check — it has
+no root — and a `project:` line rendered from an unchecked guess is how
+`project: ..` reaches a statusline.
+
+So the docs lookup is called with `[projectOf(data), ...claimsOf(data)]` and
+an old record routes to exactly the tree it routed to before, by the same
+`statSync` that was always deciding it. What such a record loses is only the
+`project:` line in the injected text, which it never had.
+
+`drift` on an old record is ignored, and removed by the first `task` or
+`adopt` that rewrites the record. Nothing reads it in the meantime.
 
 ## What breaks
 
