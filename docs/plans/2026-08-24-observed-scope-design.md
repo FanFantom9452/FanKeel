@@ -228,10 +228,25 @@ interleaved pair loses one of them.
 
 This already exists — `hooks/touch.js` writes drift the same way today — but
 observation writes more often and makes it worth closing. `writeSession`
-writes to a sibling temp file and renames. `rename` is atomic on both
-platforms, the cost is one extra syscall on a path that already does IO, and
-it also removes the failure mode where a torn read returns `null` and a
-session silently drops out of the mode with no error.
+writes to a sibling temp file and renames, which removes the failure mode
+where a torn read returns `null` and a session silently drops out of the mode
+with no error.
+
+The rename is where the platforms part, and it was measured rather than
+assumed. A reader never sees half a file on either one. But Windows refuses to
+rename over a target another handle holds open, so under contention the write
+fails with `EPERM` where a direct `writeFileSync` would have succeeded — 1499
+of 1611 attempts, in a loop against a concurrent reader. Trading a torn read
+for a dropped write is not the trade this section is making: a torn read costs
+the session its mode, and a dropped write costs a claim permanently, because
+`addClaim` appends one path to what it read and never revisits it.
+
+The rename therefore retries on `EPERM` and `EBUSY`. What makes that the right
+shape rather than a patch is that the collision is transient by construction —
+the reader is one `readFileSync`, open and closed in microseconds, and the only
+thing the writer has to outlast is that. A bounded retry is the whole fix, and
+any change to it has to be re-measured against the same contention test, not
+argued.
 
 ## `drift` is deleted
 
