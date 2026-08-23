@@ -33,6 +33,23 @@ function seed(root, sessionId, over) {
   return data;
 }
 
+// The lead file is `key=value` a line at a time. Read back the same way the
+// statusline reads it, so a test failure means the renderer would have seen it
+// too.
+function leadOf(cfg, sessionId) {
+  try {
+    const text = fs.readFileSync(path.join(cfg, 'modes', sessionId, 'fankeel.lead'), 'utf8');
+    const out = {};
+    for (const line of text.split('\n')) {
+      const i = line.indexOf('=');
+      if (i > 0) out[line.slice(0, i)] = line.slice(i + 1);
+    }
+    return out;
+  } catch (e) {
+    return null;
+  }
+}
+
 // Runs the real hook the way Claude Code does: payload on stdin, everything else
 // from the environment.
 function run(payload, claudeDir) {
@@ -198,6 +215,25 @@ test('the badge carries clash when another live session overlaps', () => {
   seed(root, THEIRS, { scope: ['statusline.ps1'] });
   run({ session_id: MINE, cwd: root }, cfg);
   assert.equal(fs.readFileSync(path.join(cfg, 'modes', MINE, 'fankeel'), 'utf8'), 'clash\n');
+});
+
+test('a clash takes the badge slot, and leaves the lead line its stage', () => {
+  const root = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  seed(root, MINE, { stage: 'build' });
+  seed(root, THEIRS, { scope: ['statusline.ps1'] });
+  run({ session_id: MINE, cwd: root }, cfg);
+
+  // One word is all the shared line has, so there the collision outranks the
+  // stage.
+  assert.equal(fs.readFileSync(path.join(cfg, 'modes', MINE, 'fankeel'), 'utf8'), 'clash\n');
+
+  // The lead line has a field of its own for the collision, and it is already
+  // filled. Spending the word on it as well would state one fact twice while
+  // destroying the only copy of another — the stage has nowhere else to live.
+  const lead = leadOf(cfg, MINE);
+  assert.equal(lead.word, 'build');
+  assert.equal(lead.others, '1');
 });
 
 test('a stale overlapping session still counts as a clash', () => {

@@ -88,16 +88,22 @@ function main(raw) {
     const cfg = claudeConfigDir();
     if (cfg) {
         try {
-            const word = badge.badgeWord(mine.stage, clash);
-            badge.writeBadge(cfg, sessionId, word);
+            badge.writeBadge(cfg, sessionId, badge.badgeWord(mine.stage, clash));
             // The lead line, kept current from here because only this hook sees
             // a collision that appeared after the task was last touched. The
             // count is of live sessions actually overlapping, not of live
             // sessions — a number nobody can act on is decoration.
+            //
+            // The badge collapses to `clash` because a shared line has room for
+            // one word and at that moment the collision outranks the stage. The
+            // lead line has no such shortage: it states the collision in its own
+            // field, and `others` is where a reader already looks for it. Sending
+            // the collapsed word here too would say the same thing twice while
+            // destroying the one fact with nowhere else on the line to live.
             const at = positionIn(mine.route, mine.stage) || {};
             const overlapping = others.filter((o) => overlapPaths(mine.scope, o.data && o.data.scope).length > 0).length;
             badge.writeLead(cfg, sessionId, {
-                word,
+                word: badge.badgeWord(mine.stage, false),
                 step: at.step,
                 steps: at.steps,
                 title: mine.task,
