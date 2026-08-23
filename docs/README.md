@@ -35,6 +35,7 @@ here.
 | Why the registry goes stale, and what is meant to notice | [plans/2026-08-23-registry-staleness-design.md](plans/2026-08-23-registry-staleness-design.md) — *design intent, not built* |
 | How that is being built, task by task | [plans/2026-08-23-registry-staleness-implementation.md](plans/2026-08-23-registry-staleness-implementation.md) — *design intent, not built* |
 | Why a scope cannot be declared or a staleness measured, and what replaces both | [plans/2026-08-24-observed-scope-design.md](plans/2026-08-24-observed-scope-design.md) — *design intent, not built* |
+| How that is being built, task by task | [plans/2026-08-24-observed-scope-implementation.md](plans/2026-08-24-observed-scope-implementation.md) — *design intent, not built* |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 
 ## The two audits
