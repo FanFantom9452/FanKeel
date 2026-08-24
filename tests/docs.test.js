@@ -14,6 +14,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const docs = require('../lib/docs.js');
+const registry = require('../lib/registry.js');
 const check = require('../scripts/docs-check.js');
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'docs-check.js');
 
@@ -250,27 +251,64 @@ test('resolveRef tries the document directory and the repository root', () => {
   assert.equal(check.resolveRef(root, 'docs/a.md', 'nowhere.md'), null);
 });
 
-// --- which project a scope points at ---------------------------------------
+// --- which project a task points at -----------------------------------------
 
 // The other half of the registry living at the workspace: one registry so that
 // two sessions can see each other, one docs tree per repository so it can be
-// version-controlled with the documents it describes. The scope is what joins
-// them.
-test('a scope names the project whose docs tree applies', () => {
+// version-controlled with the documents it describes. The first path segment is
+// what joins them, and the call is handed the declared project first and the
+// observed claims after it, so a task that starts in one repository and reaches
+// into a second gets both trees in the order it touched them.
+const roots = (root, data) =>
+  docs.projectRootsFor(root, [registry.projectOf(data)].concat(registry.claimsOf(data)));
+
+test('claims name the project whose docs tree applies', () => {
   const root = tree({ 'Waypoint/web/a.js': 'x', 'KB/src/b.js': 'x', 'notes.md': 'x' });
-  assert.deepEqual(docs.projectRootsFor(root, ['Waypoint/web']), [path.join(root, 'Waypoint')]);
-  assert.deepEqual(docs.projectRootsFor(root, ['Waypoint/web', 'Waypoint/api', 'KB/src']),
+  assert.deepEqual(roots(root, { claims: ['Waypoint/web/a.js'] }), [path.join(root, 'Waypoint')]);
+  assert.deepEqual(roots(root, { claims: ['Waypoint/web/a.js', 'Waypoint/api/c.js', 'KB/src/b.js'] }),
+    [path.join(root, 'Waypoint'), path.join(root, 'KB')]);
+});
+
+// The multi-project case the deleted `scope` field used to carry, and the reason
+// this stays a list rather than becoming a single-project lookup: `project` is
+// declared once and answers which repository, and a claim that reaches a second
+// one adds its tree without anybody declaring anything. A bare `Waypoint` has no
+// slash in it, which is what used to send it to the registry root instead.
+test('a declared project and a claim in a second repository name both trees', () => {
+  const root = tree({ 'Waypoint/web/a.js': 'x', 'KB/src/b.js': 'x' });
+  assert.deepEqual(roots(root, { project: 'Waypoint', claims: ['Waypoint/web/a.js', 'KB/src/b.js'] }),
+    [path.join(root, 'Waypoint'), path.join(root, 'KB')]);
+  // First touched, first listed: the same two repositories the other way round.
+  assert.deepEqual(roots(root, { project: 'KB', claims: ['KB/src/b.js', 'Waypoint/web/a.js'] }),
+    [path.join(root, 'KB'), path.join(root, 'Waypoint')]);
+});
+
+// A record written before the split has no project, and projectOf declines to
+// guess one from the claims because a pure function of the record has no root to
+// check the guess against. It does not need to: claimsOf falls back to the old
+// scope field, and the first segment of those entries is where that field's
+// value already was. The statSync below is what applies the condition — names a
+// directory under the root — so the record lands on the same tree it always did,
+// decided by the same test that was always deciding it.
+test('a record written before the split routes from its scope', () => {
+  const root = tree({ 'Waypoint/web/a.js': 'x', 'KB/src/b.js': 'x' });
+  assert.equal(registry.projectOf({ scope: ['Waypoint/web'] }), '');
+  assert.deepEqual(roots(root, { scope: ['Waypoint/web', 'KB/src'] }),
     [path.join(root, 'Waypoint'), path.join(root, 'KB')]);
 });
 
 test('a file loose at the workspace root is its own project', () => {
   const root = tree({ 'notes.md': 'x' });
-  assert.deepEqual(docs.projectRootsFor(root, ['notes.md']), [root]);
+  assert.deepEqual(roots(root, { claims: ['notes.md'] }), [root]);
 });
 
-test('a scope that tries to leave the workspace names nothing', () => {
+test('a claim that tries to leave the workspace names nothing', () => {
   const root = tree({ 'a.js': 'x' });
-  assert.deepEqual(docs.projectRootsFor(root, ['../elsewhere', '/etc/passwd']), []);
+  assert.deepEqual(roots(root, { claims: ['../elsewhere', '/etc/passwd'] }), []);
+  // Before the first edit there is no project and no claim. The empty entry is
+  // skipped rather than standing in for the registry root, which would hand a
+  // task that has touched nothing the one tree that cannot describe its code.
+  assert.deepEqual(roots(root, {}), []);
   assert.deepEqual(docs.projectRootsFor(root, null), []);
 });
 
