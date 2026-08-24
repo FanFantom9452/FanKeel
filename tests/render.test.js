@@ -339,3 +339,24 @@ test('a long-quiet neighbour is listed like any other, with no verdict on whethe
   assert.equal(/cold/.test(out), false);
   assert.equal(/ clear /.test(out), false);
 });
+
+// `means` is printed once, by `task.js start`, and never again — the decay this
+// whole block exists to defeat. `spike` is the one that cannot afford it: its
+// route is survey,build, so it reaches neither `design`, which holds the rule
+// about cutting what the ask does not require, nor `audit`, which delegates
+// over-engineering to ponytail.
+test('a spike is told on every prompt that what it builds is throwaway', () => {
+  const text = render({
+    mine: entry('aaaaaaaa', { class: 'spike', route: ['survey', 'build'], stage: 'build' }),
+    others: [], now: NOW, root: 'F:\ws', launch: 'F:\ws',
+  });
+  assert.match(text, /Anything built is labelled throwaway/);
+});
+
+test('a class the registry does not recognise adds no line', () => {
+  const text = render({
+    mine: entry('aaaaaaaa', { class: 'nonesuch', stage: 'build' }),
+    others: [], now: NOW, root: 'F:\ws', launch: 'F:\ws',
+  });
+  assert.doesNotMatch(text, /^class: /m);
+});
