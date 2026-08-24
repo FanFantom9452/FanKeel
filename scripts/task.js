@@ -22,6 +22,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const registry = require('../lib/registry.js');
+const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
 const { overlapPaths } = require('../lib/overlap.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass } = require('../lib/stages.js');
@@ -184,10 +185,18 @@ function describe(root, sessionId, data) {
 // Other live sessions holding a file this one has touched. Said as the badge is
 // written rather than waiting for the next prompt, because the statusline is
 // where anybody looks for it and the hook only runs on the next one.
+//
+// Liveness is measured here for the same reason the hook measures it. This is
+// the second badge writer, and an unfiltered count paints `clash` off a session
+// whose process has already exited — which the next prompt then silently takes
+// back. Two writers disagreeing about one neighbour is the contradiction this
+// design exists to end, not to relocate.
 function collisions(root, sessionId, claims) {
     const out = [];
+    const liveState = live.readLive(live.liveConfigDir(), sessionId);
     for (const other of registry.readActive(root)) {
         if (other.sessionId === sessionId) continue;
+        if (!live.isLive(liveState, other.sessionId)) continue;
         const shared = overlapPaths(claims, registry.claimsOf(other.data));
         if (shared.length) out.push({ task: other.data.task || 'untitled', shared });
     }
@@ -216,7 +225,11 @@ function cmdShow(root, opts) {
         lines.push('this session: no entry — not in the mode.');
     }
 
-    const others = active.filter((e) => e.sessionId !== id);
+    // The header says live, so the list has to mean it. With no --session there
+    // is no id to self-check against, `readLive` reports unknown, and unknown is
+    // every entry — the same loud side every other reader of this falls back to.
+    const liveState = live.readLive(live.liveConfigDir(), id);
+    const others = active.filter((e) => e.sessionId !== id && live.isLive(liveState, e.sessionId));
     if (others.length) {
         lines.push('');
         lines.push('other live sessions:');
@@ -498,11 +511,14 @@ function cmdClear(root, opts) {
     if (!data) fail('No entry for ' + target + ' under ' + root);
     if (data.active !== true) return 'fankeel — already stood down.';
 
-    // Twelve hours of silence is the only evidence the registry has that nobody
-    // is behind a claim, and below that the entry may belong to somebody who
-    // stepped away. So the refusal names what it is protecting, and --force is
-    // there for the case the reader can see and the registry cannot: a terminal
-    // that died four minutes ago. Ask before deny, the same as `guard`.
+    // Age, not liveness, and the difference is deliberate — `docs/collisions.md`
+    // keeps this gate on the clock. A recent timestamp is the one sign that the
+    // owner may simply have stepped away, which is the case the refusal protects,
+    // and --force is there for the one the reader can see and the registry cannot:
+    // a terminal that died four minutes ago. `lib/live.js` is the evidence about
+    // whether anybody is behind a claim, and it is deliberately not read here, so
+    // a live session quiet all day is cleared without --force. Ask before deny,
+    // the same as `guard`.
     const at = Date.now();
     if (!registry.isStale(data, at) && opts.force !== true) {
         const age = registry.ageText(data, at);

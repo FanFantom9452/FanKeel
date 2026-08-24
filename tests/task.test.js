@@ -10,7 +10,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'task.js');
 const registry = require('../lib/registry.js');
@@ -26,11 +26,12 @@ const root = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-task-'));
 // --claude-dir is always passed. These commands write the statusline badge now,
 // and a test suite that dropped flag files for made-up session ids into the real
 // ~/.claude would be leaving litter on the machine it runs on.
-function run(dir, args) {
+function run(dir, args, env) {
   const cfg = path.join(dir, 'cfg');
   try {
     return {
-      out: execFileSync(process.execPath, [SCRIPT, ...args, '--root', dir, '--claude-dir', cfg], { encoding: 'utf8' }),
+      out: execFileSync(process.execPath, [SCRIPT, ...args, '--root', dir, '--claude-dir', cfg],
+        { encoding: 'utf8', env: env ? Object.assign({}, process.env, env) : process.env }),
       code: 0,
     };
   } catch (e) {
@@ -148,6 +149,34 @@ test('the badge clashes once two sessions hold the same file', () => {
 
   run(dir, ['stage', 'build', '--session', B]);
   assert.equal(badgeOf(dir, B), 'clash');
+});
+
+// The other half of that substitution, and the one nobody was watching: this
+// script is a second badge writer, and before this it counted every active
+// overlap without asking whether anyone was behind it. `stage` painted `clash`
+// off a dead session and the next prompt — which does measure — quietly took it
+// back, which is two answers about one neighbour again.
+//
+// The dead session is written into Claude Code's own registry with a pid that
+// has certainly exited, rather than left out of it, so what is being asserted is
+// the pid check and not merely an absent file. MINE has to be in there too, or
+// the self-check reports unknown and unknown counts everything as live.
+test('a dead session holding the same file does not paint clash', () => {
+  const dir = root();
+  const cfg = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-live-'));
+  fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
+  const write = (pid, sessionId) =>
+    fs.writeFileSync(path.join(cfg, 'sessions', pid + '.json'), JSON.stringify({ pid, sessionId }) + '\n');
+  write(process.pid, B);
+  write(spawnSync(process.execPath, ['-e', '0']).pid, A);
+
+  started(dir, A, 'tidy the project cards', 'Waypoint');
+  started(dir, B, 'fix the card link', 'Waypoint');
+  registry.addClaim(dir, A, 'Waypoint/web/src/Card.jsx');
+  registry.addClaim(dir, B, 'Waypoint/web/src/Card.jsx');
+
+  run(dir, ['stage', 'build', '--session', B], { CLAUDE_CONFIG_DIR: cfg });
+  assert.equal(badgeOf(dir, B), 'build');
 });
 
 test('a bad session id is refused rather than turned into a filename', () => {
