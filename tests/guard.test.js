@@ -327,14 +327,18 @@ test('the refusal names the command that clears a claim nobody is behind', () =>
   assert.match(text, /task\.js clear/);
 });
 
-// `blockers` drops the sessions whose process is gone, so every holder this
-// text can ever name is one `clear` refuses on its own. Printed without --force
-// it is a recommendation that fails on the first try, one hundred percent of
-// the time.
+// `blockers` drops the sessions whose process is gone, so every holder this text
+// can ever name is live. `clear` does not read liveness — it reads the age of the
+// entry — so one of those holders is refused without --force and another, quiet
+// for longer than the age gate, is not. The printed command has to run for both,
+// which is why --force is in it rather than left to the reader to add.
 test('the refusal prints the clear command whole, and says why --force is part of it', () => {
   const text = guard.reasonFor('web/a.js', [{ sessionId: THEIRS, data: { task: 't', stage: 'build' } }], MINE);
   assert.match(text, new RegExp('node .*task\\.js clear ' + THEIRS + ' --force --session ' + MINE));
-  assert.match(text, /`--force` is required there rather than optional/);
+  assert.match(text, /`--force` is printed rather than left to you/);
+  // The premise the old wording carried: that a claim only blocks while it is
+  // live and `clear` therefore refuses every holder named here. It does not.
+  assert.doesNotMatch(text, /a claim only blocks while/);
   // adopt is named only with the precondition attached: a guarded session owns an
   // active task, which is exactly the caller cmdAdopt refuses.
   assert.match(text, /adoptable, though not by this session/);
