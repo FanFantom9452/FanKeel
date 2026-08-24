@@ -49,20 +49,24 @@ that kit wires up TokenBar, which is what draws the badge.
 
 ## The pipeline
 
-Seven stages, each named for what it produces rather than how it feels.
+Seven stages, each named for what it produces rather than how it feels. What
+each one actually has you do:
 
 ```mermaid
 flowchart LR
-    S["<b>survey</b><br/>what already exists"]
-    D["<b>design</b><br/>an approach someone agreed to"]
-    P["<b>plan</b><br/>a decomposition someone<br/>with no context could execute"]
-    B["<b>build</b><br/>the change itself"]
-    V["<b>verify</b><br/>evidence, not confidence"]
-    A["<b>audit</b><br/>what is no longer true"]
-    L["<b>land</b><br/>a repository no dirtier<br/>than you found it"]
+    S["<b>survey</b><br/>search the code, read the docs —<br/>does this already exist?"]
+    D["<b>design</b><br/>two or three approaches, one<br/>picked, and the test that settles it"]
+    P["<b>plan</b><br/>split into tasks you can test<br/>and review one at a time"]
+    B["<b>build</b><br/>write it, test it, commit it —<br/>one review per task"]
+    V["<b>verify</b><br/>run the tests, check that what<br/>you changed actually changed"]
+    A["<b>audit</b><br/>find the pages that stopped<br/>being true"]
+    L["<b>land</b><br/>close the TODOs, rewrite the map,<br/>then merge, PR, or keep"]
 
     S --> D --> P --> B --> V --> A --> L
 ```
+
+What each stage *produces* — the artifact it is graded on, which is a different
+question — is the table in [docs/pipeline.md](docs/pipeline.md).
 
 **A route is the stages one task actually needs, in order.** Not every task is
 seven. A class picks one when the task starts, and every prompt from then on
