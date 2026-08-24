@@ -259,3 +259,37 @@ test('the closing instruction asks for a project and a task, and never for a fil
   assert.equal(/scope/i.test(out), false, 'orient still tells the reader to pick a scope');
   assert.equal(out.includes('Pick the project from this'), true, 'it never says to pick the project');
 });
+
+// `readActive` reports intent; `lib/live.js` reports fact. Both readings are
+// right, and orient was the only one of five callers printing a number without
+// saying which it was — so `orient: 1 active` beside `task.js show` listing none
+// read as a contradiction rather than as the two answers it is.
+test('the registry line says how many entries are live, not only how many are active', () => {
+  const root = workspace({ 'a/.git/HEAD': 'ref: refs/heads/main\n' });
+  fs.mkdirSync(path.join(root, '.fankeel', 'sessions'), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, '.fankeel', 'sessions', 'deadbeef-0000-0000-0000-000000000000.json'),
+    JSON.stringify({ task: 'gone', stage: 'land', active: true }),
+  );
+  // A config dir of its own, so the count does not depend on what is running on
+  // the machine the tests happen to be on.
+  const cfg = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-cfg-'));
+  fs.mkdirSync(path.join(cfg, 'sessions'));
+  const env = Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg });
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', root], { encoding: 'utf8', env });
+  assert.match(out, /1 active, 0 live/);
+});
+
+test('a session directory it cannot read is reported as unknown, not as zero', () => {
+  const root = workspace({ 'a/.git/HEAD': 'ref: refs/heads/main\n' });
+  fs.mkdirSync(path.join(root, '.fankeel', 'sessions'), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, '.fankeel', 'sessions', 'deadbeef-0000-0000-0000-000000000000.json'),
+    JSON.stringify({ task: 'gone', stage: 'land', active: true }),
+  );
+  const env = Object.assign({}, process.env, {
+    CLAUDE_CONFIG_DIR: path.join(os.tmpdir(), 'fankeel-no-such-config-dir'),
+  });
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', root], { encoding: 'utf8', env });
+  assert.match(out, /1 active, liveness unknown/);
+});

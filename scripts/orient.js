@@ -23,6 +23,7 @@ const { execFileSync } = require('node:child_process');
 
 const { trackedFiles, isRepo } = require('./survey.js');
 const registry = require('../lib/registry.js');
+const live = require('../lib/live.js');
 const { firstTable } = require('../lib/map.js');
 
 // A workspace with more children than this is not being read row by row, and a
@@ -243,6 +244,15 @@ function scan(root, named) {
     const resolved = path.resolve(root);
     const stateRoot = registry.findStateRoot(resolved);
     const active = stateRoot ? registry.readActive(stateRoot) : [];
+    // `readActive` answers what the record says; `lib/live.js` answers whether
+    // anybody is behind it. Printing one number without saying which it was is
+    // what made orient and `task.js show` read as contradicting each other.
+    //
+    // `runningIds` rather than `readLive`, because the self-check there needs the
+    // caller's own session id and a CLI has none: every entry would come back
+    // live and the count would equal the active count in every case.
+    const ids = live.runningIds(live.liveConfigDir());
+    const alive = ids ? active.filter((e) => ids.has(e.sessionId)).length : null;
 
     // A named path wins over everything. That is the whole point of naming one:
     // the user has already answered the question this script exists to ask.
@@ -296,7 +306,16 @@ function scan(root, named) {
         });
     }
 
-    return { root: resolved, stateRoot, active, mode, entries, dropped, now: Date.now() };
+    return { root: resolved, stateRoot, active, alive, mode, entries, dropped, now: Date.now() };
+}
+
+// Two numbers, because they answer two questions and one of them was being read
+// as the answer to both. `alive` is null when Claude Code's session directory
+// could not be read at all, and saying so is better than printing a zero that
+// looks like a measurement.
+function countLine(result) {
+    const n = result.active.length + ' active';
+    return result.alive === null ? n + ', liveness unknown' : n + ', ' + result.alive + ' live';
 }
 
 function report(result) {
@@ -309,9 +328,9 @@ function report(result) {
     if (!result.stateRoot) {
         lines.push('registry: none at or above here. Starting a task creates one at ' + result.root + '.');
     } else if (path.resolve(result.stateRoot) === result.root) {
-        lines.push('registry: here, ' + result.active.length + ' active');
+        lines.push('registry: here, ' + countLine(result));
     } else {
-        lines.push('registry: ' + result.stateRoot + ', ' + result.active.length + ' active');
+        lines.push('registry: ' + result.stateRoot + ', ' + countLine(result));
         lines.push('  registry paths are relative to that directory, not this one.');
     }
     lines.push('');

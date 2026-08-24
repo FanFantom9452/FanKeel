@@ -161,3 +161,17 @@ test('liveConfigDir follows CLAUDE_CONFIG_DIR and falls back to ~/.claude', () =
     if (saved === undefined) delete process.env.CLAUDE_CONFIG_DIR; else process.env.CLAUDE_CONFIG_DIR = saved;
   }
 });
+
+// The third reader of liveness, and the one with no self-check. `readLive` is
+// built on it, so the running-set behaviour is covered there; what is new is the
+// null, which is how a caller tells an unreadable directory from an idle machine.
+test('runningIds separates a directory it cannot read from one holding nobody', () => {
+  assert.equal(live.runningIds(path.join(os.tmpdir(), 'fankeel-no-such-config')), null);
+
+  const cfg = tmpConfig();
+  assert.deepEqual(live.runningIds(cfg), new Set());
+
+  seed(cfg, process.pid, SID);
+  seed(cfg, GONE_PID, OTHER);
+  assert.deepEqual(live.runningIds(cfg), new Set([SID]));
+});
