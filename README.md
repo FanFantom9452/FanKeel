@@ -11,8 +11,8 @@ edit the same file, because neither knows the other is there.
 fankeel is a Claude Code plugin that carries a development discipline and states
 it on every prompt — and again on every answer — rather than once at the top of a
 session. It holds a task, moves
-it along a route it picked through six stages, keeps a capped note of what has been
-tried, and shows which other live sessions are in the same files.
+it along a route it picked through seven stages, keeps a capped note of what has
+been tried, and shows which other live sessions are in the same files.
 
 ## Install
 
@@ -31,9 +31,11 @@ Then, in any project:
 ```
 
 It looks before it asks — what is under this directory, which of them is a
-repository, which was touched today — and then asks which project, which part of
-it, and what the task is, with the options already on screen. Answer, and the
-statusline badge lights up.
+repository, which was touched today — and then asks at most two questions, with
+the options already on screen: which project, skipped when there is only one, and
+what the task is, guessed from the recent commits. It does not ask which files you
+will touch. Those are recorded as the edits land, so there is no list to state and
+none to get wrong. Answer, and the statusline badge lights up.
 
 > The repository is `FanKeel` and everything you type is `fankeel`. Plugin and
 > marketplace ids have to be kebab-case — Claude Code accepts anything else, and
@@ -63,13 +65,20 @@ flowchart LR
 ```
 
 **A route is the stages one task actually needs, in order.** Not every task is
-seven. A typo fix is `build, verify`. A documentation sweep is `survey, audit,
-land`. The route is assembled when the task starts and shown in every injected
-block, so a two-stage task is not reported as permanently unfinished at 2 of 7.
+seven. A class picks one when the task starts, and every prompt from then on
+carries it with your position bracketed — so a two-stage task is never reported
+as permanently unfinished at 2 of 7:
 
-It is assembled from a **class** rather than typed out: `spike` is
-`survey,build`, `bounded` is `survey,design,build,verify,land`, and
-`architectural` is all seven.
+```
+spike          route: [survey] → build                                          (1 of 2)
+bounded        route: survey → design → [build] → verify → land                 (3 of 5)
+architectural  route: survey → design → plan → [build] → verify → audit → land  (4 of 7)
+```
+
+Assembling a route by hand is a decision made silently; a class is the same
+decision made out loud, where somebody can disagree with it before four stages of
+work hang off it. The ratchet runs one way — complexity found mid-task upgrades
+the route, and nothing downgrades it.
 
 Only the current stage's rules are sent, and they are sent again every turn — a
 pointer is only as strong as the salience of what it points at, and what it points
@@ -102,6 +111,10 @@ Each stage also ships the **shape of its report**, not only a description of one
 deferred: <TODO.md line, or omit this line>
 then AskUserQuestion
 ```
+
+What happens *inside* a stage — its steps, the scripts it runs, and the two or
+three places each one branches — is drawn stage by stage in
+[docs/pipeline.md](docs/pipeline.md).
 
 ## Where to find things
 
@@ -140,10 +153,14 @@ matches an exact mode word before falling back to the four intensity tiers:
 ```powershell
 # ~/.claude/tokenbar-config.ps1
 $badgeColors.fankeel = @{ off = 240; lite = 62; full = 68; ultra = 81
-                          survey = 60; design = 62; build = 68
-                          verify = 75; audit = 78; land = 81
-                          clash = 196 }
+                          survey = 60; design = 62; plan  = 65
+                          build  = 68; verify = 75; audit = 78
+                          land   = 81; clash  = 196 }
 ```
+
+All seven stages, not six: a word the palette does not name falls back to the four
+tiers above it, which are one neutral ramp — so a single missing stage reads as
+the badge having stopped working rather than as a stage without a colour.
 
 The `.sh` equivalent, and what each colour is doing, is in
 [docs/statusline.md](docs/statusline.md).
