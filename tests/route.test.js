@@ -159,7 +159,7 @@ test('the lead file counts along the route, not along the full seven', () => {
 // every other assertion green while the two writers silently disagreed.
 test('the lead file carries a claim once one is held', () => {
   const dir = root();
-  run(dir, ['start', '--session', A, '--task', 'fix a typo', '--project', 'a.js', '--route', 'build,verify']);
+  run(dir, ['start', '--session', A, '--task', 'fix a typo', '--project', 'Waypoint', '--route', 'build,verify']);
   registry.addClaim(dir, A, 'a.js');
 
   run(dir, ['stage', 'verify', '--session', A]);
