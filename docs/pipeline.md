@@ -243,6 +243,11 @@ plain question mid-task and gets a plain answer.
 | `audit` | a list of what is no longer true |
 | `land` | a repository no dirtier than you found it |
 
+That column is what a stage is graded on, which is not the same question as what
+it has you do. The second question is answered stage by stage in
+[Inside each stage](#inside-each-stage) below, and in one line each on the
+[front page](../README.md).
+
 ### Three classes, three routes
 
 Assembling a route by hand is a decision made silently. A class is the same
