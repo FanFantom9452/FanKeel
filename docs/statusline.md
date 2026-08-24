@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-08-22
-source_of_truth: lib/badge.js
+last_verified: 2026-08-24
+source_of_truth: lib/badge.js, hooks/inject.js
 ---
 
 # The statusline badge
@@ -23,6 +23,13 @@ and then stop noticing; a statusline earns its space by showing what changes.
 `clash` takes the slot when another live session is in your files, because at that
 moment the collision matters more than the stage — and the stage is still in the
 injected text.
+
+That trade is forced by the badge having room for one word, and it is not forced
+anywhere else. The lead line states the collision in a field of its own — `others`,
+rendered `⚑2` — so it keeps the stage in `word`: saying the collision twice there
+would cost the one fact on that line with nowhere else to live. `inject.js` writes
+the two files from the same collision check and deliberately does not send the
+same word to both.
 
 TokenBar renders an unknown flag on a neutral gray-to-white ramp, which makes
 every stage the same colour. To have the badge brighten as the work moves along,

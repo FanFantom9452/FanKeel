@@ -218,6 +218,25 @@ test('the badge carries clash when another live session overlaps', () => {
   assert.equal(fs.readFileSync(path.join(cfg, 'modes', MINE, 'fankeel'), 'utf8'), 'clash\n');
 });
 
+test('a clash takes the badge slot, and leaves the lead line its stage', () => {
+  const root = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  seed(root, MINE, { stage: 'build' });
+  seed(root, THEIRS, { scope: ['statusline.ps1'] });
+  run({ session_id: MINE, cwd: root }, cfg);
+
+  // One word is all the shared line has, so there the collision outranks the
+  // stage.
+  assert.equal(fs.readFileSync(path.join(cfg, 'modes', MINE, 'fankeel'), 'utf8'), 'clash\n');
+
+  // The lead line has a field of its own for the collision, and it is already
+  // filled. Spending the word on it as well would state one fact twice while
+  // destroying the only copy of another — the stage has nowhere else to live.
+  const lead = leadOf(cfg, MINE);
+  assert.match(lead, /^word=build$/m);
+  assert.match(lead, /^others=1$/m);
+});
+
 test('an overlapping session whose process has exited paints nothing', () => {
   const root = tmp('fankeel-hook-');
   const cfg = tmp('fankeel-cfg-');
