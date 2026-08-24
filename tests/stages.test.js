@@ -359,6 +359,10 @@ test('build says what stops it, so that nothing else does', () => {
 test('every stage points at the skill holding the part that does not compress', () => {
   for (const name of NAMES) {
     const want = name === 'audit' ? 'fankeel-audit' : 'fankeel-' + name;
-    assert.match(byName(name).rules.join(' '), new RegExp(want), name + ' points at no skill');
+    // The instruction, not the mention. `audit` named its own slash command in
+    // a rule about a fortnightly pass and passed this test for it, while the
+    // stage it belongs to never loaded the skill at all.
+    const re = new RegExp('(Read the ' + want + ' skill|the ' + want + ' skill has)');
+    assert.match(byName(name).rules.join(' '), re, name + ' points at no skill');
   }
 });
