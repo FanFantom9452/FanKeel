@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-22
+last_verified: 2026-08-24
 source_of_truth: this file is the index; each page below is its own source
 ---
 
@@ -30,12 +30,12 @@ here.
 | Why delegating a wide search saves and delegating a long report does not | [subagents.md](subagents.md) |
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
 | Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
-| How the seven-stage work is being built, task by task | [plans/2026-08-22-seven-stage-implementation.md](plans/2026-08-22-seven-stage-implementation.md) — *design intent, not built* |
-| Where the seven-stage decomposition is heading | [plans/2026-08-22-seven-stage-pipeline.md](plans/2026-08-22-seven-stage-pipeline.md) — *design intent, not built* |
-| Why the registry goes stale, and what is meant to notice | [plans/2026-08-23-registry-staleness-design.md](plans/2026-08-23-registry-staleness-design.md) — *design intent, not built* |
-| How that is being built, task by task | [plans/2026-08-23-registry-staleness-implementation.md](plans/2026-08-23-registry-staleness-implementation.md) — *design intent, not built* |
-| Why a scope cannot be declared or a staleness measured, and what replaces both | [plans/2026-08-24-observed-scope-design.md](plans/2026-08-24-observed-scope-design.md) — *design intent, not built* |
-| How that is being built, task by task | [plans/2026-08-24-observed-scope-implementation.md](plans/2026-08-24-observed-scope-implementation.md) — *design intent, not built* |
+| How the seven-stage work is being built, task by task | [plans/2026-08-22-seven-stage-implementation.md](plans/2026-08-22-seven-stage-implementation.md) — *superseded by the pipeline plan* |
+| Where the seven-stage decomposition is heading | [plans/2026-08-22-seven-stage-pipeline.md](plans/2026-08-22-seven-stage-pipeline.md) — *built, 0.24.0* |
+| Why the registry goes stale, and what is meant to notice | [plans/2026-08-23-registry-staleness-design.md](plans/2026-08-23-registry-staleness-design.md) — *superseded by the observed-scope design* |
+| How that is being built, task by task | [plans/2026-08-23-registry-staleness-implementation.md](plans/2026-08-23-registry-staleness-implementation.md) — *superseded by the observed-scope design* |
+| Why a scope cannot be declared or a staleness measured, and what replaces both | [plans/2026-08-24-observed-scope-design.md](plans/2026-08-24-observed-scope-design.md) — *built, 0.26.0* |
+| How that is being built, task by task | [plans/2026-08-24-observed-scope-implementation.md](plans/2026-08-24-observed-scope-implementation.md) — *built, 0.26.0* |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 
 ## The two audits

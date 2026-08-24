@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-08-24
 source_of_truth: lib/registry.js, lib/guard.js, lib/overlap.js, hooks/touch.js, hooks/guard.js, hooks/inject.js, scripts/task.js
 ---
