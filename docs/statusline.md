@@ -10,13 +10,30 @@ The one word fankeel writes, how TokenBar renders it, and how to give each stage
 
 # Statusline
 
-fankeel writes one word to `~/.claude/modes/<session_id>/fankeel`.
-[TokenBar](https://github.com/FanFantom9452/ClaudeCodeCLI-TokenBar) renders any
-flag it finds there, so no change is needed on that side:
+fankeel writes two files per session. One word to
+`~/.claude/modes/<session_id>/fankeel`, which
+[TokenBar](https://github.com/FanFantom9452/ClaudeCodeCLI-TokenBar) renders as a
+badge among the others on line 1:
 
 ```
-[FANKEEL:SURVEY]  [FANKEEL:DESIGN]  [FANKEEL:BUILD]  [FANKEEL:VERIFY]  [FANKEEL:AUDIT]  [FANKEEL:LAND]  [FANKEEL:CLASH]
+[FANKEEL:SURVEY]  [FANKEEL:DESIGN]  [FANKEEL:PLAN]  [FANKEEL:BUILD]  [FANKEEL:VERIFY]  [FANKEEL:AUDIT]  [FANKEEL:LAND]  [FANKEEL:CLASH]
 ```
+
+And the whole line's worth to `<session_id>/fankeel.lead`, which TokenBar can
+promote to **a line of its own above everything**, with the route position, the
+files claimed, the guard and the collision count each in a field:
+
+```
+▌FANKEEL BUILD   ●●●○○  ⚿ on  ⚑2  lib/registry.js  rework the colour ramp
+▌ Opus 5 | my-project | main ↑2
+▌ ctx ███▊░░░░░░  38%  │  5h ██████▌░░░  66%
+```
+
+**From TokenBar v1.4.1 that happens by itself.** Before it, `$leadPlugin` had to
+be set by hand in `tokenbar-config`, and a machine where nobody had set it showed
+the badge above and no sign that the other file was being written at all. If the
+badge is all you see, that install is older than v1.4.1 — either update it, or
+set `$leadPlugin = 'fankeel'` yourself.
 
 The word is the stage, not an intensity. An intensity is a constant you set once
 and then stop noticing; a statusline earns its space by showing what changes.
