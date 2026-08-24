@@ -21,6 +21,7 @@ written here instead of where it belongs.
 - Ship the stage colours in TokenBar itself rather than as a paste-in for `tokenbar-config.ps1`. Blocked on publishing: naming an unpublished plugin in a public repo announces it.
 - Concurrent `addClaim` loses claims — [lib/registry.js](lib/registry.js). Two processes adding 20 paths each left 28 of 40; temp-and-rename guards the write, not the read-modify-write. `touch()` too.
 - `readLive` self-checks my own config dir, never a neighbour’s — [lib/live.js](lib/live.js). A session under a different `CLAUDE_CONFIG_DIR` reads as dead, and its claims drop out of all four voices.
+- `cmdShow`’s liveness filter has no test — [scripts/task.js](scripts/task.js). Deleting it fails nothing, and an unpinned second reader of liveness is the shape the badge writers drifted apart in.
 
 ## Owed after first real use
 
