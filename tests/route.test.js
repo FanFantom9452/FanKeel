@@ -87,7 +87,7 @@ test('nextStage walks the route it was given', () => {
 
 test('start takes a route and begins at its first stage, not at survey', () => {
   const dir = root();
-  const { out, code } = run(dir, ['start', '--session', A, '--task', 'fix a typo', '--scope', 'a.js', '--route', 'build,verify']);
+  const { out, code } = run(dir, ['start', '--session', A, '--task', 'fix a typo', '--project', 'a.js', '--route', 'build,verify']);
   assert.equal(code, 0);
   assert.match(out, /started, at build/);
   assert.match(out, /route: build → verify/);
@@ -99,14 +99,14 @@ test('start takes a route and begins at its first stage, not at survey', () => {
 
 test('start without a route gets all seven', () => {
   const dir = root();
-  run(dir, ['start', '--session', A, '--task', 'a feature', '--scope', 'a.js']);
+  run(dir, ['start', '--session', A, '--task', 'a feature', '--project', 'a.js']);
   assert.deepEqual(registry.readSession(dir, A).route, FULL_ROUTE);
   assert.equal(registry.readSession(dir, A).stage, 'survey');
 });
 
 test('start refuses a route that is not one', () => {
   const dir = root();
-  const { out, code } = run(dir, ['start', '--session', A, '--task', 'x', '--scope', 'a.js', '--route', 'build,refactor']);
+  const { out, code } = run(dir, ['start', '--session', A, '--task', 'x', '--project', 'a.js', '--route', 'build,refactor']);
   assert.equal(code, 1);
   assert.match(out, /--route must be stages from/);
   assert.equal(registry.readSession(dir, A), null);
@@ -114,7 +114,7 @@ test('start refuses a route that is not one', () => {
 
 test('a stage off the route is refused, and the entry does not move', () => {
   const dir = root();
-  run(dir, ['start', '--session', A, '--task', 'x', '--scope', 'a.js', '--route', 'build,verify']);
+  run(dir, ['start', '--session', A, '--task', 'x', '--project', 'a.js', '--route', 'build,verify']);
   const { out, code } = run(dir, ['stage', 'design', '--session', A]);
   assert.equal(code, 1);
   assert.match(out, /not on the route for this task: build → verify/);
@@ -123,7 +123,7 @@ test('a stage off the route is refused, and the entry does not move', () => {
 
 test('route re-routes, and refuses to strand the stage the task is in', () => {
   const dir = root();
-  run(dir, ['start', '--session', A, '--task', 'x', '--scope', 'a.js', '--route', 'build,verify']);
+  run(dir, ['start', '--session', A, '--task', 'x', '--project', 'a.js', '--route', 'build,verify']);
   run(dir, ['stage', 'verify', '--session', A]);
 
   const bad = run(dir, ['route', 'survey,design', '--session', A]);
@@ -138,14 +138,16 @@ test('route re-routes, and refuses to strand the stage the task is in', () => {
 
 test('the lead file counts along the route, not along the full seven', () => {
   const dir = root();
-  run(dir, ['start', '--session', A, '--task', 'fix a typo', '--scope', 'a.js', '--route', 'build,verify']);
+  run(dir, ['start', '--session', A, '--task', 'fix a typo', '--project', 'a.js', '--route', 'build,verify']);
 
   const lead = leadOf(dir, A);
   assert.equal(lead.word, 'build');
   assert.equal(lead.step, '1');
   assert.equal(lead.steps, '2');
   assert.equal(lead.title, 'fix a typo');
-  assert.equal(lead.where, 'a.js');
+  // `--project` names the repository, not a file touched. Nothing has been
+  // edited yet at `start`, so `where` — read from `claims` — carries nothing.
+  assert.equal(lead.where, undefined);
   // Nothing to say is said by saying nothing: an `others=0` would render as a
   // flag with a zero next to it, which is worse than no flag.
   assert.equal(lead.others, undefined);
@@ -153,7 +155,7 @@ test('the lead file counts along the route, not along the full seven', () => {
 
 test('standing down takes the lead file with the badge', () => {
   const dir = root();
-  run(dir, ['start', '--session', A, '--task', 'x', '--scope', 'a.js']);
+  run(dir, ['start', '--session', A, '--task', 'x', '--project', 'a.js']);
   assert.ok(leadOf(dir, A));
   run(dir, ['down', '--session', A]);
   assert.equal(leadOf(dir, A), null);
@@ -162,7 +164,7 @@ test('standing down takes the lead file with the badge', () => {
 test('adopt carries the route over', () => {
   const dir = root();
   const B = 'bbbbbbbb-1111-2222-3333-444444444444';
-  run(dir, ['start', '--session', A, '--task', 'x', '--scope', 'a.js', '--route', 'build,verify']);
+  run(dir, ['start', '--session', A, '--task', 'x', '--project', 'a.js', '--route', 'build,verify']);
   run(dir, ['adopt', A, '--session', B]);
   assert.deepEqual(registry.readSession(dir, B).route, ['build', 'verify']);
 });
@@ -232,7 +234,7 @@ test('every class says what it means, because the word alone does not', () => {
 
 test('a class picks the route and is recorded on the entry', () => {
   const dir = root();
-  const r = run(dir, ['start', '--session', A, '--task', 'probe the ramp', '--scope', 'lib', '--class', 'spike']);
+  const r = run(dir, ['start', '--session', A, '--task', 'probe the ramp', '--project', 'lib', '--class', 'spike']);
   assert.equal(r.code, 0, r.out);
   const data = registry.readSession(dir, A);
   assert.deepEqual(data.route, ['survey', 'build']);
@@ -242,7 +244,7 @@ test('a class picks the route and is recorded on the entry', () => {
 
 test('a class and an explicit route together are refused, not silently ranked', () => {
   const dir = root();
-  const r = run(dir, ['start', '--session', A, '--task', 't', '--scope', 'lib',
+  const r = run(dir, ['start', '--session', A, '--task', 't', '--project', 'lib',
     '--class', 'spike', '--route', 'survey,design,build']);
   assert.equal(r.code, 1, r.out);
   assert.match(r.out, /--class or --route, not both/);
@@ -250,7 +252,7 @@ test('a class and an explicit route together are refused, not silently ranked', 
 
 test('an unknown class lists the three rather than guessing', () => {
   const dir = root();
-  const r = run(dir, ['start', '--session', A, '--task', 't', '--scope', 'lib', '--class', 'medium']);
+  const r = run(dir, ['start', '--session', A, '--task', 't', '--project', 'lib', '--class', 'medium']);
   assert.equal(r.code, 1, r.out);
   assert.match(r.out, /spike/);
   assert.match(r.out, /bounded/);
@@ -259,7 +261,7 @@ test('an unknown class lists the three rather than guessing', () => {
 
 test('neither given still works, and still records no class', () => {
   const dir = root();
-  const r = run(dir, ['start', '--session', A, '--task', 't', '--scope', 'lib']);
+  const r = run(dir, ['start', '--session', A, '--task', 't', '--project', 'lib']);
   assert.equal(r.code, 0, r.out);
   assert.deepEqual(registry.readSession(dir, A).route, FULL_ROUTE);
   assert.equal(registry.readSession(dir, A).class, undefined);

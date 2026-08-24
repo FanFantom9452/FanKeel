@@ -48,8 +48,10 @@ const badgeOf = (dir, id) => {
 
 const entry = (dir, id) => registry.readSession(dir, id);
 
-const started = (dir, id, task, scope) =>
-  run(dir, ['start', '--session', id, '--task', task, '--scope', scope]);
+// The fourth argument is a project now, and it is optional — every caller below
+// that passes one is naming a repository, not declaring where the work will go.
+const started = (dir, id, task, project) =>
+  run(dir, ['start', '--session', id, '--task', task, ...(project ? ['--project', project] : [])]);
 
 // Backdating the heartbeat is the only way to make an entry stale without
 // waiting twelve hours. `started` writes `updated` to now.
@@ -61,19 +63,22 @@ const chill = (dir, id, ms) => {
 
 const DAY = 24 * 3600e3;
 
-test('start writes the entry, at survey, active', () => {
+test('start writes the entry, at survey, active, holding nothing', () => {
   const dir = root();
-  const { out, code } = started(dir, A, 'tidy the project cards', 'Waypoint/web');
+  const { out, code } = started(dir, A, 'tidy the project cards', 'Waypoint');
   assert.equal(code, 0);
   assert.match(out, /started, at survey/);
 
   const data = entry(dir, A);
   assert.equal(data.task, 'tidy the project cards');
-  assert.deepEqual(data.scope, ['Waypoint/web']);
+  assert.equal(data.project, 'Waypoint');
   assert.equal(data.stage, 'survey');
   assert.equal(data.active, true);
   assert.ok(Date.parse(data.started));
   assert.ok(Date.parse(data.updated));
+  // Nothing has been edited, so nothing is held. An empty list written here
+  // would be the declaration this replaced, spelled differently.
+  assert.equal('claims' in data, false);
 });
 
 // The reason this script exists at all. Hand-writing the JSON left this file out
@@ -84,18 +89,19 @@ test('start creates .fankeel/.gitignore, which hand-writing the JSON never did',
   assert.equal(fs.readFileSync(path.join(dir, '.fankeel', '.gitignore'), 'utf8'), 'sessions/\n');
 });
 
-test('start refuses without a scope, and says why rather than inventing one', () => {
+test('start succeeds with no project — the registry root is a project too', () => {
   const dir = root();
   const { out, code } = run(dir, ['start', '--session', A, '--task', 'something']);
-  assert.equal(code, 1);
-  assert.match(out, /--scope is required/);
-  assert.match(out, /Never invent it/);
-  assert.equal(entry(dir, A), null);
+  assert.equal(code, 0);
+  assert.match(out, /started, at survey/);
+  const data = entry(dir, A);
+  assert.equal(data.task, 'something');
+  assert.equal('project' in data, false);
 });
 
 test('start refuses without a task', () => {
   const dir = root();
-  const { code } = run(dir, ['start', '--session', A, '--scope', 'Waypoint/web']);
+  const { code } = run(dir, ['start', '--session', A, '--project', 'Waypoint']);
   assert.equal(code, 1);
 });
 
@@ -116,43 +122,52 @@ test('start over a stood-down entry is allowed', () => {
   assert.equal(entry(dir, A).task, 'second');
 });
 
-test('start names a collision at the moment the scope is written', () => {
+// There is nothing left to collide at declaration time, because nothing is
+// declared. A task that has touched no file overlaps no file, and the answer
+// arrives on the first edit instead — from the guard, over a path both sessions
+// are actually holding.
+test('start into files another session holds says nothing, and the badge stays on the stage', () => {
   const dir = root();
-  started(dir, A, 'tidy the project cards', 'Waypoint/web');
-  const { out } = started(dir, B, 'fix the card link', 'Waypoint/web/src/Card.jsx');
-  assert.match(out, /already claimed by another live session/);
-  assert.match(out, /tidy the project cards/);
+  started(dir, A, 'tidy the project cards', 'Waypoint');
+  registry.addClaim(dir, A, 'Waypoint/web/src/Card.jsx');
+
+  const { out } = started(dir, B, 'fix the card link', 'Waypoint');
+  assert.doesNotMatch(out, /already claimed/);
+  assert.equal(badgeOf(dir, B), 'survey');
+});
+
+// And the clash is real once both sides hold the file — read off `claims` on
+// both sides, which is the substitution that would otherwise fail silently by
+// finding `scope` on neither.
+test('the badge clashes once two sessions hold the same file', () => {
+  const dir = root();
+  started(dir, A, 'tidy the project cards', 'Waypoint');
+  started(dir, B, 'fix the card link', 'Waypoint');
+  registry.addClaim(dir, A, 'Waypoint/web/src/Card.jsx');
+  registry.addClaim(dir, B, 'Waypoint/web/src/Card.jsx');
+
+  run(dir, ['stage', 'build', '--session', B]);
+  assert.equal(badgeOf(dir, B), 'clash');
 });
 
 test('a bad session id is refused rather than turned into a filename', () => {
   const dir = root();
-  const { out, code } = run(dir, ['start', '--session', '../../etc/passwd', '--task', 'x', '--scope', 'y']);
+  const { out, code } = run(dir, ['start', '--session', '../../etc/passwd', '--task', 'x']);
   assert.equal(code, 1);
   assert.match(out, /Not a session id/);
 });
 
 test('a missing --session is refused with the instruction not to guess', () => {
   const dir = root();
-  const { out, code } = run(dir, ['start', '--task', 'x', '--scope', 'y']);
+  const { out, code } = run(dir, ['start', '--task', 'x']);
   assert.equal(code, 1);
   assert.match(out, /never guess it/);
 });
 
-test('scope replaces by default and appends with --add', () => {
+test('a project is normalised the way a path is, and only the first is kept', () => {
   const dir = root();
-  started(dir, A, 'tidy the project cards', 'Waypoint/web');
-
-  run(dir, ['scope', 'Waypoint/api', '--session', A]);
-  assert.deepEqual(entry(dir, A).scope, ['Waypoint/api']);
-
-  run(dir, ['scope', 'Waypoint/web,Waypoint/api', '--session', A, '--add']);
-  assert.deepEqual(entry(dir, A).scope, ['Waypoint/api', 'Waypoint/web']);
-});
-
-test('scope normalises separators and drops empty pieces', () => {
-  const dir = root();
-  started(dir, A, 'x', 'Waypoint\\web\\, , Waypoint/api/');
-  assert.deepEqual(entry(dir, A).scope, ['Waypoint/web', 'Waypoint/api']);
+  started(dir, A, 'x', 'Waypoint\\web\\, Waypoint/api');
+  assert.equal(entry(dir, A).project, 'Waypoint/web');
 });
 
 test('stage moves, and refuses a name that is not a stage', () => {
@@ -217,9 +232,16 @@ test('down deactivates and never deletes', () => {
 
 test('adopt copies the task over and stands the source down in the same run', () => {
   const dir = root();
-  started(dir, A, 'tidy the project cards', 'Waypoint/web');
+  started(dir, A, 'tidy the project cards', 'Waypoint');
+  registry.addClaim(dir, A, 'Waypoint/web/src/Card.jsx');
   run(dir, ['note', 'the mid green problem', '--session', A]);
   run(dir, ['stage', 'build', '--session', A]);
+
+  // A record written before `drift` was deleted. Adopting it must not carry the
+  // field back into a freshly written entry.
+  const stale = entry(dir, A);
+  stale.drift = ['api/routes.js'];
+  registry.writeSession(dir, A, stale);
 
   const { out, code } = run(dir, ['adopt', A, '--session', B]);
   assert.equal(code, 0);
@@ -228,11 +250,28 @@ test('adopt copies the task over and stands the source down in the same run', ()
   const mine = entry(dir, B);
   assert.equal(mine.active, true);
   assert.equal(mine.stage, 'build');
-  assert.deepEqual(mine.scope, ['Waypoint/web']);
+  assert.equal(mine.project, 'Waypoint');
+  assert.deepEqual(mine.claims, ['Waypoint/web/src/Card.jsx']);
   assert.deepEqual(mine.notes, ['the mid green problem']);
+  assert.equal(mine.drift, undefined);
 
   // Both active would put two claimants on one task's own files.
   assert.equal(entry(dir, A).active, false);
+});
+
+// Re-stamping `started` handed every future tie-break to whoever started last,
+// which meant a session that inherited three days of work lost the file to a
+// task opened a minute ago.
+test('adopt inherits the start time rather than re-stamping it', () => {
+  const dir = root();
+  started(dir, A, 'tidy the project cards', 'Waypoint');
+  const source = entry(dir, A);
+  source.started = new Date(Date.now() - 3 * DAY).toISOString();
+  registry.writeSession(dir, A, source);
+
+  run(dir, ['adopt', A, '--session', B]);
+  assert.equal(entry(dir, B).started, source.started);
+  assert.ok(Date.parse(entry(dir, B).updated) > Date.parse(source.started));
 });
 
 test('adopt refuses when this session already owns something', () => {
@@ -260,23 +299,6 @@ test('the badge follows the stage', () => {
   started(dir, A, 'x', 'Waypoint/web');
   run(dir, ['stage', 'verify', '--session', A]);
   assert.equal(badgeOf(dir, A), 'verify');
-});
-
-test('starting into a collision says clash on the badge, not the stage', () => {
-  const dir = root();
-  started(dir, A, 'tidy the project cards', 'Waypoint/web');
-  started(dir, B, 'fix the card link', 'Waypoint/web/src/Card.jsx');
-  assert.equal(badgeOf(dir, B), 'clash');
-});
-
-test('narrowing the scope out of a collision clears the badge back to the stage', () => {
-  const dir = root();
-  started(dir, A, 'tidy the project cards', 'Waypoint/web');
-  started(dir, B, 'fix the api', 'Waypoint/web');
-  assert.equal(badgeOf(dir, B), 'clash');
-
-  run(dir, ['scope', 'Waypoint/api', '--session', B]);
-  assert.equal(badgeOf(dir, B), 'survey');
 });
 
 test('standing down removes the badge — the mode is off and must look off', () => {
@@ -327,7 +349,7 @@ test('without --root the registry is found the way the hooks find it', () => {
   // this test leaves a flag file in the real ~/.claude/modes named for a session
   // that never existed. It did, until this comment was written.
   execFileSync(process.execPath, [SCRIPT, 'start', '--session', A, '--task', 'x',
-    '--scope', 'Waypoint/web', '--claude-dir', path.join(dir, 'cfg')], {
+    '--project', 'Waypoint', '--claude-dir', path.join(dir, 'cfg')], {
     encoding: 'utf8', cwd: dir,
   });
 
@@ -403,4 +425,68 @@ test('clearing this session is refused, and names the command that exists for it
   assert.equal(code, 1);
   assert.match(out, /`down`/);
   assert.equal(entry(dir, A).active, true);
+});
+
+// `down` then `start` was the only reset, and it worked by accident of `start`
+// building a fresh object. Notes, `next` and now claims are session-scoped, so a
+// task renamed in place went on holding files the new one never opened.
+test('task replaces the task and drops everything the last one held', () => {
+  const dir = root();
+  started(dir, A, 'tidy the project cards', 'Waypoint');
+  registry.addClaim(dir, A, 'Waypoint/web/src/Card.jsx');
+  run(dir, ['note', 'the mid green problem', '--session', A]);
+  run(dir, ['next', 'check the ramp', '--session', A]);
+  run(dir, ['stage', 'build', '--session', A]);
+
+  const { out, code } = run(dir, ['task', 'rework the ramp', '--session', A]);
+  assert.equal(code, 0);
+  assert.match(out, /task: rework the ramp/);
+
+  const data = entry(dir, A);
+  assert.equal(data.task, 'rework the ramp');
+  assert.deepEqual(registry.claimsOf(data), []);
+  assert.equal(data.notes, undefined);
+  assert.equal(data.next, undefined);
+  // A new task starts at the beginning of its route, not wherever the last one
+  // stopped.
+  assert.equal(data.stage, 'survey');
+});
+
+test('task clears a claim list an old record still keeps under scope', () => {
+  const dir = root();
+  started(dir, A, 'first', 'Waypoint');
+  const old = entry(dir, A);
+  old.scope = ['Waypoint/web'];
+  registry.writeSession(dir, A, old);
+
+  run(dir, ['task', 'second', '--session', A]);
+  assert.deepEqual(registry.claimsOf(entry(dir, A)), []);
+});
+
+test('task keeps the project, the route, the guard and the start time', () => {
+  const dir = root();
+  run(dir, ['start', '--session', A, '--task', 'first', '--project', 'Waypoint',
+    '--route', 'design,build,verify']);
+  run(dir, ['guard', 'deny', '--session', A]);
+  run(dir, ['stage', 'verify', '--session', A]);
+  const before = entry(dir, A);
+
+  run(dir, ['task', 'second', '--session', A]);
+  const after = entry(dir, A);
+  assert.equal(after.project, 'Waypoint');
+  assert.deepEqual(after.route, ['design', 'build', 'verify']);
+  assert.equal(after.guard, 'deny');
+  assert.equal(after.stage, 'design');
+  // The tie-break. Which session reached this repository first is not re-opened
+  // by renaming what it is doing there.
+  assert.equal(after.started, before.started);
+});
+
+test('task refuses when this session owns nothing, and names what begins one', () => {
+  const dir = root();
+  const { out, code } = run(dir, ['task', 'rework the ramp', '--session', A]);
+  assert.equal(code, 1);
+  assert.match(out, /No active entry/);
+  assert.match(out, /start --task/);
+  assert.equal(entry(dir, A), null);
 });

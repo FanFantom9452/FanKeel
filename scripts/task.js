@@ -81,7 +81,7 @@ function showBadge(opts, sessionId, word, data) {
             step: at.step,
             steps: at.steps,
             title: data.task,
-            where: Array.isArray(data.scope) ? data.scope.join(' ') : '',
+            where: registry.claimsOf(data).join(' '),
             guard: data.guard,
             others: data.others > 0 ? data.others : '',
         });
@@ -116,7 +116,7 @@ function parseArgs(argv) {
     const opts = { positional: [] };
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i];
-        if (arg === '--session' || arg === '--root' || arg === '--task' || arg === '--scope' || arg === '--class') {
+        if (arg === '--session' || arg === '--root' || arg === '--task' || arg === '--project' || arg === '--class') {
             if (argv[i + 1] === undefined) fail(arg + ' needs a value.');
             opts[arg.slice(2)] = argv[++i];
             continue;
@@ -129,10 +129,6 @@ function parseArgs(argv) {
         if (arg === '--claude-dir') {
             if (argv[i + 1] === undefined) fail('--claude-dir needs a value.');
             opts.claudeDir = argv[++i];
-            continue;
-        }
-        if (arg === '--add') {
-            opts.add = true;
             continue;
         }
         if (arg === '--force') {
@@ -170,7 +166,10 @@ function describe(root, sessionId, data) {
     lines.push('stage: ' + (data.stage || '?') + (at ? '  (' + at.step + ' of ' + at.steps + ')' : '')
         + (data.active === true ? '' : '  (stood down)'));
     lines.push('route: ' + route.map((r) => (r === data.stage ? '[' + r + ']' : r)).join(' → '));
-    if (Array.isArray(data.scope) && data.scope.length) lines.push('scope: ' + data.scope.join(', '));
+    const project = registry.projectOf(data);
+    if (project) lines.push('project: ' + project);
+    const claims = registry.claimsOf(data);
+    if (claims.length) lines.push('touched: ' + claims.join(', '));
     if (data.guard) lines.push('guard: ' + data.guard);
     if (data.next) lines.push('next:  ' + data.next);
     const notes = registry.notesOf(data);
@@ -182,14 +181,14 @@ function describe(root, sessionId, data) {
     return lines;
 }
 
-// Other live sessions whose scope this one's would touch. Said at the moment the
-// scope is written rather than waiting for the next prompt, because that is the
-// moment the user can still choose a different one.
-function collisions(root, sessionId, scope) {
+// Other live sessions holding a file this one has touched. Said as the badge is
+// written rather than waiting for the next prompt, because the statusline is
+// where anybody looks for it and the hook only runs on the next one.
+function collisions(root, sessionId, claims) {
     const out = [];
     for (const other of registry.readActive(root)) {
         if (other.sessionId === sessionId) continue;
-        const shared = overlapPaths(scope, (other.data && other.data.scope) || []);
+        const shared = overlapPaths(claims, registry.claimsOf(other.data));
         if (shared.length) out.push({ task: other.data.task || 'untitled', shared });
     }
     return out;
@@ -222,12 +221,12 @@ function cmdShow(root, opts) {
         lines.push('');
         lines.push('other live sessions:');
         for (const other of others) {
-            const scope = Array.isArray(other.data.scope) ? other.data.scope.join(', ') : '';
+            const claims = registry.claimsOf(other.data).join(', ');
             const stale = registry.isStale(other.data, Date.now())
                 ? '  (last seen ' + registry.ageText(other.data, Date.now()) + ' ago)'
                 : '';
             lines.push('  - ' + (other.data.task || 'untitled') + ' @ ' + (other.data.stage || '?')
-                + (scope ? '  (scope: ' + scope + ')' : '') + stale);
+                + (claims ? '  (touched: ' + claims + ')' : '') + stale);
             lines.push('    ' + other.sessionId);
         }
     }
@@ -243,11 +242,11 @@ function cmdStart(root, opts) {
     }
     if (!opts.task || !String(opts.task).trim()) fail('--task "<one line>" is required.');
 
-    const scope = splitScope(opts.scope);
-    // Invariant 3, enforced rather than asked for. A guessed scope produces false
-    // collision warnings, and two of those are enough for the real one to be
-    // ignored.
-    if (!scope.length) fail('--scope is required. Ask for it; a directory is a complete answer. Never invent it.');
+    // Optional, and coarse: it names the repository, which is all `lib/docs.js`
+    // ever read out of the field it replaces. The registry root is a legitimate
+    // answer and a session opened inside a project already implies one, so an
+    // absent project is not a refusal.
+    const project = splitScope(opts.project)[0];
 
     // The route this task will take. Not every task is six stages: a typo fix is
     // `build,verify` and a documentation sweep is `survey,audit,land`. A fixed
@@ -277,7 +276,10 @@ function cmdStart(root, opts) {
     const stamp = now();
     const data = {
         task: String(opts.task).replace(/\s+/g, ' ').trim(),
-        scope,
+        // Dropped from the JSON when undefined, the same way `class` is. No
+        // `claims` key at all: nothing has been edited yet, and an empty list
+        // written here would be the declaration this replaced under a new name.
+        project,
         route,
         class: opts.class ? String(opts.class).trim().toLowerCase() : undefined,
         stage: route[0],
@@ -287,20 +289,16 @@ function cmdStart(root, opts) {
     };
     if (!registry.writeSession(root, id, data)) fail('Could not write the entry under ' + root);
 
-    const clash = collisions(root, id, scope);
-    showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data));
+    // No collision check here, because there is nothing yet to collide. A task
+    // holding no file overlaps no file, and the first edit is where the question
+    // gets asked — by the guard, before the write, over a path both sides hold.
+    showBadge(opts, id, badge.badgeWord(data.stage, false), data);
 
     const lines = ['fankeel — started, at ' + data.stage
         + (data.class ? '   class: ' + data.class : '')
         + '   route: ' + route.join(' → ')];
     lines.push('');
     for (const line of describe(root, id, data)) lines.push('  ' + line);
-    if (clash.length) {
-        lines.push('');
-        lines.push('already claimed by another live session:');
-        for (const c of clash) lines.push('  - ' + c.task + '  << ' + c.shared.join(', '));
-        lines.push('Say so before editing those files.');
-    }
 
     lines.push('');
     lines.push(FIRST_STEP[data.stage] || 'Begin at ' + data.stage + '. Do not stop to ask whether to start.');
@@ -327,35 +325,50 @@ function cmdStage(root, opts) {
     const from = data.stage;
     data.stage = name;
     if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
-    const clash = collisions(root, id, data.scope || []);
+    const clash = collisions(root, id, registry.claimsOf(data));
     showBadge(opts, id, badge.badgeWord(name, clash.length > 0), Object.assign({ others: clash.length }, data));
 
     const at = positionIn(route, name);
     return 'fankeel — ' + from + ' to ' + name + (at ? '   ' + at.step + ' of ' + at.steps : '');
 }
 
-function cmdScope(root, opts) {
+// A new task on a session that already has one. `down` then `start` was the only
+// reset and it worked by accident of `start` building a fresh object — so a task
+// renamed in place kept notes about work that finished, a `next` nobody would
+// take, and claims on files the new task never opens.
+//
+// `started` is kept. It is the collision tie-break, and the question it answers —
+// which of two sessions reached this repository first — is not re-opened by
+// renaming what that session is doing there.
+function cmdTask(root, opts) {
     const id = requireSession(opts);
+    const text = opts.positional.join(' ').replace(/\s+/g, ' ').trim();
+    if (!text) fail('Give the new task, in one line.');
+
     const data = registry.readSession(root, id);
-    if (!data || data.active !== true) fail('No active entry for this session under ' + root);
+    if (!data || data.active !== true) {
+        fail('No active entry for this session under ' + root
+            + NL + '`start --task "<one line>"` begins one.');
+    }
 
-    const given = splitScope(opts.positional[0] || opts.scope);
-    if (!given.length) fail('Give the paths, comma separated.');
-
-    const before = Array.isArray(data.scope) ? data.scope : [];
-    data.scope = opts.add ? before.concat(given.filter((s) => !before.includes(s))) : given;
+    data.task = text;
+    delete data.claims;
+    // `claims` falls back to `scope` on a record written before the split, so a
+    // clear that dropped only the new key would leave the old list holding.
+    delete data.scope;
+    delete data.notes;
+    delete data.next;
+    const route = normaliseRoute(data.route) || FULL_ROUTE.slice();
+    data.route = route;
+    data.stage = route[0];
     if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
 
-    const clash = collisions(root, id, data.scope);
-    showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data));
+    // Holding nothing, so overlapping nothing.
+    showBadge(opts, id, badge.badgeWord(data.stage, false), data);
 
-    const lines = ['fankeel — scope: ' + data.scope.join(', ')];
-    if (clash.length) {
-        lines.push('');
-        lines.push('now overlapping:');
-        for (const c of clash) lines.push('  - ' + c.task + '  << ' + c.shared.join(', '));
-    }
-    return lines.join('\n');
+    return 'fankeel — task: ' + text
+        + NL + '           at ' + data.stage + ', holding nothing.'
+        + NL + (FIRST_STEP[data.stage] || 'Begin at ' + data.stage + '.');
 }
 
 function cmdNote(root, opts) {
@@ -427,19 +440,24 @@ function cmdAdopt(root, opts) {
     if (mine && mine.active === true) fail('This session already owns an active task. Stand it down first.');
 
     const stamp = now();
+    const claims = registry.claimsOf(source);
     const data = {
         task: source.task,
-        scope: Array.isArray(source.scope) ? source.scope : [],
+        project: registry.projectOf(source) || undefined,
+        claims: claims.length ? claims : undefined,
         route: normaliseRoute(source.route) || FULL_ROUTE.slice(),
         stage: source.stage || 'survey',
         active: true,
-        started: stamp,
+        // The source's, not this stamp. `started` is the tie-break, and adopting
+        // transfers the work rather than re-answering which session reached these
+        // files first: re-stamping it lost that answer permanently, so a session
+        // inheriting three days of work yielded to a task opened a minute ago.
+        started: source.started || stamp,
         updated: stamp,
     };
     if (source.notes) data.notes = source.notes;
     if (source.next) data.next = source.next;
     if (source.guard) data.guard = source.guard;
-    if (source.drift) data.drift = source.drift;
     if (!registry.writeSession(root, id, data)) fail('Could not write this session\'s entry.');
 
     source.active = false;
@@ -452,7 +470,7 @@ function cmdAdopt(root, opts) {
         fail('Adopted, but could not stand the source down. Two sessions now claim these files — stand ' + from + ' down by hand.');
     }
 
-    const adoptClash = collisions(root, id, data.scope);
+    const adoptClash = collisions(root, id, claims);
     showBadge(opts, id, badge.badgeWord(data.stage, adoptClash.length > 0), Object.assign({ others: adoptClash.length }, data));
 
     const lines = ['fankeel — adopted: ' + (data.task || 'untitled') + ' @ ' + data.stage];
@@ -531,7 +549,7 @@ function cmdRoute(root, opts) {
     const before = normaliseRoute(data.route) || FULL_ROUTE;
     data.route = given;
     if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
-    const clash = collisions(root, id, data.scope || []);
+    const clash = collisions(root, id, registry.claimsOf(data));
     showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data));
 
     const at = positionIn(given, data.stage);
@@ -545,7 +563,7 @@ const COMMANDS = {
     route: cmdRoute,
     start: cmdStart,
     stage: cmdStage,
-    scope: cmdScope,
+    task: cmdTask,
     note: cmdNote,
     next: cmdNext,
     guard: cmdGuard,
@@ -558,11 +576,11 @@ const USAGE = [
     'fankeel task — the registry entry for this session.',
     '',
     '  show                              what this session owns, and who else is live',
-    '  start --task "..." --scope "a,b" [--route "survey,build,verify"]',
+    '  start --task "..." [--project <dir>] [--route "survey,build,verify"]',
     '                                    begin, at the first stage of the route',
+    '  task "..."                        a new task here: clears claims, notes and next',
     '  stage <name>                      move along the route',
     '  route "a,b,c"                     re-route a task that changed shape',
-    '  scope "a,b" [--add]               replace, or add to, the declared paths',
     '  note "..."                        a dead end or a decision, capped at five',
     '  next "..."                        one line; empty clears it',
     '  guard <ask|deny|off>              only when the user asked for it',
@@ -574,7 +592,7 @@ const USAGE = [
     'registry is. Without --root it is found the way the hooks find it: the nearest',
     '.fankeel above the working directory, or the working directory itself.',
     '',
-    'start, stage, scope, adopt and down set the badge for this session, so it is',
+    'start, task, stage, adopt and down set the badge for this session, so it is',
     'there on this turn rather than on the next prompt. The hook keeps it current',
     'from then on.',
     '',
