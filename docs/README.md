@@ -14,6 +14,7 @@ here.
 |---|---|
 | What `/fankeel` asks me, and what each answer does | [pipeline.md](pipeline.md) |
 | What the seven stages are and what each produces | [pipeline.md](pipeline.md) |
+| What the steps inside one stage are, and where it branches | [pipeline.md](pipeline.md) — *inside each stage* |
 | Why my task is only three stages and not seven | [pipeline.md](pipeline.md) — *a route per task* |
 | What spike, bounded and architectural mean | [pipeline.md](pipeline.md) — *three classes, three routes* |
 | What `.fankeel/map.md` holds and why it is generated | [pipeline.md](pipeline.md) — *the project map* |

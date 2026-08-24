@@ -1,12 +1,13 @@
 ---
 status: current
 last_verified: 2026-08-24
-source_of_truth: lib/stages.js
+source_of_truth: lib/stages.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md
 ---
 
 # The pipeline
 
-What `/fankeel` does, the seven stages, and how a route through them is chosen for one task rather than picked from a menu.
+What `/fankeel` does, the seven stages, how a route through them is chosen for
+one task rather than picked from a menu, and the steps inside each stage.
 
 # Use
 
@@ -263,6 +264,310 @@ lost would be a decision the user made and cannot see. Bounded measures the
 repository rather than your familiarity with it — it means the flow being changed
 is already here to read, so a new project is architectural however well you know
 the kind of thing it is. When in doubt, take the heavier one.
+
+## Inside each stage
+
+The table above says what each stage produces. Below is how each one gets there:
+the steps, the scripts, and the branch the stage actually has. They are not seven
+copies of one shape — `build` is a loop, `verify` is a lookup from claim to
+evidence, `land` is a sequence that stops dead on a red suite — and the shape is
+most of what there is to know about a stage.
+
+Every one of them ends at the same gate, so the gate is drawn once, on the
+[front page](../README.md), and left off all seven here.
+
+### survey
+
+Six steps, and the first three read the project before the fourth searches it.
+The order is the point: a scan run before the map is a scan whose results have
+nothing to be read against.
+
+```mermaid
+flowchart TD
+    A["<b>1 · locate</b><br/>orient<br/>root, git state, is this a worktree"]
+    B["<b>2 · read the map</b><br/>map writes .fankeel/map.md<br/><i>read the file, not the summary</i>"]
+    C{"<b>3 · take stock of the contracts</b><br/>every page carries a declared status"}
+    C1["<b>planned, not built</b><br/>design-intent. What the system is<br/>meant to become — not drift"]
+    C2["<b>retired</b><br/>true once, read as though<br/>it still were"]
+    C3["<b>undeclared</b><br/>dated by git, so dated by whoever<br/>last touched it, not by a reader"]
+    D["<b>4 · targeted scan</b><br/>survey, one or more terms<br/><i>nothing matched is a finding —<br/>say which terms you tried</i>"]
+    E{"<b>5 · classify, out loud</b><br/>measured against this repository,<br/>not against your familiarity"}
+    E1["<b>spike</b><br/>survey, build"]
+    E2["<b>bounded</b><br/>survey, design, build, verify, land"]
+    E3["<b>architectural</b><br/>all seven"]
+    F["<b>6 · write it down</b><br/>task start, class picks the route<br/><i>no file list is declared</i>"]
+
+    A --> B --> C
+    C --> C1
+    C --> C2
+    C --> C3
+    C1 --> D
+    C2 --> D
+    C3 --> D
+    D --> E
+    E -- "a feasibility question" --> E1
+    E -- "a flow already here to read" --> E2
+    E -- "a new subsystem, or an interface<br/>something else depends on" --> E3
+    E1 --> F
+    E2 --> F
+    E3 --> F
+```
+
+Step 3 is the one with no counterpart in any other stage. A page marked
+`design-intent` describes what the system is meant to become; treating it as a
+description of the code is the specific failure survey exists to prevent, and it
+is invisible unless somebody looked at the status line.
+
+Step 5 is said out loud so it can be overridden. A classification made silently
+is one nobody can disagree with — and the class is what four stages of work hang
+off. The ratchet runs one way: hidden complexity found mid-task upgrades the
+route, and nothing downgrades it.
+
+### design
+
+The gate never scales down. What scales is the artefact — a short design in chat
+for a bounded change, a committed spec for an architectural one — and the two
+paths diverge only at step 6.
+
+```mermaid
+flowchart TD
+    A["<b>1 · one question at a time</b><br/>purpose, constraints, success criteria"]
+    A0{"several independent<br/>subsystems in the ask?"}
+    A1["say so first. Decompose, and give<br/>each piece its own cycle"]
+    B["<b>2 · two or three approaches</b><br/>trade-offs, recommendation first<br/><i>no abstraction for single-use code,<br/>no error handling for impossible states</i>"]
+    C["<b>3 · the success criterion</b><br/>the test that fails now and passes<br/>after. 'Make it work' is not one"]
+    D["<b>4 · check against the map</b><br/>does this contradict a page<br/>the map lists as current?"]
+    E["<b>5 · present in sections</b><br/>architecture, components, data flow,<br/>errors, testing — approve each"]
+    F{"class?"}
+    J["design happens in chat.<br/>No spec file, no plan file."]
+    G["<b>6 · the spec</b><br/>docs/plans/&lt;date&gt;-&lt;topic&gt;-design.md<br/>status: design-intent, committed"]
+    H["<b>7 · self-review</b><br/>placeholders · internal consistency ·<br/>scope · ambiguity · against the project"]
+    I["a person reads it, and you wait"]
+
+    A --> A0
+    A0 -- yes --> A1
+    A0 -- no --> B
+    B --> C --> D --> E --> F
+    F -- "bounded" --> J
+    F -- "architectural" --> G
+    G --> H
+    H --> I
+```
+
+Step 4 has no counterpart anywhere else either. A self-review checks a document
+against itself; only this step checks it against the project. A design that
+quietly contradicts a page marked current is a contradiction that ships.
+
+### plan
+
+The stage exists on its own for one reason, and it is the third box.
+
+```mermaid
+flowchart TD
+    A["<b>the file</b><br/>docs/plans/&lt;date&gt;-&lt;topic&gt;.md"]
+    B["<b>the header</b><br/>goal · architecture · tech stack ·<br/>the spec this argues from"]
+    C["<b>Global Constraints</b><br/><i>generated from map.md, not remembered</i><br/>exact values copied, not restated"]
+    D["<b>file structure, before tasks</b><br/>what each file is responsible for"]
+    E["<b>right-size the tasks</b><br/>the smallest unit carrying its own<br/>test cycle. Split only where a reviewer<br/>could reject one and pass its neighbour"]
+    F["<b>per task</b><br/>files · interfaces consumed and<br/>produced · steps"]
+    G["<b>every step is two to five minutes</b><br/>write the failing test → watch it fail →<br/>implement → watch it pass → commit"]
+    H{"<b>self-review, before the gate</b>"}
+    H1["every spec requirement<br/>has a task"]
+    H2["no TBD · no 'add appropriate error<br/>handling' · no 'similar to Task N'"]
+    H3["a name a later task uses is the<br/>name an earlier task defined"]
+
+    A --> B --> C --> D --> E --> F --> G --> H
+    H --> H1
+    H --> H2
+    H --> H3
+```
+
+A constraint restated approximately is a constraint that will be violated
+approximately. The version floors, the naming rules, the platform requirements —
+those come out of the map at plan time, not out of what anybody remembers of the
+spec.
+
+### build
+
+The only stage that loops, and the only one whose memory is a file rather than a
+conversation.
+
+```mermaid
+flowchart TD
+    S1["<b>an isolated workspace</b>"]
+    S2["<b>open the ledger</b><br/>ledger show<br/><i>after a compaction, trust it over memory</i>"]
+    S3["<b>scan the plan first</b><br/>tasks that contradict each other,<br/>or contradict the constraints"]
+    L{"a task the ledger does<br/>not list as complete?"}
+    T1["record BASE"]
+    T2["implement<br/><i>every changed line traces to the task.<br/>Do not improve adjacent code on the way past</i>"]
+    T3["test first where the task says so<br/><i>a test you did not watch fail is a test<br/>whose meaning you do not know</i>"]
+    T4["commit"]
+    T5["<b>one reviewer</b><br/>the task text, the diff from BASE,<br/>and map.md — never the session's history"]
+    T6{"findings?"}
+    T7["fix round<br/><i>bounded at five</i>"]
+    T8["ledger complete,<br/>'what landed'"]
+    R["<b>one whole-branch review</b><br/>when the last task is done"]
+
+    S1 --> S2 --> S3 --> L
+    L -- yes --> T1
+    T1 --> T2
+    T2 --> T3
+    T3 --> T4
+    T4 --> T5
+    T5 --> T6
+    T6 -- yes --> T7
+    T7 --> T5
+    T6 -- no --> T8
+    T8 --> L
+    L -- "none left" --> R
+```
+
+A running plan does not wait on a person. What happens when something blocks it
+is the other half of the stage:
+
+```mermaid
+flowchart TD
+    Q{"something blocks the loop"}
+    S["<b>stop and ask</b>"]
+    D["<b>rule on it</b><br/>ledger ruling:<br/>what · why · what it costs if wrong"]
+    C["carry on"]
+
+    Q -- "irreversible or destructive" --> S
+    Q -- "security-sensitive" --> S
+    Q -- "a side effect outside this workspace —<br/>a merge, a push to a shared branch,<br/>a publish" --> S
+    Q -- "every path forward is a guess" --> S
+    Q -- "anything else, the plan's<br/>own defects included" --> D
+    D --> C
+```
+
+A wrong ruling costs rework the user can see and undo. A session parked on a
+question costs their whole day and buys nothing. A finding you overrule is a
+ruling, not a silence.
+
+### verify
+
+Not a checklist — a lookup. Every claim has one thing that establishes it, and
+the things that feel like they establish it do not.
+
+```mermaid
+flowchart TD
+    A{"what are you claiming?"}
+    A1["the test command's output, 0 failures<br/><i>not a previous run</i>"]
+    A2["the original symptom, retested<br/><i>not 'the code changed'</i>"]
+    A3["revert the fix, watch it fail, restore<br/><i>not 'it passes once'</i>"]
+    A4["the VCS diff<br/><i>not the agent's report</i>"]
+    A5["line by line against the plan<br/><i>not 'the tests pass'</i>"]
+    B{"did you run it<br/>in <i>this</i> message?"}
+    C["then you cannot claim it yet.<br/>Run it."]
+    D["docs-check<br/><i>which page did this change<br/>just make untrue?</i>"]
+    E{"anything half-built?"}
+    F["back to build.<br/>Verify is not where<br/>the bar gets lowered."]
+    G["quote the command and the<br/>one line that decided it"]
+
+    A -- "tests pass" --> A1
+    A -- "bug fixed" --> A2
+    A -- "regression test works" --> A3
+    A -- "an agent finished" --> A4
+    A -- "requirements met" --> A5
+    A1 --> B
+    A2 --> B
+    A3 --> B
+    A4 --> B
+    A5 --> B
+    B -- no --> C
+    C --> B
+    B -- yes --> D
+    D --> E
+    E -- yes --> F
+    E -- no --> G
+```
+
+"Should", "probably", "seems to", and any expression of satisfaction before the
+command has run — "Great", "Perfect", "Done" — are the stage's red flags.
+Rewording does not exempt anything: a phrasing that implies success without a run
+is the same claim.
+
+### audit
+
+Two scanners, and then the part neither of them can do.
+
+```mermaid
+flowchart TD
+    A["docs-check<br/><i>every reference still resolves</i>"]
+    B["docs-audit<br/><i>the deeper sweep, 14 days</i>"]
+    C{"what came back?"}
+    D1["<b>fallen behind the code they describe</b>"]
+    D2["<b>plans look landed</b><br/>a record, not a plan"]
+    D3["<b>index</b><br/>declared but not written, or<br/>entries pointing at nothing"]
+    D4["<b>diagrams behind their directory</b><br/>the files one leaves out read<br/>as files that do not exist"]
+    E1["<b>pairs describing the same code</b><br/>where single source of truth breaks"]
+    E2["<b>unfiled · undeclared ·<br/>linked from nowhere</b>"]
+    F["<b>the part only reading finds</b><br/>open both, find the claim each makes<br/>about that file, say which one the<br/>code supports. Name the line."]
+    G["<b>report, then ask, then act</b><br/><i>never move a document unasked —<br/>every one is a link somebody holds</i>"]
+
+    A --> C
+    B --> C
+    C -- "defects · the run fails" --> D1
+    C -- "defects" --> D2
+    C -- "defects" --> D3
+    C -- "defects" --> D4
+    C -- "context, not evidence" --> E1
+    C -- "context" --> E2
+    E1 --> F
+    E2 --> F
+    D1 --> G
+    D2 --> G
+    D3 --> G
+    D4 --> G
+    F --> G
+```
+
+The context sections are the ones to act on first when they appear, because every
+defect check above them gets sharper once they are gone. A page that declares
+`status: design-intent` stops being reported as fallen behind; a pair where one
+page names the other as its `source_of_truth` stops being a pair.
+
+### land
+
+A sequence with two places it stops, and a menu it is not allowed to answer.
+
+```mermaid
+flowchart TD
+    A["<b>1 · the full suite</b><br/>on the tree you are about to integrate<br/><i>a green run earlier only proves<br/>the tree it ran on</i>"]
+    A0{"green?"}
+    A1["<b>report the failures and stop.</b><br/>The menu comes after a green run."]
+    B["<b>2 · close the documents</b><br/>todo-check · last_verified on every page<br/>re-read and found true · archive the<br/>landed plan, after asking"]
+    C["<b>3 · rewrite the map</b><br/>the project looks different now, and<br/>the next task starts from this file"]
+    D["<b>4 · land the notes</b><br/>a convention → CLAUDE.md · a durable fact<br/>→ memory · why → the commit message ·<br/>deferred work → TODO.md"]
+    E["<b>5 · detect the workspace,<br/>confirm the base</b>"]
+    F{"<b>6 · the menu</b><br/><i>integration is the user's decision</i>"}
+    F1["merge back to base locally"]
+    F2["push and open a PR"]
+    F3["keep the branch as-is"]
+    G["<b>re-run the suite on<br/>the merged result</b>"]
+    G0{"green?"}
+    G1["<b>stop.</b> Nothing is pushed, so it<br/>is recoverable — leave the branch<br/>and the worktree in place"]
+    G2["clean the worktree,<br/>then delete the branch"]
+    H["<b>keep the worktree</b> —<br/>PR feedback gets fixed there"]
+
+    A --> A0
+    A0 -- no --> A1
+    A0 -- yes --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> F1 --> G --> G0
+    G0 -- no --> G1
+    G0 -- yes --> G2
+    F --> F2 --> H
+    F --> F3
+```
+
+Discarding the work is not on that menu. It happens when the user asks for it in
+so many words, and then only against the typed word `discard`. A worktree whose
+removal is refused for uncommitted files never gets `--force` on anyone's own
+initiative — those files exist nowhere else.
 
 ## The project map
 
