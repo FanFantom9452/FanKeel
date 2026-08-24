@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-22
+last_verified: 2026-08-24
 source_of_truth: lib/stages.js
 ---
 
@@ -18,11 +18,11 @@ It lists what every live session in this repository is working on and asks what
 you want to do — carry on, start a task, adopt one, stand it down, or clear out
 entries whose terminal is long gone.
 
-Before it asks anything it looks. Opening with "give me a task and a scope" and
-nothing on screen is answerable in a repository you just opened and useless in a
-directory holding five projects, where the honest reply is another question — and
-a scope guessed to avoid that question is what makes the collision warnings
-untrustworthy later. So `/fankeel` runs a scanner first:
+Before it asks anything it looks. Opening with "give me a task" and nothing on
+screen is answerable in a repository you just opened and useless in a directory
+holding five projects, where the honest reply is another question and the
+exchange costs two turns before any work starts. So `/fankeel` runs a scanner
+first:
 
 ```
 $ node <plugin>/scripts/orient.js
@@ -43,13 +43,13 @@ Most recently committed first, with the age on every row so the order is
 explicable rather than merely different. In a directory of five, the one touched
 this morning is almost always the one being asked about.
 
-The skill asks with `AskUserQuestion` rather than in prose — which project, which
-part of it, and what the task is, in one call with the options already on screen.
+The skill asks with `AskUserQuestion` rather than in prose — which project and
+what the task is, in one call with the options already on screen.
 Making someone retype a row of a listing they can see is the same waste as asking
 with nothing on screen at all.
 
-Name a place and it goes there instead, breaking that one down to the level a
-scope actually gets written at:
+Name a place and it goes there instead, breaking that one down a level so what it
+is made of is on screen too:
 
 ```
 $ node <plugin>/scripts/orient.js Waypoint
@@ -70,19 +70,17 @@ For a single project it also says which of `CLAUDE.md`, `AGENTS.md`, `README.md`
 and prints the last five commits, because what a project is in the middle of is
 not visible in a listing of directories.
 
-It writes nothing. A `scope` entry may be a file, a directory or a glob — a
-directory covers everything under it, so `Waypoint/web/src` is one entry rather
-than two hundred.
+It writes nothing. Orientation that changes what it is describing is not
+orientation.
 
 Every change to a registry entry goes through one script rather than being
-hand-written — `task.js start`, `stage`, `scope`, `note`, `next`, `guard`, `down`,
-`adopt`. It creates `.fankeel/.gitignore` with the directory, enforces the caps,
-names a collision at the moment a scope is declared, and refuses rather than
-guessing: no scope, no start. It was the last operation without a script, and it
-failed the way unsupported steps fail — quietly, leaving no registry at all, with
-the missing badge as the only symptom.
+hand-written — `task.js start`, `task`, `stage`, `note`, `next`, `guard`, `down`,
+`adopt`. It creates `.fankeel/.gitignore` with the directory, enforces the caps
+and refuses rather than guessing. It was the last operation without a script, and
+it failed the way unsupported steps fail — quietly, leaving no registry at all,
+with the missing badge as the only symptom.
 
-It also sets the badge itself on `start`, `stage`, `scope`, `adopt` and `down`.
+It also sets the badge itself on `start`, `task`, `stage`, `adopt` and `down`.
 The hook runs *before* a prompt, so a badge left to it alone appears only when the
 user types again — and for that whole gap, turning the mode on is indistinguishable
 from failing to turn it on.
@@ -99,7 +97,8 @@ the stage you are in:
 ```
 FANKEEL ACTIVE — rework the 7d deviation colour ramp @ build  (4 of 7)
 route: survey → design → plan → [build] → verify → audit → land
-scope: statusline.ps1, statusline.sh, preview.ps1
+project: Waypoint
+touched: statusline.ps1, statusline.sh, preview.ps1
 next: wire the badge word into TokenBar
 
 so far:
@@ -107,8 +106,8 @@ so far:
   - decided 12h for stale, not 24h - survives a night, not a forgotten window
 
 also in progress:
-  - retune the 5h ramp @ design  (scope: statusline.ps1)  << overlaps: statusline.ps1
-  - triage the colour issues @ survey  (scope: README.md)  (last seen 16d ago)
+  - retune the 5h ramp @ design  (touched: statusline.ps1)  << overlaps: statusline.ps1
+  - triage the colour issues @ survey  (touched: README.md)  (last seen 16d ago)
 
 stage rules:
   - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, or pause, never dropping the pause. Option one is the approval: say what it approves.
@@ -211,7 +210,7 @@ output shape:
 
 Where the task is, the rules for the stage, the shape — 1336 to 1614 characters
 depending on the stage, around 350 tokens. Deliberately not the full block: the
-scope, the notes and the other live sessions cannot have moved between a question
+touched list, the notes and the other live sessions cannot have moved between a question
 going out and its answer coming back, they are already in the context a few
 thousand tokens up, and a stage runs through several questions. Repeating them
 each time leaves a pile of copies disagreeing about which stage this is.
@@ -256,7 +255,7 @@ stages of work hang off it.
 | `architectural` | all seven | a new subsystem, or a change to an interface something else depends on |
 
 ```
-node <plugin>/scripts/task.js start --session <id> --task "..." --scope "..." --class bounded
+node <plugin>/scripts/task.js start --session <id> --task "..." --class bounded
 ```
 
 `--class` and `--route` together are refused rather than ranked: whichever one
@@ -304,7 +303,7 @@ six. The route is assembled at the start from what the task actually is, not
 picked off a menu, and confirmed along with the task line:
 
 ```
-$ node <plugin>/scripts/task.js start --session <id>       --task "fix the 7d ramp" --scope statusline.ps1 --route "build,verify"
+$ node <plugin>/scripts/task.js start --session <id>       --task "fix the 7d ramp" --route "build,verify"
 
 fankeel — started, at build   route: build → verify
 ```

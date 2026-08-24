@@ -18,9 +18,24 @@ test('every stage name survives what the statusline will read', () => {
 });
 
 test('no stage name collides with a field on the entry', () => {
-  // `scope` is the file list; a stage of the same name would make
-  // "scope: ..." in the injected text ambiguous.
-  for (const name of NAMES) assert.notEqual(name, 'scope');
+  // `claims` is the file list and `project` is the repository; a stage named
+  // for either would make "touched: ..." and "project: ..." in the injected
+  // text ambiguous about where they came from. Neither collides: the seven are
+  // survey, design, plan, build, verify, audit and land.
+  for (const name of NAMES) {
+    assert.notEqual(name, 'claims');
+    assert.notEqual(name, 'project');
+  }
+});
+
+// The design stage used to close its file list with "update the task scope if
+// it grew". Nothing declares a file list any more — `hooks/touch.js` records
+// what actually gets edited — so the instruction had no referent left, and the
+// half that did was already carried by the stage's own output format.
+test('no stage rule asks anyone to declare where the work will go', () => {
+  for (const s of STAGES) {
+    assert.equal(/scope/.test(s.rules.join(' ')), false, s.name + ' still names a scope');
+  }
 });
 
 test('every stage says what it produces and carries its own rules', () => {

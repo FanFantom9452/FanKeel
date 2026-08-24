@@ -88,7 +88,7 @@ test('a named path that is not there is reported, not silently dropped', () => {
   assert.match(out, /not found: nope/);
 });
 
-test('a single target is broken down one level, which is where a scope gets written', () => {
+test('a single target is broken down one level, so the task can be named from what is in it', () => {
   const root = workspace({
     'alpha/web/src/a.js': 'x',
     'alpha/web/src/b.js': 'x',
@@ -130,7 +130,7 @@ test('a root that is itself one project reports as one project', () => {
   assert.doesNotMatch(out, /under it:/);
 });
 
-test('the registry is named when it is somewhere else, with the warning about scope paths', () => {
+test('the registry is named when it is somewhere else, and says what its paths are relative to', () => {
   const root = workspace({ 'alpha/a.js': 'x' });
   const inner = path.join(root, 'alpha');
   fs.mkdirSync(path.join(root, '.fankeel', 'sessions'), { recursive: true });
@@ -247,4 +247,15 @@ test('an unreadable root does not throw', () => {
   const root = workspace({});
   const missing = path.join(root, 'gone');
   assert.doesNotThrow(() => orient.report(orient.scan(missing, [])));
+});
+
+// orient is where the remaining question gets its options, so its own closing
+// instruction is the nearest thing to that question in the agent's context. It
+// used to end by telling the reader to pick a scope, which after this design is
+// an instruction to declare something nothing accepts.
+test('the closing instruction asks for a project and a task, and never for a file list', () => {
+  const root = workspace({ 'alpha/a.js': 'x', 'beta/b.js': 'x' });
+  const out = run(['--root', root]);
+  assert.equal(/scope/i.test(out), false, 'orient still tells the reader to pick a scope');
+  assert.equal(out.includes('Pick the project from this'), true, 'it never says to pick the project');
 });

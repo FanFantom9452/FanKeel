@@ -113,12 +113,31 @@ test('the plan skill refuses placeholders by listing them', () => {
   assert.match(text, /Global Constraints/);
 });
 
-// The opening question is where a scope gets chosen, and it was priced as if the
-// choice were final. It is not: scope --add widens it at any time.
-test('the scope question offers narrow first and says the choice is not final', () => {
+// The opening question was a stance the agent improvised a sentence from, and
+// what reached the user priced a declaration nobody makes any more. Nothing is
+// declared now, so the only question left is which repository — and it is only
+// worth asking when the registry root holds more than one.
+test('the opening question asks which project, in the words the design fixed', () => {
   const text = read('fankeel');
-  const row = text.split('\n').find((l) => l.includes('Which part of it?'));
-  assert.ok(row, 'the scope question is gone');
-  assert.match(row, /--add/, 'it never says the scope can be widened later');
-  assert.equal(/collides with every other session/.test(row), false, 'it still prices a collision without saying what one does');
+  assert.ok(text.includes('Ask `Which project?` with **AskUserQuestion**'),
+    'the question is not asked in the words the design fixed');
+  assert.ok(/Skip the question entirely when there\s+is only one\./.test(text),
+    'it never says to skip the question when the root holds one project');
+  assert.equal(text.includes('Which part of it?'), false, 'the scope question is still there');
+  assert.equal(/--add/.test(text), false, 'a scope --add remedy survived');
+});
+
+// `--scope` stops being a flag `scripts/task.js` parses. A stale sentence is
+// survivable; a runnable command line carrying a dead flag is not, because
+// somebody pastes it and the task refuses to start. docs-audit grades a page by
+// when it was last touched rather than by whether its flags exist, so nothing
+// else here notices.
+test('no live page offers a flag the task script no longer takes', () => {
+  const pages = names.map((n) => [path.join('skills', n, 'SKILL.md'), read(n)]);
+  for (const name of fs.readdirSync(path.join(ROOT, 'docs')).filter((n) => n.endsWith('.md'))) {
+    pages.push([path.join('docs', name), fs.readFileSync(path.join(ROOT, 'docs', name), 'utf8')]);
+  }
+  for (const [rel, text] of pages) {
+    assert.equal(text.includes('--scope'), false, rel + ' still offers --scope');
+  }
 });

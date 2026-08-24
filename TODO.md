@@ -10,7 +10,7 @@ written here instead of where it belongs.
 
 ## Deferred
 
-- Default the scope guard on, once there is evidence that `scope` is declared accurately enough — [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md), "The guard blocks".
+- Default the scope guard on, once the writes that escape `PostToolUse` — a shell `sed`, a build script, an MCP write tool — are hooked — [docs/collisions.md](docs/collisions.md), "Making it block".
 - The declarations cap in [scripts/survey.js](scripts/survey.js). Ranking got boilerplate off the top, but 142 named matches still do not fit in 25, and tests rank alongside the code they test.
 - Language patterns beyond the ten [scripts/survey.js](scripts/survey.js) knows. Anything else falls back to filename matching; add a row when one is actually needed.
 - A per-`agent_type` subagent brief — the `SubagentStart` matcher allows it; which types earn one is a question real use answers.

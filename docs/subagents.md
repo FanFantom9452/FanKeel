@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-22
+last_verified: 2026-08-24
 source_of_truth: hooks/brief.js, lib/render.js
 ---
 
@@ -10,8 +10,8 @@ What a subagent is told when it starts, and why the return value is the expensiv
 
 A subagent starts with its own context and none of the parent's. The per-prompt
 injection never reaches it — that rides on the user's prompt, and a subagent does
-not have one. So a `SubagentStart` hook hands it a brief instead: the task, the
-scope, what its return value costs, and the voice digest if a style is set.
+not have one. So a `SubagentStart` hook hands it a brief instead: the task,
+the files that task has touched, and what its return value costs.
 Background subagents get the same brief. One started with an isolated context
 does not, which is Claude Code's decision rather than something to work around.
 
@@ -41,6 +41,9 @@ delegation changes.
 
 The scope guard reaches subagents on its own — `PreToolUse` fires inside them —
 so a subagent editing a file another live session claimed hits the same block the
-parent would.
+parent would. `PostToolUse` fires there too and looks the entry up by the parent's
+session id, so what a subagent edits is claimed by the task that dispatched it.
+That is why the brief carries the touched list and asks for nothing back about it:
+a returned file list would be a slower, unparsed copy of a record already written.
 
 [Back to the index](README.md) · [Back to the front page](../README.md)

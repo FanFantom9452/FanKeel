@@ -3,17 +3,16 @@
 
 // What is here, before anybody is asked to describe it.
 //
-// The entry skill used to open by asking for a task and a scope with nothing on
-// screen but the question. That works in a repository the user just opened and
-// fails everywhere else: asked for "a scope" while sitting in a directory that
-// holds five projects, the honest answer is another question, and the exchange
-// costs two turns before any work starts. Worse, a scope guessed at that point
-// is a scope that produces false collision warnings later.
+// The entry skill used to open by asking for a task with nothing on screen but
+// the question. That works in a repository the user just opened and fails
+// everywhere else: asked which project while sitting in a directory that holds
+// five of them, the honest answer is another question, and the exchange costs
+// two turns before any work starts.
 //
-// So this runs first and puts the answer in front of the question. It reports
-// where the registry is or would be, what projects are under the root, and — for
-// a single target — what is directly inside it, which is the level a scope is
-// usually written at.
+// So this runs first and puts the answer in front of the question. The list of
+// projects under the root is where `Which project?` gets its options, and the
+// breakdown of a single target is what a reader needs in order to say what the
+// task is — not to name a file list, because nothing declares one.
 //
 // It never writes anything. Orientation that changes what it is describing is
 // not orientation.
@@ -202,9 +201,9 @@ function children(root) {
         .sort();
 }
 
-// The first path segment of every file, counted. This is the level a scope gets
-// written at inside a single project — `web/src`, not a list of components — so
-// it is what a single target gets broken down into.
+// The first path segment of every file, counted. It is the shape of a project on
+// one screen — `web/`, `api/`, `docs/` with a file count each — which is what a
+// reader needs in order to say what the task is.
 function topLevel(files) {
     const counts = new Map();
     for (const f of files) {
@@ -303,17 +302,17 @@ function scan(root, named) {
 function report(result) {
     const lines = ['fankeel orient — ' + result.root, ''];
 
-    // Where a scope will be measured from, said before any path is printed.
-    // Scope entries are relative to the registry, and a user reading a listing
-    // of `Waypoint/...` while the registry sits somewhere else would write
-    // paths that match nothing.
+    // Where the paths on the record are measured from, said before any path is
+    // printed. Claims are relative to the registry, and a user reading a listing
+    // of `Waypoint/...` while the registry sits somewhere else would misread
+    // every path the injected block shows them.
     if (!result.stateRoot) {
         lines.push('registry: none at or above here. Starting a task creates one at ' + result.root + '.');
     } else if (path.resolve(result.stateRoot) === result.root) {
         lines.push('registry: here, ' + result.active.length + ' active');
     } else {
         lines.push('registry: ' + result.stateRoot + ', ' + result.active.length + ' active');
-        lines.push('  scope paths are relative to that directory, not this one.');
+        lines.push('  registry paths are relative to that directory, not this one.');
     }
     lines.push('');
 
@@ -348,14 +347,13 @@ function report(result) {
         lines.push('(' + result.dropped + ' more not listed)');
     }
 
-    // One target, so the next question is which part of it. Two or more and this
-    // would be a wall of directories with no question attached.
+    // One target, so there is room to say what it is made of. Two or more and
+    // this would be a wall of directories with no question attached.
     if (found.length === 1 && found[0].count && found[0].count.list.length) {
         const rows = topLevel(found[0].count.list);
 
         // Directories only. A README and a lockfile each getting a row of their
-        // own buried the eight directories that are the actual answer, and a
-        // scope is never one loose file at the top of a project.
+        // own buried the eight directories that are the actual answer.
         const dirs = rows.filter(([name]) => name.endsWith('/'));
         const loose = rows.length - dirs.length;
 
@@ -396,8 +394,9 @@ function report(result) {
     }
 
     lines.push('');
-    lines.push('Pick the scope from this, or ask which part. Do not guess it —');
-    lines.push('a scope nobody confirmed produces collision warnings nobody trusts.');
+    lines.push('Pick the project from this when more than one is listed, then ask what');
+    lines.push('the task is. Nothing else is declared: the files a task touches are');
+    lines.push('recorded as they are edited.');
 
     return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }

@@ -3,7 +3,7 @@ name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.25.0
 status: current
-last_verified: 2026-08-23
+last_verified: 2026-08-24
 source_of_truth: lib/stages.js, lib/registry.js, scripts/task.js
 ---
 
@@ -55,14 +55,15 @@ side can see the other and both look healthy.
 | the workspace holding several projects | every session opened in any of them joins one registry, and collisions between them are visible |
 | one project | that project only |
 
-Scope paths are relative to the registry, not to where the session was opened. If
-the two differ, the injected block names both — do not guess which one a path is
-relative to.
+Claimed paths are relative to the registry, not to where the session was opened.
+If the two differ, the injected block names both — do not guess which one a path
+is relative to.
 
 **The docs tree** is per project, and which one applies comes from the task's
-scope rather than from where the session is open. A scope of `Waypoint/web`
-means `Waypoint/.fankeel/docs.json`; a scope reaching two projects means two
-trees, and each is checked against its own. Pass the project as `--root`:
+`project` and the files it has claimed, not from where the session is open. A
+project of `Waypoint` means `Waypoint/.fankeel/docs.json`, and a claim landing
+under a second repository brings that repository's tree in too — each is checked
+against its own. Pass the project as `--root`:
 
 ```
 node <plugin>/scripts/docs-check.js --root Waypoint
@@ -84,21 +85,24 @@ controlled there.
 
 One file per session, named for the session that owns it.
 
-A `scope` entry is a **file, a directory, or a glob**, whichever says the least
-that is still true. A directory covers everything under it, so `Waypoint/web/src`
-is one entry and not two hundred. Do not ask for a list of files when the user has
-pointed at a directory — the overlap check reads a bare directory name as covering
-its subtree, and so does the guard.
+A `claims` entry is **one file path**, recorded whole and relative to the
+registry. Nobody types one: `hooks/touch.js` adds a path the first time an edit
+lands on it, so the list is what happened rather than what anyone intended. An
+edit to `lib/badge.js` claims `lib/badge.js` and not `lib` — rolling up to the
+directory would read two sessions in two files of one directory as a collision,
+and accuracy is the whole reason to observe rather than ask. Sixty at most,
+oldest dropped.
 
-The first scope is rarely the last one. `scope --add` widens it at any point, and
-`hooks/touch.js` records every edit that lands outside it on the entry's `drift`
-field, so the injected block names the files that have already left the scope
-instead of waiting for someone to remember.
+`project` is the only field anyone declares: which repository, so the docs lookup
+knows whose tree applies. One registry can cover five of them and nothing else
+needs to know which. Ask for it only when the root holds more than one, and never
+ask for a file list — there is nothing to declare and nothing to get wrong.
 
 ```json
 {
   "task": "rework the 7d deviation colour ramp",
-  "scope": ["statusline.ps1", "statusline.sh", "preview.ps1"],
+  "project": "Waypoint",
+  "claims": ["Waypoint/statusline.ps1", "Waypoint/statusline.sh"],
   "stage": "build",
   "active": true,
   "notes": ["ANSI 256 has no true mid green; the 46→83→120 run is the only clean path"],
@@ -109,6 +113,9 @@ instead of waiting for someone to remember.
 }
 ```
 
+A record written before claims shipped carries `scope` where `claims` is here. It
+is read as the claim list, and the old field goes on the next write.
+
 The current session id is in the `FANKEEL ACTIVE` block when the mode is on. When
 it is not, read it from the transcript path — never guess, and never write a file
 whose name you invented.
@@ -117,9 +124,9 @@ whose name you invented.
 
 ```
 node <plugin>/scripts/task.js show    --session <id>
-node <plugin>/scripts/task.js start   --session <id> --task "..." --scope "Waypoint/web"
+node <plugin>/scripts/task.js start   --session <id> --task "..." [--project Waypoint]
+node <plugin>/scripts/task.js task    "..." --session <id>
 node <plugin>/scripts/task.js stage   build --session <id>
-node <plugin>/scripts/task.js scope   "a,b" [--add] --session <id>
 node <plugin>/scripts/task.js note    "..." --session <id>
 node <plugin>/scripts/task.js next    "..." --session <id>
 node <plugin>/scripts/task.js guard   ask|deny|off --session <id>
@@ -127,6 +134,12 @@ node <plugin>/scripts/task.js down    --session <id>
 node <plugin>/scripts/task.js adopt   <other-session-id> --session <id>
 node <plugin>/scripts/task.js clear   <session-id> [--force] --session <id>
 ```
+
+`task` is how one task becomes the next without standing down: it takes the new
+task line, clears `claims`, `notes` and `next`, and resets `stage` to the head of
+the route. `project`, `route`, `guard` and `started` stay — `started` because it
+is the collision tie-break, and which session reached this repository first is not
+re-opened by renaming the task. Nothing else clears claims.
 
 `<plugin>` is two directories up from this file — resolve `../../scripts/task.js`
 against it. Add `--root <dir>` only to override where the registry is; without it
@@ -137,7 +150,7 @@ the invariants below, and refuses rather than guessing. It exits non-zero when i
 refuses, so read the output. Hand-written JSON gets the `.gitignore` wrong every
 time, and a `sessions/` directory that is not ignored ends up committed.
 
-`start`, `stage`, `scope`, `adopt` and `down` also set this session's statusline
+`start`, `task`, `stage`, `adopt` and `down` also set this session's statusline
 badge, so it is there on the turn the change happened. The hook keeps it current
 from then on — it runs *before* a prompt, so a badge left to the hook alone would
 not appear until the user typed again, and until then turning the mode on looks
@@ -157,17 +170,14 @@ worse than none because people stop reading it.
    deactivates it without taking the task.
 2. **Never set `active: false` without the user asking.** No timer, no session
    end, no tidying up.
-3. **Never invent `scope`.** Ask. A guessed scope produces false collision
-   warnings, and two false warnings are enough for someone to start ignoring
-   real ones.
-4. **Never edit `updated` or `drift`.** The hooks own both — `updated` from every
-   prompt, `drift` from every edit that lands outside the declared scope.
-   `scope --add` is what clears `drift`, and it clears it by widening the scope
-   rather than by deleting anything.
-5. **Never delete a session file.** Standing down sets `active: false`.
-6. **Never advance `stage` without saying so.** The stage decides which rules
+3. **Never edit `updated` or `claims`.** The hooks own both — `updated` from
+   every prompt, `claims` from every edit that lands. `claims` is the only
+   record of where this task actually went, so a path put there by hand is a
+   claim on a file nobody touched, and it blocks a neighbour over nothing.
+4. **Never delete a session file.** Standing down sets `active: false`.
+5. **Never advance `stage` without saying so.** The stage decides which rules
    are injected, so a wrong stage silently swaps the discipline.
-7. **Never set or clear `guard` on your own.** It decides whether an edit gets
+6. **Never set or clear `guard` on your own.** It decides whether an edit gets
    refused. Turning it on unasked locks the user out of their own repository;
    turning it off unasked removes a guard they chose to have.
 
@@ -209,8 +219,8 @@ the ratchet is one-way — complexity found mid-task upgrades the route and says
 so, and nothing downgrades mid-task.
 
 ```
-node <plugin>/scripts/task.js start --session <id> --task "..." --scope "..." --class bounded
-node <plugin>/scripts/task.js start --session <id> --task "..." --scope "..." --route "build,verify"
+node <plugin>/scripts/task.js start --session <id> --task "..." --class bounded
+node <plugin>/scripts/task.js start --session <id> --task "..." --route "build,verify"
 ```
 
 Omit both and it is all seven; passing both is refused rather than ranked, because
@@ -428,7 +438,8 @@ the first option name the files rather than the intent.
 
 `<project>/.fankeel/docs.json`, version-controlled — `.fankeel/.gitignore`
 excludes only `sessions/`, and this is what that exception was left open for. One
-per repository, found from the task's scope; see **Where the files are** above.
+per repository, found from the task's `project` and the files it has claimed; see
+**Where the files are** above.
 
 Each bucket is a path and a **role**, and the role is the point: it says how long
 a document is meant to stay true, and therefore what is worth checking.
@@ -494,8 +505,8 @@ other live one. Then read the directory yourself once to count any file that doe
 not parse, and say how many you skipped — the hook drops them silently, so this is the only place a
 corrupt entry is visible.
 
-Show the active ones: task, stage, scope, and — for any last touched more than 12
-hours ago — how long ago that was. Mark this session's own.
+Show the active ones: task, stage, what each has touched, and — for any last
+touched more than 12 hours ago — how long ago that was. Mark this session's own.
 
 ## Before offering anything, look
 
@@ -523,21 +534,25 @@ feeds the next step:
 
 ### Asking
 
-One `AskUserQuestion` call, up to three questions in it, all from what orient
-returned:
+One `AskUserQuestion` call, at most two questions in it, both from what orient
+returned.
 
-| Question | Options |
-|---|---|
-| Which project? | Only when more than one is listed and none was named. Orient sorts by last commit, so the first rows are the live ones — take the top four and let **Other** carry the rest. Put the branch, how dirty it is and the age in each description. |
-| Which part of it? | The directories from `inside it`, narrowest useful first. Say the choice is not final: `task.js scope "<path>" --add` widens it the moment the work reaches somewhere it did not name, which is most tasks. The whole project is a legitimate answer for work that really is project-wide — price it honestly rather than warning: every other session in that repository then overlaps you, so the badge reads `clash` for as long as the task runs and stops showing the stage. Nothing is blocked either way. |
-| What is the task? | Guess from the recent commits, one option each, phrased as a task and not as a commit subject. **Other** is always there for the real answer. |
+Ask `Which project?` with **AskUserQuestion**, one option per directory `orient`
+listed, in the order it listed them. No preamble and no explanation of
+consequences: picking a project has none. Skip the question entirely when there
+is only one.
 
-A guessed *task* offered as an option is not the guessing invariant 3 forbids —
-the user confirms it before it is written. A guessed **scope** is, so never
-pre-select one when they said nothing: put it as an option, and let them pick.
+Then `What is the task?`, in the same call: guess from the recent commits, one
+option each, phrased as a task and not as a commit subject. **Other** is always
+there for the real answer.
 
-Skip any question already answered. If they named the project and the part, only
-the task is left, and one question is one question.
+A guessed *task* offered as an option is not a guess written behind anyone's
+back — the user confirms it before it is written. Nothing else is asked for:
+`claims` is recorded from the edits that land, so there is no file list to state
+and none to get wrong.
+
+Skip a question already answered. If they named the project, the task is all that
+is left, and one question is one question.
 
 If the directory holds nothing readable, say so plainly and ask what they meant to
 open — a registry created in the wrong directory is one every later session
@@ -548,7 +563,7 @@ Then ask, with these options and no others:
 | | |
 |---|---|
 | **Carry on** | This session already owns an active task. Nothing to write. |
-| **Start** | Ask for a one-line `task`, and take the `scope` from what orient showed — a directory is a complete answer. Then `task.js start`. |
+| **Start** | Ask for a one-line `task`. Pass `--project` only when the root holds more than one project — the registry root is a legitimate project, and a session opened inside one already implies it. Then `task.js start`. |
 | **Adopt** | `task.js adopt <other-session-id>`, which copies the task over and stands the source down in one run. From a **stale** entry, offer it plainly. From a **live** one, confirm first with the other session named — that is exactly the case this registry exists to make visible. |
 | **Stand down** | `task.js down`. Ask first whether anything in `notes` belongs somewhere more durable; the script prints them, and they die with the task. |
 | **Clear out** | List the stale entries with their ages, let the user pick, then `task.js clear <that id>` for each one picked — `down` prints text addressed to the owner about notes that are not the caller's, which `clear` does not. Never for ones they did not pick. |
@@ -579,30 +594,27 @@ not — every word of instruction that buys a shorter, better-shaped answer is a
 word the user does not have to read. The only limit worth keeping is whether it
 still gets read to the end.
 
-`[FANKEEL:CLASH]` means another live session declared a file this task also
-declared. Say so before editing that file, name the other task, and let the user
-decide. Do not silently proceed.
+`[FANKEEL:CLASH]` means another live session has edited a file this task has also
+edited. Say so before editing that file again, name the other task, and let the
+user decide. Do not silently proceed.
 
-If the work reaches a file nobody declared, say so and run `task.js scope "<path>" --add`. An
-out-of-date scope is the one thing that makes the collision warning useless.
+Nothing has to be declared when the work reaches a new file. `hooks/touch.js`
+claims it as the edit lands, and the injected block lists what this task has
+touched under `touched:` — there is no command to run and nothing to keep up to
+date.
 
-A `scope drift —` block is that same thing noticed for you. It lists the files
-this task has already edited outside its declared scope, and prints the
-`scope --add` command whole, with the session id in it — run it exactly as
-printed, or say why the scope should stay as it is. It is `hooks/touch.js` that
-records those paths, so they are what happened rather than what anyone remembers,
-and widening the scope is the only thing that clears the block.
-
-`every session overlapping your scope is cold` means every other claim on these
-files was last seen more than twelve hours ago. That is evidence about age and not
-about people, so treat it as a question rather than a finding: name the tasks it
-lists, and run the `clear` command printed under each one only for the ones the
-user picks.
+A session whose terminal is gone stops appearing under `also in progress:`,
+because liveness is read from Claude Code's own session directory and checked
+against the process behind the pid. Nothing announces the disappearance and
+nothing needs to. When that directory cannot be read every entry is shown
+instead, so a line carrying `(last seen 16d ago)` is an age note and not a
+verdict — `/fankeel` → **Clear out** is how a record gets put down, and only on
+the user's say-so.
 
 A `context:` line means this session has already lost work to compaction, and
 says how much. Pass it on rather than ignoring it: the statusline shows a
 percentage, but only this knows there is a task in flight and that `/fankeel` →
-**Adopt** carries it — task, scope, stage, route, notes and `next` — into a fresh
+**Adopt** carries it — task, project, claims, stage, route, notes and `next` — into a fresh
 session in one step. Say it once when the line first appears, and again when its
 wording hardens. Repeating it every turn is nagging, and nagging gets ignored
 exactly when it stops being nagging.
@@ -628,8 +640,9 @@ copy however long the session runs.
 ## Subagents
 
 A subagent starts with its own context and none of this one's, so a
-`SubagentStart` hook hands it a brief: which task it belongs to, the scope, and
-what its return value costs. Background subagents get the same brief.
+`SubagentStart` hook hands it a brief: which task it belongs to, which files that
+task has touched, and what its return value costs. Background subagents get the
+same brief.
 
 You do not write that brief and you do not repeat it. What it is worth knowing
 here is what it says, because it changes how to use a subagent while the mode is
@@ -643,10 +656,9 @@ on:
   not a session and it does not own a task. Writing one would put a second
   claimant on this task's own files.
 - **The scope guard still applies to it.** A subagent editing a file another live
-  session claimed hits the same block this session would.
-
-If a subagent reports touching a file outside the scope — the brief asks it to —
-treat that the same as reaching one yourself: say so, and run `task.js scope "<path>" --add`.
+  session claimed hits the same block this session would, and its own edits are
+  claimed for this task — `PostToolUse` fires inside it and writes to this
+  session's entry.
 
 ### Do not route the pipeline through subagents
 
@@ -689,10 +701,12 @@ recommend: it puts the collision in front of the user at the moment of the edit
 and still lets them go ahead.
 
 Two things it deliberately does not do, so do not describe it as a lock. A claim
-last seen more than twelve hours ago never blocks — an abandoned terminal would
-otherwise hold a file shut. And when both sessions declared the file, the older
-claim holds and the newer yields, so two sessions that both named it cannot block
-each other into a stalemate.
+whose session has exited never blocks — liveness is that session's own file under
+`~/.claude/sessions/` and a live process behind its pid, so a terminal that is
+gone holds nothing shut, and a directory that cannot be read counts every claim as
+live rather than none. And when both sessions hold the file, the older task holds
+and the newer yields, so two sessions that both reached it cannot block each other
+into a stalemate.
 
 When an edit is refused, do not work around it — not by a different tool, not by
 a shell command. Report which task holds the file and ask the user what they want

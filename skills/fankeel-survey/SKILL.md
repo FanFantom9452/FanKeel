@@ -3,7 +3,7 @@ name: fankeel-survey
 description: The survey stage — read the project's own map before reading its code, classify the work, and report what is already here. Use for the survey stage of a fankeel task, "what is already here", starting work in an unfamiliar repository, or when a task needs classifying as spike, bounded or architectural.
 version: 0.25.0
 status: current
-last_verified: 2026-08-22
+last_verified: 2026-08-24
 source_of_truth: lib/stages.js, scripts/map.js, scripts/survey.js
 ---
 
@@ -22,8 +22,8 @@ node <plugin>/scripts/orient.js [--root <dir>]
 ```
 
 It answers all three and says what else is under the root, which matters in a
-directory holding five projects — a scope guessed at that point is a scope that
-produces collision warnings nobody trusts later.
+directory holding five projects: that list is where `Which project?` gets its
+options, and the project is what routes the docs lookup.
 
 ### 2. Read the map
 
@@ -88,14 +88,16 @@ classification made silently is one nobody can disagree with.
 ### 6. Write it down
 
 ```
-node <plugin>/scripts/task.js start --session <id> --task "..." --scope "..." --class <class>
+node <plugin>/scripts/task.js start --session <id> --task "..." [--project <dir>] --class <class>
 ```
 
 `--class` picks the route. Never pass both `--class` and `--route` — it is
 refused rather than ranked, because whichever one lost would be a decision the
 user made and cannot see.
 
-Never invent the scope. Ask; a directory is a complete answer.
+Nothing declares a file list. `--project` names the repository whose docs tree
+applies, ask for it only when the root holds more than one, and leave it off
+otherwise — the files this task touches are recorded as the edits land.
 
 ## The ratchet
 
