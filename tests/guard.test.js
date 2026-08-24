@@ -165,6 +165,19 @@ test('when liveness cannot be measured, every active claim blocks', () => {
   assert.equal(decisionOf(run(root, edit(root, path.join(root, 'statusline.ps1')), blind)), 'deny');
 });
 
+// Regression guard: nothing here checks `updated` any more, and this proves it
+// by seeding the field with the exact value the old 12h staleness cutoff would
+// have refused — `ago(20 * 3600e3)`, the old fixture for "a stale claim warns
+// but never blocks". If an age filter ever gets reintroduced beside the
+// liveness check, this is the test that catches it; every other seed in this
+// file leaves `updated` at its fresh default, so none of them would notice.
+test('an old claim from a running session still blocks — age is not the test any more', () => {
+  const root = tmp();
+  seed(root, MINE, { guard: 'deny', claims: ['README.md'] });
+  seed(root, THEIRS, { claims: ['statusline.ps1'], updated: ago(20 * 3600e3) });
+  assert.equal(decisionOf(run(root, edit(root, path.join(root, 'statusline.ps1')))), 'deny');
+});
+
 test('a stood-down claim does not block', () => {
   const root = tmp();
   seed(root, MINE, { guard: 'deny', claims: ['README.md'] });
