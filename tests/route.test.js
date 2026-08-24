@@ -153,6 +153,19 @@ test('the lead file counts along the route, not along the full seven', () => {
   assert.equal(lead.others, undefined);
 });
 
+// `where` is read from `claims`, not the declared project. A claim added
+// mid-task has to reach the lead line through this file's own badge write the
+// same way `hooks/inject.js` computes it — a constant here would still leave
+// every other assertion green while the two writers silently disagreed.
+test('the lead file carries a claim once one is held', () => {
+  const dir = root();
+  run(dir, ['start', '--session', A, '--task', 'fix a typo', '--project', 'a.js', '--route', 'build,verify']);
+  registry.addClaim(dir, A, 'a.js');
+
+  run(dir, ['stage', 'verify', '--session', A]);
+  assert.equal(leadOf(dir, A).where, 'a.js');
+});
+
 test('standing down takes the lead file with the badge', () => {
   const dir = root();
   run(dir, ['start', '--session', A, '--task', 'x', '--project', 'a.js']);

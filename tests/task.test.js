@@ -450,6 +450,10 @@ test('task replaces the task and drops everything the last one held', () => {
   // A new task starts at the beginning of its route, not wherever the last one
   // stopped.
   assert.equal(data.stage, 'survey');
+  // The badge is written here rather than left for the next prompt, same as
+  // `start` — a rename that left it reading `build` would be exactly the
+  // latency bug the in-script badge write exists to prevent.
+  assert.equal(badgeOf(dir, A), 'survey');
 });
 
 test('task clears a claim list an old record still keeps under scope', () => {
