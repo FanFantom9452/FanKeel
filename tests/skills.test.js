@@ -82,10 +82,11 @@ test('nothing still offers a skill that was removed', () => {
   }
 });
 
-// Seven stages, and the skill layer carries what the injected layer cannot: the
-// formats. A rule that is a principle compresses; a rule that is a literal
-// template does not, and an abbreviated template produces something that looks
-// like the format and is not it.
+// Seven stages, and both layers carry the format. Written when only the skill
+// did, this said the injected layer could not — false since `3dfad64` shipped a
+// template beside every stage's rules. The skill is read once on entering a
+// stage; the template rides every prompt, which is the copy that still exists
+// three hundred entries later. The test below keeps the two equal.
 test('every stage on the full route has a skill', () => {
   const { FULL_ROUTE } = require('../lib/stages.js');
   for (const stage of FULL_ROUTE) {
@@ -99,6 +100,50 @@ test('each stage skill ends at the gate rather than trailing off', () => {
   for (const stage of FULL_ROUTE) {
     const want = stage === 'audit' ? 'fankeel-audit' : 'fankeel-' + stage;
     assert.match(read(want), /AskUserQuestion/, want + ' never names the gate');
+  }
+});
+
+// Two copies of every stage's output shape: `template` in lib/stages.js,
+// restated on every prompt, and the `## Output` block in the skill, read once on
+// entering the stage. Both have to exist — a skill is also read with no task
+// open, `/fankeel-audit` being the shipped case, and then nothing is being
+// injected at all — so the duplication is deliberate and this is what stops it
+// drifting.
+//
+// Five of seven had drifted, and every one the same way: the injected copy was
+// the short one. The fuller version sat in the copy that recedes by thousands of
+// tokens a turn, and the thin one in the copy that never does.
+const outputBlock = (text) => {
+  const m = /\n## Output\r?\n([\s\S]*?)(?:\r?\n## |$)/.exec(text);
+  return m ? m[1] : '';
+};
+
+// Inside the fences only. What sits under them is advice about the stage — the
+// word limit, what option one approves — and is not part of the shape. `verify`
+// splits its shape across two fences, so they are read as one run.
+const fenced = (text) => {
+  const out = [];
+  let inside = false;
+  for (const raw of String(text).split(/\r?\n/)) {
+    const line = raw.trim();
+    if (line === '```') { inside = !inside; continue; }
+    if (inside && line) out.push(line);
+  }
+  return out;
+};
+
+// A template is all shape, so its own fence markers are the only thing to drop.
+const shape = (text) => String(text).split(/\r?\n/)
+  .map((l) => l.trim())
+  .filter((l) => l && l !== '```');
+
+test('each stage template is exactly the shape its skill shows', () => {
+  const { FULL_ROUTE, templateFor } = require('../lib/stages.js');
+  for (const stage of FULL_ROUTE) {
+    const want = stage === 'audit' ? 'fankeel-audit' : 'fankeel-' + stage;
+    const block = fenced(outputBlock(read(want)));
+    assert.ok(block.length, want + ' has no fenced shape under ## Output');
+    assert.deepEqual(shape(templateFor(stage)), block, stage);
   }
 });
 
