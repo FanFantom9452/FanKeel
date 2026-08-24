@@ -151,20 +151,32 @@ The word is the stage, not an intensity — a statusline earns its space by show
 what changes. `clash` takes the slot when another live session is in your files,
 because at that moment the collision matters more than the stage.
 
-Give each stage its own colour by naming the words in your TokenBar config; it
-matches an exact mode word before falling back to the four intensity tiers:
+The stage colours need no setting up from TokenBar v1.4.0 on. It ships the seven
+as a default — a ramp from indigo through blue to cyan, so the line warms as the
+task moves along its route — and both its ports render them identically:
+
+```powershell
+survey  60      design  62      plan   67      build  68
+verify  75      audit   78      land   81      clash  196
+```
+
+They are shipped rather than left to your config on purpose. A palette written
+into `tokenbar-config.ps1` is frozen the day you write it, because the updater
+never touches that file — so the day this plugin grew a seventh stage, every
+hand-written palette was one short, and a stage with no colour does not read as a
+stage without a colour. It reads as the badge having broken.
+
+To use your own instead, name the words in your config; an exact mode word is
+matched before the four intensity tiers. Naming any of them replaces all seven,
+so carry the whole set:
 
 ```powershell
 # ~/.claude/tokenbar-config.ps1
-$badgeColors.fankeel = @{ off = 240; lite = 62; full = 68; ultra = 81
-                          survey = 60; design = 62; plan  = 65
-                          build  = 68; verify = 75; audit = 78
-                          land   = 81; clash  = 196 }
+$badgeColors.fankeel = @{ off = 240; lite = 245; full  = 250; ultra = 255
+                          survey =  39; design = 141; plan  = 170
+                          build  = 214; verify =  80; audit = 180
+                          land   =  78; clash  = 196 }
 ```
-
-All seven stages, not six: a word the palette does not name falls back to the four
-tiers above it, which are one neutral ramp — so a single missing stage reads as
-the badge having stopped working rather than as a stage without a colour.
 
 The `.sh` equivalent, and what each colour is doing, is in
 [docs/statusline.md](docs/statusline.md).

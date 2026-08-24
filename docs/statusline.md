@@ -31,25 +31,40 @@ would cost the one fact on that line with nowhere else to live. `inject.js` writ
 the two files from the same collision check and deliberately does not send the
 same word to both.
 
-TokenBar renders an unknown flag on a neutral gray-to-white ramp, which makes
-every stage the same colour. To have the badge brighten as the work moves along,
-add the words to your own TokenBar config — it matches an exact mode word before
-it falls back to the four intensity tiers:
+TokenBar renders a flag it has no palette for on a neutral gray-to-white ramp,
+which would make every stage the same colour. From **v1.4.0** it carries one for
+these seven, so nothing has to be set up:
+
+| | | | | | | |
+|---|---|---|---|---|---|---|
+| `survey` | `design` | `plan` | `build` | `verify` | `audit` | `land` |
+| 60 | 62 | 67 | 68 | 75 | 78 | 81 |
+
+Dark slate through to sky blue as the stage advances, and `clash` in 196 — the one
+badge on that line that is a warning rather than a state. Both TokenBar ports ship
+the same seven numbers and were checked against each other rendering them.
+
+Before v1.4.0 this was a block you wrote yourself, which is exactly why it now
+ships: `tokenbar-config` is never touched by the updater, so a palette written
+there is frozen the day it is written. The seventh stage arrived and every
+hand-written copy was one short — and a stage with no colour does not read as a
+stage without a colour. It reads as a broken badge.
+
+To use your own, name the words in your config: an exact mode word is matched
+before the four intensity tiers, and naming any of them replaces all seven, so
+carry the whole set.
 
 ```powershell
 # ~/.claude/tokenbar-config.ps1
-$badgeColors.fankeel = @{ off = 240; lite = 62; full = 68; ultra = 81
-                          survey = 60; design = 62; build = 68
-                          verify = 75; audit = 78; land = 81
-                          clash = 196 }
+$badgeColors.fankeel = @{ off = 240; lite = 245; full  = 250; ultra = 255
+                          survey =  39; design = 141; plan  = 170
+                          build  = 214; verify =  80; audit = 180
+                          land   =  78; clash  = 196 }
 ```
 
 ```sh
 # ~/.claude/tokenbar-config.sh
-WORD_COLORS="fankeel:survey=60 fankeel:design=62 fankeel:build=68 fankeel:verify=75 fankeel:land=81 fankeel:clash=196"
+WORD_COLORS="fankeel:survey=39 fankeel:design=141 fankeel:plan=170 fankeel:build=214 fankeel:verify=80 fankeel:audit=180 fankeel:land=78 fankeel:clash=196"
 ```
-
-Dark slate through to sky blue as the stage advances, and `clash` in red — the one
-badge on that line that is a warning rather than a state.
 
 [Back to the index](README.md) · [Back to the front page](../README.md)
