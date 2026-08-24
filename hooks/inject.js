@@ -15,6 +15,7 @@
 const path = require('node:path');
 
 const registry = require('../lib/registry.js');
+const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
 const { render } = require('../lib/render.js');
 const { overlapPaths } = require('../lib/overlap.js');
@@ -67,13 +68,26 @@ function main(raw) {
     const others = registry.readActive(root).filter((e) => e.sessionId !== sessionId);
     const now = Date.now();
 
+    // One scan, read three times. Staleness used to soften a claim here and
+    // withdraw it in the guard, and both readings were defensible while liveness
+    // was a guess: a warning should err loud, a block should err quiet. It is
+    // measured now, and a session whose process has exited is not in your files
+    // under any reading. So the badge, the lead count and the text below are all
+    // taken from this one filter, and a prompt can no longer say a neighbour is
+    // in your files and gone from them at once.
+    const liveState = live.readLive(live.liveConfigDir(), sessionId);
+    const mineClaims = registry.claimsOf(mine);
+    const alive = others.filter((o) => live.isLive(liveState, o.sessionId));
+    const overlapping = alive.filter((o) => overlapPaths(mineClaims, registry.claimsOf(o.data)).length > 0).length;
+
     // Output first, side effects after. A failure while refreshing a timestamp or
     // writing a statusline flag must not cost the injection, which is the only
-    // reason this process was started.
+    // reason this process was started. The scan above is not a side effect: it
+    // reads the official registry and writes nothing anywhere.
     process.stdout.write(JSON.stringify({
         hookSpecificOutput: {
             hookEventName: 'UserPromptSubmit',
-            additionalContext: render({ mine: { sessionId, data: mine }, others, now, root, launch, transcript: payload.transcript_path }),
+            additionalContext: render({ mine: { sessionId, data: mine }, others: alive, now, root, launch, transcript: payload.transcript_path }),
         },
     }));
 
@@ -81,27 +95,22 @@ function main(raw) {
         registry.touch(root, sessionId);
     } catch (e) { /* housekeeping */ }
 
-    // Staleness softens a claim rather than withdrawing it, so a stale entry in
-    // the same files is still a clash. The other session may be gone, or may be
-    // back in a minute; either way you are both editing that file.
-    const clash = others.some((o) => overlapPaths(mine.scope, o.data && o.data.scope).length > 0);
     const cfg = claudeConfigDir();
     if (cfg) {
         try {
-            const word = badge.badgeWord(mine.stage, clash);
+            const word = badge.badgeWord(mine.stage, overlapping > 0);
             badge.writeBadge(cfg, sessionId, word);
             // The lead line, kept current from here because only this hook sees
             // a collision that appeared after the task was last touched. The
             // count is of live sessions actually overlapping, not of live
             // sessions — a number nobody can act on is decoration.
             const at = positionIn(mine.route, mine.stage) || {};
-            const overlapping = others.filter((o) => overlapPaths(mine.scope, o.data && o.data.scope).length > 0).length;
             badge.writeLead(cfg, sessionId, {
                 word,
                 step: at.step,
                 steps: at.steps,
                 title: mine.task,
-                where: Array.isArray(mine.scope) ? mine.scope.join(' ') : '',
+                where: mineClaims.join(' '),
                 guard: mine.guard,
                 others: overlapping > 0 ? overlapping : '',
             });

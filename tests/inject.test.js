@@ -12,6 +12,10 @@ const HOOK = path.join(__dirname, '..', 'hooks', 'inject.js');
 const MINE = 'aaaaaaaa-0000-4000-8000-000000000001';
 const THEIRS = 'bbbbbbbb-0000-4000-8000-000000000002';
 
+// A pid no operating system hands out: Linux caps pid_max at 2^22 and Windows
+// never comes near it, so signalling it is ESRCH on both.
+const GONE_PID = 2147483646;
+
 const ago = (ms) => new Date(Date.now() - ms).toISOString();
 
 function tmp(prefix) {
@@ -33,6 +37,18 @@ function seed(root, sessionId, over) {
   return data;
 }
 
+// Claude Code's own session registry, which is not fankeel's: one file per
+// running session, named for the pid that owns it. This session goes into it
+// every time, because a directory `readLive` cannot find itself in is the wrong
+// directory and everything in it counts live.
+function seedLive(cfg, entries) {
+  const dir = path.join(cfg, 'sessions');
+  fs.mkdirSync(dir, { recursive: true });
+  for (const [sessionId, pid] of entries) {
+    fs.writeFileSync(path.join(dir, pid + '.json'), JSON.stringify({ pid, sessionId }) + '\n');
+  }
+}
+
 // Runs the real hook the way Claude Code does: payload on stdin, everything else
 // from the environment.
 function run(payload, claudeDir) {
@@ -47,6 +63,8 @@ function run(payload, claudeDir) {
 const context = (out) => JSON.parse(out).hookSpecificOutput.additionalContext;
 const readEntry = (root, sid) =>
   JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', sid + '.json'), 'utf8'));
+const leadOf = (cfg, sid) =>
+  fs.readFileSync(path.join(cfg, 'modes', sid, 'fankeel.lead'), 'utf8');
 
 test('a project with no .fankeel says nothing', () => {
   const root = tmp('fankeel-hook-');
@@ -200,13 +218,34 @@ test('the badge carries clash when another live session overlaps', () => {
   assert.equal(fs.readFileSync(path.join(cfg, 'modes', MINE, 'fankeel'), 'utf8'), 'clash\n');
 });
 
-test('a stale overlapping session still counts as a clash', () => {
+test('an overlapping session whose process has exited paints nothing', () => {
   const root = tmp('fankeel-hook-');
   const cfg = tmp('fankeel-cfg-');
-  seed(root, MINE);
-  seed(root, THEIRS, { scope: ['statusline.ps1'], updated: ago(19 * 24 * 3600e3) });
-  run({ session_id: MINE, cwd: root }, cfg);
+  seed(root, MINE, { stage: 'build' });
+  seed(root, THEIRS, { scope: ['statusline.ps1'] });
+  seedLive(cfg, [[MINE, process.pid], [THEIRS, GONE_PID]]);
+  const ctx = context(run({ session_id: MINE, cwd: root }, cfg));
+
+  // The badge, the lead count and the injected text come off one filter now, so
+  // no two of them can disagree about whether anybody is in this file.
+  assert.equal(fs.readFileSync(path.join(cfg, 'modes', MINE, 'fankeel'), 'utf8'), 'build\n');
+  assert.doesNotMatch(leadOf(cfg, MINE), /^others=/m);
+  assert.equal(ctx.includes('<< overlaps:'), false);
+  assert.equal(ctx.includes('also in progress'), false);
+});
+
+test('an overlapping session whose process is running paints all three', () => {
+  const root = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  seed(root, MINE, { stage: 'build' });
+  seed(root, THEIRS, { scope: ['statusline.ps1'] });
+  // Two live pids, because one file per pid means the neighbour cannot share
+  // this one. The parent is running by definition: it is waiting on this test.
+  seedLive(cfg, [[MINE, process.pid], [THEIRS, process.ppid]]);
+  const ctx = context(run({ session_id: MINE, cwd: root }, cfg));
   assert.equal(fs.readFileSync(path.join(cfg, 'modes', MINE, 'fankeel'), 'utf8'), 'clash\n');
+  assert.match(leadOf(cfg, MINE), /^others=1$/m);
+  assert.match(ctx, /<< overlaps: statusline\.ps1/);
 });
 
 test('an unreadable sessions directory costs nothing but the extras', () => {
