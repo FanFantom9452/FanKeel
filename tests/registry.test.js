@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { spawn } = require('node:child_process');
 
 const registry = require('../lib/registry.js');
 
@@ -509,4 +510,30 @@ test('claiming leaves every other field alone', () => {
     if (k === 'claims') continue;
     assert.deepEqual(after[k], before[k], 'field ' + k);
   }
+});
+
+// Two processes, because that is what this is: `hooks/touch.js` runs on every
+// edit and `hooks/inject.js` on every prompt, and they are separate node
+// processes writing one record. Against the read-modify-write this replaced,
+// forty claims came back as twenty to twenty-four — and every one of those
+// writes returned true, which is why nothing caught it.
+//
+// Forty rather than more: MAX_CLAIMS is sixty, and a test that trips the cap
+// measures the cap instead of the lock.
+test('two processes adding claims at once keep all of them', async () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, { task: 't', active: true, stage: 'build', claims: [] });
+
+  const worker = path.join(root, 'worker.js');
+  fs.writeFileSync(worker,
+    'const r = require(' + JSON.stringify(path.join(__dirname, '..', 'lib', 'registry.js')) + ');\n'
+    + 'const [root, id, prefix, n] = process.argv.slice(2);\n'
+    + 'for (let i = 0; i < Number(n); i++) r.addClaim(root, id, prefix + "/f" + i + ".js");\n');
+
+  await Promise.all(['a', 'b'].map((prefix) => new Promise((done) => {
+    spawn(process.execPath, [worker, root, SID, prefix, '20'], { stdio: 'ignore' }).on('exit', done);
+  })));
+
+  const held = registry.claimsOf(registry.readSession(root, SID));
+  assert.equal(held.length, 40, 'kept ' + held.length + ' of 40');
 });
