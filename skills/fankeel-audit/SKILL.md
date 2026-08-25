@@ -138,8 +138,18 @@ PYTHONUTF8=1 deptry . --ignore DEP001,DEP003,DEP004 --no-ansi
 ```
 
 Both narrow to one question — which declared package is never used — and both
-exit 0 clean, 1 with findings. Run them, quote them, and say which is not
-installed rather than skipping it quietly.
+exit 0 clean, 1 with findings.
+
+**Run the one whose manifest is there.** knip needs a `package.json`; deptry
+needs a `pyproject.toml` with a `[project]` section or a `requirements.txt`. Run
+on a project without its manifest, deptry does not report nothing — it exits 1
+with a `DependencySpecificationNotFoundError` traceback, which reads exactly like
+a run that found something. This repository is pure Node, so `deptry` here is
+noise and only `knip` answers. A project with neither manifest has declared no
+dependencies, and there is nothing for either to say.
+
+Quote what the one you ran said, and say plainly when it is not installed rather
+than skipping it quietly.
 
 **Do not write this one.** The obvious forty lines — read the manifest, grep the
 source for the name — was measured against these two on three real projects: it
