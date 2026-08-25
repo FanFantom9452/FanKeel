@@ -136,8 +136,8 @@ output shape:
 The rules are restated in full every turn rather than pointed at. A pointer is
 only as strong as the salience of what it points at, and what it points at recedes
 by thousands of tokens a turn. Only the current stage's rules are sent, never all
-seven stages', which is what keeps a per-turn restatement affordable — 2863
-characters loaded as above, about 715 tokens.
+seven stages', which is what keeps a per-turn restatement affordable — 2873
+characters loaded as above, about 717 tokens.
 
 It grows when growing it is worth something, because the two sides of that trade
 are not priced the same. This block is read once a turn by the model and never by
@@ -213,7 +213,7 @@ output shape:
   then AskUserQuestion
 ```
 
-Where the task is, the rules for the stage, the shape — 1752 to 2432 characters
+Where the task is, the rules for the stage, the shape — 1762 to 2427 characters
 depending on the stage and the class, around 500 tokens. Deliberately not the full block: the
 touched list, the notes and the other live sessions cannot have moved between a question
 going out and its answer coming back, they are already in the context a few

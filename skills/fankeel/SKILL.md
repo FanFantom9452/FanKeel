@@ -391,7 +391,7 @@ abbreviated format produces something that looks like the format and is not it.
 The stage rules name their own skill, so this table is for the reader rather
 than for the pipeline.
 
-**`/fankeel-audit` is the whole pass**: it runs both scanners, reads the
+**`/fankeel-audit` is the whole pass**: it runs all three scanners, reads the
 shortlist they produce, and ends by offering the cleanup. Use it here, and use it
 on its own — it does not need a task, so it is also the way to audit a repository
 nobody is in the middle of.
