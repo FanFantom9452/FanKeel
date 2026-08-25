@@ -8,10 +8,16 @@
 // directory whose fate nobody chose stays invisible until somebody notices it is
 // 73 GB.
 //
-// Everything here comes from git, and that is the whole design. There is no
-// heuristic for "unused" and no list of suspicious filenames: a path is undecided
-// because nobody committed it and nobody ignored it, which is a fact about the
-// repository rather than a guess about intent.
+// There is no heuristic for "unused" and no list of suspicious filenames. Every
+// judgement is a fact somebody could check by hand: a path is undecided because
+// nobody committed it and nobody ignored it, and an environment is an orphan
+// because the file that rebuilds it is not there or the interpreter it points at
+// is not there.
+//
+// Most of it comes from git, but not all — and the part that does not is the
+// part that matters most, because a directory nobody put under version control
+// is exactly where this rots. Outside a repository the git sections are absent
+// and the rest still answers.
 //
 // It reports. It never deletes, never moves and never writes a .gitignore — the
 // audit gate offers the cleanup and the user chooses, exactly as it does for a
@@ -114,6 +120,61 @@ function emptyDirs(root) {
     return found.filter((rel) => !found.some((other) => rel.startsWith(other + '/'))).sort();
 }
 
+// What rebuilds a Python environment, in the directory the environment sits in.
+const PY_MANIFESTS = ['pyproject.toml', 'requirements.txt', 'setup.py', 'setup.cfg', 'Pipfile', 'environment.yml'];
+
+// Python's own marker rather than a list of directory names. One real directory
+// holds `.venv-docling`, `.venv-dots`, `.venv-inspector`, `.venv-mineru`,
+// `.venv-ocr` and `.venv-struct` side by side and another holds `.venv` beside
+// `.venv-uv`: a name list finds two of those eight, and `pyvenv.cfg` finds every
+// one without being maintained.
+//
+// Two ways to be an orphan, and both are checked rather than guessed. Nothing
+// beside it to rebuild from, so deleting it loses whatever is in there for good;
+// or a `home` naming an interpreter that is not on this machine, which is what a
+// tree copied from another computer looks like — gigabytes that cannot be
+// activated and cannot be rebuilt.
+function orphanArtifacts(root) {
+    const found = [];
+    const walk = (rel) => {
+        let entries;
+        try {
+            entries = fs.readdirSync(rel ? path.join(root, rel) : root, { withFileTypes: true });
+        } catch (e) {
+            return;
+        }
+        const beside = new Set(entries.filter((e) => e.isFile()).map((e) => e.name));
+        for (const entry of entries) {
+            if (!entry.isDirectory() || entry.name === '.git') continue;
+            const sub = rel ? rel + '/' + entry.name : entry.name;
+
+            let cfg;
+            try {
+                cfg = fs.readFileSync(path.join(root, sub, 'pyvenv.cfg'), 'utf8');
+            } catch (e) {
+                walk(sub);
+                continue;
+            }
+
+            // Found one, so stop. A vendored interpreter carries thousands of
+            // directories belonging to whoever built it. A probe that also
+            // matched `__pycache__` stopped at 165 directories on one workspace
+            // where the marker alone stops at 15, and 151 of the difference sat
+            // under a single bundled Python.
+            const why = [];
+            if (!PY_MANIFESTS.some((m) => beside.has(m))) why.push('no Python manifest beside it');
+            const home = ((cfg.match(/^home\s*=\s*(.*)$/m) || [])[1] || '').trim();
+            if (home && !fs.existsSync(home)) why.push('interpreter gone: ' + home);
+            if (!why.length) continue;
+
+            const size = sizeOf(path.join(root, sub));
+            found.push({ path: sub, why: why.join('; '), bytes: size.bytes, partial: size.partial });
+        }
+    };
+    walk('');
+    return found.sort((a, b) => a.path.localeCompare(b.path));
+}
+
 function worktreesOf(root) {
     const lines = git(root, ['worktree', 'list', '--porcelain']);
     if (!lines) return [];
@@ -132,8 +193,14 @@ function worktreesOf(root) {
 }
 
 function scan(root) {
+    // First, and outside the repository check: this one needs a filesystem and
+    // nothing else, and the trees where it finds the most are the ones nobody
+    // ever ran `git init` in.
+    const orphans = orphanArtifacts(root);
+    const empty = emptyDirs(root);
+
     if (!isRepo(root)) {
-        return { repo: false, branch: null, undecided: [], worktrees: [], weight: [], empty: [] };
+        return { repo: false, branch: null, undecided: [], worktrees: [], weight: [], empty, orphans };
     }
 
     const branch = ((git(root, ['rev-parse', '--abbrev-ref', 'HEAD']) || [])[0] || 'HEAD').trim();
@@ -145,7 +212,6 @@ function scan(root) {
     // context at once. It belongs in the second: git cannot record an empty
     // directory at all, so "commit it" is not one of the three choices the
     // undecided section is asking somebody to make.
-    const empty = emptyDirs(root);
     const hollow = new Set(empty);
     const undecided = (git(root, ['ls-files', '--others', '--exclude-standard', '--directory']) || [])
         .filter((rel) => !hollow.has(rel.replace(/\/$/, '')));
@@ -175,7 +241,7 @@ function scan(root) {
         .filter(Boolean)
         .sort((a, b) => b.bytes - a.bytes);
 
-    return { repo: true, branch, undecided, worktrees, weight, empty };
+    return { repo: true, branch, undecided, worktrees, weight, empty, orphans };
 }
 
 const human = (n) => (n < 1024 ? n + 'B'
@@ -198,33 +264,47 @@ function section(lines, title, rows) {
 // has an exit code that means nothing, and the weight of a build directory is a
 // fact about the project rather than a fault in it.
 function defects(result) {
-    return result.undecided.length + result.worktrees.length;
+    return result.undecided.length + result.worktrees.length + result.orphans.length;
 }
 
 function report(result) {
-    if (!result.repo) {
-        return 'fankeel residue — not a git repository.\n'
-             + 'Every judgement here comes from what is committed and what is ignored, and\n'
-             + 'without those there is nothing to compare against. Nothing is reported.';
+    const lines = [];
+
+    if (result.repo) {
+        lines.push('fankeel residue — on ' + result.branch);
+        section(lines, plural(result.undecided.length, 'path', 'paths')
+            + ' nobody has decided about — not committed, not ignored:', result.undecided);
+        section(lines, plural(result.worktrees.length, 'worktree is', 'worktrees are')
+            + ' already merged into ' + result.branch + ':',
+            result.worktrees.map((w) => w.path + '  (' + w.branch + ')'));
+    } else {
+        lines.push('fankeel residue — not a git repository.',
+            'What is committed and what is ignored are what the first three sections',
+            'compare against, so those are absent. The rest needs only the filesystem.');
     }
 
-    const lines = ['fankeel residue — on ' + result.branch];
+    section(lines, plural(result.orphans.length, 'environment', 'environments')
+        + ' nothing here can rebuild or run:',
+        result.orphans.map((o) => o.path + '  ' + human(o.bytes) + (o.partial ? ' (at least)' : '')
+            + '\n      ' + o.why));
 
-    section(lines, plural(result.undecided.length, 'path', 'paths')
-        + ' nobody has decided about — not committed, not ignored:', result.undecided);
-    section(lines, plural(result.worktrees.length, 'worktree is', 'worktrees are')
-        + ' already merged into ' + result.branch + ':',
-        result.worktrees.map((w) => w.path + '  (' + w.branch + ')'));
-    section(lines, plural(result.weight.length, 'ignored path carries', 'ignored paths carry')
-        + ' weight:',
-        result.weight.map((w) => w.path + '  ' + human(w.bytes) + (w.partial ? '  (at least)' : '')));
+    if (result.repo) {
+        section(lines, plural(result.weight.length, 'ignored path carries', 'ignored paths carry')
+            + ' weight:',
+            result.weight.map((w) => w.path + '  ' + human(w.bytes) + (w.partial ? '  (at least)' : '')));
+    }
     section(lines, plural(result.empty.length, 'directory holds', 'directories hold')
         + ' no files at any depth:', result.empty);
 
-    if (!defects(result)) lines.push('', 'Nothing undecided and no spent worktrees.');
-    lines.push('', 'Undecided paths and merged worktrees are defects: somebody has to commit,');
-    lines.push('ignore or delete each one. Weight and empty directories are context. Nothing');
-    lines.push('here is deleted by this command — the audit gate offers the cleanup.');
+    if (!defects(result)) {
+        lines.push('', result.repo
+            ? 'Nothing undecided and no spent worktrees, and every environment can be rebuilt.'
+            : 'Every environment here can be rebuilt and run.');
+    }
+    lines.push('', 'Undecided paths, merged worktrees and orphaned environments are defects:');
+    lines.push('somebody has to commit, ignore, rebuild or delete each one. Weight and empty');
+    lines.push('directories are context. Nothing here is deleted by this command — the audit');
+    lines.push('gate offers the cleanup.');
     return lines.join('\n');
 }
 
@@ -248,4 +328,4 @@ if (require.main === module) {
     process.exit(defects(result) > 0 ? 1 : 0);
 }
 
-module.exports = { scan, report, defects, parseArgs, main, human, emptyDirs, sizeOf };
+module.exports = { scan, report, defects, parseArgs, main, human, emptyDirs, sizeOf, orphanArtifacts };

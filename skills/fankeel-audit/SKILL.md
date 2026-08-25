@@ -4,8 +4,8 @@ description: Audit documentation against the code it describes — dead referenc
 argument-hint: "[--root <dir>] [--since <days>]"
 version: 0.28.0
 status: current
-last_verified: 2026-08-22
-source_of_truth: scripts/docs-check.js, scripts/docs-audit.js
+last_verified: 2026-08-25
+source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js
 ---
 
 # fankeel-audit
@@ -36,19 +36,46 @@ Quote what came back. A description of what a scanner said is not what it said.
 
 ### The one that is not about documents
 
-`residue.js` asks what is in this tree that nobody decided about. Everything it
-knows comes from git, so there is no heuristic for "unused" and no list of
-suspicious filenames.
+`residue.js` asks what is in this tree that nobody decided about. There is no
+heuristic for "unused" and no list of suspicious filenames: every line is a fact
+somebody could check by hand.
 
 | | | fails the run |
 |---|---|---|
 | untracked and not ignored | somebody has to commit it, ignore it or delete it, and nobody has | yes |
 | a worktree whose branch is merged | one that has been spent | yes |
+| an environment nothing can rebuild or run | see below | yes |
 | ignored paths, with their size | a 73 GB build directory is not a bug; not knowing about it is | no |
 | directories with no files at any depth | git cannot record one, so "commit it" is not on the menu | no |
 
-The last two are context. Only the first two fail, because a command that always
+The last two are context. The first three fail, because a command that always
 exits non-zero has an exit code that means nothing.
+
+**Two of the five need git and three do not**, so run it outside a repository
+too. That is where it finds the most: in one real workspace ten of eleven
+projects had never been `git init`-ed, and every scanner that starts from what is
+committed reported nothing at all about them.
+
+### An environment nothing can rebuild or run
+
+A Python environment is found by `pyvenv.cfg`, which Python writes into every one
+of them, rather than by a list of directory names. One real directory holds
+`.venv-docling`, `.venv-dots`, `.venv-inspector`, `.venv-mineru`, `.venv-ocr` and
+`.venv-struct` side by side; another holds `.venv` beside `.venv-uv`. A name list
+finds two of those eight and needs maintaining forever; the marker finds every one
+for free.
+
+Two ways to be an orphan, and both are checked rather than guessed:
+
+| | |
+|---|---|
+| **no Python manifest beside it** | no `pyproject.toml`, `requirements.txt`, `setup.py`, `setup.cfg`, `Pipfile` or `environment.yml` in the same directory. Nothing here can rebuild it, so whatever is inside is all there is |
+| **interpreter gone** | the `home` line in `pyvenv.cfg` names a path that is not on this machine. This is what a tree copied from another computer looks like: it cannot be activated and it cannot be rebuilt |
+
+The walk stops at each one rather than reading through it. A vendored interpreter
+carries thousands of directories belonging to whoever built it: a probe that also
+matched `__pycache__` stopped at 165 directories on one workspace where the marker
+alone stops at 15, and 151 of that difference sat under a single bundled Python.
 
 It never deletes. Name the paths at the gate and let the user choose — the same
 contract every scanner here has, and the same one that governs documents.
@@ -96,6 +123,35 @@ pass — orphan files, over-engineering, abstractions nobody uses. Offer it
 alongside. If it is not installed, say so plainly rather than quietly skipping
 the code half.
 
+## Unused packages are somebody else's answer
+
+```
+knip --dependencies
+PYTHONUTF8=1 deptry . --ignore DEP001,DEP003,DEP004 --no-ansi
+```
+
+Both narrow to one question — which declared package is never used — and both
+exit 0 clean, 1 with findings. Run them, quote them, and say which is not
+installed rather than skipping it quietly.
+
+**Do not write this one.** The obvious forty lines — read the manifest, grep the
+source for the name — was measured against these two on three real projects: it
+produced eight findings, six of them false and both real ones missed. Every false
+one was the same cause, a package whose name is not its module: `Pillow` imports
+as `PIL`, `pycryptodome` as `Crypto`, `python-docx` as `docx`, `pyyaml` as
+`yaml`. One real orphan escaped because an error message mentioned its own name
+in a comment. What makes these tools correct is a name-to-module table somebody
+maintains, and this plugin carries no such table.
+
+Two flags are load-bearing. `--dependencies` keeps knip off files and exports,
+where with no config it called every entry point of this repository unused;
+`PYTHONUTF8=1` keeps deptry from dying on a `requirements.txt` holding a comment
+in any non-ASCII script.
+
+The line this draws is the same one `residue.js` draws: a fact this can check —
+is the file beside it, does the path exist — it checks itself. A judgement
+needing a maintained table it names an outside tool for.
+
 ## Never move a document unasked
 
 Not archiving a landed plan, not deleting an orphan, not merging a pair. Every
@@ -113,6 +169,9 @@ node <plugin>/scripts/docs-check.js
 
 node <plugin>/scripts/residue.js
 <its output, quoted>
+
+knip --dependencies · PYTHONUTF8=1 deptry . --ignore DEP001,DEP003,DEP004 --no-ansi
+<quoted, or which is not installed>
 
 node <plugin>/scripts/docs-audit.js
 <its output, quoted>

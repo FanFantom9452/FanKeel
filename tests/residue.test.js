@@ -98,10 +98,55 @@ test('a worktree whose branch is merged is spent', () => {
   assert.match(report(result), /already merged into/);
 });
 
-test('outside a repository it says so and judges nothing', () => {
+test('outside a repository the git sections are absent and the rest still runs', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-norepo-'));
   const result = scan(root);
   assert.equal(result.repo, false);
   assert.equal(defects(result), 0);
   assert.match(report(result), /not a git repository/);
+});
+
+// The marker is `pyvenv.cfg` rather than a list of names. `.venv-uv`,
+// `.venv-docling` and four more siblings live in one real directory here, and a
+// name list would have missed every one of them.
+function venv(root, rel, home) {
+  fs.mkdirSync(path.join(root, rel), { recursive: true });
+  fs.writeFileSync(path.join(root, rel, 'pyvenv.cfg'),
+    'home = ' + home + '\nversion = 3.12.0\n');
+  fs.writeFileSync(path.join(root, rel, 'ballast.bin'), 'x'.repeat(2048));
+}
+
+test('an environment nothing can rebuild or run is an orphan, repository or not', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-orphan-'));
+  const live = path.dirname(process.execPath);          // wherever node is, it is there
+  fs.writeFileSync(path.join(root, 'pyproject.toml'), '[project]\nname = "x"\n');
+
+  venv(root, 'good', live);                             // manifest beside it, interpreter alive
+  venv(root, 'dead', path.join(root, 'no-such-python')); // manifest beside it, interpreter gone
+  fs.mkdirSync(path.join(root, 'sub'), { recursive: true });
+  venv(root, 'sub/lonely', live);                       // interpreter alive, nothing to rebuild from
+
+  const result = scan(root);
+  assert.equal(result.repo, false, 'no git here, and it still answers');
+  assert.deepEqual(result.orphans.map((o) => o.path), ['dead', 'sub/lonely']);
+  assert.match(result.orphans[0].why, /interpreter/);
+  assert.match(result.orphans[1].why, /manifest/);
+  assert.ok(result.orphans[0].bytes >= 2048, 'sized, so the report can say what it costs');
+  assert.equal(defects(result), 2, 'somebody has to delete each one');
+
+  const text = report(result);
+  assert.match(text, /dead/);
+  assert.match(text, /sub\/lonely/);
+  assert.equal(/(^|\n)\s*good\b/.test(text), false, 'the live one is not named');
+});
+
+test('the walk stops at an environment rather than reading through it', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-nodescend-'));
+  venv(root, 'env', path.join(root, 'gone'));
+  // A vendored interpreter carries thousands of these. Descending into one
+  // turned a 15-line report into 165 lines on a real workspace.
+  fs.mkdirSync(path.join(root, 'env', 'Lib', 'site-packages', 'numpy'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'env', 'Lib', 'site-packages', 'numpy', 'pyvenv.cfg'), 'home = /nowhere\n');
+
+  assert.deepEqual(scan(root).orphans.map((o) => o.path), ['env']);
 });

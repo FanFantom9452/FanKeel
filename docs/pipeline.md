@@ -668,16 +668,39 @@ fankeel residue — on main
 1 worktree is already merged into main:
   /repo/.claude/worktrees/registry-staleness  (worktree-registry-staleness)
 
+2 environments nothing here can rebuild or run:
+  services/spec-rag/.venv  105.2M
+      no Python manifest beside it; interpreter gone: C:\Users\user\...\Python311
+  bench/.venv-mineru  4.0G (at least)
+      interpreter gone: C:\Users\user\...\pythoncore-3.12-64
+
 4 ignored paths carry weight:
   release/  73.1G
   node_modules/  412.0M
 ```
 
 Untracked and unignored means somebody has to commit it, ignore it or delete it
-and nobody has; a worktree whose branch is merged is one already spent. Those two
-fail the run. Weight and empty directories are context — a 73 GB build directory
-is not a bug, but not knowing about it is. Everything it knows comes from git,
-so there is no heuristic for "unused" and nothing is ever deleted by it.
+and nobody has; a worktree whose branch is merged is one already spent; an
+environment with no manifest beside it and an interpreter that is not on this
+machine is weight nobody can use. Those three fail the run. Weight and empty
+directories are context — a 73 GB build directory is not a bug, but not knowing
+about it is.
+
+There is no heuristic for "unused" anywhere in it and nothing is ever deleted by
+it. **Two of the five sections need git and three do not**, so it answers outside
+a repository as well as in one — which is where it finds the most, because a tree
+nobody ran `git init` in is invisible to every check that starts from what is
+committed.
+
+Environments are found by `pyvenv.cfg` rather than by a list of directory names:
+one real directory holds six of them side by side — `.venv-docling` through
+`.venv-struct` — and another holds `.venv` beside `.venv-uv`. The marker names
+every one without being maintained.
+
+Which declared package is never used is a different question, and not one this
+answers. It needs a package-name-to-module table — `Pillow` imports as `PIL`,
+`pycryptodome` as `Crypto` — so the `audit` rules name `knip --dependencies` and
+`deptry` instead, and say plainly when neither is installed.
 
 **What gets checked depends on the document's role.** An archive naming deleted
 code is an archive doing its job; a reference page doing the same is the bug. A

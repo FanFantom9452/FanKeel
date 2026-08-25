@@ -190,7 +190,7 @@ The `.sh` equivalent, and what each colour is doing, is in
 | | |
 |---|---|
 | `node scripts/docs-check.js` | Every reference still resolves. A second to run, and the `land` rules call for it. |
-| `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged, the weight of what is ignored, directories holding no files. Everything from git, and it never deletes. |
+| `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged, an environment nothing can rebuild or run, the weight of what is ignored, directories holding no files. Two of the five need git and three do not, so it answers outside a repository too. It never deletes. |
 | `/fankeel-audit` | The fortnightly sweep: which pages have stopped being true, and which two of them disagree. Runs all three scanners, reads the shortlist they produce, then offers the cleanup. It does not need an active task, so it also works on a repository nobody is in the middle of. |
 
 Neither one decides that two documents contradict each other, because nothing
