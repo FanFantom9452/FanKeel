@@ -273,3 +273,55 @@ test('an unreadable sessions directory costs nothing but the extras', () => {
   fs.rmSync(path.join(root, '.fankeel', 'sessions', MINE + '.json'));
   assert.equal(run({ session_id: MINE, cwd: root }), '');
 });
+
+const badgeOf = (cfg, sid) => path.join(cfg, 'modes', sid, 'fankeel');
+
+test('a /fankeel prompt with no entry raises the init badge', () => {
+  const root = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  assert.equal(run({ session_id: MINE, cwd: root, prompt: '/fankeel @Waypoint' }, cfg), '');
+  assert.equal(fs.readFileSync(badgeOf(cfg, MINE), 'utf8').trim(), 'init');
+  const lead = leadOf(cfg, MINE);
+  assert.match(lead, /^word=init$/m);
+  assert.match(lead, /^step=0$/m);
+  assert.match(lead, /^steps=7$/m);
+});
+
+test('the plugin-qualified form raises it too, and fankeel-audit does not', () => {
+  const root = tmp('fankeel-hook-');
+  const yes = tmp('fankeel-cfg-');
+  run({ session_id: MINE, cwd: root, prompt: '/fankeel:fankeel look at this' }, yes);
+  assert.equal(fs.readFileSync(badgeOf(yes, MINE), 'utf8').trim(), 'init');
+
+  const no = tmp('fankeel-cfg-');
+  run({ session_id: MINE, cwd: root, prompt: '/fankeel-audit' }, no);
+  assert.equal(fs.existsSync(path.join(no, 'modes', MINE)), false, 'audit starts no task');
+});
+
+test('an ordinary prompt with no entry writes nothing at all', () => {
+  const root = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  run({ session_id: MINE, cwd: root, prompt: 'what does this repository do' }, cfg);
+  assert.equal(fs.existsSync(path.join(cfg, 'modes', MINE)), false);
+});
+
+test('an init badge is taken down by the next ordinary prompt', () => {
+  const root = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  run({ session_id: MINE, cwd: root, prompt: '/fankeel' }, cfg);
+  assert.equal(fs.existsSync(badgeOf(cfg, MINE)), true);
+  run({ session_id: MINE, cwd: root, prompt: 'never mind' }, cfg);
+  assert.equal(fs.existsSync(badgeOf(cfg, MINE)), false);
+  assert.equal(fs.existsSync(badgeOf(cfg, MINE) + '.lead'), false);
+});
+
+test('a badge another plugin owns is not cleared by this one', () => {
+  const root = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  const dir = path.join(cfg, 'modes', MINE);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'fankeel'), 'survey');
+  run({ session_id: MINE, cwd: root, prompt: 'unrelated' }, cfg);
+  assert.equal(fs.readFileSync(path.join(dir, 'fankeel'), 'utf8').trim(), 'survey',
+    'no entry and no init word means leave it alone');
+});

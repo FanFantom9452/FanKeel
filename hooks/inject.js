@@ -8,9 +8,10 @@
 // it was called for, and a plugin that can wedge your terminal is worse than no
 // plugin. Anything unexpected means say nothing and get out of the way.
 //
-// A session not in the mode must cost nothing. No entry, or an entry stood down,
-// and the process reads one file that is not there and exits — no directories
-// created, no flags written, no output.
+// A session not in the mode must stay cheap. No entry and an ordinary prompt, and
+// the process reads two files that are not there and exits — the registry entry
+// and its own statusline flag — with no directories created, no flags written and
+// no output.
 
 const path = require('node:path');
 
@@ -19,7 +20,17 @@ const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
 const { render } = require('../lib/render.js');
 const { overlapPaths } = require('../lib/overlap.js');
-const { positionIn } = require('../lib/stages.js');
+const { positionIn, FULL_ROUTE } = require('../lib/stages.js');
+
+// The one prompt trying to turn the mode on. Everything else in this hook keys
+// off the registry, and at this moment there is nothing in it: `/fankeel` runs
+// orient, reads the map and runs the scanner before it writes an entry, and on a
+// large project that is minutes of a statusline saying nothing at all.
+//
+// `/fankeel-audit` deliberately does not match. It starts no task, so a badge for
+// it would have nothing to become.
+const startsFankeel = (prompt) =>
+    /^[/@$]fankeel(:fankeel)?(\s|$)/i.test(String(prompt == null ? '' : prompt).trim());
 
 // Flags belonging to sessions that ended a month ago are litter, not state.
 const BADGE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -48,19 +59,26 @@ function main(raw) {
     // mode without having said what you are working on.
     const mine = registry.readSession(root, sessionId);
     if (!mine || mine.active !== true) {
-        // An entry that exists but is stood down means this session *was* in the
-        // mode. Its badge is still on the statusline saying otherwise, and only
-        // this hook runs often enough to notice. A session with no entry at all
-        // is skipped without touching the filesystem, which is what keeps a
-        // session that never used the plugin free.
-        if (mine) {
-            const dir = claudeConfigDir();
-            if (dir) {
-                try {
+        const dir = claudeConfigDir();
+        if (dir) {
+            try {
+                if (!mine && startsFankeel(payload.prompt)) {
+                    // Step 0 of a route nobody has chosen. Seven is the default
+                    // `task.js start` uses when no class is given, and the real
+                    // route replaces it the moment one is picked.
+                    badge.writeBadge(dir, sessionId, 'init');
+                    badge.writeLead(dir, sessionId, { word: 'init', step: 0, steps: FULL_ROUTE.length });
+                } else if (mine || badge.readBadge(dir, sessionId) === 'init') {
+                    // An entry that exists but is stood down means this session
+                    // *was* in the mode and its badge still says otherwise. An
+                    // `init` with no entry behind it is one this hook raised for a
+                    // `/fankeel` that never started anything. Only those two — a
+                    // session that never used the plugin is left alone, which is
+                    // what keeps it free.
                     badge.clearBadge(dir, sessionId);
                     badge.clearLead(dir, sessionId);
-                } catch (e) { /* housekeeping */ }
-            }
+                }
+            } catch (e) { /* housekeeping */ }
         }
         return;
     }

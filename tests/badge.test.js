@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { badgeWord, writeBadge, pruneBadges, MAX_WORD } = require('../lib/badge.js');
+const { badgeWord, writeBadge, readBadge, pruneBadges, MAX_WORD } = require('../lib/badge.js');
 
 const SID = 'aaaaaaaa-0000-4000-8000-000000000001';
 const OTHER = 'bbbbbbbb-0000-4000-8000-000000000002';
@@ -115,4 +115,14 @@ test('pruneBadges ignores entries that are not session directories', () => {
   fs.writeFileSync(path.join(dir, 'modes', 'stray.txt'), 'x');
   assert.equal(pruneBadges(dir, SID, 30 * 24 * 3600e3), 0);
   assert.ok(fs.existsSync(path.join(dir, 'modes', 'stray.txt')));
+});
+
+test('readBadge returns the word on disk, and null for everything else', () => {
+  const dir = tmpClaude();
+  assert.equal(readBadge(dir, SID), null, 'no file yet');
+  writeBadge(dir, SID, 'init');
+  assert.equal(readBadge(dir, SID), 'init');
+  writeBadge(dir, SID, 'survey');
+  assert.equal(readBadge(dir, SID), 'survey');
+  assert.equal(readBadge(dir, 'not-a-session-id'), null, 'a rejected id is not a read');
 });

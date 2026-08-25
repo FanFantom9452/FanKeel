@@ -16,7 +16,7 @@ fankeel writes two files per session. One word to
 badge among the others on line 1:
 
 ```
-[FANKEEL:SURVEY]  [FANKEEL:DESIGN]  [FANKEEL:PLAN]  [FANKEEL:BUILD]  [FANKEEL:VERIFY]  [FANKEEL:AUDIT]  [FANKEEL:LAND]  [FANKEEL:CLASH]
+[FANKEEL:INIT]  [FANKEEL:SURVEY]  [FANKEEL:DESIGN]  [FANKEEL:PLAN]  [FANKEEL:BUILD]  [FANKEEL:VERIFY]  [FANKEEL:AUDIT]  [FANKEEL:LAND]  [FANKEEL:CLASH]
 ```
 
 And the whole line's worth to `<session_id>/fankeel.lead`, which TokenBar can
@@ -40,6 +40,14 @@ and then stop noticing; a statusline earns its space by showing what changes.
 `clash` takes the slot when another live session is in your files, because at that
 moment the collision matters more than the stage — and the stage is still in the
 injected text.
+
+`init` is the exception that proves it. It is not a stage — it is the moment
+between `/fankeel` being submitted and a task existing, which on a large project
+is minutes of orienting, mapping and scanning. `hooks/inject.js` raises it from
+`payload.prompt` before there is any registry entry to read, and `task.js start`
+overwrites it with `survey`. It has no colour in TokenBar's palette on purpose:
+neutral is the correct colour for "not yet a stage", and giving it a stage colour
+would claim it is one.
 
 That trade is forced by the badge having room for one word, and it is not forced
 anywhere else. The lead line states the collision in a field of its own — `others`,
