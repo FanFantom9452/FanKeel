@@ -398,3 +398,18 @@ test('blanking a fence leaves the line numbers after it alone', () => {
   }), 'flat');
   assert.match(run(root).out, /p\.md:7 +links to two\.md/);
 });
+
+// CommonMark runs an unclosed fence to the end of the document, so blanking it
+// is right — and it would then swallow every link below without a word, which is
+// the one failure a scanner must not have. Saying so is what keeps the silence
+// from being the answer.
+test('an unclosed code fence is reported, not quietly obeyed', () => {
+  const root = withTree(tree({
+    'docs/README.md': INDEX,
+    'docs/plans/p.md': ['# A plan', '', FENCE + 'js', 'x', '',
+      'See [the real one](gone.md).', ''].join(NL),
+  }), 'flat');
+  const out = run(root).out;
+  assert.match(out, /p\.md:3 +a code fence is never closed/);
+  assert.equal(/gone\.md/.test(out), false, 'the link below it is genuinely unchecked');
+});
