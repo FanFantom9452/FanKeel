@@ -25,7 +25,7 @@ const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
 const { overlapPaths } = require('../lib/overlap.js');
-const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass } = require('../lib/stages.js');
+const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 
 const GUARDS = ['ask', 'deny', 'off'];
 
@@ -196,7 +196,7 @@ function collisions(root, sessionId, claims) {
     const liveState = live.readLive(live.liveConfigDir(), sessionId);
     for (const other of registry.readActive(root)) {
         if (other.sessionId === sessionId) continue;
-        if (!live.isLive(liveState, other.sessionId)) continue;
+        if (!live.isLive(liveState, other.sessionId, other.data && other.data.configDir)) continue;
         const shared = overlapPaths(claims, registry.claimsOf(other.data));
         if (shared.length) out.push({ task: other.data.task || 'untitled', shared });
     }
@@ -228,8 +228,14 @@ function cmdShow(root, opts) {
     // The header says live, so the list has to mean it. With no --session there
     // is no id to self-check against, `readLive` reports unknown, and unknown is
     // every entry — the same loud side every other reader of this falls back to.
+    //
+    // Except for an entry recording a config dir of its own: that one is measured
+    // against its own directory, where the self-check here has nothing to say
+    // either way. A session in another config dir is the case this list was
+    // silently wrong about, so a real answer beats the fallback.
     const liveState = live.readLive(live.liveConfigDir(), id);
-    const others = active.filter((e) => e.sessionId !== id && live.isLive(liveState, e.sessionId));
+    const others = active.filter((e) => e.sessionId !== id
+        && live.isLive(liveState, e.sessionId, e.data && e.data.configDir));
     if (others.length) {
         lines.push('');
         lines.push('other live sessions:');
@@ -295,6 +301,14 @@ function cmdStart(root, opts) {
         project,
         route,
         class: opts.class ? String(opts.class).trim().toLowerCase() : undefined,
+        // Which registry answers "is that session still running". Only this
+        // session knows, and a reader under a different CLAUDE_CONFIG_DIR has no
+        // way to guess it — without this it judged a running neighbour dead.
+        //
+        // `liveConfigDir`, not `claudeDir`: this names where the liveness file
+        // is, and liveness is read from CLAUDE_CONFIG_DIR. `--claude-dir` moves
+        // the badge and nothing else.
+        configDir: live.liveConfigDir() || undefined,
         stage: route[0],
         active: true,
         started: stamp,
@@ -454,12 +468,21 @@ function cmdAdopt(root, opts) {
 
     const stamp = now();
     const claims = registry.claimsOf(source);
+    const adoptedRoute = normaliseRoute(source.route) || FULL_ROUTE.slice();
     const data = {
         task: source.task,
         project: registry.projectOf(source) || undefined,
         claims: claims.length ? claims : undefined,
-        route: normaliseRoute(source.route) || FULL_ROUTE.slice(),
+        route: adoptedRoute,
+        // Derived rather than copied from `source.class`: a class copied across
+        // can name a route the record does not have, which is this defect one
+        // session sideways.
+        class: classForRoute(adoptedRoute) || undefined,
         stage: source.stage || 'survey',
+        // This session's, not the source's. The task moves between sessions and
+        // the directory belongs to the session — the one giving it up may
+        // already have exited.
+        configDir: live.liveConfigDir() || undefined,
         active: true,
         // The source's, not this stamp. `started` is the tie-break, and adopting
         // transfers the work rather than re-answering which session reached these
@@ -564,6 +587,11 @@ function cmdRoute(root, opts) {
 
     const before = normaliseRoute(data.route) || FULL_ROUTE;
     data.route = given;
+    // The class is the route said out loud, and it is injected on every prompt.
+    // Left behind, it describes stages the new route does not contain.
+    const cls = classForRoute(given);
+    if (cls) data.class = cls;
+    else delete data.class;
     if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
     const clash = collisions(root, id, registry.claimsOf(data));
     showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data));

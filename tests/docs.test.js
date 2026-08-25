@@ -355,3 +355,61 @@ test('the same path without the slash is still a claim', () => {
   }), 'flat');
   assert.match(run(root).out, /gone: .*names lib\/gone\.js/);
 });
+
+// A link inside a fenced block is a quotation. Plans show the code they ask for,
+// and a test fixture in that code carries a markdown link on purpose — read as a
+// claim, a plan describing a link test fails the check it is planning.
+//
+// The fence is built rather than typed, so that a document quoting this test
+// does not close its own code block on the line below.
+const FENCE = '`'.repeat(3);
+const NL = String.fromCharCode(10);
+const INDEX = ['# Index', '', '| | |', '|---|---|',
+  '| a plan | [plans/p.md](plans/p.md) |', ''].join(NL);
+
+test('a link inside a code fence is a quotation, not a reference', () => {
+  const quoted = 'fs.writeFileSync(f, "# TODO" + NL + "- [a](one.md)");';
+  const root = withTree(tree({
+    'docs/README.md': INDEX,
+    'docs/plans/p.md': ['# A plan', '', FENCE + 'js', quoted, FENCE, ''].join(NL),
+  }), 'flat');
+  const out = run(root).out;
+  assert.equal(/one\.md/.test(out), false, 'reported a quoted link:' + NL + out);
+});
+
+// The control, so the test is about fences rather than about the scanner having
+// stopped looking at all.
+test('a link outside a fence is still a reference', () => {
+  const root = withTree(tree({
+    'docs/README.md': INDEX,
+    'docs/plans/p.md': ['# A plan', '', 'See [the other one](one.md).', ''].join(NL),
+  }), 'flat');
+  assert.match(run(root).out, /one\.md/);
+});
+
+// Blanked rather than removed: every finding here is reported as `path:line`,
+// and dropping the lines of a block would move every number after it.
+test('blanking a fence leaves the line numbers after it alone', () => {
+  const quoted = 'const link = "[a](one.md)";';
+  const root = withTree(tree({
+    'docs/README.md': INDEX,
+    'docs/plans/p.md': ['# A plan', '', FENCE + 'js', quoted, FENCE, '',
+      'See [the real one](two.md).', ''].join(NL),
+  }), 'flat');
+  assert.match(run(root).out, /p\.md:7 +links to two\.md/);
+});
+
+// CommonMark runs an unclosed fence to the end of the document, so blanking it
+// is right — and it would then swallow every link below without a word, which is
+// the one failure a scanner must not have. Saying so is what keeps the silence
+// from being the answer.
+test('an unclosed code fence is reported, not quietly obeyed', () => {
+  const root = withTree(tree({
+    'docs/README.md': INDEX,
+    'docs/plans/p.md': ['# A plan', '', FENCE + 'js', 'x', '',
+      'See [the real one](gone.md).', ''].join(NL),
+  }), 'flat');
+  const out = run(root).out;
+  assert.match(out, /p\.md:3 +a code fence is never closed/);
+  assert.equal(/gone\.md/.test(out), false, 'the link below it is genuinely unchecked');
+});

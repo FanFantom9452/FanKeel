@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { spawn } = require('node:child_process');
 
 const registry = require('../lib/registry.js');
 
@@ -509,4 +510,59 @@ test('claiming leaves every other field alone', () => {
     if (k === 'claims') continue;
     assert.deepEqual(after[k], before[k], 'field ' + k);
   }
+});
+
+// Two processes, because that is what this is: `hooks/touch.js` runs on every
+// edit and `hooks/inject.js` on every prompt, and they are separate node
+// processes writing one record. Against the read-modify-write this replaced,
+// forty claims came back as twenty to twenty-four — and every one of those
+// writes returned true, which is why nothing caught it.
+//
+// Forty rather than more: MAX_CLAIMS is sixty, and a test that trips the cap
+// measures the cap instead of the lock.
+test('two processes adding claims at once keep all of them', async () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, { task: 't', active: true, stage: 'build', claims: [] });
+
+  const worker = path.join(root, 'worker.js');
+  fs.writeFileSync(worker,
+    'const r = require(' + JSON.stringify(path.join(__dirname, '..', 'lib', 'registry.js')) + ');\n'
+    + 'const [root, id, prefix, n] = process.argv.slice(2);\n'
+    + 'for (let i = 0; i < Number(n); i++) r.addClaim(root, id, prefix + "/f" + i + ".js");\n');
+
+  await Promise.all(['a', 'b'].map((prefix) => new Promise((done) => {
+    spawn(process.execPath, [worker, root, SID, prefix, '20'], { stdio: 'ignore' }).on('exit', done);
+  })));
+
+  const held = registry.claimsOf(registry.readSession(root, SID));
+  assert.equal(held.length, 40, 'kept ' + held.length + ' of 40');
+});
+
+// The wait is two hundred attempts five milliseconds apart, which is a second —
+// a fifth of the hooks' own timeout. Spinning without the delay burns all two
+// hundred in a few milliseconds, which still passes the test above and still
+// drops the write the moment anybody holds the lock longer than that. The
+// releaser is a second process because the wait is synchronous: a timer in this
+// one would not fire until after the call it is meant to interrupt returned.
+test('a writer waits out a lock somebody else is holding', async () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, { task: 't', active: true, stage: 'build', claims: [] });
+  const lock = path.join(root, '.fankeel', 'sessions', SID + '.lock');
+  fs.mkdirSync(lock);
+
+  const releaser = path.join(root, 'release.js');
+  fs.writeFileSync(releaser,
+    'const fs = require("node:fs");\n'
+    + 'const [lock, ms] = process.argv.slice(2);\n'
+    + 'Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Number(ms));\n'
+    + 'fs.rmdirSync(lock);\n');
+  // Well past a spin, and well inside both the 1s cap and the 5s staleness
+  // threshold — so this measures waiting rather than breaking.
+  const kid = spawn(process.execPath, [releaser, lock, '300'], { stdio: 'ignore' });
+
+  const ok = registry.addClaim(root, SID, 'waited.js');
+  await new Promise((done) => kid.on('exit', done));
+
+  assert.equal(ok, true, 'gave up instead of waiting');
+  assert.deepEqual(registry.claimsOf(registry.readSession(root, SID)), ['waited.js']);
 });

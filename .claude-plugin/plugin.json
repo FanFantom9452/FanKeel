@@ -1,6 +1,6 @@
 {
   "name": "fankeel",
-  "version": "0.29.0",
+  "version": "0.30.0",
   "description": "Development discipline for long-running projects: a seven-stage pipeline restated on every prompt and after every answer with the shape its report takes, a per-session task registry, capped task memory, a brief for every subagent, and warnings — optionally blocks — when two live sessions are editing the same files.",
   "author": {
     "name": "FanFantom9452",

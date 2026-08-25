@@ -119,3 +119,37 @@ test('this project’s own TODO.md is an index', () => {
   const { out, code } = run(path.join(__dirname, '..', 'TODO.md'));
   assert.equal(code, 0, out);
 });
+
+// Every other script here takes `--root <dir>`, so this is the form a person
+// reaches for and the form a gate gets written with. It used to take the flag's
+// value as the file to read: `--root .` handed a directory to `check`, reading
+// it threw EISDIR, `check` reported it missing, and missing counted as success.
+// A green run that examined nothing.
+test('--root names the directory holding TODO.md', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-todo-root-'));
+  fs.writeFileSync(path.join(dir, 'TODO.md'), '# TODO\n\n- [a](one.md)\n');
+  const out = todo.main(['--root', dir]);
+  assert.equal(out.ok, false, 'the dead link in that file is a problem');
+  assert.match(out.text, /one\.md does not exist/);
+});
+
+test('--root=<dir> is the same flag', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-todo-eq-'));
+  fs.writeFileSync(path.join(dir, 'TODO.md'), '# TODO\n\n- [a](one.md)\n');
+  assert.equal(todo.main(['--root=' + dir]).ok, false);
+});
+
+test('--root on a directory with no TODO.md names the file it looked for', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-todo-bare-'));
+  const out = todo.main(['--root', dir]);
+  assert.match(out.text, /TODO\.md/, 'named the directory rather than the file');
+  assert.equal(out.ok, true);
+});
+
+// A path is still a path. The flag's value is not one.
+test('a positional argument is still the file to check', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-todo-pos-'));
+  const file = path.join(dir, 'OTHER.md');
+  fs.writeFileSync(file, '# TODO\n\n- [a](one.md)\n');
+  assert.equal(todo.main([file]).ok, false);
+});

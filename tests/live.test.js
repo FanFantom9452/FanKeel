@@ -175,3 +175,54 @@ test('runningIds separates a directory it cannot read from one holding nobody', 
   seed(cfg, GONE_PID, OTHER);
   assert.deepEqual(live.runningIds(cfg), new Set([SID]));
 });
+
+// A neighbour running under a different CLAUDE_CONFIG_DIR writes its liveness
+// file somewhere this session never looks, and the self-check still passes — so
+// the answer came back `known: true` with the neighbour missing, which is a
+// confident "dead" about a session that is running. Its claims then dropped out
+// of all four readers.
+test('a neighbour under another config dir is live, not dead', () => {
+  const mine = tmpConfig();
+  const theirs = tmpConfig();
+  seed(mine, process.pid, SID);
+  seed(theirs, process.ppid, OTHER);
+
+  const state = live.readLive(mine, SID);
+  assert.equal(state.known, true, 'the self-check still passes');
+  assert.equal(live.isLive(state, OTHER), false, 'without their directory, still invisible');
+  assert.equal(live.isLive(state, OTHER, theirs), true, 'with it, alive');
+});
+
+// A record written before this carries no directory, and the answer for one that
+// cannot say has to be the one this module already gave.
+test('a record that does not say which config dir it runs under keeps the old answer', () => {
+  const mine = tmpConfig();
+  seed(mine, process.pid, SID);
+  const state = live.readLive(mine, SID);
+  assert.equal(live.isLive(state, OTHER, undefined), false, 'no third argument is the old answer');
+  assert.equal(live.isLive(state, OTHER, ''), false, 'an empty string is not a directory');
+});
+
+// A directory that cannot be read at all is unknown, and unknown is live.
+test('a neighbour naming a directory that is not there is live rather than dead', () => {
+  const mine = tmpConfig();
+  seed(mine, process.pid, SID);
+  const state = live.readLive(mine, SID);
+  assert.equal(live.isLive(state, OTHER, path.join(mine, 'no-such-dir')), true);
+});
+
+// One scan per directory, and no longer than the answer it belongs to. Module
+// scope would outlive it and would need a reset nobody could test around.
+test('a neighbouring config dir is scanned once per readLive, not once per question', () => {
+  const mine = tmpConfig();
+  const theirs = tmpConfig();
+  seed(mine, process.pid, SID);
+  seed(theirs, process.ppid, OTHER);
+
+  const state = live.readLive(mine, SID);
+  live.isLive(state, OTHER, theirs);
+  assert.equal(state.others.size, 1);
+  live.isLive(state, SID, theirs);
+  assert.equal(state.others.size, 1, 'asked twice, scanned once');
+  assert.equal(live.readLive(mine, SID).others.size, 0, 'a fresh scan starts empty');
+});

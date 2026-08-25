@@ -124,8 +124,29 @@ function report(result) {
     return lines.join('\n');
 }
 
+// `--root <dir>` the way every other script here takes it. Before this, the
+// first argument not beginning with `--` was taken as the file — so `--root .`
+// handed `.` to `check`, reading a directory threw EISDIR, `check` reported it
+// missing, and missing is success. The form a person reaches for, and the form a
+// gate gets written with, passed while examining nothing.
 function main(argv) {
-    const at = argv.find((a) => !a.startsWith('--')) || path.join(process.cwd(), 'TODO.md');
+    let root = '';
+    const loose = [];
+    for (let i = 0; i < argv.length; i++) {
+        const arg = argv[i];
+        if (arg === '--root') {
+            root = argv[++i] || '';
+            continue;
+        }
+        if (arg.startsWith('--root=')) {
+            root = arg.slice('--root='.length);
+            continue;
+        }
+        if (arg.startsWith('--')) continue;
+        loose.push(arg);
+    }
+    // A positional argument is still a path to a file. A flag's value is not one.
+    const at = loose[0] || path.join(root || process.cwd(), 'TODO.md');
     const result = check(path.resolve(at));
     return { text: report(result), ok: result.missing || !result.problems.length };
 }

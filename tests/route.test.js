@@ -12,12 +12,13 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
-const { normaliseRoute, positionIn, nextStage, FULL_ROUTE, NAMES } = require('../lib/stages.js');
+const { normaliseRoute, positionIn, nextStage, FULL_ROUTE, NAMES, routeForClass, classForRoute } = require('../lib/stages.js');
 const registry = require('../lib/registry.js');
 const plugins = require('../lib/plugins.js');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'task.js');
 const A = 'aaaaaaaa-1111-2222-3333-444444444444';
+const B = 'bbbbbbbb-1111-2222-3333-444444444444';
 
 const root = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-route-'));
 
@@ -278,4 +279,40 @@ test('neither given still works, and still records no class', () => {
   assert.equal(r.code, 0, r.out);
   assert.deepEqual(registry.readSession(dir, A).route, FULL_ROUTE);
   assert.equal(registry.readSession(dir, A).class, undefined);
+});
+
+// `survey,build` is spike's route. Leaving `class: bounded` on a record whose
+// route has become spike's puts a sentence in front of the model every turn
+// describing a design stage the route no longer contains.
+test('re-routing recomputes the class rather than leaving the old one', () => {
+  const dir = root();
+  run(dir, ['start', '--session', A, '--task', 'x', '--class', 'bounded']);
+  run(dir, ['route', 'survey,build', '--session', A]);
+  assert.equal(registry.readSession(dir, A).class, 'spike');
+});
+
+// A route nobody presets has no class. The alternative is a record naming a
+// class whose route it does not have, which is this defect one step sideways.
+test('a route matching no class leaves the record with none', () => {
+  const dir = root();
+  run(dir, ['start', '--session', A, '--task', 'x', '--class', 'bounded']);
+  run(dir, ['route', 'survey,build,audit', '--session', A]);
+  assert.equal('class' in registry.readSession(dir, A), false);
+});
+
+test('classForRoute is the inverse of routeForClass for all three', () => {
+  for (const name of ['spike', 'bounded', 'architectural']) {
+    assert.equal(classForRoute(routeForClass(name)), name);
+  }
+  assert.equal(classForRoute(['survey', 'build', 'audit']), null);
+  assert.equal(classForRoute('not a route'), null);
+});
+
+// The class is the name of the route, and the route is being carried over.
+// Copied rather than derived, it could name a route the record does not have.
+test('adopt carries the class, because it carries the route', () => {
+  const dir = root();
+  run(dir, ['start', '--session', B, '--task', 'theirs', '--class', 'spike']);
+  run(dir, ['adopt', B, '--session', A]);
+  assert.equal(registry.readSession(dir, A).class, 'spike');
 });

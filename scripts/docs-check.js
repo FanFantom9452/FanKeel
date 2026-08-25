@@ -32,6 +32,46 @@ const MAX_FINDINGS = 200;
 const LINK = /\[[^\]]*\]\(([^)\s#]+)(?:#[^)\s]*)?\)/g;
 const CODE = /`([^`\n]{2,120})`/g;
 
+// A link inside a fenced code block is a quotation, not a reference. A plan
+// shows the code it is asking for, and a test fixture in that code can carry a
+// markdown link on purpose — read as a claim, a plan describing a link test
+// fails the very check it is planning.
+//
+// The lines are blanked rather than removed, because every finding here is
+// reported as `path:line` and dropping lines would move every number after the
+// block. Only links are read from the blanked copy: a `path:line` or a symbol
+// named inside a block is still a claim the document is making.
+// `openedAt` is the line of a fence nobody closed, or 0. CommonMark runs such a
+// block to the end of the document, so blanking it is correct — and it would
+// then swallow every link below it without saying so, which is the one failure
+// this scanner must never have. The caller reports it.
+function withoutFences(text) {
+    const out = [];
+    let fence = null;
+    let openedAt = 0;
+    const lines = String(text).split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        const open = /^\s*(```+|~~~+)/.exec(lines[i]);
+        if (fence === null) {
+            if (open) {
+                fence = open[1];
+                openedAt = i + 1;
+            }
+            out.push(open ? '' : lines[i]);
+            continue;
+        }
+        // Closed by a run of the same character at least as long as the opener,
+        // which is the CommonMark rule and the reason the opener is kept whole
+        // rather than counted.
+        if (open && open[1][0] === fence[0] && open[1].length >= fence.length) {
+            fence = null;
+            openedAt = 0;
+        }
+        out.push('');
+    }
+    return { text: out.join('\n'), openedAt };
+}
+
 // Inside a code span, the things that are checkable claims about *this*
 // repository. A separator is required and the first segment has to be something
 // this tree actually has.
@@ -128,13 +168,29 @@ function checkDoc(root, rel, role, symbols, roots) {
 
     const lineOf = (index) => text.slice(0, index).split('\n').length;
 
+    // Same line count, different offsets — so links are numbered against the
+    // copy they were found in.
+    const fenced = withoutFences(text);
+    const linkText = fenced.text;
+    const linkLineOf = (index) => linkText.slice(0, index).split('\n').length;
+
+    // Everything below an unclosed fence is blanked, so saying nothing here would
+    // turn a check that found nothing into a check that looked at nothing — the
+    // exact shape this scanner exists to catch everywhere else.
+    if (fenced.openedAt) {
+        out.push({
+            file: rel, line: fenced.openedAt, tag: 'open-fence',
+            what: 'a code fence is never closed, so no link below this line was checked',
+        });
+    }
+
     LINK.lastIndex = 0;
     let m;
-    while ((m = LINK.exec(text)) !== null) {
+    while ((m = LINK.exec(linkText)) !== null) {
         const ref = m[1];
         if (external(ref)) continue;
         if (resolveRef(root, rel, ref) === null) {
-            out.push({ file: rel, line: lineOf(m.index), tag: 'gone', what: 'links to ' + ref });
+            out.push({ file: rel, line: linkLineOf(m.index), tag: 'gone', what: 'links to ' + ref });
         }
     }
 
@@ -253,14 +309,15 @@ function scan(root, roles) {
             if (role !== 'reference') continue;
             const text = readFile(root, rel);
             if (text === null) continue;
+            const linkText = withoutFences(text).text;
             LINK.lastIndex = 0;
             let m;
-            while ((m = LINK.exec(text)) !== null) {
+            while ((m = LINK.exec(linkText)) !== null) {
                 if (external(m[1])) continue;
                 const target = resolveRef(root, rel, m[1]);
                 if (target && archived.has(target)) {
                     findings.push({
-                        role, file: rel, line: text.slice(0, m.index).split('\n').length,
+                        role, file: rel, line: linkText.slice(0, m.index).split('\n').length,
                         tag: 'into-archive', what: 'points at retired ' + target,
                     });
                 }
@@ -279,7 +336,7 @@ function scan(root, roles) {
     };
 }
 
-const ORDER = ['gone', 'past-end', 'orphan', 'into-archive'];
+const ORDER = ['open-fence', 'gone', 'past-end', 'orphan', 'into-archive'];
 
 function report(result) {
     if (!result) return 'fankeel docs-check: nothing readable under this directory.';

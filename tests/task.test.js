@@ -170,8 +170,10 @@ test('a dead session holding the same file does not paint clash', () => {
   write(process.pid, B);
   write(spawnSync(process.execPath, ['-e', '0']).pid, A);
 
-  started(dir, A, 'tidy the project cards', 'Waypoint');
-  started(dir, B, 'fix the card link', 'Waypoint');
+  // The same registry for all three, because each entry now records the one it
+  // was started under and a reader checks the neighbour against that.
+  run(dir, ['start', '--session', A, '--task', 'tidy the project cards'], { CLAUDE_CONFIG_DIR: cfg });
+  run(dir, ['start', '--session', B, '--task', 'fix the card link'], { CLAUDE_CONFIG_DIR: cfg });
   registry.addClaim(dir, A, 'Waypoint/web/src/Card.jsx');
   registry.addClaim(dir, B, 'Waypoint/web/src/Card.jsx');
 
@@ -522,4 +524,54 @@ test('task refuses when this session owns nothing, and names what begins one', (
   assert.match(out, /No active entry/);
   assert.match(out, /start --task/);
   assert.equal(entry(dir, A), null);
+});
+
+// Two readers of liveness sit in this file — the collision scan and the listing
+// `show` prints — and only the first was pinned. Deleting the filter from the
+// listing left 599 of 599 tests passing; deleting the same filter from the
+// collision scan failed one. An unpinned second reader of one fact is the shape
+// the badge writers drifted apart in.
+//
+// `CLAUDE_CONFIG_DIR` as well as `--claude-dir`, because the badge follows the
+// flag and liveness follows the variable.
+test('a session whose process is gone is not listed as live', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
+  const seed = (pid, id) => fs.writeFileSync(
+    path.join(cfg, 'sessions', pid + '.json'), JSON.stringify({ pid, sessionId: id }));
+  // This process is the self-check `readLive` needs, so the answer is `known`
+  // rather than the unknown that makes everything live.
+  seed(process.pid, A);
+
+  run(dir, ['start', '--session', A, '--task', 'mine'], { CLAUDE_CONFIG_DIR: cfg });
+  run(dir, ['start', '--session', B, '--task', 'theirs'], { CLAUDE_CONFIG_DIR: cfg });
+
+  const shown = run(dir, ['show', '--session', A], { CLAUDE_CONFIG_DIR: cfg }).out;
+  assert.equal(/theirs/.test(shown), false, 'listed a session with no live process:\n' + shown);
+
+  // The control, so the assertion above is about liveness rather than about
+  // `show` never listing anything. `process.ppid` is the runner waiting on this
+  // file and cannot have gone while the test runs.
+  seed(process.ppid, B);
+  assert.match(run(dir, ['show', '--session', A], { CLAUDE_CONFIG_DIR: cfg }).out, /theirs/);
+});
+
+// Nothing can check a neighbour's liveness without knowing which registry to
+// look in, and only that session knows. Without it a session running under a
+// different CLAUDE_CONFIG_DIR reads as dead while its process is still there.
+test('start records the config dir this session runs under', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'live');
+  run(dir, ['start', '--session', A, '--task', 'x'], { CLAUDE_CONFIG_DIR: cfg });
+  assert.equal(entry(dir, A).configDir, cfg);
+});
+
+// The task moves between sessions; the directory belongs to the session. The
+// one giving the task up may already have exited.
+test('adopt records the config dir of the session taking over, not the one giving up', () => {
+  const dir = root();
+  run(dir, ['start', '--session', B, '--task', 'theirs'], { CLAUDE_CONFIG_DIR: path.join(dir, 'theirs') });
+  run(dir, ['adopt', B, '--session', A], { CLAUDE_CONFIG_DIR: path.join(dir, 'mine') });
+  assert.equal(entry(dir, A).configDir, path.join(dir, 'mine'));
 });
