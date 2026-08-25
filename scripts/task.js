@@ -25,7 +25,7 @@ const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
 const { overlapPaths } = require('../lib/overlap.js');
-const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass } = require('../lib/stages.js');
+const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 
 const GUARDS = ['ask', 'deny', 'off'];
 
@@ -463,11 +463,16 @@ function cmdAdopt(root, opts) {
 
     const stamp = now();
     const claims = registry.claimsOf(source);
+    const adoptedRoute = normaliseRoute(source.route) || FULL_ROUTE.slice();
     const data = {
         task: source.task,
         project: registry.projectOf(source) || undefined,
         claims: claims.length ? claims : undefined,
-        route: normaliseRoute(source.route) || FULL_ROUTE.slice(),
+        route: adoptedRoute,
+        // Derived rather than copied from `source.class`: a class copied across
+        // can name a route the record does not have, which is this defect one
+        // session sideways.
+        class: classForRoute(adoptedRoute) || undefined,
         stage: source.stage || 'survey',
         // This session's, not the source's. The task moves between sessions and
         // the directory belongs to the session — the one giving it up may
@@ -577,6 +582,11 @@ function cmdRoute(root, opts) {
 
     const before = normaliseRoute(data.route) || FULL_ROUTE;
     data.route = given;
+    // The class is the route said out loud, and it is injected on every prompt.
+    // Left behind, it describes stages the new route does not contain.
+    const cls = classForRoute(given);
+    if (cls) data.class = cls;
+    else delete data.class;
     if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
     const clash = collisions(root, id, registry.claimsOf(data));
     showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data));
