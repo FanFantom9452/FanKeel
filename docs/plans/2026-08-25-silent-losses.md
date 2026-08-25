@@ -138,11 +138,51 @@ test('two processes adding claims at once keep all of them', async () => {
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+A second test, because the first passes whether or not the wait between attempts
+happens — with two processes and a two-millisecond critical section, two hundred
+attempts with no delay usually still get in:
+
+```js
+// The wait is two hundred attempts five milliseconds apart, which is a second —
+// a fifth of the hooks' own timeout. Spinning without the delay burns all two
+// hundred in a few milliseconds, which still passes the test above and still
+// drops the write the moment anybody holds the lock longer than that. The
+// releaser is a second process because the wait is synchronous: a timer in this
+// one would not fire until after the call it is meant to interrupt returned.
+test('a writer waits out a lock somebody else is holding', async () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, { task: 't', active: true, stage: 'build', claims: [] });
+  const lock = path.join(root, '.fankeel', 'sessions', SID + '.lock');
+  fs.mkdirSync(lock);
+
+  const releaser = path.join(root, 'release.js');
+  fs.writeFileSync(releaser,
+    'const fs = require("node:fs");
+'
+    + 'const [lock, ms] = process.argv.slice(2);
+'
+    + 'Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Number(ms));
+'
+    + 'fs.rmdirSync(lock);
+');
+  // Well past a spin, and well inside both the 1s cap and the 5s staleness
+  // threshold — so this measures waiting rather than breaking.
+  const kid = spawn(process.execPath, [releaser, lock, '300'], { stdio: 'ignore' });
+
+  const ok = registry.addClaim(root, SID, 'waited.js');
+  await new Promise((done) => kid.on('exit', done));
+
+  assert.equal(ok, true, 'gave up instead of waiting');
+  assert.deepEqual(registry.claimsOf(registry.readSession(root, SID)), ['waited.js']);
+});
+```
+
+- [ ] **Step 2: Run them and watch them fail**
 
 Run: `node --test tests/registry.test.js`
-Expected: FAIL, `kept 20 of 40` or a nearby number. The number varies run to run;
-that it is under 40 is the point.
+Expected: FAIL twice — `kept 20 of 40` or a nearby number, and `gave up instead
+of waiting`. The first number varies run to run; that it is under 40 is the
+point.
 
 - [ ] **Step 3: Add the lock**
 
@@ -193,11 +233,18 @@ function withLock(projectRoot, sessionId, fn) {
                 // measured is 8.6ms and the ceiling is `renameRetrying`'s own
                 // 250ms, so five seconds is far outside anything real — and a
                 // hook killed at its own 5s timeout cannot have held it longer.
-                if (Date.now() - fs.statSync(lock).mtimeMs > LOCK_STALE_MS) fs.rmdirSync(lock);
-                continue;
+                if (Date.now() - fs.statSync(lock).mtimeMs > LOCK_STALE_MS) {
+                    fs.rmdirSync(lock);
+                    continue;
+                }
             } catch (e2) {
-                // Gone already, or somebody else broke it first. Try again.
+                // Gone already, or somebody else broke it first. Try again at
+                // once: there is nothing left to wait for.
+                continue;
             }
+            // Only a lock somebody is legitimately holding is worth sleeping
+            // over. Continuing here instead would spin all two hundred attempts
+            // out in a few milliseconds and turn a one-second wait into none.
             sleepMs(LOCK_DELAY_MS);
         }
     }
