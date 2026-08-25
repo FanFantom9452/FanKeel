@@ -95,7 +95,7 @@ function main(raw) {
     // in your files and gone from them at once.
     const liveState = live.readLive(live.liveConfigDir(), sessionId);
     const mineClaims = registry.claimsOf(mine);
-    const alive = others.filter((o) => live.isLive(liveState, o.sessionId));
+    const alive = others.filter((o) => live.isLive(liveState, o.sessionId, o.data && o.data.configDir));
     const overlapping = alive.filter((o) => overlapPaths(mineClaims, registry.claimsOf(o.data)).length > 0).length;
 
     // Output first, side effects after. A failure while refreshing a timestamp or

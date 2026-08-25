@@ -196,7 +196,7 @@ function collisions(root, sessionId, claims) {
     const liveState = live.readLive(live.liveConfigDir(), sessionId);
     for (const other of registry.readActive(root)) {
         if (other.sessionId === sessionId) continue;
-        if (!live.isLive(liveState, other.sessionId)) continue;
+        if (!live.isLive(liveState, other.sessionId, other.data && other.data.configDir)) continue;
         const shared = overlapPaths(claims, registry.claimsOf(other.data));
         if (shared.length) out.push({ task: other.data.task || 'untitled', shared });
     }
@@ -229,7 +229,8 @@ function cmdShow(root, opts) {
     // is no id to self-check against, `readLive` reports unknown, and unknown is
     // every entry — the same loud side every other reader of this falls back to.
     const liveState = live.readLive(live.liveConfigDir(), id);
-    const others = active.filter((e) => e.sessionId !== id && live.isLive(liveState, e.sessionId));
+    const others = active.filter((e) => e.sessionId !== id
+        && live.isLive(liveState, e.sessionId, e.data && e.data.configDir));
     if (others.length) {
         lines.push('');
         lines.push('other live sessions:');
@@ -295,6 +296,14 @@ function cmdStart(root, opts) {
         project,
         route,
         class: opts.class ? String(opts.class).trim().toLowerCase() : undefined,
+        // Which registry answers "is that session still running". Only this
+        // session knows, and a reader under a different CLAUDE_CONFIG_DIR has no
+        // way to guess it — without this it judged a running neighbour dead.
+        //
+        // `liveConfigDir`, not `claudeDir`: this names where the liveness file
+        // is, and liveness is read from CLAUDE_CONFIG_DIR. `--claude-dir` moves
+        // the badge and nothing else.
+        configDir: live.liveConfigDir() || undefined,
         stage: route[0],
         active: true,
         started: stamp,
@@ -460,6 +469,10 @@ function cmdAdopt(root, opts) {
         claims: claims.length ? claims : undefined,
         route: normaliseRoute(source.route) || FULL_ROUTE.slice(),
         stage: source.stage || 'survey',
+        // This session's, not the source's. The task moves between sessions and
+        // the directory belongs to the session — the one giving it up may
+        // already have exited.
+        configDir: live.liveConfigDir() || undefined,
         active: true,
         // The source's, not this stamp. `started` is the tie-break, and adopting
         // transfers the work rather than re-answering which session reached these

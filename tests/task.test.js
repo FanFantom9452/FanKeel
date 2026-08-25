@@ -170,8 +170,10 @@ test('a dead session holding the same file does not paint clash', () => {
   write(process.pid, B);
   write(spawnSync(process.execPath, ['-e', '0']).pid, A);
 
-  started(dir, A, 'tidy the project cards', 'Waypoint');
-  started(dir, B, 'fix the card link', 'Waypoint');
+  // The same registry for all three, because each entry now records the one it
+  // was started under and a reader checks the neighbour against that.
+  run(dir, ['start', '--session', A, '--task', 'tidy the project cards'], { CLAUDE_CONFIG_DIR: cfg });
+  run(dir, ['start', '--session', B, '--task', 'fix the card link'], { CLAUDE_CONFIG_DIR: cfg });
   registry.addClaim(dir, A, 'Waypoint/web/src/Card.jsx');
   registry.addClaim(dir, B, 'Waypoint/web/src/Card.jsx');
 
@@ -553,4 +555,23 @@ test('a session whose process is gone is not listed as live', () => {
   // file and cannot have gone while the test runs.
   seed(process.ppid, B);
   assert.match(run(dir, ['show', '--session', A], { CLAUDE_CONFIG_DIR: cfg }).out, /theirs/);
+});
+
+// Nothing can check a neighbour's liveness without knowing which registry to
+// look in, and only that session knows. Without it a session running under a
+// different CLAUDE_CONFIG_DIR reads as dead while its process is still there.
+test('start records the config dir this session runs under', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'live');
+  run(dir, ['start', '--session', A, '--task', 'x'], { CLAUDE_CONFIG_DIR: cfg });
+  assert.equal(entry(dir, A).configDir, cfg);
+});
+
+// The task moves between sessions; the directory belongs to the session. The
+// one giving the task up may already have exited.
+test('adopt records the config dir of the session taking over, not the one giving up', () => {
+  const dir = root();
+  run(dir, ['start', '--session', B, '--task', 'theirs'], { CLAUDE_CONFIG_DIR: path.join(dir, 'theirs') });
+  run(dir, ['adopt', B, '--session', A], { CLAUDE_CONFIG_DIR: path.join(dir, 'mine') });
+  assert.equal(entry(dir, A).configDir, path.join(dir, 'mine'));
 });

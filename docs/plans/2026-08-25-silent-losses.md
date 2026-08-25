@@ -445,8 +445,10 @@ git commit -m "test: the listing's liveness filter was deletable without a failu
 
 **Interfaces:**
 - Consumes: `runningIds(configDir)` — already in `lib/live.js`, returns a `Set`
-  or `null`. `claudeDir(opts)` — already at `scripts/task.js:61`, resolving
-  `--claude-dir`, then `CLAUDE_CONFIG_DIR`, then `~/.claude`.
+  or `null`. `live.liveConfigDir()` — already in `lib/live.js`, resolving
+  `CLAUDE_CONFIG_DIR` then `~/.claude`. Not `claudeDir(opts)`: that honours
+  `--claude-dir`, which moves the statusline badge and nothing else, while this
+  field names where the liveness file is.
 - Produces: `readLive(configDir, mySessionId)` now returns
   `{ known: boolean, ids: Set, configDir: string, others: Map }`.
   `isLive(state, sessionId, theirConfigDir)` — the third argument is optional and
@@ -579,7 +581,7 @@ In `cmdStart`, inside the `data` object literal at `scripts/task.js:290`, beside
         // Which registry answers "is that session still running". Only this
         // session knows, and a reader in another config dir has no way to guess
         // it — so it is recorded here rather than derived anywhere else.
-        configDir: claudeDir(opts) || undefined,
+        configDir: live.liveConfigDir() || undefined,
 ```
 
 In `cmdAdopt`, the record for the taking session is the `data` literal at
@@ -587,7 +589,7 @@ In `cmdAdopt`, the record for the taking session is the `data` literal at
 — the task moves between sessions, the directory belongs to the session:
 
 ```js
-        configDir: claudeDir(opts) || undefined,
+        configDir: live.liveConfigDir() || undefined,
 ```
 
 Not `source.configDir`: that is where the session giving the task up was
