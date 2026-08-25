@@ -1,6 +1,6 @@
 ---
-status: design-intent
-last_verified: 2026-08-25
+status: current
+last_verified: 2026-08-26
 source_of_truth: lib/registry.js, lib/live.js, scripts/task.js, scripts/todo-check.js
 ---
 

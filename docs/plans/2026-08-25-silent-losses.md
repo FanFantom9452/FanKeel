@@ -1,6 +1,6 @@
 ---
-status: design-intent
-last_verified: 2026-08-25
+status: current
+last_verified: 2026-08-26
 source_of_truth: lib/registry.js, lib/live.js, lib/stages.js, scripts/task.js, scripts/todo-check.js
 ---
 
@@ -97,7 +97,7 @@ changes the signature underneath.
   already-noted case. `update` returns `false` when there is no readable record,
   when the lock could not be taken, or when the write failed.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In `tests/registry.test.js`, after the existing claims tests (the file ends at
 `claiming leaves every other field alone`). This file imports no child process
@@ -177,14 +177,14 @@ test('a writer waits out a lock somebody else is holding', async () => {
 });
 ```
 
-- [ ] **Step 2: Run them and watch them fail**
+- [x] **Step 2: Run them and watch them fail**
 
 Run: `node --test tests/registry.test.js`
 Expected: FAIL twice — `kept 20 of 40` or a nearby number, and `gave up instead
 of waiting`. The first number varies run to run; that it is under 40 is the
 point.
 
-- [ ] **Step 3: Add the lock**
+- [x] **Step 3: Add the lock**
 
 In `lib/registry.js`, immediately above `function touch(`:
 
@@ -280,7 +280,7 @@ function update(projectRoot, sessionId, change) {
 }
 ```
 
-- [ ] **Step 4: Move the four writers onto it**
+- [x] **Step 4: Move the four writers onto it**
 
 Replace the bodies of the four functions, keeping every comment already above
 them:
@@ -329,7 +329,7 @@ function setNext(projectRoot, sessionId, next) {
 
 Add `update` to `module.exports` beside `writeSession`.
 
-- [ ] **Step 5: Run the whole suite**
+- [x] **Step 5: Run the whole suite**
 
 Run: `npm test`
 Expected: PASS, 600 tests. The new test says `40 of 40`. The existing tests
@@ -339,7 +339,7 @@ leaves every other field byte-identical` and `a claim on a session with no entry
 creates nothing` are the ones that pin the `false` branch — if any of them fails,
 the `change` return value is inverted somewhere.
 
-- [ ] **Step 6: Check nothing was left behind**
+- [x] **Step 6: Check nothing was left behind**
 
 Run: `node --test tests/registry.test.js`
 Expected: PASS. Then confirm no `.lock` directory survives a normal write — the
@@ -347,7 +347,7 @@ existing test `writeSession renames a temp file into place and leaves nothing
 behind` covers the temp file; add nothing new, but read its assertion to be sure
 the directory listing it checks would have caught a stray lock.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add lib/registry.js tests/registry.test.js
@@ -371,7 +371,7 @@ Task 3 changes the call underneath it.
   environment overlay.
 - Produces: nothing other tasks consume.
 
-- [ ] **Step 1: Write the test**
+- [x] **Step 1: Write the test**
 
 `scripts/task.js:231` reads liveness from `live.liveConfigDir()`, which follows
 `CLAUDE_CONFIG_DIR` rather than `--claude-dir`, so the test sets the environment
@@ -410,12 +410,12 @@ test('a session whose process is gone is not listed as live', () => {
 `process.ppid` is the test runner that spawned this file and cannot exit while
 the test runs — `tests/live.test.js` uses it for the same reason.
 
-- [ ] **Step 2: Run it and watch it pass**
+- [x] **Step 2: Run it and watch it pass**
 
 Run: `node --test tests/task.test.js`
 Expected: PASS. This one is green from the start; it is a characterisation test.
 
-- [ ] **Step 3: Prove it would fail**
+- [x] **Step 3: Prove it would fail**
 
 Delete ` && live.isLive(liveState, e.sessionId)` from `scripts/task.js:232`, run
 `node --test tests/task.test.js`, and confirm the new test FAILS with `listed a
@@ -425,7 +425,7 @@ session with no live process`. Then restore the line with
 A characterisation test that has not been watched fail is a test nobody has
 checked.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add tests/task.test.js
@@ -455,7 +455,7 @@ git commit -m "test: the listing's liveness filter was deletable without a failu
   `undefined` keeps today's answer exactly. A record's `configDir` field is a
   string or absent.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In `tests/live.test.js`, after `runningIds separates a directory it cannot read
 from one holding nobody`:
@@ -497,13 +497,13 @@ test('a neighbour naming a directory that is not there is live rather than dead'
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `node --test tests/live.test.js`
 Expected: FAIL on `with it, alive` — `isLive` takes two arguments today and
 ignores the third.
 
-- [ ] **Step 3: Change `lib/live.js`**
+- [x] **Step 3: Change `lib/live.js`**
 
 Replace `readLive` and `isLive`:
 
@@ -541,7 +541,7 @@ function isLive(state, sessionId, theirConfigDir) {
 }
 ```
 
-- [ ] **Step 4: Run it and watch it pass**
+- [x] **Step 4: Run it and watch it pass**
 
 Run: `node --test tests/live.test.js`
 Expected: PASS, including the eleven tests already there — `unknown liveness
@@ -549,7 +549,7 @@ makes every session live` and `a missing sessions directory is unknown rather
 than nobody being live` both call `isLive` with two arguments and must keep
 their answers.
 
-- [ ] **Step 5: Record the directory, with a failing test first**
+- [x] **Step 5: Record the directory, with a failing test first**
 
 In `tests/task.test.js`:
 
@@ -572,7 +572,7 @@ test('adopt carries the config dir of the session taking it over, not the one gi
 
 Run: `node --test tests/task.test.js`. Expected: FAIL, `undefined`.
 
-- [ ] **Step 6: Write it in `scripts/task.js`**
+- [x] **Step 6: Write it in `scripts/task.js`**
 
 In `cmdStart`, inside the `data` object literal at `scripts/task.js:290`, beside
 `project` and `class`, which are dropped the same way when undefined:
@@ -595,7 +595,7 @@ In `cmdAdopt`, the record for the taking session is the `data` literal at
 Not `source.configDir`: that is where the session giving the task up was
 running, and it may already have exited.
 
-- [ ] **Step 7: Pass the neighbour's directory at all four call sites**
+- [x] **Step 7: Pass the neighbour's directory at all four call sites**
 
 ```js
 // lib/guard.js:100 — `data` is already bound one line above
@@ -612,12 +612,12 @@ running, and it may already have exited.
         && live.isLive(liveState, e.sessionId, e.data && e.data.configDir));
 ```
 
-- [ ] **Step 8: Run the whole suite**
+- [x] **Step 8: Run the whole suite**
 
 Run: `npm test`
 Expected: PASS. Task 2's test is the one that proves `:232` still filters at all.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add lib/live.js lib/guard.js hooks/inject.js scripts/task.js tests/live.test.js tests/task.test.js
@@ -638,7 +638,7 @@ git commit -m "fix: a session under another config dir is running, not dead"
 - Produces: `classForRoute(route) -> string | null` — the class name whose route
   is exactly this one, or `null`. Exported from `lib/stages.js`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In `tests/route.test.js`, after `a class picks the route and is recorded on the
 entry`:
@@ -679,12 +679,12 @@ a namespace. Add the two names to that line:
 const { normaliseRoute, positionIn, nextStage, FULL_ROUTE, NAMES, routeForClass, classForRoute } = require('../lib/stages.js');
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `node --test tests/route.test.js`
 Expected: FAIL — `'bounded' !== 'spike'`, and `classForRoute is not a function`.
 
-- [ ] **Step 3: Add `classForRoute`**
+- [x] **Step 3: Add `classForRoute`**
 
 In `lib/stages.js`, directly below `routeForClass`:
 
@@ -707,7 +707,7 @@ function classForRoute(route) {
 
 Add `classForRoute` to `module.exports`.
 
-- [ ] **Step 4: Use it in `cmdRoute`**
+- [x] **Step 4: Use it in `cmdRoute`**
 
 In `scripts/task.js`, replace the single line `data.route = given;` at :566 with:
 
@@ -723,7 +723,7 @@ In `scripts/task.js`, replace the single line `data.route = given;` at :566 with
 Add `classForRoute` to the destructured `lib/stages.js` import at the top of
 `scripts/task.js`, beside `routeForClass` and `normaliseRoute`.
 
-- [ ] **Step 5: Adopt carries the class, because it carries the route**
+- [x] **Step 5: Adopt carries the class, because it carries the route**
 
 Found while pinning line numbers, not in the spec. `cmdAdopt` copies `task`,
 `project`, `claims`, `route` and `stage` from the source record and **not**
@@ -763,13 +763,13 @@ and inside the literal replace `route: normaliseRoute(source.route) || FULL_ROUT
 
 Run: `node --test tests/route.test.js`. Expected: PASS.
 
-- [ ] **Step 6: Run it and watch it pass**
+- [x] **Step 6: Run it and watch it pass**
 
 Run: `npm test`
 Expected: PASS. `neither given still works, and still records no class` is the
 existing test that pins the absent-class shape.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add lib/stages.js scripts/task.js tests/route.test.js
@@ -788,7 +788,7 @@ git commit -m "fix: the class follows the route it names"
 - Consumes: `check(file)` and `report(result)`, unchanged.
 - Produces: `main(argv)` unchanged in signature — `{ text, ok }`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In `tests/todo-check.test.js`, after `no TODO.md is not a failure`:
 
@@ -823,13 +823,13 @@ test('a positional argument is still the file to check', () => {
 
 `tests/todo-check.test.js:10` already imports it as `todo`.
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `node --test tests/todo-check.test.js`
 Expected: FAIL on the first test — `out.ok` is `true`, because `--root`'s value
 was read as the file path and reading a directory reports missing.
 
-- [ ] **Step 3: Parse the flag**
+- [x] **Step 3: Parse the flag**
 
 Replace `main` in `scripts/todo-check.js`:
 
@@ -861,19 +861,19 @@ function main(argv) {
 }
 ```
 
-- [ ] **Step 4: Run it and watch it pass**
+- [x] **Step 4: Run it and watch it pass**
 
 Run: `npm test`
 Expected: PASS. `this project's own TODO.md is an index` and `no TODO.md is not a
 failure` both call `main` in the old shapes and must keep their answers.
 
-- [ ] **Step 5: Check it by hand, on this repository**
+- [x] **Step 5: Check it by hand, on this repository**
 
 Run: `node scripts/todo-check.js --root .`
 Expected: `fankeel todo-check: 19 entries, all links resolve, none over the cap.`
 and exit 0 — the same answer as the bare command, which is the whole point.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add scripts/todo-check.js tests/todo-check.test.js
@@ -906,7 +906,7 @@ for cannot pass the gate that plan's own `land` stage runs.
   block's lines blanked. Internal to `scripts/docs-check.js`; exported only if
   the test needs it directly.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/docs.test.js` already has `tree(files)`, `withTree(root, preset)` and
 `run(root)`; `run` returns `{ out, code }`. The fixture needs `withTree` so that
@@ -949,12 +949,12 @@ test('a link outside a fence is still a reference', () => {
 Drop the `INDEX` helper into the same place; it exists only so the two fixtures
 do not disagree about what the index says.
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `node --test tests/docs.test.js`
 Expected: FAIL on the first test — `reported a quoted link`.
 
-- [ ] **Step 3: Blank the fences**
+- [x] **Step 3: Blank the fences**
 
 In `scripts/docs-check.js`, beside `LINK` at `:32`:
 
@@ -986,7 +986,7 @@ function withoutFences(text) {
 }
 ```
 
-- [ ] **Step 4: Scan the blanked copy**
+- [x] **Step 4: Scan the blanked copy**
 
 In `checkDoc`, immediately after `const lines = text.split('
 ');` at `:123`:
@@ -1011,12 +1011,12 @@ Then change `:129` and `:131`-`:133` to read from it:
 
 Do the same at the archive scan near `:256`: build `const linkText = withoutFences(text);` after the `readFile` and run `LINK` over it, including the `text.slice(0, m.index)` in the finding at `:263`.
 
-- [ ] **Step 5: Run it and watch it pass**
+- [x] **Step 5: Run it and watch it pass**
 
 Run: `npm test`
 Expected: PASS.
 
-- [ ] **Step 6: Run it on this repository**
+- [x] **Step 6: Run it on this repository**
 
 Run: `node scripts/docs-check.js`
 Expected: every `links to one.md` finding against
@@ -1026,7 +1026,7 @@ fix is what the run says, not a number written here. Findings from
 `session-31b5f48b-full.md` are a separate question and are not this task's to
 fix — say what is left rather than treating the exit code as the answer.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add scripts/docs-check.js tests/docs.test.js
@@ -1041,3 +1041,10 @@ git commit -m "fix: a link inside a code fence is a quotation, not a reference"
 moves from `design-intent` to `current`, at `audit` and `land` respectively —
 neither is a task above, because neither is code and both depend on what the
 build actually produced.
+
+What the build actually produced, against this: six rulings in the ledger, and
+one step Task 6 grew during the whole-branch review. Blanking fences is right,
+and CommonMark runs an unclosed one to the end of the document — so Task 6 as
+written would have swallowed every link below a stray fence without a word, on
+the branch whose entire subject is loss that looks like success. An unclosed
+fence is now a finding of its own.
