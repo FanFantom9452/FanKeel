@@ -181,11 +181,12 @@ $badgeColors.fankeel = @{ off = 240; lite = 245; full  = 250; ultra = 255
 The `.sh` equivalent, and what each colour is doing, is in
 [docs/statusline.md](docs/statusline.md).
 
-## The two audits
+## The three scanners
 
 | | |
 |---|---|
 | `node scripts/docs-check.js` | Every reference still resolves. A second to run, and the `land` rules call for it. |
+| `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged, the weight of what is ignored, directories holding no files. Everything from git, and it never deletes. |
 | `/fankeel-audit` | The fortnightly sweep: which pages have stopped being true, and which two of them disagree. Runs both scanners, reads the shortlist they produce, then offers the cleanup. It does not need an active task, so it also works on a repository nobody is in the middle of. |
 
 Neither one decides that two documents contradict each other, because nothing

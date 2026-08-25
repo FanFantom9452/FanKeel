@@ -1,0 +1,245 @@
+#!/usr/bin/env node
+'use strict';
+
+// What nobody decided about.
+//
+// docs-check asks whether a reference still resolves. docs-audit asks whether a
+// page is still true. Neither looks at the tree those files live in, and a
+// directory whose fate nobody chose stays invisible until somebody notices it is
+// 73 GB.
+//
+// Everything here comes from git, and that is the whole design. There is no
+// heuristic for "unused" and no list of suspicious filenames: a path is undecided
+// because nobody committed it and nobody ignored it, which is a fact about the
+// repository rather than a guess about intent.
+//
+// It reports. It never deletes, never moves and never writes a .gitignore — the
+// audit gate offers the cleanup and the user chooses, exactly as it does for a
+// document.
+
+const { execFileSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const { isRepo } = require('../lib/tracked.js');
+
+const MAX_PER_SECTION = 25;
+
+// Best effort, like every other shell-out in this plugin. A git that is missing,
+// too old for a flag, or refusing for a reason of its own gives back null, and
+// the section it feeds is simply absent from the report.
+function git(root, args) {
+    try {
+        return execFileSync('git', args, {
+            cwd: root,
+            encoding: 'utf8',
+            stdio: ['ignore', 'pipe', 'ignore'],
+            maxBuffer: 32 * 1024 * 1024,
+        }).split(/\r?\n/).filter(Boolean);
+    } catch (e) {
+        return null;
+    }
+}
+
+// A `release/` directory of 73 GB is the case this exists for, and walking it
+// fully to add up bytes would cost more than the answer is worth. The report says
+// "at least" where it stopped early, rather than presenting a partial total as a
+// whole one.
+const MAX_SIZE_ENTRIES = 20000;
+
+function sizeOf(dir) {
+    let bytes = 0;
+    let seen = 0;
+    const stack = [dir];
+    while (stack.length && seen < MAX_SIZE_ENTRIES) {
+        // Held in a binding rather than read back off the entry. `Dirent.parentPath`
+        // only exists from Node 20.12, this package declares no engine floor, and
+        // the wrong parent silently sizes the wrong directory.
+        const here = stack.pop();
+        let entries;
+        try {
+            entries = fs.readdirSync(here, { withFileTypes: true });
+        } catch (e) {
+            continue;
+        }
+        for (const entry of entries) {
+            seen++;
+            const full = path.join(here, entry.name);
+            if (entry.isDirectory()) stack.push(full);
+            else if (entry.isFile()) {
+                try {
+                    bytes += fs.statSync(full).size;
+                } catch (e) { /* vanished mid-walk */ }
+            }
+        }
+    }
+    return { bytes, partial: seen >= MAX_SIZE_ENTRIES };
+}
+
+// Directories holding no files at any depth. Git cannot represent one, so it is
+// the one kind of residue no other scanner here can see — and that same fact is
+// why it is context rather than a defect: nobody chose it, because there was
+// never anything to choose.
+function emptyDirs(root) {
+    const found = [];
+    const walk = (rel) => {
+        let entries;
+        try {
+            entries = fs.readdirSync(rel ? path.join(root, rel) : root, { withFileTypes: true });
+        } catch (e) {
+            return false;
+        }
+        let hasFile = false;
+        for (const entry of entries) {
+            if (entry.name === '.git') continue;
+            const sub = rel ? rel + '/' + entry.name : entry.name;
+            if (entry.isDirectory()) {
+                if (walk(sub)) hasFile = true;
+            } else {
+                hasFile = true;
+            }
+        }
+        // Only the topmost empty directory earns a line. Reporting `hollow` and
+        // `hollow/deeper` separately says the same thing twice.
+        if (!hasFile && rel && !found.some((f) => rel.startsWith(f + '/'))) found.push(rel);
+        return hasFile;
+    };
+    walk('');
+    return found.sort();
+}
+
+function worktreesOf(root) {
+    const lines = git(root, ['worktree', 'list', '--porcelain']);
+    if (!lines) return [];
+    const all = [];
+    let current = null;
+    for (const line of lines) {
+        if (line.startsWith('worktree ')) {
+            current = { path: line.slice('worktree '.length), branch: null };
+            all.push(current);
+        } else if (line.startsWith('branch ') && current) {
+            current.branch = line.slice('branch '.length).replace(/^refs\/heads\//, '');
+        }
+    }
+    // The first entry is the main working tree — the one you are standing in.
+    return all.slice(1);
+}
+
+function scan(root) {
+    if (!isRepo(root)) {
+        return { repo: false, branch: null, undecided: [], worktrees: [], weight: [], empty: [] };
+    }
+
+    const branch = ((git(root, ['rev-parse', '--abbrev-ref', 'HEAD']) || [])[0] || 'HEAD').trim();
+    const ignored = git(root, ['ls-files', '--others', '--ignored', '--exclude-standard', '--directory']) || [];
+
+    // The two sections are disjoint, and empty wins. `ls-files --others
+    // --directory` does list an empty untracked directory — `git status` does not
+    // — so without this subtraction the same path is a defect and a piece of
+    // context at once. It belongs in the second: git cannot record an empty
+    // directory at all, so "commit it" is not one of the three choices the
+    // undecided section is asking somebody to make.
+    const empty = emptyDirs(root);
+    const hollow = new Set(empty);
+    const undecided = (git(root, ['ls-files', '--others', '--exclude-standard', '--directory']) || [])
+        .filter((rel) => !hollow.has(rel.replace(/\/$/, '')));
+
+    // Merged into what you are standing on, not into a guessed default. Which
+    // branch is "the" branch is a question this cannot answer without inventing
+    // an answer, and the report names the one it used.
+    const merged = new Set((git(root, ['branch', '--merged', 'HEAD', '--format=%(refname:short)']) || [])
+        .map((s) => s.trim()).filter(Boolean));
+
+    const worktrees = worktreesOf(root)
+        .filter((w) => w.branch && merged.has(w.branch))
+        .map((w) => ({ path: w.path, branch: w.branch }));
+
+    const weight = ignored
+        .map((rel) => {
+            let stat;
+            try {
+                stat = fs.statSync(path.join(root, rel));
+            } catch (e) {
+                return null;
+            }
+            if (!stat.isDirectory()) return { path: rel, bytes: stat.size, partial: false };
+            const size = sizeOf(path.join(root, rel));
+            return { path: rel, bytes: size.bytes, partial: size.partial };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.bytes - a.bytes);
+
+    return { repo: true, branch, undecided, worktrees, weight, empty };
+}
+
+const human = (n) => (n < 1024 ? n + 'B'
+    : n < 1024 * 1024 ? (n / 1024).toFixed(1) + 'K'
+    : n < 1024 * 1024 * 1024 ? (n / (1024 * 1024)).toFixed(1) + 'M'
+    : (n / (1024 * 1024 * 1024)).toFixed(1) + 'G');
+
+const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
+
+function section(lines, title, rows) {
+    if (!rows.length) return;
+    lines.push('', title);
+    for (const row of rows.slice(0, MAX_PER_SECTION)) lines.push('  ' + row);
+    if (rows.length > MAX_PER_SECTION) {
+        lines.push('  ... and ' + (rows.length - MAX_PER_SECTION) + ' more, not listed');
+    }
+}
+
+// Only the first two sections fail the run. A command that always exits non-zero
+// has an exit code that means nothing, and the weight of a build directory is a
+// fact about the project rather than a fault in it.
+function defects(result) {
+    return result.undecided.length + result.worktrees.length;
+}
+
+function report(result) {
+    if (!result.repo) {
+        return 'fankeel residue — not a git repository.\n'
+             + 'Every judgement here comes from what is committed and what is ignored, and\n'
+             + 'without those there is nothing to compare against. Nothing is reported.';
+    }
+
+    const lines = ['fankeel residue — on ' + result.branch];
+
+    section(lines, plural(result.undecided.length, 'path', 'paths')
+        + ' nobody has decided about — not committed, not ignored:', result.undecided);
+    section(lines, plural(result.worktrees.length, 'worktree is', 'worktrees are')
+        + ' already merged into ' + result.branch + ':',
+        result.worktrees.map((w) => w.path + '  (' + w.branch + ')'));
+    section(lines, plural(result.weight.length, 'ignored path carries', 'ignored paths carry')
+        + ' weight:',
+        result.weight.map((w) => w.path + '  ' + human(w.bytes) + (w.partial ? '  (at least)' : '')));
+    section(lines, plural(result.empty.length, 'directory holds', 'directories hold')
+        + ' no files at any depth:', result.empty);
+
+    if (!defects(result)) lines.push('', 'Nothing undecided and no spent worktrees.');
+    lines.push('', 'Undecided paths and merged worktrees are defects: somebody has to commit,');
+    lines.push('ignore or delete each one. Weight and empty directories are context. Nothing');
+    lines.push('here is deleted by this command — the audit gate offers the cleanup.');
+    return lines.join('\n');
+}
+
+function parseArgs(argv) {
+    let root = process.cwd();
+    for (let i = 0; i < argv.length; i++) {
+        if (argv[i] === '--root' && argv[i + 1]) root = argv[++i];
+    }
+    return { root };
+}
+
+function main(argv) {
+    const { root } = parseArgs(argv);
+    return report(scan(root));
+}
+
+if (require.main === module) {
+    const { root } = parseArgs(process.argv.slice(2));
+    const result = scan(root);
+    process.stdout.write(report(result) + '\n');
+    process.exit(defects(result) > 0 ? 1 : 0);
+}
+
+module.exports = { scan, report, defects, parseArgs, main, human, emptyDirs };

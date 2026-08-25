@@ -20,10 +20,11 @@ contradict each other, and nothing here pretends to: what the sweep does is turn
 describe `lib/badge.js`, and one has not been touched since before it changed".
 That is a shortlist someone can finish.
 
-## Run both
+## Run all three
 
 ```
 node <plugin>/scripts/docs-check.js [--root <dir>]
+node <plugin>/scripts/residue.js [--root <dir>]
 node <plugin>/scripts/docs-audit.js [--root <dir>] [--since <days>]
 ```
 
@@ -32,6 +33,25 @@ defaults to 14 days, which is the cadence this is built for: not on a typo fix,
 not skipped for a quarter.
 
 Quote what came back. A description of what a scanner said is not what it said.
+
+### The one that is not about documents
+
+`residue.js` asks what is in this tree that nobody decided about. Everything it
+knows comes from git, so there is no heuristic for "unused" and no list of
+suspicious filenames.
+
+| | | fails the run |
+|---|---|---|
+| untracked and not ignored | somebody has to commit it, ignore it or delete it, and nobody has | yes |
+| a worktree whose branch is merged | one that has been spent | yes |
+| ignored paths, with their size | a 73 GB build directory is not a bug; not knowing about it is | no |
+| directories with no files at any depth | git cannot record one, so "commit it" is not on the menu | no |
+
+The last two are context. Only the first two fail, because a command that always
+exits non-zero has an exit code that means nothing.
+
+It never deletes. Name the paths at the gate and let the user choose — the same
+contract every scanner here has, and the same one that governs documents.
 
 ## What the sweep reports
 

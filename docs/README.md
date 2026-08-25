@@ -41,11 +41,12 @@ here.
 | How that was built, task by task | [plans/2026-08-25-injected-layer.md](plans/2026-08-25-injected-layer.md) — *built, 0.27.0* |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 
-## The two audits
+## The three scanners
 
 | | |
 |---|---|
 | `node scripts/docs-check.js` | every reference still resolves. A second to run, before every land. |
+| `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged, the weight of what is ignored, directories holding no files. Everything from git, and it never deletes. |
 | `/fankeel-audit` | the fortnightly sweep: what has stopped being true, and which two pages disagree. Runs both scanners, reads the shortlist, offers the cleanup. |
 
 ## Roles

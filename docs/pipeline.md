@@ -655,6 +655,30 @@ Only what can be decided mechanically, and fast enough to sit in front of every
 land. Whether two documents contradict each other is not mechanical, and a script
 that guessed would produce findings nobody could act on.
 
+Beside it runs the one scanner that is not about documents at all:
+
+```
+$ node <plugin>/scripts/residue.js
+
+fankeel residue — on main
+
+1 path nobody has decided about — not committed, not ignored:
+  .claude/
+
+1 worktree is already merged into main:
+  /repo/.claude/worktrees/registry-staleness  (worktree-registry-staleness)
+
+4 ignored paths carry weight:
+  release/  73.1G
+  node_modules/  412.0M
+```
+
+Untracked and unignored means somebody has to commit it, ignore it or delete it
+and nobody has; a worktree whose branch is merged is one already spent. Those two
+fail the run. Weight and empty directories are context — a 73 GB build directory
+is not a bug, but not knowing about it is. Everything it knows comes from git,
+so there is no heuristic for "unused" and nothing is ever deleted by it.
+
 **What gets checked depends on the document's role.** An archive naming deleted
 code is an archive doing its job; a reference page doing the same is the bug. A
 plan naming files that do not exist yet is a plan. Reporting the three alike is
