@@ -41,6 +41,8 @@ here.
 | How that was built, task by task | [plans/2026-08-25-injected-layer.md](plans/2026-08-25-injected-layer.md) — *built, 0.27.0* |
 | Why the statusline said nothing while a task was being worked out | [plans/2026-08-25-init-scan-residue-design.md](plans/2026-08-25-init-scan-residue-design.md) — *built, 0.28.0* |
 | How that was built, task by task | [plans/2026-08-25-init-scan-residue.md](plans/2026-08-25-init-scan-residue.md) — *built, 0.28.0* |
+| Why five separate defects are one shape, and what each fix costs | [plans/2026-08-25-silent-losses-design.md](plans/2026-08-25-silent-losses-design.md) — *design-intent, not built* |
+| How that is being built, task by task | [plans/2026-08-25-silent-losses.md](plans/2026-08-25-silent-losses.md) — *design-intent, not built* |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 
 ## The three scanners
