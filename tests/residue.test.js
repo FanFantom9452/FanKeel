@@ -7,7 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
-const { scan, report, defects } = require('../scripts/residue.js');
+const { scan, report, defects, emptyDirs, sizeOf } = require('../scripts/residue.js');
 
 function repo() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-residue-'));
@@ -48,12 +48,43 @@ test('untracked and unignored is a defect; ignored is not', () => {
   assert.match(report(result), /nobody has decided/);
 });
 
-test('an empty directory is context, not a defect', () => {
+test('an empty directory is context, not a defect, and only the topmost', () => {
   const { root } = repo();
-  fs.mkdirSync(path.join(root, 'hollow', 'deeper'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'hollow', 'one', 'two'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'empty2'), { recursive: true });
   const result = scan(root);
-  assert.ok(result.empty.includes('hollow'), 'reported: ' + JSON.stringify(result.empty));
+  // deepEqual, not includes: `includes('hollow')` passes whether or not the
+  // three levels under it are also reported, which is how the every-level bug
+  // survived its own test.
+  assert.deepEqual(result.empty, ['empty2', 'hollow']);
   assert.equal(defects(result), 0, 'git cannot represent it, so nobody chose it');
+});
+
+test('emptyDirs keeps the parent when the whole branch is hollow', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-hollow-'));
+  fs.mkdirSync(path.join(root, 'a', 'b', 'c'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'kept'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'kept', 'f.txt'), 'x');
+  assert.deepEqual(emptyDirs(root), ['a']);
+});
+
+test('sizeOf says "at least" when it stopped early', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-size-'));
+  for (const dir of ['a', 'b']) {
+    fs.mkdirSync(path.join(root, dir), { recursive: true });
+    for (let i = 0; i < 3; i++) fs.writeFileSync(path.join(root, dir, 'f' + i), '0123456789');
+  }
+
+  const whole = sizeOf(root);
+  assert.equal(whole.bytes, 60);
+  assert.equal(whole.partial, false);
+
+  // The cap stops it between directories, not between files: it finishes the
+  // directory that crosses the line. Three entries in means the root and one of
+  // the two subdirectories, so half the bytes come back and `partial` says so.
+  const stopped = sizeOf(root, 3);
+  assert.equal(stopped.partial, true, 'the cap was reached');
+  assert.equal(stopped.bytes, 30, 'one directory of the two');
 });
 
 test('a worktree whose branch is merged is spent', () => {

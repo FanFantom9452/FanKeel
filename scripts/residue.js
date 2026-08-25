@@ -47,11 +47,14 @@ function git(root, args) {
 // whole one.
 const MAX_SIZE_ENTRIES = 20000;
 
-function sizeOf(dir) {
+// `cap` is here so the stopped-early path can be tested without building a
+// directory of twenty thousand files. Callers pass nothing.
+function sizeOf(dir, cap) {
+    const limit = cap === undefined ? MAX_SIZE_ENTRIES : cap;
     let bytes = 0;
     let seen = 0;
     const stack = [dir];
-    while (stack.length && seen < MAX_SIZE_ENTRIES) {
+    while (stack.length && seen < limit) {
         // Held in a binding rather than read back off the entry. `Dirent.parentPath`
         // only exists from Node 20.12, this package declares no engine floor, and
         // the wrong parent silently sizes the wrong directory.
@@ -73,7 +76,7 @@ function sizeOf(dir) {
             }
         }
     }
-    return { bytes, partial: seen >= MAX_SIZE_ENTRIES };
+    return { bytes, partial: seen >= limit };
 }
 
 // Directories holding no files at any depth. Git cannot represent one, so it is
@@ -99,13 +102,16 @@ function emptyDirs(root) {
                 hasFile = true;
             }
         }
-        // Only the topmost empty directory earns a line. Reporting `hollow` and
-        // `hollow/deeper` separately says the same thing twice.
-        if (!hasFile && rel && !found.some((f) => rel.startsWith(f + '/'))) found.push(rel);
+        if (!hasFile && rel) found.push(rel);
         return hasFile;
     };
     walk('');
-    return found.sort();
+    // Only the topmost empty directory earns a line: reporting `hollow` and
+    // `hollow/one/two` separately says the same thing three times. The filter runs
+    // after the walk rather than inside it, because depth-first pushes children
+    // before their parents — a check made on the way past would be asking whether
+    // the child sits under a parent nobody has found yet, and would never match.
+    return found.filter((rel) => !found.some((other) => rel.startsWith(other + '/'))).sort();
 }
 
 function worktreesOf(root) {
@@ -242,4 +248,4 @@ if (require.main === module) {
     process.exit(defects(result) > 0 ? 1 : 0);
 }
 
-module.exports = { scan, report, defects, parseArgs, main, human, emptyDirs };
+module.exports = { scan, report, defects, parseArgs, main, human, emptyDirs, sizeOf };
