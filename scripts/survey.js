@@ -166,7 +166,7 @@ function scan(root, terms) {
     // Sort is stable, so file order survives inside each group.
     decls.sort((a, b) => (b.named ? 1 : 0) - (a.named ? 1 : 0));
 
-    return { total: files.length, repos, walked, truncated, decls, docs, named };
+    return { total: files.length, files, repos, walked, truncated, decls, docs, named };
 }
 
 // `slice(0, Infinity)` is the whole array and `length > Infinity` is false, so
@@ -177,6 +177,49 @@ function section(title, rows, render, max) {
     for (const row of rows.slice(0, max)) out.push('  ' + render(row));
     if (rows.length > max) {
         out.push('  ... and ' + (rows.length - max) + ' more, not listed');
+    }
+    out.push('');
+    return out;
+}
+
+const human = (n) => (n < 1024 ? n + 'B'
+    : n < 1024 * 1024 ? (n / 1024).toFixed(1) + 'K'
+    : (n / (1024 * 1024)).toFixed(1) + 'M');
+
+// The shape of the tree rather than what is declared in it — for the case the
+// scanner cannot serve, which is a project big enough that no set of search terms
+// tells you where anything lives.
+//
+// One line per directory carrying its full path, then its files under it.
+// Indenting by depth was the alternative and it drops rungs: a directory holding
+// no files of its own has no line for its children to hang under, so the level
+// vanishes and the reader is never told.
+//
+// This is the one section costing a stat per file, and it runs only when asked.
+function treeLines(root, files, max) {
+    const dirs = new Map();
+    let total = 0;
+    for (const rel of files) {
+        const cut = rel.lastIndexOf('/');
+        const dir = cut === -1 ? '.' : rel.slice(0, cut);
+        let size = 0;
+        try {
+            size = fs.statSync(path.join(root, rel)).size;
+        } catch (e) {
+            size = 0;
+        }
+        total += size;
+        if (!dirs.has(dir)) dirs.set(dir, []);
+        dirs.get(dir).push({ name: rel.slice(cut + 1), size });
+    }
+
+    const out = ['tree — ' + files.length + ' files, ' + human(total), ''];
+    for (const dir of [...dirs.keys()].sort()) {
+        const list = dirs.get(dir);
+        const bytes = list.reduce((sum, f) => sum + f.size, 0);
+        out.push('  ' + (dir === '.' ? './' : dir + '/') + '   ' + list.length + ' files  ' + human(bytes));
+        for (const f of list.slice(0, max)) out.push('    ' + f.name + '  ' + human(f.size));
+        if (list.length > max) out.push('    ... and ' + (list.length - max) + ' more, not listed');
     }
     out.push('');
     return out;
@@ -222,6 +265,8 @@ function report(result, terms, opts) {
     lines.push(...section(declTitle, decls, (d) => d.file + ':' + d.line + '  ' + d.text, max));
     lines.push(...section('documentation:', docs, (d) => d.file + ':' + d.line + '  ' + d.text, max));
 
+    if (opts && opts.tree && opts.root) lines.push(...treeLines(opts.root, result.files, max));
+
     if (!named.length && !decls.length && !docs.length) {
         lines.push(terms.length
             ? 'Nothing matched. Either it does not exist yet, or it is called something else —'
@@ -240,6 +285,7 @@ function report(result, terms, opts) {
 function parseArgs(argv) {
     let root = process.cwd();
     let max = DEFAULT_MAX;
+    let tree = false;
     const terms = [];
     for (let i = 0; i < argv.length; i++) {
         if (argv[i] === '--root') {
@@ -257,20 +303,21 @@ function parseArgs(argv) {
             continue;
         }
         if (argv[i] === '--all') { max = Infinity; continue; }
+        if (argv[i] === '--tree') { tree = true; continue; }
         if (argv[i].startsWith('--')) continue;
         const term = String(argv[i]).toLowerCase().trim();
         if (term && !terms.includes(term)) terms.push(term);
     }
-    return { root, terms, max };
+    return { root, terms, max, tree };
 }
 
 function main(argv) {
-    const { root, terms, max } = parseArgs(argv);
-    return report(scan(root, terms), terms, { max });
+    const { root, terms, max, tree } = parseArgs(argv);
+    return report(scan(root, terms), terms, { max, tree, root });
 }
 
 if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
 
-module.exports = { scan, report, main, parseArgs, declPatterns, matches, trackedFiles };
+module.exports = { scan, report, main, parseArgs, declPatterns, matches, trackedFiles, treeLines, human };

@@ -386,3 +386,31 @@ test('the cap actually caps, and the report says which one it used', () => {
   const plain = survey.report(result, []);
   assert.equal(/cap:/.test(plain), false, 'the default is not announced');
 });
+
+test('--tree lists every directory with its files and their sizes', () => {
+  assert.equal(survey.parseArgs(['--tree']).tree, true);
+  assert.equal(survey.parseArgs([]).tree, false);
+
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-tree-'));
+  fs.mkdirSync(path.join(root, 'lib'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'lib', 'a.js'), 'x'.repeat(2048));
+  fs.writeFileSync(path.join(root, 'lib', 'b.js'), 'y'.repeat(10));
+  fs.writeFileSync(path.join(root, 'top.md'), 'z');
+
+  const files = ['lib/a.js', 'lib/b.js', 'top.md'];
+  const out = survey.treeLines(root, files, 25).join('\n');
+  assert.match(out, /^tree — 3 files/m);
+  assert.match(out, /lib\/\s+2 files/);
+  assert.match(out, /a\.js\s+2\.0K/);
+  assert.match(out, /top\.md\s+1B/);
+
+  const capped = survey.treeLines(root, files, 1).join('\n');
+  assert.match(capped, /\.\.\. and 1 more, not listed/);
+});
+
+test('the tree only appears when it is asked for', () => {
+  const root = path.join(__dirname, '..');
+  const result = survey.scan(root, ['badge']);
+  assert.equal(/^tree — /m.test(survey.report(result, ['badge'])), false);
+  assert.match(survey.report(result, ['badge'], { tree: true, root }), /^tree — \d+ files/m);
+});
