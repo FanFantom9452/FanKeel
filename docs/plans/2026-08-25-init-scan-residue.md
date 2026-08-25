@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-08-25
 source_of_truth: this is a plan; the code it describes is the source of truth once it lands
 ---
@@ -1319,3 +1319,34 @@ Ask before tagging or releasing. Installing it here is `tokenbar-update.ps1`, an
 **Type consistency.** `trackedFiles` keeps its exact signature and return shape across the move in Task 2. `readBadge(claudeDir, sessionId)` matches the argument order of `writeBadge`, `clearBadge` and `badgePath` in the same file. `report(result, terms, opts)` in `scripts/survey.js` and `report(result)` in `scripts/residue.js` are different functions in different modules and neither imports the other. `human` is defined twice — once in each script — and deliberately not shared: `residue.js` needs a `G` suffix that `survey.js` has no use for, and one shared formatter with an unused branch is worse than two short ones.
 
 **One thing this plan does not decide.** Whether `.claude/worktrees/registry-staleness/` should be removed once `residue.js` names it. That is a deletion, it is the user's call, and `audit` is the stage where it gets offered.
+
+---
+
+## What it measured
+
+Recorded here rather than in `docs/decisions/fankeel-shell.md`, which is written
+once and not maintained. These are the numbers this work produced.
+
+**Three of nine pairs were one sentence, copied.** `docs-audit`'s pairs section
+matched `README.md`, `skills/fankeel-audit/SKILL.md` and `skills/fankeel/SKILL.md`
+on `lib/badge.js`. None of the three describes that file — all three quote the
+same illustrative sentence about what the pairs feature is *for*. The detector
+counts a path appearing in prose as a page describing it, so a page that uses a
+filename as an example is indistinguishable from one that documents it. That is
+the first real evidence against the `TODO.md` entry asking whether the pairs are
+the ones worth reading: a third of them were not.
+
+The other six held. `hooks/touch.js` is described by three pages that agree with
+each other and with the code — `PostToolUse` on `Edit|Write|NotebookEdit`, the
+same matcher the guard uses.
+
+**Two of seven tasks were sent back.** `verify` bounced four false documentation
+claims this change had created, and then a real defect: `emptyDirs` reported every
+level of a hollow branch while the comment above it claimed only the topmost, and
+its own test asserted `includes('hollow')` — which passes either way. The rule
+that sends half-built work back to `build` is what caught both.
+
+**The rule budget after this**: survey 1615, design 1475, plan 1525, build 1928,
+verify 1263, audit 1459, land 1347. The cap is 2000 and `build` has 72 characters
+left, which is the number that decided the fourth gate option belongs to `survey`
+alone rather than to `ALWAYS`.

@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-22
+last_verified: 2026-08-25
 source_of_truth: lib/docs.js
 ---
 
