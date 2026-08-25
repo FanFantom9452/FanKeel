@@ -523,3 +523,34 @@ test('task refuses when this session owns nothing, and names what begins one', (
   assert.match(out, /start --task/);
   assert.equal(entry(dir, A), null);
 });
+
+// Two readers of liveness sit in this file — the collision scan and the listing
+// `show` prints — and only the first was pinned. Deleting the filter from the
+// listing left 599 of 599 tests passing; deleting the same filter from the
+// collision scan failed one. An unpinned second reader of one fact is the shape
+// the badge writers drifted apart in.
+//
+// `CLAUDE_CONFIG_DIR` as well as `--claude-dir`, because the badge follows the
+// flag and liveness follows the variable.
+test('a session whose process is gone is not listed as live', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
+  const seed = (pid, id) => fs.writeFileSync(
+    path.join(cfg, 'sessions', pid + '.json'), JSON.stringify({ pid, sessionId: id }));
+  // This process is the self-check `readLive` needs, so the answer is `known`
+  // rather than the unknown that makes everything live.
+  seed(process.pid, A);
+
+  run(dir, ['start', '--session', A, '--task', 'mine'], { CLAUDE_CONFIG_DIR: cfg });
+  run(dir, ['start', '--session', B, '--task', 'theirs'], { CLAUDE_CONFIG_DIR: cfg });
+
+  const shown = run(dir, ['show', '--session', A], { CLAUDE_CONFIG_DIR: cfg }).out;
+  assert.equal(/theirs/.test(shown), false, 'listed a session with no live process:\n' + shown);
+
+  // The control, so the assertion above is about liveness rather than about
+  // `show` never listing anything. `process.ppid` is the runner waiting on this
+  // file and cannot have gone while the test runs.
+  seed(process.ppid, B);
+  assert.match(run(dir, ['show', '--session', A], { CLAUDE_CONFIG_DIR: cfg }).out, /theirs/);
+});
