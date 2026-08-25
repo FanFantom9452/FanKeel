@@ -885,9 +885,13 @@ git commit -m "fix: --root names a directory, not the file to read"
 ## Task 6: `docs-check` reads links inside code blocks
 
 Not in the spec. Found by running `docs-check` against this plan: the two
-`- [a](one.md)` fixtures inside Task 5's code blocks were reported as broken
-references, because `scripts/docs-check.js:32` scans the whole file text for
-`[text](target)` and knows nothing about fences.
+dead-link fixtures inside Task 5's code blocks were reported as broken
+references, because `scripts/docs-check.js:32` scans the whole file text with a
+markdown-link pattern and knows nothing about fences.
+
+This paragraph is written around that pattern rather than quoting it, which is
+the smaller half of the same lesson: prose naming a link in passing is still
+prose, and the fix below only rescues what is inside a fence.
 
 It blocks rather than merely annoys — a plan that shows the code it is asking
 for cannot pass the gate that plan's own `land` stage runs.
