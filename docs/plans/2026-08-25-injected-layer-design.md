@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-08-25
 source_of_truth: lib/stages.js, lib/render.js, scripts/orient.js, tests/stages.test.js
 ---

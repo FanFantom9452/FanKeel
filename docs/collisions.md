@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-08-24
-source_of_truth: lib/overlap.js, lib/guard.js, lib/live.js, lib/registry.js, scripts/task.js, hooks/touch.js
+last_verified: 2026-08-25
+source_of_truth: lib/overlap.js, lib/guard.js, lib/live.js, lib/registry.js, scripts/task.js, scripts/orient.js, hooks/touch.js
 ---
 
 # Two sessions, one repository
@@ -93,7 +93,9 @@ That is the whole mechanism. Being stale writes nothing, deactivates nothing and
 hides nothing. If the owning session comes back, its next prompt refreshes the
 timestamp and it stops being stale. Age decides nothing else any more: it
 annotates the line and it gates `clear`, while the badge, the guard and the
-injected block all read liveness. `/fankeel` offers to clear genuinely dead
+injected block all read liveness. `orient` prints both numbers — what the record
+claims and how many of those have a process behind them — because one number on a
+listing gets read as the answer to the other question too. `/fankeel` offers to clear genuinely dead
 entries, and only ever on your say-so.
 
 ## A claim outlives its terminal
