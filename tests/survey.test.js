@@ -359,3 +359,30 @@ test('the scanner has no dependencies to install', () => {
       'a require that would have to be installed: ' + r);
   }
 });
+
+test('--max sets the per-section cap and --all lifts it', () => {
+  assert.equal(survey.parseArgs(['--max', '2', 'badge']).max, 2);
+  assert.deepEqual(survey.parseArgs(['--max', '2', 'badge']).terms, ['badge']);
+  assert.equal(survey.parseArgs(['--all']).max, Infinity);
+  assert.equal(survey.parseArgs(['badge']).max, 25, 'the default is unchanged');
+  assert.equal(survey.parseArgs(['--max', 'nonsense']).max, 25, 'a bad value keeps the default');
+  assert.deepEqual(survey.parseArgs(['--max', 'nonsense']).terms, [], 'and does not become a term');
+});
+
+test('the cap actually caps, and the report says which one it used', () => {
+  const root = path.join(__dirname, '..');
+  // No terms: every declaration this repository has, which is comfortably more
+  // than two. A term would have to keep matching for the test to keep meaning
+  // what it says.
+  const result = survey.scan(root, []);
+  const capped = survey.report(result, [], { max: 2 });
+  assert.match(capped, /\.\.\. and \d+ more, not listed/);
+  assert.match(capped, /cap: 2 per section/);
+
+  const all = survey.report(result, [], { max: Infinity });
+  assert.equal(/more, not listed/.test(all), false, 'nothing is dropped');
+  assert.match(all, /cap: none/);
+
+  const plain = survey.report(result, []);
+  assert.equal(/cap:/.test(plain), false, 'the default is not announced');
+});

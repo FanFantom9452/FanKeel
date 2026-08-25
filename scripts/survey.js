@@ -23,7 +23,10 @@ const path = require('node:path');
 
 const { trackedFiles, MAX_WALK_FILES } = require('../lib/tracked.js');
 
-const MAX_PER_SECTION = 25;
+// The default, not the law. `--max N` and `--all` move it, because a report that
+// silently stops at 25 answers a different question than the one that was asked —
+// and on a large repository the tail it cuts is where the answer usually is.
+const DEFAULT_MAX = 25;
 const MAX_FILE_BYTES = 512 * 1024;
 
 // One pattern per language, capturing the declared name. Deliberately shallow:
@@ -166,18 +169,21 @@ function scan(root, terms) {
     return { total: files.length, repos, walked, truncated, decls, docs, named };
 }
 
-function section(title, rows, render) {
+// `slice(0, Infinity)` is the whole array and `length > Infinity` is false, so
+// `--all` needs no special case here.
+function section(title, rows, render, max) {
     if (!rows.length) return [];
     const out = [title];
-    for (const row of rows.slice(0, MAX_PER_SECTION)) out.push('  ' + render(row));
-    if (rows.length > MAX_PER_SECTION) {
-        out.push('  ... and ' + (rows.length - MAX_PER_SECTION) + ' more, not listed');
+    for (const row of rows.slice(0, max)) out.push('  ' + render(row));
+    if (rows.length > max) {
+        out.push('  ... and ' + (rows.length - max) + ' more, not listed');
     }
     out.push('');
     return out;
 }
 
-function report(result, terms) {
+function report(result, terms, opts) {
+    const max = (opts && opts.max) || DEFAULT_MAX;
     if (result === null) {
         return 'fankeel survey: nothing readable under that root — no repository, and no files.\n'
              + 'Search by hand and say what you searched for.';
@@ -198,6 +204,7 @@ function report(result, terms) {
         source.push('a directory walk elsewhere (dot-directories, dependencies and build output skipped)');
     }
     const note = ['source: ' + source.join('; ')];
+    if (max !== DEFAULT_MAX) note.push('cap: ' + (max === Infinity ? 'none' : max + ' per section'));
     if (truncated) {
         note.push('the walk stopped at ' + MAX_WALK_FILES + ' files — narrow it with --root before trusting this.');
     }
@@ -211,9 +218,9 @@ function report(result, terms) {
         : 'declarations:';
 
     const lines = [head, ...note, ''];
-    lines.push(...section('files whose name matches:', named, (f) => f));
-    lines.push(...section(declTitle, decls, (d) => d.file + ':' + d.line + '  ' + d.text));
-    lines.push(...section('documentation:', docs, (d) => d.file + ':' + d.line + '  ' + d.text));
+    lines.push(...section('files whose name matches:', named, (f) => f, max));
+    lines.push(...section(declTitle, decls, (d) => d.file + ':' + d.line + '  ' + d.text, max));
+    lines.push(...section('documentation:', docs, (d) => d.file + ':' + d.line + '  ' + d.text, max));
 
     if (!named.length && !decls.length && !docs.length) {
         lines.push(terms.length
@@ -232,22 +239,34 @@ function report(result, terms) {
 // showed up in the report header and could match against a file path.
 function parseArgs(argv) {
     let root = process.cwd();
+    let max = DEFAULT_MAX;
     const terms = [];
     for (let i = 0; i < argv.length; i++) {
         if (argv[i] === '--root') {
             if (argv[i + 1]) root = argv[++i];
             continue;
         }
+        // A value that is not a positive number leaves the default in place rather
+        // than erroring, and is still consumed so it cannot become a search term.
+        // The header line says which cap was used, so a typo shows up in the
+        // report instead of in a stack trace.
+        if (argv[i] === '--max') {
+            const n = parseInt(argv[i + 1], 10);
+            if (argv[i + 1] !== undefined) i++;
+            if (Number.isFinite(n) && n > 0) max = n;
+            continue;
+        }
+        if (argv[i] === '--all') { max = Infinity; continue; }
         if (argv[i].startsWith('--')) continue;
         const term = String(argv[i]).toLowerCase().trim();
         if (term && !terms.includes(term)) terms.push(term);
     }
-    return { root, terms };
+    return { root, terms, max };
 }
 
 function main(argv) {
-    const { root, terms } = parseArgs(argv);
-    return report(scan(root, terms), terms);
+    const { root, terms, max } = parseArgs(argv);
+    return report(scan(root, terms), terms, { max });
 }
 
 if (require.main === module) {
