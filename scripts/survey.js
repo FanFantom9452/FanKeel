@@ -198,8 +198,13 @@ const human = (n) => (n < 1024 ? n + 'B'
 // This is the one section costing a stat per file, and it runs only when asked.
 function treeLines(root, files, max) {
     const dirs = new Map();
+    // git reports a nested repository as one entry with a trailing slash and
+    // never descends into it. That is a fact about the tree worth printing, and
+    // splitting it on the last slash would otherwise produce a file with no name.
+    const opaque = [];
     let total = 0;
     for (const rel of files) {
+        if (rel.endsWith('/')) { opaque.push(rel); continue; }
         const cut = rel.lastIndexOf('/');
         const dir = cut === -1 ? '.' : rel.slice(0, cut);
         let size = 0;
@@ -213,14 +218,16 @@ function treeLines(root, files, max) {
         dirs.get(dir).push({ name: rel.slice(cut + 1), size });
     }
 
-    const out = ['tree — ' + files.length + ' files, ' + human(total), ''];
+    const count = (n) => n + (n === 1 ? ' file' : ' files');
+    const out = ['tree — ' + count(files.length - opaque.length) + ', ' + human(total), ''];
     for (const dir of [...dirs.keys()].sort()) {
         const list = dirs.get(dir);
         const bytes = list.reduce((sum, f) => sum + f.size, 0);
-        out.push('  ' + (dir === '.' ? './' : dir + '/') + '   ' + list.length + ' files  ' + human(bytes));
+        out.push('  ' + (dir === '.' ? './' : dir + '/') + '   ' + count(list.length) + '  ' + human(bytes));
         for (const f of list.slice(0, max)) out.push('    ' + f.name + '  ' + human(f.size));
         if (list.length > max) out.push('    ... and ' + (list.length - max) + ' more, not listed');
     }
+    for (const rel of opaque.sort()) out.push('  ' + rel + '   a repository of its own, not descended into');
     out.push('');
     return out;
 }

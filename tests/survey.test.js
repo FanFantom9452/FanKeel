@@ -408,6 +408,15 @@ test('--tree lists every directory with its files and their sizes', () => {
   assert.match(capped, /\.\.\. and 1 more, not listed/);
 });
 
+test('a nested repository is one line, not a file with no name', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-tree2-'));
+  fs.writeFileSync(path.join(root, 'only.md'), 'z');
+  const out = survey.treeLines(root, ['only.md', '.claude/worktrees/old/'], 25).join('\n');
+  assert.match(out, /^tree — 1 file,/m, 'the opaque entry is not counted as a file');
+  assert.match(out, /\.claude\/worktrees\/old\/\s+a repository of its own, not descended into/);
+  assert.equal(/^ {4} {2}/m.test(out), false, 'no file row with an empty name');
+});
+
 test('the tree only appears when it is asked for', () => {
   const root = path.join(__dirname, '..');
   const result = survey.scan(root, ['badge']);
