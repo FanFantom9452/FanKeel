@@ -366,3 +366,16 @@ test('every stage points at the skill holding the part that does not compress', 
     assert.match(byName(name).rules.join(' '), re, name + ' points at no skill');
   }
 });
+
+test('the three options are a floor, and survey alone has a fourth', () => {
+  assert.match(ALWAYS[0], /at least/, 'three is the floor, not the list');
+
+  const survey = rulesFor('survey').join(' ');
+  assert.match(survey, /read wider/);
+  assert.match(survey, /--all --tree/);
+
+  for (const name of NAMES) {
+    if (name === 'survey') continue;
+    assert.equal(/read wider/.test(rulesFor(name).join(' ')), false, name + ' has no fourth option');
+  }
+});

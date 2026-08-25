@@ -13,6 +13,17 @@ Produces a statement of what already exists, a classification, and the map.
 
 ## The six steps
 
+### 0. It already said it started
+
+Nothing to run. `hooks/inject.js` raises `[FANKEEL:INIT]` the moment a `/fankeel`
+prompt is submitted, before there is any registry entry to read — so the minutes
+this stage spends orienting, mapping and scanning are not minutes of a statusline
+saying nothing. `task.js start` in step 6 replaces it with `survey`.
+
+It is there before you are. What it costs you is that the badge is now a promise:
+a session showing `init` that never reaches step 6 is one that stopped without
+saying so.
+
 ### 1. Locate
 
 Repository root, git state, whether this is a worktree.
@@ -66,6 +77,29 @@ rather than reporting a clean sweep.
 
 **"Nothing matched" is a finding.** Say which terms were tried — the next person
 needs to know a synonym was already ruled out.
+
+### 4b. When part of it is not enough
+
+The report is capped at 25 rows a section, and on a large repository the tail it
+cuts is where the answer usually is. Two flags move it:
+
+```
+node <plugin>/scripts/survey.js --all <term>...      # every match, no cap
+node <plugin>/scripts/survey.js --tree               # every directory, with sizes
+```
+
+`--tree` answers the question search terms cannot: what is this project shaped
+like. It is the one section costing a stat per file, so it runs only when asked.
+
+**This is the fourth option at the gate, and it belongs to this stage alone.**
+`AskUserQuestion` accepts four options, so `read wider` sits between "next stage"
+and "stay": re-run with `--all --tree`, read what it names, and come back to the
+same question with more on screen. The stage does not change, the route does not
+change, and the class does not change.
+
+Reading wide for a narrow answer is what a subagent is for — that is exactly the
+trade `fankeel`'s own guidance names, and the case where delegating saves rather
+than costs. What comes back should be the findings, not the files.
 
 ### 5. Classify, out loud
 

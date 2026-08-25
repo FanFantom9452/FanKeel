@@ -112,7 +112,7 @@ also in progress:
   - triage the colour issues @ survey  (touched: README.md)  (last seen 16d ago)
 
 stage rules:
-  - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, or pause, never dropping the pause. Option one is the approval: say what it approves.
+  - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, and pause at least, never dropping the pause. Option one is the approval: say what it approves.
   - The background goes inside the question call — in the option descriptions, beside the option each belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
   - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
@@ -192,7 +192,7 @@ route: survey → design → plan → [build] → verify → audit → land
 class: architectural — a new subsystem, or a change to an interface something else depends on.
 
 stage rules:
-  - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, or pause, never dropping the pause. Option one is the approval: say what it approves.
+  - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, and pause at least, never dropping the pause. Option one is the approval: say what it approves.
   - The background goes inside the question call — in the option descriptions, beside the option each belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
   - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
