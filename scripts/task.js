@@ -228,6 +228,11 @@ function cmdShow(root, opts) {
     // The header says live, so the list has to mean it. With no --session there
     // is no id to self-check against, `readLive` reports unknown, and unknown is
     // every entry — the same loud side every other reader of this falls back to.
+    //
+    // Except for an entry recording a config dir of its own: that one is measured
+    // against its own directory, where the self-check here has nothing to say
+    // either way. A session in another config dir is the case this list was
+    // silently wrong about, so a real answer beats the fallback.
     const liveState = live.readLive(live.liveConfigDir(), id);
     const others = active.filter((e) => e.sessionId !== id
         && live.isLive(liveState, e.sessionId, e.data && e.data.configDir));
