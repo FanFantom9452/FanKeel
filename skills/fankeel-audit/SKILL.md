@@ -111,6 +111,9 @@ on what was picked.
 node <plugin>/scripts/docs-check.js
 <its output, quoted>
 
+node <plugin>/scripts/residue.js
+<its output, quoted>
+
 node <plugin>/scripts/docs-audit.js
 <its output, quoted>
 

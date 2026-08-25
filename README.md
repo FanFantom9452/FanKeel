@@ -35,7 +35,8 @@ repository, which was touched today — and then asks at most two questions, wit
 the options already on screen: which project, skipped when there is only one, and
 what the task is, guessed from the recent commits. It does not ask which files you
 will touch. Those are recorded as the edits land, so there is no list to state and
-none to get wrong. Answer, and the statusline badge lights up.
+none to get wrong. The badge is up before you answer — the hook raises `init`
+the moment you submit the command — and it becomes `survey` when the entry lands.
 
 > The repository is `FanKeel` and everything you type is `fankeel`. Plugin and
 > marketplace ids have to be kebab-case — Claude Code accepts anything else, and
@@ -149,7 +150,10 @@ ctx ███▊░░░░░░  38%    ·    5h ██████▌░░�
 
 The word is the stage, not an intensity — a statusline earns its space by showing
 what changes. `clash` takes the slot when another live session is in your files,
-because at that moment the collision matters more than the stage.
+because at that moment the collision matters more than the stage. `init` is the
+one word that is not a stage: it is the gap between `/fankeel` being submitted
+and a task existing, which on a large project is minutes of orienting, mapping
+and scanning.
 
 The stage colours need no setting up from TokenBar v1.4.0 on. It ships the seven
 as a default — a ramp from indigo through blue to cyan, so the line warms as the

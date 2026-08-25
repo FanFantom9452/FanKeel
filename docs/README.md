@@ -39,6 +39,8 @@ here.
 | How that is being built, task by task | [plans/2026-08-24-observed-scope-implementation.md](plans/2026-08-24-observed-scope-implementation.md) — *built, 0.26.0* |
 | Why the injected copy of a stage's shape was thinner than the skill's | [plans/2026-08-25-injected-layer-design.md](plans/2026-08-25-injected-layer-design.md) — *built, 0.27.0* |
 | How that was built, task by task | [plans/2026-08-25-injected-layer.md](plans/2026-08-25-injected-layer.md) — *built, 0.27.0* |
+| Why the statusline said nothing while a task was being worked out | [plans/2026-08-25-init-scan-residue-design.md](plans/2026-08-25-init-scan-residue-design.md) — *built, 0.28.0* |
+| How that was built, task by task | [plans/2026-08-25-init-scan-residue.md](plans/2026-08-25-init-scan-residue.md) — *built, 0.28.0* |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 
 ## The three scanners
