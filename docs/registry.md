@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-25
+last_verified: 2026-08-26
 source_of_truth: lib/registry.js, lib/render.js, lib/context.js, hooks/touch.js
 ---
 
@@ -28,6 +28,7 @@ workspace/                     <- Claude Code opened here
 | Path | In version control | Written by |
 |---|---|---|
 | `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated`; `touch.js` for `claims` |
+| `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | Created with the directory |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
 | `~/.claude/modes/{session_id}/fankeel` | n/a | `inject.js`, every prompt |
@@ -127,5 +128,28 @@ and `next` — into a fresh session in one step.
 
 The hook writes exactly one registry file: this session's own. It never writes
 another session's, and never deletes one.
+
+# One writer at a time
+
+Writing the file is atomic — a sibling, then a rename — but reading it, changing
+one field and writing it back is not, and that is what every writer here does.
+Two of them run in hooks: `touch.js` on every edit and `inject.js` on every
+prompt, in every session on the machine. Measured, two processes adding twenty
+claims each kept 20 to 24 of the 40, and every one of those writes returned
+success.
+
+So a change to one record is taken under `sessions/{session_id}.lock`, a
+directory rather than a file, because a holder that dies leaves no open handle
+behind. This is what git does with `.git/index.lock`. It is **advisory** —
+nothing enforces it, and it works because every writer goes through
+`lib/registry.js`, which is already the rule. A record edited by hand defeats it,
+the way it defeats everything else here.
+
+A writer waits up to a second in five-millisecond steps, and a lock older than
+five seconds is treated as abandoned and broken. Both numbers are measurements
+rather than tastes: the longest legitimate hold is 8.6ms, and no writer reached
+the wait cap even with eight processes on one record. A writer that does reach it
+gives up rather than writing anyway — a dropped claim comes back on the next edit
+to that path, where a clobbered record does not.
 
 [Back to the index](README.md) · [Back to the front page](../README.md)

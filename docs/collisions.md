@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-25
+last_verified: 2026-08-26
 source_of_truth: lib/overlap.js, lib/guard.js, lib/live.js, lib/registry.js, scripts/task.js, scripts/orient.js, hooks/touch.js
 ---
 
@@ -35,9 +35,11 @@ three areas.
 
 So nothing is declared. `hooks/touch.js` is `PostToolUse` on the same tools the
 guard matches, and the first time an edit lands on a path it records that path on
-the entry's `claims` field. A path already claimed writes nothing, which is what
+the entry's `claims` field. A path already claimed writes no record, which is what
 makes this affordable on a hook that fires for every edit in every session on the
-machine.
+machine — it still takes and releases the lock every writer here takes, at half a
+millisecond. How that lock works is [the registry's](registry.md), not this
+page's.
 
 The next prompt carries the list, and there is no command under it because there
 is nothing for anyone to run:
@@ -72,10 +74,15 @@ chance. Turn it on for the sessions that need it, and `"ask"` before `"deny"`.
 Two rules keep it from becoming a lockout:
 
 - **A dead session's claim never blocks.** Liveness is the session's own file
-  under `~/.claude/sessions/` and a live process behind its pid; a terminal that
-  is gone holds nothing shut. When that directory cannot be read — or this
-  session's own id is missing from what was read — every claim counts as live,
-  because warning too much is the failure worth having.
+  under `sessions/` in the config directory **that session recorded**, plus a
+  live process behind its pid; a terminal that is gone holds nothing shut.
+  `CLAUDE_CONFIG_DIR` moves that directory, so each entry carries its own and a
+  reader checks the neighbour against the one the neighbour named — reading only
+  this session's own reported a running neighbour as dead, confidently, and its
+  claims then dropped out of every reader. When a directory cannot be read, when
+  an entry does not say which one it uses, or when this session's own id is
+  missing from what was read, every claim counts as live, because warning too
+  much is the failure worth having.
 - **The older task holds.** When both sessions claim the file, the newer one
   yields — so two sessions that both reached it cannot block each other into a
   stalemate.

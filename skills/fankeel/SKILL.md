@@ -3,8 +3,8 @@ name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.29.0
 status: current
-last_verified: 2026-08-24
-source_of_truth: lib/stages.js, lib/registry.js, scripts/task.js
+last_verified: 2026-08-26
+source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js
 ---
 
 # fankeel
@@ -98,11 +98,19 @@ knows whose tree applies. One registry can cover five of them and nothing else
 needs to know which. Ask for it only when the root holds more than one, and never
 ask for a file list — there is nothing to declare and nothing to get wrong.
 
+Three more are written without anyone typing them. `route` and `class` come from
+the class picked at `start`, and `configDir` records which config directory this
+session runs under, so another session can look for its liveness in the right
+place.
+
 ```json
 {
   "task": "rework the 7d deviation colour ramp",
   "project": "Waypoint",
   "claims": ["Waypoint/statusline.ps1", "Waypoint/statusline.sh"],
+  "route": ["survey", "design", "build", "verify", "land"],
+  "class": "bounded",
+  "configDir": "C:\\Users\\you\\.claude",
   "stage": "build",
   "active": true,
   "notes": ["ANSI 256 has no true mid green; the 46→83→120 run is the only clean path"],
@@ -708,11 +716,13 @@ and still lets them go ahead.
 
 Two things it deliberately does not do, so do not describe it as a lock. A claim
 whose session has exited never blocks — liveness is that session's own file under
-`~/.claude/sessions/` and a live process behind its pid, so a terminal that is
-gone holds nothing shut, and a directory that cannot be read counts every claim as
-live rather than none. And when both sessions hold the file, the older task holds
-and the newer yields, so two sessions that both reached it cannot block each other
-into a stalemate.
+`sessions/` in the config directory **it recorded**, plus a live process behind
+its pid. `CLAUDE_CONFIG_DIR` moves that directory, so each entry names its own and
+readers check the neighbour against the one the neighbour named; a session that
+never said reads as live, and so does a directory that cannot be read. A terminal
+that is gone holds nothing shut. And when both sessions hold the file, the older
+task holds and the newer yields, so two sessions that both reached it cannot block
+each other into a stalemate.
 
 When an edit is refused, do not work around it — not by a different tool, not by
 a shell command. Report which task holds the file and ask the user what they want
