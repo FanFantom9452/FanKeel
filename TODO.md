@@ -21,11 +21,6 @@ written here instead of where it belongs.
 - A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI, so the default reminder is what the three get.
 - Whether `build` should dispatch an implementer subagent per task rather than reviewing after each — [docs/plans/2026-08-22-seven-stage-pipeline.md](docs/plans/2026-08-22-seven-stage-pipeline.md).
 - Whether a per-`agent_type` brief should carry more than the map — [docs/subagents.md](docs/subagents.md). Unanswered until real use says which types earn one.
-- Concurrent `addClaim` loses claims — [lib/registry.js](lib/registry.js). Two processes adding 20 paths each left 28 of 40; temp-and-rename guards the write, not the read-modify-write. `touch()` too.
-- `readLive` self-checks my own config dir, never a neighbour’s — [lib/live.js](lib/live.js). A session under a different `CLAUDE_CONFIG_DIR` reads as dead, and its claims drop out of all four voices.
-- `task.js route` leaves `class` behind — [scripts/task.js](scripts/task.js). Re-routing changes the route and not the class, and the class is injected every turn now.
-- `todo-check.js --root <dir>` finds nothing to check — [scripts/todo-check.js](scripts/todo-check.js). The bare command passes; `--root .` reports the root itself as missing.
-- `cmdShow`’s liveness filter has no test — [scripts/task.js](scripts/task.js). Deleting it fails nothing, and an unpinned second reader of liveness is the shape the badge writers drifted apart in.
 
 ## Owed after first real use
 
