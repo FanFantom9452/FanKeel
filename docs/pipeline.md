@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-08-24
-source_of_truth: lib/stages.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md
+last_verified: 2026-08-25
+source_of_truth: lib/stages.js, lib/render.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md
 ---
 
 # The pipeline
@@ -98,6 +98,7 @@ the stage you are in:
 ```
 FANKEEL ACTIVE — rework the 7d deviation colour ramp @ build  (4 of 7)
 route: survey → design → plan → [build] → verify → audit → land
+class: architectural — a new subsystem, or a change to an interface something else depends on.
 project: Waypoint
 touched: statusline.ps1, statusline.sh, preview.ps1
 next: wire the badge word into TokenBar
@@ -127,6 +128,7 @@ output shape:
   - path +12/-3 — what changed
   - path (new) — what it is
 
+  ledger: <n> of <m> complete
   deferred: <TODO.md line, or omit this line>
   then AskUserQuestion
 ```
@@ -134,8 +136,8 @@ output shape:
 The rules are restated in full every turn rather than pointed at. A pointer is
 only as strong as the salience of what it points at, and what it points at recedes
 by thousands of tokens a turn. Only the current stage's rules are sent, never all
-seven stages', which is what keeps a per-turn restatement affordable — 2715
-characters loaded as above, about 680 tokens.
+seven stages', which is what keeps a per-turn restatement affordable — 2863
+characters loaded as above, about 715 tokens.
 
 It grows when growing it is worth something, because the two sides of that trade
 are not priced the same. This block is read once a turn by the model and never by
@@ -187,6 +189,7 @@ nothing else — sends a short form back the moment an answer lands:
 ```
 FANKEEL ACTIVE — rework the 7d deviation colour ramp @ build  (4 of 7)
 route: survey → design → plan → [build] → verify → audit → land
+class: architectural — a new subsystem, or a change to an interface something else depends on.
 
 stage rules:
   - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, or pause, never dropping the pause. Option one is the approval: say what it approves.
@@ -205,12 +208,13 @@ output shape:
   - path +12/-3 — what changed
   - path (new) — what it is
 
+  ledger: <n> of <m> complete
   deferred: <TODO.md line, or omit this line>
   then AskUserQuestion
 ```
 
-Where the task is, the rules for the stage, the shape — 1336 to 1614 characters
-depending on the stage, around 350 tokens. Deliberately not the full block: the
+Where the task is, the rules for the stage, the shape — 1752 to 2432 characters
+depending on the stage and the class, around 500 tokens. Deliberately not the full block: the
 touched list, the notes and the other live sessions cannot have moved between a question
 going out and its answer coming back, they are already in the context a few
 thousand tokens up, and a stage runs through several questions. Repeating them
@@ -220,8 +224,8 @@ The cost is not what it looks like. The whole conversation is sent on every mode
 call whether or not anything is injected, and a prompt cache is a prefix — text
 appended at the end never invalidates it. A real turn in that session billed
 `cache_read 243,455` against `cache_creation 788`: the history at a tenth of the
-price, and only the new tail written. Twelve answers at ~350 tokens is about
-4,200 tokens of cache write across a whole session, which buys back the one
+price, and only the new tail written. Twelve answers at ~500 tokens is about
+6,000 tokens of cache write across a whole session, which buys back the one
 thing this plugin exists to hold.
 
 The other way to close it was a `Stop` hook returning `decision: block` when a
