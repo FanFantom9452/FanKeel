@@ -85,6 +85,20 @@ function sizeOf(dir, cap) {
     return { bytes, partial: seen >= limit };
 }
 
+// Python writes this into every environment it creates, whatever the directory is
+// called. Both walks below stop here: an environment is somebody else's tree, and
+// neither what is hollow inside one nor what is nested under one is a decision
+// anybody here made.
+const ENV_MARKER = 'pyvenv.cfg';
+
+function envConfig(dir) {
+    try {
+        return fs.readFileSync(path.join(dir, ENV_MARKER), 'utf8');
+    } catch (e) {
+        return null;
+    }
+}
+
 // Directories holding no files at any depth. Git cannot represent one, so it is
 // the one kind of residue no other scanner here can see — and that same fact is
 // why it is context rather than a defect: nobody chose it, because there was
@@ -103,7 +117,11 @@ function emptyDirs(root) {
             if (entry.name === '.git') continue;
             const sub = rel ? rel + '/' + entry.name : entry.name;
             if (entry.isDirectory()) {
-                if (walk(sub)) hasFile = true;
+                // `.venv/Include` is Python's own empty directory, and reporting it
+                // asks somebody to decide something Python decided. Counting the
+                // environment as full also keeps its parent off the list.
+                if (envConfig(path.join(root, sub)) !== null) hasFile = true;
+                else if (walk(sub)) hasFile = true;
             } else {
                 hasFile = true;
             }
@@ -148,10 +166,8 @@ function orphanArtifacts(root) {
             if (!entry.isDirectory() || entry.name === '.git') continue;
             const sub = rel ? rel + '/' + entry.name : entry.name;
 
-            let cfg;
-            try {
-                cfg = fs.readFileSync(path.join(root, sub, 'pyvenv.cfg'), 'utf8');
-            } catch (e) {
+            const cfg = envConfig(path.join(root, sub));
+            if (cfg === null) {
                 walk(sub);
                 continue;
             }

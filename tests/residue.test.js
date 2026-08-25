@@ -150,3 +150,14 @@ test('the walk stops at an environment rather than reading through it', () => {
 
   assert.deepEqual(scan(root).orphans.map((o) => o.path), ['env']);
 });
+
+test('emptyDirs stops where the orphan walk stops', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-envhollow-'));
+  venv(root, 'env', path.dirname(process.execPath));
+  // Python creates this one itself on Windows and leaves it empty. Reporting it
+  // asks somebody to decide something Python already decided.
+  fs.mkdirSync(path.join(root, 'env', 'Include'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'mine'), { recursive: true });
+
+  assert.deepEqual(emptyDirs(root), ['mine']);
+});

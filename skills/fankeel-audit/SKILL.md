@@ -72,10 +72,17 @@ Two ways to be an orphan, and both are checked rather than guessed:
 | **no Python manifest beside it** | no `pyproject.toml`, `requirements.txt`, `setup.py`, `setup.cfg`, `Pipfile` or `environment.yml` in the same directory. Nothing here can rebuild it, so whatever is inside is all there is |
 | **interpreter gone** | the `home` line in `pyvenv.cfg` names a path that is not on this machine. This is what a tree copied from another computer looks like: it cannot be activated and it cannot be rebuilt |
 
-The walk stops at each one rather than reading through it. A vendored interpreter
-carries thousands of directories belonging to whoever built it: a probe that also
-matched `__pycache__` stopped at 165 directories on one workspace where the marker
-alone stops at 15, and 151 of that difference sat under a single bundled Python.
+The walk stops at each one rather than reading through it, and so does the
+empty-directory walk beside it. A vendored interpreter carries thousands of
+directories belonging to whoever built it: a probe that also matched `__pycache__`
+stopped at 165 directories on one workspace where the marker alone stops at 15,
+and 151 of that difference sat under a single bundled Python. Stopping also keeps
+`.venv/Include` — which Python creates empty itself — off the empty-directory
+list, where it would be asking somebody to decide something Python decided.
+
+**Conda environments carry no `pyvenv.cfg`**, so none of this sees them. That is
+untested rather than designed: no conda was installed on the machine this was
+built on, and a marker nobody could check against a real one would be a guess.
 
 It never deletes. Name the paths at the gate and let the user choose — the same
 contract every scanner here has, and the same one that governs documents.
