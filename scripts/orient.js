@@ -21,7 +21,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
-const { trackedFiles, isRepo } = require('./survey.js');
+const { trackedFiles, isRepo } = require('../lib/tracked.js');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { firstTable } = require('../lib/map.js');

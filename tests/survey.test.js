@@ -351,6 +351,11 @@ test('the scanner has no dependencies to install', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
   assert.equal(pkg.dependencies, undefined);
   const src = fs.readFileSync(SCRIPT, 'utf8');
+  // Core modules and paths inside this repository. What this rules out is a bare
+  // specifier — the only kind that has to be installed before the scanner runs.
   const requires = [...src.matchAll(/require\('([^']+)'\)/g)].map((m) => m[1]);
-  for (const r of requires) assert.ok(r.startsWith('node:'), 'non-core require: ' + r);
+  for (const r of requires) {
+    assert.ok(r.startsWith('node:') || r.startsWith('./') || r.startsWith('../'),
+      'a require that would have to be installed: ' + r);
+  }
 });

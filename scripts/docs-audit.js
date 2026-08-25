@@ -27,7 +27,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const docs = require('../lib/docs.js');
-const { trackedFiles, isRepo } = require('./survey.js');
+const { trackedFiles, isRepo } = require('../lib/tracked.js');
 const { LINK, CODE, PATHISH, external, resolveRef, readFile, isMarkdown } = require('./docs-check.js');
 
 const DAY = 24 * 60 * 60 * 1000;

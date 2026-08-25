@@ -21,7 +21,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const docs = require('../lib/docs.js');
-const { trackedFiles } = require('./survey.js');
+const { trackedFiles } = require('../lib/tracked.js');
 
 const MAX_FINDINGS = 200;
 

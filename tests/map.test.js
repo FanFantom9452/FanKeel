@@ -9,6 +9,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 
 const map = require('../lib/map.js');
 
@@ -103,4 +104,34 @@ test('the map declares itself generated so the sweep skips it', () => {
   const text = map.buildMap(root());
   assert.match(text, /^---\r?\nstatus: generated\r?\n/);
   assert.match(text, /source_of_truth: generated-by scripts\/map\.js/);
+});
+
+test('a worktree checked out under a dot-directory is not the project', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-map-git-'));
+  const git = (args) => execFileSync('git', args, { cwd: root, stdio: 'ignore' });
+  git(['init', '-q']);
+  git(['config', 'user.email', 't@example.com']);
+  git(['config', 'user.name', 'T']);
+  fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'docs', 'real.md'), '# real');
+  git(['add', '-A']);
+  git(['commit', '-qm', 'first']);
+
+  // A worktree is a repository of its own, which is why git collapses it to a
+  // single entry and never descends. This is the shape that made this project's
+  // map count 75 documents where docs-check counted 30, and six of them were
+  // being read as the project's own design intent.
+  const stale = path.join(root, '.claude', 'worktrees', 'old');
+  fs.mkdirSync(path.join(stale, 'docs'), { recursive: true });
+  execFileSync('git', ['init', '-q'], { cwd: stale, stdio: 'ignore' });
+  fs.writeFileSync(path.join(stale, 'docs', 'ghost.md'), '# ghost');
+  fs.writeFileSync(path.join(stale, 'docs', 'ghost2.md'), '# ghost2');
+
+  assert.deepEqual(map.markdownUnder(root), ['docs/real.md']);
+
+  // A loose markdown file nobody has committed is not residue — it is the page
+  // being written right now, and a map blind to it is the confident wrong answer
+  // this plugin exists to prevent. residue.js is what says nobody decided on it.
+  fs.writeFileSync(path.join(root, 'docs', 'draft.md'), '# draft');
+  assert.deepEqual(map.markdownUnder(root), ['docs/draft.md', 'docs/real.md']);
 });
