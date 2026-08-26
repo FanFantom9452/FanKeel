@@ -28,6 +28,7 @@ written here instead of where it belongs.
 - A stale comment in [scripts/docs-audit.js](scripts/docs-audit.js) says the first three sections fail the run, directly above its own replacement saying four. Delete the older one.
 - A repository with no commits reports `no git` — [scripts/orient.js](scripts/orient.js). `rev-parse --abbrev-ref HEAD` fails there and `gitState` reads the failure as "not a repository".
 - `### Every fortnight or so — the sweep` in [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md) has no body; the `## One skill per stage` after it holds the sweep's table.
+- `fankeel-build` says the stage runs to done; the injected rule says ask at every step's end — [lib/stages.js](lib/stages.js). Read as per-increment, build becomes a gate per commit.
 
 ## Owed after first real use
 

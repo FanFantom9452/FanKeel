@@ -83,8 +83,8 @@ prompt for the privilege.
 The question above it is the case *for*. "Which page does this change make false"
 is judgement over pages nothing can grep — wide reading, narrow answer. Dispatch
 it: one reader per page the change plausibly touched, several in one response so
-they run at once — four is the ceiling, and the fankeel skill's *Delegate the
-reading, never the filtering* says why — each given the **path** to a diff file
+they run at once — four is the ceiling, and the fankeel skill's *Dispatch by
+default, never the filtering* says why — each given the **path** to a diff file
 and asked only what is now false and where. Never a pasted diff: it lands the
 whole change in this context, which is the cost dispatching exists to avoid.
 Pass the model explicitly; `sonnet` is the floor.

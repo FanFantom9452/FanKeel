@@ -223,6 +223,28 @@ test('the delegation rule is a principle, not a list of barred stages', () => {
   assert.equal(/\b\d{2},\d{3}\b/.test(block), false, 'an exact figure is back in the block');
 });
 
+// Three stage skills cite that heading by name to borrow its argument rather
+// than restate it, and a citation is a link with no checker. Renaming the
+// heading left two of them — fankeel-audit and fankeel-verify — pointing at a
+// section that no longer existed, and nothing went red: every one of those
+// pages still read as though it said something. So the tail of the heading is
+// the anchor, and every page that uses it has to spell the whole thing the way
+// the fankeel skill spells it.
+test('every skill citing the dispatch section spells its heading correctly', () => {
+  const heading = /^### (Dispatch by default,[^\r\n]*)$/m.exec(read('fankeel'));
+  assert.ok(heading, 'the fankeel skill has no dispatch heading to cite');
+  const tail = 'never the filtering';
+  for (const name of names) {
+    const flat = read(name).replace(/\s+/g, ' ');
+    let at = flat.indexOf(tail);
+    while (at !== -1) {
+      assert.ok(flat.slice(0, at + tail.length).endsWith(heading[1]),
+        `${name} cites the dispatch section as something other than "${heading[1]}"`);
+      at = flat.indexOf(tail, at + 1);
+    }
+  }
+});
+
 // The principle replaced a prohibition, and the prohibition was the only thing
 // that had said a whole stage must not be dispatched. A subagent gets the brief
 // and no prompt, so the stage rules a UserPromptSubmit hook injects never reach
