@@ -1,7 +1,7 @@
 ---
 name: fankeel-survey
 description: The survey stage — read the project's own map before reading its code, classify the work, and report what is already here. Use for the survey stage of a fankeel task, "what is already here", starting work in an unfamiliar repository, or when a task needs classifying as spike, bounded or architectural.
-version: 0.31.0
+version: 0.32.0
 status: current
 last_verified: 2026-08-26
 source_of_truth: lib/stages.js, scripts/map.js, scripts/survey.js
