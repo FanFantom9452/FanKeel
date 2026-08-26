@@ -121,6 +121,18 @@ re-read on every later turn. **Hand artefacts over as files.** A reviewer gets
 paths; it does not get the conversation. A dispatch describes one task, not the
 session's history.
 
+Say what you want back, and why it costs. A dispatch that ends "return only the
+status, the sha and the test line — every extra line stays in this session
+permanently" gets that; one that ends "return only the status, the sha and the
+test line" gets a report as well. That is the difference between the two measured
+on this branch, and it is one clause.
+
+The same asymmetry runs the other way. What you send is read once in a context
+that is thrown away; what comes back is read on every later turn. So spend words
+on the dispatch and buy them back on the return — a brief that names the exact
+files, the exact anchors and the exact wording costs nothing that lasts, and it
+is the difference between one round and three.
+
 A fix round **resumes** that implementer rather than starting a new one — its
 context is already thrown-away context and it holds the reading a fresh dispatch
 would redo. Measured here: a resume cost 402 tokens against 27,506 for the

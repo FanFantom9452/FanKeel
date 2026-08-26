@@ -726,6 +726,13 @@ Three rules that make it work, each of which fails silently when missed:
 - **Spot-check the results against each other.** Independently dispatched agents
   share a prompt style and a model, so they make correlated mistakes that reading
   each summary on its own will not catch.
+- **State the return contract, and say what it costs.** Name the shape you want
+  back and add why: every line a subagent returns lands in this context and is
+  re-read on every later turn for the rest of the session. Measured here — one
+  reviewer told "return only three lines, no preamble" returned those plus a
+  twelve-bullet verification log; the next, told the same and *why*, returned
+  exactly three. Same model, same shape of task. A contract without its reason is
+  a preference.
 
 **Four in one response is the working ceiling.** Past that you are guessing at the
 split rather than deciding it, and every reader costs a system prompt whether or

@@ -301,3 +301,14 @@ test('the verify skill separates what a pipe removes from what a reader answers'
   assert.match(text, /several in one response/i);
   assert.match(text, BOUNDARY);
 });
+
+// Measured on this branch: a reviewer told to return three lines returned three
+// plus a twelve-bullet log; the next, told the same and why, returned three. The
+// clause that carries the reason is the whole rule, so that is what gets pinned —
+// not the word "contract", which appears elsewhere in both files.
+test('a dispatch is told to state what it wants back and why that costs', () => {
+  assert.match(read('fankeel'), /State the return contract, and say what it costs/);
+  assert.match(read('fankeel'), /re-read on every later turn/);
+  assert.match(read('fankeel-build'), /Say what you want back, and why it costs/);
+  assert.match(read('fankeel-build'), /spend words\s+on the dispatch and buy them back on the return/);
+});
