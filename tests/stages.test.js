@@ -367,15 +367,35 @@ test('every stage points at the skill holding the part that does not compress', 
   }
 });
 
-test('the three options are a floor, and survey alone has a fourth', () => {
+test('the three options are the whole list, and no stage has a fourth', () => {
   assert.match(ALWAYS[0], /at least/, 'three is the floor, not the list');
 
-  const survey = rulesFor('survey').join(' ');
-  assert.match(survey, /read wider/);
-  assert.match(survey, /--all --tree/);
-
+  // survey used to carry a fourth: `read wider`, which ended the round with the
+  // reading not done. The flags it named live in the fankeel-survey skill now,
+  // where the readers that use them are dispatched.
   for (const name of NAMES) {
-    if (name === 'survey') continue;
-    assert.equal(/read wider/.test(rulesFor(name).join(' ')), false, name + ' has no fourth option');
+    const text = rulesFor(name).join(' ');
+    assert.equal(/read wider/.test(text), false, name + ' still offers a fourth option');
+    assert.equal(/--all --tree/.test(text), false, name + ' still names the flags in a rule');
   }
+});
+
+// The fourth option was a loop with the user as its counter. `read wider` ended
+// the round with the reading not yet done, so a survey needing four slices cost
+// four turns of somebody's attention. The scanner already says when it did not
+// list everything, which is an observable predicate a rule can key on — where
+// "does this seem like enough?" is a judgement, and judgements get asked about.
+test('survey dispatches on a truncated scan instead of asking to read further', () => {
+  const text = byName('survey').rules.join(' ');
+  assert.match(text, /not listed/);
+  assert.match(text, /one response/);
+  assert.equal(/fourth option/.test(text), false, 'the fourth option survived');
+});
+
+// The failure is an omission — nobody states the shape or the tier — so the form
+// is a required slot rather than a prohibition.
+test('plan makes the dispatch decision a slot every task has to fill', () => {
+  const text = byName('plan').rules.join(' ');
+  assert.match(text, /\*\*Dispatch:\*\*/);
+  assert.match(text, /sonnet/);
 });
