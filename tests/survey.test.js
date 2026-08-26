@@ -8,6 +8,9 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const survey = require('../scripts/survey.js');
+// The two gates that key on `trackedFiles` returning null and nothing else.
+const docsCheck = require('../scripts/docs-check.js');
+const docsAudit = require('../scripts/docs-audit.js');
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'survey.js');
 
 // A throwaway repository, because the scanner reads `git ls-files` and there is
@@ -482,6 +485,21 @@ test('the skips a reader can act on name their paths, and the rest stay counts',
   assert.equal(/gone\.js/.test(out), false, 'an unreadable file was named, and nothing can open it');
 });
 
+// The same split, one line further. Inside a repository nothing drops a tracked
+// binary — a `.png` in the tree is there on purpose — so `assets/logo.png`
+// reached `noPattern` and was handed to a reader under a title that promises it
+// can be opened. It stays in the count; it is only not an instruction.
+test('a binary is counted with the skips but not offered as something to open', () => {
+  const out = run(repo({
+    'a.js': 'function widgetOne() {}\n',
+    'assets/logo.png': '\x89PNG\r\n',
+    'pkg.json': '{}\n',
+  }), 'widget');
+  assert.match(out, /^skipped: 2 with no pattern for their extension$/m);
+  assert.match(out, /^ {2}pkg\.json$/m);
+  assert.equal(/logo\.png/.test(out), false, 'a binary was offered as openable by hand');
+});
+
 // Capped like every other section, and saying so in the same words. An
 // over-cap skip list that stopped silently would be the same loss one directory
 // down from the one this line exists to report.
@@ -537,6 +555,46 @@ test('a root whose only subtree cannot be listed says so, not that there is noth
   const out = survey.report(result, ['widget']);
   assert.equal(/nothing readable under that root/.test(out), false);
   assert.match(out, /skipped: 1 directory that could not be listed/);
+});
+
+// And it says so without moving the contract underneath the three callers that
+// did not ask. `trackedFiles` returning a result for an unlistable-only root —
+// so that survey could count it — left `docs-check` and `docs-audit`, which gate
+// on `if (!result)` and nothing else, reporting "0 markdown files … Every
+// reference resolves.", exit 0, over a directory neither of them could read.
+// Two of this project's own gates passing a tree they never opened is the exact
+// failure it exists to prevent, and five code reviews read past it.
+test('a caller that asks for no count still gets null for a root it cannot read', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  fs.mkdirSync(path.join(root, 'locked'));
+  fs.writeFileSync(path.join(root, 'locked', 'deep.js'), 'function widgetSealed() {}\n');
+
+  const real = fs.readdirSync;
+  t.mock.method(fs, 'readdirSync', (dir, opts) => {
+    if (String(dir).endsWith('locked')) throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+    return real.call(fs, dir, opts);
+  });
+
+  assert.equal(survey.trackedFiles(root), null, 'a caller that passed no stats got a result');
+  assert.equal(docsCheck.scan(root), null, 'docs-check would report a clean pass here');
+  assert.equal(docsAudit.sweep(root, 14, Date.now()), null, 'docs-audit would report nothing drifted here');
+
+  // The count still reaches the one caller that says why out loud.
+  const stats = {};
+  assert.equal(survey.trackedFiles(root, { stats }), null);
+  assert.equal(stats.unlistable, 1);
+});
+
+// A path that is not there is not a subtree that would not open. Counting
+// `ENOENT` alongside `EACCES` turned `--root <typo>` into "a directory walk
+// elsewhere / skipped: 1 directory that could not be listed / ... try a synonym
+// before concluding it is new" — a walk that never ran, and advice premised on
+// the term being wrong rather than the path.
+test('a root that does not exist reads as nothing readable, not as one that could not be listed', () => {
+  const gone = path.join(os.tmpdir(), 'fankeel-no-such-root-at-all');
+  const out = survey.report(survey.scan(gone, ['widget']), ['widget']);
+  assert.match(out, /nothing readable under that root/);
+  assert.equal(/could not be listed/.test(out), false, 'a missing path was counted as a blocked one');
 });
 
 // The walk drops spreadsheets, archives, media and binaries by extension, and

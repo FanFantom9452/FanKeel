@@ -309,4 +309,35 @@ test('a directory that cannot be listed says so, rather than reporting no files'
   const out = orient.main(['--root', root]);
   assert.match(out, /could not be listed/);
   assert.equal(/0 files/.test(out), false, 'an unlistable directory reported as holding nothing');
+
+  // And it stops one line short of asserting what is not in there. `read first:
+  // nothing — no CLAUDE.md, AGENTS.md or README.md here.` printed directly under
+  // `could not be listed`: absence read off a directory that would not open.
+  assert.equal(/read first: nothing/.test(out), false,
+    'absence claimed about a directory that could not be read');
+});
+
+// Step 1 and step 4 of one stage, over one root, disagreeing by two: survey's
+// header excludes subtrees — a submodule is one entry standing for a whole
+// repository, not one file — and orient counted entries. It read `11 files`
+// where survey read `9`.
+test('the file count matches the one survey puts in its header', () => {
+  const root = workspace({ 'a.js': 'x\n', 'b.js': 'x\n', 'c.js': 'x\n' });
+  execFileSync('git', ['init', '-q'], { cwd: root });
+  // Both shapes git reports a nested repository in: a bare name for a submodule,
+  // a trailing slash for an untracked one.
+  for (const name of ['sub', 'vendor.js']) {
+    const inner = path.join(root, name);
+    fs.mkdirSync(inner);
+    fs.writeFileSync(path.join(inner, 'deep.js'), 'x\n');
+    execFileSync('git', ['init', '-q'], { cwd: inner });
+    execFileSync('git', ['add', '-A'], { cwd: inner });
+    execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'x'], { cwd: inner });
+  }
+  execFileSync('git', ['add', '-A'], { cwd: root, stdio: ['ignore', 'ignore', 'ignore'] });
+
+  const survey = require('../scripts/survey.js');
+  const header = survey.report(survey.scan(root, []), []).split('\n')[0];
+  assert.match(header, /— 3 files/, 'survey counted the subtrees after all');
+  assert.match(orient.main(['--root', root]), /\b3 files\b/);
 });

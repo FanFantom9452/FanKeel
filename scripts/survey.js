@@ -24,7 +24,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { trackedFiles, MAX_WALK_FILES } = require('../lib/tracked.js');
+const { trackedFiles, MAX_WALK_FILES, SKIP_EXT } = require('../lib/tracked.js');
 
 // The default, not the law. `--max N` and `--all` move it, because a report that
 // silently stops at 25 answers a different question than the one that was asked —
@@ -99,17 +99,6 @@ function declPatterns(file) {
 
 const isDoc = (file) => path.extname(file).toLowerCase() === '.md';
 
-// `statSync` throws for an entry git lists that the disk does not have — a
-// staged file since deleted is the shipped test's own case — and a stat that
-// failed is not evidence of a directory.
-function isDirectory(full) {
-    try {
-        return fs.statSync(full).isDirectory();
-    } catch (e) {
-        return false;
-    }
-}
-
 // git reports a nested repository as one entry and never descends into it, in
 // either of two forms: a trailing slash when it is untracked, and a bare
 // directory name when it is a submodule.
@@ -117,10 +106,34 @@ function isDirectory(full) {
 // One function because there were two, and they drifted: the scan skipped the
 // stat for an entry carrying a declaration extension, the tree never did, and a
 // submodule named `vendor.js` came out a file in the header and a repository in
-// the tree below it. The saved stat bought nothing either — the scan stats every
-// file it opens anyway, one line later.
-function isSubtree(root, rel) {
-    return rel.endsWith('/') || isDirectory(path.join(root, rel));
+// the tree below it.
+//
+// Asked only of entries that could be one. Statting all of them ran 3.3x slower
+// on a 6,500-file repository, and spent it on the majority the scan never opens:
+// an entry carrying a file extension that no declaration pattern claims is a
+// file, and the stat only confirms it. What is left is the two shapes a subtree
+// actually takes — extensionless, `sub`, or named like something the scan reads,
+// `vendor.js` — and those are rare enough to pay for.
+//
+// The ones that are left are exactly the ones the read loop stats again for
+// their size, so it is handed the answer through `sizes` rather than asking
+// twice. Without that the survivors put the scan back over the budget on a
+// repository that is mostly code.
+function isSubtree(root, rel, sizes) {
+    if (rel.endsWith('/')) return true;
+    if (path.extname(rel) && !declPatterns(rel)) return false;
+    let st;
+    try {
+        st = fs.statSync(path.join(root, rel));
+    } catch (e) {
+        // A stat that failed is not evidence of a directory — git lists an entry
+        // the disk no longer has, and a staged file since deleted is the shipped
+        // test's own case.
+        return false;
+    }
+    if (st.isDirectory()) return true;
+    if (sizes) sizes.set(rel, st.size);
+    return false;
 }
 
 
@@ -134,7 +147,14 @@ function matches(terms, ...fields) {
 }
 
 function scan(root, terms) {
-    const tracked = trackedFiles(root);
+    // `null` from `trackedFiles` means nothing readable, and a root whose only
+    // subtree could not be listed is nothing readable — every other caller wants
+    // that answer and two of them are gates. This one wants to say *why*, so it
+    // asks for the count separately and rebuilds the empty result around it.
+    const stats = {};
+    const tracked = trackedFiles(root, { stats }) || (stats.unlistable
+        ? { files: [], repos: [], walked: true, truncated: false, unlistable: stats.unlistable, skippedExt: 0 }
+        : null);
     if (tracked === null) return null;
     const { files: entries, repos, walked, truncated, unlistable, skippedExt } = tracked;
 
@@ -147,8 +167,9 @@ function scan(root, terms) {
     // read loop all agree on what is a file.
     const nested = [];
     const files = [];
+    const sizes = new Map();
     for (const entry of entries) {
-        if (isSubtree(root, entry)) nested.push(entry);
+        if (isSubtree(root, entry, sizes)) nested.push(entry);
         else files.push(entry);
     }
 
@@ -183,7 +204,10 @@ function scan(root, terms) {
         const full = path.join(root, file);
         let text;
         try {
-            if (fs.statSync(full).size > MAX_FILE_BYTES) { skipped.oversize++; continue; }
+            // The split already stat'd every entry that reaches here, so the
+            // size is asked for rather than taken again.
+            const size = sizes.has(file) ? sizes.get(file) : fs.statSync(full).size;
+            if (size > MAX_FILE_BYTES) { skipped.oversize++; continue; }
             text = fs.readFileSync(full, 'utf8');
         } catch (e) {
             skipped.unreadable++;
@@ -374,9 +398,15 @@ function report(result, terms, opts) {
     // count is not — `4 with no pattern for their extension` says nothing about
     // which four. Capped like every other section, so an over-cap skip list is
     // itself visible rather than being the second silent loss.
+    //
+    // Binaries come off it. Inside a repository nothing drops a tracked `.png`,
+    // so `assets/logo.png` reached `noPattern` and got listed here — under a
+    // title whose whole job is the split between what a reader can act on and
+    // what it cannot. It stays in the count on the `skipped:` line; it is only
+    // not an instruction.
     if (skipped) {
         lines.push(...section('skipped, and openable by hand:', [
-            ...skipped.noPattern,
+            ...skipped.noPattern.filter((f) => !SKIP_EXT.has(path.extname(f).toLowerCase())),
             ...skipped.nested.map((d) => d + '  (a repository of its own)'),
         ], (f) => f, max));
     }
@@ -437,4 +467,4 @@ if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
 
-module.exports = { scan, report, main, parseArgs, declPatterns, matches, trackedFiles, treeLines, human };
+module.exports = { scan, report, main, parseArgs, declPatterns, matches, trackedFiles, isSubtree, treeLines, human };

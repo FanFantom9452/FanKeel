@@ -209,7 +209,16 @@ test('the delegation rule is a principle, not a list of barred stages', () => {
   // shape is barred rather than the literals: no exact character count in the
   // block at all. It states the size rounded and keeps the date, which is the
   // half of a measurement that cannot go stale.
-  const block = text.slice(text.indexOf('measured 20')).split('\n\n').slice(0, 2).join('\n\n');
+  //
+  // The window was the two paragraphs from `measured 20`, which is the fence and
+  // the paragraph under it — so a figure one paragraph either side of that was
+  // invisible to the guard that exists to bar it. It is the whole measurement
+  // now: the section heading down to the sentence that pivots to the other
+  // measurement, whose figures are a one-off fan-out that cannot go stale.
+  const start = text.indexOf('### Delegate the reading, never the filtering');
+  const end = text.indexOf('But that measures', start);
+  assert.ok(start !== -1 && end > start, 'the measurement section is not where the guard looks');
+  const block = text.slice(start, end);
   assert.equal(/\d[\d,]*\s+characters/.test(block), false, 'an exact character count is back in the block');
   assert.equal(/\b\d{2},\d{3}\b/.test(block), false, 'an exact figure is back in the block');
 });
@@ -229,7 +238,12 @@ test('the delegation rule bars the stage itself and says why', () => {
 test('survey no longer offers a fourth option to authorise more reading', () => {
   const text = read('fankeel-survey');
   assert.equal(/fourth option/i.test(text), false, 'the fourth option survived');
-  assert.match(text, /dispatch/i);
+  // The rule itself, not the word. `/dispatch/i` matched four unrelated uses of
+  // "dispatching" elsewhere on the page, so replacing this sentence with **Ask
+  // the user for permission before reading any wider.** — the exact thing the
+  // test is named for barring — left it green.
+  assert.match(text, /\*\*Dispatch when the reading is wide, or when nothing matched at all\.\*\*/);
+  assert.match(text, /Never ask permission for either/);
   // Added in the pre-flight scan: the option also had a row in the main skill's
   // question-shape table, and a manual grep in a step is a check that goes
   // missing after a compaction.
@@ -244,7 +258,11 @@ test('survey no longer offers a fourth option to authorise more reading', () => 
 test('the plan template carries the dispatch slot and names its floor', () => {
   const text = read('fankeel-plan');
   assert.match(text, /\*\*Dispatch:\*\*/);
-  assert.match(text, /sonnet/);
+  // The floor rule, not the word. `/sonnet/` matched the worked example in the
+  // template above it, so deleting the rule that makes sonnet the floor left
+  // this green — the one thing the test is named for.
+  assert.match(text, /\*\*`sonnet` is the floor and the default\*\*/);
+  assert.match(text, /\*\*Anything above `sonnet` names why on that same line\.\*\*/);
   assert.match(text, /opus/);
 });
 

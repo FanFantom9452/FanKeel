@@ -22,6 +22,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const { trackedFiles, isRepo } = require('../lib/tracked.js');
+const { isSubtree } = require('./survey.js');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { firstTable } = require('../lib/map.js');
@@ -175,15 +176,27 @@ function mapFrom(dir, name) {
     return out;
 }
 
+// Step 1 of a stage whose step 4 is `survey`, over the same root, so the two
+// count the same thing: `survey`'s header excludes subtrees — a submodule is one
+// entry standing for a repository, not one file — and counting entries here had
+// orient say `11 files` where survey said `9`. Same predicate, imported rather
+// than repeated, because two answers to "is this a subtree" is how the last pair
+// drifted.
+//
+// `unlistable` comes back through `stats`: `trackedFiles` returns `null` for a
+// root it could read nothing under, which is the contract `docs-check` and
+// `docs-audit` gate on, and this is the caller that wants to say why.
 function countFiles(dir) {
+    const stats = {};
     let result;
     try {
-        result = trackedFiles(dir);
+        result = trackedFiles(dir, { stats });
     } catch (e) {
         return null;
     }
-    if (!result) return null;
-    return { files: result.files.length, truncated: result.truncated, list: result.files, unlistable: result.unlistable };
+    if (!result && !stats.unlistable) return null;
+    const list = result ? result.files.filter((f) => !isSubtree(dir, f)) : [];
+    return { files: list.length, truncated: result ? result.truncated : false, list, unlistable: stats.unlistable || 0 };
 }
 
 // Immediate subdirectories worth calling a project. Dot-directories are out for
@@ -225,9 +238,11 @@ const files = (n) => n + (n === 1 ? ' file' : ' files');
 // the same fact as holding none — and `0 files` said the second. survey, step 4
 // of the same stage, reports "1 directory that could not be listed" over the
 // same root; step 1 calling it empty is the two disagreeing inside one stage.
+const unlisted = (count) => Boolean(count && !count.files && count.unlistable);
+
 function countText(count) {
     if (!count) return 'nothing readable';
-    if (!count.files && count.unlistable) return 'could not be listed';
+    if (unlisted(count)) return 'could not be listed';
     return files(count.files)
         + (count.truncated ? '+ (capped)' : '')
         + (count.unlistable ? ', ' + count.unlistable + ' not listed' : '');
@@ -410,10 +425,13 @@ function report(result) {
                 lines.push('from ' + one.base + '/CLAUDE.md:');
                 for (const l of one.map) lines.push('  ' + l);
             }
-        } else if (one.count) {
+        } else if (one.count && !unlisted(one.count)) {
             lines.push('');
             lines.push('read first: nothing — no CLAUDE.md, AGENTS.md or README.md here.');
         }
+        // Not when the row one line above says `could not be listed`. Absence
+        // read off a directory that would not open is the confident wrong answer
+        // this whole report exists to stop.
 
         // What the project is in the middle of. A task started without this gets
         // designed against the branch as it was described rather than as it is.
