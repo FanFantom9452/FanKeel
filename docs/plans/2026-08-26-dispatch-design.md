@@ -63,6 +63,26 @@ Opposite arithmetic. The first is about **filtering output you have already
 produced**; the second is about **not producing it in this context at all**. The
 paragraph uses the first to bar the second.
 
+> **Annotated 2026-08-26, after the whole-branch review. This section is
+> incomplete as written, and the gap was found in review rather than here.**
+>
+> The old ban did **two** jobs and only one of them is diagnosed above. The second
+> is mechanical: a subagent receives `renderBrief` and nothing else, because
+> `hooks/inject.js` is a `UserPromptSubmit` hook and a subagent has no prompt. So
+> `ALWAYS`, the stage's own rules and its output shape never reach it, and a
+> *stage* run inside a subagent loses its gate, its report shape and every rule at
+> once — silently.
+>
+> Replacing an enumeration with a principle about token flow left that second job
+> with no carrier. Worse, the `delegate` row below describes `audit`'s own work
+> almost word for word, so the text as first written arguably invited the failure
+> the ban prevented.
+>
+> What shipped adds the boundary back in the form the fact supports: **delegate a
+> job inside a stage, never the stage itself** — argued from the hook mechanics
+> rather than from a list of stage names. The diagnosis above stands; it was not
+> the whole of it.
+
 ## The rule that replaces it
 
 > **Delegate the reading, never the filtering.**
