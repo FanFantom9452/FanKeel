@@ -11,12 +11,21 @@ const sub = (stage) => rulesFor(stage, SCRIPTS);
 const NOW = Date.parse('2026-08-21T12:00:00.000Z');
 const ago = (ms) => new Date(NOW - ms).toISOString();
 
+// `class` and `route` are in the default because every real task carries both:
+// `task.js start --class` writes them, and `lib/render.js` turns the class into
+// a 95-character means sentence on every prompt. Without them this fixture
+// measured 95 characters less than anything a session produces, so the cap below
+// — the one thing sizing the block — was passing on an entry that does not exist
+// while `survey` sat 77 over it in real use. `architectural` and the seven-stage
+// route because a cap measures the worst real case or it measures nothing.
 const entry = (sessionId, over) => ({
   sessionId,
   data: Object.assign({
     task: 'rework the colour ramp',
     claims: ['statusline.ps1', 'statusline.sh'],
     stage: 'implement',
+    class: 'architectural',
+    route: ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'],
     active: true,
     started: ago(2 * 3600e3),
     updated: ago(60e3),

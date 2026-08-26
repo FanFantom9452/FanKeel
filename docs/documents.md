@@ -122,9 +122,8 @@ in a quarter.
 So the `build` stage rules carry the gate, not only the `audit` stage:
 
 > A new document is the last resort: put it in an existing page, or write a
-> generator when the content is derivable from code. One that is written carries
-> status, last_verified and source_of_truth — and a plan is not filed as
-> reference.
+> generator when the content derives from code. One written carries status,
+> last_verified and source_of_truth; a plan is not filed as reference.
 
 ### Filing, and what happens when you do not
 

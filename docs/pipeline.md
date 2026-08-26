@@ -117,12 +117,12 @@ stage rules:
   - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
-  - From a plan (the fankeel-build skill has the loop): `node F:\ymlab\fankeel\scripts\ledger.js --plan <f> show` first and never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction trust it over memory.
-  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, or every path forward a guess.
-  - Every changed line traces to the ask. Follow the patterns already here; do not improve adjacent code, comments or formatting on the way past. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
-  - Anything deferred goes in TODO.md as one line pointing at the detail — never as a comment nobody will find.
-  - A new document is the last resort: put it in an existing page, or write a generator when the content is derivable from code. One that is written carries status, last_verified and source_of_truth — and a plan is not filed as reference.
-  - Output: one line per file as `path +n/-m — what changed`, then the question. Under 80 words. The diff is the output; prose is for what it cannot show.
+  - From a plan (the fankeel-build skill has the loop): `node F:\ymlab\fankeel\scripts\ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction it beats memory.
+  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path forward a guess.
+  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code, comments or formatting in passing. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
+  - Anything deferred goes in TODO.md as one line pointing at the detail, never a comment nobody will find.
+  - A new document is the last resort: put it in an existing page, or write a generator when the content derives from code. One written carries status, last_verified and source_of_truth; a plan is not filed as reference.
+  - Output: one line per file as `path +n/-m — what changed`, then the question. Under 80 words; the diff is the output, prose for what it cannot show.
 
 output shape:
   - path +12/-3 — what changed
@@ -197,12 +197,12 @@ stage rules:
   - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
-  - From a plan (the fankeel-build skill has the loop): `node F:\ymlab\fankeel\scripts\ledger.js --plan <f> show` first and never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction trust it over memory.
-  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, or every path forward a guess.
-  - Every changed line traces to the ask. Follow the patterns already here; do not improve adjacent code, comments or formatting on the way past. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
-  - Anything deferred goes in TODO.md as one line pointing at the detail — never as a comment nobody will find.
-  - A new document is the last resort: put it in an existing page, or write a generator when the content is derivable from code. One that is written carries status, last_verified and source_of_truth — and a plan is not filed as reference.
-  - Output: one line per file as `path +n/-m — what changed`, then the question. Under 80 words. The diff is the output; prose is for what it cannot show.
+  - From a plan (the fankeel-build skill has the loop): `node F:\ymlab\fankeel\scripts\ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction it beats memory.
+  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path forward a guess.
+  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code, comments or formatting in passing. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
+  - Anything deferred goes in TODO.md as one line pointing at the detail, never a comment nobody will find.
+  - A new document is the last resort: put it in an existing page, or write a generator when the content derives from code. One written carries status, last_verified and source_of_truth; a plan is not filed as reference.
+  - Output: one line per file as `path +n/-m — what changed`, then the question. Under 80 words; the diff is the output, prose for what it cannot show.
 
 output shape:
   - path +12/-3 — what changed
