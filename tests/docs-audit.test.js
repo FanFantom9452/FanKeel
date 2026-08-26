@@ -244,7 +244,7 @@ test('a repository that declared no tree still gets one from its directories', (
   assert.match(audit.report(r), /implied by the directories, not declared/);
 });
 
-test('only the first three sections fail the run', () => {
+test('pairs and uncovered directories are context, not defects', () => {
   const clean = withTree(tree({
     'docs/README.md': '- [A](01-a.md)\n- [B](02-b.md)\n',
     'docs/01-a.md': 'see `lib/badge.js`\n',
