@@ -152,4 +152,27 @@ the wait cap even with eight processes on one record. A writer that does reach i
 gives up rather than writing anyway — a dropped claim comes back on the next edit
 to that path, where a clobbered record does not.
 
+# The id the hooks use
+
+Every hook reads `payload.session_id`, and the entry it looks for is that id plus
+`.json`. An entry written under any other id is one no hook will ever find — and
+every one of them is silent about it, correctly: a miss is what a session that
+never used the plugin looks like, which is nearly always what it is.
+
+That cost one session two hours. A background task's output directory carried a
+second session id, in the same shape as the real one, and it went into every
+`task.js` call while the hooks read the other. No injections, no claims, and a
+statusline badge under an id the statusline does not read.
+
+Two things close it, both upstream of the hooks:
+
+| | |
+|---|---|
+| `scripts/task.js` | `--session` is checked against Claude Code's own `<config>/sessions/<pid>.json`. An id no running process claims is refused, and the message lists the ids that are running with the directory each was opened in. A directory that cannot be read allows everything — a refusal must never come from a failed measurement. |
+| `hooks/inject.js` | a `/fankeel` prompt is answered with one line naming this session's id: the one that hook is itself holding. |
+
+`clear <id>` and `adopt <id>` take the other session's id positionally rather
+than through `--session`, so a dead neighbour is still reachable. That is what
+those two commands are for.
+
 [Back to the index](README.md) · [Back to the front page](../README.md)

@@ -125,8 +125,12 @@ A record written before claims shipped carries `scope` where `claims` is here. I
 is read as the claim list, and the old field goes on the next write.
 
 The current session id is in the `FANKEEL ACTIVE` block when the mode is on. When
-it is not, read it from the transcript path — never guess, and never write a file
-whose name you invented.
+it is not, the `/fankeel` prompt is answered with it: one line, from the hook that
+holds it. Use that one. A background task's output directory and a scratch
+directory both carry a session id in the same shape and are not always this
+session's, and an entry written under the wrong one is invisible — every hook goes
+quiet on a miss, because a miss is what a session not using the plugin looks like.
+`task.js` refuses an id no running session claims rather than writing it.
 
 **Never write that file by hand.** Every change to it goes through one script:
 
