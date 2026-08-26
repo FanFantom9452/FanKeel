@@ -353,10 +353,17 @@ Both replacements are deliberately in the matching form:
 > row claims it is not one.
 >
 > Two things narrow the gap rather than closing it. `scripts/survey.js` now
-> reports the files it skipped, so three previously silent paths became observable
-> and joined the conditional; and "nothing matched at all" was observable from the
-> start. What remains judgement is genuinely judgement: no predicate can decide
-> that forty rows of results need a second pair of eyes.
+> reports the files it skipped, so three previously silent paths became
+> observable; and "nothing matched at all" was observable from the start. What
+> remains judgement is genuinely judgement: no predicate can decide that forty
+> rows of results need a second pair of eyes.
+>
+> **Corrected again after the third review.** The sentence above first said the
+> skip report "joined the conditional". A later commit trimmed that clause out of
+> the injected rule to fit the character budget, which made this annotation false
+> the moment it was written — the condition was observable and no rule read it.
+> Put back since. A note about a fix, falsified by the next fix, is the same
+> failure this whole document is about.
 >
 > The form argument still holds for the `**Dispatch:**` slot, which is the
 > required-slot row and shipped exactly as described.
