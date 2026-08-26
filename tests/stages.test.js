@@ -428,6 +428,9 @@ test('plan makes the dispatch decision a slot every task has to fill', () => {
 // round at all: the scope and the dispatch happen in the same response.
 test('survey scopes its reading from the tree before the first term', () => {
   const text = byName('survey').rules.join(' ');
-  assert.match(text, /before the first term/, 'the scope is still decided only by what the scanner failed at');
-  assert.match(text, /model/, 'the dispatch never says how many readers, or on what');
+  // Pinned as whole clauses. `/before the first term/` on its own passed a
+  // sentence saying the opposite of this one, and `/model/` on its own passed
+  // any stray use of the word elsewhere in the rules.
+  assert.match(text, /Scope from the tree before the first term/, 'the scope is still decided only by what the scanner failed at');
+  assert.match(text, /count and model/, 'the dispatch names neither how many readers nor which model');
 });

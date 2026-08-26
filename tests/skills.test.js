@@ -378,6 +378,10 @@ test('the dispatch rule count agrees with the bullet list under it, and with the
 // than as a move with a place in the sequence.
 test('survey names the tree scope step and says what the dispatch costs', () => {
   const text = read('fankeel-survey');
-  assert.match(text, /before you type the terms/i, 'the tree step has no place in the sequence');
+  const treeAt = text.indexOf('Before you type the terms');
+  const scanAt = text.indexOf('survey.js [--root <dir>] <term>...');
+  assert.ok(treeAt > -1, 'the tree step has no place in the sequence');
+  assert.ok(scanAt > -1, 'the scan invocation moved; this test no longer measures anything');
+  assert.ok(treeAt < scanAt, 'the tree step no longer comes before the scan it scopes');
   assert.match(text, /how many readers, and on which model/i, 'the dispatch never says what it costs');
 });
