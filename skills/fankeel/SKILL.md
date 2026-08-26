@@ -246,6 +246,14 @@ A fixed route made the progress indicator lie in both directions — a two-stage
 task sat at 2 of 7 looking permanently unfinished, and a long one got no credit
 for the stages it invented. The route is what `●●●○○` on the statusline counts.
 
+**Before the terms, the tree.** `orient` has already listed the directories and
+`survey.js --tree` gives every one of them with its size — the only input there
+is before the first term is typed, and what decides whether this is one scan here
+or three readers with a lens each. Scope and dispatch go out in the **same
+response**, saying how many readers and on which model. Neither waits on an
+answer; a scope announced in one round and acted on in the next has spent a round
+on nothing.
+
 `survey` carries a scanner rather than an instruction to search. The injected
 rule names the script as `<plugin>/scripts/survey.js`, and one line above the
 rules the block says what `<plugin>` resolves to — stated once rather than spelled

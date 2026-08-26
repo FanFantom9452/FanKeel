@@ -372,3 +372,28 @@ test('the dispatch rule count agrees with the bullet list under it, and with the
   assert.equal(WORDS[docsLeadIn[1].toLowerCase()], bulletCount,
     `docs/subagents.md says "${docsLeadIn[1]}" but the skill lists ${bulletCount} rules`);
 });
+
+// The stage rule carries the trigger; the skill carries the step. Without the
+// step, a scope decided from the tree reads as one more thing to remember rather
+// than as a move with a place in the sequence.
+test('survey names the tree scope step and says what the dispatch costs', () => {
+  const text = read('fankeel-survey');
+  const treeAt = text.indexOf('Before you type the terms');
+  const scanAt = text.indexOf('survey.js [--root <dir>] <term>...');
+  assert.ok(treeAt > -1, 'the tree step has no place in the sequence');
+  assert.ok(scanAt > -1, 'the scan invocation moved; this test no longer measures anything');
+  assert.ok(treeAt < scanAt, 'the tree step no longer comes before the scan it scopes');
+  assert.match(text, /how many readers, and on which model/i, 'the dispatch never says what it costs');
+});
+
+// The main skill's account of the scanner went straight to the terms. A step the
+// stage skill carries and the page people read first does not is a step that gets
+// skipped by whoever read that page first.
+test('the main skill puts the tree ahead of the terms too', () => {
+  const text = read('fankeel');
+  const treeAt = text.indexOf('**Before the terms, the tree.**');
+  const scannerAt = text.indexOf('carries a scanner rather than an instruction to search');
+  assert.ok(treeAt > -1, 'the main skill still goes straight to the terms');
+  assert.ok(scannerAt > -1, 'the scanner section moved; this test no longer measures anything');
+  assert.ok(treeAt < scannerAt, 'the tree note no longer leads the scanner section');
+});
