@@ -414,6 +414,18 @@ small same-shape tasks into a single dispatch. A `**Dispatch:**` line can say so
 — `implementer, sonnet, batched with Tasks 4-5` — and one dispatch then covers
 all three.
 
+> **Not shipped, decided in the fifth review.** The batching form was written into
+> `skills/fankeel-plan/SKILL.md` and then removed. The build loop is one `BASE`,
+> one review range and one `complete <n>` per task, and a batch has no shape the
+> ledger can record: a half-finished one leaves it saying both tasks are still
+> open, which is the one thing the ledger exists to be right about. Giving it a
+> working form meant three new mechanisms for a case with no observed use. It also
+> shipped as "**may**", reopening a decision the injected rule states flatly.
+>
+> superpowers can batch because its ledger is per-plan prose. fankeel's is
+> per-task and machine-read. The idea was taken from a system whose bookkeeping
+> supports it, into one whose bookkeeping does not.
+
 **Not taken.** Its workspace directory and its three helper scripts
 (`sdd-workspace`, `task-brief`, `review-package`) — fankeel already has
 `scripts/ledger.js`, and the plan file on disk is already the artefact, so a
