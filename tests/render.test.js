@@ -342,12 +342,14 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
   // stage rather than only on the one the fixture happens to sit in, and each
   // size is reported so the margin is visible without editing this file.
   //
-  // 2400 is the third raise on this branch and should be the last. `build` is
-  // the binding stage with about twenty-five characters of room, and the two
-  // raises before it were paid for by content that had to exist: the ledger,
-  // without which a compacted session redoes committed work, and the four things
-  // that stop the loop, without which the default is to stop and ask. What stops
-  // a fourth raise is that `build` now has to displace a rule to gain one.
+  // 2400 is the third raise on this branch and should be the last. `survey` is
+  // now the binding stage at 2378 with `build` a few characters behind it, and
+  // the two raises before it were paid for by content that had to exist: the
+  // ledger, without which a compacted session redoes committed work, and the
+  // four things that stop the loop, without which the default is to stop and
+  // ask. What stops a fourth raise is that both of those stages now have to
+  // displace a rule to gain one — which is what the split of survey's dispatch
+  // arm into a dispatch and a report did, rather than asking for more room.
   for (const stage of NAMES) {
     const out = render({ mine: entry(MINE, { stage }), others: [], now: NOW });
     const size = sizeAtReference(out);

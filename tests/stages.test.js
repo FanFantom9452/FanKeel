@@ -73,12 +73,17 @@ test('a full injection of rules stays under a few hundred characters', () => {
   // needed them, not after, because a cap raised to fit a rule already written
   // is a cap that decides nothing.
   //
-  // The ALWAYS block is 655 of whatever the number is, so a stage's own rules
-  // get 1344. `build` is the binding one and always will be: it is the only
-  // stage that runs a loop without stopping, so it is the only one carrying
-  // both the discipline and the means of recovering its place after a
-  // compaction. It sits near 1250, which leaves under a hundred characters —
-  // the next rule added to `build` has to displace one, and that is the point.
+  // The ALWAYS block is 665 of whatever the number is, plus the newline joining
+  // it to the rest, so a stage's own rules get 1334. `build` is the binding one
+  // here and always will be: it is the only stage that runs a loop without
+  // stopping, so it is the only one carrying both the discipline and the means
+  // of recovering its place after a compaction. Its own rules are 1133, which
+  // leaves 201 characters against this cap.
+  //
+  // That headroom is not the real constraint any more. `tests/render.test.js`
+  // caps the whole injection at 2400 measured against a reference plugin root,
+  // and every stage sits within thirty characters of it — so a rule added here
+  // has to displace one there first. That is the point.
   for (const name of NAMES) {
     const size = rulesFor(name).join('\n').length;
     assert.ok(size < 2000, name + ' rules are ' + size + ' chars');

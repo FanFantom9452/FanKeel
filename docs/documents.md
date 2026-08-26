@@ -39,7 +39,7 @@ the output:
 ```
 $ node <plugin>/scripts/survey.js badge
 
-fankeel survey — 23 tracked files, matching: badge
+fankeel survey — 23 files, matching: badge
 
 files whose name matches:
   lib/badge.js

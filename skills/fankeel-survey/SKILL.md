@@ -90,7 +90,8 @@ its own output:
 and a walk that hit its ceiling prints `the walk stopped at N files`. A third
 line, `skipped:`, counts what was in the tree and never opened at all.
 
-**Three lines, three different fixes — and only the last one is a fan-out.**
+**Three lines, three different fixes — and only the last one fans out, over half
+of itself.**
 
 **A capped section is a re-run.** `--all` lifts the per-section cap and returns
 the rows it cut, for the cost of one command:
@@ -110,20 +111,30 @@ says the same: *narrow it with `--root` before trusting this*. Re-running withou
 narrowing returns the same truncated tree; dispatching readers over it hands them
 the same blind spot, four times over.
 
-**A `skipped:` line is covered by reading it — dispatch over it.** Files with no
+**A `skipped:` line is answered by reading what can be read.** Files with no
 declaration pattern for their extension, files over the size cap, files that
-could not be read, nested repositories git never descended into and directories
-that could not be listed are counted there and never opened. **No flag reaches
-any of them**: `--all` lifts a per-section cap and `--root` narrows a walk, and
-neither one opens a file the scanner had no way to parse. The header's file count
-is the tree, not the coverage; when the two disagree, the terms were checked
-against less than the report appears to say. The last two counts are subtrees
-rather than files, so a `1` there can hide any amount.
+could not be read, documents and binaries a walk drops by extension, nested
+repositories git never descended into and directories that could not be listed
+are counted there and never opened. **No flag reaches any of them**: `--all`
+lifts a per-section cap and `--root` narrows a walk, and neither one opens a file
+the scanner had no way to parse. The header's file count is the tree, not the
+coverage; when the two disagree, the terms were checked against less than the
+report appears to say. The last two counts are subtrees rather than files, so a
+`1` there can hide any amount.
 
-So this line is the one that does fan out: readers over what was skipped, one
-lens each, on the same terms — or open them yourself where there are only a few.
-Leaving the line unanswered is the confident wrong answer, said with a number
-next to it.
+So this line is the one that fans out — over the half of it a reader can act on.
+**Files with no pattern, over the cap or dropped by extension, and a nested
+repository, are one reader with the list.** The fankeel skill's test settles it:
+*if two readers would return the same shape of answer about different files, they
+are one reader with a list* — give it the terms and the list, not one reader per
+file.
+
+**The other half is reported, not dispatched and not left silent.** Nothing opens
+an unreadable file — the shipped test's case is a file no longer on disk — and a
+subagent sent at an unlistable directory hits the same `EACCES`. Say what the
+survey could not cover and why, next to the number, and move on. That is what
+keeps the coverage claim honest; leaving the line unanswered is the confident
+wrong answer, said with a number next to it.
 
 **Dispatch when the reading is wide, or when nothing matched at all.** Wide means
 the answer is a judgement over several subsystems rather than a longer list — the
