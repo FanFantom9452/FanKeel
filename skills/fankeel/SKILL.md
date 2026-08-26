@@ -298,7 +298,6 @@ The shape is the same every time, so it can be recognised without being read:
 | header | the stage that just finished | 12 characters, 6 if CJK |
 | question | the decision being made, and nothing else | ~40 characters, 20 if CJK |
 | option 1 | the next stage on the route. **Its description is where the approval happens** — say what accepting it accepts, not just which stage comes next. | one sentence |
-| option 2 (`survey` only) | read wider. Re-run the scanner uncapped and with the tree, read what it names, and come back to this same question. The stage does not change. | one sentence |
 | option 3 | stay in this stage. The description says what is still open. | one sentence |
 | option 4 | pause. The description says what `next` will be set to. | one sentence |
 
@@ -678,28 +677,49 @@ on:
   claimed for this task — `PostToolUse` fires inside it and writes to this
   session's entry.
 
-### Do not route the pipeline through subagents
+### Delegate the reading, never the filtering
 
-The tempting version of this is to run whole stages in background agents to keep
-the context small. Measured on this repository, that is the wrong tool for the
-thing it is aimed at:
+The tempting version is to run whole stages in background agents to keep the
+context small. For one kind of work, measured on this repository, that is the
+wrong tool for the thing it is aimed at:
 
 ```
-node --test, full output          34,150 characters
-the line that decides it              24 characters
+npm test, full output             49,074 characters
+the two lines that decide it          24 characters
 ```
 
-A subagent would read all 34,150 in a context that gets thrown away, and cost its
+A subagent would read all 49,074 in a context that gets thrown away, and cost its
 own system prompt to do it. `| grep -E '^ℹ (pass|fail)'` costs nothing and is
-1,400 times better. **What stacks up a context is raw output arriving in it, not
+2,045 times better. **What stacks up a context is raw output arriving in it, not
 work being done** — and the fix for that is at the source, which is what every
 stage's `Output:` rule is for.
 
-Delegate when reading is wide, the answer is narrow, and no filter can pick it
-out — *read these six documents and say whether any of them contradicts the
-code*. That is a judgement, so it cannot be grepped, and it is 60,000 characters
-of reading for two lines of answer. Verify, build and land are none of those
-things: their output is machine-shaped and already filterable.
+But that measures **filtering output you have already produced**. It says nothing
+about work not yet done, where the arithmetic runs the other way: a dispatched
+reader opens the files, follows the dead ends and reads the failed runs in a
+context that is thrown away, and what lands here is the answer. Measured on one
+fan-out of four readers over another plugin's skills: 240,881 tokens spent, about
+4,000 characters returned, 121 seconds of wall-clock rather than 352 because they
+went out in one response.
+
+| | |
+|---|---|
+| **delegate** | wide reading with a narrow answer — *read these six documents and say whether any contradicts the code*. A judgement, so no filter can pick it out |
+| **do not delegate** | anything a pipe already removes. One command's output is not worth a system prompt |
+
+Three rules that make it work, each of which fails silently when missed:
+
+- **Several dispatches in one response run at once.** One per response runs them
+  in sequence — the cost of parallelism with none of it.
+- **Always pass the model.** An omitted model inherits this session's, which is
+  usually the most capable and most expensive one available.
+- **Spot-check the results against each other.** Independently dispatched agents
+  share a prompt style and a model, so they make correlated mistakes that reading
+  each summary on its own will not catch.
+
+Which stages dispatch is not settled here. `survey` dispatches readers when its
+own scanner reports it did not list everything; `build` dispatches per task, and
+the plan's `**Dispatch:**` line is where that was decided.
 
 ## The scope guard
 

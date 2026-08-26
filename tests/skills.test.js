@@ -186,3 +186,31 @@ test('no live page offers a flag the task script no longer takes', () => {
     assert.equal(text.includes('--scope'), false, rel + ' still offers --scope');
   }
 });
+
+// It rested on one measurement of filtering a command's output, and was used to
+// bar three stages from a different kind of delegation entirely. Two neighbouring
+// pages in this same plugin contradicted it: fankeel-plan writes an Interfaces
+// block "for a task's implementer", and fankeel-survey says reading wide for a
+// narrow answer is what a subagent is for.
+test('the delegation rule is a principle, not a list of barred stages', () => {
+  const text = read('fankeel');
+  assert.equal(text.includes('Do not route the pipeline through subagents'), false,
+    'the prohibition is still there');
+  assert.match(text, /Delegate the reading, never the filtering/);
+  // The measurement it cites is the one this repository actually produces.
+  assert.match(text, /49,074/);
+  assert.equal(text.includes('34,150'), false, 'the stale figure survived');
+});
+
+// The stage that already said delegating was right, and then offered the user a
+// manual re-run instead.
+test('survey no longer offers a fourth option to authorise more reading', () => {
+  const text = read('fankeel-survey');
+  assert.equal(/fourth option/i.test(text), false, 'the fourth option survived');
+  assert.match(text, /dispatch/i);
+  // Added in the pre-flight scan: the option also had a row in the main skill's
+  // question-shape table, and a manual grep in a step is a check that goes
+  // missing after a compaction.
+  assert.equal(/read wider/i.test(read('fankeel')), false,
+    'the read wider row survives in the question-shape table');
+});

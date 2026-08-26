@@ -78,28 +78,42 @@ rather than reporting a clean sweep.
 **"Nothing matched" is a finding.** Say which terms were tried — the next person
 needs to know a synonym was already ruled out.
 
-### 4b. When part of it is not enough
+### 4b. When one pass did not cover it
 
-The report is capped at 25 rows a section, and on a large repository the tail it
-cuts is where the answer usually is. Two flags move it:
+The report is capped at 25 rows a section. When a section is cut, it says so in
+its own output:
+
+```
+  ... and 34 more, not listed
+```
+
+and a walk that hit its ceiling prints `the walk stopped at N files`.
+
+**Either line means dispatch, not ask.** The user's answer to "shall I read
+further?" is foreordained — they asked the question the reading answers — so the
+round buys nothing and costs a turn of their attention. Dispatch readers instead,
+and come back with the survey finished.
+
+- **Several in one response.** That is what makes them run at once; one dispatch
+  per response runs them in sequence.
+- **One lens each**, taken from what the scan named — a subsystem apiece, or a
+  term-cluster apiece. Not a fixed list.
+- **Tell each one what is already known**, so it returns only what is new.
+- **`sonnet` is the floor.** Pass the model explicitly; an omitted one inherits
+  this session's.
+- **Compare the returns against each other**, not just one by one. Agents
+  dispatched from one prompt style make correlated mistakes.
+
+The two flags are for the readers to use, not for another round here:
 
 ```
 node <plugin>/scripts/survey.js --all <term>...      # every match, no cap
 node <plugin>/scripts/survey.js --tree               # every directory, with sizes
 ```
 
-`--tree` answers the question search terms cannot: what is this project shaped
-like. It is the one section costing a stat per file, so it runs only when asked.
-
-**This is the fourth option at the gate, and it belongs to this stage alone.**
-`AskUserQuestion` accepts four options, so `read wider` sits between "next stage"
-and "stay": re-run with `--all --tree`, read what it names, and come back to the
-same question with more on screen. The stage does not change, the route does not
-change, and the class does not change.
-
-Reading wide for a narrow answer is what a subagent is for — that is exactly the
-trade `fankeel`'s own guidance names, and the case where delegating saves rather
-than costs. What comes back should be the findings, not the files.
+Reading wide for a narrow answer is what a subagent is for. This stage used to
+say that and then offer a manual re-run; the gate below is now the ordinary
+three options, and the survey in front of it is complete.
 
 ### 5. Classify, out loud
 
