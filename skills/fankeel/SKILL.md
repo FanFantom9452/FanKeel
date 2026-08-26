@@ -684,15 +684,20 @@ context small. For one kind of work, measured on this repository, that is the
 wrong tool for the thing it is aimed at:
 
 ```
-npm test, full output             49,074 characters
+measured 2026-08-26, 636 tests
+npm test, full output             49,742 characters
 the two lines that decide it          24 characters
 ```
 
-A subagent would read all 49,074 in a context that gets thrown away, and cost its
+A subagent would read all 49,742 in a context that gets thrown away, and cost its
 own system prompt to do it. `| grep -E '^ℹ (pass|fail)'` costs nothing and is
-2,045 times better. **What stacks up a context is raw output arriving in it, not
-work being done** — and the fix for that is at the source, which is what every
-stage's `Output:` rule is for.
+2,073 times better. **Re-measure it, do not carry it forward.** The date is on
+the block because the figure it replaced had none and had gone stale by 15,000
+characters before anyone noticed; a growing suite moves it every release.
+
+**What stacks up a context is raw output arriving in it, not work being done** —
+and the fix for that is at the source, which is what every stage's `Output:` rule
+is for.
 
 But that measures **filtering output you have already produced**. It says nothing
 about work not yet done, where the arithmetic runs the other way: a dispatched
@@ -717,9 +722,16 @@ Three rules that make it work, each of which fails silently when missed:
   share a prompt style and a model, so they make correlated mistakes that reading
   each summary on its own will not catch.
 
-Which stages dispatch is not settled here. `survey` dispatches readers when its
-own scanner reports it did not list everything; `build` dispatches per task, and
-the plan's `**Dispatch:**` line is where that was decided.
+**Delegate a job inside a stage; never the stage itself.** A subagent receives the
+brief and nothing else: `hooks/inject.js` is a `UserPromptSubmit` hook and a
+subagent has no prompt, so `ALWAYS`, the stage's own rules and its output shape
+never reach it. A stage run inside one loses its gate, its report shape and every
+rule at once, and nothing anywhere says so. What you dispatch is a question with
+an answer — *read these six documents and say whether any contradicts the code*.
+The judgement it feeds, the evidence and the gate stay here, where the rules are.
+
+`survey` dispatches readers; `build` dispatches per task, and the plan's
+`**Dispatch:**` line is where that was decided.
 
 ## The scope guard
 

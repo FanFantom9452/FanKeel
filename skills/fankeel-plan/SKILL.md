@@ -88,17 +88,27 @@ Every task carries an **Interfaces** block:
 - Produces: what later tasks rely on — exact names, parameter and return types
 ```
 
-A task's implementer sees only their own task. This block is how they learn the
-names their neighbours use.
+A **dispatched** implementer sees only their own task, and this block is how they
+learn the names their neighbours use. An `in-session` task is implemented in the
+session that wrote the plan, which has all of it — the block is still written,
+because which tasks are dispatched can change after the plan is approved and a
+reviewer reads it either way.
 
-And one line saying whether that implementer is dispatched at all:
+And one line saying whether that implementer is dispatched at all. Three
+alternatives, one of which every task carries:
 
 ```markdown
 **Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
-**Dispatch:** in-session — badge.js and render.js interlock here, and splitting one
-change across two contexts costs more than the reading saves.
-**Dispatch:** implementer, opus — the lock protocol has to be reasoned about, not
-transcribed.
+```
+
+```markdown
+**Dispatch:** in-session — badge.js and render.js interlock here, and splitting
+one change across two contexts costs more than the reading saves.
+```
+
+```markdown
+**Dispatch:** implementer, opus — the lock protocol has to be reasoned about,
+not transcribed.
 ```
 
 Three rules about that line:

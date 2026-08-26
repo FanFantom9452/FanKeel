@@ -413,7 +413,7 @@ flowchart TD
     T2b["<b>dispatch an implementer</b><br/>pass the model explicitly<br/><i>it commits and returns a sha, never a diff</i>"]
     T3["test first where the task says so<br/><i>a test you did not watch fail is a test<br/>whose meaning you do not know</i>"]
     T4["commit"]
-    T5["<b>one reviewer</b><br/>the task text, the diff from BASE,<br/>and map.md — never the session's history"]
+    T5["<b>one reviewer</b><br/>the task text, BASE..&lt;sha&gt;,<br/>and map.md — never the session's history"]
     T6{"findings?"}
     T7["fix round<br/><i>bounded at five</i>"]
     T8["ledger complete,<br/>'what landed'"]
@@ -425,9 +425,9 @@ flowchart TD
     T2 -- "in-session" --> T2a
     T2 -- "implementer, model" --> T2b
     T2a --> T3
-    T2b --> T3
     T3 --> T4
     T4 --> T5
+    T2b --> T5
     T5 --> T6
     T6 -- yes --> T7
     T7 --> T5

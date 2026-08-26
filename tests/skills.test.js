@@ -197,9 +197,23 @@ test('the delegation rule is a principle, not a list of barred stages', () => {
   assert.equal(text.includes('Do not route the pipeline through subagents'), false,
     'the prohibition is still there');
   assert.match(text, /Delegate the reading, never the filtering/);
-  // The measurement it cites is the one this repository actually produces.
-  assert.match(text, /49,074/);
+  // The measurement it cites is one this repository actually produced, and the
+  // block says when. Two figures have already gone stale here undetected — a
+  // number with no date reads as current however old it is, so the date is the
+  // part a test can hold.
+  assert.match(text, /measured 20\d\d-\d\d-\d\d/, 'the measurement block carries no date');
   assert.equal(text.includes('34,150'), false, 'the stale figure survived');
+  assert.equal(text.includes('49,074'), false, 'the superseded figure survived');
+});
+
+// The principle replaced a prohibition, and the prohibition was the only thing
+// that had said a whole stage must not be dispatched. A subagent gets the brief
+// and no prompt, so the stage rules a UserPromptSubmit hook injects never reach
+// it — the reason has to be on the page, not only the rule.
+test('the delegation rule bars the stage itself and says why', () => {
+  const text = read('fankeel');
+  assert.match(text, /never the stage itself/);
+  assert.match(text, /no prompt/);
 });
 
 // The stage that already said delegating was right, and then offered the user a

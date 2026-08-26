@@ -67,11 +67,19 @@ For each task the ledger does not list as complete:
    which is the one cost dispatching exists to avoid, and step 5 already reads
    it from git. Never two implementers at once, and never a second on work
    related to the first even in different files.
-3. Test first where the task says so. If you did not watch the test fail, you do
-   not know it tests the right thing.
-4. Commit.
-5. One reviewer, against the task text and the diff from BASE. Give it the diff
-   and the path to `.fankeel/map.md` — never a paste of the session's history.
+3. **`in-session` only** — test first where the task says so. If you did not
+   watch the test fail, you do not know it tests the right thing. A dispatched
+   implementer did this inside its own run; it does not happen twice.
+4. **`in-session` only** — commit. A dispatched implementer already committed and
+   returned the sha, which is what makes step 5 possible without a diff in this
+   context.
+5. One reviewer, against the task text and the diff. **Pin the range at both
+   ends** — `BASE..<the sha the implementer returned>`, or `BASE..HEAD` for an
+   `in-session` task. An open upper end is not a range: the next task's commits
+   walk into the review the moment they land. Give it that range and the path to
+   `.fankeel/map.md` — never a paste of the session's history. Pinned that way
+   the review is read-only over a fixed range, so it may run while the next task
+   is being implemented.
 6. Fix rounds are bounded at **five**. A finding you overrule is a ruling, not a
    silence.
 7. `ledger.js --plan <file> complete <n> "<what landed>"`.
@@ -121,8 +129,14 @@ index, `HEAD` or branch state — `git show`, `git diff` and `git log` are how i
 inspects, and a separate worktree is how it checks out another revision if it
 truly must. It flags a departure from the plan **as a departure, for
 confirmation**, not as a defect, and says so plainly if the plan is what looks
-wrong. And never fix a finding here yourself: a fix made in this session skips
-the review that found it.
+wrong.
+
+**Whose findings you may fix depends on who implemented the task.** For a
+**dispatched** implementer, never patch its work here: resume that implementer
+with the findings, because a fix made in this session skips the review that found
+it and throws away the context the implementer already holds. For an
+**`in-session`** task there is no implementer to resume — its findings are fixed
+in place, by you, and the fix goes back to the reviewer like any other round.
 
 ## When the plan is wrong
 

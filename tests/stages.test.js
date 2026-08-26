@@ -368,7 +368,7 @@ test('every stage points at the skill holding the part that does not compress', 
 });
 
 test('the three options are the whole list, and no stage has a fourth', () => {
-  assert.match(ALWAYS[0], /at least/, 'three is the floor, not the list');
+  assert.match(ALWAYS[0], /at least/, 'the three are no longer named as a minimum, so the pause can be dropped');
 
   // survey used to carry a fourth: `read wider`, which ended the round with the
   // reading not done. The flags it named live in the fankeel-survey skill now,
@@ -382,13 +382,17 @@ test('the three options are the whole list, and no stage has a fourth', () => {
 
 // The fourth option was a loop with the user as its counter. `read wider` ended
 // the round with the reading not yet done, so a survey needing four slices cost
-// four turns of somebody's attention. The scanner already says when it did not
-// list everything, which is an observable predicate a rule can key on — where
-// "does this seem like enough?" is a judgement, and judgements get asked about.
-test('survey dispatches on a truncated scan instead of asking to read further', () => {
+// four turns of somebody's attention. Dispatching is the answer to that, but not
+// to a cap: a section overflowing by five rows is what `--all` is for, and
+// fanning out there delegates what a flag already removes. The case the trigger
+// must not miss is the opposite one — a scan that matched nothing, where there
+// is no list to widen and reading wider is the only move left.
+test('survey re-runs a capped scan before it dispatches, and dispatches on nothing matched', () => {
   const text = byName('survey').rules.join(' ');
-  assert.match(text, /not listed/);
-  assert.match(text, /one response/);
+  assert.match(text, /--all/, 'a capped scan no longer says to re-run it first');
+  assert.match(text, /nothing matched at all/, 'a zero-match scan is not a dispatch trigger');
+  assert.match(text, /one response/, 'the readers no longer go out together');
+  assert.equal(/not listed/.test(text), false, 'the cap is still the trigger');
   assert.equal(/fourth option/.test(text), false, 'the fourth option survived');
 });
 

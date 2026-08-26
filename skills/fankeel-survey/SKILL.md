@@ -89,10 +89,24 @@ its own output:
 
 and a walk that hit its ceiling prints `the walk stopped at N files`.
 
-**Either line means dispatch, not ask.** The user's answer to "shall I read
-further?" is foreordained — they asked the question the reading answers — so the
-round buys nothing and costs a turn of their attention. Dispatch readers instead,
-and come back with the survey finished.
+**A cap is a re-run, not a fan-out.** Either line means the flag first — it costs
+one command and returns the rows the cap cut:
+
+```
+node <plugin>/scripts/survey.js --all <term>...      # every match, no cap
+node <plugin>/scripts/survey.js --tree               # every directory, with sizes
+```
+
+A section overflowing by five filenames is not wide reading; dispatching there
+delegates what a flag already removes.
+
+**Dispatch when the reading is wide, or when nothing matched at all.** Wide means
+the answer is a judgement over several subsystems rather than a longer list — the
+one case a subagent pays for. A **zero-match scan** is the other: there is no list
+to widen, the terms were wrong or the thing is named something else, and reading
+wider is the only move left. Never ask permission for either. The user's answer to
+"shall I read further?" is foreordained — they asked the question the reading
+answers — so the round buys nothing and costs a turn of their attention.
 
 - **Several in one response.** That is what makes them run at once; one dispatch
   per response runs them in sequence.
@@ -104,16 +118,9 @@ and come back with the survey finished.
 - **Compare the returns against each other**, not just one by one. Agents
   dispatched from one prompt style make correlated mistakes.
 
-The two flags are for the readers to use, not for another round here:
-
-```
-node <plugin>/scripts/survey.js --all <term>...      # every match, no cap
-node <plugin>/scripts/survey.js --tree               # every directory, with sizes
-```
-
 Reading wide for a narrow answer is what a subagent is for. This stage used to
-say that and then offer a manual re-run; the gate below is now the ordinary
-three options, and the survey in front of it is complete.
+say that and then offer a manual re-run at the gate; the gate below is now the
+ordinary three options, and the survey in front of it is complete.
 
 ### 5. Classify, out loud
 
