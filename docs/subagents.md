@@ -39,13 +39,18 @@ The section below says what a subagent is *not*. This is the other half.
 
 Measured on 2026-08-26, one fan-out of four readers with a lens each: 240,881
 tokens spent inside them, about 4,000 characters returned, and 121 seconds rather
-than 352 because all four went out in one response.
+than 352 because all four went out in one response. A second fan-out, measured the
+same day during this branch's own verify stage, sent four readers out in one
+response for 614 seconds of combined agent time against 235 seconds of wall-clock
+— the slowest one.
 
-Three things that fail silently when missed: several dispatches must be in **one
+Four things that fail silently when missed: several dispatches must be in **one
 response** to run concurrently; the **model must be passed explicitly**, since an
-omitted one inherits the parent's; and the returns must be **compared against
-each other**, because agents dispatched from one prompt style make correlated
-mistakes that per-agent reading will not catch.
+omitted one inherits the parent's; the returns must be **compared against each
+other**, because agents dispatched from one prompt style make correlated mistakes
+that per-agent reading will not catch; and the **return contract must state why it
+costs**, because naming the shape without the reason is a preference, not a
+contract, and a subagent told the reason returns the shape.
 
 `PostToolUse` fires inside a subagent under the **parent's** session id — measured,
 not assumed — so a dispatched implementer's edits are claimed for the task that

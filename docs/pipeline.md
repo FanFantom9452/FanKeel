@@ -485,6 +485,7 @@ flowchart TD
     B{"did you run it<br/>in <i>this</i> message?"}
     C["then you cannot claim it yet.<br/>Run it."]
     D["docs-check<br/><i>which page did this change<br/>just make untrue?</i>"]
+    D1["<b>dispatch readers</b><br/>several in one response, one per page<br/><i>four the ceiling, sonnet the floor</i><br/><i>the path to a diff file, never a pasted diff</i>"]
     E{"anything half-built?"}
     F["back to build.<br/>Verify is not where<br/>the bar gets lowered."]
     G["quote the command and the<br/>one line that decided it"]
@@ -502,7 +503,8 @@ flowchart TD
     B -- no --> C
     C --> B
     B -- yes --> D
-    D --> E
+    D --> D1
+    D1 --> E
     E -- yes --> F
     E -- no --> G
 ```
@@ -528,6 +530,7 @@ flowchart TD
     E1["<b>pairs describing the same code</b><br/>where single source of truth breaks"]
     E2["<b>unfiled · undeclared ·<br/>linked from nowhere</b>"]
     F["<b>the part only reading finds</b><br/>open both, find the claim each makes<br/>about that file, say which one the<br/>code supports. Name the line."]
+    F1["<b>dispatch readers</b><br/>several in one response, one per pair<br/><i>four the ceiling, sonnet the floor</i><br/><i>compare what comes back against itself</i>"]
     G["<b>report, then ask, then act</b><br/><i>never move a document unasked —<br/>every one is a link somebody holds</i>"]
 
     A --> C
@@ -544,7 +547,8 @@ flowchart TD
     D2 --> G
     D3 --> G
     D4 --> G
-    F --> G
+    F --> F1
+    F1 --> G
 ```
 
 The context sections are the ones to act on first when they appear, because every

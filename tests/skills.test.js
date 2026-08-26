@@ -350,3 +350,25 @@ test('dispatching is the default and the two exceptions are named', () => {
   assert.match(docsText, /a pipe already removes the residue/);
   assert.match(docsText, /a single tool call/);
 });
+
+// A fourth rule landed in the bullet list without anybody touching the lead-in
+// that counts it, and nothing went red: "Three rules" sat above four bullets for
+// a whole build, and docs/subagents.md's mirror of the same list still said
+// three too. A count has no checker unless something recounts it.
+test('the dispatch rule count agrees with the bullet list under it, and with the docs mirror', () => {
+  const text = read('fankeel');
+  const leadIn = /^(\w+) rules that make it work, each of which fails silently when missed:\r?\n\r?\n([\s\S]*?)\r?\n\r?\n\*\*/m.exec(text);
+  assert.ok(leadIn, 'the dispatch rules lead-in is not where this test expects it');
+  const WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
+  const claimed = WORDS[leadIn[1].toLowerCase()];
+  assert.ok(claimed, `"${leadIn[1]}" is not a recognised count word`);
+  const bulletCount = (leadIn[2].match(/^- /gm) || []).length;
+  assert.equal(claimed, bulletCount,
+    `the lead-in says "${leadIn[1]}" but ${bulletCount} bullets follow it`);
+
+  const docsText = fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8');
+  const docsLeadIn = /^(\w+) things that fail silently when missed:/m.exec(docsText);
+  assert.ok(docsLeadIn, 'docs/subagents.md has no matching lead-in to compare');
+  assert.equal(WORDS[docsLeadIn[1].toLowerCase()], bulletCount,
+    `docs/subagents.md says "${docsLeadIn[1]}" but the skill lists ${bulletCount} rules`);
+});

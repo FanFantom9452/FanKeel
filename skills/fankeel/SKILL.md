@@ -734,7 +734,7 @@ went out in one response.
 | **delegate** | wide reading with a narrow answer — *read these six documents and say whether any contradicts the code*. A judgement, so no filter can pick it out |
 | **do not delegate** | anything a pipe already removes. One command's output is not worth a system prompt |
 
-Three rules that make it work, each of which fails silently when missed:
+Four rules that make it work, each of which fails silently when missed:
 
 - **Several dispatches in one response run at once.** One per response runs them
   in sequence — the cost of parallelism with none of it.
