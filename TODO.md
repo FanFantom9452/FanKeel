@@ -11,7 +11,7 @@ written here instead of where it belongs.
 ## Deferred
 
 - A wrong session id reaching a hook any way but through `task.js` is still silent — [docs/plans/2026-08-26-session-id-design.md](docs/plans/2026-08-26-session-id-design.md). None observed.
-- A feature asked for mid-task belongs in TODO.md, not in the running task — unless it blocks it or is closely related. That is a rule the pipeline should carry — [lib/stages.js](lib/stages.js).
+- A feature asked for mid-task goes to TODO.md unless it blocks this task or is closely related; where the boundary is genuinely ambiguous, ask rather than decide — [lib/stages.js](lib/stages.js).
 - Nothing sets the version in all ten places at once or fails when they disagree, and no page lists what a release changed. Both are derivable from the commits between two `chore: X.Y.Z`.
 - Sample `inspect()` on each stage change so a task can report context burn per stage — [lib/context.js](lib/context.js). `hooks/inject.js` reads the transcript every prompt and drops it.
 - Default the scope guard on, once the writes that escape `PostToolUse` — a shell `sed`, a build script, an MCP write tool — are hooked — [docs/collisions.md](docs/collisions.md), "Making it block".
@@ -25,6 +25,7 @@ written here instead of where it belongs.
 - Whether a per-`agent_type` brief should carry more than the map — [docs/subagents.md](docs/subagents.md). Unanswered until real use says which types earn one.
 - `lib/plugins.js` is required by nothing but its own test — [lib/stages.js](lib/stages.js):200 hardcodes the rule it was built for. Delete it, or wire it up.
 - 32 exported names nothing outside their own file references, 22 of them in [lib/](lib/badge.js) — dead API surface, not dead code. Found by /ponytail-audit, 08-26.
+- `/fankeel` should cluster related TODO entries and offer the cluster as one task, not one option per bullet — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md), "Asking".
 
 ## Owed after first real use
 
