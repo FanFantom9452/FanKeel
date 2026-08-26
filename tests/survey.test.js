@@ -343,6 +343,25 @@ test('with every match named, the split is not mentioned at all', () => {
   assert.match(out, /^declarations:$/m);
 });
 
+// A file the scan never opened used to leave no trace at all, so a report that
+// covered a third of the tree and one that covered all of it read identically —
+// and the stage rule that decides whether to read wider keys on the report.
+test('files the scan never opened are counted in the note block', () => {
+  const root = repo({
+    'lib/a.js': 'function widgetFactory() {}\n',
+    'data.json': '{ "widget": 1 }\n',
+    'lib/big.js': 'function widgetHuge() {}\n' + 'x'.repeat(600 * 1024),
+  });
+  const out = run(root, 'widget');
+  assert.match(out, /skipped: 1 over the size cap, 1 with no pattern for their extension/);
+  assert.equal(/widgetHuge/.test(out), false, 'the file over the cap was read after all');
+});
+
+test('a scan that skipped nothing says nothing', () => {
+  const root = repo({ 'lib/a.js': 'function widgetFactory() {}\n' });
+  assert.equal(/skipped:/.test(run(root, 'widget')), false);
+});
+
 test('report says nothing matched rather than throwing on a null scan', () => {
   assert.match(survey.report(null, ['x']), /nothing readable under that root/);
 });

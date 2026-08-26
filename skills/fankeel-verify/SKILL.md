@@ -73,15 +73,18 @@ been half verified.
 
 **This stage is where both halves of the delegation rule are visible at once.**
 
-The suite is the case *against* dispatching. Its output is machine-shaped: 49,742
-characters where two lines decide it, and `| grep -E '^ℹ (pass|fail)'` removes the
+The suite is the case *against* dispatching. Its output is machine-shaped: 50,434
+characters — measured 2026-08-26, 640 tests — where two lines decide it, and `| grep -E '^ℹ (pass|fail)'` removes the
 rest for nothing. A subagent there would read all of it in a context that gets
 thrown away and charge a system prompt for the privilege.
 
 The question above it is the case *for*. "Which page does this change make false"
 is judgement over pages nothing can grep — wide reading, narrow answer. Dispatch
 it: one reader per page the change plausibly touched, several in one response so
-they run at once, each given the diff and asked only what is now false and where.
+they run at once — four is the ceiling, and the fankeel skill's *Delegate the
+reading, never the filtering* says why — each given the **path** to a diff file
+and asked only what is now false and where. Never a pasted diff: it lands the
+whole change in this context, which is the cost dispatching exists to avoid.
 Pass the model explicitly; `sonnet` is the floor.
 
 What you do not dispatch is this stage. The evidence table, the red-green
@@ -104,4 +107,6 @@ $ <command>
 then AskUserQuestion
 ```
 
-Filter the run. Never paste 34,000 characters to report 24.
+Filter the run. Never paste 50,434 characters to report 24 — measured 2026-08-26,
+640 tests. Re-measure it rather than carrying it forward; a growing suite moves it
+every release.

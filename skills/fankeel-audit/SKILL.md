@@ -131,7 +131,9 @@ with a narrow answer — which page does the code support, and where. The readin
 is thrown away; the answer is two lines.
 
 So dispatch it: one reader per pair, **several in one response** so they run at
-once, each told the file they share and asked which page the code supports. Pass
+once, each told the file they share and asked which page the code supports. Four
+in one response is the ceiling — the fankeel skill's *Delegate the reading, never
+the filtering* says why, and pairs past that are one reader with a list. Pass
 the model explicitly — `sonnet` is the floor — and compare what comes back
 against itself before acting, because readers dispatched from one prompt make
 correlated mistakes.

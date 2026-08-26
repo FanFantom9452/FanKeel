@@ -115,15 +115,21 @@ function scan(root, terms) {
     const docs = [];
     const named = files.filter((f) => terms.length && matches(terms, f));
 
+    // Three ways a file is never opened, every one of them silent until now. A
+    // scan that skipped half the tree and a scan that genuinely found nothing
+    // read the same, and the stage rule can only key on what the report says.
+    const skipped = { unreadable: 0, oversize: 0, noPattern: 0 };
+
     for (const file of files) {
         const patterns = declPatterns(file);
-        if (!patterns) continue;
+        if (!patterns) { skipped.noPattern++; continue; }
         const full = path.join(root, file);
         let text;
         try {
-            if (fs.statSync(full).size > MAX_FILE_BYTES) continue;
+            if (fs.statSync(full).size > MAX_FILE_BYTES) { skipped.oversize++; continue; }
             text = fs.readFileSync(full, 'utf8');
         } catch (e) {
+            skipped.unreadable++;
             continue;
         }
         const lines = text.split(/\r?\n/);
@@ -166,7 +172,7 @@ function scan(root, terms) {
     // Sort is stable, so file order survives inside each group.
     decls.sort((a, b) => (b.named ? 1 : 0) - (a.named ? 1 : 0));
 
-    return { total: files.length, files, repos, walked, truncated, decls, docs, named };
+    return { total: files.length, files, repos, walked, truncated, decls, docs, named, skipped };
 }
 
 // `slice(0, Infinity)` is the whole array and `length > Infinity` is false, so
@@ -238,7 +244,7 @@ function report(result, terms, opts) {
         return 'fankeel survey: nothing readable under that root — no repository, and no files.\n'
              + 'Search by hand and say what you searched for.';
     }
-    const { total, repos, walked, truncated, decls, docs, named } = result;
+    const { total, repos, walked, truncated, decls, docs, named, skipped } = result;
     const head = terms.length
         ? 'fankeel survey — ' + total + ' files, matching: ' + terms.join(', ')
         : 'fankeel survey — ' + total + ' files, everything declared';
@@ -258,6 +264,15 @@ function report(result, terms, opts) {
     if (truncated) {
         note.push('the walk stopped at ' + MAX_WALK_FILES + ' files — narrow it with --root before trusting this.');
     }
+    // What was in the tree and never opened. The file count in the header is the
+    // tree, not the coverage, and the gap between them used to be invisible.
+    const skips = [];
+    if (skipped) {
+        if (skipped.unreadable) skips.push(skipped.unreadable + ' unreadable');
+        if (skipped.oversize) skips.push(skipped.oversize + ' over the size cap');
+        if (skipped.noPattern) skips.push(skipped.noPattern + ' with no pattern for their extension');
+    }
+    if (skips.length) note.push('skipped: ' + skips.join(', '));
 
     // The split is said out loud rather than left for the reader to infer from
     // the ordering. A section that silently mixes two kinds of match is a
@@ -301,8 +316,9 @@ function parseArgs(argv) {
         }
         // A value that is not a positive number leaves the default in place rather
         // than erroring, and is still consumed so it cannot become a search term.
-        // The header line says which cap was used, so a typo shows up in the
-        // report instead of in a stack trace.
+        // The note block names the cap only when it differs from the default, so a
+        // mistyped value reads as an ordinary run rather than as an error — the
+        // trade for never failing a scan over an argument.
         if (argv[i] === '--max') {
             const n = parseInt(argv[i + 1], 10);
             if (argv[i + 1] !== undefined) i++;

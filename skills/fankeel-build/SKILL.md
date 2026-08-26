@@ -62,6 +62,13 @@ For each task the ledger does not list as complete:
    past, and remove what your own change orphaned — dead code you did not create
    gets mentioned, not deleted.
 
+   A dispatch carries four things and nothing else: one line on where the task
+   fits, the **path** to the plan file with the task's number, the plan's
+   `## Global Constraints` block (the subagent receives none of this pipeline's
+   rules, so anything binding it must travel in the dispatch), and the path it
+   must write its report to. Never the session's history, and never a paste of
+   the plan.
+
    A dispatched implementer **commits, and returns a status line and a sha —
    never a diff.** A returned diff puts the whole change back in this context,
    which is the one cost dispatching exists to avoid, and step 5 already reads

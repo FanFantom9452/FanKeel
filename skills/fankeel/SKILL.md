@@ -684,14 +684,14 @@ context small. For one kind of work, measured on this repository, that is the
 wrong tool for the thing it is aimed at:
 
 ```
-measured 2026-08-26, 636 tests
-npm test, full output             49,742 characters
+measured 2026-08-26, 640 tests
+npm test, full output             50,434 characters
 the two lines that decide it          24 characters
 ```
 
-A subagent would read all 49,742 in a context that gets thrown away, and cost its
+A subagent would read all 50,434 in a context that gets thrown away, and cost its
 own system prompt to do it. `| grep -E '^ℹ (pass|fail)'` costs nothing and is
-2,073 times better. **Re-measure it, do not carry it forward.** The date is on
+2,101 times better. **Re-measure it, do not carry it forward.** The date is on
 the block because the figure it replaced had none and had gone stale by 15,000
 characters before anyone noticed; a growing suite moves it every release.
 
@@ -721,6 +721,13 @@ Three rules that make it work, each of which fails silently when missed:
 - **Spot-check the results against each other.** Independently dispatched agents
   share a prompt style and a model, so they make correlated mistakes that reading
   each summary on its own will not catch.
+
+**Four in one response is the working ceiling.** Past that you are guessing at the
+split rather than deciding it, and every reader costs a system prompt whether or
+not it had a distinct question. The test is what comes back: **if two readers
+would return the same shape of answer about different files, they are one reader
+with a list** — give it the list. Fan out on distinct questions, not on file
+count.
 
 **Delegate a job inside a stage; never the stage itself.** A subagent receives the
 brief and nothing else: `hooks/inject.js` is a `UserPromptSubmit` hook and a

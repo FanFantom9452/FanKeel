@@ -109,6 +109,12 @@ says the same: *narrow it with `--root` before trusting this*. Re-running withou
 narrowing returns the same truncated tree; dispatching readers over it hands them
 the same blind spot, four times over.
 
+**A `skipped:` line is a third way the scan did not cover it.** Files with no
+declaration pattern for their extension, files over the size cap and files that
+could not be read are counted there and never opened. The header's file count is
+the tree, not the coverage; when the two disagree, the terms were checked against
+less than the report appears to say.
+
 **Dispatch when the reading is wide, or when nothing matched at all.** Wide means
 the answer is a judgement over several subsystems rather than a longer list — the
 one case a subagent pays for. A **zero-match scan** is the other: there is no list
@@ -118,7 +124,9 @@ wider is the only move left. Never ask permission for either. The user's answer 
 answers — so the round buys nothing and costs a turn of their attention.
 
 - **Several in one response.** That is what makes them run at once; one dispatch
-  per response runs them in sequence.
+  per response runs them in sequence. **Four is the ceiling** — the fankeel
+  skill's *Delegate the reading, never the filtering* says why, and lenses past
+  that are one reader with a list.
 - **One lens each**, taken from what the scan named — a subsystem apiece, or a
   term-cluster apiece. Not a fixed list.
 - **Tell each one what is already known**, so it returns only what is new.

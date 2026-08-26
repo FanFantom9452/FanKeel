@@ -248,6 +248,11 @@ test('the build loop reads the dispatch line rather than always implementing', (
   assert.match(text, /never a diff/i);
 });
 
+// The two skills spell the boundary differently — one bolds the "not", one does
+// not — and prose reflows. Matched on the words with the bold optional, so both
+// tests assert the same sentence in the same form.
+const BOUNDARY = /do\s+(?:\*\*)?not(?:\*\*)?\s+dispatch\s+is\s+this\s+stage/;
+
 // The branch that replaced the delegation ban used audit's own job as its
 // example of the good case, and this skill said nothing about dispatch at all —
 // so the stage most likely to reach for one had no guidance where it would
@@ -257,7 +262,7 @@ test('the audit skill names its dispatch case and the line around it', () => {
   assert.match(text, /one reader per pair/);
   assert.match(text, /several in one response/i);
   // And the boundary, in the stage where the temptation is strongest.
-  assert.match(text, /do \*\*not\*\* dispatch is this stage/);
+  assert.match(text, BOUNDARY);
 });
 
 // Verify is the one stage where both halves of the delegation rule apply at
@@ -268,5 +273,5 @@ test('the verify skill separates what a pipe removes from what a reader answers'
   const text = read('fankeel-verify');
   assert.match(text, /one reader per page/);
   assert.match(text, /several in one response/i);
-  assert.match(text, /do not dispatch is this stage/);
+  assert.match(text, BOUNDARY);
 });
