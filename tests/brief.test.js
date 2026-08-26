@@ -165,3 +165,16 @@ test('no entry renders nothing rather than a header with holes in it', () => {
   assert.equal(renderBrief({ mine: null }), null);
   assert.equal(renderBrief({}), null);
 });
+
+// Observed by superpowers and reported as a real cost: every reviewer a worker
+// spawned duplicated the review the parent dispatched anyway — a whole extra
+// seat per task, at full price, for a verdict that counts for nothing. This is
+// the one rule about dispatching that belongs in the brief, because it is the
+// only one addressed to the subagent rather than to whoever dispatched it.
+test('the brief tells a subagent not to dispatch subagents of its own', () => {
+  assert.match(RETURN_RULES.join(' '), /not dispatch subagents of your own/i);
+  // And it reaches a real subagent, not only the array.
+  const root = tmp();
+  seed(root);
+  assert.match(contextOf(run(root, start(root))), /not dispatch subagents of your own/i);
+});
