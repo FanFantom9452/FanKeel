@@ -85,13 +85,24 @@ paragraph uses the first to bar the second.
 
 ## The rule that replaces it
 
-> **Delegate the reading, never the filtering.**
+> **Dispatch by default, never the filtering.**
 >
 > A subagent earns its system prompt when the work generates context that would
 > otherwise land here and cannot be piped away — files opened, dead ends, the
 > iteration between a failing test and a passing one. It does not earn it when
 > the only thing being avoided is one command's output, because a pipe does that
 > for free.
+
+> **Widened 2026-08-26, on the user's instruction.** This first read *delegate the
+> reading*, and as written it made dispatching the case that needed justifying.
+> The cost being managed is residue in the parent, and reading is only one way to
+> produce it — implementing a task leaves as much. So the default inverted:
+> **dispatch unless the leftovers come out another way**, and there are exactly
+> two ways they can — a pipe removes them, or it is a single tool call.
+>
+> The filtering measurement is untouched by this. It stops being a rule competing
+> with the default and becomes the reason for the first exception, which is what
+> it always was.
 
 The enumeration goes. `survey` was already on the yes side in its own skill
 (`skills/fankeel-survey/SKILL.md`, §4b: "Reading wide for a narrow answer is what

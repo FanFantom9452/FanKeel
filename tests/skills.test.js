@@ -196,7 +196,7 @@ test('the delegation rule is a principle, not a list of barred stages', () => {
   const text = read('fankeel');
   assert.equal(text.includes('Do not route the pipeline through subagents'), false,
     'the prohibition is still there');
-  assert.match(text, /Delegate the reading, never the filtering/);
+  assert.match(text, /Dispatch by default, never the filtering/);
   // The measurement it cites is one this repository actually produced, and the
   // block says when. Two figures have already gone stale here undetected — a
   // number with no date reads as current however old it is, so the date is the
@@ -215,7 +215,7 @@ test('the delegation rule is a principle, not a list of barred stages', () => {
   // invisible to the guard that exists to bar it. It is the whole measurement
   // now: the section heading down to the sentence that pivots to the other
   // measurement, whose figures are a one-off fan-out that cannot go stale.
-  const start = text.indexOf('### Delegate the reading, never the filtering');
+  const start = text.indexOf('### Dispatch by default, never the filtering');
   const end = text.indexOf('But that measures', start);
   assert.ok(start !== -1 && end > start, 'the measurement section is not where the guard looks');
   const block = text.slice(start, end);

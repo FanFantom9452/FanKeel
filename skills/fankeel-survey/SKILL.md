@@ -151,7 +151,7 @@ answers — so the round buys nothing and costs a turn of their attention.
 
 - **Several in one response.** That is what makes them run at once; one dispatch
   per response runs them in sequence. **Four is the ceiling** — the fankeel
-  skill's *Delegate the reading, never the filtering* says why, and lenses past
+  skill's *Dispatch by default, never the filtering* says why, and lenses past
   that are one reader with a list.
 - **One lens each**, taken from what the scan named — a subsystem apiece, or a
   term-cluster apiece. Not a fixed list.

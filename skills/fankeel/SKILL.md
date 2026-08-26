@@ -680,7 +680,7 @@ on:
   claimed for this task — `PostToolUse` fires inside it and writes to this
   session's entry.
 
-### Delegate the reading, never the filtering
+### Dispatch by default, never the filtering
 
 **Dispatch is the default. Doing it here is what needs a reason.**
 
