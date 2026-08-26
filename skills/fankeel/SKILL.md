@@ -682,6 +682,23 @@ on:
 
 ### Delegate the reading, never the filtering
 
+**Dispatch is the default. Doing it here is what needs a reason.**
+
+The thing that costs is residue: files opened, output read, dead ends followed,
+all of it left in this context and re-read on every later turn for the rest of
+the session. Work done in a subagent leaves none of it — the reading happens in a
+context that is thrown away and only the answer arrives.
+
+So the question is not "is this big enough to delegate". It is **can I get rid of
+the leftovers without a subagent** — and there are exactly two ways:
+
+| exception | why |
+|---|---|
+| **a pipe already removes them** | one command's output is not worth a system prompt. `\| grep` costs nothing and is thousands of times better than a subagent reading the whole run |
+| **it is one tool call** | the dispatch costs more than the work. Reading a named file, running a check, editing a line you already know — do those here |
+
+Everything else is a dispatch, and several of them go out in one response.
+
 The tempting version is to run whole stages in background agents to keep the
 context small. For one kind of work, measured on this repository, that is the
 wrong tool for the thing it is aimed at:

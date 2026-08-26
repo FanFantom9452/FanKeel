@@ -312,3 +312,19 @@ test('a dispatch is told to state what it wants back and why that costs', () => 
   assert.match(read('fankeel-build'), /Say what you want back, and why it costs/);
   assert.match(read('fankeel-build'), /spend words\s+on the dispatch and buy them back on the return/);
 });
+
+// The section read as a list of cases where dispatching was allowed. The cost is
+// residue in the parent, so the default inverts: dispatch unless the leftovers
+// come out another way, and there are exactly two ways they can.
+test('dispatching is the default and the two exceptions are named', () => {
+  const text = read('fankeel');
+  assert.match(text, /Dispatch is the default\. Doing it here is what needs a reason\./);
+  assert.match(text, /a pipe already removes them/);
+  assert.match(text, /it is one tool call/);
+  // The same default has to land where the standalone doc states the rule, not
+  // just in the skill.
+  const docsText = fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8');
+  assert.match(docsText, /\*\*dispatch\*\* \| by default/);
+  assert.match(docsText, /a pipe already removes the residue/);
+  assert.match(docsText, /a single tool call/);
+});
