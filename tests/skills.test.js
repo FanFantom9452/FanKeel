@@ -385,3 +385,15 @@ test('survey names the tree scope step and says what the dispatch costs', () => 
   assert.ok(treeAt < scanAt, 'the tree step no longer comes before the scan it scopes');
   assert.match(text, /how many readers, and on which model/i, 'the dispatch never says what it costs');
 });
+
+// The main skill's account of the scanner went straight to the terms. A step the
+// stage skill carries and the page people read first does not is a step that gets
+// skipped by whoever read that page first.
+test('the main skill puts the tree ahead of the terms too', () => {
+  const text = read('fankeel');
+  const treeAt = text.indexOf('**Before the terms, the tree.**');
+  const scannerAt = text.indexOf('carries a scanner rather than an instruction to search');
+  assert.ok(treeAt > -1, 'the main skill still goes straight to the terms');
+  assert.ok(scannerAt > -1, 'the scanner section moved; this test no longer measures anything');
+  assert.ok(treeAt < scannerAt, 'the tree note no longer leads the scanner section');
+});
