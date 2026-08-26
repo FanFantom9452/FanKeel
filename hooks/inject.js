@@ -73,7 +73,13 @@ function main(raw) {
         //
         // Output before the side effects, the same order the injection below
         // keeps and for the same reason.
-        if (starting && typeof sessionId === 'string' && sessionId) {
+        //
+        // `sessionPath` is the shape check, borrowed rather than repeated: it
+        // answers null for anything that is not a session id. What it is doing
+        // here is refusing to read an unvalidated payload field back into the
+        // conversation — the id is Claude Code's to send, not this hook's to
+        // vouch for.
+        if (starting && registry.sessionPath(root, sessionId)) {
             process.stdout.write(JSON.stringify({
                 hookSpecificOutput: {
                     hookEventName: 'UserPromptSubmit',

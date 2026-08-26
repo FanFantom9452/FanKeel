@@ -346,3 +346,11 @@ test('an ordinary prompt with no entry is answered with nothing', () => {
   assert.equal(run({ session_id: MINE, cwd: dir, prompt: 'what does this repository do' }), '');
   assert.equal(run({ session_id: MINE, cwd: dir, prompt: '/fankeel-audit' }), '');
 });
+
+// The id goes back into the conversation, so it is read back only when it is
+// actually a session id. A payload field is Claude Code's to send, not this
+// hook's to vouch for.
+test('a malformed session_id is not read back even on a /fankeel prompt', () => {
+  const dir = tmp('fankeel-hook-');
+  assert.equal(run({ session_id: '../../etc/passwd', cwd: dir, prompt: '/fankeel' }), '');
+});
