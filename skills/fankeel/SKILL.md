@@ -298,13 +298,13 @@ The shape is the same every time, so it can be recognised without being read:
 | header | the stage that just finished | 12 characters, 6 if CJK |
 | question | the decision being made, and nothing else | ~40 characters, 20 if CJK |
 | option 1 | the next stage on the route. **Its description is where the approval happens** — say what accepting it accepts, not just which stage comes next. | one sentence |
-| option 3 | stay in this stage. The description says what is still open. | one sentence |
-| option 4 | pause. The description says what `next` will be set to. | one sentence |
+| option 2 | stay in this stage. The description says what is still open. | one sentence |
+| option 3 | pause. The description says what `next` will be set to. | one sentence |
 
-Four is the ceiling, not a target. `AskUserQuestion` caps `options` at four, so a
-fifth does not exist — and three is the floor, because dropping the pause is how
-a gate stops being one. The fourth is `survey`'s alone until some other stage has
-a use for one; everywhere else, option 2 is stay and option 3 is pause.
+Three is the whole list. `AskUserQuestion` caps `options` at four, and nothing
+uses the fourth any more: `survey` held it, and what it carried — asking whether
+to read further — is dispatched now rather than asked. Three is also the minimum,
+because dropping the pause is how a gate stops being one.
 
 The lengths are there because "one line" was already the rule and a design stage
 still asked a 491-character question: a paragraph with no newline in it is one
