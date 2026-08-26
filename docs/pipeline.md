@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-25
+last_verified: 2026-08-26
 source_of_truth: lib/stages.js, lib/render.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js
 ---
 
@@ -408,7 +408,9 @@ flowchart TD
     S3["<b>scan the plan first</b><br/>tasks that contradict each other,<br/>or contradict the constraints"]
     L{"a task the ledger does<br/>not list as complete?"}
     T1["record BASE"]
-    T2["implement<br/><i>every changed line traces to the task.<br/>Do not improve adjacent code on the way past</i>"]
+    T2{"the task's <b>Dispatch:</b> line"}
+    T2a["<b>implement here</b><br/><i>every changed line traces to the task.<br/>Do not improve adjacent code on the way past</i>"]
+    T2b["<b>dispatch an implementer</b><br/>pass the model explicitly<br/><i>it commits and returns a sha, never a diff</i>"]
     T3["test first where the task says so<br/><i>a test you did not watch fail is a test<br/>whose meaning you do not know</i>"]
     T4["commit"]
     T5["<b>one reviewer</b><br/>the task text, the diff from BASE,<br/>and map.md — never the session's history"]
@@ -420,7 +422,10 @@ flowchart TD
     S1 --> S2 --> S3 --> L
     L -- yes --> T1
     T1 --> T2
-    T2 --> T3
+    T2 -- "in-session" --> T2a
+    T2 -- "implementer, model" --> T2b
+    T2a --> T3
+    T2b --> T3
     T3 --> T4
     T4 --> T5
     T5 --> T6

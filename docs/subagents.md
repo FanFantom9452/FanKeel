@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-24
+last_verified: 2026-08-26
 source_of_truth: hooks/brief.js, lib/render.js
 ---
 
@@ -27,6 +27,29 @@ competing for the window and pulling compaction forward.
 So spending 280 tokens on a brief to take a thousand off a return value is worth
 it every single time, and it is worth it even when nothing else about the
 delegation changes.
+
+## When to dispatch one
+
+The page below says what a subagent is *not*. This is the other half.
+
+| | |
+|---|---|
+| **dispatch** | when the reading is wide, the answer is narrow, and no filter can pick it out. The reading happens in a context that is thrown away and only the answer arrives here |
+| **do not** | when a pipe already removes what you are avoiding. `npm test` is 49,074 characters and the two lines that decide it are 24 — `grep` does that for nothing |
+
+Measured on 2026-08-26, one fan-out of four readers with a lens each: 240,881
+tokens spent inside them, about 4,000 characters returned, and 121 seconds rather
+than 352 because all four went out in one response.
+
+Three things that fail silently when missed: several dispatches must be in **one
+response** to run concurrently; the **model must be passed explicitly**, since an
+omitted one inherits the parent's; and the returns must be **compared against
+each other**, because agents dispatched from one prompt style make correlated
+mistakes that per-agent reading will not catch.
+
+`PostToolUse` fires inside a subagent under the **parent's** session id — measured,
+not assumed — so a dispatched implementer's edits are claimed for the task that
+dispatched it and the collision warning keeps covering them.
 
 ## What it deliberately is not
 
