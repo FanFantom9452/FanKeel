@@ -19,7 +19,9 @@ written here instead of where it belongs.
 - A per-`agent_type` subagent brief — the `SubagentStart` matcher allows it; which types earn one is a question real use answers.
 - Whether an output style reaches subagents at all. Unverified, and now unmitigated: nothing restates one for them since the digest came out with the style skill.
 - A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI, so the default reminder is what the three get.
-- Whether `build` should dispatch an implementer subagent per task rather than reviewing after each — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md), "The task loop".
+- Whether `build` dispatches an implementer per task or one session runs the route end to end — and that it is decided at `plan` — [skills/fankeel-plan/SKILL.md](skills/fankeel-plan/SKILL.md).
+- A subagent model tier should be a rule: the cheap tier for mechanical subtasks, the top one only when the task names why — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
+- fankeel 0.26.0 is still installed on a second machine though the marketplace entry sets autoUpdate — [docs/README.md](docs/README.md). Two releases behind when found, 08-26.
 - Whether a per-`agent_type` brief should carry more than the map — [docs/subagents.md](docs/subagents.md). Unanswered until real use says which types earn one.
 - `lib/plugins.js` is required by nothing but its own test — [lib/stages.js](lib/stages.js):200 hardcodes the rule it was built for. Delete it, or wire it up.
 - 32 exported names nothing outside their own file references, 22 of them in [lib/](lib/badge.js) — dead API surface, not dead code. Found by /ponytail-audit, 08-26.
