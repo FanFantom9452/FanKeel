@@ -687,16 +687,18 @@ context small. For one kind of work, measured on this repository, that is the
 wrong tool for the thing it is aimed at:
 
 ```
-measured 2026-08-26, 644 tests
-npm test, full output             51,457 characters
-the two lines that decide it          24 characters
+measured 2026-08-26
+npm test, full output             about fifty thousand characters
+the two lines that decide it      twenty-four
 ```
 
-A subagent would read all 51,457 in a context that gets thrown away, and cost its
-own system prompt to do it. `| grep -E '^ℹ (pass|fail)'` costs nothing and is
-2,144 times better. **Re-measure it, do not carry it forward.** The date is on
-the block because the figure it replaced had none and had gone stale by 15,000
-characters before anyone noticed; a growing suite moves it every release.
+A subagent would read the whole of that in a context that gets thrown away, and
+cost its own system prompt to do it. `| grep -E '^ℹ (pass|fail)'` costs nothing
+and is some two thousand times better. **Rounded on purpose.** An exact figure
+here has gone stale four times, each time falsified by the next commit that added
+a test, and each stale one was read as current because it looked precise. The
+date says when it was measured; the exact characters belong in that day's commit
+message, not on a page nobody re-measures.
 
 **What stacks up a context is raw output arriving in it, not work being done** —
 and the fix for that is at the source, which is what every stage's `Output:` rule

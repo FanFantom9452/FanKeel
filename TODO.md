@@ -21,9 +21,13 @@ written here instead of where it belongs.
 - A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI, so the default reminder is what the three get.
 - fankeel 0.26.0 is still installed on a second machine though the marketplace entry sets autoUpdate — [docs/README.md](docs/README.md). Two releases behind when found, 08-26.
 - Whether a per-`agent_type` brief should carry more than the map — [docs/subagents.md](docs/subagents.md). Unanswered until real use says which types earn one.
-- `lib/plugins.js` is required by nothing but its own test — [lib/stages.js](lib/stages.js):200 hardcodes the rule it was built for. Delete it, or wire it up.
+- `lib/plugins.js` is required by nothing but its own test — the audit stage's fortnightly rule in [lib/stages.js](lib/stages.js) names ponytail and knip outright. Delete it, or wire it up.
 - 32 exported names nothing outside their own file references, 22 of them in [lib/](lib/badge.js) — dead API surface, not dead code. Found by /ponytail-audit, 08-26.
 - `/fankeel` should cluster related TODO entries and offer the cluster as one task, not one option per bullet — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md), "Asking".
+- "Only the first three fail the run" in [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md) — [scripts/docs-audit.js](scripts/docs-audit.js) counts four, and fankeel-audit says four.
+- A stale comment in [scripts/docs-audit.js](scripts/docs-audit.js) says the first three sections fail the run, directly above its own replacement saying four. Delete the older one.
+- A repository with no commits reports `no git` — [scripts/orient.js](scripts/orient.js). `rev-parse --abbrev-ref HEAD` fails there and `gitState` reads the failure as "not a repository".
+- `### Every fortnight or so — the sweep` in [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md) has no body; the `## One skill per stage` after it holds the sweep's table.
 
 ## Owed after first real use
 

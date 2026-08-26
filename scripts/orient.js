@@ -183,7 +183,7 @@ function countFiles(dir) {
         return null;
     }
     if (!result) return null;
-    return { files: result.files.length, truncated: result.truncated, list: result.files };
+    return { files: result.files.length, truncated: result.truncated, list: result.files, unlistable: result.unlistable };
 }
 
 // Immediate subdirectories worth calling a project. Dot-directories are out for
@@ -220,6 +220,18 @@ function pad(s, width) {
 }
 
 const files = (n) => n + (n === 1 ? ' file' : ' files');
+
+// A directory that could not be listed holds no files this can see, which is not
+// the same fact as holding none — and `0 files` said the second. survey, step 4
+// of the same stage, reports "1 directory that could not be listed" over the
+// same root; step 1 calling it empty is the two disagreeing inside one stage.
+function countText(count) {
+    if (!count) return 'nothing readable';
+    if (!count.files && count.unlistable) return 'could not be listed';
+    return files(count.files)
+        + (count.truncated ? '+ (capped)' : '')
+        + (count.unlistable ? ', ' + count.unlistable + ' not listed' : '');
+}
 
 // Every column padded to its widest, not just the first. Five projects with
 // ragged branch and file-count columns is harder to read than a paragraph, and
@@ -350,7 +362,7 @@ function report(result) {
     lines.push(...table(found.map((e) => [
         e.rel,
         stateText(e.state),
-        e.count ? files(e.count.files) + (e.count.truncated ? '+ (capped)' : '') : 'nothing readable',
+        countText(e.count),
         ageText(e.touched, stamp),
     ])));
 

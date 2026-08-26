@@ -123,8 +123,10 @@ Three rules about that line:
    why. A protocol to reason about, a design judgement, a change whose shape is
    not in the plan — those are.
 
-Several small same-shape tasks may share one dispatch:
-`**Dispatch:** implementer, sonnet, batched with Tasks 4-5`.
+**One dispatch per task, and no third form of the line.** The build loop records
+a BASE, reviews one range and marks one `complete <n>` per task; a dispatch
+spanning Tasks 4-5 has no shape it can record, and a half-finished batch leaves
+the ledger saying both are open.
 
 ## Steps are two to five minutes
 

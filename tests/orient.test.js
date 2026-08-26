@@ -293,3 +293,20 @@ test('a session directory it cannot read is reported as unknown, not as zero', (
   const out = execFileSync(process.execPath, [SCRIPT, '--root', root], { encoding: 'utf8', env });
   assert.match(out, /1 active, liveness unknown/);
 });
+
+// Step 1 and step 4 of the same stage over the same root: survey says "1
+// directory that could not be listed" and orient said `0 files` — that it holds
+// nothing, which is a different fact and the wrong one. The counter was there;
+// only survey read it.
+test('a directory that cannot be listed says so, rather than reporting no files', (t) => {
+  const root = workspace({ 'locked/deep.js': 'function widgetSealed() {}\n' });
+  const real = fs.readdirSync;
+  t.mock.method(fs, 'readdirSync', (dir, opts) => {
+    if (String(dir).endsWith('locked')) throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+    return real.call(fs, dir, opts);
+  });
+
+  const out = orient.main(['--root', root]);
+  assert.match(out, /could not be listed/);
+  assert.equal(/0 files/.test(out), false, 'an unlistable directory reported as holding nothing');
+});

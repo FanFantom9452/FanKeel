@@ -117,24 +117,29 @@ could not be read, documents and binaries a walk drops by extension, nested
 repositories git never descended into and directories that could not be listed
 are counted there and never opened. **No flag reaches any of them**: `--all`
 lifts a per-section cap and `--root` narrows a walk, and neither one opens a file
-the scanner had no way to parse. The header's file count is the tree, not the
-coverage; when the two disagree, the terms were checked against less than the
-report appears to say. The last two counts are subtrees rather than files, so a
-`1` there can hide any amount.
+the scanner had no way to parse. The header counts the files that reached the
+scan, which is neither the tree nor the coverage: three of those kinds sit inside
+that number and three never entered it, so subtracting the skips from it is wrong
+in both directions. The two subtree counts are the ones to distrust most — a `1`
+there can hide any amount.
 
-So this line is the one that fans out — over the half of it a reader can act on.
-**Files with no pattern, over the cap or dropped by extension, and a nested
-repository, are one reader with the list.** The fankeel skill's test settles it:
-*if two readers would return the same shape of answer about different files, they
-are one reader with a list* — give it the terms and the list, not one reader per
-file.
+The report splits the line for you, and the half a reader can act on is **named,
+not counted**, under `skipped, and openable by hand:` — the files with no pattern
+and the nested repositories, capped like every other section and saying `... and
+N more, not listed` when the cap bites. That list is the fan-out: **one reader,
+given the terms and the paths.** The fankeel skill's test settles the shape: *if
+two readers would return the same shape of answer about different files, they are
+one reader with a list* — not one reader per file. A nested repository is the one
+entry that is a root of its own: `--root` at it rather than a lens over it.
 
-**The other half is reported, not dispatched and not left silent.** Nothing opens
+**The rest stays a count, and is reported rather than dispatched.** Nothing opens
 an unreadable file — the shipped test's case is a file no longer on disk — and a
-subagent sent at an unlistable directory hits the same `EACCES`. Say what the
-survey could not cover and why, next to the number, and move on. That is what
-keeps the coverage claim honest; leaving the line unanswered is the confident
-wrong answer, said with a number next to it.
+subagent sent at an unlistable directory hits the same `EACCES`. Over the size
+cap and dropped by extension are the same call made cheaply: a path there tells a
+reader nothing the count did not. Say what the survey could not cover and why,
+next to the number, and move on. That is what keeps the coverage claim honest;
+leaving the line unanswered is the confident wrong answer, said with a number
+next to it.
 
 **Dispatch when the reading is wide, or when nothing matched at all.** Wide means
 the answer is a judgement over several subsystems rather than a longer list — the

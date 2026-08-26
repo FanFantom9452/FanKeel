@@ -320,7 +320,7 @@ flowchart TD
     C3 --> D
     D --> D2
     D2 -- "a section capped → --all<br/>the walk truncated → --root" --> D
-    D2 -- "the reading is wide, nothing matched,<br/>or a <b>skipped:</b> line counts what a reader can open" --> D3
+    D2 -- "the reading is wide, nothing matched,<br/>or a <b>skipped:</b> line names paths a reader can open" --> D3
     D2 -- "a <b>skipped:</b> line counts what nothing can open —<br/>unreadable files, unlistable directories" --> D4
     D2 -- yes --> E
     D3 --> E

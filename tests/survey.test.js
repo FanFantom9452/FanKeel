@@ -432,6 +432,67 @@ test('a submodule listed without a trailing slash is a subtree too', () => {
   assert.equal(/^ {2}sub$/m.test(bySub), false, 'the submodule was listed as a file whose name matches');
 });
 
+// Two copies of "is this entry a subtree" had drifted: the scan skipped the stat
+// when the entry carried a declaration extension, the tree never did. So a
+// submodule named `vendor.js` came out a file in the header — opened, failed
+// with EISDIR, counted unreadable — and a repository in the tree below it, in
+// the one report.
+test('a submodule with a code extension is a subtree in the header and in the tree', () => {
+  const root = repo({ 'lib/a.js': 'function widgetFactory() {}\n' });
+  const inner = path.join(root, 'vendor.js');
+  fs.mkdirSync(inner);
+  execFileSync('git', ['init', '-q'], { cwd: inner });
+  fs.writeFileSync(path.join(inner, 'deep.js'), 'function widgetBuried() {}\n');
+  execFileSync('git', ['add', '-A'], { cwd: inner });
+  execFileSync('git', ['-c', 'user.email=t@example.invalid', '-c', 'user.name=t', 'commit', '-qm', 'x'], { cwd: inner });
+  execFileSync('git', ['add', 'vendor.js'], { cwd: root, stdio: ['ignore', 'ignore', 'ignore'] });
+
+  const listed = execFileSync('git', ['ls-files', '--cached'], { cwd: root, encoding: 'utf8' });
+  assert.match(listed, /^vendor\.js$/m, 'git did not record the submodule as a bare entry');
+
+  const out = run(root, '--tree');
+  assert.match(out, /survey — 1 files/, 'the header counted the submodule as a file');
+  assert.match(out, /tree — 1 file,/, 'the tree and the header disagree about the file count');
+  assert.equal(/unreadable/.test(out), false, 'the submodule was opened as a file');
+  assert.match(out, /vendor\.js {3}a repository of its own/);
+});
+
+// The `skipped:` line is counts, and the stage rule sends one reader at the half
+// of it that can be opened by hand — with the list, which a count is not. A file
+// with no pattern can be read by hand and a nested repository can be surveyed on
+// its own root; nothing opens an unreadable file, so naming it buys the reader
+// nothing and it stays a count.
+test('the skips a reader can act on name their paths, and the rest stay counts', () => {
+  const root = repo({
+    'lib/a.js': 'function widgetFactory() {}\n',
+    'data.json': '{ "widget": 1 }\n',
+    'lib/gone.js': 'function widgetVanished() {}\n',
+  });
+  fs.rmSync(path.join(root, 'lib', 'gone.js'));
+  const inner = path.join(root, 'inner');
+  fs.mkdirSync(inner);
+  execFileSync('git', ['init', '-q'], { cwd: inner });
+  fs.writeFileSync(path.join(inner, 'deep.js'), 'function widgetBuried() {}\n');
+
+  const out = run(root, 'widget');
+  assert.match(out, /^skipped: 1 unreadable, 1 with no pattern for their extension, 1 nested repository/m);
+  assert.match(out, /^skipped, and openable by hand:$/m);
+  assert.match(out, /^ {2}data\.json$/m, 'the file with no pattern was not named');
+  assert.match(out, /^ {2}inner\/ {2}\(a repository of its own\)$/m, 'the nested repository was not named');
+  assert.equal(/gone\.js/.test(out), false, 'an unreadable file was named, and nothing can open it');
+});
+
+// Capped like every other section, and saying so in the same words. An
+// over-cap skip list that stopped silently would be the same loss one directory
+// down from the one this line exists to report.
+test('an over-cap skip list says how many it did not name', () => {
+  const files = { 'lib/a.js': 'function widgetFactory() {}\n' };
+  for (let i = 0; i < 30; i++) files['d' + i + '.json'] = '{}\n';
+  const out = run(repo(files), 'widget');
+  assert.match(out, /^skipped, and openable by hand:$/m);
+  assert.match(out, /^ {2}\.\.\. and 5 more, not listed$/m);
+});
+
 // The last silently incomplete path: `readdirSync` failing dropped a whole
 // subtree with no counter and no line, and walk mode — the multi-project root
 // the scanner exists for — is exactly where that happens. Forced rather than

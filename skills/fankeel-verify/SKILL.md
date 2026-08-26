@@ -73,10 +73,12 @@ been half verified.
 
 **This stage is where both halves of the delegation rule are visible at once.**
 
-The suite is the case *against* dispatching. Its output is machine-shaped: 51,457
-characters — measured 2026-08-26, 644 tests — where two lines decide it, and `| grep -E '^ℹ (pass|fail)'` removes the
-rest for nothing. A subagent there would read all of it in a context that gets
-thrown away and charge a system prompt for the privilege.
+The suite is the case *against* dispatching. Its output is machine-shaped: about
+fifty thousand characters — measured 2026-08-26, rounded because an exact figure
+is false again by the next commit that adds a test — where two lines decide it,
+and `| grep -E '^ℹ (pass|fail)'` removes the rest for nothing. A subagent there
+would read all of it in a context that gets thrown away and charge a system
+prompt for the privilege.
 
 The question above it is the case *for*. "Which page does this change make false"
 is judgement over pages nothing can grep — wide reading, narrow answer. Dispatch
@@ -107,6 +109,6 @@ $ <command>
 then AskUserQuestion
 ```
 
-Filter the run. Never paste 51,457 characters to report 24 — measured 2026-08-26,
-644 tests. Re-measure it rather than carrying it forward; a growing suite moves it
-every release.
+Filter the run. Never paste some fifty thousand characters to report twenty-four
+— measured 2026-08-26, and stated rounded because a suite that grows falsifies an
+exact figure with the next test anyone adds.

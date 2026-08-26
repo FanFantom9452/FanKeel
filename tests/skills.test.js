@@ -202,8 +202,16 @@ test('the delegation rule is a principle, not a list of barred stages', () => {
   // number with no date reads as current however old it is, so the date is the
   // part a test can hold.
   assert.match(text, /measured 20\d\d-\d\d-\d\d/, 'the measurement block carries no date');
-  assert.equal(text.includes('34,150'), false, 'the stale figure survived');
-  assert.equal(text.includes('49,074'), false, 'the superseded figure survived');
+
+  // Four exact figures have rotted here — 34,150, then 49,074, 49,742, 51,457 —
+  // every one of them falsified by the next commit that added a test, and every
+  // one of them past a guard that barred only its predecessors by name. So the
+  // shape is barred rather than the literals: no exact character count in the
+  // block at all. It states the size rounded and keeps the date, which is the
+  // half of a measurement that cannot go stale.
+  const block = text.slice(text.indexOf('measured 20')).split('\n\n').slice(0, 2).join('\n\n');
+  assert.equal(/\d[\d,]*\s+characters/.test(block), false, 'an exact character count is back in the block');
+  assert.equal(/\b\d{2},\d{3}\b/.test(block), false, 'an exact figure is back in the block');
 });
 
 // The principle replaced a prohibition, and the prohibition was the only thing

@@ -39,20 +39,33 @@ the output:
 ```
 $ node <plugin>/scripts/survey.js badge
 
-fankeel survey — 23 files, matching: badge
+fankeel survey — 99 files, matching: badge
+source: git
+skipped: 7 with no pattern for their extension, 1 nested repository not descended into
 
 files whose name matches:
   lib/badge.js
   tests/badge.test.js
 
-declarations:
+declarations:  (12 by name, then 5 more in files that match)
   lib/badge.js:22  function badgeWord(stage, clash) {
   lib/badge.js:36  function writeBadge(claudeDir, sessionId, word) {
   ...
 
 documentation:
-  docs/decisions/fankeel-shell.md:96  ## Smaller calls, with their reasons
+  docs/statusline.md:7  # The statusline badge
+
+skipped, and openable by hand:
+  .claude-plugin/plugin.json
+  .claude/worktrees/registry-staleness/  (a repository of its own)
+  ...
 ```
+
+Run against this checkout on 2026-08-26. The header and the two lines under it
+are what decides how far to trust the matches: `source:` says where the file list
+came from and `skipped:` counts what was never opened, while the section at the
+foot names the half of that a reader can open by hand. The header itself is the
+files that reached the scan — not the coverage, and not the tree.
 
 It reads `git ls-files` and the working tree on every run, so **nothing is
 stored and nothing can go stale**. A written index of "what this project already

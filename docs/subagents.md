@@ -35,7 +35,7 @@ The section below says what a subagent is *not*. This is the other half.
 | | |
 |---|---|
 | **dispatch** | when the reading is wide, the answer is narrow, and no filter can pick it out. The reading happens in a context that is thrown away and only the answer arrives here |
-| **do not** | when a pipe already removes what you are avoiding. `npm test` was 51,457 characters over 644 tests on 2026-08-26 and the two lines that decide it are 24 — `grep` does that for nothing |
+| **do not** | when a pipe already removes what you are avoiding. `npm test` was about fifty thousand characters when measured on 2026-08-26 and the two lines that decide it are twenty-four — `grep` does that for nothing |
 
 Measured on 2026-08-26, one fan-out of four readers with a lens each: 240,881
 tokens spent inside them, about 4,000 characters returned, and 121 seconds rather
