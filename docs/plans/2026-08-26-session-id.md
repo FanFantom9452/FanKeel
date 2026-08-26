@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-08-26
 source_of_truth: lib/live.js, scripts/task.js, hooks/inject.js
 ---
