@@ -1,9 +1,9 @@
 ---
 name: fankeel-survey
 description: The survey stage — read the project's own map before reading its code, classify the work, and report what is already here. Use for the survey stage of a fankeel task, "what is already here", starting work in an unfamiliar repository, or when a task needs classifying as spike, bounded or architectural.
-version: 0.31.0
+version: 0.32.0
 status: current
-last_verified: 2026-08-24
+last_verified: 2026-08-26
 source_of_truth: lib/stages.js, scripts/map.js, scripts/survey.js
 ---
 
@@ -78,28 +78,92 @@ rather than reporting a clean sweep.
 **"Nothing matched" is a finding.** Say which terms were tried — the next person
 needs to know a synonym was already ruled out.
 
-### 4b. When part of it is not enough
+### 4b. When one pass did not cover it
 
-The report is capped at 25 rows a section, and on a large repository the tail it
-cuts is where the answer usually is. Two flags move it:
+The report is capped at 25 rows a section. When a section is cut, it says so in
+its own output:
+
+```
+  ... and 34 more, not listed
+```
+
+and a walk that hit its ceiling prints `the walk stopped at N files`. A third
+line, `skipped:`, counts what was in the tree and never opened at all.
+
+**Three lines, three different fixes — and only the last one fans out, over half
+of itself.**
+
+**A capped section is a re-run.** `--all` lifts the per-section cap and returns
+the rows it cut, for the cost of one command:
 
 ```
 node <plugin>/scripts/survey.js --all <term>...      # every match, no cap
 node <plugin>/scripts/survey.js --tree               # every directory, with sizes
 ```
 
-`--tree` answers the question search terms cannot: what is this project shaped
-like. It is the one section costing a stat per file, so it runs only when asked.
+A section overflowing by five filenames is not wide reading; dispatching there
+delegates what a flag already removes.
 
-**This is the fourth option at the gate, and it belongs to this stage alone.**
-`AskUserQuestion` accepts four options, so `read wider` sits between "next stage"
-and "stay": re-run with `--all --tree`, read what it names, and come back to the
-same question with more on screen. The stage does not change, the route does not
-change, and the class does not change.
+**A truncated walk is narrowed with `--root`.** No flag lifts it. The ceiling is
+a constant in the walker — a backstop against somebody's home directory, not a
+cap anyone tunes — so `--all` does nothing for it, and the scanner's own message
+says the same: *narrow it with `--root` before trusting this*. Re-running without
+narrowing returns the same truncated tree; dispatching readers over it hands them
+the same blind spot, four times over.
 
-Reading wide for a narrow answer is what a subagent is for — that is exactly the
-trade `fankeel`'s own guidance names, and the case where delegating saves rather
-than costs. What comes back should be the findings, not the files.
+**A `skipped:` line is answered by reading what can be read.** Files with no
+declaration pattern for their extension, files over the size cap, files that
+could not be read, documents and binaries a walk drops by extension, nested
+repositories git never descended into and directories that could not be listed
+are counted there and never opened. **No flag reaches any of them**: `--all`
+lifts a per-section cap and `--root` narrows a walk, and neither one opens a file
+the scanner had no way to parse. The header counts the files that reached the
+scan, which is neither the tree nor the coverage: three of those kinds sit inside
+that number and three never entered it, so subtracting the skips from it is wrong
+in both directions. The two subtree counts are the ones to distrust most — a `1`
+there can hide any amount.
+
+The report splits the line for you, and the half a reader can act on is **named,
+not counted**, under `skipped, and openable by hand:` — the files with no pattern
+and the nested repositories, capped like every other section and saying `... and
+N more, not listed` when the cap bites. That list is the fan-out: **one reader,
+given the terms and the paths.** The fankeel skill's test settles the shape: *if
+two readers would return the same shape of answer about different files, they are
+one reader with a list* — not one reader per file. A nested repository is the one
+entry that is a root of its own: `--root` at it rather than a lens over it.
+
+**The rest stays a count, and is reported rather than dispatched.** Nothing opens
+an unreadable file — the shipped test's case is a file no longer on disk — and a
+subagent sent at an unlistable directory hits the same `EACCES`. Over the size
+cap and dropped by extension are the same call made cheaply: a path there tells a
+reader nothing the count did not. Say what the survey could not cover and why,
+next to the number, and move on. That is what keeps the coverage claim honest;
+leaving the line unanswered is the confident wrong answer, said with a number
+next to it.
+
+**Dispatch when the reading is wide, or when nothing matched at all.** Wide means
+the answer is a judgement over several subsystems rather than a longer list — the
+one case a subagent pays for. A **zero-match scan** is the other: there is no list
+to widen, the terms were wrong or the thing is named something else, and reading
+wider is the only move left. Never ask permission for either. The user's answer to
+"shall I read further?" is foreordained — they asked the question the reading
+answers — so the round buys nothing and costs a turn of their attention.
+
+- **Several in one response.** That is what makes them run at once; one dispatch
+  per response runs them in sequence. **Four is the ceiling** — the fankeel
+  skill's *Dispatch by default, never the filtering* says why, and lenses past
+  that are one reader with a list.
+- **One lens each**, taken from what the scan named — a subsystem apiece, or a
+  term-cluster apiece. Not a fixed list.
+- **Tell each one what is already known**, so it returns only what is new.
+- **`sonnet` is the floor.** Pass the model explicitly; an omitted one inherits
+  this session's.
+- **Compare the returns against each other**, not just one by one. Agents
+  dispatched from one prompt style make correlated mistakes.
+
+Reading wide for a narrow answer is what a subagent is for. This stage used to
+say that and then offer a manual re-run at the gate; the gate below is now the
+ordinary three options, and the survey in front of it is complete.
 
 ### 5. Classify, out loud
 

@@ -11,7 +11,7 @@ written here instead of where it belongs.
 ## Deferred
 
 - A wrong session id reaching a hook any way but through `task.js` is still silent — [docs/plans/2026-08-26-session-id-design.md](docs/plans/2026-08-26-session-id-design.md). None observed.
-- A feature asked for mid-task belongs in TODO.md, not in the running task — unless it blocks it or is closely related. That is a rule the pipeline should carry — [lib/stages.js](lib/stages.js).
+- A feature asked for mid-task goes to TODO.md unless it blocks this task or is closely related; where the boundary is genuinely ambiguous, ask rather than decide — [lib/stages.js](lib/stages.js).
 - Nothing sets the version in all ten places at once or fails when they disagree, and no page lists what a release changed. Both are derivable from the commits between two `chore: X.Y.Z`.
 - Sample `inspect()` on each stage change so a task can report context burn per stage — [lib/context.js](lib/context.js). `hooks/inject.js` reads the transcript every prompt and drops it.
 - Default the scope guard on, once the writes that escape `PostToolUse` — a shell `sed`, a build script, an MCP write tool — are hooked — [docs/collisions.md](docs/collisions.md), "Making it block".
@@ -19,12 +19,15 @@ written here instead of where it belongs.
 - A per-`agent_type` subagent brief — the `SubagentStart` matcher allows it; which types earn one is a question real use answers.
 - Whether an output style reaches subagents at all. Unverified, and now unmitigated: nothing restates one for them since the digest came out with the style skill.
 - A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI, so the default reminder is what the three get.
-- Whether `build` dispatches an implementer per task or one session runs the route end to end — and that it is decided at `plan` — [skills/fankeel-plan/SKILL.md](skills/fankeel-plan/SKILL.md).
-- A subagent model tier should be a rule: the cheap tier for mechanical subtasks, the top one only when the task names why — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
 - fankeel 0.26.0 is still installed on a second machine though the marketplace entry sets autoUpdate — [docs/README.md](docs/README.md). Two releases behind when found, 08-26.
 - Whether a per-`agent_type` brief should carry more than the map — [docs/subagents.md](docs/subagents.md). Unanswered until real use says which types earn one.
-- `lib/plugins.js` is required by nothing but its own test — [lib/stages.js](lib/stages.js):200 hardcodes the rule it was built for. Delete it, or wire it up.
+- `lib/plugins.js` is required by nothing but its own test — the audit stage's fortnightly rule in [lib/stages.js](lib/stages.js) names ponytail and knip outright. Delete it, or wire it up.
 - 32 exported names nothing outside their own file references, 22 of them in [lib/](lib/badge.js) — dead API surface, not dead code. Found by /ponytail-audit, 08-26.
+- `/fankeel` should cluster related TODO entries and offer the cluster as one task, not one option per bullet — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md), "Asking".
+- A stale comment in [scripts/docs-audit.js](scripts/docs-audit.js) says the first three sections fail the run, directly above its own replacement saying four. Delete the older one.
+- A repository with no commits reports `no git` — [scripts/orient.js](scripts/orient.js). `rev-parse --abbrev-ref HEAD` fails there and `gitState` reads the failure as "not a repository".
+- `### Every fortnight or so — the sweep` in [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md) has no body; the `## One skill per stage` after it holds the sweep's table.
+- `fankeel-build` says the stage runs to done; the injected rule says ask at every step's end — [lib/stages.js](lib/stages.js). Read as per-increment, build becomes a gate per commit.
 
 ## Owed after first real use
 

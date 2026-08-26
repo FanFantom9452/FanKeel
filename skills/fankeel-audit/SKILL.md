@@ -2,9 +2,9 @@
 name: fankeel-audit
 description: Audit documentation against the code it describes — dead references, pages that stopped being true, two pages describing one thing, plans whose work has landed, orphans. Use for /fankeel-audit, "check the docs", "what is out of date", "文件審查", before a release, or when two documents disagree.
 argument-hint: "[--root <dir>] [--since <days>]"
-version: 0.31.0
+version: 0.32.0
 status: current
-last_verified: 2026-08-25
+last_verified: 2026-08-26
 source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js
 ---
 
@@ -124,6 +124,24 @@ Three failures the scanners cannot see, and the reason this skill exists:
 - **Single source of truth.** When two pages both explain one mechanism, one of
   them is the source and the other links to it. Say which should be which and
   why — usually the one closest to the code wins.
+
+**This is the stage's dispatch case, and it is the clearest one in the pipeline.**
+Reading two long pages against each other and against the code is wide reading
+with a narrow answer — which page does the code support, and where. The reading
+is thrown away; the answer is two lines.
+
+So dispatch it: one reader per pair, **several in one response** so they run at
+once, each told the file they share and asked which page the code supports. Four
+in one response is the ceiling — the fankeel skill's *Dispatch by default, never
+the filtering* says why, and pairs past that are one reader with a list. Pass
+the model explicitly — `sonnet` is the floor — and compare what comes back
+against itself before acting, because readers dispatched from one prompt make
+correlated mistakes.
+
+What you do **not** dispatch is this stage. A subagent receives the brief and
+nothing else, so an `audit` run inside one has no gate, no output shape and none
+of these rules. The pairs are dispatched; the judgement, the findings and the
+question at the end stay here.
 
 If `/ponytail-audit` is installed, it is the code half of the same fortnightly
 pass — orphan files, over-engineering, abstractions nobody uses. Offer it

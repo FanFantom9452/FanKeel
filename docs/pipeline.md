@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-25
+last_verified: 2026-08-26
 source_of_truth: lib/stages.js, lib/render.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js
 ---
 
@@ -111,18 +111,19 @@ also in progress:
   - retune the 5h ramp @ design  (touched: statusline.ps1)  << overlaps: statusline.ps1
   - triage the colour issues @ survey  (touched: README.md)  (last seen 16d ago)
 
+<plugin> = C:\Users\you\.claude\plugins\cache\fankeel\fankeel\0.31.0
 stage rules:
   - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, and pause at least, never dropping the pause. Option one is the approval: say what it approves.
   - The background goes inside the question call — in the option descriptions, beside the option each belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
   - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
-  - From a plan (the fankeel-build skill has the loop): `node F:\ymlab\fankeel\scripts\ledger.js --plan <f> show` first and never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction trust it over memory.
-  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, or every path forward a guess.
-  - Every changed line traces to the ask. Follow the patterns already here; do not improve adjacent code, comments or formatting on the way past. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
-  - Anything deferred goes in TODO.md as one line pointing at the detail — never as a comment nobody will find.
-  - A new document is the last resort: put it in an existing page, or write a generator when the content is derivable from code. One that is written carries status, last_verified and source_of_truth — and a plan is not filed as reference.
-  - Output: one line per file as `path +n/-m — what changed`, then the question. Under 80 words. The diff is the output; prose is for what it cannot show.
+  - From a plan (the fankeel-build skill has the loop): `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction it beats memory.
+  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path forward a guess.
+  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code, comments or formatting in passing. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
+  - Anything deferred goes in TODO.md as one line pointing at the detail, never a comment nobody will find.
+  - A new document is the last resort: use an existing page, or write a generator when it derives from code. One written carries status, last_verified and source_of_truth.
+  - Output: one line per file, then the question. Under 80 words; the diff is the output, prose for what it cannot show.
 
 output shape:
   - path +12/-3 — what changed
@@ -191,18 +192,19 @@ FANKEEL ACTIVE — rework the 7d deviation colour ramp @ build  (4 of 7)
 route: survey → design → plan → [build] → verify → audit → land
 class: architectural — a new subsystem, or a change to an interface something else depends on.
 
+<plugin> = C:\Users\you\.claude\plugins\cache\fankeel\fankeel\0.31.0
 stage rules:
   - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, and pause at least, never dropping the pause. Option one is the approval: say what it approves.
   - The background goes inside the question call — in the option descriptions, beside the option each belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
   - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
-  - From a plan (the fankeel-build skill has the loop): `node F:\ymlab\fankeel\scripts\ledger.js --plan <f> show` first and never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction trust it over memory.
-  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, or every path forward a guess.
-  - Every changed line traces to the ask. Follow the patterns already here; do not improve adjacent code, comments or formatting on the way past. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
-  - Anything deferred goes in TODO.md as one line pointing at the detail — never as a comment nobody will find.
-  - A new document is the last resort: put it in an existing page, or write a generator when the content is derivable from code. One that is written carries status, last_verified and source_of_truth — and a plan is not filed as reference.
-  - Output: one line per file as `path +n/-m — what changed`, then the question. Under 80 words. The diff is the output; prose is for what it cannot show.
+  - From a plan (the fankeel-build skill has the loop): `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction it beats memory.
+  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path forward a guess.
+  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code, comments or formatting in passing. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
+  - Anything deferred goes in TODO.md as one line pointing at the detail, never a comment nobody will find.
+  - A new document is the last resort: use an existing page, or write a generator when it derives from code. One written carries status, last_verified and source_of_truth.
+  - Output: one line per file, then the question. Under 80 words; the diff is the output, prose for what it cannot show.
 
 output shape:
   - path +12/-3 — what changed
@@ -300,6 +302,9 @@ flowchart TD
     C2["<b>retired</b><br/>true once, read as though<br/>it still were"]
     C3["<b>undeclared</b><br/>dated by git, so dated by whoever<br/>last touched it, not by a reader"]
     D["<b>4 · targeted scan</b><br/>survey, one or more terms<br/><i>nothing matched is a finding —<br/>say which terms you tried</i>"]
+    D2{"<b>4b · did one pass cover it?</b>"}
+    D4["<b>report the gap</b><br/>say what was not covered and why<br/><i>not a dispatch, and not a silence</i>"]
+    D3["<b>dispatch readers</b><br/>several in one response, one lens each<br/><i>one reader with the list where the lens is the same</i><br/><i>never a round spent asking permission to read</i>"]
     E{"<b>5 · classify, out loud</b><br/>measured against this repository,<br/>not against your familiarity"}
     E1["<b>spike</b><br/>survey, build"]
     E2["<b>bounded</b><br/>survey, design, build, verify, land"]
@@ -313,7 +318,13 @@ flowchart TD
     C1 --> D
     C2 --> D
     C3 --> D
-    D --> E
+    D --> D2
+    D2 -- "a section capped → --all<br/>the walk truncated → --root" --> D
+    D2 -- "the reading is wide, nothing matched,<br/>or a <b>skipped:</b> line names paths a reader can open" --> D3
+    D2 -- "a <b>skipped:</b> line counts what nothing can open —<br/>unreadable files, unlistable directories" --> D4
+    D2 -- yes --> E
+    D3 --> E
+    D4 --> E
     E -- "a feasibility question" --> E1
     E -- "a flow already here to read" --> E2
     E -- "a new subsystem, or an interface<br/>something else depends on" --> E3
@@ -408,10 +419,12 @@ flowchart TD
     S3["<b>scan the plan first</b><br/>tasks that contradict each other,<br/>or contradict the constraints"]
     L{"a task the ledger does<br/>not list as complete?"}
     T1["record BASE"]
-    T2["implement<br/><i>every changed line traces to the task.<br/>Do not improve adjacent code on the way past</i>"]
+    T2{"the task's <b>Dispatch:</b> line"}
+    T2a["<b>implement here</b><br/><i>every changed line traces to the task.<br/>Do not improve adjacent code on the way past</i>"]
+    T2b["<b>dispatch an implementer</b><br/>pass the model explicitly<br/><i>it commits and returns a sha, never a diff</i>"]
     T3["test first where the task says so<br/><i>a test you did not watch fail is a test<br/>whose meaning you do not know</i>"]
     T4["commit"]
-    T5["<b>one reviewer</b><br/>the task text, the diff from BASE,<br/>and map.md — never the session's history"]
+    T5["<b>one reviewer</b><br/>the task text, BASE..&lt;sha&gt;,<br/>and map.md — never the session's history"]
     T6{"findings?"}
     T7["fix round<br/><i>bounded at five</i>"]
     T8["ledger complete,<br/>'what landed'"]
@@ -420,9 +433,12 @@ flowchart TD
     S1 --> S2 --> S3 --> L
     L -- yes --> T1
     T1 --> T2
-    T2 --> T3
+    T2 -- "in-session" --> T2a
+    T2 -- "implementer, model" --> T2b
+    T2a --> T3
     T3 --> T4
     T4 --> T5
+    T2b --> T5
     T5 --> T6
     T6 -- yes --> T7
     T7 --> T5
@@ -469,6 +485,7 @@ flowchart TD
     B{"did you run it<br/>in <i>this</i> message?"}
     C["then you cannot claim it yet.<br/>Run it."]
     D["docs-check<br/><i>which page did this change<br/>just make untrue?</i>"]
+    D1["<b>dispatch readers</b><br/>several in one response, one per page<br/><i>four the ceiling, sonnet the floor</i><br/><i>the path to a diff file, never a pasted diff</i>"]
     E{"anything half-built?"}
     F["back to build.<br/>Verify is not where<br/>the bar gets lowered."]
     G["quote the command and the<br/>one line that decided it"]
@@ -486,7 +503,8 @@ flowchart TD
     B -- no --> C
     C --> B
     B -- yes --> D
-    D --> E
+    D --> D1
+    D1 --> E
     E -- yes --> F
     E -- no --> G
 ```
@@ -512,6 +530,7 @@ flowchart TD
     E1["<b>pairs describing the same code</b><br/>where single source of truth breaks"]
     E2["<b>unfiled · undeclared ·<br/>linked from nowhere</b>"]
     F["<b>the part only reading finds</b><br/>open both, find the claim each makes<br/>about that file, say which one the<br/>code supports. Name the line."]
+    F1["<b>dispatch readers</b><br/>several in one response, one per pair<br/><i>four the ceiling, sonnet the floor</i><br/><i>compare what comes back against itself</i>"]
     G["<b>report, then ask, then act</b><br/><i>never move a document unasked —<br/>every one is a link somebody holds</i>"]
 
     A --> C
@@ -528,7 +547,8 @@ flowchart TD
     D2 --> G
     D3 --> G
     D4 --> G
-    F --> G
+    F --> F1
+    F1 --> G
 ```
 
 The context sections are the ones to act on first when they appear, because every
@@ -738,7 +758,7 @@ fankeel docs-audit — 18 markdown files, tree: flat (implied by the directories
 
 It narrows rather than judges. Nothing mechanical decides that two pages
 disagree; this turns *read all forty documents looking for disagreements* into
-*read these two*. Only the first three sections fail the run — pairs, orphans and
+*read these two*. Only the first four sections fail the run — pairs, orphans and
 uncovered directories are true of almost every healthy repository, and a command
 that always exits non-zero has an exit code that means nothing.
 

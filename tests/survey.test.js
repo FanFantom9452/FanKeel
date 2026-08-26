@@ -8,6 +8,9 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const survey = require('../scripts/survey.js');
+// The two gates that key on `trackedFiles` returning null and nothing else.
+const docsCheck = require('../scripts/docs-check.js');
+const docsAudit = require('../scripts/docs-audit.js');
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'survey.js');
 
 // A throwaway repository, because the scanner reads `git ls-files` and there is
@@ -343,6 +346,279 @@ test('with every match named, the split is not mentioned at all', () => {
   assert.match(out, /^declarations:$/m);
 });
 
+// A file the scan never opened used to leave no trace at all, so a report that
+// covered a third of the tree and one that covered all of it read identically —
+// and the stage rule that decides whether to read wider keys on the report.
+test('files the scan never opened are counted in the note block', () => {
+  const root = repo({
+    'lib/a.js': 'function widgetFactory() {}\n',
+    'data.json': '{ "widget": 1 }\n',
+    'lib/big.js': 'function widgetHuge() {}\n' + 'x'.repeat(600 * 1024),
+  });
+  const out = run(root, 'widget');
+  assert.match(out, /skipped: 1 over the size cap, 1 with no pattern for their extension/);
+  assert.equal(/widgetHuge/.test(out), false, 'the file over the cap was read after all');
+});
+
+test('a scan that skipped nothing says nothing', () => {
+  const root = repo({ 'lib/a.js': 'function widgetFactory() {}\n' });
+  assert.equal(/skipped:/.test(run(root, 'widget')), false);
+});
+
+// An earlier ruling on this branch said the unreadable counter could not be
+// produced portably and left it untested. It can, in three lines: stage a file,
+// delete it from disk, and `git ls-files --cached` still lists it while
+// `statSync` throws ENOENT straight into that counter. No permissions involved,
+// so it reads the same on Windows as anywhere else.
+test('a staged file that is no longer on disk is counted as unreadable', () => {
+  const root = repo({
+    'lib/a.js': 'function widgetFactory() {}\n',
+    'lib/gone.js': 'function widgetVanished() {}\n',
+  });
+  fs.rmSync(path.join(root, 'lib', 'gone.js'));
+  const out = run(root, 'widget');
+  assert.match(out, /skipped: 1 unreadable/);
+  assert.equal(/widgetVanished/.test(out), false, 'a file that is not on disk was read anyway');
+});
+
+// git reports a nested repository as one entry with a trailing slash and never
+// descends into it. It used to land in the no-pattern counter, where an entire
+// unread project reported as "1 with no pattern for their extension" — a count
+// of one standing for any amount.
+test('a nested repository is counted as a subtree, not as one unknown file', () => {
+  const root = repo({ 'lib/a.js': 'function widgetFactory() {}\n' });
+  const inner = path.join(root, 'inner');
+  fs.mkdirSync(inner);
+  execFileSync('git', ['init', '-q'], { cwd: inner });
+  fs.writeFileSync(path.join(inner, 'deep.js'), 'function widgetBuried() {}\n');
+
+  const out = run(root, 'widget');
+  assert.match(out, /skipped: 1 nested repository not descended into/);
+  assert.equal(/no pattern for their extension/.test(out), false, 'the subtree was counted as a file');
+  assert.equal(/widgetBuried/.test(out), false, 'the nested repository was descended into');
+  // The header counts files. A subtree already has its own line on the
+  // `skipped:` line, and counting it twice makes the two disagree.
+  assert.match(out, /survey — 1 files/, 'the subtree was counted in the header as well');
+});
+
+// The other form, and the one the trailing-slash test could never reach: a
+// submodule is listed by `git ls-files --cached` as a bare `sub`. No slash, no
+// extension, so it fell straight through to the no-pattern counter and an
+// entire unread repository reported as one file of an unknown type — the exact
+// understatement the counter above exists to remove.
+test('a submodule listed without a trailing slash is a subtree too', () => {
+  const root = repo({ 'lib/a.js': 'function widgetFactory() {}\n' });
+  const inner = path.join(root, 'sub');
+  fs.mkdirSync(inner);
+  execFileSync('git', ['init', '-q'], { cwd: inner });
+  fs.writeFileSync(path.join(inner, 'deep.js'), 'function widgetBuried() {}\n');
+  execFileSync('git', ['add', '-A'], { cwd: inner });
+  // An identity on the call, not in the environment: a gitlink needs a commit
+  // to point at, and a machine running the suite need not have one configured.
+  execFileSync('git', ['-c', 'user.email=t@example.invalid', '-c', 'user.name=t', 'commit', '-qm', 'x'], { cwd: inner });
+  execFileSync('git', ['add', 'sub'], { cwd: root, stdio: ['ignore', 'ignore', 'ignore'] });
+
+  // The gitlink is what this test is about; if git declined to record one there
+  // is nothing here to check and a green assertion would be a lie.
+  const listed = execFileSync('git', ['ls-files', '--cached'], { cwd: root, encoding: 'utf8' });
+  assert.match(listed, /^sub$/m, 'git did not record the submodule as a bare entry');
+
+  const out = run(root, 'widget');
+  assert.match(out, /skipped: 1 nested repository not descended into/);
+  assert.equal(/no pattern for their extension/.test(out), false, 'the submodule was counted as a file');
+  assert.equal(/widgetBuried/.test(out), false, 'the submodule was descended into');
+  assert.match(out, /survey — 1 files/, 'the submodule was counted in the header as well');
+
+  // And it is not a file in the name matches either. `sub` matching a term put
+  // a directory under "files whose name matches:".
+  const bySub = run(root, 'sub');
+  assert.equal(/^ {2}sub$/m.test(bySub), false, 'the submodule was listed as a file whose name matches');
+});
+
+// Two copies of "is this entry a subtree" had drifted: the scan skipped the stat
+// when the entry carried a declaration extension, the tree never did. So a
+// submodule named `vendor.js` came out a file in the header — opened, failed
+// with EISDIR, counted unreadable — and a repository in the tree below it, in
+// the one report.
+test('a submodule with a code extension is a subtree in the header and in the tree', () => {
+  const root = repo({ 'lib/a.js': 'function widgetFactory() {}\n' });
+  const inner = path.join(root, 'vendor.js');
+  fs.mkdirSync(inner);
+  execFileSync('git', ['init', '-q'], { cwd: inner });
+  fs.writeFileSync(path.join(inner, 'deep.js'), 'function widgetBuried() {}\n');
+  execFileSync('git', ['add', '-A'], { cwd: inner });
+  execFileSync('git', ['-c', 'user.email=t@example.invalid', '-c', 'user.name=t', 'commit', '-qm', 'x'], { cwd: inner });
+  execFileSync('git', ['add', 'vendor.js'], { cwd: root, stdio: ['ignore', 'ignore', 'ignore'] });
+
+  const listed = execFileSync('git', ['ls-files', '--cached'], { cwd: root, encoding: 'utf8' });
+  assert.match(listed, /^vendor\.js$/m, 'git did not record the submodule as a bare entry');
+
+  const out = run(root, '--tree');
+  assert.match(out, /survey — 1 files/, 'the header counted the submodule as a file');
+  assert.match(out, /tree — 1 file,/, 'the tree and the header disagree about the file count');
+  assert.equal(/unreadable/.test(out), false, 'the submodule was opened as a file');
+  assert.match(out, /vendor\.js {3}a repository of its own/);
+});
+
+// The `skipped:` line is counts, and the stage rule sends one reader at the half
+// of it that can be opened by hand — with the list, which a count is not. A file
+// with no pattern can be read by hand and a nested repository can be surveyed on
+// its own root; nothing opens an unreadable file, so naming it buys the reader
+// nothing and it stays a count.
+test('the skips a reader can act on name their paths, and the rest stay counts', () => {
+  const root = repo({
+    'lib/a.js': 'function widgetFactory() {}\n',
+    'data.json': '{ "widget": 1 }\n',
+    'lib/gone.js': 'function widgetVanished() {}\n',
+  });
+  fs.rmSync(path.join(root, 'lib', 'gone.js'));
+  const inner = path.join(root, 'inner');
+  fs.mkdirSync(inner);
+  execFileSync('git', ['init', '-q'], { cwd: inner });
+  fs.writeFileSync(path.join(inner, 'deep.js'), 'function widgetBuried() {}\n');
+
+  const out = run(root, 'widget');
+  assert.match(out, /^skipped: 1 unreadable, 1 with no pattern for their extension, 1 nested repository/m);
+  assert.match(out, /^skipped, and openable by hand:$/m);
+  assert.match(out, /^ {2}data\.json$/m, 'the file with no pattern was not named');
+  assert.match(out, /^ {2}inner\/ {2}\(a repository of its own\)$/m, 'the nested repository was not named');
+  assert.equal(/gone\.js/.test(out), false, 'an unreadable file was named, and nothing can open it');
+});
+
+// The same split, one line further. Inside a repository nothing drops a tracked
+// binary — a `.png` in the tree is there on purpose — so `assets/logo.png`
+// reached `noPattern` and was handed to a reader under a title that promises it
+// can be opened. It stays in the count; it is only not an instruction.
+test('a binary is counted with the skips but not offered as something to open', () => {
+  const out = run(repo({
+    'a.js': 'function widgetOne() {}\n',
+    'assets/logo.png': '\x89PNG\r\n',
+    'pkg.json': '{}\n',
+  }), 'widget');
+  assert.match(out, /^skipped: 2 with no pattern for their extension$/m);
+  assert.match(out, /^ {2}pkg\.json$/m);
+  assert.equal(/logo\.png/.test(out), false, 'a binary was offered as openable by hand');
+});
+
+// Capped like every other section, and saying so in the same words. An
+// over-cap skip list that stopped silently would be the same loss one directory
+// down from the one this line exists to report.
+test('an over-cap skip list says how many it did not name', () => {
+  const files = { 'lib/a.js': 'function widgetFactory() {}\n' };
+  for (let i = 0; i < 30; i++) files['d' + i + '.json'] = '{}\n';
+  const out = run(repo(files), 'widget');
+  assert.match(out, /^skipped, and openable by hand:$/m);
+  assert.match(out, /^ {2}\.\.\. and 5 more, not listed$/m);
+});
+
+// The last silently incomplete path: `readdirSync` failing dropped a whole
+// subtree with no counter and no line, and walk mode — the multi-project root
+// the scanner exists for — is exactly where that happens. Forced rather than
+// waited for, because an unlistable directory is the one skip a test cannot
+// arrange the same way on every platform.
+test('a directory the walk cannot list is counted, not dropped in silence', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  fs.writeFileSync(path.join(root, 'top.js'), 'function widgetFactory() {}\n');
+  fs.mkdirSync(path.join(root, 'locked'));
+  fs.writeFileSync(path.join(root, 'locked', 'deep.js'), 'function widgetSealed() {}\n');
+
+  const real = fs.readdirSync;
+  t.mock.method(fs, 'readdirSync', (dir, opts) => {
+    if (String(dir).endsWith('locked')) throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+    return real.call(fs, dir, opts);
+  });
+
+  const result = survey.scan(root, ['widget']);
+  assert.equal(result.skipped.unlistable, 1);
+  const out = survey.report(result, ['widget']);
+  assert.match(out, /skipped: 1 directory that could not be listed/);
+  assert.equal(/widgetSealed/.test(out), false, 'the unlistable subtree was read after all');
+});
+
+// The count was collected and then thrown away one line later: with no files at
+// all, `trackedFiles` returned null and the report said "nothing readable under
+// that root — no repository, and no files". A root whose only subtree could not
+// be listed is not that, and the difference is the whole point of the counter.
+test('a root whose only subtree cannot be listed says so, not that there is nothing there', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  fs.mkdirSync(path.join(root, 'locked'));
+  fs.writeFileSync(path.join(root, 'locked', 'deep.js'), 'function widgetSealed() {}\n');
+
+  const real = fs.readdirSync;
+  t.mock.method(fs, 'readdirSync', (dir, opts) => {
+    if (String(dir).endsWith('locked')) throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+    return real.call(fs, dir, opts);
+  });
+
+  const result = survey.scan(root, ['widget']);
+  assert.notEqual(result, null, 'a countable failure was reported as an empty root');
+  const out = survey.report(result, ['widget']);
+  assert.equal(/nothing readable under that root/.test(out), false);
+  assert.match(out, /skipped: 1 directory that could not be listed/);
+});
+
+// And it says so without moving the contract underneath the three callers that
+// did not ask. `trackedFiles` returning a result for an unlistable-only root —
+// so that survey could count it — left `docs-check` and `docs-audit`, which gate
+// on `if (!result)` and nothing else, reporting "0 markdown files … Every
+// reference resolves.", exit 0, over a directory neither of them could read.
+// Two of this project's own gates passing a tree they never opened is the exact
+// failure it exists to prevent, and five code reviews read past it.
+test('a caller that asks for no count still gets null for a root it cannot read', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  fs.mkdirSync(path.join(root, 'locked'));
+  fs.writeFileSync(path.join(root, 'locked', 'deep.js'), 'function widgetSealed() {}\n');
+
+  const real = fs.readdirSync;
+  t.mock.method(fs, 'readdirSync', (dir, opts) => {
+    if (String(dir).endsWith('locked')) throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+    return real.call(fs, dir, opts);
+  });
+
+  assert.equal(survey.trackedFiles(root), null, 'a caller that passed no stats got a result');
+  assert.equal(docsCheck.scan(root), null, 'docs-check would report a clean pass here');
+  assert.equal(docsAudit.sweep(root, 14, Date.now()), null, 'docs-audit would report nothing drifted here');
+
+  // The count still reaches the one caller that says why out loud.
+  const stats = {};
+  assert.equal(survey.trackedFiles(root, { stats }), null);
+  assert.equal(stats.unlistable, 1);
+});
+
+// A path that is not there is not a subtree that would not open. Counting
+// `ENOENT` alongside `EACCES` turned `--root <typo>` into "a directory walk
+// elsewhere / skipped: 1 directory that could not be listed / ... try a synonym
+// before concluding it is new" — a walk that never ran, and advice premised on
+// the term being wrong rather than the path.
+test('a root that does not exist reads as nothing readable, not as one that could not be listed', () => {
+  const gone = path.join(os.tmpdir(), 'fankeel-no-such-root-at-all');
+  const out = survey.report(survey.scan(gone, ['widget']), ['widget']);
+  assert.match(out, /nothing readable under that root/);
+  assert.equal(/could not be listed/.test(out), false, 'a missing path was counted as a blocked one');
+});
+
+// The walk drops spreadsheets, archives, media and binaries by extension, and
+// dropped them with no counter and no line: the `source:` note disclosed only
+// dot-directories, dependencies and build output, so the largest silent gap in
+// the mode these counters exist for was the one nothing named. The comment on
+// SKIP_EXT cites eleven thousand in one real run.
+test('files dropped by extension in walk mode are counted', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  fs.writeFileSync(path.join(root, 'real.js'), 'function widgetReal() {}\n');
+  fs.writeFileSync(path.join(root, 'a.xlsx'), 'x');
+  fs.writeFileSync(path.join(root, 'b.pdf'), 'x');
+  const out = run(root, 'widget');
+  assert.match(out, /skipped: 2 documents and binaries dropped by extension/);
+
+  // One reads as one, and inside a repository the drop never happens at all —
+  // a tracked `.png` is tracked on purpose.
+  const single = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  fs.writeFileSync(path.join(single, 'real.js'), 'function widgetReal() {}\n');
+  fs.writeFileSync(path.join(single, 'a.pdf'), 'x');
+  assert.match(run(single, 'widget'), /skipped: 1 document or binary dropped by extension/);
+  assert.equal(/dropped by extension/.test(run(repo({ 'a.pdf': 'x', 'r.js': 'function widgetReal() {}\n' }), 'widget')), false);
+});
+
 test('report says nothing matched rather than throwing on a null scan', () => {
   assert.match(survey.report(null, ['x']), /nothing readable under that root/);
 });
@@ -415,6 +691,13 @@ test('a nested repository is one line, not a file with no name', () => {
   assert.match(out, /^tree — 1 file,/m, 'the opaque entry is not counted as a file');
   assert.match(out, /\.claude\/worktrees\/old\/\s+a repository of its own, not descended into/);
   assert.equal(/^ {4} {2}/m.test(out), false, 'no file row with an empty name');
+
+  // The submodule form, which carries no slash to key on. This section stats
+  // every entry anyway, so the directory is free to notice.
+  fs.mkdirSync(path.join(root, 'sub'));
+  const withSub = survey.treeLines(root, ['only.md', 'sub'], 25).join('\n');
+  assert.match(withSub, /^tree — 1 file,/m, 'the submodule was counted as a file');
+  assert.match(withSub, /sub\s+a repository of its own, not descended into/);
 });
 
 test('the tree only appears when it is asked for', () => {

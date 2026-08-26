@@ -73,12 +73,17 @@ test('a full injection of rules stays under a few hundred characters', () => {
   // needed them, not after, because a cap raised to fit a rule already written
   // is a cap that decides nothing.
   //
-  // The ALWAYS block is 655 of whatever the number is, so a stage's own rules
-  // get 1344. `build` is the binding one and always will be: it is the only
-  // stage that runs a loop without stopping, so it is the only one carrying
-  // both the discipline and the means of recovering its place after a
-  // compaction. It sits near 1250, which leaves under a hundred characters —
-  // the next rule added to `build` has to displace one, and that is the point.
+  // The ALWAYS block is 665 of whatever the number is, plus the newline joining
+  // it to the rest, so a stage's own rules get 1334. `build` is the binding one
+  // here and always will be: it is the only stage that runs a loop without
+  // stopping, so it is the only one carrying both the discipline and the means
+  // of recovering its place after a compaction. Its own rules are 1133, which
+  // leaves 201 characters against this cap.
+  //
+  // That headroom is not the real constraint any more. `tests/render.test.js`
+  // caps the whole injection at 2400 measured against a reference plugin root,
+  // and every stage sits within thirty characters of it — so a rule added here
+  // has to displace one there first. That is the point.
   for (const name of NAMES) {
     const size = rulesFor(name).join('\n').length;
     assert.ok(size < 2000, name + ' rules are ' + size + ' chars');
@@ -124,7 +129,11 @@ test('the stage that writes documents carries the gate for creating one', () => 
   assert.match(text, /A new document is the last resort/);
   assert.match(text, /write a generator/, 'derivable content should not be a document');
   assert.match(text, /status, last_verified and source_of_truth/);
-  assert.match(text, /a plan is not filed as reference/);
+  // `a plan is not filed as reference` used to be here and is not a rule any
+  // more, because nothing about it was the author's choice: `lib/docs.js` files
+  // everything under `docs/plans/` as a plan by its directory. The rule was
+  // spending injected characters restating what the filing already decides.
+  assert.equal(/filed as reference/.test(text), false);
 });
 
 // A template that describes the shape in words is the rule again, not a
@@ -367,15 +376,47 @@ test('every stage points at the skill holding the part that does not compress', 
   }
 });
 
-test('the three options are a floor, and survey alone has a fourth', () => {
-  assert.match(ALWAYS[0], /at least/, 'three is the floor, not the list');
+test('three options are the floor, and no stage ships a fourth', () => {
+  assert.match(ALWAYS[0], /at least/, 'the three are no longer named as a minimum, so the pause can be dropped');
 
-  const survey = rulesFor('survey').join(' ');
-  assert.match(survey, /read wider/);
-  assert.match(survey, /--all --tree/);
-
+  // survey used to carry a fourth: `read wider`, which ended the round with the
+  // reading not done. The flags it named live in the fankeel-survey skill now,
+  // where the readers that use them are dispatched.
   for (const name of NAMES) {
-    if (name === 'survey') continue;
-    assert.equal(/read wider/.test(rulesFor(name).join(' ')), false, name + ' has no fourth option');
+    const text = rulesFor(name).join(' ');
+    assert.equal(/read wider/.test(text), false, name + ' still offers a fourth option');
+    assert.equal(/--all --tree/.test(text), false, name + ' still names the flags in a rule');
   }
+});
+
+// The fourth option was a loop with the user as its counter. `read wider` ended
+// the round with the reading not yet done, so a survey needing four slices cost
+// four turns of somebody's attention. Dispatching is the answer to that, but not
+// to a cap: a section overflowing by five rows is what `--all` is for, and
+// fanning out there delegates what a flag already removes. The case the trigger
+// must not miss is the opposite one — a scan that matched nothing, where there
+// is no list to widen and reading wider is the only move left.
+test('survey re-runs a capped scan before it dispatches, and dispatches on nothing matched', () => {
+  const text = byName('survey').rules.join(' ');
+  assert.match(text, /--all/, 'a capped scan no longer says to re-run it first');
+  // Two truncations, two remedies, and the rule has to carry both in the one
+  // element — `--root` also appears in the scanner rule above, so joining the
+  // stage would pass this on the wrong sentence. `--all` lifts the per-section
+  // cap; the walk ceiling is MAX_WALK_FILES in lib/tracked.js, a constant no
+  // flag lifts, and scripts/survey.js prescribes --root for it. A branch naming
+  // only one remedy sends the reader back to the same truncated tree.
+  const remedy = byName('survey').rules.find((r) => r.includes('--all'));
+  assert.match(remedy, /--root/, 'the truncated walk lost its remedy; --all does not lift that ceiling');
+  assert.match(text, /nothing matched at all/, 'a zero-match scan is not a dispatch trigger');
+  assert.match(text, /one response/, 'the readers no longer go out together');
+  assert.equal(/not listed/.test(text), false, 'the cap is still the trigger');
+  assert.equal(/fourth option/.test(text), false, 'the fourth option survived');
+});
+
+// The failure is an omission — nobody states the shape or the tier — so the form
+// is a required slot rather than a prohibition.
+test('plan makes the dispatch decision a slot every task has to fill', () => {
+  const text = byName('plan').rules.join(' ');
+  assert.match(text, /\*\*Dispatch:\*\*/);
+  assert.match(text, /sonnet/);
 });

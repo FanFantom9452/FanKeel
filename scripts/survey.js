@@ -14,14 +14,17 @@
 // confidence. This walks the working tree on every run, so it cannot go out of
 // date.
 //
-// Tracked files only, via `git ls-files`, which is how node_modules, build
-// output and everything else already excluded stays excluded without a second
-// ignore list to maintain.
+// The file list comes from `git ls-files --cached --others --exclude-standard`,
+// which is how node_modules, build output and everything else already excluded
+// stays excluded without a second ignore list to maintain. Not tracked files
+// only: a file written this session and never committed is in the list, because
+// a scanner blind to the work in progress is the confident wrong answer this
+// plugin exists to prevent. `lib/tracked.js` carries the case that proved it.
 
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { trackedFiles, MAX_WALK_FILES } = require('../lib/tracked.js');
+const { trackedFiles, MAX_WALK_FILES, SKIP_EXT } = require('../lib/tracked.js');
 
 // The default, not the law. `--max N` and `--all` move it, because a report that
 // silently stops at 25 answers a different question than the one that was asked —
@@ -96,6 +99,43 @@ function declPatterns(file) {
 
 const isDoc = (file) => path.extname(file).toLowerCase() === '.md';
 
+// git reports a nested repository as one entry and never descends into it, in
+// either of two forms: a trailing slash when it is untracked, and a bare
+// directory name when it is a submodule.
+//
+// One function because there were two, and they drifted: the scan skipped the
+// stat for an entry carrying a declaration extension, the tree never did, and a
+// submodule named `vendor.js` came out a file in the header and a repository in
+// the tree below it.
+//
+// Asked only of entries that could be one. Statting all of them ran 3.3x slower
+// on a 6,500-file repository, and spent it on the majority the scan never opens:
+// an entry carrying a file extension that no declaration pattern claims is a
+// file, and the stat only confirms it. What is left is the two shapes a subtree
+// actually takes — extensionless, `sub`, or named like something the scan reads,
+// `vendor.js` — and those are rare enough to pay for.
+//
+// The ones that are left are exactly the ones the read loop stats again for
+// their size, so it is handed the answer through `sizes` rather than asking
+// twice. Without that the survivors put the scan back over the budget on a
+// repository that is mostly code.
+function isSubtree(root, rel, sizes) {
+    if (rel.endsWith('/')) return true;
+    if (path.extname(rel) && !declPatterns(rel)) return false;
+    let st;
+    try {
+        st = fs.statSync(path.join(root, rel));
+    } catch (e) {
+        // A stat that failed is not evidence of a directory — git lists an entry
+        // the disk no longer has, and a staged file since deleted is the shipped
+        // test's own case.
+        return false;
+    }
+    if (st.isDirectory()) return true;
+    if (sizes) sizes.set(rel, st.size);
+    return false;
+}
+
 
 // Substring, case-insensitive, against the declared name and the path both. A
 // looser match would fill the report with noise, and a report nobody finishes
@@ -107,23 +147,70 @@ function matches(terms, ...fields) {
 }
 
 function scan(root, terms) {
-    const tracked = trackedFiles(root);
+    // `null` from `trackedFiles` means nothing readable, and a root whose only
+    // subtree could not be listed is nothing readable — every other caller wants
+    // that answer and two of them are gates. This one wants to say *why*, so it
+    // asks for the count separately and rebuilds the empty result around it.
+    const stats = {};
+    const tracked = trackedFiles(root, { stats }) || (stats.unlistable
+        ? { files: [], repos: [], walked: true, truncated: false, unlistable: stats.unlistable, skippedExt: 0 }
+        : null);
     if (tracked === null) return null;
-    const { files, repos, walked, truncated } = tracked;
+    const { files: entries, repos, walked, truncated, unlistable, skippedExt } = tracked;
+
+    // A nested repository has no extension, so it used to fall through to
+    // `noPattern` — an entire unread repository counted as one file of an
+    // unknown type, which is the exact understatement these counters were added
+    // to remove.
+    //
+    // Split here rather than in the loop so the header, the name matches and the
+    // read loop all agree on what is a file.
+    const nested = [];
+    const files = [];
+    const sizes = new Map();
+    for (const entry of entries) {
+        if (isSubtree(root, entry, sizes)) nested.push(entry);
+        else files.push(entry);
+    }
 
     const decls = [];
     const docs = [];
     const named = files.filter((f) => terms.length && matches(terms, f));
 
+    // Six ways the tree is never opened, every one of them silent until now. A
+    // scan that skipped half the tree and a scan that genuinely found nothing
+    // read the same, and the stage rule can only key on what the report says.
+    //
+    // `nested` and `unlistable` are subtrees rather than files, so they are
+    // counted apart from the per-file kinds: a `sub/` entry inside `noPattern`
+    // reported an unread repository as one file with an unknown extension.
+    //
+    // Two of them hold paths rather than a number, and it is the same two the
+    // stage rule dispatches a reader over: a file with no pattern can be opened
+    // by hand, and a nested repository can be surveyed on its own root. The
+    // other four name nothing a reader could act on, so they stay counts.
+    const skipped = {
+        unreadable: 0,
+        oversize: 0,
+        noPattern: [],
+        skipExt: skippedExt || 0,
+        nested,
+        unlistable: unlistable || 0,
+    };
+
     for (const file of files) {
         const patterns = declPatterns(file);
-        if (!patterns) continue;
+        if (!patterns) { skipped.noPattern.push(file); continue; }
         const full = path.join(root, file);
         let text;
         try {
-            if (fs.statSync(full).size > MAX_FILE_BYTES) continue;
+            // The split already stat'd every entry that reaches here, so the
+            // size is asked for rather than taken again.
+            const size = sizes.has(file) ? sizes.get(file) : fs.statSync(full).size;
+            if (size > MAX_FILE_BYTES) { skipped.oversize++; continue; }
             text = fs.readFileSync(full, 'utf8');
         } catch (e) {
+            skipped.unreadable++;
             continue;
         }
         const lines = text.split(/\r?\n/);
@@ -166,7 +253,16 @@ function scan(root, terms) {
     // Sort is stable, so file order survives inside each group.
     decls.sort((a, b) => (b.named ? 1 : 0) - (a.named ? 1 : 0));
 
-    return { total: files.length, files, repos, walked, truncated, decls, docs, named };
+    // `total` is the file count, not the entry count: a nested repository is a
+    // subtree, it is reported as one on the `skipped:` line, and counting it
+    // here as well would have the header disagree with the split below it.
+    // `files` stays the whole list because the tree section prints the subtrees
+    // as their own rows.
+    //
+    // `nested` is not returned on its own. It was, read by nothing, while
+    // `report` used `skipped.nested` and `treeLines` worked it out again — which
+    // is where the two answers to "is this a subtree" came from.
+    return { total: files.length, files: entries, repos, walked, truncated, decls, docs, named, skipped };
 }
 
 // `slice(0, Infinity)` is the whole array and `length > Infinity` is false, so
@@ -198,13 +294,14 @@ const human = (n) => (n < 1024 ? n + 'B'
 // This is the one section costing a stat per file, and it runs only when asked.
 function treeLines(root, files, max) {
     const dirs = new Map();
-    // git reports a nested repository as one entry with a trailing slash and
-    // never descends into it. That is a fact about the tree worth printing, and
-    // splitting it on the last slash would otherwise produce a file with no name.
+    // A nested repository is a fact about the tree worth printing, and splitting
+    // a trailing slash on the last slash would otherwise produce a file with no
+    // name. Same test as the scan's, so the header and the tree cannot disagree
+    // about which entries are files.
     const opaque = [];
     let total = 0;
     for (const rel of files) {
-        if (rel.endsWith('/')) { opaque.push(rel); continue; }
+        if (isSubtree(root, rel)) { opaque.push(rel); continue; }
         const cut = rel.lastIndexOf('/');
         const dir = cut === -1 ? '.' : rel.slice(0, cut);
         let size = 0;
@@ -238,7 +335,7 @@ function report(result, terms, opts) {
         return 'fankeel survey: nothing readable under that root — no repository, and no files.\n'
              + 'Search by hand and say what you searched for.';
     }
-    const { total, repos, walked, truncated, decls, docs, named } = result;
+    const { total, repos, walked, truncated, decls, docs, named, skipped } = result;
     const head = terms.length
         ? 'fankeel survey — ' + total + ' files, matching: ' + terms.join(', ')
         : 'fankeel survey — ' + total + ' files, everything declared';
@@ -258,6 +355,30 @@ function report(result, terms, opts) {
     if (truncated) {
         note.push('the walk stopped at ' + MAX_WALK_FILES + ' files — narrow it with --root before trusting this.');
     }
+    // What was in the tree and never opened. The header counts the files that
+    // reached the scan, which is neither the tree nor the coverage: three of
+    // these kinds are inside it and three never entered it. The gap used to be
+    // invisible either way.
+    //
+    // Comma-joined, so no member may contain a comma of its own: one that does
+    // stops the line reading as a list and turns a single count into what looks
+    // like two.
+    const skips = [];
+    if (skipped) {
+        if (skipped.unreadable) skips.push(skipped.unreadable + ' unreadable');
+        if (skipped.oversize) skips.push(skipped.oversize + ' over the size cap');
+        if (skipped.noPattern.length) skips.push(skipped.noPattern.length + ' with no pattern for their extension');
+        // Walk mode only — inside a repository a `.png` in the tree is there on
+        // purpose. The count matters because it is large: eleven thousand on the
+        // first real run, against a `source:` note that named only directories.
+        if (skipped.skipExt) skips.push(skipped.skipExt + (skipped.skipExt === 1 ? ' document or binary' : ' documents and binaries') + ' dropped by extension');
+        // Whole subtrees. Said as subtrees, because a count of one here is not a
+        // file and reading it as one understates the gap by however much is
+        // under it.
+        if (skipped.nested.length) skips.push(skipped.nested.length + (skipped.nested.length === 1 ? ' nested repository' : ' nested repositories') + ' not descended into');
+        if (skipped.unlistable) skips.push(skipped.unlistable + (skipped.unlistable === 1 ? ' directory' : ' directories') + ' that could not be listed');
+    }
+    if (skips.length) note.push('skipped: ' + skips.join(', '));
 
     // The split is said out loud rather than left for the reader to infer from
     // the ordering. A section that silently mixes two kinds of match is a
@@ -271,6 +392,24 @@ function report(result, terms, opts) {
     lines.push(...section('files whose name matches:', named, (f) => f, max));
     lines.push(...section(declTitle, decls, (d) => d.file + ':' + d.line + '  ' + d.text, max));
     lines.push(...section('documentation:', docs, (d) => d.file + ':' + d.line + '  ' + d.text, max));
+
+    // The half of the `skipped:` line something can be done about, named. The
+    // stage rule sends one reader at these with the list, and a list is what a
+    // count is not — `4 with no pattern for their extension` says nothing about
+    // which four. Capped like every other section, so an over-cap skip list is
+    // itself visible rather than being the second silent loss.
+    //
+    // Binaries come off it. Inside a repository nothing drops a tracked `.png`,
+    // so `assets/logo.png` reached `noPattern` and got listed here — under a
+    // title whose whole job is the split between what a reader can act on and
+    // what it cannot. It stays in the count on the `skipped:` line; it is only
+    // not an instruction.
+    if (skipped) {
+        lines.push(...section('skipped, and openable by hand:', [
+            ...skipped.noPattern.filter((f) => !SKIP_EXT.has(path.extname(f).toLowerCase())),
+            ...skipped.nested.map((d) => d + '  (a repository of its own)'),
+        ], (f) => f, max));
+    }
 
     if (opts && opts.tree && opts.root) lines.push(...treeLines(opts.root, result.files, max));
 
@@ -301,8 +440,9 @@ function parseArgs(argv) {
         }
         // A value that is not a positive number leaves the default in place rather
         // than erroring, and is still consumed so it cannot become a search term.
-        // The header line says which cap was used, so a typo shows up in the
-        // report instead of in a stack trace.
+        // The note block names the cap only when it differs from the default, so a
+        // mistyped value reads as an ordinary run rather than as an error — the
+        // trade for never failing a scan over an argument.
         if (argv[i] === '--max') {
             const n = parseInt(argv[i + 1], 10);
             if (argv[i + 1] !== undefined) i++;
@@ -327,4 +467,4 @@ if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
 
-module.exports = { scan, report, main, parseArgs, declPatterns, matches, trackedFiles, treeLines, human };
+module.exports = { scan, report, main, parseArgs, declPatterns, matches, trackedFiles, isSubtree, treeLines, human };

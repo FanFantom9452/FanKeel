@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.31.0
+version: 0.32.0
 status: current
 last_verified: 2026-08-26
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js
@@ -247,8 +247,10 @@ task sat at 2 of 7 looking permanently unfinished, and a long one got no credit
 for the stages it invented. The route is what `●●●○○` on the statusline counts.
 
 `survey` carries a scanner rather than an instruction to search. The injected
-rule names the script with its resolved path; run it with the terms you would
-have searched for, and quote what came back:
+rule names the script as `<plugin>/scripts/survey.js`, and one line above the
+rules the block says what `<plugin>` resolves to — stated once rather than spelled
+out in every rule that names a script. Run it with the terms you would have
+searched for, and quote what came back:
 
 ```
 node <plugin>/scripts/survey.js badge colour ramp
@@ -298,14 +300,14 @@ The shape is the same every time, so it can be recognised without being read:
 | header | the stage that just finished | 12 characters, 6 if CJK |
 | question | the decision being made, and nothing else | ~40 characters, 20 if CJK |
 | option 1 | the next stage on the route. **Its description is where the approval happens** — say what accepting it accepts, not just which stage comes next. | one sentence |
-| option 2 (`survey` only) | read wider. Re-run the scanner uncapped and with the tree, read what it names, and come back to this same question. The stage does not change. | one sentence |
-| option 3 | stay in this stage. The description says what is still open. | one sentence |
-| option 4 | pause. The description says what `next` will be set to. | one sentence |
+| option 2 | stay in this stage. The description says what is still open. | one sentence |
+| option 3 | pause. The description says what `next` will be set to. | one sentence |
 
-Four is the ceiling, not a target. `AskUserQuestion` caps `options` at four, so a
-fifth does not exist — and three is the floor, because dropping the pause is how
-a gate stops being one. The fourth is `survey`'s alone until some other stage has
-a use for one; everywhere else, option 2 is stay and option 3 is pause.
+Three is the floor, not a quota — which is why the rule says *at least*. Dropping
+the pause is how a gate stops being one, so nothing goes below three.
+`AskUserQuestion` caps `options` at four, and the fourth is free for a decision
+that genuinely has one; no stage ships one today. `survey` used to, and what it
+carried — asking whether to read further — is dispatched now rather than asked.
 
 The lengths are there because "one line" was already the rule and a design stage
 still asked a 491-character question: a paragraph with no newline in it is one
@@ -422,10 +424,11 @@ can still describe a system that was replaced last month.
 | **drift** | a reference document whose subject changed after it did, by more than the window. The finding worth the fortnight. |
 | **landed plans** | a plan where everything named now exists and nobody has touched it since. Offer to archive; never move one unasked. |
 | **the index** | entries pointing at nothing, and documents the index never learned about. Both directions, because the index is maintained by hand. |
+| **diagrams** | a mermaid graph naming most of a directory is claiming to list it, so the files it leaves out read as files that do not exist. |
 | **pairs** | two reference documents describing the same source file. Not a contradiction — the shortlist of places one could live. |
 | **orphans, uncovered** | documents nothing links to, and directories no document names. Context, not defects. |
 
-Only the first three fail the run. A command that always exits non-zero has an
+Only the first four fail the run. A command that always exits non-zero has an
 exit code that means nothing.
 
 **It narrows; it does not judge.** Nothing mechanical can decide that two pages
@@ -678,28 +681,94 @@ on:
   claimed for this task — `PostToolUse` fires inside it and writes to this
   session's entry.
 
-### Do not route the pipeline through subagents
+### Dispatch by default, never the filtering
 
-The tempting version of this is to run whole stages in background agents to keep
-the context small. Measured on this repository, that is the wrong tool for the
-thing it is aimed at:
+**Dispatch is the default. Doing it here is what needs a reason.**
+
+The thing that costs is residue: files opened, output read, dead ends followed,
+all of it left in this context and re-read on every later turn for the rest of
+the session. Work done in a subagent leaves none of it — the reading happens in a
+context that is thrown away and only the answer arrives.
+
+So the question is not "is this big enough to delegate". It is **can I get rid of
+the leftovers without a subagent** — and there are exactly two ways:
+
+| exception | why |
+|---|---|
+| **a pipe already removes them** | one command's output is not worth a system prompt. `\| grep` costs nothing and is thousands of times better than a subagent reading the whole run |
+| **it is one tool call** | the dispatch costs more than the work. Reading a named file, running a check, editing a line you already know — do those here |
+
+Everything else is a dispatch, and several of them go out in one response.
+
+The tempting version is to run whole stages in background agents to keep the
+context small. For one kind of work, measured on this repository, that is the
+wrong tool for the thing it is aimed at:
 
 ```
-node --test, full output          34,150 characters
-the line that decides it              24 characters
+measured 2026-08-26
+npm test, full output             about fifty thousand characters
+the two lines that decide it      twenty-four
 ```
 
-A subagent would read all 34,150 in a context that gets thrown away, and cost its
-own system prompt to do it. `| grep -E '^ℹ (pass|fail)'` costs nothing and is
-1,400 times better. **What stacks up a context is raw output arriving in it, not
-work being done** — and the fix for that is at the source, which is what every
-stage's `Output:` rule is for.
+A subagent would read the whole of that in a context that gets thrown away, and
+cost its own system prompt to do it. `| grep -E '^ℹ (pass|fail)'` costs nothing
+and is some two thousand times better. **Rounded on purpose.** An exact figure
+here has gone stale four times, each time falsified by the next commit that added
+a test, and each stale one was read as current because it looked precise. The
+date says when it was measured; the exact characters belong in that day's commit
+message, not on a page nobody re-measures.
 
-Delegate when reading is wide, the answer is narrow, and no filter can pick it
-out — *read these six documents and say whether any of them contradicts the
-code*. That is a judgement, so it cannot be grepped, and it is 60,000 characters
-of reading for two lines of answer. Verify, build and land are none of those
-things: their output is machine-shaped and already filterable.
+**What stacks up a context is raw output arriving in it, not work being done** —
+and the fix for that is at the source, which is what every stage's `Output:` rule
+is for.
+
+But that measures **filtering output you have already produced**. It says nothing
+about work not yet done, where the arithmetic runs the other way: a dispatched
+reader opens the files, follows the dead ends and reads the failed runs in a
+context that is thrown away, and what lands here is the answer. Measured on one
+fan-out of four readers over another plugin's skills: 240,881 tokens spent, about
+4,000 characters returned, 121 seconds of wall-clock rather than 352 because they
+went out in one response.
+
+| | |
+|---|---|
+| **delegate** | wide reading with a narrow answer — *read these six documents and say whether any contradicts the code*. A judgement, so no filter can pick it out |
+| **do not delegate** | anything a pipe already removes. One command's output is not worth a system prompt |
+
+Four rules that make it work, each of which fails silently when missed:
+
+- **Several dispatches in one response run at once.** One per response runs them
+  in sequence — the cost of parallelism with none of it.
+- **Always pass the model.** An omitted model inherits this session's, which is
+  usually the most capable and most expensive one available.
+- **Spot-check the results against each other.** Independently dispatched agents
+  share a prompt style and a model, so they make correlated mistakes that reading
+  each summary on its own will not catch.
+- **State the return contract, and say what it costs.** Name the shape you want
+  back and add why: every line a subagent returns lands in this context and is
+  re-read on every later turn for the rest of the session. Measured here — one
+  reviewer told "return only three lines, no preamble" returned those plus a
+  twelve-bullet verification log; the next, told the same and *why*, returned
+  exactly three. Same model, same shape of task. A contract without its reason is
+  a preference.
+
+**Four in one response is the working ceiling.** Past that you are guessing at the
+split rather than deciding it, and every reader costs a system prompt whether or
+not it had a distinct question. The test is what comes back: **if two readers
+would return the same shape of answer about different files, they are one reader
+with a list** — give it the list. Fan out on distinct questions, not on file
+count.
+
+**Delegate a job inside a stage; never the stage itself.** A subagent receives the
+brief and nothing else: `hooks/inject.js` is a `UserPromptSubmit` hook and a
+subagent has no prompt, so `ALWAYS`, the stage's own rules and its output shape
+never reach it. A stage run inside one loses its gate, its report shape and every
+rule at once, and nothing anywhere says so. What you dispatch is a question with
+an answer — *read these six documents and say whether any contradicts the code*.
+The judgement it feeds, the evidence and the gate stay here, where the rules are.
+
+`survey` dispatches readers; `build` dispatches per task, and the plan's
+`**Dispatch:**` line is where that was decided.
 
 ## The scope guard
 

@@ -1,9 +1,9 @@
 ---
 name: fankeel-plan
 description: The plan stage — decompose an approved design into tasks someone with no context could execute, with constraints generated from the project rather than remembered. Use for the plan stage of a fankeel task, writing an implementation plan, or breaking a spec into tasks before any code is written.
-version: 0.31.0
+version: 0.32.0
 status: current
-last_verified: 2026-08-22
+last_verified: 2026-08-26
 source_of_truth: lib/stages.js, scripts/map.js
 ---
 
@@ -88,8 +88,45 @@ Every task carries an **Interfaces** block:
 - Produces: what later tasks rely on — exact names, parameter and return types
 ```
 
-A task's implementer sees only their own task. This block is how they learn the
-names their neighbours use.
+A **dispatched** implementer sees only their own task, and this block is how they
+learn the names their neighbours use. An `in-session` task is implemented in the
+session that wrote the plan, which has all of it — the block is still written,
+because which tasks are dispatched can change after the plan is approved and a
+reviewer reads it either way.
+
+And one line saying whether that implementer is dispatched at all. Three
+alternatives, one of which every task carries:
+
+```markdown
+**Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
+```
+
+```markdown
+**Dispatch:** in-session — badge.js and render.js interlock here, and splitting
+one change across two contexts costs more than the reading saves.
+```
+
+```markdown
+**Dispatch:** implementer, opus — the lock protocol has to be reasoned about,
+not transcribed.
+```
+
+Three rules about that line:
+
+1. **Every task carries one.** A task without it is a plan failure, in the same
+   list as `TBD` and "similar to Task N".
+2. **`sonnet` is the floor and the default**, and needs no argument. The unit
+   that matters is not token price but whether the task finishes on the first
+   dispatch: a model that needs two attempts re-reads everything the first one
+   read, and costs more in wall-clock and attention than the tier above it.
+3. **Anything above `sonnet` names why on that same line.** "Complex" is not a
+   why. A protocol to reason about, a design judgement, a change whose shape is
+   not in the plan — those are.
+
+**One dispatch per task, and no third form of the line.** The build loop records
+a BASE, reviews one range and marks one `complete <n>` per task; a dispatch
+spanning Tasks 4-5 has no shape it can record, and a half-finished batch leaves
+the ledger saying both are open.
 
 ## Steps are two to five minutes
 
@@ -109,6 +146,7 @@ These are **plan failures**, not shorthand:
 - "similar to Task N" — repeat the code; they may be reading out of order
 - a step that says what to do without showing how
 - a reference to a type or function no task defines
+- a task with no `**Dispatch:**` line
 
 ## Self-review before the gate
 

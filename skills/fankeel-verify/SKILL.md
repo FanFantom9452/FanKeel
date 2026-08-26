@@ -1,9 +1,9 @@
 ---
 name: fankeel-verify
 description: The verify stage — evidence before claims, requirements checked line by line, and the documents this change just made false. Use for the verify stage of a fankeel task, before claiming work is complete or passing, before a commit or PR, or when checking whether a change broke the documentation describing it.
-version: 0.31.0
+version: 0.32.0
 status: current
-last_verified: 2026-08-22
+last_verified: 2026-08-26
 source_of_truth: lib/stages.js, scripts/docs-check.js
 ---
 
@@ -71,6 +71,27 @@ resolves. Name the page and the line.
 A change that is correct and leaves three pages describing the old behaviour has
 been half verified.
 
+**This stage is where both halves of the delegation rule are visible at once.**
+
+The suite is the case *against* dispatching. Its output is machine-shaped: about
+fifty thousand characters — measured 2026-08-26, rounded because an exact figure
+is false again by the next commit that adds a test — where two lines decide it,
+and `| grep -E '^ℹ (pass|fail)'` removes the rest for nothing. A subagent there
+would read all of it in a context that gets thrown away and charge a system
+prompt for the privilege.
+
+The question above it is the case *for*. "Which page does this change make false"
+is judgement over pages nothing can grep — wide reading, narrow answer. Dispatch
+it: one reader per page the change plausibly touched, several in one response so
+they run at once — four is the ceiling, and the fankeel skill's *Dispatch by
+default, never the filtering* says why — each given the **path** to a diff file
+and asked only what is now false and where. Never a pasted diff: it lands the
+whole change in this context, which is the cost dispatching exists to avoid.
+Pass the model explicitly; `sonnet` is the floor.
+
+What you do not dispatch is this stage. The evidence table, the red-green
+discipline and the gate stay here — a subagent has none of these rules.
+
 ## Half-built sends it back
 
 Verify is not where the bar gets lowered. Anything unfinished returns to `build`.
@@ -88,4 +109,6 @@ $ <command>
 then AskUserQuestion
 ```
 
-Filter the run. Never paste 34,000 characters to report 24.
+Filter the run. Never paste some fifty thousand characters to report twenty-four
+— measured 2026-08-26, and stated rounded because a suite that grows falsifies an
+exact figure with the next test anyone adds.

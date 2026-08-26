@@ -186,3 +186,189 @@ test('no live page offers a flag the task script no longer takes', () => {
     assert.equal(text.includes('--scope'), false, rel + ' still offers --scope');
   }
 });
+
+// It rested on one measurement of filtering a command's output, and was used to
+// bar three stages from a different kind of delegation entirely. Two neighbouring
+// pages in this same plugin contradicted it: fankeel-plan writes an Interfaces
+// block "for a task's implementer", and fankeel-survey says reading wide for a
+// narrow answer is what a subagent is for.
+test('the delegation rule is a principle, not a list of barred stages', () => {
+  const text = read('fankeel');
+  assert.equal(text.includes('Do not route the pipeline through subagents'), false,
+    'the prohibition is still there');
+  assert.match(text, /Dispatch by default, never the filtering/);
+  // The measurement it cites is one this repository actually produced, and the
+  // block says when. Two figures have already gone stale here undetected — a
+  // number with no date reads as current however old it is, so the date is the
+  // part a test can hold.
+  assert.match(text, /measured 20\d\d-\d\d-\d\d/, 'the measurement block carries no date');
+
+  // Four exact figures have rotted here — 34,150, then 49,074, 49,742, 51,457 —
+  // every one of them falsified by the next commit that added a test, and every
+  // one of them past a guard that barred only its predecessors by name. So the
+  // shape is barred rather than the literals: no exact character count in the
+  // block at all. It states the size rounded and keeps the date, which is the
+  // half of a measurement that cannot go stale.
+  //
+  // The window was the two paragraphs from `measured 20`, which is the fence and
+  // the paragraph under it — so a figure one paragraph either side of that was
+  // invisible to the guard that exists to bar it. It is the whole measurement
+  // now: the section heading down to the sentence that pivots to the other
+  // measurement, whose figures are a one-off fan-out that cannot go stale.
+  const start = text.indexOf('### Dispatch by default, never the filtering');
+  const end = text.indexOf('But that measures', start);
+  assert.ok(start !== -1 && end > start, 'the measurement section is not where the guard looks');
+  const block = text.slice(start, end);
+  assert.equal(/\d[\d,]*\s+characters/.test(block), false, 'an exact character count is back in the block');
+  assert.equal(/\b\d{2},\d{3}\b/.test(block), false, 'an exact figure is back in the block');
+});
+
+// Three stage skills cite that heading by name to borrow its argument rather
+// than restate it, and a citation is a link with no checker. Renaming the
+// heading left two of them — fankeel-audit and fankeel-verify — pointing at a
+// section that no longer existed, and nothing went red: every one of those
+// pages still read as though it said something. So the tail of the heading is
+// the anchor, and every page that uses it has to spell the whole thing the way
+// the fankeel skill spells it.
+test('every skill citing the dispatch section spells its heading correctly', () => {
+  const heading = /^### (Dispatch by default,[^\r\n]*)$/m.exec(read('fankeel'));
+  assert.ok(heading, 'the fankeel skill has no dispatch heading to cite');
+  const tail = 'never the filtering';
+  for (const name of names) {
+    const flat = read(name).replace(/\s+/g, ' ');
+    let at = flat.indexOf(tail);
+    while (at !== -1) {
+      assert.ok(flat.slice(0, at + tail.length).endsWith(heading[1]),
+        `${name} cites the dispatch section as something other than "${heading[1]}"`);
+      at = flat.indexOf(tail, at + 1);
+    }
+  }
+});
+
+// The principle replaced a prohibition, and the prohibition was the only thing
+// that had said a whole stage must not be dispatched. A subagent gets the brief
+// and no prompt, so the stage rules a UserPromptSubmit hook injects never reach
+// it — the reason has to be on the page, not only the rule.
+test('the delegation rule bars the stage itself and says why', () => {
+  const text = read('fankeel');
+  assert.match(text, /never the stage itself/);
+  assert.match(text, /no prompt/);
+});
+
+// The stage that already said delegating was right, and then offered the user a
+// manual re-run instead.
+test('survey no longer offers a fourth option to authorise more reading', () => {
+  const text = read('fankeel-survey');
+  assert.equal(/fourth option/i.test(text), false, 'the fourth option survived');
+  // The rule itself, not the word. `/dispatch/i` matched four unrelated uses of
+  // "dispatching" elsewhere on the page, so replacing this sentence with **Ask
+  // the user for permission before reading any wider.** — the exact thing the
+  // test is named for barring — left it green.
+  assert.match(text, /\*\*Dispatch when the reading is wide, or when nothing matched at all\.\*\*/);
+  assert.match(text, /Never ask permission for either/);
+  // Added in the pre-flight scan: the option also had a row in the main skill's
+  // question-shape table, and a manual grep in a step is a check that goes
+  // missing after a compaction.
+  assert.equal(/read wider/i.test(read('fankeel')), false,
+    'the read wider row survives in the question-shape table');
+});
+
+// The plan stage has written an Interfaces block "for a task's implementer"
+// since it shipped, while the build stage never dispatched one. This is the
+// field that closes that gap, and it has to be spelled the same in the rule,
+// in the template that writes it, and in the loop that reads it.
+test('the plan template carries the dispatch slot and names its floor', () => {
+  const text = read('fankeel-plan');
+  assert.match(text, /\*\*Dispatch:\*\*/);
+  // The floor rule, not the word. `/sonnet/` matched the worked example in the
+  // template above it, so deleting the rule that makes sonnet the floor left
+  // this green — the one thing the test is named for.
+  assert.match(text, /\*\*`sonnet` is the floor and the default\*\*/);
+  assert.match(text, /\*\*Anything above `sonnet` names why on that same line\.\*\*/);
+  assert.match(text, /opus/);
+});
+
+test('the build loop reads the dispatch line rather than always implementing', () => {
+  const text = read('fankeel-build');
+  assert.match(text, /\*\*Dispatch:\*\*/);
+  // A returned diff would land the whole change in the parent — the one cost
+  // dispatching exists to avoid.
+  assert.match(text, /never a diff/i);
+});
+
+// The two skills spell the boundary differently — one bolds the "not", one does
+// not — and prose reflows. Matched on the words with the bold optional, so both
+// tests assert the same sentence in the same form.
+const BOUNDARY = /do\s+(?:\*\*)?not(?:\*\*)?\s+dispatch\s+is\s+this\s+stage/;
+
+// The branch that replaced the delegation ban used audit's own job as its
+// example of the good case, and this skill said nothing about dispatch at all —
+// so the stage most likely to reach for one had no guidance where it would
+// actually be read.
+test('the audit skill names its dispatch case and the line around it', () => {
+  const text = read('fankeel-audit');
+  assert.match(text, /one reader per pair/);
+  assert.match(text, /several in one response/i);
+  // And the boundary, in the stage where the temptation is strongest.
+  assert.match(text, BOUNDARY);
+});
+
+// Verify is the one stage where both halves of the delegation rule apply at
+// once: the suite is what a pipe removes for nothing, and "which page did this
+// make false" is exactly the wide-read-narrow-answer case. The skill said
+// neither, so the stage with the clearest example taught nothing.
+test('the verify skill separates what a pipe removes from what a reader answers', () => {
+  const text = read('fankeel-verify');
+  assert.match(text, /one reader per page/);
+  assert.match(text, /several in one response/i);
+  assert.match(text, BOUNDARY);
+});
+
+// Measured on this branch: a reviewer told to return three lines returned three
+// plus a twelve-bullet log; the next, told the same and why, returned three. The
+// clause that carries the reason is the whole rule, so that is what gets pinned —
+// not the word "contract", which appears elsewhere in both files.
+test('a dispatch is told to state what it wants back and why that costs', () => {
+  assert.match(read('fankeel'), /State the return contract, and say what it costs/);
+  assert.match(read('fankeel'), /re-read on every later turn/);
+  assert.match(read('fankeel-build'), /Say what you want back, and why it costs/);
+  assert.match(read('fankeel-build'), /spend words\s+on the dispatch and buy them back on the return/);
+});
+
+// The section read as a list of cases where dispatching was allowed. The cost is
+// residue in the parent, so the default inverts: dispatch unless the leftovers
+// come out another way, and there are exactly two ways they can.
+test('dispatching is the default and the two exceptions are named', () => {
+  const text = read('fankeel');
+  assert.match(text, /Dispatch is the default\. Doing it here is what needs a reason\./);
+  assert.match(text, /a pipe already removes them/);
+  assert.match(text, /it is one tool call/);
+  // The same default has to land where the standalone doc states the rule, not
+  // just in the skill.
+  const docsText = fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8');
+  assert.match(docsText, /\*\*dispatch\*\* \| by default/);
+  assert.match(docsText, /a pipe already removes the residue/);
+  assert.match(docsText, /a single tool call/);
+});
+
+// A fourth rule landed in the bullet list without anybody touching the lead-in
+// that counts it, and nothing went red: "Three rules" sat above four bullets for
+// a whole build, and docs/subagents.md's mirror of the same list still said
+// three too. A count has no checker unless something recounts it.
+test('the dispatch rule count agrees with the bullet list under it, and with the docs mirror', () => {
+  const text = read('fankeel');
+  const leadIn = /^(\w+) rules that make it work, each of which fails silently when missed:\r?\n\r?\n([\s\S]*?)\r?\n\r?\n\*\*/m.exec(text);
+  assert.ok(leadIn, 'the dispatch rules lead-in is not where this test expects it');
+  const WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
+  const claimed = WORDS[leadIn[1].toLowerCase()];
+  assert.ok(claimed, `"${leadIn[1]}" is not a recognised count word`);
+  const bulletCount = (leadIn[2].match(/^- /gm) || []).length;
+  assert.equal(claimed, bulletCount,
+    `the lead-in says "${leadIn[1]}" but ${bulletCount} bullets follow it`);
+
+  const docsText = fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8');
+  const docsLeadIn = /^(\w+) things that fail silently when missed:/m.exec(docsText);
+  assert.ok(docsLeadIn, 'docs/subagents.md has no matching lead-in to compare');
+  assert.equal(WORDS[docsLeadIn[1].toLowerCase()], bulletCount,
+    `docs/subagents.md says "${docsLeadIn[1]}" but the skill lists ${bulletCount} rules`);
+});

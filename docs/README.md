@@ -29,6 +29,7 @@ here.
 | Why an archive naming deleted code is not a bug | [documents.md](documents.md) — *roles* |
 | What a subagent is told when it starts | [subagents.md](subagents.md) |
 | Why delegating a wide search saves and delegating a long report does not | [subagents.md](subagents.md) |
+| When to dispatch one, and when a pipe already removes what you are avoiding | [subagents.md](subagents.md) — *when to dispatch one* |
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
 | Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
 | How the seven-stage work is being built, task by task | [plans/2026-08-22-seven-stage-implementation.md](plans/2026-08-22-seven-stage-implementation.md) — *superseded by the pipeline plan* |
@@ -36,6 +37,8 @@ here.
 | How that is being built, task by task | [plans/2026-08-23-registry-staleness-implementation.md](plans/2026-08-23-registry-staleness-implementation.md) — *superseded by the observed-scope design* |
 | Why a session ran two hours with the plugin doing nothing | [plans/2026-08-26-session-id-design.md](plans/2026-08-26-session-id-design.md) — *built, 0.31.0* |
 | How that was built, task by task | [plans/2026-08-26-session-id.md](plans/2026-08-26-session-id.md) — *built, 0.31.0* |
+| Why the pipeline stopped barring subagents, and what it bars instead | [plans/2026-08-26-dispatch-design.md](plans/2026-08-26-dispatch-design.md) — *built, 0.32.0* |
+| How that was built, task by task | [plans/2026-08-26-dispatch.md](plans/2026-08-26-dispatch.md) — *built, 0.32.0* |
 | What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 

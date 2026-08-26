@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-24
+last_verified: 2026-08-26
 source_of_truth: hooks/brief.js, lib/render.js
 ---
 
@@ -27,6 +27,34 @@ competing for the window and pulling compaction forward.
 So spending 280 tokens on a brief to take a thousand off a return value is worth
 it every single time, and it is worth it even when nothing else about the
 delegation changes.
+
+## When to dispatch one
+
+The section below says what a subagent is *not*. This is the other half.
+
+| | |
+|---|---|
+| **dispatch** | by default. Anything that would leave files, output or dead ends in the parent's context, where they are re-read on every later turn |
+| **do not** | only two cases — a pipe already removes the residue, or it is a single tool call. `npm test` is tens of thousands of characters and the two lines that decide it are 24; `grep` does that for nothing |
+
+Measured on 2026-08-26, one fan-out of four readers with a lens each: 240,881
+tokens spent inside them, about 4,000 characters returned, and 121 seconds rather
+than 352 because all four went out in one response. A second fan-out, measured the
+same day during this branch's own verify stage, sent four readers out in one
+response for 614 seconds of combined agent time against 235 seconds of wall-clock
+— the slowest one.
+
+Four things that fail silently when missed: several dispatches must be in **one
+response** to run concurrently; the **model must be passed explicitly**, since an
+omitted one inherits the parent's; the returns must be **compared against each
+other**, because agents dispatched from one prompt style make correlated mistakes
+that per-agent reading will not catch; and the **return contract must state why it
+costs**, because naming the shape without the reason is a preference, not a
+contract, and a subagent told the reason returns the shape.
+
+`PostToolUse` fires inside a subagent under the **parent's** session id — measured,
+not assumed — so a dispatched implementer's edits are claimed for the task that
+dispatched it and the collision warning keeps covering them.
 
 ## What it deliberately is not
 
