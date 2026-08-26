@@ -390,6 +390,14 @@ test('the three options are the whole list, and no stage has a fourth', () => {
 test('survey re-runs a capped scan before it dispatches, and dispatches on nothing matched', () => {
   const text = byName('survey').rules.join(' ');
   assert.match(text, /--all/, 'a capped scan no longer says to re-run it first');
+  // Two truncations, two remedies, and the rule has to carry both in the one
+  // element — `--root` also appears in the scanner rule above, so joining the
+  // stage would pass this on the wrong sentence. `--all` lifts the per-section
+  // cap; the walk ceiling is MAX_WALK_FILES in lib/tracked.js, a constant no
+  // flag lifts, and scripts/survey.js prescribes --root for it. A branch naming
+  // only one remedy sends the reader back to the same truncated tree.
+  const remedy = byName('survey').rules.find((r) => r.includes('--all'));
+  assert.match(remedy, /--root/, 'the truncated walk lost its remedy; --all does not lift that ceiling');
   assert.match(text, /nothing matched at all/, 'a zero-match scan is not a dispatch trigger');
   assert.match(text, /one response/, 'the readers no longer go out together');
   assert.equal(/not listed/.test(text), false, 'the cap is still the trigger');

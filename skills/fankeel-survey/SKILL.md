@@ -89,8 +89,10 @@ its own output:
 
 and a walk that hit its ceiling prints `the walk stopped at N files`.
 
-**A cap is a re-run, not a fan-out.** Either line means the flag first — it costs
-one command and returns the rows the cap cut:
+**Neither line is a fan-out, and the two are not fixed the same way.**
+
+**A capped section is a re-run.** `--all` lifts the per-section cap and returns
+the rows it cut, for the cost of one command:
 
 ```
 node <plugin>/scripts/survey.js --all <term>...      # every match, no cap
@@ -99,6 +101,13 @@ node <plugin>/scripts/survey.js --tree               # every directory, with siz
 
 A section overflowing by five filenames is not wide reading; dispatching there
 delegates what a flag already removes.
+
+**A truncated walk is narrowed with `--root`.** No flag lifts it. The ceiling is
+a constant in the walker — a backstop against somebody's home directory, not a
+cap anyone tunes — so `--all` does nothing for it, and the scanner's own message
+says the same: *narrow it with `--root` before trusting this*. Re-running without
+narrowing returns the same truncated tree; dispatching readers over it hands them
+the same blind spot, four times over.
 
 **Dispatch when the reading is wide, or when nothing matched at all.** Wide means
 the answer is a judgement over several subsystems rather than a longer list — the
