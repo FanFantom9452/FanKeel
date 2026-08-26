@@ -198,6 +198,20 @@ The split is not a compromise; the two jobs have different corpora:
 So the fan-out belongs where the corpus is bigger than a reader, and the lens list
 belongs where it is not.
 
+> **Annotated 2026-08-26, after the second whole-branch review.** The table above
+> puts `verify` in the reviewing row without qualification, and what shipped gives
+> `verify` a fan-out — one reader per page the change may have made false. The
+> review called that a contradiction, and read as written it is one.
+>
+> The table was drawn around *what a stage does with a diff*, and `verify` does two
+> different things. Reviewing the diff is the bounded corpus this row describes and
+> gets no fan-out. But *"which page does this change make false"* is reading over
+> every page in the repository — an unbounded corpus, and the reading row's case
+> exactly. `verify` belongs in **both** rows, and the table saying otherwise is the
+> table's error rather than the skill's.
+>
+> The same applies to `audit`, which the table never listed at all.
+
 ## Where the decision is made
 
 Not in a stage rule, and not by whoever happens to be running the loop. **On the
@@ -331,6 +345,21 @@ Both replacements are deliberately in the matching form:
 | `**Dispatch:**` on every plan task | nobody states the shape or the tier — an **omission** | a structural required slot, and a task without one is a plan failure |
 | readers are dispatched when the scan reports truncation | behaviour should depend on a condition | a conditional on an **observable predicate** — the scanner's own truncation report, not a judgement about whether more reading "seems needed" |
 | "never spend a round asking permission to do your own reading" | a rule skipped under the pressure of wanting the turn to end | a prohibition — and it takes **no nuance clause**, per the same skill: one hedge measurably degraded a winning rule from consistent to noisy compliance |
+
+> **Annotated 2026-08-26, after the second whole-branch review.** The middle row
+> overstates what shipped. Two rounds of correction turned a capped section into a
+> re-run rather than a dispatch — rightly, since `--all` is free — which left the
+> *primary* trigger as "when the reading is wide". That is a judgement, and this
+> row claims it is not one.
+>
+> Two things narrow the gap rather than closing it. `scripts/survey.js` now
+> reports the files it skipped, so three previously silent paths became observable
+> and joined the conditional; and "nothing matched at all" was observable from the
+> start. What remains judgement is genuinely judgement: no predicate can decide
+> that forty rows of results need a second pair of eyes.
+>
+> The form argument still holds for the `**Dispatch:**` slot, which is the
+> required-slot row and shipped exactly as described.
 
 ## What the comparison with superpowers actually found
 
