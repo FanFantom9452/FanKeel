@@ -64,8 +64,8 @@ For each task the ledger does not list as complete:
 
    A dispatch carries four things and nothing else: one line on where the task
    fits, the **path** to the plan file with the task's number, the plan's
-   `## Global Constraints` block (the subagent receives none of this pipeline's
-   rules, so anything binding it must travel in the dispatch), and the path it
+   `## Global Constraints` block (the subagent receives the brief and nothing
+   else, so anything binding it must travel in the dispatch), and the path it
    must write its report to. Never the session's history, and never a paste of
    the plan.
 

@@ -303,10 +303,11 @@ The shape is the same every time, so it can be recognised without being read:
 | option 2 | stay in this stage. The description says what is still open. | one sentence |
 | option 3 | pause. The description says what `next` will be set to. | one sentence |
 
-Three is the whole list. `AskUserQuestion` caps `options` at four, and nothing
-uses the fourth any more: `survey` held it, and what it carried — asking whether
-to read further — is dispatched now rather than asked. Three is also the minimum,
-because dropping the pause is how a gate stops being one.
+Three is the floor, not a quota — which is why the rule says *at least*. Dropping
+the pause is how a gate stops being one, so nothing goes below three.
+`AskUserQuestion` caps `options` at four, and the fourth is free for a decision
+that genuinely has one; no stage ships one today. `survey` used to, and what it
+carried — asking whether to read further — is dispatched now rather than asked.
 
 The lengths are there because "one line" was already the rule and a design stage
 still asked a 491-character question: a paragraph with no newline in it is one
@@ -686,14 +687,14 @@ context small. For one kind of work, measured on this repository, that is the
 wrong tool for the thing it is aimed at:
 
 ```
-measured 2026-08-26, 640 tests
-npm test, full output             50,434 characters
+measured 2026-08-26, 644 tests
+npm test, full output             51,457 characters
 the two lines that decide it          24 characters
 ```
 
-A subagent would read all 50,434 in a context that gets thrown away, and cost its
+A subagent would read all 51,457 in a context that gets thrown away, and cost its
 own system prompt to do it. `| grep -E '^ℹ (pass|fail)'` costs nothing and is
-2,101 times better. **Re-measure it, do not carry it forward.** The date is on
+2,144 times better. **Re-measure it, do not carry it forward.** The date is on
 the block because the figure it replaced had none and had gone stale by 15,000
 characters before anyone noticed; a growing suite moves it every release.
 

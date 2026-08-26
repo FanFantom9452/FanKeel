@@ -73,8 +73,8 @@ been half verified.
 
 **This stage is where both halves of the delegation rule are visible at once.**
 
-The suite is the case *against* dispatching. Its output is machine-shaped: 50,434
-characters — measured 2026-08-26, 640 tests — where two lines decide it, and `| grep -E '^ℹ (pass|fail)'` removes the
+The suite is the case *against* dispatching. Its output is machine-shaped: 51,457
+characters — measured 2026-08-26, 644 tests — where two lines decide it, and `| grep -E '^ℹ (pass|fail)'` removes the
 rest for nothing. A subagent there would read all of it in a context that gets
 thrown away and charge a system prompt for the privilege.
 
@@ -107,6 +107,6 @@ $ <command>
 then AskUserQuestion
 ```
 
-Filter the run. Never paste 50,434 characters to report 24 — measured 2026-08-26,
-640 tests. Re-measure it rather than carrying it forward; a growing suite moves it
+Filter the run. Never paste 51,457 characters to report 24 — measured 2026-08-26,
+644 tests. Re-measure it rather than carrying it forward; a growing suite moves it
 every release.

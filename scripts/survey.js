@@ -109,18 +109,26 @@ function matches(terms, ...fields) {
 function scan(root, terms) {
     const tracked = trackedFiles(root);
     if (tracked === null) return null;
-    const { files, repos, walked, truncated } = tracked;
+    const { files, repos, walked, truncated, unlistable } = tracked;
 
     const decls = [];
     const docs = [];
     const named = files.filter((f) => terms.length && matches(terms, f));
 
-    // Three ways a file is never opened, every one of them silent until now. A
+    // Five ways the tree is never opened, every one of them silent until now. A
     // scan that skipped half the tree and a scan that genuinely found nothing
     // read the same, and the stage rule can only key on what the report says.
-    const skipped = { unreadable: 0, oversize: 0, noPattern: 0 };
+    //
+    // `nested` and `unlistable` are subtrees rather than files, so they are
+    // counted apart from the three per-file kinds: one `sub/` entry inside
+    // `noPattern` reported an unread repository as one file with an unknown
+    // extension, which is the understatement this whole block exists to stop.
+    const skipped = { unreadable: 0, oversize: 0, noPattern: 0, nested: 0, unlistable: unlistable || 0 };
 
     for (const file of files) {
+        // git reports a nested repository as one entry with a trailing slash and
+        // never descends into it. Nothing under it was read.
+        if (file.endsWith('/')) { skipped.nested++; continue; }
         const patterns = declPatterns(file);
         if (!patterns) { skipped.noPattern++; continue; }
         const full = path.join(root, file);
@@ -271,6 +279,11 @@ function report(result, terms, opts) {
         if (skipped.unreadable) skips.push(skipped.unreadable + ' unreadable');
         if (skipped.oversize) skips.push(skipped.oversize + ' over the size cap');
         if (skipped.noPattern) skips.push(skipped.noPattern + ' with no pattern for their extension');
+        // Whole subtrees. Said as subtrees, because a count of one here is not a
+        // file and reading it as one understates the gap by however much is
+        // under it.
+        if (skipped.nested) skips.push(skipped.nested + (skipped.nested === 1 ? ' nested repository' : ' nested repositories') + ', not descended into');
+        if (skipped.unlistable) skips.push(skipped.unlistable + (skipped.unlistable === 1 ? ' directory' : ' directories') + ' that could not be listed');
     }
     if (skips.length) note.push('skipped: ' + skips.join(', '));
 

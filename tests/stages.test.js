@@ -371,7 +371,7 @@ test('every stage points at the skill holding the part that does not compress', 
   }
 });
 
-test('the three options are the whole list, and no stage has a fourth', () => {
+test('three options are the floor, and no stage ships a fourth', () => {
   assert.match(ALWAYS[0], /at least/, 'the three are no longer named as a minimum, so the pause can be dropped');
 
   // survey used to carry a fourth: `read wider`, which ended the round with the

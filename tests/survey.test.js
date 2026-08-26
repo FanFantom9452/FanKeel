@@ -362,6 +362,63 @@ test('a scan that skipped nothing says nothing', () => {
   assert.equal(/skipped:/.test(run(root, 'widget')), false);
 });
 
+// An earlier ruling on this branch said the unreadable counter could not be
+// produced portably and left it untested. It can, in three lines: stage a file,
+// delete it from disk, and `git ls-files --cached` still lists it while
+// `statSync` throws ENOENT straight into that counter. No permissions involved,
+// so it reads the same on Windows as anywhere else.
+test('a staged file that is no longer on disk is counted as unreadable', () => {
+  const root = repo({
+    'lib/a.js': 'function widgetFactory() {}\n',
+    'lib/gone.js': 'function widgetVanished() {}\n',
+  });
+  fs.rmSync(path.join(root, 'lib', 'gone.js'));
+  const out = run(root, 'widget');
+  assert.match(out, /skipped: 1 unreadable/);
+  assert.equal(/widgetVanished/.test(out), false, 'a file that is not on disk was read anyway');
+});
+
+// git reports a nested repository as one entry with a trailing slash and never
+// descends into it. It used to land in the no-pattern counter, where an entire
+// unread project reported as "1 with no pattern for their extension" — a count
+// of one standing for any amount.
+test('a nested repository is counted as a subtree, not as one unknown file', () => {
+  const root = repo({ 'lib/a.js': 'function widgetFactory() {}\n' });
+  const inner = path.join(root, 'inner');
+  fs.mkdirSync(inner);
+  execFileSync('git', ['init', '-q'], { cwd: inner });
+  fs.writeFileSync(path.join(inner, 'deep.js'), 'function widgetBuried() {}\n');
+
+  const out = run(root, 'widget');
+  assert.match(out, /skipped: 1 nested repository, not descended into/);
+  assert.equal(/no pattern for their extension/.test(out), false, 'the subtree was counted as a file');
+  assert.equal(/widgetBuried/.test(out), false, 'the nested repository was descended into');
+});
+
+// The last silently incomplete path: `readdirSync` failing dropped a whole
+// subtree with no counter and no line, and walk mode — the multi-project root
+// the scanner exists for — is exactly where that happens. Forced rather than
+// waited for, because an unlistable directory is the one skip a test cannot
+// arrange the same way on every platform.
+test('a directory the walk cannot list is counted, not dropped in silence', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  fs.writeFileSync(path.join(root, 'top.js'), 'function widgetFactory() {}\n');
+  fs.mkdirSync(path.join(root, 'locked'));
+  fs.writeFileSync(path.join(root, 'locked', 'deep.js'), 'function widgetSealed() {}\n');
+
+  const real = fs.readdirSync;
+  t.mock.method(fs, 'readdirSync', (dir, opts) => {
+    if (String(dir).endsWith('locked')) throw Object.assign(new Error('EACCES'), { code: 'EACCES' });
+    return real.call(fs, dir, opts);
+  });
+
+  const result = survey.scan(root, ['widget']);
+  assert.equal(result.skipped.unlistable, 1);
+  const out = survey.report(result, ['widget']);
+  assert.match(out, /skipped: 1 directory that could not be listed/);
+  assert.equal(/widgetSealed/.test(out), false, 'the unlistable subtree was read after all');
+});
+
 test('report says nothing matched rather than throwing on a null scan', () => {
   assert.match(survey.report(null, ['x']), /nothing readable under that root/);
 });
