@@ -124,7 +124,11 @@ test('the stage that writes documents carries the gate for creating one', () => 
   assert.match(text, /A new document is the last resort/);
   assert.match(text, /write a generator/, 'derivable content should not be a document');
   assert.match(text, /status, last_verified and source_of_truth/);
-  assert.match(text, /a plan is not filed as reference/);
+  // `a plan is not filed as reference` used to be here and is not a rule any
+  // more, because nothing about it was the author's choice: `lib/docs.js` files
+  // everything under `docs/plans/` as a plan by its directory. The rule was
+  // spending injected characters restating what the filing already decides.
+  assert.equal(/filed as reference/.test(text), false);
 });
 
 // A template that describes the shape in words is the rule again, not a

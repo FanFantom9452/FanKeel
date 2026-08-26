@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { render, SCRIPTS, SURVEY_SCRIPT, TODO_CHECK_SCRIPT } = require('../lib/render.js');
+const { render, SCRIPTS, PLUGIN_ROOT, PLUGIN_MARK, SURVEY_SCRIPT, TODO_CHECK_SCRIPT } = require('../lib/render.js');
 const { ALWAYS, NAMES, byName, rulesFor, SURVEY_TOKEN, TOKENS } = require('../lib/stages.js');
 
 const sub = (stage) => rulesFor(stage, SCRIPTS);
@@ -185,7 +185,26 @@ test('the survey rule names a runnable path, not a placeholder', () => {
   const out = render({ mine: entry(MINE, { stage: 'survey' }), others: [], now: NOW });
   assert.equal(out.includes(SURVEY_TOKEN), false, 'the token survived into the output');
   assert.match(out, /node .*survey\.js/);
+  // The rule names the script the way every SKILL.md does, and the block resolves
+  // the notation one line above the rules using it — so the command is still
+  // pasteable without going and reading a document to find out what `<plugin>` is.
+  assert.ok(out.includes('node ' + PLUGIN_MARK + '/scripts/survey.js'), 'the rule does not name the script');
+  assert.ok(out.split('\n').includes(PLUGIN_MARK + ' = ' + PLUGIN_ROOT), 'the block never says what <plugin> is');
   assert.ok(require('node:fs').existsSync(SURVEY_SCRIPT), SURVEY_SCRIPT + ' does not exist');
+});
+
+// The root is stated once, and only where it buys something. `design` runs no
+// script, so a line defining a word it never uses is seventy characters of pure
+// cost — and the saving on `audit`, which names three, is what pays for the form.
+test('the plugin root is stated once per injection, and not at all when no rule needs it', () => {
+  for (const stage of NAMES) {
+    const out = render({ mine: entry(MINE, { stage }), others: [], now: NOW });
+    const stated = out.split('\n').filter((l) => l === PLUGIN_MARK + ' = ' + PLUGIN_ROOT).length;
+    const names = out.includes(PLUGIN_MARK + '/scripts/');
+    assert.equal(stated, names ? 1 : 0, stage + ' states the root ' + stated + ' times');
+  }
+  const design = render({ mine: entry(MINE, { stage: 'design' }), others: [], now: NOW });
+  assert.equal(design.includes(PLUGIN_ROOT), false, 'design names no script and still carries the root');
 });
 
 test('the land rule names a runnable todo-check path, not a placeholder', () => {
@@ -267,6 +286,27 @@ test('a style is never restated in the injected block', () => {
   assert.equal(out.includes('undefined'), false);
 });
 
+// An installed plugin does not live where this checkout does. It lives under
+// ~/.claude/plugins/cache/<marketplace>/<plugin>/<version> — 59 characters once
+// expanded, as in C:\Users\Owner\.claude\plugins\cache\fankeel\fankeel\0.24.0 —
+// against the 16 this repository happens to sit at. Sizing the block where the
+// tests run sizes a condition no user is in: measured against a real root,
+// `survey`, `build` and `audit` were all over the cap below while this file
+// reported them passing, and two of them had been over since before the branch
+// that raised it.
+const REFERENCE_ROOT = 59;
+
+// The root reaches the block as a run-time string, so every place it appears
+// grows by the difference between this checkout's root and a real one. It appears
+// once per injection — the rules name `<plugin>` and one line above them says
+// what `<plugin>` is — where it used to appear once per rule naming a script.
+// Counting occurrences rather than tokens is what keeps this honest if a path
+// ever gets inlined back into a rule.
+function sizeAtReference(out) {
+  const roots = out.split(PLUGIN_ROOT).length - 1;
+  return out.length + roots * (REFERENCE_ROOT - PLUGIN_ROOT.length);
+}
+
 test('the whole injection stays a readable size with everything populated', () => {
   // The worst case on purpose, and found rather than named: every stage, both
   // memory fields full, a second session to report, the voice digest present.
@@ -291,25 +331,28 @@ test('the whole injection stays a readable size with everything populated', () =
       others: [entry(THEIRS, { task: 'retune the 5h ramp', claims: ['statusline.ps1'] })],
       now: NOW,
     });
-    if (out.length > worst) { worst = out.length; name = stage; }
+    const size = sizeAtReference(out);
+    if (size > worst) { worst = size; name = stage; }
   }
-  assert.ok(worst < 3000, 'worst injection is ' + name + ' at ' + worst + ' chars');
+  assert.ok(worst < 3000, 'worst injection is ' + name + ' at ' + worst + ' chars under a ' + REFERENCE_ROOT + '-character root');
 });
 
-test('no stage’s rules cost more than a readable preamble', () => {
-  // survey and land both name a script by absolute path, so they are the two
-  // that can quietly grow. Checked per stage rather than only on the one the
-  // fixture happens to sit in.
+test('no stage’s rules cost more than a readable preamble', (t) => {
+  // Measured against REFERENCE_ROOT, not against this checkout. Checked per
+  // stage rather than only on the one the fixture happens to sit in, and each
+  // size is reported so the margin is visible without editing this file.
   //
   // 2400 is the third raise on this branch and should be the last. `build` is
-  // the binding stage at about 2300 of it, and the two before it were paid for
-  // by content that had to exist: the ledger, without which a compacted session
-  // redoes committed work, and the four things that stop the loop, without which
-  // the default is to stop and ask. What stops a fourth raise is that `build`
-  // now has to displace a rule to gain one.
+  // the binding stage with about twenty-five characters of room, and the two
+  // raises before it were paid for by content that had to exist: the ledger,
+  // without which a compacted session redoes committed work, and the four things
+  // that stop the loop, without which the default is to stop and ask. What stops
+  // a fourth raise is that `build` now has to displace a rule to gain one.
   for (const stage of NAMES) {
     const out = render({ mine: entry(MINE, { stage }), others: [], now: NOW });
-    assert.ok(out.length < 2400, stage + ' injection is ' + out.length + ' chars');
+    const size = sizeAtReference(out);
+    t.diagnostic(stage.padEnd(7) + size + ' chars at a ' + REFERENCE_ROOT + '-char root  (' + out.length + ' here)');
+    assert.ok(size < 2400, stage + ' injection is ' + size + ' chars under a ' + REFERENCE_ROOT + '-character plugin root');
   }
 });
 

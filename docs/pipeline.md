@@ -111,18 +111,19 @@ also in progress:
   - retune the 5h ramp @ design  (touched: statusline.ps1)  << overlaps: statusline.ps1
   - triage the colour issues @ survey  (touched: README.md)  (last seen 16d ago)
 
+<plugin> = C:\Users\you\.claude\plugins\cache\fankeel\fankeel\0.31.0
 stage rules:
   - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, and pause at least, never dropping the pause. Option one is the approval: say what it approves.
   - The background goes inside the question call — in the option descriptions, beside the option each belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
   - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
-  - From a plan (the fankeel-build skill has the loop): `node F:\ymlab\fankeel\scripts\ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction it beats memory.
+  - From a plan (the fankeel-build skill has the loop): `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction it beats memory.
   - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path forward a guess.
   - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code, comments or formatting in passing. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
   - Anything deferred goes in TODO.md as one line pointing at the detail, never a comment nobody will find.
-  - A new document is the last resort: put it in an existing page, or write a generator when the content derives from code. One written carries status, last_verified and source_of_truth; a plan is not filed as reference.
-  - Output: one line per file as `path +n/-m — what changed`, then the question. Under 80 words; the diff is the output, prose for what it cannot show.
+  - A new document is the last resort: use an existing page, or write a generator when it derives from code. One written carries status, last_verified and source_of_truth.
+  - Output: one line per file, then the question. Under 80 words; the diff is the output, prose for what it cannot show.
 
 output shape:
   - path +12/-3 — what changed
@@ -191,18 +192,19 @@ FANKEEL ACTIVE — rework the 7d deviation colour ramp @ build  (4 of 7)
 route: survey → design → plan → [build] → verify → audit → land
 class: architectural — a new subsystem, or a change to an interface something else depends on.
 
+<plugin> = C:\Users\you\.claude\plugins\cache\fankeel\fankeel\0.31.0
 stage rules:
   - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, and pause at least, never dropping the pause. Option one is the approval: say what it approves.
   - The background goes inside the question call — in the option descriptions, beside the option each belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
   - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
-  - From a plan (the fankeel-build skill has the loop): `node F:\ymlab\fankeel\scripts\ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction it beats memory.
+  - From a plan (the fankeel-build skill has the loop): `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction it beats memory.
   - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path forward a guess.
   - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code, comments or formatting in passing. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
   - Anything deferred goes in TODO.md as one line pointing at the detail, never a comment nobody will find.
-  - A new document is the last resort: put it in an existing page, or write a generator when the content derives from code. One written carries status, last_verified and source_of_truth; a plan is not filed as reference.
-  - Output: one line per file as `path +n/-m — what changed`, then the question. Under 80 words; the diff is the output, prose for what it cannot show.
+  - A new document is the last resort: use an existing page, or write a generator when it derives from code. One written carries status, last_verified and source_of_truth.
+  - Output: one line per file, then the question. Under 80 words; the diff is the output, prose for what it cannot show.
 
 output shape:
   - path +12/-3 — what changed

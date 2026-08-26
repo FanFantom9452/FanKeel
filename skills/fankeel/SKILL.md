@@ -247,8 +247,10 @@ task sat at 2 of 7 looking permanently unfinished, and a long one got no credit
 for the stages it invented. The route is what `●●●○○` on the statusline counts.
 
 `survey` carries a scanner rather than an instruction to search. The injected
-rule names the script with its resolved path; run it with the terms you would
-have searched for, and quote what came back:
+rule names the script as `<plugin>/scripts/survey.js`, and one line above the
+rules the block says what `<plugin>` resolves to — stated once rather than spelled
+out in every rule that names a script. Run it with the terms you would have
+searched for, and quote what came back:
 
 ```
 node <plugin>/scripts/survey.js badge colour ramp

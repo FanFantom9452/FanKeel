@@ -32,8 +32,9 @@ decided the lifetime of, which is the one most likely to rot unnoticed.
 
 The rule that says "check whether this already exists" is the kind that gets
 agreed with and skipped, which is exactly why components get built twice. So
-`survey` names a script instead, with its resolved path, and the rule requires
-quoting the output:
+`survey` names a script instead — `<plugin>/scripts/survey.js`, with the injected
+block resolving `<plugin>` once above the rules — and the rule requires quoting
+the output:
 
 ```
 $ node <plugin>/scripts/survey.js badge
@@ -121,9 +122,9 @@ in a quarter.
 
 So the `build` stage rules carry the gate, not only the `audit` stage:
 
-> A new document is the last resort: put it in an existing page, or write a
-> generator when the content derives from code. One written carries status,
-> last_verified and source_of_truth; a plan is not filed as reference.
+> A new document is the last resort: use an existing page, or write a generator
+> when it derives from code. One written carries status, last_verified and
+> source_of_truth.
 
 ### Filing, and what happens when you do not
 
