@@ -594,7 +594,7 @@ status**. That last section is the one the rest was built for:
 
 ```
 planned, not built — 2:
-  docs/plans/2026-08-22-seven-stage-pipeline.md
+  docs/archive/2026-08-22-seven-stage-pipeline.md
   docs/roadmap.md
 ```
 

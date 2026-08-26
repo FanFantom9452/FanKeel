@@ -1,5 +1,5 @@
 ---
-status: superseded-by docs/plans/2026-08-24-observed-scope-design.md
+status: superseded-by docs/archive/2026-08-24-observed-scope-design.md
 last_verified: 2026-08-23
 source_of_truth: lib/registry.js, lib/render.js, scripts/task.js, hooks/touch.js
 ---

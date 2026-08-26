@@ -1,5 +1,5 @@
 ---
-status: superseded-by docs/plans/2026-08-22-seven-stage-pipeline.md
+status: superseded-by docs/archive/2026-08-22-seven-stage-pipeline.md
 last_verified: 2026-08-22
 source_of_truth: lib/stages.js, lib/map.js, lib/ledger.js
 ---
@@ -14,7 +14,7 @@ source_of_truth: lib/stages.js, lib/map.js, lib/ledger.js
 
 **Tech Stack:** Node.js, built-ins only. `node:test` + `node:assert/strict`. No dependencies — `package.json` is `private: true` and has none. Markdown for skills and documentation.
 
-**Spec:** [docs/plans/2026-08-22-seven-stage-pipeline.md](2026-08-22-seven-stage-pipeline.md)
+**Spec:** [docs/plans/2026-08-22-seven-stage-pipeline.md](../archive/2026-08-22-seven-stage-pipeline.md)
 
 ## Global Constraints
 
@@ -2264,7 +2264,7 @@ Expected: every line reads `0.24.0`.
 Remove the `Whether build should dispatch one implementer subagent per task` entry only if Task 8 actually shipped the fleet — **it does not**, so leave it. Instead re-point it at the shipped shape:
 
 ```markdown
-- Whether `build` should dispatch one implementer subagent per task rather than reviewing after each — [docs/plans/2026-08-22-seven-stage-pipeline.md](docs/plans/2026-08-22-seven-stage-pipeline.md), "build".
+- Whether `build` should dispatch one implementer subagent per task rather than reviewing after each — [docs/plans/2026-08-22-seven-stage-pipeline.md](docs/archive/2026-08-22-seven-stage-pipeline.md), "build".
 ```
 
 Run: `node scripts/todo-check.js`

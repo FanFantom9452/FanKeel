@@ -19,7 +19,7 @@ written here instead of where it belongs.
 - A per-`agent_type` subagent brief — the `SubagentStart` matcher allows it; which types earn one is a question real use answers.
 - Whether an output style reaches subagents at all. Unverified, and now unmitigated: nothing restates one for them since the digest came out with the style skill.
 - A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI, so the default reminder is what the three get.
-- Whether `build` should dispatch an implementer subagent per task rather than reviewing after each — [docs/plans/2026-08-22-seven-stage-pipeline.md](docs/plans/2026-08-22-seven-stage-pipeline.md).
+- Whether `build` should dispatch an implementer subagent per task rather than reviewing after each — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md), "The task loop".
 - Whether a per-`agent_type` brief should carry more than the map — [docs/subagents.md](docs/subagents.md). Unanswered until real use says which types earn one.
 
 ## Owed after first real use

@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-25
+last_verified: 2026-08-26
 source_of_truth: this file is the index; each page below is its own source
 ---
 
@@ -32,19 +32,11 @@ here.
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
 | Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
 | How the seven-stage work is being built, task by task | [plans/2026-08-22-seven-stage-implementation.md](plans/2026-08-22-seven-stage-implementation.md) — *superseded by the pipeline plan* |
-| Where the seven-stage decomposition is heading | [plans/2026-08-22-seven-stage-pipeline.md](plans/2026-08-22-seven-stage-pipeline.md) — *built, 0.24.0* |
 | Why the registry goes stale, and what is meant to notice | [plans/2026-08-23-registry-staleness-design.md](plans/2026-08-23-registry-staleness-design.md) — *superseded by the observed-scope design* |
 | How that is being built, task by task | [plans/2026-08-23-registry-staleness-implementation.md](plans/2026-08-23-registry-staleness-implementation.md) — *superseded by the observed-scope design* |
-| Why a scope cannot be declared or a staleness measured, and what replaces both | [plans/2026-08-24-observed-scope-design.md](plans/2026-08-24-observed-scope-design.md) — *built, 0.26.0* |
-| How that is being built, task by task | [plans/2026-08-24-observed-scope-implementation.md](plans/2026-08-24-observed-scope-implementation.md) — *built, 0.26.0* |
-| Why the injected copy of a stage's shape was thinner than the skill's | [plans/2026-08-25-injected-layer-design.md](plans/2026-08-25-injected-layer-design.md) — *built, 0.27.0* |
-| How that was built, task by task | [plans/2026-08-25-injected-layer.md](plans/2026-08-25-injected-layer.md) — *built, 0.27.0* |
-| Why the statusline said nothing while a task was being worked out | [plans/2026-08-25-init-scan-residue-design.md](plans/2026-08-25-init-scan-residue-design.md) — *built, 0.28.0* |
-| How that was built, task by task | [plans/2026-08-25-init-scan-residue.md](plans/2026-08-25-init-scan-residue.md) — *built, 0.28.0* |
-| Why five separate defects are one shape, and what each fix costs | [plans/2026-08-25-silent-losses-design.md](plans/2026-08-25-silent-losses-design.md) — *built, 0.30.0* |
-| How that was built, task by task | [plans/2026-08-25-silent-losses.md](plans/2026-08-25-silent-losses.md) — *built, 0.30.0* |
 | Why a session ran two hours with the plugin doing nothing | [plans/2026-08-26-session-id-design.md](plans/2026-08-26-session-id-design.md) — *design-intent, not built* |
 | How that is being built, task by task | [plans/2026-08-26-session-id.md](plans/2026-08-26-session-id.md) — *design-intent, not built* |
+| What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 
 ## The three scanners

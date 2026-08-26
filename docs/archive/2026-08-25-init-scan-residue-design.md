@@ -1,5 +1,5 @@
 ---
-status: current
+status: archived
 last_verified: 2026-08-25
 source_of_truth: this is a design; lib/stages.js and the scripts are the code
 ---

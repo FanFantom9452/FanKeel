@@ -1,5 +1,5 @@
 ---
-status: current
+status: archived
 last_verified: 2026-08-24
 source_of_truth: lib/registry.js, lib/guard.js, lib/live.js, hooks/touch.js, hooks/guard.js, hooks/inject.js, scripts/task.js
 ---
@@ -2927,7 +2927,7 @@ test('a bad session id is refused rather than turned into a filename', () => {
 
 > Superseded since. Neither the test name nor that assertion is in the suite any
 > more: the message stopped telling anyone not to guess and started naming where
-> the id comes from — [2026-08-26-session-id-design.md](2026-08-26-session-id-design.md).
+> the id comes from — [2026-08-26-session-id-design.md](../plans/2026-08-26-session-id-design.md).
 
 ```js
 test('a missing --session is refused with the instruction not to guess', () => {
@@ -2959,7 +2959,7 @@ test('a bad session id is refused rather than turned into a filename', () => {
 
 > Superseded since, the same way the block above it was — the assertion is now
 > on the sentence that names where the id comes from
-> — [2026-08-26-session-id-design.md](2026-08-26-session-id-design.md).
+> — [2026-08-26-session-id-design.md](../plans/2026-08-26-session-id-design.md).
 
 ```js
 test('a missing --session is refused with the instruction not to guess', () => {
@@ -4206,7 +4206,7 @@ BEFORE (`:112-114`):
 > Superseded since. The AFTER below kept the transcript-path sentence, and that
 > sentence is the one that failed: the transcript path is not on screen and a
 > background task's output path is, in the same shape. The `/fankeel` prompt is
-> answered with the id now — [2026-08-26-session-id-design.md](2026-08-26-session-id-design.md).
+> answered with the id now — [2026-08-26-session-id-design.md](../plans/2026-08-26-session-id-design.md).
 
 ```
 The current session id is in the `FANKEEL ACTIVE` block when the mode is on. When
@@ -4218,7 +4218,7 @@ AFTER:
 
 > Superseded since, in its second paragraph only — the first is still what the
 > SKILL says. The transcript-path sentence is gone
-> — [2026-08-26-session-id-design.md](2026-08-26-session-id-design.md).
+> — [2026-08-26-session-id-design.md](../plans/2026-08-26-session-id-design.md).
 
 ```
 A record written before claims shipped carries `scope` where `claims` is here. It
