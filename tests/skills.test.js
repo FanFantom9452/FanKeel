@@ -247,3 +247,15 @@ test('the build loop reads the dispatch line rather than always implementing', (
   // dispatching exists to avoid.
   assert.match(text, /never a diff/i);
 });
+
+// The branch that replaced the delegation ban used audit's own job as its
+// example of the good case, and this skill said nothing about dispatch at all —
+// so the stage most likely to reach for one had no guidance where it would
+// actually be read.
+test('the audit skill names its dispatch case and the line around it', () => {
+  const text = read('fankeel-audit');
+  assert.match(text, /one reader per pair/);
+  assert.match(text, /several in one response/i);
+  // And the boundary, in the stage where the temptation is strongest.
+  assert.match(text, /do \*\*not\*\* dispatch is this stage/);
+});
