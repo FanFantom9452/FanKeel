@@ -54,10 +54,19 @@ table into the ledger, rule on anything it surfaces, and record each ruling.
 For each task the ledger does not list as complete:
 
 1. Record `git rev-parse HEAD` as BASE.
-2. Implement it. **Every changed line traces to the plan's task.** Follow the
-   patterns already in this repository. Do not improve adjacent code, comments or
-   formatting on the way past. Remove what your own change orphaned; dead code
-   you did not create gets mentioned, not deleted.
+2. Do what the task's `**Dispatch:**` line says. `in-session` means implement it
+   here; `implementer, <model>` means dispatch one — **pass the model
+   explicitly**, an omitted one inherits this session's. Either way: every
+   changed line traces to the plan's task, follow the patterns already in this
+   repository, do not improve adjacent code, comments or formatting on the way
+   past, and remove what your own change orphaned — dead code you did not create
+   gets mentioned, not deleted.
+
+   A dispatched implementer **commits, and returns a status line and a sha —
+   never a diff.** A returned diff puts the whole change back in this context,
+   which is the one cost dispatching exists to avoid, and step 5 already reads
+   it from git. Never two implementers at once, and never a second on work
+   related to the first even in different files.
 3. Test first where the task says so. If you did not watch the test fail, you do
    not know it tests the right thing.
 4. Commit.
@@ -96,6 +105,24 @@ Everything pasted into a dispatch prompt stays resident in this context and is
 re-read on every later turn. **Hand artefacts over as files.** A reviewer gets
 paths; it does not get the conversation. A dispatch describes one task, not the
 session's history.
+
+A fix round **resumes** that implementer rather than starting a new one — its
+context is already thrown-away context and it holds the reading a fresh dispatch
+would redo. Measured here: a resume cost 402 tokens against 27,506 for the
+original dispatch, and re-read nothing. When a round stops shrinking the
+findings, the next one is a fresh dispatch one tier up; the five-round bound in
+step 6 stays as the backstop.
+
+One fix dispatch carries the **whole** findings list. One fixer per finding makes
+each of them rebuild context and re-run the suite.
+
+The reviewer in step 5 is **read-only**: it never mutates the working tree, the
+index, `HEAD` or branch state — `git show`, `git diff` and `git log` are how it
+inspects, and a separate worktree is how it checks out another revision if it
+truly must. It flags a departure from the plan **as a departure, for
+confirmation**, not as a defect, and says so plainly if the plan is what looks
+wrong. And never fix a finding here yourself: a fix made in this session skips
+the review that found it.
 
 ## When the plan is wrong
 

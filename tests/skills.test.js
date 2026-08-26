@@ -214,3 +214,22 @@ test('survey no longer offers a fourth option to authorise more reading', () => 
   assert.equal(/read wider/i.test(read('fankeel')), false,
     'the read wider row survives in the question-shape table');
 });
+
+// The plan stage has written an Interfaces block "for a task's implementer"
+// since it shipped, while the build stage never dispatched one. This is the
+// field that closes that gap, and it has to be spelled the same in the rule,
+// in the template that writes it, and in the loop that reads it.
+test('the plan template carries the dispatch slot and names its floor', () => {
+  const text = read('fankeel-plan');
+  assert.match(text, /\*\*Dispatch:\*\*/);
+  assert.match(text, /sonnet/);
+  assert.match(text, /opus/);
+});
+
+test('the build loop reads the dispatch line rather than always implementing', () => {
+  const text = read('fankeel-build');
+  assert.match(text, /\*\*Dispatch:\*\*/);
+  // A returned diff would land the whole change in the parent — the one cost
+  // dispatching exists to avoid.
+  assert.match(text, /never a diff/i);
+});

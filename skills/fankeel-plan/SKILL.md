@@ -91,6 +91,31 @@ Every task carries an **Interfaces** block:
 A task's implementer sees only their own task. This block is how they learn the
 names their neighbours use.
 
+And one line saying whether that implementer is dispatched at all:
+
+```markdown
+**Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
+**Dispatch:** in-session — badge.js and render.js interlock here, and splitting one
+change across two contexts costs more than the reading saves.
+**Dispatch:** implementer, opus — the lock protocol has to be reasoned about, not
+transcribed.
+```
+
+Three rules about that line:
+
+1. **Every task carries one.** A task without it is a plan failure, in the same
+   list as `TBD` and "similar to Task N".
+2. **`sonnet` is the floor and the default**, and needs no argument. The unit
+   that matters is not token price but whether the task finishes on the first
+   dispatch: a model that needs two attempts re-reads everything the first one
+   read, and costs more in wall-clock and attention than the tier above it.
+3. **Anything above `sonnet` names why on that same line.** "Complex" is not a
+   why. A protocol to reason about, a design judgement, a change whose shape is
+   not in the plan — those are.
+
+Several small same-shape tasks may share one dispatch:
+`**Dispatch:** implementer, sonnet, batched with Tasks 4-5`.
+
 ## Steps are two to five minutes
 
 - Write the failing test
@@ -109,6 +134,7 @@ These are **plan failures**, not shorthand:
 - "similar to Task N" — repeat the code; they may be reading out of order
 - a step that says what to do without showing how
 - a reference to a type or function no task defines
+- a task with no `**Dispatch:**` line
 
 ## Self-review before the gate
 
