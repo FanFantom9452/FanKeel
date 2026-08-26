@@ -21,6 +21,8 @@ written here instead of where it belongs.
 - A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI, so the default reminder is what the three get.
 - Whether `build` should dispatch an implementer subagent per task rather than reviewing after each — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md), "The task loop".
 - Whether a per-`agent_type` brief should carry more than the map — [docs/subagents.md](docs/subagents.md). Unanswered until real use says which types earn one.
+- `lib/plugins.js` is required by nothing but its own test — [lib/stages.js](lib/stages.js):200 hardcodes the rule it was built for. Delete it, or wire it up.
+- 32 exported names nothing outside their own file references, 22 of them in [lib/](lib/badge.js) — dead API surface, not dead code. Found by /ponytail-audit, 08-26.
 
 ## Owed after first real use
 
