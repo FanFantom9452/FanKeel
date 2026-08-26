@@ -758,7 +758,7 @@ fankeel docs-audit — 18 markdown files, tree: flat (implied by the directories
 
 It narrows rather than judges. Nothing mechanical decides that two pages
 disagree; this turns *read all forty documents looking for disagreements* into
-*read these two*. Only the first three sections fail the run — pairs, orphans and
+*read these two*. Only the first four sections fail the run — pairs, orphans and
 uncovered directories are true of almost every healthy repository, and a command
 that always exits non-zero has an exit code that means nothing.
 

@@ -259,6 +259,34 @@ test('only the first three sections fail the run', () => {
   assert.equal(audit.defects(r), 0);
 });
 
+// This claim rotted in two places — skills/fankeel/SKILL.md and docs/pipeline.md
+// both still said "first three" after defects() grew a fourth category — and
+// nothing went red. Tracked in TODO.md and still shipped. The count here comes
+// from defects() itself rather than being hardcoded, so the next category added
+// to that function fails this test until the prose catches up with it.
+test('the prose names as many sections as defects() actually sums', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'docs-audit.js'), 'utf8');
+  const body = /function defects\(r\) \{([\s\S]*?)\n\}/.exec(src)[1];
+  const fields = new Set();
+  for (const m of body.matchAll(/r\.(\w+)/g)) fields.add(m[1]);
+  const count = fields.size;
+
+  const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'];
+  const word = WORDS[count];
+
+  const skillText = fs.readFileSync(path.join(__dirname, '..', 'skills', 'fankeel', 'SKILL.md'), 'utf8');
+  const pipelineText = fs.readFileSync(path.join(__dirname, '..', 'docs', 'pipeline.md'), 'utf8');
+
+  assert.match(skillText, new RegExp('first ' + word + ' fail the run'));
+  assert.match(pipelineText, new RegExp('first ' + word + ' sections fail the run'));
+
+  // The table above the sentence has to carry at least that many rows, or "the
+  // first N" cannot be true of what is actually printed.
+  const idx = skillText.indexOf('Only the first');
+  const rows = (skillText.slice(0, idx).match(/^\|\s*\*\*/gm) || []).length;
+  assert.ok(rows >= count, `table has ${rows} rows above the sentence, defects() sums ${count}`);
+});
+
 test('a clean sweep says so rather than printing nothing', () => {
   const root = withTree(tree({
     'docs/README.md': '- [A](01-a.md)\n',
