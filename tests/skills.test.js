@@ -372,3 +372,12 @@ test('the dispatch rule count agrees with the bullet list under it, and with the
   assert.equal(WORDS[docsLeadIn[1].toLowerCase()], bulletCount,
     `docs/subagents.md says "${docsLeadIn[1]}" but the skill lists ${bulletCount} rules`);
 });
+
+// The stage rule carries the trigger; the skill carries the step. Without the
+// step, a scope decided from the tree reads as one more thing to remember rather
+// than as a move with a place in the sequence.
+test('survey names the tree scope step and says what the dispatch costs', () => {
+  const text = read('fankeel-survey');
+  assert.match(text, /before you type the terms/i, 'the tree step has no place in the sequence');
+  assert.match(text, /how many readers, and on which model/i, 'the dispatch never says what it costs');
+});

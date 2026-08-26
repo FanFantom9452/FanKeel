@@ -420,3 +420,14 @@ test('plan makes the dispatch decision a slot every task has to fill', () => {
   assert.match(text, /\*\*Dispatch:\*\*/);
   assert.match(text, /sonnet/);
 });
+
+// Every branch of the dispatch rule fired on something the scanner had already
+// failed at — a capped section, a `skipped:` line, a zero-match. All three are
+// evidence that arrives after the reading was scoped wrong. The tree is the one
+// input available before the first term is typed, and consulting it costs no
+// round at all: the scope and the dispatch happen in the same response.
+test('survey scopes its reading from the tree before the first term', () => {
+  const text = byName('survey').rules.join(' ');
+  assert.match(text, /before the first term/, 'the scope is still decided only by what the scanner failed at');
+  assert.match(text, /model/, 'the dispatch never says how many readers, or on what');
+});

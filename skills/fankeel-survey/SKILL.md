@@ -67,6 +67,22 @@ whitespace fix updates a git date and verifies nothing.
 
 ### 4. Targeted scan
 
+**Before you type the terms, look at the tree.** Step 1 already listed the
+directories; `--tree` gives every one of them with its size:
+
+```
+node <plugin>/scripts/survey.js --tree
+```
+
+That is the only input there is before the first term, and it is what decides the
+scope — which directories hold the answer, and therefore whether this is one scan
+here or three readers with a lens each.
+
+**Scope and dispatch belong in the same response.** A scope announced in one
+round and acted on in the next has spent a round on nothing, which is the waste
+§4b was rewritten to remove. Say how many readers, and on which model, as they go
+out: that is a report, not a request, and nothing waits on it.
+
 ```
 node <plugin>/scripts/survey.js [--root <dir>] <term>...
 ```

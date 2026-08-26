@@ -301,10 +301,11 @@ flowchart TD
     C1["<b>planned, not built</b><br/>design-intent. What the system is<br/>meant to become — not drift"]
     C2["<b>retired</b><br/>true once, read as though<br/>it still were"]
     C3["<b>undeclared</b><br/>dated by git, so dated by whoever<br/>last touched it, not by a reader"]
+    D0["<b>scope from the tree</b><br/>which directories hold the answer<br/><i>the only input there is before the first term —<br/>scope and dispatch in one response</i>"]
     D["<b>4 · targeted scan</b><br/>survey, one or more terms<br/><i>nothing matched is a finding —<br/>say which terms you tried</i>"]
     D2{"<b>4b · did one pass cover it?</b>"}
     D4["<b>report the gap</b><br/>say what was not covered and why<br/><i>not a dispatch, and not a silence</i>"]
-    D3["<b>dispatch readers</b><br/>several in one response, one lens each<br/><i>one reader with the list where the lens is the same</i><br/><i>never a round spent asking permission to read</i>"]
+    D3["<b>dispatch readers</b><br/>several in one response, one lens each<br/><i>one reader with the list where the lens is the same</i><br/><i>never a round spent asking permission to read</i><br/><i>say how many, and on which model</i>"]
     E{"<b>5 · classify, out loud</b><br/>measured against this repository,<br/>not against your familiarity"}
     E1["<b>spike</b><br/>survey, build"]
     E2["<b>bounded</b><br/>survey, design, build, verify, land"]
@@ -315,9 +316,10 @@ flowchart TD
     C --> C1
     C --> C2
     C --> C3
-    C1 --> D
-    C2 --> D
-    C3 --> D
+    C1 --> D0
+    C2 --> D0
+    C3 --> D0
+    D0 --> D
     D --> D2
     D2 -- "a section capped → --all<br/>the walk truncated → --root" --> D
     D2 -- "the reading is wide, nothing matched,<br/>or a <b>skipped:</b> line names paths a reader can open" --> D3
