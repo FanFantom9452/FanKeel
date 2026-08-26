@@ -259,3 +259,14 @@ test('the audit skill names its dispatch case and the line around it', () => {
   // And the boundary, in the stage where the temptation is strongest.
   assert.match(text, /do \*\*not\*\* dispatch is this stage/);
 });
+
+// Verify is the one stage where both halves of the delegation rule apply at
+// once: the suite is what a pipe removes for nothing, and "which page did this
+// make false" is exactly the wide-read-narrow-answer case. The skill said
+// neither, so the stage with the clearest example taught nothing.
+test('the verify skill separates what a pipe removes from what a reader answers', () => {
+  const text = read('fankeel-verify');
+  assert.match(text, /one reader per page/);
+  assert.match(text, /several in one response/i);
+  assert.match(text, /do not dispatch is this stage/);
+});

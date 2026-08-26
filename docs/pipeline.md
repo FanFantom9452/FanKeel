@@ -300,6 +300,8 @@ flowchart TD
     C2["<b>retired</b><br/>true once, read as though<br/>it still were"]
     C3["<b>undeclared</b><br/>dated by git, so dated by whoever<br/>last touched it, not by a reader"]
     D["<b>4 · targeted scan</b><br/>survey, one or more terms<br/><i>nothing matched is a finding —<br/>say which terms you tried</i>"]
+    D2{"<b>4b · did one pass cover it?</b>"}
+    D3["<b>dispatch readers</b><br/>several in one response, one lens each<br/><i>never a round spent asking permission to read</i>"]
     E{"<b>5 · classify, out loud</b><br/>measured against this repository,<br/>not against your familiarity"}
     E1["<b>spike</b><br/>survey, build"]
     E2["<b>bounded</b><br/>survey, design, build, verify, land"]
@@ -313,7 +315,11 @@ flowchart TD
     C1 --> D
     C2 --> D
     C3 --> D
-    D --> E
+    D --> D2
+    D2 -- "a section capped → --all<br/>the walk truncated → --root" --> D
+    D2 -- "the reading is wide, or nothing matched" --> D3
+    D2 -- yes --> E
+    D3 --> E
     E -- "a feasibility question" --> E1
     E -- "a flow already here to read" --> E2
     E -- "a new subsystem, or an interface<br/>something else depends on" --> E3
