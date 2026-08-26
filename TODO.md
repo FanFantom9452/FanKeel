@@ -11,6 +11,7 @@ written here instead of where it belongs.
 ## Deferred
 
 - A wrong session id reaching a hook any way but through `task.js` is still silent — [docs/plans/2026-08-26-session-id-design.md](docs/plans/2026-08-26-session-id-design.md). None observed.
+- The statusline gets a session id the hooks never see, so the badge lands where nothing reads it — [docs/plans/2026-08-26-session-id-design.md](docs/plans/2026-08-26-session-id-design.md). Seen 08-26.
 - A feature asked for mid-task belongs in TODO.md, not in the running task — unless it blocks it or is closely related. That is a rule the pipeline should carry — [lib/stages.js](lib/stages.js).
 - Nothing sets the version in all ten places at once or fails when they disagree, and no page lists what a release changed. Both are derivable from the commits between two `chore: X.Y.Z`.
 - Sample `inspect()` on each stage change so a task can report context burn per stage — [lib/context.js](lib/context.js). `hooks/inject.js` reads the transcript every prompt and drops it.
