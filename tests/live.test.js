@@ -226,3 +226,35 @@ test('a neighbouring config dir is scanned once per readLive, not once per quest
   assert.equal(state.others.size, 1, 'asked twice, scanned once');
   assert.equal(live.readLive(mine, SID).others.size, 0, 'a fresh scan starts empty');
 });
+
+// The refusal in `task.js` has to name the sessions that are running, not only
+// count them: an id on its own is not something anyone can recognise, and the
+// directory each was opened in is what makes the list readable.
+test('runningSessions carries the cwd beside the id', () => {
+  const dir = tmpConfig();
+  seedRaw(dir, process.pid + '.json',
+    JSON.stringify({ pid: process.pid, sessionId: SID, cwd: '/somewhere/else' }));
+
+  const rows = live.runningSessions(dir);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].sessionId, SID);
+  assert.equal(rows[0].cwd, '/somewhere/else');
+});
+
+// The same rule the whole module keeps: a directory that cannot be read is not
+// an empty machine, and the two must not answer the same.
+test('runningSessions is null when the directory cannot be read', () => {
+  assert.equal(live.runningSessions(path.join(os.tmpdir(), 'fankeel-no-such-dir-x')), null);
+});
+
+// `runningIds` is what every existing caller reads. Rebuilding it on the rows
+// must not change what it answers, the dead-pid filter included.
+test('runningIds still drops a session whose process is gone', () => {
+  const dir = tmpConfig();
+  seed(dir, process.pid, SID);
+  seed(dir, GONE_PID, OTHER);
+
+  const ids = live.runningIds(dir);
+  assert.equal(ids.has(SID), true);
+  assert.equal(ids.has(OTHER), false);
+});
