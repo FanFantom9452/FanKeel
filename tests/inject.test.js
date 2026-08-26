@@ -279,7 +279,8 @@ const badgeOf = (cfg, sid) => path.join(cfg, 'modes', sid, 'fankeel');
 test('a /fankeel prompt with no entry raises the init badge', () => {
   const root = tmp('fankeel-hook-');
   const cfg = tmp('fankeel-cfg-');
-  assert.equal(run({ session_id: MINE, cwd: root, prompt: '/fankeel @Waypoint' }, cfg), '');
+  const out = run({ session_id: MINE, cwd: root, prompt: '/fankeel @Waypoint' }, cfg);
+  assert.match(context(out), new RegExp(MINE));
   assert.equal(fs.readFileSync(badgeOf(cfg, MINE), 'utf8').trim(), 'init');
   const lead = leadOf(cfg, MINE);
   assert.match(lead, /^word=init$/m);
@@ -324,4 +325,32 @@ test('a badge another plugin owns is not cleared by this one', () => {
   run({ session_id: MINE, cwd: root, prompt: 'unrelated' }, cfg);
   assert.equal(fs.readFileSync(path.join(dir, 'fankeel'), 'utf8').trim(), 'survey',
     'no entry and no init word means leave it alone');
+});
+
+// The id typed into `task.js --session` has to be the id the hooks read, and
+// nothing on screen distinguishes it: a background task's output directory and
+// a scratch directory both carry one in the same shape. So the hook holding the
+// real one says it, on the single prompt where it is about to be needed.
+test('a /fankeel prompt is answered with the id the hooks use', () => {
+  const dir = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  const text = context(run({ session_id: MINE, cwd: dir, prompt: '/fankeel' }, cfg));
+  assert.match(text, new RegExp(MINE));
+  assert.match(text, /--session/, 'it has to say what the id is for');
+});
+
+// The cost stays on that one prompt. Every other prompt in every session on the
+// machine that is not in the mode still writes nothing at all.
+test('an ordinary prompt with no entry is answered with nothing', () => {
+  const dir = tmp('fankeel-hook-');
+  assert.equal(run({ session_id: MINE, cwd: dir, prompt: 'what does this repository do' }), '');
+  assert.equal(run({ session_id: MINE, cwd: dir, prompt: '/fankeel-audit' }), '');
+});
+
+// The id goes back into the conversation, so it is read back only when it is
+// actually a session id. A payload field is Claude Code's to send, not this
+// hook's to vouch for.
+test('a malformed session_id is not read back even on a /fankeel prompt', () => {
+  const dir = tmp('fankeel-hook-');
+  assert.equal(run({ session_id: '../../etc/passwd', cwd: dir, prompt: '/fankeel' }), '');
 });

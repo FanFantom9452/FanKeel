@@ -26,12 +26,18 @@ const root = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-task-'));
 // --claude-dir is always passed. These commands write the statusline badge now,
 // and a test suite that dropped flag files for made-up session ids into the real
 // ~/.claude would be leaving litter on the machine it runs on.
+//
+// CLAUDE_CONFIG_DIR goes to the same place, because the badge follows the flag
+// and liveness follows the variable. `task.js` now measures --session against
+// the running sessions in that directory, so without this every made-up id in
+// this file would be checked against whichever machine runs the suite and
+// refused. A caller passing its own still wins: it is last in the merge.
 function run(dir, args, env) {
   const cfg = path.join(dir, 'cfg');
   try {
     return {
       out: execFileSync(process.execPath, [SCRIPT, ...args, '--root', dir, '--claude-dir', cfg],
-        { encoding: 'utf8', env: env ? Object.assign({}, process.env, env) : process.env }),
+        { encoding: 'utf8', env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg }, env || {}) }),
       code: 0,
     };
   } catch (e) {
@@ -168,12 +174,23 @@ test('a dead session holding the same file does not paint clash', () => {
   const write = (pid, sessionId) =>
     fs.writeFileSync(path.join(cfg, 'sessions', pid + '.json'), JSON.stringify({ pid, sessionId }) + '\n');
   write(process.pid, B);
-  write(spawnSync(process.execPath, ['-e', '0']).pid, A);
+  write(process.ppid, A);
 
   // The same registry for all three, because each entry now records the one it
   // was started under and a reader checks the neighbour against that.
+  //
+  // Both are live for the two `start` calls, because `task.js` refuses an id no
+  // running session claims — and a task nothing live ever started is not the case
+  // this is about. A dies afterwards, which is the order real life takes. Written
+  // the other way round this test passed for the wrong reason: A's `start` was
+  // refused, its claim went nowhere, and the badge read `build` because there was
+  // no second claimant rather than because the one there was had gone.
   run(dir, ['start', '--session', A, '--task', 'tidy the project cards'], { CLAUDE_CONFIG_DIR: cfg });
   run(dir, ['start', '--session', B, '--task', 'fix the card link'], { CLAUDE_CONFIG_DIR: cfg });
+  assert.ok(entry(dir, A), 'A has to be in the registry, or this asserts nothing');
+  fs.rmSync(path.join(cfg, 'sessions', process.ppid + '.json'));
+  write(spawnSync(process.execPath, ['-e', '0']).pid, A);
+
   registry.addClaim(dir, A, 'Waypoint/web/src/Card.jsx');
   registry.addClaim(dir, B, 'Waypoint/web/src/Card.jsx');
 
@@ -188,11 +205,15 @@ test('a bad session id is refused rather than turned into a filename', () => {
   assert.match(out, /Not a session id/);
 });
 
-test('a missing --session is refused with the instruction not to guess', () => {
+// The old wording told the reader to take the id off the transcript path and not
+// to guess. That is the advice that failed: the transcript path is not on screen
+// and a background task's output path is, in the same shape. So the message now
+// names where the id actually comes from.
+test('a missing --session is refused by naming where the id comes from', () => {
   const dir = root();
   const { out, code } = run(dir, ['start', '--task', 'x']);
   assert.equal(code, 1);
-  assert.match(out, /never guess it/);
+  assert.match(out, /\/fankeel prompt makes the hook say it/);
 });
 
 test('a project is normalised the way a path is, and only the first is kept', () => {
@@ -382,11 +403,14 @@ test('without --root the registry is found the way the hooks find it', () => {
   execFileSync(process.execPath, [SCRIPT, 'start', '--session', A, '--task', 'x',
     '--project', 'Waypoint', '--claude-dir', path.join(dir, 'cfg')], {
     encoding: 'utf8', cwd: dir,
+    env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: path.join(dir, 'cfg') }),
   });
 
   // Started at the root, then run from two directories down: the walk-up has to
   // land on the same registry, or the badge reads one file and the user another.
-  const out = execFileSync(process.execPath, [SCRIPT, 'show', '--session', A], { encoding: 'utf8', cwd: inner });
+  const out = execFileSync(process.execPath, [SCRIPT, 'show', '--session', A],
+    { encoding: 'utf8', cwd: inner,
+      env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: path.join(dir, 'cfg') }) });
   assert.match(out, /task:  x/);
   assert.equal(fs.existsSync(path.join(inner, '.fankeel')), false);
 
@@ -543,9 +567,14 @@ test('a session whose process is gone is not listed as live', () => {
   // This process is the self-check `readLive` needs, so the answer is `known`
   // rather than the unknown that makes everything live.
   seed(process.pid, A);
+  // Live for its own `start` — `task.js` refuses an id no running session claims
+  // — and gone by the time the listing is read, which is the subject here.
+  seed(process.ppid, B);
 
   run(dir, ['start', '--session', A, '--task', 'mine'], { CLAUDE_CONFIG_DIR: cfg });
   run(dir, ['start', '--session', B, '--task', 'theirs'], { CLAUDE_CONFIG_DIR: cfg });
+  assert.ok(entry(dir, B), 'B has to be in the registry, or the listing has nothing to omit');
+  fs.rmSync(path.join(cfg, 'sessions', process.ppid + '.json'));
 
   const shown = run(dir, ['show', '--session', A], { CLAUDE_CONFIG_DIR: cfg }).out;
   assert.equal(/theirs/.test(shown), false, 'listed a session with no live process:\n' + shown);
@@ -574,4 +603,41 @@ test('adopt records the config dir of the session taking over, not the one givin
   run(dir, ['start', '--session', B, '--task', 'theirs'], { CLAUDE_CONFIG_DIR: path.join(dir, 'theirs') });
   run(dir, ['adopt', B, '--session', A], { CLAUDE_CONFIG_DIR: path.join(dir, 'mine') });
   assert.equal(entry(dir, A).configDir, path.join(dir, 'mine'));
+});
+
+// The failure this exists for: a background task's output directory carried a
+// second session id, in the same shape as the real one, and it went into every
+// task.js call for two hours while the hooks read the other one. Nothing said
+// so — an entry under an id no hook reads looks exactly like no entry at all.
+test('an id no running session claims is refused, and the running ones are named', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
+  fs.writeFileSync(path.join(cfg, 'sessions', process.pid + '.json'),
+    JSON.stringify({ pid: process.pid, sessionId: B, cwd: '/somewhere/else' }));
+
+  const { out, code } = run(dir, ['start', '--session', A, '--task', 'x']);
+  assert.equal(code, 1);
+  assert.match(out, /No running Claude Code session/);
+  assert.match(out, new RegExp(B), 'the refusal has to name the ids that are running');
+  assert.match(out, /\/somewhere\/else/, 'an id alone is not something anyone can recognise');
+  assert.equal(entry(dir, A), null, 'refused, and nothing written');
+
+  // `show` too, and it matters more than it looks: in the session this was built
+  // for, `show` carried the wrong id one command before `start` did. Checking
+  // only the writers would have let that first one pass.
+  assert.equal(run(dir, ['show', '--session', A]).code, 1);
+  // With no --session there is nothing to be wrong about, and the listing still
+  // works.
+  assert.equal(run(dir, ['show']).code, 0);
+});
+
+// The other half of the same rule, and the one that keeps this from becoming a
+// lockout: `runningSessions` answers null when it cannot read the directory, and
+// a refusal must never come from a failed measurement.
+test('a config directory that cannot be read is not a refusal', () => {
+  const dir = root();
+  const { out, code } = run(dir, ['start', '--session', A, '--task', 'x']);
+  assert.equal(code, 0, out);
+  assert.equal(entry(dir, A).task, 'x');
 });

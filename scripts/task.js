@@ -150,10 +150,43 @@ function rootOf(opts) {
     return registry.rootFor({ cwd: process.cwd() });
 }
 
+// The one chokepoint every subcommand passes through, and the only way a wrong id
+// ever reaches the registry: somebody typed it here.
+//
+// An entry written under an id no hook reads is invisible in the direction that
+// costs most. Every hook goes quiet on a miss, correctly — a miss is what a
+// session that never used the plugin looks like, which is nearly always what it
+// is. One real session spent two hours that way, its id taken off a background
+// task's output directory, which carries a session id in exactly this shape and
+// not always this session's.
+//
+// `runningSessions` returning null is the directory being unreadable, and that
+// allows: a refusal must never come from a failed measurement, which is the rule
+// `isLive` already keeps. It is a measured absence that is fatal.
+//
+// `clear <id>` and `adopt <id>` take the other session's id positionally rather
+// than through `--session`, so a dead neighbour is still reachable — which is the
+// whole point of those two commands.
 function requireSession(opts) {
     const id = opts.session;
-    if (!id) fail('--session <id> is required. Read it from the transcript path; never guess it.');
+    if (!id) fail('--session <id> is required. The /fankeel prompt makes the hook say it; use that one.');
     if (!registry.sessionPath(process.cwd(), id)) fail('Not a session id: ' + id);
+    const rows = live.runningSessions(live.liveConfigDir());
+    if (rows && !rows.some((row) => row.sessionId === id)) {
+        const lines = ['No running Claude Code session has the id ' + id + '.', ''];
+        if (rows.length) {
+            lines.push('  running now:');
+            for (const row of rows) lines.push('    ' + row.sessionId + (row.cwd ? '   ' + row.cwd : ''));
+        } else {
+            lines.push('  running now: none');
+        }
+        lines.push('');
+        lines.push('An entry written under that id is one no hook would ever read, and every');
+        lines.push('hook is silent about a miss — so the mode would look on and do nothing.');
+        lines.push('A path on screen carries a session id in the same shape and it is not');
+        lines.push('always this one. The /fankeel prompt makes the hook say which it is.');
+        fail(lines.join('\n'));
+    }
     return id;
 }
 
@@ -206,7 +239,13 @@ function collisions(root, sessionId, claims) {
 function cmdShow(root, opts) {
     const lines = ['fankeel — registry at ' + root];
     const active = registry.readActive(root);
-    const id = opts.session;
+    // `--session` is optional here: without one this is a listing of the whole
+    // registry, and there is nothing to be wrong about. With one it is a claim to
+    // *be* that session, and a claim no running process backs is exactly what
+    // `requireSession` refuses. It is checked here rather than left out because
+    // `show` was the first command carrying the wrong id in the session this was
+    // built for — a whole command before the entry was written under it.
+    const id = opts.session ? requireSession(opts) : null;
 
     if (!fs.existsSync(registry.stateDir(root))) {
         lines.push('');

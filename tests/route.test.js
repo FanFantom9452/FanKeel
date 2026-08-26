@@ -26,7 +26,11 @@ function run(dir, args) {
   const cfg = path.join(dir, 'cfg');
   try {
     return {
-      out: execFileSync(process.execPath, [SCRIPT, ...args, '--root', dir, '--claude-dir', cfg], { encoding: 'utf8' }),
+      // CLAUDE_CONFIG_DIR as well as --claude-dir: `task.js` measures --session
+      // against the running sessions in that directory, and pointed at the real
+      // one it would refuse every made-up id in this file.
+      out: execFileSync(process.execPath, [SCRIPT, ...args, '--root', dir, '--claude-dir', cfg],
+        { encoding: 'utf8', env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg }) }),
       code: 0,
     };
   } catch (e) {

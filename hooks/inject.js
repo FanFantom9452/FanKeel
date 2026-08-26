@@ -59,10 +59,41 @@ function main(raw) {
     // mode without having said what you are working on.
     const mine = registry.readSession(root, sessionId);
     if (!mine || mine.active !== true) {
+        const starting = startsFankeel(payload.prompt);
+
+        // The one prompt where the id is about to be typed into `task.js`, and
+        // the only moment anything here can say what it is. Nothing else on
+        // screen can be trusted to: a background task's output directory and a
+        // scratch directory both carry a session id in this exact shape, and
+        // they are not always this session's. One real session wrote its whole
+        // entry under one of those while every hook here read the other — two
+        // hours, no injections, no claims, and nothing anywhere said so, because
+        // a miss is what a session that never used the plugin looks like and
+        // that is the common case worth staying quiet for.
+        //
+        // Output before the side effects, the same order the injection below
+        // keeps and for the same reason.
+        //
+        // `sessionPath` is the shape check, borrowed rather than repeated: it
+        // answers null for anything that is not a session id. What it is doing
+        // here is refusing to read an unvalidated payload field back into the
+        // conversation — the id is Claude Code's to send, not this hook's to
+        // vouch for.
+        if (starting && registry.sessionPath(root, sessionId)) {
+            process.stdout.write(JSON.stringify({
+                hookSpecificOutput: {
+                    hookEventName: 'UserPromptSubmit',
+                    additionalContext: 'fankeel: this session is ' + sessionId
+                        + '\nThat is the id every hook here reads. Pass it to --session; an id read'
+                        + '\noff a path on screen may be a different one.',
+                },
+            }));
+        }
+
         const dir = claudeConfigDir();
         if (dir) {
             try {
-                if (!mine && startsFankeel(payload.prompt)) {
+                if (!mine && starting) {
                     // Step 0 of a route nobody has chosen. Seven is the default
                     // `task.js start` uses when no class is given, and the real
                     // route replaces it the moment one is picked.
