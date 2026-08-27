@@ -224,9 +224,12 @@ output shape:
 
 Where the task is, the rules for the stage, the shape — about 2,350 characters
 for the block above, roughly 600 tokens, and 1,850 to 2,400 across the three
-classes. Rounded on purpose and measured 2026-08-27: an exact count here is
-falsified by the next clause anyone adds to a rule, and the stale one goes on
-being read as current because it looks precise. The
+classes. Rounded on purpose and measured 2026-08-27. This figure moves only
+when a rule in `lib/stages.js` changes — a smaller blast radius than a suite
+total, and exactly why an exact count is the wrong shape for it: nothing pins
+these two numbers, so an exact one would be right until the next clause lands
+and then wrong with nothing to say so. `node --test tests/render.test.js` prints
+the per-stage sizes if you want them exact today. The
 range is `renderResume` measured against the same 59-character reference plugin
 root `tests/render.test.js` caps every stage against, and **each class over its
 own route** — a `bounded` task never reaches `audit`, so pairing every class
