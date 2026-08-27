@@ -114,13 +114,13 @@ also in progress:
 <plugin> = C:\Users\you\.claude\plugins\cache\fankeel\fankeel\0.31.0
 stage rules:
   - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, and pause at least, never dropping the pause. Option one is the approval: say what it approves.
-  - The background goes inside the question call — in the option descriptions, beside the option each belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
-  - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
+  - The background goes inside the question call — in the option descriptions, beside the option it belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
+  - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
   - From a plan (the fankeel-build skill has the loop): `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction it beats memory.
   - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path forward a guess.
-  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code, comments or formatting in passing. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
+  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code, comments or formatting. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
   - Anything deferred goes in TODO.md as one line pointing at the detail, never a comment nobody will find.
   - A new document is the last resort: use an existing page, or write a generator when it derives from code. One written carries status, last_verified and source_of_truth.
   - Output: one line per file, then the question. Under 80 words; the diff is the output, prose for what it cannot show.
@@ -137,8 +137,10 @@ output shape:
 The rules are restated in full every turn rather than pointed at. A pointer is
 only as strong as the salience of what it points at, and what it points at recedes
 by thousands of tokens a turn. Only the current stage's rules are sent, never all
-seven stages', which is what keeps a per-turn restatement affordable — 2873
-characters loaded as above, about 717 tokens.
+seven stages', which is what keeps a per-turn restatement affordable — 2822
+characters, about 700 tokens. That figure is the block above counted as it is
+printed, so it is re-measured by counting it again rather than by trusting the
+number.
 
 It grows when growing it is worth something, because the two sides of that trade
 are not priced the same. This block is read once a turn by the model and never by
@@ -195,13 +197,13 @@ class: architectural — a new subsystem, or a change to an interface something 
 <plugin> = C:\Users\you\.claude\plugins\cache\fankeel\fankeel\0.31.0
 stage rules:
   - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, and pause at least, never dropping the pause. Option one is the approval: say what it approves.
-  - The background goes inside the question call — in the option descriptions, beside the option each belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
-  - Say what you actually did. A step you skipped, a test that failed, a thing you could not check — say so plainly.
+  - The background goes inside the question call — in the option descriptions, beside the option it belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
+  - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
   - From a plan (the fankeel-build skill has the loop): `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction it beats memory.
   - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path forward a guess.
-  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code, comments or formatting in passing. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
+  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code, comments or formatting. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
   - Anything deferred goes in TODO.md as one line pointing at the detail, never a comment nobody will find.
   - A new document is the last resort: use an existing page, or write a generator when it derives from code. One written carries status, last_verified and source_of_truth.
   - Output: one line per file, then the question. Under 80 words; the diff is the output, prose for what it cannot show.
@@ -215,8 +217,13 @@ output shape:
   then AskUserQuestion
 ```
 
-Where the task is, the rules for the stage, the shape — 1762 to 2427 characters
-depending on the stage and the class, around 500 tokens. Deliberately not the full block: the
+Where the task is, the rules for the stage, the shape — 2363 characters for the
+block above, about 600 tokens, and 1867 to 2378 across the three classes. The
+range is `renderResume` measured against the same 59-character reference plugin
+root `tests/render.test.js` caps every stage against, and **each class over its
+own route** — a `bounded` task never reaches `audit`, so pairing every class
+with every stage measures blocks that cannot exist and reports a wider range
+than the pipeline has. Deliberately not the full block: the
 touched list, the notes and the other live sessions cannot have moved between a question
 going out and its answer coming back, they are already in the context a few
 thousand tokens up, and a stage runs through several questions. Repeating them
@@ -391,7 +398,7 @@ flowchart TD
     C["<b>Global Constraints</b><br/><i>generated from map.md, not remembered</i><br/>exact values copied, not restated"]
     D["<b>file structure, before tasks</b><br/>what each file is responsible for"]
     E["<b>right-size the tasks</b><br/>the smallest unit carrying its own<br/>test cycle. Split only where a reviewer<br/>could reject one and pass its neighbour"]
-    F["<b>per task</b><br/>files · interfaces consumed and<br/>produced · steps"]
+    F["<b>per task</b><br/>files · interfaces consumed and produced ·<br/><b>Dispatch:</b> in-session, or a model said out loud<br/>· steps"]
     G["<b>every step is two to five minutes</b><br/>write the failing test → watch it fail →<br/>implement → watch it pass → commit"]
     H{"<b>self-review, before the gate</b>"}
     H1["every spec requirement<br/>has a task"]
@@ -423,7 +430,7 @@ flowchart TD
     T1["record BASE"]
     T2{"the task's <b>Dispatch:</b> line"}
     T2a["<b>implement here</b><br/><i>every changed line traces to the task.<br/>Do not improve adjacent code on the way past</i>"]
-    T2b["<b>dispatch an implementer</b><br/>pass the model explicitly<br/><i>it commits and returns a sha, never a diff</i>"]
+    T2b["<b>dispatch an implementer</b><br/>pass the model explicitly<br/><i>say how many, and on which model</i><br/><i>it commits and returns a sha, never a diff</i>"]
     T3["test first where the task says so<br/><i>a test you did not watch fail is a test<br/>whose meaning you do not know</i>"]
     T4["commit"]
     T5["<b>one reviewer</b><br/>the task text, BASE..&lt;sha&gt;,<br/>and map.md — never the session's history"]
@@ -487,7 +494,7 @@ flowchart TD
     B{"did you run it<br/>in <i>this</i> message?"}
     C["then you cannot claim it yet.<br/>Run it."]
     D["docs-check<br/><i>which page did this change<br/>just make untrue?</i>"]
-    D1["<b>dispatch readers</b><br/>several in one response, one per page<br/><i>four the ceiling, sonnet the floor</i><br/><i>the path to a diff file, never a pasted diff</i>"]
+    D1["<b>dispatch readers</b><br/>several in one response, one per page<br/><i>four the ceiling, sonnet the floor</i><br/><i>say how many, and on which model</i><br/><i>the path to a diff file, never a pasted diff</i>"]
     E{"anything half-built?"}
     F["back to build.<br/>Verify is not where<br/>the bar gets lowered."]
     G["quote the command and the<br/>one line that decided it"]
@@ -532,7 +539,7 @@ flowchart TD
     E1["<b>pairs describing the same code</b><br/>where single source of truth breaks"]
     E2["<b>unfiled · undeclared ·<br/>linked from nowhere</b>"]
     F["<b>the part only reading finds</b><br/>open both, find the claim each makes<br/>about that file, say which one the<br/>code supports. Name the line."]
-    F1["<b>dispatch readers</b><br/>several in one response, one per pair<br/><i>four the ceiling, sonnet the floor</i><br/><i>compare what comes back against itself</i>"]
+    F1["<b>dispatch readers</b><br/>several in one response, one per pair<br/><i>four the ceiling, sonnet the floor</i><br/><i>say how many, and on which model</i><br/><i>compare what comes back against itself</i>"]
     G["<b>report, then ask, then act</b><br/><i>never move a document unasked —<br/>every one is a link somebody holds</i>"]
 
     A --> C

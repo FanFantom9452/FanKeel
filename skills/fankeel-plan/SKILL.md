@@ -3,7 +3,7 @@ name: fankeel-plan
 description: The plan stage — decompose an approved design into tasks someone with no context could execute, with constraints generated from the project rather than remembered. Use for the plan stage of a fankeel task, writing an implementation plan, or breaking a spec into tasks before any code is written.
 version: 0.32.0
 status: current
-last_verified: 2026-08-26
+last_verified: 2026-08-27
 source_of_truth: lib/stages.js, scripts/map.js
 ---
 
@@ -111,7 +111,7 @@ one change across two contexts costs more than the reading saves.
 not transcribed.
 ```
 
-Three rules about that line:
+Four rules about that line:
 
 1. **Every task carries one.** A task without it is a plan failure, in the same
    list as `TBD` and "similar to Task N".
@@ -122,6 +122,12 @@ Three rules about that line:
 3. **Anything above `sonnet` names why on that same line.** "Complex" is not a
    why. A protocol to reason about, a design judgement, a change whose shape is
    not in the plan — those are.
+4. **Where it says `implementer`, this line is what `build` says out loud.** The
+   loop names the dispatch in the response that sends it — how many, and on
+   which model — and for a task that sentence comes from here, so write it as a
+   statement of what the task costs rather than as a note to yourself. An
+   `in-session` task announces nothing: nothing goes out, so there is no spend
+   to disclose.
 
 **One dispatch per task, and no third form of the line.** The build loop records
 a BASE, reviews one range and marks one `complete <n>` per task; a dispatch

@@ -73,17 +73,22 @@ test('a full injection of rules stays under a few hundred characters', () => {
   // needed them, not after, because a cap raised to fit a rule already written
   // is a cap that decides nothing.
   //
-  // The ALWAYS block is 665 of whatever the number is, plus the newline joining
-  // it to the rest, so a stage's own rules get 1334. `build` is the binding one
-  // here and always will be: it is the only stage that runs a loop without
-  // stopping, so it is the only one carrying both the discipline and the means
-  // of recovering its place after a compaction. Its own rules are 1133, which
-  // leaves 201 characters against this cap.
+  // The ALWAYS block is 693 of whatever the number is, plus the newline joining
+  // it to the rest, so a stage's own rules get 1306. `build` and `plan` bind
+  // here, at 1122 each — `build` because it is the only stage that runs a loop
+  // without stopping, and so carries both the discipline and the means of
+  // recovering its place after a compaction; `plan` because every task it writes
+  // has to carry a dispatch decision as well as its files, interfaces and steps.
+  // 184 characters left against this cap, and a tie means either of them can be
+  // the one that fails it.
   //
   // That headroom is not the real constraint any more. `tests/render.test.js`
   // caps the whole injection at 2400 measured against a reference plugin root,
-  // and every stage sits within thirty characters of it — so a rule added here
-  // has to displace one there first. That is the point.
+  // and four of the seven sit within twenty characters of it — `build`, `audit`,
+  // `plan` and `survey`, in that order. `design`, `verify` and `land` have
+  // hundreds of characters spare, so read the diagnostics that test prints
+  // rather than this sentence before deciding a stage has no room. For the four,
+  // a rule added here has to displace one there first. That is the point.
   for (const name of NAMES) {
     const size = rulesFor(name).join('\n').length;
     assert.ok(size < 2000, name + ' rules are ' + size + ' chars');
@@ -432,5 +437,39 @@ test('survey scopes its reading from the tree before the first term', () => {
   // sentence saying the opposite of this one, and `/model/` on its own passed
   // any stray use of the word elsewhere in the rules.
   assert.match(text, /Scope from the tree before the first term/, 'the scope is still decided only by what the scanner failed at');
-  assert.match(text, /count and model/, 'the dispatch names neither how many readers nor which model');
+});
+
+// The disclosure started in `survey`'s own rule, which is why only `survey` ever
+// made it: `plan` picks a tier per task, `build` dispatches an implementer, and
+// `verify` and `audit` send a reader per page or per pair, and none of them said
+// so. A fan-out nobody announced is spend the user is paying for and could not
+// see coming. Asserted on every stage rather than on the four that dispatch,
+// because the always-on block is what makes it survive a compaction.
+//
+// Two clauses, because the first version of this rule passed a wording carrying
+// neither. It said "a dispatch and its model", which drops the count the whole
+// finding was about, and it hung off "say what you actually did", which is
+// retrospective — so a fan-out reported in the wrap-up satisfied it, and the
+// user was billed before being told. The injected block is the copy that
+// survives a compaction, so a weak clause here is the one that outlives the
+// skill text spelling out what it meant.
+test('every stage is told to say what a dispatch costs, before it costs it', () => {
+  for (const name of NAMES) {
+    const text = rulesFor(name).join(' ');
+    assert.match(text, /a dispatch before it goes/, name + ' can report a dispatch after the bill arrives');
+    assert.match(text, /how many, which model/, name + ' names the model without the count');
+  }
+});
+
+// The dispatch clause shares a rule string with the one that predates it, and
+// only the dispatch half was pinned. `build` sits nine characters under the
+// injection cap, so this string is the first place anyone looks for room — and
+// rewriting it down to the dispatch clause alone would leave every test green
+// while deleting the only injected rule that asks for a skipped step or a failed
+// test to be named. The other three always-on rules are each pinned this way.
+test('the always-on block still asks for what was skipped and what failed', () => {
+  const text = ALWAYS.join(' ');
+  assert.match(text, /Say what you actually did/);
+  assert.match(text, /a failed test/);
+  assert.match(text, /a thing you could not check/);
 });

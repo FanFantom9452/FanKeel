@@ -3,7 +3,7 @@ name: fankeel-verify
 description: The verify stage — evidence before claims, requirements checked line by line, and the documents this change just made false. Use for the verify stage of a fankeel task, before claiming work is complete or passing, before a commit or PR, or when checking whether a change broke the documentation describing it.
 version: 0.32.0
 status: current
-last_verified: 2026-08-26
+last_verified: 2026-08-27
 source_of_truth: lib/stages.js, scripts/docs-check.js
 ---
 
@@ -87,7 +87,9 @@ they run at once — four is the ceiling, and the fankeel skill's *Dispatch by
 default, never the filtering* says why — each given the **path** to a diff file
 and asked only what is now false and where. Never a pasted diff: it lands the
 whole change in this context, which is the cost dispatching exists to avoid.
-Pass the model explicitly; `sonnet` is the floor.
+Pass the model explicitly; `sonnet` is the floor. Say how many are going and
+on which model as they go out — a fan-out the user did not see coming is spend
+they were never given the chance to question.
 
 What you do not dispatch is this stage. The evidence table, the red-green
 discipline and the gate stay here — a subagent has none of these rules.

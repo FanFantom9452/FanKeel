@@ -3,7 +3,7 @@ name: fankeel-build
 description: The build stage — run the plan's tasks in a loop that does not stop to ask, keeping its place in a ledger and reviewing each task as it lands. Use for the build stage of a fankeel task, implementing an approved plan, resuming build work after a compaction, or when a task loop needs a ledger.
 version: 0.32.0
 status: current
-last_verified: 2026-08-26
+last_verified: 2026-08-27
 source_of_truth: lib/stages.js, lib/ledger.js
 ---
 
@@ -56,7 +56,8 @@ For each task the ledger does not list as complete:
 1. Record `git rev-parse HEAD` as BASE.
 2. Do what the task's `**Dispatch:**` line says. `in-session` means implement it
    here; `implementer, <model>` means dispatch one — **pass the model
-   explicitly**, an omitted one inherits this session's. Either way: every
+   explicitly**, an omitted one inherits this session's, and say how many
+   and on which model in the response that sends it. Either way: every
    changed line traces to the plan's task, follow the patterns already in this
    repository, do not improve adjacent code, comments or formatting on the way
    past, and remove what your own change orphaned — dead code you did not create

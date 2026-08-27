@@ -28,7 +28,11 @@ written here instead of where it belongs.
 - A repository with no commits reports `no git` — [scripts/orient.js](scripts/orient.js). `rev-parse --abbrev-ref HEAD` fails there and `gitState` reads the failure as "not a repository".
 - `### Every fortnight or so — the sweep` in [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md) has no body; the `## One skill per stage` after it holds the sweep's table.
 - `fankeel-build` says the stage runs to done; the injected rule says ask at every step's end — [lib/stages.js](lib/stages.js). Read as per-increment, build becomes a gate per commit.
-- Only `survey` says how many readers it is sending and on which model; the dispatcher rules in [docs/subagents.md](docs/subagents.md) do not, so a `build` implementer still costs invisibly.
+- Option two at a gate should say what is still open, not offer adjacent work; a stage whose every gate proposes something new never ends — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
+- `task.js` refuses when `<config>/sessions/` is readable but empty, and fails open when it is absent — [scripts/task.js](scripts/task.js). `lib/live.js` fails open on that same evidence.
+- The session id is disclosed only while there is no active entry, so a compacted session that owns a task cannot read its own id — [hooks/inject.js](hooks/inject.js).
+- `isSubtree` stats 95 of this repo's 100 entries and [scripts/orient.js](scripts/orient.js) has no size cache to amortise it, so a workspace of large repos pays it per row.
+- `trackedFiles` fills `stats.unlistable` but not the extension skips — [lib/tracked.js](lib/tracked.js). A root of only skipped extensions still reports no files at all.
 
 ## Owed after first real use
 

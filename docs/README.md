@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-26
+last_verified: 2026-08-27
 source_of_truth: this file is the index; each page below is its own source
 ---
 
@@ -29,7 +29,7 @@ here.
 | Why an archive naming deleted code is not a bug | [documents.md](documents.md) — *roles* |
 | What a subagent is told when it starts | [subagents.md](subagents.md) |
 | Why delegating a wide search saves and delegating a long report does not | [subagents.md](subagents.md) |
-| When to dispatch one, and when a pipe already removes what you are avoiding | [subagents.md](subagents.md) — *when to dispatch one* |
+| When to dispatch one, what the dispatcher has to say out loud, and when a pipe already removes what you are avoiding | [subagents.md](subagents.md) — *when to dispatch one* |
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
 | Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
 | How the seven-stage work is being built, task by task | [plans/2026-08-22-seven-stage-implementation.md](plans/2026-08-22-seven-stage-implementation.md) — *superseded by the pipeline plan* |
