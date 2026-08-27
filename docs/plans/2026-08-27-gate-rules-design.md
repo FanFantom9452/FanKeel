@@ -199,12 +199,14 @@ means one plan task everywhere, and the gate rules stop using the word.
 
 ## What is still open
 
-- `docs/pipeline.md:224-225` says "2363 characters for the block above" and "1867
-  to 2378 across the three classes". Those measure across classes, not across
-  stages, so the figures here do not replace them. They are recomputed during
-  `build`, or restated as rounded figures with a date — the precedent is
-  `scripts/survey.js`, where an exact character count rotted four times and was
-  replaced by a rounded one.
+- ~~`docs/pipeline.md:224-225`'s two character figures.~~ Settled in Task 3.
+  Measured `renderResume` at the 59-character reference root, each class over its
+  own route: the block that page shows is 2356 and the range is 1857 to 2369,
+  against the 2363 and "1867 to 2378" it carried. Both are now rounded and dated
+  rather than replaced with two fresh exact numbers, because nothing pins them —
+  the review of Task 3 corrected the reasoning, which had leaned on a
+  `scripts/survey.js` precedent whose figure rotted from any test added anywhere,
+  where this one moves only when a rule in `lib/stages.js` changes.
 - `README.md` and `TODO.md` are the two pages the map lists as undeclared, dated
   by git rather than by anyone reading them. This change reads `README.md` and
   edits it; whether it should gain frontmatter is a separate question.
