@@ -39,6 +39,8 @@ written here instead of where it belongs.
 - land outputs `<sha> <subject>`, not a list of what was done, and nothing drafts the commit message — same material either way — [skills/fankeel-land/SKILL.md](skills/fankeel-land/SKILL.md).
 - A fan-out split by slice loses the global view; by lens over the whole tree keeps it, and the denominator has to be said out loud — [docs/subagents.md](docs/subagents.md).
 - Each stage's page says what it produces, never the method that makes it complete — the enumeration, the fan-out shape, the critic — [docs/pipeline.md](docs/pipeline.md).
+- `pruneBadges` deletes the badge and keeps the lead TokenBar actually draws from, so a session idle 30 days shows a live rail for ever — [lib/badge.js](lib/badge.js). Matrix measured 08-27.
+- The report example in [README.md](README.md) drops build's `ledger: <n> of <m> complete` line, and no test reads this repository's own README. Found 08-27, older than the change that found it.
 
 ## Owed after first real use
 
