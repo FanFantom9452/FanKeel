@@ -522,8 +522,9 @@ Notes are never version-controlled and die with the task. If a note still matter
 after the task lands, it was never a note — move it to one of the four above
 during `land`.
 
-`TODO.md` is an index and only an index: the bullet is short and the detail lives
-in a file it links to. `node <plugin>/scripts/todo-check.js` says when that has
+`TODO.md` is an index whose bullets `init` also offers as the task options when a
+session starts, so each one is read twice: the bullet is short and the detail
+lives in a file it links to. `node <plugin>/scripts/todo-check.js` says when that has
 stopped being true, and the `land` rules call for it — a plan deleted at `land`
 is a link that just died.
 
@@ -609,8 +610,9 @@ Then ask, with these options and no others:
 Every one of these ends by saying what changed and offering the next step. Do not
 finish a `/fankeel` turn with a bare confirmation.
 
-**Start does not stop there.** Writing the entry puts the session at `survey`, and
-taking stock is what `survey` is for — so do it in the same turn rather than
+**Start does not stop there.** Writing the entry puts the session at the first
+stage on the route — `survey` unless `--route` said otherwise — and taking stock
+is what `survey` is for — so do it in the same turn rather than
 asking permission to begin. Read the signposts orient named, say what the recent
 commits show the project is in the middle of, and run the scanner on the terms the
 task implies. Then ask, with something on screen to ask about.

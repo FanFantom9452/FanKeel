@@ -18,7 +18,7 @@ Produces a statement of what already exists, a classification, and the map.
 Nothing to run. `hooks/inject.js` raises `[FANKEEL:INIT]` the moment a `/fankeel`
 prompt is submitted, before there is any registry entry to read — so the minutes
 this stage spends orienting, mapping and scanning are not minutes of a statusline
-saying nothing. `task.js start` in step 6 replaces it with `survey`.
+saying nothing. `task.js start` in step 6 replaces it with the first stage on the route.
 
 It is there before you are. What it costs you is that the badge is now a promise:
 a session showing `init` that never reaches step 6 is one that stopped without

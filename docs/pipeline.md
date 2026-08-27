@@ -90,9 +90,9 @@ The hook runs *before* a prompt, so a badge left to it alone appears only when t
 user types again — and for that whole gap, turning the mode on is indistinguishable
 from failing to turn it on.
 
-Starting a task does not then stop to ask whether to begin. The entry goes in at
-`survey`, and taking stock is what `survey` is for, so it happens in the same
-turn — otherwise the badge reads `▌FANKEEL SURVEY` at the exact moment nothing
+Starting a task does not then stop to ask whether to begin. The entry goes in at the
+first stage on the route, `survey` unless `--route` said otherwise, and taking
+stock is what `survey` is for, so it happens in the same turn — otherwise the badge reads `▌FANKEEL SURVEY` at the exact moment nothing
 has been surveyed.
 
 Starting a task puts this session in fankeel mode. From then on every prompt

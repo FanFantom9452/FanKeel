@@ -4,6 +4,10 @@ An index. One bullet per deferred thing, short enough to scan, with any detail
 behind it living in a file in this repository that the bullet links to. Whoever
 finishes the work removes the entry in the same change.
 
+It is read twice. Once by whoever scans the list, and once by `/fankeel`, which
+offers these entries clustered as the task options when a session starts. A
+bullet nobody can understand on its own is a menu item nobody can pick.
+
 `node scripts/todo-check.js` enforces both halves: a link that no longer resolves
 is an entry someone forgot to close, and an entry over the length cap is detail
 written here instead of where it belongs.
@@ -35,6 +39,8 @@ written here instead of where it belongs.
 - land outputs `<sha> <subject>`, not a list of what was done, and nothing drafts the commit message — same material either way — [skills/fankeel-land/SKILL.md](skills/fankeel-land/SKILL.md).
 - A fan-out split by slice loses the global view; by lens over the whole tree keeps it, and the denominator has to be said out loud — [docs/subagents.md](docs/subagents.md).
 - Each stage's page says what it produces, never the method that makes it complete — the enumeration, the fan-out shape, the critic — [docs/pipeline.md](docs/pipeline.md).
+- Three pages list the commands that set the badge directly and all three omit `route` — [scripts/task.js](scripts/task.js), where `cmdRoute` calls `showBadge`.
+- The lead line writes `steps: 7` before a class is chosen, so a `bounded` or `spike` task briefly shows a total it will never reach — [hooks/inject.js](hooks/inject.js).
 
 ## Owed after first real use
 
