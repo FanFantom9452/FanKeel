@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-08-27
 source_of_truth: lib/stages.js, lib/render.js, skills/fankeel/SKILL.md
 ---
