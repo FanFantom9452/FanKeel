@@ -41,6 +41,8 @@ written here instead of where it belongs.
 - Each stage's page says what it produces, never the method that makes it complete — the enumeration, the fan-out shape, the critic — [docs/pipeline.md](docs/pipeline.md).
 - `pruneBadges` deletes the badge and keeps the lead TokenBar actually draws from, so a session idle 30 days shows a live rail for ever — [lib/badge.js](lib/badge.js). Matrix measured 08-27.
 - The report example in [README.md](README.md) drops build's `ledger: <n> of <m> complete` line, and no test reads this repository's own README. Found 08-27, older than the change that found it.
+- The init cap comment in [tests/render.test.js](tests/render.test.js) sets 1400 against "the 1140 it costs today"; it costs 1161. Predates 08-27, found by a lens sweep.
+- [docs/output-styles.md](docs/output-styles.md) and the decision record beside it both say "The three always-on rules" where `ALWAYS.length` is 4. Predates 08-27.
 
 ## Owed after first real use
 

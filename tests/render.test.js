@@ -391,9 +391,11 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
   // size is reported so the margin is visible without editing this file.
   //
   // 2400 is the third raise on this branch and should be the last. `build` is
-  // the binding stage at 2391, with `audit` at 2385, `plan` at 2381 and
-  // `survey` at 2380 — four stages inside twenty characters of the cap, so read
-  // the diagnostics below before adding a clause to any of them. The two raises
+  // the binding stage at 2382, with `audit` at 2374 and `plan` and `survey` at
+  // 2371 — `build` alone is inside twenty characters of the cap now, where four
+  // stages were before the gate rule stopped describing option one and started
+  // substituting it. Read the diagnostics below before adding a clause to any of
+  // them. The two raises
   // before it were paid for by content that had to exist: the ledger, without
   // which a compacted session redoes committed work, and the four things that
   // stop the loop, without which the default is to stop and ask. What stops a

@@ -73,22 +73,22 @@ test('a full injection of rules stays under a few hundred characters', () => {
   // needed them, not after, because a cap raised to fit a rule already written
   // is a cap that decides nothing.
   //
-  // The ALWAYS block is 693 of whatever the number is, plus the newline joining
-  // it to the rest, so a stage's own rules get 1306. `build` and `plan` bind
+  // The ALWAYS block is 687 of whatever the number is, plus the newline joining
+  // it to the rest, so a stage's own rules get 1313. `build` and `plan` bind
   // here, at 1122 each — `build` because it is the only stage that runs a loop
   // without stopping, and so carries both the discipline and the means of
   // recovering its place after a compaction; `plan` because every task it writes
   // has to carry a dispatch decision as well as its files, interfaces and steps.
-  // 184 characters left against this cap, and a tie means either of them can be
+  // 191 characters left against this cap, and a tie means either of them can be
   // the one that fails it.
   //
   // That headroom is not the real constraint any more. `tests/render.test.js`
   // caps the whole injection at 2400 measured against a reference plugin root,
-  // and four of the seven sit within twenty characters of it — `build`, `audit`,
-  // `plan` and `survey`, in that order. `design`, `verify` and `land` have
-  // hundreds of characters spare, so read the diagnostics that test prints
-  // rather than this sentence before deciding a stage has no room. For the four,
-  // a rule added here has to displace one there first. That is the point.
+  // and `build` alone sits within twenty characters of it. `audit`, `plan` and
+  // `survey` are within thirty; `design`, `verify` and `land` have hundreds of
+  // characters spare, so read the diagnostics that test prints rather than this
+  // sentence before deciding a stage has no room. For the four nearest it, a
+  // rule added here has to displace one there first. That is the point.
   for (const name of NAMES) {
     const size = rulesFor(name).join('\n').length;
     assert.ok(size < 2000, name + ' rules are ' + size + ' chars');
