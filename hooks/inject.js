@@ -98,7 +98,10 @@ function main(raw) {
                     // `bounded` task then showed five where it had just shown
                     // seven. A count the next command contradicts is worse than
                     // no count: with `steps` absent the statusline draws none
-                    // until a route exists to draw.
+                    // until a route exists to draw. TokenBar's `StepDots`
+                    // returns nothing without a denominator and says why —
+                    // "inventing a denominator would draw a progress bar out of
+                    // nothing" — so this is its contract, not a workaround.
                     badge.writeBadge(dir, sessionId, 'init');
                     badge.writeLead(dir, sessionId, { word: 'init', step: 0 });
                 } else if (mine || badge.readBadge(dir, sessionId) === 'init') {
