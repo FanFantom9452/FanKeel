@@ -33,10 +33,12 @@ Then, in any project:
 It looks before it asks — what is under this directory, which of them is a
 repository, which was touched today — and then asks at most two questions, with
 the options already on screen: which project, skipped when there is only one, and
-what the task is, guessed from the recent commits. It does not ask which files you
-will touch. Those are recorded as the edits land, so there is no list to state and
-none to get wrong. The badge is up before you answer — the hook raises `init`
-the moment you submit the command — and it becomes `survey` when the entry lands.
+what the task is, read from `TODO.md` where the root has one and guessed from the
+recent commits where it does not. It does not ask which files you will touch.
+Those are recorded as the edits land, so there is no list to state and none to get
+wrong. The badge is up before you answer — the hook raises `init` the moment you
+submit the command, and the rules for that step ride the same prompt — and it
+becomes `survey` when the entry lands.
 
 > The repository is `FanKeel` and everything you type is `fankeel`. Plugin and
 > marketplace ids have to be kebab-case — Claude Code accepts anything else, and

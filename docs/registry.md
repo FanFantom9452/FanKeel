@@ -169,7 +169,7 @@ Two things close it, both upstream of the hooks:
 | | |
 |---|---|
 | `scripts/task.js` | `--session` is checked against Claude Code's own `<config>/sessions/<pid>.json`. An id no running process claims is refused, and the message lists the ids that are running with the directory each was opened in. A directory that cannot be read allows everything — a refusal must never come from a failed measurement. |
-| `hooks/inject.js` | a `/fankeel` prompt is answered with one line naming this session's id: the one that hook is itself holding. |
+| `hooks/inject.js` | a `/fankeel` prompt is answered with the `init` block: this session's id — the one that hook is itself holding — and the rules for the step before there is a task. |
 
 `clear <id>` and `adopt <id>` take the other session's id positionally rather
 than through `--session`, so a dead neighbour is still reachable. That is what
