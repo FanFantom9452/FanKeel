@@ -391,11 +391,15 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
   // size is reported so the margin is visible without editing this file.
   //
   // 2400 is the third raise on this branch and should be the last. `build` is
-  // the binding stage at 2382, with `audit` at 2374 and `plan` and `survey` at
-  // 2371 — `build` alone is inside twenty characters of the cap now, where four
-  // stages were before the gate rule stopped describing option one and started
-  // substituting it. Read the diagnostics below before adding a clause to any of
-  // them. The two raises
+  // the binding stage at 2394, with `audit` at 2389 and `plan` and `survey` at
+  // 2371 — two stages are inside twenty characters of the cap now, where one was
+  // before TODO.md's headings reached the two stages that write entries. That
+  // change is what a full cap looks like from the inside: the classification
+  // could not be spelled out in `build`'s deferral rule at all, so it rides the
+  // output template instead, and `audit` paid for its `routed:` slot by giving
+  // up "knip or deptry for unused packages" — a phrase its own template already
+  // carried as a runnable command. Read the diagnostics below before adding a
+  // clause to any of them. The two raises
   // before it were paid for by content that had to exist: the ledger, without
   // which a compacted session redoes committed work, and the four things that
   // stop the loop, without which the default is to stop and ask. What stops a

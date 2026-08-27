@@ -512,7 +512,7 @@ instead:
 | A project convention that will outlive this task | `CLAUDE.md` |
 | A durable fact about the user or the repository | the memory directory |
 | Why a change was made | the commit message |
-| Work deliberately deferred | `TODO.md`, one line, linking to the detail |
+| Work deliberately deferred | `TODO.md`, one line, linking to the detail, under the heading for what it is short of |
 | A plan whose work has landed | the `archive` bucket, after asking |
 | What was tried and failed, mid-task | a **note** |
 | What to pick up next | **next** |
@@ -528,9 +528,13 @@ during `land`.
 
 `TODO.md` is an index whose bullets `init` also offers as the task options when a
 session starts, so each one is read twice: the bullet is short and the detail
-lives in a file it links to. `node <plugin>/scripts/todo-check.js` says when that has
-stopped being true, and the `land` rules call for it — a plan deleted at `land`
-is a link that just died.
+lives in a file it links to. The heading it sits under is the third half of that
+convention — `## Ready`, `## Needs a decision`, `## Waiting` — and it answers
+what the entry is still short of rather than what it is about, because what
+`init` has to know is which entries can become a task this morning.
+`node <plugin>/scripts/todo-check.js` says when any of the three has stopped being
+true, and the `land` rules call for it — a plan deleted at `land` is a link that
+just died.
 
 ## On `/fankeel`
 
@@ -577,10 +581,14 @@ consequences: picking a project has none. Skip the question entirely when there
 is only one.
 
 Then `What is the task?`, in the same call. **Read `TODO.md` first where the root
-has one**: its entries are the options, clustered — two bullets touching the same
-file or settling the same question are one task and one option, not two. One
-option per bullet is how a twenty-eight entry index becomes a menu nobody reads,
-and it is also how one file gets opened twice. A repository with no `TODO.md` is
+has one**: its headings are the clustering, so there is nothing to derive.
+`## Ready` is one option for the whole section — every entry under it is its own
+specification, and a build loop runs them as a list. `## Needs a decision` is one
+option each, because each is a different question for a person. `## Waiting` is
+not offered at all: nothing under it can move today, and six unpickable rows are
+how a menu stops being read. Any other heading, or none, means clustering by hand
+— two bullets touching the same file or settling the same question are one task
+and one option, not two. A repository with no `TODO.md` is
 where guessing from the recent commits belongs, one option each, phrased as a
 task and not as a commit subject. **Other** is always there for the real answer.
 

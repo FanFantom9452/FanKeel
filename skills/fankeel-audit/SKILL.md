@@ -216,11 +216,17 @@ node <plugin>/scripts/docs-audit.js
 - path:line — what is no longer true
 - path:line × path:line — what they disagree about, and which one the code supports
 
+routed: <heading — the entry, or omit this line>
 clean: <what you read and found nothing wrong in>
 then AskUserQuestion
 ```
 
 Worst first. Nothing found is a finding — say so, say what you read, and stop.
+
+`routed:` is the line that keeps a finding alive past this turn. Anything you
+are not fixing here goes to `TODO.md` under `## Ready`, `## Needs a decision` or
+`## Waiting`, and that line names which — a finding that exists only in this
+report is one the next sweep finds again from scratch.
 
 ## The question at the end
 

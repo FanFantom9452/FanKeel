@@ -116,7 +116,7 @@ Each stage also ships the **shape of its report**, not only a description of one
 - path +12/-3 — what changed
 - path (new) — what it is
 
-deferred: <TODO.md line, or omit this line>
+deferred: <heading> — <TODO.md line, or omit this line>
 then AskUserQuestion
 ```
 
@@ -231,5 +231,7 @@ the user in the middle of somebody else's turn is its own kind of broken.
 
 `node scripts/todo-check.js` says whether [TODO.md](TODO.md) is still an index —
 every link resolving, no entry carrying detail that belongs in the file it points
-at. The `land` stage rules call for it, because a plan deleted at `land` is a link
+at, and every entry filed under `## Ready`, `## Needs a decision` or `## Waiting`,
+which is what says whether it can be started today. A clean run prints the split,
+so the ready count is on screen without opening the file. The `land` stage rules call for it, because a plan deleted at `land` is a link
 that just died.

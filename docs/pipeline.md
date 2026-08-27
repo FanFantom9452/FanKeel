@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-27
+last_verified: 2026-08-28
 source_of_truth: lib/stages.js, lib/render.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js
 ---
 
@@ -46,10 +46,11 @@ this morning is almost always the one being asked about.
 
 The skill asks with `AskUserQuestion` rather than in prose — which project and
 what the task is, in one call with the options already on screen. Where the root
-has a `TODO.md`, that is where the task options come from: its entries clustered,
-two bullets touching one file offered as one task rather than as two options that
-would open it twice. A root without one is where guessing from the recent commits
-belongs.
+has a `TODO.md`, that is where the task options come from, and its headings do
+the clustering: `## Ready` is offered as one task for the whole section,
+`## Needs a decision` as one task each, and `## Waiting` is left out because
+nothing under it can move today. A root without one is where guessing from the
+recent commits belongs.
 Making someone retype a row of a listing they can see is the same waste as asking
 with nothing on screen at all.
 
@@ -135,7 +136,7 @@ output shape:
   - path (new) — what it is
 
   ledger: <n> of <m> complete
-  deferred: <TODO.md line, or omit this line>
+  deferred: <heading> — <TODO.md line, or omit this line>
   then AskUserQuestion
 ```
 
@@ -218,7 +219,7 @@ output shape:
   - path (new) — what it is
 
   ledger: <n> of <m> complete
-  deferred: <TODO.md line, or omit this line>
+  deferred: <heading> — <TODO.md line, or omit this line>
   then AskUserQuestion
 ```
 
@@ -741,8 +742,10 @@ every one without being maintained.
 
 Which declared package is never used is a different question, and not one this
 answers. It needs a package-name-to-module table — `Pillow` imports as `PIL`,
-`pycryptodome` as `Crypto` — so the `audit` rules name `knip --dependencies` and
-`deptry` instead, and say plainly when neither is installed.
+`pycryptodome` as `Crypto` — so `audit` reaches for `knip --dependencies` and
+`deptry` instead, and says plainly when neither is installed. Its output template
+carries both as runnable commands; the rules stopped naming them a second time
+when `audit` had to find room for its `routed:` slot.
 
 **What gets checked depends on the document's role.** An archive naming deleted
 code is an archive doing its job; a reference page doing the same is the bug. A

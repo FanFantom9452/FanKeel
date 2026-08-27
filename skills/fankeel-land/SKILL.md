@@ -54,7 +54,7 @@ was never a note:
 | a project convention | `CLAUDE.md` |
 | a durable fact about the user or repository | the memory directory |
 | why a change was made | the commit message |
-| work deliberately deferred | `TODO.md`, one line, linking to the detail |
+| work deliberately deferred | `TODO.md`, one line, under the heading for what it is short of |
 
 Commit the reason, not the diff. The diff is already in the commit.
 
