@@ -285,7 +285,7 @@ test('a /fankeel prompt with no entry raises the init badge', () => {
   const lead = leadOf(cfg, MINE);
   assert.match(lead, /^word=init$/m);
   assert.match(lead, /^step=0$/m);
-  assert.match(lead, /^steps=7$/m);
+  assert.doesNotMatch(lead, /^steps=/m, 'a denominator before a route is a count the next command contradicts');
 });
 
 test('the plugin-qualified form raises it too, and fankeel-audit does not', () => {

@@ -39,7 +39,6 @@ written here instead of where it belongs.
 - land outputs `<sha> <subject>`, not a list of what was done, and nothing drafts the commit message — same material either way — [skills/fankeel-land/SKILL.md](skills/fankeel-land/SKILL.md).
 - A fan-out split by slice loses the global view; by lens over the whole tree keeps it, and the denominator has to be said out loud — [docs/subagents.md](docs/subagents.md).
 - Each stage's page says what it produces, never the method that makes it complete — the enumeration, the fan-out shape, the critic — [docs/pipeline.md](docs/pipeline.md).
-- The lead line writes `steps: 7` before a class is chosen, so a `bounded` or `spike` task briefly shows a total it will never reach — [hooks/inject.js](hooks/inject.js).
 
 ## Owed after first real use
 

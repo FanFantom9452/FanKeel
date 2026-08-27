@@ -20,7 +20,7 @@ const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
 const { render, renderInit } = require('../lib/render.js');
 const { overlapPaths } = require('../lib/overlap.js');
-const { positionIn, FULL_ROUTE } = require('../lib/stages.js');
+const { positionIn } = require('../lib/stages.js');
 
 // The one prompt trying to turn the mode on. Everything else in this hook keys
 // off the registry, and at this moment there is nothing in it: `/fankeel` runs
@@ -92,11 +92,15 @@ function main(raw) {
         if (dir) {
             try {
                 if (!mine && starting) {
-                    // Step 0 of a route nobody has chosen. Seven is the default
-                    // `task.js start` uses when no class is given, and the real
-                    // route replaces it the moment one is picked.
+                    // Step 0 of a route nobody has chosen, so there is no
+                    // denominator either. Seven used to go here, being what
+                    // `task.js start` defaults to with no class given, and a
+                    // `bounded` task then showed five where it had just shown
+                    // seven. A count the next command contradicts is worse than
+                    // no count: with `steps` absent the statusline draws none
+                    // until a route exists to draw.
                     badge.writeBadge(dir, sessionId, 'init');
-                    badge.writeLead(dir, sessionId, { word: 'init', step: 0, steps: FULL_ROUTE.length });
+                    badge.writeLead(dir, sessionId, { word: 'init', step: 0 });
                 } else if (mine || badge.readBadge(dir, sessionId) === 'init') {
                     // An entry that exists but is stood down means this session
                     // *was* in the mode and its badge still says otherwise. An
