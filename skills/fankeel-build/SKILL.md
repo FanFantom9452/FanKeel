@@ -10,6 +10,8 @@ source_of_truth: lib/stages.js, lib/ledger.js
 # fankeel-build
 
 Produces the change. **This stage does not stop at a question until it is done.**
+Its gate is the end of the stage, not the end of a task: the loop runs every task
+the ledger lists open, and then asks once.
 
 ## Setup
 
