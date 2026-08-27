@@ -33,7 +33,7 @@ written here instead of where it belongs.
 - `trackedFiles` fills `stats.unlistable` but not the extension skips — [lib/tracked.js](lib/tracked.js). A root of only skipped extensions still reports no files at all.
 - Nothing in fankeel names the Workflow tool; when a scripted fan-out beats parallel dispatches is unwritten — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md), "Dispatch by default".
 - land outputs `<sha> <subject>`, not a list of what was done, and nothing drafts the commit message — same material either way — [skills/fankeel-land/SKILL.md](skills/fankeel-land/SKILL.md).
-- A fan-out has no global view: nobody holds the denominator, no reader is told what the others cover, and nothing asks what was missed — [docs/subagents.md](docs/subagents.md).
+- A fan-out split by slice loses the global view; by lens over the whole tree keeps it, and the denominator has to be said out loud — [docs/subagents.md](docs/subagents.md).
 - Each stage's page says what it produces, never the method that makes it complete — the enumeration, the fan-out shape, the critic — [docs/pipeline.md](docs/pipeline.md).
 
 ## Owed after first real use
