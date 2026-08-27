@@ -204,8 +204,13 @@ function worktreesOf(root) {
             current.branch = line.slice('branch '.length).replace(/^refs\/heads\//, '');
         }
     }
-    // The first entry is the main working tree — the one you are standing in.
-    return all.slice(1);
+    // Two exclusions, and they are different. The first entry is the main
+    // working tree wherever the command was run from, and nobody deletes that.
+    // The one you are standing in is the second: run from inside a linked
+    // worktree, its own branch is merged into HEAD because HEAD *is* that
+    // branch, so without this it reports itself as spent every time.
+    const here = (git(root, ['rev-parse', '--show-toplevel']) || [])[0];
+    return all.slice(1).filter((w) => !here || path.relative(w.path, here) !== '');
 }
 
 function scan(root) {
@@ -344,4 +349,4 @@ if (require.main === module) {
     process.exit(defects(result) > 0 ? 1 : 0);
 }
 
-module.exports = { scan, report, defects, parseArgs, main, human, emptyDirs, sizeOf, orphanArtifacts };
+module.exports = { scan, report, defects, emptyDirs, sizeOf };

@@ -324,7 +324,7 @@ function sweep(root, since, now) {
         for (let i = 0; i < holders.length; i++) {
             for (let j = i + 1; j < holders.length; j++) {
                 if (defers(holders[i], holders[j])) continue;
-                const key = holders[i] + ' ' + holders[j];
+                const key = holders[i] + '\u0000' + holders[j];
                 if (!pairs.has(key)) pairs.set(key, { a: holders[i], b: holders[j], shared: [] });
                 pairs.get(key).shared.push(target);
             }
@@ -644,4 +644,4 @@ if (require.main === module) {
     process.exit(code);
 }
 
-module.exports = { sweep, report, main, parseArgs, defects, pointsAt, commitTimes, DEFAULT_SINCE };
+module.exports = { sweep, report, main, parseArgs, defects, pointsAt, DEFAULT_SINCE };

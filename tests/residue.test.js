@@ -98,6 +98,21 @@ test('a worktree whose branch is merged is spent', () => {
   assert.match(report(result), /already merged into/);
 });
 
+test('the worktree you are standing in is not spent by standing in it', () => {
+  const { root, git } = repo();
+  git(['branch', 'done']);
+  const where = path.join(root, '.claude', 'worktrees', 'done');
+  execFileSync('git', ['worktree', 'add', '-q', where, 'done'], { cwd: root, stdio: 'ignore' });
+
+  // Run from inside the linked worktree. Its own branch is merged into HEAD by
+  // definition — HEAD is that branch — so anything that only asks "is this
+  // branch merged" reports the caller's own worktree, for ever.
+  const result = scan(where);
+  assert.deepEqual(result.worktrees, [], 'reported: ' + JSON.stringify(result.worktrees));
+  assert.equal(defects(result), 0);
+  assert.match(report(result), /no spent worktrees/);
+});
+
 test('outside a repository the git sections are absent and the rest still runs', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-norepo-'));
   const result = scan(root);

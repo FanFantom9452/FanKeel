@@ -157,4 +157,4 @@ if (require.main === module) {
     process.exit(ok ? 0 : 1);
 }
 
-module.exports = { MAX_ENTRY_CHARS, entries, linksIn, check, report, main };
+module.exports = { MAX_ENTRY_CHARS, linksIn, check, main };
