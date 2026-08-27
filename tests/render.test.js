@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { render, SCRIPTS, PLUGIN_ROOT, PLUGIN_MARK, SURVEY_SCRIPT, TODO_CHECK_SCRIPT } = require('../lib/render.js');
+const { render, renderInit, SCRIPTS, PLUGIN_ROOT, PLUGIN_MARK, SURVEY_SCRIPT, TODO_CHECK_SCRIPT } = require('../lib/render.js');
 const { ALWAYS, NAMES, byName, rulesFor, SURVEY_TOKEN, TOKENS } = require('../lib/stages.js');
 
 const sub = (stage) => rulesFor(stage, SCRIPTS);
@@ -360,6 +360,22 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
     t.diagnostic(stage.padEnd(7) + size + ' chars at a ' + REFERENCE_ROOT + '-char root  (' + out.length + ' here)');
     assert.ok(size < 2400, stage + ' injection is ' + size + ' chars under a ' + REFERENCE_ROOT + '-character plugin root');
   }
+});
+
+// `init` is not a stage, so the loop above never reaches it — and it is the one
+// block a reader meets before anything else is on screen, on the prompt where
+// they have just typed a slash command and are waiting.
+//
+// 1400 against the 1140 it costs today. That is room for a fifth rule and not a
+// sixth, which is the same arithmetic as every other cap here: a block gains a
+// rule by displacing one, and the number is set before the rule that would need
+// it rather than raised afterwards to fit one already written.
+test('the init block is capped like every other block of rules', (t) => {
+  const out = renderInit({ sessionId: MINE });
+  const size = sizeAtReference(out);
+  t.diagnostic('init'.padEnd(7) + size + ' chars at a ' + REFERENCE_ROOT + '-char root  (' + out.length + ' here)');
+  assert.ok(size < 1400, 'init block is ' + size + ' chars under a ' + REFERENCE_ROOT + '-character plugin root');
+  assert.match(out, /then AskUserQuestion$/, 'the block does not end in the shape it asks for');
 });
 
 // A rule describes a shape; a template is the shape. The stage rules survived a
