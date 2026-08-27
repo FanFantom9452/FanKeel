@@ -364,6 +364,17 @@ test('land closes the documents and rewrites the map', () => {
   assert.match(text, /\{\{MAP\}\}/);
 });
 
+// A commit subject holds one thing, and a task that shipped four of them has
+// nowhere to say so. The order in the second rule is the one that costs
+// something to get wrong: a `/clear` before the stand-down leaves an entry
+// active with no session reading it, because a cleared session gets a new id.
+test('land names what shipped, and the order a clear comes in', () => {
+  const text = byName('land').rules.join(' ');
+  assert.match(text, /shipped: is one line per thing someone can now do/);
+  assert.match(text, /`\/clear` comes after it, never before/);
+  assert.match(templateFor('land'), /\nshipped:\n/);
+});
+
 // Build is the one stage that does not stop at a question, so it is the one
 // stage whose place has to be written down somewhere other than the context.
 test('build opens a ledger and resumes from it rather than from memory', () => {

@@ -58,6 +58,11 @@ was never a note:
 
 Commit the reason, not the diff. The diff is already in the commit.
 
+Standing the task down is the last thing, and `/clear` comes after it — never
+before. A `/clear` keeps the process and takes a **new** session id, so a clear
+first leaves the entry `active` with nothing reading it. `hooks/carry.js` offers
+it back on the next session's first prompt, but the clean order costs nothing.
+
 ## 5. Detect the workspace, confirm the base
 
 ```bash
@@ -110,10 +115,17 @@ Anything else belongs to the host environment.
 
 ```
 <sha> <subject>
+shipped:
+  - <what someone can now do that they could not>
 cost: <what it took>
 open: <what is still not done>
 then AskUserQuestion
 ```
 
-Three lines. Not a tour of the diff. `land` has no successor — what follows a
-finished route is a new task, which is a decision rather than a transition.
+Three lines and the list. `shipped:` is one line per thing someone can now do
+that they could not — from the ledger's completed entries where the task had a
+plan, listed by hand where it did not. A commit subject already holds the change;
+what it cannot hold is a task that shipped four of them. Not a tour of the diff.
+
+`land` has no successor — what follows a finished route is a new task, which is a
+decision rather than a transition.
