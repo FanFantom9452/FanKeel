@@ -553,6 +553,113 @@ sentence in `docs/pipeline.md` names a date.
 
 ---
 
+## Task 4 — the numbers this change moved, and the word it half retired
+
+Added after `verify` sent the branch back. Four lenses swept the whole tree —
+one for option one, one for option two, one for the word `step`, one for every
+claim about the injected block's size — and found fourteen live sentences this
+change falsified or left half done. **None of them was visible to a per-task
+review**: they are not inside any task's diff, and they are falsified by those
+diffs. That is the gap this task closes, and the gap in the plan that let it
+open — the file table said which files to edit and never asked which comments
+inside them state a number the edit moves.
+
+**Interfaces:**
+- Consumes: the landed state of Tasks 1 to 3, and the measurements below.
+- Produces: nothing another task reads.
+
+**Dispatch:** in-session — six files, and the two longest items are comment blocks whose claim changed rather than whose number changed, so the rewrite is judgement and not transcription.
+
+### 4a. Numbers this change moved
+
+Measured with `node --test tests/render.test.js 2>&1 | grep "chars at a"` and by
+requiring `lib/stages.js` directly.
+
+| anchor | says | is |
+|---|---|---|
+| `lib/stages.js:78` | "`build` now sits 9 characters under that cap" | 18 |
+| `tests/render.test.js:393-395` | "`build` … at 2391, `audit` at 2385, `plan` at 2381 and `survey` at 2380 — four stages inside twenty characters of the cap" | 2382, 2374, 2371, 2371 — `build` alone is inside twenty |
+| `tests/stages.test.js:76` | "The ALWAYS block is 693" | 687 |
+| `tests/stages.test.js:77` | "a stage's own rules get 1306" | 1313 |
+| `tests/stages.test.js:82` | "184 characters left against this cap" | 191 |
+| `tests/stages.test.js:87-88` | "four of the seven sit within twenty characters of it — `build`, `audit`, `plan` and `survey`" | `build` alone; the other three are 26 to 29 away |
+| `docs/pipeline.md:145` | "2822 characters, about 700 tokens" | 2813; the token figure is still about right |
+
+The two comment blocks are rewritten rather than renumbered: their claim was
+"four stages are nearly out of room", and that is what stopped being true.
+
+### 4b. The word `step`, finished in prose
+
+The settlement removed `step` as a gate unit from every injected rule, which is
+what the spec claimed. It left it in five comments and paragraphs, where it still
+names the thing that ends in an AskUserQuestion:
+
+| anchor | the clause |
+|---|---|
+| `lib/render.js:9` | "the real rules for the current step on every prompt" |
+| `lib/render.js:188` | "the step ended in prose with no question at all" |
+| `hooks/resume.js:13` | the same sentence, duplicated |
+| `docs/pipeline.md:185` | "The step that broke was the one where…" |
+| `docs/pipeline.md:190` | "Eleven of the twelve steps in that session ended in an AskUserQuestion" |
+
+Each becomes `stage`/`stages`. Two occurrences that quote the **old** wording as
+history — `lib/stages.js:37` and `docs/pipeline.md:169-170`, both "It used to say
+`end every step by asking what comes next`" — stay exactly as they are: they are
+dated records of what the rule said, and correcting a quotation is falsifying it.
+
+`lib/stages.js` `ALWAYS[2]`'s "a skipped step" and the same phrase in both output
+styles also stay. Under the settlement they read as a skipped **plan task**,
+which in `build` is a real and reportable thing, so the phrase narrows rather
+than breaks.
+
+### 4c. The gate table's option one
+
+`skills/fankeel/SKILL.md:310` still reads:
+
+```markdown
+| option 1 | the next stage on the route. **Its description is where the approval happens** — say what accepting it accepts, not just which stage comes next. | one sentence |
+```
+
+That is false at the last stage on any route, and it is contradicted by this same
+page's own paragraph at `:340-346`, which Task 2 rewrote. Replace with:
+
+```markdown
+| option 1 | the next stage on the route, or standing the task down where the route ends — the injected rule substitutes whichever it is. **Its description is where the approval happens**: say what accepting it accepts. | one sentence |
+```
+
+### 4d. The range claim, and the dimension it left out
+
+`docs/pipeline.md:224-227` says the resume block runs "1,850 to 2,400 across the
+three classes". Measured, that range is 1857 to 2369 — **for the entry the page
+itself shows**, whose task line is 35 characters. It moves with that line: a
+one-character task gives 1823 to 2335, and an entry with no `class` field gives
+1746 to 2261. The route dimension is already named in the sentence after it; the
+task-line dimension is not, and without it the band is a number nobody can
+reproduce. Add it.
+
+### 4e. One adjacent line, ruled in
+
+`lib/render.js:12` says "never all five stages'". There are seven, and
+`docs/pipeline.md:145` already says seven — so this is the sole outlier, and it
+sits three lines below `lib/render.js:9`, which 4b edits. Leaving a known
+falsehood inside a comment block being rewritten is the failure this whole task
+is about. Fixed here, and recorded as a ruling rather than done quietly.
+
+### Not fixed here, routed to `TODO.md`
+
+Both predate this branch, neither is inside a block this task rewrites:
+
+- `tests/render.test.js:417` — "1400 against the 1140 it costs today" for the
+  `init` block, which measures 1161. From `271b626`, already on `main`.
+- `docs/output-styles.md:74` and `docs/decisions/fankeel-shell.md:177` — both say
+  "The three always-on rules"; `ALWAYS.length` is 4. The second is a `decision`
+  page and is not graded for current truth; the first is `reference` and is.
+
+**Done when:** `npm test` reports 0 failing, `node scripts/docs-check.js` is
+clean, and a re-run of the four lenses finds nothing this change falsified.
+
+---
+
 ## Self-review
 
 **Spec coverage.** Each row of the spec's file table, and the task carrying it:
