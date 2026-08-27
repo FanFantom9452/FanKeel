@@ -30,7 +30,7 @@ the style, not the language.
 The failure this exists to fix: finish a chunk of work, list the open questions,
 stop. The user is left holding a list and no momentum.
 
-Every completed step ends by asking what comes next, **with `AskUserQuestion`
+Stopping means asking what comes next, **with `AskUserQuestion`
 and never in prose**. A pause option is always among the choices.
 
 Options written out as a numbered paragraph are the failure this is about, not a

@@ -222,8 +222,11 @@ output shape:
   then AskUserQuestion
 ```
 
-Where the task is, the rules for the stage, the shape — 2363 characters for the
-block above, about 600 tokens, and 1867 to 2378 across the three classes. The
+Where the task is, the rules for the stage, the shape — about 2,350 characters
+for the block above, roughly 600 tokens, and 1,850 to 2,400 across the three
+classes. Rounded on purpose and measured 2026-08-27: an exact count here is
+falsified by the next clause anyone adds to a rule, and the stale one goes on
+being read as current because it looks precise. The
 range is `renderResume` measured against the same 59-character reference plugin
 root `tests/render.test.js` caps every stage against, and **each class over its
 own route** — a `bounded` task never reaches `audit`, so pairing every class

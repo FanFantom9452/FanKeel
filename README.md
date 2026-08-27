@@ -98,6 +98,7 @@ flowchart LR
     W["do the work"] --> R["report in this<br/>stage's shape"]
     R --> Q{"AskUserQuestion"}
     Q -- "1 · approve, move on" --> N["next stage<br/>on the route"]
+    Q -- "1 · at the last stage" --> D["stand the task down"]
     Q -- "2 · stay here" --> W
     Q -- "3 · pause" --> P["next is written down;<br/>the task outlives the session"]
     N --> W
