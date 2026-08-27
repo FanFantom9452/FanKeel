@@ -30,7 +30,6 @@ written here instead of where it belongs.
 - A stale comment in [scripts/docs-audit.js](scripts/docs-audit.js) says the first three sections fail the run, directly above its own replacement saying four. Delete the older one.
 - A repository with no commits reports `no git` — [scripts/orient.js](scripts/orient.js). `rev-parse --abbrev-ref HEAD` fails there and `gitState` reads the failure as "not a repository".
 - `### Every fortnight or so — the sweep` in [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md) has no body; the `## One skill per stage` after it holds the sweep's table.
-- Designed, not built: the gate unit, option two's content, the two readings of "still open" — [docs/plans/2026-08-27-gate-rules-design.md](docs/plans/2026-08-27-gate-rules-design.md).
 - `task.js` refuses when `<config>/sessions/` is readable but empty, and fails open when it is absent — [scripts/task.js](scripts/task.js). `lib/live.js` fails open on that same evidence.
 - The session id is disclosed only while there is no active entry, so a compacted session that owns a task cannot read its own id — [hooks/inject.js](hooks/inject.js).
 - `isSubtree` stats 95 of this repo's 100 entries and [scripts/orient.js](scripts/orient.js) has no size cache to amortise it, so a workspace of large repos pays it per row.
@@ -39,6 +38,16 @@ written here instead of where it belongs.
 - land outputs `<sha> <subject>`, not a list of what was done, and nothing drafts the commit message — same material either way — [skills/fankeel-land/SKILL.md](skills/fankeel-land/SKILL.md).
 - A fan-out split by slice loses the global view; by lens over the whole tree keeps it, and the denominator has to be said out loud — [docs/subagents.md](docs/subagents.md).
 - Each stage's page says what it produces, never the method that makes it complete — the enumeration, the fan-out shape, the critic — [docs/pipeline.md](docs/pipeline.md).
+- `pruneBadges` deletes the badge and keeps the lead TokenBar actually draws from, so a session idle 30 days shows a live rail for ever — [lib/badge.js](lib/badge.js). Matrix measured 08-27.
+- The report example in [README.md](README.md) drops build's `ledger: <n> of <m> complete` line, and no test reads this repository's own README. Found 08-27, older than the change that found it.
+- The init cap comment in [tests/render.test.js](tests/render.test.js) sets 1400 against "the 1140 it costs today"; it costs 1161. Predates 08-27, found by a lens sweep.
+- [docs/output-styles.md](docs/output-styles.md) and the decision record beside it both say "The three always-on rules" where `ALWAYS.length` is 4. Predates 08-27.
+- `step` still names a route entry in [lib/stages.js](lib/stages.js) and [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md) — a third sense the 08-27 settlement never enumerated.
+- The injected block asks for both “Option one is the approval” and “Recommended option first” — [lib/stages.js](lib/stages.js). They collide when a finding argues against advancing.
+- [docs/collisions.md](docs/collisions.md) says the already-claimed path still takes the lock; [hooks/touch.js](hooks/touch.js) returns before `addClaim`, the only caller that takes one. Found 08-27.
+- [docs/registry.md](docs/registry.md) says notes and next die only when the task is stood down; `task.js task` clears them on a rename too. Found 08-27.
+- [scripts/residue.js](scripts/residue.js) counts the worktree you are standing in as merged into itself, so it exits 1 from inside any worktree for ever. Found 08-27.
+- [scripts/docs-audit.js](scripts/docs-audit.js) holds a raw NUL byte as a Map key separator, so grep and ripgrep read the whole file as binary and skip it. Found 08-27.
 
 ## Owed after first real use
 

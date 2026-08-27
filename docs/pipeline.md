@@ -118,8 +118,8 @@ also in progress:
 
 <plugin> = C:\Users\you\.claude\plugins\cache\fankeel\fankeel\0.31.0
 stage rules:
-  - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, and pause at least, never dropping the pause. Option one is the approval: say what it approves.
-  - The background goes inside the question call — in the option descriptions, beside the option it belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
+  - Never end a stage silently or in prose. Ask with AskUserQuestion — three at least, never dropping the pause. Option one is the approval: verify. Option two names the open decision, never unfinished work.
+  - The background goes inside the question call — in the option descriptions, never as a paragraph in the stem. The stem is one line. Recommended option first.
   - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
@@ -142,7 +142,7 @@ output shape:
 The rules are restated in full every turn rather than pointed at. A pointer is
 only as strong as the salience of what it points at, and what it points at recedes
 by thousands of tokens a turn. Only the current stage's rules are sent, never all
-seven stages', which is what keeps a per-turn restatement affordable — 2822
+seven stages', which is what keeps a per-turn restatement affordable — 2813
 characters, about 700 tokens. That figure is the block above counted as it is
 printed, so it is re-measured by counting it again rather than by trusting the
 number.
@@ -182,12 +182,12 @@ session driven the way this pipeline asks to be driven is the one session where
 the block never returns. One run spent 511 transcript entries and forty-four
 minutes on a single injection.
 
-The step that broke was the one where another skill's output contract — *End
+The stage that broke was the one where another skill's output contract — *End
 with the only metric that matters: `net: -<N> lines possible.`* — was loaded
 twelve entries before generation, competing with rules five hundred entries
 behind it. It ended in prose with no question at all, and the user had to type
 `CONTINUE` to get the pipeline moving again. The turn after that had the block
-back, and gated properly. Eleven of the twelve steps in that session ended in an
+back, and gated properly. Eleven of the twelve stages in that session ended in an
 AskUserQuestion; the twelfth is the one that had a competing contract nearer to
 hand than its own rules.
 
@@ -201,8 +201,8 @@ class: architectural — a new subsystem, or a change to an interface something 
 
 <plugin> = C:\Users\you\.claude\plugins\cache\fankeel\fankeel\0.31.0
 stage rules:
-  - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, and pause at least, never dropping the pause. Option one is the approval: say what it approves.
-  - The background goes inside the question call — in the option descriptions, beside the option it belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
+  - Never end a stage silently or in prose. Ask with AskUserQuestion — three at least, never dropping the pause. Option one is the approval: verify. Option two names the open decision, never unfinished work.
+  - The background goes inside the question call — in the option descriptions, never as a paragraph in the stem. The stem is one line. Recommended option first.
   - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
@@ -222,8 +222,16 @@ output shape:
   then AskUserQuestion
 ```
 
-Where the task is, the rules for the stage, the shape — 2363 characters for the
-block above, about 600 tokens, and 1867 to 2378 across the three classes. The
+Where the task is, the rules for the stage, the shape — about 2,350 characters
+for the block above, roughly 600 tokens, and 1,850 to 2,400 across the three
+classes. Rounded on purpose and measured 2026-08-27, against the entry shown
+above — the band slides with the task line, which is 35 characters there and
+takes it to 1823 to 2335 at one character. It also moves when a rule in
+`lib/stages.js` changes, which is a smaller blast radius than a suite total.
+Between the two, an exact count is the wrong shape here: nothing pins these
+numbers, so an exact one would be right until the next clause lands and then
+wrong with nothing to say so. `node --test tests/render.test.js` prints
+the per-stage sizes if you want them exact today. The
 range is `renderResume` measured against the same 59-character reference plugin
 root `tests/render.test.js` caps every stage against, and **each class over its
 own route** — a `bounded` task never reaches `audit`, so pairing every class

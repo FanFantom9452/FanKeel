@@ -2,7 +2,7 @@
 name: fankeel-audit
 description: Audit documentation against the code it describes — dead references, pages that stopped being true, two pages describing one thing, plans whose work has landed, orphans. Use for /fankeel-audit, "check the docs", "what is out of date", "文件審查", before a release, or when two documents disagree.
 argument-hint: "[--root <dir>] [--since <days>]"
-version: 0.32.0
+version: 0.33.0
 status: current
 last_verified: 2026-08-27
 source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js
@@ -224,13 +224,20 @@ Worst first. Nothing found is a finding — say so, say what you read, and stop.
 
 ## The question at the end
 
-One call, and the first option is the approval:
+One call, and the first option is the approval. **`/fankeel-audit` standing
+alone has no route, so there is no next stage to offer and the cleanup is what
+option one approves:**
 
 | | |
 |---|---|
 | option 1 | do the cleanup, listing exactly what moves, merges or is deleted |
 | option 2 | fix only the defects — dead references and the index — and leave the reading to a person |
 | option 3 | report only. Nothing changes. |
+
+**Run as a stage on a route, option one is the next stage** — the injected rule
+names it — and the cleanup moves into that option's description, where it is
+what accepting the stage accepts. The three above are not a second kind of gate;
+they are what this one looks like when `nextStage` has nothing to return.
 
 A deep pass that rewrites documentation is a large change to something people
 navigate by memory, so the description on option one has to name the files, not

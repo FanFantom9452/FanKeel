@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.32.0
+version: 0.33.0
 status: current
 last_verified: 2026-08-27
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js
@@ -307,8 +307,8 @@ The shape is the same every time, so it can be recognised without being read:
 |---|---|---|
 | header | the stage that just finished | 12 characters, 6 if CJK |
 | question | the decision being made, and nothing else | ~40 characters, 20 if CJK |
-| option 1 | the next stage on the route. **Its description is where the approval happens** — say what accepting it accepts, not just which stage comes next. | one sentence |
-| option 2 | stay in this stage. The description says what is still open. | one sentence |
+| option 1 | the next stage on the route, or standing the task down where the route ends — the injected rule substitutes whichever it is. **Its description is where the approval happens**: say what accepting it accepts. | one sentence |
+| option 2 | stay in this stage. The description names the decision still open — never work you have not finished. | one sentence |
 | option 3 | pause. The description says what `next` will be set to. | one sentence |
 
 Three is the floor, not a quota — which is why the rule says *at least*. Dropping
@@ -337,9 +337,13 @@ gate is the only place it gets accepted:
 | `verify` | that the evidence is enough |
 | `audit` | the findings, and what is being done about them |
 
-At the **last stage on the route** there is no next stage, so option 1 becomes
-standing the task down and option 2 becomes starting a new one. What follows a
-finished route is a new task, which is a decision rather than a transition.
+Option one is the one part of this that varies, and it varies with the route
+rather than with the stage. `lib/stages.js` substitutes it: the injected rule
+carries `{{NEXT}}` and `lib/render.js` fills it from `nextStage`. At the **last
+stage on the route** there is no next stage, so what arrives is **standing the
+task down**, and option 2 becomes starting a new one. What follows a finished
+route is a new task, which is a decision rather than a transition — so option
+two names a decision there exactly as it does everywhere else.
 
 One question per call. A second belongs in the same call only when it is
 genuinely independent — a decision the answer to the first would not change.

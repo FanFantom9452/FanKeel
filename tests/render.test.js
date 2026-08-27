@@ -4,9 +4,13 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { render, renderInit, SCRIPTS, PLUGIN_ROOT, PLUGIN_MARK, SURVEY_SCRIPT, TODO_CHECK_SCRIPT } = require('../lib/render.js');
-const { ALWAYS, NAMES, byName, rulesFor, SURVEY_TOKEN, TOKENS } = require('../lib/stages.js');
+const { ALWAYS, NAMES, byName, rulesFor, SURVEY_TOKEN, TOKENS, SCRIPT_TOKENS, nextStage } = require('../lib/stages.js');
 
-const sub = (stage) => rulesFor(stage, SCRIPTS);
+// The rendered block substitutes the next stage on the route, so a comparison
+// against the rules has to substitute it the same way. Going through `nextStage`
+// rather than a literal is what stops the two from drifting apart.
+const sub = (stage, route) => rulesFor(stage, Object.assign(
+  { next: nextStage(stage, route) || 'standing the task down' }, SCRIPTS));
 
 const NOW = Date.parse('2026-08-21T12:00:00.000Z');
 const ago = (ms) => new Date(NOW - ms).toISOString();
@@ -214,11 +218,52 @@ test('the land rule names a runnable todo-check path, not a placeholder', () => 
   assert.ok(require('node:fs').existsSync(TODO_CHECK_SCRIPT), TODO_CHECK_SCRIPT + ' does not exist');
 });
 
-test('every token this file knows about is substituted somewhere', () => {
+test('every script token has a script, and no token survives a render', () => {
   // A token added to stages.js without a script added to render.js would
-  // otherwise ship as literal `{{...}}` in the injected text.
-  for (const key of Object.keys(TOKENS)) {
+  // otherwise ship as literal `{{...}}` in the injected text. A render-time
+  // token has no script by construction, so the second loop is what covers it:
+  // whatever the kind, nothing reaches the block unsubstituted.
+  for (const key of Object.keys(SCRIPT_TOKENS)) {
     assert.ok(SCRIPTS[key], 'no script supplied for token ' + key);
+  }
+  for (const stage of NAMES) {
+    const out = render({ mine: entry(MINE, { stage }), others: [], now: NOW });
+    assert.equal(out.includes('{{'), false, stage + ' shipped an unsubstituted token');
+  }
+});
+
+test('option one names the stage the route actually goes to next', () => {
+  const out = render({ mine: entry(MINE, { stage: 'build' }), others: [], now: NOW });
+  assert.match(out, /Option one is the approval: verify\./);
+});
+
+test('where the route ends, option one is standing the task down', () => {
+  const out = render({ mine: entry(MINE, { stage: 'land' }), others: [], now: NOW });
+  assert.match(out, /Option one is the approval: standing the task down\./);
+});
+
+test('a short route gets its own next stage, not the full route’s', () => {
+  const out = render({
+    mine: entry(MINE, { stage: 'survey', route: ['survey', 'build'] }),
+    others: [],
+    now: NOW,
+  });
+  assert.match(out, /Option one is the approval: build\./);
+});
+
+test('the docs quote the injected rules verbatim, in both blocks', () => {
+  // The claim rotted once already in two places and nothing went red;
+  // tests/docs-audit.test.js:262 records that and pins its own claim this same
+  // way. docs/pipeline.md shows the injected block twice on purpose — once for
+  // hooks/inject.js and once for hooks/resume.js, which restates it — so two
+  // copies is the correct count and one is a page half updated.
+  const page = require('node:fs').readFileSync(
+    require('node:path').join(__dirname, '..', 'docs', 'pipeline.md'), 'utf8');
+  // Those blocks are a task at `build`, so compare against what `build` gets.
+  const shown = rulesFor('build', { next: 'verify' }).slice(0, ALWAYS.length);
+  for (const rule of shown) {
+    const copies = page.split('  - ' + rule).length - 1;
+    assert.equal(copies, 2, 'docs/pipeline.md carries ' + copies + ' copies of: ' + rule.slice(0, 48));
   }
 });
 
@@ -230,7 +275,10 @@ test('an unsubstituted rulesFor still returns the token, so callers cannot forge
 
 test('an unknown stage still gets the always-on rules', () => {
   const out = render({ mine: entry(MINE, { stage: 'nonsense' }), others: [], now: NOW });
-  for (const rule of ALWAYS) assert.ok(out.includes(rule), rule);
+  // Not the raw ALWAYS strings: an unknown stage still has its render-time
+  // token substituted, the same as any other, so the comparison has to go
+  // through the same substitution `sub` applies everywhere else.
+  for (const rule of sub('nonsense')) assert.ok(out.includes(rule), rule);
 });
 
 test('next is rendered as one line when set', () => {
@@ -343,9 +391,11 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
   // size is reported so the margin is visible without editing this file.
   //
   // 2400 is the third raise on this branch and should be the last. `build` is
-  // the binding stage at 2391, with `audit` at 2385, `plan` at 2381 and
-  // `survey` at 2380 — four stages inside twenty characters of the cap, so read
-  // the diagnostics below before adding a clause to any of them. The two raises
+  // the binding stage at 2382, with `audit` at 2374 and `plan` and `survey` at
+  // 2371 — `build` alone is inside twenty characters of the cap now, where four
+  // stages were before the gate rule stopped describing option one and started
+  // substituting it. Read the diagnostics below before adding a clause to any of
+  // them. The two raises
   // before it were paid for by content that had to exist: the ledger, without
   // which a compacted session redoes committed work, and the four things that
   // stop the loop, without which the default is to stop and ask. What stops a

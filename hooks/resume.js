@@ -10,7 +10,7 @@
 // doing exactly what the pipeline asks the one session where the restatement
 // never happens: one real run went 511 transcript entries and forty-four minutes
 // on a single injection, and the first time another skill's output contract was
-// loaded on top of it, the step ended in prose with no question at all.
+// loaded on top of it, the stage ended in prose with no question at all.
 //
 // Same discipline as inject.js. It exits 0 on every path — a hook that throws
 // here does not block a prompt, but it does put an error in front of the user in

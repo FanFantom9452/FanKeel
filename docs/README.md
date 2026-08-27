@@ -39,7 +39,8 @@ here.
 | How that was built, task by task | [plans/2026-08-26-session-id.md](plans/2026-08-26-session-id.md) — *built, 0.31.0* |
 | Why the pipeline stopped barring subagents, and what it bars instead | [plans/2026-08-26-dispatch-design.md](plans/2026-08-26-dispatch-design.md) — *built, 0.32.0* |
 | How that was built, task by task | [plans/2026-08-26-dispatch.md](plans/2026-08-26-dispatch.md) — *built, 0.32.0* |
-| The three contradictions in the injected gate rules, and the ten edits that settle them | [plans/2026-08-27-gate-rules-design.md](plans/2026-08-27-gate-rules-design.md) — *designed, not built* |
+| Why the gate substitutes option one and states option two, and what it takes | [plans/2026-08-27-gate-rules-design.md](plans/2026-08-27-gate-rules-design.md) — *built, 0.33.0* |
+| The four tasks that built it, with every replacement string written out | [plans/2026-08-27-gate-rules.md](plans/2026-08-27-gate-rules.md) — *built, 0.33.0* |
 | What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 

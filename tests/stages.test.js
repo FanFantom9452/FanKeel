@@ -73,22 +73,22 @@ test('a full injection of rules stays under a few hundred characters', () => {
   // needed them, not after, because a cap raised to fit a rule already written
   // is a cap that decides nothing.
   //
-  // The ALWAYS block is 693 of whatever the number is, plus the newline joining
-  // it to the rest, so a stage's own rules get 1306. `build` and `plan` bind
+  // The ALWAYS block is 686 of whatever the number is, plus the newline joining
+  // it to the rest, so a stage's own rules get 1313. `build` and `plan` bind
   // here, at 1122 each — `build` because it is the only stage that runs a loop
   // without stopping, and so carries both the discipline and the means of
   // recovering its place after a compaction; `plan` because every task it writes
   // has to carry a dispatch decision as well as its files, interfaces and steps.
-  // 184 characters left against this cap, and a tie means either of them can be
+  // 191 characters left against this cap, and a tie means either of them can be
   // the one that fails it.
   //
   // That headroom is not the real constraint any more. `tests/render.test.js`
   // caps the whole injection at 2400 measured against a reference plugin root,
-  // and four of the seven sit within twenty characters of it — `build`, `audit`,
-  // `plan` and `survey`, in that order. `design`, `verify` and `land` have
-  // hundreds of characters spare, so read the diagnostics that test prints
-  // rather than this sentence before deciding a stage has no room. For the four,
-  // a rule added here has to displace one there first. That is the point.
+  // and `build` alone sits within twenty characters of it. `audit`, `plan` and
+  // `survey` are within thirty; `design`, `verify` and `land` have hundreds of
+  // characters spare, so read the diagnostics that test prints rather than this
+  // sentence before deciding a stage has no room. For the four nearest it, a
+  // rule added here has to displace one there first. That is the point.
   for (const name of NAMES) {
     const size = rulesFor(name).join('\n').length;
     assert.ok(size < 2000, name + ' rules are ' + size + ' chars');
@@ -203,7 +203,7 @@ test('the discipline covers the captured requirements', () => {
   const text = (ALWAYS.join(' ') + ' ' + STAGES.map((s) => s.rules.join(' ')).join(' ')).toLowerCase();
   // R2 never stop, R3 questions carry context, R4 finish it,
   // R5 TODO is an index, R6 rewrite not move, R7 use the audit skills.
-  assert.match(text, /never end a step silently or in prose/);
+  assert.match(text, /never end a stage silently or in prose/);
   assert.match(text, /background goes inside the question/);
   assert.match(text, /do not stop where the happy path works/);
   assert.match(text, /todo\.md as one line pointing at the detail/);
@@ -220,6 +220,24 @@ test('the always-on block names the tool, not just the act of asking', () => {
   assert.match(ALWAYS.join(' '), /never dropping the pause/);
   // Picking the first option is the approval, so it has to say what it approves.
   assert.match(ALWAYS.join(' '), /Option one is the approval/);
+});
+
+test('the always-on block says what option two holds, not only option one', () => {
+  // This lived in skills/fankeel/SKILL.md alone, which is read once on entering
+  // a stage, while the gate is asked at the end of one. Before this line, a
+  // grep of tests/ for `option two` returned nothing at all.
+  assert.match(ALWAYS.join(' '), /Option two names the open decision/);
+  assert.match(ALWAYS.join(' '), /never unfinished work/);
+});
+
+test('option one is a token, so the route decides what it says', () => {
+  const { RENDER_TOKENS } = require('../lib/stages.js');
+  assert.ok(ALWAYS.join(' ').includes(RENDER_TOKENS.next),
+    'ALWAYS names no render-time token, so option one is still a description');
+  // Same contract as the script tokens: a caller that supplies nothing sees the
+  // token, rather than a rule that reads as though it had been filled in.
+  assert.ok(rulesFor('build').join(' ').includes(RENDER_TOKENS.next));
+  assert.equal(rulesFor('build', { next: 'verify' }).join(' ').includes(RENDER_TOKENS.next), false);
 });
 
 test('the stage that produced the wall of text now carries a length', () => {
@@ -462,7 +480,7 @@ test('every stage is told to say what a dispatch costs, before it costs it', () 
 });
 
 // The dispatch clause shares a rule string with the one that predates it, and
-// only the dispatch half was pinned. `build` sits nine characters under the
+// only the dispatch half was pinned. `build` sits eighteen characters under the
 // injection cap, so this string is the first place anyone looks for room — and
 // rewriting it down to the dispatch clause alone would leave every test green
 // while deleting the only injected rule that asks for a skipped step or a failed
