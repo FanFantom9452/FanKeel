@@ -31,8 +31,8 @@ workspace/                     <- Claude Code opened here
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | Created with the directory |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
-| `~/.claude/modes/{session_id}/fankeel` | n/a | `inject.js`, every prompt |
-| `~/.claude/modes/{session_id}/fankeel.lead` | n/a | `inject.js`, every prompt |
+| `~/.claude/modes/{session_id}/fankeel` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
+| `~/.claude/modes/{session_id}/fankeel.lead` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
 
 The registry is found by walking up for **`.fankeel/sessions/`**, not for
 `.fankeel/`. The marker has to be the thing the registry owns, because the two
