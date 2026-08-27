@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-26
+last_verified: 2026-08-27
 source_of_truth: lib/badge.js, hooks/inject.js
 ---
 
@@ -45,7 +45,8 @@ injected text.
 between `/fankeel` being submitted and a task existing, which on a large project
 is minutes of orienting, mapping and scanning. `hooks/inject.js` raises it from
 `payload.prompt` before there is any registry entry to read, and `task.js start`
-overwrites it with `survey`. It has no colour in TokenBar's palette on purpose:
+overwrites it with the first stage on the route, which `--route` can make
+something other than `survey`. It has no colour in TokenBar's palette on purpose:
 neutral is the correct colour for "not yet a stage", and giving it a stage colour
 would claim it is one.
 

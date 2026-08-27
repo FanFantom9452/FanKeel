@@ -162,8 +162,8 @@ the invariants below, and refuses rather than guessing. It exits non-zero when i
 refuses, so read the output. Hand-written JSON gets the `.gitignore` wrong every
 time, and a `sessions/` directory that is not ignored ends up committed.
 
-`start`, `task`, `stage`, `adopt` and `down` also set this session's statusline
-badge, so it is there on the turn the change happened. The hook keeps it current
+`start`, `task`, `stage`, `route`, `adopt` and `down` also set this session's
+statusline badge, so it is there on the turn the change happened. The hook keeps it current
 from then on — it runs *before* a prompt, so a badge left to the hook alone would
 not appear until the user typed again, and until then turning the mode on looks
 exactly like failing to.
@@ -522,8 +522,9 @@ Notes are never version-controlled and die with the task. If a note still matter
 after the task lands, it was never a note — move it to one of the four above
 during `land`.
 
-`TODO.md` is an index and only an index: the bullet is short and the detail lives
-in a file it links to. `node <plugin>/scripts/todo-check.js` says when that has
+`TODO.md` is an index whose bullets `init` also offers as the task options when a
+session starts, so each one is read twice: the bullet is short and the detail
+lives in a file it links to. `node <plugin>/scripts/todo-check.js` says when that has
 stopped being true, and the `land` rules call for it — a plan deleted at `land`
 is a link that just died.
 
@@ -571,9 +572,13 @@ listed, in the order it listed them. No preamble and no explanation of
 consequences: picking a project has none. Skip the question entirely when there
 is only one.
 
-Then `What is the task?`, in the same call: guess from the recent commits, one
-option each, phrased as a task and not as a commit subject. **Other** is always
-there for the real answer.
+Then `What is the task?`, in the same call. **Read `TODO.md` first where the root
+has one**: its entries are the options, clustered — two bullets touching the same
+file or settling the same question are one task and one option, not two. One
+option per bullet is how a twenty-eight entry index becomes a menu nobody reads,
+and it is also how one file gets opened twice. A repository with no `TODO.md` is
+where guessing from the recent commits belongs, one option each, phrased as a
+task and not as a commit subject. **Other** is always there for the real answer.
 
 A guessed *task* offered as an option is not a guess written behind anyone's
 back — the user confirms it before it is written. Nothing else is asked for:
@@ -586,6 +591,11 @@ is left, and one question is one question.
 If the directory holds nothing readable, say so plainly and ask what they meant to
 open — a registry created in the wrong directory is one every later session
 inherits.
+
+The short form of all of that is injected on the `/fankeel` prompt itself —
+`INIT` in `lib/stages.js`, carried by the same `additionalContext` that names the
+session id, because a rule read once in a skill is a rule competing with
+everything since. This section is the long form, not the only copy.
 
 Then ask, with these options and no others:
 
@@ -600,8 +610,9 @@ Then ask, with these options and no others:
 Every one of these ends by saying what changed and offering the next step. Do not
 finish a `/fankeel` turn with a bare confirmation.
 
-**Start does not stop there.** Writing the entry puts the session at `survey`, and
-taking stock is what `survey` is for — so do it in the same turn rather than
+**Start does not stop there.** Writing the entry puts the session at the first
+stage on the route — `survey` unless `--route` said otherwise — and taking stock
+is what `survey` is for — so do it in the same turn rather than
 asking permission to begin. Read the signposts orient named, say what the recent
 commits show the project is in the middle of, and run the scanner on the terms the
 task implies. Then ask, with something on screen to ask about.

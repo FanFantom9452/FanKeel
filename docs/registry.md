@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-26
+last_verified: 2026-08-27
 source_of_truth: lib/registry.js, lib/render.js, lib/context.js, hooks/touch.js
 ---
 
@@ -31,8 +31,8 @@ workspace/                     <- Claude Code opened here
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | Created with the directory |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
-| `~/.claude/modes/{session_id}/fankeel` | n/a | `inject.js`, every prompt |
-| `~/.claude/modes/{session_id}/fankeel.lead` | n/a | `inject.js`, every prompt |
+| `~/.claude/modes/{session_id}/fankeel` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
+| `~/.claude/modes/{session_id}/fankeel.lead` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
 
 The registry is found by walking up for **`.fankeel/sessions/`**, not for
 `.fankeel/`. The marker has to be the thing the registry owns, because the two
@@ -169,7 +169,7 @@ Two things close it, both upstream of the hooks:
 | | |
 |---|---|
 | `scripts/task.js` | `--session` is checked against Claude Code's own `<config>/sessions/<pid>.json`. An id no running process claims is refused, and the message lists the ids that are running with the directory each was opened in. A directory that cannot be read allows everything — a refusal must never come from a failed measurement. |
-| `hooks/inject.js` | a `/fankeel` prompt is answered with one line naming this session's id: the one that hook is itself holding. |
+| `hooks/inject.js` | a `/fankeel` prompt is answered with the `init` block: this session's id — the one that hook is itself holding — and the rules for the step before there is a task. |
 
 `clear <id>` and `adopt <id>` take the other session's id positionally rather
 than through `--session`, so a dead neighbour is still reachable. That is what

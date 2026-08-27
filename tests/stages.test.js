@@ -473,3 +473,28 @@ test('the always-on block still asks for what was skipped and what failed', () =
   assert.match(text, /a failed test/);
   assert.match(text, /a thing you could not check/);
 });
+
+// `init` is step 0 and not a stage, so none of the per-stage walks above reach
+// it. These are the checks it would have got for free had it been one.
+test('init carries rules of its own and a shape to fill in', () => {
+  const { INIT, INIT_TEMPLATE } = require('../lib/stages.js');
+  assert.ok(INIT.length >= 3, 'init has fewer rules than the smallest stage');
+  for (const rule of INIT) assert.ok(rule.length > 20, 'a rule this short is a label: ' + rule);
+  assert.match(INIT.join(' '), /TODO\.md/, 'the step whose job is reading TODO.md never names it');
+  assert.match(INIT_TEMPLATE, /then AskUserQuestion$/);
+});
+
+test('init is not a stage, and no route can name it', () => {
+  const { INIT, NAMES: names, FULL_ROUTE, normaliseRoute } = require('../lib/stages.js');
+  assert.ok(INIT.length > 0);
+  assert.equal(names.includes('init'), false, 'init reached the stage list');
+  assert.equal(FULL_ROUTE.includes('init'), false, 'init reached the default route');
+  assert.equal(normaliseRoute(['init', 'survey']), null, 'a route naming init was accepted');
+});
+
+test('init substitutes the same tokens a stage does', () => {
+  const { initRules } = require('../lib/stages.js');
+  const first = initRules({ orient: '/x/orient.js', task: '/x/task.js' })[0];
+  assert.match(first, /\/x\/orient\.js/);
+  assert.equal(initRules().some((r) => r.includes('{{')), true, 'no substitution left no token');
+});

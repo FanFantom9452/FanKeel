@@ -3,7 +3,7 @@ name: fankeel-survey
 description: The survey stage — read the project's own map before reading its code, classify the work, and report what is already here. Use for the survey stage of a fankeel task, "what is already here", starting work in an unfamiliar repository, or when a task needs classifying as spike, bounded or architectural.
 version: 0.32.0
 status: current
-last_verified: 2026-08-26
+last_verified: 2026-08-27
 source_of_truth: lib/stages.js, scripts/map.js, scripts/survey.js
 ---
 
@@ -18,7 +18,7 @@ Produces a statement of what already exists, a classification, and the map.
 Nothing to run. `hooks/inject.js` raises `[FANKEEL:INIT]` the moment a `/fankeel`
 prompt is submitted, before there is any registry entry to read — so the minutes
 this stage spends orienting, mapping and scanning are not minutes of a statusline
-saying nothing. `task.js start` in step 6 replaces it with `survey`.
+saying nothing. `task.js start` in step 6 replaces it with the first stage on the route.
 
 It is there before you are. What it costs you is that the badge is now a promise:
 a session showing `init` that never reaches step 6 is one that stopped without

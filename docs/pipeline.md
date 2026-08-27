@@ -45,7 +45,11 @@ explicable rather than merely different. In a directory of five, the one touched
 this morning is almost always the one being asked about.
 
 The skill asks with `AskUserQuestion` rather than in prose — which project and
-what the task is, in one call with the options already on screen.
+what the task is, in one call with the options already on screen. Where the root
+has a `TODO.md`, that is where the task options come from: its entries clustered,
+two bullets touching one file offered as one task rather than as two options that
+would open it twice. A root without one is where guessing from the recent commits
+belongs.
 Making someone retype a row of a listing they can see is the same waste as asking
 with nothing on screen at all.
 
@@ -81,14 +85,15 @@ and refuses rather than guessing. It was the last operation without a script, an
 it failed the way unsupported steps fail — quietly, leaving no registry at all,
 with the missing badge as the only symptom.
 
-It also sets the badge itself on `start`, `task`, `stage`, `adopt` and `down`.
+It also sets the badge itself on `start`, `task`, `stage`, `route`, `adopt` and
+`down`.
 The hook runs *before* a prompt, so a badge left to it alone appears only when the
 user types again — and for that whole gap, turning the mode on is indistinguishable
 from failing to turn it on.
 
-Starting a task does not then stop to ask whether to begin. The entry goes in at
-`survey`, and taking stock is what `survey` is for, so it happens in the same
-turn — otherwise the badge reads `▌FANKEEL SURVEY` at the exact moment nothing
+Starting a task does not then stop to ask whether to begin. The entry goes in at the
+first stage on the route, `survey` unless `--route` said otherwise, and taking
+stock is what `survey` is for, so it happens in the same turn — otherwise the badge reads `▌FANKEEL SURVEY` at the exact moment nothing
 has been surveyed.
 
 Starting a task puts this session in fankeel mode. From then on every prompt

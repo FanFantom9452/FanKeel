@@ -3,7 +3,7 @@ name: fankeel-review
 description: Findings only, one line each, most severe first — no praise, no redesigns, no summary of what the code does
 keep-coding-instructions: true
 status: current
-last_verified: 2026-08-22
+last_verified: 2026-08-27
 source_of_truth: this file is the prompt, no upstream
 ---
 

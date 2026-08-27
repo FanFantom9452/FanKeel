@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-26
+last_verified: 2026-08-27
 source_of_truth: lib/docs.js
 ---
 
@@ -81,7 +81,8 @@ would cost a dependency this plugin does not have.
 "Nothing matched" is a finding, and the rule asks for the terms that were tried —
 so the next person knows which synonyms were already ruled out.
 
-A task starts at `survey`. At the end of a stage you are offered the next one,
+A task starts at the first stage on its route, `survey` unless `--route` said
+otherwise. At the end of a stage you are offered the next one,
 staying put, or pausing — never told a stage is complete and left there. Short
 tasks may skip forward, but the skip is said out loud, because skipping silently
 is how `verify` gets skipped.
