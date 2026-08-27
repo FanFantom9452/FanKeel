@@ -4,7 +4,7 @@ description: Audit documentation against the code it describes — dead referenc
 argument-hint: "[--root <dir>] [--since <days>]"
 version: 0.32.0
 status: current
-last_verified: 2026-08-26
+last_verified: 2026-08-27
 source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js
 ---
 
@@ -136,7 +136,9 @@ in one response is the ceiling — the fankeel skill's *Dispatch by default, nev
 the filtering* says why, and pairs past that are one reader with a list. Pass
 the model explicitly — `sonnet` is the floor — and compare what comes back
 against itself before acting, because readers dispatched from one prompt make
-correlated mistakes.
+correlated mistakes. Say how many are going and on which model as they go out:
+a pair count nobody announced is spend the user is paying for and could not see
+coming.
 
 What you do **not** dispatch is this stage. A subagent receives the brief and
 nothing else, so an `audit` run inside one has no gate, no output shape and none

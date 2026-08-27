@@ -343,13 +343,17 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
   // size is reported so the margin is visible without editing this file.
   //
   // 2400 is the third raise on this branch and should be the last. `build` is
-  // the binding stage, with `survey` a character behind it, and
-  // the two raises before it were paid for by content that had to exist: the
-  // ledger, without which a compacted session redoes committed work, and the
-  // four things that stop the loop, without which the default is to stop and
-  // ask. What stops a fourth raise is that both of those stages now have to
-  // displace a rule to gain one — which is what the split of survey's dispatch
-  // arm into a dispatch and a report did, rather than asking for more room.
+  // the binding stage at 2391, with `audit` at 2385, `plan` at 2381 and
+  // `survey` at 2380 — four stages inside twenty characters of the cap, so read
+  // the diagnostics below before adding a clause to any of them. The two raises
+  // before it were paid for by content that had to exist: the ledger, without
+  // which a compacted session redoes committed work, and the four things that
+  // stop the loop, without which the default is to stop and ask. What stops a
+  // fourth raise is that a stage now has to displace a rule to gain one — which
+  // is what the split of survey's dispatch arm into a dispatch and a report did,
+  // and then what moving the dispatch disclosure into ALWAYS did again: `survey`
+  // gave up its own copy of it and "which no flag lifts", `build` gave up "in
+  // passing", ALWAYS[1] gave up a word, and nobody asked for more room.
   for (const stage of NAMES) {
     const out = render({ mine: entry(MINE, { stage }), others: [], now: NOW });
     const size = sizeAtReference(out);

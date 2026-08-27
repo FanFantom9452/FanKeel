@@ -3,7 +3,7 @@ name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.32.0
 status: current
-last_verified: 2026-08-26
+last_verified: 2026-08-27
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js
 ---
 
@@ -743,12 +743,17 @@ went out in one response.
 | **delegate** | wide reading with a narrow answer — *read these six documents and say whether any contradicts the code*. A judgement, so no filter can pick it out |
 | **do not delegate** | anything a pipe already removes. One command's output is not worth a system prompt |
 
-Four rules that make it work, each of which fails silently when missed:
+Five rules that make it work, each of which fails silently when missed:
 
 - **Several dispatches in one response run at once.** One per response runs them
   in sequence — the cost of parallelism with none of it.
 - **Always pass the model.** An omitted model inherits this session's, which is
   usually the most capable and most expensive one available.
+- **Say how many, and on which model.** In the response that sends them, not
+  after they come back. A fan-out is spend the user is paying for and cannot see
+  coming, and for a long time `survey` was the only stage that said it — which
+  read as though survey were the only one that cost anything. `plan`, `build`,
+  `verify` and `audit` all dispatch too, and all four say it now.
 - **Spot-check the results against each other.** Independently dispatched agents
   share a prompt style and a model, so they make correlated mistakes that reading
   each summary on its own will not catch.

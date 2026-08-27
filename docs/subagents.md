@@ -44,13 +44,16 @@ same day during this branch's own verify stage, sent four readers out in one
 response for 614 seconds of combined agent time against 235 seconds of wall-clock
 — the slowest one.
 
-Four things that fail silently when missed: several dispatches must be in **one
+Five things that fail silently when missed: several dispatches must be in **one
 response** to run concurrently; the **model must be passed explicitly**, since an
-omitted one inherits the parent's; the returns must be **compared against each
-other**, because agents dispatched from one prompt style make correlated mistakes
-that per-agent reading will not catch; and the **return contract must state why it
-costs**, because naming the shape without the reason is a preference, not a
-contract, and a subagent told the reason returns the shape.
+omitted one inherits the parent's; the **count and the model must be said out
+loud**, in the response that sends them, because a fan-out nobody announced is
+spend the user is paying for and could not see coming; the returns must be
+**compared against each other**, because agents dispatched from one prompt style
+make correlated mistakes that per-agent reading will not catch; and the **return
+contract must state why it costs**, because naming the shape without the reason
+is a preference, not a contract, and a subagent told the reason returns the
+shape.
 
 `PostToolUse` fires inside a subagent under the **parent's** session id — measured,
 not assumed — so a dispatched implementer's edits are claimed for the task that

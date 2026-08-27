@@ -367,10 +367,32 @@ test('the dispatch rule count agrees with the bullet list under it, and with the
     `the lead-in says "${leadIn[1]}" but ${bulletCount} bullets follow it`);
 
   const docsText = fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8');
-  const docsLeadIn = /^(\w+) things that fail silently when missed:/m.exec(docsText);
+  const docsLeadIn = /^(\w+) things that fail silently when missed:([\s\S]*?)\r?\n\r?\n/m.exec(docsText);
   assert.ok(docsLeadIn, 'docs/subagents.md has no matching lead-in to compare');
   assert.equal(WORDS[docsLeadIn[1].toLowerCase()], bulletCount,
     `docs/subagents.md says "${docsLeadIn[1]}" but the skill lists ${bulletCount} rules`);
+
+  // The word alone was half a check: both lead-ins could be edited to "Six"
+  // while the prose under one of them still listed five. The page runs its list
+  // as one sentence with exactly one bold phrase naming each item, so the items
+  // are countable the same way the bullets are.
+  const docsItems = (docsLeadIn[2].match(/\*\*/g) || []).length / 2;
+  assert.equal(docsItems, bulletCount,
+    `docs/subagents.md says "${docsLeadIn[1]}" but its prose names ${docsItems} things`);
+});
+
+// The same shape, in a second file, found the same way. The plan skill's list of
+// rules about the `Dispatch:` line went from Three to Four when the disclosure
+// arrived, and nothing recounted it — which is exactly the gap the test above
+// was written to close for its own list.
+test('the plan skill counts its own rules about the Dispatch line', () => {
+  const leadIn = /^(\w+) rules about that line:\r?\n\r?\n([\s\S]*?)\r?\n\r?\n\*\*/m.exec(read('fankeel-plan'));
+  assert.ok(leadIn, 'the Dispatch rules lead-in is not where this test expects it');
+  const WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
+  const claimed = WORDS[leadIn[1].toLowerCase()];
+  assert.ok(claimed, `"${leadIn[1]}" is not a recognised count word`);
+  const items = (leadIn[2].match(/^\d+\. /gm) || []).length;
+  assert.equal(claimed, items, `the lead-in says "${leadIn[1]}" but ${items} rules follow it`);
 });
 
 // The stage rule carries the trigger; the skill carries the step. Without the
@@ -396,4 +418,56 @@ test('the main skill puts the tree ahead of the terms too', () => {
   assert.ok(treeAt > -1, 'the main skill still goes straight to the terms');
   assert.ok(scannerAt > -1, 'the scanner section moved; this test no longer measures anything');
   assert.ok(treeAt < scannerAt, 'the tree note no longer leads the scanner section');
+});
+
+// `survey` has said what a fan-out costs since the day it started dispatching,
+// and the four stages that dispatch after it never did. The asymmetry reads as
+// though only survey costs anything: a verify stage that sends four readers, or
+// a build task that dispatches an implementer, bills for a tier nobody named.
+// The contract lives in one place and the stages that use it repeat it, so this
+// checks both ends — the rule, and every stage skill that dispatches under it.
+//
+// Derived, not listed. A hand-written array is the thing that rots: the day
+// `fankeel-design` or `fankeel-land` starts dispatching, a list would go on
+// passing while the new dispatcher said nothing about what it costs. A skill
+// that names dispatching at all is one that has to say what it costs, which is
+// the same shape as `tests/docs-audit.test.js` counting from `defects()` rather
+// than from the prose beside it. Today that derives to five of the seven;
+// `design` and `land` do not mention it, and the floor below catches the
+// derivation collapsing.
+//
+// Derived inside the test, not at module load. A skill directory with no
+// SKILL.md has its own named failure at the top of this file; reading every one
+// of them while the module evaluates turns that into an ENOENT stack trace that
+// aborts the whole file and diagnoses nothing.
+//
+// A negative mention is not a dispatch. `fankeel-verify` says "What you do not
+// dispatch is this stage", and a bare /dispatch/i would read a page saying it
+// dispatches nothing as a page that has to disclose what it dispatches — and
+// the disclosure it was then made to carry would cost injected characters four
+// stages cannot spare.
+const dispatchers = () => names.filter((n) => n.startsWith('fankeel-')
+    && /dispatch/i.test(read(n).replace(/do(es)? not dispatch[^.]*\./gi, '')));
+
+test('every stage that dispatches says how many and on which model', () => {
+  const DISPATCHERS = dispatchers();
+  assert.ok(DISPATCHERS.length >= 5,
+    'only ' + DISPATCHERS.length + ' skills name dispatching; the derivation has collapsed');
+  for (const name of DISPATCHERS) {
+    // Both halves, and in the same breath. Asserting only the model passed a
+    // build skill that named the task instead of the count; asserting the two
+    // anywhere in the file passes a skill that lost the disclosure entirely and
+    // happens to use "how many" elsewhere — `skills/fankeel/SKILL.md` uses that
+    // phrase five times. The prose wraps at 80 columns, so the gap between them
+    // has to allow a newline.
+    assert.match(read(name).replace(/\s+/g, ' '), /how many[^.]{0,80}on which model/i,
+      name + ' never says how many and on which model in one sentence');
+  }
+  assert.match(read('fankeel'), /\*\*Say\s+how\s+many,\s+and\s+on\s+which\s+model/,
+    'the dispatch contract does not carry the disclosure as a rule of its own');
+  // Both halves here too. `/said out loud/` on its own passed a page that could
+  // drop "the count and the model" and keep the phrase.
+  const page = fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8');
+  assert.match(page, /count\s+and\s+(the\s+)?model/i, 'the reference page drops the count');
+  assert.match(page, /said\s+out\s+loud/i, 'the reference page states the contract without the disclosure');
 });
