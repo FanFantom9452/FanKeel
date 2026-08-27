@@ -337,6 +337,33 @@ test('the docs quote the injected rules verbatim, in both blocks', () => {
 `rulesFor` returns `ALWAYS` first and the stage's own rules after it, so
 `.slice(0, ALWAYS.length)` is the always-on four and nothing else.
 
+### 1g. The helper that compares rules against the rendered block
+
+Found by the pre-flight scan, after this plan was first written.
+`tests/render.test.js:9` defines:
+
+```js
+const sub = (stage) => rulesFor(stage, SCRIPTS);
+```
+
+and `:171` and `:177` assert that every rule it returns appears verbatim in the
+rendered output. `SCRIPTS` carries no `next`, so after 1b both go red against a
+**correct** implementation: `sub` returns the literal `{{NEXT}}` where the block
+carries `verify`. Replace `:9` with:
+
+```js
+// The rendered block substitutes the next stage on the route, so a comparison
+// against the rules has to substitute it the same way. Going through `nextStage`
+// rather than a literal is what stops the two from drifting apart.
+const sub = (stage, route) => rulesFor(stage, Object.assign(
+  { next: nextStage(stage, route) || 'standing the task down' }, SCRIPTS));
+```
+
+The import at `:7` gains `nextStage` alongside `SCRIPT_TOKENS`. The two call
+sites keep their shape — `sub('build')` and `sub('survey')` pass no route, and
+`nextStage` falls back to `FULL_ROUTE`, which is exactly the route `entry()` at
+`:21-33` gives the entries those two tests render.
+
 **Done when:** `npm test` reports 0 failing, `tests/render.test.js` diagnostics
 show `build` at 2382 or lower, and
 
@@ -560,6 +587,12 @@ placeholder.
 exact names in 1a, 1f. `next` is the sub key in 1c and 1f. `{{NEXT}}` is the
 token spelling in 1a, 1b, 2b. `standing the task down` is the fallback phrase in
 1c, 1f, 2b and 3a — one string, checked as one.
+
+**Amended after the pre-flight scan.** Step 1g was added: `tests/render.test.js:9`
+defines a `sub` helper that feeds two assertions comparing rules against the
+rendered block, and it supplies `SCRIPTS` only. Without 1g those two go red
+against a correct implementation. The ruling is in the ledger; the fix is in the
+task, because the implementer reads the plan and not the ledger.
 
 **Task boundaries.** The first draft of this plan split the token mechanism from
 the rule that uses it. That split had no test cycle on either side: a token
