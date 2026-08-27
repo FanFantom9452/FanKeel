@@ -73,7 +73,7 @@ test('a full injection of rules stays under a few hundred characters', () => {
   // needed them, not after, because a cap raised to fit a rule already written
   // is a cap that decides nothing.
   //
-  // The ALWAYS block is 687 of whatever the number is, plus the newline joining
+  // The ALWAYS block is 686 of whatever the number is, plus the newline joining
   // it to the rest, so a stage's own rules get 1313. `build` and `plan` bind
   // here, at 1122 each — `build` because it is the only stage that runs a loop
   // without stopping, and so carries both the discipline and the means of

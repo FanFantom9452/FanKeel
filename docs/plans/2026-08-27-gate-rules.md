@@ -579,7 +579,8 @@ requiring `lib/stages.js` directly.
 |---|---|---|
 | `lib/stages.js:78` | "`build` now sits 9 characters under that cap" | 18 |
 | `tests/render.test.js:393-395` | "`build` … at 2391, `audit` at 2385, `plan` at 2381 and `survey` at 2380 — four stages inside twenty characters of the cap" | 2382, 2374, 2371, 2371 — `build` alone is inside twenty |
-| `tests/stages.test.js:76` | "The ALWAYS block is 693" | 687 |
+| `tests/stages.test.js:76` | "The ALWAYS block is 693" | 686 — `join('
+').length`, where 687 is that plus the newline joining it to the stage's rules, and 1313 and 191 below are both downstream of 687 |
 | `tests/stages.test.js:77` | "a stage's own rules get 1306" | 1313 |
 | `tests/stages.test.js:82` | "184 characters left against this cap" | 191 |
 | `tests/stages.test.js:87-88` | "four of the seven sit within twenty characters of it — `build`, `audit`, `plan` and `survey`" | `build` alone; the other three are 26 to 29 away |
