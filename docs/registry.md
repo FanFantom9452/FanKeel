@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-26
+last_verified: 2026-08-27
 source_of_truth: lib/registry.js, lib/render.js, lib/context.js, hooks/touch.js
 ---
 
