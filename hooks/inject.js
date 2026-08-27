@@ -102,6 +102,7 @@ function main(raw) {
                     // returns nothing without a denominator and says why —
                     // "inventing a denominator would draw a progress bar out of
                     // nothing" — so this is its contract, not a workaround.
+                    // Measured 2026-08-27: seven hollow dots before, none now.
                     badge.writeBadge(dir, sessionId, 'init');
                     badge.writeLead(dir, sessionId, { word: 'init', step: 0 });
                 } else if (mine || badge.readBadge(dir, sessionId) === 'init') {
