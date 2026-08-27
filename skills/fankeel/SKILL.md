@@ -571,9 +571,13 @@ listed, in the order it listed them. No preamble and no explanation of
 consequences: picking a project has none. Skip the question entirely when there
 is only one.
 
-Then `What is the task?`, in the same call: guess from the recent commits, one
-option each, phrased as a task and not as a commit subject. **Other** is always
-there for the real answer.
+Then `What is the task?`, in the same call. **Read `TODO.md` first where the root
+has one**: its entries are the options, clustered — two bullets touching the same
+file or settling the same question are one task and one option, not two. One
+option per bullet is how a twenty-eight entry index becomes a menu nobody reads,
+and it is also how one file gets opened twice. A repository with no `TODO.md` is
+where guessing from the recent commits belongs, one option each, phrased as a
+task and not as a commit subject. **Other** is always there for the real answer.
 
 A guessed *task* offered as an option is not a guess written behind anyone's
 back — the user confirms it before it is written. Nothing else is asked for:
@@ -586,6 +590,11 @@ is left, and one question is one question.
 If the directory holds nothing readable, say so plainly and ask what they meant to
 open — a registry created in the wrong directory is one every later session
 inherits.
+
+The short form of all of that is injected on the `/fankeel` prompt itself —
+`INIT` in `lib/stages.js`, carried by the same `additionalContext` that names the
+session id, because a rule read once in a skill is a rule competing with
+everything since. This section is the long form, not the only copy.
 
 Then ask, with these options and no others:
 

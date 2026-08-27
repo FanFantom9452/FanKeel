@@ -18,7 +18,7 @@ const path = require('node:path');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
-const { render } = require('../lib/render.js');
+const { render, renderInit } = require('../lib/render.js');
 const { overlapPaths } = require('../lib/overlap.js');
 const { positionIn, FULL_ROUTE } = require('../lib/stages.js');
 
@@ -83,9 +83,7 @@ function main(raw) {
             process.stdout.write(JSON.stringify({
                 hookSpecificOutput: {
                     hookEventName: 'UserPromptSubmit',
-                    additionalContext: 'fankeel: this session is ' + sessionId
-                        + '\nThat is the id every hook here reads. Pass it to --session; an id read'
-                        + '\noff a path on screen may be a different one.',
+                    additionalContext: renderInit({ sessionId }),
                 },
             }));
         }

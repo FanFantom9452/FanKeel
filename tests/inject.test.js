@@ -354,3 +354,14 @@ test('a malformed session_id is not read back even on a /fankeel prompt', () => 
   const dir = tmp('fankeel-hook-');
   assert.equal(run({ session_id: '../../etc/passwd', cwd: dir, prompt: '/fankeel' }), '');
 });
+
+test('the /fankeel prompt carries rules, not only the session id', () => {
+  const root = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  const text = context(run({ session_id: MINE, cwd: root, prompt: '/fankeel' }, cfg));
+  assert.match(text, new RegExp(MINE), 'the id it already said');
+  assert.match(text, /init rules:/, 'the badge is raised with nothing behind it');
+  assert.match(text, /TODO\.md/, 'nothing tells it to read TODO.md before asking');
+  assert.match(text, /orient\.js/);
+  assert.match(text, /then AskUserQuestion/, 'no shape for what it puts on screen');
+});
