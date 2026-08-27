@@ -203,7 +203,7 @@ test('the discipline covers the captured requirements', () => {
   const text = (ALWAYS.join(' ') + ' ' + STAGES.map((s) => s.rules.join(' ')).join(' ')).toLowerCase();
   // R2 never stop, R3 questions carry context, R4 finish it,
   // R5 TODO is an index, R6 rewrite not move, R7 use the audit skills.
-  assert.match(text, /never end a step silently or in prose/);
+  assert.match(text, /never end a stage silently or in prose/);
   assert.match(text, /background goes inside the question/);
   assert.match(text, /do not stop where the happy path works/);
   assert.match(text, /todo\.md as one line pointing at the detail/);
@@ -220,6 +220,24 @@ test('the always-on block names the tool, not just the act of asking', () => {
   assert.match(ALWAYS.join(' '), /never dropping the pause/);
   // Picking the first option is the approval, so it has to say what it approves.
   assert.match(ALWAYS.join(' '), /Option one is the approval/);
+});
+
+test('the always-on block says what option two holds, not only option one', () => {
+  // This lived in skills/fankeel/SKILL.md alone, which is read once on entering
+  // a stage, while the gate is asked at the end of one. Before this line, a
+  // grep of tests/ for `option two` returned nothing at all.
+  assert.match(ALWAYS.join(' '), /Option two names the open decision/);
+  assert.match(ALWAYS.join(' '), /never unfinished work/);
+});
+
+test('option one is a token, so the route decides what it says', () => {
+  const { RENDER_TOKENS } = require('../lib/stages.js');
+  assert.ok(ALWAYS.join(' ').includes(RENDER_TOKENS.next),
+    'ALWAYS names no render-time token, so option one is still a description');
+  // Same contract as the script tokens: a caller that supplies nothing sees the
+  // token, rather than a rule that reads as though it had been filled in.
+  assert.ok(rulesFor('build').join(' ').includes(RENDER_TOKENS.next));
+  assert.equal(rulesFor('build', { next: 'verify' }).join(' ').includes(RENDER_TOKENS.next), false);
 });
 
 test('the stage that produced the wall of text now carries a length', () => {

@@ -118,8 +118,8 @@ also in progress:
 
 <plugin> = C:\Users\you\.claude\plugins\cache\fankeel\fankeel\0.31.0
 stage rules:
-  - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, and pause at least, never dropping the pause. Option one is the approval: say what it approves.
-  - The background goes inside the question call — in the option descriptions, beside the option it belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
+  - Never end a stage silently or in prose. Ask with AskUserQuestion — three at least, never dropping the pause. Option one is the approval: verify. Option two names the open decision, never unfinished work.
+  - The background goes inside the question call — in the option descriptions, never as a paragraph in the stem. The stem is one line. Recommended option first.
   - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
@@ -201,8 +201,8 @@ class: architectural — a new subsystem, or a change to an interface something 
 
 <plugin> = C:\Users\you\.claude\plugins\cache\fankeel\fankeel\0.31.0
 stage rules:
-  - Never end a step silently or in prose. Ask with AskUserQuestion — next stage, stay, and pause at least, never dropping the pause. Option one is the approval: say what it approves.
-  - The background goes inside the question call — in the option descriptions, beside the option it belongs to, never as a paragraph in the stem. The stem is one line. Recommended option first.
+  - Never end a stage silently or in prose. Ask with AskUserQuestion — three at least, never dropping the pause. Option one is the approval: verify. Option two names the open decision, never unfinished work.
+  - The background goes inside the question call — in the option descriptions, never as a paragraph in the stem. The stem is one line. Recommended option first.
   - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
