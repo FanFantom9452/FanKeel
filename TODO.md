@@ -25,10 +25,8 @@ written here instead of where it belongs.
 - A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI, so the default reminder is what the three get.
 - fankeel 0.26.0 is still installed on a second machine though the marketplace entry sets autoUpdate — [docs/README.md](docs/README.md). Two releases behind when found, 08-26.
 - Whether a per-`agent_type` brief should carry more than the map — [docs/subagents.md](docs/subagents.md). Unanswered until real use says which types earn one.
-- `lib/plugins.js` is required by nothing but its own test — the audit stage's fortnightly rule in [lib/stages.js](lib/stages.js) names ponytail and knip outright. Delete it, or wire it up.
-- 32 exported names nothing outside their own file references, 22 of them in [lib/](lib/badge.js) — dead API surface, not dead code. Found by /ponytail-audit, 08-26.
+- Wire [lib/plugins.js](lib/plugins.js) up: nothing calls it, and `lib/stages.js` names ponytail and knip unconditionally. Deleting is the wrong half — the decision record says why.
 - A stale comment in [scripts/docs-audit.js](scripts/docs-audit.js) says the first three sections fail the run, directly above its own replacement saying four. Delete the older one.
-- A repository with no commits reports `no git` — [scripts/orient.js](scripts/orient.js). `rev-parse --abbrev-ref HEAD` fails there and `gitState` reads the failure as "not a repository".
 - `### Every fortnight or so — the sweep` in [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md) has no body; the `## One skill per stage` after it holds the sweep's table.
 - `task.js` refuses when `<config>/sessions/` is readable but empty, and fails open when it is absent — [scripts/task.js](scripts/task.js). `lib/live.js` fails open on that same evidence.
 - The session id is disclosed only while there is no active entry, so a compacted session that owns a task cannot read its own id — [hooks/inject.js](hooks/inject.js).
@@ -46,8 +44,7 @@ written here instead of where it belongs.
 - The injected block asks for both “Option one is the approval” and “Recommended option first” — [lib/stages.js](lib/stages.js). They collide when a finding argues against advancing.
 - [docs/collisions.md](docs/collisions.md) says the already-claimed path still takes the lock; [hooks/touch.js](hooks/touch.js) returns before `addClaim`, the only caller that takes one. Found 08-27.
 - [docs/registry.md](docs/registry.md) says notes and next die only when the task is stood down; `task.js task` clears them on a rename too. Found 08-27.
-- [scripts/residue.js](scripts/residue.js) counts the worktree you are standing in as merged into itself, so it exits 1 from inside any worktree for ever. Found 08-27.
-- [scripts/docs-audit.js](scripts/docs-audit.js) holds a raw NUL byte as a Map key separator, so grep and ripgrep read the whole file as binary and skip it. Found 08-27.
+- Writes that escape `PostToolUse` are not hypothetical: this repository's own build stage edited fifteen files through `node -e` and claimed none — [hooks/touch.js](hooks/touch.js). Found 08-27.
 
 ## Owed after first real use
 

@@ -70,4 +70,4 @@ if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
 
-module.exports = { main, parseArgs, keepIgnored, MAP_REL, IGNORE_LINE };
+module.exports = { main, parseArgs };

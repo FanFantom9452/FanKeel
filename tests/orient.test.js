@@ -176,6 +176,21 @@ test('a project with no commit date sorts last rather than first', () => {
   assert.deepEqual(result.entries.map((e) => e.rel), ['alpha', 'beta']);
 });
 
+test('a repository with no commits is a repository, not "no git"', () => {
+  const root = workspace({ 'solo/a.js': 'x' });
+  execFileSync('git', ['init', '-q'], { cwd: path.join(root, 'solo'), stdio: 'ignore' });
+
+  // `rev-parse --abbrev-ref HEAD` fails on an unborn branch, and reading that
+  // failure as "not a repository" is the wrong half: the directory has a .git,
+  // it just has nothing in it yet. That is the first commit anyone is about to
+  // make, so it is exactly when orient gets run.
+  const out = run(['--root', root]);
+  const line = out.split(/\r?\n/).find((l) => l.trim().startsWith('solo'));
+  assert.ok(line, 'no solo row in: ' + out);
+  assert.doesNotMatch(line, /no git/);
+  assert.ok(line.includes('git '), 'reported: ' + line);
+});
+
 test('stateText says clean rather than saying nothing', () => {
   assert.equal(orient.stateText({ branch: 'main', changed: 0, untracked: 0 }), 'git main, clean');
   assert.equal(orient.stateText({ branch: 'x', changed: 2, untracked: 1 }), 'git x, 2 uncommitted, 1 untracked');

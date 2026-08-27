@@ -698,4 +698,4 @@ if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
 
-module.exports = { main, parseArgs, splitScope, COMMANDS, USAGE };
+module.exports = { main, parseArgs, USAGE };

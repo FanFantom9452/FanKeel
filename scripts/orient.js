@@ -62,7 +62,12 @@ function git(dir, args) {
 // will see in their own prompt.
 function gitState(dir) {
     if (!isRepo(dir)) return null;
-    const branch = git(dir, ['rev-parse', '--abbrev-ref', 'HEAD']);
+    // `rev-parse` fails on an unborn branch — a repository initialised and not
+    // yet committed to — and `symbolic-ref` is the one that answers there. The
+    // fallback order matters: rev-parse is what reports a detached HEAD as
+    // `HEAD`, and symbolic-ref would fail on that instead.
+    const branch = git(dir, ['rev-parse', '--abbrev-ref', 'HEAD'])
+        || git(dir, ['symbolic-ref', '--short', 'HEAD']);
     const status = git(dir, ['status', '--porcelain']);
     if (branch === null) return null;
 
@@ -474,4 +479,4 @@ if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
 
-module.exports = { scan, report, main, parseArgs, gitState, stateText, topLevel, children, recent, signposts, lastCommit, ageText };
+module.exports = { scan, report, main, parseArgs, stateText, topLevel, children, recent, signposts, ageText };
