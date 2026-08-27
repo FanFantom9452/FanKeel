@@ -480,7 +480,7 @@ test('every stage is told to say what a dispatch costs, before it costs it', () 
 });
 
 // The dispatch clause shares a rule string with the one that predates it, and
-// only the dispatch half was pinned. `build` sits nine characters under the
+// only the dispatch half was pinned. `build` sits eighteen characters under the
 // injection cap, so this string is the first place anyone looks for room — and
 // rewriting it down to the dispatch clause alone would leave every test green
 // while deleting the only injected rule that asks for a skipped step or a failed

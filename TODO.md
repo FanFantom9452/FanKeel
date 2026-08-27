@@ -43,6 +43,8 @@ written here instead of where it belongs.
 - The report example in [README.md](README.md) drops build's `ledger: <n> of <m> complete` line, and no test reads this repository's own README. Found 08-27, older than the change that found it.
 - The init cap comment in [tests/render.test.js](tests/render.test.js) sets 1400 against "the 1140 it costs today"; it costs 1161. Predates 08-27, found by a lens sweep.
 - [docs/output-styles.md](docs/output-styles.md) and the decision record beside it both say "The three always-on rules" where `ALWAYS.length` is 4. Predates 08-27.
+- `step` still names a route entry in [lib/stages.js](lib/stages.js) and [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md) — a third sense the 08-27 settlement never enumerated.
+- The injected block asks for both “Option one is the approval” and “Recommended option first” — [lib/stages.js](lib/stages.js). They collide when a finding argues against advancing.
 
 ## Owed after first real use
 

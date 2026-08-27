@@ -342,8 +342,8 @@ rather than with the stage. `lib/stages.js` substitutes it: the injected rule
 carries `{{NEXT}}` and `lib/render.js` fills it from `nextStage`. At the **last
 stage on the route** there is no next stage, so what arrives is **standing the
 task down**, and option 2 becomes starting a new one. What follows a finished
-route is a new task, which is a decision rather than a transition — which is why
-option two reads the same there as everywhere else.
+route is a new task, which is a decision rather than a transition — so option
+two names a decision there exactly as it does everywhere else.
 
 One question per call. A second belongs in the same call only when it is
 genuinely independent — a decision the answer to the first would not change.
