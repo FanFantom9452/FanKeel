@@ -590,7 +590,7 @@ flowchart TD
     A1["<b>report the failures and stop.</b><br/>The menu comes after a green run."]
     B["<b>2 · close the documents</b><br/>todo-check · last_verified on every page<br/>re-read and found true · archive the<br/>landed plan, after asking"]
     C["<b>3 · rewrite the map</b><br/>the project looks different now, and<br/>the next task starts from this file"]
-    D["<b>4 · land the notes</b><br/>a convention → CLAUDE.md · a durable fact<br/>→ memory · why → the commit message ·<br/>deferred work → TODO.md"]
+    D["<b>4 · land the notes</b><br/>a convention → CLAUDE.md · a durable fact<br/>→ memory · why → the commit message ·<br/>deferred work → TODO.md<br/><i>stand down first, /clear after</i>"]
     E["<b>5 · detect the workspace,<br/>confirm the base</b>"]
     F{"<b>6 · the menu</b><br/><i>integration is the user's decision</i>"}
     F1["merge back to base locally"]
@@ -620,6 +620,27 @@ Discarding the work is not on that menu. It happens when the user asks for it in
 so many words, and then only against the typed word `discard`. A worktree whose
 removal is refused for uncommitted files never gets `--force` on anyone's own
 initiative — those files exist nowhere else.
+
+The report `land` ends on carries a list nothing else in the pipeline does:
+
+```
+<sha> <subject>
+shipped:
+  - <what someone can now do that they could not>
+cost: <what it took>
+open: <what is still not done>
+```
+
+A commit subject holds one change. A task that shipped four of them had nowhere
+to say so, which is what `shipped:` is for — one line per thing someone can now
+do, taken from the ledger's completed entries where the task had a plan and
+listed by hand where it did not.
+
+Then option one stands the task down, and **`/clear` comes after that, never
+before**. A clear takes a new session id, so clearing first leaves the entry
+`active` with nothing reading it — recoverable, because `hooks/carry.js` offers
+it back, but free to get right. See [registry.md](registry.md), "The mode never
+switches itself off".
 
 ## The project map
 

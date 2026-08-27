@@ -97,6 +97,27 @@ the flag at session end would drop you out of the mode behind your back and the
 mode would appear to switch itself off at random. Only standing a task down ends
 it.
 
+`/clear` is the third case, and it is the one that behaves the other way. It
+keeps the process and takes a **new** session id: `<config>/sessions/<pid>.json`
+is rewritten, the old id leaves the running set, and the entry it owned is judged
+dead by every reader at once while staying `active: true`. Nothing is corrupted
+and no collision appears — the task simply stops being read.
+
+`hooks/carry.js` is what says so. It runs on `SessionStart` with `matcher:
+"clear"`, and on the first prompt of the new session it names the task, where on
+its route it got to, its notes and its `next`, with the `adopt` command already
+carrying both ids.
+
+**Stand the task down before clearing and there is nothing to offer.** An entry
+cleared the other way round is put down by `/fankeel` → **Clear out**, which
+never takes the task with it.
+
+| continuation | session id | the entry |
+|---|---|---|
+| `resume` | the same | still read, still yours |
+| `compact` | the same | still read, still yours |
+| `/clear` | **new** | active, unread, offered back by `hooks/carry.js` |
+
 # When compaction has already cost something
 
 ```
