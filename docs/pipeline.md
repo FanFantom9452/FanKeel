@@ -45,7 +45,11 @@ explicable rather than merely different. In a directory of five, the one touched
 this morning is almost always the one being asked about.
 
 The skill asks with `AskUserQuestion` rather than in prose — which project and
-what the task is, in one call with the options already on screen.
+what the task is, in one call with the options already on screen. Where the root
+has a `TODO.md`, that is where the task options come from: its entries clustered,
+two bullets touching one file offered as one task rather than as two options that
+would open it twice. A root without one is where guessing from the recent commits
+belongs.
 Making someone retype a row of a listing they can see is the same waste as asking
 with nothing on screen at all.
 
