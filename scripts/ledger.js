@@ -80,5 +80,3 @@ function main(argv) {
 if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
-
-module.exports = { main, parseArgs };

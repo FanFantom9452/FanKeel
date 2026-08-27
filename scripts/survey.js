@@ -467,4 +467,4 @@ if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
 
-module.exports = { scan, report, main, parseArgs, matches, trackedFiles, isSubtree, treeLines, human };
+module.exports = { scan, report, parseArgs, trackedFiles, isSubtree, treeLines };

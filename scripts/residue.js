@@ -349,4 +349,4 @@ if (require.main === module) {
     process.exit(defects(result) > 0 ? 1 : 0);
 }
 
-module.exports = { scan, report, defects, parseArgs, main, human, emptyDirs, sizeOf };
+module.exports = { scan, report, defects, emptyDirs, sizeOf };
