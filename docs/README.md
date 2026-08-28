@@ -41,9 +41,7 @@ here.
 | How that was built, task by task | [plans/2026-08-26-dispatch.md](plans/2026-08-26-dispatch.md) — *built, 0.32.0* |
 | Why the end of a task is where the advice goes, and what `/clear` costs | [plans/2026-08-28-task-end-design.md](plans/2026-08-28-task-end-design.md) — *built* |
 | The three tasks that built it, with every string and every test written out | [plans/2026-08-28-task-end.md](plans/2026-08-28-task-end.md) — *built* |
-| Why nothing said what each directory is for, and what a person has to write | [plans/2026-08-28-directory-tree-design.md](plans/2026-08-28-directory-tree-design.md) — *built* |
-| The five tasks that built it, measured against 43 real trees | [plans/2026-08-29-directory-tree.md](plans/2026-08-29-directory-tree.md) — *built* |
-| What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 |
+| What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 
 ## The three scanners
