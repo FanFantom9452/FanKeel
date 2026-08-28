@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-08-28
-source_of_truth: lib/registry.js, lib/render.js, lib/context.js, lib/dirty.js, hooks/touch.js, hooks/inject.js, hooks/carry.js
+source_of_truth: lib/registry.js, lib/render.js, lib/context.js, lib/dirty.js, scripts/task.js, hooks/touch.js, hooks/inject.js, hooks/carry.js
 ---
 
 # The registry, and what it remembers
@@ -27,7 +27,7 @@ workspace/                     <- Claude Code opened here
 
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated`; `touch.js` and `inject.js` for `claims` |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims` |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | Created with the directory |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |

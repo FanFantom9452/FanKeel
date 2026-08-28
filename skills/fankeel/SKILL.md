@@ -3,7 +3,7 @@ name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.34.0
 status: current
-last_verified: 2026-08-27
+last_verified: 2026-08-28
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js
 ---
 
@@ -100,10 +100,11 @@ knows whose tree applies. One registry can cover five of them and nothing else
 needs to know which. Ask for it only when the root holds more than one, and never
 ask for a file list — there is nothing to declare and nothing to get wrong.
 
-Three more are written without anyone typing them. `route` and `class` come from
-the class picked at `start`, and `configDir` records which config directory this
+Four more are written without anyone typing them. `route` and `class` come from
+the class picked at `start`, `configDir` records which config directory this
 session runs under, so another session can look for its liveness in the right
-place.
+place, and `burn` is what each stage cost — two token counts per stage, written
+by the same prompt hook that refreshes `updated`.
 
 ```json
 {
