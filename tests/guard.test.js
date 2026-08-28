@@ -207,13 +207,6 @@ test('a file outside the project root is none of its business', () => {
   assert.equal(run(root, edit(root, path.join(elsewhere, 'statusline.ps1'))), '');
 });
 
-test('a glob claim covers what is under it', () => {
-  const root = tmp();
-  seed(root, MINE, { guard: 'deny', claims: ['README.md'] });
-  seed(root, THEIRS, { claims: ['src/**'] });
-  assert.equal(decisionOf(run(root, edit(root, path.join(root, 'src', 'a.ts')))), 'deny');
-});
-
 test('a bare directory claim covers what is under it', () => {
   const root = tmp();
   seed(root, MINE, { guard: 'deny', claims: ['README.md'] });
@@ -246,7 +239,7 @@ test('two holders are both named', () => {
   const root = tmp();
   seed(root, MINE, { guard: 'ask', claims: ['README.md'] });
   seed(root, THEIRS, { task: 'first task', claims: ['statusline.ps1'] });
-  seed(root, THIRD, { task: 'second task', claims: ['statusline.*'] });
+  seed(root, THIRD, { task: 'second task', claims: ['statusline.ps1'] });
   const cfg = seedLive([[process.pid, MINE], [livePid(), THEIRS], [livePid(), THIRD]]);
   const reason = reasonOf(run(root, edit(root, path.join(root, 'statusline.ps1')), cfg));
   assert.match(reason, /2 other live sessions/);

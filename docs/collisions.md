@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-28
+last_verified: 2026-08-29
 source_of_truth: lib/overlap.js, lib/guard.js, lib/live.js, lib/registry.js, lib/dirty.js, scripts/task.js, scripts/orient.js, hooks/touch.js, hooks/inject.js
 ---
 
@@ -14,11 +14,18 @@ Two sessions collide when their **claims** overlap. One person writes "colour
 ramp" and the other writes "fix 7d"; a check on the name sees two unrelated
 tasks, while the file is what actually gets overwritten.
 
-A claim is one file path, recorded whole. The overlap check itself is unchanged:
-`src/**` and `src/a.ts` overlap whichever way round they are written, `src/*.ts`
-stops at one path segment, and a bare directory name covers what is under it —
-which is what lets a record written before this shipped keep working, its old
-`scope` read as the claim list.
+A claim is one file path, recorded whole, and two of them overlap when they are
+the same path or when one is a directory the other sits under. That is the whole
+rule. A record written before observed claims shipped still works: its old
+`scope` is read as the claim list.
+
+Glob matching lived here until 2026-08-29 — `src/**` spanning separators,
+`src/*.ts` stopping at one segment — for the years when a claim was a pattern
+somebody declared. It was removed once nothing produced a pattern any more,
+because it had stopped being free: POSIX allows a star in a filename, so one real
+file called `a*.ts` was read as a wildcard and collided with every `.ts` beside
+it. A warning between two sessions that share nothing is the one thing a
+collision warning must never be.
 
 By default an overlap is **reported, not blocked** — the warning rides on every
 prompt and `[FANKEEL:CLASH]` sits in the statusline.
