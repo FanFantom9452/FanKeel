@@ -585,6 +585,22 @@ test('a caller that asks for no count still gets null for a root it cannot read'
   assert.equal(stats.unlistable, 1);
 });
 
+// The other half of the same contract, and it was left out. `unlistable` reaches
+// the caller that says why; the extension drops did not, so a root holding
+// nothing but archives and images returned null with an empty `stats` — the
+// caller could not tell it apart from a root with nothing in it at all.
+test('a root of nothing but skipped extensions says how many it skipped', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-skipext-'));
+  fs.writeFileSync(path.join(root, 'photo.png'), 'x');
+  fs.writeFileSync(path.join(root, 'sheet.xlsx'), 'x');
+  fs.writeFileSync(path.join(root, 'notes.pdf'), 'x');
+
+  const stats = {};
+  assert.equal(survey.trackedFiles(root, { stats }), null, 'nothing readable is still nothing readable');
+  assert.equal(stats.skippedExt, 3, 'the caller cannot tell this from an empty root');
+  assert.equal(stats.unlistable, 0, 'nothing here failed to open');
+});
+
 // A path that is not there is not a subtree that would not open. Counting
 // `ENOENT` alongside `EACCES` turned `--root <typo>` into "a directory walk
 // elsewhere / skipped: 1 directory that could not be listed / ... try a synonym
