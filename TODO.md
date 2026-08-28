@@ -33,6 +33,7 @@ heading is one nobody said the state of.
 - `toFixed(1)` makes 1048575 read `1024.0K`, a unit that exists — [survey.js](scripts/survey.js):294, [layout.js](scripts/layout.js):37, [residue.js](scripts/residue.js):268, byte-identical. 08-29.
 - `MAX_TREE` caps entry lines, not printed ones, so `│` continuations ride free — [lib/map.js](lib/map.js). Trovara printed 66 for a cap of 50; pathologically unbounded. 08-29.
 - Three scanners each rewrite `human`, `plural`/`count` and `section`, and the copies truncate in different words — [residue.js](scripts/residue.js):275 × [docs-audit.js](scripts/docs-audit.js):503.
+- `MAX_PAIRS` slices before `section` sees it, so the shortlist drops 3 of 15 saying nothing — [docs-audit.js](scripts/docs-audit.js):549 × [lib/map.js](lib/map.js):23, which forbids that. 08-29.
 - `isRepo` at [lib/dirty.js](lib/dirty.js):63 and `PLUGIN_ROOT` at [lib/map.js](lib/map.js):38 are private copies of what a sibling exports, each comment citing the original. 08-29.
 
 ## Needs a decision
