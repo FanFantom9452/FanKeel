@@ -30,6 +30,9 @@ heading is one nobody said the state of.
 
 ## Ready
 
+- `--tree` prints nothing without `--root` — [scripts/survey.js](scripts/survey.js):419. Three places teach it without one, and the survey rule tells the model to scope from a tree that never appears.
+- `human()` stops at M, so a 3 GB directory reads `3071.0M` — [scripts/survey.js](scripts/survey.js):286. Measured on a real project 08-29.
+
 ## Needs a decision
 
 - `isSubtree` costs a stat per entry per row in [scripts/orient.js](scripts/orient.js) and no cache helps: 107 stats, 105 distinct paths, 2 repeated. Read gitlinks from `--stage`, or accept it. 08-28.
