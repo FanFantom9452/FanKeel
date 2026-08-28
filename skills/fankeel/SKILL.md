@@ -431,7 +431,7 @@ exit code that means nothing.
 
 **It narrows; it does not judge.** Nothing mechanical can decide that two pages
 disagree. What this does is turn "read all forty documents looking for
-disagreements" into "read these two — they both describe `lib/badge.js`, and one
+disagreements" into "read these two — they describe the same source file, and one
 has not been touched since before it changed". Then you read them.
 
 Where no `docs.json` exists it infers the tree from the directories, so it is

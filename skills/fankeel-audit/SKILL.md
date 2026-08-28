@@ -16,8 +16,8 @@ stopped being true, and which two of them disagree.**
 
 The scripts gather. You judge. Nothing mechanical can decide that two documents
 contradict each other, and nothing here pretends to: what the sweep does is turn
-"read all forty documents looking for disagreements" into "these two both
-describe `lib/badge.js`, and one has not been touched since before it changed".
+"read all forty documents looking for disagreements" into "these two describe
+the same source file, and one has not been touched since before it changed".
 That is a shortlist someone can finish.
 
 ## Run all three

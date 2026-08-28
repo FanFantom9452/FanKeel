@@ -200,7 +200,7 @@ The `.sh` equivalent, and what each colour is doing, is in
 
 Neither one decides that two documents contradict each other, because nothing
 mechanical can. What the sweep does is turn "read all forty documents looking for
-disagreements" into "read these two — they both describe `lib/badge.js`, and one
+disagreements" into "read these two — they describe the same source file, and one
 has not been touched since before it changed".
 
 ## Uninstall
