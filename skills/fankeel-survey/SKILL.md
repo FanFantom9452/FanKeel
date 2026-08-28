@@ -3,8 +3,8 @@ name: fankeel-survey
 description: The survey stage — read the project's own map before reading its code, classify the work, and report what is already here. Use for the survey stage of a fankeel task, "what is already here", starting work in an unfamiliar repository, or when a task needs classifying as spike, bounded or architectural.
 version: 0.34.0
 status: current
-last_verified: 2026-08-27
-source_of_truth: lib/stages.js, scripts/map.js, scripts/survey.js
+last_verified: 2026-08-29
+source_of_truth: lib/stages.js, lib/map.js, scripts/map.js, scripts/survey.js, scripts/layout.js
 ---
 
 # fankeel-survey
@@ -44,7 +44,15 @@ node <plugin>/scripts/map.js [--root <dir>]
 
 It writes `.fankeel/map.md` and prints a summary. **Read the file, not only the
 summary.** What it holds that nothing else does: the signpost file's navigation
-table, the filing declared in `docs.json`, and every page's declared status.
+table, the filing declared in `docs.json`, what each directory is for, and every
+page's declared status.
+
+The directory tree is the one to read first. It is lifted from the project's own
+README — the file among `CLAUDE.md`, `AGENTS.md` and `README.md` that draws one,
+under the nearest heading above it — and it carries the thing nothing derives: a
+person saying what `backend/` is. Where a project has none, the map says so and
+names `scripts/layout.js`, which prints a skeleton for someone to fill in. Rows
+with no responsibility yet are counted, so a half-finished tree says so.
 
 If it says `filing: nothing declared`, the project has no `docs.json` and every
 document is being read by guesswork. If it names a parse error, say so — a
@@ -74,9 +82,10 @@ directories; `--tree` gives every one of them with its size:
 node <plugin>/scripts/survey.js --tree
 ```
 
-That is the only input there is before the first term, and it is what decides the
-scope — which directories hold the answer, and therefore whether this is one scan
-here or three readers with a lens each.
+Sizes, not purposes — step 2's tree already said what the directories are for,
+where the project has written one. Together they decide the scope: which
+directories hold the answer, and therefore whether this is one scan here or three
+readers with a lens each. Where step 2 found no tree, this is all there is.
 
 **Scope and dispatch belong in the same response.** A scope announced in one
 round and acted on in the next has spent a round on nothing, which is the waste

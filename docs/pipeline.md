@@ -322,7 +322,7 @@ flowchart TD
     C1["<b>planned, not built</b><br/>design-intent. What the system is<br/>meant to become — not drift"]
     C2["<b>retired</b><br/>true once, read as though<br/>it still were"]
     C3["<b>undeclared</b><br/>dated by git, so dated by whoever<br/>last touched it, not by a reader"]
-    D0["<b>scope from the tree</b><br/>which directories hold the answer<br/><i>the only input there is before the first term —<br/>scope and dispatch in one response</i>"]
+    D0["<b>scope from the tree</b><br/>which directories hold the answer<br/><i>the map says what they are for, --tree says how big —<br/>scope and dispatch in one response</i>"]
     D["<b>4 · targeted scan</b><br/>survey, one or more terms<br/><i>nothing matched is a finding —<br/>say which terms you tried</i>"]
     D2{"<b>4b · did one pass cover it?</b>"}
     D4["<b>report the gap</b><br/>say what was not covered and why<br/><i>not a dispatch, and not a silence</i>"]
@@ -659,8 +659,10 @@ Generated rather than maintained, git-ignored, and carrying `status: generated`
 so the documentation sweep skips it.
 
 It holds the signpost file's navigation table, the filing declared in
-`docs.json`, and — the part nothing else reports — **every page's declared
-status**. That last section is the one the rest was built for:
+`docs.json`, **what each directory is for** — lifted from the project's own
+README, or a line saying no tree was found and the command that starts one — and,
+the part nothing else reports, **every page's declared status**. That last
+section is the one the rest was built for:
 
 ```
 planned, not built — 2:
