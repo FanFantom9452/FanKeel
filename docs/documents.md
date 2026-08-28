@@ -56,14 +56,16 @@ contradicts the README is worse than no map, because it is believed.
 
 `lib/map.js` lifts the block into `.fankeel/map.md`, capped at fifty rows and
 counting the entries nobody has described yet. A project with no tree gets a line
-saying so and the command that starts one:
+saying so and the command that starts one — written with the plugin root resolved,
+because the map is read on its own and `<plugin>` is defined only in the injected
+block:
 
 ```
-node <plugin>/scripts/layout.js
+`node /the/resolved/plugin/root/scripts/layout.js` prints a skeleton to fill in.
 ```
 
-which prints a skeleton — one row per top-level directory, its size, what is
-underneath, and an empty column. It writes nothing. The paths are derivable and
+That command prints a skeleton — one row per top-level directory, its size, what
+is underneath, and an empty column. It writes nothing. The paths are derivable and
 the answers are not, which is the whole shape of the problem: `backend/` is the
 backend because somebody decided it was, and no listing says so.
 

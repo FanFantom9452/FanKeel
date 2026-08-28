@@ -231,7 +231,10 @@ test('a project with no tree is told so, and told what makes one', () => {
   assert.match(text, /no directory tree found in CLAUDE\.md, AGENTS\.md, README\.md/);
   assert.match(text, /scripts\/layout\.js/);
   assert.doesNotMatch(text, /<plugin>/);
-  assert.match(text, /`node .+\/scripts\/layout\.js` prints a skeleton/);
+  // `[^<]+` rather than `.+`: the point is that the path is a real one, and `.+`
+  // matches `<plugin>` too, so the earlier draft of this line proved nothing the
+  // assertion above it had not already proved.
+  assert.match(text, /`node [^<]+\/scripts\/layout\.js` prints a skeleton/);
 });
 
 test('a tree is printed with its file, its heading and its unfilled count', () => {
