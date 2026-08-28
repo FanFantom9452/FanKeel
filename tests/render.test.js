@@ -2,6 +2,9 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
 const { render, renderInit, SCRIPTS, PLUGIN_ROOT, PLUGIN_MARK, SURVEY_SCRIPT, TODO_CHECK_SCRIPT } = require('../lib/render.js');
 const { ALWAYS, NAMES, byName, rulesFor, SURVEY_TOKEN, TOKENS, SCRIPT_TOKENS, nextStage } = require('../lib/stages.js');
@@ -395,6 +398,19 @@ test('the whole injection stays a readable size with everything populated', () =
   // preamble that buys a shorter answer is the trade this whole file is making
   // on purpose. What the number guards is that the block still gets read to the
   // end — past a point a preamble is skimmed, and skimmed rules are no rules.
+  // The transcript is part of the worst case and was missing from it. A session
+  // that has compacted gets a `context:` line the others do not, and it is the
+  // longest single line the block can carry — the counts, the advice, and the id
+  // every `task.js` call needs. Measured without it, this test was sizing every
+  // block except the one that is actually biggest, and the margin it reported
+  // was 64 characters wider than the real one.
+  const heavy = path.join(os.tmpdir(), 'fankeel-render-cap.jsonl');
+  fs.writeFileSync(heavy,
+    '{"type":"assistant","message":{"usage":{"input_tokens":2,'
+    + '"cache_creation_input_tokens":2362,"cache_read_input_tokens":650000,"output_tokens":275}}}\n'
+    + '{"type":"system","subtype":"compact_boundary","content":"'
+    + '\\\\"compactMetadata\\\\":{\\\\"cumulativeDroppedTokens\\\\":1120198}"}\n');
+
   let worst = 0;
   let name = '';
   for (const stage of NAMES) {
@@ -408,10 +424,14 @@ test('the whole injection stays a readable size with everything populated', () =
       }),
       others: [entry(THEIRS, { task: 'retune the 5h ramp', claims: ['statusline.ps1'] })],
       now: NOW,
+      transcript: heavy,
     });
     const size = sizeAtReference(out);
     if (size > worst) { worst = size; name = stage; }
   }
+  fs.unlinkSync(heavy);
+  assert.match(render({ mine: entry(MINE, { stage: 'build' }), others: [], now: NOW, transcript: heavy }) || '', /^FANKEEL/,
+    'the fixture transcript is gone, and a missing one still renders');
   assert.ok(worst < 3000, 'worst injection is ' + name + ' at ' + worst + ' chars under a ' + REFERENCE_ROOT + '-character root');
 });
 

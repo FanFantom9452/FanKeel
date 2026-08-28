@@ -475,6 +475,13 @@ function sweep(root, since, now) {
     // Root files are excluded. `README.md` and `CLAUDE.md` are the front door
     // rather than pages in a tree, and GitHub renders a frontmatter block on a
     // README as a stray table at the top of the page.
+    //
+    // `TODO.md` is excluded for the opposite reason: it is not a claim about the
+    // code that could quietly stop being true, it is a list `scripts/todo-check.js`
+    // re-verifies in full on every run — every link resolving, every entry inside
+    // the cap, every entry under one of the three headings. A `last_verified`
+    // there would be a date somebody has to remember to bump standing in for a
+    // check that already runs continuously.
     const undeclared = markdown.filter((rel) => rel.includes('/')
         && roleOf(rel) === 'reference'
         && !(contracts.get(rel) || {}).declared);

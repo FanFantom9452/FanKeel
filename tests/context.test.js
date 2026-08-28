@@ -66,6 +66,29 @@ test('the line names what was lost and how to carry the task over', () => {
   assert.doesNotMatch(line, /Start a fresh session before the next one/);
 });
 
+// The id is disclosed in the `init` block, which a session only sees while it
+// has no task. Once it has one the block never repeats it — so the session that
+// most needs it is the one that cannot get it: after a compaction the id is out
+// of context, and every `task.js` call needs `--session <id>`.
+//
+// It rides the compaction line rather than the block, because that line only
+// appears once something has been dropped, which is exactly the case. A session
+// that has never compacted still has the id where it first saw it, and pays
+// nothing.
+test('a compacted session is told the id every task.js call needs', () => {
+  const id = 'aaaaaaaa-1111-2222-3333-444444444444';
+  const line = ctx.contextLine({ dropped: 326893, used: 287578 }, id);
+  assert.match(line, new RegExp(id));
+  assert.match(line, /--session/, 'the id alone is not the thing that was forgotten');
+
+  // Nothing dropped, nothing to have forgotten: the busy line stays as it was.
+  const busy = ctx.contextLine({ dropped: 0, used: ctx.BUSY }, id);
+  assert.doesNotMatch(busy, new RegExp(id));
+
+  // And a caller with no id to pass still gets the line it always got.
+  assert.doesNotMatch(ctx.contextLine({ dropped: 326893, used: 287578 }), /--session/);
+});
+
 test('past a million dropped it stops being a note and starts being advice', () => {
   const line = ctx.contextLine({ dropped: 1120198, used: 307734 });
   assert.match(line, /1\.1M tokens dropped/);
