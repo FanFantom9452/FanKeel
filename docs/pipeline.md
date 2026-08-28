@@ -541,19 +541,22 @@ is the same claim.
 
 ### audit
 
-Two scanners, and then the part neither of them can do.
+Three scanners, and then the part none of them can do.
 
 ```mermaid
 flowchart TD
     A["docs-check<br/><i>every reference still resolves</i>"]
     B["docs-audit<br/><i>the deeper sweep, 14 days</i>"]
+    A2["residue<br/><i>the one not about documents</i>"]
     C{"what came back?"}
     D1["<b>fallen behind the code they describe</b>"]
     D2["<b>plans look landed</b><br/>a record, not a plan"]
     D3["<b>index</b><br/>declared but not written, or<br/>entries pointing at nothing"]
     D4["<b>diagrams behind their directory</b><br/>the files one leaves out read<br/>as files that do not exist"]
+    D5["<b>undecided paths · spent worktrees ·<br/>environments nothing can rebuild</b><br/>somebody has to commit, ignore,<br/>rebuild or delete each one"]
     E1["<b>pairs describing the same code</b><br/>where single source of truth breaks"]
     E2["<b>unfiled · undeclared ·<br/>linked from nowhere</b>"]
+    E3["<b>weight · empty directories</b><br/>a 73 GB build directory is not a bug;<br/>not knowing about it is"]
     F["<b>the part only reading finds</b><br/>open both, find the claim each makes<br/>about that file, say which one the<br/>code supports. Name the line."]
     F1["<b>dispatch readers</b><br/>several in one response, one per pair<br/><i>four the ceiling, sonnet the floor</i><br/><i>say how many, and on which model</i><br/><i>compare what comes back against itself</i>"]
     F2["<b>the adversary</b><br/>read-only, over the findings<br/><i>was it run · on what · could it have failed</i><br/><i>only the findings it defeats</i>"]
@@ -561,18 +564,23 @@ flowchart TD
 
     A --> C
     B --> C
+    A2 --> C
     C -- "defects · the run fails" --> D1
     C -- "defects" --> D2
     C -- "defects" --> D3
     C -- "defects" --> D4
+    C -- "defects" --> D5
     C -- "context, not evidence" --> E1
     C -- "context" --> E2
+    C -- "context" --> E3
     E1 --> F
     E2 --> F
+    E3 --> F2
     D1 --> F2
     D2 --> F2
     D3 --> F2
     D4 --> F2
+    D5 --> F2
     F --> F1
     F1 --> F2
     F2 --> G

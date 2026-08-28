@@ -155,12 +155,12 @@ the code half.
 **Before the question, one read-only adversary over the findings.** The pairs
 above are dispatched to produce findings; this one is dispatched to defeat them.
 
-It asks what the same adversary asks at `verify` — was it run, on what, and could
-it have failed — with the findings list in place of the evidence table, and it is
-aimed at how a finding was reached rather than at whether it sounds right. The
-contract is the same: paths and never a paste, only the findings it defeats, and
-the reason that costs, because every line it returns stays in this context. It
-reads the method; it does not probe it.
+It asks what the same adversary asks at `verify`, with the findings list in place
+of the evidence table, and under the same contract. The questions and the
+contract are written once, in the `fankeel-verify` skill; the short form rides
+every prompt in this stage's own injected rules. This section carries only what
+is particular to `audit`, because a second copy is the pair this stage exists to
+find.
 
 Two things are particular to this stage. A finding built on something nobody ran
 is the failure it exists for — one reached a TODO entry under `## Ready`, a
