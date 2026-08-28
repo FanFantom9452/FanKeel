@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-08-27
-source_of_truth: hooks/brief.js, lib/render.js
+last_verified: 2026-08-28
+source_of_truth: hooks/brief.js, lib/render.js, hooks/carry.js
 ---
 
 # Subagents
@@ -58,6 +58,21 @@ shape.
 `PostToolUse` fires inside a subagent under the **parent's** session id — measured,
 not assumed — so a dispatched implementer's edits are claimed for the task that
 dispatched it and the collision warning keeps covering them.
+
+# Telling a subagent apart, when a hook has to
+
+`hooks/carry.js` has to, because a subagent owns no task and must never be
+offered one. The field for it is **`agent_id`**, and Claude Code says so itself:
+
+> Subagent identifier. Present only when the hook fires from within a subagent
+> (e.g., a tool called by an AgentTool worker). Absent for the main thread, even
+> in `--agent` sessions. **Use this field (not `agent_type`) to distinguish
+> subagent calls from main-thread calls.**
+
+`agent_type` is the trap. It is set inside a subagent *and* on the main thread of
+a session started with `--agent` — and that second one is a real session, which
+does own tasks and does get the offer. A hook filtering on the type would refuse
+the person it was written for.
 
 ## What it deliberately is not
 
