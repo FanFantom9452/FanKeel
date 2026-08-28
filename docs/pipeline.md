@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-28
+last_verified: 2026-08-29
 source_of_truth: lib/stages.js, lib/render.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js
 ---
 
@@ -507,8 +507,9 @@ flowchart TD
     A5["line by line against the plan<br/><i>not 'the tests pass'</i>"]
     B{"did you run it<br/>in <i>this</i> message?"}
     C["then you cannot claim it yet.<br/>Run it."]
-    D["docs-check<br/><i>which page did this change<br/>just make untrue?</i>"]
+    D["docs-check<br/><i>which page did this change<br/>just make untrue?</i><br/><i>a coverage claim states its denominator</i>"]
     D1["<b>dispatch readers</b><br/>several in one response, one per page<br/><i>four the ceiling, sonnet the floor</i><br/><i>say how many, and on which model</i><br/><i>the path to a diff file, never a pasted diff</i>"]
+    D2["<b>the adversary</b><br/>read-only, over the evidence table<br/><i>was it run · on what · could it have<br/>failed · out of what</i><br/><i>paths never a paste — only the rows it defeats</i>"]
     E{"anything half-built?"}
     F["back to build.<br/>Verify is not where<br/>the bar gets lowered."]
     G["quote the command and the<br/>one line that decided it"]
@@ -527,7 +528,8 @@ flowchart TD
     C --> B
     B -- yes --> D
     D --> D1
-    D1 --> E
+    D1 --> D2
+    D2 --> E
     E -- yes --> F
     E -- no --> G
 ```
@@ -554,6 +556,7 @@ flowchart TD
     E2["<b>unfiled · undeclared ·<br/>linked from nowhere</b>"]
     F["<b>the part only reading finds</b><br/>open both, find the claim each makes<br/>about that file, say which one the<br/>code supports. Name the line."]
     F1["<b>dispatch readers</b><br/>several in one response, one per pair<br/><i>four the ceiling, sonnet the floor</i><br/><i>say how many, and on which model</i><br/><i>compare what comes back against itself</i>"]
+    F2["<b>the adversary</b><br/>read-only, over the findings<br/><i>was it run · on what · could it have failed</i><br/><i>only the findings it defeats</i>"]
     G["<b>report, then ask, then act</b><br/><i>never move a document unasked —<br/>every one is a link somebody holds</i>"]
 
     A --> C
@@ -566,12 +569,13 @@ flowchart TD
     C -- "context" --> E2
     E1 --> F
     E2 --> F
-    D1 --> G
-    D2 --> G
-    D3 --> G
-    D4 --> G
+    D1 --> F2
+    D2 --> F2
+    D3 --> F2
+    D4 --> F2
     F --> F1
-    F1 --> G
+    F1 --> F2
+    F2 --> G
 ```
 
 The context sections are the ones to act on first when they appear, because every
