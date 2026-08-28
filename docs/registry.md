@@ -170,9 +170,17 @@ success.
 So a change to one record is taken under `sessions/{session_id}.lock`, a
 directory rather than a file, because a holder that dies leaves no open handle
 behind. This is what git does with `.git/index.lock`. It is **advisory** —
-nothing enforces it, and it works because every writer goes through
-`lib/registry.js`, which is already the rule. A record edited by hand defeats it,
-the way it defeats everything else here.
+nothing enforces it, and it works because every writer goes through `update` or
+`replace` in `lib/registry.js`, both of which take it. A record edited by hand
+defeats it, the way it defeats everything else here.
+
+Going through the module was the rule for a long time and it was not enough.
+`writeSession` is in the same module and takes no lock — it is the atomic write
+the two above are built on — and nine writes in `scripts/task.js` called it
+directly, so `stage`, `task`, `route`, `guard`, `down`, `clear`, `start` and
+`adopt` each read the record, changed a field and wrote it back with nothing
+holding the file. A claim landing in that window was put back the way it was.
+Fixed 2026-08-29; the rule is the entry point, not the file it lives in.
 
 A writer waits up to a second in five-millisecond steps, and a lock older than
 five seconds is treated as abandoned and broken. Both numbers are measurements

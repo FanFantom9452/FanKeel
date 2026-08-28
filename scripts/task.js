@@ -359,7 +359,16 @@ function cmdStart(root, opts) {
         started: stamp,
         updated: stamp,
     };
-    if (!registry.writeSession(root, id, data)) fail('Could not write the entry under ' + root);
+    // `replace` rather than `update`: this record was built from scratch a few
+    // lines up, so there is nothing of anyone else's in the file to preserve.
+    // What the lock buys is that a hook firing on the prompt that ran this
+    // command waits rather than being overwritten.
+    //
+    // The already-active check above still sits outside it, so two `start`s for
+    // one session id could both pass it. That is a different race and a rarer
+    // one — a session cannot run two commands at once — and closing it would
+    // mean refusing from inside the lock, where `fail` exits without releasing.
+    if (!registry.replace(root, id, data)) fail('Could not write the entry under ' + root);
 
     // No collision check here, because there is nothing yet to collide. A task
     // holding no file overlaps no file, and the first edit is where the question
@@ -382,21 +391,36 @@ function cmdStage(root, opts) {
     const name = String(opts.positional[0] || '').toLowerCase();
     if (!stageByName(name)) fail('Not a stage: ' + (name || '(none)') + '. One of: ' + STAGE_NAMES.join(', '));
 
-    const data = registry.readSession(root, id);
-    if (!data || data.active !== true) fail('No active entry for this session under ' + root);
+    // Read, checked and written inside the lock, because a claim landing between
+    // the read and the write used to be put back the way it was. `refuse` rather
+    // than `fail` in there: `fail` exits the process, `process.exit` does not run
+    // a `finally`, and the lock directory would outlive the command by the five
+    // seconds it takes the next writer to judge it abandoned.
+    let refuse = null;
+    let data = null;
+    let from = null;
+    let route = null;
+    const wrote = registry.update(root, id, (d) => {
+        if (d.active !== true) { refuse = 'No active entry for this session under ' + root; return false; }
 
-    // A stage off the route is refused rather than silently added. The route was
-    // agreed at Start, and a task that quietly grew two stages is a task whose
-    // progress nobody can read.
-    const route = normaliseRoute(data.route) || FULL_ROUTE;
-    if (!route.includes(name)) {
-        fail('`' + name + '` is not on the route for this task: ' + route.join(' → ')
-            + NL + 'Re-route with `route` if the task really changed shape.');
-    }
+        // A stage off the route is refused rather than silently added. The route
+        // was agreed at Start, and a task that quietly grew two stages is a task
+        // whose progress nobody can read.
+        route = normaliseRoute(d.route) || FULL_ROUTE;
+        if (!route.includes(name)) {
+            refuse = '`' + name + '` is not on the route for this task: ' + route.join(' → ')
+                + NL + 'Re-route with `route` if the task really changed shape.';
+            return false;
+        }
 
-    const from = data.stage;
-    data.stage = name;
-    if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
+        from = d.stage;
+        d.stage = name;
+        data = d;
+        return true;
+    });
+    if (refuse) fail(refuse);
+    if (!data) fail('No active entry for this session under ' + root);
+    if (!wrote) fail('Could not write the entry.');
     const clash = collisions(root, id, registry.claimsOf(data));
     showBadge(opts, id, badge.badgeWord(name, clash.length > 0), Object.assign({ others: clash.length }, data));
 
@@ -423,27 +447,38 @@ function cmdTask(root, opts) {
     const text = opts.positional.join(' ').replace(/\s+/g, ' ').trim();
     if (!text) fail('Give the new task, in one line.');
 
-    const data = registry.readSession(root, id);
-    if (!data || data.active !== true) {
+    // Under the lock, and this is the command with the most to lose to a claim
+    // arriving mid-write: it is clearing the claim list on purpose, so an
+    // unlocked read-modify-write here could keep exactly the one path the clear
+    // was meant to drop.
+    let data = null;
+    let active = false;
+    const wrote = registry.update(root, id, (d) => {
+        if (d.active !== true) return false;
+        active = true;
+
+        d.task = text;
+        delete d.claims;
+        // `claims` falls back to `scope` on a record written before the split, so
+        // a clear that dropped only the new key would leave the old list holding.
+        delete d.scope;
+        delete d.notes;
+        delete d.next;
+        // The stage names come round again, so a burn left here would give the
+        // new task the old one's first sighting and report the difference
+        // between two tasks as the cost of one stage.
+        delete d.burn;
+        const route = normaliseRoute(d.route) || FULL_ROUTE.slice();
+        d.route = route;
+        d.stage = route[0];
+        data = d;
+        return true;
+    });
+    if (!active) {
         fail('No active entry for this session under ' + root
             + NL + '`start --task "<one line>"` begins one.');
     }
-
-    data.task = text;
-    delete data.claims;
-    // `claims` falls back to `scope` on a record written before the split, so a
-    // clear that dropped only the new key would leave the old list holding.
-    delete data.scope;
-    delete data.notes;
-    delete data.next;
-    // The stage names come round again, so a burn left here would give the new
-    // task the old one's first sighting and report the difference between two
-    // tasks as the cost of one stage.
-    delete data.burn;
-    const route = normaliseRoute(data.route) || FULL_ROUTE.slice();
-    data.route = route;
-    data.stage = route[0];
-    if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
+    if (!wrote) fail('Could not write the entry.');
 
     // Holding nothing, so overlapping nothing.
     showBadge(opts, id, badge.badgeWord(data.stage, false), data);
@@ -477,11 +512,16 @@ function cmdGuard(root, opts) {
     const mode = String(opts.positional[0] || '').toLowerCase();
     if (!GUARDS.includes(mode)) fail('Guard is one of: ' + GUARDS.join(', '));
 
-    const data = registry.readSession(root, id);
-    if (!data || data.active !== true) fail('No active entry for this session under ' + root);
-    if (mode === 'off') delete data.guard;
-    else data.guard = mode;
-    if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
+    let data = null;
+    const wrote = registry.update(root, id, (d) => {
+        if (d.active !== true) return false;
+        if (mode === 'off') delete d.guard;
+        else d.guard = mode;
+        data = d;
+        return true;
+    });
+    if (!data) fail('No active entry for this session under ' + root);
+    if (!wrote) fail('Could not write the entry.');
     return 'fankeel — guard: ' + (data.guard || 'off (warning only)');
 }
 
@@ -490,11 +530,17 @@ function cmdGuard(root, opts) {
 // the same dead end gets walked into twice.
 function cmdDown(root, opts) {
     const id = requireSession(opts);
-    const data = registry.readSession(root, id);
+    let data = null;
+    let already = false;
+    const wrote = registry.update(root, id, (d) => {
+        data = d;
+        if (d.active !== true) { already = true; return false; }
+        d.active = false;
+        return true;
+    });
     if (!data) fail('No entry for this session under ' + root);
-    if (data.active !== true) return 'fankeel — already stood down.';
-    data.active = false;
-    if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
+    if (already) return 'fankeel — already stood down.';
+    if (!wrote) fail('Could not write the entry.');
     hideBadge(opts, id);
 
     const lines = ['fankeel — stood down: ' + (data.task || 'untitled')];
@@ -549,15 +595,18 @@ function cmdAdopt(root, opts) {
     if (source.notes) data.notes = source.notes;
     if (source.next) data.next = source.next;
     if (source.guard) data.guard = source.guard;
-    if (!registry.writeSession(root, id, data)) fail('Could not write this session\'s entry.');
+    // Two records, two locks, and no way to make the pair atomic — which is why
+    // the failure below names the state it can leave behind rather than
+    // pretending it cannot happen. Each side is atomic on its own, which is the
+    // part that was missing.
+    if (!registry.replace(root, id, data)) fail('Could not write this session\'s entry.');
 
-    source.active = false;
     // The source's badge goes too. Reaching into another session's state is
     // already what adopt is, and a badge still reading `build` for a task this
     // session took over is the statusline telling that window a lie it has no
     // way to notice.
     hideBadge(opts, from);
-    if (!registry.writeSession(root, from, source)) {
+    if (!registry.update(root, from, (d) => { d.active = false; })) {
         fail('Adopted, but could not stand the source down. Two sessions now claim these files — stand ' + from + ' down by hand.');
     }
 
@@ -605,8 +654,10 @@ function cmdClear(root, opts) {
             + NL + 'Pass --force if you know the terminal is gone.');
     }
 
-    data.active = false;
-    if (!registry.writeSession(root, target, data)) fail('Could not write the entry.');
+    // The staleness gate above ran on the read a moment ago; the write itself
+    // goes under the target's lock, so a hook of theirs that is still firing has
+    // its claim kept rather than rolled back by this deactivation.
+    if (!registry.update(root, target, (d) => { d.active = false; })) fail('Could not write the entry.');
     hideBadge(opts, target);
 
     // Prose rather than a command, because the command would not run for the
@@ -624,7 +675,10 @@ function cmdClear(root, opts) {
 // task, and the two should not be one keystroke apart.
 function cmdRoute(root, opts) {
     const id = requireSession(opts);
-    const data = registry.readSession(root, id);
+    // Read once for the two refusals below, which have to print before anything
+    // is written, then re-read under the lock for the write itself. `data` is
+    // reassigned there so the badge and the return line describe what landed.
+    let data = registry.readSession(root, id);
     if (!data || data.active !== true) fail('No active entry for this session under ' + root);
 
     const given = normaliseRoute(splitScope(opts.positional[0] || opts.route));
@@ -641,13 +695,17 @@ function cmdRoute(root, opts) {
     }
 
     const before = normaliseRoute(data.route) || FULL_ROUTE;
-    data.route = given;
-    // The class is the route said out loud, and it is injected on every prompt.
-    // Left behind, it describes stages the new route does not contain.
-    const cls = classForRoute(given);
-    if (cls) data.class = cls;
-    else delete data.class;
-    if (!registry.writeSession(root, id, data)) fail('Could not write the entry.');
+    const wrote = registry.update(root, id, (d) => {
+        d.route = given;
+        // The class is the route said out loud, and it is injected on every
+        // prompt. Left behind, it describes stages the new route does not
+        // contain.
+        const cls = classForRoute(given);
+        if (cls) d.class = cls;
+        else delete d.class;
+        data = d;
+    });
+    if (!wrote) fail('Could not write the entry.');
     const clash = collisions(root, id, registry.claimsOf(data));
     showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data));
 

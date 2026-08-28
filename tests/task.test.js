@@ -10,7 +10,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { execFileSync, spawnSync } = require('node:child_process');
+const { execFileSync, spawnSync, spawn } = require('node:child_process');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'task.js');
 const registry = require('../lib/registry.js');
@@ -682,4 +682,50 @@ test('a config directory that cannot be read is not a refusal', () => {
   const { out, code } = run(dir, ['start', '--session', A, '--task', 'x']);
   assert.equal(code, 0, out);
   assert.equal(entry(dir, A).task, 'x');
+});
+
+// Every command here reads the entry, changes one field and writes it back, and
+// `writeSession` being atomic does not make the pair atomic — the sentence
+// `lib/registry.js` opens its lock section with. The difference is that the
+// hooks were routed through the lock and these were not: nine writes across
+// eight commands went straight to `writeSession`, which takes nothing.
+//
+// Racing it is not testable: the read and the write are microseconds apart, so
+// a helper timed to land between them lands after both nearly every run. What is
+// testable is the property underneath — while somebody else holds the lock, this
+// command must not have written. So the helper is the observer rather than the
+// racer. It wakes at 200ms, well after an unlocked `task.js` has finished at
+// about 77ms and well before it releases the lock at 600ms, and records the
+// stage it found.
+//
+// Unlocked, it finds `design`: the write went in while the lock was held.
+// Locked, it finds `survey`, and `task.js` lands afterwards — 600ms of waiting
+// inside a cap of 1000, and nowhere near the 5s that would break the lock as
+// abandoned.
+test('a stage change waits for the lock instead of writing through it', async () => {
+  const dir = root();
+  assert.equal(started(dir, A, 'x').code, 0);
+
+  const lock = path.join(dir, '.fankeel', 'sessions', A + '.lock');
+  fs.mkdirSync(lock, { recursive: true });
+  const seen = path.join(dir, 'seen.txt');
+
+  const helper = path.join(dir, 'helper.js');
+  fs.writeFileSync(helper,
+    'const fs = require("node:fs");\n'
+    + 'const r = require(' + JSON.stringify(path.join(__dirname, '..', 'lib', 'registry.js')) + ');\n'
+    + 'const [root, id, lock, seen] = process.argv.slice(2);\n'
+    + 'const nap = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);\n'
+    + 'nap(200);\n'
+    + 'fs.writeFileSync(seen, String(r.readSession(root, id).stage));\n'
+    + 'nap(400);\n'
+    + 'fs.rmdirSync(lock);\n');
+  const kid = spawn(process.execPath, [helper, dir, A, lock, seen], { stdio: 'ignore' });
+
+  const { code, out } = run(dir, ['stage', 'design', '--session', A]);
+  await new Promise((done) => kid.on('exit', done));
+
+  assert.equal(code, 0, out);
+  assert.equal(fs.readFileSync(seen, 'utf8'), 'survey', 'wrote while another writer held the lock');
+  assert.equal(entry(dir, A).stage, 'design', 'and still landed once the lock came free');
 });
