@@ -436,6 +436,10 @@ function cmdTask(root, opts) {
     delete data.scope;
     delete data.notes;
     delete data.next;
+    // The stage names come round again, so a burn left here would give the new
+    // task the old one's first sighting and report the difference between two
+    // tasks as the cost of one stage.
+    delete data.burn;
     const route = normaliseRoute(data.route) || FULL_ROUTE.slice();
     data.route = route;
     data.stage = route[0];

@@ -45,7 +45,7 @@ heading is one nobody said the state of.
 ## Needs a decision
 
 - Nothing sets the version in all ten places at once or fails when they disagree, and no page lists what a release changed. Both are derivable from the commits between two `chore: X.Y.Z`.
-- Sample `inspect()` on each stage change so a task can report context burn per stage — [lib/context.js](lib/context.js). `hooks/inject.js` reads the transcript every prompt and drops it.
+- `cmdStage` reads then writes outside the lock, so a hook `touch` between the two is lost — [scripts/task.js](scripts/task.js). Older than `burn`: `updated` was always losable this way.
 - Wire [lib/plugins.js](lib/plugins.js) up: nothing calls it, and `lib/stages.js` names ponytail and knip unconditionally. Deleting is the wrong half — the decision record says why.
 - `task.js` refuses when `<config>/sessions/` is readable but empty, and fails open when it is absent — [scripts/task.js](scripts/task.js). `lib/live.js` fails open on that same evidence.
 - The session id is disclosed only while there is no active entry, so a compacted session that owns a task cannot read its own id — [hooks/inject.js](hooks/inject.js).

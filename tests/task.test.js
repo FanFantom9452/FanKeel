@@ -550,6 +550,20 @@ test('task clears a claim list an old record still keeps under scope', () => {
   assert.deepEqual(registry.claimsOf(entry(dir, A)), []);
 });
 
+// The route restarts at its head, so the same stage names come round again. A
+// burn left behind would pair the old task's first sighting with the new task's
+// latest and report the gap between two tasks as the cost of one stage.
+test('task clears the burn along with the claims and the notes', () => {
+  const dir = root();
+  started(dir, A, 'first', 'Waypoint');
+  registry.touch(dir, A, 120000);
+  registry.touch(dir, A, 342000);
+  assert.ok(entry(dir, A).burn, 'the fixture never recorded a burn to clear');
+
+  run(dir, ['task', 'second', '--session', A]);
+  assert.equal(entry(dir, A).burn, undefined);
+});
+
 test('task keeps the project, the route, the guard and the start time', () => {
   const dir = root();
   run(dir, ['start', '--session', A, '--task', 'first', '--project', 'Waypoint',

@@ -243,6 +243,27 @@ test('burnOf is null for a stage never sampled, sampled once, or sampled backwar
   assert.equal(registry.burnOf({ burn: { survey: 342000 } }, 'survey'), null);
 });
 
+// A pair of the wrong length would otherwise be preserved as the first sighting
+// on every later write, and the stage could never report a burn again.
+test('touch replaces a malformed pair rather than carrying it forward', () => {
+  const root = tmpRoot();
+  for (const bad of [[], [120000], 'survey', null, [null, 342000]]) {
+    registry.writeSession(root, SID, task({ stage: 'survey', burn: { survey: bad } }));
+    registry.touch(root, SID, 300000);
+    registry.touch(root, SID, 342000);
+    assert.deepEqual(registry.readSession(root, SID).burn, { survey: [300000, 342000] },
+      'malformed pair ' + JSON.stringify(bad) + ' was not replaced');
+  }
+});
+
+test('a burn that is not an object at all is replaced, not written into', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task({ stage: 'survey', burn: [1, 2] }));
+  registry.touch(root, SID, 120000);
+  registry.touch(root, SID, 342000);
+  assert.deepEqual(registry.readSession(root, SID).burn, { survey: [120000, 342000] });
+});
+
 test('touch with no figure, or a stage-less entry, writes no burn at all', () => {
   const root = tmpRoot();
   registry.writeSession(root, SID, task({ stage: 'survey' }));
