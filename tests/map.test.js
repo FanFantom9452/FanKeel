@@ -225,6 +225,37 @@ test('a single-dash diagram above the tree does not swallow the search', () => {
   assert.doesNotMatch(found.lines.join('\n'), /Step 1/);
 });
 
+// A misspelt `layout.file` narrows the search to one file that is not there, and
+// the absent-case line then names three signposts none of which were opened — on
+// a project whose README holds a perfectly good tree. A confident sentence
+// pointing the wrong way is the failure this whole section exists to prevent, so
+// it must not be the failure mode of the section itself.
+test('a declared layout that resolves to nothing names what was tried, not what was not', () => {
+  const tree = '# r\n\n## Layout\n\n├── a/  one\n├── b/  two\n└── c/  three\n';
+
+  const badFile = withFiles({
+    'README.md': tree,
+    '.fankeel/docs.json': JSON.stringify({
+      buckets: [{ path: 'docs', role: 'reference' }],
+      layout: { file: 'REAMDE.md' },
+    }),
+  });
+  const missed = map.buildMap(badFile);
+  assert.match(missed, /REAMDE\.md/);
+  assert.doesNotMatch(missed, /no directory tree found in CLAUDE\.md/);
+
+  const badHeading = withFiles({
+    'README.md': tree,
+    '.fankeel/docs.json': JSON.stringify({
+      buckets: [{ path: 'docs', role: 'reference' }],
+      layout: { file: 'README.md', heading: 'Nowhere' },
+    }),
+  });
+  const wrong = map.buildMap(badHeading);
+  assert.match(wrong, /Nowhere/);
+  assert.doesNotMatch(wrong, /no directory tree found in CLAUDE\.md/);
+});
+
 test('a project with no tree is told so, and told what makes one', () => {
   const dir = withFiles({ 'README.md': '# r\n\nprose only\n' });
   const text = map.buildMap(dir);
