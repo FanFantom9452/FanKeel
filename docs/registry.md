@@ -15,7 +15,7 @@ One registry for the workspace, one docs tree per repository:
 ```
 workspace/                     <- Claude Code opened here
 ├── .fankeel/
-│   ├── .gitignore          sessions/
+│   ├── .gitignore          sessions/, map.md, build/
 │   └── sessions/           the registry, one file per session, never committed
 ├── Waypoint/               a repository
 │   ├── .fankeel/

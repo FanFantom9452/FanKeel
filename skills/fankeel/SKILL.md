@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.35.0
+version: 0.36.0
 status: current
 last_verified: 2026-08-28
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js
@@ -22,7 +22,7 @@ Two things live under `.fankeel/`, and they have different homes.
 ```
 workspace/                        <- Claude Code opened here
 ├── .fankeel/
-│   ├── .gitignore             sessions/
+│   ├── .gitignore             sessions/, map.md, build/
 │   └── sessions/              THE REGISTRY. one for the whole workspace.
 │       └── <session_id>.json    never committed
 │
@@ -78,7 +78,7 @@ controlled there.
 
 ```
 .fankeel/
-├── .gitignore          one line: sessions/
+├── .gitignore          sessions/, map.md, build/
 └── sessions/
     └── {session_id}.json
 ```
@@ -476,7 +476,8 @@ than for the pipeline.
 ## Where documents live
 
 `<project>/.fankeel/docs.json`, version-controlled — `.fankeel/.gitignore`
-excludes only `sessions/`, and this is what that exception was left open for. One
+excludes what is per-machine or regenerated, `sessions/` and `map.md` and
+`build/`, and this is the one it deliberately leaves in. One
 per repository, found from the task's `project` and the files it has claimed; see
 **Where the files are** above.
 
