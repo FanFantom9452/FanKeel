@@ -134,6 +134,30 @@ test('a directory with no git history says so instead of guessing', () => {
   assert.equal(version.main(['--changes'], tree()).code, 1);
 });
 
+// The manifests are listed and the skills are found, and the asymmetry is the
+// point: a third manifest is a decision somebody makes, where a ninth skill is
+// what adding a stage looks like and should be covered without editing this.
+test('the skills are found by looking, the manifests by name', () => {
+  assert.deepEqual(version.MANIFESTS, ['package.json', '.claude-plugin/plugin.json']);
+
+  const root = tree();
+  assert.deepEqual(version.skillFiles(root), [
+    'skills/fankeel-build/SKILL.md',
+    'skills/fankeel-survey/SKILL.md',
+    'skills/fankeel/SKILL.md',
+  ], 'sorted, so two runs over one tree read the same');
+
+  fs.mkdirSync(path.join(root, 'skills', 'fankeel-ninth'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'skills', 'fankeel-ninth', 'SKILL.md'), '---\nversion: 0.34.0\n---\n');
+  assert.equal(version.skillFiles(root).length, 4, 'a new skill is covered without this file changing');
+
+  // A directory under skills/ that holds no SKILL.md is not a skill.
+  fs.mkdirSync(path.join(root, 'skills', 'not-a-skill'), { recursive: true });
+  assert.equal(version.skillFiles(root).length, 4);
+
+  assert.deepEqual(version.skillFiles(path.join(root, 'nowhere')), []);
+});
+
 // Only a release commit starts a release. Other chore commits are ordinary work.
 test('a chore that is not a release does not start one', () => {
   assert.equal(version.RELEASE.test('chore: 0.34.0 — the end of a task says what shipped'), true);

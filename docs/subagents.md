@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-28
+last_verified: 2026-08-29
 source_of_truth: hooks/brief.js, lib/render.js, hooks/carry.js
 ---
 
@@ -54,6 +54,42 @@ make correlated mistakes that per-agent reading will not catch; and the **return
 contract must state why it costs**, because naming the shape without the reason
 is a preference, not a contract, and a subagent told the reason returns the
 shape.
+
+## Split it by lens, not by slice
+
+Once you have decided to fan out, there are two ways to divide the work and they
+are not equivalent.
+
+| | |
+|---|---|
+| **by slice** | reader one gets `lib/`, reader two gets `scripts/`, reader three gets `hooks/`. Each sees a third of the tree |
+| **by lens** | every reader gets the whole tree and one question. One looks for dead code, one for reinvented standard library, one for duplication |
+
+**Slicing loses exactly the findings a fan-out is for.** "Nothing calls this" and
+"this abstraction has one implementation" are answers no reader holding a third
+of the tree can give: the caller it is looking for is in somebody else's slice,
+so every reader reports a maybe and the parent has to redo the join. Measured on
+this repository: `lib/plugins.js` has zero production callers, and that is only
+visible to something holding `lib/`, `scripts/` and `hooks/` at once.
+
+A lens costs more per reader — each reads the whole tree — and it buys an answer
+that does not need reassembling. The reading is thrown away either way; what
+survives is the answer, and a narrow answer from a wide read is the trade the
+whole mechanism is making.
+
+Slice only where the question is genuinely local. "Does this file's own logic
+agree with itself" is per-file and splits cleanly; "is this used" never does.
+
+## Say the denominator
+
+A fan-out reads part of something. **Say what the part is out of.** Four readers
+over four pages of forty-three is four readers over 9% of the documents, and a
+report that says "four readers found nothing" without the forty-three reads as a
+clean sweep of the whole thing.
+
+This is the rule `lib/map.js` states for its own caps — the count of what was
+dropped is still printed, because a silent cap reads as "that is all there is".
+A fan-out is a cap somebody chose, and it fails the same way.
 
 `PostToolUse` fires inside a subagent under the **parent's** session id — measured,
 not assumed — so a dispatched implementer's edits are claimed for the task that

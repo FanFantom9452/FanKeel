@@ -198,7 +198,7 @@ function main(argv, root) {
     };
 }
 
-module.exports = { MANIFESTS, RELEASE, skillFiles, readAll, changes, changeReport, report, main };
+module.exports = { MANIFESTS, RELEASE, skillFiles, readAll, changes, changeReport, main };
 
 if (require.main === module) {
     const r = main(process.argv.slice(2));
