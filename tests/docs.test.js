@@ -108,6 +108,29 @@ test('a docs.json that does not parse names itself rather than failing the run',
   assert.match(error, /does not parse/);
 });
 
+test('a layout pointer survives read, normalised the way index is', () => {
+  const root = tree({
+    '.fankeel/docs.json': JSON.stringify({
+      preset: 'flat',
+      index: 'docs/README.md',
+      buckets: [{ path: 'docs', role: 'reference' }],
+      layout: { file: '.\\README.md', heading: '  目錄結構  ' },
+    }),
+  });
+  const parsed = docs.read(root).tree;
+  assert.deepEqual(parsed.layout, { file: 'README.md', heading: '目錄結構' });
+});
+
+test('half a pointer is kept and no pointer at all is absent, not empty', () => {
+  const only = docs.normalise({ buckets: [{ path: 'docs', role: 'reference' }], layout: { file: 'CLAUDE.md' } });
+  assert.deepEqual(only.layout, { file: 'CLAUDE.md' });
+
+  for (const bad of [undefined, null, 'README.md', [], {}, { file: '   ' }, { heading: 42 }]) {
+    const t = docs.normalise({ buckets: [{ path: 'docs', role: 'reference' }], layout: bad });
+    assert.equal(t.layout, undefined, 'layout survived from ' + JSON.stringify(bad));
+  }
+});
+
 // --- the checker -----------------------------------------------------------
 
 test('a dead link in a reference document is a finding', () => {
