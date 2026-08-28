@@ -636,6 +636,12 @@ to say so, which is what `shipped:` is for — one line per thing someone can no
 do, taken from the ledger's completed entries where the task had a plan and
 listed by hand where it did not.
 
+**The commit body is that same list.** The subject is why; the bullets are what
+shipped. They are the same material, and a commit that argues in paragraphs
+makes its reader reconstruct a list written twenty lines earlier — prose is for
+what a bullet cannot hold, a number or a cap or a decision that went the other
+way.
+
 Then option one stands the task down, and **`/clear` comes after that, never
 before**. A clear takes a new session id, so clearing first leaves the entry
 `active` with nothing reading it — recoverable, because `hooks/carry.js` offers

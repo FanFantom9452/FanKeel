@@ -56,7 +56,22 @@ was never a note:
 | why a change was made | the commit message |
 | work deliberately deferred | `TODO.md`, one line, under the heading for what it is short of |
 
-Commit the reason, not the diff. The diff is already in the commit.
+Commit the reason, not the diff — it is already in the commit. The subject is
+why; the body is the same `shipped:` list the report ends on, one bullet each:
+
+```
+<why this was done, one line>
+
+- <what someone can now do that they could not>
+- <another>
+
+<anything the bullets cannot hold: a measurement, a cap, a ruling>
+```
+
+The report and the commit are the same material, and a commit that argues in
+paragraphs makes its reader reconstruct a list that was written twenty lines
+earlier. Prose is for what a bullet cannot hold — a number, a cap, a decision
+that went the other way.
 
 Standing the task down is the last thing, and `/clear` comes after it — never
 before. A `/clear` keeps the process and takes a **new** session id, so a clear

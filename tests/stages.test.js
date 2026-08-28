@@ -375,6 +375,15 @@ test('land names what shipped, and the order a clear comes in', () => {
   assert.match(templateFor('land'), /\nshipped:\n/);
 });
 
+// The report and the commit are the same material — what someone can now do that
+// they could not — and only the report was getting it. A commit message that
+// argues in paragraphs makes the reader reconstruct the list that was already
+// written twenty lines earlier.
+test('the commit body is the shipped list, not a paragraph about it', () => {
+  const text = byName('land').rules.join(' ');
+  assert.match(text, /body is the shipped list, one bullet each/);
+});
+
 // Build is the one stage that does not stop at a question, so it is the one
 // stage whose place has to be written down somewhere other than the context.
 test('build opens a ledger and resumes from it rather than from memory', () => {
