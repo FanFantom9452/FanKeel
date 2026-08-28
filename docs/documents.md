@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-08-27
-source_of_truth: lib/docs.js
+last_verified: 2026-08-29
+source_of_truth: lib/docs.js, lib/map.js, scripts/layout.js
 ---
 
 # Where documents live
@@ -27,6 +27,45 @@ one?" rather than "which of these?".
 
 A markdown file in no bucket is reported. Not as an error, but as the one nobody
 decided the lifetime of, which is the one most likely to rot unnoticed.
+
+## `layout`, which points at a tree rather than holding one
+
+The buckets say where documents live. One optional key says where the project
+says what its *directories* are for:
+
+```json
+"layout": { "file": "README.md", "heading": "目錄結構" }
+```
+
+Both halves are optional and the key is absent unless one of them survives being
+trimmed. It is an **override**, not a requirement. With nothing declared the tree
+is found by structure: among `CLAUDE.md`, `AGENTS.md` and `README.md`, the file
+containing `├──` lines, and the nearest heading above the first of them. Measured
+over 185 README and CLAUDE files on one machine — 36 of them third-party plugins
+— 43 carry such a tree and that rule identified the heading in all 43. A keyword
+list would have missed twenty-three Chinese headings and nine English ones that
+are ordinary sentences, so the rule deliberately never reads the heading's words.
+
+Declare it where the guess is wrong: a file whose first box block is a diagram of
+something else, or a README with a tree its author does not want lifted.
+
+**It points; it never copies.** The responsibility text lives in the README and
+nowhere else, so nothing can hold a second version of it and disagree. That is
+the whole reason this is a pointer and not a `directories` array — a map that
+contradicts the README is worse than no map, because it is believed.
+
+`lib/map.js` lifts the block into `.fankeel/map.md`, capped at fifty rows and
+counting the entries nobody has described yet. A project with no tree gets a line
+saying so and the command that starts one:
+
+```
+node <plugin>/scripts/layout.js
+```
+
+which prints a skeleton — one row per top-level directory, its size, what is
+underneath, and an empty column. It writes nothing. The paths are derivable and
+the answers are not, which is the whole shape of the problem: `backend/` is the
+backend because somebody decided it was, and no listing says so.
 
 ## survey carries a scanner, not an instruction
 

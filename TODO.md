@@ -31,7 +31,7 @@ heading is one nobody said the state of.
 ## Ready
 
 - `--tree` prints nothing without `--root` — [scripts/survey.js](scripts/survey.js):419. Three places teach it without one, and the survey rule tells the model to scope from a tree that never appears.
-- `human()` stops at M, so a 3 GB directory reads `3071.0M` — [scripts/survey.js](scripts/survey.js):286. Measured on a real project 08-29.
+- `human()` stops at M so 3 GB reads `3071.0M`, and `toFixed(1)` makes 1048575 read `1024.0K` — [scripts/survey.js](scripts/survey.js):286. Both found 08-29.
 
 ## Needs a decision
 

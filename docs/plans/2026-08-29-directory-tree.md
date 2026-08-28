@@ -281,7 +281,7 @@ test('every directory appears once, with a size and an empty responsibility', ()
   for (const d of ['lib/', 'scripts/', 'docs/']) {
     assert.equal(out.split('\n').filter((l) => l.startsWith(d)).length, 1, d + ' appeared other than once');
   }
-  assert.match(out, /docs\/.*1 directories below/);
+  assert.match(out, /docs\/.*1 directory below/);
   assert.match(out, /lib\/.*2 files/);
   // The responsibility column is what a person fills in; the tool leaves it open.
   for (const line of out.split('\n').filter((l) => /^(lib|scripts|docs)\//.test(l))) {
@@ -352,11 +352,17 @@ In `lib/docs.js`, immediately above the `return` at the end of `normalise`, add:
     // rather than half-kept, because a pointer with no file is not a pointer.
     const layoutIn = data.layout && typeof data.layout === 'object' ? data.layout : null;
     const layout = {};
-    if (layoutIn && typeof layoutIn.file === 'string' && layoutIn.file.trim()) {
-        layout.file = layoutIn.file.replace(/\\/g, '/').replace(/^\.\//, '').trim();
+    if (layoutIn && typeof layoutIn.file === 'string') {
+        // Tested after the transform, not before. An earlier draft guarded on
+        // `layoutIn.file.trim()` and stripped afterwards, so a file of `./`
+        // passed the guard, became the empty string, and landed anyway — which
+        // is the one shape the stated contract forbids.
+        const file = layoutIn.file.replace(/\\/g, '/').replace(/^\.\//, '').trim();
+        if (file) layout.file = file;
     }
-    if (layoutIn && typeof layoutIn.heading === 'string' && layoutIn.heading.trim()) {
-        layout.heading = layoutIn.heading.trim();
+    if (layoutIn && typeof layoutIn.heading === 'string') {
+        const heading = layoutIn.heading.trim();
+        if (heading) layout.heading = heading;
     }
 ```
 
@@ -372,29 +378,43 @@ Add to `tests/docs.test.js`:
 
 ```js
 test('a layout pointer survives read, normalised the way index is', () => {
-  const root = withTree(tmpRoot(), {
-    preset: 'flat',
-    index: 'docs/README.md',
-    buckets: [{ path: 'docs', role: 'reference' }],
-    layout: { file: '.\\README.md', heading: '  目錄結構  ' },
+  const root = tree({
+    '.fankeel/docs.json': JSON.stringify({
+      preset: 'flat',
+      index: 'docs/README.md',
+      buckets: [{ path: 'docs', role: 'reference' }],
+      layout: { file: '.\\README.md', heading: '  目錄結構  ' },
+    }),
   });
-  const { tree } = docs.read(root);
-  assert.deepEqual(tree.layout, { file: 'README.md', heading: '目錄結構' });
+  const parsed = docs.read(root).tree;
+  assert.deepEqual(parsed.layout, { file: 'README.md', heading: '目錄結構' });
 });
 
 test('half a pointer is kept and no pointer at all is absent, not empty', () => {
   const only = docs.normalise({ buckets: [{ path: 'docs', role: 'reference' }], layout: { file: 'CLAUDE.md' } });
   assert.deepEqual(only.layout, { file: 'CLAUDE.md' });
 
-  for (const bad of [undefined, null, 'README.md', [], {}, { file: '   ' }, { heading: 42 }]) {
+  for (const bad of [undefined, null, 'README.md', [], {}, { file: '   ' }, { file: './' }, { heading: 42 }]) {
     const t = docs.normalise({ buckets: [{ path: 'docs', role: 'reference' }], layout: bad });
     assert.equal(t.layout, undefined, 'layout survived from ' + JSON.stringify(bad));
   }
+
+  // The case the first draft of this file missed: `./` alone drops the whole key
+  // because neither half is usable, but paired with a heading it kept the key
+  // alive carrying an empty file. Half a pointer is kept — half an empty string
+  // is not half a pointer.
+  const stripped = docs.normalise({
+    buckets: [{ path: 'docs', role: 'reference' }],
+    layout: { file: './', heading: 'Layout' },
+  });
+  assert.deepEqual(stripped.layout, { heading: 'Layout' });
 });
 ```
 
-`withTree` and `tmpRoot` already exist in that file — `tests/docs.test.js:31` and
-`:21`. Read them before writing; do not redefine them.
+`tree(files)` at `tests/docs.test.js:21` writes a fixture from a file map and
+returns its root; use it rather than `withTree` at `:31`, which takes a preset
+*name* and calls `docs.write(root, docs.PRESETS[name])` — it cannot carry a
+`layout` key. Do not redefine either.
 
 Steps: add both tests, run `node --test tests/docs.test.js` and watch them fail,
 make the two edits to `lib/docs.js`, run again and watch them pass, then
@@ -560,15 +580,26 @@ function layoutBlock(root, declared) {
 
 Add `layoutBlock` to that file's `module.exports`.
 
-Add to `tests/map.test.js`:
+Add to `tests/map.test.js`. That file has `root()` at `:16` and
+`write(dir, rel, text)` at `:17` and **no** `withTree`; this puts the two together
+because the tests below want a whole fixture at once. Add it beside them:
+
+`tests/map.test.js` requires only `../lib/map.js` today; the override test below
+reads a declaration, so add `const docs = require('../lib/docs.js');` beside it.
 
 ```js
+const withFiles = (files) => {
+  const dir = root();
+  for (const [rel, text] of Object.entries(files)) write(dir, rel, text);
+  return dir;
+};
+
 test('the tree is found with nothing declared, even when another file sorts first', () => {
-  const root = withTree({
+  const dir = withFiles({
     'CLAUDE.md': '# c\n\n| a | b |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |\n',
     'README.md': '# r\n\n## 目錄結構\n\n├── lib/    the library\n├── docs/   the pages\n└── bin/    entry points\n',
   });
-  const found = map.layoutBlock(root, null);
+  const found = map.layoutBlock(dir, null);
   assert.equal(found.file, 'README.md');
   assert.equal(found.heading, '目錄結構');
   assert.equal(found.rows, 3);
@@ -576,7 +607,7 @@ test('the tree is found with nothing declared, even when another file sorts firs
 });
 
 test('a declared pointer overrides the structural search', () => {
-  const root = withTree({
+  const dir = withFiles({
     'README.md': '# r\n\n## First\n\n├── a/  one\n├── b/  two\n└── c/  three\n\n'
       + '## Second\n\n├── x/  ex\n├── y/  why\n└── z/  zed\n',
     '.fankeel/docs.json': JSON.stringify({
@@ -584,31 +615,31 @@ test('a declared pointer overrides the structural search', () => {
       layout: { file: 'README.md', heading: 'Second' },
     }),
   });
-  const found = map.layoutBlock(root, docs.read(root).tree);
+  const found = map.layoutBlock(dir, docs.read(dir).tree);
   assert.equal(found.heading, 'Second');
   assert.match(found.lines.join('\n'), /x\//);
   assert.doesNotMatch(found.lines.join('\n'), /a\//);
 });
 
 test('rows with a path and nothing after it are counted, not refused', () => {
-  const root = withTree({
+  const dir = withFiles({
     'README.md': '# r\n\n## Layout\n\n├── lib/    the library\n├── docs/\n└── bin/\n',
   });
-  const found = map.layoutBlock(root, null);
+  const found = map.layoutBlock(dir, null);
   assert.equal(found.rows, 3);
   assert.equal(found.unfilled, 2);
 });
 
 test('fewer than three entry lines is a fragment, not a tree', () => {
-  const root = withTree({ 'README.md': '# r\n\n## Layout\n\n├── lib/  one\n└── x/  two\n' });
-  assert.equal(map.layoutBlock(root, null), null);
+  const dir = withFiles({ 'README.md': '# r\n\n## Layout\n\n├── lib/  one\n└── x/  two\n' });
+  assert.equal(map.layoutBlock(dir, null), null);
 });
 
 test('a continuation line is part of the block but is not a row', () => {
-  const root = withTree({
+  const dir = withFiles({
     'README.md': '# r\n\n## Layout\n\n├── lib/    the library\n│   └── x.js\n├── docs/   the pages\n└── bin/    entries\n',
   });
-  const found = map.layoutBlock(root, null);
+  const found = map.layoutBlock(dir, null);
   // Four entry lines, and the bare `│` line is carried but counted as neither a
   // row nor an unfilled one.
   assert.equal(found.rows, 4);
@@ -618,16 +649,16 @@ test('a continuation line is part of the block but is not a row', () => {
 
 test('a tree longer than the cap is cut and says how long it was', () => {
   const long = Array.from({ length: 60 }, (_, i) => '├── d' + i + '/  holds ' + i).join('\n');
-  const root = withTree({ 'README.md': '# r\n\n## Layout\n\n' + long + '\n' });
-  const found = map.layoutBlock(root, null);
+  const dir = withFiles({ 'README.md': '# r\n\n## Layout\n\n' + long + '\n' });
+  const found = map.layoutBlock(dir, null);
   assert.equal(found.total, 60);
   assert.equal(found.rows, 50);
   assert.equal(found.lines.filter((l) => /[├└]──/.test(l)).length, 50);
 });
 
 test('a file with no box lines at all yields nothing', () => {
-  const root = withTree({ 'README.md': '# r\n\n- lib/ the library\n- docs/ the pages\n- bin/ entries\n' });
-  assert.equal(map.layoutBlock(root, null), null);
+  const dir = withFiles({ 'README.md': '# r\n\n- lib/ the library\n- docs/ the pages\n- bin/ entries\n' });
+  assert.equal(map.layoutBlock(dir, null), null);
 });
 
 // Found by running this against 43 real files: three of them draw a flow diagram
@@ -635,20 +666,19 @@ test('a file with no box lines at all yields nothing', () => {
 // the diagram and abandoned the file. A directory tree uses two dashes; a flow
 // diagram does not.
 test('a single-dash diagram above the tree does not swallow the search', () => {
-  const root = withTree({
+  const dir = withFiles({
     'README.md': '# r\n\n## Pipeline\n\n  ├─ Step 1: fetch\n  ├─ Step 2: transform\n  └─ Step 3: push\n\n'
       + '## Layout\n\n├── lib/    the library\n├── docs/   the pages\n└── bin/    entry points\n',
   });
-  const found = map.layoutBlock(root, null);
+  const found = map.layoutBlock(dir, null);
   assert.equal(found.heading, 'Layout');
   assert.equal(found.rows, 3);
   assert.doesNotMatch(found.lines.join('\n'), /Step 1/);
 });
 ```
 
-`withTree` in `tests/map.test.js` takes a file map; read `tests/map.test.js:21`
-onward for its exact signature before writing, and use it rather than a new
-helper.
+`withFiles` is defined once, above the first of these tests, and Task 4 uses it
+too. Do not add a second copy.
 
 Steps: add the five tests, run `node --test tests/map.test.js` and watch them fail,
 write `layoutBlock` and export it, run again and watch them pass, then `npm test`,
@@ -706,26 +736,26 @@ Add to `tests/map.test.js`:
 
 ```js
 test('a project with no tree is told so, and told what makes one', () => {
-  const root = withTree({ 'README.md': '# r\n\nprose only\n' });
-  const text = map.buildMap(root);
+  const dir = withFiles({ 'README.md': '# r\n\nprose only\n' });
+  const text = map.buildMap(dir);
   assert.match(text, /no directory tree found in CLAUDE\.md, AGENTS\.md, README\.md/);
   assert.match(text, /scripts\/layout\.js/);
 });
 
 test('a tree is printed with its file, its heading and its unfilled count', () => {
-  const root = withTree({
+  const dir = withFiles({
     'README.md': '# r\n\n## 目錄結構\n\n├── lib/  the library\n├── docs/\n└── bin/\n',
   });
-  const text = map.buildMap(root);
+  const text = map.buildMap(dir);
   assert.match(text, /tree — 3 rows from README\.md, under 目錄結構, 2 with no responsibility/);
   assert.match(text, /├── lib\/  the library/);
 });
 
 test('a fully described tree says nothing about unfilled rows', () => {
-  const root = withTree({
+  const dir = withFiles({
     'README.md': '# r\n\n## Layout\n\n├── lib/  one\n├── docs/  two\n└── bin/  three\n',
   });
-  assert.match(map.buildMap(root), /tree — 3 rows from README\.md, under Layout\n/);
+  assert.match(map.buildMap(dir), /tree — 3 rows from README\.md, under Layout\n/);
 });
 ```
 
