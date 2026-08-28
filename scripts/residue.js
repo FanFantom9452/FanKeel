@@ -28,8 +28,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { isRepo } = require('../lib/tracked.js');
-
-const MAX_PER_SECTION = 25;
+const { human, plural, section } = require('../lib/report.js');
 
 // Best effort, like every other shell-out in this plugin. A git that is missing,
 // too old for a flag, or refusing for a reason of its own gives back null, and
@@ -265,21 +264,6 @@ function scan(root) {
     return { repo: true, branch, undecided, worktrees, weight, empty, orphans };
 }
 
-const human = (n) => (n < 1024 ? n + 'B'
-    : n < 1024 * 1024 ? (n / 1024).toFixed(1) + 'K'
-    : n < 1024 * 1024 * 1024 ? (n / (1024 * 1024)).toFixed(1) + 'M'
-    : (n / (1024 * 1024 * 1024)).toFixed(1) + 'G');
-
-const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
-
-function section(lines, title, rows) {
-    if (!rows.length) return;
-    lines.push('', title);
-    for (const row of rows.slice(0, MAX_PER_SECTION)) lines.push('  ' + row);
-    if (rows.length > MAX_PER_SECTION) {
-        lines.push('  ... and ' + (rows.length - MAX_PER_SECTION) + ' more, not listed');
-    }
-}
 
 // Only the first two sections fail the run. A command that always exits non-zero
 // has an exit code that means nothing, and the weight of a build directory is a
@@ -293,29 +277,29 @@ function report(result) {
 
     if (result.repo) {
         lines.push('fankeel residue — on ' + result.branch);
-        section(lines, plural(result.undecided.length, 'path', 'paths')
-            + ' nobody has decided about — not committed, not ignored:', result.undecided);
-        section(lines, plural(result.worktrees.length, 'worktree is', 'worktrees are')
+        lines.push(...section(plural(result.undecided.length, 'path', 'paths')
+            + ' nobody has decided about — not committed, not ignored:', result.undecided));
+        lines.push(...section(plural(result.worktrees.length, 'worktree is', 'worktrees are')
             + ' already merged into ' + result.branch + ':',
-            result.worktrees.map((w) => w.path + '  (' + w.branch + ')'));
+            result.worktrees.map((w) => w.path + '  (' + w.branch + ')')));
     } else {
         lines.push('fankeel residue — not a git repository.',
             'What is committed and what is ignored are what the first three sections',
             'compare against, so those are absent. The rest needs only the filesystem.');
     }
 
-    section(lines, plural(result.orphans.length, 'environment', 'environments')
+    lines.push(...section(plural(result.orphans.length, 'environment', 'environments')
         + ' nothing here can rebuild or run:',
         result.orphans.map((o) => o.path + '  ' + human(o.bytes) + (o.partial ? ' (at least)' : '')
-            + '\n      ' + o.why));
+            + '\n      ' + o.why)));
 
     if (result.repo) {
-        section(lines, plural(result.weight.length, 'ignored path carries', 'ignored paths carry')
+        lines.push(...section(plural(result.weight.length, 'ignored path carries', 'ignored paths carry')
             + ' weight:',
-            result.weight.map((w) => w.path + '  ' + human(w.bytes) + (w.partial ? '  (at least)' : '')));
+            result.weight.map((w) => w.path + '  ' + human(w.bytes) + (w.partial ? '  (at least)' : ''))));
     }
-    section(lines, plural(result.empty.length, 'directory holds', 'directories hold')
-        + ' no files at any depth:', result.empty);
+    lines.push(...section(plural(result.empty.length, 'directory holds', 'directories hold')
+        + ' no files at any depth:', result.empty));
 
     if (!defects(result)) {
         lines.push('', result.repo

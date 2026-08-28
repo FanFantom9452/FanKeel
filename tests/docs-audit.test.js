@@ -148,7 +148,9 @@ test('a pairs list cut to its cap says how many it dropped', () => {
 
   const text = audit.report(r);
   assert.match(text, /15 pairs describe the same code/);
-  assert.match(text, /\(3 more\)/);
+  // The words `scripts/residue.js` and `scripts/survey.js` already used. This
+  // section said `(3 more)`, which was the third spelling of one sentence.
+  assert.match(text, /\.\.\. and 3 more, not listed/);
 });
 
 // --- landed plans -----------------------------------------------------------

@@ -25,6 +25,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { trackedFiles, MAX_WALK_FILES, SKIP_EXT } = require('../lib/tracked.js');
+const { human, plural, section } = require('../lib/report.js');
 
 // The default, not the law. `--max N` and `--all` move it, because a report that
 // silently stops at 25 answers a different question than the one that was asked —
@@ -272,29 +273,11 @@ function scan(root, terms) {
 
 // `slice(0, Infinity)` is the whole array and `length > Infinity` is false, so
 // `--all` needs no special case here.
-function section(title, rows, render, max) {
-    if (!rows.length) return [];
-    const out = [title];
-    for (const row of rows.slice(0, max)) out.push('  ' + render(row));
-    if (rows.length > max) {
-        out.push('  ... and ' + (rows.length - max) + ' more, not listed');
-    }
-    out.push('');
-    return out;
-}
-
 // The tier above M is not decoration: a real project measured on 2026-08-29 had
 // a three-gigabyte data directory, and without it the tree said `3071.0M` — four
 // digits of megabyte on the one line whose job is to say what reading a place
 // costs, which is a number a reader converts by hand or skips.
 //
-// `scripts/layout.js:37` is the same four lines. Two copies rather than a shared
-// helper because they are four lines in two scripts, and the pair is held
-// together by the test beside this one rather than by an import.
-const human = (n) => (n < 1024 ? n + 'B'
-    : n < 1024 * 1024 ? (n / 1024).toFixed(1) + 'K'
-    : n < 1024 * 1024 * 1024 ? (n / (1024 * 1024)).toFixed(1) + 'M'
-    : (n / (1024 * 1024 * 1024)).toFixed(1) + 'G');
 
 // The shape of the tree rather than what is declared in it — for the case the
 // scanner cannot serve, which is a project big enough that no set of search terms
@@ -329,12 +312,11 @@ function treeLines(root, files, max) {
         dirs.get(dir).push({ name: rel.slice(cut + 1), size });
     }
 
-    const count = (n) => n + (n === 1 ? ' file' : ' files');
-    const out = ['tree — ' + count(files.length - opaque.length) + ', ' + human(total), ''];
+    const out = ['tree — ' + plural(files.length - opaque.length, 'file', 'files') + ', ' + human(total), ''];
     for (const dir of [...dirs.keys()].sort()) {
         const list = dirs.get(dir);
         const bytes = list.reduce((sum, f) => sum + f.size, 0);
-        out.push('  ' + (dir === '.' ? './' : dir + '/') + '   ' + count(list.length) + '  ' + human(bytes));
+        out.push('  ' + (dir === '.' ? './' : dir + '/') + '   ' + plural(list.length, 'file', 'files') + '  ' + human(bytes));
         for (const f of list.slice(0, max)) out.push('    ' + f.name + '  ' + human(f.size));
         if (list.length > max) out.push('    ... and ' + (list.length - max) + ' more, not listed');
     }
@@ -403,9 +385,9 @@ function report(result, terms, opts) {
         : 'declarations:';
 
     const lines = [head, ...note, ''];
-    lines.push(...section('files whose name matches:', named, (f) => f, max));
-    lines.push(...section(declTitle, decls, (d) => d.file + ':' + d.line + '  ' + d.text, max));
-    lines.push(...section('documentation:', docs, (d) => d.file + ':' + d.line + '  ' + d.text, max));
+    lines.push(...section('files whose name matches:', named, max));
+    lines.push(...section(declTitle, decls.map((d) => d.file + ':' + d.line + '  ' + d.text), max));
+    lines.push(...section('documentation:', docs.map((d) => d.file + ':' + d.line + '  ' + d.text), max));
 
     // The half of the `skipped:` line something can be done about, named. The
     // stage rule sends one reader at these with the list, and a list is what a
@@ -422,7 +404,7 @@ function report(result, terms, opts) {
         lines.push(...section('skipped, and openable by hand:', [
             ...skipped.noPattern.filter((f) => !SKIP_EXT.has(path.extname(f).toLowerCase())),
             ...skipped.nested.map((d) => d + '  (a repository of its own)'),
-        ], (f) => f, max));
+        ], max));
     }
 
     if (opts && opts.tree && opts.root) lines.push(...treeLines(opts.root, result.files, max));
@@ -481,4 +463,4 @@ if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
 
-module.exports = { scan, report, parseArgs, trackedFiles, isSubtree, treeLines, human };
+module.exports = { scan, report, parseArgs, trackedFiles, isSubtree, treeLines };

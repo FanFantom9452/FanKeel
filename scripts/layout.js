@@ -21,6 +21,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { trackedFiles } = require('../lib/tracked.js');
+const { human, plural } = require('../lib/report.js');
 
 function parseArgs(argv) {
     let root = process.cwd();
@@ -29,20 +30,6 @@ function parseArgs(argv) {
     }
     return { root: path.resolve(root) };
 }
-
-// The shape `scripts/survey.js:286` uses, with the tier it is missing. Run
-// against a real project on 2026-08-29 this printed `data/ 3071.0M`, which is a
-// number nobody reads as three gigabytes. `survey.js` has the same gap and is
-// filed in TODO.md rather than fixed from here.
-const human = (n) => (n < 1024 ? n + 'B'
-    : n < 1024 * 1024 ? (n / 1024).toFixed(1) + 'K'
-    : n < 1024 * 1024 * 1024 ? (n / (1024 * 1024)).toFixed(1) + 'M'
-    : (n / (1024 * 1024 * 1024)).toFixed(1) + 'G');
-
-// `scripts/survey.js:323` does it this way; a skeleton reading "1 files" is a
-// skeleton that looks generated, which is the opposite of what it is asking
-// somebody to sit down and finish.
-const count = (n, one, many) => n + ' ' + (n === 1 ? one : many);
 
 // Grouped by first path segment. A file loose at the top is its own row, because
 // a project whose entry point is a single script has that fact worth stating too.
@@ -86,16 +73,16 @@ function main(argv) {
     for (const d of names) {
         const it = dirs.get(d);
         const under = it.below.size
-            ? ', ' + count(it.below.size, 'directory below', 'directories below')
+            ? ', ' + plural(it.below.size, 'directory below', 'directories below')
             : '';
         out.push((d + '/').padEnd(width + 1)
             + ' ' + human(it.bytes).padStart(7)
-            + '  ' + count(it.files, 'file', 'files') + under
+            + '  ' + plural(it.files, 'file', 'files') + under
             + '   # ');
     }
     if (loose.length) {
         out.push('');
-        out.push('# ' + count(loose.length, 'file', 'files') + ' loose at the top: '
+        out.push('# ' + plural(loose.length, 'file', 'files') + ' loose at the top: '
             + loose.map((f) => f.rel).sort().join(', '));
     }
     out.push('```');

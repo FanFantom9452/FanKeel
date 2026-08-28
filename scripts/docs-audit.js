@@ -29,10 +29,10 @@ const { execFileSync } = require('node:child_process');
 const docs = require('../lib/docs.js');
 const { trackedFiles, isRepo } = require('../lib/tracked.js');
 const { LINK, CODE, PATHISH, external, resolveRef, readFile, isMarkdown } = require('./docs-check.js');
+const { plural, section } = require('../lib/report.js');
 
 const DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_SINCE = 14;          // the fortnight this exists to serve
-const MAX_PER_SECTION = 25;
 const MAX_PAIRS = 12;              // a reading list, and one of 25 is not read
 const LANDMARK = 4;                // documents naming a file, above which it is common ground
 const HISTORY = 4000;              // commits walked for dates; plenty, and bounded
@@ -496,24 +496,6 @@ function sweep(root, since, now) {
 
 // --- the report -------------------------------------------------------------
 
-function plural(n, one, many) {
-    return n + ' ' + (n === 1 ? one : many);
-}
-
-// `max` overrides the default for a section with a tighter cap of its own. It is
-// the cap rather than the caller that truncates, because a caller that slices
-// first hands over a list already the right length — and the count of what was
-// dropped, which is the one line that keeps a cap from reading as "that is all
-// there is", never gets printed. `lib/map.js:23` states the rule; the pairs
-// section broke it by slicing at the call.
-function section(lines, title, body, max) {
-    if (!body.length) return;
-    const cap = Number.isFinite(max) ? max : MAX_PER_SECTION;
-    lines.push('');
-    lines.push(title);
-    for (const b of body.slice(0, cap)) lines.push('  ' + b);
-    if (body.length > cap) lines.push('  (' + (body.length - cap) + ' more)');
-}
 
 function report(r) {
     if (!r) return 'fankeel docs-audit: nothing readable under this directory.';
@@ -525,21 +507,21 @@ function report(r) {
         + (r.dates === 'mtime' ? ', dates from mtime (no git history here)' : ''));
     if (r.error) lines.push('  ' + r.error + ' — falling back to root files only.');
 
-    section(lines, plural(r.drift.length, 'reference document has', 'reference documents have')
+    lines.push(...section(plural(r.drift.length, 'reference document has', 'reference documents have')
         + ' fallen behind the code they describe:',
     r.drift.map((d) => d.file + '  (' + (d.declared ? 'verified' : 'last touched') + ' ' + d.docAge + 'd ago; '
-        + d.target + ' changed ' + d.gap + 'd after it)'));
+        + d.target + ' changed ' + d.gap + 'd after it)')));
 
-    section(lines, plural(r.landed.length, 'plan looks', 'plans look') + ' landed — everything named now exists:',
-        r.landed.map((p) => p.file + '  (' + p.named + ' files, untouched ' + p.age + 'd)'));
+    lines.push(...section(plural(r.landed.length, 'plan looks', 'plans look') + ' landed — everything named now exists:',
+        r.landed.map((p) => p.file + '  (' + p.named + ' files, untouched ' + p.age + 'd)')));
 
     if (r.index.path) {
         if (!r.index.exists) {
             lines.push('');
             lines.push('The index is declared but not written: ' + r.index.path);
         } else {
-            section(lines, plural(r.index.dead.length, 'index entry points', 'index entries point') + ' at nothing:',
-                r.index.dead);
+            lines.push(...section(plural(r.index.dead.length, 'index entry points', 'index entries point') + ' at nothing:',
+                r.index.dead));
             if (r.index.navigation) {
                 lines.push('');
                 lines.push(r.index.path + ' links ' + (r.markdown - r.index.missing.length - 1)
@@ -547,26 +529,26 @@ function report(r) {
                 lines.push('  so the rest are not reported as missing. Nothing is wrong with that; it');
                 lines.push('  only means this check cannot tell you what is unreachable.');
             } else {
-                section(lines, plural(r.index.missing.length, 'document is', 'documents are') + ' missing from ' + r.index.path + ':',
-                    r.index.missing);
+                lines.push(...section(plural(r.index.missing.length, 'document is', 'documents are') + ' missing from ' + r.index.path + ':',
+                    r.index.missing));
             }
         }
     }
 
-    section(lines, plural(r.overlaps.length, 'pair', 'pairs') + ' describe the same code — read these against each other'
+    lines.push(...section(plural(r.overlaps.length, 'pair', 'pairs') + ' describe the same code — read these against each other'
         + (r.overlaps.length > MAX_PAIRS ? ', strongest first' : '') + ':',
     r.overlaps.map((p) => p.a + '  ×  ' + p.b + '  (' + p.shared.slice(0, 3).join(', ')
-        + (p.shared.length > 3 ? ' +' + (p.shared.length - 3) : '') + ')'), MAX_PAIRS);
+        + (p.shared.length > 3 ? ' +' + (p.shared.length - 3) : '') + ')'), MAX_PAIRS));
 
-    section(lines, plural(r.orphans.length, 'document is', 'documents are') + ' linked from nowhere:', r.orphans);
+    lines.push(...section(plural(r.orphans.length, 'document is', 'documents are') + ' linked from nowhere:', r.orphans));
 
-    section(lines, plural(r.diagrams.length, 'diagram lists a directory and has', 'diagrams list a directory and have') + ' fallen behind it:',
+    lines.push(...section(plural(r.diagrams.length, 'diagram lists a directory and has', 'diagrams list a directory and have') + ' fallen behind it:',
         r.diagrams.map((d) => d.file + ':' + d.line + '  names ' + d.named + ' of ' + d.total + ' in ' + d.dir
             + '/ — missing ' + d.missing.slice(0, 4).join(', ')
-            + (d.missing.length > 4 ? ' +' + (d.missing.length - 4) : '')));
+            + (d.missing.length > 4 ? ' +' + (d.missing.length - 4) : ''))));
 
-    section(lines, plural(r.uncovered.length, 'directory has', 'directories have') + ' no reference document naming anything inside:',
-        r.uncovered);
+    lines.push(...section(plural(r.uncovered.length, 'directory has', 'directories have') + ' no reference document naming anything inside:',
+        r.uncovered));
 
     // Decided before the advisories below, which are footnotes rather than
     // findings: a sweep that found nothing still found nothing, whatever else
