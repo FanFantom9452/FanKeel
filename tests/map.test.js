@@ -12,12 +12,19 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const map = require('../lib/map.js');
+const docs = require('../lib/docs.js');
 
 const root = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-map-'));
 const write = (dir, rel, text) => {
   const full = path.join(dir, rel);
   fs.mkdirSync(path.dirname(full), { recursive: true });
   fs.writeFileSync(full, text);
+};
+
+const withFiles = (files) => {
+  const dir = root();
+  for (const [rel, text] of Object.entries(files)) write(dir, rel, text);
+  return dir;
 };
 
 test('firstTable takes the first table of three rows or more', () => {
@@ -134,4 +141,86 @@ test('a worktree checked out under a dot-directory is not the project', () => {
   // this plugin exists to prevent. residue.js is what says nobody decided on it.
   fs.writeFileSync(path.join(root, 'docs', 'draft.md'), '# draft');
   assert.deepEqual(map.markdownUnder(root), ['docs/draft.md', 'docs/real.md']);
+});
+
+test('the tree is found with nothing declared, even when another file sorts first', () => {
+  const dir = withFiles({
+    'CLAUDE.md': '# c\n\n| a | b |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |\n',
+    'README.md': '# r\n\n## 目錄結構\n\n├── lib/    the library\n├── docs/   the pages\n└── bin/    entry points\n',
+  });
+  const found = map.layoutBlock(dir, null);
+  assert.equal(found.file, 'README.md');
+  assert.equal(found.heading, '目錄結構');
+  assert.equal(found.rows, 3);
+  assert.equal(found.unfilled, 0);
+});
+
+test('a declared pointer overrides the structural search', () => {
+  const dir = withFiles({
+    'README.md': '# r\n\n## First\n\n├── a/  one\n├── b/  two\n└── c/  three\n\n'
+      + '## Second\n\n├── x/  ex\n├── y/  why\n└── z/  zed\n',
+    '.fankeel/docs.json': JSON.stringify({
+      buckets: [{ path: 'docs', role: 'reference' }],
+      layout: { file: 'README.md', heading: 'Second' },
+    }),
+  });
+  const found = map.layoutBlock(dir, docs.read(dir).tree);
+  assert.equal(found.heading, 'Second');
+  assert.match(found.lines.join('\n'), /x\//);
+  assert.doesNotMatch(found.lines.join('\n'), /a\//);
+});
+
+test('rows with a path and nothing after it are counted, not refused', () => {
+  const dir = withFiles({
+    'README.md': '# r\n\n## Layout\n\n├── lib/    the library\n├── docs/\n└── bin/\n',
+  });
+  const found = map.layoutBlock(dir, null);
+  assert.equal(found.rows, 3);
+  assert.equal(found.unfilled, 2);
+});
+
+test('fewer than three entry lines is a fragment, not a tree', () => {
+  const dir = withFiles({ 'README.md': '# r\n\n## Layout\n\n├── lib/  one\n└── x/  two\n' });
+  assert.equal(map.layoutBlock(dir, null), null);
+});
+
+test('a continuation line is part of the block but is not a row', () => {
+  const dir = withFiles({
+    'README.md': '# r\n\n## Layout\n\n├── lib/    the library\n│   └── x.js\n├── docs/   the pages\n└── bin/    entries\n',
+  });
+  const found = map.layoutBlock(dir, null);
+  // Four entry lines, and the bare `│` line is carried but counted as neither a
+  // row nor an unfilled one.
+  assert.equal(found.rows, 4);
+  assert.equal(found.unfilled, 1);
+  assert.match(found.lines.join('\n'), /│   └── x\.js/);
+});
+
+test('a tree longer than the cap is cut and says how long it was', () => {
+  const long = Array.from({ length: 60 }, (_, i) => '├── d' + i + '/  holds ' + i).join('\n');
+  const dir = withFiles({ 'README.md': '# r\n\n## Layout\n\n' + long + '\n' });
+  const found = map.layoutBlock(dir, null);
+  assert.equal(found.total, 60);
+  assert.equal(found.rows, 50);
+  assert.equal(found.lines.filter((l) => /[├└]──/.test(l)).length, 50);
+});
+
+test('a file with no box lines at all yields nothing', () => {
+  const dir = withFiles({ 'README.md': '# r\n\n- lib/ the library\n- docs/ the pages\n- bin/ entries\n' });
+  assert.equal(map.layoutBlock(dir, null), null);
+});
+
+// Found by running this against 43 real files: three of them draw a flow diagram
+// with a single dash above the real tree, and seeking any box character landed in
+// the diagram and abandoned the file. A directory tree uses two dashes; a flow
+// diagram does not.
+test('a single-dash diagram above the tree does not swallow the search', () => {
+  const dir = withFiles({
+    'README.md': '# r\n\n## Pipeline\n\n  ├─ Step 1: fetch\n  ├─ Step 2: transform\n  └─ Step 3: push\n\n'
+      + '## Layout\n\n├── lib/    the library\n├── docs/   the pages\n└── bin/    entry points\n',
+  });
+  const found = map.layoutBlock(dir, null);
+  assert.equal(found.heading, 'Layout');
+  assert.equal(found.rows, 3);
+  assert.doesNotMatch(found.lines.join('\n'), /Step 1/);
 });
