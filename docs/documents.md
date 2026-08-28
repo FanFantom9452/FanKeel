@@ -54,8 +54,11 @@ nowhere else, so nothing can hold a second version of it and disagree. That is
 the whole reason this is a pointer and not a `directories` array — a map that
 contradicts the README is worse than no map, because it is believed.
 
-`lib/map.js` lifts the block into `.fankeel/map.md`, capped at fifty rows and
-counting the entries nobody has described yet. A project with no tree gets a line
+`lib/map.js` lifts the block into `.fankeel/map.md`, capped at fifty entries and
+counting the ones nobody has described yet. Entries, not printed lines: the bare
+verticals that hold a subtree open are carried without being counted, so a lifted
+block runs a little longer than its cap — the largest real tree measured printed
+66 lines for fifty entries. A project with no tree gets a line
 saying so and the command that starts one — written with the plugin root resolved,
 because the map is read on its own and `<plugin>` is defined only in the injected
 block:

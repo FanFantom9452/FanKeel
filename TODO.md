@@ -30,7 +30,7 @@ heading is one nobody said the state of.
 
 ## Ready
 
-- `toFixed(1)` makes 1048575 read `1024.0K`, a unit that exists — [scripts/survey.js](scripts/survey.js):286 and [scripts/layout.js](scripts/layout.js):37, which are byte-identical. 08-29.
+- `toFixed(1)` makes 1048575 read `1024.0K`, a unit that exists — [scripts/survey.js](scripts/survey.js):294 and [scripts/layout.js](scripts/layout.js):37, which are byte-identical. 08-29.
 - `MAX_TREE` caps entry lines, not printed ones, so `│` continuations ride free — [lib/map.js](lib/map.js). Trovara printed 66 for a cap of 50; pathologically unbounded. 08-29.
 
 ## Needs a decision
