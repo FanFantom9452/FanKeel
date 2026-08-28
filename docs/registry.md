@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-08-28
-source_of_truth: lib/registry.js, lib/render.js, lib/context.js, hooks/touch.js, hooks/carry.js
+source_of_truth: lib/registry.js, lib/render.js, lib/context.js, lib/dirty.js, hooks/touch.js, hooks/inject.js, hooks/carry.js
 ---
 
 # The registry, and what it remembers
@@ -27,7 +27,7 @@ workspace/                     <- Claude Code opened here
 
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated`; `touch.js` for `claims` |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated`; `touch.js` and `inject.js` for `claims` |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | Created with the directory |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
@@ -79,9 +79,13 @@ where it moves to one of the four.
 A third field is written by nobody the user talks to. `claims` holds every file
 this task has edited — at most sixty, oldest dropped, each recorded whole and
 never truncated, because nothing here is a path a human retypes.
-`hooks/touch.js` appends to it the first time an edit lands on a path, which is
-why the table above lists a hook rather than a command as its writer. No
-subcommand sets it. `adopt` carries it across, because where the work went belongs
+Two hooks append to it, which is why the table above lists hooks rather than a
+command as its writer. `hooks/touch.js` adds a path the first time an edit lands
+on it. `hooks/inject.js` adds, once a prompt, every path git reports dirty whose
+mtime is later than the task's `started` — the writes that reached the disk
+without any tool a hook matches, a `sed` or a `node -e` or a build script. Which
+of the two recorded a path is not distinguishable afterwards and does not need to
+be: the field says where the work went. No subcommand sets it. `adopt` carries it across, because where the work went belongs
 to the task rather than to the session, and `task` clears it, because a task that
 has just been renamed has touched nothing yet.
 
@@ -155,7 +159,8 @@ another session's, and never deletes one.
 Writing the file is atomic — a sibling, then a rename — but reading it, changing
 one field and writing it back is not, and that is what every writer here does.
 Two of them run in hooks: `touch.js` on every edit and `inject.js` on every
-prompt, in every session on the machine. Measured, two processes adding twenty
+prompt — the latter twice over, once for the claims git found and once for
+`updated` — in every session on the machine. Measured, two processes adding twenty
 claims each kept 20 to 24 of the 40, and every one of those writes returned
 success.
 
