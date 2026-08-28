@@ -204,6 +204,61 @@ test('touch on a missing entry returns false and creates nothing', () => {
   assert.equal(fs.existsSync(path.join(root, '.fankeel')), false);
 });
 
+// The first sighting is the one that cannot be recovered: by the second prompt
+// of a stage the session has already spent whatever it spent, and a running
+// total would report the whole session against whichever stage was sampled.
+test('touch records the first and the latest sighting for the stage it is in', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task({ stage: 'survey' }));
+  registry.touch(root, SID, 120000);
+  registry.touch(root, SID, 300000);
+  registry.touch(root, SID, 342000);
+  assert.deepEqual(registry.readSession(root, SID).burn, { survey: [120000, 342000] });
+});
+
+test('a stage change opens its own pair and leaves the finished one alone', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task({ stage: 'survey' }));
+  registry.touch(root, SID, 120000);
+  registry.touch(root, SID, 342000);
+
+  const data = registry.readSession(root, SID);
+  data.stage = 'design';
+  registry.writeSession(root, SID, data);
+  registry.touch(root, SID, 350000);
+  registry.touch(root, SID, 401000);
+
+  const after = registry.readSession(root, SID);
+  assert.deepEqual(after.burn, { survey: [120000, 342000], design: [350000, 401000] });
+  assert.equal(registry.burnOf(after, 'survey'), 222000);
+  assert.equal(registry.burnOf(after, 'design'), 51000);
+});
+
+// Compaction moves the figure backwards, and a stage cannot cost less than
+// nothing. Null rather than a negative: the reading is real, the distance is not.
+test('burnOf is null for a stage never sampled, sampled once, or sampled backwards', () => {
+  assert.equal(registry.burnOf(task(), 'survey'), null);
+  assert.equal(registry.burnOf({ burn: { survey: [120000, 120000] } }, 'survey'), null);
+  assert.equal(registry.burnOf({ burn: { survey: [342000, 90000] } }, 'survey'), null);
+  assert.equal(registry.burnOf({ burn: { survey: 342000 } }, 'survey'), null);
+});
+
+test('touch with no figure, or a stage-less entry, writes no burn at all', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task({ stage: 'survey' }));
+  registry.touch(root, SID);
+  registry.touch(root, SID, 0);
+  registry.touch(root, SID, NaN);
+  assert.equal(registry.readSession(root, SID).burn, undefined);
+
+  const bare = tmpRoot();
+  const noStage = task();
+  delete noStage.stage;
+  registry.writeSession(bare, SID, noStage);
+  registry.touch(bare, SID, 120000);
+  assert.equal(registry.readSession(bare, SID).burn, undefined);
+});
+
 test('isStale flips at the 12 hour mark', () => {
   const now = Date.parse('2026-08-21T12:00:00.000Z');
   const at = (ms) => ({ updated: new Date(now - ms).toISOString() });

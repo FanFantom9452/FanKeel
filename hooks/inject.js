@@ -18,6 +18,7 @@ const path = require('node:path');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
+const context = require('../lib/context.js');
 const { render, renderInit } = require('../lib/render.js');
 const { overlapPaths } = require('../lib/overlap.js');
 const { positionIn } = require('../lib/stages.js');
@@ -146,8 +147,14 @@ function main(raw) {
         },
     }));
 
+    // The same transcript `render` just read, read again for the number it threw
+    // away: `contextLine` says nothing below its threshold, and what a stage
+    // cost is a difference between two readings taken while it was still cheap.
+    // A second tail read of a file touched microseconds ago is warm, and cheaper
+    // than threading the figure back out of a function that returns a string.
     try {
-        registry.touch(root, sessionId);
+        const info = context.inspect(payload.transcript_path);
+        registry.touch(root, sessionId, info && info.used);
     } catch (e) { /* housekeeping */ }
 
     const cfg = claudeConfigDir();

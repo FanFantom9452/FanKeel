@@ -24,6 +24,7 @@ const path = require('node:path');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
+const { tokens } = require('../lib/context.js');
 const { overlapPaths } = require('../lib/overlap.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 
@@ -204,6 +205,11 @@ function describe(root, sessionId, data) {
     if (project) lines.push('project: ' + project);
     const claims = registry.claimsOf(data);
     if (claims.length) lines.push('touched: ' + claims.join(', '));
+    // Only the stages this route holds, in the order it runs them, and only the
+    // ones sampled more than once. A stage with one sighting has no distance to
+    // report and is left out rather than shown as zero.
+    const burn = route.map((r) => [r, registry.burnOf(data, r)]).filter((pair) => pair[1]);
+    if (burn.length) lines.push('burn:  ' + burn.map((pair) => pair[0] + ' ' + tokens(pair[1])).join(', '));
     if (data.guard) lines.push('guard: ' + data.guard);
     if (data.next) lines.push('next:  ' + data.next);
     const notes = registry.notesOf(data);
@@ -394,8 +400,14 @@ function cmdStage(root, opts) {
     const clash = collisions(root, id, registry.claimsOf(data));
     showBadge(opts, id, badge.badgeWord(name, clash.length > 0), Object.assign({ others: clash.length }, data));
 
+    // What the stage just left cost, said at the one moment it is a finished
+    // number. It goes here rather than into the injected block because `build`
+    // already renders at 2394 characters against a cap of 2400, and a figure
+    // nobody can read is worse than one printed where the move is announced.
     const at = positionIn(route, name);
-    return 'fankeel — ' + from + ' to ' + name + (at ? '   ' + at.step + ' of ' + at.steps : '');
+    const spent = registry.burnOf(data, from);
+    return 'fankeel — ' + from + ' to ' + name + (at ? '   ' + at.step + ' of ' + at.steps : '')
+        + (spent ? '   ' + from + ' burned ' + tokens(spent) : '');
 }
 
 // A new task on a session that already has one. `down` then `start` was the only

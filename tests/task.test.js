@@ -235,6 +235,34 @@ test('stage moves, and refuses a name that is not a stage', () => {
   assert.equal(entry(dir, A).stage, 'build');
 });
 
+// The transition line is the one place the figure is finished: the stage being
+// left is over, and the stage being entered has not begun. `show` is the other,
+// and it has to name only the stages that were actually sampled twice.
+test('the transition line says what the stage being left cost', () => {
+  const dir = root();
+  started(dir, A, 'x', 'Waypoint/web');
+  registry.touch(dir, A, 120000);
+  registry.touch(dir, A, 342000);
+
+  const moved = run(dir, ['stage', 'design', '--session', A]);
+  assert.equal(moved.code, 0);
+  assert.match(moved.out, /survey to design/);
+  assert.match(moved.out, /survey burned 222k/);
+
+  assert.match(run(dir, ['show', '--session', A]).out, /burn:\s+survey 222k/);
+});
+
+test('a stage nobody sampled twice is left off both the transition line and show', () => {
+  const dir = root();
+  started(dir, A, 'x', 'Waypoint/web');
+  registry.touch(dir, A, 120000);
+
+  const moved = run(dir, ['stage', 'design', '--session', A]);
+  assert.equal(moved.code, 0);
+  assert.doesNotMatch(moved.out, /burned/);
+  assert.doesNotMatch(run(dir, ['show', '--session', A]).out, /burn:/);
+});
+
 test('notes are capped and a repeat does not evict a still-useful one', () => {
   const dir = root();
   started(dir, A, 'x', 'Waypoint/web');
