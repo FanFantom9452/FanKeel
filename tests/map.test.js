@@ -205,6 +205,21 @@ test('a tree longer than the cap is cut and says how long it was', () => {
   assert.equal(found.lines.filter((l) => /[├└]──/.test(l)).length, 50);
 });
 
+// `MAX_TREE` counts rows, and a `│` holding a subtree open is not one — so the
+// row cap alone bounds nothing about how much gets printed. Measured over 51 real
+// trees the worst case is Trovara at 66 lines for 50 rows, a ratio of 1.32, and
+// none of the 51 exceeds a hundred lines. A file that is mostly continuations is
+// what has no bound at all without the second cap.
+test('a tree that is mostly continuation lines is bounded by lines, not just rows', () => {
+  const held = Array.from({ length: 200 }, () => '│').join('\n');
+  const dir = withFiles({
+    'README.md': '# r\n\n## Layout\n\n├── a/  the first\n' + held + '\n├── b/  the second\n└── c/  the third\n',
+  });
+  const found = map.layoutBlock(dir, null);
+  assert.equal(found.total, 3, 'every row is still counted');
+  assert.ok(found.lines.length <= 100, 'printed ' + found.lines.length + ' lines');
+});
+
 test('a file with no box lines at all yields nothing', () => {
   const dir = withFiles({ 'README.md': '# r\n\n- lib/ the library\n- docs/ the pages\n- bin/ entries\n' });
   assert.equal(map.layoutBlock(dir, null), null);

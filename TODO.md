@@ -30,8 +30,8 @@ heading is one nobody said the state of.
 
 ## Ready
 
-- `MAX_TREE` caps entry lines, not printed ones, so `│` continuations ride free — [lib/map.js](lib/map.js). Trovara printed 66 for a cap of 50; pathologically unbounded. 08-29.
-- `PLUGIN_ROOT` at [lib/map.js](lib/map.js):38 is a private copy of the one [lib/render.js](lib/render.js):28 exports, its own comment citing that line for the reasoning. 08-29.
+Nothing. Everything deferred is waiting on a person or on something that is not
+a person, which is what the two headings below say.
 
 ## Needs a decision
 
