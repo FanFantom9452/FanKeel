@@ -26,6 +26,12 @@ test('it writes the map where every stage will look for it', () => {
   assert.match(fs.readFileSync(written, 'utf8'), /status: generated/);
 });
 
+test('--root=<dir> is the same flag', () => {
+  const dir = root();
+  execFileSync(process.execPath, [SCRIPT, '--root=' + dir], { encoding: 'utf8' });
+  assert.ok(fs.existsSync(path.join(dir, '.fankeel', 'map.md')), 'the equals form was not read as --root');
+});
+
 test('it keeps the generated map out of git', () => {
   const dir = root();
   run(dir);

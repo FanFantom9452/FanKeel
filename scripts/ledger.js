@@ -7,6 +7,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { parseArgs: parseArgv } = require('node:util');
 
 const ledger = require('../lib/ledger.js');
 
@@ -15,16 +16,22 @@ function fail(message) {
     process.exit(1);
 }
 
+// `strict: false` keeps an unknown flag silent. A declared flag given no value
+// comes back `true` rather than a string, and that is the refusal below: a flag
+// typed with nothing after it is a mistake worth naming, not a default worth
+// guessing at.
 function parseArgs(argv) {
-    const opts = { positional: [] };
-    for (let i = 0; i < argv.length; i++) {
-        if (argv[i] === '--root' || argv[i] === '--plan') {
-            if (argv[i + 1] === undefined) fail(argv[i] + ' needs a value.');
-            opts[argv[i].slice(2)] = argv[++i];
-            continue;
-        }
-        if (argv[i].startsWith('--')) continue;
-        opts.positional.push(argv[i]);
+    const { values, positionals } = parseArgv({
+        args: argv,
+        strict: false,
+        allowPositionals: true,
+        options: { root: { type: 'string' }, plan: { type: 'string' } },
+    });
+    const opts = { positional: positionals };
+    for (const name of ['root', 'plan']) {
+        if (values[name] === undefined) continue;
+        if (typeof values[name] !== 'string') fail('--' + name + ' needs a value.');
+        opts[name] = values[name];
     }
     return opts;
 }

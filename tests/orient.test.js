@@ -37,6 +37,15 @@ test('parseArgs drops unknown flags and de-duplicates named paths', () => {
   assert.deepEqual(named, ['a', 'b']);
 });
 
+// `--root=x` is the same flag. Every other script here spelt its own parser and
+// only `todo-check.js` ever accepted the equals form, so the ten disagreed with
+// each other about a form every CLI takes.
+test('parseArgs reads --root=<dir> as the same flag', () => {
+  const { root, named } = orient.parseArgs(['--root=/tmp/x', 'Waypoint']);
+  assert.equal(root, '/tmp/x');
+  assert.deepEqual(named, ['Waypoint']);
+});
+
 test('parseArgs defaults the root to the working directory', () => {
   assert.equal(orient.parseArgs([]).root, process.cwd());
 });

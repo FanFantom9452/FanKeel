@@ -26,6 +26,7 @@
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const { parseArgs: parseArgv } = require('node:util');
 
 const { isRepo } = require('../lib/tracked.js');
 const { human, plural, section } = require('../lib/report.js');
@@ -313,12 +314,11 @@ function report(result) {
     return lines.join('\n');
 }
 
+// A declared flag given no value comes back `true` rather than a string, so the
+// default is restored by type; `strict: false` keeps an unknown flag silent.
 function parseArgs(argv) {
-    let root = process.cwd();
-    for (let i = 0; i < argv.length; i++) {
-        if (argv[i] === '--root' && argv[i + 1]) root = argv[++i];
-    }
-    return { root };
+    const { values } = parseArgv({ args: argv, strict: false, allowPositionals: true, options: { root: { type: 'string' } } });
+    return { root: typeof values.root === 'string' ? values.root : process.cwd() };
 }
 
 function main(argv) {

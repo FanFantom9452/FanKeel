@@ -25,6 +25,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
+const { parseArgs: parseArgv } = require('node:util');
 
 const docs = require('../lib/docs.js');
 const { trackedFiles, isRepo } = require('../lib/tracked.js');
@@ -606,20 +607,23 @@ function defects(r) {
         + (r.index.path && !r.index.exists ? 1 : 0);
 }
 
+// A declared flag given no value comes back `true` rather than a string, so the
+// default is restored by type; `strict: false` keeps an unknown flag silent. A
+// `--since` that is not a number still leaves the default, and is still consumed
+// rather than becoming something else's argument.
 function parseArgs(argv) {
-    let root = process.cwd();
-    let since = DEFAULT_SINCE;
-    let quiet = false;
-    for (let i = 0; i < argv.length; i++) {
-        if (argv[i] === '--root') { if (argv[i + 1]) root = argv[++i]; continue; }
-        if (argv[i] === '--since') {
-            const n = parseInt(argv[i + 1], 10);
-            if (Number.isFinite(n) && n >= 0) { since = n; i++; }
-            continue;
-        }
-        if (argv[i] === '--quiet') { quiet = true; continue; }
-    }
-    return { root, since, quiet };
+    const { values } = parseArgv({
+        args: argv,
+        strict: false,
+        allowPositionals: true,
+        options: { root: { type: 'string' }, since: { type: 'string' }, quiet: { type: 'boolean' } },
+    });
+    const n = parseInt(values.since, 10);
+    return {
+        root: typeof values.root === 'string' ? values.root : process.cwd(),
+        since: Number.isFinite(n) && n >= 0 ? n : DEFAULT_SINCE,
+        quiet: Boolean(values.quiet),
+    };
 }
 
 function main(argv, now) {

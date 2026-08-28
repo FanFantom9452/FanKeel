@@ -216,6 +216,32 @@ test('a missing --session is refused by naming where the id comes from', () => {
   assert.match(out, /\/fankeel prompt makes the hook say it/);
 });
 
+// A flag given no value at all. `run` appends --root and --claude-dir after its
+// arguments, so nothing passed through it is ever last and this path cannot be
+// reached that way — which is why it had no test until now. Each of the three
+// branches that raise it gets a case, because they are three separate `if`s.
+function runRaw(dir, args) {
+  const cfg = path.join(dir, 'cfg');
+  try {
+    execFileSync(process.execPath, [SCRIPT, ...args], {
+      encoding: 'utf8',
+      env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg }),
+    });
+    return { out: '', code: 0 };
+  } catch (e) {
+    return { out: String(e.stdout || ''), code: e.status };
+  }
+}
+
+for (const flag of ['--task', '--route', '--claude-dir']) {
+  test('a trailing ' + flag + ' with no value is refused by name', () => {
+    const dir = root();
+    const { out, code } = runRaw(dir, ['start', '--session', A, '--root', dir, flag]);
+    assert.equal(code, 1, flag + ' with no value should exit 1');
+    assert.match(out, new RegExp(flag + ' needs a value\\.'));
+  });
+}
+
 test('a project is normalised the way a path is, and only the first is kept', () => {
   const dir = root();
   started(dir, A, 'x', 'Waypoint\\web\\, Waypoint/api');

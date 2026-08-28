@@ -8,20 +8,18 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { parseArgs: parseArgv } = require('node:util');
 
 const { buildMap, pagesByStatus } = require('../lib/map.js');
 
 const MAP_REL = '.fankeel/map.md';
 const IGNORE_LINE = 'map.md';
 
+// A declared flag given no value comes back `true` rather than a string, so the
+// default is restored by type; `strict: false` keeps an unknown flag silent.
 function parseArgs(argv) {
-    let root = process.cwd();
-    for (let i = 0; i < argv.length; i++) {
-        if (argv[i] === '--root' && argv[i + 1]) {
-            root = argv[++i];
-        }
-    }
-    return { root: path.resolve(root) };
+    const { values } = parseArgv({ args: argv, strict: false, allowPositionals: true, options: { root: { type: 'string' } } });
+    return { root: path.resolve(typeof values.root === 'string' ? values.root : process.cwd()) };
 }
 
 // The map is generated, so committing it would put a file in review that nobody

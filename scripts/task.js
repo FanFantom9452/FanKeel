@@ -20,6 +20,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { parseArgs: parseArgv } = require('node:util');
 
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
@@ -114,32 +115,34 @@ function splitScope(raw) {
         .filter(Boolean);
 }
 
+// Every string flag, and the key it lands on. Only `--claude-dir` differs from
+// its own name, which is why this is a table rather than `arg.slice(2)`.
+const STRING_FLAGS = {
+    session: 'session',
+    root: 'root',
+    task: 'task',
+    project: 'project',
+    class: 'class',
+    route: 'route',
+    'claude-dir': 'claudeDir',
+};
+
+// `strict: false` keeps an unknown flag silent. A declared flag given no value
+// comes back `true` rather than a string, and that is the refusal below: a flag
+// typed with nothing after it is a mistake worth naming, not a default worth
+// guessing at.
 function parseArgs(argv) {
-    const opts = { positional: [] };
-    for (let i = 0; i < argv.length; i++) {
-        const arg = argv[i];
-        if (arg === '--session' || arg === '--root' || arg === '--task' || arg === '--project' || arg === '--class') {
-            if (argv[i + 1] === undefined) fail(arg + ' needs a value.');
-            opts[arg.slice(2)] = argv[++i];
-            continue;
-        }
-        if (arg === '--route') {
-            if (argv[i + 1] === undefined) fail('--route needs a value.');
-            opts.route = argv[++i];
-            continue;
-        }
-        if (arg === '--claude-dir') {
-            if (argv[i + 1] === undefined) fail('--claude-dir needs a value.');
-            opts.claudeDir = argv[++i];
-            continue;
-        }
-        if (arg === '--force') {
-            opts.force = true;
-            continue;
-        }
-        if (arg.startsWith('--')) continue;
-        opts.positional.push(arg);
+    const options = { force: { type: 'boolean' } };
+    for (const flag of Object.keys(STRING_FLAGS)) options[flag] = { type: 'string' };
+
+    const { values, positionals } = parseArgv({ args: argv, strict: false, allowPositionals: true, options });
+    const opts = { positional: positionals };
+    for (const [flag, key] of Object.entries(STRING_FLAGS)) {
+        if (values[flag] === undefined) continue;
+        if (typeof values[flag] !== 'string') fail('--' + flag + ' needs a value.');
+        opts[key] = values[flag];
     }
+    if (values.force) opts.force = true;
     return opts;
 }
 

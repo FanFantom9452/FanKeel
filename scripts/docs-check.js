@@ -19,6 +19,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { parseArgs: parseArgv } = require('node:util');
 
 const docs = require('../lib/docs.js');
 const { trackedFiles } = require('../lib/tracked.js');
@@ -381,22 +382,21 @@ function report(result) {
     return lines.join('\n');
 }
 
+// A declared flag given no value comes back `true` rather than a string, so the
+// default is restored by type; `strict: false` keeps an unknown flag silent. A
+// repeated `--role` is the last one, which is what the hand-written loop did.
 function parseArgs(argv) {
-    let root = process.cwd();
-    let roles = [];
-    let quiet = false;
-    for (let i = 0; i < argv.length; i++) {
-        if (argv[i] === '--root') {
-            if (argv[i + 1]) root = argv[++i];
-            continue;
-        }
-        if (argv[i] === '--role') {
-            if (argv[i + 1]) roles = String(argv[++i]).split(',').map((r) => r.trim()).filter(Boolean);
-            continue;
-        }
-        if (argv[i] === '--quiet') { quiet = true; continue; }
-    }
-    return { root, roles, quiet };
+    const { values } = parseArgv({
+        args: argv,
+        strict: false,
+        allowPositionals: true,
+        options: { root: { type: 'string' }, role: { type: 'string' }, quiet: { type: 'boolean' } },
+    });
+    return {
+        root: typeof values.root === 'string' ? values.root : process.cwd(),
+        roles: typeof values.role === 'string' ? values.role.split(',').map((r) => r.trim()).filter(Boolean) : [],
+        quiet: Boolean(values.quiet),
+    };
 }
 
 function main(argv) {

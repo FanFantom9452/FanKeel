@@ -20,6 +20,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
+const { parseArgs: parseArgv } = require('node:util');
 
 const { trackedFiles, isRepo } = require('../lib/tracked.js');
 const { isSubtree } = require('./survey.js');
@@ -462,19 +463,22 @@ function report(result) {
     return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
+// A declared flag given no value comes back `true` rather than a string, so the
+// default is restored by type; `strict: false` keeps an unknown flag silent,
+// which is what lets `--quiet a a b` still name a, b rather than swallowing one.
 function parseArgs(argv) {
-    let root = process.cwd();
+    const { values, positionals } = parseArgv({
+        args: argv,
+        strict: false,
+        allowPositionals: true,
+        options: { root: { type: 'string' } },
+    });
     const named = [];
-    for (let i = 0; i < argv.length; i++) {
-        if (argv[i] === '--root') {
-            if (argv[i + 1]) root = argv[++i];
-            continue;
-        }
-        if (argv[i].startsWith('--')) continue;
-        const p = String(argv[i]).trim();
+    for (const raw of positionals) {
+        const p = String(raw).trim();
         if (p && !named.includes(p)) named.push(p);
     }
-    return { root, named };
+    return { root: typeof values.root === 'string' ? values.root : process.cwd(), named };
 }
 
 function main(argv) {
