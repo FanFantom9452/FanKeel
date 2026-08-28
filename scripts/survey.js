@@ -283,9 +283,18 @@ function section(title, rows, render, max) {
     return out;
 }
 
+// The tier above M is not decoration: a real project measured on 2026-08-29 had
+// a three-gigabyte data directory, and without it the tree said `3071.0M` — four
+// digits of megabyte on the one line whose job is to say what reading a place
+// costs, which is a number a reader converts by hand or skips.
+//
+// `scripts/layout.js:37` is the same four lines. Two copies rather than a shared
+// helper because they are four lines in two scripts, and the pair is held
+// together by the test beside this one rather than by an import.
 const human = (n) => (n < 1024 ? n + 'B'
     : n < 1024 * 1024 ? (n / 1024).toFixed(1) + 'K'
-    : (n / (1024 * 1024)).toFixed(1) + 'M');
+    : n < 1024 * 1024 * 1024 ? (n / (1024 * 1024)).toFixed(1) + 'M'
+    : (n / (1024 * 1024 * 1024)).toFixed(1) + 'G');
 
 // The shape of the tree rather than what is declared in it — for the case the
 // scanner cannot serve, which is a project big enough that no set of search terms
@@ -472,4 +481,4 @@ if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
 
-module.exports = { scan, report, parseArgs, trackedFiles, isSubtree, treeLines };
+module.exports = { scan, report, parseArgs, trackedFiles, isSubtree, treeLines, human };

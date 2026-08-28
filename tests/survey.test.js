@@ -722,3 +722,17 @@ test('the tree only appears when it is asked for', () => {
   assert.equal(/^tree — /m.test(survey.report(result, ['badge'])), false);
   assert.match(survey.report(result, ['badge'], { tree: true, root }), /^tree — \d+ files/m);
 });
+
+// A directory of three gigabytes read `3071.0M` — a number nobody converts in
+// their head, on the line whose whole job is to say how much reading a place
+// costs. Measured on a real project 2026-08-29. `scripts/layout.js` was written
+// with the tier from the start, so this is also what keeps the two the same
+// function rather than two that drifted.
+test('human names gigabytes rather than counting to four thousand megabytes', () => {
+  assert.equal(survey.human(0), '0B');
+  assert.equal(survey.human(1023), '1023B');
+  assert.equal(survey.human(1024), '1.0K');
+  assert.equal(survey.human(1024 * 1024), '1.0M');
+  assert.equal(survey.human(1024 * 1024 * 1024), '1.0G');
+  assert.equal(survey.human(3 * 1024 * 1024 * 1024), '3.0G');
+});
