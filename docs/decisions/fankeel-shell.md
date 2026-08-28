@@ -285,6 +285,15 @@ Depending on them outright would break for anyone without them; reimplementing
 them would be worse at it and would put fankeel in the business of being a plugin
 directory.
 
+Where it lands is split, and the split is the budget. The injected block gets one
+clause — `audit`'s `{{PONYTAIL}}`, filled by `lib/render.js` from
+`lib/plugins.js` — because that block is sent every turn and has about two
+hundred characters of headroom. graphify and codegraph are named in
+[skills/fankeel/SKILL.md](../../skills/fankeel/SKILL.md) instead, which is read
+once on entering a stage and can afford a table. A catalogue of all three lived
+in code for a while with nowhere to be printed; it was deleted on 2026-08-29
+rather than given a home the block could not pay for.
+
 Their *shape* was worth taking and their text was not — tags, one line per
 finding, an explicit boundary, and a sentence for when nothing was found. That is
 a way of writing a report, not anybody's property, and the subject differs enough

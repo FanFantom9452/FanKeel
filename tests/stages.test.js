@@ -209,7 +209,10 @@ test('the discipline covers the captured requirements', () => {
   assert.match(text, /todo\.md as one line pointing at the detail/);
   assert.match(text, /leaves a decision record behind/);
   assert.match(text, /then is archived, after asking/);
-  assert.match(text, /ponytail-audit/);
+  // The code half is named through a token now, because whether it can be named
+  // at all depends on the machine. The wording either branch produces is checked
+  // in tests/route.test.js against a manifest with and without ponytail in it.
+  assert.match(text, /\{\{ponytail\}\}/);
 });
 
 // The failure that produced this test: a design stage ended with three numbered
@@ -287,8 +290,11 @@ test('every stage ends by stating the shape of its output', () => {
 // `land` used to carry "run /ponytail-audit if the change was large enough",
 // which is the audit stage's own rule arriving one stage late.
 test('no stage repeats another stage tool', () => {
-  assert.doesNotMatch(byName('land').rules.join(' '), /ponytail/);
-  assert.match(byName('audit').rules.join(' '), /ponytail/);
+  // Case-insensitive on the negative side: the audit rule carries the token
+  // `{{PONYTAIL}}` now, and a `land` rule that grew one would slip past a
+  // lowercase-only check.
+  assert.doesNotMatch(byName('land').rules.join(' '), /ponytail/i);
+  assert.match(byName('audit').rules.join(' '), /\{\{PONYTAIL\}\}/);
 });
 
 test('no rule is a placeholder', () => {

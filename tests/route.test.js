@@ -15,6 +15,7 @@ const { execFileSync } = require('node:child_process');
 const { normaliseRoute, positionIn, nextStage, FULL_ROUTE, NAMES, routeForClass, classForRoute } = require('../lib/stages.js');
 const registry = require('../lib/registry.js');
 const plugins = require('../lib/plugins.js');
+const render = require('../lib/render.js');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'task.js');
 const A = 'aaaaaaaa-1111-2222-3333-444444444444';
@@ -218,7 +219,23 @@ test('names come back without the marketplace suffix', () => {
   assert.ok(plugins.has('ponytail', env));
   assert.ok(plugins.has('superpowers', env));
   assert.equal(plugins.has('never-installed', env), false, 'an empty install list is not installed');
-  assert.deepEqual(plugins.available(env).map((k) => k.name), ['ponytail']);
+});
+
+// What the detection is actually for. The rule naming the code half of the
+// fortnightly pass used to name ponytail whether or not it was there, so a
+// session on a machine without it was told every turn to run a command that does
+// not exist. Both branches say something — an empty substitution would leave the
+// raw `{{PONYTAIL}}` in the block, which `substitute` skips falsy values for.
+test('the audit rule names ponytail only where ponytail is installed', () => {
+  const dir = root();
+  fs.mkdirSync(path.join(dir, 'plugins'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'plugins', 'installed_plugins.json'), JSON.stringify({
+    version: 2, plugins: { 'ponytail@ponytail-per-session': [{ version: '4.9.0' }] },
+  }));
+
+  assert.match(render.ponytailLine({ CLAUDE_CONFIG_DIR: dir }), /\/ponytail-audit/);
+  assert.doesNotMatch(render.ponytailLine({ CLAUDE_CONFIG_DIR: root() }), /ponytail-audit/);
+  assert.match(render.ponytailLine({ CLAUDE_CONFIG_DIR: root() }), /code half/);
 });
 
 // The classification superpowers makes before its first question, with the

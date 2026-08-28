@@ -41,7 +41,6 @@ a person, which is what the two headings below say.
 - `isSubtree` costs a stat per entry per row in [scripts/orient.js](scripts/orient.js) and no cache helps: 107 stats, 105 distinct paths, 2 repeated. Read gitlinks from `--stage`, or accept it. 08-28.
 - Nothing sets the version in all ten places at once or fails when they disagree, and no page lists what a release changed. Both are derivable from the commits between two `chore: X.Y.Z`.
 - `cmdStage` reads then writes outside the lock, so a hook `touch` between the two is lost — [scripts/task.js](scripts/task.js). Older than `burn`: `updated` was always losable this way.
-- Wire [lib/plugins.js](lib/plugins.js) up: nothing calls it, and `lib/stages.js` names ponytail and knip unconditionally. Deleting is the wrong half — the decision record says why.
 - `task.js` refuses when `<config>/sessions/` is readable but empty, and fails open when it is absent — [scripts/task.js](scripts/task.js). `lib/live.js` fails open on that same evidence.
 - The session id is disclosed only while there is no active entry, so a compacted session that owns a task cannot read its own id — [hooks/inject.js](hooks/inject.js).
 - Default the scope guard on: writes outside the hooks are claimed from git now — [docs/collisions.md](docs/collisions.md), "Making it block". Two gaps left: a one-prompt lag, and what git cannot see.
