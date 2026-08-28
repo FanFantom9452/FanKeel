@@ -91,6 +91,36 @@ test('an active entry injects its task', () => {
   assert.match(ctx, /stage rules:/);
 });
 
+// The whole round trip through the real hook: a transcript on disk, the figure
+// read out of it, and the entry carrying it afterwards. The unit tests below
+// `touch` prove the arithmetic; only this proves the number ever arrives.
+test('the hook records what the transcript says the session is holding', () => {
+  const root = tmp('fankeel-hook-');
+  seed(root, MINE, { stage: 'survey' });
+  const jsonl = path.join(tmp('fankeel-transcript-'), 'session.jsonl');
+  const usage = (read) => JSON.stringify({
+    type: 'assistant',
+    message: { usage: { input_tokens: 12, cache_creation_input_tokens: 0, cache_read_input_tokens: read } },
+  }) + '\n';
+
+  fs.writeFileSync(jsonl, usage(119988));
+  run({ session_id: MINE, cwd: root, transcript_path: jsonl });
+  fs.appendFileSync(jsonl, usage(341988));
+  run({ session_id: MINE, cwd: root, transcript_path: jsonl });
+
+  assert.deepEqual(readEntry(root, MINE).burn, { survey: [120000, 342000] });
+});
+
+// A hook that cannot read the transcript still has a block to deliver, and the
+// entry it leaves behind must not carry a guess.
+test('a missing or absent transcript leaves the entry without a burn', () => {
+  const root = tmp('fankeel-hook-');
+  seed(root, MINE, { stage: 'survey' });
+  run({ session_id: MINE, cwd: root });
+  run({ session_id: MINE, cwd: root, transcript_path: path.join(root, 'nope.jsonl') });
+  assert.equal(readEntry(root, MINE).burn, undefined);
+});
+
 test('the payload shape is what Claude Code expects', () => {
   const root = tmp('fankeel-hook-');
   seed(root, MINE);
