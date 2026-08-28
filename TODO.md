@@ -30,12 +30,16 @@ heading is one nobody said the state of.
 
 ## Ready
 
-- `toFixed(1)` makes 1048575 read `1024.0K`, a unit that exists — [scripts/survey.js](scripts/survey.js):294 and [scripts/layout.js](scripts/layout.js):37, which are byte-identical. 08-29.
+- `toFixed(1)` makes 1048575 read `1024.0K`, a unit that exists — [survey.js](scripts/survey.js):294, [layout.js](scripts/layout.js):37, [residue.js](scripts/residue.js):268, byte-identical. 08-29.
 - `MAX_TREE` caps entry lines, not printed ones, so `│` continuations ride free — [lib/map.js](lib/map.js). Trovara printed 66 for a cap of 50; pathologically unbounded. 08-29.
+- Three scanners each rewrite `human`, `plural`/`count` and `section`, and the copies truncate in different words — [residue.js](scripts/residue.js):275 × [docs-audit.js](scripts/docs-audit.js):503.
+- `isRepo` at [lib/dirty.js](lib/dirty.js):63 and `PLUGIN_ROOT` at [lib/map.js](lib/map.js):38 are private copies of what a sibling exports, each comment citing the original. 08-29.
 
 ## Needs a decision
 
 - Three pages describe the badge; only [docs/statusline.md](docs/statusline.md) declares `lib/badge.js`. Should the other two defer, or is restating it worth the drift? 08-29.
+- Six hooks each carry the same stdin block and the same parse-and-read preamble, 121 lines — [hooks/touch.js](hooks/touch.js):53. One shared runner is ~15. Is self-contained worth it? 08-29.
+- `globToRegExp` serves claims no writer makes: [touch.js](hooks/touch.js) passes `relPath`, [dirty.js](lib/dirty.js) git porcelain, `task.js` deletes `scope`. Keep the pre-08-24 path? 08-29.
 - `isSubtree` costs a stat per entry per row in [scripts/orient.js](scripts/orient.js) and no cache helps: 107 stats, 105 distinct paths, 2 repeated. Read gitlinks from `--stage`, or accept it. 08-28.
 - Nothing sets the version in all ten places at once or fails when they disagree, and no page lists what a release changed. Both are derivable from the commits between two `chore: X.Y.Z`.
 - `cmdStage` reads then writes outside the lock, so a hook `touch` between the two is lost — [scripts/task.js](scripts/task.js). Older than `burn`: `updated` was always losable this way.
