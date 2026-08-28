@@ -38,7 +38,8 @@ recent commits where it does not. It does not ask which files you will touch.
 Those are recorded as the edits land, so there is no list to state and none to get
 wrong. The badge is up before you answer — the hook raises `init` the moment you
 submit the command, and the rules for that step ride the same prompt — and it
-becomes `survey` when the entry lands.
+becomes the first stage on the route when the entry lands, which is `survey`
+unless `--route` said otherwise.
 
 > The repository is `FanKeel` and everything you type is `fankeel`. Plugin and
 > marketplace ids have to be kebab-case — Claude Code accepts anything else, and

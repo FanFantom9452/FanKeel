@@ -35,6 +35,7 @@ heading is one nobody said the state of.
 
 ## Needs a decision
 
+- Three pages describe the badge; only [docs/statusline.md](docs/statusline.md) declares `lib/badge.js`. Should the other two defer, or is restating it worth the drift? 08-29.
 - `isSubtree` costs a stat per entry per row in [scripts/orient.js](scripts/orient.js) and no cache helps: 107 stats, 105 distinct paths, 2 repeated. Read gitlinks from `--stage`, or accept it. 08-28.
 - Nothing sets the version in all ten places at once or fails when they disagree, and no page lists what a release changed. Both are derivable from the commits between two `chore: X.Y.Z`.
 - `cmdStage` reads then writes outside the lock, so a hook `touch` between the two is lost — [scripts/task.js](scripts/task.js). Older than `burn`: `updated` was always losable this way.
