@@ -30,8 +30,7 @@ heading is one nobody said the state of.
 
 ## Ready
 
-Nothing. Everything deferred is waiting on a person or on something that is not
-a person, which is what the two headings below say.
+- Five stage skills gained a `Done when` line and none was re-read whole — [skills/fankeel-survey/SKILL.md](skills/fankeel-survey/SKILL.md) and four beside it still declare 08-27. 08-29.
 
 ## Needs a decision
 
@@ -44,6 +43,7 @@ a person, which is what the two headings below say.
 
 ## Waiting
 
+- Whether a stated `Done when` actually ends the gate loop, or only renames it — [lib/stages.js](lib/stages.js), ALWAYS[0]'s `or none`. Reported live once; only use says. 08-29.
 - Whether an MCP write tool is actually covered. The mechanism asks git rather than the payload so it should be, but none was connected to measure — [lib/dirty.js](lib/dirty.js). Untested 08-28.
 - A wrong session id reaching a hook any way but through `task.js` is still silent — [docs/plans/2026-08-26-session-id-design.md](docs/plans/2026-08-26-session-id-design.md). None observed.
 - Language patterns beyond the ten [scripts/survey.js](scripts/survey.js) knows. Anything else falls back to filename matching; add a row when one is actually needed.

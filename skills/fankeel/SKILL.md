@@ -314,7 +314,7 @@ The shape is the same every time, so it can be recognised without being read:
 | header | the stage that just finished | 12 characters, 6 if CJK |
 | question | the decision being made, and nothing else | ~40 characters, 20 if CJK |
 | option 1 | the next stage on the route, or standing the task down where the route ends — the injected rule substitutes whichever it is. **Its description is where the approval happens**: say what accepting it accepts. | one sentence |
-| option 2 | stay in this stage. The description names the decision still open — never work you have not finished. | one sentence |
+| option 2 | stay in this stage. The description names the decision still open — never work you have not finished. **With nothing open it says so**, and that is a complete option two: a stage that is finished has no open decision, and inventing one to fill the slot is how the gate becomes a treadmill. | one sentence |
 | option 3 | pause. The description says what `next` will be set to. | one sentence |
 
 Three is the floor, not a quota — which is why the rule says *at least*. Dropping

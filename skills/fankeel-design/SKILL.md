@@ -11,6 +11,10 @@ source_of_truth: lib/stages.js
 
 Produces an approach someone agreed to — and for `architectural`, a spec file.
 
+**Done when** one approach, its file table, the criterion that fails now and
+passes after, the check against the map and the one unverified thing are all on
+screen. A second approach is a catalogue, not more design.
+
 ## The gate never scales down
 
 The artefact scales with the task. A bounded change gets a few sentences in chat;

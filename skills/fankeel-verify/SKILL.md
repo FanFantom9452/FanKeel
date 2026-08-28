@@ -11,6 +11,11 @@ source_of_truth: lib/stages.js, scripts/docs-check.js
 
 Produces evidence, not confidence.
 
+**Done when** every claim has a row with the evidence beside it and
+`docs-check` has been run. A row that did not hold does not reopen the stage —
+it is a finding, and sending the work back to `build` is a route decision made
+at the gate, not another lap around this one.
+
 ## The iron law
 
 ```

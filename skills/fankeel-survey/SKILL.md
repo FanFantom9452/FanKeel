@@ -11,6 +11,11 @@ source_of_truth: lib/stages.js, lib/map.js, scripts/map.js, scripts/survey.js, s
 
 Produces a statement of what already exists, a classification, and the map.
 
+**Done when** the map has been read, the scanner has been run and quoted, its
+`skipped:` line has been answered rather than left as a number, and the class is
+said out loud. That list runs out. Reading wider once it has is unfinished work,
+which is the one thing option two may never be — so the gate is asked once.
+
 ## The six steps
 
 ### 0. It already said it started

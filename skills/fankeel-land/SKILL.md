@@ -11,6 +11,10 @@ source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js, hooks/car
 
 Produces a repository no dirtier than you found it.
 
+**Done when** the suite is green, the documents are closed, the map is rewritten
+and `todo-check` passes. The integration decision itself is the user's, so it is
+what the gate asks — never something to settle first and report afterwards.
+
 ## 1. The full suite, on the tree you are about to integrate
 
 `npm test` / `cargo test` / `pytest` / `go test ./...` — whatever this project
