@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-08-28
-source_of_truth: lib/overlap.js, lib/guard.js, lib/live.js, lib/registry.js, scripts/task.js, scripts/orient.js, hooks/touch.js
+source_of_truth: lib/overlap.js, lib/guard.js, lib/live.js, lib/registry.js, lib/dirty.js, scripts/task.js, scripts/orient.js, hooks/touch.js, hooks/inject.js
 ---
 
 # Two sessions, one repository
@@ -41,6 +41,39 @@ one — which is what makes this affordable on a hook that fires for every edit 
 every session on the machine: the lock is paid for once per new path, not once
 per edit. How that lock works is [the registry's](registry.md), not this page's.
 
+## The writes no hook saw
+
+That hook sees three tools. A `sed` in a shell, a `node -e`, a build script, an
+MCP write tool — none of them fire it, and for a long time none of them left a
+claim behind. Not hypothetically: this repository's own build stage once edited
+fifteen files through `node -e` and claimed none of them.
+
+Teaching a hook to read the shell command was the obvious fix and the wrong one.
+A parser cannot see what `npm run build` or `python script.py` is about to write,
+which is most of what is worth catching, and it would claim files a command only
+read. So nothing is parsed. `lib/dirty.js` asks git what is dirty and
+`hooks/inject.js` claims it, which makes the tool that wrote the file stop
+mattering.
+
+| | |
+|---|---|
+| when | once per prompt, before the block is rendered — so what it finds is in the `touched:` list of the same prompt rather than the one after |
+| what | every dirty path whose mtime is later than the task's `started` — `git status --porcelain -z -uall`, so git's own ignore rules apply and an untracked directory is not rolled up to its name |
+| where | the repository named by `project`, or the registry root; the claim is written back registry-relative like every other |
+| never | a pass holding more paths than `claims` can keep. `-uall` lists an unignored `dist/` of 300 build outputs as 300 fresh writes, and keeping the newest sixty of those would evict every claim an edit earned. The block says so — `unclaimed: 300 files written outside the hooks` — because a `touched:` list that reads as complete while half its source was discarded is the failure this page is about |
+| cost | one `git status`: **+41ms a prompt**, measured end to end through the hook on Windows 2026-08-28, 185ms before and 226ms after. Near enough a constant — `git status` alone runs 124ms against a 14-file repository and 131ms against a 106-file one, so what is paid for is starting git rather than walking the tree, and `-uall` adds nothing to it |
+
+Two limits, and they are why this is a second path rather than a replacement.
+A claim found this way lands **on the next prompt**, where `touch.js` records it
+as the edit lands — the write happens mid-turn and nothing looks until the turn
+after. And **git is the only source**: a root that is not a repository gets no
+answer at all, which is reported as nothing having been found rather than as
+nothing having happened.
+
+Per prompt rather than per Bash call is the whole reason it is affordable. The
+same check on a `Bash` hook would have made a fifty-command build stage pay that
+125ms fifty times.
+
 The next prompt carries the list, and there is no command under it because there
 is nothing for anyone to run:
 
@@ -65,11 +98,16 @@ one field on its own entry:
 | `"deny"` | Is refused outright. |
 
 It is off by default on purpose. A block is only as good as the claims it reads,
-and while those are now what happened rather than what anyone declared, the tools
-that are not hooked still escape it — a `sed` in a shell, a build script, an MCP
-write tool. A file nobody has claimed is not proof nobody is in it, and a plugin
-whose first act is to lock you out of your own repository does not get a second
-chance. Turn it on for the sessions that need it, and `"ask"` before `"deny"`.
+and two gaps remain in those. A write outside git's view leaves no claim at all —
+a repository fankeel cannot ask, an ignored path, a file under no repository. And
+a write that git can see is claimed on the **next** prompt, so between the write
+and that prompt the file reads as unheld. A file nobody has claimed is still not
+proof nobody is in it, and a plugin whose first act is to lock you out of your own
+repository does not get a second chance. Turn it on for the sessions that need it,
+and `"ask"` before `"deny"`.
+
+What has changed is the size of the gap. It used to be every write through every
+tool but three; it is now a lag of one prompt, and whatever git cannot see.
 
 Two rules keep it from becoming a lockout:
 

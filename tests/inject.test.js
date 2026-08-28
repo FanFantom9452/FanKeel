@@ -365,3 +365,74 @@ test('the /fankeel prompt carries rules, not only the session id', () => {
   assert.match(text, /orient\.js/);
   assert.match(text, /then AskUserQuestion/, 'no shape for what it puts on screen');
 });
+
+// The other half of how a claim gets onto the record. `hooks/touch.js` sees
+// Edit, Write and NotebookEdit; everything else — a `sed`, a `node -e`, a build
+// script, an MCP write tool — reaches the disk without any hook firing, and this
+// hook is where git is asked what happened.
+function gitRepo() {
+  const dir = tmp('fankeel-hook-');
+  const g = (args) => execFileSync('git', args, { cwd: dir, stdio: ['ignore', 'ignore', 'ignore'] });
+  g(['init', '-q']);
+  g(['config', 'user.email', 'test@example.invalid']);
+  g(['config', 'user.name', 'test']);
+  g(['config', 'commit.gpgsign', 'false']);
+  fs.writeFileSync(path.join(dir, 'kept.js'), 'one\n');
+  fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.fankeel', '.gitignore'), 'sessions/\n');
+  g(['add', '-A']);
+  g(['commit', '-qm', 'base']);
+  return dir;
+}
+
+test('a write no hook saw is claimed on the next prompt', () => {
+  const root = gitRepo();
+  seed(root, MINE, { claims: [] });
+  fs.mkdirSync(path.join(root, 'api'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'api', 'routes.js'), 'sed did this\n');
+  run({ session_id: MINE, cwd: root, prompt: 'carry on' });
+  assert.deepEqual(readEntry(root, MINE).claims, ['api/routes.js']);
+});
+
+test('a file dirty before the task started is not claimed', () => {
+  const root = gitRepo();
+  seed(root, MINE, { claims: [] });
+  fs.appendFileSync(path.join(root, 'kept.js'), 'two\n');
+  const then = Date.now() - 48 * 3600e3;
+  fs.utimesSync(path.join(root, 'kept.js'), then / 1000, then / 1000);
+  run({ session_id: MINE, cwd: root, prompt: 'carry on' });
+  assert.deepEqual(readEntry(root, MINE).claims, []);
+});
+
+test('a session not in the mode never asks git anything', () => {
+  const root = gitRepo();
+  seed(root, MINE, { active: false });
+  fs.writeFileSync(path.join(root, 'kept.js'), 'changed\n');
+  const before = fs.readFileSync(path.join(root, '.fankeel', 'sessions', MINE + '.json'), 'utf8');
+  run({ session_id: MINE, cwd: root, prompt: 'carry on' });
+  assert.equal(fs.readFileSync(path.join(root, '.fankeel', 'sessions', MINE + '.json'), 'utf8'), before);
+});
+
+// A refusal nobody is told about is the hole this whole path was closing. The
+// list above it would read as complete while the half git was going to supply
+// had been thrown away.
+test('a pass too big to record says so in the block', () => {
+  const root = gitRepo();
+  seed(root, MINE, { claims: ['kept.js'] });
+  fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
+  for (let i = 0; i <= 60; i++) fs.writeFileSync(path.join(root, 'dist', 'part' + i + '.js'), 'chunk\n');
+  const text = context(run({ session_id: MINE, cwd: root, prompt: 'carry on' }));
+  assert.match(text, /unclaimed: 61 files written outside the hooks/);
+  assert.deepEqual(readEntry(root, MINE).claims, ['kept.js'], 'nothing evicted to make room');
+});
+
+// The claim and the line describing it come from one moment. Rendering the list
+// before the pass that fills it would show this prompt's writes a prompt late.
+test('a write outside the hooks is in the block on the same prompt it is claimed', () => {
+  const root = gitRepo();
+  seed(root, MINE, { claims: [] });
+  fs.mkdirSync(path.join(root, 'api'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'api', 'routes.js'), 'sed did this\n');
+  const text = context(run({ session_id: MINE, cwd: root, prompt: 'carry on' }));
+  assert.match(text, /touched: api\/routes\.js/);
+});

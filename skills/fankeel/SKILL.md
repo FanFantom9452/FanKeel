@@ -87,7 +87,9 @@ One file per session, named for the session that owns it.
 
 A `claims` entry is **one file path**, recorded whole and relative to the
 registry. Nobody types one: `hooks/touch.js` adds a path the first time an edit
-lands on it, so the list is what happened rather than what anyone intended. An
+lands on it, and `hooks/inject.js` adds, once a prompt, whatever git reports
+dirty since the task started — so a `sed`, a `node -e` or a build script is on
+the list too. Either way it is what happened rather than what anyone intended. An
 edit to `lib/badge.js` claims `lib/badge.js` and not `lib` — rolling up to the
 directory would read two sessions in two files of one directory as a collision,
 and accuracy is the whole reason to observe rather than ask. Sixty at most,
@@ -651,9 +653,10 @@ edited. Say so before editing that file again, name the other task, and let the
 user decide. Do not silently proceed.
 
 Nothing has to be declared when the work reaches a new file. `hooks/touch.js`
-claims it as the edit lands, and the injected block lists what this task has
-touched under `touched:` — there is no command to run and nothing to keep up to
-date.
+claims it as the edit lands; a write that no hook matches — a shell `sed`, a
+`node -e`, a build script — is picked up from git on the next prompt instead. The
+injected block lists what this task has touched under `touched:` — there is no
+command to run and nothing to keep up to date.
 
 A session whose terminal is gone stops appearing under `also in progress:`,
 because liveness is read from Claude Code's own session directory and checked
