@@ -248,3 +248,33 @@ test('the undeclared count is one line, not a list of every page', () => {
   assert.match(text, /13 reference documents have no frontmatter contract/);
   assert.equal(text.includes('docs/11-a.md'), false, 'the fix is a convention, not thirteen edits');
 });
+
+// Ten files carry the version and nothing kept them together: two manifests and
+// one line of frontmatter in each of the eight skills. A release that missed one
+// left a skill announcing a version the plugin is not, which is the kind of wrong
+// nobody reads carefully enough to catch — the number is right in nine places.
+//
+// Listed rather than globbed on the manifests, so adding a third one has to be a
+// decision. Globbed on the skills, because adding a stage means adding a skill
+// and that one should not need this file edited to be covered.
+test('every file that carries the version carries the same one', () => {
+  const root = path.join(__dirname, '..');
+  const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
+
+  const found = new Map();
+  for (const rel of ['package.json', '.claude-plugin/plugin.json']) {
+    found.set(rel, JSON.parse(read(rel)).version);
+  }
+  for (const name of fs.readdirSync(path.join(root, 'skills'))) {
+    const rel = 'skills/' + name + '/SKILL.md';
+    const m = read(rel).match(/^version:\s*(\S+)\s*$/m);
+    assert.ok(m, rel + ' carries no version line');
+    found.set(rel, m[1]);
+  }
+
+  assert.equal(found.size, 10, 'the count moved: ' + [...found.keys()].join(', '));
+  const versions = [...new Set(found.values())];
+  assert.equal(versions.length, 1,
+    'versions disagree — ' + [...found].map(([f, v]) => f + ' ' + v).join(', '));
+  assert.match(versions[0], /^\d+\.\d+\.\d+$/, 'not a release number: ' + versions[0]);
+});

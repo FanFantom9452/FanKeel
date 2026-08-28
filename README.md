@@ -237,3 +237,11 @@ at, and every entry filed under `## Ready`, `## Needs a decision` or `## Waiting
 which is what says whether it can be started today. A clean run prints the split,
 so the ready count is on screen without opening the file. The `land` stage rules call for it, because a plan deleted at `land` is a link
 that just died.
+
+`node scripts/version.js` is the release number in the ten files that carry it —
+two manifests and one frontmatter line in each of the eight skills. With a number
+it sets them all; with `--changes` it lists the commits since the last
+`chore: <x.y.z>`, which is what a release contains. `npm test` fails when the ten
+disagree, so the script is what makes them agree rather than what notices. A
+release used to be ten edits, and missing one left a skill announcing a version
+the plugin is not — right in nine places, which is how it went unnoticed.
