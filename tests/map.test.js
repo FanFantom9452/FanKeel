@@ -224,3 +224,26 @@ test('a single-dash diagram above the tree does not swallow the search', () => {
   assert.equal(found.rows, 3);
   assert.doesNotMatch(found.lines.join('\n'), /Step 1/);
 });
+
+test('a project with no tree is told so, and told what makes one', () => {
+  const dir = withFiles({ 'README.md': '# r\n\nprose only\n' });
+  const text = map.buildMap(dir);
+  assert.match(text, /no directory tree found in CLAUDE\.md, AGENTS\.md, README\.md/);
+  assert.match(text, /scripts\/layout\.js/);
+});
+
+test('a tree is printed with its file, its heading and its unfilled count', () => {
+  const dir = withFiles({
+    'README.md': '# r\n\n## 目錄結構\n\n├── lib/  the library\n├── docs/\n└── bin/\n',
+  });
+  const text = map.buildMap(dir);
+  assert.match(text, /tree — 3 rows from README\.md, under 目錄結構, 2 with no responsibility/);
+  assert.match(text, /├── lib\/  the library/);
+});
+
+test('a fully described tree says nothing about unfilled rows', () => {
+  const dir = withFiles({
+    'README.md': '# r\n\n## Layout\n\n├── lib/  one\n├── docs/  two\n└── bin/  three\n',
+  });
+  assert.match(map.buildMap(dir), /tree — 3 rows from README\.md, under Layout\n/);
+});
