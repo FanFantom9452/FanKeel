@@ -237,12 +237,12 @@ test('every script token has a script, and no token survives a render', () => {
 
 test('option one names the stage the route actually goes to next', () => {
   const out = render({ mine: entry(MINE, { stage: 'build' }), others: [], now: NOW });
-  assert.match(out, /Option one is the approval: verify\./);
+  assert.match(out, /Option one is the approval: verify —/);
 });
 
 test('where the route ends, option one is standing the task down', () => {
   const out = render({ mine: entry(MINE, { stage: 'land' }), others: [], now: NOW });
-  assert.match(out, /Option one is the approval: standing the task down\./);
+  assert.match(out, /Option one is the approval: standing the task down —/);
 });
 
 test('a short route gets its own next stage, not the full route’s', () => {
@@ -251,7 +251,7 @@ test('a short route gets its own next stage, not the full route’s', () => {
     others: [],
     now: NOW,
   });
-  assert.match(out, /Option one is the approval: build\./);
+  assert.match(out, /Option one is the approval: build —/);
 });
 
 test('the docs quote the injected rules verbatim, in both blocks', () => {

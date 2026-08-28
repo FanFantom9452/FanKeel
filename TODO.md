@@ -44,8 +44,6 @@ a person, which is what the two headings below say.
 - Nothing in fankeel names the Workflow tool; when a scripted fan-out beats parallel dispatches is unwritten — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md), "Dispatch by default".
 - A fan-out split by slice loses the global view; by lens over the whole tree keeps it, and the denominator has to be said out loud — [docs/subagents.md](docs/subagents.md).
 - Each stage's page says what it produces, never the method that makes it complete — the enumeration, the fan-out shape, the critic — [docs/pipeline.md](docs/pipeline.md).
-- The injected block asks for both “Option one is the approval” and “Recommended option first” — [lib/stages.js](lib/stages.js). They collide when a finding argues against advancing.
-- `step` still names a route entry in [lib/stages.js](lib/stages.js) and [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md) — a third sense the 08-27 settlement never enumerated.
 - A feature asked for mid-task goes to TODO.md unless it blocks this task or is closely related; where the boundary is genuinely ambiguous, ask rather than decide — [lib/stages.js](lib/stages.js).
 
 ## Waiting

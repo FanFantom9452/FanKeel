@@ -204,7 +204,7 @@ test('the discipline covers the captured requirements', () => {
   // R2 never stop, R3 questions carry context, R4 finish it,
   // R5 TODO is an index, R6 rewrite not move, R7 use the audit skills.
   assert.match(text, /never end a stage silently or in prose/);
-  assert.match(text, /background goes inside the question/);
+  assert.match(text, /background belongs in the option descriptions/);
   assert.match(text, /do not stop where the happy path works/);
   assert.match(text, /todo\.md as one line pointing at the detail/);
   assert.match(text, /leaves a decision record behind/);
@@ -264,8 +264,25 @@ test('tool input is written in characters, not escapes', () => {
 test('the background sits in the descriptions, not in the stem', () => {
   const text = ALWAYS.join(' ');
   assert.match(text, /in the option descriptions/);
-  assert.match(text, /never as a paragraph in the stem/);
-  assert.match(text, /The stem is one line/);
+  assert.match(text, /never in the stem/);
+  assert.match(text, /which is one line/);
+});
+
+// Two instructions that agreed until they did not. `AskUserQuestion`'s own
+// description says to put the recommended option first and label it; the rule
+// here says option one is the approval. A finding that argues against advancing
+// cannot satisfy both, so one loses silently and the reader cannot tell which.
+//
+// Settled by separating the two signals: position always means the approval,
+// the label always means the recommendation, and the label is free to sit on any
+// option. What must not come back is an ordering rule, which is what put the two
+// in conflict.
+test('the recommendation is a label, never a position', () => {
+  const text = ALWAYS.join(' ');
+  assert.match(text, /Option one is the approval/);
+  assert.match(text, /`\(Recommended\)` rather than moving it/);
+  assert.equal(/recommended option first/i.test(text), false,
+    'an ordering rule is back, and it collides with option one being the approval');
 });
 
 // A word count bounds how much is written and says nothing about what has to be

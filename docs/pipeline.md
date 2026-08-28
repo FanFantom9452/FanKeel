@@ -119,8 +119,8 @@ also in progress:
 
 <plugin> = C:\Users\you\.claude\plugins\cache\fankeel\fankeel\0.31.0
 stage rules:
-  - Never end a stage silently or in prose. Ask with AskUserQuestion — three at least, never dropping the pause. Option one is the approval: verify. Option two names the open decision, never unfinished work.
-  - The background goes inside the question call — in the option descriptions, never as a paragraph in the stem. The stem is one line. Recommended option first.
+  - Never end a stage silently or in prose. Ask with AskUserQuestion — three at least, never dropping the pause. Option one is the approval: verify — mark your pick `(Recommended)` rather than moving it. Option two names the open decision, never unfinished work.
+  - Background belongs in the option descriptions, never in the stem, which is one line.
   - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
@@ -143,7 +143,7 @@ output shape:
 The rules are restated in full every turn rather than pointed at. A pointer is
 only as strong as the salience of what it points at, and what it points at recedes
 by thousands of tokens a turn. Only the current stage's rules are sent, never all
-seven stages', which is what keeps a per-turn restatement affordable — 2813
+seven stages', which is what keeps a per-turn restatement affordable — 2808
 characters, about 700 tokens. That figure is the block above counted as it is
 printed, so it is re-measured by counting it again rather than by trusting the
 number.
@@ -202,8 +202,8 @@ class: architectural — a new subsystem, or a change to an interface something 
 
 <plugin> = C:\Users\you\.claude\plugins\cache\fankeel\fankeel\0.31.0
 stage rules:
-  - Never end a stage silently or in prose. Ask with AskUserQuestion — three at least, never dropping the pause. Option one is the approval: verify. Option two names the open decision, never unfinished work.
-  - The background goes inside the question call — in the option descriptions, never as a paragraph in the stem. The stem is one line. Recommended option first.
+  - Never end a stage silently or in prose. Ask with AskUserQuestion — three at least, never dropping the pause. Option one is the approval: verify — mark your pick `(Recommended)` rather than moving it. Option two names the open decision, never unfinished work.
+  - Background belongs in the option descriptions, never in the stem, which is one line.
   - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Finish what you start. Do not stop where the happy path works and the rest is "later".
