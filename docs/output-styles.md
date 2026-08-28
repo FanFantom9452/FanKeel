@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-08-27
-source_of_truth: output-styles/
+source_of_truth: output-styles/, lib/stages.js
 ---
 
 # Output styles
@@ -71,9 +71,9 @@ The three styles are unaffected. They ship with the plugin and appear in the
   and let them pick it. A style changes the voice of every session on the
   machine, including ones they are not looking at.
 
-The three always-on rules in the per-turn injection overlap `fankeel-pipeline` on
+The four always-on rules in the per-turn injection overlap `fankeel-pipeline` on
 purpose. A style is the user's choice and a hook cannot see which one is active,
 so moving those rules into the style would mean losing them whenever the user
-picked something else. Three lines a turn is the cheaper price.
+picked something else. Four lines a turn is the cheaper price.
 
 [Back to the index](README.md) · [Back to the front page](../README.md)

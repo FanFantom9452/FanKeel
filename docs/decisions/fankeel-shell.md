@@ -174,10 +174,10 @@ fankeel is opt-in per session. And the skill never picks a style on the user's
 behalf — it changes the voice of every session on the machine, including the
 ones they are not looking at.
 
-The three always-on rules stay in the injection even though `fankeel-pipeline`
+The always-on rules stay in the injection even though `fankeel-pipeline`
 repeats them. A style is the user's choice, a hook cannot see which one is active,
-and losing the rules whenever the user picks something else costs more than three
-duplicated lines a turn.
+and losing the rules whenever the user picks something else costs more than
+repeating them every turn.
 
 ## A subagent gets a brief, and it is the best-value text here
 

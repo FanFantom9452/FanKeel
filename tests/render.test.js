@@ -267,6 +267,24 @@ test('the docs quote the injected rules verbatim, in both blocks', () => {
   }
 });
 
+// The page above quotes the rules, so it cannot be wrong about how many there
+// are. docs/output-styles.md counts them instead, and the count rotted the day
+// ALWAYS grew a fourth rule: two pages said "three" for six days and nothing
+// went red. The word comes from ALWAYS.length rather than being written here, so
+// the next rule added fails this until the prose catches up — the shape
+// tests/docs-audit.test.js:267 settled on for the same kind of claim.
+test('the page that counts the always-on rules counts as many as there are', () => {
+  const page = require('node:fs').readFileSync(
+    require('node:path').join(__dirname, '..', 'docs', 'output-styles.md'), 'utf8');
+  const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'];
+  const word = WORDS[ALWAYS.length];
+
+  assert.match(page, new RegExp('The ' + word + ' always-on rules'));
+  // The same number a second time, at the end of the paragraph: the price of
+  // repeating them is one line per rule, so it moves whenever the count does.
+  assert.match(page, new RegExp(word[0].toUpperCase() + word.slice(1) + ' lines a turn'));
+});
+
 test('an unsubstituted rulesFor still returns the token, so callers cannot forget silently', () => {
   assert.ok(byName('survey').rules.some((r) => r.includes(SURVEY_TOKEN)));
   assert.ok(rulesFor('survey').some((r) => r.includes(SURVEY_TOKEN)));
