@@ -22,6 +22,7 @@ const context = require('../lib/context.js');
 const { render, renderInit } = require('../lib/render.js');
 const { overlapPaths } = require('../lib/overlap.js');
 const { positionIn } = require('../lib/stages.js');
+const { claimWrites } = require('../lib/dirty.js');
 
 // The one prompt trying to turn the mode on. Everything else in this hook keys
 // off the registry, and at this moment there is nothing in it: `/fankeel` runs
@@ -58,7 +59,7 @@ function main(raw) {
     // The mode is on for this session exactly when this session owns an active
     // entry. There is no second flag to disagree with, and no way to be in the
     // mode without having said what you are working on.
-    const mine = registry.readSession(root, sessionId);
+    let mine = registry.readSession(root, sessionId);
     if (!mine || mine.active !== true) {
         const starting = startsFankeel(payload.prompt);
 
@@ -121,6 +122,32 @@ function main(raw) {
         return;
     }
 
+    // The writes `hooks/touch.js` never saw. It is PostToolUse on
+    // Edit|Write|NotebookEdit, so a `sed`, a `node -e`, a build script or an MCP
+    // write tool lands nothing on `claims` — and a claim list missing those is
+    // why the scope guard is off by default. `lib/dirty.js` asks git what is
+    // dirty instead of asking a hook what tool ran, so which tool wrote the file
+    // stops mattering.
+    //
+    // Here rather than on a Bash hook because the cost is one `git status`, and
+    // that cost is a process rather than a tree. Measured on Windows 2026-08-28,
+    // this whole hook end to end against a 41-file repository: 185ms before,
+    // 226ms after. Once a prompt is 41ms; once a Bash call would have made a
+    // fifty-command build stage pay it fifty times.
+    //
+    // Above the render rather than below it, which is the one place the
+    // output-first rule does not reach: what this finds is what the block is
+    // about to describe, and reading the claim list either side of the write
+    // would put two different moments in one block. The entry is re-read for the
+    // same reason. It stays inside a try — if this throws, `unclaimed` is 0, the
+    // entry is the one already in hand, and the injection goes out regardless.
+    let unclaimed = 0;
+    try {
+        const found = claimWrites(root, sessionId, mine);
+        unclaimed = found.declined;
+        if (found.added) mine = registry.readSession(root, sessionId) || mine;
+    } catch (e) { /* housekeeping */ }
+
     const others = registry.readActive(root).filter((e) => e.sessionId !== sessionId);
     const now = Date.now();
 
@@ -143,7 +170,7 @@ function main(raw) {
     process.stdout.write(JSON.stringify({
         hookSpecificOutput: {
             hookEventName: 'UserPromptSubmit',
-            additionalContext: render({ mine: { sessionId, data: mine }, others: alive, now, root, launch, transcript: payload.transcript_path }),
+            additionalContext: render({ mine: { sessionId, data: mine }, others: alive, now, root, launch, transcript: payload.transcript_path, unclaimed }),
         },
     }));
 

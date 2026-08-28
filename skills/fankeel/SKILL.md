@@ -87,7 +87,9 @@ One file per session, named for the session that owns it.
 
 A `claims` entry is **one file path**, recorded whole and relative to the
 registry. Nobody types one: `hooks/touch.js` adds a path the first time an edit
-lands on it, so the list is what happened rather than what anyone intended. An
+lands on it, and `hooks/inject.js` adds, once a prompt, whatever git reports
+dirty since the task started — so a `sed`, a `node -e` or a build script is on
+the list too. Either way it is what happened rather than what anyone intended. An
 edit to `lib/badge.js` claims `lib/badge.js` and not `lib` — rolling up to the
 directory would read two sessions in two files of one directory as a collision,
 and accuracy is the whole reason to observe rather than ask. Sixty at most,
@@ -397,26 +399,6 @@ page doing the same is the bug.
 
 ### Every fortnight or so — the sweep
 
-## One skill per stage
-
-These rules ride every prompt because they compress. What does not compress — a
-task template, the ledger's header contract, a claim-to-evidence table, an
-integration menu — lives in a skill per stage, read once on entering it. An
-abbreviated format produces something that looks like the format and is not it.
-
-| Stage | Skill | What only it holds |
-|---|---|---|
-| `survey` | **fankeel-survey** | reading the map, and the three classes |
-| `design` | **fankeel-design** | the success criterion, and checking against the map |
-| `plan` | **fankeel-plan** | the task template, and the placeholders that are plan failures |
-| `build` | **fankeel-build** | the ledger, the conflict scan, the four things that stop the loop |
-| `verify` | **fankeel-verify** | the claim-to-evidence table |
-| `audit` | **fankeel-audit** | the defect table, and what only reading finds |
-| `land` | **fankeel-land** | the integration menu, and the cleanup rules |
-
-The stage rules name their own skill, so this table is for the reader rather
-than for the pipeline.
-
 **`/fankeel-audit` is the whole pass**: it runs all three scanners, reads the
 shortlist they produce, and ends by offering the cleanup. Use it here, and use it
 on its own — it does not need a task, so it is also the way to audit a repository
@@ -466,6 +448,26 @@ rules name the tools, and the rules are injected while you are in that stage.
 plans, merges two pages into one source of truth and deletes orphans is a large
 change to something people navigate by memory. Report first, then ask, and let
 the first option name the files rather than the intent.
+
+## One skill per stage
+
+These rules ride every prompt because they compress. What does not compress — a
+task template, the ledger's header contract, a claim-to-evidence table, an
+integration menu — lives in a skill per stage, read once on entering it. An
+abbreviated format produces something that looks like the format and is not it.
+
+| Stage | Skill | What only it holds |
+|---|---|---|
+| `survey` | **fankeel-survey** | reading the map, and the three classes |
+| `design` | **fankeel-design** | the success criterion, and checking against the map |
+| `plan` | **fankeel-plan** | the task template, and the placeholders that are plan failures |
+| `build` | **fankeel-build** | the ledger, the conflict scan, the four things that stop the loop |
+| `verify` | **fankeel-verify** | the claim-to-evidence table |
+| `audit` | **fankeel-audit** | the defect table, and what only reading finds |
+| `land` | **fankeel-land** | the integration menu, and the cleanup rules |
+
+The stage rules name their own skill, so this table is for the reader rather
+than for the pipeline.
 
 ## Where documents live
 
@@ -651,9 +653,10 @@ edited. Say so before editing that file again, name the other task, and let the
 user decide. Do not silently proceed.
 
 Nothing has to be declared when the work reaches a new file. `hooks/touch.js`
-claims it as the edit lands, and the injected block lists what this task has
-touched under `touched:` — there is no command to run and nothing to keep up to
-date.
+claims it as the edit lands; a write that no hook matches — a shell `sed`, a
+`node -e`, a build script — is picked up from git on the next prompt instead. The
+injected block lists what this task has touched under `touched:` — there is no
+command to run and nothing to keep up to date.
 
 A session whose terminal is gone stops appearing under `also in progress:`,
 because liveness is read from Claude Code's own session directory and checked

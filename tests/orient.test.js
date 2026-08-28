@@ -332,6 +332,17 @@ test('a directory that cannot be listed says so, rather than reporting no files'
     'absence claimed about a directory that could not be read');
 });
 
+// The same disagreement, with the other counter. survey reports "2 documents and
+// binaries dropped by extension" over a root of nothing but archives and images;
+// orient said `nothing readable`, which is what it says about a root that does
+// not exist. A directory holding two files is not one of those.
+test('a root of nothing but skipped extensions says how many, not that it is unreadable', () => {
+  const root = workspace({ 'photo.png': 'x', 'notes.pdf': 'x' });
+  const out = orient.main(['--root', root]);
+  assert.equal(/nothing readable/.test(out), false, 'a root holding two files read as unreadable');
+  assert.match(out, /2 skipped/);
+});
+
 // Step 1 and step 4 of one stage, over one root, disagreeing by two: survey's
 // header excludes subtrees — a submodule is one entry standing for a whole
 // repository, not one file — and orient counted entries. It read `11 files`
