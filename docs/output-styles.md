@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-27
+last_verified: 2026-08-28
 source_of_truth: output-styles/, lib/stages.js
 ---
 
