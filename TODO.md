@@ -35,7 +35,8 @@ a person, which is what the two headings below say.
 
 ## Needs a decision
 
-- `isSubtree` costs a stat per entry per row in [scripts/orient.js](scripts/orient.js) and no cache helps: 107 stats, 105 distinct paths, 2 repeated. Read gitlinks from `--stage`, or accept it. 08-28.
+- `isSubtree` stats what both sources already classified — [lib/tracked.js](lib/tracked.js) emits files, git emits files and gitlinks. 18,415 stats, 849ms, 23% of a real orient. 08-29.
+- 53 git spawns are 55% of a 3.7s `orient` on a workspace of eleven — [scripts/orient.js](scripts/orient.js). Bigger than the stats beside it, and no measurement says which calls are the fat. 08-29.
 - Default the scope guard on: writes outside the hooks are claimed from git now — [docs/collisions.md](docs/collisions.md), "Making it block". Two gaps left: a one-prompt lag, and what git cannot see.
 - Nothing in fankeel names the Workflow tool; when a scripted fan-out beats parallel dispatches is unwritten — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md), "Dispatch by default".
 - A fan-out split by slice loses the global view; by lens over the whole tree keeps it, and the denominator has to be said out loud — [docs/subagents.md](docs/subagents.md).
