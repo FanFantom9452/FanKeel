@@ -230,6 +230,8 @@ test('a project with no tree is told so, and told what makes one', () => {
   const text = map.buildMap(dir);
   assert.match(text, /no directory tree found in CLAUDE\.md, AGENTS\.md, README\.md/);
   assert.match(text, /scripts\/layout\.js/);
+  assert.doesNotMatch(text, /<plugin>/);
+  assert.match(text, /`node .+\/scripts\/layout\.js` prints a skeleton/);
 });
 
 test('a tree is printed with its file, its heading and its unfilled count', () => {
