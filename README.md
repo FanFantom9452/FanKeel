@@ -223,7 +223,7 @@ claude plugin validate .
 ```
 
 `lib/` is pure logic, tested directly. `hooks/` is where stdin, stdout and process
-exit live, and all five hooks are tested as subprocesses with real payloads.
+exit live, and all six hooks are tested as subprocesses with real payloads.
 
 Every hook exits 0 on every path, including every error path. A `UserPromptSubmit`
 hook that throws blocks the prompt it was called for and a `PreToolUse` hook that

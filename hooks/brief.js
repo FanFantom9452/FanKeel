@@ -19,15 +19,11 @@
 
 const registry = require('../lib/registry.js');
 const { renderBrief } = require('../lib/render.js');
+const { run, parse } = require('../lib/hook.js');
 
 function main(raw) {
-    let payload;
-    try {
-        payload = JSON.parse(raw);
-    } catch (e) {
-        return;
-    }
-    if (!payload || typeof payload !== 'object') return;
+    const payload = parse(raw);
+    if (!payload) return;
 
     // The subagent inherits its parent's session, so the parent's entry is the
     // one to read. `agent_id` identifies the subagent and is deliberately not
@@ -48,15 +44,6 @@ function main(raw) {
     }));
 }
 
-let input = '';
-process.stdin.setEncoding('utf8');
-process.stdin.on('data', (chunk) => { input += chunk; });
-process.stdin.on('end', () => {
-    try {
-        main(input);
-    } catch (e) {
-        // Deliberately silent. A subagent that starts without the brief is worse
-        // informed; a subagent that fails to start is worse than that.
-    }
-});
-process.stdin.on('error', () => {});
+// Deliberately silent. A subagent that starts without the brief is worse
+// informed; a subagent that fails to start is worse than that.
+run(main);

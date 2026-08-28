@@ -35,7 +35,6 @@ a person, which is what the two headings below say.
 
 ## Needs a decision
 
-- Six hooks each carry the same stdin block and the same parse-and-read preamble, 121 lines — [hooks/touch.js](hooks/touch.js):53. One shared runner is ~15. Is self-contained worth it? 08-29.
 - `isSubtree` costs a stat per entry per row in [scripts/orient.js](scripts/orient.js) and no cache helps: 107 stats, 105 distinct paths, 2 repeated. Read gitlinks from `--stage`, or accept it. 08-28.
 - Nothing sets the version in all ten places at once or fails when they disagree, and no page lists what a release changed. Both are derivable from the commits between two `chore: X.Y.Z`.
 - Default the scope guard on: writes outside the hooks are claimed from git now — [docs/collisions.md](docs/collisions.md), "Making it block". Two gaps left: a one-prompt lag, and what git cannot see.

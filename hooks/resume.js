@@ -19,15 +19,11 @@
 
 const registry = require('../lib/registry.js');
 const { renderResume } = require('../lib/render.js');
+const { run, parse } = require('../lib/hook.js');
 
 function main(raw) {
-    let payload;
-    try {
-        payload = JSON.parse(raw);
-    } catch (e) {
-        return;
-    }
-    if (!payload || typeof payload !== 'object') return;
+    const payload = parse(raw);
+    if (!payload) return;
 
     const sessionId = payload.session_id;
     const root = registry.rootFor(payload);
@@ -56,14 +52,5 @@ function main(raw) {
     } catch (e) { /* housekeeping */ }
 }
 
-let input = '';
-process.stdin.setEncoding('utf8');
-process.stdin.on('data', (chunk) => { input += chunk; });
-process.stdin.on('end', () => {
-    try {
-        main(input);
-    } catch (e) {
-        // Deliberately silent. Whatever went wrong, the turn still has to finish.
-    }
-});
-process.stdin.on('error', () => {});
+// Deliberately silent. Whatever went wrong, the turn still has to finish.
+run(main);

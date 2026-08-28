@@ -23,6 +23,7 @@ const { render, renderInit } = require('../lib/render.js');
 const { overlapPaths } = require('../lib/overlap.js');
 const { positionIn } = require('../lib/stages.js');
 const { claimWrites } = require('../lib/dirty.js');
+const { run, parse } = require('../lib/hook.js');
 
 // The one prompt trying to turn the mode on. Everything else in this hook keys
 // off the registry, and at this moment there is nothing in it: `/fankeel` runs
@@ -44,13 +45,8 @@ function claudeConfigDir() {
 }
 
 function main(raw) {
-    let payload;
-    try {
-        payload = JSON.parse(raw);
-    } catch (e) {
-        return;
-    }
-    if (!payload || typeof payload !== 'object') return;
+    const payload = parse(raw);
+    if (!payload) return;
 
     const sessionId = payload.session_id;
     const launch = registry.launchRoot(payload);
@@ -214,15 +210,6 @@ function main(raw) {
     }
 }
 
-let input = '';
-process.stdin.setEncoding('utf8');
-process.stdin.on('data', (chunk) => { input += chunk; });
-process.stdin.on('end', () => {
-    try {
-        main(input);
-    } catch (e) {
-        // Deliberately silent. Whatever went wrong, the prompt still has to go
-        // through.
-    }
-});
-process.stdin.on('error', () => {});
+// Deliberately silent. Whatever went wrong, the prompt still has to go
+// through.
+run(main);

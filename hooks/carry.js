@@ -26,6 +26,7 @@
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { renderCarry } = require('../lib/render.js');
+const { run, parse } = require('../lib/hook.js');
 
 // At most three, though in practice there is one: the session cleared a second
 // ago. More than that is a workspace carrying several abandoned records, and
@@ -34,13 +35,8 @@ const { renderCarry } = require('../lib/render.js');
 const MOST = 3;
 
 function main(raw) {
-    let payload;
-    try {
-        payload = JSON.parse(raw);
-    } catch (e) {
-        return;
-    }
-    if (!payload || typeof payload !== 'object') return;
+    const payload = parse(raw);
+    if (!payload) return;
 
     // A subagent owns no task and must never be offered one. `agent_id` is the
     // field Claude Code names for exactly this, and it is not `agent_type`: the
@@ -85,17 +81,7 @@ function main(raw) {
     }));
 }
 
-let input = '';
-process.stdin.setEncoding('utf8');
-process.stdin.on('data', (chunk) => { input += chunk; });
-process.stdin.on('end', () => {
-    try {
-        main(input);
-    } catch (e) {
-        // Deliberately silent. This runs before the first prompt of a session,
-        // so an error here would be the first thing that session showed — and
-        // the task it is about is not lost by staying unmentioned, only by
-        // being forgotten.
-    }
-});
-process.stdin.on('error', () => {});
+// Deliberately silent. This runs before the first prompt of a session, so an
+// error here would be the first thing that session showed — and the task it
+// is about is not lost by staying unmentioned, only by being forgotten.
+run(main);
