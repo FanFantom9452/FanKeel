@@ -133,7 +133,9 @@ holds it. Use that one. A background task's output directory and a scratch
 directory both carry a session id in the same shape and are not always this
 session's, and an entry written under the wrong one is invisible — every hook goes
 quiet on a miss, because a miss is what a session not using the plugin looks like.
-`task.js` refuses an id no running session claims rather than writing it.
+`task.js` refuses an id no running session claims rather than writing it — when
+it can see other sessions running and this is not one of them. A scan that finds
+nobody at all found nobody including the caller, so it proves nothing and allows.
 
 **Never write that file by hand.** Every change to it goes through one script:
 

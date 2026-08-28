@@ -729,3 +729,38 @@ test('a stage change waits for the lock instead of writing through it', async ()
   assert.equal(fs.readFileSync(seen, 'utf8'), 'survey', 'wrote while another writer held the lock');
   assert.equal(entry(dir, A).stage, 'design', 'and still landed once the lock came free');
 });
+
+// The other half of that refusal, and the one it got wrong. `lib/live.js:124`
+// already holds the rule: a scan that succeeded but cannot see the session doing
+// the scanning is not measuring what it claims to, so `readLive` returns
+// `known: false` and draws no conclusion from it. `requireSession` drew one —
+// and the id it is checking is this session's own, so an empty scan is exactly
+// the case `readLive` refuses to trust.
+//
+// It gates every command, so the cost of being wrong is the whole plugin
+// refusing to run with a message saying the id does not exist.
+//
+// Two shapes reach it: a sessions directory with nothing in it, and one holding
+// only files whose processes have exited. Both are a readable directory that
+// found nobody, including the caller.
+test('a scan that found nobody at all is not evidence the id is wrong', async () => {
+  const dir = root();
+  fs.mkdirSync(path.join(dir, 'cfg', 'sessions'), { recursive: true });
+
+  assert.equal(run(dir, ['start', '--session', A, '--task', 'x']).code, 0,
+    'an empty sessions directory refused a session that is plainly running');
+  assert.equal(entry(dir, A).task, 'x');
+
+  // A file with a pid that has definitely exited: this one, recorded after it
+  // did. Same empty result, arrived at the other way.
+  const kid = spawn(process.execPath, ['-e', ''], { stdio: 'ignore' });
+  const gone = kid.pid;
+  await new Promise((done) => kid.on('exit', done));
+
+  const second = root();
+  fs.mkdirSync(path.join(second, 'cfg', 'sessions'), { recursive: true });
+  fs.writeFileSync(path.join(second, 'cfg', 'sessions', gone + '.json'),
+    JSON.stringify({ pid: gone, sessionId: B, cwd: '/gone' }));
+  assert.equal(run(second, ['start', '--session', A, '--task', 'x']).code, 0,
+    'a directory of dead sessions refused a live one');
+});

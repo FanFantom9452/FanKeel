@@ -163,7 +163,20 @@ function rootOf(opts) {
 //
 // `runningSessions` returning null is the directory being unreadable, and that
 // allows: a refusal must never come from a failed measurement, which is the rule
-// `isLive` already keeps. It is a measured absence that is fatal.
+// `isLive` already keeps.
+//
+// An empty list allows too, and that took a second reading to see. The id being
+// checked is this session's own, so a scan that found nobody found nobody
+// *including the caller* — and this session is demonstrably running, because it
+// is the one asking. `lib/live.js:124` states the same rule for the same
+// directory: `readLive` returns `known: false` when the scan cannot see the
+// session doing the scanning, and draws no conclusion from it. This drew one,
+// and it gates every command, so the cost of being wrong was the whole plugin
+// refusing to run with a message saying the id does not exist.
+//
+// What is fatal is a scan that found somebody else and not this id. That is the
+// failure it was built for — an id off a background task's output directory,
+// while real sessions were listed beside it.
 //
 // `clear <id>` and `adopt <id>` take the other session's id positionally rather
 // than through `--session`, so a dead neighbour is still reachable — which is the
@@ -173,14 +186,10 @@ function requireSession(opts) {
     if (!id) fail('--session <id> is required. The /fankeel prompt makes the hook say it; use that one.');
     if (!registry.sessionPath(process.cwd(), id)) fail('Not a session id: ' + id);
     const rows = live.runningSessions(live.liveConfigDir());
-    if (rows && !rows.some((row) => row.sessionId === id)) {
+    if (rows && rows.length && !rows.some((row) => row.sessionId === id)) {
         const lines = ['No running Claude Code session has the id ' + id + '.', ''];
-        if (rows.length) {
-            lines.push('  running now:');
-            for (const row of rows) lines.push('    ' + row.sessionId + (row.cwd ? '   ' + row.cwd : ''));
-        } else {
-            lines.push('  running now: none');
-        }
+        lines.push('  running now:');
+        for (const row of rows) lines.push('    ' + row.sessionId + (row.cwd ? '   ' + row.cwd : ''));
         lines.push('');
         lines.push('An entry written under that id is one no hook would ever read, and every');
         lines.push('hook is silent about a miss — so the mode would look on and do nothing.');

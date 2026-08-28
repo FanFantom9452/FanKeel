@@ -205,7 +205,7 @@ Two things close it, both upstream of the hooks:
 
 | | |
 |---|---|
-| `scripts/task.js` | `--session` is checked against Claude Code's own `<config>/sessions/<pid>.json`. An id no running process claims is refused, and the message lists the ids that are running with the directory each was opened in. A directory that cannot be read allows everything — a refusal must never come from a failed measurement. |
+| `scripts/task.js` | `--session` is checked against Claude Code's own `<config>/sessions/<pid>.json`. An id refused is one the scan did not find **while finding others**, and the message lists those with the directory each was opened in. Two results allow: a directory that cannot be read, and a scan that found nobody at all. Neither is evidence, because a refusal must never come from a failed measurement — and a scan that cannot see the session doing the asking has failed, whatever it returned. `lib/live.js:124` keeps the same rule for the same directory. |
 | `hooks/inject.js` | a `/fankeel` prompt is answered with the `init` block: this session's id — the one that hook is itself holding — and the rules for the step before there is a task. |
 
 `clear <id>` and `adopt <id>` take the other session's id positionally rather
