@@ -267,6 +267,36 @@ test('the docs quote the injected rules verbatim, in both blocks', () => {
   }
 });
 
+// The page above quotes the rules, so it cannot be wrong about how many there
+// are. docs/output-styles.md counts them instead, and the count rotted the day
+// ALWAYS grew a fourth rule: two pages said "three" for six days and nothing
+// went red. The word comes from ALWAYS.length rather than being written here, so
+// the next rule added fails this until the prose catches up — the shape
+// tests/docs-audit.test.js:267 settled on for the same kind of claim.
+test('the page that counts the always-on rules counts as many as there are', () => {
+  const page = require('node:fs').readFileSync(
+    require('node:path').join(__dirname, '..', 'docs', 'output-styles.md'), 'utf8');
+  const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'];
+  const word = WORDS[ALWAYS.length];
+
+  assert.match(page, new RegExp('The ' + word + ' always-on rules'));
+  // The same number a second time, at the end of the paragraph: the price of
+  // repeating them is one line per rule, so it moves whenever the count does.
+  assert.match(page, new RegExp(word[0].toUpperCase() + word.slice(1) + ' lines a turn'));
+});
+
+// The front page shows `build`'s report shape as an example, and it had been
+// missing the ledger line since before the change that added it. Nothing read
+// this repository's own README, which is why a shape shown to every new reader
+// could differ from the one every build stage is actually given.
+test('the README shows the build template as build actually ships it', () => {
+  const readme = require('node:fs').readFileSync(
+    require('node:path').join(__dirname, '..', 'README.md'), 'utf8');
+  const template = byName('build').template;
+  assert.ok(readme.includes(template),
+    'README.md does not carry build\'s template verbatim; it ships as:\n' + template);
+});
+
 test('an unsubstituted rulesFor still returns the token, so callers cannot forget silently', () => {
   assert.ok(byName('survey').rules.some((r) => r.includes(SURVEY_TOKEN)));
   assert.ok(rulesFor('survey').some((r) => r.includes(SURVEY_TOKEN)));
@@ -420,10 +450,13 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
 // block a reader meets before anything else is on screen, on the prompt where
 // they have just typed a slash command and are waiting.
 //
-// 1400 against the 1140 it costs today. That is room for a fifth rule and not a
-// sixth, which is the same arithmetic as every other cap here: a block gains a
-// rule by displacing one, and the number is set before the rule that would need
-// it rather than raised afterwards to fit one already written.
+// 1400 against the 1364 it costs today, which is 36 characters — room for no
+// further rule at all, where the four it holds were bought one at a time. The
+// arithmetic is the same as every other cap here: a block gains a rule by
+// displacing one, and the number is set before the rule that would need it
+// rather than raised afterwards to fit one already written. So the next rule
+// `init` is given comes out of the four already in it, and the diagnostic below
+// is what says whether that trade actually happened.
 test('the init block is capped like every other block of rules', (t) => {
   const out = renderInit({ sessionId: MINE });
   const size = sizeAtReference(out);

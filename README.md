@@ -116,6 +116,7 @@ Each stage also ships the **shape of its report**, not only a description of one
 - path +12/-3 — what changed
 - path (new) — what it is
 
+ledger: <n> of <m> complete
 deferred: <heading> — <TODO.md line, or omit this line>
 then AskUserQuestion
 ```

@@ -16,12 +16,24 @@ function tmpClaude() {
 }
 
 const flag = (dir, sid) => path.join(dir, 'modes', sid, 'fankeel');
+const lead = (dir, sid) => flag(dir, sid) + '.lead';
 
 function seedBadge(dir, sid, word, ageMs) {
   const d = path.join(dir, 'modes', sid);
   fs.mkdirSync(d, { recursive: true });
   const f = path.join(d, 'fankeel');
   fs.writeFileSync(f, word + '\n');
+  if (ageMs) {
+    const t = new Date(Date.now() - ageMs);
+    fs.utimesSync(f, t, t);
+  }
+  return f;
+}
+
+function seedLead(dir, sid, body, ageMs) {
+  const f = lead(dir, sid);
+  fs.mkdirSync(path.dirname(f), { recursive: true });
+  fs.writeFileSync(f, body);
   if (ageMs) {
     const t = new Date(Date.now() - ageMs);
     fs.utimesSync(f, t, t);
@@ -79,6 +91,28 @@ test('pruneBadges removes a flag from a session long gone', () => {
   seedBadge(dir, OTHER, 'implement', 40 * 24 * 3600e3);
   assert.equal(pruneBadges(dir, SID, 30 * 24 * 3600e3), 1);
   assert.equal(fs.existsSync(path.join(dir, 'modes', OTHER)), false);
+});
+
+// The badge is the word; the lead is the rail TokenBar actually draws. Every
+// other caller takes them down together — `hooks/inject.js:115` and
+// `scripts/task.js:96` both call `clearBadge` and `clearLead` in the same
+// breath. Pruning removed only the badge, so a session thirty days gone kept a
+// live rail for ever, and the directory it sat in never emptied.
+test('pruneBadges takes the lead down with the badge', () => {
+  const dir = tmpClaude();
+  seedBadge(dir, OTHER, 'implement', 40 * 24 * 3600e3);
+  seedLead(dir, OTHER, 'word=implement\ntask=something long gone\n', 40 * 24 * 3600e3);
+  assert.equal(pruneBadges(dir, SID, 30 * 24 * 3600e3), 1);
+  assert.equal(fs.existsSync(lead(dir, OTHER)), false, 'the lead outlived the badge');
+  assert.equal(fs.existsSync(path.join(dir, 'modes', OTHER)), false, 'nothing was left, so the directory should have gone');
+});
+
+test('pruneBadges keeps a recent flag and its lead', () => {
+  const dir = tmpClaude();
+  seedBadge(dir, OTHER, 'implement', 60e3);
+  seedLead(dir, OTHER, 'word=implement\n', 60e3);
+  assert.equal(pruneBadges(dir, SID, 30 * 24 * 3600e3), 0);
+  assert.ok(fs.existsSync(lead(dir, OTHER)));
 });
 
 test('pruneBadges keeps a recent foreign flag', () => {

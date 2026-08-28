@@ -72,9 +72,10 @@ answers.
 
 What none of the four holds is the state of a task **in flight**: what was tried
 and failed, what was decided along the way, what to pick up next. That is all this
-keeps. It is never version-controlled and it dies when the task is stood down; if
-a note still matters after the task lands, it was never a note, and `land` is
-where it moves to one of the four.
+keeps. It is never version-controlled and it dies when the task is stood down —
+or renamed, because `task.js task` clears `notes` and `next` along with `claims`
+when one task becomes the next. If a note still matters after the task lands, it
+was never a note, and `land` is where it moves to one of the four.
 
 A third field is written by nobody the user talks to. `claims` holds every file
 this task has edited — at most sixty, oldest dropped, each recorded whole and

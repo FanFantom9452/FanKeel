@@ -399,26 +399,6 @@ page doing the same is the bug.
 
 ### Every fortnight or so — the sweep
 
-## One skill per stage
-
-These rules ride every prompt because they compress. What does not compress — a
-task template, the ledger's header contract, a claim-to-evidence table, an
-integration menu — lives in a skill per stage, read once on entering it. An
-abbreviated format produces something that looks like the format and is not it.
-
-| Stage | Skill | What only it holds |
-|---|---|---|
-| `survey` | **fankeel-survey** | reading the map, and the three classes |
-| `design` | **fankeel-design** | the success criterion, and checking against the map |
-| `plan` | **fankeel-plan** | the task template, and the placeholders that are plan failures |
-| `build` | **fankeel-build** | the ledger, the conflict scan, the four things that stop the loop |
-| `verify` | **fankeel-verify** | the claim-to-evidence table |
-| `audit` | **fankeel-audit** | the defect table, and what only reading finds |
-| `land` | **fankeel-land** | the integration menu, and the cleanup rules |
-
-The stage rules name their own skill, so this table is for the reader rather
-than for the pipeline.
-
 **`/fankeel-audit` is the whole pass**: it runs all three scanners, reads the
 shortlist they produce, and ends by offering the cleanup. Use it here, and use it
 on its own — it does not need a task, so it is also the way to audit a repository
@@ -468,6 +448,26 @@ rules name the tools, and the rules are injected while you are in that stage.
 plans, merges two pages into one source of truth and deletes orphans is a large
 change to something people navigate by memory. Report first, then ask, and let
 the first option name the files rather than the intent.
+
+## One skill per stage
+
+These rules ride every prompt because they compress. What does not compress — a
+task template, the ledger's header contract, a claim-to-evidence table, an
+integration menu — lives in a skill per stage, read once on entering it. An
+abbreviated format produces something that looks like the format and is not it.
+
+| Stage | Skill | What only it holds |
+|---|---|---|
+| `survey` | **fankeel-survey** | reading the map, and the three classes |
+| `design` | **fankeel-design** | the success criterion, and checking against the map |
+| `plan` | **fankeel-plan** | the task template, and the placeholders that are plan failures |
+| `build` | **fankeel-build** | the ledger, the conflict scan, the four things that stop the loop |
+| `verify` | **fankeel-verify** | the claim-to-evidence table |
+| `audit` | **fankeel-audit** | the defect table, and what only reading finds |
+| `land` | **fankeel-land** | the integration menu, and the cleanup rules |
+
+The stage rules name their own skill, so this table is for the reader rather
+than for the pipeline.
 
 ## Where documents live
 
