@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-28
+last_verified: 2026-08-29
 source_of_truth: lib/registry.js, lib/render.js, lib/context.js, lib/dirty.js, scripts/task.js, hooks/touch.js, hooks/inject.js, hooks/carry.js
 ---
 
@@ -126,9 +126,10 @@ never takes the task with it.
 # When compaction has already cost something
 
 ```
-context: 1.1M tokens dropped to compaction so far, 308k in play now. Start a
-fresh session before the next one. A new terminal and /fankeel → Adopt carries
-this task over with its notes and its route.
+context: 1.1M tokens dropped to compaction so far, 308k in play now,
+--session 302790e6-e652-4cab-af1c-e45d239516cc. Start a fresh session before the
+next one. A new terminal and /fankeel → Adopt carries this task over with its
+notes and its route.
 ```
 
 Read from the transcript, which records what every compaction cost:
@@ -142,6 +143,14 @@ Cumulative, so the most recent entry is the whole answer — no counting, and no
 need for the window size, which neither the hook payload nor the transcript
 carries. The trigger is that a compaction happened at all: one is already proof
 the window filled, which is what a percentage would only be a proxy for.
+
+The session id rides this line and only this line. It is disclosed in the `init`
+block, which a session sees only while it has no task; once it owns one the block
+never repeats it, so the session that most needs it is the one that cannot get
+it — after a compaction the id is out of context and every `task.js` call needs
+`--session <id>`. This line is already conditional on something having been
+dropped, which is exactly that case, so a session that has never compacted still
+has the id where it first saw it and pays nothing.
 
 Only the last 512KB of the transcript is read, before every prompt, so a
 thirteen-megabyte session costs the same as a fresh one. A compaction older than
