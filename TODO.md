@@ -30,7 +30,6 @@ heading is one nobody said the state of.
 
 ## Ready
 
-- `--tree` prints nothing without `--root` — [scripts/survey.js](scripts/survey.js):419. Three places teach it without one, and the survey rule tells the model to scope from a tree that never appears.
 - `human()` stops at M so 3 GB reads `3071.0M`, and `toFixed(1)` makes 1048575 read `1024.0K` — [scripts/survey.js](scripts/survey.js):286. Both found 08-29.
 - `MAX_TREE` caps entry lines, not printed ones, so `│` continuations ride free — [lib/map.js](lib/map.js). Trovara printed 66 for a cap of 50; pathologically unbounded. 08-29.
 

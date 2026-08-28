@@ -217,33 +217,35 @@ is the developer's document; a tool that edits it uninvited is a tool people tur
 off. `map.js` writes to `.fankeel/`, which is generated ground; this writes to
 standard output, which is nobody's.
 
-## The bug this sits on top of
+## A bug this was written on top of, which does not exist
 
-`scripts/survey.js:419` reads
+Two drafts of this page carried a section claiming `scripts/survey.js:419`
 
 ```js
 if (opts && opts.tree && opts.root) lines.push(...treeLines(opts.root, result.files, max));
 ```
 
-`--tree` prints nothing unless `--root` is also given. Three places teach it
-without one — `skills/fankeel-survey/SKILL.md:74`, `:117`, and
-`skills/fankeel/SKILL.md:253` — and the injected survey rule tells the model to
-scope from the tree before typing a term.
+prints nothing unless `--root` is given, and that the three places teaching
+`--tree` without one — `skills/fankeel-survey/SKILL.md:74`, `:117`,
+`skills/fankeel/SKILL.md:253` — therefore instruct the model to scope from a tree
+that never appears.
 
-So the step that exists to stop a session reading everything silently produces
-nothing, and the session reads everything.
+**It is not true.** `parseArgs` at `scripts/survey.js:437` defaults
+`root = process.cwd()`, and `main` passes it through, so `opts.root` is always
+set. `node scripts/survey.js --tree` and `node scripts/survey.js --tree --root .`
+produce byte-identical output; the tree lands at line 70 of the report either way.
 
-**It is filed separately, not fixed here.** An earlier draft of this page kept it
-in, arguing that a skeleton generator built on `treeLines()` inherits the defect.
-It does not: the defect is in the CLI guard, and `treeLines(root, files, max)`
-takes its root as an argument — `scripts/layout.js` passes its own and never goes
-near `opts.root`. The justification for bundling was simply wrong.
+The finding came from reading the guard rather than running the command, and from
+a first run piped through `head -25` — which cut the report forty-five lines above
+the tree. Every later claim built on it, including a `TODO.md` entry under
+`## Ready` and a paragraph about why the defect should not be bundled into this
+work, was reasoning from an observation that was never made.
 
-What bundling would cost is real. The rule is broken today, on every survey, in
-every project; the fix is one condition and three documentation lines. Attaching
-it to a seven-stage architectural route makes a live defect wait for a new
-subsystem. It goes to `TODO.md` under `## Ready`, where the bullet is its own
-specification, and this design assumes nothing about whether it has landed.
+It is kept here rather than deleted because the shape of the mistake is worth
+more than the space: a guard that *looks* like it needs an argument, a truncated
+first run that agreed, and three documents amended before anything ran the two
+commands side by side. The step this design exists to serve — scope from the tree
+before reading files — works today.
 
 ## Proves it done
 

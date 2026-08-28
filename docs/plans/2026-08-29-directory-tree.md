@@ -806,8 +806,9 @@ this repository, and the reading it needs is already here.
 **Spec coverage.** README holds the text — Tasks 3, 4. `docs.json` holds a pointer
 — Task 2. Found by structure — Task 3. Absence is a finding — Task 4. Half-filled
 is counted — Tasks 3, 4. Skeleton, one level, prints nothing — Task 1. The
-`--tree` bug is deliberately **not** here: it went to `TODO.md ## Ready`, and the
-spec says this design assumes nothing about whether it has landed.
+`--tree` defect this plan was written around **does not exist**: `parseArgs`
+defaults the root, the two commands produce identical output, and the spec's
+section on it now records the mistake rather than the bug.
 
 **Placeholder scan.** No `TBD`, no "similar to Task N", no "add error handling".
 Every task carries its code and its tests. Every task carries a `**Dispatch:**`
