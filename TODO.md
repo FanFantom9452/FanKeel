@@ -38,7 +38,6 @@ heading is one nobody said the state of.
 - 53 git spawns are 55% of a 3.7s `orient` on a workspace of eleven — [scripts/orient.js](scripts/orient.js). Bigger than the stats beside it, and no measurement says which calls are the fat. 08-29.
 - Default the scope guard on: writes outside the hooks are claimed from git now — [docs/collisions.md](docs/collisions.md), "Making it block". Two gaps left: a one-prompt lag, and what git cannot see.
 - Nothing in fankeel names the Workflow tool; when a scripted fan-out beats parallel dispatches is unwritten — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md), "Dispatch by default".
-- `build` has a reviewer per task; [verify](skills/fankeel-verify/SKILL.md) and [audit](skills/fankeel-audit/SKILL.md) dispatch readers, and nothing argues the evidence or the finding is wrong. 08-29.
 - A feature asked for mid-task goes to TODO.md unless it blocks this task or is closely related; where the boundary is genuinely ambiguous, ask rather than decide — [lib/stages.js](lib/stages.js).
 
 ## Waiting

@@ -419,6 +419,36 @@ test('build reviews each task rather than saving it all for the end', () => {
   assert.match(byName('build').rules.join(' '), /reviewer/);
 });
 
+// The reviewer above had no counterpart at the two stages whose product is a
+// conclusion rather than a diff. Counted across 0.33.0, 0.34.0 and 0.35.0, five
+// retractions it would have been aimed at, and every one was a claim whose
+// evidence had never been produced: a guard read instead of a command run
+// (8e8a4df), a number written down instead of measured (4a69d3b), a profile
+// taken on the wrong repository (539855f), a check that could not fail on a
+// common name (5c3455b), and nine pages of twenty-one reported as coverage
+// (5b42db1). So it asks provenance rather than re-arguing the conclusion, and it
+// reads the method rather than probing it — which is how 5c3455b was found, and
+// what keeps it read-only while the session still owns red-green.
+test('verify sends an adversary at the evidence before it asks', () => {
+  const text = byName('verify').rules.join(' ');
+  assert.match(text, /adversary/);
+  assert.match(text, /could have failed/);
+});
+
+// `survey` makes a coverage claim honest by naming what it skipped. `verify` had
+// no counterpart, which is the half of 5b42db1 that was recorded rather than
+// fixed: nine of twenty-one pages read, and the number said nowhere.
+test('verify states the denominator of a coverage claim', () => {
+  assert.match(byName('verify').rules.join(' '), /denominator/);
+});
+
+// Same rule at `audit`, where the artefact is the findings list. It cost the
+// landed-plan rule its place in the injection: `scripts/docs-audit.js` prints
+// that finding in the same words, and the skill carries a section on it.
+test('audit sends an adversary at the findings before it asks', () => {
+  assert.match(byName('audit').rules.join(' '), /adversary/);
+});
+
 // Four things stop the loop and only these. Named in the rules because the
 // default when a rule is missing is to stop and ask, which is the failure.
 test('build says what stops it, so that nothing else does', () => {

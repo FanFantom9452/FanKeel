@@ -3,7 +3,7 @@ name: fankeel-verify
 description: The verify stage — evidence before claims, requirements checked line by line, and the documents this change just made false. Use for the verify stage of a fankeel task, before claiming work is complete or passing, before a commit or PR, or when checking whether a change broke the documentation describing it.
 version: 0.35.0
 status: current
-last_verified: 2026-08-27
+last_verified: 2026-08-29
 source_of_truth: lib/stages.js, scripts/docs-check.js
 ---
 
@@ -76,6 +76,12 @@ resolves. Name the page and the line.
 A change that is correct and leaves three pages describing the old behaviour has
 been half verified.
 
+**A coverage claim states its denominator.** Nine pages read of the twenty-one
+whose role says they must match the code is nine of twenty-one, not "the pages".
+`survey` is already honest this way — it prints what the scanner skipped and why
+— and this stage had no counterpart, which is how a documentation pass that read
+nine of them reported as though it had read them all.
+
 **This stage is where both halves of the delegation rule are visible at once.**
 
 The suite is the case *against* dispatching. Its output is machine-shaped: about
@@ -99,6 +105,28 @@ they were never given the chance to question.
 What you do not dispatch is this stage. The evidence table, the red-green
 discipline and the gate stay here — a subagent has none of these rules.
 
+## The adversary
+
+**Before the question, one read-only adversary over the evidence.** The reviewer
+at `build` reads a diff; this one reads the table above, and it is aimed at the
+link between a claim and the evidence beside it rather than at the conclusion.
+
+- **Was it run?** Not read, not remembered, not carried over from an earlier run.
+- **On what?** The thing the claim is about, not a smaller thing beside it.
+- **Could it have failed?** A check with no path to a negative is not evidence.
+- **Out of what?** The denominator above.
+
+It gets **paths, never a paste**, and is asked only for the rows it defeats — say
+why, because every line it returns lands here and is re-read on every later turn.
+
+It **reads the method rather than probing it.** Red-green belongs to this session
+and is already in the table above, and an adversary that mutates the tree cannot
+run beside anything else. Where the method does not say whether a check could have
+failed, that is itself the finding: say so rather than guess.
+
+A defeated row is a **ruling, not an automatic return to `build`** — the same
+standing the per-task reviewer's findings have.
+
 ## Half-built sends it back
 
 Verify is not where the bar gets lowered. Anything unfinished returns to `build`.
@@ -113,6 +141,7 @@ $ <command>
 ```
 - <what you claimed> — held / did not hold
 - docs: <page:line that is now false, or "none">
+- adversary: <the claim it defeated, or "nothing">
 then AskUserQuestion
 ```
 

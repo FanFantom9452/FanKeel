@@ -4,7 +4,7 @@ description: Audit documentation against the code it describes — dead referenc
 argument-hint: "[--root <dir>] [--since <days>]"
 version: 0.35.0
 status: current
-last_verified: 2026-08-27
+last_verified: 2026-08-29
 source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js
 ---
 
@@ -150,6 +150,26 @@ pass — orphan files, over-engineering, abstractions nobody uses. Offer it
 alongside. If it is not installed, say so plainly rather than quietly skipping
 the code half.
 
+## The adversary
+
+**Before the question, one read-only adversary over the findings.** The pairs
+above are dispatched to produce findings; this one is dispatched to defeat them.
+
+It asks what the same adversary asks at `verify` — was it run, on what, and could
+it have failed — with the findings list in place of the evidence table, and it is
+aimed at how a finding was reached rather than at whether it sounds right. The
+contract is the same: paths and never a paste, only the findings it defeats, and
+the reason that costs, because every line it returns stays in this context. It
+reads the method; it does not probe it.
+
+Two things are particular to this stage. A finding built on something nobody ran
+is the failure it exists for — one reached a TODO entry under `## Ready`, a
+section of a design and a paragraph of a plan arguing about whether to bundle the
+fix, all before anyone ran the two commands side by side. And it runs whether
+`audit` is a stage on a route or `/fankeel-audit` standing alone; standing alone
+it matters more rather than less, because there is no next stage and the findings
+drive a cleanup that moves, merges and deletes files.
+
 ## Unused packages are somebody else's answer
 
 ```
@@ -216,6 +236,7 @@ node <plugin>/scripts/docs-audit.js
 - path:line — what is no longer true
 - path:line × path:line — what they disagree about, and which one the code supports
 
+adversary: <what it defeated, or none>
 routed: <heading — the entry, or omit this line>
 clean: <what you read and found nothing wrong in>
 then AskUserQuestion
