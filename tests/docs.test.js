@@ -131,6 +131,19 @@ test('half a pointer is kept and no pointer at all is absent, not empty', () => 
   }
 });
 
+// `file: './'` passes a truthiness check on the raw string but strips to '' once
+// `./` is removed. The guard has to test the string after that transform, not
+// before, or the empty result lands anyway. With the fix, `file` drops and
+// `heading` — the other half — survives on its own, which is the same
+// half-a-pointer-is-kept behaviour as the test above, reached from the other side.
+test('a file that strips to nothing does not survive, even when its heading does', () => {
+  const t = docs.normalise({
+    buckets: [{ path: 'docs', role: 'reference' }],
+    layout: { file: './', heading: 'x' },
+  });
+  assert.deepEqual(t.layout, { heading: 'x' });
+});
+
 // --- the checker -----------------------------------------------------------
 
 test('a dead link in a reference document is a finding', () => {
