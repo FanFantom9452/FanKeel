@@ -500,12 +500,19 @@ function plural(n, one, many) {
     return n + ' ' + (n === 1 ? one : many);
 }
 
-function section(lines, title, body) {
+// `max` overrides the default for a section with a tighter cap of its own. It is
+// the cap rather than the caller that truncates, because a caller that slices
+// first hands over a list already the right length — and the count of what was
+// dropped, which is the one line that keeps a cap from reading as "that is all
+// there is", never gets printed. `lib/map.js:23` states the rule; the pairs
+// section broke it by slicing at the call.
+function section(lines, title, body, max) {
     if (!body.length) return;
+    const cap = Number.isFinite(max) ? max : MAX_PER_SECTION;
     lines.push('');
     lines.push(title);
-    for (const b of body.slice(0, MAX_PER_SECTION)) lines.push('  ' + b);
-    if (body.length > MAX_PER_SECTION) lines.push('  (' + (body.length - MAX_PER_SECTION) + ' more)');
+    for (const b of body.slice(0, cap)) lines.push('  ' + b);
+    if (body.length > cap) lines.push('  (' + (body.length - cap) + ' more)');
 }
 
 function report(r) {
@@ -546,11 +553,10 @@ function report(r) {
         }
     }
 
-    const pairs = r.overlaps.slice(0, MAX_PAIRS);
     section(lines, plural(r.overlaps.length, 'pair', 'pairs') + ' describe the same code — read these against each other'
         + (r.overlaps.length > MAX_PAIRS ? ', strongest first' : '') + ':',
-    pairs.map((p) => p.a + '  ×  ' + p.b + '  (' + p.shared.slice(0, 3).join(', ')
-        + (p.shared.length > 3 ? ' +' + (p.shared.length - 3) : '') + ')'));
+    r.overlaps.map((p) => p.a + '  ×  ' + p.b + '  (' + p.shared.slice(0, 3).join(', ')
+        + (p.shared.length > 3 ? ' +' + (p.shared.length - 3) : '') + ')'), MAX_PAIRS);
 
     section(lines, plural(r.orphans.length, 'document is', 'documents are') + ' linked from nowhere:', r.orphans);
 

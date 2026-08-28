@@ -129,6 +129,28 @@ test('a file half the documents mention is common ground, not a subject', () => 
   assert.deepEqual(r.overlaps, []);
 });
 
+// The cap is the point of the list — a reading list of twenty-five is not read.
+// What is not the point is dropping the tail in silence: `lib/map.js:23` states
+// the rule this section broke, that a silent cap reads as "that is all there
+// is". The header counted fifteen and the list showed twelve.
+test('a pairs list cut to its cap says how many it dropped', () => {
+  const files = {};
+  for (let g = 1; g <= 5; g++) {
+    files['lib/f' + g + '.js'] = 'x\n';
+    // Three documents per file, never four: at four a file becomes common
+    // ground and drops out of the pairs entirely.
+    for (let d = 1; d <= 3; d++) {
+      files['docs/' + g + d + '-p.md'] = 'see `lib/f' + g + '.js`\n';
+    }
+  }
+  const r = sweep(withTree(tree(files), 'flat'));
+  assert.equal(r.overlaps.length, 15);
+
+  const text = audit.report(r);
+  assert.match(text, /15 pairs describe the same code/);
+  assert.match(text, /\(3 more\)/);
+});
+
 // --- landed plans -----------------------------------------------------------
 
 test('a plan whose named files all exist, and which nobody has touched, looks landed', () => {

@@ -805,9 +805,10 @@ fankeel docs-audit — 18 markdown files, tree: flat (implied by the directories
   docs/plans/2026-08-21-due-rules-unify.md
   ...
 
-12 pairs describe the same code — read these against each other, strongest first:
+15 pairs describe the same code — read these against each other, strongest first:
   docs/01-architecture.md  ×  docs/06-config.md  (shared/canvas_rules.py, web/src/lib/canvas-rules.js +2)
   ...
+  (3 more)
 ```
 
 It narrows rather than judges. Nothing mechanical decides that two pages
