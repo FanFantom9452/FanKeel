@@ -35,11 +35,11 @@ three areas.
 
 So nothing is declared. `hooks/touch.js` is `PostToolUse` on the same tools the
 guard matches, and the first time an edit lands on a path it records that path on
-the entry's `claims` field. A path already claimed writes no record, which is what
-makes this affordable on a hook that fires for every edit in every session on the
-machine — it still takes and releases the lock every writer here takes, at half a
-millisecond. How that lock works is [the registry's](registry.md), not this
-page's.
+the entry's `claims` field. A path already claimed writes no record and takes no
+lock — `hooks/touch.js` returns before `addClaim`, the only call in it that takes
+one — which is what makes this affordable on a hook that fires for every edit in
+every session on the machine: the lock is paid for once per new path, not once
+per edit. How that lock works is [the registry's](registry.md), not this page's.
 
 The next prompt carries the list, and there is no command under it because there
 is nothing for anyone to run:
