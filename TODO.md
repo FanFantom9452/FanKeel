@@ -31,9 +31,11 @@ heading is one nobody said the state of.
 ## Ready
 
 - Five stage skills gained a `Done when` line and none was re-read whole — [skills/fankeel-survey/SKILL.md](skills/fankeel-survey/SKILL.md) and four beside it still declare 08-27. 08-29.
+- Nine scripts hand-roll an arg parser, 139 lines, and `node:util` ships one — [scripts/survey.js](scripts/survey.js) and task.js carry extra; seven are near a swap. 08-29.
 
 ## Needs a decision
 
+- Two lib modules have one production caller each — [lib/ledger.js](lib/ledger.js) and [lib/plugins.js](lib/plugins.js). Fold them, or say what the seam earns. 08-29.
 - The pairs shortlist is blind to 11 of its 21 pages and prints no denominator — [scripts/docs-audit.js](scripts/docs-audit.js)'s `pointsAt` reads neither `<plugin>/` paths nor `source_of_truth`. 08-29.
 - `isSubtree` stats what both sources already classified — [lib/tracked.js](lib/tracked.js) emits files, git emits files and gitlinks. 18,415 stats, 849ms, 23% of a real orient. 08-29.
 - 53 git spawns are 55% of a 3.7s `orient` on a workspace of eleven — [scripts/orient.js](scripts/orient.js). Bigger than the stats beside it, and no measurement says which calls are the fat. 08-29.
