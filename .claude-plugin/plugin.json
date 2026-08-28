@@ -9,6 +9,19 @@
   "skills": "./skills/",
   "outputStyles": "./output-styles/",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/carry.js\"",
+            "timeout": 5,
+            "statusMessage": "Looking for the task the clear left behind..."
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [

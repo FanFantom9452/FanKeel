@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-08-27
-source_of_truth: lib/stages.js, lib/render.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js
+last_verified: 2026-08-28
+source_of_truth: lib/stages.js, lib/render.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js
 ---
 
 # The pipeline
@@ -46,10 +46,11 @@ this morning is almost always the one being asked about.
 
 The skill asks with `AskUserQuestion` rather than in prose — which project and
 what the task is, in one call with the options already on screen. Where the root
-has a `TODO.md`, that is where the task options come from: its entries clustered,
-two bullets touching one file offered as one task rather than as two options that
-would open it twice. A root without one is where guessing from the recent commits
-belongs.
+has a `TODO.md`, that is where the task options come from, and its headings do
+the clustering: `## Ready` is offered as one task for the whole section,
+`## Needs a decision` as one task each, and `## Waiting` is left out because
+nothing under it can move today. A root without one is where guessing from the
+recent commits belongs.
 Making someone retype a row of a listing they can see is the same waste as asking
 with nothing on screen at all.
 
@@ -135,7 +136,7 @@ output shape:
   - path (new) — what it is
 
   ledger: <n> of <m> complete
-  deferred: <TODO.md line, or omit this line>
+  deferred: <heading> — <TODO.md line, or omit this line>
   then AskUserQuestion
 ```
 
@@ -218,7 +219,7 @@ output shape:
   - path (new) — what it is
 
   ledger: <n> of <m> complete
-  deferred: <TODO.md line, or omit this line>
+  deferred: <heading> — <TODO.md line, or omit this line>
   then AskUserQuestion
 ```
 
@@ -589,7 +590,7 @@ flowchart TD
     A1["<b>report the failures and stop.</b><br/>The menu comes after a green run."]
     B["<b>2 · close the documents</b><br/>todo-check · last_verified on every page<br/>re-read and found true · archive the<br/>landed plan, after asking"]
     C["<b>3 · rewrite the map</b><br/>the project looks different now, and<br/>the next task starts from this file"]
-    D["<b>4 · land the notes</b><br/>a convention → CLAUDE.md · a durable fact<br/>→ memory · why → the commit message ·<br/>deferred work → TODO.md"]
+    D["<b>4 · land the notes</b><br/>a convention → CLAUDE.md · a durable fact<br/>→ memory · why → the commit message ·<br/>deferred work → TODO.md<br/><i>stand down first, /clear after</i>"]
     E["<b>5 · detect the workspace,<br/>confirm the base</b>"]
     F{"<b>6 · the menu</b><br/><i>integration is the user's decision</i>"}
     F1["merge back to base locally"]
@@ -619,6 +620,33 @@ Discarding the work is not on that menu. It happens when the user asks for it in
 so many words, and then only against the typed word `discard`. A worktree whose
 removal is refused for uncommitted files never gets `--force` on anyone's own
 initiative — those files exist nowhere else.
+
+The report `land` ends on carries a list nothing else in the pipeline does:
+
+```
+<sha> <subject>
+shipped:
+  - <what someone can now do that they could not>
+cost: <what it took>
+open: <what is still not done>
+```
+
+A commit subject holds one change. A task that shipped four of them had nowhere
+to say so, which is what `shipped:` is for — one line per thing someone can now
+do, taken from the ledger's completed entries where the task had a plan and
+listed by hand where it did not.
+
+**The commit body is that same list.** The subject is why; the bullets are what
+shipped. They are the same material, and a commit that argues in paragraphs
+makes its reader reconstruct a list written twenty lines earlier — prose is for
+what a bullet cannot hold, a number or a cap or a decision that went the other
+way.
+
+Then option one stands the task down, and **`/clear` comes after that, never
+before**. A clear takes a new session id, so clearing first leaves the entry
+`active` with nothing reading it — recoverable, because `hooks/carry.js` offers
+it back, but free to get right. See [registry.md](registry.md), "The mode never
+switches itself off".
 
 ## The project map
 
@@ -741,8 +769,10 @@ every one without being maintained.
 
 Which declared package is never used is a different question, and not one this
 answers. It needs a package-name-to-module table — `Pillow` imports as `PIL`,
-`pycryptodome` as `Crypto` — so the `audit` rules name `knip --dependencies` and
-`deptry` instead, and say plainly when neither is installed.
+`pycryptodome` as `Crypto` — so `audit` reaches for `knip --dependencies` and
+`deptry` instead, and says plainly when neither is installed. Its output template
+carries both as runnable commands; the rules stopped naming them a second time
+when `audit` had to find room for its `routed:` slot.
 
 **What gets checked depends on the document's role.** An archive naming deleted
 code is an archive doing its job; a reference page doing the same is the bug. A

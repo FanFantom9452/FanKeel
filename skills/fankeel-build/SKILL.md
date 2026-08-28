@@ -175,7 +175,7 @@ neighbour rather than to commit something red.
 - path (new) — what it is
 
 ledger: <n> of <m> complete
-deferred: <TODO.md line, or omit this line>
+deferred: <heading> — <TODO.md line, or omit this line>
 then AskUserQuestion
 ```
 

@@ -3,8 +3,8 @@ name: fankeel-land
 description: The land stage — a green suite, the documents closed, the map rewritten, and the integration decision left to the user. Use for the land stage of a fankeel task, finishing a development branch, deciding between merge and PR, or cleaning up a worktree when work is complete.
 version: 0.33.0
 status: current
-last_verified: 2026-08-27
-source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js
+last_verified: 2026-08-28
+source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js, hooks/carry.js
 ---
 
 # fankeel-land
@@ -54,9 +54,29 @@ was never a note:
 | a project convention | `CLAUDE.md` |
 | a durable fact about the user or repository | the memory directory |
 | why a change was made | the commit message |
-| work deliberately deferred | `TODO.md`, one line, linking to the detail |
+| work deliberately deferred | `TODO.md`, one line, under the heading for what it is short of |
 
-Commit the reason, not the diff. The diff is already in the commit.
+Commit the reason, not the diff — it is already in the commit. The subject is
+why; the body is the same `shipped:` list the report ends on, one bullet each:
+
+```
+<why this was done, one line>
+
+- <what someone can now do that they could not>
+- <another>
+
+<anything the bullets cannot hold: a measurement, a cap, a ruling>
+```
+
+The report and the commit are the same material, and a commit that argues in
+paragraphs makes its reader reconstruct a list that was written twenty lines
+earlier. Prose is for what a bullet cannot hold — a number, a cap, a decision
+that went the other way.
+
+Standing the task down is the last thing, and `/clear` comes after it — never
+before. A `/clear` keeps the process and takes a **new** session id, so a clear
+first leaves the entry `active` with nothing reading it. `hooks/carry.js` offers
+it back on the next session's first prompt, but the clean order costs nothing.
 
 ## 5. Detect the workspace, confirm the base
 
@@ -110,10 +130,17 @@ Anything else belongs to the host environment.
 
 ```
 <sha> <subject>
+shipped:
+  - <what someone can now do that they could not>
 cost: <what it took>
 open: <what is still not done>
 then AskUserQuestion
 ```
 
-Three lines. Not a tour of the diff. `land` has no successor — what follows a
-finished route is a new task, which is a decision rather than a transition.
+Three lines and the list. `shipped:` is one line per thing someone can now do
+that they could not — from the ledger's completed entries where the task had a
+plan, listed by hand where it did not. A commit subject already holds the change;
+what it cannot hold is a task that shipped four of them. Not a tour of the diff.
+
+`land` has no successor — what follows a finished route is a new task, which is a
+decision rather than a transition.

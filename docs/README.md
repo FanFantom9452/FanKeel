@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-27
+last_verified: 2026-08-28
 source_of_truth: this file is the index; each page below is its own source
 ---
 
@@ -39,8 +39,8 @@ here.
 | How that was built, task by task | [plans/2026-08-26-session-id.md](plans/2026-08-26-session-id.md) — *built, 0.31.0* |
 | Why the pipeline stopped barring subagents, and what it bars instead | [plans/2026-08-26-dispatch-design.md](plans/2026-08-26-dispatch-design.md) — *built, 0.32.0* |
 | How that was built, task by task | [plans/2026-08-26-dispatch.md](plans/2026-08-26-dispatch.md) — *built, 0.32.0* |
-| Why the gate substitutes option one and states option two, and what it takes | [plans/2026-08-27-gate-rules-design.md](plans/2026-08-27-gate-rules-design.md) — *built, 0.33.0* |
-| The four tasks that built it, with every replacement string written out | [plans/2026-08-27-gate-rules.md](plans/2026-08-27-gate-rules.md) — *built, 0.33.0* |
+| Why the end of a task is where the advice goes, and what `/clear` costs | [plans/2026-08-28-task-end-design.md](plans/2026-08-28-task-end-design.md) — *built* |
+| The three tasks that built it, with every string and every test written out | [plans/2026-08-28-task-end.md](plans/2026-08-28-task-end.md) — *built* |
 | What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 

@@ -7,14 +7,17 @@
 // an index pointing at things that no longer exist is worse than no index — it
 // is read with confidence and it is wrong. The convention:
 //
-//   An entry is one bullet. It is short enough to scan, and any detail behind it
-//   lives in a file in this repository that the entry links to.
+//   An entry is one bullet. It is short enough to scan, any detail behind it
+//   lives in a file in this repository that the entry links to, and it sits
+//   under the heading that says what it is still waiting for.
 //
-// Two things follow, and both are checkable, which is the point. A link that no
-// longer resolves is a dead entry: usually the plan it pointed at was rewritten
-// into a decision record and deleted at `land`, and closing the entry was
-// forgotten. An entry over the length cap is not an index entry at all; the
-// detail got written here instead of where it belongs.
+// Three things follow, and all three are checkable, which is the point. A link
+// that no longer resolves is a dead entry: usually the plan it pointed at was
+// rewritten into a decision record and deleted at `land`, and closing the entry
+// was forgotten. An entry over the length cap is not an index entry at all; the
+// detail got written here instead of where it belongs. An entry under no known
+// heading is one nobody said the state of, and `init` then has to guess which
+// entries can become a task today.
 //
 // Nothing else is judged. Whether the work is still worth doing is not a thing a
 // script can know.
@@ -26,6 +29,18 @@ const path = require('node:path');
 // fit. Detail that will not compress to this belongs in the file being pointed
 // at, which is the whole rule.
 const MAX_ENTRY_CHARS = 200;
+
+// The three buckets, in the order a reader wants them: what can be started now,
+// what needs a person before anyone can start, what nobody can move yet. The
+// heading carries the classification, so it costs one line of structure per group
+// rather than a field on every bullet — and `entries()` was already recording it
+// while nothing read it back.
+//
+// By decision state and not by topic, on purpose. Topic groups read well and
+// answer the wrong question: what `init` needs to know is which entries can
+// become a task today, and two bullets about one file are as often one that is
+// ready and one that is still an argument.
+const SECTIONS = ['Ready', 'Needs a decision', 'Waiting'];
 
 const LINK = /\[[^\]]*\]\(([^)]+)\)/g;
 // A scheme, or a bare in-page anchor. Neither is a file in this repository, so
@@ -89,6 +104,15 @@ function check(file) {
     const problems = [];
     const found = entries(text);
     for (const entry of found) {
+        if (!SECTIONS.includes(entry.section)) {
+            problems.push({
+                line: entry.line,
+                kind: 'unclassified',
+                detail: (entry.section ? 'under "' + entry.section + '"' : 'under no heading')
+                    + '. Every entry sits under one of ' + SECTIONS.map((s) => '## ' + s).join(' · ')
+                    + ', which is what says whether it can be started today.',
+            });
+        }
         const len = entry.text.replace(/\s+/g, ' ').trim().length;
         if (len > MAX_ENTRY_CHARS) {
             problems.push({
@@ -106,15 +130,22 @@ function check(file) {
             });
         }
     }
-    return { file, missing: false, count: found.length, problems };
+    const counts = {};
+    for (const name of SECTIONS) counts[name] = found.filter((e) => e.section === name).length;
+    return { file, missing: false, count: found.length, counts, problems };
 }
 
 function report(result) {
     if (result.missing) {
         return 'fankeel todo-check: no ' + result.file + '. Nothing to check.';
     }
+    // The split is the reason to run this on a clean file: a backlog of thirty is
+    // unreadable as one list, and "18 ready" is the number that decides whether
+    // there is a task to start this morning.
+    const split = SECTIONS.map((s) => (result.counts[s] || 0) + ' ' + s.toLowerCase()).join(', ');
     if (!result.problems.length) {
-        return 'fankeel todo-check: ' + result.count + ' entries, all links resolve, none over the cap.';
+        return 'fankeel todo-check: ' + result.count + ' entries — ' + split
+            + '. All links resolve, none over the cap.';
     }
     const lines = ['fankeel todo-check: ' + result.problems.length + ' problem'
         + (result.problems.length === 1 ? '' : 's') + ' in ' + result.file, ''];
@@ -157,4 +188,4 @@ if (require.main === module) {
     process.exit(ok ? 0 : 1);
 }
 
-module.exports = { MAX_ENTRY_CHARS, linksIn, check, main };
+module.exports = { MAX_ENTRY_CHARS, SECTIONS, linksIn, check, main };
