@@ -599,9 +599,6 @@ function report(r) {
     return lines.join('\n');
 }
 
-// Only the first three sections fail the run. Overlapping pairs, orphans and
-// uncovered directories are true of almost every healthy repository, and a
-// command that always exits non-zero is a command whose exit code means nothing.
 // What makes the run fail. Drift, landed plans, a broken index and a diagram
 // that has stopped listing its directory are all things that are wrong. Pairs,
 // orphans, uncovered directories and the undeclared count are context, and a

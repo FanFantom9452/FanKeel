@@ -285,6 +285,18 @@ test('the page that counts the always-on rules counts as many as there are', () 
   assert.match(page, new RegExp(word[0].toUpperCase() + word.slice(1) + ' lines a turn'));
 });
 
+// The front page shows `build`'s report shape as an example, and it had been
+// missing the ledger line since before the change that added it. Nothing read
+// this repository's own README, which is why a shape shown to every new reader
+// could differ from the one every build stage is actually given.
+test('the README shows the build template as build actually ships it', () => {
+  const readme = require('node:fs').readFileSync(
+    require('node:path').join(__dirname, '..', 'README.md'), 'utf8');
+  const template = byName('build').template;
+  assert.ok(readme.includes(template),
+    'README.md does not carry build\'s template verbatim; it ships as:\n' + template);
+});
+
 test('an unsubstituted rulesFor still returns the token, so callers cannot forget silently', () => {
   assert.ok(byName('survey').rules.some((r) => r.includes(SURVEY_TOKEN)));
   assert.ok(rulesFor('survey').some((r) => r.includes(SURVEY_TOKEN)));
