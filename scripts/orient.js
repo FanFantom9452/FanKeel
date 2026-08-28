@@ -199,9 +199,15 @@ function countFiles(dir) {
     } catch (e) {
         return null;
     }
-    if (!result && !stats.unlistable) return null;
+    if (!result && !stats.unlistable && !stats.skippedExt) return null;
     const list = result ? result.files.filter((f) => !isSubtree(dir, f)) : [];
-    return { files: list.length, truncated: result ? result.truncated : false, list, unlistable: stats.unlistable || 0 };
+    return {
+        files: list.length,
+        truncated: result ? result.truncated : false,
+        list,
+        unlistable: stats.unlistable || 0,
+        skippedExt: result ? result.skippedExt : stats.skippedExt || 0,
+    };
 }
 
 // Immediate subdirectories worth calling a project. Dot-directories are out for
@@ -250,7 +256,8 @@ function countText(count) {
     if (unlisted(count)) return 'could not be listed';
     return files(count.files)
         + (count.truncated ? '+ (capped)' : '')
-        + (count.unlistable ? ', ' + count.unlistable + ' not listed' : '');
+        + (count.unlistable ? ', ' + count.unlistable + ' not listed' : '')
+        + (count.skippedExt ? ', ' + count.skippedExt + ' skipped' : '');
 }
 
 // Every column padded to its widest, not just the first. Five projects with

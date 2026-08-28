@@ -150,10 +150,15 @@ function scan(root, terms) {
     // `null` from `trackedFiles` means nothing readable, and a root whose only
     // subtree could not be listed is nothing readable — every other caller wants
     // that answer and two of them are gates. This one wants to say *why*, so it
-    // asks for the count separately and rebuilds the empty result around it.
+    // asks for the counts separately and rebuilds the empty result around them.
+    //
+    // Both counts, not just the one. A root of nothing but archives and images
+    // is as empty in the return as a locked one, and rebuilding for only
+    // `unlistable` left it reported as "nothing readable under that root — no
+    // repository, and no files", over a directory that has files and says so.
     const stats = {};
-    const tracked = trackedFiles(root, { stats }) || (stats.unlistable
-        ? { files: [], repos: [], walked: true, truncated: false, unlistable: stats.unlistable, skippedExt: 0 }
+    const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt
+        ? { files: [], repos: [], walked: true, truncated: false, unlistable: stats.unlistable, skippedExt: stats.skippedExt }
         : null);
     if (tracked === null) return null;
     const { files: entries, repos, walked, truncated, unlistable, skippedExt } = tracked;
