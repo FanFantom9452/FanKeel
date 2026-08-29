@@ -23,3 +23,66 @@ test('parseStaged separates the paths from the modes', () => {
   assert.equal(got.known.has('vendor/sub'), false, 'a gitlink was reported as a file');
   assert.equal(got.known.has('nested-repo/'), false, 'an untracked repository was reported as a file');
 });
+
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { execFileSync } = require('node:child_process');
+const { fanout } = require('../lib/fanout.js');
+
+const FANOUT = path.join(__dirname, '..', 'lib', 'fanout.js');
+
+// A root holding `n` repositories, each with one file naming itself, plus one
+// directory that is not a repository at all.
+function workspace(n) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-fanout-'));
+  for (let i = 0; i < n; i++) {
+    const dir = path.join(root, 'p' + i);
+    fs.mkdirSync(dir);
+    execFileSync('git', ['init', '-q'], { cwd: dir });
+    fs.writeFileSync(path.join(dir, 'a' + i + '.js'), 'x\n');
+    execFileSync('git', ['add', '-A'], { cwd: dir });
+  }
+  fs.mkdirSync(path.join(root, 'loose'));
+  fs.writeFileSync(path.join(root, 'loose', 'b.js'), 'x\n');
+  return root;
+}
+
+test('fanout answers for every repository it is given, and null for one that is not', async () => {
+  const root = workspace(3);
+  const got = await fanout(root, ['p0', 'p1', 'p2', 'loose']);
+  assert.deepEqual(Object.keys(got).sort(), ['loose', 'p0', 'p1', 'p2']);
+  assert.equal(got.loose, null, 'a directory with no .git in it was answered for');
+  for (const p of ['p0', 'p1', 'p2']) {
+    assert.equal(got[p].staged, true, p + ' fell back off --stage for no reason');
+    assert.match(got[p].out, /a\d\.js/, p + ' came back with no file in it');
+  }
+});
+
+test('fanout is the same answer whatever the width', async () => {
+  const root = workspace(5);
+  const repos = ['p0', 'p1', 'p2', 'p3', 'p4'];
+  const one = await fanout(root, repos, 1);
+  const many = await fanout(root, repos, 8);
+  assert.deepEqual(one, many);
+});
+
+test('lib/fanout.js run as a process reads stdin and writes JSON', () => {
+  const root = workspace(2);
+  const out = execFileSync(process.execPath, [FANOUT], {
+    input: JSON.stringify({ root, repos: ['p0', 'p1'] }),
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  const got = JSON.parse(out);
+  assert.deepEqual(Object.keys(got).sort(), ['p0', 'p1']);
+  assert.match(got.p0.out, /a0\.js/);
+});
+
+test('lib/fanout.js writes an empty object rather than dying on bad input', () => {
+  const out = execFileSync(process.execPath, [FANOUT], {
+    input: 'not json',
+    encoding: 'utf8',
+  });
+  assert.equal(out, '{}');
+});
