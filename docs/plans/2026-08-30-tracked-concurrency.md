@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-08-30
 source_of_truth: lib/tracked.js, lib/fanout.js
 ---

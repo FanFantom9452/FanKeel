@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-08-30
 source_of_truth: lib/tracked.js
 ---
@@ -116,19 +116,25 @@ takes the raw output and returns `{files, known}`. The synchronous path and the
 helper both call `parseStaged`, so there is one answer to what a staged record
 means — the property `lib/tracked.js`'s own header comment exists to protect.
 
-It goes in `scripts/`, not `lib/`. `README.md:225` says `lib/` is pure logic
-tested directly, and a file whose job is to read stdin and write stdout is not
-that. `scripts/fanout.js` follows the shape every script in that directory
-already has: the work exported as a function, and an `if (require.main ===
-module)` block that is the only part touching stdio — so it is spawnable and
-still testable without spawning it.
+It goes in `lib/`, not `scripts/` — which reverses what this section said when it
+was written, and the reason is inside the file being changed. `lib/tracked.js:5-7`
+records that `lib/map.js` grew a second walk of its own because it "could not
+reach into `scripts/` from `lib/`", and that the two then disagreed by 45
+markdown files. That constraint is why `trackedFiles` is in `lib/` at all, and a
+`lib/` file spawning a `scripts/` one would be the first thing to break it.
+
+So `lib/fanout.js` carries the pure `fanout()` the tests call and a
+four-statement `require.main === module` block. The cost is that `README.md:225`
+called `lib/` free of stdio; that paragraph now names this file as the one
+exception. Both rules could not be kept, and the one kept is the one whose
+violation has already caused a measured bug here.
 
 ## Files
 
 | file | change |
 |---|---|
 | `lib/tracked.js` | `gitFiles` splits into `gitList` + `parseStaged`; `walk()` records repos instead of spawning; new splice pass; threshold at 4 |
-| `scripts/fanout.js` | new. Reads `{root, repos}` on stdin, pool of 8, writes JSON |
+| `lib/fanout.js` | new. Reads `{root, repos}` on stdin, pool of 8, writes JSON |
 | `tests/tracked.test.js` | new. Order, the threshold both sides, the ceiling, a repo git declines |
 | `tests/survey.test.js` | the two spawn mocks keep working; add one asserting the pooled path is taken above the threshold |
 
@@ -143,12 +149,24 @@ forced either way. It fails now because there is no pooled path, and because
 Alongside it, `npm test` stays at 860 passing plus the new ones, and
 `node scripts/docs-check.js` stays clean.
 
+**What was actually done.** The threshold was not forced. The test uses six
+repositories, which is above it, and reaches the serial path by making the child
+process throw — the same comparison by a different lever, and worth naming
+because it is not what this paragraph asked for. The suite finished at 875
+passing, 0 failing, and `docs-check` is clean at 46 files.
+
 ## Against the map
 
 No conflict. `.fankeel/map.md` lists two pages as planned-but-not-built and both
-are in `docs/archive/` — the directory-tree work, retired intent. No current
-reference page describes `lib/tracked.js` at all; three archive pages mention it,
-and archives are checked only for whether anything current still points at them.
+are in `docs/archive/` — the directory-tree work, retired intent.
+
+The second half of this paragraph was wrong when it was written, and the audit
+found it: it said no current reference page describes `lib/tracked.js`. Two do.
+`lib/docs.js:78` hard-codes `ROOT_REFERENCE`, so root `README.md` and `TODO.md`
+carry the `reference` role on top of the nineteen declared in `docs.json`, and
+`docs-audit` reports them as a pair over exactly this file. Both were read and
+both were edited: `README.md` for the stdio exception above, `TODO.md` to close
+the entry this work answered.
 
 ## Unverified
 
