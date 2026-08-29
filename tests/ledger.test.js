@@ -153,3 +153,41 @@ test('a note beginning --root= does not move the tree', () => {
     /^Task 2: complete — --root=elsewhere matters too$/m,
   );
 });
+
+// The same shapelessness one token earlier. `--plan` is required, so `ledger.js
+// init` alone is refused -- and the shortest way to answer that refusal is
+// `--plan init`, which handed the verb to the flag: a ledger at
+// `.fankeel/build/init/`, and `Task 1 complete.` on a ledger the build loop
+// would never read again. Both halves are asserted, because the refusal without
+// the empty tree would pass on a script that refused after writing.
+for (const verb of ['init', 'complete', 'ruling', 'show']) {
+  test('--plan ' + verb + ' is refused rather than filed as a plan named ' + verb, () => {
+    const dir = root();
+    let out = '';
+    let code = 0;
+    try {
+      execFileSync(process.execPath, [SCRIPT, '--plan', verb, 'complete', '1', 'note'], { cwd: dir, encoding: 'utf8' });
+    } catch (e) {
+      out = String(e.stdout || '');
+      code = e.status;
+    }
+    assert.equal(code, 1, '--plan ' + verb + ' should exit 1');
+    assert.match(out, /--plan needs a value\./);
+    assert.equal(fs.existsSync(path.join(dir, '.fankeel', 'build', verb)), false, 'a ledger was written under the verb');
+  });
+}
+
+// The escape hatch, and the reason the refusal above can be this blunt: `=`
+// spends no token, so there is nothing for the verb set to withhold.
+test('--plan=init still means a plan called init', () => {
+  const dir = root();
+  execFileSync(process.execPath, [SCRIPT, '--plan=init', 'init'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(fs.existsSync(ledger.ledgerPath(dir, 'init')), true, 'the = form no longer reaches the plan');
+});
+
+// A plan file may legitimately be named for a verb; only the bare word is one.
+test('--plan init.md is a path, not the verb it begins with', () => {
+  const dir = root();
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'init.md', 'init'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(fs.existsSync(ledger.ledgerPath(dir, 'init.md')), true);
+});

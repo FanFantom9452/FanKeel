@@ -43,6 +43,12 @@ that landed was a flag. Put `--plan` after the verb and the command refuses,
 naming what it is missing; that is the only shape this rule costs, and no
 documented call ever used it.
 
+**And no flag takes a verb as its value.** `--plan init complete 1 note` once
+filed `init` as the plan, wrote a ledger under it and reported the task
+complete — a tick on a ledger the loop would never read again. It is refused
+now, naming `--plan` as the flag left without a value. Write `--plan=init` if a
+plan really is named for a verb.
+
 **Conversation memory does not survive compaction; this does.** A task the ledger
 lists as complete is done — do not redo it. Resume at the first task without a
 completion line. After a compaction, trust the ledger and `git log` over your own
