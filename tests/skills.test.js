@@ -415,6 +415,35 @@ test('the dispatch rule count agrees with the bullet list under it, and with the
     `docs/subagents.md says "${docsLeadIn[1]}" but its prose names ${docsItems} things`);
 });
 
+// The ceiling paragraph said four and stopped, which reads as "past four, don't"
+// — and the one tool that covers the case past four went unnamed in both files
+// for four releases. Naming it is only half the rule. The other half is that it
+// may not be started from here, so a test matching `/Workflow/` alone would pass
+// a page that told you to press it; and the third is the admission that nothing
+// was measured, without which the structural argument reads as a benchmark.
+test('both dispatch surfaces name the Workflow tool, and bound it', () => {
+  const surfaces = [
+    ['skills/fankeel/SKILL.md', read('fankeel')],
+    ['docs/subagents.md', fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8')],
+  ];
+  for (const [label, text] of surfaces) {
+    const flat = text.replace(/\s+/g, ' ');
+    assert.match(flat, /\bWorkflow\b/, label + ' never names the Workflow tool');
+    assert.match(flat, /fan-out whose output feeds another fan-out/,
+      label + ' does not say which shape the ceiling cannot cover');
+    assert.match(flat, /never launch(ed)?\b/i,
+      label + ' names the tool without saying it may not be started here');
+    assert.match(flat, /\bunmeasured\b/i,
+      label + ' argues the case without admitting nothing was measured');
+    // Four exact figures have already rotted in the block above this one. This
+    // paragraph has nothing behind it at all, so a figure appearing here is a
+    // fabricated measurement rather than a stale one.
+    const start = flat.indexOf('fan-out whose output feeds another fan-out');
+    assert.equal(/\b\d{2},\d{3}\b/.test(flat.slice(start, start + 1600)), false,
+      label + ' grew a figure for a comparison nobody ran');
+  }
+});
+
 // The same shape, in a second file, found the same way. The plan skill's list of
 // rules about the `Dispatch:` line went from Three to Four when the disclosure
 // arrived, and nothing recounted it — which is exactly the gap the test above

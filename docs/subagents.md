@@ -55,6 +55,33 @@ contract must state why it costs**, because naming the shape without the reason
 is a preference, not a contract, and a subagent told the reason returns the
 shape.
 
+## The one thing four dispatches cannot do
+
+Four in one response is the working ceiling, and the reason is that past four you
+are guessing at the split rather than deciding it. A script does not guess. It
+holds the list, and it holds the join.
+
+So there is exactly one shape the ceiling cannot cover: **a fan-out whose output
+feeds another fan-out.** Review six dimensions, then verify each finding the
+review returned. Run as dispatches, that is two round-trips through the parent's
+context, and every intermediate finding lands there permanently even though only
+the verified ones survive. Run as a `pipeline` in Claude Code's **Workflow**
+tool, the intermediates stay inside the script and what returns is the join.
+
+**It is offered, never launched.** The tool is gated on the user asking for it in
+their own words, so the plugin's part is to name the shape and roughly what it
+would cost, and to let them start it. This is not the foreordained gate the
+pipeline removes elsewhere — reading never needs authorising, and a dozen agents
+always does. One is work; the other is spend.
+
+Nor does it become a way to run a stage. A workflow's `phases` are its own,
+declared in its script; they are not the route, and none of them is a gate.
+
+**This is unmeasured.** No workflow has been run against four parallel dispatches
+on this repository. The argument above is structural — it turns on where the
+intermediate output lands — and there is no figure behind it, which is why none
+is quoted.
+
 ## Split it by lens, not by slice
 
 Once you have decided to fan out, there are two ways to divide the work and they

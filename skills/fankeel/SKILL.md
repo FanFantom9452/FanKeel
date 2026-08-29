@@ -803,6 +803,26 @@ would return the same shape of answer about different files, they are one reader
 with a list** — give it the list. Fan out on distinct questions, not on file
 count.
 
+**The ceiling has one exception, and it is not yours to press.** Four is where
+guessing at the split begins; a script does not guess, because it holds the list
+and it holds the join. So the shape the ceiling cannot cover is a fan-out whose
+output feeds another fan-out — review six dimensions, then verify each finding
+one of them returned. As dispatches that is two round-trips through this context,
+and every intermediate finding stays in it for the rest of the session even
+though only the verified ones matter; as a `pipeline` in the **Workflow** tool
+the intermediates live inside the script and what comes back is the join.
+
+Offer it; never launch it. The tool is gated on the user's own words — the
+keyword `ultracode`, or asking for a workflow in as many — so naming the shape
+and roughly what it would cost is the whole of your part. That is not the
+foreordained gate this pipeline strips out elsewhere: your own reading needs no
+permission, and a dozen agents is spend, which is theirs to authorise. It is
+still a job inside a stage rather than the stage itself — a workflow's `phases`
+are its own, declared in its script, and none of them is this route's gate.
+**Unmeasured here**: nothing has been run against four parallel dispatches on
+this repository, so the paragraph above argues from where the intermediate output
+lands, which is structural, and quotes no figure because there is none to quote.
+
 **Delegate a job inside a stage; never the stage itself.** A subagent receives the
 brief and nothing else: `hooks/inject.js` is a `UserPromptSubmit` hook and a
 subagent has no prompt, so `ALWAYS`, the stage's own rules and its output shape
