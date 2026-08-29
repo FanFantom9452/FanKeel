@@ -42,6 +42,7 @@ heading is one nobody said the state of.
 - Default the scope guard on: writes outside the hooks are claimed from git now — [docs/collisions.md](docs/collisions.md), "Making it block". Two gaps left: a one-prompt lag, and what git cannot see.
 - Nothing in fankeel names the Workflow tool; when a scripted fan-out beats parallel dispatches is unwritten — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md), "Dispatch by default".
 - A feature asked for mid-task goes to TODO.md unless it blocks this task or is closely related; where the boundary is genuinely ambiguous, ask rather than decide — [lib/stages.js](lib/stages.js).
+- Two stage skills state no stopping condition — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md) and fankeel-audit carry no `Done when` line where the other five do. 08-29.
 
 ## Waiting
 

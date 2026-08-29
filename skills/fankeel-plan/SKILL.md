@@ -3,7 +3,7 @@ name: fankeel-plan
 description: The plan stage — decompose an approved design into tasks someone with no context could execute, with constraints generated from the project rather than remembered. Use for the plan stage of a fankeel task, writing an implementation plan, or breaking a spec into tasks before any code is written.
 version: 0.36.0
 status: current
-last_verified: 2026-08-27
+last_verified: 2026-08-29
 source_of_truth: lib/stages.js, scripts/map.js
 ---
 
@@ -11,9 +11,11 @@ source_of_truth: lib/stages.js, scripts/map.js
 
 Produces a decomposition someone with no context could execute.
 
-**Done when** every task carries its own test cycle and its `Dispatch:` line, and
-the plan file is written. The decomposition is the denominator, the same way the
-ledger is `build`'s: when no task is missing one of those, the stage is finished.
+**Done when** every task carries its own test cycle and its `Dispatch:` line,
+`## Global Constraints` has been generated from the project rather than
+remembered, and the plan file is written. The decomposition is the denominator,
+the same way the ledger is `build`'s: when no task is missing one of those, the
+stage is finished.
 
 Write it assuming the engineer is skilled, has never seen this codebase, and will
 read the tasks out of order.

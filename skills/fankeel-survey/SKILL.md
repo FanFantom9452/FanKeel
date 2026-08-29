@@ -243,6 +243,7 @@ re-route with `task.js route`. Nothing downgrades mid-task.
 
 planned, not built: <the pages, or "none">
 not found: <terms that matched nothing>
+skipped: <what, and why — not N>
 class: <class> — <why>
 then AskUserQuestion
 ```
