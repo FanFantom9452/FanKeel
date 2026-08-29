@@ -327,7 +327,9 @@ test('a note or a next whose text starts with a dash is text, not a flag', () =>
   assert.equal(entry(dir, A).next, '--route it through the other branch');
 });
 
-test('guard takes only the three values, and off removes the field', () => {
+// `off` is written rather than deleted since 2026-08-30: absence means `ask`
+// now, so deleting the field would turn opting out into opting in.
+test('guard takes only the three values, and off is stored like the others', () => {
   const dir = root();
   started(dir, A, 'x', 'Waypoint/web');
 
@@ -338,7 +340,7 @@ test('guard takes only the three values, and off removes the field', () => {
   assert.equal(entry(dir, A).guard, 'ask');
 
   run(dir, ['guard', 'off', '--session', A]);
-  assert.equal(entry(dir, A).guard, undefined);
+  assert.equal(entry(dir, A).guard, 'off');
 });
 
 // Invariant 5. The entry is the only record the task existed, and a task nobody

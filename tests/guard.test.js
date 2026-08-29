@@ -98,9 +98,16 @@ test('a session with no entry is not guarded', () => {
   assert.equal(run(root, edit(root, path.join(root, 'statusline.ps1'))), '');
 });
 
-test('an active session that did not ask for the guard is not guarded', () => {
+test('an active session that said nothing about the guard is asked', () => {
   const root = tmp();
   seed(root, MINE, { claims: ['README.md'] });
+  seed(root, THEIRS, { task: 'retune the ramp', claims: ['statusline.ps1'] });
+  assert.equal(decisionOf(run(root, edit(root, path.join(root, 'statusline.ps1')))), 'ask');
+});
+
+test('guard: "off" is the way out, and it is a stored value', () => {
+  const root = tmp();
+  seed(root, MINE, { guard: 'off', claims: ['README.md'] });
   seed(root, THEIRS, { task: 'retune the ramp', claims: ['statusline.ps1'] });
   assert.equal(run(root, edit(root, path.join(root, 'statusline.ps1'))), '');
 });
@@ -254,19 +261,24 @@ test('the reason says how to get out of it', () => {
   const reason = reasonOf(run(root, edit(root, path.join(root, 'statusline.ps1'))));
   assert.match(reason, /move off the file/);
   assert.match(reason, /task\.js clear/);
-  assert.match(reason, /remove `guard`/);
+  assert.match(reason, /guard off/);
 });
 
 // ---- the pieces ----------------------------------------------------------
 
-test('guardMode reads only the three values it accepts', () => {
+// Two ways to say off and one to say deny; everything else asks. The direction
+// the unrecognised value falls is the whole point of the default: somebody who
+// wrote a word this does not know did not ask to be unguarded, and `ask` is the
+// reading they can undo with one keypress.
+test('guardMode takes two words for off, one for deny, and asks otherwise', () => {
+  assert.equal(guard.guardMode({ guard: 'off' }), null);
+  assert.equal(guard.guardMode({ guard: false }), null);
+  assert.equal(guard.guardMode({ guard: 'deny' }), 'deny');
   assert.equal(guard.guardMode({ guard: true }), 'ask');
   assert.equal(guard.guardMode({ guard: 'ask' }), 'ask');
-  assert.equal(guard.guardMode({ guard: 'deny' }), 'deny');
-  assert.equal(guard.guardMode({ guard: 'yes' }), null);
-  assert.equal(guard.guardMode({ guard: false }), null);
-  assert.equal(guard.guardMode({}), null);
-  assert.equal(guard.guardMode(null), null);
+  assert.equal(guard.guardMode({ guard: 'yes' }), 'ask');
+  assert.equal(guard.guardMode({}), 'ask');
+  assert.equal(guard.guardMode(null), 'ask');
 });
 
 test('relPath normalises to forward slashes and refuses anything outside the root', () => {
@@ -309,7 +321,7 @@ test('targetOf reads file_path, falls back to notebook_path, and gives up on nei
 // hook and this stays the test of that.
 test('decide says nothing at all when the guard is off', () => {
   const root = path.join(os.tmpdir(), 'fankeel-decide');
-  const mine = { claims: ['README.md'] };
+  const mine = { guard: 'off', claims: ['README.md'] };
   const others = [{ sessionId: THEIRS, data: { claims: ['a.ts'], started: ago(3600e3) } }];
   const liveState = { known: true, ids: new Set([THEIRS]) };
   assert.equal(guard.decide({ mine, others, root, file: path.join(root, 'a.ts'), liveState }), null);

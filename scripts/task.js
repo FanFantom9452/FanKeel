@@ -524,8 +524,13 @@ function cmdNext(root, opts) {
 }
 
 // Invariant 7: never on this script's own initiative, so the value is always
-// something the caller passed. `off` removes the field rather than storing a
-// third value the guard would have to interpret.
+// something the caller passed.
+//
+// `off` used to delete the field rather than store a third value the guard would
+// have to interpret. That was right while the field's absence meant off and
+// deleting it said the same thing twice. Since 2026-08-30 absence means `ask`,
+// so off is the one mode that has nothing else to be written as, and the write
+// is what carries it.
 function cmdGuard(root, opts) {
     const id = requireSession(opts);
     const mode = String(opts.positional[0] || '').toLowerCase();
@@ -534,14 +539,13 @@ function cmdGuard(root, opts) {
     let data = null;
     const wrote = registry.update(root, id, (d) => {
         if (d.active !== true) return false;
-        if (mode === 'off') delete d.guard;
-        else d.guard = mode;
+        d.guard = mode;
         data = d;
         return true;
     });
     if (!data) fail('No active entry for this session under ' + root);
     if (!wrote) fail('Could not write the entry.');
-    return 'fankeel — guard: ' + (data.guard || 'off (warning only)');
+    return 'fankeel — guard: ' + (data.guard === 'off' ? 'off (warning only)' : data.guard);
 }
 
 // Invariant 5: standing down sets a flag, it never deletes. The entry is the
