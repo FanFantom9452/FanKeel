@@ -617,10 +617,16 @@ function parseArgs(argv) {
     // stream to be read as whatever else it was. parseArgs validates nothing and
     // would swallow it, so the flag is dropped before it can -- `--since --root
     // x` has to keep meaning x, not audit the working directory in silence.
+    // Only where `--since` is being read as a flag at all: after a flag that
+    // takes a value it is that value, however odd a window it makes, and
+    // dropping it there would hand `--root --since` the working directory in
+    // place of the directory that was asked for.
+    const TAKES_VALUE = new Set(['--root', '--since']);
     const args = [];
     for (let i = 0; i < argv.length; i++) {
         const next = parseInt(argv[i + 1], 10);
-        if (argv[i] === '--since' && !(Number.isFinite(next) && next >= 0)) continue;
+        const readAsFlag = !TAKES_VALUE.has(argv[i - 1]);
+        if (readAsFlag && argv[i] === '--since' && !(Number.isFinite(next) && next >= 0)) continue;
         args.push(argv[i]);
     }
 

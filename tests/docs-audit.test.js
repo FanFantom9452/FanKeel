@@ -339,6 +339,9 @@ test('--since with no number leaves the next flag alone', () => {
   assert.equal(audit.parseArgs(['--since', '--quiet']).since, audit.DEFAULT_SINCE);
   assert.equal(audit.parseArgs(['--since', '--root', '/tmp']).root, '/tmp');
   assert.equal(audit.parseArgs(['--since']).since, audit.DEFAULT_SINCE);
+  // The other direction: after a flag that takes a value, `--since` is that
+  // value rather than a flag, so it is not the one being dropped.
+  assert.equal(audit.parseArgs(['--root', '--since']).root, '--since');
 });
 
 test('quiet says nothing when there is nothing, and everything when there is', () => {
