@@ -156,7 +156,63 @@ test('the files of a repository are listed under it, in walk order', () => {
   const root = workspace(6);
   const got = trackedFiles(root);
   assert.deepEqual(got.repos, ['p0', 'p1', 'p2', 'p3', 'p4', 'p5']);
-  const positions = got.repos.map((p) => got.files.indexOf(p + '/a' + p.slice(1) + '.js'));
-  assert.deepEqual(positions, positions.slice().sort((a, b) => a - b), 'the repositories came back out of order');
-  assert.ok(got.files.includes('loose/b.js'), 'the directory that is not a repository was dropped');
+  // The whole list, literally. The assertion this replaces mapped each file to
+  // its `indexOf` and checked the result was ascending — but `indexOf` answers
+  // -1 for a file that is not there, and an array of -1s is ascending too, so it
+  // passed just as well for a list with everything dropped out of it.
+  assert.deepEqual(got.files, [
+    'loose/b.js',
+    'p0/a0.js', 'p1/a1.js', 'p2/a2.js', 'p3/a3.js', 'p4/a4.js', 'p5/a5.js',
+  ]);
+});
+
+// `flatten` is exported for these two. Building a root with more than
+// MAX_WALK_FILES real files in it costs about twelve seconds of writing and
+// deleting, against under five for this whole file; the ceiling is worth a test
+// and not worth that, so the list it cuts is handed to it directly.
+test('flatten stops at the ceiling and says so', () => {
+  const many = { files: [], known: new Set() };
+  for (let i = 0; i < tracked.MAX_WALK_FILES + 500; i++) many.files.push('f' + i + '.js');
+  const answers = new Map([['big', many]]);
+  const state = { files: [], known: new Set(), repos: [], truncated: false, unlistable: 0, skippedExt: 0 };
+
+  tracked.flatten('/nowhere', [{ repo: 'big' }, 'after.js'], answers, state);
+
+  assert.equal(state.files.length, tracked.MAX_WALK_FILES, 'the list ran past its ceiling');
+  assert.equal(state.truncated, true, 'the list was cut and nothing said so');
+  assert.equal(state.files.includes('after.js'), false, 'a part past the ceiling was listed anyway');
+});
+
+test('flatten puts each repository back where the walk left it', () => {
+  const answers = new Map([
+    ['b-repo', { files: ['one.js', 'two.js'], known: new Set(['one.js', 'two.js']) }],
+    ['d-repo', { files: ['three.js'], known: new Set(['three.js']) }],
+  ]);
+  const state = { files: [], known: new Set(), repos: [], truncated: false, unlistable: 0, skippedExt: 0 };
+
+  tracked.flatten('/nowhere', ['a.js', { repo: 'b-repo' }, 'c.js', { repo: 'd-repo' }, 'e.js'], answers, state);
+
+  assert.deepEqual(state.files,
+    ['a.js', 'b-repo/one.js', 'b-repo/two.js', 'c.js', 'd-repo/three.js', 'e.js']);
+  assert.deepEqual(state.repos, ['b-repo', 'd-repo']);
+  assert.equal(state.truncated, false);
+});
+
+// The other branch the ceiling shares: a directory that is a repository to
+// `isRepo`, which is an existsSync, and not one to git. It is what falls
+// through to the walk, and with five repositories in the root it goes through
+// the pool first, so the serial retry behind a null answer is exercised too.
+test('a directory git refuses to read is walked instead', () => {
+  const root = workspace(4);
+  const broken = path.join(root, 'q-broken');
+  fs.mkdirSync(broken);
+  fs.writeFileSync(path.join(broken, '.git'), 'not a gitdir\n');
+  fs.writeFileSync(path.join(broken, 'kept.js'), 'x\n');
+  fs.writeFileSync(path.join(broken, 'dropped.png'), 'x\n');
+
+  const got = trackedFiles(root);
+
+  assert.ok(got.files.includes('q-broken/kept.js'), 'the declined repository was dropped entirely');
+  assert.equal(got.repos.includes('q-broken'), false, 'a repository git would not read was counted as read');
+  assert.equal(got.skippedExt, 1, 'the walk of the declined repository did not report its skipped file');
 });
