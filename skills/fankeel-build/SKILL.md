@@ -3,15 +3,21 @@ name: fankeel-build
 description: The build stage — run the plan's tasks in a loop that does not stop to ask, keeping its place in a ledger and reviewing each task as it lands. Use for the build stage of a fankeel task, implementing an approved plan, resuming build work after a compaction, or when a task loop needs a ledger.
 version: 0.36.0
 status: current
-last_verified: 2026-08-27
+last_verified: 2026-08-29
 source_of_truth: lib/stages.js, lib/ledger.js
 ---
 
 # fankeel-build
 
-Produces the change. **This stage does not stop at a question until it is done.**
-Its gate is the end of the stage, not the end of a task: the loop runs every task
-the ledger lists open, and then asks once.
+Produces the change.
+
+**Done when** the ledger lists no task open, each has had its review as it
+landed, and the whole-branch review has run. The ledger is the denominator, the
+same way the decomposition is `plan`'s.
+
+**This stage does not stop at a question until it is done.** Its gate is the end
+of the stage, not the end of a task: the loop runs every task the ledger lists
+open, and then asks once.
 
 ## Setup
 

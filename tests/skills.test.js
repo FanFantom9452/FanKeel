@@ -103,6 +103,20 @@ test('each stage skill ends at the gate rather than trailing off', () => {
   }
 });
 
+// ALWAYS[0] lets option two answer "none — never unfinished work", and the line
+// that earns that answer is the stage's own stopping condition. Five of seven
+// carried one; the two that did not were `build`, whose loop is the longest
+// thing in the pipeline, and `audit`, whose reading has no natural end. Both
+// stated the condition somewhere in their prose, which is exactly where it is
+// not read at the moment the gate is asked.
+test('every stage skill states when it is done', () => {
+  const { FULL_ROUTE } = require('../lib/stages.js');
+  for (const stage of FULL_ROUTE) {
+    const want = stage === 'audit' ? 'fankeel-audit' : 'fankeel-' + stage;
+    assert.match(read(want), /\*\*Done when\*\*/, want + ' states no stopping condition');
+  }
+});
+
 // Two copies of every stage's output shape: `template` in lib/stages.js,
 // restated on every prompt, and the `## Output` block in the skill, read once on
 // entering the stage. Both have to exist — a skill is also read with no task
