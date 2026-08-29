@@ -30,10 +30,9 @@ heading is one nobody said the state of.
 
 ## Ready
 
-- The sample report in [docs/pipeline.md](docs/pipeline.md) prints `(3 more)`; the command has said `... and 3 more, not listed` since [lib/report.js](lib/report.js) unified the three spellings. 08-29.
-
 ## Needs a decision
 
+- The last spelling of that one sentence — [scripts/orient.js](scripts/orient.js) prints `(N more not listed)` unindented under no heading, so it is not a `section()` fold. 08-29.
 - Whether a pairs entry must share two files rather than one — [scripts/docs-audit.js](scripts/docs-audit.js) reports 26 where 7 would fit the cap, but unpicks a shipped test. 08-29.
 - The 8,584 stats left in `orient` are nested repositories' `ls-files` output, which has no `--stage` to mark a gitlink — [lib/tracked.js](lib/tracked.js). 423ms of 3.0s. 08-29.
 - Two lib modules have one production caller each — [lib/ledger.js](lib/ledger.js) and [lib/plugins.js](lib/plugins.js). Fold them, or say what the seam earns. 08-29.

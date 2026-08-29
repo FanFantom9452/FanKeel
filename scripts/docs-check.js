@@ -22,6 +22,7 @@ const path = require('node:path');
 const { parseArgs: parseArgv } = require('node:util');
 
 const docs = require('../lib/docs.js');
+const { section } = require('../lib/report.js');
 const { trackedFiles } = require('../lib/tracked.js');
 
 const MAX_FINDINGS = 200;
@@ -333,7 +334,6 @@ function scan(root, roles) {
         tree, error, counts, undeclared,
         markdown: markdown.length,
         findings: kept,
-        truncated: kept.length > MAX_FINDINGS,
     };
 }
 
@@ -352,12 +352,8 @@ function report(result) {
 
     // Said before the findings, because an undeclared document is the one whose
     // lifetime nobody decided, and those are the ones that rot unnoticed.
-    if (result.undeclared.length) {
-        lines.push('');
-        lines.push(result.undeclared.length + ' in no bucket — nobody has said how long these stay true:');
-        for (const rel of result.undeclared.slice(0, 20)) lines.push('  ' + rel);
-        if (result.undeclared.length > 20) lines.push('  (' + (result.undeclared.length - 20) + ' more)');
-    }
+    lines.push(...section(result.undeclared.length + ' in no bucket — nobody has said how long these stay true:',
+        result.undeclared, 20));
 
     const findings = result.findings.slice()
         .sort((a, b) => ORDER.indexOf(a.tag) - ORDER.indexOf(b.tag) || (a.file < b.file ? -1 : a.file > b.file ? 1 : a.line - b.line));
@@ -369,12 +365,8 @@ function report(result) {
         return lines.join('\n');
     }
 
-    lines.push('');
-    lines.push(findings.length + (findings.length === 1 ? ' reference that no longer resolves:' : ' references that no longer resolve:'));
-    for (const f of findings.slice(0, MAX_FINDINGS)) {
-        lines.push('  ' + f.tag + ': ' + f.file + ':' + f.line + '  ' + f.what + '  [' + f.role + ']');
-    }
-    if (result.truncated) lines.push('  (' + (findings.length - MAX_FINDINGS) + ' more not listed)');
+    lines.push(...section(findings.length + (findings.length === 1 ? ' reference that no longer resolves:' : ' references that no longer resolve:'),
+        findings.map((f) => f.tag + ': ' + f.file + ':' + f.line + '  ' + f.what + '  [' + f.role + ']'), MAX_FINDINGS));
 
     lines.push('');
     lines.push('These are facts, not judgements. A document can have every link working');
@@ -415,4 +407,4 @@ if (require.main === module) {
     process.exit(code);
 }
 
-module.exports = { scan, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown };
+module.exports = { scan, report, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown };
