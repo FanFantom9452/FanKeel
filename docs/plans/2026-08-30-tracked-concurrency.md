@@ -51,8 +51,10 @@ repository, so every convention below comes from the surrounding code.
   `lib/dirty.js:82`. `scripts/docs-audit.js:98` uses `64 * 1024 * 1024`.
 - **`MAX_WALK_FILES = 20000`** at `lib/tracked.js:132`, exported at `:277`,
   imported by `scripts/survey.js:27`, and named in the message at
-  `scripts/survey.js:352`: "the walk stopped at 20000 files — narrow it with
-  --root before trusting this." That message must stay true.
+  `scripts/survey.js:352`. That message must stay true — and this task changes
+  what it has to say, because the walk comes to count parts rather than files:
+  it now reads "the walk stopped at its 20000 ceiling — narrow it with --root
+  before trusting this", and a test pins that wording.
 - **`GITLINK = '160000'`** at `lib/tracked.js:60`; the `STAGED` regex at `:56`.
   Neither changes.
 - **`trackedFiles` returns `null` for nothing readable** — `lib/tracked.js:273`.

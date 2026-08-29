@@ -216,3 +216,18 @@ test('a directory git refuses to read is walked instead', () => {
   assert.equal(got.repos.includes('q-broken'), false, 'a repository git would not read was counted as read');
   assert.equal(got.skippedExt, 1, 'the walk of the declined repository did not report its skipped file');
 });
+
+// The retry behind a pool `null`. Without it the repository is walked instead of
+// read, and a walked repository is never added to `repos` — which is what this
+// pins, because its files land in `files` either way and no assertion on those
+// would notice. An explicit `null` in `answers` is what the pool returns for a
+// repository it could not read, and is not the same as the key being absent.
+test('a repository the pool could not read is asked once more, serially', () => {
+  const root = workspace(1);
+  const state = { files: [], known: new Set(), repos: [], truncated: false, unlistable: 0, skippedExt: 0 };
+
+  tracked.flatten(root, [{ repo: 'p0' }], new Map([['p0', null]]), state);
+
+  assert.deepEqual(state.repos, ['p0'], 'the pool said null and the repository was walked instead of re-read');
+  assert.deepEqual(state.files, ['p0/a0.js']);
+});
