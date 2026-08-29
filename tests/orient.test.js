@@ -376,3 +376,29 @@ test('the file count matches the one survey puts in its header', () => {
   assert.match(header, /— 3 files/, 'survey counted the subtrees after all');
   assert.match(orient.main(['--root', root]), /\b3 files\b/);
 });
+
+// `walk` reads every directory with `withFileTypes`, so it already holds a
+// dirent saying file-or-directory for everything it pushes — and then threw it
+// away, leaving `isSubtree` to ask the disk the same question again. On a
+// workspace of fifteen that was 18,423 stats and a quarter of the whole run.
+//
+// Only entries with no extension, or an extension no declaration pattern
+// claims, ever reached the stat, so the fixture is named to hit exactly those.
+test('a file the walk already identified is not stat-ed again', (t) => {
+  const root = workspace({
+    'alpha/README': 'x',
+    'alpha/Makefile': 'x',
+    'alpha/notes.txt': 'x',
+    'beta/b.js': 'x',
+  });
+
+  const real = fs.statSync;
+  const statted = [];
+  t.mock.method(fs, 'statSync', (p, ...rest) => {
+    if (String(p).split(path.sep).includes('alpha')) statted.push(String(p));
+    return real.call(fs, p, ...rest);
+  });
+
+  orient.scan(root, []);
+  assert.deepEqual(statted, [], 'the walk knew these were files and asked the disk anyway');
+});

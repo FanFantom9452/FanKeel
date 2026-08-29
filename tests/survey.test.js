@@ -723,6 +723,52 @@ test('the tree only appears when it is asked for', () => {
   assert.match(survey.report(result, ['badge'], { tree: true, root }), /^tree — \d+ files/m);
 });
 
+// A directory with no `.git` was still handed to `git ls-files`, once per
+// project, so that git could say what a single `existsSync` already knew. On a
+// workspace of fifteen where eleven are not repositories, that is eleven whole
+// processes spawned to be told no.
+//
+// The first half of this test is not decoration: `lib/tracked.js` used to
+// destructure `execFileSync` at load, and a mock on the module property could
+// not see the call at all. Without a spawn the mock is known to observe, an
+// empty list in the second half proves nothing.
+test('a directory that is not a repository is walked without spawning git', (t) => {
+  const cp = require('node:child_process');
+  const real = cp.execFileSync;
+  const calls = [];
+  t.mock.method(cp, 'execFileSync', (file, args, opts) => {
+    if (file === 'git') calls.push(args[0]);
+    return real.call(cp, file, args, opts);
+  });
+
+  survey.trackedFiles(repo({ 'a.js': 'x\n' }), {});
+  assert.ok(calls.includes('ls-files'), 'the mock never saw the repository being read');
+
+  calls.length = 0;
+  const plain = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-plain-'));
+  fs.writeFileSync(path.join(plain, 'a.js'), 'x\n');
+  const result = survey.trackedFiles(plain, {});
+  assert.equal(result.walked, true);
+  assert.deepEqual(calls, [], 'git was spawned for a directory with no .git in it');
+});
+
+// A regression guard, and it is worth saying so: this one passed before
+// `isInsideRepo` existed. It had to — nothing guarded the spawn then, and `git
+// ls-files` walks up by itself, so the subdirectory came back read-by-git for
+// free.
+//
+// What changed is who provides that. The property now rests on code rather than
+// on git's own behaviour, and the cheap-looking simplification of it —
+// `isRepo(root)`, one look for `dir/.git` — fails here, because a subdirectory
+// of a repository holds none of its own and would drop to the walk, changing
+// its source, its count and its skipped-extension line together.
+test('a subdirectory of a repository is still read with git, not walked', () => {
+  const root = repo({ 'top.js': 'x\n', 'sub/a.js': 'x\n' });
+  const result = survey.trackedFiles(path.join(root, 'sub'), {});
+  assert.equal(result.walked, false, 'a bare .git check would have walked it');
+  assert.deepEqual(result.files, ['a.js']);
+});
+
 // `human` moved to `lib/report.js` with the two copies it had grown, and is
 // tested in `tests/report.test.js`. It is named here because the tree line is
 // the report that motivated it: a directory of three gigabytes read `3071.0M`.
