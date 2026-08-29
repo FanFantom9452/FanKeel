@@ -86,3 +86,69 @@ test('lib/fanout.js writes an empty object rather than dying on bad input', () =
   });
   assert.equal(out, '{}');
 });
+
+const { trackedFiles } = require('../lib/tracked.js');
+
+// The one test here that fails before the walk is rewritten rather than after
+// it. The three around it are regression guards — they describe what must not
+// change, and they pass today because today's walk already has those
+// properties. This one is the driver: nothing spawns a pool yet.
+test('a root above the threshold spawns the pool exactly once', (t) => {
+  const root = workspace(6);
+  const cp = require('node:child_process');
+  const real = cp.execFileSync;
+  const nodes = [];
+  t.mock.method(cp, 'execFileSync', (file, args, opts) => {
+    if (file === process.execPath) nodes.push(args[0]);
+    return real.call(cp, file, args, opts);
+  });
+  const got = trackedFiles(root);
+  assert.deepEqual(nodes, [path.join(__dirname, '..', 'lib', 'fanout.js')],
+    'six repositories were read one at a time');
+  assert.equal(got.repos.length, 6);
+});
+
+// Six is above the threshold, so this root takes the pooled path. Blocking the
+// child process sends the same root down the serial path instead, and the two
+// have to agree exactly — including the order, which is the property no test in
+// this repository covered before this one.
+test('the pooled path and the serial path return the same list, in the same order', (t) => {
+  const root = workspace(6);
+  const pooled = trackedFiles(root);
+
+  const cp = require('node:child_process');
+  const real = cp.execFileSync;
+  t.mock.method(cp, 'execFileSync', (file, args, opts) => {
+    if (file === process.execPath) throw new Error('no pool for you');
+    return real.call(cp, file, args, opts);
+  });
+  const serial = trackedFiles(root);
+
+  assert.deepEqual(serial.files, pooled.files, 'the two paths disagree on the list or its order');
+  assert.deepEqual(serial.repos, pooled.repos, 'the two paths disagree on which repositories were read');
+  assert.deepEqual([...serial.known].sort(), [...pooled.known].sort());
+  assert.equal(pooled.walked, true);
+});
+
+test('a root below the threshold never spawns the pool', (t) => {
+  const root = workspace(2);
+  const cp = require('node:child_process');
+  const real = cp.execFileSync;
+  const nodes = [];
+  t.mock.method(cp, 'execFileSync', (file, args, opts) => {
+    if (file === process.execPath) nodes.push(args[0]);
+    return real.call(cp, file, args, opts);
+  });
+  const got = trackedFiles(root);
+  assert.deepEqual(nodes, [], 'two repositories are not worth a process start');
+  assert.equal(got.repos.length, 2);
+});
+
+test('the files of a repository are listed under it, in walk order', () => {
+  const root = workspace(6);
+  const got = trackedFiles(root);
+  assert.deepEqual(got.repos, ['p0', 'p1', 'p2', 'p3', 'p4', 'p5']);
+  const positions = got.repos.map((p) => got.files.indexOf(p + '/a' + p.slice(1) + '.js'));
+  assert.deepEqual(positions, positions.slice().sort((a, b) => a - b), 'the repositories came back out of order');
+  assert.ok(got.files.includes('loose/b.js'), 'the directory that is not a repository was dropped');
+});
