@@ -135,7 +135,7 @@ output shape:
   - path +12/-3 — what changed
   - path (new) — what it is
 
-  ledger: <n> of <m> complete
+  done: <n> of <m> — ledger or file table
   deferred: <heading> — <TODO.md line, or omit this line>
   then AskUserQuestion
 ```
@@ -218,7 +218,7 @@ output shape:
   - path +12/-3 — what changed
   - path (new) — what it is
 
-  ledger: <n> of <m> complete
+  done: <n> of <m> — ledger or file table
   deferred: <heading> — <TODO.md line, or omit this line>
   then AskUserQuestion
 ```
@@ -434,6 +434,11 @@ spec.
 
 The only stage that loops, and the only one whose memory is a file rather than a
 conversation.
+
+The second and third setup steps below are the path with a plan. A `bounded` or
+`spike` route reaches this stage without one, and then there is no ledger to open
+and no plan to scan: `design`'s file table is what the loop runs and what the
+report counts against, and the memory is a conversation again.
 
 ```mermaid
 flowchart TD

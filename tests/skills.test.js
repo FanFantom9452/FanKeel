@@ -117,6 +117,26 @@ test('every stage skill states when it is done', () => {
   }
 });
 
+// The stopping condition above named one denominator: the ledger. A ledger is
+// named for a plan file, so `bounded` and `spike` — two of the three classes —
+// reach `build` with nothing to count against, and the stage's own `Done when`
+// then describes a state they cannot reach. The classes are read from
+// `lib/stages.js` rather than listed here, so a fourth one arriving with no
+// `plan` on its route fails this until the denominator covers it too.
+test('build names a denominator for a route with no plan', () => {
+  const { CLASSES, templateFor } = require('../lib/stages.js');
+  const noPlan = Object.keys(CLASSES).filter((c) => !CLASSES[c].route.includes('plan'));
+  assert.ok(noPlan.length, 'no class reaches build without a plan; this test is moot');
+  assert.match(templateFor('build'), /file table/,
+    'build\'s output shape can only be filled in from a ledger: ' + noPlan.join(', ') + ' have none');
+  // Anchored past `**Done when**` because the frontmatter description carries
+  // the same phrase, and a description is what routes to the skill rather than
+  // what the stage is held to. Unanchored, a body that went back to naming only
+  // the ledger would still pass on the description alone.
+  assert.match(read('fankeel-build'), /\*\*Done when\*\*[\s\S]*?where there is no plan/,
+    'fankeel-build names only the ledger as its denominator');
+});
+
 // Two copies of every stage's output shape: `template` in lib/stages.js,
 // restated on every prompt, and the `## Output` block in the skill, read once on
 // entering the stage. Both have to exist — a skill is also read with no task

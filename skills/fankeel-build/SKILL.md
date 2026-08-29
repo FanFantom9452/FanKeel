@@ -1,6 +1,6 @@
 ---
 name: fankeel-build
-description: The build stage — run the plan's tasks in a loop that does not stop to ask, keeping its place in a ledger and reviewing each task as it lands. Use for the build stage of a fankeel task, implementing an approved plan, resuming build work after a compaction, or when a task loop needs a ledger.
+description: The build stage — run a plan's tasks, or a design's file table where there is no plan, in a loop that does not stop to ask, keeping its place in a ledger and reviewing each task as it lands. Use for the build stage of a fankeel task, implementing an approved plan, resuming build work after a compaction, or when a task loop needs a ledger.
 version: 0.36.0
 status: current
 last_verified: 2026-08-29
@@ -11,13 +11,15 @@ source_of_truth: lib/stages.js, lib/ledger.js
 
 Produces the change.
 
-**Done when** the ledger lists no task open, each has had its review as it
-landed, and the whole-branch review has run. The ledger is the denominator, the
-same way the decomposition is `plan`'s.
+**Done when** the denominator lists nothing open, each piece has had its review
+as it landed, and the whole-branch review has run. **The denominator is the
+ledger where there is a plan**, the same way the decomposition is `plan`'s — and
+`design`'s file table where there is no plan, which is every `bounded` task. A
+`spike` has neither, and what it counts against is the question it was asked.
 
 **This stage does not stop at a question until it is done.** Its gate is the end
-of the stage, not the end of a task: the loop runs every task the ledger lists
-open, and then asks once.
+of the stage, not the end of a task: the loop runs everything the denominator
+lists open, and then asks once.
 
 ## Setup
 
@@ -44,6 +46,14 @@ where it is; `init` starts your own beside it. Two plans can share a basename,
 and that is the one case where reusing the file would silently skip tasks nobody
 ran.
 
+**With no plan file there is no ledger and nothing to `init`.** The rows of
+`design`'s file table are the tasks instead: they are worked in the same loop
+below, each gets its review, and a ruling or a completion line goes in the
+response and then the commit message rather than through `ledger.js`. What is
+lost is the recovery: nothing is on disk, so a compaction takes the place with
+it, and `git log` is all that is left. A task that cannot afford that wants a
+plan, which is what upgrading the route is for.
+
 ### 3. Scan the plan before the first task
 
 Write down what you check as you check it. **The output is a table, not a
@@ -59,7 +69,7 @@ table into the ledger, rule on anything it surfaces, and record each ruling.
 
 ## The task loop
 
-For each task the ledger does not list as complete:
+For each task the denominator does not list as complete:
 
 1. Record `git rev-parse HEAD` as BASE.
 2. Do what the task's `**Dispatch:**` line says. `in-session` means implement it
@@ -180,7 +190,7 @@ neighbour rather than to commit something red.
 - path +12/-3 — what changed
 - path (new) — what it is
 
-ledger: <n> of <m> complete
+done: <n> of <m> — ledger or file table
 deferred: <heading> — <TODO.md line, or omit this line>
 then AskUserQuestion
 ```

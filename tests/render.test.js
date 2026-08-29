@@ -453,15 +453,15 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
   // stage rather than only on the one the fixture happens to sit in, and each
   // size is reported so the margin is visible without editing this file.
   //
-  // 2400 is the third raise on this branch and should be the last. `build` is
-  // the binding stage at 2387, with `audit` at 2382 and `plan` and `survey` at
-  // 2364. Those four read 2394, 2389 and 2371 here until 2026-08-29, when the
-  // run said 2377, 2372 and 2354 — the prose had been kept by hand and the
-  // diagnostics by the machine, and only one of them was right. It is the same
-  // failure the plugin exists to catch, in the file that reports the number.
-  // Two stages were inside twenty characters of the cap under the stale figures
-  // and none is under the real ones, which is exactly how a stale number costs
-  // something: it refuses a clause the budget would have allowed. That
+  // 2400 is the third raise on this branch and should be the last. `build` and
+  // `survey` are the binding stages at 2399, with `audit` at 2387 and `verify`
+  // at 2371. This line said 2387, 2382 and 2364 until 2026-08-29, when the run
+  // said otherwise — the prose had been kept by hand and the diagnostics by the
+  // machine, and only one of them was right. It is the same failure the plugin
+  // exists to catch, in the file that reports the number. `build` reached 2399
+  // the same day, buying the twelve characters its output shape needed to name a
+  // denominator other than the ledger; a stale figure would have refused them,
+  // which is exactly what a stale number costs. That
   // change is what a full cap looks like from the inside: the classification
   // could not be spelled out in `build`'s deferral rule at all, so it rides the
   // output template instead, and `audit` paid for its `routed:` slot by giving

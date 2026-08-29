@@ -14,8 +14,8 @@ Produces a decomposition someone with no context could execute.
 **Done when** every task carries its own test cycle and its `Dispatch:` line,
 `## Global Constraints` has been generated from the project rather than
 remembered, and the plan file is written. The decomposition is the denominator,
-the same way the ledger is `build`'s: when no task is missing one of those, the
-stage is finished.
+the same way the ledger is `build`'s wherever this stage ran: when no task is
+missing one of those, the stage is finished.
 
 Write it assuming the engineer is skilled, has never seen this codebase, and will
 read the tasks out of order.
