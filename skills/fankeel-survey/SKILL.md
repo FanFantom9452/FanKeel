@@ -3,7 +3,7 @@ name: fankeel-survey
 description: The survey stage — read the project's own map before reading its code, classify the work, and report what is already here. Use for the survey stage of a fankeel task, "what is already here", starting work in an unfamiliar repository, or when a task needs classifying as spike, bounded or architectural.
 version: 0.40.0
 status: current
-last_verified: 2026-08-29
+last_verified: 2026-08-30
 source_of_truth: lib/stages.js, lib/map.js, scripts/map.js, scripts/survey.js, scripts/layout.js
 ---
 
@@ -117,7 +117,7 @@ its own output:
   ... and 34 more, not listed
 ```
 
-and a walk that hit its ceiling prints `the walk stopped at N files`. A third
+and a walk that hit its ceiling prints `the walk stopped at its N ceiling`. A third
 line, `skipped:`, counts what was in the tree and never opened at all.
 
 **Three lines, three different fixes — and only the last one fans out, over half

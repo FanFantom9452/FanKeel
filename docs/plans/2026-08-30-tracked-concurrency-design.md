@@ -47,7 +47,14 @@ awaits anything.
 
 The interface does not change. `trackedFiles` stays synchronous, keeps returning
 `null` for nothing readable, and keeps its depth-first alphabetical order. No
-caller, no entry point, and no existing test call site is touched.
+caller changes how it calls, and no entry point changes at all.
+
+What shipped kept that, with two edits this paragraph originally denied outright
+and which both came out of review rather than out of the design. `scripts/survey.js`
+has one changed string — the note a truncated walk prints, which said "files"
+where the walk had come to count parts — and `tests/survey.test.js` gained the
+test that pins the new wording. Five of the six callers are byte-identical to
+`main`.
 
 ### Why not make it async
 
