@@ -89,6 +89,18 @@ Under this design the tree is walked whole and the ceiling is applied when the
 lists are spliced, so truncation is a function of the file order alone.
 `truncated: true` still means the same thing to every caller.
 
+**And `skippedExt` grows on a truncating root.** Found in verification by
+comparing the two versions' whole output rather than their counts: on a
+workspace of thirty repositories every field matched byte for byte except that
+one, which went from 9504 to 20352. Walking the whole tree means meeting every
+archive and image in it, including in the subtrees whose files the ceiling then
+cuts, and `skippedExt` counts what the walk met. Both numbers are honest about
+the walk that produced them; this one is honest about a bigger walk. It reaches
+the reader through `survey`'s `skipped:` line, so on a root that truncates that
+line now reports the tree rather than the part of it that survived the cut —
+which is what the line says it is for, and is the more useful of the two, but it
+is a changed number and no page said so before this paragraph.
+
 ### The threshold
 
 A node process costs 59ms to start on this machine, so the helper is a loss on a
