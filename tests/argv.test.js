@@ -172,13 +172,24 @@ test('a flag left without a value stays last in the head, so the refusal still f
   });
 });
 
-test('a flag the table does not know is peeled on its own, spending nothing', () => {
+test('a flag the table does not know stops the peel and stays a word', () => {
   // `clear <id> --force --session <id>` is printed by lib/guard.js for a person
-  // to copy. `--force` is boolean and not in the table; the id is still the text.
+  // to copy, and `note --force` is a note in tests/task.test.js. Both are the
+  // same argv shape, so the string table is the only line that holds them apart:
+  // `--force` stays in the text, and the caller reads it off the whole argv,
+  // where a boolean swallows nothing.
   assert.deepEqual(splitAroundVerb(['clear', 'bbbb', '--force', '--session', 'S'], FLAGS, CMDS), {
-    head: ['--force', '--session', 'S'],
+    head: ['--session', 'S'],
     verb: 'clear',
-    text: ['bbbb'],
+    text: ['bbbb', '--force'],
+  });
+});
+
+test('a known flag in the = form is peeled alone, even at the very end', () => {
+  assert.deepEqual(splitAroundVerb(['note', 'a note', '--root=w', '--session', 'S'], FLAGS, CMDS), {
+    head: ['--root=w', '--session', 'S'],
+    verb: 'note',
+    text: ['a note'],
   });
 });
 
