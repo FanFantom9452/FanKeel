@@ -769,6 +769,57 @@ test('a subdirectory of a repository is still read with git, not walked', () => 
   assert.deepEqual(result.files, ['a.js']);
 });
 
+// A walk that meets a repository splices `git ls-files` into its own list, and
+// those entries used to arrive with nothing known about them. `--stage` puts the
+// mode in front of each cached one, so the splice can say which are files.
+//
+// The prefix is the part that fails quietly. `known` holds paths from the nested
+// repository and `files` holds them under `sub/`; mismatched, every lookup misses
+// and the result is indistinguishable from git having said nothing at all.
+test('the entries spliced in from a nested repository say which of them are files', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-splice-'));
+  const alpha = path.join(root, 'alpha');
+  fs.mkdirSync(alpha);
+  fs.writeFileSync(path.join(alpha, 'a.js'), 'x\n');
+  fs.writeFileSync(path.join(alpha, 'README'), 'x\n');
+  execFileSync('git', ['init', '-q'], { cwd: alpha });
+
+  const sub = path.join(alpha, 'sub');
+  fs.mkdirSync(sub);
+  fs.writeFileSync(path.join(sub, 'deep.js'), 'x\n');
+  execFileSync('git', ['init', '-q'], { cwd: sub });
+  execFileSync('git', ['add', '-A'], { cwd: sub });
+  execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'x'], { cwd: sub });
+  execFileSync('git', ['add', '-A'], { cwd: alpha, stdio: ['ignore', 'ignore', 'ignore'] });
+
+  const result = survey.trackedFiles(root, {});
+  assert.equal(result.walked, true, 'the root is not a repository and should have been walked');
+  assert.ok(result.files.includes('alpha/sub'), 'the gitlink left the list git put it in');
+  assert.ok(result.known.has('alpha/a.js'), 'a file git named is still unknown, so it will be stat-ed');
+  assert.equal(result.known.has('alpha/sub'), false, 'a whole repository was recorded as one file');
+});
+
+// The branch no git here has taken. `--stage` beside `--others` is verified on
+// 2.44 and nowhere older, and a git that refuses the combination refuses the
+// whole call rather than the flag — so without the retry this repository would
+// read as unreadable and fall through to the walk, changing its source, its
+// count and its skipped-extension line together. That is the failure the guard
+// in front of the spawn was written to prevent, arriving by another door.
+test('a git that refuses --stage still returns the list, with nothing known', (t) => {
+  const root = repo({ 'a.js': 'x\n' });
+  const cp = require('node:child_process');
+  const real = cp.execFileSync;
+  t.mock.method(cp, 'execFileSync', (file, args, opts) => {
+    if (file === 'git' && args.includes('--stage')) throw new Error('fatal: unknown option `stage`');
+    return real.call(cp, file, args, opts);
+  });
+
+  const result = survey.trackedFiles(root, {});
+  assert.equal(result.walked, false, 'it fell through to the walk instead of asking git again');
+  assert.deepEqual(result.files, ['a.js']);
+  assert.equal(result.known.size, 0, 'something was called known from a list that carried no modes');
+});
+
 // `human` moved to `lib/report.js` with the two copies it had grown, and is
 // tested in `tests/report.test.js`. It is named here because the tree line is
 // the report that motivated it: a directory of three gigabytes read `3071.0M`.

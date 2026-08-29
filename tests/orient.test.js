@@ -402,3 +402,44 @@ test('a file the walk already identified is not stat-ed again', (t) => {
   orient.scan(root, []);
   assert.deepEqual(statted, [], 'the walk knew these were files and asked the disk anyway');
 });
+
+// The other half of the same saving, and the half the walk could not reach. Every
+// entry it did not produce itself came from `git ls-files`, where a gitlink and a
+// file with no extension are the same string — so the count stat-ed all of them
+// to tell the two apart, 8,585 times on a workspace of fifteen. `--stage` prints
+// the mode git already had, `160000` is the gitlink, and the disk is not asked.
+//
+// The gitlink itself is the one entry still stat-ed, and deliberately: `known`
+// says which entries are files, so the whole repository standing as one of them
+// is what is left over, and `isSubtree` is what reads it. Buying that one back
+// costs a second set in a return shape six callers read, for the handful of
+// submodules a workspace holds — 3 stats here become 1, and 8,585 become 30.
+//
+// A workspace of two rather than one project, because a single target is read
+// deeply and `signposts` stats the five names it looks for — which is a question
+// about the project rather than about its file list, and it is not this one.
+test('a project read by git is counted without stat-ing the files git named', (t) => {
+  const root = workspace({ 'alpha/a.js': 'x\n', 'alpha/README': 'x\n', 'beta/b.js': 'x\n' });
+  const alpha = path.join(root, 'alpha');
+  execFileSync('git', ['init', '-q'], { cwd: alpha });
+
+  const sub = path.join(alpha, 'sub');
+  fs.mkdirSync(sub);
+  fs.writeFileSync(path.join(sub, 'deep.js'), 'x\n');
+  execFileSync('git', ['init', '-q'], { cwd: sub });
+  execFileSync('git', ['add', '-A'], { cwd: sub });
+  execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'x'], { cwd: sub });
+  execFileSync('git', ['add', '-A'], { cwd: alpha, stdio: ['ignore', 'ignore', 'ignore'] });
+
+  const real = fs.statSync;
+  const statted = [];
+  t.mock.method(fs, 'statSync', (p, ...rest) => {
+    if (String(p).split(path.sep).includes('alpha')) statted.push(String(p));
+    return real.call(fs, p, ...rest);
+  });
+
+  const out = orient.report(orient.scan(root, []));
+  assert.match(out, /^\s*alpha\b.*\b2 files\b/m, 'the gitlink was counted as a file, or a file was lost');
+  assert.deepEqual(statted.map((p) => path.basename(p)), ['sub'],
+    'a file git had already named was stat-ed to be told the same thing');
+});
