@@ -299,6 +299,32 @@ finding, an explicit boundary, and a sentence for when nothing was found. That i
 a way of writing a report, not anybody's property, and the subject differs enough
 that copying would not have helped.
 
+## One caller is not evidence on its own
+
+`lib/ledger.js`, `lib/plugins.js` and `lib/dirty.js` each have exactly one
+production caller. Counted from outside that reads as three dead seams, and an
+audit opened a TODO entry saying so for two of them. It is one borderline case
+and two files doing their job, and the rule that separates them is worth writing
+down because the count keeps looking like the answer.
+
+**A module with one caller is evidence of a dead seam only when folding it would
+neither move a dependency the caller does not otherwise have, nor put a unit test
+behind a process spawn.**
+
+| module | its one caller | what folding it would cost |
+|---|---|---|
+| `lib/ledger.js` | `scripts/ledger.js` | six pure text functions reachable only through `execFileSync`. `skills/fankeel-build/SKILL.md` also names the file as `source_of_truth` |
+| `lib/dirty.js` | `hooks/inject.js` | the same one directory over: a hook is an entry point a test can only run as a process |
+| `lib/plugins.js` | `lib/render.js` | `render.js` does no reading of its own anywhere: `registry.js` reads the session file, `context.js` the transcript, `plugins.js` the manifest, and `render.js` itself requires only `path`. Folding puts its first `readFileSync` in the module whose whole job is producing text |
+
+The first two are the same case and it is not really about the count: the caller
+is a process entry point, so the seam is the only thing a unit test can hold.
+Only `lib/plugins.js` is lib-to-lib, which is where the count would have been
+evidence — and what settles it there is a pattern the caller already keeps three
+times over, one module per file it needs read.
+
+The counts are where the question starts, not where it ends.
+
 ## What is still a guess
 
 The stage list. Five, named for what they produce, is a first cut; whether
