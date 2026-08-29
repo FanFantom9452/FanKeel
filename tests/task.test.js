@@ -809,3 +809,43 @@ test('a scan that found nobody at all is not evidence the id is wrong', async ()
   assert.equal(run(second, ['start', '--session', A, '--task', 'x']).code, 0,
     'a directory of dead sessions refused a live one');
 });
+
+// The other half of the same hole, one script over from `scripts/ledger.js`.
+// `parseArgs` read the whole argv, so a note's own first word spelled like a
+// flag was consumed and acted on before `freeText` ever ran: the word vanished
+// from the note and `--root=` sent the lookup somewhere else entirely.
+test('a note keeps a word spelled like a known flag, and the lookup stays put', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  const elsewhere = path.join(dir, 'elsewhere');
+  started(dir, A, 'x', 'Waypoint/web');
+
+  // --root ahead of the verb so the only trailing flag is --session: the
+  // `--root=` in the note has to be the one the parser never sees.
+  const { code } = runRaw(dir, ['--root', dir, '--claude-dir', cfg, 'note',
+    '--root=' + elsewhere, 'rest of it', '--session', A]);
+
+  // These two are what discriminate. Under the bug the redirect never reached
+  // the point of writing: `withLock` mkdirs without `recursive`, so a root whose
+  // parent does not exist raised ENOENT, was swallowed as "no entry", and the
+  // command exited 1 — which `code` catches. Asserting that nothing appeared at
+  // `elsewhere` would pass in both worlds, so it is not here.
+  assert.equal(code, 0, 'the note should have been recorded, not redirected');
+  assert.deepEqual(entry(dir, A).notes, ['--root=' + elsewhere + ' rest of it']);
+});
+
+// The flag that ate the verb, arriving at task.js's own door. `29e814f` closed
+// it for `ledger.js`, where the swallowed verb wrote a ledger and reported
+// success; here it left `main` with no command name at all, which is the same
+// branch as typing nothing — so `task.js --root down` printed the usage text and
+// exited 0, having stood nothing down.
+test('a flag does not spend a verb, and is named rather than printing the usage', () => {
+  const dir = root();
+  started(dir, A, 'x', 'Waypoint/web');
+
+  const { out, code } = run(dir, ['--root', 'down', '--session', A]);
+
+  assert.equal(code, 1, '--root with no value should exit 1, not print help at 0');
+  assert.match(out, /--root needs a value/);
+  assert.equal(entry(dir, A).active, true, 'the task was stood down by a swallowed verb');
+});

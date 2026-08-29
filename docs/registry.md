@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-29
+last_verified: 2026-08-30
 source_of_truth: lib/registry.js, lib/render.js, lib/context.js, lib/dirty.js, scripts/task.js, hooks/touch.js, hooks/inject.js, hooks/carry.js
 ---
 

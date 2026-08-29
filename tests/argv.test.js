@@ -5,18 +5,23 @@
 // text that began with one. Two copies of a parser this subtle would be two
 // answers to one question, so both live here and the table they read travels in.
 //
-// The two answer it at different depths. `freeText` filters an argv the parser
-// has already read, which is enough for a dash the table does not know —
-// `scripts/task.js` uses it. It cannot help against a dash the table *does*
-// know: by then `parseArgs` has consumed the token and acted on it. `splitAtVerb`
-// runs first instead and hands the parser only what precedes the verb, which is
-// what `scripts/ledger.js` needs, because both of its flags are paths and a
-// redirected write is silent.
+// The three answer it at different depths. `freeText` filters an argv the parser
+// has already read, which is enough for a dash the table does not know. It cannot
+// help against a dash the table *does* know: by then `parseArgs` has consumed the
+// token and acted on it. `splitAtVerb` runs first instead and hands the parser
+// only what precedes the verb, which is what `scripts/ledger.js` needs, because
+// both of its flags are paths and a redirected write is silent. `splitAroundVerb`
+// does it from both ends, because `scripts/task.js` puts its flags after the verb
+// and after the words.
+//
+// `freeText` has no caller left — `scripts/task.js` was the last one and moved to
+// `splitAroundVerb`. Its cases stay until somebody rules on the export; TODO.md
+// carries the question.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { freeText, splitAtVerb } = require('../lib/argv.js');
+const { freeText, splitAtVerb, splitAroundVerb } = require('../lib/argv.js');
 
 // The caller's own table: the flag as typed against the key it lands on.
 // `freeText` reads the names and never the keys, but it is passed whole so
@@ -133,6 +138,122 @@ test('with no verb set every flag spends its next token, exactly as before', () 
   assert.deepEqual(splitAtVerb(['--root', 'init', 'complete'], FLAGS), {
     head: ['--root', 'init'],
     verb: 'complete',
+    text: [],
+  });
+});
+
+// The third depth, and the one `scripts/task.js` needs. Its shape is not
+// ledger's: flags come *after* the verb and after the words, in every documented
+// call, in both commands printed for a person to copy, and in 103 test calls. So
+// the user's words are not "everything after the verb" — they are what sits
+// between the flags at either end.
+const CMDS = new Set(['start', 'note', 'next', 'down', 'stage', 'clear']);
+
+test('the flags after the words are the head, and what sits between is the text', () => {
+  assert.deepEqual(splitAroundVerb(['note', 'a note', '--session', 'S'], FLAGS, CMDS), {
+    head: ['--session', 'S'],
+    verb: 'note',
+    text: ['a note'],
+  });
+});
+
+test('a word in the text spelled exactly like a known flag is kept', () => {
+  // The whole point. `parseArgs` would have consumed it and redirected the
+  // lookup; peeling from the right never offers it the token at all.
+  assert.deepEqual(splitAroundVerb(['note', '--root=x', 'rest', '--session', 'S'], FLAGS, CMDS), {
+    head: ['--session', 'S'],
+    verb: 'note',
+    text: ['--root=x', 'rest'],
+  });
+});
+
+test('a flag left without a value stays last in the head, so the refusal still fires', () => {
+  // node:util hands a string flag whatever token follows it, `--session`
+  // included. The trailing flags go in front for that reason alone.
+  assert.deepEqual(splitAroundVerb(['--root', 'down', '--session', 'S'], FLAGS, CMDS), {
+    head: ['--session', 'S', '--root'],
+    verb: 'down',
+    text: [],
+  });
+});
+
+test('a flag the table does not know is peeled on its own, spending nothing', () => {
+  // `clear <id> --force --session <id>` is printed by lib/guard.js for a person
+  // to copy. `--force` is boolean and not in the table; the id is still the text.
+  assert.deepEqual(splitAroundVerb(['clear', 'bbbb', '--force', '--session', 'S'], FLAGS, CMDS), {
+    head: ['--force', '--session', 'S'],
+    verb: 'clear',
+    text: ['bbbb'],
+  });
+});
+
+test('the same unknown flag is a word when it sits where the words begin', () => {
+  // tests/task.test.js records `--force` as a note. It and the `clear` call above
+  // are one argv shape apart from this: nothing about the token tells them
+  // apart, only where it sits.
+  assert.deepEqual(splitAroundVerb(['note', '--force', '--session', 'S'], FLAGS, CMDS), {
+    head: ['--session', 'S'],
+    verb: 'note',
+    text: ['--force'],
+  });
+});
+
+test('a known flag in the = form is peeled alone, even at the very end', () => {
+  assert.deepEqual(splitAroundVerb(['note', 'a note', '--root=w', '--session', 'S'], FLAGS, CMDS), {
+    head: ['--root=w', '--session', 'S'],
+    verb: 'note',
+    text: ['a note'],
+  });
+});
+
+test('a verb with no words at all has empty text', () => {
+  // `next --session <id>` clears next. Read as text the flag would set it.
+  assert.deepEqual(splitAroundVerb(['next', '--session', 'S'], FLAGS, CMDS), {
+    head: ['--session', 'S'],
+    verb: 'next',
+    text: [],
+  });
+});
+
+test('flags on both sides at once, and the words still come out whole', () => {
+  assert.deepEqual(splitAroundVerb(['--root', 'w', 'stage', 'build', '--session', 'S'], FLAGS, CMDS), {
+    head: ['--session', 'S', '--root', 'w'],
+    verb: 'stage',
+    text: ['build'],
+  });
+});
+
+test('no flag spends a verb from the left either', () => {
+  assert.deepEqual(splitAroundVerb(['--root', 'stage', 'build', '--session', 'S'], FLAGS, CMDS).head,
+    ['--session', 'S', '--root']);
+});
+
+test('an argv that is all flags has no verb, and says so', () => {
+  assert.deepEqual(splitAroundVerb(['--session', 'S'], FLAGS, CMDS), {
+    head: ['--session', 'S'],
+    verb: undefined,
+    text: [],
+  });
+});
+
+test('a known flag left with nothing after it is peeled, so the parser can refuse it', () => {
+  // `runRaw` in tests/task.test.js passes exactly this shape three times over.
+  // Stopping in front of the dangling flag would hand every earlier flag to the
+  // text, and the refusal would name --session instead of the flag at fault.
+  assert.deepEqual(splitAroundVerb(['start', '--session', 'S', '--root', 'w', '--task'], FLAGS, CMDS), {
+    head: ['--session', 'S', '--root', 'w', '--task'],
+    verb: 'start',
+    text: [],
+  });
+});
+
+test('a flag left without a value goes last however early it sat', () => {
+  // Peeling `--session S` as a pair leaves `--task` stranded in the middle,
+  // where node:util hands it `--session` as its value and nothing is refused.
+  // The old whole-argv parser had the same hole; this is where it closes.
+  assert.deepEqual(splitAroundVerb(['start', '--task', '--session', 'S'], FLAGS, CMDS), {
+    head: ['--session', 'S', '--task'],
+    verb: 'start',
     text: [],
   });
 });
