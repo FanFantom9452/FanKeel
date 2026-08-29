@@ -30,6 +30,8 @@ heading is one nobody said the state of.
 
 ## Ready
 
+- `task.js guard` changes the mode without writing the badge, so the statusline lags a command — [scripts/task.js](scripts/task.js), `cmdGuard`. Predates the default change. 08-30.
+
 ## Needs a decision
 
 - The last spelling of that one sentence — [scripts/orient.js](scripts/orient.js) prints `(N more not listed)` unindented under no heading, so it is not a `section()` fold. 08-29.

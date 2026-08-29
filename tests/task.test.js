@@ -53,6 +53,14 @@ const badgeOf = (dir, id) => {
   }
 };
 
+const leadOf = (dir, id) => {
+  try {
+    return fs.readFileSync(path.join(dir, 'cfg', 'modes', id, 'fankeel.lead'), 'utf8');
+  } catch (e) {
+    return null;
+  }
+};
+
 const entry = (dir, id) => registry.readSession(dir, id);
 
 // The fourth argument is a project now, and it is optional — every caller below
@@ -325,6 +333,38 @@ test('a note or a next whose text starts with a dash is text, not a flag', () =>
 
   run(dir, ['next', '--route it through the other branch', '--session', A]);
   assert.equal(entry(dir, A).next, '--route it through the other branch');
+});
+
+// This script is the other lead writer, and it had the same raw-field read
+// `hooks/inject.js` did. It fires on start, stage and adopt, so a session that
+// never types another prompt gets its guard from here or not at all.
+test('the lead line this script writes carries the mode, not the field', () => {
+  const dir = root();
+  started(dir, A, 'x', 'Waypoint/web');
+  assert.match(leadOf(dir, A), /^guard=ask$/m);
+
+  // `guard` is not one of the commands that writes the badge, so the refresh
+  // rides the next one that does. That lag is older than the default change and
+  // is tracked in TODO.md; what is being tested here is which of the two values
+  // gets written when something finally writes.
+  run(dir, ['guard', 'off', '--session', A]);
+  run(dir, ['stage', 'design', '--session', A]);
+  assert.doesNotMatch(leadOf(dir, A), /^guard=/m);
+});
+
+// `show` printed the guard only when the field was set. That was the same test
+// as "only when somebody opted in" until the default moved; after it, the one
+// state worth confirming out loud is the one with no field to test.
+test('show reports the guard that is running, with or without a field', () => {
+  const dir = root();
+  started(dir, A, 'x', 'Waypoint/web');
+  assert.match(run(dir, ['show', '--session', A]).out, /^\s+guard: ask$/m);
+
+  run(dir, ['guard', 'deny', '--session', A]);
+  assert.match(run(dir, ['show', '--session', A]).out, /^\s+guard: deny$/m);
+
+  run(dir, ['guard', 'off', '--session', A]);
+  assert.match(run(dir, ['show', '--session', A]).out, /^\s+guard: off$/m);
 });
 
 // `off` is written rather than deleted since 2026-08-30: absence means `ask`

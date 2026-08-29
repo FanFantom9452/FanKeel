@@ -27,6 +27,7 @@ const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
 const { tokens } = require('../lib/context.js');
 const { overlapPaths } = require('../lib/overlap.js');
+const { guardMode } = require('../lib/guard.js');
 const { splitAroundVerb } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 
@@ -86,7 +87,10 @@ function showBadge(opts, sessionId, word, data) {
             steps: at.steps,
             title: data.task,
             where: registry.claimsOf(data).join(' '),
-            guard: data.guard,
+            // The mode rather than the field, for the reason `hooks/inject.js`
+            // writes the same thing: since the default became `ask` the field is
+            // empty on exactly the sessions the guard is loudest on.
+            guard: guardMode(data) || '',
             others: data.others > 0 ? data.others : '',
         });
     } catch (e) { /* housekeeping */ }
@@ -229,7 +233,10 @@ function describe(root, sessionId, data) {
     // report and is left out rather than shown as zero.
     const burn = route.map((r) => [r, registry.burnOf(data, r)]).filter((pair) => pair[1]);
     if (burn.length) lines.push('burn:  ' + burn.map((pair) => pair[0] + ' ' + tokens(pair[1])).join(', '));
-    if (data.guard) lines.push('guard: ' + data.guard);
+    // Always, not only when the field is set. It was a line that appeared when
+    // somebody opted in; the same test now hides it on every session running the
+    // default, which is the one state worth confirming out loud.
+    lines.push('guard: ' + (guardMode(data) || 'off'));
     if (data.next) lines.push('next:  ' + data.next);
     const notes = registry.notesOf(data);
     if (notes.length) {
