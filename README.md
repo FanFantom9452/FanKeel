@@ -133,7 +133,7 @@ three places each one branches — is drawn stage by stage in
 | What `/fankeel` asks me, the seven stages, and how a route is chosen | [docs/pipeline.md](docs/pipeline.md) |
 | What `.fankeel/map.md` holds, and why a page marked design-intent is not drift | [docs/pipeline.md](docs/pipeline.md) |
 | What gets written to disk, what is committed, and what `notes` and `next` are for | [docs/registry.md](docs/registry.md) |
-| What `[FANKEEL:CLASH]` means, and how to make a collision block rather than warn | [docs/collisions.md](docs/collisions.md) |
+| What `[FANKEEL:CLASH]` means, and how to stop a collision raising a prompt | [docs/collisions.md](docs/collisions.md) |
 | What `docs.json` declares, and why an archive naming deleted code is not a bug | [docs/documents.md](docs/documents.md) |
 | What a subagent is told when it starts, and what its return value costs | [docs/subagents.md](docs/subagents.md) |
 | The badge word, and how to colour each stage | [docs/statusline.md](docs/statusline.md) |

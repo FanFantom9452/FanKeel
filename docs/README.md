@@ -23,7 +23,7 @@ here.
 | Why the mode never switches itself off | [registry.md](registry.md) |
 | What the `context:` line in the injected block means | [registry.md](registry.md) |
 | What `[FANKEEL:CLASH]` means | [collisions.md](collisions.md) |
-| How to make a file collision block an edit rather than warn | [collisions.md](collisions.md) — *the scope guard* |
+| Why an edit to a file another session holds asks first, and how to turn that off | [collisions.md](collisions.md) — *the scope guard* |
 | Why an abandoned terminal does not hold a file shut | [collisions.md](collisions.md) — *stale entries* |
 | What `.fankeel/docs.json` declares | [documents.md](documents.md) |
 | Why an archive naming deleted code is not a bug | [documents.md](documents.md) — *roles* |
