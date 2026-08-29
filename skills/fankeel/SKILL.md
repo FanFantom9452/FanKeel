@@ -195,8 +195,9 @@ worse than none because people stop reading it.
 5. **Never advance `stage` without saying so.** The stage decides which rules
    are injected, so a wrong stage silently swaps the discipline.
 6. **Never set or clear `guard` on your own.** It decides whether an edit gets
-   refused. Turning it on unasked locks the user out of their own repository;
-   turning it off unasked removes a guard they chose to have.
+   refused. Raising it to `deny` unasked locks the user out of their own
+   repository; setting it to `off` unasked removes the one they had by default,
+   and removes it silently, because nothing announces a guard that stopped.
 
 ## The stages, and the route through them
 
@@ -836,20 +837,25 @@ The judgement it feeds, the evidence and the gate stay here, where the rules are
 
 ## The scope guard
 
-By default the collision is a warning and nothing more. A session can ask for it
-to be enforced with `task.js guard ask|deny|off`, which sets `guard` on its own
-entry:
+A collision always warns. Since 2026-08-30 it also **asks** by default: an edit
+to a file another live session claimed raises a permission prompt naming that
+task. `task.js guard ask|deny|off` sets `guard` on this session's own entry:
 
 | | |
 |---|---|
-| absent | Warning only. This is the default and it is what most tasks want. |
-| `"ask"` | An edit to a file another live session claimed raises a permission prompt naming that task. |
+| absent | An edit to a file another live session claimed raises a permission prompt naming that task. **This is the default.** |
+| `"ask"` | The same thing, chosen out loud. |
 | `"deny"` | The same edit is refused outright. |
+| `"off"` | Warning only. |
 
-Offer this when two sessions are genuinely working the same repository at once,
-and say which of the two values you are offering. `"ask"` is the one to
-recommend: it puts the collision in front of the user at the moment of the edit
-and still lets them go ahead.
+The one worth offering is `"off"`, and only when the prompts are landing on a
+collision the user has already decided about. `"deny"` is the other direction and
+needs asking for: it is where an unreadable config directory would cost real
+work, because liveness that cannot be measured counts as live.
+
+Do not describe the default as a lock, and do not turn it off to get past a
+prompt — that is the same working-around the last paragraph of this section is
+about.
 
 Two things it deliberately does not do, so do not describe it as a lock. A claim
 whose session has exited never blocks — liveness is that session's own file under

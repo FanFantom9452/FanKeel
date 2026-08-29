@@ -64,6 +64,36 @@ the JSON by hand. And when both sessions declared the file, the older claim
 holds and the newer yields, so two sessions that both named it cannot block each
 other into a stalemate.
 
+## Then it stopped being opt-in, because its reason had gone
+
+2026-08-30. The section above is left as written; this is what changed under it.
+
+The default was off because "a block is only as good as the `scope` field it
+reads, and nobody yet knows how accurately scope gets declared". Observed claims
+landed on 2026-08-24 and nobody declares a scope any more — `hooks/touch.js`
+records the path an edit lands on, `lib/dirty.js` asks git for the rest. The
+reason went out with the field it named, and the default outlived it by six days
+because nothing re-reads a decision record when the thing it argues about is
+deleted.
+
+The two gaps in the claims looked like a replacement reason and are not one. A
+write git cannot see, a write claimed only on the next prompt, a dirty file whose
+mtime predates `started`, a pass of more than sixty paths — every one of them
+makes the guard **miss** a collision. Missing one is what the old default did on
+purpose, so a gap that misses more is not an argument for missing everything.
+
+The argument that would have counted is over-blocking, and it has one source:
+`lib/live.js` answers "live" for every liveness it cannot measure. That direction
+was chosen while the default was a warning and warning too much was the failure
+worth having. It is kept, because it is what decides between the two modes rather
+than an obstacle to either: under `ask` an unmeasurable registry costs a keypress
+and a message naming its holder, and under `deny` it would cost real work. So
+`ask` is what absence means, and `deny` stays a thing you ask for.
+
+`off` became a stored word in the same change. Deleting the field said the same
+thing as its absence for as long as absence meant off; the moment absence meant
+`ask`, deleting it turned opting out into opting in.
+
 ## The registry is found by walking up, not fixed at the launch directory
 
 The nearest `.fankeel/` at or above where Claude Code was opened wins, the way
