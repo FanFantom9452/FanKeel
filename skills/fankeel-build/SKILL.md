@@ -1,7 +1,7 @@
 ---
 name: fankeel-build
 description: The build stage — run a plan's tasks, or a design's file table where there is no plan, in a loop that does not stop to ask, keeping its place in a ledger and reviewing each task as it lands. Use for the build stage of a fankeel task, implementing an approved plan, resuming build work after a compaction, or when a task loop needs a ledger.
-version: 0.38.0
+version: 0.39.0
 status: current
 last_verified: 2026-08-30
 source_of_truth: lib/stages.js, lib/ledger.js, scripts/ledger.js
