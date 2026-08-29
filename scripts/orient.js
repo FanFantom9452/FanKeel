@@ -201,7 +201,13 @@ function countFiles(dir) {
         return null;
     }
     if (!result && !stats.unlistable && !stats.skippedExt) return null;
-    const list = result ? result.files.filter((f) => !isSubtree(dir, f)) : [];
+    // `known` holds the entries the walk read a dirent for, so asking the disk
+    // again is asking a question already answered. What is left is the git
+    // output — the root's own list, and each nested repository's — where a
+    // gitlink and a file without an extension are the same string, and only the
+    // stat inside `isSubtree` tells them apart.
+    const known = result ? result.known : null;
+    const list = result ? result.files.filter((f) => (known && known.has(f)) || !isSubtree(dir, f)) : [];
     return {
         files: list.length,
         truncated: result ? result.truncated : false,
