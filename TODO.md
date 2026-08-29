@@ -39,6 +39,7 @@ heading is one nobody said the state of.
 - Whether `freeText` still earns its export — [lib/argv.js](lib/argv.js). `scripts/task.js` was its last caller and moved to `splitAroundVerb`; seven tests, no production caller. 08-30.
 - Nothing in fankeel names the Workflow tool; when a scripted fan-out beats parallel dispatches is unwritten — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md), "Dispatch by default".
 - A feature asked for mid-task goes to TODO.md unless it blocks this task or is closely related; where the boundary is genuinely ambiguous, ask rather than decide — [lib/stages.js](lib/stages.js).
+- Which page owns the `flat`/`phased` shapes and survey's worked example — [docs/documents.md](docs/documents.md) × [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md). Near-verbatim in both. 08-30.
 
 ## Waiting
 
