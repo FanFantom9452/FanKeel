@@ -35,6 +35,7 @@ heading is one nobody said the state of.
 ## Needs a decision
 
 - Whether a pairs entry must share two files rather than one — [scripts/docs-audit.js](scripts/docs-audit.js) reports 26 where 7 would fit the cap, but unpicks a shipped test. 08-29.
+- The 8,584 stats left in `orient` are nested repositories' `ls-files` output, which has no `--stage` to mark a gitlink — [lib/tracked.js](lib/tracked.js). 423ms of 3.0s. 08-29.
 - Two lib modules have one production caller each — [lib/ledger.js](lib/ledger.js) and [lib/plugins.js](lib/plugins.js). Fold them, or say what the seam earns. 08-29.
 - `isSubtree` stats what both sources already classified — [lib/tracked.js](lib/tracked.js) emits files, git emits files and gitlinks. 18,415 stats, 849ms, 23% of a real orient. 08-29.
 - 53 git spawns are 55% of a 3.7s `orient` on a workspace of eleven — [scripts/orient.js](scripts/orient.js). Bigger than the stats beside it, and no measurement says which calls are the fat. 08-29.
