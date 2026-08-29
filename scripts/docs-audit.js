@@ -66,6 +66,13 @@ const CONVENTION_SHARE = 0.5;
 const MERMAID_FENCE = /^ {0,3}(?:```|~~~)+\s*mermaid\b/i;
 const FENCE_END = /^ {0,3}(?:```|~~~)+\s*$/;
 
+// `<plugin>/scripts/task.js` is a real path with a placeholder standing in for
+// the part that varies by installation. `PATHISH` rejects the angle brackets, so
+// every one of them was invisible — and a skill page names its scripts no other
+// way. Stripped only for the resolve attempt: a placeholder path that resolves
+// to nothing is dropped exactly as it was before.
+const PLACEHOLDER = /^<[^>\s]+>\//;
+
 const CODE_EXT = new Set([
     '.js', '.ts', '.tsx', '.jsx', '.mjs', '.cjs', '.py', '.sh', '.ps1',
     '.go', '.rs', '.rb', '.java', '.cs', '.vue', '.svelte', '.php', '.kt', '.swift',
@@ -138,7 +145,12 @@ const daysBetween = (a, b) => Math.floor((a - b) / DAY);
 //
 // `roots` is the same guard `docs-check` learned the hard way. Without it a plan
 // mentioning somebody else's tree in an example looks permanently unfinished.
-function pointsAt(root, rel, roots) {
+//
+// `contract` is the fourth source, and on this repository it is the largest: the
+// pages that name their subject only in frontmatter were eleven of twenty-one,
+// because a skill writes its script references inside a fenced block and neither
+// regex below reaches one.
+function pointsAt(root, rel, roots, contract) {
     const text = readFile(root, rel);
     if (text === null) return { code: [], markdown: [], unbuilt: [] };
     const code = new Set();
@@ -160,17 +172,45 @@ function pointsAt(root, rel, roots) {
 
     CODE.lastIndex = 0;
     while ((m = CODE.exec(text)) !== null) {
-        const hit = PATHISH.exec(m[1].trim());
+        const span = m[1].trim();
+        const direct = PATHISH.exec(span);
+        const hit = direct || PATHISH.exec(span.replace(PLACEHOLDER, ''));
         if (!hit) continue;
         const found = resolveRef(root, rel, hit[1]);
         if (found === null) {
-            if (roots && roots.has(hit[1].split('/')[0])) unbuilt.add(hit[1]);
+            // Only a path written out in full can be unbuilt. A placeholder one
+            // is missing here for the ordinary reason that this is not the tree
+            // it was written about, and reading it as an unfinished plan would
+            // hold that plan open forever.
+            if (direct && roots && roots.has(hit[1].split('/')[0])) unbuilt.add(hit[1]);
             continue;
         }
         note(found);
     }
 
+    // A `source_of_truth` entry naming code is the document declaring its
+    // subject. One naming markdown is the deferral `defers` reads, and it is
+    // left to it — the two never collide, because a page cannot defer to a `.js`
+    // and cannot take a `.md` as a code subject.
+    for (const target of declaredPaths(root, rel, contract)) if (isCode(target)) code.add(target);
+
     return { code: [...code], markdown: [...markdown], unbuilt: [...unbuilt] };
+}
+
+// The paths a document's `source_of_truth` names, resolved and in order. It is a
+// comma list because a page has more than one subject; `generated-by` is stripped
+// first, that being the same field carrying a promise about who writes the file
+// rather than a claim about what it describes.
+function declaredPaths(root, rel, contract) {
+    const raw = (contract && contract.source) || '';
+    const out = [];
+    for (const entry of raw.split(',')) {
+        const s = entry.trim().replace(/^generated-by\s+/i, '');
+        if (!s) continue;
+        const found = resolveRef(root, rel, s);
+        if (found && found !== rel && !out.includes(found)) out.push(found);
+    }
+    return out;
 }
 
 // --- diagrams ---------------------------------------------------------------
@@ -235,10 +275,11 @@ function sweep(root, since, now) {
     const bodies = new Map();
     const contracts = new Map();
     for (const rel of markdown) {
-        points.set(rel, pointsAt(root, rel, roots));
         const text = readFile(root, rel);
         bodies.set(rel, text);
-        contracts.set(rel, docs.contractOf(text));
+        const contract = docs.contractOf(text);
+        contracts.set(rel, contract);
+        points.set(rel, pointsAt(root, rel, roots, contract));
     }
 
     // A document's own declaration beats anything inferred about it. `roleOf`
@@ -301,15 +342,23 @@ function sweep(root, since, now) {
         const ca = contracts.get(a);
         const cb = contracts.get(b);
         if (docs.isGenerated(ca) || docs.isGenerated(cb)) return true;
-        const sa = (ca && ca.source) || '';
-        const sb = (cb && cb.source) || '';
-        return sa.includes(b) || sb.includes(a);
+        // Resolved rather than matched as a substring: the field is a list, and
+        // `docs/a.md` is a substring of `docs/a.md.bak`.
+        return declaredPaths(root, a, ca).includes(b) || declaredPaths(root, b, cb).includes(a);
     };
 
+    // The denominator. A pairs list with no rows under it reads as a tree with
+    // nothing to read against itself, and it is just as often a tree the scan
+    // could not see into: a page naming no code at all can never appear above,
+    // however much it describes.
     const byTarget = new Map();
+    const pool = { pages: 0, silent: 0 };
     for (const rel of markdown) {
         if (!current(rel)) continue;
-        for (const target of points.get(rel).code) {
+        pool.pages++;
+        const named = points.get(rel).code;
+        if (!named.length) pool.silent++;
+        for (const target of named) {
             if (!byTarget.has(target)) byTarget.set(target, []);
             byTarget.get(target).push(rel);
         }
@@ -496,7 +545,7 @@ function sweep(root, since, now) {
 
     return {
         tree, error, since, implied, markdown: markdown.length, dates: dates.kind,
-        drift, overlaps, landed, index, orphans, uncovered, diagrams,
+        drift, overlaps, pool, landed, index, orphans, uncovered, diagrams,
         undeclared: undeclared.length, declaredOf: markdown.length,
         unfiled: unfiled.length,
     };
@@ -548,6 +597,23 @@ function report(r) {
     r.overlaps.map((p) => p.a + '  ×  ' + p.b + '  (' + p.shared.slice(0, 3).join(', ')
         + (p.shared.length > 3 ? ' +' + (p.shared.length - 3) : '') + ')'), MAX_PAIRS));
 
+    // Printed whether or not there were pairs, and outside the section for that
+    // reason: `section` renders nothing over an empty list, so the one case that
+    // most needs the denominator is the one that would not have got it.
+    //
+    // It sits here rather than with the advisories at the foot because it
+    // qualifies the list directly above it, and forty lines later it is a
+    // different sentence. What that costs is the line below.
+    const beforeFootnote = lines.length;
+    if (r.pool && r.pool.pages) {
+        lines.push('');
+        lines.push('Drawn from ' + plural(r.pool.pages, 'page', 'pages') + ' claiming to be current, '
+            + r.pool.silent + ' of which name no code at all.');
+        lines.push('  A page names code by linking it, by writing it in a code span, or by');
+        lines.push('  declaring it in source_of_truth.');
+    }
+    const footnote = lines.length - beforeFootnote;
+
     lines.push(...section(plural(r.orphans.length, 'document is', 'documents are') + ' linked from nowhere:', r.orphans));
 
     lines.push(...section(plural(r.diagrams.length, 'diagram lists a directory and has', 'diagrams list a directory and have') + ' fallen behind it:',
@@ -560,8 +626,10 @@ function report(r) {
 
     // Decided before the advisories below, which are footnotes rather than
     // findings: a sweep that found nothing still found nothing, whatever else
-    // there is to say about how the tree is filed.
-    const quiet = lines.length === 1 || (r.error && lines.length === 2);
+    // there is to say about how the tree is filed. The pairs denominator is one
+    // of those footnotes even though it is printed above, so it comes back out.
+    const said = lines.length - footnote;
+    const quiet = said === 1 || (r.error && said === 2);
 
     if (r.unfiled) {
         lines.push('');

@@ -106,6 +106,57 @@ test('two reference documents describing one file are a pair worth reading', () 
   assert.deepEqual(r.overlaps[0].shared, ['lib/badge.js']);
 });
 
+// Measured on this repository on 2026-08-29: eleven of the twenty-one pages
+// claiming to be current named no code anywhere a regex could reach it, because
+// a skill page writes every script reference inside a fenced block. What they do
+// have is a frontmatter line saying what they are about.
+test('a page naming its subject only in frontmatter still forms a pair', () => {
+  const root = withTree(tree({
+    'docs/01-a.md': '---\nsource_of_truth: lib/badge.js\n---\n\nthe badge, in prose that names no path.\n',
+    'docs/02-b.md': '---\nsource_of_truth: lib/badge.js\n---\n\nthe badge again, and no path here either.\n',
+    'lib/badge.js': 'x\n',
+  }), 'flat');
+  const r = sweep(root);
+  assert.equal(r.overlaps.length, 1);
+  assert.deepEqual(r.overlaps[0].shared, ['lib/badge.js']);
+});
+
+// One field, two senses, told apart by what the entry names. Nothing collides:
+// a page cannot defer to a `.js`, and cannot take a `.md` as a code subject.
+//
+// The control is the first half: same subject, same frontmatter, and the only
+// difference is the document entry. It is written relative, the way every link
+// in this repository's own docs is written, which is also why the deferral is
+// resolved rather than matched as a substring — `01-a.md` is not a substring of
+// `docs/01-a.md`.
+test('source_of_truth naming a document is a deferral, not a subject', () => {
+  const both = '---\nsource_of_truth: lib/badge.js\n---\n\nthe badge.\n';
+  const paired = withTree(tree({
+    'docs/01-a.md': both,
+    'docs/02-b.md': both,
+    'lib/badge.js': 'x\n',
+  }), 'flat');
+  assert.equal(sweep(paired).overlaps.length, 1);
+
+  const deferred = withTree(tree({
+    'docs/01-a.md': both,
+    'docs/02-b.md': '---\nsource_of_truth: lib/badge.js, 01-a.md\n---\n\nthe badge, but a says it.\n',
+    'lib/badge.js': 'x\n',
+  }), 'flat');
+  assert.deepEqual(sweep(deferred).overlaps, []);
+});
+
+test('a code span behind an installation placeholder is still a path', () => {
+  const root = withTree(tree({
+    'docs/01-a.md': 'run `<plugin>/scripts/task.js` to write the entry\n',
+    'docs/02-b.md': 'the entry is written by `scripts/task.js`\n',
+    'scripts/task.js': 'x\n',
+  }), 'flat');
+  const r = sweep(root);
+  assert.equal(r.overlaps.length, 1);
+  assert.deepEqual(r.overlaps[0].shared, ['scripts/task.js']);
+});
+
 test('pairs are ordered by how much they share', () => {
   const root = withTree(tree({
     'docs/01-a.md': 'see `lib/badge.js` and `lib/docs.js`\n',
@@ -318,7 +369,13 @@ test('a clean sweep says so rather than printing nothing', () => {
   }), 'flat');
   const r = sweep(root);
   assert.equal(audit.defects(r), 0);
-  assert.match(audit.report(r), /Nothing drifted, nothing stranded/);
+  const text = audit.report(r);
+  assert.match(text, /Nothing drifted, nothing stranded/);
+  // An empty pairs list is the case that most needs the denominator — two pages
+  // with nothing to read against each other and two the scan could not see into
+  // print the same nothing — and it is the case `section` renders nothing for.
+  // It is a footnote, so it must not cost the all-clear above.
+  assert.match(text, /Drawn from 2 pages claiming to be current, 2 of which name no code at all/);
 });
 
 test('arguments parse, and a nonsense window is ignored rather than obeyed', () => {
@@ -367,5 +424,19 @@ test('pointsAt separates documents from code and never counts the file itself', 
   const p = audit.pointsAt(root, 'docs/01-a.md', new Set(['docs', 'lib']));
   assert.deepEqual(p.code, ['lib/badge.js']);
   assert.deepEqual(p.markdown, ['docs/02-b.md']);
+  assert.deepEqual(p.unbuilt, []);
+});
+
+// The placeholder is stripped for the resolve attempt and for nothing else. A
+// plan naming `<plugin>/scripts/gone.js` is naming a file in somebody's
+// installation, not a file this plan has yet to build, and reading it the second
+// way would hold the plan open forever.
+test('a placeholder path that resolves to nothing is not an unbuilt plan', () => {
+  const root = tree({
+    'docs/01-a.md': 'run `<plugin>/scripts/here.js`, and one day `<plugin>/scripts/gone.js`\n',
+    'scripts/here.js': 'x\n',
+  });
+  const p = audit.pointsAt(root, 'docs/01-a.md', new Set(['docs', 'scripts']));
+  assert.deepEqual(p.code, ['scripts/here.js']);
   assert.deepEqual(p.unbuilt, []);
 });

@@ -150,7 +150,7 @@ and somebody wrote it deliberately.
 ---
 status: current | design-intent | superseded-by <path> | archived | generated
 last_verified: 2026-08-22
-source_of_truth: lib/badge.js        # or: generated-by scripts/gen.sh
+source_of_truth: lib/badge.js, lib/render.js   # or: generated-by scripts/gen.sh
 ---
 ```
 
@@ -162,7 +162,7 @@ because each replaces a guess with a statement:
 |---|---|---|
 | `last_verified` | git mtime | mtime says somebody touched the file. A whitespace fix does that and verifies nothing. `last_verified` says somebody read it and it was true. |
 | `status` | the directory it sits in | `design-intent` is the word that was missing. A page describing what a system is *meant* to become is not drifting when the code does not match it — it is doing its job. Without somewhere to say that, a roadmap gets written into an architecture page and then read as a description of what exists. |
-| `source_of_truth` | nothing | Two pages describing one file is only a defect when neither defers to the other. Declaring the source settles it, and `generated-by` says the file is rewritten rather than maintained, which makes its age meaningless. |
+| `source_of_truth` | reading the page for its subject | A comma list, doing two jobs told apart by what each entry names. Code: this is what the page is about — and for a page whose scripts live in fenced blocks, the only place it says so, because a fence is not a link and not a code span. A document: this page defers to that one, so the two are not a pair. Two pages describing one file is only a defect when neither defers. `generated-by` says the file is rewritten rather than maintained, which makes its age meaningless. |
 
 The vocabulary is wider than those five words — `定案`, `活躍`, `draft`, `草稿`,
 `deprecated`, `historical`, `merged-into <path>` are all understood, and anything
