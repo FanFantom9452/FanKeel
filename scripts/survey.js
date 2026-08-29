@@ -426,10 +426,15 @@ function report(result, terms, opts) {
 // showed up in the report header and could match against a file path.
 //
 // This is the one parser here still written out by hand; the other eight in
-// `scripts/` use `node:util`. Non-strict `parseArgs` turns any single-dash
-// argument into a flag, and this is the only script whose positionals are
-// arbitrary user text rather than paths or subcommands — `survey.js -Force` has
-// to stay a search term. The eight that took the swap all take paths.
+// `scripts/` use `node:util`. Non-strict `parseArgs` turns any dash-leading
+// argument into a flag, and a search term is arbitrary user text — `survey.js
+// -Force` has to stay a term.
+//
+// It was not the only script with that problem, though this comment claimed so
+// for a while and was read as the reason not to look. `task.js note` and `next`
+// take the user's own words positionally too, and lost every one that began
+// with a dash; they filter the argv against their own flag table now rather
+// than swapping parsers. `ledger.js complete` and `ruling` are the same shape.
 function parseArgs(argv) {
     let root = process.cwd();
     let max = DEFAULT_MAX;

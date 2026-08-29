@@ -308,6 +308,25 @@ test('next is one line, replaced not appended, and clearable', () => {
   assert.equal(entry(dir, A).next, undefined);
 });
 
+// `node:util` reads any token with a leading dash as a flag whatever the shell
+// did with the quotes, and these are the two commands whose positional is the
+// user's own words. `note` refused outright; `next` was worse — it wrote an
+// empty line and reported `next cleared`, which is a success message for having
+// deleted what was there.
+test('a note or a next whose text starts with a dash is text, not a flag', () => {
+  const dir = root();
+  started(dir, A, 'x', 'Waypoint/web');
+
+  run(dir, ['note', '--force is not the flag it looks like', '--session', A]);
+  run(dir, ['note', '-x short flags too', '--session', A]);
+  run(dir, ['note', '--force', '--session', A]);
+  assert.deepEqual(entry(dir, A).notes,
+    ['--force is not the flag it looks like', '-x short flags too', '--force']);
+
+  run(dir, ['next', '--route it through the other branch', '--session', A]);
+  assert.equal(entry(dir, A).next, '--route it through the other branch');
+});
+
 test('guard takes only the three values, and off removes the field', () => {
   const dir = root();
   started(dir, A, 'x', 'Waypoint/web');

@@ -30,7 +30,7 @@ heading is one nobody said the state of.
 
 ## Ready
 
-- A note whose text begins with `--` is eaten by the arg parser and `task.js note` answers `Give the note.` — [scripts/task.js](scripts/task.js). 08-29.
+- The same arg-parser hole one script over: `complete`'s note and `ruling`'s three parts are positional user text — [scripts/ledger.js](scripts/ledger.js). 08-30.
 
 ## Needs a decision
 
