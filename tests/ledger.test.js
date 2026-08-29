@@ -23,11 +23,14 @@ const root = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-ledger-'));
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'ledger.js');
 
 for (const flag of ['--root', '--plan']) {
-  test('scripts/ledger.js refuses a trailing ' + flag + ' by name', () => {
+  // The flag stands alone rather than after a verb: flags precede the verb here,
+  // so a token after one is the user's words and no longer reaches the parser.
+  // The branch is the same one either way — this is where it is still reachable.
+  test('scripts/ledger.js refuses ' + flag + ' with no value by name', () => {
     let out = '';
     let code = 0;
     try {
-      execFileSync(process.execPath, [SCRIPT, 'show', flag], { encoding: 'utf8' });
+      execFileSync(process.execPath, [SCRIPT, flag], { encoding: 'utf8' });
     } catch (e) {
       out = String(e.stdout || '');
       code = e.status;
@@ -104,6 +107,18 @@ for (const [name, argv, expected] of [
     ['ruling', 'a', 'b', '--c', 'd'],
     /^Ruling: a — b — costs if wrong: --c d$/m,
   ],
+  // The dashed word is now a flag this script's own table knows, which is the
+  // case the filter could never reach: `parseArgs` had consumed it first.
+  [
+    'complete keeps a word that begins with a flag the table knows',
+    ['complete', '1', '--plan=elsewhere.md', 'is not the flag it looks like'],
+    /^Task 1: complete — --plan=elsewhere\.md is not the flag it looks like$/m,
+  ],
+  [
+    'ruling keeps a part that begins with a flag the table knows',
+    ['ruling', 'we ruled', '--plan=x.md', 'because', 'it costs a rewrite'],
+    /^Ruling: we ruled — --plan=x\.md — costs if wrong: because it costs a rewrite$/m,
+  ],
 ]) {
   test(name, () => {
     const dir = root();
@@ -111,3 +126,30 @@ for (const [name, argv, expected] of [
     assert.match(fs.readFileSync(ledger.ledgerPath(dir, 'plan.md'), 'utf8'), expected);
   });
 }
+
+// Keeping the word and writing to the right ledger are two failures, and the
+// second is the silent one: a redirected write reports success, so the build
+// loop is told a task is complete that its own ledger will not list.
+test('a note beginning --plan= writes no second ledger', () => {
+  const dir = root();
+  execFileSync(
+    process.execPath,
+    [SCRIPT, '--plan', 'plan.md', 'complete', '1', '--plan=elsewhere.md', 'is not the flag it looks like'],
+    { cwd: dir, encoding: 'utf8' },
+  );
+  assert.deepEqual(fs.readdirSync(path.join(dir, '.fankeel', 'build')), ['plan']);
+});
+
+test('a note beginning --root= does not move the tree', () => {
+  const dir = root();
+  execFileSync(
+    process.execPath,
+    [SCRIPT, '--plan', 'plan.md', 'complete', '2', '--root=elsewhere', 'matters too'],
+    { cwd: dir, encoding: 'utf8' },
+  );
+  assert.equal(fs.existsSync(path.join(dir, 'elsewhere')), false, 'the write escaped the root it was given');
+  assert.match(
+    fs.readFileSync(ledger.ledgerPath(dir, 'plan.md'), 'utf8'),
+    /^Task 2: complete — --root=elsewhere matters too$/m,
+  );
+});

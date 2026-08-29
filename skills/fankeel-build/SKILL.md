@@ -3,8 +3,8 @@ name: fankeel-build
 description: The build stage — run a plan's tasks, or a design's file table where there is no plan, in a loop that does not stop to ask, keeping its place in a ledger and reviewing each task as it lands. Use for the build stage of a fankeel task, implementing an approved plan, resuming build work after a compaction, or when a task loop needs a ledger.
 version: 0.38.0
 status: current
-last_verified: 2026-08-29
-source_of_truth: lib/stages.js, lib/ledger.js
+last_verified: 2026-08-30
+source_of_truth: lib/stages.js, lib/ledger.js, scripts/ledger.js
 ---
 
 # fankeel-build
@@ -35,6 +35,13 @@ they chose, and do not ask again.
 node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md show
 node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md init
 ```
+
+**`--plan` goes before the verb, always.** Everything after the verb is text, so
+a completion note or a ruling keeps every word — including one spelled exactly
+like a flag, which is what `complete` and `ruling` are for the moment the thing
+that landed was a flag. Put `--plan` after the verb and the command refuses,
+naming what it is missing; that is the only shape this rule costs, and no
+documented call ever used it.
 
 **Conversation memory does not survive compaction; this does.** A task the ledger
 lists as complete is done — do not redo it. Resume at the first task without a
