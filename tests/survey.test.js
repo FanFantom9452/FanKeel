@@ -752,11 +752,16 @@ test('a directory that is not a repository is walked without spawning git', (t) 
   assert.deepEqual(calls, [], 'git was spawned for a directory with no .git in it');
 });
 
-// The guard has to walk up, not look once. `git ls-files` run inside a
-// subdirectory of a repository succeeds and lists that subdirectory — which is
-// the answer this scanner wants — but the subdirectory holds no `.git` of its
-// own, so a guard that only checked for one would drop it to the walk and
-// change the source, the count and the skipped-extension line with it.
+// A regression guard, and it is worth saying so: this one passed before
+// `isInsideRepo` existed. It had to — nothing guarded the spawn then, and `git
+// ls-files` walks up by itself, so the subdirectory came back read-by-git for
+// free.
+//
+// What changed is who provides that. The property now rests on code rather than
+// on git's own behaviour, and the cheap-looking simplification of it —
+// `isRepo(root)`, one look for `dir/.git` — fails here, because a subdirectory
+// of a repository holds none of its own and would drop to the walk, changing
+// its source, its count and its skipped-extension line together.
 test('a subdirectory of a repository is still read with git, not walked', () => {
   const root = repo({ 'top.js': 'x\n', 'sub/a.js': 'x\n' });
   const result = survey.trackedFiles(path.join(root, 'sub'), {});
