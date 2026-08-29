@@ -30,8 +30,6 @@ heading is one nobody said the state of.
 
 ## Ready
 
-- Nobody has read all 330 lines of [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md); a section was added 08-29 but `last_verified` still says 2026-08-22. 08-29.
-
 ## Needs a decision
 
 - The last spelling of that one sentence — [scripts/orient.js](scripts/orient.js) prints `(N more not listed)` unindented under no heading, so it is not a `section()` fold. 08-29.
