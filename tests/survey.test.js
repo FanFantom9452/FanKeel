@@ -823,3 +823,13 @@ test('a git that refuses --stage still returns the list, with nothing known', (t
 // `human` moved to `lib/report.js` with the two copies it had grown, and is
 // tested in `tests/report.test.js`. It is named here because the tree line is
 // the report that motivated it: a directory of three gigabytes read `3071.0M`.
+
+// The note a truncated walk prints. It had no test in either wording, which is
+// how it came to say "files" after the walk started counting parts — the number
+// is a ceiling on parts now, and the emitted list can be shorter than it.
+test('a truncated walk says so in terms of its ceiling, not its files', () => {
+  const root = repo({ 'lib/a.js': 'function widgetFactory() {}\n' });
+  const result = survey.scan(root, ['widget']);
+  result.truncated = true;
+  assert.match(survey.report(result, ['widget']), /the walk stopped at its 20000 ceiling/);
+});

@@ -222,8 +222,13 @@ npm test
 claude plugin validate .
 ```
 
-`lib/` is pure logic, tested directly. `hooks/` is where stdin, stdout and process
-exit live, and all six hooks are tested as subprocesses with real payloads.
+`lib/` is pure logic, tested directly. The one exception is `lib/fanout.js`, which
+ends in a four-statement block reading stdin and writing stdout, because
+`lib/tracked.js` spawns it as a child process to read several repositories at
+once; it sits in `lib/` rather than `scripts/` because nothing in `lib/` may reach
+the other way, which is the rule that put `lib/tracked.js` there to begin with.
+`hooks/` is where stdin, stdout and process exit otherwise live, and all six hooks
+are tested as subprocesses with real payloads.
 
 Every hook exits 0 on every path, including every error path. A `UserPromptSubmit`
 hook that throws blocks the prompt it was called for and a `PreToolUse` hook that

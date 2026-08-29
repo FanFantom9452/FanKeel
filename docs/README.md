@@ -41,6 +41,8 @@ here.
 | How that was built, task by task | [plans/2026-08-26-dispatch.md](plans/2026-08-26-dispatch.md) — *built, 0.32.0* |
 | Why the end of a task is where the advice goes, and what `/clear` costs | [plans/2026-08-28-task-end-design.md](plans/2026-08-28-task-end-design.md) — *built* |
 | The three tasks that built it, with every string and every test written out | [plans/2026-08-28-task-end.md](plans/2026-08-28-task-end.md) — *built* |
+| Why the thirty spawns a walk makes were left synchronous | [plans/2026-08-30-tracked-concurrency-design.md](plans/2026-08-30-tracked-concurrency-design.md) — *built* |
+| How that is being built, task by task | [plans/2026-08-30-tracked-concurrency.md](plans/2026-08-30-tracked-concurrency.md) — *built* |
 | What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 | Why three lib modules with one caller each were not folded into their callers | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *one caller is not evidence on its own* |

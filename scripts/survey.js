@@ -349,7 +349,7 @@ function report(result, terms, opts) {
     const note = ['source: ' + source.join('; ')];
     if (max !== DEFAULT_MAX) note.push('cap: ' + (max === Infinity ? 'none' : max + ' per section'));
     if (truncated) {
-        note.push('the walk stopped at ' + MAX_WALK_FILES + ' files — narrow it with --root before trusting this.');
+        note.push('the walk stopped at its ' + MAX_WALK_FILES + ' ceiling — narrow it with --root before trusting this.');
     }
     // What was in the tree and never opened. The header counts the files that
     // reached the scan, which is neither the tree nor the coverage: three of
