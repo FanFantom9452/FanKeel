@@ -612,8 +612,20 @@ function defects(r) {
 // `--since` that is not a number still leaves the default, and is still consumed
 // rather than becoming something else's argument.
 function parseArgs(argv) {
+    // `--since` is the one flag here that validated before it consumed: a token
+    // that did not parse as a number was never its value, and stayed in the
+    // stream to be read as whatever else it was. parseArgs validates nothing and
+    // would swallow it, so the flag is dropped before it can -- `--since --root
+    // x` has to keep meaning x, not audit the working directory in silence.
+    const args = [];
+    for (let i = 0; i < argv.length; i++) {
+        const next = parseInt(argv[i + 1], 10);
+        if (argv[i] === '--since' && !(Number.isFinite(next) && next >= 0)) continue;
+        args.push(argv[i]);
+    }
+
     const { values } = parseArgv({
-        args: argv,
+        args,
         strict: false,
         allowPositionals: true,
         options: { root: { type: 'string' }, since: { type: 'string' }, quiet: { type: 'boolean' } },

@@ -329,6 +329,18 @@ test('arguments parse, and a nonsense window is ignored rather than obeyed', () 
   assert.equal(audit.parseArgs(['--root', 'x', '--quiet']).quiet, true);
 });
 
+// `--since` is the one flag here that validates before it consumes. A token that
+// is not a number was never its value, so it stays in the stream to be read as
+// whatever else it is -- and the flag that follows a forgotten number is the one
+// that would otherwise be swallowed silently. The root case is the expensive
+// one: swallowed, it audits the working directory and says nothing.
+test('--since with no number leaves the next flag alone', () => {
+  assert.equal(audit.parseArgs(['--since', '--quiet']).quiet, true);
+  assert.equal(audit.parseArgs(['--since', '--quiet']).since, audit.DEFAULT_SINCE);
+  assert.equal(audit.parseArgs(['--since', '--root', '/tmp']).root, '/tmp');
+  assert.equal(audit.parseArgs(['--since']).since, audit.DEFAULT_SINCE);
+});
+
 test('quiet says nothing when there is nothing, and everything when there is', () => {
   const clean = withTree(tree({ 'docs/README.md': '# index\n' }), 'flat');
   assert.equal(audit.main(['--root', clean, '--quiet'], NOW).text, '');
