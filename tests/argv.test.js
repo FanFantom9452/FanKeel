@@ -147,7 +147,7 @@ test('with no verb set every flag spends its next token, exactly as before', () 
 // call, in both commands printed for a person to copy, and in 103 test calls. So
 // the user's words are not "everything after the verb" — they are what sits
 // between the flags at either end.
-const CMDS = new Set(['note', 'next', 'down', 'stage', 'clear']);
+const CMDS = new Set(['start', 'note', 'next', 'down', 'stage', 'clear']);
 
 test('the flags after the words are the head, and what sits between is the text', () => {
   assert.deepEqual(splitAroundVerb(['note', 'a note', '--session', 'S'], FLAGS, CMDS), {
@@ -242,6 +242,17 @@ test('a known flag left with nothing after it is peeled, so the parser can refus
   // text, and the refusal would name --session instead of the flag at fault.
   assert.deepEqual(splitAroundVerb(['start', '--session', 'S', '--root', 'w', '--task'], FLAGS, CMDS), {
     head: ['--session', 'S', '--root', 'w', '--task'],
+    verb: 'start',
+    text: [],
+  });
+});
+
+test('a flag left without a value goes last however early it sat', () => {
+  // Peeling `--session S` as a pair leaves `--task` stranded in the middle,
+  // where node:util hands it `--session` as its value and nothing is refused.
+  // The old whole-argv parser had the same hole; this is where it closes.
+  assert.deepEqual(splitAroundVerb(['start', '--task', '--session', 'S'], FLAGS, CMDS), {
+    head: ['--session', 'S', '--task'],
     verb: 'start',
     text: [],
   });
