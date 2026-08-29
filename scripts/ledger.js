@@ -11,6 +11,10 @@
 // would otherwise redirect the write to a ledger nobody asked for and say the
 // task was complete. Every documented call already puts the flags first; this
 // makes that the rule rather than the habit.
+//
+// The same shapelessness ran the other way too: `--plan init complete 1 note`
+// handed the verb to the flag and wrote `.fankeel/build/init/`. No flag spends a
+// verb now, so that lands on the refusal below with nothing after it.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -27,6 +31,12 @@ function fail(message) {
 // Every string flag, and the key it lands on. A table rather than a list because
 // `splitAtVerb` reads it too, and two lists of the same flags drift.
 const STRING_FLAGS = { root: 'root', plan: 'plan' };
+
+// The verbs, in the order the refusal at the bottom lists them. A set rather
+// than four literals for the same reason the flags are a table: `splitAtVerb`
+// reads it too, so that no flag spends one, and two lists of the same verbs
+// drift.
+const VERBS = new Set(['init', 'complete', 'ruling', 'show']);
 
 // `strict: false` keeps an unknown flag silent. A declared flag given no value
 // comes back `true` rather than a string, and that is the refusal below: a flag
@@ -50,7 +60,7 @@ function parseArgs(argv) {
 }
 
 function main(argv) {
-    const { head, verb: named, text } = splitAtVerb(argv, STRING_FLAGS);
+    const { head, verb: named, text } = splitAtVerb(argv, STRING_FLAGS, VERBS);
     const opts = parseArgs(head);
     const root = path.resolve(opts.root || process.cwd());
     if (!opts.plan) fail('--plan <path to the plan file> is required.');
@@ -95,7 +105,7 @@ function main(argv) {
             + '\n\nResume at the first task not listed. Trust this and git log over what you remember.';
     }
 
-    return fail('Verbs: init, complete, ruling, show.');
+    return fail('Verbs: ' + [...VERBS].join(', ') + '.');
 }
 
 if (require.main === module) {

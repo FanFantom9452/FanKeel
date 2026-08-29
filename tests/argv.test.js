@@ -97,3 +97,42 @@ test('a flag the table does not know spends nothing, so the verb is still found'
   // would swallow the verb and leave the command looking like a bare `show`.
   assert.deepEqual(splitAtVerb(['--force', 'show'], FLAGS), { head: ['--force'], verb: 'show', text: [] });
 });
+
+// The verb set. A flag whose value has no shape takes whatever follows it, and
+// what followed was the verb: `--plan init complete 1 note` filed `init` as the
+// plan and wrote a ledger under it. A verb is never a value, so the flag is left
+// in the head with nothing after it, where the caller's own refusal waits.
+const VERBS = new Set(['init', 'complete', 'ruling', 'show']);
+
+test('a flag does not spend a token that is a verb', () => {
+  assert.deepEqual(splitAtVerb(['--root', 'init', 'complete', '1', 'note'], FLAGS, VERBS), {
+    head: ['--root'],
+    verb: 'init',
+    text: ['complete', '1', 'note'],
+  });
+});
+
+test('the = form still means a value spelled like a verb', () => {
+  // It spends no token to say so, so there is nothing for the verb set to stop.
+  assert.deepEqual(splitAtVerb(['--root=init', 'show'], FLAGS, VERBS), {
+    head: ['--root=init'],
+    verb: 'show',
+    text: [],
+  });
+});
+
+test('a value that merely begins with a verb is still a value', () => {
+  assert.deepEqual(splitAtVerb(['--root', 'init.md', 'show'], FLAGS, VERBS).head, ['--root', 'init.md']);
+});
+
+test('the verb is matched however it is cased, as the caller matches it', () => {
+  assert.equal(splitAtVerb(['--root', 'INIT'], FLAGS, VERBS).verb, 'INIT');
+});
+
+test('with no verb set every flag spends its next token, exactly as before', () => {
+  assert.deepEqual(splitAtVerb(['--root', 'init', 'complete'], FLAGS), {
+    head: ['--root', 'init'],
+    verb: 'complete',
+    text: [],
+  });
+});

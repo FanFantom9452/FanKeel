@@ -1,7 +1,7 @@
 ---
 name: fankeel-build
 description: The build stage — run a plan's tasks, or a design's file table where there is no plan, in a loop that does not stop to ask, keeping its place in a ledger and reviewing each task as it lands. Use for the build stage of a fankeel task, implementing an approved plan, resuming build work after a compaction, or when a task loop needs a ledger.
-version: 0.38.0
+version: 0.39.0
 status: current
 last_verified: 2026-08-30
 source_of_truth: lib/stages.js, lib/ledger.js, scripts/ledger.js
@@ -42,6 +42,12 @@ like a flag, which is what `complete` and `ruling` are for the moment the thing
 that landed was a flag. Put `--plan` after the verb and the command refuses,
 naming what it is missing; that is the only shape this rule costs, and no
 documented call ever used it.
+
+**And no flag takes a verb as its value.** `--plan init complete 1 note` once
+filed `init` as the plan, wrote a ledger under it and reported the task
+complete — a tick on a ledger the loop would never read again. It is refused
+now, naming `--plan` as the flag left without a value. Write `--plan=init` if a
+plan really is named for a verb.
 
 **Conversation memory does not survive compaction; this does.** A task the ledger
 lists as complete is done — do not redo it. Resume at the first task without a
