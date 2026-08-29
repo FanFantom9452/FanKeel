@@ -812,7 +812,7 @@ test('a scan that found nobody at all is not evidence the id is wrong', async ()
 
 // The other half of the same hole, one script over from `scripts/ledger.js`.
 // `parseArgs` read the whole argv, so a note's own first word spelled like a
-// flag was consumed and acted on before `freeText` ever ran: the word vanished
+// flag was consumed and acted on before any filter could run: the word vanished
 // from the note and `--root=` sent the lookup somewhere else entirely.
 test('a note keeps a word spelled like a known flag, and the lookup stays put', () => {
   const dir = root();
