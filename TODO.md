@@ -30,9 +30,6 @@ heading is one nobody said the state of.
 
 ## Ready
 
-- Five stage skills gained a `Done when` line and none was re-read whole — [skills/fankeel-survey/SKILL.md](skills/fankeel-survey/SKILL.md) and four beside it still declare 08-27. 08-29.
-- Nine scripts hand-roll an arg parser, 139 lines, and `node:util` ships one — [scripts/survey.js](scripts/survey.js) and task.js carry extra; seven are near a swap. 08-29.
-
 ## Needs a decision
 
 - Two lib modules have one production caller each — [lib/ledger.js](lib/ledger.js) and [lib/plugins.js](lib/plugins.js). Fold them, or say what the seam earns. 08-29.

@@ -424,6 +424,12 @@ function report(result, terms, opts) {
 // --root takes a value, so the value has to be consumed with the flag. Filtering
 // on the leading dashes alone left the path itself in the term list, where it
 // showed up in the report header and could match against a file path.
+//
+// This is the one parser here still written out by hand; the other eight in
+// `scripts/` use `node:util`. Non-strict `parseArgs` turns any single-dash
+// argument into a flag, and this is the only script whose positionals are
+// arbitrary user text rather than paths or subcommands — `survey.js -Force` has
+// to stay a search term. The eight that took the swap all take paths.
 function parseArgs(argv) {
     let root = process.cwd();
     let max = DEFAULT_MAX;
