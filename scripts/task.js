@@ -27,7 +27,7 @@ const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
 const { tokens } = require('../lib/context.js');
 const { overlapPaths } = require('../lib/overlap.js');
-const { freeText } = require('../lib/argv.js');
+const { splitAroundVerb } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 
 const GUARDS = ['ask', 'deny', 'off'];
@@ -132,25 +132,26 @@ const STRING_FLAGS = {
 // comes back `true` rather than a string, and that is the refusal below: a flag
 // typed with nothing after it is a mistake worth naming, not a default worth
 // guessing at.
-function parseArgs(argv) {
-    const options = { force: { type: 'boolean' } };
+//
+// It is given the flags alone, never the whole argv — which is what stops a note
+// from being read as one. `--force` is the exception and stays on the whole
+// argv: it is boolean, so it spends no token and cannot swallow the word this
+// split exists to keep, and the peel may have left it among the user's words on
+// purpose. `note --force` records `--force`; `clear <id> --force` still forces.
+function parseArgs(head, whole) {
+    const options = {};
     for (const flag of Object.keys(STRING_FLAGS)) options[flag] = { type: 'string' };
 
-    const { values, positionals } = parseArgv({ args: argv, strict: false, allowPositionals: true, options });
-    const opts = { positional: positionals };
+    const { values } = parseArgv({ args: head, strict: false, allowPositionals: true, options });
+    const opts = {};
     for (const [flag, key] of Object.entries(STRING_FLAGS)) {
         if (values[flag] === undefined) continue;
         if (typeof values[flag] !== 'string') fail('--' + flag + ' needs a value.');
         opts[key] = values[flag];
     }
-    if (values.force) opts.force = true;
+    if (whole.includes('--force')) opts.force = true;
     return opts;
 }
-
-// The two commands whose positional is the user's own words rather than a stage
-// name, a guard word or a session id. `lib/argv.js` is the rest of it, shared
-// with `scripts/ledger.js`, which has two of the same.
-const FREE_TEXT = new Set(['note', 'next']);
 
 // The root the hooks would resolve, resolved the same way. Two answers here
 // would be two registries, and the one the user is shown would not be the one
@@ -776,17 +777,23 @@ const USAGE = [
     'next prompt.',
 ].join('\n');
 
+// The commands, as the split reads them. `COMMANDS` is already the list, so
+// taking the keys is what keeps a second copy from existing — the same reason
+// `scripts/ledger.js` keeps one set for its four verbs.
+const VERBS = new Set(Object.keys(COMMANDS));
+
 function main(argv) {
-    const opts = parseArgs(argv);
-    const name = opts.positional.shift();
+    // Flags at either end, the user's words in between. `task.js` puts its flags
+    // *after* the verb, so `--session` is never the note and a note beginning
+    // `--root=` is never the registry: the parser is handed the flags alone and
+    // the words are never offered to it.
+    const { head, verb: name, text } = splitAroundVerb(argv, STRING_FLAGS, VERBS);
+    const opts = parseArgs(head, argv);
+    opts.positional = text;
     if (!name || name === 'help') return USAGE;
 
     const command = COMMANDS[name];
     if (!command) fail('No such command: ' + name + '\n\n' + USAGE);
-
-    // The flags are already out of `opts`; what the first pass could not do is
-    // tell a note from an option, so these two take their text from the argv.
-    if (FREE_TEXT.has(name)) opts.positional = freeText(argv, name, STRING_FLAGS);
 
     return command(rootOf(opts), opts);
 }

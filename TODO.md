@@ -36,7 +36,7 @@ heading is one nobody said the state of.
 - Whether a pairs entry must share two files rather than one — [scripts/docs-audit.js](scripts/docs-audit.js) reports 26 where 7 would fit the cap, but unpicks a shipped test. 08-29.
 - Whether `trackedFiles` goes async so the 30 nested-repo `ls-files` run at once — [lib/tracked.js](lib/tracked.js). Serial 1257ms, 8 wide 264ms; six callers and the null contract. 08-29.
 - Default the scope guard on: writes outside the hooks are claimed from git now — [docs/collisions.md](docs/collisions.md), "Making it block". Two gaps left: a one-prompt lag, and what git cannot see.
-- Whether `task.js` moves onto `splitAtVerb` too — [scripts/task.js](scripts/task.js): `note "--root=x" "rest"` drops the word and redirects the lookup. Breaks tests/route.test.js:33. 08-30.
+- Whether `freeText` still earns its export — [lib/argv.js](lib/argv.js). `scripts/task.js` was its last caller and moved to `splitAroundVerb`; seven tests, no production caller. 08-30.
 - Nothing in fankeel names the Workflow tool; when a scripted fan-out beats parallel dispatches is unwritten — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md), "Dispatch by default".
 - A feature asked for mid-task goes to TODO.md unless it blocks this task or is closely related; where the boundary is genuinely ambiguous, ask rather than decide — [lib/stages.js](lib/stages.js).
 

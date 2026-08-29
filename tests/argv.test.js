@@ -5,13 +5,18 @@
 // text that began with one. Two copies of a parser this subtle would be two
 // answers to one question, so both live here and the table they read travels in.
 //
-// The two answer it at different depths. `freeText` filters an argv the parser
-// has already read, which is enough for a dash the table does not know —
-// `scripts/task.js` uses it. It cannot help against a dash the table *does*
-// know: by then `parseArgs` has consumed the token and acted on it. `splitAtVerb`
-// runs first instead and hands the parser only what precedes the verb, which is
-// what `scripts/ledger.js` needs, because both of its flags are paths and a
-// redirected write is silent.
+// The three answer it at different depths. `freeText` filters an argv the parser
+// has already read, which is enough for a dash the table does not know. It cannot
+// help against a dash the table *does* know: by then `parseArgs` has consumed the
+// token and acted on it. `splitAtVerb` runs first instead and hands the parser
+// only what precedes the verb, which is what `scripts/ledger.js` needs, because
+// both of its flags are paths and a redirected write is silent. `splitAroundVerb`
+// does it from both ends, because `scripts/task.js` puts its flags after the verb
+// and after the words.
+//
+// `freeText` has no caller left — `scripts/task.js` was the last one and moved to
+// `splitAroundVerb`. Its cases stay until somebody rules on the export; TODO.md
+// carries the question.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -172,16 +177,24 @@ test('a flag left without a value stays last in the head, so the refusal still f
   });
 });
 
-test('a flag the table does not know stops the peel and stays a word', () => {
+test('a flag the table does not know is peeled on its own, spending nothing', () => {
   // `clear <id> --force --session <id>` is printed by lib/guard.js for a person
-  // to copy, and `note --force` is a note in tests/task.test.js. Both are the
-  // same argv shape, so the string table is the only line that holds them apart:
-  // `--force` stays in the text, and the caller reads it off the whole argv,
-  // where a boolean swallows nothing.
+  // to copy. `--force` is boolean and not in the table; the id is still the text.
   assert.deepEqual(splitAroundVerb(['clear', 'bbbb', '--force', '--session', 'S'], FLAGS, CMDS), {
-    head: ['--session', 'S'],
+    head: ['--force', '--session', 'S'],
     verb: 'clear',
-    text: ['bbbb', '--force'],
+    text: ['bbbb'],
+  });
+});
+
+test('the same unknown flag is a word when it sits where the words begin', () => {
+  // tests/task.test.js records `--force` as a note. It and the `clear` call above
+  // are one argv shape apart from this: nothing about the token tells them
+  // apart, only where it sits.
+  assert.deepEqual(splitAroundVerb(['note', '--force', '--session', 'S'], FLAGS, CMDS), {
+    head: ['--session', 'S'],
+    verb: 'note',
+    text: ['--force'],
   });
 });
 
@@ -219,6 +232,17 @@ test('an argv that is all flags has no verb, and says so', () => {
   assert.deepEqual(splitAroundVerb(['--session', 'S'], FLAGS, CMDS), {
     head: ['--session', 'S'],
     verb: undefined,
+    text: [],
+  });
+});
+
+test('a known flag left with nothing after it is peeled, so the parser can refuse it', () => {
+  // `runRaw` in tests/task.test.js passes exactly this shape three times over.
+  // Stopping in front of the dangling flag would hand every earlier flag to the
+  // text, and the refusal would name --session instead of the flag at fault.
+  assert.deepEqual(splitAroundVerb(['start', '--session', 'S', '--root', 'w', '--task'], FLAGS, CMDS), {
+    head: ['--session', 'S', '--root', 'w', '--task'],
+    verb: 'start',
     text: [],
   });
 });
