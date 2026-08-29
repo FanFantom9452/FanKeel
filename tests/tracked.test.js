@@ -87,6 +87,14 @@ test('lib/fanout.js writes an empty object rather than dying on bad input', () =
   assert.equal(out, '{}');
 });
 
+test('lib/fanout.js writes an empty object when stdin parses to no repository list', () => {
+  const out = execFileSync(process.execPath, [FANOUT], {
+    input: 'null',
+    encoding: 'utf8',
+  });
+  assert.equal(out, '{}');
+});
+
 const { trackedFiles } = require('../lib/tracked.js');
 
 // The one test here that fails before the walk is rewritten rather than after
