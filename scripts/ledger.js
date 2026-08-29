@@ -10,28 +10,31 @@ const path = require('node:path');
 const { parseArgs: parseArgv } = require('node:util');
 
 const ledger = require('../lib/ledger.js');
+const { freeText } = require('../lib/argv.js');
 
 function fail(message) {
     process.stdout.write(message + '\n');
     process.exit(1);
 }
 
+// Every string flag, and the key it lands on. A table rather than a list because
+// `freeText` reads it too, and two lists of the same flags drift.
+const STRING_FLAGS = { root: 'root', plan: 'plan' };
+
 // `strict: false` keeps an unknown flag silent. A declared flag given no value
 // comes back `true` rather than a string, and that is the refusal below: a flag
 // typed with nothing after it is a mistake worth naming, not a default worth
 // guessing at.
 function parseArgs(argv) {
-    const { values, positionals } = parseArgv({
-        args: argv,
-        strict: false,
-        allowPositionals: true,
-        options: { root: { type: 'string' }, plan: { type: 'string' } },
-    });
+    const options = {};
+    for (const flag of Object.keys(STRING_FLAGS)) options[flag] = { type: 'string' };
+
+    const { values, positionals } = parseArgv({ args: argv, strict: false, allowPositionals: true, options });
     const opts = { positional: positionals };
-    for (const name of ['root', 'plan']) {
-        if (values[name] === undefined) continue;
-        if (typeof values[name] !== 'string') fail('--' + name + ' needs a value.');
-        opts[name] = values[name];
+    for (const [flag, key] of Object.entries(STRING_FLAGS)) {
+        if (values[flag] === undefined) continue;
+        if (typeof values[flag] !== 'string') fail('--' + flag + ' needs a value.');
+        opts[key] = values[flag];
     }
     return opts;
 }
@@ -40,16 +43,25 @@ function main(argv) {
     const opts = parseArgs(argv);
     const root = path.resolve(opts.root || process.cwd());
     if (!opts.plan) fail('--plan <path to the plan file> is required.');
-    const verb = String(opts.positional[0] || 'show').toLowerCase();
+    const named = String(opts.positional[0] || 'show');
+    const verb = named.toLowerCase();
+
+    // What follows the verb, for the two whose positional is the user's own
+    // words. The parser cannot give it back: `node:util` reads any token with a
+    // leading dash as a flag however the shell quoted it, so a part beginning
+    // `--` was filed under a flag named for the whole sentence and never arrived.
+    // Taken from `named` rather than `verb` because the verb is matched
+    // case-insensitively and the argv holds whatever was typed.
+    const text = freeText(argv, named, STRING_FLAGS);
 
     if (verb === 'init') {
         return 'fankeel ledger — ' + ledger.init(root, opts.plan);
     }
 
     if (verb === 'complete') {
-        const n = Number(opts.positional[1]);
+        const n = Number(text[0]);
         if (!Number.isInteger(n) || n < 1) fail('complete <task number> "<what landed>"');
-        const note = opts.positional.slice(2).join(' ');
+        const note = text.slice(1).join(' ');
         // A completion line with no note is a tick nobody can check, and this
         // file exists to be read by someone who does not remember writing it.
         if (!note.trim()) fail('Say what landed. A completion line with no note is a tick nobody can check.');
@@ -58,7 +70,7 @@ function main(argv) {
     }
 
     if (verb === 'ruling') {
-        const parts = opts.positional.slice(1);
+        const parts = text;
         if (parts.length < 3) fail('ruling "<what you decided>" "<why>" "<what it costs if wrong>"');
         ledger.append(root, opts.plan, ledger.rulingLine(parts[0], parts[1], parts.slice(2).join(' ')));
         return 'fankeel ledger — ruling recorded.';

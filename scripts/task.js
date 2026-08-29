@@ -27,6 +27,7 @@ const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
 const { tokens } = require('../lib/context.js');
 const { overlapPaths } = require('../lib/overlap.js');
+const { freeText } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 
 const GUARDS = ['ask', 'deny', 'off'];
@@ -147,40 +148,9 @@ function parseArgs(argv) {
 }
 
 // The two commands whose positional is the user's own words rather than a stage
-// name, a guard word or a session id.
+// name, a guard word or a session id. `lib/argv.js` is the rest of it, shared
+// with `scripts/ledger.js`, which has two of the same.
 const FREE_TEXT = new Set(['note', 'next']);
-
-// Everything after the command that STRING_FLAGS does not claim.
-//
-// `node:util` reads any token with a leading dash as a flag however the shell
-// quoted it, so a note that began `--` never reached `cmdNote` as text: it was
-// filed under a flag named for the whole sentence, and what arrived was nothing
-// at all. `note` refused with `Give the note.`, which at least said so. `next`
-// wrote the empty string and printed `next cleared` — a success message for
-// having deleted the line that was there.
-//
-// Only these two need it. Everywhere else the positional is a value from a
-// fixed set, where a stray dash is a typo and swallowing it as a value would be
-// the worse answer.
-//
-// Driven by the same table the parser uses, so there is no second list of flags
-// to keep in step, and a flag the table does not know stays text — which under
-// these two commands is exactly right: an unrecognised dash is the user's words.
-function freeText(argv, name) {
-    const text = [];
-    for (let i = argv.indexOf(name) + 1; i < argv.length; i++) {
-        const arg = argv[i];
-        const eq = arg.indexOf('=');
-        const flag = arg.startsWith('--') ? arg.slice(2, eq === -1 ? undefined : eq) : null;
-        if (flag !== null && Object.hasOwn(STRING_FLAGS, flag)) {
-            // `--session X` spends the next argument; `--session=X` does not.
-            if (eq === -1) i++;
-            continue;
-        }
-        text.push(arg);
-    }
-    return text;
-}
 
 // The root the hooks would resolve, resolved the same way. Two answers here
 // would be two registries, and the one the user is shown would not be the one
@@ -816,7 +786,7 @@ function main(argv) {
 
     // The flags are already out of `opts`; what the first pass could not do is
     // tell a note from an option, so these two take their text from the argv.
-    if (FREE_TEXT.has(name)) opts.positional = freeText(argv, name);
+    if (FREE_TEXT.has(name)) opts.positional = freeText(argv, name, STRING_FLAGS);
 
     return command(rootOf(opts), opts);
 }

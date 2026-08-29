@@ -87,3 +87,27 @@ test('a ledger left behind by another plan is replaced, not merged', () => {
   ledger.init(dir, 'docs/plans/a.md');
   assert.deepEqual(ledger.completed(fs.readFileSync(p, 'utf8')), []);
 });
+
+// The two verbs whose positional is the user's own words. A token with a leading
+// dash was filed under a flag named for itself, so what reached the ledger was
+// the sentence with a piece missing — and with three parts still standing, no
+// refusal to say so. `--plan` here is deliberately where every documented call
+// puts it: ahead of the verb.
+for (const [name, argv, expected] of [
+  [
+    'complete keeps a dashed word in the middle of its note',
+    ['complete', '1', 'fixed', '--force', 'handling'],
+    /^Task 1: complete — fixed --force handling$/m,
+  ],
+  [
+    'ruling keeps a dashed word among its three parts',
+    ['ruling', 'a', 'b', '--c', 'd'],
+    /^Ruling: a — b — costs if wrong: --c d$/m,
+  ],
+]) {
+  test(name, () => {
+    const dir = root();
+    execFileSync(process.execPath, [SCRIPT, '--plan', 'plan.md', ...argv], { cwd: dir, encoding: 'utf8' });
+    assert.match(fs.readFileSync(ledger.ledgerPath(dir, 'plan.md'), 'utf8'), expected);
+  });
+}
