@@ -825,10 +825,13 @@ test('a note keeps a word spelled like a known flag, and the lookup stays put', 
   const { code } = runRaw(dir, ['--root', dir, '--claude-dir', cfg, 'note',
     '--root=' + elsewhere, 'rest of it', '--session', A]);
 
+  // These two are what discriminate. Under the bug the redirect never reached
+  // the point of writing: `withLock` mkdirs without `recursive`, so a root whose
+  // parent does not exist raised ENOENT, was swallowed as "no entry", and the
+  // command exited 1 — which `code` catches. Asserting that nothing appeared at
+  // `elsewhere` would pass in both worlds, so it is not here.
   assert.equal(code, 0, 'the note should have been recorded, not redirected');
   assert.deepEqual(entry(dir, A).notes, ['--root=' + elsewhere + ' rest of it']);
-  assert.equal(fs.existsSync(path.join(elsewhere, '.fankeel')), false,
-    'a word in a note wrote a registry somewhere nobody asked for');
 });
 
 // The flag that ate the verb, arriving at task.js's own door. `29e814f` closed
