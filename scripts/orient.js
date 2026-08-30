@@ -337,11 +337,17 @@ function scan(root, named) {
     // five git logs and a screen nobody reads, and a workspace listing is still a
     // question about which project rather than an inventory of one.
     //
-    // Counted over `targets` rather than over `shown`, which now holds only the
-    // ones that are there: a single named path that does not exist would leave
-    // `shown` empty, and the count that decides this is a count of what was
-    // asked for.
-    const deep = targets.length === 1;
+    // Counted over `present`, because that is the count the report already
+    // uses: every deep section below prints under `found.length === 1`, and
+    // `found` is this list. Deciding the gathering by `targets` made two gates
+    // out of one question, and they disagreed in exactly one shape — a path
+    // that is there named beside one that is not, where the report went on to
+    // print `read first: nothing` over a project holding a README.
+    //
+    // The case the old count was defending needs no defending: a single named
+    // path that is not there leaves `t.exists` false, and `row()` gathers
+    // nothing whichever way this reads.
+    const deep = present.length === 1;
 
     const row = (t) => ({
         rel: t.rel === '.' ? path.basename(resolved) : t.rel.replace(/\\/g, '/').replace(/\/+$/, ''),
@@ -405,7 +411,11 @@ function report(result) {
     if (result.mode === 'workspace') {
         lines.push(found.length + ' under it:');
     } else if (result.mode === 'named') {
-        lines.push('named:');
+        // A heading for a table, so no table means no heading. With every named
+        // path missing this stood alone over nothing, and `not found:` below
+        // already lists exactly what the caller typed — the answer is whole
+        // without a line introducing an empty one.
+        if (found.length) lines.push('named:');
     } else {
         lines.push('one project:');
     }
@@ -443,7 +453,10 @@ function report(result) {
     // justify, and the reason beside MAX_ROWS — a listing nobody finishes is a
     // listing nobody acts on — is already about this line word for word.
     if (missing.length) {
-        lines.push('');
+        // Not a second blank where the heading above declined to print: the one
+        // pushed ahead of it is still the last line, and two in a row read as a
+        // section boundary that is not there.
+        if (lines[lines.length - 1] !== '') lines.push('');
         lines.push('not found: ' + missing.slice(0, MAX_ROWS).map((e) => e.rel).join(', '));
         if (missing.length > MAX_ROWS) {
             lines.push('  ... and ' + (missing.length - MAX_ROWS) + ' more, not listed');

@@ -135,6 +135,17 @@ test('exactly the cap many misses says nothing about a tail that is not there', 
   assert.doesNotMatch(out, /more, not listed/);
 });
 
+// `named:` is the heading of a table, and with every named path missing there
+// is no table under it. It stood alone over nothing, two lines above a
+// `not found:` that was already the whole answer — the names it lists are the
+// ones the caller typed a moment ago.
+test('the named heading does not stand over an empty table', () => {
+  const out = run(['--root', workspace({ 'alpha/a.js': 'x' }), 'nope1', 'nope2']);
+  assert.doesNotMatch(out, /^named:$/m);
+  assert.match(out, /not found: nope1, nope2/);
+  assert.doesNotMatch(out, /\n\n\nnot found:/);
+});
+
 // The line the cap exists for. 200 misses printed one line thousands of
 // characters long before it. The assertion is on the shape rather than on a
 // figure that moves with the length of the names: these are eight characters
@@ -278,6 +289,21 @@ test('signposts are reported, and their absence is reported too', () => {
   const bare = workspace({ 'web/a.js': 'x' });
   fs.mkdirSync(path.join(bare, '.git'), { recursive: true });
   assert.match(run(['--root', bare]), /read first: nothing/);
+});
+
+// The gathering was gated on `targets.length === 1` and the printing on
+// `found.length === 1`, which is `present`. One name that is not there beside
+// one that is, and the two disagreed: nothing deep was gathered, so a project
+// holding a README was reported as holding none. `alone` is the control — it
+// fails too if signposts break outright, which is the failure a one-sided
+// assertion here would read as a pass.
+test('a missing name beside a present one does not cost the present one its signposts', () => {
+  const root = workspace({ 'Waypoint/README.md': 'x' });
+  const alone = run(['--root', root, 'Waypoint']);
+  const beside = run(['--root', root, 'Waypoint', 'nope']);
+  assert.match(alone, /read first: README[.]md/);
+  assert.match(beside, /read first: README[.]md/);
+  assert.doesNotMatch(beside, /read first: nothing/);
 });
 
 test('signposts must be files, not directories with the same name', () => {
