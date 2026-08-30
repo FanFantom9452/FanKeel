@@ -114,6 +114,38 @@ test('a named path that is not there is reported past the cap too', () => {
   assert.match(out, /not found: nope/);
 });
 
+// A glob that misses is one mistake, not two hundred of them: past a point the
+// count is the answer and the names are noise. Cut with the table's own
+// MAX_ROWS rather than a second number, and said in the sentence every other
+// capped list here uses. Safe to cut where the table is not, because the caller
+// typed these and still has them.
+const ghosts = (n) => Array.from({ length: n }, (_, i) => 'ghost' + String(i).padStart(2, '0'));
+
+test('a wall of misses is cut at the same cap the table uses, and counted', () => {
+  const out = run(['--root', workspace({ 'alpha/a.js': 'x' }), ...ghosts(41)]);
+  assert.match(out, /not found: ghost00, /);
+  assert.match(out, /ghost39/);
+  assert.doesNotMatch(out, /ghost40/);
+  assert.match(out, /^ {2}\.\.\. and 1 more, not listed$/m);
+});
+
+test('exactly the cap many misses says nothing about a tail that is not there', () => {
+  const out = run(['--root', workspace({ 'alpha/a.js': 'x' }), ...ghosts(40)]);
+  assert.match(out, /ghost39/);
+  assert.doesNotMatch(out, /more, not listed/);
+});
+
+// The line the cap exists for. 200 misses printed one line thousands of
+// characters long before it. The assertion is on the shape rather than on a
+// figure that moves with the length of the names: these are eight characters
+// each, and longer ones measured half as long again.
+test('no line in the report is a wall, however many names missed', () => {
+  const out = run(['--root', workspace({ 'alpha/a.js': 'x' }), ...ghosts(200)]);
+  assert.match(out, /^ {2}\.\.\. and 160 more, not listed$/m);
+  const longest = Math.max(...out.split('\n').map((l) => l.length));
+  assert.ok(longest < 600, 'longest line was ' + longest);
+});
+
 // Capping after the split is also what makes this sentence true: it counts what
 // was cut from the table it sits under, so it can be the one `lib/report.js`
 // prints for every other capped list rather than a fifth spelling of it.

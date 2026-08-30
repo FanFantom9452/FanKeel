@@ -428,10 +428,26 @@ function report(result) {
     }
 
     // Named but absent is the one thing here that is an error rather than a
-    // finding, because the user typed it.
+    // finding, because the user typed it. That is also the reason this is the
+    // one list here safe to cut: `present` is what the scan found, so a name
+    // dropped from it is gone, while `missing` is a subset of what the caller
+    // typed a moment ago and they still hold all of it. A glob missing two
+    // hundred times printed one line thousands of characters long, measured
+    // 2026-08-31 — rounded on purpose, because the figure moves with how long
+    // the names happen to be and an exact one here would be read as current
+    // long after it stopped being. The count is the answer there; the names
+    // are the noise.
+    //
+    // The same MAX_ROWS and the same sentence as the table above. A second
+    // number for a second list in one report is a number somebody has to
+    // justify, and the reason beside MAX_ROWS — a listing nobody finishes is a
+    // listing nobody acts on — is already about this line word for word.
     if (missing.length) {
         lines.push('');
-        lines.push('not found: ' + missing.map((e) => e.rel).join(', '));
+        lines.push('not found: ' + missing.slice(0, MAX_ROWS).map((e) => e.rel).join(', '));
+        if (missing.length > MAX_ROWS) {
+            lines.push('  ... and ' + (missing.length - MAX_ROWS) + ' more, not listed');
+        }
     }
 
     // One target, so there is room to say what it is made of. Two or more and
