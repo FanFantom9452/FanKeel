@@ -32,7 +32,8 @@ heading is one nobody said the state of.
 
 ## Needs a decision
 
-- The last spelling of that one sentence — [scripts/orient.js](scripts/orient.js) prints `(N more not listed)` unindented under no heading, so it is not a `section()` fold. 08-29.
+- Which count decides `deep` — [scripts/orient.js](scripts/orient.js) says `read first: nothing` over a project that has one, when a present path is named beside a missing one. Predates this. 08-31.
+- Whether `not found:` needs a cap of its own — [scripts/orient.js](scripts/orient.js) now lists every absent target on one joined line, so a glob of two hundred misses is one very long line. 08-31.
 - Whether a fenced block counts as naming a path in the body — [scripts/docs-audit.js](scripts/docs-audit.js). A skill page fences every path, so a real pair can score 0 and sort last. 08-30.
 - A feature asked for mid-task goes to TODO.md unless it blocks this task or is closely related; where the boundary is genuinely ambiguous, ask rather than decide — [lib/stages.js](lib/stages.js).
 - Which page owns the `flat`/`phased` shapes and survey's worked example — [docs/documents.md](docs/documents.md) × [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md). Near-verbatim in both. 08-30.

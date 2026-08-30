@@ -97,6 +97,32 @@ test('a named path that is not there is reported, not silently dropped', () => {
   assert.match(out, /not found: nope/);
 });
 
+// The cap sat in front of `existsSync`, so a target past the fortieth was
+// neither listed nor found: it went into a count and nothing else. The test
+// above makes its claim inside the cap only, which is where a silent loss goes
+// unnoticed for as long as nobody names forty-one things.
+const many = (n) => {
+  const tree = {};
+  for (let i = 0; i < n; i++) tree['p' + String(i).padStart(2, '0') + '/a.js'] = 'x';
+  return tree;
+};
+
+test('a named path that is not there is reported past the cap too', () => {
+  const tree = many(40);
+  const root = workspace(tree);
+  const out = run(['--root', root, ...Object.keys(tree).map((f) => f.slice(0, 3)), 'nope']);
+  assert.match(out, /not found: nope/);
+});
+
+// Capping after the split is also what makes this sentence true: it counts what
+// was cut from the table it sits under, so it can be the one `lib/report.js`
+// prints for every other capped list rather than a fifth spelling of it.
+test('the cut targets are said in the same sentence as every other capped list', () => {
+  const out = run(['--root', workspace(many(41))]);
+  assert.match(out, /^ {2}\.\.\. and 1 more, not listed$/m);
+  assert.doesNotMatch(out, /\(1 more not listed\)/);
+});
+
 test('a single target is broken down one level, so the task can be named from what is in it', () => {
   const root = workspace({
     'alpha/web/src/a.js': 'x',
