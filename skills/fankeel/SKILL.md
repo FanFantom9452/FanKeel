@@ -418,7 +418,7 @@ can still describe a system that was replaced last month.
 | | |
 |---|---|
 | **drift** | a reference document whose subject changed after it did, by more than the window. The finding worth the fortnight. |
-| **landed plans** | a plan where everything named now exists and nobody has touched it since. Offer to archive; never move one unasked. |
+| **landed plans** | a plan where everything named now exists and nobody has touched it for three days. That settle period is its own, not the drift window. Offer to archive; never move one unasked. |
 | **the index** | entries pointing at nothing, and documents the index never learned about. Both directions, because the index is maintained by hand. |
 | **diagrams** | a mermaid graph naming most of a directory is claiming to list it, so the files it leaves out read as files that do not exist. |
 | **pairs** | two reference documents describing the same source file. Not a contradiction — the shortlist of places one could live. |

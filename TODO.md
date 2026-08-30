@@ -32,8 +32,6 @@ heading is one nobody said the state of.
 
 ## Needs a decision
 
-- The window for [scripts/docs-audit.js](scripts/docs-audit.js). Measured 08-31: at 14d the landed-plan check cannot fire on a repo younger than the window; `--since 0` found 8 here. 08-31.
-
 ## Waiting
 
 - Whether a stated `Done when` actually ends the gate loop, or only renames it — [lib/stages.js](lib/stages.js), ALWAYS[0]'s `or none`. Reported live once; only use says. 08-29.

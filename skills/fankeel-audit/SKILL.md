@@ -38,6 +38,14 @@ node <plugin>/scripts/docs-audit.js [--root <dir>] [--since <days>]
 defaults to 14 days, which is the cadence this is built for: not on a typo fix,
 not skipped for a quarter.
 
+That fortnight is the **drift** window, and drift's alone — it measures how long
+a page has been wrong while the code it names moved on. The landed-plan check
+asks something else, whether anyone has come back to the plan, and it settles
+after **three days**. One number for both meant the landed check could not fire
+on a repository younger than a fortnight. Passing `--since` explicitly still
+sets both, so `--since 0` remains the way to see everything either window is
+holding back.
+
 Quote what came back. A description of what a scanner said is not what it said.
 
 ### The one that is not about documents
@@ -101,7 +109,7 @@ contradiction could live, which is not evidence that one does.
 | Section | Defect | What it means |
 |---|---|---|
 | **fallen behind the code they describe** | yes | a reference page is older than a file it names. `verified` in the line means the page declared the date; `last touched` means it came from git, which is the weaker claim |
-| **plans look landed** | yes | every file the plan named now exists and nobody has touched the plan. It is a record, not a plan — offer to archive it |
+| **plans look landed** | yes | every file the plan named now exists and nobody has touched the plan for three days. It is a record, not a plan — offer to archive it |
 | **index** | yes | declared but not written, or entries pointing at nothing, or documents missing from it |
 | **diagrams behind their directory** | yes | a mermaid graph naming most of a directory is claiming to list it, so the files it does not name read as files that do not exist |
 | **pairs describing the same code** | no | two reference pages both name the same file and neither defers. This is where single source of truth breaks |

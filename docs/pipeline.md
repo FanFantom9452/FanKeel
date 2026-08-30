@@ -558,7 +558,7 @@ Three scanners, and then the part none of them can do.
 ```mermaid
 flowchart TD
     A["docs-check<br/><i>every reference still resolves</i>"]
-    B["docs-audit<br/><i>the deeper sweep, 14 days</i>"]
+    B["docs-audit<br/><i>the deeper sweep<br/>drift 14 days · landed settles at 3</i>"]
     A2["residue<br/><i>the one not about documents</i>"]
     C{"what came back?"}
     D1["<b>fallen behind the code they describe</b>"]
@@ -844,6 +844,15 @@ that always exits non-zero has an exit code that means nothing.
 A file half the documentation mentions is common ground, not a subject:
 `api/entrypoint.sh` named in five pages produced ten pairs on the first real run,
 none worth reading, and they pushed the pair sharing four files off the list.
+
+Two windows, not one. Drift measures a **gap** — how long a page has been wrong
+while the code it names moved on — and a fortnight is what makes one worth a
+reading session. A landed plan is a different question: everything it named
+exists, and nobody has come back to it. That is a settle period, and it is three
+days. Sharing one number made the landed check unable to fire on a repository
+younger than a fortnight, which is every repository for its first two weeks. An
+explicit `--since` still sets both, so `--since 0` shows everything either one is
+holding back.
 
 Dates come from the commit log in one `git log`, not one per file, and fall back
 to mtime for a working tree with no history. Where no `docs.json` exists the tree
