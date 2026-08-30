@@ -138,8 +138,9 @@ const daysBetween = (a, b) => Math.floor((a - b) / DAY);
 
 // --- what a document points at ---------------------------------------------
 
-// Every repository path a document names, whether by link or by code span,
-// split three ways: documents, code that is there, and code that is not.
+// Every repository path a document names — by link, by code span or inside a
+// fenced block — split three ways: documents, code that is there, and code that
+// is not.
 //
 // The third is not a finding — `docs-check` already reports unresolvable
 // references, and repeating them here would make the two commands argue. It is
@@ -682,8 +683,8 @@ function report(r) {
         lines.push('');
         lines.push('Drawn from ' + plural(r.pool.pages, 'page', 'pages') + ' claiming to be current, '
             + r.pool.silent + ' of which name no code at all.');
-        lines.push('  A page names code by linking it, by writing it in a code span, or by');
-        lines.push('  declaring it in source_of_truth.');
+        lines.push('  A page names code by linking it, by writing it in a code span or a');
+        lines.push('  fenced block, or by declaring it in source_of_truth.');
     }
     const footnote = lines.length - beforeFootnote;
 
