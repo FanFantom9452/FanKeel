@@ -517,6 +517,22 @@ test('arguments parse, and a nonsense window is ignored rather than obeyed', () 
   assert.equal(audit.parseArgs(['--root', 'x', '--quiet']).quiet, true);
 });
 
+const pick = ({ since, settled }) => ({ since, settled });
+
+// The numbers are written out rather than read back off the module, because the
+// assertions above compare the default against the constant that produces it and
+// so cannot fail whatever it is set to. These are the promise: two different
+// defaults, and one explicit `--since` that overrides both — which is what makes
+// `--since 0` still the way to see everything either window is holding back.
+test('the two windows default apart, and an explicit --since sets both', () => {
+  assert.equal(audit.parseArgs([]).since, 14);
+  assert.equal(audit.parseArgs([]).settled, 3);
+  assert.deepEqual(pick(audit.parseArgs(['--since', '0'])), { since: 0, settled: 0 });
+  assert.deepEqual(pick(audit.parseArgs(['--since', '30'])), { since: 30, settled: 30 });
+  // A rejected window falls back to both defaults, not to one of them twice.
+  assert.deepEqual(pick(audit.parseArgs(['--since', 'soon'])), { since: 14, settled: 3 });
+});
+
 // `--since` is the one flag here that validates before it consumes. A token that
 // is not a number was never its value, so it stays in the stream to be read as
 // whatever else it is -- and the flag that follows a forgotten number is the one
