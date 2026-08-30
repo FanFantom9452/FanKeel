@@ -83,7 +83,7 @@ no state and `scripts/ledger.js` is the only thing that needs both.
 1. In `skills/fankeel-plan/SKILL.md`, immediately before the line
    `Every task carries an **Interfaces** block:`, insert:
 
-```markdown
+````markdown
 Every task carries a **Files** block:
 
 ```markdown
@@ -101,7 +101,7 @@ This block is what decides whether two tasks may be implemented at the same
 time, and it is what the parent stages when the task lands. A path missing from
 it is a file nobody may write.
 
-```
+````
 
 2. In the same file, in the `## No placeholders` list, after the line
    `- a task with no **Dispatch:** line`, add:
