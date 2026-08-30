@@ -86,8 +86,8 @@ and refuses rather than guessing. It was the last operation without a script, an
 it failed the way unsupported steps fail — quietly, leaving no registry at all,
 with the missing badge as the only symptom.
 
-It also sets the badge itself on `start`, `task`, `stage`, `route`, `adopt` and
-`down`.
+It also sets the badge itself on `start`, `task`, `stage`, `route`, `guard`,
+`adopt` and `down`.
 The hook runs *before* a prompt, so a badge left to it alone appears only when the
 user types again — and for that whole gap, turning the mode on is indistinguishable
 from failing to turn it on.
