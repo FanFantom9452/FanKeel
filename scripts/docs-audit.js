@@ -34,6 +34,15 @@ const { plural, section } = require('../lib/report.js');
 
 const DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_SINCE = 14;          // the fortnight this exists to serve
+// The landed check asks a different question from drift, so it cannot share
+// drift's number. Drift measures a gap — how long a document has been wrong
+// while the code moved on — and a fortnight is the threshold worth reading.
+// Landed measures a settle period: everything the plan named exists, and nobody
+// has come back to it. Borrowing the fortnight made the check unable to fire at
+// all on a repository younger than one, which is every repository for its first
+// two weeks. Three days is past a long weekend; a plan touched today is
+// somebody still working, and archiving is offered, never done.
+const LANDED_QUIET = 3;
 const MAX_PAIRS = 12;              // a reading list, and one of 25 is not read
 const LANDMARK = 4;                // documents naming a file, above which it is common ground
 const HISTORY = 4000;              // commits walked for dates; plenty, and bounded
@@ -304,7 +313,7 @@ function diagramsIn(text) {
 
 // --- the sweep --------------------------------------------------------------
 
-function sweep(root, since, now) {
+function sweep(root, since, now, settled = LANDED_QUIET) {
     const listed = trackedFiles(root);
     if (!listed) return null;
 
@@ -480,7 +489,7 @@ function sweep(root, since, now) {
     for (const rel of markdown) {
         if (docs.roleOf(tree, rel) !== 'plan') continue;
         const at = dates.at(rel);
-        if (!at || daysBetween(now, at) < since) continue;
+        if (!at || daysBetween(now, at) < settled) continue;
         const { code: named, unbuilt } = points.get(rel);
         if (!named.length || unbuilt.length) continue;
         landed.push({ file: rel, age: daysBetween(now, at), named: named.length });
@@ -791,16 +800,22 @@ function parseArgs(argv) {
         options: { root: { type: 'string' }, since: { type: 'string' }, quiet: { type: 'boolean' } },
     });
     const n = parseInt(values.since, 10);
+    // An explicit `--since` sets both, so `--since 0` still forces every check
+    // to report and stays the way to see what the two windows are holding back.
+    // Only the defaults differ, because only the defaults were ever one number
+    // answering two questions.
+    const given = Number.isFinite(n) && n >= 0;
     return {
         root: typeof values.root === 'string' ? values.root : process.cwd(),
-        since: Number.isFinite(n) && n >= 0 ? n : DEFAULT_SINCE,
+        since: given ? n : DEFAULT_SINCE,
+        settled: given ? n : LANDED_QUIET,
         quiet: Boolean(values.quiet),
     };
 }
 
 function main(argv, now) {
-    const { root, since, quiet } = parseArgs(argv);
-    const r = sweep(root, since, typeof now === 'number' ? now : Date.now());
+    const { root, since, settled, quiet } = parseArgs(argv);
+    const r = sweep(root, since, typeof now === 'number' ? now : Date.now(), settled);
     const bad = defects(r) > 0;
     const text = report(r);
     return { text: quiet && !bad ? '' : text, code: bad ? 1 : 0 };

@@ -333,12 +333,35 @@ test('a plan naming something unbuilt only inside a fence has still landed', () 
   assert.equal(sweep(root).landed.length, 1);
 });
 
-test('a plan written this week is not judged at all', () => {
+test('a plan still inside the settle period is not judged at all', () => {
   const root = withTree(tree({
     'docs/plans/2026-08-20-x.md': { body: 'add `lib/badge.js`\n', age: 1 },
     'lib/badge.js': 'x\n',
   }), 'flat');
   assert.deepEqual(sweep(root).landed, []);
+});
+
+// The settle period is landed's own number, and these two go through `sweep`'s
+// default rather than the helper above, which pins 14 so the drift fixtures can
+// state their ages. What this check asks is whether anyone has come back to the
+// plan — not how long a document has been wrong, which is what the drift window
+// measures. Four days is quiet; today is somebody still working.
+test('a landed plan quiet for four days is reported under the default settle period', () => {
+  const root = withTree(tree({
+    'docs/plans/2026-01-01-x.md': { body: 'add `lib/badge.js`\n', age: 4 },
+    'lib/badge.js': 'x\n',
+  }), 'flat');
+  const r = audit.sweep(root, audit.DEFAULT_SINCE, NOW);
+  assert.equal(r.landed.length, 1);
+  assert.equal(r.landed[0].age, 4);
+});
+
+test('a landed plan touched today is held back by the settle period', () => {
+  const root = withTree(tree({
+    'docs/plans/2026-01-01-x.md': { body: 'add `lib/badge.js`\n', age: 0 },
+    'lib/badge.js': 'x\n',
+  }), 'flat');
+  assert.deepEqual(audit.sweep(root, audit.DEFAULT_SINCE, NOW).landed, []);
 });
 
 // --- the index --------------------------------------------------------------
