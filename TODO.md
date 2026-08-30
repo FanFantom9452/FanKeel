@@ -32,6 +32,7 @@ heading is one nobody said the state of.
 
 ## Needs a decision
 
+- A path holding only ignored content reads as undecided *and* as ignored weight — [scripts/residue.js](scripts/residue.js). `.claude/` here; git cannot record it. 08-31.
 - The window for [scripts/docs-audit.js](scripts/docs-audit.js). Measured 08-31: at 14d the landed-plan check cannot fire on a repo younger than the window; `--since 0` found 8 here. 08-31.
 
 ## Waiting
