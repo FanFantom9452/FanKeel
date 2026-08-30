@@ -228,7 +228,7 @@ the user can disagree with it:
 | Class | Route | What it means |
 |---|---|---|
 | `spike` | `survey,build` | a feasibility question whose output is an answer. Anything built is labelled throwaway |
-| `bounded` | `survey,design,build,verify,land` | a scoped change to a flow already here. Design happens in chat: no spec file, no plan file |
+| `bounded` | `survey,design,build,verify,land` | a scoped change to a flow already in this repository. Design happens in chat: no spec file, no plan file |
 | `architectural` | all seven | a new subsystem, or a change to an interface something else depends on |
 
 Bounded measures the repository, not your familiarity with it: it means the flow
@@ -295,9 +295,6 @@ Declarations whose **name** carries the term are listed before ones that only
 share a path with it, and the report says how many of each. The list is capped,
 so on a large repository the tail is cut — if the count is far above the cap, say
 so rather than treating what you can see as the whole answer.
-
-"Nothing matched" is a finding — report it, and say which terms were tried,
-because the next person needs to know a synonym was already ruled out.
 
 Short tasks may skip forward — a one-line typo fix does not need a design stage —
 but say which stages you are skipping and why. Skipping silently is how `verify`
@@ -375,9 +372,6 @@ is obvious" is the reasoning that turns a gate back into a step.
 
 When they advance, run `task.js stage <name>`; the statusline badge reads it, so
 `▌FANKEEL DESIGN` becoming `▌FANKEEL BUILD` is how they see the move.
-
-`land` has no successor. What follows it is a new task, which is a decision, not
-a transition.
 
 ## The `audit` stage, and other people's plugins
 

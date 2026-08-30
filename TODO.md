@@ -32,8 +32,6 @@ heading is one nobody said the state of.
 
 ## Needs a decision
 
-- Whether a one-line rule needs a copy in the stage skill too — `Nothing matched`, `land` has no successor, the class table. [skills/fankeel-survey/SKILL.md](skills/fankeel-survey/SKILL.md). 08-31.
-
 ## Waiting
 
 - Whether a stated `Done when` actually ends the gate loop, or only renames it — [lib/stages.js](lib/stages.js), ALWAYS[0]'s `or none`. Reported live once; only use says. 08-29.
