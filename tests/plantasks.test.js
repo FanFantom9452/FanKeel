@@ -70,3 +70,88 @@ test('groups keep the plan order and split on the first conflict', () => {
     + task(4, ['docs/d.md'], [], [], []);
   assert.deepEqual(groups(text), [[1], [2, 3, 4]]);
 });
+
+// A description after the em dash can itself hold backticked words; only the
+// first backtick on the line is the declared path, or the description leaks
+// into the file list.
+test('only the first backticked token on an entry line is taken', () => {
+  const text = [
+    '## Task 1: name',
+    '',
+    '**Files:**',
+    '- Modify: `lib/stages.js` — the `plan` stage\'s `**Dispatch:**` rule',
+    '',
+  ].join('\n');
+  const [t] = parseTasks(text);
+  assert.deepEqual(t.modify, ['lib/stages.js']);
+});
+
+// A fenced code block documenting the block's own format must not thereby
+// declare files.
+test('a fenced code block is not read as a declaration', () => {
+  const text = [
+    '## Task 1: name',
+    '',
+    '**Files:**',
+    '- Modify: `lib/a.js`',
+    '',
+    '```markdown',
+    '**Files:**',
+    '- Modify: `path`',
+    '- Test: `path`',
+    '```',
+    '',
+  ].join('\n');
+  const [t] = parseTasks(text);
+  assert.deepEqual(t.modify, ['lib/a.js']);
+  assert.deepEqual(t.test, []);
+});
+
+// A four-backtick fence nests a three-backtick example inside it; the inner
+// backticks are content, not a closer, so nothing inside either is declared.
+test('a shorter fence nested inside a longer one is not a closer', () => {
+  const text = [
+    '## Task 1: name',
+    '',
+    '**Files:**',
+    '- Modify: `lib/a.js`',
+    '',
+    '````markdown',
+    '**Files:**',
+    '- Modify: `path`',
+    '',
+    '```markdown',
+    '**Files:**',
+    '- Modify: `path`',
+    '- Test: `path`',
+    '```',
+    '',
+    '````',
+    '',
+  ].join('\n');
+  const [t] = parseTasks(text);
+  assert.deepEqual(t.modify, ['lib/a.js']);
+  assert.deepEqual(t.test, []);
+});
+
+// Document order, not task number — the build loop reads the file in this
+// order, and that is a choice, not an accident of falling out of the loop.
+test('groups follow document order, not task number', () => {
+  const text = task(2, ['lib/b.js'], [], [], []) + task(1, ['lib/a.js'], [], [], []);
+  assert.deepEqual(groups(text), [[2, 1]]);
+});
+
+// The fail-closed path exercised through the real parser, not a hand-built
+// object: a **Files:** block with a Test entry and no Modify entry.
+test('a parsed task with a Test entry but no Modify entry fails closed', () => {
+  const text = [
+    '## Task 1: name',
+    '',
+    '**Files:**',
+    '- Test: `tests/a.test.js`',
+    '',
+  ].join('\n');
+  const [a] = parseTasks(text);
+  const [b] = parseTasks(task(2, ['lib/b.js'], [], [], []));
+  assert.equal(conflict(a, b), 'undeclared');
+});
