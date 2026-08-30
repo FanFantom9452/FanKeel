@@ -449,9 +449,12 @@ flowchart TD
     T1["record BASE"]
     T2{"the task's <b>Dispatch:</b> line"}
     T2a["<b>implement here</b><br/><i>every changed line traces to the task.<br/>Do not improve adjacent code on the way past</i>"]
-    T2b["<b>dispatch an implementer</b><br/>pass the model explicitly<br/><i>say how many, and on which model</i><br/><i>it commits and returns a sha, never a diff</i>"]
+    T2b{"<b>dispatch the group</b><br/>groups says which tasks go together<br/><i>pass the model explicitly, say how many</i>"}
+    T2b1["implement one task"]
+    T2b2["implement one task"]
+    T2b3["…"]
     T3["test first where the task says so<br/><i>a test you did not watch fail is a test<br/>whose meaning you do not know</i>"]
-    T4["commit"]
+    T4["<b>commit</b><br/>the parent, one task at a time,<br/>as each implementer returns<br/><i>never the implementer — it returns paths, never a diff</i>"]
     T5["<b>one reviewer</b><br/>the task text, BASE..&lt;sha&gt;,<br/>and map.md — never the session's history"]
     T6{"findings?"}
     T7["fix round<br/><i>bounded at five</i>"]
@@ -465,8 +468,13 @@ flowchart TD
     T2 -- "implementer, model" --> T2b
     T2a --> T3
     T3 --> T4
+    T2b --> T2b1
+    T2b --> T2b2
+    T2b --> T2b3
+    T2b1 --> T4
+    T2b2 --> T4
+    T2b3 --> T4
     T4 --> T5
-    T2b --> T5
     T5 --> T6
     T6 -- yes --> T7
     T7 --> T5
