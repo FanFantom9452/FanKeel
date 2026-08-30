@@ -3,7 +3,7 @@ name: fankeel-verify
 description: The verify stage — evidence before claims, requirements checked line by line, and the documents this change just made false. Use for the verify stage of a fankeel task, before claiming work is complete or passing, before a commit or PR, or when checking whether a change broke the documentation describing it.
 version: 0.40.0
 status: current
-last_verified: 2026-08-29
+last_verified: 2026-08-30
 source_of_truth: lib/stages.js, scripts/docs-check.js
 ---
 
