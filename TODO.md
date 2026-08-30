@@ -30,11 +30,12 @@ heading is one nobody said the state of.
 
 ## Ready
 
+- `task.js guard` changes the mode without writing the badge, so the statusline lags a command — [scripts/task.js](scripts/task.js), `cmdGuard`. Predates the default change. 08-30.
+
 ## Needs a decision
 
 - The last spelling of that one sentence — [scripts/orient.js](scripts/orient.js) prints `(N more not listed)` unindented under no heading, so it is not a `section()` fold. 08-29.
 - Whether a pairs entry must share two files rather than one — [scripts/docs-audit.js](scripts/docs-audit.js) reports 26 where 7 would fit the cap, but unpicks a shipped test. 08-29.
-- Default the scope guard on: writes outside the hooks are claimed from git now — [docs/collisions.md](docs/collisions.md), "Making it block". Two gaps left: a one-prompt lag, and what git cannot see.
 - A feature asked for mid-task goes to TODO.md unless it blocks this task or is closely related; where the boundary is genuinely ambiguous, ask rather than decide — [lib/stages.js](lib/stages.js).
 - Which page owns the `flat`/`phased` shapes and survey's worked example — [docs/documents.md](docs/documents.md) × [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md). Near-verbatim in both. 08-30.
 
@@ -52,4 +53,5 @@ heading is one nobody said the state of.
 - Whether the pairs [scripts/docs-audit.js](scripts/docs-audit.js) picks are the ones worth reading — [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md), "What is still a guess".
 - Whether a fortnight is the right window for [scripts/docs-audit.js](scripts/docs-audit.js). Fourteen days matched ponytail, not measurement.
 - `fork` also takes a new session id, but its predecessor may still be live, so offering Adopt would take a task off a running session — [hooks/carry.js](hooks/carry.js).
+- Whether `deny` needs the liveness fallback flipped — [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md), "Then it stopped being opt-in". Unmeasurable liveness blocks. 08-30.
 - Whether `fanoutSync`'s all-or-nothing payload ever costs anything — [lib/tracked.js](lib/tracked.js). One 64MB overflow discards every answer and re-reads all thirty serially. 08-30.

@@ -21,6 +21,7 @@ const badge = require('../lib/badge.js');
 const context = require('../lib/context.js');
 const { render, renderInit } = require('../lib/render.js');
 const { overlapPaths } = require('../lib/overlap.js');
+const { guardMode } = require('../lib/guard.js');
 const { positionIn } = require('../lib/stages.js');
 const { claimWrites } = require('../lib/dirty.js');
 const { run, parse } = require('../lib/hook.js');
@@ -202,7 +203,12 @@ function main(raw) {
                 steps: at.steps,
                 title: mine.task,
                 where: mineClaims.join(' '),
-                guard: mine.guard,
+                // The mode, not the field. They were the same thing while an
+                // absent field meant off; since the default became `ask` the
+                // field is empty on exactly the sessions the guard is loudest
+                // on, and a statusline reading it raw would say off while the
+                // prompts were landing.
+                guard: guardMode(mine) || '',
                 others: overlapping > 0 ? overlapping : '',
             });
             badge.pruneBadges(cfg, sessionId, BADGE_TTL_MS);

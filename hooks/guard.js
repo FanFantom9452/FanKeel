@@ -25,10 +25,18 @@ function main(raw) {
     if (!mine || mine.active !== true) return;
 
     // Asked here rather than left to `decide`, because everything below this line
-    // reads a directory and the guard is off unless a session opted in — which is
-    // the default, on every Edit in every session on the machine. `decide` asks
-    // again so the module stays answerable on its own; two comparisons is not a
-    // price worth a second entry point.
+    // reads a directory. It used to be the gate that mattered: the guard was off
+    // unless a session opted in, so almost every edit stopped on this line. Since
+    // 2026-08-30 it stops only the sessions that opted out, and the line above is
+    // what keeps this off the machine's other terminals. `decide` asks again so
+    // the module stays answerable on its own; two comparisons is not a price
+    // worth a second entry point.
+    //
+    // What the default cost, measured 2026-08-30 against a three-entry registry:
+    // the reads below run 1.7ms for a session on its own and 6ms where there is
+    // a neighbour to check liveness for. Both are inside the noise of spawning
+    // the node process this hook already is, which is why the gate moved rather
+    // than grew.
     if (!guardMode(mine)) return;
 
     const file = targetOf(payload);

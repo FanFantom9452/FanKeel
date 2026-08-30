@@ -27,8 +27,9 @@ file called `a*.ts` was read as a wildcard and collided with every `.ts` beside
 it. A warning between two sessions that share nothing is the one thing a
 collision warning must never be.
 
-By default an overlap is **reported, not blocked** — the warning rides on every
-prompt and `[FANKEEL:CLASH]` sits in the statusline.
+An overlap is always **reported** — the warning rides on every prompt and
+`[FANKEEL:CLASH]` sits in the statusline. Since 2026-08-30 it also raises a
+permission prompt by default, which *Making it block* below is about.
 
 ## Nobody declares anything
 
@@ -100,21 +101,40 @@ one field on its own entry:
 
 | `guard` | What an edit to a file another live session has claimed does |
 |---|---|
-| absent | Nothing. The warning is all you get. This is the default. |
-| `"ask"` | Raises a permission prompt naming the task that holds the file. |
+| absent | Raises a permission prompt naming the task that holds the file. **This is the default.** |
+| `"ask"` | The same thing, chosen out loud. |
 | `"deny"` | Is refused outright. |
+| `"off"` | Nothing. The warning is all you get. |
 
-It is off by default on purpose. A block is only as good as the claims it reads,
-and two gaps remain in those. A write outside git's view leaves no claim at all —
-a repository fankeel cannot ask, an ignored path, a file under no repository. And
-a write that git can see is claimed on the **next** prompt, so between the write
-and that prompt the file reads as unheld. A file nobody has claimed is still not
-proof nobody is in it, and a plugin whose first act is to lock you out of your own
-repository does not get a second chance. Turn it on for the sessions that need it,
-and `"ask"` before `"deny"`.
+It defaulted to off until 2026-08-30, and the reason on the record was that a
+block is only as good as the `scope` field somebody declared. Nothing has
+declared a scope since observed claims shipped, so that reason went out with the
+field it named.
 
-What has changed is the size of the gap. It used to be every write through every
-tool but three; it is now a lag of one prompt, and whatever git cannot see.
+The two gaps are not the reason either, though they are real and they are still
+here. A write outside git's view leaves no claim at all — a repository fankeel
+cannot ask, an ignored path, a file under no repository. A write git *can* see is
+claimed on the **next** prompt, so between the write and that prompt the file
+reads as unheld. And two smaller ones in the same pass: a dirty file whose mtime
+is not later than the task's `started` is dropped without a word, and a pass
+holding more than sixty paths claims none of them. It used to be every write
+through every tool but three; it is now those four.
+
+Every one of them makes the guard *miss* a collision. Missing one is exactly what
+the old default did on purpose, so a gap that misses more cannot be the argument
+for missing everything.
+
+What would have been an argument is **over**-blocking, and there is one place it
+comes from: liveness that cannot be measured counts as live. That direction was
+chosen while the default was a warning, and it survives the default becoming
+`ask` because an `ask` costs one keypress and names its holder on the way past.
+It is also why the default is `ask` and not `deny` — `deny` is where an
+unreadable config directory would cost something real, and `deny` is the one
+nobody gets without asking for it.
+
+`task.js guard off` puts it back to a warning. It writes the word rather than
+deleting the field: absence means `ask` now, so deleting it would turn opting out
+into opting in.
 
 Two rules keep it from becoming a lockout:
 

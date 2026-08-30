@@ -267,6 +267,24 @@ test('a clash takes the badge slot, and leaves the lead line its stage', () => {
   assert.match(lead, /^others=1$/m);
 });
 
+// The lead line carries the guard so a statusline can show it, and what it has
+// to carry is the mode rather than the field. Since the default became `ask` the
+// field is empty on exactly the sessions the guard is loudest on, so a raw read
+// would report off while the prompts were landing.
+test('the lead line reports the guard that is running, not the field', () => {
+  const root = tmp('fankeel-hook-');
+
+  const on = tmp('fankeel-cfg-');
+  seed(root, MINE, { stage: 'build' });
+  run({ session_id: MINE, cwd: root }, on);
+  assert.match(leadOf(on, MINE), /^guard=ask$/m, 'no field means the default, which is ask');
+
+  const off = tmp('fankeel-cfg-');
+  seed(root, MINE, { stage: 'build', guard: 'off' });
+  run({ session_id: MINE, cwd: root }, off);
+  assert.doesNotMatch(leadOf(off, MINE), /^guard=/m, 'off is the one that paints nothing');
+});
+
 test('an overlapping session whose process has exited paints nothing', () => {
   const root = tmp('fankeel-hook-');
   const cfg = tmp('fankeel-cfg-');
