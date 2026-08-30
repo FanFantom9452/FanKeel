@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-30
+last_verified: 2026-08-31
 source_of_truth: lib/overlap.js, lib/guard.js, lib/live.js, lib/registry.js, lib/dirty.js, scripts/task.js, scripts/orient.js, hooks/touch.js, hooks/inject.js
 ---
 
@@ -144,10 +144,11 @@ Two rules keep it from becoming a lockout:
   `CLAUDE_CONFIG_DIR` moves that directory, so each entry carries its own and a
   reader checks the neighbour against the one the neighbour named — reading only
   this session's own reported a running neighbour as dead, confidently, and its
-  claims then dropped out of every reader. When a directory cannot be read, when
-  an entry does not say which one it uses, or when this session's own id is
-  missing from what was read, every claim counts as live, because warning too
-  much is the failure worth having.
+  claims then dropped out of every reader. When a directory cannot be read, or
+  when this session's own id is missing from what was read, every claim counts as
+  live, because warning too much is the failure worth having. An entry that names
+  no directory is the one case that is *not* waved through: it is checked against
+  the directory this session already scanned, and can be judged dead there.
 - **The older task holds.** When both sessions claim the file, the newer one
   yields — so two sessions that both reached it cannot block each other into a
   stalemate.

@@ -4,7 +4,7 @@ description: Audit documentation against the code it describes — dead referenc
 argument-hint: "[--root <dir>] [--since <days>]"
 version: 0.40.0
 status: current
-last_verified: 2026-08-30
+last_verified: 2026-08-31
 source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js
 ---
 
@@ -57,7 +57,7 @@ somebody could check by hand.
 The last two are context. The first three fail, because a command that always
 exits non-zero has an exit code that means nothing.
 
-**Two of the five need git and three do not**, so run it outside a repository
+**Three of the five need git and two do not**, so run it outside a repository
 too. That is where it finds the most: in one real workspace ten of eleven
 projects had never been `git init`-ed, and every scanner that starts from what is
 committed reported nothing at all about them.

@@ -285,7 +285,7 @@ function report(result) {
             result.worktrees.map((w) => w.path + '  (' + w.branch + ')')));
     } else {
         lines.push('fankeel residue — not a git repository.',
-            'What is committed and what is ignored are what the first three sections',
+            'What is committed and what is ignored are what three of the five sections',
             'compare against, so those are absent. The rest needs only the filesystem.');
     }
 

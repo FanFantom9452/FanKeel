@@ -3,7 +3,7 @@ name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.40.0
 status: current
-last_verified: 2026-08-30
+last_verified: 2026-08-31
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js
 ---
 
@@ -125,7 +125,9 @@ by the same prompt hook that refreshes `updated`.
 ```
 
 A record written before claims shipped carries `scope` where `claims` is here. It
-is read as the claim list, and the old field goes on the next write.
+is read as the claim list, and the old field goes when `task` renames the task —
+that is the one writer that deletes it, because it is the one clearing the claim
+list on purpose. Every other write leaves it where it is.
 
 The current session id is in the `FANKEEL ACTIVE` block when the mode is on. When
 it is not, the `/fankeel` prompt is answered with it: one line, from the hook that
@@ -147,6 +149,7 @@ node <plugin>/scripts/task.js stage   build --session <id>
 node <plugin>/scripts/task.js note    "..." --session <id>
 node <plugin>/scripts/task.js next    "..." --session <id>
 node <plugin>/scripts/task.js guard   ask|deny|off --session <id>
+node <plugin>/scripts/task.js route   "build,verify" --session <id>
 node <plugin>/scripts/task.js down    --session <id>
 node <plugin>/scripts/task.js adopt   <other-session-id> --session <id>
 node <plugin>/scripts/task.js clear   <session-id> [--force] --session <id>
@@ -863,8 +866,9 @@ Two things it deliberately does not do, so do not describe it as a lock. A claim
 whose session has exited never blocks — liveness is that session's own file under
 `sessions/` in the config directory **it recorded**, plus a live process behind
 its pid. `CLAUDE_CONFIG_DIR` moves that directory, so each entry names its own and
-readers check the neighbour against the one the neighbour named; a session that
-never said reads as live, and so does a directory that cannot be read. A terminal
+readers check the neighbour against the one the neighbour named; a directory that
+cannot be read counts as live, while a session that named no directory is checked
+against the one already scanned and can be judged dead there. A terminal
 that is gone holds nothing shut. And when both sessions hold the file, the older
 task holds and the newer yields, so two sessions that both reached it cannot block
 each other into a stalemate.

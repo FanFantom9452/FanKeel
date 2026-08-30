@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: archived
 last_verified: 2026-08-28
 source_of_truth: lib/map.js, lib/docs.js, scripts/survey.js
 ---

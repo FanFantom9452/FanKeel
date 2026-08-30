@@ -32,6 +32,8 @@ heading is one nobody said the state of.
 
 ## Needs a decision
 
+- The window for [scripts/docs-audit.js](scripts/docs-audit.js). Measured 08-31: at 14d the landed-plan check cannot fire on a repo younger than the window; `--since 0` found 8 here. 08-31.
+
 ## Waiting
 
 - Whether a stated `Done when` actually ends the gate loop, or only renames it — [lib/stages.js](lib/stages.js), ALWAYS[0]'s `or none`. Reported live once; only use says. 08-29.
@@ -44,7 +46,6 @@ heading is one nobody said the state of.
 - A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI, so the default reminder is what the three get.
 - Whether `audit` earns a place on routes that are not documentation work — [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md), "What is still a guess".
 - Whether the pairs [scripts/docs-audit.js](scripts/docs-audit.js) picks are the ones worth reading — [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md), "What is still a guess".
-- Whether a fortnight is the right window for [scripts/docs-audit.js](scripts/docs-audit.js). Fourteen days matched ponytail, not measurement.
 - `fork` also takes a new session id, but its predecessor may still be live, so offering Adopt would take a task off a running session — [hooks/carry.js](hooks/carry.js).
 - Whether `deny` needs the liveness fallback flipped — [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md), "Then it stopped being opt-in". Unmeasurable liveness blocks. 08-30.
 - Whether `fanoutSync`'s all-or-nothing payload ever costs anything — [lib/tracked.js](lib/tracked.js). One 64MB overflow discards every answer and re-reads all thirty serially. 08-30.
