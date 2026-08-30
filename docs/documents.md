@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-08-30
-source_of_truth: lib/docs.js, lib/map.js, scripts/layout.js
+last_verified: 2026-08-31
+source_of_truth: lib/docs.js, lib/map.js, scripts/layout.js, scripts/docs-audit.js
 ---
 
 # Where documents live
