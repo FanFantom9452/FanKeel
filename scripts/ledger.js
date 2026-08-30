@@ -98,10 +98,18 @@ function main(argv) {
             return fail('No plan at ' + file);
         }
         const tasks = plantasks.parseTasks(text);
-        const rows = plantasks.groups(text);
+        const rows = plantasks.groups(tasks);
         if (!tasks.length) return 'fankeel ledger — no tasks in ' + file;
+        // A task that declared no files conflicts with everything, so it lands
+        // alone and the grouping looks merely unlucky rather than incomplete.
+        // Naming it is what makes a missing `**Files:**` block visible at the
+        // moment it costs something, rather than a plan rule nobody re-read.
+        const undeclared = tasks.filter((t) => !t.modify.length).map((t) => t.n);
         return 'fankeel ledger — ' + rows.length + ' groups over ' + tasks.length + ' tasks\n\n'
             + rows.map((g, i) => '  ' + (i + 1) + ': ' + g.join(', ')).join('\n')
+            + (undeclared.length
+                ? '\n\nNo Files block, so serialised against everything: ' + undeclared.join(', ')
+                : '')
             + '\n\nOne group is one response. Their files are disjoint and neither'
             + '\nconsumes what the other produces. Commit them one at a time as'
             + '\nthey return, in the order listed.';

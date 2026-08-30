@@ -206,3 +206,18 @@ test('groups reports the parallelisable sets of a plan', () => {
   assert.match(out, /1 groups over 2 tasks/);
   assert.match(out, /1: 1, 2/);
 });
+
+// A task with no Files block conflicts with everything, so it lands alone and
+// the grouping reads as merely unlucky rather than as a plan that never said
+// what the task owns. Naming it is what makes the difference visible before the
+// dispatch rather than after it.
+test('groups names the tasks that declared no files', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, [
+    '## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', '',
+    '## Task 2: two', '', '**Files:**', '- Test: `tests/b.test.js`', '',
+  ].join('\n'));
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(out, /No Files block, so serialised against everything: 2/);
+});

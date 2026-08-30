@@ -165,3 +165,12 @@ test('a group is not capped at the dispatch ceiling', () => {
   const text = [1, 2, 3, 4, 5].map((n) => task(n, ['lib/f' + n + '.js'], [], [], [])).join('');
   assert.deepEqual(groups(text), [[1, 2, 3, 4, 5]]);
 });
+
+// Two questions about one plan should cost one parse. The command line needs
+// the tasks for the count and for which of them declared nothing, and handing
+// `groups` the text again made it read the same file a second time to answer
+// the third.
+test('groups takes tasks already parsed as readily as text', () => {
+  const text = task(1, ['lib/a.js'], [], [], []) + task(2, ['lib/b.js'], [], [], []);
+  assert.deepEqual(groups(parseTasks(text)), groups(text));
+});
