@@ -65,6 +65,10 @@ const BOILERPLATE = new Set(['__init__.py', '__main__.py', 'index.js', 'index.ts
 const CONVENTION_SHARE = 0.5;
 const MERMAID_FENCE = /^ {0,3}(?:```|~~~)+\s*mermaid\b/i;
 const FENCE_END = /^ {0,3}(?:```|~~~)+\s*$/;
+// Any fence line, opener or closer. `FENCE_END` matches only a bare closer,
+// which is all `diagramsIn` needs; a pass that has to know whether it is inside
+// a block needs the opener too, info string and all.
+const FENCE_LINE = /^ {0,3}(?:```|~~~)/;
 
 // `<plugin>/scripts/task.js` is a real path with a placeholder standing in for
 // the part that varies by installation. `PATHISH` rejects the angle brackets, so
@@ -146,10 +150,11 @@ const daysBetween = (a, b) => Math.floor((a - b) / DAY);
 // `roots` is the same guard `docs-check` learned the hard way. Without it a plan
 // mentioning somebody else's tree in an example looks permanently unfinished.
 //
-// `contract` is the fourth source, and on this repository it is the largest: the
-// pages that name their subject only in frontmatter were eleven of twenty-one,
-// because a skill writes its script references inside a fenced block and neither
-// regex below reaches one.
+// `contract` is the fourth source. It was the largest here while a fenced block
+// was invisible — eleven of twenty-one pages named their subject only in
+// frontmatter, because that is where a skill's script references live. The fence
+// pass below reads them now, so the tag is back to declaring a subject a page
+// never writes out rather than standing in for one it writes in the wrong place.
 function pointsAt(root, rel, roots, contract) {
     const text = readFile(root, rel);
     if (text === null) return { code: [], markdown: [], unbuilt: [], body: [] };
@@ -186,6 +191,44 @@ function pointsAt(root, rel, roots, contract) {
             continue;
         }
         note(found);
+    }
+
+    // The third place a document names a path, and until now the only one
+    // nothing read: `LINK` wants brackets and `CODE` wants a span that opens and
+    // closes on one line, and a fenced block gives neither. Measured here on
+    // 2026-08-31: twenty pages named a script nowhere else, and twenty-one of
+    // those mentions had no `source_of_truth` tag putting them back — including
+    // three skill pages whose entire regex-visible subject was nothing at all.
+    //
+    // Tokens rather than a regex over the whole block, because a fence holds
+    // commands rather than prose: `node lib/badge.js --check` is three words and
+    // one of them is the path.
+    //
+    // Mermaid blocks are skipped. `diagramsIn` already reads those as the
+    // inventories they are, and read a second time here a graph naming thirteen
+    // modules would make all thirteen the subject of the page drawing it — which
+    // is `LANDMARK` territory for every one of them.
+    //
+    // Resolved or dropped, and never added to `unbuilt`: a fence is where the
+    // examples live, and a path in one that does not resolve is far more often
+    // somebody else's tree or a shell line than a file this document is waiting
+    // for. Holding a plan open on one of those would never end.
+    let fenced = null;
+    for (const line of text.split(/\r?\n/)) {
+        if (fenced === null) {
+            if (FENCE_LINE.test(line)) fenced = { mermaid: MERMAID_FENCE.test(line) };
+            continue;
+        }
+        if (FENCE_LINE.test(line)) { fenced = null; continue; }
+        if (fenced.mermaid) continue;
+        for (const word of line.split(/\s+/)) {
+            const token = word.replace(/^[`'"([]+/, '').replace(/[`'",;:)\]]+$/, '');
+            if (!token) continue;
+            const hit = PATHISH.exec(token) || PATHISH.exec(token.replace(PLACEHOLDER, ''));
+            if (!hit) continue;
+            const found = resolveRef(root, rel, hit[1]);
+            if (found !== null && found !== rel && isCode(found)) code.add(found);
+        }
     }
 
     // A `source_of_truth` entry naming code is the document declaring its

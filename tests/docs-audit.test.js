@@ -243,6 +243,35 @@ test('at one shared file, both bodies naming it outranks two frontmatter tags', 
   assert.deepEqual([r.overlaps[0].a, r.overlaps[0].b], ['docs/03-c.md', 'docs/04-d.md']);
 });
 
+// A skill page writes every script it names inside a fenced block, and neither
+// regex reached one — so `source_of_truth` was carrying the whole subject, and
+// only where somebody had remembered to write the tag. Measured on this
+// repository on 2026-08-31: twenty pages named a path nowhere else, and
+// twenty-one of those mentions had no frontmatter tag putting them back.
+test('a path named only inside a fenced block is still a subject', () => {
+  const root = withTree(tree({
+    'docs/01-a.md': 'run it:\n\n```\nnode lib/badge.js\n```\n',
+    'docs/02-b.md': 'or with a flag:\n\n```sh\nnode lib/badge.js --check\n```\n',
+    'lib/badge.js': 'x\n',
+  }), 'flat');
+  const r = sweep(root);
+  assert.equal(r.overlaps.length, 1);
+  assert.deepEqual([r.overlaps[0].a, r.overlaps[0].b], ['docs/01-a.md', 'docs/02-b.md']);
+});
+
+// A mermaid block is an inventory somebody typed, and `diagramsIn` already reads
+// it as one. Read a second time here, every file a graph draws would become a
+// subject of the page drawing it — and a graph naming thirteen modules would
+// pair that page against every other page naming any of the thirteen.
+test('a file named only inside a mermaid block is not a subject', () => {
+  const root = withTree(tree({
+    'docs/01-a.md': '```mermaid\ngraph TD\n  A --> lib/badge.js\n```\n',
+    'docs/02-b.md': 'the badge is written by `lib/badge.js`\n',
+    'lib/badge.js': 'x\n',
+  }), 'flat');
+  assert.deepEqual(sweep(root).overlaps, []);
+});
+
 // --- landed plans -----------------------------------------------------------
 
 test('a plan whose named files all exist, and which nobody has touched, looks landed', () => {
@@ -262,6 +291,18 @@ test('a plan still naming something unbuilt has not landed', () => {
     'lib/badge.js': 'x\n',
   }), 'flat');
   assert.deepEqual(sweep(root).landed, []);
+});
+
+// A fence is where the examples live: somebody else's tree, a shell line, a path
+// that is about to exist. Feeding those to `unbuilt` would hold every plan open
+// forever, so the fence pass adds a path only where it resolves and never adds
+// one that does not.
+test('a plan naming something unbuilt only inside a fence has still landed', () => {
+  const root = withTree(tree({
+    'docs/plans/2026-01-01-x.md': { body: 'add `lib/badge.js`\n\n```\nnode lib/future.js\n```\n', age: 60 },
+    'lib/badge.js': 'x\n',
+  }), 'flat');
+  assert.equal(sweep(root).landed.length, 1);
 });
 
 test('a plan written this week is not judged at all', () => {
