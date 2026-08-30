@@ -339,6 +339,9 @@ test('plan is a stage, and it sits between design and build', () => {
   assert.equal(nextStage('plan'), 'build');
 });
 
+// `**Files:**` is what a later task's conflict check reads, not `**Dispatch:**`
+// alone. If this rule stops naming it, the slot reverts to a convention with
+// nothing enforcing it, and two tasks sharing a file dispatch together silently.
 test('the plan stage names both required slots', () => {
   const rules = rulesFor('plan').join('\n');
   assert.match(rules, /\*\*Files:\*\*/);
