@@ -152,7 +152,7 @@ const daysBetween = (a, b) => Math.floor((a - b) / DAY);
 // regex below reaches one.
 function pointsAt(root, rel, roots, contract) {
     const text = readFile(root, rel);
-    if (text === null) return { code: [], markdown: [], unbuilt: [] };
+    if (text === null) return { code: [], markdown: [], unbuilt: [], body: [] };
     const code = new Set();
     const markdown = new Set();
     const unbuilt = new Set();
@@ -192,9 +192,15 @@ function pointsAt(root, rel, roots, contract) {
     // subject. One naming markdown is the deferral `defers` reads, and it is
     // left to it — the two never collide, because a page cannot defer to a `.js`
     // and cannot take a `.md` as a code subject.
+    // Snapshotted before the frontmatter merges in, which is the whole point of
+    // keeping it: a page that writes the path out has said something about the
+    // file, and a page that only tags it has not. Both are subjects; they are
+    // not both evidence, and `overlaps` orders on the difference.
+    const body = [...code];
+
     for (const target of declaredPaths(root, rel, contract)) if (isCode(target)) code.add(target);
 
-    return { code: [...code], markdown: [...markdown], unbuilt: [...unbuilt] };
+    return { code: [...code], markdown: [...markdown], unbuilt: [...unbuilt], body };
 }
 
 // The paths a document's `source_of_truth` names, resolved and in order. It is a
@@ -355,6 +361,11 @@ function sweep(root, since, now) {
     const pool = { pages: 0, silent: 0 };
     for (const rel of markdown) {
         if (!current(rel)) continue;
+        // A signpost shares a file with everything it links to and describes
+        // none of them, so every pair it forms is one nobody would read. Out of
+        // the denominator too: a page that cannot be in the list is not part of
+        // what the list was drawn from.
+        if (docs.isSignpost(rel)) continue;
         pool.pages++;
         const named = points.get(rel).code;
         if (!named.length) pool.silent++;
@@ -363,6 +374,17 @@ function sweep(root, since, now) {
             byTarget.get(target).push(rel);
         }
     }
+    // 1 when the page writes the path out where a reader meets it, 0 when the
+    // only mention is the frontmatter tag. Summed over both sides of a pair and
+    // over every file it shares, so it is a count of evidence rather than a
+    // flag. Memoised because a page in four pairs would otherwise rebuild it
+    // four times.
+    const bodyPaths = new Map();
+    const namedInBody = (rel, target) => {
+        if (!bodyPaths.has(rel)) bodyPaths.set(rel, new Set(points.get(rel).body));
+        return bodyPaths.get(rel).has(target) ? 1 : 0;
+    };
+
     const pairs = new Map();
     for (const [target, holders] of byTarget) {
         if (holders.length < 2) continue;
@@ -375,12 +397,20 @@ function sweep(root, since, now) {
             for (let j = i + 1; j < holders.length; j++) {
                 if (defers(holders[i], holders[j])) continue;
                 const key = holders[i] + '\u0000' + holders[j];
-                if (!pairs.has(key)) pairs.set(key, { a: holders[i], b: holders[j], shared: [] });
-                pairs.get(key).shared.push(target);
+                if (!pairs.has(key)) pairs.set(key, { a: holders[i], b: holders[j], shared: [], body: 0 });
+                const pair = pairs.get(key);
+                pair.shared.push(target);
+                pair.body += namedInBody(pair.a, target) + namedInBody(pair.b, target);
             }
         }
     }
+    // Shared count first, as it always was: two pages sharing five files
+    // disagree in more interesting ways than two sharing one. What is new is the
+    // tie, which twenty-one of this repository's twenty-eight pairs sat in — it
+    // broke alphabetically, so the cap kept whichever pairs sorted early rather
+    // than whichever had something written in them to read against each other.
     const overlaps = [...pairs.values()].sort((x, y) => y.shared.length - x.shared.length
+        || y.body - x.body
         || (x.a < y.a ? -1 : x.a > y.a ? 1 : 0));
 
     // 3. Plans whose work has landed.

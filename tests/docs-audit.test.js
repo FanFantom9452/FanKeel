@@ -204,6 +204,45 @@ test('a pairs list cut to its cap says how many it dropped', () => {
   assert.match(text, /\.\.\. and 3 more, not listed/);
 });
 
+// `README.md` and `TODO.md` point at half the repository by construction — a
+// bullet deferring work links to the file it is short of, which is not the same
+// as describing it. They stay `reference`, because a signpost that has gone
+// stale is exactly what drift is for; what they are not is half of a reading
+// pair. Measured on this repository on 2026-08-30: five of the twenty-one
+// single-file pairs were `TODO.md` against something, and none of the five was
+// a page anyone would read against another.
+test('a signpost at the repository root is not half of a pair', () => {
+  const root = withTree(tree({
+    'TODO.md': '- the ramp in `lib/badge.js` is still wrong\n',
+    'docs/01-a.md': 'the badge lives in `lib/badge.js`\n',
+    'docs/02-b.md': 'badges are written by `lib/badge.js`\n',
+    'lib/badge.js': 'x\n',
+  }), 'flat');
+  const r = sweep(root);
+  // The pair between the two documents survives; the two the signpost would
+  // have formed do not. Asserting only the count would pass if all three went.
+  assert.equal(r.overlaps.length, 1);
+  assert.deepEqual([r.overlaps[0].a, r.overlaps[0].b], ['docs/01-a.md', 'docs/02-b.md']);
+});
+
+// Frontmatter is how a skill page names the subject its fenced blocks hide from
+// the regex, and it stays a source — the test above this one is that case and
+// still passes. What it is not is equal evidence: two pages that only tag a
+// file have written nothing about it to read against anything. Ordering rather
+// than filtering, because the cap is what this is really about — 28 pairs, 12
+// shown, and the question is which 12.
+test('at one shared file, both bodies naming it outranks two frontmatter tags', () => {
+  const root = withTree(tree({
+    'docs/01-a.md': '---\nsource_of_truth: lib/badge.js\n---\n\nthe badge, in prose naming no path.\n',
+    'docs/02-b.md': '---\nsource_of_truth: lib/badge.js\n---\n\nthe badge again, and no path here.\n',
+    'docs/03-c.md': 'the badge is written by `lib/badge.js`\n',
+    'docs/04-d.md': 'and read back out of `lib/badge.js`\n',
+    'lib/badge.js': 'x\n',
+  }), 'flat');
+  const r = sweep(root);
+  assert.deepEqual([r.overlaps[0].a, r.overlaps[0].b], ['docs/03-c.md', 'docs/04-d.md']);
+});
+
 // --- landed plans -----------------------------------------------------------
 
 test('a plan whose named files all exist, and which nobody has touched, looks landed', () => {
