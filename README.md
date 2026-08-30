@@ -203,6 +203,21 @@ mechanical can. What the sweep does is turn "read all forty documents looking fo
 disagreements" into "read these two — they describe the same source file, and one
 has not been touched since before it changed".
 
+## Update
+
+```
+claude plugin marketplace update fankeel
+claude plugin update fankeel@fankeel
+```
+
+Restart Claude Code afterwards, the same as installing. The marketplace line comes
+first because `plugin update` compares against the listing already on disk — skip
+it and there is nothing newer to find. Given no name, `marketplace update`
+refreshes every marketplace at once.
+
+Re-running `claude plugin install` is not the update path: the plugin is already
+installed, and what needs refreshing is the marketplace listing behind it.
+
 ## Uninstall
 
 ```
