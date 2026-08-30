@@ -272,6 +272,34 @@ test('a file named only inside a mermaid block is not a subject', () => {
   assert.deepEqual(sweep(root).overlaps, []);
 });
 
+// A fence closes on a run of the same character at least as long as the one that
+// opened it — which is the only reason a block can quote another block. Toggling
+// on any fence-looking line reads the inner opener as the outer closer, and then
+// everything the inner block holds counts as outside every fence.
+// `docs/plans/2026-08-26-dispatch.md` is exactly this shape: a ````markdown block
+// opened at 398 and closed at 435, quoting a ``` one, with `scripts/survey.js`
+// named nowhere in it but between them.
+test('a fence nested inside a longer one is still inside it', () => {
+  const root = withTree(tree({
+    'docs/01-a.md': '````markdown\nquoting a block:\n\n```\nnode lib/badge.js\n```\n````\n',
+    'docs/02-b.md': 'the badge is written by `lib/badge.js`\n',
+    'lib/badge.js': 'x\n',
+  }), 'flat');
+  assert.equal(sweep(root).overlaps.length, 1);
+});
+
+// A fence holds commands, but it holds comments too, and a comment ends in a
+// full stop. `PATHISH` swallows the stop into the capture, so the path resolves
+// to nothing and is dropped — the trim has to take it off first.
+test('a path ending a sentence inside a fence keeps its extension', () => {
+  const root = withTree(tree({
+    'docs/01-a.md': '```sh\n# it all runs through lib/badge.js.\n```\n',
+    'docs/02-b.md': 'the badge is written by `lib/badge.js`\n',
+    'lib/badge.js': 'x\n',
+  }), 'flat');
+  assert.equal(sweep(root).overlaps.length, 1);
+});
+
 // --- landed plans -----------------------------------------------------------
 
 test('a plan whose named files all exist, and which nobody has touched, looks landed', () => {

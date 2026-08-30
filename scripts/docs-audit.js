@@ -65,10 +65,12 @@ const BOILERPLATE = new Set(['__init__.py', '__main__.py', 'index.js', 'index.ts
 const CONVENTION_SHARE = 0.5;
 const MERMAID_FENCE = /^ {0,3}(?:```|~~~)+\s*mermaid\b/i;
 const FENCE_END = /^ {0,3}(?:```|~~~)+\s*$/;
-// Any fence line, opener or closer. `FENCE_END` matches only a bare closer,
-// which is all `diagramsIn` needs; a pass that has to know whether it is inside
-// a block needs the opener too, info string and all.
-const FENCE_LINE = /^ {0,3}(?:```|~~~)/;
+// Any fence line, opener or closer, capturing the run that makes it one.
+// `FENCE_END` matches a bare closer of exactly three characters, which is all
+// `diagramsIn` needs; a pass that has to know whether it is inside a block needs
+// the opener too, info string and all, and needs the run's length to tell a
+// nested fence from the one that closes its parent.
+const FENCE_LINE = /^ {0,3}(`{3,}|~{3,})/;
 
 // `<plugin>/scripts/task.js` is a real path with a placeholder standing in for
 // the part that varies by installation. `PATHISH` rejects the angle brackets, so
@@ -216,14 +218,24 @@ function pointsAt(root, rel, roots, contract) {
     // for. Holding a plan open on one of those would never end.
     let fenced = null;
     for (const line of text.split(/\r?\n/)) {
+        const fence = FENCE_LINE.exec(line);
         if (fenced === null) {
-            if (FENCE_LINE.test(line)) fenced = { mermaid: MERMAID_FENCE.test(line) };
+            if (fence) fenced = { run: fence[1], mermaid: MERMAID_FENCE.test(line) };
             continue;
         }
-        if (FENCE_LINE.test(line)) { fenced = null; continue; }
+        // A closer is the same character, at least as long as the opener, and
+        // carries no info string. Everything else is content — which is the only
+        // way a block quoting another block keeps what it quotes. This file's own
+        // plans are that shape, and a bare toggle read the inner opener as the
+        // outer closer and dropped everything between them.
+        if (fence && fence[1][0] === fenced.run[0] && fence[1].length >= fenced.run.length
+            && line.replace(FENCE_LINE, '').trim() === '') { fenced = null; continue; }
         if (fenced.mermaid) continue;
         for (const word of line.split(/\s+/)) {
-            const token = word.replace(/^[`'"([]+/, '').replace(/[`'",;:)\]]+$/, '');
+            // The full stop goes with the brackets and quotes: a fence holds
+            // comments as well as commands, and `PATHISH` swallows a trailing
+            // stop into the capture, which then resolves to nothing.
+            const token = word.replace(/^[`'"([]+/, '').replace(/[`'",;:.)\]]+$/, '');
             if (!token) continue;
             const hit = PATHISH.exec(token) || PATHISH.exec(token.replace(PLACEHOLDER, ''));
             if (!hit) continue;
