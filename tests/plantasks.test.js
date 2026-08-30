@@ -155,3 +155,13 @@ test('a parsed task with a Test entry but no Modify entry fails closed', () => {
   const [b] = parseTasks(task(2, ['lib/b.js'], [], [], []));
   assert.equal(conflict(a, b), 'undeclared');
 });
+
+// `groups` says which tasks may run at once, never how many to send at once.
+// The ceiling of four dispatches in one response belongs to the loop, and a
+// group of five sliced into four and one is still safe because the five
+// conflict with none of each other. A cap added here would look like the same
+// rule and quietly serialise the fifth task forever.
+test('a group is not capped at the dispatch ceiling', () => {
+  const text = [1, 2, 3, 4, 5].map((n) => task(n, ['lib/f' + n + '.js'], [], [], [])).join('');
+  assert.deepEqual(groups(text), [[1, 2, 3, 4, 5]]);
+});

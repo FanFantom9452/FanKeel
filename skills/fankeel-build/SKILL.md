@@ -128,9 +128,14 @@ For each task the denominator does not list as complete:
    sessions, so it cannot protect a task from its own dispatches.
 
    **A whole group goes out in one response**, and the `groups` command above
-   says which tasks that is. Two tasks in different groups never run at once,
-   and the ceiling of four dispatches in one response still holds. Say how many
-   and on which model in the response that sends them.
+   says which tasks that is. Two tasks in different groups never run at once.
+   Say how many and on which model in the response that sends them.
+
+   `groups` answers which tasks *may* run together, never how many to send at
+   once, so it does not cap a group at anything. **The ceiling of four dispatches
+   in one response is still the ceiling**: a group of six goes out four and then
+   two. Slicing it is safe precisely because the six conflict with none of each
+   other, so any subset of a group is a group.
 3. **`in-session` only** — test first where the task says so. If you did not
    watch the test fail, you do not know it tests the right thing. A dispatched
    implementer did this inside its own run; it does not happen twice.
