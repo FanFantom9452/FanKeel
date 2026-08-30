@@ -31,6 +31,7 @@ heading is one nobody said the state of.
 ## Ready
 
 - `task.js guard` changes the mode without writing the badge, so the statusline lags a command — [scripts/task.js](scripts/task.js), `cmdGuard`. Predates the default change. 08-30.
+- `groups` never prints the tasks whose `**Files:**` is missing, though `conflict()` already computes `undeclared` — [scripts/ledger.js](scripts/ledger.js). Ruled deferred at verify. 08-30.
 
 ## Needs a decision
 

@@ -1,7 +1,7 @@
 ---
-status: design-intent
-date: 2026-08-30
-supersedes: none
+status: current
+last_verified: 2026-08-30
+source_of_truth: lib/plantasks.js, scripts/ledger.js, skills/fankeel-build/SKILL.md, skills/fankeel-plan/SKILL.md
 amends: docs/plans/2026-08-26-dispatch-design.md — the "Never two implementers in parallel" row
 ---
 
