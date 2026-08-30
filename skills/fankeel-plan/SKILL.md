@@ -86,6 +86,23 @@ deliverable needs them. Split only where a reviewer could meaningfully reject on
 task while approving its neighbour. Each task ends with an independently testable
 deliverable.
 
+Every task carries a **Files** block:
+
+```markdown
+**Files:**
+- Modify: `path` — what changes in it
+- Test: `path`
+```
+
+`Test:` lists the test files this task **writes**. A suite it merely has to keep
+green is not an entry: two tasks that both have to leave `npm test` passing are
+not in conflict, and listing it as though they were is how a plan serialises
+work that could have run at once.
+
+This block is what decides whether two tasks may be implemented at the same
+time, and it is what the parent stages when the task lands. A path missing from
+it is a file nobody may write.
+
 Every task carries an **Interfaces** block:
 
 ```markdown
@@ -159,6 +176,7 @@ These are **plan failures**, not shorthand:
 - a step that says what to do without showing how
 - a reference to a type or function no task defines
 - a task with no `**Dispatch:**` line
+- a task with no `**Files:**` block, or one whose `Modify:` list is empty
 
 ## Self-review before the gate
 

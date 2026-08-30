@@ -339,6 +339,12 @@ test('plan is a stage, and it sits between design and build', () => {
   assert.equal(nextStage('plan'), 'build');
 });
 
+test('the plan stage names both required slots', () => {
+  const rules = rulesFor('plan').join('\n');
+  assert.match(rules, /\*\*Files:\*\*/);
+  assert.match(rules, /\*\*Dispatch:\*\*/);
+});
+
 test('the plan stage refuses the placeholders that make a plan unexecutable', () => {
   const text = byName('plan').rules.join(' ');
   assert.match(text, /the actual code, not a description of it/);
