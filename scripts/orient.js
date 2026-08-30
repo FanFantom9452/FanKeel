@@ -315,29 +315,47 @@ function scan(root, named) {
         mode = 'workspace';
     }
 
-    const dropped = Math.max(0, targets.length - MAX_ROWS);
-    const shown = targets.slice(0, MAX_ROWS);
+    // The cap goes after the existence check rather than in front of it.
+    // `existsSync` is cheap; the git state, the file count and the log behind
+    // every row are not, and those still run forty times at most. Capping first
+    // cut targets before anyone had asked whether they were there, so a mistyped
+    // name past the fortieth reached neither list — the `not found:` line is the
+    // report of exactly that, and it cannot report what was already gone. It also
+    // left the truncation count measuring `targets` while printing under a table
+    // of what exists, which is two different lists sharing one number.
+    const seen = targets.map((rel) => {
+        const full = path.resolve(resolved, rel);
+        return { rel, full, exists: fs.existsSync(full) };
+    });
+    const present = seen.filter((t) => t.exists);
+    const absent = seen.filter((t) => !t.exists);
+
+    const dropped = Math.max(0, present.length - MAX_ROWS);
+    const shown = present.slice(0, MAX_ROWS);
 
     // The inventory below is gathered for one target only. Five projects would be
     // five git logs and a screen nobody reads, and a workspace listing is still a
     // question about which project rather than an inventory of one.
-    const deep = shown.length === 1;
+    //
+    // Counted over `targets` rather than over `shown`, which now holds only the
+    // ones that are there: a single named path that does not exist would leave
+    // `shown` empty, and the count that decides this is a count of what was
+    // asked for.
+    const deep = targets.length === 1;
 
-    const entries = shown.map((rel) => {
-        const full = path.resolve(resolved, rel);
-        const exists = fs.existsSync(full);
-        return {
-            rel: rel === '.' ? path.basename(resolved) : rel.replace(/\\/g, '/').replace(/\/+$/, ''),
-            base: rel,
-            exists,
-            state: exists ? gitState(full) : null,
-            count: exists ? countFiles(full) : null,
-            touched: exists ? lastCommit(full) : null,
-            recent: exists && deep ? recent(full, 5) : [],
-            signposts: exists && deep ? signposts(full) : [],
-            map: exists && deep ? mapFrom(full, 'CLAUDE.md') : [],
-        };
+    const row = (t) => ({
+        rel: t.rel === '.' ? path.basename(resolved) : t.rel.replace(/\\/g, '/').replace(/\/+$/, ''),
+        base: t.rel,
+        exists: t.exists,
+        state: t.exists ? gitState(t.full) : null,
+        count: t.exists ? countFiles(t.full) : null,
+        touched: t.exists ? lastCommit(t.full) : null,
+        recent: t.exists && deep ? recent(t.full, 5) : [],
+        signposts: t.exists && deep ? signposts(t.full) : [],
+        map: t.exists && deep ? mapFrom(t.full, 'CLAUDE.md') : [],
     });
+
+    const entries = [...shown.map(row), ...absent.map(row)];
 
     // Most recently committed first. The order still comes entirely from data on
     // screen — the age is printed on every row — so it is explicable rather than
@@ -400,16 +418,20 @@ function report(result) {
         ageText(e.touched, stamp),
     ])));
 
+    // Indented into the table it truncates, and in the sentence `lib/report.js`
+    // prints for every other capped list. It stood on its own below `not found:`
+    // in a spelling of its own, two blocks from the rows it was counting; the
+    // refactor that unified that sentence across the scanners reached the four
+    // holding a copy of `section`, and this one builds its own tables.
+    if (result.dropped) {
+        lines.push('  ... and ' + result.dropped + ' more, not listed');
+    }
+
     // Named but absent is the one thing here that is an error rather than a
     // finding, because the user typed it.
     if (missing.length) {
         lines.push('');
         lines.push('not found: ' + missing.map((e) => e.rel).join(', '));
-    }
-
-    if (result.dropped) {
-        lines.push('');
-        lines.push('(' + result.dropped + ' more not listed)');
     }
 
     // One target, so there is room to say what it is made of. Two or more and
