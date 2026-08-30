@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-29
+last_verified: 2026-08-30
 source_of_truth: this file, no upstream — a decision record is not derived from anything
 ---
 
