@@ -445,33 +445,42 @@ flowchart TD
     S1["<b>an isolated workspace</b>"]
     S2["<b>open the ledger</b><br/>ledger show<br/><i>after a compaction, trust it over memory</i>"]
     S3["<b>scan the plan first</b><br/>tasks that contradict each other,<br/>or contradict the constraints"]
-    L{"a task the ledger does<br/>not list as complete?"}
-    T1["record BASE"]
-    T2{"the task's <b>Dispatch:</b> line"}
-    T2a["<b>implement here</b><br/><i>every changed line traces to the task.<br/>Do not improve adjacent code on the way past</i>"]
-    T2b["<b>dispatch an implementer</b><br/>pass the model explicitly<br/><i>say how many, and on which model</i><br/><i>it commits and returns a sha, never a diff</i>"]
+    L{"a group holding a task the ledger<br/>does not list as complete?"}
+    D["<b>the whole group, one response</b><br/>groups says which tasks go together<br/><i>pass the model explicitly, say how many<br/>and on which model. Four dispatches at a time</i>"]
+    T2a["<b>implement here</b><br/>the group's in-session tasks<br/><i>every changed line traces to the task.<br/>Do not improve adjacent code on the way past</i>"]
+    T2b1["implement one task"]
+    T2b2["implement one task"]
+    T2b3["…"]
     T3["test first where the task says so<br/><i>a test you did not watch fail is a test<br/>whose meaning you do not know</i>"]
-    T4["commit"]
+    E{"a task in this group<br/>not committed yet?"}
+    T1["record BASE<br/><i>now — not when the group went out</i>"]
+    T4["<b>commit</b><br/>the parent stages that one task's declared paths<br/><i>never the implementer — it returns paths, never a diff</i>"]
     T5["<b>one reviewer</b><br/>the task text, BASE..&lt;sha&gt;,<br/>and map.md — never the session's history"]
     T6{"findings?"}
-    T7["fix round<br/><i>bounded at five</i>"]
+    T7["fix round<br/><i>bounded at five; the parent commits it too</i>"]
     T8["ledger complete,<br/>'what landed'"]
     R["<b>one whole-branch review</b><br/>when the last task is done"]
 
     S1 --> S2 --> S3 --> L
-    L -- yes --> T1
-    T1 --> T2
-    T2 -- "in-session" --> T2a
-    T2 -- "implementer, model" --> T2b
+    L -- yes --> D
+    D -- "in-session" --> T2a
+    D -- "implementer, model" --> T2b1
+    D -- "implementer, model" --> T2b2
+    D --> T2b3
     T2a --> T3
-    T3 --> T4
+    T3 --> E
+    T2b1 --> E
+    T2b2 --> E
+    T2b3 --> E
+    E -- yes --> T1
+    T1 --> T4
     T4 --> T5
-    T2b --> T5
     T5 --> T6
     T6 -- yes --> T7
     T7 --> T5
     T6 -- no --> T8
-    T8 --> L
+    T8 --> E
+    E -- "none left" --> L
     L -- "none left" --> R
 ```
 

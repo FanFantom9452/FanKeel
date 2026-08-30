@@ -534,3 +534,13 @@ test('every stage that dispatches says how many and on which model', () => {
   assert.match(page, /count\s+and\s+(the\s+)?model/i, 'the reference page drops the count');
   assert.match(page, /said\s+out\s+loud/i, 'the reference page states the contract without the disclosure');
 });
+
+// The commit moved to the parent so that two implementations can overlap while
+// their commits do not. A skill that still tells the implementer to commit is
+// the one sentence that undoes it, and `groups` is how the loop knows which
+// tasks may overlap at all — a build skill naming neither has lost both halves.
+test('the build skill moves the commit to the parent', () => {
+  const text = read('fankeel-build');
+  assert.match(text, /does not commit/);
+  assert.match(text, /groups/);
+});

@@ -3,7 +3,7 @@ name: fankeel-plan
 description: The plan stage — decompose an approved design into tasks someone with no context could execute, with constraints generated from the project rather than remembered. Use for the plan stage of a fankeel task, writing an implementation plan, or breaking a spec into tasks before any code is written.
 version: 0.40.0
 status: current
-last_verified: 2026-08-29
+last_verified: 2026-08-30
 source_of_truth: lib/stages.js, scripts/map.js
 ---
 
@@ -11,7 +11,8 @@ source_of_truth: lib/stages.js, scripts/map.js
 
 Produces a decomposition someone with no context could execute.
 
-**Done when** every task carries its own test cycle and its `Dispatch:` line,
+**Done when** every task carries its own test cycle, its `**Files:**` block and
+its `Dispatch:` line,
 `## Global Constraints` has been generated from the project rather than
 remembered, and the plan file is written. The decomposition is the denominator,
 the same way the ledger is `build`'s wherever this stage ran: when no task is
@@ -86,6 +87,23 @@ deliverable needs them. Split only where a reviewer could meaningfully reject on
 task while approving its neighbour. Each task ends with an independently testable
 deliverable.
 
+Every task carries a **Files** block:
+
+```markdown
+**Files:**
+- Modify: `path` — what changes in it
+- Test: `path`
+```
+
+`Test:` lists the test files this task **writes**. A suite it merely has to keep
+green is not an entry: two tasks that both have to leave `npm test` passing are
+not in conflict, and listing it as though they were is how a plan serialises
+work that could have run at once.
+
+This block is what decides whether two tasks may be implemented at the same
+time, and it is what the parent stages when the task lands. A path missing from
+it is a file nobody may write.
+
 Every task carries an **Interfaces** block:
 
 ```markdown
@@ -159,6 +177,7 @@ These are **plan failures**, not shorthand:
 - a step that says what to do without showing how
 - a reference to a type or function no task defines
 - a task with no `**Dispatch:**` line
+- a task with no `**Files:**` block, or one whose `Modify:` list is empty
 
 ## Self-review before the gate
 

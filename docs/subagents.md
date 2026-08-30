@@ -82,6 +82,26 @@ on this repository. The argument above is structural — it turns on where the
 intermediate output lands — and there is no figure behind it, which is why none
 is quoted.
 
+## Two implementers, when the plan says so
+
+Two dispatched implementers used to be a flat no. They share one checkout,
+`hooks/guard.js` does not protect a task from its own dispatches — both carry
+the same parent `session_id` — and an implementer used to commit, so two
+commits in one checkout would interleave and no review range would mean
+anything afterward.
+
+The commit moved to the parent, one task at a time, as each implementer
+returns — never the implementer itself, which now returns paths, never a diff.
+That is what makes overlap in wall-clock safe even though the index still has
+one writer. What decides whether a *pair* may overlap is two predicates,
+computed from the plan rather than judged: tasks in one group have disjoint
+`Files: Modify` lists, and neither's `Consumes` names anything the other
+`Produces` — the half file overlap alone cannot see.
+`node scripts/ledger.js --plan <file> groups` computes both over a whole plan
+and prints which tasks may share one response. Two tasks in different groups
+never run at once, and the ceiling above still bounds how many of one group go
+out together.
+
 ## Split it by lens, not by slice
 
 Once you have decided to fan out, there are two ways to divide the work and they

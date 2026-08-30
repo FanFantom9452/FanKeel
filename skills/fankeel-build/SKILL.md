@@ -80,11 +80,30 @@ verdict:**
 "The scan is clean" without those rows is not a scan that was run. Write the
 table into the ledger, rule on anything it surfaces, and record each ruling.
 
+Then run it rather than remembering it:
+
+```
+node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md groups
+```
+
+It computes the first row's predicates over the whole plan: tasks in one group
+have disjoint `**Files:**` and neither consumes what another produces. A pair
+the table found sharing something and the command puts in one group is a
+disagreement worth stopping for — one of the two is reading the plan wrong, and
+finding out which is cheaper before the first dispatch than after it.
+
+Copy its output into the ledger beside the table. The grouping is what the loop
+dispatches against, and a compaction that takes it leaves you re-deriving which
+tasks were safe together from a plan you can no longer remember reading.
+
 ## The task loop
 
 For each task the denominator does not list as complete:
 
-1. Record `git rev-parse HEAD` as BASE.
+1. Record `git rev-parse HEAD` as BASE — **immediately before this task's
+   commit, not when its group went out.** The tasks in a group that committed
+   before it are already in HEAD, and a BASE taken at dispatch time would pull
+   their diffs into this task's review.
 2. Do what the task's `**Dispatch:**` line says. `in-session` means implement it
    here; `implementer, <model>` means dispatch one — **pass the model
    explicitly**, an omitted one inherits this session's, and say how many
@@ -101,26 +120,56 @@ For each task the denominator does not list as complete:
    must write its report to. Never the session's history, and never a paste of
    the plan.
 
-   A dispatched implementer **commits, and returns a status line and a sha —
-   never a diff.** A returned diff puts the whole change back in this context,
-   which is the one cost dispatching exists to avoid, and step 5 already reads
-   it from git. Never two implementers at once, and never a second on work
-   related to the first even in different files.
+   A dispatched implementer **does not commit. It returns a status line and the
+   paths it wrote — never a diff.** A returned diff puts the whole change back
+   in this context, which is the one cost dispatching exists to avoid, and step
+   5 still reads it from git once the parent has committed. Tell it plainly not
+   to touch the index, `HEAD` or branch state: `hooks/guard.js` filters to other
+   sessions, so it cannot protect a task from its own dispatches.
+
+   **A whole group goes out in one response**, and the `groups` command above
+   says which tasks that is. Two tasks in different groups never run at once.
+   Say how many and on which model in the response that sends them.
+
+   `groups` answers which tasks *may* run together, never how many to send at
+   once, so it does not cap a group at anything. **The ceiling of four dispatches
+   in one response is still the ceiling**: a group of six goes out four and then
+   two. Slicing it is safe precisely because the six conflict with none of each
+   other, so any subset of a group is a group.
 3. **`in-session` only** — test first where the task says so. If you did not
    watch the test fail, you do not know it tests the right thing. A dispatched
    implementer did this inside its own run; it does not happen twice.
-4. **`in-session` only** — commit. A dispatched implementer already committed and
-   returned the sha, which is what makes step 5 possible without a diff in this
-   context.
+4. Commit — **the parent, one task at a time**, in the order the group lists
+   them, as each implementer returns. `git add` **exactly** that task's declared
+   `Modify` and `Test` paths, then commit and take the sha. Anything written
+   outside those paths stays unstaged, so `git status` after the commit is where
+   a wrong `**Files:**` block shows up, before the review rather than after it.
+
+   This is what lets two implementations overlap while their commits do not: the
+   parent is the only writer of the index, so every range in step 5 still has
+   two ends.
 5. One reviewer, against the task text and the diff. **Pin the range at both
-   ends** — `BASE..<the sha the implementer returned>`, or `BASE..HEAD` for an
-   `in-session` task. An open upper end is not a range: the next task's commits
+   ends** — `BASE..<the sha this task's commit produced>`. Every task has one,
+   `in-session` included, because step 4 commits them all; there is no `HEAD`
+   form left, and that is deliberate. `HEAD` was safe only while nothing else
+   could commit, and in a group something else can — a dispatched neighbour
+   landing first would walk straight into an `in-session` task's review.
+   An open upper end is not a range: the next task's commits
    walk into the review the moment they land. Give it that range and the path to
    `.fankeel/map.md` — never a paste of the session's history. Pinned that way
    the review is read-only over a fixed range, so it may run while the next task
    is being implemented.
 6. Fix rounds are bounded at **five**. A finding you overrule is a ruling, not a
    silence.
+
+   **A fix round lands the same way the task did**: the resumed implementer
+   returns paths and does not commit, and the parent stages that task's declared
+   paths and commits them. Re-review `<the task's previous sha>..<the new one>`.
+   A fix round left uncommitted is a finding nobody can re-diff; one committed
+   without a range of its own walks into whatever task is reviewed next. Both are
+   why step 1 takes BASE immediately before a commit rather than when the group
+   went out — a fix for an earlier task can land after a later task's dispatch,
+   and taking BASE late is what keeps that out of the later task's range.
 7. `ledger.js --plan <file> complete <n> "<what landed>"`.
 
 Then one whole-branch review when the last task is done.

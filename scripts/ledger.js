@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 
-// The ledger, from the command line. Three verbs, because three is what the build
+// The ledger, from the command line. Four verbs, because four is what the build
 // loop actually does to it: open it, say a task is done, and — after a compaction
-// — ask what it already knows.
+// — ask what it already knows, and ask which of a plan's tasks may go out together.
 //
 // **Flags precede the verb.** Everything after it is the user's words, down to a
 // word spelled exactly like a flag. `--plan` and `--root` are both paths, and a
@@ -22,6 +22,7 @@ const { parseArgs: parseArgv } = require('node:util');
 
 const ledger = require('../lib/ledger.js');
 const { splitAtVerb } = require('../lib/argv.js');
+const plantasks = require('../lib/plantasks.js');
 
 function fail(message) {
     process.stdout.write(message + '\n');
@@ -36,7 +37,7 @@ const STRING_FLAGS = { root: 'root', plan: 'plan' };
 // than four literals for the same reason the flags are a table: `splitAtVerb`
 // reads it too, so that no flag spends one, and two lists of the same verbs
 // drift.
-const VERBS = new Set(['init', 'complete', 'ruling', 'show']);
+const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups']);
 
 // `strict: false` keeps an unknown flag silent. A declared flag given no value
 // comes back `true` rather than a string, and that is the refusal below: a flag
@@ -86,6 +87,32 @@ function main(argv) {
         if (parts.length < 3) fail('ruling "<what you decided>" "<why>" "<what it costs if wrong>"');
         ledger.append(root, opts.plan, ledger.rulingLine(parts[0], parts[1], parts.slice(2).join(' ')));
         return 'fankeel ledger — ruling recorded.';
+    }
+
+    if (verb === 'groups') {
+        const file = path.resolve(root, opts.plan);
+        let text = '';
+        try {
+            text = fs.readFileSync(file, 'utf8');
+        } catch (e) {
+            return fail('No plan at ' + file);
+        }
+        const tasks = plantasks.parseTasks(text);
+        const rows = plantasks.groups(tasks);
+        if (!tasks.length) return 'fankeel ledger — no tasks in ' + file;
+        // A task that declared no files conflicts with everything, so it lands
+        // alone and the grouping looks merely unlucky rather than incomplete.
+        // Naming it is what makes a missing `**Files:**` block visible at the
+        // moment it costs something, rather than a plan rule nobody re-read.
+        const undeclared = tasks.filter((t) => !t.modify.length).map((t) => t.n);
+        return 'fankeel ledger — ' + rows.length + ' groups over ' + tasks.length + ' tasks\n\n'
+            + rows.map((g, i) => '  ' + (i + 1) + ': ' + g.join(', ')).join('\n')
+            + (undeclared.length
+                ? '\n\nNo Files block, so serialised against everything: ' + undeclared.join(', ')
+                : '')
+            + '\n\nOne group is one response. Their files are disjoint and neither'
+            + '\nconsumes what the other produces. Commit them one at a time as'
+            + '\nthey return, in the order listed.';
     }
 
     if (verb === 'show') {
