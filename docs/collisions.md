@@ -151,6 +151,16 @@ Two rules keep it from becoming a lockout:
 - **The older task holds.** When both sessions claim the file, the newer one
   yields — so two sessions that both reached it cannot block each other into a
   stalemate.
+- **It does not protect a task from itself.** Every one of the rules above is
+  between *sessions*, and `hooks/guard.js` reaches that by filtering to entries
+  whose `sessionId` is not this one's. A subagent inherits its parent's session
+  id, so two implementers dispatched by one session are invisible to each other
+  here however the guard is set. That was inert while `build` dispatched one at
+  a time. It is not inert now: `build` sends a whole group at once, and what
+  keeps those apart instead is the pair of predicates in
+  [subagents.md](subagents.md) — disjoint `**Files:**`, no producer/consumer
+  edge — plus the parent staging each task's declared paths, which leaves
+  anything written outside them unstaged rather than committed.
 
 # Stale entries
 

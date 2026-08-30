@@ -591,7 +591,10 @@ is only one.
 Then `What is the task?`, in the same call. **Read `TODO.md` first where the root
 has one**: its headings are the clustering, so there is nothing to derive.
 `## Ready` is one option for the whole section — every entry under it is its own
-specification, and a build loop runs them as a list. `## Needs a decision` is one
+specification, and a build loop runs them as a list. **More than one bullet there
+needs `plan` on the route**: the plan file is the only place N tasks are written
+down durably, and with no plan file there is no ledger, so a compaction takes the
+loop's place with it. `## Needs a decision` is one
 option each, because each is a different question for a person. `## Waiting` is
 not offered at all: nothing under it can move today, and six unpickable rows are
 how a menu stops being read. Any other heading, or none, means clustering by hand
