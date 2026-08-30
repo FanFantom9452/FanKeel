@@ -92,6 +92,10 @@ the table found sharing something and the command puts in one group is a
 disagreement worth stopping for — one of the two is reading the plan wrong, and
 finding out which is cheaper before the first dispatch than after it.
 
+Copy its output into the ledger beside the table. The grouping is what the loop
+dispatches against, and a compaction that takes it leaves you re-deriving which
+tasks were safe together from a plan you can no longer remember reading.
+
 ## The task loop
 
 For each task the denominator does not list as complete:
@@ -140,14 +144,27 @@ For each task the denominator does not list as complete:
    parent is the only writer of the index, so every range in step 5 still has
    two ends.
 5. One reviewer, against the task text and the diff. **Pin the range at both
-   ends** — `BASE..<the sha this task's commit produced>`, or `BASE..HEAD` for an
-   `in-session` task. An open upper end is not a range: the next task's commits
+   ends** — `BASE..<the sha this task's commit produced>`. Every task has one,
+   `in-session` included, because step 4 commits them all; there is no `HEAD`
+   form left, and that is deliberate. `HEAD` was safe only while nothing else
+   could commit, and in a group something else can — a dispatched neighbour
+   landing first would walk straight into an `in-session` task's review.
+   An open upper end is not a range: the next task's commits
    walk into the review the moment they land. Give it that range and the path to
    `.fankeel/map.md` — never a paste of the session's history. Pinned that way
    the review is read-only over a fixed range, so it may run while the next task
    is being implemented.
 6. Fix rounds are bounded at **five**. A finding you overrule is a ruling, not a
    silence.
+
+   **A fix round lands the same way the task did**: the resumed implementer
+   returns paths and does not commit, and the parent stages that task's declared
+   paths and commits them. Re-review `<the task's previous sha>..<the new one>`.
+   A fix round left uncommitted is a finding nobody can re-diff; one committed
+   without a range of its own walks into whatever task is reviewed next. Both are
+   why step 1 takes BASE immediately before a commit rather than when the group
+   went out — a fix for an earlier task can land after a later task's dispatch,
+   and taking BASE late is what keeps that out of the later task's range.
 7. `ledger.js --plan <file> complete <n> "<what landed>"`.
 
 Then one whole-branch review when the last task is done.
