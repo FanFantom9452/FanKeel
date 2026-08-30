@@ -191,3 +191,18 @@ test('--plan init.md is a path, not the verb it begins with', () => {
   execFileSync(process.execPath, [SCRIPT, '--plan', 'init.md', 'init'], { cwd: dir, encoding: 'utf8' });
   assert.equal(fs.existsSync(ledger.ledgerPath(dir, 'init.md')), true);
 });
+
+// The verb exists so the loop does not have to hold the predicates in its head.
+// Exercised through the script rather than the library because the printed
+// shape is what the loop reads.
+test('groups reports the parallelisable sets of a plan', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, [
+    '## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', '',
+    '## Task 2: two', '', '**Files:**', '- Modify: `lib/b.js`', '',
+  ].join('\n'));
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(out, /1 groups over 2 tasks/);
+  assert.match(out, /1: 1, 2/);
+});
