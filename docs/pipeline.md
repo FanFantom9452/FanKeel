@@ -759,7 +759,7 @@ $ node <plugin>/scripts/residue.js
 fankeel residue — on main
 
 1 path nobody has decided about — not committed, not ignored:
-  .claude/
+  scratch/
 
 1 worktree is already merged into main:
   /repo/.claude/worktrees/registry-staleness  (worktree-registry-staleness)
@@ -783,7 +783,7 @@ directories are context — a 73 GB build directory is not a bug, but not knowin
 about it is.
 
 There is no heuristic for "unused" anywhere in it and nothing is ever deleted by
-it. **Two of the five sections need git and three do not**, so it answers outside
+it. **Three of the five sections need git and two do not**, so it answers outside
 a repository as well as in one — which is where it finds the most, because a tree
 nobody ran `git init` in is invisible to every check that starts from what is
 committed.
