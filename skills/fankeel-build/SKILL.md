@@ -3,7 +3,7 @@ name: fankeel-build
 description: The build stage — run a plan's tasks, or a design's file table where there is no plan, in a loop that does not stop to ask, keeping its place in a ledger and reviewing each task as it lands. Use for the build stage of a fankeel task, implementing an approved plan, resuming build work after a compaction, or when a task loop needs a ledger.
 version: 0.40.0
 status: current
-last_verified: 2026-08-30
+last_verified: 2026-08-31
 source_of_truth: lib/stages.js, lib/ledger.js, scripts/ledger.js
 ---
 
@@ -194,6 +194,33 @@ undo; a session parked on a question costs their whole day and buys nothing.
 3. a side effect outside this workspace that norms say you ask about first — a
    merge, a push to a shared branch, a publish
 4. a plan so broken that every path forward is a guess
+
+## A new ask is not a fifth stopper
+
+A request the user raises mid-build is routed **in the turn it arrives**, one of
+three ways:
+
+1. **It neither blocks this task nor belongs to it** — one `TODO.md` line under
+   the heading that says what it is still short of, pointing at the detail. Do
+   not start it.
+2. **It blocks this task, or belongs here** — do it now, as part of this task.
+3. **Genuinely either** — it could plausibly belong to this task or to a later
+   one, and nobody said when it was wanted. **Ask, in that same turn.**
+
+Say which of the three it fell into, and why. A wrong call is then visible while
+it is still cheap. Both failures this prevents are invisible until much later: a
+task that quietly triples, and something wanted now that gets filed away for a
+week.
+
+Branch 3 is not a fifth thing that stops the loop, because a new ask was never
+in the loop. The four above are things that happen to work already on the plan;
+this is a reply owed to a prompt the user has just typed, in a turn that owes a
+reply anyway. Nor does it wait for the stage gate — by then it is no longer the
+same turn, which is the whole of what branch 3 buys.
+
+Two requests arriving together are routed one at a time. Route the clear one and
+ask about the other; batching them into one judgement is how the unclear one
+rides in on the clear one's answer.
 
 ## What delegation costs
 
