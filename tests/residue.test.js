@@ -48,6 +48,34 @@ test('untracked and unignored is a defect; ignored is not', () => {
   assert.match(report(result), /nobody has decided/);
 });
 
+test('a parent matched by no pattern, holding only ignored content, is weight and not a decision', () => {
+  const { root, git } = repo();
+  // `full/` is matched by nothing; everything under it is. `wrap/` is the
+  // control for the same shape — one file in it is not ignored, so it stays a
+  // decision somebody can actually act on.
+  fs.writeFileSync(path.join(root, '.gitignore'), 'full/inner/\nwrap/inner/\n');
+  git(['add', '.gitignore']);
+  git(['commit', '-qm', 'ignore the inner directories']);
+  fs.mkdirSync(path.join(root, 'full', 'inner'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'full', 'inner', 'blob.bin'), 'z'.repeat(4096));
+  fs.mkdirSync(path.join(root, 'wrap', 'inner'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'wrap', 'inner', 'blob.bin'), 'z'.repeat(2048));
+  fs.writeFileSync(path.join(root, 'wrap', 'loose.txt'), 'x');
+
+  const result = scan(root);
+
+  // `git add full/` stages nothing at all, so "commit it" is not one of the
+  // three choices the undecided section is asking somebody to make.
+  assert.equal(result.undecided.includes('full/'), false, 'nothing in it can be committed');
+  assert.ok(result.undecided.includes('wrap/'), 'a parent holding an unignored file is still a decision');
+
+  // git answers `full/` and `full/inner/` to the ignored question, and they are
+  // the same bytes. deepEqual, not includes: the double count is the bug.
+  assert.deepEqual(result.weight.map((w) => w.path), ['full/', 'wrap/inner/']);
+  assert.equal(result.weight.find((w) => w.path === 'full/').bytes, 4096);
+  assert.equal(defects(result), 1, 'wrap/ alone');
+});
+
 test('an empty directory is context, not a defect, and only the topmost', () => {
   const { root } = repo();
   fs.mkdirSync(path.join(root, 'hollow', 'one', 'two'), { recursive: true });

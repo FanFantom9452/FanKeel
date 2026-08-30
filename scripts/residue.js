@@ -233,9 +233,19 @@ function scan(root) {
     // context at once. It belongs in the second: git cannot record an empty
     // directory at all, so "commit it" is not one of the three choices the
     // undecided section is asking somebody to make.
+    //
+    // The second subtraction is the same argument about a different path. A
+    // directory no pattern matches, holding nothing but content that is matched,
+    // is answered by git twice: untracked to one question and ignored to the
+    // other, both true. `.claude/` here is one — the root ignores
+    // `.claude/worktrees/` and that is all it holds. `git add` on it stages
+    // nothing, so again the undecided section would be asking for a choice that
+    // is not on offer. A parent holding even one unignored file is absent from
+    // the ignored list, so it survives this and stays a decision.
     const hollow = new Set(empty);
+    const collapsed = new Set(ignored);
     const undecided = (git(root, ['ls-files', '--others', '--exclude-standard', '--directory']) || [])
-        .filter((rel) => !hollow.has(rel.replace(/\/$/, '')));
+        .filter((rel) => !hollow.has(rel.replace(/\/$/, '')) && !collapsed.has(rel));
 
     // Merged into what you are standing on, not into a guessed default. Which
     // branch is "the" branch is a question this cannot answer without inventing
@@ -247,7 +257,18 @@ function scan(root) {
         .filter((w) => w.branch && merged.has(w.branch))
         .map((w) => ({ path: w.path, branch: w.branch }));
 
+    // Only the topmost ignored path earns a line, for the reason `emptyDirs` gives
+    // and one more. That same collapsed parent is listed beside the pattern that
+    // matched inside it — `.claude/` and `.claude/worktrees/` are one directory
+    // and one set of bytes — so without this the section reports the same weight
+    // twice and a reader adding the column up gets a number too big. Filtered
+    // before the sizing rather than after, so the tree is walked once.
+    //
+    // Only a directory can be a parent, hence the `endsWith`: entries here carry
+    // their trailing slash where `emptyDirs` has to add one, and a bare prefix
+    // test would read `notes.txt.bak` as sitting under `notes.txt`.
     const weight = ignored
+        .filter((rel) => !ignored.some((other) => other !== rel && other.endsWith('/') && rel.startsWith(other)))
         .map((rel) => {
             let stat;
             try {
