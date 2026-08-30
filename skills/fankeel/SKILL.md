@@ -503,6 +503,11 @@ the roles are what fankeel needs, not the paths.
 A markdown file in no bucket is reported. Not as an error — as the thing nobody
 decided the lifetime of, which is the one most likely to rot unnoticed.
 
+The reasoning behind all of that — why the offer is "this one?" rather than a
+menu, why the scan is re-run rather than stored, and one dated run of the scanner
+— is in [docs/documents.md](../../docs/documents.md). This section is the short
+form, not the only copy.
+
 ## Task memory
 
 Two fields, both capped in code: at most five notes of 100 characters, and one

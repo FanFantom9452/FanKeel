@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-08-31
-source_of_truth: lib/docs.js, lib/map.js, scripts/layout.js, scripts/docs-audit.js
+source_of_truth: lib/docs.js, lib/map.js, scripts/layout.js, scripts/docs-audit.js, skills/fankeel/SKILL.md, skills/fankeel-survey/SKILL.md
 ---
 
 # Where documents live
@@ -19,14 +19,12 @@ and the role says how long a document is meant to stay true:
 | `report` | a dated snapshot: audit, benchmark, meeting | yes |
 | `archive` | retired; checked only that nothing current points at it | yes |
 
-Two shapes ship, both taken from real repositories rather than invented: `flat`
-(one `docs/` with a numbered series) and `phased` (`01-vision` through
-`99-archive`). Neither is imposed — a repository that already has habits keeps
-them, and `detect()` says which shape it resembles so the question can be "this
-one?" rather than "which of these?".
-
-A markdown file in no bucket is reported. Not as an error, but as the one nobody
-decided the lifetime of, which is the one most likely to rot unnoticed.
+The two shapes that ship — `flat` and `phased` — and what happens to a markdown
+file in no bucket are stated in [the skill](../skills/fankeel/SKILL.md), under
+*Where documents live*. What belongs here is why the question is put that way:
+`detect()` names the shape a repository already resembles, so the offer is "this
+one?" rather than "which of these?" — a project that already has habits is not
+asked to choose again.
 
 ## `layout`, which points at a tree rather than holding one
 
@@ -76,9 +74,10 @@ backend because somebody decided it was, and no listing says so.
 
 The rule that says "check whether this already exists" is the kind that gets
 agreed with and skipped, which is exactly why components get built twice. So
-`survey` names a script instead — `<plugin>/scripts/survey.js`, with the injected
-block resolving `<plugin>` once above the rules — and the rule requires quoting
-the output:
+`survey` names a script instead. The commands, the two sources it reads, the caps
+and how a `skipped:` line is answered are in
+[the survey stage's skill](../skills/fankeel-survey/SKILL.md); what is kept here
+is one dated run of it, and what the header is for:
 
 ```
 $ node <plugin>/scripts/survey.js badge
@@ -111,34 +110,12 @@ came from and `skipped:` counts what was never opened, while the section at the
 foot names the half of that a reader can open by hand. The header itself is the
 files that reached the scan — not the coverage, and not the tree.
 
-It reads `git ls-files` and the working tree on every run, so **nothing is
-stored and nothing can go stale**. A written index of "what this project already
-has" disagrees with the code within months and is then read back with confidence,
-which is worse than having none. Declarations are found in JavaScript,
-TypeScript, Vue and Svelte script blocks, PowerShell, Python, shell, Go, Rust,
-C#/Java/Kotlin/Swift, Ruby, and CSS classes, custom properties and mixins, plus
-markdown headings. Anything else is matched on filename alone. The patterns are
-deliberately shallow, because the goal is to notice a name exists, not to parse
-the language — a missed declaration costs one line of a report, and a real parser
-would cost a dependency this plugin does not have.
-
-"Nothing matched" is a finding, and the rule asks for the terms that were tried —
-so the next person knows which synonyms were already ruled out.
-
-A task starts at the first stage on its route, `survey` unless `--route` said
-otherwise. At the end of a stage you are offered the next one,
-staying put, or pausing — never told a stage is complete and left there. Short
-tasks may skip forward, but the skip is said out loud, because skipping silently
-is how `verify` gets skipped.
-
-Each stage also carries one line about the **shape** of its output — `survey`
-quotes the scanner rather than paraphrasing it, `build` says almost nothing
-because the diff is the output, `verify` quotes the command and the line that
-decided it. This is the dynamic half that an output style cannot do: the system
-prompt is fixed for the session, and the stage is not.
-
-`land` has no successor. What follows it is a new task, which is a decision rather
-than a transition.
+A written index of "what this project already has" disagrees with the code within
+months and is then read back with confidence, which is worse than having none —
+which is why the scan is re-run rather than stored. The declaration patterns are
+deliberately shallow for the same kind of reason: the goal is to notice a name
+exists, not to parse the language, and a missed declaration costs one line of a
+report where a real parser would cost a dependency this plugin does not have.
 
 ## What a document says about itself
 

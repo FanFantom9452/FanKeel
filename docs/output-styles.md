@@ -47,6 +47,10 @@ inside the cached prefix, so it is close to free.
 Claude Code also injects its own per-turn reminder while a style is active, which
 is the other half of what an injected ruleset was doing, at no cost here.
 
+The stage rules are the converse, and that is why both exist: an `output shape:`
+is the dynamic half a style cannot do, because the system prompt is fixed for the
+session and the stage is not.
+
 ## Setting it without /config — removed in 0.20.0
 
 A `fankeel-style` skill used to write `outputStyle` into `settings.json` for you,

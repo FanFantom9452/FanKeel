@@ -32,7 +32,7 @@ heading is one nobody said the state of.
 
 ## Needs a decision
 
-- Which page owns the `flat`/`phased` shapes and survey's worked example — [docs/documents.md](docs/documents.md) × [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md). Near-verbatim in both. 08-30.
+- Whether a one-line rule needs a copy in the stage skill too — `Nothing matched`, `land` has no successor, the class table. [skills/fankeel-survey/SKILL.md](skills/fankeel-survey/SKILL.md). 08-31.
 
 ## Waiting
 
