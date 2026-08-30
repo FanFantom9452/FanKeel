@@ -552,6 +552,20 @@ function cmdGuard(root, opts) {
     });
     if (!data) fail('No active entry for this session under ' + root);
     if (!wrote) fail('Could not write the entry.');
+
+    // The mode is a field on the lead line, so this is the one command whose own
+    // change the statusline shows — and it was the one command that did not
+    // write it. The refresh rode the next `stage` or the next prompt, and until
+    // one came the line named the mode that had just been replaced.
+    //
+    // The collision count is asked for rather than passed as `false`: `start`
+    // and `task` may hardcode it because a task holding nothing overlaps
+    // nothing, but this runs mid-task over files already claimed. Skipping it
+    // would take a live `clash` off the statusline as a side effect of setting
+    // the mode that exists to make collisions louder.
+    const clash = collisions(root, id, registry.claimsOf(data));
+    showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data));
+
     return 'fankeel — guard: ' + (data.guard === 'off' ? 'off (warning only)' : data.guard);
 }
 

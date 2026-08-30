@@ -336,20 +336,44 @@ test('a note or a next whose text starts with a dash is text, not a flag', () =>
 });
 
 // This script is the other lead writer, and it had the same raw-field read
-// `hooks/inject.js` did. It fires on start, stage and adopt, so a session that
-// never types another prompt gets its guard from here or not at all.
+// `hooks/inject.js` did. It fires on start, stage, task, route, adopt and guard,
+// so a session that never types another prompt gets its guard from here or not
+// at all.
 test('the lead line this script writes carries the mode, not the field', () => {
   const dir = root();
   started(dir, A, 'x', 'Waypoint/web');
   assert.match(leadOf(dir, A), /^guard=ask$/m);
 
-  // `guard` is not one of the commands that writes the badge, so the refresh
-  // rides the next one that does. That lag is older than the default change and
-  // is tracked in TODO.md; what is being tested here is which of the two values
-  // gets written when something finally writes.
+  // `guard` writes the line itself, so nothing has to follow it. The command
+  // that changes the mode is the one command whose own field is on that line,
+  // and until it wrote, the statusline named the mode that had just been
+  // replaced — for a whole prompt, saying it with the same confidence as a
+  // current one.
+  run(dir, ['guard', 'deny', '--session', A]);
+  assert.match(leadOf(dir, A), /^guard=deny$/m);
+
+  // `off` is the mode with no field of its own, because `guardMode` answers null
+  // for it and `writeLead` drops an empty value. It is also the one a stale line
+  // gets most wrong: it reads as still guarding.
   run(dir, ['guard', 'off', '--session', A]);
-  run(dir, ['stage', 'design', '--session', A]);
   assert.doesNotMatch(leadOf(dir, A), /^guard=/m);
+});
+
+// The badge word is the stage, or `clash` when it applies, and `guard` writes
+// that word now — so it has to ask the collision question `stage` and `route`
+// ask. Passing `false` the way `start` does would be right for a task holding
+// nothing and wrong here: `guard` runs mid-task, over files already claimed, and
+// it would take a live collision off the statusline as a side effect of setting
+// the mode meant to make collisions louder.
+test('guard keeps a clash on the badge rather than painting it over', () => {
+  const dir = root();
+  started(dir, A, 'tidy the project cards', 'Waypoint');
+  started(dir, B, 'fix the card link', 'Waypoint');
+  registry.addClaim(dir, A, 'Waypoint/web/src/Card.jsx');
+  registry.addClaim(dir, B, 'Waypoint/web/src/Card.jsx');
+
+  run(dir, ['guard', 'deny', '--session', B]);
+  assert.equal(badgeOf(dir, B), 'clash');
 });
 
 // `show` printed the guard only when the field was set. That was the same test

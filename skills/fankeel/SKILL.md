@@ -167,8 +167,8 @@ the invariants below, and refuses rather than guessing. It exits non-zero when i
 refuses, so read the output. Hand-written JSON gets the `.gitignore` wrong every
 time, and a `sessions/` directory that is not ignored ends up committed.
 
-`start`, `task`, `stage`, `route`, `adopt` and `down` also set this session's
-statusline badge, so it is there on the turn the change happened. The hook keeps it current
+`start`, `task`, `stage`, `route`, `guard`, `adopt` and `down` also set this
+session's statusline badge, so it is there on the turn the change happened. The hook keeps it current
 from then on — it runs *before* a prompt, so a badge left to the hook alone would
 not appear until the user typed again, and until then turning the mode on looks
 exactly like failing to.
