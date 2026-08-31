@@ -30,7 +30,11 @@ heading is one nobody said the state of.
 
 ## Ready
 
+- `survey.js --tree` prints nothing unless `--root` is passed too — [scripts/survey.js](scripts/survey.js), line 410 gates the tree on `opts.root`. Silent, so it reads as an empty tree. 08-31.
+
 ## Needs a decision
+
+- Looking at `.fankeel/sessions/` without a session open — an HTML page, a `task.js` verb, or neither. `/fankeel` lists and `clear` deletes already; the view from outside is what is missing. 08-31.
 
 ## Waiting
 
@@ -41,8 +45,7 @@ heading is one nobody said the state of.
 - Whether an MCP write tool is actually covered. The mechanism asks git rather than the payload so it should be, but none was connected to measure — [lib/dirty.js](lib/dirty.js). Untested 08-28.
 - A wrong session id reaching a hook any way but through `task.js` is still silent — [docs/plans/2026-08-26-session-id-design.md](docs/plans/2026-08-26-session-id-design.md). None observed.
 - Language patterns beyond the ten [scripts/survey.js](scripts/survey.js) knows. Anything else falls back to filename matching; add a row when one is actually needed.
-- A per-`agent_type` subagent brief — the `SubagentStart` matcher allows it; which types earn one is a question real use answers.
-- Whether a per-`agent_type` brief should carry more than the map — [docs/subagents.md](docs/subagents.md). Unanswered until real use says which types earn one.
+- A per-`agent_type` subagent brief, and whether it carries more than the map — [docs/subagents.md](docs/subagents.md). The `SubagentStart` matcher allows it; real use says which types earn one. 08-31.
 - Whether an output style reaches subagents at all. Unverified, and now unmitigated: nothing restates one for them since the digest came out with the style skill.
 - A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI, so the default reminder is what the three get.
 - Whether `audit` earns a place on routes that are not documentation work — [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md), "What is still a guess".
