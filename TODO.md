@@ -30,12 +30,10 @@ heading is one nobody said the state of.
 
 ## Ready
 
-- A merged worktree and an empty one under `.claude/worktrees/` — [scripts/residue.js](scripts/residue.js) fails the run on the first. 08-31.
-- `undeclared` is counted by two tools and explained by neither page — [docs/documents.md](docs/documents.md). Only a code comment says why the root is excluded. 08-31.
-
 ## Needs a decision
 
 - Whether the [seven-stage plan](docs/plans/2026-08-22-seven-stage-implementation.md) is archived like its siblings. Declares `superseded-by`; the landed check cannot confirm it. 08-31.
+- Whether `lib/map.js` counting root files as `undeclared` is deliberate — [docs/documents.md](docs/documents.md). The page now says it is; nothing written said so before. 08-31.
 
 ## Waiting
 

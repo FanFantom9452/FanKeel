@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-08-31
-source_of_truth: lib/docs.js, lib/map.js, scripts/layout.js, scripts/docs-audit.js, skills/fankeel/SKILL.md, skills/fankeel-survey/SKILL.md
+source_of_truth: lib/docs.js, lib/map.js, scripts/layout.js, scripts/docs-check.js, scripts/docs-audit.js, skills/fankeel/SKILL.md, skills/fankeel-survey/SKILL.md
 ---
 
 # Where documents live
@@ -172,5 +172,39 @@ findings in one run, every one of them a plan doing exactly its job.
 The exception is a project with no tree at all. With nothing filed anywhere,
 reading markdown as reference is the only reading available, and a project in
 that state wants the checks more than it wants the precision.
+
+### `unfiled` and `undeclared` are two different questions
+
+The scanners use both words, and they are not the same gap. **Unfiled** answers
+*which bucket is this in?* — `roleOf` returned nothing, so no role covers the
+page and none of the checks above graded it at all. **Undeclared** answers *did
+anybody sign it?* — `contractOf` found none of `status`, `last_verified` or
+`source_of_truth`, so the page is dated by git rather than by a reader. A page
+can be either, both or neither, and the fixes are different: a bucket in
+`docs.json` for the first, three lines of frontmatter for the second.
+
+| | `unfiled` | `undeclared` |
+|---|---|---|
+| `scripts/docs-check.js` | a list, capped at twenty — but only pages under the doc root. A README beside code is not misfiled | not counted |
+| `scripts/docs-audit.js` | one line, every directory | one line |
+| `lib/map.js` | not counted | a list, in `.fankeel/map.md` |
+
+Neither is a defect anywhere. Both are the state of the tree rather than a fault
+in a page, and a command that always exits non-zero has an exit code that means
+nothing.
+
+**The root is excluded from `undeclared`, and only by the audit.** `README.md`
+and `CLAUDE.md` are the front door rather than pages in a tree, and GitHub
+renders a frontmatter block on a README as a stray table at the top of it.
+`TODO.md` is excluded for the opposite reason: it is not a claim about the code
+that could quietly stop being true, it is a list `scripts/todo-check.js`
+re-verifies in full on every run, so a `last_verified` there would be a date
+somebody has to remember to bump standing in for a check that already runs.
+
+`lib/map.js` keeps them, deliberately. The map is read while surveying, where
+*these two pages are dated by git* is something the reader wants to know rather
+than a chore being handed to them — which is why this repository's own map says
+`undeclared — 2` and names `README.md` and `TODO.md` where `docs-audit` says
+nothing at all.
 
 [Back to the index](README.md) · [Back to the front page](../README.md)

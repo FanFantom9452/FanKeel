@@ -21,7 +21,7 @@ const result = (over) => ({
   tree: { preset: 'flat' },
   error: null,
   counts: {},
-  undeclared: [],
+  unfiled: [],
   markdown: 0,
   findings: [],
   ...over,
@@ -31,9 +31,9 @@ const finding = (i) => ({
   tag: 'gone', file: 'docs/' + i + '.md', line: 1, what: 'names docs/x.md', role: 'reference',
 });
 
-test('the undeclared list stops at twenty and says how many it cut', () => {
+test('the unfiled list stops at twenty and says how many it cut', () => {
   const files = Array.from({ length: 23 }, (_, i) => 'docs/' + i + '.md');
-  const text = report(result({ undeclared: files, markdown: 23 }));
+  const text = report(result({ unfiled: files, markdown: 23 }));
 
   assert.match(text, /23 in no bucket/);
   assert.equal(text.includes('  docs/19.md'), true, 'the twentieth is inside the cap');
@@ -42,13 +42,13 @@ test('the undeclared list stops at twenty and says how many it cut', () => {
 });
 
 test('a list inside the cap gets no truncation line at all', () => {
-  const text = report(result({ undeclared: ['docs/a.md'], markdown: 1 }));
+  const text = report(result({ unfiled: ['docs/a.md'], markdown: 1 }));
 
   assert.match(text, /1 in no bucket/);
   assert.equal(/more, not listed/.test(text), false, 'nothing was dropped, so nothing says so');
 });
 
-test('nothing undeclared renders no heading over an empty list', () => {
+test('nothing unfiled renders no heading over an empty list', () => {
   const text = report(result({}));
 
   assert.equal(text.includes('in no bucket'), false, 'a heading over no rows reads as a finding');

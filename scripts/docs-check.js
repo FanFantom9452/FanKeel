@@ -285,19 +285,19 @@ function scan(root, roles) {
 
     const findings = [];
     const counts = {};
-    const undeclared = [];
+    const unfiled = [];
     const archived = new Set(
         tree ? markdown.filter((f) => docs.roleOf(tree, f) === 'archive') : [],
     );
 
     for (const rel of markdown) {
         const declared = docs.roleOf(tree, rel);
-        // Undeclared markdown is still checked, as reference — a page that
+        // Unfiled markdown is still checked, as reference — a page that
         // describes code and nobody filed is exactly the page most likely to be
         // wrong. It is only *reported* as unfiled when it sits where documents
         // are supposed to be filed.
         const role = declared || 'reference';
-        if (!declared && rel.split('/')[0] === docRoot) undeclared.push(rel);
+        if (!declared && rel.split('/')[0] === docRoot) unfiled.push(rel);
         counts[role] = (counts[role] || 0) + 1;
         for (const f of checkDoc(root, rel, role, symbols, roots)) findings.push(Object.assign({ role }, f));
     }
@@ -331,7 +331,7 @@ function scan(root, roles) {
     const kept = wanted ? findings.filter((f) => wanted.includes(f.role)) : findings;
 
     return {
-        tree, error, counts, undeclared,
+        tree, error, counts, unfiled,
         markdown: markdown.length,
         findings: kept,
     };
@@ -350,10 +350,10 @@ function report(result) {
     const roles = Object.keys(result.counts).sort();
     if (roles.length) lines.push('  ' + roles.map((r) => result.counts[r] + ' ' + r).join(', '));
 
-    // Said before the findings, because an undeclared document is the one whose
+    // Said before the findings, because an unfiled document is the one whose
     // lifetime nobody decided, and those are the ones that rot unnoticed.
-    lines.push(...section(result.undeclared.length + ' in no bucket — nobody has said how long these stay true:',
-        result.undeclared, 20));
+    lines.push(...section(result.unfiled.length + ' in no bucket — nobody has said how long these stay true:',
+        result.unfiled, 20));
 
     const findings = result.findings.slice()
         .sort((a, b) => ORDER.indexOf(a.tag) - ORDER.indexOf(b.tag) || (a.file < b.file ? -1 : a.file > b.file ? 1 : a.line - b.line));
