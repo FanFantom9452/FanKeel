@@ -92,6 +92,64 @@ One extra registry write per gate, taken under the lock every writer already
 takes. `docs/registry.md` measures `inject.js` at two writes per prompt in every
 session on the machine; a gate is rarer than a prompt.
 
+## What was measured, and the one thing still open
+
+Measured 2026-09-01, in a live session, by installing this branch's four files
+over the cached plugin at
+`~/.claude/plugins/cache/fankeel/fankeel/0.40.0` and asking one question.
+
+The record before the question, after draining a hand-run stamp:
+
+```
+gateAt : undefined
+waited : {"verify":28660}
+clock  : undefined
+```
+
+and after it:
+
+```
+gateAt : undefined
+waited : {"verify":28660}          unchanged
+clock  : {"verify":[1788199546885,1788199546885]}
+burn   : undefined
+```
+
+**The control held.** `clock` appearing at all proves the cached code was live —
+`hooks/resume.js` called the new `touch()`. And `burn` staying `undefined`
+beside it is this design's central claim confirmed in production rather than in
+a test: `resume.js` passes no token figure, so `burn` records nothing where a
+clock records a sighting. The pair being `[t, t]` is the single-sighting case,
+which `clockOf` reports as `null`.
+
+**`waited` did not move, and no `gateAt` was ever written.** The new
+`PreToolUse` registration did not fire. Two causes are consistent with that and
+this run does not separate them:
+
+1. Claude Code reads its hook **registration list** at session start, so a
+   `plugin.json` edited mid-session registers nothing. The two files that did
+   take effect had registrations that already existed and only changed content;
+   `hooks/gate.js` is the only one needing a new entry.
+2. `PreToolUse` does not fire for `AskUserQuestion` at all.
+
+Cause 1 is the likelier reading and it is still a reading, not an observation.
+
+**What settles it.** A session started *after* the install: any `waited` at all
+appearing in a fresh record means `gate.js` ran, because `adopt` does not carry
+`waited` and a new record has none. If a restarted session asks one question and
+`waited` is still absent, cause 2 is the answer and the `waited` half of this
+design has to be rebuilt on something else.
+
+**The machine's state while that is pending.** The 0.40.0 cache holds this
+branch's `hooks/gate.js`, `hooks/resume.js`, `lib/registry.js` and
+`.claude-plugin/plugin.json`, so it no longer matches the released 0.40.0 and
+the next plugin update will overwrite it. The originals are backed up under the
+session scratchpad at `cache-backup/`, and their md5s were
+`c4e59a51a6658371c1165861795d8135` for `hooks/resume.js`,
+`195c60fc6a72e758a31977218dc33091` for `lib/registry.js` and
+`25ca5f4e6e4b32d7ed67d89542060e6c` for `.claude-plugin/plugin.json`. Restoring
+those three and deleting `hooks/gate.js` returns it.
+
 ## Not doing
 
 - No `Stop` hook, for the reason above.
