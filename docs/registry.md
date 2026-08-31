@@ -158,9 +158,19 @@ owns: a breakdown is for reading one task, a total is for comparing two. A stage
 sampled once has no distance to report, so a task too short to be sampled twice
 shows a dash rather than a zero.
 
-Capped at 25, with the same `... and N more, not listed` line `scripts/survey.js`
-uses. The registry only grows, so an uncapped listing is one that gets longer
-every week and is read less each time.
+Uncapped, and the flag is why. It was capped at 25, with the `... and N more, not
+listed` line copied from `scripts/survey.js` — but 25 is that script's
+`DEFAULT_MAX`, the number it prints with no flag, and its own `--all` sets the cap
+to `Infinity`. The borrowed half was the wrong half: a flag whose entire meaning
+is *every one of them* was truncating the one reader who had typed it, and on this
+repository the tail it cut was 30 of 55 entries.
+
+The registry does only grow — `down` and `clear` both deactivate and nothing
+deletes — which is the argument for a bound somewhere, and three things already
+carry it. The `every entry:` header above is the count for anyone who does not
+want to scroll. `show` without the flag still filters on `active`. And a reader
+who wants the first N has `head`, which is why there is no `--max N` here to
+reinvent it.
 
 The header carries the one number no reader had: how many files were entries by
 name and did not parse. `readFile` turns a parse failure into null and every hook
