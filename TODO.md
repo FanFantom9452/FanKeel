@@ -35,6 +35,8 @@ entry under any other heading is one nobody said the state of.
 
 ## Needs a decision
 
+- Whether the task column should be bounded — [scripts/task.js](scripts/task.js), `entryLine` puts it last. Uncapping `show --all` gave 55 rows, widest 189 characters, which wraps. 09-01.
+
 - Whether `adopt` should carry a task's cost history — [scripts/task.js](scripts/task.js) builds the new record from an explicit field list, so `burn`, `clock` and `waited` are all dropped. 09-01.
 
 ## Waiting
