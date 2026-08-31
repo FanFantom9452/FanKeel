@@ -216,9 +216,10 @@ another session's, and never deletes one.
 
 Writing the file is atomic — a sibling, then a rename — but reading it, changing
 one field and writing it back is not, and that is what every writer here does.
-Two of them run in hooks. `inject.js` writes on every prompt — twice over, once
+Four of them run in hooks. `inject.js` writes on every prompt — twice over, once
 for the claims git found and once for `updated` — in every session on the
-machine. `touch.js` fires on every edit but writes on almost none of them: it
+machine. `resume.js` writes once per answered question, and `gate.js` once per
+question asked. `touch.js` fires on every edit but writes on almost none of them: it
 returns at `hooks/touch.js:42` when the path is already claimed, which is what
 makes a task editing one file two hundred times cost the registry one write. Measured, two processes adding twenty
 claims each kept 20 to 24 of the 40, and every one of those writes returned
