@@ -32,6 +32,7 @@ heading is one nobody said the state of.
 
 ## Needs a decision
 
+- A plan whose tasks all touch one index file serialises the whole build and nothing says so — [scripts/ledger.js](scripts/ledger.js), `groups`. Three singleton groups printed the pair message. 08-31.
 - Looking at `.fankeel/sessions/` without a session open — an HTML page, a `task.js` verb, or neither. `/fankeel` lists and `clear` deletes already; the view from outside is what is missing. 08-31.
 
 ## Waiting
