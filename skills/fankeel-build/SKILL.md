@@ -4,7 +4,7 @@ description: The build stage — run a plan's tasks, or a design's file table wh
 version: 0.40.0
 status: current
 last_verified: 2026-08-31
-source_of_truth: lib/stages.js, lib/ledger.js, scripts/ledger.js
+source_of_truth: lib/stages.js, lib/ledger.js, lib/plantasks.js, scripts/ledger.js
 ---
 
 # fankeel-build
@@ -67,15 +67,16 @@ lost is the recovery: nothing is on disk, so a compaction takes the place with
 it, and `git log` is all that is left. A task that cannot afford that wants a
 plan, which is what upgrading the route is for.
 
-**The rows run in order, one at a time.** `groups` reads a plan's two
-declarations and a file table carries one of them: a path per row is the disjoint
-`**Files:**` half, and with no `**Interfaces:**` block `Consumes` and `Produces`
-are empty, so the shared-cause check has nothing to match and two rows on
-different files read as independent even where one produces what the next
-consumes. Half a predicate is not one, and here there is no ledger to recover
-from when it is wrong. A bounded task whose rows really are independent —
-several `TODO.md` entries cleared in one go, which is the case parallel build was
-built for — wants a plan for that as well as for the recovery.
+**The rows run in order, one at a time.** Nothing groups them: `parseTasks`
+reads `### Task` headings and the `**Files:**` and `**Interfaces:**` blocks
+under them, so a two-column file table yields no tasks at all and `groups` has
+nothing to group. Teaching the table to declare its paths would not be enough
+either — with no `**Interfaces:**` block `Consumes` and `Produces` stay empty,
+so the shared-cause check has nothing to match and two rows on different files
+would read as independent even where one produces what the next consumes. A
+bounded task whose rows really are independent — several `TODO.md` entries
+cleared in one go, which is the case parallel build was built for — wants a plan
+for that as well as for the recovery.
 
 ### 3. Scan the plan before the first task
 

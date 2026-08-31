@@ -138,20 +138,22 @@ test('build names a denominator for a route with no plan', () => {
 });
 
 // The denominator above says what a no-plan route counts against. It does not say
-// what order those rows run in, and `groups` cannot answer it either: the two
-// predicates are computed from a plan's `**Files:**` and `**Interfaces:**` blocks
-// and a file table carries at most the first, so two dependent rows on different
-// files would read as independent. The branch has to state the order and name the
-// half it is missing, in the paragraph that describes the branch — a reader who
-// gets as far as the mermaid in docs/pipeline.md finds a group node that is on
-// the plan path only.
+// what order those rows run in, and there are two reasons rather than one: nothing
+// parses a two-column file table into tasks at all, and a table taught to declare
+// its paths would still leave the shared-cause half of `conflict()` with nothing
+// to match. Both belong in the branch, because stopping at the first reads as
+// though declaring paths would be the fix. Each assertion below names a different
+// claim — one substring standing for all three would pass on a paragraph that
+// mentioned Interfaces and said nothing about order.
 test('build says the no-plan rows run in order', () => {
   const branch = /\*\*With no plan file there is no ledger[\s\S]*?\n\n### /.exec(read('fankeel-build'));
   assert.ok(branch, 'the no-plan branch is not where this test looks for it');
   assert.match(branch[0], /in order, one at a time/,
     'the no-plan branch does not say what order its rows run in');
-  assert.match(branch[0], /Interfaces/,
-    'the no-plan branch states an order without naming the predicate it is short of');
+  assert.match(branch[0], /Nothing groups them/,
+    'the branch states an order without saying why nothing could group the rows');
+  assert.match(branch[0], /shared-cause check has nothing to match/,
+    'the branch stops at the parser and never reaches the missing Interfaces half');
 });
 
 // Two copies of every stage's output shape: `template` in lib/stages.js,

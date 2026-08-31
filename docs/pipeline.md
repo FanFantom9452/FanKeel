@@ -438,8 +438,8 @@ The second and third setup steps below are the path with a plan. A `bounded` or
 and no plan to scan: `design`'s file table is what the loop runs and what the
 report counts against, and the memory is a conversation again. Those rows run in
 order. The grouping in the diagram below is computed from a plan's `**Files:**`
-and `**Interfaces:**` declarations, a file table carries at most the first, and
-half the predicate reads two dependent rows as independent.
+and `**Interfaces:**` blocks; a file table has neither, so there is nothing for
+the two predicates to compare and nothing that could say two rows may overlap.
 
 ```mermaid
 flowchart TD
