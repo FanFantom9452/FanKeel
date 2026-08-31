@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-08-30
-source_of_truth: hooks/brief.js, lib/render.js, hooks/carry.js
+last_verified: 2026-08-31
+source_of_truth: hooks/brief.js, lib/render.js, hooks/carry.js, lib/plantasks.js
 ---
 
 # Subagents
@@ -93,11 +93,17 @@ anything afterward.
 The commit moved to the parent, one task at a time, as each implementer
 returns — never the implementer itself, which now returns paths, never a diff.
 That is what makes overlap in wall-clock safe even though the index still has
-one writer. What decides whether a *pair* may overlap is two predicates,
-computed from the plan rather than judged: tasks in one group have disjoint
+one writer. What decides whether a *pair* may overlap is three predicates,
+computed from the plan rather than judged. A task that declared no
+`Files: Modify` at all conflicts with everything, because nothing declared is
+not the same as nothing shared. Past that, tasks in one group have disjoint
 `Files: Modify` lists, and neither's `Consumes` names anything the other
-`Produces` — the half file overlap alone cannot see.
-`node scripts/ledger.js --plan <file> groups` computes both over a whole plan
+`Produces` — the half file overlap alone cannot see. The two halves fail
+opposite ways on purpose, and `conflict()` in `lib/plantasks.js` carries why:
+an empty `Files:` is a task nobody finished writing, where an empty `Consumes`
+or `Produces` is an answer plans give constantly — the first task of one
+consumes nothing and the last produces nothing.
+`node scripts/ledger.js --plan <file> groups` computes all three over a whole plan
 and prints which tasks may share one response. Two tasks in different groups
 never run at once, and the ceiling above still bounds how many of one group go
 out together.
