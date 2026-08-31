@@ -36,9 +36,11 @@ heading is one nobody said the state of.
 - What a session record should hold for the outside view — per-stage timestamps beside `burn` in [lib/registry.js](lib/registry.js), and whether a Stop/UserPromptSubmit pair nets out the wait. 08-31.
 - Whether [scripts/todo-check.js](scripts/todo-check.js) should check that a cited section names its subject — it validates that links resolve only. Three entries drifted through that gap. 08-31.
 
+- Whether `adopt` should carry a task's cost history — [scripts/task.js](scripts/task.js) builds the new record from an explicit field list, so `burn`, `clock` and `waited` are all dropped. 09-01.
+
 ## Waiting
 
-- Whether a `path:line` that drifts while still resolving is worth a check — [scripts/docs-check.js](scripts/docs-check.js). Once: `lib/map.js:323` became 342, passing both ways. 08-31.
+- Whether a `path:line` that drifts while still resolving is worth a check — [scripts/docs-check.js](scripts/docs-check.js). Twice now: `lib/map.js:323` became 342, and five citations drifted across one build, all passing both ways. 09-01.
 
 - Whether three days is the right settle period — [scripts/docs-audit.js](scripts/docs-audit.js), `LANDED_QUIET`. Picked from 8 plans on one repo, all inside a 0–4 day band. 08-31.
 - Whether a stated `Done when` actually ends the gate loop, or only renames it — [lib/stages.js](lib/stages.js), ALWAYS[0]'s `or none`. Reported live once; only use says. 08-29.
