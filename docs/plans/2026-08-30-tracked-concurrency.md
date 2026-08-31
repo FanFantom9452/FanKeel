@@ -32,7 +32,7 @@ repository, so every convention below comes from the surrounding code.
 - **`lib/` may not reach into `scripts/`.** This is stated at
   `lib/tracked.js:5-7` as the reason this module exists: `lib/map.js` "could not
   reach into `scripts/` from `lib/`" and grew a second walk of its own, and the
-  two then disagreed by 45 markdown files. `lib/map.js:323` and
+  two then disagreed by 45 markdown files. `lib/map.js:342` and
   `lib/stages.js:299` build `scripts/...` strings for *display* only; no file in
   `lib/` requires or spawns one, and this plan does not make it the first.
 - **`README.md:225`** — "`lib/` is pure logic, tested directly. `hooks/` is where
