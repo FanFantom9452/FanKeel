@@ -137,6 +137,23 @@ test('build names a denominator for a route with no plan', () => {
     'fankeel-build names only the ledger as its denominator');
 });
 
+// The denominator above says what a no-plan route counts against. It does not say
+// what order those rows run in, and `groups` cannot answer it either: the two
+// predicates are computed from a plan's `**Files:**` and `**Interfaces:**` blocks
+// and a file table carries at most the first, so two dependent rows on different
+// files would read as independent. The branch has to state the order and name the
+// half it is missing, in the paragraph that describes the branch — a reader who
+// gets as far as the mermaid in docs/pipeline.md finds a group node that is on
+// the plan path only.
+test('build says the no-plan rows run in order', () => {
+  const branch = /\*\*With no plan file there is no ledger[\s\S]*?\n\n### /.exec(read('fankeel-build'));
+  assert.ok(branch, 'the no-plan branch is not where this test looks for it');
+  assert.match(branch[0], /in order, one at a time/,
+    'the no-plan branch does not say what order its rows run in');
+  assert.match(branch[0], /Interfaces/,
+    'the no-plan branch states an order without naming the predicate it is short of');
+});
+
 // Two copies of every stage's output shape: `template` in lib/stages.js,
 // restated on every prompt, and the `## Output` block in the skill, read once on
 // entering the stage. Both have to exist — a skill is also read with no task

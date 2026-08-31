@@ -436,7 +436,10 @@ conversation.
 The second and third setup steps below are the path with a plan. A `bounded` or
 `spike` route reaches this stage without one, and then there is no ledger to open
 and no plan to scan: `design`'s file table is what the loop runs and what the
-report counts against, and the memory is a conversation again.
+report counts against, and the memory is a conversation again. Those rows run in
+order. The grouping in the diagram below is computed from a plan's `**Files:**`
+and `**Interfaces:**` declarations, a file table carries at most the first, and
+half the predicate reads two dependent rows as independent.
 
 ```mermaid
 flowchart TD

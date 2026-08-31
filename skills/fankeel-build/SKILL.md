@@ -67,6 +67,16 @@ lost is the recovery: nothing is on disk, so a compaction takes the place with
 it, and `git log` is all that is left. A task that cannot afford that wants a
 plan, which is what upgrading the route is for.
 
+**The rows run in order, one at a time.** `groups` reads a plan's two
+declarations and a file table carries one of them: a path per row is the disjoint
+`**Files:**` half, and with no `**Interfaces:**` block `Consumes` and `Produces`
+are empty, so the shared-cause check has nothing to match and two rows on
+different files read as independent even where one produces what the next
+consumes. Half a predicate is not one, and here there is no ledger to recover
+from when it is wrong. A bounded task whose rows really are independent —
+several `TODO.md` entries cleared in one go, which is the case parallel build was
+built for — wants a plan for that as well as for the recovery.
+
 ### 3. Scan the plan before the first task
 
 Write down what you check as you check it. **The output is a table, not a

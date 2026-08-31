@@ -32,8 +32,6 @@ heading is one nobody said the state of.
 
 ## Needs a decision
 
-- Whether a `bounded` task should ever run tasks in parallel — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md), the no-plan branch. No plan file, so `groups` has no input. 08-31.
-
 ## Waiting
 
 - Whether `conflict()` fail closed on `Files:` but fail open on `Interfaces:` lets a dependent pair run at once — [lib/plantasks.js](lib/plantasks.js). The plan skill mandates the block. 08-31.
