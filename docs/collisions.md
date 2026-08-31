@@ -157,11 +157,11 @@ Two rules keep it from becoming a lockout:
   whose `sessionId` is not this one's. A subagent inherits its parent's session
   id, so two implementers dispatched by one session are invisible to each other
   here however the guard is set. That was inert while `build` dispatched one at
-  a time. It is not inert now: `build` sends a whole group at once, and what
-  keeps those apart instead is the pair of predicates in
-  [subagents.md](subagents.md) — disjoint `**Files:**`, no producer/consumer
-  edge — plus the parent staging each task's declared paths, which leaves
-  anything written outside them unstaged rather than committed.
+  a time. It is not inert now: `build` sends a whole group at once wherever there
+  is a plan to compute one from, and what keeps those apart instead is the pair
+  of predicates in [subagents.md](subagents.md) — disjoint `**Files:**`, no
+  producer/consumer edge — plus the parent staging each task's declared paths,
+  which leaves anything written outside them unstaged rather than committed.
 
 # Stale entries
 

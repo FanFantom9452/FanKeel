@@ -156,6 +156,22 @@ test('build says the no-plan rows run in order', () => {
     'the branch stops at the parser and never reaches the missing Interfaces half');
 });
 
+// The branch above sends a no-plan route into `## The task loop`, and that loop
+// talks about groups throughout: step 1's BASE rule turns on when a task's group
+// went out, and step 2 sends a whole group in one response and names the `groups`
+// command. A bounded reader told two paragraphs earlier that nothing groups their
+// rows then arrives at an instruction to run a command that answers `No plan at`.
+// The marking is one rule at the head of the loop rather than a note per step,
+// the same way docs/pipeline.md marks its flowchart.
+test('the task loop marks its group language as the plan path', () => {
+  const loop = /\n## The task loop\n[\s\S]*?\n## /.exec(read('fankeel-build'));
+  assert.ok(loop, 'the task loop is not where this test looks for it');
+  assert.match(loop[0], /Where\s+there\s+is\s+no\s+plan\s+there\s+are\s+no\s+groups/,
+    'the task loop never says its group language is the plan path');
+  assert.match(loop[0], /one\s+row\s+per\s+pass/,
+    'the loop marks the group language without saying what a no-plan route does instead');
+});
+
 // Two copies of every stage's output shape: `template` in lib/stages.js,
 // restated on every prompt, and the `## Output` block in the skill, read once on
 // entering the stage. Both have to exist — a skill is also read with no task

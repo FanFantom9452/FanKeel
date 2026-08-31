@@ -111,6 +111,11 @@ tasks were safe together from a plan you can no longer remember reading.
 
 For each task the denominator does not list as complete:
 
+**Where there is no plan there are no groups.** Everything below that names one —
+the group in step 1's BASE rule, the whole group going out in step 2, the
+`groups` command itself — is the plan path. A no-plan route runs one row per
+pass, and every other step of the loop is unchanged.
+
 1. Record `git rev-parse HEAD` as BASE — **immediately before this task's
    commit, not when its group went out.** The tasks in a group that committed
    before it are already in HEAD, and a BASE taken at dispatch time would pull
