@@ -30,8 +30,6 @@ heading is one nobody said the state of.
 
 ## Ready
 
-- `survey.js --tree` prints nothing unless `--root` is passed too — [scripts/survey.js](scripts/survey.js), line 410 gates the tree on `opts.root`. Silent, so it reads as an empty tree. 08-31.
-
 ## Needs a decision
 
 - Looking at `.fankeel/sessions/` without a session open — an HTML page, a `task.js` verb, or neither. `/fankeel` lists and `clear` deletes already; the view from outside is what is missing. 08-31.

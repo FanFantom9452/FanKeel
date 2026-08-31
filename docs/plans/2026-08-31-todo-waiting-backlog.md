@@ -6,7 +6,7 @@ source_of_truth: TODO.md, lib/plantasks.js, lib/guard.js
 
 # TODO Waiting backlog Implementation Plan
 
-**Goal:** close the three `## Waiting` entries that no longer wait on anything external, and file the two entries this survey produced.
+**Goal:** close the three `## Waiting` entries that no longer wait on anything external, and file what this survey produced. One of the two entries it produced was withdrawn at review — see Task 3, step 2.
 
 **Architecture:** no behaviour changes. Two of the three entries are answered by reasoning already half-written in the code; the work is finishing that reasoning where it lives and removing the entry in the same change, which is this repository's own way of closing one. The third is a merge of two bullets asking one question. Nothing new is built and no test is added: the behaviour both entries ask about is already pinned by tests that exist.
 
@@ -183,11 +183,7 @@ Replace both with this one:
 - A per-`agent_type` subagent brief, and whether it carries more than the map — [docs/subagents.md](docs/subagents.md). The `SubagentStart` matcher allows it; real use says which types earn one. 08-31.
 ```
 
-2. Under `## Ready`, add:
-
-```
-- `survey.js --tree` prints nothing unless `--root` is passed too — [scripts/survey.js](scripts/survey.js), line 410 gates the tree on `opts.root`. Silent, so it reads as an empty tree. 08-31.
-```
+2. ~~Under `## Ready`, add an entry for `survey.js --tree` printing nothing without `--root`.~~ **Withdrawn on 2026-08-31, after the review.** The observation behind it was an artefact of the survey piping that command through `head`: `parseArgs` defaults `root` to `process.cwd()` at `scripts/survey.js:439`, so `opts.root` is always set on the CLI path and the tree does print — at the end of a long report, below the declarations. There is no defect and nothing to file. `## Ready` stays empty.
 
 3. Under `## Needs a decision`, add:
 
@@ -195,7 +191,7 @@ Replace both with this one:
 - How to look at `.fankeel/sessions/` without a session open — a generated HTML page, a `task.js` verb, or neither. `/fankeel` already lists and `clear` already deletes; the view from outside is what is missing. 08-31.
 ```
 
-4. Run `node scripts/todo-check.js`. It must report `1 ready, 1 needs a decision, 12 waiting`, all links resolving, none over the cap.
+4. Run `node scripts/todo-check.js`. It must report `0 ready, 1 needs a decision, 13 waiting`, all links resolving, none over the cap.
 
 5. Run `npm test` and watch the suite stay green.
 
