@@ -203,6 +203,35 @@ test('the plan scan says what a no-plan route does instead', () => {
     'the scan is marked plan-only without naming the ledger write it also cannot do');
 });
 
+// Past the loop the page keeps speaking to the plan path only. The ruling verb is
+// a `ledger.js` call, and the fourth of the four things that stop the loop is a
+// plan so broken every path forward is a guess. The mechanism is disclaimed far
+// above, in the setup branch that sends a completion line to the response and the
+// commit message; the section that actually issues the ruling is where a reader
+// stops, and nothing there said which route it was talking to.
+test('the ruling section says where a no-plan ruling goes', () => {
+  const section = /\n## Rulings, not stalls\n[\s\S]*?\n## /.exec(read('fankeel-build'));
+  assert.ok(section, 'the ruling section is not where this test looks for it');
+  assert.match(section[0], /With\s+no\s+plan\s+the\s+ruling\s+goes\s+in\s+the\s+response/,
+    'the ruling section names only a ledger.js call and never the no-plan route');
+  assert.match(section[0], /a\s+plan,\s+or\s+a\s+file\s+table,\s+so\s+broken/,
+    'the fourth stopper still stops only on a broken plan, which a no-plan route has none of');
+});
+
+// The same one heading later. A file table can be wrong exactly as a plan can, and
+// is ruled on the same way; what does not carry over is the task-boundary half,
+// because a row is a line in a table rather than a task with its own test cycle.
+// Saying only the first would leave a reader ruling a row back to a document that
+// does not exist.
+test('the plan-is-wrong section covers a file table too', () => {
+  const section = /\n## When the plan is wrong\n[\s\S]*?\n## /.exec(read('fankeel-build'));
+  assert.ok(section, 'the plan-is-wrong section is not where this test looks for it');
+  assert.match(section[0], /A\s+file\s+table\s+is\s+wrong\s+the\s+same\s+way/,
+    'the section speaks only to a plan, which a bounded route reaching it does not have');
+  assert.match(section[0], /task-boundary\s+half\s+has\s+nothing\s+to\s+say/,
+    'the section carries the file table over without saying which half does not carry');
+});
+
 // Two copies of every stage's output shape: `template` in lib/stages.js,
 // restated on every prompt, and the `## Output` block in the skill, read once on
 // entering the stage. Both have to exist — a skill is also read with no task

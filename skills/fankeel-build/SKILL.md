@@ -210,6 +210,10 @@ decide them, and record the decision:
 node <plugin>/scripts/ledger.js --plan <file> ruling "<what>" "<why>" "<cost if wrong>"
 ```
 
+**With no plan the ruling goes in the response and then the commit message**, by
+the branch in setup step 2 that sends the completion line to the same two places.
+Nothing else in this section changes.
+
 The spec is the binding authority, the plan is its argument, and your judgement
 settles what neither answers. A wrong ruling costs rework the user can see and
 undo; a session parked on a question costs their whole day and buys nothing.
@@ -220,7 +224,7 @@ undo; a session parked on a question costs their whole day and buys nothing.
 2. a security-sensitive action
 3. a side effect outside this workspace that norms say you ask about first — a
    merge, a push to a shared branch, a publish
-4. a plan so broken that every path forward is a guess
+4. a plan, or a file table, so broken that every path forward is a guess
 
 ## A new ask is not a fifth stopper
 
@@ -299,6 +303,11 @@ is a guess. Record what the plan said, what you did instead, and what it costs i
 that was wrong. If a task turns out not to carry its own test cycle, say so: that
 is a defect in the plan's task boundaries, and the fix is to merge it with its
 neighbour rather than to commit something red.
+
+**A file table is wrong the same way and ruled on the same way.** The
+task-boundary half has nothing to say there — a row is a line in a table, not a
+task carrying its own test cycle — so a row that turns out to need two is split
+where you are, rather than being a defect in a document.
 
 ## Output
 
