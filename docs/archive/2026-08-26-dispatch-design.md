@@ -1,5 +1,5 @@
 ---
-status: current
+status: archived
 last_verified: 2026-08-26
 source_of_truth: skills/fankeel/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, lib/stages.js
 ---

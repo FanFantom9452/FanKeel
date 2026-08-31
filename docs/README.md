@@ -34,12 +34,7 @@ here.
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
 | Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
 | How the seven-stage work is being built, task by task | [plans/2026-08-22-seven-stage-implementation.md](plans/2026-08-22-seven-stage-implementation.md) — *superseded by the pipeline plan* |
-| Why the registry goes stale, and what is meant to notice | [plans/2026-08-23-registry-staleness-design.md](plans/2026-08-23-registry-staleness-design.md) — *superseded by the observed-scope design* |
-| How that is being built, task by task | [plans/2026-08-23-registry-staleness-implementation.md](plans/2026-08-23-registry-staleness-implementation.md) — *superseded by the observed-scope design* |
 | Why a session ran two hours with the plugin doing nothing | [plans/2026-08-26-session-id-design.md](plans/2026-08-26-session-id-design.md) — *built, 0.31.0* |
-| How that was built, task by task | [plans/2026-08-26-session-id.md](plans/2026-08-26-session-id.md) — *built, 0.31.0* |
-| Why the pipeline stopped barring subagents, and what it bars instead | [plans/2026-08-26-dispatch-design.md](plans/2026-08-26-dispatch-design.md) — *built, 0.32.0* |
-| How that was built, task by task | [plans/2026-08-26-dispatch.md](plans/2026-08-26-dispatch.md) — *built, 0.32.0* |
 | Why the end of a task is where the advice goes, and what `/clear` costs | [plans/2026-08-28-task-end-design.md](plans/2026-08-28-task-end-design.md) — *built* |
 | The three tasks that built it, with every string and every test written out | [plans/2026-08-28-task-end.md](plans/2026-08-28-task-end.md) — *built* |
 | Why the thirty spawns a walk makes were left synchronous | [plans/2026-08-30-tracked-concurrency-design.md](plans/2026-08-30-tracked-concurrency-design.md) — *built* |
