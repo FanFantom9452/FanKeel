@@ -41,7 +41,7 @@ test('an index whose links all resolve passes', () => {
   const { out, code } = run(file);
   assert.equal(code, 0);
   assert.match(out, /1 entries — 1 ready, 0 needs a decision, 0 waiting/);
-  assert.match(out, /All links resolve, none over the cap/);
+  assert.match(out, /All links resolve, no stale citations, none over the cap/);
 });
 
 test('a link to a file that no longer exists is a dead entry', () => {
@@ -161,6 +161,119 @@ test('a clean run reports the count under each heading', () => {
 
 test('this project’s own TODO.md is an index', () => {
   const { out, code } = run(path.join(__dirname, '..', 'TODO.md'));
+  assert.equal(code, 0, out);
+});
+
+const TREE = JSON.stringify({
+  index: 'docs/README.md',
+  buckets: [
+    { path: 'docs', role: 'reference', depth: 1 },
+    { path: 'docs/decisions', role: 'decision' },
+    { path: 'docs/plans', role: 'plan' },
+    { path: 'docs/reports', role: 'report' },
+    { path: 'docs/archive', role: 'archive' },
+  ],
+});
+
+// Two of the three entries this check was written for, in the words they drifted
+// in. Both cited `## What is still a guess`, and the heading was still there — so
+// verifying that a cited section exists would have reported neither. What had
+// changed was the section's subject, and the role is the standing declaration
+// that the page is an account of a decision and not a place an open question is
+// tracked.
+//
+// The second bullet is the control and it is the third of those three entries.
+// It cites a reference page, which is where a live question may live, and it has
+// to come back clean: a rule that reports every citation is measuring "has a
+// link", not the role.
+test('an entry citing a decision record is a stale citation, one citing a reference page is not', () => {
+  const file = fixture(
+    '# TODO\n\n## Waiting\n\n'
+      + '- Whether `audit` earns a place — [why](docs/decisions/shell.md), "What is still a guess".\n'
+      + '- A per-`agent_type` subagent brief — [subagents](docs/subagents.md).\n',
+    {
+      '.fankeel/docs.json': TREE,
+      'docs/decisions/shell.md': '# why\n\n## What is still a guess\n\nWhether `survey` earns its place.\n',
+      'docs/subagents.md': '# subagents\n\n`agent_type` is the trap.\n',
+    });
+  const found = todo.check(file).problems;
+  assert.deepEqual(found.map((p) => p.kind), ['stale citation'], 'the reference citation is clean');
+  assert.equal(found[0].line, 5);
+  assert.match(found[0].detail, /filed as decision/);
+});
+
+// The live one. A plan is archived or deleted at `land`, so an entry whose detail
+// lives in one is a dead link with a date on it.
+test('an entry citing a plan is a stale citation', () => {
+  const file = fixture('# TODO\n\n## Waiting\n\n- Still silent — [design](docs/plans/session-id.md).\n',
+    { '.fankeel/docs.json': TREE, 'docs/plans/session-id.md': '# plan\n' });
+  const { out, code } = run(file);
+  assert.equal(code, 1);
+  assert.match(out, /stale citation/);
+  assert.match(out, /filed as plan/);
+});
+
+// The reading this check deliberately does NOT do, pinned so it cannot drift
+// back in. `roleOf` reads the bucket a path falls under and never the page's own
+// frontmatter, so a decision record marked `status: current` with this morning's
+// date is still reported — as this repository's own
+// `docs/decisions/fankeel-shell.md` is. That is the check working. A
+// scrupulously current account of a decision is still an account of a decision,
+// and an entry whose detail lives in one points at history however fresh the
+// history is.
+test('a decision record marked current is still a stale citation', () => {
+  const file = fixture('# TODO\n\n## Waiting\n\n- Whether it earns a place — [why](docs/decisions/shell.md).\n',
+    {
+      '.fankeel/docs.json': TREE,
+      'docs/decisions/shell.md': '---\nstatus: current\nlast_verified: 2026-09-01\n---\n\n# why\n',
+    });
+  const found = todo.check(file).problems;
+  assert.deepEqual(found.map((p) => p.kind), ['stale citation']);
+  assert.match(found[0].detail, /records a moment rather than the present/);
+});
+
+// `STALE_ROLES` has four entries and two of them had no test at all: deleting
+// `report` or `archive` from that list left the whole suite green. The `#anchor`
+// is the third case here because it is the form the entries that motivated this
+// check actually used — `fankeel-shell.md`, "What is still a guess" — and
+// `linksIn` throws away everything after the `#`, so the role lookup has to
+// survive that. The fourth bullet is the control: a reference page in the same
+// run, which has to stay clean or the other three prove nothing.
+test('archive and report are stale citations too, and an #anchor does not hide the role', () => {
+  const file = fixture(
+    '# TODO\n\n## Waiting\n\n'
+      + '- retired — [a](docs/archive/old.md).\n'
+      + '- a benchmark — [b](docs/reports/bench.md).\n'
+      + '- anchored — [c](docs/decisions/shell.md#what-is-still-a-guess).\n'
+      + '- a reference page — [d](docs/pipeline.md).\n',
+    {
+      '.fankeel/docs.json': TREE,
+      'docs/archive/old.md': '# old\n',
+      'docs/reports/bench.md': '# bench\n',
+      'docs/decisions/shell.md': '# why\n\n## What is still a guess\n',
+      'docs/pipeline.md': '# pipeline\n',
+    });
+  const found = todo.check(file).problems;
+  assert.deepEqual(found.map((p) => p.line), [5, 6, 7], 'the reference page on line 8 stays clean');
+  assert.match(found[0].detail, /filed as archive/);
+  assert.match(found[1].detail, /filed as report/);
+  assert.match(found[2].detail, /filed as decision/);
+});
+
+test('a link to code is never a stale citation', () => {
+  const file = fixture('# TODO\n\n## Waiting\n\n- The gap — [lib](lib/registry.js), `readSession`.\n',
+    { '.fankeel/docs.json': TREE, 'lib/registry.js': '// code\n' });
+  assert.deepEqual(todo.check(file).problems, []);
+});
+
+// The role check is the only thing here that reads a docs tree, and this script
+// had no dependency on one before it. A repository that never declared a tree
+// gets the three checks it always had — not a crash, and not a finding on every
+// link because the role came back null.
+test('with no docs.json nothing is a stale citation', () => {
+  const file = fixture('# TODO\n\n## Waiting\n\n- Still silent — [design](docs/plans/session-id.md).\n',
+    { 'docs/plans/session-id.md': '# plan\n' });
+  const { out, code } = run(file);
   assert.equal(code, 0, out);
 });
 

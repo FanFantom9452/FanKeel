@@ -3,7 +3,7 @@ name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.40.0
 status: current
-last_verified: 2026-08-31
+last_verified: 2026-09-01
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js
 ---
 
@@ -561,7 +561,11 @@ what the entry is still short of rather than what it is about, because what
 `init` has to know is which entries can become a task this morning.
 `node <plugin>/scripts/todo-check.js` says when any of the three has stopped being
 true, and the `land` rules call for it — a plan deleted at `land` is a link that
-just died.
+just died. It also refuses a link that still resolves but lands on a plan, a
+decision record, a report or an archive: those four roles record a moment rather
+than the present, so the detail behind the bullet is pointing at history — and a
+decision record kept scrupulously current is a scrupulously current account of a
+decision, which is why the check reads the role and not a `last_verified` date.
 
 ## On `/fankeel`
 
