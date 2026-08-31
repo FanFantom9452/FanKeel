@@ -11,19 +11,25 @@
 //   lives in a file in this repository that the entry links to, and it sits
 //   under the heading that says what it is still waiting for.
 //
-// Three things follow, and all three are checkable, which is the point. A link
+// Four things follow, and all four are checkable, which is the point. A link
 // that no longer resolves is a dead entry: usually the plan it pointed at was
 // rewritten into a decision record and deleted at `land`, and closing the entry
-// was forgotten. An entry over the length cap is not an index entry at all; the
-// detail got written here instead of where it belongs. An entry under no known
-// heading is one nobody said the state of, and `init` then has to guess which
-// entries can become a task today.
+// was forgotten. A link that resolves to a document whose role records a moment
+// rather than the present is the same failure one step earlier — the file is
+// still there and has already stopped answering. An entry over the length cap
+// is not an index entry at all; the detail got written here instead of where it
+// belongs.
+// An entry under no known heading is one nobody said the state of, and `init`
+// then has to guess which entries can become a task today.
 //
 // Nothing else is judged. Whether the work is still worth doing is not a thing a
-// script can know.
+// script can know, and neither is whether a page that is maintained happens to
+// discuss this entry.
 
 const fs = require('node:fs');
 const path = require('node:path');
+
+const docs = require('../lib/docs.js');
 
 // Long enough for a sentence and a link, short enough that a paragraph does not
 // fit. Detail that will not compress to this belongs in the file being pointed
@@ -41,6 +47,31 @@ const MAX_ENTRY_CHARS = 200;
 // become a task today, and two bullets about one file are as often one that is
 // ready and one that is still an argument.
 const SECTIONS = ['Ready', 'Needs a decision', 'Waiting'];
+
+// The roles `docs.json` declares for documents that record a moment rather than
+// the present: a decision record says why something was decided then, a plan
+// says what was about to be done, a report is a dated snapshot, and an archive
+// is retired. All four are correct documents doing their job. All four are the
+// wrong home for the detail behind an open entry, because none of them is
+// written to answer a question that is still open — which leaves `reference`,
+// and code, which is in no bucket at all.
+//
+// Not "nobody maintains them", which is the reading this said first and which
+// this repository's own tree falsifies: `docs/decisions/fankeel-shell.md`
+// carries `status: current` and a `last_verified` date, and is still reported
+// here. That is the check working. A decision record kept scrupulously current
+// is a scrupulously current account of a decision, and an entry whose detail
+// lives in one is pointing at history, however fresh the history is.
+//
+// This is the check, and it is deliberately not the one that was asked for.
+// Three entries drifted on 2026-08-31 and two of them cited `## What is still a
+// guess` in a decision record — the heading was still there, so verifying that a
+// cited section exists would have caught neither. What had changed was the
+// section's subject, narrowed to `survey` while the entries went on pointing at
+// it, and no script can read a section and rule on its subject. The role can:
+// it is the standing declaration that the page is an account of a decision and
+// not a place an open question is tracked.
+const STALE_ROLES = ['decision', 'plan', 'report', 'archive'];
 
 const LINK = /\[[^\]]*\]\(([^)]+)\)/g;
 // A scheme, or a bare in-page anchor. Neither is a file in this repository, so
@@ -101,6 +132,11 @@ function check(file) {
         return { file, missing: true, problems: [] };
     }
     const base = path.dirname(file);
+    // No `docs.json` is not a failure. `read` hands back a null tree, `roleOf`
+    // answers null for everything under it, and the role check reports nothing —
+    // this degrades to the three checks it had before rather than refusing to
+    // run in a repository that never declared a tree.
+    const { tree } = docs.read(base);
     const problems = [];
     const found = entries(text);
     for (const entry of found) {
@@ -122,12 +158,23 @@ function check(file) {
             });
         }
         for (const target of linksIn(entry.text)) {
-            if (fs.existsSync(path.resolve(base, target))) continue;
-            problems.push({
-                line: entry.line,
-                kind: 'dead link',
-                detail: target + ' does not exist. Either the entry is finished and should be removed, or the detail moved.',
-            });
+            const full = path.resolve(base, target);
+            if (!fs.existsSync(full)) {
+                problems.push({
+                    line: entry.line,
+                    kind: 'dead link',
+                    detail: target + ' does not exist. Either the entry is finished and should be removed, or the detail moved.',
+                });
+                continue;
+            }
+            const role = docs.roleOf(tree, path.relative(base, full));
+            if (STALE_ROLES.includes(role)) {
+                problems.push({
+                    line: entry.line,
+                    kind: 'stale citation',
+                    detail: target + ' is filed as ' + role + ', a role that records a moment rather than the present. Point at the code this is about, or at a reference page.',
+                });
+            }
         }
     }
     const counts = {};
@@ -145,7 +192,7 @@ function report(result) {
     const split = SECTIONS.map((s) => (result.counts[s] || 0) + ' ' + s.toLowerCase()).join(', ');
     if (!result.problems.length) {
         return 'fankeel todo-check: ' + result.count + ' entries — ' + split
-            + '. All links resolve, none over the cap.';
+            + '. All links resolve, no stale citations, none over the cap.';
     }
     const lines = ['fankeel todo-check: ' + result.problems.length + ' problem'
         + (result.problems.length === 1 ? '' : 's') + ' in ' + result.file, ''];

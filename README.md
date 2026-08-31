@@ -252,11 +252,13 @@ plugin. The other three are not load-bearing that way, but a stack trace in fron
 the user in the middle of somebody else's turn is its own kind of broken.
 
 `node scripts/todo-check.js` says whether [TODO.md](TODO.md) is still an index —
-every link resolving, no entry carrying detail that belongs in the file it points
-at, and every entry filed under `## Ready`, `## Needs a decision` or `## Waiting`,
-which is what says whether it can be started today. A clean run prints the split,
-so the ready count is on screen without opening the file. The `land` stage rules call for it, because a plan deleted at `land` is a link
-that just died.
+every link resolving, none of them landing on a document whose declared role
+records a moment rather than the present, no entry carrying detail that belongs
+in the file it points at, and every entry filed under `## Ready`, `## Needs a decision` or
+`## Waiting`, which is what says whether it can be started today. A clean run
+prints the split, so the ready count is on screen without opening the file. The
+`land` stage rules call for it, because a plan deleted at `land` is a link that
+just died.
 
 `node scripts/version.js` is the release number in the ten files that carry it —
 two manifests and one frontmatter line in each of the eight skills. With a number
