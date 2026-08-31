@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-31
+last_verified: 2026-09-01
 source_of_truth: this file is the index; each page below is its own source
 ---
 
@@ -21,6 +21,7 @@ here.
 | What gets written to disk, and what is committed | [registry.md](registry.md) |
 | What `notes` and `next` are for, and why they are capped | [registry.md](registry.md) |
 | What a stage cost, in tokens and in minutes, and how the gate wait is told apart | [registry.md](registry.md) — *what a stage cost* |
+| How to read the whole registry without a session open, and where a corrupt entry surfaces | [registry.md](registry.md) — *reading it from outside* |
 | Why the mode never switches itself off | [registry.md](registry.md) |
 | What the `context:` line in the injected block means | [registry.md](registry.md) |
 | What `[FANKEEL:CLASH]` means | [collisions.md](collisions.md) |

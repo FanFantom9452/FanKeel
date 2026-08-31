@@ -138,6 +138,42 @@ and renders `build` at 2394. `task.js show` prints `burn:` and `time:`, and the
 stage transition names what the stage it left cost, which is the one moment the
 figure is finished.
 
+# Reading it from outside
+
+Every reader here but one filters on `active === true`, and nothing deletes an
+entry — `down` and `clear` both deactivate, so a claim put down by mistake can
+still be adopted back with its notes intact. The two together mean the registry holds
+every task the workspace has ever run while no view showed any of them: 53 of 54
+entries on this repository the day the flag below was written, 26 of them
+carrying a `burn` figure nothing could print.
+
+```
+node scripts/task.js show --all
+```
+
+The whole directory, newest first by `updated`, one line an entry — the date, the
+stage it reached, the summed `burn` and `clock` over its route, then the task. The
+sums rather than the per-stage breakdown `show` prints for the entry a session
+owns: a breakdown is for reading one task, a total is for comparing two. A stage
+sampled once has no distance to report, so a task too short to be sampled twice
+shows a dash rather than a zero.
+
+Capped at 25, with the same `... and N more, not listed` line `scripts/survey.js`
+uses. The registry only grows, so an uncapped listing is one that gets longer
+every week and is read less each time.
+
+The header carries the one number no reader had: how many files were entries by
+name and did not parse. `readFile` turns a parse failure into null and every hook
+then returns quietly, which is right in a hook — a miss is what a session not
+using the plugin looks like, and nearly always is — and leaves a corrupt entry
+visible in no view at all. `readAll` counts it on the way past, so the one caller
+that is a person asking rather than a hook firing can say so out loud.
+
+`--all` asks the operating system nothing. `active` is what an entry says about
+itself, where the `other live sessions` block above it is `lib/live.js` measuring
+a process. An entry listed here may have no terminal behind it, and putting that
+claim down is what `/fankeel` → **Clear out** is for.
+
 # The mode never switches itself off
 
 A session is in fankeel mode exactly when it owns an active task. There is no

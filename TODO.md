@@ -35,7 +35,7 @@ entry under any other heading is one nobody said the state of.
 
 ## Needs a decision
 
-- Looking at `.fankeel/sessions/` without a session open — an HTML page, a `task.js` verb, or neither. `/fankeel` lists and `clear` deletes already; the view from outside is what is missing. 08-31.
+- Whether `show --all`'s 25-row cap is the right one — [scripts/task.js](scripts/task.js), `SHOWN`. 53 of 54 entries here already, so a listing built to be read prints `... and 29 more`. 09-01.
 
 - Whether `adopt` should carry a task's cost history — [scripts/task.js](scripts/task.js) builds the new record from an explicit field list, so `burn`, `clock` and `waited` are all dropped. 09-01.
 
