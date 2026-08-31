@@ -296,12 +296,24 @@ test('the build section marks the loop grouping as plan-only, not just the setup
     require('node:path').join(__dirname, '..', 'docs', 'pipeline.md'), 'utf8');
   const section = /\n### build\n[\s\S]*?\n```mermaid/.exec(page);
   assert.ok(section, 'the build section is not where this test looks for it');
-  // Both patterns tolerate the wrap: the page is hard-wrapped at 80 columns, so
-  // either phrase can arrive with a newline anywhere a space is written here.
+  // Every pattern tolerates the wrap: the page is hard-wrapped at 80 columns, so
+  // any phrase can arrive with a newline anywhere a space is written here.
   assert.match(section[0], /Those\s+rows\s+run\s+in\s+order/,
     'the build section does not say a no-plan route runs its rows in order');
   assert.match(section[0], /the\s+path\s+with\s+a\s+plan,\s+and\s+so\s+is/,
     'the plan-only marking stops at the setup steps and never reaches the loop');
+  // The lead-in above pins only that the sentence continues. These pin what it
+  // continues INTO: a reader has to be able to tell which nodes of the flowchart
+  // are plan-only, and a sentence that gestures at the loop without naming them
+  // leaves the same diagram unreadable on a bounded route.
+  for (const [pattern, node] of [
+    [/gate\s+asking\s+for\s+a\s+group/, 'the group gate'],
+    [/whole\s+group\s+out\s+in\s+one/, 'the group dispatch'],
+    [/`ledger\s+complete`/, 'the ledger completion'],
+  ]) {
+    assert.match(section[0], pattern,
+      'the plan-only marking does not name ' + node + ', so that node still reads as available with no plan');
+  }
 });
 
 // The page above quotes the rules, so it cannot be wrong about how many there
