@@ -290,13 +290,6 @@ function collisions(root, sessionId, claims) {
     return out;
 }
 
-// The cap on `show --all`. The registry only grows — nothing deletes an entry —
-// so an uncapped listing is one that gets longer every week and read less each
-// time. Twenty-five is what `scripts/survey.js` caps a section at, and the line
-// saying what was cut is copied from it word for word: two listings in one
-// project that trail off differently are two things to learn.
-const SHOWN = 25;
-
 // `updated` rather than `started`, because it is written on every prompt and so
 // says when the task was last worked on, which is what a person scanning a month
 // of them is looking for. An absent or unparseable one sorts to the bottom
@@ -398,11 +391,18 @@ function cmdShow(root, opts) {
         lines.push('every entry:  ' + (entries.length + unreadable) + ' total — '
             + open + ' active, ' + (entries.length - open) + ' stood down, '
             + unreadable + ' unreadable');
+        // Uncapped, and the flag is the reason. This listing was capped at 25 —
+        // `scripts/survey.js`'s DEFAULT_MAX, borrowed along with its `... and N
+        // more` line — but that is the number survey prints *without* a flag, and
+        // its own `--all` sets the cap to Infinity. So the borrowed half was the
+        // wrong half: a flag whose whole meaning is "every one of them" was
+        // truncating the one reader who had typed it, and at 55 entries here the
+        // tail it cut was 30. The registry does only grow, which is the argument
+        // for a bound somewhere — but the header line above is that bound for
+        // anyone who does not want to scroll, `show` without the flag still
+        // filters on active, and a reader who wants N of them has `head`.
         const rows = entries.slice().sort((a, b) => stampOf(b.data) - stampOf(a.data));
-        for (const row of rows.slice(0, SHOWN)) lines.push('  ' + entryLine(row.data));
-        if (rows.length > SHOWN) {
-            lines.push('  ... and ' + (rows.length - SHOWN) + ' more, not listed');
-        }
+        for (const row of rows) lines.push('  ' + entryLine(row.data));
     }
     return lines.join('\n');
 }
