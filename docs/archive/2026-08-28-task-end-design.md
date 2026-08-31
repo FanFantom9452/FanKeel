@@ -1,5 +1,5 @@
 ---
-status: current
+status: archived
 last_verified: 2026-08-28
 source_of_truth: lib/stages.js, lib/render.js, lib/registry.js, .claude-plugin/plugin.json
 ---

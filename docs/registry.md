@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-08-31
-source_of_truth: lib/registry.js, lib/render.js, lib/context.js, lib/dirty.js, scripts/task.js, hooks/touch.js, hooks/inject.js, hooks/carry.js
+last_verified: 2026-09-01
+source_of_truth: lib/registry.js, lib/render.js, lib/context.js, lib/dirty.js, scripts/task.js, hooks/touch.js, hooks/inject.js, hooks/carry.js, hooks/gate.js, hooks/resume.js
 ---
 
 # The registry, and what it remembers
@@ -27,7 +27,7 @@ workspace/                     <- Claude Code opened here
 
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims` |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited` |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | Created with the directory |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
@@ -89,6 +89,54 @@ of the two recorded a path is not distinguishable afterwards and does not need t
 be: the field says where the work went. No subcommand sets it. `adopt` carries it across, because where the work went belongs
 to the task rather than to the session, and `task` clears it, because a task that
 has just been renamed has touched nothing yet.
+
+# What a stage cost
+
+Three fields, none of them typed by anyone, and all three cleared when `task`
+renames the task — for the reason `burn` is cleared: stage names come round
+again, so a first sighting left behind reports two tasks as the cost of one
+stage.
+
+```json
+"burn":   { "survey": [120000, 342000] },
+"clock":  { "survey": [1756659679797, 1756660399797] },
+"waited": { "survey": 240000 }
+```
+
+`burn` is tokens and `clock` is milliseconds, and they are the same shape for the
+same reason: the first sighting is gone the moment it is not written down, and
+one sighting is a position rather than a distance. Both report `null` for a stage
+sampled once, and for one sampled backwards — which `burn` reaches whenever
+compaction moves the figure down.
+
+**Where they are written is where they differ, and it is deliberate.** `burn`
+sits inside `touch()`'s guard on the token figure. `hooks/inject.js` passes one;
+`hooks/resume.js` passes none, because an answer to an `AskUserQuestion` is a
+tool result rather than a prompt — so a stage that ends at a gate refreshes
+`updated` and records no burn at all. A clock has no threshold to fall below, so
+it is written beside `updated` and every touch is a sighting.
+
+`waited` is a running total rather than a pair, because a stage may open more
+than one gate and what is worth knowing is their sum. A gate that opened and was
+answered inside one millisecond still adds its zero: leaving it out would read,
+downstream, exactly like a stage that never opened one.
+
+**The pair that measures it is `PreToolUse`/`PostToolUse` on `AskUserQuestion`,
+not `Stop`.** `hooks/gate.js` stamps `gateAt` when the question goes out and
+`hooks/resume.js` folds the interval into `waited` when the answer arrives.
+`Stop` fires when Claude finishes responding, and a session pausing on a tool
+call has not finished responding — this pipeline's gate is a tool call, so `Stop`
+never fires at one. It would have measured the typing gap between two turns and
+missed the wait this pipeline actually accumulates.
+
+`gateAt` is the one transient field here. A `gateAt` nothing consumes — the
+session dies at a gate — is overwritten by the next one rather than repaired:
+the interval it measured has no end, so there is nothing to recover.
+
+None of the three reaches the injected block, which is capped at 2400 characters
+and renders `build` at 2394. `task.js show` prints `burn:` and `time:`, and the
+stage transition names what the stage it left cost, which is the one moment the
+figure is finished.
 
 # The mode never switches itself off
 
@@ -168,9 +216,10 @@ another session's, and never deletes one.
 
 Writing the file is atomic — a sibling, then a rename — but reading it, changing
 one field and writing it back is not, and that is what every writer here does.
-Two of them run in hooks. `inject.js` writes on every prompt — twice over, once
+Four of them run in hooks. `inject.js` writes on every prompt — twice over, once
 for the claims git found and once for `updated` — in every session on the
-machine. `touch.js` fires on every edit but writes on almost none of them: it
+machine. `resume.js` writes once per answered question, and `gate.js` once per
+question asked. `touch.js` fires on every edit but writes on almost none of them: it
 returns at `hooks/touch.js:42` when the path is already claimed, which is what
 makes a task editing one file two hundred times cost the registry one write. Measured, two processes adding twenty
 claims each kept 20 to 24 of the 40, and every one of those writes returned

@@ -642,3 +642,91 @@ test('a writer waits out a lock somebody else is holding', async () => {
   assert.equal(ok, true, 'gave up instead of waiting');
   assert.deepEqual(registry.claimsOf(registry.readSession(root, SID)), ['waited.js']);
 });
+
+// The clock is written where `updated` is, not where `burn` is. inject.js passes
+// a token figure and resume.js passes none, so a gate answered without a prompt
+// refreshes `updated` and leaves `burn` alone — a clock has no such threshold.
+test('touch records the clock even when no token figure is passed', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task({ stage: 'survey' }));
+  registry.touch(root, SID);
+  registry.touch(root, SID);
+  const after = registry.readSession(root, SID);
+  assert.equal(Array.isArray(after.clock.survey), true);
+  assert.equal(after.clock.survey.length, 2);
+  assert.equal(after.burn, undefined);
+});
+
+test('the clock keeps the first sighting and moves the latest', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task({ stage: 'survey', clock: { survey: [1000, 2000] } }));
+  registry.touch(root, SID);
+  const after = registry.readSession(root, SID);
+  assert.equal(after.clock.survey[0], 1000);
+  assert.equal(after.clock.survey[1] > 2000, true);
+});
+
+test('a stage change opens its own clock pair', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task({ stage: 'survey', clock: { survey: [1000, 2000] } }));
+  const data = registry.readSession(root, SID);
+  data.stage = 'design';
+  registry.writeSession(root, SID, data);
+  registry.touch(root, SID);
+  const after = registry.readSession(root, SID);
+  assert.deepEqual(after.clock.survey, [1000, 2000]);
+  assert.equal(after.clock.design[0], after.clock.design[1]);
+});
+
+test('clockOf is null for a stage never sampled, sampled once, or sampled backwards', () => {
+  assert.equal(registry.clockOf(task(), 'survey'), null);
+  assert.equal(registry.clockOf({ clock: { survey: [1000, 1000] } }, 'survey'), null);
+  assert.equal(registry.clockOf({ clock: { survey: [2000, 1000] } }, 'survey'), null);
+  assert.equal(registry.clockOf({ clock: { survey: 2000 } }, 'survey'), null);
+  assert.equal(registry.clockOf({ clock: { survey: [1000, 61000] } }, 'survey'), 60000);
+});
+
+// A malformed pair is replaced rather than repaired, for the reason the burn
+// tests give: carrying a broken first sighting forward keeps it forever.
+test('a clock that is not a readable pair is replaced', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task({ stage: 'survey', clock: { survey: ['x'] } }));
+  registry.touch(root, SID);
+  const after = registry.readSession(root, SID);
+  assert.equal(after.clock.survey.length, 2);
+  assert.equal(after.clock.survey[0], after.clock.survey[1]);
+});
+
+// Gates accumulate: a stage may open three of them, so `waited` is a total and
+// not a pair.
+test('gateOpen stamps and gateClose accumulates into the stage it was in', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task({ stage: 'design' }));
+  registry.gateOpen(root, SID);
+  assert.equal(Number.isFinite(registry.readSession(root, SID).gateAt), true);
+  registry.gateClose(root, SID);
+  const after = registry.readSession(root, SID);
+  assert.equal(after.gateAt, undefined);
+  assert.equal(Number.isFinite(after.waited.design), true);
+  registry.gateOpen(root, SID);
+  registry.gateClose(root, SID);
+  assert.equal(registry.readSession(root, SID).waited.design >= after.waited.design, true);
+});
+
+// The effect, not the return value. `update` documents a change returning false
+// as a success with no write, so it hands back true either way — asserting false
+// here would be asserting a contract this module does not have.
+test('gateClose with no gateAt writes nothing', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task({ stage: 'design' }));
+  registry.gateClose(root, SID);
+  const after = registry.readSession(root, SID);
+  assert.equal(after.waited, undefined);
+  assert.equal(after.gateAt, undefined);
+});
+
+test('waitedOf is null for a stage that never waited', () => {
+  assert.equal(registry.waitedOf(task(), 'design'), null);
+  assert.equal(registry.waitedOf({ waited: { design: 0 } }, 'design'), null);
+  assert.equal(registry.waitedOf({ waited: { design: 4000 } }, 'design'), 4000);
+});

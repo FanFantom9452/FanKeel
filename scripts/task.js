@@ -31,6 +31,16 @@ const { guardMode } = require('../lib/guard.js');
 const { splitAroundVerb } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 
+// Minutes, rounded, with hours above sixty of them. Seconds are not offered: a
+// stage that took forty seconds is one nobody is asking the cost of, and a
+// second-precision figure invites reading noise as signal.
+const mins = (ms) => {
+    const m = Math.round(ms / 60000);
+    if (m < 60) return m + 'm';
+    const h = Math.floor(m / 60);
+    return h + 'h' + (m % 60 ? (m % 60) + 'm' : '');
+};
+
 const GUARDS = ['ask', 'deny', 'off'];
 
 // A refusal is often two sentences: what was wrong, and what to do instead.
@@ -233,6 +243,16 @@ function describe(root, sessionId, data) {
     // report and is left out rather than shown as zero.
     const burn = route.map((r) => [r, registry.burnOf(data, r)]).filter((pair) => pair[1]);
     if (burn.length) lines.push('burn:  ' + burn.map((pair) => pair[0] + ' ' + tokens(pair[1])).join(', '));
+    // Same rule as the burn line above: only the stages this route holds, in the
+    // order it runs them, and only the ones with a distance to report. The wait
+    // is shown inside the total rather than beside it, because it is part of that
+    // number and not another one.
+    const clock = route.map((r) => [r, registry.clockOf(data, r), registry.waitedOf(data, r)])
+        .filter((row) => row[1]);
+    if (clock.length) {
+        lines.push('time:  ' + clock.map((row) => row[0] + ' ' + mins(row[1])
+            + (row[2] ? ' (' + mins(row[2]) + ' waiting)' : '')).join(', '));
+    }
     // Always, not only when the field is set. It was a line that appeared when
     // somebody opted in; the same test now hides it on every session running the
     // default, which is the one state worth confirming out loud.
@@ -456,8 +476,12 @@ function cmdStage(root, opts) {
     // nobody can read is worse than one printed where the move is announced.
     const at = positionIn(route, name);
     const spent = registry.burnOf(data, from);
+    const took = registry.clockOf(data, from);
+    const held = registry.waitedOf(data, from);
     return 'fankeel — ' + from + ' to ' + name + (at ? '   ' + at.step + ' of ' + at.steps : '')
-        + (spent ? '   ' + from + ' burned ' + tokens(spent) : '');
+        + (spent ? '   ' + from + ' burned ' + tokens(spent) : '')
+        + (took ? '   ' + from + ' took ' + mins(took)
+            + (held ? ', ' + mins(held) + ' of it at the gate' : '') : '');
 }
 
 // A new task on a session that already has one. `down` then `start` was the only
@@ -494,6 +518,12 @@ function cmdTask(root, opts) {
         // new task the old one's first sighting and report the difference
         // between two tasks as the cost of one stage.
         delete d.burn;
+        // The same argument, and the same failure if they are left: a clock here
+        // dates the new task's stage from the old one's, and a `gateAt` left open
+        // bills the rename to whatever stage the next answer lands in.
+        delete d.clock;
+        delete d.waited;
+        delete d.gateAt;
         const route = normaliseRoute(d.route) || FULL_ROUTE.slice();
         d.route = route;
         d.stage = route[0];

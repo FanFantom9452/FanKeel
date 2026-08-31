@@ -33,12 +33,15 @@ heading is one nobody said the state of.
 ## Needs a decision
 
 - Looking at `.fankeel/sessions/` without a session open — an HTML page, a `task.js` verb, or neither. `/fankeel` lists and `clear` deletes already; the view from outside is what is missing. 08-31.
-- What a session record should hold for the outside view — per-stage timestamps beside `burn` in [lib/registry.js](lib/registry.js), and whether a Stop/UserPromptSubmit pair nets out the wait. 08-31.
 - Whether [scripts/todo-check.js](scripts/todo-check.js) should check that a cited section names its subject — it validates that links resolve only. Three entries drifted through that gap. 08-31.
+
+- Whether `adopt` should carry a task's cost history — [scripts/task.js](scripts/task.js) builds the new record from an explicit field list, so `burn`, `clock` and `waited` are all dropped. 09-01.
 
 ## Waiting
 
-- Whether a `path:line` that drifts while still resolving is worth a check — [scripts/docs-check.js](scripts/docs-check.js). Once: `lib/map.js:323` became 342, passing both ways. 08-31.
+- Whether `PreToolUse` fires for `AskUserQuestion` — [hooks/gate.js](hooks/gate.js). Probed live: the file change took, the new registration did not. A restart settles it. 09-01.
+
+- Whether a `path:line` that drifts while still resolving is worth a check — [scripts/docs-check.js](scripts/docs-check.js). Twice: `lib/map.js:323` became 342; five drifted in one build. 09-01.
 
 - Whether three days is the right settle period — [scripts/docs-audit.js](scripts/docs-audit.js), `LANDED_QUIET`. Picked from 8 plans on one repo, all inside a 0–4 day band. 08-31.
 - Whether a stated `Done when` actually ends the gate loop, or only renames it — [lib/stages.js](lib/stages.js), ALWAYS[0]'s `or none`. Reported live once; only use says. 08-29.
