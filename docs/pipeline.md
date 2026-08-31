@@ -434,12 +434,14 @@ The only stage that loops, and the only one whose memory is a file rather than a
 conversation.
 
 The second and third setup steps below are the path with a plan, and so is every
-node under them naming a ledger or a group: the gate asking for a group the
-ledger has not completed, the node sending a whole group out in one response,
-and the `ledger complete` closing each task. A `bounded` or `spike` route reaches
-this stage without one, and then there is no ledger to open and no plan to scan:
-`design`'s file table is what the loop runs and what the report counts against,
-the completion line goes in the response and then the commit message, and the
+node under them naming a ledger, a group or an implementer: the gate asking for a
+group the ledger has not completed, the node sending a whole group out in one
+response, the commit node staging a task's declared paths rather than an
+implementer's, and the `ledger complete` closing each task. A `bounded` or
+`spike` route reaches this stage without one, and then there is no ledger to open
+and no plan to scan: `design`'s file table is what the loop runs and what the
+report counts against, the commit stages the row's own `file` cell, the
+completion line goes in the response and then the commit message, and the
 memory is a conversation again. Those rows run in order. Grouping is computed
 from a plan's `**Files:**` and `**Interfaces:**` blocks; a file table has
 neither, so there is nothing for the two predicates to compare and nothing that
@@ -490,7 +492,10 @@ flowchart TD
 ```
 
 A running plan does not wait on a person. What happens when something blocks it
-is the other half of the stage:
+is the other half of the stage. The `ledger ruling` below is the plan path like
+every other ledger on this page — with no plan the ruling goes in the response
+and then the commit message — and the four things that stop the loop are the
+same four either way:
 
 ```mermaid
 flowchart TD

@@ -310,10 +310,32 @@ test('the build section marks the loop grouping as plan-only, not just the setup
     [/gate\s+asking\s+for\s+a\s+group/, 'the group gate'],
     [/whole\s+group\s+out\s+in\s+one/, 'the group dispatch'],
     [/`ledger\s+complete`/, 'the ledger completion'],
+    // The commit node names neither a ledger nor a group, which is how it stayed
+    // off this list, and it is plan-only twice over: it stages a task's *declared*
+    // paths, which come from a plan's `**Files:**` block, and it holds the parent
+    // apart from a dispatched implementer, which a no-plan row never has.
+    [/implementer/, 'the commit node'],
   ]) {
     assert.match(section[0], pattern,
       'the plan-only marking does not name ' + node + ', so that node still reads as available with no plan');
   }
+});
+
+// The `### build` section draws two diagrams. The paragraph the test above reads
+// scopes itself to the nodes under the setup steps, which is the first one; the
+// second — what happens when something blocks the loop — has a `ledger ruling`
+// node of its own, under a lead-in saying a running *plan* does not wait on a
+// person. A no-plan route has no ledger to rule into, and the marking in the
+// first paragraph stops at the first mermaid block, so nothing could reach here.
+test('the blocking half of build marks its ledger ruling as plan-only', () => {
+  const page = require('node:fs').readFileSync(
+    require('node:path').join(__dirname, '..', 'docs', 'pipeline.md'), 'utf8');
+  const half = /A running plan does not wait on a person[\s\S]*?\n### verify/.exec(page);
+  assert.ok(half, 'the blocking half of build is not where this test looks for it');
+  assert.match(half[0], /is\s+the\s+plan\s+path\s+like\s+every\s+other\s+ledger/,
+    'the blocking half never says its ledger ruling is the plan path');
+  assert.match(half[0], /in\s+the\s+response\s+and\s+then\s+the\s+commit\s+message/,
+    'the ruling is marked plan-only without saying where a no-plan one goes instead');
 });
 
 // The page above quotes the rules, so it cannot be wrong about how many there
