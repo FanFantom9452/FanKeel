@@ -32,7 +32,12 @@ heading is one nobody said the state of.
 
 ## Needs a decision
 
+- Whether a `bounded` task should ever run tasks in parallel — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md), the no-plan branch. No plan file, so `groups` has no input. 08-31.
+
 ## Waiting
+
+- Whether `conflict()` fail closed on `Files:` but fail open on `Interfaces:` lets a dependent pair run at once — [lib/plantasks.js](lib/plantasks.js). The plan skill mandates the block. 08-31.
+- Whether a `path:line` that drifts while still resolving is worth a check — [scripts/docs-check.js](scripts/docs-check.js). Once: `lib/map.js:323` became 342, passing both ways. 08-31.
 
 - Whether three days is the right settle period — [scripts/docs-audit.js](scripts/docs-audit.js), `LANDED_QUIET`. Picked from 8 plans on one repo, all inside a 0–4 day band. 08-31.
 - Whether a stated `Done when` actually ends the gate loop, or only renames it — [lib/stages.js](lib/stages.js), ALWAYS[0]'s `or none`. Reported live once; only use says. 08-29.
