@@ -391,16 +391,11 @@ function cmdShow(root, opts) {
         lines.push('every entry:  ' + (entries.length + unreadable) + ' total — '
             + open + ' active, ' + (entries.length - open) + ' stood down, '
             + unreadable + ' unreadable');
-        // Uncapped, and the flag is the reason. This listing was capped at 25 —
-        // `scripts/survey.js`'s DEFAULT_MAX, borrowed along with its `... and N
-        // more` line — but that is the number survey prints *without* a flag, and
-        // its own `--all` sets the cap to Infinity. So the borrowed half was the
-        // wrong half: a flag whose whole meaning is "every one of them" was
-        // truncating the one reader who had typed it, and at 55 entries here the
-        // tail it cut was 30. The registry does only grow, which is the argument
-        // for a bound somewhere — but the header line above is that bound for
-        // anyone who does not want to scroll, `show` without the flag still
-        // filters on active, and a reader who wants N of them has `head`.
+        // Uncapped on purpose. This was 25, borrowed from `scripts/survey.js` —
+        // but 25 is that script's DEFAULT_MAX, what it prints with no flag, and
+        // its own `--all` sets the cap to Infinity. Borrow the other half if you
+        // come back to this. Why the header line is the bound instead:
+        // docs/registry.md.
         const rows = entries.slice().sort((a, b) => stampOf(b.data) - stampOf(a.data));
         for (const row of rows) lines.push('  ' + entryLine(row.data));
     }
