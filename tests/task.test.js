@@ -813,6 +813,39 @@ test('show --all lists stood-down entries, and counts what did not parse', () =>
   assert.match(out, /1 unreadable/);
 });
 
+// The cap this removed was `scripts/survey.js`'s DEFAULT_MAX, copied onto the one
+// path that script uses to *remove* a cap: `survey --all` sets max to Infinity.
+// So a flag named `--all` was truncating the one person who had typed it, and at
+// 55 entries on this repository the tail it cut was 30 of them. The plain `show`
+// still filters on active, so nothing that did not ask for the whole directory
+// prints a line more than it did.
+test('show --all is not capped — a flag named --all prints them all', () => {
+  const dir = root();
+  started(dir, A, 'the live one');
+  // Written straight to disk rather than through `start`: thirty process spawns
+  // is a slow way to say thirty entries, and `chill` above already writes here.
+  for (let i = 0; i < 30; i++) {
+    registry.writeSession(dir, 'cccccccc-1111-2222-3333-' + String(i).padStart(12, '0'), {
+      task: 'stood down number ' + i,
+      stage: 'land',
+      active: false,
+      updated: new Date(Date.now() - i * 60e3).toISOString(),
+    });
+  }
+
+  const { out, code } = run(dir, ['show', '--all']);
+  assert.equal(code, 0, out);
+  assert.match(out, /31 total — 1 active, 30 stood down, 0 unreadable/);
+  assert.doesNotMatch(out, /not listed/,
+    'the truncation line is what this removed; its absence is the assertion');
+  // Anchored at the end of the line, because `entryLine` puts the task last and
+  // an unanchored `number 1` also matches the row for `number 10`.
+  for (let i = 0; i < 30; i++) {
+    assert.match(out, new RegExp('stood down number ' + i + '$', 'm'),
+      'entry ' + i + ' is missing, so something still cuts the tail');
+  }
+});
+
 // The other half of the same rule, and the one that keeps this from becoming a
 // lockout: `runningSessions` answers null when it cannot read the directory, and
 // a refusal must never come from a failed measurement.
