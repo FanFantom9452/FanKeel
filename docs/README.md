@@ -40,6 +40,7 @@ here.
 | How that is being built, task by task | [plans/2026-08-30-tracked-concurrency.md](plans/2026-08-30-tracked-concurrency.md) — *built* |
 | Why two implementers can now run at once without their commits colliding | [plans/2026-08-30-parallel-build-design.md](plans/2026-08-30-parallel-build-design.md) — *built* |
 | How that was built, task by task | [plans/2026-08-30-parallel-build.md](plans/2026-08-30-parallel-build.md) — *built* |
+| Which `## Waiting` entries had stopped waiting, and what closed them | [plans/2026-08-31-todo-waiting-backlog.md](plans/2026-08-31-todo-waiting-backlog.md) — *built* |
 | What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 | Why three lib modules with one caller each were not folded into their callers | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *one caller is not evidence on its own* |

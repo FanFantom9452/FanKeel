@@ -3,7 +3,7 @@ name: fankeel-survey
 description: The survey stage — read the project's own map before reading its code, classify the work, and report what is already here. Use for the survey stage of a fankeel task, "what is already here", starting work in an unfamiliar repository, or when a task needs classifying as spike, bounded or architectural.
 version: 0.40.0
 status: current
-last_verified: 2026-08-30
+last_verified: 2026-08-31
 source_of_truth: lib/stages.js, lib/map.js, scripts/map.js, scripts/survey.js, scripts/layout.js
 ---
 
@@ -31,15 +31,16 @@ saying so.
 
 ### 1. Locate
 
-Repository root, git state, whether this is a worktree.
+Repository root, git state, and what else is under it.
 
 ```
 node <plugin>/scripts/orient.js [--root <dir>]
 ```
 
-It answers all three and says what else is under the root, which matters in a
-directory holding five projects: that list is where `Which project?` gets its
-options, and the project is what routes the docs lookup.
+It answers all three, which matters in a directory holding five projects: that
+list is where `Which project?` gets its options, and the project is what routes
+the docs lookup. Whether this is a worktree is not among them — `scripts/residue.js`
+is the one that asks git that.
 
 ### 2. Read the map
 
