@@ -32,8 +32,6 @@ heading is one nobody said the state of.
 
 ## Needs a decision
 
-- Whether `lib/map.js` counting root files as `undeclared` is deliberate — [docs/documents.md](docs/documents.md). The page now says it is; nothing written said so before. 08-31.
-
 ## Waiting
 
 - Whether three days is the right settle period — [scripts/docs-audit.js](scripts/docs-audit.js), `LANDED_QUIET`. Picked from 8 plans on one repo, all inside a 0–4 day band. 08-31.

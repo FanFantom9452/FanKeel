@@ -75,6 +75,27 @@ test('pages are grouped by what they declare about themselves', () => {
   assert.ok(by.current.includes('docs/now.md'));
 });
 
+// `README.md` and `TODO.md` are the two the project has decided must never carry
+// a contract — GitHub renders one on a README as a stray table, and
+// `todo-check.js` re-verifies TODO.md in full on every run. Listing them as
+// undeclared invites a fix already ruled out, and on this repository they were
+// the entire bucket. `isSignpost` rather than "anything at the root": a loose
+// `NOTES.md` is a page nobody signed, and the map is the only tool that reports
+// one outside the doc root. They stay in the count, which is what `documents:`
+// adds up.
+test('the front-door files are not undeclared, and are still counted', () => {
+  const dir = root();
+  write(dir, 'README.md', '# Front door\n');
+  write(dir, 'TODO.md', '# TODO\n');
+  write(dir, 'NOTES.md', '# Notes\n');
+  write(dir, 'docs/bare.md', '# Bare\n');
+  const by = map.pagesByStatus(dir);
+  assert.deepEqual(by.undeclared, ['NOTES.md', 'docs/bare.md']);
+  assert.ok(by.current.includes('README.md'));
+  const total = Object.keys(by).reduce((n, k) => n + by[k].length, 0);
+  assert.equal(total, 4, 'the count is every markdown file, signposts included');
+});
+
 test('the map names what was planned but not built, because nothing else does', () => {
   const dir = root();
   write(dir, '.fankeel/docs.json', JSON.stringify({ preset: 'flat', index: 'docs/README.md' }));
