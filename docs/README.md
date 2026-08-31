@@ -20,6 +20,7 @@ here.
 | What `.fankeel/map.md` holds and why it is generated | [pipeline.md](pipeline.md) — *the project map* |
 | What gets written to disk, and what is committed | [registry.md](registry.md) |
 | What `notes` and `next` are for, and why they are capped | [registry.md](registry.md) |
+| What a stage cost, in tokens and in minutes, and how the gate wait is told apart | [registry.md](registry.md) — *what a stage cost* |
 | Why the mode never switches itself off | [registry.md](registry.md) |
 | What the `context:` line in the injected block means | [registry.md](registry.md) |
 | What `[FANKEEL:CLASH]` means | [collisions.md](collisions.md) |
