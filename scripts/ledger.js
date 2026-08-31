@@ -60,6 +60,35 @@ function parseArgs(argv) {
     return opts;
 }
 
+// Why a plan that grouped into nothing but singletons grouped that way, in the
+// words the reader can act on. `groups` compares a task only against the open
+// group, so when every group closed at one task each consecutive pair is exactly
+// a comparison that closed one — asking `conflict` about those pairs re-runs the
+// comparisons that produced the result rather than guessing at them. Counting
+// the file the most tasks share would have been shorter and wrong: a plan
+// serialised by `Consumes`/`Produces` edges has no shared file to count, and
+// naming one anyway would send the reader to rewrite the wrong block.
+function serialCause(tasks) {
+    const shared = new Set();
+    let edge = false;
+    for (let i = 0; i + 1 < tasks.length; i++) {
+        const [a, b] = [tasks[i], tasks[i + 1]];
+        const reason = plantasks.conflict(a, b);
+        if (reason === 'interface') edge = true;
+        if (reason !== 'files') continue;
+        const owned = [...b.modify, ...b.test];
+        for (const p of [...a.modify, ...a.test]) if (owned.includes(p)) shared.add(p);
+    }
+    if (shared.size) return 'Shared by consecutive tasks: ' + [...shared].join(', ');
+    // Only when no pair shared a file at all, so this never overwrites the more
+    // actionable half of a mixed answer.
+    if (edge) return 'A Consumes/Produces edge joins each pair, so'
+        + '\nthe order is the dependency rather than a filename.';
+    // Nothing left to add: the pairs conflicted on `undeclared`, which the line
+    // above has already named by task number.
+    return '';
+}
+
 function main(argv) {
     const { head, verb: named, text } = splitAtVerb(argv, STRING_FLAGS, VERBS);
     const opts = parseArgs(head);
@@ -105,14 +134,30 @@ function main(argv) {
         // Naming it is what makes a missing `**Files:**` block visible at the
         // moment it costs something, rather than a plan rule nobody re-read.
         const undeclared = tasks.filter((t) => !t.modify.length).map((t) => t.n);
+        // Every group a singleton means nothing ever runs beside anything, and
+        // the disjointness sentence below is then a claim about a pair that does
+        // not exist. A plan whose tasks all appended to one index file read as an
+        // ordinary grouping and built serially with nothing saying so, because
+        // the numbers said it and the prose underneath said the opposite. So the
+        // prose goes when it stops being true, and the warning gets a paragraph
+        // of its own — the first line is already the ratio, and what was missing
+        // was something that contradicted rather than merely failed to mention.
+        const serial = tasks.length > 1 && rows.length === tasks.length;
+        const cause = serial ? serialCause(tasks) : '';
         return 'fankeel ledger — ' + rows.length + ' groups over ' + tasks.length + ' tasks\n\n'
             + rows.map((g, i) => '  ' + (i + 1) + ': ' + g.join(', ')).join('\n')
             + (undeclared.length
                 ? '\n\nNo Files block, so serialised against everything: ' + undeclared.join(', ')
                 : '')
-            + '\n\nOne group is one response. Their files are disjoint and neither'
-            + '\nconsumes what the other produces. Commit them one at a time as'
-            + '\nthey return, in the order listed.';
+            + (serial
+                ? '\n\nEvery group is one task, so nothing runs beside anything and this'
+                    + '\nplan builds serially.' + (cause ? ' ' + cause : '')
+                : '')
+            + '\n\nOne group is one response.'
+            + (serial ? '' : ' Their files are disjoint and neither'
+                + '\nconsumes what the other produces.')
+            + ' Commit them one at a time as they'
+            + '\nreturn, in the order listed.';
     }
 
     if (verb === 'show') {
