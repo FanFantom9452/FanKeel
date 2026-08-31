@@ -100,11 +100,21 @@ knows whose tree applies. One registry can cover five of them and nothing else
 needs to know which. Ask for it only when the root holds more than one, and never
 ask for a file list — there is nothing to declare and nothing to get wrong.
 
-Four more are written without anyone typing them. `route` and `class` come from
+Six more are written without anyone typing them. `route` and `class` come from
 the class picked at `start`, `configDir` records which config directory this
 session runs under, so another session can look for its liveness in the right
 place, and `burn` is what each stage cost — two token counts per stage, written
 by the same prompt hook that refreshes `updated`.
+
+`clock` is that stage in minutes rather than tokens, and `waited` is how much of
+it the user spent at a gate. They part company with `burn` in one place: `burn`
+is only written when a token figure arrives, and an answered question is not a
+prompt, so a stage that ends in a gate records nothing. A clock has no such
+threshold, so it is written beside `updated` and every touch is a sighting.
+
+A seventh, `gateAt`, is deliberately not below. It exists only between a question
+going out and its answer arriving, so a record shown holding one is a record
+shown mid-question.
 
 ```json
 {
@@ -116,6 +126,9 @@ by the same prompt hook that refreshes `updated`.
   "configDir": "C:\\Users\\you\\.claude",
   "stage": "build",
   "active": true,
+  "burn": { "survey": [120000, 342000] },
+  "clock": { "survey": [1756659679797, 1756660399797] },
+  "waited": { "survey": 240000 },
   "notes": ["ANSI 256 has no true mid green; the 46→83→120 run is the only clean path"],
   "next": "wire the badge word into TokenBar",
   "guard": "ask",

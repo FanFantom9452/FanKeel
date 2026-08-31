@@ -55,26 +55,26 @@ line, for `updated`. `clock` is written **outside** the `used` guard, and that i
 the one place this design deliberately does not copy `burn`.
 
 The difference is the point. `hooks/inject.js:181` passes a token figure;
-`hooks/resume.js:51` passes none, so an answered gate refreshes `updated` and
+`hooks/resume.js:55` passes none, so an answered gate refreshes `updated` and
 leaves `burn` untouched. The record of the session that wrote this page is the
 evidence: it carries `updated` and no `burn` at all. A clock has no threshold to
 fall below — every touch is a sighting.
 
 ## Where it is read
 
-Not the injected block. `scripts/task.js:452` records why: `build` renders at
+Not the injected block. `scripts/task.js:473` records why: `build` renders at
 2394 characters against a cap of 2400, and a figure nobody can read is worse than
 one printed where the move is announced. Two readers, both already printing
 `burn`:
 
 | where | today | after |
 |---|---|---|
-| `scripts/task.js:234` — `show` | `burn:  survey 222k, design 51k` | a `time:` line beside it |
-| `scripts/task.js:458` — the stage move | `survey burned 222k` | `survey took 12m, 4m of it at the gate` |
+| `scripts/task.js:245` — `show` | `burn:  survey 222k, design 51k` | a `time:` line beside it |
+| `scripts/task.js:478` — the stage move | `survey burned 222k` | `survey took 12m, 4m of it at the gate` |
 
 ## What `task` must clear
 
-`scripts/task.js:496` deletes `burn` on a rename, with a comment saying why:
+`scripts/task.js:520` deletes `burn` on a rename, with a comment saying why:
 stage names come round again, so a leftover first sighting reports two tasks as
 the cost of one stage. `clock`, `waited` and `gateAt` inherit the identical bug
 and need the identical delete.

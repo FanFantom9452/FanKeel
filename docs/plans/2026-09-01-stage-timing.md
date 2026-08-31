@@ -25,7 +25,7 @@ Generated from `package.json`, `.fankeel/map.md`, `.fankeel/docs.json` and the s
 - **Every hook exits 0 on every path**, including every error path, and gets its stdin handling from `run`/`parse` in `lib/hook.js`. Nothing calls `process.exit`. A `PreToolUse` hook additionally **never writes a decision** for a tool it has no opinion about — see the comment at the top of `hooks/guard.js`.
 - **Every registry write goes through `update` or `replace`** in `lib/registry.js`; both take `sessions/{session_id}.lock`. `writeSession` takes no lock and is for a caller already holding one.
 - **Caps already asserted in code**, none of which this work changes: `MAX_NOTES = 5`, `MAX_NOTE_LEN = 100`, `MAX_NEXT_LEN = 120`, `MAX_CLAIMS = 60`, `STALE_MS = 12 * 60 * 60 * 1000`.
-- **The injected block is capped at 2400 characters and `build` renders at 2394** (`scripts/task.js:452`). No task below adds anything to it.
+- **The injected block is capped at 2400 characters and `build` renders at 2394** (`scripts/task.js:473`). No task below adds anything to it.
 - **Documents carry `status:`, `last_verified:` and `source_of_truth:` frontmatter.** `.fankeel/docs.json` files `docs/plans` as role `plan` and `docs` at depth 1 as `reference`.
 - **A plan is `status: design-intent` until the work lands.** This file becomes `status: current` at `land`, and is archived after that.
 
@@ -622,6 +622,6 @@ Run the three commands and quote their output.
 
 **Test helpers.** Checked, not assumed. `tests/registry.test.js` supplies `tmpRoot()`, `SID` and `task(over)`; `tests/task.test.js` supplies `root()`, `started`, `entry` and `run`, and imports `registry` at line 16. The first draft of Task 3 invented four helper names this repository does not have; they are gone.
 
-**Type consistency.** `clock`, `waited` and `gateAt` are the field names everywhere; `clockOf`, `waitedOf`, `gateOpen`, `gateClose` and `mins` are the function names everywhere. The design page's earlier name for `clock` was `spent`, dropped because `scripts/task.js:458` already binds `spent` to a token figure.
+**Type consistency.** `clock`, `waited` and `gateAt` are the field names everywhere; `clockOf`, `waitedOf`, `gateOpen`, `gateClose` and `mins` are the function names everywhere. The design page's earlier name for `clock` was `spent`, dropped because `scripts/task.js:478` already binds `spent` to a token figure.
 
 **Sequencing.** All four tasks are sequential, and deliberately so: Tasks 1 and 3 both write `lib/registry.js`'s consumers, Task 2 depends on Task 1's exports, and Task 4 depends on all three having moved the lines it cites. No two tasks here may run at once, and nothing is gained by pretending otherwise.
