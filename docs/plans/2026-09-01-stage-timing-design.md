@@ -1,7 +1,7 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-09-01
-source_of_truth: lib/registry.js, hooks/resume.js, .claude-plugin/plugin.json, scripts/task.js
+source_of_truth: lib/registry.js, hooks/gate.js, hooks/resume.js, .claude-plugin/plugin.json, scripts/task.js
 ---
 
 # What a stage cost in minutes, and how much of that was waiting
