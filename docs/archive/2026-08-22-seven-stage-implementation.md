@@ -1,5 +1,5 @@
 ---
-status: superseded-by docs/archive/2026-08-22-seven-stage-pipeline.md
+status: archived
 last_verified: 2026-08-22
 source_of_truth: lib/stages.js, lib/map.js, lib/ledger.js
 ---

@@ -32,7 +32,6 @@ heading is one nobody said the state of.
 
 ## Needs a decision
 
-- Whether the [seven-stage plan](docs/plans/2026-08-22-seven-stage-implementation.md) is archived like its siblings. Declares `superseded-by`; the landed check cannot confirm it. 08-31.
 - Whether `lib/map.js` counting root files as `undeclared` is deliberate — [docs/documents.md](docs/documents.md). The page now says it is; nothing written said so before. 08-31.
 
 ## Waiting

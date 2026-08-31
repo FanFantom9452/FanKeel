@@ -33,7 +33,6 @@ here.
 | When a scripted fan-out beats parallel dispatches, and why you may offer one but not start it | [subagents.md](subagents.md) — *the one thing four dispatches cannot do* |
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
 | Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
-| How the seven-stage work is being built, task by task | [plans/2026-08-22-seven-stage-implementation.md](plans/2026-08-22-seven-stage-implementation.md) — *superseded by the pipeline plan* |
 | Why a session ran two hours with the plugin doing nothing | [plans/2026-08-26-session-id-design.md](plans/2026-08-26-session-id-design.md) — *built, 0.31.0* |
 | Why the end of a task is where the advice goes, and what `/clear` costs | [plans/2026-08-28-task-end-design.md](plans/2026-08-28-task-end-design.md) — *built* |
 | The three tasks that built it, with every string and every test written out | [plans/2026-08-28-task-end.md](plans/2026-08-28-task-end.md) — *built* |
