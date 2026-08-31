@@ -48,6 +48,10 @@ function main(raw) {
     // Without it, a session driven entirely by its own questions looks idle to
     // every other session for exactly as long as it behaves.
     try {
+        // The other end of hooks/gate.js, and it runs first: the clock `touch`
+        // is about to move has to be counted against the stage before the wait
+        // is taken out of it.
+        registry.gateClose(root, sessionId);
         registry.touch(root, sessionId);
     } catch (e) { /* housekeeping */ }
 }
