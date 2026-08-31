@@ -283,6 +283,27 @@ test('the docs quote the injected rules verbatim, in both blocks', () => {
   }
 });
 
+// The `### build` section says which parts of the diagram below it are the path
+// with a plan, and for a while it named only the two setup steps. The loop's own
+// group gate and group dispatch are plan-only too — `groups` is computed from a
+// plan's `**Files:**` and `**Interfaces:**` blocks and a design's file table has
+// neither — so a diagram marking the setup and not the loop left a `bounded`
+// route with no path through it, two paragraphs under a sentence saying its rows
+// run in order. The prose carries the marking for every node, which is why this
+// asserts on the prose rather than on the mermaid labels.
+test('the build section marks the loop grouping as plan-only, not just the setup', () => {
+  const page = require('node:fs').readFileSync(
+    require('node:path').join(__dirname, '..', 'docs', 'pipeline.md'), 'utf8');
+  const section = /\n### build\n[\s\S]*?\n```mermaid/.exec(page);
+  assert.ok(section, 'the build section is not where this test looks for it');
+  // Both patterns tolerate the wrap: the page is hard-wrapped at 80 columns, so
+  // either phrase can arrive with a newline anywhere a space is written here.
+  assert.match(section[0], /Those\s+rows\s+run\s+in\s+order/,
+    'the build section does not say a no-plan route runs its rows in order');
+  assert.match(section[0], /the\s+path\s+with\s+a\s+plan,\s+and\s+so\s+is/,
+    'the plan-only marking stops at the setup steps and never reaches the loop');
+});
+
 // The page above quotes the rules, so it cannot be wrong about how many there
 // are. docs/output-styles.md counts them instead, and the count rotted the day
 // ALWAYS grew a fourth rule: two pages said "three" for six days and nothing

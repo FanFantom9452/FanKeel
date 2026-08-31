@@ -433,13 +433,15 @@ spec.
 The only stage that loops, and the only one whose memory is a file rather than a
 conversation.
 
-The second and third setup steps below are the path with a plan. A `bounded` or
-`spike` route reaches this stage without one, and then there is no ledger to open
-and no plan to scan: `design`'s file table is what the loop runs and what the
-report counts against, and the memory is a conversation again. Those rows run in
-order. The grouping in the diagram below is computed from a plan's `**Files:**`
-and `**Interfaces:**` blocks; a file table has neither, so there is nothing for
-the two predicates to compare and nothing that could say two rows may overlap.
+The second and third setup steps below are the path with a plan, and so is
+everything the loop does with groups: the gate asking for a group the ledger has
+not completed, and the node sending a whole group out in one response. A
+`bounded` or `spike` route reaches this stage without one, and then there is no
+ledger to open and no plan to scan: `design`'s file table is what the loop runs
+and what the report counts against, and the memory is a conversation again.
+Those rows run in order. Grouping is computed from a plan's `**Files:**` and
+`**Interfaces:**` blocks; a file table has neither, so there is nothing for the
+two predicates to compare and nothing that could say two rows may overlap.
 
 ```mermaid
 flowchart TD
