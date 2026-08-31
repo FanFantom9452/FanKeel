@@ -6,7 +6,7 @@ source_of_truth: TODO.md, lib/plantasks.js, lib/guard.js
 
 # TODO Waiting backlog Implementation Plan
 
-**Goal:** close the three `## Waiting` entries that no longer wait on anything external, and file what this survey produced. One of the two entries it produced was withdrawn at review — see Task 3, step 2.
+**Goal:** close the two `## Waiting` entries that no longer wait on anything external, merge two more that turned out to ask one question, and file what this survey produced. The design counted three closures because it expected the output-style entry to close too; it did not — see **Not in this plan**. One of the two entries the survey produced was withdrawn at review — see Task 3, step 2.
 
 **Architecture:** no behaviour changes. Two of the three entries are answered by reasoning already half-written in the code; the work is finishing that reasoning where it lives and removing the entry in the same change, which is this repository's own way of closing one. The third is a merge of two bullets asking one question. Nothing new is built and no test is added: the behaviour both entries ask about is already pinned by tests that exist.
 
@@ -36,7 +36,7 @@ Taken from `node scripts/map.js`, `package.json`, `TODO.md` and the test suite, 
 | `lib/plantasks.js` | the `conflict()` comment gains the half that explains the asymmetry it already relies on |
 | `tests/plantasks.test.js` | one comment above the test that already pins the fail-open, naming what it pins |
 | `lib/guard.js` | the `blockers()` comment gains its conclusion and the date it was taken |
-| `TODO.md` | three entries out, two bullets merged into one, two new entries in |
+| `TODO.md` | two entries removed, two bullets merged into one, one entry added under `## Needs a decision` |
 
 No file is created. No file is deleted.
 
