@@ -56,8 +56,13 @@ Generated from `package.json`, `.fankeel/map.md`, `.fankeel/docs.json` and the s
 - Consumes: `readSession(projectRoot, sessionId)` — likewise.
 - Produces: `clockOf(data, stage)` — elapsed milliseconds as a number, `null` when the stage was never sampled, sampled once, or sampled backwards.
 - Produces: `waitedOf(data, stage)` — accumulated gate milliseconds as a number, `null` when nothing was accumulated.
-- Produces: `gateOpen(projectRoot, sessionId)` — stamps `data.gateAt`, returns whether it wrote.
-- Produces: `gateClose(projectRoot, sessionId)` — folds `now - gateAt` into `waited[stage]`, deletes `gateAt`, returns whether it wrote.
+- Produces: `gateOpen(projectRoot, sessionId)` — stamps `data.gateAt`.
+- Produces: `gateClose(projectRoot, sessionId)` — folds `now - gateAt` into `waited[stage]` and deletes `gateAt`.
+
+Neither gate function reports whether there was a gate. `update` documents a
+change returning `false` as a success with no write (`lib/registry.js`, the
+comment above `update`), so it hands back `true` either way; `hooks/resume.js`
+ignores the return, and no caller asks. Assert the effect on the record.
 
 ### 1.1 Write the failing tests
 
