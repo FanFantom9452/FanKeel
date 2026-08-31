@@ -40,7 +40,7 @@ heading is one nobody said the state of.
 
 ## Waiting
 
-- Whether a `path:line` that drifts while still resolving is worth a check — [scripts/docs-check.js](scripts/docs-check.js). Twice now: `lib/map.js:323` became 342, and five citations drifted across one build, all passing both ways. 09-01.
+- Whether a `path:line` that drifts while still resolving is worth a check — [scripts/docs-check.js](scripts/docs-check.js). Twice: `lib/map.js:323` became 342; five drifted in one build. 09-01.
 
 - Whether three days is the right settle period — [scripts/docs-audit.js](scripts/docs-audit.js), `LANDED_QUIET`. Picked from 8 plans on one repo, all inside a 0–4 day band. 08-31.
 - Whether a stated `Done when` actually ends the gate loop, or only renames it — [lib/stages.js](lib/stages.js), ALWAYS[0]'s `or none`. Reported live once; only use says. 08-29.
