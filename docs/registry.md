@@ -178,9 +178,10 @@ character. Uncapping put thirty more rows on screen and that is what exposed the
 column with no width of its own — the task is last precisely so the columns
 before it stay aligned, which is also what makes it the only one able to push a
 row past the terminal. A wrapped row's second line starts at column 0, where it
-reads as a row of its own and the date column stops being scannable. On this
-repository 32 of 56 rows were over 100 characters and the widest was 189; the
-median task ran 68, so the median row loses six characters and a `…` says where.
+reads as a row of its own and the date column stops being scannable. Measured
+here the day after the 55 above, one entry further on: 32 of 56 rows were over
+100 characters and the widest was 189; the median task ran 68, so the median row
+loses six characters and a `…` says where.
 The whole task is still in the entry's own file, and `show` without the flag
 still prints this session's in full.
 
