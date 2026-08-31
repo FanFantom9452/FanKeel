@@ -332,7 +332,14 @@ function entryLine(data) {
     ].join('  ');
     // Two for the indent `cmdShow` adds as it pushes the line, two for the
     // separator this function adds before the task.
-    const room = LINE_MAX - 2 - head.length - 2;
+    //
+    // Floored, and at 1 rather than 0. `padEnd` widens a short `stage` and never
+    // narrows a long one, so an entry written by hand can render a head wider
+    // than the whole bound — and a negative `room` reaching `slice` below would
+    // count from the far end of the task and print all but the last few
+    // characters of it, which is the opposite of what the arithmetic asked for.
+    // A floor of 0 has the same fault one step later, at `room - 1`.
+    const room = Math.max(LINE_MAX - 2 - head.length - 2, 1);
     const task = data.task || 'untitled';
     // `trimEnd` because a cut that lands on a space would otherwise render as a
     // word floating clear of its own ellipsis.

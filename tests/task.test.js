@@ -888,6 +888,35 @@ test('show --all bounds the row, and leaves a task inside the bound alone', () =
     'a task already inside the bound must come through untouched');
 });
 
+// `room` is whatever the columns ahead of the task left over, and it is
+// arithmetic on a width nothing validates: `padEnd` widens a short `stage` and
+// never narrows a long one, so an entry written by hand — which the registry has
+// no way to refuse, and which is exactly what `--all` exists to surface — can
+// render a head wider than the whole bound.
+//
+// A negative `room` reaching `slice(0, room - 1)` is the quiet failure. A
+// negative end index counts from the far end of the string, so the row that meant
+// to print none of the task prints all but the last few characters of it. The row
+// here is still over 100 afterwards, and that is honest: the width is in the
+// columns ahead of the task, which is a corrupt entry rather than this bound.
+test('show --all bounds the task even when the columns ahead of it do not', () => {
+  const dir = root();
+  started(dir, A, 'the live one');
+  registry.writeSession(dir, 'cccccccc-1111-2222-3333-000000000003', {
+    task: 'a task long enough that returning it whole would be obvious ' + 'x'.repeat(120),
+    stage: 'land'.padEnd(80, '-'),
+    active: false,
+    updated: new Date().toISOString(),
+  });
+
+  const { out, code } = run(dir, ['show', '--all']);
+  assert.equal(code, 0, out);
+  const row = out.split('\n').find((line) => line.includes('land---'));
+  assert.ok(row, 'the entry with the overwide stage is not in the listing:\n' + out);
+  assert.doesNotMatch(row, /x{20}/,
+    'the task came through nearly whole — a negative end index counts from the far end');
+});
+
 // The other half of the same rule, and the one that keeps this from becoming a
 // lockout: `runningSessions` answers null when it cannot read the directory, and
 // a refusal must never come from a failed measurement.
