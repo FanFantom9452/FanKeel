@@ -107,14 +107,25 @@ Copy its output into the ledger beside the table. The grouping is what the loop
 dispatches against, and a compaction that takes it leaves you re-deriving which
 tasks were safe together from a plan you can no longer remember reading.
 
+**With no plan there is nothing here to scan.** Both rows of the table above
+compare things a `| file | change |` row does not carry — one pair of tasks
+against another's interfaces, one task's specified tests against its specified
+code — and there is no ledger to write it into either. Step 1 is route-neutral
+and step 2 carries its own branch, so this is the setup step a no-plan route
+skips whole.
+
 ## The task loop
 
 For each task the denominator does not list as complete:
 
 **Where there is no plan there are no groups.** Everything below that names one —
 the group in step 1's BASE rule, the whole group going out in step 2, the
-`groups` command itself — is the plan path. A no-plan route runs one row per
-pass, and every other step of the loop is unchanged.
+`groups` command itself — is the plan path, **and so is the rest of step 2**: a
+`| file | change |` row is two columns and neither of them is a `**Dispatch:**`
+line, so there is no model named and no plan file to hand a subagent. The row is
+implemented in session, and its `change` cell is what the dispatch block's four
+things would otherwise have carried. A no-plan route runs one row per pass, and
+every other step of the loop is unchanged.
 
 1. Record `git rev-parse HEAD` as BASE — **immediately before this task's
    commit, not when its group went out.** The tasks in a group that committed

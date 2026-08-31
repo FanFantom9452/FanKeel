@@ -172,6 +172,37 @@ test('the task loop marks its group language as the plan path', () => {
     'the loop marks the group language without saying what a no-plan route does instead');
 });
 
+// The rule above named the group in step 2 and stopped there, and step 2 is more
+// than its group: it opens on the task's `**Dispatch:**` line, and the four things
+// a dispatch carries include the path to the plan file with the task's number. A
+// `| file | change |` row has two columns and neither is a dispatch, so a bounded
+// reader arrives at an instruction whose input does not exist and a handover with
+// no file to hand over. `every other step of the loop is unchanged` said so twice
+// over. One rule at the head still, not a note per step.
+test('the task loop marks the rest of step 2, not only its group', () => {
+  const loop = /\n## The task loop\n[\s\S]*?\n## /.exec(read('fankeel-build'));
+  assert.ok(loop, 'the task loop is not where this test looks for it');
+  assert.match(loop[0], /and\s+so\s+is\s+the\s+rest\s+of\s+step\s+2/,
+    'the marking stops at step 2 group and leaves its dispatch block on the no-plan path');
+  assert.match(loop[0], /implemented\s+in\s+session/,
+    'the loop marks step 2 as plan-only without saying what a no-plan row does instead');
+});
+
+// Setup step 2 carries the no-plan branch and step 1 is route-neutral, which left
+// step 3 as the only one of the three saying nothing. Its table has a row per pair
+// of tasks sharing a file or interface and a row per task checking its own tests
+// against its own code, and it ends by writing that table into the ledger — three
+// things a two-column row does not have. The `groups` command inside it is already
+// covered by step 2 branch; the table and the ledger write were not.
+test('the plan scan says what a no-plan route does instead', () => {
+  const step = /\n### 3\. Scan the plan before the first task\n[\s\S]*?\n## /.exec(read('fankeel-build'));
+  assert.ok(step, 'the plan scan is not where this test looks for it');
+  assert.match(step[0], /With\s+no\s+plan\s+there\s+is\s+nothing\s+here\s+to\s+scan/,
+    'the plan scan never says it is the plan path');
+  assert.match(step[0], /no\s+ledger\s+to\s+write\s+it\s+into/,
+    'the scan is marked plan-only without naming the ledger write it also cannot do');
+});
+
 // Two copies of every stage's output shape: `template` in lib/stages.js,
 // restated on every prompt, and the `## Output` block in the skill, read once on
 // entering the stage. Both have to exist — a skill is also read with no task
