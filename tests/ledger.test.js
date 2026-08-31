@@ -205,6 +205,11 @@ test('groups reports the parallelisable sets of a plan', () => {
   const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
   assert.match(out, /1 groups over 2 tasks/);
   assert.match(out, /1: 1, 2/);
+  // The control for the two tests below. They assert this sentence is gone when
+  // no group holds a pair, which says nothing unless it is still here when one
+  // does — a deleted sentence passes those assertions just as well.
+  assert.match(out, /files are disjoint/);
+  assert.doesNotMatch(out, /builds serially/);
 });
 
 // A task with no Files block conflicts with everything, so it lands alone and
@@ -220,4 +225,54 @@ test('groups names the tasks that declared no files', () => {
   ].join('\n'));
   const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
   assert.match(out, /No Files block, so serialised against everything: 2/);
+});
+
+// The rows said three singletons, the paragraph under them said the files were
+// disjoint and nothing consumed anything, and the paragraph won: a plan whose
+// tasks all appended to one index file built serially with nothing saying so.
+// The sentence is about a pair, so it goes when there is no pair.
+test('groups warns when nothing can run beside anything, and names the shared file', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, [
+    '## Task 1: one', '', '**Files:**', '- Modify: `TODO.md`', '',
+    '## Task 2: two', '', '**Files:**', '- Modify: `TODO.md`', '',
+    '## Task 3: three', '', '**Files:**', '- Modify: `TODO.md`', '',
+  ].join('\n'));
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(out, /3 groups over 3 tasks/);
+  assert.match(out, /nothing runs beside anything/);
+  assert.match(out, /Shared by consecutive tasks: TODO\.md/);
+  assert.doesNotMatch(out, /files are disjoint/);
+});
+
+// Every `Modify` list here is disjoint and the plan still serialises, so there
+// is no shared file to name. This is the row that counting the file the most
+// tasks share would get wrong — it would report no cause at all, or send the
+// reader to rewrite a `**Files:**` block that was already correct.
+test('groups names a Consumes/Produces chain as the cause when no file is shared', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, [
+    '## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', '',
+    '**Interfaces:**', '- Produces: `parseThing`', '',
+    '## Task 2: two', '', '**Files:**', '- Modify: `lib/b.js`', '',
+    '**Interfaces:**', '- Consumes: `parseThing`', '',
+  ].join('\n'));
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(out, /2 groups over 2 tasks/);
+  assert.match(out, /Consumes\/Produces edge joins each pair/);
+  assert.doesNotMatch(out, /Shared by consecutive tasks/);
+});
+
+// One task is one group, which satisfies the condition arithmetically and is
+// not the finding — a plan with nothing to parallelise against is not a plan
+// that failed to parallelise. Warning here is how the warning becomes noise.
+test('groups does not warn about a one-task plan', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, ['## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', ''].join('\n'));
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(out, /1 groups over 1 tasks/);
+  assert.doesNotMatch(out, /builds serially/);
 });
