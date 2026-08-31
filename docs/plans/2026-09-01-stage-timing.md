@@ -52,12 +52,12 @@ Generated from `package.json`, `.fankeel/map.md`, `.fankeel/docs.json` and the s
 - Test: `tests/registry.test.js`
 
 **Interfaces:**
-- Consumes: `update(projectRoot, sessionId, change)` and `readSession(projectRoot, sessionId)`, both already exported from this file.
-- Produces:
-  - `clockOf(data, stage) -> number | null` — elapsed milliseconds, `null` when the stage was never sampled, sampled once, or sampled backwards
-  - `waitedOf(data, stage) -> number | null` — accumulated gate milliseconds, `null` when nothing was accumulated
-  - `gateOpen(projectRoot, sessionId) -> boolean` — stamps `data.gateAt`
-  - `gateClose(projectRoot, sessionId) -> boolean` — folds `now - gateAt` into `waited[stage]` and deletes `gateAt`
+- Consumes: `update(projectRoot, sessionId, change)` — already exported from this file.
+- Consumes: `readSession(projectRoot, sessionId)` — likewise.
+- Produces: `clockOf(data, stage)` — elapsed milliseconds as a number, `null` when the stage was never sampled, sampled once, or sampled backwards.
+- Produces: `waitedOf(data, stage)` — accumulated gate milliseconds as a number, `null` when nothing was accumulated.
+- Produces: `gateOpen(projectRoot, sessionId)` — stamps `data.gateAt`, returns whether it wrote.
+- Produces: `gateClose(projectRoot, sessionId)` — folds `now - gateAt` into `waited[stage]`, deletes `gateAt`, returns whether it wrote.
 
 ### 1.1 Write the failing tests
 
@@ -242,7 +242,10 @@ The half that does not exist yet, and the registration that makes Claude Code ca
 - Test: `tests/gate.test.js`
 
 **Interfaces:**
-- Consumes: `registry.rootFor(payload)`, `registry.readSession(root, id)`, `registry.gateOpen(root, id)` and `registry.gateClose(root, id)` from Task 1; `run(main)` and `parse(raw)` from `lib/hook.js`.
+- Consumes: `gateOpen(projectRoot, sessionId)` from Task 1.
+- Consumes: `gateClose(projectRoot, sessionId)` from Task 1.
+- Consumes: `rootFor(payload)` — already exported from `lib/registry.js`.
+- Consumes: `run(main)` and `parse(raw)` from `lib/hook.js`, the way every other hook takes them.
 - Produces: nothing any later task imports. Task 3 reads the fields these write, not these functions.
 
 ### 2.1 Write the failing test
@@ -442,7 +445,9 @@ Run `npm test` and watch the six pass.
 - Test: `tests/task.test.js`
 
 **Interfaces:**
-- Consumes: `registry.clockOf(data, stage)` and `registry.waitedOf(data, stage)` from Task 1; the existing `tokens` from `lib/context.js`.
+- Consumes: `clockOf(data, stage)` from Task 1.
+- Consumes: `waitedOf(data, stage)` from Task 1.
+- Consumes: `tokens(n)` — already imported at `scripts/task.js:28` from `lib/context.js`.
 - Produces: nothing later tasks import.
 
 ### 3.1 Write the failing tests
