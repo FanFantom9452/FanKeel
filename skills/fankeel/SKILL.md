@@ -159,7 +159,7 @@ nobody at all found nobody including the caller, so it proves nothing and allows
 **Never write that file by hand.** Every change to it goes through one script:
 
 ```
-node <plugin>/scripts/task.js show    --session <id>
+node <plugin>/scripts/task.js show    [--session <id>] [--all]
 node <plugin>/scripts/task.js start   --session <id> --task "..." [--project Waypoint]
 node <plugin>/scripts/task.js task    "..." --session <id>
 node <plugin>/scripts/task.js stage   build --session <id>
@@ -570,9 +570,15 @@ decision, which is why the check reads the role and not a `last_verified` date.
 ## On `/fankeel`
 
 Run `task.js show --session <id>`, which lists this session's entry and every
-other live one. Then read the directory yourself once to count any file that does
-not parse, and say how many you skipped — the hook drops them silently, so this is the only place a
-corrupt entry is visible.
+other live one. Add `--all` for the registry itself: every entry the directory
+holds, stood down included, newest first, with the stage each reached and what it
+cost. Nothing here deletes, so that is a month of finished tasks and the only
+view of them.
+
+Its header is also where a file that does not parse is counted. The hooks drop
+those silently and correctly — a miss is what a session not using the plugin
+looks like — so the `unreadable` figure on that line is the only place a corrupt
+entry surfaces. Read it out rather than counting the directory by hand.
 
 Show the active ones: task, stage, what each has touched, and — for any last
 touched more than 12 hours ago — how long ago that was. Mark this session's own.

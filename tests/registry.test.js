@@ -106,6 +106,47 @@ test('readActive is ordered by session id', () => {
   assert.deepEqual(ids, [...ids].sort());
 });
 
+// Nothing deletes an entry — `down` and `clear` both set `active: false` — so
+// the registry accumulates every task the project has ever run, and `readActive`
+// hides all of them behind one filter. `readAll` is the same read without it,
+// carrying the one number no reader had: how many files did not parse. Every
+// hook is silent about those on purpose, because a miss is what a session not
+// using the plugin looks like, which leaves this the only place they surface.
+test('readAll returns stood-down entries as well as active ones', () => {
+  const root = tmpRoot();
+  seed(root, SID, task());
+  seed(root, OTHER, task({ task: 'finished', active: false }));
+  const got = registry.readAll(root);
+  assert.deepEqual(got.entries.map((e) => e.sessionId), [SID, OTHER].sort());
+  assert.equal(got.unreadable, 0);
+});
+
+test('readAll counts a file that does not parse rather than dropping it silently', () => {
+  const root = tmpRoot();
+  seed(root, SID, task());
+  seedRaw(root, OTHER + '.json', '{ not json');
+  const got = registry.readAll(root);
+  assert.deepEqual(got.entries.map((e) => e.sessionId), [SID]);
+  assert.equal(got.unreadable, 1);
+});
+
+// The same three skips `readActive` makes, and for the same reason: a name that
+// is not an entry was never an entry, so counting it as a broken one would
+// report the directory's `.key` neighbours as corruption every time.
+test('readAll skips what is not an entry without counting it as unreadable', () => {
+  const root = tmpRoot();
+  seed(root, SID, task());
+  seedRaw(root, 'notes.txt', 'not an entry');
+  seedRaw(root, 'zz.json', '{}');
+  const got = registry.readAll(root);
+  assert.deepEqual(got.entries.map((e) => e.sessionId), [SID]);
+  assert.equal(got.unreadable, 0);
+});
+
+test('readAll on a directory that is not there is empty rather than an error', () => {
+  assert.deepEqual(registry.readAll(tmpRoot()), { entries: [], unreadable: 0 });
+});
+
 test('sessionPath refuses a session id that would escape the directory', () => {
   const root = tmpRoot();
   assert.equal(registry.sessionPath(root, '../../etc/passwd'), null);

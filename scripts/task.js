@@ -148,10 +148,11 @@ const STRING_FLAGS = {
 // guessing at.
 //
 // It is given the flags alone, never the whole argv — which is what stops a note
-// from being read as one. `--force` is the exception and stays on the whole
-// argv: it is boolean, so it spends no token and cannot swallow the word this
-// split exists to keep, and the peel may have left it among the user's words on
-// purpose. `note --force` records `--force`; `clear <id> --force` still forces.
+// from being read as one. `--force` and `--all` are the exceptions and stay on
+// the whole argv: both are boolean, so neither spends a token nor can swallow
+// the word this split exists to keep, and the peel may have left one among the
+// user's words on purpose. `note --force` records `--force`; `clear <id>
+// --force` still forces, and `show --all` still lists the whole registry.
 function parseArgs(head, whole) {
     const options = {};
     for (const flag of Object.keys(STRING_FLAGS)) options[flag] = { type: 'string' };
@@ -164,6 +165,7 @@ function parseArgs(head, whole) {
         opts[key] = values[flag];
     }
     if (whole.includes('--force')) opts.force = true;
+    if (whole.includes('--all')) opts.all = true;
     return opts;
 }
 
@@ -288,6 +290,42 @@ function collisions(root, sessionId, claims) {
     return out;
 }
 
+// The cap on `show --all`. The registry only grows — nothing deletes an entry —
+// so an uncapped listing is one that gets longer every week and read less each
+// time. Twenty-five is what `scripts/survey.js` caps a section at, and the line
+// saying what was cut is copied from it word for word: two listings in one
+// project that trail off differently are two things to learn.
+const SHOWN = 25;
+
+// `updated` rather than `started`, because it is written on every prompt and so
+// says when the task was last worked on, which is what a person scanning a month
+// of them is looking for. An absent or unparseable one sorts to the bottom
+// instead of throwing: an entry with no timestamp is one nothing ever touched.
+const stampOf = (data) => Date.parse(data && data.updated) || 0;
+
+// One line, because there are fifty of these. Date, the stage it reached, what
+// it cost, then the task — the task last so the columns before it stay aligned
+// however long it runs.
+//
+// The two figures are sums over the route rather than the per-stage breakdown
+// `describe` prints. A breakdown is what you want for the one entry a session
+// owns; a listing wants the number you can compare between two rows. Both are
+// null for a stage sampled once, so a task too short to be sampled twice shows a
+// dash — which is the honest answer where a zero would not be.
+function entryLine(data) {
+    const route = normaliseRoute(data.route) || FULL_ROUTE;
+    const sum = (of) => route.reduce((total, r) => total + (of(data, r) || 0), 0);
+    const burned = sum(registry.burnOf);
+    const spent = sum(registry.clockOf);
+    return [
+        String(data.updated || '').slice(0, 10).padEnd(10),
+        String(data.stage || '?').padEnd(7),
+        (burned ? tokens(burned) : '—').padStart(6),
+        (spent ? mins(spent) : '—').padStart(5),
+        data.task || 'untitled',
+    ].join('  ');
+}
+
 function cmdShow(root, opts) {
     const lines = ['fankeel — registry at ' + root];
     const active = registry.readActive(root);
@@ -338,6 +376,32 @@ function cmdShow(root, opts) {
             lines.push('  - ' + (other.data.task || 'untitled') + ' @ ' + (other.data.stage || '?')
                 + (claims ? '  (touched: ' + claims + ')' : '') + stale);
             lines.push('    ' + other.sessionId);
+        }
+    }
+    // Everything above filters on `active === true`, and nothing in this file
+    // ever deletes an entry — `down` and `clear` both deactivate. So a task
+    // stood down last month sits in this directory with its route, the stage it
+    // reached and what it cost, and until this flag it had no reader anywhere:
+    // not `show`, not `/fankeel`, not the injected block.
+    //
+    // Newest first, which is deliberately not the read order. `readAll` sorts by
+    // session id so two runs render the same lines; a person scanning a month of
+    // finished tasks wants the recent end, and the id says nothing about when.
+    if (opts.all === true) {
+        const { entries, unreadable } = registry.readAll(root);
+        // Not named `live`: that is the module holding `isLive`, and shadowing it
+        // inside a function that measures liveness twenty lines above is a trap
+        // for whoever edits this next. These are active entries, which is a
+        // different claim — `--all` never asks the operating system anything.
+        const open = entries.filter((e) => e.data.active === true).length;
+        lines.push('');
+        lines.push('every entry:  ' + (entries.length + unreadable) + ' total — '
+            + open + ' active, ' + (entries.length - open) + ' stood down, '
+            + unreadable + ' unreadable');
+        const rows = entries.slice().sort((a, b) => stampOf(b.data) - stampOf(a.data));
+        for (const row of rows.slice(0, SHOWN)) lines.push('  ' + entryLine(row.data));
+        if (rows.length > SHOWN) {
+            lines.push('  ... and ' + (rows.length - SHOWN) + ' more, not listed');
         }
     }
     return lines.join('\n');
@@ -806,7 +870,9 @@ const COMMANDS = {
 const USAGE = [
     'fankeel task — the registry entry for this session.',
     '',
-    '  show                              what this session owns, and who else is live',
+    '  show [--all]                      what this session owns, and who else is live;',
+    '                                    --all adds every entry the registry holds,',
+    '                                    stood down included, newest first',
     '  start --task "..." [--project <dir>] [--route "survey,build,verify"]',
     '                                    begin, at the first stage of the route',
     '  task "..."                        a new task here: clears claims, notes and next',

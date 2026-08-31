@@ -785,6 +785,34 @@ test('an id no running session claims is refused, and the running ones are named
   assert.equal(run(dir, ['show']).code, 0);
 });
 
+// Neither `down` nor `clear` deletes, so the registry keeps every task the
+// project has ever run and no view had a reader for any of them: `readActive`
+// filters on `active === true` and it is the only read `show`, `/fankeel` and
+// the injected block have. 53 of 54 entries on this repository the day this was
+// written, 26 of them carrying a `burn` nothing could print.
+//
+// The unreadable count rides the same command because it is the same question
+// asked from outside. The `/fankeel` skill had been telling a model to read the
+// directory itself and count what did not parse; a number the code already has
+// on its way past is not a thing to ask anyone to work out by hand.
+test('show --all lists stood-down entries, and counts what did not parse', () => {
+  const dir = root();
+  started(dir, A, 'the finished one');
+  run(dir, ['down', '--session', A]);
+  fs.writeFileSync(path.join(dir, '.fankeel', 'sessions', B + '.json'), '{ not json');
+
+  const plain = run(dir, ['show']);
+  assert.equal(plain.code, 0, plain.out);
+  assert.doesNotMatch(plain.out, /the finished one/,
+    'a stood-down entry is not an active one, and the plain listing keeps saying so');
+
+  const { out, code } = run(dir, ['show', '--all']);
+  assert.equal(code, 0, out);
+  assert.match(out, /the finished one/);
+  assert.match(out, /1 stood down/);
+  assert.match(out, /1 unreadable/);
+});
+
 // The other half of the same rule, and the one that keeps this from becoming a
 // lockout: `runningSessions` answers null when it cannot read the directory, and
 // a refusal must never come from a failed measurement.
