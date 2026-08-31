@@ -106,11 +106,15 @@ session runs under, so another session can look for its liveness in the right
 place, and `burn` is what each stage cost — two token counts per stage, written
 by the same prompt hook that refreshes `updated`.
 
-`clock` is that stage in minutes rather than tokens, and `waited` is how much of
-it the user spent at a gate. They part company with `burn` in one place: `burn`
-is only written when a token figure arrives, and an answered question is not a
-prompt, so a stage that ends in a gate records nothing. A clock has no such
-threshold, so it is written beside `updated` and every touch is a sighting.
+`clock` is those same two slots with a wall-clock reading in place of the token
+count — epoch milliseconds, which `task.js` renders as minutes — and `waited` is
+how much of that the user spent at a gate. They part company with `burn` in one
+place: `burn` is only written when a token figure arrives, and an answered
+question is not a prompt, so a stage that ends in a gate records none. A clock
+has no such threshold, so it is written beside `updated` and every touch is a
+sighting. What measures the wait, and why it is not `Stop`, is in
+[docs/registry.md](../../docs/registry.md) — this is the short form, not the
+only copy.
 
 A seventh, `gateAt`, is deliberately not below. It exists only between a question
 going out and its answer arriving, so a record shown holding one is a record
