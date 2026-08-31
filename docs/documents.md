@@ -141,6 +141,14 @@ because each replaces a guess with a statement:
 | `status` | the directory it sits in | `design-intent` is the word that was missing. A page describing what a system is *meant* to become is not drifting when the code does not match it — it is doing its job. Without somewhere to say that, a roadmap gets written into an architecture page and then read as a description of what exists. |
 | `source_of_truth` | reading the page for its subject | A comma list, doing two jobs told apart by what each entry names. Code: this is what the page is about, said outright rather than inferred. Links, code spans and fenced blocks are all read, so the tag names a subject a page never writes out rather than standing in for one it writes where nothing looked. A document: this page defers to that one, so the two are not a pair. Two pages describing one file is only a defect when neither defers. `generated-by` says the file is rewritten rather than maintained, which makes its age meaningless. |
 
+`archived` and `superseded-by` are both retirement, and what separates them is
+whether something took the page's place. `superseded-by` names that thing;
+`archived` says only that the page stopped being current, which is what most
+retirements are — seventeen of the nineteen in `docs/archive/` here. Pointing
+`superseded-by` at the document a plan *implemented* rather than at one that
+replaced it puts a third meaning under the word, and the reader who follows it
+lands on a page that superseded nothing.
+
 The vocabulary is wider than those five words — `定案`, `活躍`, `draft`, `草稿`,
 `deprecated`, `historical`, `merged-into <path>` are all understood, and anything
 unrecognised reads as `current`. Being wrong towards checking is the safe
