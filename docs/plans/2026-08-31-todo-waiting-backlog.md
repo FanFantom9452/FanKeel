@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-08-31
 source_of_truth: TODO.md, lib/plantasks.js, lib/guard.js
 ---
