@@ -915,3 +915,47 @@ test('a flag does not spend a verb, and is named rather than printing the usage'
   assert.match(out, /--root needs a value/);
   assert.equal(entry(dir, A).active, true, 'the task was stood down by a swallowed verb');
 });
+
+// Stage names come round again, so a clock left behind dates the new task's
+// stage from the old one's, and a gateAt left open bills the rename to whatever
+// stage the next answer lands in. The same argument that already deletes `burn`.
+test('renaming the task forgets the clock, the wait and any open gate', () => {
+  const dir = root();
+  started(dir, A, 'rework the colour ramp');
+  const data = entry(dir, A);
+  data.clock = { survey: [1000, 61000] };
+  data.waited = { survey: 4000 };
+  data.gateAt = 1000;
+  registry.writeSession(dir, A, data);
+
+  run(dir, ['task', 'something else entirely', '--session', A]);
+  const after = entry(dir, A);
+  assert.equal(after.clock, undefined);
+  assert.equal(after.waited, undefined);
+  assert.equal(after.gateAt, undefined);
+});
+
+test('show prints a time line for the stages that have one', () => {
+  const dir = root();
+  started(dir, A, 'rework the colour ramp');
+  const data = entry(dir, A);
+  data.stage = 'design';
+  data.clock = { survey: [1000, 721000], design: [800000, 1040000] };
+  data.waited = { survey: 240000 };
+  registry.writeSession(dir, A, data);
+
+  const { out } = run(dir, ['show', '--session', A]);
+  assert.match(out, /time:\s+survey 12m \(4m waiting\), design 4m/);
+});
+
+test('the stage line reports what the stage it left took', () => {
+  const dir = root();
+  started(dir, A, 'rework the colour ramp');
+  const data = entry(dir, A);
+  data.clock = { survey: [1000, 721000] };
+  data.waited = { survey: 240000 };
+  registry.writeSession(dir, A, data);
+
+  const { out } = run(dir, ['stage', 'design', '--session', A]);
+  assert.match(out, /survey took 12m, 4m of it at the gate/);
+});
