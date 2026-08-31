@@ -36,6 +36,9 @@ test('prose after the block is not a declaration', () => {
   assert.deepEqual(t.modify, ['lib/a.js']);
 });
 
+// Both tasks here declare empty interfaces, which is what makes this the pin on
+// `conflict()` failing open on them. Make interfaces fail closed the way files
+// do and this is the test that goes red.
 test('disjoint files and no edge may run at once', () => {
   const [a, b] = parseTasks(task(1, ['lib/a.js'], [], [], []) + task(2, ['lib/b.js'], [], [], []));
   assert.equal(conflict(a, b), null);
