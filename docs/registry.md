@@ -140,9 +140,9 @@ figure is finished.
 
 # Reading it from outside
 
-Every reader here filters on `active === true`, and nothing deletes an entry —
-`down` and `clear` both deactivate, so a claim put down by mistake can still be
-adopted back with its notes intact. The two together mean the registry holds
+Every reader here but one filters on `active === true`, and nothing deletes an
+entry — `down` and `clear` both deactivate, so a claim put down by mistake can
+still be adopted back with its notes intact. The two together mean the registry holds
 every task the workspace has ever run while no view showed any of them: 53 of 54
 entries on this repository the day the flag below was written, 26 of them
 carrying a `burn` figure nothing could print.
