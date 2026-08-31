@@ -212,8 +212,13 @@ function gateClose(projectRoot, sessionId) {
         if (!Number.isFinite(opened)) return false;
         delete data.gateAt;
         if (!data.stage) return true;
+        // `< 0` and not `<= 0`. A gate opened and answered inside one
+        // millisecond is a real gate with nothing to add, and skipping it leaves
+        // `waited` absent rather than zero — which reads, to everything
+        // downstream, exactly like a stage that never opened one. `waitedOf`
+        // hides the zero; this keeps the fact that it happened.
         const held = Date.now() - opened;
-        if (held <= 0) return true;
+        if (held < 0) return true;
         const waited = (data.waited && typeof data.waited === 'object' && !Array.isArray(data.waited))
             ? data.waited
             : {};
