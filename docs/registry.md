@@ -367,9 +367,8 @@ pass claims, since `lib/dirty.js:180` calls `addClaim` per path and each one
 takes the lock — in every session on the machine. That second number is usually
 zero after a task's first prompt, because `covers` skips a path already held.
 `resume.js` writes once per answered question. `gate.js` would write once per
-question asked and never has,
-for the reason above — so three writers contend here today, and four if it ever
-runs.
+question asked and never has, for the reason above — so three writers contend
+here today, and four if it ever runs.
 
 `touch.js` fires on every edit but writes on almost none of them: it
 returns at `hooks/touch.js:42` when the path is already claimed, which is what
