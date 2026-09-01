@@ -111,10 +111,10 @@ by the same prompt hook that refreshes `updated`.
 `clock` is those same two slots with a wall-clock reading in place of the token
 count — epoch milliseconds, which `task.js` renders as minutes — and `waited` is
 meant to be how much of that the user spent at a gate. No hook has ever written
-one: the hook that stamps the opening has never run, so `gateClose` has never had
-a stamp from it to fold in. One record holds a `waited` stamped by hand while the
-field was being built, and it is not a gate. Why the hook has not
-run is unsettled, though the two candidates are now known to be coupled —
+one: the hook that stamps the opening has never run, so `gateClose` has never
+had a stamp from it to fold in. One record holds a `waited` stamped by hand
+while the field was being built, and it is not a gate. Why the hook has not run
+is unsettled, though the two candidates are now known to be coupled —
 [docs/registry.md](../../docs/registry.md) has both and the one run that would
 close them.
 

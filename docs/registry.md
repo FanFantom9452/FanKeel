@@ -136,13 +136,13 @@ downstream, exactly like a stage that never opened one.
 
 **The pair that should measure it is `PreToolUse`/`PostToolUse` on
 `AskUserQuestion`, and the first half has never once run.** `hooks/gate.js` is
-registered on `PreToolUse`; `gateAt` has never been stamped by it, so `gateClose`
-has never had anything to fold in. The second half does run — `hooks/resume.js`
-writes `clock` and `updated` from every answered question — which is what rules
-out a path or a permission fault. Three sessions since the file landed stamped no
-`gateAt`: one four stages deep with `clock` and `burn` in the same file, and one
-three gates deep on 2026-09-02 with a `clock` entry for each of the three stages
-beside the silence.
+registered on `PreToolUse`; `gateAt` has never been stamped by it, so
+`gateClose` has never had a stamp from it to fold in. The second half does run —
+`hooks/resume.js` writes `clock` and `updated` from every answered question —
+which is what rules out a path or a permission fault. Three sessions since the
+file landed stamped no `gateAt`: one four stages deep with `clock` and `burn` in
+the same file, and one three gates deep on 2026-09-02 with a `clock` entry for
+each of the three stages beside the silence.
 
 **Why it has not run is not settled**, and there are two candidates.
 
@@ -167,11 +167,11 @@ What is settled is that the two candidates cannot both be innocent. A session
 begun by `/clear` on 2026-09-02, 22 hours after the install, opened three gates
 with an active record and stamped no `gateAt` at any of them, while `resume.js`
 wrote a `clock` entry for all three stages beside it. A fixture control ran
-`gateOpen` against a scratch registry the same day and the stamp appeared, so the
-silence is an absence rather than a blind read. That rules out the
-**conjunction** — session-scoped reload together with a `PreToolUse` that
-fires — and nothing finer, because either candidate being false explains the
-silence on its own.
+`gateOpen` against a scratch registry the same day and the stamp appeared, so
+the silence is an absence rather than a blind read. That rules out the
+**conjunction** — session-scoped reload together with a `PreToolUse` that fires
+— and nothing finer, because either candidate being false explains the silence
+on its own.
 
 **What would settle it**, and nothing short of it: a Claude Code **process**
 started after the install — the stronger of the two readings, so it answers

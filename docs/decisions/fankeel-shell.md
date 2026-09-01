@@ -484,14 +484,14 @@ reading the entry was never live and on the other it was.
 Since 2026-09-02 the pair is narrowed, though not to one. A session begun by
 `/clear` at 00:21:11 that day — 22 hours after the 02:03:37 install, inside
 `claude.exe` 400028, which started 2026-08-31 23:55:39 — asked one question with
-an active record and wrote neither `gateAt` nor `waited`, while `resume.js` wrote
-`clock` and `updated` on the same tool call, out of the same `rootFor` and the
-same `active` guard. The read was not blind: a fixture control ran `gateOpen` and
-then `gateClose` against a scratch registry that day and saw
-`gateAt: 1788281443521`, then `waited: {"survey":18}`. What that rules out is the
-**conjunction** — session-scoped reload together with a `PreToolUse` that fires —
-and nothing finer, because either half being false explains the silence by
-itself.
+an active record and wrote neither `gateAt` nor `waited`, while `resume.js`
+wrote `clock` and `updated` on the same tool call, out of the same `rootFor` and
+the same `active` guard. The read was not blind: a fixture control ran
+`gateOpen` and then `gateClose` against a scratch registry that day and saw
+`gateAt: 1788281443521`, then `waited: {"survey":18}`. What that rules out is
+the **conjunction** — session-scoped reload together with a `PreToolUse` that
+fires — and nothing finer, because either half being false explains the silence
+by itself.
 
 The shape of the mistake was the same both times: a measurement that was real
 was made to carry a conclusion one step wider than it reaches. The second time
