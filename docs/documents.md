@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-31
+last_verified: 2026-09-01
 source_of_truth: lib/docs.js, lib/map.js, scripts/layout.js, scripts/docs-check.js, scripts/docs-audit.js, skills/fankeel/SKILL.md, skills/fankeel-survey/SKILL.md
 ---
 

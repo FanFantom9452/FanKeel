@@ -260,6 +260,19 @@ prints the split, so the ready count is on screen without opening the file. The
 `land` stage rules call for it, because a plan deleted at `land` is a link that
 just died.
 
+An entry under `## Waiting` also carries a `MM-DD` stamp, and it is checked for.
+The stamp is the day somebody last read that entry and agreed it is still
+waiting — not the day it was filed — so re-reading one and leaving it where it is
+means moving its stamp forward. Entries stamped seven days or older are printed
+below the verdict as **due for a re-read**, without failing the run: sitting under
+`## Waiting` for a fortnight is not a defect, and a script cannot know whether the
+thing an entry waits for has happened. What it can know is how long since a person
+last said it had not. That is worth printing because `## Waiting` has never once
+shrunk in this repository by an entry's blocker resolving — four times it has
+shrunk, and all four were somebody re-reading the section and finding an entry
+misfiled. It is drained by being read, so the interval between readings is the
+thing to measure.
+
 `node scripts/version.js` is the release number in the ten files that carry it —
 two manifests and one frontmatter line in each of the eight skills. With a number
 it sets them all; with `--changes` it lists the commits since the last

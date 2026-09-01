@@ -31,7 +31,16 @@ function run(file) {
   }
 }
 
-const kinds = (file) => todo.check(file).problems.map((p) => p.kind);
+const kinds = (file, now) => todo.check(file, now).problems.map((p) => p.kind);
+
+// Every `## Waiting` fixture below ends with this, because an entry there with
+// no stamp is now a problem in its own right and would be reported by each of
+// these tests instead of the one thing it is checking. Today's date rather than
+// a literal, so none of them is ever also reported as due for a re-read.
+const TODAY = (() => {
+  const t = new Date();
+  return String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+})();
 
 // Every fixture below carries a heading, because an entry under none of the three
 // is now a problem in its own right and would otherwise be reported by each of
@@ -143,7 +152,7 @@ test('the entry names the three headings it could have sat under', () => {
 });
 
 test('all three headings are accepted', () => {
-  const body = todo.SECTIONS.map((s) => '## ' + s + '\n\n- one under ' + s + '\n').join('\n');
+  const body = todo.SECTIONS.map((s) => '## ' + s + '\n\n- one under ' + s + ' ' + TODAY + '.\n').join('\n');
   const file = fixture('# TODO\n\n' + body);
   assert.deepEqual(kinds(file), []);
   assert.deepEqual(todo.check(file).counts, { Ready: 1, 'Needs a decision': 1, Waiting: 1 });
@@ -153,7 +162,7 @@ test('all three headings are accepted', () => {
 // backlog of thirty is unreadable as one list, and the ready count is the number
 // that says whether there is a task to start.
 test('a clean run reports the count under each heading', () => {
-  const file = fixture('# TODO\n\n## Ready\n\n- a\n- b\n\n## Needs a decision\n\n- c\n\n## Waiting\n\n- d\n');
+  const file = fixture('# TODO\n\n## Ready\n\n- a\n- b\n\n## Needs a decision\n\n- c\n\n## Waiting\n\n- d ' + TODAY + '.\n');
   const { out, code } = run(file);
   assert.equal(code, 0);
   assert.match(out, /4 entries — 2 ready, 1 needs a decision, 1 waiting/);
@@ -189,8 +198,8 @@ const TREE = JSON.stringify({
 test('an entry citing a decision record is a stale citation, one citing a reference page is not', () => {
   const file = fixture(
     '# TODO\n\n## Waiting\n\n'
-      + '- Whether `audit` earns a place — [why](docs/decisions/shell.md), "What is still a guess".\n'
-      + '- A per-`agent_type` subagent brief — [subagents](docs/subagents.md).\n',
+      + '- Whether `audit` earns a place — [why](docs/decisions/shell.md), "What is still a guess". ' + TODAY + '.\n'
+      + '- A per-`agent_type` subagent brief — [subagents](docs/subagents.md). ' + TODAY + '.\n',
     {
       '.fankeel/docs.json': TREE,
       'docs/decisions/shell.md': '# why\n\n## What is still a guess\n\nWhether `survey` earns its place.\n',
@@ -205,7 +214,7 @@ test('an entry citing a decision record is a stale citation, one citing a refere
 // The live one. A plan is archived or deleted at `land`, so an entry whose detail
 // lives in one is a dead link with a date on it.
 test('an entry citing a plan is a stale citation', () => {
-  const file = fixture('# TODO\n\n## Waiting\n\n- Still silent — [design](docs/plans/session-id.md).\n',
+  const file = fixture('# TODO\n\n## Waiting\n\n- Still silent — [design](docs/plans/session-id.md). ' + TODAY + '.\n',
     { '.fankeel/docs.json': TREE, 'docs/plans/session-id.md': '# plan\n' });
   const { out, code } = run(file);
   assert.equal(code, 1);
@@ -222,7 +231,7 @@ test('an entry citing a plan is a stale citation', () => {
 // and an entry whose detail lives in one points at history however fresh the
 // history is.
 test('a decision record marked current is still a stale citation', () => {
-  const file = fixture('# TODO\n\n## Waiting\n\n- Whether it earns a place — [why](docs/decisions/shell.md).\n',
+  const file = fixture('# TODO\n\n## Waiting\n\n- Whether it earns a place — [why](docs/decisions/shell.md). ' + TODAY + '.\n',
     {
       '.fankeel/docs.json': TREE,
       'docs/decisions/shell.md': '---\nstatus: current\nlast_verified: 2026-09-01\n---\n\n# why\n',
@@ -242,10 +251,10 @@ test('a decision record marked current is still a stale citation', () => {
 test('archive and report are stale citations too, and an #anchor does not hide the role', () => {
   const file = fixture(
     '# TODO\n\n## Waiting\n\n'
-      + '- retired — [a](docs/archive/old.md).\n'
-      + '- a benchmark — [b](docs/reports/bench.md).\n'
-      + '- anchored — [c](docs/decisions/shell.md#what-is-still-a-guess).\n'
-      + '- a reference page — [d](docs/pipeline.md).\n',
+      + '- retired — [a](docs/archive/old.md). ' + TODAY + '.\n'
+      + '- a benchmark — [b](docs/reports/bench.md). ' + TODAY + '.\n'
+      + '- anchored — [c](docs/decisions/shell.md#what-is-still-a-guess). ' + TODAY + '.\n'
+      + '- a reference page — [d](docs/pipeline.md). ' + TODAY + '.\n',
     {
       '.fankeel/docs.json': TREE,
       'docs/archive/old.md': '# old\n',
@@ -261,7 +270,7 @@ test('archive and report are stale citations too, and an #anchor does not hide t
 });
 
 test('a link to code is never a stale citation', () => {
-  const file = fixture('# TODO\n\n## Waiting\n\n- The gap — [lib](lib/registry.js), `readSession`.\n',
+  const file = fixture('# TODO\n\n## Waiting\n\n- The gap — [lib](lib/registry.js), `readSession`. ' + TODAY + '.\n',
     { '.fankeel/docs.json': TREE, 'lib/registry.js': '// code\n' });
   assert.deepEqual(todo.check(file).problems, []);
 });
@@ -271,7 +280,7 @@ test('a link to code is never a stale citation', () => {
 // gets the three checks it always had — not a crash, and not a finding on every
 // link because the role came back null.
 test('with no docs.json nothing is a stale citation', () => {
-  const file = fixture('# TODO\n\n## Waiting\n\n- Still silent — [design](docs/plans/session-id.md).\n',
+  const file = fixture('# TODO\n\n## Waiting\n\n- Still silent — [design](docs/plans/session-id.md). ' + TODAY + '.\n',
     { 'docs/plans/session-id.md': '# plan\n' });
   const { out, code } = run(file);
   assert.equal(code, 0, out);
@@ -309,4 +318,101 @@ test('a positional argument is still the file to check', () => {
   const file = path.join(dir, 'OTHER.md');
   fs.writeFileSync(file, '# TODO\n\n## Ready\n\n- [a](one.md)\n');
   assert.equal(todo.main([file]).ok, false);
+});
+
+// The stamp, and the one thing it is for.
+//
+// `## Waiting` shrank four times in this repository's history — c50a5d5,
+// a62863e, 811219c and 3fadc08 — and every one of the four was somebody
+// re-reading the section and finding an entry misfiled. Not one entry ever left
+// because the external thing it named had happened. So the number worth
+// surfacing is not how old an entry is, it is how long since anyone last looked
+// at it and agreed it is still waiting, and the stamp is that date.
+
+const DAY = 24 * 60 * 60 * 1000;
+// Local midday, so a stamp built from it cannot cross a day boundary under any
+// timezone the suite runs in.
+const NOW = new Date(2026, 8, 1, 12, 0, 0).getTime();
+const stampFor = (daysAgo, from) => {
+  const t = new Date((from === undefined ? NOW : from) - daysAgo * DAY);
+  return String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+};
+const waiting = (entry) => fixture('# TODO\n\n## Waiting\n\n- ' + entry + '\n');
+
+test('a Waiting entry with no stamp is one nobody can age', () => {
+  const file = waiting('Whether the pool ever overflows. None observed.');
+  assert.deepEqual(kinds(file, NOW), ['undated']);
+  assert.equal(todo.main([file]).ok, false);
+});
+
+test('a Ready or Needs a decision entry needs no stamp', () => {
+  const file = fixture('# TODO\n\n## Ready\n\n- a\n\n## Needs a decision\n\n- b\n');
+  assert.deepEqual(kinds(file, NOW), []);
+});
+
+test('a Waiting entry nobody has confirmed for three weeks is due for a re-read', () => {
+  const file = waiting('Whether the pool ever overflows. ' + stampFor(20) + '.');
+  const result = todo.check(file, NOW);
+  assert.deepEqual(result.problems, [], 'an old entry is not a defect');
+  assert.equal(result.overdue.length, 1);
+  assert.equal(result.overdue[0].days, 20);
+});
+
+// The control. Without it the test above passes just as well against a rule that
+// reports every Waiting entry there is, which measures "has a stamp" rather than
+// how long it has been since anyone read it.
+test('a Waiting entry confirmed two days ago is not due', () => {
+  const file = waiting('Whether the pool ever overflows. ' + stampFor(2) + '.');
+  const result = todo.check(file, NOW);
+  assert.deepEqual(result.problems, []);
+  assert.deepEqual(result.overdue, []);
+});
+
+test('an entry exactly at the threshold is due, one day under it is not', () => {
+  const due = todo.check(waiting('a. ' + stampFor(todo.REREAD_DAYS) + '.'), NOW);
+  const under = todo.check(waiting('a. ' + stampFor(todo.REREAD_DAYS - 1) + '.'), NOW);
+  assert.equal(due.overdue.length, 1);
+  assert.deepEqual(under.overdue, []);
+});
+
+// The stamp carries no year, because a year is noise 364 days out of 365 in a
+// file written by hand. So the year is inferred, and the only inference that is
+// ever wrong is the one that puts the stamp in the future: read on 5 January, a
+// `12-15` is three weeks ago and not eleven months away.
+test('a stamp from last December is read as last December, not as next', () => {
+  const jan = new Date(2027, 0, 5, 12, 0, 0).getTime();
+  const result = todo.check(waiting('a. 12-15.'), jan);
+  assert.equal(result.overdue.length, 1);
+  assert.equal(result.overdue[0].days, 21);
+});
+
+// The guard that decides a stamp is not a date at all, and the one case where
+// those two things are not the same. `02-29` is not a date in 2025 and is the
+// right answer in 2024 — the year the entry was actually stamped — so a guard
+// that gives up on the first candidate reads a real stamp as a missing one and
+// fails the run on it.
+test('a leap day is a date in the year it was a date in', () => {
+  const jan = new Date(2025, 0, 5, 12, 0, 0).getTime();
+  const result = todo.check(waiting('a. 02-29.'), jan);
+  assert.deepEqual(result.problems, [], 'a valid leap-day stamp is not a missing stamp');
+  assert.equal(result.overdue.length, 1);
+});
+
+test('a day no month ever had is not a date in any year', () => {
+  const jan = new Date(2025, 0, 5, 12, 0, 0).getTime();
+  assert.deepEqual(kinds(waiting('a. 02-31.'), jan), ['undated']);
+});
+
+test('a month or day out of range is not a stamp', () => {
+  assert.deepEqual(kinds(waiting('a. 13-05.'), NOW), ['undated']);
+  assert.deepEqual(kinds(waiting('a. 00-05.'), NOW), ['undated']);
+  assert.deepEqual(kinds(waiting('a. 06-00.'), NOW), ['undated']);
+});
+
+test('the re-read list is reported and does not fail the run', () => {
+  const file = waiting('Whether the pool ever overflows. ' + stampFor(20) + '.');
+  const { text, ok } = todo.main([file], NOW);
+  assert.equal(ok, true, 'an entry due for a re-read is not a problem');
+  assert.match(text, /due for a re-read/);
+  assert.match(text, /20 days/);
 });

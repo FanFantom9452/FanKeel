@@ -3,7 +3,7 @@ name: fankeel-land
 description: The land stage — a green suite, the documents closed, the map rewritten, and the integration decision left to the user. Use for the land stage of a fankeel task, finishing a development branch, deciding between merge and PR, or cleaning up a worktree when work is complete.
 version: 0.40.0
 status: current
-last_verified: 2026-08-30
+last_verified: 2026-09-01
 source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js, hooks/carry.js
 ---
 
@@ -77,7 +77,7 @@ was never a note:
 | a project convention | `CLAUDE.md` |
 | a durable fact about the user or repository | the memory directory |
 | why a change was made | the commit message |
-| work deliberately deferred | `TODO.md`, one line, under the heading for what it is short of |
+| work deliberately deferred | `TODO.md`, one line, under the heading for what it is short of — under `## Waiting`, ending with a `MM-DD` stamp, or `todo-check` fails the gate below |
 
 Commit the reason, not the diff — it is already in the commit. The subject is
 why; the body is the same `shipped:` list the report ends on, one bullet each:

@@ -4,7 +4,7 @@ description: Audit documentation against the code it describes — dead referenc
 argument-hint: "[--root <dir>] [--since <days>]"
 version: 0.40.0
 status: current
-last_verified: 2026-08-31
+last_verified: 2026-09-01
 source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js
 ---
 
@@ -261,7 +261,8 @@ Worst first. Nothing found is a finding — say so, say what you read, and stop.
 `routed:` is the line that keeps a finding alive past this turn. Anything you
 are not fixing here goes to `TODO.md` under `## Ready`, `## Needs a decision` or
 `## Waiting`, and that line names which — a finding that exists only in this
-report is one the next sweep finds again from scratch.
+report is one the next sweep finds again from scratch. One routed to `## Waiting`
+ends with a `MM-DD` stamp, or `todo-check.js` refuses it.
 
 ## The question at the end
 

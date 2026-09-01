@@ -11,7 +11,7 @@
 //   lives in a file in this repository that the entry links to, and it sits
 //   under the heading that says what it is still waiting for.
 //
-// Four things follow, and all four are checkable, which is the point. A link
+// Five things follow, and all five are checkable, which is the point. A link
 // that no longer resolves is a dead entry: usually the plan it pointed at was
 // rewritten into a decision record and deleted at `land`, and closing the entry
 // was forgotten. A link that resolves to a document whose role records a moment
@@ -21,10 +21,15 @@
 // belongs.
 // An entry under no known heading is one nobody said the state of, and `init`
 // then has to guess which entries can become a task today.
+// A `## Waiting` entry with no date stamp is one nobody can age, and the section
+// that grows fastest is exactly the one where that matters — see the block above
+// `REREAD_DAYS`.
 //
-// Nothing else is judged. Whether the work is still worth doing is not a thing a
-// script can know, and neither is whether a page that is maintained happens to
-// discuss this entry.
+// Nothing else is judged, and the re-read list below is deliberately not a
+// judgement. Whether the work is still worth doing is not a thing a script can
+// know, and neither is whether the thing an entry waits for has happened. What
+// is knowable is how long it has been since a person last said it had not, which
+// is why that list is printed and does not fail the run.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -72,6 +77,50 @@ const SECTIONS = ['Ready', 'Needs a decision', 'Waiting'];
 // it is the standing declaration that the page is an account of a decision and
 // not a place an open question is tracked.
 const STALE_ROLES = ['decision', 'plan', 'report', 'archive'];
+
+// Seven days, and it is a re-read interval rather than an age.
+//
+// `## Waiting` has shrunk four times in this repository's history — c50a5d5,
+// a62863e, 811219c, 3fadc08 — and all four were somebody re-reading the section
+// and finding an entry misfiled. Not one entry has ever left because the
+// external thing it named actually happened. The section is drained by being
+// read, so the interval to measure is the one between readings.
+//
+// Seven and not the fortnight the documentation sweep runs on, because the
+// fortnight caught nothing: on 2026-09-01 the four oldest entries had sat
+// eleven days untouched and a fourteen-day window would have reported none of
+// them. A window that misses the backlog it was written for is the wrong
+// window. Seven reports those four and the one behind them, which is the set
+// that prompted this.
+const REREAD_DAYS = 7;
+
+// `MM-DD` at the end of the entry, which is what twelve of the sixteen entries
+// already carried before anything read them back. No year: it is written by
+// hand, and a year is noise 364 days out of 365.
+const STAMP = /(?:^|\s)(\d{2})-(\d{2})\.?$/;
+
+// The most recent `MM-DD` that is not in the future. Read on 5 January, a
+// `12-15` is three weeks back and not eleven months forward, and that rollover
+// is the only case where a missing year can be got wrong.
+function stampAt(text, now) {
+    const m = STAMP.exec(text.replace(/\s+/g, ' ').trim());
+    if (!m) return null;
+    const month = Number(m[1]);
+    const day = Number(m[2]);
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    const year = new Date(now).getFullYear();
+    for (const y of [year, year - 1]) {
+        const at = new Date(y, month - 1, day);
+        // A month that rolled over is not a date in *this* year, which is not
+        // the same as not being a date. `02-29` is both: invalid in 2025 and
+        // the right answer in 2024, so the next candidate still has to be
+        // tried. Returning here read a valid leap-day stamp as no stamp at all
+        // and failed the run on it.
+        if (at.getMonth() !== month - 1 || at.getDate() !== day) continue;
+        if (at.getTime() <= now) return at.getTime();
+    }
+    return null;
+}
 
 const LINK = /\[[^\]]*\]\(([^)]+)\)/g;
 // A scheme, or a bare in-page anchor. Neither is a file in this repository, so
@@ -124,12 +173,13 @@ function linksIn(text) {
     return out;
 }
 
-function check(file) {
+function check(file, now) {
+    const at = now === undefined ? Date.now() : now;
     let text;
     try {
         text = fs.readFileSync(file, 'utf8');
     } catch (e) {
-        return { file, missing: true, problems: [] };
+        return { file, missing: true, problems: [], overdue: [] };
     }
     const base = path.dirname(file);
     // No `docs.json` is not a failure. `read` hands back a null tree, `roleOf`
@@ -138,8 +188,29 @@ function check(file) {
     // run in a repository that never declared a tree.
     const { tree } = docs.read(base);
     const problems = [];
+    const overdue = [];
     const found = entries(text);
     for (const entry of found) {
+        // The stamp is asked for under `Waiting` and nowhere else. `Ready` and
+        // `Needs a decision` are read every time `/fankeel` offers a menu, so
+        // they are looked at whether or not anyone meant to; `Waiting` is the
+        // one that is skipped by design and therefore the one that needs a date
+        // to say when it last was not.
+        if (entry.section === 'Waiting') {
+            const stamped = stampAt(entry.text, at);
+            if (stamped === null) {
+                problems.push({
+                    line: entry.line,
+                    kind: 'undated',
+                    detail: 'no MM-DD stamp. End the entry with the date somebody last read it and'
+                        + ' confirmed it is still waiting — without one it cannot be told from an entry'
+                        + ' nobody has looked at since it was filed.',
+                });
+            } else {
+                const days = Math.floor((at - stamped) / 86400000);
+                if (days >= REREAD_DAYS) overdue.push({ line: entry.line, days, text: entry.text });
+            }
+        }
         if (!SECTIONS.includes(entry.section)) {
             problems.push({
                 line: entry.line,
@@ -179,7 +250,8 @@ function check(file) {
     }
     const counts = {};
     for (const name of SECTIONS) counts[name] = found.filter((e) => e.section === name).length;
-    return { file, missing: false, count: found.length, counts, problems };
+    overdue.sort((a, b) => b.days - a.days);
+    return { file, missing: false, count: found.length, counts, problems, overdue };
 }
 
 function report(result) {
@@ -190,14 +262,28 @@ function report(result) {
     // unreadable as one list, and "18 ready" is the number that decides whether
     // there is a task to start this morning.
     const split = SECTIONS.map((s) => (result.counts[s] || 0) + ' ' + s.toLowerCase()).join(', ');
+    const lines = [];
     if (!result.problems.length) {
-        return 'fankeel todo-check: ' + result.count + ' entries — ' + split
-            + '. All links resolve, no stale citations, none over the cap.';
+        lines.push('fankeel todo-check: ' + result.count + ' entries — ' + split
+            + '. All links resolve, no stale citations, none over the cap.');
+    } else {
+        lines.push('fankeel todo-check: ' + result.problems.length + ' problem'
+            + (result.problems.length === 1 ? '' : 's') + ' in ' + result.file, '');
+        for (const p of result.problems) {
+            lines.push('  ' + result.file + ':' + p.line + '  ' + p.kind + ' — ' + p.detail);
+        }
     }
-    const lines = ['fankeel todo-check: ' + result.problems.length + ' problem'
-        + (result.problems.length === 1 ? '' : 's') + ' in ' + result.file, ''];
-    for (const p of result.problems) {
-        lines.push('  ' + result.file + ':' + p.line + '  ' + p.kind + ' — ' + p.detail);
+    // Below the verdict and outside it. These are not defects — an entry can sit
+    // under `Waiting` for a month and be filed correctly the whole time — so the
+    // run stays green and the list is the prompt to go and look.
+    if (result.overdue && result.overdue.length) {
+        lines.push('', '  due for a re-read — nobody has confirmed these are still waiting in '
+            + REREAD_DAYS + ' days or more:');
+        for (const o of result.overdue) {
+            const short = o.text.replace(/\s+/g, ' ').trim();
+            lines.push('    ' + result.file + ':' + o.line + '  ' + String(o.days).padStart(3)
+                + ' days  ' + (short.length > 72 ? short.slice(0, 71) + '…' : short));
+        }
     }
     return lines.join('\n');
 }
@@ -207,7 +293,7 @@ function report(result) {
 // handed `.` to `check`, reading a directory threw EISDIR, `check` reported it
 // missing, and missing is success. The form a person reaches for, and the form a
 // gate gets written with, passed while examining nothing.
-function main(argv) {
+function main(argv, now) {
     let root = '';
     const loose = [];
     for (let i = 0; i < argv.length; i++) {
@@ -225,7 +311,7 @@ function main(argv) {
     }
     // A positional argument is still a path to a file. A flag's value is not one.
     const at = loose[0] || path.join(root || process.cwd(), 'TODO.md');
-    const result = check(path.resolve(at));
+    const result = check(path.resolve(at), now);
     return { text: report(result), ok: result.missing || !result.problems.length };
 }
 
@@ -235,4 +321,4 @@ if (require.main === module) {
     process.exit(ok ? 0 : 1);
 }
 
-module.exports = { MAX_ENTRY_CHARS, SECTIONS, linksIn, check, main };
+module.exports = { MAX_ENTRY_CHARS, REREAD_DAYS, SECTIONS, linksIn, check, main };

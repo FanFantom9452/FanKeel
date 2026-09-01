@@ -539,7 +539,7 @@ instead:
 | A project convention that will outlive this task | `CLAUDE.md` |
 | A durable fact about the user or the repository | the memory directory |
 | Why a change was made | the commit message |
-| Work deliberately deferred | `TODO.md`, one line, linking to the detail, under the heading for what it is short of |
+| Work deliberately deferred | `TODO.md`, one line, linking to the detail, under the heading for what it is short of — and under `## Waiting`, ending with a `MM-DD` stamp |
 | A plan whose work has landed | the `archive` bucket, after asking |
 | What was tried and failed, mid-task | a **note** |
 | What to pick up next | **next** |
