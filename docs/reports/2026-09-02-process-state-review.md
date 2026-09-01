@@ -41,13 +41,13 @@ registry 的寫入路徑、route 的驗證、class 的推導、記憶欄位的�
 
 | 優點 | 證據 |
 |---|---|
-| 一個寫入原語，每個常數都有量測 | `lib/registry.js:218` 無 retry 時 86–93% 的 rename 撞 EPERM；`:220` 5ms retry 後 229 次寫入 2 次失敗；`:309` 最長合法持鎖 8.6ms 對 5s 的過期線 |
+| 一個寫入原語，每個常數都有量測 | `lib/registry.js:213` 無 retry 時 86–93% 的 rename 撞 EPERM；`:220` 5ms retry 後 229 次寫入 2 次失敗；`:309` 最長合法持鎖 8.6ms 對 5s 的過期線 |
 | 一個 route validator 管所有入口 | `lib/stages.js:444` `normaliseRoute`；`scripts/task.js:482`、`:896`、`:749` 三個入口都經過它 |
 | `class` 是推導值，不會漂移 | `scripts/task.js:915-917` 重算並在不符時刪除；`:754-758` adopt 同樣推導；`tests/route.test.js:317` |
 | liveness 用 pid 量，不用時間戳猜 | `lib/live.js:9` 量到閒置時間從 0.1h 到 268.5h 都有活的 session，所以放棄時間閾值 |
 | hook 先輸出再副作用 | `hooks/inject.js:163`、`hooks/resume.js:47`；每個副作用各自 try/catch |
 | 一次真實事故換來機械修正 | `docs/registry.md:426` 兩小時的 session id 事故；`scripts/task.js:210` 現在對照 Claude Code 自己的 session 目錄拒絕陌生 id |
-| gate 的文字對著具名事故收緊，每條有測試釘住 | `lib/stages.js:50-56`（九百字的 design）、`:71-82`（`\uXXXX` 壞掉的中文）、`tests/stages.test.js:256` |
+| gate 的文字對著具名事故收緊，每條有測試釘住 | `lib/stages.js:50-56`（design 以一段文字列三個編號選項收尾）、`:159`（九百字的 design）、`:71-82`（`\uXXXX` 壞掉的中文）、`tests/stages.test.js:256` |
 | Stop hook 是算過三個成本才否決的 | `docs/pipeline.md:252-257`：多一個 model turn、`stop_hook_active` 迴圈、誤傷中途的普通問答 |
 | 注入規則的三份副本有測試防漂移 | `tests/render.test.js:270` 逐字比對 pipeline.md 的兩處引文 |
 | `positionIn` 誠實報告倒退 | `lib/stages.js:465` 是純函數，沒有高水位；verify 退回 build 會顯示 5 of 7 變 4 of 7 |
@@ -72,12 +72,12 @@ registry 的寫入路徑、route 的驗證、class 的推導、記憶欄位的�
 ### A. 狀態機本身：只有集合檢查，沒有順序，也沒有棘輪
 
 **A1 [medium] 單向棘輪只有散文，程式碼零強制。**
-`README.md:88`、`docs/pipeline.md:363`、`skills/fankeel/SKILL.md:265`、`lib/stages.js:404` 四處宣稱 route 只升不降。`scripts/task.js:888-928` 的 `cmdRoute` 只拒絕會孤立當前 stage 的 route（`:904`），從不比較新舊 route，雖然 `before`（`:909`）和 `given`（`:896`）在寫入前都在手上。實跑：architectural 任務進到 design 後 `route survey,design,build` exit 0，砍掉 plan、verify、audit、land，刪掉 `class`，只印中性的前後對照。`tests/route.test.js:310-314` 把降級寫成預期行為。
+`README.md:88`、`docs/pipeline.md:364`、`skills/fankeel/SKILL.md:265`、`lib/stages.js:404` 四處宣稱 route 只升不降。`scripts/task.js:888-928` 的 `cmdRoute` 只拒絕會孤立當前 stage 的 route（`:904`），從不比較新舊 route，雖然 `before`（`:909`）和 `given`（`:896`）在寫入前都在手上。實跑：architectural 任務進到 design 後 `route survey,design,build` exit 0，砍掉 plan、verify、audit、land，刪掉 `class`，只印中性的前後對照。`tests/route.test.js:310-314` 把降級寫成預期行為。
 已承認：`lib/stages.js:403-406` 說「enforced by nothing here, because neither is checkable」。對「縮短」這一半不成立：那是一個比較，兩個運算元都在。鏡像的規則在 `cmdStage`（`:555-557`）已經用同樣的理由機械強制了。
 最小修法：縮短時印出被丟掉的 stage；完整修法是拒絕，`--force` 放行。
 
 **A2 [medium] `clock`/`burn` 對回頭的 stage 把離開的時間全算進去。**
-`lib/registry.js:409-413`（clock）與 `:420-424`（burn）存 (first, latest) 一對，沒有離開與重進的概念；唯一的重置在 `scripts/task.js:623-628`，觸發於改名而不是重進。verify 退回 build 是設計允許的路徑（`lib/stages.js:270`、`docs/pipeline.md:539`），`cmdStage` 只查成員（`scripts/task.js:559`）所以放行。離開一小時再回來碰一次，build 報 65 分鐘而不是 5 分鐘，多報的量等於離開的時間。`waited` 為同一情境改成累加（`docs/plans/2026-09-01-stage-timing-design.md:44-45`），這兩個沒跟上。只影響 `show`（`scripts/task.js:252-261`）、stage 轉換行（`:581-583`）和 adopt 帶過去的距離（`:796`）。`scripts/task.js:786` 寫著「bills a stage for the days nobody was on it」是要避免的事，正是這條路徑做的事。沒有測試涵蓋重進。
+`lib/registry.js:409-413`（clock）與 `:420-424`（burn）存 (first, latest) 一對，沒有離開與重進的概念；唯一的重置在 `scripts/task.js:623-628`，觸發於改名而不是重進。verify 退回 build 是設計允許的路徑（`lib/stages.js:270`、`docs/pipeline.md:539`），`cmdStage` 只查成員（`scripts/task.js:559`）所以放行。離開一小時再回來碰一次，build 報 65 分鐘而不是 5 分鐘，多報的量等於離開的時間。`waited` 為同一情境改成累加（`docs/plans/2026-09-01-stage-timing-design.md:44-45`），這兩個沒跟上。只影響 `show`（`scripts/task.js:252-261`）、stage 轉換行（`:581-583`）和 adopt 帶過去的距離（`:796`）。`scripts/task.js:785-786` 寫著「bills a stage for the days nobody was on it」是要避免的事，正是這條路徑做的事。沒有測試涵蓋重進。
 已承認：沒有。
 最小修法：改成累加區間，或重進時重置 first。
 
@@ -149,7 +149,7 @@ BASE 由 `git rev-parse HEAD` 取到對話裡（`skills/fankeel-build/SKILL.md:1
 
 **D2 [medium] note 的 100 字上限沒量過，而且截斷是無聲的。**
 `lib/registry.js:34` `MAX_NOTE_LEN = 100` 全史只有一個 commit（a2930da），`LINE_MAX` 則是量了 32/56 列超過才從 100 改 120（8b6c7cb）。65 筆紀錄 105 條 note，24 條剛好 100 字，36 條 95 字以上；抽查的每一條都切在字中間。`:495`/`:501` 無聲切掉，`scripts/task.js:656` 回報「N of 5 kept」，報的是沒撞到的那個上限。兩條共用 100 字前綴的 note 會合併成一條而回報成功（`:503-504`）。
-已承認：`docs/decisions/fankeel-shell.md:243-244`「small by nature ... the shape of the thing rather than a limitation」，沒有量測。設上限的理由成立（第五個記憶 store 沒人審），數字沒有依據。
+已承認：`docs/decisions/fankeel-shell.md:243-245`「small by nature ... the shape of the thing rather than a limitation」，沒有量測。設上限的理由成立（第五個記憶 store 沒人審），數字沒有依據。
 最小修法：截斷時說出來，像 `scripts/todo-check.js:228` 那樣；不要加大上限，note 每 prompt 重新注入，預算 2400 字現在 2394。
 
 **D3 [low] hook 的數量在自己的頁面上過期了，而且這類失效三個掃描器按構造都抓不到。**
@@ -175,7 +175,7 @@ BASE 由 `git rev-parse HEAD` 取到對話裡（`skills/fankeel-build/SKILL.md:1
 
 - PreToolUse 對 AskUserQuestion **會** fire。
 - 這個 repo 裡從沒 fire，是 `docs/registry.md:152-164` 的第二個候選：hook 註冊是 process 級，開發用的那個程序早於 manifest，`/clear` 不重載。
-- `docs/registry.md:138`、`docs/decisions/fankeel-shell.md:456`、`skills/fankeel/SKILL.md:111` 三處「no record has carried a gateAt」對磁碟上這個檔案是假的。
+- `docs/registry.md:138`、`docs/decisions/fankeel-shell.md:456`、`skills/fankeel/SKILL.md:114` 與 `:130` 三頁四句「no record has carried a gateAt」對磁碟上這個檔案是假的。
 - 那次 gate 沒關（沒有 `waited`），因為問題被中斷而不是回答，PostToolUse 對取消的呼叫不跑。`docs/registry.md:206` 說未消費的 `gateAt` 由下一個蓋掉，那是「session 死在 gate 上」的情況；「問題被 Esc 掉、session 繼續」是第二種，結果一樣是一個永遠不會被折進 `waited` 的 stamp。
 
 同一批外部 registry 還有：四個 project 共 5 筆紀錄，3 筆仍 `active: true`、停在 survey / design / audit 沒人收，4 筆沒有 class，0 筆有 `next`。`§1` 之前的所有實證數字都只算了這個 repo，而這個 repo 的作者就是工具的作者、每個任務都在改工具本身。
@@ -197,7 +197,7 @@ BASE 由 `git rev-parse HEAD` 取到對話裡（`skills/fankeel-build/SKILL.md:1
 
 依價值除以成本排序。每條寫明它關掉的問題與大概的成本。
 
-1. **三頁改一句，一個決定收掉。** 依 §4-E 更新 `docs/registry.md:138`、`docs/decisions/fankeel-shell.md:456`、`skills/fankeel/SKILL.md:111`：gate.js 會 fire，此 repo 的沉默是 process 級註冊。TODO.md「gateClose 找不到 gateAt 時要不要講」可以據此決定：在 `/clear` 出來的 session 裡它一定找不到，講一次是對的。成本：文件。
+1. **三頁改一句，一個決定收掉。** 依 §4-E 更新 `docs/registry.md:138`、`docs/decisions/fankeel-shell.md:456`、`skills/fankeel/SKILL.md:114` 與 `:130`：gate.js 會 fire，此 repo 的沉默是 process 級註冊。TODO.md「gateClose 找不到 gateAt 時要不要講」可以據此決定：在 `/clear` 出來的 session 裡它一定找不到，講一次是對的。成本：文件。
 2. **`pointsAt()` 套兩個 guard 加一個測試。** 關 D1。成本：約 10 行加 1 個測試。
 3. **`renderResume` 加一行 context 與 session id。** 關 C1。成本：約 5 行加 1 個測試；`contextLine` 已算好。
 4. **plan 路線的 ruling 也進 commit message。** `skills/fankeel-build/SKILL.md:223` 那句從「with no plan」改成「always」；或 `.fankeel/build/` 不再 ignore。關 B1，B2 關一半。成本：一句規則，或一行 `.gitignore`。
@@ -246,7 +246,7 @@ BASE 由 `git rev-parse HEAD` 取到對話裡（`skills/fankeel-build/SKILL.md:1
 | plugin root 搬走或 node 不在，hook.js 的 try/catch 接不到 | 保證的範圍寫明是「a hook that throws」（`lib/hook.js:19-23`） |
 | parse 失敗丟掉整筆紀錄 | 手改是唯一剩下的向量，`docs/registry.md:401-402` 有論證；原子寫入排除了部分寫入 |
 | 什麼都不會被銷毀（優點） | 假：`task` 改名清 notes 與 next（`docs/registry.md:75-77`） |
-| map 把 plugin root 烤進檔案且現在就過期 | 假：路徑解析得到，`scripts/map.js:50` 每次重寫，三個 stage 按名重跑 |
+| map 把 plugin root 烤進檔案且現在就過期 | 假：路徑解析得到，`scripts/map.js:51` 每次重寫，三個 stage 按名重跑 |
 | 「regenerated so cannot be stale」沒有限定 | 有論證且限定於一種失效模式（`docs/pipeline.md:719-721`、`tests/stages.test.js:372-374`） |
 | 模型無法表達一個任務兩個活 attachment | 有論證（`docs/subagents.md:189-190`）；舉的成本在例子裡不成立 |
 | live.js 把 pid 列折成 id 集合 | `runningSessions` 保留兩列；只有上層的 Set 丟掉；`lib/live.js:85-86` 的政策 |
