@@ -355,6 +355,39 @@ times over, one module per file it needs read.
 
 The counts are where the question starts, not where it ends.
 
+## `audit` joins neither `spike` nor `bounded`
+
+The stage exists and two of the three classes do not route through it, which
+reads like an oversight often enough to have been filed as one. It is not.
+
+`docs-check.js` runs at `verify`, and `verify` is already on `bounded`'s route.
+So a scoped change is checked for a dead link, a citation past the end of a file
+and a symbol nothing declares, without the `audit` stage being anywhere near it.
+What `audit` adds on top is `docs-audit.js` — the sweep that asks which reference
+pages have not been touched since the code under them changed, which plans have
+landed, and which pages describe the same file. That is a fortnightly question.
+Asking it on every scoped change is not thoroughness but a cadence error, and the
+answer would be the same fifteen times running until somebody stopped reading it.
+
+`spike` is the clearer half. Its route is `survey,build` and its own definition
+says anything built is labelled throwaway. Grading documents against code nobody
+intends to keep answers a question nobody asked.
+
+Nothing is lost by leaving both alone, and that is what makes this cheap rather
+than a trade: `/fankeel-audit` runs the whole pass without a task at all, so the
+sweep was never gated on a route in the first place. It is also the way to audit
+a repository nobody is in the middle of, which no route could ever have covered.
+
+The cost of the other answer is worth recording, because it lands somewhere
+nobody would look. A record stores its class and its route as two fields, and
+`classForRoute` reconciles them at only two moments: `adopt` and `task.js route`.
+Add a stage to `bounded` and every entry already carrying the old five-step route
+keeps the word `bounded`, which `lib/render.js` injects on every prompt with the
+new meaning — while an `adopt` of that same entry recomputes the class from the
+route, matches nothing, and drops it. One record, describing itself two ways
+depending on which command touched it last.
+
+
 ## A hook that cannot tell a wrong id from no plugin says nothing
 
 A session id that never appears in the registry resolves to a path that does not
