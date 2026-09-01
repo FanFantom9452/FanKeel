@@ -134,20 +134,26 @@ sessions since the file landed recorded neither field — one of them four stage
 deep, with `clock` and `burn` written to the same file by the sibling hooks,
 which rules out a path or a permission fault.
 
-**Why it has not run is not settled, and the obvious reading is the wrong one to
-reach for.** Claude Code reads its hook registration list when the process
-starts, so a `plugin.json` that gained an entry mid-session registers nothing
-until the next start — and on this machine no `claude.exe` has started since:
-the newest began at 2026-08-31 23:55:39 against a manifest carrying the entry
-from 2026-09-01 02:03:37. That alone accounts for every observation above,
-without `PreToolUse` having to be missing for `AskUserQuestion` at all.
+**Why it has not run is not settled**, and the second candidate is easy to talk
+yourself out of. Claude Code reads its hook registration list at the start of
+something, so a `plugin.json` that gained an entry afterwards registers nothing
+until the next one — which means the entry may simply never have been live.
 
-**What would settle it**, and nothing short of it: a Claude Code process started
-after the install, a task begun with `start` rather than `adopt` — `start` builds
-a fresh record and `adopt` carries a `waited` across — one question asked, and
-then the record read. A `waited` of any value means the hook ran. Still absent,
-the event is the answer and the `waited` half of this needs rebuilding on
-something else. It is in [TODO.md](../TODO.md).
+Whether that "something" is the process or the session is the whole question, and
+nothing here answers it. The process that ran this work began 2026-08-31
+23:55:39, two hours before the manifest carrying the entry, so on the process
+reading the entry was never live. But the session inside it began well after,
+and `/clear` starts a session without starting a process, so on the session
+reading it should have been. The two readings point opposite ways and no page in
+this repository says which one holds.
+
+**What would settle it**, and nothing short of it: a Claude Code **process**
+started after the install — the stronger of the two conditions, so it answers
+whichever reading is right — with a task begun by `start` rather than `adopt`,
+because `start` builds a fresh record and `adopt` carries a `waited` across. Ask
+one question, then read the field. A `waited` of any value means the hook ran.
+Still absent, the event is the answer and the `waited` half of this needs
+rebuilding on something else. It is in [TODO.md](../TODO.md).
 
 `Stop` was the obvious alternative and is the wrong one, which is why the pair
 was built this way and why replacing it is not simply a matter of moving to

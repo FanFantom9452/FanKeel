@@ -132,8 +132,10 @@ missing.
 
 | evidence | |
 |---|---|
-| registration | present in the copy that runs — the cache `plugin.json` is byte-identical to the repo's, mtime `2026-09-01 02:03:37 +0800`. **On disk is not live in a process** |
-| the process | no `claude.exe` on this machine started after that mtime; the newest began `2026-08-31 23:55:39`, and the session drawing these conclusions ran inside it |
+| registration | the `PreToolUse`/`AskUserQuestion` entry naming `gate.js` is identical in the repo and in the installed cache, mtime `2026-09-01 02:03:37 +0800`. **On disk is not the same as live** |
+| the manifests | *not* byte-identical, and were only briefly so: `d55b7e0` changed the repo's `SessionStart` matcher to `clear\|fork` and the cache still reads `clear`, so that fix is not live either |
+| the process | no `claude.exe` started after that mtime; the newest began `2026-08-31 23:55:39` and hosts this session |
+| the session | began hours after that mtime. `/clear` starts one without starting a process, and the source says the registration list is read at **session** start, not process start — so the two readings disagree and nothing here settles them |
 | control session `9c173d5f` | ran 11:03–11:44 local, nine hours later, route `design,build,verify,land` to completion. `clock` and `burn` written by the sibling hooks; no `gateAt`, no `waited` |
 | this session | three gates with `active: true`; no `gateAt`, no `waited` |
 | the one `waited` on record (`cb8cee7b`) | that session's task *was* building this feature, and its window straddles the commit that installed the hook — not evidence the hook fires |

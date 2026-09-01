@@ -466,13 +466,20 @@ drifting citations in one build stay for `audit`, read by a person.
 
 ### Step 3 — the finding, in `## What is still a guess`
 
-That section is at `:358`. Add to it that `PreToolUse` does not fire for
-`AskUserQuestion`, with the control: registration present in the copy that runs
-(the cache `plugin.json` is byte-identical to the repository's, mtime
-`2026-09-01 02:03:37 +0800`); session `9c173d5f` ran nine hours later through
+That section is at `:358`. Add to it that `hooks/gate.js` has never run — no
+record carries a `gateAt` or a `waited`, and session `9c173d5f` went through
 `design,build,verify,land` with `clock` and `burn` written by the sibling hooks
-and no `gateAt` or `waited`; `PostToolUse` on the same matcher fires on every
-answer. Say plainly that what happens to `hooks/gate.js` is **not** decided.
+and neither of those two. Say plainly that **why** it has not run is unsettled:
+the `PreToolUse`/`AskUserQuestion` entry naming `gate.js` is in the installed
+cache as well as the repository, but present on disk is not the same as live,
+and whether the registration list reloads at process start or at session start
+decides it — the process here predates the install and the session does not.
+Say that what happens to `hooks/gate.js` is **not** decided, and cannot be until
+that runs.
+
+**Do not write that the two manifests are byte-identical.** They were when this
+plan was written and Task 3 has since changed the repository's `SessionStart`
+matcher, so the claim goes stale inside this very build.
 
 Also add there: whether `fork` changes the session id is still unmeasured, and
 Task 3 shipped a matcher that is correct either way rather than an answer.

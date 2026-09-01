@@ -457,21 +457,28 @@ works. The hook has never run: no record has carried a `gateAt` or a `waited`,
 and two sessions since the file landed recorded neither, one of them four stages
 deep with `clock` and `burn` written to the same entry by the sibling hooks.
 
-**This was written up as settled and it is not, which is worth keeping as the
-mistake rather than quietly correcting.** The argument was that the registration
-is present in the copy that actually runs — the plugin cache's `plugin.json` is
-byte-identical to this repository's. That is true and it is not the same claim.
-Claude Code reads its hook registration list when the **process** starts, and no
-`claude.exe` on this machine has started since the entry was installed: the
-newest began 2026-08-31 23:55:39, the manifest carrying the entry dates from
-2026-09-01 02:03:37, and the session that reasoned its way to the conclusion was
-running inside that older process the whole time.
+**This was written up as settled twice, and neither writing held.** Both
+overstatements are kept here, because each looked like the correction of the one
+before it.
 
-Present on disk is not live in a process, and the gap between those two is
-invisible from inside the session that has the gap.
-[docs/plans/2026-09-01-stage-timing-design.md](../plans/2026-09-01-stage-timing-design.md)
-had already named it as the likelier of the two causes, in the run that first
-observed the silence.
+The first was that the registration is present in the copy that actually runs, so
+the event must be missing. Present on disk is not the same as live in a running
+program, and the gap is invisible from inside the session that has it.
+
+The second was the correction to that: Claude Code reads its registration list
+when the **process** starts, and no `claude.exe` here has started since the entry
+was installed — the newest began 2026-08-31 23:55:39 against a manifest dated
+2026-09-01 02:03:37. The process part is measured and true. The word `process` is
+not: the source it came from,
+[docs/plans/2026-09-01-stage-timing-design.md](../plans/2026-09-01-stage-timing-design.md),
+says **session** start, and `/clear` begins a session without beginning a
+process. The session that did this work began long after the install. So on one
+reading the entry was never live and on the other it was, and nothing in this
+repository says which reading is right.
+
+The shape of the mistake was the same both times: a measurement that was real
+was made to carry a conclusion one step wider than it reaches. The second time
+it was a single word.
 
 What settles it is in [TODO.md](../../TODO.md): a process started after the
 install, a task begun with `start` rather than `adopt` — `adopt` carries a
