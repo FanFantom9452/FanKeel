@@ -37,6 +37,8 @@ entry under any other heading is one nobody said the state of.
 
 ## Waiting
 
+- Whether a flag a verb ignores should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses the same value. None observed. 09-01.
+
 - Whether 100 is the right bound for a row — [scripts/task.js](scripts/task.js), `LINE_MAX`. One registry: 32 of 56 over it, median task 68. An 80-column terminal still wraps. 09-01.
 
 - Whether `PreToolUse` fires for `AskUserQuestion` — [hooks/gate.js](hooks/gate.js). Restarted, registration installed: two gates, no `gateAt`, no `waited`. `gateOpen` works called direct. 09-01.
