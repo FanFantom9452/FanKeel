@@ -269,8 +269,27 @@ that window reads as none — which is the right failure, since it means a great
 deal has happened since without another one.
 
 A statusline can show the percentage. What it cannot know is that there is a task
-in flight, or that **Adopt** moves it — task, project, claims, stage, route, notes
-and `next` — into a fresh session in one step.
+in flight, or that **Adopt** moves it — task, project, claims, stage, route, notes,
+`next`, and what the stages have cost in wall-clock — into a fresh session in one
+step.
+
+**The cost history is where that list stops being a copy.** `clock` and `waited`
+measure the wall, which does not care which session read it, so they go over.
+`burn` measures *a session's own context*, and its two slots are sightings of
+one: subtract the source's first from the adopting session's latest and the
+answer is a distance between two different rulers — negative, and so silently
+`null`, or positive and carrying the whole of the new session's baseline. It is
+left behind, and a stage adopted mid-flight reports its burn from the adopt
+onward.
+
+`clock` goes over as a **distance with a new origin**: `adopt` writes
+`[stamp - clockOf(source, stage), stamp]`, so the stage keeps what it cost and
+loses the gap between the source falling quiet and somebody picking it up. That
+gap is already reported twice — by `updated`, and by the `(last seen 16d ago)`
+line — and a third telling would bill a stage for the fortnight nobody was on
+it. `gateAt` does not go over at all: it is an interval with one end, and the
+next answer in the adopting session would close it against a stamp from another
+one.
 
 The hook writes exactly one registry file: this session's own. It never writes
 another session's, and never deletes one.

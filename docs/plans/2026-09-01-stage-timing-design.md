@@ -134,11 +134,14 @@ this run does not separate them:
 
 Cause 1 is the likelier reading and it is still a reading, not an observation.
 
-**What settles it.** A session started *after* the install: any `waited` at all
-appearing in a fresh record means `gate.js` ran, because `adopt` does not carry
-`waited` and a new record has none. If a restarted session asks one question and
-`waited` is still absent, cause 2 is the answer and the `waited` half of this
-design has to be rebuilt on something else.
+**What settles it.** A session started *after* the install and **begun with
+`start` rather than `adopt`**: any `waited` at all appearing in that record means
+`gate.js` ran, because `start` builds a fresh object and a fresh object has none.
+`adopt` is no longer the other half of that sentence — it carries `waited` over
+now, so a record it wrote can hold a wait no gate in this session ever opened. If
+a restarted session asks one question and `waited` is still absent, cause 2 is
+the answer and the `waited` half of this design has to be rebuilt on something
+else.
 
 **The machine's state while that is pending.** The 0.40.0 cache holds this
 branch's `hooks/gate.js`, `hooks/resume.js`, `lib/registry.js` and

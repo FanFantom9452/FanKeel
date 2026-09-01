@@ -465,6 +465,39 @@ test('adopt inherits the start time rather than re-stamping it', () => {
   assert.ok(Date.parse(entry(dir, B).updated) > Date.parse(source.started));
 });
 
+// `burn` is two sightings of one session's context and `clock` is two of the
+// wall. Only the second kind means anything after the session changes, and the
+// clock carries its distance rather than its timestamps — the sixteen days the
+// source sat stood down are reported by `updated`, and billing them to the
+// stage as well would say a design took a fortnight of work.
+test('adopt carries the wall-clock cost and leaves the token count behind', () => {
+  const dir = root();
+  started(dir, A, 'tidy the project cards', 'Waypoint');
+  run(dir, ['stage', 'design', '--session', A]);
+
+  const source = entry(dir, A);
+  const quiet = Date.now() - 16 * DAY;
+  source.clock = { design: [quiet - 30 * 60e3, quiet] };
+  source.waited = { design: 5 * 60e3, survey: 0 };
+  source.burn = { design: [1000, 51000] };
+  // Stamped when a question went out and never answered — the session died at
+  // the gate. Carried over, the next answer would close a sixteen-day interval.
+  source.gateAt = quiet;
+  registry.writeSession(dir, A, source);
+
+  assert.equal(run(dir, ['adopt', A, '--session', B]).code, 0);
+
+  const mine = entry(dir, B);
+  // Exact rather than approximate: both ends are rebuilt from the one stamp.
+  assert.equal(registry.clockOf(mine, 'design'), 30 * 60e3);
+  assert.ok(Date.now() - mine.clock.design[1] < 30e3);
+  assert.equal(mine.waited.design, 5 * 60e3);
+  // Zero is a real entry — a gate that took no measurable time still happened.
+  assert.equal(mine.waited.survey, 0);
+  assert.equal(mine.burn, undefined);
+  assert.equal(mine.gateAt, undefined);
+});
+
 test('adopt refuses when this session already owns something', () => {
   const dir = root();
   started(dir, A, 'first', 'Waypoint/web');

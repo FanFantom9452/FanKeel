@@ -707,8 +707,9 @@ the user's say-so.
 A `context:` line means this session has already lost work to compaction, and
 says how much. Pass it on rather than ignoring it: the statusline shows a
 percentage, but only this knows there is a task in flight and that `/fankeel` →
-**Adopt** carries it — task, project, claims, stage, route, notes and `next` — into a fresh
-session in one step. Say it once when the line first appears, and again when its
+**Adopt** carries it — task, project, claims, stage, route, notes, `next` and what
+the stages have cost in wall-clock — into a fresh session in one step. Not `burn`:
+that measures a session's own context, and the session is the thing changing. Say it once when the line first appears, and again when its
 wording hardens. Repeating it every turn is nagging, and nagging gets ignored
 exactly when it stops being nagging.
 

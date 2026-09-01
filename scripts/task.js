@@ -228,6 +228,12 @@ function requireSession(opts) {
 
 const now = () => new Date().toISOString();
 
+// A record is a file anything can have written to, so a field expected to be a
+// map of stages may be a string, a list or missing. An empty object reads the
+// same as an empty map everywhere it is used, which is what makes the caller a
+// loop rather than a loop inside a guard.
+const plainMap = (v) => (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+
 function describe(root, sessionId, data) {
     const lines = [];
     lines.push('task:  ' + (data.task || 'untitled'));
@@ -760,6 +766,41 @@ function cmdAdopt(root, opts) {
     if (source.notes) data.notes = source.notes;
     if (source.next) data.next = source.next;
     if (source.guard) data.guard = source.guard;
+
+    // The cost history splits by what it measures, and only one half survives a
+    // change of session. `clock` and `waited` are wall-clock, which does not
+    // care who read it. `burn` is two sightings of *this session's* context, so
+    // carrying a pair across subtracts the source's ruler from the new
+    // session's: a negative that disappears into `null`, or a positive holding
+    // the whole of the new session's baseline. Left behind rather than guessed.
+    //
+    // The clock carries its distance and not its timestamps. Between the source
+    // going quiet and this adopt there may be a fortnight, and that fortnight is
+    // already reported twice — by `updated`, and by the `(last seen 16d ago)`
+    // line. Letting it into `clock` as well bills a stage for the days nobody
+    // was on it.
+    //
+    // `gateAt` is absent from this record for the same reason it is absent from
+    // the field list above: it is an interval with one end, and the next answer
+    // in this session would close it against a stamp from another one.
+    const at = Date.parse(stamp);
+    const clocked = plainMap(source.clock);
+    const clock = {};
+    for (const stage of Object.keys(clocked)) {
+        const held = registry.clockOf(source, stage);
+        if (held) clock[stage] = [at - held, at];
+    }
+    if (Object.keys(clock).length) data.clock = clock;
+    // Copied rather than read through `waitedOf`, which hides a zero. A gate
+    // that took no measurable time still happened, and the record is where that
+    // is kept; the hiding belongs to the display.
+    const waitedIn = plainMap(source.waited);
+    const waited = {};
+    for (const stage of Object.keys(waitedIn)) {
+        const ms = waitedIn[stage];
+        if (Number.isFinite(ms) && ms >= 0) waited[stage] = ms;
+    }
+    if (Object.keys(waited).length) data.waited = waited;
     // Two records, two locks, and no way to make the pair atomic — which is why
     // the failure below names the state it can leave behind rather than
     // pretending it cannot happen. Each side is atomic on its own, which is the
