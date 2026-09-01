@@ -43,8 +43,6 @@ entry under any other heading is one nobody said the state of.
 
 - Whether `fork`'s Adopt path gets the `live.isLive` guard `clear` already has, or its own — [hooks/carry.js](hooks/carry.js). `carry.js:60` skips live entries; `fork` is matched nowhere. 09-01.
 
-- Whether `fanoutSync` keeps its all-or-nothing payload, splits it, or retries — [lib/tracked.js](lib/tracked.js). One 64MB overflow already discarded thirty answers; only the fix is open. 09-01.
-
 ## Waiting
 
 - Whether a flag a verb ignores should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses the same value. None observed. 09-01.
@@ -60,3 +58,4 @@ entry under any other heading is one nobody said the state of.
 - Whether an output style reaches subagents at all. Unverified, and now unmitigated: nothing restates one for them since the digest came out with the style skill.
 - A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI, so the default reminder is what the three get.
 - Whether the pairs [scripts/docs-audit.js](scripts/docs-audit.js) picks are worth reading — `LANDMARK = 4` is the filter that decides. 4 of 28 read once, none of them wrong. 08-31.
+- Whether `fanoutSync`'s all-or-nothing payload ever costs anything — [lib/tracked.js](lib/tracked.js). One 64MB overflow discards every answer and re-reads all thirty serially. 08-30.
