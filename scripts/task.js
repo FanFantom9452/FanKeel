@@ -296,9 +296,23 @@ function collisions(root, sessionId, claims) {
 // instead of throwing: an entry with no timestamp is one nothing ever touched.
 const stampOf = (data) => Date.parse(data && data.updated) || 0;
 
+// Where a row stops. The other axis of the cap `--all` removed: the rows are
+// uncapped because a flag named `--all` promising every entry and printing 25 was
+// the bug, and it never promised every character. The task is the last column and
+// the only one with no width of its own, so it is the only one that can push a
+// row past the terminal — and a wrapped row's second line starts at column 0,
+// where it reads as a row of its own and the date column stops being scannable.
+// Measured on this repository: 32 of 56 rows over 100 characters, the widest 189,
+// while the median task ran 68 and loses six characters to this.
+//
+// The bound is on the line rather than on the task, because 100 is the number a
+// reader reasons about and the columns ahead of the task may yet change width.
+// `room` is measured off the ones actually rendered rather than counted here.
+const LINE_MAX = 100;
+
 // One line, because there are fifty of these. Date, the stage it reached, what
-// it cost, then the task — the task last so the columns before it stay aligned
-// however long it runs.
+// it cost, then the task — the task last so the columns before it stay aligned,
+// which is also what makes it the one column a bound can be spent on.
 //
 // The two figures are sums over the route rather than the per-stage breakdown
 // `describe` prints. A breakdown is what you want for the one entry a session
@@ -310,13 +324,27 @@ function entryLine(data) {
     const sum = (of) => route.reduce((total, r) => total + (of(data, r) || 0), 0);
     const burned = sum(registry.burnOf);
     const spent = sum(registry.clockOf);
-    return [
+    const head = [
         String(data.updated || '').slice(0, 10).padEnd(10),
         String(data.stage || '?').padEnd(7),
         (burned ? tokens(burned) : '—').padStart(6),
         (spent ? mins(spent) : '—').padStart(5),
-        data.task || 'untitled',
     ].join('  ');
+    // Two for the indent `cmdShow` adds as it pushes the line, two for the
+    // separator this function adds before the task.
+    //
+    // Floored, and at 1 rather than 0. `padEnd` widens a short `stage` and never
+    // narrows a long one, so an entry written by hand can render a head wider
+    // than the whole bound — and a negative `room` reaching `slice` below would
+    // count from the far end of the task and print all but the last few
+    // characters of it, which is the opposite of what the arithmetic asked for.
+    // A floor of 0 has the same fault one step later, at `room - 1`.
+    const room = Math.max(LINE_MAX - 2 - head.length - 2, 1);
+    const task = data.task || 'untitled';
+    // `trimEnd` because a cut that lands on a space would otherwise render as a
+    // word floating clear of its own ellipsis.
+    return head + '  '
+        + (task.length > room ? task.slice(0, room - 1).trimEnd() + '…' : task);
 }
 
 function cmdShow(root, opts) {
@@ -396,6 +424,10 @@ function cmdShow(root, opts) {
         // its own `--all` sets the cap to Infinity. Borrow the other half if you
         // come back to this. Why the header line is the bound instead:
         // docs/registry.md.
+        //
+        // The rows are what is uncapped. Each one is still bounded at `LINE_MAX`,
+        // which is the axis uncapping this exposed rather than a cap creeping
+        // back: thirty more rows arrived on a column that wraps.
         const rows = entries.slice().sort((a, b) => stampOf(b.data) - stampOf(a.data));
         for (const row of rows) lines.push('  ' + entryLine(row.data));
     }

@@ -172,6 +172,23 @@ want to scroll. `show` without the flag still filters on `active`. And a reader
 who wants the first N has `head`, which is why there is no `--max N` here to
 reinvent it.
 
+The **rows** are what is uncapped. Each row is bounded at 100 characters, and the
+two are not the same promise: `--all` means every entry, and it never meant every
+character. Uncapping put thirty more rows on screen and that is what exposed the
+column with no width of its own — the task is last precisely so the columns
+before it stay aligned, which is also what makes it the only one able to push a
+row past the terminal. A wrapped row's second line starts at column 0, where it
+reads as a row of its own and the date column stops being scannable. Measured
+here the day after the 55 above, one entry further on: 32 of 56 rows were over
+100 characters and the widest was 189; the median task ran 68, so the median row
+loses six characters and a `…` says where.
+The whole task is still in the entry's own file, and `show` without the flag
+still prints this session's in full.
+
+The bound is on the line rather than on the task because 100 is the number a
+reader reasons about; `entryLine` measures the columns it actually rendered and
+gives the task what is left.
+
 The header carries the one number no reader had: how many files were entries by
 name and did not parse. `readFile` turns a parse failure into null and every hook
 then returns quietly, which is right in a hook — a miss is what a session not

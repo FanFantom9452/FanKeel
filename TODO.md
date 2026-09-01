@@ -35,11 +35,11 @@ entry under any other heading is one nobody said the state of.
 
 ## Needs a decision
 
-- Whether the task column should be bounded — [scripts/task.js](scripts/task.js), `entryLine` puts it last. Uncapping `show --all` gave 55 rows, widest 189 characters, which wraps. 09-01.
-
 - Whether `adopt` should carry a task's cost history — [scripts/task.js](scripts/task.js) builds the new record from an explicit field list, so `burn`, `clock` and `waited` are all dropped. 09-01.
 
 ## Waiting
+
+- Whether 100 is the right bound for a row — [scripts/task.js](scripts/task.js), `LINE_MAX`. One registry: 32 of 56 over it, median task 68. An 80-column terminal still wraps. 09-01.
 
 - Whether `PreToolUse` fires for `AskUserQuestion` — [hooks/gate.js](hooks/gate.js). Probed live: the file change took, the new registration did not. A restart settles it. 09-01.
 
