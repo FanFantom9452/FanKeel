@@ -47,6 +47,7 @@ here.
 | The five tasks that built it, with every string and every test written out | [plans/2026-09-01-stage-units.md](plans/2026-09-01-stage-units.md) — *built* |
 | Why six deferred decisions were settled in one pass, and what each one decided | [plans/2026-09-01-six-decisions-design.md](plans/2026-09-01-six-decisions-design.md) — *built* |
 | The six tasks that settled them, with every string and every test written out | [plans/2026-09-01-six-decisions.md](plans/2026-09-01-six-decisions.md) — *built* |
+| Which three of the four `## Ready` entries were documentation defects, and why the fourth could not be run here | [plans/2026-09-01-ready-backlog.md](plans/2026-09-01-ready-backlog.md) — *built* |
 | What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 | Why three lib modules with one caller each were not folded into their callers | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *one caller is not evidence on its own* |

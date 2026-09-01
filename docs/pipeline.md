@@ -94,8 +94,8 @@ from failing to turn it on.
 
 Starting a task does not then stop to ask whether to begin. The entry goes in at the
 first stage on the route, `survey` unless `--route` said otherwise, and taking
-stock is what `survey` is for, so it happens in the same turn — otherwise the badge reads `▌FANKEEL SURVEY` at the exact moment nothing
-has been surveyed.
+stock is what `survey` is for, so it happens in the same turn — otherwise the
+badge reads `[FANKEEL:SURVEY]` at the exact moment nothing has been surveyed.
 
 Starting a task puts this session in fankeel mode. From then on every prompt
 carries the task, what has been tried, the other live sessions, and the rules for

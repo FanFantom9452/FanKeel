@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-30
+last_verified: 2026-09-02
 source_of_truth: lib/badge.js, hooks/inject.js
 ---
 

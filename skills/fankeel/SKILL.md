@@ -92,8 +92,10 @@ dirty since the task started — so a `sed`, a `node -e` or a build script is on
 the list too. Either way it is what happened rather than what anyone intended. An
 edit to `lib/badge.js` claims `lib/badge.js` and not `lib` — rolling up to the
 directory would read two sessions in two files of one directory as a collision,
-and accuracy is the whole reason to observe rather than ask. Sixty at most,
-oldest dropped.
+and accuracy is the whole reason to observe rather than ask. Sixty at most, and
+the two writers hit that cap differently: a path arriving on its own drops the
+oldest, where a git pass holding more than sixty is refused whole rather than
+trimmed.
 
 `project` is the only field anyone declares: which repository, so the docs lookup
 knows whose tree applies. One registry can cover five of them and nothing else
@@ -395,8 +397,10 @@ in order, so the end of a stage is the moment the next decision exists — and t
 answer being predictable is not the same as it having been given. "The next stage
 is obvious" is the reasoning that turns a gate back into a step.
 
-When they advance, run `task.js stage <name>`; the statusline badge reads it, so
-`▌FANKEEL DESIGN` becoming `▌FANKEEL BUILD` is how they see the move.
+When they advance, run `task.js stage <name>`; the statusline reads it, so
+`[FANKEEL:DESIGN]` becoming `[FANKEEL:BUILD]` is how they see the move — and on
+a TokenBar from v1.4.1, the `▌FANKEEL BUILD` lead line above it as well
+([docs/statusline.md](../../docs/statusline.md)).
 
 ## The `audit` stage, and other people's plugins
 

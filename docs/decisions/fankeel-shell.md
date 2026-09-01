@@ -453,9 +453,15 @@ questions only real use answers. Tracked in [TODO.md](../../TODO.md).
 
 Whether `PreToolUse` fires for `AskUserQuestion` at all. `hooks/gate.js` was
 written to mark the moment a gate opened; `hooks/resume.js` is the other end and
-works. The hook has never run: no record has carried a `gateAt` or a `waited`,
-and two sessions since the file landed recorded neither, one of them four stages
-deep with `clock` and `burn` written to the same entry by the sibling hooks.
+works. The hook has never run: no record has carried a `gateAt` or a `waited`
+that a hook put there, and two sessions since the file landed recorded neither,
+one of them four stages deep with `clock` and `burn` written to the same entry
+by the sibling hooks. One record does carry a `waited` — session `cb8cee7b`'s
+`{"verify":28660}` — and it is the hand-run stamp
+[the stage-timing design](../plans/2026-09-01-stage-timing-design.md) drained
+before its own probe, not a gate anything opened. Read without that clause the
+sentence is false against a file in `.fankeel/sessions/` today, which is the
+third time this paragraph has been written wider than it reaches.
 
 **This was written up as settled twice, and neither writing held.** Both
 overstatements are kept here, because each looked like the correction of the one
