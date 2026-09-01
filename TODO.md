@@ -35,15 +35,21 @@ entry under any other heading is one nobody said the state of.
 
 ## Needs a decision
 
+- Whether `LINE_MAX` should be 100, a bound an 80-column terminal survives, or none at all — [scripts/task.js](scripts/task.js). 32 of 56 rows over it, median 68; 100 wraps 80 columns too. 09-01.
+
+- Break `docs-check.js`'s mechanical-only rule for a `path:line` that drifts while still resolving, or leave it — [scripts/docs-check.js](scripts/docs-check.js). Five drifted in one build. 09-01.
+
+- Whether `audit` joins `spike` and `bounded`, one of them, or neither — [lib/stages.js](lib/stages.js), `CLASSES`. A route-cost call; no amount of waiting produces the answer. 09-01.
+
+- Whether `fork`'s Adopt path gets the `live.isLive` guard `clear` already has, or its own — [hooks/carry.js](hooks/carry.js). `carry.js:60` skips live entries; `fork` is matched nowhere. 09-01.
+
+- Whether `fanoutSync` keeps its all-or-nothing payload, splits it, or retries — [lib/tracked.js](lib/tracked.js). One 64MB overflow already discarded thirty answers; only the fix is open. 09-01.
+
 ## Waiting
 
 - Whether a flag a verb ignores should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses the same value. None observed. 09-01.
 
-- Whether 100 is the right bound for a row — [scripts/task.js](scripts/task.js), `LINE_MAX`. One registry: 32 of 56 over it, median task 68. An 80-column terminal still wraps. 09-01.
-
 - Whether `PreToolUse` fires for `AskUserQuestion` — [hooks/gate.js](hooks/gate.js). Restarted, registration installed: two gates, no `gateAt`, no `waited`. `gateOpen` works called direct. 09-01.
-
-- Whether a `path:line` that drifts while still resolving is worth a check — [scripts/docs-check.js](scripts/docs-check.js). Twice: `lib/map.js:323` became 342; five drifted in one build. 09-01.
 
 - Whether three days is the right settle period — [scripts/docs-audit.js](scripts/docs-audit.js), `LANDED_QUIET`. Picked from 8 plans on one repo, all inside a 0–4 day band. 08-31.
 - Whether a stated `Done when` actually ends the gate loop, or only renames it — [lib/stages.js](lib/stages.js), ALWAYS[0]'s `or none`. Reported live once; only use says. 08-29.
@@ -53,7 +59,4 @@ entry under any other heading is one nobody said the state of.
 - A per-`agent_type` subagent brief, and whether it carries more than the map — [lib/render.js](lib/render.js) appends the type as a label only; `SubagentStart` has no matcher and fires for all. 08-31.
 - Whether an output style reaches subagents at all. Unverified, and now unmitigated: nothing restates one for them since the digest came out with the style skill.
 - A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI, so the default reminder is what the three get.
-- Whether `audit` earns a place on routes that are not documentation work — [lib/stages.js](lib/stages.js), `CLASSES`. Absent from `spike` and `bounded` today. 08-31.
 - Whether the pairs [scripts/docs-audit.js](scripts/docs-audit.js) picks are worth reading — `LANDMARK = 4` is the filter that decides. 4 of 28 read once, none of them wrong. 08-31.
-- `fork` also takes a new session id, but its predecessor may still be live, so offering Adopt would take a task off a running session — [hooks/carry.js](hooks/carry.js).
-- Whether `fanoutSync`'s all-or-nothing payload ever costs anything — [lib/tracked.js](lib/tracked.js). One 64MB overflow discards every answer and re-reads all thirty serially. 08-30.
