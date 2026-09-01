@@ -11,7 +11,7 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "clear",
+        "matcher": "clear|fork",
         "hooks": [
           {
             "type": "command",

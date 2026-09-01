@@ -220,9 +220,11 @@ dead by every reader at once while staying `active: true`. Nothing is corrupted
 and no collision appears — the task simply stops being read.
 
 `hooks/carry.js` is what says so. It runs on `SessionStart` with `matcher:
-"clear"`, and on the first prompt of the new session it names the task, where on
-its route it got to, its notes and its `next`, with the `adopt` command already
-carrying both ids.
+"clear|fork"`, and on the first prompt of the new session it names the task,
+where on its route it got to, its notes and its `next`, with the `adopt` command
+already carrying both ids. A cleared session's predecessor is certainly gone; a
+forked one might still be running, and it is the liveness check at `carry.js:60`
+that keeps the offer from firing over a session that is still there.
 
 **Stand the task down before clearing and there is nothing to offer.** An entry
 cleared the other way round is put down by `/fankeel` → **Clear out**, which
