@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-09-01
 source_of_truth: docs/registry.md, docs/collisions.md, lib/dirty.js, scripts/map.js
 ---
