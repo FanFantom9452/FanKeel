@@ -481,8 +481,9 @@ was made to carry a conclusion one step wider than it reaches. The second time
 it was a single word.
 
 What settles it is in [TODO.md](../../TODO.md): a process started after the
-install, a task begun with `start` rather than `adopt`, one question asked, and
-`gateAt` read **while that question is still open**. Not `waited` after it —
+install, one question asked, and `gateAt` read **while that question is still
+open**. How the task was started does not matter — `adopt` never carries a
+`gateAt`. Not `waited` after it —
 `gateOpen` stamps `gateAt` the moment the hook runs, so the stamp is `gate.js`
 firing and nothing else, where a missing `waited` also implicates `gateClose`,
 which has two paths that delete the stamp and write nothing at all.

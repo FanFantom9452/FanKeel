@@ -49,7 +49,7 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Ready
 
-- Run the `AskUserQuestion` `PreToolUse` probe in a Claude Code started after the registration — [hooks/gate.js](hooks/gate.js). `start`, ask one question, read `gateAt` while it is open. 09-01.
+- Run the `AskUserQuestion` `PreToolUse` probe in a Claude Code started after the registration — [hooks/gate.js](hooks/gate.js). Ask one question, read `gateAt` while it is still open. 09-01.
 
 - `docs/registry.md` summarises claiming and contradicts [docs/collisions.md](docs/collisions.md) twice: the sixty-path cap, and the per-path write cost. The code backs collisions.md. 09-01.
 

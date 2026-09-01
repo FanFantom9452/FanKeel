@@ -134,10 +134,16 @@ sessions since the file landed recorded neither field — one of them four stage
 deep, with `clock` and `burn` written to the same file by the sibling hooks,
 which rules out a path or a permission fault.
 
-**Why it has not run is not settled**, and the second candidate is easy to talk
-yourself out of. Claude Code reads its hook registration list at the start of
-something, so a `plugin.json` that gained an entry afterwards registers nothing
-until the next one — which means the entry may simply never have been live.
+**Why it has not run is not settled**, and there are two candidates.
+
+The first is that `PreToolUse` does not fire for `AskUserQuestion` at all — the
+event simply never arrives, and the hook is registered against nothing.
+
+The second is that the registration was never live. Claude Code reads its hook
+list at the start of something, so a `plugin.json` that gained an entry
+afterwards registers nothing until the next one. This is the one that is easy to
+talk yourself out of, because the entry is plainly there in the installed
+manifest — and being there is not the same as being loaded.
 
 Whether that "something" is the process or the session is the whole question, and
 nothing here answers it. The process that ran this work began 2026-08-31
@@ -148,11 +154,16 @@ reading it should have been. The two readings point opposite ways and no page in
 this repository says which one holds.
 
 **What would settle it**, and nothing short of it: a Claude Code **process**
-started after the install — the stronger of the two conditions above, so it
-answers whichever reading is right — with a task begun by `start` rather than
-`adopt`, because `adopt` carries the cost history across and `start` gives a
-record that begins with none. Then ask one question and, **while it is still on
-screen, read `gateAt`.**
+started after the install — the stronger of the two readings, so it answers
+whichever one is right. Then ask one question and, **while it is still on screen,
+read `gateAt`.**
+
+How the task was started does not matter, which is worth saying because an
+earlier version of this required `start` over `adopt`. That was a condition for
+reading `waited`, which `adopt` carries across. It does not carry a `gateAt`:
+that is an interval with one end, and the next answer in the adopting session
+would close it against a stamp from another one. Reading the field that answers
+the narrow question also removed the condition that was guarding the wide one.
 
 Read `gateAt` and not `waited`, because they answer different questions.
 `gateOpen` stamps `gateAt` the instant the hook runs, before anyone has answered,
