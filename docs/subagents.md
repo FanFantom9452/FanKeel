@@ -82,7 +82,7 @@ on this repository. The argument above is structural — it turns on where the
 intermediate output lands — and there is no figure behind it, which is why none
 is quoted.
 
-## Two implementers, when the plan says so
+## The unit of independent work, per stage
 
 Two dispatched implementers used to be a flat no. They share one checkout,
 `hooks/guard.js` does not protect a task from its own dispatches — both carry
@@ -107,6 +107,23 @@ consumes nothing and the last produces nothing.
 and prints which tasks may share one response. Two tasks in different groups
 never run at once, and the ceiling above still bounds how many of one group go
 out together.
+
+That is `build`'s unit. Every stage has one or has none, and the rows with none
+are the ones worth reading: they are where a fan-out does not belong.
+
+**`unit` here is not the `slice` of the next section.** That one divides one
+tree among several readers and loses the findings a fan-out is for. This one is
+how many independent pieces of work a stage's own product breaks into.
+
+| stage | unit | computed by |
+|---|---|---|
+| `survey` | a lens over the whole tree | judged — see the next section for why not a slice |
+| `design` | **none.** One approach for one gate; N approaches do not compose | — |
+| `plan` | **none.** The stage's own check is global consistency — a name a later task uses is one an earlier task defined — which parallel authors break precisely | — |
+| `build` | a group of tasks | `scripts/ledger.js --plan <f> groups` |
+| `verify` | one task's claim over its pinned range | `scripts/ledger.js --plan <f> ranges` |
+| `audit` | a pair of documents describing one source file | `scripts/docs-audit.js` |
+| `land` | **none.** Moving files, then `todo-check.js`, then `map.js` is a dependency chain, not an ordering. Only the suite is free, and it cannot overlap the edits before it | — |
 
 ## Split it by lens, not by slice
 
