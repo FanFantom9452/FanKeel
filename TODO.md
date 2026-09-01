@@ -65,6 +65,8 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 - Whether `fork`'s Adopt path gets the `live.isLive` guard `clear` already has, or its own — [hooks/carry.js](hooks/carry.js). `carry.js:60` skips live entries; `fork` is matched nowhere. 09-01.
 
+- Whether `survey.js` should match a data `const` — [scripts/survey.js](scripts/survey.js), `JS_PATTERNS`. Function-valued only: `CLASSES` and `LINE_MAX` both scan as nothing matched. 09-01.
+
 ## Waiting
 
 - Whether a flag a verb ignores should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses the same value. None observed. 09-01.
