@@ -49,6 +49,10 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Ready
 
+- `docs/registry.md` says `inject.js` writes twice per prompt — [hooks/inject.js](hooks/inject.js). It is one `touch` plus one `addClaim` per newly dirty path: zero, one, or several. 09-01.
+
+- `docs/registry.md` names only creation as writing `.fankeel/.gitignore` — [scripts/map.js](scripts/map.js), whose `keepIgnored` adds `map.md` and `build/` later. 09-01.
+
 ## Needs a decision
 
 - Whether `hooks/gate.js` is deleted, kept for a future release, or replaced by a `resume.js`-only measure — [hooks/gate.js](hooks/gate.js). `PreToolUse` does not fire for `AskUserQuestion`. 09-01.

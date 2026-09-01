@@ -136,7 +136,6 @@ ever held one, for the reason above.
   "active": true,
   "burn": { "survey": [120000, 342000] },
   "clock": { "survey": [1756659679797, 1756660399797] },
-  "waited": { "survey": 240000 },
   "notes": ["ANSI 256 has no true mid green; the 46→83→120 run is the only clean path"],
   "next": "wire the badge word into TokenBar",
   "guard": "ask",
