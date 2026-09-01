@@ -598,3 +598,15 @@ test('init substitutes the same tokens a stage does', () => {
   assert.match(first, /\/x\/orient\.js/);
   assert.equal(initRules().some((r) => r.includes('{{')), true, 'no substitution left no token');
 });
+
+// Without a plan file there are no `### Task` headings, so `parseTasks` returns
+// nothing and `groups` has nothing to group -- every row of a design's file
+// table then runs serially with nothing saying why. The design gate is the
+// first place the number of independent units is countable.
+test('the design rules tell the gate when the route needs plan', () => {
+  const rules = rulesFor('design', {});
+  assert.ok(
+    rules.some((r) => r.includes('put `plan` on the route')),
+    'design does not name the route upgrade'
+  );
+});
