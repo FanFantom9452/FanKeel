@@ -168,9 +168,16 @@ every other step of the loop is unchanged.
    implementer did this inside its own run; it does not happen twice.
 4. Commit — **the parent, one task at a time**, in the order the group lists
    them, as each implementer returns. `git add` **exactly** that task's declared
-   `Modify` and `Test` paths, then commit and take the sha. Anything written
-   outside those paths stays unstaged, so `git status` after the commit is where
-   a wrong `**Files:**` block shows up, before the review rather than after it.
+   `Modify` and `Test` paths, then commit and take the sha.
+
+   Keep BASE and that sha together — step 7 records them as the task's review
+   range, and they are the only durable record of where this task's diff begins
+   and ends. Re-deriving them at `verify` means reading a log for a range the
+   parent already had in hand.
+
+   Anything written outside those paths stays unstaged, so `git status` after
+   the commit is where a wrong `**Files:**` block shows up, before the review
+   rather than after it.
 
    This is what lets two implementations overlap while their commits do not: the
    parent is the only writer of the index, so every range in step 5 still has
@@ -197,7 +204,10 @@ every other step of the loop is unchanged.
    why step 1 takes BASE immediately before a commit rather than when the group
    went out — a fix for an earlier task can land after a later task's dispatch,
    and taking BASE late is what keeps that out of the later task's range.
-7. `ledger.js --plan <file> complete <n> "<what landed>"`.
+7. `ledger.js --plan <file> --range <BASE>..<the sha> complete <n> "<what landed>"`.
+   The flag precedes the verb; everything after `complete` is the note. A task
+   completed with no `--range` is recorded and reported as such by `ranges`,
+   which is worse than it sounds: it is a task that landed and gets no verifier.
 
 Then one whole-branch review when the last task is done.
 

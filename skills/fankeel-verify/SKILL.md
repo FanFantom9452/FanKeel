@@ -106,6 +106,29 @@ they were never given the chance to question.
 What you do not dispatch is this stage. The evidence table, the red-green
 discipline and the gate stay here — a subagent has none of these rules.
 
+## One verifier per task, where a ledger exists
+
+```
+node <plugin>/scripts/ledger.js --plan <file> ranges
+```
+
+Each row is one completed task and the range its diff occupies, pinned at both
+ends. The rows do not overlap, so **the verifiers go out in one response** —
+four is still the ceiling, and a plan of six goes four then two. Say how many
+and on which model in the response that sends them.
+
+Give each one its range, the task's text from the plan, and the path to
+`.fankeel/map.md`. Never a paste of the session's history, and never the diff:
+a returned diff puts the whole change back in this context, which is the cost
+dispatching exists to avoid.
+
+A row reading `(no range recorded)` is a task that landed without one. It is not
+skipped — it is verified here, against `git log`, and the reason it has no range
+is a finding for the report.
+
+With no ledger there is no row and no fan-out: the claims are verified in this
+session, one table, exactly as below.
+
 ## The adversary
 
 **Before the question, one read-only adversary over the evidence.** The reviewer
