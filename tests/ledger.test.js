@@ -276,3 +276,26 @@ test('groups does not warn about a one-task plan', () => {
   assert.match(out, /1 groups over 1 tasks/);
   assert.doesNotMatch(out, /builds serially/);
 });
+
+// The range is what lets `verify` send one verifier per task, each pinned at
+// both ends. It sits between `complete` and the em dash because the note is
+// free text and may hold an em dash of its own -- a suffix would need the last
+// occurrence of a delimiter the note can also produce.
+test('a completion line carries its review range and parses back', () => {
+  const line = ledger.completionLine(3, 'the verb landed', 'a1b2c3d..e4f5a6b');
+  assert.equal(line, 'Task 3: complete [a1b2c3d..e4f5a6b] — the verb landed');
+  assert.deepEqual(ledger.completions(line), [{ n: 3, range: 'a1b2c3d..e4f5a6b' }]);
+});
+
+// The control, and it sits inside the change rather than beside it: eleven
+// ledgers under .fankeel/build/ were written before this field existed, and a
+// parser that only reads the new shape silently loses every one of them.
+test('a completion line written before ranges existed still parses', () => {
+  const old = 'Task 2: complete — landed before this field existed';
+  assert.deepEqual(ledger.completions(old), [{ n: 2, range: null }]);
+  assert.deepEqual(ledger.completed(old), [2]);
+});
+
+test('the range is absent from the line when none is given', () => {
+  assert.equal(ledger.completionLine(1, 'no range'), 'Task 1: complete — no range');
+});
