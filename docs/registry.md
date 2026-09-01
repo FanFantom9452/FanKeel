@@ -29,7 +29,7 @@ workspace/                     <- Claude Code opened here
 |---|---|---|
 | `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`, neither of which has ever been written |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
-| `.fankeel/.gitignore` | Yes | `lib/registry.js:199` creates it holding `sessions/` alone; `scripts/map.js:37` adds `build/` and `map.md`, on every map run rather than at creation |
+| `.fankeel/.gitignore` | Yes | `lib/registry.js:200` creates it holding `sessions/` alone; `scripts/map.js:37` adds `build/` and `map.md`, on every map run rather than at creation |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
 | `~/.claude/modes/{session_id}/fankeel` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
 | `~/.claude/modes/{session_id}/fankeel.lead` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
