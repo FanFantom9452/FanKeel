@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-09-01
 source_of_truth: lib/ledger.js, lib/stages.js, scripts/ledger.js
 ---
@@ -51,9 +51,12 @@ Generated from the project on 2026-09-01, not remembered.
   lists the ledger's shape as unchanged, and this plan does not reopen it.
 - **`docs/subagents.md:111` owns the word `slice`** for dividing one tree among
   readers. New text about a stage's independent work says `unit`.
-- **`.fankeel/map.md`:** 51 markdown files, 0 planned-not-built, 21 retired, 2
-  undeclared (`README.md`, `TODO.md`). Nothing in this plan is design-intent
-  that the map would contradict.
+- **`.fankeel/map.md`:** 53 markdown files, 0 planned-not-built, 21 retired, 0
+  undeclared. Nothing in this plan is design-intent that the map would
+  contradict. **Run the repository's own `scripts/map.js`, not the installed
+  plugin's copy** — the cache lags, and its `lib/map.js` predates `62e8fb4`,
+  so it still counts `README.md` and `TODO.md` as undeclared where
+  `docs.isSignpost` now files them as current.
 - **Flags precede the verb** in `scripts/ledger.js`; `splitAtVerb` reads both
   `STRING_FLAGS` and `VERBS`, so a new flag or verb goes in those tables and
   nowhere else.

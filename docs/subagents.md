@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-31
+last_verified: 2026-09-01
 source_of_truth: hooks/brief.js, lib/render.js, hooks/carry.js, lib/plantasks.js
 ---
 

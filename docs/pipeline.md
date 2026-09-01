@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-31
+last_verified: 2026-09-01
 source_of_truth: lib/stages.js, lib/render.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js
 ---
 
@@ -531,6 +531,7 @@ flowchart TD
     A5["line by line against the plan<br/><i>not 'the tests pass'</i>"]
     B{"did you run it<br/>in <i>this</i> message?"}
     C["then you cannot claim it yet.<br/>Run it."]
+    D0["<b>where a ledger exists</b><br/>ledger.js ranges — one verifier per task<br/><i>each pinned at both ends, and the rows<br/>do not overlap, so they go out together</i>"]
     D["docs-check<br/><i>which page did this change<br/>just make untrue?</i><br/><i>a coverage claim states its denominator</i>"]
     D1["<b>dispatch readers</b><br/>several in one response, one per page<br/><i>four the ceiling, sonnet the floor</i><br/><i>say how many, and on which model</i><br/><i>the path to a diff file, never a pasted diff</i>"]
     D2["<b>the adversary</b><br/>read-only, over the evidence table<br/><i>was it run · on what · could it have<br/>failed · out of what</i><br/><i>paths never a paste — only the rows it defeats</i>"]
@@ -550,7 +551,8 @@ flowchart TD
     A5 --> B
     B -- no --> C
     C --> B
-    B -- yes --> D
+    B -- yes --> D0
+    D0 --> D
     D --> D1
     D1 --> D2
     D2 --> E

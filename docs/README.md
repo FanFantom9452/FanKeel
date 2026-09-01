@@ -43,6 +43,8 @@ here.
 | Which `## Waiting` entries had stopped waiting, and what closed them | [plans/2026-08-31-todo-waiting-backlog.md](plans/2026-08-31-todo-waiting-backlog.md) — *built* |
 | Why a stage's minutes are recorded where its tokens are not, and why the wait is not measured with `Stop` | [plans/2026-09-01-stage-timing-design.md](plans/2026-09-01-stage-timing-design.md) — *built* |
 | The four tasks that built it, with every string and every test written out | [plans/2026-09-01-stage-timing.md](plans/2026-09-01-stage-timing.md) — *built* |
+| Why the design gate decides whether a route needs `plan`, and what runs at once in each stage | [plans/2026-09-01-stage-units-design.md](plans/2026-09-01-stage-units-design.md) — *built* |
+| The five tasks that built it, with every string and every test written out | [plans/2026-09-01-stage-units.md](plans/2026-09-01-stage-units.md) — *built* |
 | What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 | Why three lib modules with one caller each were not folded into their callers | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *one caller is not evidence on its own* |
