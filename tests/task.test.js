@@ -297,6 +297,18 @@ test('a stage nobody sampled twice is left off both the transition line and show
   assert.doesNotMatch(run(dir, ['show', '--session', A]).out, /burn:/);
 });
 
+// `LINE_MAX` bounds the whole row, and the columns ahead of the task measure 34
+// characters — so the task itself gets `LINE_MAX - 38`. At 100 that was 62 and
+// the median task on this registry measured 68, which is the number this guards.
+test('a task of median length survives the --all listing whole', () => {
+  const dir = root();
+  const task = 'x'.repeat(68);
+  started(dir, A, task, 'Waypoint');
+  const out = run(dir, ['show', '--all', '--session', A]).out;
+  assert.match(out, /x{68}/);
+  assert.doesNotMatch(out, /x…/);
+});
+
 test('notes are capped and a repeat does not evict a still-useful one', () => {
   const dir = root();
   started(dir, A, 'x', 'Waypoint/web');
@@ -912,7 +924,7 @@ test('show --all bounds the row, and leaves a task inside the bound alone', () =
   const rows = out.split('\n').filter((line) => /^ {2}\d{4}-\d{2}-\d{2} {2}/.test(line));
   assert.equal(rows.length, 3, 'expected three rows, got:\n' + out);
   for (const row of rows) {
-    assert.ok(row.length <= 100,
+    assert.ok(row.length <= 120,
       'a row this wide wraps, and a wrapped row reads as two: ' + row.length + '\n' + row);
   }
   assert.ok(rows.some((row) => row.endsWith('…')),
