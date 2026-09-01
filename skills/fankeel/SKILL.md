@@ -395,8 +395,10 @@ in order, so the end of a stage is the moment the next decision exists — and t
 answer being predictable is not the same as it having been given. "The next stage
 is obvious" is the reasoning that turns a gate back into a step.
 
-When they advance, run `task.js stage <name>`; the statusline badge reads it, so
-`▌FANKEEL DESIGN` becoming `▌FANKEEL BUILD` is how they see the move.
+When they advance, run `task.js stage <name>`; the statusline reads it, so
+`[FANKEEL:DESIGN]` becoming `[FANKEEL:BUILD]` is how they see the move — and on
+a TokenBar from v1.4.1, the `▌FANKEEL BUILD` lead line above it as well
+([docs/statusline.md](../../docs/statusline.md)).
 
 ## The `audit` stage, and other people's plugins
 
