@@ -92,8 +92,10 @@ dirty since the task started — so a `sed`, a `node -e` or a build script is on
 the list too. Either way it is what happened rather than what anyone intended. An
 edit to `lib/badge.js` claims `lib/badge.js` and not `lib` — rolling up to the
 directory would read two sessions in two files of one directory as a collision,
-and accuracy is the whole reason to observe rather than ask. Sixty at most,
-oldest dropped.
+and accuracy is the whole reason to observe rather than ask. Sixty at most, and
+the two writers hit that cap differently: a path arriving on its own drops the
+oldest, where a git pass holding more than sixty is refused whole rather than
+trimmed.
 
 `project` is the only field anyone declares: which repository, so the docs lookup
 knows whose tree applies. One registry can cover five of them and nothing else
