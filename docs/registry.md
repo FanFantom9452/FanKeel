@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-01
+last_verified: 2026-09-02
 source_of_truth: lib/registry.js, lib/render.js, lib/context.js, lib/dirty.js, scripts/task.js, hooks/touch.js, hooks/inject.js, hooks/carry.js, hooks/gate.js, hooks/resume.js
 ---
 
@@ -108,8 +108,11 @@ stage.
 "waited": { "survey": 240000 }
 ```
 
-`waited` is there for its shape and nothing else: no record has ever carried
-one, for the reason under **The pair that should measure it** below.
+`waited` is there for its shape and nothing else: no hook has ever written one,
+for the reason under **The pair that should measure it** below. One record does
+hold a `waited` — session `cb8cee7b`'s `{"verify":28660}` — and it is a stamp
+run by hand while the field was being built, not a gate anything opened. Without
+that clause the sentence is false against a file in `.fankeel/sessions/` today.
 `skills/fankeel/SKILL.md` shows the same record without it, because that example
 is a record rather than a set of shapes.
 
@@ -132,12 +135,14 @@ answered inside one millisecond still adds its zero: leaving it out would read,
 downstream, exactly like a stage that never opened one.
 
 **The pair that should measure it is `PreToolUse`/`PostToolUse` on
-`AskUserQuestion`, and it has never once run.** `hooks/gate.js` is registered on
-the first half. `gateAt` has never been stamped by it, `gateClose` has therefore
-never had anything to close, and **no record has ever carried a `waited`.** Two
-sessions since the file landed recorded neither field — one of them four stages
-deep, with `clock` and `burn` written to the same file by the sibling hooks,
-which rules out a path or a permission fault.
+`AskUserQuestion`, and the first half has never once run.** `hooks/gate.js` is
+registered on `PreToolUse`; `gateAt` has never been stamped by it, so
+`gateClose` has never had a stamp from it to fold in. The second half does run —
+`hooks/resume.js` writes `clock` and `updated` from every answered question —
+which is what rules out a path or a permission fault. Three sessions since the
+file landed stamped no `gateAt`: one four stages deep with `clock` and `burn` in
+the same file, and one three gates deep on 2026-09-02 with a `clock` entry for
+each of the three stages beside the silence.
 
 **Why it has not run is not settled**, and there are two candidates.
 
@@ -151,17 +156,30 @@ talk yourself out of, because the entry is plainly there in the installed
 manifest — and being there is not the same as being loaded.
 
 Whether that "something" is the process or the session is the whole question, and
-nothing here answers it. The process that ran this work began 2026-08-31
+nothing here answers it outright. The process that ran this work began 2026-08-31
 23:55:39, two hours before the manifest carrying the entry, so on the process
 reading the entry was never live. But the session inside it began well after,
 and `/clear` starts a session without starting a process, so on the session
 reading it should have been. The two readings point opposite ways and no page in
 this repository says which one holds.
 
+What is settled is that the two candidates cannot both be innocent. A session
+begun by `/clear` on 2026-09-02, 22 hours after the install, opened three gates
+with an active record and stamped no `gateAt` at any of them, while `resume.js`
+wrote a `clock` entry for all three stages beside it. A fixture control ran
+`gateOpen` against a scratch registry the same day and the stamp appeared, so
+the silence is an absence rather than a blind read. That rules out the
+**conjunction** — session-scoped reload together with a `PreToolUse` that fires
+— and nothing finer, because either candidate being false explains the silence
+on its own.
+
 **What would settle it**, and nothing short of it: a Claude Code **process**
 started after the install — the stronger of the two readings, so it answers
 whichever one is right. Then ask one question and, **while it is still on screen,
-read `gateAt`.**
+read `gateAt`.** Since the run above, that one probe closes both candidates. A
+`gateAt` there proves the event fires, which leaves the reload as the only thing
+the `/clear` silence can be; no `gateAt` there proves the event never arrives,
+and the reload scope stops mattering.
 
 How the task was started does not matter, which is worth saying because an
 earlier version of this required `start` over `adopt`. That was a condition for

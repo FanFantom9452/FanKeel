@@ -3,7 +3,7 @@ name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.40.0
 status: current
-last_verified: 2026-09-01
+last_verified: 2026-09-02
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js
 ---
 
@@ -110,11 +110,13 @@ by the same prompt hook that refreshes `updated`.
 
 `clock` is those same two slots with a wall-clock reading in place of the token
 count — epoch milliseconds, which `task.js` renders as minutes — and `waited` is
-meant to be how much of that the user spent at a gate. No record has ever
-carried one: the hook that stamps the opening has never run, so there has never
-been anything for the closing half to fold in. Why it has not run is unsettled —
-[docs/registry.md](../../docs/registry.md) has the two candidates and the run
-that would separate them.
+meant to be how much of that the user spent at a gate. No hook has ever written
+one: the hook that stamps the opening has never run, so `gateClose` has never
+had a stamp from it to fold in. One record holds a `waited` stamped by hand
+while the field was being built, and it is not a gate. Why the hook has not run
+is unsettled, though the two candidates are now known to be coupled —
+[docs/registry.md](../../docs/registry.md) has both and the one run that would
+close them.
 
 `clock` and `burn` part company in one place: `burn` is only written when a
 token figure arrives, and an answered question is not a prompt, so a stage that
@@ -125,8 +127,8 @@ is not `Stop`, and what it does instead of measuring anything, is in
 only copy.
 
 A seventh, `gateAt`, is deliberately not below. It should exist only between a
-question going out and its answer arriving; in practice no record has ever held
-one, for the reason above.
+question going out and its answer arriving; in practice `gate.js` has never put
+one there, for the reason above.
 
 ```json
 {

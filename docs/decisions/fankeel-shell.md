@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-01
+last_verified: 2026-09-02
 source_of_truth: this file, no upstream — a decision record is not derived from anything
 ---
 
@@ -479,8 +479,19 @@ not: the source it came from,
 [docs/plans/2026-09-01-stage-timing-design.md](../plans/2026-09-01-stage-timing-design.md),
 says **session** start, and `/clear` begins a session without beginning a
 process. The session that did this work began long after the install. So on one
-reading the entry was never live and on the other it was, and nothing in this
-repository says which reading is right.
+reading the entry was never live and on the other it was.
+
+Since 2026-09-02 the pair is narrowed, though not to one. A session begun by
+`/clear` at 00:21:11 that day — 22 hours after the 02:03:37 install, inside
+`claude.exe` 400028, which started 2026-08-31 23:55:39 — asked one question with
+an active record and wrote neither `gateAt` nor `waited`, while `resume.js`
+wrote `clock` and `updated` on the same tool call, out of the same `rootFor` and
+the same `active` guard. The read was not blind: a fixture control ran
+`gateOpen` and then `gateClose` against a scratch registry that day and saw
+`gateAt: 1788281443521`, then `waited: {"survey":18}`. What that rules out is
+the **conjunction** — session-scoped reload together with a `PreToolUse` that
+fires — and nothing finer, because either half being false explains the silence
+by itself.
 
 The shape of the mistake was the same both times: a measurement that was real
 was made to carry a conclusion one step wider than it reaches. The second time
@@ -488,8 +499,12 @@ it was a single word.
 
 What settles it is in [TODO.md](../../TODO.md): a process started after the
 install, one question asked, and `gateAt` read **while that question is still
-open**. How the task was started does not matter — `adopt` never carries a
-`gateAt`. Not `waited` after it —
+open**. Since the run above, that one probe answers both halves. A `gateAt` there
+proves the event fires, which leaves the `/clear` silence with nothing but the
+reload to explain it, and `process` is the word. No `gateAt` there proves
+`PreToolUse` does not fire for `AskUserQuestion` at all, and the reload scope
+stops mattering. How the task was started does not matter — `adopt` never carries
+a `gateAt`. Not `waited` after it —
 `gateOpen` stamps `gateAt` the moment the hook runs, so the stamp is `gate.js`
 firing and nothing else, where a missing `waited` also implicates `gateClose`,
 which has two paths that delete the stamp and write nothing at all.

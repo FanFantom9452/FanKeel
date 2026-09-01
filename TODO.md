@@ -49,7 +49,7 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Ready
 
-- Run the `AskUserQuestion` `PreToolUse` probe in a Claude Code whose **process** started after the manifest — [hooks/gate.js](hooks/gate.js). Ask one question, read `gateAt` while it is open. 09-01.
+- Probe `PreToolUse` on `AskUserQuestion` — [hooks/gate.js](hooks/gate.js). Needs Claude Code **restarted** since the manifest; `/clear` is ruled out. Read `gateAt` while the question is open. 09-02.
 
 ## Needs a decision
 
