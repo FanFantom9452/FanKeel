@@ -40,6 +40,29 @@ test('an exported const arrow function is found', () => {
   assert.match(run(root, 'widget'), /makeWidget/);
 });
 
+test('a module-level data const is found', () => {
+  const root = repo({ 'lib/a.js': 'const WIDGET_MAX = 100;\n' });
+  assert.match(run(root, 'widget'), /WIDGET_MAX/);
+});
+
+// The other half of the same decision. Widening this to every `const` would turn
+// each local variable into a declaration, and the report is capped — noise that
+// buries a real hit is worse than the miss, because it looks like an answer.
+test('a local lowercase const is not reported as a declaration', () => {
+  const root = repo({ 'lib/a.js': 'function f() {\n  const widgetCount = 1;\n  return widgetCount;\n}\n' });
+  assert.doesNotMatch(run(root, 'widget'), /widgetCount/);
+});
+
+// The filter narrows by naming case, not by scope — a line-based scanner has
+// no way to see scope at all. A function-local `UPPER_SNAKE` const is reported
+// on purpose: a name shouted in capitals is a constant a reader plausibly came
+// looking for, and the noise the narrowing exists to keep out is the ordinary
+// lowercase local above, not this.
+test('an UPPER_SNAKE const declared inside a function is still reported', () => {
+  const root = repo({ 'lib/a.js': 'function f() {\n  const WIDGET_MAX = 5;\n  return WIDGET_MAX;\n}\n' });
+  assert.match(run(root, 'widget'), /WIDGET_MAX/);
+});
+
 test('a class is found', () => {
   const root = repo({ 'lib/a.ts': 'export class WidgetStore {}\n' });
   assert.match(run(root, 'widget'), /WidgetStore/);

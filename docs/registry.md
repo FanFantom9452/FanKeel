@@ -27,7 +27,7 @@ workspace/                     <- Claude Code opened here
 
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited` |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`, neither of which has ever been written |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | Created with the directory |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
@@ -103,6 +103,11 @@ stage.
 "waited": { "survey": 240000 }
 ```
 
+`waited` is there for its shape and nothing else: no record has ever carried
+one, for the reason under **The pair that should measure it** below.
+`skills/fankeel/SKILL.md` shows the same record without it, because that example
+is a record rather than a set of shapes.
+
 `burn` is tokens and `clock` is milliseconds, and they are the same shape for the
 same reason: the first sighting is gone the moment it is not written down, and
 one sighting is a position rather than a distance. Both report `null` for a stage
@@ -121,13 +126,59 @@ than one gate and what is worth knowing is their sum. A gate that opened and was
 answered inside one millisecond still adds its zero: leaving it out would read,
 downstream, exactly like a stage that never opened one.
 
-**The pair that measures it is `PreToolUse`/`PostToolUse` on `AskUserQuestion`,
-not `Stop`.** `hooks/gate.js` stamps `gateAt` when the question goes out and
-`hooks/resume.js` folds the interval into `waited` when the answer arrives.
-`Stop` fires when Claude finishes responding, and a session pausing on a tool
-call has not finished responding — this pipeline's gate is a tool call, so `Stop`
-never fires at one. It would have measured the typing gap between two turns and
-missed the wait this pipeline actually accumulates.
+**The pair that should measure it is `PreToolUse`/`PostToolUse` on
+`AskUserQuestion`, and it has never once run.** `hooks/gate.js` is registered on
+the first half. `gateAt` has never been stamped by it, `gateClose` has therefore
+never had anything to close, and **no record has ever carried a `waited`.** Two
+sessions since the file landed recorded neither field — one of them four stages
+deep, with `clock` and `burn` written to the same file by the sibling hooks,
+which rules out a path or a permission fault.
+
+**Why it has not run is not settled**, and there are two candidates.
+
+The first is that `PreToolUse` does not fire for `AskUserQuestion` at all — the
+event simply never arrives, and the hook is registered against nothing.
+
+The second is that the registration was never live. Claude Code reads its hook
+list at the start of something, so a `plugin.json` that gained an entry
+afterwards registers nothing until the next one. This is the one that is easy to
+talk yourself out of, because the entry is plainly there in the installed
+manifest — and being there is not the same as being loaded.
+
+Whether that "something" is the process or the session is the whole question, and
+nothing here answers it. The process that ran this work began 2026-08-31
+23:55:39, two hours before the manifest carrying the entry, so on the process
+reading the entry was never live. But the session inside it began well after,
+and `/clear` starts a session without starting a process, so on the session
+reading it should have been. The two readings point opposite ways and no page in
+this repository says which one holds.
+
+**What would settle it**, and nothing short of it: a Claude Code **process**
+started after the install — the stronger of the two readings, so it answers
+whichever one is right. Then ask one question and, **while it is still on screen,
+read `gateAt`.**
+
+How the task was started does not matter, which is worth saying because an
+earlier version of this required `start` over `adopt`. That was a condition for
+reading `waited`, which `adopt` carries across. It does not carry a `gateAt`:
+that is an interval with one end, and the next answer in the adopting session
+would close it against a stamp from another one. Reading the field that answers
+the narrow question also removed the condition that was guarding the wide one.
+
+Read `gateAt` and not `waited`, because they answer different questions.
+`gateOpen` stamps `gateAt` the instant the hook runs, before anyone has answered,
+so its presence is `gate.js` firing and nothing else. `waited` needs `gateClose`
+to run too, and `gateClose` deletes the stamp and returns success without writing
+anything when the record has no `stage`, and again when the interval comes out
+negative — so a missing `waited` after the answer is two hooks confounded, where
+a `gateAt` seen mid-question is one. It is in [TODO.md](../TODO.md).
+
+`Stop` was the obvious alternative and is the wrong one, which is why the pair
+was built this way and why replacing it is not simply a matter of moving to
+`Stop`. `Stop` fires when Claude finishes responding, and a session pausing on a
+tool call has not finished responding — this pipeline's gate is a tool call, so
+`Stop` never fires at one. It would have measured the typing gap between two
+turns and missed the wait this pipeline actually accumulates.
 
 `gateAt` is the one transient field here. A `gateAt` nothing consumes — the
 session dies at a gate — is overwritten by the next one rather than repaired:
@@ -172,7 +223,7 @@ want to scroll. `show` without the flag still filters on `active`. And a reader
 who wants the first N has `head`, which is why there is no `--max N` here to
 reinvent it.
 
-The **rows** are what is uncapped. Each row is bounded at 100 characters, and the
+The **rows** are what is uncapped. Each row is bounded at 120 characters, and the
 two are not the same promise: `--all` means every entry, and it never meant every
 character. Uncapping put thirty more rows on screen and that is what exposed the
 column with no width of its own — the task is last precisely so the columns
@@ -180,14 +231,19 @@ before it stay aligned, which is also what makes it the only one able to push a
 row past the terminal. A wrapped row's second line starts at column 0, where it
 reads as a row of its own and the date column stops being scannable. Measured
 here the day after the 55 above, one entry further on: 32 of 56 rows were over
-100 characters and the widest was 189; the median task ran 68, so the median row
-loses six characters and a `…` says where.
+100 characters and the widest was 189, while the median task ran 68. That
+measurement is what moved the bound from 100 to 120: at 100 the task column got
+62 characters and the median row lost six of them to a `…`, which is more than
+half the listing losing its tail. At 120 it gets 82 and the median survives
+whole; the widest still does not, and the `…` still says where.
 The whole task is still in the entry's own file, and `show` without the flag
 still prints this session's in full.
 
-The bound is on the line rather than on the task because 100 is the number a
-reader reasons about; `entryLine` measures the columns it actually rendered and
-gives the task what is left.
+The bound is on the line rather than on the task because the columns ahead of the
+task may yet change width; `entryLine` measures the ones it actually rendered and
+gives the task what is left. The 80-column argument that first picked 100 does
+not survive the arithmetic — a 100-character row already wraps at 80, so nothing
+that was being held was given up by widening it.
 
 The header carries the one number no reader had: how many files were entries by
 name and did not parse. `readFile` turns a parse failure into null and every hook
@@ -220,9 +276,11 @@ dead by every reader at once while staying `active: true`. Nothing is corrupted
 and no collision appears — the task simply stops being read.
 
 `hooks/carry.js` is what says so. It runs on `SessionStart` with `matcher:
-"clear"`, and on the first prompt of the new session it names the task, where on
-its route it got to, its notes and its `next`, with the `adopt` command already
-carrying both ids.
+"clear|fork"`, and on the first prompt of the new session it names the task,
+where on its route it got to, its notes and its `next`, with the `adopt` command
+already carrying both ids. A cleared session's predecessor is certainly gone; a
+forked one might still be running, and it is the liveness check at `carry.js:67`
+that keeps the offer from firing over a session that is still there.
 
 **Stand the task down before clearing and there is nothing to offer.** An entry
 cleared the other way round is put down by `/fankeel` → **Clear out**, which
@@ -298,10 +356,14 @@ another session's, and never deletes one.
 
 Writing the file is atomic — a sibling, then a rename — but reading it, changing
 one field and writing it back is not, and that is what every writer here does.
-Four of them run in hooks. `inject.js` writes on every prompt — twice over, once
-for the claims git found and once for `updated` — in every session on the
-machine. `resume.js` writes once per answered question, and `gate.js` once per
-question asked. `touch.js` fires on every edit but writes on almost none of them: it
+Four of them are registered in hooks and three have ever run. `inject.js` writes
+on every prompt — twice over, once for the claims git found and once for
+`updated` — in every session on the machine. `resume.js` writes once per
+answered question. `gate.js` would write once per question asked and never has,
+for the reason above — so three writers contend here today, and four if it ever
+runs.
+
+`touch.js` fires on every edit but writes on almost none of them: it
 returns at `hooks/touch.js:42` when the path is already claimed, which is what
 makes a task editing one file two hundred times cost the registry one write. Measured, two processes adding twenty
 claims each kept 20 to 24 of the 40, and every one of those writes returned

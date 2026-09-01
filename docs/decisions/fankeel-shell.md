@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-30
+last_verified: 2026-09-01
 source_of_truth: this file, no upstream — a decision record is not derived from anything
 ---
 
@@ -355,8 +355,146 @@ times over, one module per file it needs read.
 
 The counts are where the question starts, not where it ends.
 
+## `audit` joins neither `spike` nor `bounded`
+
+The stage exists and two of the three classes do not route through it, which
+reads like an oversight often enough to have been filed as one. It is not.
+
+`docs-check.js` runs at `verify`, and `verify` is already on `bounded`'s route.
+So a scoped change is checked for a dead link, a citation past the end of a file
+and a symbol nothing declares, without the `audit` stage being anywhere near it.
+What `audit` adds on top is `docs-audit.js` — the sweep that asks which reference
+pages have not been touched since the code under them changed, which plans have
+landed, and which pages describe the same file. That is a fortnightly question.
+Asking it on every scoped change is not thoroughness but a cadence error, and the
+answer would be the same fifteen times running until somebody stopped reading it.
+
+`spike` is the clearer half. Its route is `survey,build` and its own definition
+says anything built is labelled throwaway. Grading documents against code nobody
+intends to keep answers a question nobody asked.
+
+Nothing is lost by leaving both alone, and that is what makes this cheap rather
+than a trade: `/fankeel-audit` runs the whole pass without a task at all, so the
+sweep was never gated on a route in the first place. It is also the way to audit
+a repository nobody is in the middle of, which no route could ever have covered.
+
+The cost of the other answer is worth recording, because it lands somewhere
+nobody would look. A record stores its class and its route as two fields, and
+`classForRoute` reconciles them at only two moments: `adopt` and `task.js route`.
+Add a stage to `bounded` and every entry already carrying the old five-step route
+keeps the word `bounded`, which `lib/render.js` injects on every prompt with the
+new meaning — while an `adopt` of that same entry recomputes the class from the
+route, matches nothing, and drops it. One record, describing itself two ways
+depending on which command touched it last.
+
+
+## A hook that cannot tell a wrong id from no plugin says nothing
+
+A session id that never appears in the registry resolves to a path that does not
+exist, and `lib/registry.js:140` returns null. Every hook then returns quietly.
+The question that kept coming back is whether that silence hides a real bug —
+whether a hook handed the wrong id should say so.
+
+It cannot, and the reason is that there is nothing to say it about. A file that
+is not there is byte-for-byte what a session not using this plugin looks like, so
+any output would fire for every one of them. That is the opposite of the contract
+every hook here is built on: exit 0 on every path, and cost nothing for a session
+that is not in the mode.
+
+The premise is also thinner than it reads. No hook takes an id from typed input —
+`brief.js:33`, `carry.js:53`, `gate.js:27`, `guard.js:24`, `inject.js:52`,
+`resume.js:28` and `touch.js:28` all read `payload.session_id`. A wrong id
+reaching one of them would mean Claude Code passed a wrong one, which is not a
+thing a warning in a hook would help anybody fix.
+
+What the entry was actually worried about — a corrupt entry visible in no view at
+all — was already answered, one directory over and in the one place a person is
+looking rather than a hook firing. `readAll` returns the unreadable count beside
+the entries it could parse, and `task.js` refuses an id no running session
+claims. Both of those have a reader. A line printed from inside a hook does not.
+
+## The document checker stops where the machine stops
+
+`scripts/docs-check.js:8-18` states its own boundary: it reports what can be
+decided mechanically, and leaves the rest to `audit`, where a person reads. A
+`path:line` that no longer resolves is mechanical. One past the end of a file is
+mechanical, and is reported as `past-end`. One that still resolves but now points
+at the wrong line is not, and the difference is not a matter of effort.
+
+Deciding it needs someone to know what the citation was meant to point at, and
+nothing on disk records that. `lib/map.js:323` becoming 342 is only visible as
+drift to a reader who knows what was at 323. Every mechanical proxy for that —
+look for a symbol near the line, compare against the last commit that touched
+both — answers a different question and reports on the occasions it disagrees
+with itself.
+
+Five citations drifted in one build, which is what reopened this. They stay
+unreported, and that is the trade: this tool's findings are worth acting on
+because none of them is a guess, and one heuristic is enough to make a reader
+check the next twenty by hand.
+
+Four more drifted while this was being decided, which is the argument
+demonstrated rather than asserted. `docs/registry.md` cited the liveness check as
+`carry.js:60`; the commit that added the citation also added five lines of
+comment above it, and the check went to `:67`. A commit message cited
+`scripts/task.js:317` for `LINE_MAX` when a sibling commit had already put it at
+`:323`. The other two were in this section: the list of hooks above named
+`carry.js:47` for a read that had moved to `:53`, and the paragraph on `fork`
+below named `:59` and `:60` for lines that had moved to `:66` and `:67`. All four
+resolve. All four name a real file and a line that exists. `docs-check` exited 0
+over every one of them, and a reader found all four — including the two written
+by the argument for not checking.
+
 ## What is still a guess
 
 The stage list. Five, named for what they produce, is a first cut; whether
 `survey` earns its place and whether the rules fire at the right moments are
 questions only real use answers. Tracked in [TODO.md](../../TODO.md).
+
+Whether `PreToolUse` fires for `AskUserQuestion` at all. `hooks/gate.js` was
+written to mark the moment a gate opened; `hooks/resume.js` is the other end and
+works. The hook has never run: no record has carried a `gateAt` or a `waited`,
+and two sessions since the file landed recorded neither, one of them four stages
+deep with `clock` and `burn` written to the same entry by the sibling hooks.
+
+**This was written up as settled twice, and neither writing held.** Both
+overstatements are kept here, because each looked like the correction of the one
+before it.
+
+The first was that the registration is present in the copy that actually runs, so
+the event must be missing. Present on disk is not the same as live in a running
+program, and the gap is invisible from inside the session that has it.
+
+The second was the correction to that: Claude Code reads its registration list
+when the **process** starts, and no `claude.exe` here has started since the entry
+was installed — the newest began 2026-08-31 23:55:39 against a manifest dated
+2026-09-01 02:03:37. The process part is measured and true. The word `process` is
+not: the source it came from,
+[docs/plans/2026-09-01-stage-timing-design.md](../plans/2026-09-01-stage-timing-design.md),
+says **session** start, and `/clear` begins a session without beginning a
+process. The session that did this work began long after the install. So on one
+reading the entry was never live and on the other it was, and nothing in this
+repository says which reading is right.
+
+The shape of the mistake was the same both times: a measurement that was real
+was made to carry a conclusion one step wider than it reaches. The second time
+it was a single word.
+
+What settles it is in [TODO.md](../../TODO.md): a process started after the
+install, one question asked, and `gateAt` read **while that question is still
+open**. How the task was started does not matter — `adopt` never carries a
+`gateAt`. Not `waited` after it —
+`gateOpen` stamps `gateAt` the moment the hook runs, so the stamp is `gate.js`
+firing and nothing else, where a missing `waited` also implicates `gateClose`,
+which has two paths that delete the stamp and write nothing at all.
+
+All of the evidence above is read from `.fankeel/sessions/` and from the
+installed plugin cache, neither of which is version controlled, so it is an
+observation of one machine on one day rather than something a later reader can
+check out and re-run.
+
+Whether `fork` changes the session id. `hooks/carry.js` now runs on it, and the
+matcher is correct either way — the self-check at `:66` covers an unchanged id
+and `live.isLive` at `:67` covers a predecessor still running — but nobody has
+watched a `fork` reach the hook. Correct in both branches is not the same as
+measured.

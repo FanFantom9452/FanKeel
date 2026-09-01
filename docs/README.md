@@ -45,9 +45,13 @@ here.
 | The four tasks that built it, with every string and every test written out | [plans/2026-09-01-stage-timing.md](plans/2026-09-01-stage-timing.md) — *built* |
 | Why the design gate decides whether a route needs `plan`, and what runs at once in each stage | [plans/2026-09-01-stage-units-design.md](plans/2026-09-01-stage-units-design.md) — *built* |
 | The five tasks that built it, with every string and every test written out | [plans/2026-09-01-stage-units.md](plans/2026-09-01-stage-units.md) — *built* |
+| Why six deferred decisions were settled in one pass, and what each one decided | [plans/2026-09-01-six-decisions-design.md](plans/2026-09-01-six-decisions-design.md) — *built* |
+| The six tasks that settled them, with every string and every test written out | [plans/2026-09-01-six-decisions.md](plans/2026-09-01-six-decisions.md) — *built* |
 | What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 | Why three lib modules with one caller each were not folded into their callers | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *one caller is not evidence on its own* |
+| Why a hook says nothing when it is handed a session id it cannot find | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *a hook that cannot tell a wrong id from no plugin* |
+| Why `docs-check` leaves a citation that drifted but still resolves | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *the document checker stops where the machine stops* |
 
 ## The three scanners
 

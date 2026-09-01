@@ -156,11 +156,11 @@ test('nothing on stdin, and nothing that parses, are both survivable', () => {
   assert.equal(run('not json', tmp('fankeel-cfg-')), '');
 });
 
-test('the manifest runs it on a clear and on nothing else', () => {
+test('the manifest runs it on a clear or a fork, and on nothing else', () => {
   const plugin = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
   const starts = plugin.hooks.SessionStart;
   assert.equal(starts.length, 1);
-  assert.equal(starts[0].matcher, 'clear');
+  assert.equal(starts[0].matcher, 'clear|fork');
   assert.equal(starts[0].hooks.length, 1);
   assert.equal(starts[0].hooks[0].timeout, 5);
   assert.match(starts[0].hooks[0].command, /hooks\/carry\.js/);

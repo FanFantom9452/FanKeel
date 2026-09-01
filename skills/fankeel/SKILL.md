@@ -108,17 +108,23 @@ by the same prompt hook that refreshes `updated`.
 
 `clock` is those same two slots with a wall-clock reading in place of the token
 count — epoch milliseconds, which `task.js` renders as minutes — and `waited` is
-how much of that the user spent at a gate. They part company with `burn` in one
-place: `burn` is only written when a token figure arrives, and an answered
-question is not a prompt, so a stage that ends in a gate records none. A clock
-has no such threshold, so it is written beside `updated` and every touch is a
-sighting. What measures the wait, and why it is not `Stop`, is in
+meant to be how much of that the user spent at a gate. No record has ever
+carried one: the hook that stamps the opening has never run, so there has never
+been anything for the closing half to fold in. Why it has not run is unsettled —
+[docs/registry.md](../../docs/registry.md) has the two candidates and the run
+that would separate them.
+
+`clock` and `burn` part company in one place: `burn` is only written when a
+token figure arrives, and an answered question is not a prompt, so a stage that
+ends in a gate records none. A clock has no such threshold, so it is written
+beside `updated` and every touch is a sighting. What measures the wait, why it
+is not `Stop`, and what it does instead of measuring anything, is in
 [docs/registry.md](../../docs/registry.md) — this is the short form, not the
 only copy.
 
-A seventh, `gateAt`, is deliberately not below. It exists only between a question
-going out and its answer arriving, so a record shown holding one is a record
-shown mid-question.
+A seventh, `gateAt`, is deliberately not below. It should exist only between a
+question going out and its answer arriving; in practice no record has ever held
+one, for the reason above.
 
 ```json
 {
@@ -132,7 +138,6 @@ shown mid-question.
   "active": true,
   "burn": { "survey": [120000, 342000] },
   "clock": { "survey": [1756659679797, 1756660399797] },
-  "waited": { "survey": 240000 },
   "notes": ["ANSI 256 has no true mid green; the 46→83→120 run is the only clean path"],
   "next": "wire the badge word into TokenBar",
   "guard": "ask",

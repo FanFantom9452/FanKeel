@@ -92,6 +92,20 @@ test('a file written behind the hooks is dirty', () => {
   assert.deepEqual(dirty.dirtyPaths(dir).sort(), ['api/routes.js', 'kept.js']);
 });
 
+// Not a gap to close. `dirtyPaths` shells `git status`, so the repository's own
+// ignore rules apply and a generated file is not this task's work — which is the
+// answer wanted. Pinned because nothing else in this file says so, and this is
+// the test that fails the day `dirtyPaths` starts reporting a path git itself
+// was told to ignore.
+test('a write to a gitignored path is invisible, because git says so', () => {
+  const dir = repo();
+  fs.writeFileSync(path.join(dir, '.gitignore'), 'build/\n');
+  git(dir, ['add', '-A']);
+  git(dir, ['commit', '-qm', 'ignore build output']);
+  writeBehindTheHooks(dir, 'build/out.js', 'generated\n');
+  assert.deepEqual(dirty.dirtyPaths(dir), []);
+});
+
 test('a file dirtied before the cutoff is not this task\'s', () => {
   const dir = repo();
   writeBehindTheHooks(dir, 'old.js', 'yesterday\n');

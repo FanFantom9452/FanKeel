@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 
-// SessionStart, matcher `clear`. It exists because `/clear` is the one
-// continuation that changes the session id.
+// SessionStart, matcher `clear|fork`. It exists because `/clear` is the one
+// continuation that certainly changes the session id; whether `fork` does is
+// unmeasured.
 //
 // A resumed or compacted session is the same session, and `docs/registry.md`
 // says so — which for two releases was the whole list. `/clear` is the third
@@ -15,9 +16,14 @@
 //
 // The matcher is the whole cost control, and it is exact rather than trusted:
 // Claude Code matches it against `source`, whose five values are `startup`,
-// `resume`, `clear`, `compact` and `fork`. On `clear` alone this never runs at
-// an ordinary startup, and `tests/carry.test.js` asserts the manifest rather
-// than believing this comment.
+// `resume`, `clear`, `compact` and `fork`. On `clear` or `fork` this never runs
+// at an ordinary startup, and `tests/carry.test.js` asserts the manifest rather
+// than believing this comment. `fork` needed no new guard: keeping the session
+// id is caught by the check below that skips a session's own entry, changing it
+// while the predecessor is still running is caught by `isLive` treating an
+// unreadable state as live rather than gone, and changing it once the
+// predecessor is truly dead is answered correctly — that offer is the whole
+// point of this hook.
 //
 // It writes nothing. Not the registry, not a badge, not the entry it names.
 // Adopting is a decision and standing an entry down is the user's, so a hook
@@ -54,8 +60,9 @@ function main(raw) {
     const orphans = [];
     for (const entry of registry.readActive(root)) {
         // Reading its own entry back would produce an adopt line naming the
-        // reader. A clear gives a new id so this is theoretical, and nothing
-        // else stops it.
+        // reader. A clear certainly gives a new id, so this branch never fires
+        // there; a fork that keeps its old id is exactly what this check
+        // answers, which is why it is not dead code.
         if (entry.sessionId === sessionId) continue;
         if (live.isLive(state, entry.sessionId, entry.data.configDir)) continue;
         // Twelve hours is `registry.STALE_MS`, and it is what separates this

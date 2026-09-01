@@ -309,12 +309,18 @@ const stampOf = (data) => Date.parse(data && data.updated) || 0;
 // row past the terminal — and a wrapped row's second line starts at column 0,
 // where it reads as a row of its own and the date column stops being scannable.
 // Measured on this repository: 32 of 56 rows over 100 characters, the widest 189,
-// while the median task ran 68 and loses six characters to this.
+// while the median task ran 68.
 //
-// The bound is on the line rather than on the task, because 100 is the number a
-// reader reasons about and the columns ahead of the task may yet change width.
-// `room` is measured off the ones actually rendered rather than counted here.
-const LINE_MAX = 100;
+// The bound is on the line rather than on the task, because the columns ahead of
+// the task may yet change width and `room` is measured off the ones actually
+// rendered rather than counted here.
+//
+// 120 and not 100. The head measures 34 characters, so 100 left the task 62 —
+// and the median task on this registry is 68, which put more than half the rows
+// through the ellipsis. The 80-column argument that picked 100 does not survive
+// the arithmetic: a 100-character row already wraps at 80, so widening it gives
+// up nothing that was being held.
+const LINE_MAX = 120;
 
 // One line, because there are fifty of these. Date, the stage it reached, what
 // it cost, then the task — the task last so the columns before it stay aligned,
