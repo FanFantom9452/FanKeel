@@ -108,9 +108,11 @@ by the same prompt hook that refreshes `updated`.
 
 `clock` is those same two slots with a wall-clock reading in place of the token
 count — epoch milliseconds, which `task.js` renders as minutes — and `waited` is
-meant to be how much of that the user spent at a gate. It is never written:
-`PreToolUse` does not fire for `AskUserQuestion`, so the hook that stamps the
-opening never runs and there is nothing for the closing half to fold in.
+meant to be how much of that the user spent at a gate. No record has ever
+carried one: the hook that stamps the opening has never run, so there has never
+been anything for the closing half to fold in. Why it has not run is unsettled —
+[docs/registry.md](../../docs/registry.md) has the two candidates and the run
+that would separate them.
 
 `clock` and `burn` part company in one place: `burn` is only written when a
 token figure arrives, and an answered question is not a prompt, so a stage that
@@ -120,9 +122,9 @@ is not `Stop`, and what it does instead of measuring anything, is in
 [docs/registry.md](../../docs/registry.md) — this is the short form, not the
 only copy.
 
-A seventh, `gateAt`, is deliberately not below. It was meant to exist only
-between a question going out and its answer arriving; in practice no record has
-ever held one, for the reason above.
+A seventh, `gateAt`, is deliberately not below. It should exist only between a
+question going out and its answer arriving; in practice no record has ever held
+one, for the reason above.
 
 ```json
 {

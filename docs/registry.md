@@ -104,7 +104,7 @@ stage.
 ```
 
 `waited` is there for its shape and nothing else: no record has ever carried
-one, for the reason under **The pair meant to measure it** below.
+one, for the reason under **The pair that should measure it** below.
 `skills/fankeel/SKILL.md` shows the same record without it, because that example
 is a record rather than a set of shapes.
 
@@ -126,20 +126,28 @@ than one gate and what is worth knowing is their sum. A gate that opened and was
 answered inside one millisecond still adds its zero: leaving it out would read,
 downstream, exactly like a stage that never opened one.
 
-**The pair meant to measure it is `PreToolUse`/`PostToolUse` on
-`AskUserQuestion`, and it does not work.** `hooks/gate.js` is registered on the
-first half and never runs: `PreToolUse` does not fire for `AskUserQuestion`. So
-`gateAt` is never stamped, `gateClose` finds nothing to close, and **`waited` has
-never been written by any session.** Two sessions since the registration was
-installed recorded neither field — one of them four stages deep, with `clock` and
-`burn` written to the same file by the sibling hooks, which is what rules out a
-path or permission fault. `PostToolUse` on the same matcher fires on every
-answer.
+**The pair that should measure it is `PreToolUse`/`PostToolUse` on
+`AskUserQuestion`, and it has never once run.** `hooks/gate.js` is registered on
+the first half. `gateAt` has never been stamped by it, `gateClose` has therefore
+never had anything to close, and **no record has ever carried a `waited`.** Two
+sessions since the file landed recorded neither field — one of them four stages
+deep, with `clock` and `burn` written to the same file by the sibling hooks,
+which rules out a path or a permission fault.
 
-What happens to `hooks/gate.js` is open: deleting it, keeping it against a
-release that starts sending the event, and replacing the pair with something
-`resume.js` can measure alone are three different answers. It is in
-[TODO.md](../TODO.md).
+**Why it has not run is not settled, and the obvious reading is the wrong one to
+reach for.** Claude Code reads its hook registration list when the process
+starts, so a `plugin.json` that gained an entry mid-session registers nothing
+until the next start — and on this machine no `claude.exe` has started since:
+the newest began at 2026-08-31 23:55:39 against a manifest carrying the entry
+from 2026-09-01 02:03:37. That alone accounts for every observation above,
+without `PreToolUse` having to be missing for `AskUserQuestion` at all.
+
+**What would settle it**, and nothing short of it: a Claude Code process started
+after the install, a task begun with `start` rather than `adopt` — `start` builds
+a fresh record and `adopt` carries a `waited` across — one question asked, and
+then the record read. A `waited` of any value means the hook ran. Still absent,
+the event is the answer and the `waited` half of this needs rebuilding on
+something else. It is in [TODO.md](../TODO.md).
 
 `Stop` was the obvious alternative and is the wrong one, which is why the pair
 was built this way and why replacing it is not simply a matter of moving to
@@ -324,11 +332,12 @@ another session's, and never deletes one.
 
 Writing the file is atomic — a sibling, then a rename — but reading it, changing
 one field and writing it back is not, and that is what every writer here does.
-Four of them are registered in hooks and three of them run. `inject.js` writes on
-every prompt — twice over, once for the claims git found and once for `updated` —
-in every session on the machine. `resume.js` writes once per answered question.
-`gate.js` would write once per question asked and never has, because the event it
-is registered for does not fire.
+Four of them are registered in hooks and three have ever run. `inject.js` writes
+on every prompt — twice over, once for the claims git found and once for
+`updated` — in every session on the machine. `resume.js` writes once per
+answered question. `gate.js` would write once per question asked and never has,
+for the reason above — so three writers contend here today, and four if it ever
+runs.
 
 `touch.js` fires on every edit but writes on almost none of them: it
 returns at `hooks/touch.js:42` when the path is already claimed, which is what

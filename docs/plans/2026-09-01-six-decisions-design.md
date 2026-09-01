@@ -125,22 +125,30 @@ Five drifting citations in one build stay unreported, and that is `audit`'s work
 
 ## What was found, not decided
 
-`PreToolUse` does not fire for `AskUserQuestion`. `TODO.md` carried this as a
-`## Ready` probe; the probe ran during this task and returned a negative.
+`PreToolUse` may or may not fire for `AskUserQuestion`. `TODO.md` carried this as
+a `## Ready` probe; the probe ran during this task, returned a negative, and the
+negative was over-read. It is back under `## Ready`, with the condition it was
+missing.
 
 | evidence | |
 |---|---|
-| registration | present in the copy that runs — the cache `plugin.json` is byte-identical to the repo's, mtime `2026-09-01 02:03:37 +0800` |
+| registration | present in the copy that runs — the cache `plugin.json` is byte-identical to the repo's, mtime `2026-09-01 02:03:37 +0800`. **On disk is not live in a process** |
+| the process | no `claude.exe` on this machine started after that mtime; the newest began `2026-08-31 23:55:39`, and the session drawing these conclusions ran inside it |
 | control session `9c173d5f` | ran 11:03–11:44 local, nine hours later, route `design,build,verify,land` to completion. `clock` and `burn` written by the sibling hooks; no `gateAt`, no `waited` |
 | this session | three gates with `active: true`; no `gateAt`, no `waited` |
 | the one `waited` on record (`cb8cee7b`) | that session's task *was* building this feature, and its window straddles the commit that installed the hook — not evidence the hook fires |
 
 `PostToolUse` on the same matcher fires on every answer.
 
-**What happens to `hooks/gate.js` is not decided here.** It is dead code if the
-event never arrives, but removing it, keeping it against a future Claude Code
-release, or replacing the pair with a `resume.js`-only measurement are three
-different answers and none of them was in the six.
+**So the table above is consistent with the event never arriving and equally
+consistent with the registration never having been live.** Claude Code reads that
+list at process start. Nothing here separates the two, and
+`docs/plans/2026-09-01-stage-timing-design.md` had already called the second the
+likelier reading.
+
+**What happens to `hooks/gate.js` is not decided here, and cannot be until the
+probe runs under a process that started after the install.** That run is back in
+`TODO.md` under `## Ready`, carrying the condition this one lacked.
 
 ## The file table
 

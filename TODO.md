@@ -49,6 +49,8 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Ready
 
+- Run the `AskUserQuestion` `PreToolUse` probe in a Claude Code started after the registration — [hooks/gate.js](hooks/gate.js). Begin with `start`, ask one question, read `waited`. 09-01.
+
 - `docs/registry.md` summarises claiming and contradicts [docs/collisions.md](docs/collisions.md) twice: the sixty-path cap, and the per-path write cost. The code backs collisions.md. 09-01.
 
 - `skills/fankeel/SKILL.md` shows a stage change as `▌FANKEEL DESIGN` — [docs/statusline.md](docs/statusline.md). That render needs TokenBar to promote `fankeel.lead`; alone it is a bare word. 09-01.
@@ -57,7 +59,6 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Needs a decision
 
-- Whether `hooks/gate.js` is deleted, kept for a future release, or replaced by a `resume.js`-only measure — [hooks/gate.js](hooks/gate.js). `PreToolUse` does not fire for `AskUserQuestion`. 09-01.
 
 ## Waiting
 

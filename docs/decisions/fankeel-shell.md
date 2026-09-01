@@ -451,24 +451,35 @@ The stage list. Five, named for what they produce, is a first cut; whether
 `survey` earns its place and whether the rules fire at the right moments are
 questions only real use answers. Tracked in [TODO.md](../../TODO.md).
 
-`PreToolUse` does not fire for `AskUserQuestion`, and what to do about that is
-open. `hooks/gate.js` was written to mark the moment a gate opened;
-`hooks/resume.js` is the other end and works. The registration is present in the
-copy that actually runs — the plugin cache's `plugin.json` is byte-identical to
-this repository's — and two sessions since it was installed recorded nothing: one
-ran `design,build,verify,land` to completion with `clock` and `burn` written to
-its entry by the sibling hooks and neither `gateAt` nor `waited`, and the session
-that settled these decisions made three gates with the same result. The one
-`waited` value on record belongs to the session whose task *was* building the
-feature, and its window straddles the commit that installed the hook, so it is
-not evidence either way. All of that is read from `.fankeel/sessions/` and from
-the installed plugin cache, neither of which is version controlled — so it is an
-observation of one machine on one day rather than something a later reader can
-check out and re-run.
+Whether `PreToolUse` fires for `AskUserQuestion` at all. `hooks/gate.js` was
+written to mark the moment a gate opened; `hooks/resume.js` is the other end and
+works. The hook has never run: no record has carried a `gateAt` or a `waited`,
+and two sessions since the file landed recorded neither, one of them four stages
+deep with `clock` and `burn` written to the same entry by the sibling hooks.
 
-Whether `gate.js` is deleted, kept against a future release, or replaced by a
-measurement `resume.js` can take alone is three different answers, and none of
-them was asked here.
+**This was written up as settled and it is not, which is worth keeping as the
+mistake rather than quietly correcting.** The argument was that the registration
+is present in the copy that actually runs — the plugin cache's `plugin.json` is
+byte-identical to this repository's. That is true and it is not the same claim.
+Claude Code reads its hook registration list when the **process** starts, and no
+`claude.exe` on this machine has started since the entry was installed: the
+newest began 2026-08-31 23:55:39, the manifest carrying the entry dates from
+2026-09-01 02:03:37, and the session that reasoned its way to the conclusion was
+running inside that older process the whole time.
+
+Present on disk is not live in a process, and the gap between those two is
+invisible from inside the session that has the gap.
+[docs/plans/2026-09-01-stage-timing-design.md](../plans/2026-09-01-stage-timing-design.md)
+had already named it as the likelier of the two causes, in the run that first
+observed the silence.
+
+What settles it is in [TODO.md](../../TODO.md): a process started after the
+install, a task begun with `start` rather than `adopt` — `adopt` carries a
+`waited` across, so only `start` gives a record that begins with none — one
+question, then read the field. All of the evidence above is read from
+`.fankeel/sessions/` and from the installed plugin cache, neither version
+controlled, so it is an observation of one machine on one day rather than
+something a later reader can check out and re-run.
 
 Whether `fork` changes the session id. `hooks/carry.js` now runs on it, and the
 matcher is correct either way — the self-check at `:66` covers an unchanged id
