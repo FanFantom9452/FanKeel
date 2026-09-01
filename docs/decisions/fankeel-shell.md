@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-30
+last_verified: 2026-09-01
 source_of_truth: this file, no upstream — a decision record is not derived from anything
 ---
 
@@ -355,8 +355,75 @@ times over, one module per file it needs read.
 
 The counts are where the question starts, not where it ends.
 
+## A hook that cannot tell a wrong id from no plugin says nothing
+
+A session id that never appears in the registry resolves to a path that does not
+exist, and `lib/registry.js:140` returns null. Every hook then returns quietly.
+The question that kept coming back is whether that silence hides a real bug —
+whether a hook handed the wrong id should say so.
+
+It cannot, and the reason is that there is nothing to say it about. A file that
+is not there is byte-for-byte what a session not using this plugin looks like, so
+any output would fire for every one of them. That is the opposite of the contract
+every hook here is built on: exit 0 on every path, and cost nothing for a session
+that is not in the mode.
+
+The premise is also thinner than it reads. No hook takes an id from typed input —
+`brief.js:33`, `carry.js:47`, `gate.js:27`, `guard.js:24`, `inject.js:52`,
+`resume.js:28` and `touch.js:28` all read `payload.session_id`. A wrong id
+reaching one of them would mean Claude Code passed a wrong one, which is not a
+thing a warning in a hook would help anybody fix.
+
+What the entry was actually worried about — a corrupt entry visible in no view at
+all — was already answered, one directory over and in the one place a person is
+looking rather than a hook firing. `readAll` returns the unreadable count beside
+the entries it could parse, and `task.js` refuses an id no running session
+claims. Both of those have a reader. A line printed from inside a hook does not.
+
+## The document checker stops where the machine stops
+
+`scripts/docs-check.js:8-18` states its own boundary: it reports what can be
+decided mechanically, and leaves the rest to `audit`, where a person reads. A
+`path:line` that no longer resolves is mechanical. One past the end of a file is
+mechanical, and is reported as `past-end`. One that still resolves but now points
+at the wrong line is not, and the difference is not a matter of effort.
+
+Deciding it needs someone to know what the citation was meant to point at, and
+nothing on disk records that. `lib/map.js:323` becoming 342 is only visible as
+drift to a reader who knows what was at 323. Every mechanical proxy for that —
+look for a symbol near the line, compare against the last commit that touched
+both — answers a different question and reports on the occasions it disagrees
+with itself.
+
+Five citations drifted in one build, which is what reopened this. They stay
+unreported, and that is the trade: this tool's findings are worth acting on
+because none of them is a guess, and one heuristic is enough to make a reader
+check the next twenty by hand.
+
 ## What is still a guess
 
 The stage list. Five, named for what they produce, is a first cut; whether
 `survey` earns its place and whether the rules fire at the right moments are
 questions only real use answers. Tracked in [TODO.md](../../TODO.md).
+
+`PreToolUse` does not fire for `AskUserQuestion`, and what to do about that is
+open. `hooks/gate.js` was written to mark the moment a gate opened;
+`hooks/resume.js` is the other end and works. The registration is present in the
+copy that actually runs — the plugin cache's `plugin.json` is byte-identical to
+this repository's — and two sessions since it was installed recorded nothing: one
+ran `design,build,verify,land` to completion with `clock` and `burn` written to
+its entry by the sibling hooks and neither `gateAt` nor `waited`, and the session
+that settled these decisions made three gates with the same result. The one
+`waited` value on record belongs to the session whose task *was* building the
+feature, and its window straddles the commit that installed the hook, so it is
+not evidence either way.
+
+Whether `gate.js` is deleted, kept against a future release, or replaced by a
+measurement `resume.js` can take alone is three different answers, and none of
+them was asked here.
+
+Whether `fork` changes the session id. `hooks/carry.js` now runs on it, and the
+matcher is correct either way — the self-check at `:59` covers an unchanged id
+and `live.isLive` at `:60` covers a predecessor still running — but nobody has
+watched a `fork` reach the hook. Correct in both branches is not the same as
+measured.
