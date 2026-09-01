@@ -1,6 +1,7 @@
 ---
-status: design-intent
-source_of_truth: TODO.md
+status: current
+last_verified: 2026-09-01
+source_of_truth: scripts/task.js, scripts/survey.js, hooks/carry.js, .claude-plugin/plugin.json, lib/dirty.js, lib/registry.js, scripts/docs-check.js
 ---
 
 # Six deferred decisions, settled
