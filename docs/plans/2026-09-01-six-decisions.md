@@ -520,8 +520,11 @@ under `## Needs a decision`. Leave the eleven under `## Waiting` untouched,
 stamps included — none of them was in scope and re-stamping one nobody re-read
 is the exact thing the stamp is there to prevent.
 
-`## Ready` and `## Needs a decision` both end up empty. Leave the headings in
-place with nothing under them; `todo-check.js` accepts an empty section and
+`## Ready` ends up empty. `## Needs a decision` does not: the `hooks/gate.js`
+probe ran during this task and returned a negative, and what happens to that file
+is a question nobody has answered — so one entry replaces the eight, and deleting
+the probe outright would have dropped a deferred thing out of the index. Leave
+both headings in place; `todo-check.js` accepts an empty section and
 `/fankeel` needs the headings to exist to cluster against.
 
 ### Step 2 — the checks
@@ -530,7 +533,8 @@ place with nothing under them; `todo-check.js` accepts an empty section and
 node scripts/todo-check.js
 ```
 
-Expect: **11 entries — 0 ready, 0 needs a decision, 11 waiting**, exit 0.
+Expect: **12 entries — 0 ready, 1 needs a decision, 11 waiting**, exit 0. The one
+is the fate of `hooks/gate.js`.
 
 ```
 npm test

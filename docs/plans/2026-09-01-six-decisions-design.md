@@ -84,8 +84,13 @@ is documented as a finding, that is worse than an incomplete answer.
 
 The pattern added is `^\s*(?:export\s+)?const\s+([A-Z][A-Z0-9_]*)\s*=` — it
 catches `CLASSES`, `LINE_MAX`, `MAX_ENTRY_CHARS`, `FULL_ROUTE`, `JS_PATTERNS`,
-and skips locals. Not chosen: matching every `const`, which would turn each local
-variable into a declaration and bury real hits under a capped report.
+and skips the ordinary lowercase local. It narrows by naming case and not by
+scope — nothing line-based can see scope, so a `const LOCAL_MAX = 5` inside a
+function is reported too, which is accepted: a name shouted in capitals is one a
+reader came looking for.
+
+Not chosen: matching every `const`, which would turn each local variable into a
+declaration and bury real hits under a capped report.
 
 Known limit, accepted: a module-level data constant in camelCase stays invisible.
 
@@ -161,7 +166,8 @@ different answers and none of them was in the six.
   the miss, which fails today only if someone later makes it not miss.
 - `node scripts/survey.js LINE_MAX CLASSES` reports two declarations where it
   reports zero today. This is the one that fails now and passes after.
-- `node scripts/todo-check.js` exits 0 with 11 entries, all under `## Waiting`.
+- `node scripts/todo-check.js` exits 0 with 12 entries: 11 under `## Waiting` and
+  one new decision, the fate of `hooks/gate.js`.
 - `node scripts/docs-check.js` exits 0 — the two new decision pages resolve.
 
 ## Against the map

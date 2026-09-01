@@ -402,7 +402,7 @@ every hook here is built on: exit 0 on every path, and cost nothing for a sessio
 that is not in the mode.
 
 The premise is also thinner than it reads. No hook takes an id from typed input —
-`brief.js:33`, `carry.js:47`, `gate.js:27`, `guard.js:24`, `inject.js:52`,
+`brief.js:33`, `carry.js:53`, `gate.js:27`, `guard.js:24`, `inject.js:52`,
 `resume.js:28` and `touch.js:28` all read `payload.session_id`. A wrong id
 reaching one of them would mean Claude Code passed a wrong one, which is not a
 thing a warning in a hook would help anybody fix.
@@ -433,14 +433,17 @@ unreported, and that is the trade: this tool's findings are worth acting on
 because none of them is a guess, and one heuristic is enough to make a reader
 check the next twenty by hand.
 
-Two more drifted while this was being decided, which is the argument demonstrated
-rather than asserted. `docs/registry.md` cited the liveness check as
+Four more drifted while this was being decided, which is the argument
+demonstrated rather than asserted. `docs/registry.md` cited the liveness check as
 `carry.js:60`; the commit that added the citation also added five lines of
 comment above it, and the check went to `:67`. A commit message cited
 `scripts/task.js:317` for `LINE_MAX` when a sibling commit had already put it at
-`:323`. Both resolve. Both name a real file and a line that exists. `docs-check`
-exited 0 over each of them, twice, on the branch that wrote this section — and a
-reader found both.
+`:323`. The other two were in this section: the list of hooks above named
+`carry.js:47` for a read that had moved to `:53`, and the paragraph on `fork`
+below named `:59` and `:60` for lines that had moved to `:66` and `:67`. All four
+resolve. All four name a real file and a line that exists. `docs-check` exited 0
+over every one of them, and a reader found all four — including the two written
+by the argument for not checking.
 
 ## What is still a guess
 
@@ -458,14 +461,17 @@ its entry by the sibling hooks and neither `gateAt` nor `waited`, and the sessio
 that settled these decisions made three gates with the same result. The one
 `waited` value on record belongs to the session whose task *was* building the
 feature, and its window straddles the commit that installed the hook, so it is
-not evidence either way.
+not evidence either way. All of that is read from `.fankeel/sessions/` and from
+the installed plugin cache, neither of which is version controlled — so it is an
+observation of one machine on one day rather than something a later reader can
+check out and re-run.
 
 Whether `gate.js` is deleted, kept against a future release, or replaced by a
 measurement `resume.js` can take alone is three different answers, and none of
 them was asked here.
 
 Whether `fork` changes the session id. `hooks/carry.js` now runs on it, and the
-matcher is correct either way — the self-check at `:59` covers an unchanged id
-and `live.isLive` at `:60` covers a predecessor still running — but nobody has
+matcher is correct either way — the self-check at `:66` covers an unchanged id
+and `live.isLive` at `:67` covers a predecessor still running — but nobody has
 watched a `fork` reach the hook. Correct in both branches is not the same as
 measured.
