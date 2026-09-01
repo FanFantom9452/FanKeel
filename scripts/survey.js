@@ -47,6 +47,17 @@ const JS_PATTERNS = [
     /^\s*(?:export\s+)?(?:abstract\s+)?class\s+([A-Za-z_$][\w$]*)/,
     /^\s*(?:export\s+)?(?:interface|type|enum)\s+([A-Za-z_$][\w$]*)/,
     /^\s*(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\(|function|[A-Za-z_$][\w$]*\s*=>)/,
+    // `UPPER_SNAKE` only. The pattern above takes a const whose value is a
+    // function, which leaves every module-level data constant invisible in a
+    // language this scanner otherwise reads completely — `CLASSES` and
+    // `LINE_MAX` in this repository both scanned as nothing matched, which in a
+    // tool that reports a miss as a finding is a wrong answer and not a thin one.
+    //
+    // Not every `const`: that would make a declaration of each local variable,
+    // and the report is capped, so the noise would bury the hits it was widened
+    // to find. A module-level data constant in camelCase stays invisible, and
+    // that is the price of the line above.
+    /^\s*(?:export\s+)?const\s+([A-Z][A-Z0-9_]*)\s*=/,
 ];
 
 const DECLARATIONS = [
