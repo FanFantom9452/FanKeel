@@ -949,7 +949,7 @@ test('show --all bounds the task even when the columns ahead of it do not', () =
   started(dir, A, 'the live one');
   registry.writeSession(dir, 'cccccccc-1111-2222-3333-000000000003', {
     task: 'a task long enough that returning it whole would be obvious ' + 'x'.repeat(120),
-    stage: 'land'.padEnd(80, '-'),
+    stage: 'land'.padEnd(100, '-'),
     active: false,
     updated: new Date().toISOString(),
   });

@@ -309,7 +309,7 @@ const stampOf = (data) => Date.parse(data && data.updated) || 0;
 // row past the terminal — and a wrapped row's second line starts at column 0,
 // where it reads as a row of its own and the date column stops being scannable.
 // Measured on this repository: 32 of 56 rows over 100 characters, the widest 189,
-// while the median task ran 68 and loses six characters to this.
+// while the median task ran 68.
 //
 // The bound is on the line rather than on the task, because the columns ahead of
 // the task may yet change width and `room` is measured off the ones actually
