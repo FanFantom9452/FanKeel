@@ -148,12 +148,19 @@ reading it should have been. The two readings point opposite ways and no page in
 this repository says which one holds.
 
 **What would settle it**, and nothing short of it: a Claude Code **process**
-started after the install — the stronger of the two conditions, so it answers
-whichever reading is right — with a task begun by `start` rather than `adopt`,
-because `start` builds a fresh record and `adopt` carries a `waited` across. Ask
-one question, then read the field. A `waited` of any value means the hook ran.
-Still absent, the event is the answer and the `waited` half of this needs
-rebuilding on something else. It is in [TODO.md](../TODO.md).
+started after the install — the stronger of the two conditions above, so it
+answers whichever reading is right — with a task begun by `start` rather than
+`adopt`, because `adopt` carries the cost history across and `start` gives a
+record that begins with none. Then ask one question and, **while it is still on
+screen, read `gateAt`.**
+
+Read `gateAt` and not `waited`, because they answer different questions.
+`gateOpen` stamps `gateAt` the instant the hook runs, before anyone has answered,
+so its presence is `gate.js` firing and nothing else. `waited` needs `gateClose`
+to run too, and `gateClose` deletes the stamp and returns success without writing
+anything when the record has no `stage`, and again when the interval comes out
+negative — so a missing `waited` after the answer is two hooks confounded, where
+a `gateAt` seen mid-question is one. It is in [TODO.md](../TODO.md).
 
 `Stop` was the obvious alternative and is the wrong one, which is why the pair
 was built this way and why replacing it is not simply a matter of moving to
