@@ -107,6 +107,15 @@ function main(argv) {
         // A completion line with no note is a tick nobody can check, and this
         // file exists to be read by someone who does not remember writing it.
         if (!note.trim()) fail('Say what landed. A completion line with no note is a tick nobody can check.');
+        // Refused on the way in rather than dropped on the way out. A range the
+        // parser cannot read back still reaches the file, and `ranges` then
+        // reports the row as a task that recorded none — naming two causes,
+        // neither of which happened. The shape is `lib/ledger.js`'s own, so this
+        // refuses exactly what that parser would have skipped.
+        if (opts.range !== undefined && !ledger.isRange(opts.range)) {
+            fail('--range wants two commit shas: <base>..<head>, 7 to 40 hex each. '
+                + '"' + opts.range + '" would reach the file and read back as no range at all.');
+        }
         ledger.append(root, opts.plan, ledger.completionLine(n, note, opts.range));
         return 'fankeel ledger — Task ' + n + ' complete.';
     }

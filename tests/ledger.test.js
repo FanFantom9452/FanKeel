@@ -322,3 +322,35 @@ test('ranges names a completed task that recorded no range', () => {
   const out = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'ranges'], { cwd: dir, encoding: 'utf8' });
   assert.match(out, /no range recorded/);
 });
+
+// The write side took any string and the read side reads one shape, so
+// `--range HEAD~1..HEAD` landed on disk and came back from `ranges` as
+// `(no range recorded)` -- above a message naming two causes, neither of which
+// had happened. Both halves are asserted, because a refusal raised after
+// `append` would pass on the exit code alone.
+test('a --range the parser cannot read back is refused', () => {
+  const dir = root();
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'init'], { cwd: dir, encoding: 'utf8' });
+  let out = '';
+  let code = 0;
+  try {
+    execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', 'HEAD~1..HEAD', 'complete', '1', 'note'], { cwd: dir, encoding: 'utf8' });
+  } catch (e) {
+    out = String(e.stdout || '');
+    code = e.status;
+  }
+  assert.equal(code, 1, 'a range ranges cannot read back should exit 1');
+  assert.match(out, /--range wants two commit shas/);
+  const contents = fs.readFileSync(ledger.ledgerPath(dir, 'p.md'), 'utf8');
+  assert.equal(contents.includes('Task 1'), false, 'the completion was written anyway');
+});
+
+// The refusal is the parser's own shape and not a second spelling of it, so the
+// short shas the build loop actually records still go through untouched.
+test('the short shas the build loop records are accepted', () => {
+  const dir = root();
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'init'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', '4aacd71..94ec4b3', 'complete', '1', 'first'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'ranges'], { cwd: dir, encoding: 'utf8' });
+  assert.match(out, /1 4aacd71\.\.94ec4b3/);
+});
