@@ -160,7 +160,7 @@ test('a note beginning --root= does not move the tree', () => {
 // `.fankeel/build/init/`, and `Task 1 complete.` on a ledger the build loop
 // would never read again. Both halves are asserted, because the refusal without
 // the empty tree would pass on a script that refused after writing.
-for (const verb of ['init', 'complete', 'ruling', 'show']) {
+for (const verb of ['init', 'complete', 'ruling', 'show', 'groups', 'ranges']) {
   test('--plan ' + verb + ' is refused rather than filed as a plan named ' + verb, () => {
     const dir = root();
     let out = '';
@@ -298,4 +298,27 @@ test('a completion line written before ranges existed still parses', () => {
 
 test('the range is absent from the line when none is given', () => {
   assert.equal(ledger.completionLine(1, 'no range'), 'Task 1: complete — no range');
+});
+
+// One verifier per row, each pinned at both ends. The rows do not overlap, so
+// they may go out in one response -- which is the whole reason the range is
+// recorded rather than re-derived from git at verify time.
+test('ranges prints one pinned range per completed task', () => {
+  const dir = root();
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'init'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', 'aaaaaaa..bbbbbbb', 'complete', '1', 'first'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', 'bbbbbbb..ccccccc', 'complete', '2', 'second'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'ranges'], { cwd: dir, encoding: 'utf8' });
+  assert.match(out, /1 aaaaaaa\.\.bbbbbbb/);
+  assert.match(out, /2 bbbbbbb\.\.ccccccc/);
+});
+
+// A task completed without one is named rather than skipped: a silent omission
+// here is a verifier that never went out for work that did land.
+test('ranges names a completed task that recorded no range', () => {
+  const dir = root();
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'init'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'complete', '1', 'no range given'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'ranges'], { cwd: dir, encoding: 'utf8' });
+  assert.match(out, /no range recorded/);
 });

@@ -31,13 +31,13 @@ function fail(message) {
 
 // Every string flag, and the key it lands on. A table rather than a list because
 // `splitAtVerb` reads it too, and two lists of the same flags drift.
-const STRING_FLAGS = { root: 'root', plan: 'plan' };
+const STRING_FLAGS = { root: 'root', plan: 'plan', range: 'range' };
 
 // The verbs, in the order the refusal at the bottom lists them. A set rather
 // than four literals for the same reason the flags are a table: `splitAtVerb`
 // reads it too, so that no flag spends one, and two lists of the same verbs
 // drift.
-const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups']);
+const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'ranges']);
 
 // `strict: false` keeps an unknown flag silent. A declared flag given no value
 // comes back `true` rather than a string, and that is the refusal below: a flag
@@ -107,7 +107,7 @@ function main(argv) {
         // A completion line with no note is a tick nobody can check, and this
         // file exists to be read by someone who does not remember writing it.
         if (!note.trim()) fail('Say what landed. A completion line with no note is a tick nobody can check.');
-        ledger.append(root, opts.plan, ledger.completionLine(n, note));
+        ledger.append(root, opts.plan, ledger.completionLine(n, note, opts.range));
         return 'fankeel ledger — Task ' + n + ' complete.';
     }
 
@@ -158,6 +158,29 @@ function main(argv) {
                 + '\nconsumes what the other produces.')
             + ' Commit them one at a time as they'
             + '\nreturn, in the order listed.';
+    }
+
+    if (verb === 'ranges') {
+        const file = ledger.ledgerPath(root, opts.plan);
+        let contents = '';
+        try {
+            contents = fs.readFileSync(file, 'utf8');
+        } catch (e) {
+            return 'fankeel ledger — none yet at ' + file + '\nRun `init` before the first task.';
+        }
+        if (!ledger.owns(contents, opts.plan)) {
+            return 'fankeel ledger — ' + file + ' belongs to another plan. Leave it; `init` starts your own.';
+        }
+        const rows = ledger.completions(contents);
+        if (!rows.length) return 'fankeel ledger — nothing complete yet at ' + file;
+        const lines = rows.map((r) => '  ' + r.n + ' ' + (r.range || '(no range recorded)'));
+        // A missing range is named rather than dropped. Silence here is a task
+        // that landed and never got a verifier, which is the failure this verb
+        // exists to prevent.
+        const blind = rows.filter((r) => !r.range).length;
+        return 'fankeel ledger — ' + file + '\n\n' + lines.join('\n')
+            + (blind ? '\n\nA row with no range was completed before this field existed, or without\n--range. Read it against git log rather than here.' : '')
+            + '\n\nOne verifier per row, pinned at both ends. The rows do not overlap, so\nthey may go out in one response.';
     }
 
     if (verb === 'show') {
