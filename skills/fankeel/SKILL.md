@@ -110,11 +110,13 @@ by the same prompt hook that refreshes `updated`.
 count — epoch milliseconds, which `task.js` renders as minutes — and `waited` is
 meant to be how much of that the user spent at a gate. It is never written:
 `PreToolUse` does not fire for `AskUserQuestion`, so the hook that stamps the
-opening never runs and there is nothing for the closing half to fold in. They part company with `burn` in one
-place: `burn` is only written when a token figure arrives, and an answered
-question is not a prompt, so a stage that ends in a gate records none. A clock
-has no such threshold, so it is written beside `updated` and every touch is a
-sighting. What measures the wait, and why it is not `Stop`, is in
+opening never runs and there is nothing for the closing half to fold in.
+
+`clock` and `burn` part company in one place: `burn` is only written when a
+token figure arrives, and an answered question is not a prompt, so a stage that
+ends in a gate records none. A clock has no such threshold, so it is written
+beside `updated` and every touch is a sighting. What measures the wait, why it
+is not `Stop`, and what it does instead of measuring anything, is in
 [docs/registry.md](../../docs/registry.md) — this is the short form, not the
 only copy.
 
