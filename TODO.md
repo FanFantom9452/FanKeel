@@ -49,7 +49,9 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Ready
 
-- `docs/registry.md` says `inject.js` writes twice per prompt — [hooks/inject.js](hooks/inject.js). It is one `touch` plus one `addClaim` per newly dirty path: zero, one, or several. 09-01.
+- `docs/registry.md` summarises claiming and contradicts [docs/collisions.md](docs/collisions.md) twice: the sixty-path cap, and the per-path write cost. The code backs collisions.md. 09-01.
+
+- `skills/fankeel/SKILL.md` shows a stage change as `▌FANKEEL DESIGN` — [docs/statusline.md](docs/statusline.md). That render needs TokenBar to promote `fankeel.lead`; alone it is a bare word. 09-01.
 
 - `docs/registry.md` names only creation as writing `.fankeel/.gitignore` — [scripts/map.js](scripts/map.js), whose `keepIgnored` adds `map.md` and `build/` later. 09-01.
 

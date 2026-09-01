@@ -103,6 +103,11 @@ stage.
 "waited": { "survey": 240000 }
 ```
 
+`waited` is there for its shape and nothing else: no record has ever carried
+one, for the reason under **The pair meant to measure it** below.
+`skills/fankeel/SKILL.md` shows the same record without it, because that example
+is a record rather than a set of shapes.
+
 `burn` is tokens and `clock` is milliseconds, and they are the same shape for the
 same reason: the first sighting is gone the moment it is not written down, and
 one sighting is a position rather than a distance. Both report `null` for a stage
