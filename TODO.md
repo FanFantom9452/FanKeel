@@ -49,23 +49,9 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Ready
 
-- Run the `AskUserQuestion` `PreToolUse` probe — [hooks/gate.js](hooks/gate.js). Registration is installed; restart, ask one question, read `waited`. Any value at all means it fired. 09-01.
-
-- Pin the gap in [lib/dirty.js](lib/dirty.js) with a test that writes to a gitignored path and asserts `dirtyPaths` misses it. 16 tests and none does. 09-01.
-
 ## Needs a decision
 
-- Whether a wrong session id reaching a hook should stay silent — [lib/registry.js](lib/registry.js), `readSession`. `hooks/inject.js` documents the silence as deliberate. 08-26.
-
-- Whether `LINE_MAX` should be 100, a bound an 80-column terminal survives, or none at all — [scripts/task.js](scripts/task.js). 32 of 56 rows over it, median 68; 100 wraps 80 columns too. 09-01.
-
-- Break `docs-check.js`'s mechanical-only rule for a `path:line` that drifts while still resolving, or leave it — [scripts/docs-check.js](scripts/docs-check.js). Five drifted in one build. 09-01.
-
-- Whether `audit` joins `spike` and `bounded`, one of them, or neither — [lib/stages.js](lib/stages.js), `CLASSES`. A route-cost call; no amount of waiting produces the answer. 09-01.
-
-- Whether `fork`'s Adopt path gets the `live.isLive` guard `clear` already has, or its own — [hooks/carry.js](hooks/carry.js). `carry.js:60` skips live entries; `fork` is matched nowhere. 09-01.
-
-- Whether `survey.js` should match a data `const` — [scripts/survey.js](scripts/survey.js), `JS_PATTERNS`. Function-valued only: `CLASSES` and `LINE_MAX` both scan as nothing matched. 09-01.
+- Whether `hooks/gate.js` is deleted, kept for a future release, or replaced by a `resume.js`-only measure — [hooks/gate.js](hooks/gate.js). `PreToolUse` does not fire for `AskUserQuestion`. 09-01.
 
 ## Waiting
 
