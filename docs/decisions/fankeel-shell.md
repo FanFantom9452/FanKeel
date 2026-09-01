@@ -485,10 +485,12 @@ install, a task begun with `start` rather than `adopt`, one question asked, and
 `gateAt` read **while that question is still open**. Not `waited` after it —
 `gateOpen` stamps `gateAt` the moment the hook runs, so the stamp is `gate.js`
 firing and nothing else, where a missing `waited` also implicates `gateClose`,
-which has two paths that delete the stamp and write nothing. All of the evidence above is read from
-`.fankeel/sessions/` and from the installed plugin cache, neither version
-controlled, so it is an observation of one machine on one day rather than
-something a later reader can check out and re-run.
+which has two paths that delete the stamp and write nothing at all.
+
+All of the evidence above is read from `.fankeel/sessions/` and from the
+installed plugin cache, neither of which is version controlled, so it is an
+observation of one machine on one day rather than something a later reader can
+check out and re-run.
 
 Whether `fork` changes the session id. `hooks/carry.js` now runs on it, and the
 matcher is correct either way — the self-check at `:66` covers an unchanged id
