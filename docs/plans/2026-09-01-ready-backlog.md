@@ -248,8 +248,10 @@ stock is what `survey` is for, so it happens in the same turn — otherwise the 
 has been surveyed.
 ```
 
-The middle line is 113 characters, which is the defect commit `960bdd9` exists
-to prevent. Replace with:
+The middle line is 135 characters, which is the defect commit `960bdd9` exists
+to prevent. **Measure it with `wc -m`, not `awk`'s `length()`** — that line holds
+an em dash and a `▌`, so `awk` reports 140 bytes and the first draft of this plan
+recorded 113 from a byte-counting run. Replace with:
 
 ```
 first stage on the route, `survey` unless `--route` said otherwise, and taking
