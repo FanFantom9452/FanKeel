@@ -29,7 +29,7 @@ workspace/                     <- Claude Code opened here
 |---|---|---|
 | `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`, neither of which has ever been written |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
-| `.fankeel/.gitignore` | Yes | Created with the directory |
+| `.fankeel/.gitignore` | Yes | `lib/registry.js:199` creates it holding `sessions/` alone; `scripts/map.js:37` adds `build/` and `map.md`, on every map run rather than at creation |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
 | `~/.claude/modes/{session_id}/fankeel` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
 | `~/.claude/modes/{session_id}/fankeel.lead` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
@@ -78,11 +78,16 @@ when one task becomes the next. If a note still matters after the task lands, it
 was never a note, and `land` is where it moves to one of the four.
 
 A third field is written by nobody the user talks to. `claims` holds every file
-this task has edited — at most sixty, oldest dropped, each recorded whole and
-never truncated, because nothing here is a path a human retypes.
-Two hooks append to it, which is why the table above lists hooks rather than a
-command as its writer. `hooks/touch.js` adds a path the first time an edit lands
-on it. `hooks/inject.js` adds, once a prompt, every path git reports dirty whose
+this task has edited — at most sixty, each recorded whole and never truncated,
+because nothing here is a path a human retypes. The two writers reach that cap
+from opposite directions. A path arriving on its own drops the oldest to make
+room (`lib/registry.js:551`); a git pass holding more than sixty is refused
+whole rather than trimmed (`lib/dirty.js:173`), because trimming it would evict
+every claim an edit earned and put build output in its place.
+[collisions.md](collisions.md) is the page for that. Two hooks append to it,
+which is why the table above lists hooks rather than a command as its writer.
+`hooks/touch.js` adds a path the first time an edit lands on it.
+`hooks/inject.js` adds, once a prompt, every path git reports dirty whose
 mtime is later than the task's `started` — the writes that reached the disk
 without any tool a hook matches, a `sed` or a `node -e` or a build script. Which
 of the two recorded a path is not distinguishable afterwards and does not need to
@@ -357,9 +362,12 @@ another session's, and never deletes one.
 Writing the file is atomic — a sibling, then a rename — but reading it, changing
 one field and writing it back is not, and that is what every writer here does.
 Four of them are registered in hooks and three have ever run. `inject.js` writes
-on every prompt — twice over, once for the claims git found and once for
-`updated` — in every session on the machine. `resume.js` writes once per
-answered question. `gate.js` would write once per question asked and never has,
+on every prompt — once for `updated`, and once more for every new path the git
+pass claims, since `lib/dirty.js:180` calls `addClaim` per path and each one
+takes the lock — in every session on the machine. That second number is usually
+zero after a task's first prompt, because `covers` skips a path already held.
+`resume.js` writes once per answered question. `gate.js` would write once per
+question asked and never has,
 for the reason above — so three writers contend here today, and four if it ever
 runs.
 
