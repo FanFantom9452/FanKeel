@@ -400,6 +400,15 @@ unreported, and that is the trade: this tool's findings are worth acting on
 because none of them is a guess, and one heuristic is enough to make a reader
 check the next twenty by hand.
 
+Two more drifted while this was being decided, which is the argument demonstrated
+rather than asserted. `docs/registry.md` cited the liveness check as
+`carry.js:60`; the commit that added the citation also added five lines of
+comment above it, and the check went to `:67`. A commit message cited
+`scripts/task.js:317` for `LINE_MAX` when a sibling commit had already put it at
+`:323`. Both resolve. Both name a real file and a line that exists. `docs-check`
+exited 0 over each of them, twice, on the branch that wrote this section — and a
+reader found both.
+
 ## What is still a guess
 
 The stage list. Five, named for what they produce, is a first cut; whether
