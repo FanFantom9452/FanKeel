@@ -53,6 +53,16 @@ test('a local lowercase const is not reported as a declaration', () => {
   assert.doesNotMatch(run(root, 'widget'), /widgetCount/);
 });
 
+// The filter narrows by naming case, not by scope — a line-based scanner has
+// no way to see scope at all. A function-local `UPPER_SNAKE` const is reported
+// on purpose: a name shouted in capitals is a constant a reader plausibly came
+// looking for, and the noise the narrowing exists to keep out is the ordinary
+// lowercase local above, not this.
+test('an UPPER_SNAKE const declared inside a function is still reported', () => {
+  const root = repo({ 'lib/a.js': 'function f() {\n  const WIDGET_MAX = 5;\n  return WIDGET_MAX;\n}\n' });
+  assert.match(run(root, 'widget'), /WIDGET_MAX/);
+});
+
 test('a class is found', () => {
   const root = repo({ 'lib/a.ts': 'export class WidgetStore {}\n' });
   assert.match(run(root, 'widget'), /WidgetStore/);

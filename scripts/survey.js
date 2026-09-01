@@ -53,10 +53,13 @@ const JS_PATTERNS = [
     // `LINE_MAX` in this repository both scanned as nothing matched, which in a
     // tool that reports a miss as a finding is a wrong answer and not a thin one.
     //
-    // Not every `const`: that would make a declaration of each local variable,
-    // and the report is capped, so the noise would bury the hits it was widened
-    // to find. A module-level data constant in camelCase stays invisible, and
-    // that is the price of the line above.
+    // Not every `const`: the filter narrows by naming case, not by scope,
+    // because nothing line-based can see scope. A `const LOCAL_MAX = 5` inside
+    // a function is reported, and that is accepted rather than overlooked — a
+    // name shouted in capitals is a constant a reader plausibly came looking
+    // for, and the noise the narrowing was for is the ordinary lowercase
+    // local. A module-level data constant in camelCase still stays invisible,
+    // and that is the price of the line above.
     /^\s*(?:export\s+)?const\s+([A-Z][A-Z0-9_]*)\s*=/,
 ];
 
