@@ -37,12 +37,17 @@ The section below says what a subagent is *not*. This is the other half.
 | **dispatch** | by default. Anything that would leave files, output or dead ends in the parent's context, where they are re-read on every later turn |
 | **do not** | only two cases — a pipe already removes the residue, or it is a single tool call. `npm test` is tens of thousands of characters and the two lines that decide it are 24; `grep` does that for nothing |
 
-A host that allows a subagent only on the user's own word is neither case:
-nothing removes the residue, and the work stays in the parent. It is not put to
-the user as a question either. The plan's `**Dispatch:**` lines read `in-session`
-with the reason stated once, the build reviewer runs in the session as a ruling
-recorded once, and step 5 of the fankeel-build skill says what that costs and how
-half of it is bought back.
+A user who has said, this session, not to dispatch is neither case: nothing
+removes the residue, and the work stays in the parent — for that session, and
+written down as that session's. The plan's `**Dispatch:**` lines read
+`in-session — the user said so this session` on Task 1 and `same reason as Task
+1` after it, the build reviewer runs in the session as a ruling recorded once,
+and step 5 of the fankeel-build skill says what that costs and how half of it is
+bought back. Nothing else settles it that way. The host gates one tool,
+**Workflow**, on the user's own words (`ultracode`), and that one is offered
+rather than launched; the **Agent** tool has no gate. A session that read *only
+when the user has opted in* off the wrong tool and stopped sending Agent readers
+had forbidden itself — 2026-09-01, and two builds ran in-session over it.
 
 Measured on 2026-08-26, one fan-out of four readers with a lens each: 240,881
 tokens spent inside them, about 4,000 characters returned, and 121 seconds rather

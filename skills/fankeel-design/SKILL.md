@@ -105,9 +105,9 @@ Then ask the user to read it, and wait.
 ```
 <the approach, one sentence>
 
-| file | change |
-|---|---|
-| path | what happens to it |
+| file | change | dispatch |
+|---|---|---|
+| path | what happens to it | implementer, sonnet — or in-session, with why |
 
 proves it done: <the test that fails now and passes after>
 against the map: <the page it touches, or "no conflict">
@@ -116,3 +116,13 @@ then AskUserQuestion
 ```
 
 Under 200 words. One approach, not a catalogue.
+
+The third column is the plan's `**Dispatch:**` line in its two forms —
+`implementer, <model>` with `sonnet` as the floor, or `in-session — <why>` — and
+the same two exceptions decide it: a pipe already removes the leftovers, or it
+is one tool call. Everything else is an implementer, and
+a row without one is a design failure, in the same list as a `change` cell that
+could not brief a stranger. `build` reads the cell and says how many go out and
+on which model, so the count is decided here and announced there. Rows that
+share no file and feed nothing to each other are `plan`'s work, not a wider
+table.

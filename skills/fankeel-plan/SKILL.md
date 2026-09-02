@@ -158,13 +158,15 @@ a BASE, reviews one range and marks one `complete <n>` per task; a dispatch
 spanning Tasks 4-5 has no shape it can record, and a half-finished batch leaves
 the ledger saying both are open.
 
-**A host that allows a subagent only on the user's own word settles the line for
-every task.** Each one reads `in-session`, with the reason written out on Task 1
+**A user who has said, this session, not to dispatch settles the line for every
+task.** Each one reads `in-session — the user said so this session` on Task 1
 and `same reason as Task 1` after it — that is where the implementer's half of
 the ruling is written, and the build loop reads it there rather than re-deriving
 it per task. Nothing goes out, so nothing is announced. The reviewer's half is
 recorded once in the ledger: step 5 of the fankeel-build skill has it, with what
-it costs and how to buy half of it back.
+it costs and how to buy half of it back. Nothing else settles the line that way:
+not a host, and not a tool's gate read as an instruction — the Agent tool has no
+gate, and the one on the Workflow tool is the Workflow tool's own.
 
 ## Steps are two to five minutes
 

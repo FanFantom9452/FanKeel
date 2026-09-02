@@ -172,20 +172,36 @@ test('the task loop marks its group language as the plan path', () => {
     'the loop marks the group language without saying what a no-plan route does instead');
 });
 
-// The rule above named the group in step 2 and stopped there, and step 2 is more
-// than its group: it opens on the task's `**Dispatch:**` line, and the four things
-// a dispatch carries include the path to the plan file with the task's number. A
-// `| file | change |` row has two columns and neither is a dispatch, so a bounded
-// reader arrives at an instruction whose input does not exist and a handover with
-// no file to hand over. `every other step of the loop is unchanged` said so twice
-// over. One rule at the head still, not a note per step.
-test('the task loop marks the rest of step 2, not only its group', () => {
+// A file-table row used to be run in session because it carried no
+// `**Dispatch:**` line at all. Now the third cell of a `| file | change |
+// dispatch |` row is that line, in the plan's own two forms, and the four
+// things a dispatch carries map onto the row the same way they map onto a
+// plan task. There is no report file on this path, because a no-plan route
+// keeps nothing on disk for one to land in.
+test('the task loop reads a no-plan row\'s dispatch cell where a plan\'s line would be', () => {
   const loop = /\n## The task loop\n[\s\S]*?\n## /.exec(read('fankeel-build'));
   assert.ok(loop, 'the task loop is not where this test looks for it');
-  assert.match(loop[0], /and\s+so\s+is\s+the\s+rest\s+of\s+step\s+2/,
-    'the marking stops at step 2 group and leaves its dispatch block on the no-plan path');
-  assert.match(loop[0], /implemented\s+in\s+session/,
-    'the loop marks step 2 as plan-only without saying what a no-plan row does instead');
+  assert.match(loop[0], /\| file \| change \| dispatch \|/,
+    'the task loop does not show the file table with its dispatch column');
+  assert.match(loop[0], /`change` cell is the whole\s+brief/,
+    'the task loop does not say the `change` cell is the whole brief');
+  assert.match(loop[0], /no report file/,
+    'the task loop does not say a no-plan route keeps no report file');
+});
+
+// The task loop above reads a dispatch cell that has to come from somewhere: the
+// design stage writes the file table a no-plan build works from, so its template
+// needs the same third column, both in the skill's own words and in the template
+// text `lib/stages.js` injects at land time — one drifting from the other would
+// leave a design that never produces a row a no-plan build can read.
+test('the design\'s file table carries a dispatch column, in the skill and in the injected template', () => {
+  assert.match(read('fankeel-design'), /\| file \| change \| dispatch \|/,
+    'fankeel-design does not show the file table with its dispatch column');
+  assert.match(read('fankeel-design'), /a row without one is a design failure/,
+    'fankeel-design does not say a row without a dispatch cell is a design failure');
+  const { templateFor } = require('../lib/stages.js');
+  assert.match(templateFor('design'), /\| file \| change \| dispatch \|/,
+    'the injected design template does not carry the dispatch column');
 });
 
 // Setup step 2 carries the no-plan branch and step 1 is route-neutral, which left
@@ -480,31 +496,46 @@ test('dispatching is the default and the two exceptions are named', () => {
   assert.match(docsText, /a single tool call/);
 });
 
-// Two builds on this repository ran under a host that allows a subagent only on
-// the user's own word — `docs/plans/2026-09-01-ready-backlog.md:90`, and the
-// process-state review that followed it — and each re-derived the same answer
-// from nothing: the reviewer runs in-session, as a ruling. Step 5 said "one
-// reviewer" and nothing about where, so the third session filed it as a
-// decision. The answer is written where the loop reads it; this pins that it
-// stays there.
-test('build says where the reviewer runs when the host will not let one be dispatched', () => {
-  const text = read('fankeel-build');
-  assert.match(text, /allows a subagent only on the user's own word/);
-  assert.match(text, /a ruling, not a stopper/);
-  // The plan is where the `in-session` decision is first written down, once,
-  // and the build loop reads it there rather than re-deriving it per task.
-  const plan = read('fankeel-plan');
-  assert.match(plan, /allows a subagent only on the user's own word/);
-  assert.match(plan, /same reason as Task 1/);
-  // The dispatch-by-default section names exactly two exceptions, and this is
-  // not a third: nothing removes the leftovers. Both the skill and its mirror
-  // in docs/subagents.md say so, or one of them reads as a page half updated.
+// On 2026-09-01 a session read the Workflow tool's `ultracode` gate as though it
+// applied to the Agent tool too, stopped dispatching, and two builds ran in
+// session on that misreading. On 2026-09-02 the mistake was written down as a
+// property of the host — "a host that allows a subagent only on the user's own
+// word" — across four pages. The Agent tool has no gate; only Workflow does.
+// This test forbids that sentence from coming back, and pins the sentence that
+// replaced it: in-session is the user's call for that session, not the host's.
+test('in-session is the user\'s call for this session, never the host\'s', () => {
+  const texts = [read('fankeel'), read('fankeel-plan'), read('fankeel-build'),
+    fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8')];
+  for (const text of texts) {
+    assert.doesNotMatch(text, /allows a subagent only on the user's own word/,
+      'the host-property misreading is back in one of the four pages');
+    assert.match(text, /the user said so this\s+session/,
+      'a page is missing the sentence that replaced the host-property misreading');
+  }
   const top = read('fankeel');
-  assert.match(top, /allows a subagent only on the user's own word/);
-  assert.match(top, /not a third way/);
+  assert.match(top, /not a third way/,
+    'the skill no longer says this is not a third exception to dispatch-by-default');
+  assert.match(top, /has no\s+gate/,
+    'the skill does not say the Agent tool has no gate');
+  assert.match(top, /ultracode/,
+    'the skill does not name the Workflow tool\'s ultracode gate');
   const mirror = fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8');
-  assert.match(mirror, /allows a subagent only on the user's own word/);
-  assert.match(mirror, /neither case/);
+  assert.match(mirror, /neither case/,
+    'docs/subagents.md does not say neither case is a third exception');
+  assert.match(mirror, /has no\s+gate/,
+    'docs/subagents.md does not say the Agent tool has no gate');
+  assert.match(mirror, /ultracode/,
+    'docs/subagents.md does not name the Workflow tool\'s ultracode gate');
+  const plan = read('fankeel-plan');
+  assert.match(plan, /same reason as Task 1/,
+    'fankeel-plan does not point the decision back at the same reason as Task 1');
+  assert.match(plan, /has no\s+gate/,
+    'fankeel-plan does not say the Agent tool has no gate');
+  const build = read('fankeel-build');
+  assert.match(build, /a ruling, not a stopper/,
+    'fankeel-build does not call the reviewer location a ruling, not a stopper');
+  assert.match(build, /has no\s+gate/,
+    'fankeel-build does not say the Agent tool has no gate');
 });
 
 // A fourth rule landed in the bullet list without anybody touching the lead-in

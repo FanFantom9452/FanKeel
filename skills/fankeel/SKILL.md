@@ -794,12 +794,20 @@ the leftovers without a subagent** — and there are exactly two ways:
 
 Everything else is a dispatch, and several of them go out in one response.
 
-A host that allows a subagent only on the user's own word is not a third way:
-nothing removes the leftovers, and the work stays here. Nor is it a question to
-put to the user. The plan writes `in-session` on every `**Dispatch:**` line with
-the reason stated once, the build reviewer runs in this session as a ruling
-recorded once, and step 5 of the fankeel-build skill says what that costs and how
-half of it is bought back.
+A user who has said, this session, not to dispatch is not a third way: nothing
+removes the leftovers, and the work stays here — for this session, and written
+down as this session's. The plan writes `in-session — the user said so this
+session` on Task 1's `**Dispatch:**` line and `same reason as Task 1` after it,
+the build reviewer runs here as a ruling recorded once, and step 5 of the
+fankeel-build skill says what that costs and how half of it is bought back.
+Nothing else settles it that way — not a host, and not a tool's gate read as an
+instruction. This host gates one tool, **Workflow**, on the user's own words
+(`ultracode`), and that one is offered rather than launched; the **Agent** tool
+has no gate, and the Workflow tool's own description points at it for anything
+short of a workflow. A session that read *only when the user has opted in* off
+the wrong tool and stopped sending Agent readers had forbidden itself:
+2026-09-01, and two builds ran in-session over it before anyone checked which
+tool the sentence was about.
 
 The tempting version is to run whole stages in background agents to keep the
 context small. For one kind of work, measured on this repository, that is the

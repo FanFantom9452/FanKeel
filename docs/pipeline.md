@@ -443,7 +443,8 @@ response, the commit node staging a task's declared paths rather than an
 implementer's, and the `ledger complete` closing each task. A `bounded` or
 `spike` route reaches this stage without one, and then there is no ledger to open
 and no plan to scan: `design`'s file table is what the loop runs and what the
-report counts against, the commit stages the row's own `file` cell, the
+report counts against, the row's `dispatch` cell is read where a plan's
+`**Dispatch:**` line would be, the commit stages the row's own `file` cell, the
 completion line goes in the response and then the commit message, and the
 memory is a conversation again. Those rows run in order. Grouping is computed
 from a plan's `**Files:**` and `**Interfaces:**` blocks; a file table has

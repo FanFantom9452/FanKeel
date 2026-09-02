@@ -69,7 +69,7 @@ plan, which is what upgrading the route is for.
 
 **The rows run in order, one at a time.** Nothing groups them: `parseTasks`
 reads `### Task` headings and the `**Files:**` and `**Interfaces:**` blocks
-under them, so a two-column file table yields no tasks at all and `groups` has
+under them, so a file table of any width yields no tasks at all and `groups` has
 nothing to group. Teaching the table to declare its paths would not be enough
 either — with no `**Interfaces:**` block `Consumes` and `Produces` stay empty,
 so the shared-cause check has nothing to match and two rows on different files
@@ -108,7 +108,7 @@ dispatches against, and a compaction that takes it leaves you re-deriving which
 tasks were safe together from a plan you can no longer remember reading.
 
 **With no plan there is nothing here to scan.** Both rows of the table above
-compare things a `| file | change |` row does not carry — one pair of tasks
+compare things a file-table row does not carry — one pair of tasks
 against another's interfaces, one task's specified tests against its specified
 code — and there is no ledger to write it into either. Step 1 is route-neutral
 and step 2 carries its own branch, so this is the setup step a no-plan route
@@ -120,12 +120,18 @@ For each task the denominator does not list as complete:
 
 **Where there is no plan there are no groups.** Everything below that names one —
 the group in step 1's BASE rule, the whole group going out in step 2, the
-`groups` command itself — is the plan path, **and so is the rest of step 2**: a
-`| file | change |` row is two columns and neither of them is a `**Dispatch:**`
-line, so there is no model named and no plan file to hand a subagent. The row is
-implemented in session, and its `change` cell is what the dispatch block's four
-things would otherwise have carried. A no-plan route runs one row per pass, and
-every other step of the loop is unchanged.
+`groups` command itself — is the plan path. **The rest of step 2 is not**: a
+`| file | change | dispatch |` row carries its `**Dispatch:**` line in the
+third cell, in the same two forms, and the loop reads it there. The four things
+a dispatch carries become the task line with the row's place in the table, the
+row itself verbatim — its `change` cell is the whole brief, so a cell that could
+not brief a stranger is a design failure — the design's `proves it done` line in
+place of Global Constraints, and a return contract in place of a report path: a
+status line, the paths written and one line on the tests, with no report file
+because a no-plan route keeps nothing on disk. The implementer does not commit;
+step 4 stages the paths in the row's `file` cell, which may name more than one,
+and step 5 reviews the range as it would a task's. A no-plan route runs one row
+per pass, and every other step of the loop is unchanged.
 
 1. Record `git rev-parse HEAD` as BASE — **immediately before this task's
    commit, not when its group went out.** The tasks in a group that committed
@@ -201,19 +207,21 @@ every other step of the loop is unchanged.
    the review is read-only over a fixed range, so it may run while the next task
    is being implemented.
 
-   **When the host allows a subagent only on the user's own word**, the reviewer
-   runs here, in this session. That is a ruling, not a stopper: the four things
-   that stop the loop are listed below, and a dispatch the host refuses is not
-   among them. Record it once — at the top of the ledger, or in the response
-   where a `bounded` task puts its rulings — not once per task; the plan's
-   `**Dispatch:**` lines already read `in-session` for the same reason. What it
-   costs is independence: a reviewer sharing this context shares its blind
-   spots. Buy back the half that can be bought — every `path:line` the change
-   cites is checked by a command against the file, never by re-reading the prose
-   that wrote it. Two builds here ran this way,
+   **When the user has said, this session, not to dispatch**, the reviewer runs
+   here, in this session. That is a ruling, not a stopper: the four things that
+   stop the loop are listed below, and a dispatch the user declined is not among
+   them. Record it once — at the top of the ledger, or in the response where a
+   `bounded` task puts its rulings — not once per task; the plan's
+   `**Dispatch:**` lines already read `in-session — the user said so this
+   session` for the same reason. What it costs is independence: a reviewer
+   sharing this context shares its blind spots. Buy back the half that can be
+   bought — every `path:line` the change cites is checked by a command against
+   the file, never by re-reading the prose that wrote it. Nothing but the user
+   settles it this way. Two builds here ran in-session,
    `docs/plans/2026-09-01-ready-backlog.md` and then
-   `docs/reports/2026-09-02-process-state-review.md`, and the ruling read the
-   same in both.
+   `docs/reports/2026-09-02-process-state-review.md`, on a session that had
+   read the Workflow tool's `ultracode` gate as the Agent tool's; the Agent tool
+   has no gate, and both would have dispatched.
 6. Fix rounds are bounded at **five**. A finding you overrule is a ruling, not a
    silence.
 
