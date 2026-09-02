@@ -110,10 +110,12 @@ test('every exported name is imported by something', () => {
 });
 
 // `contractOf` in `lib/docs.js` reads three frontmatter keys and no others, and
-// `docs-check` never opens a frontmatter block at all — its two passes are body
-// links and body code spans. So a repository path written into a fourth key has
-// no reader anywhere, and therefore no feedback: it can rot for as long as
-// nobody happens to follow it by hand.
+// `docs-check` does not parse frontmatter at all — it scans the whole file for
+// markdown links and code spans, that block included, and a bare path is
+// neither. So a bare path written into a fourth key has no reader and no
+// checker, and can rot for as long as it takes somebody to follow it by hand.
+// A link written into a key is checked like any other, which is why the filter
+// below is shape and not location: it is the bare ones that go unwatched.
 //
 // One did. `amends:` on a plan went on naming `docs/plans/` after its target had
 // moved to `docs/archive/`, and the move was silent in both directions — the
