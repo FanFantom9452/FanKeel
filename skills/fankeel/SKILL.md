@@ -1,7 +1,7 @@
 ---
 name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
-version: 0.40.0
+version: 0.41.0
 status: current
 last_verified: 2026-09-03
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js
