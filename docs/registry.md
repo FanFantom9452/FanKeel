@@ -27,7 +27,7 @@ workspace/                     <- Claude Code opened here
 
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`, neither of which either hook has ever been seen to write |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited` — first seen written by them 2026-09-02, in a process started after the manifest carried `gate.js` |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | `lib/registry.js:200` creates it holding `sessions/` alone; `scripts/map.js:37` adds `build/` and `map.md`, on every map run rather than at creation |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
@@ -134,67 +134,41 @@ than one gate and what is worth knowing is their sum. A gate that opened and was
 answered inside one millisecond still adds its zero: leaving it out would read,
 downstream, exactly like a stage that never opened one.
 
-**The pair that should measure it is `PreToolUse`/`PostToolUse` on
-`AskUserQuestion`, and the first half has never once run.** `hooks/gate.js` is
-registered on `PreToolUse`; `gateAt` has never been stamped by it, so
-`gateClose` has never had a stamp from it to fold in. The second half does run —
-`hooks/resume.js` writes `clock` and `updated` from every answered question —
-which is what rules out a path or a permission fault. Three sessions since the
-file landed stamped no `gateAt`: one four stages deep with `clock` and `burn` in
-the same file, and one three gates deep on 2026-09-02 with a `clock` entry for
-each of the three stages beside the silence.
+**The pair that measures it is `PreToolUse`/`PostToolUse` on
+`AskUserQuestion`, and both halves run — in a process that started after the
+manifest carried `hooks/gate.js`.** The first `waited` a hook wrote in this
+repository landed 2026-09-02: session `922c64a8`, `{"design": 20828}`, one gate
+stamped by `gate.js` and folded in by `resume.js` twenty seconds later. The same
+day's [process-state review](reports/2026-09-02-process-state-review.md) found
+a `gateAt` the hook had stamped in a neighbouring project's registry, in a
+process begun eight hours after the install.
 
-**Why it has not run is not settled**, and there are two candidates.
+**Why it was silent for two days is settled, and it is the registration.**
+Claude Code reads its hook list once, at process start, so a `plugin.json` that
+gains an entry afterwards registers nothing in that process until it restarts —
+and `/clear` starts a session without starting a process. The process that ran
+this work began 2026-08-31 23:55:39, two hours before the manifest carrying the
+entry; every session it opened from then on, three of them under `/clear`, ran
+`resume.js` at every answer and `gate.js` at none, while a fixture control ran
+`gateOpen` against a scratch registry and the stamp appeared. The entry being
+plainly there in the installed manifest is what made this easy to talk oneself
+out of: being there is not the same as being loaded.
 
-The first is that `PreToolUse` does not fire for `AskUserQuestion` at all — the
-event simply never arrives, and the hook is registered against nothing.
+**It is silent no longer.** `hooks/resume.js` reads the record after the answer
+and before it closes the gate, so a record with no `gateAt` at that moment is a
+`PreToolUse` that did not run, and the short block it sends back carries one
+`gate:` line saying so — that `waited` will stay empty for as long as the process
+lives, and that a restart is what loads the hook. It reads `gateAt` rather than
+`waited`, because `gateClose` returns success without writing when the record has
+no `stage` or the interval comes out negative, so a missing `waited` is two hooks
+confounded where a missing `gateAt` is one. It is stateless, like `context:` —
+sent at every answer, and the skill says to pass it on once. Nothing else could
+have noticed: `waitedOf` hides an absent total exactly the way it hides a stage
+that opened no gate.
 
-The second is that the registration was never live. Claude Code reads its hook
-list at the start of something, so a `plugin.json` that gained an entry
-afterwards registers nothing until the next one. This is the one that is easy to
-talk yourself out of, because the entry is plainly there in the installed
-manifest — and being there is not the same as being loaded.
-
-Whether that "something" is the process or the session is the whole question, and
-nothing here answers it outright. The process that ran this work began 2026-08-31
-23:55:39, two hours before the manifest carrying the entry, so on the process
-reading the entry was never live. But the session inside it began well after,
-and `/clear` starts a session without starting a process, so on the session
-reading it should have been. The two readings point opposite ways and no page in
-this repository says which one holds.
-
-What is settled is that the two candidates cannot both be innocent. A session
-begun by `/clear` on 2026-09-02, 22 hours after the install, opened three gates
-with an active record and stamped no `gateAt` at any of them, while `resume.js`
-wrote a `clock` entry for all three stages beside it. A fixture control ran
-`gateOpen` against a scratch registry the same day and the stamp appeared, so
-the silence is an absence rather than a blind read. That rules out the
-**conjunction** — session-scoped reload together with a `PreToolUse` that fires
-— and nothing finer, because either candidate being false explains the silence
-on its own.
-
-**What would settle it**, and nothing short of it: a Claude Code **process**
-started after the install — the stronger of the two readings, so it answers
-whichever one is right. Then ask one question and, **while it is still on screen,
-read `gateAt`.** Since the run above, that one probe closes both candidates. A
-`gateAt` there proves the event fires, which leaves the reload as the only thing
-the `/clear` silence can be; no `gateAt` there proves the event never arrives,
-and the reload scope stops mattering.
-
-How the task was started does not matter, which is worth saying because an
-earlier version of this required `start` over `adopt`. That was a condition for
-reading `waited`, which `adopt` carries across. It does not carry a `gateAt`:
-that is an interval with one end, and the next answer in the adopting session
-would close it against a stamp from another one. Reading the field that answers
-the narrow question also removed the condition that was guarding the wide one.
-
-Read `gateAt` and not `waited`, because they answer different questions.
-`gateOpen` stamps `gateAt` the instant the hook runs, before anyone has answered,
-so its presence is `gate.js` firing and nothing else. `waited` needs `gateClose`
-to run too, and `gateClose` deletes the stamp and returns success without writing
-anything when the record has no `stage`, and again when the interval comes out
-negative — so a missing `waited` after the answer is two hooks confounded, where
-a `gateAt` seen mid-question is one. It is in [TODO.md](../TODO.md).
+`adopt` carries `waited` across and not `gateAt`: that is an interval with one
+end, and the next answer in the adopting session would close it against a stamp
+from another one.
 
 `Stop` was the obvious alternative and is the wrong one, which is why the pair
 was built this way and why replacing it is not simply a matter of moving to
