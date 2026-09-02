@@ -39,9 +39,9 @@ promoted cheaply and why it cannot be relied on today.
 
 ## Two recorded decisions this reopens, and on what ground
 
-Both were decided in [docs/archive/2026-08-26-dispatch-design.md](docs/archive/2026-08-26-dispatch-design.md),
-and this plan amends them. Neither is a gap: both were decided, written down, and
-are being amended rather than ignored.
+Neither is a gap. Both were decided in
+[docs/archive/2026-08-26-dispatch-design.md](docs/archive/2026-08-26-dispatch-design.md),
+written down, and are being amended rather than ignored.
 
 ### Batching, rejected in the fifth review
 
