@@ -784,6 +784,13 @@ the leftovers without a subagent** — and there are exactly two ways:
 
 Everything else is a dispatch, and several of them go out in one response.
 
+A host that allows a subagent only on the user's own word is not a third way:
+nothing removes the leftovers, and the work stays here. Nor is it a question to
+put to the user. The plan writes `in-session` on every `**Dispatch:**` line with
+the reason stated once, the build reviewer runs in this session as a ruling
+recorded once, and step 5 of the fankeel-build skill says what that costs and how
+half of it is bought back.
+
 The tempting version is to run whole stages in background agents to keep the
 context small. For one kind of work, measured on this repository, that is the
 wrong tool for the thing it is aimed at:

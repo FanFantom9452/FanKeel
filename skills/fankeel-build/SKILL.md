@@ -193,6 +193,20 @@ every other step of the loop is unchanged.
    `.fankeel/map.md` — never a paste of the session's history. Pinned that way
    the review is read-only over a fixed range, so it may run while the next task
    is being implemented.
+
+   **When the host allows a subagent only on the user's own word**, the reviewer
+   runs here, in this session. That is a ruling, not a stopper: the four things
+   that stop the loop are listed below, and a dispatch the host refuses is not
+   among them. Record it once — at the top of the ledger, or in the response
+   where a `bounded` task puts its rulings — not once per task; the plan's
+   `**Dispatch:**` lines already read `in-session` for the same reason. What it
+   costs is independence: a reviewer sharing this context shares its blind
+   spots. Buy back the half that can be bought — every `path:line` the change
+   cites is checked by a command against the file, never by re-reading the prose
+   that wrote it. Two builds here ran this way,
+   `docs/plans/2026-09-01-ready-backlog.md` and then
+   `docs/reports/2026-09-02-process-state-review.md`, and the ruling read the
+   same in both.
 6. Fix rounds are bounded at **five**. A finding you overrule is a ruling, not a
    silence.
 

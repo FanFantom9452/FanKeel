@@ -480,6 +480,33 @@ test('dispatching is the default and the two exceptions are named', () => {
   assert.match(docsText, /a single tool call/);
 });
 
+// Two builds on this repository ran under a host that allows a subagent only on
+// the user's own word — `docs/plans/2026-09-01-ready-backlog.md:90`, and the
+// process-state review that followed it — and each re-derived the same answer
+// from nothing: the reviewer runs in-session, as a ruling. Step 5 said "one
+// reviewer" and nothing about where, so the third session filed it as a
+// decision. The answer is written where the loop reads it; this pins that it
+// stays there.
+test('build says where the reviewer runs when the host will not let one be dispatched', () => {
+  const text = read('fankeel-build');
+  assert.match(text, /allows a subagent only on the user's own word/);
+  assert.match(text, /a ruling, not a stopper/);
+  // The plan is where the `in-session` decision is first written down, once,
+  // and the build loop reads it there rather than re-deriving it per task.
+  const plan = read('fankeel-plan');
+  assert.match(plan, /allows a subagent only on the user's own word/);
+  assert.match(plan, /same reason as Task 1/);
+  // The dispatch-by-default section names exactly two exceptions, and this is
+  // not a third: nothing removes the leftovers. Both the skill and its mirror
+  // in docs/subagents.md say so, or one of them reads as a page half updated.
+  const top = read('fankeel');
+  assert.match(top, /allows a subagent only on the user's own word/);
+  assert.match(top, /not a third way/);
+  const mirror = fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8');
+  assert.match(mirror, /allows a subagent only on the user's own word/);
+  assert.match(mirror, /neither case/);
+});
+
 // A fourth rule landed in the bullet list without anybody touching the lead-in
 // that counts it, and nothing went red: "Three rules" sat above four bullets for
 // a whole build, and docs/subagents.md's mirror of the same list still said

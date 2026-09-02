@@ -49,9 +49,10 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Ready
 
-- Probe `PreToolUse` on `AskUserQuestion` — [hooks/gate.js](hooks/gate.js). Needs Claude Code **restarted** since the manifest; `/clear` is ruled out. Read `gateAt` while the question is open. 09-02.
 
 ## Needs a decision
+
+- gateClose 找不到 gateAt 時要不要講 — [hooks/resume.js](hooks/resume.js):54。hook 註冊是 per-session，啟動早於 manifest 的 session 那半邊不跑，waited 就永遠空著且無聲。resume.js 跑得到，是唯一能發現的地方。
 
 
 ## Waiting
