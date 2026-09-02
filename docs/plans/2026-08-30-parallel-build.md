@@ -172,7 +172,7 @@ disappears silently.
 // Which of a plan's tasks may be implemented at the same time.
 //
 // Two objections stood against parallel implementers and only one of them is
-// about filenames. `docs/plans/2026-08-26-dispatch-design.md` records both:
+// about filenames. `docs/archive/2026-08-26-dispatch-design.md` records both:
 // they collide in the same files, and — the half a filename cannot see — "the
 // interference test is not file overlap. It is shared resources and shared
 // causes." A producer/consumer edge is a shared cause, it is already written in
@@ -574,7 +574,7 @@ as a file this task owns.
    fan-out beats parallel dispatches* if it now reads as contradicting the
    predicates.
 
-4. `docs/plans/2026-08-26-dispatch-design.md` has role `plan` and is marked
+4. `docs/archive/2026-08-26-dispatch-design.md` has role `archive` and is marked
    *built, 0.32.0*. **Do not edit its argument.** Its "Never two implementers in
    parallel" row is a record of what was decided then; the amendment lives in
    this plan's design, whose frontmatter names it.

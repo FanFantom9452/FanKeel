@@ -840,8 +840,9 @@ Five rules that make it work, each of which fails silently when missed:
 
 - **Several dispatches in one response run at once.** One per response runs them
   in sequence — the cost of parallelism with none of it.
-- **Always pass the model.** An omitted model inherits this session's, which is
-  usually the most capable and most expensive one available.
+- **Always pass the model, and `sonnet` is the floor.** An omitted model
+  inherits this session's, which is usually the most capable and most
+  expensive one available.
 - **Say how many, and on which model.** In the response that sends them, not
   after they come back. A fan-out is spend the user is paying for and cannot see
   coming, and for a long time `survey` was the only stage that said it — which
