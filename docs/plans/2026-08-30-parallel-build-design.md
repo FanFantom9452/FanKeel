@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-08-30
+last_verified: 2026-09-03
 source_of_truth: lib/plantasks.js, scripts/ledger.js, skills/fankeel-build/SKILL.md, skills/fankeel-plan/SKILL.md
 ---
 
