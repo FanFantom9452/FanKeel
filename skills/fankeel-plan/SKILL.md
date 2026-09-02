@@ -3,7 +3,7 @@ name: fankeel-plan
 description: The plan stage — decompose an approved design into tasks someone with no context could execute, with constraints generated from the project rather than remembered. Use for the plan stage of a fankeel task, writing an implementation plan, or breaking a spec into tasks before any code is written.
 version: 0.41.0
 status: current
-last_verified: 2026-08-30
+last_verified: 2026-09-03
 source_of_truth: lib/stages.js, scripts/map.js
 ---
 

@@ -67,3 +67,4 @@ entry waited for actually happening. It shrinks when somebody reads it.
 - Whether the pairs [scripts/docs-audit.js](scripts/docs-audit.js) picks are worth reading — `LANDMARK = 4` is the filter that decides. 4 of 28 read once, none of them wrong. 09-01.
 - Whether `fanoutSync`'s all-or-nothing payload ever costs anything — [lib/tracked.js](lib/tracked.js). One 64MB overflow discards every answer and re-reads all thirty serially. 09-01.
 - Whether the day arithmetic slips a day across a DST transition — [scripts/todo-check.js](scripts/todo-check.js). Matches `docs-audit.js`'s `daysBetween`; no DST here. 09-01.
+- Whether a bounded build reads the `dispatch` cell — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md), the no-plan paragraph. Model behaviour; the first bounded build is the test. 09-03.
