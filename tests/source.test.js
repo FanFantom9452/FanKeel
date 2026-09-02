@@ -1,8 +1,8 @@
 'use strict';
 
-// Two facts about this repository's own source that no behavioural test would
-// catch, because neither one changes what anything does. Both were found by
-// reading rather than by running, and both grow back without a word.
+// Three facts about this repository's own source that no behavioural test would
+// catch, because none of them changes what anything does. All three were found
+// by reading rather than by running, and all three grow back without a word.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -10,10 +10,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
+const { PATHISH, resolveRef } = require('../scripts/docs-check.js');
+
 const ROOT = path.join(__dirname, '..');
 
-const tracked = () =>
-    execFileSync('git', ['ls-files', '*.js'], { cwd: ROOT, encoding: 'utf8' })
+const tracked = (glob = '*.js') =>
+    execFileSync('git', ['ls-files', glob], { cwd: ROOT, encoding: 'utf8' })
         .split(/\r?\n/)
         .filter(Boolean);
 
@@ -105,4 +107,59 @@ test('every exported name is imported by something', () => {
     }
 
     assert.deepEqual(orphans, [], 'exported, and imported by nothing');
+});
+
+// `contractOf` in `lib/docs.js` reads three frontmatter keys and no others, and
+// `docs-check` does not parse frontmatter at all — it scans the file for
+// markdown links and code spans, that block included, and a bare path is
+// neither. So a bare path written into a fourth key has no reader and no
+// checker, and can rot for as long as it takes somebody to follow it by hand.
+// A link or a backticked path written into a key is checked like any other,
+// which is why the filter below is shape and not location: it is the bare ones
+// that go unwatched.
+//
+// One did. `amends:` on a plan went on naming `docs/plans/` after its target had
+// moved to `docs/archive/`, and the move was silent in both directions — the
+// checker that would have caught the same path in the body could not see it, and
+// nothing else was looking. What makes it worth a test rather than a fix is that
+// the key cost nothing to invent and would cost nothing to invent again.
+//
+// A key holding prose is not the failure and is not flagged: `name`,
+// `description` and `version` all carry text nobody could follow, and this
+// repository is deliberately tolerant about frontmatter vocabulary. What is
+// caught is the narrower shape — something that looks followable, resolves
+// today, and is checked by nothing.
+const READ_KEYS = new Set(['status', 'last_verified', 'source_of_truth']);
+const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?(?:\n|$)/;
+
+test('no frontmatter key nothing reads carries a repository path', () => {
+    const guilty = [];
+
+    for (const rel of tracked('*.md')) {
+        const block = FRONTMATTER.exec(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
+        if (!block) continue;
+
+        for (const line of block[1].split(/\r?\n/)) {
+            const kv = /^([A-Za-z][\w-]*)\s*:\s*(.*)$/.exec(line);
+            if (!kv || READ_KEYS.has(kv[1].toLowerCase())) continue;
+
+            // A value is a list of words, and any one of them can be the path —
+            // the key that rotted wrote a sentence after its own.
+            for (const word of kv[2].split(/[\s,]+/)) {
+                // A backticked value is a code span and a bracketed one is a
+                // link, and `docs-check` scans both inside the frontmatter
+                // block exactly as it does in the body. Stripping the backticks
+                // and flagging what is underneath would report a path somebody
+                // formatted correctly, which is the one finding that would get
+                // this test deleted. Only the bare ones go unwatched.
+                if (word.includes('`')) continue;
+                const ref = word.replace(/^["']+|["'.]+$/g, '');
+                if (!ref || !PATHISH.test(ref)) continue;
+                if (resolveRef(ROOT, rel, ref) === null) continue;
+                guilty.push(rel + ' — ' + kv[1] + ': ' + ref);
+            }
+        }
+    }
+
+    assert.deepEqual(guilty, [], 'a path here is read by nothing, so nothing catches it rotting');
 });

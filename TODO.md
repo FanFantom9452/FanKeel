@@ -51,8 +51,6 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Needs a decision
 
-- Whether `amends:` should be validated or dropped — [scripts/docs-check.js](scripts/docs-check.js). One use; nothing in `lib/` or `scripts/` reads it, so its path rotted unnoticed.
-
 ## Waiting
 
 - Whether a flag a verb ignores should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses the same value. None observed. 09-01.
