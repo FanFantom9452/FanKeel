@@ -3,7 +3,7 @@ name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.40.0
 status: current
-last_verified: 2026-09-02
+last_verified: 2026-09-03
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js
 ---
 
@@ -277,7 +277,7 @@ that is not on the route, and `task.js route` changes the route when the task
 turns out to be a different shape than it looked.
 
 A fixed route made the progress indicator lie in both directions — a two-stage
-task sat at 2 of 7 looking permanently unfinished, and a long one got no credit
+task sat at 2 of 5 looking permanently unfinished, and a long one got no credit
 for the stages it invented. The route is what `●●●○○` on the statusline counts.
 
 **Before the terms, the tree.** `orient` has already listed the directories, the

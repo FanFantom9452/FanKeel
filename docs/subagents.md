@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-01
+last_verified: 2026-09-03
 source_of_truth: hooks/brief.js, lib/render.js, hooks/carry.js, lib/plantasks.js
 ---
 
@@ -104,9 +104,10 @@ one writer. What decides whether a *pair* may overlap is three predicates,
 computed from the plan rather than judged. A task that declared no
 `Files: Modify` at all conflicts with everything, because nothing declared is
 not the same as nothing shared. Past that, tasks in one group have disjoint
-`Files: Modify` lists, and neither's `Consumes` names anything the other
-`Produces` — the half file overlap alone cannot see. The two halves fail
-opposite ways on purpose, and `conflict()` in `lib/plantasks.js` carries why:
+`Files:` lists, `Modify` and `Test` compared every way round, and neither's
+`Consumes` names anything the other `Produces` — the half file overlap alone
+cannot see. The two halves fail opposite ways on purpose, and `conflict()` in
+`lib/plantasks.js` carries why:
 an empty `Files:` is a task nobody finished writing, where an empty `Consumes`
 or `Produces` is an answer plans give constantly — the first task of one
 consumes nothing and the last produces nothing.

@@ -1,6 +1,6 @@
 ---
-status: current
-last_verified: 2026-08-30
+status: archived
+last_verified: 2026-09-03
 source_of_truth: lib/tracked.js, lib/fanout.js
 ---
 

@@ -49,6 +49,8 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Ready
 
+- The lead line gets `word: 'clash'` where the stage belongs — [scripts/task.js](scripts/task.js), `showBadge` sends one word to both writers. `hooks/inject.js:203` is the shape to copy.
+
 ## Needs a decision
 
 ## Waiting

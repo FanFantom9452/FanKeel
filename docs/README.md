@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-02
+last_verified: 2026-09-03
 source_of_truth: this file is the index; each page below is its own source
 ---
 
@@ -35,8 +35,6 @@ here.
 | When a scripted fan-out beats parallel dispatches, and why you may offer one but not start it | [subagents.md](subagents.md) — *the one thing four dispatches cannot do* |
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
 | Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
-| Why the thirty spawns a walk makes were left synchronous | [plans/2026-08-30-tracked-concurrency-design.md](plans/2026-08-30-tracked-concurrency-design.md) — *built* |
-| How that is being built, task by task | [plans/2026-08-30-tracked-concurrency.md](plans/2026-08-30-tracked-concurrency.md) — *built* |
 | Why two implementers can now run at once without their commits colliding | [plans/2026-08-30-parallel-build-design.md](plans/2026-08-30-parallel-build-design.md) — *built* |
 | How that was built, task by task | [plans/2026-08-30-parallel-build.md](plans/2026-08-30-parallel-build.md) — *built* |
 | Which `## Waiting` entries had stopped waiting, and what closed them | [plans/2026-08-31-todo-waiting-backlog.md](plans/2026-08-31-todo-waiting-backlog.md) — *built* |
