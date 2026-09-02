@@ -54,8 +54,6 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 - gateClose 找不到 gateAt 時要不要講 — [hooks/resume.js](hooks/resume.js):54。hook 註冊是 per-session，啟動早於 manifest 的 session 那半邊不跑，waited 就永遠空著且無聲。resume.js 跑得到，是唯一能發現的地方。
 
-- 主機禁止 dispatch 時 build 的 reviewer 怎麼辦 — [lib/stages.js](lib/stages.js)。:249 要求每任務一個 reviewer，:179 說 Never ask permission，但有些 session 的系統指示是使用者要求才能叫 subagent。c41cab3b 與本 session 都撞到。
-
 
 ## Waiting
 
