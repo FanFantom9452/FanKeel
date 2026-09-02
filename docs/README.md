@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-01
+last_verified: 2026-09-02
 source_of_truth: this file is the index; each page below is its own source
 ---
 
