@@ -496,6 +496,15 @@ test('build says where the reviewer runs when the host will not let one be dispa
   const plan = read('fankeel-plan');
   assert.match(plan, /allows a subagent only on the user's own word/);
   assert.match(plan, /same reason as Task 1/);
+  // The dispatch-by-default section names exactly two exceptions, and this is
+  // not a third: nothing removes the leftovers. Both the skill and its mirror
+  // in docs/subagents.md say so, or one of them reads as a page half updated.
+  const top = read('fankeel');
+  assert.match(top, /allows a subagent only on the user's own word/);
+  assert.match(top, /not a third way/);
+  const mirror = fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8');
+  assert.match(mirror, /allows a subagent only on the user's own word/);
+  assert.match(mirror, /neither case/);
 });
 
 // A fourth rule landed in the bullet list without anybody touching the lead-in
