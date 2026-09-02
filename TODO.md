@@ -49,8 +49,6 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Ready
 
-- `pointsAt` needs the STATE_DIR and trailing-slash guards `docs-check.js:220` has — [scripts/docs-audit.js](scripts/docs-audit.js). One example `.fankeel/sessions/` path hides a landed plan.
-
 ## Needs a decision
 
 - Whether `amends:` should be validated or dropped — [scripts/docs-check.js](scripts/docs-check.js). One use; nothing in `lib/` or `scripts/` reads it, so its path rotted unnoticed.
