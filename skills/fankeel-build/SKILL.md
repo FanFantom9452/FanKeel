@@ -170,6 +170,13 @@ every other step of the loop is unchanged.
    them, as each implementer returns. `git add` **exactly** that task's declared
    `Modify` and `Test` paths, then commit and take the sha.
 
+   The message is the skeleton `land` uses. `land` gets it injected; this
+   stage's injection has no room for it, so this paragraph is where `build`
+   reads it: `type: what changed` under 60 characters, one bullet per change
+   with the module it landed in, and one paragraph only for what a bullet
+   cannot hold. The next session's `init` reads those bullets before it reads
+   any code.
+
    Keep BASE and that sha together — step 7 records them as the task's review
    range, and they are the only durable record of where this task's diff begins
    and ends. Re-deriving them at `verify` means reading a log for a range the

@@ -666,3 +666,18 @@ test('the build skill moves the commit to the parent', () => {
   assert.match(text, /does not commit/);
   assert.match(text, /groups/);
 });
+
+// The commit skeleton is injected at land and not at build — build's injection
+// has no room, and a cap there is displaced into rather than raised — so the
+// only place build reads it is step 4 of its skill. `tests/stages.test.js` pins
+// land's injected copy; this pins the one build depends on, and the fence the
+// land skill shows.
+test('the build skill carries the commit skeleton its injection cannot', () => {
+  const step = /\n4\. Commit[\s\S]*?\n5\. /.exec(read('fankeel-build'));
+  assert.ok(step, 'step 4 of the build loop is not where this test looks for it');
+  const text = step[0].replace(/\s+/g, ' ');
+  assert.match(text, /`type: what changed` under 60 characters/);
+  assert.match(text, /one bullet per change with the module it landed in/);
+  assert.match(text, /one paragraph only for what a bullet cannot hold/);
+  assert.match(read('fankeel-land'), /\ntype: what changed, under 60 characters/);
+});

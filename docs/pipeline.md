@@ -677,11 +677,14 @@ to say so, which is what `shipped:` is for — one line per thing someone can no
 do, taken from the ledger's completed entries where the task had a plan and
 listed by hand where it did not.
 
-**The commit body is that same list.** The subject is why; the bullets are what
-shipped. They are the same material, and a commit that argues in paragraphs
-makes its reader reconstruct a list written twenty lines earlier — prose is for
-what a bullet cannot hold, a number or a cap or a decision that went the other
-way.
+**The commit body is that list rewritten for the next session.** `init` and
+`survey` read `git log` before they read any code, so the subject says what
+changed in under 60 characters, each bullet is one change and the module it
+landed in, and the one paragraph after them holds only what a bullet cannot — a
+number, a control, a decision that went the other way. `build` commits one task
+at a time with the same skeleton, read from step 4 of its skill because its
+injection has no room for the rule `land` carries. Asking for the reason
+instead came back as five paragraphs of it under a 107-character subject.
 
 Then option one stands the task down, and **`/clear` comes after that, never
 before**. A clear takes a new session id, so clearing first leaves the entry

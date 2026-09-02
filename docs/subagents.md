@@ -192,8 +192,8 @@ the person it was written for.
 ## What it deliberately is not
 
 - **Not the stage rules.** A subagent is not running the pipeline; it is doing one
-  bounded job inside somebody else's stage. "Commit the reason, not the diff" is
-  instructions for work it is not doing.
+  bounded job inside somebody else's stage. "One bullet per change, with its
+  module" is instructions for work it is not doing.
 - **Not a registry entry.** A subagent is not a session and does not own a task.
   Giving it one would put a second claimant on its own parent's files.
 - **Not a replacement for what compressing agents already do.** If a subagent

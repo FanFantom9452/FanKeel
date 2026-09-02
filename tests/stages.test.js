@@ -407,13 +407,21 @@ test('land names what shipped, and the order a clear comes in', () => {
   assert.match(templateFor('land'), /\nshipped:\n/);
 });
 
-// The report and the commit are the same material — what someone can now do that
-// they could not — and only the report was getting it. A commit message that
-// argues in paragraphs makes the reader reconstruct the list that was already
-// written twenty lines earlier.
-test('the commit body is the shipped list, not a paragraph about it', () => {
+// A commit is read by the next session's init before anyone reads the code, so
+// the body is a list that scans: one bullet per change with the module it
+// touched, under a subject that says what changed in under 60 characters, and
+// one paragraph for the one thing a bullet cannot hold. Land's rule asked for
+// the reason instead, and got five paragraphs of it under a 107-character
+// subject. `build` commits too, but its injection sits seven characters under
+// the cap in `tests/render.test.js`, so its copy rides step 4 of its skill —
+// `tests/skills.test.js` pins that one.
+test('land carries the commit skeleton, not a request for the reason', () => {
   const text = byName('land').rules.join(' ');
-  assert.match(text, /body is the shipped list, one bullet each/);
+  assert.match(text, /under 60 characters/);
+  assert.match(text, /one bullet per change/);
+  assert.match(text, /- <what changed> — <module>/);
+  assert.match(text, /one paragraph/);
+  assert.doesNotMatch(text, /Commit the reason/);
 });
 
 // Build is the one stage that does not stop at a question, so it is the one

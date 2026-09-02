@@ -79,22 +79,26 @@ was never a note:
 | why a change was made | the commit message |
 | work deliberately deferred | `TODO.md`, one line, under the heading for what it is short of — under `## Waiting`, ending with a `MM-DD` stamp, or `todo-check` fails the gate below |
 
-Commit the reason, not the diff — it is already in the commit. The subject is
-why; the body is the same `shipped:` list the report ends on, one bullet each:
+The commit is the same three parts every time, and `build` commits one task at a
+time with the same skeleton — injected here, and read from step 4 of its own
+skill there, because its injection has no room for the rule:
 
 ```
-<why this was done, one line>
+type: what changed, under 60 characters with the type
 
-- <what someone can now do that they could not>
-- <another>
+- <what changed> — <module or path>
+- <what changed> — <module or path>
 
-<anything the bullets cannot hold: a measurement, a cap, a ruling>
+<one paragraph, only for what a bullet cannot hold: a number, a control, a
+decision that went the other way>
 ```
 
-The report and the commit are the same material, and a commit that argues in
-paragraphs makes its reader reconstruct a list that was written twenty lines
-earlier. Prose is for what a bullet cannot hold — a number, a cap, a decision
-that went the other way.
+The bullets are the `shipped:` list rewritten for the next session's `init`,
+which reads `git log` before it reads any code: a capability in the report, a
+change and the module it landed in here. Asking for the reason instead came back
+as five paragraphs of it under a 107-character subject, and the reader had to
+reconstruct the list. The reason is the one paragraph, and only when a bullet
+cannot hold it.
 
 Standing the task down is the last thing, and `/clear` comes after it — never
 before. A `/clear` keeps the process and takes a **new** session id, so a clear
