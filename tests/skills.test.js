@@ -491,6 +491,11 @@ test('build says where the reviewer runs when the host will not let one be dispa
   const text = read('fankeel-build');
   assert.match(text, /allows a subagent only on the user's own word/);
   assert.match(text, /a ruling, not a stopper/);
+  // The plan is where the `in-session` decision is first written down, once,
+  // and the build loop reads it there rather than re-deriving it per task.
+  const plan = read('fankeel-plan');
+  assert.match(plan, /allows a subagent only on the user's own word/);
+  assert.match(plan, /same reason as Task 1/);
 });
 
 // A fourth rule landed in the bullet list without anybody touching the lead-in
