@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-03
-source_of_truth: 一組成對量測（`ab.sh`，2026-09-03，`HEAD 86a104e1bc87f7e82eec45cb84b6e32459a32402`）的直接輸出——`ab-provenance.txt` 與兩份 `claude -p --output-format json` 輸出 `arm-dispatch.json`、`arm-inline.json`；本頁每一個數字都可回溯到這三個檔案之一，本頁不會重新產生
+source_of_truth: 一組成對量測（`ab.sh`，2026-09-03，`HEAD 86a104e1bc87f7e82eec45cb84b6e32459a32402`）的直接輸出——`ab-provenance.txt`、兩份 `claude -p --output-format json` 輸出 `arm-dispatch.json`、`arm-inline.json`，以及確認 `--disallowedTools Agent` 移除的是工具本身的前導測試 `pilot-dispatch.json`、`pilot-inline.json`；本頁每一個數字都可回溯到這五個檔案之一，本頁不會重新產生
 ---
 
 # Dispatch 對 Inline 的成對量測 — 2026-09-03
@@ -34,7 +34,7 @@ Arm A（dispatch）：
 Arm B（inline）：
 > In the repository at F:/ymlab/fankeel, answer one question: which rules injected by lib/stages.js have no counterpart in the stage skill they belong to (skills/fankeel-<stage>/SKILL.md), and which rules does a stage skill state that lib/stages.js does not inject? Answer in at most 10 lines, one finding per line, every line anchored with a file:line. No preamble, no summary. Method you must use: read the files yourself in this session. Do not delegate any of the reading.
 
-拿掉 `Agent` 工具用的是 `--disallowedTools`，這移除的是工具本身，不是只擋呼叫——一次 pilot run 已確認：拿到這個旗標的 model 會回報找不到這個工具，不是被拒絕呼叫。
+拿掉 `Agent` 工具用的是 `--disallowedTools`，這移除的是工具本身，不是只擋呼叫——這一點有一組前導測試（`pilot-dispatch.json`、`pilot-inline.json`）為證：兩邊都是同一個極短的提問，要求「剛好 dispatch 一次 Agent」；拿到 `--disallowedTools Agent` 的那一份 `subagent_stats.spawned` 是 0，另一份是 1，而拿掉工具的那一份在 `result` 裡明講「No dispatch-capable `Agent` tool exists in this session」——講的是工具不存在，不是呼叫被拒絕。
 
 `ab-provenance.txt` 的 header，逐字：
 
@@ -45,11 +45,11 @@ porcelain:
 claude: 2.1.259 (Claude Code)
 ```
 
-（`porcelain:` 後面沒有任何一行，即乾淨樹。）
+（`porcelain:` 後面沒有任何一行，即乾淨樹。`date` 是 UTC；這次執行所在時區的本地時間是 2026-09-03 07:29，跟本頁標註的日期一致，不是打錯。）
 
 兩個 arm 實際上有沒有走上不同的方法，機械上的證明是 `subagent_stats.spawned`：Arm A 是 4，Arm B 是 0。這不是自我宣稱，是 `claude -p` 自己記的執行統計。
 
-兩份回答都經過人手核對，確認不是空轉：各自回傳 10 行，每行都以 `file:line` 收尾，抽出其中四個 anchor 手動打開檔案核對——`lib/stages.js:270`、`lib/stages.js:196`、`skills/fankeel-verify/SKILL.md:47`、`skills/fankeel-plan/SKILL.md:107`——四個都對得上。若其中一個 arm 是死的（例如工具被拒絕呼叫導致答非所問、或回傳空內容），這一對量測就作廢。
+兩份回答都經過人手核對，確認不是空轉：各自回傳 10 行，每行都帶著一個 `file:line` anchor，抽出其中四個 anchor 手動打開檔案核對——`lib/stages.js:270`、`lib/stages.js:196`、`skills/fankeel-verify/SKILL.md:47`、`skills/fankeel-plan/SKILL.md:107`——四個都對得上。若其中一個 arm 是死的（例如工具被拒絕呼叫導致答非所問、或回傳空內容），這一對量測就作廢。
 
 ## 3. 數字
 
@@ -65,7 +65,7 @@ claude: 2.1.259 (Claude Code)
 | `result` 字數 | 1,156 | 1,106 | ≈1.05× |
 | `num_turns` | 1 | 13 | — |
 
-`modelUsage` 的拆分：Arm A 的 2,541,508 tokens 由兩個 model 組成——`claude-sonnet-5` 2,140,264 tokens／US$1.4056（四個 subagent 讀者），`claude-opus-5` 401,244 tokens／US$0.8293（parent）；兩者相加正是 2,541,508 tokens、US$2.2350，與 `total_cost_usd` 的 2.2349645 一致。Arm B 全部由 `claude-opus-5` 產生：543,396 tokens／US$1.2091，與 `total_cost_usd` 的 1.2091465 一致。
+`modelUsage` 的拆分：Arm A 的 2,541,508 tokens 由兩個 model 組成——`claude-sonnet-5` 2,140,264 tokens／US$1.4056（四個 subagent 讀者），`claude-opus-5` 401,244 tokens／US$0.8293（parent）。token 的加總是精確值：2,140,264+401,244=2,541,508，跟 all-model tokens 的數字完全一致。金額的加總則是捨入後的結果：US$1.4056 加 US$0.8293 等於 US$2.2349，比 `total_cost_usd` 捨入到小數點後四位顯示的 US$2.2350 少 US$0.0001——差在兩個 model 的費用各自先捨入到四位小數才相加；用未捨入的原始值相加（1.4056294999999999+0.8293349999999999=2.2349644999999998）才精確對上 `total_cost_usd` 的 2.2349645。Arm B 全部由 `claude-opus-5` 產生：543,396 tokens／US$1.2091，與 `total_cost_usd` 的 1.2091464999999997 一致（只有一個 model，不涉及加總捨入）。
 
 ## 4. 結論
 
@@ -75,7 +75,7 @@ claude: 2.1.259 (Claude Code)
 
 **(a) `duration_ms` 嚴重低估 dispatch 這個 arm。** Arm A 的 `duration_ms` 是 45,586 ms，而 shell 量到的 wall-clock 是 280 秒（280,000 ms 量級）；`duration_api_ms`（679,764 ms）則是四個 subagent 的 API 時間總和，不是 wall-clock。如果只信 JSON 自己的 `duration_ms`（45,586 對 153,810），報告會說 dispatch 快了大約三倍——事實上它慢了 1.75 倍。wall-clock 必須從 process 外面用 shell 量，不能信 JSON 自報的欄位。
 
-**(b) `modelUsage` 與 `total_cost_usd` 確實把 subagent 的花費算進去了。** Arm A 的主執行緒 `usage` 只顯示 57,652 tokens，但 `modelUsage` 加總是 2,541,508 tokens——一個 fan-out真正的成本要看這個加總，而不是主執行緒自己的 `usage`。per-model 的拆分（`claude-sonnet-5` 對 `claude-opus-5`）正好把四個 sonnet 讀者跟 opus parent 的花費分開看。
+**(b) `modelUsage` 與 `total_cost_usd` 確實把 subagent 的花費算進去了。** Arm A 的主執行緒 `usage` 只顯示 57,652 tokens，但 `modelUsage` 加總是 2,541,508 tokens——一個 fan-out 真正的成本要看這個加總，而不是主執行緒自己的 `usage`。per-model 的拆分（`claude-sonnet-5` 對 `claude-opus-5`）正好把四個 sonnet 讀者跟 opus parent 的花費分開看。
 
 ## 6. 這一對沒有回答的
 
@@ -132,4 +132,4 @@ exit=0 shell_seconds=160
 done
 ```
 
-[回索引](../README.md) · [回首頁](../../README.md)
+[Back to the index](../README.md) · [Back to the front page](../../README.md)
