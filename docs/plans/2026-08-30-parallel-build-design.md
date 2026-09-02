@@ -2,7 +2,7 @@
 status: current
 last_verified: 2026-08-30
 source_of_truth: lib/plantasks.js, scripts/ledger.js, skills/fankeel-build/SKILL.md, skills/fankeel-plan/SKILL.md
-amends: docs/plans/2026-08-26-dispatch-design.md — the "Never two implementers in parallel" row
+amends: docs/archive/2026-08-26-dispatch-design.md — the "Never two implementers in parallel" row
 ---
 
 # The parent is the only writer of git
@@ -33,7 +33,7 @@ happened in sequence, and the session ran out before the list did.
 | `hooks/touch.js:45` | a subagent's edits are claimed under the **parent's** session id |
 
 **`**Files:**` is not in that list on purpose.** Every real plan in
-`docs/plans/` writes one — `docs/plans/2026-08-26-dispatch.md:107` is typical —
+`docs/plans/` writes one — `docs/archive/2026-08-26-dispatch.md:107` is typical —
 but `skills/fankeel-plan/SKILL.md` mandates only `**Interfaces:**` and
 `**Dispatch:**`. It is a convention with no enforcement, which is why it can be
 promoted cheaply and why it cannot be relied on today.
@@ -49,7 +49,7 @@ than ignored.
 > task, and a batch has no shape the ledger can record: a half-finished one
 > leaves it saying both tasks are still open... three new mechanisms for a case
 > with no observed use."
-> — `docs/plans/2026-08-26-dispatch-design.md`
+> — `docs/archive/2026-08-26-dispatch-design.md`
 
 The stated ground for rejection was **no observed use**. There is now one. But
 the objection itself still stands and is **not overruled**: this design does not
@@ -67,7 +67,7 @@ batch does not apply to it.
 > "**Do not parallelise *related* work**, even across different files — the
 > interference test is not file overlap. It is shared resources and shared
 > causes, and file overlap is only the visible case."
-> — `docs/plans/2026-08-26-dispatch-design.md`
+> — `docs/archive/2026-08-26-dispatch-design.md`
 
 Two objections, and a partition by filename answers only the first. The second
 is answered below by a second predicate, taken from the plan's own
@@ -122,7 +122,7 @@ task, and it is observable — no judgement about whether two tasks "feel
 related". A pair failing either predicate stays serial.
 
 This is a **conditional keyed to an observable predicate**, which is the form
-`docs/plans/2026-08-26-dispatch-design.md` argues a conditional has to take.
+`docs/archive/2026-08-26-dispatch-design.md` argues a conditional has to take.
 
 ### 3. The parent stages by declaration
 

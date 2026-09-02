@@ -1,5 +1,5 @@
 ---
-status: current
+status: archived
 last_verified: 2026-08-26
 source_of_truth: scripts/task.js, hooks/inject.js, lib/live.js
 ---
