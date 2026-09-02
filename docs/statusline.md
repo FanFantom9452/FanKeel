@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-09-02
-source_of_truth: lib/badge.js, hooks/inject.js
+last_verified: 2026-09-03
+source_of_truth: lib/badge.js, hooks/inject.js, scripts/task.js
 ---
 
 # The statusline badge
@@ -53,9 +53,9 @@ would claim it is one.
 That trade is forced by the badge having room for one word, and it is not forced
 anywhere else. The lead line states the collision in a field of its own — `others`,
 rendered `⚑2` — so it keeps the stage in `word`: saying the collision twice there
-would cost the one fact on that line with nowhere else to live. `inject.js` writes
-the two files from the same collision check and deliberately does not send the
-same word to both.
+would cost the one fact on that line with nowhere else to live. `hooks/inject.js`
+and `scripts/task.js`'s `showBadge` each write the two files from one collision
+check, and neither sends the same word to both.
 
 TokenBar renders a flag it has no palette for on a neutral gray-to-white ramp,
 which would make every stage the same colour. From **v1.4.0** it carries one for
