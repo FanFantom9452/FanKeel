@@ -52,7 +52,6 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Needs a decision
 
-- Whether a file-and-description line should lead with the description — [lib/stages.js](lib/stages.js):256 (build) and :212 (design). The path is an address, read second. Flip both or neither.
 
 ## Waiting
 
