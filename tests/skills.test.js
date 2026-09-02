@@ -480,6 +480,19 @@ test('dispatching is the default and the two exceptions are named', () => {
   assert.match(docsText, /a single tool call/);
 });
 
+// Two builds on this repository ran under a host that allows a subagent only on
+// the user's own word — `docs/plans/2026-09-01-ready-backlog.md:90`, and the
+// process-state review that followed it — and each re-derived the same answer
+// from nothing: the reviewer runs in-session, as a ruling. Step 5 said "one
+// reviewer" and nothing about where, so the third session filed it as a
+// decision. The answer is written where the loop reads it; this pins that it
+// stays there.
+test('build says where the reviewer runs when the host will not let one be dispatched', () => {
+  const text = read('fankeel-build');
+  assert.match(text, /allows a subagent only on the user's own word/);
+  assert.match(text, /a ruling, not a stopper/);
+});
+
 // A fourth rule landed in the bullet list without anybody touching the lead-in
 // that counts it, and nothing went red: "Three rules" sat above four bullets for
 // a whole build, and docs/subagents.md's mirror of the same list still said
