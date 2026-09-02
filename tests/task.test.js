@@ -165,6 +165,35 @@ test('the badge clashes once two sessions hold the same file', () => {
   assert.equal(badgeOf(dir, B), 'clash');
 });
 
+// The other writer of that same pair, and the one that was sending one word to
+// both files while `hooks/inject.js` deliberately sent two. A collision took the
+// stage off the lead line as well as off the badge, and then stated itself twice
+// there — once in `word`, once in `others` — while the stage had nowhere else on
+// that line to live.
+//
+// TokenBar reads the two exactly that way: `statusline.ps1:647` and
+// `statusline.sh:445` take the rail's colour from `others` and never from
+// `word`, so raising the alarm was never the word's job here.
+test('a clash takes the badge slot here too, and leaves the lead line its stage', () => {
+  const dir = root();
+  started(dir, A, 'tidy the project cards', 'Waypoint');
+  started(dir, B, 'fix the card link', 'Waypoint');
+  registry.addClaim(dir, A, 'Waypoint/web/src/Card.jsx');
+  registry.addClaim(dir, B, 'Waypoint/web/src/Card.jsx');
+
+  run(dir, ['stage', 'build', '--session', B]);
+
+  // One word is all the shared line has, so there the collision outranks the
+  // stage.
+  assert.equal(badgeOf(dir, B), 'clash');
+
+  // The lead line has a field of its own for the collision, and it is already
+  // filled.
+  const lead = leadOf(dir, B);
+  assert.match(lead, /^word=build$/m);
+  assert.match(lead, /^others=1$/m);
+});
+
 // The other half of that substitution, and the one nobody was watching: this
 // script is a second badge writer, and before this it counted every active
 // overlap without asking whether anyone was behind it. `stage` painted `clash`

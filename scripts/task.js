@@ -92,7 +92,13 @@ function showBadge(opts, sessionId, word, data) {
     try {
         const at = positionIn(data.route, data.stage) || {};
         badge.writeLead(dir, sessionId, {
-            word,
+            // Not the word above. That one is whatever a shared line has room
+            // for, and on a collision it is `clash` — which here would repeat
+            // what `others` already says while destroying the one fact with
+            // nowhere else on this line to live. `hooks/inject.js` computes it
+            // the same way and for the same reason, and TokenBar agrees: both
+            // ports take the rail's alarm from `others`, never from this.
+            word: badge.badgeWord(data.stage, false),
             step: at.step,
             steps: at.steps,
             title: data.task,
