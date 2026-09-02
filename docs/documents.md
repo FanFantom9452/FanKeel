@@ -145,9 +145,10 @@ because each replaces a guess with a statement:
 opens a frontmatter block; what it reads is the body, and how much of it is the
 role's again. A reference page has its links and its code spans both checked. A
 plan or a decision record has its links checked, and of a code span is told only
-that a `path:line` overshot the file, never that the path is gone — both name
-code that is deliberately not there. An archive or a report is read for none of
-it. So a path written into a fourth key of your own is read by nothing and
+that a `path:line` overshot the file, never that the path is gone — a plan names
+code that is not built yet, a decision names code that was there when it was
+written, and an absence is the point in both. An archive or a report is read for
+none of it. So a path written into a fourth key of your own is read by nothing and
 checked by nothing — a slower failure than a stale sentence, because nothing
 about it looks unmaintained. An `amends:` key here did exactly that, and
 `tests/source.test.js` now fails on the shape rather than on the word: a key
