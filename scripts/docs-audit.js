@@ -193,6 +193,20 @@ function pointsAt(root, rel, roots, contract) {
         const direct = PATHISH.exec(span);
         const hit = direct || PATHISH.exec(span.replace(PLACEHOLDER, ''));
         if (!hit) continue;
+        // The two guards `docs-check.js:204` and `:220` have and this pass did
+        // not. A trailing slash makes it a shape rather than a file, and a path
+        // under the state directory is where this software writes at run time —
+        // neither is a claim that the path is here, so neither is a plan waiting
+        // to be built. `PATHISH` keeps the slash inside its capture, so one test
+        // on the ref covers what `docs-check` tests on the span.
+        //
+        // Skipped for `note` as well, which costs nothing: a directory is
+        // neither code nor markdown, `.fankeel/docs.json` is the only committed
+        // file under the state directory and `.json` is not in `CODE_EXT`, and
+        // `.fankeel/map.md` is git-ignored, so no subject reached `code` or
+        // `markdown` through here in the first place.
+        if (hit[1].endsWith('/')) continue;
+        if (hit[1] === docs.STATE_DIR || hit[1].startsWith(docs.STATE_DIR + '/')) continue;
         const found = resolveRef(root, rel, hit[1]);
         if (found === null) {
             // Only a path written out in full can be unbuilt. A placeholder one

@@ -587,3 +587,23 @@ test('a placeholder path that resolves to nothing is not an unbuilt plan', () =>
   assert.deepEqual(p.code, ['scripts/here.js']);
   assert.deepEqual(p.unbuilt, []);
 });
+
+// The two guards `docs-check.js` learned and this file did not. A trailing slash
+// makes it a shape rather than a file — `docs/archive/` is a convention a project
+// may not have filled yet — and everything under the state directory is where
+// this software writes at run time, so naming it says where the registry goes
+// rather than naming a file the plan is waiting for. Both arrived here as
+// `unbuilt`, and one `.fankeel/sessions/` in a plan held that plan out of the
+// landed report forever — in every clone where the directory had not been
+// generated yet, which is the only place it is ever read from.
+test('a shape and a runtime path are not unbuilt', () => {
+  const root = tree({
+    'docs/plans/01-p.md': 'the registry is `.fankeel/sessions/`, the map is `.fankeel/map.md`,'
+      + ' retired pages go to `docs/archive/`, and `scripts/here.js` is here\n',
+    'scripts/here.js': 'x\n',
+  });
+  const p = audit.pointsAt(root, 'docs/plans/01-p.md', new Set(['docs', '.fankeel', 'scripts']));
+  assert.deepEqual(p.unbuilt, []);
+  // The control on the guards: a path that is neither still reaches `code`.
+  assert.deepEqual(p.code, ['scripts/here.js']);
+});
