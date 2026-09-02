@@ -223,7 +223,10 @@ output shape:
 
 Where the task is, the rules for the stage, the shape — about 2,350 characters
 for the block above, roughly 600 tokens, and 1,850 to 2,400 across the three
-classes. Rounded on purpose and measured 2026-08-27, against the entry shown
+classes — plus one `gate:` line of 226 characters, and past the band, in the one
+case where the record carries no `gateAt` at the answer, which
+[registry.md](registry.md) explains. Rounded on purpose and measured 2026-08-27,
+against the entry shown
 above — the band slides with the task line, which is 35 characters there and
 takes it to 1823 to 2335 at one character. It also moves when a rule in
 `lib/stages.js` changes, which is a smaller blast radius than a suite total.

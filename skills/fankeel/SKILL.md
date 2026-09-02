@@ -110,13 +110,12 @@ by the same prompt hook that refreshes `updated`.
 
 `clock` is those same two slots with a wall-clock reading in place of the token
 count — epoch milliseconds, which `task.js` renders as minutes — and `waited` is
-meant to be how much of that the user spent at a gate. No hook has ever written
-one: the hook that stamps the opening has never run, so `gateClose` has never
-had a stamp from it to fold in. One record holds a `waited` stamped by hand
-while the field was being built, and it is not a gate. Why the hook has not run
-is unsettled, though the two candidates are now known to be coupled —
-[docs/registry.md](../../docs/registry.md) has both and the one run that would
-close them.
+how much of that the user spent at a gate. It is written only in a process that
+started after the manifest carried `hooks/gate.js`: Claude Code reads its hook
+list once per process and `/clear` does not re-read it, which is why two days of
+records held no `waited` a hook had put there and every session of a newer
+process has one, from 2026-09-02 on. [docs/registry.md](../../docs/registry.md)
+has that run, and what the older process looked like from inside.
 
 `clock` and `burn` part company in one place: `burn` is only written when a
 token figure arrives, and an answered question is not a prompt, so a stage that
@@ -126,9 +125,9 @@ is not `Stop`, and what it does instead of measuring anything, is in
 [docs/registry.md](../../docs/registry.md) — this is the short form, not the
 only copy.
 
-A seventh, `gateAt`, is deliberately not below. It should exist only between a
-question going out and its answer arriving; in practice `gate.js` has never put
-one there, for the reason above.
+A seventh, `gateAt`, is deliberately not below. It exists only between a
+question going out and its answer arriving — and a record that lacks it when the
+answer arrives is what the `gate:` line under **While the mode is on** reports.
 
 ```json
 {
@@ -723,6 +722,17 @@ the stages have cost in wall-clock — into a fresh session in one step. Not `bu
 that measures a session's own context, and the session is the thing changing. Say it once when the line first appears, and again when its
 wording hardens. Repeating it every turn is nagging, and nagging gets ignored
 exactly when it stops being nagging.
+
+A `gate:` line, in the block that comes back after an answered question, means
+the record carried no `gateAt` when the answer arrived: `hooks/gate.js` did not
+run before the question went out, so `waited` will stay empty for as long as
+this process lives. Claude Code reads its hook list once per process, and
+`/clear` does not re-read it, so a process older than the manifest entry runs
+`resume.js` at every answer and `gate.js` at none — and nothing but this line
+can tell, because an empty `waited` reads exactly like a stage that opened no
+gate. Say it once, with what fixes it: a new terminal, and `/fankeel` →
+**Adopt**. The line comes back at every answer until then; repeating it does
+not.
 
 ## Output styles
 

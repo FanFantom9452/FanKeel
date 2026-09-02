@@ -93,13 +93,30 @@ test('malformed stdin is not an error', () => {
   assert.equal(out.trim(), '');
 });
 
+const context = (out) => JSON.parse(out).hookSpecificOutput.additionalContext;
+
 // The pair, in the order Claude Code runs it.
 test('the gate opened then answered accumulates into the stage', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'design' });
   run(GATE, root, {});
-  run(RESUME, root, {});
+  const out = run(RESUME, root, {});
   const after = readEntry(root, MINE);
   assert.equal(after.gateAt, undefined);
   assert.equal(Number.isFinite(after.waited.design), true);
+  assert.doesNotMatch(context(out), /^gate: /m);
+});
+
+// The second half on its own is what a process registered before `gate.js`
+// existed looks like: Claude Code reads its hook list at process start, so a
+// session opened later in that process — `/clear` included — runs `resume.js`
+// and never `gate.js`. `waited` then stays empty for as long as the process
+// lives, and `resume.js` is the only place that can see it. It says so in the
+// one block it already sends.
+test('an answer with no stamp says the gate hook did not run', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'design' });
+  const out = run(RESUME, root, {});
+  assert.match(context(out), /^gate: .*hooks\/gate\.js did not run/m);
+  assert.equal(readEntry(root, MINE).waited, undefined);
 });

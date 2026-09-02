@@ -52,8 +52,7 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Needs a decision
 
-- gateClose 找不到 gateAt 時要不要講 — [hooks/resume.js](hooks/resume.js):54。hook 註冊是 per-session，啟動早於 manifest 的 session 那半邊不跑，waited 就永遠空著且無聲。resume.js 跑得到，是唯一能發現的地方。
-
+- Whether a file-and-description line should lead with the description — [lib/stages.js](lib/stages.js):256 (build) and :212 (design). The path is an address, read second. Flip both or neither.
 
 ## Waiting
 

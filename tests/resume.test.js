@@ -106,9 +106,11 @@ test('the short form leaves out what has not moved since the last prompt', () =>
   assert.equal(ctx.includes('retune the 5h ramp'), false);
 });
 
+// Stamped, the way a process with `gate.js` registered leaves the record. The
+// unstamped one carries a `gate:` line saying so, measured in tests/gate.test.js.
 test('the short form really is shorter than the block a prompt gets', () => {
   const root = tmp('fankeel-resume-');
-  seed(root, MINE);
+  seed(root, MINE, { gateAt: Date.now() });
   seed(root, THEIRS, { task: 'retune the 5h ramp' });
   const short = context(run({ session_id: MINE, cwd: root }));
   const full = context(run({ session_id: MINE, cwd: root }, INJECT));
