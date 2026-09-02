@@ -143,14 +143,15 @@ because each replaces a guess with a statement:
 
 **A path that needs checking goes in a link.** `docs-check` does not parse
 frontmatter — it does not know the block is there. It scans the file for markdown
-links and code spans, that block included, so a link or a backticked path written
-into a key is checked like any other. What is never read is a bare path, in a key
-or in a sentence alike, and the markup rather than the place is the whole of it.
-How much of a link or a span is acted on is the role's again: a reference page
-has both checked; a plan or a decision record has its links checked, and of its
-code spans only that a `path:line` overshot the file, never that the path is
-gone, since a plan names code that is not built yet and a decision names code
-that was there when it was written; an archive or a report is read for neither.
+links and code spans, that block included, so a path written into a key is
+treated exactly as one written in a sentence and the rules below apply to it
+unchanged. What is never read is a bare path, in either place, and the markup
+rather than the place is the whole of it. How much of a link or a span is acted
+on is the role's again: a reference page has both checked; a plan or a decision
+record has its links checked, and of its code spans only that a `path:line`
+overshot the file, never that the path is gone, since a plan names code that is
+not built yet and a decision names code that was there when it was written; an
+archive or a report is read for neither.
 
 So a bare path written into a key of your own is read by nothing and checked by
 nothing — a slower failure than a stale sentence, because a key looks like a
