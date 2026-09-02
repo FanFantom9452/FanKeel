@@ -142,15 +142,15 @@ because each replaces a guess with a statement:
 | `source_of_truth` | reading the page for its subject | A comma list, doing two jobs told apart by what each entry names. Code: this is what the page is about, said outright rather than inferred. Links, code spans and fenced blocks are all read, so the tag names a subject a page never writes out rather than standing in for one it writes where nothing looked. A document: this page defers to that one, so the two are not a pair. Two pages describing one file is only a defect when neither defers. `generated-by` says the file is rewritten rather than maintained, which makes its age meaningless. |
 
 **A path that needs checking goes in a link.** `docs-check` does not parse
-frontmatter — it does not know the block is there. It scans the whole file for
-markdown links and code spans, that block included, so a link written into a key
-is reported like any other. What is never read is a bare path, in a key or in a
-sentence alike, and the markup rather than the place is the whole of it. How much
-of a link or a span is acted on is the role's again: a reference page has both
-checked; a plan or a decision record has its links checked, and of its code spans
-only that a `path:line` overshot the file, never that the path is gone, since a
-plan names code that is not built yet and a decision names code that was there
-when it was written; an archive or a report is read for neither.
+frontmatter — it does not know the block is there. It scans the file for markdown
+links and code spans, that block included, so a link or a backticked path written
+into a key is checked like any other. What is never read is a bare path, in a key
+or in a sentence alike, and the markup rather than the place is the whole of it.
+How much of a link or a span is acted on is the role's again: a reference page
+has both checked; a plan or a decision record has its links checked, and of its
+code spans only that a `path:line` overshot the file, never that the path is
+gone, since a plan names code that is not built yet and a decision names code
+that was there when it was written; an archive or a report is read for neither.
 
 So a bare path written into a key of your own is read by nothing and checked by
 nothing — a slower failure than a stale sentence, because a key looks like a

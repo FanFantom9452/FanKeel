@@ -145,7 +145,14 @@ test('no frontmatter key nothing reads carries a repository path', () => {
             // A value is a list of words, and any one of them can be the path —
             // the key that rotted wrote a sentence after its own.
             for (const word of kv[2].split(/[\s,]+/)) {
-                const ref = word.replace(/^["'`]+|["'`.]+$/g, '');
+                // A backticked value is a code span and a bracketed one is a
+                // link, and `docs-check` scans both inside the frontmatter
+                // block exactly as it does in the body. Stripping the backticks
+                // and flagging what is underneath would report a path somebody
+                // formatted correctly, which is the one finding that would get
+                // this test deleted. Only the bare ones go unwatched.
+                if (word.includes('`')) continue;
+                const ref = word.replace(/^["']+|["'.]+$/g, '');
                 if (!ref || !PATHISH.test(ref)) continue;
                 if (resolveRef(ROOT, rel, ref) === null) continue;
                 guilty.push(rel + ' — ' + kv[1] + ': ' + ref);
