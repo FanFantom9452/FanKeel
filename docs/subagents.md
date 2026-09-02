@@ -56,6 +56,15 @@ same day during this branch's own verify stage, sent four readers out in one
 response for 614 seconds of combined agent time against 235 seconds of wall-clock
 — the slowest one.
 
+Neither of those had a control: they counted what readers spent and compared it
+to nothing. Measured on 2026-09-03, one pair that did — the same wide question
+put to two fresh sessions, one dispatching four `sonnet` readers and one with the
+`Agent` tool taken away. Dispatch left 57,652 tokens in the parent against
+532,322, and paid for that with $2.24 against $1.21, 2.5 million tokens against
+543,000, and 280 seconds of wall-clock against 160. Dispatch is not cheaper and
+not faster. It buys residue, and that is the price of it:
+[reports/2026-09-03-dispatch-vs-inline.md](reports/2026-09-03-dispatch-vs-inline.md).
+
 Five things that fail silently when missed: several dispatches must be in **one
 response** to run concurrently; the **model must be passed explicitly**, since an
 omitted one inherits the parent's; the **count and the model must be said out

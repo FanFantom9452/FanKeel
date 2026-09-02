@@ -839,6 +839,12 @@ fan-out of four readers over another plugin's skills: 240,881 tokens spent, abou
 4,000 characters returned, 121 seconds of wall-clock rather than 352 because they
 went out in one response.
 
+That figure had no control. Measured on 2026-09-03 against a session asked the
+same question with the `Agent` tool taken away: dispatch left 57,652 tokens in
+the parent against 532,322, and paid 1.85 times the money and 1.75 times the
+wall-clock for it. Not cheaper, not faster — residue is what it buys
+([docs/reports/2026-09-03-dispatch-vs-inline.md](../../docs/reports/2026-09-03-dispatch-vs-inline.md)).
+
 | | |
 |---|---|
 | **delegate** | wide reading with a narrow answer — *read these six documents and say whether any contradicts the code*. A judgement, so no filter can pick it out |

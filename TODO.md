@@ -49,8 +49,6 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Ready
 
-- Measure dispatch against inline: one survey question, a fresh session each way, four sonnet readers or none; tokens and wall-clock into a report — [docs/subagents.md](docs/subagents.md).
-
 ## Needs a decision
 
 ## Waiting
