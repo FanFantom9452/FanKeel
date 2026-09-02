@@ -142,8 +142,10 @@ because each replaces a guess with a statement:
 | `source_of_truth` | reading the page for its subject | A comma list, doing two jobs told apart by what each entry names. Code: this is what the page is about, said outright rather than inferred. Links, code spans and fenced blocks are all read, so the tag names a subject a page never writes out rather than standing in for one it writes where nothing looked. A document: this page defers to that one, so the two are not a pair. Two pages describing one file is only a defect when neither defers. `generated-by` says the file is rewritten rather than maintained, which makes its age meaningless. |
 
 **A path that needs checking goes in the body, not here.** `docs-check` never
-opens a frontmatter block: it reads body links, and body code spans everywhere
-but a plan or a decision record. So a path written into a fourth key of your own
+opens a frontmatter block: what it reads is body links, in every role, and body
+code spans — of which a plan or a decision record is told only that a `path:line`
+overshot the file, never that the path is gone, since both name code that is
+deliberately not there. So a path written into a fourth key of your own
 is read by nothing and checked by nothing — a slower failure than a stale
 sentence, because nothing about it looks unmaintained. An `amends:` key here did
 exactly that, and `tests/source.test.js` now fails on the shape rather than on
