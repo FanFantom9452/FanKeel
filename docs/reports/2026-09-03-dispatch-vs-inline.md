@@ -45,7 +45,7 @@ porcelain:
 claude: 2.1.259 (Claude Code)
 ```
 
-（`porcelain:` 後面沒有任何一行，即乾淨樹。`date` 是 UTC；這次執行所在時區的本地時間是 2026-09-03 07:29，跟本頁標註的日期一致，不是打錯。）
+（`porcelain:` 後面沒有任何一行，即乾淨樹。`date` 是 UTC，因為 `ab.sh` 用的是 `date -u`；本頁的日期標的是執行機器的本地日曆日，不是這個 UTC 戳章，兩者不必是同一天，不是打錯。）
 
 兩個 arm 實際上有沒有走上不同的方法，機械上的證明是 `subagent_stats.spawned`：Arm A 是 4，Arm B 是 0。這不是自我宣稱，是 `claude -p` 自己記的執行統計。
 
@@ -65,7 +65,7 @@ claude: 2.1.259 (Claude Code)
 | `result` 字數 | 1,156 | 1,106 | ≈1.05× |
 | `num_turns` | 1 | 13 | — |
 
-`modelUsage` 的拆分：Arm A 的 2,541,508 tokens 由兩個 model 組成——`claude-sonnet-5` 2,140,264 tokens／US$1.4056（四個 subagent 讀者），`claude-opus-5` 401,244 tokens／US$0.8293（parent）。token 的加總是精確值：2,140,264+401,244=2,541,508，跟 all-model tokens 的數字完全一致。金額的加總則是捨入後的結果：US$1.4056 加 US$0.8293 等於 US$2.2349，比 `total_cost_usd` 捨入到小數點後四位顯示的 US$2.2350 少 US$0.0001——差在兩個 model 的費用各自先捨入到四位小數才相加；用未捨入的原始值相加（1.4056294999999999+0.8293349999999999=2.2349644999999998）才精確對上 `total_cost_usd` 的 2.2349645。Arm B 全部由 `claude-opus-5` 產生：543,396 tokens／US$1.2091，與 `total_cost_usd` 的 1.2091464999999997 一致（只有一個 model，不涉及加總捨入）。
+`modelUsage` 的拆分：Arm A 的 2,541,508 tokens 由兩個 model 組成——`claude-sonnet-5` 2,140,264 tokens／US$1.4056（四個 subagent 讀者），`claude-opus-5` 401,244 tokens／US$0.8293（parent）。token 的加總是精確值：2,140,264+401,244=2,541,508，跟 all-model tokens 的數字完全一致。顯示用的四位小數金額則是捨入後的結果：US$1.4056 加 US$0.8293 等於 US$2.2349，比 `total_cost_usd` 顯示的 US$2.2350 少 US$0.0001，差在兩個數字都先捨入到四位小數才相加；`modelUsage` 裡未捨入的原始值相加，精確等於 `total_cost_usd`。Arm B 全部由 `claude-opus-5` 產生：543,396 tokens／US$1.2091，與 `total_cost_usd` 的 1.2091464999999997 一致（只有一個 model，不涉及加總捨入）。
 
 ## 4. 結論
 
