@@ -141,13 +141,14 @@ because each replaces a guess with a statement:
 | `status` | the directory it sits in | `design-intent` is the word that was missing. A page describing what a system is *meant* to become is not drifting when the code does not match it — it is doing its job. Without somewhere to say that, a roadmap gets written into an architecture page and then read as a description of what exists. |
 | `source_of_truth` | reading the page for its subject | A comma list, doing two jobs told apart by what each entry names. Code: this is what the page is about, said outright rather than inferred. Links, code spans and fenced blocks are all read, so the tag names a subject a page never writes out rather than standing in for one it writes where nothing looked. A document: this page defers to that one, so the two are not a pair. Two pages describing one file is only a defect when neither defers. `generated-by` says the file is rewritten rather than maintained, which makes its age meaningless. |
 
-**A path that needs checking goes in the body, not here.** `docs-check` never
-opens a frontmatter block; what it reads is the body, and how much of it is the
-role's again. A reference page has its links and its code spans both checked. A
-plan or a decision record has its links checked, and of its code spans only that
-a `path:line` overshot the file — never that the path is gone, since a plan names
-code that is not built yet and a decision names code that was there when it was
-written. An archive or a report is read for none of it.
+**A path that needs checking goes in a link.** `docs-check` never opens a
+frontmatter block, and it never reads a bare path in a sentence either: what it
+scans is markdown links and code spans, and how much of those is the role's
+again. A reference page has both checked. A plan or a decision record has its
+links checked, and of its code spans only that a `path:line` overshot the file —
+never that the path is gone, since a plan names code that is not built yet and a
+decision names code that was there when it was written. An archive or a report is
+read for neither.
 
 So a path written into a fourth key of your own is read by nothing and checked
 by nothing — a slower failure than a stale sentence, because nothing about it
