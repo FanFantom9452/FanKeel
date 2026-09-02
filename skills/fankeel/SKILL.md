@@ -113,9 +113,9 @@ count — epoch milliseconds, which `task.js` renders as minutes — and `waited
 how much of that the user spent at a gate. It is written only in a process that
 started after the manifest carried `hooks/gate.js`: Claude Code reads its hook
 list once per process and `/clear` does not re-read it, which is why two days of
-records held no `waited` a hook had put there and the first one landed
-2026-09-02. [docs/registry.md](../../docs/registry.md) has that run, and what
-the older process looked like from inside.
+records held no `waited` a hook had put there and every session of a newer
+process has one, from 2026-09-02 on. [docs/registry.md](../../docs/registry.md)
+has that run, and what the older process looked like from inside.
 
 `clock` and `burn` part company in one place: `burn` is only written when a
 token figure arrives, and an answered question is not a prompt, so a stage that

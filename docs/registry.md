@@ -108,11 +108,11 @@ stage.
 "waited": { "survey": 240000 }
 ```
 
-`waited` is there for its shape and nothing else: no hook has ever written one,
-for the reason under **The pair that should measure it** below. One record does
-hold a `waited` — session `cb8cee7b`'s `{"verify":28660}` — and it is a stamp
-run by hand while the field was being built, not a gate anything opened. Without
-that clause the sentence is false against a file in `.fankeel/sessions/` today.
+`waited` is a gate that stayed open four minutes. Until 2026-09-02 no hook had
+written one — the one record carrying it, session `cb8cee7b`'s
+`{"verify":28660}`, was a stamp run by hand while the field was being built —
+for the reason under **The pair that measures it** below; since then every
+session of a process started after the install carries one.
 `skills/fankeel/SKILL.md` shows the same record without it, because that example
 is a record rather than a set of shapes.
 
@@ -136,10 +136,12 @@ downstream, exactly like a stage that never opened one.
 
 **The pair that measures it is `PreToolUse`/`PostToolUse` on
 `AskUserQuestion`, and both halves run — in a process that started after the
-manifest carried `hooks/gate.js`.** The first `waited` a hook wrote in this
-repository landed 2026-09-02: session `922c64a8`, `{"design": 20828}`, one gate
-stamped by `gate.js` and folded in by `resume.js` twenty seconds later. The same
-day's [process-state review](reports/2026-09-02-process-state-review.md) found
+manifest carried `hooks/gate.js`.** Hook-written `waited` appears in this
+repository's registry from 2026-09-02, in every session of such a process —
+three by the time this was written, this one's design gate among them: session
+`922c64a8`, `{"design": 20828}`, stamped by `gate.js` and folded in by
+`resume.js` twenty seconds later. The same day's
+[process-state review](reports/2026-09-02-process-state-review.md) found
 a `gateAt` the hook had stamped in a neighbouring project's registry, in a
 process begun eight hours after the install.
 
@@ -353,14 +355,14 @@ another session's, and never deletes one.
 
 Writing the file is atomic — a sibling, then a rename — but reading it, changing
 one field and writing it back is not, and that is what every writer here does.
-Four of them are registered in hooks and three have ever run. `inject.js` writes
+Four of them are registered in hooks. `inject.js` writes
 on every prompt — once for `updated`, and once more for every new path the git
 pass claims, since `lib/dirty.js:180` calls `addClaim` per path and each one
 takes the lock — in every session on the machine. That second number is usually
 zero after a task's first prompt, because `covers` skips a path already held.
-`resume.js` writes once per answered question. `gate.js` would write once per
-question asked and never has, for the reason above — so three writers contend
-here today, and four if it ever runs.
+`resume.js` writes once per answered question, and `gate.js` once per question
+asked, in a process that registered it — the reason above — so four writers
+contend here, and three in a process that did not.
 
 `touch.js` fires on every edit but writes on almost none of them: it
 returns at `hooks/touch.js:42` when the path is already claimed, which is what
