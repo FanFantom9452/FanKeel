@@ -87,9 +87,7 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 - Whether `.claude/agents/` is documentation and wants a bucket — [.fankeel/docs.json](.fankeel/docs.json); the probe fixture made the unfiled count 2.
 
-- Whether the `Workflow` gate is written wide or narrow: `SKILL.md:806` says `(ultracode)`, `:907` says that or asking in as many — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
-
-- Whether `sonnet` is the floor inside a `Workflow` too: its agents take a `model` argument each, and workflow-authoring says omit it and inherit — [docs/subagents.md](docs/subagents.md).
+- Whether build's chain is one workflow too — commit, ledger and ruling sit between its hops here; a run journal doubles the ledger — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
 
 ## Waiting
 
