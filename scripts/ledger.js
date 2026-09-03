@@ -89,6 +89,49 @@ function serialCause(tasks) {
     return '';
 }
 
+// `init` and `groups` both reach for this exact sentence when a plan parses to
+// zero tasks, because they are the same underlying failure seen from two call
+// sites: `parseTasks` requires `^##\s+Task\s+(\d+):\s*`, and a heading
+// punctuated with a dash instead of a colon — which every other heading in a
+// plan is free to use — matches nothing, silently. A plan with six visible
+// tasks then parses to zero without an error anywhere to point at, and `init`
+// still builds a ledger that looks perfectly healthy on top of it. Sharing the
+// literal string is what keeps a reader who meets this from one verb and later
+// from the other recognising it as the same answer, not two different guesses.
+const CONFORMING_HEADING = 'A conforming heading looks like `## Task 1: name` — note the colon after the number.';
+
+// `conflict()` matches a backticked identifier between one task's `Consumes`
+// and another's `Produces`; a dependency written as prose instead —
+// `Consumes: Task 2's --no-mdns flag name` — declares no identifier for the
+// other side's `Produces` to match, so nothing conflicts and the pair is
+// grouped as if either could go first. Row 1 kept `consumesText`, the raw text
+// of each `Consumes:` entry, for exactly this: it is the one place left to
+// look for a dependency `conflict()` cannot see. The only piece of that text
+// that is machine-readable is a literal `Task <n>`, and it is worth a person's
+// eye only when `<n>` is a task in this one's own group — that is the one
+// case where the group's claim (these may run at once) and the sentence's
+// claim (this one waits on that one) actually disagree. A `Task <n>` naming a
+// task in an earlier, already-committed group is not a contradiction: that
+// task's commit is already in HEAD by the time this one runs.
+function proseConflicts(tasks, rows) {
+    const known = new Set(tasks.map((t) => t.n));
+    const groupOf = new Map();
+    rows.forEach((g, i) => g.forEach((n) => groupOf.set(n, i)));
+    const out = [];
+    for (const t of tasks) {
+        for (const line of t.consumesText) {
+            for (const m of line.matchAll(/\bTask (\d+)\b/g)) {
+                const other = Number(m[1]);
+                if (other === t.n || !known.has(other)) continue;
+                if (groupOf.get(other) !== groupOf.get(t.n)) continue;
+                out.push('Task ' + t.n + ' names Task ' + other + ' in its Consumes text, and both land in group '
+                    + (groupOf.get(t.n) + 1) + ': "' + line + '"');
+            }
+        }
+    }
+    return out;
+}
+
 function main(argv) {
     const { head, verb: named, text } = splitAtVerb(argv, STRING_FLAGS, VERBS);
     const opts = parseArgs(head);
@@ -97,7 +140,37 @@ function main(argv) {
     const verb = String(named || 'show').toLowerCase();
 
     if (verb === 'init') {
-        return 'fankeel ledger — ' + ledger.init(root, opts.plan);
+        // `lib/ledger.js`'s own `init()` only opens the progress file; it never
+        // reads the plan, so a plan whose headings do not match `parseTasks`
+        // opens a ledger that looks perfectly healthy and stays silent about
+        // holding zero tasks until `groups` is run, if it is run at all — a
+        // whole build can pass with no denominator. `lib/ledger.js` is off
+        // limits to fix that: its return value is `append()`'s own path
+        // argument and `tests/ledger.test.js` asserts on it. So the count is
+        // taken here, where the plan path this verb was given is already at
+        // hand and `plantasks` is already required.
+        const ledgerFile = ledger.init(root, opts.plan);
+        const planFile = path.resolve(root, opts.plan);
+        let planText = null;
+        try {
+            planText = fs.readFileSync(planFile, 'utf8');
+        } catch (e) {
+            // Not a refusal: a `bounded` or `spike` route reaches the build
+            // stage with no plan file at all, and opening a ledger anyway is
+            // this verb's whole job for that route. Refusing here would break
+            // the one route that legitimately has nothing to be wrong about.
+        }
+        if (planText === null) {
+            return 'fankeel ledger — ' + ledgerFile
+                + '\n\nNo file at ' + planFile + '. The ledger is open regardless.';
+        }
+        const tasks = plantasks.parseTasks(planText);
+        if (!tasks.length) {
+            return 'fankeel ledger — ' + ledgerFile
+                + '\n\nNo task headings found in ' + planFile + '. ' + CONFORMING_HEADING;
+        }
+        return 'fankeel ledger — ' + ledgerFile
+            + '\n\n' + tasks.length + ' tasks in ' + planFile;
     }
 
     if (verb === 'complete') {
@@ -137,7 +210,16 @@ function main(argv) {
         }
         const tasks = plantasks.parseTasks(text);
         const rows = plantasks.groups(tasks);
-        if (!tasks.length) return 'fankeel ledger — no tasks in ' + file;
+        if (!tasks.length) {
+            // "no tasks in <file>" alone reads as "this plan is empty," and the
+            // far more likely cause is a heading `parseTasks` could not match —
+            // the same failure `init` now names, in the same words, so a reader
+            // who meets this from `groups` after already seeing it from `init`
+            // recognises it rather than treating it as a second problem.
+            return 'fankeel ledger — no tasks in ' + file
+                + ' — more likely a heading did not match than an empty plan.'
+                + '\n' + CONFORMING_HEADING;
+        }
         // A task that declared no files conflicts with everything, so it lands
         // alone and the grouping looks merely unlucky rather than incomplete.
         // Naming it is what makes a missing `**Files:**` block visible at the
@@ -153,10 +235,15 @@ function main(argv) {
         // was something that contradicted rather than merely failed to mention.
         const serial = tasks.length > 1 && rows.length === tasks.length;
         const cause = serial ? serialCause(tasks) : '';
+        const prose = proseConflicts(tasks, rows);
         return 'fankeel ledger — ' + rows.length + ' groups over ' + tasks.length + ' tasks\n\n'
             + rows.map((g, i) => '  ' + (i + 1) + ': ' + g.join(', ')).join('\n')
             + (undeclared.length
                 ? '\n\nNo Files block, so serialised against everything: ' + undeclared.join(', ')
+                : '')
+            + (prose.length
+                ? '\n\nConsumes text names a task already in its own group, worth a look:\n  '
+                    + prose.join('\n  ')
                 : '')
             + (serial
                 ? '\n\nEvery group is one task, so nothing runs beside anything and this'

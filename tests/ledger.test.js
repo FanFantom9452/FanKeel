@@ -354,3 +354,66 @@ test('the short shas the build loop records are accepted', () => {
   const out = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'ranges'], { cwd: dir, encoding: 'utf8' });
   assert.match(out, /1 4aacd71\.\.94ec4b3/);
 });
+
+// `lib/ledger.js`'s own `init()` only opens the file; it never looks at the
+// plan, so a ledger could look perfectly healthy while holding a plan nobody
+// could build from. `init` now opens the plan the same way `groups` does, so
+// the count is known before the build loop ever gets to `groups`.
+test('init reports how many tasks the plan holds', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, [
+    '## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', '',
+    '## Task 2: two', '', '**Files:**', '- Modify: `lib/b.js`', '',
+    '## Task 3: three', '', '**Files:**', '- Modify: `lib/c.js`', '',
+  ].join('\n'));
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'init'], { encoding: 'utf8' });
+  assert.match(out, /3 tasks in/);
+  assert.equal(fs.existsSync(ledger.ledgerPath(dir, plan)), true);
+});
+
+// `## Task 1 — dash instead of colon` matches nothing in `parseTasks`,
+// silently: before this, `init` printed only the ledger path, and a plan with
+// six visible tasks looked exactly like an empty one until someone happened to
+// run `groups`.
+test('init names a heading it could not match, and shows a conforming one', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, ['## Task 1 — dash instead of colon', '', '**Files:**', '- Modify: `lib/a.js`', ''].join('\n'));
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'init'], { encoding: 'utf8' });
+  assert.match(out, /No task headings found in/);
+  assert.match(out, /## Task 1: name/);
+  assert.equal(fs.existsSync(ledger.ledgerPath(dir, plan)), true);
+});
+
+// The same failure, met from `groups` instead: "no tasks in <file>" alone
+// reads as "this plan is empty," and the far more likely cause is the heading
+// above. The two verbs show the identical sentence so the two readings
+// collapse into one.
+test('groups names the same cause when a heading does not match', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, ['## Task 1 — dash instead of colon', '', '**Files:**', '- Modify: `lib/a.js`', ''].join('\n'));
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(out, /no tasks in/);
+  assert.match(out, /more likely a heading did not match than an empty plan/);
+  assert.match(out, /## Task 1: name/);
+});
+
+// Row 1's `consumesText` exists for exactly this case: a dependency written as
+// prose names no identifier `conflict()` can match against a `Produces`, so
+// the pair is grouped as parallel while the task's own words say one waits on
+// the other.
+test('groups flags a Consumes text naming a task already in its group', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, [
+    '## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', '',
+    '## Task 2: two', '', '**Files:**', '- Modify: `lib/b.js`', '',
+    '**Interfaces:**', "- Consumes: Task 1's export name", '- Produces: nothing.', '',
+  ].join('\n'));
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(out, /1 groups over 2 tasks/);
+  assert.match(out, /1: 1, 2/);
+  assert.match(out, /Task 2 names Task 1 in its Consumes text/);
+});
