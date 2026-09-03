@@ -49,11 +49,23 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Ready
 
+- A `task-brief` script: task N's text to a file, print the path, so a dispatch carries a path not two thousand words — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
+
+- Never pre-judge a reviewer: a brief saying "less likely to have drifted" got `no drift` back — [skills/fankeel-verify/SKILL.md](skills/fankeel-verify/SKILL.md).
+
+- Say what round five leaves behind: the cap is written, its behaviour is not — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md), fix rounds.
+
+- `land` collects every ruling into the final message: notes cap at five and one bounded task made six — [skills/fankeel-land/SKILL.md](skills/fankeel-land/SKILL.md).
+
 ## Needs a decision
 
 - Whether the three pairs' evidence files belong in the repository: all three reports cite files that live in a session temp directory — [docs/subagents.md](docs/subagents.md).
 
 - Whether a two-source join needs a fourth pair: fankeel-verify:99 cites 1.5× for readers each given a page and a diff, a shape no pair measured — [docs/subagents.md](docs/subagents.md).
+
+- Whether a no-plan route should keep its brief, report and ledger on disk — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md), the no-plan paragraph.
+
+- Whether an implementer needs a way to say it is blocked, against a return contract that is three lines on purpose — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
 
 ## Waiting
 
