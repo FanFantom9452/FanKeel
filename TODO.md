@@ -69,6 +69,8 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 - A feature is called "all six", and "the first four sections fail" names the wrong four — [docs/pipeline.md](docs/pipeline.md).
 
+- A worst-case comment still lists "the voice digest present"; `render` has carried none since 0.20.0 — [tests/render.test.js](tests/render.test.js), :461.
+
 ## Needs a decision
 
 - Whether the three pairs' evidence files belong in the repository: all three reports cite files that live in a session temp directory — [docs/subagents.md](docs/subagents.md).
