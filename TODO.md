@@ -53,6 +53,8 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 - Whether the middle is worth a third pair: two shapes measured, named and unnamed, and nothing between them — [docs/subagents.md](docs/subagents.md).
 
+- Whether the two pairs' evidence files belong in the repository: both reports cite files that live in a session temp directory — [docs/subagents.md](docs/subagents.md).
+
 ## Waiting
 
 - Whether a flag a verb ignores should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses the same value. None observed. 09-01.
