@@ -89,7 +89,7 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 - Whether the `Workflow` gate is written wide or narrow: `SKILL.md:806` says `(ultracode)`, `:907` says that or asking in as many — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
 
-- Whether `sonnet` is the floor inside a `Workflow` too: `agent()` takes `model` per call, and workflow-authoring says omit it and inherit — [docs/subagents.md](docs/subagents.md).
+- Whether `sonnet` is the floor inside a `Workflow` too: its agents take a `model` argument each, and workflow-authoring says omit it and inherit — [docs/subagents.md](docs/subagents.md).
 
 ## Waiting
 
