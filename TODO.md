@@ -51,9 +51,7 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Needs a decision
 
-- Whether the middle is worth a third pair: two shapes measured, named and unnamed, and nothing between them — [docs/subagents.md](docs/subagents.md).
-
-- Whether the two pairs' evidence files belong in the repository: both reports cite files that live in a session temp directory — [docs/subagents.md](docs/subagents.md).
+- Whether the three pairs' evidence files belong in the repository: all three reports cite files that live in a session temp directory — [docs/subagents.md](docs/subagents.md).
 
 ## Waiting
 
