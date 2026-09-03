@@ -3,7 +3,7 @@ name: fankeel-build
 description: The build stage — run a plan's tasks, or a design's file table where there is no plan, in a loop that does not stop to ask, keeping its place in a ledger and reviewing each task as it lands. Use for the build stage of a fankeel task, implementing an approved plan, resuming build work after a compaction, or when a task loop needs a ledger.
 version: 0.42.0
 status: current
-last_verified: 2026-09-03
+last_verified: 2026-09-04
 source_of_truth: lib/stages.js, lib/ledger.js, lib/plantasks.js, scripts/ledger.js
 ---
 
@@ -102,6 +102,15 @@ have disjoint `**Files:**` and neither consumes what another produces. A pair
 the table found sharing something and the command puts in one group is a
 disagreement worth stopping for — one of the two is reading the plan wrong, and
 finding out which is cheaper before the first dispatch than after it.
+
+It reports one more thing, which is not a predicate and moves no task: a
+`Consumes:` entry whose text names a task already in its own group. A dependency
+written as prose declares no identifier for another task's `Produces` to match,
+so nothing conflicts and the pair is grouped as though either could go first —
+the literal `Task <n>` is the only part of such a line a command can read. **A
+report carrying that flag withholds its closing line about disjoint files**, for
+the whole report rather than the flagged group, so a run that ends without that
+sentence is one that declined to make the claim.
 
 Copy its output into the ledger beside the table. The grouping is what the loop
 dispatches against, and a compaction that takes it leaves you re-deriving which

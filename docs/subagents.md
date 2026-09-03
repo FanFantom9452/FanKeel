@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-03
+last_verified: 2026-09-04
 source_of_truth: hooks/brief.js, lib/render.js, hooks/carry.js, lib/plantasks.js
 ---
 
@@ -163,7 +163,13 @@ consumes nothing and the last produces nothing.
 `node scripts/ledger.js --plan <file> groups` computes all three over a whole plan
 and prints which tasks may share one response. Two tasks in different groups
 never run at once, and the ceiling above still bounds how many of one group go
-out together.
+out together. It prints a fourth thing that is not a predicate and moves no
+task: a `Consumes:` entry whose text names a task already in its own group.
+Prose declares no identifier for a `Produces` to match, so the third predicate
+cannot see such a dependency at all, and the literal `Task <n>` is the only part
+of the line a command can read. A report carrying that flag withholds its
+closing line about disjoint files — for the whole report rather than the flagged
+group.
 
 That is `build`'s unit. Every stage has one or has none, and the rows with none
 are the ones worth reading: they are where a fan-out does not belong.
