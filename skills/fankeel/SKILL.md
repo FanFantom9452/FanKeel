@@ -765,8 +765,10 @@ on:
 
 - **The return value is the expensive part.** Everything a subagent reads is
   spent in a context that gets thrown away; what it returns lands in this one and
-  stays for the rest of the session. Delegating a wide search is a saving.
-  Delegating something that has to report at length is not.
+  stays for the rest of the session. Delegating a wide search saves this
+  context and nothing else — measured 2026-09-03, it cost 1.85 times the money
+  and 1.75 times the wall-clock to do it. Delegating something that has to
+  report at length does not even buy that.
 - **A subagent has no entry in the registry and must not be given one.** It is
   not a session and it does not own a task. Writing one would put a second
   claimant on this task's own files.

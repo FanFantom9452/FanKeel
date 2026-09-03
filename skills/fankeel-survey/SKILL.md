@@ -174,7 +174,8 @@ next to it.
 
 **Dispatch when the reading is wide, or when nothing matched at all.** Wide means
 the answer is a judgement over several subsystems rather than a longer list — the
-one case a subagent pays for. A **zero-match scan** is the other: there is no list
+one case a subagent buys anything, and what it buys is a smaller context rather
+than a cheaper or a quicker one. A **zero-match scan** is the other: there is no list
 to widen, the terms were wrong or the thing is named something else, and reading
 wider is the only move left. Never ask permission for either. The user's answer to
 "shall I read further?" is foreordained — they asked the question the reading
