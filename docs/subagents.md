@@ -34,7 +34,7 @@ The section below says what a subagent is *not*. This is the other half.
 
 | | |
 |---|---|
-| **dispatch** | by default. Anything that would leave files, output or dead ends in the parent's context, where they are re-read on every later turn. The payoff is concentrated in questions that have to **find** things; measured, one whose files were already named bought almost none of it |
+| **dispatch** | by default. Anything that would leave files, output or dead ends in the parent's context, where they are re-read on every later turn. The payoff is concentrated in questions that have to **find** things; measured, a named question still joining across files bought 2.55× where the same question unnamed bought 9.23× |
 | **do not** | only two cases — a pipe already removes the residue, or it is a single tool call. `npm test` is tens of thousands of characters and the two lines that decide it are 24; `grep` does that for nothing |
 
 A user who has said, this session, not to dispatch is neither case: nothing
@@ -68,13 +68,37 @@ not faster. It buys residue, and that is the price of it:
 A second pair the same day changed one thing about that question: it named the
 seven files it wanted read, so neither arm had to search for them. The residue
 advantage fell from 9.2× to 1.5× — 74,603 tokens in the parent against 113,518 —
-while the money stayed at 1.59× and the wall-clock got worse, 2.77×. So the 9.2×
-was the inline arm *searching*, not the inline arm reading: the first pair's
-target set was 106KB, and no amount of reading 106KB costs 532,322 tokens. What
-decides whether a dispatch pays is whether the question has to find things, not
-how much it has to read:
+while the money stayed at 1.59× and the wall-clock got worse, 2.77×:
 [reports/2026-09-03-dispatch-vs-inline-named.md](reports/2026-09-03-dispatch-vs-inline-named.md).
-Two points, and nothing between them has been measured.
+
+A third pair filled the middle — the first pair's question with its eight files
+spelled out, so the join stayed and the searching went. Three points now, each
+one variable from its neighbour:
+
+| the question | residue advantage |
+|---|---|
+| unnamed, cross-file join | 9.23× |
+| **named, cross-file join** | **2.55×** |
+| named, per-file classification | 1.52× |
+
+Naming with the join held drops it 3.62×; the join with naming held raises it
+1.68×. **Both are real, and naming is the larger** — so what decides whether a
+dispatch pays is mostly whether the question has to **find** things, but it is a
+gradient and not a step: a named question that still has to join across files
+buys 2.55×, which is not nothing.
+
+`num_turns` is the mechanism, and all three pairs had it in hand from the start
+without using it. The inline arms ran 8, 9 and 13 turns for 113,518, 160,728 and
+532,322 tokens of residue — turns rise 1.63× where residue rises 4.69×, because
+every turn re-reads the accumulated context. Searching adds turns, and turns
+compound. That also retires the second pair's own argument for its conclusion:
+*no amount of reading 106KB costs 532,322 tokens* ignores turn count, and 106KB
+across thirteen turns reaches it with no searching at all. The conclusion held;
+the reasoning under it did not:
+[reports/2026-09-03-dispatch-vs-inline-join.md](reports/2026-09-03-dispatch-vs-inline-join.md).
+
+Dispatch was dearer and slower in every one of the three, without exception —
+1.85×, 1.59× and 2.12× the money, 1.75×, 2.77× and 2.70× the wall-clock.
 
 Five things that fail silently when missed: several dispatches must be in **one
 response** to run concurrently; the **model must be passed explicitly**, since an
