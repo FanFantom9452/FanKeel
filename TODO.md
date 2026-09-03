@@ -53,6 +53,8 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 - Whether the three pairs' evidence files belong in the repository: all three reports cite files that live in a session temp directory — [docs/subagents.md](docs/subagents.md).
 
+- Whether a two-source join needs a fourth pair: fankeel-verify:99 cites 1.5× for readers each given a page and a diff, a shape no pair measured — [docs/subagents.md](docs/subagents.md).
+
 ## Waiting
 
 - Whether a flag a verb ignores should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses the same value. None observed. 09-01.

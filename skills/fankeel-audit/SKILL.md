@@ -143,9 +143,12 @@ Three failures the scanners cannot see, and the reason this skill exists:
 Reading two long pages against each other and against the code is wide reading
 with a narrow answer — which page does the code support, and where. The reading
 is thrown away; the answer is two lines. But `docs-audit.js` has already named
-the pair, so nothing here has to be *found*, and finding is where the payoff
-turned out to be: measured 2026-09-03, a fan-out over files already named bought
-about 1.5× the residue rather than 9.2×, at 1.59× the money.
+the pair, so nothing here has to be *found*, and finding is where most of the
+payoff turned out to be: measured 2026-09-03, a fan-out over files already named
+bought 1.52× the residue rather than 9.23×, at 1.59× the money. This stage's
+question does still join two pages against each other and against the code, and
+a named question that joins measured 2.55×, at 2.12× the money — so the payoff
+here is real and middling rather than absent.
 
 So dispatch it: one reader per pair, **several in one response** so they run at
 once, each told the file they share and asked which page the code supports. Four

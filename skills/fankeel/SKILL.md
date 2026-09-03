@@ -852,11 +852,16 @@ had to search. The residue advantage fell from 9.2× to 1.5× while the money
 stayed at 1.59× and the wall-clock got worse, 2.77× — so what the first pair
 measured was the inline arm *searching*, not the inline arm reading
 ([docs/reports/2026-09-03-dispatch-vs-inline-named.md](../../docs/reports/2026-09-03-dispatch-vs-inline-named.md)).
-Two points, and nothing between them has been measured.
+A third pair filled the middle: the first pair's question with its eight files
+spelled out, so the join stayed and the searching went — 2.55×. Naming with the
+join held drops the advantage 3.62×; the join with naming held raises it 1.68×.
+Both are real and naming is the larger, so what decides whether a dispatch pays
+is mostly whether the question has to find things — as a gradient, not a step
+([docs/reports/2026-09-03-dispatch-vs-inline-join.md](../../docs/reports/2026-09-03-dispatch-vs-inline-join.md)).
 
 | | |
 |---|---|
-| **delegate** | wide reading with a narrow answer — *read these six documents and say whether any contradicts the code*. A judgement, so no filter can pick it out. Most of the payoff is in the **finding**: with the files already named it measured 1.5×, not 9.2× |
+| **delegate** | wide reading with a narrow answer — *read these six documents and say whether any contradicts the code*. A judgement, so no filter can pick it out. Most of the payoff is in the **finding** — 1.52× where the files were already named against 9.23× where they were not — but this row's own example still joins across those documents, and a named question that joins measured 2.55× |
 | **do not delegate** | anything a pipe already removes. One command's output is not worth a system prompt |
 
 Five rules that make it work, each of which fails silently when missed:
