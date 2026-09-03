@@ -34,7 +34,7 @@ The section below says what a subagent is *not*. This is the other half.
 
 | | |
 |---|---|
-| **dispatch** | by default. Anything that would leave files, output or dead ends in the parent's context, where they are re-read on every later turn |
+| **dispatch** | by default. Anything that would leave files, output or dead ends in the parent's context, where they are re-read on every later turn. The payoff is concentrated in questions that have to **find** things; measured, one whose files were already named bought almost none of it |
 | **do not** | only two cases — a pipe already removes the residue, or it is a single tool call. `npm test` is tens of thousands of characters and the two lines that decide it are 24; `grep` does that for nothing |
 
 A user who has said, this session, not to dispatch is neither case: nothing
@@ -64,6 +64,17 @@ put to two fresh sessions, one dispatching four `sonnet` readers and one with th
 543,000, and 280 seconds of wall-clock against 160. Dispatch is not cheaper and
 not faster. It buys residue, and that is the price of it:
 [reports/2026-09-03-dispatch-vs-inline.md](reports/2026-09-03-dispatch-vs-inline.md).
+
+A second pair the same day changed one thing about that question: it named the
+seven files it wanted read, so neither arm had to search for them. The residue
+advantage fell from 9.2× to 1.5× — 74,603 tokens in the parent against 113,518 —
+while the money stayed at 1.59× and the wall-clock got worse, 2.77×. So the 9.2×
+was the inline arm *searching*, not the inline arm reading: the first pair's
+target set was 106KB, and no amount of reading 106KB costs 532,322 tokens. What
+decides whether a dispatch pays is whether the question has to find things, not
+how much it has to read:
+[reports/2026-09-03-dispatch-vs-inline-named.md](reports/2026-09-03-dispatch-vs-inline-named.md).
+Two points, and nothing between them has been measured.
 
 Five things that fail silently when missed: several dispatches must be in **one
 response** to run concurrently; the **model must be passed explicitly**, since an
