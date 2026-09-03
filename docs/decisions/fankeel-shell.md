@@ -221,9 +221,9 @@ context for the rest of the session. 280 tokens spent to take a thousand off a
 return value is a trade that always pays, and it pays in the resource a long
 project actually runs out of, which is window rather than money.
 
-It carries the task, the scope, what the return value costs, and the voice digest
-if one is set. It does not carry the stage rules: a subagent is not running the
-pipeline, it is doing one bounded job inside somebody else's stage.
+It carries the task, the scope, and what the return value costs. It does not
+carry the stage rules: a subagent is not running the pipeline, it is doing one
+bounded job inside somebody else's stage.
 
 A subagent never gets a registry entry. It is not a session and does not own a
 task, and an entry would make it a second claimant on its own parent's files.
