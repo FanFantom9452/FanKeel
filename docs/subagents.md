@@ -14,6 +14,13 @@ not have one. So a `SubagentStart` hook hands it a brief instead: the task,
 the files that task has touched, and what its return value costs.
 Background subagents get the same brief. One started with an isolated context
 does not, which is Claude Code's decision rather than something to work around.
+A **Workflow** agent gets it too, byte for byte, and its `agent_type` reads
+`workflow-subagent` — a value no test here had ever seen. That the brief arrives
+at all was assumed until 2026-09-04 and is measured now: `tests/brief.test.js`
+asserts the hook process's stdout and stops there, so three cells were dispatched
+and asked to reproduce whatever had been put in front of them, with no needle in
+the prompt to find
+([reports/2026-09-04-subagent-brief-probe.md](reports/2026-09-04-subagent-brief-probe.md)).
 
 ## Why this is the best-value text in the plugin
 
