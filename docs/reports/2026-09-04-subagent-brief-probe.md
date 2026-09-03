@@ -75,10 +75,14 @@ touched: TODO.md, .claude/agents/brief-probe.md
 | output style 送不送 | 送出去的東西裡沒有任何 style 文字。**但這不是完整答案** —— 見下 |
 | turn-reminder | brief 裡沒有 |
 
-`docs/decisions/fankeel-shell.md:224` 寫 brief「carries the task, the scope, what the
-return value costs, and **the voice digest if one is set**」。先前只證明了
-`hooks/brief.js` 與 `lib/render.js` 裡 grep 不到任何 style 參照；這次證明**送出去的東西
-裡也沒有**。
+`docs/decisions/fankeel-shell.md:224`，**在 `ffd95c6` 也就是這次量測之前的狀態**，寫著
+brief「carries the task, the scope, what the return value costs, and **the voice
+digest if one is set**」。先前只證明了 `hooks/brief.js` 與 `lib/render.js` 裡 grep 不到
+任何 style 參照；這次證明**送出去的東西裡也沒有**。
+
+那一句已經在 `feabd15` 被刪除，所以上面的行號指的是刪除之前 —— 現在去讀 :224 看到的是
+改過的版本。引用一個活的行號來當作刪除它的理由，會在下一次有人照著查的時候變成一個
+自相矛盾的引文；這裡釘的是 sha。
 
 ## 這一次沒有定下來的
 
