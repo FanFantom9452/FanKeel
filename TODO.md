@@ -51,6 +51,8 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Needs a decision
 
+- Whether a second pair is worth running: the dispatch-vs-inline figures are n=1 per arm, the harness is one command, and the pair cost about US$3.44 and seven minutes — [docs/subagents.md](docs/subagents.md).
+
 ## Waiting
 
 - Whether a flag a verb ignores should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses the same value. None observed. 09-01.
