@@ -278,3 +278,58 @@ test('every file that carries the version carries the same one', () => {
     'versions disagree — ' + [...found].map(([f, v]) => f + ' ' + v).join(', '));
   assert.match(versions[0], /^\d+\.\d+\.\d+$/, 'not a release number: ' + versions[0]);
 });
+
+// The hook count is written in prose three times and derived nowhere, so every
+// hook added falsifies all three and nothing goes red. `README.md:188` was
+// corrected from "The other two" to "The other three" when the fifth hook
+// landed; `carry.js` made that line wrong again on 2026-08-28 and it stayed
+// wrong through 371f78e, which fixed the line above it, and 93ea151, which
+// fixed "all six hooks" beside it. That is three readings of one defect, each
+// by a person — the last recorded at
+// docs/reports/2026-09-02-process-state-review.md:156.
+//
+// A count has no checker unless something recounts it: the shape
+// tests/skills.test.js:545 and tests/render.test.js:347 settled on for the same
+// kind of claim. Counted from the manifest rather than the directory, because
+// what runs is what is registered, and the load-bearing split needs the event
+// each hook sits on anyway.
+test('the pages that count the hooks count as many as are registered', () => {
+  const root = path.join(__dirname, '..');
+  const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
+  const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven',
+    'eight', 'nine', 'ten'];
+
+  const eventOf = new Map();
+  for (const [event, groups] of Object.entries(JSON.parse(read('.claude-plugin/plugin.json')).hooks)) {
+    for (const group of groups) {
+      for (const hook of group.hooks) {
+        const m = hook.command.match(/hooks\/([\w-]+\.js)/);
+        assert.ok(m, 'no hook file in the registered command: ' + hook.command);
+        eventOf.set(m[1], event);
+      }
+    }
+  }
+
+  // A file in hooks/ that nothing registers never runs, so a count taken from
+  // either one alone can be right about a set the other does not have.
+  assert.deepEqual([...eventOf.keys()].sort(),
+    fs.readdirSync(path.join(root, 'hooks')).sort(),
+    'hooks/ and the manifest name different hooks');
+
+  // README's own definition of load-bearing: the two events where a hook that
+  // throws blocks the thing it was called for.
+  const BLOCKING = new Set(['UserPromptSubmit', 'PreToolUse']);
+  const total = WORDS[eventOf.size];
+  const others = WORDS[[...eventOf.values()].filter((e) => !BLOCKING.has(e)).length];
+
+  // "all seven\nhooks are tested" — the line wraps between the two words, so the
+  // gap has to allow a newline or the fix that rewraps it fails this instead.
+  const readme = read('README.md');
+  assert.match(readme, new RegExp('all ' + total + '\\s+hooks'),
+    'README.md does not say "all ' + total + ' hooks"');
+  assert.match(readme, new RegExp('The other ' + others + ' are not load-bearing'),
+    'README.md does not say "The other ' + others + ' are not load-bearing"');
+
+  assert.match(read('tests/hook.test.js'), new RegExp('all ' + total + '\\s+hooks'),
+    'tests/hook.test.js does not say "all ' + total + ' hooks"');
+});

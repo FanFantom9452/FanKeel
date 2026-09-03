@@ -67,6 +67,8 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 - Whether an implementer needs a way to say it is blocked, against a return contract that is three lines on purpose — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
 
+- Whether `tested as subprocesses with real payloads` should be pinned like the count beside it — [tests/contract.test.js](tests/contract.test.js).
+
 ## Waiting
 
 - Whether a flag a verb ignores should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses the same value. None observed. 09-01.
