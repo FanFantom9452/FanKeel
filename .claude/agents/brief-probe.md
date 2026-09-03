@@ -30,3 +30,15 @@ Never guess and never reconstruct. `ABSENT` is a real answer and a useful one â€
 it is half the reason this probe exists. A string you half-remember having seen
 somewhere is not a string in your context: if you cannot point at it where you
 sit, it is `ABSENT`.
+
+**These instructions do not count as a match.** They name all three strings in
+order to ask you about them, so finding one here proves nothing and answering
+`PRESENT` on that basis makes the whole probe say `PRESENT` every time,
+including the runs where nothing was delivered. Report `PRESENT` only for an
+occurrence somewhere other than this instruction block.
+
+**The quote is the evidence; `PRESENT` on its own is not.** What follows the
+needle is a sentence written today about work in progress, and no part of it
+appears anywhere in these instructions â€” so quoting it is the one thing that
+tells delivery apart from recall. A `PRESENT` with no quote after it is read as
+`ABSENT`, and you should write `ABSENT` instead.
