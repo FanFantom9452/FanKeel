@@ -95,10 +95,12 @@ Every task opens with a heading, and its shape is a contract rather than a style
 
 `lib/plantasks.js` matches that line and nothing else — the number, then a
 colon. A dash or an em dash in place of the colon parses as prose, so the task
-is not in the plan at all as far as every tool downstream is concerned. Nothing
-says so at the time: `init` still writes a ledger, `show` still reports it
-healthy, and it is `groups` — run later, if at all — that finally answers with
-no tasks in a plan that visibly has six.
+is not in the plan at all as far as every tool downstream is concerned. `init`
+says so, naming the file and showing a conforming heading, and it is the only
+one that says so early: `show` reads the ledger and never the plan, so over a
+plan holding no tasks it still answers `complete: nothing yet` and tells you to
+resume at the first task not listed. `groups` is what is left for whoever did
+not read what `init` printed.
 
 Every task carries a **Files** block:
 
