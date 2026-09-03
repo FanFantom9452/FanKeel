@@ -112,10 +112,11 @@ Dispatch was dearer and slower in every one of the three, without exception —
 Five things that fail silently when missed: several dispatches must be in **one
 response** to run concurrently; the **model must be passed explicitly**, since an
 omitted one inherits the parent's — inside a Workflow script too, where every
-`agent` call carries `model` and `sonnet` is the floor; the **count and the
-model must be said out loud**, in the response that sends them, because a
-fan-out nobody announced is spend the user is paying for and could not see
-coming; the returns must be
+`agent` call carries `model` and `sonnet` is the floor, and the authoring
+reference's omit-and-inherit is the host's default, not this plugin's; the
+**count and the model must be said out loud**, in the response that sends
+them, because a fan-out nobody announced is spend the user is paying for and
+could not see coming; the returns must be
 **compared against each other**, because agents dispatched from one prompt style
 make correlated mistakes that per-agent reading will not catch; and the **return
 contract must state why it costs**, because naming the shape without the reason
@@ -147,10 +148,10 @@ spend.
 Nor does it become a way to run a stage. A workflow's `phases` are its own,
 declared in its script; they are not the route, and none of them is a gate.
 
-**This is unmeasured against a control.** Chains have run as workflows on this
-repository — one task's own build and verify, written up in
+**This is unmeasured against a control.** A chain has run as a workflow on this
+repository — one task's own build, written up in
 [reports/2026-09-04-chains-as-workflows.md](reports/2026-09-04-chains-as-workflows.md)
-— with no four-dispatch arm beside either. The argument above is still
+— with no four-dispatch arm beside it. The argument above is still
 structural — it turns on where the intermediate output lands — and the
 figures live in the report, dated, which is why none is quoted here.
 
