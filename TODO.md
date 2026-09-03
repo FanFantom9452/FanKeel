@@ -51,7 +51,7 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Needs a decision
 
-- Whether a second pair is worth running: the dispatch-vs-inline figures are n=1 per arm, the harness is one command, and the pair cost about US$3.44 and seven minutes — [docs/subagents.md](docs/subagents.md).
+- Whether a second dispatch-vs-inline pair is worth its cost: the figures are n=1 per arm and the harness is one command — [docs/subagents.md](docs/subagents.md).
 
 ## Waiting
 
