@@ -59,7 +59,11 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 - Step 2 still says "two or three approaches" against its own line 16 and `lib/stages.js:225` — [skills/fankeel-design/SKILL.md](skills/fankeel-design/SKILL.md).
 
-- Three counts nobody recounted: archive 17/19 is 22/24, `build` 2394 is 2393, 2808 no two readers reproduce — [docs/documents.md](docs/documents.md).
+- The archive count is stale: seventeen of the nineteen is twenty-two of the twenty-four — [docs/documents.md](docs/documents.md), :167.
+
+- `build` renders at 2393, not 2394; the test prints the figure, and stage-units.md:40 carries it too — [docs/registry.md](docs/registry.md), :187.
+
+- 2808 is a figure no two readers reproduce, in a sentence telling you to recount it — [docs/pipeline.md](docs/pipeline.md), :145.
 
 - The index says every page in it is `reference`, and its Roles table omits two buckets holding 11 files — [docs/README.md](docs/README.md).
 
@@ -89,8 +93,8 @@ entry waited for actually happening. It shrinks when somebody reads it.
 - Whether a stated `Done when` actually ends the gate loop, or only renames it — [lib/stages.js](lib/stages.js), ALWAYS[0]'s `or none`. It lives in the model loop; no test here reaches it. 09-01.
 - An MCP write tool is covered wherever git reports it — [lib/dirty.js](lib/dirty.js) reads only `git status --porcelain`. Writes outside the repo are the part no test can pin. 09-01.
 - Language patterns beyond the ten [scripts/survey.js](scripts/survey.js) knows. Anything else is listed under `skipped.noPattern` for a human; add a row when one is actually needed. 09-01.
-- A per-`agent_type` subagent brief — [lib/render.js](lib/render.js) appends the type as a label only. Three types measured 09-04, `workflow-subagent` among them. 09-04.
-- Whether an output style reaches subagents at all — none in what three subagents received on 09-04. Needs one active in `/config` to tell "not sent" from "nothing to send". 09-04.
+- A per-`agent_type` subagent brief — [lib/render.js](lib/render.js) appends the type as a label. Two types measured 09-04, briefs byte-identical; which deserves its own is real use's answer. 09-04.
+- Whether an output style reaches subagents at all — none in what three subagent runs received on 09-04. Needs one active in `/config` to tell "not sent" from "nothing to send". 09-04.
 - A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI, so the default reminder is what the three get. 09-04.
 - Whether the pairs [scripts/docs-audit.js](scripts/docs-audit.js) picks are worth reading — `LANDMARK = 4` is the filter that decides. 4 of 28 read once, none of them wrong. 09-01.
 - Whether `fanoutSync`'s all-or-nothing payload ever costs anything — [lib/tracked.js](lib/tracked.js). One 64MB overflow discards every answer and re-reads all thirty serially. 09-01.
