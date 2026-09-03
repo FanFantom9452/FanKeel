@@ -139,10 +139,13 @@ Three failures the scanners cannot see, and the reason this skill exists:
   them is the source and the other links to it. Say which should be which and
   why — usually the one closest to the code wins.
 
-**This is the stage's dispatch case, and it is the clearest one in the pipeline.**
+**This is the stage's dispatch case, and it is a narrower one than it looks.**
 Reading two long pages against each other and against the code is wide reading
 with a narrow answer — which page does the code support, and where. The reading
-is thrown away; the answer is two lines.
+is thrown away; the answer is two lines. But `docs-audit.js` has already named
+the pair, so nothing here has to be *found*, and finding is where the payoff
+turned out to be: measured 2026-09-03, a fan-out over files already named bought
+about 1.5× the residue rather than 9.2×, at 1.59× the money.
 
 So dispatch it: one reader per pair, **several in one response** so they run at
 once, each told the file they share and asked which page the code supports. Four

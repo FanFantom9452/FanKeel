@@ -93,10 +93,14 @@ would read all of it in a context that gets thrown away and charge a system
 prompt for the privilege.
 
 The question above it is the case *for*. "Which page does this change make false"
-is judgement over pages nothing can grep — wide reading, narrow answer. Dispatch
-it: one reader per page the change plausibly touched, several in one response so
-they run at once — four is the ceiling, and the fankeel skill's *Dispatch by
-default, never the filtering* says why — each given the **path** to a diff file
+is judgement over pages nothing can grep — wide reading, narrow answer. What it
+buys is a smaller context rather than a cheaper or a quicker one, and less of
+that than it looks: the pages here have already been named, and a fan-out over
+named files measured about 1.5× the residue rather than 9.2×, at 1.59× the money
+and 2.77× the wall-clock. Dispatch it anyway: one reader per page the change
+plausibly touched, several in one response so they run at once — four is the
+ceiling, and the fankeel skill's *Dispatch by default, never the filtering* says
+why — each given the **path** to a diff file
 and asked only what is now false and where. Never a pasted diff: it lands the
 whole change in this context, which is the cost dispatching exists to avoid.
 Pass the model explicitly; `sonnet` is the floor. Say how many are going and

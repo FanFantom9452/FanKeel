@@ -847,9 +847,16 @@ the parent against 532,322, and paid 1.85 times the money and 1.75 times the
 wall-clock for it. Not cheaper, not faster — residue is what it buys
 ([docs/reports/2026-09-03-dispatch-vs-inline.md](../../docs/reports/2026-09-03-dispatch-vs-inline.md)).
 
+A second pair the same day named the seven files it wanted read, so neither arm
+had to search. The residue advantage fell from 9.2× to 1.5× while the money
+stayed at 1.59× and the wall-clock got worse, 2.77× — so what the first pair
+measured was the inline arm *searching*, not the inline arm reading
+([docs/reports/2026-09-03-dispatch-vs-inline-named.md](../../docs/reports/2026-09-03-dispatch-vs-inline-named.md)).
+Two points, and nothing between them has been measured.
+
 | | |
 |---|---|
-| **delegate** | wide reading with a narrow answer — *read these six documents and say whether any contradicts the code*. A judgement, so no filter can pick it out |
+| **delegate** | wide reading with a narrow answer — *read these six documents and say whether any contradicts the code*. A judgement, so no filter can pick it out. Most of the payoff is in the **finding**: with the files already named it measured 1.5×, not 9.2× |
 | **do not delegate** | anything a pipe already removes. One command's output is not worth a system prompt |
 
 Five rules that make it work, each of which fails silently when missed:
