@@ -250,7 +250,14 @@ function main(argv) {
                     + '\nplan builds serially.' + (cause ? ' ' + cause : '')
                 : '')
             + '\n\nOne group is one response.'
-            + (serial ? '' : ' Their files are disjoint and neither'
+            // Still true of what the tasks declared even when `prose.length`,
+            // but true is not the bar: printed three lines under a finding
+            // that says "worth a look," it reads as the answer to that
+            // finding rather than a claim about a different thing (declared
+            // identifiers, not prose), and the reader leaves concluding the
+            // warning was noise. Withheld, not reworded — the sentence itself
+            // did not become false.
+            + (serial || prose.length ? '' : ' Their files are disjoint and neither'
                 + '\nconsumes what the other produces.')
             + ' Commit them one at a time as they'
             + '\nreturn, in the order listed.';

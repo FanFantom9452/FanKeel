@@ -403,7 +403,12 @@ test('groups names the same cause when a heading does not match', () => {
 // Row 1's `consumesText` exists for exactly this case: a dependency written as
 // prose names no identifier `conflict()` can match against a `Produces`, so
 // the pair is grouped as parallel while the task's own words say one waits on
-// the other.
+// the other. The disjointness sentence is asserted absent, not merely
+// unchecked: printed three lines under "worth a look" it reads as the answer
+// to that finding, which is the failure round 1 fixed. The positive control --
+// a report with no finding still carrying the sentence -- is
+// 'groups reports the parallelisable sets of a plan' above, so this fix is not
+// a silent deletion of the sentence for every report.
 test('groups flags a Consumes text naming a task already in its group', () => {
   const dir = root();
   const plan = path.join(dir, 'plan.md');
@@ -416,4 +421,5 @@ test('groups flags a Consumes text naming a task already in its group', () => {
   assert.match(out, /1 groups over 2 tasks/);
   assert.match(out, /1: 1, 2/);
   assert.match(out, /Task 2 names Task 1 in its Consumes text/);
+  assert.doesNotMatch(out, /files are disjoint/);
 });
