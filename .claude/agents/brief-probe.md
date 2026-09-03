@@ -17,8 +17,9 @@ voids the run out loud. **That is why there is no `tools:` key above.** An empty
 `tools: []` looks like the stronger version of this and is the weaker one:
 Claude Code refuses to launch a subagent whose tools list resolves to nothing,
 so what you get is not a tool-free run but no run at all, and a probe that never
-started tells the caller nothing. Measured 2026-09-04 against CLI 2.1.259; the
-run and what it settled are in `docs/reports/2026-09-04-subagent-brief-probe.md`.
+started tells the caller nothing. That refusal is documented behaviour rather
+than something this repository watched happen — the run that tried it died one
+step earlier, on an agent registry that is only read at process start.
 
 Answer exactly these four, in this order, as four lines. Nothing else — no
 preamble, no explanation, no offer to help, no closing remark.

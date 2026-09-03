@@ -84,6 +84,11 @@ digest if one is set**」。先前只證明了 `hooks/brief.js` 與 `lib/render.
 改過的版本。引用一個活的行號來當作刪除它的理由，會在下一次有人照著查的時候變成一個
 自相矛盾的引文；這裡釘的是 sha。
 
+**刪掉那一句靠的是 grep，不是這次的量測。** `hooks/brief.js` 與 `lib/render.js` 裡沒有
+任何 style 參照，所以沒有一條路徑能帶上 digest，不管有沒有 style 被設定 —— 那是決定性
+的。探針是佐證，而且它自己帶著下面那個條件；把一個有條件的量測跟一個無條件的證據並列
+成「兩層證據」，是這份報告不該做的事。
+
 ## 這一次沒有定下來的
 
 - **output style 那條仍然是半個答案。** 量測時 `C:/Users/Owner/.claude/settings.json`
@@ -100,6 +105,13 @@ digest if one is set**」。先前只證明了 `hooks/brief.js` 與 `lib/render.
   同一個 registry 解析，所以自訂型別在這個行程裡同樣不可用。`workflow-subagent` 是沒有
   指定型別時的值，不是唯一可能的值。
 - **B 格只跑了一次。** C 格跑了兩次而且一致；B 格沒有自己的重複。
+- **修好的 fixture 從來沒有被跑過。** `2257199` 把 `tools:` 那個鍵拿掉，讓它理論上可以
+  啟動，但 registry 在行程啟動時就讀完，所以這一輪不可能驗證。「它現在會啟動」在這裡是
+  推論而不是觀察，下一個 session 的第一件事應該是跑它一次。
+- **「`tools: []` 會拒絕啟動」也不是這次觀察到的。** A 格死在更前面的一步
+  （`Agent type 'brief-probe' not found`），從來沒走到那個檢查。那句話的出處是 Claude
+  Code 的 sub-agents 文件，由兩個獨立的讀者各自查到並附上版本（CLI ≥ 2.1.208，本機
+  2.1.259），不是本次的量測結果。
 
 ## 順帶量到的
 
@@ -112,4 +124,9 @@ digest if one is set**」。先前只證明了 `hooks/brief.js` 與 `lib/render.
 - 提交：`ffd95c6`（量測前的 HEAD）、`a77b5e2`、`eaef4c3`（探針 fixture 與它的修正）
 - `hooks/brief.js`、`lib/render.js:335-356`（`renderBrief`）
 - `.claude-plugin/plugin.json:61-72`：`SubagentStart` 沒有 matcher，所以對每一種
-  subagent 開火 —— 這次的三個格子是那句話第一次有證據
+  subagent 開火 —— 這次的格子是那句話第一次有證據
+
+**原始輸出不在這個 repository 裡。** 三個格子的完整回傳落在這個 session 的暫存目錄
+（`.../tasks/<id>.output`），上面的逐字引文是從那裡抄過來的，所以讀者無法獨立核對這份
+轉錄。這與 `docs/reports/` 裡 09-03 那三份報告是同一個未決問題，`TODO.md` 的
+`## Needs a decision` 有它；這一份讓那個問題多了一個案例，沒有解決它。

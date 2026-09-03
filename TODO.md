@@ -99,4 +99,6 @@ entry waited for actually happening. It shrinks when somebody reads it.
 - Whether the pairs [scripts/docs-audit.js](scripts/docs-audit.js) picks are worth reading — `LANDMARK = 4` is the filter that decides. 4 of 28 read once, none of them wrong. 09-01.
 - Whether `fanoutSync`'s all-or-nothing payload ever costs anything — [lib/tracked.js](lib/tracked.js). One 64MB overflow discards every answer and re-reads all thirty serially. 09-01.
 - Whether the day arithmetic slips a day across a DST transition — [scripts/todo-check.js](scripts/todo-check.js). Matches `docs-audit.js`'s `daysBetween`; no DST here. 09-01.
+- The fixed probe fixture has never been run — [.claude/agents/brief-probe.md](.claude/agents/brief-probe.md); the agent registry is read at process start, so it needs a fresh terminal. 09-04.
+
 - Whether the disjointness sentence should be withheld per group rather than per report — [scripts/ledger.js](scripts/ledger.js), the `prose.length` gate. A clean group loses an accurate claim. 09-04.
