@@ -74,9 +74,47 @@ test('groups keep the plan order and split on the first conflict', () => {
   assert.deepEqual(groups(text), [[1], [2, 3, 4]]);
 });
 
+// An `Interfaces:` entry has no em-dash prose to guard against — it is a
+// plain list — so it takes every backticked token on the line, unlike the
+// `Files:` case pinned below.
+test('an Interfaces entry takes every backticked token, not just the first', () => {
+  const text = [
+    '## Task 1: name',
+    '',
+    '**Interfaces:**',
+    '- Consumes: nothing.',
+    '- Produces: `makeA`, `makeB`',
+    '',
+  ].join('\n');
+  const [t] = parseTasks(text);
+  assert.deepEqual(t.produces, ['makeA', 'makeB']);
+});
+
+// The name a first-backtick-only read would have dropped: `makeB` is the
+// second token on the `Produces:` line, and only taking every token catches
+// the edge it forms with a consumer that names it.
+test('a producer/consumer edge on the second name serialises the pair', () => {
+  const [a, b] = parseTasks(task(1, ['lib/a.js'], [], [], ['makeA', 'makeB']) + task(2, ['lib/b.js'], [], ['makeB'], []));
+  assert.equal(conflict(a, b), 'interface');
+});
+
+test('consumesText holds the raw text of each Consumes entry', () => {
+  const text = [
+    '## Task 1: name',
+    '',
+    '**Interfaces:**',
+    '- Consumes: `makeA`, `makeB`',
+    '- Produces: nothing.',
+    '',
+  ].join('\n');
+  const [t] = parseTasks(text);
+  assert.deepEqual(t.consumesText, ['`makeA`, `makeB`']);
+});
+
 // A description after the em dash can itself hold backticked words; only the
 // first backtick on the line is the declared path, or the description leaks
-// into the file list.
+// into the file list. `Interfaces:` entries take every token instead — see
+// the case above — because they have no such prose to guard against.
 test('only the first backticked token on an entry line is taken', () => {
   const text = [
     '## Task 1: name',
