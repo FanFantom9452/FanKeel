@@ -51,7 +51,7 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Needs a decision
 
-- Whether a second dispatch-vs-inline pair is worth its cost: the figures are n=1 per arm and the harness is one command — [docs/subagents.md](docs/subagents.md).
+- Whether the middle is worth a third pair: two shapes measured, named and unnamed, and nothing between them — [docs/subagents.md](docs/subagents.md).
 
 ## Waiting
 
