@@ -3,7 +3,7 @@ name: fankeel-plan
 description: The plan stage — decompose an approved design into tasks someone with no context could execute, with constraints generated from the project rather than remembered. Use for the plan stage of a fankeel task, writing an implementation plan, or breaking a spec into tasks before any code is written.
 version: 0.42.0
 status: current
-last_verified: 2026-09-03
+last_verified: 2026-09-04
 source_of_truth: lib/stages.js, scripts/map.js
 ---
 
@@ -86,6 +86,19 @@ Fold setup, configuration, scaffolding and documentation into the task whose
 deliverable needs them. Split only where a reviewer could meaningfully reject one
 task while approving its neighbour. Each task ends with an independently testable
 deliverable.
+
+Every task opens with a heading, and its shape is a contract rather than a style:
+
+```markdown
+## Task 1: <name>
+```
+
+`lib/plantasks.js` matches that line and nothing else — the number, then a
+colon. A dash or an em dash in place of the colon parses as prose, so the task
+is not in the plan at all as far as every tool downstream is concerned. Nothing
+says so at the time: `init` still writes a ledger, `show` still reports it
+healthy, and it is `groups` — run later, if at all — that finally answers with
+no tasks in a plan that visibly has six.
 
 Every task carries a **Files** block:
 
