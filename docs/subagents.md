@@ -47,14 +47,16 @@ The section below says what a subagent is *not*. This is the other half.
 A user who has said, this session, not to dispatch is neither case: nothing
 removes the residue, and the work stays in the parent — for that session, and
 written down as that session's. The plan's `**Dispatch:**` lines read
-`in-session — the user said so this session` on Task 1 and `same reason as Task
-1` after it, the build reviewer runs in the session as a ruling recorded once,
-and step 5 of the fankeel-build skill says what that costs and how half of it is
-bought back. Nothing else settles it that way. The host gates one tool,
-**Workflow**, on the user's own words (`ultracode`), and that one is offered
-rather than launched; the **Agent** tool has no gate. A session that read *only
-when the user has opted in* off the wrong tool and stopped sending Agent readers
-had forbidden itself — 2026-09-01, and two builds ran in-session over it.
+`in-session — the user said so this session` on Task 1 and `same reason as
+Task 1` after it, the build reviewer runs in the session as a ruling recorded
+once, and step 5 of the fankeel-build skill says what that costs and how half of
+it is bought back. Nothing else settles it that way. The host opens one tool,
+**Workflow**, on five things: `ultracode` in the prompt, ultracode on for the
+session, the user asking for a workflow in their own words, a skill the user
+invoked whose instructions say to run one, or a saved workflow by name; the
+**Agent** tool has no gate. A session that read *only when the user has opted
+in* off the wrong tool and stopped sending Agent readers had forbidden itself
+— 2026-09-01, and two builds ran in-session over it.
 
 Measured on 2026-08-26, one fan-out of four readers with a lens each: 240,881
 tokens spent inside them, about 4,000 characters returned, and 121 seconds rather
@@ -109,9 +111,11 @@ Dispatch was dearer and slower in every one of the three, without exception —
 
 Five things that fail silently when missed: several dispatches must be in **one
 response** to run concurrently; the **model must be passed explicitly**, since an
-omitted one inherits the parent's; the **count and the model must be said out
-loud**, in the response that sends them, because a fan-out nobody announced is
-spend the user is paying for and could not see coming; the returns must be
+omitted one inherits the parent's — inside a Workflow script too, where every
+`agent` call carries `model` and `sonnet` is the floor; the **count and the
+model must be said out loud**, in the response that sends them, because a
+fan-out nobody announced is spend the user is paying for and could not see
+coming; the returns must be
 **compared against each other**, because agents dispatched from one prompt style
 make correlated mistakes that per-agent reading will not catch; and the **return
 contract must state why it costs**, because naming the shape without the reason
@@ -131,19 +135,24 @@ context, and every intermediate finding lands there permanently even though only
 the verified ones survive. Run as a `pipeline` in Claude Code's **Workflow**
 tool, the intermediates stay inside the script and what returns is the join.
 
-**It is offered, never launched.** The tool is gated on the user asking for it in
-their own words, so the plugin's part is to name the shape and roughly what it
-would cost, and to let them start it. This is not the foreordained gate the
-pipeline removes elsewhere — reading never needs authorising, and a dozen agents
-always does. One is work; the other is spend.
+**`/fankeel` is the fourth of those five.** Where a stage's rule names a chain
+as one workflow, that rule is the opt-in, and the host's own run dialog is where
+the spend is authorised — it lists the phases and the agent count before
+anything runs. A shape no rule names is offered, not launched: the plugin's part
+is to name it and roughly what it would cost, and to let the user say so. This
+is not the foreordained gate the pipeline removes elsewhere — reading never
+needs authorising, and a dozen agents always does. One is work; the other is
+spend.
 
 Nor does it become a way to run a stage. A workflow's `phases` are its own,
 declared in its script; they are not the route, and none of them is a gate.
 
-**This is unmeasured.** No workflow has been run against four parallel dispatches
-on this repository. The argument above is structural — it turns on where the
-intermediate output lands — and there is no figure behind it, which is why none
-is quoted.
+**This is unmeasured against a control.** Chains have run as workflows on this
+repository — one task's own build and verify, written up in
+[reports/2026-09-04-chains-as-workflows.md](reports/2026-09-04-chains-as-workflows.md)
+— with no four-dispatch arm beside either. The argument above is still
+structural — it turns on where the intermediate output lands — and the
+figures live in the report, dated, which is why none is quoted here.
 
 ## The unit of independent work, per stage
 

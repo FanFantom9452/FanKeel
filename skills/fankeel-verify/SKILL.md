@@ -133,6 +133,21 @@ is a finding for the report.
 With no ledger there is no row and no fan-out: the claims are verified in this
 session, one table, exactly as below.
 
+**Where the host opens it, the chain is one workflow.** Verifiers then an
+adversary is a fan-out whose output feeds another fan-out — the one shape the
+fankeel skill says only the Workflow tool covers — and this paragraph is the
+opt-in the host's fourth valve names: a skill the user invoked whose
+instructions say to run one. Run the tasks through a `pipeline` with two
+stages: the verifier for a task writes its evidence rows to a file and returns
+the path; the adversary for that task reads the path and returns, under a
+`schema`, only the rows it defeats. Every `agent` call carries `model`, and
+`sonnet` is the floor there as it is here. What returns is the join — per
+task, the rows and the rows defeated — and the intermediates never land in
+this context. The ruling stays here, over the join: a row one task leaned on
+that another task's adversary defeated is the cross-task reading, and no agent
+makes it. The Agent form below is the fallback, for a session where the user
+said not to dispatch, or declined the host's run dialog.
+
 ## The adversary
 
 **Before the question, one read-only adversary over the evidence.** The reviewer

@@ -570,10 +570,13 @@ test('the dispatch rule count agrees with the bullet list under it, and with the
 
 // The ceiling paragraph said four and stopped, which reads as "past four, don't"
 // — and the one tool that covers the case past four went unnamed in both files
-// for four releases. Naming it is only half the rule. The other half is that it
-// may not be started from here, so a test matching `/Workflow/` alone would pass
-// a page that told you to press it; and the third is the admission that nothing
-// was measured, without which the structural argument reads as a benchmark.
+// for four releases. Naming it is only half the rule. Until 0.43.0 the other
+// half was "never launch it": the host's gate was read as `ultracode` alone,
+// when the host opens the tool on five things and the fourth is a skill the
+// user invoked whose instructions say to run one — which `/fankeel` is. So the
+// pin is now the valve and where the spend is authorised, the old sentence is
+// forbidden, and the admission of no control stays: two chains have run, none
+// against a four-dispatch arm.
 test('both dispatch surfaces name the Workflow tool, and bound it', () => {
   const surfaces = [
     ['skills/fankeel/SKILL.md', read('fankeel')],
@@ -584,16 +587,46 @@ test('both dispatch surfaces name the Workflow tool, and bound it', () => {
     assert.match(flat, /\bWorkflow\b/, label + ' never names the Workflow tool');
     assert.match(flat, /fan-out whose output feeds another fan-out/,
       label + ' does not say which shape the ceiling cannot cover');
-    assert.match(flat, /never launch(ed)?\b/i,
-      label + ' names the tool without saying it may not be started here');
+    assert.match(flat, /a skill the user invoked whose instructions say to run one/,
+      label + ' does not name the valve a stage rule opens');
+    assert.match(flat, /the host's own run dialog/,
+      label + ' does not say where the spend is authorised');
+    assert.doesNotMatch(flat, /offered rather than launched/,
+      label + ' still says the tool may not be started here');
     assert.match(flat, /\bunmeasured\b/i,
-      label + ' argues the case without admitting nothing was measured');
-    // Four exact figures have already rotted in the block above this one. This
-    // paragraph has nothing behind it at all, so a figure appearing here is a
-    // fabricated measurement rather than a stale one.
+      label + ' argues the case without admitting no control was run');
+    // The old sentence is banned only in the paragraph that carried it: the
+    // same words describe a probe cell elsewhere on the docs page, and a
+    // file-wide ban made an implementer rewrite that sentence to pass.
     const start = flat.indexOf('fan-out whose output feeds another fan-out');
-    assert.equal(/\b\d{2},\d{3}\b/.test(flat.slice(start, start + 1600)), false,
+    const block = flat.slice(start, start + 1600);
+    assert.doesNotMatch(block, /never launch(ed)?\b/i,
+      label + ' still says the tool may not be started here');
+    // Four exact figures have already rotted in the block above this one. The
+    // runs behind this paragraph live in a dated report; a figure appearing
+    // here is one nobody will re-measure.
+    assert.equal(/\b\d{2},\d{3}\b/.test(block), false,
       label + ' grew a figure for a comparison nobody ran');
+  }
+});
+
+// The two chains in this repository that are that shape — verifiers then an
+// adversary, pair readers then an adversary — were written as Agent dispatches
+// in both stage skills while the page above said only a workflow covers the
+// shape. Each skill now says when the chain is one workflow, carries the model
+// floor into the script, and keeps the Agent form for a declined dialog.
+test('verify and audit run their chain as one workflow where the host opens it', () => {
+  for (const n of ['fankeel-verify', 'fankeel-audit']) {
+    const flat = read(n).replace(/\s+/g, ' ');
+    assert.match(flat, /\bWorkflow\b/, n + ' never names the Workflow tool');
+    assert.match(flat, /where the host opens it/i,
+      n + ' does not say when the chain is a workflow');
+    assert.match(flat, /`model`[^.]{0,160}`sonnet`/,
+      n + ' does not carry the model floor into the script');
+    assert.match(flat, /\bAgent\b[^.]{0,200}\bfallback\b/,
+      n + ' keeps no Agent form for a declined dialog');
+    assert.doesNotMatch(flat, /`(agent|pipeline|parallel|phase)\(\)`/,
+      n + ' writes a script call as a symbol this repository would have to declare');
   }
 });
 

@@ -569,6 +569,20 @@ test('every stage is told to say what a dispatch costs, before it costs it', () 
   }
 });
 
+// The injected rule is the copy that survives a compaction, and the skill text
+// is read once on entering the stage. `verify` and `audit` each carry a chain —
+// a fan-out whose output feeds another — and the skill says it is one workflow
+// where the host opens it; a rule that names only the adversary leaves the
+// session dispatching the chain by hand after the skill text is gone. The
+// clause lives in these two rules and not in ALWAYS: `build` sits seven
+// characters under the injection cap, and ALWAYS rides every stage.
+test('verify and audit rules say the chain is one workflow', () => {
+  for (const name of ['verify', 'audit']) {
+    const text = rulesFor(name).join(' ');
+    assert.match(text, /one workflow/, name + ' names the adversary without saying the chain is one workflow');
+  }
+});
+
 // The dispatch clause shares a rule string with the one that predates it, and
 // only the dispatch half was pinned. `build` sits eighteen characters under the
 // injection cap, so this string is the first place anyone looks for room — and

@@ -170,6 +170,17 @@ pass — orphan files, over-engineering, abstractions nobody uses. Offer it
 alongside. If it is not installed, say so plainly rather than quietly skipping
 the code half.
 
+**Where the host opens it, the chain is one workflow.** Pair readers then an
+adversary is the same shape. The pairs come from `docs-audit.js` first, run
+here — the Workflow tool pipelines over a list it is handed; it does not go
+looking for one. Run the pairs through a `pipeline`: the reader for a pair
+returns, under a `schema`, which page the code supports and the `file:line` it
+stands on; the adversary for that pair reads the same two pages and returns
+what it defeats. Every `agent` call carries `model`, and `sonnet` is the floor
+there as it is here. What returns is the join, per pair. The ruling and the
+`routed:` line stay here. The Agent form below is the fallback, for a session
+where the user said not to dispatch, or declined the host's run dialog.
+
 ## The adversary
 
 **Before the question, one read-only adversary over the findings.** The pairs

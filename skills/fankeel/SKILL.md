@@ -802,14 +802,15 @@ down as this session's. The plan writes `in-session — the user said so this
 session` on Task 1's `**Dispatch:**` line and `same reason as Task 1` after it,
 the build reviewer runs here as a ruling recorded once, and step 5 of the
 fankeel-build skill says what that costs and how half of it is bought back.
-Nothing else settles it that way — not a host, and not a tool's gate read as an
-instruction. This host gates one tool, **Workflow**, on the user's own words
-(`ultracode`), and that one is offered rather than launched; the **Agent** tool
-has no gate, and the Workflow tool's own description points at it for anything
-short of a workflow. A session that read *only when the user has opted in* off
-the wrong tool and stopped sending Agent readers had forbidden itself:
-2026-09-01, and two builds ran in-session over it before anyone checked which
-tool the sentence was about.
+Nothing else settles it that way — not a host, and not a tool's gate read as
+an instruction. The host opens one tool, **Workflow**, on five things:
+`ultracode` in the prompt, ultracode on for the session, the user asking for a
+workflow in their own words, a skill the user invoked whose instructions say to
+run one, or a saved workflow by name; the **Agent** tool has no gate, and the
+Workflow tool's own description points at it for anything short of a workflow. A
+session that read *only when the user has opted in* off the wrong tool and
+stopped sending Agent readers had forbidden itself: 2026-09-01, and two builds
+ran in-session over it before anyone checked which tool the sentence was about.
 
 The tempting version is to run whole stages in background agents to keep the
 context small. For one kind of work, measured on this repository, that is the
@@ -869,8 +870,11 @@ Five rules that make it work, each of which fails silently when missed:
 - **Several dispatches in one response run at once.** One per response runs them
   in sequence — the cost of parallelism with none of it.
 - **Always pass the model, and `sonnet` is the floor.** An omitted model
-  inherits this session's, which is usually the most capable and most
-  expensive one available.
+  inherits this session's, which is usually the most capable and most expensive
+  one available. Inside a Workflow script the same rule holds: every `agent`
+  call carries `model` and `sonnet` is the floor there too; the authoring
+  reference's advice to omit it and inherit is the host's default, not this
+  plugin's.
 - **Say how many, and on which model.** In the response that sends them, not
   after they come back. A fan-out is spend the user is paying for and cannot see
   coming, and for a long time `survey` was the only stage that said it — which
@@ -903,16 +907,21 @@ and every intermediate finding stays in it for the rest of the session even
 though only the verified ones matter; as a `pipeline` in the **Workflow** tool
 the intermediates live inside the script and what comes back is the join.
 
-Offer it; never launch it. The tool is gated on the user's own words — the
-keyword `ultracode`, or asking for a workflow in as many — so naming the shape
-and roughly what it would cost is the whole of your part. That is not the
+`/fankeel` is the fourth of those five: where a stage's rule names a chain as
+one workflow, that rule is the opt-in, and the host's own run dialog is where
+the spend is authorised — it lists the phases and the agent count before
+anything runs. A shape no rule names is offered, not launched: name it and
+roughly what it would cost, and let the user say so. That is not the
 foreordained gate this pipeline strips out elsewhere: your own reading needs no
 permission, and a dozen agents is spend, which is theirs to authorise. It is
-still a job inside a stage rather than the stage itself — a workflow's `phases`
-are its own, declared in its script, and none of them is this route's gate.
-**Unmeasured here**: nothing has been run against four parallel dispatches on
-this repository, so the paragraph above argues from where the intermediate output
-lands, which is structural, and quotes no figure because there is none to quote.
+still a job inside a stage rather than the stage itself — a workflow's
+`phases` are its own, declared in its script, and none of them is this route's
+gate. **Unmeasured against a control here**: chains have run as workflows on
+this repository — this task's own build and verify, written up in
+[docs/reports/2026-09-04-chains-as-workflows.md](../../docs/reports/2026-09-04-chains-as-workflows.md)
+— with no four-dispatch arm beside either, so the paragraph above still argues
+from where the intermediate output lands, which is structural, and quotes no
+figure here; the figures live in the report, dated.
 
 **Delegate a job inside a stage; never the stage itself.** A subagent receives the
 brief and nothing else: `hooks/inject.js` is a `UserPromptSubmit` hook and a
