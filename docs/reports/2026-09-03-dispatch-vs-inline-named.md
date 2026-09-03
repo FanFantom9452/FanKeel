@@ -27,7 +27,7 @@ source_of_truth: 一組成對量測（`ab2.sh`，2026-09-03，`HEAD 86a104e1bc87
 | Arm B（inline）額外旗標 | `--disallowedTools "Edit Write NotebookEdit Agent"` |
 | n | 每個 arm 1 次（見 §6） |
 
-`ab2.sh` 相對 `ab.sh` 只差四處，`diff` 逐行核對過：`SP` 與三個輸出檔名、`QUESTION`、`M_DISPATCH` 裡跟著問題規模縮的行數上限（10→7 行、每個 subagent 6→3 行），以及頭尾兩行把樹切到 `86a104e` 再切回 `main`。兩個 arm 的 `--disallowedTools` 字串與第一對逐字相同。
+`ab2.sh` 相對 `ab.sh` 有五處差異，`diff` 逐行核對過：檔頭說明這支腳本在量什麼的註解、`SP` 與三個輸出檔名、`QUESTION`、`M_DISPATCH` 裡跟著問題規模縮的行數上限（10→7 行、每個 subagent 6→3 行），以及把樹切到 `86a104e` 再切回 `main` 的三行。除此之外，兩個 `claude` 呼叫各自從三行的續行寫法併成一行；旗標字串本身一字未改，兩個 arm 的 `--disallowedTools` 與第一對逐字相同。
 
 兩個 arm 送進去的完整提問文字，逐字引自 `ab2.sh`：
 
