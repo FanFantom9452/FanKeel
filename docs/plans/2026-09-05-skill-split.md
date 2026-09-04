@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-09-05
 source_of_truth: skills/fankeel-build/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-audit/SKILL.md, tests/skills.test.js
 ---

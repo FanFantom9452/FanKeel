@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-02
+last_verified: 2026-09-05
 source_of_truth: this file, no upstream — a decision record is not derived from anything
 ---
 
@@ -444,6 +444,41 @@ below named `:59` and `:60` for lines that had moved to `:66` and `:67`. All fou
 resolve. All four name a real file and a line that exists. `docs-check` exited 0
 over every one of them, and a reader found all four — including the two written
 by the argument for not checking.
+
+## A skill's reasons live beside it, not in it
+
+Decided 2026-09-05. Three stage skills — `build`, `plan` and `audit` — keep
+their procedures and templates in `SKILL.md` and carry their reasons in a
+`rationale.md` beside it, under the same headings, linked once from the
+preamble. `design`, `verify` and `land` had no reasons to move; `survey` had 25
+lines of 266 and was left whole; the `/fankeel` skill itself, 998 lines, is a
+task of its own.
+
+Why: a skill is read once on entering a stage and the injected block is re-sent
+on every prompt, so a procedure that lives only in the skill loses to everything
+read since — twenty of twenty-one probes on 2026-09-04. The release before this
+one answered that with anchors in the injection, and the cheapest carrier it
+found was the pointer line `Read the fankeel-<stage> skill`. That pointer is
+worth what re-reading the skill costs, and on 2026-09-05 `build` was 375 lines
+of rationale in 458. The split makes the pointed-at thing cheap: build 458 to
+362, plan 243 to 217, audit 303 to 194, with 156, 46 and 140 lines beside them.
+
+What holds it: `tests/skills.test.js` asserts the contract — the file exists,
+every `##` and `###` in it is a heading the skill has, in the skill's order, its
+`source_of_truth` names the skill's code and the skill, no `version:` line, and
+the one link sentence sits after `**Done when**`. Two sonnet readers sent in at
+the stage's skill followed the link for a fact that lives only in
+`rationale.md`, 2 of 2. What it cost: 0.75M subagent tokens at build and 1.17M
+at verify, all sonnet, against one in-session test edit.
+
+What went the other way: the official example name is `reference.md`; here
+`reference` is a role meaning *must match the code*, so the file is
+`rationale.md`. And the rationale names the same code subjects as the skill
+rather than deferring alone — a reason can stop being true when the code moves,
+and `docs-audit` should say so.
+
+The design is [2026-09-05-skill-split-design.md](../plans/2026-09-05-skill-split-design.md)
+and the plan [2026-09-05-skill-split.md](../plans/2026-09-05-skill-split.md).
 
 ## What is still a guess
 
