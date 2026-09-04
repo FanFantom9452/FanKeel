@@ -49,31 +49,9 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Ready
 
-- A `task-brief` script: task N's text to a file, print the path, so a dispatch carries a path not two thousand words — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
-
-- Never pre-judge a reviewer: a brief saying "less likely to have drifted" got `no drift` back — [skills/fankeel-verify/SKILL.md](skills/fankeel-verify/SKILL.md).
-
-- Say what round five leaves behind: the cap is written, its behaviour is not — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md), fix rounds.
-
-- `land` collects every ruling into the final message: notes cap at five and one bounded task made six — [skills/fankeel-land/SKILL.md](skills/fankeel-land/SKILL.md).
-
-- Step 2 still says "two or three approaches" against its own line 16 and `lib/stages.js:225` — [skills/fankeel-design/SKILL.md](skills/fankeel-design/SKILL.md).
-
-- The archive count is stale: seventeen of the nineteen is twenty-two of the twenty-four — [docs/documents.md](docs/documents.md), :167.
-
-- `build` renders at 2393, not 2394; the test prints the figure, and stage-units.md:40 carries it too — [docs/registry.md](docs/registry.md), :187.
-
-- 2808 is a figure no two readers reproduce, in a sentence telling you to recount it — [docs/pipeline.md](docs/pipeline.md), :145.
-
-- The index says every page in it is `reference`, and its Roles table omits two buckets holding 11 files — [docs/README.md](docs/README.md).
-
-- A feature is called "all six", and "the first four sections fail" names the wrong four — [docs/pipeline.md](docs/pipeline.md).
-
-- A worst-case comment still lists "the voice digest present"; `render` has carried none since 0.20.0 — [tests/render.test.js](tests/render.test.js), :461.
+Nothing deferred here at the moment.
 
 ## Needs a decision
-
-- Whether the three pairs' evidence files belong in the repository: all three reports cite files that live in a session temp directory — [docs/subagents.md](docs/subagents.md).
 
 - Whether a two-source join needs a fourth pair: fankeel-verify:99 cites 1.5× for readers each given a page and a diff, a shape no pair measured — [docs/subagents.md](docs/subagents.md).
 
@@ -83,11 +61,7 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 - Whether `tested as subprocesses with real payloads` should be pinned like the count beside it — [tests/contract.test.js](tests/contract.test.js).
 
-- Whether the orphan check should fire where an index exists — `index.exists ? [] : ...` makes it always empty here — [scripts/docs-audit.js](scripts/docs-audit.js).
-
 - Whether `.claude/agents/` is documentation and wants a bucket — [.fankeel/docs.json](.fankeel/docs.json); the probe fixture made the unfiled count 2.
-
-- Whether build's chain is one workflow too — commit, ledger and ruling sit between its hops here; a run journal doubles the ledger — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
 
 - Whether the group, not the chain, is what becomes a workflow — `ledger.js groups` already splits it — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
 
