@@ -204,9 +204,8 @@ The fan-out is two stages in one run, not four returns into this session:
             claims, and anything not bearing on the task dropped
 
 Only what survives reaches the session. The check is not optional politeness:
-three of five pair readers in one measured run cited lines that said otherwise,
-and a finding nobody opened is a confident wrong answer with a line number
-next to it.
+a reader that cites a `path:line` has not necessarily opened it, and a finding
+nobody opened is a confident wrong answer with a line number next to it.
 
 ### 5. Classify, out loud
 

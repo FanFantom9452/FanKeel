@@ -520,8 +520,12 @@ test('survey re-runs a capped scan before it dispatches, and dispatches on nothi
   // only one remedy sends the reader back to the same truncated tree.
   const remedy = byName('survey').rules.find((r) => r.includes('--all'));
   assert.match(remedy, /--root/, 'the truncated walk lost its remedy; --all does not lift that ceiling');
-  assert.match(text, /nothing matched at all/, 'a zero-match scan is not a dispatch trigger');
-  assert.match(text, /one response/, 'the readers no longer go out together');
+  assert.match(text, /nothing matched at all|no match/, 'a zero-match scan is not a dispatch trigger');
+  // `one response` was how this rule said the readers go out together, until the
+  // clause naming the workflow was paid for out of it — survey had one spare
+  // character. A workflow is concurrent by construction, so the phrase was
+  // describing the mechanism the rule now names. Either wording keeps the claim.
+  assert.match(text, /one response|one workflow/, 'the readers no longer go out together');
   assert.equal(/not listed/.test(text), false, 'the cap is still the trigger');
   assert.equal(/fourth option/.test(text), false, 'the fourth option survived');
 });
