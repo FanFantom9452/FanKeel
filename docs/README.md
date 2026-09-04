@@ -54,6 +54,7 @@ here.
 | The six tasks that put the Workflow threshold in what `groups` prints and anchored five stages' skill-only procedures | [plans/2026-09-05-stage-division.md](plans/2026-09-05-stage-division.md) — *design-intent* |
 | Why three stage skills are mostly rationale, and how the procedure stays in `SKILL.md` while the why moves beside it | [plans/2026-09-05-skill-split-design.md](plans/2026-09-05-skill-split-design.md) — *design-intent* |
 | The four tasks that split those three skills: one test, then one implementer per skill with the rows and the pins | [plans/2026-09-05-skill-split.md](plans/2026-09-05-skill-split.md) — *design-intent* |
+| What a full run on 0.44.0 found from outside this repository: eleven sessions never stood down, six registries station cannot see, 297,088 test directories, six tool defects | [reports/2026-09-05-field-report-0.44.0.md](reports/2026-09-05-field-report-0.44.0.md) — *a dated snapshot from another session* |
 | Where the four figures quoted during that build came from, and which two can only be checked on the machine that ran them | [reports/2026-09-05-stage-division-measurements.md](reports/2026-09-05-stage-division-measurements.md) — *a dated snapshot* |
 | What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
