@@ -728,13 +728,12 @@ function cmdClear(root, opts) {
 - Test: `tests/station.test.js`
 
 **Interfaces:**
-- Consumes: `badge.readLeads` (Task 1); `prices.costOf`, `prices.verified` (Task 3); `registry.readAll`, `findStateRoot`, `burnOf`, `clockOf`, `waitedOf`, `claimsOf`, `notesOf`, `nextOf`, `updatedAt` (`lib/registry.js`); `live.runningSessions`, `runningIds`, `liveConfigDir` (`lib/live.js`); `positionIn` (`lib/stages.js`); `tokens` (`lib/context.js`).
+- Consumes: `badge.readLeads` (Task 1); `prices.costOf`, `prices.verified` (Task 3); `registry.readAll`, `findStateRoot`, `burnOf`, `clockOf`, `waitedOf`, `claimsOf`, `notesOf`, `nextOf`, `updatedAt` (`lib/registry.js`); `live.runningSessions`, `runningIds` (`lib/live.js`); `positionIn` (`lib/stages.js`); `tokens` (`lib/context.js`).
 - Produces:
   - `discover({ configDir, roots?, cwd? }) → { roots: string[], gone: string[] }` — absolute, de-duplicated, sorted.
   - `gather({ configDir, roots?, cwd?, now? }) → Model`, where `Model = { generatedAt, configDir, pricesVerified, registries: Registry[] }`, `Registry = { root, gone: boolean, unreadable, build: { name, files }[], mapAt: string|null, sessions: Row[] }`, `Row = { sessionId, state: 'live'|'stale'|'down', unknown: boolean, task, project, stage, route, step, steps, started, updated, ended, model, usage, cost, burn, clock, waited, claims, notes, next, guard, configDir }`.
   - `render(model, { serve?: boolean, nonce?: string, plugin?: string }) → string` (a whole HTML document).
-  - `write({ configDir, roots?, cwd? }) → string` — the path written, `<configDir>/fankeel/station.html`.
-  - `stationPath(configDir) → string`.
+  - `write({ configDir, roots?, cwd?, plugin? }) → string` — the path written, `<configDir>/fankeel/station.html`. (`stationPath` stays internal: the fix round `c01f045` took it out of the exports because nothing imported it.)
 
 **Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
 
@@ -1131,7 +1130,7 @@ module.exports = { discover, gather, render, write, stationPath };
 - Test: `tests/station-cli.test.js`
 
 **Interfaces:**
-- Consumes: `station.gather`, `render`, `write`, `stationPath` (Task 5); `clearEntry` (Task 4); `live.liveConfigDir`.
+- Consumes: `station.gather`, `render`, `write` (Task 5); `clearEntry` (Task 4); `live.liveConfigDir`.
 - Produces: the command below. Exports `serve(opts) → Promise<{ url, close() }>` so the test can drive it in-process.
 
 ```
@@ -1755,6 +1754,311 @@ one and `403` without the per-run nonce, and exits after ten idle minutes.
 7. Run `node --test` in full, then
    `node <plugin>/scripts/docs-check.js` and `node <plugin>/scripts/todo-check.js`.
    All green. Commit: `docs: the station — its skill, its page, the three fields and the lead key`.
+
+## Task 9: the session's own agents count too
+
+Added 2026-09-04 at `verify`, on the user's decision. `summarise` reads the
+parent transcript only, and a session's Background Agents and Workflow agents
+each have a transcript of their own under
+`<transcript path minus .jsonl>/subagents/agent-*.jsonl` and
+`subagents/workflows/<run>/agent-*.jsonl`, every line of which is flagged
+`isSidechain: true` — the flag `summarise` skips on purpose for the parent
+file. Measured on this session before the task was written: 26 agent
+transcripts, none of them counted; one implementer alone was 62 requests and
+6.3 million input-and-cache tokens against the parent's 109 requests.
+
+**Files:**
+- Modify: `lib/usage.js` — `summarise` takes `{ sidechain }`; new `agentsOf` and `summariseTree`
+- Modify: `hooks/leave.js` — writes `summariseTree`'s result
+- Modify: `lib/station.js` — a row carries `agents` and `agentCost`; the page shows them
+- Modify: `docs/registry.md` — `usage.subagents` in the shape
+- Modify: `docs/station.md` — what a row holds, and that cost is own plus agents
+- Test: `tests/usage.test.js`
+- Test: `tests/leave.test.js`
+- Test: `tests/station.test.js`
+
+**Interfaces:**
+- Consumes: `summarise(transcriptPath)` (Task 2); `prices.costOf` (Task 3); `gather`, `render` (Task 5); `hooks/leave.js` (Task 7).
+- Produces: `summarise(transcriptPath, { sidechain?: boolean })` — with `sidechain: true` the `isSidechain` lines are counted; the default is unchanged. `agentsOf(transcriptPath) → { agents, requests, models, wallMs } | null` — every agent transcript under the session's own directory, counted with `sidechain: true`; `wallMs` is the sum of each agent's first-to-last timestamp; `null` when there are none. `summariseTree(transcriptPath) → { model, usage: { requests, models, subagents? } } | null` — `usage.requests` and `usage.models` are the parent's own, `usage.subagents` is `agentsOf`'s result when it is not null. The record's `usage` field is now `summariseTree`'s `usage`. A station row gains `agents` (the `subagents` object or `null`) and `agentCost` (`costOf(subagents.models)` or `null`).
+
+**Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
+
+**Steps**
+
+1. Add to `tests/usage.test.js`, after the existing tests and using its `line`, `assistant` and `transcript` helpers:
+
+```js
+test('sidechain lines count only when asked', () => {
+    const file = transcript([
+        assistant('r1', 'claude-sonnet-5', { input_tokens: 1, output_tokens: 2 }, { isSidechain: true }),
+    ]);
+    assert.equal(usage.summarise(file), null);
+    assert.deepEqual(usage.summarise(file, { sidechain: true }).usage, {
+        requests: 1, models: { 'claude-sonnet-5': { input: 1, output: 2, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } },
+    });
+});
+
+// A session directory beside the transcript: `<base>/t.jsonl` and `<base>/t/subagents/...`.
+function session(agentFiles) {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-usage-tree-'));
+    const file = path.join(base, 't.jsonl');
+    fs.writeFileSync(file, assistant('own1', 'claude-fable-5-1', { input_tokens: 5, output_tokens: 50 }));
+    for (const [rel, lines] of Object.entries(agentFiles)) {
+        const p = path.join(base, 't', rel);
+        fs.mkdirSync(path.dirname(p), { recursive: true });
+        fs.writeFileSync(p, lines.join(''));
+    }
+    return file;
+}
+const agentLine = (requestId, out, ts) => line({ type: 'assistant', isSidechain: true, requestId, timestamp: ts,
+    message: { model: 'claude-sonnet-5', usage: { input_tokens: 10, output_tokens: out } } });
+
+test('agentsOf walks subagents/ and subagents/workflows/*/, counts sidechain lines once per request, sums wall-clock', () => {
+    const file = session({
+        'subagents/agent-aaaa.jsonl': [
+            agentLine('a1', 100, '2026-09-04T02:00:00.000Z'),
+            agentLine('a1', 100, '2026-09-04T02:00:05.000Z'),
+            agentLine('a2', 1, '2026-09-04T02:00:10.000Z'),
+        ],
+        'subagents/agent-aaaa.meta.json': ['{"model":"sonnet"}'],
+        'subagents/notes.txt': ['not a transcript\n'],
+        'subagents/workflows/wf_x/agent-bbbb.jsonl': [agentLine('b1', 7, '2026-09-04T03:00:00.000Z')],
+    });
+    assert.deepEqual(usage.agentsOf(file), {
+        agents: 2, requests: 3, wallMs: 10000,
+        models: { 'claude-sonnet-5': { input: 30, output: 108, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } },
+    });
+});
+
+test('agentsOf is null with no agents, and summariseTree nests it under usage only when present', () => {
+    const alone = session({});
+    assert.equal(usage.agentsOf(alone), null);
+    const tree = usage.summariseTree(alone);
+    assert.equal(tree.model, 'claude-fable-5-1');
+    assert.equal('subagents' in tree.usage, false);
+    const withAgents = session({ 'subagents/agent-cccc.jsonl': [agentLine('c1', 3, '2026-09-04T02:00:00.000Z')] });
+    const t2 = usage.summariseTree(withAgents);
+    assert.equal(t2.usage.requests, 1);
+    assert.equal(t2.usage.subagents.agents, 1);
+    assert.equal(t2.usage.subagents.requests, 1);
+    assert.equal(usage.summariseTree(path.join(os.tmpdir(), 'fankeel-no-such.jsonl')), null);
+    assert.equal(usage.agentsOf('not-a-jsonl-path'), null);
+});
+```
+
+   Run `node --test tests/usage.test.js`; the new tests fail (`sidechain` ignored; `agentsOf is not a function`).
+
+2. In `lib/usage.js`: add `const path = require('node:path');` under the `fs` require; change `summarise`'s signature and its skip line:
+
+```js
+function summarise(transcriptPath, opts) {
+    const sidechain = Boolean(opts && opts.sidechain);
+```
+
+```js
+        if (!entry || entry.type !== 'assistant') continue;
+        if (!sidechain && entry.isSidechain === true) continue;
+```
+
+   Then add, before `module.exports`:
+
+```js
+// The session's own agents. Claude Code keeps each Background Agent's and each
+// Workflow agent's transcript beside the parent's, under a directory named for
+// the session, and every line in those files is flagged `isSidechain` — the
+// flag `summarise` skips for the parent, where an older Claude Code wrote
+// subagent turns inline. So the same reader runs over them with the skip
+// lifted, and what it finds is the part of a session's cost the parent
+// transcript never sees: measured 2026-09-04, twenty-six agents on one
+// session, one of them alone 6.3 million tokens of input and cache.
+const AGENT_FILE = /^agent-[0-9a-f]+\.jsonl$/;
+
+function sessionDirOf(transcriptPath) {
+    return typeof transcriptPath === 'string' && transcriptPath.endsWith('.jsonl')
+        ? transcriptPath.slice(0, -'.jsonl'.length)
+        : null;
+}
+
+function agentFiles(sessionDir) {
+    const out = [];
+    const sub = path.join(sessionDir, 'subagents');
+    let names;
+    try {
+        names = fs.readdirSync(sub);
+    } catch (e) {
+        return out;
+    }
+    for (const name of names) {
+        if (AGENT_FILE.test(name)) out.push(path.join(sub, name));
+    }
+    let runs;
+    try {
+        runs = fs.readdirSync(path.join(sub, 'workflows'));
+    } catch (e) {
+        return out;
+    }
+    for (const run of runs) {
+        let inner;
+        try {
+            inner = fs.readdirSync(path.join(sub, 'workflows', run));
+        } catch (e) {
+            continue;
+        }
+        for (const name of inner) {
+            if (AGENT_FILE.test(name)) out.push(path.join(sub, 'workflows', run, name));
+        }
+    }
+    return out;
+}
+
+// First and last timestamp in one transcript, in milliseconds; null with none.
+// The agent's own wall-clock, which its `.meta.json` does not record.
+function spanOf(file) {
+    let text;
+    try {
+        text = fs.readFileSync(file, 'utf8');
+    } catch (e) {
+        return null;
+    }
+    let first = null;
+    let last = null;
+    for (const raw of text.split('\n')) {
+        if (!raw) continue;
+        let entry;
+        try {
+            entry = JSON.parse(raw);
+        } catch (e) {
+            continue;
+        }
+        const t = entry && typeof entry.timestamp === 'string' ? Date.parse(entry.timestamp) : NaN;
+        if (!Number.isFinite(t)) continue;
+        if (first === null || t < first) first = t;
+        if (last === null || t > last) last = t;
+    }
+    return first === null ? null : { first, last };
+}
+
+function agentsOf(transcriptPath) {
+    const dir = sessionDirOf(transcriptPath);
+    if (!dir) return null;
+    const out = { agents: 0, requests: 0, models: {}, wallMs: 0 };
+    for (const file of agentFiles(dir)) {
+        const seen = summarise(file, { sidechain: true });
+        if (!seen) continue;
+        out.agents += 1;
+        out.requests += seen.usage.requests;
+        for (const [id, m] of Object.entries(seen.usage.models)) {
+            const t = out.models[id] || (out.models[id] = { input: 0, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 });
+            for (const k of Object.keys(t)) t[k] += m[k];
+        }
+        const span = spanOf(file);
+        if (span) out.wallMs += span.last - span.first;
+    }
+    return out.agents ? out : null;
+}
+
+// The parent and its agents, as one record. `usage.requests` and
+// `usage.models` stay the parent's own — that is what every reader of the
+// field already expects — and the agents sit beside them under `subagents`,
+// present only when there were any.
+function summariseTree(transcriptPath) {
+    const own = summarise(transcriptPath);
+    const agents = agentsOf(transcriptPath);
+    if (!own && !agents) return null;
+    const usage = own ? own.usage : { requests: 0, models: {} };
+    if (agents) usage.subagents = agents;
+    return { model: own ? own.model : null, usage };
+}
+```
+
+   and `module.exports = { summarise, agentsOf, summariseTree };`. Run the tests; all green, the earlier three included.
+
+3. In `hooks/leave.js`, the two lines that read the transcript and write the fields become:
+
+```js
+        const seen = typeof payload.transcript_path === 'string' ? usage.summariseTree(payload.transcript_path) : null;
+```
+
+```js
+                if (seen) {
+                    if (seen.model) d.model = seen.model;
+                    d.usage = seen.usage;
+                }
+```
+
+   Add to `tests/leave.test.js`'s `fixture()`, after the transcript is written: an agent transcript at `path.join(base, 't', 'subagents', 'agent-dddd.jsonl')` (make the directory) holding one line `JSON.stringify({ type: 'assistant', isSidechain: true, requestId: 'd1', timestamp: '2026-09-04T02:00:00.000Z', message: { model: 'claude-sonnet-5', usage: { input_tokens: 4, output_tokens: 8 } } }) + '\n'`. Then in the first test, after the existing `usage` assertion, replace it with:
+
+```js
+    assert.deepEqual(d.usage.models, { 'claude-sonnet-5': { input: 11, output: 22, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } });
+    assert.equal(d.usage.requests, 2);
+    assert.deepEqual(d.usage.subagents, { agents: 1, requests: 1, wallMs: 0,
+        models: { 'claude-sonnet-5': { input: 4, output: 8, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } });
+```
+
+   Run `node --test tests/leave.test.js`; green.
+
+4. In `lib/station.js`, `gather`'s row gains two fields after `cost`:
+
+```js
+                agents: usage && usage.subagents && typeof usage.subagents === 'object' ? usage.subagents : null,
+                agentCost: usage && usage.subagents && usage.subagents.models ? prices.costOf(usage.subagents.models) : null,
+```
+
+   In `row()`, the cost cell becomes own plus agents. Replace the `usd` line and the cost `<span>` with:
+
+```js
+    const usd = s.cost && s.cost.priced.length ? '$' + s.cost.usd.toFixed(2) : '';
+    const agentUsd = s.agentCost && s.agentCost.priced.length ? '$' + s.agentCost.usd.toFixed(2) : '';
+    const costCell = usd || outTok
+        ? (usd || outTok) + (agentUsd ? ' + ' + agentUsd + ' (' + s.agents.agents + ' agents)' : '')
+        : '';
+```
+
+```js
+        + `<span>${esc(costCell)}${esc(unpriced)}</span>`
+```
+
+   and add to the `<dl>`, after the `guard` row:
+
+```js
+        + (s.agents ? `<dt>agents</dt><dd>${s.agents.agents} agents, ${s.agents.requests} requests, ${esc(mins(s.agents.wallMs))} of their own wall-clock</dd>` : '')
+```
+
+   In `tests/station.test.js`, give the DOWN session's `usage` a `subagents` member: `subagents: { agents: 2, requests: 5, wallMs: 60000, models: { 'claude-sonnet-5': { input: 1e6, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } }`, and add to the gather test `assert.equal(down.agentCost.usd, 2); assert.equal(down.agents.agents, 2);` and to the render test `assert.ok(page.includes('2 agents'));`. Run `node --test tests/station.test.js tests/station-cli.test.js`; green.
+
+5. `docs/registry.md`: where the `usage` shape is described, add that `usage.subagents` — `{ agents, requests, models, wallMs }` — is present when the session ran agents, summed over every transcript under the session's `subagents/` directory with the sidechain flag counted, and that `requests` and `models` at the top stay the parent's own. `docs/station.md`, *What each row holds*: the dollar figure is the parent's, and beside it the agents' with their count; a row opens to their requests and wall-clock. Set both pages' `last_verified` to 2026-09-04 (already so; leave if so).
+
+6. Run the full `node --test`, `node scripts/docs-check.js`. Commit: `feat: a session's own agents count in its usage`.
+
+## Task 10: the live guard's test can fail
+
+Added 2026-09-04 at `verify`. The adversary found that `tests/station-cli.test.js`'s "refuses a live row" assertion cannot distinguish the server's liveness guard from `clearEntry`'s age rule: the LIVE fixture was updated sixty seconds ago, so `clearEntry` would refuse it as `fresh` and the server maps that to `409` too. Neutering the guard left the test green.
+
+**Files:**
+- Modify: `tests/station-cli.test.js` — the LIVE row is old by the age rule, so only the guard can refuse it
+- Test: `tests/station-cli.test.js`
+
+**Interfaces:**
+- Consumes: `serve` (Task 6); `clearEntry`'s age rule (Task 4).
+- Produces: nothing new; the test now fails when the `if (row.state === 'live')` branch in `scripts/station.js` is removed.
+
+**Dispatch:** implementer, sonnet — a fixture change and one assertion.
+
+**Steps**
+
+1. In `fixture()`, change LIVE's record to be stale by age while still running: `started: at(now - 40 * DAY), updated: at(now - 30 * DAY)` (keep `active: true`, `configDir: cfg`, and the running-session file with `pid: process.pid` and `sessionId: LIVE`). Then in the serve test, after the `409` assertion on the LIVE row, add:
+
+```js
+        const refused = await post(form({ root: f.r1, id: LIVE, nonce }));
+        assert.equal(refused.status, 409);
+        assert.match(refused.text, /running/);
+```
+
+   (the existing `409` line may be folded into this). Keep the `registry.readSession(f.r1, LIVE).active === true` assertion after it.
+
+2. Prove it can fail: in a scratch copy — `git stash` is not allowed; use `git worktree add <tmp> HEAD` or copy `scripts/station.js` aside — comment out the `if (row.state === 'live') { ... }` block, run the test, watch the LIVE row get cleared and the assertion fail, restore. Write the two runs' pass/fail lines to the report.
+
+3. Run `node --test tests/station-cli.test.js` and the full suite. Commit: `test: the station's live guard is tested on a row the age rule would clear`.
 
 ## Self-review
 
