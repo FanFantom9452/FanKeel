@@ -3,7 +3,7 @@ name: fankeel-build
 description: The build stage — run a plan's tasks, or a design's file table where there is no plan, in a loop that does not stop to ask, keeping its place in a ledger and reviewing each task as it lands. Use for the build stage of a fankeel task, implementing an approved plan, resuming build work after a compaction, or when a task loop needs a ledger.
 version: 0.44.0
 status: current
-last_verified: 2026-09-04
+last_verified: 2026-09-05
 source_of_truth: lib/stages.js, lib/ledger.js, lib/plantasks.js, scripts/ledger.js
 ---
 
@@ -123,6 +123,19 @@ code — and there is no ledger to write it into either. Step 1 is route-neutral
 and step 2 carries its own branch, so this is the setup step a no-plan route
 skips whole.
 
+`groups` now prints a surface beside each group, and it is the dispatch
+decision rather than an input to one:
+
+    1: 1, 2, 3  — workflow
+    2: 4        — agent
+
+`agent` is one dispatch, `agents` two in one response, and `workflow` one
+Workflow whose fan-out is that group. It is the batch shape only — a task
+whose `**Dispatch:**` line reads `in-session` is not dispatched at all,
+whatever its group carries. Do not re-derive the surface from the group size:
+a group of three carrying a prose `Consumes:` or a task with no `**Files:**`
+block prints `agents`, and the size alone cannot tell you that.
+
 ## The task loop
 
 For each task the denominator does not list as complete:
@@ -155,12 +168,23 @@ per pass, and every other step of the loop is unchanged.
    past, and remove what your own change orphaned — dead code you did not create
    gets mentioned, not deleted.
 
-   A dispatch carries four things and nothing else: one line on where the task
-   fits, the **path** to the plan file with the task's number, the plan's
-   `## Global Constraints` block (the subagent receives the brief and nothing
-   else, so anything binding it must travel in the dispatch), and the path it
-   must write its report to. Never the session's history, and never a paste of
-   the plan.
+   A dispatch carries four things and nothing else, and **none of them is a
+   decision**: one line on where the task fits, the **path** to the plan file
+   with the task's number, the plan's `## Global Constraints` block (the
+   subagent receives the brief and nothing else, so anything binding it must
+   travel in the dispatch), and the path it must write its report to. Never the
+   session's history, and never a paste of the plan.
+
+   Everything else the loop needs — BASE, the review range, the diff, the map
+   path, the commit message, the ledger note — is a runtime fact, taken when it
+   is needed and never carried in the plan.
+
+   A draft of this paragraph replaced the four with three and had the second
+   one read `the task block, verbatim`. Both were wrong: pasting a task costs
+   the parent the tokens a path costs nothing, which is the argument the
+   `task-brief` note below already makes, and the list was never the place the
+   deciding happened. It is the line above that is the change — the brief is
+   read, not chosen.
 
    A `task-brief` script would carry less: it writes task N's own text to a
    file and prints the path, so a dispatch carries a path rather than the
@@ -188,9 +212,37 @@ per pass, and every other step of the loop is unchanged.
 3. **`in-session` only** — test first where the task says so. If you did not
    watch the test fail, you do not know it tests the right thing. A dispatched
    implementer did this inside its own run; it does not happen twice.
-4. Commit — **the parent, one task at a time**, in the order the group lists
-   them, as each implementer returns. `git add` **exactly** that task's declared
-   `Modify` and `Test` paths, then commit and take the sha.
+4. Commit —
+
+   **`agent` and `agents`**: unchanged. The parent commits each task as its
+   implementer returns, and reviews the pinned `BASE..<sha>` range.
+
+   **`workflow`**: the group is one Workflow of two stages, implement then
+   review, and **nothing commits while it runs**. That is what makes the review
+   range safe without a sha: with no commit landing during the run, no
+   neighbour's work can walk into a review, so
+
+       git diff HEAD -- <the task's declared Modify and Test paths>
+
+   is that task's change and nothing else — a range pinned by path where a
+   committed one is pinned by sha. The group's files are disjoint, which is what
+   made it a group.
+
+   Tell every implementer in the run three things it cannot infer: that
+   neighbours are editing the same working tree on other files, so it must run
+   only its own test command and never the full suite; that it must not commit
+   or touch the index, HEAD or branch state; and that it must return paths and a
+   status, never a diff.
+
+   When the run returns, the parent takes BASE and commits each task in the
+   group's order, then records `--range BASE..<sha> complete <n>`. The reviews
+   already happened, so what the parent adds is the commit and the ledger line.
+
+   What this buys is the whole reason to prefer it: every implementer return,
+   every reviewer's full findings list and every fix round stays inside the
+   script. One join reaches the session. Measured on this plan's own group of
+   three — three implementers, three reviewers, one fixer — that was 7 agents
+   and one return.
 
    The message is the skeleton `land` uses. `land` gets it injected; this
    stage's injection has no room for it, so this paragraph is where `build`
