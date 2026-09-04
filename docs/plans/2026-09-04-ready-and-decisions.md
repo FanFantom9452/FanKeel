@@ -600,7 +600,8 @@ can copy verbatim.
 ## Task 11: `TODO.md` loses what this plan closed
 
 Eleven `## Ready` entries and three `## Needs a decision` entries are closed by
-Tasks 1 through 10. Two of the eleven bullets were themselves wrong about the
+Tasks 1 through 8. Tasks 9 and 10 close no `TODO.md` entry at all, which is why
+the Ordering section puts this task beside Task 10 rather than after it. Two of the eleven bullets were themselves wrong about the
 values they proposed, which is worth one line in the commit message and nothing
 in the file.
 

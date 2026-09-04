@@ -17,6 +17,8 @@ session `f1816f3e-12b5-4291-a42c-a72483b1bc15` 裡 31 次 `Agent` 呼叫，input
 background 旗標**，而 31 次的 tool_result 全都是 `Async agent launched successfully`。
 所以沒有一個「前景 subagent」的對照組可以擺在旁邊比：這個工具只有一種模式。
 
+那 31 次的組成是 30 個 `general-purpose` 加 1 個 `claude-code-guide`，全部 `sonnet`。
+
 要問的問題因此換成別的：**喚醒次數跟著什麼長。**
 
 ## 喚醒跟著 dispatch 數長，不跟著 agent 數長
@@ -30,6 +32,9 @@ background 旗標**，而 31 次的 tool_result 全都是 `Async agent launched 
 上表是 session `b7045836-2bf5-4603-b956-ecd1fb50f7cf` 自己的三次 fan-out。四個
 `Agent` reader 是**在同一個 response 裡送出的**，所以它們確實同時跑——但每一個回來
 時都各自喚醒 parent 一次。平行不會減少喚醒；收進一支 workflow 才會。
+
+`f1816f3e` 那邊也有一次同樣形狀的觀察：它三支 `Workflow` 其中一支的 `agentCount`
+是 **10**，同樣只換一次喚醒。一次執行，沒有對照組。
 
 同一個 session 的用量，供對照，但**不是成本比較**（見最後一節）：
 
@@ -71,7 +76,8 @@ subagent 自己的字則完全不進來：parent 的 transcript 裡 `isSidechain
   上面那張表的三列做的是三件不同的事——四個 reader 在找東西，五個 implementer 在
   改檔，八個 reviewer 在讀 diff——所以每個 agent 的 token 數之間不能互相比。**能比
   的只有喚醒次數**，因為那是結構決定的，不是工作量決定的。
-- 兩個 session、一台機器、一天。`f1816f3e` 的 27:34 比例有 7 個缺口沒有解釋。
+- 兩個 session、一台機器、一天。`f1816f3e` 的 27:34 比例有三個缺口是有解釋的（見
+  上一節），其餘沒有。
 - 上面每一個 token 數都是 harness 自己回報的 `subagent_tokens` 與 `usage`，沒有第二
   個來源可以交叉核對。
 - 這裡完全沒有量「一支 workflow 比四個 dispatch 便宜或貴」。`docs/reports/2026-09-03-dispatch-vs-inline.md`

@@ -583,7 +583,7 @@ function cmdStage(root, opts) {
 
     // What the stage just left cost, said at the one moment it is a finished
     // number. It goes here rather than into the injected block because `build`
-    // already renders at 2394 characters against a cap of 2400, and a figure
+    // already renders at 2393 characters against a cap of 2400, and a figure
     // nobody can read is worse than one printed where the move is announced.
     const at = positionIn(route, name);
     const spent = registry.burnOf(data, from);

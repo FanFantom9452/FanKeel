@@ -163,9 +163,11 @@ status, startTime, phases, defaultModel, workflowProgress, totalTokens,
 totalToolCalls`. `agentCount` **does** exist — how many agents the run held.
 `phases` carries each phase's `title` and `detail`. `defaultModel` records the
 model the script asked for. There is still no per-agent token split in that
-file. A second file sits beside it that the report never names:
-`subagents/workflows/<run id>/journal.jsonl`, where the run's own agents'
-transcripts sit.
+file. A directory sits beside it that the report never names:
+`subagents/workflows/<run id>/`, holding one `agent-<id>.jsonl` transcript per
+agent the run spawned — those are what `lib/usage.js:81` matches and prices —
+and a `journal.jsonl` of `started` and `result` events, one line each, which is
+what a resume replays from rather than a transcript.
 
 How much a workflow run wakes the parent is its own measurement:
 [reports/2026-09-04-agent-wakeups.md](reports/2026-09-04-agent-wakeups.md).

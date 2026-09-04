@@ -378,7 +378,7 @@ flowchart TD
     A["<b>1 · one question at a time</b><br/>purpose, constraints, success criteria"]
     A0{"several independent<br/>subsystems in the ask?"}
     A1["say so first. Decompose, and give<br/>each piece its own cycle"]
-    B["<b>2 · two or three approaches</b><br/>trade-offs, recommendation first<br/><i>no abstraction for single-use code,<br/>no error handling for impossible states</i>"]
+    B["<b>2 · one approach</b><br/>trade-offs, lead with it and say why<br/><i>no abstraction for single-use code,<br/>no error handling for impossible states</i>"]
     C["<b>3 · the success criterion</b><br/>the test that fails now and passes<br/>after. 'Make it work' is not one"]
     D["<b>4 · check against the map</b><br/>does this contradict a page<br/>the map lists as current?"]
     E["<b>5 · present in sections</b><br/>architecture, components, data flow,<br/>errors, testing — approve each"]
