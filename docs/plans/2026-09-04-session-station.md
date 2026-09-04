@@ -277,7 +277,7 @@ assert.match(lead, /^root=/m);
 ## Task 2: `lib/usage.js` — one transcript, summed once per request
 
 **Files:**
-- Create: `lib/usage.js`
+- Modify: `lib/usage.js`
 - Test: `tests/usage.test.js`
 
 **Interfaces:**
@@ -436,7 +436,7 @@ module.exports = { summarise };
 ## Task 3: `lib/prices.js` — a dated table and `costOf`
 
 **Files:**
-- Create: `lib/prices.js`
+- Modify: `lib/prices.js`
 - Test: `tests/prices.test.js`
 
 **Interfaces:**
@@ -547,7 +547,7 @@ module.exports = { verified, perMillion, rateFor, costOf };
 ## Task 4: `lib/clear.js` — the checks `clear` makes, returned
 
 **Files:**
-- Create: `lib/clear.js`
+- Modify: `lib/clear.js`
 - Modify: `scripts/task.js` — `cmdClear` calls `clearEntry`; its messages and exit codes do not change
 - Test: `tests/clear.test.js`
 
@@ -724,7 +724,7 @@ function cmdClear(root, opts) {
 ## Task 5: `lib/station.js` — discover, gather, render, write
 
 **Files:**
-- Create: `lib/station.js`
+- Modify: `lib/station.js`
 - Test: `tests/station.test.js`
 
 **Interfaces:**
@@ -1127,7 +1127,7 @@ module.exports = { discover, gather, render, write, stationPath };
 ## Task 6: `scripts/station.js` — write, open, serve
 
 **Files:**
-- Create: `scripts/station.js`
+- Modify: `scripts/station.js`
 - Test: `tests/station-cli.test.js`
 
 **Interfaces:**
@@ -1405,7 +1405,7 @@ module.exports = { serve, parseArgs };
 ## Task 7: `hooks/leave.js` on `SessionEnd`
 
 **Files:**
-- Create: `hooks/leave.js`
+- Modify: `hooks/leave.js`
 - Modify: `.claude-plugin/plugin.json` — a `SessionEnd` entry
 - Modify: `README.md` — `all seven hooks` → `all eight hooks`; `The other four are not load-bearing` → `The other five are not load-bearing`
 - Modify: `tests/hook.test.js` — the comment at :3, `all seven hooks` → `all eight hooks`
@@ -1591,8 +1591,8 @@ run(main);
 ## Task 8: the skill, the page, the fields, the index
 
 **Files:**
-- Create: `skills/fankeel-station/SKILL.md`
-- Create: `docs/station.md`
+- Modify: `skills/fankeel-station/SKILL.md`
+- Modify: `docs/station.md`
 - Modify: `tests/contract.test.js` — `found.size === 10` becomes `11`
 - Modify: `docs/registry.md` — three fields, one new file on disk
 - Modify: `docs/statusline.md` — `root` in the lead keys
