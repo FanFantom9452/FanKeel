@@ -1,5 +1,7 @@
 ---
-status: design-intent
+status: current
+last_verified: 2026-09-04
+source_of_truth: the eleven tasks landed as commits on todo-ready-and-decisions; the ledger at .fankeel/build/2026-09-04-ready-and-decisions/progress.md holds the ranges and the rulings
 ---
 
 # Ready Backlog and Three Decisions Implementation Plan
