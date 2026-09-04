@@ -131,21 +131,41 @@ for (const n of SPLIT) {
     assert.ok(fs.existsSync(file), n + ' has no rationale.md');
     const skill = read(n);
     const why = fs.readFileSync(file, 'utf8');
-    // One link, in the preamble. The mirrored headings are the index, so a
-    // second link is a second place for the path to go stale.
+    // One link, in the preamble, as the one sentence the plan gives — after the
+    // `**Done when**` paragraph, because that is where a reader entering the
+    // stage is still reading. The mirrored headings are the index, so a second
+    // link is a second place for the path to go stale.
     const links = skill.match(/\[rationale\.md\]\(rationale\.md\)/g) || [];
     assert.equal(links.length, 1, n + ' links rationale.md ' + links.length + ' times; one, in the preamble');
-    // Every `## ` in the rationale is a `## ` the skill has, same text.
-    const own = new Set(skill.split(/\r?\n/).filter((l) => /^## /.test(l)));
-    const heads = why.split(/\r?\n/).filter((l) => /^## /.test(l));
-    assert.ok(heads.length >= 1, n + ' rationale.md has no ## headings');
-    for (const h of heads) assert.ok(own.has(h), n + ' rationale.md heading is not in SKILL.md: ' + h);
+    const SENTENCE = 'Why each rule is what it is, under the same headings: [rationale.md](rationale.md).';
+    const at = skill.indexOf(SENTENCE);
+    assert.ok(at >= 0, n + ' lacks the link sentence the plan gives verbatim');
+    assert.ok(at > skill.indexOf('**Done when**'), n + ' links rationale.md before its Done when paragraph');
+    // Every `## ` and `### ` in the rationale is a heading the skill has, same
+    // text, and they run in the skill's order: a reader who found a section in
+    // one file finds it in the same place in the other.
+    const isHead = (l) => /^#{2,3} /.test(l);
+    const own = skill.split(/\r?\n/).filter(isHead);
+    const heads = why.split(/\r?\n/).filter(isHead);
+    assert.ok(heads.length >= 1, n + ' rationale.md has no headings');
+    let last = -1;
+    for (const h of heads) {
+      const i = own.indexOf(h);
+      assert.ok(i >= 0, n + ' rationale.md heading is not in SKILL.md: ' + h);
+      assert.ok(i > last, n + ' rationale.md heading is out of SKILL.md order: ' + h);
+      last = i;
+    }
     // It names the code the skill names and defers to the skill, so docs-audit
-    // grades it against the same code and never pairs the two.
+    // grades it against the same code and never pairs the two. Both halves are
+    // asserted: a rationale naming only the skill would be graded against
+    // nothing, and one naming only the code would pair with the skill.
     const fm = frontmatter(why);
     assert.ok(fm && fm.source_of_truth, n + ' rationale.md declares no source_of_truth');
     const declared = fm.source_of_truth.split(',').map((s) => s.trim());
     assert.ok(declared.includes('skills/' + n + '/SKILL.md'), n + ' rationale.md does not defer to its SKILL.md');
+    for (const p of frontmatter(skill).source_of_truth.split(',').map((s) => s.trim())) {
+      assert.ok(declared.includes(p), n + ' rationale.md does not name ' + p + ', which its SKILL.md does');
+    }
     // scripts/version.js reads only SKILL.md and tests/version.test.js counts
     // eleven; a twelfth version line would fail it.
     assert.equal(fm.version, undefined, n + ' rationale.md carries a version line');
