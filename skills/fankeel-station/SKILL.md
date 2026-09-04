@@ -48,4 +48,4 @@ know shows its output tokens instead of a dollar figure.
 
 **The end of a session is recorded, not decided.** `ended` says when and why
 (`clear`, `logout`, `prompt_input_exit`, `other`); `active` is only ever
-changed by `down` and `clear`.
+changed by `down`, by `clear`, and by `adopt` on the entry it takes over.
