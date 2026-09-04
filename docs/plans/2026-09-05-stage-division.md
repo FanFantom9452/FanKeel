@@ -501,9 +501,10 @@ path, the commit message, the ledger note — is a runtime fact, taken when it
 is needed and never carried in the plan.
 ```
 
-The design said `build` decides twelve things per task. That was an
-overstatement: nine are runtime facts a plan cannot hold, and the brief was
-already fixed. Record it here rather than leaving the design's number standing.
+The design counted 18 things `build` reads or decides per task, twelve of them
+not supplied by the task template. Calling those twelve decisions was the
+overstatement: the design itself says nine are runtime facts a plan cannot hold,
+and the brief the other three sit in was already a fixed list.
 
 ### Step 4 — check
 
