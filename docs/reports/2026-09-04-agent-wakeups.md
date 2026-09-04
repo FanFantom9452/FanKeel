@@ -67,8 +67,10 @@ background 旗標**，而 31 次的 tool_result 全都是 `Async agent launched 
 量到的東西支持那句話，沒有替它加上任何新東西。
 
 subagent 自己的字則完全不進來：parent 的 transcript 裡 `isSidechain: true` 是 **0**
-行（1201 行是 `false`），它們的 19,076,379 bytes 全部留在 `subagents/` 底下的 63 個
-檔案裡。
+行（1201 行是 `false`），它們的 19,076,379 bytes 全部留在 `subagents/` 底下——遞迴
+數是 125 個檔案。頂層是 63 個項目（31 個 transcript、31 個 meta、1 個 `workflows/`
+目錄），佔其中的 10,988,455 bytes；把頂層的項目數配上遞迴的位元組數是兩個不同的
+分母，這一頁原本就是那樣寫的。
 
 ## 這一頁不說的
 
