@@ -25,6 +25,7 @@ const { parseArgs: parseArgv } = require('node:util');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
+const { clearEntry } = require('../lib/clear.js');
 const { tokens } = require('../lib/context.js');
 const { overlapPaths } = require('../lib/overlap.js');
 const { guardMode } = require('../lib/guard.js');
@@ -850,33 +851,24 @@ function cmdClear(root, opts) {
     const id = requireSession(opts);
     const target = opts.positional[0];
     if (!target) fail('Give the session id to clear.');
-    if (target === id) fail('That is this session. Use `down`, which prints the notes that are about to die.');
-    if (!registry.sessionPath(root, target)) fail('Not a session id: ' + target);
-
-    const data = registry.readSession(root, target);
-    if (!data) fail('No entry for ' + target + ' under ' + root);
-    if (data.active !== true) return 'fankeel — already stood down.';
-
-    // Age, not liveness, and the difference is deliberate — `docs/collisions.md`
-    // keeps this gate on the clock. A recent timestamp is the one sign that the
-    // owner may simply have stepped away, which is the case the refusal protects,
-    // and --force is there for the one the reader can see and the registry cannot:
-    // a terminal that died four minutes ago. `lib/live.js` is the evidence about
-    // whether anybody is behind a claim, and it is deliberately not read here, so
-    // a live session quiet all day is cleared without --force. Ask before deny,
-    // the same as `guard`.
-    const at = Date.now();
-    if (!registry.isStale(data, at) && opts.force !== true) {
-        const age = registry.ageText(data, at);
-        fail('That entry was last seen ' + (age ? age + ' ago' : 'recently') + ': '
-            + (data.task || 'untitled') + ' @ ' + (data.stage || '?')
-            + NL + 'Pass --force if you know the terminal is gone.');
+    const out = clearEntry(root, target, { callerId: id, force: opts.force === true });
+    if (!out.ok) {
+        // Each `fail` ends the command; the strings are the ones the tests read.
+        if (out.reason === 'self') fail('That is this session. Use `down`, which prints the notes that are about to die.');
+        if (out.reason === 'invalid') fail('Not a session id: ' + target);
+        if (out.reason === 'missing') fail('No entry for ' + target + ' under ' + root);
+        if (out.reason === 'inactive') return 'fankeel — already stood down.';
+        if (out.reason === 'fresh') {
+            fail('That entry was last seen ' + (out.age ? out.age + ' ago' : 'recently') + ': '
+                + (out.data.task || 'untitled') + ' @ ' + (out.data.stage || '?')
+                + NL + 'Pass --force if you know the terminal is gone.');
+        }
+        fail('Could not write the entry.');
     }
-
-    // The staleness gate above ran on the read a moment ago; the write itself
-    // goes under the target's lock, so a hook of theirs that is still firing has
-    // its claim kept rather than rolled back by this deactivation.
-    if (!registry.update(root, target, (d) => { d.active = false; })) fail('Could not write the entry.');
+    // `out.data` is the record clearEntry read before its write, which is the
+    // same read the old inline body used — `data` here keeps the tail below
+    // untouched rather than threading `out.` through every reference in it.
+    const data = out.data;
     hideBadge(opts, target);
 
     // Prose rather than a command, because the command would not run for the
