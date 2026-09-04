@@ -15,13 +15,11 @@
 // Zero dependencies, as everywhere in this repository: `node:http` and a form.
 // The per-run nonce is what stops a page on some other origin from posting to
 // this port; the address is loopback so nothing off this machine reaches it.
-const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
 const crypto = require('node:crypto');
 const { spawn } = require('node:child_process');
 const station = require('../lib/station.js');
-const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { clearEntry } = require('../lib/clear.js');
 
