@@ -120,8 +120,10 @@ WORKTREE_PATH=$(git rev-parse --show-toplevel)
 ```
 
 `GIT_DIR == GIT_COMMON` is a normal repository with no worktree to clean up.
-Otherwise it is a worktree; a detached HEAD is externally managed, so leave it in
-place and offer only the PR and keep-as-is options.
+Otherwise it is a worktree; a detached HEAD is externally managed, so leave it
+in place. The menu is then the PR, keep-as-is, and the pause every gate carries —
+three, because `ALWAYS` never drops below three and a detached HEAD removes an
+option rather than the floor.
 
 The base branch is whatever this work forked from. If it is not already known,
 ask — merging into the wrong base is expensive to undo.
@@ -165,12 +167,15 @@ Anything else belongs to the host environment.
 <sha> <subject>
 shipped:
   - <what someone can now do that they could not>
+suite: <green>
 cost: <what it took>
 open: <what is still not done>
 then AskUserQuestion
 ```
 
-Three lines and the list. `shipped:` is one line per thing someone can now do
+Four lines and the list. `suite:` is the green line from the run in step 1 —
+this stage's own `Done when` puts a green suite first, and until it had a slot
+here nothing reported whether it happened. `shipped:` is one line per thing someone can now do
 that they could not — from the ledger's completed entries where the task had a
 plan, listed by hand where it did not. A commit subject already holds the change;
 what it cannot hold is a task that shipped four of them. Not a tour of the diff.
