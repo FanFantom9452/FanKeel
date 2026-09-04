@@ -89,6 +89,14 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 - Whether build's chain is one workflow too — commit, ledger and ruling sit between its hops here; a run journal doubles the ledger — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
 
+- Whether the group, not the chain, is what becomes a workflow — `ledger.js groups` already splits it — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
+
+- Whether a workflow rule fits every stage's injection: the seven share 135 spare characters and `survey` has 1 — [lib/stages.js](lib/stages.js).
+
+- Whether `build` should name its skill like the other six do — it is the only one without the line, and the only one at 2393 of 2400 — [lib/stages.js](lib/stages.js).
+
+- Whether a load-bearing rule can live in a 53.8 KB skill at all: the one missed this session was at :916 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
+
 ## Waiting
 
 - Whether a flag a verb ignores should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses the same value. None observed. 09-01.
