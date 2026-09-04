@@ -102,7 +102,10 @@ knows whose tree applies. One registry can cover five of them and nothing else
 needs to know which. Ask for it only when the root holds more than one, and never
 ask for a file list — there is nothing to declare and nothing to get wrong.
 
-Six more are written without anyone typing them. `route` and `class` come from
+Nine more are written without anyone typing them. Three of those — `ended`,
+`model` and `usage` — arrive once, from `hooks/leave.js` when the session ends,
+and [docs/registry.md](../../docs/registry.md) has their shape; the six below
+are the ones every session carries. `route` and `class` come from
 the class picked at `start`, `configDir` records which config directory this
 session runs under, so another session can look for its liveness in the right
 place, and `burn` is what each stage cost — two token counts per stage, written
@@ -125,7 +128,7 @@ is not `Stop`, and what it does instead of measuring anything, is in
 [docs/registry.md](../../docs/registry.md) — this is the short form, not the
 only copy.
 
-A seventh, `gateAt`, is deliberately not below. It exists only between a
+A tenth, `gateAt`, is deliberately not below. It exists only between a
 question going out and its answer arriving — and a record that lacks it when the
 answer arrives is what the `gate:` line under **While the mode is on** reports.
 

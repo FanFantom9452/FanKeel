@@ -176,7 +176,9 @@ That is the whole mechanism. Being stale writes nothing, deactivates nothing and
 hides nothing. If the owning session comes back, its next prompt refreshes the
 timestamp and it stops being stale. Age decides nothing else any more: it
 annotates the line and it gates `clear`, while the badge, the guard and the
-injected block all read liveness. `orient` prints both numbers — what the record
+injected block all read liveness. The station's server reads liveness as well,
+and refuses to clear a row with a process behind it before the age rule is
+asked; `task.js clear` keeps the age rule alone. `orient` prints both numbers — what the record
 claims and how many of those have a process behind them — because one number on a
 listing gets read as the answer to the other question too. `/fankeel` offers to clear genuinely dead
 entries, and only ever on your say-so.
@@ -184,7 +186,9 @@ entries, and only ever on your say-so.
 ## A claim outlives its terminal
 
 `lib/registry.js` is explicit that nothing deactivates anything: a session ending,
-a timer expiring and a terminal dying all leave the entry exactly as it was. That
+a timer expiring and a terminal dying all leave `active` exactly as it was. A
+clean end does write three fields — `ended`, `model` and `usage`, from
+`hooks/leave.js` — and nothing else. That
 is right — a terminal that dies at midnight has to find its task at nine, and a
 registry that expires claims on a timer is one that quietly loses work.
 

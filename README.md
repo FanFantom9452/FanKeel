@@ -279,10 +279,10 @@ shrunk, and all four were somebody re-reading the section and finding an entry
 misfiled. It is drained by being read, so the interval between readings is the
 thing to measure.
 
-`node scripts/version.js` is the release number in the ten files that carry it —
-two manifests and one frontmatter line in each of the eight skills. With a number
+`node scripts/version.js` is the release number in the eleven files that carry it —
+two manifests and one frontmatter line in each of the nine skills. With a number
 it sets them all; with `--changes` it lists the commits since the last
-`chore: <x.y.z>`, which is what a release contains. `npm test` fails when the ten
+`chore: <x.y.z>`, which is what a release contains. `npm test` fails when the eleven
 disagree, so the script is what makes them agree rather than what notices. A
 release used to be ten edits, and missing one left a skill announcing a version
 the plugin is not — right in nine places, which is how it went unnoticed.

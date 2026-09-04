@@ -13,12 +13,13 @@ what is on it and where it comes from; the decisions are in
 ## Where the registries come from
 
 A registry is per workspace and every reader walks up to exactly one, so the
-station has to be told, or find out. Three sources, unioned:
+station has to be told, or find out. Four sources, unioned:
 
 | source | what it finds |
 |---|---|
 | `~/.claude/modes/<id>/fankeel.lead`, its `root=` line | every registry a session has run under in the last thirty days — the lead is pruned after that |
 | `~/.claude/sessions/<pid>.json`, its `cwd`, walked up | every registry a running session is in, whether or not it has started a task |
+| the directory the command runs in, walked up — at `SessionEnd`, the ending session's own launch directory | the registry in front of you, including the one whose session is leaving the running set at that moment |
 | `--root <dir>` | anything older |
 
 A root whose `.fankeel/sessions/` no longer exists is listed as gone rather
