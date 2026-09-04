@@ -161,9 +161,10 @@ for (const n of SPLIT) {
     // nothing, and one naming only the code would pair with the skill.
     const fm = frontmatter(why);
     assert.ok(fm && fm.source_of_truth, n + ' rationale.md declares no source_of_truth');
-    const declared = fm.source_of_truth.split(',').map((s) => s.trim());
+    const csv = (s) => s.split(',').map((x) => x.trim());
+    const declared = csv(fm.source_of_truth);
     assert.ok(declared.includes('skills/' + n + '/SKILL.md'), n + ' rationale.md does not defer to its SKILL.md');
-    for (const p of frontmatter(skill).source_of_truth.split(',').map((s) => s.trim())) {
+    for (const p of csv(frontmatter(skill).source_of_truth)) {
       assert.ok(declared.includes(p), n + ' rationale.md does not name ' + p + ', which its SKILL.md does');
     }
     // scripts/version.js reads only SKILL.md and tests/version.test.js counts
