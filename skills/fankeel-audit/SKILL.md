@@ -2,7 +2,7 @@
 name: fankeel-audit
 description: Audit documentation against the code it describes — dead references, pages that stopped being true, two pages describing one thing, plans whose work has landed, orphans. Use for /fankeel-audit, "check the docs", "what is out of date", "文件審查", before a release, or when two documents disagree.
 argument-hint: "[--root <dir>] [--since <days>]"
-version: 0.44.0
+version: 0.45.0
 status: current
 last_verified: 2026-09-04
 source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js
