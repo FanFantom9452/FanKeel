@@ -1,0 +1,54 @@
+Pair 3 — prediction, written before the run.
+Written by hand, not by ab3.sh. ab3.sh does not touch this file.
+
+WHAT PAIR 3 CHANGES
+Against pair 1 (ab.sh) the single variable is the QUESTION text: the eight files
+are spelled out, so neither arm has to locate them. The join, the answer shape,
+the 10-line cap, the 6-line-per-subagent cap, the four sonnet readers, the flags,
+the model and the 86a104e tree are ab.sh verbatim.
+
+THE TWO EXPLANATIONS THE EXISTING TWO POINTS CANNOT SEPARATE
+(a) naming decides. Pair 2's 1.5x came from neither arm having to search.
+    This is what docs/subagents.md:74 currently claims.
+(b) depth of join decides. Pair 2's 1.5x came from the work being a shallow
+    per-file classification over 7 small files, needing few turns.
+
+PREDICTION
+I predict (b), against the page as it stands, and against what this task's own
+design gate said an hour ago. The design guessed (a); reading ab.sh's actual
+QUESTION changed it, because pair 1's paths were ALREADY given as a glob
+(skills/fankeel-<stage>/SKILL.md, plus lib/stages.js named outright). So naming
+was never the large variable between pair 1 and pair 2. What differs is the depth
+of the join, hence the number of turns, and parent residue is turn count times
+context re-read per turn.
+
+The page's supporting argument is also weak on its own terms: it says "the first
+pair's target set was 106KB, and no amount of reading 106KB costs 532,322
+tokens". That ignores turn count. 106KB is roughly 30k tokens; fifteen turns each
+re-reading an accumulated context reaches 450k without any searching at all.
+
+FALSIFIABLE FORM — main-thread residue ratio, inline / dispatch
+  parent residue = usage.input_tokens + cache_read_input_tokens
+                 + cache_creation_input_tokens
+  pair 1: 532,322 / 57,652  = 9.2x
+  pair 2: 113,518 / 74,603  = 1.5x
+
+  ratio >= 3.0x  -> (b). naming was not the variable. docs/subagents.md:74 is
+                   wrong and the dispatch rule at :37 needs rewriting.
+  ratio <  3.0x  -> (a). naming was the variable. The page stands and now has a
+                   second point behind it.
+
+  3.0x is the midpoint on a log scale between 1.5 and 9.2 (sqrt(1.5*9.2)=3.7),
+  rounded down to 3.0 so the threshold does not sit inside the noise of either
+  end. Named before the numbers are known.
+
+SECONDARY, PREDICTED BUT NOT DECISIVE
+  money ratio (dispatch / inline, total_cost_usd): 1.5-2.0x, dispatch dearer.
+    pair 1 was 1.85x, pair 2 was 1.59x.
+  wall-clock: dispatch slower. Both prior pairs were.
+  subagent_stats.spawned: 4 for arm A, 0 for arm B. This is the control that the
+    two arms took different methods, and it is mechanical, not self-reported.
+
+IF THE CONTROL FAILS
+spawned != 4/0 means the arms did not do what they were told and the pair says
+nothing about either explanation. Report that and do not read the token figures.

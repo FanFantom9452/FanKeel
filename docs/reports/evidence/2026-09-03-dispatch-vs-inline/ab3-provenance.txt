@@ -1,0 +1,10 @@
+date: 2026-09-03T15:14:02Z
+HEAD: 86a104e1bc87f7e82eec45cb84b6e32459a32402
+porcelain:
+claude: 2.1.259 (Claude Code)
+--- arm A: dispatch
+exit=0 shell_seconds=324
+--- arm B: inline
+exit=0 shell_seconds=120
+restored: main
+done
