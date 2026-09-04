@@ -23,7 +23,7 @@ function fixture() {
     const now = Date.now();
     const at = (ms) => new Date(ms).toISOString();
     registry.writeSession(r1, LIVE, { task: 'live', stage: 'build', route: ['survey', 'build'], active: true, claims: [],
-        started: at(now - 3600e3), updated: at(now - 60e3), configDir: cfg });
+        started: at(now - 40 * DAY), updated: at(now - 30 * DAY), configDir: cfg });
     registry.writeSession(r1, STALE, { task: 'stale', stage: 'design', route: ['survey', 'design'], active: true, claims: [],
         started: at(now - 40 * DAY), updated: at(now - 30 * DAY), configDir: cfg });
     badge.writeLead(cfg, STALE, { word: 'design', root: r1 });
@@ -66,7 +66,9 @@ test('serve renders live, refuses a bad nonce, refuses a live row, clears a stal
         const form = (o) => new URLSearchParams(o).toString();
         const post = (body) => request(s.url + 'clear', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } }, body);
         assert.equal((await post(form({ root: f.r1, id: STALE, nonce: 'wrong' }))).status, 403);
-        assert.equal((await post(form({ root: f.r1, id: LIVE, nonce }))).status, 409);
+        const refused = await post(form({ root: f.r1, id: LIVE, nonce }));
+        assert.equal(refused.status, 409);
+        assert.match(refused.text, /running/);
         assert.equal(registry.readSession(f.r1, LIVE).active, true);
         const ok = await post(form({ root: f.r1, id: STALE, nonce }));
         assert.equal(ok.status, 303);
