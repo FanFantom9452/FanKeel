@@ -185,7 +185,9 @@ session dies at a gate — is overwritten by the next one rather than repaired:
 the interval it measured has no end, so there is nothing to recover.
 
 None of the three reaches the injected block, which is capped at 2400 characters
-and renders `build` at 2394. `task.js show` prints `burn:` and `time:`, and the
+and renders `build` at 2393 — `node --test tests/render.test.js` prints that
+figure for every stage, so the way to know it is to re-run it rather than to
+trust this line. `task.js show` prints `burn:` and `time:`, and the
 stage transition names what the stage it left cost, which is the one moment the
 figure is finished.
 

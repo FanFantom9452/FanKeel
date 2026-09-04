@@ -458,7 +458,7 @@ function sizeAtReference(out) {
 
 test('the whole injection stays a readable size with everything populated', () => {
   // The worst case on purpose, and found rather than named: every stage, both
-  // memory fields full, a second session to report, the voice digest present.
+  // memory fields full, and a second session to report.
   // Naming `land` as the longest is what this used to do, and it stopped being
   // true the moment the output templates arrived.
   //

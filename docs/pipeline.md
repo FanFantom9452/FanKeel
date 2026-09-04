@@ -142,10 +142,10 @@ output shape:
 The rules are restated in full every turn rather than pointed at. A pointer is
 only as strong as the salience of what it points at, and what it points at recedes
 by thousands of tokens a turn. Only the current stage's rules are sent, never all
-seven stages', which is what keeps a per-turn restatement affordable — 2808
-characters, about 700 tokens. That figure is the block above counted as it is
-printed, so it is re-measured by counting it again rather than by trusting the
-number.
+seven stages', which is what keeps a per-turn restatement affordable — about 700
+tokens. Rounded on purpose. Nothing prints that block's length, and three
+readings of it here came back with three different character counts, so a
+figure precise to the character is one nobody reproduces and everybody trusts.
 
 It grows when growing it is worth something, because the two sides of that trade
 are not priced the same. This block is read once a turn by the model and never by
@@ -730,7 +730,7 @@ map and it outlives the task that built it.
 
 **A task's route is these stages in some order, chosen for that task.** A typo fix
 is `build,verify`. A documentation sweep is `survey,audit,land`. A feature is all
-six. The route is assembled at the start from what the task actually is, not
+seven. The route is assembled at the start from what the task actually is, not
 picked off a menu, and confirmed along with the task line:
 
 ```
@@ -858,9 +858,9 @@ fankeel docs-audit — 18 markdown files, tree: flat (implied by the directories
 
 It narrows rather than judges. Nothing mechanical decides that two pages
 disagree; this turns *read all forty documents looking for disagreements* into
-*read these two*. Only the first four sections fail the run — pairs, orphans and
-uncovered directories are true of almost every healthy repository, and a command
-that always exits non-zero has an exit code that means nothing.
+*read these two*. Only drift, landed plans, a broken index and diagrams fail the run — pairs,
+orphans and uncovered directories are true of almost every healthy repository,
+and a command that always exits non-zero has an exit code that means nothing.
 
 A file half the documentation mentions is common ground, not a subject:
 `api/entrypoint.sh` named in five pages produced ten pairs on the first real run,
