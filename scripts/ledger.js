@@ -220,7 +220,7 @@ function main(argv) {
                 ? '\n\nEvery group is one task, so nothing runs beside anything and this'
                     + '\nplan builds serially.' + (cause ? ' ' + cause : '')
                 : '')
-            + '\n\nOne group is one surface: in-session, two Agents in one response, or one Workflow.'
+            + '\n\nOne group is one surface: one dispatch, two Agents in one response, or one Workflow.'
             // Still true of what the tasks declared even when `prose.length`,
             // but true is not the bar: printed three lines under a finding
             // that says "worth a look," it reads as the answer to that
