@@ -206,8 +206,9 @@ nothing else:
   present when the session ran agents: it sums every transcript under the
   session's own `subagents/` directory, one entry per Background Agent or
   Workflow agent, with the sidechain flag counted rather than skipped, since
-  every line in those transcripts carries it. Absent when the transcript
-  could not be read.
+  every line in those transcripts carries it. Absent when neither the
+  transcript nor any agent transcript could be read; with only the agents
+  readable, `requests` is 0, `models` is empty and `model` is not written.
 
 # Reading it from outside
 
