@@ -225,8 +225,17 @@ per pass, and every other step of the loop is unchanged.
        git diff HEAD -- <the task's declared Modify and Test paths>
 
    is that task's change and nothing else — a range pinned by path where a
-   committed one is pinned by sha. The group's files are disjoint, which is what
-   made it a group.
+   committed one is pinned by sha.
+
+   **Both halves are load-bearing, and the second is the one that is easy to
+   skip.** No commit landing during the run is what keeps a *committed*
+   neighbour out. But the neighbours are running concurrently and their work is
+   sitting uncommitted in the same working tree, so an unfiltered `git diff
+   HEAD` would show all of it. What keeps it out of this range is the path
+   filter, and the path filter only works because **no neighbour writes these
+   paths** — which is exactly what made these tasks a group. Take either half
+   away and the range stops being one: commit during the run and a neighbour's
+   sha walks in; group tasks that share a file and their uncommitted edits do.
 
    Tell every implementer in the run three things it cannot infer: that
    neighbours are editing the same working tree on other files, so it must run

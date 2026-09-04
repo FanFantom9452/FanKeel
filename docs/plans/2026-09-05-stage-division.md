@@ -477,22 +477,33 @@ three — three implementers, three reviewers, one fixer — that was 7 agents
 and one return.
 ```
 
-### Step 3 — the brief becomes a recipe
+### Step 3 — the brief is named as read, not chosen
 
-Find the paragraph describing what a dispatch carries. Replace the per-task
-deciding with a fixed list, so nothing is chosen per task:
+An earlier draft of this step replaced the existing four-item list with three,
+one of them `the task block, verbatim`. Both were wrong and the ruling in the
+ledger says so: pasting a task costs the parent what a path costs nothing —
+which is the argument the file's own `task-brief` note already makes — and the
+list was never where the deciding happened. It was already a fixed list.
+
+So the four stay, and what this step adds is the framing plus one sentence that
+answers the design's claim about what `build` decides per task:
 
 ```
-The brief is the same three things every time, and none of them is a decision:
-
-- the plan's `## Global Constraints`, verbatim
-- the task block, verbatim
-- the path the implementer writes its report to
+A dispatch carries four things and nothing else, and **none of them is a
+decision**: one line on where the task fits, the **path** to the plan file
+with the task's number, the plan's `## Global Constraints` block (the
+subagent receives the brief and nothing else, so anything binding it must
+travel in the dispatch), and the path it must write its report to. Never the
+session's history, and never a paste of the plan.
 
 Everything else the loop needs — BASE, the review range, the diff, the map
 path, the commit message, the ledger note — is a runtime fact, taken when it
 is needed and never carried in the plan.
 ```
+
+The design said `build` decides twelve things per task. That was an
+overstatement: nine are runtime facts a plan cannot hold, and the brief was
+already fixed. Record it here rather than leaving the design's number standing.
 
 ### Step 4 — check
 
