@@ -434,12 +434,50 @@ decision rather than an input to one:
 `agent` is one dispatch, `agents` two in one response, and `workflow` one
 Workflow whose fan-out is that group. It is the batch shape only — a task
 whose `**Dispatch:**` line reads `in-session` is not dispatched at all,
-whatever its group carries. Do not re-derive the surface from the group size: a group of three carrying a prose `Consumes:` or a task
-with no `**Files:**` block prints `agents`, and the size alone cannot tell you
-that.
+whatever its group carries. Do not re-derive the surface from the group size:
+a group of three carrying a prose `Consumes:` or a task with no `**Files:**`
+block prints `agents`, and the size alone cannot tell you that.
 ```
 
-### Step 2 — the brief becomes a recipe
+### Step 2 — a `workflow` group runs implement and review inside one run
+
+This is the step that changes what the loop does, not just what it reads.
+Replace the part of step 4 that says the parent commits **as each implementer
+returns** with a branch on the surface:
+
+```
+**`agent` and `agents`**: unchanged. The parent commits each task as its
+implementer returns, and reviews the pinned `BASE..<sha>` range.
+
+**`workflow`**: the group is one Workflow of two stages, implement then
+review, and **nothing commits while it runs**. That is what makes the review
+range safe without a sha: with no commit landing during the run, no
+neighbour's work can walk into a review, so
+
+    git diff HEAD -- <the task's declared Modify and Test paths>
+
+is that task's change and nothing else — a range pinned by path where a
+committed one is pinned by sha. The group's files are disjoint, which is what
+made it a group.
+
+Tell every implementer in the run three things it cannot infer: that
+neighbours are editing the same working tree on other files, so it must run
+only its own test command and never the full suite; that it must not commit
+or touch the index, HEAD or branch state; and that it must return paths and a
+status, never a diff.
+
+When the run returns, the parent takes BASE and commits each task in the
+group's order, then records `--range BASE..<sha> complete <n>`. The reviews
+already happened, so what the parent adds is the commit and the ledger line.
+
+What this buys is the whole reason to prefer it: every implementer return,
+every reviewer's full findings list and every fix round stays inside the
+script. One join reaches the session. Measured on this plan's own group of
+three — three implementers, three reviewers, one fixer — that was 7 agents
+and one return.
+```
+
+### Step 3 — the brief becomes a recipe
 
 Find the paragraph describing what a dispatch carries. Replace the per-task
 deciding with a fixed list, so nothing is chosen per task:
@@ -456,15 +494,105 @@ path, the commit message, the ledger note — is a runtime fact, taken when it
 is needed and never carried in the plan.
 ```
 
-### Step 3 — check
+### Step 4 — check
 
 ```
 node scripts/docs-check.js
+npm test
 ```
 
 ---
 
-## Task 5: The documents
+## Task 5: The survey rule
+
+**Files:**
+- Modify: `lib/stages.js` — survey's dispatch rule
+- Modify: `skills/fankeel-survey/SKILL.md` — section 4b, the shape of the fan-out
+- Test: `tests/render.test.js` — survey's new size
+
+**Interfaces:**
+- Consumes: nothing. `lib/stages.js` is free again — Task 2 committed.
+- Produces: nothing.
+
+**Dispatch:** implementer, sonnet — the replacement string is measured and written out below.
+
+### Step 1 — why survey changes at all
+
+`survey` dispatches readers today and its rule says so. What it does not say is
+what happens to what they return: this session's four readers returned seven
+verbatim `## Output` blocks, about twenty verbatim policy quotes and an
+eighteen-item list, of which the design used a duplication list, six quotes and
+one ratio. The rest is permanent context.
+
+It also has a defect with its own `TODO.md` entry: **a reader's `path:line` is
+never machine-checked before it becomes a finding**, and a reader that cites a
+`path:line` has not necessarily opened it. Both are answered by the same
+second stage — verify each cited `path:line` against the file, and cut what does
+not bear on the task, inside the run.
+
+### Step 2 — the rule, measured
+
+`survey` is the binding stage at 2399 with **one** spare character, so the new
+clause has to be paid for out of the old one. Replace survey's dispatch rule
+entirely. Old (314 characters):
+
+```
+Scope from the tree before the first term. A capped scan re-runs with `--all`; a truncated walk needs `--root`. A `skipped:` line’s paths go to one reader; its counts are only reported. Dispatch when the reading is wide, or when nothing matched at all: several in one response, one lens each. Never ask permission.
+```
+
+New (305 characters, so survey goes 2399 → 2390):
+
+```
+Scope from the tree before the first term. A capped scan re-runs with `--all`; a truncated walk needs `--root`. A `skipped:` line’s paths go to one reader; its counts are only reported. Wide reading or no match: one lens each, one workflow, every path:line checked before it returns. Never ask permission.
+```
+
+Note what paid for it: `several in one response` is dropped because a workflow
+is concurrent by construction, so the phrase was describing the mechanism it
+now names.
+
+### Step 3 — the assertion
+
+In `tests/render.test.js`, the per-stage diagnostic already prints every size.
+Add one assertion beside the cap, in the same test:
+
+```js
+    if (stage === 'survey') assert.match(rulesFor('survey', TOKENS).join(' '), /one workflow, every path:line checked/,
+        'survey must name the check its readers run before returning');
+```
+
+Use whatever token argument the surrounding test already passes to `rulesFor`.
+Run `node --test tests/render.test.js` and watch it fail, then make Step 2's
+change and watch it pass with `survey 2390`.
+
+### Step 4 — the skill
+
+In `skills/fankeel-survey/SKILL.md`, section **4b** currently ends with a list of
+five rules about dispatching readers. Add the shape underneath, as the skill is
+where a procedure lives:
+
+```
+The fan-out is two stages in one run, not four returns into this session:
+
+    read    one reader per lens, each returning findings as path:line pairs
+    check   every path:line opened and confirmed to say what the finding
+            claims, and anything not bearing on the task dropped
+
+Only what survives reaches the session. The check is not optional politeness:
+a reader that cites a `path:line` has not necessarily opened it, and a finding
+nobody opened is a confident wrong answer with a line number next to it.
+```
+
+### Step 5 — check
+
+```
+node --test tests/render.test.js
+node scripts/docs-check.js
+npm test
+```
+
+---
+
+## Task 6: The documents
 
 **Files:**
 - Modify: `docs/pipeline.md` — the `build` subsection at :434-522
