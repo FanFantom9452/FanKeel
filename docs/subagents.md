@@ -155,6 +155,21 @@ repository — one task's own build and verify, written up in
 structural — it turns on where the intermediate output lands — and the
 figures live in the report, dated, which is why none is quoted here.
 
+That report describes the run json as holding three fields, because three were
+what that day's run was checked for — a dated snapshot being accurate about its
+own date. The file on disk holds 19 keys: `runId, timestamp, taskId, script,
+scriptPath, args, result, agentCount, logs, durationMs, summary, workflowName,
+status, startTime, phases, defaultModel, workflowProgress, totalTokens,
+totalToolCalls`. `agentCount` **does** exist — how many agents the run held.
+`phases` carries each phase's `title` and `detail`. `defaultModel` records the
+model the script asked for. There is still no per-agent token split in that
+file. A second file sits beside it that the report never names:
+`subagents/workflows/<run id>/journal.jsonl`, where the run's own agents'
+transcripts sit.
+
+How much a workflow run wakes the parent is its own measurement:
+[reports/2026-09-04-agent-wakeups.md](reports/2026-09-04-agent-wakeups.md).
+
 ## The unit of independent work, per stage
 
 Two dispatched implementers used to be a flat no. They share one checkout,
