@@ -189,13 +189,14 @@ the next task needs.
 - Test: `tests/skills.test.js`
 
 **Interfaces:**
-- Consumes: `read(n)`, `frontmatter(text)`, `DIR`, `names` — the helpers at `tests/skills.test.js:12–27`, unchanged
+- Consumes: `read(n)`, `frontmatter(text)`, `DIR` — the helpers at `tests/skills.test.js:12–27`, unchanged
 - Produces: the test named `<skill>: the rationale sits beside the skill under the same headings`, for each of `fankeel-build`, `fankeel-plan`, `fankeel-audit`; referred to below as `rationale-contract`
 
 **Dispatch:** in-session — one edit to one file, and it is the test the three implementers run; a dispatch costs more than the edit.
 
 **Step 1.** Append after the `every stage skill states when it is done` test
-(the block ending at line 112) the following, verbatim:
+(the block starting at line 112 and closing at line 118) the following,
+verbatim:
 
 ```js
 // A stage skill is read once on entering its stage, so what it costs to re-read
