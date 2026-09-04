@@ -125,7 +125,7 @@ where the user said not to dispatch, or declined the host's run dialog.
 
 ## The adversary
 
-And it runs whether
+The adversary runs whether
 `audit` is a stage on a route or `/fankeel-audit` standing alone; standing alone
 it matters more rather than less, because there is no next stage and the findings
 drive a cleanup that moves, merges and deletes files.
