@@ -148,10 +148,10 @@ spend.
 Nor does it become a way to run a stage. A workflow's `phases` are its own,
 declared in its script; they are not the route, and none of them is a gate.
 
-**This is unmeasured against a control.** A chain has run as a workflow on this
-repository — one task's own build, written up in
+**This is unmeasured against a control.** Chains have run as workflows on this
+repository — one task's own build and verify, written up in
 [reports/2026-09-04-chains-as-workflows.md](reports/2026-09-04-chains-as-workflows.md)
-— with no four-dispatch arm beside it. The argument above is still
+— with no four-dispatch arm beside either. The argument above is still
 structural — it turns on where the intermediate output lands — and the
 figures live in the report, dated, which is why none is quoted here.
 

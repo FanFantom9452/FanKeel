@@ -12,7 +12,10 @@ fan-out 的輸出餵下一次 fan-out——只有 **Workflow** 工具蓋得住�
 的記錄。**沒有對照組**：沒有一條鏈同時以四個 Agent dispatch 跑一次放在旁邊，所以這裡
 的數字說的是「花了多少」，不是「比較省」。要比較，要另開一對。
 
-每一列都是從 host 自己的工具結果抄的（`usage` 區塊），不是 agent 自報。
+每一列的數字都是 host 自己記的，不是 agent 自報：工具結果的 `usage` 區塊，以及
+`<config>/projects/<session>/workflows/<run id>.json` 的 `totalTokens`、`durationMs`、
+`totalToolCalls`——兩處對得上。本頁第一版只寫了前者、說沒有檔案可指；verify 的
+adversary 找到後者，是它打掉的那一列。
 
 ## build — implementer 接 reviewer，兩個 task
 
@@ -39,6 +42,27 @@ parent 端在鏈的兩跳之間**沒有** commit：reviewer 靠路徑釘範圍�
 的檔案>`），因為兩個 implementer 改的檔案不相交。這是 build 鏈跑成 workflow 時和
 `skills/fankeel-build/SKILL.md` 第 4、5 步（parent 逐 task commit、reviewer 釘 `BASE..sha`）
 不同的地方，也是 `TODO.md` 那條「build 的鏈是否也跑成 workflow」要決定的事。
+
+## verify — verifier 接 adversary 三條、doc reader 三個、session adversary 一個
+
+| | |
+|---|---|
+| run id | `wf_448647af-83d` |
+| 派出時的 HEAD | `f4aafdf`，工作區乾淨 |
+| 形狀 | `pipeline` 兩段 × 三條：verifier 對一組檔案表的列跑指令、把證據列寫成檔、只回路徑與 notHeld；adversary 讀那個檔，只回 defeated 與 gaps。旁邊 `parallel` 三個 doc reader（給 diff 的路徑，回 nowFalse）和一個讀 session 證據表的 adversary，用 `Promise.all` 一起跑 |
+| agent | 10 — 3 verifier、4 adversary、3 doc reader，全部 `model: 'sonnet'` |
+| subagent tokens | 697,949 |
+| 工時 | 482,484 ms（8.0 分鐘） |
+| 工具呼叫 | 180 |
+| 錯誤 / 跳過 / 空結果 | 0 / 0 / 0 |
+| 回到 parent 的 | 18 條主張全 held；adversary 打掉 4 列；3 頁 nowFalse 都是空 |
+
+四列被打掉的下場：兩列是 session 自己的證據表引了沒有落地的輸出（上限曾紅 2423 的
+那次跑只印到終端、對照檔沒行號），重跑到 log 後成立；一列是 verifier 說「無括號呼叫」
+那條 grep 在 audit skill 上找不到負向——裁決是它的負向在 `docs-check` 的 orphan
+偵測，09-04 在 `TODO.md` 真的紅過一次（`19203c6`）；一列是 report 的 token 數「沒有檔
+案可指」——有，就是上面那個 meta 檔。meta 檔只有整支 workflow 的 token 總數，沒有逐
+agent 的拆分，所以 verifier 和 adversary 各花多少，這一頁說不出來。
 
 ## 這一頁不說的
 

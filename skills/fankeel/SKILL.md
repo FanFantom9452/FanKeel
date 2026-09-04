@@ -916,10 +916,10 @@ foreordained gate this pipeline strips out elsewhere: your own reading needs no
 permission, and a dozen agents is spend, which is theirs to authorise. It is
 still a job inside a stage rather than the stage itself — a workflow's
 `phases` are its own, declared in its script, and none of them is this route's
-gate. **Unmeasured against a control here**: a chain has run as a workflow on
-this repository — this task's own build, written up in
+gate. **Unmeasured against a control here**: chains have run as workflows on
+this repository — this task's own build and verify, written up in
 [docs/reports/2026-09-04-chains-as-workflows.md](../../docs/reports/2026-09-04-chains-as-workflows.md)
-— with no four-dispatch arm beside it, so the paragraph above still argues
+— with no four-dispatch arm beside either, so the paragraph above still argues
 from where the intermediate output lands, which is structural, and quotes no
 figure here; the figures live in the report, dated.
 
