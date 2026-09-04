@@ -33,7 +33,8 @@ function fixture() {
     registry.writeSession(r2, DOWN, { task: 'down two', stage: 'land', route: ['survey', 'build', 'land'],
         active: false, claims: [], started: at(now - 2 * DAY), updated: at(now - DAY), configDir: cfg,
         notes: ['a note'], next: 'nothing',
-        model: 'claude-sonnet-5', usage: { requests: 3, models: { 'claude-sonnet-5': { input: 1e6, output: 1e6, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } } });
+        model: 'claude-sonnet-5', usage: { requests: 3, models: { 'claude-sonnet-5': { input: 1e6, output: 1e6, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } },
+            subagents: { agents: 2, requests: 5, wallMs: 60000, models: { 'claude-sonnet-5': { input: 1e6, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } } } });
     fs.writeFileSync(path.join(r2, '.fankeel', 'sessions', 'deadbeef-0000-4000-8000-000000000000.json'), '{not json');
     fs.mkdirSync(path.join(r1, '.fankeel', 'build', '2026-09-04-thing'), { recursive: true });
     fs.writeFileSync(path.join(r1, '.fankeel', 'build', '2026-09-04-thing', 'ledger.md'), '# ledger\n');
@@ -71,6 +72,8 @@ test('gather classifies live, stale and down, counts unreadable, prices usage, l
     assert.equal(down.ended, null);
     assert.equal(down.cost.usd, 12);
     assert.deepEqual(down.cost.unpriced, []);
+    assert.equal(down.agentCost.usd, 2);
+    assert.equal(down.agents.agents, 2);
     assert.equal(one.sessions[1].ended.reason, 'clear');
     assert.equal(m.pricesVerified.length, 10);
 });
@@ -83,6 +86,7 @@ test('render names every task, marks state, shows the price date, and draws the 
     for (const t of ['live one', 'stale one', 'down two']) assert.ok(page.includes(t), t);
     assert.match(page, /prices 2026-\d{2}-\d{2}|prices \d{4}-\d{2}-\d{2}/);
     assert.ok(page.includes('task.js clear ' + STALE));
+    assert.ok(page.includes('2 agents'));
     assert.ok(!page.includes('<form'));
     assert.ok(!page.includes('<script src='));
     const served = station.render(m, { serve: true, nonce: 'n0nce' });

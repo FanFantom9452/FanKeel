@@ -43,7 +43,11 @@ From the entry: `task`, `project`, `stage` on its `route`, `started`,
 `updated`, `claims`, `notes`, `next`, `guard`, and the stage sums of `burn`,
 `clock` and `waited`. From `hooks/leave.js`: `ended`, `model`, `usage` — see
 [registry.md](registry.md). From `lib/prices.js`: the dollar figure, and the
-date the table was read.
+date the table was read. The dollar figure shown is the session's own; beside
+it, when the session ran agents, is the agents' dollar figure and how many
+agents produced it — `usage.subagents`, priced the same way. A row opens to
+the agents' own request count and their summed wall-clock, alongside
+everything else.
 
 ## Two forms
 

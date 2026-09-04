@@ -33,13 +33,13 @@ function main(raw) {
     const root = registry.rootFor(payload);
     const mine = registry.readSession(root, sessionId);
     if (mine) {
-        const seen = typeof payload.transcript_path === 'string' ? usage.summarise(payload.transcript_path) : null;
+        const seen = typeof payload.transcript_path === 'string' ? usage.summariseTree(payload.transcript_path) : null;
         const reason = typeof payload.reason === 'string' && payload.reason ? payload.reason.slice(0, 32) : 'other';
         try {
             registry.update(root, sessionId, (d) => {
                 d.ended = { at: new Date().toISOString(), reason };
                 if (seen) {
-                    d.model = seen.model;
+                    if (seen.model) d.model = seen.model;
                     d.usage = seen.usage;
                 }
             });

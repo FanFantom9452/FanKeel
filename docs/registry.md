@@ -200,8 +200,14 @@ nothing else:
 - `model` — the model that produced the most output tokens in the transcript,
   written at the same moment.
 - `usage` — `{ requests, models: { <id>: { input, output, cacheRead,
-  cacheWrite5m, cacheWrite1h } } }`, summed once per `requestId` over the
-  whole transcript. Absent when the transcript could not be read.
+  cacheWrite5m, cacheWrite1h } }, subagents? }`, `requests` and `models`
+  summed once per `requestId` over the whole transcript and staying the
+  session's own. `subagents` — `{ agents, requests, models, wallMs }` — is
+  present when the session ran agents: it sums every transcript under the
+  session's own `subagents/` directory, one entry per Background Agent or
+  Workflow agent, with the sidechain flag counted rather than skipped, since
+  every line in those transcripts carries it. Absent when the transcript
+  could not be read.
 
 # Reading it from outside
 
