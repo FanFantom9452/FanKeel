@@ -162,6 +162,13 @@ per pass, and every other step of the loop is unchanged.
    must write its report to. Never the session's history, and never a paste of
    the plan.
 
+   A `task-brief` script would carry less: it writes task N's own text to a
+   file and prints the path, so a dispatch carries a path rather than the
+   whole plan — two thousand words an implementer does not need. It belongs
+   in `scripts/`, beside `ledger.js`. **Do not write it here** — that is out
+   of this plan's scope, and the `TODO.md` entry it answers asks for the
+   rule, not the tool.
+
    A dispatched implementer **does not commit. It returns a status line and the
    paths it wrote — never a diff.** A returned diff puts the whole change back
    in this context, which is the one cost dispatching exists to avoid, and step
@@ -234,6 +241,11 @@ per pass, and every other step of the loop is unchanged.
 6. Fix rounds are bounded at **five**. A finding you overrule is a ruling, not a
    silence.
 
+   When the fifth round ends with findings still open, record what remains as
+   rulings with their cost — `ledger.js ruling` — and mark the task complete
+   with them named. A cap that silently drops what it caps is the failure
+   this is preventing.
+
    **A fix round lands the same way the task did**: the resumed implementer
    returns paths and does not commit, and the parent stages that task's declared
    paths and commits them. Re-review `<the task's previous sha>..<the new one>`.
@@ -273,6 +285,20 @@ undo; a session parked on a question costs their whole day and buys nothing.
 3. a side effect outside this workspace that norms say you ask about first — a
    merge, a push to a shared branch, a publish
 4. a plan, or a file table, so broken that every path forward is a guess
+
+**Why `build`'s chain does not become a Workflow.** Steps 4 and 5 put a parent
+`git commit` between the implementer and the reviewer: the reviewer pins the
+range `BASE..sha`, and that sha does not exist until the parent commits it. A
+Workflow's hops run inside its own script, where the parent cannot commit
+between them — which is why `verify`'s chain, whose reviewer reads a file the
+first hop wrote rather than a git range, could become one and `build`'s
+cannot. `docs/reports/2026-09-04-chains-as-workflows.md:41-44` records the one
+trial run this way and states plainly that its parent did not commit between
+hops — one trial, no control arm.
+
+What that leaves open, in one sentence: the chain cannot be a Workflow, but a
+**group** of tasks that share no file and feed nothing to each other is a
+different shape, and `ledger.js groups` already computes it.
 
 ## A new ask is not a fifth stopper
 
