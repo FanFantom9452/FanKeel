@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { badgeWord, writeBadge, readBadge, pruneBadges, MAX_WORD } = require('../lib/badge.js');
+const badge = require('../lib/badge.js');
 
 const SID = 'aaaaaaaa-0000-4000-8000-000000000001';
 const OTHER = 'bbbbbbbb-0000-4000-8000-000000000002';
@@ -159,4 +160,34 @@ test('readBadge returns the word on disk, and null for everything else', () => {
   writeBadge(dir, SID, 'survey');
   assert.equal(readBadge(dir, SID), 'survey');
   assert.equal(readBadge(dir, 'not-a-session-id'), null, 'a rejected id is not a read');
+});
+
+// LEAD_KEYS is exported because it is the contract `writeLead` writes to —
+// only these keys, in this order, and `root` is the newest of them. A reader
+// outside this file (the station, eventually) needs the same list rather than
+// a second copy of it, so the order lives here once.
+test('LEAD_KEYS is the order writeLead writes fields in, with root last', () => {
+  assert.deepEqual(badge.LEAD_KEYS, ['word', 'step', 'steps', 'title', 'where', 'guard', 'others', 'root']);
+});
+
+test('readLeads lists every lead under modes/ with its fields, root included', () => {
+    const dir = tmpClaude();
+    const other = 'abcdef01-2345-6789-abcd-ef0123456789';
+    assert.equal(badge.writeLead(dir, SID, { word: 'build', step: 3, steps: 5, title: 't', root: 'F:\\ws' }), true);
+    assert.equal(badge.writeLead(dir, other, { word: 'init', step: 0, root: '/home/u/ws' }), true);
+    fs.mkdirSync(path.join(dir, 'modes', 'not-a-session-id'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'modes', 'not-a-session-id', 'fankeel.lead'), 'word=build\n');
+    const leads = badge.readLeads(dir).sort((a, b) => a.sessionId.localeCompare(b.sessionId));
+    assert.deepEqual(leads.map((l) => l.sessionId), [other, SID].sort());
+    const mine = leads.find((l) => l.sessionId === SID);
+    assert.deepEqual(mine.fields, { word: 'build', step: '3', steps: '5', title: 't', root: 'F:\\ws' });
+    assert.equal(leads.find((l) => l.sessionId === other).fields.root, '/home/u/ws');
+});
+
+test('readLeads returns [] where modes/ is absent, and skips a lead with no word', () => {
+    const dir = tmpClaude();
+    assert.deepEqual(badge.readLeads(dir), []);
+    fs.mkdirSync(path.join(dir, 'modes', SID), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'modes', SID, 'fankeel.lead'), 'root=F:\\ws\n');
+    assert.deepEqual(badge.readLeads(dir), []);
 });

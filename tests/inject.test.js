@@ -267,6 +267,18 @@ test('a clash takes the badge slot, and leaves the lead line its stage', () => {
   assert.match(lead, /^others=1$/m);
 });
 
+test('the lead names the registry root', () => {
+  // Reuse the fixture the `/^word=build$/m` test builds; `root` is that
+  // fixture's registry directory and `cfg` its config directory.
+  const root = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  seed(root, MINE, { stage: 'build' });
+  seed(root, THEIRS, { scope: ['statusline.ps1'] });
+  run({ session_id: MINE, cwd: root }, cfg);
+  const lead = leadOf(cfg, MINE);
+  assert.match(lead, new RegExp('^root=' + root.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&') + '$', 'm'));
+});
+
 // The lead line carries the guard so a statusline can show it, and what it has
 // to carry is the mode rather than the field. Since the default became `ask` the
 // field is empty on exactly the sessions the guard is loudest on, so a raw read

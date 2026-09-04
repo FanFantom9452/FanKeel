@@ -192,6 +192,7 @@ test('a clash takes the badge slot here too, and leaves the lead line its stage'
   const lead = leadOf(dir, B);
   assert.match(lead, /^word=build$/m);
   assert.match(lead, /^others=1$/m);
+  assert.match(lead, /^root=/m);
 });
 
 // The other half of that substitution, and the one nobody was watching: this

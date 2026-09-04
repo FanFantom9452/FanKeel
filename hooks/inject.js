@@ -103,7 +103,7 @@ function main(raw) {
                     // nothing" — so this is its contract, not a workaround.
                     // Measured 2026-08-27: seven hollow dots before, none now.
                     badge.writeBadge(dir, sessionId, 'init');
-                    badge.writeLead(dir, sessionId, { word: 'init', step: 0 });
+                    badge.writeLead(dir, sessionId, { word: 'init', step: 0, root });
                 } else if (mine || badge.readBadge(dir, sessionId) === 'init') {
                     // An entry that exists but is stood down means this session
                     // *was* in the mode and its badge still says otherwise. An
@@ -210,6 +210,7 @@ function main(raw) {
                 // prompts were landing.
                 guard: guardMode(mine) || '',
                 others: overlapping > 0 ? overlapping : '',
+                root,
             });
             badge.pruneBadges(cfg, sessionId, BADGE_TTL_MS);
         } catch (e) { /* housekeeping */ }

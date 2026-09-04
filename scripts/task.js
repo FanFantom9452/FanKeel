@@ -79,7 +79,7 @@ function claudeDir(opts) {
     return home ? path.join(home, '.claude') : null;
 }
 
-function showBadge(opts, sessionId, word, data) {
+function showBadge(opts, sessionId, word, data, root) {
     const dir = claudeDir(opts);
     if (!dir) return;
     try {
@@ -108,6 +108,7 @@ function showBadge(opts, sessionId, word, data) {
             // empty on exactly the sessions the guard is loudest on.
             guard: guardMode(data) || '',
             others: data.others > 0 ? data.others : '',
+            root,
         });
     } catch (e) { /* housekeeping */ }
 }
@@ -528,7 +529,7 @@ function cmdStart(root, opts) {
     // No collision check here, because there is nothing yet to collide. A task
     // holding no file overlaps no file, and the first edit is where the question
     // gets asked — by the guard, before the write, over a path both sides hold.
-    showBadge(opts, id, badge.badgeWord(data.stage, false), data);
+    showBadge(opts, id, badge.badgeWord(data.stage, false), data, root);
 
     const lines = ['fankeel — started, at ' + data.stage
         + (data.class ? '   class: ' + data.class : '')
@@ -577,7 +578,7 @@ function cmdStage(root, opts) {
     if (!data) fail('No active entry for this session under ' + root);
     if (!wrote) fail('Could not write the entry.');
     const clash = collisions(root, id, registry.claimsOf(data));
-    showBadge(opts, id, badge.badgeWord(name, clash.length > 0), Object.assign({ others: clash.length }, data));
+    showBadge(opts, id, badge.badgeWord(name, clash.length > 0), Object.assign({ others: clash.length }, data), root);
 
     // What the stage just left cost, said at the one moment it is a finished
     // number. It goes here rather than into the injected block because `build`
@@ -646,7 +647,7 @@ function cmdTask(root, opts) {
     if (!wrote) fail('Could not write the entry.');
 
     // Holding nothing, so overlapping nothing.
-    showBadge(opts, id, badge.badgeWord(data.stage, false), data);
+    showBadge(opts, id, badge.badgeWord(data.stage, false), data, root);
 
     return 'fankeel — task: ' + text
         + NL + '           at ' + data.stage + ', holding nothing.'
@@ -703,7 +704,7 @@ function cmdGuard(root, opts) {
     // would take a live `clash` off the statusline as a side effect of setting
     // the mode that exists to make collisions louder.
     const clash = collisions(root, id, registry.claimsOf(data));
-    showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data));
+    showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data), root);
 
     return 'fankeel — guard: ' + (data.guard === 'off' ? 'off (warning only)' : data.guard);
 }
@@ -829,7 +830,7 @@ function cmdAdopt(root, opts) {
     }
 
     const adoptClash = collisions(root, id, claims);
-    showBadge(opts, id, badge.badgeWord(data.stage, adoptClash.length > 0), Object.assign({ others: adoptClash.length }, data));
+    showBadge(opts, id, badge.badgeWord(data.stage, adoptClash.length > 0), Object.assign({ others: adoptClash.length }, data), root);
 
     const lines = ['fankeel — adopted: ' + (data.task || 'untitled') + ' @ ' + data.stage];
     lines.push('  ' + from + ' is now stood down.');
@@ -925,7 +926,7 @@ function cmdRoute(root, opts) {
     });
     if (!wrote) fail('Could not write the entry.');
     const clash = collisions(root, id, registry.claimsOf(data));
-    showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data));
+    showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data), root);
 
     const at = positionIn(given, data.stage);
     const shown = 'fankeel — route: ' + before.join(' → ') + NL + '           now: ' + given.join(' → ');
