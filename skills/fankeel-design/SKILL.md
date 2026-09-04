@@ -36,9 +36,9 @@ If the request describes several independent subsystems, say so **before**
 spending questions on the details of one. A project too large for a single design
 gets decomposed first, and each piece gets its own cycle.
 
-### 2. Two or three approaches
+### 2. One approach
 
-With trade-offs. Lead with the recommendation and say why.
+With trade-offs. Lead with it and say why.
 
 Cut ruthlessly: no features beyond the ask, no abstraction for single-use code,
 no configurability nobody requested, no error handling for impossible states. If
