@@ -903,6 +903,26 @@ would return the same shape of answer about different files, they are one reader
 with a list** — give it the list. Fan out on distinct questions, not on file
 count.
 
+**Where a plan exists, none of that is guesswork and none of it is yours.**
+`lib/plantasks.js` groups a plan's tasks by disjoint `**Files:**` and by whether
+one consumes what another produces, and `surfaces()` gives each group its
+dispatch surface — one task is `agent`, two are `agents` in one response, three
+or more are `workflow`. `node <plugin>/scripts/ledger.js --plan <f> groups`
+prints it beside each group, and `build` reads it there rather than deriving one
+from the group's size, which cannot see what the next paragraph can.
+
+A group carrying a diagnostic never reaches `workflow`, whatever its size.
+`conflict()` reads only a backticked identifier out of `Consumes:`, so a
+dependency written as prose declares nothing for the other side to match and the
+pair looks independent. Two Agents survive that — the parent reads both returns,
+so the grouping's mistake is in front of it. A Workflow does not come back
+between its steps, so it wants a group shown to be disjoint rather than one
+merely not refuted.
+
+The surface is the batch shape, not the implementer decision: a task whose own
+`**Dispatch:**` line reads `in-session` is not dispatched at all, whatever
+surface its group carries.
+
 **The ceiling has one exception, and it is not yours to press.** Four is where
 guessing at the split begins; a script does not guess, because it holds the list
 and it holds the join. So the shape the ceiling cannot cover is a fan-out whose

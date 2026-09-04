@@ -119,6 +119,21 @@ This block is what decides whether two tasks may be implemented at the same
 time, and it is what the parent stages when the task lands. A path missing from
 it is a file nobody may write.
 
+**And it decides how they go out.** `lib/plantasks.js` groups tasks by disjoint
+`**Files:**` and by whether one consumes what another produces, then gives each
+group a dispatch surface: one task is `agent`, two are `agents` in one response,
+three or more are one `workflow`. `node <plugin>/scripts/ledger.js --plan <f>
+groups` prints it, and `build` dispatches on what it printed.
+
+So a `**Files:**` block left off does not merely fail this stage's own rule — it
+serialises that task against every other, because a task declaring no files
+conflicts with all of them. And a `Consumes:` written as prose rather than as a
+backticked identifier declares nothing for another task's `Produces:` to match,
+which downgrades its whole group from `workflow` to `agents`: `conflict()` fails
+open by design, and a group it could not confirm is not one to spend a Workflow
+on. Both are silent from inside this stage. `groups` names them, and it is the
+last place before the work goes out that anyone sees them.
+
 Every task carries an **Interfaces** block:
 
 ```markdown
