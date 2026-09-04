@@ -49,8 +49,9 @@ removes the residue, and the work stays in the parent — for that session, and
 written down as that session's. The plan's `**Dispatch:**` lines read
 `in-session — the user said so this session` on Task 1 and `same reason as
 Task 1` after it, the build reviewer runs in the session as a ruling recorded
-once, and step 5 of the fankeel-build skill says what that costs and how half of
-it is bought back. Nothing else settles it that way. The host opens one tool,
+once, and the fankeel-build skill's rationale.md, under its task loop, says
+what that costs and how half of it is bought back. Nothing else settles it that
+way. The host opens one tool,
 **Workflow**, on five things: `ultracode` in the prompt, ultracode on for the
 session, the user asking for a workflow in their own words, a skill the user
 invoked whose instructions say to run one, or a saved workflow by name; the
