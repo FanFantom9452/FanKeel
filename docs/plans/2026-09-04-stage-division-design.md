@@ -234,20 +234,31 @@ compared against a rendered rule gives a wrong delta. It gave one, first time.
 | stage | edits | rule delta | template | base → after | headroom |
 |---|---|---|---|---|---|
 | `plan` | 1 | +8 | | 2379 → 2387 | 13 |
-| `build` | 1 | −4 | | 2393 → **2389** | 11 |
+| `build` | 1 | +5 | | 2393 → **2398** | 2 |
 | `verify` | 1 | +26 | | 2360 → 2386 | 14 |
 | `audit` | 2 | +35 | | 2360 → 2395 | 5 |
 | `land` | 2 | −16 | +11 | 2387 → **2382** | 18 |
+| `survey` | 1 | −9 | | 2399 → **2390** | 10 |
 
-`survey` and `design` are not touched. `build` and `land` end up *smaller* than
-they started while gaining anchors.
+`design` is not touched. `land` and `survey` end up *smaller* than they started
+while gaining anchors.
+
+**Two rows were amended after the build, and the reason is on the record.**
+`build` was drafted at 2389 with the parenthetical reading `skill: scan, groups,
+BASE, range` — which removed the only place build's block named its own skill,
+and broke `tests/stages.test.js:481`, a test whose comment says it wants the
+instruction and not the mention. The ruling in the ledger reverts it: the
+parenthetical is `the fankeel-build skill has loop and scan`, keeping the
+pointer and one keyword at 2398. `survey` was not in this table at all when it
+was written; it became a task of its own after the question was asked out loud,
+and its row is the measured result.
 
 **`plan`** — `Every task carries` becomes ``Every `## Task N:` carries``.
 
 **`build`** — only the parenthetical moves. Everything else, the correct
 `complete` form and the compaction sentence included, stays exactly as it is:
 
-> From a plan (skill: scan, groups, BASE, range): `node {{LEDGER}} --plan <f> show` first; never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction it beats memory.
+> From a plan (the fankeel-build skill has loop and scan): `node {{LEDGER}} --plan <f> show` first; never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`. After a compaction it beats memory.
 
 **`verify`** — one edit carrying three keywords:
 
@@ -285,6 +296,12 @@ five dropped procedures and `verify`'s one go to `TODO.md` under
 anchor and can hold nothing further.
 
 ### What the two runs cost
+
+Every figure below, and the twenty-one-probe table in §3, is sourced in
+[docs/reports/2026-09-05-stage-division-measurements.md](../reports/2026-09-05-stage-division-measurements.md).
+Two of the four come from workflow run records under the session directory,
+which is per-machine and not version controlled — checkable today on the machine
+that ran them and nowhere else. The report says which.
 
 1,169,842 subagent tokens over two runs and about 37 minutes, to establish that
 anchors fit in four stages. The first run was unusable — it returned eleven

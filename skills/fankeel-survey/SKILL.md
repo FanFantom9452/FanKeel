@@ -181,10 +181,12 @@ wider is the only move left. Never ask permission for either. The user's answer 
 "shall I read further?" is foreordained — they asked the question the reading
 answers — so the round buys nothing and costs a turn of their attention.
 
-- **Several in one response.** That is what makes them run at once; one dispatch
-  per response runs them in sequence. **Four is the ceiling** — the fankeel
-  skill's *Dispatch by default, never the filtering* says why, and lenses past
-  that are one reader with a list.
+- **One workflow, not several dispatches.** The readers are its first stage and
+  the `path:line` check is its second, so what returns is the join rather than
+  every reader's whole reading. **Four is the ceiling for dispatches** — the
+  fankeel skill's *Dispatch by default, never the filtering* says why — and a
+  script is the exception the ceiling names, because it holds the list rather
+  than guessing at the split.
 - **One lens each**, taken from what the scan named — a subsystem apiece, or a
   term-cluster apiece. Not a fixed list.
 - **Tell each one what is already known**, so it returns only what is new.
