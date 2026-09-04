@@ -1,5 +1,5 @@
 ---
-status: current
+status: archived
 last_verified: 2026-09-01
 source_of_truth: lib/registry.js, hooks/gate.js, hooks/resume.js, .claude-plugin/plugin.json, scripts/task.js
 ---

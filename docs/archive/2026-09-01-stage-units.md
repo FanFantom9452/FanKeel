@@ -1,5 +1,5 @@
 ---
-status: current
+status: archived
 last_verified: 2026-09-01
 source_of_truth: lib/ledger.js, lib/stages.js, scripts/ledger.js
 ---

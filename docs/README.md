@@ -6,7 +6,7 @@ source_of_truth: this file is the index; each page below is its own source
 
 # FanKeel documentation
 
-Seven pages, one question each. The front page has install, the pipeline
+Eight pages, one question each. The front page has install, the pipeline
 diagram, and the statusline; everything that needs more than a paragraph is
 here.
 
@@ -38,13 +38,8 @@ here.
 | Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
 | Why two implementers can now run at once without their commits colliding | [plans/2026-08-30-parallel-build-design.md](plans/2026-08-30-parallel-build-design.md) — *built* |
 | How that was built, task by task | [plans/2026-08-30-parallel-build.md](plans/2026-08-30-parallel-build.md) — *built* |
-| Which `## Waiting` entries had stopped waiting, and what closed them | [plans/2026-08-31-todo-waiting-backlog.md](plans/2026-08-31-todo-waiting-backlog.md) — *built* |
-| Why a stage's minutes are recorded where its tokens are not, and why the wait is not measured with `Stop` | [plans/2026-09-01-stage-timing-design.md](plans/2026-09-01-stage-timing-design.md) — *built* |
-| The four tasks that built it, with every string and every test written out | [plans/2026-09-01-stage-timing.md](plans/2026-09-01-stage-timing.md) — *built* |
-| Every fankeel session on this machine on one page, what each cost, and how an abandoned one is put down | [plans/2026-09-04-session-station-design.md](plans/2026-09-04-session-station-design.md) — *design-intent* |
-| The eight tasks that build the station, with every test and every file written out | [plans/2026-09-04-session-station.md](plans/2026-09-04-session-station.md) — *design-intent* |
-| Why the design gate decides whether a route needs `plan`, and what runs at once in each stage | [plans/2026-09-01-stage-units-design.md](plans/2026-09-01-stage-units-design.md) — *built* |
-| The five tasks that built it, with every string and every test written out | [plans/2026-09-01-stage-units.md](plans/2026-09-01-stage-units.md) — *built* |
+| Every fankeel session on this machine on one page, what each cost, and how an abandoned one is put down | [plans/2026-09-04-session-station-design.md](plans/2026-09-04-session-station-design.md) — *built* |
+| The eight tasks that build the station, with every test and every file written out | [plans/2026-09-04-session-station.md](plans/2026-09-04-session-station.md) — *built* |
 | Why six deferred decisions were settled in one pass, and what each one decided | [plans/2026-09-01-six-decisions-design.md](plans/2026-09-01-six-decisions-design.md) — *built* |
 | The six tasks that settled them, with every string and every test written out | [plans/2026-09-01-six-decisions.md](plans/2026-09-01-six-decisions.md) — *built* |
 | Which three of the four `## Ready` entries were documentation defects, and why the fourth could not be run here | [plans/2026-09-01-ready-backlog.md](plans/2026-09-01-ready-backlog.md) — *built* |
@@ -52,6 +47,8 @@ here.
 | What dispatching four readers cost against doing the same reading in-session, measured as a pair on 2026-09-03 | [reports/2026-09-03-dispatch-vs-inline.md](reports/2026-09-03-dispatch-vs-inline.md) — *a dated snapshot, 繁體中文* |
 | Why that pair's 9.2× was the searching rather than the reading, measured again with the files named | [reports/2026-09-03-dispatch-vs-inline-named.md](reports/2026-09-03-dispatch-vs-inline-named.md) — *a dated snapshot, 繁體中文* |
 | Why the middle between those two is 2.55× and the rule is a gradient rather than a step, with a pre-registered prediction that failed | [reports/2026-09-03-dispatch-vs-inline-join.md](reports/2026-09-03-dispatch-vs-inline-join.md) — *a dated snapshot, 繁體中文* |
+| How a build chain and a verify chain each ran as one Workflow on 2026-09-04, and what the runs cost | [reports/2026-09-04-chains-as-workflows.md](reports/2026-09-04-chains-as-workflows.md) — *a dated snapshot, 繁體中文* |
+| What a subagent actually received in its brief on 2026-09-04, measured with a probe agent | [reports/2026-09-04-subagent-brief-probe.md](reports/2026-09-04-subagent-brief-probe.md) — *a dated snapshot, 繁體中文* |
 | What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 | Why three lib modules with one caller each were not folded into their callers | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *one caller is not evidence on its own* |

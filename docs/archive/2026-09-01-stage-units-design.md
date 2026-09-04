@@ -1,5 +1,5 @@
 ---
-status: current
+status: archived
 last_verified: 2026-09-01
 source_of_truth: lib/stages.js, lib/ledger.js, lib/plantasks.js
 ---

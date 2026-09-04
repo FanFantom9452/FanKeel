@@ -3,7 +3,7 @@ name: fankeel-design
 description: The design stage — one approach with its trade-offs, a success criterion that can fail, and a check against the project map before anything is built. Use for the design stage of a fankeel task, choosing between approaches, writing a spec, or when an approach needs approving before implementation.
 version: 0.43.0
 status: current
-last_verified: 2026-09-03
+last_verified: 2026-09-04
 source_of_truth: lib/stages.js
 ---
 

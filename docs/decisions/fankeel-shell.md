@@ -458,7 +458,7 @@ that a hook put there, and two sessions since the file landed recorded neither,
 one of them four stages deep with `clock` and `burn` written to the same entry
 by the sibling hooks. One record does carry a `waited` — session `cb8cee7b`'s
 `{"verify":28660}` — and it is the hand-run stamp
-[the stage-timing design](../plans/2026-09-01-stage-timing-design.md) drained
+[the stage-timing design](../archive/2026-09-01-stage-timing-design.md) drained
 before its own probe, not a gate anything opened. Read without that clause the
 sentence is false against a file in `.fankeel/sessions/` today, which is the
 third time this paragraph has been written wider than it reaches.
@@ -476,7 +476,7 @@ when the **process** starts, and no `claude.exe` here has started since the entr
 was installed — the newest began 2026-08-31 23:55:39 against a manifest dated
 2026-09-01 02:03:37. The process part is measured and true. The word `process` is
 not: the source it came from,
-[docs/plans/2026-09-01-stage-timing-design.md](../plans/2026-09-01-stage-timing-design.md),
+[docs/plans/2026-09-01-stage-timing-design.md](../archive/2026-09-01-stage-timing-design.md),
 says **session** start, and `/clear` begins a session without beginning a
 process. The session that did this work began long after the install. So on one
 reading the entry was never live and on the other it was.

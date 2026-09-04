@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-03
+last_verified: 2026-09-04
 source_of_truth: lib/docs.js, lib/map.js, scripts/layout.js, scripts/docs-check.js, scripts/docs-audit.js, skills/fankeel/SKILL.md, skills/fankeel-survey/SKILL.md
 ---
 
@@ -126,7 +126,7 @@ and somebody wrote it deliberately.
 ```yaml
 ---
 status: current | design-intent | superseded-by <path> | archived | generated
-last_verified: 2026-08-22
+last_verified: 2026-09-04
 source_of_truth: lib/badge.js, lib/render.js   # or: generated-by scripts/gen.sh
 ---
 ```
