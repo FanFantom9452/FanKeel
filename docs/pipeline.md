@@ -436,6 +436,14 @@ spec.
 The only stage that loops, and the only one whose memory is a file rather than a
 conversation.
 
+**It executes rather than decides.** `ledger.js groups` prints a dispatch
+surface beside each group — `agent`, `agents` or `workflow` — and the loop reads
+it instead of re-deriving one from the group's size, which cannot see the
+diagnostics that downgrade a group. The brief a dispatch carries is four fixed
+things, none of them chosen per task. What is left to decide here is the ruling
+and the commit message; everything else the loop needs is a runtime fact taken
+when it is needed.
+
 The second and third setup steps below are the path with a plan, and so is every
 node under them naming a ledger, a group or an implementer: the gate asking for a
 group the ledger has not completed, the node sending a whole group out in one
@@ -457,7 +465,7 @@ flowchart TD
     S2["<b>open the ledger</b><br/>ledger show<br/><i>after a compaction, trust it over memory</i>"]
     S3["<b>scan the plan first</b><br/>tasks that contradict each other,<br/>or contradict the constraints"]
     L{"a group holding a task the ledger<br/>does not list as complete?"}
-    D["<b>the whole group, one response</b><br/>groups says which tasks go together<br/><i>pass the model explicitly, say how many<br/>and on which model. Four dispatches at a time</i>"]
+    D["<b>the whole group, on the surface groups printed</b><br/>agent · agents · workflow<br/><i>pass the model explicitly, say how many<br/>and on which model. Four dispatches at a time</i>"]
     T2a["<b>implement here</b><br/>the group's in-session tasks<br/><i>every changed line traces to the task.<br/>Do not improve adjacent code on the way past</i>"]
     T2b1["implement one task"]
     T2b2["implement one task"]

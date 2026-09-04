@@ -136,6 +136,27 @@ context, and every intermediate finding lands there permanently even though only
 the verified ones survive. Run as a `pipeline` in Claude Code's **Workflow**
 tool, the intermediates stay inside the script and what returns is the join.
 
+## The other threshold, which is size
+
+The shape above is one question. **How many independent tasks are in front of
+you** is a different one, and `plan` answers it durably: `lib/plantasks.js`
+groups a plan's tasks by disjoint `**Files:**` and by whether one consumes what
+another produces, and `surfaces()` gives each group its dispatch surface — one
+task is `agent`, two are `agents` in one response, three or more are
+`workflow`.
+
+A group carrying a diagnostic never reaches `workflow`, whatever its size.
+`conflict()` reads only a backticked identifier out of `Consumes:`, so a
+dependency written as prose declares nothing for the other side to match and
+the pair looks independent. Two Agents survive that: the parent reads both
+returns and the grouping's mistake is in front of it. A Workflow does not come
+back between its steps, so it wants a group shown to be disjoint rather than one
+merely not refuted.
+
+The two thresholds meet in `build`, which is the only stage that has groups at
+all: a group of implementers whose output feeds a reviewer each is the shape
+rule and the size rule naming the same run.
+
 **`/fankeel` is the fourth of those five.** Where a stage's rule names a chain
 as one workflow, that rule is the opt-in, and the host's own run dialog is where
 the spend is authorised — it lists the phases and the agent count before
