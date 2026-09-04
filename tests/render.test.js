@@ -536,6 +536,8 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
     const size = sizeAtReference(out);
     t.diagnostic(stage.padEnd(7) + size + ' chars at a ' + REFERENCE_ROOT + '-char root  (' + out.length + ' here)');
     assert.ok(size < 2400, stage + ' injection is ' + size + ' chars under a ' + REFERENCE_ROOT + '-character plugin root');
+    if (stage === 'survey') assert.match(rulesFor('survey').join(' '), /one workflow, every path:line checked/,
+      'survey must name the check its readers run before returning');
     assert.match(templateFor('land'), /^suite: <green>$/m,
       'land must report the suite run, or nothing catches it being skipped');
   }

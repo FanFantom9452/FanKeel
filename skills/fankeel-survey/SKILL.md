@@ -3,7 +3,7 @@ name: fankeel-survey
 description: The survey stage — read the project's own map before reading its code, classify the work, and report what is already here. Use for the survey stage of a fankeel task, "what is already here", starting work in an unfamiliar repository, or when a task needs classifying as spike, bounded or architectural.
 version: 0.44.0
 status: current
-last_verified: 2026-09-04
+last_verified: 2026-09-05
 source_of_truth: lib/stages.js, lib/map.js, scripts/map.js, scripts/survey.js, scripts/layout.js
 ---
 
@@ -196,6 +196,17 @@ answers — so the round buys nothing and costs a turn of their attention.
 Reading wide for a narrow answer is what a subagent is for. This stage used to
 say that and then offer a manual re-run at the gate; the gate below is now the
 ordinary three options, and the survey in front of it is complete.
+
+The fan-out is two stages in one run, not four returns into this session:
+
+    read    one reader per lens, each returning findings as path:line pairs
+    check   every path:line opened and confirmed to say what the finding
+            claims, and anything not bearing on the task dropped
+
+Only what survives reaches the session. The check is not optional politeness:
+three of five pair readers in one measured run cited lines that said otherwise,
+and a finding nobody opened is a confident wrong answer with a line number
+next to it.
 
 ### 5. Classify, out loud
 
