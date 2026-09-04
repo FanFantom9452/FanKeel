@@ -49,7 +49,7 @@ it says so on the page.
   directories hold one today, dated 09-01 to 09-04.
 - `hooks/inject.js:53-54` — `launchRoot` and `rootFor` are computed before the
   init lead is written, so the registry root is known at `[FANKEEL:INIT]`.
-- `hooks/hooks.json` — six events, none of them `SessionEnd`. Claude Code's
+- `.claude-plugin/plugin.json` — six events, none of them `SessionEnd`. Claude Code's
   `SessionEnd` input carries `session_id`, `transcript_path`, `cwd` and
   `reason` (`clear | logout | prompt_input_exit | other`); `"async": true`
   lifts the hook timeout.
@@ -173,16 +173,18 @@ there, `update`s it with:
   "usage": {
     "requests": 25,
     "models": {
-      "claude-fable-5-1": { "input": 812, "output": 41880, "cacheRead": 3102344, "cacheWrite": 61220 }
+      "claude-fable-5-1": { "input": 812, "output": 41880, "cacheRead": 3102344, "cacheWrite5m": 1220, "cacheWrite1h": 60000 }
     }
   }
 }
 ```
 
 `usage` comes from `lib/usage.js`: read the transcript whole, keep one
-`message.usage` per `requestId` (the last line wins), sum the four counts per
-`message.model`, and name `model` as the one with the most output tokens. A
-transcript that cannot be read leaves the fields absent rather than zero.
+`message.usage` per `requestId` (the last line wins), sum the five counts per
+`message.model` — cache writes arrive split by TTL under `cache_creation`, and
+the two TTLs are priced differently — and name `model` as the one with the
+most output tokens. A transcript that cannot be read leaves the fields absent
+rather than zero.
 
 Then it regenerates `station.html`, whether or not there was an entry. It never
 touches `active`, `claims`, `updated`, `stage` or `guard`: a session ending is
@@ -200,12 +202,13 @@ old id ended, and that one offers the new id its task.
 module.exports = {
   verified: 'YYYY-MM-DD',
   perMillion: {
-    '<model id>': { input, output, cacheRead, cacheWrite }
+    '<model id>': { input, output, cacheRead, cacheWrite5m, cacheWrite1h }
   }
 };
 ```
 
-Dollars per million tokens, four rates per model id, and one `verified` date
+Dollars per million tokens, five rates per model id — input, output, cache
+read, and cache write at each of the two TTLs — and one `verified` date
 for the whole table. The build fills one row per model id that appears in this
 machine's transcripts — `claude-fable-5-1`, `claude-opus-5`, `claude-sonnet-5`
 and `claude-haiku-4-5-20251001` today — from Anthropic's published pricing

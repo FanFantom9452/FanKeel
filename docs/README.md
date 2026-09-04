@@ -41,6 +41,7 @@ here.
 | Why a stage's minutes are recorded where its tokens are not, and why the wait is not measured with `Stop` | [plans/2026-09-01-stage-timing-design.md](plans/2026-09-01-stage-timing-design.md) — *built* |
 | The four tasks that built it, with every string and every test written out | [plans/2026-09-01-stage-timing.md](plans/2026-09-01-stage-timing.md) — *built* |
 | Every fankeel session on this machine on one page, what each cost, and how an abandoned one is put down | [plans/2026-09-04-session-station-design.md](plans/2026-09-04-session-station-design.md) — *design-intent* |
+| The eight tasks that build the station, with every test and every file written out | [plans/2026-09-04-session-station.md](plans/2026-09-04-session-station.md) — *design-intent* |
 | Why the design gate decides whether a route needs `plan`, and what runs at once in each stage | [plans/2026-09-01-stage-units-design.md](plans/2026-09-01-stage-units-design.md) — *built* |
 | The five tasks that built it, with every string and every test written out | [plans/2026-09-01-stage-units.md](plans/2026-09-01-stage-units.md) — *built* |
 | Why six deferred decisions were settled in one pass, and what each one decided | [plans/2026-09-01-six-decisions-design.md](plans/2026-09-01-six-decisions-design.md) — *built* |
