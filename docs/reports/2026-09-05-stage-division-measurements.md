@@ -11,11 +11,15 @@ A dated snapshot. Four figures were quoted in
 and in [skills/fankeel-build/SKILL.md](../../skills/fankeel-build/SKILL.md) with
 no citation, which a whole-branch review caught. This is where they come from.
 
-**Read the provenance column before quoting any of them.** Two are reproducible
-from the repository. Two are not: they come from Claude Code's own workflow run
-records under the session directory, which is per-machine and not version
-controlled, so they can be checked today on the machine that ran them and never
-again anywhere else. That is a real limit on the claim, not a formality.
+**Read the provenance column before quoting any of them.** **One** is
+reproducible from the repository — the probe. The other **three** are not: they
+come from Claude Code's own workflow run records under the session directory,
+which is per-machine and not version controlled, so they can be checked today on
+the machine that ran them and never again anywhere else. That is a real limit on
+the claim, not a formality.
+
+An earlier draft of this paragraph said two and two, which its own table below
+already contradicted. A verify-stage adversary caught it.
 
 | Figure | Where it is quoted | Provenance |
 |---|---|---|
@@ -64,8 +68,30 @@ works, because the template is re-sent every prompt and enumerates what must be
 on screen.
 
 **Re-running it on this branch will not reproduce that table**, and should not:
-five of the seven stages gained anchors here, so several probes now return
-`YES`. The table is what the branch started from.
+**six** of the seven stages gained anchors here — `plan`, `build`, `verify`,
+`audit`, `land` and `survey`, every one but `design` — so several probes now
+return `YES`. The table is what the branch started from.
+
+## Three things this branch is, which no per-task range shows
+
+Found by the verify stage's own adversaries, recorded here because none can be
+fixed without rewriting history and all three are true of the branch as it
+stands.
+
+- **One intermediate commit is red.** At `a71b575`, `npm test` reports 1030 of
+  1031: the `suite: <green>` line landed in `lib/stages.js`'s template while
+  `skills/fankeel-land/SKILL.md`'s shown copy of that template did not gain it
+  until `8b2e22b`, one commit later. The branch tip is green; a bisect landing
+  on `a71b575` is not.
+- **A commit message misattributes one file.** `a71b575` says "three
+  rule-content assertions follow — tests/stages.test.js". Two are there; the
+  third is in `tests/render.test.js`.
+- **Tasks 1 to 3 were built against a plan that was not yet in git.** The plan
+  and the design were committed at `47a8557`, after those three tasks landed.
+  Anything grading that code against the plan is comparing it to a document
+  written to describe it, which has little room to disagree. The order was
+  wrong, not the work: both documents should have been committed at their own
+  stage, which is what `47a8557`'s own message says.
 
 ## What no figure here supports
 

@@ -415,7 +415,7 @@ Quote the output. `skills/` is a `reference` bucket, so this page is checked.
 
 **Interfaces:**
 - Consumes: `plantasks.surfaces`, and its three values `'agent'`, `'agents'`, `'workflow'`.
-- Produces: `the three-item brief recipe`.
+- Produces: `the four-item brief, named as read`.
 
 **Dispatch:** implementer, sonnet — one file, and the values it names come from Task 1's step 3.
 
@@ -612,7 +612,7 @@ npm test
 - Modify: `TODO.md` — the procedures this plan anchored nothing for
 
 **Interfaces:**
-- Consumes: `plantasks.surfaces`, `suite: <green>`, and `the three-item brief recipe`.
+- Consumes: `plantasks.surfaces`, `suite: <green>`, and `the four-item brief, named as read`.
 - Produces: nothing.
 
 **Dispatch:** in-session — three documents whose job is to describe what actually shipped, and the session is the only thing that watched all four tasks land. An implementer given this task would be transcribing an intention.
