@@ -79,6 +79,12 @@ was never a note:
 | why a change was made | the commit message |
 | work deliberately deferred | `TODO.md`, one line, under the heading for what it is short of — under `## Waiting`, ending with a `MM-DD` stamp, or `todo-check` fails the gate below |
 
+`notes` holds five (`lib/registry.js:33`, `MAX_NOTES = 5`); a sixth note pushes
+the oldest out and nothing announces it, so a task that produced six rulings has
+already lost one by the time `land` reads them. Read the notes before standing
+the task down, and put anything still needed into one of the four durable places
+above.
+
 The commit is the same three parts every time, and `build` commits one task at a
 time with the same skeleton — injected here, and read from step 4 of its own
 skill there, because its injection has no room for the rule:
