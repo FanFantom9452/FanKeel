@@ -59,7 +59,7 @@ each one actually has you do:
 ```mermaid
 flowchart LR
     S["<b>survey</b><br/>search the code, read the docs —<br/>does this already exist?"]
-    D["<b>design</b><br/>two or three approaches, one<br/>picked, and the test that settles it"]
+    D["<b>design</b><br/>one approach, its trade-offs,<br/>and the test that settles it"]
     P["<b>plan</b><br/>split into tasks you can test<br/>and review one at a time"]
     B["<b>build</b><br/>write it, test it, commit it —<br/>one review per task"]
     V["<b>verify</b><br/>run the tests, check that what<br/>you changed actually changed"]
