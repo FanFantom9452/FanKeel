@@ -290,7 +290,7 @@ test('the recommendation is a label, never a position', () => {
 test('every output rule names a line format, not only a length', () => {
   for (const s of STAGES) {
     const last = s.rules[s.rules.length - 1];
-    assert.match(last, /one line per|as a table|in a code block|three lines/, s.name);
+    assert.match(last, /one line per|as a table|in a code block|the suite's green line/, s.name);
   }
 });
 
@@ -403,7 +403,7 @@ test('land closes the documents and rewrites the map', () => {
 test('land names what shipped, and the order a clear comes in', () => {
   const text = byName('land').rules.join(' ');
   assert.match(text, /shipped: is one line per thing someone can now do/);
-  assert.match(text, /`\/clear` comes after it, never before/);
+  assert.match(text, /`\/clear` after, never before/);
   assert.match(templateFor('land'), /\nshipped:\n/);
 });
 

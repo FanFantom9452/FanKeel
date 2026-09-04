@@ -7,7 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { render, renderInit, SCRIPTS, PLUGIN_ROOT, PLUGIN_MARK, SURVEY_SCRIPT, TODO_CHECK_SCRIPT } = require('../lib/render.js');
-const { ALWAYS, NAMES, byName, rulesFor, SURVEY_TOKEN, TOKENS, SCRIPT_TOKENS, nextStage } = require('../lib/stages.js');
+const { ALWAYS, NAMES, byName, rulesFor, SURVEY_TOKEN, TOKENS, SCRIPT_TOKENS, nextStage, templateFor } = require('../lib/stages.js');
 
 // The rendered block substitutes the next stage on the route, so a comparison
 // against the rules has to substitute it the same way. Going through `nextStage`
@@ -536,6 +536,8 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
     const size = sizeAtReference(out);
     t.diagnostic(stage.padEnd(7) + size + ' chars at a ' + REFERENCE_ROOT + '-char root  (' + out.length + ' here)');
     assert.ok(size < 2400, stage + ' injection is ' + size + ' chars under a ' + REFERENCE_ROOT + '-character plugin root');
+    assert.match(templateFor('land'), /^suite: <green>$/m,
+      'land must report the suite run, or nothing catches it being skipped');
   }
 });
 
