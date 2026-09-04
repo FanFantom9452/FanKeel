@@ -585,6 +585,8 @@ holds, stood down included, newest first, with the stage each reached and what i
 cost. Nothing here deletes, so that is a month of finished tasks and the only
 view of them.
 
+For every registry on the machine rather than this one, `/fankeel-station`.
+
 Its header is also where a file that does not parse is counted. The hooks drop
 those silently and correctly — a miss is what a session not using the plugin
 looks like — so the `unreadable` figure on that line is the only place a corrupt

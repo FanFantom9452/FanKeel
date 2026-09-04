@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-03
+last_verified: 2026-09-04
 source_of_truth: lib/badge.js, hooks/inject.js, scripts/task.js
 ---
 
@@ -28,6 +28,10 @@ files claimed, the guard and the collision count each in a field:
 ▌ Opus 5 | my-project | main ↑2
 ▌ ctx ███▊░░░░░░  38%  │  5h ██████▌░░░  66%
 ```
+
+The lead line also carries `root` — the absolute registry root the session
+runs under — written for [the station](station.md)'s benefit and ignored by
+TokenBar.
 
 **From TokenBar v1.4.1 that happens by itself.** Before it, `$leadPlugin` had to
 be set by hand in `tokenbar-config`, and a machine where nobody had set it showed

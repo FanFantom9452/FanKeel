@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-03
+last_verified: 2026-09-04
 source_of_truth: lib/registry.js, lib/render.js, lib/context.js, lib/dirty.js, scripts/task.js, hooks/touch.js, hooks/inject.js, hooks/carry.js, hooks/gate.js, hooks/resume.js
 ---
 
@@ -33,6 +33,7 @@ workspace/                     <- Claude Code opened here
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
 | `~/.claude/modes/{session_id}/fankeel` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
 | `~/.claude/modes/{session_id}/fankeel.lead` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
+| `<configDir>/fankeel/station.html` | n/a | the station page, rewritten by `hooks/leave.js` and by `scripts/station.js` |
 
 The registry is found by walking up for **`.fankeel/sessions/`**, not for
 `.fankeel/`. The marker has to be the thing the registry owns, because the two
@@ -187,6 +188,20 @@ None of the three reaches the injected block, which is capped at 2400 characters
 and renders `build` at 2394. `task.js show` prints `burn:` and `time:`, and the
 stage transition names what the stage it left cost, which is the one moment the
 figure is finished.
+
+# What ending records
+
+Three more fields, written once, by `hooks/leave.js` at `SessionEnd`, and by
+nothing else:
+
+- `ended` — `{ at, reason }`, `reason` one of `clear`, `logout`,
+  `prompt_input_exit`, `other`. Present on a record that is still
+  `active: true` when the session ended without the task being stood down.
+- `model` — the model that produced the most output tokens in the transcript,
+  written at the same moment.
+- `usage` — `{ requests, models: { <id>: { input, output, cacheRead,
+  cacheWrite5m, cacheWrite1h } } }`, summed once per `requestId` over the
+  whole transcript. Absent when the transcript could not be read.
 
 # Reading it from outside
 

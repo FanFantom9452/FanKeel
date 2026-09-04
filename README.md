@@ -126,6 +126,11 @@ What happens *inside* a stage — its steps, the scripts it runs, and the two or
 three places each one branches — is drawn stage by stage in
 [docs/pipeline.md](docs/pipeline.md).
 
+Every session this machine has run, live or abandoned or stood down, is one
+page: the station. `node scripts/station.js --open` opens it. `serve` in
+place of that is the clearing form — it runs the page as a server for as long
+as putting an abandoned session down takes.
+
 ## Where to find things
 
 | I want to know | Page |
@@ -137,6 +142,7 @@ three places each one branches — is drawn stage by stage in
 | What `docs.json` declares, and why an archive naming deleted code is not a bug | [docs/documents.md](docs/documents.md) |
 | What a subagent is told when it starts, and what its return value costs | [docs/subagents.md](docs/subagents.md) |
 | The badge word, and how to colour each stage | [docs/statusline.md](docs/statusline.md) |
+| Every session on this machine on one page, and how to put an abandoned one down | [docs/station.md](docs/station.md) |
 | Which output style to use, and why a style rather than an injected ruleset | [docs/output-styles.md](docs/output-styles.md) |
 | Why any of it was built this way | [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md) |
 

@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-03
+last_verified: 2026-09-04
 source_of_truth: this file is the index; each page below is its own source
 ---
 
@@ -34,6 +34,7 @@ here.
 | When to dispatch one, what the dispatcher has to say out loud, and when a pipe already removes what you are avoiding | [subagents.md](subagents.md) — *when to dispatch one* |
 | When a scripted fan-out beats parallel dispatches, and why you may offer one but not start it | [subagents.md](subagents.md) — *the one thing four dispatches cannot do* |
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
+| Every session on this machine, where the page finds the registries, and what `stale` means | [station.md](station.md) |
 | Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
 | Why two implementers can now run at once without their commits colliding | [plans/2026-08-30-parallel-build-design.md](plans/2026-08-30-parallel-build-design.md) — *built* |
 | How that was built, task by task | [plans/2026-08-30-parallel-build.md](plans/2026-08-30-parallel-build.md) — *built* |
