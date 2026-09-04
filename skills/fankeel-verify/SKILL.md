@@ -101,8 +101,11 @@ and 2.77× the wall-clock. Dispatch it anyway: one reader per page the change
 plausibly touched, several in one response so they run at once — four is the
 ceiling, and the fankeel skill's *Dispatch by default, never the filtering* says
 why — each given the **path** to a diff file
-and asked only what is now false and where. Never a pasted diff: it lands the
-whole change in this context, which is the cost dispatching exists to avoid.
+and asked only what is now false and where. Never tell a reader what you
+expect it to find: a brief saying a page was less likely to have drifted got
+`no drift` back. Ask the same question of every target, with no ranking among
+them. Never a pasted diff: it lands the whole change in this context, which
+is the cost dispatching exists to avoid.
 Pass the model explicitly; `sonnet` is the floor. Say how many are going and
 on which model as they go out — a fan-out the user did not see coming is spend
 they were never given the chance to question.
