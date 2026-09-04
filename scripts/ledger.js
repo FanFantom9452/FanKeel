@@ -100,38 +100,6 @@ function serialCause(tasks) {
 // from the other recognising it as the same answer, not two different guesses.
 const CONFORMING_HEADING = 'A conforming heading looks like `## Task 1: name` — note the colon after the number.';
 
-// `conflict()` matches a backticked identifier between one task's `Consumes`
-// and another's `Produces`; a dependency written as prose instead —
-// `Consumes: Task 2's --no-mdns flag name` — declares no identifier for the
-// other side's `Produces` to match, so nothing conflicts and the pair is
-// grouped as if either could go first. Row 1 kept `consumesText`, the raw text
-// of each `Consumes:` entry, for exactly this: it is the one place left to
-// look for a dependency `conflict()` cannot see. The only piece of that text
-// that is machine-readable is a literal `Task <n>`, and it is worth a person's
-// eye only when `<n>` is a task in this one's own group — that is the one
-// case where the group's claim (these may run at once) and the sentence's
-// claim (this one waits on that one) actually disagree. A `Task <n>` naming a
-// task in an earlier, already-committed group is not a contradiction: that
-// task's commit is already in HEAD by the time this one runs.
-function proseConflicts(tasks, rows) {
-    const known = new Set(tasks.map((t) => t.n));
-    const groupOf = new Map();
-    rows.forEach((g, i) => g.forEach((n) => groupOf.set(n, i)));
-    const out = [];
-    for (const t of tasks) {
-        for (const line of t.consumesText) {
-            for (const m of line.matchAll(/\bTask (\d+)\b/g)) {
-                const other = Number(m[1]);
-                if (other === t.n || !known.has(other)) continue;
-                if (groupOf.get(other) !== groupOf.get(t.n)) continue;
-                out.push('Task ' + t.n + ' names Task ' + other + ' in its Consumes text, and both land in group '
-                    + (groupOf.get(t.n) + 1) + ': "' + line + '"');
-            }
-        }
-    }
-    return out;
-}
-
 function main(argv) {
     const { head, verb: named, text } = splitAtVerb(argv, STRING_FLAGS, VERBS);
     const opts = parseArgs(head);
@@ -210,6 +178,7 @@ function main(argv) {
         }
         const tasks = plantasks.parseTasks(text);
         const rows = plantasks.groups(tasks);
+        const surfaced = plantasks.surfaces(tasks);
         if (!tasks.length) {
             // "no tasks in <file>" alone reads as "this plan is empty," and the
             // far more likely cause is a heading `parseTasks` could not match —
@@ -235,9 +204,11 @@ function main(argv) {
         // was something that contradicted rather than merely failed to mention.
         const serial = tasks.length > 1 && rows.length === tasks.length;
         const cause = serial ? serialCause(tasks) : '';
-        const prose = proseConflicts(tasks, rows);
+        const prose = plantasks.proseConflicts(tasks, rows).map((p) =>
+            'Task ' + p.n + ' names Task ' + p.other + ' in its Consumes text, and both land in group '
+            + p.group + ': "' + p.text + '"');
         return 'fankeel ledger — ' + rows.length + ' groups over ' + tasks.length + ' tasks\n\n'
-            + rows.map((g, i) => '  ' + (i + 1) + ': ' + g.join(', ')).join('\n')
+            + surfaced.map((g, i) => '  ' + (i + 1) + ': ' + g.tasks.join(', ') + '  — ' + g.surface).join('\n')
             + (undeclared.length
                 ? '\n\nNo Files block, so serialised against everything: ' + undeclared.join(', ')
                 : '')
@@ -249,7 +220,7 @@ function main(argv) {
                 ? '\n\nEvery group is one task, so nothing runs beside anything and this'
                     + '\nplan builds serially.' + (cause ? ' ' + cause : '')
                 : '')
-            + '\n\nOne group is one response.'
+            + '\n\nOne group is one surface: in-session, two Agents in one response, or one Workflow.'
             // Still true of what the tasks declared even when `prose.length`,
             // but true is not the bar: printed three lines under a finding
             // that says "worth a look," it reads as the answer to that

@@ -8,6 +8,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { parseTasks, conflict, groups } = require('../lib/plantasks.js');
+const plantasks = require('../lib/plantasks.js');
 
 const task = (n, modify, tests, consumes, produces) => [
   '## Task ' + n + ': name',
@@ -214,4 +215,44 @@ test('a group is not capped at the dispatch ceiling', () => {
 test('groups takes tasks already parsed as readily as text', () => {
   const text = task(1, ['lib/a.js'], [], [], []) + task(2, ['lib/b.js'], [], [], []);
   assert.deepEqual(groups(parseTasks(text)), groups(text));
+});
+
+const plan = (...tasks) => tasks.join('\n\n');
+const taskBlock = (n, files, iface) => '## Task ' + n + ': t' + n + '\n\n'
+    + '**Files:**\n' + files.map((f) => '- Modify: `' + f + '`').join('\n') + '\n\n'
+    + '**Interfaces:**\n' + (iface || '- Consumes: nothing.\n- Produces: nothing.');
+
+test('a lone group is one dispatch', () => {
+    const out = plantasks.surfaces(plan(taskBlock(1, ['a.js'])));
+    assert.deepStrictEqual(out, [{ tasks: [1], surface: 'agent' }]);
+});
+
+test('a pair is two dispatches in one response', () => {
+    const out = plantasks.surfaces(plan(taskBlock(1, ['a.js']), taskBlock(2, ['b.js'])));
+    assert.deepStrictEqual(out, [{ tasks: [1, 2], surface: 'agents' }]);
+});
+
+test('three independent tasks are one workflow', () => {
+    const out = plantasks.surfaces(plan(taskBlock(1, ['a.js']), taskBlock(2, ['b.js']), taskBlock(3, ['c.js'])));
+    assert.deepStrictEqual(out, [{ tasks: [1, 2, 3], surface: 'workflow' }]);
+});
+
+// `conflict()` matches only a backticked identifier, so a dependency written as
+// prose leaves the pair looking independent. Two Agents are still safe — the
+// parent reads both returns — but a Workflow does not come back between its
+// steps, so an unrefuted group is not a group to spend one on.
+test('a prose Consumes degrades a workflow group to agents', () => {
+    const out = plantasks.surfaces(plan(
+        taskBlock(1, ['a.js']),
+        taskBlock(2, ['b.js'], '- Consumes: the flag name from Task 1.\n- Produces: nothing.'),
+        taskBlock(3, ['c.js'])));
+    assert.deepStrictEqual(out, [{ tasks: [1, 2, 3], surface: 'agents' }]);
+});
+
+test('a task with no Files block degrades its group', () => {
+    const three = plan(taskBlock(1, ['a.js']), taskBlock(2, ['b.js']), taskBlock(3, ['c.js']));
+    const parsed = plantasks.parseTasks(three);
+    parsed[1].modify = [];
+    const out = plantasks.surfaces(parsed);
+    assert.strictEqual(out.some((g) => g.surface === 'workflow'), false);
 });
