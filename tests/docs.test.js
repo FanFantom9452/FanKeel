@@ -449,3 +449,22 @@ test('an unclosed code fence is reported, not quietly obeyed', () => {
   assert.match(out, /p\.md:3 +a code fence is never closed/);
   assert.equal(/gone\.md/.test(out), false, 'the link below it is genuinely unchecked');
 });
+
+// The index is maintained by hand and `docs.json` is not, so the Roles table
+// drifts in one direction only: a bucket gets declared and the table never hears
+// about it. Both `skills` and `output-styles` sat outside it that way. Scoped to
+// the section rather than the file, because a bucket named in passing somewhere
+// above is not the table having a row for it — and the trailing slash is the
+// table's own spelling, which is the reader's convention rather than a mismatch.
+test('the Roles table names every bucket docs.json declares', () => {
+  const root = path.join(__dirname, '..');
+  const declared = JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'docs.json'), 'utf8'));
+  const index = fs.readFileSync(path.join(root, 'docs', 'README.md'), 'utf8');
+  const at = index.indexOf('## Roles');
+  assert.notEqual(at, -1, 'the index has no Roles section');
+  const roles = index.slice(at);
+  const missing = declared.buckets
+    .map((b) => b.path)
+    .filter((p) => !roles.includes('`' + p + '`') && !roles.includes('`' + p + '/`'));
+  assert.deepEqual(missing, [], 'buckets the Roles table never names');
+});

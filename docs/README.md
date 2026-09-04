@@ -65,9 +65,12 @@ here.
 
 ## Roles
 
-`.fankeel/docs.json` declares this tree. Every page above is `reference`, which
-means it is expected to be true right now — [documents.md](documents.md) is where
-that is explained, and it is the one thing to know before adding a page here.
+`.fankeel/docs.json` declares this tree. A page carries the role of the bucket it
+sits in, and the table below is the whole list. Most of what this index points at
+is `reference`, which means it is expected to be true right now — but the decision
+record, the plans and the reports linked above are not, and reading them that way
+is the mistake the roles exist to stop. [documents.md](documents.md) is where that
+is explained, and it is the one thing to know before adding a page here.
 
 | Directory | Role | May be out of date |
 |---|---|---|
@@ -76,5 +79,7 @@ that is explained, and it is the one thing to know before adding a page here.
 | `docs/plans/` | plan | until the work lands, then it is archived |
 | `docs/reports/` | report | it is a dated snapshot |
 | `docs/archive/` | archive | that is the point of it |
+| `skills/` | reference | no |
+| `output-styles/` | reference | no |
 
 [Back to the front page](../README.md)
