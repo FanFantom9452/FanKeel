@@ -164,10 +164,9 @@ closed is the silence.
 `archived` and `superseded-by` are both retirement, and what separates them is
 whether something took the page's place. `superseded-by` names that thing;
 `archived` says only that the page stopped being current, which is what most
-retirements are — seventeen of the nineteen in `docs/archive/` here. Pointing
-`superseded-by` at the document a plan *implemented* rather than at one that
-replaced it puts a third meaning under the word, and the reader who follows it
-lands on a page that superseded nothing.
+retirements are. Pointing `superseded-by` at the document a plan *implemented*
+rather than at one that replaced it puts a third meaning under the word, and
+the reader who follows it lands on a page that superseded nothing.
 
 The vocabulary is wider than those five words — `定案`, `活躍`, `draft`, `草稿`,
 `deprecated`, `historical`, `merged-into <path>` are all understood, and anything
@@ -240,5 +239,25 @@ and the map is the only tool that reports one from outside the doc root. They ar
 still counted — `documents:` adds the buckets up, and a signpost is filed under
 `current`, the bucket the map never prints, so excluding them subtracts nothing
 from a line that claims to be every markdown file.
+
+### `orphan`, deliberately empty where an index exists
+
+An orphan is a document under the docs root that no other document links to.
+`scripts/docs-audit.js:559` reports them only where the project declares no
+index. Where one exists, the same gap is already reported, and worded better,
+as `missing from the index` (`index.missing`, `scripts/docs-audit.js:542-546`):
+an index is a markdown file like any other, so anything it fails to list is
+unreachable regardless of what else in the tree links there. Two names for one
+problem is how a report starts looking longer than it is.
+
+Both branches are tested. `tests/docs-audit.test.js:404-411` covers the
+no-index case; `:417-425` covers the index case and asserts `orphans` comes
+back empty. This project declares an index, so the branch that would populate
+`orphans` never runs here — the empty result is the index case behaving as
+built, not a gap in the check.
+
+Orphans never fail a run. `defects()` at `scripts/docs-audit.js:782-786` sums
+drift, landed plans, a broken index and diagrams; `orphans` is not a term in
+that sum.
 
 [Back to the index](README.md) · [Back to the front page](../README.md)
