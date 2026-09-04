@@ -71,6 +71,8 @@ Nothing deferred here at the moment.
 
 - Whether a load-bearing rule can live in a 53.8 KB skill at all: the one missed this session was at :916 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
 
+- Whether a reader's `path:line` should be machine-checked before it is a finding: 3 of 5 pair readers cited lines saying otherwise — [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md).
+
 ## Waiting
 
 - Whether a flag a verb ignores should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses the same value. None observed. 09-01.
