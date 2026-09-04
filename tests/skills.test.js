@@ -117,6 +117,41 @@ test('every stage skill states when it is done', () => {
   }
 });
 
+// A stage skill is read once on entering its stage, so what it costs to re-read
+// is what the injected pointer line is worth. Three skills keep the procedure in
+// SKILL.md and the reasons in a rationale.md beside it, under the same headings,
+// so a reader looking for the why of a section finds it under the section's own
+// name. The other four stage skills have no rationale to move — measured
+// 2026-09-05, design, verify and land carry none and survey carries 25 lines of
+// 266 — so they are not in this list, and adding one is a design decision.
+const SPLIT = ['fankeel-build', 'fankeel-plan', 'fankeel-audit'];
+for (const n of SPLIT) {
+  test(n + ': the rationale sits beside the skill under the same headings', () => {
+    const file = path.join(DIR, n, 'rationale.md');
+    assert.ok(fs.existsSync(file), n + ' has no rationale.md');
+    const skill = read(n);
+    const why = fs.readFileSync(file, 'utf8');
+    // One link, in the preamble. The mirrored headings are the index, so a
+    // second link is a second place for the path to go stale.
+    const links = skill.match(/\[rationale\.md\]\(rationale\.md\)/g) || [];
+    assert.equal(links.length, 1, n + ' links rationale.md ' + links.length + ' times; one, in the preamble');
+    // Every `## ` in the rationale is a `## ` the skill has, same text.
+    const own = new Set(skill.split(/\r?\n/).filter((l) => /^## /.test(l)));
+    const heads = why.split(/\r?\n/).filter((l) => /^## /.test(l));
+    assert.ok(heads.length >= 1, n + ' rationale.md has no ## headings');
+    for (const h of heads) assert.ok(own.has(h), n + ' rationale.md heading is not in SKILL.md: ' + h);
+    // It names the code the skill names and defers to the skill, so docs-audit
+    // grades it against the same code and never pairs the two.
+    const fm = frontmatter(why);
+    assert.ok(fm && fm.source_of_truth, n + ' rationale.md declares no source_of_truth');
+    const declared = fm.source_of_truth.split(',').map((s) => s.trim());
+    assert.ok(declared.includes('skills/' + n + '/SKILL.md'), n + ' rationale.md does not defer to its SKILL.md');
+    // scripts/version.js reads only SKILL.md and tests/version.test.js counts
+    // eleven; a twelfth version line would fail it.
+    assert.equal(fm.version, undefined, n + ' rationale.md carries a version line');
+  });
+}
+
 // The stopping condition above named one denominator: the ledger. A ledger is
 // named for a plan file, so `bounded` and `spike` — two of the three classes —
 // reach `build` with nothing to count against, and the stage's own `Done when`
