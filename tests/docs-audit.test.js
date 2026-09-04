@@ -483,8 +483,38 @@ test('the prose names as many sections as defects() actually sums', () => {
   const skillText = fs.readFileSync(path.join(__dirname, '..', 'skills', 'fankeel', 'SKILL.md'), 'utf8');
   const pipelineText = fs.readFileSync(path.join(__dirname, '..', 'docs', 'pipeline.md'), 'utf8');
 
+  // The skill counts the rows of the table directly above its sentence, and
+  // those four rows are the four defects, so counting is right there.
   assert.match(skillText, new RegExp('first ' + word + ' fail the run'));
-  assert.match(pipelineText, new RegExp('first ' + word + ' sections fail the run'));
+
+  // `docs/pipeline.md` counted the report's *sections* instead, where `pairs`
+  // prints fourth and is context — the count was right and the referent was
+  // not, so it names them now. The guard is unchanged in kind: a field
+  // `defects()` starts summing with no label below fails this test until the
+  // prose catches up with it, which is the whole point of deriving from the
+  // function rather than hardcoding.
+  const LABEL = {
+    drift: 'drift',
+    landed: 'landed plans',
+    index: 'a broken index',
+    diagrams: 'diagrams',
+  };
+  // Whitespace-collapsed, because the sentence is wrapped and a reflow must
+  // not decide whether this passes. Every occurrence is a candidate: the page
+  // says "fail the run" once about `residue.js` too, and anchoring on the
+  // first hit checked that unrelated sentence for these four words.
+  const flat = pipelineText.replace(/\s+/g, ' ');
+  for (const f of fields) {
+    assert.ok(LABEL[f], 'defects() sums r.' + f + ' and this test has no prose label for it');
+  }
+  const windows = [];
+  for (let i = flat.indexOf('fail the run'); i !== -1; i = flat.indexOf('fail the run', i + 1)) {
+    windows.push(flat.slice(Math.max(0, i - 200), i + 20));
+  }
+  assert.ok(windows.length, 'docs/pipeline.md no longer says what fails the run');
+  const names = (w) => Array.from(fields).every((f) => w.includes(LABEL[f]));
+  assert.ok(windows.some(names),
+    'no sentence in docs/pipeline.md names all ' + count + ' of what defects() sums');
 
   // The table above the sentence has to carry at least that many rows, or "the
   // first N" cannot be true of what is actually printed.
