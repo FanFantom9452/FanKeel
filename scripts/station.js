@@ -12,11 +12,16 @@
 // button, and exits after `--idle` minutes without one. Nothing here is
 // started for the user by anything else, and no session holds a port.
 // `--scan` walks a directory for registries once; what it finds is remembered
-// in `<configDir>/fankeel/roots.json`, so it is run once per drive.
+// in `<configDir>/fankeel/roots.json`, so it is run once per drive. With no
+// roots.json at all — this config dir's first-ever run — every drive is
+// scanned that way automatically, under a wall-clock budget rather than
+// waiting for `--scan` to be typed; `--forget <dir>` is the other direction,
+// dropping one remembered root now that a gone one is kept for good.
 //
 // Zero dependencies, as everywhere in this repository: `node:http` and a form.
 // The per-run nonce is what stops a page on some other origin from posting to
 // this port; the address is loopback so nothing off this machine reaches it.
+const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
 const crypto = require('node:crypto');
@@ -29,13 +34,14 @@ const { clearEntry } = require('../lib/clear.js');
 const PLUGIN = path.resolve(__dirname, '..');
 
 function parseArgs(argv) {
-    const out = { verb: null, roots: [], scan: [], open: false, port: 0, idleMs: 10 * 60e3 };
+    const out = { verb: null, roots: [], scan: [], open: false, port: 0, idleMs: 10 * 60e3, forget: null };
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
         if (a === 'serve' && out.verb === null) out.verb = 'serve';
         else if (a === '--open') out.open = true;
         else if (a === '--root' && argv[i + 1]) out.roots.push(argv[++i]);
         else if (a === '--scan' && argv[i + 1]) out.scan.push(argv[++i]);
+        else if (a === '--forget' && argv[i + 1]) out.forget = argv[++i];
         else if (a === '--port' && argv[i + 1]) out.port = Number(argv[++i]) || 0;
         else if (a === '--idle' && argv[i + 1]) out.idleMs = (Number(argv[++i]) || 10) * 60e3;
         else {
@@ -44,6 +50,99 @@ function parseArgs(argv) {
         }
     }
     return out;
+}
+
+// Undoes what Task 6 made permanent: a root that has gone stays remembered
+// forever, on purpose, so putting one down needs a name rather than a wait.
+// Writes the same way `rememberRoots` does — a sibling, then a rename — since
+// `hooks/leave.js` can rewrite this same file at any moment.
+function forget(configDir, dir) {
+    const target = path.resolve(dir);
+    const before = station.readRoots(configDir);
+    const known = Object.prototype.hasOwnProperty.call(before, target);
+    const after = Object.assign({}, before);
+    delete after[target];
+    const file = station.rootsPath(configDir);
+    const temp = file + '.' + process.pid + '.tmp';
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(temp, JSON.stringify(after, null, 2) + '\n');
+    registry.renameRetrying(temp, file);
+    const left = Object.keys(after).sort();
+    process.stdout.write((known ? 'forgot ' + target : target + ' was not remembered') + '\n'
+        + (left.length ? left.length + ' remembered: ' + left.join(', ') : '0 remembered') + '\n');
+}
+
+// Five seconds is what a person will wait for a command they typed; anything
+// the budget cuts short is still reachable by naming it with `--scan`. This
+// runs only from `main()` below, never from `station.write()` — `hooks/inject.js`
+// calls `write()` on every `/fankeel` prompt, and a walk measured at 10.7
+// seconds for one drive would stall the prompt that triggered it.
+const AUTO_BUDGET_MS = 5000;
+
+// Every drive this machine has, each checked for existence rather than listed
+// by any OS call — Node carries no dependency-free API for that, and an
+// existence check on a drive letter is instant where walking one is not.
+function driveRoots() {
+    if (process.platform !== 'win32') return ['/'];
+    const out = [];
+    for (let c = 65; c <= 90; c++) {
+        const root = String.fromCharCode(c) + ':' + path.sep;
+        try {
+            if (fs.existsSync(root)) out.push(root);
+        } catch (e) { /* not a drive */ }
+    }
+    return out.length ? out : ['/'];
+}
+
+// One shared deadline across every drive, so a slow first drive leaves nothing
+// for the rest rather than each getting its own five seconds.
+function autoScan() {
+    const deadline = Date.now() + AUTO_BUDGET_MS;
+    const roots = [];
+    let depthCuts = 0;
+    let timedOut = false;
+    for (const drive of driveRoots()) {
+        const found = station.scanRoots(drive, undefined, { deadline });
+        roots.push(...found.roots);
+        depthCuts += found.depthCuts;
+        if (found.timedOut) timedOut = true;
+    }
+    return { roots, depthCuts, timedOut };
+}
+
+// The `scannedAt` record, read with `fs` rather than `station.readRoots` —
+// that reader's filter (a string that parses as a date) is exactly what keeps
+// this object-valued key from ever being mistaken for a remembered root by
+// `discover()`, so it has to be bypassed to read the key back.
+function readScanRecord(configDir) {
+    let data;
+    try {
+        data = JSON.parse(fs.readFileSync(station.rootsPath(configDir), 'utf8'));
+    } catch (e) {
+        return null;
+    }
+    return data && typeof data === 'object' && !Array.isArray(data) && data.scannedAt ? data.scannedAt : null;
+}
+
+// `station.write()`'s own `rememberRoots` rewrites `roots.json` from the
+// registries it just gathered and knows nothing of this key, so it drops it
+// on every call. Writing it back afterward — the record of a scan that ran,
+// or the one this run carried forward — is what makes "never repeats" survive
+// more than one invocation of this CLI.
+function writeScanRecord(configDir, record) {
+    const file = station.rootsPath(configDir);
+    let data;
+    try {
+        data = JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch (e) {
+        data = {};
+    }
+    if (!data || typeof data !== 'object' || Array.isArray(data)) data = {};
+    data.scannedAt = record;
+    const temp = file + '.' + process.pid + '.tmp';
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(temp, JSON.stringify(data, null, 2) + '\n');
+    registry.renameRetrying(temp, file);
 }
 
 function openInBrowser(target) {
@@ -121,6 +220,38 @@ function serve(opts) {
             res.end();
             return;
         }
+        if (req.method === 'POST' && url.pathname === '/clear-stale') {
+            const form = new URLSearchParams(await readBody(req));
+            if (form.get('nonce') !== nonce) {
+                res.writeHead(403, { 'content-type': 'text/plain' });
+                res.end('wrong nonce: open the page this server printed and try again\n');
+                return;
+            }
+            const model = station.gather(gatherOpts);
+            const reg = model.registries.find((r) => r.root === path.resolve(form.get('root') || ''));
+            if (!reg) {
+                res.writeHead(404, { 'content-type': 'text/plain' });
+                res.end('no such registry on this page\n');
+                return;
+            }
+            const force = form.get('force') === '1';
+            let cleared = 0;
+            const refused = [];
+            for (const s of reg.sessions) {
+                if (s.state !== 'stale') continue;
+                const out = clearEntry(reg.root, s.sessionId, { force });
+                if (out.ok) cleared += 1;
+                else if (out.reason !== 'inactive') refused.push(s.sessionId + ': ' + out.reason);
+            }
+            if (refused.length) {
+                res.writeHead(409, { 'content-type': 'text/plain' });
+                res.end('cleared ' + cleared + '; refused ' + refused.length + '\n' + refused.join('\n') + '\n');
+                return;
+            }
+            res.writeHead(303, { location: '/' });
+            res.end();
+            return;
+        }
         res.writeHead(404, { 'content-type': 'text/plain' });
         res.end('not here\n');
     });
@@ -144,6 +275,10 @@ function serve(opts) {
 function main() {
     const args = parseArgs(process.argv.slice(2));
     const configDir = live.liveConfigDir();
+    if (args.forget) {
+        forget(configDir, args.forget);
+        return;
+    }
     if (args.verb === 'serve') {
         serve({ configDir, roots: args.roots, scan: args.scan, port: args.port, idleMs: args.idleMs, open: args.open }).then((s) => {
             process.stdout.write('fankeel station — ' + s.url + '  (exits after '
@@ -154,10 +289,33 @@ function main() {
         });
         return;
     }
+    // "No roots.json at all" is what marks this configDir's first-ever run —
+    // `rememberRoots` writes the file on every `write()`, hook-triggered ones
+    // included, so once anything has run even once this stays false for good.
+    const firstRun = !fs.existsSync(station.rootsPath(configDir));
+    const carried = firstRun ? null : readScanRecord(configDir);
+    const scan = firstRun ? autoScan() : null;
     const out = station.write({
-        configDir, roots: args.roots, scan: args.scan, cwd: process.cwd(),
+        configDir, roots: args.roots.concat(scan ? scan.roots : []), scan: args.scan, cwd: process.cwd(),
         root: registry.findStateRoot(process.cwd()), plugin: PLUGIN,
     });
+    if (scan) {
+        writeScanRecord(configDir, {
+            at: new Date().toISOString(),
+            roots: scan.roots.length,
+            depthCuts: scan.depthCuts,
+            timedOut: scan.timedOut,
+        });
+        process.stdout.write('station: first run — scanned this machine\'s drives, found '
+            + scan.roots.length + ' registr' + (scan.roots.length === 1 ? 'y' : 'ies')
+            + (scan.timedOut ? ' (ran out of time)' : scan.depthCuts ? ' (depth cut it ' + scan.depthCuts + ' places)' : '')
+            + '\n');
+    } else if (carried) {
+        // `write()` above just erased it the same way; put back exactly what
+        // was there, so a run that did not scan neither repeats one nor loses
+        // the record that an earlier run already did.
+        writeScanRecord(configDir, carried);
+    }
     process.stdout.write('fankeel station — ' + out.file + '\n'
         + '  ' + out.registries + ' registries · ' + out.live + ' live, ' + out.stale + ' stale, ' + out.down + ' down'
         + (out.copy ? '  ·  copy at ' + out.copy : '') + '\n');
