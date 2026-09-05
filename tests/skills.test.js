@@ -69,6 +69,16 @@ test('the entry skill points at the audit skill rather than repeating it', () =>
   assert.match(read('fankeel'), /\/fankeel-audit/);
 });
 
+// Both places that tell someone how to file under `## Waiting` have to name the
+// event, because `todo-check` fails on an entry without one and a skill that
+// teaches the older shape teaches a step that fails its own gate. That is not
+// hypothetical: c55c373 fixed exactly this for the stamp, in three skills.
+test('the two places that teach the Waiting convention name the event', () => {
+  for (const n of ['fankeel', 'fankeel-land']) {
+    assert.match(read(n), /lifts when:/, n + ' teaches a Waiting entry with no event');
+  }
+});
+
 // The style skill was removed in 0.20.0. Nothing should have been left behind
 // pointing at it, because a reference to a skill that is not installed reads as
 // a command the user typed wrong.

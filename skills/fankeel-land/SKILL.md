@@ -77,7 +77,7 @@ was never a note:
 | a project convention | `CLAUDE.md` |
 | a durable fact about the user or repository | the memory directory |
 | why a change was made | the commit message |
-| work deliberately deferred | `TODO.md`, one line, under the heading for what it is short of — under `## Waiting`, ending with a `MM-DD` stamp, or `todo-check` fails the gate below |
+| work deliberately deferred | `TODO.md`, one line, under the heading for what it is short of — under `## Waiting`, `lifts when: <the event>` then a `MM-DD` stamp, or `todo-check` fails the gate below |
 
 `notes` holds five (`lib/registry.js:33`, `MAX_NOTES = 5`); a sixth note pushes
 the oldest out and nothing announces it, so a task that produced six rulings has
