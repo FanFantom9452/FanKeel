@@ -1,10 +1,10 @@
 ---
 name: fankeel-station
-description: Every fankeel session on this machine on one page — live, abandoned and stood down, with what each cost — and a button to put an abandoned one down. Use for /fankeel-station, "show all sessions", "which sessions are still open", "clean up old sessions", or "監控站".
+description: Every fankeel session on this machine on one page — live, abandoned and stood down, each drawing what it spent against how long it ran, filtered and sorted, with a button to put an abandoned one down. Use for /fankeel-station, "show all sessions", "which sessions are still open", "clean up old sessions", or "監控站".
 version: 0.50.0
 status: current
-last_verified: 2026-09-05
-source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js
+last_verified: 2026-09-06
+source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/registry.js
 ---
 
 # fankeel-station
@@ -23,8 +23,20 @@ or the copy that is always newest:
 through a roots file every write refreshes (`~/.claude/fankeel/roots.json`),
 the leads under `~/.claude/modes/` of sessions running a task now, and the
 working directory of every running session. A registry none of those has
-seen yet is found once by `--scan <dir>` — one run per drive, and it is
-remembered from then on — or named with `--root <dir>`.
+seen yet is found once by `--scan <dir>` — one run per drive, eight levels
+deep, and it is remembered from then on — or named with `--root <dir>`. With
+no roots file at all, the first CLI run walks the drives once under a
+five-second budget and records that it did, so it never repeats.
+
+A remembered root is kept until `--forget <dir>` drops it. It does not expire:
+a registry nobody has opened for a month is still one somebody may be looking
+for, and the page marks it `gone` rather than forgetting it.
+
+**Depth does not bound a walk; the budget does.** A depth-8 walk of a whole
+drive measured 10.7 seconds here, and a home directory did not finish in 20 —
+so the header says `depth stopped the scan in N places`, and `the scan ran out
+of time` when it did. A walk that could not reach everything otherwise looks
+exactly like one that found everything.
 
 ## Clearing from the page
 
@@ -40,6 +52,15 @@ for a terminal you know is gone, and a `live` row has no button at all. It
 writes `active: false` and nothing else, so a session cleared by mistake can be
 adopted back.
 
+A second button under each registry clears every stale row it has at once,
+with the count in its label so the confirm says what it will do. It calls
+`clearEntry` per row — the same checks, not a second copy of them — and
+reports which rows it refused and why.
+
+`down` and `adopt` are not buttons and cannot be. Both need a *calling*
+session id, and a browser page is not a session; `clear` is the only registry
+write the page can reach.
+
 ## What the page shows
 
 Per registry: its root, how many entries could not be parsed, what is under
@@ -48,6 +69,23 @@ started, its state, its stage on its route, the task, cost in USD at the price
 table's date, the stage tokens and minutes fankeel measured itself, and the
 model. A row opens to the session id, project, route, when it was last touched,
 when and why it ended, what it touched, its notes and its `next`.
+
+**And a curve.** An opened row draws two series against time since it started:
+`burn`, the context tokens climbing through the session, and spend, cumulative
+in USD. Each is scaled to its own maximum with both maxima printed underneath,
+because a dual axis is unreadable at ninety pixels. A faint rule marks each
+stage. Under it is the table it is drawn from, a row per stage.
+
+Two empty cases are drawn deliberately rather than left as a blank axis.
+Fewer than two stages with `burn` says `no burn recorded` — one sighting is a
+position, not a distance. No spend says `spend arrives when the session ends`,
+which is every live session and every session that ended before this shipped:
+spend is bucketed out of the transcript at session end, using the stage
+windows `clock` already holds.
+
+The list above the rows filters and sorts — one inline script, nothing
+fetched. Auto-refresh appears only on a served page, because the file on disk
+is rewritten by fankeel's own events and a timer would reload the same bytes.
 
 **Cost is at a dated price table.** `lib/prices.js` names the day its figures
 were read, and the page prints it in the header. A model the table does not

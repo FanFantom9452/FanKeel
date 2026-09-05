@@ -202,11 +202,19 @@ the checkbox to `clearEntry` — so it proved nothing.
 ## Against the map
 
 `.fankeel/map.md` lists [docs/station.md](../station.md) as the current page for
-this subsystem, and it is contradicted twice by this design: it claims no
-sorting or filtering anywhere, and it documents the 30-day TTL. It is rewritten
-**in this change**, not left for the audit sweep, along with
-`skills/fankeel-station/SKILL.md`. Nothing else on the map's navigation table
-describes this area.
+this subsystem. It is rewritten **in this change**, not left for the audit
+sweep, along with `skills/fankeel-station/SKILL.md`. Nothing else on the map's
+navigation table describes this area.
+
+**One correction to an earlier draft of this section**, which claimed the page
+was contradicted twice. Checked at the plan gate: only one sentence becomes
+false, the thirty-day retention of `roots.json`. The page is *silent* on
+sorting and filtering rather than denying them, which is a gap to fill and not
+a contradiction to correct — and the difference matters, because a rewrite
+hunting a sentence that was never there is how a page acquires a claim nobody
+made. There is a second "thirty days" on that page, in the row about
+`fankeel.lead` pruning; that is a different mechanism and this change does not
+touch it.
 
 Nothing here is `design-intent` being read as though it exists: the two prior
 station plans are both landed, verified on 2026-09-06 against the files and
