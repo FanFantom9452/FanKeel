@@ -42,6 +42,28 @@ function fixture() {
     return { cfg, root, transcript };
 }
 
+// Task 3: a fixture with a `clock` on the entry and timestamped transcript
+// lines, so `windowsFrom(clock)` has something to bucket the requests into.
+function fixtureWithClock(clock) {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-leave-'));
+    const cfg = path.join(base, 'cfg');
+    const root = path.join(base, 'ws');
+    fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
+    registry.ensureLayout(root);
+    registry.writeSession(root, SID, { task: 'the ramp', stage: 'build', route: ['survey', 'build'], active: true,
+        claims: ['a.js'], started: new Date().toISOString(), updated: new Date().toISOString(), configDir: cfg, clock });
+    const transcript = path.join(base, 't.jsonl');
+    const a = (requestId, at, model, usage) => JSON.stringify({
+        type: 'assistant', requestId, timestamp: new Date(at).toISOString(), message: { model, usage },
+    }) + '\n';
+    fs.writeFileSync(transcript, [
+        a('r1', 1500, 'claude-sonnet-5', { input_tokens: 10, output_tokens: 20 }),
+        a('r2', 3500, 'claude-sonnet-5', { input_tokens: 1, output_tokens: 2 }),
+        a('r3', 3500, 'claude-sonnet-5', { input_tokens: 1, output_tokens: 2 }),
+    ].join(''));
+    return { cfg, root, transcript };
+}
+
 test('records ended, model and usage on its own entry; active stays true; the page is regenerated; stdout is empty', () => {
     const f = fixture();
     const out = run({ session_id: SID, transcript_path: f.transcript, cwd: f.root, reason: 'clear', hook_event_name: 'SessionEnd' }, f.cfg);
@@ -78,4 +100,35 @@ test('garbage on stdin exits 0 and writes nothing', () => {
     const f = fixture();
     assert.equal(execFileSync(process.execPath, [HOOK], { input: 'not json', env: { ...process.env, CLAUDE_CONFIG_DIR: f.cfg }, encoding: 'utf8' }), '');
     assert.equal(fs.existsSync(path.join(f.cfg, 'fankeel')), false);
+});
+
+test('leave writes spend per stage from the clock windows', () => {
+    const f = fixtureWithClock({ survey: [1000, 2000], build: [3000, 4000] });
+    const out = run({ session_id: SID, transcript_path: f.transcript, cwd: f.root, reason: 'clear', hook_event_name: 'SessionEnd' }, f.cfg);
+    assert.equal(out, '');
+    const d = registry.readSession(f.root, SID);
+    assert.equal(d.spend.survey.requests, 1);
+    assert.equal(d.spend.build.requests, 2);
+    assert.deepEqual(d.spend.survey.models, { 'claude-sonnet-5': { input: 10, output: 20, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } });
+    assert.deepEqual(d.spend.build.models, { 'claude-sonnet-5': { input: 2, output: 4, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } });
+});
+
+test('leave writes no spend when the entry has no clock', () => {
+    const f = fixture();
+    const out = run({ session_id: SID, transcript_path: f.transcript, cwd: f.root, reason: 'clear', hook_event_name: 'SessionEnd' }, f.cfg);
+    assert.equal(out, '');
+    const d = registry.readSession(f.root, SID);
+    assert.equal(d.spend, undefined);
+    assert.equal(d.usage.requests, 2);
+});
+
+test('usage keeps the shape it always had', () => {
+    const f = fixtureWithClock({ survey: [1000, 2000], build: [3000, 4000] });
+    const out = run({ session_id: SID, transcript_path: f.transcript, cwd: f.root, reason: 'clear', hook_event_name: 'SessionEnd' }, f.cfg);
+    assert.equal(out, '');
+    const d = registry.readSession(f.root, SID);
+    assert.equal(d.usage.stages, undefined);
+    assert.equal(d.usage.requests, 3);
+    assert.equal(d.spend.survey.requests, 1, 'deleting usage.stages must not have carried away spend, which holds its own reference');
+    assert.equal(d.spend.build.requests, 2, 'deleting usage.stages must not have carried away spend, which holds its own reference');
 });

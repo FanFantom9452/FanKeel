@@ -34,7 +34,10 @@ function main(raw) {
     const root = registry.rootFor(payload);
     const mine = registry.readSession(root, sessionId);
     if (mine) {
-        const seen = typeof payload.transcript_path === 'string' ? usage.summariseTree(payload.transcript_path) : null;
+        const windows = registry.windowsFrom(mine.clock);
+        const seen = typeof payload.transcript_path === 'string'
+            ? usage.summariseTree(payload.transcript_path, windows.length ? { stages: windows } : undefined)
+            : null;
         const reason = typeof payload.reason === 'string' && payload.reason ? payload.reason.slice(0, 32) : 'other';
         try {
             registry.update(root, sessionId, (d) => {
@@ -42,6 +45,14 @@ function main(raw) {
                 if (seen) {
                     if (seen.model) d.model = seen.model;
                     d.usage = seen.usage;
+                    // `d.usage` and `seen.usage` are the same object, so this
+                    // delete removes `stages` from both — but `d.spend` was
+                    // just handed the `stages` object's own reference, not a
+                    // path through `usage`, so the delete cannot reach it.
+                    if (seen.usage.stages) {
+                        d.spend = seen.usage.stages;
+                        delete d.usage.stages;
+                    }
                 }
             });
         } catch (e) { /* housekeeping */ }
