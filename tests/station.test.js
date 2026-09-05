@@ -119,7 +119,10 @@ test('write returns the counts and both paths, copies the page into the caller\'
 
 // What the lead forgets. A lead is cleared with its badge, so a registry with no
 // task running in it had nothing pointing at it: 3 of at least 11 on 2026-09-05.
-test('discover reads roots.json; write stamps the present, keeps the gone for thirty days, then drops them', () => {
+// A root that has gone is already rendered as `gone` on the page; forgetting it
+// as well would mean the page silently stops mentioning a registry the user may
+// still be looking for, so nothing here is ever dropped for age any more.
+test('discover reads roots.json; write stamps the present and keeps the gone, however old', () => {
     const f = fixture();
     const now = Date.now();
     const r3 = path.join(f.base, 'ws-three');
@@ -140,7 +143,8 @@ test('discover reads roots.json; write stamps the present, keeps the gone for th
     assert.equal(roots[path.resolve(r3)], new Date(now).toISOString());
     assert.equal(roots[path.resolve(f.r1)], new Date(now).toISOString(), 'a root found through a lead is remembered');
     assert.equal(roots[path.resolve(gone)], new Date(now - 5 * DAY).toISOString(), 'gone keeps its stamp');
-    assert.equal(path.resolve(old) in roots, false, 'gone for 31 days is dropped');
+    assert.ok(path.resolve(old) in roots, 'a root gone for 31 days is kept, not forgotten');
+    assert.equal(roots[path.resolve(old)], new Date(now - 31 * DAY).toISOString(), 'and keeps its own old stamp, unchanged');
     fs.writeFileSync(station.rootsPath(f.cfg), '{not json');
     assert.deepEqual(station.readRoots(f.cfg), {}, 'an unreadable file is empty, not fatal');
 });
@@ -157,16 +161,56 @@ test('the root a caller writes into is listed and remembered even with no lead a
     assert.ok(path.resolve(r3) in station.readRoots(f.cfg));
 });
 
+// `scanRoots` now returns `{ roots, depthCuts, timedOut }` rather than a bare
+// array, and SCAN_DEPTH moved from 6 to 8 (Task 6), so the nine-level fixture
+// below — one level past the new default — is what now proves depth still
+// bounds the walk; a seven-level fixture no longer would, since 8 reaches it.
 test('scanRoots finds a registry two levels down, skips node_modules and dot-directories, and stops at its depth', () => {
     const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-'));
     const deep = path.join(base, 'a', 'b');
     registry.ensureLayout(deep);
     registry.ensureLayout(path.join(base, 'node_modules', 'pkg'));
     registry.ensureLayout(path.join(base, '.hidden', 'ws'));
-    registry.ensureLayout(path.join(base, '1', '2', '3', '4', '5', '6', '7'));
-    assert.deepEqual(station.scanRoots(base), [path.resolve(deep)]);
-    const found = station.discover({ configDir: path.join(base, 'cfg'), scan: [base] });
-    assert.ok(found.roots.includes(path.resolve(deep)));
+    const far = path.join(base, '1', '2', '3', '4', '5', '6', '7', '8', '9');
+    registry.ensureLayout(far);
+    const found = station.scanRoots(base);
+    assert.deepEqual(found.roots, [path.resolve(deep)],
+        'the two-level registry is found; node_modules, dot-directories and the nine-level one are not');
+    const discovered = station.discover({ configDir: path.join(base, 'cfg'), scan: [base] });
+    assert.ok(discovered.roots.includes(path.resolve(deep)));
+});
+
+test('scanRoots finds a registry seven levels down', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-deep-'));
+    const deep = path.join(base, '1', '2', '3', '4', '5', '6', '7');
+    registry.ensureLayout(deep);
+    const found = station.scanRoots(base);
+    assert.ok(found.roots.includes(path.resolve(deep)), 'depth 8 reaches seven levels down; depth 6 did not');
+});
+
+test('scanRoots stops when its deadline is spent and says so', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-deadline-'));
+    registry.ensureLayout(path.join(base, 'a', 'b'));
+    const found = station.scanRoots(base, undefined, { deadline: Date.now() - 1 });
+    assert.equal(found.timedOut, true);
+    assert.deepEqual(found.roots, [], 'a deadline already spent finds nothing, not a partial list');
+});
+
+test('scanRoots counts the places depth cut it', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-cuts-'));
+    registry.ensureLayout(path.join(base, '1', '2', '3', '4', '5', '6', '7', '8', '9'));
+    const found = station.scanRoots(base, 2);
+    assert.ok(found.depthCuts > 0, 'a walk nine deep at depth two is cut before it reaches the registry');
+});
+
+test('the header reports a scan that ran out of time', () => {
+    const model = {
+        generatedAt: new Date().toISOString(), configDir: '', pricesVerified: 'n/a',
+        registries: [], scanStats: { depthCuts: 3, timedOut: true },
+    };
+    const page = station.render(model, {});
+    assert.match(page, /the scan ran out of time/);
+    assert.match(page, /depth stopped the scan in 3 places/);
 });
 
 // A registry of its own per test below, rather than the shared fixture: each
