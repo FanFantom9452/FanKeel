@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-05
+last_verified: 2026-09-06
 source_of_truth: this file, no upstream — a decision record is not derived from anything
 ---
 
@@ -652,3 +652,67 @@ the profile. What the pass found beside the work: `docs-check` reads a
 insert pushed down passed as resolved — a `## Needs a decision` line — and a
 per-task review that runs a hook to prove "exits 0" proves nothing about the
 change, because `lib/hook.js` swallows every throw.
+
+## `## Waiting` asks for an event, because a date can always be refreshed
+
+The heading asked for a `MM-DD` stamp meaning the day somebody last read the
+entry and agreed it was still waiting. On 2026-09-06 twelve of its thirteen
+entries named no event at all: eight opened with `Whether`, and the rest were
+noun phrases naming a topic. An entry like `Whether three days is the right
+settle period` has no finisher, so it could never leave by being done.
+
+The evidence was already in the code. `todo-check.js`'s own comment recorded
+that the section had shrunk four times — `c50a5d5`, `a62863e`, `811219c`,
+`3fadc08` — and that every one was somebody re-reading it and finding an entry
+misfiled, never the awaited thing happening. Counted across all 201 commits that
+touched `TODO.md`, the section ran 10 to 16 and sat at 13: not growing, but
+drained only by being read.
+
+`REREAD_DAYS = 7` was built for that in `c55c373` and had never fired, because
+the same commit re-stamped every entry to that day. So the stamp measures
+reading, and reading is the one thing a person can always honestly do again.
+The event cannot be refreshed that way: `lifts when: <event>` is what would make
+the entry actionable, `todo-check` refuses a `## Waiting` entry without one, and
+the seven-day list prints the event so the prompt is *has this happened* rather
+than *you have not looked lately*.
+
+It cost no length. The trailing sentence of most entries was already the event —
+`None observed.`, `add a row when one is actually needed.` — so the clause
+renames what was there rather than adding to it, and `MAX_ENTRY_CHARS` did not
+move. The four that could not fill the slot were exactly the four that had never
+named an event; they left for the source files they describe, as comments, which
+is where this repository already keeps a recorded uncertainty. Thirteen became
+five.
+
+## The check does not grade the event, and two of five is why
+
+`liftsAt()` checks that a clause is present, not that it names anything.
+`lifts when: it seems worth revisiting.` passes and is exactly as unfinishable
+as the twelve entries the rule removed. That is the honest limit and it is
+written beside `LIFTS` where somebody changing the rule will read it.
+
+Grading was considered and refused on a count. Of the five events that survived,
+a script could have checked two — a count of `docs/archive/`, a language turning
+up in `skipped.noPattern` — and not the other three, which wait on real use.
+A check that covers two entries in five costs more than the reading it saves,
+and the same reasoning is why `docs-audit` narrows rather than judges. The
+sentence is asked of a person.
+
+## A rule is taught in more places than a search finds
+
+The plan named two pages teaching the `## Waiting` convention. There were four.
+A per-task review found `README.md`; a search for `MM-DD` afterwards found
+`skills/fankeel-audit/rationale.md`. Two searches each missed one, and the
+second missed a whole shape: a `rationale.md` sitting beside a `SKILL.md` was
+not in the first search's idea of where a rule lives.
+
+`c55c373`, which rolled the stamp out, names three skills in its own message.
+The commit that last changed a rule is the map of where that rule is taught, and
+it is cheaper to read than any grep. The test that pins these now anchors on the
+row rather than the page, because a page-wide match for the phrase stays green
+while the row it is about goes back.
+
+A related convention, settled the same day: a wrong figure in a commit body is
+ruled on rather than amended once a ledger or a review range names that sha.
+`d1b7f14` says 193 where the entry is 194, and the correction lives in the
+build ledger and in the following commit.

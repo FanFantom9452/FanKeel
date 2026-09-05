@@ -57,7 +57,6 @@ here.
 | The four tasks that split those three skills: one test, then one implementer per skill with the rows and the pins | [plans/2026-09-05-skill-split.md](plans/2026-09-05-skill-split.md) — *built* |
 | Where a rule lives — script, anchor or skill — and the ten deferred decisions settled by applying it | [plans/2026-09-05-anchor-tiers-design.md](plans/2026-09-05-anchor-tiers-design.md) — *built* |
 | The five tasks that anchored four stages, mandated `**Interfaces:**`, and closed ten TODO entries | [plans/2026-09-05-anchor-tiers.md](plans/2026-09-05-anchor-tiers.md) — *built* |
-| The four tasks that make a `## Waiting` entry name the event that lifts it, and re-file the thirteen that did not | [plans/2026-09-06-waiting-lifts-when.md](plans/2026-09-06-waiting-lifts-when.md) — *built* |
 | Anchors for the last three stages, and why `build`'s commit step is two words on a pointer rather than a rule | [plans/2026-09-05-anchor-remaining-design.md](plans/2026-09-05-anchor-remaining-design.md) — *built* |
 | The two tasks that anchored `survey`, `plan` and `audit`, and brought the survey skill's step 6 to what `task.js` does | [plans/2026-09-05-anchor-remaining.md](plans/2026-09-05-anchor-remaining.md) — *built* |
 | What a full run on 0.44.0 found from outside this repository: eleven sessions never stood down, six registries station cannot see, 297,088 test directories, six tool defects | [reports/2026-09-05-field-report-0.44.0.md](reports/2026-09-05-field-report-0.44.0.md) — *a dated snapshot from another session* |
@@ -67,6 +66,9 @@ here.
 | Why three lib modules with one caller each were not folded into their callers | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *one caller is not evidence on its own* |
 | Why a hook says nothing when it is handed a session id it cannot find | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *a hook that cannot tell a wrong id from no plugin* |
 | Why `docs-check` leaves a citation that drifted but still resolves | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *the document checker stops where the machine stops* |
+| Why a `## Waiting` entry names an event and not only a date | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *`## Waiting` asks for an event* |
+| Why `todo-check` refuses an entry with no event but never judges whether the event is real | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *the check does not grade the event* |
+| Where to look for every place a rule is taught, before changing the rule | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *a rule is taught in more places than a search finds* |
 
 ## The three scanners
 
