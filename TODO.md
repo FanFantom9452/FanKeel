@@ -64,6 +64,8 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Needs a decision
 
+- `docs-check` passes a `path:line` whose line merely moved: three drifted on 09-05 after an insert — carry the cited text, or check a symbol — [scripts/docs-check.js](scripts/docs-check.js).
+
 - `docs-check` compares counts, not lists: 22 to 21 on one branch hid a change; `--since <ref>`, or a documented "compare the list" — [scripts/docs-check.js](scripts/docs-check.js).
 
 - `todo-check` `SECTIONS` is fixed and exits 1 on a repository with its own headings, 22 of 22 unclassified; per-project names, or one downgrade line — [scripts/todo-check.js](scripts/todo-check.js).
