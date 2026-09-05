@@ -55,6 +55,10 @@ recollection.
 A ledger whose header names a different plan is another plan's progress. Leave it
 where it is; `init` starts your own beside it.
 
+After a compaction the ledger beats memory: what it lists complete was
+committed, and what it does not list is what is left. The commit message shape
+is `land`'s `COMMIT` rule; nothing here repeats it.
+
 **With no plan file there is no ledger and nothing to `init`.** The rows of
 `design`'s file table are the tasks instead: they are worked in the same loop
 below, each gets its review, and a ruling or a completion line goes in the
@@ -123,8 +127,11 @@ a dispatch carries become the task line with the row's place in the table, the
 row itself verbatim — its `change` cell is the whole brief, so a cell that could
 not brief a stranger is a design failure — the design's `proves it done` line in
 place of Global Constraints, and a return contract in place of a report path: a
-status line, the paths written and one line on the tests, with no report file
-because a no-plan route keeps nothing on disk. The implementer does not commit;
+status line — `done`, `partial: <what>` or `blocked: <why>` — the paths written
+and one line on the tests, with no report file. A no-plan route keeps nothing on
+disk on purpose: `design` puts `plan` on the route the moment two rows are
+independent, so what runs without one is a short dependent chain, and the
+registry's `next` line is its ledger. The implementer does not commit;
 step 4 stages the paths in the row's `file` cell, which may name more than one,
 and step 5 reviews the range as it would a task's. A no-plan route runs one row
 per pass, and every other step of the loop is unchanged.
@@ -359,4 +366,4 @@ deferred: <heading> — <TODO.md line, or omit this line>
 then AskUserQuestion
 ```
 
-Under 80 words. The diff is the output; prose is for what it cannot show.
+Under 80 words. The diff is the output; prose is for what a diff cannot show.
