@@ -194,6 +194,7 @@ function main(argv) {
         // Naming it is what makes a missing `**Files:**` block visible at the
         // moment it costs something, rather than a plan rule nobody re-read.
         const undeclared = tasks.filter((t) => !t.modify.length).map((t) => t.n);
+        const noInterfaces = plantasks.missingInterfaces(tasks);
         // Every group a singleton means nothing ever runs beside anything, and
         // the disjointness sentence below is then a claim about a pair that does
         // not exist. A plan whose tasks all appended to one index file read as an
@@ -211,6 +212,9 @@ function main(argv) {
             + surfaced.map((g, i) => '  ' + (i + 1) + ': ' + g.tasks.join(', ') + '  — ' + g.surface).join('\n')
             + (undeclared.length
                 ? '\n\nNo Files block, so serialised against everything: ' + undeclared.join(', ')
+                : '')
+            + (noInterfaces.length
+                ? '\n\nNo Interfaces block, so never a workflow: ' + noInterfaces.join(', ')
                 : '')
             + (prose.length
                 ? '\n\nConsumes text names a task already in its own group, worth a look:\n  '

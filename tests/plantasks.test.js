@@ -256,3 +256,14 @@ test('a task with no Files block degrades its group', () => {
     const out = plantasks.surfaces(parsed);
     assert.strictEqual(out.some((g) => g.surface === 'workflow'), false);
 });
+
+// The block is required even when it says `none`. A task that omits it has
+// declared nothing, and `conflict()` reads nothing as independence — which is
+// the reading a Workflow, authorised once, cannot afford.
+test('a task with no Interfaces block degrades its group and is named', () => {
+    const bare = ['## Task 2: name', '', '**Files:**', '- Modify: `b.js`', ''].join('\n');
+    const parsed = plantasks.parseTasks(plan(taskBlock(1, ['a.js']), bare, taskBlock(3, ['c.js'])));
+    assert.deepStrictEqual(parsed.map((t) => t.interfaces), [true, false, true]);
+    assert.deepStrictEqual(plantasks.missingInterfaces(parsed), [2]);
+    assert.deepStrictEqual(plantasks.surfaces(parsed), [{ tasks: [1, 2, 3], surface: 'agents' }]);
+});

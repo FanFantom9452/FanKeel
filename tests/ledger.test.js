@@ -227,6 +227,20 @@ test('groups names the tasks that declared no files', () => {
   assert.match(out, /No Files block, so serialised against everything: 2/);
 });
 
+test('groups names the tasks that declared no interfaces', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, [
+    '## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', '',
+    '**Interfaces:**', '- Consumes: nothing.', '- Produces: nothing.', '',
+    '## Task 2: two', '', '**Files:**', '- Modify: `b.js`', '',
+    '## Task 3: three', '', '**Files:**', '- Modify: `lib/c.js`', '',
+    '**Interfaces:**', '- Consumes: nothing.', '- Produces: nothing.', '',
+  ].join('\n'));
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(out, /No Interfaces block, so never a workflow: 2/);
+});
+
 // The rows said three singletons, the paragraph under them said the files were
 // disjoint and nothing consumed anything, and the paragraph won: a plan whose
 // tasks all appended to one index file built serially with nothing saying so.

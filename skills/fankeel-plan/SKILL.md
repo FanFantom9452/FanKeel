@@ -110,7 +110,9 @@ group a dispatch surface: one task is `agent`, two are `agents` in one response,
 three or more are one `workflow`. `node <plugin>/scripts/ledger.js --plan <f>
 groups` prints it, and `build` dispatches on what it printed.
 
-Every task carries an **Interfaces** block:
+Every task carries an **Interfaces** block, and `none` is an answer — the block
+is what says so. A task without it has declared nothing, and `ledger.js groups`
+keeps its group off `workflow` for exactly that reason:
 
 ```markdown
 **Interfaces:**
