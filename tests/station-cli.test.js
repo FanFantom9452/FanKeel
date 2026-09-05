@@ -46,12 +46,30 @@ const request = (url, opts, body) => new Promise((resolve, reject) => {
     req.end();
 });
 
-test('the default form writes the page and prints its path', () => {
+test('the default form writes the page, prints its path and the counts', () => {
     const f = fixture();
-    const out = execFileSync(process.execPath, [CLI], { env: { ...process.env, CLAUDE_CONFIG_DIR: f.cfg }, encoding: 'utf8' });
+    const out = execFileSync(process.execPath, [CLI], { cwd: f.base, env: { ...process.env, CLAUDE_CONFIG_DIR: f.cfg }, encoding: 'utf8' });
     const file = path.join(f.cfg, 'fankeel', 'station.html');
     assert.ok(out.includes(file));
+    assert.match(out, /1 registries · 1 live, 1 stale, 0 down/);
     assert.ok(fs.readFileSync(file, 'utf8').includes('stale'));
+});
+
+test('--scan walks a directory for registries, and the next run remembers what it found', () => {
+    const f = fixture();
+    const far = path.join(f.base, 'elsewhere', 'deep', 'ws2');
+    registry.ensureLayout(far);
+    registry.writeSession(far, 'cccccccc-3333-4333-8333-333333333333', { task: 'scanned', stage: 'land', route: ['survey', 'land'],
+        active: false, claims: [], started: new Date().toISOString(), updated: new Date().toISOString(), configDir: f.cfg });
+    const env = { ...process.env, CLAUDE_CONFIG_DIR: f.cfg };
+    const out = execFileSync(process.execPath, [CLI, '--scan', path.join(f.base, 'elsewhere')], { cwd: f.base, env, encoding: 'utf8' });
+    assert.match(out, /2 registries · 1 live, 1 stale, 1 down/);
+    assert.ok(fs.readFileSync(path.join(f.cfg, 'fankeel', 'station.html'), 'utf8').includes('scanned'));
+    const again = execFileSync(process.execPath, [CLI], { cwd: f.base, env, encoding: 'utf8' });
+    assert.match(again, /2 registries/, 'roots.json remembered the scanned registry');
+    const inside = execFileSync(process.execPath, [CLI], { cwd: far, env, encoding: 'utf8' });
+    assert.match(inside, /copy at /);
+    assert.ok(fs.existsSync(path.join(far, '.fankeel', 'station.html')), 'run from inside a registry, the copy lands there');
 });
 
 test('serve renders live, refuses a bad nonce, refuses a live row, clears a stale one, then exits when idle', async () => {
