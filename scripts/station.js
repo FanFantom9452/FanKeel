@@ -2,7 +2,7 @@
 'use strict';
 // The station: every fankeel session on this machine, on one page.
 //
-//   node scripts/station.js [--root <dir>]... [--open]
+//   node scripts/station.js [--root <dir>]... [--scan <dir>]... [--open]
 //   node scripts/station.js serve [--port <n>] [--idle <minutes>] [--root <dir>]... [--open]
 //
 // The first form writes `<configDir>/fankeel/station.html` and prints the path;
@@ -11,6 +11,8 @@
 // 127.0.0.1 that renders on every request, takes a POST from the page's clear
 // button, and exits after `--idle` minutes without one. Nothing here is
 // started for the user by anything else, and no session holds a port.
+// `--scan` walks a directory for registries once; what it finds is remembered
+// in `<configDir>/fankeel/roots.json`, so it is run once per drive.
 //
 // Zero dependencies, as everywhere in this repository: `node:http` and a form.
 // The per-run nonce is what stops a page on some other origin from posting to
@@ -20,18 +22,20 @@ const http = require('node:http');
 const crypto = require('node:crypto');
 const { spawn } = require('node:child_process');
 const station = require('../lib/station.js');
+const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { clearEntry } = require('../lib/clear.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
 
 function parseArgs(argv) {
-    const out = { verb: null, roots: [], open: false, port: 0, idleMs: 10 * 60e3 };
+    const out = { verb: null, roots: [], scan: [], open: false, port: 0, idleMs: 10 * 60e3 };
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
         if (a === 'serve' && out.verb === null) out.verb = 'serve';
         else if (a === '--open') out.open = true;
         else if (a === '--root' && argv[i + 1]) out.roots.push(argv[++i]);
+        else if (a === '--scan' && argv[i + 1]) out.scan.push(argv[++i]);
         else if (a === '--port' && argv[i + 1]) out.port = Number(argv[++i]) || 0;
         else if (a === '--idle' && argv[i + 1]) out.idleMs = (Number(argv[++i]) || 10) * 60e3;
         else {
@@ -64,7 +68,7 @@ const readBody = (req) => new Promise((resolve) => {
 function serve(opts) {
     const configDir = opts.configDir || live.liveConfigDir();
     const nonce = crypto.randomBytes(16).toString('hex');
-    const gatherOpts = { configDir, roots: opts.roots || [], cwd: process.cwd() };
+    const gatherOpts = { configDir, roots: opts.roots || [], scan: opts.scan || [], cwd: process.cwd() };
     let timer = null;
     let server;
     const touch = () => {
@@ -141,7 +145,7 @@ function main() {
     const args = parseArgs(process.argv.slice(2));
     const configDir = live.liveConfigDir();
     if (args.verb === 'serve') {
-        serve({ configDir, roots: args.roots, port: args.port, idleMs: args.idleMs, open: args.open }).then((s) => {
+        serve({ configDir, roots: args.roots, scan: args.scan, port: args.port, idleMs: args.idleMs, open: args.open }).then((s) => {
             process.stdout.write('fankeel station — ' + s.url + '  (exits after '
                 + Math.round(args.idleMs / 60e3) + ' idle minutes, or Ctrl+C)\n');
         }, (e) => {
@@ -150,9 +154,14 @@ function main() {
         });
         return;
     }
-    const file = station.write({ configDir, roots: args.roots, cwd: process.cwd(), plugin: PLUGIN });
-    process.stdout.write('fankeel station — ' + file + '\n');
-    if (args.open) openInBrowser(file);
+    const out = station.write({
+        configDir, roots: args.roots, scan: args.scan, cwd: process.cwd(),
+        root: registry.findStateRoot(process.cwd()), plugin: PLUGIN,
+    });
+    process.stdout.write('fankeel station — ' + out.file + '\n'
+        + '  ' + out.registries + ' registries · ' + out.live + ' live, ' + out.stale + ' stale, ' + out.down + ' down'
+        + (out.copy ? '  ·  copy at ' + out.copy : '') + '\n');
+    if (args.open) openInBrowser(out.file);
 }
 
 if (require.main === module) main();

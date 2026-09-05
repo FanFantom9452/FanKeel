@@ -96,9 +96,62 @@ test('render names every task, marks state, shows the price date, and draws the 
     assert.ok(!served.includes('value="' + LIVE + '"'));
 });
 
-test('write puts the page under <configDir>/fankeel/station.html', () => {
+test('write returns the counts and both paths, copies the page into the caller\'s registry, and ignores it there', () => {
     const f = fixture();
-    const file = station.write({ configDir: f.cfg });
-    assert.equal(file, path.join(f.cfg, 'fankeel', 'station.html'));
-    assert.ok(fs.readFileSync(file, 'utf8').includes('live one'));
+    const out = station.write({ configDir: f.cfg, root: f.r1 });
+    assert.equal(out.file, path.join(f.cfg, 'fankeel', 'station.html'));
+    assert.equal(out.copy, path.join(f.r1, '.fankeel', 'station.html'));
+    assert.deepEqual([out.registries, out.live, out.stale, out.down], [2, 1, 1, 1]);
+    assert.ok(fs.readFileSync(out.file, 'utf8').includes('live one'));
+    assert.equal(fs.readFileSync(out.copy, 'utf8'), fs.readFileSync(out.file, 'utf8'));
+    assert.match(fs.readFileSync(path.join(f.r1, '.fankeel', '.gitignore'), 'utf8'), /^station\.html$/m);
+    station.write({ configDir: f.cfg, root: f.r1 });
+    const lines = fs.readFileSync(path.join(f.r1, '.fankeel', '.gitignore'), 'utf8').split(/\r?\n/);
+    assert.equal(lines.filter((l) => l === 'station.html').length, 1, 'a second write does not duplicate the line');
+    // A root with no registry gets no copy and no .fankeel/ — a hook handing
+    // over its launch directory must not create one there.
+    const bare = path.join(f.base, 'no-registry');
+    fs.mkdirSync(bare);
+    assert.equal(station.write({ configDir: f.cfg, root: bare }).copy, null);
+    assert.equal(fs.existsSync(path.join(bare, '.fankeel')), false);
+});
+
+// What the lead forgets. A lead is cleared with its badge, so a registry with no
+// task running in it had nothing pointing at it: 3 of at least 11 on 2026-09-05.
+test('discover reads roots.json; write stamps the present, keeps the gone for thirty days, then drops them', () => {
+    const f = fixture();
+    const now = Date.now();
+    const r3 = path.join(f.base, 'ws-three');
+    registry.ensureLayout(r3);
+    const gone = path.join(f.base, 'gone');
+    const old = path.join(f.base, 'older');
+    fs.mkdirSync(path.join(f.cfg, 'fankeel'), { recursive: true });
+    fs.writeFileSync(station.rootsPath(f.cfg), JSON.stringify({
+        [r3]: new Date(now - 5 * DAY).toISOString(),
+        [gone]: new Date(now - 5 * DAY).toISOString(),
+        [old]: new Date(now - 31 * DAY).toISOString(),
+    }));
+    const found = station.discover({ configDir: f.cfg });
+    assert.ok(found.roots.includes(path.resolve(r3)), 'a root only roots.json names');
+    assert.deepEqual(found.gone, [gone, old].map((p) => path.resolve(p)).sort());
+    station.write({ configDir: f.cfg, now });
+    const roots = station.readRoots(f.cfg);
+    assert.equal(roots[path.resolve(r3)], new Date(now).toISOString());
+    assert.equal(roots[path.resolve(f.r1)], new Date(now).toISOString(), 'a root found through a lead is remembered');
+    assert.equal(roots[path.resolve(gone)], new Date(now - 5 * DAY).toISOString(), 'gone keeps its stamp');
+    assert.equal(path.resolve(old) in roots, false, 'gone for 31 days is dropped');
+    fs.writeFileSync(station.rootsPath(f.cfg), '{not json');
+    assert.deepEqual(station.readRoots(f.cfg), {}, 'an unreadable file is empty, not fatal');
+});
+
+test('scanRoots finds a registry two levels down, skips node_modules and dot-directories, and stops at its depth', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-'));
+    const deep = path.join(base, 'a', 'b');
+    registry.ensureLayout(deep);
+    registry.ensureLayout(path.join(base, 'node_modules', 'pkg'));
+    registry.ensureLayout(path.join(base, '.hidden', 'ws'));
+    registry.ensureLayout(path.join(base, '1', '2', '3', '4', '5', '6', '7'));
+    assert.deepEqual(station.scanRoots(base), [path.resolve(deep)]);
+    const found = station.discover({ configDir: path.join(base, 'cfg'), scan: [base] });
+    assert.ok(found.roots.includes(path.resolve(deep)));
 });
