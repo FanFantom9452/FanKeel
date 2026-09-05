@@ -49,6 +49,8 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Ready
 
+- `skills/fankeel/SKILL.md:599` sends people to `/fankeel-station` for a page the `/fankeel` block already names; the skill can go — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
+
 - `ledger.js` has no verb for build step 3's scan table; two sessions on 09-05 appended it to progress.md by hand, which is what the ledger exists to avoid — [scripts/ledger.js](scripts/ledger.js).
 
 - `station.js` prints a path and a counts line, so a session can read how many are stale; the rows themselves have no `--json` — [scripts/station.js](scripts/station.js).
