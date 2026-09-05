@@ -21,12 +21,13 @@ which is the one thing option two may never be — so the gate is asked once.
 ### 0. It already said it started
 
 Nothing to run. `hooks/inject.js` raises `[FANKEEL:INIT]` the moment a `/fankeel`
-prompt is submitted, before there is any registry entry to read — so the minutes
-this stage spends orienting, mapping and scanning are not minutes of a statusline
-saying nothing. `task.js start` in step 6 replaces it with the first stage on the route.
+prompt is submitted, before there is any registry entry to read, and `task.js
+start` — run at `/fankeel`, before this stage — replaces it with `survey`. So the
+minutes this stage spends mapping and scanning are not minutes of a statusline
+saying nothing, and the entry this stage reports into already exists.
 
 It is there before you are. What it costs you is that the badge is now a promise:
-a session showing `init` that never reaches step 6 is one that stopped without
+a session showing `survey` that never reaches step 6 is one that stopped without
 saying so.
 
 ### 1. Locate
@@ -229,17 +230,23 @@ classification made silently is one nobody can disagree with.
 
 ### 6. Write it down
 
+The entry already exists: `task.js start` ran at `/fankeel`, with the class said
+there — or all seven stages when none was — and `start` refuses an active entry
+(`scripts/task.js:461`). What this step writes is the class step 5 arrived at,
+when it differs:
+
 ```
-node <plugin>/scripts/task.js start --session <id> --task "..." [--project <dir>] --class <class>
+node <plugin>/scripts/task.js route "survey,design,build,verify,land" --session <id>
 ```
 
-`--class` picks the route. Never pass both `--class` and `--route` — it is
-refused rather than ranked, because whichever one lost would be a decision the
-user made and cannot see.
+`route` takes the stages and derives the class from them (`scripts/task.js:914`);
+the stage the task is in has to be on the new route. Quote its output on the
+`route:` line of the report, or write `unchanged`. Up is always allowed. Down is
+allowed only from the seven-stage default nobody said — a class someone said at
+`start` is the ratchet's floor.
 
-Nothing declares a file list. `--project` names the repository whose docs tree
-applies, ask for it only when the root holds more than one, and leave it off
-otherwise — the files this task touches are recorded as the edits land.
+Nothing declares a file list: the files this task touches are recorded as the
+edits land.
 
 ## The ratchet
 
