@@ -620,3 +620,35 @@ What it cost, by `tests/render.test.js` on the day: survey 2390 to 2338, plan
 chose, `disagree`, matched the old audit template too and was not a control
 until it became `pairs disagree:` — caught by running the probe on the
 pre-change file, which is the control every `YES` needs.
+
+## The station remembers, and is written where the user is
+
+Dated 2026-09-05. The station's design of 2026-09-04 rejected a registries
+index because "the lead already exists, is already per session, and is already
+pruned on a rule someone wrote down". The lead is also cleared with the badge
+the moment a task stands down, so a registry with nothing running in it had
+nothing pointing at it: the page found 3 of at least 11 on the day
+([reports/2026-09-05-field-report-0.44.0.md](../reports/2026-09-05-field-report-0.44.0.md)
+had found 5 of 11 a day earlier).
+[docs/plans/2026-09-05-station-at-hand-design.md](../plans/2026-09-05-station-at-hand-design.md)
+reversed that one ruling: `<configDir>/fankeel/roots.json` remembers every
+registry a write has seen, for thirty days after it last had a `sessions/`
+directory, and `--scan <dir>` walks a drive once to seed it — twelve
+registries after the first run here.
+
+The page is now written where the user is and when the state changes: at the
+`/fankeel` prompt, by every `task.js` verb that goes through a badge writer,
+and at session end, with a copy at `<registry>/.fankeel/station.html` so the
+file sits in the tree in front of them. The injected block names it in one
+short line — `station: 8 stale, 2 live — <file>` rather than the design's four
+figures — because the init block sat at 1391 of its 1400 characters and the
+two figures a reader acts on are those. Two rationale sentences the fankeel
+skill already carried paid for it.
+
+What it costs: 1.4 to 2.5 seconds per verb at twelve registries, most of it
+`readAll` over 169 entries, inside a five-second hook. A `## Ready` line holds
+the profile. What the pass found beside the work: `docs-check` reads a
+`path:line` only for past-end-of-file, so three citations that an 18-line
+insert pushed down passed as resolved — a `## Needs a decision` line — and a
+per-task review that runs a hook to prove "exits 0" proves nothing about the
+change, because `lib/hook.js` swallows every throw.

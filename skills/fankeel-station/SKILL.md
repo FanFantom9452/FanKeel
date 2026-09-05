@@ -54,5 +54,5 @@ were read, and the page prints it in the header. A model the table does not
 know shows its output tokens instead of a dollar figure.
 
 **The end of a session is recorded, not decided.** `ended` says when and why
-(`clear`, `logout`, `prompt_input_exit`, `other`); `active` is only ever
-changed by `down`, by `clear`, and by `adopt` on the entry it takes over.
+(`clear`, `logout`, `prompt_input_exit`, `other`); `active` is set to
+`false` only by `down`, by `clear`, and by `adopt` on the entry it takes over.

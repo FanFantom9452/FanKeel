@@ -15,7 +15,7 @@ and, for how it is found and when it is written,
 ## Where the registries come from
 
 A registry is per workspace and every reader walks up to exactly one, so the
-station has to be told, or find out. Six sources, unioned:
+station has to be told, or find out. Seven sources, unioned:
 
 | source | what it finds |
 |---|---|
@@ -23,6 +23,7 @@ station has to be told, or find out. Six sources, unioned:
 | `~/.claude/modes/<id>/fankeel.lead`, its `root=` line | every registry a session is running a task in right now — the lead is cleared with the badge at `down`, `clear`, `adopt` and the prompt after a stand-down, and pruned after thirty days |
 | `~/.claude/sessions/<pid>.json`, its `cwd`, walked up | every registry a running session is in, whether or not it has started a task |
 | the directory the command runs in, walked up — at `SessionEnd`, the ending session's own launch directory | the registry in front of you, including the one whose session is leaving the running set at that moment |
+| the registry the caller is writing into — a `task.js` verb's own | the one registry a verb can be sure of, whether or not anything else still points at it: `hideBadge` clears the lead before the page is written |
 | `--scan <dir>` | a one-off walk of `<dir>`, six levels deep, skipping `node_modules`, `.git` and dot-directories. What it finds is remembered, so it is run once per drive |
 | `--root <dir>` | anything else |
 
@@ -68,6 +69,7 @@ says when it was generated.
 
 `serve` runs a loopback server only while clearing; it renders afresh on
 every request, takes a POST from the clear button on a `stale` row, answers
-`409` for a `live` one and `403` without the per-run nonce, and exits after
-ten idle minutes. The static copies carry the `task.js clear` command on each
+`409` for a `live` one and for a row touched in the last twelve hours unless
+`force` is ticked, `403` without the per-run nonce, and exits after ten idle
+minutes. The static copies carry the `task.js clear` command on each
 `stale` row instead of the button.

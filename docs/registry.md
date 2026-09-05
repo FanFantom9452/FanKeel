@@ -29,7 +29,7 @@ workspace/                     <- Claude Code opened here
 |---|---|---|
 | `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `leave.js` for `ended`, `model` and `usage`, once, at `SessionEnd` — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
-| `.fankeel/.gitignore` | Yes | `lib/registry.js:200` creates it holding `sessions/` alone; `registry.ensureIgnored` appends what is missing — `scripts/map.js:31` asks for `build/` and `map.md` on every map run, `lib/station.js` for `station.html` on every write of the copy |
+| `.fankeel/.gitignore` | Yes | `lib/registry.js:200` creates it holding `sessions/` alone; `registry.ensureIgnored` appends what is missing — `scripts/map.js:31` asks for `sessions/`, `build/` and `map.md` on every map run, `lib/station.js` for `station.html` on every write of the copy |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
 | `~/.claude/modes/{session_id}/fankeel` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
 | `~/.claude/modes/{session_id}/fankeel.lead` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
@@ -199,8 +199,9 @@ Three more fields, written once, by `hooks/leave.js` at `SessionEnd`, and by
 nothing else:
 
 - `ended` — `{ at, reason }`, `reason` one of `clear`, `logout`,
-  `prompt_input_exit`, `other`. Present on a record that is still
-  `active: true` when the session ended without the task being stood down.
+  `prompt_input_exit`, `other`. Written on whatever entry the session owns,
+  stood down or not; on one still `active: true` it is what the station shows
+  as `stale`.
 - `model` — the model that produced the most output tokens in the transcript,
   written at the same moment.
 - `usage` — `{ requests, models: { <id>: { input, output, cacheRead,
