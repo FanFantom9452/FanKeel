@@ -69,13 +69,45 @@ test('the entry skill points at the audit skill rather than repeating it', () =>
   assert.match(read('fankeel'), /\/fankeel-audit/);
 });
 
-// Both places that tell someone how to file under `## Waiting` have to name the
-// event, because `todo-check` fails on an entry without one and a skill that
-// teaches the older shape teaches a step that fails its own gate. That is not
-// hypothetical: c55c373 fixed exactly this for the stamp, in three skills.
-test('the two places that teach the Waiting convention name the event', () => {
+// Four places tell someone how to file under `## Waiting`, and `todo-check`
+// fails an entry that skips either half of it. A bare /lifts when:/ anywhere
+// in a long page would stay green even if the taught row or sentence itself
+// regressed to the older shape and the phrase kept appearing by coincidence
+// elsewhere on the page, so each place is anchored to its own row or sentence
+// and checked for both halves in order. Not hypothetical: c55c373 rolled the
+// stamp out in `fankeel`, `fankeel-land` and `fankeel-audit` in one commit and
+// left the same rot behind in `fankeel-audit/rationale.md` and `README.md`.
+test('every place that teaches the Waiting convention names the event before the stamp', () => {
+  // fankeel and fankeel-land: a markdown table row is one physical line, so
+  // the row naming `## Waiting` is found whole and checked on its own.
   for (const n of ['fankeel', 'fankeel-land']) {
-    assert.match(read(n), /lifts when:/, n + ' teaches a Waiting entry with no event');
+    const row = read(n).split(/\r?\n/).find((l) => l.includes('## Waiting'));
+    assert.ok(row, n + ' has no row naming ## Waiting');
+    const liftsAt = row.indexOf('lifts when:');
+    const stampAt = row.indexOf('MM-DD');
+    assert.ok(liftsAt !== -1, n + ' row does not name the event');
+    assert.ok(stampAt !== -1, n + ' row does not carry the MM-DD stamp');
+    assert.ok(liftsAt < stampAt, n + ' row does not put the event before the stamp');
+  }
+
+  // README.md and fankeel-audit/rationale.md teach it in prose, wrapped across
+  // lines, so whitespace is flattened and each check runs in a bounded window
+  // starting at the sentence's own anchor rather than across the whole file.
+  const prose = [
+    ['README.md', path.join(ROOT, 'README.md'), '## Waiting` also carries'],
+    ['skills/fankeel-audit/rationale.md', path.join(DIR, 'fankeel-audit', 'rationale.md'),
+      'One routed to `## Waiting`'],
+  ];
+  for (const [label, file, anchor] of prose) {
+    const flat = fs.readFileSync(file, 'utf8').replace(/\s+/g, ' ');
+    const at = flat.indexOf(anchor);
+    assert.ok(at !== -1, label + ' no longer has the sentence this test anchors on');
+    const window = flat.slice(at, at + 200);
+    const liftsAt = window.indexOf('lifts when:');
+    const stampAt = window.indexOf('MM-DD');
+    assert.ok(liftsAt !== -1, label + ' does not name the event');
+    assert.ok(stampAt !== -1, label + ' does not carry the MM-DD stamp');
+    assert.ok(liftsAt < stampAt, label + ' does not put the event before the stamp');
   }
 });
 
