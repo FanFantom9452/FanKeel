@@ -789,7 +789,7 @@ test('waitedOf is null for a stage that never waited', () => {
 // inserted in, because that order is route order, and route order is not when
 // a stage actually opened.
 test('seriesOf orders stages by when they were entered, not by route order', () => {
-  const data = { clock: { build: [500, 600], survey: [100, 200] } };
+  const data = { clock: { build: [500, 600], survey: [100, 900] } };
   assert.deepEqual(registry.seriesOf(data).map((w) => w.stage), ['survey', 'build']);
 });
 
