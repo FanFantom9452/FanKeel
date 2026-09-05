@@ -167,3 +167,70 @@ test('scanRoots finds a registry two levels down, skips node_modules and dot-dir
     const found = station.discover({ configDir: path.join(base, 'cfg'), scan: [base] });
     assert.ok(found.roots.includes(path.resolve(deep)));
 });
+
+// A registry of its own per test below, rather than the shared fixture: each
+// one exercises a different shape of `clock`/`burn`/`spend` and none of them
+// should shift the session counts the earlier tests already assert on.
+function chartFixture(sessionId, data) {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-chart-'));
+    const root = path.join(base, 'ws');
+    registry.ensureLayout(root);
+    const now = Date.now();
+    registry.writeSession(root, sessionId, Object.assign({
+        project: 'ws', active: false, claims: [],
+        started: new Date(now - 3600e3).toISOString(), updated: new Date(now).toISOString(),
+    }, data));
+    return station.gather({ configDir: path.join(base, 'cfg'), root });
+}
+
+test('a session with burn on three stages draws a polyline of six points', () => {
+    const m = chartFixture('dddddddd-4444-4444-8444-444444444444', {
+        task: 'three stages', stage: 'verify', route: ['survey', 'build', 'verify'],
+        clock: { survey: [0, 1000], build: [1000, 2000], verify: [2000, 3000] },
+        burn: { survey: [0, 100000], build: [100000, 250000], verify: [250000, 400000] },
+    });
+    const page = station.render(m, {});
+    assert.match(page, /<svg class="curve"/);
+    const burnLine = page.match(/<polyline class="burn" points="([^"]+)"/);
+    assert.ok(burnLine, 'a burn polyline is drawn');
+    assert.equal(burnLine[1].trim().split(/\s+/).length, 6, 'two points per stage, three stages');
+    assert.equal((page.match(/<line class="rule"/g) || []).length, 3, 'one rule per stage');
+});
+
+test('a session with burn on one stage draws no chart', () => {
+    const m = chartFixture('eeeeeeee-5555-4555-8555-555555555555', {
+        task: 'one stage burn', stage: 'build', route: ['survey', 'build'],
+        clock: { survey: [0, 1000], build: [1000, 2000] },
+        burn: { survey: [0, 50000] },
+    });
+    const page = station.render(m, {});
+    assert.ok(page.includes('no burn recorded'));
+    assert.ok(!page.includes('<svg'), 'a stage sampled once is not enough to draw a curve');
+});
+
+test('a session with no spend says so instead of drawing a spend line', () => {
+    const m = chartFixture('ffffffff-6666-4666-8666-666666666666', {
+        task: 'two stages no spend', stage: 'build', route: ['survey', 'build'],
+        clock: { survey: [0, 1000], build: [1000, 2000] },
+        burn: { survey: [0, 50000], build: [50000, 120000] },
+    });
+    const page = station.render(m, {});
+    assert.ok(page.includes('spend arrives when the session ends'));
+    assert.ok(!page.includes('polyline class="spend"'));
+});
+
+test('the stage table prints the burn distance, not the pair', () => {
+    // Two stages, not one: `s.burn` (the existing route-summed total, already
+    // rendered before this task) would otherwise happen to equal the single
+    // stage's distance and pass whether or not the new table renders anything.
+    // Here the total (550k) differs from each stage's own distance, so a
+    // "400k" in the page can only have come from the stage table.
+    const m = chartFixture('99999999-7777-4777-8777-777777777777', {
+        task: 'distance not pair', stage: 'build', route: ['survey', 'build'],
+        clock: { survey: [0, 1000], build: [1000, 2000] },
+        burn: { survey: [100000, 500000], build: [500000, 650000] },
+    });
+    const page = station.render(m, {});
+    assert.ok(page.includes('400k'), 'the distance between the pair, 500000 - 100000');
+    assert.ok(!page.includes('500k'), 'not the raw upper value of the survey pair');
+});
