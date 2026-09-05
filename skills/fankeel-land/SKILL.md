@@ -1,7 +1,7 @@
 ---
 name: fankeel-land
 description: The land stage — a green suite, the documents closed, the map rewritten, and the integration decision left to the user. Use for the land stage of a fankeel task, finishing a development branch, deciding between merge and PR, or cleaning up a worktree when work is complete.
-version: 0.46.0
+version: 0.47.0
 status: current
 last_verified: 2026-09-05
 source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js, hooks/carry.js
