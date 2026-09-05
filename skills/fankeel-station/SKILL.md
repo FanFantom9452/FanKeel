@@ -3,21 +3,28 @@ name: fankeel-station
 description: Every fankeel session on this machine on one page — live, abandoned and stood down, with what each cost — and a button to put an abandoned one down. Use for /fankeel-station, "show all sessions", "which sessions are still open", "clean up old sessions", or "監控站".
 version: 0.48.0
 status: current
-last_verified: 2026-09-04
+last_verified: 2026-09-05
 source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js
 ---
 
 # fankeel-station
 
-The station is a page, not a process. `hooks/leave.js` regenerates it every
-time a session ends, so opening it is enough:
+The station is a page, not a process. It is rewritten at the `/fankeel`
+prompt, by every `task.js` verb that moves an entry, and when a session ends,
+so opening it is enough — from the registry you are in:
+
+    .fankeel/station.html
+
+or the copy that is always newest:
 
     node <plugin>/scripts/station.js --open
 
-`<plugin>` is two directories up from this file. Add `--root <dir>` for a
-registry the page did not find on its own — it finds them through the leads
-under `~/.claude/modes/`, which are pruned after thirty days, and through the
-working directory of every running session.
+`<plugin>` is two directories up from this file. The page finds registries
+through a roots file every write refreshes (`~/.claude/fankeel/roots.json`),
+the leads under `~/.claude/modes/` of sessions running a task now, and the
+working directory of every running session. A registry none of those has
+seen yet is found once by `--scan <dir>` — one run per drive, and it is
+remembered from then on — or named with `--root <dir>`.
 
 ## Clearing from the page
 

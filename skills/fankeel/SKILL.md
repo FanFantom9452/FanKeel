@@ -22,7 +22,7 @@ Two things live under `.fankeel/`, and they have different homes.
 ```
 workspace/                        <- Claude Code opened here
 ├── .fankeel/
-│   ├── .gitignore             sessions/, map.md, build/
+│   ├── .gitignore             sessions/, map.md, build/, station.html
 │   └── sessions/              THE REGISTRY. one for the whole workspace.
 │       └── <session_id>.json    never committed
 │
@@ -78,7 +78,7 @@ controlled there.
 
 ```
 .fankeel/
-├── .gitignore          sessions/, map.md, build/
+├── .gitignore          sessions/, map.md, build/, station.html
 └── sessions/
     └── {session_id}.json
 ```
@@ -513,7 +513,7 @@ lives only in a skill, this one included. `docs/pipeline.md` has the table.
 
 `<project>/.fankeel/docs.json`, version-controlled — `.fankeel/.gitignore`
 excludes what is per-machine or regenerated, `sessions/` and `map.md` and
-`build/`, and this is the one it deliberately leaves in. One
+`build/` and `station.html`, and this is the one it deliberately leaves in. One
 per repository, found from the task's `project` and the files it has claimed; see
 **Where the files are** above.
 

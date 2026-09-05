@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-04
+last_verified: 2026-09-05
 source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/prices.js, lib/clear.js
 ---
 
@@ -8,19 +8,23 @@ source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.j
 
 Every fankeel session on this machine, on one page. This is the reference for
 what is on it and where it comes from; the decisions are in
-[plans/2026-09-04-session-station-design.md](plans/2026-09-04-session-station-design.md).
+[plans/2026-09-04-session-station-design.md](plans/2026-09-04-session-station-design.md)
+and, for how it is found and when it is written,
+[plans/2026-09-05-station-at-hand-design.md](plans/2026-09-05-station-at-hand-design.md).
 
 ## Where the registries come from
 
 A registry is per workspace and every reader walks up to exactly one, so the
-station has to be told, or find out. Four sources, unioned:
+station has to be told, or find out. Six sources, unioned:
 
 | source | what it finds |
 |---|---|
-| `~/.claude/modes/<id>/fankeel.lead`, its `root=` line | every registry a session has run under in the last thirty days — the lead is pruned after that |
+| `~/.claude/fankeel/roots.json` | every registry any write of the page has seen with a `sessions/` directory, for thirty days after it last had one. Rewritten by every write, which is what remembers a registry after its last lead is cleared |
+| `~/.claude/modes/<id>/fankeel.lead`, its `root=` line | every registry a session is running a task in right now — the lead is cleared with the badge at `down`, `clear`, `adopt` and the prompt after a stand-down, and pruned after thirty days |
 | `~/.claude/sessions/<pid>.json`, its `cwd`, walked up | every registry a running session is in, whether or not it has started a task |
 | the directory the command runs in, walked up — at `SessionEnd`, the ending session's own launch directory | the registry in front of you, including the one whose session is leaving the running set at that moment |
-| `--root <dir>` | anything older |
+| `--scan <dir>` | a one-off walk of `<dir>`, six levels deep, skipping `node_modules`, `.git` and dot-directories. What it finds is remembered, so it is run once per drive |
+| `--root <dir>` | anything else |
 
 A root whose `.fankeel/sessions/` no longer exists is listed as gone rather
 than dropped.
@@ -49,10 +53,21 @@ agents produced it — `usage.subagents`, priced the same way. A row opens to
 the agents' own request count and their summed wall-clock, alongside
 everything else.
 
-## Two forms
+## When it is written, and where
 
-`node <plugin>/scripts/station.js` writes `~/.claude/fankeel/station.html`,
-which `hooks/leave.js` also rewrites at every session end. `serve` runs a
-loopback server only while clearing; it renders afresh on every request, takes
-a POST from the clear button on a `stale` row, answers `409` for a `live`
-one and `403` without the per-run nonce, and exits after ten idle minutes.
+`lib/station.js`'s `write` runs at four moments: the `/fankeel` prompt
+(`hooks/inject.js`, which then names the page and its `stale` count in the
+block it injects), every `task.js` verb that moves an entry — `start`,
+`stage`, `task`, `route`, `guard`, `adopt`, `down` and `clear`, not `note` or
+`next` — every session end (`hooks/leave.js`), and `node scripts/station.js`.
+Each writes `~/.claude/fankeel/station.html`, the copy that is always newest,
+and, when the caller is inside a registry, the same page at
+`<registry>/.fankeel/station.html`, kept out of git by a line the write adds.
+That copy is refreshed by the sessions in its registry; the header on both
+says when it was generated.
+
+`serve` runs a loopback server only while clearing; it renders afresh on
+every request, takes a POST from the clear button on a `stale` row, answers
+`409` for a `live` one and `403` without the per-run nonce, and exits after
+ten idle minutes. The static copies carry the `task.js clear` command on each
+`stale` row instead of the button.

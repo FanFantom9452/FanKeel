@@ -51,7 +51,7 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 - `ledger.js` has no verb for build step 3's scan table; two sessions on 09-05 appended it to progress.md by hand, which is what the ledger exists to avoid — [scripts/ledger.js](scripts/ledger.js).
 
-- `station.js` prints only an HTML path, so a session cannot read the answer it just produced; a `--text` or `--json` form — [scripts/station.js](scripts/station.js).
+- `station.js` prints a path and a counts line, so a session can read how many are stale; the rows themselves have no `--json` — [scripts/station.js](scripts/station.js).
 
 - `--root` resolves against cwd, not the registry: run from inside the project, the documented command reports "nothing readable" — [scripts/docs-check.js](scripts/docs-check.js), `survey.js` the same.
 
@@ -60,9 +60,9 @@ entry waited for actually happening. It shrinks when somebody reads it.
 - Every test makes its own `mkdtempSync` and none removes it: 297,088 directories under %TEMP% on 09-05, about 4.5 GB, 20k a day — [tests/badge.test.js](tests/badge.test.js):16 is one of many.
 - `docs/pipeline.md` hand-copies two rendered `stage rules:` blocks; they went stale on 09-05 when build's rules changed — a test pinning them to `render()` — [docs/pipeline.md](docs/pipeline.md).
 
-## Needs a decision
+- `station.write` costs 1.4 s per `task.js` verb at 12 registries; profile `gather` — `readAll` per registry and the recursive `buildDirs` are the suspects — [lib/station.js](lib/station.js).
 
-- `station.js discover()` never walks the filesystem: 6 of 11 registries, 7 active sessions, were invisible on 09-05 — a `--scan`, or a remembered roots file — [lib/station.js](lib/station.js).
+## Needs a decision
 
 - `docs-check` compares counts, not lists: 22 to 21 on one branch hid a change; `--since <ref>`, or a documented "compare the list" — [scripts/docs-check.js](scripts/docs-check.js).
 
