@@ -60,7 +60,7 @@ entry waited for actually happening. It shrinks when somebody reads it.
 - Every test makes its own `mkdtempSync` and none removes it: 297,088 directories under %TEMP% on 09-05, about 4.5 GB, 20k a day — [tests/badge.test.js](tests/badge.test.js):16 is one of many.
 - `docs/pipeline.md` hand-copies two rendered `stage rules:` blocks; they went stale on 09-05 when build's rules changed — a test pinning them to `render()` — [docs/pipeline.md](docs/pipeline.md).
 
-- `station.write` costs 1.4 s per `task.js` verb at 12 registries: `readAll` over 169 entries is most of it, and `adopt` pays it twice (`hideBadge` then `showBadge`) — [lib/station.js](lib/station.js).
+- `station.write` costs 1.4 s per `task.js` verb at 12 registries: `readAll` over 169 entries is most of it, and `adopt` pays it twice — [lib/station.js](lib/station.js).
 
 ## Needs a decision
 
