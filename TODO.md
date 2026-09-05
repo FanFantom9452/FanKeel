@@ -104,7 +104,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Waiting
 
-- Whether a flag a verb ignores should be refused — [scripts/ledger.js](scripts/ledger.js). `--range x ranges` exits 0 where `complete` refuses it. lifts when: a run is seen ignoring one. 09-06.
+- Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it. lifts when: a run is seen ignoring one. 09-06.
 
 - Language patterns beyond the ten [scripts/survey.js](scripts/survey.js) knows. Anything else is listed under `skipped.noPattern` for a human. lifts when: a repository needs an eleventh. 09-06.
 
@@ -112,4 +112,4 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI. lifts when: Claude Code ships one. 09-06.
 
-- Whether `fanoutSync`'s payload costs anything: a 64MB overflow discards every answer and re-reads all thirty serially — [lib/tracked.js](lib/tracked.js). lifts when: an overflow is observed. 09-06.
+- Whether `fanoutSync`'s payload costs anything: a 64MB overflow discards every answer and re-reads all thirty serially — [lib/tracked.js](lib/tracked.js). lifts when: an overflow occurs. 09-06.
