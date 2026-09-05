@@ -8,6 +8,7 @@ const http = require('node:http');
 const { execFileSync } = require('node:child_process');
 const registry = require('../lib/registry.js');
 const badge = require('../lib/badge.js');
+const station = require('../lib/station.js');
 
 const CLI = path.join(__dirname, '..', 'scripts', 'station.js');
 const LIVE = 'aaaaaaaa-1111-4111-8111-111111111111';
@@ -291,6 +292,21 @@ test('the first run scans once and records that it did', () => {
     assert.ok(after1.scannedAt && typeof after1.scannedAt.at === 'string', 'roots.json records that the scan ran');
     const stamp1 = after1.scannedAt.at;
 
+    // Whatever that walk had to give up on has to reach the page, not only
+    // stdout: `discover` never saw this walk, so the header's two scan-cut
+    // lines are silent unless `main()` hands `autoScan`'s counts into
+    // `write()`. Guarded on the record rather than asserted flat, because a
+    // machine small enough to finish every drive inside five seconds cuts
+    // nothing and should say nothing.
+    const page1 = fs.readFileSync(path.join(cfg, 'fankeel', 'station.html'), 'utf8');
+    if (after1.scannedAt.timedOut) {
+        assert.match(page1, /the scan ran out of time/, 'a walk that ran out of time says so on the page');
+    }
+    if (after1.scannedAt.depthCuts > 0) {
+        assert.ok(page1.includes('depth stopped the scan in ' + after1.scannedAt.depthCuts + ' places'),
+            'the page carries the same count of depth cuts the record does');
+    }
+
     const t1 = Date.now();
     const out2 = execFileSync(process.execPath, [CLI], { cwd: base, env, encoding: 'utf8', timeout: 20000 });
     const elapsed2 = Date.now() - t1;
@@ -298,9 +314,28 @@ test('the first run scans once and records that it did', () => {
 
     const after2 = JSON.parse(fs.readFileSync(rootsFile, 'utf8'));
     assert.equal(after2.scannedAt.at, stamp1, 'scannedAt is not rewritten by a run that did not scan');
+
+    // Not the CLI: `station.write()` is what `hooks/inject.js` runs on every
+    // `/fankeel` prompt, and it is the writer that used to rebuild roots.json
+    // without this key. The record only counts as durable if it survives that.
+    station.write({ configDir: cfg, cwd: base });
+    const after3 = JSON.parse(fs.readFileSync(rootsFile, 'utf8'));
+    assert.deepEqual(after3.scannedAt, after2.scannedAt,
+        'a write of the page from outside this CLI leaves the scan record alone');
+
     // The budget is 5 seconds; a run that actually walked the machine's drives
     // again would sit near it, the way the first run just did. Three seconds
     // is comfortably below that and comfortably above what an ordinary run —
     // read a small registry, render a page — costs.
     assert.ok(elapsed2 < 3000, 'a run with roots.json already present does not re-walk the drives (took ' + elapsed2 + 'ms)');
+    // The first run is the one AUTO_BUDGET_MS exists to bound, and until this
+    // line the suite measured it and threw the number away — a budget raised to
+    // anything under this test's own 20-second `timeout` shipped green. Measured
+    // here on 2026-09-06: 6.0 seconds for a 5-second budget, so a second of
+    // node start-up, the readdir in flight when the deadline landed, and the
+    // write of the page. Nine seconds leaves that margin doubled and still
+    // catches a budget moved to ten seconds or beyond. It is deliberately a
+    // literal rather than `AUTO_BUDGET_MS + slack`: a bound that moves with the
+    // budget is a bound the budget cannot break.
+    assert.ok(elapsed1 < 9000, 'the first run stays inside its scan budget (took ' + elapsed1 + 'ms)');
 });

@@ -24,9 +24,13 @@ through a roots file every write refreshes (`~/.claude/fankeel/roots.json`),
 the leads under `~/.claude/modes/` of sessions running a task now, and the
 working directory of every running session. A registry none of those has
 seen yet is found once by `--scan <dir>` — one run per drive, eight levels
-deep, and it is remembered from then on — or named with `--root <dir>`. With
-no roots file at all, the first CLI run walks the drives once under a
-five-second budget and records that it did, so it never repeats.
+deep, under a sixty-second budget, and it is remembered from then on — or named
+with `--root <dir>`. With no roots file at all, the first CLI run walks the
+drives once under a five-second budget. What stops it happening twice is the
+roots file itself: the walk runs only when that file is absent, and every write
+of the page creates it. The `scannedAt` record written beside the roots says
+when the sweep happened and what cut it short; it is the receipt, not the
+guard.
 
 A remembered root is kept until `--forget <dir>` drops it. It does not expire:
 a registry nobody has opened for a month is still one somebody may be looking
@@ -70,11 +74,14 @@ table's date, the stage tokens and minutes fankeel measured itself, and the
 model. A row opens to the session id, project, route, when it was last touched,
 when and why it ended, what it touched, its notes and its `next`.
 
-**And a curve.** An opened row draws two series against time since it started:
-`burn`, the context tokens climbing through the session, and spend, cumulative
-in USD. Each is scaled to its own maximum with both maxima printed underneath,
-because a dual axis is unreadable at ninety pixels. A faint rule marks each
-stage. Under it is the table it is drawn from, a row per stage.
+**And a curve.** An opened row draws two series against the session's own
+clock — x runs from the first stage's first `clock` sighting, not from the
+entry's `started` — so the width in the legend is the clocked span rather than
+the elapsed run. The series are `burn`, the context tokens climbing through the
+session, and spend, cumulative in USD. Each is scaled to its own maximum with
+both maxima printed underneath, because a dual axis is unreadable at ninety
+pixels. A faint rule marks each stage. Under it is the table it is drawn from,
+a row per stage.
 
 Two empty cases are drawn deliberately rather than left as a blank axis.
 Fewer than two stages with `burn` says `no burn recorded` — one sighting is a
@@ -89,7 +96,10 @@ is rewritten by fankeel's own events and a timer would reload the same bytes.
 
 **Cost is at a dated price table.** `lib/prices.js` names the day its figures
 were read, and the page prints it in the header. A model the table does not
-know shows its output tokens instead of a dollar figure.
+know shows its output tokens instead of a dollar figure in the row's summary
+cell, and is named there as unpriced. The per-stage table and the spend curve
+have no token fallback: an unpriced stage prints `—` and the curve steps over
+it, because `$0.00` on a stage nobody priced reads as a stage that was free.
 
 **The end of a session is recorded, not decided.** `ended` says when and why
 (`clear`, `logout`, `prompt_input_exit`, `other`); `active` is set to

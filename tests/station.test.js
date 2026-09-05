@@ -257,6 +257,15 @@ test('a session with burn on three stages draws a polyline of six points', () =>
     const burnLine = page.match(/<polyline class="burn" points="([^"]+)"/);
     assert.ok(burnLine, 'a burn polyline is drawn');
     assert.equal(burnLine[1].trim().split(/\s+/).length, 6, 'two points per stage, three stages');
+    // Counting the points says nothing about where they are. Swapping the pair
+    // in `burnPts.push` — `w.burn[1]` first, then `w.burn[0]` — still pushes six
+    // points, and every burn curve on the page then descends through each stage
+    // instead of climbing, which is the one series this whole change is for. So
+    // the coordinates are pinned exactly, the way the spend polyline's are:
+    // x is 4/108/212/316 across a 3000ms span, and y falls from 86 (0 tokens)
+    // to 4 (400k, the maximum) as burn climbs.
+    assert.equal(burnLine[1], '4.0,86.0 108.0,65.5 108.0,65.5 212.0,34.8 212.0,34.8 316.0,4.0',
+        'the curve climbs: each stage opens where the last one closed, and y descends as burn rises');
     assert.equal((page.match(/<line class="rule"/g) || []).length, 3, 'one rule per stage');
 });
 
@@ -319,6 +328,86 @@ test('the spend polyline plots a running total across stages, not each stage\'s 
     assert.ok(spendLine, 'a spend polyline is drawn');
     assert.equal(spendLine[1], '4.0,86.0 108.0,58.7 212.0,58.7 316.0,4.0',
         'the two middle points sit at the level survey alone reached ($1 of $3), not at $0 or at $2');
+});
+
+test('a stage priced by no rate in the table is blank, not free', () => {
+    // Same three stages and the same two priced figures as the test above, with
+    // the middle stage carrying a model `lib/prices.js` has no rate for instead
+    // of carrying no spend at all. `costOf` answers `usd: 0` for it — the same
+    // number a stage that genuinely cost nothing would get — so reading `.usd`
+    // without checking `priced.length` prints `$0.00` in the table and plants a
+    // real point on the cumulative curve. Both are checked here: the fixed
+    // spend polyline is the four-point one, identical to the no-spend case
+    // above, because an unpriced stage is stepped over rather than plotted.
+    const m = chartFixture('22222222-9999-4999-8999-999999999999', {
+        task: 'one unpriced stage', stage: 'verify', route: ['survey', 'build', 'verify'],
+        clock: { survey: [0, 1000], build: [1000, 2000], verify: [2000, 3000] },
+        burn: { survey: [0, 50000], build: [50000, 90000], verify: [90000, 140000] },
+        spend: {
+            survey: { requests: 1, models: { 'claude-sonnet-5': { input: 500000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
+            build: { requests: 1, models: { 'claude-nonesuch-9': { input: 9000000, output: 9000000, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
+            verify: { requests: 1, models: { 'claude-sonnet-5': { input: 1000000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
+        },
+    });
+    assert.equal(m.registries[0].sessions[0].stages[1].usd, null,
+        'the unpriced stage carries no dollar figure at all, rather than zero');
+    const page = station.render(m, {});
+    assert.ok(!page.includes('$0.00'), 'no stage is printed as having cost nothing');
+    assert.match(page, /<td>build<\/td>[\s\S]*?<td>—<\/td><\/tr>/, 'the unpriced stage prints an em dash in the spend column');
+    assert.ok(page.includes('spend</span> to $3.00'), 'the two priced stages still total $3');
+    const spendLine = page.match(/<polyline class="spend" points="([^"]+)"/);
+    assert.ok(spendLine, 'a spend polyline is still drawn from the stages that are priced');
+    assert.equal(spendLine[1], '4.0,86.0 108.0,58.7 212.0,58.7 316.0,4.0',
+        'the unpriced stage contributes no point: four, not six');
+});
+
+// Finding 1 of the whole-branch review: the two scan-cut lines in the header
+// were reachable only from a model built by hand. `discover` called `scanRoots`
+// with no options, so every `--scan` walk ran at `deadline: Infinity` and
+// `timedOut` could not become true; and the one walk that did carry a deadline
+// — `autoScan` in `scripts/station.js` — printed its counts and threw them
+// away. These two tests take the two production routes.
+test('discover forwards a deadline into the scan, and the header says the scan ran out of time', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-deadline-page-'));
+    registry.ensureLayout(path.join(base, 'a', 'b'));
+    const m = station.gather({ configDir: path.join(base, 'cfg'), scan: [base], deadline: Date.now() - 1 });
+    assert.equal(m.scanStats.timedOut, true, 'the deadline reaches scanRoots through discover');
+    assert.match(station.render(m, {}), /the scan ran out of time/);
+});
+
+test('a caller that walked the machine itself hands its counts to the page write() produces', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scanstats-'));
+    const cfg = path.join(base, 'cfg');
+    // No `scan` at all: these numbers can only have come from `opts.scanStats`,
+    // which is how `scripts/station.js` hands `autoScan`'s own walk in.
+    const out = station.write({ configDir: cfg, cwd: base, scanStats: { depthCuts: 7, timedOut: true } });
+    const page = fs.readFileSync(out.file, 'utf8');
+    assert.match(page, /depth stopped the scan in 7 places/);
+    assert.match(page, /the scan ran out of time/);
+});
+
+// Finding 3 of the same review: `scripts/station.js` wrote `scannedAt` back
+// after every run and claimed that was what made the record durable. It was
+// not — the next `station.write()`, which every `/fankeel` prompt runs, rebuilt
+// roots.json through `rememberRoots` and dropped the key. The durability is
+// real now, and this is where it is pinned.
+test('a write of the page keeps every key in roots.json that is not a root record', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scanrec-'));
+    const cfg = path.join(base, 'cfg');
+    const ws = path.join(base, 'ws');
+    registry.ensureLayout(ws);
+    const file = station.rootsPath(cfg);
+    const scannedAt = { at: new Date().toISOString(), roots: 4, depthCuts: 2, timedOut: true };
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify({ [path.resolve(ws)]: new Date().toISOString(), scannedAt }, null, 2) + '\n');
+
+    station.write({ configDir: cfg, roots: [ws], cwd: base });
+
+    const after = JSON.parse(fs.readFileSync(file, 'utf8'));
+    assert.deepEqual(after.scannedAt, scannedAt, 'the scan record survives a write of the page');
+    assert.ok(typeof after[path.resolve(ws)] === 'string', 'and the root it was sitting beside is still remembered');
+    assert.deepEqual(Object.keys(station.readRoots(cfg)), [path.resolve(ws)],
+        'readRoots still sees one root: the carried key is not mistaken for one');
 });
 
 test('the page carries an inline script and still no script src', () => {
@@ -421,6 +510,7 @@ function makeEl(attrs) {
         hidden: false,
         textContent: '',
         value: '',
+        checked: false,
         listeners: {},
         getAttribute(name) {
             return Object.prototype.hasOwnProperty.call(el.attrs, name) ? el.attrs[name] : null;
@@ -445,7 +535,9 @@ function makeEl(attrs) {
 // key cannot hide behind another key happening to land on the same order:
 // updated desc -> [b,c,a]; started desc -> [a,b,c]; cost desc -> [c,a,b];
 // stage asc -> [b,a,c].
-function buildStub() {
+// `opts.auto` adds the auto-refresh checkbox the served page carries and the
+// static file does not, so both sides of SCRIPT's `if(auto)` are reachable.
+function buildStub(opts) {
     const a = makeEl({ 'data-updated': '100', 'data-started': '500', 'data-cost': '2', 'data-stage': 'build', 'data-text': 'alpha one' });
     const b = makeEl({ 'data-updated': '300', 'data-started': '200', 'data-cost': '1', 'data-stage': 'ares', 'data-text': 'beta two' });
     const c = makeEl({ 'data-updated': '200', 'data-started': '100', 'data-cost': '3', 'data-stage': 'verify', 'data-text': 'gamma three' });
@@ -460,7 +552,9 @@ function buildStub() {
         cost: mkBtn('cost', false),
         stage: mkBtn('stage', false),
     };
+    const auto = opts && opts.auto ? makeEl({ type: 'checkbox' }) : null;
     const byId = { q, shown };
+    if (auto) byId.auto = auto;
     const doc = {
         getElementById: (id) => byId[id] || null,
         querySelectorAll: (sel) => {
@@ -469,14 +563,25 @@ function buildStub() {
             throw new Error('stub does not implement selector: ' + sel);
         },
     };
-    return { doc, group, rows: { a, b, c }, q, shown, buttons };
+    return { doc, group, rows: { a, b, c }, q, shown, buttons, auto };
 }
 
-// Runs the real, exported SCRIPT string against the stub DOM.
+// Runs the real, exported SCRIPT string against the stub DOM. The three globals
+// the auto-refresh branch uses are recorded rather than swallowed: that branch
+// is a timer, a cancel and a reload, and a stub returning nothing from all
+// three leaves it with nothing to assert against.
 function runScript(doc) {
-    const sandbox = { document: doc, setTimeout: () => 0, clearTimeout: () => {}, location: { reload: () => {} } };
+    const timers = { set: [], cleared: [], reloads: 0 };
+    let handle = 0;
+    const sandbox = {
+        document: doc,
+        setTimeout: (fn, ms) => { timers.set.push({ fn, ms }); return ++handle; },
+        clearTimeout: (t) => { timers.cleared.push(t); },
+        location: { reload: () => { timers.reloads += 1; } },
+    };
     vm.createContext(sandbox);
     vm.runInContext(station.SCRIPT, sandbox);
+    sandbox.timers = timers;
     return sandbox;
 }
 
@@ -530,4 +635,28 @@ test('stage starts ascending on its first click while a numeric key starts desce
     runScript(numericStub.doc);
     numericStub.buttons.started.fire('click');
     assert.deepEqual(textOrder(numericStub.group), ['alpha one', 'beta two', 'gamma three'], 'started descending: a(500), b(200), c(100)');
+});
+
+test('ticking auto-refresh arms a thirty-second reload, and unticking it cancels', () => {
+    const s = buildStub({ auto: true });
+    const sandbox = runScript(s.doc);
+    assert.deepEqual(sandbox.timers.set, [], 'nothing is scheduled while the box is clear');
+    s.auto.checked = true;
+    s.auto.fire('change');
+    assert.equal(sandbox.timers.set.length, 1, 'ticking it schedules exactly one timer');
+    assert.equal(sandbox.timers.set[0].ms, 30000, 'thirty seconds, the interval the served page promises');
+    sandbox.timers.set[0].fn();
+    assert.equal(sandbox.timers.reloads, 1, 'and what it scheduled is a reload of the page');
+    s.auto.checked = false;
+    s.auto.fire('change');
+    assert.deepEqual(sandbox.timers.cleared, [1], 'unticking cancels the timer that ticking armed');
+    assert.equal(sandbox.timers.set.length, 1, 'and schedules nothing in its place');
+});
+
+test('the static page has no auto-refresh control and the script runs without one', () => {
+    const s = buildStub();
+    assert.equal(s.doc.getElementById('auto'), null, 'the file on disk ships no checkbox');
+    const sandbox = runScript(s.doc);
+    assert.deepEqual(sandbox.timers.set, [], 'so nothing is ever scheduled');
+    assert.equal(s.shown.textContent, '3 shown', 'and the rest of the script still ran');
 });

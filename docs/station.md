@@ -26,8 +26,8 @@ station has to be told, or find out. Seven sources, unioned:
 | `~/.claude/sessions/<pid>.json`, its `cwd`, walked up | every registry a running session is in, whether or not it has started a task |
 | the directory the command runs in, walked up — at `SessionEnd`, the ending session's own launch directory | the registry in front of you, including the one whose session is leaving the running set at that moment |
 | the registry the caller is writing into — a `task.js` verb's own | the one registry a verb can be sure of, whether or not anything else still points at it: `hideBadge` clears the lead before the page is written |
-| the first run, when there is no `roots.json` at all | one walk of every drive, under a five-second budget, recorded so it never repeats. It runs from `scripts/station.js` only and never from `write()` — `hooks/inject.js` calls `write()` on every `/fankeel` prompt, and a walk this long inside a hook would stall the prompt that triggered it |
-| `--scan <dir>` | a one-off walk of `<dir>`, eight levels deep, skipping `node_modules`, `.git` and dot-directories. What it finds is remembered, so it is run once per drive |
+| the first run, when there is no `roots.json` at all | one walk of every drive, under a five-second budget. What stops it repeating is the file itself: `main()` runs the walk only when `roots.json` is absent, and every `write()` creates it. It runs from `scripts/station.js` only and never from `write()` — `hooks/inject.js` calls `write()` on every `/fankeel` prompt, and a walk this long inside a hook would stall the prompt that triggered it |
+| `--scan <dir>` | a one-off walk of `<dir>`, eight levels deep, skipping `node_modules`, `.git` and dot-directories, under a sixty-second budget — a directory somebody named gets longer than one nobody asked about. What it finds is remembered, so it is run once per drive |
 | `--root <dir>` | anything else |
 | `--forget <dir>` | the only way a remembered root leaves the file |
 
@@ -44,6 +44,20 @@ backstop rather than the control. It counts both kinds of cut, and the page's
 header carries them — `depth stopped the scan in N places`, and `the scan ran
 out of time` — because a walk that could not reach everything otherwise looks
 exactly like one that found everything.
+
+Those two counts reach the header by two routes. A `--scan` walk is
+`discover`'s own, and `discover` forwards `opts.deadline` into it, so the
+counts come back in the model it builds. The first-run walk is not
+`discover`'s — `autoScan` in `scripts/station.js` does it before `write()` is
+called at all — so that walk hands its own numbers in as `opts.scanStats`,
+which `gather` prefers over anything `discover` found. Without both, the two
+header lines are reachable only from a model built by hand.
+
+The `scannedAt` key sitting beside the roots in that file is the record of the
+first-run walk, not the guard against a second: it says when the machine was
+swept and what stopped the sweep. `rememberRoots` owns the root records in
+`roots.json` and carries every other key across untouched, which is what keeps
+that record alive past the next `/fankeel` prompt.
 
 ## States
 
@@ -71,9 +85,16 @@ everything else.
 
 ### The curve
 
-An opened row draws what the session spent against how long it ran: an inline
-`<svg>`, x in milliseconds since `started`, with a faint rule and a letter at
-each stage boundary so the time axis reads without a tooltip.
+An opened row draws what the session spent against its own clock: an inline
+`<svg>`, x in milliseconds since the first stage's first `clock` sighting —
+`stages[0].from`, not the entry's `started`, which `chart()` never reads — with
+a faint rule and a letter at each stage boundary so the time axis reads without
+a tooltip. So the width printed in the legend is the clocked span, from that
+first sighting to the last stage's last, and not the elapsed run: a session
+whose clock started late, or stopped early, is drawn narrower than it lived.
+That is deliberate. A session's clock is what its stages are measured in, and
+an axis in one unit and rules in another would put the boundaries in the wrong
+places.
 
 Two series share the box, **each scaled to its own maximum**, and the two
 maxima are printed underneath in the series' colours. A dual axis is
@@ -95,6 +116,14 @@ at session end, so a live session does not have it yet and no session that
 ended before this shipped will ever have it. Below the chart is the table it
 is drawn from — one row per stage, with the minutes, the burn distance and
 the spend.
+
+A stage whose models the price table does not know has no dollar figure, not a
+figure of zero: `costOf` returns `usd: 0` there, and `gather` reads
+`priced.length` — the check `row()` already made for the summary cell — before
+believing it. So an unpriced stage prints `—` in the table and the cumulative
+curve steps over it rather than counting it as free. The output tokens shown
+instead of a dollar figure are the row's summary cell only; the per-stage
+surfaces say nothing rather than something wrong.
 
 ### Where per-stage spend comes from
 

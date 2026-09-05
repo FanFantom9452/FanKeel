@@ -93,6 +93,14 @@ function forget(configDir, dir) {
 // seconds for one drive would stall the prompt that triggered it.
 const AUTO_BUDGET_MS = 5000;
 
+// A directory the user named is not a directory nobody asked about, so `--scan`
+// gets its own, longer budget: it is the escape hatch for whatever the
+// automatic walk above could not reach, and a minute is what someone who typed
+// a path will sit through. It is still a bound — before this, `--scan` ran with
+// `deadline: Infinity`, so the walk had nothing but depth stopping it and the
+// page's `the scan ran out of time` line could not be reached from here.
+const SCAN_BUDGET_MS = 60000;
+
 // Every drive this machine has, each checked for existence rather than listed
 // by any OS call — Node carries no dependency-free API for that, and an
 // existence check on a drive letter is instant where walking one is not.
@@ -124,25 +132,16 @@ function autoScan() {
     return { roots, depthCuts, timedOut };
 }
 
-// The `scannedAt` record, read with `fs` rather than `station.readRoots` —
-// that reader's filter (a string that parses as a date) is exactly what keeps
-// this object-valued key from ever being mistaken for a remembered root by
-// `discover()`, so it has to be bypassed to read the key back.
-function readScanRecord(configDir) {
-    let data;
-    try {
-        data = JSON.parse(fs.readFileSync(station.rootsPath(configDir), 'utf8'));
-    } catch (e) {
-        return null;
-    }
-    return data && typeof data === 'object' && !Array.isArray(data) && data.scannedAt ? data.scannedAt : null;
-}
-
-// `station.write()`'s own `rememberRoots` rewrites `roots.json` from the
-// registries it just gathered and knows nothing of this key, so it drops it
-// on every call. Writing it back afterward — the record of a scan that ran,
-// or the one this run carried forward — is what makes "never repeats" survive
-// more than one invocation of this CLI.
+// The record of the first-run walk, written beside the roots so a reader can
+// see when the machine was last swept and what stopped the sweep.
+//
+// It is not what stops a second walk. `main()` decides that on whether
+// `roots.json` exists at all, and every `station.write()` — the `/fankeel`
+// prompt's included — creates it. So the guard is the file, and this key is
+// the record of what the file's creation replaced. `lib/station.js`'s
+// `rememberRoots` carries every non-root key across, which is what keeps this
+// one alive past the next hook; before it did, this record survived exactly
+// until the first prompt after the scan.
 function writeScanRecord(configDir, record) {
     const file = station.rootsPath(configDir);
     let data;
@@ -182,6 +181,12 @@ function serve(opts) {
     const configDir = opts.configDir || live.liveConfigDir();
     const nonce = crypto.randomBytes(16).toString('hex');
     const gatherOpts = { configDir, roots: opts.roots || [], scan: opts.scan || [], cwd: process.cwd() };
+    // A deadline is an absolute moment, so it is taken per request rather than
+    // once at listen: a `--scan` here is re-walked on every render, and one
+    // timestamp fixed at startup would leave every later request walking with a
+    // deadline already spent.
+    const modelNow = () => station.gather(Object.assign({}, gatherOpts,
+        gatherOpts.scan.length ? { deadline: Date.now() + SCAN_BUDGET_MS } : null));
     let timer = null;
     let server;
     const touch = () => {
@@ -195,7 +200,7 @@ function serve(opts) {
         touch();
         const url = new URL(req.url, 'http://127.0.0.1');
         if (req.method === 'GET' && url.pathname === '/') {
-            const html = station.render(station.gather(gatherOpts), { serve: true, nonce, plugin: PLUGIN });
+            const html = station.render(modelNow(), { serve: true, nonce, plugin: PLUGIN });
             res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
             res.end(html);
             return;
@@ -211,7 +216,7 @@ function serve(opts) {
             const id = form.get('id') || '';
             // The server has just measured liveness for the page; a row that is
             // live is not one the button is for, whatever the age rule says.
-            const model = station.gather(gatherOpts);
+            const model = modelNow();
             const reg = model.registries.find((r) => r.root === path.resolve(root));
             const row = reg && reg.sessions.find((s) => s.sessionId === id);
             if (!row) {
@@ -241,7 +246,7 @@ function serve(opts) {
                 res.end('wrong nonce: open the page this server printed and try again\n');
                 return;
             }
-            const model = station.gather(gatherOpts);
+            const model = modelNow();
             const reg = model.registries.find((r) => r.root === path.resolve(form.get('root') || ''));
             if (!reg) {
                 res.writeHead(404, { 'content-type': 'text/plain' });
@@ -307,10 +312,15 @@ function main() {
     // `rememberRoots` writes the file on every `write()`, hook-triggered ones
     // included, so once anything has run even once this stays false for good.
     const firstRun = !fs.existsSync(station.rootsPath(configDir));
-    const carried = firstRun ? null : readScanRecord(configDir);
     const scan = firstRun ? autoScan() : null;
     const out = station.write({
         configDir, roots: args.roots.concat(scan ? scan.roots : []), scan: args.scan, cwd: process.cwd(),
+        // What `autoScan` just measured, handed to the page rather than only
+        // printed below: `discover` never saw that walk, so without this the
+        // header's two scan-cut lines are unreachable on a first run. A
+        // `--scan` walk is `discover`'s own, and it is bounded here.
+        scanStats: scan ? { depthCuts: scan.depthCuts, timedOut: scan.timedOut } : undefined,
+        deadline: args.scan.length ? Date.now() + SCAN_BUDGET_MS : undefined,
         root: registry.findStateRoot(process.cwd()), plugin: PLUGIN,
     });
     if (scan) {
@@ -324,11 +334,6 @@ function main() {
             + scan.roots.length + ' registr' + (scan.roots.length === 1 ? 'y' : 'ies')
             + (scan.timedOut ? ' (ran out of time)' : scan.depthCuts ? ' (depth cut it ' + scan.depthCuts + ' places)' : '')
             + '\n');
-    } else if (carried) {
-        // `write()` above just erased it the same way; put back exactly what
-        // was there, so a run that did not scan neither repeats one nor loses
-        // the record that an earlier run already did.
-        writeScanRecord(configDir, carried);
     }
     process.stdout.write('fankeel station — ' + out.file + '\n'
         + '  ' + out.registries + ' registries · ' + out.live + ' live, ' + out.stale + ' stale, ' + out.down + ' down'
