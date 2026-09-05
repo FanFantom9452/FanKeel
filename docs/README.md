@@ -41,7 +41,6 @@ here.
 | Every fankeel session on this machine on one page, what each cost, and how an abandoned one is put down | [plans/2026-09-04-session-station-design.md](plans/2026-09-04-session-station-design.md) — *built* |
 | The eight tasks that build the station, with every test and every file written out | [plans/2026-09-04-session-station.md](plans/2026-09-04-session-station.md) — *built* |
 | Why six deferred decisions were settled in one pass, and what each one decided | [plans/2026-09-01-six-decisions-design.md](plans/2026-09-01-six-decisions-design.md) — *built* |
-| The six tasks that settled them, with every string and every test written out | [plans/2026-09-01-six-decisions.md](plans/2026-09-01-six-decisions.md) — *built* |
 | Which three of the four `## Ready` entries were documentation defects, and why the fourth could not be run here | [plans/2026-09-01-ready-backlog.md](plans/2026-09-01-ready-backlog.md) — *built* |
 | What a 174-agent review of the process-state design found on 2026-09-02, what was refuted, and what to fix first | [reports/2026-09-02-process-state-review.md](reports/2026-09-02-process-state-review.md) — *a dated snapshot, 繁體中文* |
 | What dispatching four readers cost against doing the same reading in-session, measured as a pair on 2026-09-03 | [reports/2026-09-03-dispatch-vs-inline.md](reports/2026-09-03-dispatch-vs-inline.md) — *a dated snapshot, 繁體中文* |
@@ -54,6 +53,8 @@ here.
 | The six tasks that put the Workflow threshold in what `groups` prints and anchored five stages' skill-only procedures | [plans/2026-09-05-stage-division.md](plans/2026-09-05-stage-division.md) — *design-intent* |
 | Why three stage skills are mostly rationale, and how the procedure stays in `SKILL.md` while the why moves beside it | [plans/2026-09-05-skill-split-design.md](plans/2026-09-05-skill-split-design.md) — *built* |
 | The four tasks that split those three skills: one test, then one implementer per skill with the rows and the pins | [plans/2026-09-05-skill-split.md](plans/2026-09-05-skill-split.md) — *built* |
+| Where a rule lives — script, anchor or skill — and the ten deferred decisions settled by applying it | [plans/2026-09-05-anchor-tiers-design.md](plans/2026-09-05-anchor-tiers-design.md) — *built* |
+| The five tasks that anchored four stages, mandated `**Interfaces:**`, and closed ten TODO entries | [plans/2026-09-05-anchor-tiers.md](plans/2026-09-05-anchor-tiers.md) — *built* |
 | What a full run on 0.44.0 found from outside this repository: eleven sessions never stood down, six registries station cannot see, 297,088 test directories, six tool defects | [reports/2026-09-05-field-report-0.44.0.md](reports/2026-09-05-field-report-0.44.0.md) — *a dated snapshot from another session* |
 | Where the four figures quoted during that build came from, and which two can only be checked on the machine that ran them | [reports/2026-09-05-stage-division-measurements.md](reports/2026-09-05-stage-division-measurements.md) — *a dated snapshot* |
 | What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |

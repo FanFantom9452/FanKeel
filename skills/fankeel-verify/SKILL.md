@@ -3,7 +3,7 @@ name: fankeel-verify
 description: The verify stage — evidence before claims, requirements checked line by line, and the documents this change just made false. Use for the verify stage of a fankeel task, before claiming work is complete or passing, before a commit or PR, or when checking whether a change broke the documentation describing it.
 version: 0.46.0
 status: current
-last_verified: 2026-09-04
+last_verified: 2026-09-05
 source_of_truth: lib/stages.js, scripts/docs-check.js
 ---
 
@@ -13,9 +13,9 @@ Produces evidence, not confidence.
 
 **Done when** every claim has a row with the evidence beside it, the adversary
 has read that table, and `docs-check` has been run. A row that did not hold does
-not reopen the stage —
-it is a finding, and sending the work back to `build` is a route decision made
-at the gate, not another lap around this one.
+not reopen the stage: it is a finding whose destination is `build` — the
+report's slot says `→ build` — and the gate is where it is sent, not another lap
+around this one.
 
 ## The iron law
 
@@ -170,8 +170,9 @@ and is already in the table above, and an adversary that mutates the tree cannot
 run beside anything else. Where the method does not say whether a check could have
 failed, that is itself the finding: say so rather than guess.
 
-A defeated row is a **ruling, not an automatic return to `build`** — the same
-standing the per-task reviewer's findings have.
+A defeated row goes to `build`, and the slot says so. It is a **ruling here and
+a route decision at the gate** — the same standing the per-task reviewer's
+findings have — never an automatic lap back through this stage.
 
 ## Half-built sends it back
 

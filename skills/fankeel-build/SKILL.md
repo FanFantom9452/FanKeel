@@ -65,7 +65,7 @@ below, each gets its review, and a ruling or a completion line goes in the
 response and then the commit message rather than through `ledger.js`.
 
 **The rows run in order, one at a time.** Nothing groups them: `parseTasks`
-reads `### Task` headings and the `**Files:**` and `**Interfaces:**` blocks
+reads `## Task` headings and the `**Files:**` and `**Interfaces:**` blocks
 under them, so a file table of any width yields no tasks at all and `groups` has
 nothing to group. Teaching the table to declare its paths would not be enough
 either — with no `**Interfaces:**` block `Consumes` and `Produces` stay empty,

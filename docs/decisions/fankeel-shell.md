@@ -554,3 +554,40 @@ matcher is correct either way — the self-check at `:66` covers an unchanged id
 and `live.isLive` at `:67` covers a predecessor still running — but nobody has
 watched a `fork` reach the hook. Correct in both branches is not the same as
 measured.
+
+## Where a rule lives is decided by tier, and ten rulings followed from it
+
+Dated 2026-09-05. Every stage's injection sat at 2382 to 2398 of the 2400 cap, and
+ten deferred decisions were one question asked ten ways: which of a stage's rules
+earns the cap, and where the rest go.
+[docs/plans/2026-09-05-anchor-tiers-design.md](../plans/2026-09-05-anchor-tiers-design.md)
+answered it once. A rule takes the first tier that can hold it: a **script**,
+where one can check or refuse it; an **anchor** — a template slot first, because a
+report cannot be filled without doing the step, else words on the stage's
+`Read the fankeel-<stage> skill on entry:` line — where skipping the step is
+silent and a later stage pays for it; the **skill** for the rest, and nothing
+load-bearing lives only there. Room is made by moving a rationale clause into
+the skill, never by raising the cap.
+
+What followed: `build` got a standalone pointer carrying worktree consent, the
+four-item brief, five rounds and resume-the-fixer, paying with two rationale
+clauses and the tail of its output rule; `design` got `spec file, self-review`
+on its pointer and a `spec:` slot, paying with two rationale clauses; `plan`
+mandates `**Interfaces:**` beside `**Files:**`, and `groups` keeps a task
+without the block off `workflow` the way it already did for a prose
+`Consumes:`; `verify`'s slot says `→ build`. No anchor for the manifest check,
+which fails loud, and none for a commit skeleton in `build`, which `land`
+carries. A no-plan route keeps nothing on disk, and a status line says `done`,
+`partial` or `blocked`.
+
+What it cost, by `tests/render.test.js` on the day: design 2387 to 2339, plan
+2387 to 2381, build 2398 to 2372, verify 2386 to 2394 — each within two
+characters of the design's estimate. Four workflows of `sonnet` agents — four
+implementers and four reviewers, five verifiers and five adversaries, seven
+readers — spent about 2.3 million subagent tokens. The two things none of them
+caught were found otherwise: the verify skill's own page said a defeated row was
+*not* a return to `build`, which the design's check against the map missed
+because the survey reader had cited the template line and not the paragraph
+under it; and `docs/pipeline.md`'s hand-copied example blocks still showed the
+old `build` rules, which the audit's pair readers found and a `## Ready` entry
+now asks a test to pin.

@@ -1,5 +1,5 @@
 ---
-status: current
+status: archived
 last_verified: 2026-09-01
 source_of_truth: scripts/task.js, scripts/survey.js, hooks/carry.js, .claude-plugin/plugin.json, lib/dirty.js, lib/registry.js, scripts/docs-check.js
 ---
@@ -443,7 +443,7 @@ writer would have to reverse-engineer from the page before writing a word.
 
 `docs/decisions/` holds **one page**, not one file per decision:
 `fankeel-shell.md`, with a `##` per decision. Follow that. Its frontmatter is
-`status: current`, `last_verified: 2026-08-30` — move that to `2026-09-01`.
+`status: archived`, `last_verified: 2026-08-30` — move that to `2026-09-01`.
 
 ### Step 1 — the hook silence section
 

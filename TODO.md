@@ -58,6 +58,7 @@ entry waited for actually happening. It shrinks when somebody reads it.
 - A markdown file outside `docs/` with no bucket is graded reference and never listed as unfiled: 3 of 29 on one repository — [scripts/docs-check.js](scripts/docs-check.js), lines 293-301.
 
 - Every test makes its own `mkdtempSync` and none removes it: 297,088 directories under %TEMP% on 09-05, about 4.5 GB, 20k a day — [tests/badge.test.js](tests/badge.test.js):16 is one of many.
+- `docs/pipeline.md` hand-copies two rendered `stage rules:` blocks; they went stale on 09-05 when build's rules changed — a test pinning them to `render()` — [docs/pipeline.md](docs/pipeline.md).
 
 ## Needs a decision
 
