@@ -55,19 +55,33 @@ function parseArgs(argv) {
 // Undoes what Task 6 made permanent: a root that has gone stays remembered
 // forever, on purpose, so putting one down needs a name rather than a wait.
 // Writes the same way `rememberRoots` does — a sibling, then a rename — since
-// `hooks/leave.js` can rewrite this same file at any moment.
+// `hooks/leave.js` can rewrite this same file at any moment. Reads the file
+// itself rather than through `station.readRoots` — that reader drops any
+// value that is not an ISO-date string, which is exactly the shape of the
+// `scannedAt` record, so building "before" from it would erase that record
+// on every `--forget` call regardless of which root was named.
 function forget(configDir, dir) {
     const target = path.resolve(dir);
-    const before = station.readRoots(configDir);
+    const file = station.rootsPath(configDir);
+    let before;
+    try {
+        before = JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch (e) {
+        before = {};
+    }
+    if (!before || typeof before !== 'object' || Array.isArray(before)) before = {};
     const known = Object.prototype.hasOwnProperty.call(before, target);
     const after = Object.assign({}, before);
     delete after[target];
-    const file = station.rootsPath(configDir);
     const temp = file + '.' + process.pid + '.tmp';
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(temp, JSON.stringify(after, null, 2) + '\n');
     registry.renameRetrying(temp, file);
-    const left = Object.keys(after).sort();
+    // Reported count is roots only, the same predicate `readRoots` filters
+    // by — `scannedAt` is kept in the file above but is not one to list here.
+    const left = Object.keys(after)
+        .filter((k) => typeof after[k] === 'string' && Number.isFinite(Date.parse(after[k])))
+        .sort();
     process.stdout.write((known ? 'forgot ' + target : target + ' was not remembered') + '\n'
         + (left.length ? left.length + ' remembered: ' + left.join(', ') : '0 remembered') + '\n');
 }

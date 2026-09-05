@@ -188,6 +188,24 @@ test('scanRoots finds a registry seven levels down', () => {
     assert.ok(found.roots.includes(path.resolve(deep)), 'depth 8 reaches seven levels down; depth 6 did not');
 });
 
+// The seven- and two-level tests above only prove SCAN_DEPTH is somewhere in
+// {7, 8} — both still pass at depth 7. These two pin it to 8 from each side.
+test('scanRoots finds a registry exactly eight levels down', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-depth8-'));
+    const deep = path.join(base, '1', '2', '3', '4', '5', '6', '7', '8');
+    registry.ensureLayout(deep);
+    const found = station.scanRoots(base);
+    assert.ok(found.roots.includes(path.resolve(deep)), 'depth 8 reaches eight levels down; depth 7 would not');
+});
+
+test('scanRoots does not find a registry nine levels down', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-depth9-'));
+    const deep = path.join(base, '1', '2', '3', '4', '5', '6', '7', '8', '9');
+    registry.ensureLayout(deep);
+    const found = station.scanRoots(base);
+    assert.ok(!found.roots.includes(path.resolve(deep)), 'depth 8 does not reach nine levels down; depth 9 would');
+});
+
 test('scanRoots stops when its deadline is spent and says so', () => {
     const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-deadline-'));
     registry.ensureLayout(path.join(base, 'a', 'b'));
@@ -363,6 +381,19 @@ test('each registry wraps its rows in one .rows div', () => {
     const notGone = m.registries.filter((r) => !r.gone).length;
     const page = station.render(m, {});
     assert.equal((page.match(/<div class="rows">/g) || []).length, notGone);
+});
+
+test('a registry with a stale row gets a /clear-stale button, naming the count, only when serving', () => {
+    const f = fixture();
+    const m = station.gather({ configDir: f.cfg });
+    const notServed = station.render(m, {});
+    const served = station.render(m, { serve: true, nonce: 'n0nce' });
+    assert.ok(!notServed.includes('action="/clear-stale"'), 'no bulk-clear form outside serve');
+    assert.ok(served.includes('action="/clear-stale"'), 'a bulk-clear form appears when serving');
+    assert.match(served, /clear all 1 stale/, 'the button names the stale count for that registry');
+    // Only r1 has a stale row (STALE); r2 (down two) has none, so it gets no button.
+    assert.equal((served.match(/action="\/clear-stale"/g) || []).length, 1,
+        'only the registry that actually has a stale row gets the button');
 });
 
 test('the auto-refresh control appears only when serving', () => {

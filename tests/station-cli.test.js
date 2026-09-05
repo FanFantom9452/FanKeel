@@ -202,6 +202,27 @@ test('POST /clear-stale reports the rows it refused', async () => {
     }
 });
 
+test('POST /clear-stale clears a too-fresh row when force is sent', async () => {
+    const f = clearStaleFixture(true);
+    const { serve } = require('../scripts/station.js');
+    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
+    try {
+        const page = await request(s.url, { method: 'GET' });
+        const nonce = /name="nonce" value="([^"]+)"/.exec(page.text)[1];
+        const form = (o) => new URLSearchParams(o).toString();
+        const res = await request(s.url + 'clear-stale',
+            { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } },
+            form({ root: f.r1, nonce, force: '1' }));
+        assert.equal(res.status, 303, 'force lets the whole batch clear rather than reporting a refusal');
+        assert.equal(res.headers.location, '/');
+        assert.equal(registry.readSession(f.r1, CS_FRESH).active, false, 'the too-fresh row is cleared when force is sent');
+        assert.equal(registry.readSession(f.r1, CS_OLD_A).active, false);
+        assert.equal(registry.readSession(f.r1, CS_OLD_B).active, false);
+    } finally {
+        s.close();
+    }
+});
+
 test('--forget drops one root and keeps the rest', () => {
     const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-forget-'));
     const cfg = path.join(base, 'cfg');
@@ -217,6 +238,25 @@ test('--forget drops one root and keeps the rest', () => {
     const after = JSON.parse(fs.readFileSync(rootsFile, 'utf8'));
     assert.ok(!Object.prototype.hasOwnProperty.call(after, drop), 'the forgotten root is gone');
     assert.ok(Object.prototype.hasOwnProperty.call(after, keep), 'the other root is kept');
+});
+
+test('--forget drops only the named root and keeps the scannedAt record', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-forget-scanrec-'));
+    const cfg = path.join(base, 'cfg');
+    const rootsFile = path.join(cfg, 'fankeel', 'roots.json');
+    fs.mkdirSync(path.dirname(rootsFile), { recursive: true });
+    const keep = path.resolve(path.join(base, 'keep'));
+    const drop = path.resolve(path.join(base, 'drop'));
+    const now = new Date().toISOString();
+    const scannedAt = { at: now, roots: 2, depthCuts: 0, timedOut: false };
+    fs.writeFileSync(rootsFile, JSON.stringify({ [keep]: now, [drop]: now, scannedAt }, null, 2) + '\n');
+    const env = { ...process.env, CLAUDE_CONFIG_DIR: cfg };
+    const out = execFileSync(process.execPath, [CLI, '--forget', drop], { cwd: base, env, encoding: 'utf8' });
+    assert.match(out, /forgot/);
+    const after = JSON.parse(fs.readFileSync(rootsFile, 'utf8'));
+    assert.ok(!Object.prototype.hasOwnProperty.call(after, drop), 'the forgotten root is gone');
+    assert.ok(Object.prototype.hasOwnProperty.call(after, keep), 'the other root is kept');
+    assert.deepEqual(after.scannedAt, scannedAt, 'the first-run scan record survives forgetting an unrelated root');
 });
 
 test('--forget on a root nobody remembers says so and changes nothing', () => {
