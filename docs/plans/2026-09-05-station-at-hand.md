@@ -105,7 +105,7 @@ function ensureIgnored(projectRoot, names) {
 }
 ```
 
-   Add `ensureIgnored` to the `module.exports` object at `:602`, beside `ensureLayout`.
+   Add `ensureIgnored,` and `renameRetrying,` to the `module.exports` object at `:602`, after `ensureLayout,`. `renameRetrying` (`:229`) is not exported today; Task 2 writes `roots.json` through it, and this is the task that opens the exports object.
 
 4. In `scripts/map.js`: delete line 16 (`const IGNORE_LINE = 'map.md';`) and the `keepIgnored` function with its comment (`:26-41`). Add `const registry = require('../lib/registry.js');` after the `lib/map.js` require at `:13`. Replace the call at `:47`:
 
@@ -136,7 +136,7 @@ Expected: `ℹ fail 0`. `tests/map-cli.test.js:35-50` pins `map.md`, `sessions/`
 - Test: `tests/station.test.js`
 
 **Interfaces:**
-- Consumes: `registry.ensureIgnored(projectRoot, names)` from Task 1.
+- Consumes: `registry.ensureIgnored(projectRoot, names)` and `registry.renameRetrying(temp, file)` from Task 1.
 - Produces:
   - `write(opts): { file: string, copy: string | null, registries: number, live: number, stale: number, down: number }` — `opts` as before plus `root?: string` (the registry to copy into; ignored unless `<root>/.fankeel/sessions/` exists), `scan?: string[]` (directories to walk), `now?: number`. Tasks 3, 4 and 5 read the return.
   - `discover(opts)` additionally reads `roots.json` and walks `opts.scan`.
@@ -305,7 +305,7 @@ function scanRoots(dir, depth) {
 }
 ```
 
-   `renameRetrying` is defined at `lib/registry.js:229` and is not exported. Add `renameRetrying,` to the `module.exports` object at `:602`, after `ensureLayout,` — this is the second caller of the Windows-safe rename, and the reason it retries is in the comment above it. `ensureIgnored` from Task 1 sits beside it.
+   `renameRetrying` is defined at `lib/registry.js:229` and Task 1 exported it beside `ensureIgnored` — this is the second caller of the Windows-safe rename, and the reason it retries is in the comment above it. Touch nothing in `lib/registry.js` here.
 
 5. In `discover` (`:40-54`), after the `runningSessions` loop and before the `opts.roots` loop, add:
 
