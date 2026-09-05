@@ -69,29 +69,9 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 - Whether a two-source join needs a fourth pair: fankeel-verify:99 cites 1.5× for readers each given a page and a diff, a shape no pair measured — [docs/subagents.md](docs/subagents.md).
 
-- Whether a no-plan route should keep its brief, report and ledger on disk — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md), the no-plan paragraph.
-
-- Whether an implementer needs a way to say it is blocked, against a return contract that is three lines on purpose — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
-
 - Whether `tested as subprocesses with real payloads` should be pinned like the count beside it — [tests/contract.test.js](tests/contract.test.js).
 
 - Whether `.claude/agents/` is documentation and wants a bucket — [.fankeel/docs.json](.fankeel/docs.json); the probe fixture made the unfiled count 2.
-
-- Whether `build` should name its skill like the other six do — it names it inside the ledger rule, and at 2398 of 2400 a standalone line costs 51 it lacks — [lib/stages.js](lib/stages.js).
-
-- Whether a load-bearing rule can live in a 53.8 KB skill at all: the one missed this session was at :916 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
-
-- Whether `design`'s spec file and self-review need an injected anchor — the skill has both steps, nothing re-sent names either — [lib/stages.js](lib/stages.js).
-
-- Whether `plan`'s `**Interfaces:**` block should be mandated where `**Files:**` already is — `groups` reads it and no rule asks for it — [lib/stages.js](lib/stages.js).
-
-- Whether `build`'s worktree consent, commit skeleton, five-round cap, four-item brief and resume-on-fix want anchors — five dropped for room — [lib/stages.js](lib/stages.js).
-
-- Whether an adversary-defeated row at `verify` is a ruling or reopens `build` — dropped from that stage's anchor set for room — [lib/stages.js](lib/stages.js).
-
-- Whether `audit`'s knip-or-deptry manifest choice needs an anchor — dropped as the one candidate whose failure is not silent — [lib/stages.js](lib/stages.js).
-
-- Whether the `Read the fankeel-<stage> skill` pointer is where an anchor should always go — measured cheapest in every stage — [lib/stages.js](lib/stages.js).
 
 - Whether the `3 of 5 pair readers` figure has a source — its own citation points at a file that carries no such measurement — [TODO.md](TODO.md).
 
