@@ -467,3 +467,21 @@ test('the event does not stop the stamp being read', () => {
   assert.deepEqual(result.problems, []);
   assert.equal(result.overdue[0].days, 20);
 });
+
+// What the list is for. It used to report that nobody had read the section,
+// which is a fact about the reader; the event is a fact about the world, and
+// only one of the two can be gone and checked.
+test('the re-read list names the event to check', () => {
+  const file = fixture('# TODO\n\n## Waiting\n\n- a. lifts when: the pool overflows. ' + stampFor(20) + '.\n');
+  const result = todo.check(file, NOW);
+  assert.equal(result.overdue[0].lifts, 'the pool overflows');
+  assert.match(todo.report(result), /the pool overflows/);
+});
+
+// The control. The line above passes against a report that prints the whole
+// entry, which is what it printed before.
+test('the re-read list does not print the rest of the entry', () => {
+  const file = fixture('# TODO\n\n## Waiting\n\n- the pool is unbounded. lifts when: it overflows. '
+    + stampFor(20) + '.\n');
+  assert.doesNotMatch(todo.report(todo.check(file, NOW)), /unbounded/);
+});

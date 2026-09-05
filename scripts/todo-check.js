@@ -113,6 +113,11 @@ function liftsAt(text) {
     return event || null;
 }
 
+// Whether the day arithmetic slips a day across a DST transition is untested.
+// It matches `docs-audit.js`'s `daysBetween`, and every machine this has run on
+// keeps one offset all year, so there has been nothing to observe rather than
+// something observed and dismissed.
+//
 // The most recent `MM-DD` that is not in the future. Read on 5 January, a
 // `12-15` is three weeks back and not eleven months forward, and that rollover
 // is the only case where a missing year can be got wrong.
@@ -222,7 +227,7 @@ function check(file, now) {
                 });
             } else {
                 const days = Math.floor((at - stamped) / 86400000);
-                if (days >= REREAD_DAYS) overdue.push({ line: entry.line, days, text: entry.text });
+                if (days >= REREAD_DAYS) overdue.push({ line: entry.line, days, text: entry.text, lifts: liftsAt(entry.text) });
             }
             // Independent of the stamp. An entry can carry a date and still be
             // waiting for nothing, and that is the case the date cannot show:
@@ -305,10 +310,13 @@ function report(result) {
     // under `Waiting` for a month and be filed correctly the whole time — so the
     // run stays green and the list is the prompt to go and look.
     if (result.overdue && result.overdue.length) {
-        lines.push('', '  due for a re-read — nobody has confirmed these are still waiting in '
+        lines.push('', '  due for a re-read — nobody has said these events have not happened in '
             + REREAD_DAYS + ' days or more:');
         for (const o of result.overdue) {
-            const short = o.text.replace(/\s+/g, ' ').trim();
+            // The event, not the entry. What a reader can act on is whether the
+            // thing has happened, and the rest of the entry is the part they
+            // already skipped every time the menu left this section out.
+            const short = (o.lifts || o.text).replace(/\s+/g, ' ').trim();
             lines.push('    ' + result.file + ':' + o.line + '  ' + String(o.days).padStart(3)
                 + ' days  ' + (short.length > 72 ? short.slice(0, 71) + '…' : short));
         }
@@ -349,4 +357,4 @@ if (require.main === module) {
     process.exit(ok ? 0 : 1);
 }
 
-module.exports = { MAX_ENTRY_CHARS, REREAD_DAYS, SECTIONS, linksIn, check, main };
+module.exports = { MAX_ENTRY_CHARS, REREAD_DAYS, SECTIONS, linksIn, check, report, main };
