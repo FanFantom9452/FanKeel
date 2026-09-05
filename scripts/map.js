@@ -11,9 +11,9 @@ const path = require('node:path');
 const { parseArgs: parseArgv } = require('node:util');
 
 const { buildMap, pagesByStatus } = require('../lib/map.js');
+const registry = require('../lib/registry.js');
 
 const MAP_REL = '.fankeel/map.md';
-const IGNORE_LINE = 'map.md';
 
 // A declared flag given no value comes back `true` rather than a string, so the
 // default is restored by type; `strict: false` keeps an unknown flag silent.
@@ -22,29 +22,13 @@ function parseArgs(argv) {
     return { root: path.resolve(typeof values.root === 'string' ? values.root : process.cwd()) };
 }
 
-// The map is generated, so committing it would put a file in review that nobody
-// wrote. The ignore file is created if it is missing, because the state dir may
-// not exist yet on a project that has never started a task.
-function keepIgnored(stateDir) {
-    const file = path.join(stateDir, '.gitignore');
-    let text = '';
-    try {
-        text = fs.readFileSync(file, 'utf8');
-    } catch (e) { /* first run */ }
-    const lines = text.split(/\r?\n/).filter(Boolean);
-    // sessions/ is the registry, build/ is one plan's ledger and scratch, and
-    // map.md is generated. None of the three is a file anybody should review.
-    for (const want of ['sessions/', 'build/', IGNORE_LINE]) {
-        if (!lines.includes(want)) lines.push(want);
-    }
-    fs.writeFileSync(file, lines.join('\n') + '\n');
-}
-
 function main(argv) {
     const { root } = parseArgs(argv);
     const stateDir = path.join(root, '.fankeel');
     fs.mkdirSync(stateDir, { recursive: true });
-    keepIgnored(stateDir);
+    // The map is generated, so committing it would put a file in review that
+    // nobody wrote. sessions/ is the registry and build/ is one plan's ledger.
+    registry.ensureIgnored(root, ['sessions/', 'build/', 'map.md']);
 
     const text = buildMap(root);
     const out = path.join(root, MAP_REL);

@@ -225,6 +225,19 @@ test('an existing .fankeel/.gitignore is never overwritten', () => {
   assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\nscratch/\n');
 });
 
+// The append `scripts/map.js` had for `map.md`, lifted here so the station's
+// copy under `.fankeel/` is ignored the same way. It writes only when a line is
+// missing: a file somebody edited by hand comes back byte-identical.
+test('ensureIgnored appends only what is missing and leaves a complete file alone', () => {
+  const root = tmpRoot();
+  assert.equal(registry.ensureIgnored(root, ['sessions/', 'station.html']), true);
+  const ignore = path.join(root, '.fankeel', '.gitignore');
+  assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\nstation.html\n');
+  fs.writeFileSync(ignore, 'sessions/\nscratch/\nstation.html\n');
+  assert.equal(registry.ensureIgnored(root, ['station.html']), false);
+  assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\nscratch/\nstation.html\n');
+});
+
 test('touch advances updated and leaves every other field byte-identical', () => {
   const root = tmpRoot();
   const t = task();
