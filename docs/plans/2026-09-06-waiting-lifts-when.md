@@ -54,6 +54,11 @@ agreed on 2026-09-06.
   `kinds(file, now)` are the helpers. Use them; do not write new ones.
 - `scripts/todo-check.js:324` — `module.exports = { MAX_ENTRY_CHARS,
   REREAD_DAYS, SECTIONS, linksIn, check, main }`. Task 2 adds `report`.
+- `node --test` here prints `✔` and `✖` per test and a summary of `ℹ pass N` /
+  `ℹ fail N`. There are no TAP `ok` / `not ok` lines, so a filter for them
+  matches nothing and reads as silence rather than as green — this was ruled on
+  during the 2026-09-05 build and is recorded in that plan's ledger. Judge a run
+  on the summary lines and on an unpiped exit code.
 
 ## File structure
 
