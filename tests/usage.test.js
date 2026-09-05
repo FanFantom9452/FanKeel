@@ -114,3 +114,52 @@ test('agentsOf is null with no agents, and summariseTree nests it under usage on
     assert.equal(usage.summariseTree(path.join(os.tmpdir(), 'fankeel-no-such.jsonl')), null);
     assert.equal(usage.agentsOf('not-a-jsonl-path'), null);
 });
+
+test('summarise buckets requests into the stage windows it is given', () => {
+    const u = { input_tokens: 1, output_tokens: 1 };
+    const file = transcript([
+        assistant('r1', 'claude-sonnet-5', u, { timestamp: new Date(10).toISOString() }),
+        assistant('r2', 'claude-sonnet-5', u, { timestamp: new Date(20).toISOString() }),
+        assistant('r3', 'claude-sonnet-5', u, { timestamp: new Date(110).toISOString() }),
+        assistant('r4', 'claude-sonnet-5', u, { timestamp: new Date(120).toISOString() }),
+    ]);
+    const windows = [{ stage: 'survey', from: 0, to: 100 }, { stage: 'design', from: 100, to: Infinity }];
+    const bare = usage.summarise(file);
+    const staged = usage.summarise(file, { stages: windows });
+    assert.equal(staged.usage.stages.survey.requests, 2);
+    assert.equal(staged.usage.stages.design.requests, 2);
+    assert.equal(staged.usage.requests, 4);
+    assert.deepEqual(staged.usage.models, bare.usage.models);
+});
+
+test('a request whose lines straddle a boundary lands in its last line stage', () => {
+    const u = { input_tokens: 1, output_tokens: 1 };
+    const file = transcript([
+        assistant('r1', 'claude-sonnet-5', u, { timestamp: new Date(90).toISOString() }),
+        assistant('r1', 'claude-sonnet-5', u, { timestamp: new Date(110).toISOString() }),
+    ]);
+    const windows = [{ stage: 'survey', from: 0, to: 100 }, { stage: 'design', from: 100, to: Infinity }];
+    const staged = usage.summarise(file, { stages: windows });
+    assert.equal(staged.usage.stages.design.requests, 1);
+    assert.equal(staged.usage.stages.survey, undefined);
+});
+
+test('summarise with no stages returns exactly what it returned before', () => {
+    const file = transcript([
+        assistant('req_1', 'claude-fable-5-1', { input_tokens: 10, output_tokens: 100, cache_read_input_tokens: 1000,
+            cache_creation_input_tokens: 40, cache_creation: { ephemeral_5m_input_tokens: 10, ephemeral_1h_input_tokens: 30 } }),
+        assistant('req_2', 'claude-sonnet-5', { input_tokens: 5, output_tokens: 7, cache_read_input_tokens: 0, cache_creation_input_tokens: 12 }),
+    ]);
+    const seen = usage.summarise(file);
+    assert.equal(seen.usage.stages, undefined);
+    assert.deepEqual(seen, {
+        model: 'claude-fable-5-1',
+        usage: {
+            requests: 2,
+            models: {
+                'claude-fable-5-1': { input: 10, output: 100, cacheRead: 1000, cacheWrite5m: 10, cacheWrite1h: 30 },
+                'claude-sonnet-5': { input: 5, output: 7, cacheRead: 0, cacheWrite5m: 12, cacheWrite1h: 0 },
+            },
+        },
+    });
+});
