@@ -116,12 +116,11 @@ test('agentsOf is null with no agents, and summariseTree nests it under usage on
 });
 
 test('summarise buckets requests into the stage windows it is given', () => {
-    const u = { input_tokens: 1, output_tokens: 1 };
     const file = transcript([
-        assistant('r1', 'claude-sonnet-5', u, { timestamp: new Date(10).toISOString() }),
-        assistant('r2', 'claude-sonnet-5', u, { timestamp: new Date(20).toISOString() }),
-        assistant('r3', 'claude-sonnet-5', u, { timestamp: new Date(110).toISOString() }),
-        assistant('r4', 'claude-sonnet-5', u, { timestamp: new Date(120).toISOString() }),
+        assistant('r1', 'claude-sonnet-5', { input_tokens: 10, output_tokens: 1 }, { timestamp: new Date(10).toISOString() }),
+        assistant('r2', 'claude-sonnet-5', { input_tokens: 20, output_tokens: 2 }, { timestamp: new Date(20).toISOString() }),
+        assistant('r3', 'claude-opus-5', { input_tokens: 30, output_tokens: 3 }, { timestamp: new Date(110).toISOString() }),
+        assistant('r4', 'claude-opus-5', { input_tokens: 40, output_tokens: 4 }, { timestamp: new Date(120).toISOString() }),
     ]);
     const windows = [{ stage: 'survey', from: 0, to: 100 }, { stage: 'design', from: 100, to: Infinity }];
     const bare = usage.summarise(file);
@@ -129,6 +128,12 @@ test('summarise buckets requests into the stage windows it is given', () => {
     assert.equal(staged.usage.stages.survey.requests, 2);
     assert.equal(staged.usage.stages.design.requests, 2);
     assert.equal(staged.usage.requests, 4);
+    assert.deepEqual(staged.usage.stages.survey.models, {
+        'claude-sonnet-5': { input: 30, output: 3, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+    });
+    assert.deepEqual(staged.usage.stages.design.models, {
+        'claude-opus-5': { input: 70, output: 7, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+    });
     assert.deepEqual(staged.usage.models, bare.usage.models);
 });
 
