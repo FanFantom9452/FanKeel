@@ -36,6 +36,10 @@ not skipped for a quarter.
 
 Quote what came back. A description of what a scanner said is not what it said.
 
+A dead path is a bug in a reference document and history in an archive.
+`docs-check` reads the role from `docs.json` and grades it that way, which is
+why the injected rule no longer says so: the script holds it.
+
 ### The one that is not about documents
 
 `residue.js` asks what is in this tree that nobody decided about. There is no
@@ -165,6 +169,7 @@ node <plugin>/scripts/docs-audit.js
 - path:line × path:line — what they disagree about, and which one the code supports
 
 adversary: <what it defeated, or none>
+pairs disagree: <where, or omit this line>
 routed: <heading — the entry, or omit this line>
 clean: <what you read and found nothing wrong in>
 then AskUserQuestion

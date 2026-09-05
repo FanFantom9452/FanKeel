@@ -128,7 +128,7 @@ stage rules:
   - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path forward a guess.
   - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code, comments or formatting. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
   - A new document is the last resort: use an existing page, or write a generator when it derives from code. One written carries status, last_verified and source_of_truth.
-  - Read the fankeel-build skill on entry: worktree consent, four-item brief, five rounds, resume the fixer.
+  - Read the fankeel-build skill on entry: worktree consent, four-item brief, five rounds, resume the fixer, commit shape.
   - Output: one line per file, then the question. Under 80 words.
 
 output shape:
@@ -211,7 +211,7 @@ stage rules:
   - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path forward a guess.
   - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code, comments or formatting. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
   - A new document is the last resort: use an existing page, or write a generator when it derives from code. One written carries status, last_verified and source_of_truth.
-  - Read the fankeel-build skill on entry: worktree consent, four-item brief, five rounds, resume the fixer.
+  - Read the fankeel-build skill on entry: worktree consent, four-item brief, five rounds, resume the fixer, commit shape.
   - Output: one line per file, then the question. Under 80 words.
 
 output shape:

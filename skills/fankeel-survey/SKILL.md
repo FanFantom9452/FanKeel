@@ -259,6 +259,7 @@ planned, not built: <the pages, or "none">
 not found: <terms that matched nothing>
 skipped: <what, and why — not N>
 class: <class> — <why>
+route: <unchanged, or the task.js route line>
 then AskUserQuestion
 ```
 

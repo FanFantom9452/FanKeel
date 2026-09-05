@@ -314,8 +314,9 @@ test('no stage repeats another stage tool', () => {
 });
 
 test('no rule is a placeholder', () => {
-  // TODO.md is a filename a rule legitimately names, so the word only counts as
-  // a placeholder when it is not followed by an extension.
+  // TODO.md is a filename and todo-check.js a script a rule legitimately names,
+  // so the word only counts as a placeholder when it is not followed by an
+  // extension or by `-check`.
   //
   // Double-quoted spans are dropped first. The plan stage's rule refuses these
   // words by listing them, and a guard that cannot tell naming a word from using
@@ -323,7 +324,7 @@ test('no rule is a placeholder', () => {
   // a plan full of TBDs, with nothing forbidding it.
   const unquoted = (r) => r.replace(/"[^"]*"/g, '');
   for (const r of ALWAYS.concat(...STAGES.map((s) => s.rules))) {
-    assert.equal(/\bTODO\b(?!\.)|\bTBD\b|placeholder|fill in/i.test(unquoted(r)), false, r);
+    assert.equal(/\bTODO\b(?!\.|-check)|\bTBD\b|placeholder|fill in/i.test(unquoted(r)), false, r);
   }
 });
 
@@ -644,7 +645,24 @@ test('design, plan, build and verify carry the anchors the design paid for', () 
   assert.match(rules('design'), /Read the fankeel-design skill on entry: spec file, self-review\./);
   assert.match(templateFor('design'), /^spec: <the docs\/plans path — architectural — or "in chat">$/m);
   assert.match(rules('plan'), /carries `\*\*Files:\*\*`, `\*\*Interfaces:\*\*` and a `\*\*Dispatch:\*\*` line/);
-  assert.match(rules('build'), /Read the fankeel-build skill on entry: worktree consent, four-item brief, five rounds, resume the fixer\./);
+  assert.match(rules('build'), /Read the fankeel-build skill on entry: worktree consent, four-item brief, five rounds, resume the fixer, commit shape\./);
   assert.doesNotMatch(rules('build'), /skill has loop and scan/);
   assert.match(templateFor('verify'), /- adversary: <the claim it defeated → build, or "nothing">/);
+});
+
+// The last three anchors and two words on build's pointer
+// (docs/plans/2026-09-05-anchor-remaining-design.md). Same carrier as the test
+// above: a step whose skipping is silent rides the pointer line or a slot, and
+// each one paid with a rationale clause that the stage's skill already carried.
+test('survey, plan, audit and build carry the anchors the second design paid for', () => {
+  const rules = (n) => rulesFor(n).join(' ');
+  assert.match(rules('survey'), /Read the fankeel-survey skill on entry: ratchet the class with task\.js route\./);
+  assert.doesNotMatch(rules('survey'), /Those pages are intent, not drift/);
+  assert.match(templateFor('survey'), /^route: <unchanged, or the task\.js route line>$/m);
+  assert.match(rules('plan'), /Read the fankeel-plan skill on entry: Test: what it writes, no-dispatch on every task\./);
+  assert.doesNotMatch(rules('plan'), /rather than remembered/);
+  assert.match(rules('audit'), /Read the fankeel-audit skill on entry: todo-check after a move\./);
+  assert.doesNotMatch(rules('audit'), /A dead path is a bug/);
+  assert.match(templateFor('audit'), /^pairs disagree: <where, or omit this line>$/m);
+  assert.match(rules('build'), /resume the fixer, commit shape\./);
 });
