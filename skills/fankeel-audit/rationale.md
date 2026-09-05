@@ -137,4 +137,5 @@ needing a maintained table it names an outside tool for.
 are not fixing here goes to `TODO.md` under `## Ready`, `## Needs a decision` or
 `## Waiting`, and that line names which — a finding that exists only in this
 report is one the next sweep finds again from scratch. One routed to `## Waiting`
-ends with a `MM-DD` stamp, or `todo-check.js` refuses it.
+names the event with `lifts when:` and then carries a `MM-DD` stamp, or
+`todo-check.js` refuses it without either.

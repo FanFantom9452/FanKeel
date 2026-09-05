@@ -23,31 +23,44 @@ often one that is ready and one that is still an argument.
 Whoever defers a thing picks its heading, because they know at that moment which
 of the three they are short of. A later reader has to guess.
 
-An entry under `## Waiting` ends with a `MM-DD` stamp, and the stamp is **the day
-somebody last read it and agreed it is still waiting** — not the day it was
-filed. Re-read one, decide it is still blocked, and move the stamp forward in the
-same change. This is the only heading that asks for one: `## Ready` and
+An entry under `## Waiting` carries two things at its end, in this order:
+`lifts when: <the event>`, and then a `MM-DD` stamp. The event is what would make
+the entry actionable — real use, upstream, or another entry landing — and it is
+the one that says whether the entry belongs under this heading at all. On
+2026-09-06 twelve of the thirteen entries here named no event anybody could
+write down, and four of those twelve turned out to be waiting on nothing that
+was ever going to arrive. The stamp is **the day somebody last read it and
+agreed it is still waiting**, not the day it was filed: re-read one, decide it
+is still blocked, and move the stamp forward in the same change. The stamp goes
+last, because that is where the check looks for it.
+
+This is the only heading that asks for either. `## Ready` and
 `## Needs a decision` are read aloud every time `/fankeel` offers a menu, so they
 get looked at whether anyone meant to or not, and `## Waiting` is deliberately
 skipped there. It is the section nothing makes you open, which is why it is the
-one that needs a date saying when you last did.
+one that has to say what it is waiting for and when you last agreed it was.
 
-`node scripts/todo-check.js` enforces all five: a link that no longer resolves is
+`node scripts/todo-check.js` enforces all six: a link that no longer resolves is
 an entry someone forgot to close, a link that still resolves but points at a
 plan, a decision record, a report or an archive is the same entry one step
 earlier — those four roles record a moment rather than the present, so the detail
 behind the bullet is pointing at history however fresh that history is — an entry
 over the length cap is detail written here instead of where it belongs, an entry
-under any other heading is one nobody said the state of, and a `## Waiting` entry
-with no stamp is one nobody can tell a fresh deferral from a forgotten one.
+under any other heading is one nobody said the state of, a `## Waiting` entry
+with no stamp is one nobody can tell a fresh deferral from a forgotten one, and a
+`## Waiting` entry with no `lifts when:` is one nobody is waiting for.
 
-It also prints, without failing the run, every `## Waiting` entry whose stamp is
-seven days or older. That list is not a defect report — an entry can sit there
-correctly filed for a month. It is the prompt to go and re-read, because in this
-repository's whole history `## Waiting` has never once shrunk by the thing an
-entry waited for actually happening. It shrinks when somebody reads it.
+It also prints, without failing the run, the event of every `## Waiting` entry
+whose stamp is seven days or older — so what you are asked is whether that event
+has happened, which is a question about the world rather than about you. That
+list is not a defect report: an entry can sit there correctly filed for a month.
+Before the event was written down this printed the entry itself, and in this
+repository's whole history `## Waiting` had never once shrunk by the thing an
+entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
+
+- `skills/fankeel/SKILL.md:599` sends people to `/fankeel-station` for a page the `/fankeel` block already names; the skill can go — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
 
 - `ledger.js` has no verb for build step 3's scan table; two sessions on 09-05 appended it to progress.md by hand, which is what the ledger exists to avoid — [scripts/ledger.js](scripts/ledger.js).
 
@@ -62,6 +75,14 @@ entry waited for actually happening. It shrinks when somebody reads it.
 - Three cuts from the 09-05 over-engineering review: `write()` re-tallies what `render()` counts; `rememberRoots` and `ensureIgnored` return values nothing reads — [lib/station.js](lib/station.js).
 
 - `station.write` costs 1.4 s per `task.js` verb at 12 registries: `readAll` over 169 entries is most of it, and `adopt` pays it twice — [lib/station.js](lib/station.js).
+
+- `LANDED_QUIET` is three days, picked from 8 plans inside a 0–4 day band; seven more landed between 09-01 and 09-06, so the band can be measured again — [scripts/docs-audit.js](scripts/docs-audit.js).
+
+- The `brief-probe` fixture has never been run, and the fresh terminal it needed has happened — [.claude/agents/brief-probe.md](.claude/agents/brief-probe.md).
+
+- Whether an output style reaches a subagent at all: set one in `/config`, dispatch one agent, and read what it was given — [lib/render.js](lib/render.js).
+
+- `docs-audit`'s pairs: 4 of 28 read once, none of them wrong. Reading more is what decides whether `LANDMARK = 4` earns its output — [scripts/docs-audit.js](scripts/docs-audit.js).
 
 ## Needs a decision
 
@@ -83,18 +104,12 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Waiting
 
-- Whether a flag a verb ignores should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses the same value. None observed. 09-01.
+- Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it. lifts when: a run is seen ignoring one. 09-06.
 
-- Whether three days is the right settle period — [scripts/docs-audit.js](scripts/docs-audit.js), `LANDED_QUIET`. Picked from 8 plans on one repo, all inside a 0–4 day band. 09-01.
-- Whether a stated `Done when` actually ends the gate loop, or only renames it — [lib/stages.js](lib/stages.js), ALWAYS[0]'s `or none`. It lives in the model loop; no test here reaches it. 09-01.
-- An MCP write tool is covered wherever git reports it — [lib/dirty.js](lib/dirty.js) reads only `git status --porcelain`. Writes outside the repo are the part no test can pin. 09-01.
-- Language patterns beyond the ten [scripts/survey.js](scripts/survey.js) knows. Anything else is listed under `skipped.noPattern` for a human; add a row when one is actually needed. 09-01.
-- A per-`agent_type` subagent brief — [lib/render.js](lib/render.js) appends the type as a label. Two types measured 09-04, briefs byte-identical; which deserves its own is real use's answer. 09-04.
-- Whether an output style reaches subagents at all — none in what three subagent runs received on 09-04. Needs one active in `/config` to tell "not sent" from "nothing to send". 09-04.
-- A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI, so the default reminder is what the three get. 09-04.
-- Whether the pairs [scripts/docs-audit.js](scripts/docs-audit.js) picks are worth reading — `LANDMARK = 4` is the filter that decides. 4 of 28 read once, none of them wrong. 09-01.
-- Whether `fanoutSync`'s all-or-nothing payload ever costs anything — [lib/tracked.js](lib/tracked.js). One 64MB overflow discards every answer and re-reads all thirty serially. 09-01.
-- Whether the day arithmetic slips a day across a DST transition — [scripts/todo-check.js](scripts/todo-check.js). Matches `docs-audit.js`'s `daysBetween`; no DST here. 09-01.
-- The fixed probe fixture has never been run — [.claude/agents/brief-probe.md](.claude/agents/brief-probe.md); the agent registry is read at process start, so it needs a fresh terminal. 09-04.
+- Language patterns beyond the ten [scripts/survey.js](scripts/survey.js) knows. Anything else is listed under `skipped.noPattern` for a human. lifts when: a repository needs an eleventh. 09-06.
 
-- Whether the disjointness sentence should be withheld per group rather than per report — [scripts/ledger.js](scripts/ledger.js), the `prose.length` gate. A clean group loses an accurate claim. 09-04.
+- A per-`agent_type` subagent brief — [lib/render.js](lib/render.js) appends the type as a label. Two compared 09-04, byte-identical. lifts when: two types' briefs are seen to differ. 09-06.
+
+- A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI. lifts when: Claude Code ships one. 09-06.
+
+- Whether `fanoutSync`'s payload costs anything: a 64MB overflow discards every answer and re-reads all thirty serially — [lib/tracked.js](lib/tracked.js). lifts when: one is observed. 09-06.

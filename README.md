@@ -269,8 +269,9 @@ prints the split, so the ready count is on screen without opening the file. The
 `land` stage rules call for it, because a plan deleted at `land` is a link that
 just died.
 
-An entry under `## Waiting` also carries a `MM-DD` stamp, and it is checked for.
-The stamp is the day somebody last read that entry and agreed it is still
+An entry under `## Waiting` also carries `lifts when: <the event>` and then a
+`MM-DD` stamp, and todo-check fails when either is missing. The stamp is the
+day somebody last read that entry and agreed it is still
 waiting — not the day it was filed — so re-reading one and leaving it where it is
 means moving its stamp forward. Entries stamped seven days or older are printed
 below the verdict as **due for a re-read**, without failing the run: sitting under
