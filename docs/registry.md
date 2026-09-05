@@ -84,7 +84,7 @@ A third field is written by nobody the user talks to. `claims` holds every file
 this task has edited — at most sixty, each recorded whole and never truncated,
 because nothing here is a path a human retypes. The two writers reach that cap
 from opposite directions. A path arriving on its own drops the oldest to make
-room (`lib/registry.js:551`); a git pass holding more than sixty is refused
+room (`lib/registry.js:569`); a git pass holding more than sixty is refused
 whole rather than trimmed (`lib/dirty.js:173`), because trimming it would evict
 every claim an edit earned and put build output in its place.
 [collisions.md](collisions.md) is the page for that. Two hooks append to it,

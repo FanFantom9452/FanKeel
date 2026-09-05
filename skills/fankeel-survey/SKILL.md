@@ -232,14 +232,14 @@ classification made silently is one nobody can disagree with.
 
 The entry already exists: `task.js start` ran at `/fankeel`, with the class said
 there — or all seven stages when none was — and `start` refuses an active entry
-(`scripts/task.js:461`). What this step writes is the class step 5 arrived at,
+(`scripts/task.js:476`). What this step writes is the class step 5 arrived at,
 when it differs:
 
 ```
 node <plugin>/scripts/task.js route "survey,design,build,verify,land" --session <id>
 ```
 
-`route` takes the stages and derives the class from them (`scripts/task.js:914`);
+`route` takes the stages and derives the class from them (`scripts/task.js:929`);
 the stage the task is in has to be on the new route. Quote its output on the
 `route:` line of the report, or write `unchanged`. Up is always allowed. Down is
 allowed only from the seven-stage default nobody said — a class someone said at
