@@ -310,7 +310,7 @@ function report(result) {
     // under `Waiting` for a month and be filed correctly the whole time — so the
     // run stays green and the list is the prompt to go and look.
     if (result.overdue && result.overdue.length) {
-        lines.push('', '  due for a re-read — nobody has said these events have not happened in '
+        lines.push('', '  due for a re-read — nobody has checked these events in '
             + REREAD_DAYS + ' days or more:');
         for (const o of result.overdue) {
             // The event, not the entry. What a reader can act on is whether the
