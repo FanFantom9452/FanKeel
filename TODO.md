@@ -104,12 +104,12 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Waiting
 
-- Whether a flag a verb ignores should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0. lifts when: a run is seen ignoring one. 09-06.
+- Whether a flag a verb ignores should be refused — [scripts/ledger.js](scripts/ledger.js). `--range x ranges` exits 0 where `complete` refuses it. lifts when: a run is seen ignoring one. 09-06.
 
 - Language patterns beyond the ten [scripts/survey.js](scripts/survey.js) knows. Anything else is listed under `skipped.noPattern` for a human. lifts when: a repository needs an eleventh. 09-06.
 
-- A per-`agent_type` subagent brief — [lib/render.js](lib/render.js) appends the type as a label. Two compared 09-04, byte-identical. lifts when: a type appears whose brief should differ. 09-06.
+- A per-`agent_type` subagent brief — [lib/render.js](lib/render.js) appends the type as a label. Two compared 09-04, byte-identical. lifts when: two types' briefs are seen to differ. 09-06.
 
 - A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI. lifts when: Claude Code ships one. 09-06.
 
-- Whether `fanoutSync`'s all-or-nothing payload ever costs anything — [lib/tracked.js](lib/tracked.js). One 64MB overflow discards every answer. lifts when: an overflow is observed. 09-06.
+- Whether `fanoutSync`'s payload costs anything: a 64MB overflow discards every answer and re-reads all thirty serially — [lib/tracked.js](lib/tracked.js). lifts when: an overflow is observed. 09-06.
