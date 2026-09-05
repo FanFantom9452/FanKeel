@@ -501,6 +501,12 @@ abbreviated format produces something that looks like the format and is not it.
 The stage rules name their own skill, so this table is for the reader rather
 than for the pipeline.
 
+Which of the three holds a rule is decided by tier, tried in order: a script,
+where one can check or refuse it; an anchor — a template slot, else words on the
+stage's `Read the fankeel-<stage> skill on entry:` line — where skipping it is
+silent and a later stage pays; the skill for the rest. Nothing load-bearing
+lives only in a skill, this one included. `docs/pipeline.md` has the table.
+
 ## Where documents live
 
 `<project>/.fankeel/docs.json`, version-controlled — `.fankeel/.gitignore`

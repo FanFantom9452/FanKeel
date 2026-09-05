@@ -298,6 +298,23 @@ repository rather than your familiarity with it — it means the flow being chan
 is already here to read, so a new project is architectural however well you know
 the kind of thing it is. When in doubt, take the heavier one.
 
+### Where a rule lives
+
+Every stage's injection sits within twenty characters of the 2400 cap
+(`tests/render.test.js` prints each figure), so a rule earns its place by tier,
+tried in this order:
+
+| tier | holds | why it is enough |
+|---|---|---|
+| script | anything a script can check or refuse — a missing block, a stage off the route, a prose `Consumes:` | the check runs whether or not anyone read the rule |
+| anchor | a step whose skipping is silent and a later stage pays for: a template slot where the step produces something the report must show, else words on the `Read the fankeel-<stage> skill on entry:` line | both are re-sent every prompt |
+| skill | the procedure's detail, the format, the why | read once on entering the stage; nothing load-bearing lives only here |
+
+Room is made by moving a rationale clause into the stage's skill, never by
+raising the cap.
+[docs/plans/2026-09-05-anchor-tiers-design.md](plans/2026-09-05-anchor-tiers-design.md)
+applied this to ten deferred decisions.
+
 ## Inside each stage
 
 The table above says what each stage produces. Below is how each one gets there:
