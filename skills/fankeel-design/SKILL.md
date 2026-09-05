@@ -112,6 +112,7 @@ Then ask the user to read it, and wait.
 proves it done: <the test that fails now and passes after>
 against the map: <the page it touches, or "no conflict">
 unverified: <the one thing you have not checked>
+spec: <the docs/plans path — architectural — or "in chat">
 then AskUserQuestion
 ```
 

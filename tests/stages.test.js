@@ -84,11 +84,10 @@ test('a full injection of rules stays under a few hundred characters', () => {
   //
   // That headroom is not the real constraint any more. `tests/render.test.js`
   // caps the whole injection at 2400 measured against a reference plugin root,
-  // and `build` alone sits within twenty characters of it. `audit`, `plan` and
-  // `survey` are within thirty; `design`, `verify` and `land` have hundreds of
-  // characters spare, so read the diagnostics that test prints rather than this
-  // sentence before deciding a stage has no room. For the four nearest it, a
-  // rule added here has to displace one there first. That is the point.
+  // and every stage sits within twenty characters of it — measured 2026-09-05,
+  // when design had 13 spare and build 2. Read the diagnostics that test prints
+  // rather than this sentence before deciding a stage has room: a rule added
+  // here displaces one there first. That is the point.
   for (const name of NAMES) {
     const size = rulesFor(name).join('\n').length;
     assert.ok(size < 2000, name + ' rules are ' + size + ' chars');
@@ -635,4 +634,17 @@ test('the design rules tell the gate when the route needs plan', () => {
     rules.some((r) => r.includes('put `plan` on the route')),
     'design does not name the route upgrade'
   );
+});
+
+// The anchor tiers (docs/plans/2026-09-05-anchor-tiers-design.md): a step whose
+// skipping is silent rides the stage's pointer line or a template slot, both
+// re-sent every prompt. These are the four the design paid for.
+test('design, plan, build and verify carry the anchors the design paid for', () => {
+  const rules = (n) => rulesFor(n).join(' ');
+  assert.match(rules('design'), /Read the fankeel-design skill on entry: spec file, self-review\./);
+  assert.match(templateFor('design'), /^spec: <the docs\/plans path — architectural — or "in chat">$/m);
+  assert.match(rules('plan'), /carries `\*\*Files:\*\*`, `\*\*Interfaces:\*\*` and a `\*\*Dispatch:\*\*` line/);
+  assert.match(rules('build'), /Read the fankeel-build skill on entry: worktree consent, four-item brief, five rounds, resume the fixer\./);
+  assert.doesNotMatch(rules('build'), /skill has loop and scan/);
+  assert.match(templateFor('verify'), /- adversary: <the claim it defeated → build, or "nothing">/);
 });

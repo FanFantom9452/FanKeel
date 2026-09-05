@@ -187,7 +187,7 @@ $ <command>
 ```
 - <what you claimed> — held / did not hold
 - docs: <page:line that is now false, or "none">
-- adversary: <the claim it defeated, or "nothing">
+- adversary: <the claim it defeated → build, or "nothing">
 then AskUserQuestion
 ```
 
