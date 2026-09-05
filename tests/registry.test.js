@@ -784,3 +784,44 @@ test('waitedOf is null for a stage that never waited', () => {
   assert.equal(registry.waitedOf({ waited: { design: 0 } }, 'design'), null);
   assert.equal(registry.waitedOf({ waited: { design: 4000 } }, 'design'), 4000);
 });
+
+// `seriesOf` reads `clock` directly rather than the order its keys were
+// inserted in, because that order is route order, and route order is not when
+// a stage actually opened.
+test('seriesOf orders stages by when they were entered, not by route order', () => {
+  const data = { clock: { build: [500, 600], survey: [100, 200] } };
+  assert.deepEqual(registry.seriesOf(data).map((w) => w.stage), ['survey', 'build']);
+});
+
+test('seriesOf carries the raw burn pair, not the distance', () => {
+  const data = { clock: { survey: [100, 200] }, burn: { survey: [100, 400] } };
+  assert.deepEqual(registry.seriesOf(data)[0].burn, [100, 400]);
+  assert.equal(registry.burnOf(data, 'survey'), 300);
+});
+
+test('seriesOf leaves burn null for a stage sampled once', () => {
+  const data = { clock: { survey: [100, 200] }, burn: { survey: [100] } };
+  const series = registry.seriesOf(data);
+  assert.equal(series[0].stage, 'survey');
+  assert.equal(series[0].burn, null);
+});
+
+test('windowsFrom runs each stage to the next one and the last to Infinity', () => {
+  const clock = { survey: [10, 20], design: [30, 40] };
+  assert.deepEqual(registry.windowsFrom(clock), [
+    { stage: 'survey', from: -Infinity, to: 30 },
+    { stage: 'design', from: 30, to: Infinity },
+  ]);
+});
+
+// `spendOf` is written once, at session end, by `hooks/leave.js` — it is
+// absent on every entry from before that hook learned to write it, and on
+// every session still running.
+test('spendOf is null for a stage with no spend recorded', () => {
+  assert.equal(registry.spendOf(task(), 'survey'), null);
+  assert.equal(registry.spendOf({ spend: { survey: { requests: 1 } } }, 'survey'), null);
+  assert.deepEqual(
+    registry.spendOf({ spend: { survey: { requests: 1, models: {} } } }, 'survey'),
+    { requests: 1, models: {} }
+  );
+});
