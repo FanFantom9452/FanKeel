@@ -234,3 +234,56 @@ test('the stage table prints the burn distance, not the pair', () => {
     assert.ok(page.includes('400k'), 'the distance between the pair, 500000 - 100000');
     assert.ok(!page.includes('500k'), 'not the raw upper value of the survey pair');
 });
+
+test('the page carries an inline script and still no script src', () => {
+    const f = fixture();
+    const m = station.gather({ configDir: f.cfg });
+    const page = station.render(m, {});
+    assert.ok(page.includes('<script>'), 'the controls ship as an inline script');
+    assert.ok(!page.includes('<script src='), 'the page loads no external script');
+});
+
+test('each row carries the attributes the script sorts on', () => {
+    const f = fixture();
+    const m = station.gather({ configDir: f.cfg });
+    const page = station.render(m, {});
+    const rows = page.match(/<details class="s[^>]*>/g) || [];
+    assert.equal(rows.length, 3, 'one details tag per session in the fixture');
+    for (const r of rows) {
+        assert.match(r, /data-updated="\d+"/, r);
+        assert.match(r, /data-started="\d+"/, r);
+        assert.match(r, /data-cost="[\d.]+"/, r);
+        assert.match(r, /data-stage="[a-z]*"/, r);
+    }
+});
+
+test('data-text is written lower-cased', () => {
+    const m = chartFixture('12121212-1212-4212-8212-121212121212', {
+        task: 'Live One', stage: 'Build', route: ['survey', 'build'],
+    });
+    const page = station.render(m, {});
+    const found = page.match(/data-text="([^"]*)"/);
+    assert.ok(found, 'a data-text attribute is present');
+    assert.ok(found[1].includes('live one'), found[1]);
+    assert.ok(!found[1].includes('Live One'), found[1]);
+});
+
+test('each registry wraps its rows in one .rows div', () => {
+    const f = fixture();
+    const gone = path.join(f.base, 'gone-registry');
+    badge.writeLead(f.cfg, DOWN, { word: 'land', root: gone });
+    const m = station.gather({ configDir: f.cfg });
+    assert.ok(m.registries.some((r) => r.gone), 'the fixture includes a gone registry');
+    const notGone = m.registries.filter((r) => !r.gone).length;
+    const page = station.render(m, {});
+    assert.equal((page.match(/<div class="rows">/g) || []).length, notGone);
+});
+
+test('the auto-refresh control appears only when serving', () => {
+    const f = fixture();
+    const m = station.gather({ configDir: f.cfg });
+    const notServed = station.render(m, {});
+    const served = station.render(m, { serve: true, nonce: 'n0nce' });
+    assert.ok(!notServed.includes('id="auto"'), 'no auto-refresh outside serve');
+    assert.ok(served.includes('id="auto"'), 'auto-refresh appears when serving');
+});
