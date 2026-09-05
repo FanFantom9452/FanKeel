@@ -397,6 +397,17 @@ test('a /fankeel prompt is answered with the id the hooks use', () => {
   const text = context(run({ session_id: MINE, cwd: dir, prompt: '/fankeel' }, cfg));
   assert.match(text, new RegExp(MINE));
   assert.match(text, /--session/, 'it has to say what the id is for');
+  assert.match(text, /^station: \d+ stale, \d+ live — /m, 'the block names the page');
+  assert.ok(fs.existsSync(path.join(cfg, 'fankeel', 'station.html')), 'the page was written at the prompt');
+});
+
+test('a /fankeel prompt inside a registry leaves a copy of the page beside it', () => {
+  const root = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  seed(root, THEIRS, { active: false });
+  run({ session_id: MINE, cwd: root, prompt: '/fankeel' }, cfg);
+  assert.ok(fs.existsSync(path.join(root, '.fankeel', 'station.html')));
+  assert.match(fs.readFileSync(path.join(root, '.fankeel', '.gitignore'), 'utf8'), /^station\.html$/m);
 });
 
 // The cost stays on that one prompt. Every other prompt in every session on the

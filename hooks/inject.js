@@ -18,8 +18,9 @@ const path = require('node:path');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
+const station = require('../lib/station.js');
 const context = require('../lib/context.js');
-const { render, renderInit } = require('../lib/render.js');
+const { render, renderInit, PLUGIN_ROOT } = require('../lib/render.js');
 const { overlapPaths } = require('../lib/overlap.js');
 const { guardMode } = require('../lib/guard.js');
 const { positionIn } = require('../lib/stages.js');
@@ -59,6 +60,17 @@ function main(raw) {
     let mine = registry.readSession(root, sessionId);
     if (!mine || mine.active !== true) {
         const starting = startsFankeel(payload.prompt);
+        const dir = claudeConfigDir();
+
+        // The page, before the block that names it. `write` is a few hundred
+        // milliseconds against this hook's five-second budget, and a failure
+        // here costs one line of the block rather than the block.
+        let page = null;
+        if (starting && dir) {
+            try {
+                page = station.write({ configDir: dir, cwd: launch, root, plugin: PLUGIN_ROOT });
+            } catch (e) { /* housekeeping */ }
+        }
 
         // The one prompt where the id is about to be typed into `task.js`, and
         // the only moment anything here can say what it is. Nothing else on
@@ -82,12 +94,11 @@ function main(raw) {
             process.stdout.write(JSON.stringify({
                 hookSpecificOutput: {
                     hookEventName: 'UserPromptSubmit',
-                    additionalContext: renderInit({ sessionId }),
+                    additionalContext: renderInit({ sessionId, station: page }),
                 },
             }));
         }
 
-        const dir = claudeConfigDir();
         if (dir) {
             try {
                 if (!mine && starting) {
