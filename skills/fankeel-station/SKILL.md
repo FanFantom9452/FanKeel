@@ -1,7 +1,7 @@
 ---
 name: fankeel-station
 description: Every fankeel session on this machine on one page — live, abandoned and stood down, with what each cost — and a button to put an abandoned one down. Use for /fankeel-station, "show all sessions", "which sessions are still open", "clean up old sessions", or "監控站".
-version: 0.47.0
+version: 0.48.0
 status: current
 last_verified: 2026-09-04
 source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js
