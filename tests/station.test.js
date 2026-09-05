@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const vm = require('node:vm');
 const registry = require('../lib/registry.js');
 const badge = require('../lib/badge.js');
 const station = require('../lib/station.js');
@@ -235,6 +236,29 @@ test('the stage table prints the burn distance, not the pair', () => {
     assert.ok(!page.includes('500k'), 'not the raw upper value of the survey pair');
 });
 
+test('the spend polyline plots a running total across stages, not each stage\'s own usd', () => {
+    // Three stages, one priced by `prices.costOf`, the middle one uninvoiced.
+    // A running total of $1 then $3 only comes from `running += w.usd`
+    // carrying the total across the null-usd stage; plotting each stage's own
+    // usd, or letting a null-usd stage clear the total, both collapse the
+    // final figure to $2 — see the mutation notes in the Task 4 report.
+    const m = chartFixture('11111111-8888-4888-8888-888888888888', {
+        task: 'real spend, three stages', stage: 'verify', route: ['survey', 'build', 'verify'],
+        clock: { survey: [0, 1000], build: [1000, 2000], verify: [2000, 3000] },
+        burn: { survey: [0, 50000], build: [50000, 90000], verify: [90000, 140000] },
+        spend: {
+            survey: { requests: 1, models: { 'claude-sonnet-5': { input: 500000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
+            verify: { requests: 1, models: { 'claude-sonnet-5': { input: 1000000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
+        },
+    });
+    const page = station.render(m, {});
+    assert.ok(page.includes('spend</span> to $3.00'), 'the legend totals the running sum, not the last stage priced');
+    const spendLine = page.match(/<polyline class="spend" points="([^"]+)"/);
+    assert.ok(spendLine, 'a spend polyline is drawn');
+    assert.equal(spendLine[1], '4.0,86.0 108.0,58.7 212.0,58.7 316.0,4.0',
+        'the two middle points sit at the level survey alone reached ($1 of $3), not at $0 or at $2');
+});
+
 test('the page carries an inline script and still no script src', () => {
     const f = fixture();
     const m = station.gather({ configDir: f.cfg });
@@ -243,18 +267,36 @@ test('the page carries an inline script and still no script src', () => {
     assert.ok(!page.includes('<script src='), 'the page loads no external script');
 });
 
-test('each row carries the attributes the script sorts on', () => {
+// A shape-only regex (`\d+`, `[a-z]*`) passes on "0" everywhere or on an empty
+// `data-stage=""` — `*` allows zero characters. This checks the value each
+// attribute actually carries against what that session's own record says, so
+// a wrong field, a swapped session, or a blanked-out value fails it.
+test('each row carries the attributes belonging to that session, not just numeric shape', () => {
     const f = fixture();
     const m = station.gather({ configDir: f.cfg });
     const page = station.render(m, {});
-    const rows = page.match(/<details class="s[^>]*>/g) || [];
-    assert.equal(rows.length, 3, 'one details tag per session in the fixture');
-    for (const r of rows) {
-        assert.match(r, /data-updated="\d+"/, r);
-        assert.match(r, /data-started="\d+"/, r);
-        assert.match(r, /data-cost="[\d.]+"/, r);
-        assert.match(r, /data-stage="[a-z]*"/, r);
+    const blocks = page.match(/<details class="s[^"]*"[^>]*>[\s\S]*?<\/details>/g) || [];
+    assert.equal(blocks.length, 3, 'one details block per session in the fixture');
+    const cases = [
+        { id: LIVE, root: f.r1, cost: '0' },
+        { id: STALE, root: f.r1, cost: '0' },
+        { id: DOWN, root: f.r2, cost: '12' },
+    ];
+    for (const c of cases) {
+        const block = blocks.find((b) => b.includes('<code>' + c.id + '</code>'));
+        assert.ok(block, 'a details block exists for ' + c.id);
+        const data = registry.readSession(c.root, c.id);
+        const updated = String(Date.parse(data.updated) || 0);
+        const started = String(Date.parse(data.started) || 0);
+        assert.match(block, new RegExp('data-updated="' + updated + '"'), c.id + ' data-updated should be ' + updated);
+        assert.match(block, new RegExp('data-started="' + started + '"'), c.id + ' data-started should be ' + started);
+        assert.match(block, new RegExp('data-cost="' + c.cost + '"'), c.id + ' data-cost should be ' + c.cost);
+        assert.match(block, new RegExp('data-stage="' + data.stage + '"'), c.id + ' data-stage should be ' + data.stage);
     }
+    // The stages differ across the three fixture sessions (build/design/land),
+    // so a bug that writes the same stage everywhere, or an empty string,
+    // could not satisfy all three assertions above.
+    assert.equal(new Set(cases.map((c) => registry.readSession(c.root, c.id).stage)).size, 3);
 });
 
 test('data-text is written lower-cased', () => {
@@ -286,4 +328,131 @@ test('the auto-refresh control appears only when serving', () => {
     const served = station.render(m, { serve: true, nonce: 'n0nce' });
     assert.ok(!notServed.includes('id="auto"'), 'no auto-refresh outside serve');
     assert.ok(served.includes('id="auto"'), 'auto-refresh appears when serving');
+});
+
+// The markup tests above prove the DOM contract exists; they never run the
+// script that reads it, so a reversed comparator or a broken filter would
+// leave all of them green. This stub implements only what `station.SCRIPT`
+// actually calls: getElementById, querySelectorAll, addEventListener,
+// getAttribute, setAttribute, appendChild, `.hidden` and `.textContent`.
+// The script itself runs for real, inside `node:vm` (built in, no
+// dependency), as the exact string `lib/station.js` exports and ships —
+// never a re-typed copy that could drift from it.
+function makeEl(attrs) {
+    const el = {
+        attrs: Object.assign({}, attrs),
+        children: [],
+        parent: null,
+        hidden: false,
+        textContent: '',
+        value: '',
+        listeners: {},
+        getAttribute(name) {
+            return Object.prototype.hasOwnProperty.call(el.attrs, name) ? el.attrs[name] : null;
+        },
+        setAttribute(name, v) { el.attrs[name] = String(v); },
+        addEventListener(type, fn) { (el.listeners[type] = el.listeners[type] || []).push(fn); },
+        fire(type) { (el.listeners[type] || []).forEach((fn) => fn.call(el)); },
+        appendChild(child) {
+            if (child.parent) {
+                const i = child.parent.children.indexOf(child);
+                if (i !== -1) child.parent.children.splice(i, 1);
+            }
+            child.parent = el;
+            el.children.push(child);
+            return child;
+        },
+    };
+    return el;
+}
+
+// Four sort keys, each producing a different order, so a mis-sort on any one
+// key cannot hide behind another key happening to land on the same order:
+// updated desc -> [b,c,a]; started desc -> [a,b,c]; cost desc -> [c,a,b];
+// stage asc -> [b,a,c].
+function buildStub() {
+    const a = makeEl({ 'data-updated': '100', 'data-started': '500', 'data-cost': '2', 'data-stage': 'build', 'data-text': 'alpha one' });
+    const b = makeEl({ 'data-updated': '300', 'data-started': '200', 'data-cost': '1', 'data-stage': 'ares', 'data-text': 'beta two' });
+    const c = makeEl({ 'data-updated': '200', 'data-started': '100', 'data-cost': '3', 'data-stage': 'verify', 'data-text': 'gamma three' });
+    const group = makeEl({});
+    group.appendChild(a); group.appendChild(b); group.appendChild(c);
+    const q = makeEl({});
+    const shown = makeEl({});
+    const mkBtn = (k, pressed) => makeEl({ 'data-sort': k, 'aria-pressed': pressed ? 'true' : 'false' });
+    const buttons = {
+        updated: mkBtn('updated', true),
+        started: mkBtn('started', false),
+        cost: mkBtn('cost', false),
+        stage: mkBtn('stage', false),
+    };
+    const byId = { q, shown };
+    const doc = {
+        getElementById: (id) => byId[id] || null,
+        querySelectorAll: (sel) => {
+            if (sel === '.rows') return [group];
+            if (sel === '.bar button[data-sort]') return Object.values(buttons);
+            throw new Error('stub does not implement selector: ' + sel);
+        },
+    };
+    return { doc, group, rows: { a, b, c }, q, shown, buttons };
+}
+
+// Runs the real, exported SCRIPT string against the stub DOM.
+function runScript(doc) {
+    const sandbox = { document: doc, setTimeout: () => 0, clearTimeout: () => {}, location: { reload: () => {} } };
+    vm.createContext(sandbox);
+    vm.runInContext(station.SCRIPT, sandbox);
+    return sandbox;
+}
+
+const textOrder = (group) => group.children.map((el) => el.attrs['data-text']);
+
+test('SCRIPT sorts by updated, descending, as soon as it loads', () => {
+    const s = buildStub();
+    runScript(s.doc);
+    assert.deepEqual(textOrder(s.group), ['beta two', 'gamma three', 'alpha one']);
+    assert.equal(s.shown.textContent, '3 shown');
+});
+
+test('typing in the filter hides non-matching rows and updates the shown count', () => {
+    const s = buildStub();
+    runScript(s.doc);
+    s.q.value = 'beta';
+    s.q.fire('input');
+    assert.equal(s.rows.a.hidden, true);
+    assert.equal(s.rows.b.hidden, false);
+    assert.equal(s.rows.c.hidden, true);
+    assert.equal(s.shown.textContent, '1 of 3 shown');
+});
+
+test('clicking a sort button reorders the rows within its .rows group', () => {
+    const s = buildStub();
+    runScript(s.doc);
+    s.buttons.cost.fire('click');
+    assert.deepEqual(textOrder(s.group), ['gamma three', 'alpha one', 'beta two'], 'cost descending: c(3), a(2), b(1)');
+    assert.equal(s.buttons.cost.attrs['aria-pressed'], 'true');
+    assert.equal(s.buttons.updated.attrs['aria-pressed'], 'false');
+});
+
+test('clicking the same sort button twice reverses the order', () => {
+    const s = buildStub();
+    runScript(s.doc);
+    s.buttons.cost.fire('click');
+    const first = textOrder(s.group);
+    s.buttons.cost.fire('click');
+    const second = textOrder(s.group);
+    assert.deepEqual(first, ['gamma three', 'alpha one', 'beta two']);
+    assert.deepEqual(second, ['beta two', 'alpha one', 'gamma three'], 'reversed: b(1), a(2), c(3)');
+});
+
+test('stage starts ascending on its first click while a numeric key starts descending', () => {
+    const stageStub = buildStub();
+    runScript(stageStub.doc);
+    stageStub.buttons.stage.fire('click');
+    assert.deepEqual(textOrder(stageStub.group), ['beta two', 'alpha one', 'gamma three'], 'ares < build < verify');
+
+    const numericStub = buildStub();
+    runScript(numericStub.doc);
+    numericStub.buttons.started.fire('click');
+    assert.deepEqual(textOrder(numericStub.group), ['alpha one', 'beta two', 'gamma three'], 'started descending: a(500), b(200), c(100)');
 });
