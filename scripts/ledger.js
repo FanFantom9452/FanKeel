@@ -216,6 +216,9 @@ function main(argv) {
             + (noInterfaces.length
                 ? '\n\nNo Interfaces block, so never a workflow: ' + noInterfaces.join(', ')
                 : '')
+            // Whether this should be withheld per group rather than per report is
+            // open: a clean group in a plan that carries one prose `Consumes:`
+            // somewhere else loses an accurate claim about itself.
             + (prose.length
                 ? '\n\nConsumes text names a task already in its own group, worth a look:\n  '
                     + prose.join('\n  ')
