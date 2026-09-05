@@ -152,7 +152,8 @@ test('the entry names the three headings it could have sat under', () => {
 });
 
 test('all three headings are accepted', () => {
-  const body = todo.SECTIONS.map((s) => '## ' + s + '\n\n- one under ' + s + ' ' + TODAY + '.\n').join('\n');
+  const body = todo.SECTIONS.map((s) => '## ' + s + '\n\n- one under ' + s
+    + (s === 'Waiting' ? ' lifts when: it happens.' : '') + ' ' + TODAY + '.\n').join('\n');
   const file = fixture('# TODO\n\n' + body);
   assert.deepEqual(kinds(file), []);
   assert.deepEqual(todo.check(file).counts, { Ready: 1, 'Needs a decision': 1, Waiting: 1 });
@@ -162,7 +163,7 @@ test('all three headings are accepted', () => {
 // backlog of thirty is unreadable as one list, and the ready count is the number
 // that says whether there is a task to start.
 test('a clean run reports the count under each heading', () => {
-  const file = fixture('# TODO\n\n## Ready\n\n- a\n- b\n\n## Needs a decision\n\n- c\n\n## Waiting\n\n- d ' + TODAY + '.\n');
+  const file = fixture('# TODO\n\n## Ready\n\n- a\n- b\n\n## Needs a decision\n\n- c\n\n## Waiting\n\n- d lifts when: it happens. ' + TODAY + '.\n');
   const { out, code } = run(file);
   assert.equal(code, 0);
   assert.match(out, /4 entries — 2 ready, 1 needs a decision, 1 waiting/);
@@ -198,8 +199,8 @@ const TREE = JSON.stringify({
 test('an entry citing a decision record is a stale citation, one citing a reference page is not', () => {
   const file = fixture(
     '# TODO\n\n## Waiting\n\n'
-      + '- Whether `audit` earns a place — [why](docs/decisions/shell.md), "What is still a guess". ' + TODAY + '.\n'
-      + '- A per-`agent_type` subagent brief — [subagents](docs/subagents.md). ' + TODAY + '.\n',
+      + '- Whether `audit` earns a place — [why](docs/decisions/shell.md), "What is still a guess". lifts when: it happens. ' + TODAY + '.\n'
+      + '- A per-`agent_type` subagent brief — [subagents](docs/subagents.md). lifts when: it happens. ' + TODAY + '.\n',
     {
       '.fankeel/docs.json': TREE,
       'docs/decisions/shell.md': '# why\n\n## What is still a guess\n\nWhether `survey` earns its place.\n',
@@ -214,7 +215,7 @@ test('an entry citing a decision record is a stale citation, one citing a refere
 // The live one. A plan is archived or deleted at `land`, so an entry whose detail
 // lives in one is a dead link with a date on it.
 test('an entry citing a plan is a stale citation', () => {
-  const file = fixture('# TODO\n\n## Waiting\n\n- Still silent — [design](docs/plans/session-id.md). ' + TODAY + '.\n',
+  const file = fixture('# TODO\n\n## Waiting\n\n- Still silent — [design](docs/plans/session-id.md). lifts when: it happens. ' + TODAY + '.\n',
     { '.fankeel/docs.json': TREE, 'docs/plans/session-id.md': '# plan\n' });
   const { out, code } = run(file);
   assert.equal(code, 1);
@@ -231,7 +232,7 @@ test('an entry citing a plan is a stale citation', () => {
 // and an entry whose detail lives in one points at history however fresh the
 // history is.
 test('a decision record marked current is still a stale citation', () => {
-  const file = fixture('# TODO\n\n## Waiting\n\n- Whether it earns a place — [why](docs/decisions/shell.md). ' + TODAY + '.\n',
+  const file = fixture('# TODO\n\n## Waiting\n\n- Whether it earns a place — [why](docs/decisions/shell.md). lifts when: it happens. ' + TODAY + '.\n',
     {
       '.fankeel/docs.json': TREE,
       'docs/decisions/shell.md': '---\nstatus: current\nlast_verified: 2026-09-01\n---\n\n# why\n',
@@ -251,10 +252,10 @@ test('a decision record marked current is still a stale citation', () => {
 test('archive and report are stale citations too, and an #anchor does not hide the role', () => {
   const file = fixture(
     '# TODO\n\n## Waiting\n\n'
-      + '- retired — [a](docs/archive/old.md). ' + TODAY + '.\n'
-      + '- a benchmark — [b](docs/reports/bench.md). ' + TODAY + '.\n'
-      + '- anchored — [c](docs/decisions/shell.md#what-is-still-a-guess). ' + TODAY + '.\n'
-      + '- a reference page — [d](docs/pipeline.md). ' + TODAY + '.\n',
+      + '- retired — [a](docs/archive/old.md). lifts when: it happens. ' + TODAY + '.\n'
+      + '- a benchmark — [b](docs/reports/bench.md). lifts when: it happens. ' + TODAY + '.\n'
+      + '- anchored — [c](docs/decisions/shell.md#what-is-still-a-guess). lifts when: it happens. ' + TODAY + '.\n'
+      + '- a reference page — [d](docs/pipeline.md). lifts when: it happens. ' + TODAY + '.\n',
     {
       '.fankeel/docs.json': TREE,
       'docs/archive/old.md': '# old\n',
@@ -270,7 +271,7 @@ test('archive and report are stale citations too, and an #anchor does not hide t
 });
 
 test('a link to code is never a stale citation', () => {
-  const file = fixture('# TODO\n\n## Waiting\n\n- The gap — [lib](lib/registry.js), `readSession`. ' + TODAY + '.\n',
+  const file = fixture('# TODO\n\n## Waiting\n\n- The gap — [lib](lib/registry.js), `readSession`. lifts when: it happens. ' + TODAY + '.\n',
     { '.fankeel/docs.json': TREE, 'lib/registry.js': '// code\n' });
   assert.deepEqual(todo.check(file).problems, []);
 });
@@ -280,7 +281,7 @@ test('a link to code is never a stale citation', () => {
 // gets the three checks it always had — not a crash, and not a finding on every
 // link because the role came back null.
 test('with no docs.json nothing is a stale citation', () => {
-  const file = fixture('# TODO\n\n## Waiting\n\n- Still silent — [design](docs/plans/session-id.md). ' + TODAY + '.\n',
+  const file = fixture('# TODO\n\n## Waiting\n\n- Still silent — [design](docs/plans/session-id.md). lifts when: it happens. ' + TODAY + '.\n',
     { 'docs/plans/session-id.md': '# plan\n' });
   const { out, code } = run(file);
   assert.equal(code, 0, out);
@@ -337,7 +338,16 @@ const stampFor = (daysAgo, from) => {
   const t = new Date((from === undefined ? NOW : from) - daysAgo * DAY);
   return String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
 };
-const waiting = (entry) => fixture('# TODO\n\n## Waiting\n\n- ' + entry + '\n');
+// Every fixture below is about the stamp, so an event is spliced in for it —
+// without one each of these would report `unlifted` as well as the one thing it
+// is checking. The splice goes before the stamp, never after: `STAMP` is
+// anchored at the end of the entry, so a clause appended after a date stops
+// that date being a date.
+const STAMP_TAIL = /\s*\d{2}-\d{2}\.?$/;
+const LIFTS_CLAUSE = 'lifts when: an overflow is observed.';
+const waiting = (entry) => fixture('# TODO\n\n## Waiting\n\n- '
+  + (STAMP_TAIL.test(entry) ? entry.replace(STAMP_TAIL, ' ' + LIFTS_CLAUSE + '$&') : entry + ' ' + LIFTS_CLAUSE)
+  + '\n');
 
 test('a Waiting entry with no stamp is one nobody can age', () => {
   const file = waiting('Whether the pool ever overflows. None observed.');
@@ -415,4 +425,45 @@ test('the re-read list is reported and does not fail the run', () => {
   assert.equal(ok, true, 'an entry due for a re-read is not a problem');
   assert.match(text, /due for a re-read/);
   assert.match(text, /20 days/);
+});
+
+// The rule the stamp could not carry. A date says when somebody last looked; it
+// cannot say whether there is anything to look for, and twelve of thirteen
+// entries on 2026-09-06 were waiting on no event at all.
+test('a Waiting entry that names no event is refused', () => {
+  const file = fixture('# TODO\n\n## Waiting\n\n- Whether the pool ever overflows. None observed. '
+    + stampFor(2) + '.\n');
+  assert.deepEqual(kinds(file, NOW), ['unlifted']);
+  assert.equal(todo.main([file]).ok, false);
+});
+
+test('a Waiting entry naming its event passes', () => {
+  const file = fixture('# TODO\n\n## Waiting\n\n- Whether the pool ever overflows.'
+    + ' lifts when: an overflow is observed. ' + stampFor(2) + '.\n');
+  assert.deepEqual(kinds(file, NOW), []);
+});
+
+// `lifts when:` with nothing after it is the form that would pass a check for
+// the words alone, which is the check this is not.
+test('an empty lifts clause names no event', () => {
+  const file = fixture('# TODO\n\n## Waiting\n\n- Whether the pool ever overflows. lifts when: '
+    + stampFor(2) + '.\n');
+  assert.deepEqual(kinds(file, NOW), ['unlifted']);
+});
+
+// The control. Without it this rule passes just as well when it fires on every
+// entry in the file, and `Ready` is the section whose bullets are the
+// specification — an event there would be a second thing to write for nothing.
+test('a Ready or Needs a decision entry needs no event', () => {
+  const file = fixture('# TODO\n\n## Ready\n\n- a\n\n## Needs a decision\n\n- b\n');
+  assert.deepEqual(kinds(file, NOW), []);
+});
+
+// The stamp has to survive the clause, because `STAMP` is end-anchored and the
+// clause is the thing now sitting in front of it.
+test('the event does not stop the stamp being read', () => {
+  const file = fixture('# TODO\n\n## Waiting\n\n- a. lifts when: it happens. ' + stampFor(20) + '.\n');
+  const result = todo.check(file, NOW);
+  assert.deepEqual(result.problems, []);
+  assert.equal(result.overdue[0].days, 20);
 });

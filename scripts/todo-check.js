@@ -99,6 +99,20 @@ const REREAD_DAYS = 7;
 // hand, and a year is noise 364 days out of 365.
 const STAMP = /(?:^|\s)(\d{2})-(\d{2})\.?$/;
 
+// The event that would lift the entry, named rather than left to the reader.
+// `## Waiting` already declares what it waits on — real use, upstream, or
+// another entry landing — and this is that declaration written down per entry
+// instead of per heading. It sits before the stamp because `STAMP` is anchored
+// at the end, and it is read by stripping that stamp back off the tail.
+const LIFTS = /\blifts when:\s*(.+)$/i;
+
+function liftsAt(text) {
+    const m = LIFTS.exec(text.replace(/\s+/g, ' ').trim());
+    if (!m) return null;
+    const event = m[1].replace(STAMP, '').trim().replace(/\.$/, '').trim();
+    return event || null;
+}
+
 // The most recent `MM-DD` that is not in the future. Read on 5 January, a
 // `12-15` is three weeks back and not eleven months forward, and that rollover
 // is the only case where a missing year can be got wrong.
@@ -209,6 +223,20 @@ function check(file, now) {
             } else {
                 const days = Math.floor((at - stamped) / 86400000);
                 if (days >= REREAD_DAYS) overdue.push({ line: entry.line, days, text: entry.text });
+            }
+            // Independent of the stamp. An entry can carry a date and still be
+            // waiting for nothing, and that is the case the date cannot show:
+            // it is refreshed by being read, so a thing nobody is waiting for
+            // reads exactly like a thing somebody checked this morning.
+            if (liftsAt(entry.text) === null) {
+                problems.push({
+                    line: entry.line,
+                    kind: 'unlifted',
+                    detail: 'no "lifts when:" clause. Name the event that would make this actionable'
+                        + ' — real use, upstream, or another entry landing. An entry that cannot name'
+                        + ' one is not waiting for anything: it belongs under another heading, or as'
+                        + ' a comment in the code it is about.',
+                });
             }
         }
         if (!SECTIONS.includes(entry.section)) {
