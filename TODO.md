@@ -49,9 +49,23 @@ entry waited for actually happening. It shrinks when somebody reads it.
 
 ## Ready
 
-Nothing deferred here at the moment.
+- `ledger.js` has no verb for build step 3's scan table; two sessions on 09-05 appended it to progress.md by hand, which is what the ledger exists to avoid — [scripts/ledger.js](scripts/ledger.js).
+
+- `station.js` prints only an HTML path, so a session cannot read the answer it just produced; a `--text` or `--json` form — [scripts/station.js](scripts/station.js).
+
+- `--root` resolves against cwd, not the registry: run from inside the project, the documented command reports "nothing readable" — [scripts/docs-check.js](scripts/docs-check.js), `survey.js` the same.
+
+- A markdown file outside `docs/` with no bucket is graded reference and never listed as unfiled: 3 of 29 on one repository — [scripts/docs-check.js](scripts/docs-check.js), lines 293-301.
+
+- Every test makes its own `mkdtempSync` and none removes it: 297,088 directories under %TEMP% on 09-05, about 4.5 GB, 20k a day — [tests/badge.test.js](tests/badge.test.js):16 is one of many.
 
 ## Needs a decision
+
+- `station.js discover()` never walks the filesystem: 6 of 11 registries, 7 active sessions, were invisible on 09-05 — a `--scan`, or a remembered roots file — [lib/station.js](lib/station.js).
+
+- `docs-check` compares counts, not lists: 22 to 21 on one branch hid a change; `--since <ref>`, or a documented "compare the list" — [scripts/docs-check.js](scripts/docs-check.js).
+
+- `todo-check` `SECTIONS` is fixed and exits 1 on a repository with its own headings, 22 of 22 unclassified; per-project names, or one downgrade line — [scripts/todo-check.js](scripts/todo-check.js).
 
 - Whether a two-source join needs a fourth pair: fankeel-verify:99 cites 1.5× for readers each given a page and a diff, a shape no pair measured — [docs/subagents.md](docs/subagents.md).
 
@@ -80,6 +94,8 @@ Nothing deferred here at the moment.
 - Whether the `Read the fankeel-<stage> skill` pointer is where an anchor should always go — measured cheapest in every stage — [lib/stages.js](lib/stages.js).
 
 - Whether the `3 of 5 pair readers` figure has a source — its own citation points at a file that carries no such measurement — [TODO.md](TODO.md).
+
+- Whether the 1.85× dispatch figure holds when the main model is priced above the subagent's — every main turn re-reads the context at that rate — [docs/subagents.md](docs/subagents.md).
 
 ## Waiting
 

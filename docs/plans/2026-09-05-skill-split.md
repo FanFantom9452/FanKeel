@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-09-05
 source_of_truth: skills/fankeel-build/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-audit/SKILL.md, tests/skills.test.js
 ---
@@ -173,12 +173,12 @@ the index.
 ### The check every split task runs before returning
 
 ```
-node --test tests/skills.test.js tests/version.test.js tests/contract.test.js 2>&1 | grep -E "^# (pass|fail)"
+node --test tests/skills.test.js tests/version.test.js tests/contract.test.js 2>&1 | grep -E "^ℹ (pass|fail)"
 node scripts/docs-check.js 2>&1 | grep -E "gone:|Every reference"
 wc -l skills/fankeel-<stage>/SKILL.md skills/fankeel-<stage>/rationale.md
 ```
 
-The first must print `# fail 0`. The second must print the `Every reference`
+The first must print `ℹ fail 0`. The second must print the `Every reference`
 line and no `gone:` line. The third is reported, not judged: it is the figure
 the next task needs.
 
@@ -189,13 +189,14 @@ the next task needs.
 - Test: `tests/skills.test.js`
 
 **Interfaces:**
-- Consumes: `read(n)`, `frontmatter(text)`, `DIR`, `names` — the helpers at `tests/skills.test.js:12–27`, unchanged
+- Consumes: `read(n)`, `frontmatter(text)`, `DIR` — the helpers at `tests/skills.test.js:12–27`, unchanged
 - Produces: the test named `<skill>: the rationale sits beside the skill under the same headings`, for each of `fankeel-build`, `fankeel-plan`, `fankeel-audit`; referred to below as `rationale-contract`
 
 **Dispatch:** in-session — one edit to one file, and it is the test the three implementers run; a dispatch costs more than the edit.
 
 **Step 1.** Append after the `every stage skill states when it is done` test
-(the block ending at line 112) the following, verbatim:
+(the block starting at line 112 and closing at line 118) the following,
+verbatim:
 
 ```js
 // A stage skill is read once on entering its stage, so what it costs to re-read
@@ -238,18 +239,18 @@ for (const n of SPLIT) {
 `has no rationale.md` assertion:
 
 ```
-node --test tests/skills.test.js 2>&1 | grep -E "^# (pass|fail)|has no rationale"
+node --test tests/skills.test.js 2>&1 | grep -E "^ℹ (pass|fail)|has no rationale"
 ```
 
-Expected: `# fail 3`, and three lines ending `has no rationale.md`.
+Expected: `ℹ fail 3`, and three lines ending `has no rationale.md`.
 
 **Step 3.** Run the whole suite to confirm nothing else moved:
 
 ```
-node --test 2>&1 | grep -E "^# (pass|fail)"
+node --test 2>&1 | grep -E "^ℹ (pass|fail)"
 ```
 
-Expected: `# fail 3` and no other failure. The three are the red this plan
+Expected: `ℹ fail 3` and no other failure. The three are the red this plan
 turns green.
 
 **Step 4.** Commit:
@@ -355,10 +356,10 @@ paragraph at line 14:
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
 ```
 
-**Step 5.** Run the check every split task runs. Expected: `# fail 0`; the
+**Step 5.** Run the check every split task runs. Expected: `ℹ fail 0`; the
 `Every reference` line; and the two `wc -l` figures, reported.
 
-**Step 6.** Return three lines and nothing else — the `# pass`/`# fail` line,
+**Step 6.** Return three lines and nothing else — the `ℹ pass`/`ℹ fail` lines,
 the `docs-check` verdict line, and the two `wc -l` figures on one line. Every
 line returned stays in the parent's context for the rest of its session.
 

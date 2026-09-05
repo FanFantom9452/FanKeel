@@ -1,7 +1,7 @@
 ---
 name: fankeel-plan
 description: The plan stage — decompose an approved design into tasks someone with no context could execute, with constraints generated from the project rather than remembered. Use for the plan stage of a fankeel task, writing an implementation plan, or breaking a spec into tasks before any code is written.
-version: 0.45.0
+version: 0.46.0
 status: current
 last_verified: 2026-09-05
 source_of_truth: lib/stages.js, scripts/map.js
@@ -17,6 +17,8 @@ its `Dispatch:` line,
 remembered, and the plan file is written. The decomposition is the denominator,
 the same way the ledger is `build`'s wherever this stage ran: when no task is
 missing one of those, the stage is finished.
+
+Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
 
 Write it assuming the engineer is skilled, has never seen this codebase, and will
 read the tasks out of order.
@@ -60,11 +62,7 @@ Then take the constraints from the project itself:
 | the test suite | caps and invariants already asserted, with their file and line |
 
 **Copy exact values.** A constraint restated approximately is a constraint that
-gets violated precisely. Every task's requirements implicitly include this
-section, which is why a constraint missing from it never reaches the work.
-
-The failure this replaces: a person copying what they remembered out of a spec,
-so anything true of the project but absent from the spec never arrives.
+gets violated precisely.
 
 ## File structure before tasks
 
@@ -93,15 +91,6 @@ Every task opens with a heading, and its shape is a contract rather than a style
 ## Task 1: <name>
 ```
 
-`lib/plantasks.js` matches that line and nothing else — the number, then a
-colon. A dash or an em dash in place of the colon parses as prose, so the task
-is not in the plan at all as far as every tool downstream is concerned. `init`
-says so, naming the file and showing a conforming heading, and it is the only
-one that says so early: `show` reads the ledger and never the plan, so over a
-plan holding no tasks it still answers `complete: nothing yet` and tells you to
-resume at the first task not listed. `groups` is what is left for whoever did
-not read what `init` printed.
-
 Every task carries a **Files** block:
 
 ```markdown
@@ -115,24 +104,11 @@ green is not an entry: two tasks that both have to leave `npm test` passing are
 not in conflict, and listing it as though they were is how a plan serialises
 work that could have run at once.
 
-This block is what decides whether two tasks may be implemented at the same
-time, and it is what the parent stages when the task lands. A path missing from
-it is a file nobody may write.
-
 **And it decides how they go out.** `lib/plantasks.js` groups tasks by disjoint
 `**Files:**` and by whether one consumes what another produces, then gives each
 group a dispatch surface: one task is `agent`, two are `agents` in one response,
 three or more are one `workflow`. `node <plugin>/scripts/ledger.js --plan <f>
 groups` prints it, and `build` dispatches on what it printed.
-
-So a `**Files:**` block left off does not merely fail this stage's own rule — it
-serialises that task against every other, because a task declaring no files
-conflicts with all of them. And a `Consumes:` written as prose rather than as a
-backticked identifier declares nothing for another task's `Produces:` to match,
-which downgrades its whole group from `workflow` to `agents`: `conflict()` fails
-open by design, and a group it could not confirm is not one to spend a Workflow
-on. Both are silent from inside this stage. `groups` names them, and it is the
-last place before the work goes out that anyone sees them.
 
 Every task carries an **Interfaces** block:
 
@@ -179,9 +155,7 @@ Four rules about that line:
 4. **Where it says `implementer`, this line is what `build` says out loud.** The
    loop names the dispatch in the response that sends it — how many, and on
    which model — and for a task that sentence comes from here, so write it as a
-   statement of what the task costs rather than as a note to yourself. An
-   `in-session` task announces nothing: nothing goes out, so there is no spend
-   to disclose.
+   statement of what the task costs rather than as a note to yourself.
 
 **One dispatch per task, and no third form of the line.** The build loop records
 a BASE, reviews one range and marks one `complete <n>` per task; a dispatch
