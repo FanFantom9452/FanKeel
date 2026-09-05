@@ -25,12 +25,15 @@ const { parseArgs: parseArgv } = require('node:util');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
+const station = require('../lib/station.js');
 const { clearEntry } = require('../lib/clear.js');
 const { tokens } = require('../lib/context.js');
 const { overlapPaths } = require('../lib/overlap.js');
 const { guardMode } = require('../lib/guard.js');
 const { splitAroundVerb } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
+
+const PLUGIN = path.resolve(__dirname, '..');
 
 // Minutes, rounded, with hours above sixty of them. Seconds are not offered: a
 // stage that took forty seconds is one nobody is asking the cost of, and a
@@ -112,15 +115,27 @@ function showBadge(opts, sessionId, word, data, root) {
             root,
         });
     } catch (e) { /* housekeeping */ }
+    refreshStation(dir, root);
 }
 
-function hideBadge(opts, sessionId) {
+function hideBadge(opts, sessionId, root) {
     const dir = claudeDir(opts);
     if (!dir) return;
     try {
         badge.clearBadge(dir, sessionId);
         badge.clearLead(dir, sessionId);
     } catch (e) { /* housekeeping */ }
+    refreshStation(dir, root);
+}
+
+// The page is rewritten wherever the entry changes — every verb goes through
+// one of the two badge writers above — so it is current when the user opens
+// it, not only when a session ends. `note` and `next` move no row the summary
+// shows and go through neither; the next verb catches the page up.
+function refreshStation(dir, root) {
+    try {
+        station.write({ configDir: dir, root, plugin: PLUGIN });
+    } catch (e) { /* housekeeping; never worth failing a write that succeeded */ }
 }
 
 function fail(message) {
@@ -726,7 +741,7 @@ function cmdDown(root, opts) {
     if (!data) fail('No entry for this session under ' + root);
     if (already) return 'fankeel — already stood down.';
     if (!wrote) fail('Could not write the entry.');
-    hideBadge(opts, id);
+    hideBadge(opts, id, root);
 
     const lines = ['fankeel — stood down: ' + (data.task || 'untitled')];
     const notes = registry.notesOf(data);
@@ -825,7 +840,7 @@ function cmdAdopt(root, opts) {
     // already what adopt is, and a badge still reading `build` for a task this
     // session took over is the statusline telling that window a lie it has no
     // way to notice.
-    hideBadge(opts, from);
+    hideBadge(opts, from, root);
     if (!registry.update(root, from, (d) => { d.active = false; })) {
         fail('Adopted, but could not stand the source down. Two sessions now claim these files — stand ' + from + ' down by hand.');
     }
@@ -869,7 +884,7 @@ function cmdClear(root, opts) {
     // same read the old inline body used — `data` here keeps the tail below
     // untouched rather than threading `out.` through every reference in it.
     const data = out.data;
-    hideBadge(opts, target);
+    hideBadge(opts, target, root);
 
     // Prose rather than a command, because the command would not run for the
     // caller who typically types this one: `adopt` refuses a session that already

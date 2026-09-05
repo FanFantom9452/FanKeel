@@ -47,7 +47,7 @@ function main(raw) {
     }
 
     try {
-        station.write({ configDir: live.liveConfigDir(), cwd: registry.launchRoot(payload) });
+        station.write({ configDir: live.liveConfigDir(), cwd: registry.launchRoot(payload), root });
     } catch (e) { /* housekeeping */ }
 }
 

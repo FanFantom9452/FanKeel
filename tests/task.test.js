@@ -101,7 +101,25 @@ test('start writes the entry, at survey, active, holding nothing', () => {
 test('start creates .fankeel/.gitignore, which hand-writing the JSON never did', () => {
   const dir = root();
   started(dir, A, 'tidy the project cards', 'Waypoint/web');
-  assert.equal(fs.readFileSync(path.join(dir, '.fankeel', '.gitignore'), 'utf8'), 'sessions/\n');
+  const ignore = fs.readFileSync(path.join(dir, '.fankeel', '.gitignore'), 'utf8');
+  assert.match(ignore, /^sessions\/$/m);
+  assert.match(ignore, /^station\.html$/m, 'start writes the station copy and keeps it out of git');
+});
+
+// The page is rewritten by every verb that moves an entry, so it is current
+// when the user opens it and not only when a session ends. `note` moves no
+// row the summary shows and leaves the page alone; the next verb catches up.
+test('start regenerates the station in the config dir and beside the registry; note does not', () => {
+  const dir = root();
+  run(dir, ['start', '--session', A, '--task', 'tidy the project cards']);
+  const page = path.join(dir, 'cfg', 'fankeel', 'station.html');
+  const copy = path.join(dir, '.fankeel', 'station.html');
+  assert.ok(fs.readFileSync(page, 'utf8').includes('tidy the project cards'));
+  assert.equal(fs.readFileSync(copy, 'utf8'), fs.readFileSync(page, 'utf8'));
+  run(dir, ['note', 'a dead end', '--session', A]);
+  assert.equal(fs.readFileSync(page, 'utf8').includes('a dead end'), false, 'note does not rewrite the page');
+  run(dir, ['down', '--session', A]);
+  assert.match(fs.readFileSync(page, 'utf8'), /class="s down"/, 'down rewrites it through hideBadge');
 });
 
 test('start succeeds with no project — the registry root is a project too', () => {
