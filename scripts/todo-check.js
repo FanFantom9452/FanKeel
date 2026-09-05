@@ -11,7 +11,7 @@
 //   lives in a file in this repository that the entry links to, and it sits
 //   under the heading that says what it is still waiting for.
 //
-// Five things follow, and all five are checkable, which is the point. A link
+// Six things follow, and all six are checkable, which is the point. A link
 // that no longer resolves is a dead entry: usually the plan it pointed at was
 // rewritten into a decision record and deleted at `land`, and closing the entry
 // was forgotten. A link that resolves to a document whose role records a moment
@@ -24,6 +24,10 @@
 // A `## Waiting` entry with no date stamp is one nobody can age, and the section
 // that grows fastest is exactly the one where that matters — see the block above
 // `REREAD_DAYS`.
+// A `## Waiting` entry with no `lifts when:` clause is one nobody is waiting
+// for. The stamp says when somebody last looked, and a person can always
+// refresh that honestly, so it cannot say whether there is anything left to
+// look for — on 2026-09-06 twelve of thirteen entries named no event at all.
 //
 // Nothing else is judged, and the re-read list below is deliberately not a
 // judgement. Whether the work is still worth doing is not a thing a script can
@@ -104,6 +108,13 @@ const STAMP = /(?:^|\s)(\d{2})-(\d{2})\.?$/;
 // another entry landing — and this is that declaration written down per entry
 // instead of per heading. It sits before the stamp because `STAMP` is anchored
 // at the end, and it is read by stripping that stamp back off the tail.
+// What this cannot do, and it is the limit of the rule rather than of the
+// regex: it checks that a clause is there, not that the clause names anything.
+// `lifts when: it seems worth revisiting.` passes, and an entry carrying that
+// is exactly as unfinishable as the twelve that named nothing at all. Of the
+// five events left on 2026-09-06 a script could have checked two — a count of
+// `docs/archive/`, a language in `skipped.noPattern` — and not the other three,
+// so this asks a person for the sentence rather than trying to grade it.
 const LIFTS = /\blifts when:\s*(.+)$/i;
 
 function liftsAt(text) {
