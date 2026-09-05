@@ -59,6 +59,7 @@ test('records ended, model and usage on its own entry; active stays true; the pa
     assert.ok(fs.readFileSync(path.join(f.cfg, 'fankeel', 'station.html'), 'utf8').includes('the ramp'));
     assert.equal(fs.readFileSync(path.join(f.root, '.fankeel', 'station.html'), 'utf8'),
         fs.readFileSync(path.join(f.cfg, 'fankeel', 'station.html'), 'utf8'), 'the copy lands beside the ending session');
+    assert.equal(fs.readFileSync(path.join(f.cfg, 'fankeel', 'station.html'), 'utf8').includes('<plugin>'), false, 'the clear command names the real plugin path');
 });
 
 test('a session with no entry still regenerates the page, and an unreadable transcript leaves usage absent', () => {

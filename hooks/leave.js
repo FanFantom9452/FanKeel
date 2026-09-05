@@ -19,6 +19,7 @@
 // Same two rules as every hook here: exit 0 on every path, and no stdout —
 // a SessionEnd hook that speaks has nobody to speak to.
 
+const path = require('node:path');
 const registry = require('../lib/registry.js');
 const usage = require('../lib/usage.js');
 const station = require('../lib/station.js');
@@ -47,7 +48,7 @@ function main(raw) {
     }
 
     try {
-        station.write({ configDir: live.liveConfigDir(), cwd: registry.launchRoot(payload), root });
+        station.write({ configDir: live.liveConfigDir(), cwd: registry.launchRoot(payload), root, plugin: path.resolve(__dirname, '..') });
     } catch (e) { /* housekeeping */ }
 }
 

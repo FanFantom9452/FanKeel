@@ -82,8 +82,9 @@ function main(raw) {
         // a miss is what a session that never used the plugin looks like and
         // that is the common case worth staying quiet for.
         //
-        // Output before the side effects, the same order the injection below
-        // keeps and for the same reason.
+        // The page is written before the output because the block names it;
+        // the badge and lead below still come after the output, in the order
+        // the injection below keeps and for the same reason.
         //
         // `sessionPath` is the shape check, borrowed rather than repeated: it
         // answers null for anything that is not a session id. What it is doing

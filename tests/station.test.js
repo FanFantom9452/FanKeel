@@ -144,6 +144,18 @@ test('discover reads roots.json; write stamps the present, keeps the gone for th
     assert.deepEqual(station.readRoots(f.cfg), {}, 'an unreadable file is empty, not fatal');
 });
 
+// `hideBadge` clears the lead before it calls `write`, so the registry a verb
+// is writing into must be in the union on its own name, not through a lead.
+test('the root a caller writes into is listed and remembered even with no lead and no running session', () => {
+    const f = fixture();
+    const r3 = path.join(f.base, 'ws-three');
+    registry.ensureLayout(r3);
+    const out = station.write({ configDir: f.cfg, root: r3 });
+    assert.equal(out.registries, 3);
+    assert.equal(out.copy, path.join(r3, '.fankeel', 'station.html'));
+    assert.ok(path.resolve(r3) in station.readRoots(f.cfg));
+});
+
 test('scanRoots finds a registry two levels down, skips node_modules and dot-directories, and stops at its depth', () => {
     const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-'));
     const deep = path.join(base, 'a', 'b');
