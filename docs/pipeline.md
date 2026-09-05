@@ -351,7 +351,7 @@ flowchart TD
     E1["<b>spike</b><br/>survey, build"]
     E2["<b>bounded</b><br/>survey, design, build, verify, land"]
     E3["<b>architectural</b><br/>all seven"]
-    F["<b>6 · write it down</b><br/>task start, class picks the route<br/><i>no file list is declared</i>"]
+    F["<b>6 · write it down</b><br/>task route when the class moved<br/><i>the entry exists since /fankeel; no file list is declared</i>"]
 
     A --> B --> C
     C --> C1

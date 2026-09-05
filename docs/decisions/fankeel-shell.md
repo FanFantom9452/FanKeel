@@ -591,3 +591,32 @@ because the survey reader had cited the template line and not the paragraph
 under it; and `docs/pipeline.md`'s hand-copied example blocks still showed the
 old `build` rules, which the audit's pair readers found and a `## Ready` entry
 now asks a test to pin.
+
+## The last three anchors, and the commit shape as two words
+
+Dated 2026-09-05. The tier rule above left `survey`, `plan` and `audit` with
+bare pointers because nobody had filed a candidate, and left open whether
+`build` wanted a `Commit:` step of its own.
+[docs/plans/2026-09-05-anchor-remaining-design.md](../plans/2026-09-05-anchor-remaining-design.md)
+filed the candidates from a four-lens survey and picked one per stage. `survey`
+got a `route:` slot and `ratchet the class with task.js route` on its pointer,
+paying with the intent clause its `planned, not built:` slot already anchored.
+`plan` got `Test: what it writes, no-dispatch on every task` on its pointer,
+paying with `rather than remembered`, because no slot fits in 42 characters.
+`audit` got a `pairs disagree:` slot and `todo-check after a move`, paying with
+the dead-path sentence `docs-check` already enforces by role. `build` got two
+words, `commit shape`, and no step: ruling 18 stands, `COMMIT` is `land`'s and
+the ledger's `complete <n>` is the per-task record.
+
+What the survey found on the way: the survey skill's step 6 said `task.js start
+--class`, which `start` refuses on an active entry — the entry is written at
+`/fankeel` before the stage runs, so the write is `task.js route`, which derives
+the class from the route and refuses only a route that drops the current stage.
+The ratchet is therefore a rule, not a script, and the seven-stage default
+written when no class was said is not a rung of it.
+
+What it cost, by `tests/render.test.js` on the day: survey 2390 to 2338, plan
+2381 to 2393, audit 2395 to 2382, build 2372 to 2386. A probe needle the design
+chose, `disagree`, matched the old audit template too and was not a control
+until it became `pairs disagree:` — caught by running the probe on the
+pre-change file, which is the control every `YES` needs.

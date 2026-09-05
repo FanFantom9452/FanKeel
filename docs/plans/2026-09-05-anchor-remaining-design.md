@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-09-05
 source_of_truth: this file is the design; lib/stages.js and the stage skills are what ships
 ---
@@ -82,7 +82,7 @@ re-run with these needles, prints `YES` where it prints `no` today:
 ```
 survey  ratchet|route:
 plan    Test:|no-dispatch
-audit   todo-check|disagree
+audit   todo-check|pairs disagree:
 build   commit shape
 ```
 

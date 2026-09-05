@@ -265,7 +265,9 @@ the user can disagree with it:
 Bounded measures the repository, not your familiarity with it: it means the flow
 being changed is already here to read. When in doubt take the heavier one, and
 the ratchet is one-way — complexity found mid-task upgrades the route and says
-so, and nothing downgrades mid-task.
+so, and nothing downgrades mid-task. The seven-stage default `start` writes when
+no class was said is not a rung of it: `survey` may narrow that with `task.js
+route`, and a class someone said at `start` is the floor.
 
 ```
 node <plugin>/scripts/task.js start --session <id> --task "..." --class bounded
