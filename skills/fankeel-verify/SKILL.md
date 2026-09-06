@@ -3,7 +3,7 @@ name: fankeel-verify
 description: The verify stage — evidence before claims, requirements checked line by line, and the documents this change just made false. Use for the verify stage of a fankeel task, before claiming work is complete or passing, before a commit or PR, or when checking whether a change broke the documentation describing it.
 version: 0.50.0
 status: current
-last_verified: 2026-09-05
+last_verified: 2026-09-07
 source_of_truth: lib/stages.js, scripts/docs-check.js
 ---
 
@@ -133,6 +133,12 @@ A row reading `(no range recorded)` is a task that landed without one. It is not
 skipped — it is verified here, against `git log`, and the reason it has no range
 is a finding for the report.
 
+A row reading `fix <range> — <what>` is a fix that came back from this stage
+once already, committed and reviewed in `build` the way a task is. Verify it
+like a task row. A commit on the branch that appears in neither list is the
+finding: a change nobody reviewed, and where it came from is the first
+question.
+
 With no ledger there is no row and no fan-out: the claims are verified in this
 session, one table, exactly as below.
 
@@ -176,7 +182,13 @@ findings have — never an automatic lap back through this stage.
 
 ## Half-built sends it back
 
-Verify is not where the bar gets lowered. Anything unfinished returns to `build`.
+Verify is not where the bar gets lowered. Anything unfinished returns to
+`build` — and so does every fix. **This stage commits nothing.** A defeated
+row, a test that should have reddened and did not, a page found false: each is
+routed to `build` at the gate, where the fix gets BASE, the parent's commit,
+one reviewer over its range and a `Fix:` line in the ledger. On 2026-09-06 five
+fix commits landed during this stage with no reviewer, and the next lap's
+findings were theirs.
 
 ## Output
 

@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-05
+last_verified: 2026-09-07
 source_of_truth: lib/stages.js, lib/ledger.js, lib/plantasks.js, scripts/ledger.js, skills/fankeel-build/SKILL.md
 ---
 
@@ -59,18 +59,20 @@ setup step a no-plan route skips whole.
 
 ## The task loop
 
-A draft of this paragraph replaced the four with three and had the second one
-read `the task block, verbatim`. Both were wrong: pasting a task costs the
-parent the tokens a path costs nothing, which is the argument the
-`task-brief` note below already makes, and the list was never the place the
-deciding happened. It is the line above that is the change — the brief is
-read, not chosen.
+The four became three on 2026-09-07, and the reason is the one the earlier
+draft of this paragraph got wrong: pasting a task costs the parent the tokens a
+path costs nothing, and so does pasting the constraints block — which every
+dispatch had been doing, by hand, since the rule said the block must travel.
+`ledger.js brief <n>` writes both into one file with the task's section and
+the footer, so the dispatch is three paths and a line, and every brief carries
+the same footer rather than whatever the parent remembered to type. Measured
+on the 2026-09-06 build, the implementer briefs ran 2,500 to 3,400 characters
+each, all typed; the footer alone is longer than most of them were, and it is
+typed once.
 
-A `task-brief` script would carry less: it writes task N's own text to a file
-and prints the path, so a dispatch carries a path rather than the whole plan
-— two thousand words an implementer does not need. It belongs in `scripts/`,
-beside `ledger.js`. **Do not write it here** — that is out of this plan's
-scope, and the `TODO.md` entry it answers asks for the rule, not the tool.
+The seven implementers of that plan each began by reading the whole 871-line
+plan, then navigating to their own task. The brief is the slice they were
+navigating to.
 
 `hooks/guard.js` filters to other sessions, so it cannot protect a task from
 its own dispatches.

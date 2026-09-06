@@ -645,7 +645,7 @@ test('design, plan, build and verify carry the anchors the design paid for', () 
   assert.match(rules('design'), /Read the fankeel-design skill on entry: spec file, self-review\./);
   assert.match(templateFor('design'), /^spec: <the docs\/plans path — architectural — or "in chat">$/m);
   assert.match(rules('plan'), /carries `\*\*Files:\*\*`, `\*\*Interfaces:\*\*` and a `\*\*Dispatch:\*\*` line/);
-  assert.match(rules('build'), /Read the fankeel-build skill on entry: worktree consent, four-item brief, five rounds, resume the fixer, commit shape\./);
+  assert.match(rules('build'), /Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, resume the fixer, commit shape\./);
   assert.doesNotMatch(rules('build'), /skill has loop and scan/);
   assert.match(templateFor('verify'), /- adversary: <the claim it defeated → build, or "nothing">/);
 });
@@ -659,7 +659,7 @@ test('survey, plan, audit and build carry the anchors the second design paid for
   assert.match(rules('survey'), /Read the fankeel-survey skill on entry: ratchet the class with task\.js route\./);
   assert.doesNotMatch(rules('survey'), /Those pages are intent, not drift/);
   assert.match(templateFor('survey'), /^route: <unchanged, or the task\.js route line>$/m);
-  assert.match(rules('plan'), /Read the fankeel-plan skill on entry: Test: what it writes, no-dispatch on every task\./);
+  assert.match(rules('plan'), /Read the fankeel-plan skill on entry: Read:, a fence names its file, ## Coverage, no-dispatch on every task\./);
   assert.doesNotMatch(rules('plan'), /rather than remembered/);
   assert.match(rules('audit'), /Read the fankeel-audit skill on entry: todo-check after a move\./);
   assert.doesNotMatch(rules('audit'), /A dead path is a bug/);

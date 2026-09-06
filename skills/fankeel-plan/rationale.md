@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-09-05
-source_of_truth: lib/stages.js, scripts/map.js, skills/fankeel-plan/SKILL.md
+last_verified: 2026-09-07
+source_of_truth: lib/stages.js, scripts/map.js, lib/plantasks.js, scripts/ledger.js, skills/fankeel-plan/SKILL.md
 ---
 
 # fankeel-plan — why
@@ -44,3 +44,24 @@ last place before the work goes out that anyone sees them.
 
 An `in-session` task announces nothing: nothing goes out, so there is no spend
 to disclose.
+
+## Every code fence names its file
+
+The fence rule is mechanical on purpose. A person reading the plan knows that
+`render()` lives in `lib/station.js`; the implementer, given only the task, did
+not, and the Files block was the contract it held to. Naming the file beside
+the code costs the author one backticked path and gives `lint` something it
+can check, which is the tier this belongs at.
+
+## Coverage, then lint, then a reviewer — before the gate
+
+Three things, in cost order. The table is the author's own reading, and it is
+what turned area-level coverage — one line per section of the design — into
+bullet-level, because the three promises dropped on 2026-09-06 all sat inside
+areas the plan had ticked. `lint` is the part a script can hold: it cannot
+judge whether a task implements a promise, but it can refuse a plan that never
+quotes one, and eight normalised words is enough to tell two bullets apart on
+every design in `docs/plans`. The reviewer is the judgement the other two
+cannot make, and it is the one superpowers already runs at this point — a
+plan-document reviewer for completeness and spec alignment. It costs a sonnet
+dispatch of a few minutes; the return trips it replaces cost hours.

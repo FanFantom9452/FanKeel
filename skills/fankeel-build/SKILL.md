@@ -3,7 +3,7 @@ name: fankeel-build
 description: The build stage — run a plan's tasks, or a design's file table where there is no plan, in a loop that does not stop to ask, keeping its place in a ledger and reviewing each task as it lands. Use for the build stage of a fankeel task, implementing an approved plan, resuming build work after a compaction, or when a task loop needs a ledger.
 version: 0.50.0
 status: current
-last_verified: 2026-09-05
+last_verified: 2026-09-07
 source_of_truth: lib/stages.js, lib/ledger.js, lib/plantasks.js, scripts/ledger.js
 ---
 
@@ -149,22 +149,38 @@ per pass, and every other step of the loop is unchanged.
    past, and remove what your own change orphaned — dead code you did not create
    gets mentioned, not deleted.
 
-   A dispatch carries four things and nothing else, and **none of them is a
-   decision**: one line on where the task fits, the **path** to the plan file
-   with the task's number, the plan's `## Global Constraints` block (the
-   subagent receives the brief and nothing else, so anything binding it must
-   travel in the dispatch), and the path it must write its report to. Never the
-   session's history, and never a paste of the plan.
+   A dispatch carries three things and nothing else, and **none of them is a
+   decision**: one line on where the task fits, the path to the task's brief
+   file, and the path it must write its report to. The brief is written by
+
+   ```
+   node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md brief <n>
+   ```
+
+   and holds the plan's goal and spec line, the `## Global Constraints` block
+   verbatim, the task's whole section, the `Produces:` entry of every task it
+   consumes from, and a fixed footer of the rules an implementer cannot infer
+   — the files it may read and the walk it may never make, no commits, its
+   own test command only, and the return contract below. Never the session's
+   history, and never a paste of the plan: the brief is a file, and the
+   dispatch names it.
 
    Everything else the loop needs — BASE, the review range, the diff, the map
    path, the commit message, the ledger note — is a runtime fact, taken when it
    is needed and never carried in the plan.
 
-   A dispatched implementer **does not commit. It returns a status line and the
-   paths it wrote — never a diff.** A returned diff puts the whole change back
-   in this context, which is the one cost dispatching exists to avoid, and step
-   5 still reads it from git once the parent has committed. Tell it plainly not
-   to touch the index, `HEAD` or branch state.
+   A dispatched implementer **does not commit. It returns a status line, the
+   paths it wrote, the `ℹ pass` / `ℹ fail` line, and one line per new test:
+   `<test name> — red when: <the mutation>`.** Never a diff — a returned diff
+   puts the whole change back in this context, which is the one cost
+   dispatching exists to avoid, and step 5 reads it from git once the parent
+   has committed. The mutation lines are the return contract's new half: a
+   new test with no line naming what reddens it is a finding before the
+   reviewer reads anything, and eight of them on 2026-09-06 cost five fix
+   rounds. And a brief whose task text names a file its Files block does not
+   list comes back as `blocked: <the file> is named but not declared` in the
+   implementer's first turn, never built around — that is a plan defect, ruled
+   on here, and a task built around it ships a feature nothing can reach.
 
    **A whole group goes out in one response**, and the `groups` command above
    says which tasks that is. Two tasks in different groups never run at once.
@@ -196,11 +212,10 @@ per pass, and every other step of the loop is unchanged.
    skip.** No commit landing during the run is what keeps a *committed*
    neighbour out.
 
-   Tell every implementer in the run three things it cannot infer: that
-   neighbours are editing the same working tree on other files, so it must run
-   only its own test command and never the full suite; that it must not commit
-   or touch the index, HEAD or branch state; and that it must return paths and a
-   status, never a diff.
+   Every implementer in the run gets its brief file, and the brief's footer
+   carries the three things it cannot infer — neighbours in the same tree so
+   its own test command only, no commits and no touching the index, `HEAD` or
+   branch state, and paths and a status back rather than a diff —
 
    When the run returns, the parent takes BASE and commits each task in the
    group's order, then records `--range BASE..<sha> complete <n>`. The reviews
@@ -220,13 +235,47 @@ per pass, and every other step of the loop is unchanged.
    Anything written outside those paths stays unstaged, so `git status` after
    the commit is where a wrong `**Files:**` block shows up, before the review
    rather than after it.
-5. One reviewer, against the task text and the diff. **Pin the range at both
-   ends** — `BASE..<the sha this task's commit produced>`. Every task has one,
-   `in-session` included, because step 4 commits them all; there is no `HEAD`
-   form left, and that is deliberate.
-   An open upper end is not a range: the next task's commits
-   walk into the review the moment they land. Give it that range and the path to
-   `.fankeel/map.md` — never a paste of the session's history.
+5. One reviewer, on this template and no other, against the brief and the
+   diff. **Pin the range at both ends** — `BASE..<the sha this task's commit
+   produced>`. Every task has one, `in-session` included, because step 4
+   commits them all; there is no `HEAD` form left, and that is deliberate.
+   An open upper end is not a range: the next task's commits walk into the
+   review the moment they land.
+
+   ```
+   You are reviewing ONE task's change in <repo>. READ-ONLY: never mutate the
+   working tree, the index, HEAD or branch state; inspect with git show, git
+   diff and git log only.
+
+   THE RANGE, pinned at both ends: <BASE>..<sha>
+   THE BRIEF: <the task's brief file> — its Files block says what the task
+   owns, its section says what it must do.
+   THE COVERAGE ROWS naming this task, from the plan's ## Coverage table:
+   <quoted, one per line>
+   THE MAP: .fankeel/map.md
+   THE IMPLEMENTER RETURNED: <its status, paths, test line and mutation lines>
+
+   Part 1 — against the brief and the coverage rows, in this order:
+     Missing: a promise or step the change does not implement, or claims
+       without evidence.
+     Extra: a change no line of the task asks for — adjacent code improved,
+       a file outside the Files block touched.
+     Misunderstood: the right thing built the wrong way.
+   Part 2 — the tests: every new test in the diff has a mutation line.
+     Pick one, apply its mutation to a scratch copy of the file
+     (git show <sha>:<path> > <scratch>), and confirm the named test
+     reddens. A new test with no line, or a picked mutation that leaves
+     its test green, is a finding.
+   Part 3 — every changed line traces to the task's text; the patterns
+     already in the repository are followed.
+
+   RETURN, and nothing else: one line per finding as `path:line — <the
+   problem>`, most serious first, or the single word `clean`. Every line you
+   return stays in a long-running parent context for the rest of the session.
+   ```
+
+   Give it the brief path and the range — never a paste of the session's
+   history.
 
    **When the user has said, this session, not to dispatch**, the reviewer runs
    here, in this session. That is a ruling, not a stopper: the four things that
@@ -256,6 +305,21 @@ per pass, and every other step of the loop is unchanged.
    The flag precedes the verb; everything after `complete` is the note. A task
    completed with no `--range` is recorded and reported as such by `ranges`,
    which is worse than it sounds: it is a task that landed and gets no verifier.
+
+**A fix that came back from `verify` is a row of this loop.** `verify` commits
+nothing; a defeated row is routed here at its gate, and here it gets what a
+task gets: BASE taken immediately before its commit, the implementer resumed
+or the fix made in-session, the parent's commit, one reviewer on the template
+above over `BASE..<sha>`, and then
+
+```
+node <plugin>/scripts/ledger.js --plan <file> --range <BASE>..<sha> fix "<what>"
+```
+
+which writes a `Fix:` line `ranges` lists beside the task rows. The five
+commits that landed during `verify` on 2026-09-06 had no reviewer, and the
+third return to build was made of their defects; `--range` is required on
+`fix` for exactly that reason.
 
 Then one whole-branch review when the last task is done.
 

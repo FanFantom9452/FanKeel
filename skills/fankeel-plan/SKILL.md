@@ -3,8 +3,8 @@ name: fankeel-plan
 description: The plan stage — decompose an approved design into tasks someone with no context could execute, with constraints generated from the project rather than remembered. Use for the plan stage of a fankeel task, writing an implementation plan, or breaking a spec into tasks before any code is written.
 version: 0.50.0
 status: current
-last_verified: 2026-09-05
-source_of_truth: lib/stages.js, scripts/map.js
+last_verified: 2026-09-07
+source_of_truth: lib/stages.js, scripts/map.js, lib/plantasks.js, scripts/ledger.js
 ---
 
 # fankeel-plan
@@ -43,6 +43,10 @@ Every plan starts with it:
 
 ## Global Constraints
 ```
+
+`**Spec:**` is read by a script: `ledger.js lint` opens the design it names —
+a bare path or a markdown link, relative to the plan's own directory — and a
+plan with no such line is refused.
 
 ## Global Constraints is generated, not remembered
 
@@ -91,11 +95,12 @@ Every task opens with a heading, and its shape is a contract rather than a style
 ## Task 1: <name>
 ```
 
-Every task carries a **Files** block:
+Every task carries a **Files** block, in three kinds:
 
 ```markdown
 **Files:**
 - Modify: `path` — what changes in it
+- Read: `path` — what it depends on there, and does not change
 - Test: `path`
 ```
 
@@ -103,6 +108,15 @@ Every task carries a **Files** block:
 green is not an entry: two tasks that both have to leave `npm test` passing are
 not in conflict, and listing it as though they were is how a plan serialises
 work that could have run at once.
+
+`Read:` lists the files the task must open and will not change — the module a
+helper it calls lives in, the fixture it copies. It is what keeps an
+implementer from walking the disk for a definition: on 2026-09-06 a reviewer
+that needed `tokens` and was not told it lived in `lib/context.js` ran
+`find /` and sat 38 minutes. A `Read:` of a file a neighbour lists under
+`Modify:` or `Test:` **serialises the pair** — a file mid-edit is not a file to
+read — and two tasks reading one file do not conflict. Only the first
+backticked token on the line is the path, as for the other two kinds.
 
 **And it decides how they go out.** `lib/plantasks.js` groups tasks by disjoint
 `**Files:**` and by whether one consumes what another produces, then gives each
@@ -182,6 +196,24 @@ gate, and the one on the Workflow tool is the Workflow tool's own.
 - Run it and watch it pass
 - Commit
 
+## Every code fence names its file
+
+A fence whose info string is a language — `js`, `json`, `md`, anything but
+none, `sh`, `bash`, `shell`, `console` or `text` — is code that lands in a
+file, and the three non-blank lines above it say which, in backticks, naming a
+path from the task's own Files block:
+
+```markdown
+In `lib/station.js`, in `gather()` beside `burn:`, add:
+```
+
+A fence introduced with a function name alone — "In `gather()`, add:" — is
+how Task 7 of the 2026-09-06 station plan carried a `render()` snippet for a
+file its Files block never listed, and how the implementer, correctly, built
+around it. `ledger.js lint` names every such fence, and every path named above
+a fence that the task does not own. A fence with no info string, or one of the
+five exempt ones, holds a command or its output and names nothing.
+
 ## No placeholders
 
 These are **plan failures**, not shorthand:
@@ -194,12 +226,53 @@ These are **plan failures**, not shorthand:
 - a reference to a type or function no task defines
 - a task with no `**Dispatch:**` line
 - a task with no `**Files:**` block, or one whose `Modify:` list is empty
+- a language fence with no file named in the three lines above it
+- a `Read:` left off when the task calls a helper from a file it does not modify
 
-## Self-review before the gate
+## Coverage, then lint, then a reviewer — before the gate
 
-1. **Spec coverage** — skim each requirement. Point at the task implementing it. List gaps.
+1. **Coverage, bullet by bullet.** Under a `## Coverage` heading, one table
+   row per promise the design makes: every first-level bullet under its
+   numbered `## N.` sections, and every row of its `## What proves it done`
+   table. Quote the promise's opening — its first line at least — and name the
+   task:
+
+   ```markdown
+   ## Coverage
+
+   | promise | task |
+   |---|---|
+   | x is milliseconds since `started`. This is the "how long it ran" axis. | Task 4 |
+   | the maximum is printed at the top of the box in that series' colour | struck — the label carries it; see the ruling |
+   ```
+
+   A struck promise is quoted too, with `struck — <why>` in the task cell: the
+   design's own `Struck:` convention, kept where `lint` can read it. Area-level
+   coverage — "Curve → Task 4" — is what let three bullets of one area drop on
+   2026-09-06 while the area read as covered.
 2. **Placeholder scan** — the list above.
-3. **Type consistency** — a helper named `clearLayers` in Task 3 and `clearFullLayers` in Task 7 is a bug, and only the implementer of Task 7 will meet both names.
+3. **Type consistency** — a helper named `clearLayers` in Task 3 and
+   `clearFullLayers` in Task 7 is a bug, and only the implementer of Task 7
+   will meet both names.
+4. **Lint**, and it must be clean:
+
+   ```
+   node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md lint
+   ```
+
+   It reads the design off the plan's `**Spec:**` line and reports, one line
+   each: a promise whose first eight words appear nowhere in the plan, a path
+   in the design's file table that no task modifies or tests, a language fence
+   naming no file from its task's Files block, and a path named above a fence
+   that the task does not own. It exits non-zero on any of them, and the
+   output line goes on the report's `lint:` slot.
+5. **One reviewer over the plan**, `sonnet`, dispatched before the gate and
+   said out loud — one, on which model. It gets three paths and a question:
+   the design, the plan, the lint output, and *which promises in the design
+   have no task, and which task's Files block disagrees with its own text*.
+   It returns only those lines, or `clean` — say why: every line it returns
+   stays in this context for the rest of the session. Fix what it finds
+   inline, and put the count on the `reviewer:` slot.
 
 Fix inline. If a requirement has no task, add the task.
 
@@ -212,6 +285,8 @@ docs/plans/<date>-<topic>.md — <n> tasks
 2. <name> — path
 
 constraints: <n> lines, from map.md
+lint: <its line>
+reviewer: clean | <n> gaps, fixed
 then AskUserQuestion
 ```
 

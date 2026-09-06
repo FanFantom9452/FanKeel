@@ -3,8 +3,8 @@ name: fankeel-design
 description: The design stage — one approach with its trade-offs, a success criterion that can fail, and a check against the project map before anything is built. Use for the design stage of a fankeel task, choosing between approaches, writing a spec, or when an approach needs approving before implementation.
 version: 0.50.0
 status: current
-last_verified: 2026-09-04
-source_of_truth: lib/stages.js
+last_verified: 2026-09-07
+source_of_truth: lib/stages.js, lib/plantasks.js
 ---
 
 # fankeel-design
@@ -56,6 +56,12 @@ clarification.
 | "fix the bug" | a test reproducing it, failing, then passing |
 | "refactor X" | the suite green before and after |
 
+**And one row on the artefact, wherever the change produces one.** A rendered
+page, a written file, a printed report — checked against itself, not against a
+unit: the row's cost cell and the curve under it agree. Unit tests each passed
+on 2026-09-06 while the curve drew a third of what the cell printed, because
+no criterion had named the artefact.
+
 If a simpler approach exists, or the ask itself looks wrong, say so before
 building it.
 
@@ -76,6 +82,12 @@ contradiction that ships.
 Scale each section to its complexity — a few sentences if straightforward, up to
 200–300 words if nuanced. Ask after each whether it holds. Cover architecture,
 components, data flow, error handling, testing.
+
+**Number the sections whose bullets are promises** — `## 1. The curve`,
+`## 2. Discovery` — and write each promise as a first-level bullet. That is
+what `plan`'s coverage table is built from and what `ledger.js lint` reads:
+a bullet under an unnumbered heading is context, and a nested bullet is
+detail of the one above it.
 
 Break the system into units with one clear purpose each, communicating through
 defined interfaces. For each: what does it do, how is it used, what does it
