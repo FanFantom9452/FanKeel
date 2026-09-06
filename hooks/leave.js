@@ -27,8 +27,9 @@ const live = require('../lib/live.js');
 const { run, parse } = require('../lib/hook.js');
 
 // `spend[stage]` carries the parent's own `{requests, models}` and, when agents
-// ran in that stage, a `subagents` sub-object of the same shape — mirroring the
-// way `usage` already carries `usage.subagents`. The two are kept apart rather
+// ran in that stage, a `subagents` sub-object of that same pair — the two fields
+// pricing needs, and not the `agents` count or the `wallMs` that
+// `usage.subagents` also carries for the whole session. The two are kept apart rather
 // than summed because the station's row prints them apart, as `$X + $Y (N
 // agents)`; `lib/station.js` prices both for the curve, so the curve totals
 // what that cell totals.
