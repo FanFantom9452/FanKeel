@@ -60,7 +60,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- The version-file count is written in words at `README.md:286-287` and `skills/fankeel-land/SKILL.md:51` and pinned by nothing; this branch found the second stale — a test that matches the words against `version.readAll` — [tests/version.test.js](tests/version.test.js).
+- The version-file count in words at `README.md:286` and `skills/fankeel-land/SKILL.md:51` is pinned by nothing; match them to `version.readAll` — [tests/version.test.js](tests/version.test.js).
 
 - A fix round writes its task's declared paths, so two on one file collide as two tasks do; the grouping rule is silent on them — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
 
