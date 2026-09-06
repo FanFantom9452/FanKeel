@@ -74,7 +74,7 @@ test('the fankeel skill routes the station phrases, and no skill names /fankeel-
 
 2. Run `node --test tests/skills.test.js` and watch it fail: the `fankeel` description lacks every phrase, and `fankeel-station` names itself.
 
-3. `git rm -r skills/fankeel-station`.
+3. Delete `skills/fankeel-station/` from the working tree — `rm -r skills/fankeel-station` — and nothing else: the parent stages the deletion when it commits, so `git rm` is not used.
 
 4. In `skills/fankeel/SKILL.md`, the frontmatter `description:` line becomes exactly this, one line:
 
