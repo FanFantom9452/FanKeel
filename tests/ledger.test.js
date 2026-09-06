@@ -560,7 +560,44 @@ test('fix records a Fix line with its range, ranges lists it beside the tasks, a
   assert.match(out, /  1 aaaaaaa\.\.bbbbbbb\n  fix bbbbbbb\.\.ccccccc — the guard counted an empty object/);
   const bad = run(dir, plan, 'fix', 'no range');
   assert.equal(bad.code, 1);
-  assert.match(bad.out, /--range/);
+  assert.match(bad.out, /a fix with no range is a commit nobody reviewed/);
+  const badRange = run(dir, plan, '--range', 'notasha', 'fix', 'x');
+  assert.equal(badRange.code, 1);
+  assert.match(badRange.out, /two commit shas/);
+});
+
+// `serialCause`'s `reason === 'read'` branch had no test naming it: a Read of
+// a neighbour's Modify serialises the pair, and the cause line should name
+// the shared file the same way a `files` conflict does.
+test("groups names the file a Read shares with a neighbour's Modify when the plan builds serially", () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, [
+    '## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', '',
+    '**Interfaces:**', '- Consumes: nothing.', '- Produces: nothing.', '',
+    '## Task 2: two', '', '**Files:**', '- Modify: `lib/b.js`', '- Read: `lib/a.js` — why', '',
+    '**Interfaces:**', '- Consumes: nothing.', '- Produces: nothing.', '',
+  ].join('\n'));
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(out, /2 groups over 2 tasks/);
+  assert.match(out, /builds serially/);
+  assert.match(out, /Shared by consecutive tasks: lib\/a\.js/);
+});
+
+// `specPath`'s bare-path branch — a Spec line with no markdown link — had no
+// test of its own; every other lint test uses `[design.md](design.md)`.
+test('lint reads a bare Spec path as well as a markdown link', () => {
+  const dir = root();
+  fs.writeFileSync(path.join(dir, 'design.md'), DESIGN);
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, [
+    '# A plan', '',
+    '**Spec:** design.md', '',
+    '## Global Constraints', '', '- four-space indent', '',
+  ].join('\n') + PLAN_TASKS);
+  const { out, code } = run(dir, plan, 'lint');
+  assert.equal(code, 1);
+  assert.match(out, /promise with no task/);
 });
 
 // The incident this verb exists for. The plan and design are copied, not
