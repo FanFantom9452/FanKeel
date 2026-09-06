@@ -17,7 +17,7 @@ for the curve, the controls and why a deadline replaced a depth,
 ## Where the registries come from
 
 A registry is per workspace and every reader walks up to exactly one, so the
-station has to be told, or find out. Seven sources, unioned:
+station has to be told, or find out. Nine sources, unioned:
 
 | source | what it finds |
 |---|---|
@@ -75,8 +75,8 @@ the loud side, as it does everywhere in this plugin.
 
 From the entry: `task`, `project`, `stage` on its `route`, `started`,
 `updated`, `claims`, `notes`, `next`, `guard`, and the stage sums of `burn`,
-`clock` and `waited`. From `hooks/leave.js`: `ended`, `model`, `usage` — see
-[registry.md](registry.md). From `lib/prices.js`: the dollar figure, and the
+`clock` and `waited`. From `hooks/leave.js`: `ended`, `model`, `usage`,
+`spend` — see [registry.md](registry.md). From `lib/prices.js`: the dollar figure, and the
 date the table was read. The dollar figure shown is the session's own; beside
 it, when the session ran agents, is the agents' dollar figure and how many
 agents produced it — `usage.subagents`, priced the same way. A row opens to
@@ -97,13 +97,20 @@ an axis in one unit and rules in another would put the boundaries in the wrong
 places.
 
 Two series share the box, **each scaled to its own maximum**, and the two
-maxima are printed underneath in the series' colours. A dual axis is
-unreadable at ninety pixels; the labels carry the units instead.
+maxima are printed underneath — only the label word, `burn` or `spend`, sits
+inside a span coloured to match its line; the maximum value itself renders in
+the legend's own mute colour. A dual axis is unreadable at ninety pixels; the
+labels carry the units instead.
 
 | series | from | |
 |---|---|---|
 | `burn` | the raw per-stage pairs, via `registry.seriesOf` | context tokens, which climb through a session |
 | spend | `spend`, priced by `lib/prices.js` | cumulative USD, running across stages |
+
+Both series end at the same pixel — the top-right corner — on every row that
+carries both, because each is scaled to its own maximum rather than a shared
+one. Colour tells them apart everywhere else; where they converge a solid
+stroke could not, so the spend line is drawn dashed.
 
 Both empty cases are drawn on purpose rather than left to render as an empty
 axis. Fewer than two stages carrying `burn` gives the words `no burn
@@ -114,8 +121,9 @@ burn series alone and says `spend arrives when the session ends`.
 **That is most rows today, and it is not a defect.** `spend` is written once,
 at session end, so a live session does not have it yet and no session that
 ended before this shipped will ever have it. Below the chart is the table it
-is drawn from — one row per stage, with the minutes, the burn distance and
-the spend.
+is drawn from — one row per stage, with the minutes, the burn distance, the
+spend, and a fifth column, `waited`: how much of that stage's minutes went on
+a gate rather than on work.
 
 A stage whose models the price table does not know has no dollar figure, not a
 figure of zero: `costOf` returns `usd: 0` there, and `gather` reads
@@ -144,9 +152,11 @@ has always seen.
 ### Filtering and sorting
 
 The page carries one inline script — no `src`, nothing fetched, no
-dependency. It filters rows on task, project, session id and model, and sorts
-them by `updated`, `started`, `cost` or `stage`, clicking twice to reverse.
-Rows are reordered inside their own registry, never across registries.
+dependency. It filters rows on task, project, session id, model and state —
+`data-state` is one of the attributes each row carries, so typing `live`,
+`stale` or `down` is itself a filter term — and sorts them by `updated`,
+`started`, `cost` or `stage`, clicking twice to reverse. Rows are reordered
+inside their own registry, never across registries.
 
 `gather` still returns sessions ordered by `updated` descending. The sorting
 here is a view over that order rather than a replacement for it, which is why
@@ -178,9 +188,11 @@ minutes. The static copies carry the `task.js clear` command on each
 
 A second button sits under each registry that has any stale row, and posts to
 `/clear-stale`: it clears them all, calling `clearEntry` once per row so the
-checks are the same list rather than a second copy of them, and reports how
-many it cleared and which it refused with the reason. Its label carries the
-count, so the confirm says what it is about to do. It takes the same `force`
+checks are the same list rather than a second copy of them. A clean run
+redirects to `/?cleared=N`, and the reloaded page prints that count in a
+banner above the rows; a refusal answers `409` with which rows it refused and
+why, since a redirect has nowhere to say it. Its label carries the count, so
+the confirm says what it is about to do. It takes the same `force`
 tick and the same nonce as the single-row button.
 
 Both buttons write `active: false` and nothing else, so a session cleared by

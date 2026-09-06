@@ -101,6 +101,16 @@ never in the `<summary>`, which is a fixed seven-column grid at
 - Stage boundaries are faint vertical rules, each labelled with the stage's
   first letter, so the x axis can be read off without a tooltip.
 
+**One correction to this section, found after the build landed:** the first
+bullet above says x is milliseconds since `started`. `chart()` never reads
+`started` — x is milliseconds since `stages[0].from`, the first stage's first
+`clock` sighting. [docs/station.md](../station.md) has the shipped shape.
+
+**A second correction, same review:** the fourth bullet says the maximum is
+"printed at the top of the box in that series' colour." It prints underneath,
+not at the top, and only the label word sits in the series' colour — the
+maximum value itself renders in the legend's own mute colour.
+
 **The empty cases are specified, not incidental.** Fewer than two `burn` samples
 renders the words `no burn recorded` and no `<svg>` at all. No `spend` renders
 the burn series alone, with `spend arrives when the session ends` under it.

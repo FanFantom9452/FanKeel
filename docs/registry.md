@@ -27,7 +27,7 @@ workspace/                     <- Claude Code opened here
 
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `leave.js` for `ended`, `model` and `usage`, once, at `SessionEnd` — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `leave.js` for `ended`, `model`, `usage` and `spend`, once, at `SessionEnd` — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | `lib/registry.js:200` creates it holding `sessions/` alone; `registry.ensureIgnored` appends what is missing — `scripts/map.js:31` asks for `sessions/`, `build/` and `map.md` on every map run, `lib/station.js` for `station.html` on every write of the copy |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
@@ -35,7 +35,7 @@ workspace/                     <- Claude Code opened here
 | `~/.claude/modes/{session_id}/fankeel.lead` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
 | `<configDir>/fankeel/station.html` | n/a | the station page, rewritten by `hooks/inject.js` at the `/fankeel` prompt, by `task.js` on every verb that moves an entry, by `hooks/leave.js` at `SessionEnd`, and by `scripts/station.js` |
 | `<registry>/.fankeel/station.html` | No — `.fankeel/.gitignore` excludes it | the same page, written beside the registry by whichever of those four ran inside it |
-| `<configDir>/fankeel/roots.json` | n/a | every registry the page has seen, rewritten by every write of the page; [station.md](station.md) has the thirty-day rule |
+| `<configDir>/fankeel/roots.json` | n/a | every registry the page has seen, rewritten by every write of the page and kept until `--forget <dir>` drops it — [station.md](station.md) has more |
 
 The registry is found by walking up for **`.fankeel/sessions/`**, not for
 `.fankeel/`. The marker has to be the thing the registry owns, because the two
@@ -100,10 +100,12 @@ has just been renamed has touched nothing yet.
 
 # What a stage cost
 
-Three fields, none of them typed by anyone, and all three cleared when `task`
+Four fields, none of them typed by anyone, and all four cleared when `task`
 renames the task — for the reason `burn` is cleared: stage names come round
 again, so a first sighting left behind reports two tasks as the cost of one
-stage.
+stage. `burn`, `clock` and `waited` are shown below; the fourth, `spend`, is
+written by `hooks/leave.js` once, at `SessionEnd`, and its shape is under
+**What ending records**.
 
 ```json
 "burn":   { "survey": [120000, 342000] },
@@ -195,7 +197,7 @@ figure is finished.
 
 # What ending records
 
-Three more fields, written once, by `hooks/leave.js` at `SessionEnd`, and by
+Four more fields, written once, by `hooks/leave.js` at `SessionEnd`, and by
 nothing else:
 
 - `ended` — `{ at, reason }`, `reason` one of `clear`, `logout`,
@@ -214,6 +216,13 @@ nothing else:
   every line in those transcripts carries it. Absent when neither the
   transcript nor any agent transcript could be read; with only the agents
   readable, `requests` is 0, `models` is empty and `model` is not written.
+- `spend` — `{ <stage>: { requests, models } }`, one entry per stage the
+  session's `clock` recorded, bucketed from the same single pass over the
+  transcript that produces `usage` above: a request lands in the window
+  holding its **last** line's timestamp, the same rule that already
+  de-duplicates a `requestId`. Deleted from `usage` before that field is
+  written, so every existing reader of `usage` still sees the shape it always
+  had. [station.md](station.md) has where the per-stage curve reads it from.
 
 # Reading it from outside
 

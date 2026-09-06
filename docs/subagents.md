@@ -187,7 +187,7 @@ totalToolCalls`. `agentCount` **does** exist — how many agents the run held.
 model the script asked for. There is still no per-agent token split in that
 file. A directory sits beside it that the report never names:
 `subagents/workflows/<run id>/`, holding one `agent-<id>.jsonl` transcript per
-agent the run spawned — those are what `lib/usage.js:81` matches and prices —
+agent the run spawned — those are what `lib/usage.js:111` matches and prices —
 and a `journal.jsonl` of `started` and `result` events, one line each, which is
 what a resume replays from rather than a transcript.
 

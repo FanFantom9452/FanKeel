@@ -58,8 +58,10 @@ adopted back.
 
 A second button under each registry clears every stale row it has at once,
 with the count in its label so the confirm says what it will do. It calls
-`clearEntry` per row — the same checks, not a second copy of them — and
-reports which rows it refused and why.
+`clearEntry` per row — the same checks, not a second copy of them. A clean
+run redirects to `/?cleared=N`, and the page it lands on says how many it put
+down; a refusal answers directly with which rows it refused and why, since a
+redirect has nowhere to say that.
 
 `down` and `adopt` are not buttons and cannot be. Both need a *calling*
 session id, and a browser page is not a session; `clear` is the only registry
@@ -80,8 +82,10 @@ entry's `started` — so the width in the legend is the clocked span rather than
 the elapsed run. The series are `burn`, the context tokens climbing through the
 session, and spend, cumulative in USD. Each is scaled to its own maximum with
 both maxima printed underneath, because a dual axis is unreadable at ninety
-pixels. A faint rule marks each stage. Under it is the table it is drawn from,
-a row per stage.
+pixels — and because that scaling brings both series to the same pixel, the
+top-right corner, on any row that has both, the spend line is drawn dashed so
+the two stay apart where colour alone could not. A faint rule marks each
+stage. Under it is the table it is drawn from, a row per stage.
 
 Two empty cases are drawn deliberately rather than left as a blank axis.
 Fewer than two stages with `burn` says `no burn recorded` — one sighting is a
@@ -90,7 +94,9 @@ which is every live session and every session that ended before this shipped:
 spend is bucketed out of the transcript at session end, using the stage
 windows `clock` already holds.
 
-The list above the rows filters and sorts — one inline script, nothing
+The list above the rows filters on task, project, session id, model and
+state — `live`, `stale` and `down` are filter terms too, since each row
+carries its own state as an attribute — and sorts, one inline script, nothing
 fetched. Auto-refresh appears only on a served page, because the file on disk
 is rewritten by fankeel's own events and a timer would reload the same bytes.
 

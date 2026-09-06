@@ -187,8 +187,8 @@ entries, and only ever on your say-so.
 
 `lib/registry.js` is explicit that nothing deactivates anything: a session ending,
 a timer expiring and a terminal dying all leave `active` exactly as it was. A
-clean end does write three fields — `ended`, `model` and `usage`, from
-`hooks/leave.js` — and nothing else. That
+clean end does write four fields — `ended`, `model`, `usage` and `spend`,
+from `hooks/leave.js` — and nothing else. That
 is right — a terminal that dies at midnight has to find its task at nine, and a
 registry that expires claims on a timer is one that quietly loses work.
 
