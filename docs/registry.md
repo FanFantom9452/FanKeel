@@ -216,13 +216,17 @@ nothing else:
   every line in those transcripts carries it. Absent when neither the
   transcript nor any agent transcript could be read; with only the agents
   readable, `requests` is 0, `models` is empty and `model` is not written.
-- `spend` — `{ <stage>: { requests, models } }`, one entry per stage the
-  session's `clock` recorded, bucketed from the same single pass over the
+- `spend` — `{ <stage>: { requests, models, subagents? } }`, one entry per stage
+  the session's `clock` recorded, bucketed from the same single pass over the
   transcript that produces `usage` above: a request lands in the window
   holding its **last** line's timestamp, the same rule that already
-  de-duplicates a `requestId`. Deleted from `usage` before that field is
-  written, so every existing reader of `usage` still sees the shape it always
-  had. [station.md](station.md) has where the per-stage curve reads it from.
+  de-duplicates a `requestId`. `subagents` is `{ requests, models }` too, and
+  is present when the session's agents ran in that window — the same windows
+  bucket their transcripts, so a stage's real cost is the two added. A stage
+  where only agents ran carries a zero parent so that the entry exists at all.
+  Both halves are deleted from `usage` before that field is written, so every
+  existing reader of `usage` still sees the shape it always had.
+  [station.md](station.md) has where the per-stage curve reads it from.
 
 # Reading it from outside
 

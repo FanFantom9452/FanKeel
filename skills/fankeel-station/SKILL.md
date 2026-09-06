@@ -87,12 +87,23 @@ top-right corner, on any row that has both, the spend line is drawn dashed so
 the two stay apart where colour alone could not. A faint rule marks each
 stage. Under it is the table it is drawn from, a row per stage.
 
+**The spend series counts the session's agents as well as its parent**, so it
+climbs to what the row's own `$X + $Y (N agents)` cost cell adds up to. A curve
+drawn from the parent alone is a fraction of a session that fanned out — on
+this repository, a row reading `$0.83 + $1.39 (4 agents)` whose curve stopped
+at `$0.83`. The stage table below prints the same one total per stage rather
+than splitting it, because it is captioned as the figures the chart is drawn
+from; the split is kept on disk, in `spend[stage].subagents`.
+
 Two empty cases are drawn deliberately rather than left as a blank axis.
 Fewer than two stages with `burn` says `no burn recorded` — one sighting is a
 position, not a distance. No spend says `spend arrives when the session ends`,
 which is every live session and every session that ended before this shipped:
 spend is bucketed out of the transcript at session end, using the stage
-windows `clock` already holds.
+windows `clock` already holds. Those windows run to the **next** stage's start
+rather than to each stage's own last touch, so a session that sat at a gate
+between two stages has that time, and what was spent in it, on the stage that
+opened the gate rather than on nothing.
 
 The list above the rows filters on task, project, session id, model and
 state — `live`, `stale` and `down` are filter terms too, since each row

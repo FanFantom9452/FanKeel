@@ -399,6 +399,59 @@ test('the spend polyline is drawn dashed and the burn polyline is not', () => {
     assert.ok(!/stroke-dasharray/.test(burnRule[1]), 'the burn line stays solid, so the dash means spend');
 });
 
+// The defect this closes: the curve plotted the parent's requests alone while
+// the cost cell directly above it printed `$X + $Y (N agents)`. Measured on a
+// real run, the curve said $0.83 of a session that cost $2.22. Every figure
+// below is chosen so the parent's own total, the agents' own total and the sum
+// are three different numbers: reading either half alone cannot produce $4.00.
+const M = (model, input) => ({ [model]: { input, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } });
+
+test('the curve and the stage table price the agents of a stage as well as its parent', () => {
+    const m = chartFixture('55555555-cccc-4ccc-8ccc-cccccccccccc', {
+        task: 'parent and agents', stage: 'build', route: ['survey', 'build'],
+        clock: { survey: [0, 1000], build: [1000, 2000] },
+        burn: { survey: [0, 50000], build: [50000, 120000] },
+        spend: {
+            // $1 of parent and $1 of agents.
+            survey: { requests: 1, models: M('claude-sonnet-5', 500000), subagents: { requests: 3, models: M('claude-sonnet-5', 500000) } },
+            // No parent requests at all in this window: $2 of agents alone.
+            build: { requests: 0, models: {}, subagents: { requests: 2, models: M('claude-sonnet-5', 1000000) } },
+        },
+    });
+    const stages = m.registries[0].sessions[0].stages;
+    assert.equal(stages[0].usd, 2, 'the parent\'s dollar and the agents\' dollar, added');
+    assert.equal(stages[1].usd, 2, 'a stage the parent spent nothing in still carries what its agents spent');
+
+    const page = station.render(m, {});
+    assert.ok(page.includes('spend</span> to $4.00'), 'the legend totals both halves; the parent alone is $1.00');
+    assert.ok(page.includes('<tr><td>survey</td><td>0m</td><td>50k</td><td>$2.00</td><td>—</td></tr>'),
+        'one spend column, parent and agents together, in the fourth cell');
+    assert.ok(page.includes('<tr><td>build</td><td>0m</td><td>70k</td><td>$2.00</td><td>—</td></tr>'));
+    const spendLine = page.match(/<polyline class="spend" points="([^"]+)"/);
+    assert.ok(spendLine, 'a spend polyline is drawn');
+    // Four points across a 2000ms span, climbing $0 → $2 → $4 against a $4
+    // maximum: the midpoint sits at half height. Plotting the parent alone puts
+    // it at 45.0 with the same point count, so the coordinates are pinned.
+    assert.equal(spendLine[1], '4.0,86.0 160.0,45.0 160.0,45.0 316.0,4.0');
+});
+
+test('a stage priced on one side only keeps that side rather than falling to null', () => {
+    // The parent's model has no rate; the agents' does. `priced.length` is zero
+    // on one `costOf` and not the other, and reading only the parent's would
+    // print an em dash over $2.50 that was really spent.
+    const m = chartFixture('66666666-dddd-4ddd-8ddd-dddddddddddd', {
+        task: 'half priced', stage: 'build', route: ['survey', 'build'],
+        clock: { survey: [0, 1000], build: [1000, 2000] },
+        burn: { survey: [0, 50000], build: [50000, 120000] },
+        spend: {
+            survey: { requests: 1, models: M('claude-nonesuch-9', 9000000), subagents: { requests: 1, models: M('claude-opus-5', 500000) } },
+        },
+    });
+    assert.equal(m.registries[0].sessions[0].stages[0].usd, 2.5, 'the unpriced parent contributes nothing, the priced agents contribute all of it');
+    const page = station.render(m, {});
+    assert.ok(page.includes('spend</span> to $2.50'));
+});
+
 test('a stage priced by no rate in the table is blank, not free', () => {
     // Same three stages and the same two priced figures as the test above, with
     // the middle stage carrying a model `lib/prices.js` has no rate for instead
@@ -492,6 +545,21 @@ test('the page carries the exported SCRIPT inline, as its only script, and no sc
         'the tag holds the exported SCRIPT, character for character');
     assert.equal((page.match(/<script/g) || []).length, 1, 'and it is the only script on the page');
     assert.ok(!page.includes('<script src='), 'the page loads no external script');
+});
+
+// `lib/station.js` explains the inline script by naming the assertion above by
+// file and line. A line number in a comment drifts every time a test is added
+// above it, and nothing executes a comment, so it drifted once already — it
+// said `:91` after the assertion had moved to `:92`. This reads the citation
+// out of the source and checks the line it points at, so the next drift is a
+// red test rather than a reader sent to the wrong line.
+test('the source comment explaining the inline script cites the line that actually asserts it', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'lib', 'station.js'), 'utf8');
+    const cited = source.match(/tests\/station\.test\.js:(\d+)/);
+    assert.ok(cited, 'lib/station.js cites the assertion by file and line');
+    const lines = fs.readFileSync(__filename, 'utf8').split('\n');
+    assert.ok(lines[Number(cited[1]) - 1].includes("'<script src='"),
+        `lib/station.js cites tests/station.test.js:${cited[1]}, which does not assert on '<script src='`);
 });
 
 // `class="bar"` appearing once counts the wrapper div and nothing inside it:

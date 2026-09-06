@@ -830,6 +830,27 @@ test('windowsFrom runs each stage to the next one and the last to Infinity', () 
   ]);
 });
 
+// The clock above is contiguous — survey's own last touch, 20, happens to be
+// design's start, 30, only because nothing sat between them — so a rule that
+// closed each window at its own `to` would produce the same two windows and no
+// test could tell the two rules apart. This clock has a real gap: survey stops
+// being touched at 20 and design does not open until 900. The gate the session
+// sat at for those 880ms belongs to survey, the stage that opened it, and a
+// request landing in there must be attributed rather than dropped.
+test('windowsFrom closes the gap between two stages onto the earlier one', () => {
+  const clock = { survey: [10, 20], design: [900, 1000] };
+  const windows = registry.windowsFrom(clock);
+  assert.deepEqual(windows, [
+    { stage: 'survey', from: -Infinity, to: 900 },
+    { stage: 'design', from: 900, to: Infinity },
+  ]);
+  assert.equal(windows[0].to, windows[1].from, 'the windows abut: nothing timestamped can fall between them');
+  const at = (t) => (windows.find((w) => t >= w.from && t < w.to) || {}).stage;
+  assert.equal(at(500), 'survey', 'a request in the gap belongs to the stage that opened the gate, not to nothing');
+  assert.equal(at(20), 'survey');
+  assert.equal(at(900), 'design');
+});
+
 // `spendOf` is written once, at session end, by `hooks/leave.js` — it is
 // absent on every entry from before that hook learned to write it, and on
 // every session still running.

@@ -26,6 +26,31 @@ const station = require('../lib/station.js');
 const live = require('../lib/live.js');
 const { run, parse } = require('../lib/hook.js');
 
+// `spend[stage]` carries the parent's own `{requests, models}` and, when agents
+// ran in that stage, a `subagents` sub-object of the same shape — mirroring the
+// way `usage` already carries `usage.subagents`. The two are kept apart rather
+// than summed because the station's row prints them apart, as `$X + $Y (N
+// agents)`; `lib/station.js` prices both for the curve, so the curve totals
+// what that cell totals.
+//
+// A stage where only agents ran still gets an entry, with a zero parent, so
+// that `registry.spendOf` — which asks for `models` — finds it rather than
+// dropping the stage's whole cost.
+function stageSpend(usage) {
+    const own = usage.stages || null;
+    const theirs = usage.subagents && usage.subagents.stages ? usage.subagents.stages : null;
+    if (!own && !theirs) return null;
+    const spend = {};
+    for (const [stage, bucket] of Object.entries(own || {})) {
+        spend[stage] = { requests: bucket.requests, models: bucket.models };
+    }
+    for (const [stage, bucket] of Object.entries(theirs || {})) {
+        const at = spend[stage] || (spend[stage] = { requests: 0, models: {} });
+        at.subagents = { requests: bucket.requests, models: bucket.models };
+    }
+    return spend;
+}
+
 function main(raw) {
     const payload = parse(raw);
     if (!payload || typeof payload.session_id !== 'string') return;
@@ -45,14 +70,17 @@ function main(raw) {
                 if (seen) {
                     if (seen.model) d.model = seen.model;
                     d.usage = seen.usage;
-                    // `d.usage` and `seen.usage` are the same object, so this
-                    // delete removes `stages` from both — but `d.spend` was
-                    // just handed the `stages` object's own reference, not a
-                    // path through `usage`, so the delete cannot reach it.
-                    if (seen.usage.stages) {
-                        d.spend = seen.usage.stages;
-                        delete d.usage.stages;
-                    }
+                    const spend = stageSpend(seen.usage);
+                    if (spend) d.spend = spend;
+                    // `d.usage` and `seen.usage` are the same object, so these
+                    // deletes remove `stages` from both — but `d.spend` is an
+                    // object `stageSpend` built, holding each bucket's `models`
+                    // by its own reference and not by a path through `usage`,
+                    // so the deletes cannot reach it. Both sides are cleared,
+                    // the parent's and the agents', so `usage` keeps exactly
+                    // the shape every reader of it already expects.
+                    delete d.usage.stages;
+                    if (d.usage.subagents) delete d.usage.subagents.stages;
                 }
             });
         } catch (e) { /* housekeeping */ }

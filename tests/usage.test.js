@@ -115,6 +115,63 @@ test('agentsOf is null with no agents, and summariseTree nests it under usage on
     assert.equal(usage.agentsOf('not-a-jsonl-path'), null);
 });
 
+// The parent's requests are a fraction of a session that fanned out, so a
+// per-stage figure built from the parent alone is a fraction too — measured
+// $0.83 against $2.22 on a real run. `agentsOf` therefore takes the same
+// `opts` the parent's `summarise` takes and buckets every agent's requests
+// into the same windows.
+test('agentsOf buckets its agents into the windows it is given, and stays silent when given none', () => {
+    const file = session({
+        'subagents/agent-aaaa.jsonl': [
+            agentLine('a1', 100, new Date(1500).toISOString()),
+            agentLine('a2', 5, new Date(3500).toISOString()),
+        ],
+        'subagents/workflows/wf_x/agent-bbbb.jsonl': [agentLine('b1', 7, new Date(3600).toISOString())],
+    });
+    const windows = [{ stage: 'survey', from: -Infinity, to: 3000 }, { stage: 'build', from: 3000, to: Infinity }];
+
+    const bare = usage.agentsOf(file);
+    assert.equal('stages' in bare, false, 'no windows asked for, no per-stage field');
+
+    const staged = usage.agentsOf(file, { stages: windows });
+    assert.equal(staged.requests, 3, 'the whole-agent totals are what they always were');
+    assert.equal(staged.agents, 2);
+    assert.equal(staged.stages.survey.requests, 1);
+    assert.equal(staged.stages.build.requests, 2, 'the second agent, in another directory, sums into the same bucket');
+    assert.deepEqual(staged.stages.survey.models, {
+        'claude-sonnet-5': { input: 10, output: 100, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+    });
+    assert.deepEqual(staged.stages.build.models, {
+        'claude-sonnet-5': { input: 20, output: 12, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+    });
+});
+
+test('summariseTree hands the windows to both halves, and neither half counts the other', () => {
+    const file = session({
+        'subagents/agent-aaaa.jsonl': [agentLine('a1', 100, new Date(1500).toISOString())],
+    });
+    // The parent transcript `session()` writes carries no timestamp, so give it
+    // one of its own, plus a sidechain line the parent must not count and the
+    // agent walk must not reach.
+    fs.appendFileSync(file, [
+        assistant('own2', 'claude-fable-5-1', { input_tokens: 7, output_tokens: 70 }, { timestamp: new Date(1600).toISOString() }),
+        assistant('ghost', 'claude-fable-5-1', { input_tokens: 999, output_tokens: 999 },
+            { isSidechain: true, timestamp: new Date(1700).toISOString() }),
+    ].join(''));
+    const windows = [{ stage: 'survey', from: -Infinity, to: 3000 }, { stage: 'build', from: 3000, to: Infinity }];
+    const tree = usage.summariseTree(file, { stages: windows });
+
+    assert.equal(tree.usage.stages.survey.requests, 1, 'the parent has one timestamped request in survey');
+    assert.deepEqual(tree.usage.stages.survey.models, {
+        'claude-fable-5-1': { input: 7, output: 70, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+    }, 'the sidechain line in the parent transcript is not in the parent bucket');
+    assert.equal(tree.usage.subagents.stages.survey.requests, 1);
+    assert.deepEqual(tree.usage.subagents.stages.survey.models, {
+        'claude-sonnet-5': { input: 10, output: 100, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+    }, 'the agents\' bucket holds the agent transcript and nothing from the parent');
+    assert.equal(tree.usage.subagents.stages.build, undefined);
+});
+
 test('summarise buckets requests into the stage windows it is given', () => {
     const file = transcript([
         assistant('r1', 'claude-sonnet-5', { input_tokens: 10, output_tokens: 1 }, { timestamp: new Date(10).toISOString() }),

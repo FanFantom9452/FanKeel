@@ -241,3 +241,25 @@ actually readable at 90 pixels**. The alternative, if they are not, is one serie
 at a time behind a toggle. Nothing in this design depends on the answer except
 the chart's own height and legend, so it is settled by looking at the first
 rendered page in `verify` rather than by argument here.
+
+**What the build did about it, and what that does not settle.** The spend line
+ships dashed — `svg.curve polyline.spend` carries a `stroke-dasharray`, the burn
+line stays solid — and `verify`'s evidence table read that as closing the
+question. It does not. The dash answers one narrower thing: because each series
+is scaled to its own maximum, both end at the same pixel in the top-right
+corner, and where they converge a solid stroke could not say which is which. A
+dash makes two lines *distinguishable*. Whether a 320×90 box carrying two
+polylines, stage rules, stage letters and a two-figure legend is *readable* is
+the question this section pre-registered, and no browser has been opened on the
+page. The method that settles it is unchanged: look at a rendered station page.
+
+**The named fallback was considered and not taken.** One series at a time behind
+a toggle was weighed against the dash when the illegibility was raised, and the
+dash was chosen because the ask was for the two read side by side and the
+ambiguity was only where the lines meet — a toggle gives up the side-by-side
+reading to solve a narrower problem than it costs. That is a judgement, not a
+measurement. If the rendered page turns out to be unreadable, the toggle is
+still the fallback and nothing has been built that forecloses it.
+
+**So this question stays open**, and is recorded as open rather than as answered:
+a mitigation filed as a fix is how an open question stops being asked.

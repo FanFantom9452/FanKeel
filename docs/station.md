@@ -105,7 +105,19 @@ labels carry the units instead.
 | series | from | |
 |---|---|---|
 | `burn` | the raw per-stage pairs, via `registry.seriesOf` | context tokens, which climb through a session |
-| spend | `spend`, priced by `lib/prices.js` | cumulative USD, running across stages |
+| spend | `spend`, both halves of it, priced by `lib/prices.js` | cumulative USD, running across stages |
+
+**The spend series is the session's, agents included.** Each `spend[stage]`
+carries the parent's own `{ requests, models }` and, when agents ran in that
+window, a `subagents` sub-object of the same shape; `gather` prices both and
+adds them, so the curve ends where the row's cost cell — `$X + $Y (N agents)` —
+adds up to. It did not always: the curve was drawn from the parent alone, which
+on a session that fanned out is a fraction of what it spent. Measured on this
+repository, a row whose cost cell read `$0.83 + $1.39 (4 agents)` had a curve
+that climbed to $0.83, and one row on the same page read `$57.43 + $91.56 (21
+agents)`. Nothing is counted twice: `usage.agentsOf` reads only the transcripts
+under the session's own `subagents/` directory, and the parent's own pass skips
+every `isSidechain` line.
 
 Both series end at the same pixel — the top-right corner — on every row that
 carries both, because each is scaled to its own maximum rather than a shared
@@ -125,6 +137,12 @@ is drawn from — one row per stage, with the minutes, the burn distance, the
 spend, and a fifth column, `waited`: how much of that stage's minutes went on
 a gate rather than on work.
 
+The spend column is **one total, parent and agents together**, and not two
+columns. The table is captioned as the figures the chart is drawn from and the
+chart draws one spend line; splitting the column would print two numbers
+neither of which is the plotted one. The split is kept where it can be read
+without arithmetic: on disk in `spend[stage]`, and on the row's own cost cell.
+
 A stage whose models the price table does not know has no dollar figure, not a
 figure of zero: `costOf` returns `usd: 0` there, and `gather` reads
 `priced.length` — the check `row()` already made for the summary cell — before
@@ -140,14 +158,22 @@ per prompt — `lib/usage.js` reads the transcript whole, once, at the end,
 deliberately. So the stages are derived rather than recorded: `clock` already
 holds when each stage was entered, `registry.windowsFrom` turns that into
 windows, and `hooks/leave.js` passes them into the same single pass that was
-already happening. Each request lands in the window holding its **last**
-line's timestamp — the same "last line winning" rule the `requestId`
-de-duplication already uses, so a request whose lines straddle a boundary is
-decided by one rule and not two.
+already happening — the parent's pass and each agent's alike, since
+`summariseTree` hands the windows to both halves. Each request lands in the
+window holding its **last** line's timestamp — the same "last line winning"
+rule the `requestId` de-duplication already uses, so a request whose lines
+straddle a boundary is decided by one rule and not two.
+
+Each window runs to the **next stage's start**, not to its own last touch. The
+first starts at `-Infinity`, because the prompt that created the entry is older
+than the entry. So the two windows abut and nothing timestamped can fall
+between them: a session that sat at a gate for an hour between `survey`'s last
+sighting and `build`'s first has that hour, and whatever was spent in it,
+attributed to `survey` — the stage that opened the gate — rather than dropped.
 
 `spend` sits beside `burn`, `clock` and `waited` as a field of its own, and
-is deleted from `usage`, so every existing reader of `usage` sees the shape it
-has always seen.
+is deleted from `usage` — from `usage.subagents` too — so every existing reader
+of `usage` sees the shape it has always seen.
 
 ### Filtering and sorting
 
