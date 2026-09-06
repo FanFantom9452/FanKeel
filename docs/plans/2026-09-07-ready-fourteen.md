@@ -266,8 +266,8 @@ function clean(dir) {
     return { scanned, removed, failed };
 }
 
-function main() {
-    const dir = os.tmpdir();
+function main(dir) {
+    dir = dir || os.tmpdir();
     const started = Date.now();
     const { scanned, removed, failed } = clean(dir);
     const secs = ((Date.now() - started) / 1000).toFixed(1);
@@ -328,10 +328,13 @@ test('a directory that cannot be read is not an error', () => {
 });
 
 // `main` is exported, so something has to import it: `tests/source.test.js:92`
-// fails a tracked non-test file that exports a name nothing reads. This runs
-// against the real temp directory, which is what `main` does, so it goes last.
+// fails a tracked non-test file that exports a name nothing reads. It is given
+// a scratch root rather than being called bare: bare, it sweeps the real temp
+// directory, which is this plan's one irreversible step and not a test's to take.
 test('main prints a one-line summary naming the prefix', () => {
-  assert.match(main(), /^tmp-clean — \d+ removed, \d+ left, \d+ matched fankeel-\* in /);
+  const root = tmp('fankeel-cleanmain-');
+  fs.mkdirSync(path.join(root, PREFIX + 'one'));
+  assert.match(main(root), /^tmp-clean — 1 removed, 0 left, 1 matched fankeel-\* in /);
 });
 ```
 
