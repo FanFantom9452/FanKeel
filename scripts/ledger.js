@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 'use strict';
 
-// The ledger, from the command line. Four verbs, because four is what the build
+// The ledger, from the command line. Nine verbs, because nine is what the build
 // loop actually does to it: open it, say a task is done, and — after a compaction
 // — ask what it already knows, and ask which of a plan's tasks may go out together.
+// `lint`, `brief` and `fix` came with the 2026-09-07 plan-quality change: check a
+// plan against its design, write one task's brief file, and record a reviewed fix.
 //
 // **Flags precede the verb.** Everything after it is the user's words, down to a
 // word spelled exactly like a flag. `--plan` and `--root` are both paths, and a
@@ -37,7 +39,7 @@ const STRING_FLAGS = { root: 'root', plan: 'plan', range: 'range' };
 // than four literals for the same reason the flags are a table: `splitAtVerb`
 // reads it too, so that no flag spends one, and two lists of the same verbs
 // drift.
-const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'ranges']);
+const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'ranges', 'lint', 'brief', 'fix']);
 
 // `strict: false` keeps an unknown flag silent. A declared flag given no value
 // comes back `true` rather than a string, and that is the refusal below: a flag
@@ -75,9 +77,14 @@ function serialCause(tasks) {
         const [a, b] = [tasks[i], tasks[i + 1]];
         const reason = plantasks.conflict(a, b);
         if (reason === 'interface') edge = true;
-        if (reason !== 'files') continue;
-        const owned = [...b.modify, ...b.test];
-        for (const p of [...a.modify, ...a.test]) if (owned.includes(p)) shared.add(p);
+        if (reason === 'files') {
+            const owned = [...b.modify, ...b.test];
+            for (const p of [...a.modify, ...a.test]) if (owned.includes(p)) shared.add(p);
+        }
+        if (reason === 'read') {
+            for (const p of a.read || []) if ([...b.modify, ...b.test].includes(p)) shared.add(p);
+            for (const p of b.read || []) if ([...a.modify, ...a.test].includes(p)) shared.add(p);
+        }
     }
     if (shared.size) return 'Shared by consecutive tasks: ' + [...shared].join(', ');
     // Only when no pair shared a file at all, so this never overwrites the more
@@ -99,6 +106,60 @@ function serialCause(tasks) {
 // literal string is what keeps a reader who meets this from one verb and later
 // from the other recognising it as the same answer, not two different guesses.
 const CONFORMING_HEADING = 'A conforming heading looks like `## Task 1: name` — note the colon after the number.';
+
+// What a dispatched implementer cannot infer and the brief must therefore
+// carry: it receives this file and nothing else. Fixed text, so that every
+// brief says it the same way and a reviewer can hold the return to it.
+const FOOTER = [
+    '## Rules you cannot infer',
+    '',
+    '- The files you may read are named above, under Files (Modify, Test, Read) and Interfaces. Never walk `/`, a home directory or a Temp directory. A file you need that is not named here is returned as `blocked: <the file>`, in your first turn.',
+    '- A file the task text names that the Files block does not list is returned as `blocked: <the file> is named but not declared`, before anything is built.',
+    '- Neighbours are editing other files in this working tree. Run only your own test command, never the full suite.',
+    '- Do not commit, and do not touch the index, HEAD or branch state.',
+    '- Write the failing tests first and watch them fail. Every new test must be shown red once: name the mutation that reddens it.',
+    '- Return, and nothing else: a status line (`done`, `partial: <what>` or `blocked: <why>`), the paths you wrote, the `ℹ pass` and `ℹ fail` line, and one line per new test as `<test name> — red when: <the mutation>`. Never a diff, never a summary of the code: every line you return stays in a long-running parent context for the rest of the session.',
+].join('\n');
+
+// The paragraph opening with `**Label:**`, to the next blank line: a Goal wraps.
+function paragraph(header, label) {
+    const lines = String(header || '').split(/\r?\n/);
+    const at = lines.findIndex((l) => l.trim().startsWith('**' + label + ':**'));
+    if (at === -1) return '';
+    const out = [];
+    for (let i = at; i < lines.length && lines[i].trim(); i++) out.push(lines[i]);
+    return out.join('\n');
+}
+
+// A `## <heading>` section of the header, heading included, to the next `## `.
+function section(header, heading) {
+    const lines = String(header || '').split(/\r?\n/);
+    const at = lines.findIndex((l) => l.trim() === '## ' + heading);
+    if (at === -1) return '';
+    const out = [lines[at]];
+    for (let i = at + 1; i < lines.length && !/^##\s/.test(lines[i]); i++) out.push(lines[i]);
+    return out.join('\n').replace(/\s+$/, '');
+}
+
+// The design a plan argues from, off its `**Spec:**` line: a bare path, or a
+// markdown link, either one relative to the plan's own directory.
+function specPath(planFile, header) {
+    const line = paragraph(header, 'Spec');
+    if (!line) return null;
+    const value = line.replace(/^\s*\*\*Spec:\*\*\s*/, '').trim();
+    const link = /\]\(([^)]+)\)/.exec(value);
+    const rel = (link ? link[1] : value).replace(/`/g, '').trim();
+    return path.resolve(path.dirname(planFile), rel);
+}
+
+function readPlan(root, plan) {
+    const file = path.resolve(root, plan);
+    try {
+        return { file, text: fs.readFileSync(file, 'utf8') };
+    } catch (e) {
+        return fail('No plan at ' + file);
+    }
+}
 
 function main(argv) {
     const { head, verb: named, text } = splitAtVerb(argv, STRING_FLAGS, VERBS);
@@ -241,6 +302,86 @@ function main(argv) {
             + '\nreturn, in the order listed.';
     }
 
+    if (verb === 'lint') {
+        const { file, text: planText } = readPlan(root, opts.plan);
+        const { header } = plantasks.parsePlan(planText);
+        const design = specPath(file, header);
+        if (!design) fail('lint wants a **Spec:** line in the plan header naming the design file.');
+        let designText = '';
+        try {
+            designText = fs.readFileSync(design, 'utf8');
+        } catch (e) {
+            return fail('No design at ' + design + ', named by the plan\'s **Spec:** line.');
+        }
+        const lines = plantasks.lint(planText, designText);
+        if (!lines.length) return 'fankeel ledger — lint: clean';
+        // Exit 1, so a gate that chains it stops here. The lines are the
+        // report; nothing is summarised on their behalf.
+        return fail('fankeel ledger — lint: ' + lines.length + ' findings\n  ' + lines.join('\n  '));
+    }
+
+    if (verb === 'brief') {
+        const n = Number(text[0]);
+        if (!Number.isInteger(n) || n < 1) fail('brief <task number>');
+        const { file, text: planText } = readPlan(root, opts.plan);
+        const { header, tasks } = plantasks.parsePlan(planText);
+        const task = tasks.find((t) => t.n === n);
+        if (!task) fail('brief: no Task ' + n + ' in ' + file + '. ' + CONFORMING_HEADING);
+        // For every name this task consumes, the entry that produces it — the
+        // exact signature, from the task that owns it, rather than a memory.
+        const produced = [];
+        for (const name of task.consumes) {
+            for (const t of tasks) {
+                if (t.n === task.n) continue;
+                for (const entry of t.producesText) {
+                    if (entry.includes('`' + name + '`') && !produced.includes('- Task ' + t.n + ' produces: ' + entry)) {
+                        produced.push('- Task ' + t.n + ' produces: ' + entry);
+                    }
+                }
+            }
+        }
+        const out = [
+            '# Task ' + n + ' — ' + task.name,
+            '',
+            opts.plan + ', Task ' + n + '. This file is your whole brief.',
+            '',
+            paragraph(header, 'Goal'),
+            '',
+            paragraph(header, 'Spec'),
+            '',
+            section(header, 'Global Constraints'),
+            '',
+            task.body,
+            '',
+            '## From the tasks this consumes',
+            '',
+            produced.length ? produced.join('\n') : 'Nothing consumed from an earlier task.',
+            '',
+            FOOTER,
+            '',
+        ].join('\n');
+        const dir = path.dirname(ledger.ledgerPath(root, opts.plan));
+        fs.mkdirSync(dir, { recursive: true });
+        const briefFile = path.join(dir, 'task-' + n + '-brief.md');
+        fs.writeFileSync(briefFile, out);
+        return 'fankeel ledger — ' + briefFile;
+    }
+
+    if (verb === 'fix') {
+        const what = text.join(' ');
+        if (!what.trim()) fail('fix "<what the fix was>" — with --range <base>..<sha> before the verb.');
+        // Required, not optional as it is on `complete`: a fix is the commit
+        // that came back from verify, and a fix line with no range is the
+        // unreviewed commit this verb exists to rule out.
+        if (opts.range === undefined) fail('fix wants --range <base>..<sha>: a fix with no range is a commit nobody reviewed.');
+        if (!ledger.isRange(opts.range)) {
+            fail('--range wants two commit shas: <base>..<head>, 7 to 40 hex each. '
+                + '"' + opts.range + '" would reach the file and read back as no range at all.');
+        }
+        ledger.append(root, opts.plan, ledger.fixLine(what, opts.range));
+        return 'fankeel ledger — fix recorded.';
+    }
+
     if (verb === 'ranges') {
         const file = ledger.ledgerPath(root, opts.plan);
         let contents = '';
@@ -253,8 +394,10 @@ function main(argv) {
             return 'fankeel ledger — ' + file + ' belongs to another plan. Leave it; `init` starts your own.';
         }
         const rows = ledger.completions(contents);
-        if (!rows.length) return 'fankeel ledger — nothing complete yet at ' + file;
-        const lines = rows.map((r) => '  ' + r.n + ' ' + (r.range || '(no range recorded)'));
+        const fixed = ledger.fixes(contents);
+        if (!rows.length && !fixed.length) return 'fankeel ledger — nothing complete yet at ' + file;
+        const lines = rows.map((r) => '  ' + r.n + ' ' + (r.range || '(no range recorded)'))
+            .concat(fixed.map((r) => '  fix ' + (r.range || '(no range recorded)') + ' — ' + r.what));
         // A missing range is named rather than dropped. Silence here is a task
         // that landed and never got a verifier, which is the failure this verb
         // exists to prevent.

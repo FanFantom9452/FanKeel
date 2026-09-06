@@ -437,3 +437,153 @@ test('groups flags a Consumes text naming a task already in its group', () => {
   assert.match(out, /Task 2 names Task 1 in its Consumes text/);
   assert.doesNotMatch(out, /files are disjoint/);
 });
+
+// A fixture plan with a header, a constraints block, two tasks and a coverage
+// table, beside the design it argues from. `lint` reads the design from the
+// plan's own Spec line, so the two are written into one directory.
+const PLAN_HEAD = [
+  '# A plan', '',
+  '**Goal:** one line, and a', 'second line of it.', '',
+  '**Spec:** [design.md](design.md)', '',
+  '## Global Constraints', '', '- **No dependency may be added.**', '- four-space indent', '',
+  '## File structure', '', '| file | responsibility |', '|---|---|', '| `lib/a.js` | a |', '',
+].join('\n');
+
+const PLAN_TASKS = [
+  '## Task 1: the first', '',
+  '**Files:**', '- Modify: `lib/a.js`', '',
+  '**Interfaces:**', '- Consumes: nothing.', '- Produces: `makeA` — `makeA(x)` → `{ a }`, the thing Task 2 reads', '',
+  'In `lib/a.js`, add:', '', '```js', 'x', '```', '',
+  '## Task 2: the second', '',
+  '**Files:**', '- Modify: `lib/b.js`', '- Read: `lib/a.js` — for makeA', '',
+  '**Interfaces:**', '- Consumes: `makeA` from Task 1.', '- Produces: nothing.', '',
+  'Then run:', '', '```', 'node --test', '```', '',
+].join('\n');
+
+const DESIGN = [
+  '# A design', '',
+  '## 1. The area', '',
+  '- the page gains a `waited` column beside the burn column', '',
+  '## What proves it done', '',
+  '| test | fails now because |', '|---|---|',
+  '| `tests/a.test.js` — makeA returns the thing | no makeA |', '',
+].join('\n');
+
+const writePair = (dir, coverage) => {
+  fs.writeFileSync(path.join(dir, 'design.md'), DESIGN);
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, PLAN_HEAD + PLAN_TASKS + (coverage || ''));
+  return plan;
+};
+
+const run = (dir, plan, ...args) => {
+  try {
+    return { out: execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, ...args], { encoding: 'utf8' }), code: 0 };
+  } catch (e) {
+    return { out: String(e.stdout || ''), code: e.status };
+  }
+};
+
+test('lint reads the design from the Spec line and exits non-zero naming the promise with no task', () => {
+  const dir = root();
+  const plan = writePair(dir);
+  const { out, code } = run(dir, plan, 'lint');
+  assert.equal(code, 1);
+  assert.match(out, /lint: 2 findings/);
+  assert.match(out, /promise with no task: the page gains a `waited` column/);
+  assert.match(out, /promise with no task: `tests\/a\.test\.js` — makeA returns the thing/);
+});
+
+test('lint is clean when the Coverage table quotes every promise', () => {
+  const dir = root();
+  const plan = writePair(dir, [
+    '## Coverage', '', '| promise | task |', '|---|---|',
+    '| the page gains a `waited` column beside the burn column | Task 1 |',
+    '| `tests/a.test.js` — makeA returns the thing | Task 1 |', '',
+  ].join('\n'));
+  const { out, code } = run(dir, plan, 'lint');
+  assert.equal(code, 0, out);
+  assert.match(out, /lint: clean/);
+});
+
+test('lint refuses a plan whose header names no Spec', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, '# A plan\n\n' + PLAN_TASKS);
+  const { out, code } = run(dir, plan, 'lint');
+  assert.equal(code, 1);
+  assert.match(out, /Spec:/);
+});
+
+test('brief writes the task section, the constraints, the producer entry and the footer, and prints the path', () => {
+  const dir = root();
+  const plan = writePair(dir);
+  const { out, code } = run(dir, plan, 'brief', '2');
+  assert.equal(code, 0, out);
+  const file = out.trim().replace(/^fankeel ledger — /, '');
+  assert.match(file.replace(/\\/g, '/'), /\.fankeel\/build\/plan\/task-2-brief\.md$/);
+  const brief = fs.readFileSync(file, 'utf8');
+  assert.match(brief, /^# Task 2 — the second/m);
+  assert.match(brief, /\*\*Goal:\*\* one line, and a\nsecond line of it\./);
+  assert.match(brief, /\*\*Spec:\*\* \[design\.md\]/);
+  assert.match(brief, /## Global Constraints\n\n- \*\*No dependency may be added\.\*\*\n- four-space indent/);
+  assert.doesNotMatch(brief, /## File structure/);
+  assert.match(brief, /## Task 2: the second[\s\S]*- Read: `lib\/a\.js`[\s\S]*node --test/);
+  assert.doesNotMatch(brief, /## Task 1: the first/);
+  assert.match(brief, /## From the tasks this consumes\n\n- Task 1 produces: `makeA` — `makeA\(x\)` → `\{ a \}`, the thing Task 2 reads/);
+  assert.match(brief, /## Rules you cannot infer/);
+  assert.match(brief, /Never walk `\/`, a home directory or a Temp directory/);
+  assert.match(brief, /blocked: <the file>/);
+  assert.match(brief, /red when: <the mutation>/);
+});
+
+test('brief refuses a task number the plan does not carry', () => {
+  const dir = root();
+  const plan = writePair(dir);
+  const { out, code } = run(dir, plan, 'brief', '7');
+  assert.equal(code, 1);
+  assert.match(out, /no Task 7/);
+});
+
+test('fix records a Fix line with its range, ranges lists it beside the tasks, and a fix with no range is refused', () => {
+  const dir = root();
+  const plan = writePair(dir);
+  run(dir, plan, 'init');
+  run(dir, plan, '--range', 'aaaaaaa..bbbbbbb', 'complete', '1', 'landed');
+  const ok = run(dir, plan, '--range', 'bbbbbbb..ccccccc', 'fix', 'the guard counted an empty object');
+  assert.equal(ok.code, 0, ok.out);
+  assert.match(ok.out, /fix recorded/);
+  const text = fs.readFileSync(ledger.ledgerPath(dir, plan), 'utf8');
+  assert.match(text, /^Fix: \[bbbbbbb\.\.ccccccc\] — the guard counted an empty object$/m);
+  assert.deepEqual(ledger.fixes(text), [{ what: 'the guard counted an empty object', range: 'bbbbbbb..ccccccc' }]);
+  const { out } = run(dir, plan, 'ranges');
+  assert.match(out, /  1 aaaaaaa\.\.bbbbbbb\n  fix bbbbbbb\.\.ccccccc — the guard counted an empty object/);
+  const bad = run(dir, plan, 'fix', 'no range');
+  assert.equal(bad.code, 1);
+  assert.match(bad.out, /--range/);
+});
+
+// The incident this verb exists for. The plan and design are copied, not
+// pointed at, because the Spec link between them is relative and the pair may
+// move to docs/archive together once the audit stage retires them.
+test('lint on the 2026-09-06 station plan names the promises it dropped and the fence that named no file', () => {
+  const dir = root();
+  const repo = path.join(__dirname, '..');
+  const find = (name) => ['docs/plans', 'docs/archive'].map((d) => path.join(repo, d, name)).find((p) => fs.existsSync(p));
+  fs.copyFileSync(find('2026-09-06-station-reads-back.md'), path.join(dir, 'plan.md'));
+  fs.copyFileSync(find('2026-09-06-station-reads-back-design.md'), path.join(dir, '2026-09-06-station-reads-back-design.md'));
+  const { out, code } = run(dir, path.join(dir, 'plan.md'), 'lint');
+  assert.equal(code, 1);
+  // Four of the six promises verify found dropped on 09-06, by the design's
+  // own wording. The x axis and the maximum's position were corrected in the
+  // design after the build; `data-state` and the cleared count never shipped.
+  assert.match(out, /promise with no task: \*\*x\*\* is milliseconds since `started`/);
+  assert.match(out, /promise with no task: \*\*Two units in one box/);
+  assert.match(out, /promise with no task: Each `<details>` carries `data-updated`/);
+  assert.match(out, /promise with no task: [^\n]*`POST \/clear-stale` clears every stale row/);
+  assert.match(out, /Task 7 line \d+: a `js` fence names no file from its Files block/);
+  // And the one it cannot see: `waited` was a paragraph in that design, not a
+  // bullet. The design skill now says to write promises as bullets for this
+  // reason, and this assertion pins the limit rather than hiding it.
+  assert.doesNotMatch(out, /`waited`/);
+});
