@@ -94,6 +94,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - Whether a reviewer per task plus a mutation control per fix earns its cost; on 09-06 it was most of a 2h20m build — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
 
+- With the roots expiry gone, any scratch registry a `leave.js` run touches is remembered until `--forget`; two landed on 09-06 — [lib/station.js](lib/station.js).
+
 - `docs-check` compares counts, not lists: 22 to 21 on one branch hid a change; `--since <ref>`, or a documented "compare the list" — [scripts/docs-check.js](scripts/docs-check.js).
 
 - `todo-check` `SECTIONS` is fixed and exits 1 on a repository with its own headings, 22 of 22 unclassified; per-project names, or one downgrade line — [scripts/todo-check.js](scripts/todo-check.js).
