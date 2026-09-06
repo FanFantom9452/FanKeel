@@ -38,8 +38,12 @@ const { run, parse } = require('../lib/hook.js');
 // that `registry.spendOf` — which asks for `models` — finds it rather than
 // dropping the stage's whole cost.
 function stageSpend(usage) {
-    const own = usage.stages || null;
-    const theirs = usage.subagents && usage.subagents.stages ? usage.subagents.stages : null;
+    // `usage.stages` is `{}`, not absent, when windows were given but no
+    // request could be placed in one — present and truthy, so an empty object
+    // on either side counts as nothing here too, or `spend: {}` gets written.
+    const own = usage.stages && Object.keys(usage.stages).length ? usage.stages : null;
+    const theirs = usage.subagents && usage.subagents.stages && Object.keys(usage.subagents.stages).length
+        ? usage.subagents.stages : null;
     if (!own && !theirs) return null;
     const spend = {};
     for (const [stage, bucket] of Object.entries(own || {})) {

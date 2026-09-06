@@ -78,6 +78,26 @@ function fixtureWithClock(clock) {
     return { cfg, root, transcript };
 }
 
+// B1: a fixture with a `clock` on the entry, so `windows.length` is nonzero and
+// `opts.stages` reaches `summarise`, but every transcript line lacks a
+// `timestamp` field — so `summarise` can place none of them into a window and
+// `usage.stages` comes back `{}`: present and truthy, not absent.
+function fixtureWithClockNoTimestamps(clock) {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-leave-'));
+    const cfg = path.join(base, 'cfg');
+    const root = path.join(base, 'ws');
+    fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
+    registry.ensureLayout(root);
+    registry.writeSession(root, SID, { task: 'the ramp', stage: 'build', route: ['survey', 'build'], active: true,
+        claims: ['a.js'], started: new Date().toISOString(), updated: new Date().toISOString(), configDir: cfg, clock });
+    const transcript = path.join(base, 't.jsonl');
+    const a = (requestId, model, usage) => JSON.stringify({ type: 'assistant', requestId, message: { model, usage } }) + '\n';
+    fs.writeFileSync(transcript, [
+        a('r1', 'claude-sonnet-5', { input_tokens: 10, output_tokens: 20 }),
+    ].join(''));
+    return { cfg, root, transcript };
+}
+
 test('records ended, model and usage on its own entry; active stays true; the page is regenerated; stdout is empty', () => {
     const f = fixture();
     const out = run({ session_id: SID, transcript_path: f.transcript, cwd: f.root, reason: 'clear', hook_event_name: 'SessionEnd' }, f.cfg);
@@ -153,6 +173,19 @@ test('leave writes no spend when the entry has no clock', () => {
     const d = registry.readSession(f.root, SID);
     assert.equal(d.spend, undefined);
     assert.equal(d.usage.requests, 2);
+});
+
+// B1: unlike the test above, this entry has a clock and `windows.length` is
+// nonzero, so `opts.stages` does reach `summarise` — but no transcript line has
+// a parseable timestamp, so nothing lands in a window and `usage.stages` comes
+// back `{}` rather than absent. `spend` must still be absent, not `{}`.
+test('leave writes no spend when the clock windows catch no timestamped request', () => {
+    const f = fixtureWithClockNoTimestamps({ survey: [1000, 2000], build: [3000, 4000] });
+    const out = run({ session_id: SID, transcript_path: f.transcript, cwd: f.root, reason: 'clear', hook_event_name: 'SessionEnd' }, f.cfg);
+    assert.equal(out, '');
+    const d = registry.readSession(f.root, SID);
+    assert.equal(d.spend, undefined);
+    assert.equal(d.usage.requests, 1);
 });
 
 // The station's curve is drawn from `spend`, and a curve that leaves the agents

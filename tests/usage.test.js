@@ -170,6 +170,50 @@ test('summariseTree hands the windows to both halves, and neither half counts th
         'claude-sonnet-5': { input: 10, output: 100, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
     }, 'the agents\' bucket holds the agent transcript and nothing from the parent');
     assert.equal(tree.usage.subagents.stages.build, undefined);
+
+    // `own1`, from `session()`, carries no timestamp and so claims no stage —
+    // but it is a real request, and stays in the whole-session totals that
+    // `usage.requests` and `usage.models` report. Left unchecked, that gap
+    // between what was spent and what a stage claims sits in this fixture
+    // unasserted; see the test below for the deliberate contract it reflects.
+    assert.equal(tree.usage.requests, 2, 'own1 and own2 both count, though only own2 landed in a stage');
+    assert.deepEqual(tree.usage.models['claude-fable-5-1'],
+        { input: 12, output: 120, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+        'own1\'s 5 input / 50 output are in this total and in no stage bucket above');
+});
+
+// B2: this gap is deliberate, not an oversight. A request whose line carries no
+// parseable timestamp has no principled stage — assigning it one would put
+// real money in a stage that did not spend it — so it stays in the
+// whole-session totals and claims no stage bucket at all. `agentsOf` keeps the
+// same rule on the agents' side, and marks it the same way `summarise` does:
+// by leaving `stages` off entirely rather than publishing an empty bucket,
+// which is what the `if (Object.keys(perStage).length)` guard around line 219
+// of `lib/usage.js` is for.
+test('a request with no parseable timestamp still counts in the totals but claims no stage, on both the parent\'s side and the agents\'', () => {
+    const file = session({
+        'subagents/agent-aaaa.jsonl': [agentLine('a1', 9000, undefined)],
+    });
+    // own1, written by `session()`, already carries no timestamp of its own;
+    // give the parent one more request that does, so the gap between "counted"
+    // and "staged" is visible rather than vacuous.
+    fs.appendFileSync(file, assistant('own2', 'claude-fable-5-1', { input_tokens: 7, output_tokens: 70 },
+        { timestamp: new Date(1600).toISOString() }));
+    const windows = [{ stage: 'survey', from: -Infinity, to: 3000 }, { stage: 'build', from: 3000, to: Infinity }];
+    const tree = usage.summariseTree(file, { stages: windows });
+
+    assert.equal(tree.usage.requests, 2, 'own1 has no timestamp but is still counted in the total');
+    assert.deepEqual(tree.usage.models['claude-fable-5-1'],
+        { input: 12, output: 120, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+        'own1 and own2 both sum into the whole-session model total');
+    const stagedRequests = Object.values(tree.usage.stages).reduce((sum, bucket) => sum + bucket.requests, 0);
+    assert.equal(stagedRequests, 1, 'only own2 — the timestamped request — is claimed by any stage; own1 is in none of them');
+
+    assert.equal(tree.usage.subagents.requests, 1, 'the untimestamped agent request still counts in the whole-agent total');
+    assert.deepEqual(tree.usage.subagents.models['claude-sonnet-5'],
+        { input: 10, output: 9000, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 });
+    assert.equal('stages' in tree.usage.subagents, false,
+        'agentsOf omits stages entirely when no agent request could be placed, rather than publish an empty bucket');
 });
 
 test('summarise buckets requests into the stage windows it is given', () => {
