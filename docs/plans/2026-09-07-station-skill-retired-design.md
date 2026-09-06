@@ -1,5 +1,6 @@
 ---
-status: design-intent
+status: current
+last_verified: 2026-09-07
 source_of_truth: hooks/inject.js, lib/render.js, scripts/station.js, lib/station.js, skills/fankeel/SKILL.md, docs/station.md
 ---
 

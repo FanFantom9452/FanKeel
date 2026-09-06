@@ -1,5 +1,6 @@
 ---
-status: design-intent
+status: current
+last_verified: 2026-09-07
 ---
 
 # The Station Skill Retired — Implementation Plan
