@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const http = require('node:http');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 const registry = require('../lib/registry.js');
 const badge = require('../lib/badge.js');
 const station = require('../lib/station.js');
@@ -61,6 +61,27 @@ test('the default form writes the page, prints its path and the counts', () => {
     assert.ok(out.includes(file));
     assert.match(out, /1 registries · 1 live, 1 stale, 0 down/);
     assert.ok(fs.readFileSync(file, 'utf8').includes('stale'));
+});
+
+test('--json prints the rows as one JSON document and writes nothing', () => {
+    const f = fixture();
+    const env = { ...process.env, CLAUDE_CONFIG_DIR: f.cfg };
+    const out = execFileSync(process.execPath, [CLI, '--json'], { cwd: f.base, env, encoding: 'utf8' });
+    const model = JSON.parse(out);
+    const states = model.registries.flatMap((r) => r.sessions.map((s) => s.state)).sort();
+    assert.deepEqual(states, ['live', 'stale']);
+    assert.equal(fs.existsSync(path.join(f.cfg, 'fankeel', 'station.html')), false, '--json wrote the page');
+    assert.equal(fs.existsSync(path.join(f.r1, '.fankeel', 'station.html')), false, '--json wrote the copy');
+});
+
+test('--json refuses a verb, the way an unknown argument is refused', () => {
+    const f = fixture();
+    const env = { ...process.env, CLAUDE_CONFIG_DIR: f.cfg };
+    for (const argv of [['--json', 'serve'], ['--json', '--forget', f.r1]]) {
+        const r = spawnSync(process.execPath, [CLI, ...argv], { cwd: f.base, env, encoding: 'utf8' });
+        assert.equal(r.status, 2, argv.join(' '));
+        assert.match(r.stderr, /--json/);
+    }
 });
 
 test('--scan walks a directory for registries, and the next run remembers what it found', () => {

@@ -34,7 +34,7 @@ const { clearEntry } = require('../lib/clear.js');
 const PLUGIN = path.resolve(__dirname, '..');
 
 function parseArgs(argv) {
-    const out = { verb: null, roots: [], scan: [], open: false, port: 0, idleMs: 10 * 60e3, forget: null };
+    const out = { verb: null, roots: [], scan: [], open: false, port: 0, idleMs: 10 * 60e3, forget: null, json: false };
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
         if (a === 'serve' && out.verb === null) out.verb = 'serve';
@@ -44,6 +44,7 @@ function parseArgs(argv) {
         else if (a === '--forget' && argv[i + 1]) out.forget = argv[++i];
         else if (a === '--port' && argv[i + 1]) out.port = Number(argv[++i]) || 0;
         else if (a === '--idle' && argv[i + 1]) out.idleMs = (Number(argv[++i]) || 10) * 60e3;
+        else if (a === '--json') out.json = true;
         else {
             process.stderr.write('station: unknown argument ' + a + '\n');
             process.exit(2);
@@ -316,6 +317,24 @@ function serve(opts) {
 function main() {
     const args = parseArgs(process.argv.slice(2));
     const configDir = live.liveConfigDir();
+    // The rows, for a session that wants to read them rather than a page. It
+    // walks nothing and writes nothing: `gather` builds the same model
+    // `write` renders, from the same sources, and the first-run scan below
+    // is the default form's — a five-second walk behind a flag a script
+    // calls would be a surprise, not a service.
+    if (args.json) {
+        if (args.verb || args.forget) {
+            process.stderr.write('station: --json prints the rows and takes no verb\n');
+            process.exit(2);
+        }
+        const model = station.gather({
+            configDir, roots: args.roots, scan: args.scan, cwd: process.cwd(),
+            deadline: scanDeadline(args.scan),
+            root: registry.findStateRoot(process.cwd()),
+        });
+        process.stdout.write(JSON.stringify(model) + '\n');
+        return;
+    }
     if (args.forget) {
         forget(configDir, args.forget);
         return;
