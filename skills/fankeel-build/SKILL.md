@@ -121,20 +121,22 @@ For each task the denominator does not list as complete:
 **Where there is no plan there are no groups.** Everything below that names one —
 the group in step 1's BASE rule, the whole group going out in step 2, the
 `groups` command itself — is the plan path. **The rest of step 2 is not**: a
-`| file | change | dispatch |` row carries its `**Dispatch:**` line in the
-third cell, in the same two forms, and the loop reads it there. The four things
-a dispatch carries become the task line with the row's place in the table, the
-row itself verbatim — its `change` cell is the whole brief, so a cell that could
-not brief a stranger is a design failure — the design's `proves it done` line in
-place of Global Constraints, and a return contract in place of a report path: a
-status line — `done`, `partial: <what>` or `blocked: <why>` — the paths written
-and one line on the tests, with no report file. A no-plan route keeps nothing on
-disk on purpose: `design` puts `plan` on the route the moment two rows are
-independent, so what runs without one is a short dependent chain, and the
-registry's `next` line is its ledger. The implementer does not commit;
-step 4 stages the paths in the row's `file` cell, which may name more than one,
-and step 5 reviews the range as it would a task's. A no-plan route runs one row
-per pass, and every other step of the loop is unchanged.
+`| file | change | dispatch |` row carries its `**Dispatch:**` line in the third
+cell, in the same two forms, and the loop reads it there. The three things a
+dispatch carries become the task line with the row's place in the table; in place
+of a brief file — there is no plan for `brief` to slice — the row itself
+verbatim — its `change` cell is the whole brief, so a cell that could not brief a
+stranger is a design failure — with the design's `proves it done` line where
+Global Constraints would be and the brief's footer rules said in the dispatch;
+and a return contract in place of a report path: a status line — `done`,
+`partial: <what>` or `blocked: <why>` — the paths written, one line on the tests
+and one per new test naming the mutation that reddens it, with no report file. A
+no-plan route keeps nothing on disk on purpose: `design` puts `plan` on the route
+the moment two rows are independent, so what runs without one is a short
+dependent chain, and the registry's `next` line is its ledger. The implementer
+does not commit; step 4 stages the paths in the row's `file` cell, which may name
+more than one, and step 5 reviews the range as it would a task's. A no-plan route
+runs one row per pass, and every other step of the loop is unchanged.
 
 1. Record `git rev-parse HEAD` as BASE — **immediately before this task's
    commit, not when its group went out.** The tasks in a group that committed
