@@ -53,6 +53,20 @@ for (const n of names) {
   });
 }
 
+// The station skill was retired on 2026-09-07: the `/fankeel` prompt writes the
+// page and names it, so a second skill was a second door to one room. Its
+// routing phrases moved into the fankeel skill's description, and nothing
+// current may send a reader to the skill that is gone.
+test('the fankeel skill routes the station phrases, and no skill names /fankeel-station', () => {
+  const fm = frontmatter(read('fankeel'));
+  for (const phrase of ['show all sessions', 'clean up old sessions', '監控站']) {
+    assert.ok(fm.description.includes(phrase), 'fankeel description lacks "' + phrase + '"');
+  }
+  for (const n of names) {
+    assert.equal(read(n).includes('/fankeel-station'), false, n + ' still names /fankeel-station');
+  }
+});
+
 // The two skills do different jobs and the split is the point: one owns a task
 // through a route, the other reads documentation and needs no task at all.
 test('the audit skill runs both scanners and ends at the gate', () => {

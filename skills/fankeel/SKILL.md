@@ -1,6 +1,6 @@
 ---
 name: fankeel
-description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, or moving to the next stage. Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
+description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, moving to the next stage, or the station — "show all sessions", "which sessions are still open", "clean up old sessions", "監控站". Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.51.0
 status: current
 last_verified: 2026-09-05
@@ -597,7 +597,13 @@ holds, stood down included, newest first, with the stage each reached and what i
 cost. Nothing here deletes, so that is a month of finished tasks and the only
 view of them.
 
-For every registry on the machine rather than this one, `/fankeel-station`.
+For every registry on the machine rather than this one, the station. The
+`station:` line of the `/fankeel` block names the page and counts its `stale`
+rows; `.fankeel/station.html` in the registry is the copy beside you, and
+`node <plugin>/scripts/station.js --open` opens the newest. `serve --open` in
+place of `--open` runs it as a page with a `clear` button on every stale row.
+The page is written at this prompt, before the block that names it, so there
+is nothing to invoke; [docs/station.md](../../docs/station.md) is the reference.
 
 Its header is also where a file that does not parse is counted. The hooks drop
 those silently and correctly — a miss is what a session not using the plugin

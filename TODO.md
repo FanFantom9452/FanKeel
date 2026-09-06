@@ -64,11 +64,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - `docs-audit` says the 08-30 parallel-build pair landed (8 files, untouched 4d); archive both under `docs/archive/` and repoint their two index rows — [docs/README.md](docs/README.md).
 
-- `skills/fankeel/SKILL.md:599` sends people to `/fankeel-station` for a page the `/fankeel` block already names; the skill can go — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
-
 - `ledger.js` has no verb for build step 3's scan table; two sessions on 09-05 appended it to progress.md by hand, which is what the ledger exists to avoid — [scripts/ledger.js](scripts/ledger.js).
-
-- `station.js` prints a path and a counts line, so a session can read how many are stale; the rows themselves have no `--json` — [scripts/station.js](scripts/station.js).
 
 - `--root` resolves against cwd, not the registry: run from inside the project, the documented command reports "nothing readable" — [scripts/docs-check.js](scripts/docs-check.js), `survey.js` the same.
 
