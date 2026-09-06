@@ -38,12 +38,22 @@ const { run, parse } = require('../lib/hook.js');
 // that `registry.spendOf` — which asks for `models` — finds it rather than
 // dropping the stage's whole cost.
 function stageSpend(usage) {
-    // `usage.stages` is `{}`, not absent, when windows were given but no
-    // request could be placed in one — present and truthy, so an empty object
-    // on either side counts as nothing here too, or `spend: {}` gets written.
-    const own = usage.stages && Object.keys(usage.stages).length ? usage.stages : null;
-    const theirs = usage.subagents && usage.subagents.stages && Object.keys(usage.subagents.stages).length
-        ? usage.subagents.stages : null;
+    // Both sides are read for keys rather than for presence. `summarise`
+    // allocates its `stages` object before the per-request loop, so
+    // `usage.stages` is `{}` — present, and truthy — when windows were given
+    // and no request could be placed in one, and `main()`'s `if (spend)` would
+    // write that straight into the entry as `spend: {}`.
+    //
+    // The agents' side cannot be `{}` today: `agentsOf` attaches `stages` only
+    // once it has a key, so `usage.subagents.stages` is either absent or has
+    // one. It is read the same way regardless, because which of the two
+    // `lib/usage.js` does is `lib/usage.js`'s business and this hook should not
+    // hold an opinion that breaks quietly when it changes. The consequence is
+    // worth writing down: no mutation of the agents' half reddens a test, and
+    // that is the expected result rather than a gap somebody should go and fill.
+    const keyed = (o) => (o && Object.keys(o).length ? o : null);
+    const own = keyed(usage.stages);
+    const theirs = keyed(usage.subagents && usage.subagents.stages);
     if (!own && !theirs) return null;
     const spend = {};
     for (const [stage, bucket] of Object.entries(own || {})) {
