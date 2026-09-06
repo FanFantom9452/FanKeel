@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-09-06
 source_of_truth: lib/station.js, lib/usage.js, lib/registry.js, scripts/station.js, hooks/leave.js
 ---
