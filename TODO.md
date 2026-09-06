@@ -60,8 +60,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- Nothing checks that a design's file table reached the plan's tasks; three spec items were dropped between the two on 09-06 — [lib/plantasks.js](lib/plantasks.js).
-
 - A fix round writes its task's declared paths, so two on one file collide as two tasks do; the grouping rule is silent on them — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
 
 - `skills/fankeel/SKILL.md:599` sends people to `/fankeel-station` for a page the `/fankeel` block already names; the skill can go — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
@@ -92,7 +90,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - `docs-check` passes a `path:line` whose line merely moved: three drifted on 09-05, a fourth on 09-06 — carry the cited text, or check a symbol — [scripts/docs-check.js](scripts/docs-check.js).
 
-- Whether a reviewer per task plus a mutation control per fix earns its cost; on 09-06 it was most of a 2h20m build — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
+- Whether a reviewer per task and a mutation per fix earn their cost; measure the next build, which returns the mutations — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
 
 - With the roots expiry gone, any scratch registry a `leave.js` run touches is remembered until `--forget`; two landed on 09-06 — [lib/station.js](lib/station.js).
 

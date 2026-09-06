@@ -11,7 +11,10 @@ What a subagent is told when it starts, and why the return value is the expensiv
 A subagent starts with its own context and none of the parent's. The per-prompt
 injection never reaches it — that rides on the user's prompt, and a subagent does
 not have one. So a `SubagentStart` hook hands it a brief instead: the task,
-the files that task has touched, and what its return value costs.
+the files that task has touched, and what its return value costs. A build
+implementer receives a second brief beside it, a file `ledger.js brief <n>`
+writes from the plan; the hook's brief says which task and which files, the
+task brief says what to build.
 Background subagents get the same brief. One started with an isolated context
 does not, which is Claude Code's decision rather than something to work around.
 A **Workflow** agent gets it too, byte for byte, and its `agent_type` reads

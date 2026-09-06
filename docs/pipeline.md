@@ -124,11 +124,11 @@ stage rules:
   - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Do not stop where the happy path works and the rest is "later". That, and a new ask that neither blocks nor belongs, is one TODO.md line at the detail. Say which; ambiguous, ask that turn.
-  - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`.
-  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path forward a guess.
-  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code, comments or formatting. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
+  - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task or fix, then `complete <n> "<what>"` or `fix "<what>"`.
+  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path a guess.
+  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
   - A new document is the last resort: use an existing page, or write a generator when it derives from code. One written carries status, last_verified and source_of_truth.
-  - Read the fankeel-build skill on entry: worktree consent, four-item brief, five rounds, resume the fixer, commit shape.
+  - Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, resume the fixer, commit shape.
   - Output: one line per file, then the question. Under 80 words.
 
 output shape:
@@ -207,11 +207,11 @@ stage rules:
   - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Do not stop where the happy path works and the rest is "later". That, and a new ask that neither blocks nor belongs, is one TODO.md line at the detail. Say which; ambiguous, ask that turn.
-  - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task, then `complete <n> "<what landed>"`.
-  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path forward a guess.
-  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code, comments or formatting. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
+  - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task or fix, then `complete <n> "<what>"` or `fix "<what>"`.
+  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path a guess.
+  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
   - A new document is the last resort: use an existing page, or write a generator when it derives from code. One written carries status, last_verified and source_of_truth.
-  - Read the fankeel-build skill on entry: worktree consent, four-item brief, five rounds, resume the fixer, commit shape.
+  - Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, resume the fixer, commit shape.
   - Output: one line per file, then the question. Under 80 words.
 
 output shape:
@@ -432,10 +432,10 @@ flowchart TD
     C["<b>Global Constraints</b><br/><i>generated from map.md, not remembered</i><br/>exact values copied, not restated"]
     D["<b>file structure, before tasks</b><br/>what each file is responsible for"]
     E["<b>right-size the tasks</b><br/>the smallest unit carrying its own<br/>test cycle. Split only where a reviewer<br/>could reject one and pass its neighbour"]
-    F["<b>per task</b><br/>files · interfaces consumed and produced ·<br/><b>Dispatch:</b> in-session, or a model said out loud<br/>· steps"]
+    F["<b>per task</b><br/>files, read as well as modified · interfaces consumed and produced ·<br/><b>Dispatch:</b> in-session, or a model said out loud<br/>· steps, every fence naming its file"]
     G["<b>every step is two to five minutes</b><br/>write the failing test → watch it fail →<br/>implement → watch it pass → commit"]
     H{"<b>self-review, before the gate</b>"}
-    H1["every spec requirement<br/>has a task"]
+    H1["every design promise has a task —<br/>a Coverage table, ledger lint, then a reviewer"]
     H2["no TBD · no 'add appropriate error<br/>handling' · no 'similar to Task N'"]
     H3["a name a later task uses is the<br/>name an earlier task defined"]
 
@@ -458,10 +458,12 @@ conversation.
 **It executes rather than decides.** `ledger.js groups` prints a dispatch
 surface beside each group — `agent`, `agents` or `workflow` — and the loop reads
 it instead of re-deriving one from the group's size, which cannot see the
-diagnostics that downgrade a group. The brief a dispatch carries is four fixed
-things, none of them chosen per task. What is left to decide here is the ruling
-and the commit message; everything else the loop needs is a runtime fact taken
-when it is needed.
+diagnostics that downgrade a group. The brief a dispatch carries is one file,
+written by `ledger.js brief <n>` from the plan — the task's section, the
+constraints, what it consumes, and the rules an implementer cannot infer — and a
+line saying where the task fits, none of it chosen per task. What is left to
+decide here is the ruling and the commit message; everything else the loop
+needs is a runtime fact taken when it is needed.
 
 The second and third setup steps below are the path with a plan, and so is every
 node under them naming a ledger, a group or an implementer: the gate asking for a
