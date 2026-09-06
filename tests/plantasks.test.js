@@ -23,6 +23,49 @@ const task = (n, modify, tests, consumes, produces) => [
   '',
 ].join('\n');
 
+// A task with a Read: line and a body. The fence shape here is the one `lint`
+// reads: a language fence names its file within three non-blank lines above.
+const readTask = (n, modify, reads, body) => [
+  '## Task ' + n + ': name',
+  '',
+  '**Files:**',
+  ...modify.map((p) => '- Modify: `' + p + '`'),
+  ...reads.map((p) => '- Read: `' + p + '` — why'),
+  '',
+  '**Interfaces:**',
+  '- Consumes: nothing.',
+  '- Produces: nothing.',
+  '',
+  ...(body || []),
+  '',
+].join('\n');
+
+const design = (bullets, rows, files) => [
+  '# A design',
+  '',
+  '## The ask',
+  '',
+  '- not a promise: this section is not numbered',
+  '',
+  '## 1. The first area',
+  '',
+  ...bullets.map((b) => '- ' + b),
+  '  - a nested bullet is not a promise either',
+  '',
+  '## File table',
+  '',
+  '| file | change | dispatch |',
+  '|---|---|---|',
+  ...(files || []).map((f) => '| `' + f + '` | something | implementer, sonnet |'),
+  '',
+  '## What proves it done',
+  '',
+  '| test | fails now because |',
+  '|---|---|',
+  ...(rows || []).map((r) => '| ' + r + ' | reason |'),
+  '',
+].join('\n');
+
 test('a task declares its files and its interfaces', () => {
   const [t] = parseTasks(task(1, ['lib/a.js'], ['tests/a.test.js'], [], ['makeA']));
   assert.equal(t.n, 1);
@@ -266,4 +309,94 @@ test('a task with no Interfaces block degrades its group and is named', () => {
     assert.deepStrictEqual(parsed.map((t) => t.interfaces), [true, false, true]);
     assert.deepStrictEqual(plantasks.missingInterfaces(parsed), [2]);
     assert.deepStrictEqual(plantasks.surfaces(parsed), [{ tasks: [1, 2, 3], surface: 'agents' }]);
+});
+
+test('a Read: entry lands in task.read and takes only its first backticked token', () => {
+  const [t] = parseTasks(readTask(1, ['lib/a.js'], ['lib/b.js` beside `lib/c.js']));
+  assert.deepEqual(t.modify, ['lib/a.js']);
+  assert.deepEqual(t.read, ['lib/b.js']);
+});
+
+test('a Read of a file another task modifies serialises the pair as read', () => {
+  const [a, b] = parseTasks(readTask(1, ['lib/a.js'], ['lib/b.js']) + task(2, ['lib/b.js'], [], [], []));
+  assert.equal(conflict(a, b), 'read');
+  assert.equal(conflict(b, a), 'read');
+  assert.deepEqual(groups([a, b]), [[1], [2]]);
+});
+
+test('two tasks reading one file may run at once', () => {
+  const [a, b] = parseTasks(readTask(1, ['lib/a.js'], ['lib/x.js']) + readTask(2, ['lib/b.js'], ['lib/x.js']));
+  assert.equal(conflict(a, b), null);
+});
+
+test('parsePlan keeps the header and each task body, fences included, and a body stops at the next heading', () => {
+  const text = [
+    '# Plan', '', '**Spec:** design.md', '', '## Global Constraints', '', '- no deps', '',
+    readTask(1, ['lib/a.js'], [], ['Some prose.', '', '```js', '## Task 9: not a task', '```']),
+    '## Self-review', '', 'Not part of any task.', '',
+  ].join('\n');
+  const { header, tasks } = plantasks.parsePlan(text);
+  assert.match(header, /\*\*Spec:\*\* design\.md/);
+  assert.match(header, /## Global Constraints\n\n- no deps/);
+  assert.equal(tasks.length, 1);
+  assert.equal(tasks[0].line, 9);
+  assert.match(tasks[0].body, /^## Task 1: name/);
+  assert.match(tasks[0].body, /## Task 9: not a task/);
+  assert.doesNotMatch(tasks[0].body, /Self-review/);
+  assert.deepEqual(parseTasks(text).map((t) => t.n), [1]);
+});
+
+test('producesText holds the raw text of each Produces entry', () => {
+  const [t] = parseTasks(task(1, ['lib/a.js'], [], [], ['makeA']) );
+  assert.deepEqual(t.producesText, ['`makeA`']);
+});
+
+test('fences lists language fences with the files named above them, and skips command fences', () => {
+  const [t] = parseTasks(readTask(1, ['lib/a.js'], [], [
+    'In `lib/a.js`, add:', '', '```js', 'x', '```', '',
+    'Run:', '', '```', 'node --test', '```', '',
+    'Then:', '', '```sh', 'npm test', '```', '',
+    'In `gather()`, add:', '', '```js', 'y', '```',
+  ]));
+  const out = plantasks.fences(t);
+  assert.equal(out.length, 2);
+  assert.deepEqual(out[0].named, ['lib/a.js']);
+  assert.equal(out[0].info, 'js');
+  assert.deepEqual(out[1].named, ['gather()']);
+});
+
+test('lint names a promise whose first eight words appear nowhere in the plan, and is silent when the plan quotes it', () => {
+  const d = design(['the page **gains** a `waited` column, one per stage, after the burn column', 'rows carry `data-state`'], []);
+  const plan = readTask(1, ['lib/a.js'], [], ['## Coverage', '', '| promise | task |', '|---|---|', '| rows carry `data-state` | Task 1 |']);
+  const out = plantasks.lint(plan, d);
+  assert.equal(out.length, 1, out.join('\n'));
+  assert.match(out[0], /promise with no task: the page \*\*gains\*\* a `waited` column/);
+  const quoted = plan + '\n| the page gains a waited column, one per stage | Task 1 |\n';
+  assert.deepEqual(plantasks.lint(quoted, d), []);
+});
+
+test('lint reads the What proves it done rows and the file table as promises', () => {
+  const d = design([], ['`tests/a.test.js` — the thing fails now and passes after this lands'], ['lib/a.js', 'lib/zzz.js']);
+  const plan = readTask(1, ['lib/a.js'], [], []);
+  const out = plantasks.lint(plan, d);
+  assert.equal(out.length, 2, out.join('\n'));
+  assert.match(out[0], /promise with no task: `tests\/a\.test\.js` — the thing fails now/);
+  assert.match(out[1], /design file table names lib\/zzz\.js, which no task modifies or tests/);
+});
+
+test('lint names a js fence with no file line above it, and a named path outside the Files block', () => {
+  const plan = readTask(1, ['lib/a.js'], [], [
+    'In `gather()`, add:', '', '```js', 'x', '```', '',
+    'In `lib/other.js`, add:', '', '```js', 'y', '```',
+  ]);
+  const out = plantasks.lint(plan, design([], []));
+  assert.equal(out.length, 2, out.join('\n'));
+  assert.match(out[0], /Task 1 line \d+: a `js` fence names no file from its Files block/);
+  assert.match(out[1], /Task 1 line \d+: `lib\/other\.js` is named but not in its Files block/);
+  const ranged = readTask(1, ['lib/a.js'], [], ['In `lib/a.js:12`, add:', '', '```js', 'x', '```']);
+  assert.deepEqual(plantasks.lint(ranged, design([], [])), []);
+  const member = readTask(1, ['lib/a.js'], [], ['In `lib/a.js`, replace the `module.exports` line with:', '', '```js', 'x', '```']);
+  assert.deepEqual(plantasks.lint(member, design([], [])), []);
+  const routes = readTask(1, ['lib/a.js'], [], ['In `lib/a.js`, `POST /clear-stale` writes `roots.json` beside `/clear`; `source_of_truth: lib/b.js` stays:', '', '```js', 'x', '```']);
+  assert.deepEqual(plantasks.lint(routes, design([], [])), []);
 });
