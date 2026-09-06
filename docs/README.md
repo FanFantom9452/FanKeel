@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-05
+last_verified: 2026-09-07
 source_of_truth: this file is the index; each page below is its own source
 ---
 
@@ -45,6 +45,8 @@ here.
 | The six tasks that made the station remember, scan, write twice and say so | [plans/2026-09-05-station-at-hand.md](plans/2026-09-05-station-at-hand.md) — *built* |
 | Why a station row gains a curve of what it spent against how long it ran, and why depth alone never bounded the scan | [plans/2026-09-06-station-reads-back-design.md](plans/2026-09-06-station-reads-back-design.md) — *built* |
 | The eight tasks that add the curve, the controls, per-stage spend and a discovery that stops forgetting | [plans/2026-09-06-station-reads-back.md](plans/2026-09-06-station-reads-back.md) — *built* |
+| Why a plan now declares what it reads, names the file above every fence, and is linted against its design before the gate — and why an implementer gets one brief file and a reviewer gets a template | [plans/2026-09-07-plan-quality-design.md](plans/2026-09-07-plan-quality-design.md) — *built* |
+| The four tasks that added `Read:`, the fence rule, `ledger.js lint`, `brief` and `fix`, and reworded three stages' anchors to say so | [plans/2026-09-07-plan-quality.md](plans/2026-09-07-plan-quality.md) — *built* |
 | Why six deferred decisions were settled in one pass, and what each one decided | [plans/2026-09-01-six-decisions-design.md](plans/2026-09-01-six-decisions-design.md) — *built* |
 | Which three of the four `## Ready` entries were documentation defects, and why the fourth could not be run here | [plans/2026-09-01-ready-backlog.md](plans/2026-09-01-ready-backlog.md) — *built* |
 | What a 174-agent review of the process-state design found on 2026-09-02, what was refuted, and what to fix first | [reports/2026-09-02-process-state-review.md](reports/2026-09-02-process-state-review.md) — *a dated snapshot, 繁體中文* |

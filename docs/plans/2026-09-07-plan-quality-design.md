@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-09-07
 source_of_truth: lib/plantasks.js, scripts/ledger.js, lib/stages.js, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-design/SKILL.md
 ---

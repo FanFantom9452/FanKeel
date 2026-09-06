@@ -343,7 +343,7 @@ behind a process spawn.**
 
 | module | its one caller | what folding it would cost |
 |---|---|---|
-| `lib/ledger.js` | `scripts/ledger.js` | six pure text functions reachable only through `execFileSync`. `skills/fankeel-build/SKILL.md` also names the file as `source_of_truth` |
+| `lib/ledger.js` | `scripts/ledger.js` | the pure text functions reachable only through `execFileSync` — never as many as the row once counted. `skills/fankeel-build/SKILL.md` also names the file as `source_of_truth` |
 | `lib/dirty.js` | `hooks/inject.js` | the same one directory over: a hook is an entry point a test can only run as a process |
 | `lib/plugins.js` | `lib/render.js` | `render.js` does no reading of its own anywhere: `registry.js` reads the session file, `context.js` the transcript, `plugins.js` the manifest, and `render.js` itself requires only `path`. Folding puts its first `readFileSync` in the module whose whole job is producing text |
 
