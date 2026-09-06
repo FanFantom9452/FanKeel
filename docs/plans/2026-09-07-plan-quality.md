@@ -1460,8 +1460,9 @@ Report to `.fankeel/build/2026-09-07-plan-quality/task-3-report.md`.
   one sentence after it — "A build implementer receives a second brief beside
   it, a file `ledger.js brief <n>` writes from the plan; the hook's brief says
   which task and which files, the task brief says what to build."
-- `docs/README.md`: one row — `| What a plan is checked for before its gate,
-  and what an implementer's brief file holds | [pipeline.md](pipeline.md) |`.
+- `docs/README.md`: one row — *What a plan is checked for before its gate,
+  and what an implementer's brief file holds* — pointing at `pipeline.md`,
+  its *plan* and *build* sections.
 - `TODO.md`: delete the `## Ready` bullet beginning `Nothing checks that a
   design's file table reached the plan's tasks`; under `## Needs a decision`,
   the bullet beginning `Whether a reviewer per task plus a mutation control
