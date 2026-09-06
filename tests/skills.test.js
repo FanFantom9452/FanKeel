@@ -272,7 +272,7 @@ test('the task loop marks its group language as the plan path', () => {
 
 // A file-table row used to be run in session because it carried no
 // `**Dispatch:**` line at all. Now the third cell of a `| file | change |
-// dispatch |` row is that line, in the plan's own two forms, and the four
+// dispatch |` row is that line, in the plan's own two forms, and the three
 // things a dispatch carries map onto the row the same way they map onto a
 // plan task. There is no report file on this path, because a no-plan route
 // keeps nothing on disk for one to land in.

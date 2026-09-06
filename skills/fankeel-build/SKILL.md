@@ -123,7 +123,7 @@ the group in step 1's BASE rule, the whole group going out in step 2, the
 `groups` command itself — is the plan path. **The rest of step 2 is not**: a
 `| file | change | dispatch |` row carries its `**Dispatch:**` line in the third
 cell, in the same two forms, and the loop reads it there. The three things a
-dispatch carries become the task line with the row's place in the table; in place
+dispatch carries become the fit line with the row's place in the table; in place
 of a brief file — there is no plan for `brief` to slice — the row itself
 verbatim — its `change` cell is the whole brief, so a cell that could not brief a
 stranger is a design failure — with the design's `proves it done` line where
@@ -299,10 +299,14 @@ runs one row per pass, and every other step of the loop is unchanged.
    this is preventing.
 
    **A fix round lands the same way the task did**: the resumed implementer
-   returns paths and does not commit, and the parent stages that task's declared
-   paths and commits them. Re-review `<the task's previous sha>..<the new one>`.
-   A fix round left uncommitted is a finding nobody can re-diff; one committed
-   without a range of its own walks into whatever task is reviewed next.
+   returns paths and does not commit, and the parent stages that task's
+   declared paths and commits them. Re-review
+   `<the task's previous sha>..<the new one>`. A fix round left uncommitted is
+   a finding nobody can re-diff; one committed without a range of its own
+   walks into whatever task is reviewed next. Record it too:
+   `node <plugin>/scripts/ledger.js --plan <file> --range <the task's previous sha>..<the new one> fix "<what>"`,
+   so `ranges` lists every reviewed commit on the branch and not only the
+   tasks.
 7. `ledger.js --plan <file> --range <BASE>..<the sha> complete <n> "<what landed>"`.
    The flag precedes the verb; everything after `complete` is the note. A task
    completed with no `--range` is recorded and reported as such by `ranges`,
