@@ -198,7 +198,7 @@ test('parsePlan keeps the header and each task body, fences included, and a body
   assert.match(header, /\*\*Spec:\*\* design\.md/);
   assert.match(header, /## Global Constraints\n\n- no deps/);
   assert.equal(tasks.length, 1);
-  assert.equal(tasks[0].line, header.split('\n').length + 1);
+  assert.equal(tasks[0].line, 9);
   assert.match(tasks[0].body, /^## Task 1: name/);
   assert.match(tasks[0].body, /## Task 9: not a task/);
   assert.doesNotMatch(tasks[0].body, /Self-review/);
@@ -476,12 +476,14 @@ function lint(planText, designText) {
     for (const t of tasks) {
         const files = [...t.modify, ...t.test, ...t.read];
         for (const f of fences(t)) {
-            if (!f.named.some((p) => files.includes(p))) {
+            // A fence naming a file the task does not own gets the specific
+            // line and not the general one: it did name a file.
+            const owned = f.named.some((p) => files.includes(p));
+            const foreign = f.named.filter((p) => !files.includes(p) && looksLikePath(p));
+            if (!owned && !foreign.length) {
                 out.push('Task ' + t.n + ' line ' + f.line + ': a `' + f.info + '` fence names no file from its Files block');
             }
-            for (const p of f.named) {
-                if (!files.includes(p) && looksLikePath(p)) out.push('Task ' + t.n + ' line ' + f.line + ': `' + p + '` is named but not in its Files block');
-            }
+            for (const p of foreign) out.push('Task ' + t.n + ' line ' + f.line + ': `' + p + '` is named but not in its Files block');
         }
     }
     return out;
@@ -546,7 +548,7 @@ const PLAN_HEAD = [
 const PLAN_TASKS = [
   '## Task 1: the first', '',
   '**Files:**', '- Modify: `lib/a.js`', '',
-  '**Interfaces:**', '- Consumes: nothing.', '- Produces: `makeA(x)` → `{ a }`, the thing Task 2 reads', '',
+  '**Interfaces:**', '- Consumes: nothing.', '- Produces: `makeA` — `makeA(x)` → `{ a }`, the thing Task 2 reads', '',
   'In `lib/a.js`, add:', '', '```js', 'x', '```', '',
   '## Task 2: the second', '',
   '**Files:**', '- Modify: `lib/b.js`', '- Read: `lib/a.js` — for makeA', '',
@@ -624,7 +626,7 @@ test('brief writes the task section, the constraints, the producer entry and the
   assert.doesNotMatch(brief, /## File structure/);
   assert.match(brief, /## Task 2: the second[\s\S]*- Read: `lib\/a\.js`[\s\S]*node --test/);
   assert.doesNotMatch(brief, /## Task 1: the first/);
-  assert.match(brief, /## From the tasks this consumes\n\n- Task 1 produces: `makeA\(x\)` → `\{ a \}`, the thing Task 2 reads/);
+  assert.match(brief, /## From the tasks this consumes\n\n- Task 1 produces: `makeA` — `makeA\(x\)` → `\{ a \}`, the thing Task 2 reads/);
   assert.match(brief, /## Rules you cannot infer/);
   assert.match(brief, /Never walk `\/`, a home directory or a Temp directory/);
   assert.match(brief, /blocked: <the file>/);
