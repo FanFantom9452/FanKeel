@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-06
+last_verified: 2026-09-07
 source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/registry.js, lib/prices.js, lib/clear.js
 ---
 
@@ -13,6 +13,13 @@ and, for how it is found and when it is written,
 [plans/2026-09-05-station-at-hand-design.md](plans/2026-09-05-station-at-hand-design.md);
 for the curve, the controls and why a deadline replaced a depth,
 [plans/2026-09-06-station-reads-back-design.md](plans/2026-09-06-station-reads-back-design.md).
+
+To open it: `.fankeel/station.html` in the registry you are in is the copy
+beside you, `node scripts/station.js --open` opens the newest, and
+`node scripts/station.js serve --open` runs it as a page with a `clear`
+button on every stale row. The `/fankeel` prompt writes the page and names it
+on the block's `station:` line, so there is nothing to invoke. An argument
+`scripts/station.js` does not know exits 2 before anything is written.
 
 ## Where the registries come from
 
@@ -28,7 +35,7 @@ the set:
 | `~/.claude/sessions/<pid>.json`, its `cwd`, walked up | every registry a running session is in, whether or not it has started a task |
 | the directory the command runs in, walked up — at `SessionEnd`, the ending session's own launch directory | the registry in front of you, including the one whose session is leaving the running set at that moment |
 | the registry the caller is writing into — a `task.js` verb's own | the one registry a verb can be sure of, whether or not anything else still points at it: `hideBadge` clears the lead before the page is written |
-| the first run, when there is no `roots.json` at all | one walk of every drive, under a five-second budget. What stops it repeating is the file itself: `main()` runs the walk only when `roots.json` is absent, and every `write()` creates it. It runs from `scripts/station.js` only and never from `write()` — `hooks/inject.js` calls `write()` on every `/fankeel` prompt, and a walk this long inside a hook would stall the prompt that triggered it |
+| the first run, when there is no `roots.json` at all | one walk of every drive, under a five-second budget, on the default form only — `serve` and `--forget` return before the check, so a first `serve` on a machine sees only what the leads and running sessions point at. What stops it repeating is the file itself: `main()` runs the walk only when `roots.json` is absent, and every `write()` creates it. It runs from `scripts/station.js` only and never from `write()` — `hooks/inject.js` calls `write()` on every `/fankeel` prompt, and a walk this long inside a hook would stall the prompt that triggered it |
 | `--scan <dir>` | a one-off walk of `<dir>`, eight levels deep, skipping `node_modules`, `.git` and dot-directories, under a sixty-second budget — a directory somebody named gets longer than one nobody asked about. What it finds is remembered, so it is run once per drive |
 | `--root <dir>` | anything else |
 | `--forget <dir>` | the only way a remembered root leaves the file |
@@ -226,11 +233,19 @@ and, when the caller is inside a registry, the same page at
 That copy is refreshed by the sessions in its registry; the header on both
 says when it was generated.
 
+`node scripts/station.js --json` is the same model as one JSON document on
+stdout, and it writes nothing — no page, no `roots.json`, no first-run walk.
+`registries[].sessions[]` is the rows, each carrying its `state`, so a session
+that wants the stale ones filters on that rather than parsing the counts line.
+It takes `--root` and `--scan` as the default form does, and refuses `serve`
+and `--forget` with exit 2.
+
 `serve` runs a loopback server only while clearing; it renders afresh on
 every request, takes a POST from the clear button on a `stale` row, answers
 `409` for a `live` one and for a row touched in the last twelve hours unless
 `force` is ticked, `403` without the per-run nonce, and exits after ten idle
-minutes. The static copies carry the `task.js clear` command on each
+minutes — `--port <n>` binds a chosen port instead of one the OS picks, and
+`--idle <minutes>` moves the ten. The static copies carry the `task.js clear` command on each
 `stale` row instead of the button.
 
 A second button sits under each registry that has any stale row, and posts to
