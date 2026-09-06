@@ -291,7 +291,7 @@ test('groups does not warn about a one-task plan', () => {
   assert.doesNotMatch(out, /builds serially/);
 });
 
-// The range is what lets `verify` send one verifier per task, each pinned at
+// The range is what lets `verify` send one verifier per row, task or fix, each pinned at
 // both ends. It sits between `complete` and the em dash because the note is
 // free text and may hold an em dash of its own -- a suffix would need the last
 // occurrence of a delimiter the note can also produce.
