@@ -101,6 +101,16 @@ const AUTO_BUDGET_MS = 5000;
 // page's `the scan ran out of time` line could not be reached from here.
 const SCAN_BUDGET_MS = 60000;
 
+// One place the budget is turned into a deadline, because it is applied at two
+// call sites — `main()` for a `--scan` typed on the command line, `serve()` once
+// per request for a `--scan` it was started with — and two copies of
+// `Date.now() + SCAN_BUDGET_MS` is how one of them quietly loses its bound. A
+// run with nothing to scan gets no deadline: the walk it is not doing needs no
+// clock, and `discover` reads an absent one as `Infinity` for the rest.
+function scanDeadline(scan) {
+    return scan && scan.length ? Date.now() + SCAN_BUDGET_MS : undefined;
+}
+
 // Every drive this machine has, each checked for existence rather than listed
 // by any OS call — Node carries no dependency-free API for that, and an
 // existence check on a drive letter is instant where walking one is not.
@@ -186,7 +196,7 @@ function serve(opts) {
     // timestamp fixed at startup would leave every later request walking with a
     // deadline already spent.
     const modelNow = () => station.gather(Object.assign({}, gatherOpts,
-        gatherOpts.scan.length ? { deadline: Date.now() + SCAN_BUDGET_MS } : null));
+        { deadline: scanDeadline(gatherOpts.scan) }));
     let timer = null;
     let server;
     const touch = () => {
@@ -200,7 +210,16 @@ function serve(opts) {
         touch();
         const url = new URL(req.url, 'http://127.0.0.1');
         if (req.method === 'GET' && url.pathname === '/') {
-            const html = station.render(modelNow(), { serve: true, nonce, plugin: PLUGIN });
+            // `?cleared=N` is what `/clear-stale` redirects to, and the only
+            // thing this page takes from its own query string. Digits only:
+            // anything else is somebody's typing, and the page says nothing
+            // rather than echoing it back into the markup.
+            const said = url.searchParams.get('cleared');
+            const cleared = said !== null && /^\d+$/.test(said) ? Number(said) : null;
+            const html = station.render(modelNow(), {
+                serve: true, nonce, plugin: PLUGIN,
+                cleared: cleared === null ? undefined : cleared,
+            });
             res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
             res.end(html);
             return;
@@ -267,7 +286,10 @@ function serve(opts) {
                 res.end('cleared ' + cleared + '; refused ' + refused.length + '\n' + refused.join('\n') + '\n');
                 return;
             }
-            res.writeHead(303, { location: '/' });
+            // Redirect-after-POST, so a refresh does not clear twice — and the
+            // count travels in the query rather than in a body this response
+            // does not have. `render` prints it above the control bar.
+            res.writeHead(303, { location: '/?cleared=' + cleared });
             res.end();
             return;
         }
@@ -320,7 +342,7 @@ function main() {
         // header's two scan-cut lines are unreachable on a first run. A
         // `--scan` walk is `discover`'s own, and it is bounded here.
         scanStats: scan ? { depthCuts: scan.depthCuts, timedOut: scan.timedOut } : undefined,
-        deadline: args.scan.length ? Date.now() + SCAN_BUDGET_MS : undefined,
+        deadline: scanDeadline(args.scan),
         root: registry.findStateRoot(process.cwd()), plugin: PLUGIN,
     });
     if (scan) {
@@ -343,4 +365,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { serve };
+module.exports = { serve, scanDeadline };

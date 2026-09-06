@@ -649,6 +649,13 @@ function cmdTask(root, opts) {
         // bills the rename to whatever stage the next answer lands in.
         delete d.clock;
         delete d.waited;
+        // The same field class, and the same argument: a per-stage cost left
+        // here bills the new task for what the old one spent. Latent as this
+        // file stands — `spend` is written by `hooks/leave.js` at session end
+        // and a rename only reaches a session still running — but a rename is
+        // the moment every other per-stage record is dropped, and leaving one
+        // of them behind is how the set quietly stops agreeing.
+        delete d.spend;
         delete d.gateAt;
         const route = normaliseRoute(d.route) || FULL_ROUTE.slice();
         d.route = route;

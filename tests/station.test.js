@@ -206,12 +206,34 @@ test('scanRoots does not find a registry nine levels down', () => {
     assert.ok(!found.roots.includes(path.resolve(deep)), 'depth 8 does not reach nine levels down; depth 9 would');
 });
 
-test('scanRoots stops when its deadline is spent and says so', () => {
+// A deadline already spent — `Date.now() - 1`, which is all this test used to
+// pass — returns on the first line of `walk`, before a single `readdirSync`.
+// An implementation that checked the deadline once before the walk began would
+// have passed that identically, so the arm proved nothing about the check being
+// inside the recursion. `opts.now` is the seam that fixes it: a counting clock
+// spends the deadline *between* two directories, so the walk must have read
+// `base`, descended a level, and checked again. Under the once-at-entry
+// mutation the first tick passes, the walk runs to the end, and both
+// `timedOut` and the empty root list below are wrong.
+test('scanRoots stops mid-walk when its deadline is spent, and says so', () => {
     const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-deadline-'));
-    registry.ensureLayout(path.join(base, 'a', 'b'));
-    const found = station.scanRoots(base, undefined, { deadline: Date.now() - 1 });
-    assert.equal(found.timedOut, true);
-    assert.deepEqual(found.roots, [], 'a deadline already spent finds nothing, not a partial list');
+    const deep = path.join(base, 'a', 'b');
+    registry.ensureLayout(deep);
+    let tick = 0;
+    const found = station.scanRoots(base, undefined, { deadline: 1, now: () => ++tick });
+    assert.equal(found.timedOut, true, 'the walk says it ran out of time');
+    assert.ok(tick > 1, 'the clock was read more than once: the check sits inside the recursion');
+    assert.deepEqual(found.roots, [], 'the registry two levels down is never reached');
+    // The control on the fixture itself: the same tree, walked with a clock that
+    // never passes the deadline, does find the registry — so the empty list
+    // above is the deadline's doing and not an unfindable fixture.
+    assert.deepEqual(station.scanRoots(base, undefined, { deadline: 1, now: () => 0 }).roots,
+        [path.resolve(deep)], 'a clock that never passes the deadline walks the whole tree');
+    // And a deadline already spent still returns nothing rather than a partial
+    // list — the property the old arm did test, kept.
+    const spent = station.scanRoots(base, undefined, { deadline: Date.now() - 1 });
+    assert.equal(spent.timedOut, true);
+    assert.deepEqual(spent.roots, [], 'a deadline already spent finds nothing, not a partial list');
 });
 
 test('scanRoots counts the places depth cut it', () => {
@@ -307,6 +329,27 @@ test('the stage table prints the burn distance, not the pair', () => {
     assert.ok(!page.includes('500k'), 'not the raw upper value of the survey pair');
 });
 
+// The design names five columns — stage, minutes, burn, spend, waited — and
+// `waited` is the field addition it calls area 2's only one. Positions are
+// pinned rather than the words alone: a `waited` header over a column printing
+// something else, or the value landing in the spend cell, both satisfy a bare
+// `includes('waited')`.
+test('the stage table prints five columns, the last of them what the stage waited', () => {
+    const m = chartFixture('33333333-aaaa-4aaa-8aaa-aaaaaaaaaaaa', {
+        task: 'a gate in survey', stage: 'build', route: ['survey', 'build'],
+        clock: { survey: [0, 60000], build: [60000, 180000] },
+        burn: { survey: [0, 50000], build: [50000, 120000] },
+        waited: { survey: 240000, build: 0 },
+    });
+    const page = station.render(m, {});
+    assert.ok(page.includes('<tr><th>stage</th><th>mins</th><th>burn</th><th>spend</th><th>waited</th></tr>'),
+        'five headers, waited last');
+    assert.ok(page.includes('<tr><td>survey</td><td>1m</td><td>50k</td><td>—</td><td>4m</td></tr>'),
+        'the four minutes survey spent at a gate print in the fifth cell, not the fourth');
+    assert.ok(page.includes('<tr><td>build</td><td>2m</td><td>70k</td><td>—</td><td>—</td></tr>'),
+        'a stage whose only wait measured zero prints an em dash, not 0m');
+});
+
 test('the spend polyline plots a running total across stages, not each stage\'s own usd', () => {
     // Three stages, one priced by `prices.costOf`, the middle one uninvoiced.
     // A running total of $1 then $3 only comes from `running += w.usd`
@@ -328,6 +371,32 @@ test('the spend polyline plots a running total across stages, not each stage\'s 
     assert.ok(spendLine, 'a spend polyline is drawn');
     assert.equal(spendLine[1], '4.0,86.0 108.0,58.7 212.0,58.7 316.0,4.0',
         'the two middle points sit at the level survey alone reached ($1 of $3), not at $0 or at $2');
+});
+
+// Each series is normalised to its own maximum, so on every row carrying both
+// they end at the same pixel and colour alone has to carry the distinction
+// where they overlap. The dash is what the ruling settled on instead of a
+// fallback to one series: the burn line stays solid, so the pair is told apart
+// by shape as well as by hue.
+test('the spend polyline is drawn dashed and the burn polyline is not', () => {
+    const m = chartFixture('44444444-bbbb-4bbb-8bbb-bbbbbbbbbbbb', {
+        task: 'both series', stage: 'build', route: ['survey', 'build'],
+        clock: { survey: [0, 1000], build: [1000, 2000] },
+        burn: { survey: [0, 50000], build: [50000, 120000] },
+        spend: {
+            survey: { requests: 1, models: { 'claude-sonnet-5': { input: 500000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
+            build: { requests: 1, models: { 'claude-sonnet-5': { input: 1000000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
+        },
+    });
+    const page = station.render(m, {});
+    assert.match(page, /<polyline class="burn"/, 'the fixture draws both series');
+    assert.match(page, /<polyline class="spend"/, 'the fixture draws both series');
+    const spendRule = /svg\.curve polyline\.spend\{([^}]*)\}/.exec(page);
+    assert.ok(spendRule, 'the spend polyline has a rule of its own');
+    assert.match(spendRule[1], /stroke-dasharray:\s*\S/, 'the spend line is dashed');
+    const burnRule = /svg\.curve polyline\.burn\{([^}]*)\}/.exec(page);
+    assert.ok(burnRule, 'the burn polyline has a rule of its own');
+    assert.ok(!/stroke-dasharray/.test(burnRule[1]), 'the burn line stays solid, so the dash means spend');
 });
 
 test('a stage priced by no rate in the table is blank, not free', () => {
@@ -410,12 +479,42 @@ test('a write of the page keeps every key in roots.json that is not a root recor
         'readRoots still sees one root: the carried key is not mistaken for one');
 });
 
-test('the page carries an inline script and still no script src', () => {
+// `includes('<script>')` proves a tag exists and nothing about what is in it:
+// an empty pair satisfies it and the page ships with no controls at all. What
+// the page has to carry is the exact string `lib/station.js` exports and the
+// vm tests below execute.
+test('the page carries the exported SCRIPT inline, as its only script, and no script src', () => {
     const f = fixture();
     const m = station.gather({ configDir: f.cfg });
     const page = station.render(m, {});
-    assert.ok(page.includes('<script>'), 'the controls ship as an inline script');
+    assert.ok(station.SCRIPT.length > 200, 'SCRIPT is the controls, not an empty string');
+    assert.ok(page.includes('<script>' + station.SCRIPT + '</script>'),
+        'the tag holds the exported SCRIPT, character for character');
+    assert.equal((page.match(/<script/g) || []).length, 1, 'and it is the only script on the page');
     assert.ok(!page.includes('<script src='), 'the page loads no external script');
+});
+
+// `class="bar"` appearing once counts the wrapper div and nothing inside it:
+// the bar could ship empty — no filter box, no buttons, no counter — and still
+// satisfy that count. These are the controls themselves.
+test('the control bar carries the filter box, four sort buttons and the shown counter', () => {
+    const f = fixture();
+    const m = station.gather({ configDir: f.cfg });
+    const page = station.render(m, {});
+    assert.equal((page.match(/<div class="bar">/g) || []).length, 1, 'one bar for the whole page');
+    const bar = /<div class="bar">([\s\S]*?)<\/div>/.exec(page);
+    assert.ok(bar, 'the bar is a closed div');
+    assert.match(bar[1], /<input type="search" id="q"/, 'the filter box the script reads');
+    assert.deepEqual(bar[1].match(/data-sort="[a-z]+"/g) || [],
+        ['data-sort="updated"', 'data-sort="started"', 'data-sort="cost"', 'data-sort="stage"'],
+        'four sort buttons, in the order the design names them');
+    assert.equal((bar[1].match(/aria-pressed="true"/g) || []).length, 1,
+        'exactly one of them starts pressed');
+    assert.match(bar[1], /id="shown"/, 'the counter the script writes the shown total into');
+    assert.ok(!bar[1].includes('id="auto"'), 'and no auto-refresh box on the static page');
+    const served = /<div class="bar">([\s\S]*?)<\/div>/
+        .exec(station.render(m, { serve: true, nonce: 'n0nce' }))[1];
+    assert.match(served, /id="auto"/, 'the served page adds the auto-refresh checkbox to the same bar');
 });
 
 // A shape-only regex (`\d+`, `[a-z]*`) passes on "0" everywhere or on an empty
@@ -429,9 +528,9 @@ test('each row carries the attributes belonging to that session, not just numeri
     const blocks = page.match(/<details class="s[^"]*"[^>]*>[\s\S]*?<\/details>/g) || [];
     assert.equal(blocks.length, 3, 'one details block per session in the fixture');
     const cases = [
-        { id: LIVE, root: f.r1, cost: '0' },
-        { id: STALE, root: f.r1, cost: '0' },
-        { id: DOWN, root: f.r2, cost: '12' },
+        { id: LIVE, root: f.r1, cost: '0', state: 'live' },
+        { id: STALE, root: f.r1, cost: '0', state: 'stale' },
+        { id: DOWN, root: f.r2, cost: '12', state: 'down' },
     ];
     for (const c of cases) {
         const block = blocks.find((b) => b.includes('<code>' + c.id + '</code>'));
@@ -443,11 +542,15 @@ test('each row carries the attributes belonging to that session, not just numeri
         assert.match(block, new RegExp('data-started="' + started + '"'), c.id + ' data-started should be ' + started);
         assert.match(block, new RegExp('data-cost="' + c.cost + '"'), c.id + ' data-cost should be ' + c.cost);
         assert.match(block, new RegExp('data-stage="' + data.stage + '"'), c.id + ' data-stage should be ' + data.stage);
+        assert.match(block, new RegExp('data-state="' + c.state + '"'), c.id + ' data-state should be ' + c.state);
     }
     // The stages differ across the three fixture sessions (build/design/land),
     // so a bug that writes the same stage everywhere, or an empty string,
     // could not satisfy all three assertions above.
     assert.equal(new Set(cases.map((c) => registry.readSession(c.root, c.id).stage)).size, 3);
+    // The same argument for the sixth attribute: the fixture's three sessions
+    // are one of each state, so `data-state` cannot be satisfied by a constant.
+    assert.equal(new Set(cases.map((c) => c.state)).size, 3);
 });
 
 test('data-text is written lower-cased', () => {
@@ -538,9 +641,11 @@ function makeEl(attrs) {
 // `opts.auto` adds the auto-refresh checkbox the served page carries and the
 // static file does not, so both sides of SCRIPT's `if(auto)` are reachable.
 function buildStub(opts) {
-    const a = makeEl({ 'data-updated': '100', 'data-started': '500', 'data-cost': '2', 'data-stage': 'build', 'data-text': 'alpha one' });
-    const b = makeEl({ 'data-updated': '300', 'data-started': '200', 'data-cost': '1', 'data-stage': 'ares', 'data-text': 'beta two' });
-    const c = makeEl({ 'data-updated': '200', 'data-started': '100', 'data-cost': '3', 'data-stage': 'verify', 'data-text': 'gamma three' });
+    // No `data-text` contains the word in its own `data-state`, so a filter term
+    // of `live`, `stale` or `down` can only match through the state attribute.
+    const a = makeEl({ 'data-updated': '100', 'data-started': '500', 'data-cost': '2', 'data-stage': 'build', 'data-state': 'live', 'data-text': 'alpha one' });
+    const b = makeEl({ 'data-updated': '300', 'data-started': '200', 'data-cost': '1', 'data-stage': 'ares', 'data-state': 'stale', 'data-text': 'beta two' });
+    const c = makeEl({ 'data-updated': '200', 'data-started': '100', 'data-cost': '3', 'data-stage': 'verify', 'data-state': 'down', 'data-text': 'gamma three' });
     const group = makeEl({});
     group.appendChild(a); group.appendChild(b); group.appendChild(c);
     const q = makeEl({});
@@ -603,6 +708,25 @@ test('typing in the filter hides non-matching rows and updates the shown count',
     assert.equal(s.rows.b.hidden, false);
     assert.equal(s.rows.c.hidden, true);
     assert.equal(s.shown.textContent, '1 of 3 shown');
+});
+
+// This is what reads `data-state`. The design lists it as the sixth attribute
+// on every row and names no consumer; written and read by nothing it would be
+// markup nobody can use, so the filter matches it beside `data-text` and the
+// three state words become filter terms.
+test('the filter matches a row on its state as well as on its text', () => {
+    const s = buildStub();
+    runScript(s.doc);
+    s.q.value = 'stale';
+    s.q.fire('input');
+    assert.equal(s.rows.b.hidden, false, 'the stale row matches, and no data-text contains "stale"');
+    assert.equal(s.rows.a.hidden, true);
+    assert.equal(s.rows.c.hidden, true);
+    assert.equal(s.shown.textContent, '1 of 3 shown');
+    s.q.value = 'down';
+    s.q.fire('input');
+    assert.deepEqual([s.rows.a.hidden, s.rows.b.hidden, s.rows.c.hidden], [true, true, false],
+        'a second state term picks out a different single row');
 });
 
 test('clicking a sort button reorders the rows within its .rows group', () => {

@@ -799,6 +799,22 @@ test('seriesOf carries the raw burn pair, not the distance', () => {
   assert.equal(registry.burnOf(data, 'survey'), 300);
 });
 
+// The station's per-stage table prints `waited` beside `burn` and `spend`, so
+// the series has to carry it: without this the column could only ever be an em
+// dash. Read through `waitedOf`, which hides a zero — a gate that took no
+// measurable time is not a wait worth a number.
+test('seriesOf carries what each stage waited, and nothing for a zero wait', () => {
+  const data = {
+    clock: { survey: [100, 200], design: [200, 300], build: [300, 400] },
+    waited: { survey: 4000, design: 0 },
+  };
+  assert.deepEqual(registry.seriesOf(data).map((w) => [w.stage, w.waited]), [
+    ['survey', 4000],
+    ['design', null],
+    ['build', null],
+  ]);
+});
+
 test('seriesOf leaves burn null for a stage sampled once', () => {
   const data = { clock: { survey: [100, 200] }, burn: { survey: [100] } };
   const series = registry.seriesOf(data);

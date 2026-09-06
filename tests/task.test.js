@@ -1144,12 +1144,17 @@ test('a flag does not spend a verb, and is named rather than printing the usage'
 // Stage names come round again, so a clock left behind dates the new task's
 // stage from the old one's, and a gateAt left open bills the rename to whatever
 // stage the next answer lands in. The same argument that already deletes `burn`.
-test('renaming the task forgets the clock, the wait and any open gate', () => {
+// `spend` is the fourth of the per-stage records and was the one left behind:
+// latent, because `hooks/leave.js` writes it at session end and a rename only
+// reaches a session still running, but a rename that drops three of the four
+// bills the new task for whatever the fourth remembers.
+test('renaming the task forgets the clock, the wait, the per-stage spend and any open gate', () => {
   const dir = root();
   started(dir, A, 'rework the colour ramp');
   const data = entry(dir, A);
   data.clock = { survey: [1000, 61000] };
   data.waited = { survey: 4000 };
+  data.spend = { survey: { requests: 3, models: { 'claude-sonnet-5': { input: 1000, output: 10 } } } };
   data.gateAt = 1000;
   registry.writeSession(dir, A, data);
 
@@ -1157,6 +1162,7 @@ test('renaming the task forgets the clock, the wait and any open gate', () => {
   const after = entry(dir, A);
   assert.equal(after.clock, undefined);
   assert.equal(after.waited, undefined);
+  assert.equal(after.spend, undefined);
   assert.equal(after.gateAt, undefined);
 });
 

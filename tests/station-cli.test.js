@@ -155,10 +155,24 @@ test('POST /clear-stale clears every stale row in one registry', async () => {
             { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } },
             form({ root: f.r1, nonce }));
         assert.equal(res.status, 303);
-        assert.equal(res.headers.location, '/');
+        // The count travels in the redirect rather than in a body this response
+        // does not have: a bare `303 → /` said nothing about what it had done,
+        // and the design asks the route to report how many it cleared.
+        assert.equal(res.headers.location, '/?cleared=2');
         assert.equal(registry.readSession(f.r1, CS_OLD_A).active, false, 'the first stale row is cleared');
         assert.equal(registry.readSession(f.r1, CS_OLD_B).active, false, 'the second stale row is cleared');
         assert.equal(registry.readSession(f.r1, CS_LIVE).active, true, 'the live row is untouched');
+        // And the page the browser lands on says so, which is the half a
+        // redirect cannot do by itself.
+        const after = await request(s.url + '?cleared=2', { method: 'GET' });
+        assert.equal(after.status, 200);
+        assert.match(after.text, /<p class="cleared">cleared 2 stale rows<\/p>/);
+        const plain = await request(s.url, { method: 'GET' });
+        assert.ok(!plain.text.includes('<p class="cleared">'),
+            'a page loaded without the query says nothing about clearing');
+        const junk = await request(s.url + '?cleared=lots', { method: 'GET' });
+        assert.ok(!junk.text.includes('<p class="cleared">'),
+            'a non-numeric count is ignored rather than echoed into the page');
     } finally {
         s.close();
     }
@@ -215,12 +229,59 @@ test('POST /clear-stale clears a too-fresh row when force is sent', async () => 
             { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } },
             form({ root: f.r1, nonce, force: '1' }));
         assert.equal(res.status, 303, 'force lets the whole batch clear rather than reporting a refusal');
-        assert.equal(res.headers.location, '/');
+        assert.equal(res.headers.location, '/?cleared=3', 'all three, the too-fresh one included');
         assert.equal(registry.readSession(f.r1, CS_FRESH).active, false, 'the too-fresh row is cleared when force is sent');
         assert.equal(registry.readSession(f.r1, CS_OLD_A).active, false);
         assert.equal(registry.readSession(f.r1, CS_OLD_B).active, false);
     } finally {
         s.close();
+    }
+});
+
+// The sixty-second `--scan` budget was exercised by nothing: every `--scan`
+// test walks a temp tree that finishes in milliseconds, so a build that dropped
+// the deadline — leaving the walk bounded only by depth, which is what it was
+// before this change — passed all of them unchanged. Timing a real walk long
+// enough to hit sixty seconds is not a test anyone would keep, so what is
+// checked here is that the budget is computed and handed to the walk, which is
+// the part that was missing. The walk's own obedience to a deadline is proved
+// by `scanRoots stops mid-walk when its deadline is spent` in station.test.js.
+test('a --scan run is given the sixty-second budget and a run with nothing to scan is given none', () => {
+    const { scanDeadline } = require('../scripts/station.js');
+    assert.equal(scanDeadline([]), undefined, 'nothing to scan, no clock');
+    assert.equal(scanDeadline(undefined), undefined);
+    const before = Date.now();
+    const deadline = scanDeadline(['anywhere']);
+    assert.ok(deadline >= before + 60000 && deadline <= Date.now() + 60000,
+        'a minute out — not a second, and not Infinity: ' + (deadline - before) + 'ms');
+});
+
+test('serve hands that budget to the walk on every request, and hands none when there is nothing to scan', async () => {
+    const f = fixture();
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-scan-budget-'));
+    const { serve } = require('../scripts/station.js');
+    const real = station.gather;
+    const seen = [];
+    station.gather = (opts) => { seen.push(opts); return real(opts); };
+    let scanning = null;
+    let plain = null;
+    try {
+        scanning = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false, scan: [empty] });
+        const before = Date.now();
+        await request(scanning.url, { method: 'GET' });
+        assert.equal(seen.length, 1, 'one render, one gather');
+        assert.ok(Number.isFinite(seen[0].deadline), 'the scan walk is bounded by a deadline');
+        assert.ok(seen[0].deadline >= before + 55000 && seen[0].deadline <= Date.now() + 60000,
+            'and the bound is the sixty-second budget: ' + (seen[0].deadline - before) + 'ms');
+
+        plain = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
+        await request(plain.url, { method: 'GET' });
+        assert.equal(seen.length, 2);
+        assert.equal(seen[1].deadline, undefined, 'a render with no --scan carries no clock');
+    } finally {
+        station.gather = real;
+        if (scanning) scanning.close();
+        if (plain) plain.close();
     }
 });
 
