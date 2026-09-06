@@ -60,6 +60,10 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
+- Nothing checks that a design's file table reached the plan's tasks; three spec items were dropped between the two on 09-06 — [lib/plantasks.js](lib/plantasks.js).
+
+- A fix round writes its task's declared paths, so two on one file collide as two tasks do; the grouping rule is silent on them — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
+
 - `skills/fankeel/SKILL.md:599` sends people to `/fankeel-station` for a page the `/fankeel` block already names; the skill can go — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
 
 - `ledger.js` has no verb for build step 3's scan table; two sessions on 09-05 appended it to progress.md by hand, which is what the ledger exists to avoid — [scripts/ledger.js](scripts/ledger.js).
@@ -86,7 +90,9 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Needs a decision
 
-- `docs-check` passes a `path:line` whose line merely moved: three drifted on 09-05 after an insert — carry the cited text, or check a symbol — [scripts/docs-check.js](scripts/docs-check.js).
+- `docs-check` passes a `path:line` whose line merely moved: three drifted on 09-05, a fourth on 09-06 — carry the cited text, or check a symbol — [scripts/docs-check.js](scripts/docs-check.js).
+
+- Whether a reviewer per task plus a mutation control per fix earns its cost; on 09-06 it was most of a 2h20m build — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
 
 - `docs-check` compares counts, not lists: 22 to 21 on one branch hid a change; `--since <ref>`, or a documented "compare the list" — [scripts/docs-check.js](scripts/docs-check.js).
 
