@@ -261,5 +261,15 @@ reading to solve a narrower problem than it costs. That is a judgement, not a
 measurement. If the rendered page turns out to be unreadable, the toggle is
 still the fallback and nothing has been built that forecloses it.
 
+**And the third verify round made it harder, not easier.** A review of the seven
+commits nobody had read found that a row's cost cell, its stage table and its
+curve could still total three different numbers — a request whose transcript
+line carries no timestamp is counted in the row and lands in no stage. The fix
+was not to invent a stage for it but to have the legend say `$N unaccounted`,
+which is the right fix and also a fourth thing in a legend this section is
+already asking whether anyone can read. Nothing was measured about that; it is
+named here so the browser check, when it happens, is done against the legend
+that actually ships.
+
 **So this question stays open**, and is recorded as open rather than as answered:
 a mitigation filed as a fix is how an open question stops being asked.

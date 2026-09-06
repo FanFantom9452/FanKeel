@@ -17,7 +17,9 @@ for the curve, the controls and why a deadline replaced a depth,
 ## Where the registries come from
 
 A registry is per workspace and every reader walks up to exactly one, so the
-station has to be told, or find out. Nine sources, unioned:
+station has to be told, or find out. Eight sources, unioned — and a ninth row
+below them that is not a source at all, because it is the one way a root leaves
+the set:
 
 | source | what it finds |
 |---|---|
@@ -49,9 +51,14 @@ Those two counts reach the header by two routes. A `--scan` walk is
 `discover`'s own, and `discover` forwards `opts.deadline` into it, so the
 counts come back in the model it builds. The first-run walk is not
 `discover`'s — `autoScan` in `scripts/station.js` does it before `write()` is
-called at all — so that walk hands its own numbers in as `opts.scanStats`,
-which `gather` prefers over anything `discover` found. Without both, the two
-header lines are reachable only from a model built by hand.
+called at all — so that walk hands its own numbers in as `opts.scanStats`.
+Both can happen on one call, and then `gather` **adds** them rather than
+choosing: cuts summed, timed-out true if either ran short. They are two walks,
+not two opinions of one, so neither is authoritative over the other — letting
+the handed block win outright threw the `--scan` walk's own counts away, and
+the header then described a walk that was not the one that ran out of time.
+Without both routes, the two header lines are reachable only from a model built
+by hand.
 
 The `scannedAt` key sitting beside the roots in that file is the record of the
 first-run walk, not the guard against a second: it says when the machine was
@@ -90,7 +97,10 @@ An opened row draws what the session spent against its own clock: an inline
 `stages[0].from`, not the entry's `started`, which `chart()` never reads — with
 a faint rule and a letter at each stage boundary so the time axis reads without
 a tooltip. So the width printed in the legend is the clocked span, from that
-first sighting to the last stage's last, and not the elapsed run: a session
+first sighting to the **latest** `to` of any stage — not the last element of the
+series, which `registry.seriesOf` orders by when each stage was *entered*, so a
+session that re-enters an earlier stage and ends there keeps its widest window
+in the middle — and not the elapsed run: a session
 whose clock started late, or stopped early, is drawn narrower than it lived.
 That is deliberate. A session's clock is what its stages are measured in, and
 an axis in one unit and rules in another would put the boundaries in the wrong
@@ -118,6 +128,17 @@ that climbed to $0.83, and one row on the same page read `$57.43 + $91.56 (21
 agents)`. Nothing is counted twice: `usage.agentsOf` reads only the transcripts
 under the session's own `subagents/` directory, and the parent's own pass skips
 every `isSidechain` line.
+
+**And when they still do not add up, the legend says so.** A request is put in
+a stage by the timestamp on its transcript line, so a line carrying none is
+counted in the row's total and lands in no bucket. Rather than invent a stage
+for money that has none — which would put real spend in a stage that did not
+spend it — `row()` compares the cell's total against the sum of the stage
+table's own figures and appends `$N unaccounted` to the legend when the first
+exceeds the second by a cent or more. Unpriced stages sit outside both sides of
+that comparison, so a row full of models `lib/prices.js` has no rate for does
+not read as a shortfall. The notice only appears on a row that prints a stage
+table at all: one total cannot disagree with itself.
 
 Both series end at the same pixel — the top-right corner — on every row that
 carries both, because each is scaled to its own maximum rather than a shared

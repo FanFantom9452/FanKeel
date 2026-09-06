@@ -95,6 +95,12 @@ at `$0.83`. The stage table below prints the same one total per stage rather
 than splitting it, because it is captioned as the figures the chart is drawn
 from; the split is kept on disk, in `spend[stage].subagents`.
 
+That the two add up is checked rather than asserted. A request is placed in a
+stage by the timestamp on its transcript line, and a line carrying none is
+counted in the row's total and lands in no stage — so when the stages account
+for less than the cell above them, the legend appends `$N unaccounted` instead
+of drawing a curve that quietly disagrees with the figure beside it.
+
 Two empty cases are drawn deliberately rather than left as a blank axis.
 Fewer than two stages with `burn` says `no burn recorded` — one sighting is a
 position, not a distance. No spend says `spend arrives when the session ends`,

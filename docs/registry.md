@@ -217,7 +217,10 @@ nothing else:
   transcript nor any agent transcript could be read; with only the agents
   readable, `requests` is 0, `models` is empty and `model` is not written.
 - `spend` — `{ <stage>: { requests, models, subagents? } }`, one entry per stage
-  the session's `clock` recorded, bucketed from the same single pass over the
+  that had a request land in it — **not** one per stage the `clock` recorded: a
+  window that caught nothing gets no key at all, which is what
+  `tests/leave.test.js` asserts where a gate falls between two stages. Bucketed
+  from the same single pass over the
   transcript that produces `usage` above: a request lands in the window
   holding its **last** line's timestamp, the same rule that already
   de-duplicates a `requestId`. `subagents` is `{ requests, models }` too, and
