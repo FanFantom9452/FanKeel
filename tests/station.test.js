@@ -475,12 +475,84 @@ test('a stage priced by no rate in the table is blank, not free', () => {
         'the unpriced stage carries no dollar figure at all, rather than zero');
     const page = station.render(m, {});
     assert.ok(!page.includes('$0.00'), 'no stage is printed as having cost nothing');
-    assert.match(page, /<td>build<\/td>[\s\S]*?<td>—<\/td><\/tr>/, 'the unpriced stage prints an em dash in the spend column');
+    // Pinned by position in the row. The pattern this replaces ran non-greedily
+    // to `</tr>`, so in a five-cell row it matched the *fifth* cell — `waited`,
+    // whose dash is the one a row end follows — and was satisfied whether the
+    // spend cell held `—` or a figure. Counting cells from `<tr>` is what makes
+    // the fourth one the one asserted on.
+    assert.match(page, /<tr><td>build<\/td><td>[^<]*<\/td><td>[^<]*<\/td><td>—<\/td>/,
+        'the unpriced stage prints an em dash in the fourth cell, which is the spend column');
     assert.ok(page.includes('spend</span> to $3.00'), 'the two priced stages still total $3');
     const spendLine = page.match(/<polyline class="spend" points="([^"]+)"/);
     assert.ok(spendLine, 'a spend polyline is still drawn from the stages that are priced');
     assert.equal(spendLine[1], '4.0,86.0 108.0,58.7 212.0,58.7 316.0,4.0',
         'the unpriced stage contributes no point: four, not six');
+});
+
+// `seriesOf` orders stages by `clock[stage][0]`, their start, so the last
+// element is the latest-*starting* stage. A session that re-entered build and
+// ran on there ends inside the middle element, and taking the last element's
+// `to` as the right-hand end of the axis scaled x to a span shorter than the
+// session: this exact clock drew a point at x=940 in a 320-wide viewBox.
+test('the x axis ends at the last stage to finish, not the last one to start', () => {
+    const m = chartFixture('77777777-eeee-4eee-8eee-eeeeeeeeeeee', {
+        task: 'ends in an earlier stage', stage: 'build', route: ['survey', 'build', 'verify'],
+        clock: { survey: [0, 1000], build: [1000, 9000], verify: [2000, 3000] },
+        burn: { survey: [0, 50000], build: [50000, 90000], verify: [90000, 140000] },
+    });
+    const page = station.render(m, {});
+    const burnLine = page.match(/<polyline class="burn" points="([^"]+)"/);
+    assert.ok(burnLine, 'a burn polyline is drawn');
+    const xs = burnLine[1].trim().split(/\s+/).map((p) => Number(p.split(',')[0]));
+    for (const at of xs) {
+        assert.ok(at >= 0 && at <= 320, 'x=' + at + ' is outside the 320-wide box: ' + burnLine[1]);
+    }
+    // Not the containment alone: a scale that merely clamped would satisfy it.
+    // 316 is the right-hand pad, so build's 9000 — the largest `to` — is what
+    // the axis was divided by, and the two stages that end earlier land inside.
+    assert.equal(burnLine[1], '4.0,86.0 38.7,56.7 38.7,56.7 316.0,33.3 73.3,33.3 108.0,4.0',
+        'build ends at the right-hand pad and verify, which starts later, sits well short of it');
+});
+
+// The guard the design's promise needs: the cost cell, the stage table and the
+// curve are three views of one sum, and `lib/usage.js` buckets a request into a
+// stage by the timestamp on its transcript line — a line carrying none is in
+// the row's total and in no bucket. Inventing a stage for it would put real
+// money in a window that did not spend it, so the page names the gap instead.
+test('a row whose stages do not account for its whole total says how much is missing', () => {
+    const m = chartFixture('88888888-ffff-4fff-8fff-ffffffffffff', {
+        task: 'more spent than any stage claims', stage: 'build', route: ['survey', 'build'],
+        clock: { survey: [0, 1000], build: [1000, 2000] },
+        burn: { survey: [0, 50000], build: [50000, 120000] },
+        // One stage's worth of spend, $1 of it.
+        spend: { survey: { requests: 1, models: M('claude-sonnet-5', 500000) } },
+        // $2 of parent and $2 of agents in the row's own total: $3 of the $4
+        // the cell prints reached no stage.
+        usage: {
+            requests: 2, models: M('claude-sonnet-5', 1000000),
+            subagents: { agents: 1, requests: 1, wallMs: 1000, models: M('claude-sonnet-5', 1000000) },
+        },
+    });
+    const page = station.render(m, {});
+    assert.ok(page.includes('$2.00 + $2.00 (1 agents)'), 'the cost cell totals $4');
+    assert.ok(page.includes('spend</span> to $1.00'), 'and the curve reaches $1, which is the disagreement');
+    assert.ok(page.includes('$3.00 unaccounted'), 'the legend names the amount no stage claims');
+
+    // The same shape with nothing missing: $1 and $2 of stage spend against a
+    // $3 row total. A notice that fired on arithmetic noise would fire here.
+    const level = chartFixture('89898989-ffff-4fff-8fff-ffffffffff01', {
+        task: 'stages account for all of it', stage: 'build', route: ['survey', 'build'],
+        clock: { survey: [0, 1000], build: [1000, 2000] },
+        burn: { survey: [0, 50000], build: [50000, 120000] },
+        spend: {
+            survey: { requests: 1, models: M('claude-sonnet-5', 500000) },
+            build: { requests: 1, models: M('claude-sonnet-5', 1000000) },
+        },
+        usage: { requests: 2, models: M('claude-sonnet-5', 1500000) },
+    });
+    const levelPage = station.render(level, {});
+    assert.ok(levelPage.includes('spend</span> to $3.00'), 'the stages total the row\'s own $3');
+    assert.ok(!levelPage.includes('unaccounted'), 'and a row that adds up says nothing');
 });
 
 // Finding 1 of the whole-branch review: the two scan-cut lines in the header
@@ -506,6 +578,35 @@ test('a caller that walked the machine itself hands its counts to the page write
     const page = fs.readFileSync(out.file, 'utf8');
     assert.match(page, /depth stopped the scan in 7 places/);
     assert.match(page, /the scan ran out of time/);
+});
+
+// `scripts/station.js` hands its first-run walk in *and* passes `--scan`
+// through on the same call, so both walks can happen in one `gather`. The
+// handed block used to win outright and the `--scan` walk's own counts were
+// dropped: the header then described a walk that had not been the one to run
+// short. Two gathers, one for each half of the merge — a fix that only ORed
+// `timedOut` would pass the first assertion and fail the second.
+test('a handed-in scan block and the walk discover did are added, not chosen between', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scanstats-merge-'));
+    registry.ensureLayout(path.join(base, 'a', 'b'));
+    const spent = station.gather({
+        configDir: path.join(base, 'cfg'), scan: [base], deadline: Date.now() - 1,
+        scanStats: { depthCuts: 0, timedOut: false },
+    });
+    assert.equal(spent.scanStats.timedOut, true,
+        'the handed block saying nothing went wrong does not erase a walk that ran out of time');
+    assert.match(station.render(spent, {}), /the scan ran out of time/);
+
+    // Ten directories below the base against a depth of eight: the walk cuts
+    // one place of its own, and the handed block reports seven more.
+    const deep = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scanstats-deep-'));
+    fs.mkdirSync(path.join(deep, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'), { recursive: true });
+    const cut = station.gather({
+        configDir: path.join(deep, 'cfg'), scan: [deep],
+        scanStats: { depthCuts: 7, timedOut: false },
+    });
+    assert.equal(cut.scanStats.depthCuts, 8, 'seven handed in plus the one this walk made');
+    assert.match(station.render(cut, {}), /depth stopped the scan in 8 places/);
 });
 
 // Finding 3 of the same review: `scripts/station.js` wrote `scannedAt` back
@@ -596,9 +697,11 @@ test('each row carries the attributes belonging to that session, not just numeri
     const blocks = page.match(/<details class="s[^"]*"[^>]*>[\s\S]*?<\/details>/g) || [];
     assert.equal(blocks.length, 3, 'one details block per session in the fixture');
     const cases = [
-        { id: LIVE, root: f.r1, cost: '0', state: 'live' },
-        { id: STALE, root: f.r1, cost: '0', state: 'stale' },
-        { id: DOWN, root: f.r2, cost: '12', state: 'down' },
+        { id: LIVE, root: f.r1, cost: '0.00', state: 'live' },
+        { id: STALE, root: f.r1, cost: '0.00', state: 'stale' },
+        // $12 of parent and $2 of agents: `data-cost` is the total the cost
+        // cell prints, not the parent's share of it.
+        { id: DOWN, root: f.r2, cost: '14.00', state: 'down' },
     ];
     for (const c of cases) {
         const block = blocks.find((b) => b.includes('<code>' + c.id + '</code>'));
@@ -851,4 +954,84 @@ test('the static page has no auto-refresh control and the script runs without on
     const sandbox = runScript(s.doc);
     assert.deepEqual(sandbox.timers.set, [], 'so nothing is ever scheduled');
     assert.equal(s.shown.textContent, '3 shown', 'and the rest of the script still ran');
+});
+
+// The sort key was not the number on screen: `data-cost` carried the parent's
+// own spend while the cell beside it printed the parent's plus its agents'. The
+// three rows below are built so the two readings disagree about the order — the
+// row showing the most money is the row whose parent spent least — and the stub
+// runs the real SCRIPT against the attributes the real page wrote, so the button
+// and the cell are checked against each other rather than each against itself.
+test('data-cost carries the total the cost cell prints, and the cost sort follows it', () => {
+    const BIG = '10101010-aaaa-4aaa-8aaa-aaaaaaaaaa01';
+    const SMALL = '10101010-aaaa-4aaa-8aaa-aaaaaaaaaa02';
+    const ODD = '10101010-aaaa-4aaa-8aaa-aaaaaaaaaa03';
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-costsort-'));
+    const root = path.join(base, 'ws');
+    registry.ensureLayout(root);
+    const now = Date.now();
+    const put = (id, task, usage) => registry.writeSession(root, id, {
+        task, project: 'ws', stage: 'build', route: ['build'], active: false, claims: [],
+        started: new Date(now - 3600e3).toISOString(), updated: new Date(now).toISOString(), usage,
+    });
+    // $1 of parent and $3 of its agents: $4 on screen, $1 under the old key.
+    put(BIG, 'agents did the spending', {
+        requests: 1, models: M('claude-sonnet-5', 500000),
+        subagents: { agents: 2, requests: 4, wallMs: 1000, models: M('claude-sonnet-5', 1500000) },
+    });
+    // $2 of parent and no agents: $2 on screen, and the larger of the two old keys.
+    put(SMALL, 'parent did the spending', { requests: 1, models: M('claude-sonnet-5', 1000000) });
+    // The measured row this defect was found on: $0.83 of parent and $1.39 of
+    // agents. Their sum in doubles is 2.2199999999999998, so an attribute that
+    // carries the raw addition carries eighteen digits of it.
+    put(ODD, 'the row this was measured on', {
+        requests: 1, models: M('claude-sonnet-5', 415000),
+        subagents: { agents: 1, requests: 2, wallMs: 1000, models: M('claude-sonnet-5', 695000) },
+    });
+
+    const page = station.render(station.gather({ configDir: path.join(base, 'cfg'), root }), {});
+    const blocks = page.match(/<details class="s[^"]*"[^>]*>[\s\S]*?<\/details>/g) || [];
+    assert.equal(blocks.length, 3, 'one details block per session');
+    const blockOf = (id) => blocks.find((b) => b.includes('<code>' + id + '</code>'));
+    const attr = (id, name) => (new RegExp('data-' + name + '="([^"]*)"').exec(blockOf(id)) || [])[1];
+    assert.ok(blockOf(BIG).includes('$1.00 + $3.00 (2 agents)'), 'the cell prints $4 of spend');
+    assert.ok(blockOf(SMALL).includes('<span>$2.00</span>'), 'and the other row prints $2');
+    assert.ok(blockOf(ODD).includes('$0.83 + $1.39 (1 agents)'), 'and the third prints $2.22');
+    assert.equal(attr(BIG, 'cost'), '4.00', 'the attribute is the total, not the parent\'s $1');
+    assert.equal(attr(SMALL, 'cost'), '2.00');
+    // Rounded to the cent the cell prints, like every other figure on the page.
+    // The raw sum of this row's two halves is 2.2199999999999998.
+    assert.equal(attr(ODD, 'cost'), '2.22', 'the sort key is the cent, not the float artifact');
+
+    // The real SCRIPT, over the real attributes, in the stub DOM the tests
+    // above use: descending cost has to run $4.00, $2.22, $2.00 — which is the
+    // order of the figures on screen and the reverse of the parents' own.
+    const group = makeEl({});
+    for (const id of [SMALL, ODD, BIG]) {
+        group.appendChild(makeEl({
+            'data-updated': attr(id, 'updated'), 'data-started': attr(id, 'started'),
+            'data-cost': attr(id, 'cost'), 'data-stage': attr(id, 'stage'),
+            'data-state': attr(id, 'state'), 'data-text': attr(id, 'text'),
+        }));
+    }
+    const q = makeEl({});
+    const shown = makeEl({});
+    const buttons = ['updated', 'started', 'cost', 'stage']
+        .map((k) => makeEl({ 'data-sort': k, 'aria-pressed': k === 'updated' ? 'true' : 'false' }));
+    const doc = {
+        getElementById: (id) => (id === 'q' ? q : id === 'shown' ? shown : null),
+        querySelectorAll: (sel) => {
+            if (sel === '.rows') return [group];
+            if (sel === '.bar button[data-sort]') return buttons;
+            throw new Error('stub does not implement selector: ' + sel);
+        },
+    };
+    runScript(doc);
+    buttons[2].fire('click');
+    const label = (el) => {
+        const text = el.attrs['data-text'];
+        return text.includes(BIG) ? 'big' : text.includes(ODD) ? 'odd' : 'small';
+    };
+    assert.deepEqual(group.children.map(label), ['big', 'odd', 'small'],
+        'descending cost follows the cells: $4.00, $2.22, $2.00');
 });
