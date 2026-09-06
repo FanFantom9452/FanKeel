@@ -459,8 +459,8 @@ conversation.
 surface beside each group — `agent`, `agents` or `workflow` — and the loop reads
 it instead of re-deriving one from the group's size, which cannot see the
 diagnostics that downgrade a group. The brief a dispatch carries is one file,
-written by `ledger.js brief <n>` from the plan — the task's section, the
-constraints, what it consumes, and the rules an implementer cannot infer — and a
+written by `ledger.js brief <n>` from the plan — the constraints, the task's
+section, what it consumes, and the rules an implementer cannot infer — and a
 line saying where the task fits, none of it chosen per task. What is left to
 decide here is the ruling and the commit message; everything else the loop
 needs is a runtime fact taken when it is needed.
