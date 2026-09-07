@@ -268,6 +268,44 @@ test('every class says what it means, because the word alone does not', () => {
   }
 });
 
+// `CLASSES` is the source and three markdown tables are hand-copied from it.
+// That edge goes stale silently: the tables read as current long after the code
+// moved, and a session picking a class believes them. It has happened once
+// already — `docs/pipeline.md`'s hand-copied blocks still showed the old `build`
+// rules until an audit's pair readers found them.
+//
+// Copies rather than one page the other two link, because each is read alone:
+// `/fankeel-survey`'s own description offers classification as an entry point,
+// so a table it has to go elsewhere for is a step it can skip. Duplication is
+// the right answer here and a check is what makes it safe.
+//
+// The three files are listed rather than found, for the reason
+// `scripts/version.js` gives for `MANIFESTS`: a fourth copy is a decision
+// somebody makes, not a directory entry.
+const CLASS_TABLES = [
+  'docs/pipeline.md',
+  'skills/fankeel/SKILL.md',
+  'skills/fankeel-survey/SKILL.md',
+];
+
+test('the three copied class tables still say what CLASSES says', () => {
+  const { CLASSES } = require('../lib/stages.js');
+  // `architectural` writes its route as prose, so the prose is checked too.
+  assert.equal(FULL_ROUTE.length, 7, '"all seven" names a route of seven');
+  for (const rel of CLASS_TABLES) {
+    const text = fs.readFileSync(path.join(__dirname, '..', rel), 'utf8');
+    for (const name of Object.keys(CLASSES)) {
+      const route = name === 'architectural'
+        ? 'all seven'
+        : '`' + CLASSES[name].route.join(',') + '`';
+      // The table drops the sentence's full stop; nothing else differs.
+      const row = '| `' + name + '` | ' + route + ' | '
+        + CLASSES[name].means.replace(/\.$/, '') + ' |';
+      assert.ok(text.includes(row), rel + ' does not carry: ' + row);
+    }
+  }
+});
+
 test('a class picks the route and is recorded on the entry', () => {
   const dir = root();
   const r = run(dir, ['start', '--session', A, '--task', 'probe the ramp', '--project', 'lib', '--class', 'spike']);
