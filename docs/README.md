@@ -37,9 +37,9 @@ here.
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
 | Every session on this machine, where the page finds the registries, and what `stale` means | [station.md](station.md) |
 | Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
-| How two implementers running at once was built, task by task — its design is in `docs/archive/` | [plans/2026-08-30-parallel-build.md](plans/2026-08-30-parallel-build.md) — *built* |
+| How two implementers running at once was built, task by task — its design is in `docs/archive/` | `docs/archive/2026-08-30-parallel-build.md` — *built* |
 | Every fankeel session on this machine on one page, what each cost, and how an abandoned one is put down | [plans/2026-09-04-session-station-design.md](plans/2026-09-04-session-station-design.md) — *built* |
-| The eight tasks that build the station, with every test and every file written out | [plans/2026-09-04-session-station.md](plans/2026-09-04-session-station.md) — *built* |
+| The eight tasks that build the station, with every test and every file written out | `docs/archive/2026-09-04-session-station.md` — *built* |
 | Why the station forgot registries — the lead dies with the badge — and where the page is written now: at `/fankeel`, at every verb, beside the user | [plans/2026-09-05-station-at-hand-design.md](plans/2026-09-05-station-at-hand-design.md) — *built* |
 | The six tasks that made the station remember, scan, write twice and say so | [plans/2026-09-05-station-at-hand.md](plans/2026-09-05-station-at-hand.md) — *built* |
 | Why a station row gains a curve of what it spent against how long it ran, and why depth alone never bounded the scan | [plans/2026-09-06-station-reads-back-design.md](plans/2026-09-06-station-reads-back-design.md) — *built* |
@@ -106,5 +106,6 @@ is explained, and it is the one thing to know before adding a page here.
 | `docs/archive/` | archive | that is the point of it |
 | `skills/` | reference | no |
 | `output-styles/` | reference | no |
+| `.claude/agents/` | reference | no |
 
 [Back to the front page](../README.md)

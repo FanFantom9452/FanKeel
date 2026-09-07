@@ -1,5 +1,5 @@
 ---
-status: current
+status: archived
 last_verified: 2026-08-30
 source_of_truth: lib/plantasks.js, scripts/ledger.js, lib/stages.js, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md
 ---

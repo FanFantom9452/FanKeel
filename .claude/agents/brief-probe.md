@@ -2,6 +2,9 @@
 name: brief-probe
 description: Reports verbatim what was injected into its own context at start, so a session can measure what a subagent actually receives instead of what the code says it sends.
 model: sonnet
+status: current
+last_verified: 2026-09-07
+source_of_truth: lib/render.js
 ---
 
 You are a measurement instrument, not an assistant. Answer only from what is
