@@ -1371,3 +1371,70 @@ test("render()'s output carries one nav entry per registry with its three counts
         assert.ok(block.includes('data-project="' + root + '"'), id + ' should carry data-project="' + root + '"');
     }
 });
+
+// `navLabels` has no seam of its own — it is not exported, and `navHtml`
+// calls it before `render()` ever hands back a string — so its
+// shortest-unique-tail behaviour is read back through the nav markup it
+// feeds, a model built by hand the way the scanStats test above builds one
+// rather than through `gather()`: nothing about a collision in path segments
+// needs a real `.fankeel/sessions/` on disk.
+function navLinksFor(roots) {
+    const model = {
+        generatedAt: new Date().toISOString(), configDir: '', pricesVerified: 'n/a',
+        registries: roots.map((root) => ({ root, gone: false, unreadable: 0, build: [], mapAt: null, sessions: [] })),
+    };
+    const page = station.render(model, {});
+    const nav = /<nav id="nav">([\s\S]*?)<\/nav>/.exec(page);
+    assert.ok(nav, 'the left pane is a closed nav');
+    return nav[1].match(/<a [^>]*>[\s\S]*?<\/a>/g) || [];
+}
+
+// Two roots, one collision. `datapacks` alone cannot tell them apart, so both
+// grow to `proj-a/datapacks` and `proj-b/datapacks` — distinct the moment the
+// segment above joins the label — and stop there: growing a third time to
+// `F:/proj-a/datapacks` would be `navLabels` refusing to believe two segments
+// are enough once they plainly are.
+test('two roots colliding on their last segment both grow one level and stop there', () => {
+    const rootA = 'F:\\proj-a\\datapacks';
+    const rootB = 'F:\\proj-b\\datapacks';
+    const links = navLinksFor([rootA, rootB]);
+    const a = links.find((l) => l.includes('data-project="' + rootA + '"'));
+    const b = links.find((l) => l.includes('data-project="' + rootB + '"'));
+    assert.ok(a && b, 'both roots have their own nav entry');
+    assert.ok(a.includes('>proj-a/datapacks<span class="n">'), a);
+    assert.ok(b.includes('>proj-b/datapacks<span class="n">'), b);
+    assert.ok(!a.includes('>F:/proj-a/datapacks<span'), 'stopped growing once distinct — not at the drive letter too');
+    assert.ok(!b.includes('>F:/proj-b/datapacks<span'), 'stopped growing once distinct — not at the drive letter too');
+});
+
+// Three roots share `datapacks`; two of them, `alpha` and `beta`, also share
+// `sub` one segment up, so `sub/datapacks` still collides between just those
+// two after the first round of growth, while `solo/datapacks` is already on
+// its own. `alpha` and `beta` need a third segment to separate; `solo` never
+// needed a second collision resolved and stops at two.
+test('three roots sharing a last segment: the two that also share the segment above grow further than the third', () => {
+    const rootA = 'F:\\alpha\\sub\\datapacks';
+    const rootB = 'F:\\beta\\sub\\datapacks';
+    const rootC = 'F:\\solo\\datapacks';
+    const links = navLinksFor([rootA, rootB, rootC]);
+    const a = links.find((l) => l.includes('data-project="' + rootA + '"'));
+    const b = links.find((l) => l.includes('data-project="' + rootB + '"'));
+    const c = links.find((l) => l.includes('data-project="' + rootC + '"'));
+    assert.ok(a && b && c, 'all three roots have their own nav entry');
+    assert.ok(a.includes('>alpha/sub/datapacks<span class="n">'), a);
+    assert.ok(b.includes('>beta/sub/datapacks<span class="n">'), b);
+    assert.ok(c.includes('>solo/datapacks<span class="n">'), c);
+});
+
+// A fourth root whose own last segment nothing else shares — mixed in with
+// the two-way collision above so the label is decided per root, not by the
+// worst case anywhere on the page.
+test('a root whose last segment is already unique keeps the one-segment label', () => {
+    const rootA = 'F:\\proj-a\\datapacks';
+    const rootB = 'F:\\proj-b\\datapacks';
+    const rootD = 'F:\\myproject';
+    const links = navLinksFor([rootA, rootB, rootD]);
+    const d = links.find((l) => l.includes('data-project="' + rootD + '"'));
+    assert.ok(d, 'the unique root has its own nav entry');
+    assert.ok(d.includes('>myproject<span class="n">'), d);
+});

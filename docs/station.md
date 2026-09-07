@@ -277,7 +277,9 @@ A section hides for one of two reasons, and it is two, not one: its project
 is excluded by the current selection (`lib/station.js:687`, `excluded=!!selected&&proj!==selected`), or it holds rows and every one of
 them was filtered out (`lib/station.js:688`, `emptied=!!c&&c.rows>0&&c.visible===0`). A registry that still has a `sessions/` directory but holds none
 fits neither — nothing ever emptied it — so under `all projects` it stays
-visible, and its meta line is the only place left on the page that says so.
+visible, because hiding it would take it off the page entirely. Its meta
+line says so (`0 sessions`), and its nav entry says the same thing beside
+it, in its own `0 live, 0 stale, 0 down` (`lib/station.js:782`, `${c.live} live`).
 A gone registry's section is never in this reckoning at all: it has no
 `.rows` group to be counted or emptied, so `excluded` alone decides it. A
 section and its `.rows` group are paired on the `data-project`
