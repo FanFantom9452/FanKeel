@@ -692,7 +692,8 @@ rewritten `tests/registry.test.js` assertions pass.
 **Dispatch:** implementer, sonnet — one reordering with a counting test; the plan names both call sites.
 
 `lib/registry.js:160` `readAll` reads and parses every session file under every
-discovered root, and `lib/station.js:688` `write()` calls it once per root. That
+discovered root, and `lib/station.js:695` `write()` calls it once per root — 688
+before Task 5 added `tally` above it. That
 cost is paid on every `task.js` verb.
 
 `adopt` pays it twice: `scripts/task.js:850` hides the source session's badge

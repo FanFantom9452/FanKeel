@@ -113,7 +113,7 @@ be tested where a one-liner in a commit message cannot.
 ## 6. `adopt` pays `readAll` once
 
 - `lib/registry.js:160` `readAll` reads and parses every session file under
-  every discovered root on each `write()`, and `lib/station.js:688` `write()` is
+  every discovered root on each `write()`, and `lib/station.js:695` `write()` is
   called on every `task.js` verb.
 - `scripts/task.js:850` and `scripts/task.js:856` both reach `refreshStation` at
   `scripts/task.js:137` — once to hide the source session's badge and once to
