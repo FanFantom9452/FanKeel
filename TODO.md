@@ -60,19 +60,11 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- `LANDED_QUIET` is three days, picked from 8 plans inside a 0–4 day band; seven more landed between 09-01 and 09-06, so the band can be measured again — [scripts/docs-audit.js](scripts/docs-audit.js).
-
 - Whether an output style reaches a subagent at all: set one in `/config`, dispatch one agent, and read what it was given — [lib/render.js](lib/render.js).
-
-- `docs-audit`'s pairs: 8 of 31 read, none with a factual disagreement; three restate what a neighbour owns. Does `LANDMARK = 4` earn its output — [scripts/docs-audit.js](scripts/docs-audit.js).
 
 ## Needs a decision
 
-- `skills/fankeel/SKILL.md` restates the whole scope guard and links `docs/collisions.md` nowhere; its `source_of_truth` omits `lib/guard.js` — [docs/collisions.md](docs/collisions.md).
-
-- The skill's `## Task memory` restates what `docs/registry.md` owns with no deferral, where the same file says short form, not the only copy three times — [docs/registry.md](docs/registry.md).
-
-- `docs/station.md:182-205` restates the window bucketing `docs/registry.md:219-232` owns; the pair's two deferrals both point at other sections — [docs/station.md](docs/station.md).
+- The 09-04 session-station plan looks landed: 18 files named, all present, untouched 3d. Archiving one is never done unasked — [scripts/docs-audit.js](scripts/docs-audit.js).
 
 - Five scripts take `--root` raw where three resolve it: `layout.js`, `map.js`, `orient.js`, `residue.js`, `todo-check.js` against the three scanners — [scripts/map.js](scripts/map.js).
 
@@ -80,15 +72,11 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - The 08-30 parallel-build pair is split: the design is archived, the plan is not, because two illustrative filenames in its prose read as missing — [scripts/docs-audit.js](scripts/docs-audit.js).
 
-- `docs-check` passes a `path:line` whose line merely moved: three drifted on 09-05, a fourth on 09-06 — carry the cited text, or check a symbol — [scripts/docs-check.js](scripts/docs-check.js).
-
 - Whether a reviewer per task and a mutation per fix earn their cost; measure the next build, which returns the mutations — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
 
 - With the roots expiry gone, any scratch registry a `leave.js` run touches is remembered until `--forget`; two landed on 09-06 — [lib/station.js](lib/station.js).
 
 - `docs-check` compares counts, not lists: 22 to 21 on one branch hid a change; `--since <ref>`, or a documented "compare the list" — [scripts/docs-check.js](scripts/docs-check.js).
-
-- `todo-check` `SECTIONS` is fixed and exits 1 on a repository with its own headings, 22 of 22 unclassified; per-project names, or one downgrade line — [scripts/todo-check.js](scripts/todo-check.js).
 
 - Whether a two-source join needs a fourth pair: fankeel-verify:99 cites 1.5× for readers each given a page and a diff, a shape no pair measured — [docs/subagents.md](docs/subagents.md).
 
