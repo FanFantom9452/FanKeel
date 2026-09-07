@@ -70,6 +70,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - Whether a decision record gets annotated when a change falsifies an argument premise rather than a reference: `scripts/ledger.js` now exports — [scripts/ledger.js](scripts/ledger.js).
 
+- What a nav label becomes when growing cannot separate two roots: one nested inside another's tree runs out of segments while still colliding — [lib/station.js](lib/station.js), `navLabels`.
+
 ## Waiting
 
 - Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it. lifts when: a run is seen ignoring one. 09-06.
