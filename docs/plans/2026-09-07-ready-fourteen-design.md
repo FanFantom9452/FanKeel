@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-09-07
 source_of_truth: TODO.md, tests/, scripts/docs-check.js, lib/station.js, scripts/ledger.js
 ---
