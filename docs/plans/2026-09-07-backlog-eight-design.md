@@ -68,9 +68,11 @@ the wrong line. Its reasoning is sound and this design does not dispute it:
 
 Both proxies it names were tested against the four incidents the entry was filed
 for. **"Look for a symbol near the line" catches 0 of 4** — none of the four
-citations names a symbol, and across the repository only 129 of 723 resolved
+citations names a symbol, and across the repository only 120 of 687 resolved
 citations land on a declaration line at all, so that proxy is blind to 82% of
-them by construction.
+them by construction. Measured at `8587d3c` over every `path:line` span in
+`git ls-files "*.md"`, fenced blocks excluded because `docs-check` never sees
+them; the pair moves with the method and the day, the 82% does not.
 
 What this design proposes is not a third proxy. It removes the decision's
 premise. When a reference page writes

@@ -264,7 +264,9 @@ the user in the middle of somebody else's turn is its own kind of broken.
 every link resolving, none of them landing on a document whose declared role
 records a moment rather than the present, no entry carrying detail that belongs
 in the file it points at, and every entry filed under `## Ready`, `## Needs a decision` or
-`## Waiting`, which is what says whether it can be started today. A clean run
+`## Waiting`, which is what says whether it can be started today. Where *no*
+entry uses those three, that is a repository with its own vocabulary rather than
+one leaving entries unfiled, so it is said once and does not fail the run. A clean run
 prints the split, so the ready count is on screen without opening the file. The
 `land` stage rules call for it, because a plan deleted at `land` is a link that
 just died.

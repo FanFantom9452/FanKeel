@@ -719,14 +719,22 @@ build ledger and in the following commit.
 
 ## A quote beside a citation is a record, not a proxy
 
-Decided 2026-09-07, and it narrows **The document checker stops where the
-machine stops** above rather than reversing it. That section rejected two
+Decided 2026-09-07. It narrows **The document checker stops where the machine
+stops** above rather than reversing it. That section rejected two
 mechanical proxies by name, *look for a symbol near the line* and *compare
 against the last commit that touched both*, and the first of those was measured
 against the four incidents it describes: it catches **none of them**. None of the
-four citations names a symbol, and across this repository only 129 of 723
+four citations names a symbol, and across this repository only 120 of 687
 resolved citations land on a declaration line at all, so that proxy is blind to
 82% of them by construction. That conclusion holds and is not reopened.
+
+That ratio is written with its method because the first two attempts at it
+disagreed. Measured at `8587d3c`, the commit this branch began from, over every
+`path:line` span in `git ls-files "*.md"`, with fenced blocks excluded because
+`withoutFences` means `docs-check` never sees them. Counted with fences kept it
+is 127 of 719, and on the branch tip 123 of 734 — the pair moves with the method
+and the day, and the 82% does not, which is why the 82% is what the argument
+rests on.
 
 What is narrowed is the premise, at `:424` above:
 
