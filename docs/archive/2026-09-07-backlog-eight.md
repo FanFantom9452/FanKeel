@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: archived
 last_verified: 2026-09-07
 source_of_truth: scripts/docs-check.js, scripts/todo-check.js, skills/fankeel/SKILL.md
 ---
