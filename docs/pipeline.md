@@ -785,7 +785,7 @@ is not produces exactly the confident wrong answer this plugin exists to prevent
 $ node <plugin>/scripts/docs-check.js
 
 fankeel docs-check — 17 markdown files, tree: flat
-  1 decision, 2 plan, 14 reference
+  1 decision, 1 plan, 3 reference
 
 12 in no bucket — nobody has said how long these stay true:
   docs/00-overview.md
