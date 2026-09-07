@@ -459,11 +459,12 @@ Three rules for the sweep:
 - **Do not change any prefix string.** The prefixes are how a leftover
   directory is traced back to the test that made it, and `scripts/tmp-clean.js`
   matches on `fankeel-`.
-- **Do not add cleanup of your own.** Four files today call `fs.rmSync` on a
+- **Do not add cleanup of your own.** Three files today call `fs.rmSync` on a
   single file *inside* a temporary directory — `tests/inject.test.js`,
-  `tests/survey.test.js`, `tests/task.test.js` and `tests/guard.test.js`, the
-  last of which also kills child processes. Those calls are part of what their
-  tests assert and stay exactly as they are.
+  `tests/survey.test.js` and `tests/task.test.js`. A fourth, `tests/guard.test.js`,
+  cleans up too but has no `fs.rmSync` at all: it kills spawned children in a
+  `test.after`. Those calls are part of what their tests assert and stay exactly
+  as they are.
 
 Run `npm test` and watch it stay green — this task changes no behaviour. Then
 run `npm run clean` and confirm the removed count is small: a full suite run
@@ -908,8 +909,8 @@ Run `node scripts/todo-check.js` and watch it exit zero.
 | `scripts/tmp-clean.js` is new: it lists `os.tmpdir()`, removes every entry whose name begins with `fankeel-` | Task 2 |
 | It never removes an entry that does not carry that prefix | Task 2 |
 | `package.json` gains `"clean": "node scripts/tmp-clean.js"` | Task 2 |
-| It is run once during build, against the 957,746 directories standing today | Task 2 |
-| The run is timed and the figure written into the build's report | Task 2 |
+| It is run once during build, against the 957,746 directories standing today | struck from Task 2 — a ruling moved the sweep to the parent because it is irreversible; Task 3's implementer then ran it from the plan text it still carried. It ran, under Task 3 |
+| The run is timed and the figure written into the build's report | struck from Task 2 — same reason; the figure (958,894 removed, 0 failed, 3037.0s) is in the ledger under Task 3 |
 | `scripts/docs-check.js:388` returns `values.root` as the raw string it was given | Task 4 |
 | Both scanners resolve `--root` against the registry root | Task 4 |
 | `scripts/survey.js` takes the identical change, because the fankeel skill documents the same flag on both | Task 4 |
@@ -939,7 +940,7 @@ Run `node scripts/todo-check.js` and watch it exit zero.
 | Nothing in the code changes, so nothing in the code can prove it | Task 7 |
 | `docs-audit` names one document, not two | Task 8 |
 | Only the flagged document moves to `docs/archive/` | Task 8 |
-| `docs/README.md:40` is repointed at the new path. `docs/README.md:41` is left alone | Task 8 |
+| `docs/README.md:40` is repointed at the new path. `docs/README.md:41` is left alone | Task 8 — not literally: row 40 was removed rather than repointed, because the index links no file inside `docs/archive/`, and row 41 was reworded because it had lost its antecedent. Recorded as a ruling |
 | `node scripts/docs-check.js` exits zero afterwards | Task 8 |
 | `.claude/agents/brief-probe.md` has never produced a reading | Task 8 |
 | This process loads it, so the fixture is dispatched once | Task 8 |
@@ -951,7 +952,7 @@ Run `node scripts/todo-check.js` and watch it exit zero.
 | Every entry this plan closes is removed in the change that closes it, not in a sweep at the end | struck — closing each entry inside its own task makes `TODO.md` a file shared by eight of the nine tasks, which serialises the entire build behind one line-edit each. Task 9 closes them together instead. |
 | entry 7 — `tests/tmp.test.js` fails today (no module) and passes after; the `%TEMP%` count is unchanged across a full `npm test` | Tasks 1 and 3 |
 | entry 2 (clean) — `npm run clean` reports a removed count, and a second run reports zero | Task 2 |
-| entry 5 — each scanner run with `--root <project>` from inside that project returns a non-empty scan | Task 4 |
+| entry 5 — each scanner run with `--root <project>` from inside that project returns a non-empty scan | Task 4 — the shipped tests assert on `parseArgs().root` rather than running `scan()`, so the resolution is proven and the non-emptiness is not |
 | entry 6 — an unbucketed markdown file outside the doc root, in a project with a tree, produces no graded finding | Task 4 |
 | entries 9a-c — `tests/station.test.js` and `tests/station-cli.test.js` green before and after | Task 5 |
 | entry 10 — `refreshStation` entered once per `adopt` | Task 6 |
