@@ -220,7 +220,15 @@ All three scanners must still behave exactly as before — this task is a refact
 - Modify: `scripts/orient.js` — `:538`
 - Modify: `scripts/residue.js` — `:342`
 - Modify: `scripts/todo-check.js` — `:366-383`
+- Modify: `tests/orient.test.js` — two assertions that pin the old behaviour
 - Test: `tests/workspace.test.js`
+
+`tests/orient.test.js:30` and `:44` assert `parseArgs(['--root', '/tmp/x'])`
+returns `/tmp/x` verbatim. After this task it returns `F:\tmp\x` — a
+POSIX-absolute path with no drive letter picks up the base's drive. Those two
+tests are about `--root` consuming its value and `--root=` being the same flag,
+not about what the value resolves to, so they take a drive-qualified absolute
+path instead. An earlier draft left this file out and the full suite caught it.
 
 **Interfaces:**
 - Consumes: `resolveRoot` from `lib/registry.js` — `resolveRoot(value, from)`,
@@ -517,7 +525,11 @@ module.exports = { withScan, SCAN_HEADING };
 ```
 
 Constraint 4 covers this: `tests/source.test.js` states that a name reached only
-by a test counts as used.
+by a test counts as used. **Reached, though — not merely exported.** That test
+also fails on an exported name nothing imports, so the test below must import
+`SCAN_HEADING` as well and build its fixture from it rather than from the
+literal `## groups`. Exporting it and then hardcoding the string leaves it an
+orphan, which is what the first draft did.
 
 ### Step 2 — write the test
 

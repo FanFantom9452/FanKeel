@@ -13,7 +13,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const ledger = require('../lib/ledger.js');
-const { withScan } = require('../scripts/ledger.js');
+const { withScan, SCAN_HEADING } = require('../scripts/ledger.js');
 const tmp = require('./tmp.js');
 
 const root = () => tmp('fankeel-ledger-');
@@ -656,12 +656,12 @@ test('a groups table under another heading survives a scan write', () => {
     '',
     '## notes',
     '',
-    '## groups',
+    SCAN_HEADING,
     'stale content that should be replaced',
     '',
     '## archive',
     '',
-    '## groups',
+    SCAN_HEADING,
     'a copy pasted under a heading of its own — not the one scan owns',
     '',
   ].join('\n');
