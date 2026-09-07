@@ -6,11 +6,13 @@
 //   node docs-check.js [--root <dir>] [--role reference,plan] [--quiet]
 //
 // This reports only what can be decided mechanically: a path that no longer
-// exists, a `file:line` past the end of the file, a symbol nothing declares, a
-// link to a document that has gone. Whether two documents contradict each other,
-// or whether a page is merely out of date in its prose, is not mechanical, and a
-// script that guessed at it would produce findings nobody could act on. That
-// judgement belongs to the `audit` stage; this gives it the facts to start from.
+// exists, a `file:line` past the end of the file, a `file:line` whose page
+// quoted what it meant to point at and no longer finds it there, a symbol
+// nothing declares, a link to a document that has gone. Whether two documents
+// contradict each other, or whether a page is merely out of date in its prose,
+// is not mechanical, and a script that guessed at it would produce findings
+// nobody could act on. That judgement belongs to the `audit` stage; this gives
+// it the facts to start from.
 //
 // The role a document holds decides what is checked, which is the whole reason
 // the tree is declared. An archive that names deleted code is an archive doing
@@ -130,10 +132,19 @@ function declaredSymbols(root, files) {
     return names;
 }
 
+const LINES = new Map();
+function linesOf(root, rel) {
+    const key = root + '\0' + rel;
+    if (!LINES.has(key)) {
+        const text = readFile(root, rel);
+        LINES.set(key, text === null ? null : text.split('\n'));
+    }
+    return LINES.get(key);
+}
+
 function lineCount(root, rel) {
-    const text = readFile(root, rel);
-    if (text === null) return null;
-    return text.split('\n').length;
+    const l = linesOf(root, rel);
+    return l === null ? null : l.length;
 }
 
 // Resolve a reference the way a reader would: relative to the document it is
@@ -157,6 +168,21 @@ function resolveRef(root, fromRel, ref) {
 }
 
 const external = (ref) => /^[a-z][a-z0-9+.-]*:/i.test(ref) || ref.startsWith('#');
+
+// The page recorded what it meant to point at, right beside the citation. A
+// nearby symbol is a proxy for intent; this is the author's own note, on disk,
+// which is the thing `docs/decisions/fankeel-shell.md:424` said nothing records.
+// A second path is not a quote — `lib/a.js:10` beside `lib/b.js` is two
+// citations, not one citation and its evidence.
+function quoteBeside(text, from) {
+    const eol = text.indexOf('\n', from);
+    const rest = text.slice(from, eol === -1 ? undefined : eol);
+    const span = /`([^`\n]{2,120})`/.exec(rest);
+    if (!span) return null;
+    return PATHISH.test(span[1].trim()) ? null : span[1];
+}
+
+const flat = (s) => s.replace(/\s+/g, ' ').trim();
 
 // One document's claims. `role` decides which of them are worth making.
 function checkDoc(root, rel, role, symbols, roots) {
@@ -245,6 +271,26 @@ function checkDoc(root, rel, role, symbols, roots) {
             const n = lineCount(root, found);
             if (n !== null && wanted > n) {
                 out.push({ file: rel, line: lineOf(m.index), tag: 'past-end', what: found + ':' + wanted + ' but the file ends at ' + n });
+            } else if (role === 'reference') {
+                // Reference only. A plan cites lines it is about to change, and
+                // a decision cites the lines that existed the day it was
+                // written; both are the role working, exactly as with `gone`.
+                const quote = quoteBeside(text, m.index + m[0].length);
+                const target = linesOf(root, found);
+                if (quote === null) {
+                    out.push({ file: rel, line: lineOf(m.index), tag: 'unquoted', what: found + ':' + wanted + ' carries no quote, so nothing checks the line' });
+                } else if (target && !flat(target[wanted - 1] || '').includes(flat(quote))) {
+                    const at = [];
+                    for (let i = 0; i < target.length; i++) {
+                        if (flat(target[i]).includes(flat(quote))) at.push(i + 1);
+                    }
+                    // One hit is where it went. Two is ambiguous and stays
+                    // ambiguous — reporting a guessed line is the thing the
+                    // 09-05 decision was right about.
+                    out.push({ file: rel, line: lineOf(m.index), tag: 'moved',
+                        what: found + ':' + wanted + ' does not hold `' + quote + '`'
+                            + (at.length === 1 ? ' — it is at :' + at[0] : '') });
+                }
             }
         }
     }
@@ -330,17 +376,22 @@ function scan(root, roles) {
         }
     }
 
+    const unquoted = findings.filter((f) => f.tag === 'unquoted')
+        .map((f) => f.file + ':' + f.line + '  ' + f.what);
+    const failing = findings.filter((f) => f.tag !== 'unquoted');
+
     const wanted = roles && roles.length ? roles : null;
-    const kept = wanted ? findings.filter((f) => wanted.includes(f.role)) : findings;
+    const kept = wanted ? failing.filter((f) => wanted.includes(f.role)) : failing;
 
     return {
         tree, error, counts, unfiled,
         markdown: markdown.length,
         findings: kept,
+        unquoted,
     };
 }
 
-const ORDER = ['open-fence', 'gone', 'past-end', 'orphan', 'into-archive'];
+const ORDER = ['open-fence', 'gone', 'past-end', 'moved', 'orphan', 'into-archive'];
 
 function report(result) {
     if (!result) return 'fankeel docs-check: nothing readable under this directory.';
@@ -357,6 +408,9 @@ function report(result) {
     // lifetime nobody decided, and those are the ones that rot unnoticed.
     lines.push(...section(result.unfiled.length + ' in no bucket — nobody has said how long these stay true:',
         result.unfiled, 20));
+
+    lines.push(...section(result.unquoted.length + ' cited with no quote — the line number is not checked:',
+        result.unquoted, 20));
 
     const findings = result.findings.slice()
         .sort((a, b) => ORDER.indexOf(a.tag) - ORDER.indexOf(b.tag) || (a.file < b.file ? -1 : a.file > b.file ? 1 : a.line - b.line));

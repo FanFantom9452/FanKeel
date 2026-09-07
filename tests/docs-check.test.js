@@ -28,6 +28,7 @@ const result = (over) => ({
   unfiled: [],
   markdown: 0,
   findings: [],
+  unquoted: [],
   ...over,
 });
 
@@ -115,4 +116,92 @@ test('--root resolves against the registry, not against the project it names', (
   } finally {
     process.chdir(prevCwd);
   }
+});
+
+// `scan` reads the working tree through `git ls-files`, so a fixture that is a
+// repository has to have its files added or the scan sees an empty project.
+function repoWith(prefix, files) {
+  const root = tmp(prefix);
+  execFileSync('git', ['init', '-q'], { cwd: root });
+  fs.mkdirSync(path.join(root, '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(root, '.fankeel', 'docs.json'), JSON.stringify({
+    preset: 'flat',
+    index: 'docs/README.md',
+    buckets: [{ path: 'docs', role: 'reference', depth: 1 },
+              { path: 'docs/plans', role: 'plan' }],
+  }));
+  for (const [name, text] of Object.entries(files)) {
+    const full = path.join(root, name);
+    fs.mkdirSync(path.dirname(full), { recursive: true });
+    fs.writeFileSync(full, text);
+  }
+  execFileSync('git', ['add', '-A'], { cwd: root });
+  return root;
+}
+
+// Ten filler lines so the quote sits at :11 and the citation at :3 is wrong by
+// a margin no off-by-one could produce.
+const FOO = 'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nconst target = 1;\n';
+
+test('a reference page citing a line that no longer holds its quote is reported', () => {
+  const root = repoWith('fankeel-docscheck-moved-', {
+    'docs/README.md': '# index\n',
+    'lib/foo.js': FOO,
+    'docs/page.md': 'See `lib/foo.js:3`, which sets `const target`.\n',
+  });
+
+  const moved = scan(root, []).findings.filter((f) => f.tag === 'moved');
+  assert.equal(moved.length, 1);
+  assert.equal(moved[0].file, 'docs/page.md');
+  assert.match(moved[0].what, /lib\/foo\.js:3 does not hold `const target`/);
+  assert.match(moved[0].what, /it is at :11/);
+});
+
+test('a quote found at the cited line is not reported', () => {
+  const root = repoWith('fankeel-docscheck-at-', {
+    'docs/README.md': '# index\n',
+    'lib/foo.js': FOO,
+    'docs/page.md': 'See `lib/foo.js:11`, which sets `const target`.\n',
+  });
+  assert.equal(scan(root, []).findings.filter((f) => f.tag === 'moved').length, 0);
+});
+
+// Two hits is ambiguous and stays ambiguous. Naming one of them would be the
+// guess `docs/decisions/fankeel-shell.md:426` was right to refuse.
+test('a quote found at two places is reported without naming a line', () => {
+  const root = repoWith('fankeel-docscheck-twice-', {
+    'docs/README.md': '# index\n',
+    'lib/foo.js': FOO + 'const target = 2;\n',
+    'docs/page.md': 'See `lib/foo.js:3`, which sets `const target`.\n',
+  });
+  const moved = scan(root, []).findings.filter((f) => f.tag === 'moved');
+  assert.equal(moved.length, 1);
+  assert.doesNotMatch(moved[0].what, /it is at/);
+});
+
+test('a citation with no quote beside it is listed and does not fail the run', () => {
+  const root = repoWith('fankeel-docscheck-unquoted-', {
+    'docs/README.md': '# index\n',
+    'lib/foo.js': FOO,
+    'docs/page.md': 'See `lib/foo.js:3`.\n',
+  });
+  const scanned = scan(root, []);
+  assert.equal(scanned.unquoted.length, 1);
+  assert.match(scanned.unquoted[0], /lib\/foo\.js:3/);
+  // `main` exits on `findings.length`, so an empty `findings` IS the exit code.
+  assert.equal(scanned.findings.length, 0);
+  assert.match(report(scanned), /1 cited with no quote/);
+});
+
+// The role boundary. A plan cites lines it is about to change; policing them
+// would report every plan in a repository the first time this shipped.
+test('a plan-role page with a moved citation is silent', () => {
+  const root = repoWith('fankeel-docscheck-plan-', {
+    'docs/README.md': '# index\n',
+    'lib/foo.js': FOO,
+    'docs/plans/p.md': 'See `lib/foo.js:3`, which sets `const target`.\n',
+  });
+  const scanned = scan(root, []);
+  assert.equal(scanned.findings.filter((f) => f.tag === 'moved').length, 0);
+  assert.equal(scanned.unquoted.length, 0);
 });
