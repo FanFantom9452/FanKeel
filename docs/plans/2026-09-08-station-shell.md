@@ -632,8 +632,11 @@ Create `assets/station/station.js`, starting with the part `node --test` reaches
             // The model is in here because it was a filter term on the old page
             // and dropping it would be a silent loss: nothing tells a reader
             // that `opus` stopped matching.
-            var t = [s.task, s.project, s.id, s.label, s.model, s.state,
-                (s.claims || []).join(' '), (s.notes || []).join(' '), s.next]
+            // Guarded, every one of them: an absent `model` joined raw puts the
+            // string `undefined` in the haystack, and a search for it matches
+            // every session that has no model.
+            var t = [s.task, s.project, s.id, s.label, s.model || '', s.state,
+                (s.claims || []).join(' '), (s.notes || []).join(' '), s.next || '']
                 .join(' ').toLowerCase();
             if (t.indexOf(f.q.toLowerCase()) === -1) return false;
         }
@@ -1279,63 +1282,77 @@ git add assets/station/station.js tests/station-view.test.js
 
 ### Step 1: the failing tests
 
+This file already has what these need: `fixture()` at `:19` returns `{ base, cfg, r1, r2 }` with three sessions in two registries — `live one`, `stale one` and `down two` — and `tmp` at `:11` is the shared scratch-directory helper, called with a prefix. There is no shared `model()`, `root` or `NOW` in this file; every test builds its own from `fixture()`, and these follow that.
+
 In `tests/station.test.js`, replace the block at `:686-705` — the three tests that assert `SCRIPT` is inlined and that the page carries exactly one `<script` and no `src` — with:
 
 ```js
 test('the page is the shell, byte for byte', () => {
     const shell = fs.readFileSync(
         path.join(__dirname, '..', 'assets', 'station', 'station.html'), 'utf8');
-    assert.equal(station.render(model(), {}), shell,
+    assert.equal(station.render(), shell,
         'render() copies the shell; it does not template it');
 });
 
 test('the shell carries no session text and the data file carries all of it', () => {
-    const dir = tmp();
-    station.write({ configDir: dir, roots: [root], cwd: dir, now: NOW });
-    const page = fs.readFileSync(path.join(dir, 'fankeel', 'station.html'), 'utf8');
-    const data = fs.readFileSync(path.join(dir, 'fankeel', 'station-data.js'), 'utf8');
-    assert.ok(!page.includes('live one'), 'a task line reached the shell');
-    assert.ok(data.includes('live one'), 'the data file lost a task line');
+    const f = fixture();
+    station.write({ configDir: f.cfg, root: f.r1 });
+    const read = (n) => fs.readFileSync(path.join(f.cfg, 'fankeel', n), 'utf8');
+    assert.ok(!read('station.html').includes('live one'), 'a task line reached the shell');
+    assert.ok(read('station-data.js').includes('live one'), 'the data file lost a task line');
 });
 
-test('write leaves exactly the four files', () => {
-    const dir = tmp();
-    station.write({ configDir: dir, roots: [root], cwd: dir, now: NOW });
+test('write leaves exactly the four files beside roots.json', () => {
+    const f = fixture();
+    station.write({ configDir: f.cfg, root: f.r1 });
     assert.deepEqual(
-        fs.readdirSync(path.join(dir, 'fankeel')).filter((n) => n !== 'roots.json').sort(),
+        fs.readdirSync(path.join(f.cfg, 'fankeel')).filter((n) => n !== 'roots.json').sort(),
         ['station-data.js', 'station.css', 'station.html', 'station.js']);
 });
 
 test('a second write with the same model rewrites only the data', () => {
-    const dir = tmp();
-    station.write({ configDir: dir, roots: [root], cwd: dir, now: NOW });
-    const at = (n) => fs.statSync(path.join(dir, 'fankeel', n)).mtimeMs;
-    const before = [at('station.html'), at('station.css'), at('station.js')];
-    station.write({ configDir: dir, roots: [root], cwd: dir, now: NOW });
-    assert.deepEqual([at('station.html'), at('station.css'), at('station.js')], before,
-        'an unchanged asset was rewritten');
+    const f = fixture();
+    station.write({ configDir: f.cfg, root: f.r1 });
+    const at = (n) => path.join(f.cfg, 'fankeel', n);
+    // Stamped to a fixed past time rather than compared between two writes:
+    // both writes land inside the same millisecond, so equal mtimes would
+    // pass whether or not the file was rewritten.
+    const PAST = new Date('2020-01-01T00:00:00Z');
+    const copied = ['station.html', 'station.css', 'station.js'];
+    for (const n of copied.concat(['station-data.js'])) fs.utimesSync(at(n), PAST, PAST);
+    station.write({ configDir: f.cfg, root: f.r1 });
+    for (const n of copied) {
+        assert.equal(fs.statSync(at(n)).mtimeMs, PAST.getTime(), n + ' was rewritten');
+    }
+    assert.notEqual(fs.statSync(at('station-data.js')).mtimeMs, PAST.getTime(),
+        'the data file was not rewritten');
 });
 
-test('serialize round-trips the model', () => {
-    const m = model();
+test('serialize flattens the registries into one session list', () => {
+    const f = fixture();
+    const m = station.gather({ configDir: f.cfg });
     const line = station.serialize(m, {});
     assert.match(line, /^window\.STATION = /);
     const back = JSON.parse(line.replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
-    assert.equal(back.registries === undefined, true, 'the page reads sessions, not registries');
+    assert.equal(back.registries, undefined, 'the page reads sessions, not registries');
     assert.equal(back.sessions.length,
         m.registries.reduce((n, r) => n + r.sessions.length, 0));
+    assert.ok(back.sessions.every((s) => typeof s.root === 'string'),
+        'a row lost the registry it came from');
 });
 
 test('serialize carries what only a server knows', () => {
-    const line = station.serialize(model(), { serve: true, nonce: 'abc', cleared: 2 });
-    const back = JSON.parse(line.replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
-    assert.equal(back.serve, true);
-    assert.equal(back.nonce, 'abc');
-    assert.equal(back.cleared, 2);
-    const file = JSON.parse(station.serialize(model(), {})
+    const f = fixture();
+    const m = station.gather({ configDir: f.cfg });
+    const read = (o) => JSON.parse(station.serialize(m, o)
         .replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
-    assert.equal(file.serve, false);
-    assert.equal(file.nonce, undefined);
+    const served = read({ serve: true, nonce: 'abc', cleared: 2 });
+    assert.equal(served.serve, true);
+    assert.equal(served.nonce, 'abc');
+    assert.equal(served.cleared, 2);
+    const onDisk = read({});
+    assert.equal(onDisk.serve, false);
+    assert.equal(onDisk.nonce, undefined);
 });
 ```
 
@@ -1531,28 +1548,28 @@ node --test
 
 In `tests/station-cli.test.js`, change the two assertions at `:64` and `:97` that grep the written `station.html` for `stale` and `scanned` to read `station-data.js` instead, change `:386` and `:389` the same way, and add:
 
+This file has its own fixture and its own client: `fixture()` at `:19` returns `{ base, cfg, r1 }` with a seeded `roots.json`, and `request(url, opts, body)` at `:47` wraps `node:http` — the file uses that rather than `fetch`, and every existing serve test calls `serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false })`. `s.url` already ends in a slash.
+
 ```js
 test('serve answers the shell and its three siblings', async () => {
-    const s = await serve({ configDir: dir, roots: [root], exitOnIdle: false });
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
     try {
-        const get = async (p) => {
-            const res = await fetch(s.url.replace(/\/$/, '') + p);
-            return { code: res.status, type: res.headers.get('content-type'), body: await res.text() };
-        };
-        const page = await get('/');
-        assert.equal(page.code, 200);
-        assert.match(page.type, /text\/html/);
-        assert.ok(!page.body.includes('window.STATION'), 'the shell inlined the data');
+        const page = await request(s.url, { method: 'GET' });
+        assert.equal(page.status, 200);
+        assert.match(page.headers['content-type'], /text\/html/);
+        assert.ok(!page.text.includes('window.STATION'), 'the shell inlined the data');
 
-        const data = await get('/station-data.js');
-        assert.equal(data.code, 200);
-        assert.match(data.type, /javascript/);
-        assert.match(data.body, /^window\.STATION = /);
-        assert.match(data.body, /"serve":true/);
+        const data = await request(s.url + 'station-data.js', { method: 'GET' });
+        assert.equal(data.status, 200);
+        assert.match(data.headers['content-type'], /javascript/);
+        assert.match(data.text, /^window\.STATION = /);
+        assert.match(data.text, /"serve":true/);
 
-        assert.equal((await get('/station.css')).code, 200);
-        assert.equal((await get('/station.js')).code, 200);
-        assert.equal((await get('/nothing')).code, 404);
+        assert.equal((await request(s.url + 'station.css', { method: 'GET' })).status, 200);
+        assert.equal((await request(s.url + 'station.js', { method: 'GET' })).status, 200);
+        assert.equal((await request(s.url + 'nothing', { method: 'GET' })).status, 404);
     } finally {
         s.close();
     }
