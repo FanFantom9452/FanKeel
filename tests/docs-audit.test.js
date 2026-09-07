@@ -19,6 +19,7 @@ const path = require('node:path');
 
 const docs = require('../lib/docs.js');
 const audit = require('../scripts/docs-audit.js');
+const { findStateRoot } = require('../lib/registry.js');
 const tmp = require('./tmp.js');
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -570,14 +571,18 @@ test('the two windows default apart, and an explicit --since sets both', () => {
 // that would otherwise be swallowed silently. The root case is the expensive
 // one: swallowed, it audits the working directory and says nothing.
 test('--since with no number leaves the next flag alone', () => {
+  // `--root` resolves its value against the registry now, so what it captured
+  // is checked against that same resolution rather than against the raw
+  // token — the resolving is a different fix, and not what this test is for.
+  const base = findStateRoot(process.cwd()) || process.cwd();
   assert.equal(audit.parseArgs(['--since', '--quiet']).quiet, true);
   assert.equal(audit.parseArgs(['--since', '--quiet']).since, audit.DEFAULT_SINCE);
-  assert.equal(audit.parseArgs(['--since', '--root', '/tmp']).root, '/tmp');
+  assert.equal(audit.parseArgs(['--since', '--root', '/tmp']).root, path.resolve(base, '/tmp'));
   assert.equal(audit.parseArgs(['--since']).since, audit.DEFAULT_SINCE);
   // The other direction: after a flag that takes a value, `--since` is that
   // value rather than a flag, so it is not the one being dropped.
-  assert.equal(audit.parseArgs(['--root', '--since']).root, '--since');
-  assert.equal(audit.parseArgs(['--root', '--since', '--quiet']).root, '--since');
+  assert.equal(audit.parseArgs(['--root', '--since']).root, path.resolve(base, '--since'));
+  assert.equal(audit.parseArgs(['--root', '--since', '--quiet']).root, path.resolve(base, '--since'));
   assert.equal(audit.parseArgs(['--root', '--since', '--quiet']).quiet, true);
 });
 
@@ -637,4 +642,27 @@ test('a shape and a runtime path are not unbuilt', () => {
   assert.deepEqual(p.unbuilt, []);
   // The control on the guards: a path that is neither still reaches `code`.
   assert.deepEqual(p.code, ['scripts/here.js']);
+});
+
+// The other half of the fix `docs-check.js` and `survey.js` already got:
+// `--root` is documented as overriding where the registry is, not as a path
+// re-based onto the project it names. Run from inside the project a relative
+// `--root` names, the old behaviour resolved to `<project>/<project>`, which
+// is not there. `SKILL.md` prints this command as an equivalent of
+// `docs-check --root`, and it stayed wrong about the two being the same until
+// this resolved the same way.
+test('--root resolves against the registry, not against the project it names', () => {
+  const registryRoot = tmp('fankeel-docsaudit-registry-');
+  fs.mkdirSync(path.join(registryRoot, '.fankeel', 'sessions'), { recursive: true });
+  const project = path.join(registryRoot, 'widget');
+  fs.mkdirSync(project, { recursive: true });
+
+  const prevCwd = process.cwd();
+  process.chdir(project);
+  try {
+    const parsed = audit.parseArgs(['--root', 'widget']);
+    assert.equal(parsed.root, project);
+  } finally {
+    process.chdir(prevCwd);
+  }
 });

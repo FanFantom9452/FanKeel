@@ -31,6 +31,7 @@ const docs = require('../lib/docs.js');
 const { trackedFiles, isRepo } = require('../lib/tracked.js');
 const { LINK, CODE, PATHISH, external, resolveRef, readFile, isMarkdown } = require('./docs-check.js');
 const { plural, section } = require('../lib/report.js');
+const { findStateRoot } = require('../lib/registry.js');
 
 const DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_SINCE = 14;          // the fortnight this exists to serve
@@ -820,7 +821,9 @@ function parseArgs(argv) {
     // answering two questions.
     const given = Number.isFinite(n) && n >= 0;
     return {
-        root: typeof values.root === 'string' ? values.root : process.cwd(),
+        root: typeof values.root === 'string'
+            ? path.resolve(findStateRoot(process.cwd()) || process.cwd(), values.root)
+            : process.cwd(),
         since: given ? n : DEFAULT_SINCE,
         settled: given ? n : LANDED_QUIET,
         quiet: Boolean(values.quiet),
