@@ -259,21 +259,28 @@ here is a view over that order rather than a replacement for it, which is why
 the static file on disk and the served page agree about what they hold.
 
 A registry is one `<section class="registry" data-project>` now, not a
-heading floating over a `<div class="rows">` that hides on its own: the
-heading, the meta line, the clear-stale form and the rows div all sit inside
-that one section, carrying the same root as `data-project` that every row
-inside it already carries. The whole section hides together. Opening the
-served page in a browser — not a test — is what found why that matters: with
-a project selected, the other eleven registries' headings stayed on screen,
-and four of their `clear all N stale` buttons stayed pressable, over rows
-that had already hidden underneath them.
+heading floating over a `<div class="rows">` that hides on its own — but not
+every section holds the same furniture. For one that still has a
+`sessions/` directory, the heading, the meta line, the clear-stale form and
+the rows div all sit inside that one section, carrying the same root as
+`data-project` that every row inside it already carries. A gone registry's
+section holds only its heading (`lib/station.js:822`, `no sessions/ here any more`) — no meta line, no clear form, no rows div — because it still has a
+nav entry: without a section carrying its root, selecting it would exclude
+every other section at once and leave the pane blank with nothing on the
+page saying why. Either way the whole section hides together. Opening the
+served page in a browser — not a test — is what found why that matters for a
+registry that does hold rows: with a project selected, the other eleven
+registries' headings stayed on screen, and four of their `clear all N stale`
+buttons stayed pressable, over rows that had already hidden underneath them.
 
 A section hides for one of two reasons, and it is two, not one: its project
 is excluded by the current selection (`lib/station.js:687`, `excluded=!!selected&&proj!==selected`), or it holds rows and every one of
-them was filtered out (`lib/station.js:688`, `emptied=!!c&&c.rows>0&&c.visible===0`). A registry with no sessions at all
+them was filtered out (`lib/station.js:688`, `emptied=!!c&&c.rows>0&&c.visible===0`). A registry that still has a `sessions/` directory but holds none
 fits neither — nothing ever emptied it — so under `all projects` it stays
-visible, and its meta line is the only place left on the page that says it
-exists. A section and its `.rows` group are paired on the `data-project`
+visible, and its meta line is the only place left on the page that says so.
+A gone registry's section is never in this reckoning at all: it has no
+`.rows` group to be counted or emptied, so `excluded` alone decides it. A
+section and its `.rows` group are paired on the `data-project`
 both already carry, not on document order (`lib/station.js:634`, `querySelectorAll('.registry')`) — the same value `row()` writes onto
 every row for `SCRIPT` to use.
 
