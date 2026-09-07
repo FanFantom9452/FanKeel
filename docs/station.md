@@ -199,9 +199,9 @@ between them: a session that sat at a gate for an hour between `survey`'s last
 sighting and `build`'s first has that hour, and whatever was spent in it,
 attributed to `survey` — the stage that opened the gate — rather than dropped.
 
-`spend` sits beside `burn`, `clock` and `waited` as a field of its own, and
-is deleted from `usage` — from `usage.subagents` too — so every existing reader
-of `usage` sees the shape it has always seen.
+`spend` sits beside `burn`, `clock` and `waited` as a field of its own. What is
+deleted from `usage` when it is written, and why every existing reader still
+sees the shape it always had, is in [registry.md](registry.md).
 
 ### Filtering and sorting
 
