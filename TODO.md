@@ -64,9 +64,15 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - Whether an output style reaches a subagent at all: set one in `/config`, dispatch one agent, and read what it was given — [lib/render.js](lib/render.js).
 
-- `docs-audit`'s pairs: 4 of 28 read once, none of them wrong. Reading more is what decides whether `LANDMARK = 4` earns its output — [scripts/docs-audit.js](scripts/docs-audit.js).
+- `docs-audit`'s pairs: 8 of 31 read, none with a factual disagreement; three restate what a neighbour owns. Does `LANDMARK = 4` earn its output — [scripts/docs-audit.js](scripts/docs-audit.js).
 
 ## Needs a decision
+
+- `skills/fankeel/SKILL.md` restates the whole scope guard and links `docs/collisions.md` nowhere; its `source_of_truth` omits `lib/guard.js` — [docs/collisions.md](docs/collisions.md).
+
+- The skill's `## Task memory` restates what `docs/registry.md` owns with no deferral, where the same file says short form, not the only copy three times — [docs/registry.md](docs/registry.md).
+
+- `docs/station.md:182-205` restates the window bucketing `docs/registry.md:219-232` owns; the pair's two deferrals both point at other sections — [docs/station.md](docs/station.md).
 
 - Five scripts take `--root` raw where three resolve it: `layout.js`, `map.js`, `orient.js`, `residue.js`, `todo-check.js` against the three scanners — [scripts/map.js](scripts/map.js).
 
