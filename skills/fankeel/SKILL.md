@@ -4,7 +4,7 @@ description: Task registry and development discipline for long-running projects.
 version: 0.52.0
 status: current
 last_verified: 2026-09-07
-source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js
+source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js, lib/guard.js
 ---
 
 # fankeel
@@ -426,7 +426,8 @@ node <plugin>/scripts/docs-check.js [--root <dir>] [--role reference,plan]
 
 A second to run, and it reports only what can be decided mechanically: a link
 that no longer resolves, a `path:line` past the end of a file, a symbol nothing
-declares. Cheap enough to sit in front of every land.
+declares, a `path:line` whose page quoted what it meant to point at and no
+longer finds it there. Cheap enough to sit in front of every land.
 
 **What is checked depends on the document's role**, which is why the tree below is
 declared. An archive naming deleted code is an archive doing its job. A reference
@@ -548,6 +549,10 @@ form, not the only copy.
 
 Two fields, both capped in code: at most five notes of 100 characters, and one
 `next` line of 120.
+
+[docs/registry.md](../../docs/registry.md) has where the two fields are
+written, what happens to them when a task is renamed, and the run the caps
+came from. This section is the short form, not the only copy.
 
 The caps are deliberate. Claude Code already remembers in four places —
 `CLAUDE.md` for project conventions, its own memory directory for durable facts,
@@ -1011,3 +1016,8 @@ When an edit is refused, do not work around it — not by a different tool, not 
 a shell command. Report which task holds the file and ask the user what they want
 to do. Working around the guard is worse than never having had one, because they
 now believe they have one.
+
+The subagent rule, what a refused edit looks like from inside, and the run
+that decided `ask` over `deny` are in
+[docs/collisions.md](../../docs/collisions.md). This section is the short
+form, not the only copy.
