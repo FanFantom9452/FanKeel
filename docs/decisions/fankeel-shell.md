@@ -724,17 +724,29 @@ stops** above rather than reversing it. That section rejected two
 mechanical proxies by name, *look for a symbol near the line* and *compare
 against the last commit that touched both*, and the first of those was measured
 against the four incidents it describes: it catches **none of them**. None of the
-four citations names a symbol, and across this repository only 120 of 687
+four citations names a symbol, and across this repository only 129 of 719
 resolved citations land on a declaration line at all, so that proxy is blind to
 82% of them by construction. That conclusion holds and is not reopened.
 
-That ratio is written with its method because the first two attempts at it
-disagreed. Measured at `8587d3c`, the commit this branch began from, over every
-`path:line` span in `git ls-files "*.md"`, with fenced blocks excluded because
-`withoutFences` means `docs-check` never sees them. Counted with fences kept it
-is 127 of 719, and on the branch tip 123 of 734 — the pair moves with the method
-and the day, and the 82% does not, which is why the 82% is what the argument
-rests on.
+That ratio is written with its method, because three attempts at it disagreed
+before this one. Measured at `8587d3c`, the commit this branch began from, over
+every `path:line` span in `git ls-files "*.md"` — **fences included**, because
+`checkDoc` binds `withoutFences` to `linkText` alone and the span loop reads the
+raw text, so a citation inside a fence is checked like any other. Declaration is
+`DECL` as committed, which is `(?:^|\s)`-anchored and matches
+`type|interface|struct|enum`, so a comment reading *type one* counts as a
+declaration: that is `survey.js`'s own bargain, it over-counts declarations, and
+inheriting it makes the 82% conservative rather than generous. On the branch tip
+the same method gives 136 of 768. The pair moves with the day; the 82% does not,
+which is why the 82% is what the argument rests on.
+
+The two wrong numbers before it are worth naming, because both looked right.
+723 was a denominator counted with a `PATHISH` that resolved slightly differently
+from the committed one. 687 came from stripping fences on the reasoning above,
+which is false, and from a `DECL` written from memory instead of copied — a
+paraphrased regex that happened to be stricter. A figure in a record nobody
+revises is worth measuring with the code's own constants rather than with an
+account of them.
 
 What is narrowed is the premise, at `:424` above:
 
