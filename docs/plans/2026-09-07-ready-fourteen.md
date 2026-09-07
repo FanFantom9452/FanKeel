@@ -586,7 +586,7 @@ Add the equivalent `--root` test to `tests/survey.test.js`, against
 `survey.js`'s own `parseArgs`. It fails today.
 
 **One existing test pins the behaviour being removed.** `tests/survey.test.js`
-lines 215-216 read:
+lines 216-217 read:
 
 ```
   const parsed = survey.parseArgs(['--root', 'F:/somewhere', 'widget']);
@@ -663,7 +663,7 @@ The TODO entry filed all three under `lib/station.js`. The third is in
 `lib/registry.js`, and the entry is wrong about that — do not go looking for an
 `ensureIgnored` in `lib/station.js`.
 
-`tests/registry.test.js:233` and `:237` assert on `ensureIgnored`'s return
+`tests/registry.test.js:234` and `:238` assert on `ensureIgnored`'s return
 value. They are the only reader of it anywhere, and a test asserting on a value
 no caller uses is testing the wrong thing. Rewrite both to assert on the
 `.fankeel/.gitignore` file the function writes — the contract

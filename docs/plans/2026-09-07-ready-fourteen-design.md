@@ -103,7 +103,7 @@ be tested where a one-liner in a commit message cannot.
   — `lib/station.js:712` — discards as a bare statement. The return goes.
 - `lib/registry.js:216,218` returns a boolean from `ensureIgnored` that both
   callers discard: `lib/station.js:704` and `scripts/map.js:31`. The return
-  goes. `tests/registry.test.js:233,237` assert on it and are rewritten to
+  goes. `tests/registry.test.js:234,238` assert on it and are rewritten to
   assert on the file the function writes, which is what the callers care about.
 - The TODO entry filed all three under `lib/station.js`. One of them is in
   `lib/registry.js`, and the entry is wrong about that.
