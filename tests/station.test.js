@@ -642,16 +642,28 @@ test('a gone root whose directory was deleted is forgotten', () => {
     const configDir = tmp('fankeel-roots-gone-');
     const alive = tmp('fankeel-roots-alive-');
     const deleted = tmp('fankeel-roots-deleted-');
+    const first = Date.parse('2026-09-07T00:00:00Z');
+    const later = Date.parse('2026-09-07T01:00:00Z');
+
+    // Both roots recorded first, while neither is gone — a gone root is only
+    // ever kept from its own past record, never given a fresh one.
+    station.rememberRoots(configDir, [
+        { root: alive, gone: false },
+        { root: deleted, gone: false },
+    ], first);
+
     fs.rmSync(deleted, { recursive: true, force: true });
 
     station.rememberRoots(configDir, [
         { root: alive, gone: true },
         { root: deleted, gone: true },
-    ], Date.parse('2026-09-07T00:00:00Z'));
+    ], later);
 
     const after = station.readRoots(configDir);
     assert.ok(Object.keys(after).includes(alive), 'a gone root that still exists is kept');
     assert.ok(!Object.keys(after).includes(deleted), 'a gone root that was deleted is dropped');
+    assert.equal(after[alive], new Date(first).toISOString(),
+        'alive keeps its first stamp, not a fresh one from the second call');
 });
 
 // `includes('<script>')` proves a tag exists and nothing about what is in it:

@@ -38,12 +38,14 @@ the set:
 | the first run, when there is no `roots.json` at all | one walk of every drive, under a five-second budget, on the default form only — `serve`, `--forget` and `--json` return before the check, so a first `serve` or `--json` on a machine sees only what the leads and running sessions point at. What stops it repeating is the file itself: `main()` runs the walk only when `roots.json` is absent, and every `write()` creates it. It runs from `scripts/station.js` only and never from `write()` — `hooks/inject.js` calls `write()` on every `/fankeel` prompt, and a walk this long inside a hook would stall the prompt that triggered it |
 | `--scan <dir>` | a one-off walk of `<dir>`, eight levels deep, skipping `node_modules`, `.git` and dot-directories, under a sixty-second budget — a directory somebody named gets longer than one nobody asked about. What it finds is remembered, so it is run once per drive |
 | `--root <dir>` | anything else |
-| `--forget <dir>` | the only way a remembered root leaves the file |
+| `--forget <dir>` | a remembered root a person tells the page to stop tracking |
 
 A root whose `.fankeel/sessions/` no longer exists is listed as gone rather
-than dropped, and it is never dropped by age either. Forgetting a registry is
-something a person does with `--forget`, not something that happens to them
-after a month of not opening it.
+than dropped, and it is never dropped by age: a directory gone for a day and
+one gone for a year are marked the same way. It leaves the file on its own
+only when the directory itself is gone from disk — a scratch tree from a test
+run, not a registry anyone is still looking for — and short of that,
+forgetting a registry is something a person does with `--forget`.
 
 **Depth does not bound a walk; a deadline does.** Measured 2026-09-06 on one
 machine: a depth-8 walk of a whole drive took 10.7 seconds over 24,151

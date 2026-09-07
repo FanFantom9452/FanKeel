@@ -380,7 +380,14 @@ node scripts/map.js && node scripts/orient.js && node scripts/todo-check.js && n
 
 **Files:**
 - Modify: `lib/station.js` — `rememberRoots`, around `:87-102`, and the comment at `:46-53`
+- Modify: `docs/station.md` — the `--forget` table row and the paragraph below it
 - Test: `tests/station.test.js`
+
+`docs/station.md` is `status: current` and names `lib/station.js` in its
+`source_of_truth`, so it is not an optional follow-up: its `--forget` row says
+that flag is *the only way a remembered root leaves the file*, and after this
+task that is false. An earlier draft of this plan left it out and the reviewer
+caught it.
 
 **Interfaces:**
 - Consumes: none.
@@ -403,6 +410,16 @@ test('a gone root whose directory was deleted is forgotten', () => {
     const configDir = tmp('fankeel-roots-gone-');
     const alive = tmp('fankeel-roots-alive-');
     const deleted = tmp('fankeel-roots-deleted-');
+    const first = Date.parse('2026-09-06T00:00:00Z');
+
+    // Both are recorded while they are live. Without this, `deleted` would be
+    // absent afterwards for the trivial reason that it was never there, and the
+    // test would pass against code that does nothing.
+    station.rememberRoots(configDir, [
+        { root: alive, gone: false },
+        { root: deleted, gone: false },
+    ], first);
+
     fs.rmSync(deleted, { recursive: true, force: true });
 
     station.rememberRoots(configDir, [
@@ -413,6 +430,8 @@ test('a gone root whose directory was deleted is forgotten', () => {
     const after = station.readRoots(configDir);
     assert.ok(Object.keys(after).includes(alive), 'a gone root that still exists is kept');
     assert.ok(!Object.keys(after).includes(deleted), 'a gone root that was deleted is dropped');
+    assert.equal(after[alive], new Date(first).toISOString(),
+        'kept means keeping its old stamp, not being re-stamped');
 });
 ```
 
@@ -523,7 +542,7 @@ test('a groups table under another heading survives a scan write', () => {
         '',
     ].join('\n');
 
-    const written = ledger.withScan(body, 'fresh block');
+    const written = withScan(body, 'fresh block');
 
     assert.ok(written.includes('a copy pasted under a heading of its own'),
         'the second block is below ## archive and must not be touched');
