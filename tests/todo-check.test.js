@@ -133,7 +133,7 @@ test('linksIn keeps only in-repository targets', () => {
 // filed nowhere is one nobody said the state of, which is exactly the entry
 // `/fankeel` cannot decide whether to offer as a task.
 test('an entry under a heading that is not one of the three is unclassified', () => {
-  const file = fixture('# TODO\n\n## Someday\n\n- a thing\n');
+  const file = fixture('# TODO\n\n## Ready\n\n- a real one\n\n## Someday\n\n- a thing\n');
   const { out, code } = run(file);
   assert.equal(code, 1);
   assert.match(out, /unclassified/);
@@ -147,9 +147,20 @@ test('an entry under no heading at all is unclassified', () => {
 });
 
 test('the entry names the three headings it could have sat under', () => {
-  const file = fixture('# TODO\n\n## Someday\n\n- a thing\n');
+  const file = fixture('# TODO\n\n## Ready\n\n- a real one\n\n## Someday\n\n- a thing\n');
   const detail = todo.check(file).problems[0].detail;
   for (const name of todo.SECTIONS) assert.match(detail, new RegExp('## ' + name));
+});
+
+// The opposite of the `## Someday` test above. One stray heading among the three
+// is an entry nobody classified; every heading being its own is a repository
+// that uses another vocabulary, and that is one fact, not N defects.
+test('a TODO.md whose every entry is off-convention reports once and passes', () => {
+  const file = fixture('# TODO\n\n## Someday\n\n- a thing\n\n## Icebox\n\n- another thing\n');
+  const { out, code } = run(file);
+  assert.equal(code, 0);
+  assert.match(out, /does not use the three headings/);
+  assert.doesNotMatch(out, /unclassified/);
 });
 
 test('all three headings are accepted', () => {

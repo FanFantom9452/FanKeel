@@ -217,7 +217,7 @@ function check(file, now) {
     // this degrades to the three checks it had before rather than refusing to
     // run in a repository that never declared a tree.
     const { tree } = docs.read(base);
-    const problems = [];
+    let problems = [];
     const overdue = [];
     const found = entries(text);
     for (const entry of found) {
@@ -292,10 +292,28 @@ function check(file, now) {
             }
         }
     }
+    // Every entry off-convention is one fact about the repository, not N
+    // defects in it. A repository using its own vocabulary has said nothing
+    // wrong; one that uses the convention and has a stray heading has, and that
+    // stays a defect because the stray is the entry nobody classified.
+    const off = problems.filter((p) => p.kind === 'unclassified');
+    // Under a heading of its own, not under none. An entry with no heading
+    // above it is not another vocabulary — it is an entry nobody filed, and it
+    // stays a defect however many there are. Without this guard `named` is
+    // empty, `vocabulary` becomes `[]`, and `[]` is truthy, so a repository
+    // whose entries sit under no heading at all would have its one real defect
+    // deleted by the branch meant to spare a different repository entirely.
+    const named = found.filter((e) => e.section);
+    const vocabulary = found.length > 0
+        && named.length === found.length
+        && off.length === found.length
+        ? [...new Set(found.map((e) => e.section))]
+        : null;
+    if (vocabulary) problems = problems.filter((p) => p.kind !== 'unclassified');
     const counts = {};
     for (const name of SECTIONS) counts[name] = found.filter((e) => e.section === name).length;
     overdue.sort((a, b) => b.days - a.days);
-    return { file, missing: false, count: found.length, counts, problems, overdue };
+    return { file, missing: false, count: found.length, counts, problems, overdue, vocabulary };
 }
 
 function report(result) {
@@ -307,6 +325,11 @@ function report(result) {
     // there is a task to start this morning.
     const split = SECTIONS.map((s) => (result.counts[s] || 0) + ' ' + s.toLowerCase()).join(', ');
     const lines = [];
+    if (result.vocabulary) {
+        lines.push('This TODO.md does not use the three headings ' + SECTIONS.map((s) => '## ' + s).join(' · ')
+            + ' — it uses ' + result.vocabulary.map((s) => '## ' + s).join(' · ')
+            + '. Nothing here says which entries can be started today, which is what those three are for.');
+    }
     if (!result.problems.length) {
         lines.push('fankeel todo-check: ' + result.count + ' entries — ' + split
             + '. All links resolve, no stale citations, none over the cap.');
