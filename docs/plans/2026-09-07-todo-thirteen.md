@@ -85,6 +85,7 @@ Generated from this project on 2026-09-07, not remembered.
 | `.fankeel/docs.json`, `docs/README.md` | **Modify** — a `.claude/agents` bucket; the index follows two archived plans |
 | `docs/reports/evidence/2026-09-07-dispatch-price/`, `.../2026-09-07-join-pair/` | **Create** — the two A/B harnesses and their raw output |
 | `docs/reports/2026-09-07-dispatch-price.md`, `2026-09-07-join-pair.md` | **Create** — the two reports |
+| `docs/reports/2026-09-07-style-to-subagent.md` | **Create** — whether an output style reaches a subagent, with its control |
 | `docs/reports/2026-09-07-reviewer-cost.md` | **Create** — what a reviewer per task and a mutation per fix cost on this build |
 | `TODO.md` | **Modify** — the thirteen close; one new deferral is filed |
 
@@ -136,7 +137,11 @@ test('resolveRoot falls back to the directory it was given', () => {
     assert.equal(registry.resolveRoot('', loose), path.resolve(loose));
 });
 
-test('resolveRoot leaves an absolute root alone', () => {
+// `tmp()` returns a drive-qualified path on Windows, which is the case that
+// really is unchanged. Do not add a `/tmp`-style case asserting the same thing:
+// a POSIX-absolute value with no drive letter picks up the base's drive, and
+// `docs/plans/2026-09-07-ready-fourteen.md:597` is where that was established.
+test('resolveRoot leaves a drive-qualified absolute root alone', () => {
     const workspace = tmp('fankeel-resolveroot-abs-');
     fs.mkdirSync(path.join(workspace, '.fankeel', 'sessions'), { recursive: true });
     const elsewhere = tmp('fankeel-resolveroot-abs-other-');
@@ -163,6 +168,11 @@ In `lib/registry.js`, directly below `findStateRoot` (which ends around `:95`):
 // `process.cwd()` instead, so `--root KB` typed from inside `Waypoint/` found
 // `KB` in one half of the tools and `Waypoint/KB` in the other. The registry
 // root is the base the skill documents, so it is the one that stays.
+//
+// A DRIVE-QUALIFIED absolute value passes through unchanged in meaning.
+// A POSIX-absolute one carrying no drive letter does not — on Windows `/tmp`
+// against a base on F: comes back under F:. That is `path.resolve`'s own
+// behaviour and it was true of the three inline copies too.
 function resolveRoot(value, from) {
     const cwd = from || process.cwd();
     if (value === undefined || value === null || value === '') return path.resolve(cwd);
@@ -221,9 +231,11 @@ All three scanners must still behave exactly as before — this task is a refact
 **Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
 
 **This is the behaviour change.** After it, `--root KB` means the same directory
-in all eight scripts wherever it is typed from. An absolute `--root` is
-unaffected either way; only a **relative** `--root` typed from a directory that
-is not the registry root moves.
+in all eight scripts wherever it is typed from. A **drive-qualified** absolute
+`--root` is unaffected either way; a **relative** one typed from a directory that
+is not the registry root moves, and so does a POSIX-absolute one with no drive
+letter, which takes the base's drive under either scheme
+(`docs/plans/2026-09-07-ready-fourteen.md:597`).
 
 ### Step 1 — the failing test
 
@@ -715,7 +727,24 @@ now points at `docs/archive/` is exactly what `docs-check` fails on.
 grep -n "2026-09-04-session-station\|2026-08-30-parallel-build" -r docs/ README.md TODO.md skills/
 ```
 
-Fix every hit, not only the index — a plan is linkable from anywhere.
+Fix every hit, not only the index — a plan is linkable from anywhere. The grep
+was run on 2026-09-07 and the live references are **two**, both in the index:
+
+- `docs/README.md:40` — its link target is the 08-30 plan, described as *built*
+- `docs/README.md:42` — its link target is the 09-04 plan, described as *built*
+
+Both are written here as descriptions rather than as link syntax on purpose:
+reproducing the markdown resolves relative to `docs/plans/`, not to `docs/`, and
+`docs-check` correctly failed this file when an earlier draft pasted them.
+
+**Three near misses that must not be touched**, because they name the *designs*,
+which are already archived or stay where they are:
+`docs/README.md:41` and `docs/station.md:11` and
+`docs/plans/2026-09-05-station-at-hand.md:726` all point at
+`2026-09-04-session-station-design.md`, and
+`docs/plans/2026-09-07-ready-fourteen.md:822-838` describes archiving
+`2026-08-30-parallel-build-design.md`, which its own Task 8 already did.
+Re-run the grep before editing — this list is dated, not authoritative.
 
 ### Step 3 — the bucket
 
@@ -758,7 +787,8 @@ must no longer list either plan as landed.
 
 **Interfaces:**
 - Consumes: none.
-- Produces: none.
+- Produces: `docs/reports/2026-09-07-dispatch-price.md` — the report Task 11 cites
+  when it closes the 1.85× entry.
 
 **Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
 
@@ -819,7 +849,8 @@ figure from a partial run is worse than none.
 
 **Interfaces:**
 - Consumes: none.
-- Produces: none.
+- Produces: `docs/reports/2026-09-07-join-pair.md` — the report Task 11 cites when
+  it closes the two-source-join entry.
 
 **Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
 
@@ -867,12 +898,17 @@ variable this pair moved.
 
 **Files:**
 - Modify: `.claude/settings.json` — `outputStyle`, set and then reverted
-- Modify: `TODO.md` — this is the one `## Ready` entry; its outcome is recorded in Task 11
+- Modify: `docs/reports/2026-09-07-style-to-subagent.md` — the observation, dated
 - Test: none — the deliverable is an observation
 
 **Interfaces:**
 - Consumes: none.
-- Produces: the answer Task 11 writes down — whether a style reaches a subagent.
+- Produces: `docs/reports/2026-09-07-style-to-subagent.md` — the report Task 11
+  cites when it closes the one `## Ready` entry.
+
+This task does **not** edit `TODO.md`. An earlier draft of this plan declared it
+here, which was wrong twice over: nothing in the steps below touches it, and
+declaring it put a false file conflict between this task and Task 11.
 
 **Dispatch:** in-session — the probe measures what a subagent of **this** session
 receives, so running it from inside another subagent measures a different
@@ -913,6 +949,19 @@ fresh terminal. **Report that as the finding** — "not observed in this process
 and this process may be why" — rather than concluding a style does not reach a
 subagent.
 
+### Step 5 — write it down
+
+`docs/reports/2026-09-07-style-to-subagent.md`, in the shape the other reports in
+that bucket use: the date, the two arms with the control first, the literal
+string that was looked for, what each of the four probe runs returned, and the
+`lib/render.js` / `hooks/brief.js` zero-match that says fankeel forwards nothing
+either way. The `unverified` caveat from Step 4 goes in the report, not only in
+the response.
+
+### Step 6 — commit
+
+`docs: whether an output style reaches a subagent, probed`
+
 ---
 
 ## Task 11: close the thirteen and file what this work deferred
@@ -923,7 +972,10 @@ subagent.
 - Test: none — `todo-check` exit 0 is the gate
 
 **Interfaces:**
-- Consumes: the outcome of every task above, including Task 10's observation.
+- Consumes: `docs/reports/2026-09-07-dispatch-price.md` from Task 8,
+  `docs/reports/2026-09-07-join-pair.md` from Task 9, and
+  `docs/reports/2026-09-07-style-to-subagent.md` from Task 10 — the three
+  measurements this task cites as it closes their entries.
 - Produces: none.
 
 **Dispatch:** in-session — the only context that knows what each task actually

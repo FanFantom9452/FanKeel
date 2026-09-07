@@ -75,8 +75,12 @@ function resolveRoot(value, from) {
 
 Exported alongside `findStateRoot` at `lib/registry.js:695`. The three scanners
 replace their inline copies with it; the five plain-`cwd` scripts adopt it, which
-is the behaviour change. An absolute `--root` is unaffected by either base, so
-the change reaches only a relative `--root` typed from a subdirectory.
+is the behaviour change. A **drive-qualified** absolute `--root` is unaffected by
+either base, so the change reaches a relative `--root` typed from a subdirectory
+— and a POSIX-absolute one carrying no drive letter, which on Windows picks up
+the base's drive under either scheme. That distinction is not new here: it was
+established today at `docs/plans/2026-09-07-ready-fourteen.md:597`, in the plan
+that made the three scanners registry-relative in the first place.
 
 `residue.js` additionally has to start resolving at all — today it hands the raw
 string to every `fs` and `git` call.

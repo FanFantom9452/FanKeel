@@ -26,7 +26,7 @@ const { parseArgs: parseArgv } = require('node:util');
 const docs = require('../lib/docs.js');
 const { section } = require('../lib/report.js');
 const { trackedFiles } = require('../lib/tracked.js');
-const { findStateRoot } = require('../lib/registry.js');
+const { resolveRoot } = require('../lib/registry.js');
 
 const MAX_FINDINGS = 200;
 
@@ -442,9 +442,7 @@ function parseArgs(argv) {
         options: { root: { type: 'string' }, role: { type: 'string' }, quiet: { type: 'boolean' } },
     });
     return {
-        root: typeof values.root === 'string'
-            ? path.resolve(findStateRoot(process.cwd()) || process.cwd(), values.root)
-            : process.cwd(),
+        root: resolveRoot(values.root),
         roles: typeof values.role === 'string' ? values.role.split(',').map((r) => r.trim()).filter(Boolean) : [],
         quiet: Boolean(values.quiet),
     };
