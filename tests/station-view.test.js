@@ -92,6 +92,45 @@ test('labels lets two roots repeat a label when they normalize the same', () => 
     assert.equal(out['\\a\\b'], 'a/b');
 });
 
+// Two roots, one collision. `datapacks` alone cannot tell them apart, so both
+// grow to `proj-a/datapacks` and `proj-b/datapacks` — distinct the moment the
+// segment above joins the label — and stop there: growing a third time to
+// `F:/proj-a/datapacks` would be `labels` refusing to believe two segments
+// are enough once they plainly are.
+test('two roots colliding on their last segment both grow one level and stop there', () => {
+    const rootA = 'F:\\proj-a\\datapacks';
+    const rootB = 'F:\\proj-b\\datapacks';
+    const out = V.labels([rootA, rootB]);
+    assert.equal(out[rootA], 'proj-a/datapacks');
+    assert.equal(out[rootB], 'proj-b/datapacks');
+});
+
+// Three roots share `datapacks`; two of them, `alpha` and `beta`, also share
+// `sub` one segment up, so `sub/datapacks` still collides between just those
+// two after the first round of growth, while `solo/datapacks` is already on
+// its own. `alpha` and `beta` need a third segment to separate; `solo` never
+// needed a second collision resolved and stops at two.
+test('three roots sharing a last segment: the two that also share the segment above grow further than the third', () => {
+    const rootA = 'F:\\alpha\\sub\\datapacks';
+    const rootB = 'F:\\beta\\sub\\datapacks';
+    const rootC = 'F:\\solo\\datapacks';
+    const out = V.labels([rootA, rootB, rootC]);
+    assert.equal(out[rootA], 'alpha/sub/datapacks');
+    assert.equal(out[rootB], 'beta/sub/datapacks');
+    assert.equal(out[rootC], 'solo/datapacks');
+});
+
+// A fourth root whose own last segment nothing else shares — mixed in with
+// the two-way collision above so the label is decided per root, not by the
+// worst case anywhere on the page.
+test('a root whose last segment is already unique keeps the one-segment label', () => {
+    const rootA = 'F:\\proj-a\\datapacks';
+    const rootB = 'F:\\proj-b\\datapacks';
+    const rootD = 'F:\\myproject';
+    const out = V.labels([rootA, rootB, rootD]);
+    assert.equal(out[rootD], 'myproject');
+});
+
 test('delta says so rather than dividing by an empty window', () => {
     assert.match(V.delta(5, 0), /前期無資料/);
     assert.match(V.delta(12, 10), /\+20%/);

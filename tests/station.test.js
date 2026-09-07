@@ -80,36 +80,45 @@ test('gather classifies live, stale and down, counts unreadable, prices usage, l
     assert.equal(m.pricesVerified.length, 10);
 });
 
-test('render names every task, marks state, shows the price date, and draws the clear control only under serve and only on stale rows', () => {
+test('serialize carries every task\'s text, the price date, and the plugin path for the offline clear command', () => {
     const f = fixture();
     const m = station.gather({ configDir: f.cfg });
-    const page = station.render(m, { plugin: 'C:/plug' });
-    assert.match(page, /<!doctype html>/i);
-    for (const t of ['live one', 'stale one', 'down two']) assert.ok(page.includes(t), t);
-    assert.match(page, /prices 2026-\d{2}-\d{2}|prices \d{4}-\d{2}-\d{2}/);
-    assert.ok(page.includes('task.js clear ' + STALE));
-    assert.ok(page.includes('2 agents'));
-    assert.ok(!page.includes('<form'));
-    assert.ok(!page.includes('<script src='));
-    const served = station.render(m, { serve: true, nonce: 'n0nce' });
-    assert.ok(served.includes('name="nonce" value="n0nce"'));
-    assert.equal((served.match(/action="\/clear"/g) || []).length, 1);
-    assert.ok(served.includes('value="' + STALE + '"'));
-    assert.ok(!served.includes('value="' + LIVE + '"'));
+    const data = JSON.parse(station.serialize(m, { plugin: 'C:/plug' })
+        .replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
+    for (const t of ['live one', 'stale one', 'down two']) {
+        assert.ok(data.sessions.some((s) => s.task === t), t);
+    }
+    assert.match(data.pricesVerified, /^\d{4}-\d{2}-\d{2}$/);
+    assert.equal(data.sessions.find((s) => s.id === DOWN).agents, 2);
+    assert.equal(data.plugin, 'C:/plug');
+    // The clear control itself is drawn in the browser from these two fields:
+    // a session offline has no server to post `/clear` to and no nonce it
+    // would need, so both are absent rather than empty strings.
+    assert.equal(data.serve, false);
+    assert.equal(data.nonce, undefined);
+    const served = JSON.parse(station.serialize(m, { serve: true, nonce: 'n0nce' })
+        .replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
+    assert.equal(served.serve, true);
+    assert.equal(served.nonce, 'n0nce');
 });
 
-test('write returns the counts and both paths, copies the page into the caller\'s registry, and ignores it there', () => {
+test('write returns the counts and both paths, copies the four files into the caller\'s registry, and ignores them there', () => {
     const f = fixture();
     const out = station.write({ configDir: f.cfg, root: f.r1 });
     assert.equal(out.file, path.join(f.cfg, 'fankeel', 'station.html'));
     assert.equal(out.copy, path.join(f.r1, '.fankeel', 'station.html'));
     assert.deepEqual([out.registries, out.live, out.stale, out.down], [2, 1, 1, 1]);
-    assert.ok(fs.readFileSync(out.file, 'utf8').includes('live one'));
+    assert.ok(fs.readFileSync(path.join(f.r1, '.fankeel', 'station-data.js'), 'utf8').includes('live one'));
     assert.equal(fs.readFileSync(out.copy, 'utf8'), fs.readFileSync(out.file, 'utf8'));
-    assert.match(fs.readFileSync(path.join(f.r1, '.fankeel', '.gitignore'), 'utf8'), /^station\.html$/m);
+    const gitignore = () => fs.readFileSync(path.join(f.r1, '.fankeel', '.gitignore'), 'utf8');
+    for (const n of station.EMITTED) {
+        assert.match(gitignore(), new RegExp('^' + n.replace('.', '\\.') + '$', 'm'));
+    }
     station.write({ configDir: f.cfg, root: f.r1 });
-    const lines = fs.readFileSync(path.join(f.r1, '.fankeel', '.gitignore'), 'utf8').split(/\r?\n/);
-    assert.equal(lines.filter((l) => l === 'station.html').length, 1, 'a second write does not duplicate the line');
+    const lines = gitignore().split(/\r?\n/);
+    for (const n of station.EMITTED) {
+        assert.equal(lines.filter((l) => l === n).length, 1, 'a second write does not duplicate ' + n);
+    }
     // A root with no registry gets no copy and no .fankeel/ — a hook handing
     // over its launch directory must not create one there.
     const bare = path.join(f.base, 'no-registry');
@@ -248,317 +257,16 @@ test('scanRoots counts the places depth cut it', () => {
     assert.ok(found.depthCuts > 0, 'a walk nine deep at depth two is cut before it reaches the registry');
 });
 
-test('the header reports a scan that ran out of time', () => {
+test('serialize carries a scan that ran out of time, and how many places depth cut it', () => {
     const model = {
         generatedAt: new Date().toISOString(), configDir: '', pricesVerified: 'n/a',
         registries: [], scanStats: { depthCuts: 3, timedOut: true },
     };
-    const page = station.render(model, {});
-    assert.match(page, /the scan ran out of time/);
-    assert.match(page, /depth stopped the scan in 3 places/);
+    const data = JSON.parse(station.serialize(model, {})
+        .replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
+    assert.deepEqual(data.scanStats, { depthCuts: 3, timedOut: true });
 });
 
-// A registry of its own per test below, rather than the shared fixture: each
-// one exercises a different shape of `clock`/`burn`/`spend` and none of them
-// should shift the session counts the earlier tests already assert on.
-function chartFixture(sessionId, data) {
-    const base = tmp('fankeel-station-chart-');
-    const root = path.join(base, 'ws');
-    registry.ensureLayout(root);
-    const now = Date.now();
-    registry.writeSession(root, sessionId, Object.assign({
-        project: 'ws', active: false, claims: [],
-        started: new Date(now - 3600e3).toISOString(), updated: new Date(now).toISOString(),
-    }, data));
-    return station.gather({ configDir: path.join(base, 'cfg'), root });
-}
-
-test('a session with burn on three stages draws a polyline of six points', () => {
-    const m = chartFixture('dddddddd-4444-4444-8444-444444444444', {
-        task: 'three stages', stage: 'verify', route: ['survey', 'build', 'verify'],
-        clock: { survey: [0, 1000], build: [1000, 2000], verify: [2000, 3000] },
-        burn: { survey: [0, 100000], build: [100000, 250000], verify: [250000, 400000] },
-    });
-    const page = station.render(m, {});
-    assert.match(page, /<svg class="curve"/);
-    const burnLine = page.match(/<polyline class="burn" points="([^"]+)"/);
-    assert.ok(burnLine, 'a burn polyline is drawn');
-    assert.equal(burnLine[1].trim().split(/\s+/).length, 6, 'two points per stage, three stages');
-    // Counting the points says nothing about where they are. Swapping the pair
-    // in `burnPts.push` — `w.burn[1]` first, then `w.burn[0]` — still pushes six
-    // points, and every burn curve on the page then descends through each stage
-    // instead of climbing, which is the one series this whole change is for. So
-    // the coordinates are pinned exactly, the way the spend polyline's are:
-    // x is 4/108/212/316 across a 3000ms span, and y falls from 86 (0 tokens)
-    // to 4 (400k, the maximum) as burn climbs.
-    assert.equal(burnLine[1], '4.0,86.0 108.0,65.5 108.0,65.5 212.0,34.8 212.0,34.8 316.0,4.0',
-        'the curve climbs: each stage opens where the last one closed, and y descends as burn rises');
-    assert.equal((page.match(/<line class="rule"/g) || []).length, 3, 'one rule per stage');
-});
-
-test('a session with burn on one stage draws no chart', () => {
-    const m = chartFixture('eeeeeeee-5555-4555-8555-555555555555', {
-        task: 'one stage burn', stage: 'build', route: ['survey', 'build'],
-        clock: { survey: [0, 1000], build: [1000, 2000] },
-        burn: { survey: [0, 50000] },
-    });
-    const page = station.render(m, {});
-    assert.ok(page.includes('no burn recorded'));
-    assert.ok(!page.includes('<svg'), 'a stage sampled once is not enough to draw a curve');
-});
-
-test('a session with no spend says so instead of drawing a spend line', () => {
-    const m = chartFixture('ffffffff-6666-4666-8666-666666666666', {
-        task: 'two stages no spend', stage: 'build', route: ['survey', 'build'],
-        clock: { survey: [0, 1000], build: [1000, 2000] },
-        burn: { survey: [0, 50000], build: [50000, 120000] },
-    });
-    const page = station.render(m, {});
-    assert.ok(page.includes('spend arrives when the session ends'));
-    assert.ok(!page.includes('polyline class="spend"'));
-});
-
-test('the stage table prints the burn distance, not the pair', () => {
-    // Two stages, not one: `s.burn` (the existing route-summed total, already
-    // rendered before this task) would otherwise happen to equal the single
-    // stage's distance and pass whether or not the new table renders anything.
-    // Here the total (550k) differs from each stage's own distance, so a
-    // "400k" in the page can only have come from the stage table.
-    const m = chartFixture('99999999-7777-4777-8777-777777777777', {
-        task: 'distance not pair', stage: 'build', route: ['survey', 'build'],
-        clock: { survey: [0, 1000], build: [1000, 2000] },
-        burn: { survey: [100000, 500000], build: [500000, 650000] },
-    });
-    const page = station.render(m, {});
-    assert.ok(page.includes('400k'), 'the distance between the pair, 500000 - 100000');
-    assert.ok(!page.includes('500k'), 'not the raw upper value of the survey pair');
-});
-
-// The design names five columns — stage, minutes, burn, spend, waited — and
-// `waited` is the field addition it calls area 2's only one. Positions are
-// pinned rather than the words alone: a `waited` header over a column printing
-// something else, or the value landing in the spend cell, both satisfy a bare
-// `includes('waited')`.
-test('the stage table prints five columns, the last of them what the stage waited', () => {
-    const m = chartFixture('33333333-aaaa-4aaa-8aaa-aaaaaaaaaaaa', {
-        task: 'a gate in survey', stage: 'build', route: ['survey', 'build'],
-        clock: { survey: [0, 60000], build: [60000, 180000] },
-        burn: { survey: [0, 50000], build: [50000, 120000] },
-        waited: { survey: 240000, build: 0 },
-    });
-    const page = station.render(m, {});
-    assert.ok(page.includes('<tr><th>stage</th><th>mins</th><th>burn</th><th>spend</th><th>waited</th></tr>'),
-        'five headers, waited last');
-    assert.ok(page.includes('<tr><td>survey</td><td>1m</td><td>50k</td><td>—</td><td>4m</td></tr>'),
-        'the four minutes survey spent at a gate print in the fifth cell, not the fourth');
-    assert.ok(page.includes('<tr><td>build</td><td>2m</td><td>70k</td><td>—</td><td>—</td></tr>'),
-        'a stage whose only wait measured zero prints an em dash, not 0m');
-});
-
-test('the spend polyline plots a running total across stages, not each stage\'s own usd', () => {
-    // Three stages, one priced by `prices.costOf`, the middle one uninvoiced.
-    // A running total of $1 then $3 only comes from `running += w.usd`
-    // carrying the total across the null-usd stage; plotting each stage's own
-    // usd, or letting a null-usd stage clear the total, both collapse the
-    // final figure to $2 — see the mutation notes in the Task 4 report.
-    const m = chartFixture('11111111-8888-4888-8888-888888888888', {
-        task: 'real spend, three stages', stage: 'verify', route: ['survey', 'build', 'verify'],
-        clock: { survey: [0, 1000], build: [1000, 2000], verify: [2000, 3000] },
-        burn: { survey: [0, 50000], build: [50000, 90000], verify: [90000, 140000] },
-        spend: {
-            survey: { requests: 1, models: { 'claude-sonnet-5': { input: 500000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
-            verify: { requests: 1, models: { 'claude-sonnet-5': { input: 1000000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
-        },
-    });
-    const page = station.render(m, {});
-    assert.ok(page.includes('spend</span> to $3.00'), 'the legend totals the running sum, not the last stage priced');
-    const spendLine = page.match(/<polyline class="spend" points="([^"]+)"/);
-    assert.ok(spendLine, 'a spend polyline is drawn');
-    assert.equal(spendLine[1], '4.0,86.0 108.0,58.7 212.0,58.7 316.0,4.0',
-        'the two middle points sit at the level survey alone reached ($1 of $3), not at $0 or at $2');
-});
-
-// Each series is normalised to its own maximum, so on every row carrying both
-// they end at the same pixel and colour alone has to carry the distinction
-// where they overlap. The dash is what the ruling settled on instead of a
-// fallback to one series: the burn line stays solid, so the pair is told apart
-// by shape as well as by hue.
-test('the spend polyline is drawn dashed and the burn polyline is not', () => {
-    const m = chartFixture('44444444-bbbb-4bbb-8bbb-bbbbbbbbbbbb', {
-        task: 'both series', stage: 'build', route: ['survey', 'build'],
-        clock: { survey: [0, 1000], build: [1000, 2000] },
-        burn: { survey: [0, 50000], build: [50000, 120000] },
-        spend: {
-            survey: { requests: 1, models: { 'claude-sonnet-5': { input: 500000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
-            build: { requests: 1, models: { 'claude-sonnet-5': { input: 1000000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
-        },
-    });
-    const page = station.render(m, {});
-    assert.match(page, /<polyline class="burn"/, 'the fixture draws both series');
-    assert.match(page, /<polyline class="spend"/, 'the fixture draws both series');
-    const spendRule = /svg\.curve polyline\.spend\{([^}]*)\}/.exec(page);
-    assert.ok(spendRule, 'the spend polyline has a rule of its own');
-    assert.match(spendRule[1], /stroke-dasharray:\s*\S/, 'the spend line is dashed');
-    const burnRule = /svg\.curve polyline\.burn\{([^}]*)\}/.exec(page);
-    assert.ok(burnRule, 'the burn polyline has a rule of its own');
-    assert.ok(!/stroke-dasharray/.test(burnRule[1]), 'the burn line stays solid, so the dash means spend');
-});
-
-// The defect this closes: the curve plotted the parent's requests alone while
-// the cost cell directly above it printed `$X + $Y (N agents)`. Measured on a
-// real run, the curve said $0.83 of a session that cost $2.22. Every figure
-// below is chosen so the parent's own total, the agents' own total and the sum
-// are three different numbers: reading either half alone cannot produce $4.00.
-const M = (model, input) => ({ [model]: { input, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } });
-
-test('the curve and the stage table price the agents of a stage as well as its parent', () => {
-    const m = chartFixture('55555555-cccc-4ccc-8ccc-cccccccccccc', {
-        task: 'parent and agents', stage: 'build', route: ['survey', 'build'],
-        clock: { survey: [0, 1000], build: [1000, 2000] },
-        burn: { survey: [0, 50000], build: [50000, 120000] },
-        spend: {
-            // $1 of parent and $1 of agents.
-            survey: { requests: 1, models: M('claude-sonnet-5', 500000), subagents: { requests: 3, models: M('claude-sonnet-5', 500000) } },
-            // No parent requests at all in this window: $2 of agents alone.
-            build: { requests: 0, models: {}, subagents: { requests: 2, models: M('claude-sonnet-5', 1000000) } },
-        },
-    });
-    const stages = m.registries[0].sessions[0].stages;
-    assert.equal(stages[0].usd, 2, 'the parent\'s dollar and the agents\' dollar, added');
-    assert.equal(stages[1].usd, 2, 'a stage the parent spent nothing in still carries what its agents spent');
-
-    const page = station.render(m, {});
-    assert.ok(page.includes('spend</span> to $4.00'), 'the legend totals both halves; the parent alone is $1.00');
-    assert.ok(page.includes('<tr><td>survey</td><td>0m</td><td>50k</td><td>$2.00</td><td>—</td></tr>'),
-        'one spend column, parent and agents together, in the fourth cell');
-    assert.ok(page.includes('<tr><td>build</td><td>0m</td><td>70k</td><td>$2.00</td><td>—</td></tr>'));
-    const spendLine = page.match(/<polyline class="spend" points="([^"]+)"/);
-    assert.ok(spendLine, 'a spend polyline is drawn');
-    // Four points across a 2000ms span, climbing $0 → $2 → $4 against a $4
-    // maximum: the midpoint sits at half height. Plotting the parent alone puts
-    // it at 45.0 with the same point count, so the coordinates are pinned.
-    assert.equal(spendLine[1], '4.0,86.0 160.0,45.0 160.0,45.0 316.0,4.0');
-});
-
-test('a stage priced on one side only keeps that side rather than falling to null', () => {
-    // The parent's model has no rate; the agents' does. `priced.length` is zero
-    // on one `costOf` and not the other, and reading only the parent's would
-    // print an em dash over $2.50 that was really spent.
-    const m = chartFixture('66666666-dddd-4ddd-8ddd-dddddddddddd', {
-        task: 'half priced', stage: 'build', route: ['survey', 'build'],
-        clock: { survey: [0, 1000], build: [1000, 2000] },
-        burn: { survey: [0, 50000], build: [50000, 120000] },
-        spend: {
-            survey: { requests: 1, models: M('claude-nonesuch-9', 9000000), subagents: { requests: 1, models: M('claude-opus-5', 500000) } },
-        },
-    });
-    assert.equal(m.registries[0].sessions[0].stages[0].usd, 2.5, 'the unpriced parent contributes nothing, the priced agents contribute all of it');
-    const page = station.render(m, {});
-    assert.ok(page.includes('spend</span> to $2.50'));
-});
-
-test('a stage priced by no rate in the table is blank, not free', () => {
-    // Same three stages and the same two priced figures as the test above, with
-    // the middle stage carrying a model `lib/prices.js` has no rate for instead
-    // of carrying no spend at all. `costOf` answers `usd: 0` for it — the same
-    // number a stage that genuinely cost nothing would get — so reading `.usd`
-    // without checking `priced.length` prints `$0.00` in the table and plants a
-    // real point on the cumulative curve. Both are checked here: the fixed
-    // spend polyline is the four-point one, identical to the no-spend case
-    // above, because an unpriced stage is stepped over rather than plotted.
-    const m = chartFixture('22222222-9999-4999-8999-999999999999', {
-        task: 'one unpriced stage', stage: 'verify', route: ['survey', 'build', 'verify'],
-        clock: { survey: [0, 1000], build: [1000, 2000], verify: [2000, 3000] },
-        burn: { survey: [0, 50000], build: [50000, 90000], verify: [90000, 140000] },
-        spend: {
-            survey: { requests: 1, models: { 'claude-sonnet-5': { input: 500000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
-            build: { requests: 1, models: { 'claude-nonesuch-9': { input: 9000000, output: 9000000, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
-            verify: { requests: 1, models: { 'claude-sonnet-5': { input: 1000000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
-        },
-    });
-    assert.equal(m.registries[0].sessions[0].stages[1].usd, null,
-        'the unpriced stage carries no dollar figure at all, rather than zero');
-    const page = station.render(m, {});
-    assert.ok(!page.includes('$0.00'), 'no stage is printed as having cost nothing');
-    // Pinned by position in the row. The pattern this replaces ran non-greedily
-    // to `</tr>`, so in a five-cell row it matched the *fifth* cell — `waited`,
-    // whose dash is the one a row end follows — and was satisfied whether the
-    // spend cell held `—` or a figure. Counting cells from `<tr>` is what makes
-    // the fourth one the one asserted on.
-    assert.match(page, /<tr><td>build<\/td><td>[^<]*<\/td><td>[^<]*<\/td><td>—<\/td>/,
-        'the unpriced stage prints an em dash in the fourth cell, which is the spend column');
-    assert.ok(page.includes('spend</span> to $3.00'), 'the two priced stages still total $3');
-    const spendLine = page.match(/<polyline class="spend" points="([^"]+)"/);
-    assert.ok(spendLine, 'a spend polyline is still drawn from the stages that are priced');
-    assert.equal(spendLine[1], '4.0,86.0 108.0,58.7 212.0,58.7 316.0,4.0',
-        'the unpriced stage contributes no point: four, not six');
-});
-
-// `seriesOf` orders stages by `clock[stage][0]`, their start, so the last
-// element is the latest-*starting* stage. A session that re-entered build and
-// ran on there ends inside the middle element, and taking the last element's
-// `to` as the right-hand end of the axis scaled x to a span shorter than the
-// session: this exact clock drew a point at x=940 in a 320-wide viewBox.
-test('the x axis ends at the last stage to finish, not the last one to start', () => {
-    const m = chartFixture('77777777-eeee-4eee-8eee-eeeeeeeeeeee', {
-        task: 'ends in an earlier stage', stage: 'build', route: ['survey', 'build', 'verify'],
-        clock: { survey: [0, 1000], build: [1000, 9000], verify: [2000, 3000] },
-        burn: { survey: [0, 50000], build: [50000, 90000], verify: [90000, 140000] },
-    });
-    const page = station.render(m, {});
-    const burnLine = page.match(/<polyline class="burn" points="([^"]+)"/);
-    assert.ok(burnLine, 'a burn polyline is drawn');
-    const xs = burnLine[1].trim().split(/\s+/).map((p) => Number(p.split(',')[0]));
-    for (const at of xs) {
-        assert.ok(at >= 0 && at <= 320, 'x=' + at + ' is outside the 320-wide box: ' + burnLine[1]);
-    }
-    // Not the containment alone: a scale that merely clamped would satisfy it.
-    // 316 is the right-hand pad, so build's 9000 — the largest `to` — is what
-    // the axis was divided by, and the two stages that end earlier land inside.
-    assert.equal(burnLine[1], '4.0,86.0 38.7,56.7 38.7,56.7 316.0,33.3 73.3,33.3 108.0,4.0',
-        'build ends at the right-hand pad and verify, which starts later, sits well short of it');
-});
-
-// The guard the design's promise needs: the cost cell, the stage table and the
-// curve are three views of one sum, and `lib/usage.js` buckets a request into a
-// stage by the timestamp on its transcript line — a line carrying none is in
-// the row's total and in no bucket. Inventing a stage for it would put real
-// money in a window that did not spend it, so the page names the gap instead.
-test('a row whose stages do not account for its whole total says how much is missing', () => {
-    const m = chartFixture('88888888-ffff-4fff-8fff-ffffffffffff', {
-        task: 'more spent than any stage claims', stage: 'build', route: ['survey', 'build'],
-        clock: { survey: [0, 1000], build: [1000, 2000] },
-        burn: { survey: [0, 50000], build: [50000, 120000] },
-        // One stage's worth of spend, $1 of it.
-        spend: { survey: { requests: 1, models: M('claude-sonnet-5', 500000) } },
-        // $2 of parent and $2 of agents in the row's own total: $3 of the $4
-        // the cell prints reached no stage.
-        usage: {
-            requests: 2, models: M('claude-sonnet-5', 1000000),
-            subagents: { agents: 1, requests: 1, wallMs: 1000, models: M('claude-sonnet-5', 1000000) },
-        },
-    });
-    const page = station.render(m, {});
-    assert.ok(page.includes('$2.00 + $2.00 (1 agents)'), 'the cost cell totals $4');
-    assert.ok(page.includes('spend</span> to $1.00'), 'and the curve reaches $1, which is the disagreement');
-    assert.ok(page.includes('$3.00 unaccounted'), 'the legend names the amount no stage claims');
-
-    // The same shape with nothing missing: $1 and $2 of stage spend against a
-    // $3 row total. A notice that fired on arithmetic noise would fire here.
-    const level = chartFixture('89898989-ffff-4fff-8fff-ffffffffff01', {
-        task: 'stages account for all of it', stage: 'build', route: ['survey', 'build'],
-        clock: { survey: [0, 1000], build: [1000, 2000] },
-        burn: { survey: [0, 50000], build: [50000, 120000] },
-        spend: {
-            survey: { requests: 1, models: M('claude-sonnet-5', 500000) },
-            build: { requests: 1, models: M('claude-sonnet-5', 1000000) },
-        },
-        usage: { requests: 2, models: M('claude-sonnet-5', 1500000) },
-    });
-    const levelPage = station.render(level, {});
-    assert.ok(levelPage.includes('spend</span> to $3.00'), 'the stages total the row\'s own $3');
-    assert.ok(!levelPage.includes('unaccounted'), 'and a row that adds up says nothing');
-});
 
 // Finding 1 of the whole-branch review: the two scan-cut lines in the header
 // were reachable only from a model built by hand. `discover` called `scanRoots`
@@ -566,23 +274,26 @@ test('a row whose stages do not account for its whole total says how much is mis
 // `timedOut` could not become true; and the one walk that did carry a deadline
 // — `autoScan` in `scripts/station.js` — printed its counts and threw them
 // away. These two tests take the two production routes.
-test('discover forwards a deadline into the scan, and the header says the scan ran out of time', () => {
+test('discover forwards a deadline into the scan, and the data says the scan ran out of time', () => {
     const base = tmp('fankeel-station-scan-deadline-page-');
     registry.ensureLayout(path.join(base, 'a', 'b'));
     const m = station.gather({ configDir: path.join(base, 'cfg'), scan: [base], deadline: Date.now() - 1 });
     assert.equal(m.scanStats.timedOut, true, 'the deadline reaches scanRoots through discover');
-    assert.match(station.render(m, {}), /the scan ran out of time/);
+    const data = JSON.parse(station.serialize(m, {})
+        .replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
+    assert.equal(data.scanStats.timedOut, true);
 });
 
-test('a caller that walked the machine itself hands its counts to the page write() produces', () => {
+test('a caller that walked the machine itself hands its counts to the data write() produces', () => {
     const base = tmp('fankeel-station-scanstats-');
     const cfg = path.join(base, 'cfg');
     // No `scan` at all: these numbers can only have come from `opts.scanStats`,
     // which is how `scripts/station.js` hands `autoScan`'s own walk in.
     const out = station.write({ configDir: cfg, cwd: base, scanStats: { depthCuts: 7, timedOut: true } });
-    const page = fs.readFileSync(out.file, 'utf8');
-    assert.match(page, /depth stopped the scan in 7 places/);
-    assert.match(page, /the scan ran out of time/);
+    const data = JSON.parse(
+        fs.readFileSync(path.join(path.dirname(out.file), 'station-data.js'), 'utf8')
+            .replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
+    assert.deepEqual(data.scanStats, { depthCuts: 7, timedOut: true });
 });
 
 // `scripts/station.js` hands its first-run walk in *and* passes `--scan`
@@ -600,7 +311,9 @@ test('a handed-in scan block and the walk discover did are added, not chosen bet
     });
     assert.equal(spent.scanStats.timedOut, true,
         'the handed block saying nothing went wrong does not erase a walk that ran out of time');
-    assert.match(station.render(spent, {}), /the scan ran out of time/);
+    const spentData = JSON.parse(station.serialize(spent, {})
+        .replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
+    assert.equal(spentData.scanStats.timedOut, true);
 
     // Ten directories below the base against a depth of eight: the walk cuts
     // one place of its own, and the handed block reports seven more.
@@ -611,7 +324,9 @@ test('a handed-in scan block and the walk discover did are added, not chosen bet
         scanStats: { depthCuts: 7, timedOut: false },
     });
     assert.equal(cut.scanStats.depthCuts, 8, 'seven handed in plus the one this walk made');
-    assert.match(station.render(cut, {}), /depth stopped the scan in 8 places/);
+    const cutData = JSON.parse(station.serialize(cut, {})
+        .replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
+    assert.equal(cutData.scanStats.depthCuts, 8);
 });
 
 // Finding 3 of the same review: `scripts/station.js` wrote `scannedAt` back
@@ -675,766 +390,72 @@ test('a gone root whose directory was deleted is forgotten', () => {
         'alive keeps its first stamp, not a fresh one from the second call');
 });
 
-// `includes('<script>')` proves a tag exists and nothing about what is in it:
-// an empty pair satisfies it and the page ships with no controls at all. What
-// the page has to carry is the exact string `lib/station.js` exports and the
-// vm tests below execute.
-test('the page carries the exported SCRIPT inline, as its only script, and no script src', () => {
-    const f = fixture();
-    const m = station.gather({ configDir: f.cfg });
-    const page = station.render(m, {});
-    assert.ok(station.SCRIPT.length > 200, 'SCRIPT is the controls, not an empty string');
-    assert.ok(page.includes('<script>' + station.SCRIPT + '</script>'),
-        'the tag holds the exported SCRIPT, character for character');
-    assert.equal((page.match(/<script/g) || []).length, 1, 'and it is the only script on the page');
-    assert.ok(!page.includes('<script src='), 'the page loads no external script');
+test('the page is the shell, byte for byte', () => {
+    const shell = fs.readFileSync(
+        path.join(__dirname, '..', 'assets', 'station', 'station.html'), 'utf8');
+    assert.equal(station.render(), shell,
+        'render() copies the shell; it does not template it');
 });
 
-// `lib/station.js` explains the inline script by naming the assertion above by
-// file and line. A line number in a comment drifts every time a test is added
-// above it, and nothing executes a comment, so it drifted once already — it
-// said `:91` after the assertion had moved to `:92`. This reads the citation
-// out of the source and checks the line it points at, so the next drift is a
-// red test rather than a reader sent to the wrong line.
-test('the source comment explaining the inline script cites the line that actually asserts it', () => {
-    const source = fs.readFileSync(path.join(__dirname, '..', 'lib', 'station.js'), 'utf8');
-    const cited = source.match(/tests\/station\.test\.js:(\d+)/);
-    assert.ok(cited, 'lib/station.js cites the assertion by file and line');
-    const lines = fs.readFileSync(__filename, 'utf8').split('\n');
-    assert.ok(lines[Number(cited[1]) - 1].includes("'<script src='"),
-        `lib/station.js cites tests/station.test.js:${cited[1]}, which does not assert on '<script src='`);
+test('the shell carries no session text and the data file carries all of it', () => {
+    const f = fixture();
+    station.write({ configDir: f.cfg, root: f.r1 });
+    const read = (n) => fs.readFileSync(path.join(f.cfg, 'fankeel', n), 'utf8');
+    assert.ok(!read('station.html').includes('live one'), 'a task line reached the shell');
+    assert.ok(read('station-data.js').includes('live one'), 'the data file lost a task line');
 });
 
-// `class="bar"` appearing once counts the wrapper div and nothing inside it:
-// the bar could ship empty — no filter box, no buttons, no counter — and still
-// satisfy that count. These are the controls themselves.
-test('the control bar carries the filter box, four sort buttons and the shown counter', () => {
+test('write leaves exactly the four files beside roots.json', () => {
     const f = fixture();
-    const m = station.gather({ configDir: f.cfg });
-    const page = station.render(m, {});
-    assert.equal((page.match(/<div class="bar">/g) || []).length, 1, 'one bar for the whole page');
-    const bar = /<div class="bar">([\s\S]*?)<\/div>/.exec(page);
-    assert.ok(bar, 'the bar is a closed div');
-    assert.match(bar[1], /<input type="search" id="q"/, 'the filter box the script reads');
-    assert.deepEqual(bar[1].match(/data-sort="[a-z]+"/g) || [],
-        ['data-sort="updated"', 'data-sort="started"', 'data-sort="cost"', 'data-sort="stage"'],
-        'four sort buttons, in the order the design names them');
-    assert.equal((bar[1].match(/aria-pressed="true"/g) || []).length, 1,
-        'exactly one of them starts pressed');
-    assert.match(bar[1], /id="shown"/, 'the counter the script writes the shown total into');
-    assert.ok(!bar[1].includes('id="auto"'), 'and no auto-refresh box on the static page');
-    const served = /<div class="bar">([\s\S]*?)<\/div>/
-        .exec(station.render(m, { serve: true, nonce: 'n0nce' }))[1];
-    assert.match(served, /id="auto"/, 'the served page adds the auto-refresh checkbox to the same bar');
+    station.write({ configDir: f.cfg, root: f.r1 });
+    assert.deepEqual(
+        fs.readdirSync(path.join(f.cfg, 'fankeel')).filter((n) => n !== 'roots.json').sort(),
+        ['station-data.js', 'station.css', 'station.html', 'station.js']);
 });
 
-// A shape-only regex (`\d+`, `[a-z]*`) passes on "0" everywhere or on an empty
-// `data-stage=""` — `*` allows zero characters. This checks the value each
-// attribute actually carries against what that session's own record says, so
-// a wrong field, a swapped session, or a blanked-out value fails it.
-test('each row carries the attributes belonging to that session, not just numeric shape', () => {
+test('a second write with the same model rewrites only the data', () => {
     const f = fixture();
-    const m = station.gather({ configDir: f.cfg });
-    const page = station.render(m, {});
-    const blocks = page.match(/<details class="s[^"]*"[^>]*>[\s\S]*?<\/details>/g) || [];
-    assert.equal(blocks.length, 3, 'one details block per session in the fixture');
-    const cases = [
-        { id: LIVE, root: f.r1, cost: '0.00', state: 'live' },
-        { id: STALE, root: f.r1, cost: '0.00', state: 'stale' },
-        // $12 of parent and $2 of agents: `data-cost` is the total the cost
-        // cell prints, not the parent's share of it.
-        { id: DOWN, root: f.r2, cost: '14.00', state: 'down' },
-    ];
-    for (const c of cases) {
-        const block = blocks.find((b) => b.includes('<code>' + c.id + '</code>'));
-        assert.ok(block, 'a details block exists for ' + c.id);
-        const data = registry.readSession(c.root, c.id);
-        const updated = String(Date.parse(data.updated) || 0);
-        const started = String(Date.parse(data.started) || 0);
-        assert.match(block, new RegExp('data-updated="' + updated + '"'), c.id + ' data-updated should be ' + updated);
-        assert.match(block, new RegExp('data-started="' + started + '"'), c.id + ' data-started should be ' + started);
-        assert.match(block, new RegExp('data-cost="' + c.cost + '"'), c.id + ' data-cost should be ' + c.cost);
-        assert.match(block, new RegExp('data-stage="' + data.stage + '"'), c.id + ' data-stage should be ' + data.stage);
-        assert.match(block, new RegExp('data-state="' + c.state + '"'), c.id + ' data-state should be ' + c.state);
+    station.write({ configDir: f.cfg, root: f.r1 });
+    const at = (n) => path.join(f.cfg, 'fankeel', n);
+    // Stamped to a fixed past time rather than compared between two writes:
+    // both writes land inside the same millisecond, so equal mtimes would
+    // pass whether or not the file was rewritten.
+    const PAST = new Date('2020-01-01T00:00:00Z');
+    const copied = ['station.html', 'station.css', 'station.js'];
+    for (const n of copied.concat(['station-data.js'])) fs.utimesSync(at(n), PAST, PAST);
+    station.write({ configDir: f.cfg, root: f.r1 });
+    for (const n of copied) {
+        assert.equal(fs.statSync(at(n)).mtimeMs, PAST.getTime(), n + ' was rewritten');
     }
-    // The stages differ across the three fixture sessions (build/design/land),
-    // so a bug that writes the same stage everywhere, or an empty string,
-    // could not satisfy all three assertions above.
-    assert.equal(new Set(cases.map((c) => registry.readSession(c.root, c.id).stage)).size, 3);
-    // The same argument for the sixth attribute: the fixture's three sessions
-    // are one of each state, so `data-state` cannot be satisfied by a constant.
-    assert.equal(new Set(cases.map((c) => c.state)).size, 3);
+    assert.notEqual(fs.statSync(at('station-data.js')).mtimeMs, PAST.getTime(),
+        'the data file was not rewritten');
 });
 
-test('data-text is written lower-cased', () => {
-    const m = chartFixture('12121212-1212-4212-8212-121212121212', {
-        task: 'Live One', stage: 'Build', route: ['survey', 'build'],
-    });
-    const page = station.render(m, {});
-    const found = page.match(/data-text="([^"]*)"/);
-    assert.ok(found, 'a data-text attribute is present');
-    assert.ok(found[1].includes('live one'), found[1]);
-    assert.ok(!found[1].includes('Live One'), found[1]);
-});
-
-test('each registry wraps its rows in one .rows div', () => {
-    const f = fixture();
-    const gone = path.join(f.base, 'gone-registry');
-    badge.writeLead(f.cfg, DOWN, { word: 'land', root: gone });
-    const m = station.gather({ configDir: f.cfg });
-    assert.ok(m.registries.some((r) => r.gone), 'the fixture includes a gone registry');
-    const notGone = m.registries.filter((r) => !r.gone).length;
-    const page = station.render(m, {});
-    assert.equal((page.match(/<div class="rows">/g) || []).length, notGone);
-});
-
-// A gone registry has a nav entry but, before this fix, no `<section>` — so
-// selecting it set `SCRIPT`'s `selected` to a root no section carried, every
-// real section's `excluded` came out true at once, and the pane went blank
-// with nothing on the page explaining why. It needs a section of its own,
-// even with nothing but a heading inside it.
-test('a gone registry is wrapped in its own section, carrying its root as data-project', () => {
-    const f = fixture();
-    const gone = path.join(f.base, 'gone-registry');
-    badge.writeLead(f.cfg, DOWN, { word: 'land', root: gone });
-    const m = station.gather({ configDir: f.cfg });
-    assert.ok(m.registries.some((r) => r.gone), 'the fixture includes a gone registry');
-    const page = station.render(m, {});
-    const root = path.resolve(gone);
-    assert.ok(page.includes('<section class="registry" data-project="' + root + '"><h2>' + root + ' <span class="gone">'),
-        'the gone heading sits inside a section carrying its own root');
-});
-
-test('a registry with a stale row gets a /clear-stale button, naming the count, only when serving', () => {
+test('serialize flattens the registries into one session list', () => {
     const f = fixture();
     const m = station.gather({ configDir: f.cfg });
-    const notServed = station.render(m, {});
-    const served = station.render(m, { serve: true, nonce: 'n0nce' });
-    assert.ok(!notServed.includes('action="/clear-stale"'), 'no bulk-clear form outside serve');
-    assert.ok(served.includes('action="/clear-stale"'), 'a bulk-clear form appears when serving');
-    assert.match(served, /clear all 1 stale/, 'the button names the stale count for that registry');
-    // Only r1 has a stale row (STALE); r2 (down two) has none, so it gets no button.
-    assert.equal((served.match(/action="\/clear-stale"/g) || []).length, 1,
-        'only the registry that actually has a stale row gets the button');
+    const line = station.serialize(m, {});
+    assert.match(line, /^window\.STATION = /);
+    const back = JSON.parse(line.replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
+    assert.equal(back.registries, undefined, 'the page reads sessions, not registries');
+    assert.equal(back.sessions.length,
+        m.registries.reduce((n, r) => n + r.sessions.length, 0));
+    assert.ok(back.sessions.every((s) => typeof s.root === 'string'),
+        'a row lost the registry it came from');
 });
 
-test('the auto-refresh control appears only when serving', () => {
+test('serialize carries what only a server knows', () => {
     const f = fixture();
     const m = station.gather({ configDir: f.cfg });
-    const notServed = station.render(m, {});
-    const served = station.render(m, { serve: true, nonce: 'n0nce' });
-    assert.ok(!notServed.includes('id="auto"'), 'no auto-refresh outside serve');
-    assert.ok(served.includes('id="auto"'), 'auto-refresh appears when serving');
+    const read = (o) => JSON.parse(station.serialize(m, o)
+        .replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
+    const served = read({ serve: true, nonce: 'abc', cleared: 2 });
+    assert.equal(served.serve, true);
+    assert.equal(served.nonce, 'abc');
+    assert.equal(served.cleared, 2);
+    const onDisk = read({});
+    assert.equal(onDisk.serve, false);
+    assert.equal(onDisk.nonce, undefined);
 });
 
-// The markup tests above prove the DOM contract exists; they never run the
-// script that reads it, so a reversed comparator or a broken filter would
-// leave all of them green. This stub implements only what `station.SCRIPT`
-// actually calls: getElementById, querySelectorAll, addEventListener,
-// getAttribute, setAttribute, appendChild, `.hidden` and `.textContent`.
-// The script itself runs for real, inside `node:vm` (built in, no
-// dependency), as the exact string `lib/station.js` exports and ships —
-// never a re-typed copy that could drift from it.
-function makeEl(attrs) {
-    const el = {
-        attrs: Object.assign({}, attrs),
-        children: [],
-        parent: null,
-        hidden: false,
-        textContent: '',
-        value: '',
-        checked: false,
-        listeners: {},
-        getAttribute(name) {
-            return Object.prototype.hasOwnProperty.call(el.attrs, name) ? el.attrs[name] : null;
-        },
-        setAttribute(name, v) { el.attrs[name] = String(v); },
-        addEventListener(type, fn) { (el.listeners[type] = el.listeners[type] || []).push(fn); },
-        fire(type) { (el.listeners[type] || []).forEach((fn) => fn.call(el)); },
-        appendChild(child) {
-            if (child.parent) {
-                const i = child.parent.children.indexOf(child);
-                if (i !== -1) child.parent.children.splice(i, 1);
-            }
-            child.parent = el;
-            el.children.push(child);
-            return child;
-        },
-        // SCRIPT calls this only on `nav`, for its own anchor children — 'a' is
-        // the one selector any element (as opposed to `document`) ever asks for.
-        querySelectorAll(sel) {
-            if (sel === 'a') return el.children.slice();
-            throw new Error('stub does not implement selector: ' + sel);
-        },
-    };
-    return el;
-}
 
-// Four sort keys, each producing a different order, so a mis-sort on any one
-// key cannot hide behind another key happening to land on the same order:
-// updated desc -> [b,c,a]; started desc -> [a,b,c]; cost desc -> [c,a,b];
-// stage asc -> [b,a,c].
-// `opts.auto` adds the auto-refresh checkbox the served page carries and the
-// static file does not, so both sides of SCRIPT's `if(auto)` are reachable.
-// `opts.nav` and `opts.showDown` do the same for the two-pane page's own
-// controls: `lib/station.js` notes that nothing in this file's tests rendered
-// either one, which is exactly what a bare `buildStub()` still leaves true —
-// a page shipping neither is still a shape SCRIPT has to run against.
-function buildStub(opts) {
-    opts = opts || {};
-    // No `data-text` contains the word in its own `data-state`, so a filter term
-    // of `live`, `stale` or `down` can only match through the state attribute.
-    // `data-project` is written by `row()` unconditionally, on every page
-    // whether or not that page ships a nav to scope by, so it sits on all three
-    // rows here regardless of `opts.nav`. a and b share p1; c alone is p2.
-    const a = makeEl({ 'data-updated': '100', 'data-started': '500', 'data-cost': '2', 'data-stage': 'build', 'data-state': 'live', 'data-text': 'alpha one', 'data-project': 'p1' });
-    const b = makeEl({ 'data-updated': '300', 'data-started': '200', 'data-cost': '1', 'data-stage': 'ares', 'data-state': 'stale', 'data-text': 'beta two', 'data-project': 'p1' });
-    const c = makeEl({ 'data-updated': '200', 'data-started': '100', 'data-cost': '3', 'data-stage': 'verify', 'data-state': 'down', 'data-text': 'gamma three', 'data-project': 'p2' });
-    const group = makeEl({});
-    group.appendChild(a); group.appendChild(b); group.appendChild(c);
-    const q = makeEl({});
-    const shown = makeEl({});
-    const mkBtn = (k, pressed) => makeEl({ 'data-sort': k, 'aria-pressed': pressed ? 'true' : 'false' });
-    const buttons = {
-        updated: mkBtn('updated', true),
-        started: mkBtn('started', false),
-        cost: mkBtn('cost', false),
-        stage: mkBtn('stage', false),
-    };
-    const auto = opts.auto ? makeEl({ type: 'checkbox' }) : null;
-    const showDown = opts.showDown ? makeEl({ type: 'checkbox' }) : null;
-    // One link per project the rows above carry, plus the all-projects link
-    // `navHtml` always writes first — the same `data-project` attribute both
-    // `markCurrent()` and the click handler read.
-    let nav = null;
-    let navLinks = null;
-    if (opts.nav) {
-        const all = makeEl({ 'data-project': '', 'aria-current': 'true' });
-        const p1 = makeEl({ 'data-project': 'p1', 'aria-current': 'false' });
-        const p2 = makeEl({ 'data-project': 'p2', 'aria-current': 'false' });
-        nav = makeEl({});
-        nav.appendChild(all); nav.appendChild(p1); nav.appendChild(p2);
-        navLinks = { all, p1, p2 };
-    }
-    // The section's own data-project, the key SCRIPT now pairs it to a group
-    // by. `opts.section: true` defaults to p1, so it lands on a and b; a
-    // caller wanting a registry with no rows at all — nothing in a/b/c holds
-    // it — passes a project name of its own, e.g. `opts.section: 'p3'`.
-    const section = opts.section
-        ? makeEl({ 'data-project': typeof opts.section === 'string' ? opts.section : 'p1' })
-        : null;
-    const byId = { q, shown };
-    if (auto) byId.auto = auto;
-    if (showDown) byId.showDown = showDown;
-    if (nav) byId.nav = nav;
-    const doc = {
-        getElementById: (id) => byId[id] || null,
-        querySelectorAll: (sel) => {
-            if (sel === '.rows') return [group];
-            if (sel === '.bar button[data-sort]') return Object.values(buttons);
-            if (sel === '.registry') return section ? [section] : [];
-            throw new Error('stub does not implement selector: ' + sel);
-        },
-    };
-    return { doc, group, rows: { a, b, c }, q, shown, buttons, auto, showDown, nav, navLinks, section };
-}
-
-// Runs the real, exported SCRIPT string against the stub DOM. The three globals
-// the auto-refresh branch uses are recorded rather than swallowed: that branch
-// is a timer, a cancel and a reload, and a stub returning nothing from all
-// three leaves it with nothing to assert against. `hash` seeds `location.hash`
-// the way a reload lands on whatever the previous click wrote there; SCRIPT
-// reads it once on load and overwrites it on every nav click, and `location`
-// is a plain object so a caller can read back what the click wrote after the
-// fact through the returned sandbox.
-function runScript(doc, hash) {
-    const timers = { set: [], cleared: [], reloads: 0 };
-    let handle = 0;
-    const sandbox = {
-        document: doc,
-        setTimeout: (fn, ms) => { timers.set.push({ fn, ms }); return ++handle; },
-        clearTimeout: (t) => { timers.cleared.push(t); },
-        location: { hash: hash || '', reload: () => { timers.reloads += 1; } },
-    };
-    vm.createContext(sandbox);
-    vm.runInContext(station.SCRIPT, sandbox);
-    sandbox.timers = timers;
-    return sandbox;
-}
-
-const textOrder = (group) => group.children.map((el) => el.attrs['data-text']);
-
-test('SCRIPT sorts by updated, descending, as soon as it loads', () => {
-    const s = buildStub();
-    runScript(s.doc);
-    assert.deepEqual(textOrder(s.group), ['beta two', 'gamma three', 'alpha one']);
-    assert.equal(s.shown.textContent, '3 shown');
-});
-
-test('typing in the filter hides non-matching rows and updates the shown count', () => {
-    const s = buildStub();
-    runScript(s.doc);
-    s.q.value = 'beta';
-    s.q.fire('input');
-    assert.equal(s.rows.a.hidden, true);
-    assert.equal(s.rows.b.hidden, false);
-    assert.equal(s.rows.c.hidden, true);
-    assert.equal(s.shown.textContent, '1 of 3 shown');
-});
-
-// This is what reads `data-state`. The design lists it as the sixth attribute
-// on every row and names no consumer; written and read by nothing it would be
-// markup nobody can use, so the filter matches it beside `data-text` and the
-// three state words become filter terms.
-test('the filter matches a row on its state as well as on its text', () => {
-    const s = buildStub();
-    runScript(s.doc);
-    s.q.value = 'stale';
-    s.q.fire('input');
-    assert.equal(s.rows.b.hidden, false, 'the stale row matches, and no data-text contains "stale"');
-    assert.equal(s.rows.a.hidden, true);
-    assert.equal(s.rows.c.hidden, true);
-    assert.equal(s.shown.textContent, '1 of 3 shown');
-    s.q.value = 'down';
-    s.q.fire('input');
-    assert.deepEqual([s.rows.a.hidden, s.rows.b.hidden, s.rows.c.hidden], [true, true, false],
-        'a second state term picks out a different single row');
-});
-
-test('clicking a sort button reorders the rows within its .rows group', () => {
-    const s = buildStub();
-    runScript(s.doc);
-    s.buttons.cost.fire('click');
-    assert.deepEqual(textOrder(s.group), ['gamma three', 'alpha one', 'beta two'], 'cost descending: c(3), a(2), b(1)');
-    assert.equal(s.buttons.cost.attrs['aria-pressed'], 'true');
-    assert.equal(s.buttons.updated.attrs['aria-pressed'], 'false');
-});
-
-test('clicking the same sort button twice reverses the order', () => {
-    const s = buildStub();
-    runScript(s.doc);
-    s.buttons.cost.fire('click');
-    const first = textOrder(s.group);
-    s.buttons.cost.fire('click');
-    const second = textOrder(s.group);
-    assert.deepEqual(first, ['gamma three', 'alpha one', 'beta two']);
-    assert.deepEqual(second, ['beta two', 'alpha one', 'gamma three'], 'reversed: b(1), a(2), c(3)');
-});
-
-test('stage starts ascending on its first click while a numeric key starts descending', () => {
-    const stageStub = buildStub();
-    runScript(stageStub.doc);
-    stageStub.buttons.stage.fire('click');
-    assert.deepEqual(textOrder(stageStub.group), ['beta two', 'alpha one', 'gamma three'], 'ares < build < verify');
-
-    const numericStub = buildStub();
-    runScript(numericStub.doc);
-    numericStub.buttons.started.fire('click');
-    assert.deepEqual(textOrder(numericStub.group), ['alpha one', 'beta two', 'gamma three'], 'started descending: a(500), b(200), c(100)');
-});
-
-test('ticking auto-refresh arms a thirty-second reload, and unticking it cancels', () => {
-    const s = buildStub({ auto: true });
-    const sandbox = runScript(s.doc);
-    assert.deepEqual(sandbox.timers.set, [], 'nothing is scheduled while the box is clear');
-    s.auto.checked = true;
-    s.auto.fire('change');
-    assert.equal(sandbox.timers.set.length, 1, 'ticking it schedules exactly one timer');
-    assert.equal(sandbox.timers.set[0].ms, 30000, 'thirty seconds, the interval the served page promises');
-    sandbox.timers.set[0].fn();
-    assert.equal(sandbox.timers.reloads, 1, 'and what it scheduled is a reload of the page');
-    s.auto.checked = false;
-    s.auto.fire('change');
-    assert.deepEqual(sandbox.timers.cleared, [1], 'unticking cancels the timer that ticking armed');
-    assert.equal(sandbox.timers.set.length, 1, 'and schedules nothing in its place');
-});
-
-test('the static page has no auto-refresh control and the script runs without one', () => {
-    const s = buildStub();
-    assert.equal(s.doc.getElementById('auto'), null, 'the file on disk ships no checkbox');
-    const sandbox = runScript(s.doc);
-    assert.deepEqual(sandbox.timers.set, [], 'so nothing is ever scheduled');
-    assert.equal(s.shown.textContent, '3 shown', 'and the rest of the script still ran');
-});
-
-// The sort key was not the number on screen: `data-cost` carried the parent's
-// own spend while the cell beside it printed the parent's plus its agents'. The
-// three rows below are built so the two readings disagree about the order — the
-// row showing the most money is the row whose parent spent least — and the stub
-// runs the real SCRIPT against the attributes the real page wrote, so the button
-// and the cell are checked against each other rather than each against itself.
-test('data-cost carries the total the cost cell prints, and the cost sort follows it', () => {
-    const BIG = '10101010-aaaa-4aaa-8aaa-aaaaaaaaaa01';
-    const SMALL = '10101010-aaaa-4aaa-8aaa-aaaaaaaaaa02';
-    const ODD = '10101010-aaaa-4aaa-8aaa-aaaaaaaaaa03';
-    const base = tmp('fankeel-station-costsort-');
-    const root = path.join(base, 'ws');
-    registry.ensureLayout(root);
-    const now = Date.now();
-    const put = (id, task, usage) => registry.writeSession(root, id, {
-        task, project: 'ws', stage: 'build', route: ['build'], active: false, claims: [],
-        started: new Date(now - 3600e3).toISOString(), updated: new Date(now).toISOString(), usage,
-    });
-    // $1 of parent and $3 of its agents: $4 on screen, $1 under the old key.
-    put(BIG, 'agents did the spending', {
-        requests: 1, models: M('claude-sonnet-5', 500000),
-        subagents: { agents: 2, requests: 4, wallMs: 1000, models: M('claude-sonnet-5', 1500000) },
-    });
-    // $2 of parent and no agents: $2 on screen, and the larger of the two old keys.
-    put(SMALL, 'parent did the spending', { requests: 1, models: M('claude-sonnet-5', 1000000) });
-    // The measured row this defect was found on: $0.83 of parent and $1.39 of
-    // agents. Their sum in doubles is 2.2199999999999998, so an attribute that
-    // carries the raw addition carries eighteen digits of it.
-    put(ODD, 'the row this was measured on', {
-        requests: 1, models: M('claude-sonnet-5', 415000),
-        subagents: { agents: 1, requests: 2, wallMs: 1000, models: M('claude-sonnet-5', 695000) },
-    });
-
-    const page = station.render(station.gather({ configDir: path.join(base, 'cfg'), root }), {});
-    const blocks = page.match(/<details class="s[^"]*"[^>]*>[\s\S]*?<\/details>/g) || [];
-    assert.equal(blocks.length, 3, 'one details block per session');
-    const blockOf = (id) => blocks.find((b) => b.includes('<code>' + id + '</code>'));
-    const attr = (id, name) => (new RegExp('data-' + name + '="([^"]*)"').exec(blockOf(id)) || [])[1];
-    assert.ok(blockOf(BIG).includes('$1.00 + $3.00 (2 agents)'), 'the cell prints $4 of spend');
-    assert.ok(blockOf(SMALL).includes('<span>$2.00</span>'), 'and the other row prints $2');
-    assert.ok(blockOf(ODD).includes('$0.83 + $1.39 (1 agents)'), 'and the third prints $2.22');
-    assert.equal(attr(BIG, 'cost'), '4.00', 'the attribute is the total, not the parent\'s $1');
-    assert.equal(attr(SMALL, 'cost'), '2.00');
-    // Rounded to the cent the cell prints, like every other figure on the page.
-    // The raw sum of this row's two halves is 2.2199999999999998.
-    assert.equal(attr(ODD, 'cost'), '2.22', 'the sort key is the cent, not the float artifact');
-
-    // The real SCRIPT, over the real attributes, in the stub DOM the tests
-    // above use: descending cost has to run $4.00, $2.22, $2.00 — which is the
-    // order of the figures on screen and the reverse of the parents' own.
-    const group = makeEl({});
-    for (const id of [SMALL, ODD, BIG]) {
-        group.appendChild(makeEl({
-            'data-updated': attr(id, 'updated'), 'data-started': attr(id, 'started'),
-            'data-cost': attr(id, 'cost'), 'data-stage': attr(id, 'stage'),
-            'data-state': attr(id, 'state'), 'data-text': attr(id, 'text'),
-        }));
-    }
-    const q = makeEl({});
-    const shown = makeEl({});
-    const buttons = ['updated', 'started', 'cost', 'stage']
-        .map((k) => makeEl({ 'data-sort': k, 'aria-pressed': k === 'updated' ? 'true' : 'false' }));
-    const doc = {
-        getElementById: (id) => (id === 'q' ? q : id === 'shown' ? shown : null),
-        querySelectorAll: (sel) => {
-            if (sel === '.rows') return [group];
-            if (sel === '.bar button[data-sort]') return buttons;
-            // No section to hide in this test — it is about sort order, not
-            // registry visibility — but SCRIPT still asks, unconditionally.
-            if (sel === '.registry') return [];
-            throw new Error('stub does not implement selector: ' + sel);
-        },
-    };
-    runScript(doc);
-    buttons[2].fire('click');
-    const label = (el) => {
-        const text = el.attrs['data-text'];
-        return text.includes(BIG) ? 'big' : text.includes(ODD) ? 'odd' : 'small';
-    };
-    assert.deepEqual(group.children.map(label), ['big', 'odd', 'small'],
-        'descending cost follows the cells: $4.00, $2.22, $2.00');
-});
-
-// The two-pane page's own filtering: a nav click scopes `.rows` to one
-// registry, ANDed with the text filter and the state default the same way
-// `projHit` sits beside `textHit` and `stateHit` in `apply()`. p1 holds a and
-// b; p2 holds c alone, so a project switch has to move both ways to prove it,
-// not just clear one row that happened to be hidden already.
-test('selecting a project hides every row whose data-project is not that project', () => {
-    const s = buildStub({ nav: true });
-    runScript(s.doc);
-    s.navLinks.p1.fire('click');
-    assert.deepEqual([s.rows.a.hidden, s.rows.b.hidden, s.rows.c.hidden], [false, false, true],
-        'p1 holds a and b; c is p2 and drops out');
-    s.navLinks.p2.fire('click');
-    assert.deepEqual([s.rows.a.hidden, s.rows.b.hidden, s.rows.c.hidden], [true, true, false],
-        'switching to p2 reverses which rows survive');
-});
-
-// Row 1's own ruling: `down` starts hidden on every page, served or static,
-// so the toggle a bare `buildStub()` never renders is what this test adds.
-test('down rows are hidden when the script loads, and live and stale are not', () => {
-    const s = buildStub({ showDown: true });
-    runScript(s.doc);
-    assert.equal(s.rows.c.hidden, true, 'c is down');
-    assert.equal(s.rows.a.hidden, false, 'a is live');
-    assert.equal(s.rows.b.hidden, false, 'b is stale');
-});
-
-// `selected` (p1) excludes c on its own; the typed term ('alpha') excludes b
-// on its own; only a survives both. `showDown` sits on the stub too, wired up
-// exactly as the two-pane page ships it, even though neither row in p1 is
-// down here — the state default is in force, it just has nothing to veto.
-test('#shown counts the rows that pass the project, the state default and a typed term together', () => {
-    const s = buildStub({ nav: true, showDown: true });
-    runScript(s.doc);
-    s.navLinks.p1.fire('click');
-    s.q.value = 'alpha';
-    s.q.fire('input');
-    assert.deepEqual([s.rows.a.hidden, s.rows.b.hidden, s.rows.c.hidden], [false, true, true]);
-    assert.equal(s.shown.textContent, '1 of 3 shown');
-});
-
-// Row 1's ruling, the other half: the state default backs off the moment the
-// filter box holds anything at all, so a term that names a down row's own
-// text still finds it with the toggle left unchecked.
-test('a typed term finds a down row even with the toggle unchecked', () => {
-    const s = buildStub({ showDown: true });
-    runScript(s.doc);
-    s.q.value = 'gamma';
-    s.q.fire('input');
-    assert.equal(s.rows.c.hidden, false, 'c matches on text, and the term overrides the state default');
-    assert.equal(s.shown.textContent, '1 of 3 shown');
-});
-
-// The click handler writes `location.hash`; a fresh load reads it back before
-// its first `apply()` — the two halves of "survives a reload" `lib/station.js`
-// promises, each exercised through a separate `runScript` the way a reload is
-// a separate page load and not a continuation of the one that set the hash.
-test('the selected project round-trips through location.hash', () => {
-    const s = buildStub({ nav: true });
-    const sandbox = runScript(s.doc);
-    s.navLinks.p2.fire('click');
-    assert.equal(sandbox.location.hash, encodeURIComponent('p2'), 'selecting a project writes it to the hash');
-
-    const reloaded = buildStub({ nav: true });
-    runScript(reloaded.doc, encodeURIComponent('p2'));
-    assert.deepEqual([reloaded.rows.a.hidden, reloaded.rows.b.hidden, reloaded.rows.c.hidden], [true, true, false],
-        'the hash alone, with no click, scopes the page to p2 on load');
-    assert.equal(reloaded.navLinks.p2.attrs['aria-current'], 'true', 'and marks that link current');
-});
-
-// A registry is one section now: emptying its rows div by any route must
-// take the heading with it, and a row surfacing again must bring it back —
-// this is the fix a heading floating over nothing was found by opening the
-// page in a real browser, not by reading the code. The stub's section is p1
-// (a and b), so a term is chosen that empties both without touching c (p2) —
-// this section's fate is decided by its own rows, not the group's.
-test('a registry with no visible rows hides whole, and reappears when one of its rows does', () => {
-    const s = buildStub({ section: true });
-    runScript(s.doc);
-    assert.equal(s.section.hidden, false, 'a and b start visible, so the section does too');
-    s.q.value = 'no such row matches this';
-    s.q.fire('input');
-    assert.equal(s.shown.textContent, '0 of 3 shown', 'the filter cleared every row, p1 and p2 alike');
-    assert.equal(s.section.hidden, true, 'p1 has rows and none of them survived the filter');
-    s.q.value = 'alpha';
-    s.q.fire('input');
-    assert.equal(s.rows.a.hidden, false, 'a matches on text again');
-    assert.equal(s.section.hidden, false, 'one visible row of its own is enough to bring p1 back');
-});
-
-// Finding 1: a registry can hold no sessions at all — `.fankeel/sessions/`
-// exists and is empty — and that is not the same thing as a registry every
-// row of which got filtered out. p3 holds no row anywhere in this stub, so
-// under "all projects" nothing has emptied it and it stays up; only an
-// actual project selection — this one is not it — takes it down.
-test('a registry with no rows at all stays visible under all projects, and hides only when a different project is excluded', () => {
-    const s = buildStub({ section: 'p3', nav: true });
-    runScript(s.doc);
-    assert.equal(s.section.hidden, false, 'nothing has emptied p3 — it never had a row to lose');
-    s.navLinks.p1.fire('click');
-    assert.equal(s.section.hidden, true, 'p1 is selected and p3 is not p1');
-    s.navLinks.all.fire('click');
-    assert.equal(s.section.hidden, false, 'back to all projects, p3 is not excluded by anything again');
-});
-
-// Finding 2: pairing by data-project, not by the order two separate
-// querySelectorAll calls happen to return. The two sections here are queried
-// in the reverse order from their groups — p2's group first, p2's own
-// section second — so an index pairing would cross the wires: it would hide
-// p1's section as if it were p2's, and leave p2's section up under p1's own
-// count. This is not a shape `render()` would ever emit — it nests a group
-// inside its own section — but the fix must not depend on that nesting; this
-// proves the pairing holds even when position alone says nothing.
-test('the section-to-group pairing holds when a group and its section arrive in different document positions', () => {
-    const rowP1 = makeEl({ 'data-updated': '1', 'data-started': '1', 'data-cost': '1', 'data-stage': 'build', 'data-state': 'live', 'data-text': 'alpha', 'data-project': 'p1' });
-    const groupP1 = makeEl({});
-    groupP1.appendChild(rowP1);
-    const rowP2 = makeEl({ 'data-updated': '1', 'data-started': '1', 'data-cost': '1', 'data-stage': 'build', 'data-state': 'live', 'data-text': 'beta', 'data-project': 'p2' });
-    const groupP2 = makeEl({});
-    groupP2.appendChild(rowP2);
-    const sectionP1 = makeEl({ 'data-project': 'p1' });
-    const sectionP2 = makeEl({ 'data-project': 'p2' });
-
-    const q = makeEl({});
-    const shown = makeEl({});
-    const all = makeEl({ 'data-project': '', 'aria-current': 'true' });
-    const linkP2 = makeEl({ 'data-project': 'p2', 'aria-current': 'false' });
-    const nav = makeEl({});
-    nav.appendChild(all); nav.appendChild(linkP2);
-
-    const doc = {
-        getElementById: (id) => (id === 'q' ? q : id === 'shown' ? shown : id === 'nav' ? nav : null),
-        querySelectorAll: (sel) => {
-            if (sel === '.rows') return [groupP1, groupP2];
-            if (sel === '.registry') return [sectionP2, sectionP1];
-            if (sel === '.bar button[data-sort]') return [];
-            throw new Error('stub does not implement selector: ' + sel);
-        },
-    };
-    runScript(doc);
-    linkP2.fire('click');
-    assert.equal(sectionP2.hidden, false, 'p2 is selected and its own row survives — an index pairing would call this one p1 and hide it');
-    assert.equal(sectionP1.hidden, true, 'p1 is excluded by the selection — an index pairing would have left this one up under p2\'s count');
-});
-
-// A gone registry has a nav entry but no rows anywhere — no group carries its
-// project, the way `pGone` here never appears on any row. Before this fix
-// render() gave it no section at all, so selecting it set `selected` to a
-// root no section carried: every real section's `excluded` came out true,
-// and the whole pane went blank with nothing on the page saying why. With a
-// section of its own, the rule from round 2 already covers it — no rows ever
-// counted against it, so it is never "emptied", and only `excluded` decides
-// it, exactly as for any other section.
-test('selecting a gone registry shows only its own heading, and all projects brings every section back', () => {
-    const rowP1 = makeEl({ 'data-updated': '1', 'data-started': '1', 'data-cost': '1', 'data-stage': 'build', 'data-state': 'live', 'data-text': 'alpha', 'data-project': 'p1' });
-    const groupP1 = makeEl({});
-    groupP1.appendChild(rowP1);
-    const rowP2 = makeEl({ 'data-updated': '1', 'data-started': '1', 'data-cost': '1', 'data-stage': 'build', 'data-state': 'live', 'data-text': 'beta', 'data-project': 'p2' });
-    const groupP2 = makeEl({});
-    groupP2.appendChild(rowP2);
-    const sectionP1 = makeEl({ 'data-project': 'p1' });
-    const sectionP2 = makeEl({ 'data-project': 'p2' });
-    // The gone registry's own section: no group, no row anywhere carries
-    // its project, the same shape render() now gives one.
-    const sectionGone = makeEl({ 'data-project': 'pGone' });
-
-    const q = makeEl({});
-    const shown = makeEl({});
-    const all = makeEl({ 'data-project': '', 'aria-current': 'true' });
-    const linkGone = makeEl({ 'data-project': 'pGone', 'aria-current': 'false' });
-    const nav = makeEl({});
-    nav.appendChild(all); nav.appendChild(linkGone);
-
-    const doc = {
-        getElementById: (id) => (id === 'q' ? q : id === 'shown' ? shown : id === 'nav' ? nav : null),
-        querySelectorAll: (sel) => {
-            if (sel === '.rows') return [groupP1, groupP2];
-            if (sel === '.registry') return [sectionP1, sectionP2, sectionGone];
-            if (sel === '.bar button[data-sort]') return [];
-            throw new Error('stub does not implement selector: ' + sel);
-        },
-    };
-    runScript(doc);
-    assert.deepEqual([sectionP1.hidden, sectionP2.hidden, sectionGone.hidden], [false, false, false],
-        'all projects: nothing is excluded and nothing with rows was emptied');
-
-    linkGone.fire('click');
-    assert.equal(sectionGone.hidden, false, 'the gone registry is what was selected — its own heading stays up');
-    assert.equal(sectionP1.hidden, true, 'p1 is excluded — this is what going blank with no explanation used to mean');
-    assert.equal(sectionP2.hidden, true, 'p2 is excluded too');
-    assert.equal(shown.textContent, '0 of 2 shown', 'no row belongs to the gone registry, but now something on the page says why');
-
-    all.fire('click');
-    assert.deepEqual([sectionP1.hidden, sectionP2.hidden, sectionGone.hidden], [false, false, false],
-        'back to all projects, every section is up again');
-});
-
-// An output test in the style of the bar test above, not a DOM one: this reads
-// `render()`'s own HTML string rather than running SCRIPT against a stub, the
-// way the markup for the nav pane and each row's `data-project` are never fed
-// through `vm` at all.
-test("render()'s output carries one nav entry per registry with its three counts, and every session row carries data-project", () => {
-    const f = fixture();
-    const m = station.gather({ configDir: f.cfg });
-    const page = station.render(m, {});
-    const nav = /<nav id="nav">([\s\S]*?)<\/nav>/.exec(page);
-    assert.ok(nav, 'the left pane is a closed nav');
-    const links = nav[1].match(/<a [^>]*>[\s\S]*?<\/a>/g) || [];
-    assert.equal(links.length, 3, 'all projects, plus one per registry in the fixture');
-    assert.ok(links[0].includes('data-project=""') && links[0].includes('>all projects<'),
-        'the first link scopes to nothing');
-    const r1 = path.resolve(f.r1);
-    const r2 = path.resolve(f.r2);
-    // r1 carries LIVE and STALE, one of each; r2 carries only DOWN — the same
-    // fixture every other render test in this file reads.
-    const r1Link = links.find((l) => l.includes('data-project="' + r1 + '"'));
-    const r2Link = links.find((l) => l.includes('data-project="' + r2 + '"'));
-    assert.ok(r1Link, 'r1 has its own nav entry');
-    assert.ok(r2Link, 'r2 has its own nav entry');
-    assert.ok(r1Link.includes('1 live, 1 stale, 0 down'), r1Link);
-    assert.ok(r2Link.includes('0 live, 0 stale, 1 down'), r2Link);
-
-    // Every row carries the root it belongs to, not just the nav link above —
-    // the equality `SCRIPT`'s project filter runs is between these two.
-    const blocks = page.match(/<details class="s[^"]*"[^>]*>[\s\S]*?<\/details>/g) || [];
-    assert.equal(blocks.length, 3, 'one details block per session in the fixture');
-    for (const [id, root] of [[LIVE, r1], [STALE, r1], [DOWN, r2]]) {
-        const block = blocks.find((b) => b.includes('<code>' + id + '</code>'));
-        assert.ok(block, 'a details block exists for ' + id);
-        assert.ok(block.includes('data-project="' + root + '"'), id + ' should carry data-project="' + root + '"');
-    }
-});
-
-// `navLabels` has no seam of its own — it is not exported, and `navHtml`
-// calls it before `render()` ever hands back a string — so its
-// shortest-unique-tail behaviour is read back through the nav markup it
-// feeds, a model built by hand the way the scanStats test above builds one
-// rather than through `gather()`: nothing about a collision in path segments
-// needs a real `.fankeel/sessions/` on disk.
-function navLinksFor(roots) {
-    const model = {
-        generatedAt: new Date().toISOString(), configDir: '', pricesVerified: 'n/a',
-        registries: roots.map((root) => ({ root, gone: false, unreadable: 0, build: [], mapAt: null, sessions: [] })),
-    };
-    const page = station.render(model, {});
-    const nav = /<nav id="nav">([\s\S]*?)<\/nav>/.exec(page);
-    assert.ok(nav, 'the left pane is a closed nav');
-    return nav[1].match(/<a [^>]*>[\s\S]*?<\/a>/g) || [];
-}
-
-// Two roots, one collision. `datapacks` alone cannot tell them apart, so both
-// grow to `proj-a/datapacks` and `proj-b/datapacks` — distinct the moment the
-// segment above joins the label — and stop there: growing a third time to
-// `F:/proj-a/datapacks` would be `navLabels` refusing to believe two segments
-// are enough once they plainly are.
-test('two roots colliding on their last segment both grow one level and stop there', () => {
-    const rootA = 'F:\\proj-a\\datapacks';
-    const rootB = 'F:\\proj-b\\datapacks';
-    const links = navLinksFor([rootA, rootB]);
-    const a = links.find((l) => l.includes('data-project="' + rootA + '"'));
-    const b = links.find((l) => l.includes('data-project="' + rootB + '"'));
-    assert.ok(a && b, 'both roots have their own nav entry');
-    assert.ok(a.includes('>proj-a/datapacks<span class="n">'), a);
-    assert.ok(b.includes('>proj-b/datapacks<span class="n">'), b);
-    assert.ok(!a.includes('>F:/proj-a/datapacks<span'), 'stopped growing once distinct — not at the drive letter too');
-    assert.ok(!b.includes('>F:/proj-b/datapacks<span'), 'stopped growing once distinct — not at the drive letter too');
-});
-
-// Three roots share `datapacks`; two of them, `alpha` and `beta`, also share
-// `sub` one segment up, so `sub/datapacks` still collides between just those
-// two after the first round of growth, while `solo/datapacks` is already on
-// its own. `alpha` and `beta` need a third segment to separate; `solo` never
-// needed a second collision resolved and stops at two.
-test('three roots sharing a last segment: the two that also share the segment above grow further than the third', () => {
-    const rootA = 'F:\\alpha\\sub\\datapacks';
-    const rootB = 'F:\\beta\\sub\\datapacks';
-    const rootC = 'F:\\solo\\datapacks';
-    const links = navLinksFor([rootA, rootB, rootC]);
-    const a = links.find((l) => l.includes('data-project="' + rootA + '"'));
-    const b = links.find((l) => l.includes('data-project="' + rootB + '"'));
-    const c = links.find((l) => l.includes('data-project="' + rootC + '"'));
-    assert.ok(a && b && c, 'all three roots have their own nav entry');
-    assert.ok(a.includes('>alpha/sub/datapacks<span class="n">'), a);
-    assert.ok(b.includes('>beta/sub/datapacks<span class="n">'), b);
-    assert.ok(c.includes('>solo/datapacks<span class="n">'), c);
-});
-
-// A fourth root whose own last segment nothing else shares — mixed in with
-// the two-way collision above so the label is decided per root, not by the
-// worst case anywhere on the page.
-test('a root whose last segment is already unique keeps the one-segment label', () => {
-    const rootA = 'F:\\proj-a\\datapacks';
-    const rootB = 'F:\\proj-b\\datapacks';
-    const rootD = 'F:\\myproject';
-    const links = navLinksFor([rootA, rootB, rootD]);
-    const d = links.find((l) => l.includes('data-project="' + rootD + '"'));
-    assert.ok(d, 'the unique root has its own nav entry');
-    assert.ok(d.includes('>myproject<span class="n">'), d);
-});
