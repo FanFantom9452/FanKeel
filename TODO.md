@@ -60,6 +60,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
+- Two reference pages cite lines that moved before this branch: `docs/registry.md:87` and `skills/fankeel-survey/SKILL.md:242` land on blank lines — [docs/registry.md](docs/registry.md).
+
 - `LANDED_QUIET` is three days, picked from 8 plans inside a 0–4 day band; seven more landed between 09-01 and 09-06, so the band can be measured again — [scripts/docs-audit.js](scripts/docs-audit.js).
 
 - Whether an output style reaches a subagent at all: set one in `/config`, dispatch one agent, and read what it was given — [lib/render.js](lib/render.js).
