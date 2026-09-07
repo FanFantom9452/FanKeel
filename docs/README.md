@@ -68,13 +68,16 @@ here.
 | The two tasks that anchored `survey`, `plan` and `audit`, and brought the survey skill's step 6 to what `task.js` does | [plans/2026-09-05-anchor-remaining.md](plans/2026-09-05-anchor-remaining.md) — *built* |
 | Why the fourteen entries under `## Ready` came down to nine changes, and why the temp-directory leak goes first | [plans/2026-09-07-ready-fourteen-design.md](plans/2026-09-07-ready-fourteen-design.md) — *design-intent* |
 | The nine tasks that close them, with the code for each written out | [plans/2026-09-07-ready-fourteen.md](plans/2026-09-07-ready-fourteen.md) — *design-intent* |
+| Why eight backlog entries close as two measurements, two scanner changes and three deferrals, and why a citation that quoted its own line is a record rather than a proxy | [plans/2026-09-07-backlog-eight-design.md](plans/2026-09-07-backlog-eight-design.md) — *design-intent* |
+| The eight tasks that close them, with the code for each written out | [plans/2026-09-07-backlog-eight.md](plans/2026-09-07-backlog-eight.md) — *design-intent* |
 | What a full run on 0.44.0 found from outside this repository: eleven sessions never stood down, six registries station cannot see, 297,088 test directories, six tool defects | [reports/2026-09-05-field-report-0.44.0.md](reports/2026-09-05-field-report-0.44.0.md) — *a dated snapshot from another session* |
 | Where the four figures quoted during that build came from, and which two can only be checked on the machine that ran them | [reports/2026-09-05-stage-division-measurements.md](reports/2026-09-05-stage-division-measurements.md) — *a dated snapshot* |
+| Why `LANDED_QUIET` still measures to 3, and what raising `LANDMARK` past its threshold found: 102 pairs, 31 shipped, and 3 that only restated a neighbour | [reports/2026-09-07-audit-constants.md](reports/2026-09-07-audit-constants.md) — *a dated snapshot, 繁體中文* |
 | What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 | Why three lib modules with one caller each were not folded into their callers | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *one caller is not evidence on its own* |
 | Why a hook says nothing when it is handed a session id it cannot find | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *a hook that cannot tell a wrong id from no plugin* |
-| Why `docs-check` leaves a citation that drifted but still resolves | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *the document checker stops where the machine stops* |
+| Why `docs-check` leaves a drifted citation alone when it is unquoted, or the page's role is not `reference` | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *the document checker stops where the machine stops* |
 | Why a `## Waiting` entry names an event and not only a date | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *`## Waiting` asks for an event* |
 | Why `todo-check` refuses an entry with no event but never judges whether the event is real | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *the check does not grade the event* |
 | Where to look for every place a rule is taught, before changing the rule | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *a rule is taught in more places than a search finds* |
