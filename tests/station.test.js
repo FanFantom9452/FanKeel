@@ -899,10 +899,13 @@ function buildStub(opts) {
         nav.appendChild(all); nav.appendChild(p1); nav.appendChild(p2);
         navLinks = { all, p1, p2 };
     }
-    // The one `.registry` section this stub's one `.rows` group sits inside,
-    // paired by the index both are queried at — `render()` nests a group
-    // inside its own section, so SCRIPT never has to ask which is whose.
-    const section = opts.section ? makeEl({}) : null;
+    // The section's own data-project, the key SCRIPT now pairs it to a group
+    // by. `opts.section: true` defaults to p1, so it lands on a and b; a
+    // caller wanting a registry with no rows at all — nothing in a/b/c holds
+    // it — passes a project name of its own, e.g. `opts.section: 'p3'`.
+    const section = opts.section
+        ? makeEl({ 'data-project': typeof opts.section === 'string' ? opts.section : 'p1' })
+        : null;
     const byId = { q, shown };
     if (auto) byId.auto = auto;
     if (showDown) byId.showDown = showDown;
@@ -1192,19 +1195,76 @@ test('the selected project round-trips through location.hash', () => {
 // A registry is one section now: emptying its rows div by any route must
 // take the heading with it, and a row surfacing again must bring it back —
 // this is the fix a heading floating over nothing was found by opening the
-// page in a real browser, not by reading the code.
+// page in a real browser, not by reading the code. The stub's section is p1
+// (a and b), so a term is chosen that empties both without touching c (p2) —
+// this section's fate is decided by its own rows, not the group's.
 test('a registry with no visible rows hides whole, and reappears when one of its rows does', () => {
     const s = buildStub({ section: true });
     runScript(s.doc);
-    assert.equal(s.section.hidden, false, 'all three rows start visible, so the section does too');
+    assert.equal(s.section.hidden, false, 'a and b start visible, so the section does too');
     s.q.value = 'no such row matches this';
     s.q.fire('input');
-    assert.equal(s.shown.textContent, '0 of 3 shown', 'the filter cleared every row in the one group');
-    assert.equal(s.section.hidden, true, 'and the section that group sits in hides with them');
-    s.q.value = 'gamma';
+    assert.equal(s.shown.textContent, '0 of 3 shown', 'the filter cleared every row, p1 and p2 alike');
+    assert.equal(s.section.hidden, true, 'p1 has rows and none of them survived the filter');
+    s.q.value = 'alpha';
     s.q.fire('input');
-    assert.equal(s.rows.c.hidden, false, 'c matches on text again');
-    assert.equal(s.section.hidden, false, 'one visible row is enough to bring the section back');
+    assert.equal(s.rows.a.hidden, false, 'a matches on text again');
+    assert.equal(s.section.hidden, false, 'one visible row of its own is enough to bring p1 back');
+});
+
+// Finding 1: a registry can hold no sessions at all — `.fankeel/sessions/`
+// exists and is empty — and that is not the same thing as a registry every
+// row of which got filtered out. p3 holds no row anywhere in this stub, so
+// under "all projects" nothing has emptied it and it stays up; only an
+// actual project selection — this one is not it — takes it down.
+test('a registry with no rows at all stays visible under all projects, and hides only when a different project is excluded', () => {
+    const s = buildStub({ section: 'p3', nav: true });
+    runScript(s.doc);
+    assert.equal(s.section.hidden, false, 'nothing has emptied p3 — it never had a row to lose');
+    s.navLinks.p1.fire('click');
+    assert.equal(s.section.hidden, true, 'p1 is selected and p3 is not p1');
+    s.navLinks.all.fire('click');
+    assert.equal(s.section.hidden, false, 'back to all projects, p3 is not excluded by anything again');
+});
+
+// Finding 2: pairing by data-project, not by the order two separate
+// querySelectorAll calls happen to return. The two sections here are queried
+// in the reverse order from their groups — p2's group first, p2's own
+// section second — so an index pairing would cross the wires: it would hide
+// p1's section as if it were p2's, and leave p2's section up under p1's own
+// count. This is not a shape `render()` would ever emit — it nests a group
+// inside its own section — but the fix must not depend on that nesting; this
+// proves the pairing holds even when position alone says nothing.
+test('the section-to-group pairing holds when a group and its section arrive in different document positions', () => {
+    const rowP1 = makeEl({ 'data-updated': '1', 'data-started': '1', 'data-cost': '1', 'data-stage': 'build', 'data-state': 'live', 'data-text': 'alpha', 'data-project': 'p1' });
+    const groupP1 = makeEl({});
+    groupP1.appendChild(rowP1);
+    const rowP2 = makeEl({ 'data-updated': '1', 'data-started': '1', 'data-cost': '1', 'data-stage': 'build', 'data-state': 'live', 'data-text': 'beta', 'data-project': 'p2' });
+    const groupP2 = makeEl({});
+    groupP2.appendChild(rowP2);
+    const sectionP1 = makeEl({ 'data-project': 'p1' });
+    const sectionP2 = makeEl({ 'data-project': 'p2' });
+
+    const q = makeEl({});
+    const shown = makeEl({});
+    const all = makeEl({ 'data-project': '', 'aria-current': 'true' });
+    const linkP2 = makeEl({ 'data-project': 'p2', 'aria-current': 'false' });
+    const nav = makeEl({});
+    nav.appendChild(all); nav.appendChild(linkP2);
+
+    const doc = {
+        getElementById: (id) => (id === 'q' ? q : id === 'shown' ? shown : id === 'nav' ? nav : null),
+        querySelectorAll: (sel) => {
+            if (sel === '.rows') return [groupP1, groupP2];
+            if (sel === '.registry') return [sectionP2, sectionP1];
+            if (sel === '.bar button[data-sort]') return [];
+            throw new Error('stub does not implement selector: ' + sel);
+        },
+    };
+    runScript(doc);
+    linkP2.fire('click');
+    assert.equal(sectionP2.hidden, false, 'p2 is selected and its own row survives — an index pairing would call this one p1 and hide it');
+    assert.equal(sectionP1.hidden, true, 'p1 is excluded by the selection — an index pairing would have left this one up under p2\'s count');
 });
 
 // An output test in the style of the bar test above, not a DOM one: this reads
