@@ -788,6 +788,23 @@ test('each registry wraps its rows in one .rows div', () => {
     assert.equal((page.match(/<div class="rows">/g) || []).length, notGone);
 });
 
+// A gone registry has a nav entry but, before this fix, no `<section>` — so
+// selecting it set `SCRIPT`'s `selected` to a root no section carried, every
+// real section's `excluded` came out true at once, and the pane went blank
+// with nothing on the page explaining why. It needs a section of its own,
+// even with nothing but a heading inside it.
+test('a gone registry is wrapped in its own section, carrying its root as data-project', () => {
+    const f = fixture();
+    const gone = path.join(f.base, 'gone-registry');
+    badge.writeLead(f.cfg, DOWN, { word: 'land', root: gone });
+    const m = station.gather({ configDir: f.cfg });
+    assert.ok(m.registries.some((r) => r.gone), 'the fixture includes a gone registry');
+    const page = station.render(m, {});
+    const root = path.resolve(gone);
+    assert.ok(page.includes('<section class="registry" data-project="' + root + '"><h2>' + root + ' <span class="gone">'),
+        'the gone heading sits inside a section carrying its own root');
+});
+
 test('a registry with a stale row gets a /clear-stale button, naming the count, only when serving', () => {
     const f = fixture();
     const m = station.gather({ configDir: f.cfg });
@@ -1265,6 +1282,58 @@ test('the section-to-group pairing holds when a group and its section arrive in 
     linkP2.fire('click');
     assert.equal(sectionP2.hidden, false, 'p2 is selected and its own row survives — an index pairing would call this one p1 and hide it');
     assert.equal(sectionP1.hidden, true, 'p1 is excluded by the selection — an index pairing would have left this one up under p2\'s count');
+});
+
+// A gone registry has a nav entry but no rows anywhere — no group carries its
+// project, the way `pGone` here never appears on any row. Before this fix
+// render() gave it no section at all, so selecting it set `selected` to a
+// root no section carried: every real section's `excluded` came out true,
+// and the whole pane went blank with nothing on the page saying why. With a
+// section of its own, the rule from round 2 already covers it — no rows ever
+// counted against it, so it is never "emptied", and only `excluded` decides
+// it, exactly as for any other section.
+test('selecting a gone registry shows only its own heading, and all projects brings every section back', () => {
+    const rowP1 = makeEl({ 'data-updated': '1', 'data-started': '1', 'data-cost': '1', 'data-stage': 'build', 'data-state': 'live', 'data-text': 'alpha', 'data-project': 'p1' });
+    const groupP1 = makeEl({});
+    groupP1.appendChild(rowP1);
+    const rowP2 = makeEl({ 'data-updated': '1', 'data-started': '1', 'data-cost': '1', 'data-stage': 'build', 'data-state': 'live', 'data-text': 'beta', 'data-project': 'p2' });
+    const groupP2 = makeEl({});
+    groupP2.appendChild(rowP2);
+    const sectionP1 = makeEl({ 'data-project': 'p1' });
+    const sectionP2 = makeEl({ 'data-project': 'p2' });
+    // The gone registry's own section: no group, no row anywhere carries
+    // its project, the same shape render() now gives one.
+    const sectionGone = makeEl({ 'data-project': 'pGone' });
+
+    const q = makeEl({});
+    const shown = makeEl({});
+    const all = makeEl({ 'data-project': '', 'aria-current': 'true' });
+    const linkGone = makeEl({ 'data-project': 'pGone', 'aria-current': 'false' });
+    const nav = makeEl({});
+    nav.appendChild(all); nav.appendChild(linkGone);
+
+    const doc = {
+        getElementById: (id) => (id === 'q' ? q : id === 'shown' ? shown : id === 'nav' ? nav : null),
+        querySelectorAll: (sel) => {
+            if (sel === '.rows') return [groupP1, groupP2];
+            if (sel === '.registry') return [sectionP1, sectionP2, sectionGone];
+            if (sel === '.bar button[data-sort]') return [];
+            throw new Error('stub does not implement selector: ' + sel);
+        },
+    };
+    runScript(doc);
+    assert.deepEqual([sectionP1.hidden, sectionP2.hidden, sectionGone.hidden], [false, false, false],
+        'all projects: nothing is excluded and nothing with rows was emptied');
+
+    linkGone.fire('click');
+    assert.equal(sectionGone.hidden, false, 'the gone registry is what was selected — its own heading stays up');
+    assert.equal(sectionP1.hidden, true, 'p1 is excluded — this is what going blank with no explanation used to mean');
+    assert.equal(sectionP2.hidden, true, 'p2 is excluded too');
+    assert.equal(shown.textContent, '0 of 2 shown', 'no row belongs to the gone registry, but now something on the page says why');
+
+    all.fire('click');
+    assert.deepEqual([sectionP1.hidden, sectionP2.hidden, sectionGone.hidden], [false, false, false],
+        'back to all projects, every section is up again');
 });
 
 // An output test in the style of the bar test above, not a DOM one: this reads
