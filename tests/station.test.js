@@ -899,6 +899,10 @@ function buildStub(opts) {
         nav.appendChild(all); nav.appendChild(p1); nav.appendChild(p2);
         navLinks = { all, p1, p2 };
     }
+    // The one `.registry` section this stub's one `.rows` group sits inside,
+    // paired by the index both are queried at — `render()` nests a group
+    // inside its own section, so SCRIPT never has to ask which is whose.
+    const section = opts.section ? makeEl({}) : null;
     const byId = { q, shown };
     if (auto) byId.auto = auto;
     if (showDown) byId.showDown = showDown;
@@ -908,10 +912,11 @@ function buildStub(opts) {
         querySelectorAll: (sel) => {
             if (sel === '.rows') return [group];
             if (sel === '.bar button[data-sort]') return Object.values(buttons);
+            if (sel === '.registry') return section ? [section] : [];
             throw new Error('stub does not implement selector: ' + sel);
         },
     };
-    return { doc, group, rows: { a, b, c }, q, shown, buttons, auto, showDown, nav, navLinks };
+    return { doc, group, rows: { a, b, c }, q, shown, buttons, auto, showDown, nav, navLinks, section };
 }
 
 // Runs the real, exported SCRIPT string against the stub DOM. The three globals
@@ -1099,6 +1104,9 @@ test('data-cost carries the total the cost cell prints, and the cost sort follow
         querySelectorAll: (sel) => {
             if (sel === '.rows') return [group];
             if (sel === '.bar button[data-sort]') return buttons;
+            // No section to hide in this test — it is about sort order, not
+            // registry visibility — but SCRIPT still asks, unconditionally.
+            if (sel === '.registry') return [];
             throw new Error('stub does not implement selector: ' + sel);
         },
     };
@@ -1179,6 +1187,24 @@ test('the selected project round-trips through location.hash', () => {
     assert.deepEqual([reloaded.rows.a.hidden, reloaded.rows.b.hidden, reloaded.rows.c.hidden], [true, true, false],
         'the hash alone, with no click, scopes the page to p2 on load');
     assert.equal(reloaded.navLinks.p2.attrs['aria-current'], 'true', 'and marks that link current');
+});
+
+// A registry is one section now: emptying its rows div by any route must
+// take the heading with it, and a row surfacing again must bring it back —
+// this is the fix a heading floating over nothing was found by opening the
+// page in a real browser, not by reading the code.
+test('a registry with no visible rows hides whole, and reappears when one of its rows does', () => {
+    const s = buildStub({ section: true });
+    runScript(s.doc);
+    assert.equal(s.section.hidden, false, 'all three rows start visible, so the section does too');
+    s.q.value = 'no such row matches this';
+    s.q.fire('input');
+    assert.equal(s.shown.textContent, '0 of 3 shown', 'the filter cleared every row in the one group');
+    assert.equal(s.section.hidden, true, 'and the section that group sits in hides with them');
+    s.q.value = 'gamma';
+    s.q.fire('input');
+    assert.equal(s.rows.c.hidden, false, 'c matches on text again');
+    assert.equal(s.section.hidden, false, 'one visible row is enough to bring the section back');
 });
 
 // An output test in the style of the bar test above, not a DOM one: this reads
