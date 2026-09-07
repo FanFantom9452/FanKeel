@@ -847,8 +847,16 @@ terms** and is written up as void rather than quietly rerun.
 
 Add the report's row to `docs/README.md`.
 
+This task also closes an index gap it did not create. `docs-audit` reports two
+documents missing from `docs/README.md`: this plan and its design. They are the
+only two, they are current rather than archived, and `docs/README.md` is this
+task's file — so the two rows go in here rather than becoming a `TODO.md` line.
+Follow the rows already there: a question in the left cell, a link and an
+italic status in the right.
+
 Run `node scripts/docs-check.js` and watch it exit zero, which is what proves no
-link was left dangling by the move.
+link was left dangling by the move. Run `node scripts/docs-audit.js` as well and
+confirm the missing-from-index count has gone from 2 to 0.
 
 ---
 
