@@ -113,10 +113,11 @@ test('records ended, model and usage on its own entry; active stays true; the pa
     assert.equal(d.usage.requests, 2);
     assert.deepEqual(d.usage.subagents, { agents: 1, requests: 1, wallMs: 0,
         models: { 'claude-sonnet-5': { input: 4, output: 8, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } });
-    assert.ok(fs.readFileSync(path.join(f.cfg, 'fankeel', 'station.html'), 'utf8').includes('the ramp'));
+    const data = fs.readFileSync(path.join(f.cfg, 'fankeel', 'station-data.js'), 'utf8');
+    assert.ok(data.includes('the ramp'), 'the task line is not in the data');
     assert.equal(fs.readFileSync(path.join(f.root, '.fankeel', 'station.html'), 'utf8'),
         fs.readFileSync(path.join(f.cfg, 'fankeel', 'station.html'), 'utf8'), 'the copy lands beside the ending session');
-    assert.equal(fs.readFileSync(path.join(f.cfg, 'fankeel', 'station.html'), 'utf8').includes('<plugin>'), false, 'the clear command names the real plugin path');
+    assert.ok(!data.includes('<plugin>'), 'the plugin path did not resolve');
 });
 
 test('a session with no entry still regenerates the page, and an unreadable transcript leaves usage absent', () => {
