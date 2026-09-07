@@ -62,6 +62,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Needs a decision
 
+- The bulk clear went with the old page: `/clear-stale` still answers and still works, but nothing in the new one posts to it, so where that control belongs in a two-page layout is open — [assets/station/station.js](assets/station/station.js), `clearControl`.
+
 - The 09-04 session-station pair is now split the other way: its plan is archived, its design is not, and four current documents link the design — [scripts/docs-audit.js](scripts/docs-audit.js).
 
 - Whether the dispatch trade-off flips with `haiku` subagents: pair 1 already ran `opus` against `sonnet`, so that is the only untested widening — [docs/subagents.md](docs/subagents.md).
