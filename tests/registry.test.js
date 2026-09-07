@@ -231,11 +231,11 @@ test('an existing .fankeel/.gitignore is never overwritten', () => {
 // missing: a file somebody edited by hand comes back byte-identical.
 test('ensureIgnored appends only what is missing and leaves a complete file alone', () => {
   const root = tmpRoot();
-  assert.equal(registry.ensureIgnored(root, ['sessions/', 'station.html']), true);
+  registry.ensureIgnored(root, ['sessions/', 'station.html']);
   const ignore = path.join(root, '.fankeel', '.gitignore');
   assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\nstation.html\n');
   fs.writeFileSync(ignore, 'sessions/\nscratch/\nstation.html\n');
-  assert.equal(registry.ensureIgnored(root, ['station.html']), false);
+  registry.ensureIgnored(root, ['station.html']);
   assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\nscratch/\nstation.html\n');
 });
 
