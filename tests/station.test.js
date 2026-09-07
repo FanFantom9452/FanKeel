@@ -642,6 +642,7 @@ test('a gone root whose directory was deleted is forgotten', () => {
     const configDir = tmp('fankeel-roots-gone-');
     const alive = tmp('fankeel-roots-alive-');
     const deleted = tmp('fankeel-roots-deleted-');
+    const unseen = tmp('fankeel-roots-unseen-');
     const first = Date.parse('2026-09-07T00:00:00Z');
     const later = Date.parse('2026-09-07T01:00:00Z');
 
@@ -657,11 +658,19 @@ test('a gone root whose directory was deleted is forgotten', () => {
     station.rememberRoots(configDir, [
         { root: alive, gone: true },
         { root: deleted, gone: true },
+        { root: unseen, gone: true },
     ], later);
 
     const after = station.readRoots(configDir);
     assert.ok(Object.keys(after).includes(alive), 'a gone root that still exists is kept');
     assert.ok(!Object.keys(after).includes(deleted), 'a gone root that was deleted is dropped');
+    // The discriminating case, and the only one here that is: `unseen` exists on
+    // disk but was never recorded. Keeping a root's own old stamp drops it;
+    // stamping any gone root whose directory happens to exist keeps it. The two
+    // assertions above pass either way, which is how the first version of this
+    // test came to pass against the bug it was written for.
+    assert.ok(!Object.keys(after).includes(unseen),
+        'a gone root never recorded before gains no entry, directory or no directory');
     assert.equal(after[alive], new Date(first).toISOString(),
         'alive keeps its first stamp, not a fresh one from the second call');
 });
