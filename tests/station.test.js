@@ -843,6 +843,12 @@ function makeEl(attrs) {
             el.children.push(child);
             return child;
         },
+        // SCRIPT calls this only on `nav`, for its own anchor children — 'a' is
+        // the one selector any element (as opposed to `document`) ever asks for.
+        querySelectorAll(sel) {
+            if (sel === 'a') return el.children.slice();
+            throw new Error('stub does not implement selector: ' + sel);
+        },
     };
     return el;
 }
@@ -853,12 +859,20 @@ function makeEl(attrs) {
 // stage asc -> [b,a,c].
 // `opts.auto` adds the auto-refresh checkbox the served page carries and the
 // static file does not, so both sides of SCRIPT's `if(auto)` are reachable.
+// `opts.nav` and `opts.showDown` do the same for the two-pane page's own
+// controls: `lib/station.js` notes that nothing in this file's tests rendered
+// either one, which is exactly what a bare `buildStub()` still leaves true —
+// a page shipping neither is still a shape SCRIPT has to run against.
 function buildStub(opts) {
+    opts = opts || {};
     // No `data-text` contains the word in its own `data-state`, so a filter term
     // of `live`, `stale` or `down` can only match through the state attribute.
-    const a = makeEl({ 'data-updated': '100', 'data-started': '500', 'data-cost': '2', 'data-stage': 'build', 'data-state': 'live', 'data-text': 'alpha one' });
-    const b = makeEl({ 'data-updated': '300', 'data-started': '200', 'data-cost': '1', 'data-stage': 'ares', 'data-state': 'stale', 'data-text': 'beta two' });
-    const c = makeEl({ 'data-updated': '200', 'data-started': '100', 'data-cost': '3', 'data-stage': 'verify', 'data-state': 'down', 'data-text': 'gamma three' });
+    // `data-project` is written by `row()` unconditionally, on every page
+    // whether or not that page ships a nav to scope by, so it sits on all three
+    // rows here regardless of `opts.nav`. a and b share p1; c alone is p2.
+    const a = makeEl({ 'data-updated': '100', 'data-started': '500', 'data-cost': '2', 'data-stage': 'build', 'data-state': 'live', 'data-text': 'alpha one', 'data-project': 'p1' });
+    const b = makeEl({ 'data-updated': '300', 'data-started': '200', 'data-cost': '1', 'data-stage': 'ares', 'data-state': 'stale', 'data-text': 'beta two', 'data-project': 'p1' });
+    const c = makeEl({ 'data-updated': '200', 'data-started': '100', 'data-cost': '3', 'data-stage': 'verify', 'data-state': 'down', 'data-text': 'gamma three', 'data-project': 'p2' });
     const group = makeEl({});
     group.appendChild(a); group.appendChild(b); group.appendChild(c);
     const q = makeEl({});
@@ -870,9 +884,25 @@ function buildStub(opts) {
         cost: mkBtn('cost', false),
         stage: mkBtn('stage', false),
     };
-    const auto = opts && opts.auto ? makeEl({ type: 'checkbox' }) : null;
+    const auto = opts.auto ? makeEl({ type: 'checkbox' }) : null;
+    const showDown = opts.showDown ? makeEl({ type: 'checkbox' }) : null;
+    // One link per project the rows above carry, plus the all-projects link
+    // `navHtml` always writes first — the same `data-project` attribute both
+    // `markCurrent()` and the click handler read.
+    let nav = null;
+    let navLinks = null;
+    if (opts.nav) {
+        const all = makeEl({ 'data-project': '', 'aria-current': 'true' });
+        const p1 = makeEl({ 'data-project': 'p1', 'aria-current': 'false' });
+        const p2 = makeEl({ 'data-project': 'p2', 'aria-current': 'false' });
+        nav = makeEl({});
+        nav.appendChild(all); nav.appendChild(p1); nav.appendChild(p2);
+        navLinks = { all, p1, p2 };
+    }
     const byId = { q, shown };
     if (auto) byId.auto = auto;
+    if (showDown) byId.showDown = showDown;
+    if (nav) byId.nav = nav;
     const doc = {
         getElementById: (id) => byId[id] || null,
         querySelectorAll: (sel) => {
@@ -881,21 +911,25 @@ function buildStub(opts) {
             throw new Error('stub does not implement selector: ' + sel);
         },
     };
-    return { doc, group, rows: { a, b, c }, q, shown, buttons, auto };
+    return { doc, group, rows: { a, b, c }, q, shown, buttons, auto, showDown, nav, navLinks };
 }
 
 // Runs the real, exported SCRIPT string against the stub DOM. The three globals
 // the auto-refresh branch uses are recorded rather than swallowed: that branch
 // is a timer, a cancel and a reload, and a stub returning nothing from all
-// three leaves it with nothing to assert against.
-function runScript(doc) {
+// three leaves it with nothing to assert against. `hash` seeds `location.hash`
+// the way a reload lands on whatever the previous click wrote there; SCRIPT
+// reads it once on load and overwrites it on every nav click, and `location`
+// is a plain object so a caller can read back what the click wrote after the
+// fact through the returned sandbox.
+function runScript(doc, hash) {
     const timers = { set: [], cleared: [], reloads: 0 };
     let handle = 0;
     const sandbox = {
         document: doc,
         setTimeout: (fn, ms) => { timers.set.push({ fn, ms }); return ++handle; },
         clearTimeout: (t) => { timers.cleared.push(t); },
-        location: { reload: () => { timers.reloads += 1; } },
+        location: { hash: hash || '', reload: () => { timers.reloads += 1; } },
     };
     vm.createContext(sandbox);
     vm.runInContext(station.SCRIPT, sandbox);
@@ -1076,4 +1110,109 @@ test('data-cost carries the total the cost cell prints, and the cost sort follow
     };
     assert.deepEqual(group.children.map(label), ['big', 'odd', 'small'],
         'descending cost follows the cells: $4.00, $2.22, $2.00');
+});
+
+// The two-pane page's own filtering: a nav click scopes `.rows` to one
+// registry, ANDed with the text filter and the state default the same way
+// `projHit` sits beside `textHit` and `stateHit` in `apply()`. p1 holds a and
+// b; p2 holds c alone, so a project switch has to move both ways to prove it,
+// not just clear one row that happened to be hidden already.
+test('selecting a project hides every row whose data-project is not that project', () => {
+    const s = buildStub({ nav: true });
+    runScript(s.doc);
+    s.navLinks.p1.fire('click');
+    assert.deepEqual([s.rows.a.hidden, s.rows.b.hidden, s.rows.c.hidden], [false, false, true],
+        'p1 holds a and b; c is p2 and drops out');
+    s.navLinks.p2.fire('click');
+    assert.deepEqual([s.rows.a.hidden, s.rows.b.hidden, s.rows.c.hidden], [true, true, false],
+        'switching to p2 reverses which rows survive');
+});
+
+// Row 1's own ruling: `down` starts hidden on every page, served or static,
+// so the toggle a bare `buildStub()` never renders is what this test adds.
+test('down rows are hidden when the script loads, and live and stale are not', () => {
+    const s = buildStub({ showDown: true });
+    runScript(s.doc);
+    assert.equal(s.rows.c.hidden, true, 'c is down');
+    assert.equal(s.rows.a.hidden, false, 'a is live');
+    assert.equal(s.rows.b.hidden, false, 'b is stale');
+});
+
+// `selected` (p1) excludes c on its own; the typed term ('alpha') excludes b
+// on its own; only a survives both. `showDown` sits on the stub too, wired up
+// exactly as the two-pane page ships it, even though neither row in p1 is
+// down here — the state default is in force, it just has nothing to veto.
+test('#shown counts the rows that pass the project, the state default and a typed term together', () => {
+    const s = buildStub({ nav: true, showDown: true });
+    runScript(s.doc);
+    s.navLinks.p1.fire('click');
+    s.q.value = 'alpha';
+    s.q.fire('input');
+    assert.deepEqual([s.rows.a.hidden, s.rows.b.hidden, s.rows.c.hidden], [false, true, true]);
+    assert.equal(s.shown.textContent, '1 of 3 shown');
+});
+
+// Row 1's ruling, the other half: the state default backs off the moment the
+// filter box holds anything at all, so a term that names a down row's own
+// text still finds it with the toggle left unchecked.
+test('a typed term finds a down row even with the toggle unchecked', () => {
+    const s = buildStub({ showDown: true });
+    runScript(s.doc);
+    s.q.value = 'gamma';
+    s.q.fire('input');
+    assert.equal(s.rows.c.hidden, false, 'c matches on text, and the term overrides the state default');
+    assert.equal(s.shown.textContent, '1 of 3 shown');
+});
+
+// The click handler writes `location.hash`; a fresh load reads it back before
+// its first `apply()` — the two halves of "survives a reload" `lib/station.js`
+// promises, each exercised through a separate `runScript` the way a reload is
+// a separate page load and not a continuation of the one that set the hash.
+test('the selected project round-trips through location.hash', () => {
+    const s = buildStub({ nav: true });
+    const sandbox = runScript(s.doc);
+    s.navLinks.p2.fire('click');
+    assert.equal(sandbox.location.hash, encodeURIComponent('p2'), 'selecting a project writes it to the hash');
+
+    const reloaded = buildStub({ nav: true });
+    runScript(reloaded.doc, encodeURIComponent('p2'));
+    assert.deepEqual([reloaded.rows.a.hidden, reloaded.rows.b.hidden, reloaded.rows.c.hidden], [true, true, false],
+        'the hash alone, with no click, scopes the page to p2 on load');
+    assert.equal(reloaded.navLinks.p2.attrs['aria-current'], 'true', 'and marks that link current');
+});
+
+// An output test in the style of the bar test above, not a DOM one: this reads
+// `render()`'s own HTML string rather than running SCRIPT against a stub, the
+// way the markup for the nav pane and each row's `data-project` are never fed
+// through `vm` at all.
+test("render()'s output carries one nav entry per registry with its three counts, and every session row carries data-project", () => {
+    const f = fixture();
+    const m = station.gather({ configDir: f.cfg });
+    const page = station.render(m, {});
+    const nav = /<nav id="nav">([\s\S]*?)<\/nav>/.exec(page);
+    assert.ok(nav, 'the left pane is a closed nav');
+    const links = nav[1].match(/<a [^>]*>[\s\S]*?<\/a>/g) || [];
+    assert.equal(links.length, 3, 'all projects, plus one per registry in the fixture');
+    assert.ok(links[0].includes('data-project=""') && links[0].includes('>all projects<'),
+        'the first link scopes to nothing');
+    const r1 = path.resolve(f.r1);
+    const r2 = path.resolve(f.r2);
+    // r1 carries LIVE and STALE, one of each; r2 carries only DOWN — the same
+    // fixture every other render test in this file reads.
+    const r1Link = links.find((l) => l.includes('data-project="' + r1 + '"'));
+    const r2Link = links.find((l) => l.includes('data-project="' + r2 + '"'));
+    assert.ok(r1Link, 'r1 has its own nav entry');
+    assert.ok(r2Link, 'r2 has its own nav entry');
+    assert.ok(r1Link.includes('1 live, 1 stale, 0 down'), r1Link);
+    assert.ok(r2Link.includes('0 live, 0 stale, 1 down'), r2Link);
+
+    // Every row carries the root it belongs to, not just the nav link above —
+    // the equality `SCRIPT`'s project filter runs is between these two.
+    const blocks = page.match(/<details class="s[^"]*"[^>]*>[\s\S]*?<\/details>/g) || [];
+    assert.equal(blocks.length, 3, 'one details block per session in the fixture');
+    for (const [id, root] of [[LIVE, r1], [STALE, r1], [DOWN, r2]]) {
+        const block = blocks.find((b) => b.includes('<code>' + id + '</code>'));
+        assert.ok(block, 'a details block exists for ' + id);
+        assert.ok(block.includes('data-project="' + root + '"'), id + ' should carry data-project="' + root + '"');
+    }
 });
