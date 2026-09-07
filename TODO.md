@@ -70,7 +70,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - `scan` finds its own table by the heading `## groups` and never a copy pasted under another one, so both survive — [scripts/ledger.js](scripts/ledger.js).
 
-- The 08-30 parallel-build pair is split: the design is archived, the plan is not, because `lib/a.js` and `lib/b.js` in its prose read as missing — [scripts/docs-audit.js](scripts/docs-audit.js).
+- The 08-30 parallel-build pair is split: the design is archived, the plan is not, because two illustrative filenames in its prose read as missing — [scripts/docs-audit.js](scripts/docs-audit.js).
 
 - `docs-check` passes a `path:line` whose line merely moved: three drifted on 09-05, a fourth on 09-06 — carry the cited text, or check a symbol — [scripts/docs-check.js](scripts/docs-check.js).
 
