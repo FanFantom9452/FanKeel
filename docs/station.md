@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-07
+last_verified: 2026-09-08
 source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/registry.js, lib/prices.js, lib/clear.js
 ---
 
@@ -98,6 +98,10 @@ it, when the session ran agents, is the agents' dollar figure and how many
 agents produced it — `usage.subagents`, priced the same way. A row opens to
 the agents' own request count and their summed wall-clock, alongside
 everything else.
+
+Every row also carries the registry it belongs to, as `data-project` (`lib/station.js:567`, `data-project="${esc(root)}"`) — the root, not the project name shown
+elsewhere on the row, and what pairs it to its nav entry and to the
+`<section>` around it; see Filtering and sorting below.
 
 ### The curve
 
@@ -208,15 +212,70 @@ sees the shape it always had, is in [registry.md](registry.md).
 ### Filtering and sorting
 
 The page carries one inline script — no `src`, nothing fetched, no
-dependency. It filters rows on task, project, session id, model and state —
-`data-state` is one of the attributes each row carries, so typing `live`,
-`stale` or `down` is itself a filter term — and sorts them by `updated`,
-`started`, `cost` or `stage`, clicking twice to reverse. Rows are reordered
-inside their own registry, never across registries.
+dependency — and it now shows two panes rather than one column: a project
+nav on the left and, on the right, every registry and its rows, side by side
+in one `<div class="layout">` (`render()`).
+
+The nav lists one entry per registry, in the same order the right pane lists
+them, so the two never disagree about which registry is which (`navHtml`).
+An entry carries the registry's label and, for one that still has a
+`sessions/` directory, its `live`, `stale` and `down` counts; a gone registry
+keeps its place and its label but prints no counts, since it has no sessions
+left to count. Clicking an entry scopes the right pane to that registry; the
+leading entry, `all projects`, clears the scope.
+
+The label is not the registry's full path. `navLabels` gives each root the
+shortest tail of its path segments that no other root shares — one segment
+until two collide, then one more for both, and so on (`lib/station.js:748`, `segs[i].slice(-depth[i])`) — because three roots on
+this machine end in `datapacks`, and the bare last segment would print that
+three times over. The full root still sits in the link's `title=`, so a
+collision costs a reader nothing but the extra segment on screen.
+
+The selected project is written to `location.hash` on every click (`lib/station.js:705`, `location.hash=selected`) and read back when the page
+loads (`lib/station.js:699`, `location.hash||''`). A reload — or a bookmarked
+link — returns to the same registry rather than resetting to `all projects`.
+
+It filters rows on task, project, session id, model and state — `data-state`
+is one of the attributes each row carries, so typing `live`, `stale` or
+`down` is itself a filter term. Project selection, the state default and the
+text filter are AND-ed, not layered: a row shows only when its text matches,
+its registry is the selected one or none is selected, and it clears the
+state default (`lib/station.js:668`, `textHit&&projHit&&stateHit`).
+
+`down` rows are that state default: hidden the moment the page loads, served
+or static alike — unlike auto-refresh below, this is not a serve-only
+convenience — and the `show down` checkbox beside the filter box brings them
+back. The default holds only while the filter box is empty: a row still
+counts as a `down` hit when `show down` is checked, when any term at all is typed, or when the row is not `down` to begin with (`lib/station.js:667`, `state!=='down'`),
+so typing `down` — itself a filter term, matched against `data-state` the
+same as `live` or `stale` — still surfaces a row the page hid on load.
+
+It sorts rows by `updated`, `started`, `cost` or `stage`, clicking twice to
+reverse. Rows are reordered inside their own registry, never across
+registries.
 
 `gather` still returns sessions ordered by `updated` descending. The sorting
 here is a view over that order rather than a replacement for it, which is why
 the static file on disk and the served page agree about what they hold.
+
+A registry is one `<section class="registry" data-project>` now, not a
+heading floating over a `<div class="rows">` that hides on its own: the
+heading, the meta line, the clear-stale form and the rows div all sit inside
+that one section, carrying the same root as `data-project` that every row
+inside it already carries. The whole section hides together. Opening the
+served page in a browser — not a test — is what found why that matters: with
+a project selected, the other eleven registries' headings stayed on screen,
+and four of their `clear all N stale` buttons stayed pressable, over rows
+that had already hidden underneath them.
+
+A section hides for one of two reasons, and it is two, not one: its project
+is excluded by the current selection (`lib/station.js:687`, `excluded=!!selected&&proj!==selected`), or it holds rows and every one of
+them was filtered out (`lib/station.js:688`, `emptied=!!c&&c.rows>0&&c.visible===0`). A registry with no sessions at all
+fits neither — nothing ever emptied it — so under `all projects` it stays
+visible, and its meta line is the only place left on the page that says it
+exists. A section and its `.rows` group are paired on the `data-project`
+both already carry, not on document order (`lib/station.js:634`, `querySelectorAll('.registry')`) — the same value `row()` writes onto
+every row for `SCRIPT` to use.
 
 Auto-refresh is offered **only on a served page**. The file at
 `<registry>/.fankeel/station.html` is rewritten by fankeel's own events, so a
