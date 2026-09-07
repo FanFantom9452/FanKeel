@@ -62,7 +62,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Needs a decision
 
-- The bulk clear went with the old page: `/clear-stale` still answers and still works, but nothing in the new one posts to it, so where that control belongs in a two-page layout is open — [assets/station/station.js](assets/station/station.js), `clearControl`.
+- The bulk clear lost its button: `/clear-stale` still answers, nothing in the new page posts to it — [assets/station/station.js](assets/station/station.js), `clearControl`.
 
 - The 09-04 session-station pair is now split the other way: its plan is archived, its design is not, and four current documents link the design — [scripts/docs-audit.js](scripts/docs-audit.js).
 
