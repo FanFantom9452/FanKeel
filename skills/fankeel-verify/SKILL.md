@@ -95,12 +95,14 @@ prompt for the privilege.
 The question above it is the case *for*. "Which page does this change make false"
 is judgement over pages nothing can grep — wide reading, narrow answer. What it
 buys is a smaller context rather than a cheaper or a quicker one, and less of
-that than it looks: the pages here have already been named, and a fan-out over
-named files measured about 1.5× the residue rather than 9.2×, at 1.59× the money
-and 2.77× the wall-clock. Dispatch it anyway: one reader per page the change
-plausibly touched, several in one response so they run at once — four is the
-ceiling, and the fankeel skill's *Dispatch by default, never the filtering* says
-why — each given the **path** to a diff file
+that than it looks: the pages here have already been named. The nearest
+measurement — one dispatch reading seven files already named in the prompt,
+answering one joint question, the inline arm asked the same — put the residue
+at about 1.5× rather than 9.2×, the money at 1.59×, and the wall-clock at
+2.77×. Dispatch it anyway: one reader per page the change plausibly touched,
+several in one response so they run at once — four is the ceiling, and the
+fankeel skill's *Dispatch by default, never the filtering* says why — each
+given the **path** to a diff file
 and asked only what is now false and where. Never tell a reader what you
 expect it to find: a brief saying a page was less likely to have drifted got
 `no drift` back. Ask the same question of every target, with no ranking among
