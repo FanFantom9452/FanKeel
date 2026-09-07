@@ -79,6 +79,87 @@ test('gather classifies live, stale and down, counts unreadable, prices usage, l
     assert.equal(one.sessions[1].ended.reason, 'clear');
     assert.equal(m.pricesVerified.length, 10);
 });
+// A registry of its own per test below, rather than the shared fixture: each
+// one exercises a different shape of `clock`/`burn`/`spend` and none of them
+// should shift the session counts the earlier tests already assert on.
+function chartFixture(sessionId, data) {
+    const base = tmp('fankeel-station-chart-');
+    const root = path.join(base, 'ws');
+    registry.ensureLayout(root);
+    const now = Date.now();
+    registry.writeSession(root, sessionId, Object.assign({
+        project: 'ws', active: false, claims: [],
+        started: new Date(now - 3600e3).toISOString(), updated: new Date(now).toISOString(),
+    }, data));
+    return station.gather({ configDir: path.join(base, 'cfg'), root });
+}
+
+// The defect this closes: the curve that used to sit over these rows plotted
+// the parent's requests alone while the cost cell beside it printed
+// `$X + $Y (N agents)`. Measured on a real run, the curve said $0.83 of a
+// session that cost $2.22. Every figure below is chosen so the parent's own
+// total, the agents' own total and the sum are three different numbers:
+// reading either half alone cannot produce the right one.
+const M = (model, input) => ({ [model]: { input, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } });
+
+// This and the next two tests assert on `gather()`'s own return value —
+// `stages[i].usd` — and nothing about a page. They were misfiled as markup
+// tests once already, by a name that started with "the curve and the stage
+// table": that render()-side coverage is gone with the curve and the table,
+// but this arithmetic runs before either ever existed and still ships,
+// verbatim, through `serialize()` into `station-data.js`.
+test('a stage\'s usd sums the parent\'s spend and its agents\', even when the parent spent nothing that window', () => {
+    const m = chartFixture('55555555-cccc-4ccc-8ccc-cccccccccccc', {
+        task: 'parent and agents', stage: 'build', route: ['survey', 'build'],
+        clock: { survey: [0, 1000], build: [1000, 2000] },
+        burn: { survey: [0, 50000], build: [50000, 120000] },
+        spend: {
+            // $1 of parent and $1 of agents.
+            survey: { requests: 1, models: M('claude-sonnet-5', 500000), subagents: { requests: 3, models: M('claude-sonnet-5', 500000) } },
+            // No parent requests at all in this window: $2 of agents alone.
+            build: { requests: 0, models: {}, subagents: { requests: 2, models: M('claude-sonnet-5', 1000000) } },
+        },
+    });
+    const stages = m.registries[0].sessions[0].stages;
+    assert.equal(stages[0].usd, 2, 'the parent\'s dollar and the agents\' dollar, added');
+    assert.equal(stages[1].usd, 2, 'a stage the parent spent nothing in still carries what its agents spent');
+});
+
+test('a stage priced on one side only keeps that side rather than falling to null', () => {
+    // The agents' model has no rate; the parent's does. `priced.length` is zero
+    // on one `costOf` and not the other, and reading only the agents' would
+    // print an em dash over $2.50 that was really spent.
+    const m = chartFixture('66666666-dddd-4ddd-8ddd-dddddddddddd', {
+        task: 'half priced', stage: 'build', route: ['survey', 'build'],
+        clock: { survey: [0, 1000], build: [1000, 2000] },
+        burn: { survey: [0, 50000], build: [50000, 120000] },
+        spend: {
+            survey: { requests: 1, models: M('claude-opus-5', 500000), subagents: { requests: 1, models: M('claude-nonesuch-9', 9000000) } },
+        },
+    });
+    assert.equal(m.registries[0].sessions[0].stages[0].usd, 2.5, 'the priced parent contributes all of it, the unpriced agents contribute nothing');
+});
+
+test('a stage priced by no rate anywhere gets null from gather(), not zero', () => {
+    // Same shape as the test above, with the middle stage carrying a model
+    // `lib/prices.js` has no rate for instead of carrying no spend at all.
+    // `costOf` answers `usd: 0` for it — the same number a stage that
+    // genuinely cost nothing would get — so reading `.usd` without checking
+    // `priced.length` cannot tell the two apart.
+    const m = chartFixture('22222222-9999-4999-8999-999999999999', {
+        task: 'one unpriced stage', stage: 'verify', route: ['survey', 'build', 'verify'],
+        clock: { survey: [0, 1000], build: [1000, 2000], verify: [2000, 3000] },
+        burn: { survey: [0, 50000], build: [50000, 90000], verify: [90000, 140000] },
+        spend: {
+            survey: { requests: 1, models: { 'claude-sonnet-5': { input: 500000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
+            build: { requests: 1, models: { 'claude-nonesuch-9': { input: 9000000, output: 9000000, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
+            verify: { requests: 1, models: { 'claude-sonnet-5': { input: 1000000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } },
+        },
+    });
+    assert.equal(m.registries[0].sessions[0].stages[1].usd, null,
+        'the unpriced stage carries no dollar figure at all, rather than zero');
+});
+
 
 test('serialize carries every task\'s text, the price date, and the plugin path for the offline clear command', () => {
     const f = fixture();
