@@ -60,33 +60,15 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- Whether an output style reaches a subagent at all: set one in `/config`, dispatch one agent, and read what it was given — [lib/render.js](lib/render.js).
-
 ## Needs a decision
 
-- The 09-04 session-station plan looks landed: 18 files named, all present, untouched 3d. Archiving one is never done unasked — [scripts/docs-audit.js](scripts/docs-audit.js).
+- The 09-04 session-station pair is now split the other way: its plan is archived, its design is not, and four current documents link the design — [scripts/docs-audit.js](scripts/docs-audit.js).
 
-- Five scripts take `--root` raw where three resolve it: `layout.js`, `map.js`, `orient.js`, `residue.js`, `todo-check.js` against the three scanners — [scripts/map.js](scripts/map.js).
+- Whether the dispatch trade-off flips with `haiku` subagents: pair 1 already ran `opus` against `sonnet`, so that is the only untested widening — [docs/subagents.md](docs/subagents.md).
 
-- `scan` finds its own table by the heading `## groups` and never a copy pasted under another one, so both survive — [scripts/ledger.js](scripts/ledger.js).
+- Whether `scripts/task.js` resolves `--root` the way the eight now do, or is deliberately different like `station.js` — [scripts/task.js](scripts/task.js), `rootOf`.
 
-- The 08-30 parallel-build pair is split: the design is archived, the plan is not, because two illustrative filenames in its prose read as missing — [scripts/docs-audit.js](scripts/docs-audit.js).
-
-- Whether a reviewer per task and a mutation per fix earn their cost; measure the next build, which returns the mutations — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
-
-- With the roots expiry gone, any scratch registry a `leave.js` run touches is remembered until `--forget`; two landed on 09-06 — [lib/station.js](lib/station.js).
-
-- `docs-check` compares counts, not lists: 22 to 21 on one branch hid a change; `--since <ref>`, or a documented "compare the list" — [scripts/docs-check.js](scripts/docs-check.js).
-
-- Whether a two-source join needs a fourth pair: fankeel-verify:99 cites 1.5× for readers each given a page and a diff, a shape no pair measured — [docs/subagents.md](docs/subagents.md).
-
-- Whether `tested as subprocesses with real payloads` should be pinned like the count beside it — [tests/contract.test.js](tests/contract.test.js).
-
-- Whether `.claude/agents/` is documentation and wants a bucket — [.fankeel/docs.json](.fankeel/docs.json); the probe fixture made the unfiled count 2.
-
-- Whether the `3 of 5 pair readers` figure has a source — its own citation points at a file that carries no such measurement — [TODO.md](TODO.md).
-
-- Whether the 1.85× dispatch figure holds when the main model is priced above the subagent's — every main turn re-reads the context at that rate — [docs/subagents.md](docs/subagents.md).
+- Whether a decision record gets annotated when a change falsifies an argument premise rather than a reference: `scripts/ledger.js` now exports — [scripts/ledger.js](scripts/ledger.js).
 
 ## Waiting
 
@@ -99,3 +81,7 @@ entry waited for actually happening. It shrank when somebody read it.
 - A per-style `turn-reminder`. Claude Code reads one for its built-in styles; no file-level key for it was found in the CLI. lifts when: Claude Code ships one. 09-06.
 
 - Whether `fanoutSync`'s payload costs anything: a 64MB overflow discards every answer and re-reads all thirty serially — [lib/tracked.js](lib/tracked.js). lifts when: one is observed. 09-06.
+
+- Whether an output style reaches a subagent — [lib/render.js](lib/render.js) forwards none; headless ignores `outputStyle`. lifts when: an interactive terminal can set one in `/config`. 09-07.
+
+- `docs-audit` reads a fixture path in a code block as a deliverable — [scripts/docs-audit.js](scripts/docs-audit.js). lifts when: a second plan is held back by it. 09-07.

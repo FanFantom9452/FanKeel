@@ -13,6 +13,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const ledger = require('../lib/ledger.js');
+const { withScan, SCAN_HEADING } = require('../scripts/ledger.js');
 const tmp = require('./tmp.js');
 
 const root = () => tmp('fankeel-ledger-');
@@ -647,4 +648,28 @@ test('lint on the 2026-09-06 station plan names the promises it dropped and the 
   // bullet. The design skill now says to write promises as bullets for this
   // reason, and this assertion pins the limit rather than hiding it.
   assert.doesNotMatch(out, /`waited`/);
+});
+
+test('a groups table under another heading survives a scan write', () => {
+  const body = [
+    '# Ledger',
+    '',
+    '## notes',
+    '',
+    SCAN_HEADING,
+    'stale content that should be replaced',
+    '',
+    '## archive',
+    '',
+    SCAN_HEADING,
+    'a copy pasted under a heading of its own — not the one scan owns',
+    '',
+  ].join('\n');
+
+  const written = withScan(body, 'fresh block');
+
+  assert.ok(written.includes('a copy pasted under a heading of its own'),
+    'the second block is below ## archive and must not be touched');
+  assert.ok(!written.includes('stale content that should be replaced'),
+    'the first ## groups block is the one scan owns');
 });

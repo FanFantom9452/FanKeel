@@ -245,6 +245,10 @@ function groupsReport(root, planOpt) {
 // one of those — or the next line that matches an ordinary ledger entry
 // appended after it by `complete`, `ruling` or `fix` — is where its block
 // ends; nothing else in this file has a shape to confuse it with.
+// Exact equality, not a pattern. `scan` owns the first line that is exactly
+// this heading and rewrites the block under it; a second copy pasted under any
+// other heading is invisible to it and survives untouched, which is what makes
+// a hand-kept table beside a generated one safe.
 const SCAN_HEADING = '## groups';
 const LEDGER_LINE = /^(Task \d+: complete\b|Ruling: |Fix: |## )/;
 
@@ -480,3 +484,5 @@ function main(argv) {
 if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
+
+module.exports = { withScan, SCAN_HEADING };

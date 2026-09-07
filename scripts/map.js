@@ -19,7 +19,7 @@ const MAP_REL = '.fankeel/map.md';
 // default is restored by type; `strict: false` keeps an unknown flag silent.
 function parseArgs(argv) {
     const { values } = parseArgv({ args: argv, strict: false, allowPositionals: true, options: { root: { type: 'string' } } });
-    return { root: path.resolve(typeof values.root === 'string' ? values.root : process.cwd()) };
+    return { root: registry.resolveRoot(typeof values.root === 'string' ? values.root : undefined) };
 }
 
 function main(argv) {

@@ -30,6 +30,7 @@ const { parseArgs: parseArgv } = require('node:util');
 
 const { isRepo } = require('../lib/tracked.js');
 const { human, plural, section } = require('../lib/report.js');
+const { resolveRoot } = require('../lib/registry.js');
 
 // Best effort, like every other shell-out in this plugin. A git that is missing,
 // too old for a flag, or refusing for a reason of its own gives back null, and
@@ -339,7 +340,7 @@ function report(result) {
 // default is restored by type; `strict: false` keeps an unknown flag silent.
 function parseArgs(argv) {
     const { values } = parseArgv({ args: argv, strict: false, allowPositionals: true, options: { root: { type: 'string' } } });
-    return { root: typeof values.root === 'string' ? values.root : process.cwd() };
+    return { root: resolveRoot(typeof values.root === 'string' ? values.root : undefined) };
 }
 
 function main(argv) {

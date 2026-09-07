@@ -39,6 +39,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const docs = require('../lib/docs.js');
+const { resolveRoot } = require('../lib/registry.js');
 
 // Long enough for a sentence and a link, short enough that a paragraph does not
 // fit. Detail that will not compress to this belongs in the file being pointed
@@ -380,7 +381,7 @@ function main(argv, now) {
         loose.push(arg);
     }
     // A positional argument is still a path to a file. A flag's value is not one.
-    const at = loose[0] || path.join(root || process.cwd(), 'TODO.md');
+    const at = loose[0] || path.join(resolveRoot(root || undefined), 'TODO.md');
     const result = check(path.resolve(at), now);
     return { text: report(result), ok: result.missing || !result.problems.length };
 }

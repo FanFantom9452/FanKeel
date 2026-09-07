@@ -533,6 +533,36 @@ test('the walk stops below the home directory rather than picking one up there',
   }
 });
 
+test('resolveRoot reads a relative root against the registry root', () => {
+  const workspace = tmp('fankeel-resolveroot-');
+  fs.mkdirSync(path.join(workspace, '.fankeel', 'sessions'), { recursive: true });
+  fs.mkdirSync(path.join(workspace, 'alpha'), { recursive: true });
+  fs.mkdirSync(path.join(workspace, 'beta'), { recursive: true });
+
+  assert.equal(
+    registry.resolveRoot('beta', path.join(workspace, 'alpha')),
+    path.join(workspace, 'beta'),
+  );
+});
+
+test('resolveRoot falls back to the directory it was given', () => {
+  const loose = tmp('fankeel-resolveroot-none-');
+  assert.equal(registry.resolveRoot('beta', loose), path.join(loose, 'beta'));
+  assert.equal(registry.resolveRoot(undefined, loose), path.resolve(loose));
+  assert.equal(registry.resolveRoot('', loose), path.resolve(loose));
+});
+
+// `tmp()` returns a drive-qualified path on Windows, which is the case that
+// really is unchanged. Do not add a `/tmp`-style case asserting the same thing:
+// a POSIX-absolute value with no drive letter picks up the base's drive, and
+// `docs/plans/2026-09-07-ready-fourteen.md:597` is where that was established.
+test('resolveRoot leaves a drive-qualified absolute root alone', () => {
+  const workspace = tmp('fankeel-resolveroot-abs-');
+  fs.mkdirSync(path.join(workspace, '.fankeel', 'sessions'), { recursive: true });
+  const elsewhere = tmp('fankeel-resolveroot-abs-other-');
+  assert.equal(registry.resolveRoot(elsewhere, workspace), path.resolve(elsewhere));
+});
+
 test('CLAUDE_PROJECT_DIR is preferred over the payload cwd', () => {
   const dir = tmp('fankeel-root-');
   const saved = process.env.CLAUDE_PROJECT_DIR;

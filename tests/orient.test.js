@@ -28,8 +28,9 @@ const run = (args, cwd) =>
   execFileSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8', cwd: cwd || process.cwd() });
 
 test('parseArgs consumes the value after --root instead of leaving it as a path', () => {
-  const { root, named } = orient.parseArgs(['--root', '/tmp/x', 'Waypoint']);
-  assert.equal(root, '/tmp/x');
+  const dir = tmp('fankeel-orient-root-');
+  const { root, named } = orient.parseArgs(['--root', dir, 'Waypoint']);
+  assert.equal(root, path.resolve(dir));
   assert.deepEqual(named, ['Waypoint']);
 });
 
@@ -42,8 +43,9 @@ test('parseArgs drops unknown flags and de-duplicates named paths', () => {
 // only `todo-check.js` ever accepted the equals form, so the ten disagreed with
 // each other about a form every CLI takes.
 test('parseArgs reads --root=<dir> as the same flag', () => {
-  const { root, named } = orient.parseArgs(['--root=/tmp/x', 'Waypoint']);
-  assert.equal(root, '/tmp/x');
+  const dir = tmp('fankeel-orient-root-');
+  const { root, named } = orient.parseArgs(['--root=' + dir, 'Waypoint']);
+  assert.equal(root, path.resolve(dir));
   assert.deepEqual(named, ['Waypoint']);
 });
 

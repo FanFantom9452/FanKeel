@@ -30,6 +30,10 @@
     {
       "path": "output-styles",
       "role": "reference"
+    },
+    {
+      "path": ".claude/agents",
+      "role": "reference"
     }
   ]
 }

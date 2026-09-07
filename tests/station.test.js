@@ -130,6 +130,10 @@ test('discover reads roots.json; write stamps the present and keeps the gone, ho
     registry.ensureLayout(r3);
     const gone = path.join(f.base, 'gone');
     const old = path.join(f.base, 'older');
+    // Present on disk but with no `.fankeel/sessions/` — a directory that has
+    // gone, not one that was deleted, and Task 3 only forgets the latter.
+    fs.mkdirSync(gone);
+    fs.mkdirSync(old);
     fs.mkdirSync(path.join(f.cfg, 'fankeel'), { recursive: true });
     fs.writeFileSync(station.rootsPath(f.cfg), JSON.stringify({
         [r3]: new Date(now - 5 * DAY).toISOString(),
@@ -632,6 +636,43 @@ test('a write of the page keeps every key in roots.json that is not a root recor
     assert.ok(typeof after[path.resolve(ws)] === 'string', 'and the root it was sitting beside is still remembered');
     assert.deepEqual(Object.keys(station.readRoots(cfg)), [path.resolve(ws)],
         'readRoots still sees one root: the carried key is not mistaken for one');
+});
+
+test('a gone root whose directory was deleted is forgotten', () => {
+    const configDir = tmp('fankeel-roots-gone-');
+    const alive = tmp('fankeel-roots-alive-');
+    const deleted = tmp('fankeel-roots-deleted-');
+    const unseen = tmp('fankeel-roots-unseen-');
+    const first = Date.parse('2026-09-07T00:00:00Z');
+    const later = Date.parse('2026-09-07T01:00:00Z');
+
+    // Both roots recorded first, while neither is gone — a gone root is only
+    // ever kept from its own past record, never given a fresh one.
+    station.rememberRoots(configDir, [
+        { root: alive, gone: false },
+        { root: deleted, gone: false },
+    ], first);
+
+    fs.rmSync(deleted, { recursive: true, force: true });
+
+    station.rememberRoots(configDir, [
+        { root: alive, gone: true },
+        { root: deleted, gone: true },
+        { root: unseen, gone: true },
+    ], later);
+
+    const after = station.readRoots(configDir);
+    assert.ok(Object.keys(after).includes(alive), 'a gone root that still exists is kept');
+    assert.ok(!Object.keys(after).includes(deleted), 'a gone root that was deleted is dropped');
+    // The discriminating case, and the only one here that is: `unseen` exists on
+    // disk but was never recorded. Keeping a root's own old stamp drops it;
+    // stamping any gone root whose directory happens to exist keeps it. The two
+    // assertions above pass either way, which is how the first version of this
+    // test came to pass against the bug it was written for.
+    assert.ok(!Object.keys(after).includes(unseen),
+        'a gone root never recorded before gains no entry, directory or no directory');
+    assert.equal(after[alive], new Date(first).toISOString(),
+        'alive keeps its first stamp, not a fresh one from the second call');
 });
 
 // `includes('<script>')` proves a tag exists and nothing about what is in it:

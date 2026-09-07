@@ -79,7 +79,8 @@ not faster. It buys residue, and that is the price of it:
 [reports/2026-09-03-dispatch-vs-inline.md](reports/2026-09-03-dispatch-vs-inline.md).
 
 A second pair the same day changed one thing about that question: it named the
-seven files it wanted read, so neither arm had to search for them. The residue
+seven files it wanted read, so neither arm had to search for them — one
+dispatch, one joint question, the inline arm asked the same. The residue
 advantage fell from 9.2× to 1.5× — 74,603 tokens in the parent against 113,518 —
 while the money stayed at 1.59× and the wall-clock got worse, 2.77×:
 [reports/2026-09-03-dispatch-vs-inline-named.md](reports/2026-09-03-dispatch-vs-inline-named.md).
