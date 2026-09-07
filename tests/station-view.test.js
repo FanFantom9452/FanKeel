@@ -29,10 +29,34 @@ test('mins climbs through hours into days', () => {
     assert.equal(V.mins(90000 * 1000), '1d1h');
 });
 
+test('hours keeps a decimal under ten hours and drops it above', () => {
+    assert.equal(V.hours(9000000), '2.5h');
+    assert.equal(V.hours(54000000), '15h');
+});
+
 test('usd prints cents under a hundred and none above', () => {
     assert.equal(V.usd(0), '—');
     assert.equal(V.usd(2.5), '$2.50');
     assert.equal(V.usd(239.37), '$239');
+});
+
+test('ago climbs from just now through minutes, hours and days', () => {
+    const now = Date.now();
+    assert.equal(V.ago(now - 5000), 'just now');
+    assert.equal(V.ago(now - 5 * 60000), '5m ago');
+    assert.equal(V.ago(now - 3 * 3.6e6), '3h ago');
+    assert.equal(V.ago(now - 2 * 8.64e7), '2d ago');
+    assert.equal(V.ago(null), '—');
+});
+
+test('day takes the first ten characters of an ISO string', () => {
+    assert.equal(V.day('2026-09-08T12:34:56.000Z'), '2026-09-08');
+    assert.equal(V.day(12345), '—');
+});
+
+test('stamp prints minute precision for a fixed epoch value', () => {
+    assert.equal(V.stamp(Date.UTC(2026, 0, 9, 10, 50)), '2026-01-09 10:50');
+    assert.equal(V.stamp(NaN), '—');
 });
 
 test('esc closes every hole the page could open', () => {
@@ -52,13 +76,20 @@ test('labels give each root the shortest tail nothing else shares', () => {
     assert.equal(out['/c/d/datapacks'], 'd/datapacks');
 });
 
-test('labels stop growing when one root nests inside another', () => {
-    // TODO.md files this under "Needs a decision": growing cannot separate a
-    // root from its own parent, because one runs out of segments first. The
-    // guard is what stops the loop; the shorter label is allowed to repeat.
-    const out = V.labels(['/a/b', '/a/b/c']);
-    assert.equal(typeof out['/a/b'], 'string');
-    assert.equal(typeof out['/a/b/c'], 'string');
+test('labels lets two roots repeat a label when they normalize the same', () => {
+    // Renamed from a case that never collided: '/a/b' and '/a/b/c' split into
+    // ['a','b'] and ['a','b','c'], and their tails ('b' vs 'c') differ at
+    // depth 1, so growth never runs and nothing here would have exercised the
+    // `depth[i] < segs[i].length` bound. A real collision needs two roots
+    // whose segments end up identical, which a mixed separator style can
+    // produce: '/a/b' and '\\a\\b' both split (on `[\\/]+`) into ['a','b'].
+    // Both start colliding at 'b', both grow to 'a/b', and there both are
+    // already at their own full length — `depth[i] < segs[i].length` is what
+    // stops them growing any further, so the collision never resolves and
+    // the shorter (here, equal-length) label is allowed to repeat.
+    const out = V.labels(['/a/b', '\\a\\b']);
+    assert.equal(out['/a/b'], 'a/b');
+    assert.equal(out['\\a\\b'], 'a/b');
 });
 
 test('delta says so rather than dividing by an empty window', () => {
