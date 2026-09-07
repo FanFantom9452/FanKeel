@@ -68,12 +68,19 @@ the wrong line. Its reasoning is sound and this design does not dispute it:
 
 Both proxies it names were tested against the four incidents the entry was filed
 for. **"Look for a symbol near the line" catches 0 of 4** — none of the four
-citations names a symbol, and across the repository only 129 of 719 resolved
+citations names a symbol, and across the repository only 126 of 719 resolved
 citations land on a declaration line at all, so that proxy is blind to 82% of
 them by construction. Measured at `8587d3c` over every `path:line` span in
 `git ls-files "*.md"`, fences included — `checkDoc` binds `withoutFences` to
-`linkText` alone, so the span loop reads raw text — and with `DECL` as committed.
-136 of 768 on the branch tip; the pair moves with the day, the 82% does not.
+`linkText` alone, so the span loop reads raw text — with `DECL` as committed, and
+a markdown heading not counting, since `declaredSymbols` only builds from
+`CODE_EXT` files. 133 of 768 on the branch tip; the pair moves with the day, the
+82% does not.
+
+Note the denominator this is *not* about. Those 719 span every role; the
+`reference` pages this change actually polices hold eleven. The 82% measures how
+far a symbol proxy could reach if it were applied everywhere, which is the claim
+the 09-05 section made against it — not the size of the surface below.
 
 What this design proposes is not a third proxy. It removes the decision's
 premise. When a reference page writes

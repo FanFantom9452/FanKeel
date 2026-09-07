@@ -629,10 +629,14 @@ Append a new section in the same shape as the others — a `##` heading, then
 
 - The 09-05 section rejected two proxies by name, *look for a symbol near the
   line* and *compare against the last commit that touched both*. The first was
-  measured against the four incidents that section describes and catches **0 of
-  4**; across the repository only 129 of 723 resolved citations land on a
-  declaration line, so it is blind to 82% of them by construction. That
-  conclusion holds and is not being reversed.
+  measured against the four incidents **the `TODO.md` entry was filed for** — not
+  the four that section itself describes — and catches **0 of 4**. Say which four,
+  because the section's own four include *`scripts/task.js:317` for `LINE_MAX`*,
+  where the symbol is backticked beside the citation and a symbol proxy would
+  catch it. What carries the argument is reach, not those four: across the
+  repository only 126 of 719 resolved citations land on a declaration line, so
+  the proxy is blind to 82% of them however it does on any four. That conclusion
+  holds and is not being reversed.
 - What is being narrowed is the premise, quoted from `:424`: *"Deciding it needs
   someone to know what the citation was meant to point at, and nothing on disk
   records that."* Where a reference page writes `` `lib/dirty.js:180` `` and then

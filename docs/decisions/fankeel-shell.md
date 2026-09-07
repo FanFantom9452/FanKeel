@@ -722,11 +722,21 @@ build ledger and in the following commit.
 Decided 2026-09-07. It narrows **The document checker stops where the machine
 stops** above rather than reversing it. That section rejected two
 mechanical proxies by name, *look for a symbol near the line* and *compare
-against the last commit that touched both*, and the first of those was measured
-against the four incidents it describes: it catches **none of them**. None of the
-four citations names a symbol, and across this repository only 129 of 719
+against the last commit that touched both*. The first of those was measured —
+not against the four incidents that section describes, but against the four the
+`TODO.md` entry was filed for, which drifted on 09-05 and 09-06. Against those
+four it catches **none**: not one names a symbol.
+
+Against the section's own four it would do better, and the difference is worth
+recording rather than smoothing over. One of them is *a commit message cited
+`scripts/task.js:317` for `LINE_MAX`* — and `LINE_MAX` is a real declared
+symbol, backticked, sitting in the same sentence. A symbol proxy would have
+caught that one. The other three are bare `path:line` in prose.
+
+What survives both readings is the reach. Across this repository only 126 of 719
 resolved citations land on a declaration line at all, so that proxy is blind to
-82% of them by construction. That conclusion holds and is not reopened.
+82% of them however well it does on any four. That is why the section rejected
+it, and that conclusion is not reopened.
 
 That ratio is written with its method, because three attempts at it disagreed
 before this one. Measured at `8587d3c`, the commit this branch began from, over
@@ -736,17 +746,20 @@ raw text, so a citation inside a fence is checked like any other. Declaration is
 `DECL` as committed, which is `(?:^|\s)`-anchored and matches
 `type|interface|struct|enum`, so a comment reading *type one* counts as a
 declaration: that is `survey.js`'s own bargain, it over-counts declarations, and
-inheriting it makes the 82% conservative rather than generous. On the branch tip
-the same method gives 136 of 768. The pair moves with the day; the 82% does not,
-which is why the 82% is what the argument rests on.
+inheriting it makes the 82% conservative rather than generous. A markdown
+heading does **not** count — `declaredSymbols` only ever builds from `CODE_EXT`
+files, so a heading is not a symbol this proxy could resolve against. On the
+branch tip the same method gives 133 of 768. The pair moves with the day; the
+82% does not, which is why the 82% is what the argument rests on.
 
-The two wrong numbers before it are worth naming, because both looked right.
-723 was a denominator counted with a `PATHISH` that resolved slightly differently
-from the committed one. 687 came from stripping fences on the reasoning above,
-which is false, and from a `DECL` written from memory instead of copied — a
-paraphrased regex that happened to be stricter. A figure in a record nobody
-revises is worth measuring with the code's own constants rather than with an
-account of them.
+Three wrong numbers preceded it, and all three looked right. 723 was a
+denominator counted with a `PATHISH` resolving slightly differently from the
+committed one. 687 came from stripping fences on reasoning that is false, and
+from a `DECL` written from memory rather than copied — a paraphrase that
+happened to be stricter. 129 came from counting three markdown headings as
+declarations. Each was checked before it was written down, and each was checked
+against the account of the code rather than the code. A figure in a record
+nobody revises is worth measuring with the constants themselves.
 
 What is narrowed is the premise, at `:424` above:
 
@@ -769,9 +782,13 @@ unchecked rather than as broken, so no repository upgrading fankeel has its
 `land` broken by citations written under the older rule.
 
 What reopened it was not an argument. `docs/registry.md` cited `lib/dirty.js:180`
-for a call to `addClaim` that is at `:183`, and it was already wrong on the day
-the section above was written — a fifth incident, sitting in the file the section
-uses for its own examples. `skills/fankeel-survey/SKILL.md` cited
+for a call to `addClaim` that is at `:183`. That citation was written four hours
+after the section above was finished — the section landed at 19:02 on 2026-09-01
+and `d194abd` put the citation in at 23:22 the same evening — so it is not an
+error the section was written past, which an earlier draft of this paragraph
+claimed. It is a fifth incident, created the same night the argument for not
+checking was made, in the file that argument uses for its own examples.
+`skills/fankeel-survey/SKILL.md` cited
 `scripts/task.js:914`, was corrected to `:929` on 09-05 by the reader that section
 credits, and had been corrected again to `:938` by 09-07.
 
