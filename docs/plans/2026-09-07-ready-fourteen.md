@@ -597,7 +597,7 @@ lines 216-217 read:
 `path.resolve` normalises separators, so a DRIVE-QUALIFIED absolute `--root`
 still passes through unchanged in meaning but comes back with backslashes on
 Windows. A POSIX-absolute one carrying no drive letter does not: `/tmp` against
-a base on `F:` resolves to `F:	mp`. Change
+a base on drive F ends up on drive F, under a `tmp` directory there. Change
 the second line of that pair to compare against `path.resolve('F:/somewhere')`,
 which is the same assertion written portably. Do not weaken it to a substring
 match — the point of the test is that an absolute root is not re-based.

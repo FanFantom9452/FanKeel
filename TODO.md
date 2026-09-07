@@ -68,7 +68,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Needs a decision
 
-- Four scripts still take `--root` as a raw string where four resolve it against the registry: `layout.js`, `map.js`, `residue.js`, `todo-check.js` — [scripts/map.js](scripts/map.js).
+- Five scripts take `--root` raw where three resolve it: `layout.js`, `map.js`, `orient.js`, `residue.js`, `todo-check.js` against the three scanners — [scripts/map.js](scripts/map.js).
 
 - `scan` finds its own table by the heading `## groups` and never a copy pasted under another one, so both survive — [scripts/ledger.js](scripts/ledger.js).
 
