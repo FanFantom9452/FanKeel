@@ -29,13 +29,14 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { fanout } = require('../lib/fanout.js');
+const tmp = require('./tmp.js');
 
 const FANOUT = path.join(__dirname, '..', 'lib', 'fanout.js');
 
 // A root holding `n` repositories, each with one file naming itself, plus one
 // directory that is not a repository at all.
 function workspace(n) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-fanout-'));
+  const root = tmp('fankeel-fanout-');
   for (let i = 0; i < n; i++) {
     const dir = path.join(root, 'p' + i);
     fs.mkdirSync(dir);

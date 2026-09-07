@@ -14,11 +14,12 @@ const { execFileSync, spawnSync, spawn } = require('node:child_process');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'task.js');
 const registry = require('../lib/registry.js');
+const tmp = require('./tmp.js');
 
 const A = 'aaaaaaaa-1111-2222-3333-444444444444';
 const B = 'bbbbbbbb-1111-2222-3333-444444444444';
 
-const root = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-task-'));
+const root = () => tmp('fankeel-task-');
 
 // A refusal is a normal outcome here, so it has to be caught to be read. What is
 // being asserted is the message and the code together.
@@ -225,7 +226,7 @@ test('a clash takes the badge slot here too, and leaves the lead line its stage'
 // the self-check reports unknown and unknown counts everything as live.
 test('a dead session holding the same file does not paint clash', () => {
   const dir = root();
-  const cfg = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-live-'));
+  const cfg = tmp('fankeel-live-');
   fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
   const write = (pid, sessionId) =>
     fs.writeFileSync(path.join(cfg, 'sessions', pid + '.json'), JSON.stringify({ pid, sessionId }) + '\n');

@@ -19,6 +19,7 @@ const path = require('node:path');
 
 const docs = require('../lib/docs.js');
 const audit = require('../scripts/docs-audit.js');
+const tmp = require('./tmp.js');
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = Date.UTC(2026, 7, 21, 12, 0, 0);
@@ -26,7 +27,7 @@ const daysAgo = (n) => NOW - n * DAY;
 
 // Every file is written with an explicit age, because age is the whole subject.
 function tree(files) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-audit-'));
+  const root = tmp('fankeel-audit-');
   for (const [rel, spec] of Object.entries(files)) {
     const body = typeof spec === 'string' ? spec : spec.body;
     const age = typeof spec === 'string' ? 100 : spec.age;

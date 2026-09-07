@@ -13,8 +13,9 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const ledger = require('../lib/ledger.js');
+const tmp = require('./tmp.js');
 
-const root = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-ledger-'));
+const root = () => tmp('fankeel-ledger-');
 
 // `scripts/ledger.js` carries the same refusal as `scripts/task.js` -- a flag
 // declared to take a value, given none, is named rather than defaulted. Only

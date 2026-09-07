@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const registry = require('../lib/registry.js');
+const tmp = require('./tmp.js');
 
 const HOOK = path.join(__dirname, '..', 'hooks', 'leave.js');
 const SID = 'aaaaaaaa-1111-4111-8111-111111111111';
@@ -19,7 +20,7 @@ function run(payload, claudeDir) {
 }
 
 function fixture() {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-leave-'));
+    const base = tmp('fankeel-leave-');
     const cfg = path.join(base, 'cfg');
     const root = path.join(base, 'ws');
     fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
@@ -45,7 +46,7 @@ function fixture() {
 // Task 3: a fixture with a `clock` on the entry and timestamped transcript
 // lines, so `windowsFrom(clock)` has something to bucket the requests into.
 function fixtureWithClock(clock) {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-leave-'));
+    const base = tmp('fankeel-leave-');
     const cfg = path.join(base, 'cfg');
     const root = path.join(base, 'ws');
     fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
@@ -83,7 +84,7 @@ function fixtureWithClock(clock) {
 // `timestamp` field — so `summarise` can place none of them into a window and
 // `usage.stages` comes back `{}`: present and truthy, not absent.
 function fixtureWithClockNoTimestamps(clock) {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-leave-'));
+    const base = tmp('fankeel-leave-');
     const cfg = path.join(base, 'cfg');
     const root = path.join(base, 'ws');
     fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });

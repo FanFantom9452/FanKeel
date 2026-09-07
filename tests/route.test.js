@@ -16,12 +16,13 @@ const { normaliseRoute, positionIn, nextStage, FULL_ROUTE, NAMES, routeForClass,
 const registry = require('../lib/registry.js');
 const plugins = require('../lib/plugins.js');
 const render = require('../lib/render.js');
+const tmp = require('./tmp.js');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'task.js');
 const A = 'aaaaaaaa-1111-2222-3333-444444444444';
 const B = 'bbbbbbbb-1111-2222-3333-444444444444';
 
-const root = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-route-'));
+const root = () => tmp('fankeel-route-');
 
 function run(dir, args) {
   const cfg = path.join(dir, 'cfg');

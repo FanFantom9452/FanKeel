@@ -18,6 +18,7 @@ const path = require('node:path');
 
 const docs = require('../lib/docs.js');
 const audit = require('../scripts/docs-audit.js');
+const tmp = require('./tmp.js');
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = Date.UTC(2026, 7, 21, 12, 0, 0);
@@ -25,7 +26,7 @@ const daysAgo = (n) => NOW - n * DAY;
 const iso = (n) => new Date(daysAgo(n)).toISOString().slice(0, 10);
 
 function tree(files) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-contract-'));
+  const root = tmp('fankeel-contract-');
   for (const [rel, spec] of Object.entries(files)) {
     const body = typeof spec === 'string' ? spec : spec.body;
     const age = typeof spec === 'string' ? 100 : spec.age;

@@ -17,6 +17,8 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
+const tmp = require('./tmp.js');
+
 const HOOKS = path.join(__dirname, '..', 'hooks');
 const INJECT = path.join(HOOKS, 'inject.js');
 const GUARD = path.join(HOOKS, 'guard.js');
@@ -29,7 +31,7 @@ const B = 'bbbbbbbb-1111-2222-3333-444444444444';
 // what a working directory of related repositories actually looks like, and it is
 // the case `git ls-files` alone could not see.
 function workspace() {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-ws-'));
+    const root = tmp('fankeel-ws-');
     for (const rel of [
         'Waypoint/web/src/App.jsx',
         'Waypoint/web/src/Card.jsx',

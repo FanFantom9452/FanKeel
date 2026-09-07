@@ -11,12 +11,13 @@ const survey = require('../scripts/survey.js');
 // The two gates that key on `trackedFiles` returning null and nothing else.
 const docsCheck = require('../scripts/docs-check.js');
 const docsAudit = require('../scripts/docs-audit.js');
+const tmp = require('./tmp.js');
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'survey.js');
 
 // A throwaway repository, because the scanner reads `git ls-files` and there is
 // no point testing it against something that is not one.
 function repo(files) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-survey-'));
+  const root = tmp('fankeel-survey-');
   execFileSync('git', ['init', '-q'], { cwd: root });
   for (const [name, body] of Object.entries(files)) {
     const full = path.join(root, name);
@@ -231,7 +232,7 @@ test('matching is case-insensitive', () => {
 });
 
 test('a root with nothing readable under it says so', () => {
-  const bare = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-nogit-'));
+  const bare = tmp('fankeel-nogit-');
   fs.mkdirSync(path.join(bare, 'empty'));
   const out = run(bare, 'widget');
   assert.match(out, /nothing readable under that root/);
@@ -242,7 +243,7 @@ test('a root with nothing readable under it says so', () => {
 // answer there used to be "not a git repository, search by hand", which took the
 // scanner away from the environment that needed it most.
 test('a directory that is not a repository is walked rather than given up on', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  const root = tmp('fankeel-walk-');
   fs.mkdirSync(path.join(root, 'Trovara', 'backend'), { recursive: true });
   fs.writeFileSync(path.join(root, 'Trovara', 'backend', 'validators.py'), 'def check_widget():\n    pass\n');
   const out = run(root, 'widget');
@@ -251,7 +252,7 @@ test('a directory that is not a repository is walked rather than given up on', (
 });
 
 test('dependencies and build output are skipped by the walk', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  const root = tmp('fankeel-walk-');
   for (const d of ['node_modules', 'dist', '__pycache__', '.venv']) {
     fs.mkdirSync(path.join(root, d), { recursive: true });
     fs.writeFileSync(path.join(root, d, 'a.js'), 'function widgetGhost() {}\n');
@@ -267,7 +268,7 @@ test('spreadsheets are skipped by the walk, but not inside a repository', () => 
   // tracked there is tracked on purpose. A working directory has no such rules,
   // and the first real run returned eleven thousand files whose visible portion
   // was entirely spreadsheets.
-  const walked = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  const walked = tmp('fankeel-walk-');
   fs.writeFileSync(path.join(walked, 'widget-data.xlsx'), 'x');
   fs.writeFileSync(path.join(walked, 'widget.js'), 'function widgetReal() {}\n');
   const out = run(walked, 'widget');
@@ -279,7 +280,7 @@ test('spreadsheets are skipped by the walk, but not inside a repository', () => 
 });
 
 test('a repository inside a walked tree is read with git, and the report says so', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-mixed-'));
+  const root = tmp('fankeel-mixed-');
   fs.writeFileSync(path.join(root, 'loose.js'), 'function widgetLoose() {}\n');
   fs.mkdirSync(path.join(root, 'plain'));
   fs.writeFileSync(path.join(root, 'plain', 'p.js'), 'function widgetPlain() {}\n');
@@ -300,7 +301,7 @@ test('a repository inside a walked tree is read with git, and the report says so
 // collision warnings and the scope guard only reach across two repositories
 // from their common parent.
 test('a parent of several repositories is read through to its children', () => {
-  const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-multi-'));
+  const parent = tmp('fankeel-multi-');
   for (const [name, files] of Object.entries({
     alpha: { 'lib/a.js': 'function widgetOne() {}\n' },
     beta: { 'lib/b.js': 'function widgetTwo() {}\n' },
@@ -328,7 +329,7 @@ test('a repository of its own reports git as its source and nothing else', () =>
 });
 
 test('git’s complaint about a non-repository never reaches the report', () => {
-  const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-multi-'));
+  const parent = tmp('fankeel-multi-');
   const root = path.join(parent, 'alpha');
   fs.mkdirSync(root);
   execFileSync('git', ['init', '-q'], { cwd: root });
@@ -540,7 +541,7 @@ test('an over-cap skip list says how many it did not name', () => {
 // waited for, because an unlistable directory is the one skip a test cannot
 // arrange the same way on every platform.
 test('a directory the walk cannot list is counted, not dropped in silence', (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  const root = tmp('fankeel-walk-');
   fs.writeFileSync(path.join(root, 'top.js'), 'function widgetFactory() {}\n');
   fs.mkdirSync(path.join(root, 'locked'));
   fs.writeFileSync(path.join(root, 'locked', 'deep.js'), 'function widgetSealed() {}\n');
@@ -563,7 +564,7 @@ test('a directory the walk cannot list is counted, not dropped in silence', (t) 
 // that root — no repository, and no files". A root whose only subtree could not
 // be listed is not that, and the difference is the whole point of the counter.
 test('a root whose only subtree cannot be listed says so, not that there is nothing there', (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  const root = tmp('fankeel-walk-');
   fs.mkdirSync(path.join(root, 'locked'));
   fs.writeFileSync(path.join(root, 'locked', 'deep.js'), 'function widgetSealed() {}\n');
 
@@ -588,7 +589,7 @@ test('a root whose only subtree cannot be listed says so, not that there is noth
 // Two of this project's own gates passing a tree they never opened is the exact
 // failure it exists to prevent, and five code reviews read past it.
 test('a caller that asks for no count still gets null for a root it cannot read', (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  const root = tmp('fankeel-walk-');
   fs.mkdirSync(path.join(root, 'locked'));
   fs.writeFileSync(path.join(root, 'locked', 'deep.js'), 'function widgetSealed() {}\n');
 
@@ -613,7 +614,7 @@ test('a caller that asks for no count still gets null for a root it cannot read'
 // nothing but archives and images returned null with an empty `stats` — the
 // caller could not tell it apart from a root with nothing in it at all.
 test('a root of nothing but skipped extensions says how many it skipped', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-skipext-'));
+  const root = tmp('fankeel-skipext-');
   fs.writeFileSync(path.join(root, 'photo.png'), 'x');
   fs.writeFileSync(path.join(root, 'sheet.xlsx'), 'x');
   fs.writeFileSync(path.join(root, 'notes.pdf'), 'x');
@@ -642,7 +643,7 @@ test('a root that does not exist reads as nothing readable, not as one that coul
 // the mode these counters exist for was the one nothing named. The comment on
 // SKIP_EXT cites eleven thousand in one real run.
 test('files dropped by extension in walk mode are counted', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  const root = tmp('fankeel-walk-');
   fs.writeFileSync(path.join(root, 'real.js'), 'function widgetReal() {}\n');
   fs.writeFileSync(path.join(root, 'a.xlsx'), 'x');
   fs.writeFileSync(path.join(root, 'b.pdf'), 'x');
@@ -651,7 +652,7 @@ test('files dropped by extension in walk mode are counted', () => {
 
   // One reads as one, and inside a repository the drop never happens at all —
   // a tracked `.png` is tracked on purpose.
-  const single = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-walk-'));
+  const single = tmp('fankeel-walk-');
   fs.writeFileSync(path.join(single, 'real.js'), 'function widgetReal() {}\n');
   fs.writeFileSync(path.join(single, 'a.pdf'), 'x');
   assert.match(run(single, 'widget'), /skipped: 1 document or binary dropped by extension/);
@@ -706,7 +707,7 @@ test('--tree lists every directory with its files and their sizes', () => {
   assert.equal(survey.parseArgs(['--tree']).tree, true);
   assert.equal(survey.parseArgs([]).tree, false);
 
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-tree-'));
+  const root = tmp('fankeel-tree-');
   fs.mkdirSync(path.join(root, 'lib'), { recursive: true });
   fs.writeFileSync(path.join(root, 'lib', 'a.js'), 'x'.repeat(2048));
   fs.writeFileSync(path.join(root, 'lib', 'b.js'), 'y'.repeat(10));
@@ -724,7 +725,7 @@ test('--tree lists every directory with its files and their sizes', () => {
 });
 
 test('a nested repository is one line, not a file with no name', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-tree2-'));
+  const root = tmp('fankeel-tree2-');
   fs.writeFileSync(path.join(root, 'only.md'), 'z');
   const out = survey.treeLines(root, ['only.md', '.claude/worktrees/old/'], 25).join('\n');
   assert.match(out, /^tree — 1 file,/m, 'the opaque entry is not counted as a file');
@@ -768,7 +769,7 @@ test('a directory that is not a repository is walked without spawning git', (t) 
   assert.ok(calls.includes('ls-files'), 'the mock never saw the repository being read');
 
   calls.length = 0;
-  const plain = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-plain-'));
+  const plain = tmp('fankeel-plain-');
   fs.writeFileSync(path.join(plain, 'a.js'), 'x\n');
   const result = survey.trackedFiles(plain, {});
   assert.equal(result.walked, true);
@@ -800,7 +801,7 @@ test('a subdirectory of a repository is still read with git, not walked', () => 
 // repository and `files` holds them under `sub/`; mismatched, every lookup misses
 // and the result is indistinguishable from git having said nothing at all.
 test('the entries spliced in from a nested repository say which of them are files', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-splice-'));
+  const root = tmp('fankeel-splice-');
   const alpha = path.join(root, 'alpha');
   fs.mkdirSync(alpha);
   fs.writeFileSync(path.join(alpha, 'a.js'), 'x\n');

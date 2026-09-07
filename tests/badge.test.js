@@ -8,12 +8,13 @@ const path = require('node:path');
 
 const { badgeWord, writeBadge, readBadge, pruneBadges, MAX_WORD } = require('../lib/badge.js');
 const badge = require('../lib/badge.js');
+const tmp = require('./tmp.js');
 
 const SID = 'aaaaaaaa-0000-4000-8000-000000000001';
 const OTHER = 'bbbbbbbb-0000-4000-8000-000000000002';
 
 function tmpClaude() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-badge-'));
+  return tmp('fankeel-badge-');
 }
 
 const flag = (dir, sid) => path.join(dir, 'modes', sid, 'fankeel');

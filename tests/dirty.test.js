@@ -9,11 +9,12 @@ const { execFileSync } = require('node:child_process');
 
 const dirty = require('../lib/dirty.js');
 const registry = require('../lib/registry.js');
+const mkTmp = require('./tmp.js');
 
 const MINE = 'aaaaaaaa-0000-4000-8000-000000000001';
 const ago = (ms) => new Date(Date.now() - ms).toISOString();
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-dirty-'));
+const tmp = () => mkTmp('fankeel-dirty-');
 
 function git(dir, args) {
   execFileSync('git', args, { cwd: dir, stdio: ['ignore', 'ignore', 'ignore'] });

@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const usage = require('../lib/usage.js');
+const tmp = require('./tmp.js');
 
 const line = (o) => JSON.stringify(o) + '\n';
 const assistant = (requestId, model, u, extra) => line(Object.assign({
@@ -12,7 +13,7 @@ const assistant = (requestId, model, u, extra) => line(Object.assign({
 }, extra || {}));
 
 function transcript(lines) {
-    const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-usage-')), 't.jsonl');
+    const file = path.join(tmp('fankeel-usage-'), 't.jsonl');
     fs.writeFileSync(file, lines.join(''));
     return file;
 }
@@ -70,7 +71,7 @@ test('sidechain lines count only when asked', () => {
 
 // A session directory beside the transcript: `<base>/t.jsonl` and `<base>/t/subagents/...`.
 function session(agentFiles) {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-usage-tree-'));
+    const base = tmp('fankeel-usage-tree-');
     const file = path.join(base, 't.jsonl');
     fs.writeFileSync(file, assistant('own1', 'claude-fable-5-1', { input_tokens: 5, output_tokens: 50 }));
     for (const [rel, lines] of Object.entries(agentFiles)) {

@@ -16,10 +16,11 @@ const { execFileSync } = require('node:child_process');
 const docs = require('../lib/docs.js');
 const registry = require('../lib/registry.js');
 const check = require('../scripts/docs-check.js');
+const tmp = require('./tmp.js');
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'docs-check.js');
 
 function tree(files) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-docs-'));
+  const root = tmp('fankeel-docs-');
   for (const [rel, body] of Object.entries(files)) {
     const full = path.join(root, rel.split('/').join(path.sep));
     fs.mkdirSync(path.dirname(full), { recursive: true });

@@ -8,9 +8,10 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const { scan, report, defects, emptyDirs, sizeOf } = require('../scripts/residue.js');
+const tmp = require('./tmp.js');
 
 function repo() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-residue-'));
+  const root = tmp('fankeel-residue-');
   const git = (args) => execFileSync('git', args, { cwd: root, stdio: 'ignore' });
   git(['init', '-q']);
   git(['config', 'user.email', 't@example.com']);
@@ -89,7 +90,7 @@ test('an empty directory is context, not a defect, and only the topmost', () => 
 });
 
 test('emptyDirs keeps the parent when the whole branch is hollow', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-hollow-'));
+  const root = tmp('fankeel-hollow-');
   fs.mkdirSync(path.join(root, 'a', 'b', 'c'), { recursive: true });
   fs.mkdirSync(path.join(root, 'kept'), { recursive: true });
   fs.writeFileSync(path.join(root, 'kept', 'f.txt'), 'x');
@@ -97,7 +98,7 @@ test('emptyDirs keeps the parent when the whole branch is hollow', () => {
 });
 
 test('sizeOf says "at least" when it stopped early', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-size-'));
+  const root = tmp('fankeel-size-');
   for (const dir of ['a', 'b']) {
     fs.mkdirSync(path.join(root, dir), { recursive: true });
     for (let i = 0; i < 3; i++) fs.writeFileSync(path.join(root, dir, 'f' + i), '0123456789');
@@ -142,7 +143,7 @@ test('the worktree you are standing in is not spent by standing in it', () => {
 });
 
 test('outside a repository the git sections are absent and the rest still runs', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-norepo-'));
+  const root = tmp('fankeel-norepo-');
   const result = scan(root);
   assert.equal(result.repo, false);
   assert.equal(defects(result), 0);
@@ -160,7 +161,7 @@ function venv(root, rel, home) {
 }
 
 test('an environment nothing can rebuild or run is an orphan, repository or not', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-orphan-'));
+  const root = tmp('fankeel-orphan-');
   const live = path.dirname(process.execPath);          // wherever node is, it is there
   fs.writeFileSync(path.join(root, 'pyproject.toml'), '[project]\nname = "x"\n');
 
@@ -184,7 +185,7 @@ test('an environment nothing can rebuild or run is an orphan, repository or not'
 });
 
 test('the walk stops at an environment rather than reading through it', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-nodescend-'));
+  const root = tmp('fankeel-nodescend-');
   venv(root, 'env', path.join(root, 'gone'));
   // A vendored interpreter carries thousands of these. Descending into one
   // turned a 15-line report into 165 lines on a real workspace.
@@ -195,7 +196,7 @@ test('the walk stops at an environment rather than reading through it', () => {
 });
 
 test('emptyDirs stops where the orphan walk stops', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-envhollow-'));
+  const root = tmp('fankeel-envhollow-');
   venv(root, 'env', path.dirname(process.execPath));
   // Python creates this one itself on Windows and leaves it empty. Reporting it
   // asks somebody to decide something Python already decided.

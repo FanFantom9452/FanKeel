@@ -6,13 +6,14 @@ const os = require('node:os');
 const path = require('node:path');
 const registry = require('../lib/registry.js');
 const { clearEntry } = require('../lib/clear.js');
+const tmp = require('./tmp.js');
 
 const A = 'aaaaaaaa-1111-4111-8111-111111111111';
 const B = 'bbbbbbbb-2222-4222-8222-222222222222';
 const DAY = 24 * 3600e3;
 
 function root() {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-clear-'));
+    const dir = tmp('fankeel-clear-');
     registry.ensureLayout(dir);
     return dir;
 }

@@ -8,6 +8,7 @@ const path = require('node:path');
 const { execFileSync, spawn, spawnSync } = require('node:child_process');
 
 const guard = require('../lib/guard.js');
+const mkTmp = require('./tmp.js');
 const HOOK = path.join(__dirname, '..', 'hooks', 'guard.js');
 
 const MINE = 'aaaaaaaa-0000-4000-8000-000000000001';
@@ -15,7 +16,7 @@ const THEIRS = 'bbbbbbbb-0000-4000-8000-000000000002';
 const THIRD = 'cccccccc-0000-4000-8000-000000000003';
 
 const ago = (ms) => new Date(Date.now() - ms).toISOString();
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-guard-'));
+const tmp = () => mkTmp('fankeel-guard-');
 
 function seed(root, sessionId, over) {
   const dir = path.join(root, '.fankeel', 'sessions');
