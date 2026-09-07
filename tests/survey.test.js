@@ -214,8 +214,28 @@ test('an ignored file stays invisible — the repository already said so', () =>
 
 test('--root takes its value with it rather than leaving it as a term', () => {
   const parsed = survey.parseArgs(['--root', 'F:/somewhere', 'widget']);
-  assert.equal(parsed.root, 'F:/somewhere');
+  assert.equal(parsed.root, path.resolve('F:/somewhere'));
   assert.deepEqual(parsed.terms, ['widget']);
+});
+
+// Run from inside the project a relative `--root` names, the flag used to be
+// re-based onto it — `Waypoint/Waypoint`, which is not there. It resolves
+// against the registry above instead, the same one the fankeel skill means by
+// "where the registry is".
+test('a relative --root resolves against the registry, not against the project it names', () => {
+  const registryRoot = tmp('fankeel-survey-registry-');
+  fs.mkdirSync(path.join(registryRoot, '.fankeel', 'sessions'), { recursive: true });
+  const project = path.join(registryRoot, 'widget');
+  fs.mkdirSync(project, { recursive: true });
+
+  const prevCwd = process.cwd();
+  process.chdir(project);
+  try {
+    const parsed = survey.parseArgs(['--root', 'widget']);
+    assert.equal(parsed.root, project);
+  } finally {
+    process.chdir(prevCwd);
+  }
 });
 
 test('terms are lowercased and de-duplicated', () => {

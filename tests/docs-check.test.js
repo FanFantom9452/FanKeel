@@ -14,8 +14,12 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 
-const { report } = require('../scripts/docs-check.js');
+const { report, scan, parseArgs } = require('../scripts/docs-check.js');
+const tmp = require('./tmp.js');
 
 const result = (over) => ({
   tree: { preset: 'flat' },
@@ -67,4 +71,48 @@ test('one finding is a reference, not references', () => {
 
   assert.match(text, /1 reference that no longer resolves:/);
   assert.match(text, /^ {2}gone: docs\/1\.md:1 {2}names docs\/x\.md {2}\[reference\]$/m);
+});
+
+// A project that declares a tree has decided how everything is filed. A page
+// outside every bucket is not a reference by default any more — it gets no
+// role at all, and none of the reference checks (like the symbol check below)
+// run against it. `docs/documents.md:192-200` is the page this follows.
+test('a file outside the doc root gets no role, and no findings, once a tree is declared', () => {
+  const root = tmp('fankeel-docscheck-role-');
+  execFileSync('git', ['init', '-q'], { cwd: root });
+  fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'docs', 'README.md'), '# index\n');
+  fs.mkdirSync(path.join(root, '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(root, '.fankeel', 'docs.json'), JSON.stringify({
+    preset: 'flat',
+    index: 'docs/README.md',
+    buckets: [{ path: 'docs', role: 'reference', depth: 1 }],
+  }));
+  fs.mkdirSync(path.join(root, 'notes'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'notes', 'scratch.md'), 'calls `missingThing()` somewhere.\n');
+  execFileSync('git', ['add', '-A'], { cwd: root });
+
+  const scanned = scan(root, []);
+  const hit = scanned.findings.some((f) => f.file === 'notes/scratch.md');
+  assert.equal(hit, false, 'a page outside the doc root is not graded as reference just because a tree exists');
+});
+
+// The other half of the fix: `--root` is documented as overriding where the
+// registry is, not as a path re-based onto the project it names. Run from
+// inside the project a relative `--root` names, the old behaviour resolved to
+// `<project>/<project>`, which is not there.
+test('--root resolves against the registry, not against the project it names', () => {
+  const registryRoot = tmp('fankeel-docscheck-registry-');
+  fs.mkdirSync(path.join(registryRoot, '.fankeel', 'sessions'), { recursive: true });
+  const project = path.join(registryRoot, 'widget');
+  fs.mkdirSync(project, { recursive: true });
+
+  const prevCwd = process.cwd();
+  process.chdir(project);
+  try {
+    const parsed = parseArgs(['--root', 'widget']);
+    assert.equal(parsed.root, project);
+  } finally {
+    process.chdir(prevCwd);
+  }
 });
