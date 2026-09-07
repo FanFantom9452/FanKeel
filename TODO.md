@@ -60,33 +60,15 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- The version-file count in words at `README.md:286` and `skills/fankeel-land/SKILL.md:51` is pinned by nothing; match them to `version.readAll` — [tests/version.test.js](tests/version.test.js).
-
-- A fix round writes its task's declared paths, so two on one file collide as two tasks do; the grouping rule is silent on them — [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
-
-- `docs-audit` says the 08-30 parallel-build pair landed (8 files, untouched 4d); archive both under `docs/archive/` and repoint their two index rows — [docs/README.md](docs/README.md).
-
-- `ledger.js` has no verb for build step 3's scan table; two sessions on 09-05 appended it to progress.md by hand, which is what the ledger exists to avoid — [scripts/ledger.js](scripts/ledger.js).
-
-- `--root` resolves against cwd, not the registry: run from inside the project, the documented command reports "nothing readable" — [scripts/docs-check.js](scripts/docs-check.js), `survey.js` the same.
-
-- A markdown file outside `docs/` with no bucket is graded reference and never listed as unfiled: 3 of 29 on one repository — [scripts/docs-check.js](scripts/docs-check.js), lines 293-301.
-
-- Every test makes its own `mkdtempSync` and none removes it: over 400,000 directories under %TEMP% on 09-06, from 297,088 on 09-05 — [tests/badge.test.js](tests/badge.test.js):16 is one of many.
-- `docs/pipeline.md` hand-copies two rendered `stage rules:` blocks; they went stale on 09-05 when build's rules changed — a test pinning them to `render()` — [docs/pipeline.md](docs/pipeline.md).
-- Three cuts from the 09-05 over-engineering review: `write()` re-tallies what `render()` counts; `rememberRoots` and `ensureIgnored` return values nothing reads — [lib/station.js](lib/station.js).
-
-- `station.write` costs 1.4 s per `task.js` verb at 12 registries: `readAll` over 169 entries is most of it, and `adopt` pays it twice — [lib/station.js](lib/station.js).
-
 - `LANDED_QUIET` is three days, picked from 8 plans inside a 0–4 day band; seven more landed between 09-01 and 09-06, so the band can be measured again — [scripts/docs-audit.js](scripts/docs-audit.js).
-
-- The `brief-probe` fixture has never been run, and the fresh terminal it needed has happened — [.claude/agents/brief-probe.md](.claude/agents/brief-probe.md).
 
 - Whether an output style reaches a subagent at all: set one in `/config`, dispatch one agent, and read what it was given — [lib/render.js](lib/render.js).
 
 - `docs-audit`'s pairs: 4 of 28 read once, none of them wrong. Reading more is what decides whether `LANDMARK = 4` earns its output — [scripts/docs-audit.js](scripts/docs-audit.js).
 
 ## Needs a decision
+
+- The 08-30 parallel-build pair is split: the design is archived, the plan is not, because `lib/a.js` and `lib/b.js` in its prose read as missing — [scripts/docs-audit.js](scripts/docs-audit.js).
 
 - `docs-check` passes a `path:line` whose line merely moved: three drifted on 09-05, a fourth on 09-06 — carry the cited text, or check a symbol — [scripts/docs-check.js](scripts/docs-check.js).
 
