@@ -66,6 +66,10 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - Whether the dispatch trade-off flips with `haiku` subagents: pair 1 already ran `opus` against `sonnet`, so that is the only untested widening — [docs/subagents.md](docs/subagents.md).
 
+- Whether `scripts/task.js` resolves `--root` the way the eight now do, or is deliberately different like `station.js` — [scripts/task.js](scripts/task.js), `rootOf`.
+
+- Whether a decision record gets annotated when a change falsifies an argument premise rather than a reference: `scripts/ledger.js` now exports — [scripts/ledger.js](scripts/ledger.js).
+
 ## Waiting
 
 - Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it. lifts when: a run is seen ignoring one. 09-06.

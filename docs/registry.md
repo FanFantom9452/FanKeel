@@ -35,7 +35,7 @@ workspace/                     <- Claude Code opened here
 | `~/.claude/modes/{session_id}/fankeel.lead` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
 | `<configDir>/fankeel/station.html` | n/a | the station page, rewritten by `hooks/inject.js` at the `/fankeel` prompt, by `task.js` on every verb that moves an entry, by `hooks/leave.js` at `SessionEnd`, and by `scripts/station.js` |
 | `<registry>/.fankeel/station.html` | No — `.fankeel/.gitignore` excludes it | the same page, written beside the registry by whichever of those four ran inside it |
-| `<configDir>/fankeel/roots.json` | n/a | every registry the page has seen, rewritten by every write of the page and kept until `--forget <dir>` drops it — [station.md](station.md) has more |
+| `<configDir>/fankeel/roots.json` | n/a | every registry the page has seen, rewritten by every write of the page. A root whose directory still exists stays until `--forget <dir>` drops it; one whose directory is gone from disk leaves on its own — [station.md](station.md) has more |
 
 The registry is found by walking up for **`.fankeel/sessions/`**, not for
 `.fankeel/`. The marker has to be the thing the registry owns, because the two
