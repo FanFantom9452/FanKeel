@@ -594,8 +594,10 @@ lines 216-217 read:
   assert.equal(parsed.root, 'F:/somewhere');
 ```
 
-`path.resolve` normalises separators, so an absolute `--root` still passes
-through unchanged in meaning but comes back with backslashes on Windows. Change
+`path.resolve` normalises separators, so a DRIVE-QUALIFIED absolute `--root`
+still passes through unchanged in meaning but comes back with backslashes on
+Windows. A POSIX-absolute one carrying no drive letter does not: `/tmp` against
+a base on `F:` resolves to `F:	mp`. Change
 the second line of that pair to compare against `path.resolve('F:/somewhere')`,
 which is the same assertion written portably. Do not weaken it to a substring
 match — the point of the test is that an absolute root is not re-based.

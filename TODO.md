@@ -68,6 +68,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Needs a decision
 
+- Four scripts still take `--root` as a raw string where four resolve it against the registry: `layout.js`, `map.js`, `residue.js`, `todo-check.js` — [scripts/map.js](scripts/map.js).
+
 - `scan` finds its own table by the heading `## groups` and never a copy pasted under another one, so both survive — [scripts/ledger.js](scripts/ledger.js).
 
 - The 08-30 parallel-build pair is split: the design is archived, the plan is not, because two illustrative filenames in its prose read as missing — [scripts/docs-audit.js](scripts/docs-audit.js).
