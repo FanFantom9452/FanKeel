@@ -92,9 +92,21 @@ node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md groups
 ```
 
 It computes the first row's predicates over the whole plan: tasks in one group
-have disjoint `**Files:**` and neither consumes what another produces.
+have disjoint `**Files:**` and neither consumes what another produces. A fix
+round inherits its task's `**Files:**` for this purpose, so two fix rounds
+that touch one file are sequenced rather than grouped, exactly as two tasks
+on that file would be.
 
-Copy its output into the ledger beside the table.
+Record it in the ledger beside the table:
+
+```
+node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md scan
+```
+
+`scan` writes exactly what `groups` just printed — the thing two sessions on
+2026-09-05 pasted in by hand — and finds its own previous table by heading and
+replaces it, so running it again after nothing has changed appends no second
+copy.
 
 **With no plan there is nothing here to scan.** Both rows of the table above
 compare things a file-table row does not carry — one pair of tasks

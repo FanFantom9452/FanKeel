@@ -9,6 +9,7 @@ const { execFileSync, spawnSync } = require('node:child_process');
 const registry = require('../lib/registry.js');
 const badge = require('../lib/badge.js');
 const station = require('../lib/station.js');
+const tmp = require('./tmp.js');
 
 const CLI = path.join(__dirname, '..', 'scripts', 'station.js');
 const LIVE = 'aaaaaaaa-1111-4111-8111-111111111111';
@@ -16,7 +17,7 @@ const STALE = 'bbbbbbbb-2222-4222-8222-222222222222';
 const DAY = 24 * 3600e3;
 
 function fixture() {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-cli-'));
+    const base = tmp('fankeel-station-cli-');
     const cfg = path.join(base, 'cfg');
     const r1 = path.join(base, 'ws');
     fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
@@ -140,7 +141,7 @@ const CS_FRESH = 'cccccccc-9999-4999-8999-999999999994';
 // `stale` on the page and still be too fresh for `/clear-stale` to touch
 // without `force`. `withFresh` is what exercises that gap.
 function clearStaleFixture(withFresh) {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-clear-stale-'));
+    const base = tmp('fankeel-clear-stale-');
     const cfg = path.join(base, 'cfg');
     const r1 = path.join(base, 'ws');
     fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
@@ -279,7 +280,7 @@ test('a --scan run is given the sixty-second budget and a run with nothing to sc
 
 test('serve hands that budget to the walk on every request, and hands none when there is nothing to scan', async () => {
     const f = fixture();
-    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-scan-budget-'));
+    const empty = tmp('fankeel-scan-budget-');
     const { serve } = require('../scripts/station.js');
     const real = station.gather;
     const seen = [];
@@ -307,7 +308,7 @@ test('serve hands that budget to the walk on every request, and hands none when 
 });
 
 test('--forget drops one root and keeps the rest', () => {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-forget-'));
+    const base = tmp('fankeel-forget-');
     const cfg = path.join(base, 'cfg');
     const rootsFile = path.join(cfg, 'fankeel', 'roots.json');
     fs.mkdirSync(path.dirname(rootsFile), { recursive: true });
@@ -324,7 +325,7 @@ test('--forget drops one root and keeps the rest', () => {
 });
 
 test('--forget drops only the named root and keeps the scannedAt record', () => {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-forget-scanrec-'));
+    const base = tmp('fankeel-forget-scanrec-');
     const cfg = path.join(base, 'cfg');
     const rootsFile = path.join(cfg, 'fankeel', 'roots.json');
     fs.mkdirSync(path.dirname(rootsFile), { recursive: true });
@@ -343,7 +344,7 @@ test('--forget drops only the named root and keeps the scannedAt record', () => 
 });
 
 test('--forget on a root nobody remembers says so and changes nothing', () => {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-forget-'));
+    const base = tmp('fankeel-forget-');
     const cfg = path.join(base, 'cfg');
     const rootsFile = path.join(cfg, 'fankeel', 'roots.json');
     fs.mkdirSync(path.dirname(rootsFile), { recursive: true });
@@ -358,7 +359,7 @@ test('--forget on a root nobody remembers says so and changes nothing', () => {
 });
 
 test('the first run scans once and records that it did', () => {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-autoscan-'));
+    const base = tmp('fankeel-autoscan-');
     const cfg = path.join(base, 'cfg');
     fs.mkdirSync(cfg, { recursive: true });
     const env = { ...process.env, CLAUDE_CONFIG_DIR: cfg };

@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 
 const live = require('../lib/live.js');
+const tmp = require('./tmp.js');
 
 const SID = '23916a07-5213-4e61-a3f0-70b5c462fd82';
 const OTHER = '8f2c1d90-0000-4000-8000-000000000001';
@@ -18,7 +19,7 @@ const OTHER = '8f2c1d90-0000-4000-8000-000000000001';
 const GONE_PID = 2147483646;
 
 function tmpConfig() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-live-'));
+  const dir = tmp('fankeel-live-');
   fs.mkdirSync(path.join(dir, 'sessions'));
   return dir;
 }
@@ -143,7 +144,7 @@ test('an entry with no pid, one with no sessionId and a file that is not .json a
 // Empty would mean every claim is dead and every warning is suppressed, which is
 // the one wrong answer that fails silently.
 test('a missing sessions directory is unknown rather than nobody being live', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-live-'));
+  const dir = tmp('fankeel-live-');
   const state = live.readLive(dir, SID);
   assert.equal(state.known, false);
   assert.equal(state.ids.size, 0);

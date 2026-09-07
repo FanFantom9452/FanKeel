@@ -9,9 +9,10 @@ const { execFileSync } = require('node:child_process');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'layout.js');
 const { rows } = require('../scripts/layout.js');
+const tmp = require('./tmp.js');
 
 function fixture(files) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-layout-'));
+  const root = tmp('fankeel-layout-');
   for (const [rel, text] of Object.entries(files)) {
     const full = path.join(root, rel);
     fs.mkdirSync(path.dirname(full), { recursive: true });
@@ -57,7 +58,7 @@ test('the run writes nothing at all', () => {
 });
 
 test('a root with nothing readable says so rather than printing an empty tree', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-layout-'));
+  const root = tmp('fankeel-layout-');
   assert.match(run(root), /nothing readable under/);
 });
 

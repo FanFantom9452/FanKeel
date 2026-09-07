@@ -8,10 +8,11 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const registry = require('../lib/registry.js');
+const mkTmp = require('./tmp.js');
 const HOOK = path.join(__dirname, '..', 'hooks', 'touch.js');
 const MINE = 'aaaaaaaa-0000-4000-8000-000000000001';
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-touch-'));
+const tmp = () => mkTmp('fankeel-touch-');
 
 // No `claims` and no `scope` by default: what a task holds is what it touched,
 // and a fresh entry has touched nothing. Tests that need either field say so.

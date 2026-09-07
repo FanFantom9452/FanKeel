@@ -7,6 +7,8 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
+const tmp = require('./tmp.js');
+
 const HOOK = path.join(__dirname, '..', 'hooks', 'inject.js');
 
 const MINE = 'aaaaaaaa-0000-4000-8000-000000000001';
@@ -17,10 +19,6 @@ const THEIRS = 'bbbbbbbb-0000-4000-8000-000000000002';
 const GONE_PID = 2147483646;
 
 const ago = (ms) => new Date(Date.now() - ms).toISOString();
-
-function tmp(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
 
 function seed(root, sessionId, over) {
   const dir = path.join(root, '.fankeel', 'sessions');

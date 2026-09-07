@@ -8,6 +8,7 @@ const vm = require('node:vm');
 const registry = require('../lib/registry.js');
 const badge = require('../lib/badge.js');
 const station = require('../lib/station.js');
+const tmp = require('./tmp.js');
 
 const LIVE = 'aaaaaaaa-1111-4111-8111-111111111111';
 const STALE = 'bbbbbbbb-2222-4222-8222-222222222222';
@@ -17,7 +18,7 @@ const DAY = 24 * 3600e3;
 // Two registries, one config dir. One session is running (this process's pid),
 // one is active with nobody behind it, one is stood down with usage recorded.
 function fixture() {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-'));
+    const base = tmp('fankeel-station-');
     const cfg = path.join(base, 'cfg');
     const r1 = path.join(base, 'ws-one');
     const r2 = path.join(base, 'ws-two');
@@ -166,7 +167,7 @@ test('the root a caller writes into is listed and remembered even with no lead a
 // below — one level past the new default — is what now proves depth still
 // bounds the walk; a seven-level fixture no longer would, since 8 reaches it.
 test('scanRoots finds a registry two levels down, skips node_modules and dot-directories, and stops at its depth', () => {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-'));
+    const base = tmp('fankeel-station-scan-');
     const deep = path.join(base, 'a', 'b');
     registry.ensureLayout(deep);
     registry.ensureLayout(path.join(base, 'node_modules', 'pkg'));
@@ -181,7 +182,7 @@ test('scanRoots finds a registry two levels down, skips node_modules and dot-dir
 });
 
 test('scanRoots finds a registry seven levels down', () => {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-deep-'));
+    const base = tmp('fankeel-station-scan-deep-');
     const deep = path.join(base, '1', '2', '3', '4', '5', '6', '7');
     registry.ensureLayout(deep);
     const found = station.scanRoots(base);
@@ -191,7 +192,7 @@ test('scanRoots finds a registry seven levels down', () => {
 // The seven- and two-level tests above only prove SCAN_DEPTH is somewhere in
 // {7, 8} — both still pass at depth 7. These two pin it to 8 from each side.
 test('scanRoots finds a registry exactly eight levels down', () => {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-depth8-'));
+    const base = tmp('fankeel-station-scan-depth8-');
     const deep = path.join(base, '1', '2', '3', '4', '5', '6', '7', '8');
     registry.ensureLayout(deep);
     const found = station.scanRoots(base);
@@ -199,7 +200,7 @@ test('scanRoots finds a registry exactly eight levels down', () => {
 });
 
 test('scanRoots does not find a registry nine levels down', () => {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-depth9-'));
+    const base = tmp('fankeel-station-scan-depth9-');
     const deep = path.join(base, '1', '2', '3', '4', '5', '6', '7', '8', '9');
     registry.ensureLayout(deep);
     const found = station.scanRoots(base);
@@ -216,7 +217,7 @@ test('scanRoots does not find a registry nine levels down', () => {
 // mutation the first tick passes, the walk runs to the end, and both
 // `timedOut` and the empty root list below are wrong.
 test('scanRoots stops mid-walk when its deadline is spent, and says so', () => {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-deadline-'));
+    const base = tmp('fankeel-station-scan-deadline-');
     const deep = path.join(base, 'a', 'b');
     registry.ensureLayout(deep);
     let tick = 0;
@@ -237,7 +238,7 @@ test('scanRoots stops mid-walk when its deadline is spent, and says so', () => {
 });
 
 test('scanRoots counts the places depth cut it', () => {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-cuts-'));
+    const base = tmp('fankeel-station-scan-cuts-');
     registry.ensureLayout(path.join(base, '1', '2', '3', '4', '5', '6', '7', '8', '9'));
     const found = station.scanRoots(base, 2);
     assert.ok(found.depthCuts > 0, 'a walk nine deep at depth two is cut before it reaches the registry');
@@ -257,7 +258,7 @@ test('the header reports a scan that ran out of time', () => {
 // one exercises a different shape of `clock`/`burn`/`spend` and none of them
 // should shift the session counts the earlier tests already assert on.
 function chartFixture(sessionId, data) {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-chart-'));
+    const base = tmp('fankeel-station-chart-');
     const root = path.join(base, 'ws');
     registry.ensureLayout(root);
     const now = Date.now();
@@ -562,7 +563,7 @@ test('a row whose stages do not account for its whole total says how much is mis
 // — `autoScan` in `scripts/station.js` — printed its counts and threw them
 // away. These two tests take the two production routes.
 test('discover forwards a deadline into the scan, and the header says the scan ran out of time', () => {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scan-deadline-page-'));
+    const base = tmp('fankeel-station-scan-deadline-page-');
     registry.ensureLayout(path.join(base, 'a', 'b'));
     const m = station.gather({ configDir: path.join(base, 'cfg'), scan: [base], deadline: Date.now() - 1 });
     assert.equal(m.scanStats.timedOut, true, 'the deadline reaches scanRoots through discover');
@@ -570,7 +571,7 @@ test('discover forwards a deadline into the scan, and the header says the scan r
 });
 
 test('a caller that walked the machine itself hands its counts to the page write() produces', () => {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scanstats-'));
+    const base = tmp('fankeel-station-scanstats-');
     const cfg = path.join(base, 'cfg');
     // No `scan` at all: these numbers can only have come from `opts.scanStats`,
     // which is how `scripts/station.js` hands `autoScan`'s own walk in.
@@ -587,7 +588,7 @@ test('a caller that walked the machine itself hands its counts to the page write
 // short. Two gathers, one for each half of the merge — a fix that only ORed
 // `timedOut` would pass the first assertion and fail the second.
 test('a handed-in scan block and the walk discover did are added, not chosen between', () => {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scanstats-merge-'));
+    const base = tmp('fankeel-station-scanstats-merge-');
     registry.ensureLayout(path.join(base, 'a', 'b'));
     const spent = station.gather({
         configDir: path.join(base, 'cfg'), scan: [base], deadline: Date.now() - 1,
@@ -599,7 +600,7 @@ test('a handed-in scan block and the walk discover did are added, not chosen bet
 
     // Ten directories below the base against a depth of eight: the walk cuts
     // one place of its own, and the handed block reports seven more.
-    const deep = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scanstats-deep-'));
+    const deep = tmp('fankeel-station-scanstats-deep-');
     fs.mkdirSync(path.join(deep, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'), { recursive: true });
     const cut = station.gather({
         configDir: path.join(deep, 'cfg'), scan: [deep],
@@ -615,7 +616,7 @@ test('a handed-in scan block and the walk discover did are added, not chosen bet
 // roots.json through `rememberRoots` and dropped the key. The durability is
 // real now, and this is where it is pinned.
 test('a write of the page keeps every key in roots.json that is not a root record', () => {
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-scanrec-'));
+    const base = tmp('fankeel-station-scanrec-');
     const cfg = path.join(base, 'cfg');
     const ws = path.join(base, 'ws');
     registry.ensureLayout(ws);
@@ -966,7 +967,7 @@ test('data-cost carries the total the cost cell prints, and the cost sort follow
     const BIG = '10101010-aaaa-4aaa-8aaa-aaaaaaaaaa01';
     const SMALL = '10101010-aaaa-4aaa-8aaa-aaaaaaaaaa02';
     const ODD = '10101010-aaaa-4aaa-8aaa-aaaaaaaaaa03';
-    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-station-costsort-'));
+    const base = tmp('fankeel-station-costsort-');
     const root = path.join(base, 'ws');
     registry.ensureLayout(root);
     const now = Date.now();

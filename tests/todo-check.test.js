@@ -8,10 +8,11 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const todo = require('../scripts/todo-check.js');
+const tmp = require('./tmp.js');
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'todo-check.js');
 
 function fixture(body, extra) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-todo-'));
+  const root = tmp('fankeel-todo-');
   fs.writeFileSync(path.join(root, 'TODO.md'), body);
   for (const [name, text] of Object.entries(extra || {})) {
     const full = path.join(root, name);
@@ -113,7 +114,7 @@ test('headings and prose are not entries', () => {
 });
 
 test('no TODO.md is not a failure', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-todo-'));
+  const root = tmp('fankeel-todo-');
   const { out, code } = run(path.join(root, 'TODO.md'));
   assert.equal(code, 0);
   assert.match(out, /Nothing to check/);
@@ -293,7 +294,7 @@ test('with no docs.json nothing is a stale citation', () => {
 // it threw EISDIR, `check` reported it missing, and missing counted as success.
 // A green run that examined nothing.
 test('--root names the directory holding TODO.md', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-todo-root-'));
+  const dir = tmp('fankeel-todo-root-');
   fs.writeFileSync(path.join(dir, 'TODO.md'), '# TODO\n\n## Ready\n\n- [a](one.md)\n');
   const out = todo.main(['--root', dir]);
   assert.equal(out.ok, false, 'the dead link in that file is a problem');
@@ -301,13 +302,13 @@ test('--root names the directory holding TODO.md', () => {
 });
 
 test('--root=<dir> is the same flag', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-todo-eq-'));
+  const dir = tmp('fankeel-todo-eq-');
   fs.writeFileSync(path.join(dir, 'TODO.md'), '# TODO\n\n## Ready\n\n- [a](one.md)\n');
   assert.equal(todo.main(['--root=' + dir]).ok, false);
 });
 
 test('--root on a directory with no TODO.md names the file it looked for', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-todo-bare-'));
+  const dir = tmp('fankeel-todo-bare-');
   const out = todo.main(['--root', dir]);
   assert.match(out.text, /TODO\.md/, 'named the directory rather than the file');
   assert.equal(out.ok, true);
@@ -315,7 +316,7 @@ test('--root on a directory with no TODO.md names the file it looked for', () =>
 
 // A path is still a path. The flag's value is not one.
 test('a positional argument is still the file to check', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-todo-pos-'));
+  const dir = tmp('fankeel-todo-pos-');
   const file = path.join(dir, 'OTHER.md');
   fs.writeFileSync(file, '# TODO\n\n## Ready\n\n- [a](one.md)\n');
   assert.equal(todo.main([file]).ok, false);

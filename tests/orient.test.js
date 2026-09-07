@@ -8,13 +8,14 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const orient = require('../scripts/orient.js');
+const tmp = require('./tmp.js');
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'orient.js');
 
 // A workspace is built rather than pointed at, because the interesting cases are
 // the ones a real directory does not happen to have: a project that is not a
 // repository next to one that is, and a root that is neither.
 function workspace(tree) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-orient-'));
+  const root = tmp('fankeel-orient-');
   for (const [rel, body] of Object.entries(tree)) {
     const full = path.join(root, rel);
     fs.mkdirSync(path.dirname(full), { recursive: true });
@@ -381,7 +382,7 @@ test('the registry line says how many entries are live, not only how many are ac
   );
   // A config dir of its own, so the count does not depend on what is running on
   // the machine the tests happen to be on.
-  const cfg = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-cfg-'));
+  const cfg = tmp('fankeel-cfg-');
   fs.mkdirSync(path.join(cfg, 'sessions'));
   const env = Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg });
   const out = execFileSync(process.execPath, [SCRIPT, '--root', root], { encoding: 'utf8', env });

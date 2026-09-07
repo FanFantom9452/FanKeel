@@ -13,11 +13,12 @@ const { execFileSync } = require('node:child_process');
 
 const { renderBrief, RETURN_RULES } = require('../lib/render.js');
 const { byName: stageByName } = require('../lib/stages.js');
+const mkTmp = require('./tmp.js');
 
 const HOOK = path.join(__dirname, '..', 'hooks', 'brief.js');
 const SESSION = 'aaaaaaaa-0000-4000-8000-000000000001';
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-brief-'));
+const tmp = () => mkTmp('fankeel-brief-');
 
 function seed(root, over) {
   const dir = path.join(root, '.fankeel', 'sessions');

@@ -24,6 +24,7 @@ const { parseArgs: parseArgv } = require('node:util');
 const docs = require('../lib/docs.js');
 const { section } = require('../lib/report.js');
 const { trackedFiles } = require('../lib/tracked.js');
+const { findStateRoot } = require('../lib/registry.js');
 
 const MAX_FINDINGS = 200;
 
@@ -292,12 +293,14 @@ function scan(root, roles) {
 
     for (const rel of markdown) {
         const declared = docs.roleOf(tree, rel);
-        // Unfiled markdown is still checked, as reference — a page that
-        // describes code and nobody filed is exactly the page most likely to be
-        // wrong. It is only *reported* as unfiled when it sits where documents
-        // are supposed to be filed.
-        const role = declared || 'reference';
+        // Guessing `reference` is the loudest default, not a safe one: a project
+        // keeping plans outside `docs/` on purpose gets every one of them graded
+        // as a claim about the present. So it is the fallback only where there is
+        // no tree at all — a project in that state wants the checks more than the
+        // precision. `docs/documents.md:192-200` is the page this follows.
+        const role = declared || (tree ? null : 'reference');
         if (!declared && rel.split('/')[0] === docRoot) unfiled.push(rel);
+        if (!role) continue;
         counts[role] = (counts[role] || 0) + 1;
         for (const f of checkDoc(root, rel, role, symbols, roots)) findings.push(Object.assign({ role }, f));
     }
@@ -385,7 +388,9 @@ function parseArgs(argv) {
         options: { root: { type: 'string' }, role: { type: 'string' }, quiet: { type: 'boolean' } },
     });
     return {
-        root: typeof values.root === 'string' ? values.root : process.cwd(),
+        root: typeof values.root === 'string'
+            ? path.resolve(findStateRoot(process.cwd()) || process.cwd(), values.root)
+            : process.cwd(),
         roles: typeof values.role === 'string' ? values.role.split(',').map((r) => r.trim()).filter(Boolean) : [],
         quiet: Boolean(values.quiet),
     };
@@ -407,4 +412,4 @@ if (require.main === module) {
     process.exit(code);
 }
 
-module.exports = { scan, report, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown };
+module.exports = { scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown };

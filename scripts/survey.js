@@ -26,6 +26,7 @@ const path = require('node:path');
 
 const { trackedFiles, MAX_WALK_FILES, SKIP_EXT } = require('../lib/tracked.js');
 const { human, plural, section } = require('../lib/report.js');
+const { findStateRoot } = require('../lib/registry.js');
 
 // The default, not the law. `--max N` and `--all` move it, because a report that
 // silently stops at 25 answers a different question than the one that was asked —
@@ -456,7 +457,9 @@ function parseArgs(argv) {
     const terms = [];
     for (let i = 0; i < argv.length; i++) {
         if (argv[i] === '--root') {
-            if (argv[i + 1]) root = argv[++i];
+            if (argv[i + 1]) {
+                root = path.resolve(findStateRoot(process.cwd()) || process.cwd(), argv[++i]);
+            }
             continue;
         }
         // A value that is not a positive number leaves the default in place rather

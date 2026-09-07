@@ -12,11 +12,12 @@ const os = require('node:os');
 const path = require('node:path');
 
 const ctx = require('../lib/context.js');
+const tmp = require('./tmp.js');
 
 const BS = String.fromCharCode(92);   // the escaping is the subject; spell it out
 
 function transcript(lines) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-ctx-'));
+  const dir = tmp('fankeel-ctx-');
   const file = path.join(dir, 'session.jsonl');
   fs.writeFileSync(file, lines.join('\n') + '\n');
   return file;

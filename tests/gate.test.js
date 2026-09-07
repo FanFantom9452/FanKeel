@@ -11,6 +11,8 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
+const tmp = require('./tmp.js');
+
 const ROOT = path.join(__dirname, '..');
 const GATE = path.join(ROOT, 'hooks', 'gate.js');
 const RESUME = path.join(ROOT, 'hooks', 'resume.js');
@@ -18,10 +20,6 @@ const RESUME = path.join(ROOT, 'hooks', 'resume.js');
 const MINE = 'aaaaaaaa-0000-4000-8000-000000000001';
 
 const ago = (ms) => new Date(Date.now() - ms).toISOString();
-
-function tmp(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-}
 
 function seed(root, sessionId, over) {
   const dir = path.join(root, '.fankeel', 'sessions');

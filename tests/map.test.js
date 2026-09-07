@@ -13,8 +13,9 @@ const { execFileSync } = require('node:child_process');
 
 const map = require('../lib/map.js');
 const docs = require('../lib/docs.js');
+const tmp = require('./tmp.js');
 
-const root = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-map-'));
+const root = () => tmp('fankeel-map-');
 const write = (dir, rel, text) => {
   const full = path.join(dir, rel);
   fs.mkdirSync(path.dirname(full), { recursive: true });
@@ -135,7 +136,7 @@ test('the map declares itself generated so the sweep skips it', () => {
 });
 
 test('a worktree checked out under a dot-directory is not the project', () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-map-git-'));
+  const root = tmp('fankeel-map-git-');
   const git = (args) => execFileSync('git', args, { cwd: root, stdio: 'ignore' });
   git(['init', '-q']);
   git(['config', 'user.email', 't@example.com']);

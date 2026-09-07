@@ -15,13 +15,14 @@ const os = require('node:os');
 const path = require('node:path');
 
 const version = require('../scripts/version.js');
+const tmp = require('./tmp.js');
 
 const REAL = path.join(__dirname, '..');
 
 // The shape rather than the contents: two manifests and one SKILL.md per skill,
 // which is what the script goes looking for.
 function tree(over) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-version-'));
+  const root = tmp('fankeel-version-');
   const at = (rel, text) => {
     fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
     fs.writeFileSync(path.join(root, rel), text);

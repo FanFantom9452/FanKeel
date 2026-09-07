@@ -21,7 +21,7 @@ stays pinned at both ends and the ledger keeps one `complete <n>` per task.
 **Tech Stack:** Node v24.9.0, `node --test`, no dependencies and none may be
 added (`package.json` has no `dependencies` key and the plugin is `private`).
 
-**Spec:** [2026-08-30-parallel-build-design.md](2026-08-30-parallel-build-design.md)
+**Spec:** [../archive/2026-08-30-parallel-build-design.md](../archive/2026-08-30-parallel-build-design.md)
 
 ## Global Constraints
 

@@ -11,8 +11,10 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
+const tmp = require('./tmp.js');
+
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'map.js');
-const root = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-mapcli-'));
+const root = () => tmp('fankeel-mapcli-');
 
 const run = (dir) => execFileSync(process.execPath, [SCRIPT, '--root', dir], { encoding: 'utf8' });
 

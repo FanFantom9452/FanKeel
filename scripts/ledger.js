@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 'use strict';
 
-// The ledger, from the command line. Nine verbs, because nine is what the build
+// The ledger, from the command line. Ten verbs, because ten is what the build
 // loop actually does to it: open it, say a task is done, and — after a compaction
 // — ask what it already knows, and ask which of a plan's tasks may go out together.
 // `lint`, `brief` and `fix` came with the 2026-09-07 plan-quality change: check a
 // plan against its design, write one task's brief file, and record a reviewed fix.
+// `scan` came the same day: it writes the `groups` report into the ledger, so the
+// build stage's step-3 scan table has one producer instead of a session pasting
+// it in by hand.
 //
 // **Flags precede the verb.** Everything after it is the user's words, down to a
 // word spelled exactly like a flag. `--plan` and `--root` are both paths, and a
@@ -39,7 +42,7 @@ const STRING_FLAGS = { root: 'root', plan: 'plan', range: 'range' };
 // than four literals for the same reason the flags are a table: `splitAtVerb`
 // reads it too, so that no flag spends one, and two lists of the same verbs
 // drift.
-const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'ranges', 'lint', 'brief', 'fix']);
+const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'scan', 'ranges', 'lint', 'brief', 'fix']);
 
 // `strict: false` keeps an unknown flag silent. A declared flag given no value
 // comes back `true` rather than a string, and that is the refusal below: a flag
@@ -161,6 +164,109 @@ function readPlan(root, plan) {
     }
 }
 
+// The whole `groups` report, as one string. `groups` prints it and `scan`
+// writes it into the ledger, and both read it from here so the two can never
+// drift into two different tables for the same plan.
+function groupsReport(root, planOpt) {
+    const file = path.resolve(root, planOpt);
+    let text = '';
+    try {
+        text = fs.readFileSync(file, 'utf8');
+    } catch (e) {
+        return fail('No plan at ' + file);
+    }
+    const tasks = plantasks.parseTasks(text);
+    const rows = plantasks.groups(tasks);
+    const surfaced = plantasks.surfaces(tasks);
+    if (!tasks.length) {
+        // "no tasks in <file>" alone reads as "this plan is empty," and the
+        // far more likely cause is a heading `parseTasks` could not match —
+        // the same failure `init` now names, in the same words, so a reader
+        // who meets this from `groups` after already seeing it from `init`
+        // recognises it rather than treating it as a second problem.
+        return 'fankeel ledger — no tasks in ' + file
+            + ' — more likely a heading did not match than an empty plan.'
+            + '\n' + CONFORMING_HEADING;
+    }
+    // A task that declared no files conflicts with everything, so it lands
+    // alone and the grouping looks merely unlucky rather than incomplete.
+    // Naming it is what makes a missing `**Files:**` block visible at the
+    // moment it costs something, rather than a plan rule nobody re-read.
+    const undeclared = tasks.filter((t) => !t.modify.length).map((t) => t.n);
+    const noInterfaces = plantasks.missingInterfaces(tasks);
+    // Every group a singleton means nothing ever runs beside anything, and
+    // the disjointness sentence below is then a claim about a pair that does
+    // not exist. A plan whose tasks all appended to one index file read as an
+    // ordinary grouping and built serially with nothing saying so, because
+    // the numbers said it and the prose underneath said the opposite. So the
+    // prose goes when it stops being true, and the warning gets a paragraph
+    // of its own — the first line is already the ratio, and what was missing
+    // was something that contradicted rather than merely failed to mention.
+    const serial = tasks.length > 1 && rows.length === tasks.length;
+    const cause = serial ? serialCause(tasks) : '';
+    const prose = plantasks.proseConflicts(tasks, rows).map((p) =>
+        'Task ' + p.n + ' names Task ' + p.other + ' in its Consumes text, and both land in group '
+        + p.group + ': "' + p.text + '"');
+    return 'fankeel ledger — ' + rows.length + ' groups over ' + tasks.length + ' tasks\n\n'
+        + surfaced.map((g, i) => '  ' + (i + 1) + ': ' + g.tasks.join(', ') + '  — ' + g.surface).join('\n')
+        + (undeclared.length
+            ? '\n\nNo Files block, so serialised against everything: ' + undeclared.join(', ')
+            : '')
+        + (noInterfaces.length
+            ? '\n\nNo Interfaces block, so never a workflow: ' + noInterfaces.join(', ')
+            : '')
+        // Whether this should be withheld per group rather than per report is
+        // open: a clean group in a plan that carries one prose `Consumes:`
+        // somewhere else loses an accurate claim about itself.
+        + (prose.length
+            ? '\n\nConsumes text names a task already in its own group, worth a look:\n  '
+                + prose.join('\n  ')
+            : '')
+        + (serial
+            ? '\n\nEvery group is one task, so nothing runs beside anything and this'
+                + '\nplan builds serially.' + (cause ? ' ' + cause : '')
+            : '')
+        + '\n\nOne group is one surface: one dispatch, two Agents in one response, or one Workflow.'
+        // Still true of what the tasks declared even when `prose.length`,
+        // but true is not the bar: printed three lines under a finding
+        // that says "worth a look," it reads as the answer to that
+        // finding rather than a claim about a different thing (declared
+        // identifiers, not prose), and the reader leaves concluding the
+        // warning was noise. Withheld, not reworded — the sentence itself
+        // did not become false.
+        + (serial || prose.length ? '' : ' Their files are disjoint and neither'
+            + '\nconsumes what the other produces.')
+        + ' Commit them one at a time as they'
+        + '\nreturn, in the order listed.';
+}
+
+// `scan`'s heading, and the shape of every other line `progress.md` already
+// holds. `scan` is the only verb that ever writes a `## ` line, so the next
+// one of those — or the next line that matches an ordinary ledger entry
+// appended after it by `complete`, `ruling` or `fix` — is where its block
+// ends; nothing else in this file has a shape to confuse it with.
+const SCAN_HEADING = '## groups';
+const LEDGER_LINE = /^(Task \d+: complete\b|Ruling: |Fix: |## )/;
+
+// Replaces `scan`'s previous block in place, rather than appending a second
+// copy below whatever was written after it. Not found is not a failure: the
+// first `scan` on a plan has nothing to replace, and the block goes at the
+// end like any other entry.
+function withScan(existing, report) {
+    const block = SCAN_HEADING + '\n\n' + String(report).trim() + '\n';
+    const body = String(existing || '');
+    const lines = body.replace(/\r\n/g, '\n').split('\n');
+    const start = lines.findIndex((l) => l === SCAN_HEADING);
+    if (start === -1) return body.replace(/\n*$/, '\n') + '\n' + block;
+    let end = lines.length;
+    for (let i = start + 1; i < lines.length; i++) {
+        if (LEDGER_LINE.test(lines[i])) { end = i; break; }
+    }
+    const before = lines.slice(0, start).join('\n').replace(/\n*$/, '\n');
+    const after = lines.slice(end).join('\n');
+    return before + '\n' + block + after;
+}
+
 function main(argv) {
     const { head, verb: named, text } = splitAtVerb(argv, STRING_FLAGS, VERBS);
     const opts = parseArgs(head);
@@ -230,76 +336,20 @@ function main(argv) {
     }
 
     if (verb === 'groups') {
-        const file = path.resolve(root, opts.plan);
-        let text = '';
-        try {
-            text = fs.readFileSync(file, 'utf8');
-        } catch (e) {
-            return fail('No plan at ' + file);
-        }
-        const tasks = plantasks.parseTasks(text);
-        const rows = plantasks.groups(tasks);
-        const surfaced = plantasks.surfaces(tasks);
-        if (!tasks.length) {
-            // "no tasks in <file>" alone reads as "this plan is empty," and the
-            // far more likely cause is a heading `parseTasks` could not match —
-            // the same failure `init` now names, in the same words, so a reader
-            // who meets this from `groups` after already seeing it from `init`
-            // recognises it rather than treating it as a second problem.
-            return 'fankeel ledger — no tasks in ' + file
-                + ' — more likely a heading did not match than an empty plan.'
-                + '\n' + CONFORMING_HEADING;
-        }
-        // A task that declared no files conflicts with everything, so it lands
-        // alone and the grouping looks merely unlucky rather than incomplete.
-        // Naming it is what makes a missing `**Files:**` block visible at the
-        // moment it costs something, rather than a plan rule nobody re-read.
-        const undeclared = tasks.filter((t) => !t.modify.length).map((t) => t.n);
-        const noInterfaces = plantasks.missingInterfaces(tasks);
-        // Every group a singleton means nothing ever runs beside anything, and
-        // the disjointness sentence below is then a claim about a pair that does
-        // not exist. A plan whose tasks all appended to one index file read as an
-        // ordinary grouping and built serially with nothing saying so, because
-        // the numbers said it and the prose underneath said the opposite. So the
-        // prose goes when it stops being true, and the warning gets a paragraph
-        // of its own — the first line is already the ratio, and what was missing
-        // was something that contradicted rather than merely failed to mention.
-        const serial = tasks.length > 1 && rows.length === tasks.length;
-        const cause = serial ? serialCause(tasks) : '';
-        const prose = plantasks.proseConflicts(tasks, rows).map((p) =>
-            'Task ' + p.n + ' names Task ' + p.other + ' in its Consumes text, and both land in group '
-            + p.group + ': "' + p.text + '"');
-        return 'fankeel ledger — ' + rows.length + ' groups over ' + tasks.length + ' tasks\n\n'
-            + surfaced.map((g, i) => '  ' + (i + 1) + ': ' + g.tasks.join(', ') + '  — ' + g.surface).join('\n')
-            + (undeclared.length
-                ? '\n\nNo Files block, so serialised against everything: ' + undeclared.join(', ')
-                : '')
-            + (noInterfaces.length
-                ? '\n\nNo Interfaces block, so never a workflow: ' + noInterfaces.join(', ')
-                : '')
-            // Whether this should be withheld per group rather than per report is
-            // open: a clean group in a plan that carries one prose `Consumes:`
-            // somewhere else loses an accurate claim about itself.
-            + (prose.length
-                ? '\n\nConsumes text names a task already in its own group, worth a look:\n  '
-                    + prose.join('\n  ')
-                : '')
-            + (serial
-                ? '\n\nEvery group is one task, so nothing runs beside anything and this'
-                    + '\nplan builds serially.' + (cause ? ' ' + cause : '')
-                : '')
-            + '\n\nOne group is one surface: one dispatch, two Agents in one response, or one Workflow.'
-            // Still true of what the tasks declared even when `prose.length`,
-            // but true is not the bar: printed three lines under a finding
-            // that says "worth a look," it reads as the answer to that
-            // finding rather than a claim about a different thing (declared
-            // identifiers, not prose), and the reader leaves concluding the
-            // warning was noise. Withheld, not reworded — the sentence itself
-            // did not become false.
-            + (serial || prose.length ? '' : ' Their files are disjoint and neither'
-                + '\nconsumes what the other produces.')
-            + ' Commit them one at a time as they'
-            + '\nreturn, in the order listed.';
+        return groupsReport(root, opts.plan);
+    }
+
+    if (verb === 'scan') {
+        // Same report `groups` prints, written into the ledger under a
+        // stable heading rather than pasted in by hand — the exact thing
+        // this verb exists to replace. `groupsReport` already refuses a
+        // missing plan the same way `groups` does.
+        const report = groupsReport(root, opts.plan);
+        const file = ledger.init(root, opts.plan);
+        const existing = fs.readFileSync(file, 'utf8');
+        const written = withScan(existing, report);
+        if (written !== existing) fs.writeFileSync(file, written);
+        return 'fankeel ledger — scan recorded in ' + file;
     }
 
     if (verb === 'lint') {

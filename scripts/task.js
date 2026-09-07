@@ -83,7 +83,7 @@ function claudeDir(opts) {
     return home ? path.join(home, '.claude') : null;
 }
 
-function showBadge(opts, sessionId, word, data, root) {
+function showBadge(opts, sessionId, word, data, root, refresh) {
     const dir = claudeDir(opts);
     if (!dir) return;
     try {
@@ -115,17 +115,17 @@ function showBadge(opts, sessionId, word, data, root) {
             root,
         });
     } catch (e) { /* housekeeping */ }
-    refreshStation(dir, root);
+    if (refresh !== false) refreshStation(dir, root);
 }
 
-function hideBadge(opts, sessionId, root) {
+function hideBadge(opts, sessionId, root, refresh) {
     const dir = claudeDir(opts);
     if (!dir) return;
     try {
         badge.clearBadge(dir, sessionId);
         badge.clearLead(dir, sessionId);
     } catch (e) { /* housekeeping */ }
-    refreshStation(dir, root);
+    if (refresh !== false) refreshStation(dir, root);
 }
 
 // The page is rewritten wherever the entry changes — every verb goes through
@@ -847,13 +847,15 @@ function cmdAdopt(root, opts) {
     // already what adopt is, and a badge still reading `build` for a task this
     // session took over is the statusline telling that window a lie it has no
     // way to notice.
-    hideBadge(opts, from, root);
+    hideBadge(opts, from, root, false);
     if (!registry.update(root, from, (d) => { d.active = false; })) {
         fail('Adopted, but could not stand the source down. Two sessions now claim these files — stand ' + from + ' down by hand.');
     }
 
     const adoptClash = collisions(root, id, claims);
-    showBadge(opts, id, badge.badgeWord(data.stage, adoptClash.length > 0), Object.assign({ others: adoptClash.length }, data), root);
+    showBadge(opts, id, badge.badgeWord(data.stage, adoptClash.length > 0), Object.assign({ others: adoptClash.length }, data), root, false);
+    const stationDir = claudeDir(opts);
+    if (stationDir) refreshStation(stationDir, root);
 
     const lines = ['fankeel — adopted: ' + (data.task || 'untitled') + ' @ ' + data.stage];
     lines.push('  ' + from + ' is now stood down.');

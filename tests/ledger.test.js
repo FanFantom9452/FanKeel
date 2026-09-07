@@ -13,8 +13,9 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const ledger = require('../lib/ledger.js');
+const tmp = require('./tmp.js');
 
-const root = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-ledger-'));
+const root = () => tmp('fankeel-ledger-');
 
 // `scripts/ledger.js` carries the same refusal as `scripts/task.js` -- a flag
 // declared to take a value, given none, is named rather than defaulted. Only
@@ -436,6 +437,29 @@ test('groups flags a Consumes text naming a task already in its group', () => {
   assert.match(out, /1: 1, 2/);
   assert.match(out, /Task 2 names Task 1 in its Consumes text/);
   assert.doesNotMatch(out, /files are disjoint/);
+});
+
+// `scan` exists so a session never again pastes `groups`' output into the
+// ledger by hand, and the two sessions on 2026-09-05 that did are the reason
+// idempotence is what this test bears down on: a second run on an unchanged
+// plan must find its own table by heading and replace it, not sit a second
+// copy underneath.
+test('scan writes the groups report into progress.md, and a second run on an unchanged plan leaves the file unchanged', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, [
+    '## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', '',
+    '## Task 2: two', '', '**Files:**', '- Modify: `lib/b.js`', '',
+  ].join('\n'));
+  const ledgerFile = ledger.ledgerPath(dir, plan);
+  execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'scan'], { encoding: 'utf8' });
+  const first = fs.readFileSync(ledgerFile, 'utf8');
+  assert.match(first, /^## groups$/m);
+  assert.match(first, /1 groups over 2 tasks/);
+  execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'scan'], { encoding: 'utf8' });
+  const second = fs.readFileSync(ledgerFile, 'utf8');
+  assert.equal(second, first, 'a second scan on an unchanged plan appended a second copy of the table');
+  assert.equal((second.match(/^## groups$/gm) || []).length, 1, 'the heading should appear exactly once');
 });
 
 // A fixture plan with a header, a constraints block, two tasks and a coverage

@@ -14,11 +14,12 @@ const { execFileSync, spawnSync, spawn } = require('node:child_process');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'task.js');
 const registry = require('../lib/registry.js');
+const tmp = require('./tmp.js');
 
 const A = 'aaaaaaaa-1111-2222-3333-444444444444';
 const B = 'bbbbbbbb-1111-2222-3333-444444444444';
 
-const root = () => fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-task-'));
+const root = () => tmp('fankeel-task-');
 
 // A refusal is a normal outcome here, so it has to be caught to be read. What is
 // being asserted is the message and the code together.
@@ -225,7 +226,7 @@ test('a clash takes the badge slot here too, and leaves the lead line its stage'
 // the self-check reports unknown and unknown counts everything as live.
 test('a dead session holding the same file does not paint clash', () => {
   const dir = root();
-  const cfg = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-live-'));
+  const cfg = tmp('fankeel-live-');
   fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
   const write = (pid, sessionId) =>
     fs.writeFileSync(path.join(cfg, 'sessions', pid + '.json'), JSON.stringify({ pid, sessionId }) + '\n');
@@ -601,6 +602,48 @@ test('adopting shows the badge for the stage taken over', () => {
   assert.equal(badgeOf(dir, B), 'build');
   // The source is stood down, so its badge goes with it.
   assert.equal(badgeOf(dir, A), null);
+});
+
+// `hideBadge` and `showBadge` each end with `refreshStation`, and `adopt` calls
+// both, so the station page — and the `readAll` behind it, one parse per
+// registry root — used to be paid for twice in one verb. Counted through
+// `fs.writeFileSync` itself, installed by a `--require` preload in the child
+// process that runs `task.js`: patching the module under test would not have
+// caught a call this task moved rather than removed.
+test('adopt enters the station refresh once, not once per badge writer', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  const page = path.join(cfg, 'fankeel', 'station.html');
+  started(dir, A, 'tidy the project cards', 'Waypoint');
+
+  const spyDir = tmp('fankeel-task-spy-');
+  const spyPath = path.join(spyDir, 'spy.js');
+  const counter = path.join(spyDir, 'count.txt');
+  fs.writeFileSync(spyPath, [
+    "const fs = require('node:fs');",
+    'const target = process.env.STATION_WATCH_FILE;',
+    'const counter = process.env.STATION_WRITE_COUNT_FILE;',
+    'const orig = fs.writeFileSync;',
+    'fs.writeFileSync = function (file, ...rest) {',
+    '  if (String(file) === target) fs.appendFileSync(counter, "x");',
+    '  return orig.call(fs, file, ...rest);',
+    '};',
+  ].join('\n'));
+  fs.writeFileSync(counter, '');
+
+  execFileSync(process.execPath,
+    ['--require', spyPath, SCRIPT, 'adopt', A, '--session', B, '--root', dir, '--claude-dir', cfg],
+    {
+      encoding: 'utf8',
+      env: Object.assign({}, process.env, {
+        CLAUDE_CONFIG_DIR: cfg,
+        STATION_WATCH_FILE: page,
+        STATION_WRITE_COUNT_FILE: counter,
+      }),
+    });
+
+  assert.equal(fs.readFileSync(counter, 'utf8').length, 1,
+    'one character per write to the station page in the config dir — two means refreshStation ran twice');
 });
 
 test('show reports no entry rather than pretending the mode is on', () => {

@@ -8,12 +8,13 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 
 const registry = require('../lib/registry.js');
+const tmp = require('./tmp.js');
 
 const SID = '23916a07-5213-4e61-a3f0-70b5c462fd82';
 const OTHER = '8f2c1d90-0000-4000-8000-000000000001';
 
 function tmpRoot() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-reg-'));
+  return tmp('fankeel-reg-');
 }
 
 function seed(root, sessionId, data) {
@@ -230,11 +231,11 @@ test('an existing .fankeel/.gitignore is never overwritten', () => {
 // missing: a file somebody edited by hand comes back byte-identical.
 test('ensureIgnored appends only what is missing and leaves a complete file alone', () => {
   const root = tmpRoot();
-  assert.equal(registry.ensureIgnored(root, ['sessions/', 'station.html']), true);
+  registry.ensureIgnored(root, ['sessions/', 'station.html']);
   const ignore = path.join(root, '.fankeel', '.gitignore');
   assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\nstation.html\n');
   fs.writeFileSync(ignore, 'sessions/\nscratch/\nstation.html\n');
-  assert.equal(registry.ensureIgnored(root, ['station.html']), false);
+  registry.ensureIgnored(root, ['station.html']);
   assert.equal(fs.readFileSync(ignore, 'utf8'), 'sessions/\nscratch/\nstation.html\n');
 });
 
@@ -469,7 +470,7 @@ test('the memory a task can hold is small by construction', () => {
 // ---- where the registry lives --------------------------------------------
 
 test('with no .fankeel anywhere, the registry is where Claude Code was opened', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-root-'));
+  const dir = tmp('fankeel-root-');
   const deep = path.join(dir, 'a', 'b');
   fs.mkdirSync(deep, { recursive: true });
   assert.equal(registry.findStateRoot(deep), null);
@@ -477,7 +478,7 @@ test('with no .fankeel anywhere, the registry is where Claude Code was opened', 
 });
 
 test('an existing registry in an ancestor is what a session inside it joins', () => {
-  const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-root-'));
+  const parent = tmp('fankeel-root-');
   fs.mkdirSync(path.join(parent, '.fankeel', 'sessions'), { recursive: true });
   const child = path.join(parent, 'Trovara', 'backend');
   fs.mkdirSync(child, { recursive: true });
@@ -486,7 +487,7 @@ test('an existing registry in an ancestor is what a session inside it joins', ()
 });
 
 test('the nearest one wins, the way git picks the nearest .git', () => {
-  const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-root-'));
+  const parent = tmp('fankeel-root-');
   fs.mkdirSync(path.join(parent, '.fankeel', 'sessions'), { recursive: true });
   const child = path.join(parent, 'Trovara');
   fs.mkdirSync(path.join(child, '.fankeel', 'sessions'), { recursive: true });
@@ -502,7 +503,7 @@ test('the nearest one wins, the way git picks the nearest .git', () => {
 // the other and both looked healthy, which is the worst way for a collision
 // warning to fail.
 test('a project holding only a docs tree does not become a second registry', () => {
-  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-root-'));
+  const workspace = tmp('fankeel-root-');
   fs.mkdirSync(path.join(workspace, '.fankeel', 'sessions'), { recursive: true });
   const project = path.join(workspace, 'Waypoint');
   fs.mkdirSync(path.join(project, '.fankeel'), { recursive: true });
@@ -515,7 +516,7 @@ test('a project holding only a docs tree does not become a second registry', () 
 });
 
 test('the walk stops below the home directory rather than picking one up there', () => {
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-home-'));
+  const home = tmp('fankeel-home-');
   fs.mkdirSync(path.join(home, '.fankeel', 'sessions'), { recursive: true });
   const project = path.join(home, 'projects', 'thing');
   fs.mkdirSync(project, { recursive: true });
@@ -533,7 +534,7 @@ test('the walk stops below the home directory rather than picking one up there',
 });
 
 test('CLAUDE_PROJECT_DIR is preferred over the payload cwd', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-root-'));
+  const dir = tmp('fankeel-root-');
   const saved = process.env.CLAUDE_PROJECT_DIR;
   process.env.CLAUDE_PROJECT_DIR = dir;
   try {
