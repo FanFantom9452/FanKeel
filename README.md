@@ -207,6 +207,17 @@ The `.sh` equivalent, and what each colour is doing, is in
 | `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged, an environment nothing can rebuild or run, the weight of what is ignored, directories holding no files. Three of the five need git and two do not, so it answers outside a repository too. It never deletes. |
 | `node scripts/docs-audit.js` | The fortnightly deep pass: which pages have stopped being true, and which two of them disagree. `/fankeel-audit` is the whole sweep — it runs all three of these, reads the shortlist they produce, then offers the cleanup. It does not need an active task, so it also works on a repository nobody is in the middle of. |
 
+It prints every finding, not a summary of them — the role counts at the top are
+in addition to the list, not instead of it. So comparing two branches is a
+`diff` rather than a flag:
+
+    git stash && node scripts/docs-check.js > /tmp/before.txt; git stash pop
+    node scripts/docs-check.js > /tmp/after.txt
+    diff /tmp/before.txt /tmp/after.txt
+
+A headline count that moved from 22 to 21 says one finding went and says nothing
+about whether a different one arrived. The list says both.
+
 Neither one decides that two documents contradict each other, because nothing
 mechanical can. What the sweep does is turn "read all forty documents looking for
 disagreements" into "read these two — they describe the same source file, and one
