@@ -84,8 +84,8 @@ A third field is written by nobody the user talks to. `claims` holds every file
 this task has edited — at most sixty, each recorded whole and never truncated,
 because nothing here is a path a human retypes. The two writers reach that cap
 from opposite directions. A path arriving on its own drops the oldest to make
-room (`lib/registry.js:624`); a git pass holding more than sixty is refused
-whole rather than trimmed (`lib/dirty.js:173`), because trimming it would evict
+room (`lib/registry.js:624`, `slice(-MAX_CLAIMS)`); a git pass holding more than sixty is refused
+whole rather than trimmed (`lib/dirty.js:176`, `declined: written.length`), because trimming it would evict
 every claim an edit earned and put build output in its place.
 [collisions.md](collisions.md) is the page for that. Two hooks append to it,
 which is why the table above lists hooks rather than a command as its writer.
@@ -400,7 +400,7 @@ Writing the file is atomic — a sibling, then a rename — but reading it, chan
 one field and writing it back is not, and that is what every writer here does.
 Four of them are registered in hooks. `inject.js` writes
 on every prompt — once for `updated`, and once more for every new path the git
-pass claims, since `lib/dirty.js:180` calls `addClaim` per path and each one
+pass claims, since `lib/dirty.js:183` calls `addClaim` per path and each one
 takes the lock — in every session on the machine. That second number is usually
 zero after a task's first prompt, because `covers` skips a path already held.
 `resume.js` writes once per answered question, and `gate.js` once per question
@@ -408,7 +408,7 @@ asked, in a process that registered it — the reason above — so four writers
 contend here, and three in a process that did not.
 
 `touch.js` fires on every edit but writes on almost none of them: it
-returns at `hooks/touch.js:42` when the path is already claimed, which is what
+returns at `hooks/touch.js:42` (`covers(registry.claimsOf(mine), rel)`) when the path is already claimed, which is what
 makes a task editing one file two hundred times cost the registry one write. Measured, two processes adding twenty
 claims each kept 20 to 24 of the 40, and every one of those writes returned
 success.
@@ -451,7 +451,7 @@ Two things close it, both upstream of the hooks:
 
 | | |
 |---|---|
-| `scripts/task.js` | `--session` is checked against Claude Code's own `<config>/sessions/<pid>.json`. An id refused is one the scan did not find **while finding others**, and the message lists those with the directory each was opened in. Two results allow: a directory that cannot be read, and a scan that found nobody at all. Neither is evidence, because a refusal must never come from a failed measurement — and a scan that cannot see the session doing the asking has failed, whatever it returned. `lib/live.js:124` keeps the same rule for the same directory. |
+| `scripts/task.js` | `--session` is checked against Claude Code's own `<config>/sessions/<pid>.json`. An id refused is one the scan did not find **while finding others**, and the message lists those with the directory each was opened in. Two results allow: a directory that cannot be read, and a scan that found nobody at all. Neither is evidence, because a refusal must never come from a failed measurement — and a scan that cannot see the session doing the asking has failed, whatever it returned. `lib/live.js:124` (`!ids.has(mySessionId)`) keeps the same rule for the same directory. |
 | `hooks/inject.js` | a `/fankeel` prompt is answered with the `init` block: this session's id — the one that hook is itself holding — and the rules for the step before there is a task. |
 
 `clear <id>` and `adopt <id>` take the other session's id positionally rather

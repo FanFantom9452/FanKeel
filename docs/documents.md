@@ -151,7 +151,9 @@ on is the role's again: a reference page has both checked; a plan or a decision
 record has its links checked, and of its code spans only that a `path:line`
 overshot the file, never that the path is gone, since a plan names code that is
 not built yet and a decision names code that was there when it was written; an
-archive or a report is read for neither.
+archive or a report is read for neither. A `path:line` in a reference page is
+checked against the code span that follows it on the same line, and one
+written without such a span is listed as unchecked rather than as broken.
 
 So a bare path written into a key of your own is read by nothing and checked by
 nothing — a slower failure than a stale sentence, because a key looks like a
@@ -243,7 +245,7 @@ from a line that claims to be every markdown file.
 ### `orphan`, deliberately empty where an index exists
 
 An orphan is a document under the docs root that no other document links to.
-`scripts/docs-audit.js:559` reports them only where the project declares no
+`scripts/docs-audit.js:560` (`index.exists ? [] :`) reports them only where the project declares no
 index. Where one exists, the same gap is already reported, and worded better,
 as `missing from the index` (`index.missing`, `scripts/docs-audit.js:542-546`):
 an index is a markdown file like any other, so anything it fails to list is
