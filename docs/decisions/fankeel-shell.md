@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-06
+last_verified: 2026-09-07
 source_of_truth: this file, no upstream — a decision record is not derived from anything
 ---
 
@@ -716,3 +716,56 @@ A related convention, settled the same day: a wrong figure in a commit body is
 ruled on rather than amended once a ledger or a review range names that sha.
 `d1b7f14` says 193 where the entry is 194, and the correction lives in the
 build ledger and in the following commit.
+
+## A quote beside a citation is a record, not a proxy
+
+Decided 2026-09-07, and it narrows **The document checker stops where the
+machine stops** above rather than reversing it. That section rejected two
+mechanical proxies by name, *look for a symbol near the line* and *compare
+against the last commit that touched both*, and the first of those was measured
+against the four incidents it describes: it catches **none of them**. None of the
+four citations names a symbol, and across this repository only 129 of 723
+resolved citations land on a declaration line at all, so that proxy is blind to
+82% of them by construction. That conclusion holds and is not reopened.
+
+What is narrowed is the premise, at `:424` above:
+
+> Deciding it needs someone to know what the citation was meant to point at, and
+> nothing on disk records that.
+
+Where a reference page writes `lib/dirty.js:180` and then `addClaim` in the
+same sentence, the page has recorded it. Comparing the two is reading the note
+the author left, not guessing at intent — so the boundary the section draws,
+*report what can be decided mechanically*, is where it always was. The quoted
+case simply turns out to be on the mechanical side of it.
+
+The scope is one role and one shape, and each limit is there to keep a finding
+from being a guess. `reference` only, because a plan cites lines it is about to
+change and a decision cites the lines that existed the day it was written. A
+quote only. Ambiguity reported and never resolved: where the quote occurs twice
+in the target file the finding names no line, since naming one would be exactly
+the guess the section above refuses. And a citation with no quote is listed as
+unchecked rather than as broken, so no repository upgrading fankeel has its
+`land` broken by citations written under the older rule.
+
+What reopened it was not an argument. `docs/registry.md` cited `lib/dirty.js:180`
+for a call to `addClaim` that is at `:183`, and it was already wrong on the day
+the section above was written — a fifth incident, sitting in the file the section
+uses for its own examples. `skills/fankeel-survey/SKILL.md` cited
+`scripts/task.js:914`, was corrected to `:929` on 09-05 by the reader that section
+credits, and had been corrected again to `:938` by 09-07.
+
+Then the check ran, and the count went up. Across the eleven `path:line`
+citations the `reference` role holds, **three** did not hold what the page said
+they did: the `addClaim` drift above; `lib/dirty.js:173`, where the cited line is
+a comment and the prose means the refusal at `:176`; and
+`scripts/docs-audit.js:559`, where it means `:560`. Two of those three nobody had
+reported. The section above argued that a reader finds these, and a reader does —
+but only the ones a reader happens to read, and these sat in the pages this
+project reads most.
+
+The cost, stated because it is real: eleven citations in four files had to carry
+a quote, and the failure mode this cannot rule out is a cited line reworded
+without moving, which would report `moved` wrongly. That rate is measured on four
+quoted citations in one repository, which is not a sample. `unquoted` being
+non-failing is what bounds the damage until it is.
