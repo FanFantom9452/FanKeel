@@ -61,7 +61,8 @@ test('the default form writes the page, prints its path and the counts', () => {
     const file = path.join(f.cfg, 'fankeel', 'station.html');
     assert.ok(out.includes(file));
     assert.match(out, /1 registries · 1 live, 1 stale, 0 down/);
-    assert.ok(fs.readFileSync(file, 'utf8').includes('stale'));
+    const dataFile = path.join(f.cfg, 'fankeel', 'station-data.js');
+    assert.ok(fs.readFileSync(dataFile, 'utf8').includes('"state":"stale"'));
 });
 
 test('--json prints the rows as one JSON document and writes nothing', () => {
@@ -94,7 +95,7 @@ test('--scan walks a directory for registries, and the next run remembers what i
     const env = { ...process.env, CLAUDE_CONFIG_DIR: f.cfg };
     const out = execFileSync(process.execPath, [CLI, '--scan', path.join(f.base, 'elsewhere')], { cwd: f.base, env, encoding: 'utf8' });
     assert.match(out, /2 registries · 1 live, 1 stale, 1 down/);
-    assert.ok(fs.readFileSync(path.join(f.cfg, 'fankeel', 'station.html'), 'utf8').includes('scanned'));
+    assert.ok(fs.readFileSync(path.join(f.cfg, 'fankeel', 'station-data.js'), 'utf8').includes('scanned'));
     const again = execFileSync(process.execPath, [CLI], { cwd: f.base, env, encoding: 'utf8' });
     assert.match(again, /2 registries/, 'roots.json remembered the scanned registry');
     const inside = execFileSync(process.execPath, [CLI], { cwd: far, env, encoding: 'utf8' });
@@ -109,8 +110,9 @@ test('serve renders live, refuses a bad nonce, refuses a live row, clears a stal
     try {
         const page = await request(s.url, { method: 'GET' });
         assert.equal(page.status, 200);
-        assert.ok(page.text.includes('action="/clear"'));
-        const nonce = /name="nonce" value="([^"]+)"/.exec(page.text)[1];
+        const data = await request(s.url + 'station-data.js', { method: 'GET' });
+        assert.match(data.text, /"serve":true/);
+        const nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
         const form = (o) => new URLSearchParams(o).toString();
         const post = (body) => request(s.url + 'clear', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } }, body);
         assert.equal((await post(form({ root: f.r1, id: STALE, nonce: 'wrong' }))).status, 403);
@@ -123,6 +125,30 @@ test('serve renders live, refuses a bad nonce, refuses a live row, clears a stal
         assert.equal(ok.headers.location, '/');
         assert.equal(registry.readSession(f.r1, STALE).active, false);
         assert.equal((await request(s.url + 'nowhere', { method: 'GET' })).status, 404);
+    } finally {
+        s.close();
+    }
+});
+
+test('serve answers the shell and its three siblings', async () => {
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
+    try {
+        const page = await request(s.url, { method: 'GET' });
+        assert.equal(page.status, 200);
+        assert.match(page.headers['content-type'], /text\/html/);
+        assert.ok(!page.text.includes('window.STATION'), 'the shell inlined the data');
+
+        const data = await request(s.url + 'station-data.js', { method: 'GET' });
+        assert.equal(data.status, 200);
+        assert.match(data.headers['content-type'], /javascript/);
+        assert.match(data.text, /^window\.STATION = /);
+        assert.match(data.text, /"serve":true/);
+
+        assert.equal((await request(s.url + 'station.css', { method: 'GET' })).status, 200);
+        assert.equal((await request(s.url + 'station.js', { method: 'GET' })).status, 200);
+        assert.equal((await request(s.url + 'nothing', { method: 'GET' })).status, 404);
     } finally {
         s.close();
     }
@@ -170,8 +196,8 @@ test('POST /clear-stale clears every stale row in one registry', async () => {
     const { serve } = require('../scripts/station.js');
     const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
     try {
-        const page = await request(s.url, { method: 'GET' });
-        const nonce = /name="nonce" value="([^"]+)"/.exec(page.text)[1];
+        const data = await request(s.url + 'station-data.js', { method: 'GET' });
+        const nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
         const form = (o) => new URLSearchParams(o).toString();
         const res = await request(s.url + 'clear-stale',
             { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } },
@@ -184,17 +210,17 @@ test('POST /clear-stale clears every stale row in one registry', async () => {
         assert.equal(registry.readSession(f.r1, CS_OLD_A).active, false, 'the first stale row is cleared');
         assert.equal(registry.readSession(f.r1, CS_OLD_B).active, false, 'the second stale row is cleared');
         assert.equal(registry.readSession(f.r1, CS_LIVE).active, true, 'the live row is untouched');
-        // And the page the browser lands on says so, which is the half a
+        // And the data the shell fetches next says so, which is the half a
         // redirect cannot do by itself.
-        const after = await request(s.url + '?cleared=2', { method: 'GET' });
+        const after = await request(s.url + 'station-data.js?cleared=2', { method: 'GET' });
         assert.equal(after.status, 200);
-        assert.match(after.text, /<p class="cleared">cleared 2 stale rows<\/p>/);
-        const plain = await request(s.url, { method: 'GET' });
-        assert.ok(!plain.text.includes('<p class="cleared">'),
-            'a page loaded without the query says nothing about clearing');
-        const junk = await request(s.url + '?cleared=lots', { method: 'GET' });
-        assert.ok(!junk.text.includes('<p class="cleared">'),
-            'a non-numeric count is ignored rather than echoed into the page');
+        assert.match(after.text, /"cleared":2/);
+        const plain = await request(s.url + 'station-data.js', { method: 'GET' });
+        assert.ok(!plain.text.includes('"cleared"'),
+            'data loaded without the query says nothing about clearing');
+        const junk = await request(s.url + 'station-data.js?cleared=lots', { method: 'GET' });
+        assert.ok(!junk.text.includes('"cleared"'),
+            'a non-numeric count is ignored rather than echoed into the data');
     } finally {
         s.close();
     }
@@ -222,8 +248,8 @@ test('POST /clear-stale reports the rows it refused', async () => {
     const { serve } = require('../scripts/station.js');
     const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
     try {
-        const page = await request(s.url, { method: 'GET' });
-        const nonce = /name="nonce" value="([^"]+)"/.exec(page.text)[1];
+        const data = await request(s.url + 'station-data.js', { method: 'GET' });
+        const nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
         const form = (o) => new URLSearchParams(o).toString();
         const res = await request(s.url + 'clear-stale',
             { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } },
@@ -244,8 +270,8 @@ test('POST /clear-stale clears a too-fresh row when force is sent', async () => 
     const { serve } = require('../scripts/station.js');
     const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
     try {
-        const page = await request(s.url, { method: 'GET' });
-        const nonce = /name="nonce" value="([^"]+)"/.exec(page.text)[1];
+        const data = await request(s.url + 'station-data.js', { method: 'GET' });
+        const nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
         const form = (o) => new URLSearchParams(o).toString();
         const res = await request(s.url + 'clear-stale',
             { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } },
@@ -290,14 +316,16 @@ test('serve hands that budget to the walk on every request, and hands none when 
     try {
         scanning = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false, scan: [empty] });
         const before = Date.now();
-        await request(scanning.url, { method: 'GET' });
+        // The shell itself no longer gathers anything — it is a static file —
+        // so the request that triggers a gather is the one for its data.
+        await request(scanning.url + 'station-data.js', { method: 'GET' });
         assert.equal(seen.length, 1, 'one render, one gather');
         assert.ok(Number.isFinite(seen[0].deadline), 'the scan walk is bounded by a deadline');
         assert.ok(seen[0].deadline >= before + 55000 && seen[0].deadline <= Date.now() + 60000,
             'and the bound is the sixty-second budget: ' + (seen[0].deadline - before) + 'ms');
 
         plain = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
-        await request(plain.url, { method: 'GET' });
+        await request(plain.url + 'station-data.js', { method: 'GET' });
         assert.equal(seen.length, 2);
         assert.equal(seen[1].deadline, undefined, 'a render with no --scan carries no clock');
     } finally {
@@ -380,14 +408,16 @@ test('the first run scans once and records that it did', () => {
     // lines are silent unless `main()` hands `autoScan`'s counts into
     // `write()`. Guarded on the record rather than asserted flat, because a
     // machine small enough to finish every drive inside five seconds cuts
-    // nothing and should say nothing.
-    const page1 = fs.readFileSync(path.join(cfg, 'fankeel', 'station.html'), 'utf8');
+    // nothing and should say nothing. The rendering of that count into words
+    // is `station.js`'s, in the browser; what the server writes is the data
+    // those words come from.
+    const data1 = fs.readFileSync(path.join(cfg, 'fankeel', 'station-data.js'), 'utf8');
     if (after1.scannedAt.timedOut) {
-        assert.match(page1, /the scan ran out of time/, 'a walk that ran out of time says so on the page');
+        assert.match(data1, /"timedOut":true/, 'a walk that ran out of time says so in the data');
     }
     if (after1.scannedAt.depthCuts > 0) {
-        assert.ok(page1.includes('depth stopped the scan in ' + after1.scannedAt.depthCuts + ' places'),
-            'the page carries the same count of depth cuts the record does');
+        assert.ok(data1.includes('"depthCuts":' + after1.scannedAt.depthCuts),
+            'the data carries the same count of depth cuts the record does');
     }
 
     const t1 = Date.now();
