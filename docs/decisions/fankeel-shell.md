@@ -748,9 +748,15 @@ raw text, so a citation inside a fence is checked like any other. Declaration is
 declaration: that is `survey.js`'s own bargain, it over-counts declarations, and
 inheriting it makes the 82% conservative rather than generous. A markdown
 heading does **not** count — `declaredSymbols` only ever builds from `CODE_EXT`
-files, so a heading is not a symbol this proxy could resolve against. On the
-branch tip the same method gives 133 of 768. The pair moves with the day; the
-82% does not, which is why the 82% is what the argument rests on.
+files, so a heading is not a symbol this proxy could resolve against.
+
+**There is deliberately no second pair for the branch tip.** One was written, and
+four counts of it disagreed — 764, 766, 768, 770 — while this pinned pair
+reproduced exactly under two independent implementations. The tip is a moving
+target, and the sentence recording it is itself a commit that adds `path:line`
+spans and moves it again: the draft naming a tip figure changed the tip figure by
+existing. A count is worth recording only against a sha, and the proportion is
+what survives either way.
 
 Three wrong numbers preceded it, and all three looked right. 723 was a
 denominator counted with a `PATHISH` resolving slightly differently from the

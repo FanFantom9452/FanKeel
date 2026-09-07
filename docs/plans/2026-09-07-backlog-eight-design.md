@@ -74,8 +74,10 @@ them by construction. Measured at `8587d3c` over every `path:line` span in
 `git ls-files "*.md"`, fences included — `checkDoc` binds `withoutFences` to
 `linkText` alone, so the span loop reads raw text — with `DECL` as committed, and
 a markdown heading not counting, since `declaredSymbols` only builds from
-`CODE_EXT` files. 133 of 768 on the branch tip; the pair moves with the day, the
-82% does not.
+`CODE_EXT` files. No second pair is given for the branch tip: four counts of one
+disagreed on the denominator while this pinned pair reproduced exactly, because
+the tip moves and the commit recording it moves it again. The proportion is the
+durable part.
 
 Note the denominator this is *not* about. Those 719 span every role; the
 `reference` pages this change actually polices hold eleven. The 82% measures how
