@@ -23,12 +23,13 @@ const { parseArgs: parseArgv } = require('node:util');
 
 const { trackedFiles } = require('../lib/tracked.js');
 const { human, plural } = require('../lib/report.js');
+const { resolveRoot } = require('../lib/registry.js');
 
 // A declared flag given no value comes back `true` rather than a string, so the
 // default is restored by type; `strict: false` keeps an unknown flag silent.
 function parseArgs(argv) {
     const { values } = parseArgv({ args: argv, strict: false, allowPositionals: true, options: { root: { type: 'string' } } });
-    return { root: path.resolve(typeof values.root === 'string' ? values.root : process.cwd()) };
+    return { root: resolveRoot(typeof values.root === 'string' ? values.root : undefined) };
 }
 
 // Grouped by first path segment. A file loose at the top is its own row, because

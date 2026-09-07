@@ -15,10 +15,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 
 const tmp = require('./tmp.js');
 
+const ROOT = path.join(__dirname, '..');
 const HOOKS = path.join(__dirname, '..', 'hooks');
 const INJECT = path.join(HOOKS, 'inject.js');
 const GUARD = path.join(HOOKS, 'guard.js');
@@ -243,4 +244,29 @@ test('the scanner reads one project of the workspace when told which', () => {
     const one = execFileSync(process.execPath, [SURVEY, '--root', 'Waypoint', 'app'], { cwd: root, encoding: 'utf8' });
     assert.doesNotMatch(one, /TypeDesk/);
     assert.match(one, /web\/src\/App\.jsx/);
+});
+
+test('a relative --root means the same directory in all eight scripts', () => {
+    const workspace = tmp('fankeel-root-agree-');
+    fs.mkdirSync(path.join(workspace, '.fankeel', 'sessions'), { recursive: true });
+    fs.mkdirSync(path.join(workspace, 'alpha'), { recursive: true });
+    fs.mkdirSync(path.join(workspace, 'beta'), { recursive: true });
+    fs.writeFileSync(path.join(workspace, 'beta', 'README.md'), '# beta\n');
+    fs.writeFileSync(path.join(workspace, 'beta', 'TODO.md'), '# TODO\n\n## Ready\n\n- a thing.\n');
+
+    const alpha = path.join(workspace, 'alpha');
+    const run = (script, args) =>
+        spawnSync(process.execPath, [path.join(ROOT, 'scripts', script), ...args], {
+            cwd: alpha, encoding: 'utf8',
+        });
+
+    // Every one of these names `beta`, never `alpha/beta`, in its output.
+    for (const script of ['layout.js', 'map.js', 'orient.js', 'residue.js', 'survey.js', 'docs-check.js', 'docs-audit.js']) {
+        const r = run(script, ['--root', 'beta']);
+        const out = r.stdout + r.stderr;
+        assert.ok(!out.includes(path.join('alpha', 'beta')), script + ' resolved against cwd: ' + out.slice(0, 300));
+    }
+
+    const todo = run('todo-check.js', ['--root', 'beta']);
+    assert.equal(todo.status, 0, todo.stdout + todo.stderr);
 });

@@ -535,7 +535,7 @@ function parseArgs(argv) {
         const p = String(raw).trim();
         if (p && !named.includes(p)) named.push(p);
     }
-    return { root: typeof values.root === 'string' ? values.root : process.cwd(), named };
+    return { root: registry.resolveRoot(typeof values.root === 'string' ? values.root : undefined), named };
 }
 
 function main(argv) {
