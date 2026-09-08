@@ -750,7 +750,7 @@ they know (a) what to do next, and (b) what just happened? If yes, send.
 
 ### 5.3 六個污染控制（第二部 2.1）
 
-caveman 的 `caveman/evals/README.md` 與 `run_evals.py` 命名了六條「操作者的世界會漏進實驗」的通道：
+i-have-adhd 的 `i-have-adhd/evals/README.md` 與 `run_evals.py` 命名了六條「操作者的世界會漏進實驗」的通道：
 
 | # | 通道 | 對策 |
 |---|---|---|
@@ -772,7 +772,7 @@ difference that has nothing to do with the skill under test.」
 
 ### 5.4 結構性盲測是結構性的，不是約定（第二部 2.2）
 
-caveman 的 `caveman/scripts/judge.py`（334 行）五個機制：**標籤置換**（條件重貼成 A/B/C，順序由
+i-have-adhd 的 `i-have-adhd/scripts/judge.py`（334 行）五個機制：**標籤置換**（條件重貼成 A/B/C，順序由
 `sha256(group_key)` 驅動的 Fisher-Yates 決定，可重跑且結果一致）、`<!-- judge:begin -->`
 / `<!-- judge:end -->` **marker 圍出評分區**（「the gate rules name the conditions by
 name, so feeding the whole document to a blind grader would leak the vocabulary
@@ -853,7 +853,7 @@ stage skill，沒有一條追溯到「為什麼」。已有的統管規則是校
 enabled"`——抓的是「schema 通過但載入失敗」，原文舉例 duplicate hooks 宣告（#61）。
 `pi-load-check.yml` 真的裝 Pi 跑另一支驗證腳本。同一條 workflow 另有 `hook-parity`
 job，matrix `[ubuntu-latest, windows-latest]`，測三份 hook 實作（`.mjs` / `.sh` /
-`.ps1`）行為一致。caveman 的 `caveman/hooks/always-on.mjs` 本身有三個可搬防禦：只在使用者 opt-in 時觸發、
+`.ps1`）行為一致。i-have-adhd 的 `i-have-adhd/hooks/always-on.mjs` 本身有三個可搬防禦：只在使用者 opt-in 時觸發、
 相對腳本自身位置解析而非信任環境變數、任何失敗都 `process.exit(0)`（永不阻擋 session
 啟動）。
 
