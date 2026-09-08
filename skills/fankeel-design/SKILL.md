@@ -29,9 +29,9 @@ screen. A second approach is a catalogue, not more design.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| Only one approach presented, no rejected alternative shown | `lib/stages.js:230` calls a second one a catalogue (`not a catalogue`) — trade-offs on the one approach chosen are the design, not a comparison table. |
-| The map check returning `no conflict` with nothing else said | `lib/stages.js:227` allows exactly that (`say you checked and found none`) — a stated absence is a complete answer, not a check cut short. |
-| Config, error handling or abstraction the ask never requested, left out | `lib/stages.js:225` requires it (`Cut whatever the stated ask does not require`) — the smaller design is the correct one, not an unfinished one. |
+| Only one approach presented, no rejected alternative shown | `lib/stages.js:231` calls a second one a catalogue (`not a catalogue`) — trade-offs on the one approach chosen are the design, not a comparison table. |
+| The map check returning `no conflict` with nothing else said | `lib/stages.js:228` allows exactly that (`say you checked and found none`) — a stated absence is a complete answer, not a check cut short. |
+| Config, error handling or abstraction the ask never requested, left out | `lib/stages.js:226` requires it (`Cut whatever the stated ask does not require`) — the smaller design is the correct one, not an unfinished one. |
 
 ## The gate never scales down
 

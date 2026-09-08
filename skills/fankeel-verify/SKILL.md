@@ -31,9 +31,9 @@ around this one.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| A defeated row sent to `build` instead of fixed here | `lib/stages.js:297` requires exactly that (`Anything half-built sends this back to build`) — a fix with its own review range is build's commit, never verify's. |
-| An adversary returning only the rows it defeated | Its charter is that scope alone — `lib/stages.js:300` (`ask only for the rows it defeats`) — a clean pass elsewhere is not it skipping anything. |
-| A coverage line reading `9 of 21`, not every page | `lib/stages.js:299` requires the denominator stated, not every page read (`nine of twenty-one pages`) — that is the complete claim, not a shortfall. |
+| A defeated row sent to `build` instead of fixed here | `lib/stages.js:298` requires exactly that (`Anything half-built sends this back to build`) — a fix with its own review range is build's commit, never verify's. |
+| An adversary returning only the rows it defeated | Its charter is that scope alone — `lib/stages.js:301` (`ask only for the rows it defeats`) — a clean pass elsewhere is not it skipping anything. |
+| A coverage line reading `9 of 21`, not every page | `lib/stages.js:300` requires the denominator stated, not every page read (`nine of twenty-one pages`) — that is the complete claim, not a shortfall. |
 
 ## The iron law
 

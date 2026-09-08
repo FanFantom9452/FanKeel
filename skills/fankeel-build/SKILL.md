@@ -31,9 +31,9 @@ ledger where there is a plan**, the same way the decomposition is `plan`'s — a
 
 | Looks like a finding | Why it is not |
 |---|---|
-| Dead code left in the diff, not deleted | Only dead code this change created gets removed — `lib/stages.js:277` (`dead code you did not create gets mentioned, not deleted`), so an orphan predating this task is correctly still there, just named. |
-| A new ask from mid-build routed to `TODO.md` instead of built | That is the routing rule working, not the ask dropped — `lib/stages.js:274` (`is one TODO.md line at the detail`), not silence. |
-| A ruling recorded instead of a fifth stopper firing | `lib/stages.js:276` names deciding as the normal outcome (`Decide rather than stall`) — only irreversible, security-sensitive, out-of-workspace or every-path-a-guess actually stop the loop. |
+| Dead code left in the diff, not deleted | Only dead code this change created gets removed — `lib/stages.js:278` (`dead code you did not create gets mentioned, not deleted`), so an orphan predating this task is correctly still there, just named. |
+| A new ask from mid-build routed to `TODO.md` instead of built | That is the routing rule working, not the ask dropped — `lib/stages.js:275` (`is one TODO.md line at the detail`), not silence. |
+| A ruling recorded instead of a fifth stopper firing | `lib/stages.js:277` names deciding as the normal outcome (`Decide rather than stall`) — only irreversible, security-sensitive, out-of-workspace or every-path-a-guess actually stop the loop. |
 
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
 

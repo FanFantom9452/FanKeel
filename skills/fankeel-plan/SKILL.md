@@ -32,9 +32,9 @@ missing one of those, the stage is finished.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| Setup, config or docs with no task of their own | `lib/stages.js:251` folds them in on purpose (`Fold setup and docs into the task needing them`) — a task with no matching bullet was never meant to have one. |
-| A `**Dispatch:**` line naming `sonnet` with no reason given | Only the tiers above the floor owe one — `lib/stages.js:254` (`and anything above it names why on that line`); `sonnet` needing no argument is the rule working. |
-| A plan reviewer's return holding only two kinds of line | `lib/stages.js:253` names its whole charter (`returning only promises with no task and Files blocks that disagree with their task.`) — nothing else is in its scope, so nothing else missing is a gap. |
+| Setup, config or docs with no task of their own | `lib/stages.js:252` folds them in on purpose (`Fold setup and docs into the task needing them`) — a task with no matching bullet was never meant to have one. |
+| A `**Dispatch:**` line naming `sonnet` with no reason given | Only the tiers above the floor owe one — `lib/stages.js:255` (`and anything above it names why on that line`); `sonnet` needing no argument is the rule working. |
+| A plan reviewer's return holding only two kinds of line | `lib/stages.js:254` names its whole charter (`returning only promises with no task and Files blocks that disagree with their task.`) — nothing else is in its scope, so nothing else missing is a gap. |
 
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
 
