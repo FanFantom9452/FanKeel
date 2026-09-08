@@ -209,9 +209,11 @@ ratio moves in percentage points, and a rise in it is the bad direction.
 
 **清單** is the sortable table and a detail pane. Clicking a row fills the pane
 rather than expanding the row, so two sessions can be compared without
-scrolling. Sorting is by task, stage, context, cost, state or last action,
-clicking twice to reverse. `gather` still returns sessions ordered by `updated`
-descending, so the page's first sort is the one it arrived in.
+scrolling. Sorting is by task, stage, context, cost, state, started or last
+action, clicking twice to reverse — `started` keeps a column and header of its
+own so it stays reachable as a sort key, the same reason the page this
+replaces sorted by it (`assets/station/station.js:513`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+`updated` descending, so the page's first sort is the one it arrived in.
 
 A stale row's clear control is the one thing that differs between the served
 page and the file: `window.STATION.serve` is true only when a server produced
