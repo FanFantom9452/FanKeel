@@ -508,7 +508,23 @@ Generated from this repository on 2026-09-08 at `af05431`, values copied exactly
 
 5. In the same page, add one sentence about `--root`: `station.js` takes it as a repeatable list while every other script takes a single override. Task 8 changes that flag's resolution and does not own this file, so the sentence is written here.
 
-6. Run `node --test tests/station-doc.test.js` and `node scripts/docs-check.js`, and confirm every `path:line` this page cites still resolves — Task 1 moved lines in `lib/station.js`, and this page cites it.
+6. This page carries nine references that `docs-check` reports as broken after Tasks 1 to 6, and closing them is part of this task rather than a later sweep. Measured on 2026-09-08:
+
+   ```
+   gone:  :168  names assets/station/station.html
+   moved: :107  assets/station/station.js:127 does not hold `s.root !== f.project` — it is at :141
+   moved: :116  assets/station/station.js:657 does not hold `w.to - w.from`
+   moved: :123  assets/station/station.js:674 does not hold `沒有分階段紀錄` — it is at :707
+   moved: :193  assets/station/station.js:460 does not hold `function goneNote()` — it is at :474
+   moved: :198  assets/station/station.js:477 does not hold `function registryNote()` — it is at :491
+   moved: :205  assets/station/station.js:704 does not hold `a corrupt-entry count must` — it is at :737
+   moved: :228  assets/station/station.js:558 does not hold `a sort key with no header is a sort nobody can reach` — it is at :574
+   moved: :269  assets/station/station.js:510 does not hold `cleared ' + S.cleared + ' stale rows` — it is at :526
+   ```
+
+   Seven of the eight `moved:` rows name the line the quote is now on, so those are transcription. `:116` names none — its quote is gone from the file, so read what replaced it and repoint the citation at what the sentence is actually about, or drop the citation if the sentence no longer needs one.
+
+7. Run `node --test tests/station-doc.test.js` and `node scripts/docs-check.js`. The flag test must pass, and no row of the list above may remain. The ten `past-end:` rows in `docs/plans/*` are older than this branch and are not this task's.
 
 ---
 
