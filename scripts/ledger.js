@@ -333,34 +333,42 @@ function overlapNote(root, entries) {
             else crossing.push(a.label + ' and ' + b.label);
         }
     }
-    if (contained.length || identical.length || crossing.length) {
-        const notes = [];
-        if (contained.length) {
-            notes.push(contained.join('; ') + ' — send the containing row and drop the row it contains');
-        }
-        if (identical.length) {
-            notes.push(identical.join('; ') + ' record the same commits — send one, not both');
-        }
-        if (crossing.length) {
-            // Neither row covers the other, and a linear `base..head` range
-            // naming their union is not always there to give: two crossing
-            // ranges can share only part of their history, and inventing an
-            // endpoint that is not a real diff risks a range that drops
-            // commits or names a comparison nobody made. Sending both is
-            // always correct, just not free — the commits where they cross
-            // get reviewed twice instead of zero times.
-            notes.push(crossing.join('; ') + ' cross without either containing the other — no single '
-                + 'range names their union, so send both; the shared commits are reviewed twice');
-        }
-        return 'These rows are not independent, so pinned-at-both-ends is not the same as\n'
-            + 'disjoint: ' + notes.join('. ') + '.';
+    const overlapFound = contained.length || identical.length || crossing.length;
+    const notes = [];
+    if (contained.length) {
+        notes.push(contained.join('; ') + ' — send the containing row and drop the row it contains');
     }
+    if (identical.length) {
+        notes.push(identical.join('; ') + ' record the same commits — send one, not both');
+    }
+    if (crossing.length) {
+        // Neither row covers the other, and a linear `base..head` range
+        // naming their union is not always there to give: two crossing
+        // ranges can share only part of their history, and inventing an
+        // endpoint that is not a real diff risks a range that drops
+        // commits or names a comparison nobody made. Sending both is
+        // always correct, just not free — the commits where they cross
+        // get reviewed twice instead of zero times.
+        notes.push(crossing.join('; ') + ' cross without either containing the other — no single '
+            + 'range names their union, so send both; the shared commits are reviewed twice');
+    }
+    // Appended rather than returned early. Whether some rows overlap and
+    // whether another row could not be read at all are two independent facts
+    // about the same list — an early return here is exactly the bug the
+    // reviewer found: a ledger holding both reported only the overlap, and
+    // the row git never resolved went unnamed.
     if (unresolved.length) {
         const plural = unresolved.length > 1;
-        return 'One verifier per row, pinned at both ends. Whether ' + (plural ? 'they overlap' : 'it overlaps')
-            + ' the rest could not be checked: git could not read ' + (plural ? 'these ranges' : 'this range')
-            + ' — ' + unresolved.map((e) => e.label).join(', ') + ' — so treat ' + (plural ? 'them' : 'it')
-            + ' as unverified rather than assume ' + (plural ? 'they are' : 'it is') + ' disjoint from the others.';
+        notes.push('Whether ' + (plural ? 'they overlap' : 'it overlaps') + ' anything could not be checked: '
+            + 'git could not read ' + (plural ? 'these ranges' : 'this range') + ' — '
+            + unresolved.map((e) => e.label).join(', ') + ' — so treat ' + (plural ? 'them' : 'it')
+            + ' as unverified rather than assume ' + (plural ? 'they are' : 'it is') + ' disjoint from the rest');
+    }
+    if (notes.length) {
+        const lead = overlapFound
+            ? 'These rows are not independent, so pinned-at-both-ends is not the same as\ndisjoint: '
+            : 'One verifier per row, pinned at both ends. ';
+        return lead + notes.join('. ') + '.';
     }
     return 'One verifier per row, pinned at both ends. The rows do not overlap, so\nthey may go out in one response.';
 }

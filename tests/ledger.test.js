@@ -482,6 +482,32 @@ test('ranges names a range git cannot read back as unverified rather than assumi
   assert.doesNotMatch(out, /The rows do not overlap/);
 });
 
+// Round-3 finding: the overlap branch returned as soon as any pair overlapped,
+// so the unresolved check right below it never ran — a ledger holding both an
+// overlapping pair and an unrelated unresolvable row reported only the
+// overlap, and the row git never resolved went unnamed. `known.length` has to
+// be 2 or more for the early return to even be reachable, which is exactly
+// what the single-row test above cannot exercise: Task 1 `c0..c3` contains
+// Task 2 `c1..c2`, and Task 3 records a range that was never committed here,
+// all three in one real repository.
+test('ranges names both an overlapping pair and a separate unresolvable row in the same report', () => {
+  const dir = root();
+  freshRepo(dir);
+  const c0 = commit(dir, 'c0.txt');
+  const c1 = commit(dir, 'c1.txt');
+  const c2 = commit(dir, 'c2.txt');
+  const c3 = commit(dir, 'c3.txt');
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'init'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', c0 + '..' + c3, 'complete', '1', 'container'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', c1 + '..' + c2, 'complete', '2', 'contained'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', 'aaaaaaa..bbbbbbb', 'complete', '3', 'never committed here'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'ranges'], { cwd: dir, encoding: 'utf8' });
+  assert.match(out, new RegExp('Task 1 \\(' + c0 + '\\.\\.' + c3 + '\\) fully contains Task 2 \\(' + c1 + '\\.\\.' + c2 + '\\)'));
+  assert.match(out, /could not be checked/);
+  assert.match(out, /Task 3 \(aaaaaaa\.\.bbbbbbb\)/);
+  assert.match(out, /unverified/);
+});
+
 // `lib/ledger.js`'s own `init()` only opens the file; it never looks at the
 // plan, so a ledger could look perfectly healthy while holding a plan nobody
 // could build from. `init` now opens the plan the same way `groups` does, so
