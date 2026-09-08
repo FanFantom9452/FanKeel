@@ -53,6 +53,21 @@
     }
     function cost(s) { return (s.usd || 0) + (s.agentUsd || 0); }
 
+    // `unknown` is `serialize()`'s way of saying liveness could not be
+    // measured for this session — `data.active === true` but the config
+    // directory it would have to read to confirm was unreadable, so `live` is
+    // what it defaulted to rather than what was confirmed. The question mark
+    // and the title are the only place that distinction reaches a reader:
+    // `skills/fankeel/SKILL.md` tells every session to trust this page about
+    // liveness, so a state that cannot be measured must not read as certain.
+    function statePill(s) {
+        return '<span class="pill ' + s.state + '"'
+            + (s.unknown ? ' title="這個 session 的 config directory 讀不到，'
+                + '活著與否無法確認"' : '') + '><i class="dot ' + s.state
+            + (s.state === 'live' ? ' pulse' : '') + '"></i>' + s.state
+            + (s.unknown ? '?' : '') + '</span>';
+    }
+
     // The shortest tail of a root's segments that no other root shares. Moved
     // here from `lib/station.js`'s `navLabels` when the nav became a facet: the
     // rule is the same and the guard is still what bounds it, because two roots
@@ -127,6 +142,7 @@
         module.exports = {
             tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
             stamp: stamp, esc: esc, cost: cost, labels: labels, delta: delta, match: match,
+            statePill: statePill,
         };
     }
     if (!doc) return;
@@ -435,11 +451,6 @@
             + '</span></div><div class="mute" style="font-size:11px;margin-top:3px">'
             + esc(s.stage || '—') + '</div>';
     }
-    function statePill(s) {
-        return '<span class="pill ' + s.state + '"><i class="dot ' + s.state
-            + (s.state === 'live' ? ' pulse' : '') + '"></i>' + s.state + '</span>';
-    }
-
     // A gone registry keeps its facet, so selecting it has to say why the pane
     // went empty. Without this the page answers a click with a blank screen and
     // the reader cannot tell a gone registry from a filter that matched nothing.
@@ -452,6 +463,30 @@
             + '<p class="mute" style="margin:4px 0 0">gone — no sessions/ here any more. '
             + 'The registry keeps its place until it is forgotten by name: '
             + '<code>station.js --forget</code>.</p></div></div>';
+    }
+
+    // The new layout has no per-registry meta line, so a selected (and not
+    // gone) registry gets a small card in `goneNote()`'s place instead: how
+    // many of its session files did not parse — the hooks drop a corrupt
+    // entry silently and correctly, so this is the only place that count
+    // surfaces — its build directories with a file count each, and when its
+    // map.md last changed.
+    function registryNote() {
+        if (!f.project) return '';
+        var hit = S.projects.filter(function (p) { return p.root === f.project; });
+        if (!hit.length || hit[0].gone) return '';
+        var p = hit[0];
+        return '<div class="card" style="margin-bottom:14px"><div class="cbody">'
+            + '<p class="mute" style="margin:0">' + p.unreadable
+            + ' 個 session 檔案讀不到</p>'
+            + '<p class="mute" style="margin:4px 0 0">map.md '
+            + (p.mapAt ? '更新於 ' + day(p.mapAt) : '不存在') + '</p>'
+            + (p.build.length
+                ? '<p class="mute" style="margin:4px 0 0">build：' + p.build.map(function (b) {
+                    return esc(b.name) + ' (' + b.files + ')';
+                }).join('、') + '</p>'
+                : '<p class="mute" style="margin:4px 0 0">沒有 build 資料夾</p>')
+            + '</div></div>';
     }
 
     function overview() {
@@ -471,6 +506,7 @@
             + (isFinite(S.cleared)
                 ? '<p class="cleared">cleared ' + S.cleared + ' stale rows</p>' : '')
             + goneNote()
+            + registryNote()
             + kpis(R)
             + '<div class="grid2">'
             + '<div class="card"><div class="chd"><span class="ci">◧</span>'
@@ -645,6 +681,7 @@
             + '<dt>最後</dt><dd class="num">' + stamp(s.updated) + '</dd>'
             + (s.ended ? '<dt>結束</dt><dd>' + esc(s.ended.reason) + '</dd>' : '')
             + '<dt>總計</dt><dd class="num">' + tokens(s.burn) + ' · ' + usd(cost(s))
+            + (s.unpriced && s.unpriced.length ? ' (' + s.unpriced.length + ' unpriced)' : '')
             + (s.agents ? ' · ' + s.agents + ' agents' : '') + '</dd>'
             + '<dt>guard</dt><dd>' + esc(s.guard || 'ask (預設)') + '</dd></dl>'
             + '<h3 style="font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;'
@@ -656,12 +693,33 @@
                 : '<p class="mute" style="font-size:12px">沒有</p>')
             + clearControl(s) + '</div>';
     }
+    // The scan-time clauses were the old header's `depth stopped the scan in N
+    // places` and `the scan ran out of time` — both are how a reader learns
+    // the registry list may be incomplete. The unreadable-count clause is
+    // separate: it is the total across every registry, and only shown when no
+    // one registry is selected, because a selected registry already carries
+    // its own count in `registryNote()`'s card — a corrupt-entry count must
+    // not require a click to find, so it lives here the rest of the time.
+    function genText() {
+        var totalUnreadable = S.projects.reduce(function (n, p) {
+            return n + (p.unreadable || 0);
+        }, 0);
+        return '掃描於 ' + stamp(NOW)
+            + ' · 價目表 ' + S.pricesVerified
+            + (S.scanStats && S.scanStats.depthCuts
+                ? ' · depth 中止掃描 ' + S.scanStats.depthCuts + ' 處' : '')
+            + (S.scanStats && S.scanStats.timedOut ? ' · 掃描逾時未跑完' : '')
+            + (!f.project && totalUnreadable
+                ? ' · ' + totalUnreadable + ' 個 session 檔案讀不到' : '')
+            + (S.serve ? ' · 每次載入都重讀 registry' : '');
+    }
     function draw() {
         var p = doc.getElementById('page');
         p.className = 'scrollmain' + (page === 'list' ? ' fixed' : '');
         p.innerHTML = page === 'list' ? listPage() : overview();
         if (page === 'list') drawList();
         drawSide();
+        doc.getElementById('gen').textContent = genText();
     }
     doc.addEventListener('click', function (e) {
         var pg = e.target.closest('[data-page]');
@@ -694,9 +752,6 @@
         if (e.key === '/') { e.preventDefault(); doc.getElementById('q').focus(); }
     });
 
-    doc.getElementById('gen').textContent = '掃描於 ' + stamp(NOW)
-        + ' · 價目表 ' + S.pricesVerified
-        + (S.serve ? ' · 每次載入都重讀 registry' : '');
     doc.getElementById('nreg').textContent = S.projects.length + ' 個 registry · '
         + S.sessions.length + ' sessions';
     doc.getElementById('cfg').textContent = String(S.configDir || '').replace(/^.*[\\/]/, '')

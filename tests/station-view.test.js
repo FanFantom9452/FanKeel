@@ -144,6 +144,20 @@ test('delta in points reads a rise in waiting as bad', () => {
     assert.match(V.delta(0.4, 0.6, 'pt'), /class="delta up"/);
 });
 
+test('statePill marks unmeasured liveness with a question mark and a reason', () => {
+    // `unknown` is `serialize()`'s way of saying liveness could not be
+    // measured — the config directory it would have to read was unreadable —
+    // and `skills/fankeel/SKILL.md` tells every session to trust this page
+    // about liveness, so the certain and the unmeasured case must read
+    // differently.
+    const known = V.statePill({ state: 'live', unknown: false });
+    assert.equal(known, '<span class="pill live"><i class="dot live pulse"></i>live</span>');
+
+    const unmeasured = V.statePill({ state: 'live', unknown: true });
+    assert.match(unmeasured, />live\?</);
+    assert.match(unmeasured, /title="[^"]+"/);
+});
+
 test('match reads state, registry, stage and free text', () => {
     const s = {
         state: 'live', root: '/a', stage: 'build', task: 'rework the ramp',
