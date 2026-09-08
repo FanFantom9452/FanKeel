@@ -205,4 +205,16 @@ test('render prints one line per grader per run and a score, and fails on any fa
     assert.equal(verdict(runs), 1);
     assert.equal(verdict([{ ...runs[0], graders: runs[0].graders.filter((g) => g.pass !== false) }]), 0);
     assert.equal(verdict([{ ...runs[0], graders: [], error: 'claude exited 1' }]), 1);
+    assert.equal(verdict([]), 1, 'no run is no evidence');
+});
+
+test('zero runs is refused before anything is spawned', () => {
+    const dir = tmp('fankeel-eval-');
+    fs.writeFileSync(path.join(dir, 'prompt.md'), '---\nname: zero\nruns: 0\n---\nhello\n');
+    const byCase = spawnSync(process.execPath, [SCRIPT, dir], { encoding: 'utf8' });
+    assert.equal(byCase.status, 1);
+    assert.match(byCase.stderr, /runs must be at least 1/);
+    const byFlag = spawnSync(process.execPath, [SCRIPT, dir, '--runs', '0'], { encoding: 'utf8' });
+    assert.equal(byFlag.status, 1);
+    assert.match(byFlag.stderr, /runs must be at least 1/);
 });

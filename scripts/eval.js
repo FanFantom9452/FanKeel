@@ -144,6 +144,8 @@ function render(c, runs) {
 }
 
 function verdict(runs) {
+    // No run is no evidence: a `score 0/0` must not read as a pass.
+    if (!runs.length) return 1;
     for (const r of runs) {
         if (r.error) return 1;
         if (r.graders.some((g) => g.pass === false)) return 1;
@@ -157,7 +159,8 @@ function main(argv) {
     if (!a.dir) { console.error('eval.js: a case dir is required\n' + usage()); return 1; }
     let c;
     try { c = ev.parseCase(path.resolve(a.dir)); } catch (e) { console.error('eval.js: ' + e.message); return 1; }
-    const n = a.runs || Number(c.prompt.meta.runs || 1);
+    const n = a.runs === null ? Number(c.prompt.meta.runs || 1) : a.runs;
+    if (!(n >= 1)) { console.error('eval.js: runs must be at least 1, got ' + n); return 1; }
     const runs = [];
     for (let i = 0; i < n; i += 1) runs.push(runOnce(c, a));
     console.log(render(c, runs));
