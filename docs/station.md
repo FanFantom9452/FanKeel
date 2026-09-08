@@ -104,7 +104,7 @@ wall-clock of its own.
 Every row also carries the registry it belongs to, as `root` on its session
 object (`lib/station.js:373`, `root: s.root`) — the raw path, not the
 shortened label shown on the row — and `match()` filters on that same field
-(`assets/station/station.js:127`, `s.root !== f.project`) rather than a DOM
+(`assets/station/station.js:141`, `s.root !== f.project`) rather than a DOM
 attribute, because every row here is rebuilt from `window.STATION` in the
 browser instead of arriving as markup; see Filtering, and the two views
 below.
@@ -113,14 +113,14 @@ below.
 
 An opened row's stage strip draws what each stage cost in time, not money:
 every stage gets a segment sized to its own share of the total, via
-`drawDetail()`'s own per-stage `w.to - w.from` (`assets/station/station.js:657`, `w.to - w.from`) — coloured by
+`drawDetail()`'s own per-stage `w.to - w.from` — coloured by
 stage and named inline once the segment is wide enough to hold it, with the
 exact stage and its minutes in the tooltip. It draws proportion, not elapsed
 time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:674`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:707`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -164,13 +164,14 @@ attributed to `survey` — the stage that opened the gate — rather than droppe
 deleted from `usage` when it is written, and why every existing reader still
 sees the shape it always had, is in [registry.md](registry.md).
 
-The page is four files. `station.html` is a shell with no session data in it,
-copied byte for byte from `assets/station/station.html`; `station.css` and
-`station.js` are copied the same way; `station-data.js` is the only generated
-one, and holds `window.STATION` — the scan, and nothing else. The shell is
-copied rather than pointed at, because the plugin directory carries its version
-in its path and the copy under `<root>/.fankeel/` would otherwise point outside
-the repository it sits in.
+The page is four files. `index.html` is a shell with no session data in it,
+copied byte for byte from `assets/station/index.html`, at the top of
+`.fankeel/`; its three siblings live under `.fankeel/station/` —
+`station.css` and `station.js` are copied the same way, and `station-data.js`
+is the only generated one, and holds `window.STATION` — the scan, and nothing
+else. The shell is copied rather than pointed at, because the plugin directory
+carries its version in its path and the copy under `<root>/.fankeel/` would
+otherwise point outside the repository it sits in.
 
 `write()` compares the three copied files before writing them, so a prompt that
 changed nothing rewrites `station-data.js` alone. `hooks/inject.js` calls it on
@@ -190,19 +191,19 @@ hide rows.
 
 A gone registry keeps its facet rather than dropping off the rail, so
 selecting one never returns a blank pane with nothing on the page saying why:
-`goneNote()` (`assets/station/station.js:460`, `function goneNote()`) prints a
+`goneNote()` (`assets/station/station.js:474`, `function goneNote()`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card instead, once it is the one
-selected: `registryNote()` (`assets/station/station.js:477`, `function registryNote()`) prints its own unreadable-session count, its
+selected: `registryNote()` (`assets/station/station.js:491`, `function registryNote()`) prints its own unreadable-session count, its
 `map.md` date — or `不存在` when there is none — and its build directories
 with each one's file count, or says there are none. The old page carried all
 three on a per-registry meta line; the redesign dropped that line, and this
 card is where its contents live now. The header's own unreadable count stays
 the total across every registry and is shown only when none is selected,
 because a selected one already carries its own count on this card
-(`assets/station/station.js:704`, `a corrupt-entry count must`) — so a corrupt
+(`assets/station/station.js:737`, `a corrupt-entry count must`) — so a corrupt
 entry is never a click away from being found.
 
 `navLabels` moved into `assets/station/station.js` as `labels`, unchanged: each
@@ -225,7 +226,7 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:558`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:574`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 A stale row's clear control is the one thing that differs between the served
@@ -257,16 +258,29 @@ and `--forget` with exit 2.
 `serve` runs a loopback server only while clearing; it renders afresh on
 every request, takes a POST from the clear button on a `stale` row, answers
 `409` for a `live` one and for a row touched in the last twelve hours unless
-`force` is ticked, `403` without the per-run nonce, and exits after ten idle
-minutes — `--port <n>` binds a chosen port instead of one the OS picks, and
-`--idle <minutes>` moves the ten. The static copies carry the `task.js clear` command on each
-`stale` row instead of the button.
+`force` is ticked, and `403` without the per-run nonce. It binds the fixed
+port `7817` by default, falling back to an ephemeral one only when `7817` is
+already taken; `--port <n>` asks for a chosen port instead. It does not exit
+on its own — `--idle <minutes>` is what asks for an idle exit at all, and
+there is none unless it is given. `--detach` runs the server as a background
+process and returns once it has started, so closing the terminal does not
+take the station with it. The static copies carry the `task.js clear`
+command on each `stale` row instead of the button.
+
+A second `serve` against the same config directory joins the first rather
+than starting one: `<configDir>/fankeel/serve.json` holds the pid, port, url
+and start time of the server already running, and a call that finds this
+file reads it before binding anything of its own. A record naming a pid that
+is no longer running is ignored, the same as no record at all; one whose
+liveness cannot be determined counts as alive — the same doubt-goes-to-the-
+loud-side rule a config directory that cannot be read already gets,
+everywhere else in this plugin.
 
 `/clear-stale` clears every stale row in one registry at once, calling
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:510`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:526`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button — but the page puts no button in front of it any more:
