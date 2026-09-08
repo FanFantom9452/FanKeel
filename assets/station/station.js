@@ -134,6 +134,12 @@
     var page = 'overview', sel = null, sortKey = 'updated', sortDir = -1;
     var NOW = Date.parse(S.generatedAt);
     var LAB = labels(S.projects.map(function (p) { return p.root; }));
+    // `serialize()` never emits a `label` field — the shortest-unique-tail
+    // rule lives only here, in `labels()`, since `navLabels` was deleted from
+    // `lib/station.js` on purpose so the rule would not exist in two places.
+    // `match()`'s haystack still reads `s.label`, so it is attached here,
+    // once, before anything renders.
+    S.sessions.forEach(function (s) { s.label = LAB[s.root]; });
     var sum = function (a, fn) {
         return a.reduce(function (n, x) { return n + (fn(x) || 0); }, 0);
     };
@@ -418,7 +424,7 @@
         return '<div class="ell" title="' + esc(s.task) + '" style="font-weight:500">'
             + esc(s.task || '（未命名）') + '</div>'
             + '<div class="mute ell" style="font-size:11px;margin-top:2px">'
-            + esc(LAB[s.root] || s.label) + ' · ' + ago(s.updated) + '</div>';
+            + esc(LAB[s.root]) + ' · ' + ago(s.updated) + '</div>';
     }
     function stageCell(s) {
         var pct = s.steps ? Math.round(s.step / s.steps * 100) : 0;
@@ -601,7 +607,7 @@
         d.innerHTML = '<div class="cbody" style="padding-top:16px">'
             + '<div style="display:flex;gap:7px;align-items:center;margin-bottom:10px;'
             + 'flex-wrap:wrap">' + statePill(s)
-            + '<span class="chip" title="' + esc(s.root) + '">' + esc(LAB[s.root] || s.label)
+            + '<span class="chip" title="' + esc(s.root) + '">' + esc(LAB[s.root])
             + '</span>'
             + (s.model ? '<span class="chip mono">'
                 + esc(s.model.replace(/^claude-/, '')) + '</span>' : '') + '</div>'

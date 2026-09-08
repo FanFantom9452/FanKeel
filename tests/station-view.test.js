@@ -156,6 +156,20 @@ test('match reads state, registry, stage and free text', () => {
     assert.equal(V.match(s, { q: 'nothing here', state: '', project: '', stage: '' }), false);
 });
 
+test('match finds a session by the shortened label the page attaches to it', () => {
+    // `serialize()` never emits `label` — the DOM half derives it once, right
+    // after `LAB` is computed, as `s.label = LAB[s.root]`. This fixture
+    // carries the same kind of value (a short, human tail, the way `labels()`
+    // actually produces one) so this test would have caught the label slot
+    // in `match()`'s haystack silently reading `undefined` for every real
+    // session, which is what shipped before that assignment existed.
+    const s = {
+        state: 'live', root: '/home/dev/projects/waypoint', stage: 'build', task: 'x',
+        project: 'p', id: 'i', label: 'waypoint', claims: [], notes: [], next: '',
+    };
+    assert.equal(V.match(s, { q: 'waypoint', state: '', project: '', stage: '' }), true);
+});
+
 test('the model and the state are still free-text terms', () => {
     // Both were terms on the page this replaces. A facet covers state; nothing
     // covers the model, so the search box has to.
