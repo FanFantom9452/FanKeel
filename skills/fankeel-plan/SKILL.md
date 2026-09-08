@@ -23,7 +23,7 @@ missing one of those, the stage is finished.
   else. One exception, and it is a different root rather than a search for
   one: where the registry root's own `package.json` names `fankeel`, the
   scripts to run are the working tree's, because the installed copy lags it
-  by a release. The injected rule says the same thing in one line.
+  by a release.
 - **No fallback path.** Never the working directory, a home directory, a
   global skill root, or another copy found by name — that one path resolves,
   or none does.
