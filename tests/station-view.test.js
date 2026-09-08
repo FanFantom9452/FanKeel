@@ -10,6 +10,16 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
+// `clearStaleControl` reads `S.serve`/`S.nonce`/`S.plugin` off the
+// module-scoped `S`, which the IIFE sets to `window.STATION` at load time
+// (falling back to `{ sessions: [], projects: [] }` only when `window` is
+// undefined, which it is not once this is set). `document` stays undefined,
+// so the DOM half after the `module.exports` guard never runs — this is
+// still the pure half of the file, just one that reads its input off
+// `window.STATION` instead of a parameter, and the object below is the same
+// one `S` closes over, so mutating it after require still reaches the
+// function on every call.
+global.window = { STATION: {} };
 const V = require('../assets/station/station.js');
 
 test('tokens rounds the way the page prints', () => {
@@ -193,4 +203,52 @@ test('the model and the state are still free-text terms', () => {
     };
     assert.equal(V.match(s, { q: 'opus', state: '', project: '', stage: '' }), true);
     assert.equal(V.match(s, { q: 'live', state: '', project: '', stage: '' }), true);
+});
+
+test('clearStaleControl prints nothing when no row is stale', () => {
+    global.window.STATION.serve = true;
+    const rows = [{ state: 'live' }, { state: 'down' }];
+    assert.equal(V.clearStaleControl({ root: '/a' }, rows), '');
+});
+
+test('clearStaleControl posts to /clear-stale with the nonce when serving', () => {
+    global.window.STATION.serve = true;
+    global.window.STATION.nonce = 'tok-123';
+    const rows = [{ state: 'stale' }, { state: 'stale' }, { state: 'live' }];
+    const out = V.clearStaleControl({ root: 'F:\\proj' }, rows);
+    assert.match(out, /<form method="post" action="\/clear-stale">/);
+    assert.match(out, /name="nonce" value="tok-123"/);
+});
+
+test('clearStaleControl prints no form when the page is not served', () => {
+    global.window.STATION.serve = false;
+    const rows = [{ state: 'stale' }];
+    const out = V.clearStaleControl({ root: 'F:\\proj' }, rows);
+    assert.doesNotMatch(out, /<form/);
+});
+
+test('clearStaleControl escapes the root it interpolates into the form', () => {
+    // `reg.root` is a filesystem path from a local scan and may legally hold
+    // `<` or `"` outside Windows — `clearControl` escapes its own root value
+    // twelve lines below this function, and this is the same hole.
+    global.window.STATION.serve = true;
+    global.window.STATION.nonce = 'tok-123';
+    const out = V.clearStaleControl({ root: 'F:\\"><script>' }, [{ state: 'stale' }]);
+    assert.match(out, /value="F:\\&quot;&gt;&lt;script&gt;"/);
+    assert.doesNotMatch(out, /<script>/);
+});
+
+test('labels folds a trailing separator and case difference into one card', () => {
+    // Windows only: `F:\a` and `f:\a\` are the same directory. The tail-growth
+    // loop never sees this pair as two roots at all, so this is a count of
+    // groups, not a check on which label wins.
+    const out = V.labels(['F:\\a', 'f:\\a\\']);
+    assert.equal(Object.keys(out).length, 1);
+});
+
+test('labels keeps a nested root as its own card', () => {
+    // `F:\a` and `F:\a\b` fold to different keys — one is not a trailing
+    // separator away from the other — so the fold must not merge them.
+    const out = V.labels(['F:\\a', 'F:\\a\\b']);
+    assert.equal(Object.keys(out).length, 2);
 });

@@ -77,13 +77,27 @@
     // root is not it: it separates once the longer one grows past the shorter
     // one's own length.
     function labels(roots) {
-        var segs = roots.map(function (r) {
+        // Two roots are the same registry when, after dropping a trailing
+        // separator and folding case, their strings are equal — that is
+        // Windows, where `F:\a` and `f:\a\` are one directory. Fold before
+        // the tails are computed, so the pair collapses to one group and one
+        // card rather than reaching the shortest-unique-tail loop as if they
+        // were two registries that happen to share a label. A nested root —
+        // `F:\a` against `F:\a\b` — keeps a different key and stays two.
+        function key(r) { return String(r).replace(/[\\/]+$/, '').toLowerCase(); }
+        var uniq = [];
+        var seen = {};
+        roots.forEach(function (r) {
+            var k = key(r);
+            if (!seen[k]) { seen[k] = true; uniq.push(r); }
+        });
+        var segs = uniq.map(function (r) {
             return String(r).split(/[\\/]+/).filter(Boolean);
         });
-        var depth = roots.map(function () { return 1; });
+        var depth = uniq.map(function () { return 1; });
         var at = function (i) { return segs[i].slice(-depth[i]).join('/'); };
         for (var guard = 0; guard < 50; guard++) {
-            var ls = roots.map(function (_, i) { return at(i); });
+            var ls = uniq.map(function (_, i) { return at(i); });
             var counts = {};
             ls.forEach(function (l) { counts[l] = (counts[l] || 0) + 1; });
             var grew = false;
@@ -93,7 +107,7 @@
             if (!grew) break;
         }
         var out = {};
-        roots.forEach(function (r, i) { out[r] = at(i); });
+        uniq.forEach(function (r, i) { out[r] = at(i); });
         return out;
     }
 
@@ -145,7 +159,7 @@
         module.exports = {
             tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
             stamp: stamp, esc: esc, cost: cost, labels: labels, delta: delta, match: match,
-            statePill: statePill,
+            statePill: statePill, clearStaleControl: clearStaleControl,
         };
     }
     if (!doc) return;
@@ -479,9 +493,11 @@
         var hit = S.projects.filter(function (p) { return p.root === f.project; });
         if (!hit.length || hit[0].gone) return '';
         var p = hit[0];
+        var own = S.sessions.filter(function (s) { return s.root === p.root; });
         return '<div class="card" style="margin-bottom:14px"><div class="cbody">'
-            + '<p class="mute" style="margin:0">' + p.unreadable
-            + ' 個 session 檔案讀不到</p>'
+            + '<div style="display:flex;align-items:center;gap:10px">'
+            + '<p class="mute" style="margin:0;flex:1">' + p.unreadable
+            + ' 個 session 檔案讀不到</p>' + clearStaleControl(p, own) + '</div>'
             + '<p class="mute" style="margin:4px 0 0">map.md '
             + (p.mapAt ? '更新於 ' + day(p.mapAt) : '不存在') + '</p>'
             + (p.build.length
@@ -615,6 +631,23 @@
         drawDetail();
     }
 
+    // A registry-level bulk clear, beside its card's heading rather than a
+    // row: counts how many of the rows handed to it are stale and, offline,
+    // prints the same kind of copyable command each per-row control prints —
+    // a static page cannot post either.
+    function clearStaleControl(reg, rows) {
+        var n = 0, i;
+        for (i = 0; i < rows.length; i++) if (rows[i].state === 'stale') n++;
+        if (!n) return '';
+        if (!S.serve) {
+            return '<code class="mono">node ' + esc(S.plugin || '<plugin>')
+                + '/scripts/task.js clear &lt;id&gt;</code>';
+        }
+        return '<form method="post" action="/clear-stale">'
+            + '<input type="hidden" name="nonce" value="' + esc(S.nonce || '') + '">'
+            + '<input type="hidden" name="root" value="' + esc(reg.root) + '">'
+            + '<button type="submit">clear ' + n + ' stale</button></form>';
+    }
     // The clear control is the one place the served page and the written file
     // differ, and both forms come out of the data rather than out of two
     // renderers: `serve` is true only when a server produced this data file, and
