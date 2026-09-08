@@ -371,6 +371,43 @@ test('the short shas the build loop records are accepted', () => {
   assert.match(out, /1 4aacd71\.\.94ec4b3/);
 });
 
+function git(dir, args) {
+  execFileSync('git', args, { cwd: dir, stdio: ['ignore', 'ignore', 'ignore'] });
+}
+
+function commit(dir, name) {
+  fs.writeFileSync(path.join(dir, name), name + '\n');
+  git(dir, ['add', '-A']);
+  git(dir, ['commit', '-qm', name]);
+  return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: dir, encoding: 'utf8' }).trim();
+}
+
+// The incident this test is filed for: a task's range covers every commit
+// between its two ends, and a fix that landed inside that span gets its own
+// row for the same commits. On station-shell three of fourteen rows did this
+// and the sentence below still claimed all fourteen were independent and
+// could go out in one response. Three real commits stand in for that shape
+// here -- c0..c2 is the task, c1..c2 is the fix, and c1..c2's one commit is a
+// strict subset of c0..c2's two -- so the overlap is read back from git
+// rather than asserted.
+test('ranges names a task row that fully contains a fix row, and drops the disjoint claim for it', () => {
+  const dir = root();
+  git(dir, ['init', '-q']);
+  git(dir, ['config', 'user.email', 'test@example.invalid']);
+  git(dir, ['config', 'user.name', 'test']);
+  git(dir, ['config', 'commit.gpgsign', 'false']);
+  const c0 = commit(dir, 'c0.txt');
+  const c1 = commit(dir, 'c1.txt');
+  const c2 = commit(dir, 'c2.txt');
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'init'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', c0 + '..' + c2, 'complete', '1', 'the task'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', c1 + '..' + c2, 'fix', 'landed inside the task'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'ranges'], { cwd: dir, encoding: 'utf8' });
+  assert.match(out, /not independent/);
+  assert.match(out, new RegExp('Task 1 \\(' + c0 + '\\.\\.' + c2 + '\\) fully contains the fix \\(' + c1 + '\\.\\.' + c2 + '\\)'));
+  assert.doesNotMatch(out, /The rows do not overlap/);
+});
+
 // `lib/ledger.js`'s own `init()` only opens the file; it never looks at the
 // plan, so a ledger could look perfectly healthy while holding a plan nobody
 // could build from. `init` now opens the plan the same way `groups` does, so
