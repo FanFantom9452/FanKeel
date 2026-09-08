@@ -15,6 +15,9 @@ const CLI = path.join(__dirname, '..', 'scripts', 'station.js');
 const LIVE = 'aaaaaaaa-1111-4111-8111-111111111111';
 const STALE = 'bbbbbbbb-2222-4222-8222-222222222222';
 const DAY = 24 * 3600e3;
+// A pid no operating system hands out, the same constant `tests/carry.test.js`
+// uses for one that is gone.
+const GONE_PID = 2147483646;
 
 function fixture() {
     const base = tmp('fankeel-station-cli-');
@@ -573,6 +576,31 @@ test('every asset the shell references answers from the server', async () => {
             const got = await request(s.url + ref, { method: 'GET' });
             assert.equal(got.status, 200, ref + ' answered ' + got.status);
         }
+    } finally {
+        s.close();
+    }
+});
+
+// A server killed rather than closed leaves its record behind — `close()` is
+// what removes it, and a hard kill never runs. So the join guard has to read a
+// record naming a dead pid as no record at all. `docs/station.md` says it does;
+// until now the only tests were the live-pid join and the write-and-remove pair,
+// so the sentence was documented and unexercised.
+test('a serve.json naming a dead pid does not stop a new server binding', async () => {
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    const record = path.join(f.cfg, 'fankeel', 'serve.json');
+    fs.mkdirSync(path.dirname(record), { recursive: true });
+    fs.writeFileSync(record, JSON.stringify({
+        pid: GONE_PID, port: 7817, url: 'http://127.0.0.1:7817/',
+        started: '2026-09-08T00:00:00.000Z',
+    }) + '\n');
+    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false });
+    try {
+        assert.notEqual(s.joined, true, 'it joined a server whose pid nobody is running');
+        const after = JSON.parse(fs.readFileSync(record, 'utf8'));
+        assert.equal(after.pid, process.pid, 'the new listener rewrote the record');
+        assert.notEqual(after.url, 'http://127.0.0.1:7817/', 'and with its own url, not the dead one');
     } finally {
         s.close();
     }
