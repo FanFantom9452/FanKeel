@@ -297,7 +297,7 @@ Generated from this repository on 2026-09-08 at `af05431`, values copied exactly
    ```
    Offline it prints the copyable command, exactly as the per-row control does — a static page cannot post.
 
-2. Call it where the registry card's header is built, so the button sits with the card rather than with a row.
+2. Call it where the registry card's header is built, so the button sits with the card rather than with a row. Then add it to this file's own export block — the view test at `tests/station-view.test.js:13` requires this module and reaches nothing that is not exported, so the test in step 4 cannot see the function otherwise. That block sits inside the IIFE rather than at the end of the file, which is why the suite's export check described in Global Constraint 4 never reads it and no orphan check fires either way.
 
 3. The label collision. `labels(roots)` at `:79` computes a shortest-unique-tail label per root. Two roots are the same registry when, after dropping a trailing separator and folding case, their strings are equal — that is Windows, where `F:\a` and `f:\a\` are one directory. Fold before the tails are computed:
 
