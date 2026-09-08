@@ -196,7 +196,7 @@ function parseArgs(head, whole) {
 // would be two registries, and the one the user is shown would not be the one
 // the badge reads.
 function rootOf(opts) {
-    if (opts.root) return path.resolve(opts.root);
+    if (opts.root) return registry.resolveRoot(opts.root);
     return registry.rootFor({ cwd: process.cwd() });
 }
 

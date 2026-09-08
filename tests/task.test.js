@@ -706,6 +706,30 @@ test('without --root the registry is found the way the hooks find it', () => {
   }
 });
 
+test('--root resolves against the found registry root, not the cwd', () => {
+  const dir = root();
+  // Seeds a registry at `dir` without running `start` there: `findStateRoot`
+  // only ever checks for this directory.
+  fs.mkdirSync(path.join(dir, '.fankeel', 'sessions'), { recursive: true });
+  const inner = path.join(dir, 'deep', 'nested');
+  fs.mkdirSync(inner, { recursive: true });
+  const cfg = path.join(dir, 'cfg');
+
+  // Run from two directories below the registry root, with a relative --root.
+  // Resolved against the registry root this lands at dir/Waypoint. Resolved
+  // against the cwd instead, as it was, it lands at inner/Waypoint — a
+  // directory this registry never heard of.
+  execFileSync(process.execPath, [SCRIPT, 'start', '--session', A, '--task', 'x',
+    '--root', 'Waypoint', '--claude-dir', cfg], {
+    encoding: 'utf8', cwd: inner,
+    env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg }),
+  });
+
+  assert.ok(registry.readSession(path.join(dir, 'Waypoint'), A),
+    'the entry should be under the registry root, not the cwd');
+  assert.equal(registry.readSession(path.join(inner, 'Waypoint'), A), null);
+});
+
 test('a cold claim is cleared without its task being inherited', () => {
   const dir = root();
   started(dir, A, 'tidy the cards', 'web');
