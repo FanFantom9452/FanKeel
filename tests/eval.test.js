@@ -158,6 +158,9 @@ test('cmdQuote wraps an argument so a space or an & survives cmd.exe', () => {
     assert.equal(cmdQuote('a&b'), '"a&b"');
     assert.equal(cmdQuote('say "hi"'), '"say \\"hi\\""');
     assert.equal(cmdQuote(12), '"12"');
+    // A trailing backslash would escape the closing quote; it is doubled.
+    assert.equal(cmdQuote('C:\\Program Files\\x\\'), '"C:\\Program Files\\x\\\\"');
+    assert.equal(cmdQuote('a\\"b'), '"a\\\\\\"b"');
 });
 
 test('eval.js --help prints usage and exits 0', () => {

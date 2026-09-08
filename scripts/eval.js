@@ -73,7 +73,12 @@ function scaffold(dir, script) {
 // with a space or an `&` in it is two arguments or a second command unless
 // this happens first.
 function cmdQuote(a) {
-    return '"' + String(a).replace(/"/g, '\\"') + '"';
+    // Backslashes count only in front of a double quote, so a run of them
+    // before one — or before the closing quote — is doubled and the quote
+    // itself escaped; a path ending in `\` would otherwise eat the closing
+    // quote and the next argument with it.
+    const s = String(a).replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, '$1$1');
+    return '"' + s + '"';
 }
 
 // The native build is an .exe and spawns directly, which is the safe path:
