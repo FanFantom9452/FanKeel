@@ -60,6 +60,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
+- `orient.js Waypoint web` reads as one nested place; the two positionals resolve independently against the root — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md), the `look` block.
+
 ## Needs a decision
 
 - The bulk clear lost its button: `/clear-stale` still answers, nothing in the new page posts to it — [assets/station/station.js](assets/station/station.js), `clearControl`.
@@ -77,6 +79,8 @@ entry waited for actually happening. It shrank when somebody read it.
 - Whether the injected `<plugin>/scripts/` path needs a caveat for fankeel's own repository, where the cache lags the tree and its output reads as a finding — [lib/stages.js](lib/stages.js).
 
 - What a stage's `burn` should be when compaction drops the context below where it started and the pair subtracts negative: 4 of 78 sessions show one — [lib/station.js](lib/station.js), `serialize`.
+
+- Whether `docs/subagents.md` should defer to `docs/station.md` for `lib/usage.js` and `lib/prices.js`: it names neither in its `source_of_truth` — [docs/subagents.md](docs/subagents.md).
 
 ## Waiting
 

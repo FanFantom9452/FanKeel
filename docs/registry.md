@@ -33,7 +33,7 @@ workspace/                     <- Claude Code opened here
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
 | `~/.claude/modes/{session_id}/fankeel` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
 | `~/.claude/modes/{session_id}/fankeel.lead` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
-| `<configDir>/fankeel/station.html`, and `station.css`, `station.js`, `station-data.js` beside it | n/a | the station page — a static shell, its two assets copied when their bytes differ, and the scan, rewritten by `hooks/inject.js` at the `/fankeel` prompt, by `task.js` on every verb that moves an entry, by `hooks/leave.js` at `SessionEnd`, and by `scripts/station.js` |
+| `<configDir>/fankeel/station.html`, and `station.css`, `station.js`, `station-data.js` beside it | n/a | the station page — a static shell and its two assets, each of the three written only when its own bytes differ, plus the scan, which is written every time. Produced by `hooks/inject.js` at the `/fankeel` prompt, by `task.js` on every verb that moves an entry, by `hooks/leave.js` at `SessionEnd`, and by `scripts/station.js` |
 | `<registry>/.fankeel/station.html`, and its three siblings | No — `.fankeel/.gitignore` excludes all four | the same page, written beside the registry by whichever of those four ran inside it |
 | `<configDir>/fankeel/roots.json` | n/a | every registry the page has seen, rewritten by every write of the page. A root whose directory still exists stays until `--forget <dir>` drops it; one whose directory is gone from disk leaves on its own — [station.md](station.md) has more |
 
