@@ -274,7 +274,8 @@ file reads it before binding anything of its own. A record naming a pid that
 is no longer running is ignored, the same as no record at all; one whose pid
 cannot be signalled counts as **dead**, not as alive. `serve` asks
 `lib/live.js`'s `running(pid)`, which returns false on any error the signal
-raises, `EPERM` included — `lib/live.js:31` says so in as many words.
+raises, `EPERM` included — `lib/live.js:31`, `EPERM counts as dead`, says so
+in as many words.
 
 That is the opposite of the doubt-goes-to-the-loud-side rule an unreadable
 config directory gets, and the difference is what the doubt is about. There it

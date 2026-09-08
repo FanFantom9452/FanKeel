@@ -332,8 +332,7 @@ that copying would not have helped.
 ## One caller is not evidence on its own
 
 `lib/ledger.js`, `lib/plugins.js` and `lib/dirty.js` each have exactly one
-production caller.
-Counted from outside that reads as three dead seams, and an
+production caller. Counted from outside that reads as three dead seams, and an
 audit opened a TODO entry saying so for two of them. It is one borderline case
 and two files doing their job, and the rule that separates them is worth writing
 down because the count keeps looking like the answer.
