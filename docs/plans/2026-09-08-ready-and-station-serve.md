@@ -628,6 +628,8 @@ Generated from this repository on 2026-09-08 at `af05431`, values copied exactly
 
 2. The PR body requirement is a `## Verification` section carrying the line **Report only checks you actually ran**. Say what a check is: a command, its output, and the tree it ran against.
 
+   Carry the other half of that clause too, which is the half that makes it actionable: a check the environment could not run goes under a `Not run:` line with its reason, **and is not a pass**. A slogan without that line leaves a missing tool looking like a green one, which is the exact failure it exists to name.
+
 3. Do not restate what `README.md:255` `## Development` already says. Link to it. A second copy of the test command is a second copy to go stale.
 
 4. `git add CONTRIBUTING.md` before running the suite — `tests/source.test.js` enumerates with `git ls-files` (Constraint 4) and cannot see an untracked file.
