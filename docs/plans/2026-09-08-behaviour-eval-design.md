@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-09-08
 source_of_truth: lib/stages.js, hooks/inject.js, scripts/task.js, docs/improvement-brief.md
 ---
@@ -109,7 +109,8 @@ runner 能跑它。
 - `docs/pipeline.md` 講三個 class 與 route，設計沒有改它。
 - `docs/subagents.md` 與 `docs/reports/2026-09-03-*` 已用 `claude -p` 量測，
   fallback runner 是同一件工具的第二個用途，不衝突。
-- 本頁是 `design-intent`：`evals/`、`scripts/eval.js`、`lib/eval.js` 今天都不存在。
+- 本頁寫時是 `design-intent`：`evals/`、`scripts/eval.js`、`lib/eval.js` 當時都不存在；
+  同日落地（plan 的 ledger 有四個 task 與七輪 fix 的範圍），status 翻成 current。
 
 ## Unverified
 
