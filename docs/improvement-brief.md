@@ -573,7 +573,9 @@ caveman 和 SEPIA 在三個地方**各自獨立收斂到同一答案**：
 > 2026-09-08 使用者在把本檔拆成 TODO 時口述的三個方向。跟第三部不同，這三項沒有
 > 對照物可抄，寫在這裡是為了不丟關鍵內容；每一項的「待決」就是 design 要回答的問題。
 > 當天 `survey.js mockup profile` 在 repo 零命中，`menu` 只命中
-> `skills/fankeel-land/SKILL.md:131`，所以三項都是從零起。
+> `skills/fankeel-land/SKILL.md` 的 `## 6. The menu`，所以三項都是從零起。
+> （原文記的是那一節當天的行號；2026-09-08 的反漂移條款插入後行號位移，
+> 改記標題——這是一筆掃描紀錄，把數字改成新行號會宣稱那次掃描命中了它並沒有命中的位置。）
 
 ### 4.1 design 階段的 mockup 步驟（前端任務）
 
@@ -655,9 +657,15 @@ rules）、`lib/stages.js`、`scripts/task.js`、`lib/registry.js`、`hooks/inje
 **想法**：station 除了看每個 session，也是**回答問題的地方**——會在 gate 問的、可以預答的
 問題做成頁面上的控制項，一次填完；頁面上一個按鈕就能把某個 profile 套到某個專案。
 
-**今天的樣子**：station 是靜態 shell（`assets/station/station.html` + `station.js`）讀
+**今天的樣子**：station 是靜態 shell（`assets/station/index.html` + `station.js`）讀
 scan 出來的 JSON；只有 `station.js serve` 才有 server，能 POST 的只有 stale row 的
 `clear`——而 `/clear-stale` 按鈕已經遺失（TODO 既有條目，同一塊程式碼）。
+
+> **補記（2026-09-08，本段寫成之後）**：這一段描述的是當天早上的狀態。同日的
+> `2026-09-08-ready-and-station-serve` 已經把 shell 由 `station.html` 改名為
+> `index.html`、其餘三檔收進 `station/`，並補上了這裡說「已經遺失」的
+> `clear N stale` 按鈕。上面的檔名是改名後的，好讓引用解析得到；段落的判斷
+> 不動，它記的是那個時點。
 
 **待決**：
 
@@ -668,7 +676,7 @@ scan 出來的 JSON；只有 `station.js serve` 才有 server，能 POST 的只�
 
 **前置**：4.2 的 profile 格式先定，這裡才有東西可以套。
 
-**會碰的檔**：`assets/station/station.js`、`assets/station/station.html`、
+**會碰的檔**：`assets/station/station.js`、`assets/station/index.html`、
 `scripts/station.js`、`lib/station.js`、`docs/station.md`。
 
 ---
@@ -810,7 +818,7 @@ claude plugin eval . --json results.json --threshold 0.7 \
 | `evals/`、`.github/` | **皆無**：沒有 CI，沒有行為 eval——第三部 #2 是從零起 |
 | 其他 host 的 prompt hook | 這台機器無法驗，C4 維持在 `## Waiting` |
 | C1「沒有機械檢查確認 script / flag 存在」 | **部分**：`tests/source.test.js` 讀 `git ls-files` 抓孤兒 export，`tests/skills.test.js` 也在；兩者是否涵蓋 SKILL.md 提到的 `<plugin>/scripts/*.js` 與 `--flag` 未讀，做 #6 之前先看這兩個檔 |
-| `mockup`、`profile` 在 repo 裡 | `survey.js` 零命中；`menu` 只命中 `skills/fankeel-land/SKILL.md:131` |
+| `mockup`、`profile` 在 repo 裡 | `survey.js` 零命中；`menu` 只命中 `skills/fankeel-land/SKILL.md` 的 `## 6. The menu` |
 
 ---
 
