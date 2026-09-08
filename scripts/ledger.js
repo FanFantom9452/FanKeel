@@ -312,7 +312,14 @@ function overlapNote(root, entries) {
     const resolved = entries.map((e) => ({ label: e.label, commits: commitsFor(root, e.range) }));
     const unresolved = resolved.filter((e) => e.commits === undefined);
     const known = resolved.filter((e) => e.commits instanceof Set);
-    const found = [];
+    // Three shapes, because one remedy does not fit all of them. Containment
+    // has a row to drop; identical ranges are one row wearing two labels;
+    // crossing has neither — the reviewer's own repro was a "contains" remedy
+    // printed under a pair that crosses, telling the reader to do something
+    // the sentence just called impossible.
+    const contained = [];
+    const identical = [];
+    const crossing = [];
     for (let i = 0; i < known.length; i++) {
         for (let j = i + 1; j < known.length; j++) {
             const a = known[i];
@@ -320,16 +327,33 @@ function overlapNote(root, entries) {
             if (![...a.commits].some((sha) => b.commits.has(sha))) continue;
             const aInB = subsetOf(a.commits, b.commits);
             const bInA = subsetOf(b.commits, a.commits);
-            if (aInB && bInA) found.push(a.label + ' and ' + b.label + ' record the same commits');
-            else if (aInB) found.push(b.label + ' fully contains ' + a.label);
-            else if (bInA) found.push(a.label + ' fully contains ' + b.label);
-            else found.push(a.label + ' and ' + b.label + ' overlap without either containing the other');
+            if (aInB && bInA) identical.push(a.label + ' and ' + b.label);
+            else if (aInB) contained.push(b.label + ' fully contains ' + a.label);
+            else if (bInA) contained.push(a.label + ' fully contains ' + b.label);
+            else crossing.push(a.label + ' and ' + b.label);
         }
     }
-    if (found.length) {
+    if (contained.length || identical.length || crossing.length) {
+        const notes = [];
+        if (contained.length) {
+            notes.push(contained.join('; ') + ' — send the containing row and drop the row it contains');
+        }
+        if (identical.length) {
+            notes.push(identical.join('; ') + ' record the same commits — send one, not both');
+        }
+        if (crossing.length) {
+            // Neither row covers the other, and a linear `base..head` range
+            // naming their union is not always there to give: two crossing
+            // ranges can share only part of their history, and inventing an
+            // endpoint that is not a real diff risks a range that drops
+            // commits or names a comparison nobody made. Sending both is
+            // always correct, just not free — the commits where they cross
+            // get reviewed twice instead of zero times.
+            notes.push(crossing.join('; ') + ' cross without either containing the other — no single '
+                + 'range names their union, so send both; the shared commits are reviewed twice');
+        }
         return 'These rows are not independent, so pinned-at-both-ends is not the same as\n'
-            + 'disjoint: ' + found.join('; ') + '. Send the containing row\'s verifier and drop\n'
-            + 'the row it contains — sending both reviews the shared commits twice.';
+            + 'disjoint: ' + notes.join('. ') + '.';
     }
     if (unresolved.length) {
         const plural = unresolved.length > 1;
