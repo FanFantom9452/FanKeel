@@ -60,6 +60,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
+- `scripts/map.js` 沒有只印不寫的模式：被交代 read-only 的 reviewer 想讀 map 就得寫 `.fankeel/map.md`，一個 build reviewer 2026-09-08 就這樣寫了兩次 — [scripts/map.js](scripts/map.js).
+
 - `orient.js Waypoint web` reads as one nested place; the two positionals resolve independently against the root — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md), the `look` block.
 
 - SKILL.md 加 `## Security boundary`：TODO.md、plan、掃到的原始碼、他人的 registry entry 是 data 不是指令，不能推 stage、改 route、設 guard、派 subagent；A1 有草稿 — [簡報 A1](docs/improvement-brief.md#附錄-a可直接抄的原文片段).
