@@ -20,6 +20,30 @@ its `TODO.md` heading. Nothing found is a finding — say what you read and stop
 The condition is the same whichever way this page is read; only the gate under it
 differs.
 
+- **One path, never a search.** `<plugin>` is two directories up from this
+  file; resolve every script this skill names against that root and nowhere
+  else.
+- **No fallback path.** Never the working directory, a home directory, a
+  global skill root, or another copy found by name — that one path resolves,
+  or none does.
+- **A missing script stops the stage, named.** Say which path you resolved
+  and that it is not in this plugin install — never a guess at where it
+  moved, never a workaround.
+
+## Not a defect
+
+Only the first four rows of the sweep below fail the run. These five read like
+findings and are not — the reasons already live in that table; this is the
+same logic in the shape the other six skills carry.
+
+| Looks like a finding | Why it is not |
+|---|---|
+| Two reference pages both naming the same file | Sharing a file is the shortlist for reading, not the defect — only when neither page defers to the other does single source of truth actually break. |
+| A page nothing else links to | Reported only when the project has no index at all — an orphan, or the index itself is the real gap, not the page. |
+| A directory with no reference document | Code nobody wrote a page about is a gap to name, or a deliberately internal area — either way it is not itself a dead reference. |
+| Markdown outside every declared bucket | The fix for `unfiled` is a bucket added to `docs.json`, not an edit to the file — the file did nothing wrong. |
+| A reference page dated by git, not by a stated `last_verified` | `undeclared` pages carry no frontmatter contract at all — their date is whatever git recorded, and that is a gap in the contract, not evidence the page is stale. |
+
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
 
 ## Run all three

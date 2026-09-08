@@ -16,6 +16,24 @@ Produces a statement of what already exists, a classification, and the map.
 said out loud. That list runs out. Reading wider once it has is unfinished work,
 which is the one thing option two may never be — so the gate is asked once.
 
+- **One path, never a search.** `<plugin>` is two directories up from this
+  file; resolve every script this skill names against that root and nowhere
+  else.
+- **No fallback path.** Never the working directory, a home directory, a
+  global skill root, or another copy found by name — that one path resolves,
+  or none does.
+- **A missing script stops the stage, named.** Say which path you resolved
+  and that it is not in this plugin install — never a guess at where it
+  moved, never a workaround.
+
+## Not a defect
+
+| Looks like a finding | Why it is not |
+|---|---|
+| Code that does not match a `status: design-intent` page | That page describes what the system is meant to become, not what it is — `lib/stages.js:198` lists such pages as `planned but not built`, and code catching up to them later is the page doing its job. |
+| A nonzero `skipped:` count in the scan report | Files with no declaration pattern, over the size cap, or otherwise unreadable are named or counted, never silently dropped — `lib/stages.js:201` (`its counts are only reported`). |
+| A page dated by git rather than by anyone reading it | An `undeclared` page carries no frontmatter contract, so its date is whatever git last touched, not proof anyone verified it — a whitespace fix moves the date and confirms nothing. |
+
 ## The six steps
 
 ### 0. It already said it started

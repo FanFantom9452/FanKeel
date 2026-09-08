@@ -15,6 +15,24 @@ Produces a repository no dirtier than you found it.
 and `todo-check` passes. The integration decision itself is the user's, so it is
 what the gate asks — never something to settle first and report afterwards.
 
+- **One path, never a search.** `<plugin>` is two directories up from this
+  file; resolve every script this skill names against that root and nowhere
+  else.
+- **No fallback path.** Never the working directory, a home directory, a
+  global skill root, or another copy found by name — that one path resolves,
+  or none does.
+- **A missing script stops the stage, named.** Say which path you resolved
+  and that it is not in this plugin install — never a guess at where it
+  moved, never a workaround.
+
+## Not a defect
+
+| Looks like a finding | Why it is not |
+|---|---|
+| A commit with only one short paragraph of prose | `lib/stages.js:190` caps it there (`one paragraph only for what a bullet cannot hold`) — the bullets are the record; more prose is not owed. |
+| A `shipped:` list that skips files the diff touched | It is one line per new capability, not one per file — `lib/stages.js:358` (`shipped: is one line per thing someone can now do that they could not`), drawn from the ledger's completed entries — a file with no capability of its own has nothing to add there. |
+| A landed plan still sitting on disk, not yet archived | `lib/stages.js:355` archives it only `then is archived, after asking` — a plan waiting on that answer is not forgotten, it is mid-step. |
+
 ## 1. The full suite, on the tree you are about to integrate
 
 `npm test` / `cargo test` / `pytest` / `go test ./...` — whatever this project

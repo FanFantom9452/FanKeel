@@ -17,6 +17,24 @@ not reopen the stage: it is a finding whose destination is `build` — the
 report's slot says `→ build` — and the gate is where it is sent, not another lap
 around this one.
 
+- **One path, never a search.** `<plugin>` is two directories up from this
+  file; resolve every script this skill names against that root and nowhere
+  else.
+- **No fallback path.** Never the working directory, a home directory, a
+  global skill root, or another copy found by name — that one path resolves,
+  or none does.
+- **A missing script stops the stage, named.** Say which path you resolved
+  and that it is not in this plugin install — never a guess at where it
+  moved, never a workaround.
+
+## Not a defect
+
+| Looks like a finding | Why it is not |
+|---|---|
+| A defeated row sent to `build` instead of fixed here | `lib/stages.js:297` requires exactly that (`Anything half-built sends this back to build`) — a fix with its own review range is build's commit, never verify's. |
+| An adversary returning only the rows it defeated | Its charter is that scope alone — `lib/stages.js:300` (`ask only for the rows it defeats`) — a clean pass elsewhere is not it skipping anything. |
+| A coverage line reading `9 of 21`, not every page | `lib/stages.js:299` requires the denominator stated, not every page read (`nine of twenty-one pages`) — that is the complete claim, not a shortfall. |
+
 ## The iron law
 
 ```

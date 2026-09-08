@@ -17,6 +17,24 @@ ledger where there is a plan**, the same way the decomposition is `plan`'s — a
 `design`'s file table where there is no plan, which is every `bounded` task. A
 `spike` has neither, and what it counts against is the question it was asked.
 
+- **One path, never a search.** `<plugin>` is two directories up from this
+  file; resolve every script this skill names against that root and nowhere
+  else.
+- **No fallback path.** Never the working directory, a home directory, a
+  global skill root, or another copy found by name — that one path resolves,
+  or none does.
+- **A missing script stops the stage, named.** Say which path you resolved
+  and that it is not in this plugin install — never a guess at where it
+  moved, never a workaround.
+
+## Not a defect
+
+| Looks like a finding | Why it is not |
+|---|---|
+| Dead code left in the diff, not deleted | Only dead code this change created gets removed — `lib/stages.js:277` (`dead code you did not create gets mentioned, not deleted`), so an orphan predating this task is correctly still there, just named. |
+| A new ask from mid-build routed to `TODO.md` instead of built | That is the routing rule working, not the ask dropped — `lib/stages.js:274` (`is one TODO.md line at the detail`), not silence. |
+| A ruling recorded instead of a fifth stopper firing | `lib/stages.js:276` names deciding as the normal outcome (`Decide rather than stall`) — only irreversible, security-sensitive, out-of-workspace or every-path-a-guess actually stop the loop. |
+
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
 
 **This stage does not stop at a question until it is done.** Its gate is the end

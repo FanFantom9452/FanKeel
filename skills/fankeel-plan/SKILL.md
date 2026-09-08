@@ -18,6 +18,24 @@ remembered, and the plan file is written. The decomposition is the denominator,
 the same way the ledger is `build`'s wherever this stage ran: when no task is
 missing one of those, the stage is finished.
 
+- **One path, never a search.** `<plugin>` is two directories up from this
+  file; resolve every script this skill names against that root and nowhere
+  else.
+- **No fallback path.** Never the working directory, a home directory, a
+  global skill root, or another copy found by name — that one path resolves,
+  or none does.
+- **A missing script stops the stage, named.** Say which path you resolved
+  and that it is not in this plugin install — never a guess at where it
+  moved, never a workaround.
+
+## Not a defect
+
+| Looks like a finding | Why it is not |
+|---|---|
+| Setup, config or docs with no task of their own | `lib/stages.js:251` folds them in on purpose (`Fold setup and docs into the task needing them`) — a task with no matching bullet was never meant to have one. |
+| A `**Dispatch:**` line naming `sonnet` with no reason given | Only the tiers above the floor owe one — `lib/stages.js:254` (`and anything above it names why on that line`); `sonnet` needing no argument is the rule working. |
+| A plan reviewer's return holding only two kinds of line | `lib/stages.js:253` names its whole charter (`returning only promises with no task and Files blocks that disagree with their task.`) — nothing else is in its scope, so nothing else missing is a gap. |
+
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
 
 Write it assuming the engineer is skilled, has never seen this codebase, and will

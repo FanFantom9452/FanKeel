@@ -15,6 +15,24 @@ Produces an approach someone agreed to — and for `architectural`, a spec file.
 passes after, the check against the map and the one unverified thing are all on
 screen. A second approach is a catalogue, not more design.
 
+- **One path, never a search.** `<plugin>` is two directories up from this
+  file; resolve every script this skill names against that root and nowhere
+  else.
+- **No fallback path.** Never the working directory, a home directory, a
+  global skill root, or another copy found by name — that one path resolves,
+  or none does.
+- **A missing script stops the stage, named.** Say which path you resolved
+  and that it is not in this plugin install — never a guess at where it
+  moved, never a workaround.
+
+## Not a defect
+
+| Looks like a finding | Why it is not |
+|---|---|
+| Only one approach presented, no rejected alternative shown | `lib/stages.js:230` calls a second one a catalogue (`not a catalogue`) — trade-offs on the one approach chosen are the design, not a comparison table. |
+| The map check returning `no conflict` with nothing else said | `lib/stages.js:227` allows exactly that (`say you checked and found none`) — a stated absence is a complete answer, not a check cut short. |
+| Config, error handling or abstraction the ask never requested, left out | `lib/stages.js:225` requires it (`Cut whatever the stated ask does not require`) — the smaller design is the correct one, not an unfinished one. |
+
 ## The gate never scales down
 
 The artefact scales with the task. A bounded change gets a few sentences in chat;
