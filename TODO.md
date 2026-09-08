@@ -74,6 +74,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - What a nav label becomes when two roots normalize to the same segments and growing cannot separate them — [assets/station/station.js](assets/station/station.js), `labels`.
 
+- Whether the injected `<plugin>/scripts/` path needs a caveat for fankeel's own repository, where the cache lags the tree and its output reads as a finding — [lib/stages.js](lib/stages.js).
+
 ## Waiting
 
 - Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it. lifts when: a run is seen ignoring one. 09-06.
