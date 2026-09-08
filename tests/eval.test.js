@@ -145,3 +145,54 @@ test('the shipped scaffold_script builds the fixture it describes', () => {
     const lines = log.stdout.trim().split('\n').filter(Boolean);
     assert.equal(lines.length, 1, 'one commit, got: ' + JSON.stringify(log.stdout));
 });
+
+const { execFileSync, spawnSync } = require('node:child_process');
+const SCRIPT = path.join(__dirname, '..', 'scripts', 'eval.js');
+// Destructured on purpose: tests/source.test.js credits an export as imported
+// only when it sees `mod.name` or a destructuring require, and runOnce is the
+// one name nothing here can call without spending money.
+const { usage, parseArgs, runOnce, render, verdict, main } = require('../scripts/eval.js');
+
+test('eval.js --help prints usage and exits 0', () => {
+    const out = execFileSync(process.execPath, [SCRIPT, '--help'], { encoding: 'utf8' });
+    assert.match(out, /eval\.js <case dir>/);
+    assert.match(out, /--setting-sources project/);
+    assert.match(usage(), /case dir/);
+    assert.equal(main(['--help']), 0);
+    assert.equal(typeof runOnce, 'function');
+});
+
+test('eval.js with no case dir, or a dir with no prompt.md, exits 1 and says why', () => {
+    const none = spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8' });
+    assert.equal(none.status, 1);
+    assert.match(none.stdout + none.stderr, /case dir/);
+    const empty = spawnSync(process.execPath, [SCRIPT, tmp('fankeel-eval-')], { encoding: 'utf8' });
+    assert.equal(empty.status, 1);
+    assert.match(empty.stdout + empty.stderr, /prompt\.md/);
+});
+
+test('parseArgs defaults: plugin dir is the repository, one run, no json', () => {
+    const a = parseArgs(['evals/route-typo']);
+    assert.equal(a.dir, 'evals/route-typo');
+    assert.equal(path.resolve(a.pluginDir), path.resolve(__dirname, '..'));
+    assert.equal(a.runs, null);
+    assert.equal(a.json, null);
+    assert.equal(parseArgs(['x', '--runs', '2', '--model', 'haiku', '--json', 'o.json']).runs, 2);
+});
+
+test('render prints one line per grader per run and a score, and fails on any fail', () => {
+    const c = { name: 'route-typo' };
+    const runs = [{ graders: [
+        { name: 'a', type: 'tool_used', pass: true, detail: 'Bash: 1 call' },
+        { name: 'b', type: 'regex', pass: false, detail: 'did not find' },
+        { name: 'c', type: 'llm', pass: null, detail: 'skipped: x' },
+    ], toolCalls: 4, lastMessage: 'done', exit: 0, error: null }];
+    const text = render(c, runs);
+    assert.match(text, /route-typo run 1 a pass — Bash: 1 call/);
+    assert.match(text, /route-typo run 1 b fail — did not find/);
+    assert.match(text, /route-typo run 1 c skipped — skipped: x/);
+    assert.match(text, /score 1\/2/);
+    assert.equal(verdict(runs), 1);
+    assert.equal(verdict([{ ...runs[0], graders: runs[0].graders.filter((g) => g.pass !== false) }]), 0);
+    assert.equal(verdict([{ ...runs[0], graders: [], error: 'claude exited 1' }]), 1);
+});
