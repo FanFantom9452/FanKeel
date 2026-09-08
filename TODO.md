@@ -60,6 +60,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
+- `assets/station/index.html` 的 `document.write` 把 `location.search` 原樣串進資料 script 的 `src`，構造過的查詢字串可以閉合屬性注入；改成 `createElement` 加 `setAttribute` — [assets/station/index.html](assets/station/index.html).
+
 - `scripts/map.js` 沒有只印不寫的模式：被交代 read-only 的 reviewer 想讀 map 就得寫 `.fankeel/map.md`，一個 build reviewer 2026-09-08 就這樣寫了兩次 — [scripts/map.js](scripts/map.js).
 
 - `orient.js Waypoint web` reads as one nested place; the two positionals resolve independently against the root — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md), the `look` block.
