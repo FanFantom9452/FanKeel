@@ -288,14 +288,16 @@ Generated from this repository on 2026-09-08 at `af05431`, values copied exactly
        var n = 0, i;
        for (i = 0; i < rows.length; i++) if (rows[i].state === 'stale') n++;
        if (!n) return '';
-       if (!S.serve) return '<code class="mono">node ' + S.plugin + '/scripts/task.js clear &lt;id&gt;</code>';
+       if (!S.serve) return '<code class="mono">node ' + esc(S.plugin || '<plugin>') + '/scripts/task.js clear &lt;id&gt;</code>';
        return '<form method="post" action="/clear-stale">'
-           + '<input type="hidden" name="nonce" value="' + S.nonce + '">'
-           + '<input type="hidden" name="root" value="' + reg.root + '">'
+           + '<input type="hidden" name="nonce" value="' + esc(S.nonce || '') + '">'
+           + '<input type="hidden" name="root" value="' + esc(reg.root) + '">'
            + '<button type="submit">clear ' + n + ' stale</button></form>';
    }
    ```
    Offline it prints the copyable command, exactly as the per-row control does — a static page cannot post.
+
+   **Every interpolated string goes through `esc()`**, which this file defines and uses at every other interpolation; `clearControl` twelve lines below escapes all four of its values, and a sibling that does not is how the next person copies the wrong one. `reg.root` is a filesystem path from a local scan and a path may legally hold `<` and `"` outside Windows. `n` is a counter this function computes and is deliberately not escaped: it is a number, and escaping it would be noise that reads as a rule.
 
 2. Call it where the registry card's header is built, so the button sits with the card rather than with a row. Then add it to this file's own export block — the view test at `tests/station-view.test.js:13` requires this module and reaches nothing that is not exported, so the test in step 4 cannot see the function otherwise. That block sits inside the IIFE rather than at the end of the file, which is why the suite's export check described in Global Constraint 4 never reads it and no orphan check fires either way.
 
