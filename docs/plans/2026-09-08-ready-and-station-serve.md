@@ -184,13 +184,20 @@ Generated from this repository on 2026-09-08 at `af05431`, values copied exactly
    else if (a === '--detach') out.detach = true;
    ```
 
-3. The idle timer at `:209` is armed unconditionally today. Guard it:
+3. The idle timer is not a standalone call. It lives inside `touch()` at `scripts/station.js:204-210`, which every request calls, and its fallback is what defeats a zero: `opts.idleMs || 10 * 60e3` at `:209` reads `0` as absent and restores the ten-minute default. So guard the arming, not the value:
 
-   In `scripts/station.js`, where the idle timer is set:
+   In `scripts/station.js`, replace `touch()`:
    ```js
-   if (opts.idleMs > 0) timer = setTimeout(() => { server.close(); }, opts.idleMs);
+   const touch = () => {
+       if (timer) { clearTimeout(timer); timer = null; }
+       if (!(opts.idleMs > 0)) return;
+       timer = setTimeout(() => {
+           server.close();
+           if (opts.exitOnIdle !== false) process.exit(0);
+       }, opts.idleMs);
+   };
    ```
-   `touch()` keeps its behaviour; with no timer there is nothing to reset, so it must not throw on a null timer.
+   `opts.exitOnIdle` is an existing option and its behaviour is unchanged. Clearing before the guard is what lets a reconfigured server drop a timer it already had.
 
 4. The three GET routes read from the assets directory by bare name. Give them the `station/` segment so a served page and a written one agree:
    - `:234` `GET /station-data.js` keeps its URL and keeps calling `serialize(modelNow(), …)` — nothing on disk is read, so this route does not change
