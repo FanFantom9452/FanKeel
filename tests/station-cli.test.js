@@ -110,7 +110,7 @@ test('serve renders live, refuses a bad nonce, refuses a live row, clears a stal
     try {
         const page = await request(s.url, { method: 'GET' });
         assert.equal(page.status, 200);
-        const data = await request(s.url + 'station-data.js', { method: 'GET' });
+        const data = await request(s.url + 'station/station-data.js', { method: 'GET' });
         assert.match(data.text, /"serve":true/);
         const nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
         const form = (o) => new URLSearchParams(o).toString();
@@ -140,14 +140,14 @@ test('serve answers the shell and its three siblings', async () => {
         assert.match(page.headers['content-type'], /text\/html/);
         assert.ok(!page.text.includes('window.STATION'), 'the shell inlined the data');
 
-        const data = await request(s.url + 'station-data.js', { method: 'GET' });
+        const data = await request(s.url + 'station/station-data.js', { method: 'GET' });
         assert.equal(data.status, 200);
         assert.match(data.headers['content-type'], /javascript/);
         assert.match(data.text, /^window\.STATION = /);
         assert.match(data.text, /"serve":true/);
 
-        assert.equal((await request(s.url + 'station.css', { method: 'GET' })).status, 200);
-        assert.equal((await request(s.url + 'station.js', { method: 'GET' })).status, 200);
+        assert.equal((await request(s.url + 'station/station.css', { method: 'GET' })).status, 200);
+        assert.equal((await request(s.url + 'station/station.js', { method: 'GET' })).status, 200);
         assert.equal((await request(s.url + 'nothing', { method: 'GET' })).status, 404);
     } finally {
         s.close();
@@ -288,7 +288,7 @@ test('POST /clear-stale clears every stale row in one registry', async () => {
     const { serve } = require('../scripts/station.js');
     const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
     try {
-        const data = await request(s.url + 'station-data.js', { method: 'GET' });
+        const data = await request(s.url + 'station/station-data.js', { method: 'GET' });
         const nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
         const form = (o) => new URLSearchParams(o).toString();
         const res = await request(s.url + 'clear-stale',
@@ -304,13 +304,13 @@ test('POST /clear-stale clears every stale row in one registry', async () => {
         assert.equal(registry.readSession(f.r1, CS_LIVE).active, true, 'the live row is untouched');
         // And the data the shell fetches next says so, which is the half a
         // redirect cannot do by itself.
-        const after = await request(s.url + 'station-data.js?cleared=2', { method: 'GET' });
+        const after = await request(s.url + 'station/station-data.js?cleared=2', { method: 'GET' });
         assert.equal(after.status, 200);
         assert.match(after.text, /"cleared":2/);
-        const plain = await request(s.url + 'station-data.js', { method: 'GET' });
+        const plain = await request(s.url + 'station/station-data.js', { method: 'GET' });
         assert.ok(!plain.text.includes('"cleared"'),
             'data loaded without the query says nothing about clearing');
-        const junk = await request(s.url + 'station-data.js?cleared=lots', { method: 'GET' });
+        const junk = await request(s.url + 'station/station-data.js?cleared=lots', { method: 'GET' });
         assert.ok(!junk.text.includes('"cleared"'),
             'a non-numeric count is ignored rather than echoed into the data');
     } finally {
@@ -340,7 +340,7 @@ test('POST /clear-stale reports the rows it refused', async () => {
     const { serve } = require('../scripts/station.js');
     const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
     try {
-        const data = await request(s.url + 'station-data.js', { method: 'GET' });
+        const data = await request(s.url + 'station/station-data.js', { method: 'GET' });
         const nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
         const form = (o) => new URLSearchParams(o).toString();
         const res = await request(s.url + 'clear-stale',
@@ -362,7 +362,7 @@ test('POST /clear-stale clears a too-fresh row when force is sent', async () => 
     const { serve } = require('../scripts/station.js');
     const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
     try {
-        const data = await request(s.url + 'station-data.js', { method: 'GET' });
+        const data = await request(s.url + 'station/station-data.js', { method: 'GET' });
         const nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
         const form = (o) => new URLSearchParams(o).toString();
         const res = await request(s.url + 'clear-stale',
@@ -410,7 +410,7 @@ test('serve hands that budget to the walk on every request, and hands none when 
         const before = Date.now();
         // The shell itself no longer gathers anything — it is a static file —
         // so the request that triggers a gather is the one for its data.
-        await request(scanning.url + 'station-data.js', { method: 'GET' });
+        await request(scanning.url + 'station/station-data.js', { method: 'GET' });
         assert.equal(seen.length, 1, 'one render, one gather');
         assert.ok(Number.isFinite(seen[0].deadline), 'the scan walk is bounded by a deadline');
         assert.ok(seen[0].deadline >= before + 55000 && seen[0].deadline <= Date.now() + 60000,
@@ -422,7 +422,7 @@ test('serve hands that budget to the walk on every request, and hands none when 
         // join behaviour `station-cli.test.js`'s Task 2 tests cover already.
         const plainCfg = fixture().cfg;
         plain = await serve({ configDir: plainCfg, port: 0, idleMs: 60e3, open: false });
-        await request(plain.url + 'station-data.js', { method: 'GET' });
+        await request(plain.url + 'station/station-data.js', { method: 'GET' });
         assert.equal(seen.length, 2);
         assert.equal(seen[1].deadline, undefined, 'a render with no --scan carries no clock');
     } finally {
@@ -548,4 +548,32 @@ test('the first run scans once and records that it did', () => {
     // literal rather than `AUTO_BUDGET_MS + slack`: a bound that moves with the
     // budget is a bound the budget cannot break.
     assert.ok(elapsed1 < 9000, 'the first run stays inside its scan budget (took ' + elapsed1 + 'ms)');
+});
+
+// The one check neither half had: `station-shell.test.js` reads the shell as a
+// string and `serve answers the shell and its three siblings` hits the routes by
+// name, so the shell could ask for a path the server never answered and both
+// stayed green. It did, for the length of one build: the shell moved to
+// `station/…` and the routes did not, and the served page rendered blank.
+test('every asset the shell references answers from the server', async () => {
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    const shell = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'index.html'), 'utf8');
+    const refs = [];
+    // The data script is written by `document.write` so the page's own query
+    // string rides along, which means an href/src scan grabs a fragment of that
+    // JavaScript string rather than a path. Every asset lives under `station/`.
+    const re = /station\/[A-Za-z0-9._-]+\.(?:css|js)/g;
+    let m;
+    while ((m = re.exec(shell))) if (refs.indexOf(m[0]) < 0) refs.push(m[0]);
+    assert.ok(refs.length >= 3, 'the shell names only ' + refs.length + ' local assets');
+    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
+    try {
+        for (const ref of refs) {
+            const got = await request(s.url + ref, { method: 'GET' });
+            assert.equal(got.status, 200, ref + ' answered ' + got.status);
+        }
+    } finally {
+        s.close();
+    }
 });

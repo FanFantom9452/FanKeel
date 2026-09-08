@@ -265,7 +265,7 @@ function serve(opts) {
             res.end(html);
             return;
         }
-        if (req.method === 'GET' && url.pathname === '/station-data.js') {
+        if (req.method === 'GET' && url.pathname === '/station/station-data.js') {
             // Per request, which is what keeps the header's promise that a
             // served page re-reads the registries on every load. `?cleared=N`
             // is what `/clear-stale` redirects with, and the only thing this
@@ -281,8 +281,8 @@ function serve(opts) {
             res.end(station.serialize(modelNow(), { serve: true, nonce, plugin: PLUGIN, cleared }));
             return;
         }
-        if (req.method === 'GET' && (url.pathname === '/station.css' || url.pathname === '/station.js')) {
-            const name = url.pathname.slice(1);
+        if (req.method === 'GET' && (url.pathname === '/station/station.css' || url.pathname === '/station/station.js')) {
+            const name = url.pathname.split('/').pop();
             let body;
             try {
                 body = fs.readFileSync(path.join(ASSETS, name), 'utf8');
