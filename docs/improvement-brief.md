@@ -305,6 +305,10 @@ ID | 論文與作者 | 連結 | 查證日期 | 證據等級 | 範圍摘要 | 被
 | 該檔的測試 | `sepia/tests/test_check_versions.py` | 同上，**先跑** | 閘門本身壞掉 | 無 |
 | 行為 | `evals/` + `claude plugin eval` | push to main（限 `skills/`、`evals/`、manifest 變動） | skill 沒被觸發 / 觸發了但輸出不對 | 無 |
 
+> 補記 2026-09-08：上表「行為」列 fankeel 那格的「無」在同一天下午不再成立——
+> `evals/route-typo/` 與 `scripts/eval.js` 已落地，見 README 的 *Behaviour
+> evals*；CI 那條仍在 `TODO.md ## Waiting`。其餘各格照掃描當時。
+
 #### E1. `check_versions.py` 的兩條規則
 
 這是整個 repo 設計最精巧的一段，docstring 自己說明了：

@@ -6,6 +6,14 @@ source_of_truth: lib/stages.js, hooks/inject.js, scripts/task.js, docs/improveme
 
 # 行為 eval：一個 case、兩種跑法
 
+> **建完後的補記（2026-09-08，audit）**：四處與落地的不同，plan 的 Coverage
+> 表各有一列說明。§1 `says-it-out-loud` 的 target 是 `trace` 不是
+> `last_message`——第一次真跑模型在第一句就說了 route，最後一句是問題，
+> `last_message` 抓不到。§2 `regex` 因此多支援 `target: trace`（只接 assistant
+> 文字，不是官方的整份 transcript）。§2 temp dir 不用 `tests/tmp.js`——
+> `scripts/` 不能 require `tests/`，runner 自己 `mkdtempSync`。§3 grader 3 的
+> 紅綠改成 trace 對 last_message。其餘照本頁。
+
 **Ask**：fankeel 有 51 個 `node --test` 檔測 script 與 hook，沒有任何測試問「模型在
 fankeel mode 下會不會照規則做」。簡報 §2.5 說行為層是「無」。這份設計補第一個
 case，並讓它今天就跑得動。

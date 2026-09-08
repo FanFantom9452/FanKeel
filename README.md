@@ -320,6 +320,8 @@ the same case runs today on this tree:
 One `claude -p` per run, in a scaffolded temp repository with only this plugin
 loaded (`--setting-sources project --plugin-dir .`), graded against
 `graders/*.md`; `tool_used` and `regex` are graded, `llm` is reported as
-skipped. Any failed grader exits 1. With early access:
+skipped. A regex `target: trace` here reads the assistant text only, not the
+whole transcript the official runner means by it — a pattern that expects a
+tool call belongs to `tool_used`. Any failed grader exits 1. With early access:
 
     claude plugin eval . --json results.json --threshold 0.7 --model claude-sonnet-5 --no-publish
