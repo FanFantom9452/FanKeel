@@ -662,6 +662,51 @@ Generated from this repository on 2026-09-08 at `af05431`, values copied exactly
 
 4. Run `node scripts/map.js` and confirm "planned, not built" no longer names either page.
 
+## Task 15: The assertions that still name the flat layout
+
+**Files:**
+- Modify: `tests/inject.test.js` — the two existence assertions at `:399` and `:407`
+- Modify: `tests/leave.test.js` — the read at `:116`, the comparison at `:118-119` and the assertion at `:128`
+- Modify: `tests/task.test.js` — the ignore assertion at `:107`, the three paths at `:116-118`, and the write-counting paths at `:624` and `:654`
+- Modify: `tests/station.test.js` — one assertion that imports `EMITTED`, which nothing imports today
+- Read: `lib/station.js` — `EMITTED` at `:428` and the export block at `:490`
+
+**Interfaces:**
+- Consumes: `EMITTED` from Task 1 — `['index.html', 'station/station.css', 'station/station.js', 'station/station-data.js']`.
+- Produces: nothing other tasks read.
+
+**Dispatch:** implementer, sonnet — every failing assertion is named with its line; transcription plus one new assertion.
+
+### Steps
+
+1. Run `node --test` and take the nine failures as the input. Measured on 2026-09-08 after Tasks 1 to 6 landed: 1215 tests, 1206 pass, 9 fail. Eight of the nine are this task's. The ninth, `every flag the station CLI parses appears on docs/station.md`, belongs to Task 9 and must **still be failing** when this task finishes — closing it here would take work from a task that owns that page.
+
+2. `tests/inject.test.js:399` and `:407` assert the shell exists at the flat name. Repoint both at `index.html`.
+
+3. `tests/leave.test.js:116` reads the data file from the top of the config directory, where it now sits under `station/`; `:118-119` compares the two copies of the shell by the flat name; `:128` asserts the shell exists. Repoint all four.
+
+4. `tests/task.test.js:116-118` builds three paths from the flat names, and `:624` and `:654` count writes to the data file at the old place. Repoint them. Then `:107`:
+
+   In `tests/task.test.js`, in the test that reads the ignore file:
+   ```js
+   assert.match(ignore, /^index\.html$/m, 'start writes the station copy and keeps it out of git');
+   assert.match(ignore, /^station\/$/m, 'and the directory its three siblings sit in');
+   ```
+   This repository's own committed ignore file still carries the four old names by a ruling in the ledger, but `ensureIgnored` no longer writes them, and this test exercises what the code writes rather than what this repository happens to hold.
+
+5. `EMITTED` is exported at `lib/station.js:490` and imported by nothing, which is what fails `every exported name is imported by something`. **Do not unexport it** — make it checked instead, so the constant's single-source claim is what a test reads rather than a second list written by hand:
+
+   In `tests/station.test.js`, in the test that asserts the written tree:
+   ```js
+   const { EMITTED } = require('../lib/station.js');
+   assert.deepEqual(written.slice().sort(), EMITTED.slice().sort());
+   ```
+   `written` is the list of relative paths that test already gathers from the written directory. If it gathers them in some other shape, convert at the assertion rather than changing what the test walks.
+
+6. Run `node --test` in full. Exactly one failure may remain, and it must be the `docs/station.md` flag test. Any other failure is this task's.
+
+---
+
 ## Coverage
 
 | promise | task |
