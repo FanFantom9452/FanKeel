@@ -22,7 +22,7 @@ Three tiers, tried in this order. A rule takes the first tier that can hold it.
 |---|---|---|
 | **script** | anything a script can check or refuse — a missing block, a stage off the route, a prose `Consumes:` | the check runs whether or not anyone read the rule. `proseConflicts()` in `lib/plantasks.js:142` already does this for the rule missed at `skills/fankeel/SKILL.md:916`: the miss was a reader not knowing, and the surface had already been downgraded |
 | **anchor** | a step whose skipping is silent — no script fails, no slot stays empty — and a later stage pays for. Two carriers, both re-sent every prompt: a **template slot** where the step produces something the report must show, else **words on the pointer line** (`Read the fankeel-<stage> skill on entry: a, b, c.`), the carrier `land` and `verify` already use | a slot cannot be filled without doing the step; a word is a reminder at the moment the skill is opened |
-| **skill** | the procedure's detail, the format, and the why | read once on entering the stage. Nothing load-bearing lives *only* here — the criterion from `docs/plans/2026-09-04-stage-division-design.md:114` |
+| **skill** | the procedure's detail, the format, and the why | read once on entering the stage. Nothing load-bearing lives *only* here — the criterion from `docs/decisions/2026-09-04-stage-division-design.md:114` |
 
 A rule sentence in `rules:` stays what it is now: a judgement with no slot and
 no procedure name. Nothing here adds one.

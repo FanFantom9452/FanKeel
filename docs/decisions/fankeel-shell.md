@@ -477,8 +477,8 @@ What went the other way: the official example name is `reference.md`; here
 rather than deferring alone — a reason can stop being true when the code moves,
 and `docs-audit` should say so.
 
-The design is [2026-09-05-skill-split-design.md](../plans/2026-09-05-skill-split-design.md)
-and the plan [2026-09-05-skill-split.md](../plans/2026-09-05-skill-split.md).
+The design is [2026-09-05-skill-split-design.md](2026-09-05-skill-split-design.md)
+and the plan [2026-09-05-skill-split.md](../archive/2026-09-05-skill-split.md).
 
 ## What is still a guess
 
@@ -560,7 +560,7 @@ measured.
 Dated 2026-09-05. Every stage's injection sat at 2382 to 2398 of the 2400 cap, and
 ten deferred decisions were one question asked ten ways: which of a stage's rules
 earns the cap, and where the rest go.
-[docs/plans/2026-09-05-anchor-tiers-design.md](../plans/2026-09-05-anchor-tiers-design.md)
+[docs/decisions/2026-09-05-anchor-tiers-design.md](2026-09-05-anchor-tiers-design.md)
 answered it once. A rule takes the first tier that can hold it: a **script**,
 where one can check or refuse it; an **anchor** — a template slot first, because a
 report cannot be filled without doing the step, else words on the stage's
@@ -597,7 +597,7 @@ now asks a test to pin.
 Dated 2026-09-05. The tier rule above left `survey`, `plan` and `audit` with
 bare pointers because nobody had filed a candidate, and left open whether
 `build` wanted a `Commit:` step of its own.
-[docs/plans/2026-09-05-anchor-remaining-design.md](../plans/2026-09-05-anchor-remaining-design.md)
+[docs/decisions/2026-09-05-anchor-remaining-design.md](2026-09-05-anchor-remaining-design.md)
 filed the candidates from a four-lens survey and picked one per stage. `survey`
 got a `route:` slot and `ratchet the class with task.js route` on its pointer,
 paying with the intent clause its `planned, not built:` slot already anchored.

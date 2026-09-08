@@ -314,7 +314,7 @@ tried in this order:
 
 Room is made by moving a rationale clause into the stage's skill, never by
 raising the cap.
-[docs/plans/2026-09-05-anchor-tiers-design.md](plans/2026-09-05-anchor-tiers-design.md)
+[docs/decisions/2026-09-05-anchor-tiers-design.md](decisions/2026-09-05-anchor-tiers-design.md)
 applied this to ten deferred decisions.
 
 ## Inside each stage

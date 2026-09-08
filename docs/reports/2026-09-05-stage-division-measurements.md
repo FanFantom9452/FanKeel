@@ -7,7 +7,7 @@ source_of_truth: this file is the source; nothing derives it
 # Measurements taken during the stage-division build, 2026-09-05
 
 A dated snapshot. Four figures were quoted in
-[docs/plans/2026-09-04-stage-division-design.md](../plans/2026-09-04-stage-division-design.md)
+[docs/decisions/2026-09-04-stage-division-design.md](../decisions/2026-09-04-stage-division-design.md)
 and in [skills/fankeel-build/SKILL.md](../../skills/fankeel-build/SKILL.md) with
 no citation, which a whole-branch review caught. This is where they come from.
 

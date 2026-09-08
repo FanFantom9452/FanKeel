@@ -1,7 +1,7 @@
 ---
 status: archived
 last_verified: 2026-09-04
-source_of_truth: docs/plans/2026-09-04-session-station-design.md
+source_of_truth: docs/decisions/2026-09-04-session-station-design.md
 ---
 
 # Session Station Implementation Plan
@@ -20,7 +20,7 @@ while the user is clearing, and calls the same `clearEntry` the CLI does.
 `node:http`, `node:fs`, `node:path`, `node:os`, `node:crypto`,
 `node:child_process`; zero dependencies and none may be added; `node --test`.
 
-**Spec:** [docs/plans/2026-09-04-session-station-design.md](2026-09-04-session-station-design.md)
+**Spec:** [docs/decisions/2026-09-04-session-station-design.md](../decisions/2026-09-04-session-station-design.md)
 
 ## Global Constraints
 
@@ -1681,7 +1681,7 @@ source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.j
 
 Every fankeel session on this machine, on one page. This is the reference for
 what is on it and where it comes from; the decisions are in
-[plans/2026-09-04-session-station-design.md](plans/2026-09-04-session-station-design.md).
+[decisions/2026-09-04-session-station-design.md](../decisions/2026-09-04-session-station-design.md).
 
 ## Where the registries come from
 

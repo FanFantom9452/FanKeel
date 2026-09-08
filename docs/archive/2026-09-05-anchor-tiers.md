@@ -9,7 +9,7 @@ source_of_truth: this file is the plan; lib/stages.js, lib/plantasks.js and the 
 **Goal:** apply the three-tier rule for where a rule lives to four stages' injected text, one parser, three stage skills and two reference pages, closing ten `## Needs a decision` entries.
 **Architecture:** `lib/stages.js` gains two anchors (`design`, `build`), one mandate (`plan`) and one slot word (`verify`), paying for each by moving a rationale clause into the stage's skill; `lib/plantasks.js` treats a task with no `**Interfaces:**` block the way it already treats a prose `Consumes:`; the two reference pages state the tiers once each.
 **Tech Stack:** Node 24, `node --test`, no dependencies and none may be added (`package.json`).
-**Spec:** [docs/plans/2026-09-05-anchor-tiers-design.md](2026-09-05-anchor-tiers-design.md).
+**Spec:** [docs/decisions/2026-09-05-anchor-tiers-design.md](../decisions/2026-09-05-anchor-tiers-design.md).
 
 ## Global Constraints
 
@@ -325,7 +325,7 @@ tried in this order:
 
 Room is made by moving a rationale clause into the stage's skill, never by
 raising the cap.
-[docs/plans/2026-09-05-anchor-tiers-design.md](plans/2026-09-05-anchor-tiers-design.md)
+[docs/decisions/2026-09-05-anchor-tiers-design.md](../decisions/2026-09-05-anchor-tiers-design.md)
 applied this to ten deferred decisions.
 
 ```

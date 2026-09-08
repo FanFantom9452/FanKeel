@@ -22,7 +22,7 @@ dependencies and none may be added (`package.json` declares none). Markdown
 with YAML-shaped frontmatter read by `lib/docs.js`'s own reader, which handles
 `key: value` lines and nothing else.
 
-**Spec:** [2026-09-05-skill-split-design.md](2026-09-05-skill-split-design.md)
+**Spec:** [docs/decisions/2026-09-05-skill-split-design.md](../decisions/2026-09-05-skill-split-design.md)
 
 Line numbers below are at `013ecff`, the last commit to touch `skills/`, and
 HEAD is `9c7317a`. Nothing under `skills/` changed between them.

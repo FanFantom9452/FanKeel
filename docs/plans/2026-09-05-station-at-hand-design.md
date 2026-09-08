@@ -39,7 +39,7 @@ report ([reports/2026-09-05-field-report-0.44.0.md](../reports/2026-09-05-field-
   stood down, and `scripts/task.js:117` `hideBadge` does the same at `down`,
   `adopt` and `clear`. On 2026-09-05: 118 directories under `modes/`, 5
   readable leads, 2 carrying a root.
-- [plans/2026-09-04-session-station-design.md](2026-09-04-session-station-design.md)
+- [decisions/2026-09-04-session-station-design.md](../decisions/2026-09-04-session-station-design.md)
   §Rejected declined a registries index because "the lead already exists, is
   already per session, and is already pruned on a rule someone wrote down".
   The lead is pruned on that rule; it is also cleared the moment a task ends,

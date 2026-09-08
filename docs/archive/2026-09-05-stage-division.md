@@ -19,7 +19,7 @@ module, no new dependency.
 **Tech Stack:** Node's built-in test runner (`node --test`). `package.json`
 declares **no dependencies and no devDependencies**, and none may be added.
 
-**Spec:** [docs/plans/2026-09-04-stage-division-design.md](2026-09-04-stage-division-design.md)
+**Spec:** [docs/decisions/2026-09-04-stage-division-design.md](../decisions/2026-09-04-stage-division-design.md)
 
 ## Global Constraints
 

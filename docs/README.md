@@ -39,7 +39,7 @@ here.
 | Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
 | What caveman and SEPIA do that this plugin does not — gates, evals, an evidence ledger, thin wrappers — plus three directions of the user's own, each a `TODO.md` entry | [improvement-brief.md](improvement-brief.md) — *a backlog, 繁體中文* |
 | How two implementers running at once was built, task by task — its design is in `docs/archive/` | `docs/archive/2026-08-30-parallel-build.md` — *built* |
-| Every fankeel session on this machine on one page, what each cost, and how an abandoned one is put down | [plans/2026-09-04-session-station-design.md](plans/2026-09-04-session-station-design.md) — *built* |
+| Every fankeel session on this machine on one page, what each cost, and how an abandoned one is put down | [decisions/2026-09-04-session-station-design.md](decisions/2026-09-04-session-station-design.md) |
 | The eight tasks that build the station, with every test and every file written out | `docs/archive/2026-09-04-session-station.md` — *built* |
 | Why the station forgot registries — the lead dies with the badge — and where the page is written now: at `/fankeel`, at every verb, beside the user | [plans/2026-09-05-station-at-hand-design.md](plans/2026-09-05-station-at-hand-design.md) — *built* |
 | The six tasks that made the station remember, scan, write twice and say so | [plans/2026-09-05-station-at-hand.md](plans/2026-09-05-station-at-hand.md) — *built* |
@@ -63,14 +63,14 @@ here.
 | What a subagent actually received in its brief on 2026-09-04, measured with a probe agent | [reports/2026-09-04-subagent-brief-probe.md](reports/2026-09-04-subagent-brief-probe.md) — *a dated snapshot, 繁體中文* |
 | What that probe answered when it finally ran, and the one line of it that contradicts the harness | [reports/2026-09-07-brief-probe.md](reports/2026-09-07-brief-probe.md) — *a dated snapshot, 繁體中文* |
 | Why a fan-out of four wakes the parent four times and a workflow of eight wakes it once, measured on 2026-09-04 | [reports/2026-09-04-agent-wakeups.md](reports/2026-09-04-agent-wakeups.md) — *a dated snapshot, 繁體中文* |
-| Why nothing new could enter the 2400-character injection, and what each of six stages gave up to gain an anchor | [plans/2026-09-04-stage-division-design.md](plans/2026-09-04-stage-division-design.md) — *design-intent* |
-| The six tasks that put the Workflow threshold in what `groups` prints and anchored five stages' skill-only procedures | [plans/2026-09-05-stage-division.md](plans/2026-09-05-stage-division.md) — *design-intent* |
-| Why three stage skills are mostly rationale, and how the procedure stays in `SKILL.md` while the why moves beside it | [plans/2026-09-05-skill-split-design.md](plans/2026-09-05-skill-split-design.md) — *built* |
-| The four tasks that split those three skills: one test, then one implementer per skill with the rows and the pins | [plans/2026-09-05-skill-split.md](plans/2026-09-05-skill-split.md) — *built* |
-| Where a rule lives — script, anchor or skill — and the ten deferred decisions settled by applying it | [plans/2026-09-05-anchor-tiers-design.md](plans/2026-09-05-anchor-tiers-design.md) — *built* |
-| The five tasks that anchored four stages, mandated `**Interfaces:**`, and closed ten TODO entries | [plans/2026-09-05-anchor-tiers.md](plans/2026-09-05-anchor-tiers.md) — *built* |
-| Anchors for the last three stages, and why `build`'s commit step is two words on a pointer rather than a rule | [plans/2026-09-05-anchor-remaining-design.md](plans/2026-09-05-anchor-remaining-design.md) — *built* |
-| The two tasks that anchored `survey`, `plan` and `audit`, and brought the survey skill's step 6 to what `task.js` does | [plans/2026-09-05-anchor-remaining.md](plans/2026-09-05-anchor-remaining.md) — *built* |
+| Why nothing new could enter the 2400-character injection, and what each of six stages gave up to gain an anchor | [decisions/2026-09-04-stage-division-design.md](decisions/2026-09-04-stage-division-design.md) |
+| The six tasks that put the Workflow threshold in what `groups` prints and anchored five stages' skill-only procedures | `docs/archive/2026-09-05-stage-division.md` — *design-intent* |
+| Why three stage skills are mostly rationale, and how the procedure stays in `SKILL.md` while the why moves beside it | [decisions/2026-09-05-skill-split-design.md](decisions/2026-09-05-skill-split-design.md) |
+| The four tasks that split those three skills: one test, then one implementer per skill with the rows and the pins | `docs/archive/2026-09-05-skill-split.md` — *built* |
+| Where a rule lives — script, anchor or skill — and the ten deferred decisions settled by applying it | [decisions/2026-09-05-anchor-tiers-design.md](decisions/2026-09-05-anchor-tiers-design.md) |
+| The five tasks that anchored four stages, mandated `**Interfaces:**`, and closed ten TODO entries | `docs/archive/2026-09-05-anchor-tiers.md` — *built* |
+| Anchors for the last three stages, and why `build`'s commit step is two words on a pointer rather than a rule | [decisions/2026-09-05-anchor-remaining-design.md](decisions/2026-09-05-anchor-remaining-design.md) |
+| The two tasks that anchored `survey`, `plan` and `audit`, and brought the survey skill's step 6 to what `task.js` does | `docs/archive/2026-09-05-anchor-remaining.md` — *built* |
 | Why the fourteen entries under `## Ready` came down to nine changes, and why the temp-directory leak goes first | [plans/2026-09-07-ready-fourteen-design.md](plans/2026-09-07-ready-fourteen-design.md) — *design-intent* |
 | The nine tasks that close them, with the code for each written out | [plans/2026-09-07-ready-fourteen.md](plans/2026-09-07-ready-fourteen.md) — *design-intent* |
 | What a full run on 0.44.0 found from outside this repository: eleven sessions never stood down, six registries station cannot see, 297,088 test directories, six tool defects | [reports/2026-09-05-field-report-0.44.0.md](reports/2026-09-05-field-report-0.44.0.md) — *a dated snapshot from another session* |

@@ -9,7 +9,7 @@ source_of_truth: this file is the plan; lib/stages.js and the stage skills are w
 **Goal:** put an anchor on `survey`, `plan` and `audit`, two words on `build`'s pointer, paying with two rationale clauses, and bring the survey skill's write-down step to what `task.js` does.
 **Architecture:** `lib/stages.js` changes in four stages — two clauses out, four pointer lines reworded or extended, two template slots in; `tests/stages.test.js` pins every needle; the survey and audit skills' shown Output blocks change in the same commit, and the audit skill receives the displaced clause; `docs/pipeline.md`'s two hand-copied build blocks follow. A second task rewrites the survey skill's steps 0 and 6 around `task.js route`.
 **Tech Stack:** Node 24, `node --test`, no dependencies and none may be added (`package.json`).
-**Spec:** [docs/plans/2026-09-05-anchor-remaining-design.md](2026-09-05-anchor-remaining-design.md).
+**Spec:** [docs/decisions/2026-09-05-anchor-remaining-design.md](../decisions/2026-09-05-anchor-remaining-design.md).
 
 ## Global Constraints
 
