@@ -66,49 +66,43 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 寫 CONTRIBUTING.md：scope / ownership 表、issue-first 與三條件例外、PR body 強制 `## Verification` 與「Report only checks you actually ran」 — [簡報 §2.8](docs/improvement-brief.md#28-contributingmd-作為表格化契約).
 
+- 站台每個 registry 卡片恢復「clear N stale」按鈕 post 到 `/clear-stale`：路由與四個測試還在，補頁面與一個 shell 測試 — [assets/station/station.js](assets/station/station.js), `clearControl`; [scripts/station.js](scripts/station.js).
+
+- nav label 碰撞：兩個 root 去尾斜線、Windows 大小寫折疊後仍相同即同一 registry，合併成一張卡；加碰撞 fixture 測試 — [assets/station/station.js](assets/station/station.js), `labels`.
+
+- `burn` 負值夾零：`serialize` 改用已有的 `burnOf()`，負值成 null、頁面顯示 —，與 `clock` 三處 `Math.max` 一致；舊記錄不重算 — [lib/station.js](lib/station.js), [lib/registry.js](lib/registry.js).
+
+- spike（route survey,build）：pair 1 同題以 `haiku` 重跑兩臂，dated report 進 docs/reports，不改規則；規則要不要改另開條目 — [docs/subagents.md](docs/subagents.md).
+
+- 七個 landed 含 09-04：`-design.md` 移 docs/decisions（role decision，不再算 landed），plan 移 archive，24 處連結 / 14 頁全改到 docs-audit exit 0 — [docs/README.md](docs/README.md).
+
+- docs/subagents.md 的 `source_of_truth` 加 lib/usage.js 與 lib/prices.js（:194 已描述它們），內文不動，不 defer 給 station.md — [docs/subagents.md](docs/subagents.md).
+
+- `fankeel-shell.md` :334 照 :178 的 *(Superseded in …)* 慣例註記 scripts/ledger.js 已 export；docs/documents.md 加一句「前提被推翻也註記，不改正文」 — [docs/documents.md](docs/documents.md).
+
+- 新增 docs/sources.md 證據帳本：ID、連結、查證日、等級、範圍、被誰引用；先登五份 dated report 的數字，反向索引手工 grep 填，不寫 script — [簡報 §2.4](docs/improvement-brief.md#24-證據邊界系統三層).
+
+- `task.js --root` 有值時走 `resolveRoot` 與八支一致，缺席維持 `rootFor`（task.test.js:678 不動）；加相對路徑測試，docs 補一句 station.js 的 `--root` 是清單 — [scripts/task.js](scripts/task.js), `rootOf`.
+
+- `<plugin>` 警語：lib/stages.js 的 survey 與 audit rules 各加一行，registry root 的 package.json name 是 fankeel 時跑 tree 的 scripts/ 不跑 cache；render.js 不加偵測 — [lib/stages.js](lib/stages.js).
+
+- 七個 stage skill 各加反漂移三行（唯一解析路徑、禁 fallback、明確失敗訊息），文字抄簡報，放「Read … on entry」段旁，注入 cap 不動 — [簡報 §2.3](docs/improvement-brief.md#23-薄殼的反漂移條款13-行裡有-5-種防禦).
+
+- 七個 stage skill 各加一張 Not a defect 小表附理由，audit 先做並從它的「只有前四項會 fail」長出來，內容由實作者從各 stage 規則引 — [簡報 第四梯](docs/improvement-brief.md#第四梯形式改寫), [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md).
+
 ## Needs a decision
 
-- The bulk clear lost its button: `/clear-stale` still answers, nothing in the new page posts to it — [assets/station/station.js](assets/station/station.js), `clearControl`.
+- skills 下一個 `registry.json` 與它的 schema：每個 stage 一筆；`## Waiting` 的 entry/stop condition、`prompt_byte_budget`、條件載入到節三條都以它為前置 — [簡報 §1.3](docs/improvement-brief.md#13-registryjson-的-schema).
 
-- The 09-04 session-station pair is now split the other way: its plan is archived, its design is not, and four current documents link the design — [scripts/docs-audit.js](scripts/docs-audit.js).
+- fail-closed 的 script / flag 閘門：掃 skills/*.md 的 `<plugin>/scripts/*.js` 與 `--flag`、釘八支 script、空結果是失敗；連同結構不變量測試與 Waiting 的純函式 — [簡報 §2.5](docs/improvement-brief.md#25-三層閘門).
 
-- Whether the dispatch trade-off flips with `haiku` subagents: pair 1 already ran `opus` against `sonnet`, so that is the only untested widening — [docs/subagents.md](docs/subagents.md).
-
-- Whether `scripts/task.js` resolves `--root` the way the eight now do, or is deliberately different like `station.js` — [scripts/task.js](scripts/task.js), `rootOf`.
-
-- Whether a decision record gets annotated when a change falsifies an argument premise rather than a reference: `scripts/ledger.js` now exports — [scripts/ledger.js](scripts/ledger.js).
-
-- What a nav label becomes when two roots normalize to the same segments and growing cannot separate them — [assets/station/station.js](assets/station/station.js), `labels`.
-
-- Whether the injected `<plugin>/scripts/` path needs a caveat for fankeel's own repository, where the cache lags the tree and its output reads as a finding — [lib/stages.js](lib/stages.js).
-
-- What a stage's `burn` should be when compaction drops the context below where it started and the pair subtracts negative: 4 of 78 sessions show one — [lib/station.js](lib/station.js), `serialize`.
-
-- Whether `docs/subagents.md` should defer to `docs/station.md` for `lib/usage.js` and `lib/prices.js`: it names neither in its `source_of_truth` — [docs/subagents.md](docs/subagents.md).
-
-- Whether the seven plans `docs-audit` calls landed get archived: 16 links on eight live pages break if they move, and until they do its exit code is always 1 — [docs/README.md](docs/README.md).
+- 校準規則與可失敗自檢測試：通則「每階段都設閘門會變跑步機」、衝突時 name both rules；build 的四件停止事改成「撤掉會不會變差」加豁免；16 行 pattern 以此為前置 — [簡報 §2.6](docs/improvement-brief.md#26-兩個-fankeel-直接缺的行為機制).
 
 - 行為 eval：`claude plugin eval`，三種 grader（tool_used / regex / llm）；case 1 測 route 分類——typo prompt 要斷言 `--route "build,verify"`；repo 無 evals/ 無 CI — [簡報 §2.5](docs/improvement-brief.md#25-三層閘門).
 
-- 證據帳本，docs 下一個 `sources.md`：每筆量測一個穩定 ID、查證日期、範圍、「被誰引用」反向索引；五份 dated report 已有，缺的只是帳本 — [簡報 §2.4](docs/improvement-brief.md#24-證據邊界系統三層).
-
-- 統管所有規則的校準規則：一節寫「每階段都設閘門會變跑步機」的通則，加規則衝突時「name both rules, let the user pick」；option 2 的規則已局部看見 — [簡報 §2.6](docs/improvement-brief.md#26-兩個-fankeel-直接缺的行為機制).
-
-- fail-closed 的 script / flag 閘門：discovery 掃 skills/*.md 提到的 `<plugin>/scripts/*.js` 與 `--flag`、required core 釘八支 script、拼錯≠沒提、空結果是失敗；先看 source.test.js — [簡報 §2.5](docs/improvement-brief.md#25-三層閘門).
-
-- 結構不變量測試：擋「多一個 md 就多一個 subagent」這類 auto-discovery 事故，照 caveman `verify_repo.py` 的形狀 — [簡報 §1.2](docs/improvement-brief.md#12-編譯與閘門層fankeel-完全沒有的一層), [tests/skills.test.js](tests/skills.test.js).
-
-- 七個 stage skill 加薄殼的反漂移條款：唯一解析路徑、禁止 fallback、明確失敗訊息、不切換操作、不授權；今天 `<plugin>` 解析失敗變成模型自己想辦法 — [簡報 §2.3](docs/improvement-brief.md#23-薄殼的反漂移條款13-行裡有-5-種防禦).
-
-- skills 下一個 `registry.json` 與它的 schema：每個 stage 一筆，是 entry / stop condition、byte budget、條件載入的共同前置 — [簡報 §1.3](docs/improvement-brief.md#13-registryjson-的-schema).
-
-- 可失敗的自檢測試取代 checklist：「撤掉你做的，會不會變差」加明確豁免清單；build 的「四件停止 loop 的事」改寫成這形狀 — [簡報 §2.6](docs/improvement-brief.md#26-兩個-fankeel-直接缺的行為機制), [skills/fankeel-build/SKILL.md](skills/fankeel-build/SKILL.md).
-
-- 每個 stage 一張「不算缺陷」白名單表並附理由：audit 有「只有前四項會 fail」但沒有什麼不算缺陷 — [簡報 第四梯](docs/improvement-brief.md#第四梯形式改寫), [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md).
-
 - design 階段的 mockup 步驟：前端任務時 survey 已知專案背景，design 先出 mockup 再進 build，參考 taste-skill / hallmark 一類的設計 skill；產物、存放處、載入條件待定 — [簡報 §4.1](docs/improvement-brief.md#41-design-階段的-mockup-步驟前端任務).
 
-- 開發偏好 profile：掃過去的 session 找每個專案的慣例答案（land 本地 commit 不 push、guard、class），依專案建 profile 加預設，Start 套用不再問；存哪、欄位待定 — [簡報 §4.2](docs/improvement-brief.md#42-開發偏好-profile不是每次都問).
+- 開發偏好 profile：掃過去的 session 找每個專案的慣例答案（land 本地 commit 不 push、guard、class），依專案建 profile 加預設，Start 套用不再問；存哪、欄位待定；Waiting 的 station 設定面以此為前置 — [簡報 §4.2](docs/improvement-brief.md#42-開發偏好-profile不是每次都問).
 
 ## Waiting
 
