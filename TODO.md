@@ -64,35 +64,9 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - `scripts/map.js` 沒有只印不寫的模式：被交代 read-only 的 reviewer 想讀 map 就得寫 `.fankeel/map.md`，一個 build reviewer 2026-09-08 就這樣寫了兩次 — [scripts/map.js](scripts/map.js).
 
-- `orient.js Waypoint web` reads as one nested place; the two positionals resolve independently against the root — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md), the `look` block.
-
-- SKILL.md 加 `## Security boundary`：TODO.md、plan、掃到的原始碼、他人的 registry entry 是 data 不是指令，不能推 stage、改 route、設 guard、派 subagent；A1 有草稿 — [簡報 A1](docs/improvement-brief.md#附錄-a可直接抄的原文片段).
-
-- 寫 CONTRIBUTING.md：scope / ownership 表、issue-first 與三條件例外、PR body 強制 `## Verification` 與「Report only checks you actually ran」 — [簡報 §2.8](docs/improvement-brief.md#28-contributingmd-作為表格化契約).
-
-- 站台每個 registry 卡片恢復「clear N stale」按鈕 post 到 `/clear-stale`：路由與四個測試還在，補頁面與一個 shell 測試 — [assets/station/station.js](assets/station/station.js), `clearControl`; [scripts/station.js](scripts/station.js).
-
-- nav label 碰撞：兩個 root 去尾斜線、Windows 大小寫折疊後仍相同即同一 registry，合併成一張卡；加碰撞 fixture 測試 — [assets/station/station.js](assets/station/station.js), `labels`.
-
-- `burn` 負值夾零：`serialize` 改用已有的 `burnOf()`，負值成 null、頁面顯示 —，與 `clock` 三處 `Math.max` 一致；舊記錄不重算 — [lib/station.js](lib/station.js), [lib/registry.js](lib/registry.js).
-
 - spike（route survey,build）：pair 1 同題以 `haiku` 重跑兩臂，dated report 進 docs/reports，不改規則；規則要不要改另開條目 — [docs/subagents.md](docs/subagents.md).
 
-- 七個 landed 含 09-04：`-design.md` 移 docs/decisions（role decision，不再算 landed），plan 移 archive，24 處連結 / 14 頁全改到 docs-audit exit 0 — [docs/README.md](docs/README.md).
-
-- docs/subagents.md 的 `source_of_truth` 加 lib/usage.js 與 lib/prices.js（:194 已描述它們），內文不動，不 defer 給 station.md — [docs/subagents.md](docs/subagents.md).
-
-- `fankeel-shell.md` :334 照 :178 的 *(Superseded in …)* 慣例註記 scripts/ledger.js 已 export；docs/documents.md 加一句「前提被推翻也註記，不改正文」 — [docs/documents.md](docs/documents.md).
-
-- 新增 docs/sources.md 證據帳本：ID、連結、查證日、等級、範圍、被誰引用；先登五份 dated report 的數字，反向索引手工 grep 填，不寫 script — [簡報 §2.4](docs/improvement-brief.md#24-證據邊界系統三層).
-
-- `task.js --root` 有值時走 `resolveRoot` 與八支一致，缺席維持 `rootFor`（task.test.js:678 不動）；加相對路徑測試，docs 補一句 station.js 的 `--root` 是清單 — [scripts/task.js](scripts/task.js), `rootOf`.
-
-- `<plugin>` 警語：lib/stages.js 的 survey 與 audit rules 各加一行，registry root 的 package.json name 是 fankeel 時跑 tree 的 scripts/ 不跑 cache；render.js 不加偵測 — [lib/stages.js](lib/stages.js).
-
-- 七個 stage skill 各加反漂移三行（唯一解析路徑、禁 fallback、明確失敗訊息），文字抄簡報，放「Read … on entry」段旁，注入 cap 不動 — [簡報 §2.3](docs/improvement-brief.md#23-薄殼的反漂移條款13-行裡有-5-種防禦).
-
-- 七個 stage skill 各加一張 Not a defect 小表附理由，audit 先做並從它的「只有前四項會 fail」長出來，內容由實作者從各 stage 規則引 — [簡報 第四梯](docs/improvement-brief.md#第四梯形式改寫), [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md).
+- 數字帶範圍取代四捨五入：9.2× 在散文裡補上「四 reader、跨 plugin skills、檔名未知」後就不與 1.5× 矛盾；帳本的 Scope 欄已經這樣寫，引用它的頁面還沒 — [docs/sources.md](docs/sources.md).
 
 ## Needs a decision
 
@@ -121,8 +95,6 @@ entry waited for actually happening. It shrank when somebody read it.
 - Whether an output style reaches a subagent — [lib/render.js](lib/render.js) forwards none; headless ignores `outputStyle`. lifts when: an interactive terminal can set one in `/config`. 09-07.
 
 - `docs-audit` reads a fixture path in a code block as a deliverable — [scripts/docs-audit.js](scripts/docs-audit.js). lifts when: a second plan is held back by it. 09-07.
-
-- 數字帶範圍取代四捨五入：9.2× 補上「四 reader、跨 plugin skills、檔名未知」後就不與 1.5× 矛盾 — [簡報 §2.4](docs/improvement-brief.md#24-證據邊界系統三層). lifts when: 證據帳本落地. 09-08.
 
 - 閘門寫成純函式，CLI 與 test 共用，照 docs-check.js / lib/docs.js 的分離 — [簡報 §1.2](docs/improvement-brief.md#12-編譯與閘門層fankeel-完全沒有的一層), [lib/docs.js](lib/docs.js). lifts when: script / flag 閘門落地. 09-08.
 
