@@ -93,97 +93,52 @@ From the entry: `task`, `project`, `stage` on its `route`, `started`,
 `updated`, `claims`, `notes`, `next`, `guard`, and the stage sums of `burn`,
 `clock` and `waited`. From `hooks/leave.js`: `ended`, `model`, `usage`,
 `spend` — see [registry.md](registry.md). From `lib/prices.js`: the dollar figure, and the
-date the table was read. The dollar figure shown is the session's own; beside
-it, when the session ran agents, is the agents' dollar figure and how many
-agents produced it — `usage.subagents`, priced the same way. A row opens to
-the agents' own request count and their summed wall-clock, alongside
-everything else.
+date the table was read. The dollar figure shown is one total: `cost(s)` in
+the browser adds the session's own `usd` and its agents' `agentUsd` together
+(`assets/station/station.js:54`, `(s.usd || 0) + (s.agentUsd || 0)`) rather
+than printing them side by side — `agentCost` is `usage.subagents`, priced
+the same way as the session's own `usage`. Opening a row appends how many
+agents ran, as a bare count beside the total rather than a request count or a
+wall-clock of its own.
 
-Every row also carries the registry it belongs to, as `data-project` (`lib/station.js:567`, `data-project="${esc(root)}"`) — the root, not the project name shown
-elsewhere on the row, and what pairs it to its nav entry and to the
-`<section>` around it; see Filtering and sorting below.
+Every row also carries the registry it belongs to, as `root` on its session
+object (`lib/station.js:373`, `root: s.root`) — the raw path, not the
+shortened label shown on the row — and `match()` filters on that same field
+(`assets/station/station.js:127`, `s.root !== f.project`) rather than a DOM
+attribute, because every row here is rebuilt from `window.STATION` in the
+browser instead of arriving as markup; see Filtering, and the two views
+below.
 
-### The curve
+### The stage strip
 
-An opened row draws what the session spent against its own clock: an inline
-`<svg>`, x in milliseconds since the first stage's first `clock` sighting —
-`stages[0].from`, not the entry's `started`, which `chart()` never reads — with
-a faint rule and a letter at each stage boundary so the time axis reads without
-a tooltip. So the width printed in the legend is the clocked span, from that
-first sighting to the **latest** `to` of any stage — not the last element of the
-series, which `registry.seriesOf` orders by when each stage was *entered*, so a
-session that re-enters an earlier stage and ends there keeps its widest window
-in the middle — and not the elapsed run: a session
-whose clock started late, or stopped early, is drawn narrower than it lived.
-That is deliberate. A session's clock is what its stages are measured in, and
-an axis in one unit and rules in another would put the boundaries in the wrong
-places.
+An opened row's stage strip draws what each stage cost in time, not money:
+every stage gets a segment sized to its own share of the total, via
+`drawDetail()`'s own per-stage `w.to - w.from` (`assets/station/station.js:657`, `w.to - w.from`) — coloured by
+stage and named inline once the segment is wide enough to hold it, with the
+exact stage and its minutes in the tooltip. It draws proportion, not elapsed
+time: every row's strip fills the same width, so a ten-minute session and a
+ten-hour one look the same size — only their segments' own widths differ.
 
-Two series share the box, **each scaled to its own maximum**, and the two
-maxima are printed underneath — only the label word, `burn` or `spend`, sits
-inside a span coloured to match its line; the maximum value itself renders in
-the legend's own mute colour. A dual axis is unreadable at ninety pixels; the
-labels carry the units instead.
+No stages at all draws no strip and no table, just one line —
+`沒有分階段紀錄` (`assets/station/station.js:674`, `沒有分階段紀錄`) — a
+session that has not crossed a stage boundary has nothing to proportion.
 
-| series | from | |
-|---|---|---|
-| `burn` | the raw per-stage pairs, via `registry.seriesOf` | context tokens, which climb through a session |
-| spend | `spend`, both halves of it, priced by `lib/prices.js` | cumulative USD, running across stages |
+Below the strip is the table it is drawn from — one row per stage, with the
+minutes, the burn distance and a third column, `等你`: how much of that
+stage's minutes went on a gate rather than on work. Neither carries a dollar
+figure any more; a stage's own cost surfaces only in the aggregate
+seven-stage ledger on **總覽**, not per row.
 
-**The spend series is the session's, agents included.** Each `spend[stage]`
-carries the parent's own `{ requests, models }` and, when agents ran in that
-window, a `subagents` sub-object of the same shape; `gather` prices both and
-adds them, so the curve ends where the row's cost cell — `$X + $Y (N agents)` —
-adds up to. It did not always: the curve was drawn from the parent alone, which
-on a session that fanned out is a fraction of what it spent. Measured on this
-repository, a row whose cost cell read `$0.83 + $1.39 (4 agents)` had a curve
-that climbed to $0.83, and one row on the same page read `$57.43 + $91.56 (21
-agents)`. Nothing is counted twice: `usage.agentsOf` reads only the transcripts
-under the session's own `subagents/` directory, and the parent's own pass skips
-every `isSidechain` line.
-
-**And when they still do not add up, the legend says so.** A request is put in
-a stage by the timestamp on its transcript line, so a line carrying none is
-counted in the row's total and lands in no bucket. Rather than invent a stage
-for money that has none — which would put real spend in a stage that did not
-spend it — `row()` compares the cell's total against the sum of the stage
-table's own figures and appends `$N unaccounted` to the legend when the first
-exceeds the second by a cent or more. Unpriced stages sit outside both sides of
-that comparison, so a row full of models `lib/prices.js` has no rate for does
-not read as a shortfall. The notice only appears on a row that prints a stage
-table at all: one total cannot disagree with itself.
-
-Both series end at the same pixel — the top-right corner — on every row that
-carries both, because each is scaled to its own maximum rather than a shared
-one. Colour tells them apart everywhere else; where they converge a solid
-stroke could not, so the spend line is drawn dashed.
-
-Both empty cases are drawn on purpose rather than left to render as an empty
-axis. Fewer than two stages carrying `burn` gives the words `no burn
-recorded` and no `<svg>` at all — a single sighting is a position, not a
-distance, the same rule `burnOf` follows. A session with no `spend` draws the
-burn series alone and says `spend arrives when the session ends`.
-
-**That is most rows today, and it is not a defect.** `spend` is written once,
-at session end, so a live session does not have it yet and no session that
-ended before this shipped will ever have it. Below the chart is the table it
-is drawn from — one row per stage, with the minutes, the burn distance, the
-spend, and a fifth column, `waited`: how much of that stage's minutes went on
-a gate rather than on work.
-
-The spend column is **one total, parent and agents together**, and not two
-columns. The table is captioned as the figures the chart is drawn from and the
-chart draws one spend line; splitting the column would print two numbers
-neither of which is the plotted one. The split is kept where it can be read
-without arithmetic: on disk in `spend[stage]`, and on the row's own cost cell.
-
-A stage whose models the price table does not know has no dollar figure, not a
-figure of zero: `costOf` returns `usd: 0` there, and `gather` reads
-`priced.length` — the check `row()` already made for the summary cell — before
-believing it. So an unpriced stage prints `—` in the table and the cumulative
-curve steps over it rather than counting it as free. The output tokens shown
-instead of a dollar figure are the row's summary cell only; the per-stage
-surfaces say nothing rather than something wrong.
+A stage's dollar figure needs `spend`, which `hooks/leave.js` writes once, at
+session end — a live session does not have it yet, and no session that ended
+before this shipped ever will — and even once it exists, a stage whose models
+the price table does not know has no dollar figure, not a figure of zero:
+`costOf` returns `usd: 0` there, and `gather` reads `priced.length` before
+believing it, so an unpriced stage's own `usd` is `null` rather than a silent
+zero (`lib/station.js:297`, `usd: priced ? mine + agents : null`) — the same
+line that folds the session and its agents together rather than pricing the
+parent alone, which is why the ledger's total already matches `cost(s)`'s own
+combined figure, agents included.
 
 ### Where per-stage spend comes from
 
@@ -209,86 +164,75 @@ attributed to `survey` — the stage that opened the gate — rather than droppe
 deleted from `usage` when it is written, and why every existing reader still
 sees the shape it always had, is in [registry.md](registry.md).
 
-### Filtering and sorting
+The page is four files. `station.html` is a shell with no session data in it,
+copied byte for byte from `assets/station/station.html`; `station.css` and
+`station.js` are copied the same way; `station-data.js` is the only generated
+one, and holds `window.STATION` — the scan, and nothing else. The shell is
+copied rather than pointed at, because the plugin directory carries its version
+in its path and the copy under `<root>/.fankeel/` would otherwise point outside
+the repository it sits in.
 
-The page carries one inline script — no `src`, nothing fetched, no
-dependency — and it now shows two panes rather than one column: a project
-nav on the left and, on the right, every registry and its rows, side by side
-in one `<div class="layout">` (`render()`).
+`write()` compares the three copied files before writing them, so a prompt that
+changed nothing rewrites `station-data.js` alone. `hooks/inject.js` calls it on
+every prompt, which is the reason that comparison is there.
 
-The nav lists one entry per registry, in the same order the right pane lists
-them, so the two never disagree about which registry is which (`navHtml`).
-An entry carries the registry's label and, for one that still has a
-`sessions/` directory, its `live`, `stale` and `down` counts; a gone registry
-keeps its place and its label but prints no counts, since it has no sessions
-left to count. Clicking an entry scopes the right pane to that registry; the
-leading entry, `all projects`, clears the scope.
+### Filtering, and the two views
 
-The label is not the registry's full path. `navLabels` gives each root the
-shortest tail of its path segments that no other root shares — one segment
-until two collide, then one more for both, and so on (`lib/station.js:748`, `segs[i].slice(-depth[i])`) — because three roots on
-this machine end in `datapacks`, and the bare last segment would print that
-three times over. The full root still sits in the link's `title=`, so a
-collision costs a reader nothing but the extra segment on screen.
+Everything on the page is built in the browser from `window.STATION`, which is
+what lets one filter narrow the charts and the table together: server-side
+markup cannot redraw a chart when a facet is clicked.
 
-The selected project is written to `location.hash` on every click (`lib/station.js:705`, `location.hash=selected`) and read back when the page
-loads (`lib/station.js:699`, `location.hash||''`). A reload — or a bookmarked
-link — returns to the same registry rather than resetting to `all projects`.
+The left rail is facets, each with its own count — state, registry, stage — and
+the search box above them matches task, project, session id, registry label,
+the files the task has touched and its notes. They are AND-ed. Selecting a
+registry recomputes the four cards, every chart and the list; it does not merely
+hide rows.
 
-It filters rows on task, project, session id, model and state — `data-state`
-is one of the attributes each row carries, so typing `live`, `stale` or
-`down` is itself a filter term. Project selection, the state default and the
-text filter are AND-ed, not layered: a row shows only when its text matches,
-its registry is the selected one or none is selected, and it clears the
-state default (`lib/station.js:668`, `textHit&&projHit&&stateHit`).
+A gone registry keeps its facet rather than dropping off the rail, so
+selecting one never returns a blank pane with nothing on the page saying why:
+`goneNote()` (`assets/station/station.js:460`, `function goneNote()`) prints a
+card reading `gone — no sessions/ here any more` in its place, alongside the
+`--forget` that would drop it for good.
 
-`down` rows are that state default: hidden the moment the page loads, served
-or static alike — unlike auto-refresh below, this is not a serve-only
-convenience — and the `show down` checkbox beside the filter box brings them
-back. The default holds only while the filter box is empty: a row still
-counts as a `down` hit when `show down` is checked, when any term at all is typed, or when the row is not `down` to begin with (`lib/station.js:667`, `state!=='down'`),
-so typing `down` — itself a filter term, matched against `data-state` the
-same as `live` or `stale` — still surfaces a row the page hid on load.
+A registry that is not gone gets its own card instead, once it is the one
+selected: `registryNote()` (`assets/station/station.js:477`, `function registryNote()`) prints its own unreadable-session count, its
+`map.md` date — or `不存在` when there is none — and its build directories
+with each one's file count, or says there are none. The old page carried all
+three on a per-registry meta line; the redesign dropped that line, and this
+card is where its contents live now. The header's own unreadable count stays
+the total across every registry and is shown only when none is selected,
+because a selected one already carries its own count on this card
+(`assets/station/station.js:704`, `a corrupt-entry count must`) — so a corrupt
+entry is never a click away from being found.
 
-It sorts rows by `updated`, `started`, `cost` or `stage`, clicking twice to
-reverse. Rows are reordered inside their own registry, never across
-registries.
+`navLabels` moved into `assets/station/station.js` as `labels`, unchanged: each
+root gets the shortest tail of its path segments no other root shares, and the
+full root stays in `title=`. Its one unresolved case is filed under
+`## Needs a decision` in `TODO.md` — two roots that split into the same
+segments run out of length before they separate, and share a label. A mixed
+separator style does that, and so does a bare trailing one. A nested root is
+not that case; it separates.
 
-`gather` still returns sessions ordered by `updated` descending. The sorting
-here is a view over that order rather than a replacement for it, which is why
-the static file on disk and the served page agree about what they hold.
+**總覽** carries four cards with a seven-day-against-previous-seven delta, the
+stacked context flow by registry, a weekday bar, the waiting gauge and the
+seven-stage ledger. A delta whose previous window holds nothing prints
+`前期無資料` rather than a percentage against zero, because this repository's
+usage records begin on 2026-09-04 and its burn records on 08-28; the waiting
+ratio moves in percentage points, and a rise in it is the bad direction.
 
-A registry is one `<section class="registry" data-project>` now, not a
-heading floating over a `<div class="rows">` that hides on its own — but not
-every section holds the same furniture. For one that still has a
-`sessions/` directory, the heading, the meta line, the clear-stale form and
-the rows div all sit inside that one section, carrying the same root as
-`data-project` that every row inside it already carries. A gone registry's
-section holds only its heading (`lib/station.js:822`, `no sessions/ here any more`) — no meta line, no clear form, no rows div — because it still has a
-nav entry: without a section carrying its root, selecting it would exclude
-every other section at once and leave the pane blank with nothing on the
-page saying why. Either way the whole section hides together. Opening the
-served page in a browser — not a test — is what found why that matters for a
-registry that does hold rows: with a project selected, the other eleven
-registries' headings stayed on screen, and four of their `clear all N stale`
-buttons stayed pressable, over rows that had already hidden underneath them.
+**清單** is the sortable table and a detail pane. Clicking a row fills the pane
+rather than expanding the row, so two sessions can be compared without
+scrolling. Sorting is by task, stage, context, cost, state, started or last
+action, clicking twice to reverse — `started` keeps a column and header of its
+own so it stays reachable as a sort key, the same reason the page this
+replaces sorted by it (`assets/station/station.js:558`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+`updated` descending, so the page's first sort is the one it arrived in.
 
-A section hides for one of two reasons, and it is two, not one: its project
-is excluded by the current selection (`lib/station.js:687`, `excluded=!!selected&&proj!==selected`), or it holds rows and every one of
-them was filtered out (`lib/station.js:688`, `emptied=!!c&&c.rows>0&&c.visible===0`). A registry that still has a `sessions/` directory but holds none
-fits neither — nothing ever emptied it — so under `all projects` it stays
-visible, because hiding it would take it off the page entirely. Its meta
-line says so (`0 sessions`), and its nav entry says the same thing beside
-it, in its own `0 live, 0 stale, 0 down` (`lib/station.js:782`, `${c.live} live`).
-A gone registry's section is never in this reckoning at all: it has no
-`.rows` group to be counted or emptied, so `excluded` alone decides it. A
-section and its `.rows` group are paired on the `data-project`
-both already carry, not on document order (`lib/station.js:634`, `querySelectorAll('.registry')`) — the same value `row()` writes onto
-every row for `SCRIPT` to use.
-
-Auto-refresh is offered **only on a served page**. The file at
-`<registry>/.fankeel/station.html` is rewritten by fankeel's own events, so a
-timer on it would reload the same bytes until one of those fired.
+A stale row's clear control is the one thing that differs between the served
+page and the file: `window.STATION.serve` is true only when a server produced
+the data, and then the pane shows a form posting to `/clear` with that run's
+nonce. A file on disk has neither, so it prints the `task.js clear` command to
+copy.
 
 ## When it is written, and where
 
@@ -318,17 +262,20 @@ minutes — `--port <n>` binds a chosen port instead of one the OS picks, and
 `--idle <minutes>` moves the ten. The static copies carry the `task.js clear` command on each
 `stale` row instead of the button.
 
-A second button sits under each registry that has any stale row, and posts to
-`/clear-stale`: it clears them all, calling `clearEntry` once per row so the
-checks are the same list rather than a second copy of them. A clean run
-redirects to `/?cleared=N`, and the reloaded page prints that count in a
-banner above the rows; a refusal answers `409` with which rows it refused and
-why, since a redirect has nowhere to say it. Its label carries the count, so
-the confirm says what it is about to do. It takes the same `force`
-tick and the same nonce as the single-row button.
+`/clear-stale` clears every stale row in one registry at once, calling
+`clearEntry` once per row so the checks are the same list rather than a
+second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
+page still prints that count in a banner above the rows
+(`assets/station/station.js:510`, `cleared ' + S.cleared + ' stale rows`); a
+refusal answers `409` with which rows it refused and why, since a redirect
+has nowhere to say it. It takes the same `force` tick and the same nonce as
+the single-row button — but the page puts no button in front of it any more:
+`assets/station/station.js` has no form that posts there, so reaching it
+today means a request built by hand.
 
-Both buttons write `active: false` and nothing else, so a session cleared by
-mistake can be adopted back with its notes and its `next` intact.
+Both routes call the same `clearEntry`, which writes `active: false` and
+nothing else, so a session cleared by mistake can be adopted back with its
+notes and its `next` intact.
 
 **`down` and `adopt` cannot be buttons, and this is structural.** Both verbs
 need a *calling* session id — which task is standing down, which session is

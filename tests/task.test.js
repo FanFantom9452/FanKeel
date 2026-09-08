@@ -115,12 +115,13 @@ test('start regenerates the station in the config dir and beside the registry; n
   run(dir, ['start', '--session', A, '--task', 'tidy the project cards']);
   const page = path.join(dir, 'cfg', 'fankeel', 'station.html');
   const copy = path.join(dir, '.fankeel', 'station.html');
-  assert.ok(fs.readFileSync(page, 'utf8').includes('tidy the project cards'));
+  const dataPath = path.join(dir, 'cfg', 'fankeel', 'station-data.js');
+  assert.ok(fs.readFileSync(dataPath, 'utf8').includes('tidy the project cards'), 'the task line is not in the data');
   assert.equal(fs.readFileSync(copy, 'utf8'), fs.readFileSync(page, 'utf8'));
   run(dir, ['note', 'a dead end', '--session', A]);
   assert.equal(fs.readFileSync(page, 'utf8').includes('a dead end'), false, 'note does not rewrite the page');
   run(dir, ['down', '--session', A]);
-  assert.match(fs.readFileSync(page, 'utf8'), /class="s down"/, 'down rewrites it through hideBadge');
+  assert.match(fs.readFileSync(dataPath, 'utf8'), /"state":"down"/);
 });
 
 test('start succeeds with no project — the registry root is a project too', () => {
@@ -610,10 +611,17 @@ test('adopting shows the badge for the stage taken over', () => {
 // `fs.writeFileSync` itself, installed by a `--require` preload in the child
 // process that runs `task.js`: patching the module under test would not have
 // caught a call this task moved rather than removed.
+//
+// The write counted is `station-data.js`, not `station.html`: the shell is
+// static now, and `write()` only rewrites the three copied files — html, css,
+// js — when their bytes differ from what is already on disk, so a second
+// identical write of the shell leaves no trace here. `station-data.js` is
+// generated fresh on every call with no such skip, so it is the one file
+// whose write count still says how many times `refreshStation` ran.
 test('adopt enters the station refresh once, not once per badge writer', () => {
   const dir = root();
   const cfg = path.join(dir, 'cfg');
-  const page = path.join(cfg, 'fankeel', 'station.html');
+  const dataFile = path.join(cfg, 'fankeel', 'station-data.js');
   started(dir, A, 'tidy the project cards', 'Waypoint');
 
   const spyDir = tmp('fankeel-task-spy-');
@@ -637,13 +645,13 @@ test('adopt enters the station refresh once, not once per badge writer', () => {
       encoding: 'utf8',
       env: Object.assign({}, process.env, {
         CLAUDE_CONFIG_DIR: cfg,
-        STATION_WATCH_FILE: page,
+        STATION_WATCH_FILE: dataFile,
         STATION_WRITE_COUNT_FILE: counter,
       }),
     });
 
   assert.equal(fs.readFileSync(counter, 'utf8').length, 1,
-    'one character per write to the station page in the config dir — two means refreshStation ran twice');
+    'one character per write to station-data.js in the config dir — two means refreshStation ran twice');
 });
 
 test('show reports no entry rather than pretending the mode is on', () => {

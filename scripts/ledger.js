@@ -23,6 +23,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 const { parseArgs: parseArgv } = require('node:util');
 
 const ledger = require('../lib/ledger.js');
@@ -271,6 +272,107 @@ function withScan(existing, report) {
     return before + '\n' + block + after;
 }
 
+// The commit set a range covers, for the overlap check `ranges` prints below.
+// `null` for a row with no range recorded — nothing to compare, and not the
+// same as a range that covers zero commits — so it never reaches this
+// function: `ranges` filters those rows out before building the list, the
+// same way `(no range recorded)` already tells the reader not to trust this
+// report for them. `undefined` is different: a range recorded but unreadable
+// — a fixture sha that was never committed, or `root` not being a git
+// repository at all, both of which the test suite exercises. Both cases are
+// left out of the comparison rather than defaulted to "covers nothing," which
+// is what would make "the rows do not overlap" a guess dressed up as a
+// finding.
+function commitsFor(root, range) {
+    if (!range) return null;
+    try {
+        const out = execFileSync('git', ['rev-list', range], {
+            cwd: root,
+            encoding: 'utf8',
+            maxBuffer: 32 * 1024 * 1024,
+            stdio: ['ignore', 'pipe', 'ignore'],
+        });
+        return new Set(out.split(/\r?\n/).filter(Boolean));
+    } catch (e) {
+        return undefined;
+    }
+}
+
+// Every element of `a` is also in `b`.
+const subsetOf = (a, b) => [...a].every((sha) => b.has(sha));
+
+// The paragraph `ranges` ends its report on, computed from the ranges it
+// already printed rather than asserted regardless of them. A task's range
+// covers every commit between its two ends, and a fix that landed inside
+// that span gets its own row for the same commits — the two rows are not
+// independent verifiers, and the sentence this replaces said they were,
+// unconditionally, which is how seventeen range-slots on one branch read as
+// fourteen unique commits' worth of work plus three more.
+function overlapNote(root, entries) {
+    const resolved = entries.map((e) => ({ label: e.label, commits: commitsFor(root, e.range) }));
+    const unresolved = resolved.filter((e) => e.commits === undefined);
+    const known = resolved.filter((e) => e.commits instanceof Set);
+    // Three shapes, because one remedy does not fit all of them. Containment
+    // has a row to drop; identical ranges are one row wearing two labels;
+    // crossing has neither — the reviewer's own repro was a "contains" remedy
+    // printed under a pair that crosses, telling the reader to do something
+    // the sentence just called impossible.
+    const contained = [];
+    const identical = [];
+    const crossing = [];
+    for (let i = 0; i < known.length; i++) {
+        for (let j = i + 1; j < known.length; j++) {
+            const a = known[i];
+            const b = known[j];
+            if (![...a.commits].some((sha) => b.commits.has(sha))) continue;
+            const aInB = subsetOf(a.commits, b.commits);
+            const bInA = subsetOf(b.commits, a.commits);
+            if (aInB && bInA) identical.push(a.label + ' and ' + b.label);
+            else if (aInB) contained.push(b.label + ' fully contains ' + a.label);
+            else if (bInA) contained.push(a.label + ' fully contains ' + b.label);
+            else crossing.push(a.label + ' and ' + b.label);
+        }
+    }
+    const overlapFound = contained.length || identical.length || crossing.length;
+    const notes = [];
+    if (contained.length) {
+        notes.push(contained.join('; ') + ' — send the containing row and drop the row it contains');
+    }
+    if (identical.length) {
+        notes.push(identical.join('; ') + ' record the same commits — send one, not both');
+    }
+    if (crossing.length) {
+        // Neither row covers the other, and a linear `base..head` range
+        // naming their union is not always there to give: two crossing
+        // ranges can share only part of their history, and inventing an
+        // endpoint that is not a real diff risks a range that drops
+        // commits or names a comparison nobody made. Sending both is
+        // always correct, just not free — the commits where they cross
+        // get reviewed twice instead of zero times.
+        notes.push(crossing.join('; ') + ' cross without either containing the other — no single '
+            + 'range names their union, so send both; the shared commits are reviewed twice');
+    }
+    // Appended rather than returned early. Whether some rows overlap and
+    // whether another row could not be read at all are two independent facts
+    // about the same list — an early return here is exactly the bug the
+    // reviewer found: a ledger holding both reported only the overlap, and
+    // the row git never resolved went unnamed.
+    if (unresolved.length) {
+        const plural = unresolved.length > 1;
+        notes.push('Whether ' + (plural ? 'they overlap' : 'it overlaps') + ' anything could not be checked: '
+            + 'git could not read ' + (plural ? 'these ranges' : 'this range') + ' — '
+            + unresolved.map((e) => e.label).join(', ') + ' — so treat ' + (plural ? 'them' : 'it')
+            + ' as unverified rather than assume ' + (plural ? 'they are' : 'it is') + ' disjoint from the rest');
+    }
+    if (notes.length) {
+        const lead = overlapFound
+            ? 'These rows are not independent, so pinned-at-both-ends is not the same as\ndisjoint: '
+            : 'One verifier per row, pinned at both ends. ';
+        return lead + notes.join('. ') + '.';
+    }
+    return 'One verifier per row, pinned at both ends. The rows do not overlap, so\nthey may go out in one response.';
+}
+
 function main(argv) {
     const { head, verb: named, text } = splitAtVerb(argv, STRING_FLAGS, VERBS);
     const opts = parseArgs(head);
@@ -456,9 +558,14 @@ function main(argv) {
         // that landed and never got a verifier, which is the failure this verb
         // exists to prevent.
         const blind = rows.filter((r) => !r.range).length;
+        // Only rows with a range are comparable at all — a blind row already
+        // gets the paragraph above sending the reader to git log instead of
+        // here, so it is left out rather than counted as overlapping nothing.
+        const entries = rows.filter((r) => r.range).map((r) => ({ label: 'Task ' + r.n + ' (' + r.range + ')', range: r.range }))
+            .concat(fixed.filter((r) => r.range).map((r) => ({ label: 'the fix (' + r.range + ')', range: r.range })));
         return 'fankeel ledger — ' + file + '\n\n' + lines.join('\n')
             + (blind ? '\n\nA row with no range was completed before this field existed, or without\n--range. Read it against git log rather than here.' : '')
-            + '\n\nOne verifier per row, pinned at both ends. The rows do not overlap, so\nthey may go out in one response.';
+            + '\n\n' + overlapNote(root, entries);
     }
 
     if (verb === 'show') {

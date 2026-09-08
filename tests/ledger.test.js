@@ -371,6 +371,143 @@ test('the short shas the build loop records are accepted', () => {
   assert.match(out, /1 4aacd71\.\.94ec4b3/);
 });
 
+function git(dir, args) {
+  execFileSync('git', args, { cwd: dir, stdio: ['ignore', 'ignore', 'ignore'] });
+}
+
+function commit(dir, name) {
+  fs.writeFileSync(path.join(dir, name), name + '\n');
+  git(dir, ['add', '-A']);
+  git(dir, ['commit', '-qm', name]);
+  return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: dir, encoding: 'utf8' }).trim();
+}
+
+// The incident this test is filed for: a task's range covers every commit
+// between its two ends, and a fix that landed inside that span gets its own
+// row for the same commits. On station-shell three of fourteen rows did this
+// and the sentence below still claimed all fourteen were independent and
+// could go out in one response. Three real commits stand in for that shape
+// here -- c0..c2 is the task, c1..c2 is the fix, and c1..c2's one commit is a
+// strict subset of c0..c2's two -- so the overlap is read back from git
+// rather than asserted.
+test('ranges names a task row that fully contains a fix row, and drops the disjoint claim for it', () => {
+  const dir = root();
+  git(dir, ['init', '-q']);
+  git(dir, ['config', 'user.email', 'test@example.invalid']);
+  git(dir, ['config', 'user.name', 'test']);
+  git(dir, ['config', 'commit.gpgsign', 'false']);
+  const c0 = commit(dir, 'c0.txt');
+  const c1 = commit(dir, 'c1.txt');
+  const c2 = commit(dir, 'c2.txt');
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'init'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', c0 + '..' + c2, 'complete', '1', 'the task'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', c1 + '..' + c2, 'fix', 'landed inside the task'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'ranges'], { cwd: dir, encoding: 'utf8' });
+  assert.match(out, /not independent/);
+  assert.match(out, new RegExp('Task 1 \\(' + c0 + '\\.\\.' + c2 + '\\) fully contains the fix \\(' + c1 + '\\.\\.' + c2 + '\\)'));
+  assert.doesNotMatch(out, /The rows do not overlap/);
+});
+
+// A ledger-test-only helper: a bare repository with an identity, so a test
+// only has to say which commits it wants. The pre-existing test above inlines
+// this itself; kept there unchanged, used here so the next three tests do not
+// triple it.
+function freshRepo(dir) {
+  git(dir, ['init', '-q']);
+  git(dir, ['config', 'user.email', 'test@example.invalid']);
+  git(dir, ['config', 'user.name', 'test']);
+  git(dir, ['config', 'commit.gpgsign', 'false']);
+}
+
+// Fix-round finding 1, first half: two ranges over a linear history can cross
+// — share commits without either covering the other — and the old trailer's
+// single remedy sentence told the reader to "send the containing row's
+// verifier" over a pair it had just said has no container. c0..c2 and
+// c1..c3 over four linear commits share {c2} while c1 sits outside the first
+// range and c3 outside the second, so neither is a subset of the other.
+test('ranges names a pair that crosses without containment, and does not send the reader after a container that is not there', () => {
+  const dir = root();
+  freshRepo(dir);
+  const c0 = commit(dir, 'c0.txt');
+  const c1 = commit(dir, 'c1.txt');
+  const c2 = commit(dir, 'c2.txt');
+  const c3 = commit(dir, 'c3.txt');
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'init'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', c0 + '..' + c2, 'complete', '1', 'first'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', c1 + '..' + c3, 'complete', '2', 'second'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'ranges'], { cwd: dir, encoding: 'utf8' });
+  assert.match(out, /cross without either containing the other/);
+  assert.match(out, /send both/);
+  assert.doesNotMatch(out, /fully contains/);
+  assert.doesNotMatch(out, /send the containing row/);
+});
+
+// Fix-round finding 1, second half: two rows recording the exact same range
+// are one range wearing two labels, not a container and a containee, and
+// "fully contains" is the wrong word for it — the old flat remedy used it
+// regardless of which of the three shapes was actually found.
+test('ranges names two rows over the exact same range as one range recorded twice, not a container and a containee', () => {
+  const dir = root();
+  freshRepo(dir);
+  const c0 = commit(dir, 'c0.txt');
+  const c1 = commit(dir, 'c1.txt');
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'init'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', c0 + '..' + c1, 'complete', '1', 'first'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', c0 + '..' + c1, 'fix', 'over the exact same span'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'ranges'], { cwd: dir, encoding: 'utf8' });
+  assert.match(out, /record the same commits/);
+  assert.match(out, /send one, not both/);
+  assert.doesNotMatch(out, /fully contains/);
+});
+
+// Fix-round finding 2: the unresolved path fires correctly but nothing
+// asserted on it before this. A real repository, one real range and one sha
+// git has never seen, so the trailer has to name the unreadable range as
+// unverified rather than folding it into the disjoint claim — which is what
+// "the rows do not overlap" would say here, wrongly, since nothing checked
+// that range at all.
+test('ranges names a range git cannot read back as unverified rather than assuming it is disjoint', () => {
+  const dir = root();
+  freshRepo(dir);
+  const c0 = commit(dir, 'c0.txt');
+  const c1 = commit(dir, 'c1.txt');
+  const fake = 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef';
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'init'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', c0 + '..' + c1, 'complete', '1', 'a real range'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', c1 + '..' + fake, 'complete', '2', 'a sha git never saw'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'ranges'], { cwd: dir, encoding: 'utf8' });
+  assert.match(out, /could not be checked/);
+  assert.match(out, new RegExp('Task 2 \\(' + c1 + '\\.\\.' + fake + '\\)'));
+  assert.match(out, /unverified/);
+  assert.doesNotMatch(out, /The rows do not overlap/);
+});
+
+// Round-3 finding: the overlap branch returned as soon as any pair overlapped,
+// so the unresolved check right below it never ran — a ledger holding both an
+// overlapping pair and an unrelated unresolvable row reported only the
+// overlap, and the row git never resolved went unnamed. `known.length` has to
+// be 2 or more for the early return to even be reachable, which is exactly
+// what the single-row test above cannot exercise: Task 1 `c0..c3` contains
+// Task 2 `c1..c2`, and Task 3 records a range that was never committed here,
+// all three in one real repository.
+test('ranges names both an overlapping pair and a separate unresolvable row in the same report', () => {
+  const dir = root();
+  freshRepo(dir);
+  const c0 = commit(dir, 'c0.txt');
+  const c1 = commit(dir, 'c1.txt');
+  const c2 = commit(dir, 'c2.txt');
+  const c3 = commit(dir, 'c3.txt');
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'init'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', c0 + '..' + c3, 'complete', '1', 'container'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', c1 + '..' + c2, 'complete', '2', 'contained'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', 'aaaaaaa..bbbbbbb', 'complete', '3', 'never committed here'], { cwd: dir, encoding: 'utf8' });
+  const out = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'ranges'], { cwd: dir, encoding: 'utf8' });
+  assert.match(out, new RegExp('Task 1 \\(' + c0 + '\\.\\.' + c3 + '\\) fully contains Task 2 \\(' + c1 + '\\.\\.' + c2 + '\\)'));
+  assert.match(out, /could not be checked/);
+  assert.match(out, /Task 3 \(aaaaaaa\.\.bbbbbbb\)/);
+  assert.match(out, /unverified/);
+});
+
 // `lib/ledger.js`'s own `init()` only opens the file; it never looks at the
 // plan, so a ledger could look perfectly healthy while holding a plan nobody
 // could build from. `init` now opens the plan the same way `groups` does, so

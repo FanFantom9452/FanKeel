@@ -3,7 +3,7 @@ name: fankeel-design
 description: The design stage — one approach with its trade-offs, a success criterion that can fail, and a check against the project map before anything is built. Use for the design stage of a fankeel task, choosing between approaches, writing a spec, or when an approach needs approving before implementation.
 version: 0.53.0
 status: current
-last_verified: 2026-09-07
+last_verified: 2026-09-08
 source_of_truth: lib/stages.js, lib/plantasks.js
 ---
 
@@ -58,9 +58,15 @@ clarification.
 
 **And one row on the artefact, wherever the change produces one.** A rendered
 page, a written file, a printed report — checked against itself, not against a
-unit: the row's cost cell and the curve under it agree. Unit tests each passed
-on 2026-09-06 while the curve drew a third of what the cell printed, because
-no criterion had named the artefact.
+unit: two figures the artefact derives from one source have to agree. Unit
+tests each passed on 2026-09-06 while a station row's cost cell and the curve
+under it disagreed by a factor of three, because no criterion had named the
+artefact.
+
+Name the check rather than the widget it lands on. That curve was deleted on
+2026-09-08 and the criterion outlived it: the same row was met by reading a
+total out of the rendered page and summing the field it came from, which is a
+sentence the redesign could not falsify.
 
 If a simpler approach exists, or the ask itself looks wrong, say so before
 building it.

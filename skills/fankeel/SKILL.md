@@ -22,7 +22,7 @@ Two things live under `.fankeel/`, and they have different homes.
 ```
 workspace/                        <- Claude Code opened here
 ├── .fankeel/
-│   ├── .gitignore             sessions/, map.md, build/, station.html
+│   ├── .gitignore             sessions/, map.md, build/, the station's four files
 │   └── sessions/              THE REGISTRY. one for the whole workspace.
 │       └── <session_id>.json    never committed
 │
@@ -78,7 +78,7 @@ controlled there.
 
 ```
 .fankeel/
-├── .gitignore          sessions/, map.md, build/, station.html
+├── .gitignore          sessions/, map.md, build/, the station's four files
 └── sessions/
     └── {session_id}.json
 ```
@@ -515,7 +515,8 @@ lives only in a skill, this one included. `docs/pipeline.md` has the table.
 
 `<project>/.fankeel/docs.json`, version-controlled — `.fankeel/.gitignore`
 excludes what is per-machine or regenerated, `sessions/` and `map.md` and
-`build/` and `station.html`, and this is the one it deliberately leaves in. One
+`build/` and the station's four emitted files, and this is the one it
+deliberately leaves in. One
 per repository, found from the task's `project` and the files it has claimed; see
 **Where the files are** above.
 
@@ -610,10 +611,13 @@ place of `--open` runs it as a page with a `clear` button on every stale row.
 The page is written at this prompt, before the block that names it, so there
 is nothing to invoke; [docs/station.md](../../docs/station.md) is the reference.
 
-Its header is also where a file that does not parse is counted. The hooks drop
+The page is also where a file that does not parse is counted. The hooks drop
 those silently and correctly — a miss is what a session not using the plugin
-looks like — so the `unreadable` figure on that line is the only place a corrupt
-entry surfaces. Read it out rather than counting the directory by hand.
+looks like — so the `unreadable` figure is the only place a corrupt entry
+surfaces at all. It is in two places on the page and never in both at once: the
+top bar carries the total across every registry while no registry is selected,
+and a selected one shows its own on its card. Read it out rather than counting
+the directory by hand.
 
 Show the active ones: task, stage, what each has touched, and — for any last
 touched more than 12 hours ago — how long ago that was. Mark this session's own.

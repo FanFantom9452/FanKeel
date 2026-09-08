@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>fankeel station</title>
+<link rel="stylesheet" href="station.css">
+</head><body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="mk">f</span><b>fankeel</b><span class="mute">station</span></div>
+    <div class="scroll" id="side"></div>
+    <div class="foot">
+      <div class="teamcard">
+        <span class="av">&#9671;</span>
+        <span><span class="t1">config dir</span><span class="t2" id="cfg">&mdash;</span></span>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="tbar">
+      <label class="search"><span class="mute">&#8981;</span>
+        <input id="q" placeholder="搜尋任務、session、碰過的檔案…"><span class="k">/</span></label>
+      <span class="spacer"></span>
+      <span class="mute gen" id="gen"></span>
+      <span class="who"><span class="av">&#9672;</span>
+        <span><span class="n1">station</span><span class="n2" id="nreg"></span></span></span>
+    </div>
+    <div class="scrollmain" id="page"></div>
+  </div>
+</div>
+<script>document.write('<script src="station-data.js' + location.search + '"><\/script>')</script>
+<script src="station.js"></script>
+</body></html>

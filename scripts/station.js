@@ -32,6 +32,7 @@ const live = require('../lib/live.js');
 const { clearEntry } = require('../lib/clear.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
+const ASSETS = path.join(PLUGIN, 'assets', 'station');
 
 function parseArgs(argv) {
     const out = { verb: null, roots: [], scan: [], open: false, port: 0, idleMs: 10 * 60e3, forget: null, json: false };
@@ -211,18 +212,56 @@ function serve(opts) {
         touch();
         const url = new URL(req.url, 'http://127.0.0.1');
         if (req.method === 'GET' && url.pathname === '/') {
-            // `?cleared=N` is what `/clear-stale` redirects to, and the only
-            // thing this page takes from its own query string. Digits only:
-            // anything else is somebody's typing, and the page says nothing
-            // rather than echoing it back into the markup.
-            const said = url.searchParams.get('cleared');
-            const cleared = said !== null && /^\d+$/.test(said) ? Number(said) : null;
-            const html = station.render(modelNow(), {
-                serve: true, nonce, plugin: PLUGIN,
-                cleared: cleared === null ? undefined : cleared,
+            let html;
+            try {
+                html = station.render();
+            } catch (e) {
+                // Unlike a missing `station.css` or `station.js` below — one
+                // asset gone — a shell that will not read means the plugin's
+                // whole `assets/station/` directory is missing or unreadable,
+                // and the reason says that rather than naming a single file.
+                res.writeHead(404, { 'content-type': 'text/plain' });
+                res.end('no such asset: this plugin\'s assets directory is missing or unreadable\n');
+                return;
+            }
+            res.writeHead(200, {
+                'content-type': 'text/html; charset=utf-8',
+                'cache-control': 'no-store',
             });
-            res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
             res.end(html);
+            return;
+        }
+        if (req.method === 'GET' && url.pathname === '/station-data.js') {
+            // Per request, which is what keeps the header's promise that a
+            // served page re-reads the registries on every load. `?cleared=N`
+            // is what `/clear-stale` redirects with, and the only thing this
+            // server takes from a query string: digits only, because anything
+            // else is somebody's typing and the page says nothing rather than
+            // echoing it into a script.
+            const said = url.searchParams.get('cleared');
+            const cleared = said !== null && /^\d+$/.test(said) ? Number(said) : undefined;
+            res.writeHead(200, {
+                'content-type': 'text/javascript; charset=utf-8',
+                'cache-control': 'no-store',
+            });
+            res.end(station.serialize(modelNow(), { serve: true, nonce, plugin: PLUGIN, cleared }));
+            return;
+        }
+        if (req.method === 'GET' && (url.pathname === '/station.css' || url.pathname === '/station.js')) {
+            const name = url.pathname.slice(1);
+            let body;
+            try {
+                body = fs.readFileSync(path.join(ASSETS, name), 'utf8');
+            } catch (e) {
+                res.writeHead(404, { 'content-type': 'text/plain' });
+                res.end('no such asset\n');
+                return;
+            }
+            res.writeHead(200, {
+                'content-type': name.endsWith('.css')
+                    ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8',
+            });
+            res.end(body);
             return;
         }
         if (req.method === 'POST' && url.pathname === '/clear') {

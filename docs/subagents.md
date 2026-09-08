@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-07
+last_verified: 2026-09-08
 source_of_truth: hooks/brief.js, lib/render.js, hooks/carry.js, lib/plantasks.js
 ---
 
@@ -245,7 +245,7 @@ how many independent pieces of work a stage's own product breaks into.
 | `design` | **none.** One approach for one gate; N approaches do not compose | — |
 | `plan` | **none.** The stage's own check is global consistency — a name a later task uses is one an earlier task defined — which parallel authors break precisely | — |
 | `build` | a group of tasks | `scripts/ledger.js --plan <f> groups` |
-| `verify` | one row's claim over its pinned range — a task's, or a fix round's | `scripts/ledger.js --plan <f> ranges` |
+| `verify` | one row's pinned range, a task's or a fix round's, qualified by the report's last paragraph: what to send where rows are not independent, and the ranges it could not check | `scripts/ledger.js --plan <f> ranges` |
 | `audit` | a pair of documents describing one source file | `scripts/docs-audit.js` |
 | `land` | **none.** Moving files, then `todo-check.js`, then `map.js` is a dependency chain, not an ordering. Only the suite is free, and it cannot overlap the edits before it | — |
 
