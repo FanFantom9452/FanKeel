@@ -212,11 +212,23 @@ function serve(opts) {
         touch();
         const url = new URL(req.url, 'http://127.0.0.1');
         if (req.method === 'GET' && url.pathname === '/') {
+            let html;
+            try {
+                html = station.render();
+            } catch (e) {
+                // Unlike a missing `station.css` or `station.js` below — one
+                // asset gone — a shell that will not read means the plugin's
+                // whole `assets/station/` directory is missing or unreadable,
+                // and the reason says that rather than naming a single file.
+                res.writeHead(404, { 'content-type': 'text/plain' });
+                res.end('no such asset: this plugin\'s assets directory is missing or unreadable\n');
+                return;
+            }
             res.writeHead(200, {
                 'content-type': 'text/html; charset=utf-8',
                 'cache-control': 'no-store',
             });
-            res.end(station.render());
+            res.end(html);
             return;
         }
         if (req.method === 'GET' && url.pathname === '/station-data.js') {

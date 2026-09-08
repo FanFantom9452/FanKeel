@@ -154,6 +154,28 @@ test('serve answers the shell and its three siblings', async () => {
     }
 });
 
+test('GET / answers 404 when the shell cannot be read', async () => {
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    // `render()` is what the route calls; it is not given a path to fail on,
+    // so this stands in for a missing or unreadable `assets/station/` without
+    // touching the real plugin directory — the same way `station.gather` is
+    // swapped out below to observe a call this file cannot otherwise see.
+    const real = station.render;
+    station.render = () => { throw new Error('ENOENT: no such file or directory'); };
+    let s = null;
+    try {
+        s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
+        const res = await request(s.url, { method: 'GET' });
+        assert.equal(res.status, 404);
+        assert.match(res.headers['content-type'], /text\/plain/);
+        assert.match(res.text, /assets directory/, 'the reason names the directory, not a single file');
+    } finally {
+        station.render = real;
+        if (s) s.close();
+    }
+});
+
 // --- Task 7: bulk clear, --forget, and the once-only budgeted first-run scan ---
 
 const CS_LIVE = 'aaaaaaaa-9999-4999-8999-999999999991';
