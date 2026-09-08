@@ -264,7 +264,11 @@ every request, takes a POST from the clear button on a `stale` row, answers
 `409` for a `live` one and for a row touched in the last twelve hours unless
 `force` is ticked, and `403` without the per-run nonce. It binds the fixed
 port `7817` by default, falling back to an ephemeral one only when `7817` is
-already taken; `--port <n>` asks for a chosen port instead. It does not exit
+already taken — and then keeps trying `7817` every thirty seconds; the first
+time it binds, a second listener on the same handler takes it, `serve.json`
+names `7817` from then on, and the ephemeral listener stays open so a tab on
+the old url keeps working. `--port <n>` asks for a chosen port instead, and
+a chosen port that is taken is an error rather than a fallback. It does not exit
 on its own — `--idle <minutes>` is what asks for an idle exit at all, and
 there is none unless it is given. `--detach` runs the server as a background
 process and returns once it has started, so closing the terminal does not
@@ -274,18 +278,33 @@ command on each `stale` row instead of the button.
 A second `serve` against the same config directory joins the first rather
 than starting one: `<configDir>/fankeel/serve.json` holds the pid, port, url
 and start time of the server already running, and a call that finds this
-file reads it before binding anything of its own. A record naming a pid that
-is no longer running is ignored, the same as no record at all; one whose pid
-cannot be signalled counts as **dead**, not as alive. `serve` asks
-`lib/live.js`'s `running(pid)`, which returns false on any error the signal
-raises, `EPERM` included — `lib/live.js:31`, `EPERM counts as dead`, says so
-in as many words.
+file reads it before binding anything of its own. The record is taken at its
+word only after a probe: `GET <url>station/health` on the recorded port,
+half a second at most, has to answer `200` with a JSON `pid` equal to the one
+the record names. A refused connection, a timeout, any other status, a body
+that is not JSON or a pid that differs all count as **dead** — a recycled pid
+or a port some other program now holds fails the probe where the old
+`live.running(pid)` check passed it — and a dead record is deleted before this
+call binds anything, so nothing later reads it as a station.
 
-That is the opposite of the doubt-goes-to-the-loud-side rule an unreadable
-config directory gets, and the difference is what the doubt is about. There it
-is another session's claim on a file, and guessing wrong takes work away from
-someone. Here it is a port this process is free to bind, and guessing wrong
-leaves the user with no station at all.
+The doubt goes to the dead side here, the opposite of the
+doubt-goes-to-the-loud-side rule an unreadable config directory gets, and the
+difference is what the doubt is about. There it is another session's claim on
+a file, and guessing wrong takes work away from someone. Here it is a port
+this process is free to bind, and guessing wrong leaves the user with no
+station at all.
+
+A join hands its own leads over rather than dropping them. `serve.json` is
+one record per config directory, so two workspaces sharing one `~/.claude`
+share one station — the page is every registry on the machine whichever
+directory started it — and what a second `serve` from the other workspace
+would otherwise lose is its own `cwd`, `--root` and `--scan`. It writes them
+into `roots.json` through `rememberRoots` before it returns, and `discover`
+reads that file on every render, so the running server sees the second
+registry on the next load. A fresh start does the same with its own leads.
+`--detach` runs the same probe before it spawns: a live station is joined and
+its url printed, and a dead record is deleted first so the poll that waits
+for the child cannot read the old url as the new one.
 
 `/clear-stale` clears every stale row in one registry at once, calling
 `clearEntry` once per row so the checks are the same list rather than a
