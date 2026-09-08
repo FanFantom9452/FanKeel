@@ -81,6 +81,11 @@ entry waited for actually happening. It shrank when somebody read it.
 - design 階段的 mockup 步驟：前端任務時 survey 已知專案背景，design 先出 mockup 再進 build，參考 taste-skill / hallmark 一類的設計 skill；產物、存放處、載入條件待定 — [簡報 §4.1](docs/improvement-brief.md#41-design-階段的-mockup-步驟前端任務).
 
 - 開發偏好 profile：掃過去的 session 找每個專案的慣例答案（land 本地 commit 不 push、guard、class），依專案建 profile 加預設，Start 套用不再問；存哪、欄位待定；Waiting 的 station 設定面以此為前置 — [簡報 §4.2](docs/improvement-brief.md#42-開發偏好-profile不是每次都問).
+- 站台的 `serve.json` 以 configDir 為鍵而非 registry：兩個工作區共用一個 `~/.claude` 時第二個 serve 會加入第一個、看到第一個的頁面，`cwd` 在第一個啟動時就固定 — [scripts/station.js](scripts/station.js).
+
+- port 殘留還有兩種沒處理：pid 被回收時 `live.running` 只問活著不問身分，會交出死 URL；7817 被佔用退回 ephemeral 之後永遠不再試回來 — [scripts/station.js](scripts/station.js).
+
+- `caveman.zip` 的四份文件還沒讀進 repo：axis inventory、兩份 improvement brief、一份 design-class prompt；哪些併進簡報、哪些開條目 — [docs/improvement-brief.md](docs/improvement-brief.md).
 
 ## Waiting
 
