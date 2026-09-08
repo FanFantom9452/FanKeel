@@ -104,7 +104,8 @@ test('start creates .fankeel/.gitignore, which hand-writing the JSON never did',
   started(dir, A, 'tidy the project cards', 'Waypoint/web');
   const ignore = fs.readFileSync(path.join(dir, '.fankeel', '.gitignore'), 'utf8');
   assert.match(ignore, /^sessions\/$/m);
-  assert.match(ignore, /^station\.html$/m, 'start writes the station copy and keeps it out of git');
+  assert.match(ignore, /^index\.html$/m, 'start writes the station copy and keeps it out of git');
+  assert.match(ignore, /^station\/$/m, 'and the directory its three siblings sit in');
 });
 
 // The page is rewritten by every verb that moves an entry, so it is current
@@ -113,9 +114,9 @@ test('start creates .fankeel/.gitignore, which hand-writing the JSON never did',
 test('start regenerates the station in the config dir and beside the registry; note does not', () => {
   const dir = root();
   run(dir, ['start', '--session', A, '--task', 'tidy the project cards']);
-  const page = path.join(dir, 'cfg', 'fankeel', 'station.html');
-  const copy = path.join(dir, '.fankeel', 'station.html');
-  const dataPath = path.join(dir, 'cfg', 'fankeel', 'station-data.js');
+  const page = path.join(dir, 'cfg', 'fankeel', 'index.html');
+  const copy = path.join(dir, '.fankeel', 'index.html');
+  const dataPath = path.join(dir, 'cfg', 'fankeel', 'station', 'station-data.js');
   assert.ok(fs.readFileSync(dataPath, 'utf8').includes('tidy the project cards'), 'the task line is not in the data');
   assert.equal(fs.readFileSync(copy, 'utf8'), fs.readFileSync(page, 'utf8'));
   run(dir, ['note', 'a dead end', '--session', A]);
@@ -621,7 +622,7 @@ test('adopting shows the badge for the stage taken over', () => {
 test('adopt enters the station refresh once, not once per badge writer', () => {
   const dir = root();
   const cfg = path.join(dir, 'cfg');
-  const dataFile = path.join(cfg, 'fankeel', 'station-data.js');
+  const dataFile = path.join(cfg, 'fankeel', 'station', 'station-data.js');
   started(dir, A, 'tidy the project cards', 'Waypoint');
 
   const spyDir = tmp('fankeel-task-spy-');
@@ -651,7 +652,7 @@ test('adopt enters the station refresh once, not once per badge writer', () => {
     });
 
   assert.equal(fs.readFileSync(counter, 'utf8').length, 1,
-    'one character per write to station-data.js in the config dir — two means refreshStation ran twice');
+    'one character per write to station/station-data.js in the config dir — two means refreshStation ran twice');
 });
 
 test('show reports no entry rather than pretending the mode is on', () => {

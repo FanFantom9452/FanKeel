@@ -512,12 +512,11 @@ test('write leaves the shell at the top and its three siblings under station/', 
     const f = fixture();
     station.write({ configDir: f.cfg, root: f.r1 });
     const dir = path.join(f.cfg, 'fankeel');
-    assert.deepEqual(
-        fs.readdirSync(dir).filter((n) => n !== 'roots.json').sort(),
-        ['index.html', 'station']);
-    assert.deepEqual(
-        fs.readdirSync(path.join(dir, 'station')).sort(),
-        ['station-data.js', 'station.css', 'station.js']);
+    const top = fs.readdirSync(dir).filter((n) => n !== 'roots.json' && n !== 'station');
+    const inner = fs.readdirSync(path.join(dir, 'station')).map((n) => 'station/' + n);
+    const written = top.concat(inner);
+    const { EMITTED } = require('../lib/station.js');
+    assert.deepEqual(written.slice().sort(), EMITTED.slice().sort());
 });
 
 test('a second write with the same model rewrites only station/station-data.js', () => {

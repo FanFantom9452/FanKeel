@@ -113,10 +113,10 @@ test('records ended, model and usage on its own entry; active stays true; the pa
     assert.equal(d.usage.requests, 2);
     assert.deepEqual(d.usage.subagents, { agents: 1, requests: 1, wallMs: 0,
         models: { 'claude-sonnet-5': { input: 4, output: 8, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } });
-    const data = fs.readFileSync(path.join(f.cfg, 'fankeel', 'station-data.js'), 'utf8');
+    const data = fs.readFileSync(path.join(f.cfg, 'fankeel', 'station', 'station-data.js'), 'utf8');
     assert.ok(data.includes('the ramp'), 'the task line is not in the data');
-    assert.equal(fs.readFileSync(path.join(f.root, '.fankeel', 'station.html'), 'utf8'),
-        fs.readFileSync(path.join(f.cfg, 'fankeel', 'station.html'), 'utf8'), 'the copy lands beside the ending session');
+    assert.equal(fs.readFileSync(path.join(f.root, '.fankeel', 'index.html'), 'utf8'),
+        fs.readFileSync(path.join(f.cfg, 'fankeel', 'index.html'), 'utf8'), 'the copy lands beside the ending session');
     assert.ok(!data.includes('<plugin>'), 'the plugin path did not resolve');
 });
 
@@ -125,7 +125,7 @@ test('a session with no entry still regenerates the page, and an unreadable tran
     const other = 'bbbbbbbb-2222-4222-8222-222222222222';
     assert.equal(run({ session_id: other, transcript_path: path.join(f.root, 'missing.jsonl'), cwd: f.root, reason: 'other' }, f.cfg), '');
     assert.equal(registry.readSession(f.root, other), null);
-    assert.ok(fs.existsSync(path.join(f.cfg, 'fankeel', 'station.html')));
+    assert.ok(fs.existsSync(path.join(f.cfg, 'fankeel', 'index.html')));
     assert.equal(run({ session_id: SID, transcript_path: path.join(f.root, 'missing.jsonl'), cwd: f.root, reason: 'logout' }, f.cfg), '');
     const d = registry.readSession(f.root, SID);
     assert.equal(d.ended.reason, 'logout');
