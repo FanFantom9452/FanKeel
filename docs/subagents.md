@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-08
-source_of_truth: hooks/brief.js, lib/render.js, hooks/carry.js, lib/plantasks.js
+source_of_truth: hooks/brief.js, lib/render.js, hooks/carry.js, lib/plantasks.js, lib/usage.js, lib/prices.js
 ---
 
 # Subagents
