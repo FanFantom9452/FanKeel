@@ -213,19 +213,95 @@ function readServeRecord(configDir) {
     }
 }
 
-function serve(opts) {
+// Whether `record` names a station actually listening, not merely a pid the
+// OS still hands back. `process.kill(pid, 0)` alone passes a recycled pid, or
+// a crashed station whose port some other process now holds, and hands the
+// caller a dead or foreign URL either way. A GET of the record's own health
+// route is answered only by an actual station, and the body's pid is checked
+// against the record's so a foreign listener on the same loopback port cannot
+// pass either. Never rejects: any error, timeout, non-200, a body that is not
+// JSON, or a pid that does not match reads the same as no station there.
+function probe(record) {
+    return new Promise((resolve) => {
+        let settled = false;
+        const done = (ok) => {
+            if (settled) return;
+            settled = true;
+            resolve(ok);
+        };
+        // A pid the OS already denies existing cannot be the one answering
+        // below, whatever is or is not listening on the port — so it is worth
+        // ruling out before the network round trip rather than after it.
+        // `live.running` cannot stand in for the request itself: a recycled
+        // pid or a foreign listener both pass it, which is why a live pid
+        // still falls through to the GET.
+        if (!live.running(record.pid)) return done(false);
+        let req;
+        try {
+            req = http.get(record.url + 'station/health', { timeout: 500 }, (res) => {
+                let text = '';
+                res.setEncoding('utf8');
+                res.on('data', (c) => { text += c; });
+                res.on('end', () => {
+                    if (res.statusCode !== 200) return done(false);
+                    let body;
+                    try {
+                        body = JSON.parse(text);
+                    } catch (e) {
+                        return done(false);
+                    }
+                    done(!!body && body.pid === record.pid);
+                });
+                res.on('error', () => done(false));
+            });
+        } catch (e) {
+            return done(false);
+        }
+        req.on('timeout', () => { req.destroy(); done(false); });
+        req.on('error', () => done(false));
+    });
+}
+
+async function serve(opts) {
     const configDir = opts.configDir || live.liveConfigDir();
+    const gatherOpts = { configDir, roots: opts.roots || [], scan: opts.scan || [], cwd: process.cwd() };
+    // The leads this call was given — its own `cwd`, `--root`, `--scan` —
+    // written to `roots.json` however this call ends, joining an existing
+    // station or binding a fresh one. `discover` re-reads that file on every
+    // render, so on a join this is the whole point: the running server's next
+    // render sees what only this call was told. `gather` is read-only;
+    // `rememberRoots` is the one write, and its own failure is only
+    // housekeeping — the join or the bind above it already succeeded.
+    const rememberLeads = () => {
+        try {
+            const model = station.gather(Object.assign({}, gatherOpts, { deadline: scanDeadline(gatherOpts.scan) }));
+            station.rememberRoots(configDir, model.registries, Date.now());
+        } catch (e) { /* housekeeping; the join or bind above already succeeded */ }
+    };
     // A second `serve` against the same configDir joins the first rather than
     // binding a second port: read what the first one recorded, and take it at
-    // its word only while the pid it names is still alive. `live.running` is
-    // the same pid check `lib/live.js` already uses for a session's liveness.
+    // its word only once its own health route answers for the pid it names —
+    // a bare pid check passes a recycled pid, or a crashed station whose port
+    // some other process now holds. `probe` above is that check.
     const existing = readServeRecord(configDir);
-    if (existing && live.running(existing.pid)) {
+    if (existing && await probe(existing)) {
         if (opts.open) openInBrowser(existing.url);
-        return Promise.resolve({ url: existing.url, close() {}, joined: true });
+        rememberLeads();
+        return { url: existing.url, close() {}, joined: true };
+    }
+    if (existing) {
+        // A record naming a dead pid, or a live pid whose port answers as
+        // something other than this station, must not outlive this check — a
+        // second call reading it before this one rebinds would see the same
+        // stale answer.
+        try { fs.unlinkSync(serveRecordPath(configDir)); } catch (e) { /* already gone */ }
     }
     const nonce = crypto.randomBytes(16).toString('hex');
-    const gatherOpts = { configDir, roots: opts.roots || [], scan: opts.scan || [], cwd: process.cwd() };
+    // One timestamp for this run, reused by `/station/health` and every write
+    // of `serve.json` below — a record rewritten once the fixed-port retry
+    // succeeds names the same start time as its first write, not the moment
+    // the retry happened to land.
+    const started = new Date().toISOString();
     // A deadline is an absolute moment, so it is taken per request rather than
     // once at listen: a `--scan` here is re-walked on every render, and one
     // timestamp fixed at startup would leave every later request walking with a
@@ -242,7 +318,10 @@ function serve(opts) {
             if (opts.exitOnIdle !== false) process.exit(0);
         }, opts.idleMs);
     };
-    server = http.createServer(async (req, res) => {
+    // Named rather than inline, so a second `http.createServer` — the
+    // fixed-port retry below — answers with the same routes rather than a
+    // stub that only occupies the port.
+    const handler = async (req, res) => {
         touch();
         const url = new URL(req.url, 'http://127.0.0.1');
         if (req.method === 'GET' && url.pathname === '/') {
@@ -279,6 +358,14 @@ function serve(opts) {
                 'cache-control': 'no-store',
             });
             res.end(station.serialize(modelNow(), { serve: true, nonce, plugin: PLUGIN, cleared }));
+            return;
+        }
+        if (req.method === 'GET' && url.pathname === '/station/health') {
+            // Read-only and identifies the process, nothing else — no nonce,
+            // so `probe` above (and a `--detach` poll) can tell a live station
+            // from a recycled pid or a foreign listener without fetching one.
+            res.writeHead(200, { 'content-type': 'application/json' });
+            res.end(JSON.stringify({ station: true, pid: process.pid, started }));
             return;
         }
         if (req.method === 'GET' && (url.pathname === '/station/station.css' || url.pathname === '/station/station.js')) {
@@ -369,8 +456,18 @@ function serve(opts) {
         }
         res.writeHead(404, { 'content-type': 'text/plain' });
         res.end('not here\n');
-    });
-    return new Promise((resolve, reject) => {
+    };
+    server = http.createServer(handler);
+    // Factored so the first bind and the fixed-port retry below write the
+    // exact same shape, rather than one drifting from the other.
+    const writeRecord = (data) => {
+        const record = serveRecordPath(configDir);
+        fs.mkdirSync(path.dirname(record), { recursive: true });
+        fs.writeFileSync(record, JSON.stringify(data, null, 2) + '\n');
+        return record;
+    };
+    const result = await new Promise((resolve, reject) => {
+        let usedFallback = false;
         server.on('error', (err) => {
             // The fixed default port can be held by another process — an
             // ordinary port conflict, not a station-related one. `serve.json`
@@ -380,28 +477,58 @@ function serve(opts) {
             // start" rather than a station on a different port. A caller who
             // named the port with `--port` gets the real error instead: they
             // asked for that port specifically.
-            if (err && err.code === 'EADDRINUSE' && !opts.portWasExplicit) return server.listen(0, '127.0.0.1');
+            if (err && err.code === 'EADDRINUSE' && !opts.portWasExplicit) {
+                usedFallback = true;
+                return server.listen(0, '127.0.0.1');
+            }
             reject(err);
         });
         server.listen(opts.port || 0, '127.0.0.1', () => {
             const url = 'http://127.0.0.1:' + server.address().port + '/';
-            const record = serveRecordPath(configDir);
-            fs.mkdirSync(path.dirname(record), { recursive: true });
-            fs.writeFileSync(record, JSON.stringify({
-                pid: process.pid, port: server.address().port, url, started: new Date().toISOString(),
-            }, null, 2) + '\n');
+            const record = writeRecord({ pid: process.pid, port: server.address().port, url, started });
             touch();
             if (opts.open) openInBrowser(url);
+            let retryTimer = null;
+            let fixedServer = null;
+            if (usedFallback) {
+                // The fixed port was somebody else's a moment ago; it may free
+                // up before this run ends. A timer is what turns "busy at
+                // startup" into "rebinds once it frees" instead of a station
+                // stuck on the ephemeral port for its whole run — `.unref()`
+                // is what keeps `--idle` still exiting on time, since a bare
+                // interval would hold the process open by itself.
+                const tryFixed = () => {
+                    const attempt = http.createServer(handler);
+                    attempt.on('error', () => { attempt.close(); });
+                    attempt.listen(opts.port, '127.0.0.1', () => {
+                        clearInterval(retryTimer);
+                        retryTimer = null;
+                        fixedServer = attempt;
+                        const fixedUrl = 'http://127.0.0.1:' + attempt.address().port + '/';
+                        // The ephemeral listener above is left open on purpose:
+                        // a browser tab already on its url must keep working
+                        // even once the fixed port is the one `serve.json`
+                        // names.
+                        writeRecord({ pid: process.pid, port: attempt.address().port, url: fixedUrl, started });
+                    });
+                };
+                retryTimer = setInterval(tryFixed, opts.retryMs || 30e3);
+                retryTimer.unref();
+            }
             resolve({
                 url,
                 close() {
                     if (timer) clearTimeout(timer);
+                    if (retryTimer) clearInterval(retryTimer);
                     server.close();
+                    if (fixedServer) fixedServer.close();
                     try { fs.unlinkSync(record); } catch (e) { /* already gone */ }
                 },
             });
         });
     });
+    rememberLeads();
+    return result;
 }
 
 function main() {
@@ -430,32 +557,47 @@ function main() {
         return;
     }
     if (args.verb === 'serve' && args.detach) {
-        // Re-run this same script as a background process, with `--detach`
-        // stripped so the child does not try to detach again. `serve` was
-        // renamed off `verb` down to just what follows it, so the child sees
-        // the same `serve` token this process did.
-        let sawVerb = false;
-        const rest = process.argv.slice(2).filter((a) => {
-            if (a === '--detach') return false;
-            if (a === 'serve' && !sawVerb) { sawVerb = true; return false; }
-            return true;
-        });
-        spawn(process.execPath, [__filename, 'serve'].concat(rest), { detached: true, stdio: 'ignore' }).unref();
-        const deadline = Date.now() + 5000;
-        const poll = () => {
-            const data = readServeRecord(configDir);
-            if (data && data.url) {
-                process.stdout.write('fankeel station — ' + data.url + '\n');
-                if (args.open) openInBrowser(data.url);
+        // A station killed rather than closed leaves `serve.json` behind — a
+        // hard kill never runs `close()` — so the poll below would read that
+        // stale record on its very first tick, before a freshly spawned child
+        // has replaced it. Probing first turns that into "nothing running,
+        // spawn one" rather than a false positive the poll would otherwise
+        // hand back before it ever ran.
+        const record = readServeRecord(configDir);
+        (record ? probe(record) : Promise.resolve(false)).then((alive) => {
+            if (alive) {
+                process.stdout.write('fankeel station — ' + record.url + '\n');
+                if (args.open) openInBrowser(record.url);
                 return;
             }
-            if (Date.now() >= deadline) {
-                process.stderr.write('station: did not start\n');
-                process.exit(1);
-            }
-            setTimeout(poll, 50);
-        };
-        poll();
+            if (record) { try { fs.unlinkSync(serveRecordPath(configDir)); } catch (e) { /* already gone */ } }
+            // Re-run this same script as a background process, with `--detach`
+            // stripped so the child does not try to detach again. `serve` was
+            // renamed off `verb` down to just what follows it, so the child sees
+            // the same `serve` token this process did.
+            let sawVerb = false;
+            const rest = process.argv.slice(2).filter((a) => {
+                if (a === '--detach') return false;
+                if (a === 'serve' && !sawVerb) { sawVerb = true; return false; }
+                return true;
+            });
+            spawn(process.execPath, [__filename, 'serve'].concat(rest), { detached: true, stdio: 'ignore' }).unref();
+            const deadline = Date.now() + 5000;
+            const poll = () => {
+                const data = readServeRecord(configDir);
+                if (data && data.url) {
+                    process.stdout.write('fankeel station — ' + data.url + '\n');
+                    if (args.open) openInBrowser(data.url);
+                    return;
+                }
+                if (Date.now() >= deadline) {
+                    process.stderr.write('station: did not start\n');
+                    process.exit(1);
+                }
+                setTimeout(poll, 50);
+            };
+            poll();
+        });
         return;
     }
     if (args.verb === 'serve') {
@@ -503,4 +645,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { serve, scanDeadline, parseArgs };
+module.exports = { serve, scanDeadline, parseArgs, probe };

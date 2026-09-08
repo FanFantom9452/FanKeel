@@ -87,9 +87,7 @@ entry waited for actually happening. It shrank when somebody read it.
 - eval 例外 case 集：每條例外條款一個 case、判準是分數不該動，baseline/candidate 成對跑；`evals/` 今天一個 case，要不要照這個形擴 — [簡報 §5.10](docs/improvement-brief.md#510-評測層的五個新項目第五部-53附錄-a10a14).
 
 - 開發偏好 profile：掃過去的 session 找每個專案的慣例答案（land 本地 commit 不 push、guard、class），依專案建 profile 加預設，Start 套用不再問；存哪、欄位待定；Waiting 的 station 設定面以此為前置 — [簡報 §4.2](docs/improvement-brief.md#42-開發偏好-profile不是每次都問).
-- 站台的 `serve.json` 以 configDir 為鍵而非 registry：兩個工作區共用一個 `~/.claude` 時第二個 serve 會加入第一個、看到第一個的頁面，`cwd` 在第一個啟動時就固定 — [scripts/station.js](scripts/station.js).
 
-- port 殘留還有兩種沒處理：pid 被回收時 `live.running` 只問活著不問身分，會交出死 URL；7817 被佔用退回 ephemeral 之後永遠不再試回來 — [scripts/station.js](scripts/station.js).
 
 
 ## Waiting

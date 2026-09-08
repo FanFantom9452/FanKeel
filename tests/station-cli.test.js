@@ -410,14 +410,17 @@ test('serve hands that budget to the walk on every request, and hands none when 
     let plain = null;
     try {
         scanning = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false, scan: [empty] });
+        // A bind now gathers once on its own, to remember its own leads before
+        // returning — so one gather has already happened before any request.
+        assert.equal(seen.length, 1, 'the bind remembered its own leads with one gather');
         const before = Date.now();
         // The shell itself no longer gathers anything — it is a static file —
         // so the request that triggers a gather is the one for its data.
         await request(scanning.url + 'station/station-data.js', { method: 'GET' });
-        assert.equal(seen.length, 1, 'one render, one gather');
-        assert.ok(Number.isFinite(seen[0].deadline), 'the scan walk is bounded by a deadline');
-        assert.ok(seen[0].deadline >= before + 55000 && seen[0].deadline <= Date.now() + 60000,
-            'and the bound is the sixty-second budget: ' + (seen[0].deadline - before) + 'ms');
+        assert.equal(seen.length, 2, 'one render, one more gather');
+        assert.ok(Number.isFinite(seen[1].deadline), 'the scan walk is bounded by a deadline');
+        assert.ok(seen[1].deadline >= before + 55000 && seen[1].deadline <= Date.now() + 60000,
+            'and the bound is the sixty-second budget: ' + (seen[1].deadline - before) + 'ms');
 
         // A distinct configDir: same `f.cfg` here would join `scanning` via
         // `serve.json` rather than bind a second server, and this half of the
@@ -425,9 +428,10 @@ test('serve hands that budget to the walk on every request, and hands none when 
         // join behaviour `station-cli.test.js`'s Task 2 tests cover already.
         const plainCfg = fixture().cfg;
         plain = await serve({ configDir: plainCfg, port: 0, idleMs: 60e3, open: false });
+        assert.equal(seen.length, 3, 'the second bind remembered its own leads too');
         await request(plain.url + 'station/station-data.js', { method: 'GET' });
-        assert.equal(seen.length, 2);
-        assert.equal(seen[1].deadline, undefined, 'a render with no --scan carries no clock');
+        assert.equal(seen.length, 4);
+        assert.equal(seen[3].deadline, undefined, 'a render with no --scan carries no clock');
     } finally {
         station.gather = real;
         if (scanning) scanning.close();
@@ -615,6 +619,129 @@ test('a serve.json naming a dead pid does not stop a new server binding', async 
         // this test from hanging when the guard is broken, which is the state a
         // mutation check puts it in.
         if (second) second.close();
+        s.close();
+    }
+});
+
+// --- probe replaces the pid check, and the joiner's own leads reach the page ---
+
+test('serve() ignores a serve.json whose pid is dead', async () => {
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    const blocker = http.createServer(() => {});
+    await new Promise((resolve) => blocker.listen(0, '127.0.0.1', resolve));
+    const deadPort = blocker.address().port;
+    await new Promise((resolve) => blocker.close(resolve));
+    const record = path.join(f.cfg, 'fankeel', 'serve.json');
+    fs.mkdirSync(path.dirname(record), { recursive: true });
+    fs.writeFileSync(record, JSON.stringify({
+        pid: 999999, port: deadPort, url: 'http://127.0.0.1:' + deadPort + '/',
+        started: new Date().toISOString(),
+    }) + '\n');
+    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false });
+    try {
+        assert.notEqual(s.joined, true, 'it joined a record whose port nothing listens on');
+        const after = JSON.parse(fs.readFileSync(record, 'utf8'));
+        assert.equal(after.pid, process.pid, 'the new listener rewrote the record with its own pid');
+        const health = await request(s.url + 'station/health', { method: 'GET' });
+        assert.equal(health.status, 200);
+    } finally {
+        s.close();
+    }
+});
+
+test('serve() does not join a live pid whose port is not a station', async () => {
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    const impostor = http.createServer((q, r) => { r.writeHead(200); r.end('nope'); });
+    await new Promise((resolve) => impostor.listen(0, '127.0.0.1', resolve));
+    try {
+        const impostorPort = impostor.address().port;
+        const record = path.join(f.cfg, 'fankeel', 'serve.json');
+        fs.mkdirSync(path.dirname(record), { recursive: true });
+        fs.writeFileSync(record, JSON.stringify({
+            pid: process.pid, port: impostorPort, url: 'http://127.0.0.1:' + impostorPort + '/',
+            started: new Date().toISOString(),
+        }) + '\n');
+        const s = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false });
+        try {
+            assert.notEqual(s.joined, true, 'it joined a live pid that answers as something other than a station');
+            const after = JSON.parse(fs.readFileSync(record, 'utf8'));
+            assert.notEqual(after.port, impostorPort, 'the record no longer names the impostor\'s port');
+        } finally {
+            s.close();
+        }
+    } finally {
+        impostor.close();
+    }
+});
+
+test('a joining serve() writes its own leads into roots.json', async () => {
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    const r2 = tmp('fankeel-station-leads-');
+    fs.mkdirSync(path.join(r2, '.fankeel', 'sessions'), { recursive: true });
+    const first = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false });
+    try {
+        const second = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false, roots: [r2] });
+        assert.equal(second.joined, true, 'the second call joined rather than bound');
+        assert.ok(Object.keys(station.readRoots(f.cfg)).includes(path.resolve(r2)),
+            'the joiner\'s own lead reached roots.json');
+    } finally {
+        first.close();
+    }
+});
+
+test('a server pushed off its port rebinds it once it frees', async () => {
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    const blocker = http.createServer(() => {});
+    await new Promise((resolve) => blocker.listen(0, '127.0.0.1', resolve));
+    const P = blocker.address().port;
+    let blockerClosed = false;
+    let s = null;
+    try {
+        s = await serve({ configDir: f.cfg, port: P, portWasExplicit: false, idleMs: 0, open: false, retryMs: 30 });
+        assert.notEqual(Number(new URL(s.url).port), P, 'the fallback did not land on the blocked port: ' + s.url);
+        await new Promise((resolve) => blocker.close(resolve));
+        blockerClosed = true;
+        const record = path.join(f.cfg, 'fankeel', 'serve.json');
+        const deadline = Date.now() + 2000;
+        let rebound = null;
+        while (Date.now() < deadline) {
+            let data;
+            try {
+                data = JSON.parse(fs.readFileSync(record, 'utf8'));
+            } catch (e) { data = null; }
+            if (data && data.port === P) { rebound = data; break; }
+            await new Promise((resolve) => setTimeout(resolve, 20));
+        }
+        assert.ok(rebound, 'serve.json never named the freed port ' + P);
+        const onFixed = await request('http://127.0.0.1:' + P + '/station/health', { method: 'GET' });
+        assert.equal(onFixed.status, 200, 'the fixed port answers health once rebound');
+        const onOriginal = await request(s.url + 'station/health', { method: 'GET' });
+        assert.equal(onOriginal.status, 200, 'the original ephemeral listener is still open');
+    } finally {
+        if (!blockerClosed) blocker.close();
+        if (s) s.close();
+    }
+});
+
+test('GET /station/health names this process', async () => {
+    const f = fixture();
+    const { serve, probe } = require('../scripts/station.js');
+    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false });
+    try {
+        const res = await request(s.url + 'station/health', { method: 'GET' });
+        assert.equal(res.status, 200);
+        assert.match(res.headers['content-type'], /json/);
+        const body = JSON.parse(res.text);
+        assert.equal(body.station, true);
+        assert.equal(body.pid, process.pid);
+        // `probe` reads this same route: a record naming this server's own
+        // pid is confirmed live by the health check it just answered.
+        assert.equal(await probe({ url: s.url, pid: process.pid }), true);
+    } finally {
         s.close();
     }
 });
