@@ -116,7 +116,7 @@ function runOnce(c, opts) {
         else if (r.status !== 0) out.error = 'claude exited ' + r.status + ': ' + (r.stderr || '').trim().slice(0, 300);
         const lines = String(r.stdout || '').split(/\r?\n/).filter(Boolean);
         out.raw = lines;
-        const run = { calls: ev.toolCalls(lines), last: ev.lastMessage(lines) };
+        const run = { calls: ev.toolCalls(lines), last: ev.lastMessage(lines), texts: ev.assistantText(lines) };
         out.toolCalls = run.calls.length;
         out.lastMessage = run.last;
         out.graders = c.graders.map((g) => ev.grade(g, run));

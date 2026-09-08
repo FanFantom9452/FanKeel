@@ -68,6 +68,21 @@ test('regex on last_message flips with contains and not_contains', () => {
     assert.equal(ev.grade(not, silent).pass, true);
 });
 
+test('regex on trace reads every assistant message, last_message only the final one', () => {
+    // The first measured run (docs/reports/evidence/2026-09-08-route-typo):
+    // the route was said in the first message and the run ended on a question.
+    const lines = [text('Route is `build → verify`.'), START_SHORT, text('Verify: fixed.'), result('Should I stand the task down?')];
+    const run = { calls: ev.toolCalls(lines), last: ev.lastMessage(lines), texts: ev.assistantText(lines) };
+    assert.equal(ev.grade(SAYS, run).pass, false, 'last_message is the question');
+    const onTrace = { ...SAYS, meta: { ...SAYS.meta, target: 'trace' } };
+    assert.equal(ev.grade(onTrace, run).pass, true, 'the trace holds the first message');
+    assert.match(ev.grade(onTrace, run).detail, /in the trace/);
+    assert.equal(ev.assistantText([START_SHORT]), '', 'a tool call is not text');
+    const unknown = { ...SAYS, meta: { ...SAYS.meta, target: 'files' } };
+    assert.equal(ev.grade(unknown, run).pass, false);
+    assert.match(ev.grade(unknown, run).detail, /files/);
+});
+
 test('an llm grader is skipped, not failed', () => {
     const g = ev.grade(grader('judge', { type: 'llm', focus: 'last_message' }, 'PASS if …'), { calls: [], last: 'x' });
     assert.equal(g.pass, null);
