@@ -2,3 +2,7 @@ node_modules/
 .superpowers/
 .claude/worktrees/
 .impeccable/
+
+# The user's own material, dropped here rather than committed: four documents
+# behind the improvement brief. Nothing in this repository points at it.
+caveman.zip
