@@ -70,9 +70,12 @@
 
     // The shortest tail of a root's segments that no other root shares. Moved
     // here from `lib/station.js`'s `navLabels` when the nav became a facet: the
-    // rule is the same and the guard is still what bounds it, because two roots
-    // where one nests inside the other cannot be separated by growing — the
-    // inner one runs out of segments first. TODO.md files that case.
+    // rule is the same and `depth[i] < segs[i].length` still bounds it. Two
+    // roots that split into the same segments — `/a/b` against `\a\b`, or
+    // against `/a/b/` — are the only pair that reaches that bound still
+    // colliding, and they share a label. TODO.md files that case. A nested
+    // root is not it: it separates once the longer one grows past the shorter
+    // one's own length.
     function labels(roots) {
         var segs = roots.map(function (r) {
             return String(r).split(/[\\/]+/).filter(Boolean);
