@@ -126,3 +126,18 @@ test('the shipped case reads back the way the design promised', () => {
     ]);
     for (const g of c.graders) assert.doesNotThrow(() => new RegExp(g.meta.input_match || g.meta.pattern), g.name + ' regex compiles');
 });
+
+test('the shipped scaffold_script builds the fixture it describes', () => {
+    // scripts/eval.js hands the string to `bash -c` exactly as parseCase
+    // returns it, so this runs it the same way: an escape that YAML would
+    // have unfolded and bash then mangles shows up here as a README with no
+    // newline, which is what the first version of this file produced.
+    const { spawnSync } = require('node:child_process');
+    const c = ev.parseCase(path.join(__dirname, '..', 'evals', 'route-typo'));
+    const dir = tmp('fankeel-eval-');
+    const r = spawnSync('bash', ['-c', c.scaffold], { cwd: dir, encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stderr);
+    assert.equal(fs.readFileSync(path.join(dir, 'README.md'), 'utf8'), 'Teh keel of a project.\n');
+    const log = spawnSync('git', ['log', '--oneline'], { cwd: dir, encoding: 'utf8' });
+    assert.equal(log.stdout.trim().split('\n').length, 1, 'one commit');
+});

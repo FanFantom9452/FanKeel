@@ -429,7 +429,7 @@ In `evals/route-typo/case.yaml`:
 schema_version: "1.1"
 name: route-typo
 context:
-  scaffold_script: "printf 'Teh keel of a project.\\n' > README.md && git init -q && git add -A && git -c user.email=eval@fankeel -c user.name=eval commit -qm init"
+  scaffold_script: "echo 'Teh keel of a project.' > README.md && git init -q && git add -A && git -c user.email=eval@fankeel -c user.name=eval commit -qm init"
 ```
 
 In `evals/route-typo/prompt.md`:
