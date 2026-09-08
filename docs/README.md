@@ -87,6 +87,7 @@ here.
 | Why a `## Waiting` entry names an event and not only a date | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *`## Waiting` asks for an event* |
 | Why `todo-check` refuses an entry with no event but never judges whether the event is real | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *the check does not grade the event* |
 | Where to look for every place a rule is taught, before changing the rule | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *a rule is taught in more places than a search finds* |
+| How to run the behaviour eval, and what to do when `claude plugin eval` says early access | [../README.md](../README.md) — *Behaviour evals* |
 
 ## The three scanners
 

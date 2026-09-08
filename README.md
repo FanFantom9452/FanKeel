@@ -307,3 +307,19 @@ it sets them all; with `--changes` it lists the commits since the last
 disagree, so the script is what makes them agree rather than what notices. A
 release used to be ten edits, and missing one left a skill announcing a version
 the plugin is not — right in nine places, which is how it went unnoticed.
+
+### Behaviour evals
+
+`evals/<case>/` holds cases in the layout `claude plugin eval` reads. That
+command is early access — run it in an empty directory: "currently in early
+access" means not enabled here, "No eval cases found" means it is. Either way
+the same case runs today on this tree:
+
+    node scripts/eval.js evals/route-typo --model sonnet
+
+One `claude -p` per run, in a scaffolded temp repository with only this plugin
+loaded (`--setting-sources project --plugin-dir .`), graded against
+`graders/*.md`; `tool_used` and `regex` are graded, `llm` is reported as
+skipped. Any failed grader exits 1. With early access:
+
+    claude plugin eval . --json results.json --threshold 0.7 --model claude-sonnet-5 --no-publish

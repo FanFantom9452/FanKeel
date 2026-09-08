@@ -98,8 +98,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 校準規則與可失敗自檢測試：通則「每階段都設閘門會變跑步機」、衝突時 name both rules；build 的四件停止事改成「撤掉會不會變差」加豁免；16 行 pattern 以此為前置 — [簡報 §2.6](docs/improvement-brief.md#26-兩個-fankeel-直接缺的行為機制).
 
-- 行為 eval：`claude plugin eval`，三種 grader（tool_used / regex / llm）；case 1 測 route 分類——typo prompt 要斷言 `--route "build,verify"`；repo 無 evals/ 無 CI — [簡報 §2.5](docs/improvement-brief.md#25-三層閘門).
-
 - design 階段的 mockup 步驟：前端任務時 survey 已知專案背景，design 先出 mockup 再進 build，參考 taste-skill / hallmark 一類的設計 skill；產物、存放處、載入條件待定 — [簡報 §4.1](docs/improvement-brief.md#41-design-階段的-mockup-步驟前端任務).
 
 - 開發偏好 profile：掃過去的 session 找每個專案的慣例答案（land 本地 commit 不 push、guard、class），依專案建 profile 加預設，Start 套用不再問；存哪、欄位待定；Waiting 的 station 設定面以此為前置 — [簡報 §4.2](docs/improvement-brief.md#42-開發偏好-profile不是每次都問).
@@ -135,3 +133,5 @@ entry waited for actually happening. It shrank when somebody read it.
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；fankeel 真正的阻礙是 hook 為 Claude Code 專屬 — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多). lifts when: 確認另一個 host 有等價 UserPromptSubmit 的 hook. 09-08.
 
 - station 變成設定面：會問的問題做在 HTML 上先決定，按鈕一鍵套用 profile；靜態 shell 只有 serve 模式能寫 — [簡報 §4.3](docs/improvement-brief.md#43-station-變成通用的設定面). lifts when: profile 格式定案. 09-08.
+
+- eval 進 CI：`.github/workflows` 一條，只在 push main 且限 skills/、evals/、manifest；永遠紅的 workflow 是噪音，所以等 — [README.md](README.md). lifts when: 本機 `claude plugin eval` 不再回 early access. 09-08.
