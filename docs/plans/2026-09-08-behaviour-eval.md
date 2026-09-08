@@ -383,6 +383,7 @@ git commit -m "feat: lib/eval.js grades a stream-json transcript" -m "- parseCas
 - Modify: `evals/route-typo/graders/no-other-route.md` — new
 - Modify: `evals/route-typo/graders/says-it-out-loud.md` — new
 - Modify: `.fankeel/docs.json` — one bucket added
+- Modify: `docs/README.md` — one row in `## Roles` naming the `evals` bucket (tests/docs.test.js:460 requires it)
 - Read: `lib/eval.js` — `parseCase`, `listValue`
 - Test: `tests/eval.test.js`
 
