@@ -115,5 +115,6 @@ is explained, and it is the one thing to know before adding a page here.
 | `skills/` | reference | no |
 | `output-styles/` | reference | no |
 | `.claude/agents/` | reference | no |
+| `evals/` | reference | no — a grader names the code it asserts on, so it goes stale the way a reference page does |
 
 [Back to the front page](../README.md)

@@ -32,6 +32,10 @@
       "role": "reference"
     },
     {
+      "path": "evals",
+      "role": "reference"
+    },
+    {
       "path": ".claude/agents",
       "role": "reference"
     }

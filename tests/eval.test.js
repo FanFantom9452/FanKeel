@@ -110,3 +110,19 @@ test('parseCase without case.yaml has no scaffold, and without prompt.md throws'
     const empty = tmp('fankeel-eval-');
     assert.throws(() => ev.parseCase(empty), /prompt\.md/);
 });
+
+test('the shipped case reads back the way the design promised', () => {
+    const c = ev.parseCase(path.join(__dirname, '..', 'evals', 'route-typo'));
+    assert.equal(c.name, 'route-typo');
+    assert.match(c.prompt.body.trim(), /^\/fankeel /);
+    const tools = ev.listValue(c.prompt.meta.allowed_tools);
+    assert.equal(tools.includes('AskUserQuestion'), false, 'headless has nobody to answer it');
+    assert.equal(tools.includes('Bash'), true, 'task.js start runs through Bash');
+    assert.match(c.scaffold, /teh/i);
+    assert.deepEqual(c.graders.map((g) => [g.name, g.meta.type]), [
+        ['no-other-route', 'tool_used'],
+        ['says-it-out-loud', 'regex'],
+        ['starts-with-short-route', 'tool_used'],
+    ]);
+    for (const g of c.graders) assert.doesNotThrow(() => new RegExp(g.meta.input_match || g.meta.pattern), g.name + ' regex compiles');
+});
