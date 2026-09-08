@@ -564,7 +564,7 @@ flowchart TD
     A5["line by line against the plan<br/><i>not 'the tests pass'</i>"]
     B{"did you run it<br/>in <i>this</i> message?"}
     C["then you cannot claim it yet.<br/>Run it."]
-    D0["<b>where a ledger exists</b><br/>ledger.js ranges — one verifier per row, a task's or a fix's<br/><i>each pinned at both ends, and the rows<br/>do not overlap, so they go out together</i>"]
+    D0["<b>where a ledger exists</b><br/>ledger.js ranges — one verifier per row, a task's or a fix's<br/><i>each pinned at both ends, which is not the same as disjoint —<br/>the last paragraph says which row to drop, or that they go out together</i>"]
     D["docs-check<br/><i>which page did this change<br/>just make untrue?</i><br/><i>a coverage claim states its denominator</i>"]
     D1["<b>dispatch readers</b><br/>several in one response, one per page<br/><i>four the ceiling, sonnet the floor</i><br/><i>say how many, and on which model</i><br/><i>the path to a diff file, never a pasted diff</i>"]
     D2["<b>the adversary</b><br/>read-only, over the evidence table<br/><i>was it run · on what · could it have<br/>failed · out of what</i><br/><i>paths never a paste — only the rows it defeats</i>"]

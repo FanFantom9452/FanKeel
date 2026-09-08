@@ -122,9 +122,17 @@ node <plugin>/scripts/ledger.js --plan <file> ranges
 ```
 
 Each row is one completed task and the range its diff occupies, pinned at both
-ends. The rows do not overlap, so **the verifiers go out in one response** —
-four is still the ceiling, and a plan of six goes four then two. Say how many
-and on which model in the response that sends them.
+ends. **Pinned at both ends is not the same as disjoint** — a fix that landed
+inside a task's span carries its own row for commits that row already covers,
+and this branch's own ledger has three of those. So the report ends on a
+paragraph computed from the rows rather than asserted over them, and it says
+which shape it found and what to do: send the containing row and drop the row
+it contains, send one of two rows recording the same range, send both where
+they cross because no single range names their union, and treat a range git
+could not read back as unverified rather than as disjoint. Where it finds none
+of that, **the verifiers go out in one response** — four is still the ceiling,
+and a plan of six goes four then two. Say how many and on which model in the
+response that sends them.
 
 Give each one its range, the task's text from the plan, and the path to
 `.fankeel/map.md`. Never a paste of the session's history, and never the diff:
