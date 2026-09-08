@@ -419,6 +419,7 @@ Generated from this repository on 2026-09-08 at `af05431`, values copied exactly
 
 **Files:**
 - Modify: `lib/stages.js` — one line added to the `survey` rules and one to the `audit` rules
+- Modify: `tests/render.test.js` — the per-stage figures quoted in the cap test's comment, which this task moves
 - Read: `lib/render.js` — how `{{SURVEY}}` and `{{DOCS_CHECK}}` are substituted, which this task does not change
 
 **Interfaces:**
@@ -433,9 +434,17 @@ Generated from this repository on 2026-09-08 at `af05431`, values copied exactly
 
 2. Do not add detection to `lib/render.js`. The line is a rule for a reader, not a branch.
 
-3. The injected block has a size cap asserted in `tests/inject.test.js`. Two lines is roughly 160 characters; run `node --test tests/inject.test.js` and read the cap headroom the test reports. If it does not fit, displace a rationale sentence from the same rules block rather than raising the cap.
+3. The cap is asserted in `tests/render.test.js` at `:538` — `size < 2400`, measured against a 59-character reference root — and the test prints every stage's size as a diagnostic. Measured on 2026-09-08 before this task:
 
-4. Run the full suite.
+   ```
+   survey 2338   design 2339   plan 2395   build 2396   verify 2391   audit 2382   land 2382
+   ```
+
+   So `survey` has 62 characters of room and `audit` has 18. **A useful warning line is longer than 18, so `audit` must displace a rationale sentence from its own rules block to pay for it — this is certain, not conditional.** Never raise the cap. Read the diagnostics from a real run rather than from this block; the numbers move.
+
+4. The comment above that assertion, at `tests/render.test.js:505-532`, quotes per-stage figures — 2399 for `survey`, 2393 for `build`, 2387 for `audit`, 2371 for `verify` — and every one of them is stale against the run above. This task moves those numbers again, so correct the quoted figures to what `node --test tests/render.test.js` prints once the two rules have landed. Change the figures only; the reasoning around them still holds.
+
+5. Run the full suite.
 
 ---
 
