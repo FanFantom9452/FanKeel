@@ -479,12 +479,15 @@ In `evals/route-typo/graders/says-it-out-loud.md`:
 ```md
 ---
 type: regex
-target: last_message
+target: trace
 pattern: build[,\s→]+verify
 flags: i
 match: contains
 ---
-The survey skill says the class is said out loud so it can be overridden.
+The survey skill says the class is said out loud so it can be overridden. It
+is said when the route is chosen, at the start, so the trace is the target:
+the first measured run said "Route is `build → verify`" in its first message
+and ended on a question, and `last_message` missed it.
 ```
 
 In `.fankeel/docs.json`, after the `output-styles` bucket, add:
@@ -852,7 +855,7 @@ git commit -m "docs: how to run the behaviour eval" -m "- Behaviour evals subsec
 | `prompt.md` body：`/fankeel 修 README.md 第一行的 typo：teh → the` | Task 2 |
 | `graders/starts-with-short-route.md`：`type: tool_used`、`tool: Bash`、`input_match` … `min: 1` | Task 2 |
 | `graders/no-other-route.md`：`type: tool_used` … `max: 0` | Task 2 |
-| `graders/says-it-out-loud.md`：`type: regex`、`target: last_message`、`pattern: build[,\s→]+verify` | Task 2 |
+| `graders/says-it-out-loud.md`：`type: regex`、`target: last_message`、`pattern: build[,\s→]+verify` | Task 2 — amended at verify: `target: trace`, because the route is said in the first message and the run ends on a question |
 | `lib/eval.js` 是純函式，照 `lib/docs.js` / `scripts/docs-check.js` 的分法：`parseCase`、`toolCalls`、`lastMessage`、`grade` | Task 1 |
 | `scripts/eval.js <case dir> [--model <m>] [--runs <n>] [--plugin-dir <dir>] [--json <path>]`：每個 run 建 temp dir、跑 scaffold_script、以 `claude -p` … 跑 | Task 3 |
 | 輸出一行一個 grader：`<case> run <i> <grader> pass\|fail\|skipped — <detail>`，最後一行 `score <passed>/<graded>`；任何 `fail` 就 exit 1 | Task 3 |
