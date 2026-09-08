@@ -333,8 +333,6 @@ that copying would not have helped.
 
 `lib/ledger.js`, `lib/plugins.js` and `lib/dirty.js` each have exactly one
 production caller.
-*(Superseded in 0.54.0: `lib/ledger.js` now exports for `scripts/ledger.js` as
-well, so it no longer has exactly one production caller.)*
 Counted from outside that reads as three dead seams, and an
 audit opened a TODO entry saying so for two of them. It is one borderline case
 and two files doing their job, and the rule that separates them is worth writing
