@@ -209,8 +209,9 @@ entry is never a click away from being found.
 root gets the shortest tail of its path segments no other root shares, and the
 full root stays in `title=`. Its one unresolved case is filed under
 `## Needs a decision` in `TODO.md` — two roots that split into the same
-segments, which a mixed separator style produces, run out of length before they
-separate and share a label. A nested root is not that case; it separates.
+segments run out of length before they separate, and share a label. A mixed
+separator style does that, and so does a bare trailing one. A nested root is
+not that case; it separates.
 
 **總覽** carries four cards with a seven-day-against-previous-seven delta, the
 stacked context flow by registry, a weekday bar, the waiting gauge and the
