@@ -76,6 +76,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - Whether the injected `<plugin>/scripts/` path needs a caveat for fankeel's own repository, where the cache lags the tree and its output reads as a finding — [lib/stages.js](lib/stages.js).
 
+- What a stage's `burn` should be when compaction drops the context below where it started and the pair subtracts negative: 4 of 78 sessions show one — [lib/station.js](lib/station.js), `serialize`.
+
 ## Waiting
 
 - Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it. lifts when: a run is seen ignoring one. 09-06.
