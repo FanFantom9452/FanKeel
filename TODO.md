@@ -135,3 +135,5 @@ entry waited for actually happening. It shrank when somebody read it.
 - station 變成設定面：會問的問題做在 HTML 上先決定，按鈕一鍵套用 profile；靜態 shell 只有 serve 模式能寫 — [簡報 §4.3](docs/improvement-brief.md#43-station-變成通用的設定面). lifts when: profile 格式定案. 09-08.
 
 - eval 進 CI：`.github/workflows` 一條，只在 push main 且限 skills/、evals/、manifest；永遠紅的 workflow 是噪音，所以等 — [README.md](README.md). lifts when: 本機 `claude plugin eval` 不再回 early access. 09-08.
+
+- `.fankeel/.gitignore` 的四行舊站台檔名還不能刪：hook 跑的是安裝版外掛，仍寫舊的平鋪版面 — [.fankeel/.gitignore](.fankeel/.gitignore). lifts when: 安裝的外掛更新到會寫 `index.html` 與 `station/`. 09-08.
