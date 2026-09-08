@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-07
+last_verified: 2026-09-08
 source_of_truth: this file is the index; each page below is its own source
 ---
 
@@ -37,6 +37,7 @@ here.
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
 | Every session on this machine, where the page finds the registries, and what `stale` means | [station.md](station.md) |
 | Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
+| What caveman and SEPIA do that this plugin does not — gates, evals, an evidence ledger, thin wrappers — plus three directions of the user's own, each a `TODO.md` entry | [improvement-brief.md](improvement-brief.md) — *a backlog, 繁體中文* |
 | How two implementers running at once was built, task by task — its design is in `docs/archive/` | `docs/archive/2026-08-30-parallel-build.md` — *built* |
 | Every fankeel session on this machine on one page, what each cost, and how an abandoned one is put down | [plans/2026-09-04-session-station-design.md](plans/2026-09-04-session-station-design.md) — *built* |
 | The eight tasks that build the station, with every test and every file written out | `docs/archive/2026-09-04-session-station.md` — *built* |
