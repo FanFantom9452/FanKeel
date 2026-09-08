@@ -14,7 +14,7 @@ and, for how it is found and when it is written,
 for the curve, the controls and why a deadline replaced a depth,
 [plans/2026-09-06-station-reads-back-design.md](plans/2026-09-06-station-reads-back-design.md).
 
-To open it: `.fankeel/station.html` in the registry you are in is the copy
+To open it: `.fankeel/index.html` in the registry you are in is the copy
 beside you, `node scripts/station.js --open` opens the newest, and
 `node scripts/station.js serve --open` runs it as a page with a `clear`
 button on every stale row. The `/fankeel` prompt writes the page and names it
@@ -242,9 +242,9 @@ copy.
 block it injects), every `task.js` verb that moves an entry — `start`,
 `stage`, `task`, `route`, `guard`, `adopt`, `down` and `clear`, not `note` or
 `next` — every session end (`hooks/leave.js`), and `node scripts/station.js`.
-Each writes `~/.claude/fankeel/station.html`, the copy that is always newest,
+Each writes `~/.claude/fankeel/index.html`, the copy that is always newest,
 and, when the caller is inside a registry, the same page at
-`<registry>/.fankeel/station.html`, kept out of git by a line the write adds.
+`<registry>/.fankeel/index.html`, kept out of git by a line the write adds.
 That copy is refreshed by the sessions in its registry; the header on both
 says when it was generated.
 
@@ -271,10 +271,16 @@ A second `serve` against the same config directory joins the first rather
 than starting one: `<configDir>/fankeel/serve.json` holds the pid, port, url
 and start time of the server already running, and a call that finds this
 file reads it before binding anything of its own. A record naming a pid that
-is no longer running is ignored, the same as no record at all; one whose
-liveness cannot be determined counts as alive — the same doubt-goes-to-the-
-loud-side rule a config directory that cannot be read already gets,
-everywhere else in this plugin.
+is no longer running is ignored, the same as no record at all; one whose pid
+cannot be signalled counts as **dead**, not as alive. `serve` asks
+`lib/live.js`'s `running(pid)`, which returns false on any error the signal
+raises, `EPERM` included — `lib/live.js:31` says so in as many words.
+
+That is the opposite of the doubt-goes-to-the-loud-side rule an unreadable
+config directory gets, and the difference is what the doubt is about. There it
+is another session's claim on a file, and guessing wrong takes work away from
+someone. Here it is a port this process is free to bind, and guessing wrong
+leaves the user with no station at all.
 
 `/clear-stale` clears every stale row in one registry at once, calling
 `clearEntry` once per row so the checks are the same list rather than a
