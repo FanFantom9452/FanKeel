@@ -821,7 +821,7 @@ In `TODO.md`, remove the `## Needs a decision` bullet beginning `- 行為 eval�
 and add under its `## Waiting` heading:
 
 ```md
-- eval 進 CI：`.github/workflows` 一條，push main 且限 skills/、evals/、manifest；本機 `claude plugin eval` 回 early access，一條永遠紅的 workflow 是噪音 — [README.md](README.md). lifts when: 本機 `claude plugin eval` 不再回 early access. 09-08.
+- eval 進 CI：`.github/workflows` 一條，只在 push main 且限 skills/、evals/、manifest；永遠紅的 workflow 是噪音，所以等 — [README.md](README.md). lifts when: 本機 `claude plugin eval` 不再回 early access. 09-08.
 ```
 
 - [ ] **Step 4: the checks**
