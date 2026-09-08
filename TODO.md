@@ -82,7 +82,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - Whether `docs/subagents.md` should defer to `docs/station.md` for `lib/usage.js` and `lib/prices.js`: it names neither in its `source_of_truth` — [docs/subagents.md](docs/subagents.md).
 
-- Whether the seven plans `docs-audit` calls landed get archived: 24 link occurrences on five live pages move with them, and until they do its exit code is always 1 — [docs/README.md](docs/README.md).
+- Whether the seven plans `docs-audit` calls landed get archived: 13 links on five live pages move with them, and until they do its exit code is always 1 — [docs/README.md](docs/README.md).
 
 ## Waiting
 
