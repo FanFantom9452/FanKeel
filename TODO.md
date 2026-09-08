@@ -68,6 +68,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 數字帶範圍取代四捨五入：9.2× 在散文裡補上「四 reader、跨 plugin skills、檔名未知」後就不與 1.5× 矛盾；帳本的 Scope 欄已經這樣寫，引用它的頁面還沒 — [docs/sources.md](docs/sources.md).
 
+- `docs/pipeline.md:570` 的 D2 節點漏了 `lib/stages.js:301` 的 one workflow 那句，還帶著全 repo 只在它自己身上出現的 `out of what`；`tests/render.test.js:270` 只釘 ALWAYS，各 stage 的圖沒測試守著 — [docs/pipeline.md](docs/pipeline.md).
+
 ## Needs a decision
 
 - skills 下一個 `registry.json` 與它的 schema：每個 stage 一筆；`## Waiting` 的 entry/stop condition、`prompt_byte_budget`、條件載入到節三條都以它為前置 — [簡報 §1.3](docs/improvement-brief.md#13-registryjson-的-schema).
