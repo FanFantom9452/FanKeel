@@ -160,6 +160,25 @@ test('a stage priced by no rate anywhere gets null from gather(), not zero', () 
         'the unpriced stage carries no dollar figure at all, rather than zero');
 });
 
+// `serialize()` used to read a stage's two token counts and subtract them
+// itself; a stage sampled backwards reached the page as a negative number.
+// It now routes the pair through `registry.burnOf`, the helper that already
+// nulls a spend that is not positive, so a record with a negative delta
+// reads the same on the page as one never sampled at all.
+test('serialize nulls a stage\'s burn when the token count runs backwards, and keeps a positive one', () => {
+    const m = chartFixture('88888888-ffff-4fff-8fff-ffffffffffff', {
+        task: 'burn clamp', stage: 'build', route: ['survey', 'build'],
+        clock: { survey: [0, 1000], build: [1000, 2000] },
+        burn: { survey: [50000, 20000], build: [50000, 120000] },
+    });
+    const data = JSON.parse(station.serialize(m, {})
+        .replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
+    const stages = data.sessions[0].stages;
+    assert.equal(stages.find((s) => s.stage === 'survey').burn, null,
+        'a token count that runs backwards reads as no burn, not a negative number');
+    assert.equal(stages.find((s) => s.stage === 'build').burn, 70000,
+        'a positive delta still reaches the page as a number');
+});
 
 test('serialize carries every task\'s text, the price date, and the plugin path for the offline clear command', () => {
     const f = fixture();
@@ -186,18 +205,18 @@ test('serialize carries every task\'s text, the price date, and the plugin path 
 test('write returns the counts and both paths, copies the four files into the caller\'s registry, and ignores them there', () => {
     const f = fixture();
     const out = station.write({ configDir: f.cfg, root: f.r1 });
-    assert.equal(out.file, path.join(f.cfg, 'fankeel', 'station.html'));
-    assert.equal(out.copy, path.join(f.r1, '.fankeel', 'station.html'));
+    assert.equal(out.file, path.join(f.cfg, 'fankeel', 'index.html'));
+    assert.equal(out.copy, path.join(f.r1, '.fankeel', 'index.html'));
     assert.deepEqual([out.registries, out.live, out.stale, out.down], [2, 1, 1, 1]);
-    assert.ok(fs.readFileSync(path.join(f.r1, '.fankeel', 'station-data.js'), 'utf8').includes('live one'));
+    assert.ok(fs.readFileSync(path.join(f.r1, '.fankeel', 'station', 'station-data.js'), 'utf8').includes('live one'));
     assert.equal(fs.readFileSync(out.copy, 'utf8'), fs.readFileSync(out.file, 'utf8'));
     const gitignore = () => fs.readFileSync(path.join(f.r1, '.fankeel', '.gitignore'), 'utf8');
-    for (const n of station.EMITTED) {
+    for (const n of ['index.html', 'station/']) {
         assert.match(gitignore(), new RegExp('^' + n.replace('.', '\\.') + '$', 'm'));
     }
     station.write({ configDir: f.cfg, root: f.r1 });
     const lines = gitignore().split(/\r?\n/);
-    for (const n of station.EMITTED) {
+    for (const n of ['index.html', 'station/']) {
         assert.equal(lines.filter((l) => l === n).length, 1, 'a second write does not duplicate ' + n);
     }
     // A root with no registry gets no copy and no .fankeel/ — a hook handing
@@ -252,7 +271,7 @@ test('the root a caller writes into is listed and remembered even with no lead a
     registry.ensureLayout(r3);
     const out = station.write({ configDir: f.cfg, root: r3 });
     assert.equal(out.registries, 3);
-    assert.equal(out.copy, path.join(r3, '.fankeel', 'station.html'));
+    assert.equal(out.copy, path.join(r3, '.fankeel', 'index.html'));
     assert.ok(path.resolve(r3) in station.readRoots(f.cfg));
 });
 
@@ -372,7 +391,7 @@ test('a caller that walked the machine itself hands its counts to the data write
     // which is how `scripts/station.js` hands `autoScan`'s own walk in.
     const out = station.write({ configDir: cfg, cwd: base, scanStats: { depthCuts: 7, timedOut: true } });
     const data = JSON.parse(
-        fs.readFileSync(path.join(path.dirname(out.file), 'station-data.js'), 'utf8')
+        fs.readFileSync(path.join(path.dirname(out.file), 'station', 'station-data.js'), 'utf8')
             .replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
     assert.deepEqual(data.scanStats, { depthCuts: 7, timedOut: true });
 });
@@ -473,7 +492,7 @@ test('a gone root whose directory was deleted is forgotten', () => {
 
 test('the page is the shell, byte for byte', () => {
     const shell = fs.readFileSync(
-        path.join(__dirname, '..', 'assets', 'station', 'station.html'), 'utf8');
+        path.join(__dirname, '..', 'assets', 'station', 'index.html'), 'utf8');
     assert.equal(station.render(), shell,
         'render() copies the shell; it does not template it');
 });
@@ -482,19 +501,26 @@ test('the shell carries no session text and the data file carries all of it', ()
     const f = fixture();
     station.write({ configDir: f.cfg, root: f.r1 });
     const read = (n) => fs.readFileSync(path.join(f.cfg, 'fankeel', n), 'utf8');
-    assert.ok(!read('station.html').includes('live one'), 'a task line reached the shell');
-    assert.ok(read('station-data.js').includes('live one'), 'the data file lost a task line');
+    assert.ok(!read('index.html').includes('live one'), 'a task line reached the shell');
+    assert.ok(read('station/station-data.js').includes('live one'), 'the data file lost a task line');
 });
 
-test('write leaves exactly the four files beside roots.json', () => {
+// The shell moved to the top of the written directory and its three siblings
+// moved under station/, so a flat four-name listing can no longer describe
+// what write() leaves behind — it has to be read as a tree.
+test('write leaves the shell at the top and its three siblings under station/', () => {
     const f = fixture();
     station.write({ configDir: f.cfg, root: f.r1 });
+    const dir = path.join(f.cfg, 'fankeel');
     assert.deepEqual(
-        fs.readdirSync(path.join(f.cfg, 'fankeel')).filter((n) => n !== 'roots.json').sort(),
-        ['station-data.js', 'station.css', 'station.html', 'station.js']);
+        fs.readdirSync(dir).filter((n) => n !== 'roots.json').sort(),
+        ['index.html', 'station']);
+    assert.deepEqual(
+        fs.readdirSync(path.join(dir, 'station')).sort(),
+        ['station-data.js', 'station.css', 'station.js']);
 });
 
-test('a second write with the same model rewrites only the data', () => {
+test('a second write with the same model rewrites only station/station-data.js', () => {
     const f = fixture();
     station.write({ configDir: f.cfg, root: f.r1 });
     const at = (n) => path.join(f.cfg, 'fankeel', n);
@@ -502,13 +528,13 @@ test('a second write with the same model rewrites only the data', () => {
     // both writes land inside the same millisecond, so equal mtimes would
     // pass whether or not the file was rewritten.
     const PAST = new Date('2020-01-01T00:00:00Z');
-    const copied = ['station.html', 'station.css', 'station.js'];
-    for (const n of copied.concat(['station-data.js'])) fs.utimesSync(at(n), PAST, PAST);
+    const copied = ['index.html', 'station/station.css', 'station/station.js'];
+    for (const n of copied.concat(['station/station-data.js'])) fs.utimesSync(at(n), PAST, PAST);
     station.write({ configDir: f.cfg, root: f.r1 });
     for (const n of copied) {
         assert.equal(fs.statSync(at(n)).mtimeMs, PAST.getTime(), n + ' was rewritten');
     }
-    assert.notEqual(fs.statSync(at('station-data.js')).mtimeMs, PAST.getTime(),
+    assert.notEqual(fs.statSync(at('station/station-data.js')).mtimeMs, PAST.getTime(),
         'the data file was not rewritten');
 });
 

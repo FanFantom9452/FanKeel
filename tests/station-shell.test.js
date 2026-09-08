@@ -13,16 +13,16 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
-const SHELL = path.join(ROOT, 'assets', 'station', 'station.html');
+const SHELL = path.join(ROOT, 'assets', 'station', 'index.html');
 const CSS = path.join(ROOT, 'assets', 'station', 'station.css');
 
 const shell = () => fs.readFileSync(SHELL, 'utf8');
 
-test('the shell references its three siblings by bare name', () => {
+test('the shell references its three siblings under station/', () => {
     const html = shell();
-    assert.match(html, /<link rel="stylesheet" href="station\.css">/);
-    assert.match(html, /station-data\.js/);
-    assert.match(html, /<script src="station\.js"><\/script>/);
+    assert.match(html, /<link rel="stylesheet" href="station\/station\.css">/);
+    assert.match(html, /station\/station-data\.js/);
+    assert.match(html, /<script src="station\/station\.js"><\/script>/);
 });
 
 test('the data request carries the page query through', () => {
@@ -33,7 +33,7 @@ test('the data request carries the page query through', () => {
 
 test('station-data.js is loaded before station.js', () => {
     const html = shell();
-    assert.ok(html.indexOf('station-data.js') < html.indexOf('src="station.js"'),
+    assert.ok(html.indexOf('station-data.js') < html.indexOf('src="station/station.js"'),
         'the view script reads window.STATION at load');
 });
 
@@ -62,4 +62,11 @@ test('neither file holds a CRLF', () => {
     for (const f of [SHELL, CSS]) {
         assert.ok(!fs.readFileSync(f, 'utf8').includes('\r'), f + ' has CRLF');
     }
+});
+
+test('the shell\'s three references all begin station/', () => {
+    const html = shell();
+    assert.match(html, /href="station\//, 'the stylesheet link does not begin station/');
+    assert.match(html, /write\('<script src="station\//, 'the data script does not begin station/');
+    assert.match(html, /<script src="station\/station\.js">/, 'the view script does not begin station/');
 });

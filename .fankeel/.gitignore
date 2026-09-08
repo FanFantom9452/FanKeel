@@ -1,6 +1,8 @@
 sessions/
 map.md
 build/
+index.html
+station/
 station.html
 station.css
 station.js
