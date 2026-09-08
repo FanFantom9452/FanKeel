@@ -593,9 +593,13 @@ Generated from this repository on 2026-09-08 at `af05431`, values copied exactly
 
 ### Steps
 
-1. Create `docs/sources.md` with `status: current` frontmatter and a table whose columns are: ID, link, the date it was checked, the level of evidence, the scope it covers, and who cites it.
+1. Create `docs/sources.md` with `status: current`, `last_verified` and `source_of_truth` frontmatter, and a table whose columns are the seven `docs/improvement-brief.md` §2.4 D1 names: ID, what it measured, link, the date it was checked, the level of evidence, the scope summary, and who cites it. The last column is a reverse index — change a figure and it says which pages have to change with it.
 
-2. Seed it with the figures from the five dated reports under `docs/reports/`. Each row's scope says what the measurement does not cover — the 9.2× dispatch figure is four readers over another plugin's skills with the filenames unknown, and saying so is what stops it reading as contradicting the 1.5×.
+2. Seed it with **all fourteen** dated reports at the top level of `docs/reports/`, not a five. The TODO entry said five and named none; measured on 2026-09-08 there are fourteen `docs/reports/*.md`, and the 47 files under `docs/reports/evidence/` are the raw evidence behind three of them rather than reports in their own right, so they get no row.
+
+   Each row's scope says what the measurement does **not** cover — the 9.2× dispatch figure is four readers over another plugin's skills with the filenames unknown, and saying so is what stops it reading as contradicting the 1.5×.
+
+   Give the ledger the section §2.4 D1 calls out as a mechanism in its own right: **Consulted with no usable numbers** — a report read and found to carry no quotable figure gets a row there rather than no row, so the next reader does not read it again to find out.
 
 3. The reverse index — who cites each source — is filled by hand from `grep`. No script is written for it; a script that has to parse prose citations is a larger commitment than the page is worth today.
 
