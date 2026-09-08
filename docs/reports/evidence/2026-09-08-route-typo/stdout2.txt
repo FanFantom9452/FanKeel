@@ -1,0 +1,4 @@
+route-typo run 1 no-other-route pass — Bash matching task\.js start\b(?![^\n]*--route\W{1,4}build,verify): 0 calls
+route-typo run 1 says-it-out-loud pass — found /build[,\s→]+verify/ in the trace
+route-typo run 1 starts-with-short-route pass — Bash matching task\.js start\b[^\n]*--route\W{1,4}build,verify: 1 call
+score 3/3

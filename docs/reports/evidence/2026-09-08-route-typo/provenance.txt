@@ -1,0 +1,13 @@
+date: 2026-09-08T12:06:05Z
+HEAD: 4db33a1b443db84bbf218fe26f60576e04378aae
+porcelain: [?? docs/reports/evidence/2026-09-08-route-typo/ ]
+2.1.263 (Claude Code)
+command: node scripts/eval.js evals/route-typo --model claude-sonnet-5 --json docs/reports/evidence/2026-09-08-route-typo/run.json
+exit=1 wall=38s
+--- run 2 (after aabf9b2)
+date: 2026-09-08T12:09:09Z
+HEAD: aabf9b2e6fa1a7e4edd9fcb6db59b54e8cffb07e
+porcelain: [ M docs/plans/2026-09-08-behaviour-eval.md ?? docs/reports/evidence/2026-09-08-route-typo/ ]
+2.1.263 (Claude Code)
+command: node scripts/eval.js evals/route-typo --model claude-sonnet-5 --json docs/reports/evidence/2026-09-08-route-typo/run2.json
+exit=0 wall=36s
