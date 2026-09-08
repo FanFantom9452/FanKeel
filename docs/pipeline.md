@@ -618,7 +618,7 @@ flowchart TD
     E3["<b>weight · empty directories</b><br/>a 73 GB build directory is not a bug;<br/>not knowing about it is"]
     F["<b>the part only reading finds</b><br/>open both, find the claim each makes<br/>about that file, say which one the<br/>code supports. Name the line."]
     F1["<b>dispatch readers</b><br/>several in one response, one per pair<br/><i>four the ceiling, sonnet the floor</i><br/><i>say how many, and on which model</i><br/><i>compare what comes back against itself</i>"]
-    F2["<b>the adversary</b><br/>read-only, over the findings<br/><i>was it run · on what · could it have failed</i><br/><i>only the findings it defeats</i>"]
+    F2["<b>the adversary</b><br/>read-only, over the findings<br/><i>only the findings it defeats</i><br/><i>one workflow where the host opens it</i>"]
     G["<b>report, then ask, then act</b><br/><i>never move a document unasked —<br/>every one is a link somebody holds</i>"]
 
     A --> C

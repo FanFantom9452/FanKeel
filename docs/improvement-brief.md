@@ -574,6 +574,9 @@ caveman 和 SEPIA 在三個地方**各自獨立收斂到同一答案**：
 > 對照物可抄，寫在這裡是為了不丟關鍵內容；每一項的「待決」就是 design 要回答的問題。
 > 當天 `survey.js mockup profile` 在 repo 零命中，`menu` 只命中
 > `skills/fankeel-land/SKILL.md` 的 `## 6. The menu`，所以三項都是從零起。
+> （補記 2026-09-09：`menu` 那半句當天就不對。重跑 `node scripts/survey.js menu`
+> 是兩個命中，另一個在 `docs/archive/2026-08-22-seven-stage-implementation.md`，
+> 那個檔在寫下這句時就已經在了。結論不變——三項仍是從零起——命中數是二。）
 > （原文記的是那一節當天的行號；2026-09-08 的反漂移條款插入後行號位移，
 > 改記標題——這是一筆掃描紀錄，把數字改成新行號會宣稱那次掃描命中了它並沒有命中的位置。）
 
@@ -818,7 +821,7 @@ claude plugin eval . --json results.json --threshold 0.7 \
 | `evals/`、`.github/` | **皆無**：沒有 CI，沒有行為 eval——第三部 #2 是從零起 |
 | 其他 host 的 prompt hook | 這台機器無法驗，C4 維持在 `## Waiting` |
 | C1「沒有機械檢查確認 script / flag 存在」 | **部分**：`tests/source.test.js` 讀 `git ls-files` 抓孤兒 export，`tests/skills.test.js` 也在；兩者是否涵蓋 SKILL.md 提到的 `<plugin>/scripts/*.js` 與 `--flag` 未讀，做 #6 之前先看這兩個檔 |
-| `mockup`、`profile` 在 repo 裡 | `survey.js` 零命中；`menu` 只命中 `skills/fankeel-land/SKILL.md` 的 `## 6. The menu` |
+| `mockup`、`profile` 在 repo 裡 | `survey.js` 零命中；`menu` 命中兩處，`skills/fankeel-land/SKILL.md` 的 `## 6. The menu` 與 `docs/archive/2026-08-22-seven-stage-implementation.md` |
 
 ---
 
