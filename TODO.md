@@ -68,7 +68,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 數字帶範圍取代四捨五入：9.2× 在散文裡補上「四 reader、跨 plugin skills、檔名未知」後就不與 1.5× 矛盾；帳本的 Scope 欄已經這樣寫，引用它的頁面還沒 — [docs/sources.md](docs/sources.md).
 
-- `docs/pipeline.md:570` 的 D2 節點漏了 `lib/stages.js:301` 的 one workflow 那句，還帶著全 repo 只在它自己身上出現的 `out of what`；`tests/render.test.js:270` 只釘 ALWAYS，各 stage 的圖沒測試守著 — [docs/pipeline.md](docs/pipeline.md).
+- `docs/pipeline.md` 的 verify adversary 節點漏了規則裡「the chain is one workflow」那句，也帶著 `lib/stages.js` 規則文字沒有的措辭；各 stage 的節點沒有測試守著 — [docs/pipeline.md](docs/pipeline.md).
 
 ## Needs a decision
 

@@ -6,7 +6,7 @@ source_of_truth: this file is the index; each page below is its own source
 
 # FanKeel documentation
 
-Eight pages, one question each. The front page has install, the pipeline
+Ten pages, one question each. The front page has install, the pipeline
 diagram, and the statusline; everything that needs more than a paragraph is
 here.
 

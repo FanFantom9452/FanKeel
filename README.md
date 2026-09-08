@@ -130,9 +130,11 @@ Every session this machine has run, live or abandoned or stood down, is one
 page: the station. It is rewritten at `/fankeel`, by every `task.js` verb that
 moves an entry, and at every session end, and a copy sits at
 `.fankeel/index.html` in the registry you are in; `node scripts/station.js
---open` opens the newest. `serve` in place of that is the clearing form — it
-runs the page as a server for as long as putting an abandoned session down
-takes.
+--open` opens the newest. `serve` in place of that is the live form — a
+server you start once and leave running: it binds the fixed port `7817`, does
+not exit on its own unless `--idle <minutes>` asks it to, takes the clear
+button on a `stale` row, and a second `serve` joins the first rather than
+binding a second port. `--detach` returns the terminal and keeps it up.
 
 ## Where to find things
 
