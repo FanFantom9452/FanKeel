@@ -139,5 +139,9 @@ test('the shipped scaffold_script builds the fixture it describes', () => {
     assert.equal(r.status, 0, r.stderr);
     assert.equal(fs.readFileSync(path.join(dir, 'README.md'), 'utf8'), 'Teh keel of a project.\n');
     const log = spawnSync('git', ['log', '--oneline'], { cwd: dir, encoding: 'utf8' });
-    assert.equal(log.stdout.trim().split('\n').length, 1, 'one commit');
+    // An empty stdout splits to one line too, so the exit code and the
+    // non-empty line are what say a repository with one commit is there.
+    assert.equal(log.status, 0, 'git log ran: ' + log.stderr);
+    const lines = log.stdout.trim().split('\n').filter(Boolean);
+    assert.equal(lines.length, 1, 'one commit, got: ' + JSON.stringify(log.stdout));
 });
