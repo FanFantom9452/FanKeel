@@ -151,7 +151,14 @@ const SCRIPT = path.join(__dirname, '..', 'scripts', 'eval.js');
 // Destructured on purpose: tests/source.test.js credits an export as imported
 // only when it sees `mod.name` or a destructuring require, and runOnce is the
 // one name nothing here can call without spending money.
-const { usage, parseArgs, runOnce, render, verdict, main } = require('../scripts/eval.js');
+const { usage, parseArgs, runOnce, render, verdict, main, cmdQuote } = require('../scripts/eval.js');
+
+test('cmdQuote wraps an argument so a space or an & survives cmd.exe', () => {
+    assert.equal(cmdQuote('C:\\Program Files\\x'), '"C:\\Program Files\\x"');
+    assert.equal(cmdQuote('a&b'), '"a&b"');
+    assert.equal(cmdQuote('say "hi"'), '"say \\"hi\\""');
+    assert.equal(cmdQuote(12), '"12"');
+});
 
 test('eval.js --help prints usage and exits 0', () => {
     const out = execFileSync(process.execPath, [SCRIPT, '--help'], { encoding: 'utf8' });

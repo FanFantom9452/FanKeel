@@ -68,6 +68,26 @@ function scaffold(dir, script) {
     return r.status === 0 ? null : 'scaffold_script exited ' + r.status + ': ' + (r.stderr || '').trim();
 }
 
+// One argument, quoted for cmd.exe: wrapped in double quotes, with any double
+// quote inside escaped. A shell line is built by concatenation, so a path
+// with a space or an `&` in it is two arguments or a second command unless
+// this happens first.
+function cmdQuote(a) {
+    return '"' + String(a).replace(/"/g, '\\"') + '"';
+}
+
+// The native build is an .exe and spawns directly, which is the safe path:
+// every argument reaches claude as itself. The npm build is a .cmd shim, which
+// Node refuses to spawn without a shell (EINVAL), and only then does the shell
+// line get built — from quoted arguments.
+function spawnClaude(args, opts) {
+    const r = spawnSync('claude', args, opts);
+    if (r.error && r.error.code === 'EINVAL' && process.platform === 'win32') {
+        return spawnSync('claude', args.map(cmdQuote), { ...opts, shell: true });
+    }
+    return r;
+}
+
 function runOnce(c, opts) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-eval-'));
     const meta = c.prompt.meta;
@@ -79,13 +99,12 @@ function runOnce(c, opts) {
             '--plugin-dir', opts.pluginDir, '--max-turns', String(meta.max_turns || 10), '--model', opts.model];
         const tools = ev.listValue(meta.allowed_tools);
         if (tools.length) args.push('--allowedTools', tools.join(','));
-        const r = spawnSync('claude', args, {
+        const r = spawnClaude(args, {
             cwd: dir,
             input: c.prompt.body.trim(),
             encoding: 'utf8',
             timeout: Number(meta.timeout_seconds || 300) * 1000,
             maxBuffer: 64 * 1024 * 1024,
-            shell: process.platform === 'win32',
         });
         out.exit = r.status;
         if (r.error) out.error = r.error.code === 'ETIMEDOUT' ? 'timed out after ' + (meta.timeout_seconds || 300) + 's' : String(r.error.message);
@@ -148,4 +167,4 @@ if (require.main === module) {
     process.exit(main(process.argv.slice(2)));
 }
 
-module.exports = { usage, parseArgs, runOnce, render, verdict, main };
+module.exports = { usage, parseArgs, runOnce, render, verdict, main, cmdQuote };
