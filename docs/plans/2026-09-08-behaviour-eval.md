@@ -71,8 +71,8 @@ reading the prompt from stdin, `--output-format stream-json --verbose`,
 | `evals/route-typo/prompt.md` | run settings and the `/fankeel …` prompt |
 | `evals/route-typo/graders/starts-with-short-route.md` | `tool_used`: a `task.js start` carrying `--route build,verify` |
 | `evals/route-typo/graders/no-other-route.md` | `tool_used`, `max: 0`: no `task.js start` without it |
-| `evals/route-typo/graders/says-it-out-loud.md` | `regex` on the last message: the route is said |
-| `lib/eval.js` | `parseCase`, `toolCalls`, `lastMessage`, `grade`, `listValue` — pure |
+| `evals/route-typo/graders/says-it-out-loud.md` | `regex` on the trace: the route is said somewhere in the run (amended at verify from the last message) |
+| `lib/eval.js` | `parseCase`, `toolCalls`, `lastMessage`, `assistantText`, `grade`, `listValue` — pure |
 | `scripts/eval.js` | CLI: temp dir, scaffold, `claude -p`, grade, print, `--json`, exit |
 | `tests/eval.test.js` | fixtures for the pure functions, the real case dir, the CLI's two cheap paths |
 | `.fankeel/docs.json` | one more bucket: `evals` as `reference` |
@@ -87,7 +87,7 @@ Task 1 first: Tasks 2 and 3 consume its exports and all three write
 
 **Files:**
 - Modify: `lib/docs.js` — add `frontmatter` to `module.exports`
-- Modify: `lib/eval.js` — new: `parseCase`, `listValue`, `toolCalls`, `lastMessage`, `grade`
+- Modify: `lib/eval.js` — new: `parseCase`, `listValue`, `toolCalls`, `lastMessage`, `grade` (and `assistantText`, added by the verify-stage fix aabf9b2)
 - Read: `lib/docs.js` — `frontmatter(text)` at line 316, the reader to reuse
 - Read: `tests/tmp.js` — `tmp(prefix)`, the scratch directory the tests use
 - Test: `tests/eval.test.js`
