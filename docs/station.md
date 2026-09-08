@@ -290,9 +290,10 @@ page still prints that count in a banner above the rows
 (`assets/station/station.js:526`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
-the single-row button — but the page puts no button in front of it any more:
-`assets/station/station.js` has no form that posts there, so reaching it
-today means a request built by hand.
+the single-row button, and every registry card now carries one:
+`clearStaleControl` in `assets/station/station.js` renders the form when the
+page is served, and prints the copyable command when it is not — a static
+file cannot post.
 
 Both routes call the same `clearEntry`, which writes `active: false` and
 nothing else, so a session cleared by mistake can be adopted back with its

@@ -129,7 +129,7 @@ three places each one branches — is drawn stage by stage in
 Every session this machine has run, live or abandoned or stood down, is one
 page: the station. It is rewritten at `/fankeel`, by every `task.js` verb that
 moves an entry, and at every session end, and a copy sits at
-`.fankeel/station.html` in the registry you are in; `node scripts/station.js
+`.fankeel/index.html` in the registry you are in; `node scripts/station.js
 --open` opens the newest. `serve` in place of that is the clearing form — it
 runs the page as a server for as long as putting an abandoned session down
 takes.
