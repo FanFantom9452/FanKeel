@@ -543,6 +543,12 @@ Generated from this repository on 2026-09-08 at `af05431`, values copied exactly
 - Modify: `docs/plans/2026-09-04-session-station-design.md` and the eight other landed pages `docs-audit` names — moved, not edited
 - Modify: `docs/station.md` — its link at `:11` points at a page this task moves
 - Modify: `docs/decisions/fankeel-shell.md` — three links at `:480-481`, `:563` and `:600` point at pages this task moves
+- Modify: `docs/pipeline.md` — cites pages this task moves
+- Modify: `docs/archive/2026-09-04-session-station.md` — an archive page whose links point at pages this task moves
+- Modify: `docs/reports/2026-09-05-stage-division-measurements.md` — a report whose links point at pages this task moves
+- Modify: `docs/plans/2026-09-05-station-at-hand.md` — cites pages this task moves
+- Modify: `docs/plans/2026-09-05-station-at-hand-design.md` — cites pages this task moves
+- Modify: `docs/plans/2026-09-07-todo-thirteen.md` — cites pages this task moves
 - Read: `.fankeel/docs.json` — which bucket carries which role
 
 **Interfaces:**
@@ -559,7 +565,11 @@ Generated from this repository on 2026-09-08 at `af05431`, values copied exactly
 
 3. Each implementation plan moves to `docs/archive/` with `git mv`.
 
-4. Sweep every link to a moved page. Find them with `grep -rn` over `docs/`, `skills/`, `README.md` and `TODO.md`, and repoint each. Do not guess the count in advance; the sweep ends when the grep is empty.
+4. Sweep every link to a moved page. Find them with `grep -rn` over `docs/`, `skills/`, `README.md` and `TODO.md`, and repoint each. Do not guess the count in advance; the sweep ends when the grep is empty. Measured on 2026-09-08 before this task: eighteen files name one of the nine, and this task's own Files block lists every one of them that is not itself a moving page.
+
+   **The sweep repoints links in an `archive` page and in a `report`, and that is deliberate.** Both roles say a page is never edited after — but the role governs whether the *prose* is maintained, not whether its pointers resolve. A link is a pointer, and a moved target makes it wrong whatever the page's role. Change the path and nothing else on those two pages: no wording, no dates, no `last_verified`.
+
+   Cross-links between the moving pages break too, because they do not move together: a `*-design.md` goes to `docs/decisions/` and its plan goes to `docs/archive/`, so a relative link that resolved while both sat in `docs/plans/` no longer does. Repoint those in the same pass.
 
 5. Update `docs/README.md`'s index rows for every page that moved.
 
