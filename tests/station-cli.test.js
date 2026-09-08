@@ -58,10 +58,10 @@ const request = (url, opts, body) => new Promise((resolve, reject) => {
 test('the default form writes the page, prints its path and the counts', () => {
     const f = fixture();
     const out = execFileSync(process.execPath, [CLI], { cwd: f.base, env: { ...process.env, CLAUDE_CONFIG_DIR: f.cfg }, encoding: 'utf8' });
-    const file = path.join(f.cfg, 'fankeel', 'station.html');
+    const file = path.join(f.cfg, 'fankeel', 'index.html');
     assert.ok(out.includes(file));
     assert.match(out, /1 registries · 1 live, 1 stale, 0 down/);
-    const dataFile = path.join(f.cfg, 'fankeel', 'station-data.js');
+    const dataFile = path.join(f.cfg, 'fankeel', 'station', 'station-data.js');
     assert.ok(fs.readFileSync(dataFile, 'utf8').includes('"state":"stale"'));
 });
 
@@ -72,8 +72,8 @@ test('--json prints the rows as one JSON document and writes nothing', () => {
     const model = JSON.parse(out);
     const states = model.registries.flatMap((r) => r.sessions.map((s) => s.state)).sort();
     assert.deepEqual(states, ['live', 'stale']);
-    assert.equal(fs.existsSync(path.join(f.cfg, 'fankeel', 'station.html')), false, '--json wrote the page');
-    assert.equal(fs.existsSync(path.join(f.r1, '.fankeel', 'station.html')), false, '--json wrote the copy');
+    assert.equal(fs.existsSync(path.join(f.cfg, 'fankeel', 'index.html')), false, '--json wrote the page');
+    assert.equal(fs.existsSync(path.join(f.r1, '.fankeel', 'index.html')), false, '--json wrote the copy');
 });
 
 test('--json refuses a verb, the way an unknown argument is refused', () => {
@@ -95,12 +95,12 @@ test('--scan walks a directory for registries, and the next run remembers what i
     const env = { ...process.env, CLAUDE_CONFIG_DIR: f.cfg };
     const out = execFileSync(process.execPath, [CLI, '--scan', path.join(f.base, 'elsewhere')], { cwd: f.base, env, encoding: 'utf8' });
     assert.match(out, /2 registries · 1 live, 1 stale, 1 down/);
-    assert.ok(fs.readFileSync(path.join(f.cfg, 'fankeel', 'station-data.js'), 'utf8').includes('scanned'));
+    assert.ok(fs.readFileSync(path.join(f.cfg, 'fankeel', 'station', 'station-data.js'), 'utf8').includes('scanned'));
     const again = execFileSync(process.execPath, [CLI], { cwd: f.base, env, encoding: 'utf8' });
     assert.match(again, /2 registries/, 'roots.json remembered the scanned registry');
     const inside = execFileSync(process.execPath, [CLI], { cwd: far, env, encoding: 'utf8' });
     assert.match(inside, /copy at /);
-    assert.ok(fs.existsSync(path.join(far, '.fankeel', 'station.html')), 'run from inside a registry, the copy lands there');
+    assert.ok(fs.existsSync(path.join(far, '.fankeel', 'index.html')), 'run from inside a registry, the copy lands there');
 });
 
 test('serve renders live, refuses a bad nonce, refuses a live row, clears a stale one, then exits when idle', async () => {
@@ -174,6 +174,76 @@ test('GET / answers 404 when the shell cannot be read', async () => {
         station.render = real;
         if (s) s.close();
     }
+});
+
+// --- Task 2: serve starts once, on a port that does not move ---
+
+test('a second serve() call joins the first rather than binding its own port', async () => {
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    const first = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false });
+    try {
+        const second = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false });
+        assert.equal(second.url, first.url, 'the second call resolves to the first\'s url');
+        assert.equal(second.joined, true, 'the second call reports that it joined rather than bound');
+        const record = JSON.parse(fs.readFileSync(path.join(f.cfg, 'fankeel', 'serve.json'), 'utf8'));
+        assert.equal(record.pid, process.pid, 'serve.json holds one pid — this process, since both calls ran in it');
+        assert.equal(record.url, first.url);
+    } finally {
+        first.close();
+    }
+});
+
+test('serve.json is written once the listener binds and removed once it closes', async () => {
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    const record = path.join(f.cfg, 'fankeel', 'serve.json');
+    assert.equal(fs.existsSync(record), false, 'nothing before the server has bound');
+    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false });
+    assert.ok(fs.existsSync(record), 'serve.json exists once the listener is bound');
+    const data = JSON.parse(fs.readFileSync(record, 'utf8'));
+    assert.equal(data.pid, process.pid);
+    assert.equal(data.url, s.url);
+    assert.ok(Number.isInteger(data.port) && data.port > 0);
+    assert.ok(typeof data.started === 'string' && !Number.isNaN(Date.parse(data.started)));
+    s.close();
+    assert.equal(fs.existsSync(record), false, 'serve.json is removed once the server closes');
+});
+
+test('idleMs: 0 arms no timer, rather than the old default falling back on a falsy value', async (t) => {
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    // A fake timer that advances real elapsed time (`t.mock.timers`) is not
+    // usable here: Node's own HTTP keep-alive bookkeeping is built on the same
+    // timer wheel, so ticking it forward resets live sockets for reasons that
+    // have nothing to do with `touch()`, ten minutes early or not. Spying on
+    // `setTimeout` itself — record what it is called with, then run the real
+    // one — proves the same thing (no idle timer armed for `idleMs: 0`)
+    // without touching how the server's own connections behave.
+    const armed = [];
+    const real = global.setTimeout;
+    t.mock.method(global, 'setTimeout', (fn, ms, ...rest) => {
+        armed.push(ms);
+        return real(fn, ms, ...rest);
+    });
+    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false });
+    try {
+        await request(s.url, { method: 'GET' });
+        assert.ok(!armed.some((ms) => ms >= 60e3),
+            'idleMs: 0 armed a timer of at least a minute: ' + JSON.stringify(armed));
+    } finally {
+        s.close();
+    }
+});
+
+test('--detach is parsed, and portWasExplicit only when --port was given', () => {
+    const { parseArgs } = require('../scripts/station.js');
+    const a = parseArgs(['serve', '--detach']);
+    assert.equal(a.detach, true, '--detach is parsed');
+    assert.ok(!a.portWasExplicit, 'no --port: portWasExplicit is falsy');
+    const b = parseArgs(['serve', '--port', '1234']);
+    assert.equal(b.detach, false);
+    assert.equal(b.portWasExplicit, true, '--port given: portWasExplicit is true');
 });
 
 // --- Task 7: bulk clear, --forget, and the once-only budgeted first-run scan ---
@@ -346,7 +416,12 @@ test('serve hands that budget to the walk on every request, and hands none when 
         assert.ok(seen[0].deadline >= before + 55000 && seen[0].deadline <= Date.now() + 60000,
             'and the bound is the sixty-second budget: ' + (seen[0].deadline - before) + 'ms');
 
-        plain = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
+        // A distinct configDir: same `f.cfg` here would join `scanning` via
+        // `serve.json` rather than bind a second server, and this half of the
+        // test is about deadline propagation on a fresh one, not about the
+        // join behaviour `station-cli.test.js`'s Task 2 tests cover already.
+        const plainCfg = fixture().cfg;
+        plain = await serve({ configDir: plainCfg, port: 0, idleMs: 60e3, open: false });
         await request(plain.url + 'station-data.js', { method: 'GET' });
         assert.equal(seen.length, 2);
         assert.equal(seen[1].deadline, undefined, 'a render with no --scan carries no clock');
@@ -433,7 +508,7 @@ test('the first run scans once and records that it did', () => {
     // nothing and should say nothing. The rendering of that count into words
     // is `station.js`'s, in the browser; what the server writes is the data
     // those words come from.
-    const data1 = fs.readFileSync(path.join(cfg, 'fankeel', 'station-data.js'), 'utf8');
+    const data1 = fs.readFileSync(path.join(cfg, 'fankeel', 'station', 'station-data.js'), 'utf8');
     if (after1.scannedAt.timedOut) {
         assert.match(data1, /"timedOut":true/, 'a walk that ran out of time says so in the data');
     }
