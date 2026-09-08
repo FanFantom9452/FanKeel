@@ -72,7 +72,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - Whether a decision record gets annotated when a change falsifies an argument premise rather than a reference: `scripts/ledger.js` now exports — [scripts/ledger.js](scripts/ledger.js).
 
-- What a nav label becomes when growing cannot separate two roots: one nested inside another's tree runs out of segments while still colliding — [lib/station.js](lib/station.js), `navLabels`.
+- What a nav label becomes when two roots normalize to the same segments and growing cannot separate them — [assets/station/station.js](assets/station/station.js), `labels`.
 
 ## Waiting
 

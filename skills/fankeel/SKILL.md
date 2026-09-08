@@ -611,10 +611,13 @@ place of `--open` runs it as a page with a `clear` button on every stale row.
 The page is written at this prompt, before the block that names it, so there
 is nothing to invoke; [docs/station.md](../../docs/station.md) is the reference.
 
-Its header is also where a file that does not parse is counted. The hooks drop
+The page is also where a file that does not parse is counted. The hooks drop
 those silently and correctly — a miss is what a session not using the plugin
-looks like — so the `unreadable` figure on that line is the only place a corrupt
-entry surfaces. Read it out rather than counting the directory by hand.
+looks like — so the `unreadable` figure is the only place a corrupt entry
+surfaces at all. It is in two places on the page and never in both at once: the
+top bar carries the total across every registry while no registry is selected,
+and a selected one shows its own on its card. Read it out rather than counting
+the directory by hand.
 
 Show the active ones: task, stage, what each has touched, and — for any last
 touched more than 12 hours ago — how long ago that was. Mark this session's own.

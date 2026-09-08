@@ -58,9 +58,15 @@ clarification.
 
 **And one row on the artefact, wherever the change produces one.** A rendered
 page, a written file, a printed report — checked against itself, not against a
-unit: the row's cost cell and the curve under it agree. Unit tests each passed
-on 2026-09-06 while the curve drew a third of what the cell printed, because
-no criterion had named the artefact.
+unit: two figures the artefact derives from one source have to agree. Unit
+tests each passed on 2026-09-06 while a station row's cost cell and the curve
+under it disagreed by a factor of three, because no criterion had named the
+artefact.
+
+Name the check rather than the widget it lands on. That curve was deleted on
+2026-09-08 and the criterion outlived it: the same row was met by reading a
+total out of the rendered page and summing the field it came from, which is a
+sentence the redesign could not falsify.
 
 If a simpler approach exists, or the ask itself looks wrong, say so before
 building it.
