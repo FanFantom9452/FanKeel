@@ -70,6 +70,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - `docs/pipeline.md` 的 verify adversary 節點漏了規則裡「the chain is one workflow」那句，也帶著 `lib/stages.js` 規則文字沒有的措辭；各 stage 的節點沒有測試守著 — [docs/pipeline.md](docs/pipeline.md).
 
+- `docs-check` 永遠 exit 1：四份已落地的 plan（09-07 ready-fourteen、09-08 station-shell 各兩份）引用 `lib/station.js:688-712` 過了檔尾；archive 它們或拿掉行號 — [scripts/docs-check.js](scripts/docs-check.js).
+
 ## Needs a decision
 
 - skills 下一個 `registry.json` 與它的 schema：每個 stage 一筆；`## Waiting` 的 entry/stop condition、`prompt_byte_budget`、條件載入到節三條都以它為前置 — [簡報 §1.3](docs/improvement-brief.md#13-registryjson-的-schema).
