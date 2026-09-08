@@ -78,14 +78,19 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 校準規則與可失敗自檢測試：通則「每階段都設閘門會變跑步機」、衝突時 name both rules；build 的四件停止事改成「撤掉會不會變差」加豁免；16 行 pattern 以此為前置 — [簡報 §2.6](docs/improvement-brief.md#26-兩個-fankeel-直接缺的行為機制).
 
-- design 階段的 mockup 步驟：前端任務時 survey 已知專案背景，design 先出 mockup 再進 build，參考 taste-skill / hallmark 一類的設計 skill；產物、存放處、載入條件待定 — [簡報 §4.1](docs/improvement-brief.md#41-design-階段的-mockup-步驟前端任務).
+- design class：盤點與 prompt 已進 repo（§4.1 補記）；待決 route 與 ratchet 位置、軸鎖定檔格式、Mode 優先路由表、三個 stage skill 增修、prompt 的三個設計問題 — [簡報 §4.1](docs/improvement-brief.md#41-design-階段的-mockup-步驟前端任務).
+
+- 六個污染控制通道：cwd、operator config、always-on flag、model、budget、tools；A/B 量測今天只控 model 與 tools，其餘要不要進 provenance — [簡報 §5.3](docs/improvement-brief.md#53-六個污染控制第二部-21).
+
+- 規則改寫成 pre-send check 形：每條配成因事實與 Bad/Good 範例、例外清單，「the constraint wins, the shape stays」；`lib/stages.js` 的規則哪幾條先改 — [簡報 §5.7](docs/improvement-brief.md#57-規則的五個成因與六個例外第三部-g1g2).
+
+- eval 例外 case 集：每條例外條款一個 case、判準是分數不該動，baseline/candidate 成對跑；`evals/` 今天一個 case，要不要照這個形擴 — [簡報 §5.10](docs/improvement-brief.md#510-評測層的五個新項目第五部-53附錄-a10a14).
 
 - 開發偏好 profile：掃過去的 session 找每個專案的慣例答案（land 本地 commit 不 push、guard、class），依專案建 profile 加預設，Start 套用不再問；存哪、欄位待定；Waiting 的 station 設定面以此為前置 — [簡報 §4.2](docs/improvement-brief.md#42-開發偏好-profile不是每次都問).
 - 站台的 `serve.json` 以 configDir 為鍵而非 registry：兩個工作區共用一個 `~/.claude` 時第二個 serve 會加入第一個、看到第一個的頁面，`cwd` 在第一個啟動時就固定 — [scripts/station.js](scripts/station.js).
 
 - port 殘留還有兩種沒處理：pid 被回收時 `live.running` 只問活著不問身分，會交出死 URL；7817 被佔用退回 ephemeral 之後永遠不再試回來 — [scripts/station.js](scripts/station.js).
 
-- `caveman.zip` 的四份文件還沒讀進 repo：axis inventory、兩份 improvement brief、一份 design-class prompt；哪些併進簡報、哪些開條目 — [docs/improvement-brief.md](docs/improvement-brief.md).
 
 ## Waiting
 
