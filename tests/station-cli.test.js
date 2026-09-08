@@ -596,12 +596,25 @@ test('a serve.json naming a dead pid does not stop a new server binding', async 
         started: '2026-09-08T00:00:00.000Z',
     }) + '\n');
     const s = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false });
+    let second = null;
     try {
         assert.notEqual(s.joined, true, 'it joined a server whose pid nobody is running');
         const after = JSON.parse(fs.readFileSync(record, 'utf8'));
         assert.equal(after.pid, process.pid, 'the new listener rewrote the record');
         assert.notEqual(after.url, 'http://127.0.0.1:7817/', 'and with its own url, not the dead one');
+
+        // The record now names this process, which is alive. Nothing else about
+        // the situation changed, so a second call joining is what separates "read
+        // the record and rejected a dead pid" from "never read the record" — the
+        // assertion above holds under both.
+        second = await serve({ configDir: f.cfg, port: 0, idleMs: 0, open: false });
+        assert.equal(second.joined, true, 'the record is not being read at all');
+        assert.equal(second.url, s.url, 'it joined something other than the server the record names');
     } finally {
+        // close() on a joined result is a no-op; on a bound one it is what keeps
+        // this test from hanging when the guard is broken, which is the state a
+        // mutation check puts it in.
+        if (second) second.close();
         s.close();
     }
 });
