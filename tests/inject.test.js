@@ -506,10 +506,11 @@ test('a write outside the hooks is in the block on the same prompt it is claimed
   assert.match(text, /touched: api\/routes\.js/);
 });
 
-test('a project profile shows up in the injected block', () => {
+test('a project profile reaches the injected rules, never a line of its own', () => {
   const root = tmp('fankeel-hook-');
-  seed(root, MINE);
-  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ guard: 'deny' }) + '\n');
+  seed(root, MINE, { stage: 'land' });
+  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'land.integration': 'merge', 'land.push': false }) + '\n');
   const ctx = context(run({ session_id: MINE, cwd: root }));
-  assert.match(ctx, /profile: guard deny/);
+  assert.doesNotMatch(ctx, /^profile:/m);
+  assert.match(ctx, /Integration — profile: land merge, no push — do that, say so, skip the menu\./);
 });

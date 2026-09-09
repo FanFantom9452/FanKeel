@@ -535,8 +535,19 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
   // and then what moving the dispatch disclosure into ALWAYS did again: `survey`
   // gave up its own copy of it and "which no flag lifts", `build` gave up "in
   // passing", ALWAYS[1] gave up a word, and nobody asked for more room.
+  // Rendered with a profile, because the profile picks which `when` rules are
+  // in the block: `judge.enabled` adds the judge rule to four stages and
+  // `land.archivePlan` picks one of two land rules, so a render with no profile
+  // measures a block no session with one produces. Seven keys set, both
+  // archive answers.
+  const PROFILES = [true, false].map((archive) => ({
+    values: { 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': archive, guard: 'ask', 'dispatch.floor': 'sonnet', 'judge.enabled': true, 'judge.model': 'fable' },
+    sources: { 'land.integration': 'project', 'land.push': 'project', 'land.archivePlan': 'project', guard: 'project', 'dispatch.floor': 'machine', 'judge.enabled': 'project', 'judge.model': 'machine' },
+    unreadable: [],
+  }));
   for (const stage of NAMES) {
-    const out = render({ mine: entry(MINE, { stage }), others: [], now: NOW });
+    const outs = PROFILES.map((profile) => render({ mine: entry(MINE, { stage }), others: [], now: NOW, profile }));
+    const out = outs.reduce((a, b) => (sizeAtReference(b) > sizeAtReference(a) ? b : a));
     const size = sizeAtReference(out);
     t.diagnostic(stage.padEnd(7) + size + ' chars at a ' + REFERENCE_ROOT + '-char root  (' + out.length + ' here)');
     assert.ok(size < 2400, stage + ' injection is ' + size + ' chars under a ' + REFERENCE_ROOT + '-character plugin root');
@@ -636,14 +647,17 @@ test('a class the registry does not recognise adds no line', () => {
   assert.doesNotMatch(text, /^class: /m);
 });
 
-test('the profile line lists what somebody set, and nothing when nobody did', () => {
+test('the profile reaches the rules, and never a line of its own', () => {
+  // The per-prompt block carries no `profile:` line — see the comment in
+  // `render()` — but the profile still decides the land rule's reading.
   const profile = { values: { 'land.integration': 'merge', 'land.push': false, guard: 'ask' }, sources: { 'land.integration': 'project', 'land.push': 'project', guard: 'builtin' }, unreadable: [] };
   const out = render({ mine: entry(MINE, { stage: 'land' }), others: [], now: NOW, profile });
-  assert.match(out, /^profile: land merge, no push$/m);
+  assert.doesNotMatch(out, /^profile:/m);
   assert.match(out, /Integration — profile: land merge, no push — do that, say so, skip the menu\./);
   const none = render({ mine: entry(MINE, { stage: 'land' }), others: [], now: NOW });
   assert.doesNotMatch(none, /^profile:/m);
   assert.match(none, /Integration — no land answer in the profile: open the menu\./);
   const bad = render({ mine: entry(MINE, { stage: 'land' }), others: [], now: NOW, profile: { values: {}, sources: {}, unreadable: ['/x/.fankeel/profile.json'] } });
-  assert.match(bad, /^profile: unreadable \/x\/\.fankeel\/profile\.json$/m);
+  assert.doesNotMatch(bad, /^profile:/m);
+  assert.match(bad, /Integration — no land answer in the profile: open the menu\./);
 });

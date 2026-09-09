@@ -84,10 +84,13 @@ last_verified: 2026-09-09
   class 分佈，印一份建議的 JSON 與 `profile set` 指令，**不寫檔**——一次確認，
   之後不問。
 - `hooks/inject.js` 與 `hooks/resume.js` 都讀 profile，`render()` 與
-  `renderResume()` 各多一個 `profile` 參數；區塊在 `project:`／`touched:` 之後、
-  `so far:` 之前多一行 `profile: land merge, no push · guard ask · judge fable`，
-  只列有值的鍵，來源不是專案的鍵加 `(machine)`。沒有任何值就沒有這一行。
-  壞檔時這一行改說 `profile: unreadable <path>`。
+  `renderResume()` 各多一個 `profile` 參數。**只有 resume 區塊**帶一行
+  `profile: land merge, no push · guard ask · judge fable`，只列有值的鍵，
+  來源不是專案的鍵加 `(machine)`；沒有任何值就沒有這一行，壞檔時改說
+  `profile: unreadable <path>`。每個 prompt 的區塊**不帶**這一行：build gate
+  （2026-09-09）量到無 profile 的區塊離 2400 只剩 3–34 字，七鍵全設的一行有
+  146 字，兩者無法並存；值要看就 `task.js profile show`，規則透過
+  `{{PROFILE_LAND}}` 與 `when` 仍讀得到它。
 - `RENDER_TOKENS` 加 `{{PROFILE_LAND}}`：land 的 menu 規則改成「profile 答了
   就照做、一行說明、不問；沒答才開 menu」。`{{PROFILE_LAND}}` 在 `rulesLines()`
   填成 `merge, no push`（有值）或空字串（無值），規則文字的兩種讀法由此決定。
@@ -95,8 +98,9 @@ last_verified: 2026-09-09
 - `task.js start` 讀生效的 `guard`：非內建預設時寫進 entry 的 `guard` 並在輸出
   多一行 `guard: deny (profile)`。這不違反不變量 6——profile 是使用者寫下的
   常設指示，`start` 是在執行它；`skills/fankeel/SKILL.md` 的不變量 6 加一句說明。
-- 2400 上限：`profile:` 行不在 `rulesLines()` 內、不計入 stage rules，但整個區塊
-  仍受 `tests/render.test.js:538` 管；land 規則改寫以**替換**為主，總長不增。
+- 2400 上限：整個區塊仍受 `tests/render.test.js:538` 管，而且那個測試改成
+  **帶七鍵 profile** 渲染（兩種 `land.archivePlan` 各一次），因為 profile 決定
+  哪些 `when` 規則在區塊裡；land 規則改寫以**替換**為主，總長不增。
   `{{PROFILE_LAND}}` 為空時規則仍要讀得通。
 
 ## 3. `fankeel-judge`：一次性判斷

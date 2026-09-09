@@ -243,4 +243,8 @@ test('the profile line appears on the short form with a profile, and not without
   const profile = { values: { guard: 'deny' }, sources: { guard: 'project' }, unreadable: [] };
   assert.match(renderResume({ mine, profile }), /^profile: guard deny$/m);
   assert.doesNotMatch(renderResume({ mine }), /^profile:/m);
+  // The one place an unreadable profile file is reported: the per-prompt block
+  // carries no profile line at all.
+  const bad = { values: {}, sources: {}, unreadable: ['/x/.fankeel/profile.json'] };
+  assert.match(renderResume({ mine, profile: bad }), /^profile: unreadable \/x\/\.fankeel\/profile\.json$/m);
 });
