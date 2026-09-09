@@ -93,3 +93,21 @@ test('run() and parseArgs() are usable directly, not only through the CLI', () =
   assert.deepEqual(findings, []);
   assert.equal(scanned.scripts, REQUIRED_CORE.length);
 });
+
+// A frontmatter `source_of_truth:` line is a citation of where truth lives,
+// not prose telling a reader to run something, so the `<plugin>/` prefix has
+// no meaning there — every script this fixture names, it names only inside
+// that line, bare, and none of the twelve may read as core-dropped or
+// bare-reference for it.
+test('a script named only in frontmatter counts for discovery and is not bare-reference', () => {
+  const dir = tmp('fankeel-skillscli-');
+  const scriptsDir = path.join(dir, 'scripts');
+  fs.mkdirSync(scriptsDir, { recursive: true });
+  for (const name of REQUIRED_CORE) fs.writeFileSync(path.join(scriptsDir, name), '');
+  fs.mkdirSync(path.join(dir, 'skills', 'one'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'skills', 'one', 'SKILL.md'),
+    '---\nname: one\nsource_of_truth: ' + REQUIRED_CORE.map((n) => 'scripts/' + n).join(', ') + '\n---\n\n# one\n');
+  const { findings } = run(dir);
+  assert.equal(findings.filter((f) => f.tag === 'bare-reference').length, 0);
+  assert.equal(findings.filter((f) => f.tag === 'core-dropped').length, 0);
+});

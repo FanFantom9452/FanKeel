@@ -77,16 +77,50 @@ function withoutLineComments(text) {
     return text.split('\n').map((line) => (/^\s*\/\//.test(line) ? '' : line)).join('\n');
 }
 
+// A SKILL.md's frontmatter `source_of_truth:` line states where truth lives —
+// a citation, not prose telling a reader to run something — so the `<plugin>/`
+// prefix has no meaning there and a bare mention inside it is not the wrong
+// shape of a reference; it is a different kind of line. It still has to count
+// for discovery (a required core script named only in frontmatter must not
+// read as core-dropped), so the block is scanned on its own, with every
+// script found in it forced `bare: false`, and blanked out of the copy the
+// rest of the file is scanned from so nothing there is counted twice. Blanked
+// rather than cut, the same reason `withoutLineComments` above blanks instead
+// of removing: findings are reported as line numbers.
+const FRONTMATTER = /^---\r?\n[\s\S]*?\r?\n---\r?(?:\n|$)/;
+
+function splitFrontmatter(text) {
+    const m = FRONTMATTER.exec(text);
+    if (!m) return { body: text, frontmatter: null };
+    const block = m[0];
+    const rest = text.slice(block.length);
+    return {
+        body: block.replace(/[^\n]/g, '') + rest,
+        frontmatter: block + rest.replace(/[^\n]/g, ''),
+    };
+}
+
 function run(root) {
     const files = scanTargets(root);
     const refs = { scripts: [], flags: [] };
     for (const file of files) {
         const rel = path.relative(root, file).split(path.sep).join('/');
         const text = fs.readFileSync(file, 'utf8');
-        const scanned = file.endsWith('.js') ? withoutLineComments(text) : text;
-        const found = references(scanned, rel);
+        if (file.endsWith('.js')) {
+            const found = references(withoutLineComments(text), rel);
+            refs.scripts.push(...found.scripts);
+            refs.flags.push(...found.flags);
+            continue;
+        }
+        const { body, frontmatter } = splitFrontmatter(text);
+        const found = references(body, rel);
         refs.scripts.push(...found.scripts);
         refs.flags.push(...found.flags);
+        if (frontmatter) {
+            const fm = references(frontmatter, rel);
+            refs.scripts.push(...fm.scripts.map((s) => Object.assign({}, s, { bare: false })));
+            refs.flags.push(...fm.flags);
+        }
     }
 
     const scriptsDir = path.join(root, 'scripts');
