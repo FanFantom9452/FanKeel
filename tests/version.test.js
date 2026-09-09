@@ -1,11 +1,11 @@
 'use strict';
 
-// The release number lives in ten files and nothing used to set them together,
-// so a release was ten edits and a miss left a skill announcing a version the
+// The release number lives in eleven files and nothing used to set them together,
+// so a release was eleven edits and a miss left a skill announcing a version the
 // plugin is not. `tests/contract.test.js` fails when they disagree; this is the
 // half that makes them agree.
 //
-// Every test here works on a copy. A script whose job is to rewrite ten files in
+// Every test here works on a copy. A script whose job is to rewrite eleven files in
 // this repository must never be pointed at this repository by its own tests.
 
 const test = require('node:test');
@@ -44,7 +44,7 @@ test('agreement is reported with the number and nothing else', () => {
 });
 
 // The failure names every file and its answer, because "they disagree" sends
-// somebody to open ten files to find the one.
+// somebody to open eleven files to find the one.
 test('a disagreement names which file says what', () => {
   const root = tree({ 'package.json': '0.33.1', 'skills/fankeel-build/SKILL.md': '0.30.0' });
   const r = version.main([], root);
@@ -95,14 +95,14 @@ test('a file with no version line reads as none, not as absent', () => {
 });
 
 // The count this repository actually has, checked against the real tree so the
-// script and `tests/contract.test.js` cannot disagree about what ten means.
-test('the real repository has the ten places the contract test counts', () => {
+// script and `tests/contract.test.js` cannot disagree about what eleven means.
+test('the real repository has the eleven places the contract test counts', () => {
   const rows = version.readAll(REAL);
-  assert.equal(rows.length, 10, rows.map((r) => r.file).join(', '));
+  assert.equal(rows.length, 11, rows.map((r) => r.file).join(', '));
   assert.equal(new Set(rows.map((r) => r.version)).size, 1);
 });
 
-// The other half of the same gap: the number was in ten places and what changed
+// The other half of the same gap: the number was in eleven places and what changed
 // between two of them was in none. Derived from the log rather than kept by hand,
 // because a hand-kept changelog is a second copy of the commits and the copy is
 // the one that goes stale.

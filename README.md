@@ -136,6 +136,37 @@ not exit on its own unless `--idle <minutes>` asks it to, takes the clear
 button on a `stale` row, and a second `serve` joins the first rather than
 binding a second port. `--detach` returns the terminal and keeps it up.
 
+### Asking a stronger model, when you decide it is worth it
+
+`/fankeel-ask` interrupts whatever stage you are in, puts one question to a
+one-shot judge running on whatever `judge.model` says — Fable unless the
+profile says otherwise — files the answer verbatim under `docs/judgements/`,
+and hands it back to the stage. It never opens the gate; that stays yours, at
+the end of the stage, as always.
+
+**Nothing in fankeel ever suggests it.** No rule mentions the judge, on any
+stage, and that absence is deliberate rather than an oversight: a line riding
+every prompt to say a stronger model is available is an invitation to defer to
+it, and the model running your session is not weak enough to need the crutch.
+The command exists for the times *you* decide it is worth the money.
+
+Fable is about twice the per-token rate of the Opus tier — `lib/prices.js`
+carries the table this repository bills against, rather than a second copy of
+it here. That ratio is why a single bounded question is the only shape that
+pays: you are buying one judgement at twice the rate, not running a session at
+twice the rate. Worth typing when
+
+- the question spans subsystems and the answer is a judgement rather than a
+  lookup — no amount of grepping settles it;
+- being wrong is expensive later, because something else gets built on top —
+  an interface, a data shape, a migration;
+- or the stage has genuinely stalled and the alternative is stopping to ask
+  you, which costs a round of your attention either way.
+
+Not worth typing when the answer is somewhere in the repository and nobody has
+looked yet, when the scope is already pinned and only the typing is left, or
+when what you want is a second opinion on something you have already decided.
+
 ## Where to find things
 
 | I want to know | Page |
@@ -302,10 +333,10 @@ shrunk, and all four were somebody re-reading the section and finding an entry
 misfiled. It is drained by being read, so the interval between readings is the
 thing to measure.
 
-`node scripts/version.js` is the release number in the ten files that carry it —
-two manifests and one frontmatter line in each of the eight skills. With a number
+`node scripts/version.js` is the release number in the eleven files that carry it —
+two manifests and one frontmatter line in each of the nine skills. With a number
 it sets them all; with `--changes` it lists the commits since the last
-`chore: <x.y.z>`, which is what a release contains. `npm test` fails when the ten
+`chore: <x.y.z>`, which is what a release contains. `npm test` fails when the eleven
 disagree, so the script is what makes them agree rather than what notices. A
 release used to be ten edits, and missing one left a skill announcing a version
 the plugin is not — right in nine places, which is how it went unnoticed.

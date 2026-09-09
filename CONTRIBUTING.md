@@ -20,7 +20,7 @@ changing it.
 | Documentation | `docs/README.md`, the hand-maintained index | Filing follows `.fankeel/map.md`: `docs` is reference, `docs/plans` is plan, `docs/decisions` is decision, `docs/reports` is report, `docs/archive` is archive. A new or renamed page gets its index row in the same change. |
 | Generated station output | `lib/station.js`, the `EMITTED` list | Never hand-edit a file `station.js serve` writes. If a name stops being emitted, remove it from the committed `.fankeel/.gitignore` by hand — appending is automatic there, removing is not. |
 | `TODO.md` | itself | One bullet per deferred thing, filed under `## Ready`, `## Needs a decision` or `## Waiting`. No detail that belongs in the file the bullet links to. |
-| Version numbers | `scripts/version.js` | Run it to move the number. It is what keeps ten files in agreement; hand-editing any one of them is how they stop agreeing. |
+| Version numbers | `scripts/version.js` | Run it to move the number. It is what keeps eleven files in agreement; hand-editing any one of them is how they stop agreeing. |
 
 ## Issue first
 

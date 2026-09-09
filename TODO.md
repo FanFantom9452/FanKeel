@@ -61,6 +61,8 @@ entry waited for actually happening. It shrank when somebody read it.
 ## Ready
 - design 的 mockup 步驟：frontend task 在 design 多一步 mockup，用 survey 的專案背景與 hallmark 類 skill；`when` 條件規則已落地，只差規則與 skill 文字 — [pipeline.md](docs/pipeline.md)、[design skill](skills/fankeel-design/SKILL.md).
 
+- collisions.md 的「Two rules」底下列了三條：`blockers()` 只有兩個防鎖死檢查，第三條靠 sessionId 過濾，是另一個機制 — [collisions.md](docs/collisions.md).
+
 ## Needs a decision
 - `dispatch.floor` 只有 skill 文字讀它：`lib/profile.js` 之外沒有程式碼強制，reader 派錯 model 不會被擋；要不要讓 `hooks/brief.js` 把 floor 注入 brief、或 `task.js` 在 dispatch 前檢查 — [subagents.md](docs/subagents.md).
 
@@ -77,6 +79,8 @@ entry waited for actually happening. It shrank when somebody read it.
 - 規則改寫成 pre-send check 形：每條配成因事實與 Bad/Good 範例、例外清單，「the constraint wins, the shape stays」；`lib/stages.js` 的規則哪幾條先改 — [簡報 §5.7](docs/improvement-brief.md#57-規則的五個成因與六個例外第三部-g1g2).
 
 - eval 例外 case 集：每條例外條款一個 case、判準是分數不該動，baseline/candidate 成對跑；`evals/` 今天一個 case，要不要照這個形擴 — [簡報 §5.10](docs/improvement-brief.md#510-評測層的五個新項目第五部-53附錄-a10a14).
+
+- `evals/` 在 docs.json 標成 `reference`，所以 [prompt.md](evals/route-typo/prompt.md) 與三個 grader 算成無契約的 reference 頁 — [documents.md](docs/documents.md).
 
 ## Waiting
 
@@ -109,3 +113,7 @@ entry waited for actually happening. It shrank when somebody read it.
 - 五個 `lib/*.js` 沒有任何 reference-role 頁面點名：`fanout.js`、`hook.js`、`report.js`、`skills.js`、`tracked.js`；另外 20 個都有 — [docs/documents.md](docs/documents.md). lifts when: docs-audit 學會報未被點名的模組. 09-09.
 
 - `evals/route-typo` 同一棵樹上分數會跳：09-08 兩次 2/3 與 3/3，09-09 一次 1/3；CI threshold 0.7 會擋掉三次裡的兩次 — [evals/route-typo/case.yaml](evals/route-typo/case.yaml). lifts when: 同一個 commit 連跑五次. 09-09.
+
+- `judge.js record` 要不要驗證這個 session 底下真的有 `fankeel-judge` 的 subagent transcript — [scripts/judge.js](scripts/judge.js). lifts when: 看到一次宣稱派了卻沒派的歸檔. 09-09.
+
+- `lib/skills.js` 的 `acceptedFlags` 讀不到 `scripts/judge.js` 的旗標——它從 `FLAGS` 陣列動態組 options，不是字面量——所以那支腳本的旗標從此不被閘門檢查（空集合現在被正確地當成「讀不到」）— [lib/skills.js](lib/skills.js). lifts when: 第二支腳本用同樣的形狀宣告旗標. 09-09.

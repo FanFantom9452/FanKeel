@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-09
+last_verified: 2026-09-10
 source_of_truth: this file is the index; each page below is its own source
 ---
 
@@ -54,6 +54,8 @@ here.
 | Why a per-project `profile.json` answers the land menu instead of the gate asking it, why in-stage questions go once to a `fankeel-judge` agent whose answer is filed under `docs/judgements/`, and why readers become a `fankeel-reader` agent that cannot call Edit | `docs/archive/2026-09-09-profile-judge-reader-design.md` — *design-intent, 繁體中文* |
 | The ten tasks that build it — `lib/profile.js` first, then `task.js profile`, `judge.js record`, the `when` rules, the render line, two agents, the station route and page, then the pages and skills | `docs/archive/2026-09-09-profile-judge-reader.md` — *design-intent, 繁體中文* |
 | The five tasks that added `lib/skills.js` and `scripts/skills-check.js`, made `eval.js` refuse an unpinned model and report what a run cost, and dated the profile evidence | [plans/2026-09-09-gate-and-controls.md](plans/2026-09-09-gate-and-controls.md) — *built, 繁體中文* |
+| Why a rule that says an in-stage question **goes to** `fankeel-judge` reads as an advertisement no matter how short the sentence, and why the fix is a skill the user calls by hand, `/fankeel-ask`, rather than anything a stage carries on its own | `docs/archive/2026-09-09-fankeel-ask-design.md` — *design-intent, 繁體中文* |
+| The seven tasks that deleted `JUDGE_RULE` and `judge.enabled`, added `/fankeel-ask` as the judge's only entry point, rewrote three reference pages and the main skill's pointer, and set the criteria for calling it in `README.md` | `docs/archive/2026-09-09-fankeel-ask.md` — *design-intent, 繁體中文* |
 | Why the station stopped being one 454 KB file rebuilt every prompt, and why its frame ships as real files rather than as template literals | `docs/archive/2026-09-08-station-shell-design.md` — *built* |
 | The six tasks that made the page a static shell over a scan, with the facets, the two views and the deletions each one carried | `docs/archive/2026-09-08-station-shell.md` — *built* |
 | Why the station is a server you start once rather than one that times out, and why `.fankeel/` should read as four names instead of a spill of station files | [plans/2026-09-08-ready-and-station-serve-design.md](plans/2026-09-08-ready-and-station-serve-design.md) — *built* |
@@ -81,6 +83,7 @@ here.
 | The five tasks that anchored four stages, mandated `**Interfaces:**`, and closed ten TODO entries | `docs/archive/2026-09-05-anchor-tiers.md` — *built* |
 | Anchors for the last three stages, and why `build`'s commit step is two words on a pointer rather than a rule | [decisions/2026-09-05-anchor-remaining-design.md](decisions/2026-09-05-anchor-remaining-design.md) |
 | Why a project answers the land menu once in `profile.json`, why in-stage questions go to a one-shot `fankeel-judge` whose answer is filed verbatim, why readers are structurally read-only, and the two placements the plan changed on the way | [decisions/2026-09-09-profile-judge-reader.md](decisions/2026-09-09-profile-judge-reader.md) — *繁體中文* |
+| Why a rule that names a stronger model invites the session's own model to defer, and why the judge is now reached only by a command the user types | [decisions/2026-09-10-judge-to-ask.md](decisions/2026-09-10-judge-to-ask.md) — *繁體中文* |
 | The two tasks that anchored `survey`, `plan` and `audit`, and brought the survey skill's step 6 to what `task.js` does | `docs/archive/2026-09-05-anchor-remaining.md` — *built* |
 | Why the fourteen entries under `## Ready` came down to nine changes, and why the temp-directory leak goes first | `docs/archive/2026-09-07-ready-fourteen-design.md` — *built* |
 | The nine tasks that close them, with the code for each written out | `docs/archive/2026-09-07-ready-fourteen.md` — *built* |

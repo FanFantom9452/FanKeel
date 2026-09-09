@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 'use strict';
 
-// The release number, in the ten places that carry it.
+// The release number, in the eleven places that carry it.
 //
 //   node version.js              what they say, and whether they agree
-//   node version.js 0.35.0       set all ten
+//   node version.js 0.35.0       set all eleven
 //   node version.js --changes    what has landed since the last release commit
 //
-// Two manifests and one frontmatter line in each of the eight skills. Nothing
+// Two manifests and one frontmatter line in each of the nine skills. Nothing
 // used to set them together, so a release was ten edits and a miss left a skill
 // announcing a version the plugin is not — wrong in a way nobody reads carefully
 // enough to catch, because the number is right in nine places.
 //
 // `tests/contract.test.js` is the other half and the one that runs unasked: it
-// fails when the ten disagree. This is what makes them agree without ten edits.
+// fails when the eleven disagree. This is what makes them agree without eleven edits.
 // Neither is enough alone — a check with no fixer is a chore, and a fixer with no
 // check is one somebody forgets to run.
 //
@@ -100,7 +100,7 @@ function writeOne(root, rel, next) {
 }
 
 // What a release would contain, which is the second half of the same gap: the
-// number was in ten places and what changed between two of them was in none.
+// number was in eleven places and what changed between two of them was in none.
 //
 // Derived rather than written down. A release commit is `chore: <x.y.z> ...`, so
 // the commits after the newest one are this release — a hand-kept changelog is a

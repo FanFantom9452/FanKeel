@@ -32,9 +32,9 @@ what the gate asks — never something to settle first and report afterwards.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| A commit with only one short paragraph of prose | `lib/stages.js:218` caps it there (`one paragraph only for what a bullet cannot hold`) — the bullets are the record; more prose is not owed. |
-| A `shipped:` list that skips files the diff touched | It is one line per new capability, not one per file — `lib/stages.js:391` (`shipped: is one line per thing someone can now do that they could not`), drawn from the ledger's completed entries — a file with no capability of its own has nothing to add there. |
-| A landed plan still sitting on disk, not yet archived | `lib/stages.js:399` archives it only `then is archived, after asking` — a plan waiting on that answer is not forgotten, it is mid-step. |
+| A commit with only one short paragraph of prose | `lib/stages.js:211` caps it there (`one paragraph only for what a bullet cannot hold`) — the bullets are the record; more prose is not owed. |
+| A `shipped:` list that skips files the diff touched | It is one line per new capability, not one per file — `lib/stages.js:380` (`shipped: is one line per thing someone can now do that they could not`), drawn from the ledger's completed entries — a file with no capability of its own has nothing to add there. |
+| A landed plan still sitting on disk, not yet archived | `lib/stages.js:388` archives it only `then is archived, after asking` — a plan waiting on that answer is not forgotten, it is mid-step. |
 
 ## 1. The full suite, on the tree you are about to integrate
 
@@ -75,16 +75,16 @@ then archived, **after asking**. An unarchived plan gets read as current.
 ## 2a. The release number, when the work is one
 
 ```
-node <plugin>/scripts/version.js              what the ten places say
+node <plugin>/scripts/version.js              what the eleven places say
 node <plugin>/scripts/version.js 0.35.0       set them
 node <plugin>/scripts/version.js --changes    what has landed since the last one
 ```
 
-Ten files carry it: two manifests and one frontmatter line in each of the eight
-skills. `npm test` fails when they disagree, so this is a fixer rather than a
-check — and the fixer matters because a release used to be ten edits, where
-missing one left a skill announcing a version the plugin is not. Wrong in the way
-nobody catches: the number is right in nine places.
+Eleven files carry it: two manifests and one frontmatter line in each of the
+nine skills. `npm test` fails when they disagree, so this is a fixer rather
+than a check — and the fixer matters because a release used to be ten edits,
+where missing one left a skill announcing a version the plugin is not. Wrong in
+the way nobody catches: the number is right in nine places.
 
 **Only when the user says this is a release.** Bumping a version is a claim about
 what shipped, which is theirs to make. `--changes` is what to show them when

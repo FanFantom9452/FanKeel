@@ -87,3 +87,9 @@ test('the two injected strings', () => {
     assert.equal(s, 'land merge, no push · judge.model opus (machine)');
     assert.equal(profile.summary({ guard: 'ask' }, { guard: 'builtin' }), '');
 });
+
+test('judge.enabled is gone; judge.model stays', () => {
+    const { values } = profile.read(dir(), null);
+    assert.equal(values['judge.enabled'], undefined);
+    assert.equal(values['judge.model'], 'fable');
+});

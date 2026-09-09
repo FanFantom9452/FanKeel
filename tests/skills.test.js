@@ -921,6 +921,18 @@ test('classify(): a flag its script does not accept is unknown-flag and fails', 
   assert.equal(hit.fail, true);
 });
 
+test('classify(): a script whose flag table could not be read raises no unknown-flag', () => {
+  const { classify } = require('../lib/skills.js');
+  const refs = {
+    scripts: [{ name: 'judge.js', file: 'skills/x/SKILL.md', line: 5, bare: false }],
+    flags: [{ flag: '--answer', file: 'skills/x/SKILL.md', line: 5, script: 'judge.js' }],
+  };
+  const accepted = new Map([['judge.js', new Set()]]);
+  const out = classify({ refs, present: new Set(['judge.js']), accepted, core: [] });
+  assert.equal(out.find((o) => o.tag === 'unknown-flag'), undefined,
+    'an empty accepted set means the table could not be read, not that the script accepts nothing');
+});
+
 test('classify(): a required core script named by no skill is core-dropped and fails', () => {
   const { classify } = require('../lib/skills.js');
   const refs = { scripts: [{ name: 'map.js', file: 'skills/x/SKILL.md', line: 1, bare: false }], flags: [] };
@@ -1013,22 +1025,23 @@ test('fankeel: the gate table names the judgement record option one relies on', 
   assert.match(text, /names the record/, 'the gate table does not say the record gets named');
 });
 
-// The injected rule is one line by design — the cap left no room for the
-// procedure design §3 describes. This is where that procedure has to live
-// now, in full: everything a one-line rule cannot carry.
-test('fankeel: the judge subsection gives the full procedure the injected rule cannot', () => {
-  const text = read('fankeel');
-  assert.match(text, /### The judge/, 'no ### The judge subsection');
-  const section = /### The judge\r?\n([\s\S]*?)(?:\r?\n## |$)/.exec(text);
-  assert.ok(section, 'the judge subsection is not where this test looks for it');
-  const body = section[1];
-  assert.match(body, /judge-<n>-brief\.md/, 'the judge subsection does not name the brief path');
-  assert.match(body, /subagent_type: fankeel-judge/, 'the judge subsection does not name subagent_type');
-  assert.match(body, /judge\.model/, 'the judge subsection does not name the profile key for its model');
+// There is no injected rule left to explain: no stage names the judge, so
+// what used to be the main skill's `### The judge` is the whole of
+// `skills/fankeel-ask/SKILL.md`. Both halves are asserted — the procedure is
+// there in full, and the main skill no longer carries a second copy of it.
+// Asserting only the first would pass a repository where both exist, which is
+// the state this move was made to leave behind.
+test('fankeel-ask: the skill carries the whole procedure, and the main skill no longer does', () => {
+  const body = read('fankeel-ask');
+  assert.match(body, /-<slug>-brief\.md/, 'the skill does not name the brief path');
+  assert.match(body, /subagent_type: fankeel-judge/, 'the skill does not name subagent_type');
+  assert.match(body, /judge\.model/, 'the skill does not name the profile key for its model');
   assert.match(body.replace(/\s+/g, ' '),
     /judge\.js record --session <id> --brief <path> --answer - --slug <slug> --model <m>/,
-    'the judge subsection does not give the record command in full');
-  assert.match(body, /never the gate/, 'the judge subsection does not carry the injected rule it explains');
+    'the skill does not give the record command in full');
+  assert.match(body, /never opens the gate/i, 'the skill does not say the gate stays with the user');
+  assert.doesNotMatch(read('fankeel'), /### The judge/,
+    'the main skill still carries the judge subsection this skill now owns');
 });
 
 // The land skill used to open the menu unconditionally. A profile that has

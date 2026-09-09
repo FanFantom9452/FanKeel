@@ -11,6 +11,11 @@ source_of_truth: lib/profile.js, scripts/judge.js, agents/fankeel-reader.md, age
 唯讀讀者為什麼還會去改檔。落地在 2026-09-09 的 `profile-judge-reader` 分支，
 spec 與十個 task 的 plan 在 `docs/archive/`。
 
+> **補記（2026-09-10）**：判官的觸發方式在隔天被推翻——四個 stage 的條件規則與
+> `judge.enabled` 都刪了，改成使用者自己叫的 `/fankeel-ask`。下面「條件規則」與
+> `fankeel-judge` 兩條裡關於「什麼時候會被叫到」的部分，讀作那天的記錄；今天的
+> 答案在[廣告與工具的差別](2026-09-10-judge-to-ask.md)。其餘照舊。
+
 ## 決定了什麼
 
 - **profile 兩層檔、三層生效值。** `<project>/.fankeel/profile.json` 進版本控制、
