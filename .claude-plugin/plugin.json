@@ -8,6 +8,7 @@
   },
   "skills": "./skills/",
   "outputStyles": "./output-styles/",
+  "agents": ["./agents/fankeel-reader.md", "./agents/fankeel-judge.md"],
   "hooks": {
     "SessionStart": [
       {

@@ -42,6 +42,10 @@
     {
       "path": ".claude/agents",
       "role": "reference"
+    },
+    {
+      "path": "agents",
+      "role": "reference"
     }
   ]
 }
