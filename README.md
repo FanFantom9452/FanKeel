@@ -344,9 +344,9 @@ into a run, contaminating the comparison. This runner's landing for each:
 
 | # | channel | landed |
 |---|---|---|
-| 1 | working directory | each run gets an empty temp directory (`fs.mkdtempSync`, `scripts/eval.js:103`) |
-| 2 | operator's settings | `--setting-sources project` (`scripts/eval.js:109`) |
+| 1 | working directory | each run gets an empty temp directory (`scripts/eval.js:103`, `fs.mkdtempSync`) |
+| 2 | operator's settings | `--setting-sources project` (`scripts/eval.js:109`, `--setting-sources`) |
 | 3 | its own always-on flag | fankeel has no persistent always-on flag, so there is nothing here to point to |
-| 4 | model version | `--model` has no default; missing it exits 1 before anything spawns (`scripts/eval.js:61`, `:173-176`) |
-| 5 | cost | `costOf()` reads `total_cost_usd`/`usage` off the result message (`lib/eval.js:91`), printed per run (`scripts/eval.js:143`) and in `--json`; `--max-budget-usd` passes through to `claude` (`scripts/eval.js:111`) |
-| 6 | tools | `--allowedTools` (`scripts/eval.js:113`) |
+| 4 | model version | `--model` has no default (`scripts/eval.js:61`, `: null`); missing it exits 1 before anything spawns (`scripts/eval.js:173`, `!a.model`) |
+| 5 | cost | `costOf()` (`lib/eval.js:91`, `costOf`) reads `total_cost_usd`/`usage` off the result message, printed per run (`scripts/eval.js:143`, `cost $`) and in `--json`; `--max-budget-usd` passes through to `claude` (`scripts/eval.js:111`, `--max-budget-usd`) |
+| 6 | tools | `--allowedTools` (`scripts/eval.js:113`, `--allowedTools`) |
