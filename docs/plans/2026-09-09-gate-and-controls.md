@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-09-09
 source_of_truth: docs/plans/2026-09-09-gate-and-controls-design.md
 ---
@@ -58,6 +58,14 @@ argv、掃描與報告文字在 `scripts/skills-check.js`，exit code 由 findin
 | `docs/improvement-brief.md` | 改。§4.2 一行補記。 |
 | `docs/sources.md` | 改。兩列，加標題與導言的計數。 |
 | `TODO.md` | 改。關掉 Ready 那條與三條已決定的。 |
+
+> **勘誤（2026-09-09，build 之後）**：上表把 `tests/skills.test.js` 記成「新」，那是錯的。
+> 這個檔在 merge-base 已經有 859 行，測的是 SKILL.md 的 frontmatter 與 description；
+> Task 1 做的是在後面 append 119 行、變成 978 行，diffstat 讀起來是 119 行新增、零刪除，
+> 而新檔與純 append 在 diffstat 上正好長得一樣。連帶的一件事記在這裡而不是修掉：
+> `lib/skills.js` 的單元測試因此坐在一個主題是 skill *文件* 的檔案裡。這個 repo 的慣例是
+> 測試檔跟著被測模組命名，而那個名字已經被佔走了；改名一個四個 commit 前就落地的模組
+> 沒有被判定值得，所以只記錄。
 
 ---
 

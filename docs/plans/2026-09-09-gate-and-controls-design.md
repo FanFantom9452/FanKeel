@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-09-09
 source_of_truth: docs/improvement-brief.md 第三部 items 6-8, §5.3, §4.2；survey 的盤點在本檔第 0 節
 ---

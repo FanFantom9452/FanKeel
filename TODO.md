@@ -107,3 +107,7 @@ entry waited for actually happening. It shrank when somebody read it.
 - station 變成設定面：會問的問題做在 HTML 上先決定，按鈕一鍵套用 profile；靜態 shell 只有 serve 模式能寫 — [簡報 §4.3](docs/improvement-brief.md#43-station-變成通用的設定面). lifts when: profile 格式定案. 09-08.
 
 - eval 進 CI：`.github/workflows` 一條，只在 push main 且限 skills/、evals/、manifest；永遠紅的 workflow 是噪音，所以等 — [README.md](README.md). lifts when: 本機 `claude plugin eval` 不再回 early access. 09-08.
+
+- 五個 `lib/*.js` 沒有任何 reference-role 頁面點名：`fanout.js`、`hook.js`、`report.js`、`skills.js`、`tracked.js`；另外 20 個都有 — [docs/documents.md](docs/documents.md). lifts when: docs-audit 學會報未被點名的模組. 09-09.
+
+- `evals/route-typo` 同一棵樹上分數會跳：09-08 兩次 2/3 與 3/3，09-09 一次 1/3；CI threshold 0.7 會擋掉三次裡的兩次 — [evals/route-typo/case.yaml](evals/route-typo/case.yaml). lifts when: 同一個 commit 連跑五次. 09-09.
