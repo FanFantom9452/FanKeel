@@ -188,8 +188,10 @@ last_verified: 2026-09-09
 - `scripts/station.js serve` 加 `POST /profile`：nonce 錯 403；body
   `scope=project|machine`、`project=<path>`、`key`、`value`；不在 `KEYS` 的鍵或值
   400；成功走 `lib/profile.write` 後 303 回原頁。`/station/health` 不變。
-- 「快速套用」按鈕：overview 卡上「把機器預設套到這個專案」一鍵——
-  就是逐鍵 POST `/profile`，不另設端點。
+- 「快速套用」按鈕：「把機器預設套到這個專案」一鍵——就是逐鍵 POST
+  `/profile`，不另設端點。位置（plan Task 8 改的，audit 2026-09-09 記）：原本寫
+  overview 的機器卡；落地是每張專案卡的標頭（`applyMachineControl` 只在 scope 為
+  `project` 時拼進去），機器卡只顯示。
 
 ## 檔案表
 

@@ -637,7 +637,8 @@ session，然後使用者就可以根據不同專案建立 profile，然後預�
 就分析完之後不問使用者。」
 
 **今天的樣子**：`skills/fankeel-land/SKILL.md` 「## 6. The menu」每次 land 都問
-merge / PR / keep；`guard` 每個 session 重新決定；class 每個 task 說一次；dispatch 的
+merge / PR / keep；`guard` 每個 session 重新決定（2026-09-09 起 `start` 讀 profile 套用，
+見下方補記）；class 每個 task 說一次；dispatch 的
 model 下限寫在 SKILL.md 散文裡。每一個都是「同一個專案、同一個答案、每次再問一次」。
 
 **想法的三個部分**：
@@ -709,8 +710,8 @@ scan 出來的 JSON；只有 `station.js serve` 才有 server，能 POST 的只�
 > §7——上面「待決」問的兩個問題都定案了。清單從哪裡來：`lib/profile.js` 的
 > `KEYS`，不是每個 stage 自己宣告。頁面的兩個身分怎麼分區：spec 寫 detail 面板，
 > plan 的 Task 8 改放 `總覽`——每個 registry 的卡後面一張專案 profile 卡，detail
-> 面板不動，不擠 stale／live 的視線；`總覽` 的機器
-> 預設卡帶一個「快速套用」鍵，逐鍵套到選定的專案。靜態頁寫不了檔那題也定案
+> 面板不動，不擠 stale／live 的視線；每張專案卡帶一個「快速套用」鍵，把機器
+> 預設逐鍵套到那個專案（鍵不在機器卡上，那張卡只顯示）。靜態頁寫不了檔那題也定案
 > 了：`serve` 模式下每列是 `<select>` 加按鈕、POST 到 `/profile`；靜態頁同
 > 一列印一句可複製的 `task.js profile set` 指令。兩種讀法都在
 > [station.md](station.md) 的「Setting a profile from the page」一節。

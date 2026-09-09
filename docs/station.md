@@ -329,9 +329,11 @@ each registry's card ends with one card per project it holds, and the
 machine defaults get the same shape on their own card after the registry
 notes. A card is one row per key in `profileKeys` (`lib/profile.js`'s
 `KEYS`), each showing the effective value, which layer it came from, and the
-values that key allows. The quick-apply button on the machine card walks the
-machine's keys onto the selected project one write at a time rather than
-opening a second endpoint for it. (The design put the project card in the
+values that key allows. The quick-apply button sits on each project's card,
+not on the machine card — `applyMachineControl` is spliced in only when the
+card's scope is `project` — and walks the machine's keys onto that project one
+write at a time rather than opening a second endpoint for it. (The design put
+the project card in the
 detail pane; the plan's Task 8 moved it into the registry card so the two
 identities of the page stay on the two pages they already had.)
 

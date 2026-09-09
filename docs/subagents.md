@@ -48,8 +48,9 @@ question at a time, survey's class, plan's split, build's stop-and-ask. Four
 stages — survey, design, plan, build — carry the same one-line rule for it on
 their own `when` rather than in `ALWAYS`, so it only rides a prompt when the
 profile's `judge.enabled` holds (`lib/stages.js:118-140`, `JUDGE_RULE`).
-`hooks/brief.js`'s `renderBrief` gives it one line the reader's brief does not
-carry, when `payload.agent_type` is `fankeel-judge`: *answer once; the parent
+`lib/render.js`'s `renderBrief`, which `hooks/brief.js` calls, gives it one
+line the reader's brief does not carry, when `payload.agent_type` is
+`fankeel-judge`: *answer once; the parent
 will not message you again.*
 
 Its answer does not stay in the judge's own context — the parent files it,
