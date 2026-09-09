@@ -68,9 +68,12 @@ is the one that asks git that.
 
 ```
 node <plugin>/scripts/map.js [--root <dir>]
+node <plugin>/scripts/map.js --print          # read it without writing it
 ```
 
-It writes `.fankeel/map.md` and prints a summary. **Read the file, not only the
+It writes `.fankeel/map.md` and prints a summary. `--print` puts the map itself
+on stdout and writes nothing — which is the one a reviewer told to touch
+nothing can run. **Read the file, not only the
 summary.** What it holds that nothing else does: the signpost file's navigation
 table, the filing declared in `docs.json`, what each directory is for, and every
 page's declared status.

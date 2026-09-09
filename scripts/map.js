@@ -18,12 +18,20 @@ const MAP_REL = '.fankeel/map.md';
 // A declared flag given no value comes back `true` rather than a string, so the
 // default is restored by type; `strict: false` keeps an unknown flag silent.
 function parseArgs(argv) {
-    const { values } = parseArgv({ args: argv, strict: false, allowPositionals: true, options: { root: { type: 'string' } } });
-    return { root: registry.resolveRoot(typeof values.root === 'string' ? values.root : undefined) };
+    const { values } = parseArgv({ args: argv, strict: false, allowPositionals: true, options: { root: { type: 'string' }, print: { type: 'boolean' } } });
+    return {
+        root: registry.resolveRoot(typeof values.root === 'string' ? values.root : undefined),
+        print: values.print === true,
+    };
 }
 
 function main(argv) {
-    const { root } = parseArgs(argv);
+    const { root, print } = parseArgs(argv);
+
+    // Read without writing. A reviewer told to change nothing can still ask
+    // what the project's own documents say about itself.
+    if (print) return buildMap(root);
+
     const stateDir = path.join(root, '.fankeel');
     fs.mkdirSync(stateDir, { recursive: true });
     // The map is generated, so committing it would put a file in review that

@@ -58,3 +58,22 @@ test('it reports what it found rather than only that it wrote a file', () => {
   const out = run(dir);
   assert.match(out, /1 planned, not built/);
 });
+
+// A reviewer told to touch nothing still needs to read the map. Without a
+// print-only mode the only way to read it is to write it: a build reviewer
+// wrote .fankeel/map.md twice on 2026-09-08 doing exactly that.
+test('--print writes nothing and puts the map on stdout', () => {
+  const dir = root();
+  fs.writeFileSync(path.join(dir, 'CLAUDE.md'), '| a | b |\n|---|---|\n| 1 | 2 |\n');
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--print'], { encoding: 'utf8' });
+  assert.match(out, /status: generated/);
+  assert.ok(!fs.existsSync(path.join(dir, '.fankeel', 'map.md')), 'a map was written');
+  assert.ok(!fs.existsSync(path.join(dir, '.fankeel', '.gitignore')), 'a .gitignore was written');
+});
+
+test('without --print the map is still written', () => {
+  const dir = root();
+  fs.writeFileSync(path.join(dir, 'CLAUDE.md'), '| a | b |\n|---|---|\n| 1 | 2 |\n');
+  run(dir);
+  assert.ok(fs.existsSync(path.join(dir, '.fankeel', 'map.md')), 'no map written');
+});
