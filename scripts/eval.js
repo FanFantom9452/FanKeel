@@ -2,7 +2,7 @@
 'use strict';
 // Run one eval case with `claude -p`, today, on this tree.
 //
-//   node scripts/eval.js <case dir> [--model <m>] [--runs <n>] [--plugin-dir <dir>] [--json <path>] [--keep-temp]
+//   node scripts/eval.js <case dir> --model <m> [--runs <n>] [--plugin-dir <dir>] [--json <path>] [--keep-temp] [--max-budget-usd <n>]
 //
 // `claude plugin eval` is the runner these case files are written for, and it
 // is early access — on a machine where it answers "currently in early access"
@@ -27,13 +27,14 @@ const ROOT = path.join(__dirname, '..');
 
 function usage() {
     return [
-        'usage: node scripts/eval.js <case dir> [--model <m>] [--runs <n>] [--plugin-dir <dir>] [--json <path>] [--keep-temp]',
+        'usage: node scripts/eval.js <case dir> --model <m> [--runs <n>] [--plugin-dir <dir>] [--json <path>] [--keep-temp] [--max-budget-usd <n>]',
         '',
         '  runs claude -p once per run in a scaffolded temp directory, with only',
         '  --plugin-dir loaded (--setting-sources project), and grades the',
         '  stream-json transcript against <case dir>/graders/*.md.',
-        '  --model defaults to sonnet; --runs to the case\'s `runs`, else 1;',
-        '  --plugin-dir to this repository. Any failed grader exits 1.',
+        '  --model is required, no default; --runs to the case\'s `runs`, else 1;',
+        '  --plugin-dir to this repository; --max-budget-usd passes through to',
+        '  claude as-is. Any failed grader exits 1.',
     ].join('\n');
 }
 
@@ -48,16 +49,21 @@ function parseArgs(argv) {
             'plugin-dir': { type: 'string' },
             json: { type: 'string' },
             'keep-temp': { type: 'boolean' },
+            'max-budget-usd': { type: 'string' },
             help: { type: 'boolean' },
         },
     });
     return {
         dir: positionals[0] || null,
-        model: typeof values.model === 'string' ? values.model : 'sonnet',
+        // 沒有預設。釘住的 model 是六條污染通道的第四條：沒釘的話一次模型 rollout 讀起來
+        // 會像 plugin 回歸，而那是量測本身壞掉、不是被量的東西壞掉。README 與
+        // behaviour-eval 計畫裡的用法本來就都帶 --model，所以這改的是契約，不是用法。
+        model: typeof values.model === 'string' ? values.model : null,
         runs: typeof values.runs === 'string' ? Number(values.runs) : null,
         pluginDir: typeof values['plugin-dir'] === 'string' ? values['plugin-dir'] : ROOT,
         json: typeof values.json === 'string' ? values.json : null,
         keepTemp: Boolean(values['keep-temp']),
+        maxBudgetUsd: typeof values['max-budget-usd'] === 'string' ? values['max-budget-usd'] : null,
         help: Boolean(values.help),
     };
 }
@@ -96,12 +102,13 @@ function spawnClaude(args, opts) {
 function runOnce(c, opts) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-eval-'));
     const meta = c.prompt.meta;
-    const out = { graders: [], toolCalls: 0, lastMessage: '', exit: null, error: null, dir };
+    const out = { graders: [], toolCalls: 0, lastMessage: '', exit: null, error: null, cost: null, dir };
     try {
         out.error = scaffold(dir, c.scaffold);
         if (out.error) return out;
         const args = ['-p', '--output-format', 'stream-json', '--verbose', '--setting-sources', 'project',
             '--plugin-dir', opts.pluginDir, '--max-turns', String(meta.max_turns || 10), '--model', opts.model];
+        if (opts.maxBudgetUsd) args.push('--max-budget-usd', opts.maxBudgetUsd);
         const tools = ev.listValue(meta.allowed_tools);
         if (tools.length) args.push('--allowedTools', tools.join(','));
         const r = spawnClaude(args, {
@@ -116,6 +123,7 @@ function runOnce(c, opts) {
         else if (r.status !== 0) out.error = 'claude exited ' + r.status + ': ' + (r.stderr || '').trim().slice(0, 300);
         const lines = String(r.stdout || '').split(/\r?\n/).filter(Boolean);
         out.raw = lines;
+        out.cost = ev.costOf(lines);
         const run = { calls: ev.toolCalls(lines), last: ev.lastMessage(lines), texts: ev.assistantText(lines) };
         out.toolCalls = run.calls.length;
         out.lastMessage = run.last;
@@ -132,6 +140,7 @@ function render(c, runs) {
     let graded = 0;
     runs.forEach((r, i) => {
         if (r.error) lines.push(c.name + ' run ' + (i + 1) + ' error — ' + r.error);
+        if (r.cost) lines.push(c.name + ' run ' + (i + 1) + ' cost $' + r.cost.costUsd.toFixed(4));
         for (const g of r.graders) {
             const word = g.pass === null ? 'skipped' : g.pass ? 'pass' : 'fail';
             lines.push(c.name + ' run ' + (i + 1) + ' ' + g.name + ' ' + word + ' — ' + g.detail);
@@ -161,11 +170,15 @@ function main(argv) {
     try { c = ev.parseCase(path.resolve(a.dir)); } catch (e) { console.error('eval.js: ' + e.message); return 1; }
     const n = a.runs === null ? Number(c.prompt.meta.runs || 1) : a.runs;
     if (!(n >= 1)) { console.error('eval.js: runs must be at least 1, got ' + n); return 1; }
+    if (!a.model) {
+        console.error('eval.js: --model is required — an unpinned model would fall back silently, and a model rollout would then read as a plugin regression instead of the model change it is\n' + usage());
+        return 1;
+    }
     const runs = [];
     for (let i = 0; i < n; i += 1) runs.push(runOnce(c, a));
     console.log(render(c, runs));
     if (a.json) {
-        const doc = { case: c.name, model: a.model, pluginDir: a.pluginDir, runs: runs.map((r) => ({ graders: r.graders, toolCalls: r.toolCalls, lastMessage: r.lastMessage, exit: r.exit, error: r.error, raw: r.raw || [] })) };
+        const doc = { case: c.name, model: a.model, pluginDir: a.pluginDir, runs: runs.map((r) => ({ graders: r.graders, toolCalls: r.toolCalls, lastMessage: r.lastMessage, exit: r.exit, error: r.error, cost: r.cost, raw: r.raw || [] })) };
         fs.writeFileSync(a.json, JSON.stringify(doc, null, 2) + '\n');
     }
     return verdict(runs);

@@ -338,3 +338,15 @@ whole transcript the official runner means by it — a pattern that expects a
 tool call belongs to `tool_used`. Any failed grader exits 1. With early access:
 
     claude plugin eval . --json results.json --threshold 0.7 --model claude-sonnet-5 --no-publish
+
+`i-have-adhd`'s eval runner names six channels an operator's own world can leak
+into a run, contaminating the comparison. This runner's landing for each:
+
+| # | channel | landed |
+|---|---|---|
+| 1 | working directory | each run gets an empty temp directory (`fs.mkdtempSync`, `scripts/eval.js:103`) |
+| 2 | operator's settings | `--setting-sources project` (`scripts/eval.js:109`) |
+| 3 | its own always-on flag | fankeel has no persistent always-on flag, so there is nothing here to point to |
+| 4 | model version | `--model` has no default; missing it exits 1 before anything spawns (`scripts/eval.js:61`, `:172-175`) |
+| 5 | cost | `costOf()` reads `total_cost_usd`/`usage` off the result message (`lib/eval.js:91`), printed per run (`scripts/eval.js:143`) and in `--json`; `--max-budget-usd` passes through to `claude` (`scripts/eval.js:111`) |
+| 6 | tools | `--allowedTools` (`scripts/eval.js:113`) |
