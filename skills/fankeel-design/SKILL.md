@@ -35,6 +35,7 @@ screen. A second approach is a catalogue, not more design.
 | Only one approach presented, no rejected alternative shown | `lib/stages.js:252` calls a second one a catalogue (`not a catalogue`) — trade-offs on the one approach chosen are the design, not a comparison table. |
 | The map check returning `no conflict` with nothing else said | `lib/stages.js:249` allows exactly that (`say you checked and found none`) — a stated absence is a complete answer, not a check cut short. |
 | Config, error handling or abstraction the ask never requested, left out | `lib/stages.js:247` requires it (`Cut whatever the stated ask does not require`) — the smaller design is the correct one, not an unfinished one. |
+| A design with no mockup | `lib/stages.js:255` puts the step behind a condition (`when: 'design.mockup'`) — a project with no front end never reaches it, and on one that does, whether this task touches a screen is step 3's per-task judgement. |
 
 ## The gate never scales down
 
@@ -42,6 +43,9 @@ The artefact scales with the task. A bounded change gets a few sentences in chat
 an architectural one gets a spec file. **The approval does not scale.** "Too
 simple to need a design" means a short design, not no design — simple tasks are
 where unexamined assumptions cause the most wasted work.
+
+Where there is a mockup, the page is what the gate approves — the object of the
+approval, not an attachment to it.
 
 Presenting a design and starting work in the same message is skipping the gate.
 
@@ -65,7 +69,32 @@ Cut ruthlessly: no features beyond the ask, no abstraction for single-use code,
 no configurability nobody requested, no error handling for impossible states. If
 two hundred lines could be fifty, it should be fifty.
 
-### 3. The success criterion
+### 3. The mockup — frontend work only
+
+Decide per task whether this is frontend work — whether the change puts
+something on a screen a person looks at. Say which way you decided, because it
+is a judgement someone can overturn, like `class`. `design.mockup` answers a
+different question: whether the project has a front end at all.
+
+The artefact is one HTML page covering every screen the approach changes, at
+`.fankeel/build/<date>-<topic>/mockup.html`, uncommitted. The design file, the
+plan and the plan's ledger all take that stem, so where a ledger appears later
+the page is already beside it. A `bounded` task gets no plan and no ledger, and
+still takes the stem from the date and the topic.
+
+Dispatch it as `implementer, <the value of design.mockup>`. Visual design does
+not take `dispatch.floor`, which is why the key carries a model at all. Name one
+installed design skill in the prompt — `taste-skill:taste-skill`,
+`taste-skill:soft-skill`, `taste-skill:minimalist-skill`,
+`frontend-design:frontend-design`, `ui-ux-pro-max:ui-ux-pro-max` or
+`impeccable:impeccable` — one, not the list. **No profile value reaches a
+subagent**, so the model and the output path have to be written into the prompt
+by the session dispatching it.
+
+Then the path goes on the `spec:` line, and option one's description points at
+the page. The gate approves the page, not the paragraph.
+
+### 4. The success criterion
 
 **Name the test that fails now and passes after.** "Make it work" is not a
 criterion — weak criteria are what turn an independent build loop into constant
@@ -92,7 +121,7 @@ sentence the redesign could not falsify.
 If a simpler approach exists, or the ask itself looks wrong, say so before
 building it.
 
-### 4. Check against the map
+### 5. Check against the map
 
 Read `.fankeel/map.md`. Two questions:
 
@@ -104,7 +133,7 @@ This is the step with no counterpart anywhere else. A spec self-review checks th
 spec against itself; a design that quietly contradicts a page marked current is a
 contradiction that ships.
 
-### 5. Present in sections
+### 6. Present in sections
 
 Scale each section to its complexity — a few sentences if straightforward, up to
 200–300 words if nuanced. Ask after each whether it holds. Cover architecture,
@@ -121,7 +150,7 @@ defined interfaces. For each: what does it do, how is it used, what does it
 depend on? If someone cannot answer those without reading its internals, the
 boundaries need work.
 
-### 6. The spec — `architectural` only
+### 7. The spec — `architectural` only
 
 `docs/plans/YYYY-MM-DD-<topic>-design.md`, with `status: design-intent`
 frontmatter, committed.
@@ -129,13 +158,13 @@ frontmatter, committed.
 A design is not filed as reference: it describes what is meant to be, and the
 documentation sweep grades reference pages as claims about what is.
 
-### 7. Self-review, then a person reads it
+### 8. Self-review, then a person reads it
 
 1. **Placeholders** — any TBD, incomplete section, or vague requirement. Fix them.
 2. **Internal consistency** — do sections contradict each other?
 3. **Scope** — focused enough for one plan, or does it need decomposing?
 4. **Ambiguity** — could a requirement be read two ways? Pick one, make it explicit.
-5. **Against the project** — step 4 again, now against the written text.
+5. **Against the project** — step 5 again, now against the written text.
 
 Then ask the user to read it, and wait.
 

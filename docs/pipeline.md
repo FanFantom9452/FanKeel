@@ -322,7 +322,10 @@ by tier. Each stage's own `when` array holds `{ when, text }` entries;
 `rulesFor(stage, subs, values)` filters them with `holds(when, values)`
 against the profile's effective values, a leading `!` on `when` negating the
 key. `ALWAYS_WHEN` is the same shape for a rule meant to ride every stage —
-exported and empty today. `land`'s archive-plan rule takes the other shape
+exported and empty today. Two stages use the mechanism today, in the two
+shapes it supports. `design`'s mockup rule is the plain filter: one entry,
+keyed `design.mockup`, in the block only when a frontend project names a
+model and gone at `false`. `land`'s archive-plan rule takes the other shape
 instead of a filter: two `when` entries, keyed `land.archivePlan` and
 `!land.archivePlan`, so the sentence itself reads differently depending on
 whether the profile already answered, rather than a token filling a blank
@@ -412,7 +415,7 @@ route, and nothing downgrades it.
 
 The gate never scales down. What scales is the artefact — a short design in chat
 for a bounded change, a committed spec for an architectural one — and the two
-paths diverge only at step 6.
+paths diverge only at step 7.
 
 ```mermaid
 flowchart TD
@@ -420,28 +423,42 @@ flowchart TD
     A0{"several independent<br/>subsystems in the ask?"}
     A1["say so first. Decompose, and give<br/>each piece its own cycle"]
     B["<b>2 · one approach</b><br/>trade-offs, lead with it and say why<br/><i>no abstraction for single-use code,<br/>no error handling for impossible states</i>"]
-    C["<b>3 · the success criterion</b><br/>the test that fails now and passes<br/>after. 'Make it work' is not one"]
-    D["<b>4 · check against the map</b><br/>does this contradict a page<br/>the map lists as current?"]
-    E["<b>5 · present in sections</b><br/>architecture, components, data flow,<br/>errors, testing — approve each"]
+    B0{"design.mockup names a model,<br/>and this task touches a screen?"}
+    B1["<b>3 · the mockup</b><br/>one page at the model the key names,<br/>under .fankeel/build/, beside the ledger<br/><i>the gate approves the page, not the paragraph</i>"]
+    C["<b>4 · the success criterion</b><br/>the test that fails now and passes<br/>after. 'Make it work' is not one"]
+    D["<b>5 · check against the map</b><br/>does this contradict a page<br/>the map lists as current?"]
+    E["<b>6 · present in sections</b><br/>architecture, components, data flow,<br/>errors, testing — approve each"]
     F{"class?"}
     J["design happens in chat.<br/>No spec file, no plan file."]
-    G["<b>6 · the spec</b><br/>docs/plans/&lt;date&gt;-&lt;topic&gt;-design.md<br/>status: design-intent, committed"]
-    H["<b>7 · self-review</b><br/>placeholders · internal consistency ·<br/>scope · ambiguity · against the project"]
+    G["<b>7 · the spec</b><br/>docs/plans/&lt;date&gt;-&lt;topic&gt;-design.md<br/>status: design-intent, committed"]
+    H["<b>8 · self-review</b><br/>placeholders · internal consistency ·<br/>scope · ambiguity · against the project"]
     I["a person reads it, and you wait"]
 
     A --> A0
     A0 -- yes --> A1
     A0 -- no --> B
-    B --> C --> D --> E --> F
+    B --> B0
+    B0 -- no --> C
+    B0 -- yes --> B1
+    B1 --> C
+    C --> D --> E --> F
     F -- "bounded" --> J
     F -- "architectural" --> G
     G --> H
     H --> I
 ```
 
-Step 4 has no counterpart anywhere else either. A self-review checks a document
+Step 5 has no counterpart anywhere else either. A self-review checks a document
 against itself; only this step checks it against the project. A design that
 quietly contradicts a page marked current is a contradiction that ships.
+
+The diamond before step 3 is a profile key. `design.mockup` — `false` by
+default — names a model for a frontend project that wants one;
+naming it switches on a `when` rule that gets a mockup built first: one page
+at the model the key names, saved under `.fankeel/build/`, its path on the
+same `spec:` line the rest of this stage's output already carries. The gate
+then approves the page, not the paragraph. Left `false`, the rule holds no
+text at all, so a project with no frontend pays nothing for it.
 
 ### plan
 
