@@ -193,7 +193,7 @@ test('a line number past the end of a real file is a finding', () => {
     'lib/a.js': 'one\ntwo\n',
   }), 'flat');
   const { out } = run(root);
-  assert.match(out, /past-end: .*lib\/a\.js:900 but the file ends at 3/);
+  assert.match(out, /past-end: .*lib\/a\.js:900 but the file ends at 2/);
 });
 
 // A plan describes what does not exist yet. Running this against a real

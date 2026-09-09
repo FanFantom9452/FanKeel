@@ -205,3 +205,24 @@ test('a plan-role page with a moved citation is silent', () => {
   assert.equal(scanned.findings.filter((f) => f.tag === 'moved').length, 0);
   assert.equal(scanned.unquoted.length, 0);
 });
+
+// `linesOf` split on newline, so a file ending in one counted a phantom last
+// line: a 490-line file reported "ends at 491", and a reference to line 491
+// was allowed. Scanned across the whole repository with the fix applied, no
+// existing reference changed verdict — only the number in the message — so
+// this is pinned on a fixture rather than on a document.
+test('a reference one line past the end is past-end', () => {
+  const dir = tmp('fankeel-pastend-');
+  fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'docs'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'lib'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.fankeel', 'docs.json'),
+    JSON.stringify({ buckets: [{ path: 'docs', role: 'reference' }] }));
+  fs.writeFileSync(path.join(dir, 'lib', 'thing.js'), 'a\nb\nc\n');
+  fs.writeFileSync(path.join(dir, 'docs', 'page.md'), 'see `lib/thing.js:4`\n');
+
+  const out = scan(dir);
+  const past = out.findings.filter((f) => f.tag === 'past-end');
+  assert.equal(past.length, 1, 'line 4 of a three-line file was not flagged');
+  assert.match(past[0].what, /ends at 3$/);
+});

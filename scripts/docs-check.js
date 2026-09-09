@@ -137,7 +137,12 @@ function linesOf(root, rel) {
     const key = root + '\0' + rel;
     if (!LINES.has(key)) {
         const text = readFile(root, rel);
-        LINES.set(key, text === null ? null : text.split('\n'));
+        // A file ending in a newline splits into a trailing empty element that
+        // is not a line. Counting it let a reference to the line after the last
+        // one pass, and made every "ends at N" one too many.
+        const l = text === null ? null : text.split('\n');
+        if (l !== null && l.length && l[l.length - 1] === '') l.pop();
+        LINES.set(key, l);
     }
     return LINES.get(key);
 }
