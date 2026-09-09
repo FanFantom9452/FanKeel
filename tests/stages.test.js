@@ -661,7 +661,9 @@ test('design, plan, build and verify carry the anchors the design paid for', () 
   assert.match(rules('design'), /Read the fankeel-design skill on entry: spec file, self-review\./);
   assert.match(templateFor('design'), /^spec: <the docs\/plans path — architectural — or "in chat">$/m);
   assert.match(rules('plan'), /carries `\*\*Files:\*\*`, `\*\*Interfaces:\*\*` and a `\*\*Dispatch:\*\*` line/);
-  assert.match(rules('build'), /Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, resume the fixer, commit shape\./);
+  // `, resume the fixer` was cut for the render cap (once `{{JUDGE}}` started
+  // substituting to a real path and design gained the `<plugin> = ...` line).
+  assert.match(rules('build'), /Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape\./);
   assert.doesNotMatch(rules('build'), /skill has loop and scan/);
   assert.match(templateFor('verify'), /- adversary: <the claim it defeated → build, or "nothing">/);
 });
@@ -682,7 +684,8 @@ test('survey, plan, audit and build carry the anchors the second design paid for
   assert.match(rules('audit'), /Read the fankeel-audit skill on entry: todo-check after a move\./);
   assert.doesNotMatch(rules('audit'), /A dead path is a bug/);
   assert.match(templateFor('audit'), /^pairs disagree: <where, or omit this line>$/m);
-  assert.match(rules('build'), /resume the fixer, commit shape\./);
+  // `resume the fixer` was cut for the render cap (same round as line 664 above).
+  assert.match(rules('build'), /five rounds, commit shape\./);
 });
 
 test('a when rule shows on its key, hides on its absence, and negates with !', () => {
