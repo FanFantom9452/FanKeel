@@ -200,13 +200,6 @@ test('the survey rule names a runnable path, not a placeholder', () => {
   assert.ok(require('node:fs').existsSync(SURVEY_SCRIPT), SURVEY_SCRIPT + ' does not exist');
 });
 
-// The root is stated once, and only where it buys something. `design` used to
-// run no script at all, which is what made it the cheap illustration of the
-// "not at all" half — but the judge rule now sits in its `when` by default
-// (`judge.enabled` is on unless a profile turns it off), and once `{{JUDGE}}`
-// resolves to a real path, design carries the root like every other stage. The
-// loop above still proves the invariant for all seven; this only pins design's
-// changed case rather than the case that no longer exists.
 test('the plugin root is stated once per injection, and not at all when no rule needs it', () => {
   for (const stage of NAMES) {
     const out = render({ mine: entry(MINE, { stage }), others: [], now: NOW });
@@ -214,8 +207,6 @@ test('the plugin root is stated once per injection, and not at all when no rule 
     const names = out.includes(PLUGIN_MARK + '/scripts/');
     assert.equal(stated, names ? 1 : 0, stage + ' states the root ' + stated + ' times');
   }
-  const design = render({ mine: entry(MINE, { stage: 'design' }), others: [], now: NOW });
-  assert.ok(design.includes(PLUGIN_ROOT), 'design names the judge script by default now, and should carry the root');
 });
 
 test('the land rule names a runnable todo-check path, not a placeholder', () => {
@@ -536,13 +527,12 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
   // gave up its own copy of it and "which no flag lifts", `build` gave up "in
   // passing", ALWAYS[1] gave up a word, and nobody asked for more room.
   // Rendered with a profile, because the profile picks which `when` rules are
-  // in the block: `judge.enabled` adds the judge rule to four stages and
-  // `land.archivePlan` picks one of two land rules, so a render with no profile
-  // measures a block no session with one produces. Seven keys set, both
-  // archive answers.
+  // in the block: `land.archivePlan` picks one of two land rules, so a render
+  // with no profile measures a block no session with one produces. Six keys
+  // set, both archive answers.
   const PROFILES = [true, false].map((archive) => ({
-    values: { 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': archive, guard: 'ask', 'dispatch.floor': 'sonnet', 'judge.enabled': true, 'judge.model': 'fable' },
-    sources: { 'land.integration': 'project', 'land.push': 'project', 'land.archivePlan': 'project', guard: 'project', 'dispatch.floor': 'machine', 'judge.enabled': 'project', 'judge.model': 'machine' },
+    values: { 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': archive, guard: 'ask', 'dispatch.floor': 'sonnet', 'judge.model': 'fable' },
+    sources: { 'land.integration': 'project', 'land.push': 'project', 'land.archivePlan': 'project', guard: 'project', 'dispatch.floor': 'machine', 'judge.model': 'machine' },
     unreadable: [],
   }));
   for (const stage of NAMES) {
@@ -551,6 +541,8 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
     const size = sizeAtReference(out);
     t.diagnostic(stage.padEnd(7) + size + ' chars at a ' + REFERENCE_ROOT + '-char root  (' + out.length + ' here)');
     assert.ok(size < 2400, stage + ' injection is ' + size + ' chars under a ' + REFERENCE_ROOT + '-character plugin root');
+    assert.ok(!/fankeel-judge/.test(out), stage + ' injection still names fankeel-judge');
+    assert.ok(!/fankeel-judge/.test(rulesFor(stage).join(' ')), stage + ' rules still name fankeel-judge');
     if (stage === 'survey') assert.match(rulesFor('survey').join(' '), /one workflow, every path:line checked/,
       'survey must name the check its readers run before returning');
     assert.match(templateFor('land'), /^suite: <green>$/m,

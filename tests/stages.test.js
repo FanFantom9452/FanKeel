@@ -184,8 +184,7 @@ test('stage lookup is case-insensitive', () => {
 
 test('rulesFor returns the always-on rules plus the stage rules', () => {
   // An explicit empty profile isolates this from the ALWAYS_WHEN layer, which
-  // is its own test below; the default (no third argument) is the builtin
-  // layer, where judge.enabled is on and adds a rule this count does not want.
+  // is its own test below.
   const rules = rulesFor('build', null, {});
   for (const a of ALWAYS) assert.ok(rules.includes(a));
   for (const r of byName('build').rules) assert.ok(rules.includes(r));
@@ -690,30 +689,28 @@ test('survey, plan, audit and build carry the anchors the second design paid for
 
 test('a when rule shows on its key, hides on its absence, and negates with !', () => {
   const { rulesFor, holds, ALWAYS_WHEN } = require('../lib/stages.js');
-  assert.equal(holds('judge.enabled', { 'judge.enabled': true }), true);
-  assert.equal(holds('judge.enabled', { 'judge.enabled': false }), false);
-  assert.equal(holds('judge.enabled', {}), false);
   assert.equal(holds('!land.archivePlan', {}), true);
   assert.equal(holds(undefined, {}), true);
-  // The judge rule lives on the four stages that ask the user something
-  // mid-stage (survey, design, plan, build), not on `land` and not in
-  // ALWAYS_WHEN, which stays empty so the mechanism and its export stay.
+  // ALWAYS_WHEN stays empty so the mechanism and its export stay.
   assert.deepEqual(ALWAYS_WHEN, []);
-  const on = rulesFor('design', null, { 'judge.enabled': true });
-  const off = rulesFor('design', null, { 'judge.enabled': false });
-  assert.ok(on.some((r) => r.includes('fankeel-judge')));
-  assert.ok(!off.some((r) => r.includes('fankeel-judge')));
   assert.ok(!rulesFor('land').some((r) => r.includes('fankeel-judge')), 'land is not one of the stages that dispatches a mid-stage question');
   const archiveOn = rulesFor('land', null, { 'land.archivePlan': true });
   const archiveOff = rulesFor('land', null, {});
   assert.ok(archiveOn.some((r) => r.includes('the profile said so')));
   assert.ok(archiveOff.some((r) => r.includes('after asking')));
-  assert.ok(rulesFor('design').some((r) => r.includes('fankeel-judge')),
-    'no third argument is the builtin layer, where judge.enabled is on');
 });
 
 test('land carries the profile token and survey names the reader agent', () => {
   const { byName } = require('../lib/stages.js');
   assert.ok(byName('land').rules.some((r) => r.includes('{{PROFILE_LAND}}')));
   assert.ok(byName('survey').rules.join(' ').includes('`fankeel-reader`'));
+});
+
+test('no stage advertises the judge in the builtin layer', () => {
+    const { TOKENS } = require('../lib/stages.js');
+    for (const stage of ['survey', 'design', 'plan', 'build']) {
+        const rules = rulesFor(stage, TOKENS);
+        assert.ok(!rules.some((r) => /fankeel-judge/.test(r)),
+            stage + ' still names fankeel-judge');
+    }
 });
