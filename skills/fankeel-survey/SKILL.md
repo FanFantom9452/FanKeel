@@ -33,8 +33,8 @@ which is the one thing option two may never be — so the gate is asked once.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| Code that does not match a `status: design-intent` page | That page describes what the system is meant to become, not what it is — `lib/stages.js:226` lists such pages as `planned but not built`, and code catching up to them later is the page doing its job. |
-| A nonzero `skipped:` count in the scan report | Files with no declaration pattern, over the size cap, or otherwise unreadable are named or counted, never silently dropped — `lib/stages.js:230` (`its counts are only reported`). |
+| Code that does not match a `status: design-intent` page | That page describes what the system is meant to become, not what it is — `lib/stages.js:219` lists such pages as `planned but not built`, and code catching up to them later is the page doing its job. |
+| A nonzero `skipped:` count in the scan report | Files with no declaration pattern, over the size cap, or otherwise unreadable are named or counted, never silently dropped — `lib/stages.js:223` (`its counts are only reported`). |
 | A page dated by git rather than by anyone reading it | An `undeclared` page carries no frontmatter contract, so its date is whatever git last touched, not proof anyone verified it — a whitespace fix moves the date and confirms nothing. |
 
 ## The six steps
