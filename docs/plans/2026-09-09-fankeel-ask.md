@@ -143,7 +143,9 @@ last_verified: 2026-09-09
 5. 寫明沒有 active 任務時 `judge.js record` 會拒絕（`scripts/judge.js` 的 `No active entry`），skill 不自己再擋一次。
 6. `git add skills/fankeel-ask/SKILL.md` —— `tests/source.test.js` 讀 `git ls-files`，沒 add 的新檔它看不到。
 7. 跑 `node scripts/skills-check.js`，必須 exit 0。
-8. 跑它的 control：暫時把內文裡的 `judge.js` 引用拿掉，再跑一次，必須 exit 1（`judge.js` 變成沒有任何 skill 找得到的腳本）；把兩次的輸出都貼進回報，然後把引用改回來。
+8. 跑它的 control：暫時把內文裡的 `<plugin>/scripts/judge.js` 改成一個不存在的檔名，再跑一次，必須 exit 1 並印出 `missing-script: skills/fankeel-ask/SKILL.md:<行> …`；把兩次的輸出都貼進回報，然後改回來。
+
+   **不要用「拿掉 judge.js 引用」當 control。** 那個不會失敗：`judge.js` 不在 `REQUIRED_CORE` 裡，`unnamed-script` 是只報不失敗的那一類，而 `skills/fankeel/SKILL.md` 在 Task 4 之前還點名著它。一個永遠綠的 control 等於沒有 control。
 
 ## Task 4: 主 skill 的判官那一節換成一句指路
 
@@ -200,6 +202,7 @@ last_verified: 2026-09-09
 1. 在 `README.md` 既有的指令／腳本表旁邊，加 `/fankeel-ask` 一行。
 2. 加一小段判準，寫給使用者讀：哪一類問題值得叫（跨子系統的取捨、判斷型而非查找型、答錯的代價高），哪一類不值得（查得到答案的、範圍已經定死的、只是想要第二意見）。
 3. 明說這段是給人讀的，不進注入區塊 —— 進去就變回廣告。
+4. 跑 `node scripts/docs-check.js`，exit 0；再跑 `node scripts/map.js --print`，確認 `read first:` 與目錄樹仍然是從 `README.md` 抬出來的 —— 這個檔是 map 的路標來源，改壞了 map 會少一整張樹。
 
 ## Task 7: 索引列與一條 Waiting
 

@@ -921,6 +921,18 @@ test('classify(): a flag its script does not accept is unknown-flag and fails', 
   assert.equal(hit.fail, true);
 });
 
+test('classify(): a script whose flag table could not be read raises no unknown-flag', () => {
+  const { classify } = require('../lib/skills.js');
+  const refs = {
+    scripts: [{ name: 'judge.js', file: 'skills/x/SKILL.md', line: 5, bare: false }],
+    flags: [{ flag: '--answer', file: 'skills/x/SKILL.md', line: 5, script: 'judge.js' }],
+  };
+  const accepted = new Map([['judge.js', new Set()]]);
+  const out = classify({ refs, present: new Set(['judge.js']), accepted, core: [] });
+  assert.equal(out.find((o) => o.tag === 'unknown-flag'), undefined,
+    'an empty accepted set means the table could not be read, not that the script accepts nothing');
+});
+
 test('classify(): a required core script named by no skill is core-dropped and fails', () => {
   const { classify } = require('../lib/skills.js');
   const refs = { scripts: [{ name: 'map.js', file: 'skills/x/SKILL.md', line: 1, bare: false }], flags: [] };
