@@ -592,7 +592,8 @@ survey 階段他應該就知道整個專案的內容，然後 mockup 根據專�
 hallmark、taste-skill 之類的東西。」
 
 **為什麼合理**：survey 已經讀過 map、docs 與既有畫面，design 現在的產物是「一個 approach
-加成功準則」（`skills/fankeel-design/SKILL.md` 第 2、3 步），對前端任務來說那還不是
+加成功準則」（`skills/fankeel-design/SKILL.md` 第 2 步與第 4 步——2026-09-10 mockup 進
+第 3 步，成功準則之後的步驟全部後推一位），對前端任務來說那還不是
 一個能被核准的東西——使用者核准的是畫面，不是段落。
 
 **本機現有的設計 skill**（落地時從中挑，不要全掛）：
@@ -687,7 +688,8 @@ rules）、`lib/stages.js`、`scripts/task.js`、`lib/registry.js`、`hooks/inje
 > 繞過——stand down、推進 stage、設 guard 仍要人說。
 
 > **補記（2026-09-10），三**：`judge.enabled` 在判官規則刪掉時一起刪了，
-> `lib/profile.js` 的 `KEYS` 現在是六個鍵。上面那七個是 2026-09-09 當天的清單，
+> `lib/profile.js` 的 `KEYS` 掉到六個鍵，同日 `design.mockup` 進來又回到七個。
+> 上面那七個是 2026-09-09 當天的清單，
 > 留著是因為它記的是那天的決定；今天要對照的是
 > [判官改成使用者自己叫](decisions/2026-09-10-judge-to-ask.md)。
 
