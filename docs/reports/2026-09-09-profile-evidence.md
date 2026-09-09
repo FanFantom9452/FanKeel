@@ -58,8 +58,14 @@ Present exactly these, and wait. Integration is the user's decision.
 ```
 
 沒有任何欄位記下使用者選了哪一個。唯一的紀錄在 git 裡：`git log --merges` 在這個 repo
-回 10 筆，全部是 `merge:` 開頭的本地合併（例如 `8c6011f merge: the station is four
-files and the D dashboard`），沒有一筆是 `Merge pull request #…` 或 squash 合併的形狀。
+回 **49 筆**，其中 47 筆是 `merge:` 開頭的本地合併（例如 `8c6011f merge: the station is
+four files and the D dashboard`），另外 2 筆是 `Merge branch 'main' into <branch>`
+（把 main 併進功能分支，不是整合動作）。`Merge pull request #…` 與 squash 合併的形狀
+**0 筆**。
+
+> **方法陷阱，記在這裡免得再犯**：這個數字第一次被回報成 10，因為那次跑的是
+> `git log --merges --oneline | head`，而 `head` 預設就是 10 行。截斷過的輸出讀起來
+> 和一個真實的計數一模一樣。計數要從沒有 `head`、沒有管線的那一次取。
 
 **所以這個 repo 的 land 答案是選項 1，而且證據是 git 而不是 registry。** 任何想「掃過去
 的 session 得到 land 慣例」的設計都要先接受這件事：那個答案不在 session 記錄裡，要嘛從

@@ -664,7 +664,8 @@ rules）、`lib/stages.js`、`scripts/task.js`、`lib/registry.js`、`hooks/inje
 > `task / project / route / class / guard`。掃過 106 筆之後，`project` 與 `guard`
 > **一筆都沒有**——前者只在 registry root 底下不只一個專案時才寫入，後者不寫就是用預設，
 > 所以「每個專案一份 profile」在這裡的證據上連分組的鍵都沒有。第 1 點說 land 的答案不在
-> registry 而在 git log 則是對的，`git log --merges` 十筆全是本地 `merge:`。
+> registry 而在 git log 則是對的：`git log --merges` 回 49 筆，47 筆本地 `merge:`、
+> 2 筆 `Merge branch 'main' into <branch>`，pull request 0 筆。
 > 完整的欄位分佈與它不涵蓋什麼在
 > [profile 證據](reports/2026-09-09-profile-evidence.md)。
 
