@@ -69,6 +69,14 @@ dated report，記下 106 筆到底有什麼、沒有什麼，以及 land 的答
 （`git log --merges` 十筆全是本地 `merge:`，無 PR；`skills/fankeel-land/SKILL.md:154-162`
 每次仍問三選一）。並在簡報 §4.2 補一行指向它，因為那一節對 registry 的描述被資料推翻了。
 
+> **勘誤（2026-09-09，build 之後）**：上一段括號裡的兩個數字都是錯的，而它們是 survey
+> 帶進來的前提，不是設計決定。`git log --merges` 是 **49** 筆，47 筆 `merge:` 開頭、
+> 2 筆 `Merge branch 'main' into <branch>`、0 筆 pull request——十筆那個數字來自
+> `| head` 截斷過的輸出。行號在 build 期間位移到
+> `skills/fankeel-land/SKILL.md:165-170`。結論沒有變：land 的答案在 git 而不在
+> registry。正確的數字與那個方法陷阱記在
+> [profile 證據](../reports/2026-09-09-profile-evidence.md)。
+
 ## 4. `sources.md` 缺的那列
 
 補第 16 列給 `2026-09-09-design-axis-inventory.md`，Scope 欄寫它量的範圍：掃描對象是
