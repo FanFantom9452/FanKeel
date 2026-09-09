@@ -37,6 +37,7 @@ const station = require('../lib/station.js');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { clearEntry } = require('../lib/clear.js');
+const profile = require('../lib/profile.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
 const ASSETS = path.join(PLUGIN, 'assets', 'station');
@@ -451,6 +452,60 @@ async function serve(opts) {
             // count travels in the query rather than in a body this response
             // does not have. `render` prints it above the control bar.
             res.writeHead(303, { location: '/?cleared=' + cleared });
+            res.end();
+            return;
+        }
+        if (req.method === 'POST' && url.pathname === '/profile') {
+            const form = new URLSearchParams(await readBody(req));
+            if (form.get('nonce') !== nonce) {
+                res.writeHead(403, { 'content-type': 'text/plain' });
+                res.end('wrong nonce: open the page this server printed and try again\n');
+                return;
+            }
+            const scope = form.get('scope');
+            let file;
+            if (scope === 'machine') file = profile.machineFile(configDir);
+            else if (scope === 'project') {
+                const want = path.resolve(form.get('project') || '');
+                const model = modelNow();
+                const known = model.registries.some((r) => Object.keys(r.profiles || {}).some((p) => path.resolve(p) === want));
+                if (!known) {
+                    res.writeHead(404, { 'content-type': 'text/plain' });
+                    res.end('no such project on this page\n');
+                    return;
+                }
+                file = profile.projectFile(want);
+            } else {
+                res.writeHead(400, { 'content-type': 'text/plain' });
+                res.end('scope is project or machine\n');
+                return;
+            }
+            const keys = form.getAll('key');
+            const values = form.getAll('value');
+            if (!keys.length || keys.length !== values.length) {
+                res.writeHead(400, { 'content-type': 'text/plain' });
+                res.end('key and value come in pairs\n');
+                return;
+            }
+            // Validate every pair before writing any, so a bad second key
+            // does not leave the first one applied.
+            for (let i = 0; i < keys.length; i++) {
+                const spec = profile.KEYS[keys[i]];
+                if (!spec || !spec.values.includes(String(values[i]).toLowerCase())) {
+                    res.writeHead(400, { 'content-type': 'text/plain' });
+                    res.end('not a profile key/value: ' + keys[i] + '=' + values[i] + '\n');
+                    return;
+                }
+            }
+            for (let i = 0; i < keys.length; i++) {
+                const out = profile.write(file, keys[i], values[i]);
+                if (!out.ok) {
+                    res.writeHead(409, { 'content-type': 'text/plain' });
+                    res.end(out.reason + '\n');
+                    return;
+                }
+            }
+            res.writeHead(303, { location: '/' });
             res.end();
             return;
         }

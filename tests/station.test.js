@@ -79,6 +79,17 @@ test('gather classifies live, stale and down, counts unreadable, prices usage, l
     assert.equal(one.sessions[1].ended.reason, 'clear');
     assert.equal(m.pricesVerified.length, 10);
 });
+
+test('gather reads a project profile from .fankeel/profile.json, and serialize carries profileKeys', () => {
+    const f = fixture();
+    fs.writeFileSync(path.join(f.r1, '.fankeel', 'profile.json'), JSON.stringify({ 'land.integration': 'merge' }));
+    const m = station.gather({ configDir: f.cfg });
+    const one = m.registries.find((r) => r.root === path.resolve(f.r1));
+    assert.equal(one.profiles[one.root].values['land.integration'], 'merge');
+    assert.equal(one.profiles[one.root].sources['land.integration'], 'project');
+    const data = station.serialize(m, {});
+    assert.match(data, /"profileKeys"/);
+});
 // A registry of its own per test below, rather than the shared fixture: each
 // one exercises a different shape of `clock`/`burn`/`spend` and none of them
 // should shift the session counts the earlier tests already assert on.
