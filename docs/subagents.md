@@ -44,14 +44,13 @@ send as `general-purpose`.
 `fankeel-judge` runs at `model: fable`, and answers a different kind of
 question: not a multi-file read inside a stage's own work, but the in-stage
 question that would otherwise stop the stage to ask a person — design's one
-question at a time, survey's class, plan's split, build's stop-and-ask. Four
-stages — survey, design, plan, build — carry the same one-line rule for it on
-their own `when` rather than in `ALWAYS`, so it only rides a prompt when the
-profile's `judge.enabled` holds (`lib/stages.js:118-140`, `JUDGE_RULE`).
-`lib/render.js`'s `renderBrief`, which `hooks/brief.js` calls, gives it one
-line the reader's brief does not carry, when `payload.agent_type` is
-`fankeel-judge`: *answer once; the parent
-will not message you again.*
+question at a time, survey's class, plan's split, build's stop-and-ask. No
+stage carries a rule for it any more: it runs when the user types
+`/fankeel-ask`, and [the skill](../skills/fankeel-ask/SKILL.md) carries
+the whole procedure from there. `lib/render.js`'s `renderBrief`, which
+`hooks/brief.js` calls, gives it one line the reader's brief does not carry,
+when `payload.agent_type` is `fankeel-judge`: *answer once; the parent will
+not message you again.*
 
 Its answer does not stay in the judge's own context — the parent files it,
 verbatim:

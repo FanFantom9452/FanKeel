@@ -125,7 +125,7 @@ report where a real parser would cost a dependency this plugin does not have.
 | `profile.json` | 是 | 專案的常設答案，改了就是改偏好；`task.js profile` 寫 |
 | `sessions/<id>.json` | 否 | 一個 session 一筆，永不刪，`active:false` 即結束 |
 | `map.md` | 否 | 每次 `map.js` 重生 |
-| `build/<plan>/` | 否 | 一個 task 的 ledger、brief、judge brief；列出不清理 |
+| `build/<plan>/`、`build/ask/` | 否 | 一個 task 的 ledger、brief、judge brief；列出不清理 |
 | `index.html`、`station/` | 否 | 這台機器的 station 副本，每次 prompt 重寫 |
 | `docs/judgements/`（不在 `.fankeel/`） | 是 | `fankeel-judge` 的判斷，寫完不改（`report`） |
 

@@ -322,22 +322,17 @@ by tier. Each stage's own `when` array holds `{ when, text }` entries;
 `rulesFor(stage, subs, values)` filters them with `holds(when, values)`
 against the profile's effective values, a leading `!` on `when` negating the
 key. `ALWAYS_WHEN` is the same shape for a rule meant to ride every stage —
-exported and empty today, because its one candidate fit the cap better
-landed on four stages' own `when` instead of one shared clause: an in-stage
-question going to `fankeel-judge` — design's one question at a time,
-survey's class, plan's split, build's stop-and-ask — is a single line on
-`survey`, `design`, `plan` and `build`, and it drops out entirely when the
-profile's `judge.enabled` does not hold. `land`'s archive-plan rule takes the
-other shape instead of a filter: two `when` entries, keyed
-`land.archivePlan` and `!land.archivePlan`, so the sentence itself reads
-differently depending on whether the profile already answered, rather than a
-token filling a blank in one shared sentence.
+exported and empty today. `land`'s archive-plan rule takes the other shape
+instead of a filter: two `when` entries, keyed `land.archivePlan` and
+`!land.archivePlan`, so the sentence itself reads differently depending on
+whether the profile already answered, rather than a token filling a blank
+in one shared sentence.
 
 A rule's token is one of two kinds, and a test depends on the difference — a
-**script token**'s value is a path, the same on every prompt: `{{JUDGE}}`
-among them, filled with `scripts/judge.js`'s installed path so the judge
-rule above can read `node {{JUDGE}} record` without a plugin root hard-coded
-here. A **render token**'s value is computed per stage and differs —
+**script token**'s value is a path, the same on every prompt: `{{SURVEY}}`
+among them, filled with `scripts/survey.js`'s installed path so `survey`'s
+scan rule can read `node {{SURVEY}} <term>...` without a plugin root
+hard-coded here. A **render token**'s value is computed per stage and differs —
 `{{NEXT}}`, `{{PONYTAIL}}`, and `{{PROFILE_LAND}}`, which `land`'s own rules
 carry as `Integration — {{PROFILE_LAND}}.`; `lib/profile.js`'s `landClause`
 fills it with `profile: land merge, no push — do that, say so, skip the
