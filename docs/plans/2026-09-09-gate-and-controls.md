@@ -370,7 +370,11 @@ model: typeof values.model === 'string' ? values.model : null,
 3. 改 `## The fifteen reports` 的數字，並改導言裡「Sixteen sit there and fifteen have a
    row」那一句——現在每一份都有列了，所以那句話要說的是別的事。
 4. **成品自檢**：把標題裡的數字讀出來，把兩張表的列數數出來，兩邊要相等。
-   `awk '/^## The/,/^\[Back/' docs/sources.md | grep -c '^| \`'` 是數列數的那個指令。
+   **數的必須是渲染出來的列，不是開頭是 `|` 的行。** 一個 GFM 表格在遇到空行時就結束，
+   所以在兩列之間插進一個空行，會把後面那些列變成段落——而 `grep -c '^| '` 照樣把它們
+   數進去，於是自檢報「相等」而讀者看到少了兩列。要數的是**連續區塊**：以空行切開檔案，
+   取開頭是 `|` 的區塊，每塊的列數是行數減去表頭與分隔線那兩行。這件事在 2026-09-09
+   真的發生過，是 reviewer 用真的 markdown renderer 抓到的。
 5. `TODO.md` 刪掉 Ready 那條，並刪掉 `## Needs a decision` 裡 §2.5、§5.3 兩條與 §4.2
    那條的證據半邊——§4.2 的格式決定還在，所以那條改寫而不是刪掉。
 6. `node scripts/todo-check.js` 與 `node scripts/docs-check.js` 都綠，且 `node --test`
