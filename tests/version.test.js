@@ -1,7 +1,7 @@
 'use strict';
 
 // The release number lives in eleven files and nothing used to set them together,
-// so a release was ten edits and a miss left a skill announcing a version the
+// so a release was eleven edits and a miss left a skill announcing a version the
 // plugin is not. `tests/contract.test.js` fails when they disagree; this is the
 // half that makes them agree.
 //
@@ -95,7 +95,7 @@ test('a file with no version line reads as none, not as absent', () => {
 });
 
 // The count this repository actually has, checked against the real tree so the
-// script and `tests/contract.test.js` cannot disagree about what ten means.
+// script and `tests/contract.test.js` cannot disagree about what eleven means.
 test('the real repository has the eleven places the contract test counts', () => {
   const rows = version.readAll(REAL);
   assert.equal(rows.length, 11, rows.map((r) => r.file).join(', '));
