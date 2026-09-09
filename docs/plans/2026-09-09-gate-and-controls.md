@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-09-09
 source_of_truth: docs/plans/2026-09-09-gate-and-controls-design.md
 ---
@@ -59,6 +59,14 @@ argv、掃描與報告文字在 `scripts/skills-check.js`，exit code 由 findin
 | `docs/sources.md` | 改。兩列，加標題與導言的計數。 |
 | `TODO.md` | 改。關掉 Ready 那條與三條已決定的。 |
 
+> **勘誤（2026-09-09，build 之後）**：上表把 `tests/skills.test.js` 記成「新」，那是錯的。
+> 這個檔在 merge-base 已經有 859 行，測的是 SKILL.md 的 frontmatter 與 description；
+> Task 1 做的是在後面 append 119 行、變成 978 行，diffstat 讀起來是 119 行新增、零刪除，
+> 而新檔與純 append 在 diffstat 上正好長得一樣。連帶的一件事記在這裡而不是修掉：
+> `lib/skills.js` 的單元測試因此坐在一個主題是 skill *文件* 的檔案裡。這個 repo 的慣例是
+> 測試檔跟著被測模組命名，而那個名字已經被佔走了；改名一個四個 commit 前就落地的模組
+> 沒有被判定值得，所以只記錄。
+
 ---
 
 ## Task 1: `lib/skills.js` — 抽取、讀 flag、比對
@@ -73,7 +81,7 @@ argv、掃描與報告文字在 `scripts/skills-check.js`，exit code 由 findin
 
 **Interfaces:**
 - Consumes: none
-- Produces: `REQUIRED_CORE` (string[]), `references(text)` → `{scripts: [{name, line, bare}], flags: [{flag, line, script}]}`, `acceptedFlags(source)` → `Set<string>`, `classify({refs, present, accepted})` → `[{tag, file, line, what, fail}]`
+- Produces: `REQUIRED_CORE` (string[]), `references(text, file)` → `{scripts: [{name, file, line, bare}], flags: [{flag, file, line, script}]}`, `acceptedFlags(source)` → `Set<string>`, `classify({refs, present, accepted, core})` → `[{tag, file, line, what, fail}]`，其中 `present` 是 `Set<string>` 的檔名、`accepted` 是 `Map<string, Set<string>>`
 
 **Dispatch:** implementer, sonnet
 
@@ -97,7 +105,7 @@ const SCRIPT = /(<plugin>\/)?scripts\/([a-z0-9-]+\.js)/g;
 // 假失敗——一個會誤殺的閘門會被關掉，關掉的閘門比沒有更糟。
 const FLAG = /--[a-z][a-z0-9-]+/g;
 
-function references(text) {
+function references(text, file) {
     const scripts = [];
     const flags = [];
     text.split(/\r?\n/).forEach((line, i) => {
@@ -105,10 +113,10 @@ function references(text) {
         const here = [];
         for (const m of line.matchAll(SCRIPT)) {
             here.push(m[2]);
-            scripts.push({ name: m[2], line: n, bare: !m[1] });
+            scripts.push({ name: m[2], file, line: n, bare: !m[1] });
         }
         for (const m of line.matchAll(FLAG)) {
-            flags.push({ flag: m[0], line: n, script: here.length === 1 ? here[0] : null });
+            flags.push({ flag: m[0], file, line: n, script: here.length === 1 ? here[0] : null });
         }
     });
     return { scripts, flags };
@@ -160,6 +168,48 @@ const REQUIRED_CORE = [
 ];
 ```
 
+在 `lib/skills.js`，`REQUIRED_CORE` 之後，加：
+
+```js
+// 讀不到旗標表的 script 不產生 unknown-flag：`accepted` 沒有它那一格就跳過。閘門只在
+// 讀得到的時候才敢說一個 flag 不被接受，因為誤殺一次就會被關掉。
+function classify({ refs, present, accepted, core }) {
+    const out = [];
+    const named = new Set(refs.scripts.map((s) => s.name));
+    for (const s of refs.scripts) {
+        if (!present.has(s.name)) {
+            out.push({ tag: 'missing-script', file: s.file, line: s.line, fail: true,
+                what: s.name + ' is named here and is not in scripts/' });
+        } else if (s.bare) {
+            out.push({ tag: 'bare-reference', file: s.file, line: s.line, fail: false,
+                what: s.name + ' is named without the <plugin>/ prefix' });
+        }
+    }
+    for (const f of refs.flags) {
+        const flags = f.script && accepted.get(f.script);
+        if (flags && !flags.has(f.flag)) {
+            out.push({ tag: 'unknown-flag', file: f.file, line: f.line, fail: true,
+                what: f.script + ' does not accept ' + f.flag });
+        }
+    }
+    for (const name of core) {
+        if (!named.has(name)) {
+            out.push({ tag: 'core-dropped', file: '-', line: 0, fail: true,
+                what: name + ' is required core and is named by no skill' });
+        }
+    }
+    for (const name of present) {
+        if (!named.has(name)) {
+            out.push({ tag: 'unnamed-script', file: '-', line: 0, fail: false,
+                what: name + ' is in scripts/ and named by no skill' });
+        }
+    }
+    return out;
+}
+
+module.exports = { REQUIRED_CORE, references, acceptedFlags, classify };
+```
+
 9. 跑，看它綠。`git add lib/skills.js tests/skills.test.js`——先 add，否則
    `tests/source.test.js` 用 `git ls-files` 看不到新檔。然後 `node --test` 跑**整套**，
    不是只跑自己那個檔：共用一棵樹的時候，只跑自己那個測試檔看不見跨檔的紅。commit。
@@ -191,17 +241,20 @@ const REQUIRED_CORE = [
    `allowPositionals: true`、`root` 是 `type: 'string'`），照 `docs-check.js:462-469`
    寫 exit code。掃描目標是 `skills/**/SKILL.md` 與 `lib/stages.js` 兩處。
 3. 跑，看它綠。commit。
-4. 寫空掃描的失敗測試：一個沒有任何 script 引用的暫時目錄，CLI 要 exit 1，訊息說掃描
-   為空。跑，看它紅——這條特別重要，因為零很容易被讀成乾淨。
+4. 寫空掃描的失敗測試：一個沒有任何 script 引用的暫時目錄，CLI 要 exit 1，訊息裡有
+   `empty-scan`。跑，看它紅——這條特別重要，因為零很容易被讀成乾淨。`classify()` 已經
+   產出這個 finding（Task 1 落地時記了 ruling 說為什麼是它而不是 CLI），所以這裡**不要**
+   再判一次，只把 findings 印出來、讓任一 `fail: true` 決定 exit code。
 
-在 `scripts/skills-check.js`，`run()` 回傳之後、`process.exit` 之前，加：
+在 `scripts/skills-check.js`，`run()` 之後，加：
 
 ```js
-// 零個引用不是「skills 很乾淨」，是掃描壞了：這棵樹上有 12 支被點名，掃到零只可能是
-// 路徑或正規表達式錯了。fail-closed 的意思就是這一行。
-if (scanned.scripts === 0) {
-    lines.push('empty-scan: no script reference found under ' + root + ' — the scan is broken, not the skills');
-}
+// exit code 由 fail 為真的 findings 決定，形狀照 scripts/docs-check.js:431,462-469。
+// empty-scan 是 classify() 回來的其中一條，不是這裡另外判的——同一件事判兩次，零個
+// 引用就會印出兩行說同一件事，而互相矛盾的報告比沒有報告更難用。
+const bad = findings.some((f) => f.fail);
+for (const f of findings) console.log(f.tag + ': ' + f.file + ':' + f.line + '  ' + f.what);
+process.exit(bad ? 1 : 0);
 ```
 
 5. 跑，看它綠。commit。
@@ -325,7 +378,11 @@ model: typeof values.model === 'string' ? values.model : null,
 3. 改 `## The fifteen reports` 的數字，並改導言裡「Sixteen sit there and fifteen have a
    row」那一句——現在每一份都有列了，所以那句話要說的是別的事。
 4. **成品自檢**：把標題裡的數字讀出來，把兩張表的列數數出來，兩邊要相等。
-   `awk '/^## The/,/^\[Back/' docs/sources.md | grep -c '^| \`'` 是數列數的那個指令。
+   **數的必須是渲染出來的列，不是開頭是 `|` 的行。** 一個 GFM 表格在遇到空行時就結束，
+   所以在兩列之間插進一個空行，會把後面那些列變成段落——而 `grep -c '^| '` 照樣把它們
+   數進去，於是自檢報「相等」而讀者看到少了兩列。要數的是**連續區塊**：以空行切開檔案，
+   取開頭是 `|` 的區塊，每塊的列數是行數減去表頭與分隔線那兩行。這件事在 2026-09-09
+   真的發生過，是 reviewer 用真的 markdown renderer 抓到的。
 5. `TODO.md` 刪掉 Ready 那條，並刪掉 `## Needs a decision` 裡 §2.5、§5.3 兩條與 §4.2
    那條的證據半邊——§4.2 的格式決定還在，所以那條改寫而不是刪掉。
 6. `node scripts/todo-check.js` 與 `node scripts/docs-check.js` 都綠，且 `node --test`

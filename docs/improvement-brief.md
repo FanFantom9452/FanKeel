@@ -660,6 +660,15 @@ model 下限寫在 SKILL.md 散文裡。每一個都是「同一個專案、同�
 **會碰的檔**：`skills/fankeel-land/SKILL.md`、`skills/fankeel/SKILL.md`（Start、init
 rules）、`lib/stages.js`、`scripts/task.js`、`lib/registry.js`、`hooks/inject.js`。
 
+> **補記（2026-09-09）**：上面第 1 點說 registry 的 `.fankeel/sessions/*.json` 有
+> `task / project / route / class / guard`。掃過 106 筆之後，`project` 與 `guard`
+> **一筆都沒有**——前者只在 registry root 底下不只一個專案時才寫入，後者不寫就是用預設，
+> 所以「每個專案一份 profile」在這裡的證據上連分組的鍵都沒有。第 1 點說 land 的答案不在
+> registry 而在 git log 則是對的：`git log --merges` 回 49 筆，47 筆本地 `merge:`、
+> 2 筆 `Merge branch 'main' into <branch>`，pull request 0 筆。
+> 完整的欄位分佈與它不涵蓋什麼在
+> [profile 證據](reports/2026-09-09-profile-evidence.md)。
+
 ### 4.3 station 變成通用的設定面
 
 **原話**：「我現在希望這個 station 變為更加通用的東西，就是他除了是監測站，還可以先設定好
@@ -769,6 +778,14 @@ difference that has nothing to do with the skill under test.」
 （`--setting-sources project`）、6（`--allowedTools`）；4 只到「預設 `sonnet`、可被覆
 寫」，不是「沒釘模型就拒絕跑」；3、5 無對應——fankeel 沒有持續性的 always-on flag，
 `scripts/eval.js` 也沒有花費上限。
+
+> **補記（2026-09-09）**：上一段的 4 與 5 在同一天下午不再成立。`--model` 已經沒有預設，
+> 未釘就在 spawn 之前拒跑（`scripts/eval.js:61,173`）；`costOf()` 從 result 讀出花費
+> （`lib/eval.js:91`，`function costOf`）；預算旗標透傳給 `claude`
+> （`scripts/eval.js:111`，`opts.maxBudgetUsd`）。
+> 旗標的名字是 `--max-budget-usd`，不是上表寫的 `--budget-usd`——後者是 i-have-adhd 那支
+> Python runner 的旗標。3 仍然無對應，而那是答案：fankeel 沒有持續性的 always-on flag。
+> 六條通道現在各自的落點寫在 `README.md` 的 `## Development`。
 
 ### 5.4 結構性盲測是結構性的，不是約定（第二部 2.2）
 

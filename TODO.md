@@ -60,25 +60,23 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- `docs/sources.md` 的帳本少一列：`docs/reports/` 頂層有 16 份報告，帳本兩張表合計 15 列，缺的是 `2026-09-09-design-axis-inventory.md`；補列並在 Scope 欄寫明它量的範圍 — [docs/sources.md](docs/sources.md).
-
 ## Needs a decision
 
-- skills 下一個 `registry.json` 與它的 schema：每個 stage 一筆；`## Waiting` 的 entry/stop condition、`prompt_byte_budget`、條件載入到節三條都以它為前置 — [簡報 §1.3](docs/improvement-brief.md#13-registryjson-的-schema).
+- 結構不變量測試要斷言什麼：擋「多一個 md 就多一個 subagent」這類 auto-discovery 事故，但要釘的不變量本身還沒定；`skills-check.js` 釘的是 script 與 flag，不是這個 — [簡報 §2.5](docs/improvement-brief.md#25-三層閘門).
 
-- fail-closed 的 script / flag 閘門：掃 skills/*.md 的 `<plugin>/scripts/*.js` 與 `--flag`、釘八支 script、空結果是失敗；連同結構不變量測試與 Waiting 的純函式 — [簡報 §2.5](docs/improvement-brief.md#25-三層閘門).
+- skills 下一個 `registry.json` 與它的 schema：每個 stage 一筆；`## Waiting` 的 entry/stop condition、`prompt_byte_budget`、條件載入到節三條都以它為前置 — [簡報 §1.3](docs/improvement-brief.md#13-registryjson-的-schema).
 
 - 校準規則與可失敗自檢測試：通則「每階段都設閘門會變跑步機」、衝突時 name both rules；build 的四件停止事改成「撤掉會不會變差」加豁免；16 行 pattern 以此為前置 — [簡報 §2.6](docs/improvement-brief.md#26-兩個-fankeel-直接缺的行為機制).
 
 - design class：盤點與 prompt 已進 repo（§4.1 補記）；待決 route 與 ratchet 位置、軸鎖定檔格式、Mode 優先路由表、三個 stage skill 增修、prompt 的三個設計問題 — [簡報 §4.1](docs/improvement-brief.md#41-design-階段的-mockup-步驟前端任務).
 
-- 六個污染控制通道：cwd、operator config、always-on flag、model、budget、tools；A/B 量測今天只控 model 與 tools，其餘要不要進 provenance — [簡報 §5.3](docs/improvement-brief.md#53-六個污染控制第二部-21).
+- A/B 量測的 provenance 要記幾條通道：`eval.js` 六條都落地了，但 `docs/reports/evidence/` 的 A/B 腳本只控 model 與 tools，其餘四條要不要寫進 provenance 檔 — [簡報 §5.3](docs/improvement-brief.md#53-六個污染控制第二部-21).
 
 - 規則改寫成 pre-send check 形：每條配成因事實與 Bad/Good 範例、例外清單，「the constraint wins, the shape stays」；`lib/stages.js` 的規則哪幾條先改 — [簡報 §5.7](docs/improvement-brief.md#57-規則的五個成因與六個例外第三部-g1g2).
 
 - eval 例外 case 集：每條例外條款一個 case、判準是分數不該動，baseline/candidate 成對跑；`evals/` 今天一個 case，要不要照這個形擴 — [簡報 §5.10](docs/improvement-brief.md#510-評測層的五個新項目第五部-53附錄-a10a14).
 
-- 開發偏好 profile：掃過去的 session 找每個專案的慣例答案（land 本地 commit 不 push、guard、class），依專案建 profile 加預設，Start 套用不再問；存哪、欄位待定；Waiting 的 station 設定面以此為前置 — [簡報 §4.2](docs/improvement-brief.md#42-開發偏好-profile不是每次都問).
+- profile 的格式與鍵：證據已經掃完並寫成報告，但 106 筆裡 `project` 與 `guard` 都是 0，所以「依專案建 profile」在這台機器的資料上沒有鍵可以分；存哪、欄位、要不要改成一台機器一份都待定 — [簡報 §4.2](docs/improvement-brief.md#42-開發偏好-profile不是每次都問)，它的補記指向那份證據報告.
 
 ## Waiting
 
@@ -96,8 +94,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - `docs-audit` reads a fixture path in a code block as a deliverable — [scripts/docs-audit.js](scripts/docs-audit.js). lifts when: a second plan is held back by it. 09-07.
 
-- 閘門寫成純函式，CLI 與 test 共用，照 docs-check.js / lib/docs.js 的分離 — [簡報 §1.2](docs/improvement-brief.md#12-編譯與閘門層fankeel-完全沒有的一層), [lib/docs.js](lib/docs.js). lifts when: script / flag 閘門落地. 09-08.
-
 - `entry_condition` / `stop_condition` 進 registry：寫在 registry 能被檢查，寫在散文只能被讀 — [簡報 §1.3](docs/improvement-brief.md#13-registryjson-的-schema). lifts when: registry.json 落地. 09-08.
 
 - 每 stage 一欄 `prompt_byte_budget` 與整體預算：注入 block「long on purpose」的唯一界線不可量測；caveman 給 560 — [簡報 §1.3](docs/improvement-brief.md#13-registryjson-的-schema). lifts when: registry.json 落地. 09-08.
@@ -111,3 +107,7 @@ entry waited for actually happening. It shrank when somebody read it.
 - station 變成設定面：會問的問題做在 HTML 上先決定，按鈕一鍵套用 profile；靜態 shell 只有 serve 模式能寫 — [簡報 §4.3](docs/improvement-brief.md#43-station-變成通用的設定面). lifts when: profile 格式定案. 09-08.
 
 - eval 進 CI：`.github/workflows` 一條，只在 push main 且限 skills/、evals/、manifest；永遠紅的 workflow 是噪音，所以等 — [README.md](README.md). lifts when: 本機 `claude plugin eval` 不再回 early access. 09-08.
+
+- 五個 `lib/*.js` 沒有任何 reference-role 頁面點名：`fanout.js`、`hook.js`、`report.js`、`skills.js`、`tracked.js`；另外 20 個都有 — [docs/documents.md](docs/documents.md). lifts when: docs-audit 學會報未被點名的模組. 09-09.
+
+- `evals/route-typo` 同一棵樹上分數會跳：09-08 兩次 2/3 與 3/3，09-09 一次 1/3；CI threshold 0.7 會擋掉三次裡的兩次 — [evals/route-typo/case.yaml](evals/route-typo/case.yaml). lifts when: 同一個 commit 連跑五次. 09-09.

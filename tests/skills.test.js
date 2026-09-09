@@ -857,3 +857,122 @@ test('the build skill carries the commit skeleton its injection cannot', () => {
   assert.match(text, /one paragraph only for what a bullet cannot hold/);
   assert.match(read('fankeel-land'), /\ntype: what changed, under 60 characters/);
 });
+
+// --- lib/skills.js: the fail-closed skills gate -----------------------------
+// `lib/skills.js` is required inside each test body below, the same way
+// `lib/stages.js` is required above, so a module that does not exist yet (or
+// has stopped exporting a name) fails only the test that needs it rather than
+// aborting this whole file's other, unrelated tests.
+
+test('references() extracts a full script reference and its same-line flag', () => {
+  const { references } = require('../lib/skills.js');
+  const { scripts, flags } = references('<plugin>/scripts/map.js --print', 'skills/x/SKILL.md');
+  assert.equal(scripts.length, 1);
+  assert.equal(scripts[0].name, 'map.js');
+  assert.equal(scripts[0].file, 'skills/x/SKILL.md');
+  assert.equal(scripts[0].line, 1);
+  assert.equal(scripts[0].bare, false, 'a <plugin>/-prefixed reference is not bare');
+  assert.equal(flags.length, 1);
+  assert.equal(flags[0].flag, '--print');
+  assert.equal(flags[0].script, 'map.js', 'a flag alone on the line is attributed to it');
+});
+
+// The three parse shapes this tree actually uses, read off their own real
+// source rather than a fixture — a regex tuned against a fixture can pass
+// while missing the shape the real file writes it in.
+test('acceptedFlags() reads all three parse shapes off their own real source', () => {
+  const { acceptedFlags } = require('../lib/skills.js');
+  const src = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  assert.ok(acceptedFlags(src('scripts/survey.js')).has('--tree'),
+    'survey.js\'s literal-comparison flags do not include --tree');
+  assert.ok(acceptedFlags(src('scripts/ledger.js')).has('--range'),
+    'ledger.js\'s STRING_FLAGS do not include --range');
+  assert.ok(acceptedFlags(src('scripts/docs-check.js')).has('--role'),
+    'docs-check.js\'s parseArgs options table does not include --role');
+});
+
+// classify() — six tags, four fail:true (missing-script, unknown-flag,
+// core-dropped, empty-scan) and two fail:false (bare-reference,
+// unnamed-script). Each test below builds the smallest {refs, present,
+// accepted, core} shape that isolates its own tag, so a mutation to one
+// branch of classify() cannot pass by accident on a different test's finding.
+
+test('classify(): a script named but not in scripts/ is missing-script and fails', () => {
+  const { classify } = require('../lib/skills.js');
+  const refs = { scripts: [{ name: 'ghost.js', file: 'skills/x/SKILL.md', line: 3, bare: false }], flags: [] };
+  const out = classify({ refs, present: new Set(['map.js']), accepted: new Map(), core: [] });
+  const hit = out.find((o) => o.tag === 'missing-script');
+  assert.ok(hit, 'no missing-script finding');
+  assert.equal(hit.fail, true);
+  assert.equal(hit.file, 'skills/x/SKILL.md');
+  assert.equal(hit.line, 3);
+});
+
+test('classify(): a flag its script does not accept is unknown-flag and fails', () => {
+  const { classify } = require('../lib/skills.js');
+  const refs = {
+    scripts: [{ name: 'map.js', file: 'skills/x/SKILL.md', line: 5, bare: false }],
+    flags: [{ flag: '--bogus', file: 'skills/x/SKILL.md', line: 5, script: 'map.js' }],
+  };
+  const accepted = new Map([['map.js', new Set(['--print'])]]);
+  const out = classify({ refs, present: new Set(['map.js']), accepted, core: [] });
+  const hit = out.find((o) => o.tag === 'unknown-flag');
+  assert.ok(hit, 'no unknown-flag finding');
+  assert.equal(hit.fail, true);
+});
+
+test('classify(): a required core script named by no skill is core-dropped and fails', () => {
+  const { classify } = require('../lib/skills.js');
+  const refs = { scripts: [{ name: 'map.js', file: 'skills/x/SKILL.md', line: 1, bare: false }], flags: [] };
+  const out = classify({
+    refs, present: new Set(['map.js', 'ledger.js']), accepted: new Map(),
+    core: ['map.js', 'ledger.js'],
+  });
+  const hit = out.find((o) => o.tag === 'core-dropped');
+  assert.ok(hit, 'no core-dropped finding');
+  assert.equal(hit.fail, true);
+  assert.ok(hit.what.includes('ledger.js'));
+});
+
+test('classify(): a scan naming zero scripts anywhere is empty-scan and fails', () => {
+  const { classify } = require('../lib/skills.js');
+  const refs = { scripts: [], flags: [] };
+  const out = classify({ refs, present: new Set(['map.js']), accepted: new Map(), core: [] });
+  const hit = out.find((o) => o.tag === 'empty-scan');
+  assert.ok(hit, 'no empty-scan finding');
+  assert.equal(hit.fail, true);
+});
+
+test('classify(): a present script named without the <plugin>/ prefix is bare-reference and does not fail', () => {
+  const { classify } = require('../lib/skills.js');
+  const refs = { scripts: [{ name: 'map.js', file: 'skills/x/SKILL.md', line: 2, bare: true }], flags: [] };
+  const out = classify({ refs, present: new Set(['map.js']), accepted: new Map(), core: [] });
+  const hit = out.find((o) => o.tag === 'bare-reference');
+  assert.ok(hit, 'no bare-reference finding');
+  assert.equal(hit.fail, false);
+});
+
+test('classify(): a script in scripts/ that no skill names is unnamed-script and does not fail', () => {
+  const { classify } = require('../lib/skills.js');
+  const refs = { scripts: [{ name: 'map.js', file: 'skills/x/SKILL.md', line: 1, bare: false }], flags: [] };
+  const out = classify({ refs, present: new Set(['map.js', 'orphan.js']), accepted: new Map(), core: [] });
+  const hit = out.find((o) => o.tag === 'unnamed-script');
+  assert.ok(hit, 'no unnamed-script finding');
+  assert.equal(hit.fail, false);
+  assert.ok(hit.what.includes('orphan.js'));
+});
+
+// REQUIRED_CORE has no importer of its own until Task 2's CLI reads it, so
+// tests/source.test.js has nothing to call an importer until this exists. A
+// test that repeats the twelve names back at the module would pass forever
+// no matter what the list drifted to — this reads scripts/ off disk instead,
+// so a name here that has stopped being a real file, or a real core script
+// that fell out of the list without the count moving, is a genuine failure.
+test('REQUIRED_CORE names real files under scripts/, twelve of them', () => {
+  const { REQUIRED_CORE } = require('../lib/skills.js');
+  const onDisk = new Set(fs.readdirSync(path.join(ROOT, 'scripts')).filter((f) => f.endsWith('.js')));
+  for (const name of REQUIRED_CORE) {
+    assert.ok(onDisk.has(name), name + ' is in REQUIRED_CORE and is not a file in scripts/');
+  }
+  assert.equal(REQUIRED_CORE.length, 12);
+});

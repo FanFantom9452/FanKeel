@@ -34,6 +34,14 @@ test('lastMessage prefers the result object and falls back to the last text bloc
     assert.equal(ev.lastMessage([]), '');
 });
 
+test('costOf reads cost and usage off the same result object lastMessage() reads, and is null without one', () => {
+    const priced = JSON.stringify({ type: 'result', subtype: 'success', result: 'done', total_cost_usd: 0.0123, usage: { input_tokens: 10, output_tokens: 20 } });
+    assert.deepEqual(ev.costOf([priced]), { costUsd: 0.0123, usage: { input_tokens: 10, output_tokens: 20 } });
+    assert.equal(ev.costOf([result('done')]), null, 'a result with no total_cost_usd is null, not a partial object');
+    assert.equal(ev.costOf([text('a'), text('b')]), null, 'no result message at all is also null');
+    assert.equal(ev.costOf([]), null);
+});
+
 test('tool_used passes on a matching call and fails on a bounded class', () => {
     const ok = { calls: ev.toolCalls([START_SHORT]), last: '' };
     const bad = { calls: ev.toolCalls([START_CLASS]), last: '' };
@@ -205,6 +213,16 @@ test('parseArgs defaults: plugin dir is the repository, one run, no json', () =>
     assert.equal(parseArgs(['x', '--runs', '2', '--model', 'haiku', '--json', 'o.json']).runs, 2);
 });
 
+test('parseArgs has no default model — missing --model comes back null, never sonnet', () => {
+    assert.equal(parseArgs(['evals/route-typo']).model, null);
+    assert.equal(parseArgs(['x', '--model', 'haiku']).model, 'haiku');
+});
+
+test('parseArgs reads --max-budget-usd, defaulting to null', () => {
+    assert.equal(parseArgs(['x']).maxBudgetUsd, null);
+    assert.equal(parseArgs(['x', '--max-budget-usd', '2.50']).maxBudgetUsd, '2.50');
+});
+
 test('render prints one line per grader per run and a score, and fails on any fail', () => {
     const c = { name: 'route-typo' };
     const runs = [{ graders: [
@@ -223,6 +241,14 @@ test('render prints one line per grader per run and a score, and fails on any fa
     assert.equal(verdict([]), 1, 'no run is no evidence');
 });
 
+test('render prints a cost line for a run that carries one, and none for a run that does not', () => {
+    const c = { name: 'x' };
+    const priced = [{ graders: [], error: null, cost: { costUsd: 0.05, usage: { input_tokens: 1 } } }];
+    const unpriced = [{ graders: [], error: null, cost: null }];
+    assert.match(render(c, priced), /x run 1 cost \$0\.0500/);
+    assert.equal(/cost \$/.test(render(c, unpriced)), false);
+});
+
 test('zero runs is refused before anything is spawned', () => {
     const dir = tmp('fankeel-eval-');
     fs.writeFileSync(path.join(dir, 'prompt.md'), '---\nname: zero\nruns: 0\n---\nhello\n');
@@ -232,4 +258,17 @@ test('zero runs is refused before anything is spawned', () => {
     const byFlag = spawnSync(process.execPath, [SCRIPT, dir, '--runs', '0'], { encoding: 'utf8' });
     assert.equal(byFlag.status, 1);
     assert.match(byFlag.stderr, /runs must be at least 1/);
+});
+
+// This spawns the real scripts/eval.js as a subprocess. Its safety rests on
+// main()'s --model guard returning before runOnce ever calls spawnClaude; a
+// mutation that defeats the guard (e.g. parseArgs defaulting model back to
+// 'sonnet', which also satisfies `if (!a.model)`) lets the run fall through
+// and invoke the real `claude` binary. A mutation check on this file should
+// use one that reaches none of the spawning tests instead — costOf removed
+// from lib/eval.js's exports, for one.
+test('eval.js refuses to run without --model, before anything is spawned', () => {
+    const r = spawnSync(process.execPath, [SCRIPT, 'evals/route-typo'], { encoding: 'utf8', cwd: path.join(__dirname, '..') });
+    assert.equal(r.status, 1);
+    assert.match(r.stdout + r.stderr, /--model/);
 });

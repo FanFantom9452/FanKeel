@@ -310,6 +310,17 @@ disagree, so the script is what makes them agree rather than what notices. A
 release used to be ten edits, and missing one left a skill announcing a version
 the plugin is not — right in nine places, which is how it went unnoticed.
 
+`node scripts/skills-check.js` is a fail-closed gate over this plugin's own
+skill files: every `skills/**/SKILL.md` and `lib/stages.js` is scanned for a
+script or flag it names, checked against what `scripts/` actually has. It
+exits 1 on a script no skill can find, a flag its script does not accept, a
+required-core script named by no skill, or the scan itself finding no script
+reference anywhere — the last of those is `classify()`'s own `empty-scan`,
+because a scan that names nothing is the extractor having broken, not a quiet
+tree, and nothing here judges that a second time. `skills/fankeel-land/SKILL.md`
+runs it in its own step; the injected `land` rules had no room left to name it
+too.
+
 ### Behaviour evals
 
 `evals/<case>/` holds cases in the layout `claude plugin eval` reads. That
@@ -327,3 +338,15 @@ whole transcript the official runner means by it — a pattern that expects a
 tool call belongs to `tool_used`. Any failed grader exits 1. With early access:
 
     claude plugin eval . --json results.json --threshold 0.7 --model claude-sonnet-5 --no-publish
+
+`i-have-adhd`'s eval runner names six channels an operator's own world can leak
+into a run, contaminating the comparison. This runner's landing for each:
+
+| # | channel | landed |
+|---|---|---|
+| 1 | working directory | each run gets an empty temp directory (`scripts/eval.js:103`, `fs.mkdtempSync`) |
+| 2 | operator's settings | `--setting-sources project` (`scripts/eval.js:109`, `--setting-sources`) |
+| 3 | its own always-on flag | fankeel has no persistent always-on flag, so there is nothing here to point to |
+| 4 | model version | `--model` has no default (`scripts/eval.js:61`, `: null`); missing it exits 1 before anything spawns (`scripts/eval.js:173`, `!a.model`) |
+| 5 | cost | `costOf()` (`lib/eval.js:91`, `costOf`) reads `total_cost_usd`/`usage` off the result message, printed per run (`scripts/eval.js:143`, `cost $`) and in `--json`; `--max-budget-usd` passes through to `claude` (`scripts/eval.js:111`, `--max-budget-usd`) |
+| 6 | tools | `--allowedTools` (`scripts/eval.js:113`, `--allowedTools`) |
