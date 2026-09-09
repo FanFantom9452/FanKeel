@@ -221,7 +221,8 @@ last_verified: 2026-09-09
 1. `docs/README.md` 的 plans 區加兩列：`docs/plans/2026-09-09-fankeel-ask-design.md` 與 `docs/plans/2026-09-09-fankeel-ask.md`，照該表既有的格式（路徑、一句話、`design-intent, 繁體中文`）。
 2. `docs/README.md:54-55,83,108-111` 不動 —— 那些是 archive 與 decision 頁的索引摘要，記錄的是當時的做法；`## Judgements` 那一段改動後仍然為真。
 3. `TODO.md` 的 `## Waiting` 加一條：`judge.js record` 要不要驗證這個 session 底下真的有 `fankeel-judge` 的 subagent transcript，連到 `scripts/judge.js`，結尾 `lifts when: 看到一次宣稱派了卻沒派的歸檔. 09-09.`
-4. 跑 `node scripts/todo-check.js`，exit 0 —— 它會抓沒有 `lifts when:` 或沒有日期戳的 Waiting 條目。
+4. `TODO.md` 的 `## Waiting` 再加一條，是 build 途中發現的：`lib/skills.js` 的 `acceptedFlags` 讀不到 `scripts/judge.js` 的旗標——它從 `FLAGS` 陣列動態組 options，不是字面量——所以那支腳本的旗標從此不被閘門檢查（空集合現在被正確地當成「讀不到」）。連到 `lib/skills.js`，結尾 `lifts when: 第二支腳本用同樣的形狀宣告旗標. 09-09.`
+5. 跑 `node scripts/todo-check.js`，exit 0 —— 它會抓沒有 `lifts when:` 或沒有日期戳的 Waiting 條目。
 5. 跑 `node scripts/docs-check.js`，exit 0。
 
 ## Coverage
