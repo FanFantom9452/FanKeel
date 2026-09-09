@@ -202,6 +202,9 @@ link between a claim and the evidence beside it rather than at the conclusion.
 
 It gets **paths, never a paste**, and is asked only for the rows it defeats — say
 why, because every line it returns lands here and is re-read on every later turn.
+Dispatch it as `subagent_type: fankeel-reviewer` too — the same agent as
+build's per-task reviewer — and let its file pin the model rather than
+typing one here.
 
 It **reads the method rather than probing it.** Red-green belongs to this session
 and is already in the table above, and an adversary that mutates the tree cannot

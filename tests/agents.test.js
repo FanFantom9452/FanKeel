@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer'];
 
 function front(file) {
     const m = FRONT.exec(fs.readFileSync(file, 'utf8'));
@@ -20,7 +20,7 @@ function front(file) {
     return out;
 }
 
-test('both agents parse, name themselves after their file, and cannot edit', () => {
+test('every agent parses, names itself after its file, and cannot edit', () => {
     for (const name of NAMES) {
         const f = front(path.join(ROOT, 'agents', name + '.md'));
         assert.equal(f.name, name);
@@ -32,7 +32,7 @@ test('both agents parse, name themselves after their file, and cannot edit', () 
     }
 });
 
-test('the manifest ships both, and no others', () => {
+test('the manifest ships them all, and no others', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
     assert.deepEqual(manifest.agents, NAMES.map((n) => './agents/' + n + '.md'));
     for (const rel of manifest.agents) assert.ok(fs.existsSync(path.join(ROOT, rel)), rel);

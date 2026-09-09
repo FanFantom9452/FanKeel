@@ -310,7 +310,8 @@ runs one row per pass, and every other step of the loop is unchanged.
    ```
 
    Give it the brief path and the range — never a paste of the session's
-   history.
+   history. Dispatch it as `subagent_type: fankeel-reviewer`; the model
+   comes from that agent file, not typed by hand here.
 
    **When the user has said, this session, not to dispatch**, the reviewer runs
    here, in this session. That is a ruling, not a stopper: the four things that

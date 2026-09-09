@@ -25,16 +25,16 @@ reproduce whatever had been put in front of them, with no needle in the prompt t
 find — a third never launched, and a cell that did not run is not a result
 ([reports/2026-09-04-subagent-brief-probe.md](reports/2026-09-04-subagent-brief-probe.md)).
 
-## The two agents this plugin defines
+## The three agents this plugin defines
 
-Two subagent types are not just described in prose — they are declared as
+Three subagent types are not just described in prose — they are declared as
 `agents` in `.claude-plugin/plugin.json` and shipped as files under `agents/`:
-`fankeel-reader` and `fankeel-judge`. Both carry `tools: [Read, Grep, Glob,
-Bash]` — Edit, Write and NotebookEdit are simply absent from the list, so
-calling either to change a file is refused by the harness rather than left to
-a rule somebody has to remember. Bash stays on the list for `git` and this
-plugin's own scripts, a named residual rather than a claim that either agent
-cannot write anything.
+`fankeel-reader`, `fankeel-judge` and `fankeel-reviewer`. All three carry
+`tools: [Read, Grep, Glob, Bash]` — Edit, Write and NotebookEdit are simply
+absent from the list, so calling any of them to change a file is refused by
+the harness rather than left to a rule somebody has to remember. Bash stays
+on the list for `git` and this plugin's own scripts, a named residual rather
+than a claim that any of the three cannot write anything.
 
 `fankeel-reader` runs at `model: sonnet`, the floor the stage rules already
 ask survey, verify and audit's own reader fan-outs to use — a `subagent_type`
@@ -68,6 +68,20 @@ missing `--session`, `--brief`, `--answer` or `--slug` exits 1 before
 anything is written. It then appends a row to `docs/README.md`'s own
 `## Judgements` table when that heading exists, and says so plainly when it
 does not rather than inventing one (`scripts/judge.js:50-66`, `indexRow`).
+
+`fankeel-reviewer` runs at `model: sonnet`, and answers neither kind of
+question above: it is the shared contract behind build's per-task reviewer
+and verify's adversary, both of which dispatch `subagent_type:
+fankeel-reviewer` instead of writing a model by hand. What tells it apart
+from `fankeel-reader` is not the tool list — both carry the same four — but
+the shape of the question: a reader is asked what a file says, a reviewer
+is asked what a diff or a table gets wrong, and it returns only what it
+defeats. This is also the only place `dispatch.floor` is actually enforced
+by the harness rather than by a rule someone has to remember:
+`SubagentStart`'s payload carries only `agent_id` and `agent_type`
+(`docs/subagents.md:354`), so a hook cannot see, and cannot check, what
+model a dispatch asked for — the agent file's `model: sonnet` is the one
+pin the harness itself reads before launch.
 
 ## Why this is the best-value text in the plugin
 
