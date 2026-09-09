@@ -191,7 +191,7 @@ test('the design template gained no slot', () => {
 新的一步要寫進去的六件事，每一件都要在文字裡出現：
 
 1. **判準**——怎麼認定這個任務是前端工作。這是 per-task 的判斷，跟 `class` 一樣說出來讓人推翻；`design.mockup` 回答的是 per-project 的「這個專案有前端嗎」，兩者不是同一個問題。
-2. **產物**——一頁 HTML，寫到 `.fankeel/build/<ledger 用的同一個目錄名>/mockup.html`，涵蓋 approach 影響到的畫面。不進版控，跟 ledger 同一層。
+2. **產物**——一頁 HTML，寫到 `.fankeel/build/<date>-<topic>/mockup.html`，涵蓋 approach 影響到的畫面。不進版控。design 跑在 plan 之前，所以那一刻還沒有 ledger 目錄，`bounded` 連 design 檔與 plan 檔都不會有；能知道的是 stem——有檔的時候三者共用它，沒檔的時候從日期與題目直接取。
 3. **抓哪支 skill**——本機已安裝的是 `taste-skill:taste-skill`、`taste-skill:soft-skill`、`taste-skill:minimalist-skill`、`frontend-design:frontend-design`、`ui-ux-pro-max:ui-ux-pro-max`、`impeccable:impeccable`。挑一支，不要全掛。
 4. **dispatch 行**——`implementer, <design.mockup 的值>`，理由是視覺設計不吃 `dispatch.floor`。
 5. **subagent 拿不到 profile**——`renderBrief({mine, agentType})`（`lib/render.js:359`）沒有 profile 參數，`hooks/brief.js:39` 只傳這兩個，所以模型與路徑必須由派它的 session 寫進 prompt。這一步要明說。
@@ -222,7 +222,7 @@ test('the design template gained no slot', () => {
 | `lib/stages.js` 的 design 物件加 `when: [{ when: 'design.mockup', text: <下面那條> }]` | Task 2 |
 | 該 stage 的 `rules` 陣列與 `template` **一個字都不動** | Task 2 |
 | 規則文字要說四件事：什麼時候做、產物寫到哪、用 `design.mockup` 指名的模型派一個 | Task 2 |
-| 產物路徑是 `.fankeel/build/<ledger 用的同一個目錄名>/mockup.html`——不是新的命名法， | Task 2、Task 3 |
+| 產物路徑是 `.fankeel/build/<date>-<topic>/mockup.html`——design 跑在 plan 之前， | Task 2、Task 3 |
 | **字元預算**：開啟時 design 的注入必須 < 2400。今天 2164，餘 235。規則寫完先跑 | Task 2 |
 | 路徑寫在 `spec:` 行而不是新增一個 `mockup:` 槽，因為 template 不受 `when` 過濾 | Task 2 |
 | `skills/fankeel-design/SKILL.md` 在第 2 步「One approach」與第 3 步「The success | Task 3 |

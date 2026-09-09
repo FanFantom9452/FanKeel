@@ -23,7 +23,7 @@ source_of_truth: lib/profile.js, lib/stages.js, lib/render.js, skills/fankeel-de
 - `renderBrief({mine, agentType})`（`lib/render.js:359`）沒有 profile 參數，
   `hooks/brief.js:39` 也只傳這兩個。**沒有任何 profile 值到得了 subagent。**
 - 沒有任何程式碼強制模型選擇：`dispatch.floor` 只有 skill 散文讀它
-  （`TODO.md:67`、`docs/decisions/2026-09-09-profile-judge-reader.md:69`），
+  （`TODO.md:65`、`docs/decisions/2026-09-09-profile-judge-reader.md:69`），
   `scripts/judge.js:79` 的模型來自 CLI 旗標不是 profile。這個新鍵繼承同一個缺口。
 - `mockup` 全 repo 只命中 `docs/improvement-brief.md:588` 一行文件、零程式碼。
   `dispatch`、`sonnet` 在 `docs/plans/2026-09-09-design-class-prompt.md` 與
@@ -58,8 +58,10 @@ per-project 的問題是「這個專案有前端嗎」，那正好是 profile �
   > names, saved under `.fankeel/build/`, its path on the `spec:` line — the
   > gate approves the page, not the paragraph.
 
-- 產物路徑是 `.fankeel/build/<ledger 用的同一個目錄名>/mockup.html`——不是新的命名法，
-  是 build 已經在用的那個目錄，所以後續 stage 讀得到，過 compaction 不會死
+- 產物路徑是 `.fankeel/build/<date>-<topic>/mockup.html`——design 跑在 plan 之前，
+  所以那一刻還沒有 ledger 目錄（`lib/ledger.js:48-50` 從 plan 的 basename 推它），
+  而 `bounded` 連 design 檔與 plan 檔都不會有；能知道的是那個 stem，有檔的時候
+  design 檔、plan 檔與 ledger 目錄共用它，沒檔的時候從日期與題目直接取
 - **字元預算**：開啟時 design 的注入必須 < 2400。今天 2164，餘 235。規則寫完先跑
   `node --test tests/render.test.js` 讀它印出來的診斷行；不夠就把一句理由挪進 skill，
   不是提高上限——`tests/render.test.js:506-527` 說明為什麼第四次提高不該發生

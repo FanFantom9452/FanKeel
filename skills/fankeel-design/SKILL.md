@@ -76,9 +76,11 @@ something on a screen a person looks at. Say which way you decided, because it
 is a judgement someone can overturn, like `class`. `design.mockup` answers a
 different question: whether the project has a front end at all.
 
-The artefact is one HTML page covering every screen the approach changes,
-written to `.fankeel/build/<the directory name the ledger uses>/mockup.html` —
-beside the ledger, and not committed.
+The artefact is one HTML page covering every screen the approach changes, at
+`.fankeel/build/<date>-<topic>/mockup.html`, uncommitted. The design file, the
+plan and the plan's ledger all take that stem, so where a ledger appears later
+the page is already beside it. A `bounded` task gets no plan and no ledger, and
+still takes the stem from the date and the topic.
 
 Dispatch it as `implementer, <the value of design.mockup>`. Visual design does
 not take `dispatch.floor`, which is why the key carries a model at all. Name one
