@@ -80,6 +80,7 @@ here.
 | Where a rule lives — script, anchor or skill — and the ten deferred decisions settled by applying it | [decisions/2026-09-05-anchor-tiers-design.md](decisions/2026-09-05-anchor-tiers-design.md) |
 | The five tasks that anchored four stages, mandated `**Interfaces:**`, and closed ten TODO entries | `docs/archive/2026-09-05-anchor-tiers.md` — *built* |
 | Anchors for the last three stages, and why `build`'s commit step is two words on a pointer rather than a rule | [decisions/2026-09-05-anchor-remaining-design.md](decisions/2026-09-05-anchor-remaining-design.md) |
+| Why a project answers the land menu once in `profile.json`, why in-stage questions go to a one-shot `fankeel-judge` whose answer is filed verbatim, why readers are structurally read-only, and the two placements the plan changed on the way | [decisions/2026-09-09-profile-judge-reader.md](decisions/2026-09-09-profile-judge-reader.md) — *繁體中文* |
 | The two tasks that anchored `survey`, `plan` and `audit`, and brought the survey skill's step 6 to what `task.js` does | `docs/archive/2026-09-05-anchor-remaining.md` — *built* |
 | Why the fourteen entries under `## Ready` came down to nine changes, and why the temp-directory leak goes first | `docs/archive/2026-09-07-ready-fourteen-design.md` — *built* |
 | The nine tasks that close them, with the code for each written out | `docs/archive/2026-09-07-ready-fourteen.md` — *built* |

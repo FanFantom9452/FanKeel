@@ -144,6 +144,8 @@ last_verified: 2026-09-09
 
 ## 5. 條件規則：D 的地基
 
+（survey 2026-09-09 對 hallmark 的盤點，留給 mockup 任務：nutlope/hallmark 的 SKILL.md 558 行加 references；pre-flight 先讀專案的 design token；21 個可釘選主題；58 個 gate，禁用與門檻混寫；輸出 HTML 加 tokens.css；MIT；只 clone 到 scratchpad 讀，沒安裝。）
+
 - `lib/stages.js` 的 rule 可以是字串，也可以是 `{ when: 'judge.enabled', text }`
   ——`when` 是 profile 鍵名，前綴 `!` 取反。`rulesFor(stage, ctx)` 過濾掉
   `when` 為假的，`ctx.profile` 是 §1 的生效值。今天只有 §3 那一條用它；
