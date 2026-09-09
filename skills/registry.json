@@ -1,0 +1,54 @@
+{
+  "generated_by": "scripts/stage-registry.js",
+  "stages": [
+    {
+      "name": "survey",
+      "entry_condition": "ratchet the class with task.js route.",
+      "stop_condition": "Done when the map has been read, the scanner has been run and quoted, its `skipped:` line has been answered rather than left as a number, and the class is said out loud.",
+      "prompt_bytes": 2377,
+      "prompt_byte_budget": 2400
+    },
+    {
+      "name": "design",
+      "entry_condition": "spec file, self-review.",
+      "stop_condition": "Done when one approach, its file table, the criterion that fails now and passes after, the check against the map and the one unverified thing are all on screen.",
+      "prompt_bytes": 2434,
+      "prompt_byte_budget": 2500
+    },
+    {
+      "name": "plan",
+      "entry_condition": "Read:, a fence names its file, ## Coverage.",
+      "stop_condition": "Done when every task carries its own test cycle, its `**Files:**` block and its `Dispatch:` line, `## Global Constraints` has been generated from the project rather than remembered, and the plan file is written.",
+      "prompt_bytes": 2366,
+      "prompt_byte_budget": 2400
+    },
+    {
+      "name": "build",
+      "entry_condition": "worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape.",
+      "stop_condition": "Done when the denominator lists nothing open, each piece has had its review as it landed, and the whole-branch review has run.",
+      "prompt_bytes": 2290,
+      "prompt_byte_budget": 2400
+    },
+    {
+      "name": "verify",
+      "entry_condition": "ledger ranges, red-green, line by line.",
+      "stop_condition": "Done when every claim has a row with the evidence beside it, the adversary has read that table, and `docs-check` has been run.",
+      "prompt_bytes": 2406,
+      "prompt_byte_budget": 2500
+    },
+    {
+      "name": "audit",
+      "entry_condition": "todo-check after a move.",
+      "stop_condition": "Done when the three scanners have been run and quoted, the adversary has read the findings, and everything not being fixed here carries a `routed:` line naming its `TODO.md` heading.",
+      "prompt_bytes": 2424,
+      "prompt_byte_budget": 2500
+    },
+    {
+      "name": "land",
+      "entry_condition": "worktree, base, release.",
+      "stop_condition": "Done when the suite is green, the documents are closed, the map is rewritten and `todo-check` passes.",
+      "prompt_bytes": 2440,
+      "prompt_byte_budget": 2500
+    }
+  ]
+}
