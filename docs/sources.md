@@ -11,8 +11,11 @@ own evidence ledger — one stable ID per measurement, seven columns, and a
 reverse-index column so that changing a figure says which pages have to
 change with it. This page is that mechanism for fankeel's own dated reports.
 
-Every row below is one of the fifteen dated reports at the top level of
-`docs/reports/`. The 53 files under `docs/reports/evidence/` are the raw
+Every row below is one of the dated reports at the top level of
+`docs/reports/`. Sixteen sit there and fifteen have a row: the heading counts
+rows and not files, and the report with no row yet is
+`2026-09-09-design-axis-inventory.md`, filed under `## Ready` in `TODO.md`.
+The 53 files under `docs/reports/evidence/` are the raw
 `claude -p --output-format json` output and diffs behind three of those
 reports, not reports of their own, so they carry no row — a row's Link column
 points at the report, and the report itself points at its evidence directory
