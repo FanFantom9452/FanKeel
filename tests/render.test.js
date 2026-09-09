@@ -528,8 +528,11 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
   // passing", ALWAYS[1] gave up a word, and nobody asked for more room.
   // Rendered with a profile, because the profile picks which `when` rules are
   // in the block: `land.archivePlan` picks one of two land rules, so a render
-  // with no profile measures a block no session with one produces. Six keys
-  // set, both archive answers.
+  // with no profile measures a block no session with one produces. Seven keys
+  // set, crossed across both archive answers and both positions of
+  // `design.mockup`: the key also switches a `when` rule on, so the on
+  // position is the one that binds against the cap, and the off position has
+  // to be measured too or nobody knows what a project with no frontend pays.
   const PROFILES = [true, false].flatMap((archive) => [false, 'opus'].map((mockup) => ({
     values: { 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': archive, guard: 'ask', 'dispatch.floor': 'sonnet', 'judge.model': 'fable', 'design.mockup': mockup },
     sources: { 'land.integration': 'project', 'land.push': 'project', 'land.archivePlan': 'project', guard: 'project', 'dispatch.floor': 'machine', 'judge.model': 'machine', 'design.mockup': mockup === false ? 'builtin' : 'project' },
