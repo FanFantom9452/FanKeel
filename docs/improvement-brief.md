@@ -168,7 +168,7 @@ SEPIA 的形狀跟 caveman 完全不同：caveman 是**一個模式 + 20 個 ski
 > **★ Insight**
 >
 > - **測試比被測程式多 48%（547 : 369）**，而且測試名字全是行為句：`test_a_non_string_version_fails_rather_than_counting_as_absent`、`test_duplicate_version_keys_are_invalid_not_first_wins`、`test_an_empty_tree_fails_rather_than_passing_vacuously`。讀測試清單就等於讀規格——這正是 fankeel `verify` stage 要的「claim-to-evidence table」，只是寫成了可執行的形式。
-> - **`research/` 這 108KB 從不進 context**。SEPIA 把「為什麼這條規則存在」和「規則本身」物理分離，但不是分離成 SKILL.md / README.md（caveman 的做法），而是分離成**執行期路徑 vs 帳本路徑**。fankeel 的 `docs/reports/2026-09-03-dispatch-vs-inline.md` 已經是這一層，但 SKILL.md 直接把數字抄進正文了（9.2×、1.5×、2.55×、1.85×）——那些數字現在活在兩個地方。
+> - **`research/` 這 108KB 從不進 context**。SEPIA 把「為什麼這條規則存在」和「規則本身」物理分離，但不是分離成 SKILL.md / README.md（caveman 的做法），而是分離成**執行期路徑 vs 帳本路徑**。fankeel 的 `docs/reports/2026-09-03-dispatch-vs-inline.md` 已經是這一層，但 SKILL.md 直接把數字抄進正文了（9.2×、1.5×、2.55×、1.85×——9.2× 是提示裡沒給檔名的那一組，1.5× 是同題但七個檔名都給了的那一組，2.55× 是給了八個檔名、但跨檔的 join 留著的中間點）——那些數字現在活在兩個地方。
 
 ---
 
