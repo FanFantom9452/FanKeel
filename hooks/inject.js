@@ -25,6 +25,8 @@ const { overlapPaths } = require('../lib/overlap.js');
 const { guardMode } = require('../lib/guard.js');
 const { positionIn } = require('../lib/stages.js');
 const { claimWrites } = require('../lib/dirty.js');
+const docs = require('../lib/docs.js');
+const profileLib = require('../lib/profile.js');
 const { run, parse } = require('../lib/hook.js');
 
 // The one prompt trying to turn the mode on. Everything else in this hook keys
@@ -172,6 +174,15 @@ function main(raw) {
     const alive = others.filter((o) => live.isLive(liveState, o.sessionId, o.data && o.data.configDir));
     const overlapping = alive.filter((o) => overlapPaths(mineClaims, registry.claimsOf(o.data)).length > 0).length;
 
+    // The project's standing answers. A read failure costs one line, never
+    // the injection: `read` returns unreadable paths rather than throwing, but
+    // `projectRootsFor` stats the disk and this stays inside a try regardless.
+    let profile;
+    try {
+        const projectRoot = docs.projectRootsFor(root, mine.project ? [mine.project] : [])[0] || root;
+        profile = profileLib.read(projectRoot, mine.configDir || profileLib.configDirOf());
+    } catch (e) { /* housekeeping */ }
+
     // Output first, side effects after. A failure while refreshing a timestamp or
     // writing a statusline flag must not cost the injection, which is the only
     // reason this process was started. The scan above is not a side effect: it
@@ -179,7 +190,7 @@ function main(raw) {
     process.stdout.write(JSON.stringify({
         hookSpecificOutput: {
             hookEventName: 'UserPromptSubmit',
-            additionalContext: render({ mine: { sessionId, data: mine }, others: alive, now, root, launch, transcript: payload.transcript_path, unclaimed }),
+            additionalContext: render({ mine: { sessionId, data: mine }, others: alive, now, root, launch, transcript: payload.transcript_path, unclaimed, profile }),
         },
     }));
 

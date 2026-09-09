@@ -32,6 +32,8 @@ const { overlapPaths } = require('../lib/overlap.js');
 const { guardMode } = require('../lib/guard.js');
 const { splitAroundVerb } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
+const profile = require('../lib/profile.js');
+const docs = require('../lib/docs.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
 
@@ -78,9 +80,7 @@ const FIRST_STEP = {
 // authority.
 function claudeDir(opts) {
     if (opts && opts.claudeDir) return opts.claudeDir;
-    if (process.env.CLAUDE_CONFIG_DIR) return process.env.CLAUDE_CONFIG_DIR;
-    const home = process.env.HOME || process.env.USERPROFILE;
-    return home ? path.join(home, '.claude') : null;
+    return profile.configDirOf();
 }
 
 function showBadge(opts, sessionId, word, data, root, refresh) {
@@ -189,6 +189,7 @@ function parseArgs(head, whole) {
     }
     if (whole.includes('--force')) opts.force = true;
     if (whole.includes('--all')) opts.all = true;
+    if (whole.includes('--default')) opts.default = true;
     return opts;
 }
 
@@ -531,6 +532,13 @@ function cmdStart(root, opts) {
         started: stamp,
         updated: stamp,
     };
+
+    // The profile is the user's standing answer, written once with
+    // `profile set guard`; applying it here is executing that instruction,
+    // not the script choosing a mode — which is what invariant 6 forbids.
+    const prof = profile.read(projectRootFor(root, opts), claudeDir(opts));
+    if (prof.sources.guard && prof.sources.guard !== 'builtin') data.guard = prof.values.guard;
+
     // `replace` rather than `update`: this record was built from scratch a few
     // lines up, so there is nothing of anyone else's in the file to preserve.
     // What the lock buys is that a hook firing on the prompt that ran this
@@ -552,6 +560,7 @@ function cmdStart(root, opts) {
         + '   route: ' + route.join(' → ')];
     lines.push('');
     for (const line of describe(root, id, data)) lines.push('  ' + line);
+    if (prof.sources.guard && prof.sources.guard !== 'builtin') lines[lines.findIndex((l) => l.startsWith('  guard:'))] += ' (profile)';
 
     lines.push('');
     lines.push(FIRST_STEP[data.stage] || 'Begin at ' + data.stage + '. Do not stop to ask whether to start.');
@@ -691,6 +700,51 @@ function cmdNext(root, opts) {
     const text = opts.positional.join(' ');
     if (!registry.setNext(root, id, text)) fail('No entry for this session under ' + root);
     return text.trim() ? 'fankeel — next: ' + registry.nextOf(registry.readSession(root, id)) : 'fankeel — next cleared.';
+}
+
+// The project a profile belongs to: the registry root, or the directory
+// `--project` names under it, resolved the way the docs lookup resolves it.
+function projectRootFor(root, opts) {
+    const roots = docs.projectRootsFor(root, opts.project ? [opts.project] : []);
+    return roots[0] || root;
+}
+
+// Nothing here touches a session entry: a profile is the project's, not the
+// task's, so `--session` is not required and no badge is written.
+function cmdProfile(root, opts) {
+    const verb = String(opts.positional[0] || '');
+    const projectRoot = projectRootFor(root, opts);
+    const cfg = claudeDir(opts);
+    if (verb === 'show') {
+        const { values, sources, unreadable } = profile.read(projectRoot, cfg);
+        const lines = ['fankeel — profile for ' + projectRoot];
+        for (const key of Object.keys(profile.KEYS)) {
+            lines.push('  ' + key.padEnd(18) + (values[key] === undefined ? '(ask)' : String(values[key])).padEnd(8) + (sources[key] || ''));
+        }
+        for (const f of unreadable) lines.push('  unreadable: ' + f);
+        return lines.join('\n');
+    }
+    if (verb === 'set') {
+        const key = opts.positional[1];
+        const value = opts.positional[2];
+        if (!key || value === undefined) fail('profile set <key> <value>');
+        const file = opts.default ? profile.machineFile(cfg) : profile.projectFile(projectRoot);
+        if (!file) fail('No config directory to write the machine default to.');
+        const out = profile.write(file, key, value);
+        if (!out.ok) fail(out.reason);
+        return 'fankeel — profile: ' + key + ' = ' + out.value + '  → ' + file;
+    }
+    if (verb === 'suggest') {
+        const { values, evidence } = profile.suggest(projectRoot);
+        const lines = ['fankeel — profile suggested from ' + projectRoot + ' (nothing written)'];
+        for (const e of evidence) lines.push('  ' + e);
+        const keys = Object.keys(values);
+        if (!keys.length) { lines.push('  nothing the history answers'); return lines.join('\n'); }
+        lines.push('', JSON.stringify(values, null, 2), '');
+        for (const k of keys) lines.push('node ' + path.relative(process.cwd(), __filename).split(path.sep).join('/') + ' profile set ' + k + ' ' + values[k] + (opts.project ? ' --project ' + opts.project : ''));
+        return lines.join('\n');
+    }
+    fail('profile is one of: show, set <key> <value> [--default], suggest');
 }
 
 // Invariant 7: never on this script's own initiative, so the value is always
@@ -959,6 +1013,7 @@ const COMMANDS = {
     note: cmdNote,
     next: cmdNext,
     guard: cmdGuard,
+    profile: cmdProfile,
     down: cmdDown,
     adopt: cmdAdopt,
     clear: cmdClear,
@@ -978,6 +1033,9 @@ const USAGE = [
     '  note "..."                        a dead end or a decision, capped at five',
     '  next "..."                        one line; empty clears it',
     '  guard <ask|deny|off>              only when the user asked for it',
+    '  profile show|set <key> <value>|suggest',
+    '                                    the project\'s standing answers; --default writes the',
+    '                                    machine file, --project <dir> picks a project under the root',
     '  down                              stand the task down; never deletes',
     '  adopt <session-id>                take another entry over, standing it down',
     '  clear <session-id> [--force]      put down a claim nobody is behind; never deletes',

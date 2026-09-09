@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-09
-source_of_truth: lib/stages.js, lib/render.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js
+source_of_truth: lib/stages.js, lib/render.js, lib/profile.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js
 ---
 
 # The pipeline
@@ -126,9 +126,9 @@ stage rules:
   - Do not stop where the happy path works and the rest is "later". That, and a new ask that neither blocks nor belongs, is one TODO.md line at the detail. Say which; ambiguous, ask that turn.
   - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task or fix, then `complete <n> "<what>"` or `fix "<what>"`.
   - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path a guess.
-  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
-  - A new document is the last resort: use an existing page, or write a generator when it derives from code. One written carries status, last_verified and source_of_truth.
-  - Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, resume the fixer, commit shape.
+  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code. Remove what your own change orphaned.
+  - A new document is the last resort: use an existing page, or write a generator when it derives from code.
+  - Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape.
   - Output: one line per file, then the question. Under 80 words.
 
 output shape:
@@ -209,9 +209,9 @@ stage rules:
   - Do not stop where the happy path works and the rest is "later". That, and a new ask that neither blocks nor belongs, is one TODO.md line at the detail. Say which; ambiguous, ask that turn.
   - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task or fix, then `complete <n> "<what>"` or `fix "<what>"`.
   - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path a guess.
-  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code. Remove what your own change orphaned; dead code you did not create gets mentioned, not deleted.
-  - A new document is the last resort: use an existing page, or write a generator when it derives from code. One written carries status, last_verified and source_of_truth.
-  - Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, resume the fixer, commit shape.
+  - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code. Remove what your own change orphaned.
+  - A new document is the last resort: use an existing page, or write a generator when it derives from code.
+  - Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape.
   - Output: one line per file, then the question. Under 80 words.
 
 output shape:
@@ -317,6 +317,33 @@ raising the cap.
 [docs/decisions/2026-09-05-anchor-tiers-design.md](decisions/2026-09-05-anchor-tiers-design.md)
 applied this to ten deferred decisions.
 
+A rule can also be conditional on the profile, rather than earning its place
+by tier. Each stage's own `when` array holds `{ when, text }` entries;
+`rulesFor(stage, subs, values)` filters them with `holds(when, values)`
+against the profile's effective values, a leading `!` on `when` negating the
+key. `ALWAYS_WHEN` is the same shape for a rule meant to ride every stage —
+exported and empty today, because its one candidate fit the cap better
+landed on four stages' own `when` instead of one shared clause: an in-stage
+question going to `fankeel-judge` — design's one question at a time,
+survey's class, plan's split, build's stop-and-ask — is a single line on
+`survey`, `design`, `plan` and `build`, and it drops out entirely when the
+profile's `judge.enabled` does not hold. `land`'s archive-plan rule takes the
+other shape instead of a filter: two `when` entries, keyed
+`land.archivePlan` and `!land.archivePlan`, so the sentence itself reads
+differently depending on whether the profile already answered, rather than a
+token filling a blank in one shared sentence.
+
+A rule's token is one of two kinds, and a test depends on the difference — a
+**script token**'s value is a path, the same on every prompt: `{{JUDGE}}`
+among them, filled with `scripts/judge.js`'s installed path so the judge
+rule above can read `node {{JUDGE}} record` without a plugin root hard-coded
+here. A **render token**'s value is computed per stage and differs —
+`{{NEXT}}`, `{{PONYTAIL}}`, and `{{PROFILE_LAND}}`, which `land`'s own rules
+carry as `Integration — {{PROFILE_LAND}}.`; `lib/profile.js`'s `landClause`
+fills it with `profile: land merge, no push — do that, say so, skip the
+menu` when the profile already answered, or `no land answer in the profile:
+open the menu` when it has not.
+
 ## Inside each stage
 
 The table above says what each stage produces. Below is how each one gets there:
@@ -343,7 +370,7 @@ flowchart TD
     C2["<b>retired</b><br/>true once, read as though<br/>it still were"]
     C3["<b>undeclared</b><br/>dated by git, so dated by whoever<br/>last touched it, not by a reader"]
     D0["<b>scope from the tree</b><br/>which directories hold the answer<br/><i>the map says what they are for, --tree says how big —<br/>scope and dispatch in one response</i>"]
-    D["<b>4 · targeted scan</b><br/>survey, one or more terms<br/><i>nothing matched is a finding —<br/>say which terms you tried</i>"]
+    D["<b>4 · targeted scan</b><br/>survey, one or more terms<br/><i>nothing matched is a finding</i>"]
     D2{"<b>4b · did one pass cover it?</b>"}
     D4["<b>report the gap</b><br/>say what was not covered and why<br/><i>not a dispatch, and not a silence</i>"]
     D3["<b>dispatch readers</b><br/>several in one response, one lens each<br/><i>one reader with the list where the lens is the same</i><br/><i>never a round spent asking permission to read</i><br/><i>say how many, and on which model</i>"]
@@ -431,7 +458,7 @@ flowchart TD
     B["<b>the header</b><br/>goal · architecture · tech stack ·<br/>the spec this argues from"]
     C["<b>Global Constraints</b><br/><i>generated from map.md, not remembered</i><br/>exact values copied, not restated"]
     D["<b>file structure, before tasks</b><br/>what each file is responsible for"]
-    E["<b>right-size the tasks</b><br/>the smallest unit carrying its own<br/>test cycle. Split only where a reviewer<br/>could reject one and pass its neighbour"]
+    E["<b>right-size the tasks</b><br/>the smallest unit carrying its own<br/>test cycle. Fold setup and docs into<br/>the task needing them"]
     F["<b>per task</b><br/>files, read as well as modified · interfaces consumed and produced ·<br/><b>Dispatch:</b> in-session, or a model said out loud<br/>· steps, every fence naming its file"]
     G["<b>every step is two to five minutes</b><br/>write the failing test → watch it fail →<br/>implement → watch it pass → commit"]
     H{"<b>self-review, before the gate</b>"}
@@ -660,7 +687,7 @@ flowchart TD
     A0{"green?"}
     A1["<b>report the failures and stop.</b><br/>The menu comes after a green run."]
     B["<b>2 · close the documents</b><br/>todo-check · last_verified on every page<br/>re-read and found true · archive the<br/>landed plan, after asking"]
-    C["<b>3 · rewrite the map</b><br/>the project looks different now, and<br/>the next task starts from this file"]
+    C["<b>3 · rewrite the map</b><br/>node map.js — the next task<br/>starts from this file"]
     D["<b>4 · land the notes</b><br/>a convention → CLAUDE.md · a durable fact<br/>→ memory · why → the commit message ·<br/>deferred work → TODO.md<br/><i>stand down first, /clear after</i>"]
     E["<b>5 · detect the workspace,<br/>confirm the base</b>"]
     F{"<b>6 · the menu</b><br/><i>integration is the user's decision</i>"}

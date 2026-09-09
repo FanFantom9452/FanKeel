@@ -16,6 +16,9 @@
 //
 // A subagent started with an isolated context does not receive this, and that is
 // Claude Code's decision rather than something to work around.
+//
+// The agent type is passed through, and one type — fankeel-judge — gets a
+// line of its own in lib/render.js.
 
 const registry = require('../lib/registry.js');
 const { renderBrief } = require('../lib/render.js');

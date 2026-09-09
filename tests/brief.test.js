@@ -99,6 +99,14 @@ test('the agent type is carried through', () => {
   assert.match(contextOf(run(root, start(root, { agent_type: 'Explore' }))), /agent type: Explore/);
 });
 
+test('a judge is told it answers once', () => {
+  const root = tmp();
+  seed(root);
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel-judge' })));
+  assert.match(text, /Answer once\. The parent will not message you again/);
+  assert.doesNotMatch(contextOf(run(root, start(root, { agent_type: 'Explore' }))), /Answer once/);
+});
+
 test('a payload with no session id says nothing', () => {
   const root = tmp();
   seed(root);

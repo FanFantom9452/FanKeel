@@ -3,7 +3,7 @@ name: fankeel-land
 description: The land stage — a green suite, the documents closed, the map rewritten, and the integration decision left to the user. Use for the land stage of a fankeel task, finishing a development branch, deciding between merge and PR, or cleaning up a worktree when work is complete.
 version: 0.55.0
 status: current
-last_verified: 2026-09-07
+last_verified: 2026-09-09
 source_of_truth: lib/stages.js, scripts/todo-check.js, scripts/map.js, hooks/carry.js
 ---
 
@@ -32,9 +32,9 @@ what the gate asks — never something to settle first and report afterwards.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| A commit with only one short paragraph of prose | `lib/stages.js:190` caps it there (`one paragraph only for what a bullet cannot hold`) — the bullets are the record; more prose is not owed. |
-| A `shipped:` list that skips files the diff touched | It is one line per new capability, not one per file — `lib/stages.js:360` (`shipped: is one line per thing someone can now do that they could not`), drawn from the ledger's completed entries — a file with no capability of its own has nothing to add there. |
-| A landed plan still sitting on disk, not yet archived | `lib/stages.js:357` archives it only `then is archived, after asking` — a plan waiting on that answer is not forgotten, it is mid-step. |
+| A commit with only one short paragraph of prose | `lib/stages.js:218` caps it there (`one paragraph only for what a bullet cannot hold`) — the bullets are the record; more prose is not owed. |
+| A `shipped:` list that skips files the diff touched | It is one line per new capability, not one per file — `lib/stages.js:391` (`shipped: is one line per thing someone can now do that they could not`), drawn from the ledger's completed entries — a file with no capability of its own has nothing to add there. |
+| A landed plan still sitting on disk, not yet archived | `lib/stages.js:399` archives it only `then is archived, after asking` — a plan waiting on that answer is not forgotten, it is mid-step. |
 
 ## 1. The full suite, on the tree you are about to integrate
 
@@ -161,6 +161,11 @@ The base branch is whatever this work forked from. If it is not already known,
 ask — merging into the wrong base is expensive to undo.
 
 ## 6. The menu
+
+**Before the menu, the profile.** `node <plugin>/scripts/task.js profile show`
+prints the project's standing answer. Where `land.integration` and `land.push`
+are set, do that — the injected rule already said which — and say so in one
+line; the menu below is for a project that has not answered.
 
 Present exactly these, and wait. Integration is the user's decision.
 

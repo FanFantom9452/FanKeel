@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-09-08
-source_of_truth: hooks/brief.js, lib/render.js, hooks/carry.js, lib/plantasks.js, lib/usage.js, lib/prices.js
+last_verified: 2026-09-09
+source_of_truth: hooks/brief.js, lib/render.js, lib/stages.js, hooks/carry.js, lib/plantasks.js, lib/usage.js, lib/prices.js, scripts/judge.js
 ---
 
 # Subagents
@@ -24,6 +24,51 @@ asserts the hook process's stdout and stops there, so two cells were asked to
 reproduce whatever had been put in front of them, with no needle in the prompt to
 find — a third never launched, and a cell that did not run is not a result
 ([reports/2026-09-04-subagent-brief-probe.md](reports/2026-09-04-subagent-brief-probe.md)).
+
+## The two agents this plugin defines
+
+Two subagent types are not just described in prose — they are declared as
+`agents` in `.claude-plugin/plugin.json` and shipped as files under `agents/`:
+`fankeel-reader` and `fankeel-judge`. Both carry `tools: [Read, Grep, Glob,
+Bash]` — Edit, Write and NotebookEdit are simply absent from the list, so
+calling either to change a file is refused by the harness rather than left to
+a rule somebody has to remember. Bash stays on the list for `git` and this
+plugin's own scripts, a named residual rather than a claim that either agent
+cannot write anything.
+
+`fankeel-reader` runs at `model: sonnet`, the floor the stage rules already
+ask survey, verify and audit's own reader fan-outs to use — a `subagent_type`
+that is structurally read-only standing in for what those dispatches used to
+send as `general-purpose`.
+
+`fankeel-judge` runs at `model: fable`, and answers a different kind of
+question: not a multi-file read inside a stage's own work, but the in-stage
+question that would otherwise stop the stage to ask a person — design's one
+question at a time, survey's class, plan's split, build's stop-and-ask. Four
+stages — survey, design, plan, build — carry the same one-line rule for it on
+their own `when` rather than in `ALWAYS`, so it only rides a prompt when the
+profile's `judge.enabled` holds (`lib/stages.js:118-140`, `JUDGE_RULE`).
+`lib/render.js`'s `renderBrief`, which `hooks/brief.js` calls, gives it one
+line the reader's brief does not carry, when `payload.agent_type` is
+`fankeel-judge`: *answer once; the parent
+will not message you again.*
+
+Its answer does not stay in the judge's own context — the parent files it,
+verbatim:
+
+```
+node scripts/judge.js record --session <id> --brief <path> --answer <path|-> --slug <a-z0-9-> [--model <m>] [--root <dir>] [--project <dir>]
+```
+
+It writes `docs/judgements/<date>-<slug>.md`: frontmatter carrying `judged`,
+`model`, `agent: fankeel-judge`, `task`, `session` and `stage`, then the brief
+and the answer copied in whole rather than summarised
+(`scripts/judge.js:83-103`). A slug already on disk gets `-2` rather than
+overwriting the first record (`scripts/judge.js:35-39`, `freePath`), and a
+missing `--session`, `--brief`, `--answer` or `--slug` exits 1 before
+anything is written. It then appends a row to `docs/README.md`'s own
+`## Judgements` table when that heading exists, and says so plainly when it
+does not rather than inventing one (`scripts/judge.js:50-66`, `indexRow`).
 
 ## Why this is the best-value text in the plugin
 

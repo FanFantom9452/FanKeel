@@ -195,3 +195,6 @@ tbody tr:last-child td{border-bottom:0}
 .clearform{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:12px}
 .cleared{margin:0 0 12px;color:var(--up);font-size:12.5px}
 .empty{padding:44px;text-align:center;color:var(--mute);font-size:13px}
+.profile table{width:100%;margin-top:8px}
+.profile td,.profile th{padding:4px 6px;text-align:left;font-size:12px}
+.pf{display:inline-flex;gap:6px;align-items:center}

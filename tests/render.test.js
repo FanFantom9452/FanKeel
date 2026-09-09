@@ -200,9 +200,13 @@ test('the survey rule names a runnable path, not a placeholder', () => {
   assert.ok(require('node:fs').existsSync(SURVEY_SCRIPT), SURVEY_SCRIPT + ' does not exist');
 });
 
-// The root is stated once, and only where it buys something. `design` runs no
-// script, so a line defining a word it never uses is seventy characters of pure
-// cost — and the saving on `audit`, which names three, is what pays for the form.
+// The root is stated once, and only where it buys something. `design` used to
+// run no script at all, which is what made it the cheap illustration of the
+// "not at all" half — but the judge rule now sits in its `when` by default
+// (`judge.enabled` is on unless a profile turns it off), and once `{{JUDGE}}`
+// resolves to a real path, design carries the root like every other stage. The
+// loop above still proves the invariant for all seven; this only pins design's
+// changed case rather than the case that no longer exists.
 test('the plugin root is stated once per injection, and not at all when no rule needs it', () => {
   for (const stage of NAMES) {
     const out = render({ mine: entry(MINE, { stage }), others: [], now: NOW });
@@ -211,7 +215,7 @@ test('the plugin root is stated once per injection, and not at all when no rule 
     assert.equal(stated, names ? 1 : 0, stage + ' states the root ' + stated + ' times');
   }
   const design = render({ mine: entry(MINE, { stage: 'design' }), others: [], now: NOW });
-  assert.equal(design.includes(PLUGIN_ROOT), false, 'design names no script and still carries the root');
+  assert.ok(design.includes(PLUGIN_ROOT), 'design names the judge script by default now, and should carry the root');
 });
 
 test('the land rule names a runnable todo-check path, not a placeholder', () => {
@@ -531,8 +535,19 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
   // and then what moving the dispatch disclosure into ALWAYS did again: `survey`
   // gave up its own copy of it and "which no flag lifts", `build` gave up "in
   // passing", ALWAYS[1] gave up a word, and nobody asked for more room.
+  // Rendered with a profile, because the profile picks which `when` rules are
+  // in the block: `judge.enabled` adds the judge rule to four stages and
+  // `land.archivePlan` picks one of two land rules, so a render with no profile
+  // measures a block no session with one produces. Seven keys set, both
+  // archive answers.
+  const PROFILES = [true, false].map((archive) => ({
+    values: { 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': archive, guard: 'ask', 'dispatch.floor': 'sonnet', 'judge.enabled': true, 'judge.model': 'fable' },
+    sources: { 'land.integration': 'project', 'land.push': 'project', 'land.archivePlan': 'project', guard: 'project', 'dispatch.floor': 'machine', 'judge.enabled': 'project', 'judge.model': 'machine' },
+    unreadable: [],
+  }));
   for (const stage of NAMES) {
-    const out = render({ mine: entry(MINE, { stage }), others: [], now: NOW });
+    const outs = PROFILES.map((profile) => render({ mine: entry(MINE, { stage }), others: [], now: NOW, profile }));
+    const out = outs.reduce((a, b) => (sizeAtReference(b) > sizeAtReference(a) ? b : a));
     const size = sizeAtReference(out);
     t.diagnostic(stage.padEnd(7) + size + ' chars at a ' + REFERENCE_ROOT + '-char root  (' + out.length + ' here)');
     assert.ok(size < 2400, stage + ' injection is ' + size + ' chars under a ' + REFERENCE_ROOT + '-character plugin root');
@@ -630,4 +645,19 @@ test('a class the registry does not recognise adds no line', () => {
     others: [], now: NOW, root: 'F:\ws', launch: 'F:\ws',
   });
   assert.doesNotMatch(text, /^class: /m);
+});
+
+test('the profile reaches the rules, and never a line of its own', () => {
+  // The per-prompt block carries no `profile:` line — see the comment in
+  // `render()` — but the profile still decides the land rule's reading.
+  const profile = { values: { 'land.integration': 'merge', 'land.push': false, guard: 'ask' }, sources: { 'land.integration': 'project', 'land.push': 'project', guard: 'builtin' }, unreadable: [] };
+  const out = render({ mine: entry(MINE, { stage: 'land' }), others: [], now: NOW, profile });
+  assert.doesNotMatch(out, /^profile:/m);
+  assert.match(out, /Integration — profile: land merge, no push — do that, say so, skip the menu\./);
+  const none = render({ mine: entry(MINE, { stage: 'land' }), others: [], now: NOW });
+  assert.doesNotMatch(none, /^profile:/m);
+  assert.match(none, /Integration — no land answer in the profile: open the menu\./);
+  const bad = render({ mine: entry(MINE, { stage: 'land' }), others: [], now: NOW, profile: { values: {}, sources: {}, unreadable: ['/x/.fankeel/profile.json'] } });
+  assert.doesNotMatch(bad, /^profile:/m);
+  assert.match(bad, /Integration — no land answer in the profile: open the menu\./);
 });

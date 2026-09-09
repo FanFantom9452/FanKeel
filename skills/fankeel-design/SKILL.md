@@ -3,7 +3,7 @@ name: fankeel-design
 description: The design stage — one approach with its trade-offs, a success criterion that can fail, and a check against the project map before anything is built. Use for the design stage of a fankeel task, choosing between approaches, writing a spec, or when an approach needs approving before implementation.
 version: 0.55.0
 status: current
-last_verified: 2026-09-08
+last_verified: 2026-09-09
 source_of_truth: lib/stages.js, lib/plantasks.js
 ---
 
@@ -32,9 +32,9 @@ screen. A second approach is a catalogue, not more design.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| Only one approach presented, no rejected alternative shown | `lib/stages.js:231` calls a second one a catalogue (`not a catalogue`) — trade-offs on the one approach chosen are the design, not a comparison table. |
-| The map check returning `no conflict` with nothing else said | `lib/stages.js:228` allows exactly that (`say you checked and found none`) — a stated absence is a complete answer, not a check cut short. |
-| Config, error handling or abstraction the ask never requested, left out | `lib/stages.js:226` requires it (`Cut whatever the stated ask does not require`) — the smaller design is the correct one, not an unfinished one. |
+| Only one approach presented, no rejected alternative shown | `lib/stages.js:260` calls a second one a catalogue (`not a catalogue`) — trade-offs on the one approach chosen are the design, not a comparison table. |
+| The map check returning `no conflict` with nothing else said | `lib/stages.js:257` allows exactly that (`say you checked and found none`) — a stated absence is a complete answer, not a check cut short. |
+| Config, error handling or abstraction the ask never requested, left out | `lib/stages.js:255` requires it (`Cut whatever the stated ask does not require`) — the smaller design is the correct one, not an unfinished one. |
 
 ## The gate never scales down
 

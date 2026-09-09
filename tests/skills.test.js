@@ -976,3 +976,91 @@ test('REQUIRED_CORE names real files under scripts/, twelve of them', () => {
   }
   assert.equal(REQUIRED_CORE.length, 12);
 });
+
+// --- Task 10: profile.json, the reader and judge agents, and the skills gate
+
+// Invariant 6 used to stop at "a guard that stopped"; the profile can now set
+// one, and `task.js start` applying it must read as following a standing
+// order rather than making a fresh call nobody asked for.
+test('fankeel: invariant 6 names the profile\'s guard as the user\'s own instruction', () => {
+  const text = read('fankeel');
+  const six = /6\.\s+\*\*Never set or clear `guard` on your own\.\*\*[\s\S]*?(?=\r?\n\r?\n## )/.exec(text);
+  assert.ok(six, 'invariant 6 is not where this test looks for it');
+  assert.match(six[0], /A `guard` the profile carries is the user's standing instruction/,
+    'invariant 6 does not name the profile as the source of a standing guard');
+  assert.match(six[0], /`task\.js start` applying it is executing that instruction, not choosing one/,
+    'invariant 6 does not say start executes rather than chooses');
+});
+
+// The tree under "Where the files are" named every bucket docs.json declared
+// and nothing profile.json or judge wrote — both are new committed files a
+// reader of this section needs to know exist.
+test('fankeel: the file tree names profile.json and the judgements bucket', () => {
+  const text = read('fankeel');
+  assert.match(text, /profile\.json\s+the project's standing answers\. committed\./,
+    'the tree does not name profile.json');
+  assert.match(text, /judgements\/\s+what fankeel-judge answered, verbatim, dated/,
+    'the tree does not name the judgements bucket');
+});
+
+// Option one's description is where the approval happens; a stage that acted
+// on a judge's answer has to say so there; otherwise approving the stage
+// approves a decision with no visible basis.
+test('fankeel: the gate table names the judgement record option one relies on', () => {
+  const text = read('fankeel');
+  assert.match(text, /Where a stage rested on a `fankeel-judge` answer, option one's description/,
+    'the gate table does not say option one names the judgement record');
+  assert.match(text, /names the record/, 'the gate table does not say the record gets named');
+});
+
+// The injected rule is one line by design — the cap left no room for the
+// procedure design §3 describes. This is where that procedure has to live
+// now, in full: everything a one-line rule cannot carry.
+test('fankeel: the judge subsection gives the full procedure the injected rule cannot', () => {
+  const text = read('fankeel');
+  assert.match(text, /### The judge/, 'no ### The judge subsection');
+  const section = /### The judge\r?\n([\s\S]*?)(?:\r?\n## |$)/.exec(text);
+  assert.ok(section, 'the judge subsection is not where this test looks for it');
+  const body = section[1];
+  assert.match(body, /judge-<n>-brief\.md/, 'the judge subsection does not name the brief path');
+  assert.match(body, /subagent_type: fankeel-judge/, 'the judge subsection does not name subagent_type');
+  assert.match(body, /judge\.model/, 'the judge subsection does not name the profile key for its model');
+  assert.match(body.replace(/\s+/g, ' '),
+    /judge\.js record --session <id> --brief <path> --answer - --slug <slug> --model <m>/,
+    'the judge subsection does not give the record command in full');
+  assert.match(body, /never the gate/, 'the judge subsection does not carry the injected rule it explains');
+});
+
+// The land skill used to open the menu unconditionally. A profile that has
+// already answered land.integration/land.push means the injected rule already
+// acted on it, so the menu is for the project that has not answered.
+test('fankeel-land: the menu checks the profile before asking', () => {
+  const text = read('fankeel-land');
+  const six = /## 6\. The menu\r?\n([\s\S]*?)\r?\n## 7\./.exec(text);
+  assert.ok(six, 'section 6 is not where this test looks for it');
+  assert.match(six[1], /\*\*Before the menu, the profile\.\*\*/, 'no profile-first paragraph');
+  assert.match(six[1], /task\.js profile show/, 'does not name the profile show command');
+  assert.match(six[1], /land\.integration/, 'does not name land.integration');
+  assert.match(six[1], /land\.push/, 'does not name land.push');
+  assert.match(six[1], /the menu below is for a project that has not answered/,
+    'does not say the menu is for an unanswered project');
+});
+
+// Task 6 shipped a custom `fankeel-reader` agent; the two skills that
+// dispatch readers said only "reader" and never which subagent_type, or
+// where its model comes from.
+test('fankeel-survey and fankeel-verify name the reader agent and its model source', () => {
+  for (const n of ['fankeel-survey', 'fankeel-verify']) {
+    const text = read(n);
+    assert.match(text, /fankeel-reader/, n + ' never names fankeel-reader');
+    assert.match(text, /dispatch\.floor/, n + ' never names the profile key for the reader\'s model');
+  }
+  // §4 ("Targeted scan") and §4b both dispatch readers, and a fix round found
+  // §4b alone carried fankeel-reader/dispatch.floor while §4 kept the old
+  // generic "readers"/"which model" wording. A whole-file match above would
+  // pass on §4b's copy alone, so this anchors to §4 specifically.
+  const section4 = /### 4\. Targeted scan\r?\n([\s\S]*?)(?:\r?\n### 4b\. |$)/.exec(read('fankeel-survey'));
+  assert.ok(section4, 'section 4 is not where this test looks for it');
+  assert.match(section4[1], /`fankeel-reader`/, 'section 4 never names fankeel-reader');
+  assert.match(section4[1], /`dispatch\.floor`/, 'section 4 never names the profile key for the reader\'s model');
+});

@@ -1,3 +1,7 @@
+---
+last_verified: 2026-09-09
+---
+
 # FANKEEL 改進簡報 — CAVEMAN 與 SEPIA 的架構掃描
 
 > **這份檔案的用途**：拿到另一台機器上，作為改進 fankeel plugin 的工作簡報。
@@ -59,7 +63,7 @@
 |---|---|
 | `caveman/skills/compile.mjs` | 驗證 canonical skill，產生 6 個 delivery target 的 `pack.json` |
 | `caveman/skills/verbs-gate.mjs` | **fail-closed 漂移閘門**：skill 不可能提到 shipped surface 沒有的 CLI 命令 / MCP tool / SDK 呼叫 |
-| `agents/reserved-verbs.json` | 保留 verb 清單，閘門的比對基準之一 |
+| `caveman/agents/reserved-verbs.json` | 保留 verb 清單，閘門的比對基準之一 |
 | `src/hooks/checksums.sha256` | hook 檔案摘要；改任何 hook 就必須重算，否則 build 失敗 |
 | `caveman/tests/verify_repo.py` | 結構性不變量：`agents/` 底下不得有第 4 個 markdown、`commands/` 不得有與 skill 同名的檔 |
 
@@ -633,7 +637,8 @@ session，然後使用者就可以根據不同專案建立 profile，然後預�
 就分析完之後不問使用者。」
 
 **今天的樣子**：`skills/fankeel-land/SKILL.md` 「## 6. The menu」每次 land 都問
-merge / PR / keep；`guard` 每個 session 重新決定；class 每個 task 說一次；dispatch 的
+merge / PR / keep；`guard` 每個 session 重新決定（2026-09-09 起 `start` 讀 profile 套用，
+見下方補記）；class 每個 task 說一次；dispatch 的
 model 下限寫在 SKILL.md 散文裡。每一個都是「同一個專案、同一個答案、每次再問一次」。
 
 **想法的三個部分**：
@@ -669,6 +674,18 @@ rules）、`lib/stages.js`、`scripts/task.js`、`lib/registry.js`、`hooks/inje
 > 完整的欄位分佈與它不涵蓋什麼在
 > [profile 證據](reports/2026-09-09-profile-evidence.md)。
 
+> **補記（2026-09-09），二**：這個方向落地為
+> [profile、judge、reader 的決定](decisions/2026-09-09-profile-judge-reader.md)，
+> 收斂到七個鍵——`land.integration`、`land.push`、`land.archivePlan`、
+> `guard`、`dispatch.floor`、`judge.enabled`、`judge.model`（`lib/profile.js`
+> 的 `KEYS`）——比上面「待決」列的清單窄：預設 class、回覆語言、要不要
+> `plan` 檔都沒有落地。存放位置照上面第一個選項定案：
+> `<project>/.fankeel/profile.json` 版控、`<configDir>/fankeel/profile.json`
+> 機器預設兜底，逐鍵合併並記來源。`landClause()` 是「答案早就知道就不問」
+> 的樣子：有答案回 `profile: land merge, no push — do that, say so, skip the menu`，
+> 沒有回 `no land answer in the profile: open the menu`。不變量 2、5、6 沒有被
+> 繞過——stand down、推進 stage、設 guard 仍要人說。
+
 ### 4.3 station 變成通用的設定面
 
 **原話**：「我現在希望這個 station 變為更加通用的東西，就是他除了是監測站，還可以先設定好
@@ -687,6 +704,17 @@ scan 出來的 JSON；只有 `station.js serve` 才有 server，能 POST 的只�
 > `index.html`、其餘三檔收進 `station/`，並補上了這裡說「已經遺失」的
 > `clear N stale` 按鈕。上面的檔名是改名後的，好讓引用解析得到；段落的判斷
 > 不動，它記的是那個時點。
+
+> **補記（2026-09-09）**：這個方向也落地在同一份
+> [profile、judge、reader 的決定](decisions/2026-09-09-profile-judge-reader.md)
+> §7——上面「待決」問的兩個問題都定案了。清單從哪裡來：`lib/profile.js` 的
+> `KEYS`，不是每個 stage 自己宣告。頁面的兩個身分怎麼分區：spec 寫 detail 面板，
+> plan 的 Task 8 改放 `總覽`——每個 registry 的卡後面一張專案 profile 卡，detail
+> 面板不動，不擠 stale／live 的視線；每張專案卡帶一個「快速套用」鍵，把機器
+> 預設逐鍵套到那個專案（鍵不在機器卡上，那張卡只顯示）。靜態頁寫不了檔那題也定案
+> 了：`serve` 模式下每列是 `<select>` 加按鈕、POST 到 `/profile`；靜態頁同
+> 一列印一句可複製的 `task.js profile set` 指令。兩種讀法都在
+> [station.md](station.md) 的「Setting a profile from the page」一節。
 
 **待決**：
 

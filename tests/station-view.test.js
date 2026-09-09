@@ -9,6 +9,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const profile = require('../lib/profile.js');
 
 // `clearStaleControl` reads `S.serve`/`S.nonce`/`S.plugin` off the
 // module-scoped `S`, which the IIFE sets to `window.STATION` at load time
@@ -251,4 +252,38 @@ test('labels keeps a nested root as its own card', () => {
     // separator away from the other — so the fold must not merge them.
     const out = V.labels(['F:\\a', 'F:\\a\\b']);
     assert.equal(Object.keys(out).length, 2);
+});
+
+test('profileCard posts to /profile with a select when served, prints the command when not, and offers a machine-default button only when the machine profile has a machine-sourced key', () => {
+    global.window.STATION.profileKeys = profile.KEYS;
+    const projectProfile = { values: { 'land.push': false }, sources: { 'land.push': 'project' } };
+
+    global.window.STATION.serve = true;
+    global.window.STATION.nonce = 'tok-9';
+    global.window.STATION.profiles = { machine: { values: {}, sources: {}, unreadable: [] } };
+    let out = V.profileCard('project profile', 'project', '/proj', projectProfile);
+    assert.match(out, /action="\/profile"/);
+    assert.match(out, /<select name="value">/);
+    assert.doesNotMatch(out, /套用機器預設/);
+    // Not a fixed literal: `scope` and `project` are the function's own
+    // arguments threaded into the hidden fields, so this is what tells apart
+    // a project card from a machine card once served.
+    assert.match(out, /name="scope" value="project"/);
+    assert.match(out, /name="project" value="\/proj"/);
+
+    const machineOut = V.profileCard('machine profile', 'machine', null, global.window.STATION.profiles.machine);
+    assert.match(machineOut, /name="scope" value="machine"/);
+    assert.doesNotMatch(machineOut, /name="project"/);
+
+    global.window.STATION.profiles.machine = { values: { guard: 'ask' }, sources: { guard: 'machine' }, unreadable: [] };
+    out = V.profileCard('project profile', 'project', '/proj', projectProfile);
+    assert.match(out, /套用機器預設/);
+
+    global.window.STATION.serve = false;
+    out = V.profileCard('project profile', 'project', '/proj', projectProfile);
+    assert.match(out, /profile set land\.push/);
+    assert.doesNotMatch(out, /<form/);
+
+    const staticMachineOut = V.profileCard('machine profile', 'machine', null, global.window.STATION.profiles.machine);
+    assert.match(staticMachineOut, /--default/);
 });

@@ -3,7 +3,7 @@ name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, moving to the next stage, or the station — "show all sessions", "which sessions are still open", "clean up old sessions", "監控站". Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.55.0
 status: current
-last_verified: 2026-09-07
+last_verified: 2026-09-09
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js, lib/guard.js
 ---
 
@@ -28,9 +28,11 @@ workspace/                        <- Claude Code opened here
 │
 ├── Waypoint/                  a repository
 │   ├── .fankeel/
-│   │   └── docs.json          THE DOCS TREE. committed, with the docs.
+│   │   ├── docs.json          THE DOCS TREE. committed, with the docs.
+│   │   └── profile.json       the project's standing answers. committed.
 │   └── docs/
 │       ├── README.md          the index
+│       ├── judgements/        what fankeel-judge answered, verbatim, dated
 │       └── plans/ decisions/ reports/ archive/
 │
 ├── KB/
@@ -179,6 +181,7 @@ node <plugin>/scripts/task.js note    "..." --session <id>
 node <plugin>/scripts/task.js next    "..." --session <id>
 node <plugin>/scripts/task.js guard   ask|deny|off --session <id>
 node <plugin>/scripts/task.js route   "build,verify" --session <id>
+node <plugin>/scripts/task.js profile show | set <key> <value> [--project|--default] | suggest
 node <plugin>/scripts/task.js down    --session <id>
 node <plugin>/scripts/task.js adopt   <other-session-id> --session <id>
 node <plugin>/scripts/task.js clear   <session-id> [--force] --session <id>
@@ -230,6 +233,8 @@ worse than none because people stop reading it.
    refused. Raising it to `deny` unasked locks the user out of their own
    repository; setting it to `off` unasked removes the one they had by default,
    and removes it silently, because nothing announces a guard that stopped.
+   A `guard` the profile carries is the user's standing instruction, and
+   `task.js start` applying it is executing that instruction, not choosing one.
 
 ## Security boundary
 
@@ -384,6 +389,11 @@ gate is the only place it gets accepted:
 | `build` | that the change is the one that was asked for |
 | `verify` | that the evidence is enough |
 | `audit` | the findings, and what is being done about them |
+
+Where a stage rested on a `fankeel-judge` answer, option one's description
+names the record — `judgements/2026-09-10-ramp.md` — so what the user is
+approving includes the judgement it was built on, and the file to read if they
+doubt it.
 
 Option one is the one part of this that varies, and it varies with the route
 rather than with the stage. `lib/stages.js` substitutes it: the injected rule
@@ -996,6 +1006,35 @@ The judgement it feeds, the evidence and the gate stay here, where the rules are
 
 `survey` dispatches readers; `build` dispatches per task, and the plan's
 `**Dispatch:**` line is where that was decided.
+
+### The judge
+
+The injected rule on `survey`, `design`, `plan` and `build` is one line: an
+in-stage question goes to `fankeel-judge` once — brief, dispatch, `node
+<plugin>/scripts/judge.js record` — never the gate. A rule read on every
+prompt has no room for what that means, so the rest of it lives here.
+
+`fankeel-judge` is the other custom agent this plugin ships, beside
+`fankeel-reader`: a one-shot subagent that answers exactly one mid-stage
+question and is never asked a second one in the same stage. It never opens
+the gate itself — that stays yours, at the end of the stage, as always.
+
+- **Write the brief first**, to `.fankeel/build/<plan>/judge-<n>-brief.md`:
+  the question, its options, the background that would otherwise sit in the
+  stem, the paths the judge needs to read, what counts as an answer, and the
+  shape the answer should come back in.
+- **Dispatch it** with `subagent_type: fankeel-judge` and `model` read from
+  the profile's `judge.model` — never inherited, the same discipline every
+  other dispatch in this skill already carries.
+- **Record the answer verbatim:** `node <plugin>/scripts/judge.js record
+  --session <id> --brief <path> --answer - --slug <slug> --model <m>`,
+  piping the answer in on stdin rather than retyping it. This is what writes
+  it, dated, under `docs/judgements/`.
+- **Proceed on the answer, and say so in one line.** A judgement is input the
+  stage acts on, not a second question the user has to sit through.
+- **Name the record at the next gate.** Option one's description names the
+  file — `judgements/2026-09-10-ramp.md` — so approving the stage's output
+  also shows what it was decided on.
 
 ## The scope guard
 

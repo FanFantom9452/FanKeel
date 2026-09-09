@@ -381,6 +381,42 @@ test('POST /clear-stale clears a too-fresh row when force is sent', async () => 
     }
 });
 
+test('POST /profile writes a project key, refuses a bad nonce, a bad key, and an unknown project', async () => {
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
+    try {
+        const data = await request(s.url + 'station/station-data.js', { method: 'GET' });
+        const nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
+        assert.match(data.text, /"profiles":\{"machine":/);
+        const form = (o) => new URLSearchParams(o).toString();
+        const post = (body) => request(s.url + 'profile', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } }, body);
+        assert.equal((await post(form({ scope: 'project', project: f.r1, key: 'land.push', value: 'false', nonce: 'wrong' }))).status, 403);
+        assert.equal((await post(form({ scope: 'project', project: f.r1, key: 'colour', value: 'blue', nonce }))).status, 400);
+        assert.equal((await post(form({ scope: 'project', project: path.join(f.base, 'nowhere'), key: 'land.push', value: 'false', nonce }))).status, 404);
+        const ok = await post(form({ scope: 'project', project: f.r1, key: 'land.push', value: 'false', nonce }));
+        assert.equal(ok.status, 303);
+        assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.r1, '.fankeel', 'profile.json'), 'utf8')), { 'land.push': false });
+        // Two pairs, the second invalid: validated before either is written, so
+        // the first pair's value must not land even though it is well formed.
+        // `value: 'true'` here (the file on disk already says `false`) is what
+        // makes a landed first pair visible — reusing `false` would leave the
+        // file looking untouched whether or not it actually was.
+        const twoPairs = new URLSearchParams([['nonce', nonce], ['scope', 'project'], ['project', f.r1],
+            ['key', 'land.push'], ['value', 'true'], ['key', 'colour'], ['value', 'blue']]);
+        assert.equal((await post(twoPairs.toString())).status, 400);
+        assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.r1, '.fankeel', 'profile.json'), 'utf8')), { 'land.push': false });
+        const machine = await post(form({ scope: 'machine', key: 'guard', value: 'deny', nonce }));
+        assert.equal(machine.status, 303);
+        assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.cfg, 'fankeel', 'profile.json'), 'utf8')), { guard: 'deny' });
+        const after = await request(s.url + 'station/station-data.js', { method: 'GET' });
+        assert.match(after.text, /"land\.push":false/);
+        assert.match(after.text, /"guard":"deny"/);
+    } finally {
+        s.close();
+    }
+});
+
 // The sixty-second `--scan` budget was exercised by nothing: every `--scan`
 // test walks a temp tree that finishes in milliseconds, so a build that dropped
 // the deadline — leaving the walk bounded only by depth, which is what it was

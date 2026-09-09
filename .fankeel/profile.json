@@ -1,0 +1,5 @@
+{
+  "land.integration": "merge",
+  "land.push": false,
+  "land.archivePlan": true
+}

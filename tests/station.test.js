@@ -79,6 +79,27 @@ test('gather classifies live, stale and down, counts unreadable, prices usage, l
     assert.equal(one.sessions[1].ended.reason, 'clear');
     assert.equal(m.pricesVerified.length, 10);
 });
+
+test('gather reads a project profile from .fankeel/profile.json, and serialize carries profileKeys', () => {
+    const f = fixture();
+    fs.writeFileSync(path.join(f.r1, '.fankeel', 'profile.json'), JSON.stringify({ 'land.integration': 'merge' }));
+    const sub = path.join(f.r1, 'sub');
+    fs.mkdirSync(path.join(sub, '.fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(sub, '.fankeel', 'profile.json'), JSON.stringify({ guard: 'deny' }));
+    registry.writeSession(f.r1, 'dddddddd-4444-4444-8444-444444444444', { task: 'sub session', project: 'sub',
+        stage: 'build', route: ['survey', 'build'], active: false, claims: [],
+        started: new Date().toISOString(), updated: new Date().toISOString(), configDir: f.cfg });
+    const m = station.gather({ configDir: f.cfg });
+    const one = m.registries.find((r) => r.root === path.resolve(f.r1));
+    assert.equal(one.profiles[one.root].values['land.integration'], 'merge');
+    assert.equal(one.profiles[one.root].sources['land.integration'], 'project');
+    const subPath = path.join(one.root, 'sub');
+    assert.deepEqual(Object.keys(one.profiles).sort(), [one.root, subPath].sort());
+    assert.equal(one.profiles[subPath].values.guard, 'deny');
+    assert.equal(one.profiles[subPath].sources.guard, 'project');
+    const data = station.serialize(m, {});
+    assert.match(data, /"profileKeys"/);
+});
 // A registry of its own per test below, rather than the shared fixture: each
 // one exercises a different shape of `clock`/`burn`/`spend` and none of them
 // should shift the session counts the earlier tests already assert on.

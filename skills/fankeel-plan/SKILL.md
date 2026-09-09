@@ -3,7 +3,7 @@ name: fankeel-plan
 description: The plan stage — decompose an approved design into tasks someone with no context could execute, with constraints generated from the project rather than remembered. Use for the plan stage of a fankeel task, writing an implementation plan, or breaking a spec into tasks before any code is written.
 version: 0.55.0
 status: current
-last_verified: 2026-09-07
+last_verified: 2026-09-09
 source_of_truth: lib/stages.js, scripts/map.js, lib/plantasks.js, scripts/ledger.js
 ---
 
@@ -35,9 +35,9 @@ missing one of those, the stage is finished.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| Setup, config or docs with no task of their own | `lib/stages.js:252` folds them in on purpose (`Fold setup and docs into the task needing them`) — a task with no matching bullet was never meant to have one. |
-| A `**Dispatch:**` line naming `sonnet` with no reason given | Only the tiers above the floor owe one — `lib/stages.js:255` (`and anything above it names why on that line`); `sonnet` needing no argument is the rule working. |
-| A plan reviewer's return holding only two kinds of line | `lib/stages.js:254` names its whole charter (`returning only promises with no task and Files blocks that disagree with their task.`) — nothing else is in its scope, so nothing else missing is a gap. |
+| Setup, config or docs with no task of their own | `lib/stages.js:282` folds them in on purpose (`Fold setup and docs into the task needing them`) — a task with no matching bullet was never meant to have one. |
+| A `**Dispatch:**` line naming `sonnet` with no reason given | Only the tiers above the floor owe one — `lib/stages.js:285` (`and anything above it names why on that line`); `sonnet` needing no argument is the rule working. |
+| A plan reviewer's return holding only two kinds of line | `lib/stages.js:284` names its whole charter (`returning only promises with no task and Files blocks that disagree with their task.`) — nothing else is in its scope, so nothing else missing is a gap. |
 
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
 
