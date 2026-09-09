@@ -683,7 +683,7 @@ rules）、`lib/stages.js`、`scripts/task.js`、`lib/registry.js`、`hooks/inje
 > 機器預設兜底，逐鍵合併並記來源。`landClause()` 是「答案早就知道就不問」
 > 的樣子：有答案回 `profile: land merge, no push — do that, say so, skip the menu`，
 > 沒有回 `no land answer in the profile: open the menu`。不變量 2、5、6 沒有被
-> 繞過——`guard`、stand down、設 guard 仍要人說。
+> 繞過——stand down、推進 stage、設 guard 仍要人說。
 
 ### 4.3 station 變成通用的設定面
 
@@ -707,8 +707,9 @@ scan 出來的 JSON；只有 `station.js serve` 才有 server，能 POST 的只�
 > **補記（2026-09-09）**：這個方向也落地在同一份
 > [profile、judge、reader 的 spec](plans/2026-09-09-profile-judge-reader-design.md)
 > §7——上面「待決」問的兩個問題都定案了。清單從哪裡來：`lib/profile.js` 的
-> `KEYS`，不是每個 stage 自己宣告。頁面的兩個身分怎麼分區：detail 面板多一個
-> profile 區，在 stage strip 旁邊，不擠 stale／live 的視線；`總覽` 的機器
+> `KEYS`，不是每個 stage 自己宣告。頁面的兩個身分怎麼分區：spec 寫 detail 面板，
+> plan 的 Task 8 改放 `總覽`——每個 registry 的卡後面一張專案 profile 卡，detail
+> 面板不動，不擠 stale／live 的視線；`總覽` 的機器
 > 預設卡帶一個「快速套用」鍵，逐鍵套到選定的專案。靜態頁寫不了檔那題也定案
 > 了：`serve` 模式下每列是 `<select>` 加按鈕、POST 到 `/profile`；靜態頁同
 > 一列印一句可複製的 `task.js profile set` 指令。兩種讀法都在

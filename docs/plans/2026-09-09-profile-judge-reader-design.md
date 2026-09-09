@@ -177,12 +177,14 @@ last_verified: 2026-09-09
 - `lib/station.js gather()` 對每個 registry 的每個 project 讀
   `lib/profile.read`，機器預設讀一次；`serialize()` 多一個 `profiles`：
   `{ machine: {values}, projects: { <path>: {values, sources} } }`。
-- `assets/station/station.js`：project 的 detail 面板多一個 **profile** 區，
+- `assets/station/station.js`：每個 project 多一張 **profile** 卡，
   每鍵一列：生效值、來源、允許值。`S.serve` 時每列是一個 `<select>` + 套用
   按鈕，POST `/profile`；靜態頁時同一列右側是可複製的
   `node <plugin>/scripts/task.js profile set <key> <value> --project <path>`。
-  機器預設同形，放在 overview 的一張卡。監測（stale／live）的版面不動：profile
-  區在 detail 的最下方、overview 卡在 registry note 之後。
+  機器預設同形，放在 overview 的一張卡。監測（stale／live）的版面不動。
+  **位置（plan Task 8 改的，verify 2026-09-09 記）**：原本寫 detail 面板最下方；
+  plan 把專案卡接進 `registryNote()`——每個 registry 的卡後面一張——detail
+  面板不動，overview 的機器卡在 registry note 之後。
 - `scripts/station.js serve` 加 `POST /profile`：nonce 錯 403；body
   `scope=project|machine`、`project=<path>`、`key`、`value`；不在 `KEYS` 的鍵或值
   400；成功走 `lib/profile.write` 後 303 回原頁。`/station/health` 不變。

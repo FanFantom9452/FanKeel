@@ -324,13 +324,16 @@ notes and its `next` intact.
 
 ## Setting a profile from the page
 
-A project's detail pane carries a **profile** section beside the stage
-strip: one row per key in `profileKeys` (`lib/profile.js`'s `KEYS`), each
-showing the effective value, which layer it came from, and the values that
-key allows. The machine defaults get the same shape on their own card on
-**總覽**, and a quick-apply button there walks the machine's keys onto the
-selected project one write at a time rather than opening a second endpoint
-for it.
+**總覽** carries the **profile** cards, and the detail pane carries none:
+each registry's card ends with one card per project it holds, and the
+machine defaults get the same shape on their own card after the registry
+notes. A card is one row per key in `profileKeys` (`lib/profile.js`'s
+`KEYS`), each showing the effective value, which layer it came from, and the
+values that key allows. The quick-apply button on the machine card walks the
+machine's keys onto the selected project one write at a time rather than
+opening a second endpoint for it. (The design put the project card in the
+detail pane; the plan's Task 8 moved it into the registry card so the two
+identities of the page stay on the two pages they already had.)
 
 Where the page is served, each row is a `<select>` and an apply button in
 place of static text; a static file prints the equivalent
