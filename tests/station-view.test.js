@@ -265,6 +265,15 @@ test('profileCard posts to /profile with a select when served, prints the comman
     assert.match(out, /action="\/profile"/);
     assert.match(out, /<select name="value">/);
     assert.doesNotMatch(out, /套用機器預設/);
+    // Not a fixed literal: `scope` and `project` are the function's own
+    // arguments threaded into the hidden fields, so this is what tells apart
+    // a project card from a machine card once served.
+    assert.match(out, /name="scope" value="project"/);
+    assert.match(out, /name="project" value="\/proj"/);
+
+    const machineOut = V.profileCard('machine profile', 'machine', null, global.window.STATION.profiles.machine);
+    assert.match(machineOut, /name="scope" value="machine"/);
+    assert.doesNotMatch(machineOut, /name="project"/);
 
     global.window.STATION.profiles.machine = { values: { guard: 'ask' }, sources: { guard: 'machine' }, unreadable: [] };
     out = V.profileCard('project profile', 'project', '/proj', projectProfile);
@@ -274,4 +283,7 @@ test('profileCard posts to /profile with a select when served, prints the comman
     out = V.profileCard('project profile', 'project', '/proj', projectProfile);
     assert.match(out, /profile set land\.push/);
     assert.doesNotMatch(out, /<form/);
+
+    const staticMachineOut = V.profileCard('machine profile', 'machine', null, global.window.STATION.profiles.machine);
+    assert.match(staticMachineOut, /--default/);
 });
