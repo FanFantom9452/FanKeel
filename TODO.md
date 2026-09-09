@@ -60,18 +60,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- `assets/station/index.html` 的 `document.write` 把 `location.search` 原樣串進資料 script 的 `src`，構造過的查詢字串可以閉合屬性注入；改成 `createElement` 加 `setAttribute` — [assets/station/index.html](assets/station/index.html).
-
-- `scripts/map.js` 沒有只印不寫的模式：被交代 read-only 的 reviewer 想讀 map 就得寫 `.fankeel/map.md`，一個 build reviewer 2026-09-08 就這樣寫了兩次 — [scripts/map.js](scripts/map.js).
-
-- spike（route survey,build）：pair 1 同題以 `haiku` 重跑兩臂，dated report 進 docs/reports，不改規則；規則要不要改另開條目 — [docs/subagents.md](docs/subagents.md).
-
-- 數字帶範圍取代四捨五入：9.2× 在散文裡補上「四 reader、跨 plugin skills、檔名未知」後就不與 1.5× 矛盾；帳本的 Scope 欄已經這樣寫，引用它的頁面還沒 — [docs/sources.md](docs/sources.md).
-
-- `docs/pipeline.md` 的 verify adversary 節點漏了規則裡「the chain is one workflow」那句，也帶著 `lib/stages.js` 規則文字沒有的措辭；各 stage 的節點沒有測試守著 — [docs/pipeline.md](docs/pipeline.md).
-
-- `docs-check` 永遠 exit 1：四份已落地的 plan（09-07 ready-fourteen、09-08 station-shell 各兩份）引用 `lib/station.js:688-712` 過了檔尾；archive 它們或拿掉行號 — [scripts/docs-check.js](scripts/docs-check.js).
-
 ## Needs a decision
 
 - skills 下一個 `registry.json` 與它的 schema：每個 stage 一筆；`## Waiting` 的 entry/stop condition、`prompt_byte_budget`、條件載入到節三條都以它為前置 — [簡報 §1.3](docs/improvement-brief.md#13-registryjson-的-schema).
