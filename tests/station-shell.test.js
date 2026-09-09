@@ -27,8 +27,12 @@ test('the shell references its three siblings under station/', () => {
 
 test('the data request carries the page query through', () => {
     // /clear-stale answers 303 -> /?cleared=2 and the shell is static, so the
-    // count reaches the data file only if the src picks up location.search.
-    assert.match(shell(), /document\.write\([^)]*location\.search/);
+    // count reaches the data file only if the src picks it up. Digits only,
+    // which is the rule scripts/station.js already applies at the other end:
+    // the whole query string went into the src until 2026-09-09.
+    const html = shell();
+    assert.match(html, /new URLSearchParams\(location\.search\)\.get\('cleared'\)/);
+    assert.match(html, /document\.write\([^)]*station-data\.js/);
 });
 
 test('station-data.js is loaded before station.js', () => {

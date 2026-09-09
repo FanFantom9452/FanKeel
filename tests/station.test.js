@@ -564,4 +564,33 @@ test('serialize carries what only a server knows', () => {
     assert.equal(onDisk.nonce, undefined);
 });
 
+// The static shell concatenates the page's query into the data script's src.
+// A crafted query could close the src attribute and inject markup, so only a
+// digits-only `cleared` is passed through — the same rule scripts/station.js
+// already applies at :355, now applied at both ends.
+const INDEX = path.join(__dirname, '..', 'assets', 'station', 'index.html');
+
+function writtenSrc(search) {
+    const html = fs.readFileSync(INDEX, 'utf8');
+    const open = html.indexOf('<script>');
+    const inline = html.slice(open + 8, html.indexOf('</script>', open));
+    assert.ok(inline.includes('station-data.js'), 'the first inline script no longer writes the data tag');
+    let out = null;
+    vm.runInNewContext(inline, {
+        location: { search },
+        document: { write: (s) => { out = s; } },
+        URLSearchParams,
+    });
+    return out;
+}
+
+test('the data script src takes a digits-only cleared and nothing else', () => {
+    assert.match(writtenSrc('?cleared=3'), /station-data\.js\?cleared=3"/);
+    assert.match(writtenSrc(''), /station-data\.js"/);
+
+    const crafted = writtenSrc('?cleared=1"></' + 'script><script>alert(1)</' + 'script>');
+    assert.ok(!crafted.includes('alert(1)'), 'a crafted query reached the src: ' + crafted);
+    assert.match(crafted, /station-data\.js"/);
+});
+
 

@@ -27,6 +27,6 @@
     <div class="scrollmain" id="page"></div>
   </div>
 </div>
-<script>document.write('<script src="station/station-data.js' + location.search + '"><\/script>')</script>
+<script>(function(){var v=new URLSearchParams(location.search).get('cleared');var q=v!==null&&/^\d+$/.test(v)?'?cleared='+v:'';document.write('<script src="station/station-data.js'+q+'"><\/script>')})()</script>
 <script src="station/station.js"></script>
 </body></html>
