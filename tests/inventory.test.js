@@ -32,7 +32,13 @@ function setDiff(actual, expected) {
 }
 
 test('skills/ holds exactly the known directories, sorted', () => {
-    const actual = fs.readdirSync(path.join(ROOT, 'skills')).sort();
+    const entries = fs.readdirSync(path.join(ROOT, 'skills'), { withFileTypes: true });
+    // The one file allowed beside the skill directories is the generated
+    // stage registry; anything else that is not a directory is as much a
+    // surprise as an unlisted directory would be.
+    const files = entries.filter((d) => !d.isDirectory()).map((d) => d.name).sort();
+    assert.deepEqual(files, ['registry.json'], 'files in skills/: ' + JSON.stringify(files));
+    const actual = entries.filter((d) => d.isDirectory()).map((d) => d.name).sort();
     const expected = [...SKILLS].sort();
     const { extra, missing } = setDiff(actual, expected);
     assert.deepEqual(actual, expected,

@@ -267,7 +267,10 @@ test('every file that carries the version carries the same one', () => {
   for (const rel of ['package.json', '.claude-plugin/plugin.json']) {
     found.set(rel, JSON.parse(read(rel)).version);
   }
-  for (const name of fs.readdirSync(path.join(root, 'skills'))) {
+  // skills/registry.json is generated data beside the skills, not a skill.
+  for (const d of fs.readdirSync(path.join(root, 'skills'), { withFileTypes: true })) {
+    if (!d.isDirectory()) continue;
+    const name = d.name;
     const rel = 'skills/' + name + '/SKILL.md';
     const m = read(rel).match(/^version:\s*(\S+)\s*$/m);
     assert.ok(m, rel + ' carries no version line');
