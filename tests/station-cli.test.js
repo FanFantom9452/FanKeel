@@ -397,6 +397,15 @@ test('POST /profile writes a project key, refuses a bad nonce, a bad key, and an
         const ok = await post(form({ scope: 'project', project: f.r1, key: 'land.push', value: 'false', nonce }));
         assert.equal(ok.status, 303);
         assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.r1, '.fankeel', 'profile.json'), 'utf8')), { 'land.push': false });
+        // Two pairs, the second invalid: validated before either is written, so
+        // the first pair's value must not land even though it is well formed.
+        // `value: 'true'` here (the file on disk already says `false`) is what
+        // makes a landed first pair visible — reusing `false` would leave the
+        // file looking untouched whether or not it actually was.
+        const twoPairs = new URLSearchParams([['nonce', nonce], ['scope', 'project'], ['project', f.r1],
+            ['key', 'land.push'], ['value', 'true'], ['key', 'colour'], ['value', 'blue']]);
+        assert.equal((await post(twoPairs.toString())).status, 400);
+        assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.r1, '.fankeel', 'profile.json'), 'utf8')), { 'land.push': false });
         const machine = await post(form({ scope: 'machine', key: 'guard', value: 'deny', nonce }));
         assert.equal(machine.status, 303);
         assert.deepEqual(JSON.parse(fs.readFileSync(path.join(f.cfg, 'fankeel', 'profile.json'), 'utf8')), { guard: 'deny' });
