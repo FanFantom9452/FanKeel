@@ -29,6 +29,15 @@ test('project beats machine beats builtin, per key', () => {
     assert.deepEqual(unreadable, []);
 });
 
+test('a leading UTF-8 BOM does not make the file unreadable', () => {
+    const d = dir();
+    fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
+    fs.writeFileSync(profile.projectFile(d), '﻿' + JSON.stringify({ guard: 'deny' }));
+    const { values, unreadable } = profile.read(d, null);
+    assert.equal(values.guard, 'deny');
+    assert.deepEqual(unreadable, []);
+});
+
 test('no files at all is the builtins, and a file that does not parse is named', () => {
     const d = dir();
     const none = profile.read(d, path.join(d, 'cfg'));
