@@ -35,7 +35,7 @@ screen. A second approach is a catalogue, not more design.
 | Only one approach presented, no rejected alternative shown | `lib/stages.js:252` calls a second one a catalogue (`not a catalogue`) — trade-offs on the one approach chosen are the design, not a comparison table. |
 | The map check returning `no conflict` with nothing else said | `lib/stages.js:249` allows exactly that (`say you checked and found none`) — a stated absence is a complete answer, not a check cut short. |
 | Config, error handling or abstraction the ask never requested, left out | `lib/stages.js:247` requires it (`Cut whatever the stated ask does not require`) — the smaller design is the correct one, not an unfinished one. |
-| A design with no mockup | Step 3 is a per-task judgement, and `lib/stages.js` carries the rule behind `when: 'design.mockup'` — a task that changes no screen gets no mockup, and a project with no front end never sees the step at all. |
+| A design with no mockup | `lib/stages.js:255` puts the step behind a condition (`when: 'design.mockup'`) — a project with no front end never reaches it, and on one that does, whether this task touches a screen is step 3's per-task judgement. |
 
 ## The gate never scales down
 
