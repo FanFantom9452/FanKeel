@@ -19,6 +19,8 @@
 
 const registry = require('../lib/registry.js');
 const { renderResume } = require('../lib/render.js');
+const docs = require('../lib/docs.js');
+const profileLib = require('../lib/profile.js');
 const { run, parse } = require('../lib/hook.js');
 
 function main(raw) {
@@ -31,10 +33,19 @@ function main(raw) {
     const mine = registry.readSession(root, sessionId);
     if (!mine || mine.active !== true) return;
 
+    // The project's standing answers. A read failure costs one line, never
+    // the injection: `read` returns unreadable paths rather than throwing, but
+    // `projectRootsFor` stats the disk and this stays inside a try regardless.
+    let profile;
+    try {
+        const projectRoot = docs.projectRootsFor(root, mine.project ? [mine.project] : [])[0] || root;
+        profile = profileLib.read(projectRoot, mine.configDir || profileLib.configDirOf());
+    } catch (e) { /* housekeeping */ }
+
     // No badge written and no other session read. Neither can have changed since
     // the question went out a few seconds ago, and this hook runs several times a
     // stage — what it does has to stay proportionate to that.
-    const context = renderResume({ mine: { sessionId, data: mine } });
+    const context = renderResume({ mine: { sessionId, data: mine }, profile });
     if (!context) return;
 
     process.stdout.write(JSON.stringify({

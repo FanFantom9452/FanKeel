@@ -505,3 +505,11 @@ test('a write outside the hooks is in the block on the same prompt it is claimed
   const text = context(run({ session_id: MINE, cwd: root, prompt: 'carry on' }));
   assert.match(text, /touched: api\/routes\.js/);
 });
+
+test('a project profile shows up in the injected block', () => {
+  const root = tmp('fankeel-hook-');
+  seed(root, MINE);
+  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ guard: 'deny' }) + '\n');
+  const ctx = context(run({ session_id: MINE, cwd: root }));
+  assert.match(ctx, /profile: guard deny/);
+});

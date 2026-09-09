@@ -8,6 +8,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const tmp = require('./tmp.js');
+const { renderResume } = require('../lib/render.js');
 
 const ROOT = path.join(__dirname, '..');
 const HOOK = path.join(ROOT, 'hooks', 'resume.js');
@@ -235,4 +236,11 @@ test('every hook the manifest names is a file that exists', () => {
       }
     }
   }
+});
+
+test('the profile line appears on the short form with a profile, and not without', () => {
+  const mine = { sessionId: MINE, data: { task: 'rework the colour ramp', stage: 'build', active: true } };
+  const profile = { values: { guard: 'deny' }, sources: { guard: 'project' }, unreadable: [] };
+  assert.match(renderResume({ mine, profile }), /^profile: guard deny$/m);
+  assert.doesNotMatch(renderResume({ mine }), /^profile:/m);
 });

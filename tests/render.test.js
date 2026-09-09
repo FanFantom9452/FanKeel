@@ -200,9 +200,13 @@ test('the survey rule names a runnable path, not a placeholder', () => {
   assert.ok(require('node:fs').existsSync(SURVEY_SCRIPT), SURVEY_SCRIPT + ' does not exist');
 });
 
-// The root is stated once, and only where it buys something. `design` runs no
-// script, so a line defining a word it never uses is seventy characters of pure
-// cost — and the saving on `audit`, which names three, is what pays for the form.
+// The root is stated once, and only where it buys something. `design` used to
+// run no script at all, which is what made it the cheap illustration of the
+// "not at all" half — but the judge rule now sits in its `when` by default
+// (`judge.enabled` is on unless a profile turns it off), and once `{{JUDGE}}`
+// resolves to a real path, design carries the root like every other stage. The
+// loop above still proves the invariant for all seven; this only pins design's
+// changed case rather than the case that no longer exists.
 test('the plugin root is stated once per injection, and not at all when no rule needs it', () => {
   for (const stage of NAMES) {
     const out = render({ mine: entry(MINE, { stage }), others: [], now: NOW });
@@ -211,7 +215,7 @@ test('the plugin root is stated once per injection, and not at all when no rule 
     assert.equal(stated, names ? 1 : 0, stage + ' states the root ' + stated + ' times');
   }
   const design = render({ mine: entry(MINE, { stage: 'design' }), others: [], now: NOW });
-  assert.equal(design.includes(PLUGIN_ROOT), false, 'design names no script and still carries the root');
+  assert.ok(design.includes(PLUGIN_ROOT), 'design names the judge script by default now, and should carry the root');
 });
 
 test('the land rule names a runnable todo-check path, not a placeholder', () => {
@@ -630,4 +634,16 @@ test('a class the registry does not recognise adds no line', () => {
     others: [], now: NOW, root: 'F:\ws', launch: 'F:\ws',
   });
   assert.doesNotMatch(text, /^class: /m);
+});
+
+test('the profile line lists what somebody set, and nothing when nobody did', () => {
+  const profile = { values: { 'land.integration': 'merge', 'land.push': false, guard: 'ask' }, sources: { 'land.integration': 'project', 'land.push': 'project', guard: 'builtin' }, unreadable: [] };
+  const out = render({ mine: entry(MINE, { stage: 'land' }), others: [], now: NOW, profile });
+  assert.match(out, /^profile: land merge, no push$/m);
+  assert.match(out, /Integration — profile: land merge, no push — do that, say so, skip the menu\./);
+  const none = render({ mine: entry(MINE, { stage: 'land' }), others: [], now: NOW });
+  assert.doesNotMatch(none, /^profile:/m);
+  assert.match(none, /Integration — no land answer in the profile: open the menu\./);
+  const bad = render({ mine: entry(MINE, { stage: 'land' }), others: [], now: NOW, profile: { values: {}, sources: {}, unreadable: ['/x/.fankeel/profile.json'] } });
+  assert.match(bad, /^profile: unreadable \/x\/\.fankeel\/profile\.json$/m);
 });
