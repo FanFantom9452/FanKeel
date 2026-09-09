@@ -1,7 +1,7 @@
 ---
 status: design-intent
 last_verified: 2026-09-09
-source_of_truth: docs/plans/2026-09-09-profile-judge-reader-design.md
+source_of_truth: docs/archive/2026-09-09-profile-judge-reader-design.md
 ---
 
 # Profile, Judge and Reader Implementation Plan
@@ -1473,7 +1473,7 @@ section on the page`.
 - Modify: `docs/station.md` — profile 區與 `POST /profile`（不是 flag，所以不進 flag 表）
 - Modify: `docs/pipeline.md` — `when` 規則進「Where a rule lives」那節；`{{PROFILE_LAND}}`、`{{JUDGE}}` 進 token 的說明
 - Modify: `docs/improvement-brief.md` — §4.2、§4.3 各一段補記（2026-09-09）指向 spec
-- Read: `docs/plans/2026-09-09-profile-judge-reader-design.md` — §6 的表
+- Read: `docs/archive/2026-09-09-profile-judge-reader-design.md` — §6 的表
 - Read: `lib/stages.js`、`lib/profile.js`、`scripts/judge.js` — 引用的名字要真的存在
 - Test: `tests/docs-check.test.js`
 

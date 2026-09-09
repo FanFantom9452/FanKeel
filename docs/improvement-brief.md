@@ -675,7 +675,7 @@ rules）、`lib/stages.js`、`scripts/task.js`、`lib/registry.js`、`hooks/inje
 > [profile 證據](reports/2026-09-09-profile-evidence.md)。
 
 > **補記（2026-09-09），二**：這個方向落地為
-> [profile、judge、reader 的 spec](plans/2026-09-09-profile-judge-reader-design.md)，
+> [profile、judge、reader 的決定](decisions/2026-09-09-profile-judge-reader.md)，
 > 收斂到七個鍵——`land.integration`、`land.push`、`land.archivePlan`、
 > `guard`、`dispatch.floor`、`judge.enabled`、`judge.model`（`lib/profile.js`
 > 的 `KEYS`）——比上面「待決」列的清單窄：預設 class、回覆語言、要不要
@@ -706,7 +706,7 @@ scan 出來的 JSON；只有 `station.js serve` 才有 server，能 POST 的只�
 > 不動，它記的是那個時點。
 
 > **補記（2026-09-09）**：這個方向也落地在同一份
-> [profile、judge、reader 的 spec](plans/2026-09-09-profile-judge-reader-design.md)
+> [profile、judge、reader 的決定](decisions/2026-09-09-profile-judge-reader.md)
 > §7——上面「待決」問的兩個問題都定案了。清單從哪裡來：`lib/profile.js` 的
 > `KEYS`，不是每個 stage 自己宣告。頁面的兩個身分怎麼分區：spec 寫 detail 面板，
 > plan 的 Task 8 改放 `總覽`——每個 registry 的卡後面一張專案 profile 卡，detail
