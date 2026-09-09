@@ -310,6 +310,17 @@ disagree, so the script is what makes them agree rather than what notices. A
 release used to be ten edits, and missing one left a skill announcing a version
 the plugin is not — right in nine places, which is how it went unnoticed.
 
+`node scripts/skills-check.js` is a fail-closed gate over this plugin's own
+skill files: every `skills/**/SKILL.md` and `lib/stages.js` is scanned for a
+script or flag it names, checked against what `scripts/` actually has. It
+exits 1 on a script no skill can find, a flag its script does not accept, a
+required-core script named by no skill, or the scan itself finding no script
+reference anywhere — the last of those is `classify()`'s own `empty-scan`,
+because a scan that names nothing is the extractor having broken, not a quiet
+tree, and nothing here judges that a second time. `skills/fankeel-land/SKILL.md`
+runs it in its own step; the injected `land` rules had no room left to name it
+too.
+
 ### Behaviour evals
 
 `evals/<case>/` holds cases in the layout `claude plugin eval` reads. That

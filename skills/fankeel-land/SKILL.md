@@ -44,6 +44,17 @@ uses.
 **Red stops everything.** Report the failures and stop; the menu comes after a
 green run. A green run earlier in the session only proves the tree it ran on.
 
+## 1a. The skills gate
+
+```
+node <plugin>/scripts/skills-check.js [--root <dir>]
+```
+
+Fail-closed, same as the suite above: exit 1 on a script no skill can find, a
+flag its script does not accept, a required-core script named by no skill, or
+the scan itself finding no script reference anywhere — the last of those is
+`classify()`'s own `empty-scan`, not judged a second time here.
+
 ## 2. Close the documents
 
 ```
