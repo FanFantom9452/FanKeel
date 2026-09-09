@@ -1007,34 +1007,8 @@ The judgement it feeds, the evidence and the gate stay here, where the rules are
 `survey` dispatches readers; `build` dispatches per task, and the plan's
 `**Dispatch:**` line is where that was decided.
 
-### The judge
-
-The injected rule on `survey`, `design`, `plan` and `build` is one line: an
-in-stage question goes to `fankeel-judge` once — brief, dispatch, `node
-<plugin>/scripts/judge.js record` — never the gate. A rule read on every
-prompt has no room for what that means, so the rest of it lives here.
-
-`fankeel-judge` is the other custom agent this plugin ships, beside
-`fankeel-reader`: a one-shot subagent that answers exactly one mid-stage
-question and is never asked a second one in the same stage. It never opens
-the gate itself — that stays yours, at the end of the stage, as always.
-
-- **Write the brief first**, to `.fankeel/build/<plan>/judge-<n>-brief.md`:
-  the question, its options, the background that would otherwise sit in the
-  stem, the paths the judge needs to read, what counts as an answer, and the
-  shape the answer should come back in.
-- **Dispatch it** with `subagent_type: fankeel-judge` and `model` read from
-  the profile's `judge.model` — never inherited, the same discipline every
-  other dispatch in this skill already carries.
-- **Record the answer verbatim:** `node <plugin>/scripts/judge.js record
-  --session <id> --brief <path> --answer - --slug <slug> --model <m>`,
-  piping the answer in on stdin rather than retyping it. This is what writes
-  it, dated, under `docs/judgements/`.
-- **Proceed on the answer, and say so in one line.** A judgement is input the
-  stage acts on, not a second question the user has to sit through.
-- **Name the record at the next gate.** Option one's description names the
-  file — `judgements/2026-09-10-ramp.md` — so approving the stage's output
-  also shows what it was decided on.
+The judge is no longer triggered from inside a stage: a user who wants one
+runs `/fankeel-ask`, and the fankeel-ask skill carries the whole procedure.
 
 ## The scope guard
 
