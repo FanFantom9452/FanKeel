@@ -59,8 +59,6 @@ repository's whole history `## Waiting` had never once shrunk by the thing an
 entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
-- design 的 mockup 步驟：frontend task 在 design 多一步 mockup，用 survey 的專案背景與 hallmark 類 skill；`when` 條件規則已落地，只差規則與 skill 文字 — [pipeline.md](docs/pipeline.md)、[design skill](skills/fankeel-design/SKILL.md).
-
 - collisions.md 的「Two rules」底下列了三條：`blockers()` 只有兩個防鎖死檢查，第三條靠 sessionId 過濾，是另一個機制 — [collisions.md](docs/collisions.md).
 
 ## Needs a decision
