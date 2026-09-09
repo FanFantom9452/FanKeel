@@ -3,7 +3,7 @@ name: fankeel-survey
 description: The survey stage — read the project's own map before reading its code, classify the work, and report what is already here. Use for the survey stage of a fankeel task, "what is already here", starting work in an unfamiliar repository, or when a task needs classifying as spike, bounded or architectural.
 version: 0.55.0
 status: current
-last_verified: 2026-09-07
+last_verified: 2026-09-09
 source_of_truth: lib/stages.js, lib/map.js, scripts/map.js, scripts/survey.js, scripts/layout.js
 ---
 
@@ -33,8 +33,8 @@ which is the one thing option two may never be — so the gate is asked once.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| Code that does not match a `status: design-intent` page | That page describes what the system is meant to become, not what it is — `lib/stages.js:198` lists such pages as `planned but not built`, and code catching up to them later is the page doing its job. |
-| A nonzero `skipped:` count in the scan report | Files with no declaration pattern, over the size cap, or otherwise unreadable are named or counted, never silently dropped — `lib/stages.js:202` (`its counts are only reported`). |
+| Code that does not match a `status: design-intent` page | That page describes what the system is meant to become, not what it is — `lib/stages.js:226` lists such pages as `planned but not built`, and code catching up to them later is the page doing its job. |
+| A nonzero `skipped:` count in the scan report | Files with no declaration pattern, over the size cap, or otherwise unreadable are named or counted, never silently dropped — `lib/stages.js:230` (`its counts are only reported`). |
 | A page dated by git rather than by anyone reading it | An `undeclared` page carries no frontmatter contract, so its date is whatever git last touched, not proof anyone verified it — a whitespace fix moves the date and confirms nothing. |
 
 ## The six steps
@@ -182,8 +182,8 @@ there can hide any amount.
 The report splits the line for you, and the half a reader can act on is **named,
 not counted**, under `skipped, and openable by hand:` — the files with no pattern
 and the nested repositories, capped like every other section and saying `... and
-N more, not listed` when the cap bites. That list is the fan-out: **one reader,
-given the terms and the paths.** The fankeel skill's test settles the shape: *if
+N more, not listed` when the cap bites. That list is the fan-out: **one
+`fankeel-reader`, given the terms and the paths.** The fankeel skill's test settles the shape: *if
 two readers would return the same shape of answer about different files, they are
 one reader with a list* — not one reader per file. A nested repository is the one
 entry that is a root of its own: `--root` at it rather than a lens over it.
@@ -206,17 +206,18 @@ wider is the only move left. Never ask permission for either. The user's answer 
 "shall I read further?" is foreordained — they asked the question the reading
 answers — so the round buys nothing and costs a turn of their attention.
 
-- **One workflow, not several dispatches.** The readers are its first stage and
-  the `path:line` check is its second, so what returns is the join rather than
-  every reader's whole reading. **Four is the ceiling for dispatches** — the
-  fankeel skill's *Dispatch by default, never the filtering* says why — and a
-  script is the exception the ceiling names, because it holds the list rather
-  than guessing at the split.
+- **One workflow, not several dispatches.** `fankeel-reader` readers are its
+  first stage and the `path:line` check is its second, so what returns is the
+  join rather than every reader's whole reading. **Four is the ceiling for
+  dispatches** — the fankeel skill's *Dispatch by default, never the
+  filtering* says why — and a script is the exception the ceiling names,
+  because it holds the list rather than guessing at the split.
 - **One lens each**, taken from what the scan named — a subsystem apiece, or a
   term-cluster apiece. Not a fixed list.
 - **Tell each one what is already known**, so it returns only what is new.
-- **`sonnet` is the floor.** Pass the model explicitly; an omitted one inherits
-  this session's.
+- **`subagent_type: fankeel-reader`, model the profile's `dispatch.floor`.**
+  Pass it explicitly; an omitted one inherits this session's, and `sonnet` is
+  the default when the profile says nothing.
 - **Compare the returns against each other**, not just one by one. Agents
   dispatched from one prompt style make correlated mistakes.
 
@@ -226,7 +227,7 @@ ordinary three options, and the survey in front of it is complete.
 
 The fan-out is two stages in one run, not four returns into this session:
 
-    read    one reader per lens, each returning findings as path:line pairs
+    read    one `fankeel-reader` per lens, each returning findings as path:line pairs
     check   every path:line opened and confirmed to say what the finding
             claims, and anything not bearing on the task dropped
 
@@ -256,14 +257,14 @@ classification made silently is one nobody can disagree with.
 
 The entry already exists: `task.js start` ran at `/fankeel`, with the class said
 there — or all seven stages when none was — and `start` refuses an active entry
-(`scripts/task.js:476`, `already owns an active task`). What this step writes is the class step 5 arrived at,
+(`scripts/task.js:477`, `already owns an active task`). What this step writes is the class step 5 arrived at,
 when it differs:
 
 ```
 node <plugin>/scripts/task.js route "survey,design,build,verify,land" --session <id>
 ```
 
-`route` takes the stages and derives the class from them (`scripts/task.js:938`, `classForRoute(given)`);
+`route` takes the stages and derives the class from them (`scripts/task.js:992`, `classForRoute(given)`);
 the stage the task is in has to be on the new route. Quote its output on the
 `route:` line of the report, or write `unchanged`. Up is always allowed. Down is
 allowed only from the seven-stage default nobody said — a class someone said at

@@ -3,7 +3,7 @@ name: fankeel-verify
 description: The verify stage — evidence before claims, requirements checked line by line, and the documents this change just made false. Use for the verify stage of a fankeel task, before claiming work is complete or passing, before a commit or PR, or when checking whether a change broke the documentation describing it.
 version: 0.55.0
 status: current
-last_verified: 2026-09-08
+last_verified: 2026-09-09
 source_of_truth: lib/stages.js, scripts/docs-check.js
 ---
 
@@ -34,9 +34,9 @@ around this one.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| A defeated row sent to `build` instead of fixed here | `lib/stages.js:298` requires exactly that (`Anything half-built sends this back to build`) — a fix with its own review range is build's commit, never verify's. |
-| An adversary returning only the rows it defeated | Its charter is that scope alone — `lib/stages.js:301` (`ask only for the rows it defeats`) — a clean pass elsewhere is not it skipping anything. |
-| A coverage line reading `9 of 21`, not every page | `lib/stages.js:300` requires the denominator stated, not every page read (`nine of twenty-one pages`) — that is the complete claim, not a shortfall. |
+| A defeated row sent to `build` instead of fixed here | `lib/stages.js:330` requires exactly that (`Anything half-built sends this back to build`) — a fix with its own review range is build's commit, never verify's. |
+| An adversary returning only the rows it defeated | Its charter is that scope alone — `lib/stages.js:333` (`ask only for the rows it defeats`) — a clean pass elsewhere is not it skipping anything. |
+| A coverage line reading `9 of 21`, not every page | `lib/stages.js:332` requires the denominator stated, not every page read (`nine of twenty-one pages`) — that is the complete claim, not a shortfall. |
 
 ## The iron law
 
@@ -120,18 +120,19 @@ that than it looks: the pages here have already been named. The nearest
 measurement — one dispatch reading seven files already named in the prompt,
 answering one joint question, the inline arm asked the same — put the residue
 at about 1.5× rather than 9.2×, the money at 1.59×, and the wall-clock at
-2.77×. Dispatch it anyway: one reader per page the change plausibly touched,
-several in one response so they run at once — four is the ceiling, and the
-fankeel skill's *Dispatch by default, never the filtering* says why — each
-given the **path** to a diff file
+2.77×. Dispatch it anyway, as `fankeel-reader`: one reader per page the change
+plausibly touched, several in one response so they run at once — four is the
+ceiling, and the fankeel skill's *Dispatch by default, never the filtering*
+says why — each given the **path** to a diff file
 and asked only what is now false and where. Never tell a reader what you
 expect it to find: a brief saying a page was less likely to have drifted got
 `no drift` back. Ask the same question of every target, with no ranking among
 them. Never a pasted diff: it lands the whole change in this context, which
 is the cost dispatching exists to avoid.
-Pass the model explicitly; `sonnet` is the floor. Say how many are going and
-on which model as they go out — a fan-out the user did not see coming is spend
-they were never given the chance to question.
+Pass `subagent_type: fankeel-reader` and the model explicitly — the profile's
+`dispatch.floor`, `sonnet` by default. Say how many are going and on which
+model as they go out — a fan-out the user did not see coming is spend they
+were never given the chance to question.
 
 What you do not dispatch is this stage. The evidence table, the red-green
 discipline and the gate stay here — a subagent has none of these rules.
