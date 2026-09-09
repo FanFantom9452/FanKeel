@@ -530,11 +530,11 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
   // in the block: `land.archivePlan` picks one of two land rules, so a render
   // with no profile measures a block no session with one produces. Six keys
   // set, both archive answers.
-  const PROFILES = [true, false].map((archive) => ({
-    values: { 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': archive, guard: 'ask', 'dispatch.floor': 'sonnet', 'judge.model': 'fable' },
-    sources: { 'land.integration': 'project', 'land.push': 'project', 'land.archivePlan': 'project', guard: 'project', 'dispatch.floor': 'machine', 'judge.model': 'machine' },
+  const PROFILES = [true, false].flatMap((archive) => [false, 'opus'].map((mockup) => ({
+    values: { 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': archive, guard: 'ask', 'dispatch.floor': 'sonnet', 'judge.model': 'fable', 'design.mockup': mockup },
+    sources: { 'land.integration': 'project', 'land.push': 'project', 'land.archivePlan': 'project', guard: 'project', 'dispatch.floor': 'machine', 'judge.model': 'machine', 'design.mockup': mockup === false ? 'builtin' : 'project' },
     unreadable: [],
-  }));
+  })));
   for (const stage of NAMES) {
     const outs = PROFILES.map((profile) => render({ mine: entry(MINE, { stage }), others: [], now: NOW, profile }));
     const out = outs.reduce((a, b) => (sizeAtReference(b) > sizeAtReference(a) ? b : a));

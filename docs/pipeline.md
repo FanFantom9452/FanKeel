@@ -322,7 +322,10 @@ by tier. Each stage's own `when` array holds `{ when, text }` entries;
 `rulesFor(stage, subs, values)` filters them with `holds(when, values)`
 against the profile's effective values, a leading `!` on `when` negating the
 key. `ALWAYS_WHEN` is the same shape for a rule meant to ride every stage —
-exported and empty today. `land`'s archive-plan rule takes the other shape
+exported and empty today. Two stages use the mechanism today, in the two
+shapes it supports. `design`'s mockup rule is the plain filter: one entry,
+keyed `design.mockup`, in the block only when a frontend project names a
+model and gone at `false`. `land`'s archive-plan rule takes the other shape
 instead of a filter: two `when` entries, keyed `land.archivePlan` and
 `!land.archivePlan`, so the sentence itself reads differently depending on
 whether the profile already answered, rather than a token filling a blank
@@ -442,6 +445,14 @@ flowchart TD
 Step 4 has no counterpart anywhere else either. A self-review checks a document
 against itself; only this step checks it against the project. A design that
 quietly contradicts a page marked current is a contradiction that ships.
+
+A profile key can add a step the diagram above does not draw. `design.mockup`
+— `false` by default — names a model for a frontend project that wants one;
+naming it switches on a `when` rule that gets a mockup built first: one page
+at the model the key names, saved under `.fankeel/build/`, its path on the
+same `spec:` line the rest of this stage's output already carries. The gate
+then approves the page, not the paragraph. Left `false`, the rule holds no
+text at all, so a project with no frontend pays nothing for it.
 
 ### plan
 

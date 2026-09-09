@@ -715,3 +715,22 @@ test('no stage advertises the judge in the builtin layer', () => {
             stage + ' still names fankeel-judge');
     }
 });
+
+// design's rule rides `when`, so a project with no frontend pays nothing for it.
+// `land` used to be the only stage with a `when` array; this is the second.
+test('the mockup rule is on only where design.mockup names a model', () => {
+  const on = rulesFor('design', null, { 'design.mockup': 'opus' }).join('\n');
+  assert.match(on, /mockup/, 'design.mockup opus did not switch the mockup rule on');
+  assert.match(on, /design\.mockup/, 'the rule does not name the key that carries its model');
+  const off = rulesFor('design', null, { 'design.mockup': false }).join('\n');
+  assert.equal(/mockup/.test(off), false, 'the mockup rule rides a design stage with no frontend');
+  const absent = rulesFor('design', null, {}).join('\n');
+  assert.equal(/mockup/.test(absent), false, 'an unset key is not the off position');
+});
+
+// The template is not filtered by `when`, so a slot added there is paid for by
+// every project. The path goes on the existing `spec:` line instead.
+test('the design template gained no slot', () => {
+  const { template } = byName('design');
+  assert.equal(/mockup/.test(template), false, 'the mockup path took a template slot');
+});
