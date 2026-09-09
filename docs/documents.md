@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-09
-source_of_truth: lib/docs.js, lib/map.js, scripts/layout.js, scripts/docs-check.js, scripts/docs-audit.js, skills/fankeel/SKILL.md, skills/fankeel-survey/SKILL.md
+source_of_truth: lib/docs.js, lib/map.js, lib/profile.js, scripts/layout.js, scripts/docs-check.js, scripts/docs-audit.js, skills/fankeel/SKILL.md, skills/fankeel-survey/SKILL.md
 ---
 
 # Where documents live
@@ -16,7 +16,7 @@ and the role says how long a document is meant to stay true:
 | `reference` | describes the system as it is now | no |
 | `decision` | why something is the way it is, written once | yes — it is dated by definition |
 | `plan` | what is about to be done | until it lands, then it is archived |
-| `report` | a dated snapshot: audit, benchmark, meeting | yes |
+| `report` | a dated snapshot: audit, benchmark, meeting, a judge's ruling (`docs/judgements/`) | yes |
 | `archive` | retired; checked only that nothing current points at it | yes |
 
 The two shapes that ship — `flat` and `phased` — and what happens to a markdown
@@ -116,6 +116,24 @@ which is why the scan is re-run rather than stored. The declaration patterns are
 deliberately shallow for the same kind of reason: the goal is to notice a name
 exists, not to parse the language, and a missed declaration costs one line of a
 report where a real parser would cost a dependency this plugin does not have.
+
+## `.fankeel/` 各區的壽命
+
+| 路徑 | 提交？ | 壽命 |
+|---|---|---|
+| `docs.json` | 是 | 跟文件一起版本控制 |
+| `profile.json` | 是 | 專案的常設答案，改了就是改偏好；`task.js profile` 寫 |
+| `sessions/<id>.json` | 否 | 一個 session 一筆，永不刪，`active:false` 即結束 |
+| `map.md` | 否 | 每次 `map.js` 重生 |
+| `build/<plan>/` | 否 | 一個 task 的 ledger、brief、judge brief；列出不清理 |
+| `index.html`、`station/` | 否 | 這台機器的 station 副本，每次 prompt 重寫 |
+| `docs/judgements/`（不在 `.fankeel/`） | 是 | `fankeel-judge` 的判斷，寫完不改（`report`） |
+
+`docs.json` 與 `profile.json` 同層、都進版本控制，是這張表裡唯二「提交」的
+`.fankeel/` 檔——其餘四區都在 `.fankeel/.gitignore` 之內。`docs/judgements/`
+不在 `.fankeel/` 底下，卻也是「寫完不改」的一區：它跟 `docs.json`、
+`profile.json` 一樣提交，但壽命規則更接近一份決定記錄，而不是一份可以重新
+生成的快照。
 
 ## What a document says about itself
 

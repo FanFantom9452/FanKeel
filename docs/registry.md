@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-09
-source_of_truth: lib/registry.js, lib/station.js, lib/render.js, lib/context.js, lib/dirty.js, lib/live.js, lib/usage.js, scripts/task.js, hooks/touch.js, hooks/inject.js, hooks/carry.js, hooks/gate.js, hooks/resume.js, hooks/leave.js
+source_of_truth: lib/registry.js, lib/station.js, lib/render.js, lib/context.js, lib/dirty.js, lib/live.js, lib/usage.js, lib/profile.js, scripts/task.js, hooks/touch.js, hooks/inject.js, hooks/carry.js, hooks/gate.js, hooks/resume.js, hooks/leave.js
 ---
 
 # The registry, and what it remembers
@@ -19,7 +19,8 @@ workspace/                     <- Claude Code opened here
 │   └── sessions/           the registry, one file per session, never committed
 ├── Waypoint/               a repository
 │   ├── .fankeel/
-│   │   └── docs.json       its docs tree, committed with the documents
+│   │   ├── docs.json       its docs tree, committed with the documents
+│   │   └── profile.json    its profile — project answers, committed the same way
 │   └── docs/
 └── KB/
     └── .fankeel/docs.json  its own
@@ -27,7 +28,7 @@ workspace/                     <- Claude Code opened here
 
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `leave.js` for `ended`, `model`, `usage` and `spend`, once, at `SessionEnd` — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `start` for `guard`, read from the effective profile whenever it is not the builtin default `ask` — a `guard` set later by hand overwrites it the same way any other write does; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `leave.js` for `ended`, `model`, `usage` and `spend`, once, at `SessionEnd` — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | `lib/registry.js:216` creates it holding `sessions/` alone; `registry.ensureIgnored` appends what is missing — `scripts/map.js:39` asks for `sessions/`, `build/` and `map.md` on every map run, `lib/station.js` for `index.html` and `station/` on every write of the copy — two names that cover the four files it emits, rather than the `EMITTED` list itself, because a directory is one line where four paths under it would be four |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
