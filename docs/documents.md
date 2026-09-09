@@ -18,6 +18,7 @@ and the role says how long a document is meant to stay true:
 | `plan` | what is about to be done | until it lands, then it is archived |
 | `report` | a dated snapshot: audit, benchmark, meeting, a judge's ruling (`docs/judgements/`) | yes |
 | `archive` | retired; checked only that nothing current points at it | yes |
+| `fixture` | a test's own input — describes nothing about the system, checked only for links | n/a |
 
 The two shapes that ship — `flat` and `phased` — and what happens to a markdown
 file in no bucket are stated in [the skill](../skills/fankeel/SKILL.md), under

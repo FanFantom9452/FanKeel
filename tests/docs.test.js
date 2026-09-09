@@ -243,6 +243,38 @@ test('a symbol nothing declares is a finding in reference only', () => {
   assert.doesNotMatch(out, /orphan: docs\/decisions/);
 });
 
+// A `fixture` bucket is a test's own input — it does not describe the system,
+// so a dead link inside it is still a finding and an undeclared symbol beside
+// it is not. `checkDoc` only special-cases `archive` and `report`
+// (`scripts/docs-check.js:201`); every other role, `fixture` included, falls
+// through to the two guards at `:279` and `:307` that read only
+// `role === 'reference'` — so those two cost no new branch. The code-span
+// `gone` check does need one: a fixture page may name a path its own scaffold
+// creates, one this tree never has — `lib/thing.js` beside `lib/present.js`
+// below stands in for `evals/one-call-not-agent/prompt.md` naming
+// `lib/thing.js`, which exists only inside that eval's scaffolded repo.
+test('a fixture document is checked for links only, not for symbols', () => {
+  const root = tree({
+    '.fankeel/docs.json': JSON.stringify({
+      preset: 'custom',
+      index: 'docs/README.md',
+      buckets: [
+        { path: 'docs', role: 'reference' },
+        { path: 'evals', role: 'fixture' },
+      ],
+    }),
+    'docs/README.md': '# index\n',
+    'evals/route-typo/case.md': 'see [the grader](grader.md) and call `vanished()`\n',
+    'evals/one-call-not-agent/prompt.md': 'read `lib/thing.js`, which the scaffold creates\n',
+    'lib/present.js': 'x\n',
+  });
+  const result = check.scan(root);
+  assert.deepEqual(result.findings.map((f) => f.tag), ['gone']);
+  assert.equal(result.findings[0].what, 'links to grader.md');
+  assert.equal(result.findings[0].role, 'fixture');
+  assert.equal(result.unfiled.length, 0, 'a declared bucket is not "in no bucket"');
+});
+
 test('a reference document pointing into the archive is a finding', () => {
   const root = withTree(tree({
     'docs/01-x.md': 'as described in [the old design](archive/2026-01-01-old.md)\n',
