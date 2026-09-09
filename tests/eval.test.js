@@ -260,6 +260,13 @@ test('zero runs is refused before anything is spawned', () => {
     assert.match(byFlag.stderr, /runs must be at least 1/);
 });
 
+// This spawns the real scripts/eval.js as a subprocess. Its safety rests on
+// main()'s --model guard returning before runOnce ever calls spawnClaude; a
+// mutation that defeats the guard (e.g. parseArgs defaulting model back to
+// 'sonnet', which also satisfies `if (!a.model)`) lets the run fall through
+// and invoke the real `claude` binary. A mutation check on this file should
+// use one that reaches none of the spawning tests instead — costOf removed
+// from lib/eval.js's exports, for one.
 test('eval.js refuses to run without --model, before anything is spawned', () => {
     const r = spawnSync(process.execPath, [SCRIPT, 'evals/route-typo'], { encoding: 'utf8', cwd: path.join(__dirname, '..') });
     assert.equal(r.status, 1);
