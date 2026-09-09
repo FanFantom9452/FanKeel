@@ -12,9 +12,10 @@ reverse-index column so that changing a figure says which pages have to
 change with it. This page is that mechanism for fankeel's own dated reports.
 
 Every row below is one of the dated reports at the top level of
-`docs/reports/`. Sixteen sit there and fifteen have a row: the heading counts
-rows and not files, and the report with no row yet is
-`2026-09-09-design-axis-inventory.md`, filed under `## Ready` in `TODO.md`.
+`docs/reports/`. Seventeen sit there and all seventeen have a row: the heading
+counts rows across both tables and not files, and today the two numbers agree.
+When they stop agreeing it is the heading that has to move, because a row can
+only be added by hand and a report cannot.
 The 53 files under `docs/reports/evidence/` are the raw
 `claude -p --output-format json` output and diffs behind three of those
 reports, not reports of their own, so they carry no row — a row's Link column
@@ -28,7 +29,7 @@ dispatch-vs-inline residue (9.2× / 2.55× / 1.5×), which is one gradient, not
 three disagreeing numbers, once each row's Scope says which variable it held
 fixed.
 
-## The fifteen reports
+## The seventeen reports
 
 | ID | What it measured | Link | Checked | Evidence level | Scope | Cited by |
 |---|---|---|---|---|---|---|
@@ -46,6 +47,9 @@ fixed.
 | `DISPATCH-JOIN-DIFF-260907` | One reader per page plus a shared diff path, against the same reading in-session — the fourth dispatch-vs-inline pair | [reports/2026-09-07-join-pair.md](reports/2026-09-07-join-pair.md) | 2026-09-07 | measured (paired A/B, n=1 per arm, run in a pinned worktree) | 45,111 vs 517,009 tokens, 11.46× — the largest of the four pairs, and the only one where dispatch is both cheaper (0.95×) and faster (0.56×). It moves two variables at once relative to every earlier pair (one-reader-one-page instead of four-readers-by-lens, **and** an extra diff source per reader), so 11.46× cannot be attributed to either variable alone — stated in the report itself, not left for a reader to find. | `docs/plans/2026-09-07-todo-thirteen.md` |
 | `HAIKU-PAIR-260909` | The first pair's question and method sentences re-run with `haiku` as the parent model on both arms, the four readers still `sonnet` | [reports/2026-09-09-haiku-pair.md](reports/2026-09-09-haiku-pair.md) | 2026-09-09 | measured (paired A/B, n=1 per arm) | 39,040 vs 133,423 tokens, 3.42× — the residue advantage falls because the *inline* arm got cheaper (532,322 on opus to 133,423 on haiku), not because dispatch improved. Money moves the other way, from 1.85× to 4.61×, because the readers are pinned at `sonnet` and so take 89% of the dispatch arm's total against 63% with an opus parent. Wall-clock is a wash (149 vs 153 shell seconds) and `duration_ms` again under-reports the fan-out by 7.1×. Not a strict replication: pinned at a different HEAD (`502dcae` vs `86a104e`) and CLI (2.1.265 vs 2.1.259), so only the within-pair ratios compare. Answer quality is not equal — the dispatch arm returned 19 anchors with no directory on any of them, against 11 fully-pathed from the inline arm — but neither arm's findings were checked for correctness. | `docs/README.md` |
 | `REVIEWER-COST-260907` | Whether a reviewer per task and a mutation per fix earned their cost, over one real ten-task build | [reports/2026-09-07-reviewer-cost.md](reports/2026-09-07-reviewer-cost.md) | 2026-09-07 | build record (task ledger and commit history, not a controlled trial) | 10 tasks, 10 reviewer dispatches, 26 rulings, 13 commits. Reviewers caught 5 real findings across 3 tasks, all while the test suite stayed green. The suite in turn caught 3 things reviewers missed (two cross-file test failures, one orphan export), because each implementer ran only their own test file, not the full suite. The one mutation run (n=1) proved a reviewer-found gap rather than discovering it itself, and its cheapness (three commands, a few seconds) is not claimed to generalize past this one fix. | `docs/plans/2026-09-07-todo-thirteen.md`, `docs/README.md` |
+
+| `DESIGN-AXIS-260909` | What sixteen design axes six installed design skills each set, where the six vocabularies conflict, and the four gaps between them | [reports/2026-09-09-design-axis-inventory.md](reports/2026-09-09-design-axis-inventory.md) | 2026-09-09 | inventory, read in verbatim from caveman.zip — not measured in this repository | **The subject is this machine, not this repository.** The scan covered 68 design-related skills under `~/.claude/plugins/cache/`, across four marketplaces, and the text is copied without rewriting or translation — so the finding does not move when this repository's code changes, and it does not re-derive on a machine with a different set of plugins installed. Its numbers describe an installed-plugin population of one machine on one day; nothing here is a claim about fankeel. | `docs/README.md`, `docs/improvement-brief.md` |
+| `PROFILE-EVIDENCE-260909` | Which development-preference answers a profile could actually be built from today: what the registry records hold, and where land's answer lives instead | [reports/2026-09-09-profile-evidence.md](reports/2026-09-09-profile-evidence.md) | 2026-09-09 | measured (field census over 106 registry records, plus git history; the records are per-machine and not version-controlled) | 106 session records at one registry path, and the second known path does not exist. Other registries on this machine were not enumerated, so 106 is a lower bound and not a census — the report says so itself. The count includes this session's own live entry, still being written when it was taken. The merge figure is 49, after a first pass reported 10 from a `head`-truncated run; that trap is recorded in the report rather than only in the fix. | `docs/README.md`, `docs/improvement-brief.md` |
 
 ## Consulted with no usable numbers
 
