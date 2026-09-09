@@ -677,14 +677,19 @@ rules）、`lib/stages.js`、`scripts/task.js`、`lib/registry.js`、`hooks/inje
 > **補記（2026-09-09），二**：這個方向落地為
 > [profile、judge、reader 的決定](decisions/2026-09-09-profile-judge-reader.md)，
 > 收斂到七個鍵——`land.integration`、`land.push`、`land.archivePlan`、
-> `guard`、`dispatch.floor`、`judge.enabled`、`judge.model`（`lib/profile.js`
-> 的 `KEYS`）——比上面「待決」列的清單窄：預設 class、回覆語言、要不要
+> `guard`、`dispatch.floor`、`judge.enabled`、`judge.model`——比上面「待決」
+> 列的清單窄：預設 class、回覆語言、要不要
 > `plan` 檔都沒有落地。存放位置照上面第一個選項定案：
 > `<project>/.fankeel/profile.json` 版控、`<configDir>/fankeel/profile.json`
 > 機器預設兜底，逐鍵合併並記來源。`landClause()` 是「答案早就知道就不問」
 > 的樣子：有答案回 `profile: land merge, no push — do that, say so, skip the menu`，
 > 沒有回 `no land answer in the profile: open the menu`。不變量 2、5、6 沒有被
 > 繞過——stand down、推進 stage、設 guard 仍要人說。
+
+> **補記（2026-09-10），三**：`judge.enabled` 在判官規則刪掉時一起刪了，
+> `lib/profile.js` 的 `KEYS` 現在是六個鍵。上面那七個是 2026-09-09 當天的清單，
+> 留著是因為它記的是那天的決定；今天要對照的是
+> [/fankeel-ask 的設計](plans/2026-09-09-fankeel-ask-design.md)。
 
 ### 4.3 station 變成通用的設定面
 

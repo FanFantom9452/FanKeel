@@ -660,8 +660,9 @@ test('design, plan, build and verify carry the anchors the design paid for', () 
   assert.match(rules('design'), /Read the fankeel-design skill on entry: spec file, self-review\./);
   assert.match(templateFor('design'), /^spec: <the docs\/plans path — architectural — or "in chat">$/m);
   assert.match(rules('plan'), /carries `\*\*Files:\*\*`, `\*\*Interfaces:\*\*` and a `\*\*Dispatch:\*\*` line/);
-  // `, resume the fixer` was cut for the render cap (once `{{JUDGE}}` started
-  // substituting to a real path and design gained the `<plugin> = ...` line).
+  // `, resume the fixer` was cut for the render cap (once the judge rule's
+  // token started substituting to a real path and design gained the
+  // `<plugin> = ...` line). That token is gone; the cut it paid for is not.
   assert.match(rules('build'), /Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape\./);
   assert.doesNotMatch(rules('build'), /skill has loop and scan/);
   assert.match(templateFor('verify'), /- adversary: <the claim it defeated → build, or "nothing">/);

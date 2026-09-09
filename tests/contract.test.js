@@ -250,10 +250,11 @@ test('the undeclared count is one line, not a list of every page', () => {
   assert.equal(text.includes('docs/11-a.md'), false, 'the fix is a convention, not thirteen edits');
 });
 
-// Ten files carry the version and nothing kept them together: two manifests and
-// one line of frontmatter in each of the nine skills. A release that missed one
-// left a skill announcing a version the plugin is not, which is the kind of wrong
-// nobody reads carefully enough to catch — the number is right in nine places.
+// Eleven files carry the version and nothing kept them together: two manifests
+// and one line of frontmatter in each of the nine skills. A release that missed
+// one left a skill announcing a version the plugin is not, which is the kind of
+// wrong nobody reads carefully enough to catch — the number is right in nine
+// places.
 //
 // Listed rather than globbed on the manifests, so adding a third one has to be a
 // decision. Globbed on the skills, because adding a stage means adding a skill
