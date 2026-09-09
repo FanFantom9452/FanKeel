@@ -60,6 +60,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
+- `docs/sources.md` 的帳本少一列：`docs/reports/` 頂層有 16 份報告，帳本兩張表合計 15 列，缺的是 `2026-09-09-design-axis-inventory.md`；補列並在 Scope 欄寫明它量的範圍 — [docs/sources.md](docs/sources.md).
+
 ## Needs a decision
 
 - skills 下一個 `registry.json` 與它的 schema：每個 stage 一筆；`## Waiting` 的 entry/stop condition、`prompt_byte_budget`、條件載入到節三條都以它為前置 — [簡報 §1.3](docs/improvement-brief.md#13-registryjson-的-schema).
