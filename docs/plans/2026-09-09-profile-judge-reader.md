@@ -1374,6 +1374,7 @@ file, POST /profile`.
 - Modify: `assets/station/index.html` — 無結構變動時可不改；若加 id 就改這裡
 - Modify: `assets/station/station.css` — `.profile` 的幾行
 - Read: `lib/station.js` — Task 7 的 `profiles`／`profileKeys` 形
+- Read: `lib/profile.js` — `KEYS`，測試用它組 `profileKeys`
 - Test: `tests/station-view.test.js`
 
 **Interfaces:**

@@ -160,6 +160,8 @@
             tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
             stamp: stamp, esc: esc, cost: cost, labels: labels, delta: delta, match: match,
             statePill: statePill, clearStaleControl: clearStaleControl,
+            profileRows: profileRows, applyMachineControl: applyMachineControl,
+            profileCard: profileCard,
         };
     }
     if (!doc) return;
@@ -494,6 +496,7 @@
         if (!hit.length || hit[0].gone) return '';
         var p = hit[0];
         var own = S.sessions.filter(function (s) { return s.root === p.root; });
+        var projectProfiles = (S.profiles && S.profiles.projects) || {};
         return '<div class="card" style="margin-bottom:14px"><div class="cbody">'
             + '<div style="display:flex;align-items:center;gap:10px">'
             + '<p class="mute" style="margin:0;flex:1">' + p.unreadable
@@ -505,7 +508,12 @@
                     return esc(b.name) + ' (' + b.files + ')';
                 }).join('、') + '</p>'
                 : '<p class="mute" style="margin:4px 0 0">沒有 build 資料夾</p>')
-            + '</div></div>';
+            + '</div></div>'
+            + Object.keys(projectProfiles).filter(function (pp) {
+                return pp.indexOf(p.root) === 0;
+            }).map(function (pp) {
+                return profileCard(LAB[pp] || pp, 'project', pp, projectProfiles[pp]);
+            }).join('');
     }
 
     function overview() {
@@ -526,6 +534,7 @@
                 ? '<p class="cleared">cleared ' + S.cleared + ' stale rows</p>' : '')
             + goneNote()
             + registryNote()
+            + profileCard('machine profile', 'machine', null, S.profiles && S.profiles.machine)
             + kpis(R)
             + '<div class="grid2">'
             + '<div class="card"><div class="chd"><span class="ci">◧</span>'
@@ -631,6 +640,57 @@
         drawDetail();
     }
 
+    // One row per key: the value in force, where it came from, and — served —
+    // a select that posts the change. The static file prints the command
+    // instead, the same way the clear control does.
+    function profileRows(scope, projectPath, prof) {
+        var keys = Object.keys(S.profileKeys || {});
+        var out = '';
+        keys.forEach(function (key) {
+            var spec = S.profileKeys[key];
+            var v = prof.values[key];
+            var src = prof.sources[key] || '';
+            var shown = v === undefined ? '(ask)' : String(v);
+            var ctl;
+            if (S.serve) {
+                ctl = '<form method="post" action="/profile" class="pf">'
+                    + '<input type="hidden" name="nonce" value="' + esc(S.nonce || '') + '">'
+                    + '<input type="hidden" name="scope" value="' + scope + '">'
+                    + (projectPath ? '<input type="hidden" name="project" value="' + esc(projectPath) + '">' : '')
+                    + '<input type="hidden" name="key" value="' + esc(key) + '">'
+                    + '<select name="value">' + spec.values.map(function (o) {
+                        return '<option' + (String(v) === o ? ' selected' : '') + '>' + esc(o) + '</option>';
+                    }).join('') + '</select><button class="ctl" type="submit">set</button></form>';
+            } else {
+                ctl = '<code class="mono">node ' + esc(S.plugin || '<plugin>') + '/scripts/task.js profile set '
+                    + esc(key) + ' &lt;value&gt;' + (scope === 'machine' ? ' --default' : ' --project "' + esc(projectPath) + '"') + '</code>';
+            }
+            out += '<tr><td class="mono">' + esc(key) + '</td><td>' + esc(shown) + '</td><td class="mute">' + esc(src) + '</td><td>' + ctl + '</td></tr>';
+        });
+        return out;
+    }
+    function applyMachineControl(projectPath) {
+        var m = S.profiles && S.profiles.machine ? S.profiles.machine : null;
+        if (!S.serve || !m) return '';
+        var keys = Object.keys(m.values).filter(function (k) { return m.sources[k] === 'machine'; });
+        if (!keys.length) return '';
+        return '<form method="post" action="/profile" class="pf">'
+            + '<input type="hidden" name="nonce" value="' + esc(S.nonce || '') + '">'
+            + '<input type="hidden" name="scope" value="project">'
+            + '<input type="hidden" name="project" value="' + esc(projectPath) + '">'
+            + keys.map(function (k) {
+                return '<input type="hidden" name="key" value="' + esc(k) + '"><input type="hidden" name="value" value="' + esc(String(m.values[k])) + '">';
+            }).join('')
+            + '<button class="ctl" type="submit">套用機器預設（' + keys.length + ' 鍵）</button></form>';
+    }
+    function profileCard(title, scope, projectPath, prof) {
+        if (!prof) return '';
+        var bad = (prof.unreadable || []).length ? '<div class="mute">unreadable: ' + esc(prof.unreadable.join(', ')) + '</div>' : '';
+        return '<div class="card profile"><div class="chead"><b>' + esc(title) + '</b>'
+            + (scope === 'project' ? applyMachineControl(projectPath) : '') + '</div>'
+            + bad + '<table><thead><tr><th>key</th><th>value</th><th>source</th><th></th></tr></thead><tbody>'
+            + profileRows(scope, projectPath, prof) + '</tbody></table></div>';
+    }
     // A registry-level bulk clear, beside its card's heading rather than a
     // row: counts how many of the rows handed to it are stale and, offline,
     // prints the same kind of copyable command each per-row control prints —
