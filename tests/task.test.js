@@ -1293,6 +1293,16 @@ test('start takes guard from the profile and says so; without one the field stay
   const out = run(dir2, ['start', '--session', B, '--task', 'guarded']);
   assert.match(out.out, /guard: deny \(profile\)/);
   assert.equal(registry.readSession(dir2, B).guard, 'deny');
+
+  // The machine file, not the project file: a source of `project` alone would
+  // let a narrower check — `prof.sources.guard === 'project'` — pass this test
+  // by accident. `--default` writes only the machine file, and no project file
+  // exists in this fresh root, so the source read back has to be `machine`.
+  const dir3 = root();
+  run(dir3, ['profile', 'set', 'guard', 'deny', '--default']);
+  const out3 = run(dir3, ['start', '--session', A, '--task', 'guarded-machine']);
+  assert.match(out3.out, /guard: deny \(profile\)/);
+  assert.equal(registry.readSession(dir3, A).guard, 'deny');
 });
 
 test('profile suggest writes nothing and says what the history answers', () => {
