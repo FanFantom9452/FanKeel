@@ -16,7 +16,7 @@ source_of_truth: docs/plans/2026-09-10-design-mockup-design.md
 從這棵樹讀出來的，不是記得的：
 
 - **沒有 `CLAUDE.md`，也沒有 `AGENTS.md`。** 慣例只能從程式碼讀。
-- **縮排分兩種，照檔案所在目錄。** `lib/` 與 `scripts/` 是 4 空格（`lib/profile.js:56-63`）；`tests/` 是 2 空格（`tests/profile.test.js:13-30`）。
+- **縮排是逐檔的，不是逐目錄。** `lib/` 與 `scripts/` 是 4 空格（`lib/profile.js:56-63`）。`tests/` 兩種都有：`tests/profile.test.js` 是 4 空格（13-95 行），`tests/stages.test.js` 是 2 空格（14-16 行）。改哪一支就照哪一支，不要從目錄推。
 - **不得新增相依。** `package.json` 沒有 `dependencies` 也沒有 `devDependencies`，`"private": true`，`"test": "node --test"`。
 - **注入上限 2400 字元**，量在 59 字元的參考 plugin root 上——`tests/render.test.js:543`。今天 design 是 **2164**。
 - **每個 stage 的 rules 上限 2000 字元**——`tests/stages.test.js:93`。design 今天遠低於此，綁的是上面那條。
@@ -71,29 +71,29 @@ source_of_truth: docs/plans/2026-09-10-design-mockup-design.md
 
 ```js
 test('design.mockup is both the switch and the model', () => {
-  const d = dir();
-  const cfg = path.join(d, 'cfg');
-  fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
-  fs.mkdirSync(path.join(cfg, 'fankeel'), { recursive: true });
-  // The builtin is the off position, and it survives read() as a boolean.
-  const off = profile.read(d, cfg);
-  assert.equal(off.values['design.mockup'], false);
-  assert.equal(off.sources['design.mockup'], 'builtin');
-  // A model name is the on position, and it is the value the rule names.
-  fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'design.mockup': 'opus' }));
-  const on = profile.read(d, cfg);
-  assert.equal(on.values['design.mockup'], 'opus');
-  assert.equal(on.sources['design.mockup'], 'project');
-  // Anything outside the four is refused, not silently taken.
-  fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'design.mockup': 'off' }));
-  assert.equal(profile.read(d, cfg).values['design.mockup'], false);
+    const d = dir();
+    const cfg = path.join(d, 'cfg');
+    fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
+    fs.mkdirSync(path.join(cfg, 'fankeel'), { recursive: true });
+    // The builtin is the off position, and it survives read() as a boolean.
+    const off = profile.read(d, cfg);
+    assert.equal(off.values['design.mockup'], false);
+    assert.equal(off.sources['design.mockup'], 'builtin');
+    // A model name is the on position, and it is the value the rule names.
+    fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'design.mockup': 'opus' }));
+    const on = profile.read(d, cfg);
+    assert.equal(on.values['design.mockup'], 'opus');
+    assert.equal(on.sources['design.mockup'], 'project');
+    // Anything outside the four is refused, not silently taken.
+    fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'design.mockup': 'off' }));
+    assert.equal(profile.read(d, cfg).values['design.mockup'], false);
 });
 
 test('summary names design.mockup once somebody sets it', () => {
-  const values = { 'design.mockup': 'opus' };
-  const sources = { 'design.mockup': 'project' };
-  assert.match(profile.summary(values, sources), /design\.mockup opus/);
-  assert.equal(profile.summary({ 'design.mockup': false }, { 'design.mockup': 'builtin' }), '');
+    const values = { 'design.mockup': 'opus' };
+    const sources = { 'design.mockup': 'project' };
+    assert.match(profile.summary(values, sources), /design\.mockup opus/);
+    assert.equal(profile.summary({ 'design.mockup': false }, { 'design.mockup': 'builtin' }), '');
 });
 ```
 

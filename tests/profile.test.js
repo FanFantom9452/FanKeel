@@ -95,27 +95,27 @@ test('judge.enabled is gone; judge.model stays', () => {
 });
 
 test('design.mockup is both the switch and the model', () => {
-  const d = dir();
-  const cfg = path.join(d, 'cfg');
-  fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
-  fs.mkdirSync(path.join(cfg, 'fankeel'), { recursive: true });
-  // The builtin is the off position, and it survives read() as a boolean.
-  const off = profile.read(d, cfg);
-  assert.equal(off.values['design.mockup'], false);
-  assert.equal(off.sources['design.mockup'], 'builtin');
-  // A model name is the on position, and it is the value the rule names.
-  fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'design.mockup': 'opus' }));
-  const on = profile.read(d, cfg);
-  assert.equal(on.values['design.mockup'], 'opus');
-  assert.equal(on.sources['design.mockup'], 'project');
-  // Anything outside the four is refused, not silently taken.
-  fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'design.mockup': 'off' }));
-  assert.equal(profile.read(d, cfg).values['design.mockup'], false);
+    const d = dir();
+    const cfg = path.join(d, 'cfg');
+    fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
+    fs.mkdirSync(path.join(cfg, 'fankeel'), { recursive: true });
+    // The builtin is the off position, and it survives read() as a boolean.
+    const off = profile.read(d, cfg);
+    assert.equal(off.values['design.mockup'], false);
+    assert.equal(off.sources['design.mockup'], 'builtin');
+    // A model name is the on position, and it is the value the rule names.
+    fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'design.mockup': 'opus' }));
+    const on = profile.read(d, cfg);
+    assert.equal(on.values['design.mockup'], 'opus');
+    assert.equal(on.sources['design.mockup'], 'project');
+    // Anything outside the four is refused, not silently taken.
+    fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'design.mockup': 'off' }));
+    assert.equal(profile.read(d, cfg).values['design.mockup'], false);
 });
 
 test('summary names design.mockup once somebody sets it', () => {
-  const values = { 'design.mockup': 'opus' };
-  const sources = { 'design.mockup': 'project' };
-  assert.match(profile.summary(values, sources), /design\.mockup opus/);
-  assert.equal(profile.summary({ 'design.mockup': false }, { 'design.mockup': 'builtin' }), '');
+    const values = { 'design.mockup': 'opus' };
+    const sources = { 'design.mockup': 'project' };
+    assert.match(profile.summary(values, sources), /design\.mockup opus/);
+    assert.equal(profile.summary({ 'design.mockup': false }, { 'design.mockup': 'builtin' }), '');
 });
