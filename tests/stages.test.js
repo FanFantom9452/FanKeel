@@ -106,9 +106,12 @@ test('design says what would prove the work done, not only what it touches', () 
   const text = byName('design').rules.join(' ');
   assert.match(text, /the test that fails now and passes after/);
   assert.match(text, /"Make it work" is not a criterion/);
-  // Pushing back is not covered by "cut what the ask does not require", which is
-  // about scope rather than about the ask being wrong.
-  assert.match(text, /the ask itself looks wrong, say so before building it/);
+  // Pushing back — "or the ask itself looks wrong, say so before building it" —
+  // used to be pinned here too. Cut for the render cap (docs/plans/2026-09-09
+  // -profile-judge-reader.md, Task 4's cap ruling); it is not covered by "cut
+  // what the ask does not require", which is about scope rather than the ask
+  // being wrong, so the gap this sentence closed is now unclosed in the
+  // injected text.
 });
 
 // The gap that this repository walked into while the rule was missing: removing
@@ -120,7 +123,10 @@ test('build says to clean up after itself, and only after itself', () => {
   assert.match(text, /Every changed line traces to the ask/);
   assert.match(text, /do not improve adjacent code/);
   assert.match(text, /Remove what your own change orphaned/);
-  assert.match(text, /dead code you did not create gets mentioned, not deleted/);
+  // `; dead code you did not create gets mentioned, not deleted` was cut for
+  // the render cap (Task 4's cap ruling); "remove what your own change
+  // orphaned" is what remains injected, and the distinction from dead code
+  // you did not create is no longer stated there.
 });
 
 // Documentation rots because nothing forces it to stay true, and the cheap place
@@ -132,7 +138,9 @@ test('the stage that writes documents carries the gate for creating one', () => 
   const text = byName('build').rules.join(' ');
   assert.match(text, /A new document is the last resort/);
   assert.match(text, /write a generator/, 'derivable content should not be a document');
-  assert.match(text, /status, last_verified and source_of_truth/);
+  // ` One written carries status, last_verified and source_of_truth.` was cut
+  // for the render cap (Task 4's cap ruling); the frontmatter fields it named
+  // are no longer stated in the injected text.
   // `a plan is not filed as reference` used to be here and is not a rule any
   // more, because nothing about it was the author's choice: `lib/docs.js` files
   // everything under `docs/plans/` as a plan by its directory. The rule was
@@ -175,16 +183,21 @@ test('stage lookup is case-insensitive', () => {
 });
 
 test('rulesFor returns the always-on rules plus the stage rules', () => {
-  const rules = rulesFor('build');
+  // An explicit empty profile isolates this from the ALWAYS_WHEN layer, which
+  // is its own test below; the default (no third argument) is the builtin
+  // layer, where judge.enabled is on and adds a rule this count does not want.
+  const rules = rulesFor('build', null, {});
   for (const a of ALWAYS) assert.ok(rules.includes(a));
   for (const r of byName('build').rules) assert.ok(rules.includes(r));
   assert.equal(rules.length, ALWAYS.length + byName('build').rules.length);
 });
 
 test('an unknown stage degrades to the always-on rules, never to none', () => {
-  const rules = rulesFor('nonsense');
+  // Same isolation as above: an unknown stage still carries whatever of
+  // ALWAYS_WHEN the profile turns on, so this pins the floor with an empty one.
+  const rules = rulesFor('nonsense', null, {});
   assert.deepEqual(rules, ALWAYS);
-  assert.deepEqual(rulesFor(undefined), ALWAYS);
+  assert.deepEqual(rulesFor(undefined, null, {}), ALWAYS);
 });
 
 test('rulesFor never returns the list it was given, so a caller cannot mutate it', () => {
@@ -199,7 +212,10 @@ test('only one stage of rules is ever produced, not all five', () => {
 });
 
 test('the discipline covers the captured requirements', () => {
-  const text = (ALWAYS.join(' ') + ' ' + STAGES.map((s) => s.rules.join(' ')).join(' ')).toLowerCase();
+  // The archive rule moved out of `land.rules` into `land.when` (two
+  // profile-conditional variants), so the requirement text is only found by
+  // also joining each stage's `when` texts.
+  const text = (ALWAYS.join(' ') + ' ' + STAGES.map((s) => s.rules.concat((s.when || []).map((w) => w.text)).join(' ')).join(' ')).toLowerCase();
   // R2 never stop, R3 questions carry context, R4 finish it,
   // R5 TODO is an index, R6 rewrite not move, R7 use the audit skills.
   assert.match(text, /never end a stage silently or in prose/);
@@ -659,10 +675,42 @@ test('survey, plan, audit and build carry the anchors the second design paid for
   assert.match(rules('survey'), /Read the fankeel-survey skill on entry: ratchet the class with task\.js route\./);
   assert.doesNotMatch(rules('survey'), /Those pages are intent, not drift/);
   assert.match(templateFor('survey'), /^route: <unchanged, or the task\.js route line>$/m);
-  assert.match(rules('plan'), /Read the fankeel-plan skill on entry: Read:, a fence names its file, ## Coverage, no-dispatch on every task\./);
+  // `, no-dispatch on every task` was cut for the render cap (round 2 of the
+  // cap ruling); the pointer line now ends at `## Coverage.`.
+  assert.match(rules('plan'), /Read the fankeel-plan skill on entry: Read:, a fence names its file, ## Coverage\./);
   assert.doesNotMatch(rules('plan'), /rather than remembered/);
   assert.match(rules('audit'), /Read the fankeel-audit skill on entry: todo-check after a move\./);
   assert.doesNotMatch(rules('audit'), /A dead path is a bug/);
   assert.match(templateFor('audit'), /^pairs disagree: <where, or omit this line>$/m);
   assert.match(rules('build'), /resume the fixer, commit shape\./);
+});
+
+test('a when rule shows on its key, hides on its absence, and negates with !', () => {
+  const { rulesFor, holds, ALWAYS_WHEN } = require('../lib/stages.js');
+  assert.equal(holds('judge.enabled', { 'judge.enabled': true }), true);
+  assert.equal(holds('judge.enabled', { 'judge.enabled': false }), false);
+  assert.equal(holds('judge.enabled', {}), false);
+  assert.equal(holds('!land.archivePlan', {}), true);
+  assert.equal(holds(undefined, {}), true);
+  // The judge rule lives on the four stages that ask the user something
+  // mid-stage (survey, design, plan, build), not on `land` and not in
+  // ALWAYS_WHEN, which stays empty so the mechanism and its export stay.
+  assert.deepEqual(ALWAYS_WHEN, []);
+  const on = rulesFor('design', null, { 'judge.enabled': true });
+  const off = rulesFor('design', null, { 'judge.enabled': false });
+  assert.ok(on.some((r) => r.includes('fankeel-judge')));
+  assert.ok(!off.some((r) => r.includes('fankeel-judge')));
+  assert.ok(!rulesFor('land').some((r) => r.includes('fankeel-judge')), 'land is not one of the stages that dispatches a mid-stage question');
+  const archiveOn = rulesFor('land', null, { 'land.archivePlan': true });
+  const archiveOff = rulesFor('land', null, {});
+  assert.ok(archiveOn.some((r) => r.includes('the profile said so')));
+  assert.ok(archiveOff.some((r) => r.includes('after asking')));
+  assert.ok(rulesFor('design').some((r) => r.includes('fankeel-judge')),
+    'no third argument is the builtin layer, where judge.enabled is on');
+});
+
+test('land carries the profile token and survey names the reader agent', () => {
+  const { byName } = require('../lib/stages.js');
+  assert.ok(byName('land').rules.some((r) => r.includes('{{PROFILE_LAND}}')));
+  assert.ok(byName('survey').rules.join(' ').includes('`fankeel-reader`'));
 });

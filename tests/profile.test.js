@@ -81,7 +81,7 @@ test('suggest reads three local merges and no remote as merge, no push, and writ
 test('the two injected strings', () => {
     assert.match(profile.landClause({}), /no land answer/);
     assert.equal(profile.landClause({ 'land.integration': 'merge', 'land.push': false }),
-        'the profile says merge, no push — do that, say so in one line, and do not open the menu');
+        'profile: land merge, no push — do that, say so, skip the menu');
     const s = profile.summary({ 'land.integration': 'merge', 'land.push': false, guard: 'ask', 'judge.model': 'opus' },
         { 'land.integration': 'project', 'land.push': 'project', guard: 'builtin', 'judge.model': 'machine' });
     assert.equal(s, 'land merge, no push · judge.model opus (machine)');
