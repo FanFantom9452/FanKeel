@@ -8,3 +8,7 @@ exit=0 shell_seconds=86
 exit=0 shell_seconds=31
 restored: main
 done
+cwd: the checkout, uncontrolled — pinned to 86a104e via `git checkout` (ab2.sh:9, restored to main at :35), not a fresh empty directory
+settings: user and project, uncontrolled — no --setting-sources or --settings flag
+always-on flag: n/a — fankeel has none
+budget: none, uncontrolled — no --max-budget-usd

@@ -7,3 +7,7 @@ exit=0 shell_seconds=280
 --- arm B: inline
 exit=0 shell_seconds=160
 done
+cwd: the checkout (F:/ymlab/fankeel), uncontrolled — ab.sh:6 only `cd`s into it, no fresh empty directory per run
+settings: user and project, uncontrolled — no --setting-sources or --settings flag
+always-on flag: n/a — fankeel has none
+budget: none, uncontrolled — no --max-budget-usd

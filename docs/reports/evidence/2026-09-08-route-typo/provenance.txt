@@ -11,3 +11,7 @@ porcelain: [ M docs/plans/2026-09-08-behaviour-eval.md ?? docs/reports/evidence/
 2.1.263 (Claude Code)
 command: node scripts/eval.js evals/route-typo --model claude-sonnet-5 --json docs/reports/evidence/2026-09-08-route-typo/run2.json
 exit=0 wall=36s
+cwd: controlled by the harness, not the checkout — scripts/eval.js:103 gives every run a fresh fs.mkdtempSync directory and spawns claude with that as cwd (:115); this command line does not show a flag for it because it is not one — it is built into scripts/eval.js
+settings: controlled by the harness — scripts/eval.js:109 always passes --setting-sources project, excluding the operator's user settings; also not visible on this command line for the same reason
+always-on flag: n/a — fankeel has none
+budget: none, uncontrolled — this run did not pass --max-budget-usd, though scripts/eval.js:111 passes one through when given
