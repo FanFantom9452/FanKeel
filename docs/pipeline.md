@@ -567,7 +567,7 @@ flowchart TD
     D0["<b>where a ledger exists</b><br/>ledger.js ranges — one verifier per row, a task's or a fix's<br/><i>pinned at both ends is not the same as disjoint</i><br/><i>the last paragraph says what to send</i>"]
     D["docs-check<br/><i>which page did this change<br/>just make untrue?</i><br/><i>a coverage claim states its denominator</i>"]
     D1["<b>dispatch readers</b><br/>several in one response, one per page<br/><i>four the ceiling, sonnet the floor</i><br/><i>say how many, and on which model</i><br/><i>the path to a diff file, never a pasted diff</i>"]
-    D2["<b>the adversary</b><br/>read-only, over the evidence table<br/><i>was it run · on what · could it have<br/>failed · out of what</i><br/><i>paths never a paste — only the rows it defeats</i>"]
+    D2["<b>the adversary</b><br/>read-only, over the evidence table<br/><i>was it run · on what · could it have<br/>failed · out of what</i><br/><i>paths never a paste — only the rows it defeats</i><br/><i>where the host opens it, the chain is one workflow</i>"]
     E{"anything half-built?"}
     F["back to build.<br/>Verify is not where<br/>the bar gets lowered."]
     G["quote the command and the<br/>one line that decided it"]
@@ -604,7 +604,7 @@ Three scanners, and then the part none of them can do.
 
 ```mermaid
 flowchart TD
-    A["docs-check<br/><i>every reference still resolves</i>"]
+    A["docs-check<br/><i>dead references, never opinions</i>"]
     B["docs-audit<br/><i>the deeper sweep<br/>drift 14 days · landed settles at 3</i>"]
     A2["residue<br/><i>the one not about documents</i>"]
     C{"what came back?"}
