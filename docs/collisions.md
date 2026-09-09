@@ -136,32 +136,37 @@ nobody gets without asking for it.
 deleting the field: absence means `ask` now, so deleting it would turn opting out
 into opting in.
 
-Two rules keep it from becoming a lockout:
+One rule keeps it from becoming a lockout, and it is checked two ways inside
+`blockers()` (`lib/guard.js:123`):
 
-- **A dead session's claim never blocks.** Liveness is the session's own file
-  under `sessions/` in the config directory **that session recorded**, plus a
-  live process behind its pid; a terminal that is gone holds nothing shut.
-  `CLAUDE_CONFIG_DIR` moves that directory, so each entry carries its own and a
-  reader checks the neighbour against the one the neighbour named — reading only
-  this session's own reported a running neighbour as dead, confidently, and its
-  claims then dropped out of every reader. When a directory cannot be read, or
-  when this session's own id is missing from what was read, every claim counts as
-  live, because warning too much is the failure worth having. An entry that names
-  no directory is the one case that is *not* waved through: it is checked against
-  the directory this session already scanned, and can be judged dead there.
-- **The older task holds.** When both sessions claim the file, the newer one
-  yields — so two sessions that both reached it cannot block each other into a
-  stalemate.
-- **It does not protect a task from itself.** Every one of the rules above is
-  between *sessions*, and `hooks/guard.js` reaches that by filtering to entries
-  whose `sessionId` is not this one's. A subagent inherits its parent's session
-  id, so two implementers dispatched by one session are invisible to each other
-  here however the guard is set. That was inert while `build` dispatched one at
-  a time. It is not inert now: `build` sends a whole group at once wherever there
-  is a plan to compute one from, and what keeps those apart instead is the pair
-  of predicates in [subagents.md](subagents.md) — disjoint `**Files:**`, no
-  producer/consumer edge — plus the parent staging each task's declared paths,
-  which leaves anything written outside them unstaged rather than committed.
+- **A dead session's claim never blocks** — `isLive`, `lib/guard.js:130`.
+  Liveness is the session's own file under `sessions/` in the config directory
+  **that session recorded**, plus a live process behind its pid; a terminal
+  that is gone holds nothing shut. `CLAUDE_CONFIG_DIR` moves that directory, so
+  each entry carries its own and a reader checks the neighbour against the one
+  the neighbour named — reading only this session's own reported a running
+  neighbour as dead, confidently, and its claims then dropped out of every
+  reader. When a directory cannot be read, or when this session's own id is
+  missing from what was read, every claim counts as live, because warning too
+  much is the failure worth having. An entry that names no directory is the one
+  case that is *not* waved through: it is checked against the directory this
+  session already scanned, and can be judged dead there.
+- **The older task holds** — `claimedFirst`, `lib/guard.js:131`. When both
+  sessions claim the file, the newer one yields — so two sessions that both
+  reached it cannot block each other into a stalemate.
+
+A task never blocking itself is a separate mechanism, and it runs before
+`blockers()` ever sees the other side: `hooks/guard.js:45` filters `others`
+down to entries whose `sessionId` is not this one's, so every rule above is
+already between *sessions* by the time it runs. A subagent inherits its
+parent's session id, so two implementers dispatched by one session are
+invisible to each other here however the guard is set. That was inert while
+`build` dispatched one at a time. It is not inert now: `build` sends a whole
+group at once wherever there is a plan to compute one from, and what keeps
+those apart instead is the pair of predicates in
+[subagents.md](subagents.md) — disjoint `**Files:**`, no producer/consumer
+edge — plus the parent staging each task's declared paths, which leaves
+anything written outside them unstaged rather than committed.
 
 # Stale entries
 
