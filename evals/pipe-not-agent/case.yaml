@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: pipe-not-agent
+context:
+  scaffold_script: "printf 'require("node:test")("ok", () => {});' > sample.test.js && git init -q && git add -A && git -c user.email=eval@fankeel -c user.name=eval commit -qm init"
