@@ -24,6 +24,10 @@
       "role": "archive"
     },
     {
+      "path": "docs/judgements",
+      "role": "report"
+    },
+    {
       "path": "skills",
       "role": "reference"
     },

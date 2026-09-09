@@ -104,6 +104,15 @@ here.
 | Where to look for every place a rule is taught, before changing the rule | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *a rule is taught in more places than a search finds* |
 | How to run the behaviour eval, and what to do when `claude plugin eval` says early access | [../README.md](../README.md) — *Behaviour evals* |
 
+## Judgements
+
+What a one-shot `fankeel-judge` dispatch answered, filed verbatim with its
+brief by `node scripts/judge.js record`. Never edited after; a wrong judgement
+is corrected by the next one, not by rewriting this.
+
+| question | record |
+|---|---|
+
 ## The three scanners
 
 | | |
@@ -128,6 +137,7 @@ is explained, and it is the one thing to know before adding a page here.
 | `docs/plans/` | plan | until the work lands, then it is archived |
 | `docs/reports/` | report | it is a dated snapshot |
 | `docs/archive/` | archive | that is the point of it |
+| `docs/judgements/` | report | it is what `fankeel-judge` answered on that day, filed verbatim by `scripts/judge.js` |
 | `skills/` | reference | no |
 | `output-styles/` | reference | no |
 | `evals/` | reference | no — a grader names the code it asserts on, so it goes stale the way a reference page does |
