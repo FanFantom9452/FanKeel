@@ -689,7 +689,7 @@ rules）、`lib/stages.js`、`scripts/task.js`、`lib/registry.js`、`hooks/inje
 > **補記（2026-09-10），三**：`judge.enabled` 在判官規則刪掉時一起刪了，
 > `lib/profile.js` 的 `KEYS` 現在是六個鍵。上面那七個是 2026-09-09 當天的清單，
 > 留著是因為它記的是那天的決定；今天要對照的是
-> [/fankeel-ask 的設計](plans/2026-09-09-fankeel-ask-design.md)。
+> [判官改成使用者自己叫](decisions/2026-09-10-judge-to-ask.md)。
 
 ### 4.3 station 變成通用的設定面
 
