@@ -115,12 +115,14 @@ node <plugin>/scripts/survey.js --tree
 
 Sizes, not purposes — step 2's tree already said what the directories are for,
 where the project has written one. Together they decide the scope: which
-directories hold the answer, and therefore whether this is one scan here or three
-readers with a lens each. Where step 2 found no tree, this is all there is.
+directories hold the answer, and therefore whether this is one scan here or
+three `fankeel-reader` dispatches with a lens each. Where step 2 found no
+tree, this is all there is.
 
 **Scope and dispatch belong in the same response.** A scope announced in one
 round and acted on in the next has spent a round on nothing, which is the waste
-§4b was rewritten to remove. Say how many readers, and on which model, as they go
+§4b was rewritten to remove. Say how many readers, and on which model — each
+one `fankeel-reader`, the model the profile's `dispatch.floor` — as they go
 out: that is a report, not a request, and nothing waits on it.
 
 ```

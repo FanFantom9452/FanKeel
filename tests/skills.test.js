@@ -1055,4 +1055,12 @@ test('fankeel-survey and fankeel-verify name the reader agent and its model sour
     assert.match(text, /fankeel-reader/, n + ' never names fankeel-reader');
     assert.match(text, /dispatch\.floor/, n + ' never names the profile key for the reader\'s model');
   }
+  // §4 ("Targeted scan") and §4b both dispatch readers, and a fix round found
+  // §4b alone carried fankeel-reader/dispatch.floor while §4 kept the old
+  // generic "readers"/"which model" wording. A whole-file match above would
+  // pass on §4b's copy alone, so this anchors to §4 specifically.
+  const section4 = /### 4\. Targeted scan\r?\n([\s\S]*?)(?:\r?\n### 4b\. |$)/.exec(read('fankeel-survey'));
+  assert.ok(section4, 'section 4 is not where this test looks for it');
+  assert.match(section4[1], /`fankeel-reader`/, 'section 4 never names fankeel-reader');
+  assert.match(section4[1], /`dispatch\.floor`/, 'section 4 never names the profile key for the reader\'s model');
 });
