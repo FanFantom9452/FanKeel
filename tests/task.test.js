@@ -1266,3 +1266,39 @@ test('the stage line reports what the stage it left took', () => {
   const { out } = run(dir, ['stage', 'design', '--session', A]);
   assert.match(out, /survey took 12m, 4m of it at the gate/);
 });
+
+test('profile set writes the project file, show reads it with its source, and an unknown key exits 1', () => {
+  const dir = root();
+  const set = run(dir, ['profile', 'set', 'land.push', 'false']);
+  assert.equal(set.code, 0);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, '.fankeel', 'profile.json'), 'utf8')), { 'land.push': false });
+  const shown = run(dir, ['profile', 'show']);
+  assert.match(shown.out, /land\.push\s+false\s+project/);
+  assert.match(shown.out, /guard\s+ask\s+builtin/);
+  const bad = run(dir, ['profile', 'set', 'colour', 'blue']);
+  assert.equal(bad.code, 1);
+  assert.match(bad.out, /unknown key/);
+  const machine = run(dir, ['profile', 'set', 'guard', 'deny', '--default']);
+  assert.equal(machine.code, 0);
+  assert.ok(fs.existsSync(path.join(dir, 'cfg', 'fankeel', 'profile.json')));
+  assert.match(run(dir, ['profile', 'show']).out, /guard\s+deny\s+machine/);
+});
+
+test('start takes guard from the profile and says so; without one the field stays absent', () => {
+  const dir = root();
+  run(dir, ['start', '--session', A, '--task', 'plain']);
+  assert.equal(registry.readSession(dir, A).guard, undefined);
+  const dir2 = root();
+  run(dir2, ['profile', 'set', 'guard', 'deny']);
+  const out = run(dir2, ['start', '--session', B, '--task', 'guarded']);
+  assert.match(out.out, /guard: deny \(profile\)/);
+  assert.equal(registry.readSession(dir2, B).guard, 'deny');
+});
+
+test('profile suggest writes nothing and says what the history answers', () => {
+  const dir = root();
+  const out = run(dir, ['profile', 'suggest']);
+  assert.equal(out.code, 0);
+  assert.match(out.out, /nothing written/);
+  assert.equal(fs.existsSync(path.join(dir, '.fankeel', 'profile.json')), false);
+});
