@@ -3,7 +3,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { ALWAYS, STAGES, NAMES, byName, nextStage, rulesFor, templateFor } = require('../lib/stages.js');
+const { ALWAYS, STAGES, NAMES, FULL_ROUTE, byName, nextStage, rulesFor, templateFor } = require('../lib/stages.js');
+const { render } = require('../lib/render.js');
 const { MAX_WORD } = require('../lib/badge.js');
 
 test('the stages are the seven a route is assembled from, in canonical order', () => {
@@ -733,4 +734,107 @@ test('the mockup rule is on only where design.mockup names a model', () => {
 test('the design template gained no slot', () => {
   const { template } = byName('design');
   assert.equal(/mockup/.test(template), false, 'the mockup path took a template slot');
+});
+
+// Where a rule and the shape it is filed under disagree, the rule stays and
+// the shape gives way — the Calibration meta-rule this same sentence carries
+// into skills/fankeel/SKILL.md.
+test('the always-on block says the constraint wins over the shape', () => {
+  assert.match(ALWAYS[2], /the constraint wins and the shape stays/);
+});
+
+// build's third rule used to name four things that stop the loop with no
+// stated reason they are the four. Reframed around what a `Ruling` actually
+// has to survive: git's own ability to undo it.
+test("build's stopping rule is framed around what git can revert", () => {
+  const text = byName('build').rules.join(' ');
+  assert.match(text, /revert/);
+  assert.match(text, /irreversible/);
+  assert.match(text, /Ruling:/);
+});
+
+// Reachability, not worth: a rule that is well-written and gated behind a
+// `when` key nobody sets is followed by nobody. This renders every stage and
+// confirms each of its own rules — ALWAYS, the stage's own list, and its
+// `when`-gated ones under the profile value that turns them on — actually
+// appears in the injected block, then removes exactly that rule from the
+// live STAGES array (the same module lib/render.js reads, restored in a
+// `finally`) and confirms only that rule's anchor is gone and every other
+// stays. This is green the moment it is written — it guards an invariant,
+// not a feature this task is building — and its own "remove one rule" step
+// is its proof that it is not vacuous; nothing outside the test demonstrates
+// that separately.
+//
+// A token like `{{NEXT}}` or `{{LEDGER}}` becomes a run-time value, so a rule
+// carrying one is anchored on its longest token-free piece rather than its
+// full text — the piece least likely to collide with another rule that
+// happens to share a short prefix or suffix (two of `audit`'s rules both
+// start with "Run `node ").
+test('every rule reaches the injected block, and removing one drops only it', () => {
+  const NOW = Date.parse('2026-08-21T12:00:00.000Z');
+  const ago = (ms) => new Date(NOW - ms).toISOString();
+  const MINE = 'aaaaaaaa-0000-4000-8000-000000000001';
+
+  function entryFor(stage, values) {
+    return {
+      mine: { sessionId: MINE, data: { task: 'x', claims: [], stage, class: 'architectural', route: FULL_ROUTE, active: true, started: ago(3600e3), updated: ago(60e3) } },
+      others: [], now: NOW, profile: values ? { values } : undefined,
+    };
+  }
+
+  const anchor = (text) => text.split(/\{\{[A-Z_]+\}\}/).reduce((a, b) => (b.length > a.length ? b : a), '');
+
+  function whenValues(when) {
+    const neg = when.charAt(0) === '!';
+    const key = neg ? when.slice(1) : when;
+    return { [key]: !neg };
+  }
+
+  let checked = 0;
+  for (const stage of NAMES) {
+    const found = byName(stage);
+
+    for (let i = 0; i < ALWAYS.length; i++) {
+      const rule = ALWAYS[i];
+      const out = render(entryFor(stage));
+      assert.ok(out.includes(anchor(rule)), stage + ': ALWAYS[' + i + '] does not reach the block');
+      const saved = ALWAYS.splice(i, 1);
+      try {
+        const out2 = render(entryFor(stage));
+        assert.ok(!out2.includes(anchor(rule)), stage + ': ALWAYS[' + i + '] still present after removal');
+        for (let j = 0; j < ALWAYS.length; j++) {
+          assert.ok(out2.includes(anchor(ALWAYS[j])), stage + ': ALWAYS[' + j + '] disappeared when a different rule was removed');
+        }
+      } finally { ALWAYS.splice(i, 0, saved[0]); }
+      checked++;
+    }
+
+    for (let i = 0; i < found.rules.length; i++) {
+      const rule = found.rules[i];
+      const out = render(entryFor(stage));
+      assert.ok(out.includes(anchor(rule)), stage + ': rules[' + i + '] does not reach the block');
+      const saved = found.rules.splice(i, 1);
+      try {
+        const out2 = render(entryFor(stage));
+        assert.ok(!out2.includes(anchor(rule)), stage + ': rules[' + i + '] still present after removal');
+      } finally { found.rules.splice(i, 0, saved[0]); }
+      checked++;
+    }
+
+    for (const w of (found.when || [])) {
+      const values = whenValues(w.when);
+      const out = render(entryFor(stage, values));
+      assert.ok(out.includes(anchor(w.text)), stage + ': when(' + w.when + ') does not reach the block');
+      const idx = found.when.indexOf(w);
+      const saved = found.when.splice(idx, 1);
+      try {
+        const out2 = render(entryFor(stage, values));
+        assert.ok(!out2.includes(anchor(w.text)), stage + ': when(' + w.when + ') still present after removal');
+      } finally { found.when.splice(idx, 0, saved[0]); }
+      checked++;
+    }
+  }
+  // A loop that iterated zero times would pass vacuously — NAMES or byName
+  // returning nothing would look identical to every rule being reachable.
+  assert.ok(checked > 50, 'the reachability loop only checked ' + checked + ' rules');
 });
