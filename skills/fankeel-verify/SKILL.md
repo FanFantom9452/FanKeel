@@ -3,7 +3,7 @@ name: fankeel-verify
 description: The verify stage — evidence before claims, requirements checked line by line, and the documents this change just made false. Use for the verify stage of a fankeel task, before claiming work is complete or passing, before a commit or PR, or when checking whether a change broke the documentation describing it.
 version: 0.59.0
 status: current
-last_verified: 2026-09-09
+last_verified: 2026-09-11
 source_of_truth: lib/stages.js, scripts/docs-check.js
 ---
 
@@ -153,8 +153,9 @@ it contains, send one of two rows recording the same range, send both where
 they cross because no single range names their union, and treat a range git
 could not read back as unverified rather than as disjoint. Where it finds none
 of that, **the verifiers go out in one response** — four is still the ceiling,
-and a plan of six goes four then two. Say how many and on which model in the
-response that sends them.
+and a plan of six goes four then two. Dispatch it as `subagent_type:
+fankeel-verifier`; the model comes from that agent file, not typed by hand
+here. Say how many and on which model in the response that sends them.
 
 Give each one its range, the task's text from the plan, and the path to
 `.fankeel/map.md`. Never a paste of the session's history, and never the diff:
@@ -179,15 +180,19 @@ adversary is a fan-out whose output feeds another fan-out — the one shape the
 fankeel skill says only the Workflow tool covers — and this paragraph is the
 opt-in the host's fourth valve names: a skill the user invoked whose
 instructions say to run one. Run the tasks through a `pipeline` with two
-stages: the verifier for a task writes its evidence rows to a file and returns
-the path; the adversary for that task reads the path and returns, under a
+stages: the verifier for a task writes its evidence rows to a file under
+`.fankeel/build/<plan>/`, not a scratchpad that gets cleared, and returns the
+path; the adversary for that task reads the path and returns, under a
 `schema`, only the rows it defeats. Every `agent` call carries `model`, and
 `sonnet` is the floor there as it is here. What returns is the join — per
-task, the rows and the rows defeated — and the intermediates never land in
-this context. The ruling stays here, over the join: a row one task leaned on
-that another task's adversary defeated is the cross-task reading, and no agent
-makes it. The Agent form below is the fallback, for a session where the user
-said not to dispatch, or declined the host's run dialog.
+task, the rows and the rows defeated. An `agent` call's own return already
+stays in the script rather than reaching this context, so writing to a file
+buys nothing there; what it keeps the rows out of is the join itself, the
+value the script does return. The ruling stays here, over the join: a row one
+task leaned on that another task's adversary defeated is the cross-task
+reading, and no agent makes it. The Agent form below is the fallback, for a
+session where the user said not to dispatch, or declined the host's run
+dialog.
 
 ## The adversary
 

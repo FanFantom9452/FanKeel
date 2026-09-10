@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-10
+last_verified: 2026-09-11
 source_of_truth: hooks/brief.js, lib/render.js, lib/stages.js, hooks/carry.js, lib/plantasks.js, lib/usage.js, lib/prices.js, scripts/judge.js
 ---
 
@@ -25,16 +25,27 @@ reproduce whatever had been put in front of them, with no needle in the prompt t
 find — a third never launched, and a cell that did not run is not a result
 ([reports/2026-09-04-subagent-brief-probe.md](reports/2026-09-04-subagent-brief-probe.md)).
 
-## The three agents this plugin defines
+## The four agents this plugin defines
 
-Three subagent types are not just described in prose — they are declared as
+Four subagent types are not just described in prose — they are declared as
 `agents` in `.claude-plugin/plugin.json` and shipped as files under `agents/`:
-`fankeel-reader`, `fankeel-judge` and `fankeel-reviewer`. All three carry
-`tools: [Read, Grep, Glob, Bash]` — Edit, Write and NotebookEdit are simply
-absent from the list, so calling any of them to change a file is refused by
-the harness rather than left to a rule somebody has to remember. Bash stays
-on the list for `git` — and, for the reader, this plugin's own scripts — a
-named residual rather than a claim that any of the three cannot write anything.
+`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer` and `fankeel-verifier`.
+The first three carry `tools: [Read, Grep, Glob, Bash]` — Edit, Write and
+NotebookEdit are simply absent from the list, so calling any of them to change
+a file is refused by the harness rather than left to a rule somebody has to
+remember. Bash stays on the list for `git` — and, for the reader, this plugin's
+own scripts — a named residual rather than a claim that any of the three cannot
+write anything.
+
+`fankeel-verifier` is the one exception, and it is a narrower agent rather than
+a looser one. It adds `Write`, because verify's per-task verifier writes its
+evidence rows to a file and returns the path — what that keeps the rows out of
+is a Workflow's join, not this session's context, which a return value never
+reaches anyway. `Write` is matched by `guard.js`'s `PreToolUse` hook, whose
+matcher is `Edit|Write|NotebookEdit`; `Bash`, which all four hold, is matched by
+no hook at all. So the agent carrying `Write` is the one under a guard.
+`tests/agents.test.js` states that as a named exemption with the argument beside
+it, rather than dropping the assertion.
 
 `fankeel-reader` runs at `model: sonnet`, the floor the survey, verify and audit
 skills ask their reader fan-outs to use (survey's stage rule names the type, no
@@ -77,7 +88,9 @@ per-task reviewer and verify's adversary, all three of which dispatch
 from `fankeel-reader` is not the tool list — both carry the same four — but
 the shape of the question: a reader is asked what a file says, a reviewer
 is asked what a diff or a table gets wrong, and it returns only what it
-defeats. This is also the one dispatch where nobody types a model at all,
+defeats. It is one of two dispatches where nobody types a model at all —
+`fankeel-verifier` is the other: `skills/fankeel-verify/SKILL.md:157`, `not typed by hand`,
+and it was added on the same branch as this sentence —
 so the file's pin is the only floor — the literal `sonnet`, not `dispatch.floor`,
 which nothing in `agents/` or `hooks/` reads: `SubagentStart`'s payload
 carries no model (`agent_id`, `agent_type`, `session_id`, `cwd`), so a hook
@@ -96,6 +109,15 @@ competing for the window and pulling compaction forward.
 So spending 280 tokens on a brief to take a thousand off a return value is worth
 it every single time, and it is worth it even when nothing else about the
 delegation changes.
+
+The brief is capped, and the cap is a test rather than a habit:
+`tests/brief.test.js:126`, `assert.ok(text.length < 1400`. Measured 2026-09-11
+against that test's own seed, the rendered brief is 1,098 characters — 823 before
+the working-tree rule was added to `RETURN_RULES`. A `TODO.md` entry carried 777
+as the figure until it closed on 2026-09-11; it matched nothing, in the code or
+in the test, and two independent measurements put the pre-rule brief at 823 and
+830 depending on the task line and the claim count. The figure moves with those,
+which is why it is quoted here with the fixture it came from and not on its own.
 
 ## When to dispatch one
 

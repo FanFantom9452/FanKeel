@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-10
+last_verified: 2026-09-11
 source_of_truth: this file is the index; each page below is its own source
 ---
 
@@ -89,7 +89,10 @@ here.
 | Why a project answers the land menu once in `profile.json`, why in-stage questions go to a one-shot `fankeel-judge` whose answer is filed verbatim, why readers are structurally read-only, and the two placements the plan changed on the way | [decisions/2026-09-09-profile-judge-reader.md](decisions/2026-09-09-profile-judge-reader.md) — *繁體中文* |
 | Why a rule that names a stronger model invites the session's own model to defer, and why the judge is now reached only by a command the user types | [decisions/2026-09-10-judge-to-ask.md](decisions/2026-09-10-judge-to-ask.md) — *繁體中文* |
 | Why the frontend axis splits into a per-project profile key and a per-task judgement, why one key carries both the switch and the model, and why the mockup path could not name the ledger | [decisions/2026-09-10-design-mockup.md](decisions/2026-09-10-design-mockup.md) — *繁體中文* |
-| Why the nine TODO answers were each the recommended one, which two design sentences the audit overturned against the code, and what the build learned — the subagent tool is `Task` in a transcript, agent files load at process start, a `when` key must be a profile key | [decisions/2026-09-10-todo-ten.md](decisions/2026-09-10-todo-ten.md) — *繁體中文* |
+| Why the nine TODO answers were each the recommended one, which two design sentences the audit overturned against the code, and what the build learned — that the subagent tool is `Task` in a transcript, which was wrong and was reversed on 2026-09-11 against the transcripts themselves, that agent files load at process start, that a `when` key must be a profile key | [decisions/2026-09-10-todo-ten.md](decisions/2026-09-10-todo-ten.md) — *繁體中文* |
+| Why the seven judgements said "do not build" four times, which commit's reasoning was wrong twice on one question, and the check the whole build never ran | [decisions/2026-09-11-todo-eight.md](decisions/2026-09-11-todo-eight.md) — *繁體中文* |
+| Why the last eight TODO entries needed seven judgements before any of them could be built, and the three places those judgements corrected the design's own claims | `docs/archive/2026-09-10-todo-eight-design.md` — *built, 繁體中文* |
+| The ten tasks that close them, one of them ruled a deferral because nobody had verified the premise it rested on | `docs/archive/2026-09-10-todo-eight.md` — *built, 繁體中文* |
 | The two tasks that anchored `survey`, `plan` and `audit`, and brought the survey skill's step 6 to what `task.js` does | `docs/archive/2026-09-05-anchor-remaining.md` — *built* |
 | Why the fourteen entries under `## Ready` came down to nine changes, and why the temp-directory leak goes first | `docs/archive/2026-09-07-ready-fourteen-design.md` — *built* |
 | The nine tasks that close them, with the code for each written out | `docs/archive/2026-09-07-ready-fourteen.md` — *built* |
@@ -122,6 +125,13 @@ is corrected by the next one, not by rewriting this.
 
 | question | record |
 |---|---|
+| 判斷 1：`renderResume` 要不要長度斷言，cap 定多少 | [judgements/2026-09-10-resume-assertion.md](judgements/2026-09-10-resume-assertion.md) — *judged 2026-09-10, fable* |
+| 判斷 2：四個例外 eval case 首跑正向 grader 全掉，歸因在哪 | [judgements/2026-09-10-exception-cases.md](judgements/2026-09-10-exception-cases.md) — *judged 2026-09-10, fable* |
+| 判斷 3：整個外掛的總 prompt 預算，要不要一個欄位 | [judgements/2026-09-10-total-budget.md](judgements/2026-09-10-total-budget.md) — *judged 2026-09-10, fable* |
+| 判斷 4：條件載入要不要做到「節」的粒度 | [judgements/2026-09-10-section-loading.md](judgements/2026-09-10-section-loading.md) — *judged 2026-09-10, fable* |
+| 判斷 5：16 行 pattern skill 的極簡形式，要不要採用 | [judgements/2026-09-10-pattern-skill.md](judgements/2026-09-10-pattern-skill.md) — *judged 2026-09-10, fable* |
+| 判斷 6：subagent 的 Bash 與 PowerShell，白名單該擋到哪 | [judgements/2026-09-10-shell-whitelist.md](judgements/2026-09-10-shell-whitelist.md) — *judged 2026-09-10, fable* |
+| 判斷 7：verify 的 verifier 要釘哪個 agent，Workflow 的寫檔要求要不要留 | [judgements/2026-09-10-verifier-agent.md](judgements/2026-09-10-verifier-agent.md) — *judged 2026-09-10, fable* |
 
 ## The three scanners
 
@@ -152,6 +162,6 @@ is explained, and it is the one thing to know before adding a page here.
 | `output-styles/` | reference | no |
 | `evals/` | fixture | n/a — a test's own input; a prompt names paths only its scaffold has, so it is checked for links and line numbers only, never for symbols |
 | `.claude/agents/` | reference | no |
-| `agents/` | reference | no — the three agents the plugin ships, read by Claude Code at process start |
+| `agents/` | reference | no — the four agents the plugin ships, read by Claude Code at process start |
 
 [Back to the front page](../README.md)

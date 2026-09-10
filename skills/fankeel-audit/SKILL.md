@@ -4,7 +4,7 @@ description: Audit documentation against the code it describes — dead referenc
 argument-hint: "[--root <dir>] [--since <days>]"
 version: 0.59.0
 status: current
-last_verified: 2026-09-09
+last_verified: 2026-09-11
 source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js
 ---
 

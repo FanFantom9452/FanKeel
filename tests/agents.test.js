@@ -7,7 +7,15 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier'];
+
+// `fankeel-verifier` is the one named exception: it writes evidence rows to a
+// file for the Workflow join, and `Write` is what that takes. It is not less
+// constrained than the other three for holding it — `guard.js`'s PreToolUse
+// hook matches `Edit|Write|NotebookEdit` (`.claude-plugin/plugin.json`), so
+// `Write` is guarded; `Bash`, which all four agents hold, is matched by no
+// hook at all.
+const MAY_WRITE = { 'fankeel-verifier': ['Write'] };
 
 function front(file) {
     const m = FRONT.exec(fs.readFileSync(file, 'utf8'));
@@ -27,7 +35,11 @@ test('every agent parses, names itself after its file, and cannot edit', () => {
         assert.match(f.tools, /^\[.+\]$/, name + ' tools is a list');
         const tools = f.tools.slice(1, -1).split(',').map((s) => s.trim());
         assert.ok(tools.length > 0, name + ' tools is not empty — an empty list refuses to launch');
-        for (const banned of ['Edit', 'Write', 'NotebookEdit']) assert.ok(!tools.includes(banned), name + ' lists ' + banned);
+        const allowed = MAY_WRITE[name] || [];
+        for (const banned of ['Edit', 'Write', 'NotebookEdit']) {
+            if (allowed.includes(banned)) continue;
+            assert.ok(!tools.includes(banned), name + ' lists ' + banned);
+        }
         assert.ok(f.model, name + ' pins a model');
     }
 });

@@ -1,0 +1,6 @@
+subagent-no-entry run 1 cost $0.1252
+subagent-no-entry run 1 at-most-one-start pass — Bash matching task\.js start\b: 0 calls
+subagent-no-entry run 1 dispatches-a-reader fail — Task: 0 of min 1
+subagent-no-entry run 1 no-edit-or-write pass — Edit: 0 calls
+score 2/3
+exit 1

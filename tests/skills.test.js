@@ -15,6 +15,36 @@ const DIR = path.join(ROOT, 'skills');
 const names = fs.readdirSync(DIR).filter((d) => fs.statSync(path.join(DIR, d)).isDirectory());
 const read = (n) => fs.readFileSync(path.join(DIR, n, 'SKILL.md'), 'utf8');
 
+// Read once against skills/fankeel-build/SKILL.md and confirmed paragraph by
+// paragraph (2026-09-11): each one below mentions `ledger.js`, `groups` or
+// `brief` with no no-plan phrase of its own, and none needed one. Judgement 4
+// (docs/judgements/2026-09-10-section-loading.md:72) named four plan-only
+// regions — Setup steps 2-3, step 2's brief description, step 4's `workflow`
+// bullet and step 7's ledger — and kept every one of them inline instead,
+// because the no-plan sentence that opens each section already names
+// everything below it; these paragraphs are the mid-section mechanics that
+// opening sentence already scopes. The step 5 fragments are not plan-only at
+// all: the no-plan branch says step 5 "reviews the range as it would a
+// task's", so the reviewer template and the return contract it describes are
+// shared machinery, not a plan-path claim a no-plan reader could be misled by.
+const KNOWN_LEDGER_PARAGRAPHS = [
+  "```",
+  "`scan` writes exactly what `groups` just printed — the thing",
+  "`groups` now prints a surface beside each group, and it is t",
+  "   A dispatch carries three things and nothing else, and **n",
+  "   ```",
+  "   and holds the plan's goal and spec line, the `## Global C",
+  "   A dispatched implementer **does not commit. It returns a ",
+  "   **A whole group goes out in one response**, and the `grou",
+  "   `groups` answers which tasks *may* run together, never ho",
+  "   Every implementer in the run gets its brief file, and the",
+  "   Anything written outside those paths stays unstaged, so `",
+  "   THE RANGE, pinned at both ends: <BASE>..<sha>",
+  "   Part 1 — against the brief and the coverage rows, in this",
+  "   Give it the brief path and the range — never a paste of t",
+  "The same asymmetry runs the other way. What you send is read",
+];
+
 function frontmatter(text) {
   const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(text);
   if (!m) return null;
@@ -358,6 +388,26 @@ test('the plan-is-wrong section covers a file table too', () => {
     'the section speaks only to a plan, which a bounded route reaching it does not have');
   assert.match(section[0], /task-boundary\s+half\s+has\s+nothing\s+to\s+say/,
     'the section carries the file table over without saying which half does not carry');
+});
+
+// Judgement 4 kept the plan/no-plan split as prose rather than splitting the
+// file, on condition that a test catch the cost it named: every added
+// plan-path sentence is one more chance to drop the no-plan reader. This
+// checks every paragraph that could make that claim -- one naming `ledger.js`,
+// `groups` or `brief` -- against a read-once whitelist of the paragraphs that
+// need no disclaimer today; a new one appearing unlisted is exactly the rot
+// `f883dc4` and `14ec966` were.
+test('fankeel-build: every ledger mention sits inside a paragraph that names the no-plan reader', () => {
+  const skill = fs.readFileSync(path.join(DIR, 'fankeel-build', 'SKILL.md'), 'utf8');
+  const paras = skill.split(/\n\n+/);
+  const LEDGER = /`ledger\.js`|\bgroups\b|\bbrief\b/;
+  const NOPLAN = /no plan|without a plan|file table|spike/i;
+  const orphans = [];
+  for (const p of paras) {
+    if (LEDGER.test(p) && !NOPLAN.test(p)) orphans.push(p.split('\n')[0].slice(0, 60));
+  }
+  assert.deepEqual(orphans, KNOWN_LEDGER_PARAGRAPHS,
+    'a ledger paragraph stopped naming the no-plan reader: ' + JSON.stringify(orphans));
 });
 
 // Two copies of every stage's output shape: `template` in lib/stages.js,

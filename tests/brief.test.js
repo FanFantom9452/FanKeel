@@ -126,6 +126,20 @@ test('the brief stays small — it is read by every subagent that starts', () =>
   assert.ok(text.length < 1400, 'brief is ' + text.length + ' chars');
 });
 
+// The three rules that shipped first are all about the return value and the
+// dispatch; none of them is about the tree the subagent is standing in. A
+// parallel reader loses its work to one `git stash` and nothing warns it,
+// because `guard.js` matches Edit|Write|NotebookEdit and no shell tool —
+// which 2026-09-10's judgement decided to leave that way, naming this rule
+// as the layer that carries it instead.
+test('the brief tells a subagent not to change the working tree', () => {
+  const root = tmp();
+  seed(root);
+  const text = contextOf(run(root, start(root)));
+  assert.match(text, /working tree outside the job you were sent to do/,
+    'the brief carries no working-tree rule');
+});
+
 test('no registry file is written on behalf of a subagent', () => {
   const root = tmp();
   seed(root);

@@ -4,7 +4,7 @@ description: Interrupt the stage you are in and put one question to a stronger m
 argument-hint: "[the question, in one line]"
 version: 0.59.0
 status: current
-last_verified: 2026-09-10
+last_verified: 2026-09-11
 source_of_truth: scripts/judge.js
 ---
 

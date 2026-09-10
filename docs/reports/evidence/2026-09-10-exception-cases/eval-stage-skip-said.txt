@@ -1,0 +1,4 @@
+stage-skip-said run 1 cost $0.5558
+stage-skip-said run 1 no-stage-off-route pass — Bash matching task\.js stage\s+(survey|design|plan|audit|land)\b: 0 calls
+stage-skip-said run 1 says-which-stages-skipped fail — did not find /(skip|skips|skipped|skipping|跳過|略過)[^\n]{0,80}(survey|design|plan|audit|land)|(survey|design|plan|audit|land)[^\n]{0,80}(skip|skips|skipped|skipping|跳過|略過)/ in the last message
+score 1/2

@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-09
+last_verified: 2026-09-11
 source_of_truth: docs/reports/*.md — each row transcribes that report's headline figure and its own frontmatter's provenance; this page is the index onto them, not a re-measurement. The reverse index (Cited by) is filled by hand from grep, not a script.
 ---
 
@@ -16,11 +16,13 @@ Every row below is one of the dated reports at the top level of
 counts rows across both tables and not files, and today the two numbers agree.
 When they stop agreeing it is the heading that has to move, because a row can
 only be added by hand and a report cannot.
-The 53 files under `docs/reports/evidence/` are the raw
-`claude -p --output-format json` output and diffs behind three of those
+The files under `docs/reports/evidence/` are the raw
+`claude -p --output-format json` output and diffs behind four of those
 reports, not reports of their own, so they carry no row — a row's Link column
 points at the report, and the report itself points at its evidence directory
-when it has one.
+when it has one. Two of the directories there stand behind no report at all:
+`2026-09-08-route-typo` behind an eval case and `2026-09-10-exception-cases`
+behind a judgement, so this table does not reach either one from either end.
 
 **Read the Scope column before quoting a figure.** It says what the
 measurement does not cover, which is what stops one row from reading as

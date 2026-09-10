@@ -1,0 +1,4 @@
+pipe-not-agent run 1 cost $0.1455
+pipe-not-agent run 1 no-agent-dispatch pass — Agent: 0 calls
+pipe-not-agent run 1 pipe-or-grep fail — Bash matching \|\s*(grep|tail|head|wc)\b: 0 of min 1
+score 1/2

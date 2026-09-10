@@ -4,7 +4,7 @@ description: Read-only reader for the survey, verify and audit stages — reads 
 tools: [Read, Grep, Glob, Bash]
 model: sonnet
 status: current
-last_verified: 2026-09-09
+last_verified: 2026-09-11
 source_of_truth: lib/render.js
 ---
 

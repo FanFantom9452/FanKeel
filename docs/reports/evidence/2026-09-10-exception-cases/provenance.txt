@@ -1,0 +1,171 @@
+provenance — the four exception eval cases, first run
+=====================================================
+
+WHY THIS DIRECTORY EXISTS
+
+These five runs cost real money and lived only in .fankeel/build/, which
+.fankeel/.gitignore excludes at line 3 (`build/`). A survey on 2026-09-10 that
+scanned git-tracked files concluded the run "does not exist anywhere in this
+repository" and was wrong. The judgement at docs/judgements/2026-09-10-exception-cases.md
+found them. They are copied here so the next scan can see them.
+
+SOURCE
+
+  .fankeel/build/2026-09-10-todo-ten/eval-*.json
+  .fankeel/build/2026-09-10-todo-ten/eval-*.txt
+
+Copied verbatim on 2026-09-11 by session 98873819-d200-4e3b-be77-be352547e51e,
+with the working tree at 7867d715231885ab40948f8baca5bc59dd66670c on branch
+todo-eight. Nothing in the files was edited.
+
+ORIGINAL MTIMES
+
+  2026-09-10 20:11  eval-one-call-not-agent.json    (.txt same)
+  2026-09-10 20:11  eval-pipe-not-agent.json        (.txt same)
+  2026-09-10 20:10  eval-stage-skip-said.json       (.txt same)
+  2026-09-10 20:11  eval-subagent-no-entry.json     (.txt same)
+  2026-09-10 20:43  eval-subagent-no-entry-task.json (.txt same)
+
+WHAT THE FILES THEMSELVES RECORD
+
+  model      claude-opus-5      (each JSON's `model` key)
+  pluginDir  F:\ymlab\fankeel
+  runs       1 per case
+  CLI        2.1.267            (present in all five files)
+
+WHICH COMMIT THEY RAN AGAINST — NOT RECORDED, AND THAT MATTERS
+
+The runner does not write the tree's HEAD into its output, and these ran against
+an uncommitted working tree during another task's build. So the sha cannot be
+stated. What can be stated is which commits bracket them:
+
+  15daa59  2026-09-10 20:43  fix: the graders count Task, a when key must be a
+                             profile key, four pages catch up
+  3771e7e  2026-09-10 20:51  fix(docs): the separator regex survives
+                             JSON.stringify, and four sentences say what is so
+
+The four runs at 20:10-20:11 therefore predate 15daa59. eval-subagent-no-entry-task.json
+at 20:43 sits at it — it is the re-run of that one case after the rename, which
+is why it carries `-task` in its name.
+
+THE VERDICTS, AS THE FILES CARRY THEM
+
+  eval-one-call-not-agent      no-agent-dispatch pass  reads-the-file FAIL
+  eval-pipe-not-agent          no-agent-dispatch pass  pipe-or-grep FAIL
+  eval-stage-skip-said         no-stage-off-route pass says-which-stages-skipped FAIL
+  eval-subagent-no-entry       at-most-one-start pass  dispatches-a-reader FAIL  no-edit-or-write pass
+  eval-subagent-no-entry-task  at-most-one-start pass  dispatches-a-reader FAIL  no-edit-or-write pass
+
+Every positive grader failed and every negative grader passed.
+
+WHY THE GRADERS SAY `Agent`, AND HOW THIS FILE GOT IT WRONG FIRST
+
+docs/judgements/2026-09-10-exception-cases.md concluded that three of the four
+positive graders were broken: they matched a tool named `Task`, while a real
+dispatch in this harness is logged as `Agent`, so `min: 1` could never pass and
+the two `max: 0` could never redden. It based that on two on-disk session
+transcripts and wrote down its own flip condition — that a headless
+`--output-format stream-json` run might name the tool `Task` instead, and that
+no probe had been made.
+
+An earlier revision of this file claimed the probe was unnecessary because these
+five runs carry it. They do not, and the claim was wrong. What each run embeds is
+its child session's system-init line, whose `tools` array holds twenty-nine
+names, `Task` among them and `Agent` absent. **That array is the CLI's own
+catalogue of registered tools. It is not a record of what a dispatch call is
+logged as**, and `type: tool_used` grades the second, not the first. Reading one
+for the other is what renamed these graders the wrong way in 15daa59 on
+2026-09-10, and this file repeated the same mistake on 2026-09-11 before a
+review caught it.
+
+It is not even the narrower thing an earlier revision called it — "the tools the
+session was offered". All five runs print the same twenty-nine names in the same
+order, byte for byte, and `eval-stage-skip-said.json` is the one that proves what
+that means: its `allowed_tools` is `[Read, Edit, Bash, Glob, Grep, Skill]`, with
+no `Task` in it at all, and its init array still lists `Task`. The runner does
+pass the list — `scripts/eval.js:113`, `args.push('--allowedTools', ...)` — and
+the array does not move. So the array is what the binary registers, and it says
+nothing about what any one run was allowed to call.
+
+What settles it is the two transcripts the judgement had already cited, both CLI
+2.1.267, both on this machine, both with this plugin loaded:
+
+  ~/.claude/projects/C--Users-Owner-AppData-Local-Temp-tmp-P2HLKSRrTi/
+    9dccef1e-ba0b-46b9-82f5-905a05092cb7.jsonl
+  ~/.claude/projects/C--Users-Owner-AppData-Local-Temp-tmp-rLAhmIXkCx/
+    72790ce6-ef49-4a32-a8cc-0ac8309eaedf.jsonl
+
+Each holds a real, successful dispatch `tool_use` block. Both are named `Agent`.
+Neither holds one named `Task`. So `Agent` is what the graders match, and they
+were restored to it on 2026-09-11.
+
+WHAT THESE FIVE RUNS DO AND DO NOT SHOW
+
+They do not show a dispatch of either name, because there was none. Parsing the
+`raw` transcript of all five gives, in order: `Read`; `Bash, Read, Bash`;
+`Bash, Bash, Read, Bash, Edit, Bash, ToolSearch, Bash, Bash`; `Read` five times;
+and `Read` five times again. No `Task`, no `Agent`, in any of them.
+
+The grader details carry the same story from the other side, and they date the
+rename: `eval-subagent-no-entry.json` records `dispatches-a-reader` as
+`Agent: 0 of min 1`, and the `-task` re-run at 20:43 records it as
+`Task: 0 of min 1`. The graders matched `Agent` first; 15daa59 changed them.
+
+So `dispatches-a-reader` failed for the reason the judgement observed and then
+set aside: the model read five one-line files inline and never attempted a
+dispatch at all. Whether it could have is a separate open question — the CLI's
+registry spells the dispatch tool `Task`, a call is logged as `Agent`, and
+nobody has checked which of the two `--allowedTools` wants. If it wants the one
+a case does not pass, the model was never able to dispatch and the case measures
+nothing. That needs one run to settle and is filed under `## Waiting` in TODO.md.
+
+These five runs do not settle it, but they do bracket it, and that is why the
+three `prompt.md` files were put back to `Agent` on 2026-09-11 rather than left
+at `Task`. 596eb21 created them with `Agent`; 15daa59 flipped them to `Task` at
+20:43 on the same reasoning it used on the graders, which this branch has
+recorded as wrong. So the four runs at 20:10-20:11 ran under `Agent` and the
+20:43 re-run under `Task` — the same case, `subagent-no-entry`, under each — and
+the two are indistinguishable: the same twenty-nine-name registry, the same five
+`Read` calls, no dispatch either way. Leaving `Task` in place would have been
+keeping one commit's mistake in the two files it was not reverted in.
+
+One more line of the recorded runs points the same way without settling
+anything. `eval-stage-skip-said` called `ToolSearch`, which its `allowed_tools`
+does not list, and the call succeeded with an empty `permission_denials` — so on
+this CLI the flag did not act as a filter on the tool set in that run.
+`ToolSearch` is the loader for deferred tools and may be exempt for that reason,
+which is why this is a hint rather than the answer.
+
+WHERE THE GRADER CHANGES LANDED, AND UNDER WHICH MESSAGE
+
+Four graders changed on this branch, in two commits, and neither commit
+message says so plainly.
+
+The rename is in 7a842c3, whose message is about a plan's link shape. An
+earlier `git add -A evals/` was still staged when that commit was made and
+swept the rename in with it, so `git show --stat 7a842c3` lists
+`pipe-or-grep.md` deleted and `ran-the-suite.md` added under a message that
+mentions neither. The history was not rewritten — it was four commits back by
+the time this was noticed — and this paragraph is where the explanation lives
+instead, because a commit message nobody would search is not a record.
+
+The other three are the `tool:` reversals, and they are in fc937c6, not here.
+At this branch's base, aca11d5, all three read `tool: Task`; they read `Agent`
+now. An earlier revision of this paragraph said "only one grader changed on
+this branch", which was true when it was written and which fc937c6 falsified
+without coming back to it.
+
+`pipe-or-grep` became `ran-the-suite` because it demanded a pipe into grep,
+tail, head or wc, while the recorded run answered the question with
+`node --test 2>&1; echo EXIT=$?` — a grader measuring the shape of the call
+rather than whether the suite ran.
+
+
+`reads-the-file` was a separate defect, a regex that could not match a Windows
+backslash, and 3771e7e fixed it at 20:51.
+
+`says-which-stages-skipped` is the one the judgement calls a real behaviour
+signal. n=1 cannot separate a prompt failure from a model one; the same tree
+scored 2/3, 3/3 and 1/3 on evals/route-typo across three runs on 09-08 and 09-09.
+Five runs on one commit is what would settle it, and that spend has not been
+authorised.
