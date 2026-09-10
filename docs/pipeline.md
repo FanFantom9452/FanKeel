@@ -302,8 +302,10 @@ the kind of thing it is. When in doubt, take the heavier one.
 
 ### Where a rule lives
 
-Every stage's injection sits within twenty characters of the 2400 cap
-(`tests/render.test.js` prints each figure), so a rule earns its place by tier,
+Every stage's injection sits under the 2400 cap with little room — on
+2026-09-10 the tightest two, `design` and `land`, had four characters to spare
+and the loosest, `build`, 146 (`tests/render.test.js` prints each figure; re-run
+it rather than trust this line), so a rule earns its place by tier,
 tried in this order:
 
 | tier | holds | why it is enough |

@@ -61,7 +61,7 @@ entry waited for actually happening. It shrank when somebody read it.
 ## Ready
 
 ## Needs a decision
-- 四個例外 case 首跑（opus）正向 grader 全掉：stage-skip 沒說跳過什麼、pipe 沒跑測試、Task 未被允許；是 prompt 沒逼出行為、grader 太窄，還是模型 — [README.md](README.md).
+- 四個例外 case 首跑（opus）正向 grader 全掉：stage-skip 沒說跳過什麼、pipe 沒跑測試、Task 一次都沒被叫；是 prompt 沒逼出行為、grader 太窄，還是模型 — [README.md](README.md).
 
 - 整體 prompt 預算：`skills/registry.json` 每 stage 有 `prompt_byte_budget`，整個外掛的總預算沒有欄位；要不要加、加在哪 — [簡報 §1.3](docs/improvement-brief.md#13-registryjson-的-schema).
 
