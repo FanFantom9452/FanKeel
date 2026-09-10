@@ -61,6 +61,7 @@ entry waited for actually happening. It shrank when somebody read it.
 ## Ready
 
 - 三處兩頁講同一個機制而兩邊都不讓路：60 上限的兩半、guard 的自派工盲點、`judge.js record` — [docs/collisions.md](docs/collisions.md). 各補一個指標，不刪句子。
+- `docs/README.md:9` 的頁數寫在散文裡，沒有任何東西在數它——這次加兩頁就過時了 — [docs/README.md](docs/README.md). 照 `tests/contract.test.js` 數 hook 的形狀補一條 test。
 
 ## Needs a decision
 
@@ -84,7 +85,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；fankeel 真正的阻礙是 hook 為 Claude Code 專屬 — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多). lifts when: 確認另一個 host 有等價 UserPromptSubmit 的 hook. 09-08.
 
-- eval 進 CI：`.github/workflows` 一條，只在 push main 且限 skills/、evals/、manifest；永遠紅的 workflow 是噪音，所以等 — [README.md](README.md). lifts when: 本機 `claude plugin eval` 不再回 early access. 09-08.
+- eval 進 CI：`.github/workflows` 一條，只在 push main 且限 skills/、evals/、manifest；永遠紅的 workflow 是噪音，所以等 — [docs/evals.md](docs/evals.md). lifts when: 本機 `claude plugin eval` 不再回 early access. 09-08.
 
 - 五個 `lib/*.js` 沒有任何 reference-role 頁面點名：`fanout.js`、`hook.js`、`report.js`、`skills.js`、`tracked.js`；另外 20 個都有 — [docs/documents.md](docs/documents.md). lifts when: docs-audit 學會報未被點名的模組. 09-09.
 

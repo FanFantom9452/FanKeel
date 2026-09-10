@@ -6,9 +6,9 @@ source_of_truth: this file is the index; each page below is its own source
 
 # FanKeel documentation
 
-Ten pages, one question each. The front page has install, the pipeline
-diagram, and the statusline; everything that needs more than a paragraph is
-here.
+Twelve pages, one question each. The front page has install, update and
+uninstall, the two diagrams and a short introduction to each of these;
+everything that needs more than a paragraph is here.
 
 | I want to know | Page |
 |---|---|
@@ -29,10 +29,12 @@ here.
 | Why an abandoned terminal does not hold a file shut | [collisions.md](collisions.md) — *stale entries* |
 | What `.fankeel/docs.json` declares | [documents.md](documents.md) |
 | Why an archive naming deleted code is not a bug | [documents.md](documents.md) — *roles* |
+| Why `docs-check` prints the list rather than a count, and where the cap bites | [documents.md](documents.md) — *the list is the output, not the count* |
 | What a subagent is told when it starts | [subagents.md](subagents.md) |
 | Why delegating a wide search saves and delegating a long report does not | [subagents.md](subagents.md) |
 | When to dispatch one, what the dispatcher has to say out loud, and when a pipe already removes what you are avoiding | [subagents.md](subagents.md) — *when to dispatch one* |
 | When a scripted fan-out beats parallel dispatches, and why you may offer one but not start it | [subagents.md](subagents.md) — *the one thing four dispatches cannot do* |
+| When `/fankeel-ask` is worth the money, and why no rule anywhere ever suggests it | [subagents.md](subagents.md) — *asking a stronger model, when you decide it is worth it* |
 | What a plan is checked for before its gate, and what an implementer's brief file holds | [pipeline.md](pipeline.md) — *plan* and *build* |
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
 | Every session on this machine, where the page finds the registries, and what `stale` means | [station.md](station.md) |
@@ -115,7 +117,8 @@ here.
 | Why a `## Waiting` entry names an event and not only a date | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *`## Waiting` asks for an event* |
 | Why `todo-check` refuses an entry with no event but never judges whether the event is real | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *the check does not grade the event* |
 | Where to look for every place a rule is taught, before changing the rule | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *a rule is taught in more places than a search finds* |
-| How to run the behaviour eval, and what to do when `claude plugin eval` says early access | [../README.md](../README.md) — *Behaviour evals* |
+| How to run the behaviour eval, and what to do when `claude plugin eval` says early access | [evals.md](evals.md) |
+| How the plugin is built and checked, and the four scripts that stop a written claim drifting | [development.md](development.md) |
 
 ## Judgements
 
@@ -137,7 +140,7 @@ is corrected by the next one, not by rewriting this.
 
 | | |
 |---|---|
-| `node scripts/docs-check.js` | every reference still resolves. A second to run, before every land. |
+| `node scripts/docs-check.js` | every reference still resolves. A second to run, and the `verify` and `audit` rules call for it. |
 | `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged, an environment nothing can rebuild or run, the weight of what is ignored, directories holding no files. Three of the five need git and two do not, so it answers outside a repository too. It never deletes. |
 | `node scripts/docs-audit.js` | the fortnightly deep pass: what has stopped being true, and which two pages disagree. `/fankeel-audit` is the whole sweep — it runs all three of these, reads the shortlist, offers the cleanup. |
 

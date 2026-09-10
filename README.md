@@ -2,17 +2,17 @@
 
 A keel is the one structural member a hull cannot lose.
 
-Long-running projects rot in ways that are invisible from inside any one session.
-Components get rebuilt because nobody knew an equivalent existed. Design documents
-pile up after the work they described has shipped. Conventions hold for a month
-and then quietly stop. And two terminals open on the same repository will happily
-edit the same file, because neither knows the other is there.
-
 fankeel is a Claude Code plugin that carries a development discipline and states
 it on every prompt — and again on every answer — rather than once at the top of a
-session. It holds a task, moves
-it along a route it picked through seven stages, keeps a capped note of what has
-been tried, and shows which other live sessions are in the same files.
+session. It holds a task, moves it along a route it picked through seven stages,
+keeps a capped note of what has been tried, and shows which other live sessions
+are in the same files.
+
+It exists because long-running projects rot in ways that are invisible from
+inside any one session: components rebuilt because nobody knew an equivalent
+existed, design documents piling up after the work they described has shipped,
+conventions that hold for a month and then quietly stop, and two terminals
+editing one file because neither knows the other is there.
 
 ## Install
 
@@ -22,39 +22,56 @@ claude plugin install fankeel@fankeel
 ```
 
 Restart Claude Code afterwards. Nothing else is installed: no dependencies, and
-the tests run on `node --test`, which is built in.
-
-Then, in any project:
+the tests run on `node --test`, which is built in. Then, in any project:
 
 ```
 /fankeel
 ```
 
 It looks before it asks — what is under this directory, which of them is a
-repository, which was touched today — and then asks at most two questions, with
+repository, which was touched today — and then asks at most two questions with
 the options already on screen: which project, skipped when there is only one, and
-what the task is, read from `TODO.md` where the root has one and guessed from the
-recent commits where it does not. It does not ask which files you will touch.
-Those are recorded as the edits land, so there is no list to state and none to get
-wrong. The badge is up before you answer — the hook raises `init` the moment you
-submit the command, and the rules for that step ride the same prompt — and it
-becomes the first stage on the route when the entry lands, which is `survey`
-unless `--route` said otherwise.
+what the task is, read from `TODO.md` where the root has one. It never asks which
+files you will touch; those are recorded as the edits land.
 
 > The repository is `FanKeel` and everything you type is `fankeel`. Plugin and
 > marketplace ids have to be kebab-case — Claude Code accepts anything else, and
-> the Claude.ai marketplace sync does not — so the id, the command, the badge word
-> and the `.fankeel/` directory are all lowercase. GitHub does not care which case
-> the repository is written in.
+> the Claude.ai marketplace sync does not — so the id, the command, the badge
+> word and the `.fankeel/` directory are all lowercase.
 
 It is also one of the plugins [claude-kit](https://github.com/FanFantom9452/claude-kit)
 installs, if you would rather take a whole machine's worth in one command — and
 that kit wires up TokenBar, which is what draws the badge.
 
+## Update
+
+```
+claude plugin marketplace update fankeel
+claude plugin update fankeel@fankeel
+```
+
+Restart Claude Code afterwards, the same as installing. The marketplace line comes
+first because `plugin update` compares against the listing already on disk — skip
+it and there is nothing newer to find. Given no name, `marketplace update`
+refreshes every marketplace at once. Re-running `claude plugin install` is not the
+update path: the plugin is already installed, and what needs refreshing is the
+marketplace listing behind it.
+
+## Uninstall
+
+```
+claude plugin uninstall fankeel@fankeel
+claude plugin marketplace remove fankeel
+```
+
+`.fankeel/` is left in place — it is the project's, not the plugin's. Delete it by
+hand if you want it gone. Stale `~/.claude/modes/<session_id>/fankeel` flags are
+pruned after 30 days while the plugin is installed; after uninstalling, remove any
+that remain.
+
 ## The pipeline
 
-Seven stages, each named for what it produces rather than how it feels. What
-each one actually has you do:
+Seven stages, each named for what it produces rather than how it feels:
 
 ```mermaid
 flowchart LR
@@ -69,13 +86,10 @@ flowchart LR
     S --> D --> P --> B --> V --> A --> L
 ```
 
-What each stage *produces* — the artifact it is graded on, which is a different
-question — is the table in [docs/pipeline.md](docs/pipeline.md).
-
 **A route is the stages one task actually needs, in order.** Not every task is
 seven. A class picks one when the task starts, and every prompt from then on
-carries it with your position bracketed — so a two-stage task is never reported
-as permanently unfinished at 2 of 7:
+carries it with your position bracketed, so a two-stage task is never reported as
+permanently unfinished at 2 of 7:
 
 ```
 spike          route: [survey] → build                                          (1 of 2)
@@ -83,16 +97,12 @@ bounded        route: survey → design → [build] → verify → land         
 architectural  route: survey → design → plan → [build] → verify → audit → land  (4 of 7)
 ```
 
-Assembling a route by hand is a decision made silently; a class is the same
-decision made out loud, where somebody can disagree with it before four stages of
-work hang off it. The ratchet runs one way — complexity found mid-task upgrades
-the route, and nothing downgrades it.
-
 Only the current stage's rules are sent, and they are sent again every turn — a
-pointer is only as strong as the salience of what it points at, and what it points
-at recedes by thousands of tokens a turn.
+pointer is only as strong as the salience of what it points at. What each stage
+produces, what happens inside one, and how a class picks a route are in
+[docs/pipeline.md](docs/pipeline.md).
 
-### Every stage ends at a gate
+## Every stage ends at a gate
 
 ```mermaid
 flowchart LR
@@ -105,13 +115,12 @@ flowchart LR
     N --> W
 ```
 
-The gate is not conditional on there being something to decide. Finishing a stage
+The gate is not conditional on there being something to decide: finishing a stage
 is the moment the next decision exists, and the answer being predictable is not
 the same as it having been given. Picking option one *is* the approval, so its
 description says what is being approved — after `design`, that is the approach
-itself.
-
-Each stage also ships the **shape of its report**, not only a description of one:
+itself. Each stage also ships the shape of its report, not only a description
+of one — the shape `build` ships:
 
 ```
 - path +12/-3 — what changed
@@ -122,69 +131,7 @@ deferred: <heading> — <TODO.md line, or omit this line>
 then AskUserQuestion
 ```
 
-What happens *inside* a stage — its steps, the scripts it runs, and the two or
-three places each one branches — is drawn stage by stage in
-[docs/pipeline.md](docs/pipeline.md).
-
-Every session this machine has run, live or abandoned or stood down, is one
-page: the station. It is rewritten at `/fankeel`, by every `task.js` verb that
-moves an entry, and at every session end, and a copy sits at
-`.fankeel/index.html` in the registry you are in; `node scripts/station.js
---open` opens the newest. `serve` in place of that is the live form — a
-server you start once and leave running: it binds the fixed port `7817`, does
-not exit on its own unless `--idle <minutes>` asks it to, takes the clear
-button on a `stale` row, and a second `serve` joins the first rather than
-binding a second port. `--detach` returns the terminal and keeps it up.
-
-### Asking a stronger model, when you decide it is worth it
-
-`/fankeel-ask` interrupts whatever stage you are in, puts one question to a
-one-shot judge running on whatever `judge.model` says — Fable unless the
-profile says otherwise — files the answer verbatim under `docs/judgements/`,
-and hands it back to the stage. It never opens the gate; that stays yours, at
-the end of the stage, as always.
-
-**Nothing in fankeel ever suggests it.** No rule mentions the judge, on any
-stage, and that absence is deliberate rather than an oversight: a line riding
-every prompt to say a stronger model is available is an invitation to defer to
-it, and the model running your session is not weak enough to need the crutch.
-The command exists for the times *you* decide it is worth the money.
-
-Fable is about twice the per-token rate of the Opus tier — `lib/prices.js`
-carries the table this repository bills against, rather than a second copy of
-it here. That ratio is why a single bounded question is the only shape that
-pays: you are buying one judgement at twice the rate, not running a session at
-twice the rate. Worth typing when
-
-- the question spans subsystems and the answer is a judgement rather than a
-  lookup — no amount of grepping settles it;
-- being wrong is expensive later, because something else gets built on top —
-  an interface, a data shape, a migration;
-- or the stage has genuinely stalled and the alternative is stopping to ask
-  you, which costs a round of your attention either way.
-
-Not worth typing when the answer is somewhere in the repository and nobody has
-looked yet, when the scope is already pinned and only the typing is left, or
-when what you want is a second opinion on something you have already decided.
-
-## Where to find things
-
-| I want to know | Page |
-|---|---|
-| What `/fankeel` asks me, the seven stages, and how a route is chosen | [docs/pipeline.md](docs/pipeline.md) |
-| What `.fankeel/map.md` holds, and why a page marked design-intent is not drift | [docs/pipeline.md](docs/pipeline.md) |
-| What gets written to disk, what is committed, and what `notes` and `next` are for | [docs/registry.md](docs/registry.md) |
-| What `[FANKEEL:CLASH]` means, and how to stop a collision raising a prompt | [docs/collisions.md](docs/collisions.md) |
-| What `docs.json` declares, and why an archive naming deleted code is not a bug | [docs/documents.md](docs/documents.md) |
-| What a subagent is told when it starts, and what its return value costs | [docs/subagents.md](docs/subagents.md) |
-| The badge word, and how to colour each stage | [docs/statusline.md](docs/statusline.md) |
-| Every session on this machine on one page, and how to put an abandoned one down | [docs/station.md](docs/station.md) |
-| Which output style to use, and why a style rather than an injected ruleset | [docs/output-styles.md](docs/output-styles.md) |
-| Why any of it was built this way | [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md) |
-
-The full index, question by question, is [docs/README.md](docs/README.md).
-
-## Recommended with TokenBar
+## The badge, and the station
 
 fankeel writes one word to `~/.claude/modes/<session_id>/fankeel`, and
 [TokenBar](https://github.com/FanFantom9452/ClaudeCodeCLI-TokenBar) renders any
@@ -195,95 +142,46 @@ flag it finds there — so the two work together with no wiring on either side:
 ctx ███▊░░░░░░  38%    ·    5h ██████▌░░░  66%   ↻ 1h 46m    ·    7d █████▊░░░░  58%
 ```
 
-The word is the stage, not an intensity — a statusline earns its space by showing
-what changes. `clash` takes the slot when another live session is in your files,
-because at that moment the collision matters more than the stage. `init` is the
-one word that is not a stage: it is the gap between `/fankeel` being submitted
-and a task existing, which on a large project is minutes of orienting, mapping
-and scanning.
-
-The stage colours need no setting up from TokenBar v1.4.0 on. It ships the seven
-as a default — a ramp from indigo through blue to cyan, so the line warms as the
-task moves along its route — and both its ports render them identically:
-
-```powershell
-survey  60      design  62      plan   67      build  68
-verify  75      audit   78      land   81      clash  196
-```
-
-They are shipped rather than left to your config on purpose. A palette written
-into `tokenbar-config.ps1` is frozen the day you write it, because the updater
-never touches that file — so the day this plugin grew a seventh stage, every
-hand-written palette was one short, and a stage with no colour does not read as a
-stage without a colour. It reads as the badge having broken.
-
-To use your own instead, name the words in your config; an exact mode word is
-matched before the four intensity tiers. Naming any of them replaces all seven,
-so carry the whole set:
-
-```powershell
-# ~/.claude/tokenbar-config.ps1
-$badgeColors.fankeel = @{ off = 240; lite = 245; full  = 250; ultra = 255
-                          survey =  39; design = 141; plan  = 170
-                          build  = 214; verify =  80; audit = 180
-                          land   =  78; clash  = 196 }
-```
-
-The `.sh` equivalent, and what each colour is doing, is in
+The word is the stage, not an intensity. `clash` takes the slot when another live
+session is in your files, and `init` is the gap between `/fankeel` being submitted
+and a task existing. The seven stage colours ship with TokenBar from v1.4.0 on;
+the palette, both config formats and what each colour is doing are in
 [docs/statusline.md](docs/statusline.md).
+
+Every session this machine has run, live or abandoned or stood down, is one page:
+the station. `node scripts/station.js --open` opens the newest, and `serve` in
+place of that is the live form — [docs/station.md](docs/station.md).
 
 ## The three scanners
 
 | | |
 |---|---|
-| `node scripts/docs-check.js` | Every reference still resolves. A second to run, and the `land` rules call for it. |
-| `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged, an environment nothing can rebuild or run, the weight of what is ignored, directories holding no files. Three of the five need git and two do not, so it answers outside a repository too. It never deletes. |
-| `node scripts/docs-audit.js` | The fortnightly deep pass: which pages have stopped being true, and which two of them disagree. `/fankeel-audit` is the whole sweep — it runs all three of these, reads the shortlist they produce, then offers the cleanup. It does not need an active task, so it also works on a repository nobody is in the middle of. |
+| `node scripts/docs-check.js` | Every reference still resolves. A second to run, and the `verify` and `audit` rules call for it. |
+| `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged, an environment nothing can rebuild or run, the weight of what is ignored, directories holding no files. It never deletes. |
+| `node scripts/docs-audit.js` | The fortnightly deep pass: which pages have stopped being true, and which two of them disagree. `/fankeel-audit` is the whole sweep — it runs all three, reads the shortlist they produce, then offers the cleanup. |
 
-It prints the findings themselves, not a summary of them — the role counts at
-the top are in addition to the list, not instead of it. The list is capped at
-`MAX_FINDINGS = 200` (`scripts/docs-check.js:31`) and says so when it bites, so
-a run past that cap is the one case where the printed list is not the whole of
-it. Short of the cap, comparing two branches is a `diff` rather than a flag:
+None of them decides that two documents contradict each other, because nothing
+mechanical can. What the cap is, and why comparing two runs beats comparing two
+headline counts, is in [docs/documents.md](docs/documents.md).
 
-    git stash && node scripts/docs-check.js > /tmp/before.txt; git stash pop
-    node scripts/docs-check.js > /tmp/after.txt
-    diff /tmp/before.txt /tmp/after.txt
+## Where to find things
 
-A headline count that moved from 22 to 21 says one finding went and says nothing
-about whether a different one arrived. The list says both.
+| I want to know | Page |
+|---|---|
+| What `/fankeel` asks me, the seven stages, and how a route is chosen | [docs/pipeline.md](docs/pipeline.md) |
+| What `.fankeel/map.md` holds, and why a page marked design-intent is not drift | [docs/pipeline.md](docs/pipeline.md) |
+| What gets written to disk, what is committed, and what `notes` and `next` are for | [docs/registry.md](docs/registry.md) |
+| What `[FANKEEL:CLASH]` means, and how to stop a collision raising a prompt | [docs/collisions.md](docs/collisions.md) |
+| What `docs.json` declares, and why an archive naming deleted code is not a bug | [docs/documents.md](docs/documents.md) |
+| What a subagent is told when it starts, and when `/fankeel-ask` is worth the money | [docs/subagents.md](docs/subagents.md) |
+| The badge word, and how to colour each stage | [docs/statusline.md](docs/statusline.md) |
+| Every session on this machine on one page, and how to put an abandoned one down | [docs/station.md](docs/station.md) |
+| Which output style to use, and why a style rather than an injected ruleset | [docs/output-styles.md](docs/output-styles.md) |
+| How the plugin is built and checked, and the four scripts that stop a claim drifting | [docs/development.md](docs/development.md) |
+| How to run the behaviour eval, and what to do when `claude plugin eval` says early access | [docs/evals.md](docs/evals.md) |
+| Why any of it was built this way | [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md) |
 
-Neither one decides that two documents contradict each other, because nothing
-mechanical can. What the sweep does is turn "read all forty documents looking for
-disagreements" into "read these two — they describe the same source file, and one
-has not been touched since before it changed".
-
-## Update
-
-```
-claude plugin marketplace update fankeel
-claude plugin update fankeel@fankeel
-```
-
-Restart Claude Code afterwards, the same as installing. The marketplace line comes
-first because `plugin update` compares against the listing already on disk — skip
-it and there is nothing newer to find. Given no name, `marketplace update`
-refreshes every marketplace at once.
-
-Re-running `claude plugin install` is not the update path: the plugin is already
-installed, and what needs refreshing is the marketplace listing behind it.
-
-## Uninstall
-
-```
-claude plugin uninstall fankeel@fankeel
-claude plugin marketplace remove fankeel
-```
-
-`.fankeel/` is left in place — it is the project's, not the plugin's. Delete it by
-hand if you want it gone. Stale `~/.claude/modes/<session_id>/fankeel` flags are
-pruned after 30 days while the plugin is installed; after uninstalling, remove any
-that remain.
+The full index, question by question, is [docs/README.md](docs/README.md).
 
 ## Development
 
@@ -292,102 +190,10 @@ npm test
 claude plugin validate .
 ```
 
-`lib/` is pure logic, tested directly. The one exception is `lib/fanout.js`, which
-ends in a four-statement block reading stdin and writing stdout, because
-`lib/tracked.js` spawns it as a child process to read several repositories at
-once; it sits in `lib/` rather than `scripts/` because nothing in `lib/` may reach
-the other way, which is the rule that put `lib/tracked.js` there to begin with.
-`hooks/` is where stdin, stdout and process exit otherwise live, and all eight
-hooks are tested as subprocesses with real payloads.
-
-Every hook exits 0 on every path, including every error path. A `UserPromptSubmit`
-hook that throws blocks the prompt it was called for and a `PreToolUse` hook that
-throws blocks the edit, and a plugin that can wedge your terminal is worse than no
-plugin. The other five are not load-bearing that way, but a stack trace in front of
-the user in the middle of somebody else's turn is its own kind of broken.
-
-`node scripts/todo-check.js` says whether [TODO.md](TODO.md) is still an index —
-every link resolving, none of them landing on a document whose declared role
-records a moment rather than the present, no entry carrying detail that belongs
-in the file it points at, and every entry filed under `## Ready`, `## Needs a decision` or
-`## Waiting`, which is what says whether it can be started today. Where *no*
-entry uses those three and every one of them sits under a heading of its own,
-that is a repository with its own vocabulary rather than one leaving entries
-unfiled, so it is said once and does not fail the run. An entry under no heading
-at all is the unfiled case, and still does. A clean run
-prints the split, so the ready count is on screen without opening the file. The
-`land` stage rules call for it, because a plan deleted at `land` is a link that
-just died.
-
-An entry under `## Waiting` also carries `lifts when: <the event>` and then a
-`MM-DD` stamp, and todo-check fails when either is missing. The stamp is the
-day somebody last read that entry and agreed it is still
-waiting — not the day it was filed — so re-reading one and leaving it where it is
-means moving its stamp forward. Entries stamped seven days or older are printed
-below the verdict as **due for a re-read**, without failing the run: sitting under
-`## Waiting` for a fortnight is not a defect, and a script cannot know whether the
-thing an entry waits for has happened. What it can know is how long since a person
-last said it had not. That is worth printing because `## Waiting` has never once
-shrunk in this repository by an entry's blocker resolving — four times it has
-shrunk, and all four were somebody re-reading the section and finding an entry
-misfiled. It is drained by being read, so the interval between readings is the
-thing to measure.
-
-`node scripts/version.js` is the release number in the eleven files that carry it —
-two manifests and one frontmatter line in each of the nine skills. With a number
-it sets them all; with `--changes` it lists the commits since the last
-`chore: <x.y.z>`, which is what a release contains. `npm test` fails when the eleven
-disagree, so the script is what makes them agree rather than what notices. A
-release used to be ten edits, and missing one left a skill announcing a version
-the plugin is not — right in nine places, which is how it went unnoticed.
-
-`node scripts/skills-check.js` is a fail-closed gate over this plugin's own
-skill files: every `skills/**/SKILL.md` and `lib/stages.js` is scanned for a
-script or flag it names, checked against what `scripts/` actually has. It
-exits 1 on a script no skill can find, a flag its script does not accept, a
-required-core script named by no skill, or the scan itself finding no script
-reference anywhere — the last of those is `classify()`'s own `empty-scan`,
-because a scan that names nothing is the extractor having broken, not a quiet
-tree, and nothing here judges that a second time. `skills/fankeel-land/SKILL.md`
-runs it in its own step; the injected `land` rules had no room left to name it
-too.
-
-`node scripts/stage-registry.js` writes `skills/registry.json`: one entry per
-stage with the sentence that gates entering its skill, the sentence that
-says it is done, and how many of its own budgeted bytes the injected block
-spends today. It follows `eval.js`'s precedent rather than joining
-`REQUIRED_CORE` — nothing in a stage's rules or a skill names this script,
-so nothing would go looking for it there. `tests/stage-registry.test.js`
-regenerates the file and deep-equals it against what is committed: a rule
-that grew without regenerating, or a budget lowered below what a stage
-actually measures, fails there rather than drifting silently.
-
-### Behaviour evals
-
-`evals/<case>/` holds cases in the layout `claude plugin eval` reads. That
-command is early access — run it in an empty directory: "currently in early
-access" means not enabled here, "No eval cases found" means it is. Either way
-the same case runs today on this tree:
-
-    node scripts/eval.js evals/route-typo --model sonnet
-
-One `claude -p` per run, in a scaffolded temp repository with only this plugin
-loaded (`--setting-sources project --plugin-dir .`), graded against
-`graders/*.md`; `tool_used` and `regex` are graded, `llm` is reported as
-skipped. A regex `target: trace` here reads the assistant text only, not the
-whole transcript the official runner means by it — a pattern that expects a
-tool call belongs to `tool_used`. Any failed grader exits 1. With early access:
-
-    claude plugin eval . --json results.json --threshold 0.7 --model claude-sonnet-5 --no-publish
-
-`i-have-adhd`'s eval runner names six channels an operator's own world can leak
-into a run, contaminating the comparison. This runner's landing for each:
-
-| # | channel | landed |
-|---|---|---|
-| 1 | working directory | each run gets an empty temp directory (`scripts/eval.js:103`, `fs.mkdtempSync`) |
-| 2 | operator's settings | `--setting-sources project` (`scripts/eval.js:109`, `--setting-sources`) |
-| 3 | its own always-on flag | fankeel has no persistent always-on flag, so there is nothing here to point to |
-| 4 | model version | `--model` has no default (`scripts/eval.js:61`, `: null`); missing it exits 1 before anything spawns (`scripts/eval.js:173`, `!a.model`) |
-| 5 | cost | `costOf()` (`lib/eval.js:91`, `costOf`) reads `total_cost_usd`/`usage` off the result message, printed per run (`scripts/eval.js:143`, `cost $`) and in `--json`; `--max-budget-usd` passes through to `claude` (`scripts/eval.js:111`, `--max-budget-usd`) |
-| 6 | tools | `--allowedTools` (`scripts/eval.js:113`, `--allowedTools`) |
+`lib/` is pure logic, tested directly; `hooks/` is where stdin, stdout and process
+exit live, and every hook exits 0 on every path, because a hook that throws blocks
+the thing it was called for and a plugin that can wedge your terminal is worse than
+no plugin. `todo-check.js`, `version.js`, `skills-check.js` and
+`stage-registry.js` each hold one written claim to the code it describes, and
+[docs/development.md](docs/development.md) says what each of them checks. The
+behaviour eval and its runner are in [docs/evals.md](docs/evals.md).

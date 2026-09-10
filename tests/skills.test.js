@@ -134,11 +134,12 @@ test('every place that teaches the Waiting convention names the event before the
     assert.ok(liftsAt < stampAt, n + ' row does not put the event before the stamp');
   }
 
-  // README.md and fankeel-audit/rationale.md teach it in prose, wrapped across
+  // docs/development.md and fankeel-audit/rationale.md teach it in prose, wrapped across
   // lines, so whitespace is flattened and each check runs in a bounded window
   // starting at the sentence's own anchor rather than across the whole file.
   const prose = [
-    ['README.md', path.join(ROOT, 'README.md'), '## Waiting` also carries'],
+    ['docs/development.md', path.join(ROOT, 'docs', 'development.md'),
+      '## Waiting` also carries'],
     ['skills/fankeel-audit/rationale.md', path.join(DIR, 'fankeel-audit', 'rationale.md'),
       'One routed to `## Waiting`'],
   ];

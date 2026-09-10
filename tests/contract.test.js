@@ -329,11 +329,14 @@ test('the pages that count the hooks count as many as are registered', () => {
 
   // "all seven\nhooks are tested" — the line wraps between the two words, so the
   // gap has to allow a newline or the fix that rewraps it fails this instead.
-  const readme = read('README.md');
-  assert.match(readme, new RegExp('all ' + total + '\\s+hooks'),
-    'README.md does not say "all ' + total + ' hooks"');
-  assert.match(readme, new RegExp('The other ' + others + ' are not load-bearing'),
-    'README.md does not say "The other ' + others + ' are not load-bearing"');
+  // The prose moved to docs/development.md when README.md was cut back to a
+  // front page. The assertion follows the sentence, not the file it used to
+  // sit in — a count is checked wherever it is written down.
+  const development = read('docs/development.md');
+  assert.match(development, new RegExp('all ' + total + '\\s+hooks'),
+    'docs/development.md does not say "all ' + total + ' hooks"');
+  assert.match(development, new RegExp('The other ' + others + ' are not load-bearing'),
+    'docs/development.md does not say "The other ' + others + ' are not load-bearing"');
 
   assert.match(read('tests/hook.test.js'), new RegExp('all ' + total + '\\s+hooks'),
     'tests/hook.test.js does not say "all ' + total + ' hooks"');

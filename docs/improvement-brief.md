@@ -311,8 +311,8 @@ ID | 論文與作者 | 連結 | 查證日期 | 證據等級 | 範圍摘要 | 被
 | 行為 | `evals/` + `claude plugin eval` | push to main（限 `skills/`、`evals/`、manifest 變動） | skill 沒被觸發 / 觸發了但輸出不對 | 無 |
 
 > 補記 2026-09-08：上表「行為」列 fankeel 那格的「無」在同一天下午不再成立——
-> `evals/route-typo/` 與 `scripts/eval.js` 已落地，見 README 的 *Behaviour
-> evals*；CI 那條仍在 `TODO.md ## Waiting`。其餘各格照掃描當時。
+> `evals/route-typo/` 與 `scripts/eval.js` 已落地，見 [evals.md](evals.md)；CI
+> 那條仍在 `TODO.md ## Waiting`。其餘各格照掃描當時。
 
 #### E1. `check_versions.py` 的兩條規則
 
@@ -820,7 +820,7 @@ difference that has nothing to do with the skill under test.」
 > （`scripts/eval.js:111`，`opts.maxBudgetUsd`）。
 > 旗標的名字是 `--max-budget-usd`，不是上表寫的 `--budget-usd`——後者是 i-have-adhd 那支
 > Python runner 的旗標。3 仍然無對應，而那是答案：fankeel 沒有持續性的 always-on flag。
-> 六條通道現在各自的落點寫在 `README.md` 的 `## Development`。
+> 六條通道現在各自的落點寫在 [evals.md](evals.md)。
 
 ### 5.4 結構性盲測是結構性的，不是約定（第二部 2.2）
 
