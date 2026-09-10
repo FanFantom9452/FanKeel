@@ -101,3 +101,5 @@ _(nothing. The seven entries that stood here were each put to `/fankeel-ask` on 
 - verify 與 build 的 rationale 沒拆完：沒人驗過模型會不會跟著 SKILL.md 的相對連結去讀 rationale.md，沒驗就搬等於丟掉理由 — [skills/fankeel-verify/SKILL.md](skills/fankeel-verify/SKILL.md). lifts when: 一次 headless 探測證實連結會被跟. 09-11.
 
 - `permissions.deny` 是 docs/collisions.md 給操作者的那一步，但它在 `defaultMode: "auto"` 與 bypassPermissions 底下還生不生效沒人驗過 — [docs/collisions.md](docs/collisions.md). lifts when: 一次探測證實它在 auto 模式下確實攔得住. 09-11.
+
+- 三個 eval case 的 `allowed_tools` 傳 `Task`，但真實派工被記成 `Agent`；模型從沒派工，可能就是那個拼法沒開成工具 — [evals/subagent-no-entry/prompt.md](evals/subagent-no-entry/prompt.md). lifts when: 一次跑動證實哪個拼法開得起派工工具. 09-11.

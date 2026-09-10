@@ -58,43 +58,63 @@ THE VERDICTS, AS THE FILES CARRY THEM
 
 Every positive grader failed and every negative grader passed.
 
-THE JUDGEMENT READ THAT PATTERN WRONG, AND THESE FILES SAY SO
+WHY THE GRADERS SAY `Agent`, AND HOW THIS FILE GOT IT WRONG FIRST
 
 docs/judgements/2026-09-10-exception-cases.md concluded that three of the four
-positive graders were themselves broken: they match a tool named `Task`, and it
-took this harness's dispatch tool to be named `Agent`, which would make `min: 1`
-impossible to pass and the two `max: 0` impossible to redden. It based that on
-two other on-disk session transcripts, and it wrote down its own flip condition:
-that a `claude -p --output-format stream-json` run might name the tool `Task`
-instead, and that no probe had been made.
+positive graders were broken: they matched a tool named `Task`, while a real
+dispatch in this harness is logged as `Agent`, so `min: 1` could never pass and
+the two `max: 0` could never redden. It based that on two on-disk session
+transcripts and wrote down its own flip condition — that a headless
+`--output-format stream-json` run might name the tool `Task` instead, and that
+no probe had been made.
 
-The probe was unnecessary. These five files carry it. Each one embeds the child
-session's system-init line, and its `tools` array is:
+An earlier revision of this file claimed the probe was unnecessary because these
+five runs carry it. They do not, and the claim was wrong. What each run embeds is
+its child session's system-init line, whose `tools` array holds twenty-nine
+names, `Task` among them and `Agent` absent. **That array is the list of tools
+the session was offered. It is not a record of what a dispatch call is logged
+as**, and `type: tool_used` grades the second, not the first. Reading one for the
+other is what renamed these graders the wrong way in 15daa59 on 2026-09-10, and
+this file repeated the same mistake on 2026-09-11 before a review caught it.
 
-  Task, Bash, CronCreate, CronDelete, CronList, DesignSync, Edit, EnterWorktree,
-  ExitWorktree, Glob, Grep, ListAgents, Monitor, NotebookEdit, PowerShell,
-  PushNotification, Read, RemoteTrigger, ReportFindings, ScheduleWakeup,
-  SendMessage, Skill, TaskOutput, TaskStop, ToolSearch, WebFetch, WebSearch,
-  Workflow, Write
+What settles it is the two transcripts the judgement had already cited, both CLI
+2.1.267, both on this machine, both with this plugin loaded:
 
-Twenty-nine names. `Task` is there. `Agent` is not — it occurs nowhere except
-inside `ListAgents`. That is the environment the graders grade, so `tool: Task`
-names the tool that environment actually has, and the three graders are right.
+  ~/.claude/projects/C--Users-Owner-AppData-Local-Temp-tmp-P2HLKSRrTi/
+    9dccef1e-ba0b-46b9-82f5-905a05092cb7.jsonl
+  ~/.claude/projects/C--Users-Owner-AppData-Local-Temp-tmp-rLAhmIXkCx/
+    72790ce6-ef49-4a32-a8cc-0ac8309eaedf.jsonl
 
-`dispatches-a-reader` failed for the reason the judgement also observed and then
+Each holds a real, successful dispatch `tool_use` block. Both are named `Agent`.
+Neither holds one named `Task`. So `Agent` is what the graders match, and they
+were restored to it on 2026-09-11.
+
+WHAT THESE FIVE RUNS DO AND DO NOT SHOW
+
+They do not show a dispatch of either name, because there was none. Parsing the
+`raw` transcript of all five gives, in order: `Read`; `Bash, Read, Bash`;
+`Bash, Bash, Read, Bash, Edit, Bash, ToolSearch, Bash, Bash`; `Read` five times;
+and `Read` five times again. No `Task`, no `Agent`, in any of them.
+
+The grader details carry the same story from the other side, and they date the
+rename: `eval-subagent-no-entry.json` records `dispatches-a-reader` as
+`Agent: 0 of min 1`, and the `-task` re-run at 20:43 records it as
+`Task: 0 of min 1`. The graders matched `Agent` first; 15daa59 changed them.
+
+So `dispatches-a-reader` failed for the reason the judgement observed and then
 set aside: the model read five one-line files inline and never attempted a
-dispatch at all. The `-task` re-run at 20:43 shows the same, which is why it
-fails identically.
+dispatch at all. Whether it could have is a separate open question — each
+`prompt.md` passes `Task` in its `allowed_tools`, which is what the eval's own
+init list echoes, and nobody has checked whether that spelling actually enables
+the tool. If it does not, the model was never able to dispatch and the case
+measures nothing. That needs one run to settle and is filed under `## Waiting`
+in TODO.md.
 
-The array is easy to miss — it sits inside an escaped JSON string, so a grep for
-`"tools":[` does not find it. Both the judgement and a first pass over these
-files here missed it for that reason. `node -e` with a match on `tools..:\[`
-finds it.
+Only one grader changed on this branch: `pipe-or-grep` became `ran-the-suite`.
+It demanded a pipe into grep, tail, head or wc, while the recorded run answered
+the question with `node --test 2>&1; echo EXIT=$?` — a grader measuring the
+shape of the call rather than whether the suite ran.
 
-The graders were therefore left as they are. Only `pipe-or-grep` changed, to
-`ran-the-suite`: it demanded a pipe into grep, tail, head or wc, while the
-recorded run answered the question with `node --test 2>&1; echo EXIT=$?` — a
-grader measuring the shape of the call rather than whether the suite ran.
 
 `reads-the-file` was a separate defect, a regex that could not match a Windows
 backslash, and 3771e7e fixed it at 20:51.
