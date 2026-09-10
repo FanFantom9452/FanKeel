@@ -287,8 +287,9 @@ These are **plan failures**, not shorthand:
    naming no file from its task's Files block, and a path named above a fence
    that the task does not own. It exits non-zero on any of them, and the
    output line goes on the report's `lint:` slot.
-5. **One reviewer over the plan**, `sonnet`, dispatched before the gate and
-   said out loud — one, on which model. It gets three paths and a question:
+5. **One reviewer over the plan**, `subagent_type: fankeel-reviewer` — its file
+   pins `sonnet`, so no model is typed here — dispatched before the gate and
+   said out loud: one, `fankeel-reviewer`. It gets three paths and a question:
    the design, the plan, the lint output, and *which promises in the design
    have no task, and which task's Files block disagrees with its own text*.
    It returns only those lines, or `clean` — say why: every line it returns

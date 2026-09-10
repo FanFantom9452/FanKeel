@@ -659,9 +659,9 @@ not one nested inside the other.
 `<plugin>` is two directories up from this file — resolve `../../scripts/orient.js`
 against it rather than searching for the path.
 
-It reports where the registry is or would be, and then either the projects under
-this directory or, for a single project, the directories inside it — each with its
-git branch, how dirty it is, and how many files. It writes nothing.
+It reports where the registry is or would be, then the project or projects it
+found — each with its git branch, how dirty it is, and how many files — and, for
+a single project, the directories inside it with their file counts. It writes nothing.
 
 Run it before the options below, and show what came back. Two rules about how it
 feeds the next step:
@@ -958,8 +958,8 @@ Five rules that make it work, each of which fails silently when missed:
 - **Always pass the model, and `sonnet` is the floor.** An omitted model
   inherits this session's, which is usually the most capable and most expensive
   one available. The one exception is a dispatch whose `subagent_type` is an
-  agent file that pins its own — `fankeel-reviewer` for build's reviewer and
-  verify's adversary — where omitting it is the point: the file's `model:` is
+  agent file that pins its own — `fankeel-reviewer` for plan's, build's and
+  verify's reviewers — where omitting it is the point: the file's `model:` is
   the floor the harness itself enforces. Inside a Workflow script the same rule holds: every `agent`
   call carries `model` and `sonnet` is the floor there too; the authoring
   reference's advice to omit it and inherit is the host's default, not this
@@ -1073,8 +1073,8 @@ whose session has exited never blocks — liveness is that session's own file un
 `sessions/` in the config directory **it recorded**, plus a live process behind
 its pid. `CLAUDE_CONFIG_DIR` moves that directory, so each entry names its own and
 readers check the neighbour against the one the neighbour named; a directory that
-cannot be read counts as live, while a session that named no directory is checked
-against the one already scanned and can be judged dead there. A terminal
+cannot be read counts as live, while a session that named no directory, or the
+one already scanned, is judged by that scan only when the scan is known good. A terminal
 that is gone holds nothing shut. And when both sessions hold the file, the older
 task holds and the newer yields, so two sessions that both reached it cannot block
 each other into a stalemate.

@@ -1,5 +1,5 @@
 ---
-last_verified: 2026-09-09
+last_verified: 2026-09-10
 ---
 
 # FANKEEL 改進簡報 — CAVEMAN 與 SEPIA 的架構掃描
@@ -653,9 +653,9 @@ model 下限寫在 SKILL.md 散文裡。每一個都是「同一個專案、同�
 **待決**：
 
 - profile 存哪裡：`<project>/.fankeel/profile.json`（版本控制，跟 `docs.json` 同層）還是
-  registry 層（每台機器）；預設 profile 放 `~/.claude/fankeel/`？
+  registry 層（每台機器）；預設 profile 放 `~/.claude/fankeel/`？（已定：`.fankeel/profile.json`，版本控制，`lib/profile.js`）
 - 欄位：land 的整合選擇、`guard`、預設 class、dispatch 的 model 下限、回覆語言、
-  mockup 要不要（4.1）、要不要 `plan` 檔。
+  mockup 要不要（4.1；已定，`design.mockup`，見 `docs/decisions/2026-09-10-design-mockup.md`）、要不要 `plan` 檔。
 - **哪些問題絕對不能預答**：不變量 2、5、6——stand down、推進 stage、設 guard 都要人說；
   stage gate 本身是這條 pipeline 的骨，profile 拿掉的是 gate 裡「答案早就知道」的那種問題，
   不是 gate。
@@ -1097,13 +1097,13 @@ claude plugin eval . --json results.json --threshold 0.7 \
 
 | 項目 | 結果 |
 |---|---|
-| `tests/` | **有**：51 個 `*.test.js`，`node --test` |
-| `CONTRIBUTING.md` | **無** |
+| `tests/` | **有**：51 個 `*.test.js`，`node --test`（09-10 覆核：58 個） |
+| `CONTRIBUTING.md` | **無**（09-10 覆核：有，983b357 於 09-09 加入） |
 | `lib/argv.js` | **有**；能否反推完整 flag surface 未讀 |
-| `evals/`、`.github/` | **皆無**：沒有 CI，沒有行為 eval——第三部 #2 是從零起 |
+| `evals/`、`.github/` | **皆無**：沒有 CI，沒有行為 eval——第三部 #2 是從零起（09-10 覆核：`evals/` 有五個 case，角色 `fixture`；`.github/` 仍無） |
 | 其他 host 的 prompt hook | 這台機器無法驗，C4 維持在 `## Waiting` |
 | C1「沒有機械檢查確認 script / flag 存在」 | **部分**：`tests/source.test.js` 讀 `git ls-files` 抓孤兒 export，`tests/skills.test.js` 也在；兩者是否涵蓋 SKILL.md 提到的 `<plugin>/scripts/*.js` 與 `--flag` 未讀，做 #6 之前先看這兩個檔 |
-| `mockup`、`profile` 在 repo 裡 | `survey.js` 零命中；`menu` 命中兩處，`skills/fankeel-land/SKILL.md` 的 `## 6. The menu` 與 `docs/archive/2026-08-22-seven-stage-implementation.md` |
+| `mockup`、`profile` 在 repo 裡 | `survey.js` 零命中（09-10 覆核：兩者都在，`lib/profile.js` 與 `lib/stages.js` 的 `design.mockup`）；`menu` 命中兩處，`skills/fankeel-land/SKILL.md` 的 `## 6. The menu` 與 `docs/archive/2026-08-22-seven-stage-implementation.md` |
 
 ---
 

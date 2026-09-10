@@ -136,8 +136,9 @@ nobody gets without asking for it.
 deleting the field: absence means `ask` now, so deleting it would turn opting out
 into opting in.
 
-One rule keeps it from becoming a lockout, and it is checked two ways inside
-`blockers()` (`lib/guard.js:123`):
+Two rules keep it from becoming a lockout, both inside `blockers()`
+(`lib/guard.js:123`) — one asked of every holder, one only when this session
+holds the file too:
 
 - **A dead session's claim never blocks** — `isLive`, `lib/guard.js:130`.
   Liveness is the session's own file under `sessions/` in the config directory
@@ -147,10 +148,12 @@ One rule keeps it from becoming a lockout, and it is checked two ways inside
   the neighbour named — reading only this session's own reported a running
   neighbour as dead, confidently, and its claims then dropped out of every
   reader. When a directory cannot be read, or when this session's own id is
-  missing from what was read, every claim counts as live, because warning too
-  much is the failure worth having. An entry that names no directory is the one
-  case that is *not* waved through: it is checked against the directory this
-  session already scanned, and can be judged dead there.
+  missing from what was read, every claim resolved through that directory
+  counts as live, because warning too much is the failure worth having — a
+  neighbour that named a different, readable directory is judged there and can
+  still be found dead. An entry that names no directory, or names the one
+  already scanned, is checked against that scan only when the scan is known
+  good, and can be judged dead there (`isLive`, `lib/live.js`).
 - **The older task holds** — `claimedFirst`, `lib/guard.js:131`. When both
   sessions claim the file, the newer one yields — so two sessions that both
   reached it cannot block each other into a stalemate.

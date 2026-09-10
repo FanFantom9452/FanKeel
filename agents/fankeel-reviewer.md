@@ -1,6 +1,6 @@
 ---
 name: fankeel-reviewer
-description: Read-only reviewer for build's per-task review and verify's adversary — reads a diff, a brief or an evidence table against what it was supposed to prove, and returns only what it defeats and why. Cannot call Edit, Write or NotebookEdit.
+description: Read-only reviewer for the plan review, build's per-task review and verify's adversary — reads a diff, a brief or an evidence table against what it was supposed to prove, and returns only what it defeats and why. Cannot call Edit, Write or NotebookEdit.
 tools: [Read, Grep, Glob, Bash]
 model: sonnet
 status: current

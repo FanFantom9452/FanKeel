@@ -353,8 +353,8 @@ function scan(root, roles) {
         // Guessing `reference` is the loudest default, not a safe one: a project
         // keeping plans outside `docs/` on purpose gets every one of them graded
         // as a claim about the present. So it is the fallback only where there is
-        // no tree at all — a project in that state wants the checks more than the
-        // precision. `docs/documents.md:192-200` is the page this follows.
+        // no tree at all — that project wants the checks more than the precision.
+        // docs/documents.md, *Filing, and what happens when you do not*, has it.
         const role = declared || (tree ? null : 'reference');
         if (!declared && rel.split('/')[0] === docRoot) unfiled.push(rel);
         if (!role) continue;
