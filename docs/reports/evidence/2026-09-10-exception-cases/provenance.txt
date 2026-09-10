@@ -56,12 +56,45 @@ THE VERDICTS, AS THE FILES CARRY THEM
   eval-subagent-no-entry       at-most-one-start pass  dispatches-a-reader FAIL  no-edit-or-write pass
   eval-subagent-no-entry-task  at-most-one-start pass  dispatches-a-reader FAIL  no-edit-or-write pass
 
-Every positive grader failed and every negative grader passed. The judgement
-reads that pattern as a property of the graders rather than of the model: three
-of them match a tool named `Task`, and this harness names its dispatch tool
-`Agent`, so `min: 1` could never pass and the two `max: 0` could never redden.
-The `-task` re-run at 20:43 is the evidence for that reading — the rename landed
-and `dispatches-a-reader` failed exactly as before.
+Every positive grader failed and every negative grader passed.
+
+THE JUDGEMENT READ THAT PATTERN WRONG, AND THESE FILES SAY SO
+
+docs/judgements/2026-09-10-exception-cases.md concluded that three of the four
+positive graders were themselves broken: they match a tool named `Task`, and it
+took this harness's dispatch tool to be named `Agent`, which would make `min: 1`
+impossible to pass and the two `max: 0` impossible to redden. It based that on
+two other on-disk session transcripts, and it wrote down its own flip condition:
+that a `claude -p --output-format stream-json` run might name the tool `Task`
+instead, and that no probe had been made.
+
+The probe was unnecessary. These five files carry it. Each one embeds the child
+session's system-init line, and its `tools` array is:
+
+  Task, Bash, CronCreate, CronDelete, CronList, DesignSync, Edit, EnterWorktree,
+  ExitWorktree, Glob, Grep, ListAgents, Monitor, NotebookEdit, PowerShell,
+  PushNotification, Read, RemoteTrigger, ReportFindings, ScheduleWakeup,
+  SendMessage, Skill, TaskOutput, TaskStop, ToolSearch, WebFetch, WebSearch,
+  Workflow, Write
+
+Twenty-nine names. `Task` is there. `Agent` is not — it occurs nowhere except
+inside `ListAgents`. That is the environment the graders grade, so `tool: Task`
+names the tool that environment actually has, and the three graders are right.
+
+`dispatches-a-reader` failed for the reason the judgement also observed and then
+set aside: the model read five one-line files inline and never attempted a
+dispatch at all. The `-task` re-run at 20:43 shows the same, which is why it
+fails identically.
+
+The array is easy to miss — it sits inside an escaped JSON string, so a grep for
+`"tools":[` does not find it. Both the judgement and a first pass over these
+files here missed it for that reason. `node -e` with a match on `tools..:\[`
+finds it.
+
+The graders were therefore left as they are. Only `pipe-or-grep` changed, to
+`ran-the-suite`: it demanded a pipe into grep, tail, head or wc, while the
+recorded run answered the question with `node --test 2>&1; echo EXIT=$?` — a
+grader measuring the shape of the call rather than whether the suite ran.
 
 `reads-the-file` was a separate defect, a regex that could not match a Windows
 backslash, and 3771e7e fixed it at 20:51.
