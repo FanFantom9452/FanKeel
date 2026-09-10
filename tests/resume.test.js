@@ -257,10 +257,14 @@ const NOW = Date.now();
 // renderResume never reads claims, and normaliseRoute already falls back to
 // the same FULL_ROUTE that render.test.js's default spells out when route is
 // absent, so leaving it out here does not change what gets measured.
+// The task line is the one docs/pipeline.md:199 shows in its own worked
+// example, 35 characters. The band slides with it, so measuring a shorter
+// one here would leave that page quoting numbers its own entry cannot
+// produce — which is the exact defect this assertion exists to stop.
 const entry = (sessionId, over) => ({
   sessionId,
   data: Object.assign({
-    task: 'rework the colour ramp',
+    task: 'rework the 7d deviation colour ramp',
     stage: 'build',
     class: 'architectural',
     active: true,
