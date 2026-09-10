@@ -103,9 +103,13 @@ test('the brief tells a subagent not to change the working tree', () => {
 
 **Files:**
 - Modify: `tests/resume.test.js` — 加尺寸斷言與非空保護
+- Modify: `tests/reference-size.js` — 新檔，把 `REFERENCE_ROOT` 與 `sizeAtReference` 從 `tests/render.test.js` 抽出來共用
+- Modify: `tests/render.test.js` — `:441,449` 的兩個定義改成 `require('./reference-size.js')`，行為一個字都不變
 - Read: `lib/render.js` — `renderResume()` 在 `:278`，`profile:` 行在 `:193-198`
-- Read: `tests/render.test.js` — `sizeAtReference` 的換算法與 `PROFILES` 的定義，照它的做法
+- Read: `lib/stages.js` — `routeForClass` 由 `:581` 匯出，直接 require
 - Read: `tests/stage-registry.test.js` — 它的控制組寫法，這一列刻意不照抄
+
+**這一列帶一個 build 階段的裁決**，記在 ledger 裡：計畫原本寫的程式碼用了四個 `tests/resume.test.js` 沒有的名字。`routeForClass` 從 `lib/stages.js:581` 匯出，直接 require 即可；`REFERENCE_ROOT` 與 `sizeAtReference` 是 `tests/render.test.js` 的模組私有值，抽成 `tests/reference-size.js` 給兩邊共用——複製一份正是這次要修的「兩個 2400 不同源」的來源。`PROFILES` 是 `tests/render.test.js:536` 某個測試內的區域 const，在新測試裡照它的形狀重建四格，不要跨檔引用。
 
 **Interfaces:**
 - Consumes: none
