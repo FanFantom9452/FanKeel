@@ -126,7 +126,7 @@ report where a real parser would cost a dependency this plugin does not have.
 | `profile.json` | 是 | 專案的常設答案，改了就是改偏好；`task.js profile` 寫 |
 | `sessions/<id>.json` | 否 | 一個 session 一筆，永不刪，`active:false` 即結束 |
 | `map.md` | 否 | 每次 `map.js` 重生 |
-| `build/<plan>/`、`build/ask/` | 否 | 一個 task 的 ledger、brief、judge brief；列出不清理 |
+| `build/<plan>/`、`build/ask/` | 否 | 一個 task 的 ledger、brief、judge brief，以及 design 的 `mockup.html`；列出不清理 |
 | `index.html`、`station/` | 否 | 這台機器的 station 副本，每次 prompt 重寫 |
 | `docs/judgements/`（不在 `.fankeel/`） | 是 | `fankeel-judge` 的判斷，寫完不改（`report`） |
 
@@ -135,6 +135,16 @@ report where a real parser would cost a dependency this plugin does not have.
 不在 `.fankeel/` 底下，卻也是「寫完不改」的一區：它跟 `docs.json`、
 `profile.json` 一樣提交，但壽命規則更接近一份決定記錄，而不是一份可以重新
 生成的快照。
+
+這幾區**不能**是 `.fankeel/docs.json` 的一個 bucket，而這值得寫下來，因為路徑
+本身是合法的：`lib/docs.js:185` 的 `if (!p.startsWith(b.path + '/')) continue;`
+是純字串前綴比對，`skills`、`evals`、`agents` 都是 `docs/` 以外的 bucket。擋住
+的是列檔的那一層。`lib/tracked.js:30` 跑
+`git ls-files -z --cached --others --exclude-standard`，而
+`scripts/docs-check.js:329`、`scripts/docs-audit.js:332` 與 `scripts/layout.js`
+三支全部走它；`--exclude-standard` 套用 `.gitignore`，所以宣告出來的 bucket 會
+永遠列出零個檔。這張表是這幾區唯一的說明，`node scripts/residue.js` 是它們當下
+的清單——表格給角色，`residue.js` 給有哪些與多大。
 
 ## What a document says about itself
 
@@ -159,6 +169,16 @@ because each replaces a guess with a statement:
 | `last_verified` | git mtime | mtime says somebody touched the file. A whitespace fix does that and verifies nothing. `last_verified` says somebody read it and it was true. |
 | `status` | the directory it sits in | `design-intent` is the word that was missing. A page describing what a system is *meant* to become is not drifting when the code does not match it — it is doing its job. Without somewhere to say that, a roadmap gets written into an architecture page and then read as a description of what exists. |
 | `source_of_truth` | reading the page for its subject | A comma list, doing two jobs told apart by what each entry names. Code: this is what the page is about, said outright rather than inferred. Links, code spans and fenced blocks are all read, so the tag names a subject a page never writes out rather than standing in for one it writes where nothing looked. A document: this page defers to that one, so the two are not a pair. Two pages describing one file is only a defect when neither defers. `generated-by` says the file is rewritten rather than maintained, which makes its age meaningless. |
+
+**One file may have several owners, and that is not a defect to fix.** The
+question was put on 2026-09-11 and answered no: the pipeline's own core files
+are named in the `source_of_truth` of a dozen reference pages each, because
+those are the files those pages are about. A single-owner rule would force
+eleven of every twelve into a deferral chain and buy nothing. The row above
+already carries the right test — whether *neither* page defers — so the sweep
+lists the pairs as context and never fails on them, and what gets fixed is a
+pair where neither side points at the other. Three such pairs were fixed the
+day this was written; the count of shared files was not.
 
 **A path that needs checking goes in a link.** `docs-check` does not parse
 frontmatter — it does not know the block is there. It scans the file for markdown

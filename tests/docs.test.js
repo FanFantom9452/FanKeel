@@ -501,3 +501,38 @@ test('the Roles table names every bucket docs.json declares', () => {
     .filter((p) => !roles.includes('`' + p + '`') && !roles.includes('`' + p + '/`'));
   assert.deepEqual(missing, [], 'buckets the Roles table never names');
 });
+
+// The lifetime table in docs/documents.md is the only description these
+// directories have, and nothing recounted it when `mockup.html` became a fourth
+// kind of file under `build/`. residue.js already enumerates every ignored path
+// at the top level, with no size threshold, so the table can be checked against
+// it. Other tools' ignored paths — `.superpowers/`, `caveman.zip` — are not
+// fankeel's to document, which is what the prefix filter is for.
+//
+// This passes the day it is written. That is the point of a guard, and it is
+// also why it is worth mutating once: delete the `build` row from the table and
+// this must go red.
+test('the lifetime table names every ignored path under .fankeel/', () => {
+  const root = path.join(__dirname, '..');
+  const residue = require('../scripts/residue.js');
+  const page = fs.readFileSync(path.join(root, 'docs', 'documents.md'), 'utf8');
+
+  const start = page.indexOf('## `.fankeel/` 各區的壽命');
+  assert.ok(start >= 0, 'docs/documents.md has no lifetime section');
+  const rest = page.slice(start + 1);
+  const end = rest.indexOf('\n## ');
+  const section = end === -1 ? rest : rest.slice(0, end);
+
+  const ours = residue.scan(root).weight
+    .map((w) => w.path.split(path.sep).join('/'))
+    .filter((p) => p.startsWith('.fankeel/'));
+  assert.ok(ours.length, 'residue reported no ignored path under .fankeel/');
+
+  for (const p of ours) {
+    // The table names the leaf — `build/<plan>/`, `sessions/<id>.json` — rather
+    // than the path residue prints, so the leaf is what is matched.
+    const leaf = p.slice('.fankeel/'.length).replace(/\/$/, '');
+    assert.ok(section.includes(leaf),
+      'the lifetime table in docs/documents.md does not name ' + p);
+  }
+});
