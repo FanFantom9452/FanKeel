@@ -60,6 +60,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
+- 四條 `path:line` 沒有同行引文，所以 `quoteBeside` 不檢查它們的行號 — [docs/collisions.md](docs/collisions.md). 三條在那裡，一條在 `docs/documents.md`；同一行補原文，別讓硬換行拆開。
+
 ## Needs a decision
 
 ## Waiting

@@ -139,11 +139,17 @@ report where a real parser would cost a dependency this plugin does not have.
 這幾區**不能**是 `.fankeel/docs.json` 的一個 bucket，而這值得寫下來，因為路徑
 本身是合法的：`lib/docs.js:185` 的 `if (!p.startsWith(b.path + '/')) continue;`
 是純字串前綴比對，`skills`、`evals`、`agents` 都是 `docs/` 以外的 bucket。擋住
-的是列檔的那一層。`lib/tracked.js:30` 跑
-`git ls-files -z --cached --others --exclude-standard`，而
-`scripts/docs-check.js:330`、`scripts/docs-audit.js:347`（兩支都是
-`trackedFiles(root)`）與 `scripts/layout.js`
-三支全部走它；`--exclude-standard` 套用 `.gitignore`，所以宣告出來的 bucket 會
+的是列檔的那一層，而那一層是同一個函式被三支腳本各叫一次。每一行的引文都必須
+跟它的行號同行。`scripts/docs-check.js:182` 是 `function quoteBeside(text, from) {`，
+它只掃到換行為止，而同一行上的第二個路徑會被它自己的 `PATHISH` 擋掉——所以擠
+在一行的兩個引用等於兩個都沒有引文，而被硬換行拆開的引文等於沒寫。
+
+- `lib/tracked.js:31` 是 `const args = ['ls-files', '-z', '--cached', '--others', '--exclude-standard'];`
+- `scripts/docs-check.js:330` 是 `const result = trackedFiles(root);`
+- `scripts/docs-audit.js:347` 是 `const listed = trackedFiles(root);`
+- `scripts/layout.js` 走同一條，它呼叫的是同一個 `trackedFiles`
+
+`--exclude-standard` 套用 `.gitignore`，所以宣告出來的 bucket 會
 永遠列出零個檔。這張表是這幾區唯一的說明，`node scripts/residue.js` 是它們當下
 的清單——表格給角色，`residue.js` 給有哪些與多大。
 
