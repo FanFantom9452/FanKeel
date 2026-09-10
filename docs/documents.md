@@ -288,4 +288,25 @@ Orphans never fail a run. `defects()` at `scripts/docs-audit.js:779-785` sums
 drift, landed plans, a broken index and diagrams; `orphans` is not a term in
 that sum.
 
+## The list is the output, not the count
+
+`docs-check` prints the findings themselves, not a summary of them — the role
+counts at the top are in addition to the list, not instead of it. The list is
+capped at `MAX_FINDINGS = 200` (`scripts/docs-check.js:31`) and says so when it
+bites, so a run past that cap is the one case where the printed list is not the
+whole of it. Short of the cap, comparing two branches is a `diff` rather than a
+flag:
+
+    git stash && node scripts/docs-check.js > /tmp/before.txt; git stash pop
+    node scripts/docs-check.js > /tmp/after.txt
+    diff /tmp/before.txt /tmp/after.txt
+
+A headline count that moved from 22 to 21 says one finding went and says nothing
+about whether a different one arrived. The list says both.
+
+Neither `docs-check` nor `docs-audit` decides that two documents contradict each
+other, because nothing mechanical can. What the sweep does is turn "read all
+forty documents looking for disagreements" into "read these two — they describe
+the same source file, and one has not been touched since before it changed".
+
 [Back to the index](README.md) · [Back to the front page](../README.md)
