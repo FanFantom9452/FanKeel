@@ -141,7 +141,8 @@ report where a real parser would cost a dependency this plugin does not have.
 是純字串前綴比對，`skills`、`evals`、`agents` 都是 `docs/` 以外的 bucket。擋住
 的是列檔的那一層。`lib/tracked.js:30` 跑
 `git ls-files -z --cached --others --exclude-standard`，而
-`scripts/docs-check.js:329`、`scripts/docs-audit.js:332` 與 `scripts/layout.js`
+`scripts/docs-check.js:330`、`scripts/docs-audit.js:347`（兩支都是
+`trackedFiles(root)`）與 `scripts/layout.js`
 三支全部走它；`--exclude-standard` 套用 `.gitignore`，所以宣告出來的 bucket 會
 永遠列出零個檔。這張表是這幾區唯一的說明，`node scripts/residue.js` 是它們當下
 的清單——表格給角色，`residue.js` 給有哪些與多大。
@@ -291,9 +292,9 @@ from a line that claims to be every markdown file.
 ### `orphan`, deliberately empty where an index exists
 
 An orphan is a document under the docs root that no other document links to.
-`scripts/docs-audit.js:560` (`index.exists ? [] :`) reports them only where the project declares no
+`scripts/docs-audit.js:575` (`index.exists ? [] :`) reports them only where the project declares no
 index. Where one exists, the same gap is already reported, and worded better,
-as `missing from the index` (`index.missing`, `scripts/docs-audit.js:542-546`):
+as `missing from the index` (`scripts/docs-audit.js:558-562`, `if (!linked.has(rel)) index.missing.push(rel);`):
 an index is a markdown file like any other, so anything it fails to list is
 unreachable regardless of what else in the tree links there. Two names for one
 problem is how a report starts looking longer than it is.
@@ -304,7 +305,8 @@ back empty. This project declares an index, so the branch that would populate
 `orphans` never runs here — the empty result is the index case behaving as
 built, not a gap in the check.
 
-Orphans never fail a run. `defects()` at `scripts/docs-audit.js:779-785` sums
+Orphans never fail a run. `defects()` at `scripts/docs-audit.js:817-823`
+(`function defects(r) {`) sums
 drift, landed plans, a broken index and diagrams; `orphans` is not a term in
 that sum.
 
