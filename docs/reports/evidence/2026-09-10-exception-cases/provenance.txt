@@ -71,11 +71,21 @@ no probe had been made.
 An earlier revision of this file claimed the probe was unnecessary because these
 five runs carry it. They do not, and the claim was wrong. What each run embeds is
 its child session's system-init line, whose `tools` array holds twenty-nine
-names, `Task` among them and `Agent` absent. **That array is the list of tools
-the session was offered. It is not a record of what a dispatch call is logged
-as**, and `type: tool_used` grades the second, not the first. Reading one for the
-other is what renamed these graders the wrong way in 15daa59 on 2026-09-10, and
-this file repeated the same mistake on 2026-09-11 before a review caught it.
+names, `Task` among them and `Agent` absent. **That array is the CLI's own
+catalogue of registered tools. It is not a record of what a dispatch call is
+logged as**, and `type: tool_used` grades the second, not the first. Reading one
+for the other is what renamed these graders the wrong way in 15daa59 on
+2026-09-10, and this file repeated the same mistake on 2026-09-11 before a
+review caught it.
+
+It is not even the narrower thing an earlier revision called it — "the tools the
+session was offered". All five runs print the same twenty-nine names in the same
+order, byte for byte, and `eval-stage-skip-said.json` is the one that proves what
+that means: its `allowed_tools` is `[Read, Edit, Bash, Glob, Grep, Skill]`, with
+no `Task` in it at all, and its init array still lists `Task`. The runner does
+pass the list — `scripts/eval.js:113`, `args.push('--allowedTools', ...)` — and
+the array does not move. So the array is what the binary registers, and it says
+nothing about what any one run was allowed to call.
 
 What settles it is the two transcripts the judgement had already cited, both CLI
 2.1.267, both on this machine, both with this plugin loaded:
@@ -104,11 +114,20 @@ rename: `eval-subagent-no-entry.json` records `dispatches-a-reader` as
 So `dispatches-a-reader` failed for the reason the judgement observed and then
 set aside: the model read five one-line files inline and never attempted a
 dispatch at all. Whether it could have is a separate open question — each
-`prompt.md` passes `Task` in its `allowed_tools`, which is what the eval's own
-init list echoes, and nobody has checked whether that spelling actually enables
-the tool. If it does not, the model was never able to dispatch and the case
+`prompt.md` passes `Task` in its `allowed_tools`, a dispatch is logged as
+`Agent`, and nobody has checked which spelling that flag wants. If it wants the
+one these cases do not pass, the model was never able to dispatch and the case
 measures nothing. That needs one run to settle and is filed under `## Waiting`
 in TODO.md.
+
+One line of the recorded runs points away from that, without settling it.
+`eval-stage-skip-said` called `ToolSearch`, which its `allowed_tools` does not
+list, and the call succeeded — so on this CLI the flag did not act as a filter
+on the tool set in that run. If it never does, the dispatch tool was present in
+all five runs under either spelling and the model simply chose not to use it.
+`ToolSearch` is the loader for deferred tools and may be exempt for that reason,
+which is why this is a hint rather than the answer. The probe the Waiting entry
+asks for is still the thing that decides it.
 
 Only one grader changed on this branch: `pipe-or-grep` became `ran-the-suite`.
 It demanded a pipe into grep, tail, head or wc, while the recorded run answered
