@@ -136,10 +136,29 @@ this CLI the flag did not act as a filter on the tool set in that run.
 `ToolSearch` is the loader for deferred tools and may be exempt for that reason,
 which is why this is a hint rather than the answer.
 
-Only one grader changed on this branch: `pipe-or-grep` became `ran-the-suite`.
-It demanded a pipe into grep, tail, head or wc, while the recorded run answered
-the question with `node --test 2>&1; echo EXIT=$?` — a grader measuring the
-shape of the call rather than whether the suite ran.
+WHERE THE GRADER CHANGES LANDED, AND UNDER WHICH MESSAGE
+
+Four graders changed on this branch, in two commits, and neither commit
+message says so plainly.
+
+The rename is in 7a842c3, whose message is about a plan's link shape. An
+earlier `git add -A evals/` was still staged when that commit was made and
+swept the rename in with it, so `git show --stat 7a842c3` lists
+`pipe-or-grep.md` deleted and `ran-the-suite.md` added under a message that
+mentions neither. The history was not rewritten — it was four commits back by
+the time this was noticed — and this paragraph is where the explanation lives
+instead, because a commit message nobody would search is not a record.
+
+The other three are the `tool:` reversals, and they are in fc937c6, not here.
+At this branch's base, aca11d5, all three read `tool: Task`; they read `Agent`
+now. An earlier revision of this paragraph said "only one grader changed on
+this branch", which was true when it was written and which fc937c6 falsified
+without coming back to it.
+
+`pipe-or-grep` became `ran-the-suite` because it demanded a pipe into grep,
+tail, head or wc, while the recorded run answered the question with
+`node --test 2>&1; echo EXIT=$?` — a grader measuring the shape of the call
+rather than whether the suite ran.
 
 
 `reads-the-file` was a separate defect, a regex that could not match a Windows

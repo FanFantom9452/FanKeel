@@ -16,7 +16,7 @@ Every row below is one of the dated reports at the top level of
 counts rows across both tables and not files, and today the two numbers agree.
 When they stop agreeing it is the heading that has to move, because a row can
 only be added by hand and a report cannot.
-The 53 files under `docs/reports/evidence/` are the raw
+The files under `docs/reports/evidence/` are the raw
 `claude -p --output-format json` output and diffs behind three of those
 reports, not reports of their own, so they carry no row — a row's Link column
 points at the report, and the report itself points at its evidence directory

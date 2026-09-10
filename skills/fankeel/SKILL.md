@@ -957,9 +957,10 @@ Five rules that make it work, each of which fails silently when missed:
   in sequence — the cost of parallelism with none of it.
 - **Always pass the model, and `sonnet` is the floor.** An omitted model
   inherits this session's, which is usually the most capable and most expensive
-  one available. The one exception is a dispatch whose `subagent_type` is an
+  one available. The exception is a dispatch whose `subagent_type` is an
   agent file that pins its own — `fankeel-reviewer` for plan's, build's and
-  verify's reviewers — where omitting it is the point: the file's `model:` is
+  verify's reviewers, and `fankeel-verifier` for verify's per-row
+  verifiers — where omitting it is the point: the file's `model:` is
   the floor the harness itself enforces. Inside a Workflow script the same rule holds: every `agent`
   call carries `model` and `sonnet` is the floor there too; the authoring
   reference's advice to omit it and inherit is the host's default, not this

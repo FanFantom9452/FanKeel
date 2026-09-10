@@ -18,9 +18,9 @@ const read = (n) => fs.readFileSync(path.join(DIR, n, 'SKILL.md'), 'utf8');
 // Read once against skills/fankeel-build/SKILL.md and confirmed paragraph by
 // paragraph (2026-09-11): each one below mentions `ledger.js`, `groups` or
 // `brief` with no no-plan phrase of its own, and none needed one. Judgement 4
-// (docs/judgements/2026-09-10-section-loading.md) named the only plan-only
-// regions worth pulling into their own file — Setup steps 2-3, step 2's brief
-// description, and step 4's `workflow` bullet — and kept them inline instead,
+// (docs/judgements/2026-09-10-section-loading.md:72) named four plan-only
+// regions — Setup steps 2-3, step 2's brief description, step 4's `workflow`
+// bullet and step 7's ledger — and kept every one of them inline instead,
 // because the no-plan sentence that opens each section already names
 // everything below it; these paragraphs are the mid-section mechanics that
 // opening sentence already scopes. The step 5 fragments are not plan-only at

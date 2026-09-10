@@ -88,7 +88,9 @@ per-task reviewer and verify's adversary, all three of which dispatch
 from `fankeel-reader` is not the tool list — both carry the same four — but
 the shape of the question: a reader is asked what a file says, a reviewer
 is asked what a diff or a table gets wrong, and it returns only what it
-defeats. This is also the one dispatch where nobody types a model at all,
+defeats. It is one of two dispatches where nobody types a model at all —
+`fankeel-verifier` is the other: `skills/fankeel-verify/SKILL.md:157`, `not typed by hand`,
+and it was added on the same branch as this sentence —
 so the file's pin is the only floor — the literal `sonnet`, not `dispatch.floor`,
 which nothing in `agents/` or `hooks/` reads: `SubagentStart`'s payload
 carries no model (`agent_id`, `agent_type`, `session_id`, `cwd`), so a hook
