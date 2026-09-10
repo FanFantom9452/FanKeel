@@ -61,6 +61,7 @@ entry waited for actually happening. It shrank when somebody read it.
 ## Ready
 
 - 三處兩頁講同一個機制而兩邊都不讓路：60 上限的兩半、guard 的自派工盲點、`judge.js record` — [docs/collisions.md](docs/collisions.md). 各補一個指標，不刪句子。
+- `docs/README.md:9` 的頁數寫在散文裡，沒有任何東西在數它——這次加兩頁就過時了 — [docs/README.md](docs/README.md). 照 `tests/contract.test.js` 數 hook 的形狀補一條 test。
 
 ## Needs a decision
 
