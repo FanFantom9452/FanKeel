@@ -224,20 +224,35 @@ output shape:
 ```
 
 Where the task is, the rules for the stage, the shape — about 2,230 characters
-for the block above, roughly 600 tokens, and 2,200 to 2,370 across the three
-classes with no `profile:` line, 2,360 to 2,530 with one — plus one `gate:`
+for the block above, roughly 600 tokens, and 2,204 to 2,381 across the three
+classes with no `profile:` line, 2,329 to 2,545 with one — plus one `gate:`
 line of 226 characters, past the band, in the one case where the record
 carries no `gateAt` at the answer, which [registry.md](registry.md) explains.
-Rounded on purpose and measured 2026-09-10 against the entry shown above — the
-band slides with the task line, which is 35 characters there and takes it to
-2,170 to 2,330 at one character. It also moves when a rule in `lib/stages.js`
-changes, a smaller blast radius than a suite total, and nothing re-runs it.
-Between the two, an exact count is the wrong shape here: nothing pins these
-numbers, so an exact one would be right until the next clause lands and then
-wrong with nothing to say so. `node --test tests/render.test.js` prints
-the per-stage sizes if you want them exact today. The
-range is `renderResume` measured against the same 59-character reference plugin
-root `tests/render.test.js` caps every stage against, and **each class over its
+Measured 2026-09-11 against the entry shown above, whose task line is the 35
+characters the whole band slides with. A shorter one moves every figure here,
+so `tests/resume.test.js` measures that same 35-character line and no other:
+a page quoting numbers its own worked example cannot produce is the defect,
+not a rounding question.
+
+These used to be rounded on purpose, and the reasoning was that an exact count
+would be right until the next clause landed and then wrong with nothing to say
+so. That is exactly how three of the seven figures in this paragraph went
+stale at once on 2026-09-10 — nothing was there to redden. `node --test
+tests/resume.test.js` is what closes it. It prints every class, stage and
+profile combination on each run — `tests/resume.test.js:295`, `t.diagnostic(cls + '@' + stage` —
+and its own assertion holds the worst of them, `bounded@design` and
+`bounded@land` tied at 2,545, under 2,600 characters at the same 59-character
+reference root: `tests/resume.test.js:299`, `assert.ok(worst < 2600`. The 55
+characters of headroom are about three more profile keys.
+
+`tests/render.test.js` caps a narrower thing, the seven stage preambles alone,
+under 2,400 — `tests/render.test.js:530`, `assert.ok(size < 2400` — and a wider
+one, the whole worst-case block those preambles sit inside, five notes, a
+second session, a compacted transcript, none of which a resume answer ever
+carries, is capped separately under 3,000 in the same file:
+`tests/render.test.js:482`, `assert.ok(worst < 3000`. The
+range is `renderResume` measured against the same reference plugin root
+`tests/reference-size.js` now defines for both files, and **each class over its
 own route** — a `bounded` task never reaches `audit`, so pairing every class
 with every stage measures blocks that cannot exist and reports a wider range
 than the pipeline has. Deliberately not the full block: the
