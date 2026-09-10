@@ -60,6 +60,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
+- subagent brief 的 `RETURN_RULES` 三條都沒說不得改動工作樹，09-09 的教訓正是光靠文字擋不住，所以它是 hook 之外的提醒層而非防線；777/1400 字元有餘裕 — [lib/render.js](lib/render.js).
+
 ## Needs a decision
 - `renderResume` 沒有量它的測試：`tests/render.test.js` 量的是 `render()`，`docs/pipeline.md` 的 resume 字數帶每次人手量，09-10 一次錯三處；要不要加斷言、cap 定多少 — [lib/render.js](lib/render.js).
 
