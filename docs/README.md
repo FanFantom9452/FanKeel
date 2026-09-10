@@ -149,8 +149,8 @@ is explained, and it is the one thing to know before adding a page here.
 | `docs/judgements/` | report | it is what `fankeel-judge` answered on that day, filed verbatim by `scripts/judge.js` |
 | `skills/` | reference | no |
 | `output-styles/` | reference | no |
-| `evals/` | reference | no — a grader names the code it asserts on, so it goes stale the way a reference page does |
+| `evals/` | fixture | n/a — a test's own input; a prompt names paths only its scaffold has, so it is checked for links and nothing else |
 | `.claude/agents/` | reference | no |
-| `agents/` | reference | no — the two agents the plugin ships, read by Claude Code at process start |
+| `agents/` | reference | no — the three agents the plugin ships, read by Claude Code at process start |
 
 [Back to the front page](../README.md)

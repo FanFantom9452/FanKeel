@@ -550,6 +550,7 @@ a document is meant to stay true, and therefore what is worth checking.
 | `plan` | what is about to be done. Stops being true the moment it lands. |
 | `report` | a dated snapshot: an audit, a benchmark, a meeting. Never edited after. |
 | `archive` | retired. Checked for one thing only — that nothing current still points at it. |
+| `fixture` | a test's own input. Describes nothing about the system, so it cannot drift from it; checked for links and line numbers only, never for symbols or paths its scaffold creates. |
 
 Two shapes ship, both taken from real repositories: `flat` (one `docs/` with a
 numbered series) and `phased` (`01-vision` through `99-archive`). Neither is

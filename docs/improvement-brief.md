@@ -899,6 +899,10 @@ stage skill，沒有一條追溯到「為什麼」。已有的統管規則是校
 個特徵會製造新指紋」），但那條防的是過度修正，不是「規則 vs 任務／harness 衝突時聽誰
 的」——「the constraint wins, the shape stays」今天無對應。
 
+> 補記 2026-09-10：上段在 `e2a31ca` 之後不再成立——`lib/stages.js` 的 `ALWAYS[2]`
+> 句尾帶了那句，`skills/fankeel/SKILL.md` 的 `## Calibration` 給四條 ALWAYS 各配了
+> 成因、Bad／Good 與豁免。其餘 59 條仍無成因，那是 TODO 已答掉的「先改哪幾條」。
+
 ### 5.8 兩條 fankeel 沒有的 CI（第四部 4.1、4.2）
 
 `plugin-load-check.yml` 把 plugin 裝進 scratch `CLAUDE_CONFIG_DIR`，`grep -q "✔
@@ -955,6 +959,10 @@ hooks/scripts/lib/skills 四層目前只能靠自己摸。`CONTRIBUTING.md` 已�
 case）尤其直接：fankeel 的例外條款（stage 的 skip forward、pipe 已移除殘留、one tool
 call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全部無現成對應，是
 `evals/` 與 `scripts/eval.js` 要擴的方向。
+
+> 補記 2026-09-10：四條例外各有一個 case 了——`evals/stage-skip-said`、`pipe-not-agent`、
+> `one-call-not-agent`、`subagent-no-entry`，`596eb21`。A11 的成對跑與「分數不該動」
+> 判準仍未做，等 `route-typo` 自己的分數穩定。
 
 ---
 

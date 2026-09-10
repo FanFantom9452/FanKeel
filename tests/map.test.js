@@ -76,6 +76,21 @@ test('pages are grouped by what they declare about themselves', () => {
   assert.ok(by.current.includes('docs/now.md'));
 });
 
+// A fixture carries no contract by design, so a bare page under a `fixture`
+// bucket is not an invitation to sign one — the same exemption docs-check
+// gives its symbols and its scaffold's paths.
+test('a bare page under a fixture bucket is not undeclared', () => {
+  const dir = root();
+  write(dir, '.fankeel/docs.json', JSON.stringify({ preset: 'flat', index: 'docs/README.md', buckets: [{ path: 'docs', role: 'reference' }, { path: 'evals', role: 'fixture' }] }));
+  write(dir, 'docs/bare.md', '# Bare
+');
+  write(dir, 'evals/case/prompt.md', '# A prompt
+');
+  const by = map.pagesByStatus(dir);
+  assert.deepEqual(by.undeclared, ['docs/bare.md']);
+  assert.ok(by.current.includes('evals/case/prompt.md'));
+});
+
 // `README.md` and `TODO.md` are the two the project has decided must never carry
 // a contract — GitHub renders one on a README as a stray table, and
 // `todo-check.js` re-verifies TODO.md in full on every run. Listing them as

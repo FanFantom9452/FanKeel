@@ -61,6 +61,8 @@ entry waited for actually happening. It shrank when somebody read it.
 ## Ready
 
 ## Needs a decision
+- 整體 prompt 預算：`skills/registry.json` 每 stage 有 `prompt_byte_budget`，整個外掛的總預算沒有欄位；要不要加、加在哪 — [簡報 §1.3](docs/improvement-brief.md#13-registryjson-的-schema).
+
 - 條件載入到「節」的粒度：build 依 class 與有無 plan 載入不同段落，今天 spike 的 build 付 architectural 的 token — [簡報 §2.2](docs/improvement-brief.md#22-條件載入矩陣fankeel-最缺的那個機制).
 
 - 16 行 pattern skill 的極簡形式：stage skill 較重且混了人類與模型兩種讀者；`surgical-patch` 證明 16 行夠 — [簡報 §1.4](docs/improvement-brief.md#14-16-行-pattern-skill-的極簡形式).
