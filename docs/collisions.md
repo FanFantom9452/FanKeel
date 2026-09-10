@@ -171,6 +171,44 @@ those apart instead is the pair of predicates in
 edge — plus the parent staging each task's declared paths, which leaves
 anything written outside them unstaged rather than committed.
 
+## What the guard does not watch
+
+The scope guard's `PreToolUse` hook is wired to one matcher: `.claude-plugin/plugin.json:76` reads `"matcher": "Edit|Write|NotebookEdit"`.
+Inside it, `hooks/guard.js:42` calls `targetOf(payload)`, which reads only
+`tool_input.file_path` and `tool_input.notebook_path`, and `hooks/guard.js:43` is the whole branch for anything else: `if (!file) return;`.
+A `Bash` or `PowerShell` call carries a command string, not a path, so it
+never reaches `blockers()` — and on this machine that is two tools, not one:
+Windows hands a subagent a `PowerShell` the matcher does not name either.
+`tests/guard.test.js:239` names that silence on purpose: `Bash and PowerShell carry no path`, and the rest of the name says the guard has
+nothing to say about either — a passing test, not a gap nobody noticed. The
+reasoning for leaving it that way, including what was measured and rejected,
+is in `docs/judgements/2026-09-10-shell-whitelist.md`.
+
+That silence is not hypothetical. The one case on record of a working tree
+being cut out from under a parallel session ran inside a shell script the
+guard could not see into: `docs/reports/evidence/2026-09-03-dispatch-vs-inline/ab2.sh:9` runs `git checkout --quiet 86a104e`, and
+`docs/reports/evidence/2026-09-03-dispatch-vs-inline/ab3.sh:11` runs `git checkout --quiet 86a104e` again — both from the main thread, both invisible
+to a hook that only ever sees `bash ab2.sh`. Reading the command string would
+not have helped: `lib/dirty.js:13` `The rejected fix was to match` a tool name and parse what runs inside it is the same shape of check, already priced
+out and rejected once, on a different hook — `hooks/touch.js`.
+
+**An operator's own step.** Widening the guard is not this plugin's answer,
+so nothing here ships it. What an operator can add instead is five entries
+of their own, in their own `settings.json` or `settings.local.json`, under
+`permissions.deny` — no hook, no extra process, no cost per prompt:
+
+- `Bash(git stash:*)`
+- `Bash(git checkout:*)`
+- `Bash(git reset:*)`
+- `Bash(git clean:*)`
+- `PowerShell(Remove-Item:*)`
+
+Nobody has verified whether `permissions.deny` still applies under
+`defaultMode: "auto"`, or against a command run with `bypassPermissions` —
+the two conditions a background subagent is most likely running under.
+Until somebody checks that, this is a step worth taking, not a guarantee to
+lean on.
+
 # Stale entries
 
 A terminal killed outright leaves an entry claiming to be in progress. Rather than

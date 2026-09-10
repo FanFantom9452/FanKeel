@@ -230,7 +230,13 @@ test('NotebookEdit’s own path field is read', () => {
   assert.equal(decisionOf(out), 'deny');
 });
 
-test('a tool call carrying no path says nothing', () => {
+// Bash and PowerShell are deliberately outside the scope guard's reach:
+// `targetOf()` only reads `tool_input.file_path` and `tool_input.notebook_path`
+// (lib/guard.js:76-82), and a command string never produces one. Why the
+// matcher stays `Edit|Write|NotebookEdit`, and what protects a working tree
+// from a stray `git stash` or `Remove-Item` instead, is written up in
+// docs/judgements/2026-09-10-shell-whitelist.md.
+test('Bash and PowerShell carry no path, so the guard has nothing to say about them', () => {
   const root = tmp();
   seed(root, MINE, { guard: 'deny', claims: ['statusline.ps1'] });
   seed(root, THEIRS, { claims: ['statusline.ps1'], started: ago(9 * 3600e3) });
