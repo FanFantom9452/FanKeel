@@ -9,6 +9,8 @@ const { execFileSync } = require('node:child_process');
 
 const tmp = require('./tmp.js');
 const { renderResume } = require('../lib/render.js');
+const { routeForClass } = require('../lib/stages.js');
+const { REFERENCE_ROOT, sizeAtReference } = require('./reference-size.js');
 
 const ROOT = path.join(__dirname, '..');
 const HOOK = path.join(ROOT, 'hooks', 'resume.js');
@@ -247,4 +249,48 @@ test('the profile line appears on the short form with a profile, and not without
   // carries no profile line at all.
   const bad = { values: {}, sources: {}, unreadable: ['/x/.fankeel/profile.json'] };
   assert.match(renderResume({ mine, profile: bad }), /^profile: unreadable \/x\/\.fankeel\/profile\.json$/m);
+});
+
+const NOW = Date.now();
+
+// Mirrors tests/render.test.js's `entry`, minus `claims` and `route`:
+// renderResume never reads claims, and normaliseRoute already falls back to
+// the same FULL_ROUTE that render.test.js's default spells out when route is
+// absent, so leaving it out here does not change what gets measured.
+const entry = (sessionId, over) => ({
+  sessionId,
+  data: Object.assign({
+    task: 'rework the colour ramp',
+    stage: 'build',
+    class: 'architectural',
+    active: true,
+    started: new Date(NOW - 2 * 3600e3).toISOString(),
+    updated: new Date(NOW - 60e3).toISOString(),
+  }, over),
+});
+
+// Rebuilt inline rather than imported: tests/render.test.js:536's PROFILES is
+// a local const inside one test, not a module export.
+const PROFILES = [true, false].flatMap((archive) => [false, 'opus'].map((mockup) => ({
+  values: { 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': archive, guard: 'ask', 'dispatch.floor': 'sonnet', 'judge.model': 'fable', 'design.mockup': mockup },
+  sources: { 'land.integration': 'project', 'land.push': 'project', 'land.archivePlan': 'project', guard: 'project', 'dispatch.floor': 'machine', 'judge.model': 'machine', 'design.mockup': mockup === false ? 'builtin' : 'project' },
+  unreadable: [],
+})));
+
+test('renderResume stays a readable size across every route and profile', (t) => {
+  let worst = 0;
+  let name = '';
+  for (const cls of ['spike', 'bounded', 'architectural']) {
+    for (const stage of routeForClass(cls)) {
+      for (const profile of [null].concat(PROFILES)) {
+        const mine = entry(MINE, { stage, class: cls, gateAt: NOW - 60000 });
+        const out = renderResume(profile ? { mine, profile } : { mine }) || '';
+        const size = sizeAtReference(out);
+        assert.match(out, /^stage rules:$/m, cls + '@' + stage + ' rendered nothing to measure');
+        if (size > worst) { worst = size; name = cls + '@' + stage + (profile ? '+profile' : ''); }
+        t.diagnostic(cls + '@' + stage + (profile ? '+profile' : '') + ': ' + size);
+      }
+    }
+  }
+  assert.ok(worst < 2600, 'worst resume is ' + name + ' at ' + worst + ' chars under a ' + REFERENCE_ROOT + '-character root');
 });

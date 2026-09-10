@@ -430,26 +430,10 @@ test('a style is never restated in the injected block', () => {
   assert.equal(out.includes('undefined'), false);
 });
 
-// An installed plugin does not live where this checkout does. It lives under
-// ~/.claude/plugins/cache/<marketplace>/<plugin>/<version> — 59 characters once
-// expanded, as in C:\Users\Owner\.claude\plugins\cache\fankeel\fankeel\0.24.0 —
-// against the 16 this repository happens to sit at. Sizing the block where the
-// tests run sizes a condition no user is in: measured against a real root,
-// `survey`, `build` and `audit` were all over the cap below while this file
-// reported them passing, and two of them had been over since before the branch
-// that raised it.
-const REFERENCE_ROOT = 59;
-
-// The root reaches the block as a run-time string, so every place it appears
-// grows by the difference between this checkout's root and a real one. It appears
-// once per injection — the rules name `<plugin>` and one line above them says
-// what `<plugin>` is — where it used to appear once per rule naming a script.
-// Counting occurrences rather than tokens is what keeps this honest if a path
-// ever gets inlined back into a rule.
-function sizeAtReference(out) {
-  const roots = out.split(PLUGIN_ROOT).length - 1;
-  return out.length + roots * (REFERENCE_ROOT - PLUGIN_ROOT.length);
-}
+// Shared with tests/resume.test.js, which sizes renderResume() against the
+// same reference root — see tests/reference-size.js for why the two used to
+// be a copy of each other and no longer are.
+const { REFERENCE_ROOT, sizeAtReference } = require('./reference-size.js');
 
 test('the whole injection stays a readable size with everything populated', () => {
   // The worst case on purpose, and found rather than named: every stage, both
