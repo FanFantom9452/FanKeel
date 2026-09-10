@@ -81,6 +81,11 @@ anything is written. It then appends a row to `docs/README.md`'s own
 `## Judgements` table when that heading exists, and says so plainly when it
 does not rather than inventing one (`scripts/judge.js:50-66`, `indexRow`).
 
+[The fankeel-ask skill](../skills/fankeel-ask/SKILL.md) owns this command and
+every flag on it. The pointer earlier in this section comes *before* the
+restatement above and so does not stop it; this one comes after. This is the
+short form, not the only copy.
+
 `fankeel-reviewer` runs at `model: sonnet`, and answers neither kind of
 question above: it is the shared contract behind plan's reviewer, build's
 per-task reviewer and verify's adversary, all three of which dispatch
@@ -288,6 +293,11 @@ Two dispatched implementers used to be a flat no. They share one checkout,
 the same parent `session_id` — and an implementer used to commit, so two
 commits in one checkout would interleave and no review range would mean
 anything afterward.
+
+[collisions.md](collisions.md) owns the blind spot itself — `lib/guard.js` is
+in its `source_of_truth` and not in this page's. The link later in this section
+points at the pair of predicates, which is the mitigation rather than the fact.
+This is the short form, not the only copy.
 
 The commit moved to the parent, one task at a time, as each implementer
 returns — never the implementer itself, which now returns paths, never a diff.

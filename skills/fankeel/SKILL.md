@@ -99,6 +99,10 @@ the two writers hit that cap differently: a path arriving on its own drops the
 oldest, where a git pass holding more than sixty is refused whole rather than
 trimmed.
 
+[docs/registry.md](../../docs/registry.md) is where that cap lives — both
+halves, the constant they come from, and the run that set it. This section is
+the short form, not the only copy.
+
 `project` is the only field anyone declares: which repository, so the docs lookup
 knows whose tree applies. One registry can cover five of them and nothing else
 needs to know which. Ask for it only when the root holds more than one, and never
