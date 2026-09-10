@@ -4,7 +4,7 @@ description: Read-only reviewer for the plan review, build's per-task review and
 tools: [Read, Grep, Glob, Bash]
 model: sonnet
 status: current
-last_verified: 2026-09-10
+last_verified: 2026-09-11
 source_of_truth: lib/render.js
 ---
 

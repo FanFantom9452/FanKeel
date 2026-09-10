@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-09
+last_verified: 2026-09-11
 source_of_truth: docs/reports/*.md — each row transcribes that report's headline figure and its own frontmatter's provenance; this page is the index onto them, not a re-measurement. The reverse index (Cited by) is filled by hand from grep, not a script.
 ---
 

@@ -4,7 +4,7 @@ description: One-shot judgement for a question the session would otherwise put t
 tools: [Read, Grep, Glob, Bash]
 model: fable
 status: current
-last_verified: 2026-09-09
+last_verified: 2026-09-11
 source_of_truth: lib/render.js
 ---
 

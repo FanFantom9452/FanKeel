@@ -1,7 +1,6 @@
 ---
-status: design-intent
-last_verified: 2026-09-10
-source_of_truth: docs/plans/2026-09-10-todo-eight-design.md
+status: current
+last_verified: 2026-09-11
 ---
 
 # TODO 八條 Implementation Plan

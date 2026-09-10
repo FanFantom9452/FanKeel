@@ -4,7 +4,7 @@ description: Writes one task's evidence rows to a file and returns the path — 
 tools: [Read, Grep, Glob, Bash, Write]
 model: sonnet
 status: current
-last_verified: 2026-09-10
+last_verified: 2026-09-11
 source_of_truth: docs/judgements/2026-09-10-verifier-agent.md
 ---
 

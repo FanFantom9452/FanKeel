@@ -1,7 +1,6 @@
 ---
-status: design-intent
-last_verified: 2026-09-10
-source_of_truth: TODO.md
+status: current
+last_verified: 2026-09-11
 ---
 
 # 處理 TODO 的八條：一條照做，七條逐條問判官
