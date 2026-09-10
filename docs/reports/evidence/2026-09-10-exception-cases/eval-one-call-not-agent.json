@@ -1,0 +1,72 @@
+{
+  "case": "one-call-not-agent",
+  "model": "claude-opus-5",
+  "pluginDir": "F:\\ymlab\\fankeel",
+  "runs": [
+    {
+      "graders": [
+        {
+          "name": "no-agent-dispatch",
+          "type": "tool_used",
+          "pass": true,
+          "detail": "Agent: 0 calls"
+        },
+        {
+          "name": "reads-the-file",
+          "type": "tool_used",
+          "pass": false,
+          "detail": "Read matching lib/thing\\.js: 0 of min 1"
+        }
+      ],
+      "toolCalls": 1,
+      "lastMessage": "`lib/thing.js` exports a single object, `{ widget: 1 }`, via `module.exports`.",
+      "exit": 0,
+      "error": null,
+      "cost": {
+        "costUsd": 0.10443400000000001,
+        "usage": {
+          "input_tokens": 4,
+          "cache_creation_input_tokens": 8092,
+          "cache_read_input_tokens": 38282,
+          "output_tokens": 135,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 8092,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 37,
+              "cache_read_input_tokens": 23102,
+              "cache_creation_input_tokens": 170,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 170
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      },
+      "raw": [
+        "{\"type\":\"system\",\"subtype\":\"init\",\"cwd\":\"C:\\\\Users\\\\Owner\\\\AppData\\\\Local\\\\Temp\\\\fankeel-eval-VuZIqo\",\"session_id\":\"19ee6af9-44a7-4987-bbf6-3be1fa670a7c\",\"tools\":[\"Task\",\"Bash\",\"CronCreate\",\"CronDelete\",\"CronList\",\"DesignSync\",\"Edit\",\"EnterWorktree\",\"ExitWorktree\",\"Glob\",\"Grep\",\"ListAgents\",\"Monitor\",\"NotebookEdit\",\"PowerShell\",\"PushNotification\",\"Read\",\"RemoteTrigger\",\"ReportFindings\",\"ScheduleWakeup\",\"SendMessage\",\"Skill\",\"TaskOutput\",\"TaskStop\",\"ToolSearch\",\"WebFetch\",\"WebSearch\",\"Workflow\",\"Write\"],\"mcp_servers\":[{\"name\":\"claude.ai Google Drive\",\"status\":\"needs-auth\"}],\"model\":\"claude-opus-5\",\"permissionMode\":\"default\",\"slash_commands\":[\"deep-research\",\"fankeel:fankeel\",\"fankeel:fankeel-ask\",\"fankeel:fankeel-audit\",\"fankeel:fankeel-build\",\"fankeel:fankeel-design\",\"fankeel:fankeel-land\",\"fankeel:fankeel-plan\",\"fankeel:fankeel-survey\",\"fankeel:fankeel-verify\",\"design\",\"design-sync\",\"dataviz\",\"update-config\",\"verify\",\"debug\",\"code-review\",\"simplify\",\"batch\",\"fewer-permission-prompts\",\"doctor\",\"loop\",\"schedule\",\"claude-api\",\"workflow-authoring\",\"run\",\"run-skill-generator\",\"advisor\",\"agents\",\"auto-mode-setup\",\"autocompact\",\"clear\",\"color\",\"compact\",\"config\",\"context\",\"effort\",\"fast\",\"heapdump\",\"init\",\"mcp\",\"import\",\"model\",\"__remote-workflow\",\"workflow-launch-exec\",\"reload-plugins\",\"reload-skills\",\"rename\",\"ultrareview\",\"security-review\",\"usage-credits\",\"extra-usage\",\"usage\",\"insights\",\"recap\",\"skill-doctor\",\"goal\",\"design-consent\",\"design-revoke\",\"list-agents\",\"team-onboarding\"],\"terminal_slash_commands\":[\"doctor\",\"color\",\"reload-plugins\"],\"apiKeySource\":\"none\",\"claude_code_version\":\"2.1.267\",\"output_style\":\"default\",\"agents\":[\"claude\",\"Explore\",\"fankeel:fankeel-judge\",\"fankeel:fankeel-reader\",\"fankeel:fankeel-reviewer\",\"general-purpose\",\"Plan\",\"statusline-setup\"],\"skills\":[\"deep-research\",\"fankeel:fankeel\",\"fankeel:fankeel-ask\",\"fankeel:fankeel-audit\",\"fankeel:fankeel-build\",\"fankeel:fankeel-design\",\"fankeel:fankeel-land\",\"fankeel:fankeel-plan\",\"fankeel:fankeel-survey\",\"fankeel:fankeel-verify\",\"design\",\"design-sync\",\"dataviz\",\"update-config\",\"verify\",\"debug\",\"code-review\",\"simplify\",\"batch\",\"fewer-permission-prompts\",\"doctor\",\"loop\",\"schedule\",\"claude-api\",\"workflow-authoring\",\"run\",\"run-skill-generator\"],\"plugins\":[{\"name\":\"fankeel\",\"path\":\"F:\\\\ymlab\\\\fankeel\",\"source\":\"fankeel@inline\",\"version\":\"0.58.0\"}],\"capabilities\":[\"interrupt_receipt_v1\",\"interrupt_cancel_queued_v1\",\"msg_lifecycle_v1\"],\"analytics_disabled\":false,\"product_feedback_disabled\":false,\"uuid\":\"6449ca0a-b2d2-4aaf-8f29-9b41498289e0\",\"memory_paths\":{\"auto\":\"C:\\\\Users\\\\Owner\\\\.claude\\\\projects\\\\C--Users-Owner-AppData-Local-Temp-fankeel-eval-VuZIqo\\\\memory\\\\\"},\"messaging_socket_path\":\"\\\\\\\\.\\\\pipe\\\\LOCAL\\\\cc-msg-f9e9ba22236393250e78cd6a20ca83db\",\"fast_mode_state\":\"off\",\"fast_mode_disabled_reason\":\"sdk_opt_in_required\",\"powershell_path\":\"C:\\\\Program Files\\\\WindowsApps\\\\Microsoft.PowerShell_7.6.4.0_x64__8wekyb3d8bbwe\\\\pwsh.exe\"}",
+        "{\"type\":\"rate_limit_event\",\"rate_limit_info\":{\"status\":\"allowed\",\"resetsAt\":1789048800,\"rateLimitType\":\"five_hour\",\"overageStatus\":\"rejected\",\"overageDisabledReason\":\"org_level_disabled\",\"isUsingOverage\":false,\"unifiedWindows\":{\"five_hour\":{\"utilization\":0.1,\"resetsAt\":1789048800},\"seven_day\":{\"utilization\":0.02,\"resetsAt\":1789617600}}},\"uuid\":\"988c102d-e298-4dc4-8944-429f03a76a54\",\"session_id\":\"19ee6af9-44a7-4987-bbf6-3be1fa670a7c\"}",
+        "{\"type\":\"assistant\",\"message\":{\"model\":\"claude-opus-5\",\"id\":\"msg_011CeujeyVmeZFmfFT7g8j2F\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"I'll check the file.\"}],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":7922,\"cache_read_input_tokens\":15180,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":7922},\"output_tokens\":1,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"},\"diagnostics\":null,\"context_management\":null},\"parent_tool_use_id\":null,\"session_id\":\"19ee6af9-44a7-4987-bbf6-3be1fa670a7c\",\"uuid\":\"2b98569f-ffcf-434e-ae70-eba1a7ba7182\",\"timestamp\":\"2026-09-10T12:11:14.234Z\",\"request_id\":\"req_011CeujexqKmJZt9SBmEN6vk\"}",
+        "{\"type\":\"assistant\",\"message\":{\"model\":\"claude-opus-5\",\"id\":\"msg_011CeujeyVmeZFmfFT7g8j2F\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_01Y5e2dB8P8kt9vhCZrLYq9G\",\"name\":\"Read\",\"input\":{\"file_path\":\"C:\\\\Users\\\\Owner\\\\AppData\\\\Local\\\\Temp\\\\fankeel-eval-VuZIqo\\\\lib\\\\thing.js\"},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":7922,\"cache_read_input_tokens\":15180,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":7922},\"output_tokens\":1,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"},\"diagnostics\":null,\"context_management\":null},\"parent_tool_use_id\":null,\"session_id\":\"19ee6af9-44a7-4987-bbf6-3be1fa670a7c\",\"uuid\":\"aa0d1646-45ed-491d-a1ef-808c793a6a6f\",\"timestamp\":\"2026-09-10T12:11:15.029Z\",\"request_id\":\"req_011CeujexqKmJZt9SBmEN6vk\"}",
+        "{\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"tool_use_id\":\"toolu_01Y5e2dB8P8kt9vhCZrLYq9G\",\"type\":\"tool_result\",\"content\":\"1\\tmodule.exports = { widget: 1 };\"}]},\"parent_tool_use_id\":null,\"session_id\":\"19ee6af9-44a7-4987-bbf6-3be1fa670a7c\",\"uuid\":\"e96d0736-2fde-4177-bbf2-ce7550a2c7ae\",\"timestamp\":\"2026-09-10T12:11:15.098Z\",\"tool_use_result\":{\"type\":\"text\",\"file\":{\"filePath\":\"C:\\\\Users\\\\Owner\\\\AppData\\\\Local\\\\Temp\\\\fankeel-eval-VuZIqo\\\\lib\\\\thing.js\",\"content\":\"module.exports = { widget: 1 };\",\"numLines\":1,\"startLine\":1,\"totalLines\":1}}}",
+        "{\"type\":\"assistant\",\"message\":{\"model\":\"claude-opus-5\",\"id\":\"msg_011Ceujf9GdLLoho17qnK7RX\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"`lib/thing.js` exports a single object, `{ widget: 1 }`, via `module.exports`.\"}],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":170,\"cache_read_input_tokens\":23102,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":170},\"output_tokens\":1,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"},\"diagnostics\":null,\"context_management\":null},\"parent_tool_use_id\":null,\"session_id\":\"19ee6af9-44a7-4987-bbf6-3be1fa670a7c\",\"uuid\":\"f05b395a-2c5a-4795-88b3-f656ac5a612c\",\"timestamp\":\"2026-09-10T12:11:16.851Z\",\"request_id\":\"req_011Ceujf8YUUcM5ZJCk5KSV2\"}",
+        "{\"duration_api_ms\":4906,\"stop_reason\":\"end_turn\",\"session_id\":\"19ee6af9-44a7-4987-bbf6-3be1fa670a7c\",\"total_cost_usd\":0.10443400000000001,\"usage\":{\"input_tokens\":4,\"cache_creation_input_tokens\":8092,\"cache_read_input_tokens\":38282,\"output_tokens\":135,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":8092,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"not_available\",\"iterations\":[{\"input_tokens\":2,\"output_tokens\":37,\"cache_read_input_tokens\":23102,\"cache_creation_input_tokens\":170,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":170},\"type\":\"message\"}],\"speed\":\"standard\"},\"modelUsage\":{\"claude-haiku-4-5-20251001\":{\"inputTokens\":908,\"outputTokens\":14,\"cacheReadInputTokens\":0,\"cacheCreationInputTokens\":0,\"webSearchRequests\":0,\"costUSD\":0.000978,\"contextWindow\":200000,\"maxOutputTokens\":32000,\"thinkingTokens\":0,\"canonicalModel\":\"claude-haiku-4-5\",\"provider\":\"firstParty\",\"costBasis\":\"list\"},\"claude-opus-5\":{\"inputTokens\":4,\"outputTokens\":135,\"cacheReadInputTokens\":38282,\"cacheCreationInputTokens\":8092,\"webSearchRequests\":0,\"costUSD\":0.103456,\"contextWindow\":1000000,\"maxOutputTokens\":64000,\"thinkingTokens\":0,\"canonicalModel\":\"claude-opus-5\",\"provider\":\"firstParty\",\"costBasis\":\"list\"}},\"permission_denials\":[],\"terminal_reason\":\"completed\",\"fast_mode_state\":\"off\",\"fast_mode_disabled_reason\":\"sdk_opt_in_required\",\"subagent_stats\":{\"spawned\":0,\"requested\":{\"background\":0,\"foreground\":0,\"unset\":0},\"started_in_background\":0,\"max_depth\":0,\"spawned_by_subagents\":0,\"completed\":0,\"failed\":0,\"killed\":{\"parent\":0,\"user\":0,\"system\":0},\"refused\":{\"depth_limit\":0,\"concurrency_limit\":0,\"budget\":0},\"by_type\":{}},\"is_error\":false,\"num_turns\":2,\"subtype\":\"success\",\"api_error_status\":null,\"result\":\"`lib/thing.js` exports a single object, `{ widget: 1 }`, via `module.exports`.\",\"ttft_ms\":1634,\"type\":\"result\",\"duration_ms\":4269,\"uuid\":\"d00ef2d7-0231-4acf-bcc0-22f48242af4e\",\"ttft_stream_ms\":1329,\"time_to_request_ms\":242,\"first_content_frame_ms\":1329,\"queued_turn_count\":0}"
+      ]
+    }
+  ]
+}

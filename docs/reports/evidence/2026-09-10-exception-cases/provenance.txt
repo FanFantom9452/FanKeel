@@ -1,0 +1,73 @@
+provenance — the four exception eval cases, first run
+=====================================================
+
+WHY THIS DIRECTORY EXISTS
+
+These five runs cost real money and lived only in .fankeel/build/, which
+.fankeel/.gitignore excludes at line 3 (`build/`). A survey on 2026-09-10 that
+scanned git-tracked files concluded the run "does not exist anywhere in this
+repository" and was wrong. The judgement at docs/judgements/2026-09-10-exception-cases.md
+found them. They are copied here so the next scan can see them.
+
+SOURCE
+
+  .fankeel/build/2026-09-10-todo-ten/eval-*.json
+  .fankeel/build/2026-09-10-todo-ten/eval-*.txt
+
+Copied verbatim on 2026-09-11 by session 98873819-d200-4e3b-be77-be352547e51e,
+with the working tree at 7867d715231885ab40948f8baca5bc59dd66670c on branch
+todo-eight. Nothing in the files was edited.
+
+ORIGINAL MTIMES
+
+  2026-09-10 20:11  eval-one-call-not-agent.json    (.txt same)
+  2026-09-10 20:11  eval-pipe-not-agent.json        (.txt same)
+  2026-09-10 20:10  eval-stage-skip-said.json       (.txt same)
+  2026-09-10 20:11  eval-subagent-no-entry.json     (.txt same)
+  2026-09-10 20:43  eval-subagent-no-entry-task.json (.txt same)
+
+WHAT THE FILES THEMSELVES RECORD
+
+  model      claude-opus-5      (each JSON's `model` key)
+  pluginDir  F:\ymlab\fankeel
+  runs       1 per case
+  CLI        2.1.267            (present in all five files)
+
+WHICH COMMIT THEY RAN AGAINST — NOT RECORDED, AND THAT MATTERS
+
+The runner does not write the tree's HEAD into its output, and these ran against
+an uncommitted working tree during another task's build. So the sha cannot be
+stated. What can be stated is which commits bracket them:
+
+  15daa59  2026-09-10 20:43  fix: the graders count Task, a when key must be a
+                             profile key, four pages catch up
+  3771e7e  2026-09-10 20:51  fix(docs): the separator regex survives
+                             JSON.stringify, and four sentences say what is so
+
+The four runs at 20:10-20:11 therefore predate 15daa59. eval-subagent-no-entry-task.json
+at 20:43 sits at it — it is the re-run of that one case after the rename, which
+is why it carries `-task` in its name.
+
+THE VERDICTS, AS THE FILES CARRY THEM
+
+  eval-one-call-not-agent      no-agent-dispatch pass  reads-the-file FAIL
+  eval-pipe-not-agent          no-agent-dispatch pass  pipe-or-grep FAIL
+  eval-stage-skip-said         no-stage-off-route pass says-which-stages-skipped FAIL
+  eval-subagent-no-entry       at-most-one-start pass  dispatches-a-reader FAIL  no-edit-or-write pass
+  eval-subagent-no-entry-task  at-most-one-start pass  dispatches-a-reader FAIL  no-edit-or-write pass
+
+Every positive grader failed and every negative grader passed. The judgement
+reads that pattern as a property of the graders rather than of the model: three
+of them match a tool named `Task`, and this harness names its dispatch tool
+`Agent`, so `min: 1` could never pass and the two `max: 0` could never redden.
+The `-task` re-run at 20:43 is the evidence for that reading — the rename landed
+and `dispatches-a-reader` failed exactly as before.
+
+`reads-the-file` was a separate defect, a regex that could not match a Windows
+backslash, and 3771e7e fixed it at 20:51.
+
+`says-which-stages-skipped` is the one the judgement calls a real behaviour
+signal. n=1 cannot separate a prompt failure from a model one; the same tree
+scored 2/3, 3/3 and 1/3 on evals/route-typo across three runs on 09-08 and 09-09.
+Five runs on one commit is what would settle it, and that spend has not been
+authorised.
