@@ -82,10 +82,8 @@ test('pages are grouped by what they declare about themselves', () => {
 test('a bare page under a fixture bucket is not undeclared', () => {
   const dir = root();
   write(dir, '.fankeel/docs.json', JSON.stringify({ preset: 'flat', index: 'docs/README.md', buckets: [{ path: 'docs', role: 'reference' }, { path: 'evals', role: 'fixture' }] }));
-  write(dir, 'docs/bare.md', '# Bare
-');
-  write(dir, 'evals/case/prompt.md', '# A prompt
-');
+  write(dir, 'docs/bare.md', '# Bare\n');
+  write(dir, 'evals/case/prompt.md', '# A prompt\n');
   const by = map.pagesByStatus(dir);
   assert.deepEqual(by.undeclared, ['docs/bare.md']);
   assert.ok(by.current.includes('evals/case/prompt.md'));
