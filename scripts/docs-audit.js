@@ -299,6 +299,21 @@ function declaredPaths(root, rel, contract) {
     return out;
 }
 
+// The entries `declaredPaths` could not resolve. It drops them silently, which
+// is right for its own job — a page deferring to another page, or saying it has
+// no upstream, is not naming a path and never was. It is wrong as the only
+// outcome: a typo in a path and a legitimate sentence are then the same silence.
+function unresolvedRefs(root, rel, contract) {
+    const raw = (contract && contract.source) || '';
+    const out = [];
+    for (const entry of raw.split(',')) {
+        const s = entry.trim().replace(/^generated-by\s+/i, '');
+        if (!s) continue;
+        if (!resolveRef(root, rel, s) && !out.includes(s)) out.push(s);
+    }
+    return out;
+}
+
 // --- diagrams ---------------------------------------------------------------
 
 // Every mermaid block in a document, with the line it starts on and the source
@@ -646,6 +661,17 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
         && roleOf(rel) === 'reference'
         && !(contracts.get(rel) || {}).declared);
 
+    // Reference pages only. A report's `source_of_truth` is a paragraph about
+    // how that day's measurement was taken, which docs/documents.md's role table
+    // calls legitimate, and a decision record's may say it has no upstream at
+    // all. Scoping to the one role that claims to describe the code as it is now
+    // is what keeps this line short enough that somebody reads it.
+    const unresolved = [];
+    for (const rel of markdown) {
+        if (roleOf(rel) !== 'reference') continue;
+        for (const s of unresolvedRefs(root, rel, contracts.get(rel))) unresolved.push({ page: rel, entry: s });
+    }
+
     // An index of 182 documents that lists 73 of them is a navigation page, not
     // a manifest, and reporting the other 109 as missing is the check misreading
     // what it is looking at. Below this share it says so once instead.
@@ -656,7 +682,7 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     return {
         tree, error, since, implied, markdown: markdown.length, dates: dates.kind,
         drift, overlaps, pool, landed, index, orphans, uncovered, diagrams,
-        undeclared: undeclared.length, declaredOf: markdown.length,
+        undeclared: undeclared.length, declaredOf: markdown.length, unresolved,
         unfiled: unfiled.length,
     };
 }
@@ -726,6 +752,16 @@ function report(r) {
 
     lines.push(...section(plural(r.orphans.length, 'document is', 'documents are') + ' linked from nowhere:', r.orphans));
 
+    // Context, not a defect. Several of these are legitimate on any given day —
+    // a page saying it is the index, or that it is the prompt with no upstream —
+    // so a run printing none would mean the field had fallen out of use rather
+    // than got cleaner. What the line is for is the one with a typo in it, which
+    // is indistinguishable from the legitimate ones while both are silent.
+    const unresolved = r.unresolved || [];
+    lines.push(...section(plural(unresolved.length, 'reference document names', 'reference documents name')
+        + ' something in source_of_truth that resolves to no file:',
+    unresolved.map((u) => u.page + '  ' + u.entry)));
+
     lines.push(...section(plural(r.diagrams.length, 'diagram lists a directory and has', 'diagrams list a directory and have') + ' fallen behind it:',
         r.diagrams.map((d) => d.file + ':' + d.line + '  names ' + d.named + ' of ' + d.total + ' in ' + d.dir
             + '/ — missing ' + d.missing.slice(0, 4).join(', ')
@@ -767,15 +803,16 @@ function report(r) {
 
     lines.push('');
     lines.push('Drift, landed plans, a broken index and a diagram behind its directory are');
-    lines.push('defects. Pairs, orphans, uncovered directories and the undeclared count are');
-    lines.push('context — a pair sharing a file is where a contradiction could live, not');
-    lines.push('evidence that one does.');
+    lines.push('defects. Pairs, orphans, uncovered directories, unresolved source_of_truth');
+    lines.push('entries and the undeclared count are context — a pair sharing a file is');
+    lines.push('where a contradiction could live, not evidence that one does.');
     return lines.join('\n');
 }
 
 // What makes the run fail. Drift, landed plans, a broken index and a diagram
 // that has stopped listing its directory are all things that are wrong. Pairs,
-// orphans, uncovered directories and the undeclared count are context, and a
+// orphans, uncovered directories, unresolved source_of_truth entries and the
+// undeclared count are context, and a
 // command that always exits non-zero has an exit code that means nothing.
 function defects(r) {
     if (!r) return 1;

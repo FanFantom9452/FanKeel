@@ -665,3 +665,31 @@ test('--root resolves against the registry, not against the project it names', (
     process.chdir(prevCwd);
   }
 });
+
+// A source_of_truth entry resolving to nothing used to be dropped in the same
+// silence as one that was never a path. The typo is the case worth catching;
+// the legitimate sentence is why this is context rather than a defect, so both
+// halves are asserted — the line appears, and the exit code does not move.
+test('an unresolvable source_of_truth entry is reported, and is not a defect', () => {
+  const root = tree({
+    '.fankeel/docs.json': { age: 1, body: JSON.stringify({
+      index: 'docs/README.md',
+      buckets: [{ path: 'docs', role: 'reference', depth: 1 }],
+    }) },
+    'docs/README.md': { age: 1, body: '# Index\n\n- [a](a.md)\n- [b](b.md)\n' },
+    'docs/a.md': { age: 1, body: '---\nstatus: current\nlast_verified: 2026-08-21\nsource_of_truth: lib/gone.js\n---\n\n# A\n' },
+    // No comma in this value, deliberately. The field is a comma list and
+    // `unresolvedRefs` splits on it, so a sentence with a comma in it is two
+    // entries and two rows — correct behaviour, and not what this test is
+    // pinning down.
+    'docs/b.md': { age: 1, body: '---\nstatus: current\nlast_verified: 2026-08-21\nsource_of_truth: this file is the prompt with no upstream\n---\n\n# B\n' },
+  });
+
+  const r = audit.sweep(root, audit.DEFAULT_SINCE, NOW);
+  assert.deepEqual(r.unresolved.map((u) => u.page + ' | ' + u.entry).sort(), [
+    'docs/a.md | lib/gone.js',
+    'docs/b.md | this file is the prompt with no upstream',
+  ]);
+  assert.match(audit.report(r), /resolves to no file/);
+  assert.equal(audit.defects(r), 0, 'an unresolvable source_of_truth entry must not fail the run');
+});
