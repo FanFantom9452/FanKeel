@@ -10,3 +10,7 @@ exit=0 shell_seconds=149
 --- arm B: inline
 exit=0 shell_seconds=153
 done
+cwd: the checkout (F:/ymlab/fankeel), uncontrolled — ab-haiku.sh:11 only `cd`s into it, no `git checkout` pin (unlike ab2.sh/ab3.sh) and no fresh empty directory
+settings: user and project, uncontrolled — no --setting-sources or --settings flag
+always-on flag: n/a — fankeel has none
+budget: none, uncontrolled — no --max-budget-usd

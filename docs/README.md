@@ -62,9 +62,11 @@ here.
 | A prompt for a later session: a `design` class with its route, an axis lock file, a mode-first routing table and the stage-skill edits — read in from caveman.zip, not yet run | [plans/2026-09-09-design-class-prompt.md](plans/2026-09-09-design-class-prompt.md) — *design-intent, 繁體中文* |
 | Why one `design.mockup` key is both the switch and the model, why a `when` rule can only be keyed on a profile value, and why the mockup path names a stem rather than a ledger that does not exist yet | `docs/archive/2026-09-10-design-mockup-design.md` — *built, 繁體中文* |
 | The three tasks that added the key, hung design's `when` rule on it inside a measured 2357-character budget, and wrote the step into the skill | `docs/archive/2026-09-10-design-mockup.md` — *built, 繁體中文* |
+| Why the `## Ready` entry and the nine `## Needs a decision` entries each already had a chosen answer, and what each becomes as a change | `docs/archive/2026-09-10-todo-ten-design.md` — *built, 繁體中文* |
+| The eight tasks that close them: a third review-only agent, an inventory test, a generated stage registry, a calibrated build-stop rule with a reachability test, seven provenance channels, four eval cases, a `fixture` role for eval documents, and TODO.md itself down from twenty-seven entries to seventeen | `docs/archive/2026-09-10-todo-ten.md` — *built, 繁體中文* |
 | The fifteen tasks that pinned the port, moved the shell under `station/`, closed fourteen `## Ready` entries and added the evidence ledger and CONTRIBUTING.md | [plans/2026-09-08-ready-and-station-serve.md](plans/2026-09-08-ready-and-station-serve.md) — *built* |
-| Why a plan now declares what it reads, names the file above every fence, and is linted against its design before the gate — and why an implementer gets one brief file and a reviewer gets a template | [plans/2026-09-07-plan-quality-design.md](plans/2026-09-07-plan-quality-design.md) — *built* |
-| The four tasks that added `Read:`, the fence rule, `ledger.js lint`, `brief` and `fix`, and reworded three stages' anchors to say so | [plans/2026-09-07-plan-quality.md](plans/2026-09-07-plan-quality.md) — *built* |
+| Why a plan now declares what it reads, names the file above every fence, and is linted against its design before the gate — and why an implementer gets one brief file and a reviewer gets a template | `docs/archive/2026-09-07-plan-quality-design.md` — *built* |
+| The four tasks that added `Read:`, the fence rule, `ledger.js lint`, `brief` and `fix`, and reworded three stages' anchors to say so | `docs/archive/2026-09-07-plan-quality.md` — *built* |
 | Why the station skill goes — the `/fankeel` prompt already writes and names the page — and what moves where when it does | [plans/2026-09-07-station-skill-retired-design.md](plans/2026-09-07-station-skill-retired-design.md) — *built* |
 | The three tasks that retire the skill, catch the station page up with the code, and add `--json` | [plans/2026-09-07-station-skill-retired.md](plans/2026-09-07-station-skill-retired.md) — *built* |
 | Why six deferred decisions were settled in one pass, and what each one decided | [plans/2026-09-01-six-decisions-design.md](plans/2026-09-01-six-decisions-design.md) — *built* |
@@ -87,6 +89,7 @@ here.
 | Why a project answers the land menu once in `profile.json`, why in-stage questions go to a one-shot `fankeel-judge` whose answer is filed verbatim, why readers are structurally read-only, and the two placements the plan changed on the way | [decisions/2026-09-09-profile-judge-reader.md](decisions/2026-09-09-profile-judge-reader.md) — *繁體中文* |
 | Why a rule that names a stronger model invites the session's own model to defer, and why the judge is now reached only by a command the user types | [decisions/2026-09-10-judge-to-ask.md](decisions/2026-09-10-judge-to-ask.md) — *繁體中文* |
 | Why the frontend axis splits into a per-project profile key and a per-task judgement, why one key carries both the switch and the model, and why the mockup path could not name the ledger | [decisions/2026-09-10-design-mockup.md](decisions/2026-09-10-design-mockup.md) — *繁體中文* |
+| Why the nine TODO answers were each the recommended one, which two design sentences the audit overturned against the code, and what the build learned — the subagent tool is `Task` in a transcript, agent files load at process start, a `when` key must be a profile key | [decisions/2026-09-10-todo-ten.md](decisions/2026-09-10-todo-ten.md) — *繁體中文* |
 | The two tasks that anchored `survey`, `plan` and `audit`, and brought the survey skill's step 6 to what `task.js` does | `docs/archive/2026-09-05-anchor-remaining.md` — *built* |
 | Why the fourteen entries under `## Ready` came down to nine changes, and why the temp-directory leak goes first | `docs/archive/2026-09-07-ready-fourteen-design.md` — *built* |
 | The nine tasks that close them, with the code for each written out | `docs/archive/2026-09-07-ready-fourteen.md` — *built* |
@@ -147,8 +150,8 @@ is explained, and it is the one thing to know before adding a page here.
 | `docs/judgements/` | report | it is what `fankeel-judge` answered on that day, filed verbatim by `scripts/judge.js` |
 | `skills/` | reference | no |
 | `output-styles/` | reference | no |
-| `evals/` | reference | no — a grader names the code it asserts on, so it goes stale the way a reference page does |
+| `evals/` | fixture | n/a — a test's own input; a prompt names paths only its scaffold has, so it is checked for links and line numbers only, never for symbols |
 | `.claude/agents/` | reference | no |
-| `agents/` | reference | no — the two agents the plugin ships, read by Claude Code at process start |
+| `agents/` | reference | no — the three agents the plugin ships, read by Claude Code at process start |
 
 [Back to the front page](../README.md)

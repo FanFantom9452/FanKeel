@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-09
+last_verified: 2026-09-10
 source_of_truth: lib/stages.js, lib/render.js, lib/profile.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js
 ---
 
@@ -117,15 +117,15 @@ also in progress:
   - retune the 5h ramp @ design  (touched: statusline.ps1)  << overlaps: statusline.ps1
   - triage the colour issues @ survey  (touched: README.md)  (last seen 16d ago)
 
-<plugin> = C:\Users\you\.claude\plugins\cache\fankeel\fankeel\0.31.0
+<plugin> = C:/Users/you/.claude/plugins/cache/fankeel/fankeel/0.31.0
 stage rules:
   - Never end a stage silently or in prose. Ask with AskUserQuestion — three at least, never dropping the pause. Option one is the approval: verify — mark your pick `(Recommended)` rather than moving it. Option two names the open decision, or none — never unfinished work.
   - Background belongs in the option descriptions, never in the stem, which is one line.
-  - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model.
+  - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model. Where a rule and the shape conflict, the constraint wins and the shape stays.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Do not stop where the happy path works and the rest is "later". That, and a new ask that neither blocks nor belongs, is one TODO.md line at the detail. Say which; ambiguous, ask that turn.
-  - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task or fix, then `complete <n> "<what>"` or `fix "<what>"`.
-  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path a guess.
+  - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One fankeel-reviewer per task or fix, then `complete <n>` or `fix`.
+  - Decide, record `Ruling:`. Stop where git cannot revert: irreversible, security-sensitive, out-of-workspace, every path a guess.
   - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code. Remove what your own change orphaned.
   - A new document is the last resort: use an existing page, or write a generator when it derives from code.
   - Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape.
@@ -157,7 +157,7 @@ preamble is skimmed, and skimmed rules are no rules.
 Every stage's last rule is the shape of its output, and they are all the same
 shape: what the stage produced, then the question. What differs is the form and
 how much room it gets — 120 words for a survey, 200 for a design, 80 for a build,
-one line per finding for an audit, one paragraph for a land. A number can be
+one line per finding for an audit, a six-line skeleton for a land. A number can be
 missed; a direction cannot be, and *in the fewest words that let someone say yes
 or no* let a design stage run to nine hundred.
 
@@ -200,15 +200,15 @@ FANKEEL ACTIVE — rework the 7d deviation colour ramp @ build  (4 of 7)
 route: survey → design → plan → [build] → verify → audit → land
 class: architectural — a new subsystem, or a change to an interface something else depends on.
 
-<plugin> = C:\Users\you\.claude\plugins\cache\fankeel\fankeel\0.31.0
+<plugin> = C:/Users/you/.claude/plugins/cache/fankeel/fankeel/0.31.0
 stage rules:
   - Never end a stage silently or in prose. Ask with AskUserQuestion — three at least, never dropping the pause. Option one is the approval: verify — mark your pick `(Recommended)` rather than moving it. Option two names the open decision, or none — never unfinished work.
   - Background belongs in the option descriptions, never in the stem, which is one line.
-  - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model.
+  - Say what you actually did — a skipped step, a failed test, a thing you could not check — and a dispatch before it goes: how many, which model. Where a rule and the shape conflict, the constraint wins and the shape stays.
   - Write tool input in literal characters, never as \uXXXX escapes: escaped calls corrupt mid-word and fail to parse. Name a code concept in code — `overdue`, not a translation of it.
   - Do not stop where the happy path works and the rest is "later". That, and a new ask that neither blocks nor belongs, is one TODO.md line at the detail. Say which; ambiguous, ask that turn.
-  - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One reviewer per task or fix, then `complete <n> "<what>"` or `fix "<what>"`.
-  - Decide rather than stall, recording `Ruling: what — why — costs if wrong`. Only four things stop the loop: irreversible, security-sensitive, a side effect outside this workspace, every path a guess.
+  - From a plan: `node <plugin>/scripts/ledger.js --plan <f> show` first; never redo a task it lists complete. One fankeel-reviewer per task or fix, then `complete <n>` or `fix`.
+  - Decide, record `Ruling:`. Stop where git cannot revert: irreversible, security-sensitive, out-of-workspace, every path a guess.
   - Every changed line traces to the ask. Follow the patterns here; do not improve adjacent code. Remove what your own change orphaned.
   - A new document is the last resort: use an existing page, or write a generator when it derives from code.
   - Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape.
@@ -223,15 +223,15 @@ output shape:
   then AskUserQuestion
 ```
 
-Where the task is, the rules for the stage, the shape — about 2,350 characters
-for the block above, roughly 600 tokens, and 1,850 to 2,400 across the three
-classes — plus one `gate:` line of 226 characters, and past the band, in the one
-case where the record carries no `gateAt` at the answer, which
-[registry.md](registry.md) explains. Rounded on purpose and measured 2026-08-27,
-against the entry shown
-above — the band slides with the task line, which is 35 characters there and
-takes it to 1823 to 2335 at one character. It also moves when a rule in
-`lib/stages.js` changes, which is a smaller blast radius than a suite total.
+Where the task is, the rules for the stage, the shape — about 2,230 characters
+for the block above, roughly 600 tokens, and 2,200 to 2,370 across the three
+classes with no `profile:` line, 2,360 to 2,530 with one — plus one `gate:`
+line of 226 characters, past the band, in the one case where the record
+carries no `gateAt` at the answer, which [registry.md](registry.md) explains.
+Rounded on purpose and measured 2026-09-10 against the entry shown above — the
+band slides with the task line, which is 35 characters there and takes it to
+2,170 to 2,330 at one character. It also moves when a rule in `lib/stages.js`
+changes, a smaller blast radius than a suite total, and nothing re-runs it.
 Between the two, an exact count is the wrong shape here: nothing pins these
 numbers, so an exact one would be right until the next clause lands and then
 wrong with nothing to say so. `node --test tests/render.test.js` prints
@@ -302,8 +302,10 @@ the kind of thing it is. When in doubt, take the heavier one.
 
 ### Where a rule lives
 
-Every stage's injection sits within twenty characters of the 2400 cap
-(`tests/render.test.js` prints each figure), so a rule earns its place by tier,
+Every stage's injection sits under the 2400 cap with little room — on
+2026-09-10 the tightest two, `design` and `land`, had four characters to spare
+and the loosest, `build`, 146 (`tests/render.test.js` prints each figure; re-run
+it rather than trust this line), so a rule earns its place by tier,
 tried in this order:
 
 | tier | holds | why it is enough |
@@ -311,6 +313,7 @@ tried in this order:
 | script | anything a script can check or refuse — a missing block, a stage off the route, a prose `Consumes:` | the check runs whether or not anyone read the rule |
 | anchor | a step whose skipping is silent and a later stage pays for: a template slot where the step produces something the report must show, else words on the `Read the fankeel-<stage> skill on entry:` line | both are re-sent every prompt |
 | skill | the procedure's detail, the format, the why | read once on entering the stage; nothing load-bearing lives only here |
+| registry | `skills/registry.json` — the entry and stop condition and the byte budget, machine-readable, generated by `scripts/stage-registry.js` | a tool outside this session can read a stage's contract without parsing prose |
 
 Room is made by moving a rationale clause into the stage's skill, never by
 raising the cap.
@@ -333,9 +336,9 @@ in one shared sentence.
 
 A rule's token is one of two kinds, and a test depends on the difference — a
 **script token**'s value is a path, the same on every prompt: `{{SURVEY}}`
-among them, filled with `scripts/survey.js`'s installed path so `survey`'s
-scan rule can read `node {{SURVEY}} <term>...` without a plugin root
-hard-coded here. A **render token**'s value is computed per stage and differs —
+among them, filled with `<plugin>/scripts/survey.js`, the root printed once
+above the rules, so `survey`'s scan rule reads `node {{SURVEY}} <term>...` with
+no root hard-coded here. A **render token**'s value is computed per stage and differs —
 `{{NEXT}}`, `{{PONYTAIL}}`, and `{{PROFILE_LAND}}`, which `land`'s own rules
 carry as `Integration — {{PROFILE_LAND}}.`; `lib/profile.js`'s `landClause`
 fills it with `profile: land merge, no push — do that, say so, skip the
@@ -371,7 +374,7 @@ flowchart TD
     D["<b>4 · targeted scan</b><br/>survey, one or more terms<br/><i>nothing matched is a finding</i>"]
     D2{"<b>4b · did one pass cover it?</b>"}
     D4["<b>report the gap</b><br/>say what was not covered and why<br/><i>not a dispatch, and not a silence</i>"]
-    D3["<b>dispatch readers</b><br/>several in one response, one lens each<br/><i>one reader with the list where the lens is the same</i><br/><i>never a round spent asking permission to read</i><br/><i>say how many, and on which model</i>"]
+    D3["<b>dispatch readers</b><br/>one fankeel-reader per lens, one workflow<br/><i>every path:line checked before it returns</i><br/><i>one reader with the list where the lens is the same</i><br/><i>never a round spent asking permission to read</i><br/><i>say how many, and on which model</i>"]
     E{"<b>5 · classify, out loud</b><br/>measured against this repository,<br/>not against your familiarity"}
     E1["<b>spike</b><br/>survey, build"]
     E2["<b>bounded</b><br/>survey, design, build, verify, land"]
@@ -424,7 +427,7 @@ flowchart TD
     A1["say so first. Decompose, and give<br/>each piece its own cycle"]
     B["<b>2 · one approach</b><br/>trade-offs, lead with it and say why<br/><i>no abstraction for single-use code,<br/>no error handling for impossible states</i>"]
     B0{"design.mockup names a model,<br/>and this task touches a screen?"}
-    B1["<b>3 · the mockup</b><br/>one page at the model the key names,<br/>under .fankeel/build/, beside the ledger<br/><i>the gate approves the page, not the paragraph</i>"]
+    B1["<b>3 · the mockup</b><br/>one page at the model the key names,<br/>under .fankeel/build/, at the date-topic stem the ledger takes later<br/><i>the gate approves the page, not the paragraph</i>"]
     C["<b>4 · the success criterion</b><br/>the test that fails now and passes<br/>after. 'Make it work' is not one"]
     D["<b>5 · check against the map</b><br/>does this contradict a page<br/>the map lists as current?"]
     E["<b>6 · present in sections</b><br/>architecture, components, data flow,<br/>errors, testing — approve each"]

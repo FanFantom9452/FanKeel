@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-09
+last_verified: 2026-09-10
 source_of_truth: lib/docs.js, lib/map.js, lib/profile.js, scripts/layout.js, scripts/docs-check.js, scripts/docs-audit.js, skills/fankeel/SKILL.md, skills/fankeel-survey/SKILL.md
 ---
 
@@ -18,6 +18,7 @@ and the role says how long a document is meant to stay true:
 | `plan` | what is about to be done | until it lands, then it is archived |
 | `report` | a dated snapshot: audit, benchmark, meeting, a judge's ruling (`docs/judgements/`) | yes |
 | `archive` | retired; checked only that nothing current points at it | yes |
+| `fixture` | a test's own input — describes nothing about the system, checked for links and line numbers only | n/a |
 
 The two shapes that ship — `flat` and `phased` — and what happens to a markdown
 file in no bucket are stated in [the skill](../skills/fankeel/SKILL.md), under
@@ -169,7 +170,9 @@ on is the role's again: a reference page has both checked; a plan or a decision
 record has its links checked, and of its code spans only that a `path:line`
 overshot the file, never that the path is gone, since a plan names code that is
 not built yet and a decision names code that was there when it was written; an
-archive or a report is read for neither. A `path:line` in a reference page is
+archive or a report is read for neither; a fixture is read exactly as a plan
+is — links, and of its code spans only that a `path:line` overshot the file —
+since the paths it names may exist only in the scaffold its own test builds. A `path:line` in a reference page is
 checked against the code span that follows it on the same line, and one
 written without such a span is listed as unchecked rather than as broken.
 

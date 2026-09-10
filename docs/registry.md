@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-09
+last_verified: 2026-09-10
 source_of_truth: lib/registry.js, lib/station.js, lib/render.js, lib/context.js, lib/dirty.js, lib/live.js, lib/usage.js, lib/profile.js, scripts/task.js, hooks/touch.js, hooks/inject.js, hooks/carry.js, hooks/gate.js, hooks/resume.js, hooks/leave.js
 ---
 
@@ -196,7 +196,7 @@ session dies at a gate — is overwritten by the next one rather than repaired:
 the interval it measured has no end, so there is nothing to recover.
 
 None of the three reaches the injected block, which is capped at 2400 characters
-and renders its widest stage, `audit`, at 2397 — `node --test tests/render.test.js` prints the
+and renders its widest stages, `design` and `land`, at 2396 — `node --test tests/render.test.js` prints the
 figure for every stage, so the way to know it is to re-run it rather than to
 trust this line. `task.js show` prints `burn:` and `time:`, and the
 stage transition names what the stage it left cost, which is the one moment the

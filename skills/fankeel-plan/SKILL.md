@@ -35,9 +35,9 @@ missing one of those, the stage is finished.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| Setup, config or docs with no task of their own | `lib/stages.js:276` folds them in on purpose (`Fold setup and docs into the task needing them`) — a task with no matching bullet was never meant to have one. |
-| A `**Dispatch:**` line naming `sonnet` with no reason given | Only the tiers above the floor owe one — `lib/stages.js:279` (`and anything above it names why on that line`); `sonnet` needing no argument is the rule working. |
-| A plan reviewer's return holding only two kinds of line | `lib/stages.js:278` names its whole charter (`returning only promises with no task and Files blocks that disagree with their task.`) — nothing else is in its scope, so nothing else missing is a gap. |
+| Setup, config or docs with no task of their own | `lib/stages.js:278` folds them in on purpose (`Fold setup and docs into the task needing them`) — a task with no matching bullet was never meant to have one. |
+| A `**Dispatch:**` line naming `sonnet` with no reason given | Only the tiers above the floor owe one — `lib/stages.js:281` (`and anything above it names why on that line`); `sonnet` needing no argument is the rule working. |
+| A plan reviewer's return holding only two kinds of line | `lib/stages.js:280` names its whole charter (`returning only promises with no task and Files blocks that disagree with their task.`) — nothing else is in its scope, so nothing else missing is a gap. |
 
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
 
@@ -287,8 +287,9 @@ These are **plan failures**, not shorthand:
    naming no file from its task's Files block, and a path named above a fence
    that the task does not own. It exits non-zero on any of them, and the
    output line goes on the report's `lint:` slot.
-5. **One reviewer over the plan**, `sonnet`, dispatched before the gate and
-   said out loud — one, on which model. It gets three paths and a question:
+5. **One reviewer over the plan**, `subagent_type: fankeel-reviewer` — its file
+   pins `sonnet`, so no model is typed here — dispatched before the gate and
+   said out loud: one, `fankeel-reviewer`. It gets three paths and a question:
    the design, the plan, the lint output, and *which promises in the design
    have no task, and which task's Files block disagrees with its own text*.
    It returns only those lines, or `clean` — say why: every line it returns

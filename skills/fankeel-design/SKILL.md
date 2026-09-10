@@ -32,10 +32,10 @@ screen. A second approach is a catalogue, not more design.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| Only one approach presented, no rejected alternative shown | `lib/stages.js:252` calls a second one a catalogue (`not a catalogue`) — trade-offs on the one approach chosen are the design, not a comparison table. |
-| The map check returning `no conflict` with nothing else said | `lib/stages.js:249` allows exactly that (`say you checked and found none`) — a stated absence is a complete answer, not a check cut short. |
-| Config, error handling or abstraction the ask never requested, left out | `lib/stages.js:247` requires it (`Cut whatever the stated ask does not require`) — the smaller design is the correct one, not an unfinished one. |
-| A design with no mockup | `lib/stages.js:255` puts the step behind a condition (`when: 'design.mockup'`) — a project with no front end never reaches it, and on one that does, whether this task touches a screen is step 3's per-task judgement. |
+| Only one approach presented, no rejected alternative shown | `lib/stages.js:253` calls a second one a catalogue (`not a catalogue`) — trade-offs on the one approach chosen are the design, not a comparison table. |
+| The map check returning `no conflict` with nothing else said | `lib/stages.js:250` allows exactly that (`say none was found`) — a stated absence is a complete answer, not a check cut short. |
+| Config, error handling or abstraction the ask never requested, left out | `lib/stages.js:248` requires it (`Cut whatever the stated ask does not require`) — the smaller design is the correct one, not an unfinished one. |
+| A design with no mockup | `lib/stages.js:257` puts the step behind a condition (`when: 'design.mockup'`) — a project with no front end never reaches it, and on one that does, whether this task touches a screen is step 3's per-task judgement. |
 
 ## The gate never scales down
 

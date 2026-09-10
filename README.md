@@ -352,6 +352,16 @@ tree, and nothing here judges that a second time. `skills/fankeel-land/SKILL.md`
 runs it in its own step; the injected `land` rules had no room left to name it
 too.
 
+`node scripts/stage-registry.js` writes `skills/registry.json`: one entry per
+stage with the sentence that gates entering its skill, the sentence that
+says it is done, and how many of its own budgeted bytes the injected block
+spends today. It follows `eval.js`'s precedent rather than joining
+`REQUIRED_CORE` — nothing in a stage's rules or a skill names this script,
+so nothing would go looking for it there. `tests/stage-registry.test.js`
+regenerates the file and deep-equals it against what is committed: a rule
+that grew without regenerating, or a budget lowered below what a stage
+actually measures, fails there rather than drifting silently.
+
 ### Behaviour evals
 
 `evals/<case>/` holds cases in the layout `claude plugin eval` reads. That

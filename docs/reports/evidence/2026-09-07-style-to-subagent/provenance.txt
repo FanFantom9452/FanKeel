@@ -16,3 +16,7 @@ exit=0 shell_seconds=17
 exit=0 shell_seconds=35
 HEAD after: 291c030cc7f74f606efd4c6d1f892da9d02915b1
 done
+cwd: the checkout (F:/ymlab/fankeel), uncontrolled — probe.sh:18 only `cd`s into it, no pinned commit and no fresh empty directory
+settings: this run's own variable, not contamination-controlled — probe.sh:48-54 passes --settings per arm (control `{}`, styled `{ outputStyle: fankeel-terse }`) with no --setting-sources, so the operator's own user/project settings still apply underneath
+always-on flag: n/a — fankeel has none (this probes an output style, a different mechanism from a persistent always-on flag)
+budget: none, uncontrolled — no --max-budget-usd

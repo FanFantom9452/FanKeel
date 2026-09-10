@@ -9,3 +9,7 @@ exit=0 shell_seconds=361
 worktree HEAD unchanged: 86a104e1bc87f7e82eec45cb84b6e32459a32402
 worktree porcelain after:
 done
+cwd: a dedicated worktree (F:/ymlab/fankeel-ab, ab5.sh:22-23) pinned at 86a104e, isolated from the main checkout's in-progress branch — but still a full tree, not a fresh empty directory
+settings: user and project, uncontrolled — no --setting-sources or --settings flag
+always-on flag: n/a — fankeel has none
+budget: none, uncontrolled — no --max-budget-usd

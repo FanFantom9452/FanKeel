@@ -265,9 +265,15 @@ function checkDoc(root, rel, role, symbols, roots) {
             // never built, and this repository's own decision record for naming
             // a `.fankeel/memory/` that was considered and rejected.
             //
-            // Links are still checked in both. A document nobody can navigate is
-            // broken whatever its role; what it says about code is history.
-            if (role !== 'plan' && role !== 'decision' && roots.has(ref.split('/')[0])) {
+            // Never for a fixture either: it is a test's own input, and a path
+            // it names may exist only inside the scaffold its own test builds —
+            // `evals/one-call-not-agent/prompt.md` naming `lib/thing.js`, which
+            // this tree never has, is exactly that.
+            //
+            // Links are still checked in all three. A document nobody can
+            // navigate is broken whatever its role; what it says about code is
+            // history, or somebody else's tree.
+            if (role !== 'plan' && role !== 'decision' && role !== 'fixture' && roots.has(ref.split('/')[0])) {
                 out.push({ file: rel, line: lineOf(m.index), tag: 'gone', what: 'names ' + ref });
             }
             continue;
@@ -347,8 +353,8 @@ function scan(root, roles) {
         // Guessing `reference` is the loudest default, not a safe one: a project
         // keeping plans outside `docs/` on purpose gets every one of them graded
         // as a claim about the present. So it is the fallback only where there is
-        // no tree at all — a project in that state wants the checks more than the
-        // precision. `docs/documents.md:192-200` is the page this follows.
+        // no tree at all — that project wants the checks more than the precision.
+        // docs/documents.md, *Filing, and what happens when you do not*, has it.
         const role = declared || (tree ? null : 'reference');
         if (!declared && rel.split('/')[0] === docRoot) unfiled.push(rel);
         if (!role) continue;

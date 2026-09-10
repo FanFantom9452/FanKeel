@@ -3,7 +3,7 @@ name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, moving to the next stage, or the station — "show all sessions", "which sessions are still open", "clean up old sessions", "監控站". Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.58.0
 status: current
-last_verified: 2026-09-09
+last_verified: 2026-09-10
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js, lib/guard.js
 ---
 
@@ -525,10 +525,12 @@ abbreviated format produces something that looks like the format and is not it.
 The stage rules name their own skill, so this table is for the reader rather
 than for the pipeline.
 
-Which of the three holds a rule is decided by tier, tried in order: a script,
+Which of the four holds a rule is decided by tier, tried in order: a script,
 where one can check or refuse it; an anchor — a template slot, else words on the
 stage's `Read the fankeel-<stage> skill on entry:` line — where skipping it is
-silent and a later stage pays; the skill for the rest. Nothing load-bearing
+silent and a later stage pays; the skill for the rest; and the registry —
+`skills/registry.json`, generated — for what a tool checks as data: each
+stage's entry and stop condition and its byte budget. Nothing load-bearing
 lives only in a skill, this one included. `docs/pipeline.md` has the table.
 
 ## Where documents live
@@ -550,6 +552,7 @@ a document is meant to stay true, and therefore what is worth checking.
 | `plan` | what is about to be done. Stops being true the moment it lands. |
 | `report` | a dated snapshot: an audit, a benchmark, a meeting. Never edited after. |
 | `archive` | retired. Checked for one thing only — that nothing current still points at it. |
+| `fixture` | a test's own input. Describes nothing about the system, so it cannot drift from it; checked for links and line numbers only, never for symbols or paths its scaffold creates. |
 
 Two shapes ship, both taken from real repositories: `flat` (one `docs/` with a
 numbered series) and `phased` (`01-vision` through `99-archive`). Neither is
@@ -656,9 +659,9 @@ not one nested inside the other.
 `<plugin>` is two directories up from this file — resolve `../../scripts/orient.js`
 against it rather than searching for the path.
 
-It reports where the registry is or would be, and then either the projects under
-this directory or, for a single project, the directories inside it — each with its
-git branch, how dirty it is, and how many files. It writes nothing.
+It reports where the registry is or would be, then the project or projects it
+found — each with its git branch, how dirty it is, and how many files — and, for
+a single project, the directories inside it with their file counts. It writes nothing.
 
 Run it before the options below, and show what came back. Two rules about how it
 feeds the next step:
@@ -805,6 +808,36 @@ the system prompt and is sent verbatim on every request, so unlike anything
 injected into the conversation it cannot be diluted by compaction, and it is one
 copy however long the session runs.
 
+## Calibration
+
+Three rules sit above the ones a stage carries, because they govern how the
+rules themselves are read rather than what any one stage produces.
+
+**A gate on every stage is a treadmill.** The gate belongs at a stage's end —
+see "At the end of a stage, ask" above — never partway through one. A rule
+that would stop mid-stage to check in has invented a second gate nothing
+asked for.
+
+**Two rules in conflict name both.** State which one wins and why, in the
+turn that hits the conflict, rather than quietly following one and dropping
+the other with nothing on screen to say it happened.
+
+**Where a rule and the shape conflict, the constraint wins and the shape
+stays.** `ALWAYS[2]` carries this for every stage. The output template is the
+cheaper place to spend room — it is read once by the model and never by the
+user — so it is never rewritten to dodge a rule, and a rule is never cut to
+keep a template line intact.
+
+The four always-on rules exist because something specific broke without
+them, not for balance:
+
+| rule | cause | Bad → Good | exemptions |
+|---|---|---|---|
+| `ALWAYS[0]` — ask with `AskUserQuestion`; option one is the approval; `(Recommended)` is a label, never a position | a real design stage ended with three numbered options in a paragraph — asking, and also the failure: the options were on screen and the user still had to type one out (`lib/stages.js`, the comment above `ALWAYS`) | Bad: "Here are three options: 1)… 2)… 3)… which would you like?" typed in prose. Good: an `AskUserQuestion` call, option one wired to advance, `(Recommended)` on whichever finding backs it | none |
+| `ALWAYS[1]` — background sits in the option descriptions, never in the stem | `background inside the question` was read as *inside the question stem*, and a design stage asked a 491-character question (`tests/stages.test.js`, the comment above this rule's test) | Bad: a one-line stem carrying the whole rationale ahead of the options. Good: a short stem, the rationale moved into the description of the option it is about | none |
+| `ALWAYS[2]` — say what you actually did, and a dispatch before it goes: how many, which model | only `survey` said what it was sending; a fan-out nobody announced is spend the user is paying for and could not see coming (`lib/stages.js`, the comment above `ALWAYS`) | Bad: naming one model in the wrap-up, after four subagents already ran. Good: "dispatching 4 readers, sonnet" stated before they go | none — covers every stage that dispatches |
+| `ALWAYS[3]` — literal characters, never `\uXXXX` escapes; a code concept named in code, not translated | two of seventeen `AskUserQuestion` calls in one real session serialised their Chinese as unicode escapes, corrupted mid-word, and did not parse (`lib/stages.js`, the comment above `ALWAYS`) | Bad: `這樣` inside a tool call's JSON string. Good: writing `這樣` directly | none |
+
 ## Subagents
 
 A subagent starts with its own context and none of this one's, so a
@@ -924,7 +957,10 @@ Five rules that make it work, each of which fails silently when missed:
   in sequence — the cost of parallelism with none of it.
 - **Always pass the model, and `sonnet` is the floor.** An omitted model
   inherits this session's, which is usually the most capable and most expensive
-  one available. Inside a Workflow script the same rule holds: every `agent`
+  one available. The one exception is a dispatch whose `subagent_type` is an
+  agent file that pins its own — `fankeel-reviewer` for plan's, build's and
+  verify's reviewers — where omitting it is the point: the file's `model:` is
+  the floor the harness itself enforces. Inside a Workflow script the same rule holds: every `agent`
   call carries `model` and `sonnet` is the floor there too; the authoring
   reference's advice to omit it and inherit is the host's default, not this
   plugin's.
@@ -1037,8 +1073,8 @@ whose session has exited never blocks — liveness is that session's own file un
 `sessions/` in the config directory **it recorded**, plus a live process behind
 its pid. `CLAUDE_CONFIG_DIR` moves that directory, so each entry names its own and
 readers check the neighbour against the one the neighbour named; a directory that
-cannot be read counts as live, while a session that named no directory is checked
-against the one already scanned and can be judged dead there. A terminal
+cannot be read counts as live, while a session that named no directory, or the
+one already scanned, is judged by that scan only when the scan is known good. A terminal
 that is gone holds nothing shut. And when both sessions hold the file, the older
 task holds and the newer yields, so two sessions that both reached it cannot block
 each other into a stalemate.

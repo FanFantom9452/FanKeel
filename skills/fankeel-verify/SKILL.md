@@ -34,9 +34,9 @@ around this one.
 
 | Looks like a finding | Why it is not |
 |---|---|
-| A defeated row sent to `build` instead of fixed here | `lib/stages.js:322` requires exactly that (`Anything half-built sends this back to build`) — a fix with its own review range is build's commit, never verify's. |
-| An adversary returning only the rows it defeated | Its charter is that scope alone — `lib/stages.js:325` (`ask only for the rows it defeats`) — a clean pass elsewhere is not it skipping anything. |
-| A coverage line reading `9 of 21`, not every page | `lib/stages.js:324` requires the denominator stated, not every page read (`nine of twenty-one pages`) — that is the complete claim, not a shortfall. |
+| A defeated row sent to `build` instead of fixed here | `lib/stages.js:326` requires exactly that (`Anything half-built sends this back to build`) — a fix with its own review range is build's commit, never verify's. |
+| An adversary returning only the rows it defeated | Its charter is that scope alone — `lib/stages.js:329` (`keep only what it defeats`) — a clean pass elsewhere is not it skipping anything. |
+| A coverage line reading `9 of 21`, not every page | `lib/stages.js:328` requires the denominator stated, not every page read (`nine of twenty-one pages`) — that is the complete claim, not a shortfall. |
 
 ## The iron law
 
@@ -202,6 +202,9 @@ link between a claim and the evidence beside it rather than at the conclusion.
 
 It gets **paths, never a paste**, and is asked only for the rows it defeats — say
 why, because every line it returns lands here and is re-read on every later turn.
+Dispatch it as `subagent_type: fankeel-reviewer` too — the same agent as
+build's per-task reviewer — and let its file pin the model rather than
+typing one here.
 
 It **reads the method rather than probing it.** Red-green belongs to this session
 and is already in the table above, and an adversary that mutates the tree cannot
