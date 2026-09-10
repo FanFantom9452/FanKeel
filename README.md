@@ -193,8 +193,7 @@ claude plugin validate .
 `lib/` is pure logic, tested directly; `hooks/` is where stdin, stdout and process
 exit live, and every hook exits 0 on every path, because a hook that throws blocks
 the thing it was called for and a plugin that can wedge your terminal is worse than
-no plugin. The four scripts that keep a written claim from drifting away from what
-it describes — `todo-check.js`, `version.js`, `skills-check.js` and
-`stage-registry.js` — are in [docs/development.md](docs/development.md); the
-behaviour eval and the six ways an operator's own machine can leak into a run are
-in [docs/evals.md](docs/evals.md).
+no plugin. `todo-check.js`, `version.js`, `skills-check.js` and
+`stage-registry.js` each hold one written claim to the code it describes, and
+[docs/development.md](docs/development.md) says what each of them checks. The
+behaviour eval and its runner are in [docs/evals.md](docs/evals.md).

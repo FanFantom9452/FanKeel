@@ -140,7 +140,7 @@ is corrected by the next one, not by rewriting this.
 
 | | |
 |---|---|
-| `node scripts/docs-check.js` | every reference still resolves. A second to run, before every land. |
+| `node scripts/docs-check.js` | every reference still resolves. A second to run, and the `verify` and `audit` rules call for it. |
 | `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged, an environment nothing can rebuild or run, the weight of what is ignored, directories holding no files. Three of the five need git and two do not, so it answers outside a repository too. It never deletes. |
 | `node scripts/docs-audit.js` | the fortnightly deep pass: what has stopped being true, and which two pages disagree. `/fankeel-audit` is the whole sweep — it runs all three of these, reads the shortlist, offers the cleanup. |
 
