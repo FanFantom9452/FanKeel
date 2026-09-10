@@ -60,22 +60,11 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- subagent brief 的 `RETURN_RULES` 三條都沒說不得改動工作樹，09-09 的教訓正是光靠文字擋不住，所以它是 hook 之外的提醒層而非防線；777/1400 字元有餘裕 — [lib/render.js](lib/render.js).
+_(nothing. The one entry that stood here on 2026-09-10 landed on branch todo-eight.)_
 
 ## Needs a decision
-- `renderResume` 沒有量它的測試：`tests/render.test.js` 量的是 `render()`，`docs/pipeline.md` 的 resume 字數帶每次人手量，09-10 一次錯三處；要不要加斷言、cap 定多少 — [lib/render.js](lib/render.js).
 
-- 四個例外 case 首跑（opus）正向 grader 全掉：stage-skip 沒說跳過什麼、pipe 沒跑測試、Task 一次都沒被叫；是 prompt 沒逼出行為、grader 太窄，還是模型 — [README.md](README.md).
-
-- 整體 prompt 預算：`skills/registry.json` 每 stage 有 `prompt_byte_budget`，整個外掛的總預算沒有欄位；要不要加、加在哪 — [簡報 §1.3](docs/improvement-brief.md#13-registryjson-的-schema).
-
-- 條件載入到「節」的粒度：build 依 class 與有無 plan 載入不同段落，今天 spike 的 build 付 architectural 的 token — [簡報 §2.2](docs/improvement-brief.md#22-條件載入矩陣fankeel-最缺的那個機制).
-
-- 16 行 pattern skill 的極簡形式：stage skill 較重且混了人類與模型兩種讀者；`surgical-patch` 證明 16 行夠 — [簡報 §1.4](docs/improvement-brief.md#14-16-行-pattern-skill-的極簡形式).
-
-- subagent 的 Bash 與 PowerShell 沒有任何 hook 擋：`guard.js` 只掛 `Edit|Write|NotebookEdit`，一句 `git stash` 或 `Remove-Item` 就收走並行 reader 的工作樹；白名單該擋到哪 — [plugin.json](.claude-plugin/plugin.json).
-
-- verify 的「One verifier per task」沒寫 `subagent_type`，落到全工具的 general-purpose，證據表卻要它 red-green；Workflow 段那個寫檔要求可省（pipeline 直接收回傳值），省掉就不必新增 agent — [verify SKILL](skills/fankeel-verify/SKILL.md).
+_(nothing. The seven entries that stood here were each put to `/fankeel-ask`; the records are [docs/judgements/](docs/judgements/) dated 2026-09-10, and what they decided is [docs/plans/2026-09-10-todo-eight.md](docs/plans/2026-09-10-todo-eight.md).)_
 
 ## Waiting
 
@@ -106,3 +95,9 @@ entry waited for actually happening. It shrank when somebody read it.
 - `lib/skills.js` 的 `acceptedFlags` 讀不到 `scripts/judge.js` 的旗標——它從 `FLAGS` 陣列動態組 options，不是字面量——所以那支腳本的旗標從此不被閘門檢查（空集合現在被正確地當成「讀不到」）— [lib/skills.js](lib/skills.js). lifts when: 第二支腳本用同樣的形狀宣告旗標. 09-09.
 
 - design class：mockup 已落地，其餘是另一個 architectural 任務 — [簡報 §4.1](docs/improvement-brief.md#41-design-階段的-mockup-步驟前端任務). lifts when: 下一個前端任務出現，執行 `docs/plans/2026-09-09-design-class-prompt.md`. 09-10.
+
+- `stage-skip-said` 是四個例外 case 裡唯一的真訊號，但 n=1 分不出 prompt 與模型 — [evals/stage-skip-said/case.yaml](evals/stage-skip-said/case.yaml). lifts when: 同一個 commit 用 opus 連跑五次，約 $2.8. 09-11.
+
+- verify 與 build 的 rationale 沒拆完：沒人驗過模型會不會跟著 SKILL.md 的相對連結去讀 rationale.md，沒驗就搬等於丟掉理由 — [skills/fankeel-verify/SKILL.md](skills/fankeel-verify/SKILL.md). lifts when: 一次 headless 探測證實連結會被跟. 09-11.
+
+- `permissions.deny` 是 docs/collisions.md 給操作者的那一步，但它在 `defaultMode: "auto"` 與 bypassPermissions 底下還生不生效沒人驗過 — [docs/collisions.md](docs/collisions.md). lifts when: 一次探測證實它在 auto 模式下確實攔得住. 09-11.
