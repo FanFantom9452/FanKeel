@@ -292,7 +292,7 @@ test('fankeel-build: every ledger mention sits inside a paragraph that names the
 
 `build` 那半：`skills/fankeel-build/SKILL.md` 現在還有帶日期的量測句散在 `:37`、`:128`、`:214`、`:323-324`、`:360` 一帶。逐句讀過再搬——一句話有日期不代表它是量測，判斷 5 要搬的是「某年某月量到某個數字」那種，不是「2026-08-29 那次 rot」那種指事件的。搬完 `skills/fankeel-build/SKILL.md` 的行數要低於 500，`tests/skills.test.js` 若有行數斷言要一併看。
 
-`tests/skills.test.js:186-195` 已經定好契約，照它做：檔案要存在、標題要與 SKILL.md 的相同、SKILL.md 要在前言恰好連 `[rationale.md](rationale.md)` 一次。看 `skills/fankeel-build/rationale.md` 與 `skills/fankeel-plan/rationale.md` 的既有寫法照做，不要自創格式。
+`tests/skills.test.js:186-195` 已經定好契約，照它做：檔案要存在、標題要與 SKILL.md 的相同、SKILL.md 要在前言恰好帶一次 rationale 的相對連結，形狀由 `tests/skills.test.js:194` 的 regex 決定。看 `skills/fankeel-build/rationale.md` 與 `skills/fankeel-plan/rationale.md` 的既有寫法照做，不要自創格式。
 
 `:180` 的註解現在寫「The other four stage skills have no rationale to move — measured」，拆完之後剩三支，數字與名單都要改。
 
