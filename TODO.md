@@ -71,6 +71,10 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 16 行 pattern skill 的極簡形式：stage skill 較重且混了人類與模型兩種讀者；`surgical-patch` 證明 16 行夠 — [簡報 §1.4](docs/improvement-brief.md#14-16-行-pattern-skill-的極簡形式).
 
+- subagent 的 Bash 沒有任何 hook 擋：`guard.js` 只掛 `Edit|Write|NotebookEdit`，reader/judge/reviewer 三個都留 Bash，verify 並行四個時一句 `git stash` 就收走別人的工作樹；白名單該擋到哪 — [plugin.json](.claude-plugin/plugin.json).
+
+- verify 的「One verifier per task」沒寫 `subagent_type`，落到全工具的 general-purpose，證據表卻要它 red-green；改 `fankeel-reader` 由主 session 寫檔，或另立 `fankeel-verifier` — [verify SKILL](skills/fankeel-verify/SKILL.md).
+
 ## Waiting
 
 - Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it. lifts when: a run is seen ignoring one. 09-06.
