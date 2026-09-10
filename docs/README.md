@@ -122,6 +122,13 @@ is corrected by the next one, not by rewriting this.
 
 | question | record |
 |---|---|
+| 判斷 1：`renderResume` 要不要長度斷言，cap 定多少 | [judgements/2026-09-10-resume-assertion.md](judgements/2026-09-10-resume-assertion.md) — *judged 2026-09-10, fable* |
+| 判斷 2：四個例外 eval case 首跑正向 grader 全掉，歸因在哪 | [judgements/2026-09-10-exception-cases.md](judgements/2026-09-10-exception-cases.md) — *judged 2026-09-10, fable* |
+| 判斷 3：整個外掛的總 prompt 預算，要不要一個欄位 | [judgements/2026-09-10-total-budget.md](judgements/2026-09-10-total-budget.md) — *judged 2026-09-10, fable* |
+| 判斷 4：條件載入要不要做到「節」的粒度 | [judgements/2026-09-10-section-loading.md](judgements/2026-09-10-section-loading.md) — *judged 2026-09-10, fable* |
+| 判斷 5：16 行 pattern skill 的極簡形式，要不要採用 | [judgements/2026-09-10-pattern-skill.md](judgements/2026-09-10-pattern-skill.md) — *judged 2026-09-10, fable* |
+| 判斷 6：subagent 的 Bash 與 PowerShell，白名單該擋到哪 | [judgements/2026-09-10-shell-whitelist.md](judgements/2026-09-10-shell-whitelist.md) — *judged 2026-09-10, fable* |
+| 判斷 7：verify 的 verifier 要釘哪個 agent，Workflow 的寫檔要求要不要留 | [judgements/2026-09-10-verifier-agent.md](judgements/2026-09-10-verifier-agent.md) — *judged 2026-09-10, fable* |
 
 ## The three scanners
 
