@@ -60,11 +60,11 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-_(nothing. The one entry that stood here closed on 2026-09-11.)_
+- 三處兩頁講同一個機制而兩邊都不讓路：60 上限的兩半、guard 的自派工盲點、`judge.js record` — [docs/collisions.md](docs/collisions.md). 各補一個指標，不刪句子。
 
 ## Needs a decision
 
-_(nothing. The seven entries that stood here were each put to `/fankeel-ask` on 2026-09-10 and closed on 2026-09-11. These two lines are prose, not bullets — `todo-check` counts only lines beginning with a dash, so a link here would never be graded, and there is deliberately none.)_
+- `source_of_truth` 沒有任何東西在驗證：五頁在裡面寫散文，25 個 `.js` 被兩頁以上 reference 頁同時宣告 — [docs/documents.md](docs/documents.md). 要不要驗證，要不要有單一擁有者。
 
 ## Waiting
 
