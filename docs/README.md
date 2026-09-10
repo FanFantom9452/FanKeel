@@ -34,7 +34,7 @@ here.
 | Why delegating a wide search saves and delegating a long report does not | [subagents.md](subagents.md) |
 | When to dispatch one, what the dispatcher has to say out loud, and when a pipe already removes what you are avoiding | [subagents.md](subagents.md) — *when to dispatch one* |
 | When a scripted fan-out beats parallel dispatches, and why you may offer one but not start it | [subagents.md](subagents.md) — *the one thing four dispatches cannot do* |
-| When `/fankeel-ask` is worth the money, and why no rule anywhere ever suggests it | [subagents.md](subagents.md) — *when a stronger model is worth the money* |
+| When `/fankeel-ask` is worth the money, and why no rule anywhere ever suggests it | [subagents.md](subagents.md) — *asking a stronger model, when you decide it is worth it* |
 | What a plan is checked for before its gate, and what an implementer's brief file holds | [pipeline.md](pipeline.md) — *plan* and *build* |
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
 | Every session on this machine, where the page finds the registries, and what `stale` means | [station.md](station.md) |

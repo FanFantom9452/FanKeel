@@ -372,7 +372,7 @@ A fan-out is a cap somebody chose, and it fails the same way.
 not assumed — so a dispatched implementer's edits are claimed for the task that
 dispatched it and the collision warning keeps covering them.
 
-## When a stronger model is worth the money
+## Asking a stronger model, when you decide it is worth it
 
 `/fankeel-ask` interrupts whatever stage you are in, puts one question to a
 one-shot judge running on whatever `judge.model` says — Fable unless the
