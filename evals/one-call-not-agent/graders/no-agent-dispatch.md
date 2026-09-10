@@ -1,6 +1,6 @@
 ---
 type: tool_used
-tool: Agent
+tool: Task
 max: 0
 ---
 One named file is one `Read` call away. Dispatching a subagent to read it

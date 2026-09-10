@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { ALWAYS, STAGES, NAMES, FULL_ROUTE, byName, nextStage, rulesFor, templateFor } = require('../lib/stages.js');
+const { KEYS } = require('../lib/profile.js');
 const { render } = require('../lib/render.js');
 const { MAX_WORD } = require('../lib/badge.js');
 
@@ -822,6 +823,10 @@ test('every rule reaches the injected block, and removing one drops only it', ()
     }
 
     for (const w of (found.when || [])) {
+      // A key no profile carries is a rule nobody can switch on — the
+      // synthesised value below would hide exactly that.
+      const key = w.when.replace(/^!/, '');
+      assert.ok(Object.prototype.hasOwnProperty.call(KEYS, key), stage + ': when(' + w.when + ') names a key no profile carries');
       const values = whenValues(w.when);
       const out = render(entryFor(stage, values));
       assert.ok(out.includes(anchor(w.text)), stage + ': when(' + w.when + ') does not reach the block');

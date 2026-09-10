@@ -525,10 +525,12 @@ abbreviated format produces something that looks like the format and is not it.
 The stage rules name their own skill, so this table is for the reader rather
 than for the pipeline.
 
-Which of the three holds a rule is decided by tier, tried in order: a script,
+Which of the four holds a rule is decided by tier, tried in order: a script,
 where one can check or refuse it; an anchor — a template slot, else words on the
 stage's `Read the fankeel-<stage> skill on entry:` line — where skipping it is
-silent and a later stage pays; the skill for the rest. Nothing load-bearing
+silent and a later stage pays; the skill for the rest; and the registry —
+`skills/registry.json`, generated — for what a tool checks as data: each
+stage's entry and stop condition and its byte budget. Nothing load-bearing
 lives only in a skill, this one included. `docs/pipeline.md` has the table.
 
 ## Where documents live
@@ -955,7 +957,10 @@ Five rules that make it work, each of which fails silently when missed:
   in sequence — the cost of parallelism with none of it.
 - **Always pass the model, and `sonnet` is the floor.** An omitted model
   inherits this session's, which is usually the most capable and most expensive
-  one available. Inside a Workflow script the same rule holds: every `agent`
+  one available. The one exception is a dispatch whose `subagent_type` is an
+  agent file that pins its own — `fankeel-reviewer` for build's reviewer and
+  verify's adversary — where omitting it is the point: the file's `model:` is
+  the floor the harness itself enforces. Inside a Workflow script the same rule holds: every `agent`
   call carries `model` and `sonnet` is the floor there too; the authoring
   reference's advice to omit it and inherit is the host's default, not this
   plugin's.
