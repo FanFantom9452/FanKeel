@@ -113,21 +113,28 @@ rename: `eval-subagent-no-entry.json` records `dispatches-a-reader` as
 
 So `dispatches-a-reader` failed for the reason the judgement observed and then
 set aside: the model read five one-line files inline and never attempted a
-dispatch at all. Whether it could have is a separate open question — each
-`prompt.md` passes `Task` in its `allowed_tools`, a dispatch is logged as
-`Agent`, and nobody has checked which spelling that flag wants. If it wants the
-one these cases do not pass, the model was never able to dispatch and the case
-measures nothing. That needs one run to settle and is filed under `## Waiting`
-in TODO.md.
+dispatch at all. Whether it could have is a separate open question — the CLI's
+registry spells the dispatch tool `Task`, a call is logged as `Agent`, and
+nobody has checked which of the two `--allowedTools` wants. If it wants the one
+a case does not pass, the model was never able to dispatch and the case measures
+nothing. That needs one run to settle and is filed under `## Waiting` in TODO.md.
 
-One line of the recorded runs points away from that, without settling it.
-`eval-stage-skip-said` called `ToolSearch`, which its `allowed_tools` does not
-list, and the call succeeded — so on this CLI the flag did not act as a filter
-on the tool set in that run. If it never does, the dispatch tool was present in
-all five runs under either spelling and the model simply chose not to use it.
+These five runs do not settle it, but they do bracket it, and that is why the
+three `prompt.md` files were put back to `Agent` on 2026-09-11 rather than left
+at `Task`. 596eb21 created them with `Agent`; 15daa59 flipped them to `Task` at
+20:43 on the same reasoning it used on the graders, which this branch has
+recorded as wrong. So the four runs at 20:10-20:11 ran under `Agent` and the
+20:43 re-run under `Task` — the same case, `subagent-no-entry`, under each — and
+the two are indistinguishable: the same twenty-nine-name registry, the same five
+`Read` calls, no dispatch either way. Leaving `Task` in place would have been
+keeping one commit's mistake in the two files it was not reverted in.
+
+One more line of the recorded runs points the same way without settling
+anything. `eval-stage-skip-said` called `ToolSearch`, which its `allowed_tools`
+does not list, and the call succeeded with an empty `permission_denials` — so on
+this CLI the flag did not act as a filter on the tool set in that run.
 `ToolSearch` is the loader for deferred tools and may be exempt for that reason,
-which is why this is a hint rather than the answer. The probe the Waiting entry
-asks for is still the thing that decides it.
+which is why this is a hint rather than the answer.
 
 Only one grader changed on this branch: `pipe-or-grep` became `ran-the-suite`.
 It demanded a pipe into grep, tail, head or wc, while the recorded run answered

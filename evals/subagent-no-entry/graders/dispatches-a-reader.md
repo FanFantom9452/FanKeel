@@ -10,7 +10,8 @@ the dispatched reader does with it — which files it opens, in what order —
 never reaches this grader at all.
 
 `Agent` is what two transcripts of CLI 2.1.267 on this machine actually record
-for a dispatch, one call each and none named `Task`. The available-tool list a
-headless eval session prints at start says `Task` instead; that list is what
-the session was offered, not what a call is logged as, and mistaking the two
-renamed this grader the wrong way on 2026-09-10.
+for a dispatch, one call each and none named `Task`. The list a headless eval
+session prints at start says `Task` instead; that list is the CLI's catalogue
+of registered tools — the same twenty-nine names in every recorded run,
+whatever `allowed_tools` held — not what a call is logged as, and mistaking
+the two renamed this grader the wrong way on 2026-09-10.

@@ -9,4 +9,5 @@ precisely so this assertion has something to fail against.
 
 `Agent` is the name a real dispatch is logged under in this harness's
 `tool_use` blocks, which is what `type: tool_used` matches — not the name in
-the available-tool list a headless session prints at start, which says `Task`.
+the list a headless session prints at start, which says `Task` and is the
+CLI's catalogue of registered tools rather than this run's.

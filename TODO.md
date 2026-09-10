@@ -102,4 +102,4 @@ _(nothing. The seven entries that stood here were each put to `/fankeel-ask` on 
 
 - `permissions.deny` 是 docs/collisions.md 給操作者的那一步，但它在 `defaultMode: "auto"` 與 bypassPermissions 底下還生不生效沒人驗過 — [docs/collisions.md](docs/collisions.md). lifts when: 一次探測證實它在 auto 模式下確實攔得住. 09-11.
 
-- 三個 eval case 的 `allowed_tools` 傳 `Task`，但真實派工被記成 `Agent`；模型從沒派工，可能就是那個拼法沒開成工具 — [evals/subagent-no-entry/prompt.md](evals/subagent-no-entry/prompt.md). lifts when: 一次跑動證實哪個拼法開得起派工工具. 09-11.
+- `--allowedTools` 吃哪個拼法沒人驗過：CLI 註冊表叫 `Task`，真實派工記成 `Agent`，兩種各跑過一次都沒派工 — [evals/subagent-no-entry/prompt.md](evals/subagent-no-entry/prompt.md). lifts when: 一次強制派工的跑動分出哪個拼法開得起工具. 09-11.
