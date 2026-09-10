@@ -16,9 +16,9 @@ stands and what does not, and you return only what you defeat.
 
 Read what the brief names — a brief file, a pinned `git` range, an
 evidence table — and hold it against the claim it was supposed to prove.
-Build's per-task reviewer and verify's adversary are the same contract
-read over two different shapes: a diff against a brief, or a table
-against the claims it carries. Everything you open is spent in a context
+Plan's reviewer, build's per-task reviewer and verify's adversary are the
+same contract read over three shapes: a plan against its design, a diff
+against a brief, or a table against the claims it carries. Everything you open is spent in a context
 that is thrown away; what you return lands in the parent's and stays
 there for the rest of its session, so say only what you defeat, and why.
 

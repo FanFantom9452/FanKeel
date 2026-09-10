@@ -36,8 +36,9 @@ the harness rather than left to a rule somebody has to remember. Bash stays
 on the list for `git` — and, for the reader, this plugin's own scripts — a
 named residual rather than a claim that any of the three cannot write anything.
 
-`fankeel-reader` runs at `model: sonnet`, the floor survey's stage rule and the
-verify and audit skills ask their reader fan-outs to use — a `subagent_type`
+`fankeel-reader` runs at `model: sonnet`, the floor the survey, verify and audit
+skills ask their reader fan-outs to use (survey's stage rule names the type, no
+model) — a `subagent_type`
 that is structurally read-only standing in for what those dispatches used to
 send as `general-purpose`.
 
@@ -76,8 +77,8 @@ per-task reviewer and verify's adversary, all three of which dispatch
 from `fankeel-reader` is not the tool list — both carry the same four — but
 the shape of the question: a reader is asked what a file says, a reviewer
 is asked what a diff or a table gets wrong, and it returns only what it
-defeats. This is also the only floor the harness enforces rather than a
-rule someone has to remember — the literal `sonnet`, not `dispatch.floor`,
+defeats. This is also the one dispatch where nobody types a model at all,
+so the file's pin is the only floor — the literal `sonnet`, not `dispatch.floor`,
 which nothing in `agents/` or `hooks/` reads: `SubagentStart`'s payload
 carries no model (`agent_id`, `agent_type`, `session_id`, `cwd`), so a hook
 cannot see, and cannot check, what a dispatch asked for — the agent file's
