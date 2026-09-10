@@ -60,11 +60,11 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-_(nothing. The one entry that stood here on 2026-09-10 landed on branch todo-eight.)_
+_(nothing. The one entry that stood here closed on 2026-09-11.)_
 
 ## Needs a decision
 
-_(nothing. The seven entries that stood here were each put to `/fankeel-ask`; the records are [docs/judgements/](docs/judgements/) dated 2026-09-10, and what they decided is [docs/plans/2026-09-10-todo-eight.md](docs/plans/2026-09-10-todo-eight.md).)_
+_(nothing. The seven entries that stood here were each put to `/fankeel-ask` on 2026-09-10 and closed on 2026-09-11. These two lines are prose, not bullets — `todo-check` counts only lines beginning with a dash, so a link here would never be graded, and there is deliberately none.)_
 
 ## Waiting
 
