@@ -155,8 +155,14 @@ curve，也拿掉了 agent 的美元、request 數與耗時。那條 curve 出�
   `.fankeel/build/2026-09-11-backlog-all/mockup.html`（第二版）。
 - context 折線只畫一條線。x 是時間，y 是每個 request 的 context（input 加 cache read
   加 cache write），資料是 `summarise()`（`lib/usage.js:59`）本來就收集的
-  `byRequest`。`moves` 的階段邊界畫成直線，派工送出與回來畫成點，壓縮造成的下降一眼
-  看得出來。沒有時間戳記的 request 不畫，寫 `N requests with no time`。超過 240 點就
+  `byRequest`。階段邊界畫成直線，派工送出與回來畫成點，壓縮造成的下降一眼看得出來。
+- 階段邊界的時間取 transcript 裡 `task.js start|stage|route` 那個指令的時間戳記；
+  transcript 裡沒有指令時才退回 `moves`。`moves` 記的是 hook 第一次看到變化的時間，
+  第二版 mockup 在這個 session 量到：`start` 在 17:12:35，`moves` 記的 survey 起點
+  卻是 17:31:09，晚了 19 分鐘。
+- 美元、tokens、秒數三欄用最大餘數法捨入，所以每一個印出來的總數都等於它下面各列的
+  和。直接四捨五入會差一分錢：13 列的和是 $10.77，總數卻印成 $10.78。
+- `spanOf()` 改成 export，station 直接用它，不另外寫一份同樣的邏輯。沒有時間戳記的 request 不畫，寫 `N requests with no time`。超過 240 點就
   降取樣，並保留峰值。
 - 派工每一列加上耗時、tokens、美元。tokens 與美元來自那個 agent 自己的 transcript
   （`agent-<id>.jsonl`，用 `summarise(..., {sidechain: true})` 加 `prices.costOf()`），
