@@ -38,6 +38,23 @@ test('a tool result over 20,000 chars speaks once', () => {
   assert.match(parsed.hookSpecificOutput.additionalContext, /Bash returned 30000 chars into this context/);
 });
 
+test('exactly 20,000 chars says nothing', () => {
+  const root = tmp();
+  const cfg = path.join(root, 'cfg');
+  seed(root, MINE);
+  const payload = { session_id: MINE, cwd: root, tool_name: 'Bash', tool_response: 'x'.repeat(20000) };
+  assert.equal(run(root, cfg, payload), '');
+});
+
+test('20,001 chars speaks once', () => {
+  const root = tmp();
+  const cfg = path.join(root, 'cfg');
+  seed(root, MINE);
+  const payload = { session_id: MINE, cwd: root, tool_name: 'Bash', tool_response: 'x'.repeat(20001) };
+  const parsed = JSON.parse(run(root, cfg, payload));
+  assert.match(parsed.hookSpecificOutput.additionalContext, /Bash returned 20001 chars into this context/);
+});
+
 test('1,000 chars says nothing', () => {
   const root = tmp();
   const cfg = path.join(root, 'cfg');
