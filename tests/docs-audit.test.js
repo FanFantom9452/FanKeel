@@ -16,6 +16,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 
 const docs = require('../lib/docs.js');
 const audit = require('../scripts/docs-audit.js');
@@ -363,6 +364,32 @@ test('a landed plan touched today is held back by the settle period', () => {
     'lib/badge.js': 'x\n',
   }), 'flat');
   assert.deepEqual(audit.sweep(root, audit.DEFAULT_SINCE, NOW).landed, []);
+});
+
+// A plan whose work was a deletion names a path that is gone, and `pointsAt()`
+// files a gone path as unbuilt — so the plans that retired the station skill
+// stayed open for good. A path git has seen deleted is the plan's work done;
+// one that never existed still holds its plan open. The commits are back-dated
+// because with a repository the dates come from the log, not from mtime.
+test('a plan naming a file git has seen deleted can land; one never built still cannot', () => {
+  const root = withTree(tree({
+    'docs/plans/2026-01-01-x.md': { body: 'keep `lib/badge.js`, delete `lib/old.js`\n', age: 60 },
+    'docs/plans/2026-01-02-y.md': { body: 'keep `lib/badge.js`, add `lib/future.js`\n', age: 60 },
+    'lib/badge.js': 'x\n',
+    'lib/old.js': 'x\n',
+  }), 'flat');
+  const at = new Date(daysAgo(60)).toISOString();
+  const env = Object.assign({}, process.env, { GIT_AUTHOR_DATE: at, GIT_COMMITTER_DATE: at });
+  const git = (args) => execFileSync('git', args, { cwd: root, env, stdio: 'ignore' });
+  git(['init', '-q']);
+  git(['config', 'user.email', 'test@example.invalid']);
+  git(['config', 'user.name', 'test']);
+  git(['config', 'commit.gpgsign', 'false']);
+  git(['add', '-A']);
+  git(['commit', '-q', '-m', 'one']);
+  git(['rm', '-q', 'lib/old.js']);
+  git(['commit', '-q', '-m', 'two']);
+  assert.deepEqual(sweep(root).landed.map((l) => l.file), ['docs/plans/2026-01-01-x.md']);
 });
 
 // --- the index --------------------------------------------------------------

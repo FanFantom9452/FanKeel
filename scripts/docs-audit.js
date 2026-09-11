@@ -128,6 +128,24 @@ function commitTimes(root) {
     return times;
 }
 
+// Every path a commit has deleted. `pointsAt()` files a path that is not on
+// disk as unbuilt, and a plan whose work was a deletion names exactly such a
+// path — so without this the plans that retired a file stayed open for good,
+// the four that retired the station skill among them. One `git log` for the
+// whole tree, for the reason `commitTimes` gives; outside a repository, or when
+// git fails, nothing counts as deleted and landed reads as it always did.
+function deletedPaths(root) {
+    let out;
+    try {
+        out = execFileSync('git', ['log', '--diff-filter=D', '--format=', '--name-only', '--no-renames', '-n', String(HISTORY)], {
+            cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'],
+        });
+    } catch (e) {
+        return new Set();
+    }
+    return new Set(out.split('\n').map((l) => l.trim()).filter(Boolean));
+}
+
 // Modification time, for a directory that is not a repository. Worse than the
 // log — a fresh clone rewrites every mtime — but a working tree with no history
 // is exactly the case where there is no better answer, and refusing to run is
@@ -516,12 +534,16 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     // has touched it since. Reported as a candidate and never moved: `land`
     // archives plans, and only after asking.
     const landed = [];
+    const gone = deletedPaths(root);
     for (const rel of markdown) {
         if (docs.roleOf(tree, rel) !== 'plan') continue;
         const at = dates.at(rel);
         if (!at || daysBetween(now, at) < settled) continue;
         const { code: named, unbuilt } = points.get(rel);
-        if (!named.length || unbuilt.length) continue;
+        // `unbuilt` still means "not on disk now". What changes is how this reads
+        // it: a path git has seen deleted is the plan's work done, not its work
+        // waiting, so only a path that never existed holds the plan open.
+        if (!named.length || unbuilt.some((p) => !gone.has(p))) continue;
         landed.push({ file: rel, age: daysBetween(now, at), named: named.length });
     }
     landed.sort((a, b) => b.age - a.age);
