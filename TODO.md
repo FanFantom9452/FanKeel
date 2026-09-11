@@ -62,9 +62,9 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 四條 `path:line` 沒有同行引文，所以 `quoteBeside` 不檢查它們的行號 — [docs/collisions.md](docs/collisions.md). 三條在那裡，一條在 `docs/documents.md`；同一行補原文，別讓硬換行拆開。
 
-- 稽核圖裡 `E2 --> F` 跟本分支修掉的 `E4` 是同一個結構錯配：unfiled、undeclared、linked from nowhere 都是單份文件的缺席，不是 F 描述的「兩份都打開、比對各自的主張」 — [docs/pipeline.md](docs/pipeline.md). 這條是既有的，照同樣的理由該跟 E3、E4 一樣指向 F2。
+- `docs/pipeline.md` 有兩張圖各有一條 `E2 --> F`：:418 那條（class）是對的，稽核那張（E1 是 pairs）的那條跟本分支修掉的 E4 同一個結構錯配 — [docs/pipeline.md](docs/pipeline.md). 單份文件的缺席不是 F 的「兩份都打開」，該跟 E3、E4 一樣指向 F2。
 
-- 同一張稽核圖沒有 uncovered directories 的節點：`report()` 會印它，圖上四顆 context 節點（E1/E2/E3/E4）都不是它 — [docs/pipeline.md](docs/pipeline.md). 既有的；圖宣稱列全就得列全，是這一頁自己寫下的規則。
+- 稽核那張圖（E1 是 pairs）沒有 uncovered directories 的節點：`report()` 會印它，四顆 context 節點 E1-E4 都不是它 — [docs/pipeline.md](docs/pipeline.md). 既有的；圖宣稱列全就得列全，是這一頁自己寫下的規則。
 
 ## Needs a decision
 
