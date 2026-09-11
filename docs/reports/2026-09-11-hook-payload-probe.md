@@ -15,7 +15,8 @@ source_of_truth: 本頁是一次量測的記錄，不隨程式碼更新；機制
 
 一支一次性 hook（不進 repo）掛在 PostToolUse 與 PreToolUse，兩邊都不設 matcher，把每次
 觸發的事件名、工具名、payload 最上層的鍵，以及 `agent_id`／`agent_type`（有才印）各
-append 一行 JSON。一次 headless `claude -p` turn（Claude Code 2.1.268）：主 session 跑一句
+append 一行 JSON。一次 headless `claude -p` turn（Claude Code 2.1.268——那個 session 自己的 transcript 有 22 行帶
+`version` 欄，全部是這個值）：主 session 跑一句
 Bash，再派一個 `subagent_type: fankeel-reader` 的 Agent，讓它自己也跑一個工具呼叫。
 
 指令多帶了四個 plan 沒寫的旗標，理由各記在 build 的 ledger 裡：`--model sonnet`（探測只看
