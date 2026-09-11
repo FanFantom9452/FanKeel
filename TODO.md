@@ -60,26 +60,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔docs〕四條 `path:line` 沒有同行引文，所以 `quoteBeside` 不檢查它們的行號 — [docs/collisions.md](docs/collisions.md). 三條在那裡，一條在 `docs/documents.md`；同一行補原文，別讓硬換行拆開。
-
-- 〔docs〕兩張圖各有一條 `E2 --> F`：class 那張（E1 是 spike）對，稽核那張（E1 是 pairs）不對——它的 E2 寫 unfiled、undeclared、linked from nowhere，是單份文件的缺席，不是 F 的兩份對照 — [docs/pipeline.md](docs/pipeline.md). 既有的，該跟 E3、E4 一樣指向 F2。
-
-- 〔docs〕稽核那張圖（E1 是 pairs）沒有 uncovered directories 的節點：`report()` 會印它，四顆 context 節點 E1-E4 都不是它 — [docs/pipeline.md](docs/pipeline.md). 既有的；圖宣稱列全就得列全，是這一頁自己寫下的規則。
-
-- 〔docs〕同一份 sweep 類別表存在兩頁，守衛只釘一頁：`tests/docs-audit.test.js:585` 只讀 skills/fankeel/SKILL.md — [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md). sweep() 新增一類時，補了被釘的那頁測試就綠，另一頁靜靜變成不完整。
-
-- 〔docs〕`skills/fankeel/SKILL.md:1095` 用散文 defer 給 collisions.md，frontmatter 沒列文件，pair 還掛在 docs-audit 上 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md). `docs/pipeline.md:4` 示範怎麼宣告。
-
-- 〔audit〕plan 的工作是刪檔時 `landed` 永遠不會觸發：被刪掉的檔進了 `pointsAt()` 的 unbuilt，`scripts/docs-audit.js:524` 就跳過 — [scripts/docs-audit.js](scripts/docs-audit.js). station 退役那幾份就是，18 份 current 沒一份被提議歸檔。
-
-- 〔map〕`map.md` 沒有「每一頁的狀態」：`buildMap()` 只逐頁列 intent、retired、undeclared 三桶，而且 retired 被 `MAX_PAGES` 砍到 30 — [skills/fankeel-survey/SKILL.md](skills/fankeel-survey/SKILL.md). 今天 166 份裡只有 44 份被點名。
-
-- 〔map〕`docs/archive/` 裡 4 份仍掛 `status: design-intent`，`buildMap()` 把它們列進 planned, not built：archive 桶的頁不該進 intent 桶 — [lib/map.js](lib/map.js). 09-11 的 map 就是這樣。
-
-- 〔station〕`clock` 每個 stage 只存 `[first, latest]`，verify→build→verify 看起來像一次長駐：`touch()` 另外逐筆記 `moves` 的 `[stage, at]`，既有欄位不動 — [lib/registry.js](lib/registry.js). 早記才有資料可畫。
-
-- 〔judge〕`judge.js record` 收到空答案照樣歸檔、exit 0，09-11 發生過一次：空白要拒絕；fankeel-ask 要寫明答案從 `subagents/agent-<id>.jsonl` 取，`tasks/*.output` 是 0 bytes — [scripts/judge.js](scripts/judge.js).
-
 ## Needs a decision
 
 - 〔docs〕`path:N-M` 範圍引用對 `docs-check` 完全隱形：`PATHISH` 不收範圍，既不檢查也不列為「無引文」 — [docs/documents.md](docs/documents.md). reference 角色還剩 5 條。教它讀範圍要先定義範圍「持有」什麼；改單行則會把描述整個區塊的散文弄壞，本分支收窄 `defects()` 那條時就發生過一次。
