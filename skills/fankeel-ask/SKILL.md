@@ -2,7 +2,7 @@
 name: fankeel-ask
 description: Interrupt the stage you are in and put one question to a stronger model — a one-shot judge whose answer is filed verbatim and then acted on. Use for /fankeel-ask, "問判官", "叫 fable", "這題我們解不開", or when a mid-stage question is worth a model above the one running the session.
 argument-hint: "[the question, in one line]"
-version: 0.60.0
+version: 0.61.0
 status: current
 last_verified: 2026-09-11
 source_of_truth: scripts/judge.js
