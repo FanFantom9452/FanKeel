@@ -3169,9 +3169,10 @@ run(main);
 ```
 
 4. 在 `.claude-plugin/plugin.json`，把 `PostToolUse` 陣列裡 `touch.js` 那個項目的收尾
-   從
+   從（第一行帶上它的 `statusMessage` 才唯一——光是這串收尾括號，檔裡有五處一模一樣）
 
 ```json
+            "statusMessage": "Noting where the work went..."
           }
         ]
       }
@@ -3181,6 +3182,7 @@ run(main);
 在 `.claude-plugin/plugin.json` 裡換成（在它後面多一個項目，不動前面任何一行）：
 
 ```json
+            "statusMessage": "Noting where the work went..."
           }
         ]
       },
@@ -3200,9 +3202,10 @@ run(main);
    這個 fence 落在 `.claude-plugin/plugin.json` 的 `PostToolUse` 陣列裡，是這個 task
    `Modify:` 清單上的檔案。
 
-5. `docs/development.md` 第 25 行的「all eight hooks are tested as subprocesses with
-   real payloads」改成「all nine hooks are tested as subprocesses with real
-   payloads」；`tests/hook.test.js` 檔頭第 3 行同一句話同樣改。這兩處是這個 task 讓它們
+5. `docs/development.md` 這句話折在兩行：第 25 行行尾是「and all eight」，第 26 行接
+   「hooks are tested as subprocesses with real payloads.」。只改第 25 行的 `all eight`
+   → `all nine`，第 26 行不動；`tests/hook.test.js` 檔頭第 3 行「What all eight hooks
+   do」的 `all eight` 同樣改成 `all nine`。這兩處是這個 task 讓它們
    變成假話的地方，跟著改掉。
 
 6. 跑 `npm test` 看綠，再跑 `node scripts/docs-check.js`——這個 task 在
@@ -3819,8 +3822,9 @@ function suggest(projectRoot, registryRoot) {
    在檔頭加一行 `const registryLib = require('./registry.js');`（放在既有的
    `require('node:child_process')` 之後）。
 
-5. 在 `skills/fankeel-land/SKILL.md`，「## 6. The menu」裡「**Discarding is not on the
-   menu.**」那一段之後加：
+5. 在 `skills/fankeel-land/SKILL.md`，「## 6. The menu」裡 Task 11 加的「**Neither is
+   uninstalling…**」那一段（結尾「can now be removed, and stop there.」）之後加——它以
+   Neither 接 Discarding 那段，兩段中間不能插東西：
 
 ```markdown
 **Record the choice.** Once the integration is settled — by this menu, or by
@@ -4082,8 +4086,10 @@ const { decide, guardMode, targetOf, readOnlyAgentType, writesFiles } = require(
 ```
 
 5. 在 `.claude-plugin/plugin.json`，把 `PreToolUse` 陣列裡 `gate.js` 那個項目的收尾從
+   （第一行帶上它的 `statusMessage` 才唯一——光是這串收尾括號，檔裡有五處一模一樣）
 
 ```json
+            "statusMessage": "Noting when the gate opened..."
           }
         ]
       }
@@ -4095,6 +4101,7 @@ const { decide, guardMode, targetOf, readOnlyAgentType, writesFiles } = require(
    號）：
 
 ```json
+            "statusMessage": "Noting when the gate opened..."
           }
         ]
       },
@@ -7180,12 +7187,12 @@ long the stage before it lasted.
 
 - [ ] **Step 4: Correct the citations the new lines moved.** `node scripts/docs-check.js` names them as `moved:`; with this plan's tasks landed in order the corrections are:
 
-- In `docs/station.md`: `assets/station/station.js:767` → `assets/station/station.js:774`
-- In `docs/station.md`: `assets/station/station.js:476` → `assets/station/station.js:478`
-- In `docs/station.md`: `assets/station/station.js:493` → `assets/station/station.js:495`
-- In `docs/station.md`: `assets/station/station.js:797` → `assets/station/station.js:807`
-- In `docs/station.md`: `assets/station/station.js:583` → `assets/station/station.js:585`
-- In `docs/station.md`: `assets/station/station.js:534` → `assets/station/station.js:536`
+- In `docs/station.md`: the assets/station/station.js citation now at line 767 → the line docs-check prints (this plan expects 774)
+- In `docs/station.md`: the assets/station/station.js citation now at line 476 → the line docs-check prints (this plan expects 478)
+- In `docs/station.md`: the assets/station/station.js citation now at line 493 → the line docs-check prints (this plan expects 495)
+- In `docs/station.md`: the assets/station/station.js citation now at line 797 → the line docs-check prints (this plan expects 807)
+- In `docs/station.md`: the assets/station/station.js citation now at line 583 → the line docs-check prints (this plan expects 585)
+- In `docs/station.md`: the assets/station/station.js citation now at line 534 → the line docs-check prints (this plan expects 536)
 
 If another task landed in between and moved the same lines further, use the number docs-check prints instead. Then `node scripts/docs-check.js` exits 0.
 
@@ -7807,12 +7814,12 @@ how many were dropped.
 
 - [ ] **Step 4: Correct the citations the new lines moved.** `node scripts/docs-check.js` names them as `moved:`; with this plan's tasks landed in order the corrections are:
 
-- In `docs/station.md`: `assets/station/station.js:774` → `assets/station/station.js:775`
-- In `docs/station.md`: `assets/station/station.js:478` → `assets/station/station.js:479`
-- In `docs/station.md`: `assets/station/station.js:495` → `assets/station/station.js:496`
-- In `docs/station.md`: `assets/station/station.js:807` → `assets/station/station.js:808`
-- In `docs/station.md`: `assets/station/station.js:585` → `assets/station/station.js:586`
-- In `docs/station.md`: `assets/station/station.js:536` → `assets/station/station.js:537`
+- In `docs/station.md`: the assets/station/station.js citation now at line 774 → the line docs-check prints (this plan expects 775)
+- In `docs/station.md`: the assets/station/station.js citation now at line 478 → the line docs-check prints (this plan expects 479)
+- In `docs/station.md`: the assets/station/station.js citation now at line 495 → the line docs-check prints (this plan expects 496)
+- In `docs/station.md`: the assets/station/station.js citation now at line 807 → the line docs-check prints (this plan expects 808)
+- In `docs/station.md`: the assets/station/station.js citation now at line 585 → the line docs-check prints (this plan expects 586)
+- In `docs/station.md`: the assets/station/station.js citation now at line 536 → the line docs-check prints (this plan expects 537)
 
 If another task landed in between and moved the same lines further, use the number docs-check prints instead. Then `node scripts/docs-check.js` exits 0.
 
@@ -8306,12 +8313,12 @@ Both routes call the same `clearEntry`, which writes `active: false` and
 
 - [ ] **Step 4: Correct the citations the new lines moved.** `node scripts/docs-check.js` names them as `moved:`; with this plan's tasks landed in order the corrections are:
 
-- In `docs/station.md`: `assets/station/station.js:775` → `assets/station/station.js:776`
-- In `docs/station.md`: `assets/station/station.js:479` → `assets/station/station.js:480`
-- In `docs/station.md`: `assets/station/station.js:496` → `assets/station/station.js:497`
-- In `docs/station.md`: `assets/station/station.js:808` → `assets/station/station.js:809`
-- In `docs/station.md`: `assets/station/station.js:586` → `assets/station/station.js:587`
-- In `docs/station.md`: `assets/station/station.js:537` → `assets/station/station.js:538`
+- In `docs/station.md`: the assets/station/station.js citation now at line 775 → the line docs-check prints (this plan expects 776)
+- In `docs/station.md`: the assets/station/station.js citation now at line 479 → the line docs-check prints (this plan expects 480)
+- In `docs/station.md`: the assets/station/station.js citation now at line 496 → the line docs-check prints (this plan expects 497)
+- In `docs/station.md`: the assets/station/station.js citation now at line 808 → the line docs-check prints (this plan expects 809)
+- In `docs/station.md`: the assets/station/station.js citation now at line 586 → the line docs-check prints (this plan expects 587)
+- In `docs/station.md`: the assets/station/station.js citation now at line 537 → the line docs-check prints (this plan expects 538)
 
 If another task landed in between and moved the same lines further, use the number docs-check prints instead. Then `node scripts/docs-check.js` exits 0.
 
@@ -8712,12 +8719,12 @@ A stale row's clear control is the one thing that differs between the served
 
 - [ ] **Step 4: Correct the citations the new lines moved.** `node scripts/docs-check.js` names them as `moved:`; with this plan's tasks landed in order the corrections are:
 
-- In `docs/station.md`: `assets/station/station.js:776` → `assets/station/station.js:786`
-- In `docs/station.md`: `assets/station/station.js:480` → `assets/station/station.js:486`
-- In `docs/station.md`: `assets/station/station.js:497` → `assets/station/station.js:503`
-- In `docs/station.md`: `assets/station/station.js:809` → `assets/station/station.js:819`
-- In `docs/station.md`: `assets/station/station.js:587` → `assets/station/station.js:593`
-- In `docs/station.md`: `assets/station/station.js:538` → `assets/station/station.js:544`
+- In `docs/station.md`: the assets/station/station.js citation now at line 776 → the line docs-check prints (this plan expects 786)
+- In `docs/station.md`: the assets/station/station.js citation now at line 480 → the line docs-check prints (this plan expects 486)
+- In `docs/station.md`: the assets/station/station.js citation now at line 497 → the line docs-check prints (this plan expects 503)
+- In `docs/station.md`: the assets/station/station.js citation now at line 809 → the line docs-check prints (this plan expects 819)
+- In `docs/station.md`: the assets/station/station.js citation now at line 587 → the line docs-check prints (this plan expects 593)
+- In `docs/station.md`: the assets/station/station.js citation now at line 538 → the line docs-check prints (this plan expects 544)
 
 If another task landed in between and moved the same lines further, use the number docs-check prints instead. Then `node scripts/docs-check.js` exits 0.
 
@@ -9091,12 +9098,12 @@ and how many backward steps between them.
 
 - [ ] **Step 4: Correct the citations the new lines moved.** `node scripts/docs-check.js` names them as `moved:`; with this plan's tasks landed in order the corrections are:
 
-- In `docs/station.md`: `assets/station/station.js:786` → `assets/station/station.js:832`
-- In `docs/station.md`: `assets/station/station.js:486` → `assets/station/station.js:532`
-- In `docs/station.md`: `assets/station/station.js:503` → `assets/station/station.js:549`
-- In `docs/station.md`: `assets/station/station.js:819` → `assets/station/station.js:865`
-- In `docs/station.md`: `assets/station/station.js:593` → `assets/station/station.js:639`
-- In `docs/station.md`: `assets/station/station.js:544` → `assets/station/station.js:590`
+- In `docs/station.md`: the assets/station/station.js citation now at line 786 → the line docs-check prints (this plan expects 832)
+- In `docs/station.md`: the assets/station/station.js citation now at line 486 → the line docs-check prints (this plan expects 532)
+- In `docs/station.md`: the assets/station/station.js citation now at line 503 → the line docs-check prints (this plan expects 549)
+- In `docs/station.md`: the assets/station/station.js citation now at line 819 → the line docs-check prints (this plan expects 865)
+- In `docs/station.md`: the assets/station/station.js citation now at line 593 → the line docs-check prints (this plan expects 639)
+- In `docs/station.md`: the assets/station/station.js citation now at line 544 → the line docs-check prints (this plan expects 590)
 
 If another task landed in between and moved the same lines further, use the number docs-check prints instead. Then `node scripts/docs-check.js` exits 0.
 
