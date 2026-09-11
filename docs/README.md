@@ -39,7 +39,7 @@ everything that needs more than a paragraph is here.
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
 | Every session on this machine, where the page finds the registries, and what `stale` means | [station.md](station.md) |
 | Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
-| What caveman and SEPIA do that this plugin does not — gates, evals, an evidence ledger, thin wrappers — plus the user's own directions — three on 09-08, five on 09-11 — each filed in `TODO.md` | [improvement-brief.md](improvement-brief.md) — *a backlog, 繁體中文* |
+| What caveman and SEPIA do that this plugin does not — gates, evals, an evidence ledger, thin wrappers — plus the user's own directions, three from 09-08 and five from 09-11 — the ones still open are `TODO.md` entries | [improvement-brief.md](improvement-brief.md) — *a backlog, 繁體中文* |
 | Every dated report's headline figure with a stable ID, what its scope does not cover, and which pages cite it | [sources.md](sources.md) — *the evidence ledger* |
 | How two implementers running at once was built, task by task — its design is in `docs/archive/` | `docs/archive/2026-08-30-parallel-build.md` — *built* |
 | Every fankeel session on this machine on one page, what each cost, and how an abandoned one is put down | [decisions/2026-09-04-session-station-design.md](decisions/2026-09-04-session-station-design.md) |
