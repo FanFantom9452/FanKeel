@@ -317,8 +317,8 @@ an index is a markdown file like any other, so anything it fails to list is
 unreachable regardless of what else in the tree links there. Two names for one
 problem is how a report starts looking longer than it is.
 
-Both branches are tested. `tests/docs-audit.test.js:407-413` covers the
-no-index case; `:418-426` covers the index case and asserts `orphans` comes
+Both branches are tested. `tests/docs-audit.test.js:434-440` covers the
+no-index case; `:445-453` covers the index case and asserts `orphans` comes
 back empty. This project declares an index, so the branch that would populate
 `orphans` never runs here — the empty result is the index case behaving as
 built, not a gap in the check.

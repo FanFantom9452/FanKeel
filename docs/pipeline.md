@@ -933,7 +933,7 @@ fankeel docs-audit — 18 markdown files, tree: flat (implied by the directories
   CLAUDE.md  (last touched 22d ago; e2e/helpers.js changed 21d after it)
   ...
 
-1 plan looks landed — everything named now exists:
+1 plan looks landed — everything named exists or git has seen it deleted:
   docs/plans/2026-07-27-waypoint-mvp.md  (25 files, untouched 23d)
 
 2 documents are missing from docs/README.md:
@@ -960,7 +960,8 @@ none worth reading, and they pushed the pair sharing four files off the list.
 Two windows, not one. Drift measures a **gap** — how long a page has been wrong
 while the code it names moved on — and a fortnight is what makes one worth a
 reading session. A landed plan is a different question: everything it named
-exists, and nobody has come back to it. That is a settle period, and it is three
+exists or git has seen it deleted, and nobody has come back to it. That is a
+settle period, and it is three
 days. Sharing one number made the landed check unable to fire on a repository
 younger than a fortnight, which is every repository for its first two weeks. An
 explicit `--since` still sets both, so `--since 0` shows everything either one is

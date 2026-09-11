@@ -530,8 +530,8 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     //
     // A plan stops being true the moment it succeeds, and nothing about it
     // changes to say so — which is why the next person reads it as current. The
-    // signal that it landed is that everything it named now exists and nobody
-    // has touched it since. Reported as a candidate and never moved: `land`
+    // signal that it landed is that everything it named now exists, or git has
+    // seen it deleted, and nobody has touched it since. Reported as a candidate and never moved: `land`
     // archives plans, and only after asking.
     const landed = [];
     const gone = deletedPaths(root);
@@ -727,7 +727,7 @@ function report(r) {
     r.drift.map((d) => d.file + '  (' + (d.declared ? 'verified' : 'last touched') + ' ' + d.docAge + 'd ago; '
         + d.target + ' changed ' + d.gap + 'd after it)')));
 
-    lines.push(...section(plural(r.landed.length, 'plan looks', 'plans look') + ' landed — everything named now exists:',
+    lines.push(...section(plural(r.landed.length, 'plan looks', 'plans look') + ' landed — everything named exists or git has seen it deleted:',
         r.landed.map((p) => p.file + '  (' + p.named + ' files, untouched ' + p.age + 'd)')));
 
     if (r.index.path) {
