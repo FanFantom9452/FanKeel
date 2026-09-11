@@ -524,6 +524,82 @@ test('the prose names as many sections as defects() actually sums', () => {
   assert.ok(rows >= count, `table has ${rows} rows above the sentence, defects() sums ${count}`);
 });
 
+// The table above lists what sweep() can report, but nothing checked it against
+// what sweep() actually returns — a key could be added to the return literal and
+// the table would just go on describing the old set. This parses the keys out of
+// the literal itself and requires each one classified, either as bookkeeping or
+// as a row, so a new key fails this test until it is sorted into one or the other.
+test('the sweep table names every category sweep() returns', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'docs-audit.js'), 'utf8');
+  // Take sweep()'s own body first, the way the test above takes defects()'s.
+  // Anchoring straight at `\n    return {` found a *different* function's
+  // return the moment sweep()'s was reformatted onto one line, and went on to
+  // parse that object's keys as though they were categories.
+  const fn = /\nfunction sweep\([\s\S]*?\n\}/.exec(src);
+  assert.ok(fn, 'scripts/docs-audit.js has no sweep() this test can find');
+  const literal = /\n\s*return \{([\s\S]*?)\n\s*\};/.exec(fn[0]);
+  assert.ok(literal, "sweep()'s return literal is not a shape this test can read");
+  const keys = [];
+  for (const line of literal[1].split('\n')) {
+    for (const entry of line.replace(/\/\/.*$/, '').split(',')) {
+      const token = entry.trim();
+      if (!token) continue;
+      keys.push(token.includes(':') ? token.slice(0, token.indexOf(':')).trim() : token);
+    }
+  }
+
+  // A nested value, or a string with a comma in it, splits into tokens that are
+  // not keys at all, and the assertion below then names garbage instead of
+  // whatever somebody actually added. Say which token broke the parse.
+  for (const key of keys) {
+    assert.match(key, /^[A-Za-z_$][\w$]*$/,
+      "sweep()'s return literal has a shape this parser cannot read — "
+      + JSON.stringify(key) + ' is not a key');
+  }
+
+  // And that the parse landed on the right object: sweep() has reported drift
+  // since the beginning, so drift missing means this read something else.
+  assert.ok(keys.includes('drift'),
+    "the keys parsed out of sweep()'s return do not include drift — this test read the wrong object");
+
+  // Not findings: what the run was, not what it found.
+  const BOOKKEEPING = new Set(['tree', 'error', 'since', 'implied', 'markdown',
+    'dates', 'pool', 'declaredOf']);
+
+  // Every other key is a category the sweep can report, and the table owes it a
+  // row. Two keys share one row on purpose — the table pairs them because both
+  // are "nothing points at it" — so the map is to the row, not to the key.
+  const ROW = {
+    drift: '**drift**',
+    landed: '**landed plans**',
+    index: '**the index**',
+    diagrams: '**diagrams**',
+    overlaps: '**pairs**',
+    unresolved: '**unresolved**',
+    orphans: '**orphans, uncovered**',
+    uncovered: '**orphans, uncovered**',
+    unfiled: '**unfiled**',
+    undeclared: '**undeclared**',
+  };
+
+  const skillText = fs.readFileSync(path.join(__dirname, '..', 'skills', 'fankeel', 'SKILL.md'), 'utf8');
+
+  // Slice the table out rather than searching the whole page — a bold phrase in
+  // unrelated prose elsewhere would pass a whole-file search.
+  const endAt = skillText.indexOf('Only the first four fail the run.');
+  assert.notEqual(endAt, -1, 'skills/fankeel/SKILL.md has no "Only the first four fail the run." sentence');
+  const start = skillText.lastIndexOf('| | |', endAt);
+  assert.notEqual(start, -1, 'skills/fankeel/SKILL.md has no table above that sentence');
+  const table = skillText.slice(start, endAt);
+
+  for (const key of keys) {
+    if (BOOKKEEPING.has(key)) continue;
+    assert.ok(ROW[key], 'sweep() returns r.' + key + ' and this test has no row for it — classify it');
+    assert.ok(table.includes(ROW[key]),
+      'the sweep table in skills/fankeel/SKILL.md has no ' + ROW[key] + ' row for r.' + key);
+  }
+});
+
 test('a clean sweep says so rather than printing nothing', () => {
   const root = withTree(tree({
     'docs/README.md': '- [A](01-a.md)\n',
@@ -664,4 +740,52 @@ test('--root resolves against the registry, not against the project it names', (
   } finally {
     process.chdir(prevCwd);
   }
+});
+
+// A source_of_truth entry resolving to nothing used to be dropped in the same
+// silence as one that was never a path. The typo is the case worth catching;
+// the legitimate sentence is why this is context rather than a defect, so both
+// halves are asserted — the line appears, and the exit code does not move.
+test('an unresolvable source_of_truth entry is reported, and is not a defect', () => {
+  const root = tree({
+    '.fankeel/docs.json': { age: 1, body: JSON.stringify({
+      index: 'docs/README.md',
+      buckets: [{ path: 'docs', role: 'reference', depth: 1 }],
+    }) },
+    'docs/README.md': { age: 1, body: '# Index\n\n- [a](a.md)\n- [b](b.md)\n' },
+    'docs/a.md': { age: 1, body: '---\nstatus: current\nlast_verified: 2026-08-21\nsource_of_truth: lib/gone.js\n---\n\n# A\n' },
+    // No comma in this value, deliberately. The field is a comma list and
+    // `unresolvedRefs` splits on it, so a sentence with a comma in it is two
+    // entries and two rows — correct behaviour, and not what this test is
+    // pinning down.
+    'docs/b.md': { age: 1, body: '---\nstatus: current\nlast_verified: 2026-08-21\nsource_of_truth: this file is the prompt with no upstream\n---\n\n# B\n' },
+  });
+
+  const r = audit.sweep(root, audit.DEFAULT_SINCE, NOW);
+  assert.deepEqual(r.unresolved.map((u) => u.page + ' | ' + u.entry).sort(), [
+    'docs/a.md | lib/gone.js',
+    'docs/b.md | this file is the prompt with no upstream',
+  ]);
+  assert.match(audit.report(r), /2 source_of_truth entries in 2 reference documents resolve to no file:/);
+  assert.equal(audit.defects(r), 0, 'an unresolvable source_of_truth entry must not fail the run');
+});
+
+test('the count is of entries and the pages are counted separately', () => {
+  const root = tree({
+    '.fankeel/docs.json': { age: 1, body: JSON.stringify({
+      index: 'docs/README.md',
+      buckets: [{ path: 'docs', role: 'reference', depth: 1 }],
+    }) },
+    'docs/README.md': { age: 1, body: '# Index\n\n- [a](a.md)\n- [b](b.md)\n' },
+    // Two entries on one page: the field is a comma list, so this page is one
+    // document and two of the count.
+    'docs/a.md': { age: 1, body: '---\nstatus: current\nlast_verified: 2026-08-21\nsource_of_truth: lib/gone.js, lib/also-gone.js\n---\n\n# A\n' },
+    'docs/b.md': { age: 1, body: '---\nstatus: current\nlast_verified: 2026-08-21\nsource_of_truth: lib/third-gone.js\n---\n\n# B\n' },
+  });
+
+  const r = audit.sweep(root, audit.DEFAULT_SINCE, NOW);
+  assert.equal(r.unresolved.length, 3);
+  assert.equal(new Set(r.unresolved.map((u) => u.page)).size, 2);
+  assert.match(audit.report(r), /3 source_of_truth entries in 2 reference documents resolve to no file:/);
+  assert.equal(audit.defects(r), 0);
 });

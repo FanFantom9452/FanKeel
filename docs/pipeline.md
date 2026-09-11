@@ -673,6 +673,7 @@ flowchart TD
     E1["<b>pairs describing the same code</b><br/>where single source of truth breaks"]
     E2["<b>unfiled · undeclared ·<br/>linked from nowhere</b>"]
     E3["<b>weight · empty directories</b><br/>a 73 GB build directory is not a bug;<br/>not knowing about it is"]
+    E4["<b>source_of_truth resolving to nothing</b><br/>a typo and a legitimate sentence are<br/>the same silence until one is printed"]
     F["<b>the part only reading finds</b><br/>open both, find the claim each makes<br/>about that file, say which one the<br/>code supports. Name the line."]
     F1["<b>dispatch readers</b><br/>several in one response, one per pair<br/><i>four the ceiling, sonnet the floor</i><br/><i>say how many, and on which model</i><br/><i>compare what comes back against itself</i>"]
     F2["<b>the adversary</b><br/>read-only, over the findings<br/><i>only the findings it defeats</i><br/><i>one workflow where the host opens it</i>"]
@@ -689,9 +690,11 @@ flowchart TD
     C -- "context, not evidence" --> E1
     C -- "context" --> E2
     C -- "context" --> E3
+    C -- "context" --> E4
     E1 --> F
     E2 --> F
     E3 --> F2
+    E4 --> F2
     D1 --> F2
     D2 --> F2
     D3 --> F2
@@ -945,7 +948,7 @@ fankeel docs-audit — 18 markdown files, tree: flat (implied by the directories
 It narrows rather than judges. Nothing mechanical decides that two pages
 disagree; this turns *read all forty documents looking for disagreements* into
 *read these two*. Only drift, landed plans, a broken index and diagrams
-fail the run — pairs, orphans and uncovered directories are true of almost every
+fail the run — pairs, orphans, uncovered directories, unresolved source_of_truth entries and the undeclared count are true of almost every
 healthy repository, and a command that always exits non-zero has an exit code
 that means nothing.
 

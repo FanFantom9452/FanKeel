@@ -60,12 +60,23 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 三處兩頁講同一個機制而兩邊都不讓路：60 上限的兩半、guard 的自派工盲點、`judge.js record` — [docs/collisions.md](docs/collisions.md). 各補一個指標，不刪句子。
-- `docs/README.md:9` 的頁數寫在散文裡，沒有任何東西在數它——這次加兩頁就過時了 — [docs/README.md](docs/README.md). 照 `tests/contract.test.js` 數 hook 的形狀補一條 test。
+- 四條 `path:line` 沒有同行引文，所以 `quoteBeside` 不檢查它們的行號 — [docs/collisions.md](docs/collisions.md). 三條在那裡，一條在 `docs/documents.md`；同一行補原文，別讓硬換行拆開。
+
+- 兩張圖各有一條 `E2 --> F`：class 那張（E1 是 spike）對，稽核那張（E1 是 pairs）不對——它的 E2 寫 unfiled、undeclared、linked from nowhere，是單份文件的缺席，不是 F 的兩份對照 — [docs/pipeline.md](docs/pipeline.md). 既有的，該跟 E3、E4 一樣指向 F2。
+
+- 稽核那張圖（E1 是 pairs）沒有 uncovered directories 的節點：`report()` 會印它，四顆 context 節點 E1-E4 都不是它 — [docs/pipeline.md](docs/pipeline.md). 既有的；圖宣稱列全就得列全，是這一頁自己寫下的規則。
+
+- 同一份 sweep 類別表存在兩頁，守衛只釘一頁：`tests/docs-audit.test.js:585` 只讀 skills/fankeel/SKILL.md — [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md). sweep() 新增一類時，補了被釘的那頁測試就綠，另一頁靜靜變成不完整。
+
+- plan 的工作是刪檔時 `landed` 永遠不會觸發：被刪掉的檔進了 `pointsAt()` 的 unbuilt，`scripts/docs-audit.js:524` 就跳過 — [scripts/docs-audit.js](scripts/docs-audit.js). station 退役那幾份就是，18 份 current 沒一份被提議歸檔。
+
+- `map.md` 沒有「每一頁的狀態」：`buildMap()` 只逐頁列 intent、retired、undeclared 三桶，而且 retired 被 `MAX_PAGES` 砍到 30 — [skills/fankeel-survey/SKILL.md](skills/fankeel-survey/SKILL.md). 今天 166 份裡只有 44 份被點名。
+
+- `skills/fankeel/SKILL.md:1095` 用散文 defer 給 collisions.md，frontmatter 沒列文件，pair 還掛在 docs-audit 上 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md). `docs/pipeline.md:4` 示範怎麼宣告。
 
 ## Needs a decision
 
-- `source_of_truth` 沒有任何東西在驗證：五頁在裡面寫散文，25 個 `.js` 被兩頁以上 reference 頁同時宣告 — [docs/documents.md](docs/documents.md). 要不要驗證，要不要有單一擁有者。
+- `path:N-M` 範圍引用對 `docs-check` 完全隱形：`PATHISH` 不收範圍，既不檢查也不列為「無引文」 — [docs/documents.md](docs/documents.md). reference 角色還剩 5 條。教它讀範圍要先定義範圍「持有」什麼；改單行則會把描述整個區塊的散文弄壞，本分支收窄 `defects()` 那條時就發生過一次。
 
 ## Waiting
 
@@ -104,3 +115,7 @@ entry waited for actually happening. It shrank when somebody read it.
 - `permissions.deny` 是 docs/collisions.md 給操作者的那一步，但它在 `defaultMode: "auto"` 與 bypassPermissions 底下還生不生效沒人驗過 — [docs/collisions.md](docs/collisions.md). lifts when: 一次探測證實它在 auto 模式下確實攔得住. 09-11.
 
 - `--allowedTools` 吃哪個拼法沒人驗過：CLI 註冊表叫 `Task`，真實派工記成 `Agent`，兩種各跑過一次都沒派工 — [evals/subagent-no-entry/prompt.md](evals/subagent-no-entry/prompt.md). lifts when: 一次強制派工的跑動分出哪個拼法開得起工具. 09-11.
+
+- todo-check 不驗 `path:line` 的行號：改成一個不存在的行仍然 exit 0 且說「no stale citations」 — [scripts/todo-check.js](scripts/todo-check.js). TODO.md 不在任何 bucket，docs-check 也不看它，兩支都不檢查。lifts when: 有行號過期被抓到. 09-11.
+
+- `skills/fankeel-audit/SKILL.md:113` 把「十條、五頁」寫死在 reference 頁裡，靠一個「today」撐著 — [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md). 沒有東西會重算它。lifts when: 那兩個數字變了而這句沒變. 09-11.

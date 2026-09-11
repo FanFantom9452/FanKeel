@@ -35,7 +35,7 @@ differs.
 
 ## Not a defect
 
-Only the first four rows of the sweep below fail the run. These five read like
+Only the first four rows of the sweep below fail the run. These six read like
 findings and are not — the reasons already live in that table; this is the
 same logic in the shape the other six skills carry.
 
@@ -46,6 +46,7 @@ same logic in the shape the other six skills carry.
 | A directory with no reference document | Code nobody wrote a page about is a gap to name, or a deliberately internal area — either way it is not itself a dead reference. |
 | Markdown outside every declared bucket | The fix for `unfiled` is a bucket added to `docs.json`, not an edit to the file — the file did nothing wrong. |
 | A reference page dated by git, not by a stated `last_verified` | `undeclared` pages carry no frontmatter contract at all — their date is whatever git recorded, and that is a gap in the contract, not evidence the page is stale. |
+| A `source_of_truth` entry that resolves to no file | Several are legitimate on any given day — a page saying it is the index, or that it is the prompt with no upstream. The line exists for the sixth one, a path with a typo in it, which is indistinguishable from those while both are silent. |
 
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
 
@@ -109,6 +110,7 @@ contradiction could live, which is not evidence that one does.
 | **directories with no reference document** | no | code nobody wrote a page about — a gap, or deliberately internal. Say which |
 | **unfiled** | no | markdown outside every bucket. Nothing above checked it; the fix is a bucket in `docs.json`, not an edit per file |
 | **undeclared** | no | reference pages with no frontmatter contract, so their dates come from git rather than from anyone saying they read them |
+| **unresolved source_of_truth** | no | a reference page names something in `source_of_truth` that resolves to no file. Ten entries across five pages today, all legitimate — the count is of entries, the field being a comma list. What it is for is the eleventh, with a typo in it |
 
 ## The part only reading finds
 

@@ -341,3 +341,31 @@ test('the pages that count the hooks count as many as are registered', () => {
   assert.match(read('tests/hook.test.js'), new RegExp('all ' + total + '\\s+hooks'),
     'tests/hook.test.js does not say "all ' + total + ' hooks"');
 });
+
+// The same shape as the hook count above, and for the same reason: a number
+// written into prose has no checker unless something recounts it. The live
+// source here is the directory, because "pages" in that sentence means the
+// top-level pages of docs/ and nothing else.
+//
+// Counted as files, not as table rows. The index table below that sentence runs
+// unbroken from line 13 and indexes docs/archive/, docs/plans/ and the rest, so
+// it has many more rows than the sentence claims pages — counting rows is the
+// first thing that looks right and is not.
+test('the index says as many pages as docs/ has', () => {
+  const root = path.join(__dirname, '..');
+  const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven',
+    'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen',
+    'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
+
+  const pages = fs.readdirSync(path.join(root, 'docs'), { withFileTypes: true })
+    .filter((e) => e.isFile() && e.name.endsWith('.md') && e.name !== 'README.md')
+    .map((e) => e.name);
+  const word = WORDS[pages.length];
+  assert.ok(word, 'docs/ has more pages than WORDS can name: ' + pages.length);
+
+  const index = fs.readFileSync(path.join(root, 'docs', 'README.md'), 'utf8');
+  const said = word[0].toUpperCase() + word.slice(1);
+  assert.match(index, new RegExp(said + '\\s+pages'),
+    'docs/README.md does not say "' + said + ' pages"; docs/ holds ' + pages.length
+      + ': ' + pages.join(', '));
+});

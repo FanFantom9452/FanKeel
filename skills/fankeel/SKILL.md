@@ -99,6 +99,10 @@ the two writers hit that cap differently: a path arriving on its own drops the
 oldest, where a git pass holding more than sixty is refused whole rather than
 trimmed.
 
+[docs/registry.md](../../docs/registry.md) is where that cap lives — both
+halves, the constant they come from, and the run that set it. This section is
+the short form, not the only copy.
+
 `project` is the only field anyone declares: which repository, so the docs lookup
 knows whose tree applies. One registry can cover five of them and nothing else
 needs to know which. Ask for it only when the root holds more than one, and never
@@ -476,7 +480,10 @@ can still describe a system that was replaced last month.
 | **the index** | entries pointing at nothing, and documents the index never learned about. Both directions, because the index is maintained by hand. |
 | **diagrams** | a mermaid graph naming most of a directory is claiming to list it, so the files it leaves out read as files that do not exist. |
 | **pairs** | two reference documents describing the same source file. Not a contradiction — the shortlist of places one could live. |
+| **unresolved** | a `source_of_truth` entry naming a file that resolves to nothing. A typo and a legitimate sentence look identical while both are silent; this is what makes the typo visible. Context, not a defect. |
 | **orphans, uncovered** | documents nothing links to, and directories no document names. Context, not defects. |
+| **unfiled** | markdown sitting outside every bucket, so nothing above checked it. The fix is a bucket in `docs.json`, not an edit to the file — the file did nothing wrong. |
+| **undeclared** | a reference page with no frontmatter contract at all, so its date is whatever git recorded rather than anyone saying they read it. One line, not a list: a project that has not adopted the convention wants to hear that it exists, not to have every page named at it. |
 
 Only the first four fail the run. A command that always exits non-zero has an
 exit code that means nothing.
