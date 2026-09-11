@@ -299,6 +299,29 @@ repo 根目錄留下 `files_ref.txt`。它的工具清單拿掉了 Edit/Write，
   survey 與 audit 的 skill 內文加一步：workflow 回來後先看 `git status --porcelain`。
 - 測試：fixture payload——reader 帶 `>` 被拒、帶 `| grep` 放行、verifier 放行。
 
+## 11. 總覽的統計依 route 分組，倒退另計
+
+使用者 09-11 看第三版 mockup 時指出兩件事。第一，7 個、5 個、3 個 stage 的 session
+混在一起平均，token 和花費不能這樣算。第二，有倒退的 session 是特例，要統計，但要
+標記出來。總覽的「七個階段」卡（`assets/station/station.js` 的 `overview()`）現在是把
+所有 session 每個 stage 的數字加在一起，不分 route。
+
+- 總覽上每一個跨 session 的平均、每一個分 stage 的彙總，都只在同一個 route 裡算：
+  `spike`、`bounded`、`architectural` 各一組，手寫的 route 以它的 stage 串當組名。不同
+  組不加成一個平均。
+- 有倒退的 session（階段序列裡出現往回的一步，算法同第 7 節）照樣計入它那一組的
+  session 數，但它的數字放在同組的「有倒退」那一列，不進該組的平均。每一組都列出有
+  倒退的 session 數與倒退總次數。
+- 第 7 節的快取再多存 `project`、`day`（開始的日期）、`class`、`route`、`backtracks`、
+  `usd`、`peak`。之後總覽改版（依專案篩選、依天篩選、趨勢折線）只需要換畫法，不必再
+  讀一次 transcript。
+- 總覽改版的版面不在這個任務：兩個專案並排、單一專案、某一天的花費、趨勢折線。land
+  時寫成 TODO 的一條，那個任務自己出 mockup。使用者 09-11 的原話是「之後應該要重新
+  調整排版」。
+- 測試：三個 fixture session——一個 bounded、一個 architectural、一個有倒退的
+  architectural。總覽裡 architectural 的平均只含沒有倒退的那一個，有倒退的那一個出現在
+  「有倒退」列。
+
 ## 對照 map
 
 - `docs/station.md`（current）：第 7 節擴充 detail 面板，不回頭加上 stage 成本。
