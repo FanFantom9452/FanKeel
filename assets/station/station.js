@@ -162,6 +162,8 @@
             statePill: statePill, clearStaleControl: clearStaleControl,
             profileRows: profileRows, applyMachineControl: applyMachineControl,
             profileCard: profileCard,
+            openSections: openSections, niceStep: niceStep, downsample: downsample, lineChart: lineChart,
+            comma: comma, riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
         };
     }
     if (!doc) return;
@@ -733,6 +735,9 @@
         var hit = S.sessions.filter(function (x) { return x.id === sel; });
         if (!hit.length) { d.innerHTML = '<div class="empty">選一列</div>'; return; }
         var s = hit[0];
+        needDetail(s);
+        var open = openSections(s);
+        var x = DETAIL[s.id] || null;
         var tot = s.stages.reduce(function (n, w) {
             return n + Math.max(w.to - w.from, 0);
         }, 0) || 1;
@@ -745,6 +750,8 @@
                 + esc(s.model.replace(/^claude-/, '')) + '</span>' : '') + '</div>'
             + '<h2 style="font-size:15px;line-height:1.45;margin-bottom:12px">'
             + esc(s.task || '（未命名）') + '</h2>'
+            + secOpen('s-sum', '摘要', esc(s.stage || '—') + ' · ' + mins(tot)
+                + (x ? ' · ' + x.requests + ' requests' : ''), open)
             + (s.stages.length
                 ? '<div class="strip">' + s.stages.map(function (w) {
                     var p = Math.max(w.to - w.from, 0) / tot * 100;
@@ -779,15 +786,18 @@
             + '<dt>總計</dt><dd class="num">' + tokens(s.burn) + ' · ' + usd(cost(s))
             + (s.unpriced && s.unpriced.length ? ' (' + s.unpriced.length + ' unpriced)' : '')
             + (s.agents ? ' · ' + s.agents + ' agents' : '') + '</dd>'
+            + (x ? '<dt>requests</dt><dd class="num">' + x.requests + '</dd>' : '')
             + '<dt>guard</dt><dd>' + esc(s.guard || 'ask (預設)') + '</dd></dl>'
-            + '<h3 style="font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;'
-            + 'color:var(--mute);margin:14px 0 6px">碰過的檔案 ' + s.claims.length + '</h3>'
+            + '</details>'
+            + secOpen('s-claims', 'claims', s.claims.length + ' 個檔', open)
             + (s.claims.length
                 ? '<div class="claims">' + s.claims.map(function (p) {
                     return '<div title="' + esc(p) + '">' + esc(p) + '</div>';
                 }).join('') + '</div>'
                 : '<p class="mute" style="font-size:12px">沒有</p>')
-            + clearControl(s) + '</div>';
+            + clearControl(s) + '</details>'
+            + (x ? detailSections(s, x, open) : detailNote(s))
+            + '</div>';
     }
     // The scan-time clauses were the old header's `depth stopped the scan in N
     // places` and `the scan ran out of time` — both are how a reader learns
@@ -809,6 +819,186 @@
                 ? ' · ' + totalUnreadable + ' 個 session 檔案讀不到' : '')
             + (S.serve ? ' · 每次載入都重讀 registry' : '');
     }
+    // ---- the detail panel ----------------------------------------------
+    // One session's detail is a script of its own, `station/detail/<id>.js`,
+    // loaded the first time the session is opened: `lib/station.js` keeps it
+    // out of `station-data.js`, which every `/fankeel` prompt rewrites.
+    var DETAIL = w.STATION_DETAIL || (w.STATION_DETAIL = {});
+    var asked = {};
+    function needDetail(s) {
+        if (!s.hasDetail || DETAIL[s.id] || asked[s.id]) return;
+        asked[s.id] = 'loading';
+        var el = doc.createElement('script');
+        el.src = 'station/detail/' + encodeURIComponent(s.id) + '.js';
+        el.onload = function () { asked[s.id] = 'loaded'; if (sel === s.id) drawDetail(); };
+        el.onerror = function () { asked[s.id] = 'failed'; if (sel === s.id) drawDetail(); };
+        doc.head.appendChild(el);
+    }
+    function detailNote(s) {
+        return '<p class="tally">' + (!s.hasDetail
+            ? '這台機器的 config dir 裡沒有這個 session 的 transcript，所以沒有 context、階段順序、派工與過程還原'
+            : asked[s.id] === 'failed' ? '細節檔讀不到：station/detail/' + esc(s.id) + '.js'
+                : '讀取細節…') + '</p>';
+    }
+    function detailSections(s, x, open) {
+        return sec('s-ctx', 'context', tokens(x.peak) + ' 峰值 · ' + x.requests + ' requests', ctxSection(s, x), open)
+            + sec('s-order', '階段順序', x.seq.length + ' 步 · 倒退 ' + x.backtracks, orderSection(s, x), open);
+    }
+
+    // Which sections start open. A live session is watched for who is in which
+    // file; an ended one is reviewed for what it cost. The replay starts closed
+    // whatever the state: it is the longest section and the last one read.
+    function openSections(s) {
+        return s && s.state === 'live' ? ['s-sum', 's-claims'] : ['s-ctx', 's-disp'];
+    }
+    function secOpen(id, title, count, open) {
+        return '<details class="sec" id="' + id + '"' + (open.indexOf(id) >= 0 ? ' open' : '') + '><summary>'
+            + '<span class="t">' + title + '</span> <span class="cnt">' + count + '</span></summary>';
+    }
+    function sec(id, title, count, body, open) {
+        return secOpen(id, title, count, open) + body + '</details>';
+    }
+    function comma(n) {
+        return String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+    function niceStep(v) {
+        var steps = [1e3, 2e3, 5e3, 1e4, 25e3, 5e4, 1e5, 2e5, 25e4, 5e5, 1e6, 2e6, 5e6];
+        for (var i = 0; i < steps.length; i++) if (v / steps[i] <= 5) return steps[i];
+        return 1e7;
+    }
+    // At most `max` points, one per bucket, each bucket keeping its highest —
+    // so the peak the tally names is a point the line still passes through.
+    function downsample(points, max) {
+        if (points.length <= max) return points.slice();
+        var out = [];
+        var size = points.length / max;
+        for (var b = 0; b < max; b++) {
+            var lo = Math.floor(b * size);
+            var hi = Math.min(points.length, Math.floor((b + 1) * size));
+            var best = points[lo];
+            for (var i = lo + 1; i < hi; i++) if (points[i].y > best.y) best = points[i];
+            out.push(best);
+        }
+        return out;
+    }
+    // One series: x is time, y the context each request carried. Stage moves
+    // are vertical lines, dispatches out and back are dots on the line, the
+    // five largest rises are numbered. `t0`, `t1` and `ymax` come from the
+    // caller so two charts can share one scale.
+    function lineChart(points, o) {
+        var W = o.W || 340, H = o.H || 170, L = 40, R = 10, TOP = 14, B = 20;
+        var t0 = o.t0, t1 = o.t1 > o.t0 ? o.t1 : o.t0 + 1, ymax = o.ymax || 1;
+        var X = function (t) { return (L + (Math.max(Math.min(t, t1), t0) - t0) / (t1 - t0) * (W - L - R)).toFixed(1); };
+        var Y = function (v) { return (H - B - Math.min(v, ymax) / ymax * (H - TOP - B)).toFixed(1); };
+        var yAt = function (t) {
+            var y = points.length ? points[0].y : 0;
+            for (var i = 0; i < points.length && points[i].t <= t; i++) y = points[i].y;
+            return y;
+        };
+        var pts = downsample(points, 240);
+        var step = niceStep(ymax);
+        var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(o.label || 'context') + '">';
+        for (var v = 0; v <= ymax; v += step) {
+            out += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/>'
+                + '<text class="axis" x="' + (L - 4) + '" y="' + (Number(Y(v)) + 3) + '" text-anchor="end">' + tokens(v) + '</text>';
+        }
+        (o.marks || []).forEach(function (m) {
+            if (!isFinite(m.t)) return;
+            out += '<line class="bd ' + esc(m.kind) + '" x1="' + X(m.t) + '" x2="' + X(m.t) + '" y1="' + TOP + '" y2="' + (H - B)
+                + '" stroke="' + (STAGE_C[m.stage] || 'var(--mute)') + '"><title>' + esc((m.stage || m.kind) + ' · ' + stamp(m.t)) + '</title></line>';
+        });
+        if (pts.length) {
+            out += '<path class="ln" d="' + pts.map(function (p, i) { return (i ? 'L' : 'M') + X(p.t) + ' ' + Y(p.y); }).join(' ') + '"/>';
+        }
+        (o.dots || []).forEach(function (d) {
+            if (!isFinite(d.t)) return;
+            out += '<circle class="' + (d.kind === 'back' ? 'dback' : 'dout') + '" r="3.5" cx="' + X(d.t) + '" cy="' + Y(yAt(d.t))
+                + '"><title>' + esc(d.text || d.kind) + '</title></circle>';
+        });
+        (o.rises || []).forEach(function (r, i) {
+            if (!isFinite(r.t)) return;
+            out += '<g class="rb"><circle r="7" cx="' + X(r.t) + '" cy="' + Y(r.y1) + '"/><text x="' + X(r.t) + '" y="'
+                + (Number(Y(r.y1)) + 3) + '" text-anchor="middle">' + (i + 1) + '</text></g>';
+        });
+        pts.forEach(function (p) {
+            out += '<circle class="hit" r="4" cx="' + X(p.t) + '" cy="' + Y(p.y) + '"><title>回合 ' + p.n + ' · '
+                + stamp(p.t) + ' · ' + comma(p.y) + ' tokens</title></circle>';
+        });
+        out += '<text class="axis" x="' + L + '" y="' + (H - 4) + '">' + (o.elapsed ? '0m' : stamp(t0).slice(11)) + '</text>'
+            + '<text class="axis" x="' + (W - R) + '" y="' + (H - 4) + '" text-anchor="end">'
+            + (o.elapsed ? mins(t1 - t0) : stamp(t1).slice(11)) + '</text>';
+        return out + '</svg>';
+    }
+    function riseText(r) {
+        if (r.cause === 'self') return r.self.label + '，輸出 ' + comma(r.self.tok) + ' tokens';
+        var top = r.top.map(function (x) { return x.label + ' ' + comma(x.chars) + ' 字元'; });
+        return (top.join('；') || '沒有記到進來的輸出')
+            + (r.restN ? '；另 ' + r.restN + ' 項 ' + comma(r.restChars) + ' 字元' : '');
+    }
+    function risesList(s, x) {
+        if (!x.rises.length) return '<p class="tally">沒有上升</p>';
+        return '<ol class="rz" aria-label="最大的五次上升">' + x.rises.map(function (r, i) {
+            return '<li><span class="rzn">' + (i + 1) + '</span><div><div class="rzh"><span class="d">+' + tokens(r.dy)
+                + '</span><span class="w">回合 ' + r.from + '→' + r.n + (isFinite(r.t) ? ' · ' + stamp(r.t).slice(11) : '')
+                + '</span><span class="w">' + (r.cause === 'self' ? '模型自己的輸出' : '進來 ' + comma(r.inChars) + ' 字元')
+                + '</span></div><div class="rzm">' + esc(riseText(r)) + '</div>'
+                + '</div></li>';
+        }).join('') + '</ol>';
+    }
+    function ctxSection(s, x) {
+        var P = x.points;
+        var step = niceStep(x.peak || 1);
+        var dots = [];
+        x.dispatches.forEach(function (d) {
+            dots.push({ t: d.out, kind: 'out', text: '派出 · ' + d.text });
+            if (isFinite(d.back)) dots.push({ t: d.back, kind: 'back', text: '回來 · ' + d.text });
+        });
+        var same = P.length + x.noTime === x.requests;
+        return '<div class="srcline">summarise() 的 byRequest：每個 request 的 input ＋ cache read ＋ cache write</div>'
+            + (P.length ? '<div class="cx">' + lineChart(P, {
+                W: 340, H: 170, t0: P[0].t, t1: P[P.length - 1].t, ymax: Math.ceil((x.peak || 1) / step) * step,
+                marks: x.marks, dots: dots, rises: x.rises,
+                label: String(s.id).slice(0, 8) + ' 的 context，' + P.length + ' 點，峰值 ' + tokens(x.peak),
+            }) + '</div>' : '')
+            + '<div class="key" aria-hidden="true"><span><i class="kl"></i>context / request</span>'
+            + '<span><i class="ko"></i>派出</span><span><i class="kb"></i>回來</span><span><i class="ks"></i>階段</span></div>'
+            + '<p class="tally">折線 <b>' + P.length + ' 點</b>' + (x.noTime ? ' ＋ ' + x.noTime + ' requests with no time' : '')
+            + ' ＝ 摘要的 ' + x.requests + ' requests <span class="' + (same ? 'eq' : 'ne') + '">' + (same ? '一致' : '不一致')
+            + '</span>' + (P.length > 240 ? ' · 超過 240 點，降取樣並保留峰值' : '')
+            + ' · 峰值 ' + tokens(x.peak) + (x.peakN ? '（回合 ' + x.peakN + '）' : '') + '</p>'
+            + risesList(s, x);
+    }
+    function seqHtml(seq, backs, route, stage, active) {
+        var bk = {};
+        (backs || []).forEach(function (b) { bk[b.i] = true; });
+        var out = (seq || []).map(function (m, i) {
+            var b = bk[i];
+            return (i ? '<span class="ar' + (b ? ' bk' : '') + '" aria-hidden="true">' + (b ? '↩' : '→') + '</span>' : '')
+                + '<span class="s' + (b ? ' bk' : '') + (m.source !== 'cmd' ? ' fb' : '') + '" role="listitem" title="'
+                + esc(m.stage + ' · ' + stamp(m.at) + ' · ' + (m.source === 'cmd' ? 'task.js 指令' : m.source)) + '">'
+                + '<span class="i">' + (i + 1) + '</span><i class="dot" style="background:' + (STAGE_C[m.stage] || '#888')
+                + '"></i>' + esc(m.stage) + '</span>';
+        }).join('');
+        if (active) {
+            (route || []).slice((route || []).indexOf(stage) + 1).forEach(function (n) {
+                out += '<span class="ar" aria-hidden="true">→</span><span class="s todo" role="listitem">' + esc(n) + '</span>';
+            });
+        }
+        return '<div class="seq" role="list" aria-label="階段移動次序">' + out + '</div>';
+    }
+    function backBlock(s, b) {
+        return '<div class="bkl"><div class="hd2">↩ ' + esc(b.from) + ' → ' + esc(b.to) + ' <span class="mono">'
+            + stamp(b.at) + ' · ' + esc(b.from) + ' 待了 ' + mins(b.at - b.since) + '</span></div>'
+            + '</div>';
+    }
+    function orderSection(s, x) {
+        return seqHtml(x.seq, x.backs, s.route, s.stage, s.state === 'live')
+            + x.backs.map(function (b) { return backBlock(s, b); }).join('')
+            + '<p class="tally">次序取 ' + (x.seqSource === 'task.js' ? 'transcript 裡真正執行的 task.js 指令'
+                : x.seqSource === 'moves' ? 'moves（transcript 裡沒有 task.js 指令）'
+                    : 'clock（沒有指令也沒有 moves，看不出回頭）') + '；倒退 ' + x.backtracks + ' 次</p>';
+    }
+
     function draw() {
         var p = doc.getElementById('page');
         p.className = 'scrollmain' + (page === 'list' ? ' fixed' : '');

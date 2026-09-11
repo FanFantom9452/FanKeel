@@ -120,7 +120,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:767`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:774`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -139,6 +139,37 @@ zero (`lib/station.js:310`, `usd: priced ? mine + agents : null`) — the same
 line that folds the session and its agents together rather than pricing the
 parent alone, which is why the ledger's total already matches `cost(s)`'s own
 combined figure, agents included.
+
+### One session, opened
+
+Opening a row fills the panel with sections that open and close, and which
+start open is the session's state — `openSections()` in the view script: a
+live session opens on 摘要 and claims, who is in which file; one that has
+ended opens on context and 派工, what it cost. 過程還原 starts closed either
+way. Everything below claims is the session's detail, read out of its
+transcript by `lib/detail.js` and loaded the first time the session is opened;
+a session whose transcript is not under this machine's config directory has
+none, and the panel says so rather than drawing an empty chart.
+
+**context** is one line. x is time and y the context each request carried —
+input, cache read and both cache writes — taken from `summarise()`'s own
+per-request map, so the tally under it (the points plus the requests with no
+time equal the request count on 摘要) holds by construction and is printed
+anyway. A request with no timestamp is counted, not drawn; past 240 points the
+line keeps each bucket's highest point, so the peak it names is on it. Stage
+moves are vertical lines at the time of the `task.js` command that made them,
+dispatches out and back are dots, and the five largest rises are numbered and
+listed with their cause: what arrived between the two requests — tool results,
+notifications and prompts, largest first, in characters — or the model's own
+output, when the previous response's output tokens are at least half the rise.
+Thinking is stored as a signature and cannot be counted.
+
+**階段順序** is the stages in the order they were entered, from the `task.js
+start` and `stage` commands the transcript actually ran — one named inside a
+`git commit -m` message or a heredoc is not a command — then from `moves`, and
+last from the clock, which keeps one window per stage and cannot show a return.
+A step to an earlier stage on the route is a backtrack, marked `↩` with how
+long the stage before it lasted.
 
 ### Where per-stage spend comes from
 
@@ -208,19 +239,19 @@ hide rows.
 
 A gone registry keeps its facet rather than dropping off the rail, so
 selecting one never returns a blank pane with nothing on the page saying why:
-`goneNote()` (`assets/station/station.js:476`, `function goneNote()`) prints a
+`goneNote()` (`assets/station/station.js:478`, `function goneNote()`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card instead, once it is the one
-selected: `registryNote()` (`assets/station/station.js:493`, `function registryNote()`) prints its own unreadable-session count, its
+selected: `registryNote()` (`assets/station/station.js:495`, `function registryNote()`) prints its own unreadable-session count, its
 `map.md` date — or `不存在` when there is none — and its build directories
 with each one's file count, or says there are none. The old page carried all
 three on a per-registry meta line; the redesign dropped that line, and this
 card is where its contents live now. The header's own unreadable count stays
 the total across every registry and is shown only when none is selected,
 because a selected one already carries its own count on this card
-(`assets/station/station.js:797`, `a corrupt-entry count must`) — so a corrupt
+(`assets/station/station.js:807`, `a corrupt-entry count must`) — so a corrupt
 entry is never a click away from being found.
 
 `navLabels` moved into `assets/station/station.js` as `labels`, unchanged: each
@@ -247,7 +278,7 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:583`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:585`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 A stale row's clear control is the one thing that differs between the served
@@ -328,7 +359,7 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:534`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:536`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button, and every registry card now carries one:
