@@ -495,11 +495,20 @@ function cmdStart(root, opts) {
     if (opts.class && opts.route) {
         fail('--class or --route, not both. A class already names a route.');
     }
+    // Read early: the class default lives in the same profile as guard, and
+    // the class decides the route before anything else below needs one.
+    const prof = profile.read(projectRootFor(root, opts), claudeDir(opts));
+    let cls = opts.class;
+    let classFromProfile = false;
+    if (!cls && !opts.route && prof.values['class.default']) {
+        cls = prof.values['class.default'];
+        classFromProfile = true;
+    }
     let route;
-    if (opts.class) {
-        route = routeForClass(opts.class);
+    if (cls) {
+        route = routeForClass(cls);
         if (!route) {
-            fail('Not a class: ' + opts.class + NL
+            fail('Not a class: ' + cls + NL
                 + Object.keys(CLASSES).map((c) => '  ' + c + '  ' + CLASSES[c].means).join(NL));
         }
     } else {
@@ -518,7 +527,7 @@ function cmdStart(root, opts) {
         // written here would be the declaration this replaced under a new name.
         project,
         route,
-        class: opts.class ? String(opts.class).trim().toLowerCase() : undefined,
+        class: cls ? String(cls).trim().toLowerCase() : undefined,
         // Which registry answers "is that session still running". Only this
         // session knows, and a reader under a different CLAUDE_CONFIG_DIR has no
         // way to guess it — without this it judged a running neighbour dead.
@@ -536,7 +545,6 @@ function cmdStart(root, opts) {
     // The profile is the user's standing answer, written once with
     // `profile set guard`; applying it here is executing that instruction,
     // not the script choosing a mode — which is what invariant 6 forbids.
-    const prof = profile.read(projectRootFor(root, opts), claudeDir(opts));
     if (prof.sources.guard && prof.sources.guard !== 'builtin') data.guard = prof.values.guard;
 
     // `replace` rather than `update`: this record was built from scratch a few
@@ -556,11 +564,30 @@ function cmdStart(root, opts) {
     showBadge(opts, id, badge.badgeWord(data.stage, false), data, root);
 
     const lines = ['fankeel — started, at ' + data.stage
-        + (data.class ? '   class: ' + data.class : '')
+        + (data.class ? '   class: ' + data.class + (classFromProfile ? ' (profile)' : '') : '')
         + '   route: ' + route.join(' → ')];
     lines.push('');
     for (const line of describe(root, id, data)) lines.push('  ' + line);
     if (prof.sources.guard && prof.sources.guard !== 'builtin') lines[lines.findIndex((l) => l.startsWith('  guard:'))] += ' (profile)';
+
+    // Only when the project has never answered anything — a project with a
+    // file that merely lacks `class.default` already made a choice about
+    // something, and this is not a nag for the fields it left out.
+    if (!fs.existsSync(profile.projectFile(projectRootFor(root, opts)))) {
+        const { values: suggested, evidence } = profile.suggest(projectRootFor(root, opts), root);
+        lines.push('');
+        lines.push('No profile.json for this project yet — suggested from its history:');
+        for (const e of evidence) lines.push('  ' + e);
+        const keys = Object.keys(suggested);
+        if (keys.length) {
+            for (const k of keys) {
+                lines.push('  node ' + __filename + ' profile set ' + k + ' ' + suggested[k]
+                    + (opts.project ? ' --project ' + opts.project : ''));
+            }
+        } else {
+            lines.push('  nothing the history answers');
+        }
+    }
 
     lines.push('');
     lines.push(FIRST_STEP[data.stage] || 'Begin at ' + data.stage + '. Do not stop to ask whether to start.');

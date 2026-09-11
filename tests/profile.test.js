@@ -119,3 +119,14 @@ test('summary names design.mockup once somebody sets it', () => {
     assert.match(profile.summary(values, sources), /design\.mockup opus/);
     assert.equal(profile.summary({ 'design.mockup': false }, { 'design.mockup': 'builtin' }), '');
 });
+
+test('class.default is a class name, and stays out of summary', () => {
+  const d = dir();
+  fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
+  fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'class.default': 'bounded' }));
+  const { values, sources } = profile.read(d, null);
+  assert.equal(values['class.default'], 'bounded');
+  assert.equal(sources['class.default'], 'project');
+  assert.equal(profile.write(profile.projectFile(d), 'class.default', 'orbital').ok, false);
+  assert.equal(profile.summary(values, sources).includes('class.default'), false);
+});

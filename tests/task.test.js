@@ -1359,3 +1359,37 @@ test('a second verify->build return says so; the first does not', () => {
   const second = run(dir, ['stage', 'build', '--session', A]);
   assert.match(second.out, /second return to build from verify — name what verify caught/);
 });
+
+test('start reads class.default when neither --class nor --route is given', () => {
+  const dir = root();
+  run(dir, ['profile', 'set', 'class.default', 'bounded']);
+  const out = run(dir, ['start', '--session', A, '--task', 'x']);
+  assert.match(out.out, /class: bounded \(profile\)/);
+  const data = entry(dir, A);
+  assert.equal(data.class, 'bounded');
+  assert.deepEqual(data.route, ['survey', 'design', 'build', 'verify', 'land']);
+});
+
+test('an explicit --class overrides class.default and carries no (profile) tag', () => {
+  const dir = root();
+  run(dir, ['profile', 'set', 'class.default', 'bounded']);
+  const out = run(dir, ['start', '--session', A, '--task', 'x', '--class', 'spike']);
+  assert.match(out.out, /class: spike/);
+  assert.equal(/\(profile\)/.test(out.out), false);
+});
+
+test('start with no profile.json prints suggest plus a runnable profile set line', () => {
+  const dir = root();
+  const g = (...a) => require('node:child_process').execFileSync('git', a, { cwd: dir, stdio: 'ignore' });
+  g('init', '-q', '-b', 'main');
+  g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'init');
+  for (let i = 0; i < 3; i++) {
+    g('checkout', '-q', '-b', 'f' + i);
+    g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'work ' + i);
+    g('checkout', '-q', 'main');
+    g('-c', 'user.name=t', '-c', 'user.email=t@t', 'merge', '-q', '--no-ff', '-m', 'merge: f' + i, 'f' + i);
+  }
+  const out = run(dir, ['start', '--session', A, '--task', 'x']);
+  assert.match(out.out, /No profile\.json for this project yet/);
+  assert.match(out.out, /profile set land\.integration merge/);
+});
