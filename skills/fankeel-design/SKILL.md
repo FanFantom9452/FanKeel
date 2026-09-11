@@ -69,6 +69,14 @@ Cut ruthlessly: no features beyond the ask, no abstraction for single-use code,
 no configurability nobody requested, no error handling for impossible states. If
 two hundred lines could be fifty, it should be fifty.
 
+Before anything is added, stop at the first rung that holds:
+
+1. It need not exist — the ask does not require it.
+2. The standard library already does it.
+3. The platform does it natively.
+4. A dependency does it — one the project already has before a new one.
+5. Then the fewest lines that work.
+
 ### 3. The mockup — frontend work only
 
 Decide per task whether this is frontend work — whether the change puts
