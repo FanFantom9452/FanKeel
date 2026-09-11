@@ -40,7 +40,7 @@
       "name": "audit",
       "entry_condition": "todo-check after a move.",
       "stop_condition": "Done when the three scanners have been run and quoted, the adversary has read the findings, and everything not being fixed here carries a `routed:` line naming its `TODO.md` heading.",
-      "prompt_bytes": 2424,
+      "prompt_bytes": 2431,
       "prompt_byte_budget": 2500
     },
     {
