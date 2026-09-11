@@ -71,6 +71,8 @@ test('the task table marks the hint and a task with no ledger line, and counts c
     assert.match(html, /could have gone in one response/);
     assert.match(html, /class="pill sm pend">no ledger line/);
     assert.match(html, /標為完成的 <b>1 列<\/b> <span class="eq">＝<\/span> ledger 的 Task 行 1/);
+    assert.match(V.tasksHtml([Object.assign({}, tasks[0], { ledgerLines: 2 })]),
+        /標為完成的 <b>1 列<\/b> <span class="ne">≠<\/span> ledger 的 Task 行 2/, 'more Task lines than completed rows disagrees');
     assert.match(html, /Plan reviewer/);
     assert.match(V.tasksHtml([]), /沒有 plan 檔/);
 });
@@ -79,6 +81,8 @@ test('the replay is one row per event with a filter per kind, a gate shows the a
     const html = V.replayHtml(x);
     assert.equal(count(html, /<li data-kind=/g), 5);
     assert.equal(count(html, /data-rk="/g), 8);
+    assert.deepEqual([...html.matchAll(/data-rk="(\w+)"[^>]*>[^<]*<span class="n">(\d+)<\/span>/g)].map((m) => m[1] + ':' + m[2]),
+        ['prompt:1', 'stage:0', 'gate:1', 'out:1', 'back:1', 'edit:0', 'commit:1', 'test:0'], 'each filter counts its own kind');
     assert.match(html, /my own<span class="own">自己寫的<\/span>/);
     assert.match(html, /展開它自己的步驟 <span class="n">2 \/ 4 步<\/span>/);
     assert.match(html, /另有 2 步沒列出（搜 2）/);
