@@ -329,6 +329,11 @@ finding, an explicit boundary, and a sentence for when nothing was found. That i
 a way of writing a report, not anybody's property, and the subject differs enough
 that copying would not have helped.
 
+*(Superseded 2026-09-12: ponytail's review and audit became fankeel's own —
+the reviewer's `## Cuts` and fankeel-audit's three lenses — and `lib/plugins.js`
+was deleted with the render token it fed. See
+[the brief, §6.5](../improvement-brief.md#65-ponytail-去依賴).)*
+
 ## One caller is not evidence on its own
 
 `lib/ledger.js`, `lib/plugins.js` and `lib/dirty.js` each have exactly one

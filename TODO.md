@@ -71,8 +71,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Needs a decision
 
-- 〔ponytail〕深度分析：6 skill、3 hook，其中 SubagentStart 把整套規則塞進 fankeel 每個 subagent；audit 的程式碼那一半由誰接 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴).
-
 - 〔station〕總覽改版：兩個專案並排、單一專案、某一天的花費、趨勢折線。另起一次設計，附自己的 mockup — [docs/station.md](docs/station.md).
 
 ## Waiting
@@ -116,7 +114,5 @@ entry waited for actually happening. It shrank when somebody read it.
 - todo-check 不驗 `path:line` 的行號：改成一個不存在的行仍然 exit 0 且說「no stale citations」 — [scripts/todo-check.js](scripts/todo-check.js). TODO.md 不在任何 bucket，docs-check 也不看它，兩支都不檢查。lifts when: 有行號過期被抓到. 09-11.
 
 - `skills/fankeel-audit/SKILL.md:136` 把「十條、五頁」寫死在 reference 頁裡，靠一個「today」撐著 — [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md). 沒有東西會重算它。lifts when: 那兩個數字變了而這句沒變. 09-11.
-
-- 〔ponytail〕解耦 `has('ponytail')`：`lib/render.js:108-110`、`lib/stages.js:352,441`、兩份 SKILL.md、三份測試；fallback 句已經在 — [lib/render.js](lib/render.js). lifts when: §6.5 定案. 09-11.
 
 - 〔session〕`hooks/size.js` 留不留：改前 bigPerSession 0.3846；hook 上線後十個 session 用 `sessions.js --since 2026-09-11` 再量，沒降就移除 — [hooks/size.js](hooks/size.js). lifts when: 十個 session 帶著 hook 跑完. 09-11.

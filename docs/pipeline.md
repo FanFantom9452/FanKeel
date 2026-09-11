@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-11
+last_verified: 2026-09-12
 source_of_truth: lib/stages.js, lib/render.js, lib/profile.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js
 ---
 
@@ -354,7 +354,7 @@ A rule's token is one of two kinds, and a test depends on the difference — a
 among them, filled with `<plugin>/scripts/survey.js`, the root printed once
 above the rules, so `survey`'s scan rule reads `node {{SURVEY}} <term>...` with
 no root hard-coded here. A **render token**'s value is computed per stage and differs —
-`{{NEXT}}`, `{{PONYTAIL}}`, and `{{PROFILE_LAND}}`, which `land`'s own rules
+`{{NEXT}}` and `{{PROFILE_LAND}}`, which `land`'s own rules
 carry as `Integration — {{PROFILE_LAND}}.`; `lib/profile.js`'s `landClause`
 fills it with `profile: land merge, no push — do that, say so, skip the
 menu` when the profile already answered, or `no land answer in the profile:
@@ -920,8 +920,8 @@ how a checker ends up nine parts noise and read once.
 
 A page where every reference resolves can still describe a system that was
 replaced last month, and finding those costs a reading session — so the deep pass
-runs on the cadence `/ponytail-audit` runs on, and is the documentation half of
-the same fortnight.
+runs fortnightly, and is the documentation half of a pass whose code half is
+three `fankeel-reviewer` lenses asking for cuts.
 
 ```
 $ node <plugin>/scripts/docs-audit.js
@@ -972,8 +972,8 @@ to mtime for a working tree with no history. Where no `docs.json` exists the tre
 is inferred from the directories, so it is worth running on a project that never
 opted in.
 
-For the code half, `audit` uses what is installed — `/ponytail-audit` if ponytail
-is there, a graph query if graphify or codegraph is — and says plainly when none
-of them are rather than implying a check ran.
+For the code half, `audit` sends three `fankeel-reviewer` lenses over the whole
+tree, cuts only — the fankeel-audit skill names them — and adds a graph query
+where graphify or codegraph is installed.
 
 [Back to the index](README.md) · [Back to the front page](../README.md)

@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-11
+last_verified: 2026-09-12
 source_of_truth: hooks/brief.js, lib/render.js, lib/stages.js, hooks/carry.js, lib/plantasks.js, lib/usage.js, lib/prices.js, scripts/judge.js
 ---
 
@@ -365,9 +365,9 @@ are not equivalent.
 "this abstraction has one implementation" are answers no reader holding a third
 of the tree can give: the caller it is looking for is in somebody else's slice,
 so every reader reports a maybe and the parent has to redo the join. Measured on
-this repository: `lib/plugins.js` has exactly one production caller, and a reader
-holding only `scripts/` and `hooks/` would have reported none — seeing it takes
-`lib/`, `scripts/` and `hooks/` at once.
+this repository: `lib/dirty.js` has exactly one production caller,
+`hooks/inject.js`, and a reader holding only `lib/` would have reported none —
+seeing it takes `lib/` and `hooks/` at once.
 
 A lens costs more per reader — each reads the whole tree — and it buys an answer
 that does not need reassembling. The reading is thrown away either way; what
