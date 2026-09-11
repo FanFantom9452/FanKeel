@@ -582,21 +582,52 @@ test('the sweep table names every category sweep() returns', () => {
     undeclared: '**undeclared**',
   };
 
-  const skillText = fs.readFileSync(path.join(__dirname, '..', 'skills', 'fankeel', 'SKILL.md'), 'utf8');
+  // The same table lives on two pages — the core skill's and the audit skill's —
+  // and a guard over one let the other fall behind with nothing to say so. Each
+  // page words its rows its own way, so each carries its own row map and its own
+  // anchors; the keys and the bookkeeping above are shared.
+  const PAGES = [
+    {
+      file: 'skills/fankeel/SKILL.md',
+      start: '| | |',
+      end: 'Only the first four fail the run.',
+      row: ROW,
+    },
+    {
+      file: 'skills/fankeel-audit/SKILL.md',
+      start: '| Section | Defect | What it means |',
+      end: '## The part only reading finds',
+      row: {
+        drift: '**fallen behind the code they describe**',
+        landed: '**plans look landed**',
+        index: '**index**',
+        diagrams: '**diagrams behind their directory**',
+        overlaps: '**pairs describing the same code**',
+        unresolved: '**unresolved source_of_truth**',
+        orphans: '**linked from nowhere**',
+        uncovered: '**directories with no reference document**',
+        unfiled: '**unfiled**',
+        undeclared: '**undeclared**',
+      },
+    },
+  ];
 
-  // Slice the table out rather than searching the whole page — a bold phrase in
-  // unrelated prose elsewhere would pass a whole-file search.
-  const endAt = skillText.indexOf('Only the first four fail the run.');
-  assert.notEqual(endAt, -1, 'skills/fankeel/SKILL.md has no "Only the first four fail the run." sentence');
-  const start = skillText.lastIndexOf('| | |', endAt);
-  assert.notEqual(start, -1, 'skills/fankeel/SKILL.md has no table above that sentence');
-  const table = skillText.slice(start, endAt);
+  for (const page of PAGES) {
+    const text = fs.readFileSync(path.join(__dirname, '..', ...page.file.split('/')), 'utf8');
+    // Slice the table out rather than searching the whole page — a bold phrase in
+    // unrelated prose elsewhere would pass a whole-file search.
+    const endAt = text.indexOf(page.end);
+    assert.notEqual(endAt, -1, page.file + ' has no ' + JSON.stringify(page.end));
+    const start = text.lastIndexOf(page.start, endAt);
+    assert.notEqual(start, -1, page.file + ' has no table above ' + JSON.stringify(page.end));
+    const table = text.slice(start, endAt);
 
-  for (const key of keys) {
-    if (BOOKKEEPING.has(key)) continue;
-    assert.ok(ROW[key], 'sweep() returns r.' + key + ' and this test has no row for it — classify it');
-    assert.ok(table.includes(ROW[key]),
-      'the sweep table in skills/fankeel/SKILL.md has no ' + ROW[key] + ' row for r.' + key);
+    for (const key of keys) {
+      if (BOOKKEEPING.has(key)) continue;
+      assert.ok(page.row[key], 'sweep() returns r.' + key + ' and ' + page.file + ' has no row mapped for it — classify it');
+      assert.ok(table.includes(page.row[key]),
+        'the sweep table in ' + page.file + ' has no ' + page.row[key] + ' row for r.' + key);
+    }
   }
 });
 
