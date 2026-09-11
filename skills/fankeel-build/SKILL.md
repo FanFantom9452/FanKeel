@@ -320,7 +320,7 @@ runs one row per pass, and every other step of the loop is unchanged.
    `bounded` task puts its rulings — not once per task; the plan's
    `**Dispatch:**` lines already read `in-session — the user said so this
    session` for the same reason. Two builds here ran in-session,
-   `docs/plans/2026-09-01-ready-backlog.md` and then
+   `docs/archive/2026-09-01-ready-backlog.md` and then
    `docs/reports/2026-09-02-process-state-review.md`, on a session that had
    read the Workflow tool's `ultracode` gate as the Agent tool's; the Agent tool
    has no gate, and both would have dispatched.

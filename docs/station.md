@@ -12,7 +12,7 @@ what is on it and where it comes from; the decisions are in
 and, for how it is found and when it is written,
 [plans/2026-09-05-station-at-hand-design.md](plans/2026-09-05-station-at-hand-design.md);
 for the curve, the controls and why a deadline replaced a depth,
-[plans/2026-09-06-station-reads-back-design.md](plans/2026-09-06-station-reads-back-design.md).
+`docs/archive/2026-09-06-station-reads-back-design.md`.
 
 To open it: `.fankeel/index.html` in the registry you are in is the copy
 beside you, `node scripts/station.js --open` opens the newest, and

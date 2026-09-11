@@ -771,7 +771,7 @@ reproducing the markdown resolves relative to `docs/plans/`, not to `docs/`, and
 **Three near misses that must not be touched**, because they name the *designs*,
 which are already archived or stay where they are:
 `docs/README.md:41` and `docs/station.md:11` and
-`docs/plans/2026-09-05-station-at-hand.md:726` all point at
+`docs/archive/2026-09-05-station-at-hand.md:726` all point at
 `2026-09-04-session-station-design.md`, and
 `docs/plans/2026-09-07-ready-fourteen.md:822-838` describes archiving
 `2026-08-30-parallel-build-design.md`, which its own Task 8 already did.

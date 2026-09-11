@@ -564,7 +564,7 @@ Generated from this repository on 2026-09-08 at `af05431`, values copied exactly
 - Modify: `docs/pipeline.md` — cites pages this task moves
 - Modify: `docs/archive/2026-09-04-session-station.md` — an archive page whose links point at pages this task moves
 - Modify: `docs/reports/2026-09-05-stage-division-measurements.md` — a report whose links point at pages this task moves
-- Modify: `docs/plans/2026-09-05-station-at-hand.md` — cites pages this task moves
+- Modify: `docs/archive/2026-09-05-station-at-hand.md` — cites pages this task moves
 - Modify: `docs/plans/2026-09-05-station-at-hand-design.md` — cites pages this task moves
 - Modify: `docs/plans/2026-09-07-todo-thirteen.md` — cites pages this task moves
 - Read: `.fankeel/docs.json` — which bucket carries which role

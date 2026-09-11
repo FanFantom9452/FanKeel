@@ -45,9 +45,9 @@ everything that needs more than a paragraph is here.
 | Every fankeel session on this machine on one page, what each cost, and how an abandoned one is put down | [decisions/2026-09-04-session-station-design.md](decisions/2026-09-04-session-station-design.md) |
 | The eight tasks that build the station, with every test and every file written out | `docs/archive/2026-09-04-session-station.md` — *built* |
 | Why the station forgot registries — the lead dies with the badge — and where the page is written now: at `/fankeel`, at every verb, beside the user | [plans/2026-09-05-station-at-hand-design.md](plans/2026-09-05-station-at-hand-design.md) — *built* |
-| The six tasks that made the station remember, scan, write twice and say so | [plans/2026-09-05-station-at-hand.md](plans/2026-09-05-station-at-hand.md) — *built* |
-| Why a station row gains a curve of what it spent against how long it ran, and why depth alone never bounded the scan | [plans/2026-09-06-station-reads-back-design.md](plans/2026-09-06-station-reads-back-design.md) — *built* |
-| The eight tasks that add the curve, the controls, per-stage spend and a discovery that stops forgetting | [plans/2026-09-06-station-reads-back.md](plans/2026-09-06-station-reads-back.md) — *built* |
+| The six tasks that made the station remember, scan, write twice and say so | `docs/archive/2026-09-05-station-at-hand.md` — *built* |
+| Why a station row gains a curve of what it spent against how long it ran, and why depth alone never bounded the scan | `docs/archive/2026-09-06-station-reads-back-design.md` — *built* |
+| The eight tasks that add the curve, the controls, per-stage spend and a discovery that stops forgetting | `docs/archive/2026-09-06-station-reads-back.md` — *built* |
 | Why the behaviour eval is one case in the official layout with a `claude -p` runner beside it, and what was cut — CI, an llm fallback, a second case | [plans/2026-09-08-behaviour-eval-design.md](plans/2026-09-08-behaviour-eval-design.md) — *built* |
 | The four tasks that added `lib/eval.js`, `evals/route-typo`, `scripts/eval.js` and the documents, with the rulings the build made on the way | [plans/2026-09-08-behaviour-eval.md](plans/2026-09-08-behaviour-eval.md) — *built* |
 | Why the six `## Ready` entries each came down to their smallest change — a client-side rule, a print-only flag, an off-by-one at end of file, four plans archived, two Scope columns and one pair re-run | [plans/2026-09-09-ready-six-design.md](plans/2026-09-09-ready-six-design.md) — *built, 繁體中文* |
@@ -71,10 +71,10 @@ everything that needs more than a paragraph is here.
 | The fifteen tasks that pinned the port, moved the shell under `station/`, closed fourteen `## Ready` entries and added the evidence ledger and CONTRIBUTING.md | [plans/2026-09-08-ready-and-station-serve.md](plans/2026-09-08-ready-and-station-serve.md) — *built* |
 | Why a plan now declares what it reads, names the file above every fence, and is linted against its design before the gate — and why an implementer gets one brief file and a reviewer gets a template | `docs/archive/2026-09-07-plan-quality-design.md` — *built* |
 | The four tasks that added `Read:`, the fence rule, `ledger.js lint`, `brief` and `fix`, and reworded three stages' anchors to say so | `docs/archive/2026-09-07-plan-quality.md` — *built* |
-| Why the station skill goes — the `/fankeel` prompt already writes and names the page — and what moves where when it does | [plans/2026-09-07-station-skill-retired-design.md](plans/2026-09-07-station-skill-retired-design.md) — *built* |
-| The three tasks that retire the skill, catch the station page up with the code, and add `--json` | [plans/2026-09-07-station-skill-retired.md](plans/2026-09-07-station-skill-retired.md) — *built* |
-| Why six deferred decisions were settled in one pass, and what each one decided | [plans/2026-09-01-six-decisions-design.md](plans/2026-09-01-six-decisions-design.md) — *built* |
-| Which three of the four `## Ready` entries were documentation defects, and why the fourth could not be run here | [plans/2026-09-01-ready-backlog.md](plans/2026-09-01-ready-backlog.md) — *built* |
+| Why the station skill goes — the `/fankeel` prompt already writes and names the page — and what moves where when it does | `docs/archive/2026-09-07-station-skill-retired-design.md` — *built* |
+| The three tasks that retire the skill, catch the station page up with the code, and add `--json` | `docs/archive/2026-09-07-station-skill-retired.md` — *built* |
+| Why six deferred decisions were settled in one pass, and what each one decided | `docs/archive/2026-09-01-six-decisions-design.md` — *built* |
+| Which three of the four `## Ready` entries were documentation defects, and why the fourth could not be run here | `docs/archive/2026-09-01-ready-backlog.md` — *built* |
 | What a 174-agent review of the process-state design found on 2026-09-02, what was refuted, and what to fix first | [reports/2026-09-02-process-state-review.md](reports/2026-09-02-process-state-review.md) — *a dated snapshot, 繁體中文* |
 | What dispatching four readers cost against doing the same reading in-session, measured as a pair on 2026-09-03 | [reports/2026-09-03-dispatch-vs-inline.md](reports/2026-09-03-dispatch-vs-inline.md) — *a dated snapshot, 繁體中文* |
 | Why that pair's 9.2× was the searching rather than the reading, measured again with the files named | [reports/2026-09-03-dispatch-vs-inline-named.md](reports/2026-09-03-dispatch-vs-inline-named.md) — *a dated snapshot, 繁體中文* |
