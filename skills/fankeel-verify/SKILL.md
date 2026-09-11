@@ -68,6 +68,13 @@ Skipping any step is not verifying.
 | Regression test works | red-green verified: revert the fix, watch it fail, restore | it passes once |
 | An agent finished | the VCS diff | the agent's report |
 | Requirements met | line by line against the plan | tests passing |
+| A cost, token or count figure | one command's raw, unpiped, untruncated output, pasted verbatim | a model's estimate, a retyped command, a number carried over from an earlier run |
+
+A figure here has broken three ways on this repository alone: a report's own
+number cut to ten by a piped `head`, a rewritten regex that miscounted twice
+running, and a number retyped from memory instead of re-run. The row above is
+what stops all three — the evidence cell is the command's own output, not a
+description of what it should have said.
 
 ## Red flags — stop
 

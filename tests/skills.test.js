@@ -1142,3 +1142,13 @@ test('fankeel-build: a cost claim is measured, not assumed', () => {
   assert.match(flat, /A number that has not improved is not a task to patch/,
     'the ruling for an unproven cost claim is missing');
 });
+
+// caveman-stats: a cost/token/count claim's evidence cell is one unpiped
+// command's raw output, never a model's estimate or a retyped command — the
+// exact three traps this repository's own reports have already fallen into.
+test('fankeel-verify: a cost or count figure requires one unpiped command output, pasted verbatim', () => {
+  const flat = read('fankeel-verify').replace(/\s+/g, ' ');
+  assert.match(flat, /A cost, token or count figure/);
+  assert.match(flat, /one command's raw, unpiped, untruncated output, pasted verbatim/);
+  assert.match(flat, /a model's estimate, a retyped command/);
+});

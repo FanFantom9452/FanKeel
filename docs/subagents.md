@@ -95,7 +95,7 @@ from `fankeel-reader` is not the tool list — both carry the same four — but
 the shape of the question: a reader is asked what a file says, a reviewer
 is asked what a diff or a table gets wrong, and it returns only what it
 defeats. It is one of two dispatches where nobody types a model at all —
-`fankeel-verifier` is the other: `skills/fankeel-verify/SKILL.md:157`, `not typed by hand`,
+`fankeel-verifier` is the other: `skills/fankeel-verify/SKILL.md:164`, `not typed by hand`,
 and it was added on the same branch as this sentence —
 so the file's pin is the only floor — the literal `sonnet`, not `dispatch.floor`,
 which nothing in `agents/` or `hooks/` reads: `SubagentStart`'s payload
