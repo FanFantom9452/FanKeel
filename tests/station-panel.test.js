@@ -30,13 +30,14 @@ test('lineChart draws one line, a line per stage mark, a dot per dispatch out an
         t0: 0, t1: 20, ymax: 100,
         marks: [{ t: 0, kind: 'start', stage: 'survey' }, { t: 10, kind: 'stage', stage: 'build' }],
         dots: [{ t: 5, kind: 'out' }, { t: 15, kind: 'back' }],
-        rises: [{ n: 2, t: 10, y1: 50 }],
+        rises: [{ n: 2, t: 10, y1: 50 }, { n: 3, t: 20, y1: 30 }],
     });
     assert.equal(count(svg, /class="ln"/g), 1, 'one series');
     assert.equal(count(svg, /class="bd /g), 2);
     assert.equal(count(svg, /class="dout"/g), 1);
     assert.equal(count(svg, /class="dback"/g), 1);
-    assert.equal(count(svg, /<g class="rb">/g), 1);
+    assert.deepEqual([...svg.matchAll(/<g class="rb"><circle[^>]*\/><text[^>]*>(\d+)<\/text><\/g>/g)].map((m) => m[1]),
+        ['1', '2'], 'a number per rise, in order');
     assert.equal(count(svg, /class="hit"/g), 3, 'every point carries its own reading');
 });
 
