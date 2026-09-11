@@ -208,6 +208,9 @@ station 的目的是分三次加上去的。09-04：看得到每個 session、�
   `## Needs a decision`。寫之前用 `scripts/todo-check.js` 的同一套規則檢查這一行（長度
   上限、連結要能解析、不能指向 plan、decision、report、archive），不另外寫一份；沒過就
   回 400，並說是哪一條沒過。靜態頁在同一個位置印一行可以複製的條目。
+- `todo-check.js` 只 export 了整份檔的 `check(file, now)`（`:207`、`:395`），沒有單條的
+  檢查。所以做法是：把這一行接在 `TODO.md` 的暫存副本上跑 `check()`，多出任何一個
+  defect 就拒絕。規則只有 todo-check 那一份。
 - 並排比較（B7）：在列表上勾兩個 session，打開比較視圖。兩張折線上下排、共用同一個
   y 軸，x 是從各自開始算起的經過時間，每一張仍然只有一條線。下面一列並排峰值、request
   數、派工美元、倒退次數，每個數字都和各自 session 的細節面板出自同一個來源。
