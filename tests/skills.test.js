@@ -1176,3 +1176,24 @@ test('fankeel-build: a no-test fix goes to fankeel-fixer instead of a resumed im
   assert.match(flat, /never more than two files at once/);
   assert.match(flat, /fankeel-fixer` cannot run a test/);
 });
+
+// D + §5 triggers: audit runs memory-check as its fourth scanner and names
+// the correction convention beside it; land runs it once when this task
+// wrote memory, and never runs an uninstall on its own say-so.
+test('fankeel-audit: runs memory-check as the fourth scanner and names the correction convention', () => {
+  const flat = read('fankeel-audit').replace(/\s+/g, ' ');
+  assert.match(flat, /scripts\/memory-check\.js/);
+  assert.match(flat, /\*\*Corrected YYYY-MM-DD:\*\*/);
+});
+
+test('fankeel-land: runs memory-check when this task wrote memory', () => {
+  const flat = read('fankeel-land').replace(/\s+/g, ' ');
+  assert.match(flat, /scripts\/memory-check\.js/);
+  assert.match(flat, /\*\*Corrected YYYY-MM-DD:\*\*/);
+});
+
+test('fankeel-land: uninstalling a decoupled plugin is offered, never run here', () => {
+  const flat = read('fankeel-land').replace(/\s+/g, ' ');
+  assert.match(flat, /Neither is uninstalling a plugin this session decoupled from/);
+  assert.match(flat, /offered here rather than run/);
+});

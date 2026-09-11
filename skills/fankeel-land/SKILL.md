@@ -111,6 +111,12 @@ was never a note:
 | why a change was made | the commit message |
 | work deliberately deferred | `TODO.md`, one line, under the heading for what it is short of — under `## Waiting`, `lifts when: <the event>` then a `MM-DD` stamp, or `todo-check` fails the gate below |
 
+If this task wrote to the memory directory, run
+`node <plugin>/scripts/memory-check.js` once before standing the task down. A
+wrong entry it finds is corrected in place with a `**Corrected
+YYYY-MM-DD:**` line, never a silent rewrite; a stale citation is only ever
+listed, and a deletion happens only for the entry the user points at.
+
 `notes` holds five (`lib/registry.js:33`, `MAX_NOTES = 5`); a sixth note pushes
 the oldest out and nothing announces it, so a task that produced six rulings has
 already lost one by the time `land` reads them. Read the notes before standing
@@ -177,6 +183,11 @@ Present exactly these, and wait. Integration is the user's decision.
 
 **Discarding is not on the menu.** It happens only when the user asks for it in
 so many words, and then only against the typed word `discard`.
+
+**Neither is uninstalling a plugin this session decoupled from.** Removing
+caveman or ponytail after their code has been unhooked is the user's own
+command, offered here rather than run — say what was decoupled and that it
+can now be removed, and stop there.
 
 ## 7. Execute
 

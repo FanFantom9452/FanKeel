@@ -5,7 +5,7 @@ argument-hint: "[--root <dir>] [--since <days>]"
 version: 0.62.0
 status: current
 last_verified: 2026-09-11
-source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js
+source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js, scripts/memory-check.js
 ---
 
 # fankeel-audit
@@ -50,12 +50,13 @@ same logic in the shape the other six skills carry.
 
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
 
-## Run all three
+## Run all four
 
 ```
 node <plugin>/scripts/docs-check.js [--root <dir>]
 node <plugin>/scripts/residue.js [--root <dir>]
 node <plugin>/scripts/docs-audit.js [--root <dir>] [--since <days>]
+node <plugin>/scripts/memory-check.js [--root <dir>] [--config-dir <dir>]
 ```
 
 `--root` picks one project out of a workspace holding several. `--since`
@@ -98,6 +99,23 @@ committed reported nothing at all about them.
 |---|---|
 | **no Python manifest beside it** | no `pyproject.toml`, `requirements.txt`, `setup.py`, `setup.cfg`, `Pipfile` or `environment.yml` in the same directory. Nothing here can rebuild it, so whatever is inside is all there is |
 | **interpreter gone** | the `home` line in `pyvenv.cfg` names a path that is not on this machine. This is what a tree copied from another computer looks like: it cannot be activated and it cannot be rebuilt |
+
+### The native memory
+
+`memory-check.js` reads Claude Code's own memory for this project —
+`<configDir>/projects/<slug>/memory/` — the notes nothing else in this
+plugin ever prunes. It reports mechanically: the index and the directory
+disagreeing about which files exist, a cited repository path that is gone, a
+`path:line` past the end of its file. Those three fail the run. A `stale`
+line — an entry's `modified` older than the last commit to a path it cites —
+is listed, never failed: a correct memory can still cite a file that changed
+after it was written.
+
+A memory entry `memory-check` finds wrong is corrected by adding a
+`**Corrected YYYY-MM-DD:**` line naming what was wrong, never by a silent
+rewrite — `workflow-run-meta-json.md`'s own corrected line is the working
+example. Deletion is the user's call: remove only the entry the user points
+at from the findings, never one inferred from a scanner alone.
 
 ## What the sweep reports
 

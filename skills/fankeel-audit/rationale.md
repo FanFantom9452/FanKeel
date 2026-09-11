@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-11
-source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js, skills/fankeel-audit/SKILL.md
+source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js, scripts/memory-check.js, skills/fankeel-audit/SKILL.md
 ---
 
 # fankeel-audit — why
@@ -16,7 +16,7 @@ contradict each other, and nothing here pretends to: what the sweep does is turn
 the same source file, and one has not been touched since before it changed".
 That is a shortlist someone can finish.
 
-## Run all three
+## Run all four
 
 That fortnight is the **drift** window, and drift's alone — it measures how long
 a page has been wrong while the code it names moved on. The landed-plan check
