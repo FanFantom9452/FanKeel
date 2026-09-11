@@ -166,11 +166,14 @@
             comma: comma, riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
             dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml,
             todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
+            figures: figures, compareHtml: compareHtml,
         };
     }
     if (!doc) return;
     var f = { q: '', state: '', project: '', stage: '' };
     var page = 'overview', sel = null, sortKey = 'updated', sortDir = -1;
+    // The sessions ticked for 比較, oldest tick first; a third tick drops the first.
+    var picked = [];
     var NOW = Date.parse(S.generatedAt);
     var LAB = labels(S.projects.map(function (p) { return p.root; }));
     // `serialize()` never emits a `label` field — the shortest-unique-tail
@@ -213,7 +216,10 @@
             + '<span class="ic">▦</span><span class="lb">總覽</span></a>'
             + '<a data-page="list" aria-current="' + (page === 'list') + '">'
             + '<span class="ic">☰</span><span class="lb">清單</span>'
-            + '<span class="n">' + S.sessions.length + '</span></a></div></div>'
+            + '<span class="n">' + S.sessions.length + '</span></a>'
+            + '<a data-page="cmp" aria-current="' + (page === 'cmp') + '">'
+            + '<span class="ic">⇅</span><span class="lb">比較</span>'
+            + '<span class="n">' + picked.length + '</span></a></div></div>'
             + navGroup('狀態', 'state', [
                 { v: '', label: '全部', n: S.sessions.length, icon: '○' },
                 { v: 'live', label: 'live', n: n.live, icon: '<i class="dot live"></i>' },
@@ -605,10 +611,11 @@
         }
         return '<div class="phead"><h1>清單</h1><span class="chip" id="cnt"></span>'
             + '<span class="spacer"></span>'
+            + '<span class="ctl" data-page="cmp">⇅ 比較勾選的 <b id="ncmp">' + picked.length + '</b> 個</span>'
             + '<span class="ctl" data-page="overview">▦ 總覽</span></div>'
             + '<div class="listwrap" style="height:calc(100% - 54px)">'
             + '<div class="card listcard"><div class="scroll"><table>'
-            + '<colgroup><col><col style="width:130px"><col style="width:80px">'
+            + '<colgroup><col style="width:34px"><col><col style="width:130px"><col style="width:80px">'
             + '<col style="width:78px"><col style="width:86px"><col style="width:86px">'
             + '<col style="width:92px"></colgroup>'
             + '<thead id="lh"></thead><tbody id="lb"></tbody></table></div></div>'
@@ -625,7 +632,7 @@
             return sortDir * ((x || 0) - (y || 0));
         });
         doc.getElementById('cnt').textContent = R.length + ' / ' + S.sessions.length;
-        doc.getElementById('lh').innerHTML = '<tr>' + COLS.map(function (c) {
+        doc.getElementById('lh').innerHTML = '<tr><th aria-label="選來比較"></th>' + COLS.map(function (c) {
             return '<th data-k="' + c[0] + '"'
                 + (['burn', 'cost'].indexOf(c[0]) >= 0 ? ' class="r"' : '')
                 + (sortKey === c[0] ? ' data-dir="' + (sortDir > 0 ? 'asc' : 'desc') + '"' : '')
@@ -633,13 +640,16 @@
         }).join('') + '</tr>';
         doc.getElementById('lb').innerHTML = R.map(function (s) {
             return '<tr data-id="' + esc(s.id) + '" aria-selected="' + (sel === s.id) + '">'
+                + '<td><input type="checkbox" data-cmp="' + esc(s.id) + '" aria-label="選來比較"'
+                + (picked.indexOf(s.id) >= 0 ? ' checked' : '')
+                + (s.hasDetail ? '' : ' disabled title="沒有 transcript，沒有細節可比"') + '></td>'
                 + '<td>' + taskCell(s) + '</td><td>' + stageCell(s) + '</td>'
                 + '<td class="r num mute">' + tokens(s.burn) + '</td>'
                 + '<td class="r num">' + usd(cost(s)) + '</td>'
                 + '<td>' + statePill(s) + '</td>'
                 + '<td class="num mute" style="font-size:11.5px">' + day(s.started) + '</td>'
                 + '<td class="num mute" style="font-size:11.5px">' + ago(s.updated) + '</td></tr>';
-        }).join('') || '<tr><td colspan="7"><div class="empty">沒有符合的 session</div></td></tr>';
+        }).join('') || '<tr><td colspan="8"><div class="empty">沒有符合的 session</div></td></tr>';
         if (R.length && !R.some(function (s) { return s.id === sel; })) sel = R[0].id;
         drawDetail();
     }
@@ -832,8 +842,12 @@
         asked[s.id] = 'loading';
         var el = doc.createElement('script');
         el.src = 'station/detail/' + encodeURIComponent(s.id) + '.js';
-        el.onload = function () { asked[s.id] = 'loaded'; if (sel === s.id) drawDetail(); };
-        el.onerror = function () { asked[s.id] = 'failed'; if (sel === s.id) drawDetail(); };
+        var redraw = function () {
+            if (page === 'cmp') draw();
+            else if (sel === s.id) drawDetail();
+        };
+        el.onload = function () { asked[s.id] = 'loaded'; redraw(); };
+        el.onerror = function () { asked[s.id] = 'failed'; redraw(); };
         doc.head.appendChild(el);
     }
     function detailNote(s) {
@@ -1221,10 +1235,72 @@
             + '<div class="tdr" role="status" aria-live="polite"></div></div></details>';
     }
 
+    // ---- 比較 ----------------------------------------------------------------
+    // The figures the comparison sets side by side, each from the field the
+    // session's own panel prints it from.
+    function figures(x) {
+        var P = x.points;
+        return {
+            peak: x.peak, peakN: x.peakN, requests: x.requests, pts: P.length, noTime: x.noTime,
+            cents: x.rows.reduce(function (n, r) { return n + r.c; }, 0), agentCents: x.agentsTotal.cents,
+            back: x.backtracks, t0: P.length ? P[0].t : 0, t1: P.length ? P[P.length - 1].t : 0,
+        };
+    }
+    // Two lines one above the other, on one y axis and one x length, x being
+    // the time since each one's first request — each chart still one series.
+    function compareHtml(a, xa, b, xb) {
+        var fa = figures(xa), fb = figures(xb);
+        var span = Math.max(fa.t1 - fa.t0, fb.t1 - fb.t0) || 1;
+        var top = Math.max(fa.peak, fb.peak) || 1;
+        var ymax = Math.ceil(top / niceStep(top)) * niceStep(top);
+        var chart = function (s, x, f) {
+            return '<div class="cmph"><span class="sid">' + esc(String(s.id).slice(0, 8)) + '</span><span class="tk" title="'
+                + esc(s.task) + '">' + esc(s.task) + '</span><span class="meta">' + stamp(f.t0) + ' 起 · ' + mins(f.t1 - f.t0)
+                + ' · ' + s.route.length + ' 段</span></div><div class="cx">' + lineChart(x.points, {
+                    W: 720, H: 180, t0: f.t0, t1: f.t0 + span, ymax: ymax, marks: x.marks, elapsed: true,
+                    label: String(s.id).slice(0, 8) + ' 的 context，' + f.pts + ' 點，峰值 ' + tokens(f.peak),
+                }) + '</div>';
+        };
+        var row = function (s, f) {
+            return '<tr><td class="sid">' + esc(String(s.id).slice(0, 8)) + '<span class="s2">' + esc(s.state + ' · ' + s.stage) + '</span></td>'
+                + '<td class="v r">' + tokens(f.peak) + '<span class="s2">' + (f.peakN ? '回合 ' + f.peakN + ' · ' : '') + comma(f.peak) + '</span></td>'
+                + '<td class="v r">' + f.requests + '<span class="s2">' + f.pts + ' 點 ＋ ' + f.noTime + ' no time</span></td>'
+                + '<td class="v r">' + cents(f.cents) + '<span class="s2">' + (f.cents === f.agentCents ? '＝' : '≠')
+                + ' agentsOf() ' + cents(f.agentCents) + '</span></td>'
+                + '<td class="v r">' + f.back + '</td></tr>';
+        };
+        return chart(a, xa, fa) + '<div style="height:14px"></div>' + chart(b, xb, fb)
+            + '<p class="cmpnote">兩張圖共用 y 軸（0 到 ' + tokens(ymax) + '）與 x 軸的長度（' + mins(span)
+            + '）；x 是從各自第一個 request 起算的經過時間，所以同一個橫座標是「開工後同樣久」。每張圖仍然只有一條線。</p>'
+            + '<div class="figs"><table><thead><tr><th>session</th><th class="r">峰值 context</th><th class="r">requests</th>'
+            + '<th class="r">派工 USD</th><th class="r">倒退</th></tr></thead><tbody>' + row(a, fa) + row(b, fb) + '</tbody></table></div>'
+            + '<p class="cmpnote">每一格都和各自 session 的細節面板出自同一個欄位：峰值與 requests 是 context 折線的，'
+            + '派工 USD 是派工表各列的和，倒退是階段順序的。</p>'
+            + '<div class="cmpseq">' + [[a, xa], [b, xb]].map(function (p) {
+                return '<h3>' + esc(String(p[0].id).slice(0, 8)) + ' · ' + p[1].seq.length + ' 步 · 倒退 ' + p[1].backtracks + '</h3>'
+                    + seqHtml(p[1].seq, p[1].backs, p[0].route, p[0].stage, false);
+            }).join('') + '</div>';
+    }
+    function cmpPage() {
+        var two = picked.map(function (id) {
+            return S.sessions.filter(function (s) { return s.id === id; })[0];
+        }).filter(Boolean);
+        var head = '<div class="phead"><h1>比較</h1><span class="spacer"></span>'
+            + '<span class="ctl" data-page="list">☰ 回清單</span></div>';
+        if (two.length < 2) {
+            return head + '<div class="card"><div class="cbody"><p class="mute">在清單上勾兩個有細節的 session，'
+                + '這裡就上下並排比較它們。</p></div></div>';
+        }
+        two.forEach(needDetail);
+        var xa = DETAIL[two[0].id], xb = DETAIL[two[1].id];
+        return head + '<div class="card cmpcard"><div class="cbody">'
+            + (xa && xb ? compareHtml(two[0], xa, two[1], xb) : '<p class="mute">讀取細節…</p>') + '</div></div>';
+    }
+
     function draw() {
         var p = doc.getElementById('page');
         p.className = 'scrollmain' + (page === 'list' ? ' fixed' : '');
-        p.innerHTML = page === 'list' ? listPage() : overview();
+        p.innerHTML = page === 'list' ? listPage() : page === 'cmp' ? cmpPage() : overview();
         if (page === 'list') drawList();
         drawSide();
         doc.getElementById('gen').textContent = genText();
@@ -1286,6 +1362,18 @@
                 if (hit && !first) first = li;
             });
             if (first) first.scrollIntoView({ block: 'center' });
+            return;
+        }
+        var cb = e.target.closest('input[data-cmp]');
+        if (cb) {
+            var id = cb.getAttribute('data-cmp');
+            picked = picked.filter(function (x) { return x !== id; });
+            if (cb.checked) picked.push(id);
+            if (picked.length > 2) picked.shift();
+            var nc = doc.getElementById('ncmp');
+            if (nc) nc.textContent = picked.length;
+            drawList();
+            drawSide();
             return;
         }
         var pg = e.target.closest('[data-page]');

@@ -120,7 +120,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:776`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:786`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -279,19 +279,19 @@ hide rows.
 
 A gone registry keeps its facet rather than dropping off the rail, so
 selecting one never returns a blank pane with nothing on the page saying why:
-`goneNote()` (`assets/station/station.js:480`, `function goneNote()`) prints a
+`goneNote()` (`assets/station/station.js:486`, `function goneNote()`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card instead, once it is the one
-selected: `registryNote()` (`assets/station/station.js:497`, `function registryNote()`) prints its own unreadable-session count, its
+selected: `registryNote()` (`assets/station/station.js:503`, `function registryNote()`) prints its own unreadable-session count, its
 `map.md` date — or `不存在` when there is none — and its build directories
 with each one's file count, or says there are none. The old page carried all
 three on a per-registry meta line; the redesign dropped that line, and this
 card is where its contents live now. The header's own unreadable count stays
 the total across every registry and is shown only when none is selected,
 because a selected one already carries its own count on this card
-(`assets/station/station.js:809`, `a corrupt-entry count must`) — so a corrupt
+(`assets/station/station.js:819`, `a corrupt-entry count must`) — so a corrupt
 entry is never a click away from being found.
 
 `navLabels` moved into `assets/station/station.js` as `labels`, unchanged: each
@@ -318,8 +318,17 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:587`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:593`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
+
+**比較** is a third view. Tick two sessions on 清單 — only a session with a
+detail can be ticked, and a third tick drops the first — and 比較 on the rail
+opens them one above the other: two context lines on one y axis and one x
+length, x being the time since each one's first request, each still a single
+line; under them their peak context, request count, dispatch dollars and
+backward steps side by side, each from the same field that session's own panel
+prints it from; and both stage sequences. It is the before-and-after view for a
+change to a skill.
 
 A stale row's clear control is the one thing that differs between the served
 page and the file: `window.STATION.serve` is true only when a server produced
@@ -399,7 +408,7 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:538`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:544`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button, and every registry card now carries one:
