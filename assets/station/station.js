@@ -165,6 +165,7 @@
             openSections: openSections, niceStep: niceStep, downsample: downsample, lineChart: lineChart,
             comma: comma, riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
             dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml,
+            todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
         };
     }
     if (!doc) return;
@@ -946,6 +947,7 @@
                 + '</span><span class="w">回合 ' + r.from + '→' + r.n + (isFinite(r.t) ? ' · ' + stamp(r.t).slice(11) : '')
                 + '</span><span class="w">' + (r.cause === 'self' ? '模型自己的輸出' : '進來 ' + comma(r.inChars) + ' 字元')
                 + '</span></div><div class="rzm">' + esc(riseText(r)) + '</div>'
+                + todoSpot(riseTodo(s.id, r), r.cause === 'self' ? 'skills/fankeel/SKILL.md' : 'docs/station.md', s)
                 + '</div></li>';
         }).join('') + '</ol>';
     }
@@ -994,6 +996,7 @@
         return '<div class="bkl"><div class="hd2">↩ ' + esc(b.from) + ' → ' + esc(b.to) + ' <span class="mono">'
             + stamp(b.at) + ' · ' + esc(b.from) + ' 待了 ' + mins(b.at - b.since) + '</span></div>'
             + '<a class="lk" tabindex="0" data-goto="' + b.since + '" data-until="' + b.at + '">過程還原裡它前面那幾列 ↓</a>'
+            + todoSpot(backTodo(s.id, b), 'skills/fankeel-build/SKILL.md', s)
             + '</div>';
     }
     function orderSection(s, x) {
@@ -1183,6 +1186,41 @@
             + (x.dropped ? '；超過 300 列，只留 gate、階段、commit 與派工，丟掉了 ' + x.dropped + ' 列' : '') + '</p>';
     }
 
+    // ---- 記成 TODO -------------------------------------------------------
+    // One line for TODO.md's `## Needs a decision`, in the shape todo-check
+    // reads: the text, then the link it points at. `scripts/station.js`
+    // builds the line it writes with this same function.
+    function todoEntry(text, link) {
+        var l = String(link || '').trim();
+        var label = l ? (l.split('#')[0].split('/').pop() || l) : '';
+        return String(text || '').replace(/\s+/g, ' ').trim() + (l ? ' — [' + label + '](' + l + ')' : '');
+    }
+    function riseTodo(id, r) {
+        return '〔station〕' + String(id).slice(0, 8) + ' 回合 ' + r.from + '→' + r.n + ' context +' + tokens(r.dy) + '：'
+            + (r.cause === 'self' ? r.self.label
+                : r.top[0] ? r.top[0].label + ' ' + comma(r.top[0].chars) + ' 字元' : '進來的輸出');
+    }
+    function backTodo(id, b) {
+        return '〔station〕' + String(id).slice(0, 8) + ' ' + b.from + '→' + b.to + ' 倒退（' + stamp(b.at) + '，'
+            + b.from + ' 待了 ' + mins(b.at - b.since) + '）：' + b.from + ' 抓到的，' + b.to + ' 為什麼沒抓到';
+    }
+    // Served, a form that posts the line to `/todo`, which checks it with
+    // todo-check's own rules before writing and answers 400 with the rule that
+    // failed. A file on disk cannot post, so it prints the line to copy.
+    function todoSpot(text, link, s) {
+        if (!S.serve) {
+            return '<div class="td"><div class="tdc"><code>- ' + esc(todoEntry(text, link)) + '</code></div>'
+                + '<div class="tds">靜態頁不寫檔：複製這一行，貼進 TODO.md 的 ## Needs a decision。</div></div>';
+        }
+        return '<details class="td"><summary class="tdb">記成 TODO <span class="m">POST /todo</span></summary>'
+            + '<div class="tdf" data-todo-root="' + esc(s.root) + '" data-todo-id="' + esc(s.id) + '">'
+            + '<label>條目（寫進 TODO.md 的 ## Needs a decision）</label><textarea rows="2" spellcheck="false">'
+            + esc(text) + '</textarea><label>連結</label><input type="text" spellcheck="false" value="' + esc(link) + '">'
+            + '<div class="help">送出前跑 todo-check 的同一套規則：≤ 200 字元、連結要存在、不指向 plan、decision、report、archive。</div>'
+            + '<div class="act"><button type="button" class="go" data-todo>送出</button></div>'
+            + '<div class="tdr" role="status" aria-live="polite"></div></div></details>';
+    }
+
     function draw() {
         var p = doc.getElementById('page');
         p.className = 'scrollmain' + (page === 'list' ? ' fixed' : '');
@@ -1192,6 +1230,29 @@
         doc.getElementById('gen').textContent = genText();
     }
     doc.addEventListener('click', function (e) {
+        // 記成 TODO: the server checks the line and answers with the rule it
+        // failed, or with the line it wrote.
+        var todo = e.target.closest('[data-todo]');
+        if (todo) {
+            var box = todo.closest('.tdf');
+            var said = box.querySelector('.tdr');
+            var body = new URLSearchParams();
+            body.set('nonce', S.nonce || '');
+            body.set('root', box.getAttribute('data-todo-root'));
+            body.set('id', box.getAttribute('data-todo-id'));
+            body.set('text', box.querySelector('textarea').value);
+            body.set('link', box.querySelector('input').value);
+            fetch('todo', { method: 'POST', body: body }).then(function (r) {
+                return r.text().then(function (t) {
+                    said.className = 'tdr ' + (r.ok ? 'ok' : 'bad');
+                    said.textContent = (r.ok ? '寫進 TODO.md：' : r.status + ' — 沒有寫進去：') + t.trim();
+                });
+            }, function () {
+                said.className = 'tdr bad';
+                said.textContent = '送不出去：serve 還在跑嗎？';
+            });
+            return;
+        }
         // A workflow phase opens into its agents.
         var ph = e.target.closest('[data-ph]');
         if (ph) {

@@ -38,6 +38,8 @@ const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { clearEntry } = require('../lib/clear.js');
 const profile = require('../lib/profile.js');
+const todoCheck = require('./todo-check.js');
+const view = require('../assets/station/station.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
 const ASSETS = path.join(PLUGIN, 'assets', 'station');
@@ -263,6 +265,48 @@ function probe(record) {
     });
 }
 
+// The one write behind 記成 TODO. The entry goes under `## Needs a decision` in
+// the project's TODO.md, and only once `scripts/todo-check.js`'s own `check()`
+// has passed it: the line is put into a copy of the file, written beside the
+// file so its link resolves from the same directory against the same
+// `docs.json`, and any problem the copy has that the file had not is the
+// refusal, named. todo-check exports only the whole-file check, and that is
+// the point: the rules stay in one place.
+function addTodo(file, entry) {
+    if (!entry.trim()) return { status: 400, text: 'empty entry — nothing to write' };
+    let text;
+    try {
+        text = fs.readFileSync(file, 'utf8');
+    } catch (e) {
+        return { status: 404, text: 'no TODO.md at ' + file };
+    }
+    const lines = text.split('\n');
+    const at = lines.findIndex((l) => /^##\s+Needs a decision\s*$/.test(l));
+    if (at < 0) return { status: 409, text: 'no "## Needs a decision" heading in ' + file };
+    let put = at + 1;
+    while (put < lines.length && !/^#{1,6}\s/.test(lines[put])) put++;
+    while (put > at + 1 && !lines[put - 1].trim()) put--;
+    const next = lines.slice(0, put).concat(['- ' + entry], lines.slice(put)).join('\n');
+    const copy = path.join(path.dirname(file), '.TODO.station-' + process.pid + '.md');
+    const key = (p) => p.kind + '\n' + p.detail;
+    try {
+        fs.writeFileSync(copy, next);
+        const had = new Map();
+        for (const p of todoCheck.check(file).problems) had.set(key(p), (had.get(key(p)) || 0) + 1);
+        const seen = new Map();
+        for (const p of todoCheck.check(copy).problems) {
+            seen.set(key(p), (seen.get(key(p)) || 0) + 1);
+            if (seen.get(key(p)) > (had.get(key(p)) || 0)) return { status: 400, text: p.kind + ' — ' + p.detail };
+        }
+    } finally {
+        try { fs.unlinkSync(copy); } catch (e) { /* already gone */ }
+    }
+    const temp = file + '.' + process.pid + '.tmp';
+    fs.writeFileSync(temp, next);
+    registry.renameRetrying(temp, file);
+    return { status: 201, text: '- ' + entry };
+}
+
 async function serve(opts) {
     const configDir = opts.configDir || live.liveConfigDir();
     const gatherOpts = { configDir, roots: opts.roots || [], scan: opts.scan || [], cwd: process.cwd() };
@@ -468,6 +512,30 @@ async function serve(opts) {
             // does not have. `render` prints it above the control bar.
             res.writeHead(303, { location: '/?cleared=' + cleared });
             res.end();
+            return;
+        }
+        if (req.method === 'POST' && url.pathname === '/todo') {
+            const form = new URLSearchParams(await readBody(req));
+            if (form.get('nonce') !== nonce) {
+                res.writeHead(403, { 'content-type': 'text/plain' });
+                res.end('wrong nonce: open the page this server printed and try again\n');
+                return;
+            }
+            const model = modelNow();
+            const reg = model.registries.find((r) => r.root === path.resolve(form.get('root') || ''));
+            const row = reg && reg.sessions.find((s) => s.sessionId === form.get('id'));
+            if (!row) {
+                res.writeHead(404, { 'content-type': 'text/plain' });
+                res.end('no such session on this page\n');
+                return;
+            }
+            // The session's own project when it names one with a TODO.md, and
+            // the registry's root otherwise.
+            const own = path.join(reg.root, row.project || '', 'TODO.md');
+            const file = fs.existsSync(own) ? own : path.join(reg.root, 'TODO.md');
+            const out = addTodo(file, view.todoEntry(form.get('text') || '', form.get('link') || ''));
+            res.writeHead(out.status, { 'content-type': 'text/plain; charset=utf-8' });
+            res.end(out.text + '\n');
             return;
         }
         if (req.method === 'POST' && url.pathname === '/profile') {
