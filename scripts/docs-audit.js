@@ -134,6 +134,10 @@ function commitTimes(root) {
 // the four that retired the station skill among them. One `git log` for the
 // whole tree, for the reason `commitTimes` gives; outside a repository, or when
 // git fails, nothing counts as deleted and landed reads as it always did.
+// The cost is one wrong reading: a path deleted and later named again by a
+// plan that means to rebuild it reads as deleted rather than unbuilt, so that
+// plan can be offered for archiving before its work is done. `land` asks
+// before it archives anything, so the mistake costs one question.
 function deletedPaths(root) {
     let out;
     try {

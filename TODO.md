@@ -66,7 +66,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔docs〕`path:N-M` 範圍引用對 `docs-check` 完全隱形：`PATHISH` 不收範圍，既不檢查也不列為「無引文」 — [docs/documents.md](docs/documents.md). reference 角色還剩 5 條。教它讀範圍要先定義範圍「持有」什麼；改單行則會把描述整個區塊的散文弄壞，本分支收窄 `defects()` 那條時就發生過一次。
 
-- 〔audit〕drift 一律假設頁面過期（`scripts/docs-audit.js:417` `1. Drift.`），但 code 也會有邏輯錯誤，文件才是最後的依據。要定 drift 怎麼同時列出「頁過期」與「code 退化」兩個方向 — [scripts/docs-audit.js](scripts/docs-audit.js).
+- 〔audit〕drift 一律假設頁面過期（`scripts/docs-audit.js:421` `1. Drift.`），但 code 也會有邏輯錯誤，文件才是最後的依據。要定 drift 怎麼同時列出「頁過期」與「code 退化」兩個方向 — [scripts/docs-audit.js](scripts/docs-audit.js).
 
 - 〔caveman〕逐項盤點 20 skill、3 agent、6 command、2 hook，和你討論要哪些：要的改寫成 fankeel 規則，不裝它的 skill；定案後拆成 Ready 條目 — [簡報 §6.4](docs/improvement-brief.md#64-caveman-去依賴). §1.5 已列六項。
 
