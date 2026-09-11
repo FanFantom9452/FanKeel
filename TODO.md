@@ -62,7 +62,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 四條 `path:line` 沒有同行引文，所以 `quoteBeside` 不檢查它們的行號 — [docs/collisions.md](docs/collisions.md). 三條在那裡，一條在 `docs/documents.md`；同一行補原文，別讓硬換行拆開。
 
-- `docs/pipeline.md` 有兩張圖各有一條 `E2 --> F`：:418 那條（class）是對的，稽核那張（E1 是 pairs）的那條跟本分支修掉的 E4 同一個結構錯配 — [docs/pipeline.md](docs/pipeline.md). 單份文件的缺席不是 F 的「兩份都打開」，該跟 E3、E4 一樣指向 F2。
+- 兩張圖各有一條 `E2 --> F`：class 那張（E1 是 spike）對，稽核那張（E1 是 pairs）不對——它的 E2 寫 unfiled、undeclared、linked from nowhere，是單份文件的缺席，不是 F 的兩份對照 — [docs/pipeline.md](docs/pipeline.md). 既有的，該跟 E3、E4 一樣指向 F2。
 
 - 稽核那張圖（E1 是 pairs）沒有 uncovered directories 的節點：`report()` 會印它，四顆 context 節點 E1-E4 都不是它 — [docs/pipeline.md](docs/pipeline.md). 既有的；圖宣稱列全就得列全，是這一頁自己寫下的規則。
 
@@ -107,3 +107,5 @@ entry waited for actually happening. It shrank when somebody read it.
 - `permissions.deny` 是 docs/collisions.md 給操作者的那一步，但它在 `defaultMode: "auto"` 與 bypassPermissions 底下還生不生效沒人驗過 — [docs/collisions.md](docs/collisions.md). lifts when: 一次探測證實它在 auto 模式下確實攔得住. 09-11.
 
 - `--allowedTools` 吃哪個拼法沒人驗過：CLI 註冊表叫 `Task`，真實派工記成 `Agent`，兩種各跑過一次都沒派工 — [evals/subagent-no-entry/prompt.md](evals/subagent-no-entry/prompt.md). lifts when: 一次強制派工的跑動分出哪個拼法開得起工具. 09-11.
+
+- todo-check 不驗 `path:line` 的行號：改成一個不存在的行仍然 exit 0 且說「no stale citations」 — [scripts/todo-check.js](scripts/todo-check.js). TODO.md 不在任何 bucket，docs-check 也不看它，兩支都不檢查。lifts when: 有行號過期被抓到. 09-11.
