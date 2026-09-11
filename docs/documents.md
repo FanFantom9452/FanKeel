@@ -151,7 +151,7 @@ report where a real parser would cost a dependency this plugin does not have.
 - `scripts/layout.js:59` 是 `const found = trackedFiles(root);`
 - `scripts/orient.js:199` 是 `result = trackedFiles(dir, { stats });`
 - `scripts/survey.js:176` 是 `const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt`
-- `lib/map.js:228` 是 `const found = trackedFiles(root);`，六個之中只有這個檔案直接讀 `.buckets`，其餘都經 `roleOf()` 取 role
+- `lib/map.js:228` 是 `const found = trackedFiles(root);`，六個之中只有這個檔案直接讀 `.buckets`，另兩個經 `roleOf()` 取 role，剩下三個兩樣都不碰
 
 `--exclude-standard` 套用 `.gitignore`，所以宣告出來的 bucket 會
 永遠列出零個檔。這張表是這幾區唯一的說明，`node scripts/residue.js` 是它們當下
