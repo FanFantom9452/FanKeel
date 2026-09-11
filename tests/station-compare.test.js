@@ -18,8 +18,9 @@ const a = { id: 'aaaaaaaa-1', task: 'before', route: ['survey', 'build', 'verify
 const b = { id: 'bbbbbbbb-2', task: 'after', route: ['survey', 'build', 'verify'], stage: 'verify', state: 'down' };
 
 test('figures take the dispatch dollars from the rows and the backtracks from the stage order', () => {
-    const f = V.figures(detail(0, 50000, [120, 30], 1));
-    assert.deepEqual([f.peak, f.requests, f.cents, f.agentCents, f.back, f.t0, f.t1], [50000, 2, 150, 150, 1, 0, 600000]);
+    // agentsTotal disagrees with the rows on purpose: each figure must come from its own field.
+    const f = V.figures(Object.assign(detail(0, 50000, [120, 30], 1), { agentsTotal: { cents: 149 } }));
+    assert.deepEqual([f.peak, f.requests, f.cents, f.agentCents, f.back, f.t0, f.t1], [50000, 2, 150, 149, 1, 0, 600000]);
 });
 
 test('two charts, one line each, on one y axis and one x length; the table and both sequences follow', () => {
@@ -30,5 +31,8 @@ test('two charts, one line each, on one y axis and one x length; the table and b
     assert.match(html, /共用 y 軸（0 到 200k）與 x 軸的長度（20m）/);
     assert.equal(count(html, /<text class="axis" x="[\d.]+" y="\d+" text-anchor="end">20m<\/text>/g), 2, 'both x axes end at the longer span');
     assert.match(html, /\$1\.50<span class="s2">＝ agentsOf\(\) \$1\.50/);
+    assert.equal(count(html, /<tr><td class="sid">/g), 2, 'one table row per session');
+    assert.match(html, /<td class="sid">bbbbbbbb<span class="s2">down · verify<\/span><\/td>.*?\$0\.10<span class="s2">＝ agentsOf\(\) \$0\.10/,
+        'the second row is the second session');
     assert.equal(count(html, /class="ar bk"/g), 1, 'the backward step shows in its own sequence');
 });
