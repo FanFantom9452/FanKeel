@@ -72,6 +72,34 @@ test('parseArgs and dirFor compose the fixture directory from flags', () => {
   assert.equal(dirFor(opts), path.join(cfg, 'projects', 'p2'));
 });
 
+test('a main-session tool_result of exactly 20,000 chars is not counted as big', async () => {
+  const dir = tmp('fankeel-sessions-boundary-');
+  const file = path.join(dir, 'boundary.jsonl');
+  fs.writeFileSync(file, [
+    JSON.stringify({ type: 'assistant', message: { usage: { input_tokens: 1 }, content: [] } }),
+    JSON.stringify({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'r-2', content: 'z'.repeat(20000) }] } }),
+  ].join('\n') + '\n');
+  const result = await processFile(file);
+  assert.equal(result.bigToolResults, 0);
+});
+
+test('a subagent tool_result of 25,000 chars is not counted as big', async () => {
+  const dir = tmp('fankeel-sessions-subagent-');
+  const file = path.join(dir, 'subagent.jsonl');
+  fs.writeFileSync(file, [
+    JSON.stringify({
+      type: 'assistant',
+      message: {
+        usage: { input_tokens: 1 },
+        content: [{ type: 'tool_use', id: 'agent-1', name: 'Agent', input: {} }],
+      },
+    }),
+    JSON.stringify({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'agent-1', content: 'w'.repeat(25000) }] } }),
+  ].join('\n') + '\n');
+  const result = await processFile(file);
+  assert.equal(result.bigToolResults, 0);
+});
+
 test('main is exported and returns fankeelSessions from a session that ran task.js start', async () => {
   const cfg = tmp('fankeel-sessions-main-');
   const dir = path.join(cfg, 'projects', 'q');
