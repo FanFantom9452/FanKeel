@@ -150,12 +150,34 @@ curve，也拿掉了 agent 的美元、request 數與耗時。那條 curve 出�
 條件：只畫一條線；頁面上每一個總數都必須能由它下面列出的各列加總得到，並且來自同一個
 來源。
 
-- 面板分成可收合的區塊，依序是：既有的摘要（預設打開）、context 折線（預設打開）、
-  階段順序、任務、派工、過程還原（預設收合）。版面照
-  `.fankeel/build/2026-09-11-backlog-all/mockup.html`（第二版）。
+### 誰用、為了什麼（2026-09-11 使用者確認：兩種人都服務，細節面板給 B）
+
+station 的目的是分三次加上去的。09-04：看得到每個 session、清得掉死掉的、session 結束後
+有一頁可以看。09-08：開工前先把偏好設好。09-11 加的就是這一節：**把一個 session
+攤開，找出 fankeel 流程本身在哪裡浪費了 context、時間和錢，好回頭改 skill**。前兩個是
+日常操作，第三個是改進 skill 時用來量的尺。
+
+| # | 誰 | 想要 | 為了 | 由哪一塊回答 | 算數的條件 |
+|---|---|---|---|---|---|
+| A1 | 同時開好幾個 session 的開發者 | 一眼看到哪些 session 還活著、各在做什麼、碰了哪些檔 | 兩個 session 不撞同一個檔 | 列表、摘要 | 已經有 |
+| A2 | 同上 | 清掉死掉的紀錄 | 列表上只剩真的在跑的 | stale 列的 clear | 已經有 |
+| A3 | 同上 | 開工前設好這個專案的 land、guard、class | 流程裡不再被問 | profile 卡 | 第 9 節補上 `class.default` |
+| B1 | 改 fankeel 的人（也就是使用者自己） | 知道一個 session 的 context 為什麼漲到峰值 | 決定要擋哪一種輸出、改哪一條規則 | context 折線 | 最大的五次上升各標出原因 |
+| B2 | 同上 | 看主 agent 怎麼把工作切成 task 和派工 | 找出本來可以一起派、卻分開派的 | 任務、派工 | 平行提示 |
+| B3 | 同上 | 每次派工花多久、多少 token、什麼模型、多少錢，回傳又在主 context 占了多少 | 判斷這次派工值不值得 | 派工 | 多一欄「回傳字元」 |
+| B4 | 同上 | 不必翻幾百 MB 的 transcript，也能還原這個 session 大致做了什麼，包括 subagent 裡面做的 | 回頭檢討時手上有證據 | 過程還原 | subagent 的步驟收在它那一列底下 |
+| B5 | 同上 | verify→build 來回了幾次、每次為什麼 | 把 verify 的檢查搬到 build 去 | 階段順序 | 每一次倒退都能點到過程還原裡它前面那幾列 |
+| B6 | 同上 | 把一次上升或一次倒退記成 TODO 的一條 | 發現直接變成改 skill 的待辦，不靠記憶 | serve 模式的「記成 TODO」鍵；靜態頁印一行可複製的條目 | 寫進去之前先過 todo-check 的規則，沒過就拒絕並說哪一條 |
+| B7 | 同上 | 挑兩個 session 並排比較 | 改 skill 前後各量一次（caveman A 的畫面版） | 比較視圖 | 兩張折線共用 y 軸，各自仍只有一條線；峰值、request 數、派工美元、倒退次數並排 |
+
+- 面板的區塊依 session 的狀態決定預設開合：還活著的 session 預設打開摘要與 claims
+  （A1）；已經結束的預設打開 context 折線與派工（B1、B3）；過程還原一律預設收合。
+  版面照 `.fankeel/build/2026-09-11-backlog-all/mockup.html`（第三版）。
 - context 折線只畫一條線。x 是時間，y 是每個 request 的 context（input 加 cache read
   加 cache write），資料是 `summarise()`（`lib/usage.js:59`）本來就收集的
   `byRequest`。階段邊界畫成直線，派工送出與回來畫成點，壓縮造成的下降一眼看得出來。
+- 最大的五次上升各標出原因：兩個 request 之間進來的是哪一個工具的輸出、哪一次派工的
+  回傳，各多少字元（B1）。
 - 階段邊界的時間取 transcript 裡 `task.js start|stage|route` 那個指令的時間戳記；
   transcript 裡沒有指令時才退回 `moves`。`moves` 記的是 hook 第一次看到變化的時間，
   第二版 mockup 在這個 session 量到：`start` 在 17:12:35，`moves` 記的 survey 起點
@@ -169,10 +191,26 @@ curve，也拿掉了 agent 的美元、request 數與耗時。那條 curve 出�
   不用 `workflow_agent.tokens` 那個總數，因為要分 input、output、cache 才算得出錢。
   耗時用 `spanOf()`（`lib/usage.js:163`）。美元旁邊印價目表的 `verified` 日期；價目表
   不認得的模型寫 `unpriced`，不寫 0。
+- 派工每一列再多一欄「回傳字元」：那次派工的結果進入主 context 的長度（背景 agent 是
+  task-notification，前景的是 Agent 的 tool_result）。這是派工留在主 session 裡的成本
+  （B3）。
 - 過程還原：從主 transcript 抽事件，一個事件一列，照時間排——使用者的 prompt（前 60
   字）、階段移動、gate 的問題與選到的答案、派工的送出與回來、改了哪些檔（同一回合的
   合併成一列）、`git commit` 的 subject、測試的結果行（`ℹ pass`、`ℹ fail`）。上限
   300 列；超過就只留 gate、階段、commit、派工，並寫出丟掉了幾列。
+- 每一次派工在過程還原裡是一列，點開後展開它自己的步驟：讀了哪些檔、改了哪些檔、跑了
+  哪些指令和結果，從它自己的 `agent-<id>.jsonl` 抽出來，同樣有上限（B4）。
+- 寫入的界線：靜態頁什麼都不寫；serve 模式只在使用者按下按鍵時寫，能寫的是既有的
+  clear、profile，再加上這一節的 TODO。使用者在同一個回答裡勾了「只看，不寫」與
+  「把發現記成 TODO」，這兩個選項就是用這條界線分開的。
+- 記成 TODO（B6）：serve 模式在每一次標出原因的上升、每一次倒退旁邊放一個按鍵，預填
+  一行 `〔station〕` 開頭的條目與一個連結欄，POST `/todo` 寫進該專案 `TODO.md` 的
+  `## Needs a decision`。寫之前用 `scripts/todo-check.js` 的同一套規則檢查這一行（長度
+  上限、連結要能解析、不能指向 plan、decision、report、archive），不另外寫一份；沒過就
+  回 400，並說是哪一條沒過。靜態頁在同一個位置印一行可以複製的條目。
+- 並排比較（B7）：在列表上勾兩個 session，打開比較視圖。兩張折線上下排、共用同一個
+  y 軸，x 是從各自開始算起的經過時間，每一張仍然只有一條線。下面一列並排峰值、request
+  數、派工美元、倒退次數，每個數字都和各自 session 的細節面板出自同一個來源。
 - 快取：每個 session 抽出來的結果存在 `<configDir>/fankeel/station/cache/<session>.json`，
   以 transcript 與 agent 目錄的大小加 mtime 為鍵。每次 `/fankeel` 只重讀有變動的，已經
   結束的 session 讀過一次就不再讀。`summarise()` 現在每次都把全部重讀一遍，這個快取
