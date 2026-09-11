@@ -125,6 +125,15 @@ Three failures the scanners cannot see, and the reason this skill exists:
   them is the source and the other links to it. Say which should be which and
   why — usually the one closest to the code wins.
 
+**Drift's two readings.** A drift finding is a gap, not a verdict: the code
+named changed after the page did, and either side can be the one that is
+wrong. The row lists what actually happened to the code afterward — read the
+commit subjects it carries. One that already says it means to change this
+behaviour is the page's fix: bring the page in line with it. No commit says
+so, and the code itself is the suspect: leave the page alone and open a
+`TODO.md` entry under `## Needs a decision` naming what looks wrong, rather
+than rewriting the page to match a change nobody meant to make.
+
 So dispatch it: one reader per pair, **several in one response** so they run at
 once, each told the file they share and asked which page the code supports. Four
 in one response is the ceiling — the fankeel skill's *Dispatch by default, never

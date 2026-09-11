@@ -81,6 +81,34 @@ test('a document newer than its subject is not drift', () => {
   assert.equal(sweep(root).drift.length, 0);
 });
 
+// A date gap alone cannot say which side is wrong, so the row hands over what
+// actually happened to the target after the page's date — the commit subjects
+// a person needs to route the finding, rather than a default blame on the page.
+test('a drift row carries the commit subjects that touched its target after the page', () => {
+  const root = withTree(tree({
+    'docs/01-architecture.md': { body: 'the badge is written by `lib/badge.js`\n', age: 60 },
+    'lib/badge.js': { body: 'x\n', age: 60 },
+  }), 'flat');
+  const envAt = (at) => Object.assign({}, process.env, { GIT_AUTHOR_DATE: at, GIT_COMMITTER_DATE: at });
+  const git = (args, env) => execFileSync('git', args, { cwd: root, env, stdio: 'ignore' });
+  const first = new Date(daysAgo(60)).toISOString();
+  git(['init', '-q']);
+  git(['config', 'user.email', 'test@example.invalid']);
+  git(['config', 'user.name', 'test']);
+  git(['config', 'commit.gpgsign', 'false']);
+  git(['add', '-A'], envAt(first));
+  git(['commit', '-q', '-m', 'one'], envAt(first));
+
+  fs.writeFileSync(path.join(root, 'lib', 'badge.js'), 'y\n');
+  const second = new Date(daysAgo(3)).toISOString();
+  git(['add', '-A'], envAt(second));
+  git(['commit', '-q', '-m', 'rewrite the badge writer'], envAt(second));
+
+  const r = sweep(root);
+  assert.equal(r.drift.length, 1);
+  assert.deepEqual(r.drift[0].subjects, ['rewrite the badge writer']);
+});
+
 // The role logic that `docs-check` needed, needed again for the same reason. A
 // plan is *supposed* to be older than the code it describes — that is what
 // happens when the plan succeeds.
