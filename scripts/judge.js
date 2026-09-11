@@ -75,6 +75,9 @@ function record(opts) {
     const projectRoot = docs.projectRootsFor(root, opts.project ? [opts.project] : (mine.project ? [mine.project] : []))[0] || root;
     const brief = fs.readFileSync(opts.brief, 'utf8');
     const answer = readAnswer(opts.answer);
+    // Filed on 2026-09-11 with nothing under `## Answer`: the answer came from a
+    // background agent's `tasks/<id>.output`, which is 0 bytes, and this exited 0.
+    if (!answer.trim()) fail('The answer is empty, so there is nothing to record. A background judge\'s answer is the last assistant message in <session>/subagents/agent-<id>.jsonl; its tasks/<id>.output is 0 bytes.');
     const judged = new Date().toISOString();
     const model = opts.model || 'fable';
     const dir = path.join(projectRoot, 'docs', 'judgements');

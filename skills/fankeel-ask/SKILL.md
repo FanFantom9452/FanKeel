@@ -82,6 +82,11 @@ the stage produces; it does not approve it.
    judgement quietly becomes a paraphrase of one. This is what writes it,
    dated, under `docs/judgements/`, and adds its row to the index where the
    project has a `## Judgements` table.
+
+   The answer is the judge's last assistant message. For a background
+   dispatch that is in `<session>/subagents/agent-<id>.jsonl` — its
+   `tasks/<id>.output` is 0 bytes, and `record` refuses the blank answer
+   piping that file would give it.
 4. **Say what the stage accepted, in one line, and carry on.** Name the file
    the record landed in. At the next gate, option one's description names it
    too, so approving the stage's output also shows what it was decided on.
