@@ -67,8 +67,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔station〕`dispatchesOf()` 要算進一個 session 的每一個 workflow run，但沒有測試用兩個 run 檔跑過：fixture 只寫 `wf_1.json` — [tests/dispatches.test.js](tests/dispatches.test.js). 補兩個 run 檔，斷言兩個都算到。
-
 ## Needs a decision
 
 - `docs-audit` 把還沒跑的 `docs/plans/2026-09-09-design-class-prompt.md`（`design-intent`）算成已落地，每次都 exit 1；landed 該不該跳過 design-intent — [scripts/docs-audit.js](scripts/docs-audit.js).

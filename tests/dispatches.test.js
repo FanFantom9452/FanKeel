@@ -22,8 +22,11 @@ const agentLine = (rid, s, model, u) => line({ type: 'assistant', isSidechain: t
 
 // Two Agent calls in one request (one in the background, one not), then a
 // Workflow; an agent file whose tool_use is not in the transcript; a run file
-// naming two agents, one of which left no transcript.
-function session() {
+// naming two agents, one of which left no transcript. With `second`, a second
+// Workflow with its own run file and its own agent — the only shape that walks
+// `runsOf`'s readdir and `agentFiles`' per-run walk past their first pass.
+function session(opts) {
+    const two = !!(opts && opts.second);
     const base = tmp('fankeel-dispatch-');
     const t = path.join(base, 'sess.jsonl');
     const dir = path.join(base, 'sess');
@@ -36,8 +39,13 @@ function session() {
         result(3, 'toolu_b', 'the answer', { status: 'completed', agentId: 'bbb2' }),
         said('req_2', 4, [use('toolu_w', 'Workflow', { script: 'export const meta = {}' })]),
         result(5, 'toolu_w', 'started', { status: 'async_launched', runId: 'wf_1', workflowName: 'flow' }),
+        ...(two ? [
+            said('req_3', 6, [use('toolu_w2', 'Workflow', { script: 'export const meta = {}' })]),
+            result(7, 'toolu_w2', 'started', { status: 'async_launched', runId: 'wf_2', workflowName: 'flow2' }),
+        ] : []),
         notify(20, 'toolu_a'),
         notify(30, 'toolu_w'),
+        ...(two ? [notify(31, 'toolu_w2')] : []),
     ].join(''));
     const sub = path.join(dir, 'subagents');
     fs.mkdirSync(path.join(sub, 'workflows', 'wf_1'), { recursive: true });
@@ -60,6 +68,17 @@ function session() {
             { type: 'workflow_agent', agentId: 'eee5', label: 'check:y', phaseTitle: 'Check', agentType: 'fankeel:fankeel-reviewer', model: 'claude-sonnet-5' },
         ],
     }));
+    if (two) {
+        fs.mkdirSync(path.join(sub, 'workflows', 'wf_2'), { recursive: true });
+        fs.writeFileSync(path.join(sub, 'workflows', 'wf_2', 'agent-fff6.jsonl'),
+            agentLine('r6', 9, 'claude-sonnet-5', { input_tokens: 20, output_tokens: 20 }));
+        fs.writeFileSync(path.join(dir, 'workflows', 'wf_2.json'), JSON.stringify({
+            runId: 'wf_2', workflowName: 'flow2', workflowProgress: [
+                { type: 'workflow_phase', index: 1, title: 'Land' },
+                { type: 'workflow_agent', agentId: 'fff6', label: 'land:z', phaseTitle: 'Land', agentType: 'fankeel:fankeel-fixer', model: 'claude-sonnet-5', tokens: 40 },
+            ],
+        }));
+    }
     return t;
 }
 
@@ -102,4 +121,24 @@ test('the rows add up to what agentsOf sums over the same files, and a missing t
     const theirs = Object.values(usage.agentsOf(t).models).reduce((n, m) => n + five(m), 0);
     assert.equal(rows.reduce((n, r) => n + r.tokens, 0), theirs);
     assert.equal(usage.dispatchesOf(path.join(path.dirname(t), 'none.jsonl')), null);
+});
+
+// `runsOf` reads the whole `workflows/` directory and `agentFiles` walks every
+// run under `subagents/workflows/`, but one run file never takes either loop
+// past its first pass. `05de9a54` is a real session with two.
+test('a second run file is its own dispatch: both runs counted, each agent placed on its own Workflow', () => {
+    const out = usage.dispatchesOf(session({ second: true }));
+    assert.deepEqual(out.runs, [
+        { run: 'wf_1', name: 'flow', agents: 2 },
+        { run: 'wf_2', name: 'flow2', agents: 1 },
+    ]);
+    const by = Object.fromEntries(out.rows.map((r) => [r.id, r]));
+    assert.deepEqual(Object.keys(by).sort(), ['aaa1', 'bbb2', 'ccc3', 'ddd4', 'eee5', 'fff6']);
+    const flows = out.dispatches.filter((d) => d.surface === 'workflow');
+    assert.deepEqual(flows.map((d) => d.run), ['wf_1', 'wf_2']);
+    assert.deepEqual(flows[0].ids.slice().sort(), ['ddd4', 'eee5']);
+    assert.deepEqual(flows[1].ids, ['fff6']);
+    assert.equal(by.fff6.disp, out.dispatches.indexOf(flows[1]));
+    assert.deepEqual([by.fff6.surface, by.fff6.label, by.fff6.phase, by.fff6.tokens],
+        ['workflow', 'land:z', 'Land', 40]);
 });
