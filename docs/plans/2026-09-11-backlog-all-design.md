@@ -177,7 +177,14 @@ station 的目的是分三次加上去的。09-04：看得到每個 session、�
   加 cache write），資料是 `summarise()`（`lib/usage.js:59`）本來就收集的
   `byRequest`。階段邊界畫成直線，派工送出與回來畫成點，壓縮造成的下降一眼看得出來。
 - 最大的五次上升各標出原因：兩個 request 之間進來的是哪一個工具的輸出、哪一次派工的
-  回傳，各多少字元（B1）。
+  回傳，各多少字元（B1）。如果上一個回應自己的 output tokens 佔了這次上升的一半以上，
+  原因就記成模型自己的輸出。thinking 在 transcript 裡只存簽章，量不到字元。第三版
+  mockup 量這個 session 的五次上升：三次是主迴圈讀了大檔，兩次是主迴圈自己寫的長
+  prompt 與 workflow script，沒有一次是 subagent 的回傳。
+- 階段序列與倒退次數都從 transcript 裡真正執行的 `task.js` 指令算，`moves` 只在沒有
+  指令時才用（`05de9a54` 就沒有 `moves`）。只算 Bash 指令本身，不算 `git commit -m`
+  裡面提到 `task.js stage` 的文字：第三版 mockup 的第一次解析就被這種 commit message
+  騙成一次倒退。
 - 階段邊界的時間取 transcript 裡 `task.js start|stage|route` 那個指令的時間戳記；
   transcript 裡沒有指令時才退回 `moves`。`moves` 記的是 hook 第一次看到變化的時間，
   第二版 mockup 在這個 session 量到：`start` 在 17:12:35，`moves` 記的 survey 起點
@@ -193,7 +200,10 @@ station 的目的是分三次加上去的。09-04：看得到每個 session、�
   不認得的模型寫 `unpriced`，不寫 0。
 - 派工每一列再多一欄「回傳字元」：那次派工的結果進入主 context 的長度（背景 agent 是
   task-notification，前景的是 Agent 的 tool_result）。這是派工留在主 session 裡的成本
-  （B3）。
+  （B3）。背景 agent 啟動時回來的那一則確認不算進這一欄，頁面上要寫明（這個 session
+  的確認合計 5,462 字元，回傳 14,317 字元）。
+- 一個 session 的所有 workflow run 都要算進去，不只是最新的一個：`05de9a54` 有兩個。
+- 比較視圖除了共用 y 軸，x 軸的長度也共用，兩張圖在同一個時間刻度上比。
 - 過程還原：從主 transcript 抽事件，一個事件一列，照時間排——使用者的 prompt（前 60
   字）、階段移動、gate 的問題與選到的答案、派工的送出與回來、改了哪些檔（同一回合的
   合併成一列）、`git commit` 的 subject、測試的結果行（`ℹ pass`、`ℹ fail`）。上限
