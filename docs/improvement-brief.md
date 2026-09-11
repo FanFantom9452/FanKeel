@@ -977,7 +977,7 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 > 這個前提在 `TODO.md` 落成〔audit〕drift 方向那一條，因為 `scripts/docs-audit.js` 的
 > drift 目前一律假設過期的是頁面。拆法的判斷歸檔在
 > `docs/judgements/2026-09-11-todo-split.md`；它把這個前提列為「不是待辦」，使用者在 design
-> gate 核准的草稿則另立了 drift 那一條（`5d08561`），因為 drift 只指向頁面是一個可以改的行為。下面每一節放的是
+> gate 核准的草稿則另立了 drift 那一條（`docs/decisions/2026-09-11-todo-split.md`），因為 drift 只指向頁面是一個可以改的行為。下面每一節放的是
 > TODO 條目裝不下的細節，
 > 數字都是 09-11 當天量的。
 
