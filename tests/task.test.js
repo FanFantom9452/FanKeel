@@ -1341,3 +1341,21 @@ test('profile suggest writes nothing and says what the history answers', () => {
   assert.match(out.out, /nothing written/);
   assert.equal(fs.existsSync(path.join(dir, '.fankeel', 'profile.json')), false);
 });
+
+test('a second verify->build return says so; the first does not', () => {
+  const dir = root();
+  started(dir, A, 'ship it');
+  let data = entry(dir, A);
+  data.stage = 'verify';
+  data.moves = [['survey', 1], ['build', 2], ['verify', 3]];
+  registry.writeSession(dir, A, data);
+  const first = run(dir, ['stage', 'build', '--session', A]);
+  assert.equal(/second return/.test(first.out), false);
+
+  data = entry(dir, A);
+  data.stage = 'verify';
+  data.moves = [['survey', 1], ['build', 2], ['verify', 3], ['build', 4], ['verify', 5]];
+  registry.writeSession(dir, A, data);
+  const second = run(dir, ['stage', 'build', '--session', A]);
+  assert.match(second.out, /second return to build from verify — name what verify caught/);
+});

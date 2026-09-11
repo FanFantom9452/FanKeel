@@ -613,10 +613,17 @@ function cmdStage(root, opts) {
     const spent = registry.burnOf(data, from);
     const took = registry.clockOf(data, from);
     const held = registry.waitedOf(data, from);
-    return 'fankeel — ' + from + ' to ' + name + (at ? '   ' + at.step + ' of ' + at.steps : '')
+    let line = 'fankeel — ' + from + ' to ' + name + (at ? '   ' + at.step + ' of ' + at.steps : '')
         + (spent ? '   ' + from + ' burned ' + tokens(spent) : '')
         + (took ? '   ' + from + ' took ' + mins(took)
             + (held ? ', ' + mins(held) + ' of it at the gate' : '') : '');
+    // 只在「已經有一次」之後才說，因為第一次 verify→build 就是這條 pipeline
+    // 本來的走法。只是 script 輸出，不佔注入——build 自己的區塊已經是 2393 / 2400。
+    if (name === 'build' && from === 'verify' && registry.returnsTo(data, 'verify', 'build') > 0) {
+        line += NL + 'second return to build from verify — name what verify caught that build\'s'
+            + NL + 'review did not, and add that check to the review';
+    }
+    return line;
 }
 
 // A new task on a session that already has one. `down` then `start` was the only
