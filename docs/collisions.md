@@ -137,10 +137,10 @@ deleting the field: absence means `ask` now, so deleting it would turn opting ou
 into opting in.
 
 Two rules keep it from becoming a lockout, both inside `blockers()`
-(`lib/guard.js:123`) — one asked of every holder, one only when this session
-holds the file too:
+(`lib/guard.js:123`, `function blockers(`) — one asked of every holder, one
+only when this session holds the file too:
 
-- **A dead session's claim never blocks** — `isLive`, `lib/guard.js:130`.
+- **A dead session's claim never blocks** — `isLive`, `lib/guard.js:130` (`if (!isLive(`).
   Liveness is the session's own file under `sessions/` in the config directory
   **that session recorded**, plus a live process behind its pid; a terminal
   that is gone holds nothing shut. `CLAUDE_CONFIG_DIR` moves that directory, so
@@ -154,9 +154,9 @@ holds the file too:
   still be found dead. An entry that names no directory, or names the one
   already scanned, is checked against that scan only when the scan is known
   good, and can be judged dead there (`isLive`, `lib/live.js`).
-- **The older task holds** — `claimedFirst`, `lib/guard.js:131`. When both
-  sessions claim the file, the newer one yields — so two sessions that both
-  reached it cannot block each other into a stalemate.
+- **The older task holds** — `claimedFirst`, `lib/guard.js:131` (`!claimedFirst(data, mine)`). When
+  both sessions claim the file, the newer one yields — so two sessions
+  that both reached it cannot block each other into a stalemate.
 
 A task never blocking itself is a separate mechanism, and it runs before
 `blockers()` ever sees the other side: `hooks/guard.js:45` filters `others`

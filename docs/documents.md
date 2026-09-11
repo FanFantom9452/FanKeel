@@ -323,7 +323,8 @@ plans, a broken index and diagrams; `orphans` is not a term in that sum.
 
 `docs-check` prints the findings themselves, not a summary of them — the role
 counts at the top are in addition to the list, not instead of it. The list is
-capped at `MAX_FINDINGS = 200` (`scripts/docs-check.js:31`) and says so when it
+capped at `MAX_FINDINGS = 200`
+(`scripts/docs-check.js:31`, `const MAX_FINDINGS = 200`) and says so when it
 bites, so a run past that cap is the one case where the printed list is not the
 whole of it. Short of the cap, comparing two branches is a `diff` rather than a
 flag:
