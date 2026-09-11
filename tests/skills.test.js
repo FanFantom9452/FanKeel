@@ -1152,3 +1152,27 @@ test('fankeel-verify: a cost or count figure requires one unpiped command output
   assert.match(flat, /one command's raw, unpiped, untruncated output, pasted verbatim/);
   assert.match(flat, /a model's estimate, a retyped command/);
 });
+
+// cavecrew-builder: verify, audit and build each name fankeel-fixer for the
+// one case it exists for — a fix with no test cycle of its own — and all
+// three carry the same file-count refusal in the same words, so one grep
+// checks the contract everywhere it is repeated.
+test('fankeel-verify: a false page with no test of its own goes to fankeel-fixer', () => {
+  const flat = read('fankeel-verify').replace(/\s+/g, ' ');
+  assert.match(flat, /subagent_type: fankeel-fixer/);
+  assert.match(flat, /never more than two files at once/);
+  assert.match(flat, /re-runs `docs-check` itself once it returns/);
+});
+
+test('fankeel-audit: a dead reference with no test of its own goes to fankeel-fixer', () => {
+  const flat = read('fankeel-audit').replace(/\s+/g, ' ');
+  assert.match(flat, /subagent_type: fankeel-fixer/);
+  assert.match(flat, /never more than two files at once/);
+});
+
+test('fankeel-build: a no-test fix goes to fankeel-fixer instead of a resumed implementer', () => {
+  const flat = read('fankeel-build').replace(/\s+/g, ' ');
+  assert.match(flat, /subagent_type: fankeel-fixer/);
+  assert.match(flat, /never more than two files at once/);
+  assert.match(flat, /fankeel-fixer` cannot run a test/);
+});

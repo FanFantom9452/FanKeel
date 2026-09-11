@@ -102,6 +102,12 @@ A renamed export, a changed default, a removed flag, a moved file — each has a
 page somewhere that still says the old thing, and every reference in it still
 resolves. Name the page and the line.
 
+A false page with nothing else to fix is a fix with no test cycle of its own:
+dispatch `subagent_type: fankeel-fixer` with the page and the exact
+correction, never more than two files at once. It returns which lines
+changed, and this stage re-runs `docs-check` itself once it returns — a code
+fix that needs its own red-then-green cycle is `build`'s, not this agent's.
+
 A change that is correct and leaves three pages describing the old behaviour has
 been half verified.
 

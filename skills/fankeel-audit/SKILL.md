@@ -68,6 +68,11 @@ A dead path is a bug in a reference document and history in an archive.
 `docs-check` reads the role from `docs.json` and grades it that way, which is
 why the injected rule no longer says so: the script holds it.
 
+A dead reference or a stale quote with no test of its own is exactly this
+kind of fix: dispatch `subagent_type: fankeel-fixer` with the page and the
+correction, never more than two files at once, and re-run `docs-check`
+yourself once it returns.
+
 ### The one that is not about documents
 
 `residue.js` asks what is in this tree that nobody decided about. There is no

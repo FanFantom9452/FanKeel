@@ -8,7 +8,7 @@
   },
   "skills": "./skills/",
   "outputStyles": "./output-styles/",
-  "agents": ["./agents/fankeel-reader.md", "./agents/fankeel-judge.md", "./agents/fankeel-reviewer.md", "./agents/fankeel-verifier.md"],
+  "agents": ["./agents/fankeel-reader.md", "./agents/fankeel-judge.md", "./agents/fankeel-reviewer.md", "./agents/fankeel-verifier.md", "./agents/fankeel-fixer.md"],
   "hooks": {
     "SessionStart": [
       {

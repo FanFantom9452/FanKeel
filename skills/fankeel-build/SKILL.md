@@ -332,6 +332,13 @@ runs one row per pass, and every other step of the loop is unchanged.
    with them named. A cap that silently drops what it caps is the failure
    this is preventing.
 
+   A finding that is a reference-page correction or a one-line fix with no
+   test cycle of its own does not need a fix round at all: dispatch
+   `subagent_type: fankeel-fixer` instead of resuming the task's implementer,
+   never more than two files at once, and re-run whatever check the finding
+   named yourself once it returns. A fix that needs its own red-then-green
+   cycle still resumes the implementer — `fankeel-fixer` cannot run a test.
+
    **A fix round lands the same way the task did**: the resumed implementer
    returns paths and does not commit, and the parent stages that task's
    declared paths and commits them. Re-review

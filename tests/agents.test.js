@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer'];
 
 // `fankeel-verifier` is the one named exception: it writes evidence rows to a
 // file for the Workflow join, and `Write` is what that takes. It is not less
@@ -15,7 +15,11 @@ const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-v
 // hook matches `Edit|Write|NotebookEdit` (`.claude-plugin/plugin.json`), so
 // `Write` is guarded; `Bash`, which all four agents hold, is matched by no
 // hook at all.
-const MAY_WRITE = { 'fankeel-verifier': ['Write'] };
+// `fankeel-fixer` is the second named exception: it makes the small edit
+// itself rather than returning it for the parent to apply, so it needs both
+// `Edit` and `Write` — never `Bash`, so it never runs the test the edit would
+// need.
+const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'] };
 
 function front(file) {
     const m = FRONT.exec(fs.readFileSync(file, 'utf8'));
