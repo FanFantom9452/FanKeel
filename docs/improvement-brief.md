@@ -1,5 +1,5 @@
 ---
-last_verified: 2026-09-10
+last_verified: 2026-09-11
 ---
 
 # FANKEEL 改進簡報 — CAVEMAN 與 SEPIA 的架構掃描
@@ -27,7 +27,9 @@ last_verified: 2026-09-10
 - [第三部：合併後的施工順序](#第三部合併後的施工順序)
 - [第四部：使用者提出的三個新方向](#第四部使用者提出的三個新方向)
 - [第五部：第二份簡報（adhd 版）的勘誤與補充](#第五部第二份簡報adhd-版的勘誤與補充)
+- [第六部：使用者 09-11 提出的五個方向](#第六部使用者-09-11-提出的五個方向)
 - [附錄 A：可直接抄的原文片段](#附錄-a可直接抄的原文片段)
+- [附錄 B：掃描來源與可覆核性](#附錄-b掃描來源與可覆核性)
 - [覆核結果](#覆核結果2026-09-08fankeel-repo0540)
 
 ---
@@ -963,6 +965,137 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 > 補記 2026-09-10：四條例外各有一個 case 了——`evals/stage-skip-said`、`pipe-not-agent`、
 > `one-call-not-agent`、`subagent-no-entry`，`596eb21`。A11 的成對跑與「分數不該動」
 > 判準仍未做，等 `route-typo` 自己的分數穩定。
+
+---
+
+## 第六部：使用者 09-11 提出的五個方向
+
+> 2026-09-11 使用者在 `/fankeel-ask` 裡一次口述、要求拆成 TODO 的五個方向：caveman
+> 與 ponytail 去依賴（先 caveman，討論過再輪到 ponytail）、原生 memory 的清理、主
+> session 堆疊太快、station 看不到單一 session 的細節。背後的前提是一句話：fankeel
+> 要讓文件在長期開發裡保持最新，而且不能把 code 當唯一來源——code 也會有邏輯錯誤。
+> 這個前提在 `TODO.md` 落成〔audit〕drift 方向那一條，因為 `scripts/docs-audit.js` 的
+> drift 目前一律假設過期的是頁面。拆法的判斷歸檔在
+> `docs/judgements/2026-09-11-todo-split.md`。下面每一節放的是 TODO 條目裝不下的細節，
+> 數字都是 09-11 當天量的。
+
+### 6.1 memory 清理
+
+**現況**：Claude Code 原生的 memory 目錄（每個專案一份，索引叫 MEMORY.md）只寫不清。
+一條寫進去的時候資訊不完整或是錯的，之後每個 session 都會把它當背景讀進來，沒有
+東西會回頭重驗。
+
+- 本專案 09-11 的索引有 76 條，多數引了檔名、旗標、行號或量測數字，正是最會過期的那一類。
+- fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:579`（`## Task memory`）那一節的路由表把
+  durable fact 指向 memory 目錄，`lib/registry.js:18`（`Task memory is two fields on the entry`）的註解說明 fankeel 不另開一份記憶。
+  讀、稽核、清理那個目錄的程式碼一行都沒有。
+
+**待決**（Needs a decision 那條要回答的）：
+
+1. 誰觸發：land 時重讀這個任務寫進去的條目、audit 時整份掃，還是比照 `## Waiting`
+   給每條一個「最後確認」的日期，過期就列出來。
+2. 驗什麼：機械能驗的是引用——條目裡的檔案路徑、行號、腳本旗標還在不在，可以照
+   `docs-check` 的做法寫一支 script；驗不了的是「這個判斷還對不對」，那只能列給人看。
+3. 誰刪：比照 registry 的不變式（從不刪檔，改動要使用者開口），機制是提出清單、
+   使用者點頭後才改，不是自動刪。
+
+### 6.2 session 堆疊
+
+**量測**：09-11 掃過本專案 153 份主 transcript（連同 subagent 共 976 MB）。腳本是一次性的，
+沒進 repo，留在 gitignored 的 `.fankeel/build/ask/measure-sessions.js`。
+
+| 項目 | 數字 |
+|---|---|
+| 跑過 `task.js start` 的 session | 34 / 153 |
+| context 峰值 | 中位數 209k tokens，p90 509k |
+| subagent 回傳進主 session 的字元 | 2.26M，佔所有工具輸出 25–28M 的 8–9% |
+| 有 stage 倒退的 session | 15 個：`verify>build` 29 次、`land>design` 7 次、`audit>build` 5 次 |
+
+兩個極端：`1239ca79` 峰值 757k、派工 47 次、verify 與 build 來回三趟；`0d2263ef` 峰值
+615k、派工 90 次、倒退 15 次，同一個 session 裡 land 了六輪。峰值前八名有四個根本沒用 fankeel。
+
+**讀法**：使用者的觀察是「丟給 background agent，回傳又慢慢疊上來」。回傳確實在疊，
+但不是大宗——九成是主迴圈自己的工具輸出：讀檔、測試輸出、grep。背景 agent 的工具結果
+本身只是約 1 KB 的「已啟動」確認，真正的回傳是之後那則 task-notification。
+
+**但書**：subagent 裡做的 stage 切換腳本看不到，倒退只算主 transcript 裡的 `task.js stage`。
+
+**custom agent 以外的候選手段**（都還沒驗證，是 Needs a decision 那條要選的）：
+
+1. 在源頭擋大輸出：一個 PostToolUse hook 量每次工具輸出，單次超過門檻就提醒改用 pipe
+   或派 reader。
+2. 在 gate 上處理 context：stage 結束時 context 超過門檻，建議 `/compact`，或開新
+   session 用 **Adopt** 接手——task、notes、next 都會帶過去。
+3. 把 verify 的檢查往 build 搬：verify 退回 build，多半是 build 每列的 review 沒跑到
+   verify 會跑的那個檢查；第二次倒退時停下來說，而不是默默再來一輪。
+4. 串接的 fan-out 改走 Workflow，中間結果留在 script 裡，回主 session 的只有 join。
+
+### 6.3 station 單 session
+
+使用者要的是：這個 session 有幾個 task、每個 task 負責什麼、主 agent 怎麼切片、哪裡
+其實可以平行。對照 09-11 的 station：
+
+| 缺口 | 現況 |
+|---|---|
+| (a) plan 的 task 與各自做了什麼 | 沒有：`lib/station.js` 完全不讀 build ledger |
+| (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:198` 的 `agentsOf` 只回一個數字 |
+| (c) 每個 stage 花多少錢 | 刻意拿掉：`docs/station.md:129`（`a stage's own cost surfaces only in the aggregate`）說它只出現在總覽的總帳 |
+| (d) stage 來回 | 結構上看不到：`lib/registry.js:430` 的 `touch` 以 stage 名為鍵，只存最早與最近兩個時間 |
+| (e) 哪一段可以平行 | 沒有 |
+
+(b) 還少一層：`lib/usage.js:129` 的 `agentFiles` 把一般 agent 和 workflow 裡的 agent 攤成
+同一個清單，派工的形狀（agent、agents、workflow）在這裡就丟了。
+
+(d) 的資料要先開始記錄才會有，所以拆成 Ready 的〔station〕那條先做；(a)(b)(e) 怎麼呈現
+是 Needs a decision。資料來源都已經在磁碟上：ledger 在 `.fankeel/build/`，subagent 的
+transcript 在各 session 目錄的 `subagents/` 底下，workflow 的在 `subagents/workflows/`；
+(e) 可以拿 `scripts/ledger.js` 算出的分組去對照實際的派工順序。
+
+### 6.4 caveman 去依賴
+
+**`caveman.zip` 已經讀完了**：repo 根目錄那個 zip（gitignored）只有四份 markdown，沒有
+skill、hook 或 agent。2026-09-09 的 `65f1490` 已經把它讀進 repo：兩份併進本檔，另外兩份
+變成 `docs/plans/2026-09-09-design-class-prompt.md` 與
+`docs/reports/2026-09-09-design-axis-inventory.md`。zip 裡沒有還沒讀過的東西。
+
+**要盤點的是裝著的外掛**：caveman 1.0.1，20 個 skill、3 個 agent、6 個 command、2 個
+hook（SessionStart 啟動它的模式，UserPromptSubmit 追蹤模式）。本檔第一部掃過一次：§1.5
+列了六個可搬項目，`docs/judgements/2026-09-10-pattern-skill.md` 判過 pattern skill 那一類。
+使用者的立場是不用、不重裝，要的功能改寫成 fankeel 自己的規則。
+
+**fankeel 這邊的耦合很少**，沒有一處是功能上的依賴：
+
+- `lib/badge.js:166`（`caveman and ponytail`）與 `lib/badge.js:181`（`caveman and ponytail keep their flags`）兩段註解：清徽章時不刪 caveman 與 ponytail
+  放在同一個目錄裡的旗標。
+- 釘住上面那句的是 `tests/badge.test.js` 裡「pruneBadges leaves another plugin flag and
+  its directory alone」那個測試。
+- eval 一律帶 `--setting-sources project`，因為沒帶的時候 haiku 挑了
+  `caveman:surgical-patch` 而不是 fankeel（`docs/plans/2026-09-08-behaviour-eval.md`）。
+
+**順序**：盤點 → 和使用者討論 → 要的拆成 Ready 條目 → 解耦 → 解除安裝。ponytail
+等 caveman 這兩條都落地才開始。
+
+### 6.5 ponytail 去依賴
+
+**裝著的是 4.9.0**：6 個 skill 各配一個 command（ponytail、-review、-audit、-debt、-gain、
+-help），3 個 hook。SessionStart 每次 start、resume、clear、compact 都注入它的整套規則；
+**SubagentStart 把同一套規則注入每一個 subagent**，fankeel 的 reader、reviewer、judge 都
+收得到；UserPromptSubmit 只記錄模式。
+
+**fankeel 這邊的耦合**只有一個布林值，外加散文與測試：
+
+- `lib/render.js:108` 的 `ponytailLine` 看 `has('ponytail')` 選句子。
+- audit stage 的規則以 `{{PONYTAIL}}` 接住那句：`lib/stages.js:352`（`{{PONYTAIL}}`）用它，`lib/stages.js:441`（`ponytail: '{{PONYTAIL}}'`）註冊它。
+- `skills/fankeel-audit/SKILL.md` 與 `skills/fankeel/SKILL.md` 各一段散文；
+  `tests/route.test.js`、`tests/stages.test.js`、`tests/skills.test.js` 有相關斷言。
+
+解除安裝不會壞任何東西：每一處都已經有「Nothing installed here does the code half; say
+so rather than skipping it.」這句 fallback。
+
+**真正會失去的**是 audit 的程式碼那一半，也就是過度工程的稽核。深度分析要回答那一半由誰
+接：寫成 fankeel 自己的 audit 規則、交給 reviewer，還是明說不做。還有一件要一起定：
+`lib/live.js:34` 的 `ponytail:` 是 fankeel 自己的債務註解標記，名字來自這個外掛，解耦時要
+不要改名。
 
 ---
 
