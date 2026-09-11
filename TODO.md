@@ -67,7 +67,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔station〕`dispatchesOf()` 要算進一個 session 的每一個 workflow run，但沒有測試用兩個 run 檔跑過：fixture 只寫 `wf_1.json` — [tests/dispatches.test.js](tests/dispatches.test.js). 補兩個 run 檔，斷言兩個都算到。
+- 〔station〕`dispatchesOf()` 還有兩條分支沒有測試走過，兩條都只有在有第二個 run 檔時才分得出來：有 run 檔卻沒有對應派工的 run（`disp` 應為 `null`），以及 `runId` 缺席時退回檔名 — [lib/usage.js](lib/usage.js).
 
 ## Needs a decision
 
