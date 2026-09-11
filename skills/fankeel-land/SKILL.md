@@ -189,6 +189,14 @@ caveman or ponytail after their code has been unhooked is the user's own
 command, offered here rather than run — say what was decoupled and that it
 can now be removed, and stop there.
 
+**Record the choice.** Once the integration is settled — by this menu, or by
+the profile already answering it — run
+`node <plugin>/scripts/task.js land merge|pr|keep [--push|--no-push]` before
+step 7 executes it: `merge` for option 1, `pr` for option 2 (which always
+pushes), `keep` for option 3. `profile suggest` counts these across a
+project's past sessions, which is the only way `pr` and `keep` ever become a
+suggested answer — git's merge history only speaks to `merge`.
+
 ## 7. Execute
 
 **Merge:** from the main repo root, checkout base, pull, merge, then **re-run the

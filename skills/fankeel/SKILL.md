@@ -108,15 +108,19 @@ knows whose tree applies. One registry can cover five of them and nothing else
 needs to know which. Ask for it only when the root holds more than one, and never
 ask for a file list — there is nothing to declare and nothing to get wrong.
 
-Eleven more are written without anyone typing them. Four of those — `ended`,
+Twelve more are written without anyone typing them. Four of those — `ended`,
 `model`, `usage` and `spend` — arrive once, from `hooks/leave.js` when the
 session ends, and [docs/registry.md](../../docs/registry.md) has their shape;
-the seven below
+the eight below
 are the ones every session carries. `route` and `class` come from
 the class picked at `start`, `configDir` records which config directory this
 session runs under, so another session can look for its liveness in the right
 place, and `burn` is what each stage cost — two token counts per stage, written
 by the same prompt hook that refreshes `updated`.
+
+`land` is `{integration, push, at}`, written once by `task.js land` when the
+integration is chosen — `push` is absent unless `--push` or `--no-push` said
+so.
 
 `clock` is those same two slots with a wall-clock reading in place of the token
 count — epoch milliseconds, which `task.js` renders as minutes — and `waited` is
@@ -140,7 +144,7 @@ is not `Stop`, and what it does instead of measuring anything, is in
 [docs/registry.md](../../docs/registry.md) — this is the short form, not the
 only copy.
 
-A twelfth, `gateAt`, is deliberately not below. It exists only between a
+A thirteenth, `gateAt`, is deliberately not below. It exists only between a
 question going out and its answer arriving — and a record that lacks it when the
 answer arrives is what the `gate:` line under **While the mode is on** reports.
 

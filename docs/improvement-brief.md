@@ -988,7 +988,7 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 東西會回頭重驗。
 
 - 本專案 09-11 的索引有 76 條，多數引了檔名、旗標、行號或量測數字，正是最會過期的那一類。
-- fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:584`（`## Task memory`）那一節的路由表把
+- fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:588`（`## Task memory`）那一節的路由表把
   durable fact 指向 memory 目錄，`lib/registry.js:18`（`Task memory is two fields on the entry`）的註解說明 fankeel 不另開一份記憶。
   讀、稽核、清理那個目錄的程式碼一行都沒有。
 

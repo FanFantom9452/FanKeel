@@ -1393,3 +1393,29 @@ test('start with no profile.json prints suggest plus a runnable profile set line
   assert.match(out.out, /No profile\.json for this project yet/);
   assert.match(out.out, /profile set land\.integration merge/);
 });
+
+test('land records the integration and push choice on the entry', () => {
+  const dir = root();
+  started(dir, A, 'ship it');
+  const out = run(dir, ['land', 'merge', '--push', '--session', A]);
+  assert.equal(out.code, 0);
+  const data = entry(dir, A);
+  assert.equal(data.land.integration, 'merge');
+  assert.equal(data.land.push, true);
+  assert.ok(Date.parse(data.land.at));
+  assert.match(out.out, /land: merge, push/);
+});
+
+test('land without --push or --no-push writes no push field', () => {
+  const dir = root();
+  started(dir, A, 'ship it');
+  run(dir, ['land', 'keep', '--session', A]);
+  assert.equal('push' in entry(dir, A).land, false);
+});
+
+test('land refuses a verb that is not merge, pr or keep', () => {
+  const dir = root();
+  started(dir, A, 'ship it');
+  const out = run(dir, ['land', 'discard', '--session', A]);
+  assert.equal(out.code, 1);
+});

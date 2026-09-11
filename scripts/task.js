@@ -49,6 +49,8 @@ const mins = (ms) => {
 
 const GUARDS = ['ask', 'deny', 'off'];
 
+const LAND_VERBS = ['merge', 'pr', 'keep'];
+
 // A refusal is often two sentences: what was wrong, and what to do instead.
 // Named because it is built into message strings all through this file.
 const NL = String.fromCharCode(10);
@@ -190,6 +192,8 @@ function parseArgs(head, whole) {
     if (whole.includes('--force')) opts.force = true;
     if (whole.includes('--all')) opts.all = true;
     if (whole.includes('--default')) opts.default = true;
+    if (whole.includes('--push')) opts.push = true;
+    if (whole.includes('--no-push')) opts.push = false;
     return opts;
 }
 
@@ -1051,6 +1055,30 @@ function cmdRoute(root, opts) {
     return shown + NL + '           at ' + data.stage + ', ' + at.step + ' of ' + at.steps;
 }
 
+// 使用者在 land 選單實際答的（或 profile 已經答的），寫一次進 entry。不動 stage、
+// 不動 badge——land 這個時間點通常已經在往 down 走，不是 collision 相關的欄位。
+// `profile.suggest` 讀回這裡的紀錄，是 `pr` 與 `keep` 唯一能被建議出來的路徑：
+// git 的 merge 歷史只看得到 `merge`。
+function cmdLand(root, opts) {
+    const id = requireSession(opts);
+    const verb = String(opts.positional[0] || '').toLowerCase();
+    if (!LAND_VERBS.includes(verb)) fail('land is one of: ' + LAND_VERBS.join(', '));
+
+    let data = null;
+    const wrote = registry.update(root, id, (d) => {
+        if (d.active !== true) return false;
+        const land = { integration: verb, at: now() };
+        if (opts.push !== undefined) land.push = opts.push;
+        d.land = land;
+        data = d;
+        return true;
+    });
+    if (!data) fail('No active entry for this session under ' + root);
+    if (!wrote) fail('Could not write the entry.');
+
+    return 'fankeel — land: ' + verb + (opts.push === true ? ', push' : opts.push === false ? ', no push' : '');
+}
+
 const COMMANDS = {
     show: cmdShow,
     route: cmdRoute,
@@ -1064,6 +1092,7 @@ const COMMANDS = {
     down: cmdDown,
     adopt: cmdAdopt,
     clear: cmdClear,
+    land: cmdLand,
 };
 
 const USAGE = [
@@ -1083,6 +1112,8 @@ const USAGE = [
     '  profile show|set <key> <value>|suggest',
     '                                    the project\'s standing answers; --default writes the',
     '                                    machine file, --project <dir> picks a project under the root',
+    '  land <merge|pr|keep> [--push|--no-push]',
+    '                                    record the integration this task actually took',
     '  down                              stand the task down; never deletes',
     '  adopt <session-id>                take another entry over, standing it down',
     '  clear <session-id> [--force]      put down a claim nobody is behind; never deletes',
