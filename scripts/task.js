@@ -776,7 +776,7 @@ function cmdProfile(root, opts) {
         return 'fankeel — profile: ' + key + ' = ' + out.value + '  → ' + file;
     }
     if (verb === 'suggest') {
-        const { values, evidence } = profile.suggest(projectRoot);
+        const { values, evidence } = profile.suggest(projectRoot, root);
         const lines = ['fankeel — profile suggested from ' + projectRoot + ' (nothing written)'];
         for (const e of evidence) lines.push('  ' + e);
         const keys = Object.keys(values);

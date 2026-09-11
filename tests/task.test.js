@@ -1342,6 +1342,23 @@ test('profile suggest writes nothing and says what the history answers', () => {
   assert.equal(fs.existsSync(path.join(dir, '.fankeel', 'profile.json')), false);
 });
 
+test('profile suggest counts this registry\'s land records back, as the land skill says it does', () => {
+  const dir = root();
+  const g = (...a) => execFileSync('git', a, { cwd: dir, stdio: 'ignore' });
+  g('init', '-q', '-b', 'main');
+  g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'init');
+  const now = new Date().toISOString();
+  for (const n of [1, 2, 3]) {
+    registry.writeSession(dir, 'cccccccc-1111-2222-3333-44444444444' + n, {
+      task: 't' + n, active: false, started: now, updated: now, land: { integration: 'pr', at: now },
+    });
+  }
+  const out = run(dir, ['profile', 'suggest']);
+  assert.equal(out.code, 0);
+  assert.match(out.out, /land records: 3 pr/);
+  assert.match(out.out, /profile set land\.integration pr/);
+});
+
 test('a second verify->build return says so; the first does not', () => {
   const dir = root();
   started(dir, A, 'ship it');
