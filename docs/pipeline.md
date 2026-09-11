@@ -694,7 +694,7 @@ flowchart TD
     E1 --> F
     E2 --> F
     E3 --> F2
-    E4 --> F
+    E4 --> F2
     D1 --> F2
     D2 --> F2
     D3 --> F2
