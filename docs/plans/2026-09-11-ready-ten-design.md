@@ -4,7 +4,7 @@ status: design-intent
 
 # TODO.md `## Ready` 十條 — 設計
 
-**Goal:** 清掉 `TODO.md` 的 `## Ready` 十條。每一條落地時，同一個 commit 刪掉它在 `TODO.md` 的那一行。
+**Goal:** 清掉 `TODO.md` 的 `## Ready` 十條。十行條目在最後一個 task 一起刪：每個 task 都改 `TODO.md` 的話，它們就共用這個檔，整份 plan 只能一條一條跑。
 
 **Architecture:** 十條收成八個改動單元：#2 與 #3 是同一張圖，#7 與 #8 是同一個函式，其餘各自獨立。每條都縮到它最小的那個改動；唯一新增的資料是 registry 的 `moves` 欄位，它也是這個任務升到 architectural 的原因——`adopt`、`task` 改名、`hooks/leave.js` 與 station 都讀同一份紀錄。
 
