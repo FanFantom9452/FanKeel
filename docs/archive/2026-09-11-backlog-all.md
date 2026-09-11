@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # 改進 backlog 全部實作 Implementation Plan
