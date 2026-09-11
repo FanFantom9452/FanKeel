@@ -111,8 +111,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - `skills/fankeel-audit/SKILL.md:136` 把「十條、五頁」寫死在 reference 頁裡，靠一個「today」撐著 — [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md). 沒有東西會重算它。lifts when: 那兩個數字變了而這句沒變. 09-11.
 
-- 〔caveman〕解耦：`lib/badge.js:166,181` 的註解、`tests/badge.test.js:134-141`、eval 用 `--setting-sources project` 的理由一起改 — [lib/badge.js](lib/badge.js). lifts when: §6.4 的取捨定案. 09-11.
-
 - 〔ponytail〕深度分析：6 skill、3 hook，其中 SubagentStart 把整套規則塞進 fankeel 每個 subagent；audit 的程式碼那一半由誰接 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴). lifts when: caveman 兩條落地. 09-11.
 
 - 〔ponytail〕解耦 `has('ponytail')`：`lib/render.js:108-110`、`lib/stages.js:352,441`、兩份 SKILL.md、三份測試；fallback 句已經在 — [lib/render.js](lib/render.js). lifts when: §6.5 定案. 09-11.
