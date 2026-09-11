@@ -1040,12 +1040,12 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 | 缺口 | 現況 |
 |---|---|
 | (a) plan 的 task 與各自做了什麼 | 沒有：`lib/station.js` 完全不讀 build ledger |
-| (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:198` 的 `agentsOf` 只回一個數字 |
+| (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:220` 的 `agentsOf` 只回一個數字 |
 | (c) 每個 stage 花多少錢 | 刻意拿掉：`docs/station.md:129`（`a stage's own cost surfaces only in the aggregate`）說它只出現在總覽的總帳 |
 | (d) stage 來回 | 結構上看不到：`lib/registry.js:435` 的 `touch` 以 stage 名為鍵，只存最早與最近兩個時間 |
 | (e) 哪一段可以平行 | 沒有 |
 
-(b) 還少一層：`lib/usage.js:129` 的 `agentFiles` 把一般 agent 和 workflow 裡的 agent 攤成
+(b) 還少一層：`lib/usage.js:151` 的 `agentFiles` 把一般 agent 和 workflow 裡的 agent 攤成
 同一個清單，派工的形狀（agent、agents、workflow）在這裡就丟了。
 
 (d) 的資料要先開始記錄才會有，所以拆成 Ready 的〔station〕那條先做；(a)(b)(e) 怎麼呈現
