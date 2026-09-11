@@ -928,3 +928,10 @@ test('spendOf is null for a stage with no spend recorded', () => {
     { requests: 1, models: {} }
   );
 });
+
+test('returnsTo counts prior from->to steps out of moves, not clock', () => {
+  const data = { moves: [['survey', 1], ['build', 2], ['verify', 3], ['build', 4], ['verify', 5]] };
+  assert.equal(registry.returnsTo(data, 'verify', 'build'), 1);
+  assert.equal(registry.returnsTo({}, 'verify', 'build'), 0);
+  assert.equal(registry.returnsTo({ moves: [['survey', 1]] }, 'verify', 'build'), 0);
+});

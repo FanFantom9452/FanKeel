@@ -68,6 +68,13 @@ Skipping any step is not verifying.
 | Regression test works | red-green verified: revert the fix, watch it fail, restore | it passes once |
 | An agent finished | the VCS diff | the agent's report |
 | Requirements met | line by line against the plan | tests passing |
+| A cost, token or count figure | one command's raw, unpiped, untruncated output, pasted verbatim | a model's estimate, a retyped command, a number carried over from an earlier run |
+
+A figure here has broken three ways on this repository alone: a report's own
+number cut to ten by a piped `head`, a rewritten regex that miscounted twice
+running, and a number retyped from memory instead of re-run. The row above is
+what stops all three — the evidence cell is the command's own output, not a
+description of what it should have said.
 
 ## Red flags — stop
 
@@ -94,6 +101,12 @@ can: **which page does this change make false?**
 A renamed export, a changed default, a removed flag, a moved file — each has a
 page somewhere that still says the old thing, and every reference in it still
 resolves. Name the page and the line.
+
+A false page with nothing else to fix is a fix with no test cycle of its own:
+dispatch `subagent_type: fankeel-fixer` with the page and the exact
+correction, never more than two files at once. It returns which lines
+changed, and this stage re-runs `docs-check` itself once it returns — a code
+fix that needs its own red-then-green cycle is `build`'s, not this agent's.
 
 A change that is correct and leaves three pages describing the old behaviour has
 been half verified.

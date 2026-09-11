@@ -86,7 +86,12 @@ function withoutFences(text) {
 // `Waypoint/web/src` in an example is describing somebody else's tree. Reported
 // as broken references they were nine findings out of ten, and a report that is
 // nine parts noise gets read once.
-const PATHISH = /^(?:\.\/)?([\w.-]+\/[\w./-]+)(?::(\d+))?$/;
+//
+// A third, optional group: `path:N-M` holds a block rather than one line, so a
+// range has to be checked against a span rather than a single index. Both a
+// hyphen and an en dash close it, because the prose in this repository uses
+// both.
+const PATHISH = /^(?:\.\/)?([\w.-]+\/[\w./-]+)(?::(\d+)(?:[-–](\d+))?)?$/;
 
 // A declaration this repository makes somewhere. Deliberately shallow, the same
 // bargain survey.js makes: the goal is to notice a name exists, not to parse
@@ -251,6 +256,7 @@ function checkDoc(root, rel, role, symbols, roots) {
         // the path is here.
         if (ref === docs.STATE_DIR || ref.startsWith(docs.STATE_DIR + '/')) continue;
         const wanted = hit[2] ? parseInt(hit[2], 10) : null;
+        const wantedEnd = hit[3] ? parseInt(hit[3], 10) : null;
         const found = resolveRef(root, rel, ref);
         if (found === null) {
             // Only when the first segment is something this repository has. A
@@ -280,8 +286,13 @@ function checkDoc(root, rel, role, symbols, roots) {
         }
         if (wanted !== null) {
             const n = lineCount(root, found);
-            if (n !== null && wanted > n) {
-                out.push({ file: rel, line: lineOf(m.index), tag: 'past-end', what: found + ':' + wanted + ' but the file ends at ' + n });
+            // A range holds a block, not one line: `found + ':' + wanted`
+            // grows a `-wantedEnd` suffix everywhere this citation is named.
+            const label = found + ':' + wanted + (wantedEnd ? '-' + wantedEnd : '');
+            if (wantedEnd !== null && wanted > wantedEnd) {
+                out.push({ file: rel, line: lineOf(m.index), tag: 'past-end', what: label + ' — the range starts after it ends' });
+            } else if (n !== null && (wantedEnd || wanted) > n) {
+                out.push({ file: rel, line: lineOf(m.index), tag: 'past-end', what: label + ' but the file ends at ' + n });
             } else if (role === 'reference') {
                 // Reference only. A plan cites lines it is about to change, and
                 // a decision cites the lines that existed the day it was
@@ -289,8 +300,8 @@ function checkDoc(root, rel, role, symbols, roots) {
                 const quote = quoteBeside(text, m.index + m[0].length);
                 const target = linesOf(root, found);
                 if (quote === null) {
-                    out.push({ file: rel, line: lineOf(m.index), tag: 'unquoted', what: found + ':' + wanted + ' carries no quote, so nothing checks the line' });
-                } else if (target && !flat(target[wanted - 1] || '').includes(flat(quote))) {
+                    out.push({ file: rel, line: lineOf(m.index), tag: 'unquoted', what: label + ' carries no quote, so nothing checks the ' + (wantedEnd ? 'range' : 'line') });
+                } else if (target && wantedEnd === null && !flat(target[wanted - 1] || '').includes(flat(quote))) {
                     const at = [];
                     for (let i = 0; i < target.length; i++) {
                         if (flat(target[i]).includes(flat(quote))) at.push(i + 1);
@@ -299,8 +310,34 @@ function checkDoc(root, rel, role, symbols, roots) {
                     // ambiguous — reporting a guessed line is the thing the
                     // 09-05 decision was right about.
                     out.push({ file: rel, line: lineOf(m.index), tag: 'moved',
-                        what: found + ':' + wanted + ' does not hold `' + quote + '`'
+                        what: label + ' does not hold `' + quote + '`'
                             + (at.length === 1 ? ' — it is at :' + at[0] : '') });
+                } else if (target && wantedEnd !== null) {
+                    // A range citation holds a block, so the quote only has to
+                    // land on one line inside N..M, not on N itself.
+                    let inRange = false;
+                    for (let i = wanted; i <= wantedEnd; i++) {
+                        if (flat(target[i - 1] || '').includes(flat(quote))) { inRange = true; break; }
+                    }
+                    if (!inRange) {
+                        const at = [];
+                        for (let i = 0; i < target.length; i++) {
+                            if (flat(target[i]).includes(flat(quote))) at.push(i + 1);
+                        }
+                        // Reported only where there is exactly one place to send
+                        // it, the same reasoning that keeps a two-hit single line
+                        // ambiguous rather than guessed. Zero or several
+                        // candidates leave the range unverified rather than wrong.
+                        if (at.length === 1) {
+                            const span = wantedEnd - wanted;
+                            out.push({ file: rel, line: lineOf(m.index), tag: 'moved',
+                                what: label + ' does not hold `' + quote + '` — it is at :' + at[0]
+                                    + ', try :' + at[0] + '-' + (at[0] + span) });
+                        } else {
+                            out.push({ file: rel, line: lineOf(m.index), tag: 'unquoted',
+                                what: label + ' does not hold `' + quote + '` anywhere in the range' });
+                        }
+                    }
                 }
             }
         }

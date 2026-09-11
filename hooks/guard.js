@@ -13,7 +13,7 @@
 
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
-const { decide, guardMode, targetOf } = require('../lib/guard.js');
+const { decide, guardMode, targetOf, readOnlyAgentType, writesFiles } = require('../lib/guard.js');
 const { run, parse } = require('../lib/hook.js');
 
 function main(raw) {
@@ -37,6 +37,26 @@ function main(raw) {
     // a neighbour to check liveness for. Both are inside the noise of spawning
     // the node process this hook already is, which is why the gate moved rather
     // than grew.
+    // A second matcher, `Bash|PowerShell`, checked before the collision guard
+    // below: three named agent types are denied a command that writes,
+    // regardless of `guard` mode — this is about a read-only contract, not
+    // about two sessions overlapping a file.
+    if (payload.tool_name === 'Bash' || payload.tool_name === 'PowerShell') {
+        if (!readOnlyAgentType(payload.agent_type)) return;
+        const command = (payload.tool_input && payload.tool_input.command) || '';
+        if (!writesFiles(command)) return;
+        process.stdout.write(JSON.stringify({
+            hookSpecificOutput: {
+                hookEventName: 'PreToolUse',
+                permissionDecision: 'deny',
+                permissionDecisionReason: 'fankeel: ' + payload.agent_type + ' is read-only for this task, '
+                    + 'and this command writes to disk. Redirect to /dev/null (or $null), or ask for a '
+                    + 'fankeel-verifier if the result needs to be written.',
+            },
+        }));
+        return;
+    }
+
     if (!guardMode(mine)) return;
 
     const file = targetOf(payload);

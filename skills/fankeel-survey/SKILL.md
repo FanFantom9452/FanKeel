@@ -225,6 +225,11 @@ answers — so the round buys nothing and costs a turn of their attention.
   the default when the profile says nothing.
 - **Compare the returns against each other**, not just one by one. Agents
   dispatched from one prompt style make correlated mistakes.
+- **Once that workflow returns, run `git status --porcelain` once** before
+  trusting what it found. A `fankeel-reader` briefed to write nothing can
+  still write through a shell redirect no hook watches for every case —
+  `docs/collisions.md` names the incident and the narrower guard this stage
+  cannot rely on alone.
 
 Reading wide for a narrow answer is what a subagent is for. This stage used to
 say that and then offer a manual re-run at the gate; the gate below is now the
@@ -261,15 +266,16 @@ classification made silently is one nobody can disagree with.
 ### 6. Write it down
 
 The entry already exists: `task.js start` ran at `/fankeel`, with the class said
-there — or all seven stages when none was — and `start` refuses an active entry
-(`scripts/task.js:477`, `already owns an active task`). What this step writes is the class step 5 arrived at,
-when it differs:
+there — or, when none was said, the profile's `class.default`, or all seven
+stages when there is none — and `start` refuses an active entry
+(`scripts/task.js:481`, `already owns an active task`). What this step writes is
+the class step 5 arrived at, when it differs:
 
 ```
 node <plugin>/scripts/task.js route "survey,design,build,verify,land" --session <id>
 ```
 
-`route` takes the stages and derives the class from them (`scripts/task.js:1005`, `classForRoute(given)`);
+`route` takes the stages and derives the class from them (`scripts/task.js:1043`, `classForRoute(given)`);
 the stage the task is in has to be on the new route. Quote its output on the
 `route:` line of the report, or write `unchanged`. Up is always allowed. Down is
 allowed only from the seven-stage default nobody said — a class someone said at

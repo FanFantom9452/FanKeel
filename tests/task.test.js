@@ -1341,3 +1341,98 @@ test('profile suggest writes nothing and says what the history answers', () => {
   assert.match(out.out, /nothing written/);
   assert.equal(fs.existsSync(path.join(dir, '.fankeel', 'profile.json')), false);
 });
+
+test('profile suggest counts this registry\'s land records back, as the land skill says it does', () => {
+  const dir = root();
+  const g = (...a) => execFileSync('git', a, { cwd: dir, stdio: 'ignore' });
+  g('init', '-q', '-b', 'main');
+  g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'init');
+  const now = new Date().toISOString();
+  for (const n of [1, 2, 3]) {
+    registry.writeSession(dir, 'cccccccc-1111-2222-3333-44444444444' + n, {
+      task: 't' + n, active: false, started: now, updated: now, land: { integration: 'pr', at: now },
+    });
+  }
+  const out = run(dir, ['profile', 'suggest']);
+  assert.equal(out.code, 0);
+  assert.match(out.out, /land records: 3 pr/);
+  assert.match(out.out, /profile set land\.integration pr/);
+});
+
+test('a second verify->build return says so; the first does not', () => {
+  const dir = root();
+  started(dir, A, 'ship it');
+  let data = entry(dir, A);
+  data.stage = 'verify';
+  data.moves = [['survey', 1], ['build', 2], ['verify', 3]];
+  registry.writeSession(dir, A, data);
+  const first = run(dir, ['stage', 'build', '--session', A]);
+  assert.equal(/second return/.test(first.out), false);
+
+  data = entry(dir, A);
+  data.stage = 'verify';
+  data.moves = [['survey', 1], ['build', 2], ['verify', 3], ['build', 4], ['verify', 5]];
+  registry.writeSession(dir, A, data);
+  const second = run(dir, ['stage', 'build', '--session', A]);
+  assert.match(second.out, /second return to build from verify — name what verify caught/);
+});
+
+test('start reads class.default when neither --class nor --route is given', () => {
+  const dir = root();
+  run(dir, ['profile', 'set', 'class.default', 'bounded']);
+  const out = run(dir, ['start', '--session', A, '--task', 'x']);
+  assert.match(out.out, /class: bounded \(profile\)/);
+  const data = entry(dir, A);
+  assert.equal(data.class, 'bounded');
+  assert.deepEqual(data.route, ['survey', 'design', 'build', 'verify', 'land']);
+});
+
+test('an explicit --class overrides class.default and carries no (profile) tag', () => {
+  const dir = root();
+  run(dir, ['profile', 'set', 'class.default', 'bounded']);
+  const out = run(dir, ['start', '--session', A, '--task', 'x', '--class', 'spike']);
+  assert.match(out.out, /class: spike/);
+  assert.equal(/\(profile\)/.test(out.out), false);
+});
+
+test('start with no profile.json prints suggest plus a runnable profile set line', () => {
+  const dir = root();
+  const g = (...a) => require('node:child_process').execFileSync('git', a, { cwd: dir, stdio: 'ignore' });
+  g('init', '-q', '-b', 'main');
+  g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'init');
+  for (let i = 0; i < 3; i++) {
+    g('checkout', '-q', '-b', 'f' + i);
+    g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'work ' + i);
+    g('checkout', '-q', 'main');
+    g('-c', 'user.name=t', '-c', 'user.email=t@t', 'merge', '-q', '--no-ff', '-m', 'merge: f' + i, 'f' + i);
+  }
+  const out = run(dir, ['start', '--session', A, '--task', 'x']);
+  assert.match(out.out, /No profile\.json for this project yet/);
+  assert.match(out.out, /profile set land\.integration merge/);
+});
+
+test('land records the integration and push choice on the entry', () => {
+  const dir = root();
+  started(dir, A, 'ship it');
+  const out = run(dir, ['land', 'merge', '--push', '--session', A]);
+  assert.equal(out.code, 0);
+  const data = entry(dir, A);
+  assert.equal(data.land.integration, 'merge');
+  assert.equal(data.land.push, true);
+  assert.ok(Date.parse(data.land.at));
+  assert.match(out.out, /land: merge, push/);
+});
+
+test('land without --push or --no-push writes no push field', () => {
+  const dir = root();
+  started(dir, A, 'ship it');
+  run(dir, ['land', 'keep', '--session', A]);
+  assert.equal('push' in entry(dir, A).land, false);
+});
+
+test('land refuses a verb that is not merge, pr or keep', () => {
+  const dir = root();
+  started(dir, A, 'ship it');
+  const out = run(dir, ['land', 'discard', '--session', A]);
+  assert.equal(out.code, 1);
+});

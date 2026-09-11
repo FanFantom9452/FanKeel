@@ -8,7 +8,7 @@
   },
   "skills": "./skills/",
   "outputStyles": "./output-styles/",
-  "agents": ["./agents/fankeel-reader.md", "./agents/fankeel-judge.md", "./agents/fankeel-reviewer.md", "./agents/fankeel-verifier.md"],
+  "agents": ["./agents/fankeel-reader.md", "./agents/fankeel-judge.md", "./agents/fankeel-reviewer.md", "./agents/fankeel-verifier.md", "./agents/fankeel-fixer.md"],
   "hooks": {
     "SessionStart": [
       {
@@ -57,6 +57,16 @@
             "statusMessage": "Noting where the work went..."
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/size.js\"",
+            "timeout": 5,
+            "statusMessage": "Checking how much that just added to context..."
+          }
+        ]
       }
     ],
     "SubagentStart": [
@@ -91,6 +101,17 @@
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.js\"",
             "timeout": 5,
             "statusMessage": "Noting when the gate opened..."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guard.js\"",
+            "timeout": 5,
+            "statusMessage": "Checking whether a read-only agent is about to write..."
           }
         ]
       }

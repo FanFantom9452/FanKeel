@@ -25,11 +25,12 @@ reproduce whatever had been put in front of them, with no needle in the prompt t
 find — a third never launched, and a cell that did not run is not a result
 ([reports/2026-09-04-subagent-brief-probe.md](reports/2026-09-04-subagent-brief-probe.md)).
 
-## The four agents this plugin defines
+## The five agents this plugin defines
 
-Four subagent types are not just described in prose — they are declared as
+Five subagent types are not just described in prose — they are declared as
 `agents` in `.claude-plugin/plugin.json` and shipped as files under `agents/`:
-`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer` and `fankeel-verifier`.
+`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier` and
+`fankeel-fixer`.
 The first three carry `tools: [Read, Grep, Glob, Bash]` — Edit, Write and
 NotebookEdit are simply absent from the list, so calling any of them to change
 a file is refused by the harness rather than left to a rule somebody has to
@@ -37,15 +38,23 @@ remember. Bash stays on the list for `git` — and, for the reader, this plugin'
 own scripts — a named residual rather than a claim that any of the three cannot
 write anything.
 
-`fankeel-verifier` is the one exception, and it is a narrower agent rather than
-a looser one. It adds `Write`, because verify's per-task verifier writes its
-evidence rows to a file and returns the path — what that keeps the rows out of
-is a Workflow's join, not this session's context, which a return value never
-reaches anyway. `Write` is matched by `guard.js`'s `PreToolUse` hook, whose
-matcher is `Edit|Write|NotebookEdit`; `Bash`, which all four hold, is matched by
-no hook at all. So the agent carrying `Write` is the one under a guard.
-`tests/agents.test.js` states that as a named exemption with the argument beside
-it, rather than dropping the assertion.
+`fankeel-verifier` is no longer the only agent carrying `Write` —
+`fankeel-fixer` does too, with `Edit` beside it and no `Bash` at all,
+for reference-page corrections and small fixes that need no test run. The
+verifier adds `Write`, because verify's per-task verifier writes its evidence rows
+to a file and returns the path — what that keeps the rows out of is a
+Workflow's join, not this session's context, which a return value never
+reaches anyway. `Write` is matched by `guard.js`'s `PreToolUse` hook,
+whose matcher is `Edit|Write|NotebookEdit`. `Bash` is matched now too:
+`.claude-plugin/plugin.json` registers `hooks/guard.js` a second time,
+matcher `Bash|PowerShell`, and it denies a command that writes files —
+`lib/guard.js`'s `writesFiles` — when `agent_type` is `fankeel-reader`,
+`fankeel-reviewer` or `fankeel-judge`; [collisions.md](collisions.md)
+carries what that denylist actually matches, not restated here. Four of
+the five agents hold `Bash`; `fankeel-fixer` is the one that does not,
+because it edits the file itself rather than returning something for the
+parent to run a test against. `tests/agents.test.js` names both writers as
+exemptions, each with its argument beside it, rather than dropping the assertion.
 
 `fankeel-reader` runs at `model: sonnet`, the floor the survey, verify and audit
 skills ask their reader fan-outs to use (survey's stage rule names the type, no
@@ -74,12 +83,13 @@ node scripts/judge.js record --session <id> --brief <path> --answer <path|-> --s
 It writes `docs/judgements/<date>-<slug>.md`: frontmatter carrying `judged`,
 `model`, `agent: fankeel-judge`, `task`, `session` and `stage`, then the brief
 and the answer copied in whole rather than summarised
-(`scripts/judge.js:86-106`). A slug already on disk gets `-2` rather than
-overwriting the first record (`scripts/judge.js:35-39`, `freePath`), and a
-missing `--session`, `--brief`, `--answer` or `--slug` exits 1 before
-anything is written. It then appends a row to `docs/README.md`'s own
-`## Judgements` table when that heading exists, and says so plainly when it
-does not rather than inventing one (`scripts/judge.js:50-66`, `indexRow`).
+(`scripts/judge.js:86-106`).
+A slug already on disk gets `-2` rather than overwriting the first record
+(`scripts/judge.js:35-39`, `freePath`), and a missing `--session`, `--brief`,
+`--answer` or `--slug` exits 1 before anything is written. It then appends a
+row to `docs/README.md`'s own `## Judgements` table when that heading exists,
+and says so plainly when it does not rather than inventing one
+(`scripts/judge.js:50-66`, `indexRow`).
 
 [The fankeel-ask skill](../skills/fankeel-ask/SKILL.md) owns this command and
 every flag on it. The pointer earlier in this section comes *before* the
@@ -94,7 +104,7 @@ from `fankeel-reader` is not the tool list — both carry the same four — but
 the shape of the question: a reader is asked what a file says, a reviewer
 is asked what a diff or a table gets wrong, and it returns only what it
 defeats. It is one of two dispatches where nobody types a model at all —
-`fankeel-verifier` is the other: `skills/fankeel-verify/SKILL.md:157`, `not typed by hand`,
+`fankeel-verifier` is the other: `skills/fankeel-verify/SKILL.md:170`, `not typed by hand`,
 and it was added on the same branch as this sentence —
 so the file's pin is the only floor — the literal `sonnet`, not `dispatch.floor`,
 which nothing in `agents/` or `hooks/` reads: `SubagentStart`'s payload

@@ -28,7 +28,7 @@ workspace/                     <- Claude Code opened here
 
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `start` for `guard`, read from the effective profile whenever it is not the builtin default `ask` — a `guard` set later by hand overwrites it the same way any other write does; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `leave.js` for `ended`, `model`, `usage` and `spend`, once, at `SessionEnd` — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `start` for `guard`, read from the effective profile whenever it is not the builtin default `ask` — a `guard` set later by hand overwrites it the same way any other write does; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `leave.js` for `ended`, `model`, `usage` and `spend`, once, at `SessionEnd`; `task.js land` for `land`, once per invocation — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | `lib/registry.js:221` creates it holding `sessions/` alone; `registry.ensureIgnored` appends what is missing — `scripts/map.js:39` asks for `sessions/`, `build/` and `map.md` on every map run, `lib/station.js` for `index.html` and `station/` on every write of the copy — two names that cover the four files it emits, rather than the `EMITTED` list itself, because a directory is one line where four paths under it would be four |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
@@ -91,7 +91,7 @@ A third field is written by nobody the user talks to. `claims` holds every file
 this task has edited — at most sixty, each recorded whole and never truncated,
 because nothing here is a path a human retypes. The two writers reach that cap
 from opposite directions. A path arriving on its own drops the oldest to make
-room (`lib/registry.js:657`, `slice(-MAX_CLAIMS)`); a git pass holding more than sixty is refused
+room (`lib/registry.js:672`, `slice(-MAX_CLAIMS)`); a git pass holding more than sixty is refused
 whole rather than trimmed (`lib/dirty.js:176`, `declined: written.length`), because trimming it would evict
 every claim an edit earned and put build output in its place.
 [collisions.md](collisions.md) is the page for that. Two hooks append to it,

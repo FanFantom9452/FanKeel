@@ -355,3 +355,70 @@ test('the refusal prints the clear command whole, and says why --force is part o
   // active task, which is exactly the caller cmdAdopt refuses.
   assert.match(text, /adoptable, though not by this session/);
 });
+
+// ---- the Bash|PowerShell matcher: a read-only agent denied by name --------
+
+const bashCall = (agentType, command, tool) => ({
+  session_id: MINE, cwd: undefined, tool_name: tool || 'Bash', agent_type: agentType,
+  tool_input: { command },
+});
+
+test('a fankeel-reader redirecting output is denied', () => {
+  const root = tmp();
+  seed(root, MINE, { guard: undefined });
+  const out = run(root, bashCall('fankeel-reader', 'ls > files_ref.txt'));
+  assert.equal(decisionOf(out), 'deny');
+  assert.match(reasonOf(out), /fankeel-reader/);
+});
+
+test('the fankeel: prefixed form is read the same way', () => {
+  const root = tmp();
+  seed(root, MINE, { guard: undefined });
+  const out = run(root, bashCall('fankeel:fankeel-reader', 'ls > files_ref.txt'));
+  assert.equal(decisionOf(out), 'deny');
+});
+
+test('a fankeel-reader piping to grep is not denied', () => {
+  const root = tmp();
+  seed(root, MINE, { guard: undefined });
+  assert.equal(run(root, bashCall('fankeel-reader', 'cat a.txt | grep foo')), '');
+});
+
+test('fankeel-verifier is excluded — it writes its own evidence file', () => {
+  const root = tmp();
+  seed(root, MINE, { guard: undefined });
+  assert.equal(run(root, bashCall('fankeel-verifier', 'ls > evidence.txt')), '');
+});
+
+test('a redirect to /dev/null is not a write worth denying', () => {
+  const root = tmp();
+  seed(root, MINE, { guard: undefined });
+  assert.equal(run(root, bashCall('fankeel-reader', 'noisy-command > /dev/null')), '');
+});
+
+test('the same identity through PowerShell is denied the same way', () => {
+  const root = tmp();
+  seed(root, MINE, { guard: undefined });
+  const out = run(root, bashCall('fankeel-reader', 'Get-Content a.txt | Out-File b.txt', 'PowerShell'));
+  assert.equal(decisionOf(out), 'deny');
+});
+
+test('the writes the first list missed are denied too, and git reads still pass', () => {
+  const root = tmp();
+  seed(root, MINE, { guard: undefined });
+  for (const [cmd, tool] of [['git restore a.txt'], ['git apply fix.diff'], ['git switch other'], ['git merge other'],
+    ['sed --in-place s/a/b/ f.txt'], ['Copy-Item a.txt b.txt', 'PowerShell'], ['Move-Item a.txt b.txt', 'PowerShell'],
+    ['Rename-Item a.txt b.txt', 'PowerShell'], ['Add-Content a.txt x', 'PowerShell']]) {
+    const out = run(root, bashCall('fankeel-reader', cmd, tool));
+    assert.ok(out, cmd + ' was let through');
+    assert.equal(decisionOf(out), 'deny', cmd);
+  }
+  for (const cmd of ['git show HEAD', 'git diff', 'git log --oneline', 'git status --porcelain']) {
+    assert.equal(run(root, bashCall('fankeel-reader', cmd)), '', cmd);
+  }
+});
+
+test('a session with no entry is not guarded on Bash either', () => {
+  const root = tmp();
+  assert.equal(run(root, bashCall('fankeel-reader', 'ls > x')), '');
+});

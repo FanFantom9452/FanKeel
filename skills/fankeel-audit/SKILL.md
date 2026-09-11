@@ -5,7 +5,7 @@ argument-hint: "[--root <dir>] [--since <days>]"
 version: 0.62.0
 status: current
 last_verified: 2026-09-11
-source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js
+source_of_truth: scripts/docs-check.js, scripts/docs-audit.js, scripts/residue.js, scripts/memory-check.js
 ---
 
 # fankeel-audit
@@ -50,12 +50,13 @@ same logic in the shape the other six skills carry.
 
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
 
-## Run all three
+## Run all four
 
 ```
 node <plugin>/scripts/docs-check.js [--root <dir>]
 node <plugin>/scripts/residue.js [--root <dir>]
 node <plugin>/scripts/docs-audit.js [--root <dir>] [--since <days>]
+node <plugin>/scripts/memory-check.js [--root <dir>] [--config-dir <dir>]
 ```
 
 `--root` picks one project out of a workspace holding several. `--since`
@@ -67,6 +68,11 @@ Quote what came back. A description of what a scanner said is not what it said.
 A dead path is a bug in a reference document and history in an archive.
 `docs-check` reads the role from `docs.json` and grades it that way, which is
 why the injected rule no longer says so: the script holds it.
+
+A dead reference or a stale quote with no test of its own is exactly this
+kind of fix: dispatch `subagent_type: fankeel-fixer` with the page and the
+correction, never more than two files at once, and re-run `docs-check`
+yourself once it returns.
 
 ### The one that is not about documents
 
@@ -93,6 +99,23 @@ committed reported nothing at all about them.
 |---|---|
 | **no Python manifest beside it** | no `pyproject.toml`, `requirements.txt`, `setup.py`, `setup.cfg`, `Pipfile` or `environment.yml` in the same directory. Nothing here can rebuild it, so whatever is inside is all there is |
 | **interpreter gone** | the `home` line in `pyvenv.cfg` names a path that is not on this machine. This is what a tree copied from another computer looks like: it cannot be activated and it cannot be rebuilt |
+
+### The native memory
+
+`memory-check.js` reads Claude Code's own memory for this project —
+`<configDir>/projects/<slug>/memory/` — the notes nothing else in this
+plugin ever prunes. It reports mechanically: the index and the directory
+disagreeing about which files exist, a cited repository path that is gone, a
+`path:line` past the end of its file. Those three fail the run. A `stale`
+line — an entry's `modified` older than the last commit to a path it cites —
+is listed, never failed: a correct memory can still cite a file that changed
+after it was written.
+
+A memory entry `memory-check` finds wrong is corrected by adding a
+`**Corrected YYYY-MM-DD:**` line naming what was wrong, never by a silent
+rewrite — `workflow-run-meta-json.md`'s own corrected line is the working
+example. Deletion is the user's call: remove only the entry the user points
+at from the findings, never one inferred from a scanner alone.
 
 ## What the sweep reports
 
@@ -125,6 +148,15 @@ Three failures the scanners cannot see, and the reason this skill exists:
   them is the source and the other links to it. Say which should be which and
   why — usually the one closest to the code wins.
 
+**Drift's two readings.** A drift finding is a gap, not a verdict: the code
+named changed after the page did, and either side can be the one that is
+wrong. The row lists what actually happened to the code afterward — read the
+commit subjects it carries. One that already says it means to change this
+behaviour is the page's fix: bring the page in line with it. No commit says
+so, and the code itself is the suspect: leave the page alone and open a
+`TODO.md` entry under `## Needs a decision` naming what looks wrong, rather
+than rewriting the page to match a change nobody meant to make.
+
 So dispatch it: one reader per pair, **several in one response** so they run at
 once, each told the file they share and asked which page the code supports. Four
 in one response is the ceiling — the fankeel skill's *Dispatch by default, never
@@ -156,6 +188,11 @@ what it defeats. Every `agent` call carries `model`, and `sonnet` is the floor
 there as it is here. What returns is the join, per pair. The ruling and the
 `routed:` line stay here. The Agent form below is the fallback, for a session
 where the user said not to dispatch, or declined the host's run dialog.
+
+**Once that workflow returns, run `git status --porcelain` once** before
+reading its findings — the same check `fankeel-survey` now makes, for the
+same reason: a read-only reader's tool list is not the same thing as a
+guarantee it wrote nothing. `docs/collisions.md` has the incident.
 
 ## The adversary
 

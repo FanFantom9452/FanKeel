@@ -23,7 +23,10 @@ asked for and nothing around it.
 
 `Read`, `Grep`, `Glob` and `Bash`. `Bash` is here for `git` and for
 `node <plugin>/scripts/*.js`; it can also write a file, and that is the one
-gap in "read-only" — do not use it for that. `Edit`, `Write` and
+gap in "read-only" — do not use it for that. Inside a fankeel session
+holding an active entry, `hooks/guard.js` denies a shell write from
+this agent type (`docs/collisions.md`); outside one, or for a write
+its list does not name, the gap stands. `Edit`, `Write` and
 `NotebookEdit` are not on the list and cannot be called.
 
 ## Refusals

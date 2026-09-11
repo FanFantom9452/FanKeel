@@ -332,6 +332,13 @@ runs one row per pass, and every other step of the loop is unchanged.
    with them named. A cap that silently drops what it caps is the failure
    this is preventing.
 
+   A finding that is a reference-page correction or a one-line fix with no
+   test cycle of its own does not need a fix round at all: dispatch
+   `subagent_type: fankeel-fixer` instead of resuming the task's implementer,
+   never more than two files at once, and re-run whatever check the finding
+   named yourself once it returns. A fix that needs its own red-then-green
+   cycle still resumes the implementer — `fankeel-fixer` cannot run a test.
+
    **A fix round lands the same way the task did**: the resumed implementer
    returns paths and does not commit, and the parent stages that task's
    declared paths and commits them. Re-review
@@ -386,6 +393,22 @@ settles what neither answers.
 3. a side effect outside this workspace that norms say you ask about first — a
    merge, a push to a shared branch, a publish
 4. a plan, or a file table, so broken that every path forward is a guess
+
+## A cost claim is measured, not assumed
+
+Where a task's whole justification is that a change is cheaper, faster or
+lighter, its steps name the script that measures the claim and record what it
+printed before the change — the same discipline
+`docs/reports/2026-09-03-dispatch-vs-inline.md` already keeps by hand. Run
+that same script again once the change lands, before treating the task as
+done.
+
+A number that has not improved is not a task to patch: revert the change,
+record the ruling and the number with `ledger.js ruling`, and leave the task
+un-kept rather than defending it through a fix round it was never about. A
+cost claim `verify` finds still unproven when it re-runs the same script over
+the merged tree is routed back here exactly as any other finding is, and this
+is the ruling it lands on.
 
 ## A new ask is not a fifth stopper
 

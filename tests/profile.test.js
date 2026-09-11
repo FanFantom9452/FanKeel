@@ -119,3 +119,39 @@ test('summary names design.mockup once somebody sets it', () => {
     assert.match(profile.summary(values, sources), /design\.mockup opus/);
     assert.equal(profile.summary({ 'design.mockup': false }, { 'design.mockup': 'builtin' }), '');
 });
+
+test('class.default is a class name, and stays out of summary', () => {
+    const d = dir();
+    fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
+    fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'class.default': 'bounded' }));
+    const { values, sources } = profile.read(d, null);
+    assert.equal(values['class.default'], 'bounded');
+    assert.equal(sources['class.default'], 'project');
+    assert.equal(profile.write(profile.projectFile(d), 'class.default', 'orbital').ok, false);
+    assert.equal(profile.summary(values, sources).includes('class.default'), false);
+});
+
+test('suggest also counts this registry\'s own land records for the same project', () => {
+    const d = dir();
+    const g = (...a) => execFileSync('git', a, { cwd: d, stdio: 'ignore' });
+    g('init', '-q', '-b', 'main');
+    g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'init');
+    const sessions = path.join(d, '.fankeel', 'sessions');
+    fs.mkdirSync(sessions, { recursive: true });
+    const write = (id, integration) => fs.writeFileSync(path.join(sessions, id + '.json'), JSON.stringify({
+        task: 't', active: false, started: new Date().toISOString(), updated: new Date().toISOString(),
+        land: { integration, at: new Date().toISOString() },
+    }));
+    write('11111111-0000-4000-8000-000000000001', 'pr');
+    write('11111111-0000-4000-8000-000000000002', 'pr');
+    write('11111111-0000-4000-8000-000000000003', 'pr');
+    const out = profile.suggest(d, d);
+    assert.equal(out.values['land.integration'], 'pr');
+    assert.ok(out.evidence.some((e) => e.startsWith('land records:') && /3 pr/.test(e)));
+});
+
+test('suggest with no second argument behaves exactly as before', () => {
+    const d = dir();
+    const out = profile.suggest(d);
+    assert.equal(out.evidence[0], 'not a git repository, or git is not on PATH');
+});

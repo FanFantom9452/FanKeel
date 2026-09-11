@@ -44,7 +44,7 @@ everything that needs more than a paragraph is here.
 | How two implementers running at once was built, task by task — its design is in `docs/archive/` | `docs/archive/2026-08-30-parallel-build.md` — *built* |
 | Every fankeel session on this machine on one page, what each cost, and how an abandoned one is put down | [decisions/2026-09-04-session-station-design.md](decisions/2026-09-04-session-station-design.md) |
 | The eight tasks that build the station, with every test and every file written out | `docs/archive/2026-09-04-session-station.md` — *built* |
-| Why the station forgot registries — the lead dies with the badge — and where the page is written now: at `/fankeel`, at every verb, beside the user | [plans/2026-09-05-station-at-hand-design.md](plans/2026-09-05-station-at-hand-design.md) — *built* |
+| Why the station forgot registries — the lead dies with the badge — and where the page is written now: at `/fankeel`, at every verb, beside the user | `docs/archive/2026-09-05-station-at-hand-design.md` — *built* |
 | The six tasks that made the station remember, scan, write twice and say so | `docs/archive/2026-09-05-station-at-hand.md` — *built* |
 | Why a station row gains a curve of what it spent against how long it ran, and why depth alone never bounded the scan | `docs/archive/2026-09-06-station-reads-back-design.md` — *built* |
 | The eight tasks that add the curve, the controls, per-stage spend and a discovery that stops forgetting | `docs/archive/2026-09-06-station-reads-back.md` — *built* |
@@ -64,6 +64,8 @@ everything that needs more than a paragraph is here.
 | A prompt for a later session: a `design` class with its route, an axis lock file, a mode-first routing table and the stage-skill edits — read in from caveman.zip, not yet run | [plans/2026-09-09-design-class-prompt.md](plans/2026-09-09-design-class-prompt.md) — *design-intent, 繁體中文* |
 | Why the ten `## Ready` entries came down to eight changes — an archive page is retired wherever it sits, a deleted file no longer holds a plan open, the order of stages is kept beside the clock, and a blank judgement is refused | `docs/archive/2026-09-11-ready-ten-design.md` — *built, 繁體中文* |
 | The nine tasks that close them, eight of them one change and its test, the last taking the ten entries out of `TODO.md` | `docs/archive/2026-09-11-ready-ten.md` — *built, 繁體中文* |
+| Why the whole 09-11 backlog rode one architectural route — caveman's four pieces rebuilt as fankeel's own, a fifth agent that edits without running anything, a memory checker, a guard over shell writes, a land record the profile counts, and a station row that opens into its tasks, dispatches and replay | `docs/archive/2026-09-11-backlog-all-design.md` — *built, 繁體中文* |
+| The thirty tasks that built it, from the size hook and the fixer agent to `lib/replay.js`, `lib/detail.js` and the station's panel, dispatch view, TODO box and compare page | `docs/archive/2026-09-11-backlog-all.md` — *built, 繁體中文* |
 | Why one `design.mockup` key is both the switch and the model, why a `when` rule can only be keyed on a profile value, and why the mockup path names a stem rather than a ledger that does not exist yet | `docs/archive/2026-09-10-design-mockup-design.md` — *built, 繁體中文* |
 | The three tasks that added the key, hung design's `when` rule on it inside a measured 2357-character budget, and wrote the step into the skill | `docs/archive/2026-09-10-design-mockup.md` — *built, 繁體中文* |
 | Why the `## Ready` entry and the nine `## Needs a decision` entries each already had a chosen answer, and what each becomes as a change | `docs/archive/2026-09-10-todo-ten-design.md` — *built, 繁體中文* |
@@ -115,6 +117,7 @@ everything that needs more than a paragraph is here.
 | What sixteen design axes six installed design skills each set, where they conflict, and the four gaps between them — read in from caveman.zip | [reports/2026-09-09-design-axis-inventory.md](reports/2026-09-09-design-axis-inventory.md) — *a dated snapshot, 繁體中文* |
 | What the first dispatch pair costs with `haiku` as the parent on both arms: why the residue advantage halves because the inline arm got cheaper, and why the money penalty more than doubles | [reports/2026-09-09-haiku-pair.md](reports/2026-09-09-haiku-pair.md) — *a dated snapshot, 繁體中文* |
 | Which development-preference answers are actually recoverable today: `project` and `guard` in none of 106 session records, and land's answer only in `git log` | [reports/2026-09-09-profile-evidence.md](reports/2026-09-09-profile-evidence.md) — *a dated snapshot, 繁體中文* |
+| That the hook payload does carry `tool_response` and, inside a subagent, `agent_type` — as `fankeel:fankeel-reader`, with the plugin prefix — observed once with a probe hook | [reports/2026-09-11-hook-payload-probe.md](reports/2026-09-11-hook-payload-probe.md) — *a dated snapshot, 繁體中文* |
 | What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 | Why three lib modules with one caller each were not folded into their callers | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *one caller is not evidence on its own* |
@@ -143,13 +146,14 @@ is corrected by the next one, not by rewriting this.
 | 判斷 7：verify 的 verifier 要釘哪個 agent，Workflow 的寫檔要求要不要留 | [judgements/2026-09-10-verifier-agent.md](judgements/2026-09-10-verifier-agent.md) — *judged 2026-09-10, fable* |
 | 判斷 8：09-11 的五個方向加上現有 8 條，怎麼拆成分群的 TODO | [judgements/2026-09-11-todo-split.md](judgements/2026-09-11-todo-split.md) — *judged 2026-09-11, fable* |
 
-## The three scanners
+## The four scanners
 
 | | |
 |---|---|
 | `node scripts/docs-check.js` | every reference still resolves. A second to run, and the `verify` and `audit` rules call for it. |
 | `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged, an environment nothing can rebuild or run, the weight of what is ignored, directories holding no files. Three of the five need git and two do not, so it answers outside a repository too. It never deletes. |
-| `node scripts/docs-audit.js` | the fortnightly deep pass: what has stopped being true, and which two pages disagree. `/fankeel-audit` is the whole sweep — it runs all three of these, reads the shortlist, offers the cleanup. |
+| `node scripts/docs-audit.js` | the fortnightly deep pass: what has stopped being true, and which two pages disagree. `/fankeel-audit` is the whole sweep — it runs all four of these, reads the shortlist, offers the cleanup. |
+| `node scripts/memory-check.js` | reads Claude Code's own memory for this project — `<configDir>/projects/<slug>/memory/` — and fails on an index and directory that disagree, a cited path that is gone, or a `path:line` past its file's end. A `stale` entry is listed, never failed. |
 
 ## Roles
 
@@ -172,6 +176,6 @@ is explained, and it is the one thing to know before adding a page here.
 | `output-styles/` | reference | no |
 | `evals/` | fixture | n/a — a test's own input; a prompt names paths only its scaffold has, so it is checked for links and line numbers only, never for symbols |
 | `.claude/agents/` | reference | no |
-| `agents/` | reference | no — the four agents the plugin ships, read by Claude Code at process start |
+| `agents/` | reference | no — the five agents the plugin ships, read by Claude Code at process start |
 
 [Back to the front page](../README.md)

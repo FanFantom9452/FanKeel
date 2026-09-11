@@ -49,6 +49,8 @@ const mins = (ms) => {
 
 const GUARDS = ['ask', 'deny', 'off'];
 
+const LAND_VERBS = ['merge', 'pr', 'keep'];
+
 // A refusal is often two sentences: what was wrong, and what to do instead.
 // Named because it is built into message strings all through this file.
 const NL = String.fromCharCode(10);
@@ -190,6 +192,8 @@ function parseArgs(head, whole) {
     if (whole.includes('--force')) opts.force = true;
     if (whole.includes('--all')) opts.all = true;
     if (whole.includes('--default')) opts.default = true;
+    if (whole.includes('--push')) opts.push = true;
+    if (whole.includes('--no-push')) opts.push = false;
     return opts;
 }
 
@@ -495,11 +499,20 @@ function cmdStart(root, opts) {
     if (opts.class && opts.route) {
         fail('--class or --route, not both. A class already names a route.');
     }
+    // Read early: the class default lives in the same profile as guard, and
+    // the class decides the route before anything else below needs one.
+    const prof = profile.read(projectRootFor(root, opts), claudeDir(opts));
+    let cls = opts.class;
+    let classFromProfile = false;
+    if (!cls && !opts.route && prof.values['class.default']) {
+        cls = prof.values['class.default'];
+        classFromProfile = true;
+    }
     let route;
-    if (opts.class) {
-        route = routeForClass(opts.class);
+    if (cls) {
+        route = routeForClass(cls);
         if (!route) {
-            fail('Not a class: ' + opts.class + NL
+            fail('Not a class: ' + cls + NL
                 + Object.keys(CLASSES).map((c) => '  ' + c + '  ' + CLASSES[c].means).join(NL));
         }
     } else {
@@ -518,7 +531,7 @@ function cmdStart(root, opts) {
         // written here would be the declaration this replaced under a new name.
         project,
         route,
-        class: opts.class ? String(opts.class).trim().toLowerCase() : undefined,
+        class: cls ? String(cls).trim().toLowerCase() : undefined,
         // Which registry answers "is that session still running". Only this
         // session knows, and a reader under a different CLAUDE_CONFIG_DIR has no
         // way to guess it — without this it judged a running neighbour dead.
@@ -536,7 +549,6 @@ function cmdStart(root, opts) {
     // The profile is the user's standing answer, written once with
     // `profile set guard`; applying it here is executing that instruction,
     // not the script choosing a mode — which is what invariant 6 forbids.
-    const prof = profile.read(projectRootFor(root, opts), claudeDir(opts));
     if (prof.sources.guard && prof.sources.guard !== 'builtin') data.guard = prof.values.guard;
 
     // `replace` rather than `update`: this record was built from scratch a few
@@ -556,11 +568,30 @@ function cmdStart(root, opts) {
     showBadge(opts, id, badge.badgeWord(data.stage, false), data, root);
 
     const lines = ['fankeel — started, at ' + data.stage
-        + (data.class ? '   class: ' + data.class : '')
+        + (data.class ? '   class: ' + data.class + (classFromProfile ? ' (profile)' : '') : '')
         + '   route: ' + route.join(' → ')];
     lines.push('');
     for (const line of describe(root, id, data)) lines.push('  ' + line);
     if (prof.sources.guard && prof.sources.guard !== 'builtin') lines[lines.findIndex((l) => l.startsWith('  guard:'))] += ' (profile)';
+
+    // Only when the project has never answered anything — a project with a
+    // file that merely lacks `class.default` already made a choice about
+    // something, and this is not a nag for the fields it left out.
+    if (!fs.existsSync(profile.projectFile(projectRootFor(root, opts)))) {
+        const { values: suggested, evidence } = profile.suggest(projectRootFor(root, opts), root);
+        lines.push('');
+        lines.push('No profile.json for this project yet — suggested from its history:');
+        for (const e of evidence) lines.push('  ' + e);
+        const keys = Object.keys(suggested);
+        if (keys.length) {
+            for (const k of keys) {
+                lines.push('  node ' + __filename + ' profile set ' + k + ' ' + suggested[k]
+                    + (opts.project ? ' --project ' + opts.project : ''));
+            }
+        } else {
+            lines.push('  nothing the history answers');
+        }
+    }
 
     lines.push('');
     lines.push(FIRST_STEP[data.stage] || 'Begin at ' + data.stage + '. Do not stop to ask whether to start.');
@@ -613,10 +644,17 @@ function cmdStage(root, opts) {
     const spent = registry.burnOf(data, from);
     const took = registry.clockOf(data, from);
     const held = registry.waitedOf(data, from);
-    return 'fankeel — ' + from + ' to ' + name + (at ? '   ' + at.step + ' of ' + at.steps : '')
+    let line = 'fankeel — ' + from + ' to ' + name + (at ? '   ' + at.step + ' of ' + at.steps : '')
         + (spent ? '   ' + from + ' burned ' + tokens(spent) : '')
         + (took ? '   ' + from + ' took ' + mins(took)
             + (held ? ', ' + mins(held) + ' of it at the gate' : '') : '');
+    // 只在「已經有一次」之後才說，因為第一次 verify→build 就是這條 pipeline
+    // 本來的走法。只是 script 輸出，不佔注入——build 自己的區塊已經是 2393 / 2400。
+    if (name === 'build' && from === 'verify' && registry.returnsTo(data, 'verify', 'build') > 0) {
+        line += NL + 'second return to build from verify — name what verify caught that build\'s'
+            + NL + 'review did not, and add that check to the review';
+    }
+    return line;
 }
 
 // A new task on a session that already has one. `down` then `start` was the only
@@ -738,7 +776,7 @@ function cmdProfile(root, opts) {
         return 'fankeel — profile: ' + key + ' = ' + out.value + '  → ' + file;
     }
     if (verb === 'suggest') {
-        const { values, evidence } = profile.suggest(projectRoot);
+        const { values, evidence } = profile.suggest(projectRoot, root);
         const lines = ['fankeel — profile suggested from ' + projectRoot + ' (nothing written)'];
         for (const e of evidence) lines.push('  ' + e);
         const keys = Object.keys(values);
@@ -1017,6 +1055,30 @@ function cmdRoute(root, opts) {
     return shown + NL + '           at ' + data.stage + ', ' + at.step + ' of ' + at.steps;
 }
 
+// 使用者在 land 選單實際答的（或 profile 已經答的），寫一次進 entry。不動 stage、
+// 不動 badge——land 這個時間點通常已經在往 down 走，不是 collision 相關的欄位。
+// `profile.suggest` 讀回這裡的紀錄，是 `pr` 與 `keep` 唯一能被建議出來的路徑：
+// git 的 merge 歷史只看得到 `merge`。
+function cmdLand(root, opts) {
+    const id = requireSession(opts);
+    const verb = String(opts.positional[0] || '').toLowerCase();
+    if (!LAND_VERBS.includes(verb)) fail('land is one of: ' + LAND_VERBS.join(', '));
+
+    let data = null;
+    const wrote = registry.update(root, id, (d) => {
+        if (d.active !== true) return false;
+        const land = { integration: verb, at: now() };
+        if (opts.push !== undefined) land.push = opts.push;
+        d.land = land;
+        data = d;
+        return true;
+    });
+    if (!data) fail('No active entry for this session under ' + root);
+    if (!wrote) fail('Could not write the entry.');
+
+    return 'fankeel — land: ' + verb + (opts.push === true ? ', push' : opts.push === false ? ', no push' : '');
+}
+
 const COMMANDS = {
     show: cmdShow,
     route: cmdRoute,
@@ -1030,6 +1092,7 @@ const COMMANDS = {
     down: cmdDown,
     adopt: cmdAdopt,
     clear: cmdClear,
+    land: cmdLand,
 };
 
 const USAGE = [
@@ -1049,6 +1112,8 @@ const USAGE = [
     '  profile show|set <key> <value>|suggest',
     '                                    the project\'s standing answers; --default writes the',
     '                                    machine file, --project <dir> picks a project under the root',
+    '  land <merge|pr|keep> [--push|--no-push]',
+    '                                    record the integration this task actually took',
     '  down                              stand the task down; never deletes',
     '  adopt <session-id>                take another entry over, standing it down',
     '  clear <session-id> [--force]      put down a claim nobody is behind; never deletes',

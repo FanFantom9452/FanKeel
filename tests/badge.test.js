@@ -141,6 +141,16 @@ test('pruneBadges leaves another plugin flag and its directory alone', () => {
   assert.equal(fs.readFileSync(caveman, 'utf8'), 'ultra\n');
 });
 
+// caveman decoupling: the comments used to name caveman and ponytail by
+// identity for no functional reason — pruneBadges never checks who a
+// sibling flag belongs to. This is a comment-only change, so the test reads
+// the source text rather than calling anything.
+test('lib/badge.js does not name another plugin by identity in its comments', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'lib', 'badge.js'), 'utf8');
+  assert.equal(/caveman/i.test(src), false, 'lib/badge.js still names caveman');
+  assert.equal(/ponytail/i.test(src), false, 'lib/badge.js still names ponytail');
+});
+
 test('pruneBadges survives a missing modes directory', () => {
   assert.equal(pruneBadges(tmpClaude(), SID, 30 * 24 * 3600e3), 0);
 });

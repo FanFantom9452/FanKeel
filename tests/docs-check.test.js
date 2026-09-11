@@ -226,3 +226,38 @@ test('a reference one line past the end is past-end', () => {
   assert.equal(past.length, 1, 'line 4 of a three-line file was not flagged');
   assert.match(past[0].what, /ends at 3$/);
 });
+
+const FOO_RANGE = 'a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nconst target = 1;\n';
+
+test('a reference page citing a range past the end of the file is reported', () => {
+  const root = repoWith('fankeel-docscheck-range-pastend-', {
+    'docs/README.md': '# index\n',
+    'lib/foo.js': FOO_RANGE,
+    'docs/page.md': 'See `lib/foo.js:3-20`, which sets `const target`.\n',
+  });
+  const past = scan(root, []).findings.filter((f) => f.tag === 'past-end');
+  assert.equal(past.length, 1);
+  assert.match(past[0].what, /lib\/foo\.js:3-20 but the file ends at 11/);
+});
+
+test('a range citation whose quote sits outside it is reported as moved, with a same-length range suggested', () => {
+  const root = repoWith('fankeel-docscheck-range-moved-', {
+    'docs/README.md': '# index\n',
+    'lib/foo.js': FOO_RANGE,
+    'docs/page.md': 'See `lib/foo.js:1-5`, which sets `const target`.\n',
+  });
+  const moved = scan(root, []).findings.filter((f) => f.tag === 'moved');
+  assert.equal(moved.length, 1);
+  assert.match(moved[0].what, /lib\/foo\.js:1-5 does not hold `const target` — it is at :11, try :11-15/);
+});
+
+test('a range citation whose quote sits inside it is not reported', () => {
+  const root = repoWith('fankeel-docscheck-range-ok-', {
+    'docs/README.md': '# index\n',
+    'lib/foo.js': FOO_RANGE,
+    'docs/page.md': 'See `lib/foo.js:9-11`, which sets `const target`.\n',
+  });
+  const scanned = scan(root, []);
+  assert.equal(scanned.findings.filter((f) => f.tag === 'moved').length, 0);
+  assert.equal(scanned.findings.filter((f) => f.tag === 'past-end').length, 0);
+});

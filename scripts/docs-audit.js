@@ -128,6 +128,37 @@ function commitTimes(root) {
     return times;
 }
 
+// Up to `limit` commit subjects that touched `rel` after `sinceMs`, newest
+// first. A date gap alone cannot say which side is wrong — the page could be
+// stale, or the code could have departed from what it still correctly
+// described — so drift hands over what a person needs to judge that: what
+// actually happened to the file after the page's own date. One `git log` per
+// drift row rather than the whole-tree pass `commitTimes` makes: there are at
+// most a dozen drift rows in a run and `--follow` on one path costs one
+// process, where doing this for every file in the tree the way `commitTimes`
+// does would cost one process per file instead of one for all of them.
+function subjectsSince(root, rel, sinceMs, limit = 3) {
+    if (!isRepo(root)) return [];
+    let out;
+    try {
+        out = execFileSync('git', ['log', '--format=%ct%n%s', '--follow', '--', rel], {
+            cwd: root, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'],
+        });
+    } catch (e) {
+        return [];
+    }
+    // `%ct` then `%s` on the line under it, one pair per commit, newest first.
+    const lines = out.split('\n');
+    const subjects = [];
+    for (let i = 0; i + 1 < lines.length; i += 2) {
+        const ts = parseInt(lines[i], 10) * 1000;
+        if (!Number.isFinite(ts) || ts <= sinceMs) continue;
+        subjects.push(lines[i + 1]);
+        if (subjects.length >= limit) break;
+    }
+    return subjects;
+}
+
 // Every path a commit has deleted. `pointsAt()` files a path that is not on
 // disk as unbuilt, and a plan whose work was a deletion names exactly such a
 // path — so without this the plans that retired a file stayed open for good,
@@ -445,6 +476,11 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
                 file: rel, target: worst.target, gap: worst.gap,
                 docAge: daysBetween(now, docAt),
                 declared: Boolean(c && c.verified),
+                // Neither side is assumed guilty: the page could be stale, or
+                // the code could have departed from what it correctly
+                // described. These are what actually happened to the target
+                // after the page's own date, for a reader to judge from.
+                subjects: subjectsSince(root, worst.target, docAt),
             });
         }
     }
@@ -727,9 +763,10 @@ function report(r) {
     if (r.error) lines.push('  ' + r.error + ' — falling back to root files only.');
 
     lines.push(...section(plural(r.drift.length, 'reference document has', 'reference documents have')
-        + ' fallen behind the code they describe:',
+        + ' fallen behind the code they describe — page stale, or the code departed from it:',
     r.drift.map((d) => d.file + '  (' + (d.declared ? 'verified' : 'last touched') + ' ' + d.docAge + 'd ago; '
-        + d.target + ' changed ' + d.gap + 'd after it)')));
+        + d.target + ' changed ' + d.gap + 'd after it)'
+        + (d.subjects.length ? d.subjects.map((s) => '\n    - ' + s).join('') : '\n    - no commit subject found for it'))));
 
     lines.push(...section(plural(r.landed.length, 'plan looks', 'plans look') + ' landed — everything named exists or git has seen it deleted:',
         r.landed.map((p) => p.file + '  (' + p.named + ' files, untouched ' + p.age + 'd)')));

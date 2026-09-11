@@ -988,7 +988,7 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 東西會回頭重驗。
 
 - 本專案 09-11 的索引有 76 條，多數引了檔名、旗標、行號或量測數字，正是最會過期的那一類。
-- fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:584`（`## Task memory`）那一節的路由表把
+- fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:590`（`## Task memory`）那一節的路由表把
   durable fact 指向 memory 目錄，`lib/registry.js:18`（`Task memory is two fields on the entry`）的註解說明 fankeel 不另開一份記憶。
   讀、稽核、清理那個目錄的程式碼一行都沒有。
 
@@ -1039,13 +1039,13 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 
 | 缺口 | 現況 |
 |---|---|
-| (a) plan 的 task 與各自做了什麼 | 沒有：`lib/station.js` 完全不讀 build ledger |
-| (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:198` 的 `agentsOf` 只回一個數字 |
+| (a) plan 的 task 與各自做了什麼 | 沒有：`lib/station.js` 完全不讀 build ledger（2026-09-12 backlog-all build 已關閉：Task 23、25 加了 `tasksOf`，由 `lib/station.js` 讀取；現況見 `docs/station.md`「任務」節） |
+| (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:220` 的 `agentsOf` 只回一個數字 |
 | (c) 每個 stage 花多少錢 | 刻意拿掉：`docs/station.md:129`（`a stage's own cost surfaces only in the aggregate`）說它只出現在總覽的總帳 |
 | (d) stage 來回 | 結構上看不到：`lib/registry.js:435` 的 `touch` 以 stage 名為鍵，只存最早與最近兩個時間 |
 | (e) 哪一段可以平行 | 沒有 |
 
-(b) 還少一層：`lib/usage.js:129` 的 `agentFiles` 把一般 agent 和 workflow 裡的 agent 攤成
+(b) 還少一層：`lib/usage.js:151` 的 `agentFiles` 把一般 agent 和 workflow 裡的 agent 攤成
 同一個清單，派工的形狀（agent、agents、workflow）在這裡就丟了。
 
 (d) 的資料要先開始記錄才會有，所以拆成 Ready 的〔station〕那條先做；(a)(b)(e) 怎麼呈現
@@ -1067,8 +1067,8 @@ hook（SessionStart 啟動它的模式，UserPromptSubmit 追蹤模式）。本�
 
 **fankeel 這邊的耦合很少**，沒有一處是功能上的依賴：
 
-- `lib/badge.js:166`（`caveman and ponytail`）與 `lib/badge.js:181`（`caveman and ponytail keep their flags`）兩段註解：清徽章時不刪 caveman 與 ponytail
-  放在同一個目錄裡的旗標。
+- `lib/badge.js:166`（`another plugin may`）與 `lib/badge.js:181`（`another plugin may keep its own flag`）兩段註解：清徽章時不刪
+  別的外掛放在同一個目錄裡的旗標，不點名是哪一個。
 - 釘住上面那句的是 `tests/badge.test.js` 裡「pruneBadges leaves another plugin flag and
   its directory alone」那個測試。
 - eval 一律帶 `--setting-sources project`，因為沒帶的時候 haiku 挑了

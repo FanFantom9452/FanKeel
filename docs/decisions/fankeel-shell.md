@@ -630,7 +630,7 @@ the moment a task stands down, so a registry with nothing running in it had
 nothing pointing at it: the page found 3 of at least 11 on the day
 ([reports/2026-09-05-field-report-0.44.0.md](../reports/2026-09-05-field-report-0.44.0.md)
 had found 5 of 11 a day earlier).
-[docs/plans/2026-09-05-station-at-hand-design.md](../plans/2026-09-05-station-at-hand-design.md)
+[docs/archive/2026-09-05-station-at-hand-design.md](../archive/2026-09-05-station-at-hand-design.md)
 reversed that one ruling: `<configDir>/fankeel/roots.json` remembers every
 registry a write has seen, for thirty days after it last had a `sessions/`
 directory, and `--scan <dir>` walks a drive once to seed it — twelve

@@ -159,7 +159,7 @@ only when this session holds the file too:
   that both reached it cannot block each other into a stalemate.
 
 A task never blocking itself is a separate mechanism, and it runs before
-`blockers()` ever sees the other side: `hooks/guard.js:45` filters `others`
+`blockers()` ever sees the other side: `hooks/guard.js:65` filters `others`
 down to entries whose `sessionId` is not this one's, so every rule above is
 already between *sessions* by the time it runs. A subagent inherits its
 parent's session id, so two implementers dispatched by one session are
@@ -173,9 +173,9 @@ anything written outside them unstaged rather than committed.
 
 ## What the guard does not watch
 
-The scope guard's `PreToolUse` hook is wired to one matcher: `.claude-plugin/plugin.json:76` reads `"matcher": "Edit|Write|NotebookEdit"`.
-Inside it, `hooks/guard.js:42` calls `targetOf(payload)`, which reads only
-`tool_input.file_path` and `tool_input.notebook_path`, and `hooks/guard.js:43` is the whole branch for anything else: `if (!file) return;`.
+The scope guard's `PreToolUse` hook is wired to one matcher: `.claude-plugin/plugin.json:86` reads `"matcher": "Edit|Write|NotebookEdit"`.
+Inside it, `hooks/guard.js:62` calls `targetOf(payload)`, which reads only
+`tool_input.file_path` and `tool_input.notebook_path`, and `hooks/guard.js:63` is the whole branch for anything else: `if (!file) return;`.
 A `Bash` or `PowerShell` call carries a command string, not a path, so it
 never reaches `blockers()` — and on this machine that is two tools, not one:
 Windows hands a subagent a `PowerShell` the matcher does not name either.
@@ -208,6 +208,51 @@ Nobody has verified whether `permissions.deny` still applies under
 the two conditions a background subagent is most likely running under.
 Until somebody checks that, this is a step worth taking, not a guarantee to
 lean on.
+
+## A named exception: three read-only agents, denied by command
+
+`files_ref.txt` is where the paragraph above stopped being enough. A
+`fankeel-reader` dispatched inside the 2026-09-11 survey workflow was told to
+write nothing — its tool list drops `Edit` and `Write` — and left that file in
+the repository root anyway, through `Bash`'s own `>`.
+`docs/judgements/2026-09-10-shell-whitelist.md` weighed a wider version of
+this question — a `Bash|PowerShell` matcher for every session, to protect any
+two tasks from colliding — and rejected it on cost, and on that judgement's
+own motivating case scoring zero. That judgement also named the condition
+under which it would be wrong: a record of a subagent typing a bare
+write, outside a script. `files_ref.txt` is that record.
+
+This is narrower than what was rejected. `.claude-plugin/plugin.json` now
+registers `hooks/guard.js` a second time, matcher `Bash|PowerShell`, and the
+hook denies a command only when both are true: `payload.agent_type` — read
+bare or with a `fankeel:` prefix, `lib/guard.js`'s `readOnlyAgentType` —
+names `fankeel-reader`, `fankeel-reviewer` or `fankeel-judge`, and the command
+matches `writesFiles()`'s fixed list — a redirect to anywhere but `/dev/null`
+or `$null`, `tee`, `rm`, `mv`, `cp`, `sed -i` or `--in-place`, a `git`
+subcommand that writes the tree or the index (`add`, `commit`, `checkout`,
+`switch`, `restore`, `reset`, `stash`, `clean`, `apply`, `am`, `merge`,
+`rebase`, `cherry-pick`, `revert`, `pull`), or one of eight PowerShell
+cmdlets. `fankeel-verifier` is not on the list —
+writing its own evidence file is what it is for.
+
+The list is a denylist rather than an allowlist for the reason the rejected
+2026-09-10 proposal already named: an allowlist would refuse the `npm test`
+and `node scripts/...` calls these agents are supposed to make. It runs only
+against three named agent types rather than every session's Bash calls, which
+is the difference that makes the per-call cost worth paying here and not
+worth paying everywhere — the general guard above still says nothing about a
+`Bash` or `PowerShell` call from anything else.
+
+Whether `agent_type` reaches the hook at all, and in which of the two shapes,
+was checked rather than assumed —
+[docs/reports/2026-09-11-hook-payload-probe.md](reports/2026-09-11-hook-payload-probe.md)
+is where.
+
+Belt and suspenders: `skills/fankeel-survey/SKILL.md` and
+`skills/fankeel-audit/SKILL.md`, the two skills that dispatch a
+`fankeel-reader` workflow, now run `git status --porcelain` once the workflow
+returns — a write this hook missed, or one from a tool it is not wired to,
+still shows up there before the returned findings are trusted.
 
 # Stale entries
 

@@ -1128,3 +1128,72 @@ test('fankeel-survey and fankeel-verify name the reader agent and its model sour
   assert.match(section4[1], /`fankeel-reader`/, 'section 4 never names fankeel-reader');
   assert.match(section4[1], /`dispatch\.floor`/, 'section 4 never names the profile key for the reader\'s model');
 });
+
+// caveman-learn: a cost-justified task states its own before/after measurement
+// rather than being trusted on its word. Flattened first — a hard wrap through
+// the middle of the pinned sentence would otherwise defeat this the same way it
+// has defeated a grep before.
+test('fankeel-build: a cost claim is measured, not assumed', () => {
+  const flat = read('fankeel-build').replace(/\s+/g, ' ');
+  assert.match(flat, /its steps name the script that measures the claim/,
+    'no rule ties a cost-justified task to the script that measures it');
+  assert.match(flat, /Run that same script again once the change lands/,
+    'no rule says to re-measure after the change lands');
+  assert.match(flat, /A number that has not improved is not a task to patch/,
+    'the ruling for an unproven cost claim is missing');
+});
+
+// caveman-stats: a cost/token/count claim's evidence cell is one unpiped
+// command's raw output, never a model's estimate or a retyped command — the
+// exact three traps this repository's own reports have already fallen into.
+test('fankeel-verify: a cost or count figure requires one unpiped command output, pasted verbatim', () => {
+  const flat = read('fankeel-verify').replace(/\s+/g, ' ');
+  assert.match(flat, /A cost, token or count figure/);
+  assert.match(flat, /one command's raw, unpiped, untruncated output, pasted verbatim/);
+  assert.match(flat, /a model's estimate, a retyped command/);
+});
+
+// cavecrew-builder: verify, audit and build each name fankeel-fixer for the
+// one case it exists for — a fix with no test cycle of its own — and all
+// three carry the same file-count refusal in the same words, so one grep
+// checks the contract everywhere it is repeated.
+test('fankeel-verify: a false page with no test of its own goes to fankeel-fixer', () => {
+  const flat = read('fankeel-verify').replace(/\s+/g, ' ');
+  assert.match(flat, /subagent_type: fankeel-fixer/);
+  assert.match(flat, /never more than two files at once/);
+  assert.match(flat, /re-runs `docs-check` itself once it returns/);
+});
+
+test('fankeel-audit: a dead reference with no test of its own goes to fankeel-fixer', () => {
+  const flat = read('fankeel-audit').replace(/\s+/g, ' ');
+  assert.match(flat, /subagent_type: fankeel-fixer/);
+  assert.match(flat, /never more than two files at once/);
+});
+
+test('fankeel-build: a no-test fix goes to fankeel-fixer instead of a resumed implementer', () => {
+  const flat = read('fankeel-build').replace(/\s+/g, ' ');
+  assert.match(flat, /subagent_type: fankeel-fixer/);
+  assert.match(flat, /never more than two files at once/);
+  assert.match(flat, /fankeel-fixer` cannot run a test/);
+});
+
+// D + §5 triggers: audit runs memory-check as its fourth scanner and names
+// the correction convention beside it; land runs it once when this task
+// wrote memory, and never runs an uninstall on its own say-so.
+test('fankeel-audit: runs memory-check as the fourth scanner and names the correction convention', () => {
+  const flat = read('fankeel-audit').replace(/\s+/g, ' ');
+  assert.match(flat, /scripts\/memory-check\.js/);
+  assert.match(flat, /\*\*Corrected YYYY-MM-DD:\*\*/);
+});
+
+test('fankeel-land: runs memory-check when this task wrote memory', () => {
+  const flat = read('fankeel-land').replace(/\s+/g, ' ');
+  assert.match(flat, /scripts\/memory-check\.js/);
+  assert.match(flat, /\*\*Corrected YYYY-MM-DD:\*\*/);
+});
+
+test('fankeel-land: uninstalling a decoupled plugin is offered, never run here', () => {
+  const flat = read('fankeel-land').replace(/\s+/g, ' ');
+  assert.match(flat, /Neither is uninstalling a plugin this session decoupled from/);
+  assert.match(flat, /offered here rather than run/);
+});

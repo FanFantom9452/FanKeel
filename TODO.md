@@ -23,6 +23,13 @@ often one that is ready and one that is still an argument.
 Whoever defers a thing picks its heading, because they know at that moment which
 of the three they are short of. A later reader has to guess.
 
+A bullet may also open with a `〔word〕` prefix — `〔map〕`, `〔caveman〕`,
+`〔station〕` and so on. It groups nothing the heading does not already
+decide: it is there so bullets about one area sit together at a glance, and
+it changes neither an entry's state nor what `/fankeel` offers. The heading
+still answers what an entry is waiting for; the prefix only answers what it
+is about, which is the question the heading is deliberately not asking.
+
 An entry under `## Waiting` carries two things at its end, in this order:
 `lifts when: <the event>`, and then a `MM-DD` stamp. The event is what would make
 the entry actionable — real use, upstream, or another entry landing — and it is
@@ -60,23 +67,13 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔map〕`MAX_NAV` 把導覽表截在 24 列卻不印丟掉幾列，和它上面那句「The count of what was dropped is still printed」相反 — [lib/map.js](lib/map.js). `firstTable()` 到上限就停、`signpost()` 不印 `... and N more`；比照 `listing()` 補上計數。
+- 〔station〕`dispatchesOf()` 要算進一個 session 的每一個 workflow run，但沒有測試用兩個 run 檔跑過：fixture 只寫 `wf_1.json` — [tests/dispatches.test.js](tests/dispatches.test.js). 補兩個 run 檔，斷言兩個都算到。
 
 ## Needs a decision
 
-- 〔docs〕`path:N-M` 範圍引用對 `docs-check` 完全隱形：`PATHISH` 不收範圍，既不檢查也不列為「無引文」 — [docs/documents.md](docs/documents.md). reference 角色還剩 5 條。教它讀範圍要先定義範圍「持有」什麼；改單行則會把描述整個區塊的散文弄壞，本分支收窄 `defects()` 那條時就發生過一次。
+- 〔ponytail〕深度分析：6 skill、3 hook，其中 SubagentStart 把整套規則塞進 fankeel 每個 subagent；audit 的程式碼那一半由誰接 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴).
 
-- 〔audit〕drift 一律假設頁面過期（`scripts/docs-audit.js:421` `1. Drift.`），但 code 也會有邏輯錯誤，文件才是最後的依據。要定 drift 怎麼同時列出「頁過期」與「code 退化」兩個方向 — [scripts/docs-audit.js](scripts/docs-audit.js).
-
-- 〔caveman〕逐項盤點 20 skill、3 agent、6 command、2 hook，和你討論要哪些：要的改寫成 fankeel 規則，不裝它的 skill；定案後拆成 Ready 條目 — [簡報 §6.4](docs/improvement-brief.md#64-caveman-去依賴). §1.5 已列六項。
-
-- 〔memory〕原生 memory 只寫不清：錯的或過期的條目沒有東西重驗，本專案 MEMORY.md 有 76 條，多數引檔名、旗標、行號或量測數字。要定清理機制的形狀 — [簡報 §6.1](docs/improvement-brief.md#61-memory-清理).
-
-- 〔session〕主 session 堆疊約九成來自主迴圈自己的工具輸出，subagent 回傳只佔 8–9%；15/153 個 session 有 stage 倒退（verify>build 29 次）。要定 custom agent 以外的手段 — [簡報 §6.2](docs/improvement-brief.md#62-session-堆疊).
-
-- 〔station〕單一 session 的細節：plan 有幾個 task、各做什麼、主 agent 怎麼切派工（agent/agents/workflow）、stage 來回、哪段可以平行；`lib/station.js` 一樣都沒讀 — [簡報 §6.3](docs/improvement-brief.md#63-station-單-session).
-
-- 〔todo〕分群要不要改用 `###`：`todo-check.js:174` 任何標題都會重設 section，`INIT` 只認三個 `##`，:55 明說不按主題分；要改就動兩處 — [scripts/todo-check.js](scripts/todo-check.js). 目前以〔群組〕前綴代替。
+- 〔station〕總覽改版：兩個專案並排、單一專案、某一天的花費、趨勢折線。另起一次設計，附自己的 mockup — [docs/station.md](docs/station.md).
 
 ## Waiting
 
@@ -118,10 +115,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - todo-check 不驗 `path:line` 的行號：改成一個不存在的行仍然 exit 0 且說「no stale citations」 — [scripts/todo-check.js](scripts/todo-check.js). TODO.md 不在任何 bucket，docs-check 也不看它，兩支都不檢查。lifts when: 有行號過期被抓到. 09-11.
 
-- `skills/fankeel-audit/SKILL.md:113` 把「十條、五頁」寫死在 reference 頁裡，靠一個「today」撐著 — [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md). 沒有東西會重算它。lifts when: 那兩個數字變了而這句沒變. 09-11.
-
-- 〔caveman〕解耦：`lib/badge.js:166,181` 的註解、`tests/badge.test.js:134-141`、eval 用 `--setting-sources project` 的理由一起改 — [lib/badge.js](lib/badge.js). lifts when: §6.4 的取捨定案. 09-11.
-
-- 〔ponytail〕深度分析：6 skill、3 hook，其中 SubagentStart 把整套規則塞進 fankeel 每個 subagent；audit 的程式碼那一半由誰接 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴). lifts when: caveman 兩條落地. 09-11.
+- `skills/fankeel-audit/SKILL.md:136` 把「十條、五頁」寫死在 reference 頁裡，靠一個「today」撐著 — [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md). 沒有東西會重算它。lifts when: 那兩個數字變了而這句沒變. 09-11.
 
 - 〔ponytail〕解耦 `has('ponytail')`：`lib/render.js:108-110`、`lib/stages.js:352,441`、兩份 SKILL.md、三份測試；fallback 句已經在 — [lib/render.js](lib/render.js). lifts when: §6.5 定案. 09-11.
+
+- 〔session〕`hooks/size.js` 留不留：改前 bigPerSession 0.3846；hook 上線後十個 session 用 `sessions.js --since 2026-09-11` 再量，沒降就移除 — [hooks/size.js](hooks/size.js). lifts when: 十個 session 帶著 hook 跑完. 09-11.
