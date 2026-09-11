@@ -167,6 +167,7 @@
             dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml,
             todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
             figures: figures, compareHtml: compareHtml,
+            routeGroups: routeGroups, routeLedger: routeLedger,
         };
     }
     if (!doc) return;
@@ -427,12 +428,43 @@
             + '在等你回話</text></svg>';
     }
 
-    function stageLedger(R) {
-        var st = {};
+    // A seven-stage session and a three-stage one averaged together describe
+    // neither, so every cross-session figure is taken inside one route: a
+    // class's route under the class's name, a hand-written route under its
+    // own stages, and no average crosses two groups. A session that stepped
+    // back — `backtracks`, the count the detail panel's stage order prints —
+    // is counted in its group but kept out of its averages, on a row of its
+    // own.
+    function routeName(route, classes) {
+        var key = (route || []).join('>');
+        for (var k in classes || {}) if ((classes[k] || []).join('>') === key) return k;
+        return (route || []).join(' → ') || '（沒有 route）';
+    }
+    function routeGroups(R, classes) {
+        var by = {}, order = [];
         R.forEach(function (s) {
+            var name = routeName(s.route, classes);
+            if (!by[name]) {
+                by[name] = { name: name, route: s.route || [], n: 0, clean: 0, backN: 0, backtracks: 0, stages: {},
+                    back: { ms: 0, wait: 0, burn: 0, usd: 0 } };
+                order.push(name);
+            }
+            var g = by[name];
+            g.n++;
+            if (s.backtracks > 0) {
+                g.backN++;
+                g.backtracks += s.backtracks;
+                s.stages.forEach(function (w) {
+                    g.back.ms += Math.max(w.to - w.from, 0);
+                    g.back.wait += w.waited || 0;
+                    g.back.burn += w.burn || 0;
+                    g.back.usd += w.usd || 0;
+                });
+                return;
+            }
+            g.clean++;
             s.stages.forEach(function (w) {
-                if (!st[w.stage]) st[w.stage] = { n: 0, ms: 0, wait: 0, burn: 0, usd: 0 };
-                var x = st[w.stage];
+                var x = g.stages[w.stage] || (g.stages[w.stage] = { n: 0, ms: 0, wait: 0, burn: 0, usd: 0 });
                 x.n++;
                 x.ms += Math.max(w.to - w.from, 0);
                 x.wait += w.waited || 0;
@@ -440,30 +472,44 @@
                 x.usd += w.usd || 0;
             });
         });
-        var max = Math.max.apply(null, ROUTE.map(function (k) {
-            return st[k] ? st[k].ms + st[k].wait : 0;
-        })) || 1;
-        return '<table><colgroup><col style="width:86px"><col><col style="width:70px">'
-            + '<col style="width:70px"><col style="width:56px"></colgroup>'
-            + '<thead><tr><th>階段</th><th>做事 / 等你</th><th class="r">context</th>'
-            + '<th class="r">花費</th><th class="r">等待</th></tr></thead><tbody>'
-            + ROUTE.map(function (k) {
-                var x = st[k];
-                if (!x) return '';
-                return '<tr><td><span class="chip" style="background:' + STAGE_C[k]
-                    + '1f;border-color:transparent;color:' + STAGE_C[k] + ';font-weight:600">'
-                    + k + '</span></td>'
-                    + '<td><div class="mini"><span style="width:' + (x.ms / max * 100)
-                    + '%;background:' + STAGE_C[k] + '"></span><span style="width:'
-                    + (x.wait / max * 100) + '%;background:' + STAGE_C[k] + '38"></span></div>'
-                    + '<div class="mute" style="font-size:10.5px;margin-top:4px">'
-                    + hours(x.ms) + ' 做事 · ' + hours(x.wait) + ' 等你</div></td>'
-                    + '<td class="r num mute">' + tokens(x.burn) + '</td>'
-                    + '<td class="r num">' + usd(x.usd) + '</td>'
-                    + '<td class="r num" style="color:'
-                    + (x.wait > x.ms ? 'var(--dn)' : 'var(--mute)') + '">'
-                    + Math.round(x.wait / (x.ms + x.wait || 1) * 100) + '%</td></tr>';
-            }).join('') + '</tbody></table>';
+        return order.map(function (k) { return by[k]; }).sort(function (a, b) { return b.n - a.n; });
+    }
+    // One table per route group; each stage row a per-session average over the
+    // sessions in the group that reached the stage without stepping back, the
+    // 有倒退 row the same averages over the ones that did. Nothing here is a
+    // total, so nothing here has rows to add up to.
+    function routeLedger(R) {
+        var groups = routeGroups(R, S.classes);
+        if (!groups.length) return '<div class="empty">這個篩選下沒有 session</div>';
+        return groups.map(function (g) {
+            var names = (g.route.length ? g.route : ROUTE).filter(function (k) { return g.stages[k]; });
+            var per = names.map(function (k) { return (g.stages[k].ms + g.stages[k].wait) / g.stages[k].n; });
+            if (g.backN) per.push((g.back.ms + g.back.wait) / g.backN);
+            var max = Math.max.apply(null, per.concat([0])) || 1;
+            var line = function (label, x, n, colour) {
+                var ms = x.ms / n, wait = x.wait / n;
+                return '<tr><td>' + label + '</td><td><div class="mini"><span style="width:' + (ms / max * 100)
+                    + '%;background:' + colour + '"></span><span style="width:' + (wait / max * 100) + '%;background:'
+                    + colour + '38"></span></div><div class="mute" style="font-size:10.5px;margin-top:4px">'
+                    + hours(ms) + ' 做事 · ' + hours(wait) + ' 等你 · ' + n + ' 個</div></td>'
+                    + '<td class="r num mute">' + tokens(Math.round(x.burn / n)) + '</td>'
+                    + '<td class="r num">' + usd(x.usd / n) + '</td>'
+                    + '<td class="r num" style="color:' + (wait > ms ? 'var(--dn)' : 'var(--mute)') + '">'
+                    + Math.round(wait / (ms + wait || 1) * 100) + '%</td></tr>';
+            };
+            return '<div class="rgh"><b>' + esc(g.name) + '</b><span class="mute">' + g.n + ' 個 session · 有倒退 '
+                + g.backN + ' 個、倒退 ' + g.backtracks + ' 次</span></div>'
+                + '<table><colgroup><col style="width:96px"><col><col style="width:64px"><col style="width:64px">'
+                + '<col style="width:52px"></colgroup><thead><tr><th>階段</th><th>平均：做事 / 等你</th>'
+                + '<th class="r">context</th><th class="r">花費</th><th class="r">等待</th></tr></thead><tbody>'
+                + names.map(function (k) {
+                    return line('<span class="chip" style="background:' + STAGE_C[k] + '1f;border-color:transparent;color:'
+                        + STAGE_C[k] + ';font-weight:600">' + k + '</span>', g.stages[k], g.stages[k].n, STAGE_C[k]);
+                }).join('')
+                + (g.backN ? line('<span class="chip" style="color:var(--dn);border-color:var(--dn)">有倒退</span>',
+                    g.back, g.backN, 'var(--dn)') : '')
+                + '</tbody></table>';
+        }).join('');
     }
     function taskCell(s) {
         return '<div class="ell" title="' + esc(s.task) + '" style="font-weight:500">'
@@ -569,10 +615,10 @@
             + '<div class="v">' + hours(wait) + '</div></div>'
             + '<div><div class="k">總時</div><div class="v">' + hours(clock) + '</div></div>'
             + '</div>' + gauge(clock ? Math.round(wait / clock * 100) : 0) + '</div></div>'
-            + '<div class="card"><div class="chd"><span class="ci">◫</span><h2>七個階段</h2>'
+            + '<div class="card"><div class="chd"><span class="ci">◫</span><h2>各 route 的階段</h2>'
             + '<span class="spacer"></span><a class="seeall" data-page="list">全部 '
             + R.length + ' 個 →</a></div>'
-            + '<div class="cbody" style="padding-top:8px">' + stageLedger(R) + '</div></div>'
+            + '<div class="cbody" style="padding-top:8px">' + routeLedger(R) + '</div></div>'
             + '</div>'
             + '<div class="card" style="margin-top:14px"><div class="chd"><span class="ci">☰</span>'
             + '<h2>最近動過的</h2><span class="spacer"></span>'
