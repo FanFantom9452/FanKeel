@@ -77,14 +77,14 @@ test('no session, a stood-down session, or a bad slug exits 1', () => {
 // Filed on 2026-09-11 with nothing under `## Answer`: the answer was drawn from a
 // background agent's tasks/<id>.output, which is 0 bytes, and record exited 0.
 test('a blank answer exits 1, says where the answer lives, and files nothing', () => {
-  const root = seed();
-  const args = ['record', '--session', A, '--brief', path.join(root, 'brief.md'), '--slug', 'ramp', '--answer', '-'];
-  for (const input of ['', ' \n\t\n']) {
-    const out = run(root, args, input);
-    assert.equal(out.code, 1, JSON.stringify(input));
-    assert.match(out.out, /agent-<id>\.jsonl/);
-  }
-  assert.equal(fs.existsSync(path.join(root, 'docs', 'judgements')), false);
+    const root = seed();
+    const args = ['record', '--session', A, '--brief', path.join(root, 'brief.md'), '--slug', 'ramp', '--answer', '-'];
+    for (const input of ['', ' \n\t\n']) {
+        const out = run(root, args, input);
+        assert.equal(out.code, 1, JSON.stringify(input));
+        assert.match(out.out, /agent-<id>\.jsonl/);
+    }
+    assert.equal(fs.existsSync(path.join(root, 'docs', 'judgements')), false);
 });
 
 test('firstLine strips a leading heading marker and truncates past 120 characters', () => {
