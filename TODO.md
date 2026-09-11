@@ -123,7 +123,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - todo-check 不驗 `path:line` 的行號：改成一個不存在的行仍然 exit 0 且說「no stale citations」 — [scripts/todo-check.js](scripts/todo-check.js). TODO.md 不在任何 bucket，docs-check 也不看它，兩支都不檢查。lifts when: 有行號過期被抓到. 09-11.
 
-- `skills/fankeel-audit/SKILL.md:118` 把「十條、五頁」寫死在 reference 頁裡，靠一個「today」撐著 — [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md). 沒有東西會重算它。lifts when: 那兩個數字變了而這句沒變. 09-11.
+- `skills/fankeel-audit/SKILL.md:136` 把「十條、五頁」寫死在 reference 頁裡，靠一個「today」撐著 — [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md). 沒有東西會重算它。lifts when: 那兩個數字變了而這句沒變. 09-11.
 
 - 〔caveman〕解耦：`lib/badge.js:166,181` 的註解、`tests/badge.test.js:134-141`、eval 用 `--setting-sources project` 的理由一起改 — [lib/badge.js](lib/badge.js). lifts when: §6.4 的取捨定案. 09-11.
 
