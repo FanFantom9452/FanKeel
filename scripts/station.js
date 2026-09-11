@@ -361,6 +361,21 @@ async function serve(opts) {
             res.end(station.serialize(modelNow(), { serve: true, nonce, plugin: PLUGIN, cleared }));
             return;
         }
+        const wanted = /^\/station\/detail\/([0-9A-Za-z-]+)\.js$/.exec(url.pathname);
+        if (req.method === 'GET' && wanted) {
+            // One session's detail, the script `write()` leaves beside the
+            // data file, rendered from this request's model rather than read
+            // off disk.
+            const hit = modelNow().registries.flatMap((r) => r.sessions).find((s) => s.sessionId === wanted[1]);
+            if (!hit || !hit.detail) {
+                res.writeHead(404, { 'content-type': 'text/plain' });
+                res.end('no detail for that session\n');
+                return;
+            }
+            res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-store' });
+            res.end(station.serializeDetail(hit));
+            return;
+        }
         if (req.method === 'GET' && url.pathname === '/station/health') {
             // Read-only and identifies the process, nothing else — no nonce,
             // so `probe` above (and a `--detach` poll) can tell a live station
@@ -603,6 +618,8 @@ function main() {
             configDir, roots: args.roots, scan: args.scan, cwd: process.cwd(),
             deadline: scanDeadline(args.scan),
             root: registry.findStateRoot(process.cwd()),
+            // The rows, not the panel: a session's detail is a file of its own.
+            details: false,
         });
         process.stdout.write(JSON.stringify(model) + '\n');
         return;
@@ -679,6 +696,8 @@ function main() {
         scanStats: scan ? { depthCuts: scan.depthCuts, timedOut: scan.timedOut } : undefined,
         deadline: scanDeadline(args.scan),
         root: registry.findStateRoot(process.cwd()), plugin: PLUGIN,
+        // Typed by a person, so every changed session is read, however long.
+        detailBudgetMs: Infinity,
     });
     if (scan) {
         writeScanRecord(configDir, {

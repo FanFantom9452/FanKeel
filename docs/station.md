@@ -102,7 +102,7 @@ agents ran, as a bare count beside the total rather than a request count or a
 wall-clock of its own.
 
 Every row also carries the registry it belongs to, as `root` on its session
-object (`lib/station.js:384`, `root: s.root`) — the raw path, not the
+object (`lib/station.js:405`, `root: s.root`) — the raw path, not the
 shortened label shown on the row — and `match()` filters on that same field
 (`assets/station/station.js:141`, `s.root !== f.project`) rather than a DOM
 attribute, because every row here is rebuilt from `window.STATION` in the
@@ -135,7 +135,7 @@ before this shipped ever will — and even once it exists, a stage whose models
 the price table does not know has no dollar figure, not a figure of zero:
 `costOf` returns `usd: 0` there, and `gather` reads `priced.length` before
 believing it, so an unpriced stage's own `usd` is `null` rather than a silent
-zero (`lib/station.js:298`, `usd: priced ? mine + agents : null`) — the same
+zero (`lib/station.js:310`, `usd: priced ? mine + agents : null`) — the same
 line that folds the session and its agents together rather than pricing the
 parent alone, which is why the ledger's total already matches `cost(s)`'s own
 combined figure, agents included.
@@ -164,7 +164,7 @@ attributed to `survey` — the stage that opened the gate — rather than droppe
 deleted from `usage` when it is written, and why every existing reader still
 sees the shape it always had, is in [registry.md](registry.md).
 
-The page is four files. `index.html` is a shell with no session data in it,
+The page is four files and a directory. `index.html` is a shell with no session data in it,
 copied byte for byte from `assets/station/index.html`, at the top of
 `.fankeel/`; its three siblings live under `.fankeel/station/` —
 `station.css` and `station.js` are copied the same way, and `station-data.js`
@@ -176,6 +176,23 @@ otherwise point outside the repository it sits in.
 `write()` compares the three copied files before writing them, so a prompt that
 changed nothing rewrites `station-data.js` alone. `hooks/inject.js` calls it on
 every prompt, which is the reason that comparison is there.
+
+The directory is `station/detail/`: one file per session whose transcript is
+under this machine's config directory, `station/detail/<id>.js`, holding that
+session's detail panel. `station-data.js` carries only whether there is one,
+the session's peak context and its count of backward steps, so the file every
+prompt rewrites stays small. `lib/detail.js` reads the detail and caches it at
+`<configDir>/fankeel/station/cache/<session>.json`, keyed on the size and mtime
+of the transcript, its agents' files and its workflow run files: a session is
+read again only when one of them changed, and one that has ended is read once.
+A write spends at most a second and a half reading — the `/fankeel` prompt
+writes the page inside a five-second hook, and a changed session costs about
+half a second — and a session reached after that reuses its cache as it
+stands. `node scripts/station.js` reads every changed session however long it
+takes, and `serve` answers the same file at `GET /station/detail/<id>.js`.
+Both the page and the cache sit where git does not look — the registry copy's
+`station/` is ignored and the cache is under the config directory — so the
+prompt fragments a replay quotes stay on this machine.
 
 ### Filtering, and the two views
 
@@ -254,6 +271,7 @@ says when it was generated.
 
 `node scripts/station.js --json` is the same model as one JSON document on
 stdout, and it writes nothing — no page, no `roots.json`, no first-run walk.
+It carries no session's detail either: it reads no transcript.
 `registries[].sessions[]` is the rows, each carrying its `state`, so a session
 that wants the stale ones filters on that rather than parsing the counts line.
 It takes `--root` and `--scan` as the default form does, and refuses `serve`
