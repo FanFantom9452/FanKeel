@@ -75,7 +75,7 @@ function session(opts) {
         fs.writeFileSync(path.join(dir, 'workflows', 'wf_2.json'), JSON.stringify({
             runId: 'wf_2', workflowName: 'flow2', workflowProgress: [
                 { type: 'workflow_phase', index: 1, title: 'Land' },
-                { type: 'workflow_agent', agentId: 'fff6', label: 'land:z', phaseTitle: 'Land', agentType: 'fankeel:fankeel-fixer', model: 'claude-sonnet-5', tokens: 40 },
+                { type: 'workflow_agent', agentId: 'fff6', label: 'land:z', phaseTitle: 'Land', agentType: 'fankeel:fankeel-fixer', model: 'claude-sonnet-5', tokens: 777 },
             ],
         }));
     }
