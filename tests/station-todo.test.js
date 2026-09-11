@@ -59,7 +59,9 @@ test('todoEntry is the line todo-check reads; the prefilled texts say where they
 
 test('the file on disk prints the line to copy; the served page a form carrying the session', () => {
     global.window.STATION.serve = false;
-    assert.match(V.todoSpot('x', 'docs/station.md', { root: 'R', id: 'I' }), /<code>- x — \[station\.md\]\(docs\/station\.md\)<\/code>/);
+    const onDisk = V.todoSpot('x', 'docs/station.md', { root: 'R', id: 'I' });
+    assert.match(onDisk, /<code>- x — \[station\.md\]\(docs\/station\.md\)<\/code>/);
+    assert.doesNotMatch(onDisk, /data-todo|<textarea|送出/, 'the file on disk carries no form that could post');
     global.window.STATION.serve = true;
     const form = V.todoSpot('x', 'docs/station.md', { root: 'R', id: 'I' });
     assert.match(form, /data-todo-root="R" data-todo-id="I"/);
