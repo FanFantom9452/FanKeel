@@ -311,9 +311,10 @@ back empty. This project declares an index, so the branch that would populate
 `orphans` never runs here — the empty result is the index case behaving as
 built, not a gap in the check.
 
-Orphans never fail a run. `scripts/docs-audit.js:817` is `function defects(r) {`, and it sums
-drift, landed plans, a broken index and diagrams; `orphans` is not a term in
-that sum.
+Orphans never fail a run. `defects()` opens at
+`scripts/docs-audit.js:817` (`function defects(r) {`) and returns four lines
+below that, summing drift, landed plans, a broken index and diagrams;
+`orphans` is not a term in that sum.
 
 ## The list is the output, not the count
 

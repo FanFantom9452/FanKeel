@@ -64,7 +64,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Needs a decision
 
-- `path:N-M` 範圍引用對 `docs-check` 完全隱形：`PATHISH` 不收範圍，所以它們既不被檢查也不被列為「無引文」 — [docs/documents.md](docs/documents.md). reference 角色還有 5 條這種。要教它讀範圍（那得先定義範圍「持有」什麼），還是約定只引單行。
+- `path:N-M` 範圍引用對 `docs-check` 完全隱形：`PATHISH` 不收範圍，既不檢查也不列為「無引文」 — [docs/documents.md](docs/documents.md). reference 角色還剩 5 條。教它讀範圍要先定義範圍「持有」什麼；改單行則會把描述整個區塊的散文弄壞，本分支收窄 `defects()` 那條時就發生過一次。
 
 ## Waiting
 
