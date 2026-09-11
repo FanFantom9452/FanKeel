@@ -671,7 +671,7 @@ flowchart TD
     D4["<b>diagrams behind their directory</b><br/>the files one leaves out read<br/>as files that do not exist"]
     D5["<b>undecided paths · spent worktrees ·<br/>environments nothing can rebuild</b><br/>somebody has to commit, ignore,<br/>rebuild or delete each one"]
     E1["<b>pairs describing the same code</b><br/>where single source of truth breaks"]
-    E2["<b>unfiled · undeclared ·<br/>linked from nowhere</b>"]
+    E2["<b>unfiled · undeclared ·<br/>linked from nowhere ·<br/>directories no page names</b>"]
     E3["<b>weight · empty directories</b><br/>a 73 GB build directory is not a bug;<br/>not knowing about it is"]
     E4["<b>source_of_truth resolving to nothing</b><br/>a typo and a legitimate sentence are<br/>the same silence until one is printed"]
     F["<b>the part only reading finds</b><br/>open both, find the claim each makes<br/>about that file, say which one the<br/>code supports. Name the line."]
@@ -692,7 +692,7 @@ flowchart TD
     C -- "context" --> E3
     C -- "context" --> E4
     E1 --> F
-    E2 --> F
+    E2 --> F2
     E3 --> F2
     E4 --> F2
     D1 --> F2
