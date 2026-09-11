@@ -1128,3 +1128,17 @@ test('fankeel-survey and fankeel-verify name the reader agent and its model sour
   assert.match(section4[1], /`fankeel-reader`/, 'section 4 never names fankeel-reader');
   assert.match(section4[1], /`dispatch\.floor`/, 'section 4 never names the profile key for the reader\'s model');
 });
+
+// caveman-learn: a cost-justified task states its own before/after measurement
+// rather than being trusted on its word. Flattened first — a hard wrap through
+// the middle of the pinned sentence would otherwise defeat this the same way it
+// has defeated a grep before.
+test('fankeel-build: a cost claim is measured, not assumed', () => {
+  const flat = read('fankeel-build').replace(/\s+/g, ' ');
+  assert.match(flat, /its steps name the script that measures the claim/,
+    'no rule ties a cost-justified task to the script that measures it');
+  assert.match(flat, /Run that same script again once the change lands/,
+    'no rule says to re-measure after the change lands');
+  assert.match(flat, /A number that has not improved is not a task to patch/,
+    'the ruling for an unproven cost claim is missing');
+});

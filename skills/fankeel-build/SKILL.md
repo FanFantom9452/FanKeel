@@ -387,6 +387,22 @@ settles what neither answers.
    merge, a push to a shared branch, a publish
 4. a plan, or a file table, so broken that every path forward is a guess
 
+## A cost claim is measured, not assumed
+
+Where a task's whole justification is that a change is cheaper, faster or
+lighter, its steps name the script that measures the claim and record what it
+printed before the change — the same discipline
+`docs/reports/2026-09-03-dispatch-vs-inline.md` already keeps by hand. Run
+that same script again once the change lands, before treating the task as
+done.
+
+A number that has not improved is not a task to patch: revert the change,
+record the ruling and the number with `ledger.js ruling`, and leave the task
+un-kept rather than defending it through a fix round it was never about. A
+cost claim `verify` finds still unproven when it re-runs the same script over
+the merged tree is routed back here exactly as any other finding is, and this
+is the ruling it lands on.
+
 ## A new ask is not a fifth stopper
 
 A request the user raises mid-build is routed **in the turn it arrives**, one of
