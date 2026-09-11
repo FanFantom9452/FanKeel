@@ -67,21 +67,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔map〕`MAX_NAV` 把導覽表截在 24 列卻不印丟掉幾列，和它上面那句「The count of what was dropped is still printed」相反 — [lib/map.js](lib/map.js). `firstTable()` 到上限就停、`signpost()` 不印 `... and N more`；比照 `listing()` 補上計數。
-
 ## Needs a decision
-
-- 〔docs〕`path:N-M` 範圍引用對 `docs-check` 完全隱形：`PATHISH` 不收範圍，既不檢查也不列為「無引文」 — [docs/documents.md](docs/documents.md). reference 角色還剩 5 條。教它讀範圍要先定義範圍「持有」什麼；改單行則會把描述整個區塊的散文弄壞，本分支收窄 `defects()` 那條時就發生過一次。
-
-- 〔audit〕drift 一律假設頁面過期（`scripts/docs-audit.js:452` `1. Drift.`），但 code 也會有邏輯錯誤，文件才是最後的依據。要定 drift 怎麼同時列出「頁過期」與「code 退化」兩個方向 — [scripts/docs-audit.js](scripts/docs-audit.js).
-
-- 〔caveman〕逐項盤點 20 skill、3 agent、6 command、2 hook，和你討論要哪些：要的改寫成 fankeel 規則，不裝它的 skill；定案後拆成 Ready 條目 — [簡報 §6.4](docs/improvement-brief.md#64-caveman-去依賴). §1.5 已列六項。
-
-- 〔memory〕原生 memory 只寫不清：錯的或過期的條目沒有東西重驗，本專案 MEMORY.md 有 76 條，多數引檔名、旗標、行號或量測數字。要定清理機制的形狀 — [簡報 §6.1](docs/improvement-brief.md#61-memory-清理).
-
-- 〔session〕主 session 堆疊約九成來自主迴圈自己的工具輸出，subagent 回傳只佔 8–9%；15/153 個 session 有 stage 倒退（verify>build 29 次）。要定 custom agent 以外的手段 — [簡報 §6.2](docs/improvement-brief.md#62-session-堆疊).
-
-- 〔station〕單一 session 的細節：plan 有幾個 task、各做什麼、主 agent 怎麼切派工（agent/agents/workflow）、stage 來回、哪段可以平行；`lib/station.js` 一樣都沒讀 — [簡報 §6.3](docs/improvement-brief.md#63-station-單-session).
 
 ## Waiting
 
