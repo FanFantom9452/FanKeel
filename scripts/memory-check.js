@@ -24,6 +24,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { parseArgs: parseArgv } = require('node:util');
 
+const cp = require('node:child_process');
 const { liveConfigDir } = require('../lib/live.js');
 const { resolveRoot } = require('../lib/registry.js');
 const { trackedFiles } = require('../lib/tracked.js');
@@ -59,6 +60,20 @@ function lineCount(file) {
     const l = text.split('\n');
     if (l.length && l[l.length - 1] === '') l.pop();
     return l.length;
+}
+
+// The last time a real commit touched this path, or null for "never, or this
+// is not a repository". `%cI` is the committer date in strict ISO 8601,
+// which `Date.parse` reads with no translation step.
+function lastCommit(root, rel) {
+    try {
+        const out = cp.execFileSync('git', ['log', '-1', '--format=%cI', '--', rel], {
+            cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+        }).trim();
+        return out ? Date.parse(out) : null;
+    } catch (e) {
+        return null;
+    }
 }
 
 // Every `[title](file.md)` bullet MEMORY.md carries. A bare same-directory
@@ -105,7 +120,7 @@ function scan(root, configDir) {
     const dir = memoryDir(configDir, root);
     const indexFile = path.join(dir, 'MEMORY.md');
     const indexText = readFile(indexFile);
-    if (indexText === null) return { dir, present: false, findings: [], indexed: 0, onDisk: 0 };
+    if (indexText === null) return { dir, present: false, findings: [], stale: [], indexed: 0, onDisk: 0 };
 
     let names;
     try {
@@ -128,9 +143,13 @@ function scan(root, configDir) {
     const tracked = trackedFiles(root);
     const roots = new Set((tracked ? tracked.files : []).map((f) => f.split('/')[0]));
 
+    const stale = [];
     for (const name of onDisk) {
         const text = readFile(path.join(dir, name));
         if (text === null) continue;
+        const fm = docs.frontmatter(text) || {};
+        const modified = fm['metadata.modified'] ? Date.parse(fm['metadata.modified']) : NaN;
+
         for (const { ref, wanted } of citations(text, roots)) {
             const found = resolveRef(root, '', ref);
             if (found === null) {
@@ -141,12 +160,20 @@ function scan(root, configDir) {
                 const n = lineCount(path.join(root, found.split('/').join(path.sep)));
                 if (n !== null && wanted > n) {
                     findings.push({ tag: 'past-end', what: name + ' cites ' + ref + ':' + wanted + ' but the file ends at ' + n });
+                    continue;
                 }
+            }
+            if (Number.isNaN(modified)) continue;
+            const commit = lastCommit(root, found);
+            // A correct memory entry can still cite a file that changed after
+            // it was written — this is listed, never a failing finding.
+            if (commit !== null && modified < commit) {
+                stale.push({ tag: 'stale', what: name + ' cites ' + ref + ', changed since this entry was last touched' });
             }
         }
     }
 
-    return { dir, present: true, findings, indexed: indexed.length, onDisk: onDisk.size };
+    return { dir, present: true, findings, stale, indexed: indexed.length, onDisk: onDisk.size };
 }
 
 function report(result) {
@@ -163,6 +190,10 @@ function report(result) {
         lines.push('Every entry is indexed both ways, and every cited repository path still');
         lines.push('exists where it says it does.');
     }
+    lines.push(...section(result.stale.length + (result.stale.length === 1
+        ? ' entry cites a file changed since it was written:'
+        : ' entries cite a file changed since they were written:'),
+        result.stale.map((f) => f.what), MAX_FINDINGS));
     return lines.join('\n');
 }
 
@@ -194,4 +225,4 @@ if (require.main === module) {
     process.exit(code);
 }
 
-module.exports = { scan, report, parseArgs, main, projectSlug, memoryDir, indexEntries, citations };
+module.exports = { scan, report, parseArgs, main, projectSlug, memoryDir, indexEntries, citations, lastCommit };

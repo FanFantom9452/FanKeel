@@ -569,3 +569,14 @@ test('the build/ row says its list is examples, not the whole list', () => {
   assert.ok(commaAt === -1 || markerAt < commaAt,
     '例如 comes after the first 、 in the build/ row, so the list still reads as exhaustive');
 });
+
+// memory-check needs metadata.modified, which sits one level indented under a
+// top-level `metadata:` key with an empty inline value — frontmatter() today
+// only reads lines starting at column 0, so this is currently invisible to it.
+test('frontmatter() flattens one level of nested keys under a parent with no inline value', () => {
+  const text = '---\nname: x\nmetadata:\n  type: reference\n  modified: 2026-08-25T06:45:37.444Z\n---\nbody\n';
+  const fm = docs.frontmatter(text);
+  assert.equal(fm.name, 'x');
+  assert.equal(fm['metadata.type'], 'reference');
+  assert.equal(fm['metadata.modified'], '2026-08-25T06:45:37.444Z');
+});

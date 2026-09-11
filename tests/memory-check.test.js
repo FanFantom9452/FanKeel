@@ -8,7 +8,7 @@ const path = require('node:path');
 const cp = require('node:child_process');
 
 const {
-  scan, report, main, projectSlug, memoryDir, parseArgs, indexEntries, citations,
+  scan, report, main, projectSlug, memoryDir, parseArgs, indexEntries, citations, lastCommit,
 } = require('../scripts/memory-check.js');
 
 function tmpProject() {
@@ -163,4 +163,50 @@ test('citations extracts a path or path:line for a tracked root, skipping an unt
     { ref: 'lib/real.js', wanted: null },
     { ref: 'lib/real.js', wanted: 12 },
   ]);
+});
+
+test('lastCommit reads the committer date of the last commit touching a path, and null otherwise', () => {
+  const root = tmpProject();
+  initGit(root);
+  fs.mkdirSync(path.join(root, 'lib'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'lib', 'thing.js'), 'v1\n');
+  commitAll(root, 'add thing.js');
+  const at = lastCommit(root, 'lib/thing.js');
+  assert.equal(typeof at, 'number');
+  assert.ok(Number.isFinite(at));
+  assert.equal(lastCommit(root, 'lib/never-committed.js'), null);
+});
+
+test('scan() flags a memory entry whose modified predates the last commit to a path it cites', () => {
+  const root = tmpProject();
+  initGit(root);
+  fs.mkdirSync(path.join(root, 'lib'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'lib', 'thing.js'), 'v1\n');
+  commitAll(root, 'add thing.js');
+  const configDir = tmpConfig();
+  const dir = memoryDir(configDir, root);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'MEMORY.md'), '- [G note](g-note.md) — a hook\n');
+  fs.writeFileSync(path.join(dir, 'g-note.md'),
+    '---\nname: g-note\ndescription: x\nmetadata:\n  type: reference\n  modified: 2020-01-01T00:00:00.000Z\n---\n\nSee `lib/thing.js`.\n');
+  const result = scan(root, configDir);
+  assert.ok(result.stale.some((s) => s.what.includes('lib/thing.js')));
+  assert.equal(result.findings.length, 0, 'a stale citation is not a failing finding');
+});
+
+test('scan() does not flag a memory entry modified after the path it cites', () => {
+  const root = tmpProject();
+  initGit(root);
+  fs.mkdirSync(path.join(root, 'lib'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'lib', 'thing.js'), 'v1\n');
+  commitAll(root, 'add thing.js');
+  const configDir = tmpConfig();
+  const dir = memoryDir(configDir, root);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'MEMORY.md'), '- [H note](h-note.md) — a hook\n');
+  const future = new Date(Date.now() + 3600e3).toISOString();
+  fs.writeFileSync(path.join(dir, 'h-note.md'),
+    '---\nname: h-note\ndescription: x\nmetadata:\n  type: reference\n  modified: ' + future + '\n---\n\nSee `lib/thing.js`.\n');
+  const result = scan(root, configDir);
+  assert.equal(result.stale.length, 0);
 });
