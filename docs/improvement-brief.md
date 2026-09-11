@@ -988,7 +988,7 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 東西會回頭重驗。
 
 - 本專案 09-11 的索引有 76 條，多數引了檔名、旗標、行號或量測數字，正是最會過期的那一類。
-- fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:579`（`## Task memory`）那一節的路由表把
+- fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:584`（`## Task memory`）那一節的路由表把
   durable fact 指向 memory 目錄，`lib/registry.js:18`（`Task memory is two fields on the entry`）的註解說明 fankeel 不另開一份記憶。
   讀、稽核、清理那個目錄的程式碼一行都沒有。
 
@@ -1042,7 +1042,7 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 | (a) plan 的 task 與各自做了什麼 | 沒有：`lib/station.js` 完全不讀 build ledger |
 | (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:198` 的 `agentsOf` 只回一個數字 |
 | (c) 每個 stage 花多少錢 | 刻意拿掉：`docs/station.md:129`（`a stage's own cost surfaces only in the aggregate`）說它只出現在總覽的總帳 |
-| (d) stage 來回 | 結構上看不到：`lib/registry.js:430` 的 `touch` 以 stage 名為鍵，只存最早與最近兩個時間 |
+| (d) stage 來回 | 結構上看不到：`lib/registry.js:435` 的 `touch` 以 stage 名為鍵，只存最早與最近兩個時間 |
 | (e) 哪一段可以平行 | 沒有 |
 
 (b) 還少一層：`lib/usage.js:129` 的 `agentFiles` 把一般 agent 和 workflow 裡的 agent 攤成
