@@ -1011,7 +1011,7 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 | subagent 回傳進主 session 的字元 | 2.26M，佔所有工具輸出 25–28M 的 8–9% |
 | 有 stage 倒退的 session | 15 個：`verify>build` 29 次、`land>design` 7 次、`audit>build` 5 次 |
 
-兩個極端：`1239ca79` 峰值 757k、派工 47 次、verify 與 build 來回三趟；`0d2263ef` 峰值
+兩個極端：`1239ca79` 峰值 757k、派工 47 次、倒退三次（兩次 verify→build、一次 audit→build）；`0d2263ef` 峰值
 615k、派工 90 次、倒退 15 次，同一個 session 裡 land 了六輪。峰值前八名有四個根本沒用 fankeel。
 
 **讀法**：使用者的觀察是「丟給 background agent，回傳又慢慢疊上來」。回傳確實在疊，
