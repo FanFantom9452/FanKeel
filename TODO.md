@@ -70,6 +70,10 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - plan 的工作是刪檔時 `landed` 永遠不會觸發：被刪掉的檔進了 `pointsAt()` 的 unbuilt，`scripts/docs-audit.js:524` 就跳過 — [scripts/docs-audit.js](scripts/docs-audit.js). station 退役那幾份就是，18 份 current 沒一份被提議歸檔。
 
+- `map.md` 沒有「每一頁的狀態」：`buildMap()` 只逐頁列 intent、retired、undeclared 三桶，而且 retired 被 `MAX_PAGES` 砍到 30 — [skills/fankeel-survey/SKILL.md](skills/fankeel-survey/SKILL.md). 今天 166 份裡只有 44 份被點名。
+
+- `skills/fankeel/SKILL.md:1095` 用散文 defer 給 collisions.md，frontmatter 沒列文件，pair 還掛在 docs-audit 上 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md). `docs/pipeline.md:4` 示範怎麼宣告。
+
 ## Needs a decision
 
 - `path:N-M` 範圍引用對 `docs-check` 完全隱形：`PATHISH` 不收範圍，既不檢查也不列為「無引文」 — [docs/documents.md](docs/documents.md). reference 角色還剩 5 條。教它讀範圍要先定義範圍「持有」什麼；改單行則會把描述整個區塊的散文弄壞，本分支收窄 `defects()` 那條時就發生過一次。
