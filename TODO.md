@@ -82,6 +82,7 @@ entry waited for actually happening. It shrank when somebody read it.
 - 〔session〕主 session 堆疊約九成來自主迴圈自己的工具輸出，subagent 回傳只佔 8–9%；15/153 個 session 有 stage 倒退（verify>build 29 次）。要定 custom agent 以外的手段 — [簡報 §6.2](docs/improvement-brief.md#62-session-堆疊).
 
 - 〔station〕單一 session 的細節：plan 有幾個 task、各做什麼、主 agent 怎麼切派工（agent/agents/workflow）、stage 來回、哪段可以平行；`lib/station.js` 一樣都沒讀 — [簡報 §6.3](docs/improvement-brief.md#63-station-單-session).
+
 ## Waiting
 
 - Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it. lifts when: a run is seen ignoring one. 09-06.
