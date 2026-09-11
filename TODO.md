@@ -130,3 +130,5 @@ entry waited for actually happening. It shrank when somebody read it.
 - 〔ponytail〕深度分析：6 skill、3 hook，其中 SubagentStart 把整套規則塞進 fankeel 每個 subagent；audit 的程式碼那一半由誰接 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴). lifts when: caveman 兩條落地. 09-11.
 
 - 〔ponytail〕解耦 `has('ponytail')`：`lib/render.js:108-110`、`lib/stages.js:352,441`、兩份 SKILL.md、三份測試；fallback 句已經在 — [lib/render.js](lib/render.js). lifts when: §6.5 定案. 09-11.
+
+- 〔session〕`hooks/size.js` 留不留：改前 bigPerSession 0.3846；hook 上線後十個 session 用 `sessions.js --since 2026-09-11` 再量，沒降就移除 — [hooks/size.js](hooks/size.js). lifts when: 十個 session 帶著 hook 跑完. 09-11.

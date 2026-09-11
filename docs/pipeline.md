@@ -239,10 +239,10 @@ would be right until the next clause landed and then wrong with nothing to say
 so. That is exactly how three of the seven figures in this paragraph went
 stale at once on 2026-09-10 — nothing was there to redden. `node --test
 tests/resume.test.js` is what closes it. It prints every class, stage and
-profile combination on each run — `tests/resume.test.js:295`, `t.diagnostic(cls + '@' + stage` —
+profile combination on each run — `tests/resume.test.js:304`, `t.diagnostic(cls + '@' + stage` —
 and its own assertion holds the worst of them, `bounded@design` and
 `bounded@land` tied at 2,545, under 2,600 characters at the same 59-character
-reference root: `tests/resume.test.js:299`, `assert.ok(worst < 2600`. The 55
+reference root: `tests/resume.test.js:308`, `assert.ok(worst < 2600`. The 55
 characters of headroom are about three more profile keys.
 
 `tests/render.test.js` caps a narrower thing, the seven stage preambles alone,

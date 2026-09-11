@@ -173,7 +173,7 @@ anything written outside them unstaged rather than committed.
 
 ## What the guard does not watch
 
-The scope guard's `PreToolUse` hook is wired to one matcher: `.claude-plugin/plugin.json:76` reads `"matcher": "Edit|Write|NotebookEdit"`.
+The scope guard's `PreToolUse` hook is wired to one matcher: `.claude-plugin/plugin.json:86` reads `"matcher": "Edit|Write|NotebookEdit"`.
 Inside it, `hooks/guard.js:42` calls `targetOf(payload)`, which reads only
 `tool_input.file_path` and `tool_input.notebook_path`, and `hooks/guard.js:43` is the whole branch for anything else: `if (!file) return;`.
 A `Bash` or `PowerShell` call carries a command string, not a path, so it
