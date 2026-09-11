@@ -55,6 +55,15 @@ test('the signpost is the first of CLAUDE.md, AGENTS.md, README.md that exists',
   assert.equal(map.signpost(dir).name, 'CLAUDE.md');
 });
 
+test('a navigation table longer than the cap says how many rows were dropped', () => {
+  const dir = root();
+  const rows = ['| a | b |', '|---|---|'];
+  for (let i = 0; i < 28; i++) rows.push('| r' + i + ' | x |');
+  write(dir, 'README.md', rows.join('\n') + '\n');
+  const text = map.buildMap(dir);
+  assert.match(text, /\.\.\. and 6 more, not listed/);
+});
+
 test('a project with no signpost says so rather than returning nothing', () => {
   const dir = root();
   write(dir, 'lib/thing.js', 'x');
