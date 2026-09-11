@@ -524,6 +524,61 @@ test('the prose names as many sections as defects() actually sums', () => {
   assert.ok(rows >= count, `table has ${rows} rows above the sentence, defects() sums ${count}`);
 });
 
+// The table above lists what sweep() can report, but nothing checked it against
+// what sweep() actually returns — a key could be added to the return literal and
+// the table would just go on describing the old set. This parses the keys out of
+// the literal itself and requires each one classified, either as bookkeeping or
+// as a row, so a new key fails this test until it is sorted into one or the other.
+test('the sweep table names every category sweep() returns', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'docs-audit.js'), 'utf8');
+  const body = /function sweep\([\s\S]*?\n    return \{([\s\S]*?)\n    \};/.exec(src)[1];
+  const keys = [];
+  for (const line of body.split('\n')) {
+    for (const entry of line.split(',')) {
+      const token = entry.trim();
+      if (!token) continue;
+      keys.push(token.includes(':') ? token.slice(0, token.indexOf(':')).trim() : token);
+    }
+  }
+
+  // Not findings: what the run was, not what it found.
+  const BOOKKEEPING = new Set(['tree', 'error', 'since', 'implied', 'markdown',
+    'dates', 'pool', 'declaredOf']);
+
+  // Every other key is a category the sweep can report, and the table owes it a
+  // row. Two keys share one row on purpose — the table pairs them because both
+  // are "nothing points at it" — so the map is to the row, not to the key.
+  const ROW = {
+    drift: '**drift**',
+    landed: '**landed plans**',
+    index: '**the index**',
+    diagrams: '**diagrams**',
+    overlaps: '**pairs**',
+    unresolved: '**unresolved**',
+    orphans: '**orphans, uncovered**',
+    uncovered: '**orphans, uncovered**',
+    unfiled: '**unfiled**',
+    undeclared: '**undeclared**',
+  };
+
+  const skillText = fs.readFileSync(path.join(__dirname, '..', 'skills', 'fankeel', 'SKILL.md'), 'utf8');
+
+  // Slice the table out rather than searching the whole page — a bold phrase in
+  // unrelated prose elsewhere would pass a whole-file search.
+  const endAt = skillText.indexOf('Only the first four fail the run.');
+  assert.notEqual(endAt, -1, 'skills/fankeel/SKILL.md has no "Only the first four fail the run." sentence');
+  const start = skillText.lastIndexOf('| | |', endAt);
+  assert.notEqual(start, -1, 'skills/fankeel/SKILL.md has no table above that sentence');
+  const table = skillText.slice(start, endAt);
+
+  for (const key of keys) {
+    if (BOOKKEEPING.has(key)) continue;
+    assert.ok(ROW[key], 'sweep() returns r.' + key + ' and this test has no row for it — classify it');
+    assert.ok(table.includes(ROW[key]),
+      'the sweep table in skills/fankeel/SKILL.md has no ' + ROW[key] + ' row for r.' + key);
+  }
+});
+
 test('a clean sweep says so rather than printing nothing', () => {
   const root = withTree(tree({
     'docs/README.md': '- [A](01-a.md)\n',

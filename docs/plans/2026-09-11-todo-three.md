@@ -434,6 +434,11 @@ test('an unresolvable source_of_truth entry is reported, and is not a defect', (
 步驟：
 
 1. 先 `grep -n "resolves to no file" scripts/docs-audit.js`。**沒有輸出就停下來**——Task 4 還沒落地，那條 `source_of_truth` 的 TODO 就還不能刪。
+
+   > **補記（verify 第三輪）**：這條閘門現在會回空，而且是本分支自己弄斷的。`9f7df5f` 把標題
+   > 改成數條目之後那句話被換行拆開——`scripts/docs-audit.js:764` 是 `+ ' to no file:',`——所以
+   > 這個 `grep` 現在 exit 1、沒有輸出。Task 5 當時是綠的也已經跑完，所以上面那行原文不動；
+   > 真要重跑這個閘門，改抓 `source_of_truth entry in`。
 2. 移除三條 TODO 條目。
 3. 補兩列索引。
 4. **頁數不變**：這兩個新檔在 `docs/plans/` 底下，不是 `docs/` 第一層，所以 Task 3 的斷言仍然是 12。跑 `node --test tests/contract.test.js` 確認。

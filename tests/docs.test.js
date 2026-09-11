@@ -536,3 +536,36 @@ test('the lifetime table names every ignored path under .fankeel/', () => {
       'the lifetime table in docs/documents.md does not name ' + p);
   }
 });
+
+// The build/ row's third cell lists ledger, brief, report, mockup.html, and the
+// verify evidence with no marker saying it is examples, and an unmarked list
+// reads as exhaustive — this cell has already been wrong that way twice, once
+// short by three kinds of file and once rewritten longer and still read as
+// complete. 例如 in front of the list is what stops that reading, so this checks
+// it is there, and before the list rather than trailing after it. Passes the
+// day it is written.
+test('the build/ row says its list is examples, not the whole list', () => {
+  const root = path.join(__dirname, '..');
+  const page = fs.readFileSync(path.join(root, 'docs', 'documents.md'), 'utf8');
+
+  const start = page.indexOf('## `.fankeel/` 各區的壽命');
+  assert.ok(start >= 0, 'docs/documents.md has no lifetime section');
+  const rest = page.slice(start + 1);
+  const end = rest.indexOf('\n## ');
+  const section = end === -1 ? rest : rest.slice(0, end);
+
+  const rowAt = section.indexOf('build/<plan>/');
+  assert.notEqual(rowAt, -1, 'the lifetime table has no build/<plan>/ row');
+  const lineStart = section.lastIndexOf('\n', rowAt) + 1;
+  const lineEnd = section.indexOf('\n', rowAt);
+  const row = section.slice(lineStart, lineEnd === -1 ? section.length : lineEnd);
+  const desc = row.split('|')[3] || '';
+
+  // 例如 has to come before the first 、, not merely appear in the cell — the
+  // order is what tells a reader the list is examples rather than a manifest.
+  const markerAt = desc.indexOf('例如');
+  assert.notEqual(markerAt, -1, 'the build/ row does not say 例如 — its list reads as exhaustive');
+  const commaAt = desc.indexOf('、');
+  assert.ok(commaAt === -1 || markerAt < commaAt,
+    '例如 comes after the first 、 in the build/ row, so the list still reads as exhaustive');
+});
