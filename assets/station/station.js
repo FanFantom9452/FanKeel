@@ -164,6 +164,7 @@
             profileCard: profileCard,
             openSections: openSections, niceStep: niceStep, downsample: downsample, lineChart: lineChart,
             comma: comma, riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
+            dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml,
         };
     }
     if (!doc) return;
@@ -842,7 +843,10 @@
     }
     function detailSections(s, x, open) {
         return sec('s-ctx', 'context', tokens(x.peak) + ' 峰值 · ' + x.requests + ' requests', ctxSection(s, x), open)
-            + sec('s-order', '階段順序', x.seq.length + ' 步 · 倒退 ' + x.backtracks, orderSection(s, x), open);
+            + sec('s-order', '階段順序', x.seq.length + ' 步 · 倒退 ' + x.backtracks, orderSection(s, x), open)
+            + sec('s-tasks', '任務', taskCount(x.tasks), tasksHtml(x.tasks), open)
+            + sec('s-disp', '派工', x.rows.length + ' 個 agent · ' + cents(x.agentCents), dispatchHtml(x), open)
+            + sec('s-rp', '過程還原', x.events.length + ' 列', replayHtml(x), open);
     }
 
     // Which sections start open. A live session is watched for who is in which
@@ -989,6 +993,7 @@
     function backBlock(s, b) {
         return '<div class="bkl"><div class="hd2">↩ ' + esc(b.from) + ' → ' + esc(b.to) + ' <span class="mono">'
             + stamp(b.at) + ' · ' + esc(b.from) + ' 待了 ' + mins(b.at - b.since) + '</span></div>'
+            + '<a class="lk" tabindex="0" data-goto="' + b.since + '" data-until="' + b.at + '">過程還原裡它前面那幾列 ↓</a>'
             + '</div>';
     }
     function orderSection(s, x) {
@@ -997,6 +1002,185 @@
             + '<p class="tally">次序取 ' + (x.seqSource === 'task.js' ? 'transcript 裡真正執行的 task.js 指令'
                 : x.seqSource === 'moves' ? 'moves（transcript 裡沒有 task.js 指令）'
                     : 'clock（沒有指令也沒有 moves，看不出回頭）') + '；倒退 ' + x.backtracks + ' 次</p>';
+    }
+    function cents(c) { return '$' + ((c || 0) / 100).toFixed(2); }
+    function dur(sec) {
+        if (!isFinite(sec)) return '—';
+        if (sec < 60) return sec + 's';
+        var m = Math.floor(sec / 60), r = sec % 60;
+        if (m < 60) return m + 'm' + (r < 10 ? '0' : '') + r + 's';
+        return Math.floor(m / 60) + 'h' + (m % 60 < 10 ? '0' : '') + (m % 60) + 'm';
+    }
+    function taskCount(list) {
+        if (!list || !list.length) return '沒有 plan';
+        var n = 0, g = 0;
+        list.forEach(function (p) { n += p.tasks.length; g += p.groups.length; });
+        return n + ' 個 · ' + g + ' 組';
+    }
+    // One band per group `plantasks` would dispatch together, its tasks under
+    // it, and the hint where one group went out over more than one turn.
+    function tasksHtml(list) {
+        if (!list || !list.length) return '<p class="tally">這個 session 的 claims 裡沒有 plan 檔，沒有任務表</p>';
+        return list.map(function (p) {
+            var byN = {};
+            p.tasks.forEach(function (t) { byN[t.n] = t; });
+            var done = p.tasks.filter(function (t) { return t.status === 'complete'; }).length;
+            return '<div class="srcline" title="' + esc(p.plan) + '">' + esc(p.plan) + '</div>'
+                + '<table class="x"><colgroup><col style="width:30px"><col><col style="width:96px"></colgroup>'
+                + '<thead><tr><th>#</th><th>任務</th><th>狀態</th></tr></thead><tbody>'
+                + p.groups.map(function (g) {
+                    return '<tr class="band"><td colspan="3"><div class="bandrow"><span class="gb">G' + g.g + '</span>'
+                        + '<span>Task ' + g.tasks.join('、') + ' · 建議 <span class="mono">' + esc(g.surface) + '</span></span>'
+                        + '<span class="rt">' + (g.turns.length ? '回合 ' + g.turns.join(' · ') : '沒有派工') + '</span></div>'
+                        + (g.hint ? '<div class="hint">could have gone in one response<span class="why">同組，分 '
+                            + g.turns.length + ' 個回合派出</span></div>' : '') + '</td></tr>'
+                        + g.tasks.map(function (n) {
+                            var t = byN[n];
+                            return '<tr><td class="num mute">' + n + '</td><td><div>' + esc(t ? t.title : '') + '</div>'
+                                + '<div class="l2">' + (t && t.range ? esc(t.range) : '出自 plan 的 task 清單')
+                                + (t && t.turns.length ? ' · 回合 ' + t.turns.join(' · ') : '') + '</div></td>'
+                                + '<td><span class="pill sm ' + (t && t.status === 'complete' ? 'ok' : 'pend') + '">'
+                                + esc(t ? t.status : 'no ledger line') + '</span></td></tr>';
+                        }).join('');
+                }).join('') + '</tbody></table>'
+                + '<p class="tally">標為完成的 <b>' + done + ' 列</b> <span class="' + (done === p.ledgerLines ? 'eq">＝' : 'ne">≠')
+                + '</span> ledger 的 Task 行 ' + p.ledgerLines
+                + (p.unmatched.length ? '；label 裡沒有 task N 的派工 ' + p.unmatched.length + ' 個，不猜：'
+                    + p.unmatched.map(esc).join('、') : '') + '</p>';
+        }).join('');
+    }
+    // Every column below is the sum of the rows under it: each row's cents,
+    // thousands of tokens and seconds were rounded in `lib/detail.js` by the
+    // largest remainder, so the page only adds.
+    function sums(rows) {
+        return rows.reduce(function (a, r) { a.c += r.c; a.k += r.k; a.s += r.s; return a; }, { c: 0, k: 0, s: 0 });
+    }
+    function numCells(t, unpriced) {
+        return '<td class="r">' + dur(t.s) + '</td><td class="r">' + comma(t.k) + 'k</td><td class="r"'
+            + (unpriced ? ' title="價目表不認得：' + esc(unpriced) + '"' : '') + '>'
+            + (unpriced && !t.c ? 'unpriced' : cents(t.c)) + '</td>';
+    }
+    function agentRow(r, cls, attr) {
+        return '<tr class="' + cls + '"' + (attr || '') + '><td><div class="lab" title="' + esc(r.label) + '">'
+            + esc(r.label || r.id) + '</div><div class="l2">' + esc((r.agentType || '—') + ' · '
+            + String(r.model || r.alias || '—').replace(/^claude-/, '')) + '</div></td>'
+            + numCells(r, (r.unpriced || []).join(', ')) + '<td class="r rc"></td></tr>';
+    }
+    // One band per dispatch, in turn order, `surface` on the band; a workflow
+    // folds into one row per phase until that phase is opened. Agents that no
+    // dispatch in the transcript accounts for are a band of their own.
+    function dispatchHtml(x) {
+        var groups = {}, order = [];
+        x.rows.forEach(function (r) {
+            var k = r.disp === null ? 'none' : String(r.disp);
+            if (!groups[k]) { groups[k] = []; order.push(k); }
+            groups[k].push(r);
+        });
+        order.sort(function (a, b) {
+            if (a === 'none') return 1;
+            if (b === 'none') return -1;
+            var da = x.dispatches[a], db = x.dispatches[b];
+            return (da.turn || 0) - (db.turn || 0) || (da.out || 0) - (db.out || 0);
+        });
+        var body = order.map(function (k) {
+            var list = groups[k], d = k === 'none' ? null : x.dispatches[k];
+            var head = '<tr class="band"><td><div class="bandrow"><span class="sf ' + (d ? d.surface : 'agent') + '">'
+                + (d ? d.surface : '—') + '</span><span class="ell">' + esc(d ? d.text : '沒有對上派工的 agent') + '</span>'
+                + '<span class="rt">' + (d && d.turn ? '回合 ' + d.turn : '')
+                + (d && isFinite(d.out) ? ' · ' + stamp(d.out).slice(11) + '→' + (isFinite(d.back) ? stamp(d.back).slice(11) : '…') : '')
+                + '</span></div></td>' + numCells(sums(list), '') + '<td class="r rc">'
+                + (d && d.ret !== null && d.ret !== undefined ? comma(d.ret) : '—') + '</td></tr>';
+            if (!d || d.surface !== 'workflow') return head + list.map(function (r) { return agentRow(r, 'ag', ''); }).join('');
+            var phases = [];
+            list.forEach(function (r) { var p = r.phase || '—'; if (phases.indexOf(p) < 0) phases.push(p); });
+            return head + phases.map(function (p, i) {
+                var pr = list.filter(function (r) { return (r.phase || '—') === p; });
+                var key = 'ph-' + k + '-' + i;
+                return '<tr class="phr"><td><button type="button" class="phb" data-ph="' + key + '" aria-expanded="false">'
+                    + esc(p) + '<span class="n">· ' + pr.length + ' agents</span></button></td>' + numCells(sums(pr), '')
+                    + '<td class="r rc"></td></tr>'
+                    + pr.map(function (r) { return agentRow(r, 'wa', ' data-in="' + key + '" hidden'); }).join('');
+            }).join('');
+        }).join('');
+        var all = sums(x.rows);
+        var ret = x.dispatches.reduce(function (n, d) { return n + (d.ret || 0); }, 0);
+        var launch = x.dispatches.reduce(function (n, d) { return n + (d.launch || 0); }, 0);
+        var wf = x.rows.filter(function (r) { return r.surface === 'workflow'; }).length;
+        var wfRun = x.runs.reduce(function (n, r) { return n + r.agents; }, 0);
+        var eq = function (a, b) { return '<span class="' + (a === b ? 'eq">＝' : 'ne">≠') + '</span>'; };
+        return '<table class="x dx"><colgroup><col><col style="width:50px"><col style="width:54px"><col style="width:54px">'
+            + '<col style="width:58px"></colgroup><thead><tr><th>派工</th><th class="r">耗時</th><th class="r">tokens</th>'
+            + '<th class="r">USD</th><th class="r rc" title="這次派工的結果進入主 context 的字元數">回傳字元</th></tr></thead>'
+            + '<tbody>' + body + '</tbody><tfoot><tr><td>' + x.rows.length + ' 個 agent</td>' + numCells(all, '')
+            + '<td class="r rc">' + comma(ret) + '</td></tr></tfoot></table>'
+            + '<p class="tally">各列美元相加 <b>' + cents(all.c) + '</b> ' + eq(all.c, x.agentsTotal.cents) + ' agentsOf() 的 '
+            + cents(x.agentsTotal.cents) + '；workflow 派工 ' + wf + ' 列 ' + eq(wf, wfRun) + ' run 檔的 workflow_agent '
+            + wfRun + ' 列</p>'
+            + '<p class="tally">回傳字元是派工的結果進入主 context 的長度：背景 agent 與 workflow 取 task-notification，前景的取 Agent 的'
+            + ' tool_result。背景啟動時回來的確認不算在內，這個 session 合計 ' + comma(launch) + ' 字元。美元照價目表 '
+            + esc(S.pricesVerified || '—') + (x.unpriced.length ? '；價目表不認得、寫 unpriced 的：' + x.unpriced.map(esc).join('、') : '')
+            + '</p>';
+    }
+    function stepsFor(x, d) {
+        var SK = { read: '讀', edit: '改', cmd: '指令', find: '搜', other: '其他' };
+        if (!d) return '';
+        var ids = d.ids.filter(function (id) { return x.steps[id]; });
+        if (!ids.length) return '';
+        var shown = 0, total = 0;
+        ids.forEach(function (id) { shown += x.steps[id].steps.length; total += x.steps[id].steps.length + x.steps[id].droppedN; });
+        return '<details class="stw"><summary class="rpx">展開它自己的步驟 <span class="n">' + shown + ' / ' + total + ' 步'
+            + (ids.length > 1 ? ' · ' + ids.length + ' agents' : '') + '</span></summary>' + ids.map(function (id) {
+                var st = x.steps[id];
+                var r = x.rows.filter(function (y) { return y.id === id; })[0];
+                return (ids.length > 1 ? '<div class="stg">' + esc(r ? r.label : id) + '</div>' : '')
+                    + '<ul class="stp">' + st.steps.map(function (y) {
+                        return '<li><span class="sk ' + y.k + '">' + (y.k === 'edit' && y.w ? '寫' : SK[y.k]) + '</span><div>'
+                            + (y.f ? '<span class="fl">' + esc(y.f) + '</span>' : '<span class="cm">' + esc(y.c) + '</span>')
+                            + (y.r ? '<div class="rl">' + esc(y.r) + '</div>' : '') + '</div></li>';
+                    }).join('') + '</ul>'
+                    + (st.droppedN ? '<p class="stn">上限 40 步，另有 ' + st.droppedN + ' 步沒列出（'
+                        + Object.keys(st.dropped).map(function (k) { return SK[k] + ' ' + st.dropped[k]; }).join('、') + '）</p>' : '');
+            }).join('') + '</details>';
+    }
+    // One row per event in time order. Each dispatch's row opens into its
+    // own steps, read from its own transcript; each kind can be hidden.
+    function replayHtml(x) {
+        var KINDS = [['prompt', 'prompt'], ['stage', '階段'], ['gate', 'gate'], ['out', '派出'], ['back', '回來'],
+            ['edit', '改檔'], ['commit', 'commit'], ['test', '測試']];
+        var tag = {};
+        KINDS.forEach(function (k) { tag[k[0]] = k[1]; });
+        var count = {};
+        x.events.forEach(function (e) { count[e.kind] = (count[e.kind] || 0) + 1; });
+        var bar = '<div class="rpf" role="group" aria-label="事件種類">' + KINDS.map(function (k) {
+            return '<button type="button" data-rk="' + k[0] + '" aria-pressed="true">' + k[1] + '<span class="n">'
+                + (count[k[0]] || 0) + '</span></button>';
+        }).join('') + '</div>';
+        var list = x.events.map(function (e) {
+            var body;
+            if (e.kind === 'prompt') body = esc(e.text) + (e.cmd ? '<div class="sub">' + esc(e.cmd) + '</div>' : '');
+            else if (e.kind === 'stage') {
+                body = esc(e.verb === 'stage' ? e.stage : e.verb + (e.stage ? ' · ' + e.stage : ''))
+                    + (e.text ? '<div class="sub">' + esc(e.text) + '</div>' : '');
+            } else if (e.kind === 'gate') {
+                body = e.qs.map(function (q) {
+                    return '<div class="qa"><div class="q">' + esc(q.q) + '</div><div class="a">'
+                        + esc(q.a === null ? '（沒有答案）' : q.a) + (q.own ? '<span class="own">自己寫的</span>' : '') + '</div></div>';
+                }).join('');
+            } else if (e.kind === 'out') {
+                body = esc(e.text) + '<div class="sub">' + esc(e.surface + (e.agentType ? ' · ' + e.agentType : '')
+                    + (e.alias ? ' · ' + e.alias : '')) + '</div>' + stepsFor(x, x.dispatches[e.disp]);
+            } else if (e.kind === 'back') {
+                body = esc(e.text) + '<div class="sub">回傳 ' + (e.ret === null || e.ret === undefined ? '—' : comma(e.ret) + ' 字元') + '</div>';
+            } else if (e.kind === 'edit') {
+                body = e.files.map(function (f) { return '<span class="fl">' + esc(f.f) + (f.n > 1 ? ' ×' + f.n : '') + '</span>'; }).join('、');
+            } else if (e.kind === 'commit') body = '<span class="sha">' + esc(e.sha) + '</span>' + esc(e.text);
+            else body = esc(e.text);
+            return '<li data-kind="' + esc(e.kind) + '" data-t="' + (isFinite(e.t) ? e.t : '') + '"><span class="tm">'
+                + (isFinite(e.t) ? stamp(e.t).slice(11) : '—') + '</span><div class="tx"><span class="tg ' + esc(e.kind) + '">'
+                + esc(tag[e.kind] || e.kind) + '</span>' + body + '</div></li>';
+        }).join('');
+        return bar + '<ol class="rp">' + list + '</ol><p class="tally">' + x.events.length + ' 列'
+            + (x.dropped ? '；超過 300 列，只留 gate、階段、commit 與派工，丟掉了 ' + x.dropped + ' 列' : '') + '</p>';
     }
 
     function draw() {
@@ -1008,6 +1192,41 @@
         doc.getElementById('gen').textContent = genText();
     }
     doc.addEventListener('click', function (e) {
+        // A workflow phase opens into its agents.
+        var ph = e.target.closest('[data-ph]');
+        if (ph) {
+            var shown = ph.getAttribute('aria-expanded') !== 'true';
+            ph.setAttribute('aria-expanded', String(shown));
+            [].forEach.call(doc.querySelectorAll('[data-in="' + ph.getAttribute('data-ph') + '"]'), function (r) { r.hidden = !shown; });
+            return;
+        }
+        // A replay kind is hidden or shown again.
+        var rk = e.target.closest('[data-rk]');
+        if (rk) {
+            var on = rk.getAttribute('aria-pressed') !== 'true';
+            rk.setAttribute('aria-pressed', String(on));
+            [].forEach.call(doc.querySelectorAll('#det .rp > li[data-kind="' + rk.getAttribute('data-rk') + '"]'), function (li) { li.hidden = !on; });
+            return;
+        }
+        // A backtrack opens the replay on the rows between entering the stage
+        // it left and the step back — what that stage saw before it sent the
+        // work back.
+        var jump = e.target.closest('[data-goto]');
+        if (jump) {
+            var from = Number(jump.getAttribute('data-goto')), until = Number(jump.getAttribute('data-until'));
+            var rp = doc.getElementById('s-rp');
+            if (!rp) return;
+            rp.open = true;
+            var first = null;
+            [].forEach.call(rp.querySelectorAll('.rp > li[data-t]'), function (li) {
+                var t = Number(li.getAttribute('data-t'));
+                var hit = li.getAttribute('data-t') !== '' && t >= from && t <= until;
+                li.classList.toggle('hl', hit);
+                if (hit && !first) first = li;
+            });
+            if (first) first.scrollIntoView({ block: 'center' });
+            return;
+        }
         var pg = e.target.closest('[data-page]');
         if (pg) { page = pg.getAttribute('data-page'); sel = null; draw(); return; }
         var a = e.target.closest('a[data-k]');
