@@ -108,10 +108,10 @@ knows whose tree applies. One registry can cover five of them and nothing else
 needs to know which. Ask for it only when the root holds more than one, and never
 ask for a file list — there is nothing to declare and nothing to get wrong.
 
-Ten more are written without anyone typing them. Four of those — `ended`,
+Eleven more are written without anyone typing them. Four of those — `ended`,
 `model`, `usage` and `spend` — arrive once, from `hooks/leave.js` when the
 session ends, and [docs/registry.md](../../docs/registry.md) has their shape;
-the six below
+the seven below
 are the ones every session carries. `route` and `class` come from
 the class picked at `start`, `configDir` records which config directory this
 session runs under, so another session can look for its liveness in the right
@@ -127,6 +127,11 @@ records held no `waited` a hook had put there and every session of a newer
 process has one, from 2026-09-02 on. [docs/registry.md](../../docs/registry.md)
 has that run, and what the older process looked like from inside.
 
+`moves` is the order those stages came in: one `[stage, at]` for each change of
+stage, stamped with the sighting `clock` takes, so a verify that went back to
+build and returned reads as two visits rather than one long one. Sixty at most,
+oldest dropped.
+
 `clock` and `burn` part company in one place: `burn` is only written when a
 token figure arrives, and an answered question is not a prompt, so a stage that
 ends in a gate records none. A clock has no such threshold, so it is written
@@ -135,7 +140,7 @@ is not `Stop`, and what it does instead of measuring anything, is in
 [docs/registry.md](../../docs/registry.md) — this is the short form, not the
 only copy.
 
-An eleventh, `gateAt`, is deliberately not below. It exists only between a
+A twelfth, `gateAt`, is deliberately not below. It exists only between a
 question going out and its answer arriving — and a record that lacks it when the
 answer arrives is what the `gate:` line under **While the mode is on** reports.
 

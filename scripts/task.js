@@ -658,6 +658,9 @@ function cmdTask(root, opts) {
         // bills the rename to whatever stage the next answer lands in.
         delete d.clock;
         delete d.waited;
+        // The order of stages, for the same reason: the names come round again,
+        // and a move left here draws the old task's visits into the new one.
+        delete d.moves;
         // The same field class, and the same argument: a per-stage cost left
         // here bills the new task for what the old one spent. Latent as this
         // file stands — `spend` is written by `hooks/leave.js` at session end
@@ -891,6 +894,16 @@ function cmdAdopt(root, opts) {
         if (Number.isFinite(ms) && ms >= 0) waited[stage] = ms;
     }
     if (Object.keys(waited).length) data.waited = waited;
+    // `moves` is wall-clock too, and goes over the way `clock` does: shifted by
+    // the gap between the source's last sighting and this adopt, so the order
+    // and the spacing survive and the fortnight nobody was on it does not.
+    const quietAt = Date.parse(source.updated);
+    if (Array.isArray(source.moves) && Number.isFinite(quietAt)) {
+        const moves = source.moves
+            .filter((m) => Array.isArray(m) && m.length === 2 && typeof m[0] === 'string' && Number.isFinite(m[1]))
+            .map((m) => [m[0], m[1] + (at - quietAt)]);
+        if (moves.length) data.moves = moves;
+    }
     // Two records, two locks, and no way to make the pair atomic — which is why
     // the failure below names the state it can leave behind rather than
     // pretending it cannot happen. Each side is atomic on its own, which is the

@@ -561,6 +561,25 @@ test('adopt carries the wall-clock cost and leaves the token count behind', () =
   assert.equal(mine.gateAt, undefined);
 });
 
+// `moves` is a sequence of wall-clock stamps, so it goes over the way `clock`
+// does: shifted by the gap between the source falling quiet and the adopt, so
+// the order and the spacing survive and the fortnight nobody was on it does not.
+test('adopt carries the moves, shifted to end where the source fell quiet', () => {
+  const dir = root();
+  started(dir, A, 'tidy the project cards', 'Waypoint');
+  const source = entry(dir, A);
+  const quiet = Date.now() - 16 * DAY;
+  source.updated = new Date(quiet).toISOString();
+  source.moves = [['survey', quiet - 50 * 60e3], ['design', quiet - 30 * 60e3]];
+  registry.writeSession(dir, A, source);
+
+  assert.equal(run(dir, ['adopt', A, '--session', B]).code, 0);
+  const mine = entry(dir, B);
+  assert.deepEqual(mine.moves.map((m) => m[0]), ['survey', 'design']);
+  assert.equal(mine.moves[1][1] - mine.moves[0][1], 20 * 60e3);
+  assert.ok(Date.now() - (mine.moves[1][1] + 30 * 60e3) < 30e3);
+});
+
 test('adopt refuses when this session already owns something', () => {
   const dir = root();
   started(dir, A, 'first', 'Waypoint/web');
@@ -1240,6 +1259,16 @@ test('renaming the task forgets the clock, the wait, the per-stage spend and any
   assert.equal(after.waited, undefined);
   assert.equal(after.spend, undefined);
   assert.equal(after.gateAt, undefined);
+});
+
+test('renaming the task forgets the moves, as it forgets the clock', () => {
+  const dir = root();
+  started(dir, A, 'rework the colour ramp');
+  const data = entry(dir, A);
+  data.moves = [['survey', 1000], ['design', 61000]];
+  registry.writeSession(dir, A, data);
+  run(dir, ['task', 'something else entirely', '--session', A]);
+  assert.equal(entry(dir, A).moves, undefined);
 });
 
 test('show prints a time line for the stages that have one', () => {

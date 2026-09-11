@@ -120,6 +120,14 @@ written by `hooks/leave.js` once, at `SessionEnd`, and its shape is under
 "waited": { "survey": 240000 }
 ```
 
+`moves` sits beside them and is not a cost. It is one `[stage, at]` for each
+change of stage, appended by the same `touch` that writes `clock` and stamped
+with the same sighting, so the entry opening a stage's first visit carries that
+stage's `clock` first. `clock` keeps one pair per stage, which makes a verify
+that went back to build and returned read as one long verify; `moves` keeps the
+order. Sixty at most, oldest dropped — `MAX_MOVES` in `lib/registry.js`. `task`
+clears it with the four above.
+
 `waited` is a gate that stayed open four minutes. Until 2026-09-02 no hook had
 written one — the one record carrying it, session `cb8cee7b`'s
 `{"verify":28660}`, was a stamp run by hand while the field was being built —
@@ -396,7 +404,9 @@ gap is already reported twice — by `updated`, and by the `(last seen 16d ago)`
 line — and a third telling would bill a stage for the fortnight nobody was on
 it. `gateAt` does not go over at all: it is an interval with one end, and the
 next answer in the adopting session would close it against a stamp from another
-one.
+one. `moves` goes over the way `clock` does, every stamp shifted by the gap
+between the source's `updated` and the adopt, so the order and the spacing
+survive and the fortnight does not.
 
 The hook writes exactly one registry file: this session's own. It never writes
 another session's, and never deletes one.

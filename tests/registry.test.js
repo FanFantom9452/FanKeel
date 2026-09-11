@@ -782,6 +782,41 @@ test('a clock that is not a readable pair is replaced', () => {
   assert.equal(after.clock.survey[0], after.clock.survey[1]);
 });
 
+// The clock keeps one pair per stage, so a verify that went back to build and
+// returned reads as one long verify. `moves` keeps the order: one entry per
+// change of stage, stamped with the sighting the clock also took.
+test('touch appends a move on each change of stage and none while it stays', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task({ stage: 'build' }));
+  registry.touch(root, SID);
+  registry.touch(root, SID);
+  const go = (stage) => {
+    const d = registry.readSession(root, SID);
+    d.stage = stage;
+    registry.writeSession(root, SID, d);
+    registry.touch(root, SID);
+  };
+  go('verify');
+  go('build');
+  go('verify');
+  const after = registry.readSession(root, SID);
+  assert.deepEqual(after.moves.map((m) => m[0]), ['build', 'verify', 'build', 'verify']);
+  assert.equal(after.moves[0][1], after.clock.build[0]);
+  assert.equal(after.moves[1][1], after.clock.verify[0]);
+});
+
+test('moves keeps the latest MAX_MOVES and drops the oldest', () => {
+  const root = tmpRoot();
+  const moves = [];
+  for (let i = 0; i < registry.MAX_MOVES; i++) moves.push([i % 2 ? 'build' : 'verify', 1000 + i]);
+  registry.writeSession(root, SID, task({ stage: 'verify', moves }));
+  registry.touch(root, SID);
+  const after = registry.readSession(root, SID);
+  assert.equal(after.moves.length, registry.MAX_MOVES);
+  assert.deepEqual(after.moves[0], moves[1]);
+  assert.equal(after.moves[after.moves.length - 1][0], 'verify');
+});
+
 // Gates accumulate: a stage may open three of them, so `waited` is a total and
 // not a pair.
 test('gateOpen stamps and gateClose accumulates into the stage it was in', () => {
