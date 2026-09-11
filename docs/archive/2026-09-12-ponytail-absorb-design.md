@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # ponytail 收錄：三項收進 fankeel，其餘解耦
@@ -44,6 +44,7 @@ plan 階段對照 map 改了一處：design 原本寫「每個頂層程式碼目
 - `docs/improvement-brief.md` §6.5 改寫成已落地、收了哪三項，不留指向已刪程式碼的 `path:line`。
 - `docs/decisions/fankeel-shell.md` 論證外掛偵測那一節末尾加一行 `*(Superseded 2026-09-12: …)*` 註記，不改原句：決策記錄記的是當時。
 - `scripts/docs-check.js` 不再對 report 檢查路徑是否存在，理由和 decision 相同：report 是有日期的快照，它點名的是當天存在的檔。刪掉 `lib/plugins.js` 會讓 `docs/reports/2026-09-02-process-state-review.md:214` 被標成 `gone`，而 report 事後不改。
+  - *Corrected 2026-09-12:* 這個前提是錯的。`scripts/docs-check.js:206` 在這條 branch 之前就對 `report` 與 `archive` 直接 return，那份 report 從來不會被標成 `gone`；Task 6 因此只留下釘住 :206 的測試，腳本沒改（見 ledger 的 ruling）。
 - `TODO.md:74` 與 `TODO.md:120` 兩條 ponytail 條目關閉；`docs/README.md` 補這份設計與它的 plan 的索引列。
 - `skills/registry.json` 用 `scripts/stage-registry.js` 重新產生。
 

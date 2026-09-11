@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # ponytail 收錄 Implementation Plan
@@ -26,6 +26,7 @@ status: design-intent
 - 文件歸檔照 `.fankeel/map.md`：`docs` 是 reference、`docs/plans` 是 plan、`docs/decisions` 是 decision、`docs/reports` 是 report、`docs/archive` 是 archive。**新增或改名的頁面要在同一個 change 補上 `docs/README.md` 的索引列**（`CONTRIBUTING.md:33`）。
 - decision、report、archive 是有日期的紀錄，內容不改。decision 可以加一行 `*(Superseded <date>: <what>)*` 註記，原句不動（先例：`docs/plans/2026-09-08-ready-and-station-serve.md:549`）。
 - `docs-check` 對 reference 與 report 檢查路徑是否存在（`scripts/docs-check.js:282`），對 reference 檢查 `name()` 形式的符號（`scripts/docs-check.js:351-358`），並檢查帶引文的 `path:line`。今天 exit 0。`todo-check` 今天 exit 0，25 條。
+  - *Corrected 2026-09-12:* report 不檢查路徑。`scripts/docs-check.js:206` 對 `report` 與 `archive` 直接 return，:282 那個條件根本到不了 report；Task 6 因此只留下釘住 :206 的測試（見 ledger 的 ruling）。
 - 版號一律跑 `scripts/version.js`，本計畫不動版號。
 - 縮排照各檔現狀：`lib/`、`scripts/`、`tests/agents.test.js`、`tests/source.test.js` 四格；`tests/route.test.js`、`tests/stages.test.js`、`tests/render.test.js`、`tests/skills.test.js`、`tests/docs-check.test.js` 兩格。
 - commit 訊息照 git log 的樣子：`type: subject`，英文小寫，一段 body，最後一行 `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>`。派出去的 implementer 不 commit，由 parent 做。
