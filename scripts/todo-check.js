@@ -13,7 +13,7 @@
 //
 // Six things follow, and all six are checkable, which is the point. A link
 // that no longer resolves is a dead entry: usually the plan it pointed at was
-// rewritten into a decision record and deleted at `land`, and closing the entry
+// rewritten into a decision record and archived at `land`, and closing the entry
 // was forgotten. A link that resolves to a document whose role records a moment
 // rather than the present is the same failure one step earlier — the file is
 // still there and has already stopped answering. An entry over the length cap

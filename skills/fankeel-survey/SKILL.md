@@ -266,9 +266,10 @@ classification made silently is one nobody can disagree with.
 ### 6. Write it down
 
 The entry already exists: `task.js start` ran at `/fankeel`, with the class said
-there — or all seven stages when none was — and `start` refuses an active entry
-(`scripts/task.js:481`, `already owns an active task`). What this step writes is the class step 5 arrived at,
-when it differs:
+there — or, when none was said, the profile's `class.default`, or all seven
+stages when there is none — and `start` refuses an active entry
+(`scripts/task.js:481`, `already owns an active task`). What this step writes is
+the class step 5 arrived at, when it differs:
 
 ```
 node <plugin>/scripts/task.js route "survey,design,build,verify,land" --session <id>

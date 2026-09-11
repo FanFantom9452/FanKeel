@@ -294,21 +294,23 @@ the user can disagree with it:
 Bounded measures the repository, not your familiarity with it: it means the flow
 being changed is already here to read. When in doubt take the heavier one, and
 the ratchet is one-way — complexity found mid-task upgrades the route and says
-so, and nothing downgrades mid-task. The seven-stage default `start` writes when
-no class was said is not a rung of it: `survey` may narrow that with `task.js
-route`, and a class someone said at `start` is the floor.
+so, and nothing downgrades mid-task. The route `start` writes when no class was
+said on its command line — all seven, or the profile's `class.default` — is not
+a rung of the ratchet. `survey` may narrow that with `task.js route`, and a
+class someone said at `start` is the floor.
 
 ```
 node <plugin>/scripts/task.js start --session <id> --task "..." --class bounded
 node <plugin>/scripts/task.js start --session <id> --task "..." --route "build,verify"
 ```
 
-Omit both and it is all seven; passing both is refused rather than ranked, because
-whichever one lost would be a decision the user made and cannot see. The rules for
-a hand-written route: every step must be a stage above, no
-repeats, and `land` last if it is there at all. `task.js stage` refuses a stage
-that is not on the route, and `task.js route` changes the route when the task
-turns out to be a different shape than it looked.
+Omit both and it is the profile's `class.default` if one is set, and all seven
+otherwise; passing both is refused rather than ranked, because whichever one
+lost would be a decision the user made and cannot see. The rules for a
+hand-written route: every step must be a stage above, no repeats, and `land`
+last if it is there at all. `task.js stage` refuses a stage that is not on the
+route, and `task.js route` changes the route when the task turns out to be a
+different shape than it looked.
 
 A fixed route made the progress indicator lie in both directions — a two-stage
 task sat at 2 of 5 looking permanently unfinished, and a long one got no credit

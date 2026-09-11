@@ -10,7 +10,7 @@ Every fankeel session on this machine, on one page. This is the reference for
 what is on it and where it comes from; the decisions are in
 [decisions/2026-09-04-session-station-design.md](decisions/2026-09-04-session-station-design.md)
 and, for how it is found and when it is written,
-[plans/2026-09-05-station-at-hand-design.md](plans/2026-09-05-station-at-hand-design.md);
+`docs/archive/2026-09-05-station-at-hand-design.md`;
 for the curve, the controls and why a deadline replaced a depth,
 `docs/archive/2026-09-06-station-reads-back-design.md`.
 

@@ -44,7 +44,7 @@ everything that needs more than a paragraph is here.
 | How two implementers running at once was built, task by task — its design is in `docs/archive/` | `docs/archive/2026-08-30-parallel-build.md` — *built* |
 | Every fankeel session on this machine on one page, what each cost, and how an abandoned one is put down | [decisions/2026-09-04-session-station-design.md](decisions/2026-09-04-session-station-design.md) |
 | The eight tasks that build the station, with every test and every file written out | `docs/archive/2026-09-04-session-station.md` — *built* |
-| Why the station forgot registries — the lead dies with the badge — and where the page is written now: at `/fankeel`, at every verb, beside the user | [plans/2026-09-05-station-at-hand-design.md](plans/2026-09-05-station-at-hand-design.md) — *built* |
+| Why the station forgot registries — the lead dies with the badge — and where the page is written now: at `/fankeel`, at every verb, beside the user | `docs/archive/2026-09-05-station-at-hand-design.md` — *built* |
 | The six tasks that made the station remember, scan, write twice and say so | `docs/archive/2026-09-05-station-at-hand.md` — *built* |
 | Why a station row gains a curve of what it spent against how long it ran, and why depth alone never bounded the scan | `docs/archive/2026-09-06-station-reads-back-design.md` — *built* |
 | The eight tasks that add the curve, the controls, per-stage spend and a discovery that stops forgetting | `docs/archive/2026-09-06-station-reads-back.md` — *built* |
@@ -144,13 +144,14 @@ is corrected by the next one, not by rewriting this.
 | 判斷 7：verify 的 verifier 要釘哪個 agent，Workflow 的寫檔要求要不要留 | [judgements/2026-09-10-verifier-agent.md](judgements/2026-09-10-verifier-agent.md) — *judged 2026-09-10, fable* |
 | 判斷 8：09-11 的五個方向加上現有 8 條，怎麼拆成分群的 TODO | [judgements/2026-09-11-todo-split.md](judgements/2026-09-11-todo-split.md) — *judged 2026-09-11, fable* |
 
-## The three scanners
+## The four scanners
 
 | | |
 |---|---|
 | `node scripts/docs-check.js` | every reference still resolves. A second to run, and the `verify` and `audit` rules call for it. |
 | `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged, an environment nothing can rebuild or run, the weight of what is ignored, directories holding no files. Three of the five need git and two do not, so it answers outside a repository too. It never deletes. |
-| `node scripts/docs-audit.js` | the fortnightly deep pass: what has stopped being true, and which two pages disagree. `/fankeel-audit` is the whole sweep — it runs all three of these, reads the shortlist, offers the cleanup. |
+| `node scripts/docs-audit.js` | the fortnightly deep pass: what has stopped being true, and which two pages disagree. `/fankeel-audit` is the whole sweep — it runs all four of these, reads the shortlist, offers the cleanup. |
+| `node scripts/memory-check.js` | reads Claude Code's own memory for this project — `<configDir>/projects/<slug>/memory/` — and fails on an index and directory that disagree, a cited path that is gone, or a `path:line` past its file's end. A `stale` entry is listed, never failed. |
 
 ## Roles
 
@@ -173,6 +174,6 @@ is explained, and it is the one thing to know before adding a page here.
 | `output-styles/` | reference | no |
 | `evals/` | fixture | n/a — a test's own input; a prompt names paths only its scaffold has, so it is checked for links and line numbers only, never for symbols |
 | `.claude/agents/` | reference | no |
-| `agents/` | reference | no — the four agents the plugin ships, read by Claude Code at process start |
+| `agents/` | reference | no — the five agents the plugin ships, read by Claude Code at process start |
 
 [Back to the front page](../README.md)

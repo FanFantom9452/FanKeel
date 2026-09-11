@@ -25,11 +25,12 @@ reproduce whatever had been put in front of them, with no needle in the prompt t
 find — a third never launched, and a cell that did not run is not a result
 ([reports/2026-09-04-subagent-brief-probe.md](reports/2026-09-04-subagent-brief-probe.md)).
 
-## The four agents this plugin defines
+## The five agents this plugin defines
 
-Four subagent types are not just described in prose — they are declared as
+Five subagent types are not just described in prose — they are declared as
 `agents` in `.claude-plugin/plugin.json` and shipped as files under `agents/`:
-`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer` and `fankeel-verifier`.
+`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier` and
+`fankeel-fixer`.
 The first three carry `tools: [Read, Grep, Glob, Bash]` — Edit, Write and
 NotebookEdit are simply absent from the list, so calling any of them to change
 a file is refused by the harness rather than left to a rule somebody has to
@@ -37,15 +38,23 @@ remember. Bash stays on the list for `git` — and, for the reader, this plugin'
 own scripts — a named residual rather than a claim that any of the three cannot
 write anything.
 
-`fankeel-verifier` is the one exception, and it is a narrower agent rather than
-a looser one. It adds `Write`, because verify's per-task verifier writes its
-evidence rows to a file and returns the path — what that keeps the rows out of
-is a Workflow's join, not this session's context, which a return value never
-reaches anyway. `Write` is matched by `guard.js`'s `PreToolUse` hook, whose
-matcher is `Edit|Write|NotebookEdit`; `Bash`, which all four hold, is matched by
-no hook at all. So the agent carrying `Write` is the one under a guard.
-`tests/agents.test.js` states that as a named exemption with the argument beside
-it, rather than dropping the assertion.
+`fankeel-verifier` is no longer the only agent carrying `Write` —
+`fankeel-fixer` does too, with `Edit` beside it and no `Bash` at all,
+for reference-page corrections and small fixes that need no test run. The
+verifier adds `Write`, because verify's per-task verifier writes its evidence rows
+to a file and returns the path — what that keeps the rows out of is a
+Workflow's join, not this session's context, which a return value never
+reaches anyway. `Write` is matched by `guard.js`'s `PreToolUse` hook,
+whose matcher is `Edit|Write|NotebookEdit`. `Bash` is matched now too:
+`.claude-plugin/plugin.json` registers `hooks/guard.js` a second time,
+matcher `Bash|PowerShell`, and it denies a command that writes files —
+`lib/guard.js`'s `writesFiles` — when `agent_type` is `fankeel-reader`,
+`fankeel-reviewer` or `fankeel-judge`; [collisions.md](collisions.md)
+carries what that denylist actually matches, not restated here. Four of
+the five agents hold `Bash`; `fankeel-fixer` is the one that does not,
+because it edits the file itself rather than returning something for the
+parent to run a test against. `tests/agents.test.js` names both writers as
+exemptions, each with its argument beside it, rather than dropping the assertion.
 
 `fankeel-reader` runs at `model: sonnet`, the floor the survey, verify and audit
 skills ask their reader fan-outs to use (survey's stage rule names the type, no

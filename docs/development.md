@@ -43,8 +43,8 @@ that is a repository with its own vocabulary rather than one leaving entries
 unfiled, so it is said once and does not fail the run. An entry under no heading
 at all is the unfiled case, and still does. A clean run
 prints the split, so the ready count is on screen without opening the file. The
-`land` stage rules call for it, because a plan deleted at `land` is a link that
-just died.
+`land` stage rules call for it, because a plan archived at `land` is a link that
+just moved.
 
 An entry under `## Waiting` also carries `lifts when: <the event>` and then a
 `MM-DD` stamp, and todo-check fails when either is missing. The stamp is the
