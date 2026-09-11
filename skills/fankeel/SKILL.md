@@ -479,7 +479,8 @@ nobody is in the middle of.
 node <plugin>/scripts/docs-audit.js [--root <dir>] [--since <days>]
 ```
 
-The documentation half of the pass whose code half is `/ponytail-audit`, and the
+The documentation half of the pass whose code half is three `fankeel-reviewer`
+lenses asking for cuts, and the
 same cadence: not on a typo fix, not skipped for a quarter. It asks the question
 the check cannot — a page where every reference resolves and every symbol exists
 can still describe a system that was replaced last month.
@@ -507,13 +508,12 @@ has not been touched since before it changed". Then you read them.
 Where no `docs.json` exists it infers the tree from the directories, so it is
 worth running on a project that never opted in.
 
-For the *code* half, use what is installed:
+For the *code* half:
 
 | | |
 |---|---|
-| ponytail installed | `/ponytail-audit` for the repository, `/ponytail-review` for a diff. Its scope is over-engineering only — it says nothing about documents. |
+| always | three `fankeel-reviewer` lenses over the whole tree, cuts only — the fankeel-audit skill names them. Its scope is over-engineering only — it says nothing about documents. |
 | graphify or codegraph installed | query the graph rather than grepping. |
-| none of them | say so plainly and read the diff yourself. Do not pretend a check ran. |
 
 `node <plugin>/scripts/task.js show` is not the place to look for this; the audit
 rules name the tools, and the rules are injected while you are in that stage.

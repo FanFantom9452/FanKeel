@@ -173,10 +173,15 @@ nothing else, so an `audit` run inside one has no gate, no output shape and none
 of these rules. The pairs are dispatched; the judgement, the findings and the
 question at the end stay here.
 
-If `/ponytail-audit` is installed, it is the code half of the same fortnightly
-pass — orphan files, over-engineering, abstractions nobody uses. Offer it
-alongside. If it is not installed, say so plainly rather than quietly skipping
-the code half.
+The code half of the same fortnightly pass is three `fankeel-reviewer`
+dispatches, each over the whole tree, each asked for cuts only in the format
+of the `## Cuts` section of its agent file, one lens apiece: what nothing
+needs (`delete:`, `yagni:`), what something else already does (`stdlib:`,
+`native:`), and what fewer lines would do (`shrink:`). By lens, never by
+directory — a reviewer holding a third of the tree cannot see the caller in
+another third, which is [docs/subagents.md](../../docs/subagents.md)'s case
+against slicing. Rank what comes back by its `net:` line and offer it at the
+gate beside the documentation findings; never apply a cut unasked.
 
 **Where the host opens it, the chain is one workflow.** Pair readers then an
 adversary is the same shape. The pairs come from `docs-audit.js` first, run

@@ -608,8 +608,8 @@ test('a long-quiet neighbour is listed like any other, with no verdict on whethe
 // `means` is printed once, by `task.js start`, and never again — the decay this
 // whole block exists to defeat. `spike` is the one that cannot afford it: its
 // route is survey,build, so it reaches neither `design`, which holds the rule
-// about cutting what the ask does not require, nor `audit`, which delegates
-// over-engineering to ponytail.
+// about cutting what the ask does not require, nor `audit`, whose code half
+// reviews for over-engineering.
 test('a spike is told on every prompt that what it builds is throwaway', () => {
   const text = render({
     mine: entry('aaaaaaaa', { class: 'spike', route: ['survey', 'build'], stage: 'build' }),

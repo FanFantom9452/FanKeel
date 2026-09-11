@@ -206,6 +206,24 @@ test('a plan-role page with a moved citation is silent', () => {
   assert.equal(scanned.unquoted.length, 0);
 });
 
+// A report is a dated snapshot and names the files that existed on its day.
+// The reference page beside it is the control: the same path must still be
+// reported there, or the report's silence would prove nothing.
+test('a report naming a file since deleted is silent, and a reference page is not', () => {
+  const dir = tmp('fankeel-report-gone-');
+  fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'docs', 'reports'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'lib'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.fankeel', 'docs.json'),
+    JSON.stringify({ buckets: [{ path: 'docs/reports', role: 'report' }, { path: 'docs', role: 'reference' }] }));
+  fs.writeFileSync(path.join(dir, 'lib', 'kept.js'), 'a\n');
+  fs.writeFileSync(path.join(dir, 'docs', 'reports', 'r.md'), 'read `lib/gone.js` that day\n');
+  fs.writeFileSync(path.join(dir, 'docs', 'page.md'), 'see `lib/gone.js`\n');
+
+  const gone = scan(dir).findings.filter((f) => f.tag === 'gone').map((f) => f.file.replace(/\\/g, '/'));
+  assert.deepEqual(gone, ['docs/page.md']);
+});
+
 // `linesOf` split on newline, so a file ending in one counted a phantom last
 // line: a 490-line file reported "ends at 491", and a reference to line 491
 // was allowed. Scanned across the whole repository with the fix applied, no

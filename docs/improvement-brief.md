@@ -1,5 +1,5 @@
 ---
-last_verified: 2026-09-11
+last_verified: 2026-09-12
 ---
 
 # FANKEEL 改進簡報 — CAVEMAN 與 SEPIA 的架構掃描
@@ -1079,25 +1079,18 @@ hook（SessionStart 啟動它的模式，UserPromptSubmit 追蹤模式）。本�
 
 ### 6.5 ponytail 去依賴
 
-**裝著的是 4.9.0**：6 個 skill 各配一個 command（ponytail、-review、-audit、-debt、-gain、
--help），3 個 hook。SessionStart 每次 start、resume、clear、compact 都注入它的整套規則；
-**SubagentStart 把同一套規則注入每一個 subagent**，fankeel 的 reader、reviewer、judge 都
-收得到；UserPromptSubmit 只記錄模式。
+**2026-09-12 落地。** 盤點時裝著的是 4.9.0：6 個 skill 各配一個 command、3 個
+hook；SessionStart 與 SubagentStart 各注入約 5 KB 的整套規則，進到 fankeel 每一個
+subagent。
 
-**fankeel 這邊的耦合**只有一個布林值，外加散文與測試：
+收了三項，都改寫成 fankeel 自己的：`ponytail-review` 成為
+`agents/fankeel-reviewer.md` 的 `## Cuts` 一節，build 模板的 Part 4 引用它；
+`ponytail-audit` 的程式碼那一半成為 fankeel-audit 的三個 reviewer lens；ladder 寫進
+`skills/fankeel-design/SKILL.md` 第 2 步。
 
-- `lib/render.js:108` 的 `ponytailLine` 看 `has('ponytail')` 選句子。
-- audit stage 的規則以 `{{PONYTAIL}}` 接住那句：`lib/stages.js:352`（`{{PONYTAIL}}`）用它，`lib/stages.js:441`（`ponytail: '{{PONYTAIL}}'`）註冊它。
-- `skills/fankeel-audit/SKILL.md` 與 `skills/fankeel/SKILL.md` 各一段散文；
-  `tests/route.test.js`、`tests/stages.test.js`、`tests/skills.test.js` 有相關斷言。
-
-解除安裝不會壞任何東西：每一處都已經有「Nothing installed here does the code half; say
-so rather than skipping it.」這句 fallback。
-
-**真正會失去的**是 audit 的程式碼那一半，也就是過度工程的稽核。深度分析要回答那一半由誰
-接：寫成 fankeel 自己的 audit 規則、交給 reviewer，還是明說不做。還有一件要一起定：
-`lib/live.js:34` 的 `ponytail:` 是 fankeel 自己的債務註解標記，名字來自這個外掛，解耦時要
-不要改名。
+不收 `ponytail-debt`（全 repo 只有一個債務標記，前綴已拿掉）、`ponytail-gain`、
+`ponytail-help` 與三個 hook。讀外掛清單的那個 lib 模組，連同 audit 規則裡的 render
+token，一起刪除。解除安裝由使用者自己跑。
 
 ---
 

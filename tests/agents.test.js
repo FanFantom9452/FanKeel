@@ -55,3 +55,17 @@ test('the manifest ships them all, and no others', () => {
     for (const rel of manifest.agents) assert.ok(fs.existsSync(path.join(ROOT, rel)), rel);
     assert.deepEqual(fs.readdirSync(path.join(ROOT, 'agents')).sort(), NAMES.map((n) => n + '.md').sort());
 });
+
+// The five cut tags are defined here once. Build's Part 4 and audit's code
+// half both point at this section rather than restating it, so a tag that
+// went missing here would go missing from both.
+test('the reviewer carries the cut tags build and audit ask for', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reviewer.md'), 'utf8');
+    assert.match(text, /^## Cuts$/m);
+    for (const tag of ['delete:', 'stdlib:', 'native:', 'yagni:', 'shrink:']) {
+        assert.ok(text.includes('`' + tag + '`'), 'the reviewer does not define ' + tag);
+    }
+    assert.match(text, /net: -<N> lines possible\./);
+    const build = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-build', 'SKILL.md'), 'utf8');
+    assert.match(build, /Part 4 — cuts/);
+});

@@ -303,10 +303,14 @@ runs one row per pass, and every other step of the loop is unchanged.
      its test green, is a finding.
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed.
+   Part 4 — cuts, over the lines this diff added and no others, in the
+     format of the `## Cuts` section of your agent file. A cut is a finding.
 
    RETURN, and nothing else: one line per finding as `path:line — <the
-   problem>`, most serious first, or the single word `clean`. Every line you
-   return stays in a long-running parent context for the rest of the session.
+   problem>`, most serious first, then Part 4's cuts and their `net:` line —
+   or the single word `clean` when Parts 1-3 found nothing and Part 4 found
+   nothing to cut. Every line you return stays in a long-running parent
+   context for the rest of the session.
    ```
 
    Give it the brief path and the range — never a paste of the session's

@@ -104,9 +104,22 @@ test('the audit skill runs both scanners and ends at the gate', () => {
   assert.match(text, /scripts\/docs-check\.js/);
   assert.match(text, /scripts\/docs-audit\.js/);
   assert.match(text, /AskUserQuestion/);
-  assert.match(text, /ponytail-audit/, 'the code half goes unmentioned');
+  assert.match(text, /three `fankeel-reviewer`/, 'the code half goes unmentioned');
+  assert.match(text, /## Cuts/, 'the code half names no cut format');
   // The one thing it must never do on its own.
   assert.match(text, /Never move a document unasked/);
+});
+
+// The ladder in design's step 2. Order is the rule: the first rung that holds
+// is where the design stops, so a rung moved below another is a changed rule.
+test('the design skill carries the ladder, first rung first', () => {
+  const text = read('fankeel-design');
+  let at = -1;
+  for (const rung of ['It need not exist', 'The standard library already does it', 'The platform does it natively', 'A dependency does it', 'Then the fewest lines that work']) {
+    const i = text.indexOf(rung);
+    assert.ok(i > at, rung + ' is missing, or sits above the rung before it');
+    at = i;
+  }
 });
 
 test('the entry skill points at the audit skill rather than repeating it', () => {

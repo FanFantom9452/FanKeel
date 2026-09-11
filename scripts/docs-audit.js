@@ -12,8 +12,8 @@
 // of them is most likely to disagree.
 //
 // It is the documentation half of the fortnightly pass whose code half is
-// `/ponytail-audit`. Same cadence, same bargain: you do not run it on a typo fix,
-// and you do not skip it for a quarter.
+// three `fankeel-reviewer` lenses asking for cuts. Same cadence, same bargain:
+// you do not run it on a typo fix, and you do not skip it for a quarter.
 //
 // The division of labour is the one this whole plugin is built on — the script
 // gathers, the model judges. Nothing here decides that two documents contradict

@@ -163,3 +163,16 @@ test('no frontmatter key nothing reads carries a repository path', () => {
 
     assert.deepEqual(guilty, [], 'a path here is read by nothing, so nothing catches it rotting');
 });
+
+// Three of ponytail's skills became fankeel's own on 2026-09-12 — the
+// reviewer's `## Cuts`, audit's three lenses, design's ladder — and the
+// module that read the install manifest to pick one sentence went with them.
+// A name that grows back in a comment is the coupling returning as prose
+// first. The length check is the control: an empty scan would pass too.
+test('no shipped file names ponytail', () => {
+    const shipped = ['lib', 'scripts', 'hooks', 'agents', 'skills', 'output-styles', 'assets', '.claude-plugin']
+        .flatMap((dir) => tracked(dir));
+    assert.ok(shipped.length > 50, 'git ls-files found ' + shipped.length + ' files to scan');
+    const naming = shipped.filter((rel) => /ponytail/i.test(fs.readFileSync(path.join(ROOT, rel), 'utf8')));
+    assert.deepEqual(naming, []);
+});

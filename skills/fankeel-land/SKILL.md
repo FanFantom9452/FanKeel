@@ -185,9 +185,9 @@ Present exactly these, and wait. Integration is the user's decision.
 so many words, and then only against the typed word `discard`.
 
 **Neither is uninstalling a plugin this session decoupled from.** Removing
-caveman or ponytail after their code has been unhooked is the user's own
-command, offered here rather than run — say what was decoupled and that it
-can now be removed, and stop there.
+one after its code has been unhooked is the user's own command, offered
+here rather than run — say what was decoupled and that it can now be
+removed, and stop there.
 
 **Record the choice.** Once the integration is settled — by this menu, or by
 the profile already answering it — run

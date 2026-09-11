@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-11
+last_verified: 2026-09-12
 source_of_truth: hooks/brief.js, lib/render.js, lib/stages.js, hooks/carry.js, lib/plantasks.js, lib/usage.js, lib/prices.js, scripts/judge.js
 ---
 
@@ -98,12 +98,13 @@ short form, not the only copy.
 
 `fankeel-reviewer` runs at `model: sonnet`, and answers neither kind of
 question above: it is the shared contract behind plan's reviewer, build's
-per-task reviewer and verify's adversary, all three of which dispatch
-`subagent_type: fankeel-reviewer` instead of writing a model by hand. What tells it apart
+per-task reviewer, verify's adversary and audit's code half, all four of which
+dispatch `subagent_type: fankeel-reviewer` instead of writing a model by hand. What tells it apart
 from `fankeel-reader` is not the tool list — both carry the same four — but
 the shape of the question: a reader is asked what a file says, a reviewer
-is asked what a diff or a table gets wrong, and it returns only what it
-defeats. It is one of two dispatches where nobody types a model at all —
+is asked what a diff, a table or the tree gets wrong — or, when the brief asks
+for cuts, what it could lose — and it returns only what it defeats and those
+cuts. It is one of two dispatches where nobody types a model at all —
 `fankeel-verifier` is the other: `skills/fankeel-verify/SKILL.md:170`, `not typed by hand`,
 and it was added on the same branch as this sentence —
 so the file's pin is the only floor — the literal `sonnet`, not `dispatch.floor`,
@@ -365,9 +366,9 @@ are not equivalent.
 "this abstraction has one implementation" are answers no reader holding a third
 of the tree can give: the caller it is looking for is in somebody else's slice,
 so every reader reports a maybe and the parent has to redo the join. Measured on
-this repository: `lib/plugins.js` has exactly one production caller, and a reader
-holding only `scripts/` and `hooks/` would have reported none — seeing it takes
-`lib/`, `scripts/` and `hooks/` at once.
+this repository: `lib/dirty.js` has exactly one production caller,
+`hooks/inject.js`, and a reader holding only `lib/` would have reported none —
+seeing it takes `lib/` and `hooks/` at once.
 
 A lens costs more per reader — each reads the whole tree — and it buys an answer
 that does not need reassembling. The reading is thrown away either way; what

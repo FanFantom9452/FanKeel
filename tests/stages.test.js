@@ -98,8 +98,8 @@ test('a full injection of rules stays under a few hundred characters', () => {
 
 // Two rules taken from Karpathy's guidelines after checking them against these
 // line by line. Most of that list was already here in one form or another, and
-// the delegation is deliberate where it is not: over-engineering is ponytail's
-// subject, and the audit rules name it rather than restating it.
+// over-engineering is the one subject left out on purpose: audit's code half
+// owns it, and these rules name it rather than restating it.
 //
 // These two were the gaps. A stage that names the files it will touch has said
 // what will happen and not what would prove it happened, and "make it work" is
@@ -225,10 +225,8 @@ test('the discipline covers the captured requirements', () => {
   assert.match(text, /todo\.md line at the detail/);
   assert.match(text, /leaves a decision record behind/);
   assert.match(text, /then is archived, after asking/);
-  // The code half is named through a token now, because whether it can be named
-  // at all depends on the machine. The wording either branch produces is checked
-  // in tests/route.test.js against a manifest with and without ponytail in it.
-  assert.match(text, /\{\{ponytail\}\}/);
+  // The code half is a fixed sentence: nothing about it depends on the machine.
+  assert.match(text, /code half: three reviewers by lens, cuts only\./);
 });
 
 // The failure that produced this test: a design stage ended with three numbered
@@ -320,14 +318,13 @@ test('every stage ends by stating the shape of its output', () => {
   }
 });
 
-// `land` used to carry "run /ponytail-audit if the change was large enough",
+// `land` used to carry "run the code audit if the change was large enough",
 // which is the audit stage's own rule arriving one stage late.
 test('no stage repeats another stage tool', () => {
-  // Case-insensitive on the negative side: the audit rule carries the token
-  // `{{PONYTAIL}}` now, and a `land` rule that grew one would slip past a
-  // lowercase-only check.
-  assert.doesNotMatch(byName('land').rules.join(' '), /ponytail/i);
-  assert.match(byName('audit').rules.join(' '), /\{\{PONYTAIL\}\}/);
+  // Case-insensitive on the negative side, so a `land` rule that grew the
+  // sentence in another case would not slip past.
+  assert.doesNotMatch(byName('land').rules.join(' '), /code half/i);
+  assert.match(byName('audit').rules.join(' '), /Code half: three reviewers by lens, cuts only\./);
 });
 
 test('no rule is a placeholder', () => {
