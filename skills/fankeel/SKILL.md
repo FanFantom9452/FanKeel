@@ -480,6 +480,7 @@ can still describe a system that was replaced last month.
 | **the index** | entries pointing at nothing, and documents the index never learned about. Both directions, because the index is maintained by hand. |
 | **diagrams** | a mermaid graph naming most of a directory is claiming to list it, so the files it leaves out read as files that do not exist. |
 | **pairs** | two reference documents describing the same source file. Not a contradiction — the shortlist of places one could live. |
+| **unresolved** | a `source_of_truth` entry naming a file that resolves to nothing. A typo and a legitimate sentence look identical while both are silent; this is what makes the typo visible. Context, not a defect. |
 | **orphans, uncovered** | documents nothing links to, and directories no document names. Context, not defects. |
 
 Only the first four fail the run. A command that always exits non-zero has an
