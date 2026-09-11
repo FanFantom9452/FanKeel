@@ -296,7 +296,7 @@ but the two that must stay unsigned. It uses `isSignpost` rather than the audit'
 "anything at the root": a loose `NOTES.md` beside them is a page nobody signed,
 and the map is the only tool that reports one from outside the doc root. They are
 still counted — `documents:` adds the buckets up, and a signpost is filed under
-`current`, the bucket the map never prints, so excluding them subtracts nothing
+`current`, the bucket the map counts but never lists, so excluding them subtracts nothing
 from a line that claims to be every markdown file.
 
 A page in an `archive` bucket is filed as `retired` before its frontmatter is

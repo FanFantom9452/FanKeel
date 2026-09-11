@@ -60,6 +60,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
+- 〔map〕`MAX_NAV` 把導覽表截在 24 列卻不印丟掉幾列，和它上面那句「The count of what was dropped is still printed」相反 — [lib/map.js](lib/map.js). `firstTable()` 到上限就停、`signpost()` 不印 `... and N more`；比照 `listing()` 補上計數。
+
 ## Needs a decision
 
 - 〔docs〕`path:N-M` 範圍引用對 `docs-check` 完全隱形：`PATHISH` 不收範圍，既不檢查也不列為「無引文」 — [docs/documents.md](docs/documents.md). reference 角色還剩 5 條。教它讀範圍要先定義範圍「持有」什麼；改單行則會把描述整個區塊的散文弄壞，本分支收窄 `defects()` 那條時就發生過一次。
