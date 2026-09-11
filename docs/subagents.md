@@ -295,9 +295,9 @@ commits in one checkout would interleave and no review range would mean
 anything afterward.
 
 [collisions.md](collisions.md) owns the blind spot itself — `lib/guard.js` is
-in its `source_of_truth` and not in this page's. The link later in this section
-points at the pair of predicates, which is the mitigation rather than the fact.
-This is the short form, not the only copy.
+in its `source_of_truth` and not in this page's. The link runs the other way:
+that page points back here for the pair of predicates, which is the mitigation
+rather than the fact. This is the short form, not the only copy.
 
 The commit moved to the parent, one task at a time, as each implementer
 returns — never the implementer itself, which now returns paths, never a diff.

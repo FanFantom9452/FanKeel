@@ -190,6 +190,11 @@ points at the pair of predicates, which is the mitigation rather than the fact.
 This is the short form, not the only copy.
 ```
 
+> **補記（audit）**：上面那段的第二句落地後被稽核打掉。`docs/subagents.md`
+> 那一節（289-343）除了這段自己的連結之外沒有別的連結，方向也反了——連結在
+> `docs/collisions.md:170` 指回這裡。已改成「The link runs the other way」；照這份
+> plan 重做的人請用現在頁上的文字，不要用這個框裡的。
+
 步驟：
 
 1. 三處都插入。**一個既有句子都不刪**，這是 TODO 條目的原話（「各補一個指標，不刪句子」）。
