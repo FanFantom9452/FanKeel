@@ -23,6 +23,13 @@ often one that is ready and one that is still an argument.
 Whoever defers a thing picks its heading, because they know at that moment which
 of the three they are short of. A later reader has to guess.
 
+A bullet may also open with a `〔word〕` prefix — `〔map〕`, `〔caveman〕`,
+`〔station〕` and so on. It groups nothing the heading does not already
+decide: it is there so bullets about one area sit together at a glance, and
+it changes neither an entry's state nor what `/fankeel` offers. The heading
+still answers what an entry is waiting for; the prefix only answers what it
+is about, which is the question the heading is deliberately not asking.
+
 An entry under `## Waiting` carries two things at its end, in this order:
 `lifts when: <the event>`, and then a `MM-DD` stamp. The event is what would make
 the entry actionable — real use, upstream, or another entry landing — and it is
@@ -75,9 +82,6 @@ entry waited for actually happening. It shrank when somebody read it.
 - 〔session〕主 session 堆疊約九成來自主迴圈自己的工具輸出，subagent 回傳只佔 8–9%；15/153 個 session 有 stage 倒退（verify>build 29 次）。要定 custom agent 以外的手段 — [簡報 §6.2](docs/improvement-brief.md#62-session-堆疊).
 
 - 〔station〕單一 session 的細節：plan 有幾個 task、各做什麼、主 agent 怎麼切派工（agent/agents/workflow）、stage 來回、哪段可以平行；`lib/station.js` 一樣都沒讀 — [簡報 §6.3](docs/improvement-brief.md#63-station-單-session).
-
-- 〔todo〕分群要不要改用 `###`：`todo-check.js:174` 任何標題都會重設 section，`INIT` 只認三個 `##`，:55 明說不按主題分；要改就動兩處 — [scripts/todo-check.js](scripts/todo-check.js). 目前以〔群組〕前綴代替。
-
 ## Waiting
 
 - Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it. lifts when: a run is seen ignoring one. 09-06.
