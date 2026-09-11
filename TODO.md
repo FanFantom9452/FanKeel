@@ -62,6 +62,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 四條 `path:line` 沒有同行引文，所以 `quoteBeside` 不檢查它們的行號 — [docs/collisions.md](docs/collisions.md). 三條在那裡，一條在 `docs/documents.md`；同一行補原文，別讓硬換行拆開。
 
+- 稽核圖裡 `E2 --> F` 跟本分支修掉的 `E4` 是同一個結構錯配：unfiled、undeclared、linked from nowhere 都是單份文件的缺席，不是 F 描述的「兩份都打開、比對各自的主張」 — [docs/pipeline.md](docs/pipeline.md). 這條是既有的，照同樣的理由該跟 E3、E4 一樣指向 F2。
+
 ## Needs a decision
 
 - `path:N-M` 範圍引用對 `docs-check` 完全隱形：`PATHISH` 不收範圍，既不檢查也不列為「無引文」 — [docs/documents.md](docs/documents.md). reference 角色還剩 5 條。教它讀範圍要先定義範圍「持有」什麼；改單行則會把描述整個區塊的散文弄壞，本分支收窄 `defects()` 那條時就發生過一次。
