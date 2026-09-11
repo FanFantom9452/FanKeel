@@ -119,6 +119,46 @@ test('the map names what was planned but not built, because nothing else does', 
   assert.match(text, /docs\/roadmap\.md/);
 });
 
+// Archiving is a move, not an edit, so a page in an archive bucket can still say
+// `current` or `design-intent`. On 2026-09-11 twenty-four did, and the four
+// saying the second were listed as planned, not built. Where it sits decides.
+test('every page in an archive bucket is retired, whatever its frontmatter says', () => {
+  const dir = root();
+  write(dir, '.fankeel/docs.json', JSON.stringify({ preset: 'flat', index: 'docs/README.md', buckets: [{ path: 'docs', role: 'reference', depth: 1 }, { path: 'docs/archive', role: 'archive' }] }));
+  write(dir, 'docs/now.md', '---\nstatus: current\n---\n# Now\n');
+  write(dir, 'docs/archive/old-plan.md', '---\nstatus: design-intent\n---\n# Old plan\n');
+  write(dir, 'docs/archive/old-page.md', '---\nstatus: current\n---\n# Old page\n');
+  write(dir, 'docs/archive/bare.md', '# Bare\n');
+  const by = map.pagesByStatus(dir);
+  assert.deepEqual(by.intent, []);
+  assert.deepEqual(by.undeclared, []);
+  assert.deepEqual(by.retired, ['docs/archive/bare.md', 'docs/archive/old-page.md', 'docs/archive/old-plan.md']);
+  assert.ok(by.current.includes('docs/now.md'));
+});
+
+// The retired section names a bucket per line rather than a page per line, so
+// `MAX_PAGES` never cuts it — on 2026-09-11 it held 59 and showed 30 — and the
+// counts on `documents:` add up to the total, which is what lets a page named
+// nowhere be read as current. With a list cut, that sentence would lie.
+test('the map counts every status, files an archive bucket as one line, and says when an unnamed page is current', () => {
+  const dir = root();
+  write(dir, '.fankeel/docs.json', JSON.stringify({ preset: 'flat', index: 'docs/README.md', buckets: [{ path: 'docs', role: 'reference', depth: 1 }, { path: 'docs/archive', role: 'archive' }] }));
+  write(dir, 'docs/now.md', '---\nstatus: current\n---\n# Now\n');
+  write(dir, 'docs/roadmap.md', '---\nstatus: design-intent\n---\n# Roadmap\n');
+  write(dir, 'docs/gone.md', '---\nstatus: archived\n---\n# Gone\n');
+  for (let i = 0; i < 40; i++) write(dir, 'docs/archive/p' + String(i).padStart(2, '0') + '.md', '---\nstatus: current\n---\n# P\n');
+  const text = map.buildMap(dir);
+  assert.match(text, /documents: 43 markdown files — 1 current, 1 planned, 41 retired\n/);
+  assert.match(text, /a page named nowhere below is current\./);
+  assert.match(text, /retired, do not follow — 41:\n  docs\/archive — 40, the whole archive bucket\n  docs\/gone\.md\n/);
+  assert.doesNotMatch(text, /docs\/archive\/p\d\d\.md/);
+  assert.doesNotMatch(text, /\.\.\. and \d+ more/);
+
+  const many = root();
+  for (let i = 0; i < 31; i++) write(many, 'docs/bare' + String(i).padStart(2, '0') + '.md', '# Bare\n');
+  assert.doesNotMatch(map.buildMap(many), /a page named nowhere below is current/);
+});
+
 // The filing is half of what a map is for, and the bug this caught was silent:
 // `docs.read` returns { tree, error }, so reading `.buckets` off the wrapper
 // produced "nothing declared" for a project with seven buckets. Nothing failed —

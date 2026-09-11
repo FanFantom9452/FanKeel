@@ -795,12 +795,13 @@ so the documentation sweep skips it.
 It holds the signpost file's navigation table, the filing declared in
 `docs.json`, **what each directory is for** — lifted from the project's own
 README, or a line saying no tree was found and the command that starts one — and,
-the part nothing else reports, **every page's declared status**. That last
+the part nothing else reports, **every page's declared status** — each status
+counted, the planned, retired and undeclared pages named, and an `archive`
+bucket filed as retired on one line whatever its pages declare. That last
 section is the one the rest was built for:
 
 ```
-planned, not built — 2:
-  docs/archive/2026-08-22-seven-stage-pipeline.md
+planned, not built — 1:
   docs/roadmap.md
 ```
 

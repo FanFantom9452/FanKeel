@@ -99,7 +99,10 @@ job, and designing against them as if they described the code is the failure
 this stage exists to prevent.
 
 **retired, do not follow** is the opposite error: a page that was true once and
-is being read as though it still were.
+is being read as though it still were. Every page in an `archive` bucket is
+filed there whatever its frontmatter says, one line per bucket; a retired page
+outside one is named. `documents:` counts every status, and when no list is cut
+it says so: a page named nowhere below is current.
 
 **undeclared** pages are dated by git rather than by anyone having read them. A
 whitespace fix updates a git date and verifies nothing.

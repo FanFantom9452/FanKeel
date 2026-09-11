@@ -299,6 +299,14 @@ still counted — `documents:` adds the buckets up, and a signpost is filed unde
 `current`, the bucket the map never prints, so excluding them subtracts nothing
 from a line that claims to be every markdown file.
 
+A page in an `archive` bucket is filed as `retired` before its frontmatter is
+read, the way a bare page under a `fixture` bucket is filed as `current`.
+Archiving is a move rather than an edit: on 2026-09-11 twenty-four pages under
+`docs/archive/` still said `current` or `design-intent`, and the four saying the
+second were listed as planned, not built. The retired section names a bucket
+per line rather than a page, so `MAX_PAGES` no longer cuts it, and `documents:`
+counts every status, so a page named nowhere below reads as current.
+
 ### `orphan`, deliberately empty where an index exists
 
 An orphan is a document under the docs root that no other document links to.
