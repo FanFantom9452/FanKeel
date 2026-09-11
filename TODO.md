@@ -64,6 +64,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 稽核圖裡 `E2 --> F` 跟本分支修掉的 `E4` 是同一個結構錯配：unfiled、undeclared、linked from nowhere 都是單份文件的缺席，不是 F 描述的「兩份都打開、比對各自的主張」 — [docs/pipeline.md](docs/pipeline.md). 這條是既有的，照同樣的理由該跟 E3、E4 一樣指向 F2。
 
+- 同一張稽核圖沒有 uncovered directories 的節點：`report()` 會印它，圖上四顆 context 節點（E1/E2/E3/E4）都不是它 — [docs/pipeline.md](docs/pipeline.md). 既有的；圖宣稱列全就得列全，是這一頁自己寫下的規則。
+
 ## Needs a decision
 
 - `path:N-M` 範圍引用對 `docs-check` 完全隱形：`PATHISH` 不收範圍，既不檢查也不列為「無引文」 — [docs/documents.md](docs/documents.md). reference 角色還剩 5 條。教它讀範圍要先定義範圍「持有」什麼；改單行則會把描述整個區塊的散文弄壞，本分支收窄 `defects()` 那條時就發生過一次。
