@@ -758,8 +758,10 @@ function report(r) {
     // than got cleaner. What the line is for is the one with a typo in it, which
     // is indistinguishable from the legitimate ones while both are silent.
     const unresolved = r.unresolved || [];
-    lines.push(...section(plural(unresolved.length, 'reference document names', 'reference documents name')
-        + ' something in source_of_truth that resolves to no file:',
+    const unresolvedPages = new Set(unresolved.map((u) => u.page)).size;
+    lines.push(...section(plural(unresolved.length, 'source_of_truth entry in', 'source_of_truth entries in')
+        + ' ' + plural(unresolvedPages, 'reference document resolves', 'reference documents resolve')
+        + ' to no file:',
     unresolved.map((u) => u.page + '  ' + u.entry)));
 
     lines.push(...section(plural(r.diagrams.length, 'diagram lists a directory and has', 'diagrams list a directory and have') + ' fallen behind it:',

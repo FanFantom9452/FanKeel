@@ -482,6 +482,8 @@ can still describe a system that was replaced last month.
 | **pairs** | two reference documents describing the same source file. Not a contradiction — the shortlist of places one could live. |
 | **unresolved** | a `source_of_truth` entry naming a file that resolves to nothing. A typo and a legitimate sentence look identical while both are silent; this is what makes the typo visible. Context, not a defect. |
 | **orphans, uncovered** | documents nothing links to, and directories no document names. Context, not defects. |
+| **unfiled** | markdown sitting outside every bucket, so nothing above checked it. The fix is a bucket in `docs.json`, not an edit to the file — the file did nothing wrong. |
+| **undeclared** | a reference page with no frontmatter contract at all, so its date is whatever git recorded rather than anyone saying they read it. One line, not a list: a project that has not adopted the convention wants to hear that it exists, not to have every page named at it. |
 
 Only the first four fail the run. A command that always exits non-zero has an
 exit code that means nothing.

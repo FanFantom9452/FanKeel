@@ -690,6 +690,26 @@ test('an unresolvable source_of_truth entry is reported, and is not a defect', (
     'docs/a.md | lib/gone.js',
     'docs/b.md | this file is the prompt with no upstream',
   ]);
-  assert.match(audit.report(r), /resolves to no file/);
+  assert.match(audit.report(r), /2 source_of_truth entries in 2 reference documents resolve to no file:/);
   assert.equal(audit.defects(r), 0, 'an unresolvable source_of_truth entry must not fail the run');
+});
+
+test('the count is of entries and the pages are counted separately', () => {
+  const root = tree({
+    '.fankeel/docs.json': { age: 1, body: JSON.stringify({
+      index: 'docs/README.md',
+      buckets: [{ path: 'docs', role: 'reference', depth: 1 }],
+    }) },
+    'docs/README.md': { age: 1, body: '# Index\n\n- [a](a.md)\n- [b](b.md)\n' },
+    // Two entries on one page: the field is a comma list, so this page is one
+    // document and two of the count.
+    'docs/a.md': { age: 1, body: '---\nstatus: current\nlast_verified: 2026-08-21\nsource_of_truth: lib/gone.js, lib/also-gone.js\n---\n\n# A\n' },
+    'docs/b.md': { age: 1, body: '---\nstatus: current\nlast_verified: 2026-08-21\nsource_of_truth: lib/third-gone.js\n---\n\n# B\n' },
+  });
+
+  const r = audit.sweep(root, audit.DEFAULT_SINCE, NOW);
+  assert.equal(r.unresolved.length, 3);
+  assert.equal(new Set(r.unresolved.map((u) => u.page)).size, 2);
+  assert.match(audit.report(r), /3 source_of_truth entries in 2 reference documents resolve to no file:/);
+  assert.equal(audit.defects(r), 0);
 });

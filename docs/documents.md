@@ -126,7 +126,7 @@ report where a real parser would cost a dependency this plugin does not have.
 | `profile.json` | 是 | 專案的常設答案，改了就是改偏好；`task.js profile` 寫 |
 | `sessions/<id>.json` | 否 | 一個 session 一筆，永不刪，`active:false` 即結束 |
 | `map.md` | 否 | 每次 `map.js` 重生 |
-| `build/<plan>/`、`build/ask/` | 否 | 一個 task 在跑時各階段寫下的一切——ledger、brief、report、測試輸出、design 的 `mockup.html`、verify 的證據；列出不清理 |
+| `build/<plan>/`、`build/ask/` | 否 | 一個 task 在跑時各階段寫下的一切——例如 ledger、brief、report、測試輸出、design 的 `mockup.html`、verify 的證據；列出不清理 |
 | `index.html`、`station/` | 否 | 這台機器的 station 副本，每次 prompt 重寫 |
 | `docs/judgements/`（不在 `.fankeel/`） | 是 | `fankeel-judge` 的判斷，寫完不改（`report`） |
 
@@ -316,7 +316,7 @@ back empty. This project declares an index, so the branch that would populate
 built, not a gap in the check.
 
 Orphans never fail a run. `defects()` opens at
-`scripts/docs-audit.js:817` (`function defects(r) {`) and sums drift, landed
+`scripts/docs-audit.js:819` (`function defects(r) {`) and sums drift, landed
 plans, a broken index and diagrams; `orphans` is not a term in that sum.
 
 ## The list is the output, not the count
