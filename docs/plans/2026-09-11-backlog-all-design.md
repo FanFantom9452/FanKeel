@@ -154,10 +154,17 @@ Claude Code 的原生 memory 只會寫、不會清。今天有 79 條：30 條�
 - 平行提示：每個 task 旁邊放 `plantasks` 算出的分組。同一組的 task 如果在不同回合派出，
   就標 `could have gone in one response`。task 與派工的對應靠 label/description 裡的
   `task N`，對不上的派工列出來，不猜。
-- `assets/station/station.js` 的 `drawDetail()` 多三塊：任務、派工、階段順序。
+- `assets/station/station.js` 的 `drawDetail()` 多三塊：任務、派工、階段順序。版面照
+  `.fankeel/build/2026-09-11-backlog-all/mockup.html`：分組是任務上方的一條帶（G1、G2…），
+  平行提示寫在帶上；派工每一回合一條帶，`surface` 標在帶上。
+- 還沒完成的 task 在 ledger 裡沒有 `Task` 行，所以任務列來自 plan 的 task 清單；ledger
+  完全沒有 `Task` 行的（`2026-09-11-ready-ten` 就是）每列狀態寫 `no ledger line`，不猜。
+- workflow 的派工預設收合成每個 phase 一列（agent 數、tokens 合計），點開才展開逐列。
+  mockup 全部展開時面板在 372px 寬下約 2,460px 高，新區塊從約 1,050px 處才開始。
 - 每個 stage 自己的成本照舊不顯示（`docs/station.md:129`）。
 - 成品檢查：這個 session 的頁面上，workflow 派工數等於它的 run 檔裡 `workflow_agent`
-  列的總數；任務列數等於 ledger 的 `Task` 行數。兩個數字出自同一個來源，必須一致。
+  列的總數；標為完成的任務列數等於 ledger 的 `Task` 行數，任務總列數等於 `plantasks`
+  讀出的 task 數。每一對數字都出自同一個來源，必須一致。
 
 ## 8. TODO 的分群
 
