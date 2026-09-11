@@ -189,6 +189,11 @@ there as it is here. What returns is the join, per pair. The ruling and the
 `routed:` line stay here. The Agent form below is the fallback, for a session
 where the user said not to dispatch, or declined the host's run dialog.
 
+**Once that workflow returns, run `git status --porcelain` once** before
+reading its findings — the same check `fankeel-survey` now makes, for the
+same reason: a read-only reader's tool list is not the same thing as a
+guarantee it wrote nothing. `docs/collisions.md` has the incident.
+
 ## The adversary
 
 The adversary runs whether

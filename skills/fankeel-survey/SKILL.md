@@ -225,6 +225,11 @@ answers — so the round buys nothing and costs a turn of their attention.
   the default when the profile says nothing.
 - **Compare the returns against each other**, not just one by one. Agents
   dispatched from one prompt style make correlated mistakes.
+- **Once that workflow returns, run `git status --porcelain` once** before
+  trusting what it found. A `fankeel-reader` briefed to write nothing can
+  still write through a shell redirect no hook watches for every case —
+  `docs/collisions.md` names the incident and the narrower guard this stage
+  cannot rely on alone.
 
 Reading wide for a narrow answer is what a subagent is for. This stage used to
 say that and then offer a manual re-run at the gate; the gate below is now the

@@ -103,6 +103,17 @@
             "statusMessage": "Noting when the gate opened..."
           }
         ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guard.js\"",
+            "timeout": 5,
+            "statusMessage": "Checking whether a read-only agent is about to write..."
+          }
+        ]
       }
     ],
     "SessionEnd": [
