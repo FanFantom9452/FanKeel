@@ -60,23 +60,41 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 四條 `path:line` 沒有同行引文，所以 `quoteBeside` 不檢查它們的行號 — [docs/collisions.md](docs/collisions.md). 三條在那裡，一條在 `docs/documents.md`；同一行補原文，別讓硬換行拆開。
+- 〔docs〕四條 `path:line` 沒有同行引文，所以 `quoteBeside` 不檢查它們的行號 — [docs/collisions.md](docs/collisions.md). 三條在那裡，一條在 `docs/documents.md`；同一行補原文，別讓硬換行拆開。
 
-- 兩張圖各有一條 `E2 --> F`：class 那張（E1 是 spike）對，稽核那張（E1 是 pairs）不對——它的 E2 寫 unfiled、undeclared、linked from nowhere，是單份文件的缺席，不是 F 的兩份對照 — [docs/pipeline.md](docs/pipeline.md). 既有的，該跟 E3、E4 一樣指向 F2。
+- 〔docs〕兩張圖各有一條 `E2 --> F`：class 那張（E1 是 spike）對，稽核那張（E1 是 pairs）不對——它的 E2 寫 unfiled、undeclared、linked from nowhere，是單份文件的缺席，不是 F 的兩份對照 — [docs/pipeline.md](docs/pipeline.md). 既有的，該跟 E3、E4 一樣指向 F2。
 
-- 稽核那張圖（E1 是 pairs）沒有 uncovered directories 的節點：`report()` 會印它，四顆 context 節點 E1-E4 都不是它 — [docs/pipeline.md](docs/pipeline.md). 既有的；圖宣稱列全就得列全，是這一頁自己寫下的規則。
+- 〔docs〕稽核那張圖（E1 是 pairs）沒有 uncovered directories 的節點：`report()` 會印它，四顆 context 節點 E1-E4 都不是它 — [docs/pipeline.md](docs/pipeline.md). 既有的；圖宣稱列全就得列全，是這一頁自己寫下的規則。
 
-- 同一份 sweep 類別表存在兩頁，守衛只釘一頁：`tests/docs-audit.test.js:585` 只讀 skills/fankeel/SKILL.md — [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md). sweep() 新增一類時，補了被釘的那頁測試就綠，另一頁靜靜變成不完整。
+- 〔docs〕同一份 sweep 類別表存在兩頁，守衛只釘一頁：`tests/docs-audit.test.js:585` 只讀 skills/fankeel/SKILL.md — [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md). sweep() 新增一類時，補了被釘的那頁測試就綠，另一頁靜靜變成不完整。
 
-- plan 的工作是刪檔時 `landed` 永遠不會觸發：被刪掉的檔進了 `pointsAt()` 的 unbuilt，`scripts/docs-audit.js:524` 就跳過 — [scripts/docs-audit.js](scripts/docs-audit.js). station 退役那幾份就是，18 份 current 沒一份被提議歸檔。
+- 〔docs〕`skills/fankeel/SKILL.md:1095` 用散文 defer 給 collisions.md，frontmatter 沒列文件，pair 還掛在 docs-audit 上 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md). `docs/pipeline.md:4` 示範怎麼宣告。
 
-- `map.md` 沒有「每一頁的狀態」：`buildMap()` 只逐頁列 intent、retired、undeclared 三桶，而且 retired 被 `MAX_PAGES` 砍到 30 — [skills/fankeel-survey/SKILL.md](skills/fankeel-survey/SKILL.md). 今天 166 份裡只有 44 份被點名。
+- 〔audit〕plan 的工作是刪檔時 `landed` 永遠不會觸發：被刪掉的檔進了 `pointsAt()` 的 unbuilt，`scripts/docs-audit.js:524` 就跳過 — [scripts/docs-audit.js](scripts/docs-audit.js). station 退役那幾份就是，18 份 current 沒一份被提議歸檔。
 
-- `skills/fankeel/SKILL.md:1095` 用散文 defer 給 collisions.md，frontmatter 沒列文件，pair 還掛在 docs-audit 上 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md). `docs/pipeline.md:4` 示範怎麼宣告。
+- 〔map〕`map.md` 沒有「每一頁的狀態」：`buildMap()` 只逐頁列 intent、retired、undeclared 三桶，而且 retired 被 `MAX_PAGES` 砍到 30 — [skills/fankeel-survey/SKILL.md](skills/fankeel-survey/SKILL.md). 今天 166 份裡只有 44 份被點名。
+
+- 〔map〕`docs/archive/` 裡 4 份仍掛 `status: design-intent`，`buildMap()` 把它們列進 planned, not built：archive 桶的頁不該進 intent 桶 — [lib/map.js](lib/map.js). 09-11 的 map 就是這樣。
+
+- 〔station〕`clock` 每個 stage 只存 `[first, latest]`，verify→build→verify 看起來像一次長駐：`touch()` 另外逐筆記 `moves` 的 `[stage, at]`，既有欄位不動 — [lib/registry.js](lib/registry.js). 早記才有資料可畫。
+
+- 〔judge〕`judge.js record` 收到空答案照樣歸檔、exit 0，09-11 發生過一次：空白要拒絕；fankeel-ask 要寫明答案從 `subagents/agent-<id>.jsonl` 取，`tasks/*.output` 是 0 bytes — [scripts/judge.js](scripts/judge.js).
 
 ## Needs a decision
 
-- `path:N-M` 範圍引用對 `docs-check` 完全隱形：`PATHISH` 不收範圍，既不檢查也不列為「無引文」 — [docs/documents.md](docs/documents.md). reference 角色還剩 5 條。教它讀範圍要先定義範圍「持有」什麼；改單行則會把描述整個區塊的散文弄壞，本分支收窄 `defects()` 那條時就發生過一次。
+- 〔docs〕`path:N-M` 範圍引用對 `docs-check` 完全隱形：`PATHISH` 不收範圍，既不檢查也不列為「無引文」 — [docs/documents.md](docs/documents.md). reference 角色還剩 5 條。教它讀範圍要先定義範圍「持有」什麼；改單行則會把描述整個區塊的散文弄壞，本分支收窄 `defects()` 那條時就發生過一次。
+
+- 〔audit〕drift 一律假設頁面過期（`scripts/docs-audit.js:399` `1. Drift.`），但 code 也會有邏輯錯誤，文件才是最後的依據。要定 drift 怎麼同時列出「頁過期」與「code 退化」兩個方向 — [scripts/docs-audit.js](scripts/docs-audit.js).
+
+- 〔caveman〕逐項盤點 20 skill、3 agent、6 command、2 hook，和你討論要哪些：要的改寫成 fankeel 規則，不裝它的 skill；定案後拆成 Ready 條目 — [簡報 §6.4](docs/improvement-brief.md#64-caveman-去依賴). §1.5 已列六項。
+
+- 〔memory〕原生 memory 只寫不清：錯的或過期的條目沒有東西重驗，本專案 MEMORY.md 有 76 條，多數引檔名、旗標、行號或量測數字。要定清理機制的形狀 — [簡報 §6.1](docs/improvement-brief.md#61-memory-清理).
+
+- 〔session〕主 session 堆疊約九成來自主迴圈自己的工具輸出，subagent 回傳只佔 8–9%；15/153 個 session 有 stage 倒退（verify>build 29 次）。要定 custom agent 以外的手段 — [簡報 §6.2](docs/improvement-brief.md#62-session-堆疊).
+
+- 〔station〕單一 session 的細節：plan 有幾個 task、各做什麼、主 agent 怎麼切派工（agent/agents/workflow）、stage 來回、哪段可以平行；`lib/station.js` 一樣都沒讀 — [簡報 §6.3](docs/improvement-brief.md#63-station-單-session).
+
+- 〔todo〕分群要不要改用 `###`：`todo-check.js:174` 任何標題都會重設 section，`INIT` 只認三個 `##`，:55 明說不按主題分；要改就動兩處 — [scripts/todo-check.js](scripts/todo-check.js). 目前以〔群組〕前綴代替。
 
 ## Waiting
 
@@ -119,3 +137,9 @@ entry waited for actually happening. It shrank when somebody read it.
 - todo-check 不驗 `path:line` 的行號：改成一個不存在的行仍然 exit 0 且說「no stale citations」 — [scripts/todo-check.js](scripts/todo-check.js). TODO.md 不在任何 bucket，docs-check 也不看它，兩支都不檢查。lifts when: 有行號過期被抓到. 09-11.
 
 - `skills/fankeel-audit/SKILL.md:113` 把「十條、五頁」寫死在 reference 頁裡，靠一個「today」撐著 — [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md). 沒有東西會重算它。lifts when: 那兩個數字變了而這句沒變. 09-11.
+
+- 〔caveman〕解耦：`lib/badge.js:166,181` 的註解、`tests/badge.test.js:134-141`、eval 用 `--setting-sources project` 的理由一起改 — [lib/badge.js](lib/badge.js). lifts when: §6.4 的取捨定案. 09-11.
+
+- 〔ponytail〕深度分析：6 skill、3 hook，其中 SubagentStart 把整套規則塞進 fankeel 每個 subagent；audit 的程式碼那一半由誰接 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴). lifts when: caveman 兩條落地. 09-11.
+
+- 〔ponytail〕解耦 `has('ponytail')`：`lib/render.js:108-110`、`lib/stages.js:352,441`、兩份 SKILL.md、三份測試；fallback 句已經在 — [lib/render.js](lib/render.js). lifts when: §6.5 定案. 09-11.

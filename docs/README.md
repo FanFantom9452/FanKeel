@@ -39,7 +39,7 @@ everything that needs more than a paragraph is here.
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
 | Every session on this machine, where the page finds the registries, and what `stale` means | [station.md](station.md) |
 | Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
-| What caveman and SEPIA do that this plugin does not — gates, evals, an evidence ledger, thin wrappers — plus three directions of the user's own, each a `TODO.md` entry | [improvement-brief.md](improvement-brief.md) — *a backlog, 繁體中文* |
+| What caveman and SEPIA do that this plugin does not — gates, evals, an evidence ledger, thin wrappers — plus the user's own directions, three from 09-08 and five from 09-11 — the ones still open are `TODO.md` entries | [improvement-brief.md](improvement-brief.md) — *a backlog, 繁體中文* |
 | Every dated report's headline figure with a stable ID, what its scope does not cover, and which pages cite it | [sources.md](sources.md) — *the evidence ledger* |
 | How two implementers running at once was built, task by task — its design is in `docs/archive/` | `docs/archive/2026-08-30-parallel-build.md` — *built* |
 | Every fankeel session on this machine on one page, what each cost, and how an abandoned one is put down | [decisions/2026-09-04-session-station-design.md](decisions/2026-09-04-session-station-design.md) |
@@ -96,6 +96,7 @@ everything that needs more than a paragraph is here.
 | Why the last eight TODO entries needed seven judgements before any of them could be built, and the three places those judgements corrected the design's own claims | `docs/archive/2026-09-10-todo-eight-design.md` — *built, 繁體中文* |
 | The ten tasks that close them, one of them ruled a deferral because nobody had verified the premise it rested on | `docs/archive/2026-09-10-todo-eight.md` — *built, 繁體中文* |
 | Why the scratch area could not be declared however legal the path looks, how one root cause survived nine rounds of review and then reappeared inside its own fix, and the six findings filed rather than built | [decisions/2026-09-11-todo-three.md](decisions/2026-09-11-todo-three.md) — *繁體中文* |
+| Why the five 09-11 directions were filed as TODO entries rather than built, the four places the approved draft departed from judgement 8, and the empty answer the first record filed | [decisions/2026-09-11-todo-split.md](decisions/2026-09-11-todo-split.md) — *繁體中文* |
 | Why the scratch area cannot be a `docs.json` bucket however legal the path looks, who owns each of three twice-described mechanisms, and why `source_of_truth` gets no single-owner rule | `docs/archive/2026-09-11-todo-three-design.md` — *built, 繁體中文* |
 | The five tasks that close those three, and the mutation each of the two new guard tests needs to be seen red — both pass the day they are written | `docs/archive/2026-09-11-todo-three.md` — *built, 繁體中文* |
 | The two tasks that anchored `survey`, `plan` and `audit`, and brought the survey skill's step 6 to what `task.js` does | `docs/archive/2026-09-05-anchor-remaining.md` — *built* |
@@ -138,6 +139,7 @@ is corrected by the next one, not by rewriting this.
 | 判斷 5：16 行 pattern skill 的極簡形式，要不要採用 | [judgements/2026-09-10-pattern-skill.md](judgements/2026-09-10-pattern-skill.md) — *judged 2026-09-10, fable* |
 | 判斷 6：subagent 的 Bash 與 PowerShell，白名單該擋到哪 | [judgements/2026-09-10-shell-whitelist.md](judgements/2026-09-10-shell-whitelist.md) — *judged 2026-09-10, fable* |
 | 判斷 7：verify 的 verifier 要釘哪個 agent，Workflow 的寫檔要求要不要留 | [judgements/2026-09-10-verifier-agent.md](judgements/2026-09-10-verifier-agent.md) — *judged 2026-09-10, fable* |
+| 判斷 8：09-11 的五個方向加上現有 8 條，怎麼拆成分群的 TODO | [judgements/2026-09-11-todo-split.md](judgements/2026-09-11-todo-split.md) — *judged 2026-09-11, fable* |
 
 ## The three scanners
 
