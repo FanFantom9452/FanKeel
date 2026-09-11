@@ -140,7 +140,39 @@ Claude Code 的原生 memory 只會寫、不會清。今天有 79 條：30 條�
 ## 7. station 的單一 session 細節
 
 使用者要知道：這個 session 有幾個 task、各做什麼、主 agent 怎麼切派工、哪裡本來可以
-平行。這些資料都已經在磁碟上，只是 station 沒有讀。
+平行。看過第一版 mockup 之後又加三樣：context 用量的折線圖；每次派工花多久、用多少
+token、什麼模型、多少錢（模型不同，計費不同）；以及大致還原這個 session 的實作過程。
+這些資料都已經在磁碟上，只是 station 沒有讀。
+
+**這一節推翻 09-08 redesign 的一部分。** `c005ebb` 拿掉了 09-06 的 burn/spend 雙線
+curve，也拿掉了 agent 的美元、request 數與耗時。那條 curve 出了兩個問題：兩種單位擠在
+90px 的框裡讀不出來；它和同一列印的數字對不起來，差到三倍。所以這次放回來時有兩個
+條件：只畫一條線；頁面上每一個總數都必須能由它下面列出的各列加總得到，並且來自同一個
+來源。
+
+- 面板分成可收合的區塊，依序是：既有的摘要（預設打開）、context 折線（預設打開）、
+  階段順序、任務、派工、過程還原（預設收合）。版面照
+  `.fankeel/build/2026-09-11-backlog-all/mockup.html`（第二版）。
+- context 折線只畫一條線。x 是時間，y 是每個 request 的 context（input 加 cache read
+  加 cache write），資料是 `summarise()`（`lib/usage.js:59`）本來就收集的
+  `byRequest`。`moves` 的階段邊界畫成直線，派工送出與回來畫成點，壓縮造成的下降一眼
+  看得出來。沒有時間戳記的 request 不畫，寫 `N requests with no time`。超過 240 點就
+  降取樣，並保留峰值。
+- 派工每一列加上耗時、tokens、美元。tokens 與美元來自那個 agent 自己的 transcript
+  （`agent-<id>.jsonl`，用 `summarise(..., {sidechain: true})` 加 `prices.costOf()`），
+  不用 `workflow_agent.tokens` 那個總數，因為要分 input、output、cache 才算得出錢。
+  耗時用 `spanOf()`（`lib/usage.js:163`）。美元旁邊印價目表的 `verified` 日期；價目表
+  不認得的模型寫 `unpriced`，不寫 0。
+- 過程還原：從主 transcript 抽事件，一個事件一列，照時間排——使用者的 prompt（前 60
+  字）、階段移動、gate 的問題與選到的答案、派工的送出與回來、改了哪些檔（同一回合的
+  合併成一列）、`git commit` 的 subject、測試的結果行（`ℹ pass`、`ℹ fail`）。上限
+  300 列；超過就只留 gate、階段、commit、派工，並寫出丟掉了幾列。
+- 快取：每個 session 抽出來的結果存在 `<configDir>/fankeel/station/cache/<session>.json`，
+  以 transcript 與 agent 目錄的大小加 mtime 為鍵。每次 `/fankeel` 只重讀有變動的，已經
+  結束的 session 讀過一次就不再讀。`summarise()` 現在每次都把全部重讀一遍，這個快取
+  連現有的讀取也一起省下。
+- 只留在本機：頁面與快取都放在 gitignored 的位置，還原裡的 prompt 片段不會離開這台
+  機器。
 
 - `lib/usage.js` 新增 `dispatchesOf()`，每一次派工一列：
   `{surface, turn, label, agentType, model, tokens}`。一般的 agent 從主 transcript 的
@@ -162,9 +194,10 @@ Claude Code 的原生 memory 只會寫、不會清。今天有 79 條：30 條�
 - workflow 的派工預設收合成每個 phase 一列（agent 數、tokens 合計），點開才展開逐列。
   mockup 全部展開時面板在 372px 寬下約 2,460px 高，新區塊從約 1,050px 處才開始。
 - 每個 stage 自己的成本照舊不顯示（`docs/station.md:129`）。
-- 成品檢查：這個 session 的頁面上，workflow 派工數等於它的 run 檔裡 `workflow_agent`
-  列的總數；標為完成的任務列數等於 ledger 的 `Task` 行數，任務總列數等於 `plantasks`
-  讀出的 task 數。每一對數字都出自同一個來源，必須一致。
+- 成品檢查：這個 session 的頁面上，折線的點數加上 `no time` 的數目，等於摘要列的
+  request 數；派工各列的美元加總，等於面板上 agent 的美元總數；workflow 派工數，等於
+  run 檔裡 `workflow_agent` 列的總數；標為完成的任務列數，等於 ledger 的 `Task` 行數。
+  每一對數字都出自同一個來源，必須一致。
 
 ## 8. TODO 的分群
 
