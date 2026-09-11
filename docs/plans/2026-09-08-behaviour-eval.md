@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-08
-source_of_truth: docs/plans/2026-09-08-behaviour-eval-design.md
+source_of_truth: docs/archive/2026-09-08-behaviour-eval-design.md
 ---
 
 # Behaviour Eval Implementation Plan
@@ -24,7 +24,7 @@ reading the prompt from stdin, `--output-format stream-json --verbose`,
 (loads the tree, not the installed cache), `--allowedTools`, `--max-turns`,
 `--model`. Git Bash for `scaffold_script`.
 
-**Spec:** [2026-09-08-behaviour-eval-design.md](2026-09-08-behaviour-eval-design.md)
+**Spec:** [2026-09-08-behaviour-eval-design.md](../archive/2026-09-08-behaviour-eval-design.md)
 
 ## Global Constraints
 

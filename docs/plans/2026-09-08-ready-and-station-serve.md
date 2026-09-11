@@ -11,7 +11,7 @@ last_verified: 2026-09-08
 
 **Tech Stack:** Node v24.9.0, zero dependencies, `node --test`. Browser side is ES5-compatible plain JavaScript, no build step, no framework — the page is opened from `file://` as often as from the server.
 
-**Spec:** [2026-09-08-ready-and-station-serve-design.md](2026-09-08-ready-and-station-serve-design.md)
+**Spec:** [2026-09-08-ready-and-station-serve-design.md](../archive/2026-09-08-ready-and-station-serve-design.md)
 
 ## Global Constraints
 
