@@ -531,15 +531,36 @@ test('the prose names as many sections as defects() actually sums', () => {
 // as a row, so a new key fails this test until it is sorted into one or the other.
 test('the sweep table names every category sweep() returns', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'docs-audit.js'), 'utf8');
-  const body = /function sweep\([\s\S]*?\n    return \{([\s\S]*?)\n    \};/.exec(src)[1];
+  // Take sweep()'s own body first, the way the test above takes defects()'s.
+  // Anchoring straight at `\n    return {` found a *different* function's
+  // return the moment sweep()'s was reformatted onto one line, and went on to
+  // parse that object's keys as though they were categories.
+  const fn = /\nfunction sweep\([\s\S]*?\n\}/.exec(src);
+  assert.ok(fn, 'scripts/docs-audit.js has no sweep() this test can find');
+  const literal = /\n\s*return \{([\s\S]*?)\n\s*\};/.exec(fn[0]);
+  assert.ok(literal, "sweep()'s return literal is not a shape this test can read");
   const keys = [];
-  for (const line of body.split('\n')) {
-    for (const entry of line.split(',')) {
+  for (const line of literal[1].split('\n')) {
+    for (const entry of line.replace(/\/\/.*$/, '').split(',')) {
       const token = entry.trim();
       if (!token) continue;
       keys.push(token.includes(':') ? token.slice(0, token.indexOf(':')).trim() : token);
     }
   }
+
+  // A nested value, or a string with a comma in it, splits into tokens that are
+  // not keys at all, and the assertion below then names garbage instead of
+  // whatever somebody actually added. Say which token broke the parse.
+  for (const key of keys) {
+    assert.match(key, /^[A-Za-z_$][\w$]*$/,
+      "sweep()'s return literal has a shape this parser cannot read — "
+      + JSON.stringify(key) + ' is not a key');
+  }
+
+  // And that the parse landed on the right object: sweep() has reported drift
+  // since the beginning, so drift missing means this read something else.
+  assert.ok(keys.includes('drift'),
+    "the keys parsed out of sweep()'s return do not include drift — this test read the wrong object");
 
   // Not findings: what the run was, not what it found.
   const BOOKKEEPING = new Set(['tree', 'error', 'since', 'implied', 'markdown',
