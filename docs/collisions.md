@@ -228,8 +228,11 @@ hook denies a command only when both are true: `payload.agent_type` — read
 bare or with a `fankeel:` prefix, `lib/guard.js`'s `readOnlyAgentType` —
 names `fankeel-reader`, `fankeel-reviewer` or `fankeel-judge`, and the command
 matches `writesFiles()`'s fixed list — a redirect to anywhere but `/dev/null`
-or `$null`, `tee`, `rm`, `mv`, `cp`, `sed -i`, a writing `git` subcommand, or
-one of four PowerShell cmdlets. `fankeel-verifier` is not on the list —
+or `$null`, `tee`, `rm`, `mv`, `cp`, `sed -i` or `--in-place`, a `git`
+subcommand that writes the tree or the index (`add`, `commit`, `checkout`,
+`switch`, `restore`, `reset`, `stash`, `clean`, `apply`, `am`, `merge`,
+`rebase`, `cherry-pick`, `revert`, `pull`), or one of eight PowerShell
+cmdlets. `fankeel-verifier` is not on the list —
 writing its own evidence file is what it is for.
 
 The list is a denylist rather than an allowlist for the reason the rejected

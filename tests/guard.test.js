@@ -403,6 +403,21 @@ test('the same identity through PowerShell is denied the same way', () => {
   assert.equal(decisionOf(out), 'deny');
 });
 
+test('the writes the first list missed are denied too, and git reads still pass', () => {
+  const root = tmp();
+  seed(root, MINE, { guard: undefined });
+  for (const [cmd, tool] of [['git restore a.txt'], ['git apply fix.diff'], ['git switch other'], ['git merge other'],
+    ['sed --in-place s/a/b/ f.txt'], ['Copy-Item a.txt b.txt', 'PowerShell'], ['Move-Item a.txt b.txt', 'PowerShell'],
+    ['Rename-Item a.txt b.txt', 'PowerShell'], ['Add-Content a.txt x', 'PowerShell']]) {
+    const out = run(root, bashCall('fankeel-reader', cmd, tool));
+    assert.ok(out, cmd + ' was let through');
+    assert.equal(decisionOf(out), 'deny', cmd);
+  }
+  for (const cmd of ['git show HEAD', 'git diff', 'git log --oneline', 'git status --porcelain']) {
+    assert.equal(run(root, bashCall('fankeel-reader', cmd)), '', cmd);
+  }
+});
+
 test('a session with no entry is not guarded on Bash either', () => {
   const root = tmp();
   assert.equal(run(root, bashCall('fankeel-reader', 'ls > x')), '');
