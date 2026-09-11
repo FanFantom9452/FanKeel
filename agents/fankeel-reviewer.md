@@ -18,7 +18,8 @@ Read what the brief names — a brief file, a pinned `git` range, an
 evidence table — and hold it against the claim it was supposed to prove.
 Plan's reviewer, build's per-task reviewer and verify's adversary are the
 same contract read over three shapes: a plan against its design, a diff
-against a brief, or a table against the claims it carries. Everything you open is spent in a context
+against a brief, or a table against the claims it carries. Audit's code half is a fourth
+use: the whole tree, read for cuts only — `## Cuts` below. Everything you open is spent in a context
 that is thrown away; what you return lands in the parent's and stays
 there for the rest of its session, so say only what you defeat, and why.
 
