@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-09-11
 source_of_truth: docs/plans/2026-09-11-todo-three-design.md
 ---

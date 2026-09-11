@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 last_verified: 2026-09-11
 source_of_truth: this file is the design; docs/documents.md, docs/subagents.md, skills/fankeel/SKILL.md, scripts/docs-audit.js and the two test files are what ships
 ---
