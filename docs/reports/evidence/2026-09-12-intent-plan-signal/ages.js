@@ -13,12 +13,17 @@ const git = (args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' })
 const files = git(['ls-files']).split('\n').map((s) => s.trim()).filter(Boolean);
 const roots = new Set(files.map((f) => f.split('/')[0]));
 
-// The second-newest commit on a path: the newest is the rename into archive,
-// which is the trap docs/reports/2026-09-07-audit-constants.md:31-35 names.
+// The newest commit on a path — only ever called on named code files, which
+// are never archived, so there is no rename-into-archive commit to skip past.
 const lastTouch = (rel) => {
     const out = git(['log', '--format=%ad', '--date=short', '--', rel]);
     return out ? out.split('\n')[0] : null;
 };
+// The first commit that added this path, skipping past a later rename: the
+// newest `--diff-filter=A --follow` row can be the rename into archive rather
+// than the original filing, which is the trap
+// docs/reports/2026-09-07-audit-constants.md:31-35 names. Called on plan pages,
+// which can be archived, so that row has to be skipped rather than trusted.
 const filedAt = (rel) => {
     const out = git(['log', '--diff-filter=A', '--follow', '--format=%ad', '--date=short', '--', rel]);
     const rows = out ? out.split('\n') : [];

@@ -95,17 +95,26 @@ AFTER。這條訊號量到的是「這個檔案本來就常換」，不是「這
 這四份今天仍然是 `status: design-intent`——被歸檔了，但從沒被翻過來。歸檔一旦
 發生，頁面的 role 就離開 `plan`，於是也離開了這個問題原本擔心的檢查範圍。
 
-拿 `docs.contractOf`（不是重新拼的 regex）對 `docs/` 底下所有檔案跑一次普查（這
-個數字包含本頁自己，因為本頁一旦寫入就落在 `docs/` 底下）：137 份檔案，88 份
-`current`、33 份 `archived`、9 份沒有 `status`、5 份 `design-intent`、2 份
-`superseded-by`。5 份 `design-intent` 裡，4 份就是上表列出的 `docs/archive`
-頁面，剩下 1 份是 `docs/plans/2026-09-09-design-class-prompt.md`——也就是本次
-的量測主體，一份目前仍在設計階段、尚未落地的計畫。
+拿 `docs.contractOf`（不是重新拼的 regex）對整個 repo 的 git-tracked `.md`
+跑一次普查，母體換成 `git ls-files` 篩出的全部 markdown，不再限定
+`docs/`——這才是 `scripts/docs-audit.js:412`（`markdown =
+files.filter(isMarkdown)`，篩的對象是 `trackedFiles()` 回傳的完整追蹤清單）
+和 `lib/map.js:224-237` 的 `markdownUnder()` 實際讀的母體；對著 `docs/` 這個
+較窄的子集普查，答不了這兩支消費者真正面對的問題。這個數字包含本頁自己：
+178 份檔案，109 份 `current`、33 份 `archived`、29 份沒有 `status`、5 份
+`design-intent`、2 份 `superseded-by`。population 從 137 擴大到 178，多出的
+41 份落在 `skills/`、`agents/`、`output-styles/`、`.claude/agents/` 底下，多
+數進了 `current` 或無 `status` 兩個桶，`archived` 和 `superseded-by` 沒有
+變。5 份 `design-intent` 裡，4 份仍是上表列出的 `docs/archive` 頁面，剩下 1
+份仍是 `docs/plans/2026-09-09-design-class-prompt.md`——也就是本次的量測主
+體，一份目前仍在設計階段、尚未落地的計畫。母體擴大 41 份，`design-intent`
+的計數一份沒多——零實例的結論不是靠一個窄母體撐出來的，換成兩支消費者實
+際讀的母體，結論反而更站得住腳。
 
-換句話說，「做完但 `status` 沒翻」這個失敗模式，今天的實際發生次數是零。加一
-條檢查，等於為一個目前不存在、而且量出來的兩個候選訊號都證明分不開真計畫的
-情境預先蓋一條規則。決定是不加：`docs-audit` 對這種情況不回報，
-`scripts/docs-audit.js:584` 維持原狀。
+換句話說，「做完但 `status` 沒翻」這個失敗模式，在整個 repo 追蹤的 markdown
+裡，今天的實際發生次數仍是零。加一條檢查，等於為一個目前不存在、而且量出來
+的兩個候選訊號都證明分不開真計畫的情境預先蓋一條規則。決定是不加：
+`docs-audit` 對這種情況不回報，`scripts/docs-audit.js:584` 維持原狀。
 
 ## `lib/map.js` 那一半：同一個判斷，同一次量測
 
@@ -157,7 +166,7 @@ planned-not-built。前面普查那段數字（`census.js`）量到的五份 `de
 
 - 訊號一那張表（`命名數 > 0 且 unbuilt = 0？`）由 `points.js` 產生。
 - 訊號二那張表（`AFTER` / `before` / `same`）由 `ages.js` 產生。
-- 普查那段數字（137/88/33/9/5/2）由 `census.js` 產生。
+- 普查那段數字（178/109/33/29/5/2）由 `census.js` 產生。
 - 歸檔落差那張表沒有腳本產生，是逐一對四份 `docs/archive` 頁面手動跑下面這行
   指令、照輸出抄的：
   `git log --follow --diff-filter=AR --format='%ad %h %s' --date=short -- <path>`
