@@ -107,6 +107,49 @@ AFTER。這條訊號量到的是「這個檔案本來就常換」，不是「這
 情境預先蓋一條規則。決定是不加：`docs-audit` 對這種情況不回報，
 `scripts/docs-audit.js:584` 維持原狀。
 
+## `lib/map.js` 那一半：同一個判斷，同一次量測
+
+TODO 原文點名的盲點是兩個，不是一個：上面幾節量的是 `docs-audit` 的 landed
+判斷這一半；`lib/map.js` 的「未建清單」分不出「計畫工作真的做完但 `status`
+沒翻」的頁面，是另一半，到這裡都還沒被提到。
+
+`lib/map.js:288` 的
+`else if (contract.kind === 'intent') out.intent.push(rel);`，用的是跟
+`scripts/docs-audit.js:584` 完全相同的 `kind === 'intent'` 判斷。這個判斷餵
+進兩個地方：`lib/map.js:413-416` 印出來的「planned, not built — N:」清單，
+以及 `:381` 那行把 `by.intent` 算進 `documents:` 摘要的 `planned` 計數——一
+份誤判的頁面因此既上榜，也讓一個統計數字虛報。`:410-412` 的註解把這份清單稱
+作「這個外掛裡唯一產生的東西，也是地圖存在的理由：一頁描述系統打算變成什麼
+樣子的文字，要讀成 intent，而不是一段已經 drift 掉的描述」。
+
+兩個消費者都站在一個前置過濾器後面。`docs-audit` 要求
+`roleOf(tree, rel) === 'plan'`（`scripts/docs-audit.js:579`）；
+`lib/map.js:270-272` 則是先問 `docs.roleOf(tree, rel) === 'archive'`，是就
+整批收進 `retired`，不管 frontmatter 寫什麼——而且這一步排在 `kind` 判斷之
+前。`:265-269` 的註解記著 2026-09-11 那次修正：`docs/archive/` 底下當時有
+24 份頁面仍寫著 `current` 或 `design-intent`，其中 4 份第二種曾經被錯列進
+planned-not-built。前面普查那段數字（`census.js`）量到的五份 `design-intent`
+頁面裡，四份正是這批 archive 頁面，兩個前置過濾器都會把它們擋下來；能同時通
+過兩邊過濾器的只剩 `docs/plans/2026-09-09-design-class-prompt.md` 一份。
+`lib/map.js` 這一半的曝險範圍因此跟 `docs-audit` 那一半一樣大——不是更大的
+問題，是同一份頁面。
+
+訊號一、訊號二失敗，失敗在 `kind === 'intent'` 這個判斷本身在檔案層級分不出
+「還在等」跟「做完沒翻」——這是判斷的性質，跟哪一個消費者讀它無關。所以前
+面兩節的量測已經同時回答了兩半：這裡沒有，也不需要，為 `lib/map.js` 另外跑
+一次探針或量測。上面這段結構論證——兩個前置過濾器把曝險收斂到同一份頁面、
+訊號失敗是判斷本身而非消費者的性質——就是全部的依據，沒有第三張表可以再產
+生。
+
+後果不一樣，值得寫清楚。`docs-audit` 那一半丟失的是「提示去歸檔一份已完成的
+計畫」。`lib/map.js` 那一半更重：`skills/fankeel-survey/SKILL.md:95` 把
+「planned, not built」訂為 survey 該最先讀的段落，所以一份工作已經做完的計
+畫，會持續被之後每一個 session 讀成「還沒建」——這正是地圖存在要防止的那種
+誤讀。
+
+決定不變：`lib/map.js:288` 也維持原狀，理由跟 `scripts/docs-audit.js:584`
+相同，不是另一個獨立判斷的結果。
+
 ## 量測方式
 
 證據目錄：`docs/reports/evidence/2026-09-12-intent-plan-signal/`。本頁四張表，

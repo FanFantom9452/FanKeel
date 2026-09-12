@@ -69,6 +69,8 @@ evidence the work happened. This exemption was re-opened and re-confirmed on
 plan whose work had landed from one that was merely waiting were measured and
 both scored identically against a landed control, so the exemption stands —
 [docs/reports/2026-09-12-intent-plan-signal.md](../../docs/reports/2026-09-12-intent-plan-signal.md).
+The same test gates `lib/map.js`'s planned-not-built list too, and nothing in
+that measurement was specific to the sweep — the same finding holds there.
 One that declares `last_verified` is dated by
 when somebody read it rather than by when somebody touched it; a pair where
 one page declares the other as its `source_of_truth` stops being a pair. The
