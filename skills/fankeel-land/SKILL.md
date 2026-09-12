@@ -33,8 +33,8 @@ what the gate asks — never something to settle first and report afterwards.
 | Looks like a finding | Why it is not |
 |---|---|
 | A commit with only one short paragraph of prose | `lib/stages.js:211` caps it there (`one paragraph only for what a bullet cannot hold`) — the bullets are the record; more prose is not owed. |
-| A `shipped:` list that skips files the diff touched | It is one line per new capability, not one per file — `lib/stages.js:389` (`shipped: is one line per thing someone can now do that they could not`), drawn from the ledger's completed entries — a file with no capability of its own has nothing to add there. |
-| A landed plan still sitting on disk, not yet archived | `lib/stages.js:398` archives it only `then is archived, after asking` — a plan waiting on that answer is not forgotten, it is mid-step. |
+| A `shipped:` list that skips files the diff touched | It is one line per new capability, not one per file — `lib/stages.js:390` (`shipped: is one line per thing someone can now do that they could not`), drawn from the ledger's completed entries — a file with no capability of its own has nothing to add there. |
+| A landed plan still sitting on disk, not yet archived | `lib/stages.js:399` archives it only `then is archived, after asking` — a plan waiting on that answer is not forgotten, it is mid-step. |
 
 ## 1. The full suite, on the tree you are about to integrate
 

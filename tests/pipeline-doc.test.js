@@ -16,7 +16,7 @@ const { byName } = require('../lib/stages.js');
 const PIPELINE = path.join(__dirname, '..', 'docs', 'pipeline.md');
 
 const ANCHOR = {
-  survey: 'Nothing matched is a finding',
+  survey: 'every path:line checked before it returns',
   design: 'the test that fails now and passes after',
   plan: 'the smallest unit carrying its own test cycle',
   build: 'do not improve adjacent code',
