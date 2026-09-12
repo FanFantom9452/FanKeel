@@ -16,6 +16,7 @@ const SKILLS = [
     'fankeel-audit',
     'fankeel-build',
     'fankeel-design',
+    'fankeel-explain',
     'fankeel-land',
     'fankeel-plan',
     'fankeel-survey',
