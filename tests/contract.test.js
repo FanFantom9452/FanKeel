@@ -253,7 +253,7 @@ test('the undeclared count is one line, not a list of every page', () => {
 // Twelve files carry the version and nothing kept them together: two manifests
 // and one line of frontmatter in each of the ten skills. A release that missed
 // one left a skill announcing a version the plugin is not, which is the kind of
-// wrong nobody reads carefully enough to catch — the number is right in ten
+// wrong nobody reads carefully enough to catch — the number is right in eleven
 // places.
 //
 // Listed rather than globbed on the manifests, so adding a third one has to be a
