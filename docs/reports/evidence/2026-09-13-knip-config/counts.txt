@@ -1,0 +1,17 @@
+# namespace-require census, tests/
+run: 2026-09-13, uncapped, no pagination
+
+predicate, namespace binding:
+  ^const [A-Za-z_][A-Za-z0-9_]* = require\(.\.\./(lib|scripts|hooks)/
+predicate, destructured:
+  ^const \{.*\} = require\(.\.\./(lib|scripts|hooks)/
+
+namespace, lib+scripts+hooks:   53 lines across 38 files
+namespace, ../lib/ only:        44 lines across 34 files
+destructured, lib+scripts+hooks: 35 lines across 26 files
+denominator, tests/*.test.js:   73 files
+
+The page quotes the first and the third. An earlier draft quoted 44/34
+taken from a paginated grep: the figure happened to be right because that
+tool reports a whole-set total, but it was quoted from a capped run and
+carried no predicate, so it could not be checked or reproduced.

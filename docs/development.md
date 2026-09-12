@@ -96,7 +96,7 @@ regenerates the file and deep-equals it against what is committed: a rule
 that grew without regenerating, or a budget lowered below what a stage
 actually measures, fails there rather than drifting silently.
 
-## `knip.json` — which files and packages nothing reaches
+## `knip.json` — which files nothing reaches
 
 `knip` is the third command above and the only one this repository does not own.
 [skills/fankeel-audit/rationale.md](../skills/fankeel-audit/rationale.md) says why
@@ -116,11 +116,21 @@ genuinely used exports unused. One barrel shows it with one variable changed:
 `knip --trace-export badgeWord`, destructured at `tests/badge.test.js:9`,
 returns `import[badgeWord] ⎆ ✓`; `knip --trace-export clearBadge`, reached as
 `badge.clearBadge`, returns `(no imports found) ✗` — and `scripts/task.js:127`
-and `hooks/inject.js:128` call it. The shape is not rare here: 44 namespace
-requires across 34 test files. `TODO.md` carries what would lift the exclusion.
+and `hooks/inject.js:128` call it. The shape is not rare here: counting lines
+under `tests/` that bind a module from `../lib/`, `../scripts/` or `../hooks/`
+to a plain identifier rather than destructuring it gives 53 lines across 38 of
+the 73 test files, against 35 destructured lines across 26. `TODO.md` carries
+what would lift the exclusion.
 
 **A green run has to be able to go red.** An `ignore` wide enough to silence 228
 files is wide enough to silence a real one, and the exit code cannot tell them
-apart — so the check is a control rather than a clean run: drop a file nothing
-imports into `lib/`, and `knip` must name that file and nothing else. On
-2026-09-13 it reported exactly `Unused files (1)` and that one path.
+apart — so both halves of this config are controlled rather than merely run
+clean. For `ignore`: drop a file nothing imports into `lib/`, and `knip` must
+name that file and nothing else; on 2026-09-13 it reported exactly
+`Unused files (1)` and that one path. For `exclude`: append a genuinely dead
+export to a module that is reached, then run the same tree twice with only that
+field changed. With it, `knip` exits 0 and says nothing; without it, `knip`
+exits 1, reports `Unused exports (147)` — the standing 146 plus the probe — and
+names the probe. So the exclusion does hide a dead export in `lib/`, which is
+its measured cost rather than an asserted one. The runs are in
+[reports/evidence/2026-09-13-knip-config](reports/evidence/2026-09-13-knip-config/provenance.txt).
