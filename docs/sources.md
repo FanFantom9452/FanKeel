@@ -17,9 +17,11 @@ counts rows across both tables and not files, and today the two numbers agree.
 When they stop agreeing it is the heading that has to move, because a row can
 only be added by hand and a report cannot.
 The files under `docs/reports/evidence/` are the raw evidence behind a
-report, which for four of those reports is `claude -p --output-format json`
-output and diffs and for the newest is re-runnable probe scripts; none of
-these directories are reports of their own, so they carry no row — a row's
+report, and what that is varies with the measurement: mostly
+`claude -p --output-format json` output beside the shell script that
+produced it, with one directory carrying a diff and the newest holding
+nothing but re-runnable node probes. None of these directories are reports
+of their own, so they carry no row — a row's
 Link column points at the report, and the report itself points at its
 evidence directory when it has one. Two of the directories there stand behind no report at all:
 `2026-09-08-route-typo` behind an eval case and `2026-09-10-exception-cases`
