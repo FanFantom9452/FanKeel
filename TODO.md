@@ -67,8 +67,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔station〕`dispatchesOf()` 還有兩條分支沒有測試走過，兩條都只有在有第二個 run 檔時才分得出來：有 run 檔卻沒有對應派工的 run（`disp` 應為 `null`），以及 `runId` 缺席時退回檔名 — [lib/usage.js](lib/usage.js).
-
 ## Needs a decision
 
 - `docs-audit` 把還沒跑的 `docs/plans/2026-09-09-design-class-prompt.md`（`design-intent`）算成已落地，每次都 exit 1；landed 該不該跳過 design-intent — [scripts/docs-audit.js](scripts/docs-audit.js).
