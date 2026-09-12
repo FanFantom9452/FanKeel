@@ -125,7 +125,7 @@ contradiction could live, which is not evidence that one does.
 | Section | Defect | What it means |
 |---|---|---|
 | **fallen behind the code they describe** | yes | a reference page is older than a file it names. `verified` in the line means the page declared the date; `last touched` means it came from git, which is the weaker claim |
-| **plans look landed** | yes | every file the plan named now exists or git has seen it deleted, and nobody has touched the plan for three days. A plan declaring itself `design-intent` is never judged here — it names files as reading, not as done work, so their existing proves nothing. It is a record, not a plan — offer to archive it |
+| **plans look landed** | yes | every file the plan named now exists or git has seen it deleted, and nobody has touched the plan for three days. A plan declaring itself `design-intent` is never judged here — it names files as reading, not as done work, so their existence proves nothing. It is a record, not a plan — offer to archive it |
 | **index** | yes | declared but not written, or entries pointing at nothing, or documents missing from it |
 | **diagrams behind their directory** | yes | a mermaid graph naming most of a directory is claiming to list it, so the files it does not name read as files that do not exist |
 | **pairs describing the same code** | no | two reference pages both name the same file and neither defers. This is where single source of truth breaks |
