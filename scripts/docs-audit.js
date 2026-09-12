@@ -579,8 +579,8 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
         if (docs.roleOf(tree, rel) !== 'plan') continue;
         // A plan that declares itself `design-intent` is a prompt for work not
         // yet done, and the files it names are what it tells the reader to go
-        // read — on disk from day one, not because the plan succeeded. The same
-        // contract already excuses such a page from drift.
+        // read — on disk from day one, not because the plan succeeded. `kind`
+        // is what `landed` newly reads; role alone already decides drift.
         if (contracts.get(rel).kind === 'intent') continue;
         const at = dates.at(rel);
         if (!at || daysBetween(now, at) < settled) continue;
