@@ -64,7 +64,12 @@ above gets sharper once they are gone. A page that declares
 `status: design-intent` stops being reported as drifting, and a plan under
 that status stops being judged landed too — it is a statement of work not
 yet done, and the files it names are what it tells the reader to go read, not
-evidence the work happened; one that declares `last_verified` is dated by
+evidence the work happened. This exemption was re-opened and re-confirmed on
+2026-09-12, when two candidate signals for telling apart a `design-intent`
+plan whose work had landed from one that was merely waiting were measured and
+both scored identically against a landed control, so the exemption stands —
+[docs/reports/2026-09-12-intent-plan-signal.md](../../docs/reports/2026-09-12-intent-plan-signal.md).
+One that declares `last_verified` is dated by
 when somebody read it rather than by when somebody touched it; a pair where
 one page declares the other as its `source_of_truth` stops being a pair. The
 shape of that contract is in [docs/documents.md](../../docs/documents.md).

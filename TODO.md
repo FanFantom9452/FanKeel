@@ -71,8 +71,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔station〕總覽改版：兩個專案並排、單一專案、某一天的花費、趨勢折線。另起一次設計，附自己的 mockup — [docs/station.md](docs/station.md).
 
-- 計畫工作真的做完但沒把 status 從 design-intent 翻成 current，對 landed 永久隱形，`lib/map.js` 的未建清單也分不出來；docs-audit 要不要照樣回報 — [scripts/docs-audit.js](scripts/docs-audit.js).
-
 ## Waiting
 
 - Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it. lifts when: a run is seen ignoring one. 09-06.
