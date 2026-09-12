@@ -1,0 +1,41 @@
+# provenance - knip config task
+written: 2026-09-12T19:23:59Z
+
+## HEAD and the branch
+HEAD: 3dc9718225feb0f68dde814e805562a04092b907
+BASE of the whole task: 648e22335c0caeb4d15861e8edf48c2f4510dcb0
+3dc9718 docs: the knip config written down, the TODO entry halved
+3587a3e build: a knip config, and the exports row turned off
+
+## ranges, pinned
+row 1 (knip.json):  648e22335c0caeb4d15861e8edf48c2f4510dcb0..3587a3eb70a7b1abb4abe34d3ffb8bccbb03a893
+rows 2-4 (docs):    3587a3eb70a7b1abb4abe34d3ffb8bccbb03a893..3dc9718225feb0f68dde814e805562a04092b907
+
+## working tree at the time of writing (empty means clean)
+[end of porcelain]
+
+## identity: the committed config vs the working copy
+committed 3587a3e: b78b3ab745c4a562182904fce165d67e
+working copy:      b78b3ab745c4a562182904fce165d67e
+
+## tool
+knip: 6.32.2
+node: v24.9.0
+
+## what each evidence file holds
+a-clean.txt       entry+ignore only, no exclude: exit 1, 146 unused exports remained
+b-orphan.txt      same config, control orphan present: caught it, plus the 146
+c-restored.txt    same config, orphan removed
+final-a-clean.txt final config: exit 0, zero lines
+final-b-orphan.txt final config, control orphan present: exit 1, Unused files (1) only
+final-c-restored.txt final config, orphan removed: exit 0
+final-d-deps.txt  knip --dependencies, the audit stage's own command: exit 0, zero lines
+suite.txt         npm test on the tree holding all three doc edits: 1433 pass, 0 fail
+
+## the exclude control, run after the first review
+arm 1, shipped config (exclude present):  exit 0, zero lines, __deadProbe not reported
+arm 2, same tree same probe, exclude removed: exit 1, Unused exports (147), __deadProbe at lib/badge.js:223:16
+one variable: the exclude field. 147 is the standing 146 plus the one probe appended to lib/badge.js.
+lib/badge.js was restored with git checkout and the tree verified clean afterwards.
+
+suite.txt is not copied into docs/reports/evidence - it stays in .fankeel/build/ for size.
