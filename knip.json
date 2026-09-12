@@ -1,0 +1,5 @@
+{
+  "entry": ["hooks/*.js", "scripts/*.js", "tests/**/*.test.js"],
+  "ignore": [".fankeel/**", "docs/reports/evidence/**"],
+  "exclude": ["exports"]
+}
