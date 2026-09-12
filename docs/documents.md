@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-12
+last_verified: 2026-09-13
 source_of_truth: lib/docs.js, lib/map.js, lib/profile.js, scripts/layout.js, scripts/docs-check.js, scripts/docs-audit.js, skills/fankeel/SKILL.md, skills/fankeel-survey/SKILL.md
 ---
 
@@ -318,8 +318,8 @@ an index is a markdown file like any other, so anything it fails to list is
 unreachable regardless of what else in the tree links there. Two names for one
 problem is how a report starts looking longer than it is.
 
-Both branches are tested. `tests/docs-audit.test.js:434-440` covers the
-no-index case; `tests/docs-audit.test.js:445-453` covers the index case and
+Both branches are tested. `tests/docs-audit.test.js:475-481` covers the
+no-index case; `tests/docs-audit.test.js:486-495` covers the index case and
 asserts `orphans` comes back empty. This project declares an index, so the
 branch that would populate
 `orphans` never runs here — the empty result is the index case behaving as

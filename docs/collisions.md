@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-11
+last_verified: 2026-09-13
 source_of_truth: lib/overlap.js, lib/guard.js, lib/live.js, lib/registry.js, lib/dirty.js, scripts/task.js, scripts/orient.js, hooks/touch.js, hooks/inject.js
 ---
 
@@ -278,8 +278,9 @@ entries, and only ever on your say-so.
 
 `lib/registry.js` is explicit that nothing deactivates anything: a session ending,
 a timer expiring and a terminal dying all leave `active` exactly as it was. A
-clean end does write four fields — `ended`, `model`, `usage` and `spend`,
-from `hooks/leave.js` — and nothing else. That
+clean end does write `ended`, and `model`, `usage` and `spend` where the
+transcript could be read — `hooks/leave.js:84-89`, with the conditions on each
+of those three in [registry.md](registry.md) — and nothing else. That
 is right — a terminal that dies at midnight has to find its task at nine, and a
 registry that expires claims on a timer is one that quietly loses work.
 

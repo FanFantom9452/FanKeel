@@ -601,7 +601,7 @@ In `scripts/eval.js`:
 
 > **勘誤（2026-09-09，Task 3 落地之後）**：下面這份是 2026-09-08 當天寫下的
 > `scripts/eval.js`，原樣保留作為那天的紀錄。它的參數契約後來被
-> [閘門、污染控制、profile 證據](2026-09-09-gate-and-controls.md) 改掉三處：fence 裡的
+> [閘門、污染控制、profile 證據](../archive/2026-09-09-gate-and-controls.md) 改掉三處：fence 裡的
 > usage 行、`--model defaults to sonnet` 那一句、以及 `parseArgs` 裡 model 的預設值。
 > 今天的契約是 `scripts/eval.js:35` `--model is required, no default`；預設值在
 > `scripts/eval.js:61` 已經是 `null`，不給 `--model` 會在 spawn 之前拒跑；usage 在

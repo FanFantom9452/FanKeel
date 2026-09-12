@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-09
-source_of_truth: docs/plans/2026-09-09-gate-and-controls-design.md
+source_of_truth: docs/archive/2026-09-09-gate-and-controls-design.md
 ---
 
 # Gate and Controls Implementation Plan
