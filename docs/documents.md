@@ -178,7 +178,7 @@ because each replaces a guess with a statement:
 | Key | Replaces | Why the guess was weak |
 |---|---|---|
 | `last_verified` | git mtime | mtime says somebody touched the file. A whitespace fix does that and verifies nothing. `last_verified` says somebody read it and it was true. |
-| `status` | the directory it sits in | `design-intent` is the word that was missing. A page describing what a system is *meant* to become is not drifting when the code does not match it — it is doing its job. Without somewhere to say that, a roadmap gets written into an architecture page and then read as a description of what exists. |
+| `status` | the directory it sits in | `design-intent` is the word that was missing. A page describing what a system is *meant* to become is not drifting when the code does not match it — it is doing its job. Without somewhere to say that, a roadmap gets written into an architecture page and then read as a description of what exists. The same word, read on a plan, says its named files are what it tells the reader to go read rather than evidence the work happened — so it is kept out of the landed check too. |
 | `source_of_truth` | reading the page for its subject | A comma list, doing two jobs told apart by what each entry names. Code: this is what the page is about, said outright rather than inferred. Links, code spans and fenced blocks are all read, so the tag names a subject a page never writes out rather than standing in for one it writes where nothing looked. A document: this page defers to that one, so the two are not a pair. Two pages describing one file is only a defect when neither defers. `generated-by` says the file is rewritten rather than maintained, which makes its age meaningless. |
 
 **One file may have several owners, and that is not a defect to fix.** The
@@ -310,9 +310,9 @@ counts every status, so a page named nowhere below reads as current.
 ### `orphan`, deliberately empty where an index exists
 
 An orphan is a document under the docs root that no other document links to.
-`scripts/docs-audit.js:637` (`index.exists ? [] :`) reports them only where the project declares no
+`scripts/docs-audit.js:642` (`index.exists ? [] :`) reports them only where the project declares no
 index. Where one exists, the same gap is already reported, and worded better,
-as `missing from the index` (`scripts/docs-audit.js:624` is `if (!linked.has(rel)) index.missing.push(rel);`):
+as `missing from the index` (`scripts/docs-audit.js:629` is `if (!linked.has(rel)) index.missing.push(rel);`):
 an index is a markdown file like any other, so anything it fails to list is
 unreachable regardless of what else in the tree links there. Two names for one
 problem is how a report starts looking longer than it is.
@@ -325,7 +325,7 @@ branch that would populate
 built, not a gap in the check.
 
 Orphans never fail a run. `defects()` opens at
-`scripts/docs-audit.js:882` (`function defects(r) {`) and sums drift, landed
+`scripts/docs-audit.js:887` (`function defects(r) {`) and sums drift, landed
 plans, a broken index and diagrams; `orphans` is not a term in that sum.
 
 ## The list is the output, not the count

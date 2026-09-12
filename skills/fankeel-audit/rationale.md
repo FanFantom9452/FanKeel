@@ -20,11 +20,11 @@ That is a shortlist someone can finish.
 
 That fortnight is the **drift** window, and drift's alone — it measures how long
 a page has been wrong while the code it names moved on. The landed-plan check
-asks something else, whether anyone has come back to the plan, and it settles
-after **three days**. One number for both meant the landed check could not fire
-on a repository younger than a fortnight. Passing `--since` explicitly still
-sets both, so `--since 0` remains the way to see everything either window is
-holding back.
+asks something else, whether anyone has come back to a plan that is not itself
+`design-intent`, and it settles after **three days**. One number for both meant
+the landed check could not fire on a repository younger than a fortnight.
+Passing `--since` explicitly still sets both, so `--since 0` remains the way to
+see everything either window is holding back.
 
 ### The one that is not about documents
 
@@ -61,11 +61,13 @@ contract every scanner here has, and the same one that governs documents.
 
 The last two are the ones to act on first when they appear, because every check
 above gets sharper once they are gone. A page that declares
-`status: design-intent` stops being reported as drifting; one that declares
-`last_verified` is dated by when somebody read it rather than by when somebody
-touched it; a pair where one page declares the other as its `source_of_truth`
-stops being a pair. The shape of that contract is in
-[docs/documents.md](../../docs/documents.md).
+`status: design-intent` stops being reported as drifting, and a plan under
+that status stops being judged landed too — it is a statement of work not
+yet done, and the files it names are what it tells the reader to go read, not
+evidence the work happened; one that declares `last_verified` is dated by
+when somebody read it rather than by when somebody touched it; a pair where
+one page declares the other as its `source_of_truth` stops being a pair. The
+shape of that contract is in [docs/documents.md](../../docs/documents.md).
 
 ## The part only reading finds
 

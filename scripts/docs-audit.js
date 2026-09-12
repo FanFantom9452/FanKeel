@@ -577,6 +577,11 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     const gone = deletedPaths(root);
     for (const rel of markdown) {
         if (docs.roleOf(tree, rel) !== 'plan') continue;
+        // A plan that declares itself `design-intent` is a prompt for work not
+        // yet done, and the files it names are what it tells the reader to go
+        // read — on disk from day one, not because the plan succeeded. `kind`
+        // is what `landed` newly reads; role alone already decides drift.
+        if (contracts.get(rel).kind === 'intent') continue;
         const at = dates.at(rel);
         if (!at || daysBetween(now, at) < settled) continue;
         const { code: named, unbuilt } = points.get(rel);

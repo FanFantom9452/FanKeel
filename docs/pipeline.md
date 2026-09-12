@@ -707,8 +707,9 @@ flowchart TD
 
 The context sections are the ones to act on first when they appear, because every
 defect check above them gets sharper once they are gone. A page that declares
-`status: design-intent` stops being reported as fallen behind; a pair where one
-page names the other as its `source_of_truth` stops being a pair.
+`status: design-intent` stops being reported as fallen behind; a plan under that
+status stops being judged landed; a pair where one page names the other as its
+`source_of_truth` stops being a pair.
 
 ### land
 
@@ -961,11 +962,13 @@ Two windows, not one. Drift measures a **gap** — how long a page has been wron
 while the code it names moved on — and a fortnight is what makes one worth a
 reading session. A landed plan is a different question: everything it named
 exists or git has seen it deleted, and nobody has come back to it. That is a
-settle period, and it is three
-days. Sharing one number made the landed check unable to fire on a repository
-younger than a fortnight, which is every repository for its first two weeks. An
-explicit `--since` still sets both, so `--since 0` shows everything either one is
-holding back.
+settle period, and it is three days. A plan that declares itself `design-intent`
+is not judged at all — it is a statement of work not yet done, and the files it
+names are what it tells the reader to go read, not evidence the work happened.
+Sharing one number made the landed check unable to fire on a repository younger
+than a fortnight, which is every repository for its first two weeks. An explicit
+`--since` still sets both, so `--since 0` shows everything either one is holding
+back.
 
 Dates come from the commit log in one `git log`, not one per file, and fall back
 to mtime for a working tree with no history. Where no `docs.json` exists the tree

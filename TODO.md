@@ -69,9 +69,9 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Needs a decision
 
-- `docs-audit` 把還沒跑的 `docs/plans/2026-09-09-design-class-prompt.md`（`design-intent`）算成已落地，每次都 exit 1；landed 該不該跳過 design-intent — [scripts/docs-audit.js](scripts/docs-audit.js).
-
 - 〔station〕總覽改版：兩個專案並排、單一專案、某一天的花費、趨勢折線。另起一次設計，附自己的 mockup — [docs/station.md](docs/station.md).
+
+- 計畫工作真的做完但沒把 status 從 design-intent 翻成 current，對 landed 永久隱形，`lib/map.js` 的未建清單也分不出來；docs-audit 要不要照樣回報 — [scripts/docs-audit.js](scripts/docs-audit.js).
 
 ## Waiting
 
