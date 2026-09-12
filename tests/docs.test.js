@@ -506,7 +506,7 @@ test('the Roles table names every bucket docs.json declares', () => {
 // directories have, and nothing recounted it when `mockup.html` became a fourth
 // kind of file under `build/`. residue.js already enumerates every ignored path
 // at the top level, with no size threshold, so the table can be checked against
-// it. Other tools' ignored paths — `.superpowers/`, `caveman.zip` — are not
+// it. Other tools' ignored paths — `.superpowers/`, `.impeccable/` — are not
 // fankeel's to document, which is what the prefix filter is for.
 //
 // This passes the day it is written. That is the point of a guard, and it is
