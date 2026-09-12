@@ -170,9 +170,18 @@ test('no frontmatter key nothing reads carries a repository path', () => {
 // A name that grows back in a comment is the coupling returning as prose
 // first. The length check is the control: an empty scan would pass too.
 test('no shipped file names ponytail', () => {
-    const shipped = ['lib', 'scripts', 'hooks', 'agents', 'skills', 'output-styles', 'assets', '.claude-plugin']
+    const shipped = ['lib', 'scripts', 'hooks', 'agents', 'skills', 'assets', '.claude-plugin']
         .flatMap((dir) => tracked(dir));
     assert.ok(shipped.length > 50, 'git ls-files found ' + shipped.length + ' files to scan');
     const naming = shipped.filter((rel) => /ponytail/i.test(fs.readFileSync(path.join(ROOT, rel), 'utf8')));
     assert.deepEqual(naming, []);
+});
+
+// fankeel shipped three output styles until 2026-09-13. Every user saw them in
+// the /config picker and none of them reached a subagent, so the voice moved to
+// the injected rules and the fankeel-explain skill instead.
+test('no output style ships', () => {
+    const plugin = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
+    assert.equal(plugin.outputStyles, undefined, 'plugin.json still declares outputStyles');
+    assert.equal(fs.existsSync(path.join(ROOT, 'output-styles')), false, 'output-styles/ is still on disk');
 });

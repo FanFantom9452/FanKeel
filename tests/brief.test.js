@@ -161,8 +161,8 @@ test('the brief is not the stage rules', () => {
 
 // The brief used to carry a digest of the chosen output style. That whole
 // mechanism existed to bridge the gap between a skill setting a style and the
-// style being in force, and the skill is gone — a style is picked in /config and
-// arrives in the system prompt, where nothing here has to restate it.
+// style being in force. The skill went in 0.20.0 and the styles themselves on
+// 2026-09-13; this keeps the digest from growing back.
 test('a style is never restated in the brief', () => {
   assert.equal(renderBrief({ mine: entry({ style: 'review' }) }).includes('voice ('), false);
 });

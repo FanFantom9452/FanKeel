@@ -50,8 +50,8 @@ test('every stage says what it produces and carries its own rules', () => {
 
 // Four, not three. The fourth arrived on evidence rather than taste: two of one
 // session's seventeen AskUserQuestion calls failed to parse outright. A rule that
-// prevents a failed tool call cannot live in an output style, because a style is
-// a setting the user might not have chosen.
+// prevents a failed tool call has to ride every prompt, and the injected block is
+// the only thing fankeel has that does.
 //
 // The number is not a token budget. Input is cheap and output is not, so paying
 // more here to get a shorter answer is the trade this file makes deliberately.

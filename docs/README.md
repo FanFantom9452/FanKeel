@@ -176,7 +176,6 @@ is explained, and it is the one thing to know before adding a page here.
 | `docs/archive/` | archive | that is the point of it |
 | `docs/judgements/` | report | it is what `fankeel-judge` answered on that day, filed verbatim by `scripts/judge.js` |
 | `skills/` | reference | no |
-| `output-styles/` | reference | no |
 | `evals/` | fixture | n/a — a test's own input; a prompt names paths only its scaffold has, so it is checked for links and line numbers only, never for symbols |
 | `.claude/agents/` | reference | no |
 | `agents/` | reference | no — the five agents the plugin ships, read by Claude Code at process start |
