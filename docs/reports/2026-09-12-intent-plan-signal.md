@@ -95,21 +95,25 @@ AFTER。這條訊號量到的是「這個檔案本來就常換」，不是「這
 這四份今天仍然是 `status: design-intent`——被歸檔了，但從沒被翻過來。歸檔一旦
 發生，頁面的 role 就離開 `plan`，於是也離開了這個問題原本擔心的檢查範圍。
 
-拿 `docs.contractOf`（不是重新拼的 regex）對整個 repo 的 git-tracked `.md`
-跑一次普查，母體換成 `git ls-files` 篩出的全部 markdown，不再限定
-`docs/`——這才是 `scripts/docs-audit.js:412`（`markdown =
-files.filter(isMarkdown)`，篩的對象是 `trackedFiles()` 回傳的完整追蹤清單）
-和 `lib/map.js:224-237` 的 `markdownUnder()` 實際讀的母體；對著 `docs/` 這個
-較窄的子集普查，答不了這兩支消費者真正面對的問題。這個數字包含本頁自己：
-178 份檔案，109 份 `current`、33 份 `archived`、29 份沒有 `status`、5 份
-`design-intent`、2 份 `superseded-by`。population 從 137 擴大到 178，多出的
-41 份落在 `skills/`、`agents/`、`output-styles/`、`.claude/agents/` 底下，多
-數進了 `current` 或無 `status` 兩個桶，`archived` 和 `superseded-by` 沒有
-變。5 份 `design-intent` 裡，4 份仍是上表列出的 `docs/archive` 頁面，剩下 1
-份仍是 `docs/plans/2026-09-09-design-class-prompt.md`——也就是本次的量測主
-體，一份目前仍在設計階段、尚未落地的計畫。母體擴大 41 份，`design-intent`
-的計數一份沒多——零實例的結論不是靠一個窄母體撐出來的，換成兩支消費者實
-際讀的母體，結論反而更站得住腳。
+拿 `docs.contractOf`（不是重新拼的 regex）對整個 repo 的 `.md` 跑一次普
+查，母體改用 `trackedFiles()` 回傳的清單篩出全部 markdown，不再限定
+`docs/`——這才是 `scripts/docs-audit.js:400-412`（`trackedFiles(root)` 接
+`markdown = files.filter(isMarkdown)`）和 `lib/map.js:224-237` 的
+`markdownUnder()` 實際讀的母體；對著 `docs/` 這個較窄的子集普查，答不了這
+兩支消費者真正面對的問題。這個數字包含本頁自己：178 份檔案，109 份
+`current`、33 份 `archived`、29 份沒有 `status`、5 份 `design-intent`、2 份
+`superseded-by`。population 從 137 擴大到 178，多出的 41 份分落六處：
+`evals/` 17、`skills/` 12、`agents/` 5、`output-styles/` 3、頂層 3
+（`CONTRIBUTING.md`、`README.md`、`TODO.md`）、`.claude/agents/` 1。
+`evals/` 是單一最大宗，也是原本這句沒提到的一塊——它在 `.fankeel/docs.json`
+裡的角色是 `fixture`，測試自己的輸入，這正是它會被算進兩支消費者都讀的
+markdown 母體的原因。多出的 41 份多數進了 `current` 或無 `status` 兩個桶，
+`archived` 和 `superseded-by` 沒有變。5 份 `design-intent` 裡，4 份仍是上
+表列出的 `docs/archive` 頁面，剩下 1 份仍是
+`docs/plans/2026-09-09-design-class-prompt.md`——也就是本次的量測主體，一
+份目前仍在設計階段、尚未落地的計畫。母體擴大 41 份，`design-intent` 的計數
+一份沒多——零實例的結論不是靠一個窄母體撐出來的，換成兩支消費者實際讀的
+母體，結論反而更站得住腳。
 
 換句話說，「做完但 `status` 沒翻」這個失敗模式，在整個 repo 追蹤的 markdown
 裡，今天的實際發生次數仍是零。加一條檢查，等於為一個目前不存在、而且量出來
