@@ -131,10 +131,14 @@ as `PIL`, `pycryptodome` as `Crypto`, `python-docx` as `docx`, `pyyaml` as
 in a comment. What makes these tools correct is a name-to-module table somebody
 maintains, and this plugin carries no such table.
 
-Two flags are load-bearing. `--dependencies` keeps knip off files and exports,
-where with no config it called every entry point of this repository unused;
+Two flags are load-bearing. `--dependencies` keeps knip off files and exports;
 `PYTHONUTF8=1` keeps deptry from dying on a `requirements.txt` holding a comment
 in any non-ASCII script.
+
+This repository carries a `knip.json` since 2026-09-13, so a bare `knip` no
+longer calls every entry point unused — which is what the first flag was
+protecting this stage from. It stays because the question here is the packages
+one; [docs/development.md](../../docs/development.md) describes the rest.
 
 The line this draws is the same one `residue.js` draws: a fact this can check —
 is the file beside it, does the path exist — it checks itself. A judgement

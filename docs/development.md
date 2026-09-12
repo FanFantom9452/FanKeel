@@ -1,18 +1,19 @@
 ---
 status: current
-last_verified: 2026-09-11
-source_of_truth: package.json, .claude-plugin/plugin.json, scripts/todo-check.js, scripts/version.js, scripts/skills-check.js, scripts/stage-registry.js
+last_verified: 2026-09-13
+source_of_truth: package.json, .claude-plugin/plugin.json, knip.json, scripts/todo-check.js, scripts/version.js, scripts/skills-check.js, scripts/stage-registry.js
 ---
 
 # Development
 
-The two commands, where pure logic ends and process boundaries begin, and the
+The three commands, where pure logic ends and process boundaries begin, and the
 four scripts that keep a written claim from drifting away from what it
 describes.
 
 ```
 npm test
 claude plugin validate .
+knip
 ```
 
 ## Where the code lives
@@ -94,3 +95,32 @@ so nothing would go looking for it there. `tests/stage-registry.test.js`
 regenerates the file and deep-equals it against what is committed: a rule
 that grew without regenerating, or a budget lowered below what a stage
 actually measures, fails there rather than drifting silently.
+
+## `knip.json` — which files and packages nothing reaches
+
+`knip` is the third command above and the only one this repository does not own.
+[skills/fankeel-audit/rationale.md](../skills/fankeel-audit/rationale.md) says why
+that question goes to an outside tool rather than to the obvious forty lines.
+
+Without a config it answered badly. On 2026-09-13 a bare `knip` reported 228
+unused files: 212 were under `.fankeel/`, which is per-machine and regenerated,
+and four more were the frozen evidence scripts under `docs/reports/evidence/`.
+The twelve left were real entry points it had no way to see — the nine
+`hooks/*.js`, which `.claude-plugin/plugin.json` invokes by path, and
+`scripts/map.js`, `scripts/stage-registry.js` and `scripts/task.js`, which are
+run as `node scripts/<x>.js`. Hence `entry` and `ignore`.
+
+**The exports row is excluded, and that is a limitation rather than a taste.**
+knip 6.32.2 does not resolve CJS namespace property access, so it called 146
+genuinely used exports unused. One barrel shows it with one variable changed:
+`knip --trace-export badgeWord`, destructured at `tests/badge.test.js:9`,
+returns `import[badgeWord] ⎆ ✓`; `knip --trace-export clearBadge`, reached as
+`badge.clearBadge`, returns `(no imports found) ✗` — and `scripts/task.js:127`
+and `hooks/inject.js:128` call it. The shape is not rare here: 44 namespace
+requires across 34 test files. `TODO.md` carries what would lift the exclusion.
+
+**A green run has to be able to go red.** An `ignore` wide enough to silence 228
+files is wide enough to silence a real one, and the exit code cannot tell them
+apart — so the check is a control rather than a clean run: drop a file nothing
+imports into `lib/`, and `knip` must name that file and nothing else. On
+2026-09-13 it reported exactly `Unused files (1)` and that one path.

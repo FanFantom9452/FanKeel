@@ -71,9 +71,9 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔station〕總覽改版：兩個專案並排、單一專案、某一天的花費、趨勢折線。另起一次設計，附自己的 mockup — [docs/station.md](docs/station.md).
 
-- 〔build〕knip 沒有設定檔，unused files/exports 兩格因此讀不得 — [docs/development.md](docs/development.md).
-
 ## Waiting
+
+- 〔build〕knip 的 unused exports 一格關著：6.32.2 認不得 CJS namespace 取用，開著回 146 個假陽性 — [docs/development.md](docs/development.md). lifts when: knip 認得 CJS namespace property access. 09-13.
 
 - Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it. lifts when: a run is seen ignoring one. 09-06.
 
