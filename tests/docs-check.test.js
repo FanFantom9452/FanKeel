@@ -77,7 +77,7 @@ test('one finding is a reference, not references', () => {
 // A project that declares a tree has decided how everything is filed. A page
 // outside every bucket is not a reference by default any more — it gets no
 // role at all, and none of the reference checks (like the symbol check below)
-// run against it. `docs/documents.md:193-201` is the page this follows.
+// run against it. `docs/documents.md:253-257` is the page this follows.
 test('a file outside the doc root gets no role, and no findings, once a tree is declared', () => {
   const root = tmp('fankeel-docscheck-role-');
   execFileSync('git', ['init', '-q'], { cwd: root });
