@@ -20,11 +20,11 @@ That is a shortlist someone can finish.
 
 That fortnight is the **drift** window, and drift's alone — it measures how long
 a page has been wrong while the code it names moved on. The landed-plan check
-asks something else, whether anyone has come back to the plan, and it settles
-after **three days**. One number for both meant the landed check could not fire
-on a repository younger than a fortnight. Passing `--since` explicitly still
-sets both, so `--since 0` remains the way to see everything either window is
-holding back.
+asks something else, whether anyone has come back to a plan that is not itself
+`design-intent`, and it settles after **three days**. One number for both meant
+the landed check could not fire on a repository younger than a fortnight.
+Passing `--since` explicitly still sets both, so `--since 0` remains the way to
+see everything either window is holding back.
 
 ### The one that is not about documents
 

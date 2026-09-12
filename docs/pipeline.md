@@ -707,8 +707,9 @@ flowchart TD
 
 The context sections are the ones to act on first when they appear, because every
 defect check above them gets sharper once they are gone. A page that declares
-`status: design-intent` stops being reported as fallen behind; a pair where one
-page names the other as its `source_of_truth` stops being a pair.
+`status: design-intent` stops being reported as fallen behind; a plan under that
+status stops being judged landed; a pair where one page names the other as its
+`source_of_truth` stops being a pair.
 
 ### land
 
