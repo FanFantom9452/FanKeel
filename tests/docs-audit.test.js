@@ -420,6 +420,19 @@ test('a plan naming a file git has seen deleted can land; one never built still 
   assert.deepEqual(sweep(root).landed.map((l) => l.file), ['docs/plans/2026-01-01-x.md']);
 });
 
+// A plan that declares itself `design-intent` is a prompt for work not yet
+// done, and the files it names are what it tells the reader to go read —
+// existing on day one, not because the plan succeeded. This is the same
+// contract that already excuses such a page from drift, read here instead of
+// `roleOf`.
+test('a plan declaring itself design-intent is not reported as landed even when its named files exist', () => {
+  const root = withTree(tree({
+    'docs/plans/2026-01-01-x.md': { body: '---\nstatus: design-intent\n---\n\nadd `lib/badge.js`\n', age: 60 },
+    'lib/badge.js': 'x\n',
+  }), 'flat');
+  assert.deepEqual(sweep(root).landed, []);
+});
+
 // --- the index --------------------------------------------------------------
 
 test('the index is checked in both directions', () => {
