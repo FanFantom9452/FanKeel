@@ -181,7 +181,7 @@ const external = (ref) => /^[a-z][a-z0-9+.-]*:/i.test(ref) || ref.startsWith('#'
 
 // The page recorded what it meant to point at, right beside the citation. A
 // nearby symbol is a proxy for intent; this is the author's own note, on disk,
-// which is the thing `docs/decisions/fankeel-shell.md:424` said nothing records.
+// which is the thing `docs/decisions/fankeel-shell.md:435` said nothing records.
 // A second path is not a quote — `lib/a.js:10` beside `lib/b.js` is two
 // citations, not one citation and its evidence.
 function quoteBeside(text, from) {

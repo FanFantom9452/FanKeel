@@ -167,7 +167,7 @@ test('a quote found at the cited line is not reported', () => {
 });
 
 // Two hits is ambiguous and stays ambiguous. Naming one of them would be the
-// guess `docs/decisions/fankeel-shell.md:426` was right to refuse.
+// guess `docs/decisions/fankeel-shell.md:437` was right to refuse.
 test('a quote found at two places is reported without naming a line', () => {
   const root = repoWith('fankeel-docscheck-twice-', {
     'docs/README.md': '# index\n',
