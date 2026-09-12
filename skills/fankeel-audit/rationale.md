@@ -61,11 +61,13 @@ contract every scanner here has, and the same one that governs documents.
 
 The last two are the ones to act on first when they appear, because every check
 above gets sharper once they are gone. A page that declares
-`status: design-intent` stops being reported as drifting; one that declares
-`last_verified` is dated by when somebody read it rather than by when somebody
-touched it; a pair where one page declares the other as its `source_of_truth`
-stops being a pair. The shape of that contract is in
-[docs/documents.md](../../docs/documents.md).
+`status: design-intent` stops being reported as drifting, and a plan under
+that status stops being judged landed too — it is a statement of work not
+yet done, and the files it names are what it tells the reader to go read, not
+evidence the work happened; one that declares `last_verified` is dated by
+when somebody read it rather than by when somebody touched it; a pair where
+one page declares the other as its `source_of_truth` stops being a pair. The
+shape of that contract is in [docs/documents.md](../../docs/documents.md).
 
 ## The part only reading finds
 

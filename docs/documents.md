@@ -310,9 +310,9 @@ counts every status, so a page named nowhere below reads as current.
 ### `orphan`, deliberately empty where an index exists
 
 An orphan is a document under the docs root that no other document links to.
-`scripts/docs-audit.js:637` (`index.exists ? [] :`) reports them only where the project declares no
+`scripts/docs-audit.js:642` (`index.exists ? [] :`) reports them only where the project declares no
 index. Where one exists, the same gap is already reported, and worded better,
-as `missing from the index` (`scripts/docs-audit.js:624` is `if (!linked.has(rel)) index.missing.push(rel);`):
+as `missing from the index` (`scripts/docs-audit.js:629` is `if (!linked.has(rel)) index.missing.push(rel);`):
 an index is a markdown file like any other, so anything it fails to list is
 unreachable regardless of what else in the tree links there. Two names for one
 problem is how a report starts looking longer than it is.
@@ -325,7 +325,7 @@ branch that would populate
 built, not a gap in the check.
 
 Orphans never fail a run. `defects()` opens at
-`scripts/docs-audit.js:882` (`function defects(r) {`) and sums drift, landed
+`scripts/docs-audit.js:887` (`function defects(r) {`) and sums drift, landed
 plans, a broken index and diagrams; `orphans` is not a term in that sum.
 
 ## The list is the output, not the count
