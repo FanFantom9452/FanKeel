@@ -142,3 +142,71 @@ test('a second run file is its own dispatch: both runs counted, each agent place
     assert.deepEqual([by.fff6.surface, by.fff6.label, by.fff6.phase, by.fff6.tokens],
         ['workflow', 'land:z', 'Land', 40]);
 });
+
+// `runsOf` keys a run by its `runId` and falls back to the run file's own name;
+// `dispatchesOf` then places each of that run's agents on the Workflow that
+// launched it. Neither fallback is visible with one run file: a key taken from
+// the filename cannot be told from one taken from the field while the two
+// agree, and a run on no dispatch cannot be told from the only run there is.
+// So two — `wf_a.json` carries no `runId`, and nothing in the transcript
+// launched `wf_b`.
+function orphanSession() {
+    const base = tmp('fankeel-orphan-');
+    const t = path.join(base, 'sess.jsonl');
+    const dir = path.join(base, 'sess');
+    fs.writeFileSync(t, [
+        line({ type: 'user', timestamp: T(0), message: { content: 'go' } }),
+        said('req_1', 1, [use('toolu_a', 'Workflow', { script: 'export const meta = {}' })]),
+        result(2, 'toolu_a', 'started', { status: 'async_launched', runId: 'wf_a', workflowName: 'flow-a' }),
+        notify(20, 'toolu_a'),
+    ].join(''));
+    const sub = path.join(dir, 'subagents');
+    fs.mkdirSync(path.join(sub, 'workflows', 'wf_a'), { recursive: true });
+    fs.mkdirSync(path.join(sub, 'workflows', 'wf_b'), { recursive: true });
+    fs.mkdirSync(path.join(dir, 'workflows'), { recursive: true });
+    fs.writeFileSync(path.join(sub, 'workflows', 'wf_a', 'agent-a1a1.jsonl'),
+        agentLine('r1', 8, 'claude-sonnet-5', { input_tokens: 30, output_tokens: 30 }));
+    fs.writeFileSync(path.join(sub, 'workflows', 'wf_b', 'agent-b2b2.jsonl'),
+        agentLine('r2', 9, 'claude-sonnet-5', { input_tokens: 10, output_tokens: 10 }));
+    // No `runId`, and `workflowName` kept: the run's key and its name cannot
+    // then have come from the same place. A run file on disk does carry
+    // `runId` — docs/subagents.md names it among the 19 keys — so this is the
+    // defensive half of that line rather than a shape anyone has observed.
+    fs.writeFileSync(path.join(dir, 'workflows', 'wf_a.json'), JSON.stringify({
+        workflowName: 'flow-a', workflowProgress: [
+            { type: 'workflow_phase', index: 1, title: 'Read' },
+            { type: 'workflow_agent', agentId: 'a1a1', label: 'read:a', phaseTitle: 'Read', model: 'claude-sonnet-5' },
+        ],
+    }));
+    // No Workflow tool_use carries `wf_b`, so both its agents — the one with a
+    // transcript and the one without — are rows on no dispatch.
+    fs.writeFileSync(path.join(dir, 'workflows', 'wf_b.json'), JSON.stringify({
+        runId: 'wf_b', workflowName: 'flow-b', workflowProgress: [
+            { type: 'workflow_agent', agentId: 'b2b2', label: 'read:b', phaseTitle: 'Read', model: 'claude-sonnet-5' },
+            { type: 'workflow_agent', agentId: 'c3c3', label: 'check:b', phaseTitle: 'Check', model: 'claude-sonnet-5' },
+        ],
+    }));
+    return t;
+}
+
+test('a run file with no runId is keyed by its own filename, and its agent still lands on its Workflow', () => {
+    const out = usage.dispatchesOf(orphanSession());
+    assert.deepEqual(out.runs.find((r) => r.run === 'wf_a'), { run: 'wf_a', name: 'flow-a', agents: 1 });
+    const by = Object.fromEntries(out.rows.map((r) => [r.id, r]));
+    // `tokens` is what tells the two placements apart: a row built from the
+    // agent's own transcript carries them, and the zero row a run file alone
+    // produces carries 0 with the same label, phase and dispatch.
+    assert.deepEqual([by.a1a1.disp, by.a1a1.turn, by.a1a1.label, by.a1a1.phase, by.a1a1.tokens],
+        [0, 1, 'read:a', 'Read', 60]);
+});
+
+test('a run file nothing launched places nothing: both its agents are rows on no dispatch', () => {
+    const out = usage.dispatchesOf(orphanSession());
+    const by = Object.fromEntries(out.rows.map((r) => [r.id, r]));
+    assert.deepEqual([by.b2b2.disp, by.b2b2.turn, by.b2b2.surface, by.b2b2.label, by.b2b2.tokens],
+        [null, null, 'workflow', 'read:b', 20]);
+    assert.deepEqual([by.c3c3.disp, by.c3c3.turn, by.c3c3.surface, by.c3c3.label, by.c3c3.tokens, by.c3c3.requests],
+        [null, null, 'workflow', 'check:b', 0, 0]);
+    assert.deepEqual(out.runs.find((r) => r.run === 'wf_b'), { run: 'wf_b', name: 'flow-b', agents: 2 });
+    assert.deepEqual(out.dispatches[0].ids, ['a1a1']);
+});
