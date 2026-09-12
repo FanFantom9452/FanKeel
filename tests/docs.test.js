@@ -580,3 +580,90 @@ test('frontmatter() flattens one level of nested keys under a parent with no inl
   assert.equal(fm['metadata.type'], 'reference');
   assert.equal(fm['metadata.modified'], '2026-08-25T06:45:37.444Z');
 });
+
+// The lifetime section's bullet list is the only place the trackedFiles call
+// sites are written down, and it said six while scripts/ held a seventh:
+// scripts/memory-check.js:143 had been calling it since before the count was
+// last read. Nothing recounted it, which is why this does.
+//
+// The shape is tests/skills.test.js:1047 — derive one side off disk so a
+// bullet that stopped being a real call site fails by name, and pin the count
+// so a call site that fell out of the list without the count moving fails too.
+//
+// This passes the day it is written. That is the point of a guard, and it is
+// also why it is worth mutating once: delete the scripts/memory-check.js
+// bullet from the page and the first test must go red naming that path.
+const CALL_RE = /\btrackedFiles\(/;
+const DECL_RE = /function\s+trackedFiles\(/;
+
+// Nothing else in scripts/ or lib/ puts an open paren straight after the
+// name: the imports are `const { trackedFiles } = require(...)` and the
+// re-exports are `module.exports = { trackedFiles, ... }`, so only the
+// declaration needs excluding.
+function callSites(root) {
+  const out = [];
+  for (const dir of ['scripts', 'lib']) {
+    const names = fs.readdirSync(path.join(root, dir)).filter((f) => f.endsWith('.js')).sort();
+    for (const name of names) {
+      const lines = fs.readFileSync(path.join(root, dir, name), 'utf8').split(/\r?\n/);
+      lines.forEach((line, i) => {
+        if (CALL_RE.test(line) && !DECL_RE.test(line)) out.push(dir + '/' + name + ':' + (i + 1));
+      });
+    }
+  }
+  return out.sort();
+}
+
+// Sliced the way the two tests above slice it.
+function lifetimeSection(root) {
+  const page = fs.readFileSync(path.join(root, 'docs', 'documents.md'), 'utf8');
+  const start = page.indexOf('## `.fankeel/` 各區的壽命');
+  assert.ok(start >= 0, 'docs/documents.md has no lifetime section');
+  const rest = page.slice(start + 1);
+  const end = rest.indexOf('\n## ');
+  return end === -1 ? rest : rest.slice(0, end);
+}
+
+test('the lifetime section lists every trackedFiles call site in scripts/ and lib/', () => {
+  const root = path.join(__dirname, '..');
+  const actual = callSites(root);
+
+  const declared = [];
+  for (const line of lifetimeSection(root).split(/\r?\n/)) {
+    const m = /^- `([^`]+:\d+)` 是 `([^`]*)`/.exec(line);
+    // The first bullet quotes lib/tracked.js:31, the ls-files flags, and is
+    // not a call site — its quote holds no trackedFiles(, so it drops out.
+    if (m && CALL_RE.test(m[2])) declared.push(m[1]);
+  }
+  declared.sort();
+
+  const d = new Set(declared);
+  const a = new Set(actual);
+  assert.deepEqual(declared, actual,
+    'call sites the page does not list: ' + JSON.stringify(actual.filter((x) => !d.has(x)))
+    + ', bullets pointing at no call site: ' + JSON.stringify(declared.filter((x) => !a.has(x))));
+});
+
+test('there are seven trackedFiles call sites, six under scripts/ and one under lib/', () => {
+  const actual = callSites(path.join(__dirname, '..'));
+  assert.equal(actual.length, 7, 'call sites: ' + JSON.stringify(actual));
+  assert.equal(actual.filter((s) => s.startsWith('scripts/')).length, 6,
+    'under scripts/: ' + JSON.stringify(actual));
+  assert.equal(actual.filter((s) => s.startsWith('lib/')).length, 1,
+    'under lib/: ' + JSON.stringify(actual));
+});
+
+// The sentence above the list carries the same two numbers in words, and a
+// bullet added without the sentence moving is the drift this guards against.
+// The section is whitespace-stripped first: that sentence is hard-wrapped, and
+// pinning one wrap position makes this go red for the wrong reason the next
+// time the paragraph reflows.
+test('the sentence above the list says seven, and six under scripts/', () => {
+  const flat = lifetimeSection(path.join(__dirname, '..')).replace(/\s+/g, '');
+  assert.ok(flat.includes('其後七條是它的七個呼叫端'),
+    'the sentence above the list does not say 其後七條 / 七個呼叫端');
+  assert.ok(flat.includes('`scripts/`六處與`lib/`一處'),
+    'the sentence does not say scripts/ 六處與 lib/ 一處');
+  assert.ok(flat.includes('七個之中只有這個檔案直接讀'),
+    'the lib/map.js bullet does not say 七個之中');
+});
