@@ -176,7 +176,7 @@ headline counts, is in [docs/documents.md](docs/documents.md).
 | What a subagent is told when it starts, and when `/fankeel-ask` is worth the money | [docs/subagents.md](docs/subagents.md) |
 | The badge word, and how to colour each stage | [docs/statusline.md](docs/statusline.md) |
 | Every session on this machine on one page, and how to put an abandoned one down | [docs/station.md](docs/station.md) |
-| Which output style to use, and why a style rather than an injected ruleset | [docs/output-styles.md](docs/output-styles.md) |
+| Why fankeel ships no output style, and where its voice lives instead | [docs/decisions/2026-09-13-no-output-styles.md](docs/decisions/2026-09-13-no-output-styles.md) |
 | How the plugin is built and checked, and the four scripts that stop a claim drifting | [docs/development.md](docs/development.md) |
 | How to run the behaviour eval, and what to do when `claude plugin eval` says early access | [docs/evals.md](docs/evals.md) |
 | Why any of it was built this way | [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md) |

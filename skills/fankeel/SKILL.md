@@ -808,23 +808,17 @@ gate. Say it once, with what fixes it: a new terminal, and `/fankeel` →
 **Adopt**. The line comes back at every answer until then; repeating it does
 not.
 
-## Output styles
+## Voice
 
-fankeel ships three. They are not part of the mode and do not switch with it — a
-style is a Claude Code setting, not this plugin's state — and they are chosen in
-`/config` like any other.
+fankeel ships no output style. Claude Code stays on its default, and the voice
+comes from prompts: the injected block — whose `output shape:` is the part that
+changes with the stage — and the **fankeel-explain** skill, for a presentation,
+a report, a status sync, or a line of thought that needs sorting out.
 
-| Style | For |
-|---|---|
-| `fankeel-terse` | Everyday work. Result first, no preamble, no tool narration. |
-| `fankeel-pipeline` | Running this pipeline. Adds the question discipline: never wrap up silently, every question carries its own background and its trade-offs. |
-| `fankeel-review` | Reviews and audits. Findings only, one line each, no praise and no redesigns. |
-
-If the user asks for shorter answers or a fixed format, name the style that does
-it and let them pick it — do not promise to remember instead. A style lives in
-the system prompt and is sent verbatim on every request, so unlike anything
-injected into the conversation it cannot be diluted by compaction, and it is one
-copy however long the session runs.
+If the user asks for shorter answers or a fixed format, point at one of those
+two rather than promising to remember. Why the three styles that used to ship
+here went is in
+[docs/decisions/2026-09-13-no-output-styles.md](../../docs/decisions/2026-09-13-no-output-styles.md).
 
 ## Calibration
 

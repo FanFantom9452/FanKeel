@@ -6,7 +6,7 @@ source_of_truth: this file is the index; each page below is its own source
 
 # FanKeel documentation
 
-Twelve pages, one question each. The front page has install, update and
+Eleven pages, one question each. The front page has install, update and
 uninstall, the two diagrams and a short introduction to each of these;
 everything that needs more than a paragraph is here.
 
@@ -38,7 +38,7 @@ everything that needs more than a paragraph is here.
 | What a plan is checked for before its gate, and what an implementer's brief file holds | [pipeline.md](pipeline.md) — *plan* and *build* |
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
 | Every session on this machine, where the page finds the registries, and what `stale` means | [station.md](station.md) |
-| Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
+| Why fankeel ships no output style, and where its voice lives instead | [decisions/2026-09-13-no-output-styles.md](decisions/2026-09-13-no-output-styles.md) |
 | What caveman and SEPIA do that this plugin does not — gates, evals, an evidence ledger, thin wrappers — plus the user's own directions, three from 09-08 and five from 09-11 — the ones still open are `TODO.md` entries | [improvement-brief.md](improvement-brief.md) — *a backlog, 繁體中文* |
 | Every dated report's headline figure with a stable ID, what its scope does not cover, and which pages cite it | [sources.md](sources.md) — *the evidence ledger* |
 | How two implementers running at once was built, task by task — its design is in `docs/archive/` | `docs/archive/2026-08-30-parallel-build.md` — *built* |
