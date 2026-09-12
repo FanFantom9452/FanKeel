@@ -67,6 +67,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
+- `docs/documents.md:142-143` 說 `trackedFiles()` 有六個呼叫端，實際七處 — [docs/documents.md](docs/documents.md). 漏掉 `scripts/memory-check.js:143`，早於本次量測。
+
 ## Needs a decision
 
 - 〔station〕總覽改版：兩個專案並排、單一專案、某一天的花費、趨勢折線。另起一次設計，附自己的 mockup — [docs/station.md](docs/station.md).
