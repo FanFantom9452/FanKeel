@@ -154,6 +154,11 @@ A ruleset injected at `SessionStart` lands in the conversation, which is exactly
 what compaction rewrites and what a long session pushes into the distance. That
 is the mechanism behind every "it worked at first and then faded" report about
 this kind of plugin.
+*(Superseded 2026-09-13: fankeel ships no output style. A plugin's styles show in
+every user's `/config` picker and reach no subagent, so the voice lives in the
+injected rules and the on-demand `fankeel-explain` skill —
+[2026-09-13-no-output-styles.md](2026-09-13-no-output-styles.md). The split below
+is what fankeel shipped until then.)*
 
 Claude Code has a native place for it. An output style is appended to the system
 prompt — sent verbatim on every request, never touched by compaction, and inside
@@ -179,6 +184,7 @@ An output style is the right mechanism and `/config` is where people never go.
 still ship and are picked in `/config`; what came out was the skill that set one
 for you, and the entry field and injected digest that existed to cover the gap
 before it took effect.)*
+*(Superseded 2026-09-13: the three styles no longer ship either.)*
 
 They do not change settings; they say "answers are too long". So `fankeel-style`
 is a skill over a script that writes the same `outputStyle` field `/config`
