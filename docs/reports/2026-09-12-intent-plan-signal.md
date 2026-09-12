@@ -32,7 +32,7 @@ drift 這條路也進不去：`scripts/docs-audit.js:443` 的
 `scripts/docs-audit.js:427,436`）而不是重新推導「一份計畫命名了什麼」，量測
 主體加兩個對照組——sweep 今天實際回報為 landed 的兩份計畫：
 
-| 檔案 | status | kind | role | 命名的 code | unbuilt | landed predicate 可滿足？ |
+| 檔案 | status | kind | role | 命名的 code | unbuilt | 命名數 > 0 且 unbuilt = 0？ |
 |---|---|---|---|---|---|---|
 | `docs/plans/2026-09-09-design-class-prompt.md` | design-intent | intent | plan | 3 | 0 | YES |
 | `docs/plans/2026-09-09-gate-and-controls.md` [CONTROL] | current | current | plan | 16 | 0 | YES |
@@ -44,6 +44,17 @@ intent 計畫」跟「一份工作已經落地的 current 計畫」——兩者�
 （`design-class-prompt.md`）回報成 landed，而這正是 commit `43a7c12`
 （"fix: a design-intent plan is not judged landed"，併入 `f3e7a87`）修掉的那個
 回歸。
+
+上面這張表只量到 landed predicate 的前兩個條件。第三個條件——settled，也就是
+`scripts/docs-audit.js:586` 的 `daysBetween(now, at) >= settled`（`LANDED_QUIET
+= 3`，定義在 `scripts/docs-audit.js:46`）——證據目錄裡沒有任何一支腳本算它，這
+裡是手動核對：`git log` 顯示 `design-class-prompt.md` 唯一一次 commit 是
+2026-09-09，這次量測的日期是 2026-09-12，差距剛好三天，正好卡在
+`LANDED_QUIET` 的邊界上——早一天量測就不會通過，所以這個結論跟量測當天的日期
+綁死，換一天重跑可能翻盤。同一個結論在歷史上確實發生過，而且點名的就是同一
+個主體，不是同一類計畫裡隨便一份：commit `43a7c12` 的訊息記下拿掉這條 skip
+之前，`docs/plans/2026-09-09-design-class-prompt.md`——跟這次量測同一份
+檔案——被 sweep 回報成 landed，讓整條 run 每次執行都 exit 1。
 
 ## 訊號二：「命名的檔案是否在計畫送出之後被改動過」——同樣沒有區分力，這是這頁值得留下的發現
 
@@ -101,7 +112,7 @@ AFTER。這條訊號量到的是「這個檔案本來就常換」，不是「這
 證據目錄：`docs/reports/evidence/2026-09-12-intent-plan-signal/`。本頁四張表，
 每一張對應一個明確的來源，沒有一張是靠讀本頁自己重現的：
 
-- 訊號一那張表（`landed predicate 可滿足？`）由 `points.js` 產生。
+- 訊號一那張表（`命名數 > 0 且 unbuilt = 0？`）由 `points.js` 產生。
 - 訊號二那張表（`AFTER` / `before` / `same`）由 `ages.js` 產生。
 - 普查那段數字（137/88/33/9/5/2）由 `census.js` 產生。
 - 歸檔落差那張表沒有腳本產生，是逐一對四份 `docs/archive` 頁面手動跑下面這行

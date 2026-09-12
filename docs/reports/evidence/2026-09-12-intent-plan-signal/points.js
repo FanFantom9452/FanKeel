@@ -1,4 +1,5 @@
-// What does the landed predicate actually see for each plan?
+// Two of the landed predicate's three conditions: does each plan name code
+// files, and are none of them unbuilt? (The third, settled, is not checked here.)
 // Calls docs-audit's own pointsAt the way sweep() does (docs-audit.js:427,436),
 // rather than re-deriving what a plan "names".
 const fs = require('fs');
@@ -33,7 +34,7 @@ for (const rel of subjects) {
     const missing = p.code.filter((q) => !onDisk(q));
     console.log('  named-but-absent-on-disk: ' + missing.length);
     for (const q of missing) console.log('      absent: ' + q);
-    console.log('  => would the landed predicate be satisfiable? '
+    console.log('  => code named > 0 and unbuilt = 0? '
         + (p.code.length > 0 && p.unbuilt.length === 0 ? 'YES (names files, none unbuilt)' : 'no'));
     console.log('');
 }
