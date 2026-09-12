@@ -17,7 +17,7 @@ deleted-paths 這幾個 predicate 都碰不到它。`lib/docs.js:352-363` 的 `S
 / `statusKind` 把 `design-intent`、`draft`、`草稿`、`planned`、`proposed`、`wip`
 都映射成 `kind: intent`。
 
-drift 這條路也进不去：`scripts/docs-audit.js:443` 的
+drift 這條路也進不去：`scripts/docs-audit.js:443` 的
 `const current = (rel) => roleOf(rel) === 'reference' && claims(rel);` 要求
 `reference` 角色，`:462` 的 drift 迴圈又是拿 `current(rel)` 當閘門
 （配上 `:466-471` 逐個 target 比對日期），而一份 plan 角色的頁面永遠進不了
@@ -69,9 +69,10 @@ AFTER。這條訊號量到的是「這個檔案本來就常換」，不是「這
 沒有一個檔案層級的訊號能分開「一份只是列出待讀檔案的 prompt」跟「一份工作已
 經落地但 `status` 沒翻回來的計畫」。
 
-在這個專案裡真正生效的補救機制是**歸檔**。`docs/reports/2026-09-07-audit-constants.md`
-量過的六份計畫落在 0–4 天，`LANDED_QUIET = 3` 就是那次量測定的。這次額外核對
-四份用 `git log --follow --diff-filter=AR` 抓到的頁面：
+在這個專案裡真正生效的補救機制是**歸檔**。`LANDED_QUIET = 3` 最初是從另一批
+八份計畫的樣本定下來的；`docs/reports/2026-09-07-audit-constants.md` 用六份計
+畫重新量測，同樣落在 0–4 天、眾數同樣是 3——那是一次重新量測並確認，不是定值
+的那一次。這次額外核對四份用 `git log --follow --diff-filter=AR` 抓到的頁面：
 
 | 頁面 | 送出 | 歸檔 | 落差 |
 |---|---|---|---|
@@ -83,11 +84,12 @@ AFTER。這條訊號量到的是「這個檔案本來就常換」，不是「這
 這四份今天仍然是 `status: design-intent`——被歸檔了，但從沒被翻過來。歸檔一旦
 發生，頁面的 role 就離開 `plan`，於是也離開了這個問題原本擔心的檢查範圍。
 
-拿 `docs.contractOf`（不是重新拼的 regex）對 `docs/` 底下所有檔案跑一次普查：
-136 份檔案，87 份 `current`、33 份 `archived`、9 份沒有 `status`、5 份
-`design-intent`、2 份 `superseded-by`。5 份 `design-intent` 裡，4 份就是上表列
-出的 `docs/archive` 頁面，剩下 1 份是 `docs/plans/2026-09-09-design-class-prompt.md`
-——也就是本次的量測主體，一份目前仍在設計階段、尚未落地的計畫。
+拿 `docs.contractOf`（不是重新拼的 regex）對 `docs/` 底下所有檔案跑一次普查（這
+個數字包含本頁自己，因為本頁一旦寫入就落在 `docs/` 底下）：137 份檔案，88 份
+`current`、33 份 `archived`、9 份沒有 `status`、5 份 `design-intent`、2 份
+`superseded-by`。5 份 `design-intent` 裡，4 份就是上表列出的 `docs/archive`
+頁面，剩下 1 份是 `docs/plans/2026-09-09-design-class-prompt.md`——也就是本次
+的量測主體，一份目前仍在設計階段、尚未落地的計畫。
 
 換句話說，「做完但 `status` 沒翻」這個失敗模式，今天的實際發生次數是零。加一
 條檢查，等於為一個目前不存在、而且量出來的兩個候選訊號都證明分不開真計畫的
@@ -96,8 +98,19 @@ AFTER。這條訊號量到的是「這個檔案本來就常換」，不是「這
 
 ## 量測方式
 
-證據目錄：`docs/reports/evidence/2026-09-12-intent-plan-signal/`，內含
-`points.js`（訊號一）與 `ages.js`（訊號二）兩支腳本。兩支都用
-`path.resolve(__dirname, '../../../..')` 算出 repo 根目錄，從 repo 根目錄
-（`F:\ymlab\fankeel`）用 `node docs/reports/evidence/2026-09-12-intent-plan-signal/points.js`
-（`ages.js` 同理）重新執行即可重現本頁列出的每一個數字。
+證據目錄：`docs/reports/evidence/2026-09-12-intent-plan-signal/`。本頁四張表，
+每一張對應一個明確的來源，沒有一張是靠讀本頁自己重現的：
+
+- 訊號一那張表（`landed predicate 可滿足？`）由 `points.js` 產生。
+- 訊號二那張表（`AFTER` / `before` / `same`）由 `ages.js` 產生。
+- 普查那段數字（137/88/33/9/5/2）由 `census.js` 產生。
+- 歸檔落差那張表沒有腳本產生，是逐一對四份 `docs/archive` 頁面手動跑下面這行
+  指令、照輸出抄的：
+  `git log --follow --diff-filter=AR --format='%ad %h %s' --date=short -- <path>`
+
+`points.js`、`ages.js`、`census.js` 三支都用
+`path.resolve(__dirname, '../../../..')` 從自己的路徑算出 repo 根目錄，從 repo
+根目錄（`F:\ymlab\fankeel`）分別用
+`node docs/reports/evidence/2026-09-12-intent-plan-signal/points.js`、
+`.../ages.js`、`.../census.js` 重新執行即可重現對應那張表的數字；歸檔落差那張
+表要重現，得對上面列出的四個路徑各跑一次那行 `git log` 指令。
