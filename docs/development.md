@@ -96,7 +96,7 @@ regenerates the file and deep-equals it against what is committed: a rule
 that grew without regenerating, or a budget lowered below what a stage
 actually measures, fails there rather than drifting silently.
 
-## `knip.json` — which files nothing reaches
+## `knip.json` — which files nothing reaches, and which exports go unchecked
 
 `knip` is the third command above and the only one this repository does not own.
 [skills/fankeel-audit/rationale.md](../skills/fankeel-audit/rationale.md) says why
