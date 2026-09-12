@@ -593,6 +593,13 @@ test('frontmatter() flattens one level of nested keys under a parent with no inl
 // This passes the day it is written. That is the point of a guard, and it is
 // also why it is worth mutating once: delete the scripts/memory-check.js
 // bullet from the page and the first test must go red naming that path.
+//
+// The count below needs a compound mutation, and the obvious one does not
+// isolate it: take a call site out of source alone and the first test reddens
+// as well, so neither can be told apart. Take it out of BOTH — write
+// `trackedFiles (root)` in scripts/memory-check.js, which stops the call
+// matching while leaving the file valid, and delete the matching bullet — and
+// the first test stays green on six against six while only the count reddens.
 const CALL_RE = /\btrackedFiles\(/;
 const DECL_RE = /function\s+trackedFiles\(/;
 
