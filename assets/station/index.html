@@ -1,32 +1,18 @@
 <!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>fankeel station</title>
+<title>fankeel 測站</title>
 <link rel="stylesheet" href="station/station.css">
 </head><body>
-<div class="app">
-  <aside class="side">
-    <div class="brand"><span class="mk">f</span><b>fankeel</b><span class="mute">station</span></div>
-    <div class="scroll" id="side"></div>
-    <div class="foot">
-      <div class="teamcard">
-        <span class="av">&#9671;</span>
-        <span><span class="t1">config dir</span><span class="t2" id="cfg">&mdash;</span></span>
-      </div>
-    </div>
-  </aside>
-  <div class="main">
-    <div class="tbar">
-      <label class="search"><span class="mute">&#8981;</span>
-        <input id="q" placeholder="搜尋任務、session、碰過的檔案…"><span class="k">/</span></label>
-      <span class="spacer"></span>
-      <span class="mute gen" id="gen"></span>
-      <span class="who"><span class="av">&#9672;</span>
-        <span><span class="n1">station</span><span class="n2" id="nreg"></span></span></span>
-    </div>
-    <div class="scrollmain" id="page"></div>
-  </div>
-</div>
+<header class="mast">
+  <a class="brand" href="#/" aria-label="fankeel 測站 首頁"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 18 17H2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="10" cy="12" r="1.9" fill="currentColor"/></svg><b>fankeel</b><span>測站</span></a>
+  <nav class="crumbs" id="side" aria-label="位置"></nav>
+  <label class="search"><input id="q" placeholder="搜尋任務、session、碰過的檔案…" aria-label="搜尋"><span class="k">/</span></label>
+  <a class="btn" href="#/list">清單</a>
+  <a class="btn" href="#/cmp">比較</a>
+</header>
+<main class="page" id="page"></main>
+<footer class="foot"><span id="gen"></span> · <span id="nreg"></span> · config dir <span class="mono" id="cfg">&mdash;</span></footer>
 <script>(function(){var v=new URLSearchParams(location.search).get('cleared');var q=v!==null&&/^\d+$/.test(v)?'?cleared='+v:'';document.write('<script src="station/station-data.js'+q+'"><\/script>')})()</script>
 <script src="station/station.js"></script>
 </body></html>

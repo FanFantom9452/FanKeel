@@ -74,3 +74,56 @@ test('the shell\'s three references all begin station/', () => {
     assert.match(html, /write\('<script src="station\//, 'the data script does not begin station/');
     assert.match(html, /<script src="station\/station\.js">/, 'the view script does not begin station/');
 });
+
+// The 2026-09-14 redesign: the mockup's masthead replaces the side bar, and the
+// six ids above stay as the view script's mount points. The class list is the
+// one Tasks 6-8 render; a class with no rule is a component the port dropped.
+test('the shell is the mockup\'s masthead: a home link, the crumbs on #side, the page main', () => {
+    const html = shell();
+    assert.match(html, /<header class="mast">/);
+    assert.match(html, /<a class="brand" href="#\/"/);
+    assert.match(html, /<nav class="crumbs" id="side"/);
+    assert.match(html, /<main class="page" id="page"><\/main>/);
+    assert.match(html, /<a class="btn" href="#\/list">/);
+    assert.match(html, /<footer class="foot">/);
+});
+
+test('the page loads nothing from outside', () => {
+    // docs/decisions/2026-09-04-session-station-design.md:120
+    const css = fs.readFileSync(CSS, 'utf8');
+    assert.doesNotMatch(shell(), /(?:src|href)="(?:https?:)?\/\//);
+    assert.doesNotMatch(css, /@import|url\(/);
+});
+
+test('every palette token the three levels colour by is defined in both themes', () => {
+    const css = fs.readFileSync(CSS, 'utf8');
+    const at = css.indexOf('@media(prefers-color-scheme:dark)');
+    const light = css.slice(0, at);
+    const dark = css.slice(at, css.indexOf('}}', at));
+    const names = ['--panel', '--inset', '--ink', '--ink2', '--muted', '--faint', '--rule', '--rule2', '--grid',
+        '--hatch', '--hatch-bg', '--good', '--bad',
+        '--st-survey', '--st-design', '--st-plan', '--st-build', '--st-verify', '--st-audit', '--st-land', '--st-none',
+        '--m-fable', '--m-opus', '--m-sonnet', '--m-haiku', '--m-other', '--s-main', '--s-agent', '--s-workflow',
+        '--t-in', '--t-out', '--t-cr', '--t-cw', '--ctx', '--ctx-wash',
+        '--p-0', '--p-1', '--p-2', '--p-3', '--p-4', '--p-5'];
+    for (const n of names) {
+        assert.ok(light.includes(n + ':'), 'light theme lacks ' + n);
+        assert.ok(dark.includes(n + ':'), 'dark theme lacks ' + n);
+    }
+});
+
+test('every class the three levels render has a rule', () => {
+    const css = fs.readFileSync(CSS, 'utf8');
+    const classes = ['mast', 'crumbs', 'search', 'foot', 'page', 'fixed', 'panel', 'eyebrow', 'h2', 'readouts', 'ro',
+        'hatchsw', 'controls', 'ctlgrp', 'seg', 'legend', 'sw', 'chart', 'hit', 'tbl-wrap', 't', 'link', 'chip',
+        'pchip', 'bar-in', 'route', 'grid2', 'hero-top', 'projrow', 'pth', 'day', 'day-head', 'day-nav', 'btn',
+        'day-body', 'split', 'split-h', 'split-bar', 'split-leg', 's-title', 's-meta', 'tabs',
+        'lane-legend', 'tl', 'note', 'sumline', 'mixbar', 'mini-mix', 'ev', 'filters',
+        'card', 'phead', 'ctl', 'listwrap', 'det', 'sec', 'tally', 'seq', 'rp', 'cmpcard', 'pill', 'delta', 'mute'];
+    for (const c of classes) {
+        assert.match(css, new RegExp('\\.' + c + '[\\s{,:.>\\[)]'), 'no rule for .' + c);
+    }
+    // `^` because the kept `.seq .ar.bk{` is not the mockup's bare `.bk{`.
+    assert.doesNotMatch(css, /^\.bk\{|\.bk-h|\.demo|\.tip\{|\.xh-read|\.strip24|\.teamcard|\.scrollmain/m,
+        'a renamed or dropped rule is still there');
+});
