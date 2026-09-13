@@ -1,5 +1,6 @@
 {
   "land.integration": "merge",
   "land.push": false,
-  "land.archivePlan": true
+  "land.archivePlan": true,
+  "design.mockup": "opus"
 }
