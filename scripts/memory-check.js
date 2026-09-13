@@ -157,7 +157,7 @@ function scan(root, configDir) {
                 continue;
             }
             if (wanted !== null) {
-                const n = lineCount(path.join(root, found.split('/').join(path.sep)));
+                const n = lineCount(path.join(root, found));
                 if (n !== null && wanted > n) {
                     findings.push({ tag: 'past-end', what: name + ' cites ' + ref + ':' + wanted + ' but the file ends at ' + n });
                     continue;

@@ -187,7 +187,7 @@ function deletedPaths(root) {
 // not an improvement on an imperfect one.
 function mtime(root, rel) {
     try {
-        return fs.statSync(path.join(root, rel.split('/').join(path.sep))).mtimeMs;
+        return fs.statSync(path.join(root, rel)).mtimeMs;
     } catch (e) {
         return null;
     }
