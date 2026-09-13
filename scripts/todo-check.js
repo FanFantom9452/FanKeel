@@ -37,6 +37,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { parseArgs } = require('node:util');
 
 const docs = require('../lib/docs.js');
 const { resolveRoot } = require('../lib/registry.js');
@@ -366,23 +367,16 @@ function report(result) {
 // missing, and missing is success. The form a person reaches for, and the form a
 // gate gets written with, passed while examining nothing.
 function main(argv, now) {
-    let root = '';
-    const loose = [];
-    for (let i = 0; i < argv.length; i++) {
-        const arg = argv[i];
-        if (arg === '--root') {
-            root = argv[++i] || '';
-            continue;
-        }
-        if (arg.startsWith('--root=')) {
-            root = arg.slice('--root='.length);
-            continue;
-        }
-        if (arg.startsWith('--')) continue;
-        loose.push(arg);
-    }
+    const { values, positionals } = parseArgs({
+        args: argv, strict: false, allowPositionals: true, options: { root: { type: 'string' } },
+    });
+    // `--root` with nothing after it comes back `true`, not a string — the old
+    // loop read that case as `''` (`argv[++i] || ''`) rather than failing, and
+    // this keeps that same silent fallback rather than adopting `parseArgs`'s
+    // own "needs a value" refusal.
+    const root = typeof values.root === 'string' ? values.root : '';
     // A positional argument is still a path to a file. A flag's value is not one.
-    const at = loose[0] || path.join(resolveRoot(root || undefined), 'TODO.md');
+    const at = positionals[0] || path.join(resolveRoot(root || undefined), 'TODO.md');
     const result = check(path.resolve(at), now);
     return { text: report(result), ok: result.missing || !result.problems.length };
 }
