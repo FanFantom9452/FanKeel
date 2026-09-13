@@ -62,3 +62,33 @@ test('an ended session cached after it ended is not stat-ed again; reuse returns
     const later = Object.assign({}, f.data, { ended: { at: T(40), reason: 'exit' } });
     assert.equal(detail.detailOf(f.cfg, SID, later).fresh, true, 'a session that ended after its cache was written is read once more');
 });
+
+// Claude Code deletes a transcript after about thirty days, and a VERSION bump
+// used to drop every cache on the spot: a session older than its transcript
+// then left the page altogether.
+function oldCache(f, fields) {
+    const old = Object.assign({ v: 1, sessionId: SID, day: '2026-08-15', model: 'claude-sonnet-5', usd: 1.25, rows: [], backtracks: 0, peak: 0 }, fields);
+    const file = detail.cachePath(f.cfg, SID);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(old));
+    return { old, file };
+}
+
+test('a cache from an older VERSION is read again while the transcript is there, even for a session that ended before it was written', () => {
+    const f = setup();
+    const { file } = oldCache(f, { key: detail.keyOf(f.t), at: Date.parse(T(30)) });
+    const ended = Object.assign({}, f.data, { ended: { at: T(20), reason: 'exit' } });
+    const got = detail.detailOf(f.cfg, SID, ended);
+    assert.deepEqual([got.fresh, got.detail.v, Array.isArray(got.detail.days)], [true, 2, true]);
+    assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).v, 2, 'the cache is rewritten at the new version');
+});
+
+test('a cache from an older VERSION is kept as it stands once the transcript is gone, and a spent budget returns it too', () => {
+    const f = setup();
+    const { old, file } = oldCache(f, { key: 'gone', at: 0 });
+    fs.rmSync(f.t);
+    assert.equal(detail.transcriptOf(f.cfg, SID), null);
+    assert.deepEqual(detail.detailOf(f.cfg, SID, f.data), { detail: old, fresh: false });
+    assert.deepEqual(detail.detailOf(f.cfg, SID, f.data, { reuse: true }), { detail: old, fresh: false });
+    assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), old, 'nothing rewrote it');
+});
