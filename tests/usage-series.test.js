@@ -38,6 +38,22 @@ test('series is one row per request in first-seen order; context is input, cache
     assert.equal(usage.summarise(file).series, undefined, 'no series unless asked');
 });
 
+test('each series row carries its five token counts, read the way the model map is', () => {
+    const file = transcript([
+        said('req_a', 1, { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 100,
+            cache_creation: { ephemeral_5m_input_tokens: 20, ephemeral_1h_input_tokens: 30 } }),
+        said('req_b', 2, { input_tokens: 1, output_tokens: 7, cache_read_input_tokens: 200, cache_creation_input_tokens: 40 }),
+    ]);
+    const seen = usage.summarise(file, { series: true });
+    assert.deepEqual(seen.series.map((r) => [r.id, r.at, r.model, r.tokens]), [
+        ['req_a', Date.parse(T(1)), 'claude-opus-5', { input: 10, output: 5, cacheRead: 100, cacheWrite5m: 20, cacheWrite1h: 30 }],
+        ['req_b', Date.parse(T(2)), 'claude-opus-5', { input: 1, output: 7, cacheRead: 200, cacheWrite5m: 40, cacheWrite1h: 0 }],
+    ]);
+    const summed = { input: 0, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 };
+    for (const r of seen.series) for (const k of Object.keys(summed)) summed[k] += r.tokens[k];
+    assert.deepEqual(summed, seen.usage.models['claude-opus-5'], 'the rows add up to the model map');
+});
+
 test('turnIndex numbers requests the way the series does, and entriesOf skips a torn line', () => {
     const file = transcript([
         line({ type: 'user', message: { content: 'go' } }),

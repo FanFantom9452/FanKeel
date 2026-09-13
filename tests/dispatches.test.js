@@ -114,6 +114,18 @@ test('one row per agent file and a zero row for a run agent with no transcript, 
     assert.deepEqual(out.runs, [{ run: 'wf_1', name: 'flow', agents: 2 }]);
 });
 
+test('an agent row carries the time of its first and last request and each request on its own; a zero row carries none', () => {
+    const out = usage.dispatchesOf(session());
+    const by = Object.fromEntries(out.rows.map((r) => [r.id, r]));
+    assert.deepEqual([by.aaa1.from, by.aaa1.to], [Date.parse(T(10)), Date.parse(T(40))]);
+    assert.deepEqual(by.aaa1.series.map((c) => [c.at, c.model, c.tokens]), [
+        [Date.parse(T(10)), 'claude-sonnet-5', { input: 100, output: 10, cacheRead: 1000, cacheWrite5m: 0, cacheWrite1h: 0 }],
+        [Date.parse(T(40)), 'claude-sonnet-5', { input: 5, output: 5, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 }],
+    ]);
+    assert.deepEqual([by.ddd4.from, by.ddd4.to, by.ddd4.series.length], [Date.parse(T(8)), Date.parse(T(8)), 1]);
+    assert.deepEqual([by.eee5.from, by.eee5.to, by.eee5.series], [null, null, []]);
+});
+
 test('the rows add up to what agentsOf sums over the same files, and a missing transcript is null', () => {
     const t = session();
     const rows = usage.dispatchesOf(t).rows;
