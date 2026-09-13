@@ -15,8 +15,6 @@
         survey: '#94a3b8', design: '#8b5cf6', plan: '#f472b6', build: '#4c3fd7',
         verify: '#14b8a6', audit: '#3b82f6', land: '#64748b',
     };
-    var PAL = ['#4c3fd7', '#7c6cf0', '#3b82f6', '#14b8a6', '#7fe7d4', '#c7ccd9'];
-    var WD = ['日', '一', '二', '三', '四', '五', '六'];
 
     function tokens(n) {
         if (n === null || n === undefined) return '—';
@@ -155,6 +153,366 @@
         return true;
     }
 
+    // ---- the three levels: shared -----------------------------------------
+    // 2026-09-14. Every figure on the home, project and session pages is summed
+    // from a session's `days` (dollars, tokens) and `spans` (milliseconds), split
+    // by the local day each request happened on — never from the registry's
+    // `usd`, which SessionEnd writes once and which is filed under the start day.
+    var TABS = ['timeline', 'cost', 'dispatch', 'events'];
+    var MODEL_KEYS = ['fable', 'opus', 'sonnet', 'haiku', 'other'];
+    var TOKEN_KEYS = ['input', 'output', 'cacheRead', 'cacheWrite5m', 'cacheWrite1h'];
+    var WHO_LABEL = { main: '主 session', agent: '背景 agent', workflow: 'workflow' };
+    var DIM_LABEL = { model: '依 model', project: '依專案', stage: '依 stage', who: '主 session 對 agent' };
+    var METRIC_LABEL = { usd: '花費', tokens: 'token', time: '時間' };
+    function pad2(n) { return (n < 10 ? '0' : '') + n; }
+    function localDay(ms) {
+        var d = new Date(ms);
+        return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    }
+    // Calendar arithmetic rather than 864e5 steps, so a daylight-saving day
+    // neither repeats nor drops a date.
+    function lastDays(nowMs, n) {
+        var d = new Date(nowMs), out = [];
+        for (var i = n - 1; i >= 0; i--) {
+            out.push(localDay(new Date(d.getFullYear(), d.getMonth(), d.getDate() - i, 12).getTime()));
+        }
+        return out;
+    }
+    // `#/`, `#/d/<day>`, `#/p/<encodeURIComponent(pkey)>`, `#/s/<id>[/<tab>]`, and
+    // `#/list` and `#/cmp` for the two pages that stayed. A hash is what a page
+    // opened from file:// can go back through.
+    function parseHash(hash) {
+        var p = String(hash || '').replace(/^#\/?/, '').split('/');
+        var dec = function (v) { try { return decodeURIComponent(v); } catch (e) { return null; } };
+        if (p[0] === 'd' && /^\d{4}-\d{2}-\d{2}$/.test(p[1] || '')) return { view: 'home', day: p[1] };
+        var key = p[0] === 'p' && p[1] ? dec(p.slice(1).join('/')) : null;
+        if (key !== null) return { view: 'project', pkey: key };
+        var id = p[0] === 's' && p[1] ? dec(p[1]) : null;
+        if (id !== null) return { view: 'session', id: id, tab: TABS.indexOf(p[2]) >= 0 ? p[2] : 'timeline' };
+        if (p[0] === 'list' || p[0] === 'cmp') return { view: p[0] };
+        return { view: 'home', day: null };
+    }
+    function projectHash(pkey) { return '#/p/' + encodeURIComponent(pkey); }
+    function sessionHash(id, tab) { return '#/s/' + encodeURIComponent(id) + (tab && tab !== 'timeline' ? '/' + tab : ''); }
+    function family(model) {
+        var m = /claude-(fable|opus|sonnet|haiku)/.exec(String(model || ''));
+        return m ? m[1] : 'other';
+    }
+    function tokenSum(t) {
+        return t ? TOKEN_KEYS.reduce(function (n, k) { return n + (t[k] || 0); }, 0) : 0;
+    }
+    function dimKey(dim, s, r) {
+        if (dim === 'model') return family(r.model);
+        if (dim === 'project') return s.pkey;
+        if (dim === 'stage') return r.stage || 'none';
+        return r.who;
+    }
+    // Models bottom-up by price, stages in route order, projects by size.
+    function orderKeys(dim, seen) {
+        var fixed = dim === 'model' ? MODEL_KEYS : dim === 'stage' ? ROUTE.concat(['none'])
+            : dim === 'who' ? ['main', 'agent', 'workflow'] : null;
+        var keys = Object.keys(seen).filter(function (k) { return seen[k]; });
+        if (!fixed) return keys.sort(function (a, b) { return seen[b] - seen[a] || (a < b ? -1 : 1); });
+        return fixed.filter(function (k) { return seen[k]; })
+            .concat(keys.filter(function (k) { return fixed.indexOf(k) < 0; }).sort());
+    }
+    // A project's colour is its place in `pkeys`, the 30-day order, so it is
+    // the same on every chart; the sixth project on shares `--p-5`.
+    function colorOf(dim, key, pkeys) {
+        if (dim === 'model') return 'var(--m-' + key + ')';
+        if (dim === 'stage') return ROUTE.indexOf(key) >= 0 ? 'var(--st-' + key + ')' : 'var(--st-none)';
+        if (dim === 'who') return 'var(--s-' + key + ')';
+        var i = (pkeys || []).indexOf(key);
+        return 'var(--p-' + (i < 0 ? 5 : Math.min(i, 5)) + ')';
+    }
+    function keyLabel(dim, key, names) {
+        if (dim === 'who') return WHO_LABEL[key] || key;
+        if (dim === 'stage') return key === 'none' ? '第一步之前' : key;
+        if (dim === 'project') return (names && names[key]) || key;
+        return key;
+    }
+    function projectNames(sessions) {
+        var lab = labels(sessions.map(function (s) { return s.root; }));
+        var out = {};
+        sessions.forEach(function (s) { out[s.pkey] = (lab[s.root] || s.root) + (s.project ? ' / ' + s.project : ''); });
+        return out;
+    }
+    function niceTop(v) {
+        if (!(v > 0)) return 1;
+        var p = Math.pow(10, Math.floor(Math.log(v) / Math.LN10)), f = v / p;
+        return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+    }
+    function metricText(metric, v) {
+        return metric === 'usd' ? (v ? usd(v) : '$0') : metric === 'tokens' ? tokens(v) : hours(v);
+    }
+    function sessionTotals(s) {
+        var t = { usd: 0, tokens: 0, active: 0, main: 0, wait: 0, models: {} };
+        (s.days || []).forEach(function (r) {
+            var m = family(r.model);
+            t.usd += r.usd || 0;
+            t.tokens += tokenSum(r.tokens);
+            t.models[m] = (t.models[m] || 0) + (r.usd || 0);
+        });
+        (s.spans || []).forEach(function (r) {
+            if (r.who === 'wait') { t.wait += r.ms; return; }
+            t.active += r.ms;
+            if (r.who === 'main') t.main += r.ms;
+        });
+        return t;
+    }
+    // Time is main + agent + workflow, counted each on its own while they
+    // overlap: it measures work, not the wall clock. Waiting is apart.
+    function windowTotals(sessions, days) {
+        var inside = {}, t = { usd: 0, tokens: 0, active: 0, main: 0, wait: 0 };
+        days.forEach(function (d) { inside[d] = true; });
+        sessions.forEach(function (s) {
+            (s.days || []).forEach(function (r) {
+                if (!inside[r.day]) return;
+                t.usd += r.usd || 0;
+                t.tokens += tokenSum(r.tokens);
+            });
+            (s.spans || []).forEach(function (r) {
+                if (!inside[r.day]) return;
+                if (r.who === 'wait') { t.wait += r.ms; return; }
+                t.active += r.ms;
+                if (r.who === 'main') t.main += r.ms;
+            });
+        });
+        return t;
+    }
+    // One bar per day; a bar's total is added in the same pass as its parts,
+    // so it is their sum and nothing else.
+    function dayBars(sessions, metric, dim, days) {
+        if (metric === 'time' && dim === 'model') {
+            return { days: [], keys: [], max: 0, disabled: '時間沒有 model 可分：spans 只記 stage 與誰在跑，不記 model' };
+        }
+        var at = {}, seen = {};
+        days.forEach(function (d) { at[d] = { day: d, total: 0, parts: {} }; });
+        var add = function (d, key, v) {
+            if (!at[d] || !v) return;
+            at[d].parts[key] = (at[d].parts[key] || 0) + v;
+            at[d].total += v;
+            seen[key] = (seen[key] || 0) + v;
+        };
+        sessions.forEach(function (s) {
+            if (metric === 'time') {
+                (s.spans || []).forEach(function (r) { if (r.who !== 'wait') add(r.day, dimKey(dim, s, r), r.ms); });
+                return;
+            }
+            (s.days || []).forEach(function (r) {
+                add(r.day, dimKey(dim, s, r), metric === 'usd' ? r.usd || 0 : tokenSum(r.tokens));
+            });
+        });
+        var list = days.map(function (d) { return at[d]; });
+        return {
+            days: list, keys: orderKeys(dim, seen), disabled: null,
+            max: Math.max.apply(null, list.map(function (b) { return b.total; }).concat([0])),
+        };
+    }
+    function dayPanel(sessions, day) {
+        var out = { day: day, usd: 0, tokens: 0, active: 0, wait: 0, by: { project: {}, model: {}, stage: {}, who: {} }, sessions: [] };
+        sessions.forEach(function (s) {
+            var mine = { id: s.id, task: s.task, pkey: s.pkey, usd: 0, tokens: 0, active: 0, wait: 0 };
+            (s.days || []).forEach(function (r) {
+                if (r.day !== day) return;
+                var u = r.usd || 0;
+                mine.usd += u;
+                mine.tokens += tokenSum(r.tokens);
+                ['project', 'model', 'stage', 'who'].forEach(function (dim) {
+                    var k = dimKey(dim, s, r);
+                    out.by[dim][k] = (out.by[dim][k] || 0) + u;
+                });
+            });
+            (s.spans || []).forEach(function (r) {
+                if (r.day !== day) return;
+                if (r.who === 'wait') mine.wait += r.ms; else mine.active += r.ms;
+            });
+            out.usd += mine.usd;
+            out.tokens += mine.tokens;
+            out.active += mine.active;
+            out.wait += mine.wait;
+            if (mine.usd || mine.tokens) out.sessions.push(mine);
+        });
+        out.sessions.sort(function (a, b) { return b.usd - a.usd; });
+        return out;
+    }
+    // A session counts toward a project's `n` when it spent inside the window
+    // or started inside it; one with no transcript has only its start.
+    function projectRows(sessions, days) {
+        var inside = {}, by = {}, list = [];
+        days.forEach(function (d, i) { inside[d] = i + 1; });
+        sessions.forEach(function (s) {
+            var r = by[s.pkey];
+            if (!r) {
+                r = by[s.pkey] = { pkey: s.pkey, root: s.root, project: s.project || null, usd: 0, n: 0, last: 0,
+                    daily: days.map(function () { return 0; }) };
+                list.push(r);
+            }
+            var touched = false;
+            (s.days || []).forEach(function (x) {
+                if (!inside[x.day]) return;
+                r.usd += x.usd || 0;
+                r.daily[inside[x.day] - 1] += x.usd || 0;
+                touched = true;
+            });
+            if (touched || inside[localDay(Date.parse(s.started))]) r.n++;
+            r.last = Math.max(r.last, s.updated || 0);
+        });
+        return list.sort(function (a, b) { return b.usd - a.usd || b.last - a.last; });
+    }
+    function kpiHtml(cur, prev) {
+        var share = function (t) { return t.main + t.wait ? t.wait / (t.main + t.wait) : 0; };
+        var ro = function (label, v, d) {
+            return '<div class="ro"><div class="l">' + label + '</div><div class="v">' + v + '</div><div class="d">' + d + '</div></div>';
+        };
+        return '<div class="readouts">'
+            + ro('30 天花費', usd(cur.usd), delta(cur.usd, prev.usd))
+            + ro('token', tokens(cur.tokens), delta(cur.tokens, prev.tokens))
+            + ro('active 時間', hours(cur.active), delta(cur.active, prev.active))
+            + ro('<i class="hatchsw"></i>等待佔比', Math.round(share(cur) * 1000) / 10 + '<span class="u">%</span>',
+                (prev.main + prev.wait ? delta(share(cur), share(prev), 'pt') : '<span class="delta flat">前期無資料</span>')
+                + ' · ' + hours(cur.wait) + ' 等')
+            + '</div>';
+    }
+    function spark(values, colour) {
+        var W = 120, H = 30, mx = Math.max.apply(null, values.concat([0])) || 1, n = Math.max(values.length - 1, 1);
+        return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" aria-hidden="true"><polyline points="'
+            + values.map(function (v, i) {
+                return (i / n * (W - 4) + 2).toFixed(1) + ',' + (H - 3 - v / mx * (H - 7)).toFixed(1);
+            }).join(' ') + '" style="fill:none;stroke:' + colour + ';stroke-width:1.5;stroke-linejoin:round"/></svg>';
+    }
+    function routeDots(s) {
+        var route = s.route || [], at = route.indexOf(s.stage);
+        return '<span class="route" aria-label="route ' + esc(route.join(' → ')) + '">' + route.map(function (k, i) {
+            return '<i title="' + esc(k) + '"' + (i <= at ? ' style="background:var(--st-' + esc(k) + ')"' : ' class="todo"') + '></i>';
+        }).join('') + '</span>';
+    }
+    // `off` maps an option to the reason it cannot be chosen right now.
+    function segHtml(key, opts, current, off) {
+        return '<div class="seg" role="group" data-seg="' + key + '">' + opts.map(function (o) {
+            var why = off && off[o[0]];
+            return '<button type="button" data-v="' + esc(o[0]) + '" aria-pressed="' + (current === o[0]) + '"'
+                + (why ? ' disabled title="' + esc(why) + '"' : '') + '>' + esc(o[1]) + '</button>';
+        }).join('') + '</div>';
+    }
+    function crumbHtml(parts) {
+        return parts.map(function (p, i) {
+            return i === parts.length - 1 ? '<span class="cur">' + esc(p[0]) + '</span>'
+                : '<a href="' + esc(p[1]) + '">' + esc(p[0]) + '</a>';
+        }).join('<i>/</i>');
+    }
+    function histSvg(bars, o) {
+        if (bars.disabled) return '<p class="note">' + esc(bars.disabled) + '</p>';
+        var W = 1200, H = 318, L = 52, R = 4, T = 26, AX = 48, plotH = H - T - AX, base = T + plotH;
+        var n = bars.days.length || 1, slot = (W - L - R) / n, bw = Math.min(24, slot * 0.6);
+        var top = niceTop(bars.max), y = function (v) { return v / top * plotH; };
+        var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="近 ' + n + ' 天每日'
+            + METRIC_LABEL[o.metric] + '，' + DIM_LABEL[o.dim] + '">';
+        [0, 0.25, 0.5, 0.75, 1].forEach(function (f) {
+            var yy = (base - f * plotH).toFixed(1);
+            out += '<line class="' + (f ? 'gridl' : 'base') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '"/>'
+                + '<text class="tick" x="' + (L - 10) + '" y="' + (Number(yy) + 4) + '" text-anchor="end">'
+                + metricText(o.metric, top * f) + '</text>';
+        });
+        bars.days.forEach(function (b, i) {
+            var cx = (L + i * slot + slot / 2).toFixed(1), x0 = (L + i * slot + slot / 2 - bw / 2).toFixed(1);
+            var c = 0, open = b.day === o.sel, mark = open || b.day === o.today;
+            out += '<g class="bar"' + (o.sel && !open ? ' style="opacity:.36"' : '') + '>';
+            bars.keys.forEach(function (k) {
+                if (!b.parts[k]) return;
+                var h = y(b.parts[k]);
+                out += '<rect x="' + x0 + '" y="' + (base - c - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="'
+                    + Math.max(h - 1, 0.5).toFixed(1) + '" style="fill:' + colorOf(o.dim, k, o.pkeys) + '"/>';
+                c += h;
+            });
+            out += '</g>'
+                + (b.total ? '<text class="tick" x="' + cx + '" y="' + (base - c - 7).toFixed(1) + '" text-anchor="middle">'
+                    + metricText(o.metric, b.total) + '</text>' : '')
+                + '<text class="tick" x="' + cx + '" y="' + (base + 17) + '" text-anchor="middle"'
+                + (mark ? ' style="fill:var(--ink);font-weight:600"' : '') + '>' + Number(b.day.slice(8)) + '</text>'
+                + (b.day === o.today || b.day.slice(8) === '01' || i === 0
+                    ? '<text x="' + cx + '" y="' + (base + 33) + '" text-anchor="middle">'
+                    + (b.day === o.today ? '今天' : Number(b.day.slice(5, 7)) + '月') + '</text>' : '')
+                + '<rect class="hit" data-href="' + (open ? '#/' : '#/d/' + b.day) + '" x="' + (L + i * slot).toFixed(1)
+                + '" y="' + (T - 10) + '" width="' + slot.toFixed(1) + '" height="' + (plotH + AX) + '"><title>'
+                + esc(b.day + ' 合計 ' + metricText(o.metric, b.total) + bars.keys.filter(function (k) { return b.parts[k]; })
+                    .map(function (k) { return '\n' + keyLabel(o.dim, k, o.names) + ' ' + metricText(o.metric, b.parts[k]); }).join(''))
+                + '</title></rect>';
+        });
+        return out + '</svg>';
+    }
+    function legendHtml(bars, o) {
+        if (bars.disabled) return '';
+        var own = o.dim !== 'project' ? bars.keys : bars.keys.filter(function (k) {
+            var i = o.pkeys.indexOf(k);
+            return i >= 0 && i < 5;
+        });
+        return '<span class="muted">由下而上</span>' + own.map(function (k) {
+            return '<span><i class="sw" style="background:' + colorOf(o.dim, k, o.pkeys) + '"></i>' + esc(keyLabel(o.dim, k, o.names)) + '</span>';
+        }).join('') + (own.length < bars.keys.length
+            ? '<span><i class="sw" style="background:var(--p-5)"></i>其他 ' + (bars.keys.length - own.length) + ' 個</span>' : '');
+    }
+    function dayPanelHtml(p, o) {
+        var i = o.days.indexOf(p.day);
+        var split = function (dim) {
+            var by = p.by[dim], keys = orderKeys(dim, by);
+            return '<div class="split"><div class="split-h"><span>' + DIM_LABEL[dim] + '</span><span class="num">' + usd(p.usd) + '</span></div>'
+                + '<div class="split-bar">' + keys.map(function (k) {
+                    return '<i title="' + esc(keyLabel(dim, k, o.names) + ' ' + usd(by[k])) + '" style="flex:' + by[k] + ' 1 0;background:'
+                        + colorOf(dim, k, o.pkeys) + '"></i>';
+                }).join('') + '</div><div class="split-leg">' + keys.map(function (k) {
+                    return '<span><i class="sw" style="background:' + colorOf(dim, k, o.pkeys) + '"></i>' + esc(keyLabel(dim, k, o.names))
+                        + ' <b>' + usd(by[k]) + '</b><em>' + Math.round(by[k] / (p.usd || 1) * 100) + '%</em></span>';
+                }).join('') + '</div></div>';
+        };
+        var ro = function (l, v) { return '<div class="ro sm"><div class="l">' + l + '</div><div class="v">' + v + '</div></div>'; };
+        return '<section class="panel day" id="daypanel" aria-label="某日花費"><div class="day-head">'
+            + '<div><div class="eyebrow">某日花費</div><h2>' + esc(p.day) + (p.day === o.today ? ' <small class="muted">今天</small>' : '') + '</h2></div>'
+            + '<div class="readouts">' + ro('當日花費', usd(p.usd)) + ro('token', tokens(p.tokens)) + ro('active', hours(p.active))
+            + ro('<i class="hatchsw"></i>等待', hours(p.wait)) + '</div>'
+            + '<div class="day-nav">' + (i > 0 ? '<a class="btn" href="#/d/' + o.days[i - 1] + '">‹ 前一天</a>' : '')
+            + (i >= 0 && i < o.days.length - 1 ? '<a class="btn" href="#/d/' + o.days[i + 1] + '">後一天 ›</a>' : '')
+            + '<a class="btn" href="#/" aria-label="收起某日花費">收起 ✕</a></div></div>'
+            + '<div class="day-body"><div>' + ['project', 'model', 'stage', 'who'].map(split).join('') + '</div>'
+            + '<div><div class="h2">當日 sessions <small>' + p.sessions.length + ' 個 · 只計這一天內發生的花費</small></div>'
+            + '<div class="tbl-wrap"><table class="t"><thead><tr><th>任務</th><th class="r">active</th><th class="r">等待</th>'
+            + '<th class="r">當日花費</th><th class="r">佔當日</th></tr></thead><tbody>'
+            + p.sessions.map(function (s) {
+                return '<tr class="link" data-href="' + sessionHash(s.id) + '"><td class="task"><a href="' + sessionHash(s.id) + '">'
+                    + esc(s.task || '（未命名）') + '</a><div class="muted"><i class="sw" style="background:' + colorOf('project', s.pkey, o.pkeys)
+                    + '"></i> ' + esc(o.names[s.pkey] || s.pkey) + '</div></td>'
+                    + '<td class="r">' + hours(s.active) + '</td><td class="r muted">' + hours(s.wait) + '</td>'
+                    + '<td class="r">' + usd(s.usd) + '</td><td class="r muted">' + Math.round(s.usd / (p.usd || 1) * 100) + '%</td></tr>';
+            }).join('') + '</tbody><tfoot><tr><td>合計</td><td class="r">' + hours(p.active) + '</td><td class="r">' + hours(p.wait)
+            + '</td><td class="r">' + usd(p.usd) + '</td><td class="r">100%</td></tr></tfoot></table></div></div></div></section>';
+    }
+    function projectsHtml(rows, o) {
+        return '<div class="h2">專案 <small>近 30 天</small></div>'
+            + '<div class="projrow head"><span>專案</span><span>每日花費</span><span class="r">花費</span><span class="r">session</span>'
+            + '<span class="r">最後活動</span></div>'
+            + (rows.length ? rows.map(function (r) {
+                var c = colorOf('project', r.pkey, o.pkeys);
+                return '<a class="projrow" href="' + projectHash(r.pkey) + '"><span style="min-width:0"><span class="nm"><i class="sw" style="background:'
+                    + c + '"></i>' + esc(o.names[r.pkey] || r.pkey) + '</span><span class="pth mono">' + esc(r.pkey) + '</span></span>'
+                    + '<span>' + spark(r.daily, c) + '</span><span class="r">' + usd(r.usd) + '</span><span class="r">' + r.n + '</span>'
+                    + '<span class="r muted">' + ago(r.last) + '</span></a>';
+            }).join('') : '<p class="note">這台機器上沒有 session</p>');
+    }
+    function recentHtml(list, o) {
+        return '<div class="h2">最近 sessions <small>依最後動作，最新在上</small><span class="spacer"></span>'
+            + '<a class="btn" href="#/list">看全部 →</a></div>'
+            + '<div class="tbl-wrap"><table class="t"><thead><tr><th>任務</th><th>專案</th><th>stage</th><th class="r">花費</th>'
+            + '<th class="r">token</th><th>狀態</th></tr></thead><tbody>'
+            + list.map(function (s) {
+                var t = sessionTotals(s);
+                return '<tr class="link" data-href="' + sessionHash(s.id) + '"><td class="task"><a href="' + sessionHash(s.id) + '">'
+                    + esc(s.task || '（未命名）') + '</a></td><td><span class="pchip"><i class="sw" style="background:'
+                    + colorOf('project', s.pkey, o.pkeys) + '"></i>' + esc(o.names[s.pkey] || s.pkey) + '</span></td>'
+                    + '<td>' + routeDots(s) + '</td><td class="r">' + usd(t.usd) + '</td><td class="r muted">' + tokens(t.tokens) + '</td>'
+                    + '<td>' + statePill(s) + '</td></tr>';
+            }).join('') + '</tbody></table></div>';
+    }
+
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
@@ -168,11 +526,16 @@
             todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
             figures: figures, compareHtml: compareHtml,
             routeGroups: routeGroups, routeLedger: routeLedger,
+            localDay: localDay, lastDays: lastDays, parseHash: parseHash, family: family, sessionTotals: sessionTotals,
+            windowTotals: windowTotals, dayBars: dayBars, dayPanel: dayPanel, projectRows: projectRows, kpiHtml: kpiHtml,
+            histSvg: histSvg, dayPanelHtml: dayPanelHtml, projectsHtml: projectsHtml, recentHtml: recentHtml,
         };
     }
     if (!doc) return;
     var f = { q: '', state: '', project: '', stage: '' };
-    var page = 'overview', sel = null, sortKey = 'updated', sortDir = -1;
+    var route = parseHash(w.location && w.location.hash), sel = null, sortKey = 'updated', sortDir = -1;
+    // The home page's two segmented controls; Tasks 7 and 8 add their own keys.
+    var view = { metric: 'usd', dim: 'model' };
     // The sessions ticked for 比較, oldest tick first; a third tick drops the first.
     var picked = [];
     var NOW = Date.parse(S.generatedAt);
@@ -183,250 +546,13 @@
     // `match()`'s haystack still reads `s.label`, so it is attached here,
     // once, before anything renders.
     S.sessions.forEach(function (s) { s.label = LAB[s.root]; });
-    var sum = function (a, fn) {
-        return a.reduce(function (n, x) { return n + (fn(x) || 0); }, 0);
-    };
+    var DAYS = lastDays(NOW, 30), PREV = lastDays(NOW - 30 * 864e5, 30), TODAY = DAYS[DAYS.length - 1];
+    var NAMES = projectNames(S.sessions);
+    var PKEYS = projectRows(S.sessions, DAYS).map(function (r) { return r.pkey; });
+    var VIEWS = {}, CRUMBS = {};
     var rows = function () {
         return S.sessions.filter(function (s) { return match(s, f); });
     };
-    var windowed = function (list, from, to) {
-        return list.filter(function (s) {
-            var t = Date.parse(s.started) || 0;
-            return t >= from && t < to;
-        });
-    };
-
-    function navGroup(title, key, items) {
-        return '<div class="grp"><h3>' + title + '</h3><div class="nav">'
-            + items.map(function (it) {
-                return '<a data-k="' + key + '" data-v="' + esc(it.v) + '" aria-pressed="'
-                    + (f[key] === it.v) + '"><span class="ic">' + (it.icon || '') + '</span>'
-                    + '<span class="lb" title="' + esc(it.title || it.label) + '">'
-                    + esc(it.label) + '</span>'
-                    + (it.n === undefined ? '' : '<span class="n">' + it.n + '</span>') + '</a>';
-            }).join('') + '</div></div>';
-    }
-    function drawSide() {
-        var n = { live: 0, stale: 0, down: 0 };
-        S.sessions.forEach(function (s) { n[s.state]++; });
-        var byStage = {};
-        S.sessions.forEach(function (s) { byStage[s.stage] = (byStage[s.stage] || 0) + 1; });
-        doc.getElementById('side').innerHTML =
-            '<div class="grp"><h3>檢視</h3><div class="nav">'
-            + '<a data-page="overview" aria-current="' + (page === 'overview') + '">'
-            + '<span class="ic">▦</span><span class="lb">總覽</span></a>'
-            + '<a data-page="list" aria-current="' + (page === 'list') + '">'
-            + '<span class="ic">☰</span><span class="lb">清單</span>'
-            + '<span class="n">' + S.sessions.length + '</span></a>'
-            + '<a data-page="cmp" aria-current="' + (page === 'cmp') + '">'
-            + '<span class="ic">⇅</span><span class="lb">比較</span>'
-            + '<span class="n">' + picked.length + '</span></a></div></div>'
-            + navGroup('狀態', 'state', [
-                { v: '', label: '全部', n: S.sessions.length, icon: '○' },
-                { v: 'live', label: 'live', n: n.live, icon: '<i class="dot live"></i>' },
-                { v: 'stale', label: 'stale', n: n.stale, icon: '<i class="dot stale"></i>' },
-                { v: 'down', label: 'down', n: n.down, icon: '<i class="dot down"></i>' }])
-            + navGroup('Registry', 'project',
-                [{ v: '', label: '全部專案', n: S.sessions.length, icon: '⌂' }].concat(
-                    S.projects.map(function (p) {
-                        return {
-                            v: p.root, label: LAB[p.root] + (p.gone ? ' — gone' : ''),
-                            title: p.root, icon: '▸',
-                            n: S.sessions.filter(function (s) { return s.root === p.root; }).length,
-                        };
-                    }).sort(function (a, b) { return b.n - a.n; })))
-            + navGroup('停在哪一階段', 'stage',
-                [{ v: '', label: '全部', n: S.sessions.length, icon: '◇' }].concat(
-                    ROUTE.filter(function (k) { return byStage[k]; }).map(function (k) {
-                        return {
-                            v: k, label: k, n: byStage[k],
-                            icon: '<i class="dot" style="background:' + STAGE_C[k] + '"></i>',
-                        };
-                    })));
-    }
-    function kpis(R) {
-        var a = windowed(R, NOW - 7 * 864e5, NOW + 864e5);
-        var b = windowed(R, NOW - 14 * 864e5, NOW - 7 * 864e5);
-        var clock = sum(R, function (s) { return s.clock; });
-        var wait = sum(R, function (s) { return s.waited; });
-        var ca = sum(a, function (s) { return s.clock; });
-        var wa = sum(a, function (s) { return s.waited; });
-        var cb = sum(b, function (s) { return s.clock; });
-        var wb = sum(b, function (s) { return s.waited; });
-        var card = function (icon, label, v, unit, d, sub) {
-            return '<div class="kpi"><div class="top"><span class="ci">' + icon + '</span>'
-                + '<span class="lb">' + label + '</span>'
-                + '<span class="i" title="近 7 天與前 7 天相比">ⓘ</span></div>'
-                + '<div class="row"><span class="v">' + v
-                + (unit ? '<span class="u">' + unit + '</span>' : '') + '</span>' + d + '</div>'
-                + '<div class="sub">' + sub + '</div></div>';
-        };
-        return '<div class="kpis">'
-            + card('◷', 'session', R.length, '', delta(a.length, b.length),
-                '近 7 天 ' + a.length + ' 個，前 7 天 ' + b.length + ' 個')
-            + card('▤', 'context', tokens(sum(R, function (s) { return s.burn; })), '',
-                delta(sum(a, function (s) { return s.burn; }),
-                    sum(b, function (s) { return s.burn; })),
-                '近 7 天 ' + tokens(sum(a, function (s) { return s.burn; })))
-            + card('$', '花費', usd(sum(R, cost)), '', delta(sum(a, cost), sum(b, cost)),
-                R.filter(function (s) { return cost(s); }).length + ' / ' + R.length + ' 個有計價')
-            + card('◔', '等你的時間', clock ? Math.round(wait / clock * 100) : 0, '%',
-                delta(ca ? wa / ca : 0, cb ? wb / cb : 0, 'pt'),
-                hours(wait) + ' 等 · ' + hours(clock) + ' 總時')
-            + '</div>';
-    }
-
-    // Stacked pills, one column per day, with a ribbon joining each registry's
-    // segment to its own segment in the next column. The ribbons are what make
-    // it a flow rather than six unrelated stacks: a registry that grew from one
-    // day to the next widens between them.
-    function flow(R) {
-        var byDay = {};
-        R.forEach(function (s) {
-            var d = day(s.started);
-            if (d === '—' || !s.burn) return;
-            if (!byDay[d]) byDay[d] = {};
-            byDay[d][s.root] = (byDay[d][s.root] || 0) + s.burn;
-        });
-        var days = Object.keys(byDay).sort().slice(-6);
-        if (!days.length) return '<div class="empty">這個篩選下沒有 context 紀錄</div>';
-        var tot = {};
-        days.forEach(function (d) {
-            for (var k in byDay[d]) tot[k] = (tot[k] || 0) + byDay[d][k];
-        });
-        var top = Object.keys(tot).sort(function (x, y) { return tot[y] - tot[x]; }).slice(0, 5);
-        var keys = top.concat(['__other']);
-        var colour = {}, label = {};
-        keys.forEach(function (k, i) { colour[k] = PAL[i]; });
-        top.forEach(function (k) { label[k] = LAB[k] || k; });
-        label.__other = '其他';
-        var cols = days.map(function (d) {
-            var v = {}, other = 0;
-            for (var k in byDay[d]) {
-                if (top.indexOf(k) >= 0) v[k] = byDay[d][k]; else other += byDay[d][k];
-            }
-            if (other) v.__other = other;
-            return {
-                day: d, v: v,
-                total: Object.keys(v).reduce(function (n, k) { return n + v[k]; }, 0),
-            };
-        });
-        var W = 760, H = 300, padX = 26, padTop = 48, padBot = 32;
-        var plotH = H - padTop - padBot, base = H - padBot;
-        var max = Math.max.apply(null, cols.map(function (c) { return c.total; })) || 1;
-        var span = (W - 2 * padX) / cols.length, cw = Math.min(78, span * 0.56);
-        cols.forEach(function (c, i) {
-            c.cx = padX + span * (i + 0.5);
-            c.seg = {};
-            var y = base;
-            keys.forEach(function (k) {
-                if (!c.v[k]) return;
-                var h = c.v[k] / max * plotH;
-                c.seg[k] = { top: y - h, bot: y, h: h };
-                y -= h;
-            });
-            c.topY = y;
-        });
-        var rib = '', bar = '', txt = '';
-        for (var i = 0; i < cols.length - 1; i++) {
-            (function (A, B) {
-                keys.forEach(function (k) {
-                    var a = A.seg[k], b = B.seg[k];
-                    if (!a || !b) return;
-                    var x1 = A.cx + cw / 2, x2 = B.cx - cw / 2;
-                    rib += '<path d="M' + x1 + ',' + a.top + ' L' + x2 + ',' + b.top
-                        + ' L' + x2 + ',' + b.bot + ' L' + x1 + ',' + a.bot + ' Z" fill="'
-                        + colour[k] + '" opacity=".12"/>';
-                });
-            }(cols[i], cols[i + 1]));
-        }
-        cols.forEach(function (c) {
-            keys.forEach(function (k) {
-                var g = c.seg[k];
-                if (!g) return;
-                var h = Math.max(g.h - 5, 3);
-                bar += '<rect x="' + (c.cx - cw / 2) + '" y="' + (g.top + (g.h - h) / 2)
-                    + '" width="' + cw + '" height="' + h + '" rx="' + Math.min(7, h / 2)
-                    + '" fill="' + colour[k] + '"><title>' + esc(label[k]) + ' ' + c.day + ' '
-                    + tokens(c.v[k]) + '</title></rect>';
-            });
-            txt += '<text class="val" x="' + c.cx + '" y="' + (c.topY - 11)
-                + '" text-anchor="middle">' + tokens(c.total) + '</text>'
-                + '<text class="lbl" x="' + c.cx + '" y="' + (base + 19)
-                + '" text-anchor="middle">' + c.day.slice(5) + '</text>';
-        });
-        return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img"'
-            + ' aria-label="每天 context，依 registry"' + '>' + rib + bar + txt + '</svg>'
-            + '<div class="legend">' + keys.filter(function (k) {
-                return cols.some(function (c) { return c.v[k]; });
-            }).map(function (k) {
-                return '<span><i style="background:' + colour[k] + '"></i>'
-                    + esc(label[k]) + '</span>';
-            }).join('') + '</div>';
-    }
-    function weekBars(R) {
-        var days = [];
-        for (var i = 6; i >= 0; i--) {
-            var t = NOW - i * 864e5, d = new Date(t).toISOString().slice(0, 10);
-            days.push({
-                d: d, wd: WD[new Date(t).getUTCDay()],
-                n: R.filter(function (s) { return day(s.started) === d; }).length,
-            });
-        }
-        var max = Math.max.apply(null, days.map(function (x) { return x.n; })) || 1;
-        var W = 300, H = 270, padBot = 26, plotH = H - padBot - 30, bw = 26;
-        var span = W / days.length, out = '';
-        days.forEach(function (x, i) {
-            var h = Math.max(x.n / max * plotH, 4), cx = span * (i + 0.5), y = H - padBot - h;
-            var hot = x.n === max && x.n > 0;
-            out += '<rect x="' + (cx - bw / 2) + '" y="' + y + '" width="' + bw + '" height="'
-                + h + '" rx="' + Math.min(12, h / 2) + '" fill="'
-                + (hot ? 'url(#g1)' : 'var(--line)') + '"><title>' + x.d + ' · ' + x.n
-                + ' 個</title></rect>'
-                + (hot ? '<text class="val" x="' + cx + '" y="' + (y - 8)
-                    + '" text-anchor="middle">' + x.n + '</text>' : '')
-                + '<text class="lbl" x="' + cx + '" y="' + (H - 8) + '" text-anchor="middle">'
-                + x.wd + '</text>';
-        });
-        return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img"'
-            + ' aria-label="近七天每天開了幾個"><defs>'
-            + '<linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">'
-            + '<stop offset="0" stop-color="#7c6cf0"/><stop offset="1" stop-color="#4c3fd7"/>'
-            + '</linearGradient></defs>' + out + '</svg>';
-    }
-
-    function gauge(pct) {
-        var W = 240, H = 140, cx = 120, cy = 118, r = 88, t = 18;
-        var pt = function (a, rad) {
-            var x = Math.PI * (180 - a) / 180;
-            return [cx + Math.cos(x) * rad, cy - Math.sin(x) * rad];
-        };
-        var arc = function (a0, a1, rad, col, wid) {
-            var p0 = pt(a0, rad), p1 = pt(a1, rad);
-            return '<path d="M' + p0[0].toFixed(1) + ',' + p0[1].toFixed(1) + ' A' + rad + ','
-                + rad + ' 0 ' + (a1 - a0 > 180 ? 1 : 0) + ' 1 ' + p1[0].toFixed(1) + ','
-                + p1[1].toFixed(1) + '" fill="none" stroke="' + col + '" stroke-width="' + wid
-                + '" stroke-linecap="round"/>';
-        };
-        var ticks = '';
-        for (var a = 8; a <= 172; a += 8) {
-            var p0 = pt(a, r + 13), p1 = pt(a, r + 19);
-            ticks += '<line x1="' + p0[0].toFixed(1) + '" y1="' + p0[1].toFixed(1) + '" x2="'
-                + p1[0].toFixed(1) + '" y2="' + p1[1].toFixed(1)
-                + '" stroke="var(--line-2)" stroke-width="1.5"/>';
-        }
-        return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="等待佔比 '
-            + pct + '%"><defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="0">'
-            + '<stop offset="0" stop-color="#14b8a6"/><stop offset="1" stop-color="#4c3fd7"/>'
-            + '</linearGradient></defs>' + ticks
-            + arc(0, 180, r, 'var(--line)', t)
-            + arc(0, Math.max(pct / 100 * 180, 2), r, 'url(#g2)', t)
-            + '<text x="' + cx + '" y="' + (cy - 16) + '" text-anchor="middle"'
-            + ' style="font:600 32px var(--sans);fill:var(--fg);letter-spacing:-.03em">'
-            + pct + '%</text>'
-            + '<text x="' + cx + '" y="' + (cy + 4) + '" text-anchor="middle" class="lbl">'
-            + '在等你回話</text></svg>';
-    }
 
     // A seven-stage session and a three-stage one averaged together describe
     // neither, so every cross-session figure is taken inside one route: a
@@ -572,68 +698,33 @@
             }).join('');
     }
 
-    function overview() {
-        var R = rows();
-        var recent = R.slice().sort(function (a, b) {
-            return (b.updated || 0) - (a.updated || 0);
-        }).slice(0, 7);
-        var clock = sum(R, function (s) { return s.clock; });
-        var wait = sum(R, function (s) { return s.waited; });
-        var burn = sum(R, function (s) { return s.burn; });
-        var a = windowed(R, NOW - 7 * 864e5, NOW + 864e5);
-        var b = windowed(R, NOW - 14 * 864e5, NOW - 7 * 864e5);
-        return '<div class="phead"><h1>總覽</h1><span class="chip">'
-            + (f.project ? esc(LAB[f.project]) : '全部 ' + S.projects.length + ' 個 registry')
-            + '</span><span class="spacer"></span>'
-            + '<span class="ctl" data-page="list">☰ 清單</span></div>'
-            + (isFinite(S.cleared)
-                ? '<p class="cleared">cleared ' + S.cleared + ' stale rows</p>' : '')
-            + goneNote()
-            + registryNote()
-            + profileCard('machine profile', 'machine', null, S.profiles && S.profiles.machine)
-            + kpis(R)
-            + '<div class="grid2">'
-            + '<div class="card"><div class="chd"><span class="ci">◧</span>'
-            + '<h2>context 流向</h2></div><div class="cbody">'
-            + '<div class="headline"><span class="big">' + tokens(burn) + '</span>'
-            + delta(sum(a, function (s) { return s.burn; }),
-                sum(b, function (s) { return s.burn; }))
-            + '<span class="hint">近 6 天，每一疊是一天，色塊是一個 registry</span></div>'
-            + flow(R) + '</div></div>'
-            + '<div class="card"><div class="chd"><span class="ci">▥</span>'
-            + '<h2>近七天</h2></div><div class="cbody">'
-            + '<div class="headline"><span class="big">' + a.length + '</span>'
-            + delta(a.length, b.length) + '</div>'
-            + '<div class="mute" style="font-size:11.5px;margin:-2px 0 8px">開始的 session</div>'
-            + weekBars(R) + '</div></div></div>'
-            + '<div class="grid3">'
-            + '<div class="card"><div class="chd"><span class="ci">◕</span>'
-            + '<h2>時間去哪了</h2></div><div class="cbody"><div class="gstats">'
-            + '<div style="border-color:var(--ind)"><div class="k">做事</div>'
-            + '<div class="v">' + hours(clock - wait) + '</div></div>'
-            + '<div style="border-color:var(--teal)"><div class="k">等你</div>'
-            + '<div class="v">' + hours(wait) + '</div></div>'
-            + '<div><div class="k">總時</div><div class="v">' + hours(clock) + '</div></div>'
-            + '</div>' + gauge(clock ? Math.round(wait / clock * 100) : 0) + '</div></div>'
-            + '<div class="card"><div class="chd"><span class="ci">◫</span><h2>各 route 的階段</h2>'
-            + '<span class="spacer"></span><a class="seeall" data-page="list">全部 '
-            + R.length + ' 個 →</a></div>'
-            + '<div class="cbody" style="padding-top:8px">' + routeLedger(R) + '</div></div>'
-            + '</div>'
-            + '<div class="card" style="margin-top:14px"><div class="chd"><span class="ci">☰</span>'
-            + '<h2>最近動過的</h2><span class="spacer"></span>'
-            + '<a class="seeall" data-page="list">看全部 →</a></div>'
-            + '<div class="cbody" style="padding-top:8px"><table>'
-            + '<colgroup><col><col style="width:150px"><col style="width:78px">'
-            + '<col style="width:78px"><col style="width:86px"></colgroup>'
-            + '<thead><tr><th>任務</th><th>階段</th><th class="r">context</th>'
-            + '<th class="r">花費</th><th>狀態</th></tr></thead><tbody>'
-            + recent.map(function (s) {
-                return '<tr data-id="' + esc(s.id) + '"><td>' + taskCell(s) + '</td><td>'
-                    + stageCell(s) + '</td><td class="r num mute">' + tokens(s.burn) + '</td>'
-                    + '<td class="r num">' + usd(cost(s)) + '</td><td>' + statePill(s)
-                    + '</td></tr>';
-            }).join('') + '</tbody></table></div></div>';
+    // The home page answers the search box and nothing else: the list page's
+    // facets narrow the list page, and a facet left set there that quietly
+    // shrank these totals would read as a quieter month.
+    function homeRows() {
+        return S.sessions.filter(function (s) { return match(s, { q: f.q, state: '', project: '', stage: '' }); });
+    }
+    function homePage(r) {
+        var R = homeRows();
+        var sel = r.day && DAYS.indexOf(r.day) >= 0 ? r.day : null;
+        var o = { metric: view.metric, dim: view.dim, sel: sel, today: TODAY, days: DAYS, names: NAMES, pkeys: PKEYS };
+        var bars = dayBars(R, view.metric, view.dim, DAYS);
+        var recent = R.slice().sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); }).slice(0, 12);
+        return (isFinite(S.cleared) ? '<p class="cleared">cleared ' + S.cleared + ' stale rows</p>' : '')
+            + '<section class="panel hero"><div class="hero-top"><div class="hero-title"><div class="eyebrow">近 30 天</div>'
+            + '<h1><b>' + DAYS[0].slice(5) + '</b> — <b>' + TODAY.slice(5) + '</b></h1></div>'
+            + kpiHtml(windowTotals(R, DAYS), windowTotals(R, PREV)) + '</div>'
+            + '<div class="controls"><div class="ctlgrp"><label>長條高度</label>'
+            + segHtml('metric', [['tokens', 'token'], ['usd', '花費'], ['time', '時間']], view.metric) + '</div>'
+            + '<div class="ctlgrp"><label>分段</label>'
+            + segHtml('dim', [['model', '依 model'], ['project', '依專案'], ['stage', '依 stage'], ['who', '主 session 對 agent']],
+                view.dim, view.metric === 'time' ? { model: '時間沒有 model 可分' } : null) + '</div>'
+            + '<div class="legend">' + legendHtml(bars, o) + '</div></div>'
+            + '<div class="chart">' + histSvg(bars, o) + '</div></section>'
+            + (sel ? dayPanelHtml(dayPanel(R, sel), o) : '')
+            + '<div class="grid2"><section class="panel">' + projectsHtml(projectRows(R, DAYS), o) + '</section>'
+            + '<section class="panel">' + recentHtml(recent, o) + '</section></div>'
+            + profileCard('machine profile', 'machine', null, S.profiles && S.profiles.machine);
     }
     // `started` has a column of its own because the page this replaces sorted
     // by it, and a sort key with no header is a sort nobody can reach.
@@ -645,21 +736,35 @@
         if (k === 'started') return Date.parse(s.started) || 0;
         return s[k];
     }
+    // The side bar's three facets, moved onto the page they narrow.
+    function facetsHtml() {
+        var n = { live: 0, stale: 0, down: 0 }, byStage = {};
+        S.sessions.forEach(function (s) { n[s.state]++; byStage[s.stage] = (byStage[s.stage] || 0) + 1; });
+        var seg = function (key, items) {
+            return '<div class="seg" role="group" data-facet="' + key + '">' + items.map(function (it) {
+                return '<button type="button" data-v="' + esc(it[0]) + '" aria-pressed="' + (f[key] === it[0]) + '"'
+                    + (it[2] ? ' title="' + esc(it[2]) + '"' : '') + '>' + esc(it[1]) + '</button>';
+            }).join('') + '</div>';
+        };
+        return '<div class="controls">'
+            + '<div class="ctlgrp"><label>狀態</label>' + seg('state', [['', '全部 ' + S.sessions.length], ['live', 'live ' + n.live],
+                ['stale', 'stale ' + n.stale], ['down', 'down ' + n.down]]) + '</div>'
+            + '<div class="ctlgrp"><label>Registry</label>' + seg('project', [['', '全部']].concat(S.projects.map(function (p) {
+                return [p.root, LAB[p.root] + (p.gone ? ' — gone' : ''), p.root];
+            }))) + '</div>'
+            + '<div class="ctlgrp"><label>停在哪一階段</label>' + seg('stage', [['', '全部']].concat(ROUTE.filter(function (k) {
+                return byStage[k];
+            }).map(function (k) { return [k, k + ' ' + byStage[k]]; }))) + '</div></div>';
+    }
     function listPage() {
-        // A gone registry has no rows to lay out, and the grid below is sized
-        // against the page head alone — so the note replaces the table rather
-        // than sitting above it and pushing the list off the bottom.
+        // A gone registry has no rows to lay out, so the note replaces the table
+        // rather than sitting above it and pushing the list off the bottom.
+        var head = '<div class="phead"><h1>清單</h1><span class="chip" id="cnt"></span><span class="spacer"></span>';
         var gone = goneNote();
-        if (gone) {
-            return '<div class="phead"><h1>清單</h1><span class="chip" id="cnt"></span>'
-                + '<span class="spacer"></span>'
-                + '<span class="ctl" data-page="overview">▦ 總覽</span></div>' + gone;
-        }
-        return '<div class="phead"><h1>清單</h1><span class="chip" id="cnt"></span>'
-            + '<span class="spacer"></span>'
-            + '<span class="ctl" data-page="cmp">⇅ 比較勾選的 <b id="ncmp">' + picked.length + '</b> 個</span>'
-            + '<span class="ctl" data-page="overview">▦ 總覽</span></div>'
-            + '<div class="listwrap" style="height:calc(100% - 54px)">'
+        if (gone) return head + '<a class="ctl" href="#/">▦ 首頁</a></div>' + facetsHtml() + gone;
+        return head + '<a class="ctl" href="#/cmp">⇅ 比較勾選的 <b id="ncmp">' + picked.length + '</b> 個</a>'
+            + '<a class="ctl" href="#/">▦ 首頁</a></div>' + facetsHtml()
+            + '<div class="listwrap">'
             + '<div class="card listcard"><div class="scroll"><table>'
             + '<colgroup><col style="width:34px"><col><col style="width:130px"><col style="width:80px">'
             + '<col style="width:78px"><col style="width:86px"><col style="width:86px">'
@@ -889,7 +994,7 @@
         var el = doc.createElement('script');
         el.src = 'station/detail/' + encodeURIComponent(s.id) + '.js';
         var redraw = function () {
-            if (page === 'cmp') draw();
+            if (route.view === 'cmp') draw();
             else if (sel === s.id) drawDetail();
         };
         el.onload = function () { asked[s.id] = 'loaded'; redraw(); };
@@ -1332,9 +1437,9 @@
             return S.sessions.filter(function (s) { return s.id === id; })[0];
         }).filter(Boolean);
         var head = '<div class="phead"><h1>比較</h1><span class="spacer"></span>'
-            + '<span class="ctl" data-page="list">☰ 回清單</span></div>';
+            + '<a class="ctl" href="#/list">☰ 回清單</a></div>';
         if (two.length < 2) {
-            return head + '<div class="card"><div class="cbody"><p class="mute">在清單上勾兩個有細節的 session，'
+            return head + '<div class="card"><div class="cbody"><p class="mute">在專案頁或清單上勾兩個有細節的 session，'
                 + '這裡就上下並排比較它們。</p></div></div>';
         }
         two.forEach(needDetail);
@@ -1343,14 +1448,32 @@
             + (xa && xb ? compareHtml(two[0], xa, two[1], xb) : '<p class="mute">讀取細節…</p>') + '</div></div>';
     }
 
+    function drawSide() {
+        var tail = CRUMBS[route.view] ? CRUMBS[route.view](route)
+            : route.view === 'list' ? [['清單', null]] : route.view === 'cmp' ? [['比較', null]]
+                : route.day ? [[route.day, null]] : [];
+        doc.getElementById('side').innerHTML = crumbHtml([['首頁', '#/']].concat(tail));
+    }
+    VIEWS.home = homePage;
+    VIEWS.list = listPage;
+    VIEWS.cmp = cmpPage;
     function draw() {
+        route = parseHash(w.location.hash);
         var p = doc.getElementById('page');
-        p.className = 'scrollmain' + (page === 'list' ? ' fixed' : '');
-        p.innerHTML = page === 'list' ? listPage() : page === 'cmp' ? cmpPage() : overview();
-        if (page === 'list') drawList();
+        p.className = 'page' + (route.view === 'list' ? ' fixed' : '');
+        p.innerHTML = (VIEWS[route.view] || homePage)(route);
+        if (route.view === 'list') drawList();
         drawSide();
         doc.getElementById('gen').textContent = genText();
     }
+    // Back, forward and every link on the page arrive here; opening a day keeps
+    // the chart in view instead of jumping to the top.
+    w.addEventListener('hashchange', function () {
+        sel = null;
+        draw();
+        var dp = route.view === 'home' && route.day ? doc.getElementById('daypanel') : null;
+        if (dp) dp.scrollIntoView({ block: 'nearest' }); else w.scrollTo(0, 0);
+    });
     doc.addEventListener('click', function (e) {
         // 記成 TODO: the server checks the line and answers with the rule it
         // failed, or with the line it wrote.
@@ -1422,10 +1545,12 @@
             drawSide();
             return;
         }
-        var pg = e.target.closest('[data-page]');
-        if (pg) { page = pg.getAttribute('data-page'); sel = null; draw(); return; }
-        var a = e.target.closest('a[data-k]');
-        if (a) { f[a.getAttribute('data-k')] = a.getAttribute('data-v'); draw(); return; }
+        var sg = e.target.closest('[data-seg] button');
+        if (sg) { view[sg.parentNode.getAttribute('data-seg')] = sg.getAttribute('data-v'); draw(); return; }
+        var fc = e.target.closest('[data-facet] button');
+        if (fc) { f[fc.parentNode.getAttribute('data-facet')] = fc.getAttribute('data-v'); draw(); return; }
+        var go = e.target.closest('[data-href]');
+        if (go && !e.target.closest('a,button,input')) { w.location.hash = go.getAttribute('data-href'); return; }
         var th = e.target.closest('th[data-k]');
         if (th) {
             var k = th.getAttribute('data-k');
@@ -1435,7 +1560,7 @@
             return;
         }
         var tr = e.target.closest('tr[data-id]');
-        if (tr && page === 'list') {
+        if (tr && route.view === 'list') {
             sel = tr.getAttribute('data-id');
             [].forEach.call(doc.querySelectorAll('#lb tr'), function (x) {
                 x.setAttribute('aria-selected', x.getAttribute('data-id') === sel);

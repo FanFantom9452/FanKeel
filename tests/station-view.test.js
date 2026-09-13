@@ -287,3 +287,180 @@ test('profileCard posts to /profile with a select when served, prints the comman
     const staticMachineOut = V.profileCard('machine profile', 'machine', null, global.window.STATION.profiles.machine);
     assert.match(staticMachineOut, /--default/);
 });
+
+// --- the three levels: home -------------------------------------------------
+// Sessions in the shape `serialize()` gives them from 2026-09-14 on: `days` rows
+// per local day x stage x model x who, `spans` rows of milliseconds, and `pkey`.
+// Every dollar amount is a binary fraction, so sums compare exactly. The
+// registry's `usd` and `agentUsd` are 99 on purpose: a figure that reached the
+// page from them would be off by a visible amount.
+const count = (s, re) => (s.match(re) || []).length;
+const tok5 = (n) => ({ input: n, output: n / 10, cacheRead: n * 4, cacheWrite5m: n / 2, cacheWrite1h: n / 4 });
+const usd5 = (u) => ({ input: u / 4, output: u / 2, cacheRead: u / 8, cacheWrite5m: u / 16, cacheWrite1h: u / 16 });
+const dayRow = (day, stage, model, who, usd, n) => ({ day, stage, model, who, tokens: tok5(n), cost: usd5(usd), usd });
+const local = (mo, d, h) => new Date(2026, mo - 1, d, h).toISOString();
+const NOW = new Date(2026, 8, 14, 21, 40).getTime();
+const HOME = [
+    { id: 'aaaa1111-0000', root: 'F:\\ws\\alpha', project: null, pkey: 'F:\\ws\\alpha', task: 'crosses midnight',
+      state: 'down', stage: 'verify', route: ['survey', 'build', 'verify'], started: local(9, 13, 23),
+      updated: NOW - 3600000, usd: 99, agentUsd: 99, hasDetail: true,
+      days: [dayRow('2026-09-13', 'build', 'claude-opus-5', 'main', 1.25, 1000),
+          dayRow('2026-09-13', 'build', 'claude-sonnet-5', 'agent', 0.5, 2000),
+          dayRow('2026-09-14', 'verify', 'claude-opus-5', 'main', 2, 3000)],
+      spans: [{ day: '2026-09-13', stage: 'build', who: 'main', ms: 3600000 },
+          { day: '2026-09-13', stage: 'build', who: 'wait', ms: 1200000 },
+          { day: '2026-09-13', stage: 'build', who: 'agent', ms: 600000 },
+          { day: '2026-09-14', stage: 'verify', who: 'main', ms: 1800000 }] },
+    { id: 'bbbb2222-0000', root: 'F:\\ws\\alpha', project: 'Beta', pkey: 'F:\\ws\\alpha/Beta', task: 'a plan day',
+      state: 'live', stage: 'plan', route: ['survey', 'design', 'plan'], started: local(9, 14, 9),
+      updated: NOW - 60000, usd: 99, agentUsd: 99, hasDetail: true,
+      days: [dayRow('2026-09-14', null, 'claude-haiku-4-5-20251001', 'workflow', 0.75, 500),
+          dayRow('2026-09-14', 'plan', 'claude-fable-5-1', 'main', 4, 800)],
+      spans: [{ day: '2026-09-14', stage: null, who: 'workflow', ms: 300000 },
+          { day: '2026-09-14', stage: 'plan', who: 'main', ms: 2400000 },
+          { day: '2026-09-14', stage: 'plan', who: 'wait', ms: 600000 }] },
+    { id: 'cccc3333-0000', root: 'F:\\ws\\alpha', project: null, pkey: 'F:\\ws\\alpha', task: 'no transcript here',
+      state: 'down', stage: 'build', route: ['survey', 'build'], started: local(8, 20, 10),
+      updated: NOW - 20 * 864e5, usd: 99, agentUsd: 99, hasDetail: false, days: null, spans: null },
+    { id: 'dddd4444-0000', root: 'F:\\ws\\gamma', project: null, pkey: 'F:\\ws\\gamma', task: 'last month',
+      state: 'down', stage: 'land', route: ['survey', 'land'], started: local(8, 1, 10),
+      updated: NOW - 44 * 864e5, usd: 99, agentUsd: 99, hasDetail: false,
+      days: [dayRow('2026-08-01', 'land', 'claude-sonnet-5', 'main', 8, 4000)],
+      spans: [{ day: '2026-08-01', stage: 'land', who: 'main', ms: 7200000 },
+          { day: '2026-08-01', stage: 'land', who: 'wait', ms: 7200000 }] },
+];
+// Guarded, so that before `lastDays` exists its own tests fail rather than the
+// whole file throwing at load and taking the older tests down with it.
+const DAYS = typeof V.lastDays === 'function' ? V.lastDays(NOW, 30) : [];
+const PREV = typeof V.lastDays === 'function' ? V.lastDays(NOW - 30 * 864e5, 30) : [];
+const O = { metric: 'usd', dim: 'model', sel: '2026-09-13', today: '2026-09-14', days: DAYS,
+    names: { 'F:\\ws\\alpha': 'alpha', 'F:\\ws\\alpha/Beta': 'alpha / Beta', 'F:\\ws\\gamma': 'gamma' },
+    pkeys: ['F:\\ws\\alpha/Beta', 'F:\\ws\\alpha', 'F:\\ws\\gamma'] };
+// A session whose transcript is gone but whose v1 cache was kept: Task 4 gives
+// it one `days` row carrying its whole `usd`, with no tokens and no per-kind cost.
+const KEPT = { id: 'eeee5555-0000', root: 'F:\\ws\\gamma', project: null, pkey: 'F:\\ws\\gamma', task: 'kept cache',
+    state: 'down', stage: 'build', route: ['survey', 'build'], started: local(9, 10, 10), updated: NOW - 4 * 864e5,
+    usd: 99, agentUsd: 99, hasDetail: false, spans: null,
+    days: [{ day: '2026-09-10', stage: null, model: 'claude-opus-5', who: 'main', tokens: null, cost: null, usd: 2.5 }] };
+
+test('lastDays counts local calendar days back from now, today last, across a month', () => {
+    assert.equal(DAYS.length, 30);
+    assert.deepEqual([DAYS[0], DAYS[28], DAYS[29]], ['2026-08-16', '2026-09-13', '2026-09-14']);
+    assert.deepEqual(V.lastDays(new Date(2026, 8, 1, 0, 30).getTime(), 2), ['2026-08-31', '2026-09-01']);
+    assert.equal(V.localDay(new Date(2026, 8, 13, 23, 59).getTime()), '2026-09-13');
+});
+
+test('parseHash reads every route the three levels use and falls back to home', () => {
+    const key = 'F:\\ws\\alpha/Beta';
+    assert.deepEqual(V.parseHash(''), { view: 'home', day: null });
+    assert.deepEqual(V.parseHash('#/'), { view: 'home', day: null });
+    assert.deepEqual(V.parseHash('#/d/2026-09-13'), { view: 'home', day: '2026-09-13' });
+    assert.deepEqual(V.parseHash('#/d/yesterday'), { view: 'home', day: null });
+    assert.deepEqual(V.parseHash('#/p/' + encodeURIComponent(key)), { view: 'project', pkey: key });
+    assert.deepEqual(V.parseHash('#/s/aaaa1111-0000'), { view: 'session', id: 'aaaa1111-0000', tab: 'timeline' });
+    assert.deepEqual(V.parseHash('#/s/aaaa1111-0000/cost'), { view: 'session', id: 'aaaa1111-0000', tab: 'cost' });
+    assert.deepEqual(V.parseHash('#/s/aaaa1111-0000/nope'), { view: 'session', id: 'aaaa1111-0000', tab: 'timeline' });
+    assert.deepEqual(V.parseHash('#/list'), { view: 'list' });
+    assert.deepEqual(V.parseHash('#/cmp'), { view: 'cmp' });
+    assert.deepEqual(V.parseHash('#/p/%E0%A4%A'), { view: 'home', day: null }, 'a key that does not decode is no route');
+});
+
+test('family names the model line and calls anything else other', () => {
+    assert.deepEqual(['claude-fable-5-1', 'claude-opus-5', 'claude-sonnet-5', 'claude-haiku-4-5-20251001', 'gpt-x', null].map(V.family),
+        ['fable', 'opus', 'sonnet', 'haiku', 'other', 'other']);
+});
+
+test('dayBars stacks each day from days and spans, not from the registry, and time has no model split', () => {
+    const usd = V.dayBars(HOME, 'usd', 'model', DAYS);
+    assert.deepEqual([usd.days[29].day, usd.days[29].total, usd.days[29].parts], ['2026-09-14', 6.75, { opus: 2, haiku: 0.75, fable: 4 }]);
+    assert.deepEqual([usd.days[28].total, usd.days[28].parts], [1.75, { opus: 1.25, sonnet: 0.5 }]);
+    assert.deepEqual(usd.keys, ['fable', 'opus', 'sonnet', 'haiku'], 'model keys in price order');
+    assert.equal(usd.max, 6.75);
+    assert.equal(usd.days.reduce((n, b) => n + b.total, 0), 8.5, '08-01 is outside the window');
+    assert.deepEqual(V.dayBars(HOME, 'time', 'who', DAYS).days[28].parts, { main: 3600000, agent: 600000 }, 'waiting is not time');
+    const byStage = V.dayBars(HOME, 'usd', 'stage', DAYS);
+    assert.deepEqual(byStage.days[29].parts, { verify: 2, none: 0.75, plan: 4 });
+    assert.deepEqual(byStage.keys, ['plan', 'build', 'verify', 'none']);
+    const off = V.dayBars(HOME, 'time', 'model', DAYS);
+    assert.deepEqual([off.days.length, off.keys.length, off.max], [0, 0, 0]);
+    assert.match(off.disabled, /model/);
+    for (const b of V.dayBars(HOME, 'tokens', 'project', DAYS).days) {
+        assert.equal(b.total, Object.values(b.parts).reduce((n, v) => n + v, 0), b.day + ': a bar is its segments');
+    }
+});
+
+test('dayPanel splits one day four ways and lists the sessions that spent on it', () => {
+    const p = V.dayPanel(HOME, '2026-09-14');
+    assert.deepEqual([p.usd, p.active, p.wait], [6.75, 1800000 + 300000 + 2400000, 600000]);
+    assert.deepEqual(p.by.who, { main: 6, workflow: 0.75 });
+    assert.deepEqual(p.by.stage, { verify: 2, none: 0.75, plan: 4 });
+    assert.deepEqual(p.by.project, { 'F:\\ws\\alpha': 2, 'F:\\ws\\alpha/Beta': 4.75 });
+    assert.deepEqual(p.sessions.map((s) => [s.id, s.usd]), [['bbbb2222-0000', 4.75], ['aaaa1111-0000', 2]]);
+});
+
+test('頁面對帳：a day\'s bar total equals its day panel total equals that day\'s days[].usd across sessions', () => {
+    for (const dim of ['model', 'project', 'stage', 'who']) {
+        const bars = V.dayBars(HOME, 'usd', dim, DAYS);
+        DAYS.forEach((day, i) => {
+            let rows = 0;
+            for (const s of HOME) for (const r of s.days || []) if (r.day === day) rows += r.usd;
+            assert.equal(bars.days[i].total, rows, dim + ' ' + day + ': the bar');
+            assert.equal(V.dayPanel(HOME, day).usd, rows, day + ': the day panel');
+        });
+    }
+});
+
+test('windowTotals and the four readouts: thirty days against the thirty before, waiting over main plus wait', () => {
+    const cur = V.windowTotals(HOME, DAYS);
+    const prev = V.windowTotals(HOME, PREV);
+    assert.deepEqual(cur, { usd: 8.5, tokens: 42705, active: 8700000, main: 7800000, wait: 1800000 });
+    assert.deepEqual(prev, { usd: 8, tokens: 23400, active: 7200000, main: 7200000, wait: 7200000 });
+    const html = V.kpiHtml(cur, prev);
+    assert.match(html, /\$8\.50/);
+    assert.doesNotMatch(html, /\$99|\$198/);
+    assert.match(html, /18\.8<span class="u">%<\/span>/);
+    assert.match(html, /-31\.3 pt/);
+    const none = V.kpiHtml(cur, V.windowTotals(HOME, V.lastDays(NOW - 60 * 864e5, 30)));
+    assert.equal(count(none, /前期無資料/g), 4);
+});
+
+test('sessionTotals and projectRows sum days and spans per session and per project key', () => {
+    assert.deepEqual(V.sessionTotals(HOME[0]), { usd: 3.75, tokens: 35100, active: 6000000, main: 5400000, wait: 1200000,
+        models: { opus: 3.25, sonnet: 0.5 } });
+    assert.deepEqual(V.sessionTotals(HOME[2]), { usd: 0, tokens: 0, active: 0, main: 0, wait: 0, models: {} });
+    const rows = V.projectRows(HOME, DAYS);
+    assert.deepEqual(rows.map((r) => [r.pkey, r.usd, r.n]),
+        [['F:\\ws\\alpha/Beta', 4.75, 1], ['F:\\ws\\alpha', 3.75, 2], ['F:\\ws\\gamma', 0, 0]]);
+    assert.equal(rows[1].daily[28], 1.75);
+    assert.equal(rows[1].last, NOW - 3600000);
+});
+
+test('the home builders print dollars from days and link every row to its level', () => {
+    const svg = V.histSvg(V.dayBars(HOME, 'usd', 'model', DAYS), O);
+    assert.equal(count(svg, /<rect class="hit"/g), 30);
+    assert.match(svg, /<rect class="hit" data-href="#\/"[^>]*><title>2026-09-13 /, 'the open day closes');
+    assert.match(svg, /<rect class="hit" data-href="#\/d\/2026-09-14"/);
+    assert.match(V.histSvg(V.dayBars(HOME, 'time', 'model', DAYS), O), /^<p class="note">時間沒有 model 可分/);
+    const panel = V.dayPanelHtml(V.dayPanel(HOME, '2026-09-14'), O);
+    assert.match(panel, /當日花費<\/div><div class="v">\$6\.75/);
+    assert.match(panel, /href="#\/d\/2026-09-13"/);
+    assert.doesNotMatch(panel, /#\/d\/2026-09-15/, 'no day after today');
+    assert.match(panel, /data-href="#\/s\/bbbb2222-0000"/);
+    assert.match(V.projectsHtml(V.projectRows(HOME, DAYS), O), /href="#\/p\/F%3A%5Cws%5Calpha%2FBeta"/);
+    const recent = V.recentHtml(HOME.slice(0, 2), O);
+    assert.match(recent, /data-href="#\/s\/aaaa1111-0000"[\s\S]*?\$3\.75/);
+    assert.doesNotMatch(recent, /\$99|\$198/);
+});
+
+test('a kept v1 cache\'s single row counts its dollars and zero tokens, and breaks no home view', () => {
+    const i = DAYS.indexOf('2026-09-10');
+    assert.deepEqual(V.dayBars([KEPT], 'usd', 'stage', DAYS).days[i].parts, { none: 2.5 });
+    const tok = V.dayBars([KEPT], 'tokens', 'model', DAYS);
+    assert.deepEqual([tok.days[i].total, tok.keys, tok.max], [0, [], 0]);
+    assert.deepEqual(V.dayBars([KEPT], 'time', 'who', DAYS).days[i].parts, {});
+    assert.equal(V.dayPanel([KEPT], '2026-09-10').usd, 2.5);
+    assert.deepEqual(V.sessionTotals(KEPT), { usd: 2.5, tokens: 0, active: 0, main: 0, wait: 0, models: { opus: 2.5 } });
+    assert.deepEqual(V.windowTotals([KEPT], DAYS), { usd: 2.5, tokens: 0, active: 0, main: 0, wait: 0 });
+    assert.match(V.recentHtml([KEPT], O), /\$2\.50<\/td><td class="r muted">0<\/td>/);
+    assert.equal(count(V.histSvg(V.dayBars([KEPT], 'tokens', 'model', DAYS), O), /<rect class="hit"/g), 30);
+});
