@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-11
+last_verified: 2026-09-14
 source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/registry.js, lib/prices.js, lib/clear.js, lib/profile.js
 ---
 
@@ -467,9 +467,9 @@ makes between `serve` and a file on disk.
 
 `scripts/station.js serve` answers that button at `POST /profile`, taking
 `scope` (`project` or `machine`), `project`, and a repeated `key`/`value`
-pair per row changed in one request. A wrong nonce is `403`; an unknown key,
-or a value not on that key's list, is `400`; other refusals answer `404` or
-`409`; a write that lands goes through `lib/profile.js`'s `write` and redirects
+pair per row changed in one request. A wrong nonce is `403`. A bad `scope`,
+no pair or an unequal count, an unknown key, or a value off its list, is
+`400`; an unknown project `404`, a refused write `409`; one that lands redirects
 `303` back to the page it came from — the same shape `/clear` and
 `/clear-stale` already use.
 

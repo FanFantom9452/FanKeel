@@ -63,6 +63,16 @@ test('a directory of projects lists each one, not the files under it', () => {
   assert.match(out, /2 under it:/);
   assert.match(out, /alpha\s+no git\s+2 files/);
   assert.match(out, /beta\s+no git\s+1 file/);
+  // The two matches above accept any run of spaces, so a table whose columns
+  // stopped lining up passed them. Measured 2026-09-14, the rows are
+  // `  alpha  no git  2 files` and `  beta   no git  1 file`: `alpha` sets the
+  // first column's width, so both rows' later cells start at one offset, and
+  // that offset is the indent, `alpha`, and the two-space gap.
+  const lines = out.split('\n');
+  const a = lines.find((l) => /alpha\s+no git/.test(l));
+  const b = lines.find((l) => /beta\s+no git/.test(l));
+  assert.equal(a.indexOf('no git'), '  alpha  '.length, JSON.stringify(a));
+  assert.equal(b.indexOf('no git'), a.indexOf('no git'), JSON.stringify(b));
   // The failure this replaces: a survey with no terms, which reports every
   // declaration in the tree and is unreadable at workspace scale.
   assert.doesNotMatch(out, /declarations:/);
