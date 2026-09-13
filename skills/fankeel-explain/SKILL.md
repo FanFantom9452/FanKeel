@@ -1,7 +1,7 @@
 ---
 name: fankeel-explain
 description: Say it so it is understood on first reading — the one sentence first, unknowns left unknown, contrast only where evidence has one, a report as a path, a status sync in six fields, and a check before sending. Use for a presentation, a report, a project status sync or init, sorting out a line of thought, 簡報, 報告, 進度同步, 整理思路, or when a session has drifted, repeated itself, or may have misread the project.
-version: 0.64.0
+version: 0.65.0
 status: current
 last_verified: 2026-09-13
 source_of_truth: this file is the prompt, no upstream
