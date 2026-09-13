@@ -413,8 +413,8 @@ every hook here is built on: exit 0 on every path, and cost nothing for a sessio
 that is not in the mode.
 
 The premise is also thinner than it reads. No hook takes an id from typed input —
-`brief.js:33`, `carry.js:53`, `gate.js:27`, `guard.js:24`, `inject.js:52`,
-`resume.js:28` and `touch.js:28` all read `payload.session_id`. A wrong id
+`brief.js:36`, `carry.js:53`, `gate.js:27`, `guard.js:24`, `inject.js:47`,
+`resume.js:30` and `touch.js:28` all read `payload.session_id`. A wrong id
 reaching one of them would mean Claude Code passed a wrong one, which is not a
 thing a warning in a hook would help anybody fix.
 

@@ -247,7 +247,7 @@ test('a symbol nothing declares is a finding in reference only', () => {
 // so a dead link inside it is still a finding and an undeclared symbol beside
 // it is not. `checkDoc` only special-cases `archive` and `report`
 // (`scripts/docs-check.js:211`); every other role, `fixture` included, falls
-// through to the two guards at `:279` and `:307` that read only
+// through to the two guards at `:301` and `:349` that read only
 // `role === 'reference'` — so those two cost no new branch. The code-span
 // `gone` check does need one: a fixture page may name a path its own scaffold
 // creates, one this tree never has — `lib/thing.js` beside `lib/present.js`
