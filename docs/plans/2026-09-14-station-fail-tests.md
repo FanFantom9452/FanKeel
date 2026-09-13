@@ -278,7 +278,7 @@ status: design-intent
 | `scripts/station.js:552` 的 `POST /profile` 送既非 project 也非 machine 的 scope，回 `400` 與 `scope is project or machine`。 | Task 1 |
 | `scripts/station.js:558` 的 `POST /profile` 沒送 key/value，回 `400` 與 `key and value come in pairs`。 | Task 1 |
 | `scripts/station.js:573` 的 `POST /profile` 寫一個不能 parse 的專案 profile，回 `409`，本文以 `does not parse; fix it by hand first` 結尾，檔案不動。 | Task 1 |
-| `alpha` 與 `beta` 兩列的 `no git` 起點相同且等於 `'  alpha  '.length`，檔案數那一欄的起點也相同。 | Task 2 — its second half struck in 22c046c: both rows' git column reads `no git`, one length, so the first column alone decides the file-count offset |
+| `alpha` 與 `beta` 兩列的 `no git` 起點相同且等於 `'  alpha  '.length`，檔案數那一欄的起點也相同。 | 部分 struck — the file-count half, in 22c046c: both rows' git column reads `no git`, one length, so the first column alone decides that offset; Task 2 for the rest |
 | `docs/station.md:470-472` 改成與 `scripts/station.js:535-573` 一致：scope 不合法、沒有 pair 或數量不等也是 `400`，未知專案 `404`，寫入被拒 `409`，仍是三行。 | Task 3 |
 | `TODO.md` 的 `## Ready` 那一條刪掉。 | Task 3 |
 | 七個拒絕被測到 — 七處狀態碼改成 491–497，恰好新增的七個測試紅；還原後綠 | Task 1, steps 4-7 |
