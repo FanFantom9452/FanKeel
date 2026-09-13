@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # Explain Skill Implementation Plan

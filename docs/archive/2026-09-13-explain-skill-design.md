@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # fankeel 不再出貨 output style：原則改走 skill 與注入
