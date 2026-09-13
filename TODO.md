@@ -67,8 +67,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔station〕`scripts/station.js` 改用 `fail()` 的七個錯誤回應沒有測試走到（09-14 狀態碼改成 491–497，1410 個測試全綠）；`scripts/orient.js` 表格欄寬也沒有斷言 — [tests/station-cli.test.js](tests/station-cli.test.js).
-
 ## Needs a decision
 
 - 〔station〕總覽改版：兩個專案並排、單一專案、某一天的花費、趨勢折線。另起一次設計，附自己的 mockup — [docs/station.md](docs/station.md).
