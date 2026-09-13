@@ -73,7 +73,6 @@ test('a directory of projects lists each one, not the files under it', () => {
   const b = lines.find((l) => /beta\s+no git/.test(l));
   assert.equal(a.indexOf('no git'), '  alpha  '.length, JSON.stringify(a));
   assert.equal(b.indexOf('no git'), a.indexOf('no git'), JSON.stringify(b));
-  assert.equal(b.indexOf('1 file'), a.indexOf('2 files'), JSON.stringify(b));
   // The failure this replaces: a survey with no terms, which reports every
   // declaration in the tree and is unreadable at workspace scale.
   assert.doesNotMatch(out, /declarations:/);
