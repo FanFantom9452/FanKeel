@@ -52,27 +52,16 @@ const VERSION_LINE = /^version:[ \t]*(\S+)[ \t]*$/m;
 // a place the number should be and is not is the same defect as one that
 // disagrees.
 function readAll(root) {
-    const out = [];
-    for (const rel of MANIFESTS) {
+    return MANIFESTS.concat(skillFiles(root)).map((rel) => {
         let version = null;
         try {
-            version = JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8')).version || null;
+            const text = fs.readFileSync(path.join(root, rel), 'utf8');
+            version = rel.endsWith('.json') ? (JSON.parse(text).version || null) : (text.match(VERSION_LINE) || [])[1] || null;
         } catch (e) {
             version = null;
         }
-        out.push({ file: rel, version });
-    }
-    for (const rel of skillFiles(root)) {
-        let version = null;
-        try {
-            const m = fs.readFileSync(path.join(root, rel), 'utf8').match(VERSION_LINE);
-            version = m ? m[1] : null;
-        } catch (e) {
-            version = null;
-        }
-        out.push({ file: rel, version });
-    }
-    return out;
+        return { file: rel, version };
+    });
 }
 
 // The manifests are rewritten by editing the one line rather than by
