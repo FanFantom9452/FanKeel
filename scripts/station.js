@@ -369,6 +369,10 @@ async function serve(opts) {
     const handler = async (req, res) => {
         touch();
         const url = new URL(req.url, 'http://127.0.0.1');
+        const fail = (code, msg) => {
+            res.writeHead(code, { 'content-type': 'text/plain' });
+            res.end(msg + '\n');
+        };
         if (req.method === 'GET' && url.pathname === '/') {
             let html;
             try {
@@ -378,8 +382,7 @@ async function serve(opts) {
                 // asset gone — a shell that will not read means the plugin's
                 // whole `assets/station/` directory is missing or unreadable,
                 // and the reason says that rather than naming a single file.
-                res.writeHead(404, { 'content-type': 'text/plain' });
-                res.end('no such asset: this plugin\'s assets directory is missing or unreadable\n');
+                fail(404, 'no such asset: this plugin\'s assets directory is missing or unreadable');
                 return;
             }
             res.writeHead(200, {
@@ -412,8 +415,7 @@ async function serve(opts) {
             // off disk.
             const hit = modelNow().registries.flatMap((r) => r.sessions).find((s) => s.sessionId === wanted[1]);
             if (!hit || !hit.detail) {
-                res.writeHead(404, { 'content-type': 'text/plain' });
-                res.end('no detail for that session\n');
+                fail(404, 'no detail for that session');
                 return;
             }
             res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-store' });
@@ -448,8 +450,7 @@ async function serve(opts) {
         if (req.method === 'POST' && url.pathname === '/clear') {
             const form = new URLSearchParams(await readBody(req));
             if (form.get('nonce') !== nonce) {
-                res.writeHead(403, { 'content-type': 'text/plain' });
-                res.end('wrong nonce: open the page this server printed and try again\n');
+                fail(403, 'wrong nonce: open the page this server printed and try again');
                 return;
             }
             const root = form.get('root') || '';
@@ -465,8 +466,7 @@ async function serve(opts) {
                 return;
             }
             if (row.state === 'live') {
-                res.writeHead(409, { 'content-type': 'text/plain' });
-                res.end('that session is running; nothing to clear\n');
+                fail(409, 'that session is running; nothing to clear');
                 return;
             }
             const out = clearEntry(reg.root, id, { force: form.get('force') === '1' });
@@ -482,8 +482,7 @@ async function serve(opts) {
         if (req.method === 'POST' && url.pathname === '/clear-stale') {
             const form = new URLSearchParams(await readBody(req));
             if (form.get('nonce') !== nonce) {
-                res.writeHead(403, { 'content-type': 'text/plain' });
-                res.end('wrong nonce: open the page this server printed and try again\n');
+                fail(403, 'wrong nonce: open the page this server printed and try again');
                 return;
             }
             const model = modelNow();
@@ -503,8 +502,7 @@ async function serve(opts) {
                 else if (out.reason !== 'inactive') refused.push(s.sessionId + ': ' + out.reason);
             }
             if (refused.length) {
-                res.writeHead(409, { 'content-type': 'text/plain' });
-                res.end('cleared ' + cleared + '; refused ' + refused.length + '\n' + refused.join('\n') + '\n');
+                fail(409, 'cleared ' + cleared + '; refused ' + refused.length + '\n' + refused.join('\n'));
                 return;
             }
             // Redirect-after-POST, so a refresh does not clear twice — and the
@@ -517,16 +515,14 @@ async function serve(opts) {
         if (req.method === 'POST' && url.pathname === '/todo') {
             const form = new URLSearchParams(await readBody(req));
             if (form.get('nonce') !== nonce) {
-                res.writeHead(403, { 'content-type': 'text/plain' });
-                res.end('wrong nonce: open the page this server printed and try again\n');
+                fail(403, 'wrong nonce: open the page this server printed and try again');
                 return;
             }
             const model = modelNow();
             const reg = model.registries.find((r) => r.root === path.resolve(form.get('root') || ''));
             const row = reg && reg.sessions.find((s) => s.sessionId === form.get('id'));
             if (!row) {
-                res.writeHead(404, { 'content-type': 'text/plain' });
-                res.end('no such session on this page\n');
+                fail(404, 'no such session on this page');
                 return;
             }
             // The session's own project when it names one with a TODO.md, and
@@ -541,8 +537,7 @@ async function serve(opts) {
         if (req.method === 'POST' && url.pathname === '/profile') {
             const form = new URLSearchParams(await readBody(req));
             if (form.get('nonce') !== nonce) {
-                res.writeHead(403, { 'content-type': 'text/plain' });
-                res.end('wrong nonce: open the page this server printed and try again\n');
+                fail(403, 'wrong nonce: open the page this server printed and try again');
                 return;
             }
             const scope = form.get('scope');
@@ -553,8 +548,7 @@ async function serve(opts) {
                 const model = modelNow();
                 const known = model.registries.some((r) => Object.keys(r.profiles || {}).some((p) => path.resolve(p) === want));
                 if (!known) {
-                    res.writeHead(404, { 'content-type': 'text/plain' });
-                    res.end('no such project on this page\n');
+                    fail(404, 'no such project on this page');
                     return;
                 }
                 file = profile.projectFile(want);
@@ -575,8 +569,7 @@ async function serve(opts) {
             for (let i = 0; i < keys.length; i++) {
                 const spec = profile.KEYS[keys[i]];
                 if (!spec || !spec.values.includes(String(values[i]).toLowerCase())) {
-                    res.writeHead(400, { 'content-type': 'text/plain' });
-                    res.end('not a profile key/value: ' + keys[i] + '=' + values[i] + '\n');
+                    fail(400, 'not a profile key/value: ' + keys[i] + '=' + values[i]);
                     return;
                 }
             }
@@ -592,8 +585,7 @@ async function serve(opts) {
             res.end();
             return;
         }
-        res.writeHead(404, { 'content-type': 'text/plain' });
-        res.end('not here\n');
+        fail(404, 'not here');
     };
     server = http.createServer(handler);
     // Factored so the first bind and the fixed-port retry below write the
