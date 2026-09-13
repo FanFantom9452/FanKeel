@@ -147,7 +147,7 @@ report where a real parser would cost a dependency this plugin does not have.
 
 - `lib/tracked.js:31` 是 `const args = ['ls-files', '-z', '--cached', '--others', '--exclude-standard'];`
 - `scripts/docs-audit.js:400` 是 `const listed = trackedFiles(root);`
-- `scripts/docs-check.js:367` 是 `const result = trackedFiles(root);`
+- `scripts/docs-check.js:366` 是 `const result = trackedFiles(root);`
 - `scripts/layout.js:59` 是 `const found = trackedFiles(root);`
 - `scripts/memory-check.js:143` 是 `const tracked = trackedFiles(root);`
 - `scripts/orient.js:199` 是 `result = trackedFiles(dir, { stats });`

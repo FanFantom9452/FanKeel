@@ -5,7 +5,7 @@
       "name": "survey",
       "entry_condition": "ratchet the class with task.js route.",
       "stop_condition": "Done when the map has been read, the scanner has been run and quoted, its `skipped:` line has been answered rather than left as a number, and the class is said out loud.",
-      "prompt_bytes": 2377,
+      "prompt_bytes": 2388,
       "prompt_byte_budget": 2400
     },
     {

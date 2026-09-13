@@ -6,7 +6,7 @@ source_of_truth: this file is the index; each page below is its own source
 
 # FanKeel documentation
 
-Twelve pages, one question each. The front page has install, update and
+Eleven pages, one question each. The front page has install, update and
 uninstall, the two diagrams and a short introduction to each of these;
 everything that needs more than a paragraph is here.
 
@@ -38,7 +38,7 @@ everything that needs more than a paragraph is here.
 | What a plan is checked for before its gate, and what an implementer's brief file holds | [pipeline.md](pipeline.md) — *plan* and *build* |
 | What the badge word means, and how to colour each stage | [statusline.md](statusline.md) |
 | Every session on this machine, where the page finds the registries, and what `stale` means | [station.md](station.md) |
-| Which output style to use, and why a style and not an injected ruleset | [output-styles.md](output-styles.md) |
+| Why fankeel ships no output style, and where its voice lives instead | [decisions/2026-09-13-no-output-styles.md](decisions/2026-09-13-no-output-styles.md) |
 | What caveman and SEPIA do that this plugin does not — gates, evals, an evidence ledger, thin wrappers — plus the user's own directions, three from 09-08 and five from 09-11 — the ones still open are `TODO.md` entries | [improvement-brief.md](improvement-brief.md) — *a backlog, 繁體中文* |
 | Every dated report's headline figure with a stable ID, what its scope does not cover, and which pages cite it | [sources.md](sources.md) — *the evidence ledger* |
 | How two implementers running at once was built, task by task — its design is in `docs/archive/` | `docs/archive/2026-08-30-parallel-build.md` — *built* |
@@ -62,6 +62,8 @@ everything that needs more than a paragraph is here.
 | The six tasks that made the page a static shell over a scan, with the facets, the two views and the deletions each one carried | `docs/archive/2026-09-08-station-shell.md` — *built* |
 | Why the station is a server you start once rather than one that times out, and why `.fankeel/` should read as four names instead of a spill of station files | `docs/archive/2026-09-08-ready-and-station-serve-design.md` — *built* |
 | A prompt for a later session: a `design` class with its route, an axis lock file, a mode-first routing table and the stage-skill edits — read in from caveman.zip, not yet run | [plans/2026-09-09-design-class-prompt.md](plans/2026-09-09-design-class-prompt.md) — *design-intent, 繁體中文* |
+| Why fankeel's three output styles were retired for an on-demand `fankeel-explain` skill and one survey line, and which two parts of the pasted prompt were not taken as written | `docs/archive/2026-09-13-explain-skill-design.md` — *built, 繁體中文* |
+| The five tasks that deleted `caveman.zip`, gave survey an `unknown:` line, added `fankeel-explain`, recorded why no style ships and deleted the styles | `docs/archive/2026-09-13-explain-skill.md` — *built* |
 | Why three of ponytail's six skills became fankeel's own — the reviewer's `## Cuts`, audit's code half as three lenses, the ladder in design — and the rest was unhooked | `docs/archive/2026-09-12-ponytail-absorb-design.md` — *built, 繁體中文* |
 | The seven tasks that did it, from the audit rule's fixed sentence to the test that no shipped file names the plugin | `docs/archive/2026-09-12-ponytail-absorb.md` — *built, 繁體中文* |
 | Why the ten `## Ready` entries came down to eight changes — an archive page is retired wherever it sits, a deleted file no longer holds a plan open, the order of stages is kept beside the clock, and a blank judgement is refused | `docs/archive/2026-09-11-ready-ten-design.md` — *built, 繁體中文* |
@@ -114,7 +116,7 @@ everything that needs more than a paragraph is here.
 | Why five of thirteen deferred entries were wrong as filed, and what the survey found instead of what they claimed | [plans/2026-09-07-todo-thirteen-design.md](plans/2026-09-07-todo-thirteen-design.md) — *built* |
 | The eleven tasks that close them, one of which deliberately did not run | [plans/2026-09-07-todo-thirteen.md](plans/2026-09-07-todo-thirteen.md) — *built* |
 | What one reader per page plus a shared diff cost against the same reading in-session — the first pair where dispatch is cheaper and faster, and why that cannot be attributed to one variable | [reports/2026-09-07-join-pair.md](reports/2026-09-07-join-pair.md) — *a dated snapshot, 繁體中文* |
-| Why whether an output style reaches a subagent is still unanswered, and how the control inside each run is what proved the probe had not measured it | [reports/2026-09-07-style-to-subagent.md](reports/2026-09-07-style-to-subagent.md) — *a dated snapshot, 繁體中文* |
+| Why, on 2026-09-07, whether an output style reaches a subagent went unanswered, and how the control inside each run is what proved the probe had not measured it | [reports/2026-09-07-style-to-subagent.md](reports/2026-09-07-style-to-subagent.md) — *a dated snapshot, 繁體中文* |
 | What ten reviewers and one mutation caught across one build, and the three things the test suite caught that they did not | [reports/2026-09-07-reviewer-cost.md](reports/2026-09-07-reviewer-cost.md) — *a dated snapshot, 繁體中文* |
 | What sixteen design axes six installed design skills each set, where they conflict, and the four gaps between them — read in from caveman.zip | [reports/2026-09-09-design-axis-inventory.md](reports/2026-09-09-design-axis-inventory.md) — *a dated snapshot, 繁體中文* |
 | What the first dispatch pair costs with `haiku` as the parent on both arms: why the residue advantage halves because the inline arm got cheaper, and why the money penalty more than doubles | [reports/2026-09-09-haiku-pair.md](reports/2026-09-09-haiku-pair.md) — *a dated snapshot, 繁體中文* |
@@ -176,7 +178,6 @@ is explained, and it is the one thing to know before adding a page here.
 | `docs/archive/` | archive | that is the point of it |
 | `docs/judgements/` | report | it is what `fankeel-judge` answered on that day, filed verbatim by `scripts/judge.js` |
 | `skills/` | reference | no |
-| `output-styles/` | reference | no |
 | `evals/` | fixture | n/a — a test's own input; a prompt names paths only its scaffold has, so it is checked for links and line numbers only, never for symbols |
 | `.claude/agents/` | reference | no |
 | `agents/` | reference | no — the five agents the plugin ships, read by Claude Code at process start |

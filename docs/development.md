@@ -56,17 +56,17 @@ below the verdict as **due for a re-read**, without failing the run: sitting und
 `## Waiting` for a fortnight is not a defect, and a script cannot know whether the
 thing an entry waits for has happened. What it can know is how long since a person
 last said it had not. That is worth printing because `## Waiting` has never once
-shrunk in this repository by an entry's blocker resolving — four times it has
-shrunk, and all four were somebody re-reading the section and finding an entry
-misfiled. It is drained by being read, so the interval between readings is the
-thing to measure.
+shrunk in this repository by an entry's blocker resolving. Five times it has
+shrunk: four were somebody re-reading the section and finding an entry misfiled,
+and one a question Claude Code's docs answered before its blocker came. It is
+drained by being read, so the interval between readings is the thing to measure.
 
-## `version.js` — the release number in eleven files
+## `version.js` — the release number in twelve files
 
-`node scripts/version.js` is the release number in the eleven files that carry it —
-two manifests and one frontmatter line in each of the nine skills. With a number
+`node scripts/version.js` is the release number in the twelve files that carry it —
+two manifests and one frontmatter line in each of the ten skills. With a number
 it sets them all; with `--changes` it lists the commits since the last
-`chore: <x.y.z>`, which is what a release contains. `npm test` fails when the eleven
+`chore: <x.y.z>`, which is what a release contains. `npm test` fails when the twelve
 disagree, so the script is what makes them agree rather than what notices. A
 release used to be ten edits, and missing one left a skill announcing a version
 the plugin is not — right in nine places, which is how it went unnoticed.
@@ -116,7 +116,7 @@ genuinely used exports unused. One barrel shows it with one variable changed:
 `knip --trace-export badgeWord`, destructured at `tests/badge.test.js:9`,
 returns `import[badgeWord] ⎆ ✓`; `knip --trace-export clearBadge`, reached as
 `badge.clearBadge`, returns `(no imports found) ✗` — and `scripts/task.js:127`
-and `hooks/inject.js:128` call it. The shape is not rare here: counting lines
+and `hooks/inject.js:120` call it. The shape is not rare here: counting lines
 under `tests/` that bind a module from `../lib/`, `../scripts/` or `../hooks/`
 to a plain identifier rather than destructuring it gives 53 lines across 38 of
 the 73 test files, against 35 destructured lines across 26. `TODO.md` carries

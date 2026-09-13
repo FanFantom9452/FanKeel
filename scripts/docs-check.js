@@ -114,7 +114,7 @@ const isMarkdown = (p) => p.toLowerCase().endsWith('.md');
 
 function readFile(root, rel) {
     try {
-        return fs.readFileSync(path.join(root, rel.split('/').join(path.sep)), 'utf8');
+        return fs.readFileSync(path.join(root, rel), 'utf8');
     } catch (e) {
         return null;
     }
@@ -171,7 +171,7 @@ function resolveRef(root, fromRel, ref) {
     for (const c of candidates) {
         if (c.startsWith('..')) continue;
         try {
-            if (fs.existsSync(path.join(root, c.split('/').join(path.sep)))) return c;
+            if (fs.existsSync(path.join(root, c))) return c;
         } catch (e) { /* unreadable is not found */ }
     }
     return null;
@@ -181,7 +181,7 @@ const external = (ref) => /^[a-z][a-z0-9+.-]*:/i.test(ref) || ref.startsWith('#'
 
 // The page recorded what it meant to point at, right beside the citation. A
 // nearby symbol is a proxy for intent; this is the author's own note, on disk,
-// which is the thing `docs/decisions/fankeel-shell.md:424` said nothing records.
+// which is the thing `docs/decisions/fankeel-shell.md:435` said nothing records.
 // A second path is not a quote — `lib/a.js:10` beside `lib/b.js` is two
 // citations, not one citation and its evidence.
 function quoteBeside(text, from) {
@@ -193,6 +193,11 @@ function quoteBeside(text, from) {
 }
 
 const flat = (s) => s.replace(/\s+/g, ' ').trim();
+
+// Every 1-based line number of `target` whose flattened text holds the
+// flattened `needle`, shared by both places that ask where a quote went.
+const linesHolding = (lines, needle) =>
+    lines.map((l, i) => (flat(l).includes(flat(needle)) ? i + 1 : null)).filter((n) => n !== null);
 
 // One document's claims. `role` decides which of them are worth making.
 function checkDoc(root, rel, role, symbols, roots) {
@@ -302,10 +307,7 @@ function checkDoc(root, rel, role, symbols, roots) {
                 if (quote === null) {
                     out.push({ file: rel, line: lineOf(m.index), tag: 'unquoted', what: label + ' carries no quote, so nothing checks the ' + (wantedEnd ? 'range' : 'line') });
                 } else if (target && wantedEnd === null && !flat(target[wanted - 1] || '').includes(flat(quote))) {
-                    const at = [];
-                    for (let i = 0; i < target.length; i++) {
-                        if (flat(target[i]).includes(flat(quote))) at.push(i + 1);
-                    }
+                    const at = linesHolding(target, quote);
                     // One hit is where it went. Two is ambiguous and stays
                     // ambiguous — reporting a guessed line is the thing the
                     // 09-05 decision was right about.
@@ -320,10 +322,7 @@ function checkDoc(root, rel, role, symbols, roots) {
                         if (flat(target[i - 1] || '').includes(flat(quote))) { inRange = true; break; }
                     }
                     if (!inRange) {
-                        const at = [];
-                        for (let i = 0; i < target.length; i++) {
-                            if (flat(target[i]).includes(flat(quote))) at.push(i + 1);
-                        }
+                        const at = linesHolding(target, quote);
                         // Reported only where there is exactly one place to send
                         // it, the same reasoning that keeps a two-hit single line
                         // ambiguous rather than guessed. Zero or several

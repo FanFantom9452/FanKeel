@@ -300,6 +300,7 @@ re-route with `task.js route`. Nothing downgrades mid-task.
 
 planned, not built: <the pages, or "none">
 not found: <terms that matched nothing>
+unknown: <needs confirming, or "none">
 skipped: <what, and why — not N>
 class: <class> — <why>
 route: <unchanged, or the task.js route line>

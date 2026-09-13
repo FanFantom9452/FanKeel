@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # Explain Skill Implementation Plan
@@ -19,6 +19,7 @@ status: design-intent
 - `skills/` holds exactly the `SKILLS` array, sorted, plus `registry.json` — `tests/inventory.test.js:13-40`.
 - `ALWAYS.length <= 4` — `tests/stages.test.js:60`.
 - `skills/registry.json` is written by `node scripts/stage-registry.js` and must equal a fresh regeneration — `tests/stage-registry.test.js:21`; each stage's `prompt_bytes <= prompt_byte_budget` of 2400 — `:28`. This measure includes the profile line, so it runs above the render test's: survey is 2377 here against 2339 there, and this is the binding one.
+- `tests/contract.test.js:262` counts the files that carry the version — two manifests and one `version:` line per skill — and six files say that count in words; `:354` counts the top-level pages of `docs/` against the word at `docs/README.md:9`.
 - Each stage's anchor in `tests/pipeline-doc.test.js:18-26` must be a contiguous substring of that stage's rules and of its `### <stage>` section in `docs/pipeline.md`, both flattened.
 - A page in `docs/archive/` carries `status: archived` (33 of the archive's pages do).
 - A decision record's frontmatter is `status`, `last_verified`, `source_of_truth` — `docs/decisions/2026-09-11-todo-split.md:1-5`.
@@ -149,6 +150,12 @@ status: design-intent
 **Files:**
 - Modify: `skills/fankeel-explain/SKILL.md` — new, the approved text below, byte for byte
 - Test: `tests/inventory.test.js`
+- Test: `tests/contract.test.js` — the version-carrying count moves from 11 to 12, and its comment's nine skills to ten
+- Test: `tests/version.test.js` — the same count, in a test name, its assertion and three comments
+- Modify: `scripts/version.js` — the count in its header comments
+- Modify: `CONTRIBUTING.md` — `eleven files` at :23
+- Modify: `docs/development.md` — `eleven files` at :64 and :66, `nine skills` at :67
+- Modify: `skills/fankeel-land/SKILL.md` — `the eleven places` at :78, and the eleven files and nine skills at :83-84
 
 **Interfaces:**
 - Consumes: none
@@ -259,6 +266,8 @@ status: design-intent
    The file content is the fence's lines with the three-space list indent removed.
 4. `node --test tests/inventory.test.js tests/skills.test.js 2>&1 | grep -E '^(ℹ (pass|fail)|✖)'` shows `ℹ fail 0`.
 5. `node scripts/skills-check.js` and `node scripts/docs-check.js`, unpiped: no finding names `skills/fankeel-explain`.
+
+   A new skill directory is one more file carrying the version, so every count of them moves — added by a build ruling on 2026-09-13, after the full suite failed on it. `eleven` becomes `twelve` and `nine skills` becomes `ten skills` at the lines the Files block names, and `found.size, 11` in `tests/contract.test.js` becomes `12`. `scripts/version.js:103` and `tests/version.test.js:105` describe a past incident and keep their number. Then `node --test tests/contract.test.js tests/version.test.js tests/inventory.test.js tests/skills.test.js tests/stage-registry.test.js 2>&1 | grep -E '^(ℹ (pass|fail)|✖)'` shows `ℹ fail 0`.
 6. Commit: `feat: fankeel-explain, the understanding prompt as a skill`.
 
 ## Task 4: the reasoning recorded, the style page retired
@@ -268,7 +277,8 @@ status: design-intent
 - Modify: `docs/archive/2026-09-13-output-styles.md` — the moved page; `status: current` becomes `status: archived`
 - Modify: `docs/decisions/2026-09-13-no-output-styles.md` — new decision record, text below
 - Modify: `README.md` — the row at :179 points at the decision record
-- Modify: `docs/README.md` — the row at :41 points at the decision record; the Roles row stays until Task 5 removes its bucket
+- Modify: `docs/README.md` — the row at :41 points at the decision record, and `Twelve pages` at :9 becomes `Eleven pages`; the Roles row stays until Task 5 removes its bucket
+- Read: `tests/contract.test.js` — :354 counts the top-level pages of `docs/`
 - Modify: `skills/fankeel/SKILL.md` — `## Output styles` becomes `## Voice`
 - Modify: `TODO.md` — the `## Waiting` bullet at :88 and the blank line after it removed
 - Test: `tests/render.test.js`
@@ -343,7 +353,7 @@ status: design-intent
    | Why fankeel ships no output style, and where its voice lives instead | [docs/decisions/2026-09-13-no-output-styles.md](docs/decisions/2026-09-13-no-output-styles.md) |
    ```
 
-5. In `docs/README.md`, replace the row at :41 with a row in the same shape as the other `decisions/` rows in that table, whose text is `Why fankeel ships no output style, and where its voice lives instead` and whose link points at `docs/decisions/2026-09-13-no-output-styles.md`, written relative to `docs/README.md` the way its neighbours' links are.
+5. In `docs/README.md`, replace the row at :41 with a row in the same shape as the other `decisions/` rows in that table, whose text is `Why fankeel ships no output style, and where its voice lives instead` and whose link points at `docs/decisions/2026-09-13-no-output-styles.md`, written relative to `docs/README.md` the way its neighbours' links are. Then at :9, `Twelve pages, one question each.` becomes `Eleven pages, one question each.` — the move leaves eleven top-level pages, and `tests/contract.test.js:354` counts them.
 6. `git grep -n -i "output.style" -- README.md docs/README.md` — two hits are left: `docs/README.md:117`, the dated report row, which stays, and the Roles row `output-styles/` at :179, which Task 5 removes with its bucket.
 7. In `skills/fankeel/SKILL.md`, replace everything from the heading `## Output styles` down to, and not including, the heading `## Calibration` with:
 
@@ -363,7 +373,7 @@ status: design-intent
    ```
 
 8. In `TODO.md`, delete the bullet beginning `- Whether an output style reaches a subagent` and the blank line after it.
-9. `node --test tests/render.test.js tests/docs.test.js tests/skills.test.js 2>&1 | grep -E '^(ℹ (pass|fail)|✖)'` shows `ℹ fail 0`.
+9. `node --test tests/render.test.js tests/docs.test.js tests/skills.test.js tests/contract.test.js 2>&1 | grep -E '^(ℹ (pass|fail)|✖)'` shows `ℹ fail 0`.
 10. Control for step 1: in `skills/fankeel/SKILL.md` change `The four always-on rules` to `The five always-on rules`; `node --test tests/render.test.js 2>&1 | grep -E '^(ℹ (pass|fail)|✖)'` names `the page that counts the always-on rules counts as many as there are`; revert, and it passes again.
 11. `node scripts/docs-check.js` and `node scripts/todo-check.js`, unpiped: both exit 0.
 12. Commit: `docs: why no output style ships, and the style page archived`.

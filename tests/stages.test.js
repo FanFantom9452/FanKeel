@@ -50,14 +50,21 @@ test('every stage says what it produces and carries its own rules', () => {
 
 // Four, not three. The fourth arrived on evidence rather than taste: two of one
 // session's seventeen AskUserQuestion calls failed to parse outright. A rule that
-// prevents a failed tool call cannot live in an output style, because a style is
-// a setting the user might not have chosen.
+// prevents a failed tool call has to ride every prompt, and the injected block is
+// the only thing fankeel has that does.
 //
 // The number is not a token budget. Input is cheap and output is not, so paying
 // more here to get a shorter answer is the trade this file makes deliberately.
 // What a limit buys is that the block is still read to the end.
 test('the always-on block stays short enough to ride every prompt', () => {
   assert.ok(ALWAYS.length <= 4, 'ALWAYS grew to ' + ALWAYS.length);
+});
+
+// survey reports what it found and what matched nothing. What it could not find
+// out is a third thing, and without a slot of its own the gap gets filled in
+// rather than said.
+test('the survey shape has a slot for what is not known', () => {
+  assert.match(templateFor('survey'), /^unknown: <needs confirming, or "none">$/m);
 });
 
 test('a full injection of rules stays under a few hundred characters', () => {

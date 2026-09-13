@@ -1,5 +1,5 @@
 ---
-status: current
+status: archived
 last_verified: 2026-09-11
 source_of_truth: output-styles/, lib/stages.js
 ---

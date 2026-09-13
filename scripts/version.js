@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 'use strict';
 
-// The release number, in the eleven places that carry it.
+// The release number, in the twelve places that carry it.
 //
 //   node version.js              what they say, and whether they agree
-//   node version.js 0.35.0       set all eleven
+//   node version.js 0.35.0       set all twelve
 //   node version.js --changes    what has landed since the last release commit
 //
-// Two manifests and one frontmatter line in each of the nine skills. Nothing
+// Two manifests and one frontmatter line in each of the ten skills. Nothing
 // used to set them together, so a release was ten edits and a miss left a skill
 // announcing a version the plugin is not — wrong in a way nobody reads carefully
 // enough to catch, because the number is right in nine places.
 //
 // `tests/contract.test.js` is the other half and the one that runs unasked: it
-// fails when the eleven disagree. This is what makes them agree without eleven edits.
+// fails when the twelve disagree. This is what makes them agree without twelve edits.
 // Neither is enough alone — a check with no fixer is a chore, and a fixer with no
 // check is one somebody forgets to run.
 //
@@ -52,27 +52,16 @@ const VERSION_LINE = /^version:[ \t]*(\S+)[ \t]*$/m;
 // a place the number should be and is not is the same defect as one that
 // disagrees.
 function readAll(root) {
-    const out = [];
-    for (const rel of MANIFESTS) {
+    return MANIFESTS.concat(skillFiles(root)).map((rel) => {
         let version = null;
         try {
-            version = JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8')).version || null;
+            const text = fs.readFileSync(path.join(root, rel), 'utf8');
+            version = rel.endsWith('.json') ? (JSON.parse(text).version || null) : (text.match(VERSION_LINE) || [])[1] || null;
         } catch (e) {
             version = null;
         }
-        out.push({ file: rel, version });
-    }
-    for (const rel of skillFiles(root)) {
-        let version = null;
-        try {
-            const m = fs.readFileSync(path.join(root, rel), 'utf8').match(VERSION_LINE);
-            version = m ? m[1] : null;
-        } catch (e) {
-            version = null;
-        }
-        out.push({ file: rel, version });
-    }
-    return out;
+        return { file: rel, version };
+    });
 }
 
 // The manifests are rewritten by editing the one line rather than by

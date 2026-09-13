@@ -187,7 +187,7 @@ function deletedPaths(root) {
 // not an improvement on an imperfect one.
 function mtime(root, rel) {
     try {
-        return fs.statSync(path.join(root, rel.split('/').join(path.sep))).mtimeMs;
+        return fs.statSync(path.join(root, rel)).mtimeMs;
     } catch (e) {
         return null;
     }
@@ -247,7 +247,7 @@ function pointsAt(root, rel, roots, contract) {
         const direct = PATHISH.exec(span);
         const hit = direct || PATHISH.exec(span.replace(PLACEHOLDER, ''));
         if (!hit) continue;
-        // The two guards `docs-check.js:204` and `:220` have and this pass did
+        // The two guards `docs-check.js:250` and `:262` have and this pass did
         // not. A trailing slash makes it a shape rather than a file, and a path
         // under the state directory is where this software writes at run time —
         // neither is a claim that the path is here, so neither is a plan waiting

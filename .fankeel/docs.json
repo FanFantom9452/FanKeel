@@ -32,10 +32,6 @@
       "role": "reference"
     },
     {
-      "path": "output-styles",
-      "role": "reference"
-    },
-    {
       "path": "evals",
       "role": "fixture"
     },

@@ -246,8 +246,8 @@ test('a symbol nothing declares is a finding in reference only', () => {
 // A `fixture` bucket is a test's own input — it does not describe the system,
 // so a dead link inside it is still a finding and an undeclared symbol beside
 // it is not. `checkDoc` only special-cases `archive` and `report`
-// (`scripts/docs-check.js:201`); every other role, `fixture` included, falls
-// through to the two guards at `:279` and `:307` that read only
+// (`scripts/docs-check.js:211`); every other role, `fixture` included, falls
+// through to the two guards at `:301` and `:349` that read only
 // `role === 'reference'` — so those two cost no new branch. The code-span
 // `gone` check does need one: a fixture page may name a path its own scaffold
 // creates, one this tree never has — `lib/thing.js` beside `lib/present.js`
@@ -506,7 +506,7 @@ test('the Roles table names every bucket docs.json declares', () => {
 // directories have, and nothing recounted it when `mockup.html` became a fourth
 // kind of file under `build/`. residue.js already enumerates every ignored path
 // at the top level, with no size threshold, so the table can be checked against
-// it. Other tools' ignored paths — `.superpowers/`, `caveman.zip` — are not
+// it. Other tools' ignored paths — `.superpowers/`, `.impeccable/` — are not
 // fankeel's to document, which is what the prefix filter is for.
 //
 // This passes the day it is written. That is the point of a guard, and it is
