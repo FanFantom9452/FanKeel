@@ -96,7 +96,7 @@ test('pruneBadges removes a flag from a session long gone', () => {
 });
 
 // The badge is the word; the lead is the rail TokenBar actually draws. Every
-// other caller takes them down together — `hooks/inject.js:115` and
+// other caller takes them down together — `hooks/inject.js:107` and
 // `scripts/task.js:96` both call `clearBadge` and `clearLead` in the same
 // breath. Pruning removed only the badge, so a session thirty days gone kept a
 // live rail for ever, and the directory it sat in never emptied.

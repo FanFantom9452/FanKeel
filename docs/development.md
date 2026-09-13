@@ -116,7 +116,7 @@ genuinely used exports unused. One barrel shows it with one variable changed:
 `knip --trace-export badgeWord`, destructured at `tests/badge.test.js:9`,
 returns `import[badgeWord] ⎆ ✓`; `knip --trace-export clearBadge`, reached as
 `badge.clearBadge`, returns `(no imports found) ✗` — and `scripts/task.js:127`
-and `hooks/inject.js:128` call it. The shape is not rare here: counting lines
+and `hooks/inject.js:120` call it. The shape is not rare here: counting lines
 under `tests/` that bind a module from `../lib/`, `../scripts/` or `../hooks/`
 to a plain identifier rather than destructuring it gives 53 lines across 38 of
 the 73 test files, against 35 destructured lines across 26. `TODO.md` carries

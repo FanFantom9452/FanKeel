@@ -13,8 +13,6 @@
 // and its own statusline flag — with no directories created, no flags written and
 // no output.
 
-const path = require('node:path');
-
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
@@ -42,12 +40,6 @@ const startsFankeel = (prompt) =>
 // Flags belonging to sessions that ended a month ago are litter, not state.
 const BADGE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-function claudeConfigDir() {
-    if (process.env.CLAUDE_CONFIG_DIR) return process.env.CLAUDE_CONFIG_DIR;
-    const home = process.env.HOME || process.env.USERPROFILE;
-    return home ? path.join(home, '.claude') : null;
-}
-
 function main(raw) {
     const payload = parse(raw);
     if (!payload) return;
@@ -62,7 +54,7 @@ function main(raw) {
     let mine = registry.readSession(root, sessionId);
     if (!mine || mine.active !== true) {
         const starting = startsFankeel(payload.prompt);
-        const dir = claudeConfigDir();
+        const dir = profileLib.configDirOf();
 
         // The page, before the block that names it. `write` is a few hundred
         // milliseconds against this hook's five-second budget, and a failure
@@ -204,7 +196,7 @@ function main(raw) {
         registry.touch(root, sessionId, info && info.used);
     } catch (e) { /* housekeeping */ }
 
-    const cfg = claudeConfigDir();
+    const cfg = profileLib.configDirOf();
     if (cfg) {
         try {
             badge.writeBadge(cfg, sessionId, badge.badgeWord(mine.stage, overlapping > 0));
