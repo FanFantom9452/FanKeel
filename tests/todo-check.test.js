@@ -335,12 +335,13 @@ test('a positional argument is still the file to check', () => {
 
 // The stamp, and the one thing it is for.
 //
-// `## Waiting` shrank four times in this repository's history — c50a5d5,
-// a62863e, 811219c and 3fadc08 — and every one of the four was somebody
-// re-reading the section and finding an entry misfiled. Not one entry ever left
-// because the external thing it named had happened. So the number worth
-// surfacing is not how old an entry is, it is how long since anyone last looked
-// at it and agreed it is still waiting, and the stamp is that date.
+// `## Waiting` shrank five times in this repository's history — c50a5d5,
+// a62863e, 811219c, 3fadc08 and 0004ad5. Four were somebody re-reading the
+// section and finding an entry misfiled, and one a question Claude Code's docs
+// answered first. Not one entry ever left because the external thing it named
+// had happened. So the number worth surfacing is not how old an entry is, it is
+// how long since anyone last looked at it and agreed it is still waiting, and
+// the stamp is that date.
 
 const DAY = 24 * 60 * 60 * 1000;
 // Local midday, so a stamp built from it cannot cross a day boundary under any

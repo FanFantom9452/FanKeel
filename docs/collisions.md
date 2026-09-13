@@ -173,12 +173,15 @@ anything written outside them unstaged rather than committed.
 
 ## What the guard does not watch
 
-The scope guard's `PreToolUse` hook is wired to one matcher: `.claude-plugin/plugin.json:85` reads `"matcher": "Edit|Write|NotebookEdit"`.
+The scope guard's collision check is wired to one matcher: `.claude-plugin/plugin.json:85` reads `"matcher": "Edit|Write|NotebookEdit"`.
 Inside it, `hooks/guard.js:62` calls `targetOf(payload)`, which reads only
 `tool_input.file_path` and `tool_input.notebook_path`, and `hooks/guard.js:63` is the whole branch for anything else: `if (!file) return;`.
-A `Bash` or `PowerShell` call carries a command string, not a path, so it
-never reaches `blockers()` — and on this machine that is two tools, not one:
-Windows hands a subagent a `PowerShell` the matcher does not name either.
+The same hook has a second entry, `.claude-plugin/plugin.json:107` `"matcher": "Bash|PowerShell"`, and it stops short of that check:
+`hooks/guard.js:44` `if (payload.tool_name === 'Bash' || payload.tool_name === 'PowerShell') {` ends in a `return` of its own, and
+`hooks/guard.js:45` `if (!readOnlyAgentType(payload.agent_type)) return;` lets every agent but a read-only one through before the command is read.
+So a `Bash` or `PowerShell` call never reaches `blockers()` — and on this machine
+that is two tools, not one: Windows hands a subagent a `PowerShell` the collision
+matcher does not name either.
 `tests/guard.test.js:239` names that silence on purpose: `Bash and PowerShell carry no path`, and the rest of the name says the guard has
 nothing to say about either — a passing test, not a gap nobody noticed. The
 reasoning for leaving it that way, including what was measured and rejected,

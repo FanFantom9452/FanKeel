@@ -356,9 +356,9 @@ markdown headings. Anything else is matched on filename alone, so say so rather
 than reporting a clean sweep.
 
 Declarations whose **name** carries the term are listed before ones that only
-share a path with it, and the report says how many of each. The list is capped,
-so on a large repository the tail is cut — if the count is far above the cap, say
-so rather than treating what you can see as the whole answer.
+share a path with it; when both kinds appear, the heading says how many of each.
+The list is capped, so on a large repository the tail is cut — if the count is
+far above the cap, say so rather than treating what you see as the whole answer.
 
 Short tasks may skip forward — a one-line typo fix does not need a design stage —
 but say which stages you are skipping and why. Skipping silently is how `verify`

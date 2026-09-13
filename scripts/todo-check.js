@@ -85,11 +85,12 @@ const STALE_ROLES = ['decision', 'plan', 'report', 'archive'];
 
 // Seven days, and it is a re-read interval rather than an age.
 //
-// `## Waiting` has shrunk four times in this repository's history — c50a5d5,
-// a62863e, 811219c, 3fadc08 — and all four were somebody re-reading the section
-// and finding an entry misfiled. Not one entry has ever left because the
-// external thing it named actually happened. The section is drained by being
-// read, so the interval to measure is the one between readings.
+// `## Waiting` has shrunk five times in this repository's history — c50a5d5,
+// a62863e, 811219c, 3fadc08 and 0004ad5. Four were somebody re-reading the
+// section and finding an entry misfiled, and one a question Claude Code's docs
+// answered first. Not one entry has ever left because the external thing it
+// named actually happened. The section is drained by being read, so the
+// interval to measure is the one between readings.
 //
 // Seven and not the fortnight the documentation sweep runs on, because the
 // fortnight caught nothing: on 2026-09-01 the four oldest entries had sat
