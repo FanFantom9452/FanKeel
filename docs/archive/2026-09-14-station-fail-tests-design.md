@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # station 七個沒人走到的拒絕，與 orient 的欄寬

@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # Station Refusals and Orient Widths Implementation Plan
