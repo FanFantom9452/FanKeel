@@ -56,10 +56,10 @@ below the verdict as **due for a re-read**, without failing the run: sitting und
 `## Waiting` for a fortnight is not a defect, and a script cannot know whether the
 thing an entry waits for has happened. What it can know is how long since a person
 last said it had not. That is worth printing because `## Waiting` has never once
-shrunk in this repository by an entry's blocker resolving — four times it has
-shrunk, and all four were somebody re-reading the section and finding an entry
-misfiled. It is drained by being read, so the interval between readings is the
-thing to measure.
+shrunk in this repository by an entry's blocker resolving. Five times it has
+shrunk: four were somebody re-reading the section and finding an entry misfiled,
+and one a question Claude Code's docs answered before its blocker came. It is
+drained by being read, so the interval between readings is the thing to measure.
 
 ## `version.js` — the release number in twelve files
 
