@@ -246,10 +246,6 @@ function topLevel(files) {
     return [...counts.entries()].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
 }
 
-function pad(s, width) {
-    return s.length >= width ? s : s + ' '.repeat(width - s.length);
-}
-
 const files = (n) => n + (n === 1 ? ' file' : ' files');
 
 // A directory that could not be listed holds no files this can see, which is not
@@ -280,7 +276,7 @@ function table(rows) {
     return rows.map((r) => {
         let line = '  ';
         for (let i = 0; i < columns; i++) {
-            line += pad(String(r[i] == null ? '' : r[i]), widths[i]) + '  ';
+            line += String(r[i] == null ? '' : r[i]).padEnd(widths[i]) + '  ';
         }
         return line.replace(/\s+$/, '');
     });

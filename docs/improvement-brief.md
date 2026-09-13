@@ -1040,13 +1040,14 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 | 缺口 | 現況 |
 |---|---|
 | (a) plan 的 task 與各自做了什麼 | 沒有：`lib/station.js` 完全不讀 build ledger（2026-09-12 backlog-all build 已關閉：Task 23、25 加了 `tasksOf`，由 `lib/station.js` 讀取；現況見 `docs/station.md`「任務」節） |
-| (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:220` 的 `agentsOf` 只回一個數字 |
+| (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:220` 的 `agentsOf` 只回一個數字（2026-09-11 已關閉：90be646 加了 `dispatchesOf`，`lib/usage.js:437`（`surface: flow ? 'workflow'`）為每筆派工標出 agent、agents 或 workflow） |
 | (c) 每個 stage 花多少錢 | 刻意拿掉：`docs/station.md:129`（`a stage's own cost surfaces only in the aggregate`）說它只出現在總覽的總帳 |
 | (d) stage 來回 | 結構上看不到：`lib/registry.js:435` 的 `touch` 以 stage 名為鍵，只存最早與最近兩個時間 |
 | (e) 哪一段可以平行 | 沒有 |
 
 (b) 還少一層：`lib/usage.js:151` 的 `agentFiles` 把一般 agent 和 workflow 裡的 agent 攤成
-同一個清單，派工的形狀（agent、agents、workflow）在這裡就丟了。
+同一個清單，派工的形狀（agent、agents、workflow）在這裡就丟了。這一層也由 90be646 關閉：
+`dispatchesOf` 把形狀接回 `agentFiles` 的每一列。
 
 (d) 的資料要先開始記錄才會有，所以拆成 Ready 的〔station〕那條先做；(a)(b)(e) 怎麼呈現
 是 Needs a decision。資料來源都已經在磁碟上：ledger 在 `.fankeel/build/`，subagent 的
@@ -1067,7 +1068,7 @@ hook（SessionStart 啟動它的模式，UserPromptSubmit 追蹤模式）。本�
 
 **fankeel 這邊的耦合很少**，沒有一處是功能上的依賴：
 
-- `lib/badge.js:166`（`another plugin may`）與 `lib/badge.js:181`（`another plugin may keep its own flag`）兩段註解：清徽章時不刪
+- `lib/badge.js:169`（`another plugin may`）與 `lib/badge.js:177`（`another plugin may keep its own flag`）兩段註解：清徽章時不刪
   別的外掛放在同一個目錄裡的旗標，不點名是哪一個。
 - 釘住上面那句的是 `tests/badge.test.js` 裡「pruneBadges leaves another plugin flag and
   its directory alone」那個測試。
