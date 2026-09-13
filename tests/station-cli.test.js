@@ -417,6 +417,131 @@ test('POST /profile writes a project key, refuses a bad nonce, a bad key, and an
     }
 });
 
+// --- the seven refusals no test reached ---
+
+// On 2026-09-14 the seven replies `scripts/station.js` had just moved onto
+// `fail()` were renumbered 491-497 and every test stayed green. Each test
+// below reaches one of them. `served()` binds a server for `f`, reads the
+// per-run nonce the way the tests above do, and posts forms that carry it.
+async function served(f) {
+    const { serve } = require('../scripts/station.js');
+    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
+    let nonce;
+    try {
+        const data = await request(s.url + 'station/station-data.js', { method: 'GET' });
+        nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
+    } catch (e) {
+        s.close();
+        throw e;
+    }
+    const post = (route, fields) => request(s.url + route,
+        { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } },
+        new URLSearchParams({ nonce, ...fields }).toString());
+    return { s, post };
+}
+
+test('GET /station/station.css answers 404 when the asset cannot be read', async (t) => {
+    const f = fixture();
+    const { s } = await served(f);
+    try {
+        // `scripts/station.js` reads the asset through the same cached
+        // `node:fs` this file required, at request time, so failing that one
+        // read stands in for an unreadable assets directory without touching
+        // the real one.
+        const realRead = fs.readFileSync;
+        t.mock.method(fs, 'readFileSync', (p, ...rest) => {
+            if (path.basename(String(p)) === 'station.css') throw new Error('EACCES: permission denied');
+            return realRead(p, ...rest);
+        });
+        const res = await request(s.url + 'station/station.css', { method: 'GET' });
+        assert.equal(res.status, 404);
+        assert.match(res.headers['content-type'], /text\/plain/);
+        assert.equal(res.text, 'no such asset\n');
+    } finally {
+        s.close();
+    }
+});
+
+test('POST /clear answers 404 for a session not on the page', async () => {
+    const f = fixture();
+    const { s, post } = await served(f);
+    try {
+        const res = await post('clear', { root: f.r1, id: 'dddddddd-4444-4444-8444-444444444444' });
+        assert.equal(res.status, 404);
+        assert.equal(res.text, 'no such session on this page\n');
+        assert.equal(registry.readSession(f.r1, STALE).active, true, 'nothing else was cleared');
+    } finally {
+        s.close();
+    }
+});
+
+test('POST /clear answers 409 with the reason when clearEntry refuses a too-fresh row', async () => {
+    const f = clearStaleFixture(true);
+    const { s, post } = await served(f);
+    try {
+        // Not running, so the page reads it `stale` and the live-row check
+        // passes; five minutes old, so `clearEntry`'s twelve-hour rule refuses.
+        const res = await post('clear', { root: f.r1, id: CS_FRESH });
+        assert.equal(res.status, 409);
+        assert.match(res.text, /^not cleared: fresh\b/);
+        assert.equal(registry.readSession(f.r1, CS_FRESH).active, true, 'the fresh row is refused, not cleared');
+    } finally {
+        s.close();
+    }
+});
+
+test('POST /clear-stale answers 404 for a registry not on the page', async () => {
+    const f = clearStaleFixture(false);
+    const { s, post } = await served(f);
+    try {
+        const res = await post('clear-stale', { root: path.join(f.base, 'nowhere') });
+        assert.equal(res.status, 404);
+        assert.equal(res.text, 'no such registry on this page\n');
+        assert.equal(registry.readSession(f.r1, CS_OLD_A).active, true, 'nothing was cleared');
+    } finally {
+        s.close();
+    }
+});
+
+test('POST /profile answers 400 for a scope that is neither project nor machine', async () => {
+    const f = fixture();
+    const { s, post } = await served(f);
+    try {
+        const res = await post('profile', { scope: 'workspace', key: 'land.push', value: 'false' });
+        assert.equal(res.status, 400);
+        assert.equal(res.text, 'scope is project or machine\n');
+    } finally {
+        s.close();
+    }
+});
+
+test('POST /profile answers 400 when no key/value pair is sent', async () => {
+    const f = fixture();
+    const { s, post } = await served(f);
+    try {
+        const res = await post('profile', { scope: 'machine' });
+        assert.equal(res.status, 400);
+        assert.equal(res.text, 'key and value come in pairs\n');
+    } finally {
+        s.close();
+    }
+});
+
+test('POST /profile answers 409 with the reason when the project profile does not parse', async () => {
+    const f = fixture();
+    const { s, post } = await served(f);
+    try {
+        const file = path.join(f.r1, '.fankeel', 'profile.json');
+        fs.writeFileSync(file, 'not json');
+        const res = await post('profile', { scope: 'project', project: f.r1, key: 'land.push', value: 'false' });
+        assert.equal(res.status, 409);
+        assert.match(res.text, /does not parse; fix it by hand first\n$/);
+        assert.equal(fs.readFileSync(file, 'utf8'), 'not json', 'the unreadable file is left for a person');
+    } finally {
+        s.close();
+    }
+});
+
 // The sixty-second `--scan` budget was exercised by nothing: every `--scan`
 // test walks a temp tree that finishes in milliseconds, so a build that dropped
 // the deadline — leaving the walk bounded only by depth, which is what it was
