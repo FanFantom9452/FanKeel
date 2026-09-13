@@ -436,8 +436,7 @@ async function serve(opts) {
             try {
                 body = fs.readFileSync(path.join(ASSETS, name), 'utf8');
             } catch (e) {
-                res.writeHead(404, { 'content-type': 'text/plain' });
-                res.end('no such asset\n');
+                fail(404, 'no such asset');
                 return;
             }
             res.writeHead(200, {
@@ -461,8 +460,7 @@ async function serve(opts) {
             const reg = model.registries.find((r) => r.root === path.resolve(root));
             const row = reg && reg.sessions.find((s) => s.sessionId === id);
             if (!row) {
-                res.writeHead(404, { 'content-type': 'text/plain' });
-                res.end('no such session on this page\n');
+                fail(404, 'no such session on this page');
                 return;
             }
             if (row.state === 'live') {
@@ -471,8 +469,7 @@ async function serve(opts) {
             }
             const out = clearEntry(reg.root, id, { force: form.get('force') === '1' });
             if (!out.ok && out.reason !== 'inactive') {
-                res.writeHead(409, { 'content-type': 'text/plain' });
-                res.end('not cleared: ' + out.reason + (out.age ? ' (last seen ' + out.age + ' ago; tick force)' : '') + '\n');
+                fail(409, 'not cleared: ' + out.reason + (out.age ? ' (last seen ' + out.age + ' ago; tick force)' : ''));
                 return;
             }
             res.writeHead(303, { location: '/' });
@@ -488,8 +485,7 @@ async function serve(opts) {
             const model = modelNow();
             const reg = model.registries.find((r) => r.root === path.resolve(form.get('root') || ''));
             if (!reg) {
-                res.writeHead(404, { 'content-type': 'text/plain' });
-                res.end('no such registry on this page\n');
+                fail(404, 'no such registry on this page');
                 return;
             }
             const force = form.get('force') === '1';
@@ -553,15 +549,13 @@ async function serve(opts) {
                 }
                 file = profile.projectFile(want);
             } else {
-                res.writeHead(400, { 'content-type': 'text/plain' });
-                res.end('scope is project or machine\n');
+                fail(400, 'scope is project or machine');
                 return;
             }
             const keys = form.getAll('key');
             const values = form.getAll('value');
             if (!keys.length || keys.length !== values.length) {
-                res.writeHead(400, { 'content-type': 'text/plain' });
-                res.end('key and value come in pairs\n');
+                fail(400, 'key and value come in pairs');
                 return;
             }
             // Validate every pair before writing any, so a bad second key
@@ -576,8 +570,7 @@ async function serve(opts) {
             for (let i = 0; i < keys.length; i++) {
                 const out = profile.write(file, keys[i], values[i]);
                 if (!out.ok) {
-                    res.writeHead(409, { 'content-type': 'text/plain' });
-                    res.end(out.reason + '\n');
+                    fail(409, out.reason);
                     return;
                 }
             }

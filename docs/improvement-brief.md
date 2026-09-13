@@ -1068,7 +1068,7 @@ hook（SessionStart 啟動它的模式，UserPromptSubmit 追蹤模式）。本�
 
 **fankeel 這邊的耦合很少**，沒有一處是功能上的依賴：
 
-- `lib/badge.js:166`（`another plugin may`）與 `lib/badge.js:181`（`another plugin may keep its own flag`）兩段註解：清徽章時不刪
+- `lib/badge.js:169`（`another plugin may`）與 `lib/badge.js:177`（`another plugin may keep its own flag`）兩段註解：清徽章時不刪
   別的外掛放在同一個目錄裡的旗標，不點名是哪一個。
 - 釘住上面那句的是 `tests/badge.test.js` 裡「pruneBadges leaves another plugin flag and
   its directory alone」那個測試。
