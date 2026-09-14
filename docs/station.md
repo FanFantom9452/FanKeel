@@ -337,9 +337,11 @@ none — and its build directories with each one's file count, or says there
 are none. The old page carried all three on a per-registry meta line; the
 redesign dropped that line, and this card is where its contents live now. The
 header's own unreadable count stays the total across every registry and is
-hidden only on 清單 once a registry there is selected, because that page's own
-card already carries the same count
-(`assets/station/station.js:1331`, `a corrupt-entry count must`); everywhere
+hidden only on 清單 once a registry there is selected: one that is not gone
+carries the same count on its own card
+(`assets/station/station.js:1331`, `a corrupt-entry count must`), and a gone
+one has no session files left to count
+(`lib/station.js:339`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
 count — the header keeps the total, so a corrupt entry is never a click away
 from being found.
