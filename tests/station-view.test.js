@@ -819,3 +819,86 @@ test('the health poll never arms under file:, and does arm every 5s once served'
     assert.deepEqual(armed('file:'), [], 'a bare file open schedules no poll at all');
     assert.deepEqual(armed('http:'), [5000], 'a served page polls every 5s');
 });
+
+// The frozen eyebrow is rendered rather than patched, so the flip into and
+// out of frozen has to call `draw()` — and a poll that finds nothing changed
+// must not, because a redraw every five seconds throws away a scroll position
+// and an opened row on a page whose numbers cannot move any more. Nothing
+// else reaches that gate: the smoke test gives `win` no `setInterval`, and
+// the test above captures the interval's period without ever invoking its
+// callback. So this one drives the callback, with a `Date` it moves and a
+// `#page` that counts how often it is written — `draw()` assigns
+// `p.innerHTML` (assets/station/station.js:1906), which is what the counter
+// below is on.
+test('a poll finding no change does not redraw, and each state flip redraws once', async () => {
+    const vm = require('node:vm');
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+
+    // The page reads `Date.now()` for the poll's baseline and `Date.parse`
+    // for every `started`; moving the first is how this test spends fifteen
+    // seconds without waiting them.
+    let skew = 0;
+    class Clock extends Date {
+        static now() { return Date.now() + skew; }
+    }
+    Clock.parse = Date.parse;
+
+    let draws = 0, tick = null, alive = true;
+    const el = () => ({
+        innerHTML: '', textContent: '', className: '', title: '', style: {}, hidden: false,
+        setAttribute() {}, appendChild() {}, addEventListener() {},
+    });
+    const page = el();
+    Object.defineProperty(page, 'innerHTML', { get() { return ''; }, set() { draws++; } });
+    const els = { page: page };
+    const doc = {
+        getElementById: (id) => els[id] || (els[id] = el()),
+        addEventListener() {}, createElement: el, head: { appendChild() {} },
+        querySelectorAll: () => [],
+        // `showDead` inserts the bar after `.mast`, unguarded.
+        querySelector: () => ({ parentNode: { insertBefore() {} }, nextSibling: null }),
+    };
+    const win = {
+        location: { hash: '#/', protocol: 'http:' }, addEventListener() {}, scrollTo() {},
+        setInterval: (fn) => { tick = fn; return 1; },
+        STATION: {
+            generatedAt: new Date(2026, 8, 14, 21).toISOString(), configDir: 'C:\\cfg',
+            pricesVerified: '2026-09-04', serve: true,
+            projects: [{ root: 'F:\\ws\\alpha', gone: false, unreadable: 2, build: [], mapAt: null }],
+            profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} },
+            profileKeys: {}, classes: {}, sessions: [],
+        },
+    };
+    vm.runInNewContext(src, {
+        window: win, document: doc, URLSearchParams, Date: Clock,
+        fetch: () => (alive ? Promise.resolve({ ok: true }) : Promise.reject(new Error('refused'))),
+    });
+
+    // Awaiting a macrotask drains the fetch chain's microtasks.
+    const settle = () => new Promise((r) => { setImmediate(r); });
+    const atLoad = draws;
+    // The counter is on the real thing, and this is what says so: a stub the
+    // page never writes would leave this at zero and every count below would
+    // pass vacuously.
+    assert.ok(atLoad > 0, 'the page drew on load');
+    assert.equal(typeof tick, 'function', 'the poll armed');
+
+    // The server goes quiet and the grace window passes: the flip redraws.
+    alive = false;
+    skew = 16000;
+    tick(); await settle(); await settle();
+    assert.equal(draws, atLoad + 1, 'the flip into frozen did not redraw exactly once');
+    // Five seconds later it is still gone. Nothing has changed, so nothing
+    // may be redrawn — this is the assertion the whole gate exists for.
+    skew = 21000;
+    tick(); await settle(); await settle();
+    assert.equal(draws, atLoad + 1, 'a poll that found nothing changed redrew the page');
+    // It answers again: one redraw to take the eyebrow back, then none.
+    alive = true;
+    tick(); await settle(); await settle();
+    assert.equal(draws, atLoad + 2, 'the flip back to live did not redraw exactly once');
+    tick(); await settle(); await settle();
+    assert.equal(draws, atLoad + 2, 'a poll on a live server redrew the page');
+});
