@@ -655,9 +655,9 @@ is nothing to invoke; [docs/station.md](../../docs/station.md) is the reference.
 The page is also where a file that does not parse is counted. The hooks drop
 those silently and correctly — a miss is what a session not using the plugin
 looks like — so the `unreadable` figure is the only place a corrupt entry
-surfaces at all. It is in two places on the page and never in both at once: the
-top bar carries the total across every registry while no registry is selected,
-and a selected one shows its own on its card. Read it out rather than counting
+surfaces at all. The top bar carries the total across every registry, and a
+registry's card its own count; the total is hidden only on 清單 once a
+registry is selected there. Read it out rather than counting
 the directory by hand.
 
 Show the active ones: task, stage, what each has touched, and — for any last

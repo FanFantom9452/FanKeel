@@ -315,15 +315,18 @@ Everything on the page is built in the browser from `window.STATION`, which is
 what lets one filter narrow the charts and the table together: server-side
 markup cannot redraw a chart when a facet is clicked.
 
-The left rail is facets, each with its own count — state, registry, stage — and
-the search box above them matches task, project, session id, registry label,
-the files the task has touched and its notes. They are AND-ed. On 清單,
+The facets are on 清單, above its table — state and stage with a count on each
+button, registry with one button per root
+(`assets/station/station.js:1099`, `moved onto the page they narrow`) — and
+the search box in the top bar matches task, project, session id, registry
+label, the files the task has touched and its notes. They are AND-ed. On 清單,
 selecting a registry recomputes the page below the facets: `goneNote()`'s card
 replaces the list when the registry is gone, and `registryNote()`'s card sits
 above the list otherwise; it does not merely hide rows.
 
-A gone registry keeps its facet rather than dropping off the rail, so
-selecting one never returns a blank pane with nothing on the page saying why:
+A gone registry keeps its facet button, labelled `— gone`, rather than
+dropping off the row, so selecting one never returns a blank pane with nothing
+on the page saying why:
 `goneNote()` (`assets/station/station.js:938`, `function goneNote(root)`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
@@ -389,9 +392,10 @@ own so it stays reachable as a sort key, the same reason the page this
 replaces sorted by it (`assets/station/station.js:1090`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
-**比較** is a third view. Tick two sessions on 清單 — only a session with a
-detail can be ticked, and a third tick drops the first — and 比較 on the rail
-opens them one above the other: two context lines on one y axis and one x
+**比較** is a third view. Tick two sessions on 清單 or a project page — only a
+session with a detail can be ticked, and a third tick drops the first — and
+比較 in the top bar opens them one above the other: two context lines on one y
+axis and one x
 length, x being the time since each one's first request, each still a single
 line; under them their peak context, request count, dispatch dollars and
 backward steps side by side, each from the same field that session's own panel
@@ -505,10 +509,11 @@ notes and its `next` intact.
 
 ## Setting a profile from the page
 
-**總覽** carries the **profile** cards, and the detail pane carries none:
-each registry's card ends with one card per project it holds, and the
-machine defaults get the same shape on their own card after the registry
-notes. A card is one row per key in `profileKeys` (`lib/profile.js`'s
+No session view carries a **profile** card. 首頁 ends with the machine
+defaults' card, after its projects and recent sessions; each registry's card —
+on 清單 once that registry is selected, and on every project page for its own
+registry — ends with one card per project it holds. A card is one row per key
+in `profileKeys` (`lib/profile.js`'s
 `KEYS`), each showing the effective value, which layer it came from, and the
 values that key allows. The quick-apply button sits on each project's card,
 not on the machine card — `applyMachineControl` is spliced in only when the
