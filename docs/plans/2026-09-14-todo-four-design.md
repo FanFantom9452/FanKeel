@@ -60,7 +60,7 @@ session** 取整，整個 session 被過濾掉它根本看不到。設計初稿�
   `{ values: ['true', 'false'], builtin: 'false' }`。`KEYS` 裡每個值都是字串，
   `land.push` 用的就是 `['true', 'false']`。`lib/profile.js:59` 的 `parseValue`
   是唯一驗證點，`:90` 的 `write` 在碰硬碟前先過它，兩者都由 `KEYS` 表驅動，所以加
-  一個鍵不需要動任何驗證碼。
+  一個鍵不需要動任何驗證碼。`parseValue` 同時轉型（`:65` 回 `s === 'true' ? true : s === 'false' ? false : s`，`:78` 的 `pick` 讀檔時也過它），所以下游比的是布林 `true`。
 - `lib/station.js:375-380` 的 `flatten` 過濾：`station.hide` 為 `'true'` 的 pkey 之下
   的 session 不進 `serialize()` 的 `sessions`。pkey 的算法是既有的
   `lib/station.js:446` `s.project ? s.root + '/' + s.project : s.root`。
