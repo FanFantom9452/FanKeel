@@ -580,6 +580,40 @@ test('timelineSvg hatches each wait with its length, colours a tick per request,
         'the context line puts each request where its tick is, on one time axis');
 });
 
+test('a crowded timeline keeps the labels it can read and turns the one at the right edge around', () => {
+    const t1 = T0 + 3600000, at = (f) => T0 + (t1 - T0) * f;
+    const m = {
+        t0: T0, t1,
+        segs: [{ stage: 'build', from: T0, to: t1 }],
+        waits: [{ stage: 'build', from: at(0.10), to: at(0.105), ms: 60000 },
+            { stage: 'build', from: at(0.11), to: at(0.115), ms: 120000 },
+            { stage: 'build', from: at(0.60), to: at(0.70), ms: 360000 },
+            { stage: 'build', from: at(0.98), to: at(1), ms: 180000 }],
+        ticks: [],
+        points: [{ t: T0, y: 1000 }, { t: t1, y: 2000 }],
+        rets: [{ t: at(0.20), chars: 1000 }, { t: at(0.205), chars: 2000 }, { t: at(0.80), chars: 3000 }],
+        bars: [{ kind: 'agent', key: 'a', label: 'late', from: at(0.93), to: at(0.99),
+            model: 'claude-sonnet-5', tokens: 218000, cents: 19, ret: 6400 }],
+    };
+    const svg = V.timelineSvg(m, {});
+    assert.equal(count(svg, /<\/path>/g), 3, 'every agent return is still marked');
+    assert.equal(count(svg, />\+[\d.]+k? 字元<\/text>/g), 2, 'but two returns that land together label only one');
+    assert.match(svg, /<title>\+2\.0k 字元<\/title>/, 'and the label it dropped is on the mark itself');
+    assert.equal(count(svg, />等 \d+m<\/text>/g), 3, 'two waits that land together label only one');
+    assert.match(svg, /<title>等 2m<\/title>/, 'and that one is on the band');
+    const waitLab = [...svg.matchAll(/<text x="([\d.]+)" y="[\d.]+" text-anchor="middle"[^>]*>等 (\d+m)<\/text>/g)].map((w) => ({ x: +w[1], s: w[2] }));
+    const bands = [...svg.matchAll(/<rect class="waitst" x="([\d.]+)" y="[\d.]+" width="([\d.]+)"/g)].map((w) => +w[1] + +w[2] / 2);
+    const lastLab = waitLab[waitLab.length - 1];
+    assert.equal(lastLab.s, '3m', 'the wait at the very end of the session is labelled');
+    assert.ok(lastLab.x < bands[bands.length - 1] - 1, 'and its label is pulled in from the edge rather than centred off it');
+    assert.ok(lastLab.x <= 1200 - 18, 'and stays inside the chart; that its whole box does was measured in a browser, not here');
+    const bar = svg.match(/<rect x="([\d.]+)" y="[\d.]+" width="[\d.]+" height="12"/);
+    const lab = svg.match(/<text x="([\d.]+)" y="[\d.]+"( text-anchor="end")? style="font-size:11\.5px;fill:var\(--ink2\)">sonnet-5 · 218k/);
+    assert.ok(bar && lab, 'the bar and its label are drawn');
+    assert.ok(lab[2], 'a bar with no room on its right turns its label around');
+    assert.ok(+lab[1] < +bar[1], 'so the label sits to the left of the bar, inside the chart');
+});
+
 test('costModel lays a session\'s days out stage by model, subtotals main and agent, and totals', () => {
     const m = V.costModel(HOME[0].days);
     assert.deepEqual(m.stages.map((g) => [g.stage, g.sub.usd, g.models.map((x) => x.model)]),

@@ -625,6 +625,26 @@
                 .map(function (d) { return { t: d.back, chars: d.ret }; }),
         };
     }
+    // Roughly how wide a label is: a CJK glyph is about the font size, the rest
+    // about half of it. Close enough to keep two labels apart, which is all it
+    // is for — nothing here measures text, and a browser is the only thing that
+    // could.
+    function textW(s, size) {
+        var n = 0;
+        for (var i = 0; i < s.length; i++) n += s.charCodeAt(i) > 0x2e7f ? size : size * 0.55;
+        return n;
+    }
+    // Labels along one axis, asked in the order they are drawn: a label is kept
+    // only where it clears the last one kept. A dense session put a dozen of
+    // them on the same pixels and none of the dozen could be read.
+    function labelRoom() {
+        var last = -1e9;
+        return function (left, right) {
+            if (left < last + 4) return false;
+            last = right;
+            return true;
+        };
+    }
     function timelineSvg(m, closed) {
         if (!(m.t1 > m.t0)) return '<p class="note">這個 session 沒有帶時間的 request，畫不出時間線</p>';
         var shown = m.bars.filter(function (b) { return b.kind !== 'kid' || !closed[b.key]; });
@@ -636,6 +656,14 @@
         var Yc = function (v) { return ctxB - v / ctop * ctxH; };
         var yAt = function (t) { var y = 0; m.points.forEach(function (p) { if (p.t <= t) y = p.y; }); return y; };
         var f1 = function (n) { return n.toFixed(1); };
+        // A bar's label sits to its right, and at the end of a session there is
+        // no right left: one that would run past the edge takes the space on the
+        // left instead, and stays on the right when the left is narrower still.
+        var barLabel = function (x0, x1, y, text) {
+            var w = textW(text, 11.5), left = x1 + 8 + w > W - R && x0 - 8 - w >= 0;
+            return '<text x="' + f1(left ? x0 - 8 : x1 + 8) + '" y="' + y + '"' + (left ? ' text-anchor="end"' : '')
+                + ' style="font-size:11.5px;fill:var(--ink2)">' + esc(text) + '</text>';
+        };
         var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="session 時間線"><defs>'
             + '<pattern id="hw" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">'
             + '<rect width="5" height="5" style="fill:var(--hatch-bg)"/><rect width="1.4" height="5" style="fill:var(--hatch)"/></pattern></defs>'
@@ -656,12 +684,18 @@
             out += '<path d="' + m.points.map(function (p, i) { return (i ? 'L' : 'M') + f1(X(p.t)) + ',' + f1(Yc(p.y)); }).join('')
                 + '" style="fill:none;stroke:var(--ctx);stroke-width:2;stroke-linejoin:round"/>';
         }
+        var retRoom = labelRoom();
         m.rets.forEach(function (q) {
             var x = X(q.t), y = Yc(yAt(q.t));
+            var lab = '+' + (q.chars >= 1000 ? (q.chars / 1000).toFixed(1) + 'k' : q.chars) + ' 字元', lw = textW(lab, 10.5);
+            // It ends 9px left of its mark, unless that puts it off an edge.
+            var lx = Math.min(Math.max(x - 9, lw), W - R);
             out += '<path d="M' + f1(x) + ' ' + f1(y - 6) + ' ' + f1(x + 6) + ' ' + f1(y) + ' ' + f1(x) + ' ' + f1(y + 6) + ' ' + f1(x - 6) + ' ' + f1(y)
-                + 'Z" style="fill:var(--ink);stroke:var(--panel);stroke-width:2"/><text x="' + f1(x - 9) + '" y="' + f1(y - 9)
-                + '" text-anchor="end" style="font-size:10.5px;fill:var(--ink2)">+' + (q.chars >= 1000 ? (q.chars / 1000).toFixed(1) + 'k' : q.chars)
-                + ' 字元</text>';
+                + 'Z" style="fill:var(--ink);stroke:var(--panel);stroke-width:2"><title>' + esc(lab) + '</title></path>'
+                + (retRoom(lx - lw, lx)
+                    ? '<text x="' + f1(lx) + '" y="' + f1(y - 9)
+                        + '" text-anchor="end" style="font-size:10.5px;fill:var(--ink2)">' + lab + '</text>'
+                    : '');
         });
         out += '<text class="lane-l" x="0" y="' + (st0 + 15) + '">stage</text><text class="lane-s" x="0" y="' + (st0 + 30) + '">寬度 = 實際經過時間</text>';
         m.segs.forEach(function (g) {
@@ -671,11 +705,19 @@
                 + (w > text.length * 7 + 14 ? '<text x="' + f1(x0 + 7) + '" y="' + (st0 + 21)
                     + '" style="fill:#fff;font-size:12px;font-weight:600;pointer-events:none">' + esc(text) + '</text>' : '');
         });
+        var waitRoom = labelRoom();
         m.waits.forEach(function (w) {
             var x0 = X(w.from), wd = Math.max(X(w.to) - x0, 1);
-            out += '<rect class="waitst" x="' + f1(x0) + '" y="' + st0 + '" width="' + f1(wd) + '" height="' + stH + '" style="fill:url(#hw)"/>'
-                + '<text x="' + f1(x0 + wd / 2) + '" y="' + wl + '" text-anchor="middle" style="font-size:11px;fill:var(--ink);font-weight:500">等 '
-                + mins(w.ms) + '</text>';
+            var lab = '等 ' + mins(w.ms), lw = textW(lab, 11);
+            // Centred on the band, except where that would hang off an edge: the
+            // last wait of a session sits against the right margin.
+            var cx = Math.min(Math.max(x0 + wd / 2, lw / 2), W - R - lw / 2);
+            out += '<rect class="waitst" x="' + f1(x0) + '" y="' + st0 + '" width="' + f1(wd) + '" height="' + stH
+                + '" style="fill:url(#hw)"><title>' + esc(lab) + '</title></rect>'
+                + (waitRoom(cx - lw / 2, cx + lw / 2)
+                    ? '<text x="' + f1(cx) + '" y="' + wl + '" text-anchor="middle" style="font-size:11px;fill:var(--ink);font-weight:500">'
+                        + lab + '</text>'
+                    : '');
         });
         out += '<text class="lane-l" x="0" y="' + (rq0 + 11) + '">主 session 請求</text><text class="lane-s" x="0" y="' + (rq0 + 25) + '">'
             + m.ticks.length + ' 次，顏色 = model</text>';
@@ -695,11 +737,11 @@
                     ? '<rect x="' + f1(x0) + '" y="' + (y + 4) + '" width="' + f1(x1 - x0) + '" height="18" rx="3" style="fill:var(--s-workflow);opacity:.2"/>'
                     : '<rect x="' + f1(x0) + '" y="' + (y + 7) + '" width="' + f1(x1 - x0) + '" height="12" rx="3" style="fill:var(--s-'
                     + (b.kind === 'kid' ? 'workflow' : 'agent') + ')"/>')
-                + '<text x="' + f1(x1 + 8) + '" y="' + (y + 17) + '" style="font-size:11.5px;fill:var(--ink2)">'
-                + esc((b.kind === 'wf' ? 'workflow · ' + b.n + ' 個 agent · ' : String(b.model || '—').replace(/^claude-/, '') + ' · ')
+                + barLabel(x0, x1, y + 17,
+                    (b.kind === 'wf' ? 'workflow · ' + b.n + ' 個 agent · ' : String(b.model || '—').replace(/^claude-/, '') + ' · ')
                     + tokens(b.tokens) + ' tok · ' + cents(b.cents)
                     + (b.ret !== null && b.ret !== undefined ? ' · 回傳 ' + comma(b.ret) + ' 字元' : ''))
-                + '</text><line class="gridl" x1="0" x2="' + (W - R) + '" y1="' + (y + RH) + '" y2="' + (y + RH) + '"/>'
+                + '<line class="gridl" x1="0" x2="' + (W - R) + '" y1="' + (y + RH) + '" y2="' + (y + RH) + '"/>'
                 + (b.kind === 'wf' ? '<rect class="wf-toggle" data-wf="' + esc(b.key) + '" x="0" y="' + y + '" width="' + (W - R)
                     + '" height="' + RH + '"><title>點一下收合或展開</title></rect>' : '');
         });
