@@ -69,6 +69,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Needs a decision
 
+- 〔plan〕被派工的任務步驟寫「跑 `node --test`，全綠」，但 brief footer 只准跑自己那支，footer 贏 —— 本計畫 Task 5 因此漏了七個檔 — [skills/fankeel-plan/SKILL.md](skills/fankeel-plan/SKILL.md). 待決：footer 放寬、步驟改口、還是 Files block 規則要求宣告那些檔。
+
 - 〔station〕只能用 `--open` 或 `serve --open` 開；serve 掉了沒人知道，撞 port 就退到隨機 port 讓書籤失效 — [docs/station.md](docs/station.md). 待決：桌面捷徑、開機自啟、還是 slash command。
 
 - 〔station〕stage 的紀錄只剩數字：`moves` 存 `[stage, at]`，`burn`/`clock` 存 token 與毫秒，回看不出為何這樣走 — [docs/station.md](docs/station.md). 待決：跳階與 reroute 的理由存不存、存 registry 還是資料檔、合成一頁還是掛 session 詳情。
