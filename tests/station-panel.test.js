@@ -72,4 +72,5 @@ test('seqHtml marks a backward step and dots a stage not taken from a command; o
         { seq, backs, backtracks: 1, seqSource: 'task.js' });
     assert.match(order, /transcript 裡真正執行的 task\.js 指令；倒退 1 次/);
     assert.equal(count(order, /class="bkl"/g), 1);
+    assert.match(order, /class="bkl"><div class="hd2"><span class="ar">↩<\/span>/, 'the arrow carries .ar, which colours it');
 });
