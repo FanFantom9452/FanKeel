@@ -67,8 +67,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔station〕離線橫條只做了 mockup 螢幕 3 的一半：缺「serve 沒有回應」標頭與狀態點、缺 `node fankeel serve --open` 重啟指令、缺 hero eyebrow 的「凍結於 hh:mm」 — [assets/station/station.js](assets/station/station.js).
-
 ## Needs a decision
 
 - 〔plan〕被派工的任務步驟寫「跑 `node --test`，全綠」，但 brief footer 只准跑自己那支，footer 贏 —— 本計畫 Task 5 因此漏了七個檔 — [skills/fankeel-plan/SKILL.md](skills/fankeel-plan/SKILL.md). 待決：footer 放寬、步驟改口、還是 Files block 規則要求宣告那些檔。

@@ -90,10 +90,28 @@ test('serveLost stays quiet with no baseline or inside the grace window, and sta
     // Past the window: the mockup's sentence, with the absolute time and the
     // relative one in parentheses after it, not the whole footer line.
     const msg = V.serveLost(now - 15001, now, '2026-09-14 06:12', '8m ago');
+    // It starts at 底下: the bar's heading says `serve 沒有回應` above this,
+    // so a sentence that opened by saying the server is offline again would
+    // put it on screen twice.
+    assert.match(msg, /^底下所有數字/);
     assert.match(msg, /與狀態/);
     assert.match(msg, /2026-09-14 06:12/);
     assert.match(msg, /（8m ago）/);
     assert.match(msg, /每 5 秒重試一次/);
+});
+
+test('heroEyebrow carries the frozen moment, and says only 近 30 天 while the server answers', () => {
+    // Mockup screen 3's hero reads 「近 30 天 · 凍結於 06:12」, so a reader who
+    // has scrolled past the bar still sees the page is not live. The hh:mm is
+    // the caller's, off the same `stamp()` the bar's absolute time comes from
+    // — one clock read in two places rather than two clocks.
+    assert.equal(V.heroEyebrow(null), '近 30 天');
+    assert.equal(V.heroEyebrow(''), '近 30 天');
+    assert.equal(V.heroEyebrow('06:12'), '近 30 天 · 凍結於 06:12');
+    // The real call shape, so a slice off by one cannot pass: `stamp()`
+    // returns `YYYY-MM-DD hh:mm` and the eyebrow wants its last five.
+    assert.equal(V.heroEyebrow(V.stamp(Date.parse('2026-09-14T06:12:00Z')).slice(11)),
+        '近 30 天 · 凍結於 06:12');
 });
 
 test('labels give each root the shortest tail nothing else shares', () => {

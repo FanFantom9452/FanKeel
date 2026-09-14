@@ -834,11 +834,22 @@
 
     // Whether the served page has lost its server, and what to say. Pure, so
     // it is unit tested; the fetch that feeds it and the banner it fills are
-    // the document half below the guard.
+    // the document half below the guard. The sentence starts at 底下 rather
+    // than at 伺服器已離線 because the bar's own heading now says
+    // `serve 沒有回應` above it — mockup screen 3 splits it that way, and one
+    // bar saying it twice reads as a stutter.
     function serveLost(lastOkMs, nowMs, genAbs, genRel) {
         if (lastOkMs === null || lastOkMs === undefined) return null;
         if (nowMs - lastOkMs < 15000) return null;
-        return '伺服器已離線 — 底下所有數字與狀態都凍結在 ' + genAbs + '（' + genRel + '），不會再更新。每 5 秒重試一次。';
+        return '底下所有數字與狀態都凍結在 ' + genAbs + '（' + genRel + '），不會再更新。每 5 秒重試一次。';
+    }
+
+    // The hero's eyebrow carries the frozen moment too, so a reader who has
+    // scrolled past the bar is not reading numbers they take for live. The
+    // hh:mm is the caller's, off the same `stamp()` the bar's absolute time
+    // comes from: two places on the page, one clock read.
+    function heroEyebrow(frozenAt) {
+        return frozenAt ? '近 30 天 · 凍結於 ' + frozenAt : '近 30 天';
     }
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -861,6 +872,7 @@
             projectSessionsHtml: projectSessionsHtml,
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
             sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost,
+            heroEyebrow: heroEyebrow,
         };
     }
     if (!doc) return;
@@ -868,6 +880,10 @@
     var route = parseHash(w.location && w.location.hash), sel = null, sortKey = 'updated', sortDir = -1;
     // The home page's two segmented controls; Tasks 7 and 8 add their own keys.
     var view = { metric: 'usd', dim: 'model' };
+    // `hh:mm` while the server is gone, `null` while it answers. The poll at
+    // the bottom of this file owns it; the hero's eyebrow reads it, which is
+    // why it is declared out here rather than beside the poll.
+    var frozenAt = null;
     // The sessions ticked for 比較, oldest tick first; a third tick drops the first.
     var picked = [];
     var NOW = Date.parse(S.generatedAt);
@@ -1043,7 +1059,8 @@
         var bars = dayBars(R, view.metric, view.dim, DAYS);
         var recent = R.slice().sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); }).slice(0, 12);
         return (isFinite(S.cleared) ? '<p class="cleared">cleared ' + S.cleared + ' stale rows</p>' : '')
-            + '<section class="panel hero"><div class="hero-top"><div class="hero-title"><div class="eyebrow">近 30 天</div>'
+            + '<section class="panel hero"><div class="hero-top"><div class="hero-title"><div class="eyebrow">'
+            + heroEyebrow(frozenAt) + '</div>'
             + '<h1><b>' + DAYS[0].slice(5) + '</b> — <b>' + TODAY.slice(5) + '</b></h1></div>'
             + kpiHtml(windowTotals(R, DAYS), windowTotals(R, PREV)) + '</div>'
             + '<div class="controls"><div class="ctlgrp"><label>長條高度</label>'
@@ -2021,37 +2038,56 @@
     if (w.location && w.location.protocol !== 'file:' && typeof w.setInterval === 'function') {
         var lastOkMs = Date.now();
         var deadBar = null;
+        var deadMsg = null;
         var setFrozen = function (on) {
             var page = doc.getElementById('page');
             if (page) page.style.cssText = on ? 'opacity:.72;filter:saturate(.3)' : '';
+        };
+        var servePill = function (on) {
+            var pill = doc.getElementById('servedown');
+            if (pill) pill.hidden = !on;
         };
         var showDead = function (msg) {
             if (!deadBar) {
                 deadBar = doc.createElement('div');
                 deadBar.setAttribute('role', 'status');
                 deadBar.setAttribute('aria-live', 'polite');
-                deadBar.style.cssText = 'display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;'
-                    + 'max-width:1440px;margin:0 auto;padding:11px 32px;'
-                    + 'background:var(--stale-bg);color:var(--stale-ink);border-left:3px solid var(--stale)';
-                var msgEl = doc.createElement('span');
-                deadBar.appendChild(msgEl);
+                deadBar.className = 'dead';
+                var head = doc.createElement('b');
+                head.innerHTML = '<i class="dot down"></i>serve 沒有回應';
+                deadBar.appendChild(head);
+                deadMsg = doc.createElement('span');
+                deadBar.appendChild(deadMsg);
+                // What brings it back, as text to select rather than a
+                // control: nothing on this page can start a server.
+                var cmd = doc.createElement('code');
+                cmd.textContent = 'node fankeel serve --open';
+                deadBar.appendChild(cmd);
                 var retry = doc.createElement('button');
                 retry.type = 'button';
                 retry.className = 'btn';
                 retry.textContent = '重試';
-                retry.style.cssText = 'border-color:var(--stale);color:var(--stale-ink);margin-left:auto';
+                retry.style.cssText = 'border-color:var(--stale);color:var(--stale-ink)';
                 retry.addEventListener('click', function () { poll(); });
                 deadBar.appendChild(retry);
                 var mast = doc.querySelector('.mast');
                 mast.parentNode.insertBefore(deadBar, mast.nextSibling);
             }
-            deadBar.firstChild.textContent = msg;
+            deadMsg.textContent = msg;
             deadBar.hidden = false;
+            servePill(true);
             setFrozen(true);
+            // The eyebrow is rendered, not patched, so the page has to be
+            // drawn again — but only as the state flips. A redraw every five
+            // seconds would throw away a scroll position and an opened row
+            // for a page whose numbers cannot change any more.
+            if (frozenAt === null) { frozenAt = stamp(NOW).slice(11); draw(); }
         };
         var hideDead = function () {
             if (deadBar) deadBar.hidden = true;
+            servePill(false);
             setFrozen(false);
+            if (frozenAt !== null) { frozenAt = null; draw(); }
         };
         var poll = function () {
             fetch('station/health').then(function (r) {
