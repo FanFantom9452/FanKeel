@@ -410,7 +410,13 @@ test('頁面對帳：a day\'s bar total equals its day panel total equals that d
     }
 });
 
-test('windowTotals and the four readouts: thirty days against the thirty before, waiting over main plus wait', () => {
+test('windowTotals and the five readouts: thirty days against the thirty before, waiting over main plus wait', () => {
+    // `S.gates` (the module-scoped `global.window.STATION` object `kpiHtml`
+    // closes over) carries nothing here, on purpose: this test is about the
+    // first four readouts, and the fifth — 最常被換掉 — prints its em-dash
+    // placeholder rather than disappearing, which is what the assertions
+    // below check for.
+    global.window.STATION.gates = undefined;
     const cur = V.windowTotals(HOME, DAYS);
     const prev = V.windowTotals(HOME, PREV);
     assert.deepEqual(cur, { usd: 8.5, tokens: 42705, active: 8700000, main: 7800000, wait: 1800000 });
@@ -422,19 +428,36 @@ test('windowTotals and the four readouts: thirty days against the thirty before,
     assert.match(html, /-31\.3 pt/);
     const cells = [...html.matchAll(/<div class="ro"><div class="l">(.*?)<\/div><div class="v">(.*?)<\/div><div class="d">(.*?)<\/div><\/div>/g)];
     assert.deepEqual(cells.map((m) => m[1]),
-        ['30 天花費', 'token', 'active 時間', '<i class="hatchsw"></i>等待佔比'],
+        ['30 天花費', 'token', 'active 時間', '<i class="hatchsw"></i>等待佔比', '最常被換掉'],
         'every readout carries its own label, and nothing else, in the label cell');
     assert.deepEqual(cells.map((m) => [/class="delta/.test(m[2]), /class="delta/.test(m[3])]),
-        [[false, true], [false, true], [false, true], [false, true]],
-        'each one keeps the figure in the value cell and the comparison in the line under it');
+        [[false, true], [false, true], [false, true], [false, true], [false, false]],
+        'each one keeps the figure in the value cell and the comparison in the line under it; the gate cell has no window to compare against');
     assert.match(html, /30 天花費<\/div><div class="v">\$8\.50<\/div><div class="d">/,
         'the spend readout puts the figure in the value cell and the comparison under it');
     assert.match(html, /token<\/div><div class="v">43k<\/div>/, 'the token readout reads this window, not the one before it');
     assert.match(html, /active 時間<\/div><div class="v">2\.4h<\/div>/, 'so does active 時間');
     assert.match(html, /等待佔比<\/div><div class="v">18\.8<span class="u">%<\/span><\/div><div class="d">[^<]*<span class="delta[^>]*>[^<]*-31\.3 pt/,
         'so does the waiting share');
+    assert.match(html, /最常被換掉<\/div><div class="v">—<\/div><div class="d"><\/div>/,
+        'with no gate data, the fifth readout prints an em dash rather than dropping out of the row');
     const none = V.kpiHtml(cur, V.windowTotals(HOME, V.lastDays(NOW - 60 * 864e5, 30)));
     assert.equal(count(none, /前期無資料/g), 4);
+});
+
+test('kpiHtml reads S.gates.swapped[0] for the fifth readout: which option one loses most, and how often', () => {
+    // Mutation that reddens this: in `kpiHtml()`, drop the `var top = ...`
+    // line and the `out += roHtml('最常被換掉', ...)` line that follows it —
+    // the output then has only four `ro` cells and neither `最常被換掉` nor
+    // `進 build` nor `3 / 5` appears anywhere in it.
+    global.window.STATION.gates = { swapped: [{ label: '進 build', lost: 3, total: 5 }] };
+    const cur = V.windowTotals(HOME, DAYS);
+    const prev = V.windowTotals(HOME, PREV);
+    const html = V.kpiHtml(cur, prev);
+    assert.match(html, /最常被換掉/);
+    assert.match(html, /進 build/);
+    assert.match(html, /3 \/ 5/);
+    global.window.STATION.gates = undefined;
 });
 
 test('sessionTotals and projectRows sum days and spans per session and per project key', () => {

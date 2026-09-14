@@ -366,14 +366,16 @@
     }
     function kpiHtml(cur, prev) {
         var share = function (t) { return t.main + t.wait ? t.wait / (t.main + t.wait) : 0; };
-        return '<div class="readouts">'
+        var out = '<div class="readouts">'
             + roHtml('30 天花費', usd(cur.usd), delta(cur.usd, prev.usd))
             + roHtml('token', tokens(cur.tokens), delta(cur.tokens, prev.tokens))
             + roHtml('active 時間', hours(cur.active), delta(cur.active, prev.active))
             + roHtml('<i class="hatchsw"></i>等待佔比', Math.round(share(cur) * 1000) / 10 + '<span class="u">%</span>',
                 (prev.main + prev.wait ? delta(share(cur), share(prev), 'pt') : '<span class="delta flat">前期無資料</span>')
-                + ' · ' + hours(cur.wait) + ' 等')
-            + '</div>';
+                + ' · ' + hours(cur.wait) + ' 等');
+        var top = S.gates && S.gates.swapped && S.gates.swapped.length ? S.gates.swapped[0] : null;
+        out += roHtml('最常被換掉', top ? esc(top.label) : '—', top ? top.lost + ' / ' + top.total : '');
+        return out + '</div>';
     }
     function spark(values, colour) {
         var W = 120, H = 30, mx = Math.max.apply(null, values.concat([0])) || 1, n = Math.max(values.length - 1, 1);
