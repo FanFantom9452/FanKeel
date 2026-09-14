@@ -464,3 +464,37 @@ test('a kept v1 cache\'s single row counts its dollars and zero tokens, and brea
     assert.match(V.recentHtml([KEPT], O), /\$2\.50<\/td><td class="r muted">0<\/td>/);
     assert.equal(count(V.histSvg(V.dayBars([KEPT], 'tokens', 'model', DAYS), O), /<rect class="hit"/g), 30);
 });
+
+// --- the three levels: project -----------------------------------------------
+test('projectHead and sessionPoints take one project key\'s figures from days, one point per session start', () => {
+    assert.deepEqual(V.projectHead(HOME, 'F:\\ws\\alpha', DAYS),
+        { pkey: 'F:\\ws\\alpha', usd: 3.75, tokens: 35100, active: 6000000, n: 2 });
+    assert.equal(V.dayStart('2026-09-14'), new Date(2026, 8, 14).getTime());
+    const t0 = V.dayStart(DAYS[0]), t1 = V.dayStart(DAYS[29]) + 864e5;
+    const alpha = HOME.filter((s) => s.root === 'F:\\ws\\alpha');
+    assert.deepEqual(V.sessionPoints(alpha, 'usd', t0, t1).map((p) => [p.id, p.v]),
+        [['cccc3333-0000', 0], ['aaaa1111-0000', 3.75], ['bbbb2222-0000', 4.75]]);
+    assert.deepEqual(V.sessionPoints(HOME, 'tokens', t0, t1).map((p) => p.v), [0, 35100, 7605], 'last month\'s session is off the axis');
+});
+
+test('projectChart draws a line per project on one y axis, and every point links to its session', () => {
+    const t0 = V.dayStart(DAYS[0]), t1 = V.dayStart(DAYS[29]) + 864e5;
+    const of = (k) => V.sessionPoints(HOME.filter((s) => s.pkey === k), 'tokens', t0, t1);
+    const beta = { pkey: 'F:\\ws\\alpha/Beta', name: 'alpha / Beta', colour: 'var(--p-0)', points: of('F:\\ws\\alpha/Beta') };
+    const alpha = { pkey: 'F:\\ws\\alpha', name: 'alpha', colour: 'var(--p-1)', points: of('F:\\ws\\alpha') };
+    const o = { metric: 'tokens', t0, t1, days: DAYS, today: DAYS[29] };
+    const svg = V.projectChart([beta, alpha], o);
+    assert.equal(count(svg, /<polyline /g), 2);
+    assert.equal(count(svg, /<circle class="hit" data-href="#\/s\//g), 3);
+    assert.match(svg, /data-href="#\/s\/bbbb2222-0000"/);
+    assert.match(svg, />50k<\/text>/, 'alpha\'s 35k sets the shared axis');
+    assert.doesNotMatch(V.projectChart([beta], o), />50k<\/text>/, 'alone, Beta\'s 8k does not reach it');
+});
+
+test('the project sessions table ticks for 比較, and prints dollars and a model mix from days', () => {
+    const html = V.projectSessionsHtml(HOME.slice(0, 3), ['aaaa1111-0000']);
+    assert.match(html, /data-cmp="aaaa1111-0000" aria-label="選來比較" checked>/);
+    assert.match(html, /data-cmp="cccc3333-0000" aria-label="選來比較" disabled/);
+    assert.match(html, /data-href="#\/s\/aaaa1111-0000"[\s\S]*?\$3\.75[\s\S]*?<span class="mini-mix" title="opus \$3\.25、sonnet \$0\.50">/);
+    assert.doesNotMatch(html, /\$99/);
+});

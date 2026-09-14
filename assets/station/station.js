@@ -513,6 +513,79 @@
             }).join('') + '</tbody></table></div>';
     }
 
+    // ---- the project page -------------------------------------------------
+    function dayStart(day) {
+        return new Date(Number(day.slice(0, 4)), Number(day.slice(5, 7)) - 1, Number(day.slice(8, 10))).getTime();
+    }
+    function projectHead(sessions, pkey, days) {
+        var mine = sessions.filter(function (s) { return s.pkey === pkey; });
+        var t = windowTotals(mine, days), row = projectRows(mine, days)[0];
+        return { pkey: pkey, usd: t.usd, tokens: t.tokens, active: t.active, n: row ? row.n : 0 };
+    }
+    // A session's whole spend, at the moment it started.
+    function sessionPoints(sessions, metric, t0, t1) {
+        return sessions.map(function (s) {
+            var t = sessionTotals(s);
+            return { id: s.id, task: s.task, t: Date.parse(s.started), v: metric === 'usd' ? t.usd : t.tokens };
+        }).filter(function (p) { return p.t >= t0 && p.t < t1; }).sort(function (a, b) { return a.t - b.t; });
+    }
+    // The 對照專案 line is a second series on the same axes, not a second chart.
+    function projectChart(series, o) {
+        var W = 1200, H = 340, L = 60, R = 24, T = 16, AX = 40, plotH = H - T - AX, base = T + plotH;
+        var X = function (t) { return (L + (t - o.t0) / ((o.t1 - o.t0) || 1) * (W - L - R)).toFixed(1); };
+        var all = [0];
+        series.forEach(function (s) { s.points.forEach(function (p) { all.push(p.v); }); });
+        var top = niceTop(Math.max.apply(null, all));
+        var Y = function (v) { return (base - v / top * plotH).toFixed(1); };
+        var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="每個 session 的' + METRIC_LABEL[o.metric] + '，依開始時間">';
+        [0, 0.25, 0.5, 0.75, 1].forEach(function (f) {
+            out += '<line class="' + (f ? 'gridl' : 'base') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(top * f) + '" y2="' + Y(top * f) + '"/>'
+                + '<text class="tick" x="' + (L - 10) + '" y="' + (Number(Y(top * f)) + 4) + '" text-anchor="end">' + metricText(o.metric, top * f) + '</text>';
+        });
+        o.days.forEach(function (d, i) {
+            var x = X(dayStart(d) + 432e5);
+            if (i % 2 === 0 || d === o.today) out += '<text class="tick" x="' + x + '" y="' + (base + 17) + '" text-anchor="middle">' + Number(d.slice(8)) + '</text>';
+            if (d === o.today || d.slice(8) === '01' || i === 0) {
+                out += '<text x="' + x + '" y="' + (base + 33) + '" text-anchor="middle">' + (d === o.today ? '今天' : Number(d.slice(5, 7)) + '月') + '</text>';
+            }
+        });
+        series.forEach(function (s) {
+            if (!s.points.length) return;
+            out += '<polyline points="' + s.points.map(function (p) { return X(p.t) + ',' + Y(p.v); }).join(' ')
+                + '" style="fill:none;stroke:' + s.colour + ';stroke-width:2;stroke-linejoin:round"/>';
+            s.points.forEach(function (p) {
+                out += '<circle class="hit" data-href="' + sessionHash(p.id) + '" cx="' + X(p.t) + '" cy="' + Y(p.v) + '" r="5" style="fill:'
+                    + s.colour + ';stroke:var(--panel);stroke-width:2"><title>' + esc(s.name + ' · ' + (p.task || p.id) + ' · ' + stamp(p.t)
+                    + ' · ' + metricText(o.metric, p.v)) + '</title></circle>';
+            });
+        });
+        return out + '</svg>';
+    }
+    function miniMix(models) {
+        var keys = MODEL_KEYS.filter(function (k) { return models[k] > 0; });
+        var tot = keys.reduce(function (n, k) { return n + models[k]; }, 0);
+        if (!tot) return '<span class="muted">—</span>';
+        return '<span class="mini-mix" title="' + keys.map(function (k) { return k + ' ' + usd(models[k]); }).join('、') + '">'
+            + keys.map(function (k) {
+                return '<i style="width:' + (models[k] / tot * 100).toFixed(2) + '%;background:var(--m-' + k + ')"></i>';
+            }).join('') + '</span>';
+    }
+    function projectSessionsHtml(list, picked) {
+        if (!list.length) return '<p class="note">這個專案近 30 天沒有 session</p>';
+        return '<div class="tbl-wrap"><table class="t"><thead><tr><th aria-label="選來比較"></th><th>任務</th><th>開始</th>'
+            + '<th class="r">時長</th><th>stage 進度</th><th class="r">花費</th><th class="r">token</th><th>model 組成</th></tr></thead><tbody>'
+            + list.map(function (s) {
+                var t = sessionTotals(s), started = Date.parse(s.started);
+                return '<tr class="link" data-href="' + sessionHash(s.id) + '"><td><input type="checkbox" data-cmp="' + esc(s.id)
+                    + '" aria-label="選來比較"' + (picked.indexOf(s.id) >= 0 ? ' checked' : '')
+                    + (s.hasDetail ? '' : ' disabled title="沒有 transcript，沒有細節可比"') + '></td>'
+                    + '<td class="task"><a href="' + sessionHash(s.id) + '">' + esc(s.task || '（未命名）') + '</a></td>'
+                    + '<td class="muted">' + stamp(started) + '</td><td class="r">' + mins((s.updated || started) - started) + '</td>'
+                    + '<td>' + routeDots(s) + ' <span class="muted">' + esc(s.stage || '—') + '</span></td>'
+                    + '<td class="r">' + usd(t.usd) + '</td><td class="r muted">' + tokens(t.tokens) + '</td><td>' + miniMix(t.models) + '</td></tr>';
+            }).join('') + '</tbody></table></div>';
+    }
+
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
@@ -529,6 +602,8 @@
             localDay: localDay, lastDays: lastDays, parseHash: parseHash, family: family, sessionTotals: sessionTotals,
             windowTotals: windowTotals, dayBars: dayBars, dayPanel: dayPanel, projectRows: projectRows, kpiHtml: kpiHtml,
             histSvg: histSvg, dayPanelHtml: dayPanelHtml, projectsHtml: projectsHtml, recentHtml: recentHtml,
+            dayStart: dayStart, projectHead: projectHead, sessionPoints: sessionPoints, projectChart: projectChart,
+            projectSessionsHtml: projectSessionsHtml,
         };
     }
     if (!doc) return;
@@ -655,9 +730,9 @@
     // A gone registry keeps its facet, so selecting it has to say why the pane
     // went empty. Without this the page answers a click with a blank screen and
     // the reader cannot tell a gone registry from a filter that matched nothing.
-    function goneNote() {
-        if (!f.project) return '';
-        var hit = S.projects.filter(function (p) { return p.root === f.project; });
+    function goneNote(root) {
+        if (!root) return '';
+        var hit = S.projects.filter(function (p) { return p.root === root; });
         if (!hit.length || !hit[0].gone) return '';
         return '<div class="card" style="margin-bottom:14px"><div class="cbody">'
             + '<p style="margin:0"><b>' + esc(hit[0].root) + '</b></p>'
@@ -672,9 +747,9 @@
     // entry silently and correctly, so this is the only place that count
     // surfaces — its build directories with a file count each, and when its
     // map.md last changed.
-    function registryNote() {
-        if (!f.project) return '';
-        var hit = S.projects.filter(function (p) { return p.root === f.project; });
+    function registryNote(root) {
+        if (!root) return '';
+        var hit = S.projects.filter(function (p) { return p.root === root; });
         if (!hit.length || hit[0].gone) return '';
         var p = hit[0];
         var own = S.sessions.filter(function (s) { return s.root === p.root; });
@@ -726,6 +801,50 @@
             + '<section class="panel">' + recentHtml(recent, o) + '</section></div>'
             + profileCard('machine profile', 'machine', null, S.profiles && S.profiles.machine);
     }
+    view.pMetric = 'usd';
+    view.compare = '';
+    // A session counts on this page when it started inside the thirty days or
+    // spent inside them.
+    function inWindow(s) {
+        return Date.parse(s.started) >= dayStart(DAYS[0]) || (s.days || []).some(function (x) { return DAYS.indexOf(x.day) >= 0; });
+    }
+    function projectPage(r) {
+        var all = S.sessions.filter(function (s) { return s.pkey === r.pkey; });
+        if (!all.length) return '<section class="panel"><p class="note">這頁上沒有專案 ' + esc(r.pkey) + '</p></section>';
+        var R = homeRows(), mine = R.filter(function (s) { return s.pkey === r.pkey; });
+        var head = projectHead(R, r.pkey, DAYS), t0 = dayStart(DAYS[0]), t1 = dayStart(TODAY) + 864e5;
+        if (view.compare === r.pkey) view.compare = '';
+        var series = [r.pkey].concat(view.compare ? [view.compare] : []).map(function (k) {
+            return { pkey: k, name: NAMES[k] || k, colour: colorOf('project', k, PKEYS),
+                points: sessionPoints(R.filter(function (s) { return s.pkey === k; }), view.pMetric, t0, t1) };
+        });
+        var others = PKEYS.filter(function (k) { return k !== r.pkey; });
+        var list = mine.filter(inWindow).sort(function (a, b) { return Date.parse(b.started) - Date.parse(a.started); });
+        var ro = function (l, v) { return '<div class="ro"><div class="l">' + l + '</div><div class="v">' + v + '</div></div>'; };
+        return '<section class="panel"><div class="hero-top"><div><div class="eyebrow">專案</div>'
+            + '<h1 class="s-title"><i class="sw" style="background:' + colorOf('project', r.pkey, PKEYS) + '"></i> '
+            + esc(NAMES[r.pkey] || r.pkey) + '</h1><div class="mono muted">' + esc(r.pkey) + '</div></div>'
+            + '<div class="readouts">' + ro('近 30 天花費', usd(head.usd)) + ro('token', tokens(head.tokens))
+            + ro('active 時間', hours(head.active)) + ro('session', head.n) + '</div></div>'
+            + '<div class="controls"><div class="ctlgrp"><label>縱軸</label>'
+            + segHtml('pMetric', [['tokens', 'token'], ['usd', '花費']], view.pMetric) + '</div>'
+            + (others.length ? '<div class="ctlgrp"><label>對照專案</label>' + segHtml('compare', [['', '無']].concat(others.map(function (k) {
+                return [k, NAMES[k] || k];
+            })), view.compare) + '</div>' : '')
+            + '<div class="legend">' + series.map(function (s) {
+                return '<span><i class="sw ln" style="background:' + s.colour + '"></i>' + esc(s.name) + ' <span class="muted">'
+                    + s.points.length + ' 個</span></span>';
+            }).join('') + '</div></div>'
+            + '<div class="chart">' + projectChart(series, { metric: view.pMetric, t0: t0, t1: t1, days: DAYS, today: TODAY }) + '</div>'
+            + '<div class="note">每個點是一個 session，放在它開始的時刻；線依時間先後連接，點一下開啟那個 session。</div></section>'
+            + registryNote(all[0].root)
+            + '<section class="panel"><div class="h2">Sessions <small>近 30 天 ' + list.length + ' 個，最新在上；勾兩列進比較</small>'
+            + '<span class="spacer"></span><a class="ctl" href="#/cmp">⇅ 比較勾選的 <b>' + picked.length + '</b> 個</a></div>'
+            + projectSessionsHtml(list, picked) + '</section>'
+            + '<section class="panel"><div class="h2">各 route 的階段 <small>只算這個專案</small></div>' + routeLedger(mine) + '</section>';
+    }
+    VIEWS.project = projectPage;
+    CRUMBS.project = function (r) { return [[NAMES[r.pkey] || r.pkey, null]]; };
     // `started` has a column of its own because the page this replaces sorted
     // by it, and a sort key with no header is a sort nobody can reach.
     var COLS = [['task', '任務'], ['stage', '階段'], ['burn', 'context'],
@@ -760,7 +879,7 @@
         // A gone registry has no rows to lay out, so the note replaces the table
         // rather than sitting above it and pushing the list off the bottom.
         var head = '<div class="phead"><h1>清單</h1><span class="chip" id="cnt"></span><span class="spacer"></span>';
-        var gone = goneNote();
+        var gone = goneNote(f.project);
         if (gone) return head + '<a class="ctl" href="#/">▦ 首頁</a></div>' + facetsHtml() + gone;
         return head + '<a class="ctl" href="#/cmp">⇅ 比較勾選的 <b id="ncmp">' + picked.length + '</b> 個</a>'
             + '<a class="ctl" href="#/">▦ 首頁</a></div>' + facetsHtml()
@@ -1539,6 +1658,7 @@
             picked = picked.filter(function (x) { return x !== id; });
             if (cb.checked) picked.push(id);
             if (picked.length > 2) picked.shift();
+            if (route.view === 'project') { draw(); return; }
             var nc = doc.getElementById('ncmp');
             if (nc) nc.textContent = picked.length;
             drawList();
