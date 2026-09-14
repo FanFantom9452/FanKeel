@@ -120,16 +120,20 @@ the page is built from it: `flatten()` is where that happens
 (`lib/station.js:409`, `if (hidden.has(pkeyOf(row))) continue;`), and
 everything the page renders — the facets, the charts, four of the home
 page's five cards — reads `flatten()`'s output rather than the model
-itself, so no view filters a second time. Three server-side writers do,
-because each walks `model.registries` rather than `flatten()`. One is the
-profile list `serialize()` hands the page
-(`lib/station.js:481`, `if (values && values['station.hide'] === true) continue;`),
+itself, so no view filters a second time. Every aggregation that walks
+`model.registries` instead carries its own check, and a new one has to:
+the live/stale/down counts `write()` returns for the terminal summary
+(`lib/station.js:557`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
+the fifth card's gate tally
+(`lib/station.js:440`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`),
+the profile list `serialize()` hands the page
+(`lib/station.js:481`, `if (values && values['station.hide'] === true) continue;`) —
 an inline copy of the predicate rather than a `hiddenPkeys()` call, because
-that loop is keyed by the raw profiles directory rather than by pkey. The
-second is the fifth card, the gate tally: it is the one figure on the page
-`flatten()` never touched, so it takes the hidden set as an argument
-(`lib/station.js:440`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).
-The third is `write()`'s detail-file loop. Both are described below. There is no trace on
+that loop is keyed by the raw profiles directory rather than by pkey —
+`write()`'s detail-file loop described below, and `--json`'s own pass
+outside this file
+(`scripts/station.js:679`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
+There is no trace on
 the page that a project was left out: no count, no note on the footer. `station.js`'s own text
 summary — not the served page — does print how many projects it excluded
 (`scripts/station.js:780`, `hidden by station.hide`), but names none of
