@@ -80,6 +80,19 @@ test('cost adds the session and its agents', () => {
     assert.equal(V.cost({}), 0);
 });
 
+test('serveLost stays quiet with no baseline or inside the grace window, and names the frozen gen once stale', () => {
+    // No successful poll yet: nothing to compare against, so no verdict.
+    assert.equal(V.serveLost(null, Date.now(), 'g'), null);
+    assert.equal(V.serveLost(undefined, Date.now(), 'g'), null);
+    // A response 14s ago is still inside the 15s grace window.
+    const now = Date.now();
+    assert.equal(V.serveLost(now - 14000, now, 'g'), null);
+    // Past the window, the message carries the word and the frozen gen text.
+    const msg = V.serveLost(now - 15001, now, '2026-09-14 06:12');
+    assert.match(msg, /凍結於/);
+    assert.match(msg, /2026-09-14 06:12/);
+});
+
 test('labels give each root the shortest tail nothing else shares', () => {
     const out = V.labels(['/a/b/datapacks', '/c/d/datapacks', '/e/notes']);
     assert.equal(out['/e/notes'], 'notes');
@@ -740,4 +753,48 @@ test('selecting a registry on 清單 keeps its unreadable-session count on the c
     });
     assert.match(els.page.innerHTML, /2 個 session 檔案讀不到/, 'the selected registry carries its own count on the card');
     assert.doesNotMatch(els.gen.textContent, /個 session 檔案讀不到/, 'the header drops the total once that card is on screen');
+});
+
+// --- fix: the health poll must never arm on a page opened as a bare file ---
+// `--open` (scripts/station.js:770) writes the page and opens it with no
+// server behind it, so the poll has to switch itself off there rather than
+// show a permanent death banner. The smoke test above stubs `document` but
+// gives `win` no `setInterval` at all, which is exactly why the poll block
+// is skipped there and the suite stayed green either way — that proves
+// nothing about the `file:` guard itself. This test arms a `setInterval` spy
+// on both a `file:` and an `http:` `location.protocol` so a guard that
+// stopped checking the protocol would show up on the `file:` arm, not just
+// vanish into an already-skipped block.
+test('the health poll never arms under file:, and does arm every 5s once served', () => {
+    const vm = require('node:vm');
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    const armed = (protocol) => {
+        const els = {};
+        const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
+        const doc = {
+            getElementById: (id) => els[id] || (els[id] = el()),
+            addEventListener: () => {},
+            createElement: el,
+            head: { appendChild() {} },
+            querySelectorAll: () => [],
+        };
+        const calls = [];
+        const win = {
+            location: { hash: '#/', protocol }, addEventListener() {}, scrollTo() {},
+            setInterval: (fn, ms) => { calls.push(ms); return 1; },
+            STATION: {
+                generatedAt: new Date(2026, 8, 14, 21).toISOString(), configDir: 'C:\\cfg',
+                pricesVerified: '2026-09-04', serve: protocol !== 'file:',
+                projects: [{ root: 'F:\\ws\\alpha', gone: false, unreadable: 2, build: [], mapAt: null }],
+                profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} },
+                profileKeys: {}, classes: {}, sessions: [],
+            },
+        };
+        vm.runInNewContext(src, { window: win, document: doc, URLSearchParams, fetch() {} });
+        return calls;
+    };
+    assert.deepEqual(armed('file:'), [], 'a bare file open schedules no poll at all');
+    assert.deepEqual(armed('http:'), [5000], 'a served page polls every 5s');
 });

@@ -832,6 +832,15 @@
         }).join('') + '</nav>';
     }
 
+    // Whether the served page has lost its server, and what to say. Pure, so
+    // it is unit tested; the fetch that feeds it and the banner it fills are
+    // the document half below the guard.
+    function serveLost(lastOkMs, nowMs, genText) {
+        if (lastOkMs === null || lastOkMs === undefined) return null;
+        if (nowMs - lastOkMs < 15000) return null;
+        return '伺服器已離線 — 畫面上的數字凍結於 ' + genText;
+    }
+
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
@@ -851,7 +860,7 @@
             dayStart: dayStart, projectHead: projectHead, sessionPoints: sessionPoints, projectChart: projectChart,
             projectSessionsHtml: projectSessionsHtml,
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
-            sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml,
+            sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost,
         };
     }
     if (!doc) return;
@@ -2001,6 +2010,61 @@
     doc.getElementById('cfg').textContent = String(S.configDir || '').replace(/^.*[\\/]/, '')
         || S.configDir;
     doc.getElementById('cfg').title = S.configDir || '';
+
+    // ---- serve health polling ----------------------------------------------
+    // Only `serve` (not `--open`, scripts/station.js:770) puts a server behind
+    // this fetch, so a page opened straight from disk must never start the
+    // poll — it would show a permanent death banner for a state that is
+    // simply normal there. `w.setInterval` is also checked so a stripped-down
+    // test harness that stubs `document` but not timers skips this quietly
+    // instead of throwing.
+    if (w.location && w.location.protocol !== 'file:' && typeof w.setInterval === 'function') {
+        var lastOkMs = Date.now();
+        var deadBar = null;
+        var setFrozen = function (on) {
+            var page = doc.getElementById('page');
+            if (page) page.style.cssText = on ? 'opacity:.72;filter:saturate(.3)' : '';
+        };
+        var showDead = function (msg) {
+            if (!deadBar) {
+                deadBar = doc.createElement('div');
+                deadBar.setAttribute('role', 'status');
+                deadBar.setAttribute('aria-live', 'polite');
+                deadBar.style.cssText = 'display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;'
+                    + 'max-width:1440px;margin:0 auto;padding:11px 32px;'
+                    + 'background:var(--stale-bg);color:var(--stale-ink);border-left:3px solid var(--stale)';
+                var msgEl = doc.createElement('span');
+                deadBar.appendChild(msgEl);
+                var retry = doc.createElement('button');
+                retry.type = 'button';
+                retry.className = 'btn';
+                retry.textContent = '重試';
+                retry.style.cssText = 'border-color:var(--stale);color:var(--stale-ink);margin-left:auto';
+                retry.addEventListener('click', function () { poll(); });
+                deadBar.appendChild(retry);
+                var mast = typeof doc.querySelector === 'function' ? doc.querySelector('.mast') : null;
+                var host = mast ? mast.parentNode : doc.body;
+                if (host) host.insertBefore(deadBar, mast ? mast.nextSibling : host.firstChild);
+            }
+            deadBar.firstChild.textContent = msg;
+            deadBar.hidden = false;
+            setFrozen(true);
+        };
+        var hideDead = function () {
+            if (deadBar) deadBar.hidden = true;
+            setFrozen(false);
+        };
+        var poll = function () {
+            fetch('station/health').then(function (r) {
+                if (r && r.ok) lastOkMs = Date.now();
+            }).catch(function () {}).then(function () {
+                var msg = serveLost(lastOkMs, Date.now(), genText());
+                if (msg) showDead(msg); else hideDead();
+            });
+        };
+        w.setInterval(poll, 5000);
+    }
+
     draw();
 }(typeof window === 'undefined' ? {} : window,
   typeof document === 'undefined' ? null : document));
