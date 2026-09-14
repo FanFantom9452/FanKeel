@@ -1,6 +1,6 @@
 ---
 name: fankeel-station
-description: Open the station as a live page — every fankeel session on this machine, on one page, with a server behind it instead of the static file a session end already writes. Use for /fankeel-station, "開站", "monitor station", "open the station", or when the station needs to run as a server rather than be read as the static file.
+description: Run the station as a live server — every fankeel session on this machine on one page, served rather than read as the static file a prompt already writes. Use for /fankeel-station, "開站", or when the station has to be a server rather than a file. Reading that file, and the station's other phrases like "監控站", stay with the fankeel skill.
 version: 0.67.0
 status: current
 last_verified: 2026-09-15

@@ -85,11 +85,14 @@ for (const n of names) {
 
 // The station skill was retired on 2026-09-07 because the `/fankeel` prompt
 // already writes the page and names it, so a second skill was a second door to
-// one room. It came back on 2026-09-15 for the door the first one is not: what
-// a prompt writes is a static file, and this skill runs `station.js serve`,
-// which is a live server with a port, a URL and a death of its own. The
-// routing phrases stay in the fankeel skill's description, so the only skill
-// that may name `/fankeel-station` is the one that is it.
+// one room. It came back on 2026-09-15, and the argument is narrower than the
+// first time round. `skills/fankeel/SKILL.md:650-651` does already name
+// `serve --open` — one sentence inside a long skill about task discipline —
+// and it keeps "監控站" among its own routing phrases. What it cannot offer is
+// a door somebody can type: a server started by name, rather than by a model
+// picking that sentence out of that skill. So the new skill claims the server
+// and nothing else, its description cedes the station's other phrases back,
+// and the only skill that may name `/fankeel-station` is the one that is it.
 test('the fankeel skill routes the station phrases, and only the station skill names /fankeel-station', () => {
   const fm = frontmatter(read('fankeel'));
   for (const phrase of ['show all sessions', 'clean up old sessions', '監控站']) {
