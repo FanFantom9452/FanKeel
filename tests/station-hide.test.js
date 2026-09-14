@@ -7,7 +7,7 @@
 // every surface below reads its output rather than judging for itself — with
 // one exception worth knowing, because it looks like a bug and is not:
 // `serialize()`'s `profiles.projects` loop repeats the predicate inline
-// (`lib/station.js:475`), since that loop is keyed by the raw profiles
+// (`lib/station.js:481`), since that loop is keyed by the raw profiles
 // directory rather than by the forward-slash pkey `hiddenPkeys()` returns.
 
 const test = require('node:test');

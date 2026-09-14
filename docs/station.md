@@ -118,15 +118,18 @@ all — not a greyed-out one, an absent one. The check is one function,
 and every session under a hidden project is dropped before anything else on
 the page is built from it: `flatten()` is where that happens
 (`lib/station.js:409`, `if (hidden.has(pkeyOf(row))) continue;`), and
-everything the page renders — the facets, the charts, the home page's
-totals — reads `flatten()`'s output rather than the model itself, so no
-view filters a second time. Two server-side writers do, because each walks
-`model.registries` rather than `flatten()`. One is the profile list
-`serialize()` hands the page
+everything the page renders — the facets, the charts, four of the home
+page's five cards — reads `flatten()`'s output rather than the model
+itself, so no view filters a second time. Three server-side writers do,
+because each walks `model.registries` rather than `flatten()`. One is the
+profile list `serialize()` hands the page
 (`lib/station.js:481`, `if (values && values['station.hide'] === true) continue;`),
 an inline copy of the predicate rather than a `hiddenPkeys()` call, because
-that loop is keyed by the raw profiles directory rather than by pkey; the
-other is `write()`'s detail-file loop described below. There is no trace on
+that loop is keyed by the raw profiles directory rather than by pkey. The
+second is the fifth card, the gate tally: it is the one figure on the page
+`flatten()` never touched, so it takes the hidden set as an argument
+(`lib/station.js:440`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).
+The third is `write()`'s detail-file loop. Both are described below. There is no trace on
 the page that a project was left out: no count, no note on the footer. `station.js`'s own text
 summary — not the served page — does print how many projects it excluded
 (`scripts/station.js:780`, `hidden by station.hide`), but names none of
@@ -491,7 +494,8 @@ either, on every one of those four writes. `write()` walks
 `model.registries` directly for this loop rather than through `flatten()`,
 so it carries its own check (`lib/station.js:616`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
 hiding a project after its sessions already had a detail file does not
-delete that file, it just stops being rewritten.
+delete that file, it just stops being rewritten — nothing in `write()`
+removes a file it once wrote.
 
 `node scripts/station.js --json` is the same model as one JSON document on
 stdout, and it writes nothing — no page, no `roots.json`, no first-run walk.
