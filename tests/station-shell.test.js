@@ -113,9 +113,52 @@ test('every palette token the three levels colour by is defined in both themes',
     }
 });
 
+// A class counts as emitted only where the page actually sets one: a whole
+// space-separated token inside a class="..." attribute value (itself a JS
+// string that may be spliced by concatenation, as in
+// '<i class="sw ' + k + '">'), inside the quoted operand of a className
+// assignment (p.className = 'page' + (... ? ' fixed' : '')), or as the
+// quoted argument of classList.add/remove/toggle. Scanning the whole file
+// for a quote- or space-bounded word (round 1's check) is satisfied by any
+// short identifier — `var t = [s.task, ...]` holds ` t ` and passed even
+// with the real class="t" removed — so this narrows the search to those
+// three shapes. A splice can itself carry a ternary whose condition is bare
+// code, as in class="pill sm ' + (t && t.status === 'complete' ? 'ok' :
+// 'pend') + '" — splitting that span on punctuation alone would pull the
+// condition's `t` out as if it were a class, the same mistake one level
+// down. Single quotes inside a span alternate JS-string / bare-code, so
+// only the string-mode pieces are read as literal text.
+function literalPieces(span, startsAsString) {
+    return span.split('\'').filter(function (_, i) {
+        return startsAsString ? i % 2 === 0 : i % 2 === 1;
+    });
+}
+function classTokens(source) {
+    const tokens = new Set();
+    const add = function (pieces) {
+        pieces.forEach(function (piece) {
+            piece.split(/\s+/).forEach(function (tok) {
+                if (tok) tokens.add(tok);
+            });
+        });
+    };
+    let m;
+    // class="..." is captured already inside a JS string, so its span opens
+    // in string mode.
+    const attrRe = /class="([^"]*)"/g;
+    while ((m = attrRe.exec(source))) add(literalPieces(m[1], true));
+    // className/classList operands are captured as bare code, so their span
+    // opens in code mode.
+    const classNameRe = /\.className\s*=\s*([^;]+);/g;
+    while ((m = classNameRe.exec(source))) add(literalPieces(m[1], false));
+    const classListRe = /classList\.(?:add|remove|toggle)\(([^)]*)\)/g;
+    while ((m = classListRe.exec(source))) add(literalPieces(m[1], false));
+    return tokens;
+}
+
 test('every class the three levels render has a rule', () => {
     const css = fs.readFileSync(CSS, 'utf8');
-    const emitted = shell() + fs.readFileSync(JS, 'utf8');
+    const emitted = classTokens(shell() + fs.readFileSync(JS, 'utf8'));
     const classes = ['mast', 'crumbs', 'search', 'foot', 'page', 'fixed', 'panel', 'eyebrow', 'h2', 'readouts', 'ro',
         'hatchsw', 'controls', 'ctlgrp', 'seg', 'legend', 'sw', 'chart', 'hit', 'tbl-wrap', 't', 'link', 'chip',
         'pchip', 'route', 'grid2', 'hero-top', 'projrow', 'pth', 'day', 'day-head', 'day-nav', 'btn',
@@ -124,7 +167,7 @@ test('every class the three levels render has a rule', () => {
         'card', 'phead', 'ctl', 'listwrap', 'det', 'sec', 'tally', 'seq', 'rp', 'cmpcard', 'pill', 'delta', 'mute'];
     for (const c of classes) {
         assert.match(css, new RegExp('\\.' + c + '[\\s{,:.>\\[)]'), 'no rule for .' + c);
-        assert.match(emitted, new RegExp('[\'" ]' + c + '[\'" ]'), 'no element emits .' + c);
+        assert.ok(emitted.has(c), 'no element emits .' + c);
     }
     // `^` because the kept `.seq .ar.bk{` is not the mockup's bare `.bk{`.
     assert.doesNotMatch(css, /^\.bk\{|\.bk-h|\.demo|\.tip\{|\.xh-read|\.strip24|\.teamcard|\.scrollmain/m,
