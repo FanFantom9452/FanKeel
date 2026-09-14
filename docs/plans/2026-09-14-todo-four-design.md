@@ -80,9 +80,11 @@ session** 取整，整個 session 被過濾掉它根本看不到。設計初稿�
 - `scripts/station.js:768` 的文字回覆與它的來源 `lib/station.js:479-483` 的 `tally()`
   過濾後多印一行 `N projects hidden by station.hide`，只給數量不給名字。
 - 頁面上不加任何指示。`assets/station/station.js` 為這一條一行不改。
-- 代價寫下來：藏起來之後 `POST /profile`（`scripts/station.js:545`）會 404，因為
-  `scope='project'` 要求目標專案已被跑著的 model 認識，而它剛被過濾掉。解除只能走
-  `node scripts/task.js profile set station.hide false`。
+- 代價寫下來：藏起來之後那張卡不再渲染，所以頁面上沒有按鈕可按，解除只能走
+  `node scripts/task.js profile set station.hide false`。代價就只有這樣 ——
+  `POST /profile`（`scripts/station.js:545`）本身仍然收它：那裡的 `known` 讀
+  `r.profiles`，正是 `hiddenPkeys()` 判斷誰被藏所讀的同一張表，而 `gather()`
+  一路不過濾，所以被藏的專案對它永遠是 known，不會 404。
 - 第二個代價：`assets/station/station.css:15` 的 `--p-0` 到 `--p-5` 是按順序指派給
   專案的，所以藏掉一個會讓其餘專案換色。接受它 —— 顏色不是身分。改成由 pkey 雜湊
   決定顏色會動到每個既有專案的顏色，範圍比這一條大，不放進來。mockup 的螢幕 1 就是
