@@ -586,6 +586,209 @@
             }).join('') + '</tbody></table></div>';
     }
 
+    // ---- the session page -------------------------------------------------
+    function clock(ms) { var d = new Date(ms); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+    // One real time axis, from the first stage step to the last request: a
+    // stage is as wide as it lasted, a wait is the gap between a gate's question
+    // and its answer, an agent runs from launch to return.
+    function timelineModel(x) {
+        var pts = (x.points || []).filter(function (p) { return isFinite(p.t); });
+        var seq = x.seq || [], rows = x.rows || [], bars = [];
+        var t0 = seq.length ? seq[0].at : pts.length ? pts[0].t : NaN;
+        var t1 = pts.length ? pts[pts.length - 1].t : t0;
+        var agent = function (r, kind, key, ret) {
+            return { kind: kind, key: key, label: r.label || r.id, model: r.model, from: r.from, to: r.to,
+                tokens: (r.k || 0) * 1000, cents: r.c || 0, ret: ret };
+        };
+        (x.dispatches || []).forEach(function (d, i) {
+            var kids = rows.filter(function (r) { return r.disp === i; });
+            if (d.surface !== 'workflow') {
+                kids.forEach(function (r) { bars.push(agent(r, 'agent', r.id, d.ret)); });
+                return;
+            }
+            bars.push({ kind: 'wf', key: 'wf-' + i, label: d.text, model: null, from: d.out, to: d.back, ret: d.ret, n: kids.length,
+                tokens: kids.reduce(function (n, r) { return n + (r.k || 0); }, 0) * 1000,
+                cents: kids.reduce(function (n, r) { return n + (r.c || 0); }, 0) });
+            kids.forEach(function (r) { bars.push(agent(r, 'kid', 'wf-' + i, null)); });
+        });
+        rows.filter(function (r) { return r.disp === null; }).forEach(function (r) { bars.push(agent(r, 'agent', r.id, null)); });
+        return {
+            t0: t0, t1: t1, points: pts, bars: bars,
+            segs: seq.map(function (m, i) { return { stage: m.stage, from: m.at, to: i + 1 < seq.length ? seq[i + 1].at : t1 }; })
+                .filter(function (g) { return g.to > g.from; }),
+            waits: (x.waits || []).map(function (w) {
+                return { stage: w.stage, from: w.askedAt, to: w.answeredAt, ms: w.answeredAt - w.askedAt };
+            }),
+            ticks: pts.map(function (p) { return { t: p.t, family: family(p.model) }; }),
+            rets: (x.dispatches || []).filter(function (d) { return isFinite(d.back) && d.ret !== null && d.ret !== undefined; })
+                .map(function (d) { return { t: d.back, chars: d.ret }; }),
+        };
+    }
+    function timelineSvg(m, closed) {
+        if (!(m.t1 > m.t0)) return '<p class="note">這個 session 沒有帶時間的 request，畫不出時間線</p>';
+        var shown = m.bars.filter(function (b) { return b.kind !== 'kid' || !closed[b.key]; });
+        var W = 1200, G = 160, R = 18, RH = 26, ctx0 = 34, ctxH = 150, ctxB = ctx0 + ctxH;
+        var st0 = ctxB + 22, stH = 34, wl = st0 + stH + 15, rq0 = wl + 16, rqH = 20, d0 = rq0 + rqH + 22;
+        var H = d0 + Math.max(1, shown.length) * RH + 34, bottom = H - 26;
+        var X = function (t) { return G + (Math.min(Math.max(t, m.t0), m.t1) - m.t0) / (m.t1 - m.t0) * (W - G - R); };
+        var ctop = niceTop(Math.max.apply(null, m.points.map(function (p) { return p.y; }).concat([1])));
+        var Yc = function (v) { return ctxB - v / ctop * ctxH; };
+        var yAt = function (t) { var y = 0; m.points.forEach(function (p) { if (p.t <= t) y = p.y; }); return y; };
+        var f1 = function (n) { return n.toFixed(1); };
+        var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="session 時間線"><defs>'
+            + '<pattern id="hw" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">'
+            + '<rect width="5" height="5" style="fill:var(--hatch-bg)"/><rect width="1.4" height="5" style="fill:var(--hatch)"/></pattern></defs>'
+            + '<text x="' + G + '" y="16" style="fill:var(--ink);font-weight:600">' + clock(m.t0) + '</text>'
+            + '<text x="' + (W - R) + '" y="16" text-anchor="end" style="fill:var(--ink);font-weight:600">' + clock(m.t1) + '</text>'
+            + '<text class="tick" x="' + (W - R) + '" y="' + (H - 8) + '" text-anchor="end">共 ' + mins(m.t1 - m.t0) + '</text>';
+        m.waits.forEach(function (w) {
+            out += '<rect class="wait" x="' + f1(X(w.from)) + '" y="' + (ctx0 - 6) + '" width="' + f1(Math.max(X(w.to) - X(w.from), 1))
+                + '" height="' + (bottom - ctx0 + 6) + '" style="fill:url(#hw);opacity:.38"/>';
+        });
+        out += '<text class="lane-l" x="0" y="' + (ctx0 + 10) + '">主 session context</text>'
+            + '<text class="lane-s" x="0" y="' + (ctx0 + 26) + '">token；◆ 是 agent 回傳</text>';
+        [0, 0.5, 1].forEach(function (f) {
+            out += '<line class="' + (f ? 'gridl' : 'base') + '" x1="' + G + '" x2="' + (W - R) + '" y1="' + f1(Yc(ctop * f)) + '" y2="' + f1(Yc(ctop * f)) + '"/>'
+                + '<text class="tick" x="' + (G - 8) + '" y="' + f1(Yc(ctop * f) + 4) + '" text-anchor="end">' + tokens(ctop * f) + '</text>';
+        });
+        if (m.points.length) {
+            out += '<path d="' + m.points.map(function (p, i) { return (i ? 'L' : 'M') + f1(X(p.t)) + ',' + f1(Yc(p.y)); }).join('')
+                + '" style="fill:none;stroke:var(--ctx);stroke-width:2;stroke-linejoin:round"/>';
+        }
+        m.rets.forEach(function (q) {
+            var x = X(q.t), y = Yc(yAt(q.t));
+            out += '<path d="M' + f1(x) + ' ' + f1(y - 6) + ' ' + f1(x + 6) + ' ' + f1(y) + ' ' + f1(x) + ' ' + f1(y + 6) + ' ' + f1(x - 6) + ' ' + f1(y)
+                + 'Z" style="fill:var(--ink);stroke:var(--panel);stroke-width:2"/><text x="' + f1(x - 9) + '" y="' + f1(y - 9)
+                + '" text-anchor="end" style="font-size:10.5px;fill:var(--ink2)">+' + (q.chars >= 1000 ? (q.chars / 1000).toFixed(1) + 'k' : q.chars)
+                + ' 字元</text>';
+        });
+        out += '<text class="lane-l" x="0" y="' + (st0 + 15) + '">stage</text><text class="lane-s" x="0" y="' + (st0 + 30) + '">寬度 = 實際經過時間</text>';
+        m.segs.forEach(function (g) {
+            var x0 = X(g.from) + 1, w = Math.max(X(g.to) - x0 - 1, 0.5), text = g.stage + ' ' + mins(g.to - g.from);
+            out += '<rect class="seg" x="' + f1(x0) + '" y="' + st0 + '" width="' + f1(w) + '" height="' + stH + '" rx="3" style="fill:'
+                + colorOf('stage', g.stage) + '"><title>' + esc(text) + '</title></rect>'
+                + (w > text.length * 7 + 14 ? '<text x="' + f1(x0 + 7) + '" y="' + (st0 + 21)
+                    + '" style="fill:#fff;font-size:12px;font-weight:600;pointer-events:none">' + esc(text) + '</text>' : '');
+        });
+        m.waits.forEach(function (w) {
+            var x0 = X(w.from), wd = Math.max(X(w.to) - x0, 1);
+            out += '<rect class="waitst" x="' + f1(x0) + '" y="' + st0 + '" width="' + f1(wd) + '" height="' + stH + '" style="fill:url(#hw)"/>'
+                + '<text x="' + f1(x0 + wd / 2) + '" y="' + wl + '" text-anchor="middle" style="font-size:11px;fill:var(--ink);font-weight:500">等 '
+                + mins(w.ms) + '</text>';
+        });
+        out += '<text class="lane-l" x="0" y="' + (rq0 + 11) + '">主 session 請求</text><text class="lane-s" x="0" y="' + (rq0 + 25) + '">'
+            + m.ticks.length + ' 次，顏色 = model</text>';
+        m.ticks.forEach(function (q) {
+            out += '<rect class="rq" x="' + f1(X(q.t) - 0.75) + '" y="' + rq0 + '" width="1.5" height="' + rqH + '" style="fill:var(--m-' + q.family + ')"/>';
+        });
+        out += '<line class="base" x1="0" x2="' + (W - R) + '" y1="' + (d0 - 10) + '" y2="' + (d0 - 10) + '"/>';
+        if (!shown.length) out += '<text class="lane-s" x="' + G + '" y="' + (d0 + 16) + '">這個 session 沒有派出 agent 或 workflow</text>';
+        shown.forEach(function (b, i) {
+            var y = d0 + i * RH, ok = isFinite(b.from) && isFinite(b.to);
+            var x0 = ok ? X(b.from) : G, x1 = ok ? Math.max(X(b.to), x0 + 2) : G + 2;
+            var name = (b.kind === 'wf' ? (closed[b.key] ? '▸ ' : '▾ ') : '') + b.label;
+            out += '<text class="mono" x="' + (b.kind === 'kid' ? 14 : 0) + '" y="' + (y + 17) + '" style="font-size:11.5px;fill:var(--'
+                + (b.kind === 'kid' ? 'ink2' : 'ink') + ')' + (b.kind === 'wf' ? ';font-weight:600' : '') + '">'
+                + esc(name.length > 21 ? name.slice(0, 20) + '…' : name) + '</text>'
+                + (b.kind === 'wf'
+                    ? '<rect x="' + f1(x0) + '" y="' + (y + 4) + '" width="' + f1(x1 - x0) + '" height="18" rx="3" style="fill:var(--s-workflow);opacity:.2"/>'
+                    : '<rect x="' + f1(x0) + '" y="' + (y + 7) + '" width="' + f1(x1 - x0) + '" height="12" rx="3" style="fill:var(--s-'
+                    + (b.kind === 'kid' ? 'workflow' : 'agent') + ')"/>')
+                + '<text x="' + f1(x1 + 8) + '" y="' + (y + 17) + '" style="font-size:11.5px;fill:var(--ink2)">'
+                + esc((b.kind === 'wf' ? 'workflow · ' + b.n + ' 個 agent · ' : String(b.model || '—').replace(/^claude-/, '') + ' · ')
+                    + tokens(b.tokens) + ' tok · ' + cents(b.cents)
+                    + (b.ret !== null && b.ret !== undefined ? ' · 回傳 ' + comma(b.ret) + ' 字元' : ''))
+                + '</text><line class="gridl" x1="0" x2="' + (W - R) + '" y1="' + (y + RH) + '" y2="' + (y + RH) + '"/>'
+                + (b.kind === 'wf' ? '<rect class="wf-toggle" data-wf="' + esc(b.key) + '" x="0" y="' + y + '" width="' + (W - R)
+                    + '" height="' + RH + '"><title>點一下收合或展開</title></rect>' : '');
+        });
+        return out + '</svg>';
+    }
+    // Stage by model, each of the four token kinds with its own dollars, from
+    // the session's `days` — the same rows the home page's bars add up.
+    function costModel(days) {
+        var cell = function () {
+            return { tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, usd: 0 };
+        };
+        var add = function (a, r) {
+            var t = r.tokens || {}, c = r.cost || {};
+            ['input', 'output', 'cacheRead'].forEach(function (k) { a.tokens[k] += t[k] || 0; a.cost[k] += c[k] || 0; });
+            a.tokens.cacheWrite += (t.cacheWrite5m || 0) + (t.cacheWrite1h || 0);
+            a.cost.cacheWrite += (c.cacheWrite5m || 0) + (c.cacheWrite1h || 0);
+            a.usd += r.usd || 0;
+        };
+        var by = {}, order = [], out = { stages: [], main: cell(), agent: cell(), total: cell() };
+        (days || []).forEach(function (r) {
+            var sk = r.stage || 'none', mk = r.model || '—';
+            if (!by[sk]) { by[sk] = { sub: cell(), models: {} }; order.push(sk); }
+            if (!by[sk].models[mk]) by[sk].models[mk] = cell();
+            add(by[sk].sub, r);
+            add(by[sk].models[mk], r);
+            add(r.who === 'main' ? out.main : out.agent, r);
+            add(out.total, r);
+        });
+        var rank = function (k) { var i = ROUTE.indexOf(k); return i < 0 ? ROUTE.length : i; };
+        out.stages = order.sort(function (a, b) { return rank(a) - rank(b); }).map(function (k) {
+            return { stage: k, sub: by[k].sub, models: Object.keys(by[k].models).sort().map(function (mk) {
+                return { model: mk, cell: by[k].models[mk] };
+            }) };
+        });
+        return out;
+    }
+    function costHtml(m) {
+        var KINDS = [['input', 'input', '--t-in'], ['output', 'output', '--t-out'], ['cacheRead', 'cache read', '--t-cr'],
+            ['cacheWrite', 'cache write', '--t-cw']];
+        var cells = function (a, cls) {
+            return KINDS.map(function (k) {
+                return '<td class="r muted">' + tokens(a.tokens[k[0]]) + '</td><td class="r">' + usd(a.cost[k[0]]) + '</td>';
+            }).join('') + '<td class="r' + (cls ? ' ' + cls : '') + '">' + usd(a.usd) + '</td>';
+        };
+        var share = function (v) { return m.total.usd ? Math.round(v / m.total.usd * 1000) / 10 + '%' : '—'; };
+        var allTok = KINDS.reduce(function (n, k) { return n + m.total.tokens[k[0]]; }, 0);
+        return '<div class="sumline"><div>合計花費<b>' + usd(m.total.usd) + '</b></div><div>主 session<b>' + usd(m.main.usd) + '</b></div>'
+            + '<div>派工（agent + workflow）<b>' + usd(m.agent.usd) + '</b></div><div>output 佔花費<b>' + share(m.total.cost.output) + '</b></div>'
+            + '<div>cache read 佔 token<b>' + (allTok ? Math.round(m.total.tokens.cacheRead / allTok * 1000) / 10 + '%' : '—') + '</b></div></div>'
+            + '<div class="h2">stage × model <small>token 與各自的 USD；stage 列是小計</small></div>'
+            + '<div class="tbl-wrap"><table class="t"><thead><tr><th rowspan="2">stage</th><th rowspan="2">model · 佔 session</th>'
+            + KINDS.map(function (k) { return '<th colspan="2"><i class="sw" style="background:var(' + k[2] + ')"></i> ' + k[1] + '</th>'; }).join('')
+            + '<th rowspan="2" class="r">USD</th></tr><tr>'
+            + KINDS.map(function () { return '<th class="r">token</th><th class="r">USD</th>'; }).join('') + '</tr></thead><tbody>'
+            + m.stages.map(function (g) {
+                return '<tr class="sub"><td><span class="pchip"><i class="sw" style="background:' + colorOf('stage', g.stage) + '"></i>'
+                    + esc(g.stage === 'none' ? '第一步之前' : g.stage) + '</span></td><td class="muted">' + share(g.sub.usd) + '</td>'
+                    + cells(g.sub, '') + '</tr>' + g.models.map(function (x) {
+                        return '<tr class="child"><td></td><td><span class="pchip"><i class="sw" style="background:var(--m-' + family(x.model)
+                            + ')"></i>' + esc(String(x.model).replace(/^claude-/, '')) + '</span></td>' + cells(x.cell, '') + '</tr>';
+                    }).join('');
+            }).join('') + '</tbody><tfoot>'
+            + '<tr><td>主 session</td><td></td>' + cells(m.main, 'total') + '</tr>'
+            + '<tr><td>agent</td><td></td>' + cells(m.agent, 'total') + '</tr>'
+            + '<tr><td>合計</td><td></td>' + cells(m.total, 'total') + '</tr></tfoot></table></div>';
+    }
+    function sessionHeadHtml(s, x) {
+        var t = sessionTotals(s), m = x ? timelineModel(x) : null, agentUsd = costModel(s.days).agent.usd;
+        var waited = m ? m.waits.reduce(function (n, w) { return n + w.ms; }, 0) : t.wait;
+        var ro = function (l, v, d) {
+            return '<div class="ro"><div class="l">' + l + '</div><div class="v">' + v + '</div><div class="d">' + d + '</div></div>';
+        };
+        return '<div class="readouts">'
+            + ro('歷時', m && m.t1 > m.t0 ? mins(m.t1 - m.t0) : '—', 'active ' + hours(t.active))
+            + ro('<i class="hatchsw"></i>等你回答', mins(waited), m ? m.waits.length + ' 次 gate' : '讀取細節…')
+            + ro('花費', usd(t.usd), t.usd ? '派工佔 ' + Math.round(agentUsd / t.usd * 100) + '%' : '沒有按日的花費')
+            + ro('token', tokens(t.tokens), x ? x.requests + ' 次主 session 請求' : '')
+            + ro('派工', x ? x.rows.length + '<span class="u">agent</span>' : '—', x ? x.runs.length + ' 個 workflow' : '')
+            + ro('context 峰值', x ? tokens(x.peak) : '—', '')
+            + '</div>';
+    }
+    function tabsHtml(s, tab, x) {
+        var label = { timeline: '時間線', cost: '花費', dispatch: '派工', events: '事件' };
+        var n = { dispatch: x ? x.rows.length : null, events: x ? x.events.length : null };
+        return '<nav class="tabs" aria-label="session 檢視">' + TABS.map(function (k) {
+            return '<a href="' + sessionHash(s.id, k) + '"' + (k === tab ? ' class="on" aria-current="page"' : '') + '>' + label[k]
+                + (n[k] !== null && n[k] !== undefined ? '<small>' + n[k] + '</small>' : '') + '</a>';
+        }).join('') + '</nav>';
+    }
+
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
@@ -604,6 +807,8 @@
             histSvg: histSvg, dayPanelHtml: dayPanelHtml, projectsHtml: projectsHtml, recentHtml: recentHtml,
             dayStart: dayStart, projectHead: projectHead, sessionPoints: sessionPoints, projectChart: projectChart,
             projectSessionsHtml: projectSessionsHtml,
+            timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
+            sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml,
         };
     }
     if (!doc) return;
@@ -845,6 +1050,42 @@
     }
     VIEWS.project = projectPage;
     CRUMBS.project = function (r) { return [[NAMES[r.pkey] || r.pkey, null]]; };
+    view.closed = {};
+    function sessionPage(r) {
+        var s = S.sessions.filter(function (x) { return x.id === r.id; })[0];
+        if (!s) return '<section class="panel"><p class="note">這頁上沒有 session ' + esc(r.id) + '</p></section>';
+        needDetail(s);
+        var x = DETAIL[s.id] || null;
+        // The cost tab reads `days` off the data file, so it answers before the
+        // detail script has loaded; the other three need the detail.
+        var body = r.tab === 'cost' ? costHtml(costModel(s.days))
+            : !x ? detailNote(s)
+                : r.tab === 'dispatch' ? '<div class="det">' + dispatchHtml(x) + '</div>'
+                    : r.tab === 'events' ? '<div class="det">' + replayHtml(x) + '</div>'
+                        : '<div class="lane-legend"><span><i class="hatchsw"></i>等你回答（gate）</span>'
+                        + '<span><i class="sw ln" style="background:var(--ctx)"></i>主 session context</span>'
+                        + MODEL_KEYS.map(function (k) {
+                            return '<span><i class="sw" style="background:var(--m-' + k + ')"></i>' + k + '</span>';
+                        }).join('')
+                        + '<span><i class="sw" style="background:var(--s-agent)"></i>背景 agent</span>'
+                        + '<span><i class="sw" style="background:var(--s-workflow)"></i>workflow</span></div>'
+                        + '<div class="chart tl">' + timelineSvg(timelineModel(x), view.closed) + '</div>'
+                        + '<div class="note">橫軸是真實時間：stage 的寬度等於實際經過的時間；點 workflow 那列收合或展開。</div>'
+                        + '<div class="det">' + ctxSection(s, x) + tasksHtml(x.tasks) + '</div>';
+        return '<section class="panel"><div class="eyebrow">session <span class="mono">' + esc(String(s.id).slice(0, 8)) + '</span> · '
+            + '<a href="' + projectHash(s.pkey) + '">' + esc(NAMES[s.pkey] || s.pkey) + '</a> · ' + stamp(Date.parse(s.started)) + '</div>'
+            + '<h1 class="s-title">' + esc(s.task || '（未命名）') + '</h1>'
+            + '<div class="s-meta">' + routeDots(s) + '<span class="mono">' + esc((s.route || []).join(' → ')) + '</span>' + statePill(s)
+            + (s.model ? '<span class="chip"><i class="sw" style="background:var(--m-' + family(s.model) + ')"></i>主 session <span class="mono">'
+                + esc(s.model) + '</span></span>' : '') + '</div>'
+            + sessionHeadHtml(s, x) + '</section>'
+            + tabsHtml(s, r.tab, x) + '<section class="panel">' + body + '</section>';
+    }
+    VIEWS.session = sessionPage;
+    CRUMBS.session = function (r) {
+        var s = S.sessions.filter(function (x) { return x.id === r.id; })[0];
+        return s ? [[NAMES[s.pkey] || s.pkey, projectHash(s.pkey)], [s.task || String(s.id).slice(0, 8), null]] : [[r.id, null]];
+    };
     // `started` has a column of its own because the page this replaces sorted
     // by it, and a sort key with no header is a sort nobody can reach.
     var COLS = [['task', '任務'], ['stage', '階段'], ['burn', 'context'],
@@ -1113,7 +1354,7 @@
         var el = doc.createElement('script');
         el.src = 'station/detail/' + encodeURIComponent(s.id) + '.js';
         var redraw = function () {
-            if (route.view === 'cmp') draw();
+            if (route.view === 'cmp' || (route.view === 'session' && route.id === s.id)) draw();
             else if (sel === s.id) drawDetail();
         };
         el.onload = function () { asked[s.id] = 'loaded'; redraw(); };
@@ -1340,18 +1581,27 @@
     // thousands of tokens and seconds were rounded in `lib/detail.js` by the
     // largest remainder, so the page only adds.
     function sums(rows) {
-        return rows.reduce(function (a, r) { a.c += r.c; a.k += r.k; a.s += r.s; return a; }, { c: 0, k: 0, s: 0 });
+        return rows.reduce(function (a, r) {
+            a.c += r.c; a.k += r.k; a.s += r.s;
+            a.ti += r.split ? r.split.input || 0 : 0;
+            a.to += r.split ? r.split.output || 0 : 0;
+            a.ci += r.cost ? r.cost.input || 0 : 0;
+            a.co += r.cost ? r.cost.output || 0 : 0;
+            return a;
+        }, { c: 0, k: 0, s: 0, ti: 0, to: 0, ci: 0, co: 0 });
     }
     function numCells(t, unpriced) {
         return '<td class="r">' + dur(t.s) + '</td><td class="r">' + comma(t.k) + 'k</td><td class="r"'
             + (unpriced ? ' title="價目表不認得：' + esc(unpriced) + '"' : '') + '>'
-            + (unpriced && !t.c ? 'unpriced' : cents(t.c)) + '</td>';
+            + (unpriced && !t.c ? 'unpriced' : cents(t.c)) + '</td>'
+            + '<td class="r">' + tokens(t.ti || 0) + '</td><td class="r">$' + (t.ci || 0).toFixed(2) + '</td>'
+            + '<td class="r">' + tokens(t.to || 0) + '</td><td class="r">$' + (t.co || 0).toFixed(2) + '</td>';
     }
     function agentRow(r, cls, attr) {
         return '<tr class="' + cls + '"' + (attr || '') + '><td><div class="lab" title="' + esc(r.label) + '">'
             + esc(r.label || r.id) + '</div><div class="l2">' + esc((r.agentType || '—') + ' · '
             + String(r.model || r.alias || '—').replace(/^claude-/, '')) + '</div></td>'
-            + numCells(r, (r.unpriced || []).join(', ')) + '<td class="r rc"></td></tr>';
+            + numCells(sums([r]), (r.unpriced || []).join(', ')) + '<td class="r rc"></td></tr>';
     }
     // One band per dispatch, in turn order, `surface` on the band; a workflow
     // folds into one row per phase until that phase is opened. Agents that no
@@ -1396,8 +1646,10 @@
         var wfRun = x.runs.reduce(function (n, r) { return n + r.agents; }, 0);
         var eq = function (a, b) { return '<span class="' + (a === b ? 'eq">＝' : 'ne">≠') + '</span>'; };
         return '<table class="x dx"><colgroup><col><col style="width:50px"><col style="width:54px"><col style="width:54px">'
+            + '<col style="width:48px"><col style="width:54px"><col style="width:48px"><col style="width:54px">'
             + '<col style="width:58px"></colgroup><thead><tr><th>派工</th><th class="r">耗時</th><th class="r">tokens</th>'
-            + '<th class="r">USD</th><th class="r rc" title="這次派工的結果進入主 context 的字元數">回傳字元</th></tr></thead>'
+            + '<th class="r">USD</th><th class="r">input</th><th class="r">input USD</th><th class="r">output</th><th class="r">output USD</th>'
+            + '<th class="r rc" title="這次派工的結果進入主 context 的字元數">回傳字元</th></tr></thead>'
             + '<tbody>' + body + '</tbody><tfoot><tr><td>' + x.rows.length + ' 個 agent</td>' + numCells(all, '')
             + '<td class="r rc">' + comma(ret) + '</td></tr></tfoot></table>'
             + '<p class="tally">各列美元相加 <b>' + cents(all.c) + '</b> ' + eq(all.c, x.agentsTotal.cents) + ' agentsOf() 的 '
@@ -1449,7 +1701,7 @@
                 body = esc(e.verb === 'stage' ? e.stage : e.verb + (e.stage ? ' · ' + e.stage : ''))
                     + (e.text ? '<div class="sub">' + esc(e.text) + '</div>' : '');
             } else if (e.kind === 'gate') {
-                body = e.qs.map(function (q) {
+                body = (isFinite(e.askedAt) ? '等了 ' + dur(Math.round((e.t - e.askedAt) / 1000)) : '') + e.qs.map(function (q) {
                     return '<div class="qa"><div class="q">' + esc(q.q) + '</div><div class="a">'
                         + esc(q.a === null ? '（沒有答案）' : q.a) + (q.own ? '<span class="own">自己寫的</span>' : '') + '</div></div>';
                 }).join('');
@@ -1630,7 +1882,7 @@
         if (rk) {
             var on = rk.getAttribute('aria-pressed') !== 'true';
             rk.setAttribute('aria-pressed', String(on));
-            [].forEach.call(doc.querySelectorAll('#det .rp > li[data-kind="' + rk.getAttribute('data-rk') + '"]'), function (li) { li.hidden = !on; });
+            [].forEach.call(doc.querySelectorAll('.rp > li[data-kind="' + rk.getAttribute('data-rk') + '"]'), function (li) { li.hidden = !on; });
             return;
         }
         // A backtrack opens the replay on the rows between entering the stage
@@ -1669,6 +1921,8 @@
         if (sg) { view[sg.parentNode.getAttribute('data-seg')] = sg.getAttribute('data-v'); draw(); return; }
         var fc = e.target.closest('[data-facet] button');
         if (fc) { f[fc.parentNode.getAttribute('data-facet')] = fc.getAttribute('data-v'); draw(); return; }
+        var wfRow = e.target.closest('[data-wf]');
+        if (wfRow) { view.closed[wfRow.getAttribute('data-wf')] = !view.closed[wfRow.getAttribute('data-wf')]; draw(); return; }
         var go = e.target.closest('[data-href]');
         if (go && !e.target.closest('a,button,input')) { w.location.hash = go.getAttribute('data-href'); return; }
         var th = e.target.closest('th[data-k]');

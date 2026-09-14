@@ -498,3 +498,121 @@ test('the project sessions table ticks for 比較, and prints dollars and a mode
     assert.match(html, /data-href="#\/s\/aaaa1111-0000"[\s\S]*?\$3\.75[\s\S]*?<span class="mini-mix" title="opus \$3\.25、sonnet \$0\.50">/);
     assert.doesNotMatch(html, /\$99/);
 });
+
+// --- the three levels: session -----------------------------------------------
+// A detail in the shape `serializeDetail()` writes from 2026-09-14 on: `points`
+// carry their model, `waits` their two moments, dispatch rows `from`, `to` and
+// a five-key `cost` (one of them null, as an unpriced row arrives), and the
+// five-key token `split` every row already carries (lib/usage.js:470).
+const T0 = new Date(2026, 8, 13, 22, 0).getTime();
+const DETAIL_X = {
+    requests: 3, peak: 90000, peakN: 3, noTime: 0, backtracks: 0, marks: [], rises: [], backs: [], tasks: [],
+    points: [{ n: 1, t: T0 + 60000, y: 20000, model: 'claude-opus-5' }, { n: 2, t: T0 + 3000000, y: 60000, model: 'claude-sonnet-5' },
+        { n: 3, t: T0 + 7200000, y: 90000, model: 'claude-opus-5' }],
+    seq: [{ stage: 'build', at: T0, source: 'cmd' }, { stage: 'verify', at: T0 + 5400000, source: 'cmd' }],
+    waits: [{ askedAt: T0 + 600000, answeredAt: T0 + 1500000, stage: 'build' },
+        { askedAt: T0 + 6000000, answeredAt: T0 + 6120000, stage: 'verify' }],
+    dispatches: [
+        { key: 'd0', turn: 2, surface: 'agent', text: 'read the map', out: T0 + 1800000, back: T0 + 2400000, ret: 6400, launch: 0, ids: ['a1'] },
+        { key: 'd1', turn: 4, surface: 'workflow', text: 'build', out: T0 + 2500000, back: T0 + 4800000, ret: 9200, launch: 800, run: 'wf_1', ids: ['w1', 'w2'] },
+    ],
+    rows: [
+        { id: 'a1', disp: 0, surface: 'agent', label: 'read:map', agentType: 'reader', model: 'claude-sonnet-5', phase: null,
+          c: 19, k: 218, s: 600, unpriced: [], from: T0 + 1800000, to: T0 + 2400000,
+          split: { input: 1500, output: 12000, cacheRead: 200000, cacheWrite5m: 4500, cacheWrite1h: 0 },
+          cost: { input: 0.04, output: 0.1, cacheRead: 0.03, cacheWrite5m: 0.02, cacheWrite1h: 0 } },
+        { id: 'w1', disp: 1, surface: 'workflow', label: 'impl:a', agentType: 'implementer', model: 'claude-sonnet-5', phase: 'Build',
+          c: 164, k: 2820, s: 2000, unpriced: [], from: T0 + 2600000, to: T0 + 4600000,
+          split: { input: 3000, output: 45000, cacheRead: 2700000, cacheWrite5m: 72000, cacheWrite1h: 0 },
+          cost: { input: 0.5, output: 0.75, cacheRead: 0.25, cacheWrite5m: 0.14, cacheWrite1h: 0 } },
+        { id: 'w2', disp: 1, surface: 'workflow', label: 'impl:b', agentType: 'implementer', model: 'claude-sonnet-5', phase: 'Build',
+          c: 61, k: 889, s: 1200, unpriced: [], from: T0 + 3000000, to: T0 + 4200000, cost: null,
+          split: { input: 800, output: 9000, cacheRead: 850000, cacheWrite5m: 29200, cacheWrite1h: 0 } },
+    ],
+    runs: [{ run: 'wf_1', name: 'build', agents: 2 }], agentCents: 244, agentsTotal: { cents: 244 }, unpriced: [], steps: {}, dropped: 0,
+    events: [{ t: T0 + 1500000, kind: 'gate', askedAt: T0 + 600000, qs: [{ q: 'go?', a: 'yes', own: false }] }],
+};
+
+test('timelineModel: stages as wide as the time they took, each wait, a tick per request, a bar per agent and workflow', () => {
+    const m = V.timelineModel(DETAIL_X);
+    assert.deepEqual([m.t0, m.t1], [T0, T0 + 7200000], 'from the first step to the last request');
+    assert.deepEqual(m.segs.map((g) => [g.stage, g.to - g.from]), [['build', 5400000], ['verify', 1800000]]);
+    assert.deepEqual(m.waits.map((w) => [w.stage, w.ms]), [['build', 900000], ['verify', 120000]]);
+    assert.deepEqual(m.ticks.map((q) => q.family), ['opus', 'sonnet', 'opus']);
+    assert.deepEqual(m.bars.map((b) => [b.kind, b.label, b.from - T0, b.to - T0]), [['agent', 'read:map', 1800000, 2400000],
+        ['wf', 'build', 2500000, 4800000], ['kid', 'impl:a', 2600000, 4600000], ['kid', 'impl:b', 3000000, 4200000]]);
+    assert.deepEqual([m.bars[1].tokens, m.bars[1].cents, m.bars[1].n], [3709000, 225, 2], 'a workflow is the sum of its agents');
+    assert.deepEqual(m.rets.map((q) => [q.t - T0, q.chars]), [[2400000, 6400], [4800000, 9200]]);
+});
+
+test('timelineSvg hatches each wait with its length, colours a tick per request, and folds a workflow shut', () => {
+    const m = V.timelineModel(DETAIL_X);
+    const svg = V.timelineSvg(m, {});
+    assert.equal(count(svg, /<rect class="wait"/g), 2);
+    assert.match(svg, />等 15m<\/text>/);
+    assert.match(svg, />等 2m<\/text>/);
+    assert.equal(count(svg, /<rect class="seg" /g), 2);
+    assert.equal(count(svg, /<rect class="rq" /g), 3);
+    assert.match(svg, /<rect class="rq" [^>]*style="fill:var\(--m-sonnet\)"/);
+    assert.match(svg, />\+6\.4k 字元<\/text>/);
+    assert.match(svg, /data-wf="wf-1"/);
+    assert.match(svg, />impl:b</);
+    assert.doesNotMatch(V.timelineSvg(m, { 'wf-1': true }), />impl:b</, 'a closed workflow hides its agents');
+});
+
+test('costModel lays a session\'s days out stage by model, subtotals main and agent, and totals', () => {
+    const m = V.costModel(HOME[0].days);
+    assert.deepEqual(m.stages.map((g) => [g.stage, g.sub.usd, g.models.map((x) => x.model)]),
+        [['build', 1.75, ['claude-opus-5', 'claude-sonnet-5']], ['verify', 2, ['claude-opus-5']]]);
+    assert.deepEqual([m.main.usd, m.agent.usd, m.total.usd], [3.25, 0.5, 3.75]);
+    assert.deepEqual(m.total.tokens, { input: 6000, output: 600, cacheRead: 24000, cacheWrite: 4500 });
+    assert.deepEqual([m.stages[0].sub.cost.output, m.stages[0].sub.cost.cacheWrite], [0.875, 0.21875]);
+    assert.deepEqual(V.costModel(null).total.usd, 0);
+});
+
+test('頁面對帳：the session cost tab\'s total equals the sum of that session\'s days[].usd', () => {
+    for (const s of HOME.filter((x) => x.days)) {
+        const rows = s.days.reduce((n, r) => n + r.usd, 0);
+        const m = V.costModel(s.days);
+        assert.equal(m.total.usd, rows, s.id + ': the model');
+        assert.equal(m.main.usd + m.agent.usd, rows, s.id + ': its two subtotals');
+        const foot = V.costHtml(m).split('<tfoot>')[1];
+        const shown = V.usd(rows).replace(/[$.]/g, '\\$&');
+        assert.match(foot, new RegExp('<td>合計</td>[\\s\\S]*?<td class="r total">' + shown + '</td>'), s.id + ': the page');
+    }
+});
+
+test('the dispatch tab adds input and output tokens and USD per row, and the events tab says how long each gate waited', () => {
+    const html = V.dispatchHtml(DETAIL_X);
+    assert.match(html, /<th class="r">input<\/th><th class="r">input USD<\/th><th class="r">output<\/th><th class="r">output USD<\/th>/);
+    assert.match(html, /read:map[\s\S]*?<td class="r">2k<\/td><td class="r">\$0\.04<\/td><td class="r">12k<\/td><td class="r">\$0\.10<\/td>/,
+        'tokens from split, dollars from cost');
+    const foot = html.slice(html.indexOf('<tfoot>'), html.indexOf('</tfoot>'));
+    assert.match(foot, /<td class="r">5k<\/td><td class="r">\$0\.54<\/td><td class="r">66k<\/td><td class="r">\$0\.85<\/td>/,
+        'the footer sums the rows; a null cost adds no dollars but its tokens still count');
+    assert.match(V.replayHtml(DETAIL_X), /<span class="tg gate">gate<\/span>等了 15m00s/);
+});
+
+test('the session header reads dollars from days and time from the timeline; the four tabs link by hash', () => {
+    const head = V.sessionHeadHtml(HOME[0], DETAIL_X);
+    assert.match(head, /花費<\/div><div class="v">\$3\.75/);
+    assert.match(head, /歷時<\/div><div class="v">2h</);
+    assert.match(head, /2 次 gate/);
+    assert.doesNotMatch(head, /\$99|\$198/);
+    const tabs = V.tabsHtml(HOME[0], 'cost', DETAIL_X);
+    assert.deepEqual([...tabs.matchAll(/href="([^"]+)"/g)].map((x) => x[1]),
+        ['#/s/aaaa1111-0000', '#/s/aaaa1111-0000/cost', '#/s/aaaa1111-0000/dispatch', '#/s/aaaa1111-0000/events']);
+    assert.match(tabs, /<a href="#\/s\/aaaa1111-0000\/cost" class="on" aria-current="page">花費</);
+});
+
+test('a kept v1 cache\'s single row: the cost tab counts its dollars, zero tokens and no per-kind dollars', () => {
+    const m = V.costModel(KEPT.days);
+    assert.deepEqual([m.total.usd, m.main.usd, m.agent.usd], [2.5, 2.5, 0]);
+    assert.deepEqual(m.total.tokens, { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
+    assert.deepEqual(m.total.cost, { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
+    assert.deepEqual(m.stages.map((g) => [g.stage, g.sub.usd]), [['none', 2.5]]);
+    const html = V.costHtml(m);
+    assert.match(html.split('<tfoot>')[1], /<td>合計<\/td>[\s\S]*?<td class="r total">\$2\.50<\/td>/);
+    assert.doesNotMatch(html, /NaN|undefined/);
+    assert.match(V.sessionHeadHtml(KEPT, null), /花費<\/div><div class="v">\$2\.50/);
+});
