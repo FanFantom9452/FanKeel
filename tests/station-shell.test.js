@@ -149,7 +149,7 @@ function classTokens(source) {
     while ((m = attrRe.exec(source))) add(literalPieces(m[1], true));
     // className/classList operands are captured as bare code, so their span
     // opens in code mode.
-    const classNameRe = /\.className\s*=\s*([^;]+);/g;
+    const classNameRe = /\.className\s*=(?!=)\s*([^;]+);/g;
     while ((m = classNameRe.exec(source))) add(literalPieces(m[1], false));
     const classListRe = /classList\.(?:add|remove|toggle)\(([^)]*)\)/g;
     while ((m = classListRe.exec(source))) add(literalPieces(m[1], false));
