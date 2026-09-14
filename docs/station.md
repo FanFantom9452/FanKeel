@@ -52,11 +52,11 @@ machine: a depth-8 walk of a whole drive took 10.7 seconds over 24,151
 directories, and a home directory did not finish inside 20 seconds at all. So
 `scanRoots` takes a deadline and stops when it is spent, and the depth is the
 backstop rather than the control. It counts both kinds of cut, and the page's
-header carries them — `depth stopped the scan in N places`, and `the scan ran
+footer carries them — `depth stopped the scan in N places`, and `the scan ran
 out of time` — because a walk that could not reach everything otherwise looks
 exactly like one that found everything.
 
-Those two counts reach the header by two routes. A `--scan` walk is
+Those two counts reach the footer by two routes. A `--scan` walk is
 `discover`'s own, and `discover` forwards `opts.deadline` into it, so the
 counts come back in the model it builds. The first-run walk is not
 `discover`'s — `autoScan` in `scripts/station.js` does it before `write()` is
@@ -65,8 +65,8 @@ Both can happen on one call, and then `gather` **adds** them rather than
 choosing: cuts summed, timed-out true if either ran short. They are two walks,
 not two opinions of one, so neither is authoritative over the other — letting
 the handed block win outright threw the `--scan` walk's own counts away, and
-the header then described a walk that was not the one that ran out of time.
-Without both routes, the two header lines are reachable only from a model built
+the footer then described a walk that was not the one that ran out of time.
+Without both routes, the two footer lines are reachable only from a model built
 by hand.
 
 The `scannedAt` key sitting beside the roots in that file is the record of the
@@ -339,14 +339,14 @@ own unreadable-session count, its `map.md` date — or `不存在` when there is
 none — and its build directories with each one's file count, or says there
 are none. The old page carried all three on a per-registry meta line; the
 redesign dropped that line, and this card is where its contents live now. The
-header's own unreadable count stays the total across every registry and is
+footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
 (`assets/station/station.js:1331`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
 (`lib/station.js:339`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
-count — the header keeps the total, so a corrupt entry is never a click away
+count — the footer keeps the total, so a corrupt entry is never a click away
 from being found.
 
 `navLabels` moved into `assets/station/station.js` as `labels`, unchanged: each
@@ -418,7 +418,7 @@ block it injects), every `task.js` verb that moves an entry — `start`,
 Each writes `~/.claude/fankeel/index.html`, the copy that is always newest,
 and, when the caller is inside a registry, the same page at
 `<registry>/.fankeel/index.html`, kept out of git by a line the write adds.
-That copy is refreshed by the sessions in its registry; the header on both
+That copy is refreshed by the sessions in its registry; the footer on both
 says when it was generated.
 
 `node scripts/station.js --json` is the same model as one JSON document on
