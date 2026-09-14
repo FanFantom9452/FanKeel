@@ -120,7 +120,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:1295`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:1338`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -213,7 +213,7 @@ A dispatch is tied to a task by `task N` in its label and by nothing else, and
 the ones naming no task are listed under the table.
 
 **派工** is one band per dispatch in turn order, `agent`, `agents` (two or more
-Agent calls in one response) or `workflow` on it, and one row per agent: its
+dispatch calls in one response) or `workflow` on it, and one row per agent: its
 wall-clock from its own transcript, its tokens, and its dollars priced from its
 own per-kind counts — `workflow_agent.tokens` is one undivided number and cannot
 be priced — with the price table's `verified` date beside them and `unpriced`
@@ -317,9 +317,9 @@ markup cannot redraw a chart when a facet is clicked.
 
 The facets are on 清單, above its table — state and stage with a count on each
 button, registry with one button per root
-(`assets/station/station.js:1097`, `moved onto the page they narrow`) — and
+(`assets/station/station.js:1140`, `moved onto the page they narrow`) — and
 the search box in the top bar matches task, project, session id, registry
-label, the files the task has touched and its notes. They are AND-ed. On 清單,
+label, model, state, next, the files touched and its notes — AND-ed. On 清單,
 selecting a registry recomputes the page below the facets: `goneNote()`'s card
 replaces the list when the registry is gone, and `registryNote()`'s card sits
 above the list otherwise; it does not merely hide rows.
@@ -327,14 +327,14 @@ above the list otherwise; it does not merely hide rows.
 A gone registry keeps its facet button, labelled `— gone`, rather than
 dropping off the row, so selecting one never returns a blank pane with nothing
 on the page saying why:
-`goneNote()` (`assets/station/station.js:936`, `function goneNote(root)`) prints a
+`goneNote()` (`assets/station/station.js:979`, `function goneNote(root)`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card once it is the one selected on
 清單, and every project page carries the same card for its own registry no
 matter what is selected there: `registryNote()`
-(`assets/station/station.js:953`, `function registryNote(root)`) prints its
+(`assets/station/station.js:996`, `function registryNote(root)`) prints its
 own unreadable-session count, its `map.md` date — or `不存在` when there is
 none — and its build directories with each one's file count, or says there
 are none. The old page carried all three on a per-registry meta line; the
@@ -342,7 +342,7 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:1329`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:1372`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
 (`lib/station.js:339`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
@@ -389,7 +389,7 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:1088`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:1131`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較** is a third view. Tick two sessions on 清單 or a project page — only a
@@ -481,7 +481,7 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:991`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:1034`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button, and every registry card now carries one:

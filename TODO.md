@@ -69,6 +69,10 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Needs a decision
 
+- 〔station〕設定檔指定不上站的專案：客戶看得到花費，看不出做了哪些方案 — [docs/station.md](docs/station.md). 待決：被藏的花費算不算進總額與長條、用 `root` 還是 `pkey` 指定、session 標題與 `claims` 是否一併遮、badge 與 CLI 同不同步。
+
+- 〔station〕gate 只留問題與答案各 120 字、丟掉選項清單，也沒有跨 session 彙總，調 skill 時看不出哪個選項常被換掉 — [docs/station.md](docs/station.md). 待決：存不存 option label 與 description、clip 放到多寬、彙總做成新頁還是首頁一格。
+
 ## Waiting
 
 - 〔build〕knip 的 unused exports 一格關著：6.32.2 認不得 CJS namespace 取用，開著回 146 個假陽性 — [docs/development.md](docs/development.md). lifts when: knip 認得 CJS namespace property access. 09-13.
