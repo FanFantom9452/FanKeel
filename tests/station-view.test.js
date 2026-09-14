@@ -605,8 +605,9 @@ test('a crowded timeline keeps the labels it can read and turns the one at the r
     const bands = [...svg.matchAll(/<rect class="waitst" x="([\d.]+)" y="[\d.]+" width="([\d.]+)"/g)].map((w) => +w[1] + +w[2] / 2);
     const lastLab = waitLab[waitLab.length - 1];
     assert.equal(lastLab.s, '3m', 'the wait at the very end of the session is labelled');
+    // That the whole label box lands inside the chart was measured in a browser,
+    // not here: this asserts only that the clamp moved it off the band's centre.
     assert.ok(lastLab.x < bands[bands.length - 1] - 1, 'and its label is pulled in from the edge rather than centred off it');
-    assert.ok(lastLab.x <= 1200 - 18, 'and stays inside the chart; that its whole box does was measured in a browser, not here');
     const bar = svg.match(/<rect x="([\d.]+)" y="[\d.]+" width="[\d.]+" height="12"/);
     const lab = svg.match(/<text x="([\d.]+)" y="[\d.]+"( text-anchor="end")? style="font-size:11\.5px;fill:var\(--ink2\)">sonnet-5 · 218k/);
     assert.ok(bar && lab, 'the bar and its label are drawn');

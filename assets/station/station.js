@@ -688,8 +688,9 @@
         m.rets.forEach(function (q) {
             var x = X(q.t), y = Yc(yAt(q.t));
             var lab = '+' + (q.chars >= 1000 ? (q.chars / 1000).toFixed(1) + 'k' : q.chars) + ' 字元', lw = textW(lab, 10.5);
-            // It ends 9px left of its mark, unless that puts it off an edge.
-            var lx = Math.min(Math.max(x - 9, lw), W - R);
+            // It ends 9px left of its mark. No edge to clear: the chart starts
+            // at G, so even the widest of these labels ends well inside it.
+            var lx = x - 9;
             out += '<path d="M' + f1(x) + ' ' + f1(y - 6) + ' ' + f1(x + 6) + ' ' + f1(y) + ' ' + f1(x) + ' ' + f1(y + 6) + ' ' + f1(x - 6) + ' ' + f1(y)
                 + 'Z" style="fill:var(--ink);stroke:var(--panel);stroke-width:2"><title>' + esc(lab) + '</title></path>'
                 + (retRoom(lx - lw, lx)
@@ -711,7 +712,7 @@
             var lab = '等 ' + mins(w.ms), lw = textW(lab, 11);
             // Centred on the band, except where that would hang off an edge: the
             // last wait of a session sits against the right margin.
-            var cx = Math.min(Math.max(x0 + wd / 2, lw / 2), W - R - lw / 2);
+            var cx = Math.min(x0 + wd / 2, W - R - lw / 2);
             out += '<rect class="waitst" x="' + f1(x0) + '" y="' + st0 + '" width="' + f1(wd) + '" height="' + stH
                 + '" style="fill:url(#hw)"><title>' + esc(lab) + '</title></rect>'
                 + (waitRoom(cx - lw / 2, cx + lw / 2)
