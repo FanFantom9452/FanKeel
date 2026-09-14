@@ -837,13 +837,13 @@ test('a poll finding no change does not redraw, and each state flip redraws once
     const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
 
     // The page reads `Date.now()` for the poll's baseline and `Date.parse`
-    // for every `started`; moving the first is how this test spends fifteen
-    // seconds without waiting them.
+    // for every `started`. The subclass inherits the second as a static, so
+    // only the first is overridden — and moving it is how this test spends
+    // fifteen seconds without waiting them.
     let skew = 0;
     class Clock extends Date {
         static now() { return Date.now() + skew; }
     }
-    Clock.parse = Date.parse;
 
     let draws = 0, tick = null, alive = true;
     const el = () => ({
