@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # station 三層：30 天直方圖、專案頁、session 時間線

@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # Station 三層 Implementation Plan
