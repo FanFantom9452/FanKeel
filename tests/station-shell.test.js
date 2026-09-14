@@ -15,6 +15,7 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 const SHELL = path.join(ROOT, 'assets', 'station', 'index.html');
 const CSS = path.join(ROOT, 'assets', 'station', 'station.css');
+const JS = path.join(ROOT, 'assets', 'station', 'station.js');
 
 const shell = () => fs.readFileSync(SHELL, 'utf8');
 
@@ -114,16 +115,22 @@ test('every palette token the three levels colour by is defined in both themes',
 
 test('every class the three levels render has a rule', () => {
     const css = fs.readFileSync(CSS, 'utf8');
+    const emitted = shell() + fs.readFileSync(JS, 'utf8');
     const classes = ['mast', 'crumbs', 'search', 'foot', 'page', 'fixed', 'panel', 'eyebrow', 'h2', 'readouts', 'ro',
         'hatchsw', 'controls', 'ctlgrp', 'seg', 'legend', 'sw', 'chart', 'hit', 'tbl-wrap', 't', 'link', 'chip',
-        'pchip', 'bar-in', 'route', 'grid2', 'hero-top', 'projrow', 'pth', 'day', 'day-head', 'day-nav', 'btn',
+        'pchip', 'route', 'grid2', 'hero-top', 'projrow', 'pth', 'day', 'day-head', 'day-nav', 'btn',
         'day-body', 'split', 'split-h', 'split-bar', 'split-leg', 's-title', 's-meta', 'tabs',
-        'lane-legend', 'tl', 'note', 'sumline', 'mixbar', 'mini-mix', 'ev', 'filters',
+        'lane-legend', 'tl', 'note', 'sumline', 'mini-mix',
         'card', 'phead', 'ctl', 'listwrap', 'det', 'sec', 'tally', 'seq', 'rp', 'cmpcard', 'pill', 'delta', 'mute'];
     for (const c of classes) {
         assert.match(css, new RegExp('\\.' + c + '[\\s{,:.>\\[)]'), 'no rule for .' + c);
+        assert.match(emitted, new RegExp('[\'" ]' + c + '[\'" ]'), 'no element emits .' + c);
     }
     // `^` because the kept `.seq .ar.bk{` is not the mockup's bare `.bk{`.
     assert.doesNotMatch(css, /^\.bk\{|\.bk-h|\.demo|\.tip\{|\.xh-read|\.strip24|\.teamcard|\.scrollmain/m,
         'a renamed or dropped rule is still there');
+    // rules whose only element was deleted or renamed — a rule coming back without
+    // an element to carry it should redden this test again.
+    assert.doesNotMatch(css, /\.ev\{|\.ev[ :]|\.filters|\.mixbar|\.up-bad|\.down-bad|\.up-good|\.down-good|\.chd|\.asof|\.bar-in/,
+        'a rule with no emitting element is back');
 });
