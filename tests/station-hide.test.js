@@ -1,10 +1,14 @@
 'use strict';
 
 // A project whose profile sets `station.hide: 'true'` must vanish from the
-// station page entirely: no row, no total, no detail file, and no `--json`
-// row either. `lib/station.js:hiddenPkeys()` is the one place that decides
-// this; every surface below is proven to read from it rather than repeating
-// its own copy of the judgement.
+// station page entirely: no row, no total, no gate answer in the home page's
+// swapped cell, no detail file, and no `--json` row either.
+// `lib/station.js:hiddenPkeys()` is the one place that decides this, and
+// every surface below reads its output rather than judging for itself — with
+// one exception worth knowing, because it looks like a bug and is not:
+// `serialize()`'s `profiles.projects` loop repeats the predicate inline
+// (`lib/station.js:475`), since that loop is keyed by the raw profiles
+// directory rather than by the forward-slash pkey `hiddenPkeys()` returns.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -85,6 +89,32 @@ test('serialize carries neither the hidden project\'s sessions nor its profile e
     assert.ok(data.sessions.some((s) => s.project === 'shown-project'), 'the shown project was filtered out too');
     assert.ok(!Object.keys(data.profiles.projects).includes(path.join(ROOT, 'hidden-project')));
     assert.ok(Object.keys(data.profiles.projects).includes(path.join(ROOT, 'shown-project')));
+});
+
+// `gateSummary()` is the fifth aggregation over the model, and it was added
+// after `hiddenPkeys()` had already been threaded through the other four —
+// so it walks `model.registries` directly, the way `write()`'s detail loop
+// does, and needs the same check. What it feeds is the home page's
+// 最常被換掉 cell, which makes a hidden project's answers arriving there the
+// hidden project counting toward a total the page shows.
+function withGate(s, firstLabel, answer) {
+    return Object.assign({}, s, {
+        detail: {
+            events: [{
+                t: 0, kind: 'gate', turn: 1, askedAt: 0,
+                qs: [{ q: 'which?', a: answer, own: false, labels: [firstLabel, answer] }],
+            }],
+        },
+    });
+}
+
+test('the hidden project\'s gate answers do not reach the home page\'s swapped cell', () => {
+    const model = twoRegistryModel();
+    const r = model.registries[0];
+    r.sessions = [withGate(r.sessions[0], 'shown-first', 'shown-second'),
+        withGate(r.sessions[1], 'hidden-first', 'hidden-second')];
+    const labels = serialize(model).gates.swapped.map((row) => row.label);
+    assert.deepEqual(labels, ['shown-first'], labels.join(', '));
 });
 
 // ---- a real registry on disk, for write() and the CLI ---------------------

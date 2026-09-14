@@ -105,7 +105,7 @@ agents ran, as a bare count beside the total rather than a request count or a
 wall-clock of its own.
 
 Every row also carries the registry it belongs to, as `root` on its session
-object (`lib/station.js:484`, `root: s.root`) — the raw path, not the
+object (`lib/station.js:490`, `root: s.root`) — the raw path, not the
 shortened label shown on the row — and `match()` filters on that same field
 (`assets/station/station.js:139`, `s.root !== f.project`) rather than a DOM
 attribute, because every row here is rebuilt from `window.STATION` in the
@@ -118,10 +118,16 @@ all — not a greyed-out one, an absent one. The check is one function,
 and every session under a hidden project is dropped before anything else on
 the page is built from it: `flatten()` is where that happens
 (`lib/station.js:409`, `if (hidden.has(pkeyOf(row))) continue;`), and
-everything below — the facets, the charts, the home page's totals — reads
-`flatten()`'s output rather than the model itself, so nothing downstream has
-to filter a second time. There is no trace on the page that a project was
-left out: no count, no note on the footer. `station.js`'s own text
+everything the page renders — the facets, the charts, the home page's
+totals — reads `flatten()`'s output rather than the model itself, so no
+view filters a second time. Two server-side writers do, because each walks
+`model.registries` rather than `flatten()`. One is the profile list
+`serialize()` hands the page
+(`lib/station.js:481`, `if (values && values['station.hide'] === true) continue;`),
+an inline copy of the predicate rather than a `hiddenPkeys()` call, because
+that loop is keyed by the raw profiles directory rather than by pkey; the
+other is `write()`'s detail-file loop described below. There is no trace on
+the page that a project was left out: no count, no note on the footer. `station.js`'s own text
 summary — not the served page — does print how many projects it excluded
 (`scripts/station.js:780`, `hidden by station.hide`), but names none of
 them; the terminal is the only place the fact surfaces at all.
@@ -397,12 +403,15 @@ cards above it compare the last 30 days with the 30 before them — four of
 them the window's spend, tokens, active time and waiting ratio, the fifth
 naming the option-one gate wording most often swapped for another answer,
 `最常被換掉`, with how many times out of how many it was asked beneath it
-(`lib/station.js:431`, `function gateSummary(model) {`;
+(`lib/station.js:431`, `function gateSummary(model, hidden) {`;
 `assets/station/station.js:377`, `roHtml('最常被換掉'`). Unlike the other
 four, it does not move with the 30-day window or the search box: it is
-counted once, across every session's gate answers
-(`lib/station.js:482`, `gates: gateSummary(model),`), not from the filtered
-set the other four sum. Clicking a bar opens that day, `#/d/<day>`, with its
+counted once, across every shown session's gate answers
+(`lib/station.js:488`, `gates: gateSummary(model, hidden),`), not from the
+filtered set the other four sum. It walks the model rather than
+`flatten()`'s output, so it takes the hidden set as an argument and skips
+those sessions itself
+(`lib/station.js:440`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`). Clicking a bar opens that day, `#/d/<day>`, with its
 breakdown and the sessions that spent on it. A project, `#/p/<pkey>` with the key URI-encoded, plots its
 sessions as points over the same 30 days, can lay a second project's line on
 the same axes, lists its sessions, and carries the per-route stage ledger. A delta whose previous window holds nothing prints
@@ -438,11 +447,31 @@ backward steps side by side, each from the same field that session's own panel
 prints it from; and both stage sequences. It is the before-and-after view for a
 change to a skill.
 
-A stale row's clear control is the one thing that differs between the served
-page and the file: `window.STATION.serve` is true only when a server produced
-the data, and then the pane shows a form posting to `/clear` with that run's
-nonce. A file on disk has neither, so it prints the `task.js clear` command to
-copy.
+Two things differ between the served page and the file. A stale row's clear
+control is the first: `window.STATION.serve` is true only when a server
+produced the data, and then the pane shows a form posting to `/clear` with
+that run's nonce. A file on disk has neither, so it prints the `task.js
+clear` command to copy.
+
+The second is that the served page watches for its own server dying. Every
+five seconds it fetches `station/health`; when nothing has answered for
+fifteen, a full-width bar appears under the masthead saying the numbers are
+frozen and at what moment, and the page below it drops to `opacity: .72`
+with `saturate(.3)` — dimmed and desaturated, but every row still readable
+and every link still clickable, because nothing is removed. The bar carries
+a 重試 button that polls again, and it disappears by itself the moment a
+fetch succeeds. The frozen moment it names is the page's own
+`generatedAt`, not the server's start time: what a reader needs is when the
+data was written, not when the process began.
+
+The decision is a pure function above the `module.exports` guard
+(`assets/station/station.js:838`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`),
+so it is unit tested; the fetch that feeds it and the bar it fills are the
+document half below the guard. **The poll never arms on a file opened from
+disk.** `--open` writes a file and opens it, and there is no server behind a
+`file:` URL, so a page that polled there would show a death banner for a
+state that is simply normal — the guard checks
+`w.location.protocol !== 'file:'` before scheduling anything.
 
 ## When it is written, and where
 
@@ -460,10 +489,9 @@ says when it was generated.
 A session under a hidden project produces no `station/detail/<id>.js`
 either, on every one of those four writes. `write()` walks
 `model.registries` directly for this loop rather than through `flatten()`,
-so it carries its own check (`lib/station.js:610`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
+so it carries its own check (`lib/station.js:616`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
 hiding a project after its sessions already had a detail file does not
-delete that file, it just stops being rewritten — nothing in `write()`
-removes a file it once wrote.
+delete that file, it just stops being rewritten.
 
 `node scripts/station.js --json` is the same model as one JSON document on
 stdout, and it writes nothing — no page, no `roots.json`, no first-run walk.
