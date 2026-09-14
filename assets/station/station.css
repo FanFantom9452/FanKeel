@@ -4,9 +4,9 @@
    reference the plugin directory, and nothing is fetched from anywhere. */
 :root{
   color-scheme:light;
-  --ground:#e3e7e1; --panel:#f5f6f2; --inset:#eaede7; --raise:#ffffff;
+  --ground:#e3e7e1; --panel:#f5f6f2; --inset:#eaede7;
   --ink:#161c1a; --ink2:#4a5451; --muted:#66706d; --faint:#8d9793;
-  --rule:#d6dbd5; --rule2:#c3cac3; --grid:#e2e6e0; --wash:rgba(22,28,26,.045); --weekend:rgba(22,28,26,.028);
+  --rule:#d6dbd5; --rule2:#c3cac3; --grid:#e2e6e0; --wash:rgba(22,28,26,.045);
   --hatch:rgba(22,28,26,.42); --hatch-bg:rgba(22,28,26,.06);
   --good:#1f7a3a; --bad:#a93a20;
   --st-survey:#3578b8; --st-design:#cc9225; --st-plan:#af4a88; --st-build:#58994a;
@@ -18,11 +18,10 @@
   --ctx:#161c1a; --ctx-wash:rgba(22,28,26,.07);
   --f-ui:"Bahnschrift","Microsoft JhengHei UI","Microsoft JhengHei","PingFang TC","Noto Sans TC","DIN Alternate",system-ui,sans-serif;
   --f-mono:"Cascadia Mono","Cascadia Code",Consolas,"SF Mono",ui-monospace,monospace;
-  --r:10px; --r-md:8px; --r-sm:6px; --r-pill:999px;
+  --r:10px; --r-sm:6px; --r-pill:999px;
   --card:var(--panel); --fg:var(--ink); --fg-2:var(--ink2); --mute:var(--muted);
   --line:var(--rule); --line-2:var(--rule2); --soft:var(--inset);
   --ind:var(--ink); --ind-2:var(--ink2); --ind-soft:var(--inset);
-  --teal:var(--st-land); --blue:var(--st-survey);
   --up:var(--good); --up-bg:rgba(31,122,58,.12); --dn:var(--bad); --dn-bg:rgba(169,58,32,.12);
   --up-ink:var(--good); --dn-ink:var(--bad);
   --live:#1f7a3a; --live-bg:rgba(31,122,58,.12); --stale:#b7791f; --stale-bg:rgba(183,121,31,.14);
@@ -32,9 +31,9 @@
 }
 @media(prefers-color-scheme:dark){:root{
   color-scheme:dark;
-  --ground:#0e1311; --panel:#161c1a; --inset:#1e2522; --raise:#222a27;
+  --ground:#0e1311; --panel:#161c1a; --inset:#1e2522;
   --ink:#e8ece6; --ink2:#a9b3ae; --muted:#8a9590; --faint:#65706b;
-  --rule:#29312e; --rule2:#36403c; --grid:#232b28; --wash:rgba(232,236,230,.05); --weekend:rgba(232,236,230,.028);
+  --rule:#29312e; --rule2:#36403c; --grid:#232b28; --wash:rgba(232,236,230,.05);
   --hatch:rgba(232,236,230,.40); --hatch-bg:rgba(232,236,230,.05);
   --good:#5cc27a; --bad:#ef8a6a;
   --st-survey:#488acb; --st-design:#bf860c; --st-plan:#c35c9b; --st-build:#5e9f50;
@@ -57,7 +56,7 @@ a{color:inherit}
 button{font:inherit;color:inherit}
 .mono{font-family:var(--f-mono);font-size:.92em;letter-spacing:0}
 .num{font-variant-numeric:tabular-nums}
-.muted{color:var(--muted)} .ink2{color:var(--ink2)}
+.muted{color:var(--muted)}
 :focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:3px}
 
 /* masthead */
@@ -77,7 +76,6 @@ button{font:inherit;color:inherit}
 h1,h2,h3{margin:0;font-weight:600}
 .h2{font-size:15px;letter-spacing:.01em;display:flex;align-items:baseline;gap:10px}
 .h2 small{font-size:12px;color:var(--muted);font-weight:400}
-.row{display:flex;align-items:center;gap:12px}
 .spacer{flex:1}
 
 /* readouts: the instrument numbers */
@@ -87,9 +85,7 @@ h1,h2,h3{margin:0;font-weight:600}
 .ro .l{font-size:12px;color:var(--ink2);display:flex;align-items:center;gap:6px;white-space:nowrap}
 .ro .v{font-size:40px;font-weight:300;font-stretch:87.5%;letter-spacing:-.015em;line-height:1.05;white-space:nowrap}
 .ro .v .u{font-size:.5em;color:var(--muted);font-weight:400;margin-left:3px;letter-spacing:0}
-.ro .v .cur{font-size:.55em;color:var(--muted);font-weight:400;margin-right:1px;vertical-align:.32em}
 .ro .d{font-size:12px;color:var(--muted);white-space:nowrap}
-.ro .d b{font-weight:500}
 .ro .d .flat{color:var(--ink2)}
 .ro.sm .v{font-size:28px}
 .hatchsw{display:inline-block;width:16px;height:10px;border-radius:2px;background:var(--hatch-bg) repeating-linear-gradient(45deg,var(--hatch) 0 1.3px,transparent 1.3px 4.5px)}
@@ -106,7 +102,6 @@ h1,h2,h3{margin:0;font-weight:600}
 .legend span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .sw{display:inline-block;width:10px;height:10px;border-radius:2.5px;flex:none}
 .sw.ln{height:2px;width:14px;border-radius:1px}
-.sw.dot{border-radius:50%}
 
 /* charts */
 .chart{position:relative;width:100%}
@@ -137,10 +132,7 @@ table.t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 /* route dots */
 .route{display:inline-flex;gap:3px;align-items:center;vertical-align:middle}
 .route i{display:block;width:8px;height:8px;border-radius:50%}
-.route i.off{width:8px;height:2px;border-radius:1px;background:var(--rule2)}
 .route i.todo{box-shadow:inset 0 0 0 1.5px var(--rule2)}
-.route.big{gap:5px}
-.route.big i{width:10px;height:10px}
 
 /* layout blocks */
 .grid2{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:14px;align-items:start}
@@ -192,12 +184,6 @@ table.t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .mini-mix{display:inline-flex;width:72px;height:8px;gap:1px;vertical-align:middle}
 .mini-mix i{display:block;height:100%}
 .mini-mix i:first-child{border-radius:2px 0 0 2px} .mini-mix i:last-child{border-radius:0 2px 2px 0}
-svg .bar{transform-box:fill-box;transform-origin:50% 100%}
-@keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
-@media (prefers-reduced-motion: reduce){svg .bar{animation:none!important}}
-.fade{animation:fade .18s ease-out}
-@keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion: reduce){.fade{animation:none}}
 
 @media (max-width:1240px){
   .grid2{grid-template-columns:1fr}

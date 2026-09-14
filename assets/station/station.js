@@ -360,16 +360,17 @@
         });
         return list.sort(function (a, b) { return b.usd - a.usd || b.last - a.last; });
     }
+    // One readout: its label, its value and the line under it.
+    function roHtml(l, v, d) {
+        return '<div class="ro"><div class="l">' + l + '</div><div class="v">' + v + '</div><div class="d">' + d + '</div></div>';
+    }
     function kpiHtml(cur, prev) {
         var share = function (t) { return t.main + t.wait ? t.wait / (t.main + t.wait) : 0; };
-        var ro = function (label, v, d) {
-            return '<div class="ro"><div class="l">' + label + '</div><div class="v">' + v + '</div><div class="d">' + d + '</div></div>';
-        };
         return '<div class="readouts">'
-            + ro('30 天花費', usd(cur.usd), delta(cur.usd, prev.usd))
-            + ro('token', tokens(cur.tokens), delta(cur.tokens, prev.tokens))
-            + ro('active 時間', hours(cur.active), delta(cur.active, prev.active))
-            + ro('<i class="hatchsw"></i>等待佔比', Math.round(share(cur) * 1000) / 10 + '<span class="u">%</span>',
+            + roHtml('30 天花費', usd(cur.usd), delta(cur.usd, prev.usd))
+            + roHtml('token', tokens(cur.tokens), delta(cur.tokens, prev.tokens))
+            + roHtml('active 時間', hours(cur.active), delta(cur.active, prev.active))
+            + roHtml('<i class="hatchsw"></i>等待佔比', Math.round(share(cur) * 1000) / 10 + '<span class="u">%</span>',
                 (prev.main + prev.wait ? delta(share(cur), share(prev), 'pt') : '<span class="delta flat">前期無資料</span>')
                 + ' · ' + hours(cur.wait) + ' 等')
             + '</div>';
@@ -768,16 +769,13 @@
     function sessionHeadHtml(s, x) {
         var t = sessionTotals(s), m = x ? timelineModel(x) : null, agentUsd = costModel(s.days).agent.usd;
         var waited = m ? m.waits.reduce(function (n, w) { return n + w.ms; }, 0) : t.wait;
-        var ro = function (l, v, d) {
-            return '<div class="ro"><div class="l">' + l + '</div><div class="v">' + v + '</div><div class="d">' + d + '</div></div>';
-        };
         return '<div class="readouts">'
-            + ro('歷時', m && m.t1 > m.t0 ? mins(m.t1 - m.t0) : '—', 'active ' + hours(t.active))
-            + ro('<i class="hatchsw"></i>等你回答', mins(waited), m ? m.waits.length + ' 次 gate' : '讀取細節…')
-            + ro('花費', usd(t.usd), t.usd ? '派工佔 ' + Math.round(agentUsd / t.usd * 100) + '%' : '沒有按日的花費')
-            + ro('token', tokens(t.tokens), x ? x.requests + ' 次主 session 請求' : '')
-            + ro('派工', x ? x.rows.length + '<span class="u">agent</span>' : '—', x ? x.runs.length + ' 個 workflow' : '')
-            + ro('context 峰值', x ? tokens(x.peak) : '—', '')
+            + roHtml('歷時', m && m.t1 > m.t0 ? mins(m.t1 - m.t0) : '—', 'active ' + hours(t.active))
+            + roHtml('<i class="hatchsw"></i>等你回答', mins(waited), m ? m.waits.length + ' 次 gate' : '讀取細節…')
+            + roHtml('花費', usd(t.usd), t.usd ? '派工佔 ' + Math.round(agentUsd / t.usd * 100) + '%' : '沒有按日的花費')
+            + roHtml('token', tokens(t.tokens), x ? x.requests + ' 次主 session 請求' : '')
+            + roHtml('派工', x ? x.rows.length + '<span class="u">agent</span>' : '—', x ? x.runs.length + ' 個 workflow' : '')
+            + roHtml('context 峰值', x ? tokens(x.peak) : '—', '')
             + '</div>';
     }
     function tabsHtml(s, tab, x) {
