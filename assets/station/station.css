@@ -293,8 +293,8 @@ table:not(.t) tbody tr:last-child td{border-bottom:0}
 .det .dl{display:grid;grid-template-columns:58px 1fr;gap:4px 10px;font-size:12px;margin:12px 0}
 .det .dl dt{color:var(--mute)}
 .det .dl dd{margin:0;word-break:break-word}
-.det .note{background:var(--ind-soft);border-left:3px solid var(--ind);padding:9px 11px;
-  border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:12.5px;line-height:1.5;margin:9px 0;color:var(--ink)}
+.det .note{background:var(--ind-soft);padding:9px 11px;
+  border-radius:var(--r-sm);font-size:12.5px;line-height:1.5;margin:9px 0;color:var(--ink)}
 .claims{font:11.5px/1.75 var(--mono);max-height:170px;overflow:auto;background:var(--soft);
   border-radius:var(--r-sm);padding:9px 11px}
 .claims div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -363,9 +363,10 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .seq .s.bk{border:1px dashed var(--dn);background:var(--dn-bg);color:var(--fg)}
 .seq .s.todo{background:transparent;border-style:dashed;color:var(--mute)}
 .seq .s.fb{border-style:dotted}
-.bkl{margin-top:8px;padding:7px 9px;border-left:3px solid var(--dn);background:var(--soft);
-  border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:12px}
+.bkl{margin-top:8px;padding:7px 9px;background:var(--soft);
+  border-radius:var(--r-sm);font-size:12px}
 .bkl .hd2{font-weight:600;color:var(--fg)}
+.bkl .hd2 .ar{color:var(--dn)}
 .bkl .hd2 .mono{font-weight:400;color:var(--mute);font-size:10.5px}
 .lk{display:inline-block;margin-top:4px;font:600 11px var(--mono);color:var(--ind);cursor:pointer;text-decoration:none}
 .lk:focus-visible{outline:2px solid var(--ind);outline-offset:2px}
@@ -379,8 +380,8 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .gb{display:inline-block;font:600 10.5px var(--mono);padding:1px 7px;border-radius:5px;
   background:var(--soft);border:1px solid var(--line-2);color:var(--fg-2)}
 .hint{display:flex;align-items:center;gap:6px;margin-top:6px;padding:4px 9px;
-  border-radius:0 var(--r-sm) var(--r-sm) 0;background:var(--stale-bg);color:var(--stale-ink);
-  border-left:3px solid var(--stale);font-size:11.5px;font-weight:600}
+  border-radius:var(--r-sm);background:var(--stale-bg);color:var(--stale-ink);
+  font-size:11.5px;font-weight:600}
 .hint .why{font-weight:400;opacity:.85;margin-left:auto;font-size:10.5px;white-space:nowrap}
 .pill.ok{background:var(--up-bg);color:var(--up)}
 .pill.pend{background:var(--down-bg);color:var(--down)}

@@ -1297,7 +1297,7 @@
                 : '<p class="mute" style="font-size:12px">沒有分階段紀錄</p>')
             + (s.next ? '<div class="note"><b>下一步</b><br>' + esc(s.next) + '</div>' : '')
             + (s.notes.length
-                ? '<div class="note" style="background:var(--soft);border-color:var(--line-2)">'
+                ? '<div class="note" style="background:var(--soft)">'
                 + s.notes.map(esc).join('<br>') + '</div>' : '')
             + '<dl class="dl"><dt>session</dt><dd class="mono" style="font-size:10.5px">'
             + esc(s.id) + '</dd>'
@@ -1520,7 +1520,7 @@
         return '<div class="seq" role="list" aria-label="階段移動次序">' + out + '</div>';
     }
     function backBlock(s, b) {
-        return '<div class="bkl"><div class="hd2">↩ ' + esc(b.from) + ' → ' + esc(b.to) + ' <span class="mono">'
+        return '<div class="bkl"><div class="hd2"><span class="ar">↩</span> ' + esc(b.from) + ' → ' + esc(b.to) + ' <span class="mono">'
             + stamp(b.at) + ' · ' + esc(b.from) + ' 待了 ' + mins(b.at - b.since) + '</span></div>'
             + '<a class="lk" tabindex="0" data-goto="' + b.since + '" data-until="' + b.at + '">過程還原裡它前面那幾列 ↓</a>'
             + todoSpot(backTodo(s.id, b), 'skills/fankeel-build/SKILL.md', s)
