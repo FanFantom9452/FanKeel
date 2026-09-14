@@ -42,6 +42,14 @@ function main(raw) {
     // regardless of `guard` mode — this is about a read-only contract, not
     // about two sessions overlapping a file.
     if (payload.tool_name === 'Bash' || payload.tool_name === 'PowerShell') {
+        // `agent_type` is set inside a subagent AND on the main thread of a
+        // session started with `--agent` — and that second one is a real
+        // session that owns tasks and must be able to write. `agent_id` is
+        // present only inside a subagent, so both are needed: the id says
+        // whether this is a subagent at all, the type says whether it is a
+        // read-only one. docs/subagents.md:430-440 quotes Claude Code's own
+        // wording on the field to use.
+        if (!payload.agent_id) return;
         if (!readOnlyAgentType(payload.agent_type)) return;
         const command = (payload.tool_input && payload.tool_input.command) || '';
         if (!writesFiles(command)) return;
@@ -49,9 +57,10 @@ function main(raw) {
             hookSpecificOutput: {
                 hookEventName: 'PreToolUse',
                 permissionDecision: 'deny',
-                permissionDecisionReason: 'fankeel: ' + payload.agent_type + ' is read-only for this task, '
-                    + 'and this command writes to disk. Redirect to /dev/null (or $null), or ask for a '
-                    + 'fankeel-verifier if the result needs to be written.',
+                permissionDecisionReason: 'fankeel: this is a subagent call (agent_id is set) with the '
+                    + 'read-only agent_type ' + payload.agent_type + ', and this command writes to disk. '
+                    + 'Redirect to /dev/null (or $null), or ask for a fankeel-verifier if the result needs '
+                    + 'to be written.',
             },
         }));
         return;

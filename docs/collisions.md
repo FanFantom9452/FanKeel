@@ -159,7 +159,7 @@ only when this session holds the file too:
   that both reached it cannot block each other into a stalemate.
 
 A task never blocking itself is a separate mechanism, and it runs before
-`blockers()` ever sees the other side: `hooks/guard.js:65` filters `others`
+`blockers()` ever sees the other side: `hooks/guard.js:74` filters `others`
 down to entries whose `sessionId` is not this one's, so every rule above is
 already between *sessions* by the time it runs. A subagent inherits its
 parent's session id, so two implementers dispatched by one session are
@@ -174,11 +174,12 @@ anything written outside them unstaged rather than committed.
 ## What the guard does not watch
 
 The scope guard's collision check is wired to one matcher: `.claude-plugin/plugin.json:85` reads `"matcher": "Edit|Write|NotebookEdit"`.
-Inside it, `hooks/guard.js:62` calls `targetOf(payload)`, which reads only
-`tool_input.file_path` and `tool_input.notebook_path`, and `hooks/guard.js:63` is the whole branch for anything else: `if (!file) return;`.
+Inside it, `hooks/guard.js:71` calls `targetOf(payload)`, which reads only
+`tool_input.file_path` and `tool_input.notebook_path`, and `hooks/guard.js:72` is the whole branch for anything else: `if (!file) return;`.
 The same hook has a second entry, `.claude-plugin/plugin.json:107` `"matcher": "Bash|PowerShell"`, and it stops short of that check:
 `hooks/guard.js:44` `if (payload.tool_name === 'Bash' || payload.tool_name === 'PowerShell') {` ends in a `return` of its own, and
-`hooks/guard.js:45` `if (!readOnlyAgentType(payload.agent_type)) return;` lets every agent but a read-only one through before the command is read.
+`hooks/guard.js:52` `if (!payload.agent_id) return;` lets a session with no `agent_id` — the main thread of an `--agent` session, not a subagent — through before the type is even read, and
+`hooks/guard.js:53` `if (!readOnlyAgentType(payload.agent_type)) return;` then lets every agent but a read-only one through before the command is read. Both fields are checked because `agent_type` alone is a trap: it is set inside a subagent and on the main thread of an `--agent` session alike, and only `agent_id` tells those two apart — see [subagents.md](subagents.md).
 So a `Bash` or `PowerShell` call never reaches `blockers()` — and on this machine
 that is two tools, not one: Windows hands a subagent a `PowerShell` the collision
 matcher does not name either.
@@ -227,8 +228,10 @@ write, outside a script. `files_ref.txt` is that record.
 
 This is narrower than what was rejected. `.claude-plugin/plugin.json` now
 registers `hooks/guard.js` a second time, matcher `Bash|PowerShell`, and the
-hook denies a command only when both are true: `payload.agent_type` — read
-bare or with a `fankeel:` prefix, `lib/guard.js`'s `readOnlyAgentType` —
+hook denies a command only when all three are true: `payload.agent_id` is
+set — present only inside a subagent, absent on the main thread of an
+`--agent` session — `payload.agent_type` — read bare or with a `fankeel:`
+prefix, `lib/guard.js`'s `readOnlyAgentType` —
 names `fankeel-reader`, `fankeel-reviewer` or `fankeel-judge`, and the command
 matches `writesFiles()`'s fixed list — a redirect to anywhere but `/dev/null`
 or `$null`, `tee`, `rm`, `mv`, `cp`, `sed -i` or `--in-place`, a `git`
