@@ -317,9 +317,10 @@ markup cannot redraw a chart when a facet is clicked.
 
 The left rail is facets, each with its own count — state, registry, stage — and
 the search box above them matches task, project, session id, registry label,
-the files the task has touched and its notes. They are AND-ed. Selecting a
-registry recomputes the four cards, every chart and the list; it does not merely
-hide rows.
+the files the task has touched and its notes. They are AND-ed. On 清單,
+selecting a registry recomputes the page below the facets: `goneNote()`'s card
+replaces the list when the registry is gone, and `registryNote()`'s card sits
+above the list otherwise; it does not merely hide rows.
 
 A gone registry keeps its facet rather than dropping off the rail, so
 selecting one never returns a blank pane with nothing on the page saying why:
@@ -327,16 +328,21 @@ selecting one never returns a blank pane with nothing on the page saying why:
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
-A registry that is not gone gets its own card instead, once it is the one
-selected: `registryNote()` (`assets/station/station.js:955`, `function registryNote(root)`) prints its own unreadable-session count, its
-`map.md` date — or `不存在` when there is none — and its build directories
-with each one's file count, or says there are none. The old page carried all
-three on a per-registry meta line; the redesign dropped that line, and this
-card is where its contents live now. The header's own unreadable count stays
-the total across every registry and is shown only when none is selected,
-because a selected one already carries its own count on this card
-(`assets/station/station.js:1330`, `a corrupt-entry count must`) — so a corrupt
-entry is never a click away from being found.
+A registry that is not gone gets its own card once it is the one selected on
+清單, and every project page carries the same card for its own registry no
+matter what is selected there: `registryNote()`
+(`assets/station/station.js:955`, `function registryNote(root)`) prints its
+own unreadable-session count, its `map.md` date — or `不存在` when there is
+none — and its build directories with each one's file count, or says there
+are none. The old page carried all three on a per-registry meta line; the
+redesign dropped that line, and this card is where its contents live now. The
+header's own unreadable count stays the total across every registry and is
+hidden only on 清單 once a registry there is selected, because that page's own
+card already carries the same count
+(`assets/station/station.js:1331`, `a corrupt-entry count must`); everywhere
+else — a project page included, whose own card shows only its registry's
+count — the header keeps the total, so a corrupt entry is never a click away
+from being found.
 
 `navLabels` moved into `assets/station/station.js` as `labels`, unchanged: each
 root gets the shortest tail of its path segments no other root shares, and the

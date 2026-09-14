@@ -1123,7 +1123,7 @@
         var gone = goneNote(f.project);
         if (gone) return head + '<a class="ctl" href="#/">▦ 首頁</a></div>' + facetsHtml() + gone;
         return head + '<a class="ctl" href="#/cmp">⇅ 比較勾選的 <b id="ncmp">' + picked.length + '</b> 個</a>'
-            + '<a class="ctl" href="#/">▦ 首頁</a></div>' + facetsHtml()
+            + '<a class="ctl" href="#/">▦ 首頁</a></div>' + facetsHtml() + registryNote(f.project)
             + '<div class="listwrap">'
             + '<div class="card listcard"><div class="scroll"><table>'
             + '<colgroup><col style="width:34px"><col><col style="width:130px"><col style="width:80px">'
@@ -1325,10 +1325,12 @@
     // The scan-time clauses were the old header's `depth stopped the scan in N
     // places` and `the scan ran out of time` — both are how a reader learns
     // the registry list may be incomplete. The unreadable-count clause is
-    // separate: it is the total across every registry, and only shown when no
-    // one registry is selected, because a selected registry already carries
-    // its own count in `registryNote()`'s card — a corrupt-entry count must
-    // not require a click to find, so it lives here the rest of the time.
+    // separate: it is the total across every registry, and is hidden only on
+    // 清單 once a registry there is selected, because `registryNote()`
+    // already puts that registry's own count on the card in front of the
+    // list — a corrupt-entry count must not require a click to find, so it
+    // stays here everywhere else: home, session and the project page, whose
+    // own card never hides it either.
     function genText() {
         var totalUnreadable = S.projects.reduce(function (n, p) {
             return n + (p.unreadable || 0);
@@ -1338,7 +1340,7 @@
             + (S.scanStats && S.scanStats.depthCuts
                 ? ' · depth 中止掃描 ' + S.scanStats.depthCuts + ' 處' : '')
             + (S.scanStats && S.scanStats.timedOut ? ' · 掃描逾時未跑完' : '')
-            + (!f.project && totalUnreadable
+            + (!(route.view === 'list' && f.project) && totalUnreadable
                 ? ' · ' + totalUnreadable + ' 個 session 檔案讀不到' : '')
             + (S.serve ? ' · 每次載入都重讀 registry' : '');
     }

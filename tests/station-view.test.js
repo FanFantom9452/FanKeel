@@ -616,3 +616,50 @@ test('a kept v1 cache\'s single row: the cost tab counts its dollars, zero token
     assert.doesNotMatch(html, /NaN|undefined/);
     assert.match(V.sessionHeadHtml(KEPT, null), /花費<\/div><div class="v">\$2\.50/);
 });
+
+// --- fix: a selected registry's card on 清單, and the header it narrows -----
+// `listPage()`, `genText()` and the click handler that sets `f.project` all
+// live below the `module.exports` guard, so `require()` never reaches them —
+// `f` and `route` are never assigned once `doc` is null. `smoke-page.js`
+// proves the same file runs those DOM-touching parts fine when handed a stub
+// `document` through `vm.runInNewContext`, so this test drives it the same
+// way instead of restating `registryNote()`'s or `genText()`'s logic inline.
+test('selecting a registry on 清單 keeps its unreadable-session count on the card once the header stops showing the total', () => {
+    const vm = require('node:vm');
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    const els = {};
+    const listeners = {};
+    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
+    const doc = {
+        getElementById: (id) => els[id] || (els[id] = el()),
+        addEventListener: (type, fn) => { listeners[type] = fn; },
+        createElement: el,
+        head: { appendChild() {} },
+        querySelectorAll: () => [],
+    };
+    const win = {
+        location: { hash: '#/list' }, addEventListener() {}, scrollTo() {},
+        STATION: {
+            generatedAt: new Date(2026, 8, 14, 21).toISOString(), configDir: 'C:\\cfg',
+            pricesVerified: '2026-09-04', serve: false,
+            projects: [{ root: 'F:\\ws\\alpha', gone: false, unreadable: 2, build: [], mapAt: null }],
+            profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} },
+            profileKeys: {}, classes: {}, sessions: [],
+        },
+    };
+    vm.runInNewContext(src, { window: win, document: doc, URLSearchParams, fetch() {} });
+    assert.match(els.gen.textContent, /2 個 session 檔案讀不到/, 'nothing selected: the header carries the total');
+
+    // The same click the facet segment's `[data-facet] button` sends.
+    listeners.click({
+        target: {
+            closest: (sel) => (sel === '[data-facet] button'
+                ? { parentNode: { getAttribute: () => 'project' }, getAttribute: () => 'F:\\ws\\alpha' }
+                : null),
+        },
+    });
+    assert.match(els.page.innerHTML, /2 個 session 檔案讀不到/, 'the selected registry carries its own count on the card');
+    assert.doesNotMatch(els.gen.textContent, /個 session 檔案讀不到/, 'the header drops the total once that card is on screen');
+});
