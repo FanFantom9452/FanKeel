@@ -61,15 +61,15 @@ shrunk: four were somebody re-reading the section and finding an entry misfiled,
 and one a question Claude Code's docs answered before its blocker came. It is
 drained by being read, so the interval between readings is the thing to measure.
 
-## `version.js` — the release number in twelve files
+## `version.js` — the release number in thirteen files
 
-`node scripts/version.js` is the release number in the twelve files that carry it —
-two manifests and one frontmatter line in each of the ten skills. With a number
+`node scripts/version.js` is the release number in the thirteen files that carry it —
+two manifests and one frontmatter line in each of the eleven skills. With a number
 it sets them all; with `--changes` it lists the commits since the last
-`chore: <x.y.z>`, which is what a release contains. `npm test` fails when the twelve
+`chore: <x.y.z>`, which is what a release contains. `npm test` fails when the thirteen
 disagree, so the script is what makes them agree rather than what notices. A
-release used to be ten edits, and missing one left a skill announcing a version
-the plugin is not — right in nine places, which is how it went unnoticed.
+release used to be eleven edits, and missing one left a skill announcing a version
+the plugin is not — right in ten places, which is how it went unnoticed.
 
 ## `skills-check.js` — a fail-closed gate over the skill files
 

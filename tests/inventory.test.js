@@ -19,6 +19,7 @@ const SKILLS = [
     'fankeel-explain',
     'fankeel-land',
     'fankeel-plan',
+    'fankeel-station',
     'fankeel-survey',
     'fankeel-verify',
 ];

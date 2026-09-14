@@ -75,16 +75,16 @@ then archived, **after asking**. An unarchived plan gets read as current.
 ## 2a. The release number, when the work is one
 
 ```
-node <plugin>/scripts/version.js              what the twelve places say
+node <plugin>/scripts/version.js              what the thirteen places say
 node <plugin>/scripts/version.js 0.35.0       set them
 node <plugin>/scripts/version.js --changes    what has landed since the last one
 ```
 
-Twelve files carry it: two manifests and one frontmatter line in each of the
-ten skills. `npm test` fails when they disagree, so this is a fixer rather
-than a check — and the fixer matters because a release used to be ten edits,
+Thirteen files carry it: two manifests and one frontmatter line in each of the
+eleven skills. `npm test` fails when they disagree, so this is a fixer rather
+than a check — and the fixer matters because a release used to be eleven edits,
 where missing one left a skill announcing a version the plugin is not. Wrong in
-the way nobody catches: the number is right in nine places.
+the way nobody catches: the number is right in ten places.
 
 **Only when the user says this is a release.** Bumping a version is a claim about
 what shipped, which is theirs to make. `--changes` is what to show them when

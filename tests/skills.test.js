@@ -83,18 +83,24 @@ for (const n of names) {
   });
 }
 
-// The station skill was retired on 2026-09-07: the `/fankeel` prompt writes the
-// page and names it, so a second skill was a second door to one room. Its
-// routing phrases moved into the fankeel skill's description, and nothing
-// current may send a reader to the skill that is gone.
-test('the fankeel skill routes the station phrases, and no skill names /fankeel-station', () => {
+// The station skill was retired on 2026-09-07 because the `/fankeel` prompt
+// already writes the page and names it, so a second skill was a second door to
+// one room. It came back on 2026-09-15 for the door the first one is not: what
+// a prompt writes is a static file, and this skill runs `station.js serve`,
+// which is a live server with a port, a URL and a death of its own. The
+// routing phrases stay in the fankeel skill's description, so the only skill
+// that may name `/fankeel-station` is the one that is it.
+test('the fankeel skill routes the station phrases, and only the station skill names /fankeel-station', () => {
   const fm = frontmatter(read('fankeel'));
   for (const phrase of ['show all sessions', 'clean up old sessions', '監控站']) {
     assert.ok(fm.description.includes(phrase), 'fankeel description lacks "' + phrase + '"');
   }
   for (const n of names) {
+    if (n === 'fankeel-station') continue;
     assert.equal(read(n).includes('/fankeel-station'), false, n + ' still names /fankeel-station');
   }
+  assert.ok(read('fankeel-station').includes('/fankeel-station'),
+    'the station skill does not name its own slash command, so nothing routes to it');
 });
 
 // The two skills do different jobs and the split is the point: one owns a task
