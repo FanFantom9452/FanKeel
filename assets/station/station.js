@@ -835,10 +835,10 @@
     // Whether the served page has lost its server, and what to say. Pure, so
     // it is unit tested; the fetch that feeds it and the banner it fills are
     // the document half below the guard.
-    function serveLost(lastOkMs, nowMs, genText) {
+    function serveLost(lastOkMs, nowMs, genAbs, genRel) {
         if (lastOkMs === null || lastOkMs === undefined) return null;
         if (nowMs - lastOkMs < 15000) return null;
-        return '伺服器已離線 — 畫面上的數字凍結於 ' + genText;
+        return '伺服器已離線 — 底下所有數字與狀態都凍結在 ' + genAbs + '（' + genRel + '），不會再更新。每 5 秒重試一次。';
     }
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -2042,9 +2042,8 @@
                 retry.style.cssText = 'border-color:var(--stale);color:var(--stale-ink);margin-left:auto';
                 retry.addEventListener('click', function () { poll(); });
                 deadBar.appendChild(retry);
-                var mast = typeof doc.querySelector === 'function' ? doc.querySelector('.mast') : null;
-                var host = mast ? mast.parentNode : doc.body;
-                if (host) host.insertBefore(deadBar, mast ? mast.nextSibling : host.firstChild);
+                var mast = doc.querySelector('.mast');
+                mast.parentNode.insertBefore(deadBar, mast.nextSibling);
             }
             deadBar.firstChild.textContent = msg;
             deadBar.hidden = false;
@@ -2058,7 +2057,7 @@
             fetch('station/health').then(function (r) {
                 if (r && r.ok) lastOkMs = Date.now();
             }).catch(function () {}).then(function () {
-                var msg = serveLost(lastOkMs, Date.now(), genText());
+                var msg = serveLost(lastOkMs, Date.now(), stamp(NOW), ago(NOW));
                 if (msg) showDead(msg); else hideDead();
             });
         };

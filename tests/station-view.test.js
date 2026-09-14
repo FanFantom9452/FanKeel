@@ -80,17 +80,20 @@ test('cost adds the session and its agents', () => {
     assert.equal(V.cost({}), 0);
 });
 
-test('serveLost stays quiet with no baseline or inside the grace window, and names the frozen gen once stale', () => {
+test('serveLost stays quiet with no baseline or inside the grace window, and states the mockup\'s frozen sentence once stale', () => {
     // No successful poll yet: nothing to compare against, so no verdict.
-    assert.equal(V.serveLost(null, Date.now(), 'g'), null);
-    assert.equal(V.serveLost(undefined, Date.now(), 'g'), null);
+    assert.equal(V.serveLost(null, Date.now(), 'a', 'r'), null);
+    assert.equal(V.serveLost(undefined, Date.now(), 'a', 'r'), null);
     // A response 14s ago is still inside the 15s grace window.
     const now = Date.now();
-    assert.equal(V.serveLost(now - 14000, now, 'g'), null);
-    // Past the window, the message carries the word and the frozen gen text.
-    const msg = V.serveLost(now - 15001, now, '2026-09-14 06:12');
-    assert.match(msg, /凍結於/);
+    assert.equal(V.serveLost(now - 14000, now, 'a', 'r'), null);
+    // Past the window: the mockup's sentence, with the absolute time and the
+    // relative one in parentheses after it, not the whole footer line.
+    const msg = V.serveLost(now - 15001, now, '2026-09-14 06:12', '8m ago');
+    assert.match(msg, /與狀態/);
     assert.match(msg, /2026-09-14 06:12/);
+    assert.match(msg, /（8m ago）/);
+    assert.match(msg, /每 5 秒重試一次/);
 });
 
 test('labels give each root the shortest tail nothing else shares', () => {
