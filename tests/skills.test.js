@@ -1114,7 +1114,11 @@ test('every subagent_type a skill names carries the plugin prefix', () => {
     }
   }
   assert.deepEqual(bare, [], 'these dispatch sites name an agent the Agent tool refuses');
-  assert.equal(prefixed, 12, 'every dispatch site in the skills and in docs/subagents.md is prefixed');
+  // A lower bound rather than the exact twelve: the count is here so that
+  // deleting every dispatch line cannot pass this test by matching nothing, and
+  // a thirteenth site correctly prefixed is not a failure worth the message
+  // this assertion would print.
+  assert.ok(prefixed >= 12, 'expected the twelve known dispatch sites, found ' + prefixed);
 });
 
 test('fankeel-ask: the skill carries the whole procedure, and the main skill no longer does', () => {
