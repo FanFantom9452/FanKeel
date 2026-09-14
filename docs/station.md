@@ -95,16 +95,16 @@ From the entry: `task`, `project`, `stage` on its `route`, `started`,
 `spend` — see [registry.md](registry.md). From `lib/prices.js`: the dollar figure, and the
 date the table was read. The dollar figure shown is one total: `cost(s)` in
 the browser adds the session's own `usd` and its agents' `agentUsd` together
-(`assets/station/station.js:54`, `(s.usd || 0) + (s.agentUsd || 0)`) rather
+(`assets/station/station.js:52`, `(s.usd || 0) + (s.agentUsd || 0)`) rather
 than printing them side by side — `agentCost` is `usage.subagents`, priced
 the same way as the session's own `usage`. Opening a row appends how many
 agents ran, as a bare count beside the total rather than a request count or a
 wall-clock of its own.
 
 Every row also carries the registry it belongs to, as `root` on its session
-object (`lib/station.js:404`, `root: s.root`) — the raw path, not the
+object (`lib/station.js:416`, `root: s.root`) — the raw path, not the
 shortened label shown on the row — and `match()` filters on that same field
-(`assets/station/station.js:141`, `s.root !== f.project`) rather than a DOM
+(`assets/station/station.js:139`, `s.root !== f.project`) rather than a DOM
 attribute, because every row here is rebuilt from `window.STATION` in the
 browser instead of arriving as markup; see Filtering, and the two views
 below.
@@ -120,14 +120,15 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:832`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:1297`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
 minutes, the burn distance and a third column, `等你`: how much of that
 stage's minutes went on a gate rather than on work. Neither carries a dollar
-figure any more; a stage's own cost surfaces only in the aggregate
-per-route stage ledger on **總覽**, not per row.
+figure any more; a stage's own cost surfaces in the per-route stage
+ledger on each project page, and per stage and model on the session page's
+花費 tab — not on this table's rows.
 
 A stage's dollar figure needs `spend`, which `hooks/leave.js` writes once, at
 session end — a live session does not have it yet, and no session that ended
@@ -140,9 +141,39 @@ line that folds the session and its agents together rather than pricing the
 parent alone, which is why the ledger's total already matches `cost(s)`'s own
 combined figure, agents included.
 
+### The session page
+
+A session also opens on a page of its own, `#/s/<id>`, in four tabs — 時間線,
+花費, 派工 and 事件 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
+`cost`, `dispatch` or `events`. 時間線 is the default, with the context chart,
+任務 and the list of the largest rises under it; 派工 gives every row its input
+and output tokens, read from `split`, and its dollars, read from `cost`; 事件 is
+the replay, each gate's row carrying how long it waited. The side panel in the
+next section is the other way in, from 清單, and keeps its claims.
+
+時間線 draws the session against real elapsed time: one axis from the first
+step of `seq` to the last request, so a ten-minute session and a ten-hour one
+no longer fill the same width. The stage lane gives each step a segment as wide
+as the time it ran, and every gate in `waits` is a hatched gap across all the
+lanes, labelled with how long the question waited for its answer. Each agent
+and workflow is a bar from its first request to its last — `from` and `to` on
+its dispatch row — carrying its model, tokens and dollars, and a workflow opens
+into its agents. A lane of ticks marks every main-session request in its
+model's colour, and the context line above shares the axis, marked where an
+agent's return entered the main context.
+
+花費 is where a stage's dollars live: a stage × model table summed from the
+session's `days`, with input, output, cache-read and cache-write tokens and
+dollars in their own columns and a subtotal each for the main session and its
+agents. Its total is the sum of `days[].usd` — the figure the home and project
+pages sum too — and a live session has one, because `days` comes from the
+transcript read in `extract()` rather than from `spend`, which `hooks/leave.js`
+still writes only at session end. A model the price table does not know gives
+its rows `cost: null` and `usd: null`: no figure, rather than a zero.
+
 ### One session, opened
 
-Opening a row fills the panel with sections that open and close, and which
+Opening a row in 清單 fills the side panel with sections that open and close, and which
 start open is the session's state — `openSections()` in the view script: a
 live session opens on 摘要 and claims, who is in which file; one that has
 ended opens on context and 派工, what it cost. 過程還原 starts closed either
@@ -250,9 +281,10 @@ every prompt, which is the reason that comparison is there.
 
 The directory is `station/detail/`: one file per session whose transcript is
 under this machine's config directory, `station/detail/<id>.js`, holding that
-session's detail panel. `station-data.js` carries only whether there is one,
-the session's peak context and its count of backward steps, so the file every
-prompt rewrites stays small. `lib/detail.js` reads the detail and caches it at
+session's detail panel. `station-data.js` carries whether there is one,
+the session's peak context, its count of backward steps, and its `days`,
+`spans` and `pkey` — what the home and project pages sum, so neither page
+loads a detail file. `lib/detail.js` reads the detail and caches it at
 `<configDir>/fankeel/station/cache/<session>.json`, keyed on the size and mtime
 of the transcript, its agents' files and its workflow run files: a session is
 read again only when one of them changed, and one that has ended is read once.
@@ -264,6 +296,18 @@ takes, and `serve` answers the same file at `GET /station/detail/<id>.js`.
 Both the page and the cache sit where git does not look — the registry copy's
 `station/` is ignored and the cache is under the config directory — so the
 prompt fragments a replay quotes stay on this machine.
+
+`days` and `spans` are a second derivation, and they do not replace `spend`.
+`extract()` computes them in the same transcript read that fills the detail
+panel, so a live session has them. A request's stage there is the last step of
+`seq` at or before its timestamp — `task.js stage` commands first, `moves` or
+`clock` only when the transcript holds none — and a request older than the
+first step has stage `null` rather than falling into a first window that
+starts at `-Infinity`. Each row is one local calendar day, one stage, one model
+and one of `main`, `agent` or `workflow`, so a session that crosses midnight is
+spent on both days, and the rows' dollars sum to the detail's `usd`. `spans`
+holds the time the same way — `main`, `wait`, `agent` and `workflow` — every
+interval kept between the session's first and last request.
 
 ### Filtering, and the two views
 
@@ -279,19 +323,19 @@ hide rows.
 
 A gone registry keeps its facet rather than dropping off the rail, so
 selecting one never returns a blank pane with nothing on the page saying why:
-`goneNote()` (`assets/station/station.js:532`, `function goneNote()`) prints a
+`goneNote()` (`assets/station/station.js:938`, `function goneNote(root)`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card instead, once it is the one
-selected: `registryNote()` (`assets/station/station.js:549`, `function registryNote()`) prints its own unreadable-session count, its
+selected: `registryNote()` (`assets/station/station.js:955`, `function registryNote(root)`) prints its own unreadable-session count, its
 `map.md` date — or `不存在` when there is none — and its build directories
 with each one's file count, or says there are none. The old page carried all
 three on a per-registry meta line; the redesign dropped that line, and this
 card is where its contents live now. The header's own unreadable count stays
 the total across every registry and is shown only when none is selected,
 because a selected one already carries its own count on this card
-(`assets/station/station.js:865`, `a corrupt-entry count must`) — so a corrupt
+(`assets/station/station.js:1330`, `a corrupt-entry count must`) — so a corrupt
 entry is never a click away from being found.
 
 `navLabels` moved into `assets/station/station.js` as `labels`, unchanged: each
@@ -306,9 +350,15 @@ are one directory spelled two ways; `tests/station-view.test.js` carries both
 fixtures, the one that must merge and the nested root that must not. A nested
 root separates on its own and always did.
 
-**總覽** carries four cards with a seven-day-against-previous-seven delta, the
-stacked context flow by registry, a weekday bar, the waiting gauge and the
-per-route stage ledger. A delta whose previous window holds nothing prints
+**首頁**, `#/`, is a 30-day histogram — one bar per local day, today at the
+right — whose height switches between tokens, dollars and time and whose
+segments switch between model, project, stage and main session against
+agent; time has no model, so that pairing is disabled and says why. Four
+cards above it compare the last 30 days with the 30 before them, and clicking
+a bar opens that day, `#/d/<day>`, with its breakdown and the sessions that
+spent on it. A project, `#/p/<pkey>` with the key URI-encoded, plots its
+sessions as points over the same 30 days, can lay a second project's line on
+the same axes, lists its sessions, and carries the per-route stage ledger. A delta whose previous window holds nothing prints
 `前期無資料` rather than a percentage against zero, because this repository's
 usage records begin on 2026-09-04 and its burn records on 08-28; the waiting
 ratio moves in percentage points, and a rise in it is the bad direction.
@@ -328,7 +378,7 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:639`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:1090`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較** is a third view. Tick two sessions on 清單 — only a session with a
@@ -367,7 +417,8 @@ that wants the stale ones filters on that rather than parsing the counts line.
 It takes `--root` and `--scan` as the default form does, and refuses `serve`
 and `--forget` with exit 2.
 
-`serve` runs a loopback server only while clearing; it renders afresh on
+`serve` runs a loopback server that stays up until it is stopped —
+`--idle <minutes>` brings back an idle exit — and renders afresh on
 every request, takes a POST from the clear button on a `stale` row, answers
 `409` for a `live` one and for a row touched in the last twelve hours unless
 `force` is ticked, and `403` without the per-run nonce. It binds the fixed
@@ -418,7 +469,7 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:590`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:993`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button, and every registry card now carries one:
