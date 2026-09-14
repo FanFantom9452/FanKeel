@@ -155,3 +155,11 @@ test('suggest with no second argument behaves exactly as before', () => {
     const out = profile.suggest(d);
     assert.equal(out.evidence[0], 'not a git repository, or git is not on PATH');
 });
+
+test('station.hide refuses an illegal value and accepts true', () => {
+    const d = dir();
+    const file = profile.projectFile(d);
+    assert.equal(profile.write(file, 'station.hide', 'maybe').ok, false);
+    assert.equal(profile.write(file, 'station.hide', 'true').ok, true);
+    assert.equal(JSON.parse(fs.readFileSync(file, 'utf8'))['station.hide'], true);
+});

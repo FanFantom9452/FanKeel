@@ -69,8 +69,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Needs a decision
 
-- 〔station〕設定檔指定不上站的專案：客戶看得到花費，看不出做了哪些方案 — [docs/station.md](docs/station.md). 待決：被藏的花費算不算進總額與長條、用 `root` 還是 `pkey` 指定、session 標題與 `claims` 是否一併遮、badge 與 CLI 同不同步。
-
 - 〔station〕gate 只留問題與答案各 120 字、丟掉選項清單，也沒有跨 session 彙總，調 skill 時看不出哪個選項常被換掉 — [docs/station.md](docs/station.md). 待決：存不存 option label 與 description、clip 放到多寬、彙總做成新頁還是首頁一格。
 
 - 〔hooks〕`--agent` 起的主 session 一旦也開了 fankeel 任務，寫檔會被 `hooks/guard.js:45` 依 `agent_type` 擋下 — 另兩處問同一件事用 `agent_id`，見 [docs/subagents.md](docs/subagents.md). 待決：改看 `agent_id`、兩者都要、還是承認刻意並改 docs。
