@@ -314,7 +314,7 @@ runs one row per pass, and every other step of the loop is unchanged.
    ```
 
    Give it the brief path and the range — never a paste of the session's
-   history. Dispatch it as `subagent_type: fankeel-reviewer`; the model
+   history. Dispatch it as `subagent_type: fankeel:fankeel-reviewer`; the model
    comes from that agent file, not typed by hand here.
 
    **When the user has said, this session, not to dispatch**, the reviewer runs
@@ -338,7 +338,7 @@ runs one row per pass, and every other step of the loop is unchanged.
 
    A finding that is a reference-page correction or a one-line fix with no
    test cycle of its own does not need a fix round at all: dispatch
-   `subagent_type: fankeel-fixer` instead of resuming the task's implementer,
+   `subagent_type: fankeel:fankeel-fixer` instead of resuming the task's implementer,
    never more than two files at once, and re-run whatever check the finding
    named yourself once it returns. A fix that needs its own red-then-green
    cycle still resumes the implementer — `fankeel-fixer` cannot run a test.

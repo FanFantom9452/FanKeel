@@ -103,7 +103,7 @@ page somewhere that still says the old thing, and every reference in it still
 resolves. Name the page and the line.
 
 A false page with nothing else to fix is a fix with no test cycle of its own:
-dispatch `subagent_type: fankeel-fixer` with the page and the exact
+dispatch `subagent_type: fankeel:fankeel-fixer` with the page and the exact
 correction, never more than two files at once. It returns which lines
 changed, and this stage re-runs `docs-check` itself once it returns — a code
 fix that needs its own red-then-green cycle is `build`'s, not this agent's.
@@ -142,7 +142,7 @@ expect it to find: a brief saying a page was less likely to have drifted got
 `no drift` back. Ask the same question of every target, with no ranking among
 them. Never a pasted diff: it lands the whole change in this context, which
 is the cost dispatching exists to avoid.
-Pass `subagent_type: fankeel-reader` and the model explicitly — the profile's
+Pass `subagent_type: fankeel:fankeel-reader` and the model explicitly — the profile's
 `dispatch.floor`, `sonnet` by default. Say how many are going and on which
 model as they go out — a fan-out the user did not see coming is spend they
 were never given the chance to question.
@@ -220,7 +220,7 @@ link between a claim and the evidence beside it rather than at the conclusion.
 
 It gets **paths, never a paste**, and is asked only for the rows it defeats — say
 why, because every line it returns lands here and is re-read on every later turn.
-Dispatch it as `subagent_type: fankeel-reviewer` too — the same agent as
+Dispatch it as `subagent_type: fankeel:fankeel-reviewer` too — the same agent as
 build's per-task reviewer — and let its file pin the model rather than
 typing one here.
 

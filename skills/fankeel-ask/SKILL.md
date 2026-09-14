@@ -67,7 +67,7 @@ the stage produces; it does not approve it.
    what counts as an answer, and the shape the answer should come back in.
    `build/` is already in `.fankeel/.gitignore`, so this adds no new ignored
    name.
-2. **Dispatch it once**, `subagent_type: fankeel-judge`, and read the model
+2. **Dispatch it once**, `subagent_type: fankeel:fankeel-judge`, and read the model
    from the profile's `judge.model` — **never inherited**, the same discipline
    every other dispatch in this plugin carries. `node <plugin>/scripts/task.js
    profile show` prints it. Say how many and on which model in the response

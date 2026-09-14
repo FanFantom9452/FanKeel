@@ -99,7 +99,7 @@ short form, not the only copy.
 `fankeel-reviewer` runs at `model: sonnet`, and answers neither kind of
 question above: it is the shared contract behind plan's reviewer, build's
 per-task reviewer, verify's adversary and audit's code half, all four of which
-dispatch `subagent_type: fankeel-reviewer` instead of writing a model by hand. What tells it apart
+dispatch `subagent_type: fankeel:fankeel-reviewer` instead of writing a model by hand. What tells it apart
 from `fankeel-reader` is not the tool list — both carry the same four — but
 the shape of the question: a reader is asked what a file says, a reviewer
 is asked what a diff, a table or the tree gets wrong — or, when the brief asks

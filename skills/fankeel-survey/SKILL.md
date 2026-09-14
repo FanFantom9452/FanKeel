@@ -220,7 +220,7 @@ answers — so the round buys nothing and costs a turn of their attention.
 - **One lens each**, taken from what the scan named — a subsystem apiece, or a
   term-cluster apiece. Not a fixed list.
 - **Tell each one what is already known**, so it returns only what is new.
-- **`subagent_type: fankeel-reader`, model the profile's `dispatch.floor`.**
+- **`subagent_type: fankeel:fankeel-reader`, model the profile's `dispatch.floor`.**
   Pass it explicitly; an omitted one inherits this session's, and `sonnet` is
   the default when the profile says nothing.
 - **Compare the returns against each other**, not just one by one. Agents

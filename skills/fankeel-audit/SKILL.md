@@ -70,7 +70,7 @@ A dead path is a bug in a reference document and history in an archive.
 why the injected rule no longer says so: the script holds it.
 
 A dead reference or a stale quote with no test of its own is exactly this
-kind of fix: dispatch `subagent_type: fankeel-fixer` with the page and the
+kind of fix: dispatch `subagent_type: fankeel:fankeel-fixer` with the page and the
 correction, never more than two files at once, and re-run `docs-check`
 yourself once it returns.
 
@@ -161,7 +161,7 @@ So dispatch it: one reader per pair, **several in one response** so they run at
 once, each told the file they share and asked which page the code supports. Four
 in one response is the ceiling — the fankeel skill's *Dispatch by default, never
 the filtering* says why, and pairs past that are one reader with a list. Pass
-`subagent_type: fankeel-reader` and the model explicitly — `sonnet` is the
+`subagent_type: fankeel:fankeel-reader` and the model explicitly — `sonnet` is the
 floor — and compare what comes back
 against itself before acting, because readers dispatched from one prompt make
 correlated mistakes. Say how many are going and on which model as they go out:

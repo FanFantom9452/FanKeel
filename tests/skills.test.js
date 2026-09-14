@@ -1098,7 +1098,7 @@ test('fankeel: the gate table names the judgement record option one relies on', 
 test('fankeel-ask: the skill carries the whole procedure, and the main skill no longer does', () => {
   const body = read('fankeel-ask');
   assert.match(body, /-<slug>-brief\.md/, 'the skill does not name the brief path');
-  assert.match(body, /subagent_type: fankeel-judge/, 'the skill does not name subagent_type');
+  assert.match(body, /subagent_type: fankeel:fankeel-judge/, 'the skill does not name subagent_type');
   assert.match(body, /judge\.model/, 'the skill does not name the profile key for its model');
   assert.match(body.replace(/\s+/g, ' '),
     /judge\.js record --session <id> --brief <path> --answer - --slug <slug> --model <m>/,
@@ -1172,20 +1172,20 @@ test('fankeel-verify: a cost or count figure requires one unpiped command output
 // checks the contract everywhere it is repeated.
 test('fankeel-verify: a false page with no test of its own goes to fankeel-fixer', () => {
   const flat = read('fankeel-verify').replace(/\s+/g, ' ');
-  assert.match(flat, /subagent_type: fankeel-fixer/);
+  assert.match(flat, /subagent_type: fankeel:fankeel-fixer/);
   assert.match(flat, /never more than two files at once/);
   assert.match(flat, /re-runs `docs-check` itself once it returns/);
 });
 
 test('fankeel-audit: a dead reference with no test of its own goes to fankeel-fixer', () => {
   const flat = read('fankeel-audit').replace(/\s+/g, ' ');
-  assert.match(flat, /subagent_type: fankeel-fixer/);
+  assert.match(flat, /subagent_type: fankeel:fankeel-fixer/);
   assert.match(flat, /never more than two files at once/);
 });
 
 test('fankeel-build: a no-test fix goes to fankeel-fixer instead of a resumed implementer', () => {
   const flat = read('fankeel-build').replace(/\s+/g, ' ');
-  assert.match(flat, /subagent_type: fankeel-fixer/);
+  assert.match(flat, /subagent_type: fankeel:fankeel-fixer/);
   assert.match(flat, /never more than two files at once/);
   assert.match(flat, /fankeel-fixer` cannot run a test/);
 });
