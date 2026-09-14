@@ -166,9 +166,10 @@ it contains, send one of two rows recording the same range, send both where
 they cross because no single range names their union, and treat a range git
 could not read back as unverified rather than as disjoint. Where it finds none
 of that, **the verifiers go out in one response** — four is still the ceiling,
-and a plan of six goes four then two. Dispatch it as `subagent_type:
-fankeel-verifier`; the model comes from that agent file, not typed by hand
-here. Say how many and on which model in the response that sends them.
+and a plan of six goes four then two. Dispatch it as
+`subagent_type: fankeel:fankeel-verifier`; the model comes from that agent
+file, not typed by hand here. Say how many and on which model in the response
+that sends them.
 
 Give each one its range, the task's text from the plan, and the path to
 `.fankeel/map.md`. Never a paste of the session's history, and never the diff:

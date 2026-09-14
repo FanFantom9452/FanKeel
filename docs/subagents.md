@@ -105,7 +105,7 @@ the shape of the question: a reader is asked what a file says, a reviewer
 is asked what a diff, a table or the tree gets wrong — or, when the brief asks
 for cuts, what it could lose — and it returns only what it defeats and those
 cuts. It is one of two dispatches where nobody types a model at all —
-`fankeel-verifier` is the other: `skills/fankeel-verify/SKILL.md:170`, `not typed by hand`,
+`fankeel-verifier` is the other: `skills/fankeel-verify/SKILL.md:171`, `not typed by hand`,
 and it was added on the same branch as this sentence —
 so the file's pin is the only floor — the literal `sonnet`, not `dispatch.floor`,
 which nothing in `agents/` or `hooks/` reads: `SubagentStart`'s payload
@@ -127,7 +127,7 @@ it every single time, and it is worth it even when nothing else about the
 delegation changes.
 
 The brief is capped, and the cap is a test rather than a habit:
-`tests/brief.test.js:126`, `assert.ok(text.length < 1400`. Measured 2026-09-11
+`tests/brief.test.js:133`, `assert.ok(text.length < 1400`. Measured 2026-09-11
 against that test's own seed, the rendered brief is 1,098 characters — 823 before
 the working-tree rule was added to `RETURN_RULES`. A `TODO.md` entry carried 777
 as the figure until it closed on 2026-09-11; it matched nothing, in the code or

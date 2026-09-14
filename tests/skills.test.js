@@ -1095,6 +1095,28 @@ test('fankeel: the gate table names the judgement record option one relies on', 
 // there in full, and the main skill no longer carries a second copy of it.
 // Asserting only the first would pass a repository where both exist, which is
 // the state this move was made to leave behind.
+// A bare `subagent_type: fankeel-<name>` is refused: on 2026-09-14, Claude Code
+// 2.1.270 answered `Agent type 'fankeel-reader' not found` and listed
+// `fankeel:fankeel-reader` among the available ones. Eleven sites were fixed by
+// a line-oriented replacement and a twelfth survived it, split across a hard
+// wrap, so this reads the whitespace-normalised text the way a model does.
+test('every subagent_type a skill names carries the plugin prefix', () => {
+  const files = names.map((n) => [path.join('skills', n, 'SKILL.md'), read(n)]);
+  files.push(['docs/subagents.md', fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8')]);
+  const bare = [];
+  let prefixed = 0;
+  for (const [rel, body] of files) {
+    const re = /subagent_type: `?(fankeel:)?(fankeel-[a-z]+)/g;
+    let m;
+    while ((m = re.exec(body.replace(/\s+/g, ' '))) !== null) {
+      if (m[1]) prefixed += 1;
+      else bare.push(rel + ' — ' + m[2]);
+    }
+  }
+  assert.deepEqual(bare, [], 'these dispatch sites name an agent the Agent tool refuses');
+  assert.equal(prefixed, 12, 'every dispatch site in the skills and in docs/subagents.md is prefixed');
+});
+
 test('fankeel-ask: the skill carries the whole procedure, and the main skill no longer does', () => {
   const body = read('fankeel-ask');
   assert.match(body, /-<slug>-brief\.md/, 'the skill does not name the brief path');

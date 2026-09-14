@@ -105,6 +105,13 @@ test('a judge is told it answers once', () => {
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel-judge' })));
   assert.match(text, /Answer once\. The parent will not message you again/);
   assert.doesNotMatch(contextOf(run(root, start(root, { agent_type: 'Explore' }))), /Answer once/);
+  // What the hook receives is the type as dispatched, and every skill dispatches
+  // the judge as `fankeel:fankeel-judge` — the bare form above is what the
+  // comparison used to match, and matching only that is how the line went
+  // missing. docs/reports/2026-09-11-hook-payload-probe.md measured the prefix.
+  assert.match(contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-judge' }))),
+    /Answer once\. The parent will not message you again/,
+    'the prefixed type is what a real dispatch sends');
 });
 
 test('a payload with no session id says nothing', () => {
