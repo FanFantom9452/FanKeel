@@ -420,9 +420,13 @@ test('windowTotals and the four readouts: thirty days against the thirty before,
     assert.doesNotMatch(html, /\$99|\$198/);
     assert.match(html, /18\.8<span class="u">%<\/span>/);
     assert.match(html, /-31\.3 pt/);
-    assert.deepEqual([...html.matchAll(/<div class="ro"><div class="l">(.*?)<\/div>/g)].map((m) => m[1]),
+    const cells = [...html.matchAll(/<div class="ro"><div class="l">(.*?)<\/div><div class="v">(.*?)<\/div><div class="d">(.*?)<\/div><\/div>/g)];
+    assert.deepEqual(cells.map((m) => m[1]),
         ['30 天花費', 'token', 'active 時間', '<i class="hatchsw"></i>等待佔比'],
         'every readout carries its own label, and nothing else, in the label cell');
+    assert.deepEqual(cells.map((m) => [/class="delta/.test(m[2]), /class="delta/.test(m[3])]),
+        [[false, true], [false, true], [false, true], [false, true]],
+        'each one keeps the figure in the value cell and the comparison in the line under it');
     assert.match(html, /30 天花費<\/div><div class="v">\$8\.50<\/div><div class="d">/,
         'the spend readout puts the figure in the value cell and the comparison under it');
     assert.match(html, /等待佔比<\/div><div class="v">18\.8<span class="u">%<\/span><\/div><div class="d">[^<]*<span class="delta[^>]*>[^<]*-31\.3 pt/,
