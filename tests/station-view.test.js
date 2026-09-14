@@ -429,6 +429,8 @@ test('windowTotals and the four readouts: thirty days against the thirty before,
         'each one keeps the figure in the value cell and the comparison in the line under it');
     assert.match(html, /30 天花費<\/div><div class="v">\$8\.50<\/div><div class="d">/,
         'the spend readout puts the figure in the value cell and the comparison under it');
+    assert.match(html, /token<\/div><div class="v">43k<\/div>/, 'the token readout reads this window, not the one before it');
+    assert.match(html, /active 時間<\/div><div class="v">2\.4h<\/div>/, 'so does active 時間');
     assert.match(html, /等待佔比<\/div><div class="v">18\.8<span class="u">%<\/span><\/div><div class="d">[^<]*<span class="delta[^>]*>[^<]*-31\.3 pt/,
         'so does the waiting share');
     const none = V.kpiHtml(cur, V.windowTotals(HOME, V.lastDays(NOW - 60 * 864e5, 30)));
