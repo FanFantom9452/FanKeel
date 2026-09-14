@@ -558,6 +558,13 @@ test('timelineSvg hatches each wait with its length, colours a tick per request,
     assert.match(svg, /data-wf="wf-1"/);
     assert.match(svg, />impl:b</);
     assert.doesNotMatch(V.timelineSvg(m, { 'wf-1': true }), />impl:b</, 'a closed workflow hides its agents');
+    assert.match(svg, />sonnet-5 · 218k tok · \$0\.19 · 回傳 6,400 字元<\/text>/, 'an agent bar names its model, tokens and cost');
+    assert.match(svg, />sonnet-5 · 889k tok · \$0\.61<\/text>/, 'so does an agent inside a workflow');
+    const ctx = svg.match(/<path d="([^"]+)" style="fill:none;stroke:var\(--ctx\)/);
+    assert.ok(ctx, 'the context line is drawn');
+    const ticks = [...svg.matchAll(/<rect class="rq" x="([\d.]+)"/g)].map((q) => +q[1] + 0.75);
+    assert.deepEqual([...ctx[1].matchAll(/[ML]([\d.]+),/g)].map((v, i) => Math.abs(+v[1] - ticks[i]) < 0.11), [true, true, true],
+        'the context line puts each request where its tick is, on one time axis');
 });
 
 test('costModel lays a session\'s days out stage by model, subtotals main and agent, and totals', () => {
