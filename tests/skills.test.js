@@ -231,12 +231,10 @@ test('every stage skill states when it is done', () => {
 // SKILL.md and the reasons in a rationale.md beside it, under the same headings,
 // so a reader looking for the why of a section finds it under the section's own
 // name — a human reader, opening files. A model handed the skill by invoking it
-// does not: 0 of 4 followed the link, measured 2026-09-15, one of them after its
-// own grep had named the file. So what is asserted below is that the pointer is
-// well formed, never that anything follows it, and these tests stay green while
-// the thing they exist for does not happen. Whether that is fixed by folding the
-// rationale back in, by injecting it, or by accepting it is an open decision in
-// TODO.md. The other four stage skills have no rationale to move — measured
+// does not: 0 of 4 followed the link, measured 2026-09-15. So what is asserted
+// below is that the pointer is well formed, never that anything follows it, and
+// these tests stay green while the thing they exist for does not happen — an
+// open decision in TODO.md. The other four stage skills have no rationale to move — measured
 // 2026-09-05, design, verify and land carry none and survey carries 25 lines of
 // 266 — so they are not in this list, and adding one is a design decision.
 const SPLIT = ['fankeel-build', 'fankeel-plan', 'fankeel-audit'];

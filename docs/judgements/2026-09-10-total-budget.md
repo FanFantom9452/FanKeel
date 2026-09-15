@@ -31,7 +31,7 @@ stage: design
 - `docs/improvement-brief.md:83` — 提案的欄位清單
 - `docs/improvement-brief.md:111` — 那份簡報自己對這一項的評語
 - `docs/improvement-brief.md:542` — 同上，另一處
-- `docs/decisions/2026-09-10-todo-ten.md:72` — 這一項當時被刻意延後的紀錄
+- `docs/decisions/2026-09-10-todo-ten.md:76` — 這一項當時被刻意延後的紀錄
 - `skills/fankeel/SKILL.md` 的 While the mode is on 一節 — 「long on purpose and
   will get longer」，說注入區塊唯一的界線是「是否還會被讀到底」
 

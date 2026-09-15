@@ -206,10 +206,10 @@ dispatch-out-<arm>.jsonl when they were copied in, so that they would not
 collide with the deny probe's own out-*.jsonl. Run as shipped it printed NO
 TRANSCRIPT five times and exited 1. Verify graded section 2 by copying the five
 files into a scratch directory under the names the grader expects, and got the
-five verdicts the report states, control included. The grader is being taught
-both prefixes so that the next reader can re-run it here, in place, which is
-what an evidence directory is for. The transcripts are not renamed: their
+five verdicts the report states, control included. The grader was then taught both
+prefixes, so that the next reader can re-run it here, in place, which is what an
+evidence directory is for; it now exits 0 there and prints the same five verdicts. The transcripts are not renamed: their
 current names are what every other file in this directory already refers to.
 
-The other five defeated rows are documentation, and are recorded in the report
-and in the pages themselves.
+The remaining five defeated rows are prose, and were corrected in the report and
+in the pages themselves across the same two commits.

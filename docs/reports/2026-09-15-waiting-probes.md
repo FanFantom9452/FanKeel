@@ -67,7 +67,7 @@ source_of_truth: 五次探測的直接輸出，全部在 `docs/reports/evidence/
 
 **答案：被注入的技能本體裡，連結不會被跟。**
 
-範圍就到這裡，不能再寬，這是 verify 補上的。這四次都是**呼叫技能**——本體以注入的 `user` text 區塊到達模型手上。另一種設定沒有測：把 `SKILL.md` 的**路徑**交給一個 reader，讓它自己去開。那種情況下打開旁邊的檔案是再平常不過的動作，`docs/decisions/fankeel-shell.md:479` 記的正是那一種，寫著 2 of 2。那個數字在 repo 裡沒有任何逐字記錄——09-05 那次拆技能沒有 `docs/reports/evidence/` 目錄，`.fankeel/build/2026-09-05-skill-split/` 的四份 verify 檔也沒有一份記了它。所以兩個數字不衝突：它們問的不是同一件事，而且只有這一邊留了證據。
+範圍就到這裡，不能再寬，這是 verify 補上的。這四次都是**呼叫技能**——本體以注入的 `user` text 區塊到達模型手上。另一種設定沒有測：把 `SKILL.md` 的**路徑**交給一個 reader，讓它自己去開。那種情況下打開旁邊的檔案是再平常不過的動作，`docs/decisions/fankeel-shell.md:479-482` 記的正是那一種，寫著 2 of 2。那個數字在 repo 裡沒有任何逐字記錄——09-05 那次拆技能沒有 `docs/reports/evidence/` 目錄，`.fankeel/build/2026-09-05-skill-split/` 的四份 verify 檔也沒有一份記了它。所以兩個數字不衝突：它們問的不是同一件事，而且只有這一邊留了證據。
 
 而且不是「沒想到要去開」。`link-sonnet-1.jsonl` 那次先 grep 了一下：`tool_use.input` 的 `pattern` 是 `triples`，`path` 是 `F:\ymlab\fankeel\skills\fankeel-build`。`tool_result` 的 `content` 兩行逐字是：
 

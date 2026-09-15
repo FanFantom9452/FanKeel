@@ -120,7 +120,7 @@ BASE 由 `git rev-parse HEAD` 取到對話裡（`skills/fankeel-build/SKILL.md:1
 
 **B6 [medium，條件式] fork 若保留 session id，guard、carry、inject 都用 id 排除自己，兩個活程序共用一份紀錄且互相隱形。**
 `hooks/guard.js:45`、`hooks/carry.js:66`、`hooks/inject.js:148` 都以 `sessionId !== 自己` 篩掉同伴；registry 以 id 命名（`lib/registry.js:117`），紀錄不帶 pid（`scripts/task.js:505-508`）。`scripts/task.js:566` 無條件寫 `d.stage`，`lib/registry.js:413` 以共用紀錄當下的 `stage` 記 clock，`:466-469` 的 `gateAt` 不檢查既有 stamp，全部 last-writer-wins；`withLock`（`:293`）防撕裂寫入，不做衝突偵測。`lib/live.js:71-77` 丟掉了「兩個活 pid 帶同一個 sessionId」這個既能回答問題又能修它的訊號。
-已承認：`docs/collisions.md:155-164` 宣告同 id 互不可見，但只對 subagent 講，那裡有補償控制（disjoint `**Files:**`、parent staging）。`docs/decisions/fankeel-shell.md:517-521` 只為 carry.js 的 orphan offer 討論 fork。`lib/registry.js:5` 的「no session ever writes another's」是 per id 不是 per owner。
+已承認：`docs/collisions.md:155-164` 宣告同 id 互不可見，但只對 subagent 講，那裡有補償控制（disjoint `**Files:**`、parent staging）。`docs/decisions/fankeel-shell.md:526-530` 只為 carry.js 的 orphan offer 討論 fork。`lib/registry.js:5` 的「no session ever writes another's」是 per id 不是 per owner。
 最小修法：先量一次 fork 換不換 id；若不換，修飾 `registry.js:5` 那句，把「What is still a guess」的條目從 carry.js 擴到所有 writer。
 
 ### C. hook 層

@@ -67,6 +67,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
+- 〔docs〕兩條引用指到不相干的內容，改文件前就如此：`docs/judgements/2026-09-10-total-budget.md:34`、`docs/reports/2026-09-02-process-state-review.md:123` — [docs/documents.md](docs/documents.md).
+
 ## Needs a decision
 
 - 〔subagent〕Agent 的 `fork` 繼承整份 context、忽略 model 覆寫，和派工要縮 context、壓 `sonnet` 底線正面衝突（跟 SessionStart 那個 `fork` 不同東西） — [docs/subagents.md](docs/subagents.md). 待決：寫成明文不用、還是留白。
