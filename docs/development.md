@@ -118,8 +118,8 @@ returns `import[badgeWord] ⎆ ✓`; `knip --trace-export clearBadge`, reached a
 `badge.clearBadge`, returns `(no imports found) ✗` — and `scripts/task.js:127`
 and `hooks/inject.js:120` call it. The shape is not rare here: counting lines
 under `tests/` that bind a module from `../lib/`, `../scripts/` or `../hooks/`
-to a plain identifier rather than destructuring it gives 53 lines across 38 of
-the 73 test files, against 35 destructured lines across 26. `TODO.md` carries
+to a plain identifier rather than destructuring it gives 60 lines across 40 of
+the 74 test files, against 35 destructured lines across 26. `TODO.md` carries
 what would lift the exclusion.
 
 **A green run has to be able to go red.** An `ignore` wide enough to silence 228

@@ -406,9 +406,10 @@ root separates on its own and always did.
 right — whose height switches between tokens, dollars and time and whose
 segments switch between model, project, stage and main session against
 agent; time has no model, so that pairing is disabled and says why. Five
-cards above it compare the last 30 days with the 30 before them — four of
-them the window's spend, tokens, active time and waiting ratio, the fifth
-naming the option-one gate wording most often swapped for another answer,
+cards sit above it. Four of them compare the last 30 days with the 30
+before them — the window's spend, tokens, active time and waiting ratio —
+and the fifth does not compare windows at all: it
+names the option-one gate wording most often swapped for another answer,
 `最常被換掉`, with how many times out of how many it was asked beneath it
 (`lib/station.js:431`, `function gateSummary(model, hidden) {`;
 `assets/station/station.js:377`, `roHtml('最常被換掉'`). Unlike the other

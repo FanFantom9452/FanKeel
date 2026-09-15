@@ -149,7 +149,8 @@ the palette, both config formats and what each colour is doing are in
 [docs/statusline.md](docs/statusline.md).
 
 Every session this machine has run, live or abandoned or stood down, is one page:
-the station. `node scripts/station.js --open` opens the newest, and `serve` in
+the station — less any project whose profile sets `station.hide`, which appears
+on no row, in no total and in no detail file. `node scripts/station.js --open` opens the newest, and `serve` in
 place of that is the live form — [docs/station.md](docs/station.md).
 
 ## The three scanners

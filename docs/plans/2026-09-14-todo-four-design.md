@@ -65,7 +65,12 @@ session** 取整，整個 session 被過濾掉它根本看不到。設計初稿�
   的 session 不進 `serialize()` 的 `sessions`。pkey 的算法是既有的
   `lib/station.js:446` `s.project ? s.root + '/' + s.project : s.root`。
 - 判斷「這個 pkey 被藏了嗎」寫成 `lib/station.js` 匯出的一個函式，所有過濾點都呼叫
-  它。CONTRIBUTING 的 Scope 表要求 `lib/` 不得反向依賴 `scripts/` 或 `hooks/`，而同
+  它 —— **落地後有一處例外，記在這裡**：`serialize()` 的 profile 迴圈
+  （`lib/station.js:481`，`if (values && values['station.hide'] === true) continue;`）
+  內嵌同一個判斷，因為那個迴圈的鍵是 `r.profiles` 的原始目錄路徑，而這個函式回的是
+  正斜線 pkey，拿 pkey 去比原始目錄永遠不中。它不是同一個判斷的第二份，是同一條規則
+  在另一種鍵上的寫法；`tests/station-hide.test.js` 的檔頭與 `docs/station.md` 都把它
+  說出來。CONTRIBUTING 的 Scope 表要求 `lib/` 不得反向依賴 `scripts/` 或 `hooks/`，而同
   一個判斷寫兩份就是兩份會分岔的判斷。`scripts/station.js` 只有 `--json` 那一處直接
   呼叫；文字回覆讀 `write()` 回傳的計數，因為 `:743` 的 `const out = station.write(...)`
   之後 model 不在那個 scope 裡。
@@ -168,7 +173,7 @@ session** 取整，整個 session 被過濾掉它根本看不到。設計初稿�
 | test | 現在 | 改完 |
 |---|---|---|
 | `tests/guard.test.js` 新測試：`agent_type` 唯讀、無 `agent_id`、指令寫檔 | 紅 —— `hooks/guard.js:45` 擋下 | 綠 |
-| `tests/profile.test.js` 新測試：`station.hide` 設 `'true'` 後 `flatten()` 不回那個 pkey 的 session | 紅 —— `parseValue` 回 `unknown key` | 綠 |
+| `tests/profile.test.js` 新測試：`station.hide` 設 `'true'` 存得進去、設別的值被拒。`flatten()` 不回那個 pkey 的 session 這半落在 `tests/station-hide.test.js`，不在 `profile.test.js` —— 那裡不 require `lib/station.js` | 紅 —— `parseValue` 回 `unknown key` | 綠 |
 | `tests/replay.test.js` 新測試：gate 事件帶 `labels`，`q` 在 121 到 240 字之間不被截 | 紅 —— `:118` 截在 120 且不存 labels | 綠 |
 | `tests/inventory.test.js` 既有的「skills/ holds exactly the known directories」 | 綠 | 加了目錄與陣列條目後仍綠 |
 | 整個 `node --test` 套件 | 綠 | 綠 |

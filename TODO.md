@@ -69,6 +69,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Needs a decision
 
+- 〔fankeel〕每個 stage 與每次問使用者都該留下可回看的紀錄：現在只有 `moves` 的 `[stage, at]` 與 `burn`/`clock` 的數字 — [docs/registry.md](docs/registry.md). 待決：放 registry 還是資料檔、gate 存問題與選項還是只存結果、與下面 stage 紀錄那條合併還是各自做。
+
 - 〔plan〕被派工的任務步驟寫「跑 `node --test`，全綠」，但 brief footer 只准跑自己那支，footer 贏 —— 本計畫 Task 5 因此漏了七個檔 — [skills/fankeel-plan/SKILL.md](skills/fankeel-plan/SKILL.md). 待決：footer 放寬、步驟改口、還是 Files block 規則要求宣告那些檔。
 
 - 〔station〕stage 的紀錄只剩數字：`moves` 存 `[stage, at]`，`burn`/`clock` 存 token 與毫秒，回看不出為何這樣走 — [docs/station.md](docs/station.md). 待決：跳階與 reroute 的理由存不存、存 registry 還是資料檔、合成一頁還是掛 session 詳情。
