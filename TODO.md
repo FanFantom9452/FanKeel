@@ -69,6 +69,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Needs a decision
 
+- 〔subagent〕Agent 的 `fork` 繼承整份 context、忽略 model 覆寫，和派工要縮 context、壓 `sonnet` 底線正面衝突（跟 SessionStart 那個 `fork` 不同東西） — [docs/subagents.md](docs/subagents.md). 待決：寫成明文不用、還是留白。
+
 - 〔survey〕Grep 慢的不是搜尋是回傳：442 檔全庫 0.099 秒，吐回 196KB。`survey.js` 有 25 列上限，reader 直接用 Grep 工具繞過它 — [scripts/survey.js](scripts/survey.js). 待決：reader 改走 survey.js、Grep 加回傳上限、還是縮 `docs/archive`。
 
 - 〔fankeel〕每個 stage 與每次問使用者都該留下可回看的紀錄：現在只有 `moves` 的 `[stage, at]` 與 `burn`/`clock` 的數字 — [docs/registry.md](docs/registry.md). 待決：放 registry 還是資料檔、gate 存問題與選項還是只存結果、與下面 stage 紀錄那條合併還是各自做。
