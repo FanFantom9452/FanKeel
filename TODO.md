@@ -75,6 +75,14 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔station〕stage 的紀錄只剩數字：`moves` 存 `[stage, at]`，`burn`/`clock` 存 token 與毫秒，回看不出為何這樣走 — [docs/station.md](docs/station.md). 待決：跳階與 reroute 的理由存不存、存 registry 還是資料檔、合成一頁還是掛 session 詳情。
 
+- 〔subagent〕per-`agent_type` 的 brief：`lib/render.js:363` 已給 `fankeel-judge` 一行別人沒的規則，1189 對 1045 字元 — [lib/render.js](lib/render.js). 待決：每 type 一段、只留這特例、或改按能力宣告。
+
+- 〔docs〕fence 裡的 fixture 路徑被當成沒交付，記錄這 quirk 的兩個 todo-thirteen 檔自己卡在 landed 外 — [scripts/docs-audit.js](scripts/docs-audit.js). 待決：fence 不算、加 `fixture:`、或只認 Files block。
+
+- 〔docs〕`docs/improvement-brief.md` 沒有 `status:` 鍵，`lib/docs.js` 把缺鍵當成宣稱現況，backlog 被當 live reference — [docs/documents.md](docs/documents.md). 待決：標 design-intent、搬 reports/、或缺鍵改成失敗。
+
+- 〔eval〕eval 進 CI 的阻礙沒了：2026-09-15 空目錄探測回 `No eval cases found`，early access 已開 — [docs/evals.md](docs/evals.md). 待決：threshold 訂多少（`route-typo` 三次 2/3、3/3、1/3）、只跑 push main、還是等分數穩。
+
 ## Waiting
 
 - 〔build〕knip 的 unused exports 一格關著：6.32.2 認不得 CJS namespace 取用，開著回 146 個假陽性 — [docs/development.md](docs/development.md). lifts when: knip 認得 CJS namespace property access. 09-13.
@@ -83,15 +91,9 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - Language patterns beyond the ten [scripts/survey.js](scripts/survey.js) knows. Anything else is listed under `skipped.noPattern` for a human. lifts when: a repository needs an eleventh. 09-14.
 
-- A per-`agent_type` subagent brief — [lib/render.js](lib/render.js) appends the type as a label. Two compared 09-04, byte-identical. lifts when: two types' briefs are seen to differ. 09-06.
-
 - Whether `fanoutSync`'s payload costs anything: a 64MB overflow discards every answer and re-reads all thirty serially — [lib/tracked.js](lib/tracked.js). lifts when: one is observed. 09-14.
 
-- `docs-audit` reads a fixture path in a code block as a deliverable — [scripts/docs-audit.js](scripts/docs-audit.js). lifts when: a second plan is held back by it. 09-07.
-
-- 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；fankeel 真正的阻礙是 hook 為 Claude Code 專屬 — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多). lifts when: 確認另一個 host 有等價 UserPromptSubmit 的 hook. 09-08.
-
-- eval 進 CI：`.github/workflows` 一條，只在 push main 且限 skills/、evals/、manifest；永遠紅的 workflow 是噪音，所以等 — [docs/evals.md](docs/evals.md). lifts when: 本機 `claude plugin eval` 不再回 early access. 09-08.
+- 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；fankeel 真正的阻礙是 hook 為 Claude Code 專屬 — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多). lifts when: 確認另一個 host 有等價 UserPromptSubmit 的 hook. 09-15.
 
 - 五個 `lib/*.js` 沒有任何 reference-role 頁面點名：`fanout.js`、`hook.js`、`report.js`、`skills.js`、`tracked.js`；另外 20 個都有 — [docs/documents.md](docs/documents.md). lifts when: docs-audit 學會報未被點名的模組. 09-09.
 

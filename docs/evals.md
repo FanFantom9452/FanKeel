@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-11
+last_verified: 2026-09-15
 source_of_truth: scripts/eval.js, lib/eval.js, evals/route-typo/case.yaml
 ---
 
@@ -10,10 +10,13 @@ One case in the layout `claude plugin eval` reads, a runner beside it that works
 without early access, and the six ways an operator's own machine can leak into a
 run.
 
-`evals/<case>/` holds cases in the layout `claude plugin eval` reads. That
-command is early access — run it in an empty directory: "currently in early
-access" means not enabled here, "No eval cases found" means it is. Either way
-the same case runs today on this tree:
+`evals/<case>/` holds cases in the layout `claude plugin eval` reads. Whether
+this machine has it is read in an empty directory: "currently in early access"
+means not enabled here, "No eval cases found" means it is. On 2.1.272 a
+non-interactive run stops at a trust gate before it answers either way, so the
+probe needs `--trust-plugin` to get that far — and on 2026-09-15 it answered
+`No eval cases found`, so it is enabled here. The runner below needs none of
+that, and runs the same case on this tree:
 
     node scripts/eval.js evals/route-typo --model sonnet
 

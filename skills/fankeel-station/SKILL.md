@@ -4,7 +4,7 @@ description: Run the station as a live server — every fankeel session on this 
 version: 0.67.0
 status: current
 last_verified: 2026-09-15
-source_of_truth: scripts/station.js
+source_of_truth: scripts/station.js, docs/station.md
 ---
 
 # fankeel-station
