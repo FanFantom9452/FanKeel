@@ -46,7 +46,15 @@ function toolsIn(file) {
 
 const seen = {};
 for (const arm of ARMS) {
-    const r = toolsIn(path.join(dir, 'out-' + arm + '.jsonl'));
+    // Two names, because the transcripts carry one in each place they live:
+    // `dispatch-out-<arm>.jsonl` here in the evidence directory, where they were
+    // prefixed so as not to collide with the deny probe's own `out-*.jsonl`, and
+    // `out-<arm>.jsonl` in the throwaway directory probe-dispatch.sh wrote them
+    // to. Graded from the second and shipped beside the first, this opened
+    // neither and printed NO TRANSCRIPT five times -- a grader that cannot read
+    // its own evidence is one nobody re-runs.
+    const r = toolsIn(path.join(dir, 'dispatch-out-' + arm + '.jsonl'))
+        || toolsIn(path.join(dir, 'out-' + arm + '.jsonl'));
     if (!r) { console.log(arm.padEnd(11) + 'NO TRANSCRIPT'); continue; }
     const dispatched = r.names.filter((n) => DISPATCH.has(n));
     seen[arm] = { dispatched, names: r.names, refusal: r.refusal };
