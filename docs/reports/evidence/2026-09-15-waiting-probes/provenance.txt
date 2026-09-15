@@ -94,3 +94,33 @@ Ruled on, not fixed:
     Declined. These scripts are the evidence of how the runs were made; refactoring them
     afterwards leaves a committed script that is not the one that produced the
     transcripts beside it. The cuts are real and would be right in source. Not here.
+
+## round two
+
+A second fankeel-reviewer read 1ab5830..a78df99 with one named target: whether each of the
+five deleted `## Waiting` entries corresponds to a question the evidence actually answers.
+
+It found all five justified, and made the argument the report does not: two of the five had
+events that the probes did not satisfy as worded -- the --allowedTools entry's event
+presupposed that one spelling opens the tool, and the rationale-link entry's event was
+phrased as "confirms the link IS followed". Neither literal proposition came true. Deleting
+both was still right, because `## Waiting` means waiting on something that is not a person.
+Once a probe returns a firm mechanism -- including one that falsifies the entry's own
+premise -- the thing being waited on is a person's choice among named options, which is
+`## Needs a decision`. Rewording and keeping them in Waiting would have left settled
+questions labelled as pending.
+
+Its one defect finding: $2.8749 for stage-skip-said should be $2.8748. The five costUsd
+values sum to 2.8747925; the report had summed the five four-decimal figures the .txt
+prints instead of the raw ones. Fixed, along with the total ($5.1716 -> $5.1714) and an
+internal inconsistency it did not catch: the prose still said $6.5 and "超支 $2.5" after the
+table had been corrected to $6.4.
+
+The reviewer's own correction repeated the same mistake in the other direction -- it gave
+the total as $5.1715, which is 1.6204 + 2.8748 + 0.6763, three already-rounded numbers. The
+raw sum is $5.1714. Both errors have one cause, and the report now states the method next to
+the table: every figure comes from cost.costUsd and total_cost_usd, never from the .txt.
+
+Not re-run for this round: npm test. The round-two fix changes one markdown file and this
+one; no source under test was touched, and the suite was green twice earlier on this branch
+(1475/1475, both times).

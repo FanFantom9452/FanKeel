@@ -65,7 +65,8 @@ source_of_truth: 五次探測的直接輸出，全部在 `docs/reports/evidence/
 
 **答案：連結不會被跟。**
 
-而且不是「沒想到要去開」。`link-sonnet-1.jsonl` 那次先 grep 了一下，`Grep{pattern: "triples", path: ".../skills/fankeel-build"}` 回的是 `Found 1 file  skillsankeel-buildationale.md`——模型自己的工具告訴它答案就在那個檔裡。它接著寫的是：
+而且不是「沒想到要去開」。`link-sonnet-1.jsonl` 那次先 grep 了一下，`Grep{pattern: "triples", path: ".../skills/fankeel-build"}` 回的是 `Found 1 file  skillsankeel-build
+ationale.md`——模型自己的工具告訴它答案就在那個檔裡。它接著寫的是：
 
 > NEEDLE NOT FOUND
 > The word `triples` doesn't appear in the fankeel-build skill body itself — it only exists in `rationale.md`, which the skill links to but did not inline into the material made available here.
@@ -135,15 +136,19 @@ TODO 那條寫：「四個例外 case 裡唯一的真訊號，但 n=1 分不出 
 | | | 來源 |
 |---|---|---|
 | `route-typo` ×5，sonnet | $1.6204 | 量到的，`eval-route-typo.json` 每次的 `cost.costUsd` |
-| `stage-skip-said` ×5，opus | $2.8749 | 量到的，同上 |
+| `stage-skip-said` ×5，opus | $2.8748 | 量到的，同上。原始值 2.8747925——把 `.txt` 印出的五個四位數相加會得到 2.8749 |
 | 三支探測留下的 15 次跑動 | $0.6763 | 量到的，各 `*.jsonl` 取 `result` 行 `total_cost_usd` 的**單檔最大值**——`dispatch-out-{agent,none,task}.jsonl` 三份各把同一個值記了兩次，直接加總會多算 $0.0906 |
 | `rmSync` EPERM 白跑的兩次 | 約 $0.88 | 估的。各付了一次，用同一個 case 的單次均價 |
 | dispatch 探測前兩輪的 8 次 | 約 $0.36 | 估的。transcript 被第三輪覆寫了，用第三輪 haiku 的單次均價 |
-| **合計** | **約 $6.4** | 前三列量到的共 $5.1716，後兩列估的共約 $1.24 |
+| **合計** | **約 $6.4** | 前三列量到的共 $5.1714，後兩列估的共約 $1.24 |
 
-design 的 gate 上說的是約 $4，實際約 $6.5。超支 $2.5，拆開來三塊，白跑只是最小的一塊：
+上表每一格都是從 `.json` 的 `cost.costUsd` 與 `.jsonl` 的 `total_cost_usd` **原始值**算的，不是從 `.txt` 印出來的四位數。兩者會差：`stage-skip-said` 五次的顯示值相加是 $2.8749，原始值相加是 $2.8748；三列合計的顯示值相加是 $5.1715，原始值是 $5.1714。這份報告為此錯過一次，指出它的審查在寫更正時又犯了同一次，所以方法寫在這裡。
 
-- **$1.62 是我在 gate 上沒算的。** 那句話只點名了「opus 五次約 $2.8」，`route-typo` 的五次 sonnet 一次都沒被報價。opus 那半反而準：估 $2.8，實際 $2.8749。
+design 的 gate 上說的是約 $4，實際約 $6.4，超支約 $2.4。
+
+那個 $4 實際上是「opus 五次約 $2.8，其餘約 $1.2」。opus 那半估得很準——$2.8 對 $2.8748。爆掉的是「其餘」：實際花了 $3.54，對上約 $1.2。拆開來三塊，白跑是最小的一塊：
+
+- **$1.62 是我在 gate 上沒算的。** 那句話只點名了「opus 五次約 $2.8」，`route-typo` 的五次 sonnet 一次都沒被報價。opus 那半反而準：估 $2.8，實際 $2.8748。
 - **$0.68 是三支探測本身。** 同樣沒被報價——gate 上只講了 eval，沒講前面三支各要跑四到五格。
 - **$1.24 是白跑的。** `scripts/eval.js:133` 的 `fs.rmSync` 在 Windows 上吃 `EPERM`，而它在 `finally` 區塊裡，所以是在評分完成之後才炸——錢付了、分數沒留下（約 $0.88）。另外 $0.36 是 dispatch 探測前兩輪控制臂失敗的跑動。
 
