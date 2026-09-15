@@ -586,7 +586,7 @@ test('frontmatter() flattens one level of nested keys under a parent with no inl
 // scripts/memory-check.js:143 had been calling it since before the count was
 // last read. Nothing recounted it, which is why this does.
 //
-// The shape is tests/skills.test.js:1051 — derive one side off disk so a
+// The shape is tests/skills.test.js:1060-1066 — derive one side off disk so a
 // bullet that stopped being a real call site fails by name, and pin the count
 // so a call site that fell out of the list without the count moving fails too.
 //

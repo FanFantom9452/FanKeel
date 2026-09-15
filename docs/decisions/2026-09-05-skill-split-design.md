@@ -56,7 +56,7 @@ for once this lands.
   the minorities inside rationale sections — `build`'s task loop steps at
   162–211 are procedure inside a section that is otherwise rationale, and they
   stay.
-- The `## Output` fenced block, verbatim. `tests/skills.test.js:293` requires it
+- The `## Output` fenced block, verbatim. `tests/skills.test.js:480` requires it
   to equal `templateFor(stage)`. Prose after the fence in that section may move.
 - Every phrase `tests/skills.test.js` pins. The survey listed them by assertion
   line; the plan carries the list, and each implementer runs

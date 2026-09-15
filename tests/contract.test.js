@@ -294,7 +294,7 @@ test('every file that carries the version carries the same one', () => {
 // docs/reports/2026-09-02-process-state-review.md:156.
 //
 // A count has no checker unless something recounts it: the shape
-// tests/skills.test.js:549 and tests/render.test.js:347 settled on for the same
+// tests/skills.test.js:734 and tests/render.test.js:342 settled on for the same
 // kind of claim. Counted from the manifest rather than the directory, because
 // what runs is what is registered, and the load-bearing split needs the event
 // each hook sits on anyway.
