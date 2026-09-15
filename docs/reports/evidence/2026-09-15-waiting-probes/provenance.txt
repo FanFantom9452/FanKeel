@@ -1,0 +1,62 @@
+# provenance — 2026-09-15 waiting probes
+
+date:        2026-09-15T06:38:24Z
+HEAD:        1ab583061fa651e63df9df097818c61091547292
+branch:      main
+claude:      2.1.272 (Claude Code)
+node:        v24.9.0
+os:          MINGW64_NT-10.0-26200 3.4.10-87d57229.x86_64
+
+## git status --porcelain at the time of the runs
+   M TODO.md
+  ?? docs/reports/evidence/2026-09-15-waiting-probes/
+
+## what is here
+
+probe-deny.sh / grade-deny.js
+  permissions.deny under two permission modes. out-{auto,bypassPermissions}-{nodeny,deny}.jsonl
+  are its four cells. The nodeny pair is the control.
+
+probe-dispatch.sh / grade-dispatch.js
+  which flag and which spelling gates a dispatch. dispatch-out-{agent,task,none,dis-agent,dis-task}.jsonl
+  are its five arms. dis-agent is the control.
+  Rounds 1 and 2 of this probe both failed their control and are not kept: round 1 ran under
+  bypassPermissions, where --allowedTools is a no-op by definition, and round 2 under
+  manual + --permission-prompts none, where it is not and the dispatch happened anyway.
+  Both are why the arms moved to --disallowedTools.
+
+probe-link.sh / probe-link-sonnet.sh / grade-link.js
+  whether a model follows the relative link out of a SKILL.md. link-control-{1,2}.jsonl,
+  link-linked-{1,2}.jsonl (haiku), link-sonnet-{1,2}.jsonl (sonnet).
+  The control needle is a word only in SKILL.md; the question needle is a word only in
+  rationale.md.
+
+  grade-link.js counts text blocks from assistant messages ONLY. Its first version counted
+  every text block, and the injected SKILL.md body is a `user` text block carrying the control
+  needle -- so control/1 passed on the injection rather than on the model's answer, and flipped
+  to a miss when that was fixed. The control still holds, on control/2.
+
+  These six transcripts are kept whole, at about 44K each, against a convention where the
+  largest previous evidence directory is 141K. The 26K `user` text block in each is the
+  fankeel-build SKILL.md body, and it is not duplication that can be elided: it is the
+  evidence that the skill body arrived in the context WITHOUT any file being read, which is
+  the whole of what the control proves. A re-grade has to run against exactly what the model
+  saw.
+
+eval-route-typo.{json,txt} / eval-stage-skip-said.{json,txt}
+  five runs each, per the two TODO entries asking for n=5 on one commit.
+  A first attempt at both died in scripts/eval.js:133, `fs.rmSync` of the scaffold temp
+  directory, EPERM on Windows; --keep-temp skips that line and is what the kept runs used.
+
+## one elision, named
+
+eval-route-typo.json and eval-stage-skip-said.json had their per-run `raw` key removed
+before committing: it held the whole stream-json transcript, about 520K across the two
+files, against a convention where the largest previous evidence directory is 141K. Each
+run now carries a `rawElided` string saying how many lines went and the exact command
+that produced the run. What is kept is everything the report cites -- `graders` with the
+regex or tool predicate behind each verdict, `cost` per run, `toolCalls`, and
+`lastMessage`, which is the exact text the regex graders matched against, so the failing
+grader's own input is still here. A re-run makes different transcripts, so those lines
+are gone rather than reproducible; that is the cost of the elision and it is why it is
+written down here rather than left for a reader to notice.

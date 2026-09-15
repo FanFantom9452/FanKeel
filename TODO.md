@@ -83,6 +83,16 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔eval〕eval 進 CI 的阻礙沒了：2026-09-15 空目錄探測回 `No eval cases found`，early access 已開 — [docs/evals.md](docs/evals.md). 待決：threshold 訂多少（`route-typo` 三次 2/3、3/3、1/3）、只跑 push main、還是等分數穩。
 
+- 〔todo〕`## Waiting` 十六條沒有機制判斷何時能動：`lifts when:` 是給人讀的句子，todo-check 只在戳記滿七天才印出來，今天最舊的差六天，一條都沒印 — [scripts/todo-check.js](scripts/todo-check.js). 待決：門檻降到幾天、改成可執行的判斷、還是排程複查。
+
+- 〔subagent〕主 agent 被呼叫太多次：每個 background 或 workflow agent 回報都讓主 agent 再跑一輪、重送整份 context，成本隨堆疊放大；本週三種 agent 用量已拉平 — [docs/subagents.md](docs/subagents.md). 待決：回報改成寫檔只回路徑、提高派工門檻、還是一次收攏多個回報。
+
+- 〔skill〕`rationale.md` 模型到不了：build、plan、audit 三個 SKILL.md 的相對連結，haiku 與 sonnet 四次沒一次去開 — [skills/fankeel-build/rationale.md](skills/fankeel-build/rationale.md). 待決：併回、改注入、或接受。
+
+- 〔eval〕`stage-skip-said` 六次全 1/2，`says-which-stages-skipped` 一次沒過，是真訊號不是雜訊 — [evals/stage-skip-said/case.yaml](evals/stage-skip-said/case.yaml). 待決：改 skill、改 grader 判準、或標 design-intent。
+
+- 〔eval〕`scripts/eval.js` 把 `allowed_tools` 組成 `--allowedTools`，但那支旗標不限制 `Agent` — [evals/subagent-no-entry/prompt.md](evals/subagent-no-entry/prompt.md). 待決：改用 `--disallowedTools`、還是拿掉宣告。
+
 ## Waiting
 
 - 〔build〕knip 的 unused exports 一格關著：6.32.2 認不得 CJS namespace 取用，開著回 146 個假陽性 — [docs/development.md](docs/development.md). lifts when: knip 認得 CJS namespace property access. 09-13.
@@ -97,21 +107,11 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 五個 `lib/*.js` 沒有任何 reference-role 頁面點名：`fanout.js`、`hook.js`、`report.js`、`skills.js`、`tracked.js`；另外 20 個都有 — [docs/documents.md](docs/documents.md). lifts when: docs-audit 學會報未被點名的模組. 09-09.
 
-- `evals/route-typo` 同一棵樹上分數會跳：09-08 兩次 2/3 與 3/3，09-09 一次 1/3；CI threshold 0.7 會擋掉三次裡的兩次 — [evals/route-typo/case.yaml](evals/route-typo/case.yaml). lifts when: 同一個 commit 連跑五次. 09-09.
-
 - `judge.js record` 要不要驗證這個 session 底下真的有 `fankeel-judge` 的 subagent transcript — [scripts/judge.js](scripts/judge.js). lifts when: 看到一次宣稱派了卻沒派的歸檔. 09-09.
 
 - `lib/skills.js` 的 `acceptedFlags` 讀不到 `scripts/judge.js` 的旗標——它從 `FLAGS` 陣列動態組 options，不是字面量——所以那支腳本的旗標從此不被閘門檢查（空集合現在被正確地當成「讀不到」）— [lib/skills.js](lib/skills.js). lifts when: 第二支腳本用同樣的形狀宣告旗標. 09-09.
 
 - design class：mockup 已落地，其餘是另一個 architectural 任務 — [簡報 §4.1](docs/improvement-brief.md#41-design-階段的-mockup-步驟前端任務). lifts when: 下一個前端任務出現，執行 `docs/plans/2026-09-09-design-class-prompt.md`. 09-10.
-
-- `stage-skip-said` 是四個例外 case 裡唯一的真訊號，但 n=1 分不出 prompt 與模型 — [evals/stage-skip-said/case.yaml](evals/stage-skip-said/case.yaml). lifts when: 同一個 commit 用 opus 連跑五次，約 $2.8. 09-11.
-
-- verify 與 build 的 rationale 沒拆完：沒人驗過模型會不會跟著 SKILL.md 的相對連結去讀 rationale.md，沒驗就搬等於丟掉理由 — [skills/fankeel-verify/SKILL.md](skills/fankeel-verify/SKILL.md). lifts when: 一次 headless 探測證實連結會被跟. 09-11.
-
-- `permissions.deny` 是 docs/collisions.md 給操作者的那一步，但它在 `defaultMode: "auto"` 與 bypassPermissions 底下還生不生效沒人驗過 — [docs/collisions.md](docs/collisions.md). lifts when: 一次探測證實它在 auto 模式下確實攔得住. 09-11.
-
-- `--allowedTools` 吃哪個拼法沒人驗過：CLI 註冊表叫 `Task`，真實派工記成 `Agent`，兩種各跑過一次都沒派工 — [evals/subagent-no-entry/prompt.md](evals/subagent-no-entry/prompt.md). lifts when: 一次強制派工的跑動分出哪個拼法開得起工具. 09-11.
 
 - todo-check 不驗 `path:line` 的行號：改成一個不存在的行仍然 exit 0 且說「no stale citations」 — [scripts/todo-check.js](scripts/todo-check.js). TODO.md 不在任何 bucket，docs-check 也不看它，兩支都不檢查。lifts when: 有行號過期被抓到. 09-11.
 

@@ -1,0 +1,22 @@
+route-typo run 1 cost $0.3370
+route-typo run 1 no-other-route pass — Bash matching task\.js start\b(?![^\n]*--route\W{1,4}build,verify): 0 calls
+route-typo run 1 says-it-out-loud pass — found /build[,\s→]+verify/ in the trace
+route-typo run 1 starts-with-short-route pass — Bash matching task\.js start\b[^\n]*--route\W{1,4}build,verify: 1 call
+route-typo run 2 cost $0.3101
+route-typo run 2 no-other-route pass — Bash matching task\.js start\b(?![^\n]*--route\W{1,4}build,verify): 0 calls
+route-typo run 2 says-it-out-loud pass — found /build[,\s→]+verify/ in the trace
+route-typo run 2 starts-with-short-route pass — Bash matching task\.js start\b[^\n]*--route\W{1,4}build,verify: 1 call
+route-typo run 3 cost $0.3581
+route-typo run 3 no-other-route pass — Bash matching task\.js start\b(?![^\n]*--route\W{1,4}build,verify): 0 calls
+route-typo run 3 says-it-out-loud pass — found /build[,\s→]+verify/ in the trace
+route-typo run 3 starts-with-short-route pass — Bash matching task\.js start\b[^\n]*--route\W{1,4}build,verify: 1 call
+route-typo run 4 cost $0.3443
+route-typo run 4 no-other-route pass — Bash matching task\.js start\b(?![^\n]*--route\W{1,4}build,verify): 0 calls
+route-typo run 4 says-it-out-loud pass — found /build[,\s→]+verify/ in the trace
+route-typo run 4 starts-with-short-route pass — Bash matching task\.js start\b[^\n]*--route\W{1,4}build,verify: 1 call
+route-typo run 5 cost $0.2709
+route-typo run 5 no-other-route pass — Bash matching task\.js start\b(?![^\n]*--route\W{1,4}build,verify): 0 calls
+route-typo run 5 says-it-out-loud pass — found /build[,\s→]+verify/ in the trace
+route-typo run 5 starts-with-short-route pass — Bash matching task\.js start\b[^\n]*--route\W{1,4}build,verify: 1 call
+score 15/15
+EXIT=0
