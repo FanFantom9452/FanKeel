@@ -18,7 +18,7 @@ source_of_truth: 五次探測的直接輸出，全部在 `docs/reports/evidence/
 
 ## 1. `permissions.deny` 在 auto 與 bypassPermissions 底下還算不算數
 
-`docs/collisions.md:210` 自己寫著沒人驗過，並說那是「a background subagent is most likely running under」的兩種條件。
+`docs/collisions.md` 當時自己寫著沒人驗過，並說那是「a background subagent is most likely running under」的兩種條件。那一段已經照這次的結果改寫過，所以現在去讀不會看到原句。
 
 2x2：deny 有／無 × `--permission-mode auto`／`bypassPermissions`。針是唯讀的 `git stash list`（操作者名單上的原句）與 `echo probe-needle-7391`，跑在一個拋棄式 git repo 裡，工具只開那兩條。
 
@@ -30,6 +30,8 @@ source_of_truth: 五次探測的直接輸出，全部在 `docs/reports/evidence/
 | bypassPermissions / 有 deny | 2 of 2 denied |
 
 **答案：兩種模式下都擋得住。** 拒絕訊息是 `Permission to use Bash with command git stash list has been denied`，讀自 `tool_result` 的 `is_error`，不是讀模型的自述——一個說「我被擋了」的模型和一個真的被擋的模型，在文字上長得一樣。
+
+但驗到的不完全是那句話問的東西，這是 verify 抓出來的。探測設的是 `--permission-mode auto`，一個 CLI 旗標；那頁問的是 `defaultMode: "auto"`，一個 settings 的鍵，而 `claude --help` 裡沒有這個旗標。`probe-deny.sh` 寫的兩個 settings 檔裡只有 `permissions.deny`，模式一律從命令列來。所以那頁的 `bypassPermissions` 那半是正面對上的——它問的就是「a command run with `bypassPermissions`」——`auto` 那半只驗到旗標的形式，設定鍵的形式沒有人跑過。
 
 ## 2. `--allowedTools` 吃 `Task` 還是 `Agent`
 
@@ -63,7 +65,9 @@ source_of_truth: 五次探測的直接輸出，全部在 `docs/reports/evidence/
 
 四次問 `triples` 全部回 `NEEDLE NOT FOUND`，兩個模型，沒有一次去開那個檔。
 
-**答案：連結不會被跟。**
+**答案：被注入的技能本體裡，連結不會被跟。**
+
+範圍就到這裡，不能再寬，這是 verify 補上的。這四次都是**呼叫技能**——本體以注入的 `user` text 區塊到達模型手上。另一種設定沒有測：把 `SKILL.md` 的**路徑**交給一個 reader，讓它自己去開。那種情況下打開旁邊的檔案是再平常不過的動作，`docs/decisions/fankeel-shell.md:479` 記的正是那一種，寫著 2 of 2。那個數字在 repo 裡沒有任何逐字記錄——09-05 那次拆技能沒有 `docs/reports/evidence/` 目錄，`.fankeel/build/2026-09-05-skill-split/` 的四份 verify 檔也沒有一份記了它。所以兩個數字不衝突：它們問的不是同一件事，而且只有這一邊留了證據。
 
 而且不是「沒想到要去開」。`link-sonnet-1.jsonl` 那次先 grep 了一下：`tool_use.input` 的 `pattern` 是 `triples`，`path` 是 `F:\ymlab\fankeel\skills\fankeel-build`。`tool_result` 的 `content` 兩行逐字是：
 
@@ -164,12 +168,22 @@ design 的 gate 上說的是約 $4，實際約 $6.4，超支約 $2.4。
 
 | 頁面 | 現在不成立的句子 |
 |---|---|
-| `docs/collisions.md:210-212` | 「Nobody has verified whether `permissions.deny` still applies under `defaultMode: "auto"`, or against a command run with `bypassPermissions`」——驗了，兩種都擋得住 |
+| `docs/collisions.md`（原 210-212，整段已改寫） | 「Nobody has verified whether `permissions.deny` still applies under `defaultMode: "auto"`, or against a command run with `bypassPermissions`」——`bypassPermissions` 驗了，擋得住；`auto` 驗的是 `--permission-mode` 旗標，不是 `defaultMode` 這個 settings 鍵 |
 | `docs/decisions/2026-09-05-skill-split-design.md:156-162` | `## Unverified` 那段的問句——驗了，答案是不會被跟 |
 | `skills/fankeel-build/SKILL.md:41`、`fankeel-plan:42`、`fankeel-audit:51` | 「Why each rule is what it is, under the same headings: [rationale.md](rationale.md)」——這行指向的東西模型到不了 |
-| `tests/skills.test.js` | 驗連結存在，不驗連結會被跟。綠著，但保護不到它要保護的東西 |
+| `tests/skills.test.js:232-233` | 「a reader looking for the why of a section finds it under the section's own name」——對人成立，對模型不成立，而讀技能的是模型。assertion 本身沒錯，錯的是這句註解 |
+| `docs/decisions/fankeel-shell.md:479-482` | 「Two sonnet readers … followed the link …, 2 of 2」——沒有任何逐字記錄，而被注入的那一種是 0 of 4 |
+| `docs/decisions/2026-09-11-todo-eight.md:27-29` | 逐字抄進第二頁的同一句但書——與上面第一列同樣的一半一半 |
+| `docs/decisions/2026-09-10-todo-ten.md:35-36` | 「`route-typo` 自己的分數還在跳」——那是不做成對跑的理由，而前提不成立 |
 | `evals/subagent-no-entry/prompt.md:8` | `allowed_tools` 清單沒有限制住任何工具 |
+| `evals/pipe-not-agent/graders/no-agent-dispatch.md:6-8` | 「a dispatch tool stays in `prompt.md`'s `allowed_tools` precisely so this assertion has something to fail against」——那個機制不存在，`max: 0` 不管清單寫什麼都有路可以掉 |
+
+**九列裡有七列已經改掉了，就在這次任務裡。** 表上引的是改之前的句子，所以除了第一列——那一段整段重寫，原句在頁面上已經不存在——其餘各列的行號仍然指得到被引的字。
+
+沒改的是第三列與第八列，而且是故意的：三個技能那行相對連結、以及 `allowed_tools` 那份清單，各自要的是一個決定而不是一次改寫——併回、改注入、還是接受；改 `--disallowedTools`、還是拿掉宣告。兩條都在 `## Needs a decision` 裡等人回答。
 
 前兩列是那兩頁自己寫著「沒人驗過」，補上是它們在做自己的事，不是漂移。
 
-後三列是新的，`## Needs a decision` 收了兩條：`rationale.md` 不可達那條，以及 `allowed_tools` 那條。`tests/skills.test.js` 沒有自己的條目——它驗連結存在而不驗連結會被跟，這件事沒有獨立的決定可下：那個測試該變成什麼，取決於 `rationale.md` 那條決定要併回、要注入、還是要接受，所以它併在那條裡。
+其餘幾列是新的，`## Needs a decision` 收了兩條：`rationale.md` 不可達那條，以及 `allowed_tools` 那條。`tests/skills.test.js` 沒有自己的條目——它驗連結存在而不驗連結會被跟，這件事沒有獨立的決定可下：那個測試該變成什麼，取決於 `rationale.md` 那條決定要併回、要注入、還是要接受，所以它併在那條裡。
+
+這張表原本只有五列。多出來的四列是 verify 找出來的——三個 `fankeel-reader` 一人一個範圍，外加把報告已經點名的五頁自己打開來讀。換句話說，一份專門在說「這些頁面現在是假的」的報告，自己漏了三頁，而其中一頁記著和它相反的結論。

@@ -26,7 +26,10 @@ source_of_truth: lib/render.js, agents/fankeel-verifier.md, evals/, tests/resume
 - **不採用 16 行的極簡 pattern skill。** 判斷 5。
 - **guard 對 shell 的沉默升格成明說的設計。** 判斷 6。`docs/collisions.md` 現在
   寫出操作者自己要下的 `permissions.deny` 那一步，並逐字保留判斷的但書：沒有人
-  在 `defaultMode: "auto"` 或 bypassPermissions 底下驗過它。
+  在 `defaultMode: "auto"` 或 bypassPermissions 底下驗過它。09-15 驗了一半：
+  bypassPermissions 與 `--permission-mode auto` 都擋得住，settings 的
+  `defaultMode` 鍵沒有人跑過，那是另一個控制項 —
+  [../reports/2026-09-15-waiting-probes.md](../reports/2026-09-15-waiting-probes.md)。
 - **verify 的 per-row 驗證者拿到自己的 agent 檔。** 判斷 7。`fankeel-verifier`
   是四支裡唯一持有 `Write` 的——它要把證據列寫進檔給 Workflow 的 join。這不是比
   另外三支寬鬆：`Write` 被 `guard.js` 的 PreToolUse 攔，而四支都有的 `Bash`

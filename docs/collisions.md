@@ -207,11 +207,19 @@ of their own, in their own `settings.json` or `settings.local.json`, under
 - `Bash(git clean:*)`
 - `PowerShell(Remove-Item:*)`
 
-Nobody has verified whether `permissions.deny` still applies under
-`defaultMode: "auto"`, or against a command run with `bypassPermissions` —
-the two conditions a background subagent is most likely running under.
-Until somebody checks that, this is a step worth taking, not a guarantee to
-lean on.
+Half of this was checked on 2026-09-15, and the half that was not is the half
+that reads as checked. A command run with `bypassPermissions` is still denied,
+2 of 2 needles; so is one run under `--permission-mode auto`, 1 of 1. Both
+readings come off `tool_result`'s `is_error` rather than off the model's own
+account, and both no-deny control arms ran their needles, so the deny arms mean
+something.
+
+What was not checked is the settings key `defaultMode: "auto"`. The probe set
+the CLI flag; its settings files carried only `permissions.deny`, and
+`claude --help` lists no `defaultMode`. The two are not the same control. So
+this is a guarantee under a background subagent started with the flag, and an
+open question under a project that sets the mode in its settings —
+[reports/2026-09-15-waiting-probes.md](reports/2026-09-15-waiting-probes.md).
 
 ## A named exception: three read-only agents, denied by command
 

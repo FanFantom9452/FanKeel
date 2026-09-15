@@ -174,3 +174,42 @@ which is unchanged.
 Not re-run for this round: npm test. This round changes two markdown files and this one; no
 source under test was touched, and the suite was green twice earlier on this branch
 (1475/1475, both times).
+
+Round four -- what the verify stage defeated
+--------------------------------------------
+
+Verify re-ran every figure in its own session, held all nine claims, and then
+defeated seven things. Two of the seven are about this directory.
+
+First, probe-deny.sh answers a neighbouring question to the one
+docs/collisions.md asks. Line 2 of the script says "permissions.deny under
+defaultMode auto and bypassPermissions". Line 4 says "--permission-mode
+auto/bypassPermissions", and line 44 is what actually ran:
+
+    --permission-mode "$mode"
+
+The two settings files it writes carry only permissions.deny. `defaultMode` is
+a settings key; `--permission-mode` is a CLI flag, and `claude --help` lists no
+`defaultMode`. They are not the same control. So the bypassPermissions half of
+the collisions.md sentence was answered head-on -- that page asks about "a
+command run with bypassPermissions" -- and the auto half was answered only in
+its flag form. Nobody has run the settings-key form.
+
+Line 2 is NOT being corrected. This script is the artefact that ran, and the
+copy under .fankeel/build/ has to stay byte-identical to it; a comment fixed
+after the fact makes the record disagree with the run it records. The
+correction lives here, in docs/collisions.md and in section 1 of the report.
+
+Second, grade-dispatch.js could not be run against this directory at all. It
+opens out-<arm>.jsonl, and the five dispatch transcripts were prefixed to
+dispatch-out-<arm>.jsonl when they were copied in, so that they would not
+collide with the deny probe's own out-*.jsonl. Run as shipped it printed NO
+TRANSCRIPT five times and exited 1. Verify graded section 2 by copying the five
+files into a scratch directory under the names the grader expects, and got the
+five verdicts the report states, control included. The grader is being taught
+both prefixes so that the next reader can re-run it here, in place, which is
+what an evidence directory is for. The transcripts are not renamed: their
+current names are what every other file in this directory already refers to.
+
+The other five defeated rows are documentation, and are recorded in the report
+and in the pages themselves.

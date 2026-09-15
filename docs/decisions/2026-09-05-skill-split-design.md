@@ -160,3 +160,17 @@ out of the plugin cache — the documentation says bundled files are reached by
 markdown link, and `${CLAUDE_SKILL_DIR}` exists for scripts, but nothing here
 has invoked a split skill yet. Verify checks it by invoking `fankeel-build` and
 asking for one fact that lives only in `rationale.md`.
+
+**Answered 2026-09-15, and the answer is no.** That check was run exactly as
+written above: `fankeel-build` invoked, asked for a word living only in
+`rationale.md`, twice on haiku and twice on sonnet. Four runs, four
+`NEEDLE NOT FOUND`, none of them opening the file. One sonnet run grepped the
+skill's directory first, was told by its own tool that the word was in
+`rationale.md`, and still reported the word absent from "the material made
+available here". The control held: the skill body did reach the model, and a
+control run quoted a sentence from `SKILL.md` without opening anything.
+
+So a rule that has to reach an invoked skill belongs in the body, not behind the
+link. What this does **not** say is that no reader ever opens the file — a
+subagent handed the path is doing an ordinary file read, and that case was not
+measured here — [../reports/2026-09-15-waiting-probes.md](../reports/2026-09-15-waiting-probes.md).

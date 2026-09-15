@@ -479,7 +479,16 @@ every `##` and `###` in it is a heading the skill has, in the skill's order, its
 `source_of_truth` names the skill's code and the skill, no `version:` line, and
 the one link sentence sits after `**Done when**`. Two sonnet readers sent in at
 the stage's skill followed the link for a fact that lives only in
-`rationale.md`, 2 of 2. What it cost: 0.75M subagent tokens at build and 1.17M
+`rationale.md`, 2 of 2 — recorded here at the time with no transcript kept
+anywhere, and answered the other way on 2026-09-15 for the case that decides
+whether the split works. **Invoke** the skill, so the body arrives injected
+rather than as a file to open, and the link is not followed at all: 0 of 4,
+haiku and sonnet, every run answering `NEEDLE NOT FOUND`, one of them after its
+own grep had named the file. The two are different setups — a reader handed a
+path opens a sibling as a matter of course — and only the invoked one has
+evidence:
+[../reports/2026-09-15-waiting-probes.md](../reports/2026-09-15-waiting-probes.md).
+What it cost: 0.75M subagent tokens at build and 1.17M
 at verify, all sonnet, against one in-session test edit.
 
 What went the other way: the official example name is `reference.md`; here
