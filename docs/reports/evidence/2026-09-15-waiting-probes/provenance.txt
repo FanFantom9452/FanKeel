@@ -60,3 +60,37 @@ regex or tool predicate behind each verdict, `cost` per run, `toolCalls`, and
 grader's own input is still here. A re-run makes different transcripts, so those lines
 are gone rather than reproducible; that is the cost of the elision and it is why it is
 written down here rather than left for a reader to notice.
+
+## what the review changed, and what it did not
+
+A fankeel-reviewer read 1ab5830..eaf5844 and found six things. Four were fixed in the
+follow-up commit; two were ruled on and left alone.
+
+Fixed:
+  - the probe cost row said $0.3, then $0.7670, and is $0.6763. The first was an estimate
+    presented in a table where every other row was measured. The second summed every
+    `result` line, and dispatch-out-{agent,none,task}.jsonl each log the same
+    total_cost_usd twice, so it double-counted $0.0906. The figure is now the max per
+    file. The reviewer caught the second error; the first was caught here before it did.
+  - grade-dispatch.js collected its `refusal` text from every message role, the same
+    defect grade-link.js was fixed for. Re-graded against the saved transcripts: every
+    verdict unchanged, because both NO DISPATCH TOOL matches were in real assistant
+    blocks. A hardening, not a correction -- but the report quotes that field.
+  - the report said four link runs "never opened the file", which undersold what
+    link-sonnet-1.jsonl shows: the model grepped, found rationale.md holds the needle,
+    said the skill links it, and still would not treat it as material it had been given.
+  - the report promised a TODO entry for each of the last three falsified rows and filed
+    two. The tests/skills.test.js row has no decision of its own and now says so.
+
+Ruled on, not fixed:
+  - Two TODO entries in eaf5844 -- the todo-check threshold one and the main-agent cost
+    one -- are outside the five-probe brief. They are there because the user asked for
+    them mid-task, in as many words. The reviewer could not see that and was right to
+    flag them. What was wrong is the commit message: it says "Needs a decision 9 到 12"
+    where the commit takes that section from 7 to 12, because those two are in the same
+    commit.
+  - The cuts, both in this directory: a single-call-site `blocks()` helper in
+    grade-deny.js, and probe-link-sonnet.sh duplicating probe-link.sh's one invocation.
+    Declined. These scripts are the evidence of how the runs were made; refactoring them
+    afterwards leaves a committed script that is not the one that produced the
+    transcripts beside it. The cuts are real and would be right in source. Not here.

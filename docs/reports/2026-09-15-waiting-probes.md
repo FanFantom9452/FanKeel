@@ -65,6 +65,15 @@ source_of_truth: 五次探測的直接輸出，全部在 `docs/reports/evidence/
 
 **答案：連結不會被跟。**
 
+而且不是「沒想到要去開」。`link-sonnet-1.jsonl` 那次先 grep 了一下，`Grep{pattern: "triples", path: ".../skills/fankeel-build"}` 回的是 `Found 1 file  skillsankeel-buildationale.md`——模型自己的工具告訴它答案就在那個檔裡。它接著寫的是：
+
+> NEEDLE NOT FOUND
+> The word `triples` doesn't appear in the fankeel-build skill body itself — it only exists in `rationale.md`, which the skill links to but did not inline into the material made available here.
+
+知道有那個檔、知道答案在裡面、知道技能連向它，然後把它當成「沒有被提供的材料」。所以這不是注意力問題，是模型把 `SKILL.md` 的內文和連結後面的東西當成兩種不同性質的材料——前者是被給的，後者不是。
+
+（`grade-link.js` 的 `openedRationale` 只認 `tool_use.input` 裡字面出現 `rationale.md`，所以那次目錄層級的 grep 不算「開過」。表格裡 sonnet 那列的 `0 of 2` 按它自己的定義是對的，但單看那個數字會讀成毫無所覺。）
+
 控制臂在這支也抓到一個東西，而且是會讓結論作廢的那種。`grade-link.js` 第一版把所有 `text` 區塊都收進來比對，而被注入的 `SKILL.md` 本體是一個 26,105 位元組的 `user` text 區塊，控制針本來就在裡面——所以 `control/1` 是配到注入的內容，不是模型的回答。改成只收 `assistant` 的文字之後，`control/1` 從命中翻成沒命中。控制臂仍然成立，靠的是 `control/2`：那次模型自己引了那句話。
 
 控制格兩次都沒有開任何檔，其中一次仍引出了 `SKILL.md` 的句子——技能本體是被注入進 context 的，不是被讀出來的。這正好說明另一半：注入的東西到得了，連結後面的東西到不了。
@@ -123,15 +132,22 @@ TODO 那條寫：「四個例外 case 裡唯一的真訊號，但 n=1 分不出 
 
 ## 花費
 
-| | |
-|---|---|
-| `route-typo` ×5，sonnet | $1.62 |
-| `stage-skip-said` ×5，opus | $2.87 |
-| 第一次掛在 `rmSync` EPERM 的兩次跑動 | 各付了一次，約 $0.9 |
-| 三支探測（haiku 為主，兩次 sonnet） | 約 $0.3 |
-| **合計** | **約 $5.7** |
+| | | 來源 |
+|---|---|---|
+| `route-typo` ×5，sonnet | $1.6204 | 量到的，`eval-route-typo.json` 每次的 `cost.costUsd` |
+| `stage-skip-said` ×5，opus | $2.8749 | 量到的，同上 |
+| 三支探測留下的 15 次跑動 | $0.6763 | 量到的，各 `*.jsonl` 取 `result` 行 `total_cost_usd` 的**單檔最大值**——`dispatch-out-{agent,none,task}.jsonl` 三份各把同一個值記了兩次，直接加總會多算 $0.0906 |
+| `rmSync` EPERM 白跑的兩次 | 約 $0.88 | 估的。各付了一次，用同一個 case 的單次均價 |
+| dispatch 探測前兩輪的 8 次 | 約 $0.36 | 估的。transcript 被第三輪覆寫了，用第三輪 haiku 的單次均價 |
+| **合計** | **約 $6.4** | 前三列量到的共 $5.1716，後兩列估的共約 $1.24 |
 
-design 的 gate 上說的是約 $4。超出的部分幾乎全是 `scripts/eval.js:133` 那次白跑——`fs.rmSync` 在 Windows 上吃 `EPERM`，`finally` 區塊讓它在評分完成之後才炸掉，所以錢付了、分數沒留下。`--keep-temp` 跳過那行。
+design 的 gate 上說的是約 $4，實際約 $6.5。超支 $2.5，拆開來三塊，白跑只是最小的一塊：
+
+- **$1.62 是我在 gate 上沒算的。** 那句話只點名了「opus 五次約 $2.8」，`route-typo` 的五次 sonnet 一次都沒被報價。opus 那半反而準：估 $2.8，實際 $2.8749。
+- **$0.68 是三支探測本身。** 同樣沒被報價——gate 上只講了 eval，沒講前面三支各要跑四到五格。
+- **$1.24 是白跑的。** `scripts/eval.js:133` 的 `fs.rmSync` 在 Windows 上吃 `EPERM`，而它在 `finally` 區塊裡，所以是在評分完成之後才炸——錢付了、分數沒留下（約 $0.88）。另外 $0.36 是 dispatch 探測前兩輪控制臂失敗的跑動。
+
+`--keep-temp` 跳過那行 `rmSync`，兩支 eval 都是重跑才拿到結果。
 
 ## 這些結果讓什麼變成假的
 
@@ -143,4 +159,6 @@ design 的 gate 上說的是約 $4。超出的部分幾乎全是 `scripts/eval.j
 | `tests/skills.test.js` | 驗連結存在，不驗連結會被跟。綠著，但保護不到它要保護的東西 |
 | `evals/subagent-no-entry/prompt.md:8` | `allowed_tools` 清單沒有限制住任何工具 |
 
-前兩列是那兩頁自己寫著「沒人驗過」，補上是它們在做自己的事，不是漂移。後三列是新的，`## Needs a decision` 各有一條。
+前兩列是那兩頁自己寫著「沒人驗過」，補上是它們在做自己的事，不是漂移。
+
+後三列是新的，`## Needs a decision` 收了兩條：`rationale.md` 不可達那條，以及 `allowed_tools` 那條。`tests/skills.test.js` 沒有自己的條目——它驗連結存在而不驗連結會被跟，這件事沒有獨立的決定可下：那個測試該變成什麼，取決於 `rationale.md` 那條決定要併回、要注入、還是要接受，所以它併在那條裡。
