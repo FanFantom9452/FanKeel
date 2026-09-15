@@ -53,7 +53,7 @@ source_of_truth: 五次探測的直接輸出，全部在 `docs/reports/evidence/
 
 `docs/decisions/2026-09-05-skill-split-design.md:158` 把方法寫下來了，沒人跑：叫 `fankeel-build`，問一個只存在 `rationale.md` 的事實。
 
-兩根針，各是自己檔案裡唯一的字（在 `skills/`、`docs/`、`lib/` 範圍內）：`predating` 只在 `SKILL.md`，`triples` 只在 `rationale.md`。每格跑兩次。
+兩根針，各是自己檔案裡唯一的字：`predating` 只在 `SKILL.md`，`triples` 只在 `rationale.md`。範圍是 `skills/`、`docs/`、`lib/`，樹是探測當下的 `1ab5830`——`git grep -n -E "predating|triples" 1ab5830 -- skills/ docs/ lib/` 各回一行。這份報告與 `evidence/` 落地之後兩個字都不再唯一，唯一性是探測跑動時的條件，不是現在這棵樹的。每格跑兩次。
 
 | 格 | 開過 `rationale.md` | 引出那句話 |
 |---|---|---|
@@ -65,8 +65,14 @@ source_of_truth: 五次探測的直接輸出，全部在 `docs/reports/evidence/
 
 **答案：連結不會被跟。**
 
-而且不是「沒想到要去開」。`link-sonnet-1.jsonl` 那次先 grep 了一下，`Grep{pattern: "triples", path: ".../skills/fankeel-build"}` 回的是 `Found 1 file  skillsankeel-build
-ationale.md`——模型自己的工具告訴它答案就在那個檔裡。它接著寫的是：
+而且不是「沒想到要去開」。`link-sonnet-1.jsonl` 那次先 grep 了一下：`tool_use.input` 的 `pattern` 是 `triples`，`path` 是 `F:\ymlab\fankeel\skills\fankeel-build`。`tool_result` 的 `content` 兩行逐字是：
+
+```
+Found 1 file
+skills\fankeel-build\rationale.md
+```
+
+模型自己的工具告訴它答案就在那個檔裡。它接著寫的是：
 
 > NEEDLE NOT FOUND
 > The word `triples` doesn't appear in the fankeel-build skill body itself — it only exists in `rationale.md`, which the skill links to but did not inline into the material made available here.

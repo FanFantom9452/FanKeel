@@ -124,3 +124,53 @@ the table: every figure comes from cost.costUsd and total_cost_usd, never from t
 Not re-run for this round: npm test. The round-two fix changes one markdown file and this
 one; no source under test was touched, and the suite was green twice earlier on this branch
 (1475/1475, both times).
+
+Round three -- what it checked, and what it found
+-------------------------------------------------
+
+One fankeel-reviewer over 1ab5830..40cd3fc, sent at exactly what round two said it did not
+open: the three probe tables checked cell by cell against the raw transcripts. Round two
+had read only the two eval JSONs, so the five rows of section 2 had never been verified
+against their transcripts by anyone.
+
+Sections 1, 2 and 3 all held, cell for cell. Two things it added that the report did not
+claim: dis-task also says NO DISPATCH TOOL verbatim (the table quotes the phrase only on
+the dis-agent row, so that row is under-credited rather than wrong), and control/1 misses
+the sentence because its copy of the needle is wrapped as **predating**, which breaks the
+contiguous substring grade-link.js looks for -- so the 1 of 2 is a property of the answer,
+not of the grader.
+
+Two defects, both in the report and both fixed here.
+
+First, the quoted Grep tool_result was not verbatim. The transcript records
+
+    Found 1 file
+    skills\fankeel-build\rationale.md
+
+and the report had printed "skills" joined to "ankeel-build", then "ationale.md" on the
+next line: the backslashes of the Windows path were eaten as escapes when the quote was
+first written, \f becoming a form feed and \r a newline, both of them real control
+characters in the file. The claim the quote supports was never wrong -- the real text does
+name that file -- but section 3 promises a verbatim record, and this was the one place the
+page did not keep it. The two lines now sit in a fenced block, and the tool_use input is
+quoted as its pattern and path values rather than as a JSON blob, because the JSON on disk
+doubles every backslash and the decoded value is what the model actually searched. Both are
+now checked against the transcript by string comparison rather than by eye, and no form
+feed or carriage return survives anywhere in the page.
+
+Second, the needle-uniqueness sentence was self-falsifying. It claimed predating occurs
+only in SKILL.md and triples only in rationale.md within skills/, docs/ and lib/ -- true of
+the tree the probe ran on, and false of the commit the sentence was read at, because the
+report and its evidence directory both live under docs/ and both carry the words. The
+sentence now pins the tree:
+
+    git grep -n -E "predating|triples" 1ab5830 -- skills/ docs/ lib/
+
+returns exactly one line each, and the page says so, along with the fact that its own
+landing ended that uniqueness. The experiment never depended on the repository-wide
+property, only on each needle being unique between the injected SKILL.md and rationale.md,
+which is unchanged.
+
+Not re-run for this round: npm test. This round changes two markdown files and this one; no
+source under test was touched, and the suite was green twice earlier on this branch
+(1475/1475, both times).
