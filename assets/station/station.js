@@ -366,14 +366,16 @@
     }
     function kpiHtml(cur, prev) {
         var share = function (t) { return t.main + t.wait ? t.wait / (t.main + t.wait) : 0; };
-        return '<div class="readouts">'
+        var out = '<div class="readouts">'
             + roHtml('30 天花費', usd(cur.usd), delta(cur.usd, prev.usd))
             + roHtml('token', tokens(cur.tokens), delta(cur.tokens, prev.tokens))
             + roHtml('active 時間', hours(cur.active), delta(cur.active, prev.active))
             + roHtml('<i class="hatchsw"></i>等待佔比', Math.round(share(cur) * 1000) / 10 + '<span class="u">%</span>',
                 (prev.main + prev.wait ? delta(share(cur), share(prev), 'pt') : '<span class="delta flat">前期無資料</span>')
-                + ' · ' + hours(cur.wait) + ' 等')
-            + '</div>';
+                + ' · ' + hours(cur.wait) + ' 等');
+        var top = S.gates && S.gates.swapped && S.gates.swapped.length ? S.gates.swapped[0] : null;
+        out += roHtml('最常被換掉', top ? esc(top.label) : '—', top ? top.lost + ' / ' + top.total : '');
+        return out + '</div>';
     }
     function spark(values, colour) {
         var W = 120, H = 30, mx = Math.max.apply(null, values.concat([0])) || 1, n = Math.max(values.length - 1, 1);
@@ -830,6 +832,26 @@
         }).join('') + '</nav>';
     }
 
+    // Whether the served page has lost its server, and what to say. Pure, so
+    // it is unit tested; the fetch that feeds it and the banner it fills are
+    // the document half below the guard. The sentence starts at 底下 rather
+    // than at 伺服器已離線 because the bar's own heading now says
+    // `serve 沒有回應` above it — mockup screen 3 splits it that way, and one
+    // bar saying it twice reads as a stutter.
+    function serveLost(lastOkMs, nowMs, genAbs, genRel) {
+        if (lastOkMs === null || lastOkMs === undefined) return null;
+        if (nowMs - lastOkMs < 15000) return null;
+        return '底下所有數字與狀態都凍結在 ' + genAbs + '（' + genRel + '），不會再更新。每 5 秒重試一次。';
+    }
+
+    // The hero's eyebrow carries the frozen moment too, so a reader who has
+    // scrolled past the bar is not reading numbers they take for live. The
+    // hh:mm is the caller's, off the same `stamp()` the bar's absolute time
+    // comes from: two places on the page, one clock read.
+    function heroEyebrow(frozenAt) {
+        return frozenAt ? '近 30 天 · 凍結於 ' + frozenAt : '近 30 天';
+    }
+
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
             tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
@@ -849,7 +871,8 @@
             dayStart: dayStart, projectHead: projectHead, sessionPoints: sessionPoints, projectChart: projectChart,
             projectSessionsHtml: projectSessionsHtml,
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
-            sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml,
+            sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost,
+            heroEyebrow: heroEyebrow,
         };
     }
     if (!doc) return;
@@ -857,6 +880,10 @@
     var route = parseHash(w.location && w.location.hash), sel = null, sortKey = 'updated', sortDir = -1;
     // The home page's two segmented controls; Tasks 7 and 8 add their own keys.
     var view = { metric: 'usd', dim: 'model' };
+    // `hh:mm` while the server is gone, `null` while it answers. The poll at
+    // the bottom of this file owns it; the hero's eyebrow reads it, which is
+    // why it is declared out here rather than beside the poll.
+    var frozenAt = null;
     // The sessions ticked for 比較, oldest tick first; a third tick drops the first.
     var picked = [];
     var NOW = Date.parse(S.generatedAt);
@@ -1032,7 +1059,8 @@
         var bars = dayBars(R, view.metric, view.dim, DAYS);
         var recent = R.slice().sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); }).slice(0, 12);
         return (isFinite(S.cleared) ? '<p class="cleared">cleared ' + S.cleared + ' stale rows</p>' : '')
-            + '<section class="panel hero"><div class="hero-top"><div class="hero-title"><div class="eyebrow">近 30 天</div>'
+            + '<section class="panel hero"><div class="hero-top"><div class="hero-title"><div class="eyebrow">'
+            + heroEyebrow(frozenAt) + '</div>'
             + '<h1><b>' + DAYS[0].slice(5) + '</b> — <b>' + TODAY.slice(5) + '</b></h1></div>'
             + kpiHtml(windowTotals(R, DAYS), windowTotals(R, PREV)) + '</div>'
             + '<div class="controls"><div class="ctlgrp"><label>長條高度</label>'
@@ -1999,6 +2027,79 @@
     doc.getElementById('cfg').textContent = String(S.configDir || '').replace(/^.*[\\/]/, '')
         || S.configDir;
     doc.getElementById('cfg').title = S.configDir || '';
+
+    // ---- serve health polling ----------------------------------------------
+    // Only `serve` (not `--open`, scripts/station.js:770) puts a server behind
+    // this fetch, so a page opened straight from disk must never start the
+    // poll — it would show a permanent death banner for a state that is
+    // simply normal there. `w.setInterval` is also checked so a stripped-down
+    // test harness that stubs `document` but not timers skips this quietly
+    // instead of throwing.
+    if (w.location && w.location.protocol !== 'file:' && typeof w.setInterval === 'function') {
+        var lastOkMs = Date.now();
+        var deadBar = null;
+        var deadMsg = null;
+        var setFrozen = function (on) {
+            var page = doc.getElementById('page');
+            if (page) page.style.cssText = on ? 'opacity:.72;filter:saturate(.3)' : '';
+        };
+        var servePill = function (on) {
+            var pill = doc.getElementById('servedown');
+            if (pill) pill.hidden = !on;
+        };
+        var showDead = function (msg) {
+            if (!deadBar) {
+                deadBar = doc.createElement('div');
+                deadBar.setAttribute('role', 'status');
+                deadBar.setAttribute('aria-live', 'polite');
+                deadBar.className = 'dead';
+                var head = doc.createElement('b');
+                head.innerHTML = '<i class="dot down"></i>serve 沒有回應';
+                deadBar.appendChild(head);
+                deadMsg = doc.createElement('span');
+                deadBar.appendChild(deadMsg);
+                // What brings it back, as text to select rather than a
+                // control: nothing on this page can start a server.
+                var cmd = doc.createElement('code');
+                cmd.textContent = 'node fankeel serve --open';
+                deadBar.appendChild(cmd);
+                var retry = doc.createElement('button');
+                retry.type = 'button';
+                retry.className = 'btn';
+                retry.textContent = '重試';
+                retry.style.cssText = 'border-color:var(--stale);color:var(--stale-ink)';
+                retry.addEventListener('click', function () { poll(); });
+                deadBar.appendChild(retry);
+                var mast = doc.querySelector('.mast');
+                mast.parentNode.insertBefore(deadBar, mast.nextSibling);
+            }
+            deadMsg.textContent = msg;
+            deadBar.hidden = false;
+            servePill(true);
+            setFrozen(true);
+            // The eyebrow is rendered, not patched, so the page has to be
+            // drawn again — but only as the state flips. A redraw every five
+            // seconds would throw away a scroll position and an opened row
+            // for a page whose numbers cannot change any more.
+            if (frozenAt === null) { frozenAt = stamp(NOW).slice(11); draw(); }
+        };
+        var hideDead = function () {
+            if (deadBar) deadBar.hidden = true;
+            servePill(false);
+            setFrozen(false);
+            if (frozenAt !== null) { frozenAt = null; draw(); }
+        };
+        var poll = function () {
+            fetch('station/health').then(function (r) {
+                if (r && r.ok) lastOkMs = Date.now();
+            }).catch(function () {}).then(function () {
+                var msg = serveLost(lastOkMs, Date.now(), stamp(NOW), ago(NOW));
+                if (msg) showDead(msg); else hideDead();
+            });
+        };
+        w.setInterval(poll, 5000);
+    }
+
     draw();
 }(typeof window === 'undefined' ? {} : window,
   typeof document === 'undefined' ? null : document));

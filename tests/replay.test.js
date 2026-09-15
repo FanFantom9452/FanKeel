@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const replay = require('../lib/replay.js');
 const usage = require('../lib/usage.js');
+const registry = require('../lib/registry.js');
 const tmp = require('./tmp.js');
 
 const T = (ms) => new Date(Date.UTC(2026, 8, 11, 10) + ms).toISOString();
@@ -34,13 +35,47 @@ test('eventsOf: prompt, gate with its answer, one row per turn of edits, commit,
     assert.deepEqual(out.events.map((e) => e.kind), ['prompt', 'gate', 'edit', 'commit', 'test', 'stage', 'out', 'back']);
     const [prompt, gate, edit, commit, tested, , sent, back] = out.events;
     assert.deepEqual([prompt.text, prompt.cmd], ['fix the station', '/fankeel:fankeel']);
-    assert.deepEqual(gate.qs, [{ q: 'Which?', a: 'my own', own: true }]);
+    assert.deepEqual(gate.qs, [{ q: 'Which?', a: 'my own', own: true, labels: ['A', 'B'] }]);
     assert.equal(gate.askedAt, Date.parse(T(1000)));
     assert.deepEqual(edit.files, [{ f: 'y/lib/a.js', n: 2 }, { f: 'x/docs/b.md', n: 1 }]);
     assert.deepEqual([commit.sha, commit.text], ['abc1234', 'fix: the thing']);
     assert.equal(tested.text, 'ℹ pass 3 · ℹ fail 0');
     assert.deepEqual([sent.disp, back.disp, back.ret], [0, 0, 500]);
     assert.deepEqual([out.total, out.dropped], [8, 0]);
+});
+
+test('a gate keeps every option\'s label, in the order AskUserQuestion gave them', () => {
+    const entries = [
+        said('r1', 1000, [use('q1', 'AskUserQuestion', { questions: [
+            { question: 'Which?', options: [{ label: 'Third', description: 'z' }, { label: 'First', description: 'a' }, { label: 'Second', description: 'b' }] },
+        ] })]),
+        result(2000, 'q1', 'answered', { answers: { 'Which?': 'Third' } }),
+    ];
+    const out = replay.eventsOf(entries, { turnAt: usage.turnIndex(entries) });
+    const gate = out.events.find((e) => e.kind === 'gate');
+    assert.deepEqual(gate.qs[0].labels, ['Third', 'First', 'Second']);
+});
+
+test('a gate\'s question and answer clip at 240, not 120', () => {
+    const q240 = 'Q'.repeat(240);
+    const q241 = 'R'.repeat(241);
+    const entries = [
+        said('r1', 1000, [use('q1', 'AskUserQuestion', { questions: [
+            { question: q240, options: [{ label: 'A' }] },
+            { question: q241, options: [{ label: 'B' }] },
+        ] })]),
+        result(2000, 'q1', 'answered', { answers: { [q240]: q240, [q241]: q241 } }),
+    ];
+    const out = replay.eventsOf(entries, { turnAt: usage.turnIndex(entries) });
+    const gate = out.events.find((e) => e.kind === 'gate');
+    assert.equal(gate.qs[0].q, q240);
+    assert.equal(gate.qs[0].a, q240);
+    assert.equal(gate.qs[1].q, q241.slice(0, 239) + '…');
+    assert.equal(gate.qs[1].a, q241.slice(0, 239) + '…');
+});
+
+test('lib/registry.js\'s MAX_NEXT_LEN is untouched at 120 — the gate clip widened, that one did not', () => {
+    assert.equal(registry.MAX_NEXT_LEN, 120);
 });
 
 test('a commit that prints its own [branch sha] line is read from there', () => {

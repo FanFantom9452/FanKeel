@@ -80,6 +80,40 @@ test('cost adds the session and its agents', () => {
     assert.equal(V.cost({}), 0);
 });
 
+test('serveLost stays quiet with no baseline or inside the grace window, and states the mockup\'s frozen sentence once stale', () => {
+    // No successful poll yet: nothing to compare against, so no verdict.
+    assert.equal(V.serveLost(null, Date.now(), 'a', 'r'), null);
+    assert.equal(V.serveLost(undefined, Date.now(), 'a', 'r'), null);
+    // A response 14s ago is still inside the 15s grace window.
+    const now = Date.now();
+    assert.equal(V.serveLost(now - 14000, now, 'a', 'r'), null);
+    // Past the window: the mockup's sentence, with the absolute time and the
+    // relative one in parentheses after it, not the whole footer line.
+    const msg = V.serveLost(now - 15001, now, '2026-09-14 06:12', '8m ago');
+    // It starts at 底下: the bar's heading says `serve 沒有回應` above this,
+    // so a sentence that opened by saying the server is offline again would
+    // put it on screen twice.
+    assert.match(msg, /^底下所有數字/);
+    assert.match(msg, /與狀態/);
+    assert.match(msg, /2026-09-14 06:12/);
+    assert.match(msg, /（8m ago）/);
+    assert.match(msg, /每 5 秒重試一次/);
+});
+
+test('heroEyebrow carries the frozen moment, and says only 近 30 天 while the server answers', () => {
+    // Mockup screen 3's hero reads 「近 30 天 · 凍結於 06:12」, so a reader who
+    // has scrolled past the bar still sees the page is not live. The hh:mm is
+    // the caller's, off the same `stamp()` the bar's absolute time comes from
+    // — one clock read in two places rather than two clocks.
+    assert.equal(V.heroEyebrow(null), '近 30 天');
+    assert.equal(V.heroEyebrow(''), '近 30 天');
+    assert.equal(V.heroEyebrow('06:12'), '近 30 天 · 凍結於 06:12');
+    // The real call shape, so a slice off by one cannot pass: `stamp()`
+    // returns `YYYY-MM-DD hh:mm` and the eyebrow wants its last five.
+    assert.equal(V.heroEyebrow(V.stamp(Date.parse('2026-09-14T06:12:00Z')).slice(11)),
+        '近 30 天 · 凍結於 06:12');
+});
+
 test('labels give each root the shortest tail nothing else shares', () => {
     const out = V.labels(['/a/b/datapacks', '/c/d/datapacks', '/e/notes']);
     assert.equal(out['/e/notes'], 'notes');
@@ -410,7 +444,13 @@ test('頁面對帳：a day\'s bar total equals its day panel total equals that d
     }
 });
 
-test('windowTotals and the four readouts: thirty days against the thirty before, waiting over main plus wait', () => {
+test('windowTotals and the five readouts: thirty days against the thirty before, waiting over main plus wait', () => {
+    // `S.gates` (the module-scoped `global.window.STATION` object `kpiHtml`
+    // closes over) carries nothing here, on purpose: this test is about the
+    // first four readouts, and the fifth — 最常被換掉 — prints its em-dash
+    // placeholder rather than disappearing, which is what the assertions
+    // below check for.
+    global.window.STATION.gates = undefined;
     const cur = V.windowTotals(HOME, DAYS);
     const prev = V.windowTotals(HOME, PREV);
     assert.deepEqual(cur, { usd: 8.5, tokens: 42705, active: 8700000, main: 7800000, wait: 1800000 });
@@ -422,19 +462,36 @@ test('windowTotals and the four readouts: thirty days against the thirty before,
     assert.match(html, /-31\.3 pt/);
     const cells = [...html.matchAll(/<div class="ro"><div class="l">(.*?)<\/div><div class="v">(.*?)<\/div><div class="d">(.*?)<\/div><\/div>/g)];
     assert.deepEqual(cells.map((m) => m[1]),
-        ['30 天花費', 'token', 'active 時間', '<i class="hatchsw"></i>等待佔比'],
+        ['30 天花費', 'token', 'active 時間', '<i class="hatchsw"></i>等待佔比', '最常被換掉'],
         'every readout carries its own label, and nothing else, in the label cell');
     assert.deepEqual(cells.map((m) => [/class="delta/.test(m[2]), /class="delta/.test(m[3])]),
-        [[false, true], [false, true], [false, true], [false, true]],
-        'each one keeps the figure in the value cell and the comparison in the line under it');
+        [[false, true], [false, true], [false, true], [false, true], [false, false]],
+        'each one keeps the figure in the value cell and the comparison in the line under it; the gate cell has no window to compare against');
     assert.match(html, /30 天花費<\/div><div class="v">\$8\.50<\/div><div class="d">/,
         'the spend readout puts the figure in the value cell and the comparison under it');
     assert.match(html, /token<\/div><div class="v">43k<\/div>/, 'the token readout reads this window, not the one before it');
     assert.match(html, /active 時間<\/div><div class="v">2\.4h<\/div>/, 'so does active 時間');
     assert.match(html, /等待佔比<\/div><div class="v">18\.8<span class="u">%<\/span><\/div><div class="d">[^<]*<span class="delta[^>]*>[^<]*-31\.3 pt/,
         'so does the waiting share');
+    assert.match(html, /最常被換掉<\/div><div class="v">—<\/div><div class="d"><\/div>/,
+        'with no gate data, the fifth readout prints an em dash rather than dropping out of the row');
     const none = V.kpiHtml(cur, V.windowTotals(HOME, V.lastDays(NOW - 60 * 864e5, 30)));
     assert.equal(count(none, /前期無資料/g), 4);
+});
+
+test('kpiHtml reads S.gates.swapped[0] for the fifth readout: which option one loses most, and how often', () => {
+    // Mutation that reddens this: in `kpiHtml()`, drop the `var top = ...`
+    // line and the `out += roHtml('最常被換掉', ...)` line that follows it —
+    // the output then has only four `ro` cells and neither `最常被換掉` nor
+    // `進 build` nor `3 / 5` appears anywhere in it.
+    global.window.STATION.gates = { swapped: [{ label: '進 build', lost: 3, total: 5 }] };
+    const cur = V.windowTotals(HOME, DAYS);
+    const prev = V.windowTotals(HOME, PREV);
+    const html = V.kpiHtml(cur, prev);
+    assert.match(html, /最常被換掉/);
+    assert.match(html, /進 build/);
+    assert.match(html, /3 \/ 5/);
+    global.window.STATION.gates = undefined;
 });
 
 test('sessionTotals and projectRows sum days and spans per session and per project key', () => {
@@ -717,4 +774,131 @@ test('selecting a registry on 清單 keeps its unreadable-session count on the c
     });
     assert.match(els.page.innerHTML, /2 個 session 檔案讀不到/, 'the selected registry carries its own count on the card');
     assert.doesNotMatch(els.gen.textContent, /個 session 檔案讀不到/, 'the header drops the total once that card is on screen');
+});
+
+// --- fix: the health poll must never arm on a page opened as a bare file ---
+// `--open` (scripts/station.js:770) writes the page and opens it with no
+// server behind it, so the poll has to switch itself off there rather than
+// show a permanent death banner. The smoke test above stubs `document` but
+// gives `win` no `setInterval` at all, which is exactly why the poll block
+// is skipped there and the suite stayed green either way — that proves
+// nothing about the `file:` guard itself. This test arms a `setInterval` spy
+// on both a `file:` and an `http:` `location.protocol` so a guard that
+// stopped checking the protocol would show up on the `file:` arm, not just
+// vanish into an already-skipped block.
+test('the health poll never arms under file:, and does arm every 5s once served', () => {
+    const vm = require('node:vm');
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    const armed = (protocol) => {
+        const els = {};
+        const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
+        const doc = {
+            getElementById: (id) => els[id] || (els[id] = el()),
+            addEventListener: () => {},
+            createElement: el,
+            head: { appendChild() {} },
+            querySelectorAll: () => [],
+        };
+        const calls = [];
+        const win = {
+            location: { hash: '#/', protocol }, addEventListener() {}, scrollTo() {},
+            setInterval: (fn, ms) => { calls.push(ms); return 1; },
+            STATION: {
+                generatedAt: new Date(2026, 8, 14, 21).toISOString(), configDir: 'C:\\cfg',
+                pricesVerified: '2026-09-04', serve: protocol !== 'file:',
+                projects: [{ root: 'F:\\ws\\alpha', gone: false, unreadable: 2, build: [], mapAt: null }],
+                profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} },
+                profileKeys: {}, classes: {}, sessions: [],
+            },
+        };
+        vm.runInNewContext(src, { window: win, document: doc, URLSearchParams, fetch() {} });
+        return calls;
+    };
+    assert.deepEqual(armed('file:'), [], 'a bare file open schedules no poll at all');
+    assert.deepEqual(armed('http:'), [5000], 'a served page polls every 5s');
+});
+
+// The frozen eyebrow is rendered rather than patched, so the flip into and
+// out of frozen has to call `draw()` — and a poll that finds nothing changed
+// must not, because a redraw every five seconds throws away a scroll position
+// and an opened row on a page whose numbers cannot move any more. Nothing
+// else reaches that gate: the smoke test gives `win` no `setInterval`, and
+// the test above captures the interval's period without ever invoking its
+// callback. So this one drives the callback, with a `Date` it moves and a
+// `#page` that counts how often it is written — `draw()` assigns
+// `p.innerHTML` (assets/station/station.js:1906), which is what the counter
+// below is on.
+test('a poll finding no change does not redraw, and each state flip redraws once', async () => {
+    const vm = require('node:vm');
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+
+    // The page reads `Date.now()` for the poll's baseline and `Date.parse`
+    // for every `started`. The subclass inherits the second as a static, so
+    // only the first is overridden — and moving it is how this test spends
+    // fifteen seconds without waiting them.
+    let skew = 0;
+    class Clock extends Date {
+        static now() { return Date.now() + skew; }
+    }
+
+    let draws = 0, tick = null, alive = true;
+    const el = () => ({
+        innerHTML: '', textContent: '', className: '', title: '', style: {}, hidden: false,
+        setAttribute() {}, appendChild() {}, addEventListener() {},
+    });
+    const page = el();
+    Object.defineProperty(page, 'innerHTML', { get() { return ''; }, set() { draws++; } });
+    const els = { page: page };
+    const doc = {
+        getElementById: (id) => els[id] || (els[id] = el()),
+        addEventListener() {}, createElement: el, head: { appendChild() {} },
+        querySelectorAll: () => [],
+        // `showDead` inserts the bar after `.mast`, unguarded.
+        querySelector: () => ({ parentNode: { insertBefore() {} }, nextSibling: null }),
+    };
+    const win = {
+        location: { hash: '#/', protocol: 'http:' }, addEventListener() {}, scrollTo() {},
+        setInterval: (fn) => { tick = fn; return 1; },
+        STATION: {
+            generatedAt: new Date(2026, 8, 14, 21).toISOString(), configDir: 'C:\\cfg',
+            pricesVerified: '2026-09-04', serve: true,
+            projects: [{ root: 'F:\\ws\\alpha', gone: false, unreadable: 2, build: [], mapAt: null }],
+            profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} },
+            profileKeys: {}, classes: {}, sessions: [],
+        },
+    };
+    vm.runInNewContext(src, {
+        window: win, document: doc, URLSearchParams, Date: Clock,
+        fetch: () => (alive ? Promise.resolve({ ok: true }) : Promise.reject(new Error('refused'))),
+    });
+
+    // Awaiting a macrotask drains the fetch chain's microtasks.
+    const settle = () => new Promise((r) => { setImmediate(r); });
+    const atLoad = draws;
+    // The counter is on the real thing, and this is what says so: a stub the
+    // page never writes would leave this at zero and every count below would
+    // pass vacuously.
+    assert.ok(atLoad > 0, 'the page drew on load');
+    assert.equal(typeof tick, 'function', 'the poll armed');
+
+    // The server goes quiet and the grace window passes: the flip redraws.
+    alive = false;
+    skew = 16000;
+    tick(); await settle(); await settle();
+    assert.equal(draws, atLoad + 1, 'the flip into frozen did not redraw exactly once');
+    // Five seconds later it is still gone. Nothing has changed, so nothing
+    // may be redrawn — this is the assertion the whole gate exists for.
+    skew = 21000;
+    tick(); await settle(); await settle();
+    assert.equal(draws, atLoad + 1, 'a poll that found nothing changed redrew the page');
+    // It answers again: one redraw to take the eyebrow back, then none.
+    alive = true;
+    tick(); await settle(); await settle();
+    assert.equal(draws, atLoad + 2, 'the flip back to live did not redraw exactly once');
+    tick(); await settle(); await settle();
+    assert.equal(draws, atLoad + 2, 'a poll on a live server redrew the page');
 });

@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 'use strict';
 
-// The release number, in the twelve places that carry it.
+// The release number, in the thirteen places that carry it.
 //
 //   node version.js              what they say, and whether they agree
-//   node version.js 0.35.0       set all twelve
+//   node version.js 0.35.0       set all thirteen
 //   node version.js --changes    what has landed since the last release commit
 //
-// Two manifests and one frontmatter line in each of the ten skills. Nothing
-// used to set them together, so a release was ten edits and a miss left a skill
+// Two manifests and one frontmatter line in each of the eleven skills. Nothing
+// used to set them together, so a release was eleven edits and a miss left a skill
 // announcing a version the plugin is not — wrong in a way nobody reads carefully
-// enough to catch, because the number is right in nine places.
+// enough to catch, because the number is right in ten places.
 //
 // `tests/contract.test.js` is the other half and the one that runs unasked: it
-// fails when the twelve disagree. This is what makes them agree without twelve edits.
+// fails when the thirteen disagree. This is what makes them agree without thirteen edits.
 // Neither is enough alone — a check with no fixer is a chore, and a fixer with no
 // check is one somebody forgets to run.
 //

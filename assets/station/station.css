@@ -58,6 +58,10 @@ button{font:inherit;color:inherit}
 .num{font-variant-numeric:tabular-nums}
 .muted{color:var(--muted)}
 :focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:3px}
+/* Every `hidden` element on this page also carries a class that sets
+   `display`, and a class beats the browser's own `[hidden]` rule — so
+   `el.hidden = true` would leave it on screen without this. */
+[hidden]{display:none!important}
 
 /* masthead */
 .mast{display:flex;align-items:center;gap:22px;padding:0 32px;height:52px;max-width:1440px;margin:0 auto}
@@ -66,6 +70,13 @@ button{font:inherit;color:inherit}
 .brand span{font-weight:300;color:var(--ink2)}
 .brand svg{width:20px;height:20px}
 .crumbs{display:flex;align-items:center;gap:8px;color:var(--muted);min-width:0;flex:1;white-space:nowrap;overflow:hidden}
+/* The dead-server bar, under the masthead and the full width of it. Stale
+   colours rather than an alarm: the page is readable and every link still
+   works, so this states a fact instead of blocking the view. */
+.dead{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;max-width:1440px;margin:0 auto;
+  padding:11px 32px;background:var(--stale-bg);color:var(--stale-ink);border-left:3px solid var(--stale)}
+.dead b{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.dead code{font:11px/1.5 var(--mono);user-select:all;margin-left:auto}
 .crumbs a{text-decoration:none;color:var(--ink2)} .crumbs a:hover{color:var(--ink);text-decoration:underline}
 .crumbs i{font-style:normal;color:var(--faint)}
 .crumbs .cur{color:var(--ink);overflow:hidden;text-overflow:ellipsis}

@@ -48,8 +48,12 @@ reaches anyway. `Write` is matched by `guard.js`'s `PreToolUse` hook,
 whose matcher is `Edit|Write|NotebookEdit`. `Bash` is matched now too:
 `.claude-plugin/plugin.json` registers `hooks/guard.js` a second time,
 matcher `Bash|PowerShell`, and it denies a command that writes files —
-`lib/guard.js`'s `writesFiles` — when `agent_type` is `fankeel-reader`,
-`fankeel-reviewer` or `fankeel-judge`; [collisions.md](collisions.md)
+`lib/guard.js`'s `writesFiles` — when `agent_id` is set **and** `agent_type` is
+`fankeel-reader`, `fankeel-reviewer` or `fankeel-judge`. The id is the half that
+says this is a subagent at all: the main thread of a session started with
+`--agent` carries the type without it and must be able to write, so the id is
+checked first (`hooks/guard.js:52`, `if (!payload.agent_id) return;`).
+[collisions.md](collisions.md)
 carries what that denylist actually matches, not restated here. Four of
 the five agents hold `Bash`; `fankeel-fixer` is the one that does not,
 because it edits the file itself rather than returning something for the

@@ -674,6 +674,16 @@ function main() {
             // The rows, not the panel: a session's detail is a file of its own.
             details: false,
         });
+        const hidden = station.hiddenPkeys(model);
+        for (const r of model.registries) {
+            r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));
+            const keep = {};
+            for (const dir of Object.keys(r.profiles || {})) {
+                const values = r.profiles[dir] && r.profiles[dir].values;
+                if (!values || values['station.hide'] !== true) keep[dir] = r.profiles[dir];
+            }
+            r.profiles = keep;
+        }
         process.stdout.write(JSON.stringify(model) + '\n');
         return;
     }
@@ -766,7 +776,8 @@ function main() {
     }
     process.stdout.write('fankeel station — ' + out.file + '\n'
         + '  ' + out.registries + ' registries · ' + out.live + ' live, ' + out.stale + ' stale, ' + out.down + ' down'
-        + (out.copy ? '  ·  copy at ' + out.copy : '') + '\n');
+        + (out.copy ? '  ·  copy at ' + out.copy : '') + '\n'
+        + (out.hidden ? '  ' + out.hidden + ' project' + (out.hidden === 1 ? '' : 's') + ' hidden by station.hide\n' : ''));
     if (args.open) openInBrowser(out.file);
 }
 

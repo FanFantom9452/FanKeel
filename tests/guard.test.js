@@ -360,7 +360,7 @@ test('the refusal prints the clear command whole, and says why --force is part o
 
 const bashCall = (agentType, command, tool) => ({
   session_id: MINE, cwd: undefined, tool_name: tool || 'Bash', agent_type: agentType,
-  tool_input: { command },
+  agent_id: 'agt_01', tool_input: { command },
 });
 
 test('a fankeel-reader redirecting output is denied', () => {
@@ -421,4 +421,19 @@ test('the writes the first list missed are denied too, and git reads still pass'
 test('a session with no entry is not guarded on Bash either', () => {
   const root = tmp();
   assert.equal(run(root, bashCall('fankeel-reader', 'ls > x')), '');
+});
+
+// `agent_type` alone is a trap: it is set both inside a subagent and on the
+// main thread of a session started with `--agent`, and that second one is a
+// real session that owns tasks and must be able to write. `agent_id` is
+// present only inside a subagent, so a read-only `agent_type` with no
+// `agent_id` is the main thread, not a subagent, and must not be denied.
+test('a read-only agent_type with no agent_id is a real session, not a subagent', () => {
+  const root = tmp();
+  seed(root, MINE, { guard: undefined });
+  const out = run(root, {
+    session_id: MINE, cwd: undefined, tool_name: 'Bash', agent_type: 'fankeel-reader',
+    tool_input: { command: 'echo x > f.txt' },
+  });
+  assert.equal(out, '');
 });
