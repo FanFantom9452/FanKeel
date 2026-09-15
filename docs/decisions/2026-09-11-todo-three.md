@@ -47,7 +47,7 @@ Ruling，代價講明白了：想知道另外五個的人得自己 grep。
 ## 兩個守衛，因為散文修正不會自己紅
 
 adversary 打掉過「這兩條修正沒辦法寫測試」這個說法，它舉了
-`tests/skills.test.js:708` 與 `tests/docs.test.js:515` 兩處早就存在的同形狀檢
+`tests/skills.test.js:712` 與 `tests/docs.test.js:515` 兩處早就存在的同形狀檢
 查。於是：
 
 - `tests/docs-audit.test.js` 從 `sweep()` 自己的 return literal 解出類別集合，

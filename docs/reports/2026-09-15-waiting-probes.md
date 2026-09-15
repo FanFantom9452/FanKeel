@@ -172,13 +172,13 @@ design 的 gate 上說的是約 $4，實際約 $6.4，超支約 $2.4。
 | `docs/decisions/2026-09-05-skill-split-design.md:156-162` | `## Unverified` 那段的問句——驗了，答案是不會被跟 |
 | `skills/fankeel-build/SKILL.md:41`、`fankeel-plan:42`、`fankeel-audit:51` | 「Why each rule is what it is, under the same headings: [rationale.md](rationale.md)」——這行指向的東西模型到不了 |
 | `tests/skills.test.js:232-233` | 「a reader looking for the why of a section finds it under the section's own name」——對人成立，對模型不成立，而讀技能的是模型。assertion 本身沒錯，錯的是這句註解 |
-| `docs/decisions/fankeel-shell.md:479-482` | 「Two sonnet readers … followed the link …, 2 of 2」——沒有任何逐字記錄，而被注入的那一種是 0 of 4 |
+| `docs/decisions/fankeel-shell.md:480-482` | 「Two sonnet readers … followed the link …, 2 of 2」——沒有任何逐字記錄，而被注入的那一種是 0 of 4 |
 | `docs/decisions/2026-09-11-todo-eight.md:27-29` | 逐字抄進第二頁的同一句但書——與上面第一列同樣的一半一半 |
 | `docs/decisions/2026-09-10-todo-ten.md:35-36` | 「`route-typo` 自己的分數還在跳」——那是不做成對跑的理由，而前提不成立 |
 | `evals/subagent-no-entry/prompt.md:8` | `allowed_tools` 清單沒有限制住任何工具 |
 | `evals/pipe-not-agent/graders/no-agent-dispatch.md:6-8` | 「a dispatch tool stays in `prompt.md`'s `allowed_tools` precisely so this assertion has something to fail against」——那個機制不存在，`max: 0` 不管清單寫什麼都有路可以掉 |
 
-**九列裡有七列已經改掉了，就在這次任務裡。** 表上引的是改之前的句子，所以除了第一列——那一段整段重寫，原句在頁面上已經不存在——其餘各列的行號仍然指得到被引的字。
+**九列裡有七列已經改掉了，就在這次任務裡。** 表上引的是改之前的句子。改掉的七列分兩種：五列是在原句後面接一段但書，原句與行號都還指得到；兩列是整段重寫，原句在頁面上已經不存在——第一列的 `docs/collisions.md` 與最後一列的 `no-agent-dispatch.md`，那兩處的行號現在指到的是改寫後的文字。
 
 沒改的是第三列與第八列，而且是故意的：三個技能那行相對連結、以及 `allowed_tools` 那份清單，各自要的是一個決定而不是一次改寫——併回、改注入、還是接受；改 `--disallowedTools`、還是拿掉宣告。兩條都在 `## Needs a decision` 裡等人回答。
 
