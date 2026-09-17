@@ -540,3 +540,111 @@ test('a project read by git is counted without stat-ing the files git named', (t
   assert.deepEqual(statted.map((p) => path.basename(p)), ['sub'],
     'a file git had already named was stat-ed to be told the same thing');
 });
+
+// `/fankeel init` offers TODO.md entries as menu options, and AskUserQuestion
+// holds at most 4. This is the block that says which ones — ordered by
+// git-blame time, an entry per line rewritten and re-committed so the order is
+// not a coincidence of file position.
+function initGit(dir) {
+  const opts = { cwd: dir, stdio: ['ignore', 'ignore', 'ignore'] };
+  execFileSync('git', ['init', '-q'], opts);
+  execFileSync('git', ['config', 'user.email', 't@example.com'], opts);
+  execFileSync('git', ['config', 'user.name', 'test'], opts);
+  return opts;
+}
+
+function commitTodo(dir, opts, body, when) {
+  fs.writeFileSync(path.join(dir, 'TODO.md'), body);
+  const env = Object.assign({}, process.env, { GIT_AUTHOR_DATE: when, GIT_COMMITTER_DATE: when });
+  execFileSync('git', ['add', '-A'], Object.assign({}, opts, { env }));
+  execFileSync('git', ['commit', '-qm', 'todo'], Object.assign({}, opts, { env }));
+}
+
+test('the todo: block offers the newest edits under Needs a decision, oldest edit last', () => {
+  const root = workspace({});
+  const opts = initGit(root);
+
+  const bodyV1 = [
+    '## Ready',
+    '',
+    '## Needs a decision',
+    '- Entry A original text',
+    '- Entry B',
+    '- Entry C',
+    '- Entry D',
+    '- Entry E',
+    '',
+    '## Waiting',
+  ].join('\n') + '\n';
+  commitTodo(root, opts, bodyV1, '2026-01-01T00:00:00Z');
+
+  // Only the first entry's line changes. Its git-blame time moves to the
+  // second commit while the other four keep the first commit's time, so a
+  // reader who sorted by file position instead of by edit time would put it
+  // last, not first.
+  const bodyV2 = bodyV1.replace('- Entry A original text', '- Entry A rewritten text');
+  commitTodo(root, opts, bodyV2, '2026-01-02T00:00:00Z');
+
+  const out = run(['--root', root]);
+  assert.match(out, /^todo: TODO\.md$/m);
+  assert.match(out, /Needs a decision 5 — newest 4 by last edit, offer these:/);
+  const lines = out.split(/\r?\n/);
+  const headingIdx = lines.findIndex((l) => /Needs a decision 5/.test(l));
+  assert.match(lines[headingIdx + 1], /Entry A rewritten text/);
+  assert.match(out, /and 1 more, not listed — Other takes one by name/);
+  assert.match(out, /Waiting 0 — not offered/);
+});
+
+test('a Ready entry drops the offer from 4 to 3', () => {
+  const root = workspace({});
+  const opts = initGit(root);
+  const body = [
+    '## Ready',
+    '- Do the thing',
+    '',
+    '## Needs a decision',
+    '- Entry one',
+    '- Entry two',
+    '- Entry three',
+    '- Entry four',
+    '',
+    '## Waiting',
+  ].join('\n') + '\n';
+  commitTodo(root, opts, body, '2026-01-01T00:00:00Z');
+
+  const out = run(['--root', root]);
+  assert.match(out, /Needs a decision 4 — newest 3 by last edit, offer these:/);
+  assert.match(out, /and 1 more, not listed — Other takes one by name/);
+});
+
+test('what is offered plus "and N more" equals todo-check\'s own count', () => {
+  const root = workspace({});
+  const opts = initGit(root);
+  const body = [
+    '## Ready',
+    '',
+    '## Needs a decision',
+    '- One', '- Two', '- Three', '- Four', '- Five', '- Six',
+    '',
+    '## Waiting',
+  ].join('\n') + '\n';
+  commitTodo(root, opts, body, '2026-01-01T00:00:00Z');
+
+  const todoCheck = require('../scripts/todo-check.js');
+  const expected = todoCheck.check(path.join(root, 'TODO.md')).counts['Needs a decision'];
+
+  const out = run(['--root', root]);
+  const start = out.indexOf('todo: TODO.md');
+  const waitingIdx = out.indexOf('\n  Waiting ', start);
+  const block = out.slice(start, waitingIdx);
+  const offered = block.split(/\r?\n/).filter((l) => /^    \S/.test(l) && !/^    and \d+ more/.test(l)).length;
+  const more = /and (\d+) more, not listed/.exec(block);
+  assert.equal(offered + (more ? Number(more[1]) : 0), expected);
+});
+
+test('no TODO.md means no todo: block at all', () => {
+  const root = workspace({ 'a.js': 'x' });
+  fs.mkdirSync(path.join(root, '.git'), { recursive: true });
+  const out = run(['--root', root]);
+  assert.doesNotMatch(out, /todo: TODO\.md/);
+});

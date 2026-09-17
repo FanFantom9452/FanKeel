@@ -387,4 +387,4 @@ if (require.main === module) {
     process.exit(ok ? 0 : 1);
 }
 
-module.exports = { MAX_ENTRY_CHARS, REREAD_DAYS, SECTIONS, linksIn, check, report, main };
+module.exports = { MAX_ENTRY_CHARS, REREAD_DAYS, SECTIONS, linksIn, entries, check, report, main };

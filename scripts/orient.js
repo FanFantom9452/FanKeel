@@ -27,6 +27,9 @@ const { isSubtree } = require('./survey.js');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { firstTable } = require('../lib/map.js');
+// `require.main === module` guards its CLI body, so requiring it here does not
+// run `todo-check`'s own report — only `entries` and `check` get used.
+const todoCheck = require('./todo-check.js');
 
 // A workspace with more children than this is not being read row by row, and a
 // listing nobody finishes is a listing nobody acts on. The count of what was
@@ -384,6 +387,115 @@ function countLine(result) {
     return result.alive === null ? n + ', liveness unknown' : n + ', ' + result.alive + ' live';
 }
 
+// git blame's committer-time for every line of a file, in document order, so
+// index i holds line i+1. null when blame fails — the directory is not a
+// repository, or the file has never been committed — which is the caller's
+// signal to fall back to file order rather than reading zero lines as a
+// history of zero.
+function blameTimes(dir, name) {
+    const out = git(dir, ['blame', '--line-porcelain', '--', name]);
+    if (out === null) return null;
+    const times = [];
+    let sha = null;
+    for (const line of out.split('\n')) {
+        const header = /^([0-9a-f]{40})\s+\d+\s+\d+/.exec(line);
+        if (header) {
+            sha = header[1];
+            continue;
+        }
+        const ct = /^committer-time (\d+)/.exec(line);
+        if (ct) {
+            // All-zero is git's marker for a line the working tree has changed
+            // since the last commit. It has no history to date yet, so it
+            // counts as the newest thing in the file rather than as whatever
+            // placeholder time blame prints for it.
+            times.push(/^0+$/.test(sha || '') ? Infinity : Number(ct[1]) * 1000);
+        }
+    }
+    return times.length ? times : null;
+}
+
+// Bullets in document order, each carrying the line range it spans: from its
+// own first line up to — not including — whichever bullet or heading comes
+// next, or the end of the file for the last one. `todo-check.js`'s `entries()`
+// records only an entry's first line; a wrapped entry's edit time is the
+// newest edit to any of its lines, so the rest of the range is worked out here.
+function withSpans(list, totalLines) {
+    return list.map((e, i) => ({
+        ...e,
+        end: i + 1 < list.length ? list[i + 1].line - 1 : totalLines,
+    }));
+}
+
+// `list`, newest edit first. Ties — including every line sharing one commit,
+// or no git history at all — keep the entry later in the file first: with no
+// blame to sort by the whole list is one tie, and "the last N entries, latest
+// first" falls out of this same rule rather than needing one of its own.
+function orderByEdit(dir, name, list, totalLines) {
+    const blame = blameTimes(dir, name);
+    if (!blame) return [...list].reverse();
+    const scored = list.map((entry) => {
+        let latest = -Infinity;
+        for (let ln = entry.line; ln <= entry.end; ln++) {
+            const t = blame[ln - 1];
+            if (t !== undefined && t > latest) latest = t;
+        }
+        return { entry, latest };
+    });
+    scored.sort((a, b) => (b.latest - a.latest) || (b.entry.line - a.entry.line));
+    return scored.map((s) => s.entry);
+}
+
+// What `/fankeel init` can actually offer. `AskUserQuestion` holds at most
+// four options and `## Needs a decision` routinely holds far more than that,
+// so this is not a listing of the section — it is the subset init can turn
+// into options, ordered by which entry was touched most recently, plus the
+// count of what got left out rather than a silent drop of it.
+//
+// null when there is nothing to say: no TODO.md at `dir`, or it could not be
+// read. A missing file is not a finding here — `todo-check.js` already has
+// the line for that — so the caller prints nothing rather than an empty block.
+function todoBlock(dir) {
+    const file = path.join(dir, 'TODO.md');
+    const result = todoCheck.check(file);
+    if (result.missing) return null;
+    let text;
+    try {
+        text = fs.readFileSync(file, 'utf8');
+    } catch (e) {
+        return null;
+    }
+    const totalLines = text.split(/\r?\n/).length;
+    const spans = withSpans(todoCheck.entries(text), totalLines);
+    const needs = spans.filter((e) => e.section === 'Needs a decision');
+    const ordered = orderByEdit(dir, 'TODO.md', needs, totalLines);
+
+    const readyCount = result.counts['Ready'] || 0;
+    const waitingCount = result.counts['Waiting'] || 0;
+    const needsCount = result.counts['Needs a decision'] || 0;
+    // Three rather than four when Ready already holds one: a menu offering
+    // four from this section plus one from Ready is five options, one more
+    // than AskUserQuestion takes.
+    const limit = readyCount > 0 ? 3 : 4;
+    const shown = ordered.slice(0, limit);
+
+    const lines = ['todo: TODO.md', '  Ready ' + readyCount];
+    if (needsCount === 0) {
+        lines.push('  Needs a decision 0');
+    } else {
+        lines.push('  Needs a decision ' + needsCount + ' — newest ' + shown.length
+            + ' by last edit, offer these:');
+        for (const e of shown) {
+            const t = e.text.replace(/\s+/g, ' ').trim();
+            lines.push('    ' + (t.length > 100 ? t.slice(0, 99) + '…' : t));
+        }
+        const more = needsCount - shown.length;
+        if (more > 0) lines.push('    and ' + more + ' more, not listed — Other takes one by name');
+    }
+    lines.push('  Waiting ' + waitingCount + ' — not offered');
+    return lines;
+}
+
 function report(result) {
     const lines = ['fankeel orient — ' + result.root, ''];
 
@@ -461,6 +573,11 @@ function report(result) {
 
     // One target, so there is room to say what it is made of. Two or more and
     // this would be a wall of directories with no question attached.
+    //
+    // `insideBreakdown` records whether that happened, because it decides
+    // which TODO.md the block below reads: this project's own, once there was
+    // room to break it into directories, or the scan root's otherwise.
+    let insideBreakdown = false;
     if (found.length === 1 && found[0].count && found[0].count.list.length) {
         const rows = topLevel(found[0].count.list);
 
@@ -470,6 +587,7 @@ function report(result) {
         const loose = rows.length - dirs.length;
 
         if (dirs.length) {
+            insideBreakdown = true;
             lines.push('');
             lines.push('inside it:');
             const prefix = result.mode === 'single' ? '' : found[0].rel + '/';
@@ -498,6 +616,18 @@ function report(result) {
         // Not when the row one line above says `could not be listed`. Absence
         // read off a directory that would not open is the confident wrong answer
         // this whole report exists to stop.
+
+        // What `/fankeel init` can offer as menu options. The project's own
+        // TODO.md once this was broken down into directories of its own —
+        // that breakdown is what said this is a project and not just a
+        // container for one — and the scan root's otherwise, because there is
+        // no more specific TODO.md this could mean.
+        const todoDir = insideBreakdown ? path.resolve(result.root, one.base) : result.root;
+        const todo = todoBlock(todoDir);
+        if (todo) {
+            lines.push('');
+            lines.push(...todo);
+        }
 
         // What the project is in the middle of. A task started without this gets
         // designed against the branch as it was described rather than as it is.
