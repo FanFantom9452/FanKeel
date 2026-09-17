@@ -180,7 +180,7 @@ const { usage, parseArgs, runOnce, render, verdict, main, cmdQuote, buildArgs } 
 // be checked without spending money on a real `claude -p` run — the comment
 // on the destructure above explains why `runOnce` itself is never called here.
 test('buildArgs reads disallowed_tools and passes --disallowedTools, never --allowedTools', () => {
-    const args = buildArgs({ disallowed_tools: '[Agent]' }, { pluginDir: 'PLUGIN_DIR', model: 'sonnet' });
+    const args = buildArgs({ disallowed_tools: '[Agent]', allowed_tools: '[Read]' }, { pluginDir: 'PLUGIN_DIR', model: 'sonnet' });
     const i = args.indexOf('--disallowedTools');
     assert.notEqual(i, -1, '--disallowedTools is not in the args at all');
     assert.equal(args[i + 1], 'Agent');
