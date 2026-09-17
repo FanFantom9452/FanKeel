@@ -108,10 +108,10 @@ knows whose tree applies. One registry can cover five of them and nothing else
 needs to know which. Ask for it only when the root holds more than one, and never
 ask for a file list — there is nothing to declare and nothing to get wrong.
 
-Twelve more are written without anyone typing them. Four of those — `ended`,
-`model`, `usage` and `spend` — arrive once, from `hooks/leave.js` when the
-session ends, and [docs/registry.md](../../docs/registry.md) has their shape;
-the eight below
+Thirteen more are written without anyone typing them. Five of those —
+`ended`, `model`, `usage`, `spend` and `gates` — arrive once, from
+`hooks/leave.js` when the session ends, and
+[docs/registry.md](../../docs/registry.md) has their shape; the eight below
 are the ones every session carries. `route` and `class` come from
 the class picked at `start`, `configDir` records which config directory this
 session runs under, so another session can look for its liveness in the right
@@ -131,10 +131,12 @@ records held no `waited` a hook had put there and every session of a newer
 process has one, from 2026-09-02 on. [docs/registry.md](../../docs/registry.md)
 has that run, and what the older process looked like from inside.
 
-`moves` is the order those stages came in: one `[stage, at]` for each change of
-stage, stamped with the sighting `clock` takes, so a verify that went back to
-build and returned reads as two visits rather than one long one. Sixty at most,
-oldest dropped.
+`moves` is the order those stages came in: one `[stage, at, used]` for each
+change of stage, stamped with the sighting `clock` takes, so a verify that went
+back to build and returned reads as two visits rather than one long one. `used`
+is the context reading at that moment, left off when there was none, so what a
+return to `build` cost is the gap between two readings. Sixty at most, oldest
+dropped.
 
 `clock` and `burn` part company in one place: `burn` is only written when a
 token figure arrives, and an answered question is not a prompt, so a stage that
@@ -144,7 +146,7 @@ is not `Stop`, and what it does instead of measuring anything, is in
 [docs/registry.md](../../docs/registry.md) — this is the short form, not the
 only copy.
 
-A thirteenth, `gateAt`, is deliberately not below. It exists only between a
+A fourteenth, `gateAt`, is deliberately not below. It exists only between a
 question going out and its answer arriving — and a record that lacks it when the
 answer arrives is what the `gate:` line under **While the mode is on** reports.
 
@@ -827,7 +829,7 @@ here went is in
 
 ## Calibration
 
-Three rules sit above the ones a stage carries, because they govern how the
+Four rules sit above the ones a stage carries, because they govern how the
 rules themselves are read rather than what any one stage produces.
 
 **A gate on every stage is a treadmill.** The gate belongs at a stage's end —
@@ -844,6 +846,12 @@ stays.** `ALWAYS[2]` carries this for every stage. The output template is the
 cheaper place to spend room — it is read once by the model and never by the
 user — so it is never rewritten to dodge a rule, and a rule is never cut to
 keep a template line intact.
+
+**While a task is active, `fankeel-<stage>` is the procedure for that step.**
+Another installed plugin's process skill for the same step is set aside —
+named the first time it is, not silently. `<plugin>/scripts/orient.js`'s `overlap:`
+line, read off the config directory's own `plugins/installed_plugins.json`,
+is where the ones actually installed are listed.
 
 The four always-on rules exist because something specific broke without
 them, not for balance:
@@ -981,7 +989,9 @@ Five rules that make it work, each of which fails silently when missed:
   the floor the harness itself enforces. Inside a Workflow script the same rule holds: every `agent`
   call carries `model` and `sonnet` is the floor there too; the authoring
   reference's advice to omit it and inherit is the host's default, not this
-  plugin's.
+  plugin's. `subagent_type: "fork"` is a second exception, and the wrong
+  direction: it inherits the whole context and ignores `model` outright — the
+  Agent tool's own description says so — so fankeel never dispatches one.
 - **Say how many, and on which model.** In the response that sends them, not
   after they come back. A fan-out is spend the user is paying for and cannot see
   coming, and for a long time `survey` was the only stage that said it — which

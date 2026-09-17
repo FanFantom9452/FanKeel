@@ -28,7 +28,7 @@ workspace/                     <- Claude Code opened here
 
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `start` for `guard`, read from the effective profile whenever it is not the builtin default `ask` — a `guard` set later by hand overwrites it the same way any other write does; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `leave.js` for `ended`, `model`, `usage` and `spend`, once, at `SessionEnd`; `task.js land` for `land`, once per invocation — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `start` for `guard`, read from the effective profile whenever it is not the builtin default `ask` — a `guard` set later by hand overwrites it the same way any other write does; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `leave.js` for `ended`, `model`, `usage`, `spend` and `gates`, once, at `SessionEnd`; `task.js land` for `land`, once per invocation — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | `lib/registry.js:221` creates it holding `sessions/` alone; `registry.ensureIgnored` appends what is missing — `scripts/map.js:39` asks for `sessions/`, `build/` and `map.md` on every map run, `lib/station.js` for `index.html` and `station/` on every write of the copy — two names that cover the four files it emits, rather than the `EMITTED` list itself, because a directory is one line where four paths under it would be four |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
@@ -120,10 +120,14 @@ written by `hooks/leave.js` once, at `SessionEnd`, and its shape is under
 "waited": { "survey": 240000 }
 ```
 
-`moves` sits beside them and is not a cost. It is one `[stage, at]` for each
-change of stage, appended by the same `touch` that writes `clock` and stamped
-with the same sighting, so the entry opening a stage's first visit carries that
-stage's `clock` first. `clock` keeps one pair per stage, which makes a verify
+`moves` sits beside them and is not a cost. It is one `[stage, at, used]` for
+each change of stage, appended by the same `touch` that writes `clock` and
+stamped with the same sighting, so the entry opening a stage's first visit
+carries that stage's `clock` first. `used` is the context reading `touch()`
+had in hand at that moment (`hooks/inject.js`); where none was available the
+entry keeps the older two-element shape, `[stage, at]`. What one stage's
+regression to `build` cost is the difference between two adjacent `used`
+readings. `clock` keeps one pair per stage, which makes a verify
 that went back to build and returned read as one long verify; `moves` keeps the
 order. Sixty at most, oldest dropped — `MAX_MOVES` in `lib/registry.js`. `task`
 clears it with the four above.
@@ -212,7 +216,7 @@ figure is finished.
 
 # What ending records
 
-Four more fields, written once, by `hooks/leave.js` at `SessionEnd`, and by
+Five more fields, written once, by `hooks/leave.js` at `SessionEnd`, and by
 nothing else:
 
 - `ended` — `{ at, reason }`, `reason` one of `clear`, `logout`,
@@ -221,10 +225,12 @@ nothing else:
   as `stale`.
 - `model` — the model that produced the most output tokens in the transcript,
   written at the same moment.
-- `usage` — `{ requests, models: { <id>: { input, output, cacheRead,
+- `usage` — `{ requests, wakes, models: { <id>: { input, output, cacheRead,
   cacheWrite5m, cacheWrite1h } }, subagents? }`, `requests` and `models`
   summed once per `requestId` over the whole transcript and staying the
-  session's own. `subagents` — `{ agents, requests, models, wallMs }` — is
+  session's own. `wakes` is how many lines of the main transcript —
+  sidechain lines excluded — `notificationOf()` recognises. `subagents` —
+  `{ agents, requests, models, wallMs }` — is
   present when the session ran agents: it sums every transcript under the
   session's own `subagents/` directory, one entry per Background Agent or
   Workflow agent, with the sidechain flag counted rather than skipped, since
@@ -245,6 +251,15 @@ nothing else:
   Both halves are deleted from `usage` before that field is written, so every
   existing reader of `usage` still sees the shape it always had.
   [station.md](station.md) has where the per-stage curve reads it from.
+- `gates` — an array of `{ at, stage, header, picked }`, one entry per
+  `AskUserQuestion` `lib/replay.js` finds in the transcript: `stage` is read
+  off `moves` at that point, and `picked` is the chosen option's label — the
+  text typed, capped at 120 characters, when it was Other. At most
+  `MAX_GATES` (60), oldest dropped. Written only when the session ends
+  cleanly, because `hooks/leave.js` runs at `SessionEnd` alone — a session
+  that never reaches it carries no `gates` at all. Nothing reads it back:
+  while the transcript is still there, the detail page's own replay
+  (`lib/detail.js:613`) already shows the same questions and answers.
 
 # Reading it from outside
 

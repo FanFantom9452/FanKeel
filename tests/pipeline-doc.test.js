@@ -12,6 +12,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { byName } = require('../lib/stages.js');
+const { OVERLAPS } = require('../lib/skill-overlap.js');
 
 const PIPELINE = path.join(__dirname, '..', 'docs', 'pipeline.md');
 
@@ -58,4 +59,25 @@ test('every stage diagram quotes one line of its own rule', () => {
     assert.ok(flat(section(doc, stage)).includes(flat(ANCHOR[stage])),
       stage + ': docs/pipeline.md does not carry "' + ANCHOR[stage] + '"');
   }
+});
+
+// docs/pipeline.md's overlap table defers to lib/skill-overlap.js rather than
+// carrying its own copy of the collisions — this is what keeps the two from
+// drifting apart the way the stage diagrams above did.
+test('the overlap table under "Another plugin\'s process skill, for the same stage" matches OVERLAPS, in order', () => {
+  const doc = fs.readFileSync(PIPELINE, 'utf8');
+  const heading = '### Another plugin\'s process skill, for the same stage';
+  const start = doc.indexOf(heading);
+  assert.notEqual(start, -1, 'no `' + heading + '` heading in docs/pipeline.md');
+  const after = doc.indexOf('\n### ', start + heading.length);
+  const block = doc.slice(start, after === -1 ? doc.length : after);
+
+  const rows = block.split('\n').filter(function (line) { return line.trim().startsWith('|'); });
+  const dataRows = rows.slice(2); // drop the `| plugin | skill | stage |` header and its `|---|---|---|` separator
+  const table = dataRows.map(function (line) {
+    const cells = line.split('|').map(function (cell) { return cell.trim(); }).filter(function (cell) { return cell.length; });
+    return [cells[0], cells[1].replace(/`/g, ''), cells[2]];
+  });
+
+  assert.deepEqual(table, OVERLAPS.map(function (o) { return [o.plugin, o.skill, o.stage]; }));
 });
