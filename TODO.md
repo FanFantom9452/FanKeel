@@ -72,6 +72,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔docs〕`docs/decisions/2026-09-18-needs-decision-all.md` 兩處假敘述：ledger 只有 21 條 `Ruling:`、3 條點名編號，實質定案在 design 文件；送關卡的是四個編號不是三個 — [docs/registry.md](docs/registry.md).
 
+- 〔audit〕`docs-audit` 列的 43 對只有 `registry × station` 被讀過，其餘 42 對沒人開過——09-17 那次 audit 的 pair 那一半只走了一對 — [docs/documents.md](docs/documents.md). 一對一個 reader，四個一批。
+
 ## Needs a decision
 
 - 〔lib〕`lib/skill-overlap.js` 只有一個 production caller，折進 `scripts/orient.js` 既不多帶依賴也不會把測試推到 spawn 後面 — [lib/skill-overlap.js](lib/skill-overlap.js). 待決：折進去、還是留著。（audit 2026-09-18，8 行）
@@ -91,6 +93,10 @@ entry waited for actually happening. It shrank when somebody read it.
 - 〔skill〕三個唯讀 agent 都有 Bash，而 Bash 寫得了檔：`fankeel-reader`、`fankeel-judge`、`fankeel-reviewer` 沒有 Edit/Write 但有 Bash — [agents/fankeel-reader.md](agents/fankeel-reader.md). 待決：拿掉 Bash、靠 hook 擋、還是接受。
 
 - 〔gates〕`gates` 只存 `{at, stage, header, picked}`，沒存全部選項；station 讀了 `labels` 但只餵「最常被換掉」統計 — [lib/gates.js](lib/gates.js). 待決：存全部選項、只存被換掉的、還是維持現狀。
+
+- 〔memory〕102 條原生記憶裡 50 條引用的檔案在寫完之後改過；`memory-check` 只列不 fail，刪哪一條是使用者的決定 — [docs/documents.md](docs/documents.md). 待決：逐條看、只看引用最多的、還是不動。
+
+- 〔docs〕`documents.md` 三處重述 `development.md` 已逐行講過的 `lib/tracked.js`、`tests/badge.test.js`、`scripts/todo-check.js`，兩頁都不讓；沒矛盾但 SSOT 破了 — [docs/documents.md](docs/documents.md). 待決：改連過去、還是維持。
 
 ## Waiting
 
