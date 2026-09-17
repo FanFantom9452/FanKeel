@@ -27,7 +27,7 @@ const { isSubtree } = require('./survey.js');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { firstTable } = require('../lib/map.js');
-const { blameTimes, orderByEdit } = require('../lib/blame.js');
+const { orderByEdit } = require('../lib/blame.js');
 const { human } = require('../lib/report.js');
 const skillOverlap = require('../lib/skill-overlap.js');
 // `require.main === module` guards its CLI body, so requiring it here does not
