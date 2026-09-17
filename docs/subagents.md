@@ -220,7 +220,9 @@ response** to run concurrently; the **model must be passed explicitly**, since a
 omitted one inherits the parent's, unless the `subagent_type` is an agent file
 that pins its own — inside a Workflow script too, where every
 `agent` call carries `model` and `sonnet` is the floor, and the authoring
-reference's omit-and-inherit is the host's default, not this plugin's; the
+reference's omit-and-inherit is the host's default, not this plugin's — and
+`subagent_type: "fork"` inherits the whole context and ignores `model`
+regardless, which is why fankeel never dispatches one; the
 **count and the model must be said out loud**, in the response that sends
 them, because a fan-out nobody announced is spend the user is paying for and
 could not see coming; the returns must be

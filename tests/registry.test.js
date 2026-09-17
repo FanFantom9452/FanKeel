@@ -805,6 +805,38 @@ test('touch appends a move on each change of stage and none while it stays', () 
   assert.equal(after.moves[1][1], after.clock.verify[0]);
 });
 
+// N19: `used` is the context reading `touch()` had in hand — `hooks/inject.js`
+// passes `info && info.used` — and it rides along as a third element on the
+// move a stage change appends, so a single backward step's cost is the
+// difference between two adjacent `used` readings.
+test('touch records a finite reading as the moves entry\'s third element', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task({ stage: 'build' }));
+  registry.touch(root, SID);
+  const d = registry.readSession(root, SID);
+  d.stage = 'verify';
+  registry.writeSession(root, SID, d);
+  registry.touch(root, SID, 1234);
+  const after = registry.readSession(root, SID);
+  const last = after.moves[after.moves.length - 1];
+  assert.deepEqual(last, ['verify', after.clock.verify[0], 1234]);
+});
+
+// N19's other half: with no finite reading, the move stays the two-element
+// shape it had before `used` existed — no placeholder third element.
+test('touch appends a two-element move when no finite reading is available', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task({ stage: 'build' }));
+  registry.touch(root, SID);
+  const d = registry.readSession(root, SID);
+  d.stage = 'verify';
+  registry.writeSession(root, SID, d);
+  registry.touch(root, SID);
+  const after = registry.readSession(root, SID);
+  const last = after.moves[after.moves.length - 1];
+  assert.deepEqual(last, ['verify', after.clock.verify[0]]);
+});
+
 test('moves keeps the latest MAX_MOVES and drops the oldest', () => {
   const root = tmpRoot();
   const moves = [];

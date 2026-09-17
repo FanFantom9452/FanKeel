@@ -95,7 +95,7 @@ the loud side, as it does everywhere in this plugin.
 From the entry: `task`, `project`, `stage` on its `route`, `started`,
 `updated`, `claims`, `notes`, `next`, `guard`, and the stage sums of `burn`,
 `clock` and `waited`. From `hooks/leave.js`: `ended`, `model`, `usage`,
-`spend` — see [registry.md](registry.md). From `lib/prices.js`: the dollar figure, and the
+`spend`, `gates` — see [registry.md](registry.md). From `lib/prices.js`: the dollar figure, and the
 date the table was read. The dollar figure shown is one total: `cost(s)` in
 the browser adds the session's own `usd` and its agents' `agentUsd` together
 (`assets/station/station.js:52`, `(s.usd || 0) + (s.agentUsd || 0)`) rather
@@ -209,8 +209,11 @@ live session opens on 摘要 and claims, who is in which file; one that has
 ended opens on context and 派工, what it cost. 過程還原 starts closed either
 way. Everything below claims is the session's detail, read out of its
 transcript by `lib/detail.js` and loaded the first time the session is opened;
-a session whose transcript is not under this machine's config directory has
-none, and the panel says so rather than drawing an empty chart.
+a session with no transcript under this machine's config directory and no
+detail cached here has none, and the panel says so rather than drawing an empty
+chart. Where one was cached here once, `lib/detail.js:674` keeps it and the
+panel draws that instead — a transcript Claude Code has since deleted leaves
+the cache as all there is.
 
 **context** is one line. x is time and y the context each request carried —
 input, cache read and both cache writes — taken from `summarise()`'s own
@@ -336,8 +339,9 @@ first step has stage `null` rather than falling into a first window that
 starts at `-Infinity`. Each row is one local calendar day, one stage, one model
 and one of `main`, `agent` or `workflow`, so a session that crosses midnight is
 spent on both days, and the rows' dollars sum to the detail's `usd`. `spans`
-holds the time the same way — `main`, `wait`, `agent` and `workflow` — every
-interval kept between the session's first and last request.
+holds the time the same way — `main`, `wait`, `agent` and `workflow` — with
+`main` and `wait` clipped to the session's first and last request, and `agent`
+and `workflow` running from an agent file's own first request to its last.
 
 ### Filtering, and the two views
 

@@ -9,6 +9,8 @@ const { execFileSync } = require('node:child_process');
 
 const orient = require('../scripts/orient.js');
 const tmp = require('./tmp.js');
+const { human } = require('../lib/report.js');
+const { OVERLAPS } = require('../lib/skill-overlap.js');
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'orient.js');
 
 // A workspace is built rather than pointed at, because the interesting cases are
@@ -783,4 +785,70 @@ test('an uncommitted edit outranks even a commit dated in the future', () => {
   const lines = out.split(/\r?\n/);
   const idx = lines.findIndex((l) => /Needs a decision 5/.test(l));
   assert.match(lines[idx + 1], /Entry one edited, not committed/);
+});
+
+// N24/N27: `claude.md:` names a CLAUDE.md at the project root or the config
+// directory, with its size; `overlap:` names an installed plugin's skill
+// that already covers a fankeel stage. Both read `CLAUDE_CONFIG_DIR` the
+// way `lib/live.js` already does, so a fixture config directory keeps
+// either from depending on what happens to be installed on the machine
+// running the suite — other tests in this file that spawn the script
+// without setting `CLAUDE_CONFIG_DIR` may now print an `overlap:` block of
+// their own on a machine that has superpowers installed, which is fine:
+// none of them assert its absence, only this one does, and it isolates
+// itself.
+test('claude.md: and overlap: read the config directory, and print neither when it holds neither', () => {
+  const root = workspace({ 'alpha/a.js': 'x' });
+
+  const cfg = tmp('fankeel-cfg-claude-');
+  fs.writeFileSync(path.join(cfg, 'CLAUDE.md'), '# notes\n');
+  const pluginRoot = tmp('fankeel-plugin-superpowers-');
+  fs.mkdirSync(path.join(pluginRoot, 'skills', 'brainstorming'), { recursive: true });
+  fs.writeFileSync(path.join(pluginRoot, 'skills', 'brainstorming', 'SKILL.md'), '# brainstorming\n');
+  fs.mkdirSync(path.join(cfg, 'plugins'), { recursive: true });
+  fs.writeFileSync(path.join(cfg, 'plugins', 'installed_plugins.json'), JSON.stringify({
+    version: 1,
+    plugins: {
+      'superpowers@anthropics': [{
+        scope: 'user', installPath: pluginRoot, version: '1.0.0',
+        installedAt: '2026-01-01T00:00:00Z', lastUpdated: '2026-01-01T00:00:00Z', gitCommitSha: 'abc123',
+      }],
+    },
+  }));
+
+  const withEnv = Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg });
+  const withPlugin = execFileSync(process.execPath, [SCRIPT, '--root', root], { encoding: 'utf8', env: withEnv });
+  assert.match(withPlugin, /^claude\.md:$/m);
+  assert.match(withPlugin, /^overlap:$/m);
+  assert.match(withPlugin, /superpowers:brainstorming → design/);
+
+  // N24, split into its two halves. `startsWith`/`endsWith` rather than a
+  // regex, because the CLAUDE.md path is a Windows tmp path full of
+  // backslashes that a RegExp would read as escapes. The expected path and
+  // size both come from what this fixture actually wrote and `fs.statSync`
+  // actually measured, not a guessed byte count.
+  const claudeMdPath = path.join(cfg, 'CLAUDE.md');
+  const claudeMdSize = fs.statSync(claudeMdPath).size;
+  const withPluginLines = withPlugin.split(/\r?\n/);
+  const claudeRow = withPluginLines[withPluginLines.findIndex((l) => l === 'claude.md:') + 1];
+  assert.ok(claudeRow.startsWith('  ' + claudeMdPath),
+    'claude.md: row should carry the file\'s path, got: ' + JSON.stringify(claudeRow));
+  assert.ok(claudeRow.endsWith(human(claudeMdSize)),
+    'claude.md: row should carry the size human() would print, got: ' + JSON.stringify(claudeRow));
+
+  // N27. The fixture installed only brainstorming's SKILL.md, so it is the
+  // only OVERLAPS row with anywhere to be found; the other five must not be
+  // named even though their plugin ("superpowers") is the same one that is
+  // installed.
+  const notInstalled = OVERLAPS.filter((o) => o.skill !== 'brainstorming');
+  for (const o of notInstalled) {
+    assert.ok(!withPlugin.includes(o.plugin + ':' + o.skill + ' →'),
+      'overlap: should not name ' + o.skill + ', which the fixture never installed');
+  }
+
+  const empty = tmp('fankeel-cfg-empty-');
+  const emptyEnv = Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: empty });
+  const withoutEither = execFileSync(process.execPath, [SCRIPT, '--root', root], { encoding: 'utf8', env: emptyEnv });
+  assert.doesNotMatch(withoutEither, /^claude\.md:$/m);
+  assert.doesNotMatch(withoutEither, /^overlap:$/m);
 });

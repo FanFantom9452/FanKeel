@@ -580,6 +580,28 @@ test('adopt carries the moves, shifted to end where the source fell quiet', () =
   assert.ok(Date.now() - (mine.moves[1][1] + 30 * 60e3) < 30e3);
 });
 
+// The same shift, on a move that also carries `used` — the context reading
+// `lib/registry.js`'s `touch()` writes as a third element. It is a token
+// count, not a timestamp, and must not be dropped by a length check that only
+// accepts two-element moves, nor shifted the way `at` is.
+test('adopt carries a move\'s third element unshifted, through the same timestamp shift', () => {
+  const dir = root();
+  started(dir, A, 'tidy the project cards', 'Waypoint');
+  const source = entry(dir, A);
+  const quiet = Date.now() - 16 * DAY;
+  source.updated = new Date(quiet).toISOString();
+  source.moves = [['survey', quiet - 50 * 60e3, 90000], ['design', quiet - 30 * 60e3]];
+  registry.writeSession(dir, A, source);
+
+  assert.equal(run(dir, ['adopt', A, '--session', B]).code, 0);
+  const mine = entry(dir, B);
+  assert.equal(mine.moves[0][0], 'survey');
+  assert.equal(mine.moves[0].length, 3);
+  assert.equal(mine.moves[0][2], 90000);
+  assert.equal(mine.moves[1][0], 'design');
+  assert.equal(mine.moves[1].length, 2);
+});
+
 test('adopt refuses when this session already owns something', () => {
   const dir = root();
   started(dir, A, 'first', 'Waypoint/web');

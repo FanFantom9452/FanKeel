@@ -4,10 +4,10 @@ tool: Agent
 max: 0
 ---
 A one-command question does not need a second session reading a transcript
-back to this one. `Agent` is listed in `prompt.md`'s `allowed_tools`, but
-`--allowedTools` — what `scripts/eval.js:113` turns that list into — does not
-gate it: measured 2026-09-15, the arm allowing neither spelling still
-dispatched. So `max: 0` has a real negative regardless of the list.
+back to this one. This case declares no `disallowed_tools`, so `scripts/eval.js`
+passes no `--disallowedTools` flag at all — measured 2026-09-15, the arm
+allowing neither spelling still dispatched. So `max: 0` has a real negative
+regardless of what the case declares.
 
 `Agent` is the name a real dispatch is logged under in this harness's
 `tool_use` blocks, which is what `type: tool_used` matches — not the name in

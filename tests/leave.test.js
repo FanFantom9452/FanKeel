@@ -7,6 +7,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const registry = require('../lib/registry.js');
 const tmp = require('./tmp.js');
+const gates = require('../lib/gates.js');
 
 const HOOK = path.join(__dirname, '..', 'hooks', 'leave.js');
 const SID = 'aaaaaaaa-1111-4111-8111-111111111111';
@@ -96,6 +97,32 @@ function fixtureWithClockNoTimestamps(clock) {
     fs.writeFileSync(transcript, [
         a('r1', 'claude-sonnet-5', { input_tokens: 10, output_tokens: 20 }),
     ].join(''));
+    return { cfg, root, transcript };
+}
+
+// Task 6: a fixture whose transcript carries one AskUserQuestion and its
+// answer, and whose entry carries `moves` for `stageWhen` to read the stage
+// in force at the moment asked from.
+function fixtureWithGate(moves, askedAt, header, answer) {
+    const base = tmp('fankeel-leave-');
+    const cfg = path.join(base, 'cfg');
+    const root = path.join(base, 'ws');
+    fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
+    registry.ensureLayout(root);
+    registry.writeSession(root, SID, { task: 'the ramp', stage: 'design', route: ['survey', 'design', 'build'], active: true,
+        claims: ['a.js'], started: new Date().toISOString(), updated: new Date().toISOString(), configDir: cfg, moves });
+    const transcript = path.join(base, 't.jsonl');
+    const ask = JSON.stringify({
+        type: 'assistant', timestamp: new Date(askedAt).toISOString(),
+        message: { content: [{ type: 'tool_use', id: 'ask1', name: 'AskUserQuestion',
+            input: { questions: [{ question: 'Which way?', header, options: [{ label: '進 design' }, { label: '留在 survey' }] }] } }] },
+    });
+    const result = JSON.stringify({
+        type: 'user', timestamp: new Date(askedAt + 1000).toISOString(),
+        message: { content: [{ type: 'tool_result', tool_use_id: 'ask1', content: 'ok' }] },
+        toolUseResult: { answers: { 'Which way?': answer } },
+    });
+    fs.writeFileSync(transcript, ask + '\n' + result + '\n');
     return { cfg, root, transcript };
 }
 
@@ -243,4 +270,59 @@ test('usage keeps the shape it always had', () => {
     assert.equal(d.usage.requests, 3);
     assert.equal(d.spend.survey.requests, 1, 'deleting usage.stages must not have carried away spend, which holds its own reference');
     assert.equal(d.spend.build.requests, 2, 'deleting usage.stages must not have carried away spend, which holds its own reference');
+});
+
+// N04/N06: one row per question, the stage it asked from read out of the
+// entry's own `moves`, and the label — or Other's typed text — as `picked`.
+test('leave writes gates from the transcript\'s AskUserQuestion calls, with the stage moves says was in force', () => {
+    const askedAt = Date.now() - 60000;
+    const moves = [['survey', askedAt - 120000], ['design', askedAt - 30000]];
+    const f = fixtureWithGate(moves, askedAt, 'survey', '進 design');
+    const out = run({ session_id: SID, transcript_path: f.transcript, cwd: f.root, reason: 'clear', hook_event_name: 'SessionEnd' }, f.cfg);
+    assert.equal(out, '');
+    const d = registry.readSession(f.root, SID);
+    assert.deepEqual(d.gates, [{ at: askedAt, stage: 'design', header: 'survey', picked: '進 design' }]);
+});
+
+test('a session with no AskUserQuestion writes no gates field', () => {
+    const f = fixture();
+    const out = run({ session_id: SID, transcript_path: f.transcript, cwd: f.root, reason: 'clear', hook_event_name: 'SessionEnd' }, f.cfg);
+    assert.equal(out, '');
+    const d = registry.readSession(f.root, SID);
+    assert.equal('gates' in d, false);
+});
+
+// Fix round: `stageWhen` must pick the last move whose own timestamp is not
+// later than `at`, not simply the last move recorded — a moves array holding
+// one after `at` must not win over the stage that was really in force, and a
+// moment before the first move at all must answer null rather than the last
+// stage in the array.
+test('gates.stageWhen reads the stage in force at `at`, not the last move recorded', () => {
+    const moves = [['survey', 100], ['design', 200], ['build', 300]];
+    assert.equal(gates.stageWhen(moves, 150), 'survey', 'the last move not later than `at`, not the last one recorded');
+    assert.equal(gates.stageWhen(moves, 50), null, 'before the first move, there is no stage yet');
+});
+
+// Fix round: `gatesFrom` caps at `MAX_GATES` rows and drops the oldest one,
+// not the whole excess.
+test('gatesFrom keeps at most MAX_GATES rows and drops the oldest', () => {
+    const total = gates.MAX_GATES + 1;
+    const entries = [];
+    for (let i = 0; i < total; i++) {
+        const at = 1000 + i;
+        entries.push({
+            type: 'assistant', timestamp: new Date(at).toISOString(),
+            message: { content: [{ type: 'tool_use', id: 'ask' + i, name: 'AskUserQuestion',
+                input: { questions: [{ question: 'Which way?', header: 'q' + i, options: [] }] } }] },
+        });
+        entries.push({
+            type: 'user', timestamp: new Date(at + 1).toISOString(),
+            message: { content: [{ type: 'tool_result', tool_use_id: 'ask' + i, content: 'ok' }] },
+            toolUseResult: { answers: { 'Which way?': 'a' + i } },
+        });
+    }
+    const answerOf = (v) => v;
+    const out = gates.gatesFrom(entries, [], answerOf);
+    assert.equal(out.length, gates.MAX_GATES);
+    assert.equal(out[0].header, 'q1', 'the oldest question is dropped, so the first row left is the second question');
 });

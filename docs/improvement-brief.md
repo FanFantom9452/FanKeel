@@ -1,4 +1,5 @@
 ---
+status: design-intent
 last_verified: 2026-09-12
 ---
 
@@ -819,7 +820,7 @@ difference that has nothing to do with the skill under test.」
 > **補記（2026-09-09）**：上一段的 4 與 5 在同一天下午不再成立。`--model` 已經沒有預設，
 > 未釘就在 spawn 之前拒跑（`scripts/eval.js:61,173`）；`costOf()` 從 result 讀出花費
 > （`lib/eval.js:91`，`function costOf`）；預算旗標透傳給 `claude`
-> （`scripts/eval.js:111`，`opts.maxBudgetUsd`）。
+> （`scripts/eval.js:108`，`opts.maxBudgetUsd`）。
 > 旗標的名字是 `--max-budget-usd`，不是上表寫的 `--budget-usd`——後者是 i-have-adhd 那支
 > Python runner 的旗標。3 仍然無對應，而那是答案：fankeel 沒有持續性的 always-on flag。
 > 六條通道現在各自的落點寫在 [evals.md](evals.md)。
@@ -988,7 +989,7 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 東西會回頭重驗。
 
 - 本專案 09-11 的索引有 76 條，多數引了檔名、旗標、行號或量測數字，正是最會過期的那一類。
-- fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:590`（`## Task memory`）那一節的路由表把
+- fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:592`（`## Task memory`）那一節的路由表把
   durable fact 指向 memory 目錄，`lib/registry.js:18`（`Task memory is two fields on the entry`）的註解說明 fankeel 不另開一份記憶。
   讀、稽核、清理那個目錄的程式碼一行都沒有。
 
@@ -1040,12 +1041,12 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 | 缺口 | 現況 |
 |---|---|
 | (a) plan 的 task 與各自做了什麼 | 沒有：`lib/station.js` 完全不讀 build ledger（2026-09-12 backlog-all build 已關閉：Task 23、25 加了 `tasksOf`，由 `lib/station.js` 讀取；現況見 `docs/station.md`「任務」節） |
-| (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:229` 的 `agentsOf` 只回一個數字（2026-09-11 已關閉：90be646 加了 `dispatchesOf`，`lib/usage.js:446`（`surface: flow ? 'workflow'`）為每筆派工標出 agent、agents 或 workflow） |
+| (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:240` 的 `agentsOf` 只回一個數字（2026-09-11 已關閉：90be646 加了 `dispatchesOf`，`lib/usage.js:457`（`surface: flow ? 'workflow'`）為每筆派工標出 agent、agents 或 workflow） |
 | (c) 每個 stage 花多少錢 | 刻意拿掉：`docs/station.md` 當時說 a stage's own cost surfaces only in the aggregate，只出現在總覽的總帳（2026-09-14 已關閉：session 頁的花費分頁從 `days` 列出 stage × model 的金額；現況見 `docs/station.md`「The session page」） |
 | (d) stage 來回 | 結構上看不到：`lib/registry.js:435` 的 `touch` 以 stage 名為鍵，只存最早與最近兩個時間 |
 | (e) 哪一段可以平行 | 沒有 |
 
-(b) 還少一層：`lib/usage.js:160` 的 `agentFiles` 把一般 agent 和 workflow 裡的 agent 攤成
+(b) 還少一層：`lib/usage.js:171` 的 `agentFiles` 把一般 agent 和 workflow 裡的 agent 攤成
 同一個清單，派工的形狀（agent、agents、workflow）在這裡就丟了。這一層也由 90be646 關閉：
 `dispatchesOf` 把形狀接回 `agentFiles` 的每一列。
 
@@ -1073,7 +1074,7 @@ hook（SessionStart 啟動它的模式，UserPromptSubmit 追蹤模式）。本�
 - 釘住上面那句的是 `tests/badge.test.js` 裡「pruneBadges leaves another plugin flag and
   its directory alone」那個測試。
 - eval 一律帶 `--setting-sources project`，因為沒帶的時候 haiku 挑了
-  `caveman:surgical-patch` 而不是 fankeel（`docs/plans/2026-09-08-behaviour-eval.md`）。
+  `caveman:surgical-patch` 而不是 fankeel（`docs/archive/2026-09-08-behaviour-eval.md`）。
 
 **順序**：盤點 → 和使用者討論 → 要的拆成 Ready 條目 → 解耦 → 解除安裝。ponytail
 等 caveman 這兩條都落地才開始。

@@ -47,7 +47,7 @@ source_of_truth: lib/render.js, agents/fankeel-verifier.md, evals/, tests/resume
 那個陣列是**這支 CLI 註冊了哪些工具**，不是一次派工被記成什麼，而
 `type: tool_used` grade 的是後者。五次跑動印出的是同一份 29 個名字、逐字相同，
 連 `allowed_tools` 裡根本沒有 `Task` 的 `stage-skip-said` 那一次也一樣；
-`scripts/eval.js:113` 確實把清單傳成 `--allowedTools`，陣列不動。
+`992149c` 之前的 `scripts/eval.js` 確實把清單傳成 `--allowedTools`（該 commit 起改由 `buildArgs` 傳 `--disallowedTools`，`scripts/eval.js:110`），陣列不動。
 
 三個 `prompt.md` 的 `allowed_tools` 最後照計畫改回 `Agent`——`596eb21` 建檔時就是
 `Agent`，`15daa59` 用同一套錯誤推理把它們翻成 `Task`，而 `fc937c6` 把 grader 翻
@@ -63,7 +63,7 @@ source_of_truth: lib/render.js, agents/fankeel-verifier.md, evals/, tests/resume
 「`fankeel-reviewer` 是唯一不傳 model 的派遣」（`fankeel-verifier` 是第二個）、
 `tests/skills.test.js` 註解把判斷 4 的四個區域寫成三個、`provenance.txt` 沒指名
 grader 改動實際落在哪兩個 commit，以及計畫承諾 `TODO.md` 連到存證目錄——那個做
-不到，`docs/reports/` 是 `scripts/todo-check.js:84` 的 `STALE_ROLES` 之一，條目會
+不到，`docs/reports/` 是 `scripts/todo-check.js:86` 的 `STALE_ROLES` 之一，條目會
 被拒收，缺的是裁決不是連結。
 
 ## audit 找到的，與對手打掉的

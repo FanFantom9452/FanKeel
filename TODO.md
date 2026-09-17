@@ -70,59 +70,11 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Needs a decision
 
-- 〔subagent〕Agent 的 `fork` 繼承整份 context、忽略 model 覆寫，和派工要縮 context、壓 `sonnet` 底線正面衝突（跟 SessionStart 那個 `fork` 不同東西） — [docs/subagents.md](docs/subagents.md). 待決：寫成明文不用、還是留白。
+- 〔lib〕`lib/skill-overlap.js` 只有一個 production caller，折進 `scripts/orient.js` 既不多帶依賴也不會把測試推到 spawn 後面 — [lib/skill-overlap.js](lib/skill-overlap.js). 待決：折進去、還是留著。（audit 2026-09-18，8 行）
 
-- 〔docs〕report 區三條引用指錯，但該區寫完不改：`section-loading.md:73` 引的測試比事故晚一週，`total-budget.md:34`、`process-state-review.md:123` 指到無關內容 — [docs/documents.md](docs/documents.md). 待決：改頁、加勘誤頁、還是放著。
+- 〔scripts〕`scripts/station.js` 手寫 argv 迴圈，十五個 CLI 用 `node:util`；另一個手寫的 `scripts/survey.js` 有理由，station 的固定旗標沒有 — [scripts/station.js](scripts/station.js). 待決：換掉、還是留著。（audit 2026-09-18，5 行）
 
-- 〔survey〕Grep 慢的不是搜尋是回傳：442 檔全庫 0.099 秒，吐回 196KB。`survey.js` 有 25 列上限，reader 直接用 Grep 工具繞過它 — [scripts/survey.js](scripts/survey.js). 待決：reader 改走 survey.js、Grep 加回傳上限、還是縮 `docs/archive`。
-
-- 〔fankeel〕每個 stage 與每次問使用者都該留下可回看的紀錄：現在只有 `moves` 的 `[stage, at]` 與 `burn`/`clock` 的數字 — [docs/registry.md](docs/registry.md). 待決：放 registry 還是資料檔、gate 存問題與選項還是只存結果、與下面 stage 紀錄那條合併還是各自做。
-
-- 〔plan〕被派工的任務步驟寫「跑 `node --test`，全綠」，但 brief footer 只准跑自己那支，footer 贏 —— 本計畫 Task 5 因此漏了七個檔 — [skills/fankeel-plan/SKILL.md](skills/fankeel-plan/SKILL.md). 待決：footer 放寬、步驟改口、還是 Files block 規則要求宣告那些檔。
-
-- 〔station〕stage 的紀錄只剩數字：`moves` 存 `[stage, at]`，`burn`/`clock` 存 token 與毫秒，回看不出為何這樣走 — [docs/station.md](docs/station.md). 待決：跳階與 reroute 的理由存不存、存 registry 還是資料檔、合成一頁還是掛 session 詳情。
-
-- 〔subagent〕per-`agent_type` 的 brief：`lib/render.js:363` 已給 `fankeel-judge` 一行別人沒的規則，1189 對 1045 字元 — [lib/render.js](lib/render.js). 待決：每 type 一段、只留這特例、或改按能力宣告。
-
-- 〔docs〕fence 裡的 fixture 路徑被當成沒交付，記錄這 quirk 的兩個 todo-thirteen 檔自己卡在 landed 外 — [scripts/docs-audit.js](scripts/docs-audit.js). 待決：fence 不算、加 `fixture:`、或只認 Files block。
-
-- 〔docs〕`docs/improvement-brief.md` 沒有 `status:` 鍵，`lib/docs.js` 把缺鍵當成宣稱現況，backlog 被當 live reference — [docs/documents.md](docs/documents.md). 待決：標 design-intent、搬 reports/、或缺鍵改成失敗。
-
-- 〔eval〕eval 進 CI 的阻礙沒了：2026-09-15 空目錄探測回 `No eval cases found`，early access 已開 — [docs/evals.md](docs/evals.md). 待決：threshold 訂多少（`route-typo` 三次 2/3、3/3、1/3）、只跑 push main、還是等分數穩。
-
-- 〔todo〕`## Waiting` 十六條沒有機制判斷何時能動：`lifts when:` 是給人讀的句子，todo-check 只在戳記滿七天才印出來，今天最舊的差六天，一條都沒印 — [scripts/todo-check.js](scripts/todo-check.js). 待決：門檻降到幾天、改成可執行的判斷、還是排程複查。
-
-- 〔subagent〕主 agent 被呼叫太多次：每個 background 或 workflow agent 回報都讓主 agent 再跑一輪、重送整份 context，成本隨堆疊放大；本週三種 agent 用量已拉平 — [docs/subagents.md](docs/subagents.md). 待決：回報改成寫檔只回路徑、提高派工門檻、還是一次收攏多個回報。
-
-- 〔skill〕`rationale.md` 模型到不了：build、plan、audit 三個 SKILL.md 的相對連結，haiku 與 sonnet 四次沒一次去開 — [skills/fankeel-build/rationale.md](skills/fankeel-build/rationale.md). 待決：併回、改注入、或接受。
-
-- 〔eval〕`stage-skip-said` 六次全 1/2，`says-which-stages-skipped` 一次沒過，是真訊號不是雜訊 — [evals/stage-skip-said/case.yaml](evals/stage-skip-said/case.yaml). 待決：改 skill、改 grader 判準、或標 design-intent。
-
-- 〔eval〕`scripts/eval.js` 把 `allowed_tools` 組成 `--allowedTools`，但那支旗標不限制 `Agent` — [evals/subagent-no-entry/prompt.md](evals/subagent-no-entry/prompt.md). 待決：改用 `--disallowedTools`、還是拿掉宣告。
-
-- 〔memory〕`memory-check.js` 列出 39 條引用的檔案已改過卻 exit 0，也沒有任何清理路徑 — [docs/improvement-brief.md](docs/improvement-brief.md). 待決：誰觸發、stale 要不要 fail、誰刪。
-
-- 〔memory〕memory 的四個 type 不帶生命週期：57 條 `feedback` 裡一次性修正與長效規則混在一起，沒有欄位分得出來 — [docs/documents.md](docs/documents.md). 待決：比照 docs 的 role 加壽命、加 `last_verified`、還是不分。
-
-- 〔registry〕131 個 session 只有 44 個有 `usage`、16 個有 `moves`，個別 session 分析看不到其餘三分之二 — [docs/registry.md](docs/registry.md). 待決：每個 stage 都寫、prompt hook 寫、還是接受。
-
-- 〔registry〕`moves` 逐次記 stage 倒退、`burn` 每個 stage 只留首尾兩點，切不出單次倒退的成本：7 個 session 共 11 次 verify 回 build — [docs/registry.md](docs/registry.md). 待決：`burn` 改逐次記、倒退另記一欄、還是只報次數。
-
-- 〔registry〕沒有欄位數得出「一次背景回報等於主 agent 重跑一輪」：`usage.subagents.agents` 是跑過幾個 agent，`usage.requests` 是主 session 發了幾輪 — [lib/usage.js](lib/usage.js). 待決：加欄位記、從 transcript 事後算、還是不記。
-
-- 〔station〕token 用量要主動去查：`lib/usage.js` 的 `summarise` 讀 transcript 既有欄位、模型不算，但頁面與三支腳本都要人先去跑 — [lib/usage.js](lib/usage.js). 待決：比照 `caveman-stats` 做成 hook 當場給、維持現狀、還是兩者都要。
-
-- 〔dashboard〕station 的畫面沒有用任何外部 skill：mockup 由 `design.mockup` 指定的模型畫、人核准後 implementer 逐項搬 — [lib/profile.js](lib/profile.js). 待決：把 dashboard 生成做成可重複流程、還是留在 design 階段通例。
-
-- 〔subagent〕`lib/guard.js` 的 `WRITE_PATTERNS` 第一條把箭頭函式當成寫檔：reader、reviewer、judge 三型 subagent 的 Bash 因此擋掉 `x => y`，加 `> /dev/null` 也無效 — [lib/guard.js](lib/guard.js). 待決：regex 加排除、改判 shell 語法、還是接受。
-
-- 〔profile〕使用者的 `CLAUDE.md` 是每輪重送的前綴，fankeel 沒東西量它：Trovara 實測兩層佔一輪 9,894 tokens，瘦身後每輪省 683 — [lib/profile.js](lib/profile.js). 待決：開頭一律問還是過門檻才問、衝突比對放新 skill 還是 fankeel-judge、旗標存 profile 還是 registry。
-
-- 〔station〕session 詳情頁沒有 profile 卡是刻意的：`docs/station.md:627-630` 記著原設計放在 detail pane、plan 的 Task 8 搬進 registry 卡 — [docs/station.md](docs/station.md). 待決：加回 session 頁，還是維持現狀並刪掉這條。
-
-- 〔todo〕沉到選單外的 `## Needs a decision` 條目沒人念也沒戳記：免戳記的理由是每次選單都念，現在只念 orient `todo:` 列的最新幾條 — [scripts/todo-check.js](scripts/todo-check.js). 待決：Needs a decision 也要戳記、orient 改列最舊的、還是接受。
-
-- 〔skill〕他家流程 skill 與 stage 重疊沒寫誰贏：superpowers 的 `brainstorming`、`writing-plans` 與 SessionStart「適用就必須用」；只 Workflow `model` 寫明 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md). 待決：腳本掃重疊、注入取代規則或優先順序表。
+- 〔lib〕三處重複：`lib/usage.js` 兩個函式各自重寫 `entriesOf()`、`lib/registry.js` 四個三行三元式、`lib/live.js` 手工組 Set — [lib/usage.js](lib/usage.js). 待決：三處都收、只收 usage.js、還是都不動。（audit 2026-09-18，13 行）
 
 ## Waiting
 

@@ -41,6 +41,7 @@ const { parseArgs } = require('node:util');
 
 const docs = require('../lib/docs.js');
 const { resolveRoot } = require('../lib/registry.js');
+const { blameTimes } = require('../lib/blame.js');
 
 // Long enough for a sentence and a link, short enough that a paragraph does not
 // fit. Detail that will not compress to this belongs in the file being pointed
@@ -303,6 +304,29 @@ function check(file, now) {
             }
         }
     }
+
+    // N26: the same "how long since anyone touched this" question
+    // `## Waiting`'s stamp already answers, asked of `## Needs a decision`
+    // instead — off git blame, because nobody writes a stamp on those
+    // bullets. Shares `REREAD_DAYS`: one number for "too long to go
+    // unread", asked two ways.
+    const needsDecisionDue = [];
+    const blame = blameTimes(base, path.basename(file));
+    if (blame) {
+        for (const entry of found) {
+            if (entry.section !== 'Needs a decision') continue;
+            let latest = -Infinity;
+            for (let ln = entry.line; ln <= entry.end; ln++) {
+                const t = blame[ln - 1];
+                if (t !== undefined && t > latest) latest = t;
+            }
+            if (latest === -Infinity) continue;
+            const days = Math.floor((at - latest) / 86400000);
+            if (days >= REREAD_DAYS) needsDecisionDue.push({ line: entry.line, days, text: entry.text });
+        }
+        needsDecisionDue.sort((a, b) => b.days - a.days);
+    }
+
     // Every entry off-convention is one fact about the repository, not N
     // defects in it. A repository using its own vocabulary has said nothing
     // wrong; one that uses the convention and has a stray heading has, and that
@@ -324,7 +348,7 @@ function check(file, now) {
     const counts = {};
     for (const name of SECTIONS) counts[name] = found.filter((e) => e.section === name).length;
     overdue.sort((a, b) => b.days - a.days);
-    return { file, missing: false, count: found.length, counts, problems, overdue, vocabulary };
+    return { file, missing: false, count: found.length, counts, problems, overdue, needsDecisionDue, vocabulary };
 }
 
 function report(result) {
@@ -362,6 +386,15 @@ function report(result) {
             // thing has happened, and the rest of the entry is the part they
             // already skipped every time the menu left this section out.
             const short = (o.lifts || o.text).replace(/\s+/g, ' ').trim();
+            lines.push('    ' + result.file + ':' + o.line + '  ' + String(o.days).padStart(3)
+                + ' days  ' + (short.length > 72 ? short.slice(0, 71) + '…' : short));
+        }
+    }
+    if (result.needsDecisionDue && result.needsDecisionDue.length) {
+        lines.push('', '  ## Needs a decision entries not edited in '
+            + REREAD_DAYS + ' days or more:');
+        for (const o of result.needsDecisionDue) {
+            const short = o.text.replace(/\s+/g, ' ').trim();
             lines.push('    ' + result.file + ':' + o.line + '  ' + String(o.days).padStart(3)
                 + ' days  ' + (short.length > 72 ? short.slice(0, 71) + '…' : short));
         }

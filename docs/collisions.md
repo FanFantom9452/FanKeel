@@ -242,7 +242,8 @@ set — present only inside a subagent, absent on the main thread of an
 prefix, `lib/guard.js`'s `readOnlyAgentType` —
 names `fankeel-reader`, `fankeel-reviewer` or `fankeel-judge`, and the command
 matches `writesFiles()`'s fixed list — a redirect to anywhere but `/dev/null`
-or `$null`, `tee`, `rm`, `mv`, `cp`, `sed -i` or `--in-place`, a `git`
+or `$null`, never counting `=>`, `->`, `>&` or a `>` inside quotes,
+`tee`, `rm`, `mv`, `cp`, `sed -i` or `--in-place`, a `git`
 subcommand that writes the tree or the index (`add`, `commit`, `checkout`,
 `switch`, `restore`, `reset`, `stash`, `clean`, `apply`, `am`, `merge`,
 `rebase`, `cherry-pick`, `revert`, `pull`), or one of eight PowerShell
@@ -292,9 +293,9 @@ entries, and only ever on your say-so.
 
 `lib/registry.js` is explicit that nothing deactivates anything: a session ending,
 a timer expiring and a terminal dying all leave `active` exactly as it was. A
-clean end does write `ended`, and `model`, `usage` and `spend` where the
-transcript could be read — `hooks/leave.js:84-89`, with the conditions on each
-of those three in [registry.md](registry.md) — and nothing else. That
+clean end does write `ended`, and `model`, `usage`, `spend` and `gates` where
+the transcript could be read — `hooks/leave.js:88-115`, with the conditions on
+each of those four in [registry.md](registry.md) — and nothing else. That
 is right — a terminal that dies at midnight has to find its task at nine, and a
 registry that expires claims on a timer is one that quietly loses work.
 

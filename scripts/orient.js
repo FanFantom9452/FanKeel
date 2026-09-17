@@ -27,6 +27,9 @@ const { isSubtree } = require('./survey.js');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { firstTable } = require('../lib/map.js');
+const { orderByEdit } = require('../lib/blame.js');
+const { human } = require('../lib/report.js');
+const skillOverlap = require('../lib/skill-overlap.js');
 // `require.main === module` guards its CLI body, so requiring it here does not
 // run `todo-check`'s own report — only `entries` gets used.
 const todoCheck = require('./todo-check.js');
@@ -185,6 +188,26 @@ function mapFrom(dir, name) {
     return out;
 }
 
+// The CLAUDE.md Claude Code has already loaded for this session — the one
+// at wherever it opened, and the one at its own config directory — named
+// with its size rather than read, because getting bigger is the only fact
+// about it this report can add without re-reading a file Claude Code
+// already has. Two, never compared: N24 asks for nothing past naming what
+// is there.
+function claudeMdFiles(root, configDir) {
+    const out = [];
+    for (const dir of [root, configDir]) {
+        const full = path.join(dir, 'CLAUDE.md');
+        try {
+            const st = fs.statSync(full);
+            if (st.isFile()) out.push({ path: full, size: st.size });
+        } catch (e) {
+            // Not there, or not readable. Same as not there.
+        }
+    }
+    return out;
+}
+
 // Step 1 of a stage whose step 4 is `survey`, over the same root, so the two
 // count the same thing: `survey`'s header excludes subtrees — a submodule is one
 // entry standing for a repository, not one file — and counting entries here had
@@ -296,7 +319,8 @@ function scan(root, named) {
     // `runningIds` rather than `readLive`, because the self-check there needs the
     // caller's own session id and a CLI has none: every entry would come back
     // live and the count would equal the active count in every case.
-    const ids = live.runningIds(live.liveConfigDir());
+    const configDir = live.liveConfigDir();
+    const ids = live.runningIds(configDir);
     const alive = ids ? active.filter((e) => ids.has(e.sessionId)).length : null;
 
     // A named path wins over everything. That is the whole point of naming one:
@@ -375,7 +399,7 @@ function scan(root, named) {
         });
     }
 
-    return { root: resolved, stateRoot, active, alive, mode, entries, dropped, now: Date.now() };
+    return { root: resolved, stateRoot, active, alive, mode, entries, dropped, now: Date.now(), configDir };
 }
 
 // Two numbers, because they answer two questions and one of them was being read
@@ -387,60 +411,11 @@ function countLine(result) {
     return result.alive === null ? n + ', liveness unknown' : n + ', ' + result.alive + ' live';
 }
 
-// git blame's committer-time for every line of a file, in document order, so
-// index i holds line i+1. null when blame fails — the directory is not a
-// repository, or the file has never been committed — which is the caller's
-// signal to fall back to file order rather than reading zero lines as a
-// history of zero.
-function blameTimes(dir, name) {
-    const out = git(dir, ['blame', '--line-porcelain', '--', name]);
-    if (out === null) return null;
-    const times = [];
-    let sha = null;
-    for (const line of out.split('\n')) {
-        const header = /^([0-9a-f]{40})\s+\d+\s+\d+/.exec(line);
-        if (header) {
-            sha = header[1];
-            continue;
-        }
-        const ct = /^committer-time (\d+)/.exec(line);
-        if (ct) {
-            // All-zero is git's marker for a line the working tree has changed
-            // since the last commit. It has no history to date yet, so it
-            // counts as the newest thing in the file rather than as whatever
-            // placeholder time blame prints for it.
-            times.push(/^0+$/.test(sha || '') ? Infinity : Number(ct[1]) * 1000);
-        }
-    }
-    return times.length ? times : null;
-}
-
 // How much of a `## Needs a decision` entry's text the `todo:` block shows per
 // line. Long enough to still read as the entry, short enough that several of
 // them do not become the wall of text the whole block exists to avoid — the
 // same reasoning as `MAP_WIDTH` above, for a different listing.
 const TODO_ENTRY_WIDTH = 100;
-
-// `list` (entries carrying `line` and `end` — see `entries()` in
-// `todo-check.js`), newest edit first. Ties — including every line sharing one
-// commit, or no git history at all — keep the entry later in the file first:
-// with no blame to sort by the whole list is one tie, and "the last N
-// entries, latest first" falls out of this same rule rather than needing one
-// of its own.
-function orderByEdit(dir, name, list) {
-    const blame = blameTimes(dir, name);
-    if (!blame) return [...list].reverse();
-    const scored = list.map((entry) => {
-        let latest = -Infinity;
-        for (let ln = entry.line; ln <= entry.end; ln++) {
-            const t = blame[ln - 1];
-            if (t !== undefined && t > latest) latest = t;
-        }
-        return { entry, latest };
-    });
-    scored.sort((a, b) => (b.latest - a.latest) || (b.entry.line - a.entry.line));
-    return scored.map((s) => s.entry);
-}
 
 // What `/fankeel init` can actually offer. `AskUserQuestion` holds at most
 // four options and `## Needs a decision` routinely holds far more than that,
@@ -506,6 +481,20 @@ function report(result) {
         lines.push('  registry paths are relative to that directory, not this one.');
     }
     lines.push('');
+
+    const claudeFiles = claudeMdFiles(result.root, result.configDir);
+    if (claudeFiles.length) {
+        lines.push('claude.md:');
+        lines.push(...table(claudeFiles.map((f) => [f.path, human(f.size)])));
+        lines.push('');
+    }
+
+    const overlaps = skillOverlap.overlapsIn(result.configDir);
+    if (overlaps.length) {
+        lines.push('overlap:');
+        for (const o of overlaps) lines.push('  ' + o.plugin + ':' + o.skill + ' → ' + o.stage);
+        lines.push('');
+    }
 
     const missing = result.entries.filter((e) => !e.exists);
     const found = result.entries.filter((e) => e.exists);

@@ -498,3 +498,66 @@ test('the re-read list does not print the rest of the entry', () => {
     + stampFor(20) + '.\n');
   assert.doesNotMatch(todo.report(todo.check(file, NOW)), /unbounded/);
 });
+
+// N26: `## Needs a decision` gets the same "how long since anyone touched
+// this" question `## Waiting`'s stamp already answers, read off git blame
+// instead of a stamp nobody writes on these bullets — `blameTimes` in
+// `lib/blame.js`, shared with `scripts/orient.js`'s own `## Needs a
+// decision` ordering.
+function initTodoGit(dir) {
+  const opts = { cwd: dir, stdio: ['ignore', 'ignore', 'ignore'] };
+  execFileSync('git', ['init', '-q'], opts);
+  execFileSync('git', ['config', 'user.email', 't@example.com'], opts);
+  execFileSync('git', ['config', 'user.name', 'test'], opts);
+  return opts;
+}
+
+function commitTodoBody(dir, opts, body, when) {
+  fs.writeFileSync(path.join(dir, 'TODO.md'), body);
+  const env = Object.assign({}, process.env, { GIT_AUTHOR_DATE: when, GIT_COMMITTER_DATE: when });
+  execFileSync('git', ['add', '-A'], Object.assign({}, opts, { env }));
+  execFileSync('git', ['commit', '-qm', 'todo'], Object.assign({}, opts, { env }));
+}
+
+// No fractional seconds: git's date parser is not asked to round-trip what
+// `Date.prototype.toISOString` always includes.
+const isoSeconds = (ms) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z');
+
+test('a Needs a decision entry untouched for 7 days or more is listed by git blame; one edited today is not', () => {
+  const root = tmp('fankeel-todo-blame-');
+  const opts = initTodoGit(root);
+  const now = Date.now();
+
+  // Entry C sits under `## Ready`, just as old as Entry A, and is the
+  // control for the section filter: without it, `needsDecisionDue` would
+  // pass just as well against a rule that lists every stale entry in the
+  // file regardless of which heading it is under.
+  const bodyV1 = '# TODO\n\n## Ready\n\n- Entry C, ready and just as old.\n\n'
+    + '## Needs a decision\n\n- Entry A, old enough to be due.\n';
+  commitTodoBody(root, opts, bodyV1, isoSeconds(now - 8 * 24 * 60 * 60 * 1000));
+
+  // Only a new line is appended — Entry A's own line is untouched by this
+  // second commit, so blame still dates it to the first.
+  const bodyV2 = bodyV1 + '- Entry B, added today.\n';
+  commitTodoBody(root, opts, bodyV2, isoSeconds(now));
+
+  const file = path.join(root, 'TODO.md');
+  const result = todo.check(file, now);
+  assert.deepEqual(result.needsDecisionDue, [
+    { line: 9, days: 8, text: 'Entry A, old enough to be due.' },
+  ], 'Entry B, edited today, and Entry C, filed under Ready, must not appear beside it');
+
+  const { text, ok } = todo.main([file], now);
+  assert.equal(ok, true, 'an old Needs a decision entry is not a defect, so the run stays green');
+  assert.match(text, /## Needs a decision entries not edited in 7 days or more/);
+  assert.match(text, /Entry A, old enough to be due/);
+  assert.doesNotMatch(text, /Entry B, added today/);
+  assert.doesNotMatch(text, /Entry C, ready and just as old/);
+
+  // The real CLI, exit code included — same file, no explicit `now`: the
+  // margin either side of the 7-day threshold (about a day) easily covers
+  // however long the process takes to spawn.
+  const { out, code } = run(file);
+  assert.equal(code, 0, 'a due Needs a decision entry does not fail the run');
+  assert.match(out, /## Needs a decision entries not edited in 7 days or more/);
+});

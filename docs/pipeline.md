@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-13
-source_of_truth: lib/stages.js, lib/render.js, lib/profile.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js
+source_of_truth: lib/stages.js, lib/render.js, lib/profile.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js, lib/skill-overlap.js
 ---
 
 # The pipeline
@@ -292,6 +292,25 @@ That column is what a stage is graded on, which is not the same question as what
 it has you do. The second question is answered stage by stage in
 [Inside each stage](#inside-each-stage) below, and in one line each on the
 [front page](../README.md).
+
+### Another plugin's process skill, for the same stage
+
+While a task is active, the `fankeel-<stage>` skill is the procedure for that
+step. Where another installed plugin ships a process skill for the same
+step, it is set aside — named the first time it is, not silently.
+`lib/skill-overlap.js`'s `OVERLAPS` is the source of truth for which skills
+these are; `scripts/orient.js` prints an `overlap:` line naming whichever of
+them the config directory's own `plugins/installed_plugins.json` actually
+has installed.
+
+| plugin | skill | stage |
+|---|---|---|
+| superpowers | `brainstorming` | design |
+| superpowers | `writing-plans` | plan |
+| superpowers | `executing-plans` | build |
+| superpowers | `subagent-driven-development` | build |
+| superpowers | `verification-before-completion` | verify |
+| superpowers | `finishing-a-development-branch` | land |
 
 ### Three classes, three routes
 
