@@ -67,8 +67,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔test〕`tests/memory-check.test.js` 一次 `npm test` 漏 22 個暫存目錄（4 個是 git repo），從不清：09-15 掃到 2689 個、共 39M。`tests/tmp.js` 已經有會清的 helper — [tests/tmp.js](tests/tmp.js).
-
 - 〔docs〕兩條引用指到不相干的內容，改文件前就如此：`docs/judgements/2026-09-10-total-budget.md:34`、`docs/reports/2026-09-02-process-state-review.md:123` — [docs/documents.md](docs/documents.md).
 
 - 〔station〕session 詳情頁沒有 profile 卡：首頁、專案頁與清單頁三處都有 `profileCard()`，`docs/station.md:618` `No session view carries a **profile** card` 記著這是缺項而非缺陷 — [docs/station.md](docs/station.md).

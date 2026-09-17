@@ -50,3 +50,13 @@ test('a child that throws still removes its directory', () => {
   assert.notEqual(dir, '');
   assert.equal(fs.existsSync(dir), false);
 });
+
+test('no test file but tests/tmp.js takes a scratch directory with mkdtemp', () => {
+  // memory-check.test.js was written after this helper existed, under a plan
+  // whose constraints said to use it, and leaked 22 directories a run.
+  const self = path.basename(__filename);
+  const offenders = fs.readdirSync(__dirname)
+    .filter((f) => f.endsWith('.js') && f !== 'tmp.js' && f !== self)
+    .filter((f) => fs.readFileSync(path.join(__dirname, f), 'utf8').includes('mkdtemp'));
+  assert.deepEqual(offenders, []);
+});

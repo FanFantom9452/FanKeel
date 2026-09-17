@@ -3,19 +3,19 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
 const cp = require('node:child_process');
+const tmp = require('./tmp.js');
 
 const {
   scan, report, main, projectSlug, memoryDir, parseArgs, indexEntries, citations, lastCommit,
 } = require('../scripts/memory-check.js');
 
 function tmpProject() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-memcheck-project-'));
+  return tmp('fankeel-memcheck-project-');
 }
 function tmpConfig() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-memcheck-config-'));
+  return tmp('fankeel-memcheck-config-');
 }
 function initGit(root) {
   cp.execFileSync('git', ['init', '-q'], { cwd: root });
