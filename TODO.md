@@ -72,7 +72,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔lib〕`lib/skill-overlap.js` 只有一個 production caller，折進 `scripts/orient.js` 既不多帶依賴也不會把測試推到 spawn 後面 — [lib/skill-overlap.js](lib/skill-overlap.js). 待決：折進去、還是留著。（audit 2026-09-18，8 行）
 
-- 〔scripts〕`scripts/station.js` 自己手寫 argv 迴圈，其餘十一個 CLI 都用 `parseArgs` — [scripts/station.js](scripts/station.js). 待決：換掉、還是留著。（audit 2026-09-18，5 行）
+- 〔scripts〕`scripts/station.js` 手寫 argv 迴圈，十五個 CLI 用 `node:util`；另一個手寫的 `scripts/survey.js` 有理由，station 的固定旗標沒有 — [scripts/station.js](scripts/station.js). 待決：換掉、還是留著。（audit 2026-09-18，5 行）
 
 - 〔lib〕三處重複：`lib/usage.js` 兩個函式各自重寫 `entriesOf()`、`lib/registry.js` 四個三行三元式、`lib/live.js` 手工組 Set — [lib/usage.js](lib/usage.js). 待決：三處都收、只收 usage.js、還是都不動。（audit 2026-09-18，13 行）
 
