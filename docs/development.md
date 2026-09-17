@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-13
+last_verified: 2026-09-17
 source_of_truth: package.json, .claude-plugin/plugin.json, knip.json, scripts/todo-check.js, scripts/version.js, scripts/skills-check.js, scripts/stage-registry.js
 ---
 
@@ -60,6 +60,13 @@ shrunk in this repository by an entry's blocker resolving. Five times it has
 shrunk: four were somebody re-reading the section and finding an entry misfiled,
 and one a question Claude Code's docs answered before its blocker came. It is
 drained by being read, so the interval between readings is the thing to measure.
+
+`## Needs a decision` gets a due list of its own, read off git blame rather
+than a stamp — nobody writes `lifts when:` or a date on those bullets. An
+entry whose last edited line git blame puts seven days old or more prints
+under its own heading below the verdict, the same non-failing way. `lib/blame.js`
+holds the shared reading, because `scripts/orient.js`'s own `## Needs a decision`
+ordering in its `todo:` block needs the same history.
 
 ## `version.js` — the release number in thirteen files
 
