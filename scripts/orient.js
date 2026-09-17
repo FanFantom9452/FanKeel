@@ -28,7 +28,7 @@ const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { firstTable } = require('../lib/map.js');
 // `require.main === module` guards its CLI body, so requiring it here does not
-// run `todo-check`'s own report — only `entries` and `check` get used.
+// run `todo-check`'s own report — only `entries` gets used.
 const todoCheck = require('./todo-check.js');
 
 // A workspace with more children than this is not being read row by row, and a

@@ -623,11 +623,11 @@ after the task lands, it was never a note — move it to one of the four above
 during `land`.
 
 `TODO.md` is an index whose bullets `init` also offers as the task options when a
-session starts, so each one is read twice: the bullet is short and the detail
-lives in a file it links to. The heading it sits under is the third half of that
-convention — `## Ready`, `## Needs a decision`, `## Waiting` — and it answers
-what the entry is still short of rather than what it is about, because what
-`init` has to know is which entries can become a task this morning.
+session starts, so what it offers is read twice: the bullet is short and the
+detail lives in a file it links to. The heading it sits under is the third half
+of that convention — `## Ready`, `## Needs a decision`, `## Waiting` — and it
+answers what the entry is still short of rather than what it is about, because
+what `init` has to know is which entries can become a task this morning.
 `node <plugin>/scripts/todo-check.js` says when any of the three has stopped being
 true, and the `land` rules call for it — a plan deleted at `land` is a link that
 just died. It also refuses a link that still resolves but lands on a plan, a
@@ -679,7 +679,9 @@ against it rather than searching for the path.
 
 It reports where the registry is or would be, then the project or projects it
 found — each with its git branch, how dirty it is, and how many files — and, for
-a single project, the directories inside it with their file counts. It writes nothing.
+a single project, the directories inside it with their file counts, and a `todo:`
+block — Ready and Waiting counts, and Needs a decision's newest few by last edit.
+It writes nothing.
 
 Run it before the options below, and show what came back. Two rules about how it
 feeds the next step:

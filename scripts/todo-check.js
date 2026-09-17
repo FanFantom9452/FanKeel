@@ -233,10 +233,10 @@ function check(file, now) {
     const found = entries(text);
     for (const entry of found) {
         // The stamp is asked for under `Waiting` and nowhere else. `Ready` and
-        // `Needs a decision` are read every time `/fankeel` offers a menu, so
-        // they are looked at whether or not anyone meant to; `Waiting` is the
-        // one that is skipped by design and therefore the one that needs a date
-        // to say when it last was not.
+        // `Needs a decision`'s newest few are read every time `/fankeel` offers
+        // a menu, so those are looked at whether or not anyone meant to;
+        // `Waiting` is the one that is skipped by design and therefore the one
+        // that needs a date to say when it last was not.
         if (entry.section === 'Waiting') {
             const stamped = stampAt(entry.text, at);
             if (stamped === null) {

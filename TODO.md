@@ -42,10 +42,11 @@ is still blocked, and move the stamp forward in the same change. The stamp goes
 last, because that is where the check looks for it.
 
 This is the only heading that asks for either. `## Ready` and
-`## Needs a decision` are read aloud every time `/fankeel` offers a menu, so they
-get looked at whether anyone meant to or not, and `## Waiting` is deliberately
-skipped there. It is the section nothing makes you open, which is why it is the
-one that has to say what it is waiting for and when you last agreed it was.
+`## Needs a decision`'s newest few are read aloud every time `/fankeel` offers a
+menu, so those get looked at whether anyone meant to or not, and `## Waiting` is
+deliberately skipped there. It is the section nothing makes you open, which is
+why it is the one that has to say what it is waiting for and when you last
+agreed it was.
 
 `node scripts/todo-check.js` enforces all six: a link that no longer resolves is
 an entry someone forgot to close, a link that still resolves but points at a
@@ -118,6 +119,8 @@ entry waited for actually happening. It shrank when somebody read it.
 - 〔profile〕使用者的 `CLAUDE.md` 是每輪重送的前綴，fankeel 沒東西量它：Trovara 實測兩層佔一輪 9,894 tokens，瘦身後每輪省 683 — [lib/profile.js](lib/profile.js). 待決：開頭一律問還是過門檻才問、衝突比對放新 skill 還是 fankeel-judge、旗標存 profile 還是 registry。
 
 - 〔station〕session 詳情頁沒有 profile 卡是刻意的：`docs/station.md:627-630` 記著原設計放在 detail pane、plan 的 Task 8 搬進 registry 卡 — [docs/station.md](docs/station.md). 待決：加回 session 頁，還是維持現狀並刪掉這條。
+
+- 〔todo〕沉到選單外的 `## Needs a decision` 條目沒人念也沒戳記：免戳記的理由是每次選單都念，現在只念 orient `todo:` 列的最新幾條 — [scripts/todo-check.js](scripts/todo-check.js). 待決：Needs a decision 也要戳記、orient 改列最舊的、還是接受。
 
 ## Waiting
 
