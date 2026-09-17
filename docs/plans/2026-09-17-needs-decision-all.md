@@ -2222,7 +2222,7 @@ git mv docs/plans/2026-09-07-todo-thirteen-design.md docs/archive/2026-09-07-tod
 ```
 
     `docs/plans/2026-09-07-todo-thirteen.md`'s own `**Spec:**` line reads
-    `[2026-09-07-todo-thirteen-design.md](2026-09-07-todo-thirteen-design.md)`
+    a link to `2026-09-07-todo-thirteen-design.md` with no directory in it
     — a same-directory relative link — so moving both files together into
     `docs/archive/` leaves that link resolving without an edit, and once
     filed under `docs/archive/` the pair is role `archive`, which

@@ -214,7 +214,10 @@ gate, and the one on the Workflow tool is the Workflow tool's own.
 - Write the failing test
 - Run it and watch it fail
 - Write the minimal implementation
-- Run it and watch it pass
+- Run it and watch it pass — an implementer dispatched to build this runs
+  only its own test file; the parent runs the whole suite before committing
+  a group, matching the brief footer in `<plugin>/scripts/ledger.js`: "Run only your
+  own test command, never the full suite."
 - Commit
 
 ## Every code fence names its file

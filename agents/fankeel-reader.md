@@ -29,6 +29,16 @@ this agent type (`docs/collisions.md`); outside one, or for a write
 its list does not name, the gap stands. `Edit`, `Write` and
 `NotebookEdit` are not on the list and cannot be called.
 
+## Searching
+
+Run `<plugin>/scripts/survey.js <term>...` before turning to `Grep` for the
+same terms — it already skips `docs/archive/**` and caps what comes back.
+Where `Grep` is still the right tool, exclude `docs/archive/**` and call it
+with `output_mode: "files_with_matches"` before asking for `content`: a
+whole-repository `Grep` for one term returns hundreds of KB into a context
+the parent pays for, and which files matched is usually the answer on its
+own.
+
 ## Refusals
 
 - Do not change a file, by any tool. If the question cannot be answered without
