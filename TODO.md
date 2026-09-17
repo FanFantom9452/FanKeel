@@ -67,15 +67,11 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔docs〕兩條引用指到不相干的內容，改文件前就如此：`docs/judgements/2026-09-10-total-budget.md:34`、`docs/reports/2026-09-02-process-state-review.md:123` — [docs/documents.md](docs/documents.md).
-
-- 〔station〕session 詳情頁沒有 profile 卡：首頁、專案頁與清單頁三處都有 `profileCard()`，`docs/station.md:618` `No session view carries a **profile** card` 記著這是缺項而非缺陷 — [docs/station.md](docs/station.md).
-
 ## Needs a decision
 
 - 〔subagent〕Agent 的 `fork` 繼承整份 context、忽略 model 覆寫，和派工要縮 context、壓 `sonnet` 底線正面衝突（跟 SessionStart 那個 `fork` 不同東西） — [docs/subagents.md](docs/subagents.md). 待決：寫成明文不用、還是留白。
 
-- 〔docs〕`docs/judgements/2026-09-10-section-loading.md:73` 引的測試比它說擋住的兩次事故晚一週才加，但 judgements 是寫完不改的區 — [docs/documents.md](docs/documents.md). 待決：改判斷頁、加勘誤頁、還是放著。
+- 〔docs〕report 區三條引用指錯，但該區寫完不改：`section-loading.md:73` 引的測試比事故晚一週，`total-budget.md:34`、`process-state-review.md:123` 指到無關內容 — [docs/documents.md](docs/documents.md). 待決：改頁、加勘誤頁、還是放著。
 
 - 〔survey〕Grep 慢的不是搜尋是回傳：442 檔全庫 0.099 秒，吐回 196KB。`survey.js` 有 25 列上限，reader 直接用 Grep 工具繞過它 — [scripts/survey.js](scripts/survey.js). 待決：reader 改走 survey.js、Grep 加回傳上限、還是縮 `docs/archive`。
 
@@ -119,9 +115,11 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔subagent〕`lib/guard.js` 的 `WRITE_PATTERNS` 第一條把箭頭函式當成寫檔：reader、reviewer、judge 三型 subagent 的 Bash 因此擋掉 `x => y`，加 `> /dev/null` 也無效 — [lib/guard.js](lib/guard.js). 待決：regex 加排除、改判 shell 語法、還是接受。
 
-- 〔todo〕`## Needs a decision` 25 條但 init 選單一條一個選項、`AskUserQuestion` 上限 4 而 Ready 佔一個，每次只排得進三條 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md). 待決：分頁、改成分群、還是只提供最近的幾條。
+- 〔todo〕`## Needs a decision` 26 條但 init 選單一條一個選項、`AskUserQuestion` 上限 4 而 Ready 佔一個，每次只排得進三條 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md). 待決：分頁、改成分群、還是只提供最近的幾條。
 
 - 〔profile〕使用者的 `CLAUDE.md` 是每輪重送的前綴，fankeel 沒東西量它：Trovara 實測兩層佔一輪 9,894 tokens，瘦身後每輪省 683 — [lib/profile.js](lib/profile.js). 待決：開頭一律問還是過門檻才問、衝突比對放新 skill 還是 fankeel-judge、旗標存 profile 還是 registry。
+
+- 〔station〕session 詳情頁沒有 profile 卡是刻意的：`docs/station.md:627-630` 記著原設計放在 detail pane、plan 的 Task 8 搬進 registry 卡 — [docs/station.md](docs/station.md). 待決：加回 session 頁，還是維持現狀並刪掉這條。
 
 ## Waiting
 
