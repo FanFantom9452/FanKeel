@@ -102,6 +102,18 @@ test('start takes a route and begins at its first stage, not at survey', () => {
   assert.equal(data.stage, 'build');
 });
 
+test('start says which stages a short route skips, in canonical order', () => {
+  const dir = root();
+  const { out } = run(dir, ['start', '--session', A, '--task', 'fix a typo', '--project', 'a.js', '--route', 'build,verify']);
+  assert.match(out, /skipping: survey, design, plan, audit, land — say which and why/);
+});
+
+test('start on the full seven-stage route prints no skipping line', () => {
+  const dir = root();
+  const { out } = run(dir, ['start', '--session', A, '--task', 'a feature', '--project', 'a.js']);
+  assert.doesNotMatch(out, /skipping:/);
+});
+
 test('start without a route gets all seven', () => {
   const dir = root();
   run(dir, ['start', '--session', A, '--task', 'a feature', '--project', 'a.js']);
@@ -139,6 +151,19 @@ test('route re-routes, and refuses to strand the stage the task is in', () => {
   const ok = run(dir, ['route', 'survey,build,verify,land', '--session', A]);
   assert.equal(ok.code, 0);
   assert.deepEqual(registry.readSession(dir, A).route, ['survey', 'build', 'verify', 'land']);
+});
+
+test('route says which stages the new route skips, and none for the full seven', () => {
+  const dir = root();
+  run(dir, ['start', '--session', A, '--task', 'x', '--project', 'a.js', '--route', 'build,verify']);
+
+  const short = run(dir, ['route', 'build,land', '--session', A]);
+  assert.equal(short.code, 0, short.out);
+  assert.match(short.out, /skipping: survey, design, plan, verify, audit — say which and why/);
+
+  const full = run(dir, ['route', FULL_ROUTE.join(','), '--session', A]);
+  assert.equal(full.code, 0, full.out);
+  assert.doesNotMatch(full.out, /skipping:/);
 });
 
 test('the lead file counts along the route, not along the full seven', () => {

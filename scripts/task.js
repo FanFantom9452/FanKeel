@@ -570,6 +570,8 @@ function cmdStart(root, opts) {
     const lines = ['fankeel — started, at ' + data.stage
         + (data.class ? '   class: ' + data.class + (classFromProfile ? ' (profile)' : '') : '')
         + '   route: ' + route.join(' → ')];
+    const skippedStages = FULL_ROUTE.filter((s) => !route.includes(s));
+    if (skippedStages.length) lines.push('skipping: ' + skippedStages.join(', ') + ' — say which and why');
     lines.push('');
     for (const line of describe(root, id, data)) lines.push('  ' + line);
     if (prof.sources.guard && prof.sources.guard !== 'builtin') lines[lines.findIndex((l) => l.startsWith('  guard:'))] += ' (profile)';
@@ -1050,7 +1052,9 @@ function cmdRoute(root, opts) {
     showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data), root);
 
     const at = positionIn(given, data.stage);
-    const shown = 'fankeel — route: ' + before.join(' → ') + NL + '           now: ' + given.join(' → ');
+    const skippedStages = FULL_ROUTE.filter((s) => !given.includes(s));
+    const shown = 'fankeel — route: ' + before.join(' → ') + NL + '           now: ' + given.join(' → ')
+        + (skippedStages.length ? NL + '           skipping: ' + skippedStages.join(', ') + ' — say which and why' : '');
     if (!at) return shown;
     return shown + NL + '           at ' + data.stage + ', ' + at.step + ' of ' + at.steps;
 }
