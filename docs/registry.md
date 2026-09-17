@@ -252,7 +252,7 @@ nothing else:
   existing reader of `usage` still sees the shape it always had.
   [station.md](station.md) has where the per-stage curve reads it from.
 - `gates` — an array of `{ at, stage, header, picked }`, one entry per
-  `AskUserQuestion` `lib/replay.js` finds in the transcript: `stage` is read
+  `AskUserQuestion` `lib/gates.js` finds in the transcript: `stage` is read
   off `moves` at that point, and `picked` is the chosen option's label — the
   text typed, capped at 120 characters, when it was Other. At most
   `MAX_GATES` (60), oldest dropped. Written only when the session ends
