@@ -73,8 +73,8 @@ inside it:
 
 For a single project it also says which of `CLAUDE.md`, `AGENTS.md`, `README.md`,
 `TODO.md` and `CONTRIBUTING.md` are there — and says so plainly when none are —
-prints a `todo:` block (Ready, Needs a decision, Waiting) and the last five
-commits, because a project's middle is not visible in a listing of directories.
+and prints a `todo:` block (Ready, Needs a decision, Waiting) and the last five
+commits, because work in progress is not visible in a listing of directories.
 
 It writes nothing. Orientation that changes what it is describing is not
 orientation.
