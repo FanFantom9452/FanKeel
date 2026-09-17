@@ -242,7 +242,8 @@ set — present only inside a subagent, absent on the main thread of an
 prefix, `lib/guard.js`'s `readOnlyAgentType` —
 names `fankeel-reader`, `fankeel-reviewer` or `fankeel-judge`, and the command
 matches `writesFiles()`'s fixed list — a redirect to anywhere but `/dev/null`
-or `$null`, `tee`, `rm`, `mv`, `cp`, `sed -i` or `--in-place`, a `git`
+or `$null`, never counting `=>`, `->`, `>&` or a `>` inside quotes,
+`tee`, `rm`, `mv`, `cp`, `sed -i` or `--in-place`, a `git`
 subcommand that writes the tree or the index (`add`, `commit`, `checkout`,
 `switch`, `restore`, `reset`, `stash`, `clean`, `apply`, `am`, `merge`,
 `rebase`, `cherry-pick`, `revert`, `pull`), or one of eight PowerShell

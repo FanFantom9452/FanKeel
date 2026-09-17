@@ -437,3 +437,30 @@ test('a read-only agent_type with no agent_id is a real session, not a subagent'
   });
   assert.equal(out, '');
 });
+
+// N23: `=>`, `->`, `>&` and a `>` inside quotes write no file, and `>> /dev/null`
+// is the same exemption `> /dev/null` already had. All of them read as a
+// redirect before this, which is how `x => y` got a reader's Bash denied.
+test('writesFiles does not mistake =>, ->, >&, a quoted > or >> /dev/null for a redirect', () => {
+  for (const cmd of [
+    'node -e "[1].map(x => x)"',
+    "git log -S '=> y' --oneline",
+    "node -e \"console.log('a->b')\"",
+    'cmd 2>&1',
+    'grep "a > b" file.txt',
+    'cmd >> /dev/null',
+    'cmd > $null',
+  ]) {
+    assert.equal(guard.writesFiles(cmd), false, cmd);
+  }
+  for (const cmd of [
+    'echo x > f',
+    'cmd >> log',
+    'cmd 2> err.txt',
+    'echo "a" > f',
+    'cmd 2>&1 > out.txt',
+    'cmd &> out',
+  ]) {
+    assert.equal(guard.writesFiles(cmd), true, cmd);
+  }
+});
