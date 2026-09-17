@@ -784,3 +784,45 @@ test('an uncommitted edit outranks even a commit dated in the future', () => {
   const idx = lines.findIndex((l) => /Needs a decision 5/.test(l));
   assert.match(lines[idx + 1], /Entry one edited, not committed/);
 });
+
+// N24/N27: `claude.md:` names a CLAUDE.md at the project root or the config
+// directory, with its size; `overlap:` names an installed plugin's skill
+// that already covers a fankeel stage. Both read `CLAUDE_CONFIG_DIR` the
+// way `lib/live.js` already does, so a fixture config directory keeps
+// either from depending on what happens to be installed on the machine
+// running the suite — other tests in this file that spawn the script
+// without setting `CLAUDE_CONFIG_DIR` may now print an `overlap:` block of
+// their own on a machine that has superpowers installed, which is fine:
+// none of them assert its absence, only this one does, and it isolates
+// itself.
+test('claude.md: and overlap: read the config directory, and print neither when it holds neither', () => {
+  const root = workspace({ 'alpha/a.js': 'x' });
+
+  const cfg = tmp('fankeel-cfg-claude-');
+  fs.writeFileSync(path.join(cfg, 'CLAUDE.md'), '# notes\n');
+  const pluginRoot = tmp('fankeel-plugin-superpowers-');
+  fs.mkdirSync(path.join(pluginRoot, 'skills', 'brainstorming'), { recursive: true });
+  fs.writeFileSync(path.join(pluginRoot, 'skills', 'brainstorming', 'SKILL.md'), '# brainstorming\n');
+  fs.mkdirSync(path.join(cfg, 'plugins'), { recursive: true });
+  fs.writeFileSync(path.join(cfg, 'plugins', 'installed_plugins.json'), JSON.stringify({
+    version: 1,
+    plugins: {
+      'superpowers@anthropics': [{
+        scope: 'user', installPath: pluginRoot, version: '1.0.0',
+        installedAt: '2026-01-01T00:00:00Z', lastUpdated: '2026-01-01T00:00:00Z', gitCommitSha: 'abc123',
+      }],
+    },
+  }));
+
+  const withEnv = Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg });
+  const withPlugin = execFileSync(process.execPath, [SCRIPT, '--root', root], { encoding: 'utf8', env: withEnv });
+  assert.match(withPlugin, /^claude\.md:$/m);
+  assert.match(withPlugin, /^overlap:$/m);
+  assert.match(withPlugin, /superpowers:brainstorming → design/);
+
+  const empty = tmp('fankeel-cfg-empty-');
+  const emptyEnv = Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: empty });
+  const withoutEither = execFileSync(process.execPath, [SCRIPT, '--root', root], { encoding: 'utf8', env: emptyEnv });
+  assert.doesNotMatch(withoutEither, /^claude\.md:$/m);
+  assert.doesNotMatch(withoutEither, /^overlap:$/m);
+});

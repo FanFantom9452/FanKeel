@@ -28,6 +28,8 @@ const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { firstTable } = require('../lib/map.js');
 const { blameTimes, orderByEdit } = require('../lib/blame.js');
+const { human } = require('../lib/report.js');
+const skillOverlap = require('../lib/skill-overlap.js');
 // `require.main === module` guards its CLI body, so requiring it here does not
 // run `todo-check`'s own report — only `entries` gets used.
 const todoCheck = require('./todo-check.js');
@@ -186,6 +188,26 @@ function mapFrom(dir, name) {
     return out;
 }
 
+// The CLAUDE.md Claude Code has already loaded for this session — the one
+// at wherever it opened, and the one at its own config directory — named
+// with its size rather than read, because getting bigger is the only fact
+// about it this report can add without re-reading a file Claude Code
+// already has. Two, never compared: N24 asks for nothing past naming what
+// is there.
+function claudeMdFiles(root, configDir) {
+    const out = [];
+    for (const dir of [root, configDir]) {
+        const full = path.join(dir, 'CLAUDE.md');
+        try {
+            const st = fs.statSync(full);
+            if (st.isFile()) out.push({ path: full, size: st.size });
+        } catch (e) {
+            // Not there, or not readable. Same as not there.
+        }
+    }
+    return out;
+}
+
 // Step 1 of a stage whose step 4 is `survey`, over the same root, so the two
 // count the same thing: `survey`'s header excludes subtrees — a submodule is one
 // entry standing for a repository, not one file — and counting entries here had
@@ -297,7 +319,8 @@ function scan(root, named) {
     // `runningIds` rather than `readLive`, because the self-check there needs the
     // caller's own session id and a CLI has none: every entry would come back
     // live and the count would equal the active count in every case.
-    const ids = live.runningIds(live.liveConfigDir());
+    const configDir = live.liveConfigDir();
+    const ids = live.runningIds(configDir);
     const alive = ids ? active.filter((e) => ids.has(e.sessionId)).length : null;
 
     // A named path wins over everything. That is the whole point of naming one:
@@ -376,7 +399,7 @@ function scan(root, named) {
         });
     }
 
-    return { root: resolved, stateRoot, active, alive, mode, entries, dropped, now: Date.now() };
+    return { root: resolved, stateRoot, active, alive, mode, entries, dropped, now: Date.now(), configDir };
 }
 
 // Two numbers, because they answer two questions and one of them was being read
@@ -458,6 +481,20 @@ function report(result) {
         lines.push('  registry paths are relative to that directory, not this one.');
     }
     lines.push('');
+
+    const claudeFiles = claudeMdFiles(result.root, result.configDir);
+    if (claudeFiles.length) {
+        lines.push('claude.md:');
+        lines.push(...table(claudeFiles.map((f) => [f.path, human(f.size)])));
+        lines.push('');
+    }
+
+    const overlaps = skillOverlap.overlapsIn(result.configDir);
+    if (overlaps.length) {
+        lines.push('overlap:');
+        for (const o of overlaps) lines.push('  ' + o.plugin + ':' + o.skill + ' → ' + o.stage);
+        lines.push('');
+    }
 
     const missing = result.entries.filter((e) => !e.exists);
     const found = result.entries.filter((e) => e.exists);
