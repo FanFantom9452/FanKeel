@@ -1074,7 +1074,7 @@ hook（SessionStart 啟動它的模式，UserPromptSubmit 追蹤模式）。本�
 - 釘住上面那句的是 `tests/badge.test.js` 裡「pruneBadges leaves another plugin flag and
   its directory alone」那個測試。
 - eval 一律帶 `--setting-sources project`，因為沒帶的時候 haiku 挑了
-  `caveman:surgical-patch` 而不是 fankeel（`docs/plans/2026-09-08-behaviour-eval.md`）。
+  `caveman:surgical-patch` 而不是 fankeel（`docs/archive/2026-09-08-behaviour-eval.md`）。
 
 **順序**：盤點 → 和使用者討論 → 要的拆成 Ready 條目 → 解耦 → 解除安裝。ponytail
 等 caveman 這兩條都落地才開始。
