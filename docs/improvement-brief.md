@@ -1040,12 +1040,12 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 | 缺口 | 現況 |
 |---|---|
 | (a) plan 的 task 與各自做了什麼 | 沒有：`lib/station.js` 完全不讀 build ledger（2026-09-12 backlog-all build 已關閉：Task 23、25 加了 `tasksOf`，由 `lib/station.js` 讀取；現況見 `docs/station.md`「任務」節） |
-| (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:229` 的 `agentsOf` 只回一個數字（2026-09-11 已關閉：90be646 加了 `dispatchesOf`，`lib/usage.js:446`（`surface: flow ? 'workflow'`）為每筆派工標出 agent、agents 或 workflow） |
+| (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:240` 的 `agentsOf` 只回一個數字（2026-09-11 已關閉：90be646 加了 `dispatchesOf`，`lib/usage.js:457`（`surface: flow ? 'workflow'`）為每筆派工標出 agent、agents 或 workflow） |
 | (c) 每個 stage 花多少錢 | 刻意拿掉：`docs/station.md` 當時說 a stage's own cost surfaces only in the aggregate，只出現在總覽的總帳（2026-09-14 已關閉：session 頁的花費分頁從 `days` 列出 stage × model 的金額；現況見 `docs/station.md`「The session page」） |
 | (d) stage 來回 | 結構上看不到：`lib/registry.js:435` 的 `touch` 以 stage 名為鍵，只存最早與最近兩個時間 |
 | (e) 哪一段可以平行 | 沒有 |
 
-(b) 還少一層：`lib/usage.js:160` 的 `agentFiles` 把一般 agent 和 workflow 裡的 agent 攤成
+(b) 還少一層：`lib/usage.js:171` 的 `agentFiles` 把一般 agent 和 workflow 裡的 agent 攤成
 同一個清單，派工的形狀（agent、agents、workflow）在這裡就丟了。這一層也由 90be646 關閉：
 `dispatchesOf` 把形狀接回 `agentFiles` 的每一列。
 

@@ -38,6 +38,7 @@ test('one request written three times counts once; the model with more output is
                 'claude-fable-5-1': { input: 10, output: 100, cacheRead: 1000, cacheWrite5m: 10, cacheWrite1h: 30 },
                 'claude-sonnet-5': { input: 5, output: 7, cacheRead: 0, cacheWrite5m: 12, cacheWrite1h: 0 },
             },
+            wakes: 0,
         },
     });
 });
@@ -65,7 +66,7 @@ test('sidechain lines count only when asked', () => {
     ]);
     assert.equal(usage.summarise(file), null);
     assert.deepEqual(usage.summarise(file, { sidechain: true }).usage, {
-        requests: 1, models: { 'claude-sonnet-5': { input: 1, output: 2, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } },
+        requests: 1, models: { 'claude-sonnet-5': { input: 1, output: 2, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } }, wakes: 0,
     });
 });
 
@@ -251,7 +252,7 @@ test('a request whose lines straddle a boundary lands in its last line stage', (
     assert.equal(staged.usage.stages.survey, undefined);
 });
 
-test('summarise with no stages returns exactly what it returned before', () => {
+test('summarise with no stages returns exactly what it returned before, plus wakes', () => {
     const file = transcript([
         assistant('req_1', 'claude-fable-5-1', { input_tokens: 10, output_tokens: 100, cache_read_input_tokens: 1000,
             cache_creation_input_tokens: 40, cache_creation: { ephemeral_5m_input_tokens: 10, ephemeral_1h_input_tokens: 30 } }),
@@ -267,6 +268,38 @@ test('summarise with no stages returns exactly what it returned before', () => {
                 'claude-fable-5-1': { input: 10, output: 100, cacheRead: 1000, cacheWrite5m: 10, cacheWrite1h: 30 },
                 'claude-sonnet-5': { input: 5, output: 7, cacheRead: 0, cacheWrite5m: 12, cacheWrite1h: 0 },
             },
+            wakes: 0,
         },
     });
+});
+
+// N20: `wakes` is how many times the main transcript itself was handed a
+// background agent's or a workflow's return — `notificationOf()`'s own
+// `<task-notification>` shape — which is the figure N12 needed to show the
+// main agent's wake count follows dispatch count rather than agent count.
+const NOTE = (id) => '<task-notification>\n<tool-use-id>' + id + '</tool-use-id>\n<result>done</result>\n</task-notification>';
+const notify = (id) => line({ type: 'user', origin: { kind: 'task-notification' }, message: { content: NOTE(id) } });
+
+test('summarise counts the main-transcript task-notification lines as wakes', () => {
+    const file = transcript([
+        assistant('req_1', 'claude-sonnet-5', { input_tokens: 1, output_tokens: 1 }),
+        notify('tool_1'),
+        notify('tool_2'),
+    ]);
+    assert.equal(usage.summarise(file).usage.wakes, 2);
+});
+
+test('summarise reports wakes: 0 for a transcript with none', () => {
+    const file = transcript([
+        assistant('req_1', 'claude-sonnet-5', { input_tokens: 1, output_tokens: 1 }),
+    ]);
+    assert.equal(usage.summarise(file).usage.wakes, 0);
+});
+
+test('a task-notification line inside a sidechain is not counted as a wake', () => {
+    const file = transcript([
+        assistant('req_1', 'claude-sonnet-5', { input_tokens: 1, output_tokens: 1 }),
+        line({ type: 'user', isSidechain: true, origin: { kind: 'task-notification' }, message: { content: NOTE('tool_1') } }),
+    ]);
+    assert.equal(usage.summarise(file).usage.wakes, 0);
 });
