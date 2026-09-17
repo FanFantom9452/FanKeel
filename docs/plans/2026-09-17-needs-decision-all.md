@@ -2420,21 +2420,14 @@ Five more fields, written once, by `hooks/leave.js` at `SessionEnd`, and by
 nothing else:
 ```
 
-6. In `docs/registry.md`, the end of the `spend` bullet and the start of the
-   next section currently read:
-
-> Both halves are deleted from `usage` before that field is written, so every
-> existing reader of `usage` still sees the shape it always had.
-> [station.md](station.md) has where the per-stage curve reads it from.
->
-> # Reading it from outside
-
-   In `docs/registry.md`, replace that with:
+6. In `docs/registry.md`, the `spend` bullet is the last field under
+   `# What ending records`, and its closing paragraph ends with the line
+   `has where the per-stage curve reads it from.`, followed by one blank line
+   and the heading `# Reading it from outside`. Keep that line unchanged.
+   Directly under it, before the blank line and the heading, insert, in
+   `docs/registry.md`:
 
 ```markdown
-Both halves are deleted from `usage` before that field is written, so every
-existing reader of `usage` still sees the shape it always had.
-[station.md](station.md) has where the per-stage curve reads it from.
 - `gates` — an array of `{ at, stage, header, picked }`, one entry per
   `AskUserQuestion` `lib/replay.js` finds in the transcript: `stage` is read
   off `moves` at that point, and `picked` is the chosen option's label — the
@@ -2444,8 +2437,6 @@ existing reader of `usage` still sees the shape it always had.
   that never reaches it carries no `gates` at all. Nothing reads it back:
   while the transcript is still there, the detail page's own replay
   (`lib/detail.js:613`) already shows the same questions and answers.
-
-# Reading it from outside
 ```
 
 7. Run `node scripts/docs-check.js` again. Expected: still `Every reference
