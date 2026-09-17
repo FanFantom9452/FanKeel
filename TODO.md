@@ -122,6 +122,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔todo〕沉到選單外的 `## Needs a decision` 條目沒人念也沒戳記：免戳記的理由是每次選單都念，現在只念 orient `todo:` 列的最新幾條 — [scripts/todo-check.js](scripts/todo-check.js). 待決：Needs a decision 也要戳記、orient 改列最舊的、還是接受。
 
+- 〔skill〕他家流程 skill 與 stage 重疊沒寫誰贏：superpowers 的 `brainstorming`、`writing-plans` 與 SessionStart「適用就必須用」；只 Workflow `model` 寫明 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md). 待決：腳本掃重疊、注入取代規則或優先順序表。
+
 ## Waiting
 
 - 〔build〕knip 的 unused exports 一格關著：6.32.2 認不得 CJS namespace 取用，開著回 146 個假陽性 — [docs/development.md](docs/development.md). lifts when: knip 認得 CJS namespace property access. 09-13.
