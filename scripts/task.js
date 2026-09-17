@@ -936,12 +936,15 @@ function cmdAdopt(root, opts) {
     if (Object.keys(waited).length) data.waited = waited;
     // `moves` is wall-clock too, and goes over the way `clock` does: shifted by
     // the gap between the source's last sighting and this adopt, so the order
-    // and the spacing survive and the fortnight nobody was on it does not.
+    // and the spacing survive and the fortnight nobody was on it does not. A
+    // third element is a context reading, not a timestamp, and crosses over
+    // unshifted rather than being dropped with the rest of the entry.
     const quietAt = Date.parse(source.updated);
     if (Array.isArray(source.moves) && Number.isFinite(quietAt)) {
         const moves = source.moves
-            .filter((m) => Array.isArray(m) && m.length === 2 && typeof m[0] === 'string' && Number.isFinite(m[1]))
-            .map((m) => [m[0], m[1] + (at - quietAt)]);
+            .filter((m) => Array.isArray(m) && (m.length === 2 || m.length === 3)
+                && typeof m[0] === 'string' && Number.isFinite(m[1]))
+            .map((m) => (Number.isFinite(m[2]) ? [m[0], m[1] + (at - quietAt), m[2]] : [m[0], m[1] + (at - quietAt)]));
         if (moves.length) data.moves = moves;
     }
     // Two records, two locks, and no way to make the pair atomic — which is why
