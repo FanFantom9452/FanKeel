@@ -819,7 +819,7 @@ difference that has nothing to do with the skill under test.」
 > **補記（2026-09-09）**：上一段的 4 與 5 在同一天下午不再成立。`--model` 已經沒有預設，
 > 未釘就在 spawn 之前拒跑（`scripts/eval.js:61,173`）；`costOf()` 從 result 讀出花費
 > （`lib/eval.js:91`，`function costOf`）；預算旗標透傳給 `claude`
-> （`scripts/eval.js:111`，`opts.maxBudgetUsd`）。
+> （`scripts/eval.js:108`，`opts.maxBudgetUsd`）。
 > 旗標的名字是 `--max-budget-usd`，不是上表寫的 `--budget-usd`——後者是 i-have-adhd 那支
 > Python runner 的旗標。3 仍然無對應，而那是答案：fankeel 沒有持續性的 always-on flag。
 > 六條通道現在各自的落點寫在 [evals.md](evals.md)。

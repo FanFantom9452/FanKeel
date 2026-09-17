@@ -99,6 +99,18 @@ function spawnClaude(args, opts) {
     return r;
 }
 
+// The argument list `runOnce` hands `claude -p`, pulled out on its own so a
+// test can check what it builds without spending money on a real run: this is
+// the exported name tests/eval.test.js calls instead of runOnce.
+function buildArgs(meta, opts) {
+    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--setting-sources', 'project',
+        '--plugin-dir', opts.pluginDir, '--max-turns', String(meta.max_turns || 10), '--model', opts.model];
+    if (opts.maxBudgetUsd) args.push('--max-budget-usd', opts.maxBudgetUsd);
+    const tools = ev.listValue(meta.disallowed_tools);
+    if (tools.length) args.push('--disallowedTools', tools.join(','));
+    return args;
+}
+
 function runOnce(c, opts) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-eval-'));
     const meta = c.prompt.meta;
@@ -106,11 +118,7 @@ function runOnce(c, opts) {
     try {
         out.error = scaffold(dir, c.scaffold);
         if (out.error) return out;
-        const args = ['-p', '--output-format', 'stream-json', '--verbose', '--setting-sources', 'project',
-            '--plugin-dir', opts.pluginDir, '--max-turns', String(meta.max_turns || 10), '--model', opts.model];
-        if (opts.maxBudgetUsd) args.push('--max-budget-usd', opts.maxBudgetUsd);
-        const tools = ev.listValue(meta.allowed_tools);
-        if (tools.length) args.push('--allowedTools', tools.join(','));
+        const args = buildArgs(meta, opts);
         const r = spawnClaude(args, {
             cwd: dir,
             input: c.prompt.body.trim(),
@@ -188,4 +196,4 @@ if (require.main === module) {
     process.exit(main(process.argv.slice(2)));
 }
 
-module.exports = { usage, parseArgs, runOnce, render, verdict, main, cmdQuote };
+module.exports = { usage, parseArgs, runOnce, render, verdict, main, cmdQuote, buildArgs };

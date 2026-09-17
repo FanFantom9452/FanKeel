@@ -138,9 +138,7 @@ test('the shipped case reads back the way the design promised', () => {
     const c = ev.parseCase(path.join(__dirname, '..', 'evals', 'route-typo'));
     assert.equal(c.name, 'route-typo');
     assert.match(c.prompt.body.trim(), /^\/fankeel /);
-    const tools = ev.listValue(c.prompt.meta.allowed_tools);
-    assert.equal(tools.includes('AskUserQuestion'), false, 'headless has nobody to answer it');
-    assert.equal(tools.includes('Bash'), true, 'task.js start runs through Bash');
+    assert.equal(c.prompt.meta.allowed_tools, undefined, 'allowed_tools never gated anything, and the line is gone (N15)');
     assert.match(c.scaffold, /teh/i);
     assert.deepEqual(c.graders.map((g) => [g.name, g.meta.type]), [
         ['no-other-route', 'tool_used'],
@@ -174,7 +172,20 @@ const SCRIPT = path.join(__dirname, '..', 'scripts', 'eval.js');
 // Destructured on purpose: tests/source.test.js credits an export as imported
 // only when it sees `mod.name` or a destructuring require, and runOnce is the
 // one name nothing here can call without spending money.
-const { usage, parseArgs, runOnce, render, verdict, main, cmdQuote } = require('../scripts/eval.js');
+const { usage, parseArgs, runOnce, render, verdict, main, cmdQuote, buildArgs } = require('../scripts/eval.js');
+
+// N15: `--allowedTools` never gated anything
+// (docs/reports/2026-09-15-waiting-probes.md §2); `--disallowedTools` does.
+// `buildArgs` is `runOnce`'s argument list, pulled out on its own so this can
+// be checked without spending money on a real `claude -p` run — the comment
+// on the destructure above explains why `runOnce` itself is never called here.
+test('buildArgs reads disallowed_tools and passes --disallowedTools, never --allowedTools', () => {
+    const args = buildArgs({ disallowed_tools: '[Agent]' }, { pluginDir: 'PLUGIN_DIR', model: 'sonnet' });
+    const i = args.indexOf('--disallowedTools');
+    assert.notEqual(i, -1, '--disallowedTools is not in the args at all');
+    assert.equal(args[i + 1], 'Agent');
+    assert.equal(args.includes('--allowedTools'), false);
+});
 
 test('cmdQuote wraps an argument so a space or an & survives cmd.exe', () => {
     assert.equal(cmdQuote('C:\\Program Files\\x'), '"C:\\Program Files\\x"');
