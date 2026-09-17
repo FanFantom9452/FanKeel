@@ -99,6 +99,32 @@ function fixtureWithClockNoTimestamps(clock) {
     return { cfg, root, transcript };
 }
 
+// Task 6: a fixture whose transcript carries one AskUserQuestion and its
+// answer, and whose entry carries `moves` for `stageWhen` to read the stage
+// in force at the moment asked from.
+function fixtureWithGate(moves, askedAt, header, answer) {
+    const base = tmp('fankeel-leave-');
+    const cfg = path.join(base, 'cfg');
+    const root = path.join(base, 'ws');
+    fs.mkdirSync(path.join(cfg, 'sessions'), { recursive: true });
+    registry.ensureLayout(root);
+    registry.writeSession(root, SID, { task: 'the ramp', stage: 'design', route: ['survey', 'design', 'build'], active: true,
+        claims: ['a.js'], started: new Date().toISOString(), updated: new Date().toISOString(), configDir: cfg, moves });
+    const transcript = path.join(base, 't.jsonl');
+    const ask = JSON.stringify({
+        type: 'assistant', timestamp: new Date(askedAt).toISOString(),
+        message: { content: [{ type: 'tool_use', id: 'ask1', name: 'AskUserQuestion',
+            input: { questions: [{ question: 'Which way?', header, options: [{ label: '進 design' }, { label: '留在 survey' }] }] } }] },
+    });
+    const result = JSON.stringify({
+        type: 'user', timestamp: new Date(askedAt + 1000).toISOString(),
+        message: { content: [{ type: 'tool_result', tool_use_id: 'ask1', content: 'ok' }] },
+        toolUseResult: { answers: { 'Which way?': answer } },
+    });
+    fs.writeFileSync(transcript, ask + '\n' + result + '\n');
+    return { cfg, root, transcript };
+}
+
 test('records ended, model and usage on its own entry; active stays true; the page is regenerated; stdout is empty', () => {
     const f = fixture();
     const out = run({ session_id: SID, transcript_path: f.transcript, cwd: f.root, reason: 'clear', hook_event_name: 'SessionEnd' }, f.cfg);
@@ -243,4 +269,24 @@ test('usage keeps the shape it always had', () => {
     assert.equal(d.usage.requests, 3);
     assert.equal(d.spend.survey.requests, 1, 'deleting usage.stages must not have carried away spend, which holds its own reference');
     assert.equal(d.spend.build.requests, 2, 'deleting usage.stages must not have carried away spend, which holds its own reference');
+});
+
+// N04/N06: one row per question, the stage it asked from read out of the
+// entry's own `moves`, and the label — or Other's typed text — as `picked`.
+test('leave writes gates from the transcript\'s AskUserQuestion calls, with the stage moves says was in force', () => {
+    const askedAt = Date.now() - 60000;
+    const moves = [['survey', askedAt - 120000], ['design', askedAt - 30000]];
+    const f = fixtureWithGate(moves, askedAt, 'survey', '進 design');
+    const out = run({ session_id: SID, transcript_path: f.transcript, cwd: f.root, reason: 'clear', hook_event_name: 'SessionEnd' }, f.cfg);
+    assert.equal(out, '');
+    const d = registry.readSession(f.root, SID);
+    assert.deepEqual(d.gates, [{ at: askedAt, stage: 'design', header: 'survey', picked: '進 design' }]);
+});
+
+test('a session with no AskUserQuestion writes no gates field', () => {
+    const f = fixture();
+    const out = run({ session_id: SID, transcript_path: f.transcript, cwd: f.root, reason: 'clear', hook_event_name: 'SessionEnd' }, f.cfg);
+    assert.equal(out, '');
+    const d = registry.readSession(f.root, SID);
+    assert.equal('gates' in d, false);
 });

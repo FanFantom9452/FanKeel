@@ -24,6 +24,8 @@ const registry = require('../lib/registry.js');
 const usage = require('../lib/usage.js');
 const station = require('../lib/station.js');
 const live = require('../lib/live.js');
+const gates = require('../lib/gates.js');
+const replay = require('../lib/replay.js');
 const { run, parse } = require('../lib/hook.js');
 
 // `spend[stage]` carries the parent's own `{requests, models}` and, when agents
@@ -78,6 +80,9 @@ function main(raw) {
         const seen = typeof payload.transcript_path === 'string'
             ? usage.summariseTree(payload.transcript_path, windows.length ? { stages: windows } : undefined)
             : null;
+        // The same transcript, read a second time: `summariseTree` reads it
+        // for token usage alone and hands back no entries to reuse.
+        const entries = typeof payload.transcript_path === 'string' ? usage.entriesOf(payload.transcript_path) : null;
         const reason = typeof payload.reason === 'string' && payload.reason ? payload.reason.slice(0, 32) : 'other';
         try {
             registry.update(root, sessionId, (d) => {
@@ -96,6 +101,16 @@ function main(raw) {
                     // the shape every reader of it already expects.
                     delete d.usage.stages;
                     if (d.usage.subagents) delete d.usage.subagents.stages;
+                }
+                // N04/N06: one row per question the transcript's own
+                // `AskUserQuestion` calls carry, the stage read off this
+                // same entry's `moves`. Absent entirely on a session that
+                // asked nothing — a session that died at a gate already
+                // has no `gates` for a different reason, and this is the
+                // one that covers the ordinary case of never having asked.
+                if (entries) {
+                    const found = gates.gatesFrom(entries, d.moves, replay.answerOf);
+                    if (found.length) d.gates = found;
                 }
             });
         } catch (e) { /* housekeeping */ }
