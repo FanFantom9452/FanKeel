@@ -1,6 +1,6 @@
 ---
-status: design-intent
-last_verified: 2026-09-17
+status: current
+last_verified: 2026-09-18
 ---
 
 # `## Needs a decision` 全部 27 條 Implementation Plan
