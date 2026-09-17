@@ -17,7 +17,7 @@ often one that is ready and one that is still an argument.
 | Heading | What it is waiting for | What `/fankeel` does with it |
 |---|---|---|
 | `## Ready` | nothing but someone's hands. The bullet is the specification | the whole section is offered as **one** task |
-| `## Needs a decision` | a person, to settle what the change should be | one task each, starting at `design` |
+| `## Needs a decision` | a person, to settle what the change should be | the newest few `orient` lists, one task each, starting at `design` |
 | `## Waiting` | something that is not a person: real use, upstream, or another entry landing | kept out of the menu — nothing here can move today |
 
 Whoever defers a thing picks its heading, because they know at that moment which
@@ -114,8 +114,6 @@ entry waited for actually happening. It shrank when somebody read it.
 - 〔dashboard〕station 的畫面沒有用任何外部 skill：mockup 由 `design.mockup` 指定的模型畫、人核准後 implementer 逐項搬 — [lib/profile.js](lib/profile.js). 待決：把 dashboard 生成做成可重複流程、還是留在 design 階段通例。
 
 - 〔subagent〕`lib/guard.js` 的 `WRITE_PATTERNS` 第一條把箭頭函式當成寫檔：reader、reviewer、judge 三型 subagent 的 Bash 因此擋掉 `x => y`，加 `> /dev/null` 也無效 — [lib/guard.js](lib/guard.js). 待決：regex 加排除、改判 shell 語法、還是接受。
-
-- 〔todo〕`## Needs a decision` 26 條但 init 選單一條一個選項、`AskUserQuestion` 上限 4 而 Ready 佔一個，每次只排得進三條 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md). 待決：分頁、改成分群、還是只提供最近的幾條。
 
 - 〔profile〕使用者的 `CLAUDE.md` 是每輪重送的前綴，fankeel 沒東西量它：Trovara 實測兩層佔一輪 9,894 tokens，瘦身後每輪省 683 — [lib/profile.js](lib/profile.js). 待決：開頭一律問還是過門檻才問、衝突比對放新 skill 還是 fankeel-judge、旗標存 profile 還是 registry。
 

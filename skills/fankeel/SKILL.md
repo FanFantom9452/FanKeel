@@ -707,14 +707,17 @@ has one**: its headings are the clustering, so there is nothing to derive.
 specification, and a build loop runs them as a list. **More than one bullet there
 needs `plan` on the route**: the plan file is the only place N tasks are written
 down durably, and with no plan file there is no ledger, so a compaction takes the
-loop's place with it. `## Needs a decision` is one
-option each, because each is a different question for a person. `## Waiting` is
-not offered at all: nothing under it can move today, and six unpickable rows are
-how a menu stops being read. Any other heading, or none, means clustering by hand
-— two bullets touching the same file or settling the same question are one task
-and one option, not two. A repository with no `TODO.md` is
-where guessing from the recent commits belongs, one option each, phrased as a
-task and not as a commit subject. **Other** is always there for the real answer.
+loop's place with it. `## Needs a decision` offers the ones `orient`'s `todo:`
+block lists — the newest by last edit, because `AskUserQuestion` holds four and
+`## Ready` takes one when it has entries — one option each, because each is a
+different question for a person, with the rest reachable by name through
+**Other**. `## Waiting` is not offered at all: nothing under it can move today,
+and six unpickable rows are how a menu stops being read. Any other heading, or
+none, means clustering by hand — two bullets touching the same file or settling
+the same question are one task and one option, not two. A repository with no
+`TODO.md` is where guessing from the recent commits belongs, one option each,
+phrased as a task and not as a commit subject. **Other** is always there for the
+real answer.
 
 A guessed *task* offered as an option is not a guess written behind anyone's
 back — the user confirms it before it is written. Nothing else is asked for:
