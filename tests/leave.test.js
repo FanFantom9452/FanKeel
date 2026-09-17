@@ -7,6 +7,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const registry = require('../lib/registry.js');
 const tmp = require('./tmp.js');
+const gates = require('../lib/gates.js');
 
 const HOOK = path.join(__dirname, '..', 'hooks', 'leave.js');
 const SID = 'aaaaaaaa-1111-4111-8111-111111111111';
@@ -289,4 +290,39 @@ test('a session with no AskUserQuestion writes no gates field', () => {
     assert.equal(out, '');
     const d = registry.readSession(f.root, SID);
     assert.equal('gates' in d, false);
+});
+
+// Fix round: `stageWhen` must pick the last move whose own timestamp is not
+// later than `at`, not simply the last move recorded — a moves array holding
+// one after `at` must not win over the stage that was really in force, and a
+// moment before the first move at all must answer null rather than the last
+// stage in the array.
+test('gates.stageWhen reads the stage in force at `at`, not the last move recorded', () => {
+    const moves = [['survey', 100], ['design', 200], ['build', 300]];
+    assert.equal(gates.stageWhen(moves, 150), 'survey', 'the last move not later than `at`, not the last one recorded');
+    assert.equal(gates.stageWhen(moves, 50), null, 'before the first move, there is no stage yet');
+});
+
+// Fix round: `gatesFrom` caps at `MAX_GATES` rows and drops the oldest one,
+// not the whole excess.
+test('gatesFrom keeps at most MAX_GATES rows and drops the oldest', () => {
+    const total = gates.MAX_GATES + 1;
+    const entries = [];
+    for (let i = 0; i < total; i++) {
+        const at = 1000 + i;
+        entries.push({
+            type: 'assistant', timestamp: new Date(at).toISOString(),
+            message: { content: [{ type: 'tool_use', id: 'ask' + i, name: 'AskUserQuestion',
+                input: { questions: [{ question: 'Which way?', header: 'q' + i, options: [] }] } }] },
+        });
+        entries.push({
+            type: 'user', timestamp: new Date(at + 1).toISOString(),
+            message: { content: [{ type: 'tool_result', tool_use_id: 'ask' + i, content: 'ok' }] },
+            toolUseResult: { answers: { 'Which way?': 'a' + i } },
+        });
+    }
+    const answerOf = (v) => v;
+    const out = gates.gatesFrom(entries, [], answerOf);
+    assert.equal(out.length, gates.MAX_GATES);
+    assert.equal(out[0].header, 'q1', 'the oldest question is dropped, so the first row left is the second question');
 });
