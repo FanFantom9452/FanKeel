@@ -68,6 +68,12 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
+- 〔release〕0.70.0 發版：HEAD 領先 `origin/main` 30 個 commit，裝著的副本凍在 `70771cd`，所以 N23 修好的 guard 箭頭誤判與 `lib/gates.js` 都沒在跑 — [scripts/version.js](scripts/version.js). 推送後要換終端機。
+
+- 〔docs〕`docs/decisions/2026-09-18-needs-decision-all.md` 兩處假敘述：ledger 只有 21 條 `Ruling:`、3 條點名編號，實質定案在 design 文件；送關卡的是四個編號不是三個 — [docs/registry.md](docs/registry.md).
+
+- 〔audit〕`docs-audit` 列的 43 對只有 `registry × station` 被讀過，其餘 42 對沒人開過——09-17 那次 audit 的 pair 那一半只走了一對 — [docs/documents.md](docs/documents.md). 一對一個 reader，四個一批。
+
 ## Needs a decision
 
 - 〔lib〕`lib/skill-overlap.js` 只有一個 production caller，折進 `scripts/orient.js` 既不多帶依賴也不會把測試推到 spawn 後面 — [lib/skill-overlap.js](lib/skill-overlap.js). 待決：折進去、還是留著。（audit 2026-09-18，8 行）
@@ -75,6 +81,22 @@ entry waited for actually happening. It shrank when somebody read it.
 - 〔scripts〕`scripts/station.js` 手寫 argv 迴圈，十五個 CLI 用 `node:util`；另一個手寫的 `scripts/survey.js` 有理由，station 的固定旗標沒有 — [scripts/station.js](scripts/station.js). 待決：換掉、還是留著。（audit 2026-09-18，5 行）
 
 - 〔lib〕三處重複：`lib/usage.js` 兩個函式各自重寫 `entriesOf()`、`lib/registry.js` 四個三行三元式、`lib/live.js` 手工組 Set — [lib/usage.js](lib/usage.js). 待決：三處都收、只收 usage.js、還是都不動。（audit 2026-09-18，13 行）
+
+- 〔registry〕136 筆 entry 沒有任何版本欄位，`burn`/`usage`/`spend`/`clock` 全部無法歸因到哪一版外掛 — [lib/registry.js](lib/registry.js). 待決：記 plugin version、記 gitCommitSha、還是兩個都記。
+
+- 〔caveman〕20 skill 裡要吸收哪些：`caveman-stats` 由 hook 算真實 token、Native Core 六個流程 skill、`cavecrew` 的委派決策指南 — [docs/improvement-brief.md](docs/improvement-brief.md). 待決：挑哪些改寫成 fankeel 規則。
+
+- 〔session〕堆疊手段：subagent 佔 token 從 30.7% 升到 53%，但回傳只佔工具輸出 7.6%、叫醒只佔主回合 7% — [docs/improvement-brief.md](docs/improvement-brief.md). 待決：§6.2 四個候選挑哪個。
+
+- 〔docs〕`.fankeel/build/` 不在 `docs.json` 任何 bucket，不受任何檢查管，但一份任務的證據全在那裡 — [lib/docs.js](lib/docs.js). 待決：進 docs.json 當 fixture、只寫進 documents.md、還是維持不管。
+
+- 〔skill〕三個唯讀 agent 都有 Bash，而 Bash 寫得了檔：`fankeel-reader`、`fankeel-judge`、`fankeel-reviewer` 沒有 Edit/Write 但有 Bash — [agents/fankeel-reader.md](agents/fankeel-reader.md). 待決：拿掉 Bash、靠 hook 擋、還是接受。
+
+- 〔gates〕`gates` 只存 `{at, stage, header, picked}`，沒存全部選項；station 讀了 `labels` 但只餵「最常被換掉」統計 — [lib/gates.js](lib/gates.js). 待決：存全部選項、只存被換掉的、還是維持現狀。
+
+- 〔memory〕102 條原生記憶裡 50 條引用的檔案在寫完之後改過；`memory-check` 只列不 fail，刪哪一條是使用者的決定 — [docs/documents.md](docs/documents.md). 待決：逐條看、只看引用最多的、還是不動。
+
+- 〔docs〕`documents.md` 三處重述 `development.md` 已逐行講過的 `lib/tracked.js`、`tests/badge.test.js`、`scripts/todo-check.js`，兩頁都不讓；沒矛盾但 SSOT 破了 — [docs/documents.md](docs/documents.md). 待決：改連過去、還是維持。
 
 ## Waiting
 
@@ -94,8 +116,12 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - `lib/skills.js` 的 `acceptedFlags` 讀不到 `scripts/judge.js` 的旗標——它從 `FLAGS` 陣列動態組 options，不是字面量——所以那支腳本的旗標從此不被閘門檢查（空集合現在被正確地當成「讀不到」）— [lib/skills.js](lib/skills.js). lifts when: 第二支腳本用同樣的形狀宣告旗標. 09-09.
 
-- design class：mockup 已落地，其餘是另一個 architectural 任務 — [簡報 §4.1](docs/improvement-brief.md#41-design-階段的-mockup-步驟前端任務). lifts when: 下一個前端任務出現，執行 `docs/plans/2026-09-09-design-class-prompt.md`. 09-10.
+- design class：mockup 已落地，其餘是另一個 architectural 任務；計畫的三份必讀來源已不存在，內容多半已併進簡報 — [簡報 §4.1](docs/improvement-brief.md#41-design-階段的-mockup-步驟前端任務). lifts when: 下一個前端任務出現. 09-18.
 
 - todo-check 不驗 `path:line` 的行號：改成不存在的行仍然 exit 0 — [scripts/todo-check.js](scripts/todo-check.js). docs-check 補得到一部分，但卡 role、引文與讀得到目標三個前提。lifts when: 一條沒帶引文的行內容漂移. 09-15.
 
 - 〔session〕`hooks/size.js` 留不留：改前 bigPerSession 0.3846；hook 上線後十個 session 用 `sessions.js --since 2026-09-11` 再量，沒降就移除 — [hooks/size.js](hooks/size.js). lifts when: 十個 session 帶著 hook 跑完. 09-11.
+
+- 〔caveman〕解除安裝：程式碼零硬依賴，`settings.json` 的 `enabledPlugins` 09-15 已設 false，兩個反向測試守著 — [tests/badge.test.js](tests/badge.test.js). lifts when: 〔caveman〕挑功能那條定案. 09-18.
+
+- 〔gates〕第一筆 `gates` 資料：程式碼 2026-09-18T00:18 落地，136 筆 entry 目前 0 筆有它 — [lib/gates.js](lib/gates.js). lifts when: 0.70.0 裝好、換終端機後有 session 正常結束. 09-18.
