@@ -95,7 +95,7 @@ the loud side, as it does everywhere in this plugin.
 From the entry: `task`, `project`, `stage` on its `route`, `started`,
 `updated`, `claims`, `notes`, `next`, `guard`, and the stage sums of `burn`,
 `clock` and `waited`. From `hooks/leave.js`: `ended`, `model`, `usage`,
-`spend` — see [registry.md](registry.md). From `lib/prices.js`: the dollar figure, and the
+`spend`, `gates` — see [registry.md](registry.md). From `lib/prices.js`: the dollar figure, and the
 date the table was read. The dollar figure shown is one total: `cost(s)` in
 the browser adds the session's own `usd` and its agents' `agentUsd` together
 (`assets/station/station.js:52`, `(s.usd || 0) + (s.agentUsd || 0)`) rather
