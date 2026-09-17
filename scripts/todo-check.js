@@ -162,6 +162,13 @@ const EXTERNAL = /^(?:[a-z][a-z0-9+.-]*:|#|\/\/)/i;
 
 // Top-level bullets only. An indented bullet is a continuation of the entry
 // above it and is measured as part of it, not as an entry of its own.
+//
+// `end` is the last line actually folded into the entry — its own bullet line
+// until a continuation line extends it — not the line before whatever comes
+// next in the file. A caller wanting "this entry's lines, however many it
+// wraps over" needs that distinction: the gap between one entry and the next
+// can hold a blank line, or the heading that opens the following section, and
+// neither belongs to the entry that happens to sit above it.
 function entries(text) {
     const lines = text.split(/\r?\n/);
     const out = [];
@@ -180,11 +187,12 @@ function entries(text) {
         }
         if (/^[-*]\s+\S/.test(line)) {
             close();
-            current = { line: i + 1, section, text: line.replace(/^[-*]\s+/, '') };
+            current = { line: i + 1, end: i + 1, section, text: line.replace(/^[-*]\s+/, '') };
             continue;
         }
         if (current && /^\s+\S/.test(line)) {
             current.text += ' ' + line.trim();
+            current.end = i + 1;
             continue;
         }
         if (!line.trim()) continue;

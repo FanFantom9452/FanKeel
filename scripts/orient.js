@@ -415,23 +415,19 @@ function blameTimes(dir, name) {
     return times.length ? times : null;
 }
 
-// Bullets in document order, each carrying the line range it spans: from its
-// own first line up to — not including — whichever bullet or heading comes
-// next, or the end of the file for the last one. `todo-check.js`'s `entries()`
-// records only an entry's first line; a wrapped entry's edit time is the
-// newest edit to any of its lines, so the rest of the range is worked out here.
-function withSpans(list, totalLines) {
-    return list.map((e, i) => ({
-        ...e,
-        end: i + 1 < list.length ? list[i + 1].line - 1 : totalLines,
-    }));
-}
+// How much of a `## Needs a decision` entry's text the `todo:` block shows per
+// line. Long enough to still read as the entry, short enough that several of
+// them do not become the wall of text the whole block exists to avoid — the
+// same reasoning as `MAP_WIDTH` above, for a different listing.
+const TODO_ENTRY_WIDTH = 100;
 
-// `list`, newest edit first. Ties — including every line sharing one commit,
-// or no git history at all — keep the entry later in the file first: with no
-// blame to sort by the whole list is one tie, and "the last N entries, latest
-// first" falls out of this same rule rather than needing one of its own.
-function orderByEdit(dir, name, list, totalLines) {
+// `list` (entries carrying `line` and `end` — see `entries()` in
+// `todo-check.js`), newest edit first. Ties — including every line sharing one
+// commit, or no git history at all — keep the entry later in the file first:
+// with no blame to sort by the whole list is one tie, and "the last N
+// entries, latest first" falls out of this same rule rather than needing one
+// of its own.
+function orderByEdit(dir, name, list) {
     const blame = blameTimes(dir, name);
     if (!blame) return [...list].reverse();
     const scored = list.map((entry) => {
@@ -453,22 +449,20 @@ function orderByEdit(dir, name, list, totalLines) {
 // count of what got left out rather than a silent drop of it.
 //
 // null when there is nothing to say: no TODO.md at `dir`, or it could not be
-// read. A missing file is not a finding here — `todo-check.js` already has
-// the line for that — so the caller prints nothing rather than an empty block.
+// read. The `readFileSync` below is the only check that needs to exist for
+// that — a second, earlier one reading the same path could only ever agree
+// with it or be wrong.
 function todoBlock(dir) {
     const file = path.join(dir, 'TODO.md');
-    const result = todoCheck.check(file);
-    if (result.missing) return null;
     let text;
     try {
         text = fs.readFileSync(file, 'utf8');
     } catch (e) {
         return null;
     }
-    const totalLines = text.split(/\r?\n/).length;
-    const spans = withSpans(todoCheck.entries(text), totalLines);
-    const needs = spans.filter((e) => e.section === 'Needs a decision');
-    const ordered = orderByEdit(dir, 'TODO.md', needs, totalLines);
+    const result = todoCheck.check(file);
+    const needs = todoCheck.entries(text).filter((e) => e.section === 'Needs a decision');
+    const ordered = orderByEdit(dir, 'TODO.md', needs);
 
     const readyCount = result.counts['Ready'] || 0;
     const waitingCount = result.counts['Waiting'] || 0;
@@ -487,7 +481,7 @@ function todoBlock(dir) {
             + ' by last edit, offer these:');
         for (const e of shown) {
             const t = e.text.replace(/\s+/g, ' ').trim();
-            lines.push('    ' + (t.length > 100 ? t.slice(0, 99) + '…' : t));
+            lines.push('    ' + (t.length > TODO_ENTRY_WIDTH ? t.slice(0, TODO_ENTRY_WIDTH - 1) + '…' : t));
         }
         const more = needsCount - shown.length;
         if (more > 0) lines.push('    and ' + more + ' more, not listed — Other takes one by name');

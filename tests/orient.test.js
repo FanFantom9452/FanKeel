@@ -648,3 +648,139 @@ test('no TODO.md means no todo: block at all', () => {
   const out = run(['--root', root]);
   assert.doesNotMatch(out, /todo: TODO\.md/);
 });
+
+// An entry's blame range must stop at its own last line, not run on into
+// whatever the file happens to hold next. The line right after the last
+// `## Needs a decision` entry is a blank line and then the `## Waiting`
+// heading — neither is a continuation of that entry, and a span that reached
+// past the entry's own lines would read an edit to either of them as an edit
+// to the entry.
+test('editing only the heading after the last entry does not touch that entry\'s edit time', () => {
+  const root = workspace({});
+  const opts = initGit(root);
+  const body = [
+    '## Ready',
+    '',
+    '## Needs a decision',
+    '- Entry one',
+    '- Entry two',
+    '- Entry three',
+    '- Entry four',
+    '- Entry five',
+    '',
+    '## Waiting',
+  ].join('\n') + '\n';
+  commitTodo(root, opts, body, '2026-01-01T00:00:00Z');
+
+  // A real edit, to a real entry, in the middle of the list — not the first
+  // and not the last, so nothing about its position could explain it sorting
+  // first on its own.
+  const bodyV2 = body.replace('- Entry two', '- Entry two edited');
+  commitTodo(root, opts, bodyV2, '2026-01-02T00:00:00Z');
+
+  // Only the heading right after the last entry changes — Entry five's own
+  // bullet line is untouched. A span that leaked past Entry five's own line
+  // would pick this commit up as an edit to Entry five and — being later than
+  // Entry two's — put Entry five first instead.
+  const bodyV3 = bodyV2.replace('## Waiting', '##  Waiting');
+  commitTodo(root, opts, bodyV3, '2026-01-03T00:00:00Z');
+
+  const out = run(['--root', root]);
+  const lines = out.split(/\r?\n/);
+  const idx = lines.findIndex((l) => /Needs a decision 5/.test(l));
+  assert.match(lines[idx + 1], /Entry two edited/,
+    'the last entry picked up an edit to the heading that follows it: ' + lines[idx + 1]);
+});
+
+// The other direction of the same boundary: a continuation line is part of
+// its entry, and an edit to only that line — the bullet line itself untouched
+// — has to be enough to move the entry to the front on its own.
+test('an edit to a continuation line alone moves its entry to first', () => {
+  const root = workspace({});
+  const opts = initGit(root);
+  const body = [
+    '## Ready',
+    '',
+    '## Needs a decision',
+    '- Entry one',
+    '- Entry two',
+    '  continues here',
+    '- Entry three',
+    '- Entry four',
+    '- Entry five',
+    '',
+    '## Waiting',
+  ].join('\n') + '\n';
+  commitTodo(root, opts, body, '2026-01-01T00:00:00Z');
+
+  const bodyV2 = body.replace('  continues here', '  continues here, now edited');
+  commitTodo(root, opts, bodyV2, '2026-01-02T00:00:00Z');
+
+  const out = run(['--root', root]);
+  const lines = out.split(/\r?\n/);
+  const idx = lines.findIndex((l) => /Needs a decision 5/.test(l));
+  assert.match(lines[idx + 1], /Entry two.*continues here, now edited/);
+});
+
+// The tie-break itself, pinned by identity rather than by "some 4 of 5". Five
+// entries in one commit are one tie all the way down, so the order is decided
+// entirely by "later in the file first" — flip that comparison and this shows
+// the four earliest instead of the four latest.
+test('a tie keeps the entry later in the file first, all the way down the shown list', () => {
+  const root = workspace({});
+  const opts = initGit(root);
+  const body = [
+    '## Ready',
+    '',
+    '## Needs a decision',
+    '- Entry one',
+    '- Entry two',
+    '- Entry three',
+    '- Entry four',
+    '- Entry five',
+    '',
+    '## Waiting',
+  ].join('\n') + '\n';
+  commitTodo(root, opts, body, '2026-01-01T00:00:00Z');
+
+  const out = run(['--root', root]);
+  const lines = out.split(/\r?\n/);
+  const idx = lines.findIndex((l) => /Needs a decision 5/.test(l));
+  const shown = lines.slice(idx + 1, idx + 5).map((l) => l.trim());
+  assert.deepEqual(shown, ['Entry five', 'Entry four', 'Entry three', 'Entry two']);
+  assert.match(out, /and 1 more, not listed — Other takes one by name/);
+});
+
+// Uncommitted lines count as newest regardless of what blame's own timestamp
+// for them says — not merely "newer than everything already tested", which a
+// past-dated fixture cannot tell apart from git blame's own habit of stamping
+// an uncommitted line with the real wall-clock time it was run at. The commits
+// here are dated after any real clock this suite runs on, so only the special
+// case — not a coincidence of dates — can put the uncommitted edit first.
+test('an uncommitted edit outranks even a commit dated in the future', () => {
+  const root = workspace({});
+  const opts = initGit(root);
+  const body = [
+    '## Ready',
+    '',
+    '## Needs a decision',
+    '- Entry one original text',
+    '- Entry two',
+    '- Entry three',
+    '- Entry four',
+    '- Entry five',
+    '',
+    '## Waiting',
+  ].join('\n') + '\n';
+  commitTodo(root, opts, body, '2030-01-01T00:00:00Z');
+
+  // Entry one has the lowest line number of the five, so on a tie it would
+  // sort last, not first. Only being newer gets it to the front.
+  const edited = body.replace('- Entry one original text', '- Entry one edited, not committed');
+  fs.writeFileSync(path.join(root, 'TODO.md'), edited);
+
+  const out = run(['--root', root]);
+  const lines = out.split(/\r?\n/);
+  const idx = lines.findIndex((l) => /Needs a decision 5/.test(l));
+  assert.match(lines[idx + 1], /Entry one edited, not committed/);
+});
