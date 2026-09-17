@@ -528,7 +528,12 @@ test('a Needs a decision entry untouched for 7 days or more is listed by git bla
   const opts = initTodoGit(root);
   const now = Date.now();
 
-  const bodyV1 = '# TODO\n\n## Needs a decision\n\n- Entry A, old enough to be due.\n';
+  // Entry C sits under `## Ready`, just as old as Entry A, and is the
+  // control for the section filter: without it, `needsDecisionDue` would
+  // pass just as well against a rule that lists every stale entry in the
+  // file regardless of which heading it is under.
+  const bodyV1 = '# TODO\n\n## Ready\n\n- Entry C, ready and just as old.\n\n'
+    + '## Needs a decision\n\n- Entry A, old enough to be due.\n';
   commitTodoBody(root, opts, bodyV1, isoSeconds(now - 8 * 24 * 60 * 60 * 1000));
 
   // Only a new line is appended — Entry A's own line is untouched by this
@@ -539,14 +544,15 @@ test('a Needs a decision entry untouched for 7 days or more is listed by git bla
   const file = path.join(root, 'TODO.md');
   const result = todo.check(file, now);
   assert.deepEqual(result.needsDecisionDue, [
-    { line: 5, days: 8, text: 'Entry A, old enough to be due.' },
-  ], 'Entry B, edited today, must not appear beside it');
+    { line: 9, days: 8, text: 'Entry A, old enough to be due.' },
+  ], 'Entry B, edited today, and Entry C, filed under Ready, must not appear beside it');
 
   const { text, ok } = todo.main([file], now);
   assert.equal(ok, true, 'an old Needs a decision entry is not a defect, so the run stays green');
   assert.match(text, /## Needs a decision entries not edited in 7 days or more/);
   assert.match(text, /Entry A, old enough to be due/);
   assert.doesNotMatch(text, /Entry B, added today/);
+  assert.doesNotMatch(text, /Entry C, ready and just as old/);
 
   // The real CLI, exit code included — same file, no explicit `now`: the
   // margin either side of the 7-day threshold (about a day) easily covers
