@@ -470,7 +470,7 @@ rather than a silently accepted one.
 | 2 | operator's settings | `--setting-sources project` (`scripts/eval.js:109`, `--setting-sources`) |
 | 3 | its own always-on flag | fankeel has no persistent always-on flag, so there is nothing here to point to |
 | 4 | model version | `--model` has no default (`scripts/eval.js:61`, `: null`); missing it exits 1 before anything spawns (`scripts/eval.js:173`, `!a.model`) |
-| 5 | cost | `costOf()` (`lib/eval.js:91`, `costOf`) reads `total_cost_usd`/`usage` off the result message, printed per run (`scripts/eval.js:143`, `cost $`) and in `--json`; `--max-budget-usd` passes through to `claude` as-is (`scripts/eval.js:111`, `--max-budget-usd`) |
+| 5 | cost | `costOf()` (`lib/eval.js:91`, `costOf`) reads `total_cost_usd`/`usage` off the result message, printed per run (`scripts/eval.js:143`, `cost $`) and in `--json`; `--max-budget-usd` passes through to `claude` (`scripts/eval.js:111`, `--max-budget-usd`) |
 | 6 | tools | `--allowedTools` (`scripts/eval.js:113`, `--allowedTools`) |
    ```
 
@@ -483,7 +483,7 @@ rather than a silently accepted one.
 | 2 | operator's settings | `--setting-sources project` (`scripts/eval.js:106`, `--setting-sources`) |
 | 3 | its own always-on flag | fankeel has no persistent always-on flag, so there is nothing here to point to |
 | 4 | model version | `--model` has no default (`scripts/eval.js:61`, `: null`); missing it exits 1 before anything spawns (`scripts/eval.js:181`, `!a.model`) |
-| 5 | cost | `costOf()` (`lib/eval.js:91`, `costOf`) reads `total_cost_usd`/`usage` off the result message, printed per run (`scripts/eval.js:151`, `cost $`) and in `--json`; `--max-budget-usd` passes through to `claude` as-is (`scripts/eval.js:108`, `--max-budget-usd`) |
+| 5 | cost | `costOf()` (`lib/eval.js:91`, `costOf`) reads `total_cost_usd`/`usage` off the result message, printed per run (`scripts/eval.js:151`, `cost $`) and in `--json`; `--max-budget-usd` passes through to `claude` (`scripts/eval.js:108`, `--max-budget-usd`) |
 | 6 | tools | `--disallowedTools` (`scripts/eval.js:110`, `--disallowedTools`) |
 
 ## Not run in CI
@@ -2178,13 +2178,8 @@ own.
 **(c) `docs/improvement-brief.md` is marked `design-intent` (N09)**
 
 9. Run `node scripts/map.js --print` and read the `planned, not built`
-   block. Today it reads:
-
-```
-planned, not built — 2:
-  docs/plans/2026-09-09-design-class-prompt.md
-  docs/plans/2026-09-17-needs-decision-all-design.md
-```
+   block. Note its count; `docs/improvement-brief.md` is not in it. (It
+   also lists this plan and its design, both `status: design-intent`.)
 
 10. In `docs/improvement-brief.md`, the file opens with:
 
@@ -2203,15 +2198,9 @@ last_verified: 2026-09-12
 ---
 ```
 
-12. Run `node scripts/map.js --print` again. `documents:` now reads `3
-    planned` instead of `2`, and the block reads:
-
-```
-planned, not built — 3:
-  docs/improvement-brief.md
-  docs/plans/2026-09-09-design-class-prompt.md
-  docs/plans/2026-09-17-needs-decision-all-design.md
-```
+12. Run `node scripts/map.js --print` again. Expected: the `planned, not
+    built` count is one higher than in step 9, and the block now lists
+    `docs/improvement-brief.md`.
 
     `scripts/todo-check.js:85,296-297` reads a bucket's `role`, never a
     page's `status`, so the `TODO.md` links that point at this page are
@@ -2584,14 +2573,14 @@ The four always-on rules exist because something specific broke without
 16. In `docs/subagents.md`, inside that same paragraph, the model-floor
     sentence currently reads:
 
-> `agent` call carries `model` and `sonnet` is the floor there too; the authoring
+> `agent` call carries `model` and `sonnet` is the floor, and the authoring
 > reference's omit-and-inherit is the host's default, not this plugin's; the
 > **count and the model must be said out loud**,
 
     In `docs/subagents.md`, replace it with:
 
 ```markdown
-`agent` call carries `model` and `sonnet` is the floor there too; the authoring
+`agent` call carries `model` and `sonnet` is the floor, and the authoring
 reference's omit-and-inherit is the host's default, not this plugin's — and
 `subagent_type: "fork"` inherits the whole context and ignores `model`
 regardless, which is why fankeel never dispatches one; the
