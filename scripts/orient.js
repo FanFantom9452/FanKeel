@@ -460,13 +460,13 @@ function todoBlock(dir) {
     } catch (e) {
         return null;
     }
-    const result = todoCheck.check(file);
-    const needs = todoCheck.entries(text).filter((e) => e.section === 'Needs a decision');
+    const all = todoCheck.entries(text);
+    const needs = all.filter((e) => e.section === 'Needs a decision');
     const ordered = orderByEdit(dir, 'TODO.md', needs);
 
-    const readyCount = result.counts['Ready'] || 0;
-    const waitingCount = result.counts['Waiting'] || 0;
-    const needsCount = result.counts['Needs a decision'] || 0;
+    const readyCount = all.filter((e) => e.section === 'Ready').length;
+    const waitingCount = all.filter((e) => e.section === 'Waiting').length;
+    const needsCount = needs.length;
     // Three rather than four when Ready already holds one: a menu offering
     // four from this section plus one from Ready is five options, one more
     // than AskUserQuestion takes.
