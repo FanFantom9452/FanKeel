@@ -623,8 +623,8 @@ notes and its `next` intact.
 
 ## Setting a profile from the page
 
-No session view carries a **profile** card. 首頁 ends with the machine
-defaults' card, after its projects and recent sessions; each registry's card —
+No session view carries a **profile** card. 首頁 opens with the machine
+defaults' card, before its projects and recent sessions; each registry's card —
 on 清單 once that registry is selected, and on every project page for its own
 registry — ends with one card per project it holds. A card is one row per key
 in `profileKeys` (`lib/profile.js`'s

@@ -1061,6 +1061,7 @@
         var bars = dayBars(R, view.metric, view.dim, DAYS);
         var recent = R.slice().sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); }).slice(0, 12);
         return (isFinite(S.cleared) ? '<p class="cleared">cleared ' + S.cleared + ' stale rows</p>' : '')
+            + profileCard('machine profile', 'machine', null, S.profiles && S.profiles.machine)
             + '<section class="panel hero"><div class="hero-top"><div class="hero-title"><div class="eyebrow">'
             + heroEyebrow(frozenAt) + '</div>'
             + '<h1><b>' + DAYS[0].slice(5) + '</b> — <b>' + TODAY.slice(5) + '</b></h1></div>'
@@ -1074,8 +1075,7 @@
             + '<div class="chart">' + histSvg(bars, o) + '</div></section>'
             + (sel ? dayPanelHtml(dayPanel(R, sel), o) : '')
             + '<div class="grid2"><section class="panel">' + projectsHtml(projectRows(R, DAYS), o) + '</section>'
-            + '<section class="panel">' + recentHtml(recent, o) + '</section></div>'
-            + profileCard('machine profile', 'machine', null, S.profiles && S.profiles.machine);
+            + '<section class="panel">' + recentHtml(recent, o) + '</section></div>';
     }
     view.pMetric = 'usd';
     view.compare = '';
