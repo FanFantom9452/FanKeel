@@ -251,15 +251,27 @@ nothing else:
   Both halves are deleted from `usage` before that field is written, so every
   existing reader of `usage` still sees the shape it always had.
   [station.md](station.md) has where the per-stage curve reads it from.
-- `gates` — an array of `{ at, stage, header, picked }`, one entry per
-  `AskUserQuestion` `lib/gates.js` finds in the transcript: `stage` is read
-  off `moves` at that point, and `picked` is the chosen option's label — the
-  text typed, capped at 120 characters, when it was Other. At most
-  `MAX_GATES` (60), oldest dropped. Written only when the session ends
-  cleanly, because `hooks/leave.js` runs at `SessionEnd` alone — a session
-  that never reaches it carries no `gates` at all. Nothing reads it back:
-  while the transcript is still there, the detail page's own replay
-  (`lib/detail.js:613`) already shows the same questions and answers.
+- `gates` — an array of `{ at, stage, header, labels, picked }`, one entry
+  per `AskUserQuestion` `lib/gates.js` finds in the transcript: `stage` is
+  read off `moves` at that point, `labels` is every option's text in the
+  order `AskUserQuestion` declared them — each capped at 120 characters, an
+  empty one kept in place rather than filtered out, since dropping it would
+  shift every later index — and `picked` is the chosen option's label, the
+  same cap, the text typed when it was Other, and `null` when the question
+  was never answered. That null is kept rather than clipped to `''`, because
+  `gateSummary()` runs one guard over rows from either source, and that
+  guard skips a null. An `''` is not the same thing: `answerOf` returns one
+  for an empty multi-select too, and both sources count that alike. Clipped,
+  an unanswered gate would have read as option one losing here while the
+  same gate read from the transcript counted nothing. At most `MAX_GATES`
+  (60), oldest dropped. Written only when the session ends cleanly, because
+  `hooks/leave.js` runs at `SessionEnd` alone — a session that never reaches
+  it carries no `gates` at all. While the transcript is still there, the
+  detail page's own replay (`lib/detail.js:613`) is still the source for the
+  same questions and answers. Once it is gone, [station.md](station.md)'s
+  `gateSummary()` reads `labels` back from here instead — that is why they
+  are stored: without them the `swapped` card's denominator would quietly
+  shrink as transcripts age, with nothing on the page to show it.
 
 # Reading it from outside
 

@@ -284,10 +284,11 @@ nothing.
 `CLAUDE.md` are the front door rather than pages in a tree, and GitHub renders a
 frontmatter block on a README as a stray table at the top of it. `TODO.md` is
 excluded for the opposite reason: it is not a claim about the code that could
-quietly stop being true, it is a list `scripts/todo-check.js` re-verifies in full
-on every run, so a `last_verified` there would be a date somebody has to remember
-to bump standing in for a check that already runs. Neither has a fix worth
-offering, and a list of things nobody may act on stops being read.
+quietly stop being true, it is what
+[`todo-check.js`](development.md#todo-checkjs--whether-todomd-is-still-an-index)
+re-verifies on every run, so a `last_verified` there would be a date somebody
+has to remember to bump standing in for a check that already runs. Neither has a
+fix worth offering, and a list of things nobody may act on stops being read.
 
 `lib/map.js` was the exception until 2026-08-31, by age rather than by choice:
 `pagesByStatus` was written before `isSignpost` existed. What made it worth

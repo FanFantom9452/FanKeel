@@ -54,6 +54,12 @@ TODO 那條說有三處重述。survey 查下來**只有一處成立**，另外�
   `MAX_GATES` 的上限，不新增常數。
 - `lib/station.js:445` 的 `gateSummary()` 目前從 `lib/replay.js:122-127` 重算的
   `q.labels` 取 `labels[0]`。改成先讀持久化的欄位，讀不到才回頭用 `replay`。
+
+  **Corrected 2026-09-18:** 出貨的順序與上一句相反。`lib/station.js:454` 的
+  `if (!rows.length)` 讓 replay 先走，持久化的 gates 只在 replay 一列都沒有時
+  才讀；計畫與 `tests/station-gate.test.js` 都是這個順序。transcript 還在的時
+  候 replay 是即時的，持久化的那份是 session 結束時的快照，所以先 replay 才
+  對——寫反的是上面那一句，不是程式。
 - 為什麼要改：`replay` 需要 transcript。transcript 沒了，`picked` 還在（`gates`
   存了），選項文字不在，於是 `swapped` 的分母只算得到 transcript 還在的那些
   session。統計會隨時間縮水，而頁面上看不出來。這是缺陷，不是缺功能。
@@ -91,6 +97,13 @@ N16 已經裁過的行為，不重開。現在的問題只是這 50 條今天要
   所以這一輪派出去的每個唯讀 subagent 的 Bash 都會把 `=>` 當成 redirect 擋掉。
   緩解是每份 brief 都寫一句「用 `function(){}`，不要箭頭」。survey 四個讀工都這樣
   派，四個都沒中招。
+
+  **Corrected 2026-09-18（audit）：** 修好 guard 的是 `8b899ce`，不是 `f466f06`
+  ——後者是 gates 那一個，動的是 `hooks/leave.js`、`lib/gates.js` 與
+  `tests/leave.test.js`，一行都沒碰 `lib/guard.js`。結論不變：工作樹的
+  `lib/guard.js:212` 已經放行 `=>`、`->`、`2>&1` 與引號內的 `>`，而安裝副本的
+  `:209` 還是修復前那一條，所以繞道要寫到 0.70.0 裝上去為止。這一輪一個 reader
+  連 `2>&1 | head` 都被擋，證明現場跑的是安裝副本。
 - `scripts/version.js 0.70.0` 改 13 個檔並自我驗證，`:163` 會拒絕非 semver。
 - **push 是對 profile 的例外**：`land.push` 是 `false`，這條 TODO 明寫要推。land
   的關卡上要單獨問，不能當成 profile 的預設值默默做掉。
@@ -113,17 +126,29 @@ N16 已經裁過的行為，不重開。現在的問題只是這 50 條今天要
 - mockup。**這一輪不是 frontend 工作**：站上那個 gate 面板沒有新畫面，`swapped`
   變的是資料來源不是呈現。這是一個判斷，可以被推翻。
 
-## 怎麼知道做完了
+## 這份設計動到的檔
 
-| 條目 | 失敗於現在、通過於之後的檢查 |
+| file | change |
 |---|---|
-| 3 | `tests/leave.test.js` 新案例：transcript 不存在的 session，`gateSummary` 仍數得到它的 gate。現在失敗，因為 `labels` 來自 `replay` |
-| 3（產物） | 站上 gate 面板讀出的 `swapped` 總數，與它來源的 gate 記錄逐筆加總相等 |
-| 1、2 | `node scripts/docs-check.js` 綠，且更正行引的數字用產生它的指令重跑一次對得上 |
-| 4 | 43 對每一對都有一筆裁決，不是 12 筆——印出來的清單封頂 12，`sweep()` 才是全集 |
-| 5 | `node scripts/memory-check.js` 的 stale 數下降，且每一條下降都對得上一行更正或一次使用者指名的刪除 |
-| 6 | `node scripts/version.js` 說 `0.70.0, in all 13 places.`，且 `npm test` 綠 |
-| 7 | `node scripts/todo-check.js` 綠，六條都不在 `TODO.md` 裡 |
+| `docs/decisions/2026-09-18-needs-decision-all.md` | `:11`、`:28` 各加一行 `**Corrected 2026-09-18:**`，原文不刪 |
+| `docs/documents.md` | `:287` 改連到 `development.md:35-40`，不再自己講 `todo-check.js` |
+| `lib/gates.js` | `gatesFrom()` 加一個欄位存選項文字 |
+| `lib/station.js` | `gateSummary()` 先讀持久化欄位，讀不到才回頭用 `replay` |
+| `docs/registry.md` | `gates` 段的兩句被推翻，改掉 |
+| `docs/station.md` | `gateSummary` 的描述一起查 |
+| `TODO.md` | 六條在各自交付的那一步移除 |
+
+## What proves it done
+
+| test | 出自 |
+|---|---|
+| `tests/leave.test.js` 新案例：transcript 不存在的 session，`gateSummary` 仍數得到它的 gate。現在失敗，因為 `labels` 來自 `replay` | 第 3 節 |
+| 站上 gate 面板讀出的 `swapped` 總數，與它來源的 gate 記錄逐筆加總相等 | 第 3 節（產物） |
+| `node scripts/docs-check.js` 綠，且更正行引的數字用產生它的指令重跑一次對得上 | 第 1、2 節 |
+| 43 對每一對都有一筆裁決，不是 12 筆——印出來的清單封頂 12，`sweep()` 才是全集 | 第 4 節 |
+| `node scripts/memory-check.js` 的 stale 數下降，且每一條下降都對得上一行更正或一次使用者指名的刪除 | 第 5 節 |
+| `node scripts/version.js` 說 `0.70.0, in all 13 places.`，且 `npm test` 綠 | 第 6 節 |
+| `node scripts/todo-check.js` 綠，六條都不在 `TODO.md` 裡 | 第 7 節 |
 
 ## 對照地圖
 

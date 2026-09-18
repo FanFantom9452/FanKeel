@@ -1,14 +1,14 @@
 ---
 status: current
-last_verified: 2026-09-15
+last_verified: 2026-09-18
 source_of_truth: scripts/eval.js, lib/eval.js, evals/route-typo/case.yaml
 ---
 
 # Behaviour evals
 
-One case in the layout `claude plugin eval` reads, a runner beside it that works
-without early access, and the six ways an operator's own machine can leak into a
-run.
+Five cases in the layout `claude plugin eval` reads, a runner beside it that
+works without early access, and the six ways an operator's own machine can leak
+into a run.
 
 `evals/<case>/` holds cases in the layout `claude plugin eval` reads. Whether
 this machine has it is read in an empty directory: "currently in early access"

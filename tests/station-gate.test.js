@@ -75,6 +75,36 @@ test('a gate with no answer counts toward neither lost nor total', () => {
     assert.deepEqual(out.gates.swapped, []);
 });
 
+test('a session with no detail but a persisted gates entry still counts toward swapped', () => {
+    // Mutation that reddens this: remove the `if (!rows.length)` fallback
+    // block in `gateSummary()` (the part that reads `s.gates` when the
+    // replay-derived `rows` is empty) — with `detail` null there is no
+    // `s.detail.events` to read either, so `swapped` would come back `[]`
+    // instead of one row for `A`.
+    const session = Object.assign(fakeSession('s1', []), {
+        detail: null,
+        gates: [{ at: 1, stage: 'build', header: 'ship it?', labels: ['A', 'B'], picked: 'B' }],
+    });
+    const model = fakeModel([fakeRegistry('F:\\ws\\a', [session])]);
+    const out = parseSerialize(model);
+    assert.deepEqual(out.gates.swapped, [{ label: 'A', lost: 1, total: 1 }]);
+});
+
+test('an empty-string labels[0] on the replay path still counts toward swapped, same as before the gates fallback existed', () => {
+    // `lib/replay.js:122,127` keeps a literal `label: ''` (it filters options
+    // down to `typeof l === 'string'`, and '' passes that). The replay path
+    // must count it exactly as it did before this task's fallback was added.
+    // Mutation that reddens this: re-add `|| r.first === ''` to the guard in
+    // `gateSummary()` (`if (typeof r.first !== 'string' || r.picked === null)
+    // continue;`) — '' would then be skipped and `swapped` would come back
+    // `[]` instead of one row for `''`.
+    const model = fakeModel([fakeRegistry('F:\\ws\\a', [
+        fakeSession('s1', [gateEvent([{ q: 'ship it?', a: 'not yet', own: false, labels: ['', 'not yet'] }])]),
+    ])]);
+    const out = parseSerialize(model);
+    assert.deepEqual(out.gates.swapped, [{ label: '', lost: 1, total: 1 }]);
+});
+
 test('an Other answer (own: true) still counts as option one losing, same as a listed answer that differs', () => {
     // `own` is a different measurement — whether the person typed Other at
     // all — and `gateSummary()` never reads it; this pins that an Other
@@ -87,4 +117,40 @@ test('an Other answer (own: true) still counts as option one losing, same as a l
     ])]);
     const out = parseSerialize(model);
     assert.deepEqual(out.gates.swapped, [{ label: 'approve wording', lost: 1, total: 1 }]);
+});
+
+// Fix round 2, the fallback half of the same rule the replay test above pins:
+// an unanswered gate counts toward neither. It is a separate test because the
+// two sources reach the guard by different routes — `lib/replay.js:125` writes
+// `a: null` and `lib/gates.js` writes `picked: null` — and the defect this
+// closes was that only one of them could ever be null.
+test('a persisted gate with no answer counts toward neither, the same as the replay path', () => {
+    // Mutation that reddens this and nothing else: in `gateSummary()`'s
+    // fallback block write `picked: g.picked === null ? '' : g.picked` — that
+    // is the shape the record had before this fix, and `swapped` would come
+    // back `[{ label: 'A', lost: 1, total: 1 }]` for a gate nobody answered.
+    const session = Object.assign(fakeSession('s1', []), {
+        detail: null,
+        gates: [{ at: 1, stage: 'build', header: 'ship it?', labels: ['A', 'B'], picked: null }],
+    });
+    const model = fakeModel([fakeRegistry('F:\\ws\\a', [session])]);
+    const out = parseSerialize(model);
+    assert.deepEqual(out.gates.swapped, []);
+});
+
+// Fix round 2: the fallback is a fallback, not a second source. Every session
+// that ends cleanly writes both — `hooks/leave.js:112` the `gates` field and
+// `lib/detail.js` the replay the panel reads — so an unconditional fallback
+// would double every gate the ordinary case produces, not a rare one.
+test('a session carrying both a replay gate row and a persisted one counts it once', () => {
+    // Mutation that reddens this: delete the `if (!rows.length)` wrapper
+    // around the fallback block in `gateSummary()` so it always runs —
+    // `swapped` would come back `[{ label: 'A', lost: 2, total: 2 }]`.
+    const session = Object.assign(
+        fakeSession('s1', [gateEvent([{ q: 'ship it?', a: 'B', own: false, labels: ['A', 'B'] }])]),
+        { gates: [{ at: 1, stage: 'build', header: 'ship it?', labels: ['A', 'B'], picked: 'B' }] },
+    );
+    const model = fakeModel([fakeRegistry('F:\\ws\\a', [session])]);
+    const out = parseSerialize(model);
+    assert.deepEqual(out.gates.swapped, [{ label: 'A', lost: 1, total: 1 }]);
 });

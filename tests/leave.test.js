@@ -8,6 +8,7 @@ const { execFileSync } = require('node:child_process');
 const registry = require('../lib/registry.js');
 const tmp = require('./tmp.js');
 const gates = require('../lib/gates.js');
+const replay = require('../lib/replay.js');
 
 const HOOK = path.join(__dirname, '..', 'hooks', 'leave.js');
 const SID = 'aaaaaaaa-1111-4111-8111-111111111111';
@@ -281,7 +282,139 @@ test('leave writes gates from the transcript\'s AskUserQuestion calls, with the 
     const out = run({ session_id: SID, transcript_path: f.transcript, cwd: f.root, reason: 'clear', hook_event_name: 'SessionEnd' }, f.cfg);
     assert.equal(out, '');
     const d = registry.readSession(f.root, SID);
-    assert.deepEqual(d.gates, [{ at: askedAt, stage: 'design', header: 'survey', picked: '進 design' }]);
+    assert.deepEqual(d.gates, [{ at: askedAt, stage: 'design', header: 'survey', labels: ['進 design', '留在 survey'], picked: '進 design' }]);
+});
+
+// Mutation that reddens this: append `.reverse()` to the `.map(...)` that
+// builds `labels` in `gatesFrom`. Three options with three different labels is
+// what makes order visible here. Measured, it reddens four of the eighteen
+// cases in this file: this one, the `picked null` case below, the `PICK_LEN`
+// case below that, and the whole-record deepEqual at the top of the gates
+// block. The denominator is this file alone on purpose: `lib/station.js` never
+// requires `lib/gates.js`, so no case in `tests/station-gate.test.js` or
+// `tests/station.test.js` can redden from anything done here, and counting
+// their 39 in would report an isolation nothing measured.
+// Perfect isolation would have to be contrived — several cases
+// read the same field. What is worth knowing is the one it leaves green: the
+// empty-slot case, because `['', 'B', '']` reversed is itself, so that case
+// pins position-keeping and pins nothing about order.
+test('gatesFrom keeps every option label in the order AskUserQuestion declared them', () => {
+    const askedAt = Date.parse('2026-09-18T00:00:00.000Z');
+    const entries = [
+        {
+            type: 'assistant', timestamp: '2026-09-18T00:00:00.000Z',
+            message: { content: [{
+                type: 'tool_use', id: 'a1', name: 'AskUserQuestion',
+                input: { questions: [{
+                    question: 'q', header: 'design',
+                    options: [{ label: '進 plan' }, { label: '留在 design' }, { label: '先停' }],
+                }] },
+            }] },
+        },
+        {
+            type: 'user', timestamp: '2026-09-18T00:00:01.000Z',
+            message: { content: [{ type: 'tool_result', tool_use_id: 'a1' }] },
+            toolUseResult: { answers: { q: '留在 design' } },
+        },
+    ];
+    const out = gates.gatesFrom(entries, [['design', askedAt - 1]], function (a) { return a; });
+    assert.deepEqual(out[0].labels, ['進 plan', '留在 design', '先停']);
+    assert.equal(out[0].picked, '留在 design');
+});
+
+// Fix round 1: an empty or missing label must keep its slot rather than being
+// dropped, because `labels[0]` is read as option one — dropping a blank
+// label would shift every label after it up one index.
+test('gatesFrom keeps an empty or missing label\'s slot so labels[0] is still option one', () => {
+    const askedAt = Date.parse('2026-09-18T00:00:00.000Z');
+    const entries = [
+        {
+            type: 'assistant', timestamp: '2026-09-18T00:00:00.000Z',
+            message: { content: [{
+                type: 'tool_use', id: 'a1', name: 'AskUserQuestion',
+                input: { questions: [{
+                    question: 'q', header: 'design',
+                    options: [{ label: '' }, { label: 'B' }, {}],
+                }] },
+            }] },
+        },
+        {
+            type: 'user', timestamp: '2026-09-18T00:00:01.000Z',
+            message: { content: [{ type: 'tool_result', tool_use_id: 'a1' }] },
+            toolUseResult: { answers: { q: 'B' } },
+        },
+    ];
+    const out = gates.gatesFrom(entries, [['design', askedAt - 1]], function (a) { return a; });
+    assert.deepEqual(out[0].labels, ['', 'B', '']);
+});
+
+// Fix round 2: an unanswered gate keeps `picked: null` rather than the `''`
+// `clip` makes of it. `lib/station.js`'s `gateSummary()` skips a null on both
+// of its sources, so `''` here would make the persisted source count a gate
+// nobody answered as option one losing — an answer the replay source it stands
+// in for never gives. `replay.answerOf` is passed rather than an identity stub
+// because it is what `hooks/leave.js:112` passes, and the null starts there.
+test('gatesFrom keeps picked null for a question the answers object never answered', () => {
+    const askedAt = Date.parse('2026-09-18T00:00:00.000Z');
+    const entries = [
+        {
+            type: 'assistant', timestamp: '2026-09-18T00:00:00.000Z',
+            message: { content: [{
+                type: 'tool_use', id: 'a1', name: 'AskUserQuestion',
+                input: { questions: [{
+                    question: 'q', header: 'design',
+                    options: [{ label: 'A' }, { label: 'B' }],
+                }] },
+            }] },
+        },
+        {
+            type: 'user', timestamp: '2026-09-18T00:00:01.000Z',
+            message: { content: [{ type: 'tool_result', tool_use_id: 'a1' }] },
+            toolUseResult: { answers: {} },
+        },
+    ];
+    const out = gates.gatesFrom(entries, [['design', askedAt - 1]], replay.answerOf);
+    assert.equal(out[0].picked, null);
+    assert.deepEqual(out[0].labels, ['A', 'B']);
+});
+
+// verify sent this back: the plan's Interfaces entry promises both fields are
+// clipped at `PICK_LEN`, and nothing pinned the threshold. Before this case
+// existed, dropping `PICK_LEN` from 120 to 50 left every case in this file
+// green, so the constant could drift in either direction without a red.
+// Mutation that reddens this case: change `PICK_LEN` in `lib/gates.js` to any
+// number 9 or above — measured at 9, 50, 121, 200 and 201, each one leaving
+// the other seventeen of the eighteen cases in this file green. 9 is a floor,
+// not a round number: the labels `'留在 survey'` and `'留在 design'` above are
+// 9 UTF-16 units each, so 8 clips them too — measured at 8 and at 5, three
+// cases red apiece, this one and those two. The denominator is this file and
+// not the three the suite is usually run with: at `PICK_LEN` 8 the two station
+// files went 39 of 39 green, because `lib/station.js` never requires
+// `lib/gates.js`.
+test('gatesFrom clips a label and an answer at PICK_LEN', () => {
+    const askedAt = Date.parse('2026-09-18T00:00:00.000Z');
+    const long = 'x'.repeat(200);
+    const entries = [
+        {
+            type: 'assistant', timestamp: '2026-09-18T00:00:00.000Z',
+            message: { content: [{
+                type: 'tool_use', id: 'a1', name: 'AskUserQuestion',
+                input: { questions: [{
+                    question: 'q', header: 'design',
+                    options: [{ label: long }, { label: 'B' }],
+                }] },
+            }] },
+        },
+        {
+            type: 'user', timestamp: '2026-09-18T00:00:01.000Z',
+            message: { content: [{ type: 'tool_result', tool_use_id: 'a1' }] },
+            toolUseResult: { answers: { q: long } },
+        },
+    ];
+    const out = gates.gatesFrom(entries, [['design', askedAt - 1]], replay.answerOf);
+    assert.equal(out[0].labels[0].length, 120);
+    assert.equal(out[0].picked.length, 120);
+    assert.equal(out[0].labels[1], 'B', 'a short label beside it is untouched');
 });
 
 test('a session with no AskUserQuestion writes no gates field', () => {
