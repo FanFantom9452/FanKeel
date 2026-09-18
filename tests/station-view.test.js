@@ -972,8 +972,11 @@ test('docsCardHtml quotes one project\'s map.md into a section: counts, both lis
     assert.match(html, /2026-09-18 16:16/);
     // Every bar segment and every legend swatch carries a real `background:`
     // declaration — the retired one's hatch too, which a bare value would drop.
-    for (const style of html.match(/<div class="split-bar"[\s\S]*?<\/div>/)[0].match(/style="[^"]*"/g)) {
-        assert.match(style, /;background:/, style);
+    const split = html.slice(html.indexOf('<div class="split-bar"'), html.indexOf('</div></div>', html.indexOf('<div class="split-leg">')));
+    const styles = split.match(/style="[^"]*"/g);
+    assert.equal(styles.length, DOC_A.buckets.length * 2, 'one bar segment and one legend swatch per bucket');
+    for (const style of styles) {
+        assert.equal((style.match(/background:/g) || []).length, 1, style);
     }
     assert.match(html, /<i title="retired 102" style="flex:102 1 0;background:var\(--hatch-bg\)/);
 });
