@@ -72,6 +72,10 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔scripts〕`scripts/memory-check.js` 把 stale 的引用數當條目數印：每個引用推一列，摘要行直接拿 `.length`，今天是 49 個引用散在 27 條裡卻寫「49 entries」 — [scripts/memory-check.js](scripts/memory-check.js). 改法：摘要行改數不重複的條目。
 
+- 〔agents〕`fankeel-reader.md` 沒叫它把互不相依的 Read/Grep 放在同一個回應：reader 看起來像 pipeline，是模型一回合只發一個工具呼叫，不是讀 git 慢 — [agents/fankeel-reader.md](agents/fankeel-reader.md). 改法：`## Searching` 加一句。
+
+- 〔station〕`usage.wakes` 有算沒顯示：`lib/usage.js` 數出每個 session 被 subagent 回報叫醒幾次，`lib/detail.js` 與 session 頁都沒讀 — [lib/usage.js](lib/usage.js). 改法：`detail.js` 帶出 `wakes`，session 頁標頭加一格。
+
 ## Needs a decision
 
 - 〔lib〕`lib/skill-overlap.js` 只有一個 production caller，折進 `scripts/orient.js` 既不多帶依賴也不會把測試推到 spawn 後面 — [lib/skill-overlap.js](lib/skill-overlap.js). 待決：折進去、還是留著。（audit 2026-09-18，8 行）
@@ -91,6 +95,18 @@ entry waited for actually happening. It shrank when somebody read it.
 - 〔skill〕三個唯讀 agent 都有 Bash，而 Bash 寫得了檔：`fankeel-reader`、`fankeel-judge`、`fankeel-reviewer` 沒有 Edit/Write 但有 Bash — [agents/fankeel-reader.md](agents/fankeel-reader.md). 待決：拿掉 Bash、靠 hook 擋、還是接受。
 
 - 〔docs〕`docs-check` 不驗 `path#fragment` 的錨點：`LINK` 只捕捉路徑，片段那一段是 non-capturing 且被丟棄，沒有一行拿它去比對目標檔的標題，綠只證明檔案在 — [docs/documents.md](docs/documents.md). 待決：加上錨點解析、還是明寫這個界線。
+
+- 〔station〕主迴圈成本分解：session 頁看不到每一站主迴圈幾回合、400k 以上的回合花了多少，Sonnet 主控評估的第一步就是這個 — [lib/detail.js](lib/detail.js). 待決：放 session 頁、首頁彙總，還是兩處都放。
+
+- 〔station〕profile 卡使用者兩次沒找到：只在 `serve` 模式改得了，靜態頁只給指令而且排在首頁最後 — [docs/station.md](docs/station.md). 待決：移到首頁頂端、`/fankeel` 的 station 行直接給 `serve --open`，還是兩者。
+
+- 〔docs〕`docs/archive/` 會被 Grep 搜到：Grep 是 ripgrep，只跳過 `.gitignore`、`.ignore` 列的；只有 `fankeel-reader` 有排除規則 — [docs/documents.md](docs/documents.md). 待決：根目錄加 `.ignore`、`survey.js` 依 role 預設跳過，還是維持。
+
+- 〔docs〕沒有給人讀的文件層：`docs/` 的 reference 頁是寫給下一個 session 的英文，人只有 `docs/README.md` 的索引可以進 — [docs/documents.md](docs/documents.md). 待決：新增 `guide` role、擴充 `README.md`，還是交給 station 渲染。
+
+- 〔docs〕三處同一件事寫在兩頁，沒定哪頁是來源：`development.md:79`、`pipeline.md:985`、`registry.md:246` 各有一個分身，`728dd76` 的訊息列了對方 — [docs/documents.md](docs/documents.md). 待決：各自指定來源頁。
+
+- 〔gates〕gate 記錄要當標註資料還缺兩樣：問題本文與選項 description 都沒存，只有 `header`、`labels` 與 `picked` — [lib/gates.js](lib/gates.js). 待決：兩樣都存、只存問題本文，還是等第一批資料。
 
 ## Waiting
 
@@ -119,3 +135,7 @@ entry waited for actually happening. It shrank when somebody read it.
 - 〔caveman〕解除安裝：程式碼零硬依賴，`settings.json` 的 `enabledPlugins` 09-15 已設 false，兩個反向測試守著 — [tests/badge.test.js](tests/badge.test.js). lifts when: 〔caveman〕挑功能那條定案. 09-18.
 
 - 〔gates〕第一筆 `gates` 資料：程式碼 2026-09-18T00:18 落地，136 筆 entry 目前 0 筆有它 — [lib/gates.js](lib/gates.js). lifts when: 0.70.0 裝好、換終端機後有 session 正常結束. 09-18.
+
+- 〔session〕極端版：driver 逐站開 headless session、狀態走檔案、關卡問題走 station，每站從零開始 — [scripts/station.js](scripts/station.js). lifts when: 〔session〕堆疊手段那條定案、實施後 context 仍常過 400k. 09-18.
+
+- 〔profile〕`suggest` 只推 `land.*`：`class.default`、`design.mockup` 可以從 gate 答案推 — [lib/profile.js](lib/profile.js). lifts when: 〔gates〕第一筆資料那條解除後累積一週. 09-18.
