@@ -113,17 +113,29 @@ N16 已經裁過的行為，不重開。現在的問題只是這 50 條今天要
 - mockup。**這一輪不是 frontend 工作**：站上那個 gate 面板沒有新畫面，`swapped`
   變的是資料來源不是呈現。這是一個判斷，可以被推翻。
 
-## 怎麼知道做完了
+## 這份設計動到的檔
 
-| 條目 | 失敗於現在、通過於之後的檢查 |
+| file | change |
 |---|---|
-| 3 | `tests/leave.test.js` 新案例：transcript 不存在的 session，`gateSummary` 仍數得到它的 gate。現在失敗，因為 `labels` 來自 `replay` |
-| 3（產物） | 站上 gate 面板讀出的 `swapped` 總數，與它來源的 gate 記錄逐筆加總相等 |
-| 1、2 | `node scripts/docs-check.js` 綠，且更正行引的數字用產生它的指令重跑一次對得上 |
-| 4 | 43 對每一對都有一筆裁決，不是 12 筆——印出來的清單封頂 12，`sweep()` 才是全集 |
-| 5 | `node scripts/memory-check.js` 的 stale 數下降，且每一條下降都對得上一行更正或一次使用者指名的刪除 |
-| 6 | `node scripts/version.js` 說 `0.70.0, in all 13 places.`，且 `npm test` 綠 |
-| 7 | `node scripts/todo-check.js` 綠，六條都不在 `TODO.md` 裡 |
+| `docs/decisions/2026-09-18-needs-decision-all.md` | `:11`、`:28` 各加一行 `**Corrected 2026-09-18:**`，原文不刪 |
+| `docs/documents.md` | `:287` 改連到 `development.md:35-40`，不再自己講 `todo-check.js` |
+| `lib/gates.js` | `gatesFrom()` 加一個欄位存選項文字 |
+| `lib/station.js` | `gateSummary()` 先讀持久化欄位，讀不到才回頭用 `replay` |
+| `docs/registry.md` | `gates` 段的兩句被推翻，改掉 |
+| `docs/station.md` | `gateSummary` 的描述一起查 |
+| `TODO.md` | 六條在各自交付的那一步移除 |
+
+## What proves it done
+
+| test | 出自 |
+|---|---|
+| `tests/leave.test.js` 新案例：transcript 不存在的 session，`gateSummary` 仍數得到它的 gate。現在失敗，因為 `labels` 來自 `replay` | 第 3 節 |
+| 站上 gate 面板讀出的 `swapped` 總數，與它來源的 gate 記錄逐筆加總相等 | 第 3 節（產物） |
+| `node scripts/docs-check.js` 綠，且更正行引的數字用產生它的指令重跑一次對得上 | 第 1、2 節 |
+| 43 對每一對都有一筆裁決，不是 12 筆——印出來的清單封頂 12，`sweep()` 才是全集 | 第 4 節 |
+| `node scripts/memory-check.js` 的 stale 數下降，且每一條下降都對得上一行更正或一次使用者指名的刪除 | 第 5 節 |
+| `node scripts/version.js` 說 `0.70.0, in all 13 places.`，且 `npm test` 綠 | 第 6 節 |
+| `node scripts/todo-check.js` 綠，六條都不在 `TODO.md` 裡 | 第 7 節 |
 
 ## 對照地圖
 
