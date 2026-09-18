@@ -524,10 +524,10 @@
     function docSplitHtml(d) {
         if (!d.buckets.length || !d.total) return '';
         var swatch = function (label) {
-            return label === 'retired' ? DOC_HATCH : 'background:' + (DOC_STATUS_COLOUR[label] || 'var(--muted)');
+            return 'background:' + (label === 'retired' ? DOC_HATCH : DOC_STATUS_COLOUR[label] || 'var(--muted)');
         };
         var legend = d.buckets.map(function (b) {
-            return '<span><i class="sw" style="' + (b.label === 'retired' ? 'background:' + swatch(b.label) : swatch(b.label)) + '"></i>'
+            return '<span><i class="sw" style="' + swatch(b.label) + '"></i>'
                 + esc(b.label) + ' <b>' + b.count + '</b><em>' + Math.round(b.count / d.total * 100) + '%</em></span>';
         }).join('');
         var bar = d.buckets.map(function (b) {

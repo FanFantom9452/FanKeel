@@ -970,6 +970,12 @@ test('docsCardHtml quotes one project\'s map.md into a section: counts, both lis
     assert.match(html, /docs\/archive[\s\S]*archive[\s\S]*retired — 102, the whole archive bucket/);
     assert.match(html, /docs\/plans[\s\S]*plan/);
     assert.match(html, /2026-09-18 16:16/);
+    // Every bar segment and every legend swatch carries a real `background:`
+    // declaration — the retired one's hatch too, which a bare value would drop.
+    for (const style of html.match(/<div class="split-bar"[\s\S]*?<\/div>/)[0].match(/style="[^"]*"/g)) {
+        assert.match(style, /;background:/, style);
+    }
+    assert.match(html, /<i title="retired 102" style="flex:102 1 0;background:var\(--hatch-bg\)/);
 });
 
 test('docsCardHtml is empty with no project map, so the whole card is left out', () => {
