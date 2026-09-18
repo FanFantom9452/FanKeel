@@ -90,6 +90,21 @@ test('a session with no detail but a persisted gates entry still counts toward s
     assert.deepEqual(out.gates.swapped, [{ label: 'A', lost: 1, total: 1 }]);
 });
 
+test('an empty-string labels[0] on the replay path still counts toward swapped, same as before the gates fallback existed', () => {
+    // `lib/replay.js:122,127` keeps a literal `label: ''` (it filters options
+    // down to `typeof l === 'string'`, and '' passes that). The replay path
+    // must count it exactly as it did before this task's fallback was added.
+    // Mutation that reddens this: re-add `|| r.first === ''` to the guard in
+    // `gateSummary()` (`if (typeof r.first !== 'string' || r.picked === null)
+    // continue;`) — '' would then be skipped and `swapped` would come back
+    // `[]` instead of one row for `''`.
+    const model = fakeModel([fakeRegistry('F:\\ws\\a', [
+        fakeSession('s1', [gateEvent([{ q: 'ship it?', a: 'not yet', own: false, labels: ['', 'not yet'] }])]),
+    ])]);
+    const out = parseSerialize(model);
+    assert.deepEqual(out.gates.swapped, [{ label: '', lost: 1, total: 1 }]);
+});
+
 test('an Other answer (own: true) still counts as option one losing, same as a listed answer that differs', () => {
     // `own` is a different measurement — whether the person typed Other at
     // all — and `gateSummary()` never reads it; this pins that an Other
