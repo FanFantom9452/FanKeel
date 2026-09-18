@@ -68,41 +68,9 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
+- 〔caveman〕解除安裝：程式碼零硬依賴，`settings.json` 的 `enabledPlugins` 09-15 已設 false，兩個反向測試守著 — [tests/badge.test.js](tests/badge.test.js).
+
 ## Needs a decision
-
-- 〔caveman〕20 skill 裡要吸收哪些：`caveman-stats` 由 hook 算真實 token、Native Core 六個流程 skill、`cavecrew` 的委派決策指南 — [docs/improvement-brief.md](docs/improvement-brief.md). 待決：挑哪些改寫成 fankeel 規則。
-
-- 〔registry〕136 筆 entry 沒有任何版本欄位，`burn`/`usage`/`spend`/`clock` 全部無法歸因到哪一版外掛 — [lib/registry.js](lib/registry.js). 待決：記 plugin version、記 gitCommitSha、還是兩個都記。
-
-- 〔gates〕gate 記錄要當標註資料還缺兩樣：問題本文與選項 description 都沒存，只有 `header`、`labels` 與 `picked` — [lib/gates.js](lib/gates.js). 待決：兩樣都存、只存問題本文，還是等第一批資料。
-
-- 〔station〕主迴圈成本分解：session 頁看不到每一站主迴圈幾回合、400k 以上的回合花了多少，Sonnet 主控評估的第一步就是這個 — [lib/detail.js](lib/detail.js). 待決：放 session 頁、首頁彙總，還是兩處都放。
-
-- 〔session〕堆疊手段：subagent 佔 token 從 30.7% 升到 53%，但回傳只佔工具輸出 7.6%、叫醒只佔主回合 7% — [docs/improvement-brief.md](docs/improvement-brief.md). 待決：§6.2 四個候選挑哪個。
-
-- 〔station〕profile 卡使用者兩次沒找到：只在 `serve` 模式改得了，靜態頁只給指令而且排在首頁最後 — [docs/station.md](docs/station.md). 待決：移到首頁頂端、`/fankeel` 的 station 行直接給 `serve --open`，還是兩者。
-
-- 〔docs〕沒有給人讀的文件層：`docs/` 的 reference 頁是寫給下一個 session 的英文，人只有 `docs/README.md` 的索引可以進 — [docs/documents.md](docs/documents.md). 待決：新增 `guide` role、擴充 `README.md`，還是交給 station 渲染。
-
-- 〔docs〕`docs/archive/` 會被 Grep 搜到：Grep 是 ripgrep，只跳過 `.gitignore`、`.ignore` 列的；只有 `fankeel-reader` 有排除規則 — [docs/documents.md](docs/documents.md). 待決：根目錄加 `.ignore`、`survey.js` 依 role 預設跳過，還是維持。
-
-- 〔docs〕三處同一件事寫在兩頁，沒定哪頁是來源：`development.md:79`、`pipeline.md:985`、`registry.md:246` 各有一個分身，`728dd76` 的訊息列了對方 — [docs/documents.md](docs/documents.md). 待決：各自指定來源頁。
-
-- 〔docs〕`docs/sources.md` 的 Cited by 欄 21 列有 13 列漏了 grep 找得到的 `docs/` 頁，而 `sources.md:4` 說這欄「filled by hand from grep」 — [docs/sources.md](docs/sources.md). 待決：一次補齊、加測試比對 grep，還是改寫那句話。
-
-- 〔skill〕唯讀 agent 的 Bash 寫檔只擋一部分：hook 依名字擋 redirect、`tee`、`rm`/`mv`/`cp`、`sed -i` 與 git 寫入，`node -e`、`python -c` 寫檔不在清單 — [lib/guard.js](lib/guard.js). 待決：補清單、拿掉 Bash，還是接受。
-
-- 〔docs〕`.fankeel/build/` 不在 `docs.json` 任何 bucket，不受任何檢查管，但一份任務的證據全在那裡 — [lib/docs.js](lib/docs.js). 待決：進 docs.json 當 fixture、只寫進 documents.md、還是維持不管。
-
-- 〔docs〕`docs-check` 不驗 `path#fragment` 的錨點：`LINK` 只捕捉路徑，片段那一段是 non-capturing 且被丟棄，沒有一行拿它去比對目標檔的標題，綠只證明檔案在 — [docs/documents.md](docs/documents.md). 待決：加上錨點解析、還是明寫這個界線。
-
-- 〔scripts〕`scripts/station.js` 手寫 argv 迴圈，十五個 CLI 用 `node:util`；另一個手寫的 `scripts/survey.js` 有理由，station 的固定旗標沒有 — [scripts/station.js](scripts/station.js). 待決：換掉、還是留著。（audit 2026-09-18，5 行）
-
-- 〔scripts〕`lib/skills.js` 的 `acceptedFlags` 對 judge、ledger、task、station、survey 五支都回空集合，旗標全不被閘門檢查；「第二支用同樣形狀」的條件 09-18 已過 — [lib/skills.js](lib/skills.js). 待決：讓它讀動態 options、五支改成字面量，還是接受。
-
-- 〔lib〕三處重複：`lib/usage.js` 兩個函式各自重寫 `entriesOf()`、`lib/registry.js` 四個三行三元式、`lib/live.js` 手工組 Set — [lib/usage.js](lib/usage.js). 待決：三處都收、只收 usage.js、還是都不動。（audit 2026-09-18，13 行）
-
-- 〔ledger〕plan 階段的 commit 不在 ledger 任何一列：`ranges` 從 Task 1 的 BASE 起算，verify 會把它報成沒人審 — [scripts/ledger.js](scripts/ledger.js). 待決：`init` 記下 plan 的範圍、plan reviewer 寫帶範圍的行，或讓 verify 認得它。
 
 ## Waiting
 
@@ -111,8 +79,6 @@ entry waited for actually happening. It shrank when somebody read it.
 - 〔profile〕`suggest` 只推 `land.*`：`class.default`、`design.mockup` 可以從 gate 答案推 — [lib/profile.js](lib/profile.js). lifts when: 〔gates〕第一筆資料那條解除後累積一週. 09-18.
 
 - 〔session〕極端版：driver 逐站開 headless session、狀態走檔案、關卡問題走 station，每站從零開始；缺總輪數、花費、時間上限與回報 `status` 欄位 — [scripts/station.js](scripts/station.js). lifts when: 〔session〕堆疊手段那條定案、實施後 context 仍常過 400k. 09-18.
-
-- 〔caveman〕解除安裝：程式碼零硬依賴，`settings.json` 的 `enabledPlugins` 09-15 已設 false，兩個反向測試守著 — [tests/badge.test.js](tests/badge.test.js). lifts when: 〔caveman〕挑功能那條定案. 09-18.
 
 - 〔docs〕兩個 `lib/*.js` 沒有 reference-role 頁面點名：`hook.js`、`report.js`；09-09 記的五個裡另外三個後來被點到了 — [docs/documents.md](docs/documents.md). lifts when: docs-audit 學會報未被點名的模組. 09-18.
 
