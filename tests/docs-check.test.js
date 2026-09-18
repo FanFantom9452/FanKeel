@@ -279,3 +279,35 @@ test('a range citation whose quote sits inside it is not reported', () => {
   assert.equal(scanned.findings.filter((f) => f.tag === 'moved').length, 0);
   assert.equal(scanned.findings.filter((f) => f.tag === 'past-end').length, 0);
 });
+
+test('a fragment into a CJK heading resolves', () => {
+  const root = repoWith('fankeel-docscheck-frag-cjk-', {
+    'docs/README.md': '# index\n',
+    'docs/target.md': '# 索引\n\n## 你好，世界\n\ntext\n',
+    'docs/page.md': 'See [target](target.md#你好世界).\n',
+  });
+  const gone = scan(root, []).findings.filter((f) => f.tag === 'gone');
+  assert.equal(gone.length, 0);
+});
+
+test('a bad fragment into a real page is reported the same way a dead link is', () => {
+  const root = repoWith('fankeel-docscheck-frag-bad-', {
+    'docs/README.md': '# index\n',
+    'docs/target.md': '# index\n\n## Real Heading\n\ntext\n',
+    'docs/page.md': 'See [target](target.md#not-a-real-heading).\n',
+  });
+  const gone = scan(root, []).findings.filter((f) => f.tag === 'gone');
+  assert.equal(gone.length, 1);
+  assert.equal(gone[0].tag, 'gone');
+  assert.match(gone[0].what, /links to target\.md#not-a-real-heading/);
+});
+
+test('a heading repeated in one document resolves its second copy at -1', () => {
+  const root = repoWith('fankeel-docscheck-frag-dup-', {
+    'docs/README.md': '# index\n',
+    'docs/target.md': '# index\n\n## Notes\n\nfirst\n\n## Notes\n\nsecond\n',
+    'docs/page.md': 'See [again](target.md#notes-1).\n',
+  });
+  const gone = scan(root, []).findings.filter((f) => f.tag === 'gone');
+  assert.equal(gone.length, 0);
+});

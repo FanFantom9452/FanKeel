@@ -34,7 +34,7 @@ const MAX_FINDINGS = 200;
 // the repository. Prose that merely mentions a filename is deliberately not
 // matched: `see the registry` is not a claim that can go stale, and treating it
 // as one is how a checker starts crying wolf.
-const LINK = /\[[^\]]*\]\(([^)\s#]+)(?:#[^)\s]*)?\)/g;
+const LINK = /\[[^\]]*\]\(([^)\s#]+)(#[^)\s]*)?\)/g;
 const CODE = /`([^`\n]{2,120})`/g;
 
 // A link inside a fenced code block is a quotation, not a reference. A plan
@@ -157,6 +157,47 @@ function lineCount(root, rel) {
     return l === null ? null : l.length;
 }
 
+// A link's `#fragment` into another `.md` file, checked the way GitHub slugs
+// a heading: lowercase, punctuation dropped (CJK and other letters and
+// digits kept, along with `-` and `_`), each space becoming its own `-` —
+// not collapsed, which is why `docs/documents.md:288`'s own citation carries
+// a double hyphen (an em dash between two words drops, leaving both spaces
+// around it) — and a heading repeated in the same document getting `-1`,
+// `-2` in the order it appears. Heading markup — backticks, a link's own
+// `[text](url)`, emphasis — is reduced to its text first, so a heading like
+// `` `todo-check.js` — whether `TODO.md` is still an index `` slugs the same
+// as the plain words would.
+const HEADINGS = new Map();
+function headingSlugs(root, rel) {
+    const key = root + '\0' + rel;
+    if (HEADINGS.has(key)) return HEADINGS.get(key);
+    const text = readFile(root, rel);
+    const slugs = new Set();
+    if (text !== null) {
+        const blanked = withoutFences(text).text;
+        const seen = new Map();
+        for (const line of blanked.split('\n')) {
+            const h = /^#{1,6}\s+(.*)$/.exec(line);
+            if (!h) continue;
+            const raw = h[1].replace(/\s+#+\s*$/, '').trim();
+            const stripped = raw
+                .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+                .replace(/`+/g, '')
+                .replace(/(\*\*\*|\*\*|\*|___|__|_)/g, '');
+            let slug = '';
+            for (const ch of stripped.toLowerCase()) {
+                if (ch === ' ') slug += '-';
+                else if (/[\p{L}\p{N}_-]/u.test(ch)) slug += ch;
+            }
+            const n = seen.get(slug) || 0;
+            seen.set(slug, n + 1);
+            slugs.add(n === 0 ? slug : slug + '-' + n);
+        }
+    }
+    HEADINGS.set(key, slugs);
+    return slugs;
+}
+
 // Resolve a reference the way a reader would: relative to the document it is
 // written in, then from the repository root. Both, because both conventions are
 // in use and guessing wrong turns a working link into a finding.
@@ -232,9 +273,15 @@ function checkDoc(root, rel, role, symbols, roots) {
     let m;
     while ((m = LINK.exec(linkText)) !== null) {
         const ref = m[1];
+        const fragment = m[2];
         if (external(ref)) continue;
-        if (resolveRef(root, rel, ref) === null) {
-            out.push({ file: rel, line: linkLineOf(m.index), tag: 'gone', what: 'links to ' + ref });
+        const target = resolveRef(root, rel, ref);
+        if (target === null) {
+            out.push({ file: rel, line: linkLineOf(m.index), tag: 'gone', what: 'links to ' + ref + (fragment || '') });
+            continue;
+        }
+        if (fragment && isMarkdown(target) && !headingSlugs(root, target).has(fragment.slice(1))) {
+            out.push({ file: rel, line: linkLineOf(m.index), tag: 'gone', what: 'links to ' + ref + fragment });
         }
     }
 
@@ -511,4 +558,4 @@ if (require.main === module) {
     process.exit(code);
 }
 
-module.exports = { scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown };
+module.exports = { scan, report, parseArgs, resolveRef, headingSlugs, LINK, CODE, PATHISH, external, readFile, isMarkdown };
