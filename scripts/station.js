@@ -402,6 +402,14 @@ async function serve(opts) {
             res.writeHead(code, { 'content-type': 'text/plain' });
             res.end(msg + '\n');
         };
+        // Every POST carries the nonce this server printed. One that does not is
+        // refused before its form is read further; null tells the route to stop.
+        const formOf = async () => {
+            const form = new URLSearchParams(await readBody(req));
+            if (form.get('nonce') === nonce) return form;
+            fail(403, 'wrong nonce: open the page this server printed and try again');
+            return null;
+        };
         if (req.method === 'GET' && url.pathname === '/') {
             let html;
             try {
@@ -476,11 +484,8 @@ async function serve(opts) {
             return;
         }
         if (req.method === 'POST' && url.pathname === '/clear') {
-            const form = new URLSearchParams(await readBody(req));
-            if (form.get('nonce') !== nonce) {
-                fail(403, 'wrong nonce: open the page this server printed and try again');
-                return;
-            }
+            const form = await formOf();
+            if (!form) return;
             const root = form.get('root') || '';
             const id = form.get('id') || '';
             // The server has just measured liveness for the page; a row that is
@@ -506,11 +511,8 @@ async function serve(opts) {
             return;
         }
         if (req.method === 'POST' && url.pathname === '/clear-stale') {
-            const form = new URLSearchParams(await readBody(req));
-            if (form.get('nonce') !== nonce) {
-                fail(403, 'wrong nonce: open the page this server printed and try again');
-                return;
-            }
+            const form = await formOf();
+            if (!form) return;
             const model = modelNow();
             const reg = model.registries.find((r) => r.root === path.resolve(form.get('root') || ''));
             if (!reg) {
@@ -538,11 +540,8 @@ async function serve(opts) {
             return;
         }
         if (req.method === 'POST' && url.pathname === '/todo') {
-            const form = new URLSearchParams(await readBody(req));
-            if (form.get('nonce') !== nonce) {
-                fail(403, 'wrong nonce: open the page this server printed and try again');
-                return;
-            }
+            const form = await formOf();
+            if (!form) return;
             const model = modelNow();
             const reg = model.registries.find((r) => r.root === path.resolve(form.get('root') || ''));
             const row = reg && reg.sessions.find((s) => s.sessionId === form.get('id'));
@@ -560,11 +559,8 @@ async function serve(opts) {
             return;
         }
         if (req.method === 'POST' && url.pathname === '/profile') {
-            const form = new URLSearchParams(await readBody(req));
-            if (form.get('nonce') !== nonce) {
-                fail(403, 'wrong nonce: open the page this server printed and try again');
-                return;
-            }
+            const form = await formOf();
+            if (!form) return;
             const scope = form.get('scope');
             let file;
             if (scope === 'machine') file = profile.machineFile(configDir);

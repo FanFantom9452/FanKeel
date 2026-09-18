@@ -8,6 +8,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const readline = require('readline');
 const { parseArgs: parseArgv } = require('node:util');
 
@@ -21,8 +22,7 @@ function parseArgs(argv) {
     args: argv, strict: false, allowPositionals: true,
     options: { 'config-dir': { type: 'string' }, project: { type: 'string' }, since: { type: 'string' } },
   });
-  const home = process.env.HOME || process.env.USERPROFILE;
-  const configDir = values['config-dir'] || process.env.CLAUDE_CONFIG_DIR || (home ? path.join(home, '.claude') : null);
+  const configDir = values['config-dir'] || process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
   const since = values.since ? Date.parse(values.since) : null;
   if (Number.isNaN(since)) throw new Error('--since takes a date, YYYY-MM-DD.');
   return { configDir, project: values.project || null, since };

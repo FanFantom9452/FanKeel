@@ -164,10 +164,9 @@
     var WHO_LABEL = { main: '主 session', agent: '背景 agent', workflow: 'workflow' };
     var DIM_LABEL = { model: '依 model', project: '依專案', stage: '依 stage', who: '主 session 對 agent' };
     var METRIC_LABEL = { usd: '花費', tokens: 'token', time: '時間' };
-    function pad2(n) { return (n < 10 ? '0' : '') + n; }
     function localDay(ms) {
         var d = new Date(ms);
-        return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     }
     // Calendar arithmetic rather than 864e5 steps, so a daylight-saving day
     // neither repeats nor drops a date.
@@ -643,7 +642,7 @@
     }
 
     // ---- the session page -------------------------------------------------
-    function clock(ms) { var d = new Date(ms); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+    function clock(ms) { var d = new Date(ms); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
     // One real time axis, from the first stage step to the last request: a
     // stage is as wide as it lasted, a wait is the gap between a gate's question
     // and its answer, an agent runs from launch to return.
@@ -2120,7 +2119,7 @@
     doc.getElementById('cfg').title = S.configDir || '';
 
     // ---- serve health polling ----------------------------------------------
-    // Only `serve` (not `--open`, scripts/station.js:770) puts a server behind
+    // Only `serve` (not `--open`, scripts/station.js:766) puts a server behind
     // this fetch, so a page opened straight from disk must never start the
     // poll — it would show a permanent death banner for a state that is
     // simply normal there. `w.setInterval` is also checked so a stripped-down

@@ -378,6 +378,11 @@ test('a plan line carries its range and parses back', () => {
   assert.equal(ledger.planRange('no plan line here'), null);
 });
 
+test('planRange reads the first plan line when a ledger holds two', () => {
+  const text = [ledger.planLine('aaaaaaa..bbbbbbb'), ledger.planLine('ccccccc..ddddddd')].join('\n');
+  assert.equal(ledger.planRange(text), 'aaaaaaa..bbbbbbb');
+});
+
 test('init --range records the plan stage\'s own range, and ranges lists it before any task completes', () => {
   const dir = root();
   execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', 'aaaaaaa..bbbbbbb', 'init'], { cwd: dir, encoding: 'utf8' });

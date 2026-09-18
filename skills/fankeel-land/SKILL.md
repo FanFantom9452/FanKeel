@@ -117,7 +117,7 @@ wrong entry it finds is corrected in place with a `**Corrected
 YYYY-MM-DD:**` line, never a silent rewrite; a stale citation is only ever
 listed, and a deletion happens only for the entry the user points at.
 
-`notes` holds five (`lib/registry.js:33`, `MAX_NOTES = 5`); a sixth note pushes
+`notes` holds five (`lib/registry.js:34`, `MAX_NOTES = 5`); a sixth note pushes
 the oldest out and nothing announces it, so a task that produced six rulings has
 already lost one by the time `land` reads them. Read the notes before standing
 the task down, and put anything still needed into one of the four durable places

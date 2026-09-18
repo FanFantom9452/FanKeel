@@ -825,7 +825,7 @@ test('selecting a registry on 清單 keeps its unreadable-session count on the c
 });
 
 // --- fix: the health poll must never arm on a page opened as a bare file ---
-// `--open` (scripts/station.js:770) writes the page and opens it with no
+// `--open` (scripts/station.js:766) writes the page and opens it with no
 // server behind it, so the poll has to switch itself off there rather than
 // show a permanent death banner. The smoke test above stubs `document` but
 // gives `win` no `setInterval` at all, which is exactly why the poll block
@@ -876,7 +876,7 @@ test('the health poll never arms under file:, and does arm every 5s once served'
 // the test above captures the interval's period without ever invoking its
 // callback. So this one drives the callback, with a `Date` it moves and a
 // `#page` that counts how often it is written — `draw()` assigns
-// `p.innerHTML` (assets/station/station.js:1906), which is what the counter
+// `p.innerHTML` (assets/station/station.js:1996), which is what the counter
 // below is on.
 test('a poll finding no change does not redraw, and each state flip redraws once', async () => {
     const vm = require('node:vm');
