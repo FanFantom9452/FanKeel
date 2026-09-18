@@ -77,6 +77,7 @@ what gets scheduled.
 
 ## Needs a decision
 
+- 〔tests〕`the lifetime table names every ignored path under .fankeel/` 在新 clone 或 worktree 必紅：它讀真實樹的 ignored 檔，新樹一個都沒有；種 fixture 還是沒有就跳過 — [tests/docs.test.js](tests/docs.test.js).
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；Gemini CLI `BeforeAgent`、Codex CLI `UserPromptSubmit` 也能回 `additionalContext` — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
 
 ## Waiting
