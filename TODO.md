@@ -68,8 +68,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔docs〕`docs/sources.md` 沒有 `2026-09-15-waiting-probes.md` 的列：頁面說每份頂層報告一列，現在 21 份 20 列，漏的就是這份 — [docs/sources.md](docs/sources.md). 改法：照七欄補一列，標題改 twenty-one。
-
 ## Needs a decision
 
 - 〔lib〕`lib/skill-overlap.js` 只有一個 production caller，折進 `scripts/orient.js` 既不多帶依賴也不會把測試推到 spawn 後面 — [lib/skill-overlap.js](lib/skill-overlap.js). 待決：折進去、還是留著。（audit 2026-09-18，8 行）
