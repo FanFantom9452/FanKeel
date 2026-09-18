@@ -246,8 +246,12 @@ or `$null`, never counting `=>`, `->`, `>&` or a `>` inside quotes,
 `tee`, `rm`, `mv`, `cp`, `sed -i` or `--in-place`, a `git`
 subcommand that writes the tree or the index (`add`, `commit`, `checkout`,
 `switch`, `restore`, `reset`, `stash`, `clean`, `apply`, `am`, `merge`,
-`rebase`, `cherry-pick`, `revert`, `pull`), or one of eight PowerShell
-cmdlets. `fankeel-verifier` is not on the list —
+`rebase`, `cherry-pick`, `revert`, `pull`), one of eight PowerShell
+cmdlets, a `node -e`/`--eval` script that calls a write (`writeFile`,
+`appendFile`, `createWriteStream`, `rename`, `unlink`, `rm`, `mkdir`,
+`copyFile`), or a `python -c` one that opens a file in a write mode, calls
+`write_text` or `os.remove`, or uses `shutil` at all (`lib/guard.js`'s
+`NODE_EVAL_WRITE` and `PYTHON_WRITE`). `fankeel-verifier` is not on the list —
 writing its own evidence file is what it is for.
 
 The list is a denylist rather than an allowlist for the reason the rejected
