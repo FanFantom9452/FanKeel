@@ -141,13 +141,13 @@ report where a real parser would cost a dependency this plugin does not have.
 是純字串前綴比對，`skills`、`evals`、`agents` 都是 `docs/` 以外的 bucket。擋住
 的是列檔的那一層，而那一層是同一個函式：下面第一條是它跑的旗標，其後七條是它
 的七個呼叫端，`scripts/` 六處與 `lib/` 一處。每一行的引文都必須
-跟它的行號同行。`scripts/docs-check.js:228` 是 `function quoteBeside(text, from) {`，
+跟它的行號同行。`scripts/docs-check.js:229` 是 `function quoteBeside(text, from) {`，
 它只掃到換行為止，而同一行上的第二個路徑會被它自己的 `PATHISH` 擋掉——所以擠
 在一行的兩個引用等於兩個都沒有引文，而被硬換行拆開的引文等於沒寫。
 
 - `lib/tracked.js:31` 是 `const args = ['ls-files', '-z', '--cached', '--others', '--exclude-standard'];`
 - `scripts/docs-audit.js:400` 是 `const listed = trackedFiles(root);`
-- `scripts/docs-check.js:413` 是 `const result = trackedFiles(root);`
+- `scripts/docs-check.js:414` 是 `const result = trackedFiles(root);`
 - `scripts/layout.js:59` 是 `const found = trackedFiles(root);`
 - `scripts/memory-check.js:143` 是 `const tracked = trackedFiles(root);`
 - `scripts/orient.js:286` 是 `result = trackedFiles(dir, { stats });`

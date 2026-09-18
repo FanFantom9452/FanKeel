@@ -180,15 +180,16 @@ function headingSlugs(root, rel) {
             const h = /^#{1,6}\s+(.*)$/.exec(line);
             if (!h) continue;
             const raw = h[1].replace(/\s+#+\s*$/, '').trim();
+            // A code span keeps its underscores; outside one, only an
+            // underscore run that opens or closes emphasis goes. `*` needs no
+            // rule of its own: it is punctuation, and the filter drops it.
             const stripped = raw
                 .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-                .replace(/`+/g, '')
-                .replace(/(\*\*\*|\*\*|\*|___|__|_)/g, '');
-            let slug = '';
-            for (const ch of stripped.toLowerCase()) {
-                if (ch === ' ') slug += '-';
-                else if (/[\p{L}\p{N}_-]/u.test(ch)) slug += ch;
-            }
+                .split(/(`+[^`]*`+)/)
+                .map((part, i) => (i % 2 ? part.replace(/`/g, '')
+                    : part.replace(/(^|[^\p{L}\p{N}])(_{1,3})(?=\S)(.+?)(?<=\S)\2(?![\p{L}\p{N}])/gu, '$1$3')))
+                .join('');
+            const slug = stripped.toLowerCase().replace(/ /g, '-').replace(/[^\p{L}\p{N}_-]/gu, '');
             const n = seen.get(slug) || 0;
             seen.set(slug, n + 1);
             slugs.add(n === 0 ? slug : slug + '-' + n);
@@ -558,4 +559,4 @@ if (require.main === module) {
     process.exit(code);
 }
 
-module.exports = { scan, report, parseArgs, resolveRef, headingSlugs, LINK, CODE, PATHISH, external, readFile, isMarkdown };
+module.exports = { scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown };

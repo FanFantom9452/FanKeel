@@ -311,3 +311,17 @@ test('a heading repeated in one document resolves its second copy at -1', () => 
   const gone = scan(root, []).findings.filter((f) => f.tag === 'gone');
   assert.equal(gone.length, 0);
 });
+
+// GitHub keeps an underscore inside a code span or a word and drops only the
+// ones that mark emphasis — docs/improvement-brief.md's `check_versions.py`
+// headings are the real case.
+test('an underscore in a code span or a word stays in the slug; one marking emphasis does not', () => {
+  const root = repoWith('fankeel-docscheck-frag-underscore-', {
+    'docs/README.md': '# index\n',
+    'docs/target.md': '# index\n\n## E1. `check_versions.py` rules\n\n## tool_used now\n\n## an _emphasised_ word\n',
+    'docs/page.md': 'See [a](target.md#e1-check_versionspy-rules), [b](target.md#tool_used-now)'
+      + ' and [c](target.md#an-emphasised-word).\n',
+  });
+  const gone = scan(root, []).findings.filter((f) => f.tag === 'gone');
+  assert.deepEqual(gone.map((f) => f.text || f.ref || f.line), []);
+});
