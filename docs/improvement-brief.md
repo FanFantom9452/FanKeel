@@ -474,7 +474,7 @@ caveman 的答案是 `compile.mjs` 產生 6 個 `pack.json`。SEPIA 支援四個
 > **★ Insight**
 >
 > - caveman 報告的第 C4 項建議 fankeel「要擴到第二個目標前先做 compiler」。SEPIA 是那條建議的反例：**當 body 是純 markdown、各家差異只在 manifest schema 時，symlink + 四個小 json 就夠了，compiler 是多的**。caveman 需要 compiler 是因為它要產生 embed（body 被塞進 `pack.json`），SEPIA 不 embed。
-> - fankeel 的 body 有 `<plugin>/scripts/*.js` 依賴，所以它其實比 SEPIA 更接近 caveman 那一側——但依賴的是**檔案路徑**不是 embed，所以 symlink 路線仍然可行。真正決定的是 hook，不是 skill body：**寫這段時以為其他 host 沒有 `UserPromptSubmit`；09-18 查證，Gemini CLI 的 `BeforeAgent`、Codex CLI 的 `UserPromptSubmit` 都能回 `additionalContext`，所以其他 host 並非沒有等價的 prompt hook。**
+> - fankeel 的 body 有 `<plugin>/scripts/*.js` 依賴，所以它其實比 SEPIA 更接近 caveman 那一側——但依賴的是**檔案路徑**不是 embed，所以 symlink 路線仍然可行。真正決定的是 hook，不是 skill body：**寫這段時以為其他 host 沒有 `UserPromptSubmit`；09-18 查證，Gemini CLI 的 `BeforeAgent`、Codex CLI 的 `UserPromptSubmit` 都能回 `additionalContext`——至少這兩家有等價的 prompt hook，其餘 host 未查。**
 
 ---
 
