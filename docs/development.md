@@ -154,8 +154,10 @@ The twelve left were real entry points it had no way to see — the nine
 run as `node scripts/<x>.js`. Hence `entry` and `ignore`.
 
 **The exports row is excluded, and that is a limitation rather than a taste.**
-knip 6.32.2 does not resolve CJS namespace property access, so it called 146
-genuinely used exports unused. One barrel shows it with one variable changed:
+knip 6.32.2 does not resolve CJS namespace property access, so on 2026-09-13 it
+called 146 genuinely used exports unused. On 2026-09-18 knip 6.37.0 still does
+not, and `knip --include exports` gives 156 on both versions: the tree grew, the
+tool did not change. One barrel shows it with one variable changed:
 `knip --trace-export badgeWord`, destructured at `tests/badge.test.js:9`,
 returns `import[badgeWord] ⎆ ✓`; `knip --trace-export clearBadge`, reached as
 `badge.clearBadge`, returns `(no imports found) ✗` — and `scripts/task.js:138`
