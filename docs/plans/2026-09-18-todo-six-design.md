@@ -97,6 +97,13 @@ N16 已經裁過的行為，不重開。現在的問題只是這 50 條今天要
   所以這一輪派出去的每個唯讀 subagent 的 Bash 都會把 `=>` 當成 redirect 擋掉。
   緩解是每份 brief 都寫一句「用 `function(){}`，不要箭頭」。survey 四個讀工都這樣
   派，四個都沒中招。
+
+  **Corrected 2026-09-18（audit）：** 修好 guard 的是 `8b899ce`，不是 `f466f06`
+  ——後者是 gates 那一個，動的是 `hooks/leave.js`、`lib/gates.js` 與
+  `tests/leave.test.js`，一行都沒碰 `lib/guard.js`。結論不變：工作樹的
+  `lib/guard.js:212` 已經放行 `=>`、`->`、`2>&1` 與引號內的 `>`，而安裝副本的
+  `:209` 還是修復前那一條，所以繞道要寫到 0.70.0 裝上去為止。這一輪一個 reader
+  連 `2>&1 | head` 都被擋，證明現場跑的是安裝副本。
 - `scripts/version.js 0.70.0` 改 13 個檔並自我驗證，`:163` 會拒絕非 semver。
 - **push 是對 profile 的例外**：`land.push` 是 `false`，這條 TODO 明寫要推。land
   的關卡上要單獨問，不能當成 profile 的預設值默默做掉。

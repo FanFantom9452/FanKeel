@@ -70,7 +70,9 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔release〕0.70.0 發版：HEAD 領先 `origin/main` 30 個 commit，裝著的副本凍在 `70771cd`，所以 N23 修好的 guard 箭頭誤判與 `lib/gates.js` 都沒在跑 — [scripts/version.js](scripts/version.js). 推送後要換終端機。
 
-- 〔audit〕`docs-audit` 列的 43 對只有 `registry × station` 被讀過，其餘 42 對沒人開過——09-17 那次 audit 的 pair 那一半只走了一對 — [docs/documents.md](docs/documents.md). 一對一個 reader，四個一批。
+- 〔station〕`swapped` 只數到 2610 筆 gate question 裡的 89 筆：`8be3981` 加 `labels` 時沒動 `lib/detail.js` 的 `VERSION`，212 份快取全帶 `v: 2`，失效不觸發，舊快取原樣回傳 — [lib/detail.js](lib/detail.js). 改法：`VERSION` 進 3。
+
+- 〔scripts〕`scripts/memory-check.js` 把 stale 的引用數當條目數印：每個引用推一列，摘要行直接拿 `.length`，今天是 49 個引用散在 27 條裡卻寫「49 entries」 — [scripts/memory-check.js](scripts/memory-check.js). 改法：摘要行改數不重複的條目。
 
 ## Needs a decision
 
@@ -90,8 +92,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔skill〕三個唯讀 agent 都有 Bash，而 Bash 寫得了檔：`fankeel-reader`、`fankeel-judge`、`fankeel-reviewer` 沒有 Edit/Write 但有 Bash — [agents/fankeel-reader.md](agents/fankeel-reader.md). 待決：拿掉 Bash、靠 hook 擋、還是接受。
 
-- 〔memory〕102 條原生記憶裡 50 條引用的檔案在寫完之後改過；`memory-check` 只列不 fail，刪哪一條是使用者的決定 — [docs/documents.md](docs/documents.md). 待決：逐條看、只看引用最多的、還是不動。
-
 - 〔docs〕`docs-check` 不驗 `path#fragment` 的錨點：`LINK` 只捕捉路徑，片段那一段是 non-capturing 且被丟棄，沒有一行拿它去比對目標檔的標題，綠只證明檔案在 — [docs/documents.md](docs/documents.md). 待決：加上錨點解析、還是明寫這個界線。
 
 ## Waiting
@@ -106,17 +106,17 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；fankeel 真正的阻礙是 hook 為 Claude Code 專屬 — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多). lifts when: 確認另一個 host 有等價 UserPromptSubmit 的 hook. 09-15.
 
-- 五個 `lib/*.js` 沒有任何 reference-role 頁面點名：`fanout.js`、`hook.js`、`report.js`、`skills.js`、`tracked.js`；另外 20 個都有 — [docs/documents.md](docs/documents.md). lifts when: docs-audit 學會報未被點名的模組. 09-09.
+- 兩個 `lib/*.js` 沒有 reference-role 頁面點名：`hook.js`、`report.js`；09-09 記的五個裡另外三個後來被點到了 — [docs/documents.md](docs/documents.md). lifts when: docs-audit 學會報未被點名的模組. 09-18.
 
 - `judge.js record` 要不要驗證這個 session 底下真的有 `fankeel-judge` 的 subagent transcript — [scripts/judge.js](scripts/judge.js). lifts when: 看到一次宣稱派了卻沒派的歸檔. 09-09.
 
-- `lib/skills.js` 的 `acceptedFlags` 讀不到 `scripts/judge.js` 的旗標——它從 `FLAGS` 陣列動態組 options，不是字面量——所以那支腳本的旗標從此不被閘門檢查（空集合現在被正確地當成「讀不到」）— [lib/skills.js](lib/skills.js). lifts when: 第二支腳本用同樣的形狀宣告旗標. 09-09.
+- `lib/skills.js` 的 `acceptedFlags` 對 judge、ledger、task、station、survey 五支都回空集合——都從陣列或物件動態組 options，不是字面量，旗標全不被閘門檢查 — [lib/skills.js](lib/skills.js). lifts when: 第二支腳本用同樣的形狀宣告旗標——09-18 量到五支都是. 09-18.
 
 - design class：mockup 已落地，其餘是另一個 architectural 任務；計畫的三份必讀來源已不存在，內容多半已併進簡報 — [簡報 §4.1](docs/improvement-brief.md#41-design-階段的-mockup-步驟前端任務). lifts when: 下一個前端任務出現. 09-18.
 
 - todo-check 不驗 `path:line` 的行號：改成不存在的行仍然 exit 0 — [scripts/todo-check.js](scripts/todo-check.js). docs-check 補得到一部分，但卡 role、引文與讀得到目標三個前提。lifts when: 一條沒帶引文的行內容漂移. 09-15.
 
-- 〔session〕`hooks/size.js` 留不留：改前 bigPerSession 0.3846；hook 上線後十個 session 用 `sessions.js --since 2026-09-11` 再量，沒降就移除 — [hooks/size.js](hooks/size.js). lifts when: 十個 session 帶著 hook 跑完. 09-11.
+- 〔session〕`hooks/size.js` 留不留：改前 bigPerSession 0.3846，09-18 用 `--since 2026-09-11` 再量是 0.6136——升不是降 — [hooks/size.js](hooks/size.js). lifts when: 十個 session 帶著 hook 跑完——已有 21. 09-18.
 
 - 〔caveman〕解除安裝：程式碼零硬依賴，`settings.json` 的 `enabledPlugins` 09-15 已設 false，兩個反向測試守著 — [tests/badge.test.js](tests/badge.test.js). lifts when: 〔caveman〕挑功能那條定案. 09-18.
 
