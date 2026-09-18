@@ -12,7 +12,20 @@ const { parseArgs: parseArgv } = require('node:util');
 const registry = require('../lib/registry.js');
 const docs = require('../lib/docs.js');
 
-const FLAGS = ['session', 'brief', 'answer', 'slug', 'model', 'root', 'project'];
+// A literal options table, the same shape `scripts/docs-check.js` already
+// writes its own in. `lib/skills.js`'s `acceptedFlags()` reads this shape (and
+// two others) straight off the source text, so a flag table built from a name
+// array at runtime — the previous shape here — reads as no table at all, and
+// every flag on a line naming this script then fails the unknown-flag gate.
+const OPTIONS = {
+    session: { type: 'string' },
+    brief: { type: 'string' },
+    answer: { type: 'string' },
+    slug: { type: 'string' },
+    model: { type: 'string' },
+    root: { type: 'string' },
+    project: { type: 'string' },
+};
 
 function fail(msg) {
     process.stdout.write(msg + '\n');
@@ -20,10 +33,8 @@ function fail(msg) {
 }
 
 function parse(argv) {
-    const options = {};
-    for (const f of FLAGS) options[f] = { type: 'string' };
-    const { values, positionals } = parseArgv({ args: argv, strict: false, allowPositionals: true, options });
-    for (const f of FLAGS) if (values[f] !== undefined && typeof values[f] !== 'string') fail('--' + f + ' needs a value.');
+    const { values, positionals } = parseArgv({ args: argv, strict: false, allowPositionals: true, options: OPTIONS });
+    for (const f of Object.keys(OPTIONS)) if (values[f] !== undefined && typeof values[f] !== 'string') fail('--' + f + ' needs a value.');
     return { verb: positionals[0], opts: values };
 }
 
