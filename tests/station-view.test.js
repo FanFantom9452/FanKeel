@@ -989,3 +989,39 @@ test('docsCardHtml quotes one project\'s map.md into a section: counts, both lis
 test('docsCardHtml is empty with no project map, so the whole card is left out', () => {
     assert.equal(V.docsCardHtml([], { names: {}, pkeys: [] }), '');
 });
+
+// 首頁 used to put the machine profile card last, and it was missed twice
+// there; it now opens the page. Booted the way the 清單 test above boots it,
+// on the home route, so the order is read off what the page rendered.
+test('首頁 opens with the machine profile card, ahead of the hero panel', () => {
+    const vm = require('node:vm');
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    const els = {};
+    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
+    const doc = {
+        getElementById: (id) => els[id] || (els[id] = el()),
+        addEventListener() {},
+        createElement: el,
+        head: { appendChild() {} },
+        querySelectorAll: () => [],
+    };
+    const win = {
+        location: { hash: '' }, addEventListener() {}, scrollTo() {},
+        STATION: {
+            generatedAt: new Date(2026, 8, 14, 21).toISOString(), configDir: 'C:\\cfg',
+            pricesVerified: '2026-09-04', serve: false,
+            projects: [{ root: 'F:\\ws\\alpha', gone: false, unreadable: 0, build: [], mapAt: null }],
+            profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} },
+            profileKeys: {}, classes: {}, sessions: [],
+        },
+    };
+    vm.runInNewContext(src, { window: win, document: doc, URLSearchParams, fetch() {} });
+    const html = els.page.innerHTML;
+    const card = html.indexOf('machine profile');
+    const hero = html.indexOf('class="panel hero"');
+    assert.ok(card >= 0, 'the machine profile card is on 首頁');
+    assert.ok(hero >= 0, 'the hero panel is on 首頁');
+    assert.ok(card < hero, 'the profile card comes before the hero panel');
+});
