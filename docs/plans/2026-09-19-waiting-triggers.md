@@ -157,8 +157,10 @@ test('a timing with no lifts line is unlifted and undated', () => {
 });
 
 // The control for the grouping itself: `###` is a timing only under Waiting.
+// The `- r` under Ready keeps the convention in use; without it the only entry
+// sits under a heading of its own and `vocabulary` spares it.
 test('a ### under Ready is still a heading of its own', () => {
-  const file = fixture('# TODO\n\n## Ready\n\n### grouped\n\n- a\n');
+  const file = fixture('# TODO\n\n## Ready\n\n- r\n\n### grouped\n\n- a\n');
   assert.deepEqual(kinds(file, NOW), ['unclassified']);
 });
 
