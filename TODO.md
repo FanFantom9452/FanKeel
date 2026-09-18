@@ -114,7 +114,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔profile〕`suggest` 只推 `land.*`：`class.default`、`design.mockup` 可以從 gate 答案推 — [lib/profile.js](lib/profile.js). lifts when: 〔gates〕第一筆資料那條解除後累積一週. 09-18.
 
-- 〔session〕極端版：driver 逐站開 headless session、狀態走檔案、關卡問題走 station，每站從零開始 — [scripts/station.js](scripts/station.js). lifts when: 〔session〕堆疊手段那條定案、實施後 context 仍常過 400k. 09-18.
+- 〔session〕極端版：driver 逐站開 headless session、狀態走檔案、關卡問題走 station，每站從零開始；缺總輪數、花費、時間上限與回報 `status` 欄位 — [scripts/station.js](scripts/station.js). lifts when: 〔session〕堆疊手段那條定案、實施後 context 仍常過 400k. 09-18.
 
 - 〔caveman〕解除安裝：程式碼零硬依賴，`settings.json` 的 `enabledPlugins` 09-15 已設 false，兩個反向測試守著 — [tests/badge.test.js](tests/badge.test.js). lifts when: 〔caveman〕挑功能那條定案. 09-18.
 
