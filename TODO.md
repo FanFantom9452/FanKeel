@@ -92,7 +92,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔memory〕102 條原生記憶裡 50 條引用的檔案在寫完之後改過；`memory-check` 只列不 fail，刪哪一條是使用者的決定 — [docs/documents.md](docs/documents.md). 待決：逐條看、只看引用最多的、還是不動。
 
-- 〔docs〕`docs-check` 不驗 `path#fragment` 的錨點：`LINK` 的片段群組是 non-capturing 且被丟棄，`external()` 只跳過同頁連結，綠只證明檔案在 — [docs/documents.md](docs/documents.md). 待決：加上錨點解析、還是明寫這個界線。
+- 〔docs〕`docs-check` 不驗 `path#fragment` 的錨點：`LINK` 只捕捉路徑，片段那一段是 non-capturing 且被丟棄，沒有一行拿它去比對目標檔的標題，綠只證明檔案在 — [docs/documents.md](docs/documents.md). 待決：加上錨點解析、還是明寫這個界線。
 
 ## Waiting
 
