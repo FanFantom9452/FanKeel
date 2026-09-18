@@ -287,10 +287,14 @@ test('leave writes gates from the transcript\'s AskUserQuestion calls, with the 
 
 // Mutation that reddens this: append `.reverse()` to the `.map(...)` that
 // builds `labels` in `gatesFrom`. Three options with three different labels is
-// what makes order visible here. Measured, it reddens four of the fifty-seven
-// cases in these three files: this one, the `picked null` case below, the
-// `PICK_LEN` case below that, and the whole-record deepEqual at the top of the
-// gates block. Perfect isolation would have to be contrived — several cases
+// what makes order visible here. Measured, it reddens four of the eighteen
+// cases in this file: this one, the `picked null` case below, the `PICK_LEN`
+// case below that, and the whole-record deepEqual at the top of the gates
+// block. The denominator is this file alone on purpose: `lib/station.js` never
+// requires `lib/gates.js`, so no case in `tests/station-gate.test.js` or
+// `tests/station.test.js` can redden from anything done here, and counting
+// their 39 in would report an isolation nothing measured.
+// Perfect isolation would have to be contrived — several cases
 // read the same field. What is worth knowing is the one it leaves green: the
 // empty-slot case, because `['', 'B', '']` reversed is itself, so that case
 // pins position-keeping and pins nothing about order.
@@ -375,15 +379,18 @@ test('gatesFrom keeps picked null for a question the answers object never answer
 });
 
 // verify sent this back: the plan's Interfaces entry promises both fields are
-// clipped at `PICK_LEN`, and nothing pinned the threshold. Dropping `PICK_LEN`
-// from 120 to 50 left all 56 cases in this file and the two station files
+// clipped at `PICK_LEN`, and nothing pinned the threshold. Before this case
+// existed, dropping `PICK_LEN` from 120 to 50 left every case in this file
 // green, so the constant could drift in either direction without a red.
 // Mutation that reddens this case: change `PICK_LEN` in `lib/gates.js` to any
-// number 9 or above — measured at 9, 50 and 121, each leaves the other 56 of
-// the fifty-seven cases in these three files green. 9 is a floor, not a round
-// number: the labels `'留在 survey'` and `'留在 design'` above are 9 UTF-16
-// units each, so 8 clips them too — measured at 8 and at 5, three cases red
-// apiece, this one and those two.
+// number 9 or above — measured at 9, 50, 121, 200 and 201, each one leaving
+// the other seventeen of the eighteen cases in this file green. 9 is a floor,
+// not a round number: the labels `'留在 survey'` and `'留在 design'` above are
+// 9 UTF-16 units each, so 8 clips them too — measured at 8 and at 5, three
+// cases red apiece, this one and those two. The denominator is this file and
+// not the three the suite is usually run with: at `PICK_LEN` 8 the two station
+// files went 39 of 39 green, because `lib/station.js` never requires
+// `lib/gates.js`.
 test('gatesFrom clips a label and an answer at PICK_LEN', () => {
     const askedAt = Date.parse('2026-09-18T00:00:00.000Z');
     const long = 'x'.repeat(200);
