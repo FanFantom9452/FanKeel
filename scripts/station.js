@@ -33,6 +33,7 @@ const path = require('node:path');
 const http = require('node:http');
 const crypto = require('node:crypto');
 const { spawn } = require('node:child_process');
+const { parseArgs: parseArgv } = require('node:util');
 const station = require('../lib/station.js');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
@@ -44,25 +45,53 @@ const view = require('../assets/station/station.js');
 const PLUGIN = path.resolve(__dirname, '..');
 const ASSETS = path.join(PLUGIN, 'assets', 'station');
 
+// `--root`/`--scan` are `multiple: true`: `values.root`/`values.scan` come
+// back as an array of every occurrence, in order, rather than a hand-rolled
+// `.push()` per token. `strict: true` is what refuses an unrecognised flag;
+// the shapes it throws for — an unknown option, or a declared flag given no
+// value — are caught below and turned into the same
+// `station: unknown argument <flag>` message and exit code this file has
+// always used, so a script piping this CLI's stderr sees no difference.
+// `serve` is the one positional this file reads; any other bare word is the
+// same unknown-argument refusal.
+const OPTIONS = {
+    open: { type: 'boolean' },
+    root: { type: 'string', multiple: true },
+    scan: { type: 'string', multiple: true },
+    forget: { type: 'string' },
+    port: { type: 'string' },
+    idle: { type: 'string' },
+    detach: { type: 'boolean' },
+    json: { type: 'boolean' },
+};
+
 function parseArgs(argv) {
-    const out = { verb: null, roots: [], scan: [], open: false, port: 7817, idleMs: 0, forget: null, json: false, detach: false };
-    for (let i = 0; i < argv.length; i++) {
-        const a = argv[i];
-        if (a === 'serve' && out.verb === null) out.verb = 'serve';
-        else if (a === '--open') out.open = true;
-        else if (a === '--root' && argv[i + 1]) out.roots.push(argv[++i]);
-        else if (a === '--scan' && argv[i + 1]) out.scan.push(argv[++i]);
-        else if (a === '--forget' && argv[i + 1]) out.forget = argv[++i];
-        else if (a === '--port' && argv[i + 1]) { out.port = Number(argv[++i]) || 0; out.portWasExplicit = true; }
-        else if (a === '--idle' && argv[i + 1]) out.idleMs = (Number(argv[++i]) || 10) * 60e3;
-        else if (a === '--detach') out.detach = true;
-        else if (a === '--json') out.json = true;
-        else {
-            process.stderr.write('station: unknown argument ' + a + '\n');
-            process.exit(2);
-        }
+    let values;
+    let positionals;
+    try {
+        ({ values, positionals } = parseArgv({ args: argv, options: OPTIONS, allowPositionals: true, strict: true }));
+    } catch (e) {
+        const bad = /'(--?[a-zA-Z0-9-]+)/.exec(e.message);
+        process.stderr.write('station: unknown argument ' + (bad ? bad[1] : String(e.message)) + '\n');
+        process.exit(2);
     }
-    return out;
+    const extra = positionals.filter((p) => p !== 'serve');
+    if (extra.length) {
+        process.stderr.write('station: unknown argument ' + extra[0] + '\n');
+        process.exit(2);
+    }
+    return {
+        verb: positionals.includes('serve') ? 'serve' : null,
+        roots: values.root || [],
+        scan: values.scan || [],
+        open: Boolean(values.open),
+        port: values.port !== undefined ? (Number(values.port) || 0) : 7817,
+        portWasExplicit: values.port !== undefined,
+        idleMs: values.idle !== undefined ? (Number(values.idle) || 10) * 60e3 : 0,
+        forget: values.forget !== undefined ? values.forget : null,
+        json: Boolean(values.json),
+        detach: Boolean(values.detach),
+    };
 }
 
 // Undoes what Task 6 made permanent: a root that has gone stays remembered

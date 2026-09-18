@@ -249,6 +249,16 @@ test('--detach is parsed, and portWasExplicit only when --port was given', () =>
     assert.equal(b.portWasExplicit, true, '--port given: portWasExplicit is true');
 });
 
+test('--root and --scan repeat, and an unknown flag exits 2 with the old message shape', () => {
+    const { parseArgs } = require('../scripts/station.js');
+    const a = parseArgs(['--root', 'one', '--root', 'two', '--scan', 'x', '--scan', 'y']);
+    assert.deepEqual(a.roots, ['one', 'two']);
+    assert.deepEqual(a.scan, ['x', 'y']);
+    const r = spawnSync(process.execPath, [CLI, '--bogus'], { encoding: 'utf8' });
+    assert.equal(r.status, 2, 'an unknown flag exits 2');
+    assert.match(r.stderr, /^station: unknown argument --bogus$/m, 'the message names the flag, same shape as before');
+});
+
 // --- Task 7: bulk clear, --forget, and the once-only budgeted first-run scan ---
 
 const CS_LIVE = 'aaaaaaaa-9999-4999-8999-999999999991';
