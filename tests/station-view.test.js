@@ -725,6 +725,11 @@ test('costHtml gains a 主迴圈 row per stage from x.loops, and the row rendere
     const footTurns = Number(foot.match(/<span><b>(\d+)<\/b>回合<\/span>/)[1]);
     assert.equal(sumTurns, footTurns, 'the per-stage turn counts sum to the page\'s total main-loop turn count');
     assert.equal(footTurns, 4 + 5 + 3);
+    // The footer row sits under 主 session / agent / 合計, so its label takes the
+    // first cell as theirs do, and its share is of the session, not of a stage.
+    assert.match(foot, /<tr class="loop"><td><span class="lp">主迴圈<\/span><\/td><td><\/td>/);
+    assert.match(foot, /<\/b>佔 session<\/span>/);
+    assert.match(blocks[1], /<tr class="loop"><td><\/td><td><span class="lp">主迴圈<\/span><\/td>[\s\S]*<\/b>佔這一站<\/span>/);
     assert.match(blocks[0], /<span class="zero"><b>0<\/b>回合 ≥ 400k<\/span>/, 'a stage with no BUSY-and-over turn is styled zero');
     assert.match(blocks[0], /<span class="zero"><b>—<\/b>那些回合<\/span>/, 'and its dollar figure is a dash, not $0.00');
 });

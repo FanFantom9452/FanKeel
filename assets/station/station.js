@@ -840,16 +840,19 @@
     // alike — the same total the sub row's own last cell already prints).
     // `lp` is one row of `x.loops`, or `null` for a stage no main request
     // landed in; `usd()` already prints a dash for a zero dollar figure.
-    function loopRow(lp, stageUsd) {
+    // `foot` is the tfoot row: its label takes the first cell, as 主 session,
+    // agent and 合計 do, and its share is of the whole session.
+    function loopRow(lp, stageUsd, foot) {
         lp = lp || { turns: 0, over: 0, overUsd: 0 };
         var pct = stageUsd ? lp.overUsd / stageUsd * 100 : 0;
         var z = lp.over === 0;
-        return '<tr class="loop"><td></td><td><span class="lp">主迴圈</span></td><td colspan="8"><div class="lf">'
+        return '<tr class="loop">' + (foot ? '<td><span class="lp">主迴圈</span></td><td></td>' : '<td></td><td><span class="lp">主迴圈</span></td>')
+            + '<td colspan="8"><div class="lf">'
             + '<span><b>' + lp.turns + '</b>回合</span>'
             + '<span' + (z ? ' class="zero"' : '') + '><b>' + lp.over + '</b>回合 ≥ 400k</span>'
             + '<span' + (z ? ' class="zero"' : '') + '><b>' + usd(lp.overUsd) + '</b>那些回合</span>'
             + '<span' + (z ? ' class="zero"' : '') + '><i class="mini" style="display:inline-flex;width:72px;vertical-align:middle;margin-right:8px">'
-            + '<span style="width:' + Math.round(pct) + '%"></span></i><b>' + Math.round(pct) + '%</b>佔這一站</span>'
+            + '<span style="width:' + Math.round(pct) + '%"></span></i><b>' + Math.round(pct) + '%</b>' + (foot ? '佔 session' : '佔這一站') + '</span>'
             + '</div></td><td class="r"></td></tr>';
     }
     function sumLoops(loops) {
@@ -894,7 +897,7 @@
             + '<tr><td>主 session</td><td></td>' + cells(m.main, 'total') + '</tr>'
             + '<tr><td>agent</td><td></td>' + cells(m.agent, 'total') + '</tr>'
             + '<tr><td>合計</td><td></td>' + cells(m.total, 'total') + '</tr>'
-            + (loops ? loopRow(sumLoops(loops), m.total.usd) : '') + '</tfoot></table></div>';
+            + (loops ? loopRow(sumLoops(loops), m.total.usd, true) : '') + '</tfoot></table></div>';
     }
     function sessionHeadHtml(s, x) {
         var t = sessionTotals(s), m = x ? timelineModel(x) : null, agentUsd = costModel(s.days).agent.usd;
