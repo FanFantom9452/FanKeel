@@ -287,8 +287,8 @@ excluded for the opposite reason: it is not a claim about the code that could
 quietly stop being true, it is what
 [`todo-check.js`](development.md#todo-checkjs--whether-todomd-is-still-an-index)
 re-verifies on every run, so a `last_verified` there would be a date somebody
-has to remember to bump standing in for a check that already runs. Neither has a fix worth
-offering, and a list of things nobody may act on stops being read.
+has to remember to bump standing in for a check that already runs. Neither has a
+fix worth offering, and a list of things nobody may act on stops being read.
 
 `lib/map.js` was the exception until 2026-08-31, by age rather than by choice:
 `pagesByStatus` was written before `isSignpost` existed. What made it worth
