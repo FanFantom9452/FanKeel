@@ -261,8 +261,8 @@ nothing else:
   was never answered. That null is kept rather than clipped to `''`:
   `gateSummary()` cannot tell an empty answer from an unanswered one, and an
   empty one there would be counted as option one losing, which the replay
-  path it stands in for never does. At most `MAX_GATES` (60),
-  oldest dropped. Written only when the session ends cleanly, because
+  path it stands in for never does. At most `MAX_GATES` (60), oldest
+  dropped. Written only when the session ends cleanly, because
   `hooks/leave.js` runs at `SessionEnd` alone — a session that never reaches
   it carries no `gates` at all. While the transcript is still there, the
   detail page's own replay (`lib/detail.js:613`) is still the source for the
