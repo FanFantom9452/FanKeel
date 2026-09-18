@@ -96,13 +96,13 @@ build 才寫、land 才 commit，沒處理好的時機戳記沒動，下次 `/fa
   `lifts when:` 行或缺戳記；時機底下沒有 bullet；標題超過 28 欄。原本「每條 Waiting
   條目要有 `lifts when:` 與戳記」的檢查移到時機上。
 - 匯出 `width(s)`，照第 1 節的算法回顯示寬度；repository 裡還沒有這樣的函式，
-  標題上限和 orient 的對齊都用它。
+  標題上限用它。
 - `report()` 印 `due` 的時機：標題、事件、條數；`due` 仍然不影響 exit code。
 
 ## 3. orient
 
 - `todoBlock()` 每次列出全部時機，一個一行：`due` 標記或日期、標題、條數。`due`
-  的排前面，其餘照檔案順序。標題欄用 `width()` 補齊，中英混排的行才對得齊。
+  的排前面，其餘照檔案順序。條數緊接在標題後面，照 gate 上選的預覽，不做欄位對齊。
 - 標題行寫 `Waiting N timings, M entries — K due, offer one option`，沒有 `due` 時寫
   `— none due, not offered`；K 等於下面標了 `due` 的行數。
 
