@@ -69,3 +69,11 @@ test('the reviewer carries the cut tags build and audit ask for', () => {
     const build = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-build', 'SKILL.md'), 'utf8');
     assert.match(build, /Part 4 — cuts/);
 });
+
+// A reader that sends one call per turn reads like a slow pipeline; what is
+// slow is the turn count, not git.
+test('the reader is told to send reads that do not depend on each other in one response', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reader.md'), 'utf8');
+    const searching = text.split('\n## Searching\n')[1].split('\n## ')[0];
+    assert.match(searching, /same response/);
+});

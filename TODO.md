@@ -68,8 +68,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔agents〕`fankeel-reader.md` 沒叫它把互不相依的 Read/Grep 放在同一個回應：reader 看起來像 pipeline，是模型一回合只發一個工具呼叫，不是讀 git 慢 — [agents/fankeel-reader.md](agents/fankeel-reader.md). 改法：`## Searching` 加一句。
-
 - 〔docs〕`docs/sources.md` 沒有 `2026-09-15-waiting-probes.md` 的列：頁面說每份頂層報告一列，現在 21 份 20 列，漏的就是這份 — [docs/sources.md](docs/sources.md). 改法：照七欄補一列，標題改 twenty-one。
 
 ## Needs a decision
