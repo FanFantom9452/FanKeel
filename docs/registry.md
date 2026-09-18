@@ -258,18 +258,20 @@ nothing else:
   empty one kept in place rather than filtered out, since dropping it would
   shift every later index — and `picked` is the chosen option's label, the
   same cap, the text typed when it was Other, and `null` when the question
-  was never answered. That null is kept rather than clipped to `''`:
-  `gateSummary()` cannot tell an empty answer from an unanswered one, and an
-  empty one there would be counted as option one losing, which the replay
-  path it stands in for never does. At most `MAX_GATES` (60), oldest
-  dropped. Written only when the session ends cleanly, because
-  `hooks/leave.js` runs at `SessionEnd` alone — a session that never reaches
-  it carries no `gates` at all. While the transcript is still there, the
-  detail page's own replay (`lib/detail.js:613`) is still the source for the
-  same questions and answers. Once it is gone, [station.md](station.md)'s
-  `gateSummary()` reads `labels` back from here instead — that is why they
-  are stored: without them the `swapped` card's denominator would quietly
-  shrink as transcripts age, with nothing on the page to show it.
+  was never answered. That null is kept rather than clipped to `''`, because
+  `gateSummary()` skips exactly what the replay skips — a null — and an `''`
+  is not the same thing: `answerOf` returns one for an empty multi-select
+  too, and both sources count that alike. Clipped, an unanswered gate would
+  have read as option one losing here while the replay counted nothing. At
+  most `MAX_GATES` (60), oldest dropped. Written only when the session ends
+  cleanly, because `hooks/leave.js` runs at `SessionEnd` alone — a session
+  that never reaches it carries no `gates` at all. While the transcript is
+  still there, the detail page's own replay (`lib/detail.js:613`) is still
+  the source for the same questions and answers. Once it is gone,
+  [station.md](station.md)'s `gateSummary()` reads `labels` back from here
+  instead — that is why they are stored: without them the `swapped` card's
+  denominator would quietly shrink as transcripts age, with nothing on the
+  page to show it.
 
 # Reading it from outside
 
