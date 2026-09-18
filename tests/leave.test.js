@@ -378,9 +378,12 @@ test('gatesFrom keeps picked null for a question the answers object never answer
 // clipped at `PICK_LEN`, and nothing pinned the threshold. Dropping `PICK_LEN`
 // from 120 to 50 left all 56 cases in this file and the two station files
 // green, so the constant could drift in either direction without a red.
-// Mutation that reddens this and nothing else: change `PICK_LEN` in
-// `lib/gates.js` to any other number — every other label and answer in the
-// suite is far shorter than either value, so only this case can see it.
+// Mutation that reddens this case: change `PICK_LEN` in `lib/gates.js` to any
+// number 9 or above — measured at 9, 50 and 121, each leaves the other 56 of
+// the fifty-seven cases in these three files green. 9 is a floor, not a round
+// number: the labels `'留在 survey'` and `'留在 design'` above are 9 UTF-16
+// units each, so 8 clips them too — measured at 8 and at 5, three cases red
+// apiece, this one and those two.
 test('gatesFrom clips a label and an answer at PICK_LEN', () => {
     const askedAt = Date.parse('2026-09-18T00:00:00.000Z');
     const long = 'x'.repeat(200);
