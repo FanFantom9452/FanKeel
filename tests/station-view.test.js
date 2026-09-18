@@ -876,7 +876,7 @@ test('the health poll never arms under file:, and does arm every 5s once served'
 // the test above captures the interval's period without ever invoking its
 // callback. So this one drives the callback, with a `Date` it moves and a
 // `#page` that counts how often it is written — `draw()` assigns
-// `p.innerHTML` (assets/station/station.js:1996), which is what the counter
+// `p.innerHTML` (assets/station/station.js:2072), which is what the counter
 // below is on.
 test('a poll finding no change does not redraw, and each state flip redraws once', async () => {
     const vm = require('node:vm');

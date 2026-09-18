@@ -150,7 +150,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:1456`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:1457`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -213,14 +213,14 @@ figure.
 Opening a row in 清單 fills the side panel with sections that open and close, and which
 start open is the session's state — `openSections()` in the view script: a
 live session opens on 摘要 and claims, who is in which file; one that has
-ended opens on context and 派工, what it cost. 過程還原 starts closed either
-way. Everything below claims is the session's detail, read out of its
-transcript by `lib/detail.js` and loaded the first time the session is opened;
-a session with no transcript under this machine's config directory and no
-detail cached here has none, and the panel says so rather than drawing an empty
-chart. Where one was cached here once, `lib/detail.js:694` keeps it and the
-panel draws that instead — a transcript Claude Code has since deleted leaves
-the cache as all there is.
+ended opens on context and 派工, what it cost. 分工 opens by default either
+way, and 過程還原 starts closed either way. Everything below claims is the
+session's detail, read out of its transcript by `lib/detail.js` and loaded
+the first time the session is opened; a session with no transcript under
+this machine's config directory and no detail cached here has none, and the
+panel says so rather than drawing an empty chart. Where one was cached here
+once, `lib/detail.js:694` keeps it and the panel draws that instead — a
+transcript Claude Code has since deleted leaves the cache as all there is.
 
 **context** is one line. x is time and y the context each request carried —
 input, cache read and both cache writes — taken from `summarise()`'s own
@@ -242,6 +242,25 @@ last from the clock, which keeps one window per stage and cannot show a return.
 A step to an earlier stage on the route is a backtrack, marked `↩` with how
 long the stage before it lasted. Each backtrack links to the replay rows
 between entering the stage it left and the step back.
+
+**分工** sits third, between 階段順序 and 任務, and opens by default whether
+the session is live or has ended: a short prose account of how the main loop
+divided dispatch. One line per stage, in the order `seq` first entered it —
+a dispatch's stage is its `out` time run through the same rule
+`lib/detail.js:397`'s `stageWhen` uses: the last `seq` entry at or before it,
+or `task 開始前` when there is none. Turn counts come from `x.loops`; a cache
+written before that field existed has none, and the line says so
+(`這份快取沒有逐站回合數（寫於 loops 欄位出現之前）`) instead of printing a
+guessed zero. Concurrent dispatch — two or more `Agent` calls in one response
+— is grouped by `turn`, not counted per call: `同一回應並發 N 回（共 M 個）`.
+A single dispatch (`agent`) whose `out` lands before the previous single's
+`back`, on a different turn, is marked `本可一次發出` once per such overlap —
+the main loop did not wait for the prior result. Each line ends with the
+stage's models, by `family()`. Where the session claimed a plan, one line per
+plan gives its groups in three states: dispatched inside one turn, never
+dispatched, or `本可一次發出` by the group's own `hint`. A page with more than
+one dispatch and no plan gets one line saying the rest cannot be judged
+independent or not.
 
 **任務** is the plan the session claimed — a `docs/plans/<stem>.md` among its
 claims, not the `-design` one — with its tasks from the plan and each one's
@@ -368,7 +387,7 @@ is to change the profile and reload.
 
 The facets are on 清單, above its table — state and stage with a count on each
 button, registry with one button per root
-(`assets/station/station.js:1258`, `moved onto the page they narrow`) — and
+(`assets/station/station.js:1259`, `moved onto the page they narrow`) — and
 the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed. On 清單,
 selecting a registry recomputes the page below the facets: `goneNote()`'s card
@@ -378,14 +397,14 @@ above the list otherwise; it does not merely hide rows.
 A gone registry keeps its facet button, labelled `— gone`, rather than
 dropping off the row, so selecting one never returns a blank pane with nothing
 on the page saying why:
-`goneNote()` (`assets/station/station.js:1095`, `function goneNote(root)`) prints a
+`goneNote()` (`assets/station/station.js:1096`, `function goneNote(root)`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card once it is the one selected on
 清單, and every project page carries the same card for its own registry no
 matter what is selected there: `registryNote()`
-(`assets/station/station.js:1112`, `function registryNote(root)`) prints its
+(`assets/station/station.js:1113`, `function registryNote(root)`) prints its
 own unreadable-session count, its `map.md` date — or `不存在` when there is
 none — and its build directories with each one's file count, or says there
 are none. The old page carried all three on a per-registry meta line; the
@@ -393,7 +412,7 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:1490`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:1491`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
 (`lib/station.js:423`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
@@ -466,7 +485,7 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:1249`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:1250`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較** is a third view. Tick two sessions on 清單 or a project page — only a
@@ -611,7 +630,7 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:1151`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:1152`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button, and every registry card now carries one:

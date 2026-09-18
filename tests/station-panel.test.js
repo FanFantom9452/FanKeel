@@ -11,9 +11,9 @@ const V = require('../assets/station/station.js');
 const count = (s, re) => (s.match(re) || []).length;
 
 test('a live session opens on who and where, an ended one on what it cost, and neither opens the replay', () => {
-    assert.deepEqual(V.openSections({ state: 'live' }), ['s-sum', 's-claims']);
-    assert.deepEqual(V.openSections({ state: 'down' }), ['s-ctx', 's-disp']);
-    assert.deepEqual(V.openSections({ state: 'stale' }), ['s-ctx', 's-disp']);
+    assert.deepEqual(V.openSections({ state: 'live' }), ['s-sum', 's-claims', 's-split']);
+    assert.deepEqual(V.openSections({ state: 'down' }), ['s-ctx', 's-disp', 's-split']);
+    assert.deepEqual(V.openSections({ state: 'stale' }), ['s-ctx', 's-disp', 's-split']);
     for (const s of ['live', 'down', 'stale']) assert.ok(!V.openSections({ state: s }).includes('s-rp'));
 });
 
