@@ -86,6 +86,11 @@ lifts when: 09-25 起，registry 的 `gates` 累積滿一週. 09-18.
 
 - 〔profile〕`suggest` 只推 `land.*`：`class.default`、`design.mockup` 可以從 gate 答案推 — [lib/profile.js](lib/profile.js).
 
+### 第一次處理 Waiting
+lifts when: 09-25 起，第一次在 `/fankeel` 選了處理 Waiting. 09-19.
+
+- 〔fankeel〕看 survey 是否把只有人看得到的事件放進一次 `multiSelect` 問完、build 是否整批移走並換戳記 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
+
 ### 交接後 context 仍過 400k
 lifts when: 交接選項（簡報 §6.2）實施後 context 仍常過 400k. 09-18.
 
