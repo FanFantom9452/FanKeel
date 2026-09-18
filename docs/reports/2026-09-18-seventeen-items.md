@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-18
-source_of_truth: 每一列的現況都回溯到一個 `path:line`、commit 或 session id；數字出自 `docs/decisions/2026-09-18-skill-improvements.md`、`docs/improvement-brief.md` §6.2、`docs/reports/2026-09-03-dispatch-vs-inline.md`，價格出自 claude-api skill 的價目表（快取日 2026-06-24）；本頁不會重新產生
+source_of_truth: 每一列的現況都回溯到一個 `path:line`、commit 或 session id（八碼的是 session id，transcript 在 `~/.claude/projects/F--ymlab-fankeel/`）；現況由四個 `sonnet` reader 對程式碼讀出、本 session 抽查；數字出自 `docs/decisions/2026-09-18-skill-improvements.md`、`docs/improvement-brief.md` §6.2、`docs/reports/2026-09-03-dispatch-vs-inline.md` 與 `-named.md`、`TODO.md` 的〔session〕`hooks/size.js` 條目，價格出自 claude-api skill 的價目表（快取日 2026-06-24）；本頁不會重新產生
 ---
 
 # 使用者 09-18 下午的十七項意見：逐條現況
@@ -31,17 +31,17 @@ source_of_truth: 每一列的現況都回溯到一個 `path:line`、commit 或 s
 | 項 | 你問的 | 現況 | 狀態 | 接下來 |
 |---|---|---|---|---|
 | A | design 階段加 mockup，參考 taste-skill 之類 | `skills/fankeel-design/SKILL.md:80` 第 3 步就是它：前端任務畫一頁 HTML 到 `.fankeel/build/<日期>-<題>/mockup.html`，用 `design.mockup` 指定的模型（這個專案是 opus），從六個設計 skill 裡指名一個 | 已完成 | 無 |
-| B | station 預設開發偏好、land 不要每次問、入口不問改在 HTML 決定 | profile 有 9 個 key（`lib/profile.js:13`）；這個專案已設 `land.integration merge`、`land.push false`，land 不再問。`suggest` 只從 `git log` 與 registry 推 `land.*` 兩個 key（`lib/profile.js:112`）。「入口分析完不問、問題放 HTML」沒做 | 部分完成 | 新條目〔profile〕；入口改 HTML 併進 Q 的第 ③ 步 |
-| C | Fable 一次性判官、判斷寫成文件可追溯、docs tree 要有判斷區與暫存區 | `/fankeel-ask` 就是它：`agents/fankeel-judge.md:3` 是 `model: fable`，一次、不追問，答案存 `docs/judgements/<日期>-<slug>.md`（`scripts/judge.js:83`）。只能手動觸發——09-10 裁決（`docs/decisions/2026-09-10-judge-to-ask.md`）。分區見下面的〈文件樹〉 | 已完成 | `.fankeel/build/` 要不要進 `docs.json` 已有待決條目 |
+| B | station 預設開發偏好、land 不要每次問、入口不問改在 HTML 決定 | profile 有 9 個 key（`lib/profile.js:17`）；這個專案已設 `land.integration merge`、`land.push false`，land 不再問。`suggest` 只從 `git log` 與 registry 推 `land.*` 兩個 key（`lib/profile.js:112`）。「入口分析完不問、問題放 HTML」沒做 | 部分完成 | 新條目〔profile〕；入口改 HTML 併進 Q 的第 ③ 步 |
+| C | Fable 一次性判官、判斷寫成文件可追溯、docs tree 要有判斷區與暫存區 | `/fankeel-ask` 就是它：`agents/fankeel-judge.md:5` 是 `model: fable`，一次、不追問，答案存 `docs/judgements/<日期>-<slug>.md`（`scripts/judge.js:83`）。只能手動觸發——09-10 裁決（`docs/decisions/2026-09-10-judge-to-ask.md`）。分區見下面的〈文件樹〉 | 已完成 | `.fankeel/build/` 要不要進 `docs.json` 已有待決條目 |
 | D | sonnet 讀取任務想改檔被攔、要不要 custom agent 或 MCP | custom agent 已經有 5 個（`agents/`）。`hooks/guard.js:40` 擋唯讀 agent 用 Bash 寫檔，被擋時的訊息以 `fankeel:` 開頭——看訊息就知道是它還是 auto mode。MCP 不需要，理由見 O | 已完成 | 「乾脆拿掉 Bash」已有待決條目 |
 | E | memory 自動清理 | `scripts/memory-check.js` 列出引用失效或過期的記憶，只列不刪，audit 與 land 各跑一次。早上讀了 27 條、4 條加更正行、刪 0 條（`728dd76`）。**界線：沒有引用任何程式碼的錯誤事實，它抓不到** | 部分完成 | 摘要行把引用數當條目數，已有 Ready 條目 |
-| F | 解除 caveman、ponytail 依賴；caveman.zip 讀過沒 | caveman：程式碼零依賴，09-15 已停用。zip 在 `C:\Users\Owner\Desktop\caveman.zip`，09-09（`73b21b2c`）與 09-12（`6ef14250`）兩次解壓讀過。ponytail：09-12 完成，3 個功能收進 `fankeel-reviewer`，程式碼零引用；外掛還裝著但停用，fankeel 從沒有 session 用 Skill 叫過它 | 待你決定 | 〔caveman〕挑功能——建議當下一個任務；ponytail 剩你自己在 `/plugin` 解除安裝 |
+| F | 解除 caveman、ponytail 依賴；caveman.zip 讀過沒 | caveman：程式碼零依賴，09-15 已停用。zip 在 `C:\Users\Owner\Desktop\caveman.zip`，09-09（session `73b21b2c`）與 09-12（session `6ef14250`）兩次解壓讀過。ponytail：09-12 完成，3 個功能收進 `fankeel-reviewer`，程式碼零引用；外掛還裝著但停用，fankeel 從沒有 session 用 Skill 叫過它 | 待你決定 | 〔caveman〕挑功能——建議當下一個任務；ponytail 剩你自己在 `/plugin` 解除安裝 |
 | G | fankeel 要解決文件長期過期，code 不是唯一來源 | 09-11 判官裁定這是前提，不單獨成條（`docs/judgements/2026-09-11-todo-split.md`）。執行它的是四支掃描器：`docs-check`、`docs-audit`、`todo-check`、`memory-check` | 前提 | 無 |
 | H | session 堆疊太快、verify↔build 來回 | 量過（簡報 §6.2，09-11）：153 份 transcript，context 峰值中位數 209k、p90 509k；15 個 session 有倒退，`verify>build` 29 次。堆疊約九成是主迴圈自己的工具輸出，subagent 回傳只佔 8–9%。`hooks/size.js` 上線後 bigPerSession 從 0.3846 升到 0.6136，不降反升 | 待你決定 | 〔session〕四個候選挑哪個；我們的建議見 Q |
-| I | station 單 session 詳細分析：幾個 task、怎麼切片、哪裡可平行 | session 頁已有 task 區、派工表（agent 與 workflow 分列）、stage 泳道，以及「本來可以同一回應發出」的提示（`lib/plantasks.js:200`）。缺一段文字摘要說主 agent 怎麼分工。簡報 §6.3 還寫「沒有」，比程式碼落後 | 部分完成 | 早上裁決不重開；成本分解見新條目〔station〕 |
+| I | station 單 session 詳細分析：幾個 task、怎麼切片、哪裡可平行 | session 頁已有 task 區、派工表（agent 與 workflow 分列）、stage 泳道，以及「本來可以同一回應發出」的提示（`lib/detail.js:372`）。缺一段文字摘要說主 agent 怎麼分工。簡報 §6.3 還寫「沒有」，比程式碼落後 | 部分完成 | 早上裁決不重開；成本分解見新條目〔station〕 |
 | J | station 上看不到 profile | 在，但只在 `node scripts/station.js serve --open` 底下改得了；`/fankeel` 寫的靜態頁只給可複製的指令，而且排在首頁最後（`docs/station.md:624`）。這是第二次找不到 | 部分完成 | 新條目〔station〕profile 卡 |
 | K | 主 agent 被叫醒太多次、每次重送整份 context | 叫醒只佔主回合 7.0%（全期 `sumWakes` 1,498 ÷ `sumRequests` 21,376）。要壓的是主迴圈自己的回合數。`usage.wakes` 算了（`lib/usage.js:140`），但頁面沒顯示 | 部分完成 | 新條目〔station〕`wakes` |
-| L | station redesign 用過哪些 skill，別台機器能不能照做 | **更正早上的結論。** 早上說「沒用任何 skill」，只查了文件。transcript 裡，`d39444fc`（09-14 三層改版）畫 mockup 的 subagent（opus）叫過 `frontend-design:frontend-design` 與 `dataviz`。09-04 到 09-08 的五個改版 session 都沒叫設計 skill。別台機器：裝 fankeel 加 `frontend-design`，走 design 第 3 步；fankeel 本身不帶設計 skill | 已回答 | 決策紀錄加一行更正 |
+| L | station redesign 用過哪些 skill，別台機器能不能照做 | **更正早上的結論。** 早上說「沒用任何 skill」，只查了文件。transcript 裡，session `d39444fc`（09-14 三層改版）畫 mockup 的 subagent（opus）叫過 `frontend-design:frontend-design` 與 `dataviz`。09-04 到 09-08 的五個改版 session 都沒叫設計 skill。別台機器：裝 fankeel 加 `frontend-design`，走 design 第 3 步；fankeel 本身不帶設計 skill | 已回答 | 決策紀錄加一行更正 |
 | M | reader 讀 git 是 pipeline，能不能平行 | `scripts/survey.js:222` 讀檔確實是序列，但 09-15 量過 442 檔 0.394 秒，瓶頸不在這裡。看起來像 pipeline，是因為 reader 模型一回合只發一個工具呼叫；`agents/fankeel-reader.md` 沒叫它把互不相依的讀取放在同一個回應 | 部分完成 | 新條目〔agents〕 |
 | N | 資料標版本號、記住每個問題的選項、答案當標註 | 0.70.0 起 `lib/gates.js:66` 每題存 `{at, stage, header, labels, picked}`：選項文字與你的答案都在，`(Recommended)` 在 label 裡。**問題本文與選項 description 沒存。**版本號一個都沒有 | 部分完成 | 新條目〔gates〕；版本號已有〔registry〕待決條目 |
 | O | docs 是寫給 AI 的、grep 會引到兩處、archive 會被搜到、要不要 MCP | 見下面〈O：文件給誰讀〉 | 新的 | 三條新條目 |

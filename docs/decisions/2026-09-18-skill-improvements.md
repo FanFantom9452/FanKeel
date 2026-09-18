@@ -57,7 +57,7 @@ survey 對每一項查了現況。結果:
 10 次,對所有 station 文件零命中。零不是因為沒查到,是因為真的沒用。
 
 **Corrected 2026-09-18:** 負結果只對文件成立，對照組只掃了文件、沒掃 transcript。
-`d39444fc`（09-14 三層改版）畫 mockup 的 subagent（opus）叫過
+session `d39444fc`（09-14 三層改版）畫 mockup 的 subagent（opus）叫過
 `frontend-design:frontend-design` 與 `dataviz`；09-04 到 09-08 的五個改版 session
 都沒叫設計 skill。
 
