@@ -989,7 +989,7 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 東西會回頭重驗。
 
 - 本專案 09-11 的索引有 76 條，多數引了檔名、旗標、行號或量測數字，正是最會過期的那一類。
-- fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:592`（`## Task memory`）那一節的路由表把
+- fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:595`（`## Task memory`）那一節的路由表把
   durable fact 指向 memory 目錄，`lib/registry.js:18`（`Task memory is two fields on the entry`）的註解說明 fankeel 不另開一份記憶。
   讀、稽核、清理那個目錄的程式碼一行都沒有。
 
@@ -1032,6 +1032,13 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 3. 把 verify 的檢查往 build 搬：verify 退回 build，多半是 build 每列的 review 沒跑到
    verify 會跑的那個檢查；第二次倒退時停下來說，而不是默默再來一輪。
 4. 串接的 fan-out 改走 Workflow，中間結果留在 script 裡，回主 session 的只有 join。
+
+**定案（09-18，TODO 十九條）**：選候選 2——`lib/context.js` 的 `contextLine` 在
+`BUSY` 以上時，把接手（設 `next`、開新終端機、`/fankeel` → Adopt）接到這一站的 gate
+當第四個選項，回答後的區塊（`renderResume`）也帶這行。候選 1（hooks/size.js，已刪除）已依
+09-11 訂的規則拿掉——再量沒降就拿掉，改後 bigPerSession 從 0.3846 升到 0.6136。候選 4
+（串接的 fan-out 走 Workflow）已經是現行做法。候選 3（把 verify 的檢查往 build 搬）不
+做——它處理的是倒退，不是堆疊。
 
 ### 6.3 station 單 session
 

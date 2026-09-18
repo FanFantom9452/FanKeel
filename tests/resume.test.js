@@ -93,6 +93,27 @@ test('an answered question brings the stage rules back', () => {
   assert.match(ctx, /output shape:/);
 });
 
+// The one thing only this block is placed to see: the gate itself is an
+// AskUserQuestion, so a session driven entirely by its own answers would
+// otherwise never see a busy or compacted context reported at all.
+test('a busy transcript rides the resume block the same way it rides the prompt block', () => {
+  const root = tmp('fankeel-resume-');
+  seed(root, MINE);
+  const dir = tmp('fankeel-transcript-');
+  const file = path.join(dir, 'session.jsonl');
+  fs.writeFileSync(file, '{"type":"assistant","message":{"usage":{"input_tokens":2,'
+    + '"cache_creation_input_tokens":2362,"cache_read_input_tokens":397636,"output_tokens":275}}}\n');
+  const ctx = context(run({ session_id: MINE, cwd: root, transcript_path: file }));
+  assert.match(ctx, /context: 400k in play, nothing dropped yet\. This stage's gate gets a fourth option, hand off: set next/);
+});
+
+test('with no transcript_path the resume block still says nothing about context', () => {
+  const root = tmp('fankeel-resume-');
+  seed(root, MINE);
+  const ctx = context(run({ session_id: MINE, cwd: root }));
+  assert.doesNotMatch(ctx, /context:/);
+});
+
 // It is the short form on purpose. Everything the full block carries that cannot
 // have moved between a question and its answer stays out, because this runs
 // several times a stage and each copy is permanent in the context.

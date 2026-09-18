@@ -381,8 +381,8 @@ never takes the task with it.
 ```
 context: 1.1M tokens dropped to compaction so far, 308k in play now,
 --session 302790e6-e652-4cab-af1c-e45d239516cc. Start a fresh session before the
-next one. A new terminal and /fankeel → Adopt carries this task over with its
-notes and its route.
+next one. This stage's gate gets a fourth option, hand off: set next, then a new
+terminal and /fankeel → Adopt.
 ```
 
 Read from the transcript, which records what every compaction cost:

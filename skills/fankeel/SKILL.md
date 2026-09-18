@@ -384,8 +384,11 @@ The shape is the same every time, so it can be recognised without being read:
 Three is the floor, not a quota — which is why the rule says *at least*. Dropping
 the pause is how a gate stops being one, so nothing goes below three.
 `AskUserQuestion` caps `options` at four, and the fourth is free for a decision
-that genuinely has one; no stage ships one today. `survey` used to, and what it
-carried — asking whether to read further — is dispatched now rather than asked.
+that genuinely has one. A busy or compacted stage gets one: hand off, offered
+whenever the `context:` line has appeared this stage — its description sets
+`next`, then a new terminal and `/fankeel` → **Adopt**. Nothing else ships a
+fourth; `survey` used to for a different reason, asking whether to read
+further, and that is dispatched now rather than asked.
 
 The lengths are there because "one line" was already the rule and a design stage
 still asked a 491-character question: a paragraph with no newline in it is one
@@ -795,14 +798,19 @@ instead, so a line carrying `(last seen 16d ago)` is an age note and not a
 verdict — `/fankeel` → **Clear out** is how a record gets put down, and only on
 the user's say-so.
 
-A `context:` line means this session has already lost work to compaction, and
-says how much. Pass it on rather than ignoring it: the statusline shows a
-percentage, but only this knows there is a task in flight and that `/fankeel` →
-**Adopt** carries it — task, project, claims, stage, route, notes, `next` and what
-the stages have cost in wall-clock — into a fresh session in one step. Not `burn`:
-that measures a session's own context, and the session is the thing changing. Say it once when the line first appears, and again when its
-wording hardens. Repeating it every turn is nagging, and nagging gets ignored
-exactly when it stops being nagging.
+A `context:` line means this session is busy or has already lost work to
+compaction, and says which. It rides both blocks now, the one before a prompt
+and the one after an answered question — because the gate itself is an
+`AskUserQuestion`, and a session doing nothing but answer it would otherwise
+never see the line at all. Pass it on rather than ignoring it: the statusline
+shows a percentage, but only this knows there is a task in flight, and that
+this stage's gate should offer a fourth option — hand off — that sets `next`,
+then a new terminal and `/fankeel` → **Adopt** carries it — task, project,
+claims, stage, route, notes, `next` and what the stages have cost in
+wall-clock — into a fresh session in one step. Not `burn`: that measures a
+session's own context, and the session is the thing changing. Say it once when
+the line first appears, and again when its wording hardens. Repeating it every
+turn is nagging, and nagging gets ignored exactly when it stops being nagging.
 
 A `gate:` line, in the block that comes back after an answered question, means
 the record carried no `gateAt` when the answer arrived: `hooks/gate.js` did not
