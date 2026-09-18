@@ -6,14 +6,14 @@ status: design-intent
 
 **Goal:** 清空 `TODO.md` 的 `## Ready`：五條照各自寫好的改法做完，每條刪掉自己那一行。
 
-**Architecture:** 這條路線沒有 design stage，五條的改法都寫在條目裡。這一頁記的是 survey 的結論，以及 survey 讀到、條目沒寫的三件事：`tests/detail-cache.test.js:81-82` 把 `v` 寫死成 `2`；`wakes` 要改 detail 的輸出，所以跟第 1 條共用一次進版；`docs/sources.md:15-19` 那一整句都在解釋為什麼少一列，補完就不成立了。
+**Architecture:** 這條路線沒有 design stage，五條的改法都寫在條目裡。這一頁記的是 survey 的結論，以及 survey 讀到、條目沒寫的三件事：`tests/detail-cache.test.js:82-83` 把 `v` 寫死成 `2`；`wakes` 要改 detail 的輸出，所以跟第 1 條共用一次進版；`docs/sources.md:15-19` 那一整句都在解釋為什麼少一列，補完就不成立了。
 
 **基準:** `68f62d2`，porcelain 空，`npm test` 為 `ℹ pass 1512`、`ℹ fail 0`，存於 `.fankeel/build/2026-09-18-ready-five/baseline.txt`。
 
 ## 1. `lib/detail.js` 的 `VERSION` 進 3（Ready 第 1 條）
 
 - `lib/detail.js:523` 的 `const VERSION = 2;` 改成 `3`。`8be3981` 在 `lib/replay.js` 加了 `labels`，但沒有動 `VERSION`；v2 的快取於是在 `lib/detail.js:669` 被當成最新版原樣回傳，`swapped` 只算得到 v2 之後重讀過的 session。
-- `tests/detail-cache.test.js:81-82` 寫死的兩個 `2` 改成 `3`，另外加一支測試：key 對得上的 v2 快取也要重讀。
+- `tests/detail-cache.test.js:82-83` 寫死的兩個 `2` 改成 `3`，另外加一支測試：key 對得上的 v2 快取也要重讀。
 - 刪掉 `TODO.md` `## Ready` 的〔station〕`swapped` 那條。
 
 ## 2. `wakes` 帶到 session 頁（Ready 第 4 條）

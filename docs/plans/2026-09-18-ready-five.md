@@ -43,7 +43,7 @@ status: design-intent
 
 **Dispatch:** in-session — 改一個常數和三行測試；派工的 brief 加上回報，比改動本身還長。
 
-1. 寫失敗的測試。在 `tests/detail-cache.test.js` 把 `:81-82` 兩行改成：
+1. 寫失敗的測試。在 `tests/detail-cache.test.js` 把 `:82-83` 兩行改成：
 
 ```js
     assert.deepEqual([got.fresh, got.detail.v, Array.isArray(got.detail.days)], [true, 3, true]);
@@ -68,7 +68,7 @@ test('a VERSION 2 cache, written before gate questions carried their labels, is 
 node --test tests/detail-cache.test.js
 ```
 
-   預期 `ℹ fail 2`：新測試得到 `[false, 2]`，因為 VERSION 還是 2，key 相同就原樣回傳；`:81` 那行得到 `2`。兩者都只是因為 `VERSION` 還沒改。
+   預期 `ℹ fail 2`：新測試得到 `[false, 2]`，因為 VERSION 還是 2，key 相同就原樣回傳；`:82` 那行得到 `2`。兩者都只是因為 `VERSION` 還沒改。
 
 3. 在 `lib/detail.js` 把 `:523` 改成：
 
@@ -430,7 +430,7 @@ grep -E '^ℹ (tests|pass|fail)' .fankeel/build/2026-09-18-ready-five/final-npm.
 | promise | task |
 |---|---|
 | `lib/detail.js:523` 的 `const VERSION = 2;` 改成 `3`。`8be3981` 在 `lib/replay.js` 加了 `labels` | Task 1 |
-| `tests/detail-cache.test.js:81-82` 寫死的兩個 `2` 改成 `3`，另外加一支測試：key 對得上的 v2 快取也要重讀。 | Task 1 |
+| `tests/detail-cache.test.js:82-83` 寫死的兩個 `2` 改成 `3`，另外加一支測試：key 對得上的 v2 快取也要重讀。 | Task 1 |
 | 刪掉 `TODO.md` `## Ready` 的〔station〕`swapped` 那條。 | Task 1 |
 | `lib/detail.js:632` 的 `requests` 旁邊加 `wakes: seen ? seen.usage.wakes : 0,`。第 1 節的 VERSION 3 也涵蓋這個新欄位 | Task 2 |
 | `assets/station/station.js` 的 `sessionHeadHtml` 在「派工」後面加一格「叫醒」。舊快取沒有 `wakes`，那一格顯示 `—`，不顯示 `0`。 | Task 2 |
