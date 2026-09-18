@@ -94,6 +94,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔memory〕102 條原生記憶裡 50 條引用的檔案在寫完之後改過；`memory-check` 只列不 fail，刪哪一條是使用者的決定 — [docs/documents.md](docs/documents.md). 待決：逐條看、只看引用最多的、還是不動。
 
+- 〔docs〕`docs-check` 不驗 `path#fragment` 的錨點：`scripts/docs-check.js:37` 的 LINK regex 片段群組是 non-capturing 且丟棄，`:180` 只跳過裸 `#...`，所以綠只證明檔案在 — [docs/documents.md](docs/documents.md). 待決：加上錨點解析、還是明寫這個界線。
+
 ## Waiting
 
 - 〔build〕knip 的 unused exports 一格關著：6.32.2 認不得 CJS namespace 取用，開著回 146 個假陽性 — [docs/development.md](docs/development.md). lifts when: knip 認得 CJS namespace property access. 09-13.
