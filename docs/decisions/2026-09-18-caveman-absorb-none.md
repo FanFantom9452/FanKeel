@@ -7,7 +7,7 @@ source_of_truth: lib/usage.js, docs/station.md, skills/registry.json, skills/fan
 # caveman：一樣都不吸收 — 決策紀錄
 
 `TODO.md`〔caveman〕條問的是 caveman 1.0.1 二十個 skill 裡要吸收哪些，背景在
-`docs/improvement-brief.md` §1.5、§6.4。那一條列了三項候選——`caveman-stats`、Native
+`docs/improvement-brief.md` §6.4。那一條列了三項候選——`caveman-stats`、Native
 Core 六個流程 skill（`investigate-first`、`lean-build`、`migration`、
 `safe-refactor`、`surgical-patch`、`verify-and-stop`）、`cavecrew` 的委派決策
 指南——每項都已經有 fankeel 自己的對應，而且更強或至少一樣。三項都不吸收。
