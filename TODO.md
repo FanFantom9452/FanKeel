@@ -92,7 +92,7 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔docs〕`docs/sources.md` 的 Cited by 欄 21 列有 13 列漏了 grep 找得到的 `docs/` 頁，而 `sources.md:4` 說這欄「filled by hand from grep」 — [docs/sources.md](docs/sources.md). 待決：一次補齊、加測試比對 grep，還是改寫那句話。
 
-- 〔skill〕唯讀 agent 的 Bash 寫檔只擋一部分：hook 依名字擋 redirect、`tee`、`rm`/`mv`/`cp`、`sed -i` 與 git 寫入（`5c01be9`），`node -e`、`python -c` 寫檔不在清單 — [lib/guard.js](lib/guard.js). 待決：補清單、拿掉 Bash，還是接受。
+- 〔skill〕唯讀 agent 的 Bash 寫檔只擋一部分：hook 依名字擋 redirect、`tee`、`rm`/`mv`/`cp`、`sed -i` 與 git 寫入，`node -e`、`python -c` 寫檔不在清單 — [lib/guard.js](lib/guard.js). 待決：補清單、拿掉 Bash，還是接受。
 
 - 〔docs〕`.fankeel/build/` 不在 `docs.json` 任何 bucket，不受任何檢查管，但一份任務的證據全在那裡 — [lib/docs.js](lib/docs.js). 待決：進 docs.json 當 fixture、只寫進 documents.md、還是維持不管。
 
