@@ -161,7 +161,7 @@ test('every place that teaches the Waiting convention names the event before the
   // starting at the sentence's own anchor rather than across the whole file.
   const prose = [
     ['docs/development.md', path.join(ROOT, 'docs', 'development.md'),
-      '## Waiting` also carries'],
+      '### <timing>` heading'],
     ['skills/fankeel-audit/rationale.md', path.join(DIR, 'fankeel-audit', 'rationale.md'),
       'One routed to `## Waiting`'],
   ];

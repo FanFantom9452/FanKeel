@@ -47,19 +47,23 @@ prints the split, so the ready count is on screen without opening the file. The
 `land` stage rules call for it, because a plan archived at `land` is a link that
 just moved.
 
-An entry under `## Waiting` also carries `lifts when: <the event>` and then a
-`MM-DD` stamp, and todo-check fails when either is missing. The stamp is the
-day somebody last read that entry and agreed it is still
-waiting — not the day it was filed — so re-reading one and leaving it where it is
-means moving its stamp forward. Entries stamped seven days or older are printed
-below the verdict as **due for a re-read**, without failing the run: sitting under
-`## Waiting` for a fortnight is not a defect, and a script cannot know whether the
-thing an entry waits for has happened. What it can know is how long since a person
-last said it had not. That is worth printing because `## Waiting` has never once
-shrunk in this repository by an entry's blocker resolving. Five times it has
-shrunk: four were somebody re-reading the section and finding an entry misfiled,
-and one a question Claude Code's docs answered before its blocker came. It is
-drained by being read, so the interval between readings is the thing to measure.
+Under `## Waiting`, entries are grouped by what they wait for: a `### <timing>`
+heading at most 28 columns wide — a CJK character counts two — whose next line
+is `lifts when: <the event>` and then a `MM-DD` stamp, followed by the entries
+that lift together when it comes. todo-check fails a Waiting entry under no
+timing, a timing with no entries, one missing its event or its stamp, and a
+title over the width. The stamp is the day somebody last read that timing and
+agreed it is still waiting — not the day it was filed — so re-reading one and
+leaving it where it is means moving its stamp forward. An event that opens with
+an `MM-DD` is a date, and its timing is due from that day; any other timing is
+due once its stamp is seven days old. Due timings print below the verdict as
+**due for a re-read**, without failing the run: sitting under `## Waiting` for a
+fortnight is not a defect, and a script cannot know whether the thing a timing
+waits for has happened. What it can know is a date, and how long since a person
+last said it had not. On 2026-09-18 two entries left because their events had
+happened, and both were found by somebody reading the section rather than by the
+event announcing itself — so the reading is what gets scheduled: `orient` lists
+every timing each time, and `/fankeel` offers one option once any is due.
 
 `## Needs a decision` gets a due list of its own, read off git blame rather
 than a stamp — nobody writes `lifts when:` or a date on those bullets. An

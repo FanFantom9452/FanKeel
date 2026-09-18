@@ -18,7 +18,7 @@ often one that is ready and one that is still an argument.
 |---|---|---|
 | `## Ready` | nothing but someone's hands. The bullet is the specification | the whole section is offered as **one** task |
 | `## Needs a decision` | a person, to settle what the change should be | the newest few `orient` lists, one task each, starting at `design` |
-| `## Waiting` | something that is not a person: real use, upstream, or another entry landing | kept out of the menu — nothing here can move today |
+| `## Waiting` | something that is not a person: real use, upstream, or another entry landing | grouped under `### <timing>`; every timing listed, one option once any is due |
 
 Whoever defers a thing picks its heading, because they know at that moment which
 of the three they are short of. A later reader has to guess.
@@ -29,42 +29,49 @@ decide: it is there so bullets about one area sit together at a glance, and
 it changes neither an entry's state nor what `/fankeel` offers. The heading
 still answers what an entry is waiting for; the prefix only answers what it
 is about, which is the question the heading is deliberately not asking.
+Under `## Waiting` a `###` is not a topic either: it is the timing its entries
+wait for, and they lift together when it comes.
 
-An entry under `## Waiting` carries two things at its end, in this order:
-`lifts when: <the event>`, and then a `MM-DD` stamp. The event is what would make
-the entry actionable — real use, upstream, or another entry landing — and it is
-the one that says whether the entry belongs under this heading at all. On
+Under `## Waiting` entries sit beneath a `### <timing>` — a title at most 28
+columns wide, a CJK character counting two — whose next line is
+`lifts when: <the event>` and then a `MM-DD` stamp. The event is what would make
+the entries actionable — real use, upstream, or another entry landing — and it
+is the one that says whether they belong under this heading at all. On
 2026-09-06 twelve of the thirteen entries here named no event anybody could
 write down, and four of those twelve turned out to be waiting on nothing that
-was ever going to arrive. The stamp is **the day somebody last read it and
-agreed it is still waiting**, not the day it was filed: re-read one, decide it
-is still blocked, and move the stamp forward in the same change. The stamp goes
+was ever going to arrive. An event that opens with an `MM-DD` is a date, and its
+timing is due that day. The stamp is **the day somebody last read the timing and
+agreed it is still waiting**, not the day it was filed: re-read one, decide it is
+still blocked, and move the stamp forward in the same change. The stamp goes
 last, because that is where the check looks for it.
 
-This is the only heading that asks for either. `## Ready` and
+This is the only heading that asks for a timing. `## Ready` and
 `## Needs a decision`'s newest few are read aloud every time `/fankeel` offers a
-menu, so those get looked at whether anyone meant to or not, and `## Waiting` is
-deliberately skipped there. It is the section nothing makes you open, which is
-why it is the one that has to say what it is waiting for and when you last
-agreed it was.
+menu, so those get looked at whether anyone meant to or not. `## Waiting` is the
+section nothing made you open, which is why it has to say what it is waiting for
+and when you last agreed it was — and why `orient` now lists every timing each
+time, and `/fankeel` offers one option to handle them once any is due.
 
-`node scripts/todo-check.js` enforces all six: a link that no longer resolves is
+`node scripts/todo-check.js` enforces all nine: a link that no longer resolves is
 an entry someone forgot to close, a link that still resolves but points at a
 plan, a decision record, a report or an archive is the same entry one step
 earlier — those four roles record a moment rather than the present, so the detail
 behind the bullet is pointing at history however fresh that history is — an entry
 over the length cap is detail written here instead of where it belongs, an entry
 under any other heading is one nobody said the state of, a `## Waiting` entry
-with no stamp is one nobody can tell a fresh deferral from a forgotten one, and a
-`## Waiting` entry with no `lifts when:` is one nobody is waiting for.
+under no timing is one nobody said what it waits for, a timing with no stamp is
+one nobody can tell a fresh deferral from a forgotten one, a timing with no
+`lifts when:` is one nobody is waiting for, a timing with no entries is waiting
+for nothing, and a title over 28 columns is a sentence where a name belongs.
 
-It also prints, without failing the run, the event of every `## Waiting` entry
-whose stamp is seven days or older — so what you are asked is whether that event
-has happened, which is a question about the world rather than about you. That
-list is not a defect report: an entry can sit there correctly filed for a month.
-Before the event was written down this printed the entry itself, and in this
-repository's whole history `## Waiting` had never once shrunk by the thing an
-entry waited for actually happening. It shrank when somebody read it.
+It also prints, without failing the run, every timing that is due — its date has
+come, or its stamp is seven days old — with its event, so what you are asked is
+whether that event has happened, which is a question about the world rather than
+about you. That list is not a defect report: a timing can sit there correctly
+filed for a month. On 2026-09-18 two entries left because their events had
+happened, and both were found by somebody reading the section rather than by the
+event announcing itself. The section is drained by being read, so the reading is
+what gets scheduled.
 
 ## Ready
 

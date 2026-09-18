@@ -109,7 +109,7 @@ was never a note:
 | a project convention | `CLAUDE.md` |
 | a durable fact about the user or repository | the memory directory |
 | why a change was made | the commit message |
-| work deliberately deferred | `TODO.md`, one line, under the heading for what it is short of — under `## Waiting`, `lifts when: <the event>` then a `MM-DD` stamp, or `todo-check` fails the gate below |
+| work deliberately deferred | `TODO.md`, one line, under the heading for what it is short of — under `## Waiting`, beneath a `### <timing>` whose next line is `lifts when: <the event>` then a `MM-DD` stamp, or `todo-check` fails the gate below |
 
 If this task wrote to the memory directory, run
 `node <plugin>/scripts/memory-check.js` once before standing the task down. A
