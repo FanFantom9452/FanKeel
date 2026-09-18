@@ -29,7 +29,7 @@ const { liveConfigDir } = require('../lib/live.js');
 const { resolveRoot } = require('../lib/registry.js');
 const { trackedFiles } = require('../lib/tracked.js');
 const docs = require('../lib/docs.js');
-const { section } = require('../lib/report.js');
+const { plural, section } = require('../lib/report.js');
 const { LINK, CODE, PATHISH, resolveRef, external } = require('./docs-check.js');
 
 const MAX_FINDINGS = 200;
@@ -191,10 +191,7 @@ function report(result) {
         lines.push('exists where it says it does.');
     }
     const staleEntries = new Set(result.stale.map((f) => f.name)).size;
-    const staleTitle = staleEntries + (staleEntries === 1
-        ? ' entry cites a file changed since it was written'
-        : ' entries cite a file changed since they were written');
-    lines.push(...section(staleTitle
+    lines.push(...section(plural(staleEntries, 'entry cites a file changed since it was written', 'entries cite a file changed since they were written')
         + (result.stale.length === staleEntries ? ':' : ', ' + result.stale.length + ' citations:'),
         result.stale.map((f) => f.what), MAX_FINDINGS));
     return lines.join('\n');
