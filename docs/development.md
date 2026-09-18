@@ -76,7 +76,8 @@ it sets them all; with `--changes` it lists the commits since the last
 `chore: <x.y.z>`, which is what a release contains. `npm test` fails when the thirteen
 disagree, so the script is what makes them agree rather than what notices. A
 release used to be eleven edits, and missing one left a skill announcing a version
-the plugin is not — right in ten places, which is how it went unnoticed.
+the plugin is not, unnoticed until [`tests/contract.test.js`](../tests/contract.test.js)
+started running — its comment carries the count now, not this page.
 
 ## Releasing — the steps this repository actually takes
 

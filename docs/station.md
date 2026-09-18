@@ -290,10 +290,9 @@ deliberately. So the stages are derived rather than recorded: `clock` already
 holds when each stage was entered, `registry.windowsFrom` turns that into
 windows, and `hooks/leave.js` passes them into the same single pass that was
 already happening — the parent's pass and each agent's alike, since
-`summariseTree` hands the windows to both halves. Each request lands in the
-window holding its **last** line's timestamp — the same "last line winning"
-rule the `requestId` de-duplication already uses, so a request whose lines
-straddle a boundary is decided by one rule and not two.
+`summariseTree` hands the windows to both halves. Which window a request lands
+in is the same tie-break [registry.md](registry.md) states for `spend`, so a
+request whose lines straddle a boundary is decided by one rule and not two.
 
 Each window runs to the **next stage's start**, not to its own last touch. The
 first starts at `-Infinity`, because the prompt that created the entry is older
