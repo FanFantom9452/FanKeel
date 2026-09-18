@@ -615,7 +615,7 @@ instead:
 | A project convention that will outlive this task | `CLAUDE.md` |
 | A durable fact about the user or the repository | the memory directory |
 | Why a change was made | the commit message |
-| Work deliberately deferred | `TODO.md`, one line, linking to the detail, under the heading for what it is short of — and under `## Waiting`, `lifts when: <the event>` and then a `MM-DD` stamp |
+| Work deliberately deferred | `TODO.md`, one line, linking to the detail, under the heading for what it is short of — and under `## Waiting`, beneath a `### <timing>` whose next line is `lifts when: <the event>` and then a `MM-DD` stamp |
 | A plan whose work has landed | the `archive` bucket, after asking |
 | What was tried and failed, mid-task | a **note** |
 | What to pick up next | **next** |
@@ -720,8 +720,19 @@ loop's place with it. `## Needs a decision` offers the ones `orient`'s `todo:`
 block lists — the newest by last edit, because `AskUserQuestion` holds four and
 `## Ready` takes one when it has entries — one option each, because each is a
 different question for a person, with the rest reachable by name through
-**Other**. `## Waiting` is not offered at all: nothing under it can move today,
-and six unpickable rows are how a menu stops being read. Any other heading, or
+**Other**. `## Waiting` is one option, and only when `orient`'s `todo:` block
+marks a timing `due` — its date has come, or nobody has re-read it in seven
+days. Its timings are never options one by one — six unpickable rows are how a
+menu stops being read — but every one is listed in that block each time, so what
+is waiting is on screen whether or not it is offered. Picking it starts a task
+with `--route "survey,build,land"`. `survey` judges the due timings only: an
+event whose evidence is in the repository, its registry or upstream is checked
+there, and the ones only a person could have witnessed go into one
+`AskUserQuestion`, `multiSelect`, one option per timing with its event as the
+description — which of these has happened? `build` moves a lifted timing's
+entries together to `## Ready` or `## Needs a decision` and drops its `###` and
+its `lifts when:` line; a timing still waiting gets today's stamp, and one whose
+date came without its event gets a new date. `land` runs `todo-check`. Any other heading, or
 none, means clustering by hand — two bullets touching the same file or settling
 the same question are one task and one option, not two. A repository with no
 `TODO.md` is where guessing from the recent commits belongs, one option each,

@@ -566,6 +566,12 @@ test('the init block carries the station line when it is given one, and stays un
   assert.match(out, /<the station line, if any>/, 'the shape has a slot for it');
 });
 
+test('init offers ## Waiting as one option once orient marks a timing due', () => {
+  const out = renderInit({ sessionId: MINE });
+  assert.match(out, /`## Waiting` is one option when `orient` marks any `due`/);
+  assert.doesNotMatch(out, /`## Waiting` stays out/);
+});
+
 // A rule describes a shape; a template is the shape. The stage rules survived a
 // design stage writing nine hundred words, which is the evidence that describing
 // and showing are not the same instruction.
