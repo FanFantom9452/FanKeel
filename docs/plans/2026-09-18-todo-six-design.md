@@ -54,6 +54,12 @@ TODO 那條說有三處重述。survey 查下來**只有一處成立**，另外�
   `MAX_GATES` 的上限，不新增常數。
 - `lib/station.js:445` 的 `gateSummary()` 目前從 `lib/replay.js:122-127` 重算的
   `q.labels` 取 `labels[0]`。改成先讀持久化的欄位，讀不到才回頭用 `replay`。
+
+  **Corrected 2026-09-18:** 出貨的順序與上一句相反。`lib/station.js:454` 的
+  `if (!rows.length)` 讓 replay 先走，持久化的 gates 只在 replay 一列都沒有時
+  才讀；計畫與 `tests/station-gate.test.js` 都是這個順序。transcript 還在的時
+  候 replay 是即時的，持久化的那份是 session 結束時的快照，所以先 replay 才
+  對——寫反的是上面那一句，不是程式。
 - 為什麼要改：`replay` 需要 transcript。transcript 沒了，`picked` 還在（`gates`
   存了），選項文字不在，於是 `swapped` 的分母只算得到 transcript 還在的那些
   session。統計會隨時間縮水，而頁面上看不出來。這是缺陷，不是缺功能。

@@ -285,6 +285,13 @@ test('leave writes gates from the transcript\'s AskUserQuestion calls, with the 
     assert.deepEqual(d.gates, [{ at: askedAt, stage: 'design', header: 'survey', labels: ['進 design', '留在 survey'], picked: '進 design' }]);
 });
 
+// Mutation that reddens this: append `.reverse()` to the `.map(...)` that
+// builds `labels` in `gatesFrom`. Three options with three different labels is
+// what makes order visible here. It reddens the null test below as well —
+// `['A', 'B']` reversed differs — and leaves the empty-slot test green, because
+// `['', 'B', '']` reversed is itself. Two of three is the honest count: the
+// three tests cover adjacent halves of one field, and a mutation that moved
+// order without touching either of the others would have to be contrived.
 test('gatesFrom keeps every option label in the order AskUserQuestion declared them', () => {
     const askedAt = Date.parse('2026-09-18T00:00:00.000Z');
     const entries = [
@@ -363,6 +370,39 @@ test('gatesFrom keeps picked null for a question the answers object never answer
     const out = gates.gatesFrom(entries, [['design', askedAt - 1]], replay.answerOf);
     assert.equal(out[0].picked, null);
     assert.deepEqual(out[0].labels, ['A', 'B']);
+});
+
+// verify sent this back: the plan's Interfaces entry promises both fields are
+// clipped at `PICK_LEN`, and nothing pinned the threshold. Dropping `PICK_LEN`
+// from 120 to 50 left all 56 cases in this file and the two station files
+// green, so the constant could drift in either direction without a red.
+// Mutation that reddens this and nothing else: change `PICK_LEN` in
+// `lib/gates.js` to any other number — every other label and answer in the
+// suite is far shorter than either value, so only this case can see it.
+test('gatesFrom clips a label and an answer at PICK_LEN', () => {
+    const askedAt = Date.parse('2026-09-18T00:00:00.000Z');
+    const long = 'x'.repeat(200);
+    const entries = [
+        {
+            type: 'assistant', timestamp: '2026-09-18T00:00:00.000Z',
+            message: { content: [{
+                type: 'tool_use', id: 'a1', name: 'AskUserQuestion',
+                input: { questions: [{
+                    question: 'q', header: 'design',
+                    options: [{ label: long }, { label: 'B' }],
+                }] },
+            }] },
+        },
+        {
+            type: 'user', timestamp: '2026-09-18T00:00:01.000Z',
+            message: { content: [{ type: 'tool_result', tool_use_id: 'a1' }] },
+            toolUseResult: { answers: { q: long } },
+        },
+    ];
+    const out = gates.gatesFrom(entries, [['design', askedAt - 1]], replay.answerOf);
+    assert.equal(out[0].labels[0].length, 120);
+    assert.equal(out[0].picked.length, 120);
+    assert.equal(out[0].labels[1], 'B', 'a short label beside it is untouched');
 });
 
 test('a session with no AskUserQuestion writes no gates field', () => {
