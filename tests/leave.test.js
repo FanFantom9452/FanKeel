@@ -8,6 +8,7 @@ const { execFileSync } = require('node:child_process');
 const registry = require('../lib/registry.js');
 const tmp = require('./tmp.js');
 const gates = require('../lib/gates.js');
+const replay = require('../lib/replay.js');
 
 const HOOK = path.join(__dirname, '..', 'hooks', 'leave.js');
 const SID = 'aaaaaaaa-1111-4111-8111-111111111111';
@@ -332,6 +333,36 @@ test('gatesFrom keeps an empty or missing label\'s slot so labels[0] is still op
     ];
     const out = gates.gatesFrom(entries, [['design', askedAt - 1]], function (a) { return a; });
     assert.deepEqual(out[0].labels, ['', 'B', '']);
+});
+
+// Fix round 2: an unanswered gate keeps `picked: null` rather than the `''`
+// `clip` makes of it. `lib/station.js`'s `gateSummary()` skips a null on both
+// of its sources, so `''` here would make the persisted source count a gate
+// nobody answered as option one losing — an answer the replay source it stands
+// in for never gives. `replay.answerOf` is passed rather than an identity stub
+// because it is what `hooks/leave.js:112` passes, and the null starts there.
+test('gatesFrom keeps picked null for a question the answers object never answered', () => {
+    const askedAt = Date.parse('2026-09-18T00:00:00.000Z');
+    const entries = [
+        {
+            type: 'assistant', timestamp: '2026-09-18T00:00:00.000Z',
+            message: { content: [{
+                type: 'tool_use', id: 'a1', name: 'AskUserQuestion',
+                input: { questions: [{
+                    question: 'q', header: 'design',
+                    options: [{ label: 'A' }, { label: 'B' }],
+                }] },
+            }] },
+        },
+        {
+            type: 'user', timestamp: '2026-09-18T00:00:01.000Z',
+            message: { content: [{ type: 'tool_result', tool_use_id: 'a1' }] },
+            toolUseResult: { answers: {} },
+        },
+    ];
+    const out = gates.gatesFrom(entries, [['design', askedAt - 1]], replay.answerOf);
+    assert.equal(out[0].picked, null);
+    assert.deepEqual(out[0].labels, ['A', 'B']);
 });
 
 test('a session with no AskUserQuestion writes no gates field', () => {

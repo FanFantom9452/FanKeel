@@ -614,4 +614,26 @@ test('the data script src takes a digits-only cleared and nothing else', () => {
     assert.match(crafted, /station-data\.js"/);
 });
 
+// `gather()` is the only producer of the `gates` field `gateSummary()`'s
+// fallback reads, and `tests/station-gate.test.js` cannot see it: every test
+// there builds its session rows by hand. So the wiring had no test at all —
+// deleting it broke the feature in production and left the whole suite green.
+test('gather carries a session record\'s gates onto the session row', () => {
+    // Mutation that reddens this and nothing else: delete
+    // `gates: Array.isArray(data.gates) ? data.gates : null` from the
+    // `sessions.push({...})` in `gather()` — the row's `gates` comes back
+    // undefined and the fallback has nothing to read.
+    const written = [{ at: 1, stage: 'build', header: 'ship it?', labels: ['A', 'B'], picked: 'B' }];
+    const m = chartFixture('cccccccc-4444-4444-8444-444444444444', { gates: written });
+    assert.deepEqual(m.registries[0].sessions[0].gates, written);
+});
+
+// The other half of the same field: a record written before `gates` existed,
+// or by a session that never asked, must give the row `null` rather than
+// `undefined` — `serialize()` enumerates the field either way.
+test('gather gives a session with no gates record a null gates field', () => {
+    const m = chartFixture('eeeeeeee-4444-4444-8444-444444444444', {});
+    assert.equal(m.registries[0].sessions[0].gates, null);
+});
+
 

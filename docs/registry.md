@@ -257,7 +257,11 @@ nothing else:
   order `AskUserQuestion` declared them — each capped at 120 characters, an
   empty one kept in place rather than filtered out, since dropping it would
   shift every later index — and `picked` is the chosen option's label, the
-  same cap, the text typed when it was Other. At most `MAX_GATES` (60),
+  same cap, the text typed when it was Other, and `null` when the question
+  was never answered. That null is kept rather than clipped to `''`:
+  `gateSummary()` cannot tell an empty answer from an unanswered one, and an
+  empty one there would be counted as option one losing, which the replay
+  path it stands in for never does. At most `MAX_GATES` (60),
   oldest dropped. Written only when the session ends cleanly, because
   `hooks/leave.js` runs at `SessionEnd` alone — a session that never reaches
   it carries no `gates` at all. While the transcript is still there, the
