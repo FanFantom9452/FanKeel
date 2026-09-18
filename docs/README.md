@@ -159,8 +159,8 @@ running a session, the station's home page turns each project's own
 | Why three lib modules with one caller each were not folded into their callers | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *one caller is not evidence on its own* |
 | Why a hook says nothing when it is handed a session id it cannot find | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *a hook that cannot tell a wrong id from no plugin* |
 | Why `docs-check` leaves a drifted citation alone when it is unquoted, or the page's role is not `reference` | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *the document checker stops where the machine stops* |
-| Why a `## Waiting` entry names an event and not only a date | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *`## Waiting` asks for an event* |
-| Why `todo-check` refuses an entry with no event but never judges whether the event is real | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *the check does not grade the event* |
+| Why a `## Waiting` timing names an event and not only a date | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *`## Waiting` asks for an event* |
+| Why `todo-check` refuses a timing with no event but never judges whether the event is real | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *the check does not grade the event* |
 | Where to look for every place a rule is taught, before changing the rule | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *a rule is taught in more places than a search finds* |
 | How to run the behaviour eval, and what to do when `claude plugin eval` says early access | [evals.md](evals.md) |
 | How the plugin is built and checked, and the four scripts that stop a written claim drifting | [development.md](development.md) |

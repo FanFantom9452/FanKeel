@@ -687,8 +687,8 @@ against it rather than searching for the path.
 It reports where the registry is or would be, then the project or projects it
 found — each with its git branch, how dirty it is, and how many files — and, for
 a single project, the directories inside it with their file counts, and a `todo:`
-block — Ready and Waiting counts, and Needs a decision's newest few by last edit.
-It writes nothing.
+block — the Ready count, Needs a decision's newest few by last edit, and every
+Waiting timing, due ones first. It writes nothing.
 
 Run it before the options below, and show what came back. Two rules about how it
 feeds the next step:
