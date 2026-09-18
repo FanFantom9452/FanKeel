@@ -21,13 +21,13 @@
 // belongs.
 // An entry under no known heading is one nobody said the state of, and `init`
 // then has to guess which entries can become a task today.
-// A `## Waiting` entry with no date stamp is one nobody can age, and the section
-// that grows fastest is exactly the one where that matters — see the block above
-// `REREAD_DAYS`.
-// A `## Waiting` entry with no `lifts when:` clause is one nobody is waiting
-// for. The stamp says when somebody last looked, and a person can always
-// refresh that honestly, so it cannot say whether there is anything left to
-// look for — on 2026-09-06 twelve of thirteen entries named no event at all.
+// Under `## Waiting` entries sit beneath a `###` timing — what they wait for —
+// and the timing carries what each entry used to: a line naming the event with
+// `lifts when:`, ending in a date stamp. A timing with no stamp is one nobody
+// can age, and one with no event is one nobody is waiting for: the stamp says
+// when somebody last looked, and a person can always refresh that honestly, so
+// it cannot say whether there is anything left to look for — on 2026-09-06
+// twelve of thirteen entries named no event at all.
 //
 // Nothing else is judged, and the re-read list below is deliberately not a
 // judgement. Whether the work is still worth doing is not a thing a script can
@@ -90,9 +90,10 @@ const STALE_ROLES = ['decision', 'plan', 'report', 'archive'];
 // `## Waiting` has shrunk five times in this repository's history — c50a5d5,
 // a62863e, 811219c, 3fadc08 and 0004ad5. Four were somebody re-reading the
 // section and finding an entry misfiled, and one a question Claude Code's docs
-// answered first. Not one entry has ever left because the external thing it
-// named actually happened. The section is drained by being read, so the
-// interval to measure is the one between readings.
+// answered first; none of the five was the thing it named actually happening.
+// On 2026-09-18 two did leave that way (cdb240e), and both were found by
+// somebody reading the section. It is drained by being read, so the interval
+// to measure is the one between readings.
 //
 // Seven and not the fortnight the documentation sweep runs on, because the
 // fortnight caught nothing: on 2026-09-01 the four oldest entries had sat
@@ -126,6 +127,45 @@ function liftsAt(text) {
     if (!m) return null;
     const event = m[1].replace(STAMP, '').trim().replace(/\.$/, '').trim();
     return event || null;
+}
+
+// A timing's title, in terminal columns rather than characters. A CJK or
+// full-width character takes two, so a cap in characters would let a Chinese
+// title run twice as wide as an English one. 28 is fourteen Chinese characters
+// or twenty-eight letters — the arithmetic AskUserQuestion's header already
+// uses, twelve characters or six in CJK.
+const MAX_TITLE_WIDTH = 28;
+const WIDE = /[ᄀ-ᅟ⺀-꓏가-힣豈-﫿︰-﹏＀-｠￠-￦]/;
+
+function width(s) {
+    let n = 0;
+    for (const c of String(s).replace(/`/g, '')) n += WIDE.test(c) ? 2 : 1;
+    return n;
+}
+
+function mmdd(t) {
+    const d = new Date(t);
+    return String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+// An event that opens with `MM-DD` is a date, and its timing is due from that
+// day rather than a week after its stamp — the one kind of event a script can
+// judge. The day is the first one on or after the stamp: a `01-05` stamped
+// `12-20` is next January.
+const DATE = /^(\d{2})-(\d{2})(?!\d)/;
+
+function dateAt(event, stamped) {
+    const m = event === null ? null : DATE.exec(event);
+    if (!m || stamped === null) return null;
+    const month = Number(m[1]);
+    const day = Number(m[2]);
+    const year = new Date(stamped).getFullYear();
+    for (const y of [year, year + 1]) {
+        const at = new Date(y, month - 1, day);
+        if (at.getMonth() !== month - 1 || at.getDate() !== day) continue;
+        if (at.getTime() >= stamped) return at.getTime();
+    }
+    return null;
 }
 
 // Whether the day arithmetic slips a day across a DST transition is untested.
@@ -179,16 +219,25 @@ function entries(text) {
         if (current) out.push(current);
         current = null;
     };
+    let timing = null;
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         if (/^#{1,6}\s/.test(line)) {
             close();
+            // Under `## Waiting` a `###` is a timing, not a section: the entries
+            // below it wait for the same thing and lift together. Anywhere else
+            // it is a heading like any other, and still unclassified.
+            if (/^#{3,6}\s/.test(line) && section === 'Waiting') {
+                timing = i + 1;
+                continue;
+            }
             section = line.replace(/^#+\s*/, '').trim();
+            timing = null;
             continue;
         }
         if (/^[-*]\s+\S/.test(line)) {
             close();
-            current = { line: i + 1, end: i + 1, section, text: line.replace(/^[-*]\s+/, '') };
+            current = { line: i + 1, end: i + 1, section, timing, text: line.replace(/^[-*]\s+/, '') };
             continue;
         }
         if (current && /^\s+\S/.test(line)) {
@@ -211,6 +260,37 @@ function linksIn(text) {
         const target = m[1].trim().split(/\s+/)[0].replace(/^<|>$/g, '');
         if (!target || EXTERNAL.test(target)) continue;
         out.push(target.split('#')[0]);
+    }
+    return out;
+}
+
+// Every `###` under `## Waiting`, with the line after it read as its lifts line:
+// the event it waits for and the day somebody last agreed it still does. The
+// first non-blank line is taken whatever it says, so a line with a stamp and no
+// `lifts when:` is `unlifted` rather than `undated` too.
+function timings(text, now) {
+    const at = now === undefined ? Date.now() : now;
+    const lines = text.split(/\r?\n/);
+    const found = entries(text);
+    const out = [];
+    let section = '';
+    for (let i = 0; i < lines.length; i++) {
+        const h = /^(#{1,6})\s+(.*)$/.exec(lines[i]);
+        if (!h) continue;
+        if (h[1].length >= 3 && section === 'Waiting') {
+            let j = i + 1;
+            while (j < lines.length && !lines[j].trim()) j++;
+            const next = j < lines.length && !/^#{1,6}\s|^[-*]\s/.test(lines[j]) ? lines[j] : '';
+            const event = next ? liftsAt(next) : null;
+            const stamp = next ? stampAt(next, at) : null;
+            const date = dateAt(event, stamp);
+            const days = stamp === null ? null : Math.floor((at - stamp) / 86400000);
+            const due = date !== null ? at >= date : days !== null && days >= REREAD_DAYS;
+            out.push({ line: i + 1, title: h[2].trim(), event, stamp, date, days, due,
+                items: found.filter((e) => e.timing === i + 1) });
+            continue;
+        }
+        section = h[2].trim();
     }
     return out;
 }
@@ -238,34 +318,13 @@ function check(file, now) {
         // a menu, so those are looked at whether or not anyone meant to;
         // `Waiting` is the one that is skipped by design and therefore the one
         // that needs a date to say when it last was not.
-        if (entry.section === 'Waiting') {
-            const stamped = stampAt(entry.text, at);
-            if (stamped === null) {
-                problems.push({
-                    line: entry.line,
-                    kind: 'undated',
-                    detail: 'no MM-DD stamp. End the entry with the date somebody last read it and'
-                        + ' confirmed it is still waiting — without one it cannot be told from an entry'
-                        + ' nobody has looked at since it was filed.',
-                });
-            } else {
-                const days = Math.floor((at - stamped) / 86400000);
-                if (days >= REREAD_DAYS) overdue.push({ line: entry.line, days, text: entry.text, lifts: liftsAt(entry.text) });
-            }
-            // Independent of the stamp. An entry can carry a date and still be
-            // waiting for nothing, and that is the case the date cannot show:
-            // it is refreshed by being read, so a thing nobody is waiting for
-            // reads exactly like a thing somebody checked this morning.
-            if (liftsAt(entry.text) === null) {
-                problems.push({
-                    line: entry.line,
-                    kind: 'unlifted',
-                    detail: 'no "lifts when:" clause. Name the event that would make this actionable'
-                        + ' — real use, upstream, or another entry landing. An entry that cannot name'
-                        + ' one is not waiting for anything: it belongs under another heading, or as'
-                        + ' a comment in the code it is about.',
-                });
-            }
+        if (entry.section === 'Waiting' && entry.timing === null) {
+            problems.push({
+                line: entry.line,
+                kind: 'untimed',
+                detail: 'under ## Waiting but under no ### timing. Put it beneath the ### naming what it'
+                    + ' waits for, or open one: a title, then a "lifts when: <the event>. MM-DD." line.',
+            });
         }
         if (!SECTIONS.includes(entry.section)) {
             problems.push({
@@ -304,6 +363,48 @@ function check(file, now) {
             }
         }
     }
+
+    // The stamp and the event live on the timing now, one line for every entry
+    // beneath it, so what used to be asked of each Waiting entry is asked here.
+    for (const t of timings(text, at)) {
+        if (t.stamp === null) {
+            problems.push({
+                line: t.line,
+                kind: 'undated',
+                detail: 'no MM-DD stamp on its lifts line. End that line with the date somebody last read'
+                    + ' this timing and confirmed it is still waiting — without one it cannot be told from'
+                    + ' one nobody has looked at since it was filed.',
+            });
+        }
+        if (t.event === null) {
+            problems.push({
+                line: t.line,
+                kind: 'unlifted',
+                detail: 'no "lifts when:" on the line after it. Name the event that would make its entries'
+                    + ' actionable — real use, upstream, or another entry landing. A timing that cannot'
+                    + ' name one is not waiting for anything.',
+            });
+        }
+        if (!t.items.length) {
+            problems.push({
+                line: t.line,
+                kind: 'empty timing',
+                detail: 'no entries under it. A timing lifts the entries beneath it; with none it is'
+                    + ' waiting for nothing — remove it.',
+            });
+        }
+        const w = width(t.title);
+        if (w > MAX_TITLE_WIDTH) {
+            problems.push({
+                line: t.line,
+                kind: 'long title',
+                detail: w + ' columns, cap is ' + MAX_TITLE_WIDTH + ' — a CJK character counts two.'
+                    + ' The title names the timing; the event goes on its lifts line.',
+            });
+        }
+        if (t.due) overdue.push({ line: t.line, days: t.days, title: t.title, lifts: t.event, date: t.date, count: t.items.length });
+    }
+    problems.sort((a, b) => a.line - b.line);
 
     // N26: the same "how long since anyone touched this" question
     // `## Waiting`'s stamp already answers, asked of `## Needs a decision`
@@ -379,15 +480,15 @@ function report(result) {
     // under `Waiting` for a month and be filed correctly the whole time — so the
     // run stays green and the list is the prompt to go and look.
     if (result.overdue && result.overdue.length) {
-        lines.push('', '  due for a re-read — nobody has checked these events in '
+        lines.push('', '  due for a re-read — the date has come, or nobody has checked the event in '
             + REREAD_DAYS + ' days or more:');
         for (const o of result.overdue) {
-            // The event, not the entry. What a reader can act on is whether the
-            // thing has happened, and the rest of the entry is the part they
-            // already skipped every time the menu left this section out.
-            const short = (o.lifts || o.text).replace(/\s+/g, ' ').trim();
-            lines.push('    ' + result.file + ':' + o.line + '  ' + String(o.days).padStart(3)
-                + ' days  ' + (short.length > 72 ? short.slice(0, 71) + '…' : short));
+            // The event, not the entries. What a reader can act on is whether the
+            // thing has happened; the entries are what they skip until it has.
+            const when = o.date !== null ? mmdd(o.date) + '   ' : String(o.days).padStart(3) + ' days';
+            const short = (o.title + ' (' + o.count + ') — ' + (o.lifts || '')).replace(/\s+/g, ' ').trim();
+            lines.push('    ' + result.file + ':' + o.line + '  ' + when + '  '
+                + (short.length > 72 ? short.slice(0, 71) + '…' : short));
         }
     }
     if (result.needsDecisionDue && result.needsDecisionDue.length) {
@@ -428,4 +529,4 @@ if (require.main === module) {
     process.exit(ok ? 0 : 1);
 }
 
-module.exports = { MAX_ENTRY_CHARS, REREAD_DAYS, SECTIONS, linksIn, entries, check, report, main };
+module.exports = { MAX_ENTRY_CHARS, REREAD_DAYS, SECTIONS, linksIn, entries, timings, width, mmdd, check, report, main };
