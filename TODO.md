@@ -70,12 +70,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Needs a decision
 
-- 〔cuts〕沒人用的：`lib/docs.js:198` 的 `bucketFor` 零呼叫；`scripts/stage-registry.js` 的 `--root`、`--print` 沒有呼叫端。09-18 audit，約 -19 行 — [lib/docs.js](lib/docs.js).
-
-- 〔cuts〕內建就有的：`pad2` 換 `padStart`；兩處 `HOME || USERPROFILE` 換 `os.homedir()`；`skills-check.js` 的 `walkSkillMd` 換 `readdirSync` 的 `recursive`。約 -7 行 — [scripts/skills-check.js](scripts/skills-check.js).
-
-- 〔cuts〕可以更短的：`lib/ledger.js` 四段同形迴圈、`scripts/station.js` 四個 POST 的 nonce 開頭、`scripts/task.js` 兩個 `registry.update` 外殼。約 -22 行 — [lib/ledger.js](lib/ledger.js).
-
 ## Waiting
 
 - 〔gates〕第一筆 `gates` 資料：程式碼 2026-09-18T00:18 落地，136 筆 entry 目前 0 筆有它 — [lib/gates.js](lib/gates.js). lifts when: 0.70.0 裝好、換終端機後有 session 正常結束. 09-18.
