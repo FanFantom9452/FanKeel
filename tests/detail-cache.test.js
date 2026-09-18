@@ -79,8 +79,8 @@ test('a cache from an older VERSION is read again while the transcript is there,
     const { file } = oldCache(f, { key: detail.keyOf(f.t), at: Date.parse(T(30)) });
     const ended = Object.assign({}, f.data, { ended: { at: T(20), reason: 'exit' } });
     const got = detail.detailOf(f.cfg, SID, ended);
-    assert.deepEqual([got.fresh, got.detail.v, Array.isArray(got.detail.days)], [true, 2, true]);
-    assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).v, 2, 'the cache is rewritten at the new version');
+    assert.deepEqual([got.fresh, got.detail.v, Array.isArray(got.detail.days)], [true, 3, true]);
+    assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).v, 3, 'the cache is rewritten at the new version');
 });
 
 test('a cache from an older VERSION is kept as it stands once the transcript is gone, and a spent budget returns it too', () => {
@@ -91,4 +91,11 @@ test('a cache from an older VERSION is kept as it stands once the transcript is 
     assert.deepEqual(detail.detailOf(f.cfg, SID, f.data), { detail: old, fresh: false });
     assert.deepEqual(detail.detailOf(f.cfg, SID, f.data, { reuse: true }), { detail: old, fresh: false });
     assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), old, 'nothing rewrote it');
+});
+
+test('a VERSION 2 cache, written before gate questions carried their labels, is read again even when its key still matches', () => {
+    const f = setup();
+    oldCache(f, { v: 2, key: detail.keyOf(f.t), at: Date.parse(T(30)) });
+    const got = detail.detailOf(f.cfg, SID, f.data);
+    assert.deepEqual([got.fresh, got.detail.v], [true, 3]);
 });

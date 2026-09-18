@@ -68,8 +68,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔station〕`swapped` 只數到 2610 筆 gate question 裡的 89 筆：`8be3981` 加 `labels` 時沒動 `lib/detail.js` 的 `VERSION`，212 份快取全帶 `v: 2`，失效不觸發，舊快取原樣回傳 — [lib/detail.js](lib/detail.js). 改法：`VERSION` 進 3。
-
 - 〔scripts〕`scripts/memory-check.js` 把 stale 的引用數當條目數印：每個引用推一列，摘要行直接拿 `.length`，今天是 49 個引用散在 27 條裡卻寫「49 entries」 — [scripts/memory-check.js](scripts/memory-check.js). 改法：摘要行改數不重複的條目。
 
 - 〔agents〕`fankeel-reader.md` 沒叫它把互不相依的 Read/Grep 放在同一個回應：reader 看起來像 pipeline，是模型一回合只發一個工具呼叫，不是讀 git 慢 — [agents/fankeel-reader.md](agents/fankeel-reader.md). 改法：`## Searching` 加一句。
