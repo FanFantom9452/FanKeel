@@ -93,7 +93,7 @@ A slug already on disk gets `-2` rather than overwriting the first record
 `--answer` or `--slug` exits 1 before anything is written. It then appends a
 row to `docs/README.md`'s own `## Judgements` table when that heading exists,
 and says so plainly when it does not rather than inventing one
-(`scripts/judge.js:50-66`, `indexRow`).
+(`scripts/judge.js:61-77`, `indexRow`).
 
 [The fankeel-ask skill](../skills/fankeel-ask/SKILL.md) owns this command and
 every flag on it. The pointer earlier in this section comes *before* the
