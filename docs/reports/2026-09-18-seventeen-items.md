@@ -159,6 +159,7 @@ fankeel/
 |---|---|
 | Ready | 〔agents〕reader 把互不相依的讀取放同一個回應 |
 | Ready | 〔station〕`usage.wakes` 有算沒顯示 |
+| Ready | 〔docs〕`docs/sources.md` 漏了 09-15 報告的列 |
 | Needs a decision | 〔station〕主迴圈成本分解 |
 | Needs a decision | 〔station〕profile 卡兩次沒找到 |
 | Needs a decision | 〔docs〕archive 會被 Grep 搜到 |
@@ -175,3 +176,5 @@ fankeel/
   已經有了，記在上面 I 那一列。
 - **沒寫「station 設計手法可攜化」的條目。** 那是重開 N22，關卡上沒選；要做的話說一聲。
 - **沒碰 caveman 與 ponytail 的解除安裝。** 那是你機器上的外掛設定。
+- **沒補 09-15 報告在 `docs/sources.md` 的列。** build 時發現它在這之前就漏了；補它要先
+  讀完那份報告，所以記成 Ready 條目。這份報告自己的列有補上。
