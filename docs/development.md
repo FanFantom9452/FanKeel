@@ -157,7 +157,7 @@ knip 6.32.2 does not resolve CJS namespace property access, so it called 146
 genuinely used exports unused. One barrel shows it with one variable changed:
 `knip --trace-export badgeWord`, destructured at `tests/badge.test.js:9`,
 returns `import[badgeWord] ⎆ ✓`; `knip --trace-export clearBadge`, reached as
-`badge.clearBadge`, returns `(no imports found) ✗` — and `scripts/task.js:127`
+`badge.clearBadge`, returns `(no imports found) ✗` — and `scripts/task.js:138`
 and `hooks/inject.js:120` call it. The shape is not rare here: counting lines
 under `tests/` that bind a module from `../lib/`, `../scripts/` or `../hooks/`
 to a plain identifier rather than destructuring it gives 60 lines across 40 of
