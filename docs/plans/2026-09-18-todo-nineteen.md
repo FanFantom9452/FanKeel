@@ -95,10 +95,6 @@ last_verified: 2026-09-18
 | `tests/task.test.js` | — | — | T9 |
 | `TODO.md` | T3, T7, T19 | — | — |
 
-# Plan part A — Tasks 1-6
-
-Spec: [docs/plans/2026-09-18-todo-nineteen-design.md](../../../docs/plans/2026-09-18-todo-nineteen-design.md)
-
 ## Global Constraints
 
 - `package.json` has no `dependencies` and no `devDependencies`; `test` is
@@ -3580,7 +3576,7 @@ letters or digits kept, along with `-` and `_`; each space becomes its own
 `-` (not collapsed — two adjacent spaces make two hyphens, confirmed below
 against a citation already in this repository); a heading repeated in the
 same document gets `-1`, `-2`, `-3` in the order it appears; heading markup —
-backticks, a link's own `[text](url)`, `*`/`_`-style emphasis — is reduced to
+backticks, a link's bracketed text (its target dropped), `*`/`_`-style emphasis — is reduced to
 its plain text before slugging.
 
 A failure is reported exactly like an existing dead link — same `tag: 'gone'`,
