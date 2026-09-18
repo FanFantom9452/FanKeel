@@ -108,15 +108,17 @@ knows whose tree applies. One registry can cover five of them and nothing else
 needs to know which. Ask for it only when the root holds more than one, and never
 ask for a file list — there is nothing to declare and nothing to get wrong.
 
-Thirteen more are written without anyone typing them. Five of those —
+Fourteen more are written without anyone typing them. Five of those —
 `ended`, `model`, `usage`, `spend` and `gates` — arrive once, from
 `hooks/leave.js` when the session ends, and
-[docs/registry.md](../../docs/registry.md) has their shape; the eight below
+[docs/registry.md](../../docs/registry.md) has their shape; the nine below
 are the ones every session carries. `route` and `class` come from
 the class picked at `start`, `configDir` records which config directory this
 session runs under, so another session can look for its liveness in the right
-place, and `burn` is what each stage cost — two token counts per stage, written
-by the same prompt hook that refreshes `updated`.
+place, `version` is the plugin's own `package.json` version, fixed at `start`
+or `adopt` and left alone when `task` renames the task, and `burn` is what
+each stage cost — two token counts per stage, written by the same prompt hook
+that refreshes `updated`.
 
 `land` is `{integration, push, at}`, written once by `task.js land` when the
 integration is chosen — `push` is absent unless `--push` or `--no-push` said
@@ -146,7 +148,7 @@ is not `Stop`, and what it does instead of measuring anything, is in
 [docs/registry.md](../../docs/registry.md) — this is the short form, not the
 only copy.
 
-A fourteenth, `gateAt`, is deliberately not below. It exists only between a
+A fifteenth, `gateAt`, is deliberately not below. It exists only between a
 question going out and its answer arriving — and a record that lacks it when the
 answer arrives is what the `gate:` line under **While the mode is on** reports.
 
