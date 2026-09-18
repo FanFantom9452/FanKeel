@@ -10,7 +10,7 @@ const { execFileSync } = require('node:child_process');
 const orient = require('../scripts/orient.js');
 const tmp = require('./tmp.js');
 const { human } = require('../lib/report.js');
-const { OVERLAPS } = require('../lib/skill-overlap.js');
+const { OVERLAPS } = require('../scripts/orient.js');
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'orient.js');
 
 // A workspace is built rather than pointed at, because the interesting cases are

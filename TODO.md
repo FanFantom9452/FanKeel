@@ -102,8 +102,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔scripts〕`lib/skills.js` 的 `acceptedFlags` 對 judge、ledger、task、station、survey 五支都回空集合，旗標全不被閘門檢查；「第二支用同樣形狀」的條件 09-18 已過 — [lib/skills.js](lib/skills.js). 待決：讓它讀動態 options、五支改成字面量，還是接受。
 
-- 〔lib〕`lib/skill-overlap.js` 只有一個 production caller，折進 `scripts/orient.js` 既不多帶依賴也不會把測試推到 spawn 後面 — [lib/skill-overlap.js](lib/skill-overlap.js). 待決：折進去、還是留著。（audit 2026-09-18，8 行）
-
 - 〔lib〕三處重複：`lib/usage.js` 兩個函式各自重寫 `entriesOf()`、`lib/registry.js` 四個三行三元式、`lib/live.js` 手工組 Set — [lib/usage.js](lib/usage.js). 待決：三處都收、只收 usage.js、還是都不動。（audit 2026-09-18，13 行）
 
 - 〔ledger〕plan 階段的 commit 不在 ledger 任何一列：`ranges` 從 Task 1 的 BASE 起算，verify 會把它報成沒人審 — [scripts/ledger.js](scripts/ledger.js). 待決：`init` 記下 plan 的範圍、plan reviewer 寫帶範圍的行，或讓 verify 認得它。

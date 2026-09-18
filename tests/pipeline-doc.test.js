@@ -12,7 +12,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { byName } = require('../lib/stages.js');
-const { OVERLAPS } = require('../lib/skill-overlap.js');
+const { OVERLAPS } = require('../scripts/orient.js');
 
 const PIPELINE = path.join(__dirname, '..', 'docs', 'pipeline.md');
 
@@ -61,7 +61,7 @@ test('every stage diagram quotes one line of its own rule', () => {
   }
 });
 
-// docs/pipeline.md's overlap table defers to lib/skill-overlap.js rather than
+// docs/pipeline.md's overlap table defers to scripts/orient.js rather than
 // carrying its own copy of the collisions — this is what keeps the two from
 // drifting apart the way the stage diagrams above did.
 test('the overlap table under "Another plugin\'s process skill, for the same stage" matches OVERLAPS, in order', () => {
