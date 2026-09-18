@@ -75,6 +75,21 @@ test('a gate with no answer counts toward neither lost nor total', () => {
     assert.deepEqual(out.gates.swapped, []);
 });
 
+test('a session with no detail but a persisted gates entry still counts toward swapped', () => {
+    // Mutation that reddens this: remove the `if (!rows.length)` fallback
+    // block in `gateSummary()` (the part that reads `s.gates` when the
+    // replay-derived `rows` is empty) — with `detail` null there is no
+    // `s.detail.events` to read either, so `swapped` would come back `[]`
+    // instead of one row for `A`.
+    const session = Object.assign(fakeSession('s1', []), {
+        detail: null,
+        gates: [{ at: 1, stage: 'build', header: 'ship it?', labels: ['A', 'B'], picked: 'B' }],
+    });
+    const model = fakeModel([fakeRegistry('F:\\ws\\a', [session])]);
+    const out = parseSerialize(model);
+    assert.deepEqual(out.gates.swapped, [{ label: 'A', lost: 1, total: 1 }]);
+});
+
 test('an Other answer (own: true) still counts as option one losing, same as a listed answer that differs', () => {
     // `own` is a different measurement — whether the person typed Other at
     // all — and `gateSummary()` never reads it; this pins that an Other
