@@ -148,6 +148,21 @@ table.t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 /* layout blocks */
 .grid2{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:14px;align-items:start}
 .grid2>.panel{margin-bottom:0}
+.rcol>.panel:last-child{margin-bottom:0}
+.docs .dproj{border-top:1px solid var(--rule);margin-top:12px;padding-top:2px}
+.docs .dproj:first-child{border-top:0;margin-top:0;padding-top:0}
+.docs summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:10px;padding:12px 2px 10px;border-radius:6px}
+.docs summary::-webkit-details-marker{display:none}
+.docs summary::before{content:"";flex:0 0 auto;align-self:center;width:6px;height:6px;border-right:1.5px solid var(--muted);
+  border-bottom:1.5px solid var(--muted);transform:rotate(-45deg);margin:0 3px 0 1px;transition:transform .15s ease-out}
+.docs details[open]>summary::before{transform:rotate(45deg) translate(-1px,-1px)}
+.docs summary:hover{background:var(--wash)}
+.docs .nm{font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px}
+.docs .when{color:var(--muted);font-size:12px;white-space:nowrap}
+.dgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px;padding-bottom:6px}
+.dsub{font-size:12px;color:var(--ink2);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin:0 0 5px;font-weight:600}
+.dsub .n{font:400 11px var(--f-mono);color:var(--muted)}
+.dnote{font:11px var(--f-mono);color:var(--muted);margin:-1px 0 5px}
 .hero-top{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
 .hero-title h1{font-size:28px;font-weight:300;font-stretch:87.5%;letter-spacing:-.01em;margin-top:2px}
 .hero-title h1 b{font-weight:600}

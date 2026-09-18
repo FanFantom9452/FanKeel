@@ -904,3 +904,33 @@ test('a poll finding no change does not redraw, and each state flip redraws once
     tick(); await settle(); await settle();
     assert.equal(draws, atLoad + 2, 'a poll on a live server redrew the page');
 });
+
+const DOC_A = {
+    pkey: 'F:\\ws\\alpha', generatedAt: '2026-09-18T16:16:00.000Z', total: 201,
+    buckets: [{ label: 'current', count: 89 }, { label: 'planned', count: 2 }, { label: 'retired', count: 102 }, { label: 'undeclared', count: 8 }],
+    plannedNotBuilt: ['docs/improvement-brief.md'],
+    undeclared: { count: 2, note: 'dated by git rather than by anyone reading them', paths: ['docs/a.md', 'docs/b.md'] },
+    filing: { index: 'docs/README.md', rows: [
+        { bucket: 'docs/archive', role: 'archive', note: '102, the whole archive bucket' },
+        { bucket: 'docs/plans', role: 'plan', note: null },
+    ] },
+};
+
+test('docsCardHtml quotes one project\'s map.md into a section: counts, both lists, the filing table with its retired note, and when it was generated', () => {
+    const o = { names: { 'F:\\ws\\alpha': 'alpha' }, pkeys: ['F:\\ws\\alpha'] };
+    const html = V.docsCardHtml([DOC_A], o);
+    assert.match(html, /<div class="h2">文件 /);
+    assert.match(html, />alpha</);
+    assert.match(html, /201 markdown files/);
+    assert.match(html, /current <b>89<\/b>/);
+    assert.match(html, /docs\/improvement-brief\.md/);
+    assert.match(html, /docs\/a\.md/);
+    assert.match(html, /dated by git rather than by anyone reading them/);
+    assert.match(html, /docs\/archive[\s\S]*archive[\s\S]*retired — 102, the whole archive bucket/);
+    assert.match(html, /docs\/plans[\s\S]*plan/);
+    assert.match(html, /2026-09-18 16:16/);
+});
+
+test('docsCardHtml is empty with no project map, so the whole card is left out', () => {
+    assert.equal(V.docsCardHtml([], { names: {}, pkeys: [] }), '');
+});

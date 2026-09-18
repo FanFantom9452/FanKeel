@@ -515,6 +515,59 @@
                     + '<td>' + statePill(s) + '</td></tr>';
             }).join('') + '</tbody></table></div>';
     }
+    // The 文件 card: one section per project whose `.fankeel/map.md` was
+    // found, quoting `parseMapCard`'s own reading of it rather than
+    // recomputing anything here. `d.label` colours and `o.names` name it the
+    // same way every other project-keyed row on this page does.
+    var DOC_STATUS_COLOUR = { current: 'var(--good)', planned: 'var(--p-0)', generated: 'var(--m-haiku)', undeclared: 'var(--stale)' };
+    var DOC_HATCH = 'var(--hatch-bg) repeating-linear-gradient(45deg,var(--hatch) 0 1.3px,transparent 1.3px 4.5px)';
+    function docSplitHtml(d) {
+        if (!d.buckets.length || !d.total) return '';
+        var swatch = function (label) {
+            return label === 'retired' ? DOC_HATCH : 'background:' + (DOC_STATUS_COLOUR[label] || 'var(--muted)');
+        };
+        var legend = d.buckets.map(function (b) {
+            return '<span><i class="sw" style="' + (b.label === 'retired' ? 'background:' + swatch(b.label) : swatch(b.label)) + '"></i>'
+                + esc(b.label) + ' <b>' + b.count + '</b><em>' + Math.round(b.count / d.total * 100) + '%</em></span>';
+        }).join('');
+        var bar = d.buckets.map(function (b) {
+            return '<i title="' + esc(b.label) + ' ' + b.count + '" style="flex:' + b.count + ' 1 0;' + swatch(b.label) + '"></i>';
+        }).join('');
+        return '<div class="split"><div class="split-h"><span>狀態</span><span class="num mono">' + d.total + ' markdown files</span></div>'
+            + '<div class="split-bar" role="img">' + bar + '</div><div class="split-leg">' + legend + '</div></div>';
+    }
+    function docPathList(paths) {
+        return '<div class="claims">' + paths.map(function (p) { return '<div title="' + esc(p) + '">' + esc(p) + '</div>'; }).join('') + '</div>';
+    }
+    function docFilingHtml(filing) {
+        if (!filing || !filing.rows.length) return '';
+        return '<table class="t"><thead><tr><th>bucket</th><th>role</th><th></th></tr></thead><tbody>'
+            + filing.rows.map(function (r) {
+                return '<tr><td class="mono">' + esc(r.bucket) + '</td><td><span class="chip">' + esc(r.role) + '</span></td>'
+                    + '<td class="muted mono" style="font-size:11px;white-space:normal;line-height:1.35">'
+                    + (r.note ? esc('retired — ' + r.note) : '') + '</td></tr>';
+            }).join('') + '</tbody></table>';
+    }
+    function docProjectHtml(d, o, open) {
+        return '<details class="dproj"' + (open ? ' open' : '') + '><summary><span class="nm"><i class="sw" style="background:'
+            + colorOf('project', d.pkey, o.pkeys) + '"></i>' + esc(o.names[d.pkey] || d.pkey) + '</span>'
+            + '<span class="mono muted">.fankeel/map.md</span><span class="spacer"></span>'
+            + '<span class="when">生成於 <span class="mono">' + stamp(Date.parse(d.generatedAt)) + '</span></span></summary>'
+            + docSplitHtml(d)
+            + '<div class="dgrid"><div>'
+            + (d.plannedNotBuilt.length ? '<div class="dsub">還沒建 <span class="n">planned, not built — ' + d.plannedNotBuilt.length + '</span></div>'
+                + docPathList(d.plannedNotBuilt) : '')
+            + (d.undeclared.count ? '<div class="dsub">沒宣告狀態 <span class="n">undeclared — ' + d.undeclared.count + '</span></div>'
+                + (d.undeclared.note ? '<div class="dnote">' + esc(d.undeclared.note) + '</div>' : '') + docPathList(d.undeclared.paths) : '')
+            + '</div><div>'
+            + (d.filing ? '<div class="dsub">歸檔位置 <span class="n">filing · index: ' + esc(d.filing.index) + '</span></div>' + docFilingHtml(d.filing) : '')
+            + '</div></div></details>';
+    }
+    function docsCardHtml(list, o) {
+        if (!list.length) return '';
+        return '<section class="panel docs"><div class="h2">文件 <small>各專案已生成的 <span class="mono">.fankeel/map.md</span>，找不到的不列</small></div>'
+            + list.map(function (d, i) { return docProjectHtml(d, o, i === 0); }).join('') + '</section>';
+    }
 
     // ---- the project page -------------------------------------------------
     function dayStart(day) {
@@ -874,7 +927,7 @@
             projectSessionsHtml: projectSessionsHtml,
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
             sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost,
-            heroEyebrow: heroEyebrow,
+            heroEyebrow: heroEyebrow, docsCardHtml: docsCardHtml,
         };
     }
     if (!doc) return;
@@ -1060,6 +1113,7 @@
         var o = { metric: view.metric, dim: view.dim, sel: sel, today: TODAY, days: DAYS, names: NAMES, pkeys: PKEYS };
         var bars = dayBars(R, view.metric, view.dim, DAYS);
         var recent = R.slice().sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); }).slice(0, 12);
+        var docsList = [].concat.apply([], S.projects.map(function (p) { return p.docs || []; }));
         return (isFinite(S.cleared) ? '<p class="cleared">cleared ' + S.cleared + ' stale rows</p>' : '')
             + profileCard('machine profile', 'machine', null, S.profiles && S.profiles.machine)
             + '<section class="panel hero"><div class="hero-top"><div class="hero-title"><div class="eyebrow">'
@@ -1075,7 +1129,7 @@
             + '<div class="chart">' + histSvg(bars, o) + '</div></section>'
             + (sel ? dayPanelHtml(dayPanel(R, sel), o) : '')
             + '<div class="grid2"><section class="panel">' + projectsHtml(projectRows(R, DAYS), o) + '</section>'
-            + '<section class="panel">' + recentHtml(recent, o) + '</section></div>';
+            + '<div class="rcol"><section class="panel">' + recentHtml(recent, o) + '</section>' + docsCardHtml(docsList, o) + '</div></div>';
     }
     view.pMetric = 'usd';
     view.compare = '';
