@@ -25,7 +25,7 @@ Waiting 等的是時機，時機到了，等它的事一起拉上來做。所以
 
 | SKILL | `## Waiting` 底下 |
 |---|---|
-| `name` | `### <時機>`，24 字以內 |
+| `name` | `### <時機>`，28 欄以內：中文 14 字、英文 28 字母 |
 | `description` | 緊接的一行 `lifts when: <事件>. MM-DD.`，一個時機只寫一次 |
 | body | 時機底下的條目，時機到了一起變成一個 task |
 
@@ -74,7 +74,10 @@ build 才寫、land 才 commit，沒處理好的時機戳記沒動，下次 `/fa
   - 〔profile〕`suggest` 只推 `land.*`：… — [lib/profile.js](lib/profile.js).
   ```
 
-- 時機標題去掉反引號後不超過 24 字。
+- 時機標題去掉反引號後，顯示寬度不超過 28 欄：中日韓文字與全形符號算 2 欄，其餘算
+  1 欄，所以是中文 14 字或英文 28 字母。算字數會讓中文標題比英文寬一倍；
+  `AskUserQuestion` 的 header「12 字，CJK 6 字」是同一個道理。今天擬的十個標題最寬
+  24 欄（「交接後 context 仍過 400k」）。
 - 標題後第一個非空行是 `lifts when: <事件>. MM-DD.`，戳記的意思不變：最後一次有人
   讀過、同意它還在等的那天，放在最後。
 - 時機底下至少一條 bullet；bullet 不再各自帶 `lifts when:` 與戳記。
@@ -90,14 +93,16 @@ build 才寫、land 才 commit，沒處理好的時機戳記沒動，下次 `/fa
 - `due`：日期時機從那天起為真，之前不管戳記多舊都為假；其他時機在戳記滿
   `REREAD_DAYS`（7 天）時為真。
 - 下列各是 problem、exit 1：`## Waiting` 底下不在任何 `###` 裡的 bullet；時機缺
-  `lifts when:` 行或缺戳記；時機底下沒有 bullet；標題超過 24 字。原本「每條 Waiting
+  `lifts when:` 行或缺戳記；時機底下沒有 bullet；標題超過 28 欄。原本「每條 Waiting
   條目要有 `lifts when:` 與戳記」的檢查移到時機上。
+- 匯出 `width(s)`，照第 1 節的算法回顯示寬度；repository 裡還沒有這樣的函式，
+  標題上限和 orient 的對齊都用它。
 - `report()` 印 `due` 的時機：標題、事件、條數；`due` 仍然不影響 exit code。
 
 ## 3. orient
 
 - `todoBlock()` 每次列出全部時機，一個一行：`due` 標記或日期、標題、條數。`due`
-  的排前面，其餘照檔案順序。
+  的排前面，其餘照檔案順序。標題欄用 `width()` 補齊，中英混排的行才對得齊。
 - 標題行寫 `Waiting N timings, M entries — K due, offer one option`，沒有 `due` 時寫
   `— none due, not offered`；K 等於下面標了 `due` 的行數。
 
@@ -137,9 +142,12 @@ build 才寫、land 才 commit，沒處理好的時機戳記沒動，下次 `/fa
   `2 timings, 3 entries — 1 due`，只有 B 標 `due`，A 顯示 09-25。now 設 09-26：
   `2 due`。今天這個測試會失敗——`todoBlock()` 只印 `Waiting 3 — not offered`。
 - `tests/todo-check.test.js`：不在時機裡的 bullet、缺 `lifts when:` 行的時機、沒有
-  bullet 的時機、超過 24 字的標題，各自 exit 1，且 problem 說的是那個原因；時機底下
+  bullet 的時機、超過 28 欄的標題，各自 exit 1，且 problem 說的是那個原因；時機底下
   的 bullet 不帶戳記，exit 0。斷言原因而不只 exit code：今天 `###` 會被當成另一個
   標題，帶 `###` 的四種全報成「不在三個標題之下」，不帶的那種則放過。
+- `width()`：14 個中文字是 28、15 個是 30；28 個英文字母是 28；中英混排照加。
+  標題上限的測試用 15 個中文字（30 欄，fail）和 28 個英文字母（28 欄，pass）各一個
+  ——只算字數的實作會把前者放過，這一對就是分得出兩種算法的對照。
 - 實際產物：改寫後的 `TODO.md` 跑 `node scripts/todo-check.js` exit 0；跑
   `node scripts/orient.js`，標題行的 N、M 分別等於 `TODO.md` `## Waiting` 底下 `###`
   與 bullet 的數目，K 等於同一段裡標 `due` 的行數。
