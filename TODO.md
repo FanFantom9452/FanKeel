@@ -100,6 +100,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔gates〕gate 記錄要當標註資料還缺兩樣：問題本文與選項 description 都沒存，只有 `header`、`labels` 與 `picked` — [lib/gates.js](lib/gates.js). 待決：兩樣都存、只存問題本文，還是等第一批資料。
 
+- 〔docs〕`docs/sources.md` 的 Cited by 欄 21 列有 13 列漏了 grep 找得到的 `docs/` 頁，而 `sources.md:4` 說這欄「filled by hand from grep」 — [docs/sources.md](docs/sources.md). 待決：一次補齊、加測試比對 grep，還是改寫那句話。
+
 ## Waiting
 
 - 〔build〕knip 的 unused exports 一格關著：6.32.2 認不得 CJS namespace 取用，開著回 146 個假陽性 — [docs/development.md](docs/development.md). lifts when: knip 認得 CJS namespace property access. 09-13.
