@@ -80,8 +80,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔session〕堆疊手段：subagent 佔 token 從 30.7% 升到 53%，但回傳只佔工具輸出 7.6%、叫醒只佔主回合 7% — [docs/improvement-brief.md](docs/improvement-brief.md). 待決：§6.2 四個候選挑哪個。
 
-- 〔session〕`hooks/size.js` 留不留：「十個 session 帶著 hook 跑完」已過（21 個），改前 bigPerSession 0.3846，09-18 用 `--since 2026-09-11` 再量是 0.6136，升不是降 — [hooks/size.js](hooks/size.js). 待決：拿掉、留著，還是換量法。
-
 - 〔station〕profile 卡使用者兩次沒找到：只在 `serve` 模式改得了，靜態頁只給指令而且排在首頁最後 — [docs/station.md](docs/station.md). 待決：移到首頁頂端、`/fankeel` 的 station 行直接給 `serve --open`，還是兩者。
 
 - 〔docs〕沒有給人讀的文件層：`docs/` 的 reference 頁是寫給下一個 session 的英文，人只有 `docs/README.md` 的索引可以進 — [docs/documents.md](docs/documents.md). 待決：新增 `guide` role、擴充 `README.md`，還是交給 station 渲染。
