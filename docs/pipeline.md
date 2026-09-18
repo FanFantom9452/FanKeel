@@ -49,8 +49,8 @@ what the task is, in one call with the options already on screen. Where the root
 has a `TODO.md`, that is where the task options come from, and its headings do
 the clustering: `## Ready` is offered as one task for the whole section,
 `## Needs a decision` as the newest few by last edit, one task each, the rest
-through Other, and `## Waiting` is left out because nothing under it can move
-today. A root without one is where guessing from the recent commits belongs.
+through Other, and `## Waiting` as one option once a timing is `due`. A root
+without one is where guessing from the recent commits belongs.
 Making someone retype a row of a listing they can see is the same waste as asking
 with nothing on screen at all.
 

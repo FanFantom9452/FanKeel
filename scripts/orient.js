@@ -483,12 +483,13 @@ const TODO_ENTRY_WIDTH = 100;
 // so this is not a listing of the section — it is the subset init can turn
 // into options, ordered by which entry was touched most recently, plus the
 // count of what got left out rather than a silent drop of it.
+// Waiting is listed in full, one line per timing, and offered as one option once any is due.
 //
 // null when there is nothing to say: no TODO.md at `dir`, or it could not be
 // read. The `readFileSync` below is the only check that needs to exist for
 // that — a second, earlier one reading the same path could only ever agree
 // with it or be wrong.
-function todoBlock(dir) {
+function todoBlock(dir, now) {
     const file = path.join(dir, 'TODO.md');
     let text;
     try {
@@ -499,14 +500,16 @@ function todoBlock(dir) {
     const all = todoCheck.entries(text);
     const needs = all.filter((e) => e.section === 'Needs a decision');
     const ordered = orderByEdit(dir, 'TODO.md', needs);
+    const timings = todoCheck.timings(text, now);
 
     const readyCount = all.filter((e) => e.section === 'Ready').length;
     const waitingCount = all.filter((e) => e.section === 'Waiting').length;
+    const dueCount = timings.filter((t) => t.due).length;
     const needsCount = needs.length;
-    // Three rather than four when Ready already holds one: a menu offering
-    // four from this section plus one from Ready is five options, one more
-    // than AskUserQuestion takes.
-    const limit = readyCount > 0 ? 3 : 4;
+    // AskUserQuestion takes four. Ready's section is one option when it has
+    // entries, and Waiting's due timings are one more between them, so each
+    // takes a slot from Needs a decision's newest few.
+    const limit = 4 - (readyCount > 0 ? 1 : 0) - (dueCount > 0 ? 1 : 0);
     const shown = ordered.slice(0, limit);
 
     const lines = ['todo: TODO.md', '  Ready ' + readyCount];
@@ -522,7 +525,15 @@ function todoBlock(dir) {
         const more = needsCount - shown.length;
         if (more > 0) lines.push('    and ' + more + ' more, not listed — Other takes one by name');
     }
-    lines.push('  Waiting ' + waitingCount + ' — not offered');
+    // Every timing, every time: what is waiting is on screen whether or not
+    // it is offered, the way a skill's description is. The due ones first.
+    lines.push('  Waiting ' + timings.length + (timings.length === 1 ? ' timing, ' : ' timings, ')
+        + waitingCount + (waitingCount === 1 ? ' entry' : ' entries') + ' — '
+        + (dueCount ? dueCount + ' due, offer one option' : 'none due, not offered'));
+    for (const t of timings.filter((x) => x.due).concat(timings.filter((x) => !x.due))) {
+        const col = t.due ? 'due' : t.date !== null ? todoCheck.mmdd(t.date) : '';
+        lines.push('    ' + col.padEnd(7) + t.title + ' (' + t.items.length + ')');
+    }
     return lines;
 }
 
@@ -667,7 +678,7 @@ function report(result) {
         // container for one — and the scan root's otherwise, because there is
         // no more specific TODO.md this could mean.
         const todoDir = insideBreakdown ? path.resolve(result.root, one.base) : result.root;
-        const todo = todoBlock(todoDir);
+        const todo = todoBlock(todoDir, result.now);
         if (todo) {
             lines.push('');
             lines.push(...todo);

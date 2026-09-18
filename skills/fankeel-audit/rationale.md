@@ -149,6 +149,7 @@ needing a maintained table it names an outside tool for.
 `routed:` is the line that keeps a finding alive past this turn. Anything you
 are not fixing here goes to `TODO.md` under `## Ready`, `## Needs a decision` or
 `## Waiting`, and that line names which — a finding that exists only in this
-report is one the next sweep finds again from scratch. One routed to `## Waiting`
-names the event with `lifts when:` and then carries a `MM-DD` stamp, or
-`todo-check.js` refuses it without either.
+report is one the next sweep finds again from scratch. One routed to
+`## Waiting` goes beneath the `### <timing>` it waits for — a new one if none
+fits — whose next line names the event with `lifts when:` and then carries a
+`MM-DD` stamp, or `todo-check.js` refuses it.
