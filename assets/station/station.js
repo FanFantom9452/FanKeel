@@ -814,12 +814,14 @@
     function sessionHeadHtml(s, x) {
         var t = sessionTotals(s), m = x ? timelineModel(x) : null, agentUsd = costModel(s.days).agent.usd;
         var waited = m ? m.waits.reduce(function (n, w) { return n + w.ms; }, 0) : t.wait;
+        var wakes = x && typeof x.wakes === 'number' ? x.wakes : null;
         return '<div class="readouts">'
             + roHtml('歷時', m && m.t1 > m.t0 ? mins(m.t1 - m.t0) : '—', 'active ' + hours(t.active))
             + roHtml('<i class="hatchsw"></i>等你回答', mins(waited), m ? m.waits.length + ' 次 gate' : '讀取細節…')
             + roHtml('花費', usd(t.usd), t.usd ? '派工佔 ' + Math.round(agentUsd / t.usd * 100) + '%' : '沒有按日的花費')
             + roHtml('token', tokens(t.tokens), x ? x.requests + ' 次主 session 請求' : '')
             + roHtml('派工', x ? x.rows.length + '<span class="u">agent</span>' : '—', x ? x.runs.length + ' 個 workflow' : '')
+            + roHtml('叫醒', wakes === null ? '—' : wakes + '<span class="u">次</span>', wakes === null ? '' : '派工回報叫醒主 session')
             + roHtml('context 峰值', x ? tokens(x.peak) : '—', '')
             + '</div>';
     }

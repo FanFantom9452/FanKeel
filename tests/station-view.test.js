@@ -576,7 +576,7 @@ test('the project sessions table ticks for 比較, and prints dollars and a mode
 // five-key token `split` every row already carries (lib/usage.js:470).
 const T0 = new Date(2026, 8, 13, 22, 0).getTime();
 const DETAIL_X = {
-    requests: 3, peak: 90000, peakN: 3, noTime: 0, backtracks: 0, marks: [], rises: [], backs: [], tasks: [],
+    requests: 3, wakes: 4, peak: 90000, peakN: 3, noTime: 0, backtracks: 0, marks: [], rises: [], backs: [], tasks: [],
     points: [{ n: 1, t: T0 + 60000, y: 20000, model: 'claude-opus-5' }, { n: 2, t: T0 + 3000000, y: 60000, model: 'claude-sonnet-5' },
         { n: 3, t: T0 + 7200000, y: 90000, model: 'claude-opus-5' }],
     seq: [{ stage: 'build', at: T0, source: 'cmd' }, { stage: 'verify', at: T0 + 5400000, source: 'cmd' }],
@@ -710,6 +710,8 @@ test('the session header reads dollars from days and time from the timeline; the
     assert.match(head, /花費<\/div><div class="v">\$3\.75/);
     assert.match(head, /歷時<\/div><div class="v">2h</);
     assert.match(head, /2 次 gate/);
+    assert.match(head, /叫醒<\/div><div class="v">4<span class="u">次<\/span>/);
+    assert.match(V.sessionHeadHtml(HOME[0], Object.assign({}, DETAIL_X, { wakes: undefined })), /叫醒<\/div><div class="v">—</, 'a cache from before wakes shows a dash, not a zero');
     assert.doesNotMatch(head, /\$99|\$198/);
     const tabs = V.tabsHtml(HOME[0], 'cost', DETAIL_X);
     assert.deepEqual([...tabs.matchAll(/href="([^"]+)"/g)].map((x) => x[1]),

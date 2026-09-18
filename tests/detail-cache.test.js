@@ -99,3 +99,11 @@ test('a VERSION 2 cache, written before gate questions carried their labels, is 
     const got = detail.detailOf(f.cfg, SID, f.data);
     assert.deepEqual([got.fresh, got.detail.v], [true, 3]);
 });
+
+test('wakes counts the task notifications that reached the main transcript', () => {
+    const f = setup();
+    assert.equal(detail.detailOf(f.cfg, SID, f.data).detail.wakes, 0);
+    fs.appendFileSync(f.t, line({ type: 'user', timestamp: T(4),
+        message: { content: '<task-notification><tool-use-id>b9</tool-use-id><status>completed</status></task-notification>' } }));
+    assert.equal(detail.detailOf(f.cfg, SID, f.data).detail.wakes, 1, 'the grown transcript is read again');
+});
