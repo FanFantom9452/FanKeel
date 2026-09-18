@@ -20,6 +20,12 @@ and the role says how long a document is meant to stay true:
 | `archive` | retired; checked only that nothing current points at it | yes |
 | `fixture` | a test's own input — describes nothing about the system, checked for links and line numbers only | n/a |
 
+A root `.ignore` holding `docs/archive/` keeps ripgrep-based tools — the
+`Grep` and `Glob` tools here — from searching it by default; naming
+`docs/archive` explicitly still searches it, and `docs-check`, `docs-audit`
+and `survey.js` read `git ls-files` directly, so none of them is affected either
+way.
+
 The two shapes that ship — `flat` and `phased` — and what happens to a markdown
 file in no bucket are stated in [the skill](../skills/fankeel/SKILL.md), under
 *Where documents live*. What belongs here is why the question is put that way:
@@ -157,6 +163,9 @@ report where a real parser would cost a dependency this plugin does not have.
 `--exclude-standard` 套用 `.gitignore`，所以宣告出來的 bucket 會
 永遠列出零個檔。這張表是這幾區唯一的說明，`node scripts/residue.js` 是它們當下
 的清單——表格給角色，`residue.js` 給有哪些與多大。
+
+`.fankeel/build/` 不進 `docs.json` 當 bucket 是定案，不是漏掉沒做：宣告一個被
+`.gitignore` 擋住的路徑當 bucket，列檔那層永遠回零個檔，宣告了也沒有作用。
 
 ## What a document says about itself
 

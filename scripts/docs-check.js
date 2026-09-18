@@ -160,7 +160,7 @@ function lineCount(root, rel) {
 // A link's `#fragment` into another `.md` file, checked the way GitHub slugs
 // a heading: lowercase, punctuation dropped (CJK and other letters and
 // digits kept, along with `-` and `_`), each space becoming its own `-` —
-// not collapsed, which is why `docs/documents.md:288`'s own citation carries
+// not collapsed, which is why `docs/documents.md:301`'s own citation carries
 // a double hyphen (an em dash between two words drops, leaving both spaces
 // around it) — and a heading repeated in the same document getting `-1`,
 // `-2` in the order it appears. Heading markup — backticks, a link's own
