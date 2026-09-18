@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-15
+last_verified: 2026-09-18
 source_of_truth: scripts/eval.js, lib/eval.js, evals/route-typo/case.yaml
 ---
 

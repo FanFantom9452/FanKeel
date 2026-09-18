@@ -68,8 +68,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔release〕0.70.0 發版：HEAD 領先 `origin/main` 30 個 commit，裝著的副本凍在 `70771cd`，所以 N23 修好的 guard 箭頭誤判與 `lib/gates.js` 都沒在跑 — [scripts/version.js](scripts/version.js). 推送後要換終端機。
-
 - 〔station〕`swapped` 只數到 2610 筆 gate question 裡的 89 筆：`8be3981` 加 `labels` 時沒動 `lib/detail.js` 的 `VERSION`，212 份快取全帶 `v: 2`，失效不觸發，舊快取原樣回傳 — [lib/detail.js](lib/detail.js). 改法：`VERSION` 進 3。
 
 - 〔scripts〕`scripts/memory-check.js` 把 stale 的引用數當條目數印：每個引用推一列，摘要行直接拿 `.length`，今天是 49 個引用散在 27 條裡卻寫「49 entries」 — [scripts/memory-check.js](scripts/memory-check.js). 改法：摘要行改數不重複的條目。

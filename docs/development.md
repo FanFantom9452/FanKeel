@@ -78,6 +78,41 @@ disagree, so the script is what makes them agree rather than what notices. A
 release used to be eleven edits, and missing one left a skill announcing a version
 the plugin is not — right in ten places, which is how it went unnoticed.
 
+## Releasing — the steps this repository actually takes
+
+The section above says what `version.js` does and nothing says when to run it.
+Until 2026-09-18 no page did, and the steps lived only in whoever had done one
+before. These are the eight 0.70.0 went through, in order.
+
+1. **The branch is finished first.** `npm test` green, and `docs-check`,
+   `todo-check`, `docs-audit`, `skills-check`, `memory-check` and `residue` all
+   exit 0 on the tree about to be released. A release is a claim about what
+   shipped; a red check makes it a claim about something else.
+2. **`node scripts/version.js --changes`** lists the commits since the last
+   `chore: <x.y.z>`. That list *is* the release, and it is what to put in front
+   of whoever is choosing the number — there is no changelog to read instead.
+3. **`node scripts/version.js <x.y.z>`** writes the thirteen places and says how
+   many it changed. Only on the user's say-so: the number is a claim about what
+   shipped, and that claim is theirs.
+4. **Commit it as `chore: <x.y.z> — <one line>`.** That subject is the marker
+   `--changes` counts back to, so a release committed under any other subject
+   leaves the next one listing this one's commits again.
+5. **`npm test` again.** `tests/contract.test.js:262` reads all thirteen and
+   compares them, so the bump is only proven by a run that happened after it.
+6. **Integrate.** `land.push` is `false` in this project's profile, so a local
+   merge to `main` is where a release stops unless the user says otherwise.
+7. **Push only when asked, and ask separately.** The plugin is installed from
+   the GitHub marketplace `FanFantom9452/FanKeel`, so nothing off this machine
+   sees a release until `main` is pushed — and the profile's standing answer is
+   not consent for the one step that publishes.
+8. **The terminal that pushed still holds the old copy.**
+   `plugins/installed_plugins.json` pins `fankeel@fankeel` to a `gitCommitSha`
+   and an `installPath` under `plugins/cache/fankeel/fankeel/<version>/`, and
+   Claude Code reads that path and its hook list once per process; `/clear` does
+   not re-read either. A new terminal does, and an in-flight task comes across
+   with `/fankeel` → Adopt. That is why a release is the last thing a session
+   does rather than the first.
+
 ## `skills-check.js` — a fail-closed gate over the skill files
 
 `node scripts/skills-check.js` is a fail-closed gate over this plugin's own
