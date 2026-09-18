@@ -56,6 +56,11 @@ survey 對每一項查了現況。結果:
 控制組是有效的:同一組 pattern 對 `docs/archive/2026-09-10-design-mockup.md` 命中
 10 次,對所有 station 文件零命中。零不是因為沒查到,是因為真的沒用。
 
+**Corrected 2026-09-18:** 負結果只對文件成立，對照組只掃了文件、沒掃 transcript。
+`d39444fc`（09-14 三層改版）畫 mockup 的 subagent（opus）叫過
+`frontend-design:frontend-design` 與 `dataviz`；09-04 到 09-08 的五個改版 session
+都沒叫設計 skill。
+
 能搬的是流程,不是清單:`design.mockup` 指定的模型畫 mockup → 人核准 → implementer
 逐字搬 CSS。那節寫在 `skills/fankeel-design/SKILL.md` 的「3. The mockup」。
 
