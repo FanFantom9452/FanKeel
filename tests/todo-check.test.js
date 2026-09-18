@@ -613,6 +613,7 @@ test('width counts a CJK or full-width character as two columns', () => {
   assert.equal(todo.width('abcdefghijklmnopqrstuvwxyzab'), 28);
   assert.equal(todo.width('knip 認得 CJS namespace'), 23);
   assert.equal(todo.width('`suggest` 只推'), 12, 'backticks are not drawn');
+  assert.equal(todo.width(String.fromCodePoint(0xA730, 0xE000)), 2, 'Latin Extended-D and private use are one column each');
 });
 
 // The pair that tells columns from characters: fifteen CJK characters are 30
@@ -639,7 +640,7 @@ test('a date timing is due from its date and not before, however old its stamp',
 
 test('a date earlier in the year than its stamp is next year', () => {
   const file = timingFixture('### after new year\nlifts when: 01-05 onward. 12-20.\n\n- a\n');
-  assert.deepEqual(todo.check(file, new Date(2026, 11, 25, 12, 0, 0).getTime()).overdue, []);
+  assert.deepEqual(todo.check(file, new Date(2026, 11, 30, 12, 0, 0).getTime()).overdue, []);
   assert.equal(todo.check(file, new Date(2027, 0, 6, 12, 0, 0).getTime()).overdue.length, 1);
 });
 

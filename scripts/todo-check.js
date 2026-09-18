@@ -135,7 +135,7 @@ function liftsAt(text) {
 // or twenty-eight letters — the arithmetic AskUserQuestion's header already
 // uses, twelve characters or six in CJK.
 const MAX_TITLE_WIDTH = 28;
-const WIDE = /[ᄀ-ᅟ⺀-꓏가-힣豈-﫿︰-﹏＀-｠￠-￦]/;
+const WIDE = /[\u1100-\u115F\u2E80-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF60\uFFE0-\uFFE6]/;
 
 function width(s) {
     let n = 0;
