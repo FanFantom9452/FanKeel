@@ -1074,6 +1074,10 @@ hook（SessionStart 啟動它的模式，UserPromptSubmit 追蹤模式）。本�
 列了六個可搬項目，`docs/judgements/2026-09-10-pattern-skill.md` 判過 pattern skill 那一類。
 使用者的立場是不用、不重裝，要的功能改寫成 fankeel 自己的規則。
 
+**三項候選都定案為不吸收**：`caveman-stats`、Native Core 六個流程 skill、
+`cavecrew` 的委派指南，每項對到的 fankeel 現有機制與理由都在
+[docs/decisions/2026-09-18-caveman-absorb-none.md](decisions/2026-09-18-caveman-absorb-none.md)。
+
 **fankeel 這邊的耦合很少**，沒有一處是功能上的依賴：
 
 - `lib/badge.js:169`（`another plugin may`）與 `lib/badge.js:177`（`another plugin may keep its own flag`）兩段註解：清徽章時不刪
