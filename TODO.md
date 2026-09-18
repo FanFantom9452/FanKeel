@@ -70,8 +70,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔release〕0.70.0 發版：HEAD 領先 `origin/main` 30 個 commit，裝著的副本凍在 `70771cd`，所以 N23 修好的 guard 箭頭誤判與 `lib/gates.js` 都沒在跑 — [scripts/version.js](scripts/version.js). 推送後要換終端機。
 
-- 〔docs〕`docs/decisions/2026-09-18-needs-decision-all.md` 兩處假敘述：ledger 只有 21 條 `Ruling:`、3 條點名編號，實質定案在 design 文件；送關卡的是四個編號不是三個 — [docs/registry.md](docs/registry.md).
-
 - 〔audit〕`docs-audit` 列的 43 對只有 `registry × station` 被讀過，其餘 42 對沒人開過——09-17 那次 audit 的 pair 那一半只走了一對 — [docs/documents.md](docs/documents.md). 一對一個 reader，四個一批。
 
 ## Needs a decision
