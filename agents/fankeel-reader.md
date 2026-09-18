@@ -40,6 +40,11 @@ whole-repository `Grep` for one term returns hundreds of KB into a context
 the parent pays for, and which files matched is usually the answer on its
 own.
 
+Reads that do not depend on one another go out in the same response: several
+`Read`, `Grep` and `Bash` calls in one turn run together, and one call per
+turn is what makes a reader look like a pipeline when nothing it read was
+slow. Only a call that needs the previous one's answer waits for it.
+
 ## Refusals
 
 - Do not change a file, by any tool. If the question cannot be answered without

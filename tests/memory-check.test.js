@@ -210,3 +210,23 @@ test('scan() does not flag a memory entry modified after the path it cites', () 
   const result = scan(root, configDir);
   assert.equal(result.stale.length, 0);
 });
+
+test('report() counts stale entries, not the citations they carry', () => {
+  const root = tmpProject();
+  initGit(root);
+  fs.mkdirSync(path.join(root, 'lib'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'lib', 'thing.js'), 'v1\n');
+  fs.writeFileSync(path.join(root, 'lib', 'other.js'), 'v1\n');
+  commitAll(root, 'add two files');
+  const configDir = tmpConfig();
+  const dir = memoryDir(configDir, root);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'MEMORY.md'), '- [K note](k-note.md) — a hook\n- [M note](m-note.md) — a hook\n');
+  fs.writeFileSync(path.join(dir, 'k-note.md'),
+    '---\nname: k-note\ndescription: x\nmetadata:\n  type: reference\n  modified: 2020-01-01T00:00:00.000Z\n---\n\nSee `lib/thing.js` and `lib/other.js`.\n');
+  fs.writeFileSync(path.join(dir, 'm-note.md'),
+    '---\nname: m-note\ndescription: x\nmetadata:\n  type: reference\n  modified: 2020-01-01T00:00:00.000Z\n---\n\nSee `lib/thing.js`.\n');
+  const result = scan(root, configDir);
+  assert.equal(result.stale.length, 3);
+  assert.match(report(result), /^2 entries cite a file changed since they were written, 3 citations:$/m);
+});

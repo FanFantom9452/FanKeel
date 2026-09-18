@@ -29,7 +29,7 @@ const { liveConfigDir } = require('../lib/live.js');
 const { resolveRoot } = require('../lib/registry.js');
 const { trackedFiles } = require('../lib/tracked.js');
 const docs = require('../lib/docs.js');
-const { section } = require('../lib/report.js');
+const { plural, section } = require('../lib/report.js');
 const { LINK, CODE, PATHISH, resolveRef, external } = require('./docs-check.js');
 
 const MAX_FINDINGS = 200;
@@ -168,7 +168,7 @@ function scan(root, configDir) {
             // A correct memory entry can still cite a file that changed after
             // it was written — this is listed, never a failing finding.
             if (commit !== null && modified < commit) {
-                stale.push({ tag: 'stale', what: name + ' cites ' + ref + ', changed since this entry was last touched' });
+                stale.push({ tag: 'stale', name, what: name + ' cites ' + ref + ', changed since this entry was last touched' });
             }
         }
     }
@@ -190,9 +190,9 @@ function report(result) {
         lines.push('Every entry is indexed both ways, and every cited repository path still');
         lines.push('exists where it says it does.');
     }
-    lines.push(...section(result.stale.length + (result.stale.length === 1
-        ? ' entry cites a file changed since it was written:'
-        : ' entries cite a file changed since they were written:'),
+    const staleEntries = new Set(result.stale.map((f) => f.name)).size;
+    lines.push(...section(plural(staleEntries, 'entry cites a file changed since it was written', 'entries cite a file changed since they were written')
+        + (result.stale.length === staleEntries ? ':' : ', ' + result.stale.length + ' citations:'),
         result.stale.map((f) => f.what), MAX_FINDINGS));
     return lines.join('\n');
 }

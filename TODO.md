@@ -68,16 +68,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔station〕`swapped` 只數到 2610 筆 gate question 裡的 89 筆：`8be3981` 加 `labels` 時沒動 `lib/detail.js` 的 `VERSION`，212 份快取全帶 `v: 2`，失效不觸發，舊快取原樣回傳 — [lib/detail.js](lib/detail.js). 改法：`VERSION` 進 3。
-
-- 〔scripts〕`scripts/memory-check.js` 把 stale 的引用數當條目數印：每個引用推一列，摘要行直接拿 `.length`，今天是 49 個引用散在 27 條裡卻寫「49 entries」 — [scripts/memory-check.js](scripts/memory-check.js). 改法：摘要行改數不重複的條目。
-
-- 〔agents〕`fankeel-reader.md` 沒叫它把互不相依的 Read/Grep 放在同一個回應：reader 看起來像 pipeline，是模型一回合只發一個工具呼叫，不是讀 git 慢 — [agents/fankeel-reader.md](agents/fankeel-reader.md). 改法：`## Searching` 加一句。
-
-- 〔station〕`usage.wakes` 有算沒顯示：`lib/usage.js` 數出每個 session 被 subagent 回報叫醒幾次，`lib/detail.js` 與 session 頁都沒讀 — [lib/usage.js](lib/usage.js). 改法：`detail.js` 帶出 `wakes`，session 頁標頭加一格。
-
-- 〔docs〕`docs/sources.md` 沒有 `2026-09-15-waiting-probes.md` 的列：頁面說每份頂層報告一列，現在 21 份 20 列，漏的就是這份 — [docs/sources.md](docs/sources.md). 改法：照七欄補一列，標題改 twenty-one。
-
 ## Needs a decision
 
 - 〔lib〕`lib/skill-overlap.js` 只有一個 production caller，折進 `scripts/orient.js` 既不多帶依賴也不會把測試推到 spawn 後面 — [lib/skill-overlap.js](lib/skill-overlap.js). 待決：折進去、還是留著。（audit 2026-09-18，8 行）
@@ -109,6 +99,10 @@ entry waited for actually happening. It shrank when somebody read it.
 - 〔docs〕三處同一件事寫在兩頁，沒定哪頁是來源：`development.md:79`、`pipeline.md:985`、`registry.md:246` 各有一個分身，`728dd76` 的訊息列了對方 — [docs/documents.md](docs/documents.md). 待決：各自指定來源頁。
 
 - 〔gates〕gate 記錄要當標註資料還缺兩樣：問題本文與選項 description 都沒存，只有 `header`、`labels` 與 `picked` — [lib/gates.js](lib/gates.js). 待決：兩樣都存、只存問題本文，還是等第一批資料。
+
+- 〔docs〕`docs/sources.md` 的 Cited by 欄 21 列有 13 列漏了 grep 找得到的 `docs/` 頁，而 `sources.md:4` 說這欄「filled by hand from grep」 — [docs/sources.md](docs/sources.md). 待決：一次補齊、加測試比對 grep，還是改寫那句話。
+
+- 〔ledger〕plan 階段的 commit 不在 ledger 任何一列：`ranges` 從 Task 1 的 BASE 起算，verify 會把它報成沒人審 — [scripts/ledger.js](scripts/ledger.js). 待決：`init` 記下 plan 的範圍、plan reviewer 寫帶範圍的行，或讓 verify 認得它。
 
 ## Waiting
 
