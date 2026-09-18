@@ -53,7 +53,7 @@ source_of_truth: 每一列的現況都回溯到一個 `path:line`、commit 或 s
 **archive 會不會被 grep 搜到：會，你的理解是對的。** `Grep` 工具底下是 ripgrep，它只跳過
 `.gitignore`、`.ignore`、`.rgignore` 列的東西。`docs/archive/` 已 commit（100 個檔），
 沒有被任何一個列到，所以照搜。只有 `fankeel-reader` 有「排除 `docs/archive/**`」這條規則
-（`agents/fankeel-reader.md:34`）；主 session、其他 agent、`survey.js` 都沒有——這次
+（`agents/fankeel-reader.md:37`）；主 session、其他 agent、`survey.js` 都沒有——這次
 `survey.js profile station mockup judge` 列出的前 25 個檔名裡，19 個在 archive。
 
 **grep 引到兩處要解矛盾：** `docs-audit` 的 pairs 就是抓「兩頁描述同一個原始檔」。早上
