@@ -197,7 +197,7 @@ survey 改寫了五條的前提，這份設計照改過的寫：
 | station view 的測試：profile 卡在第一張；有 map.md 才有文件卡；主迴圈列 | §4 §7 §8 | 紅 | 綠 |
 | `npm test` 前後都綠 | §15 §17 §18 §6 | 綠 | 綠 |
 | `Grep` 搜一個只在 archive 出現的詞：之前有檔、之後 0；給 `docs/archive` 路徑仍找得到 | §9 | 有 | 0 |
-| `docs-audit` 的 pairs 不再列那三對 | §10 | 3 對 | 0 |
+| 三句重複的話各 grep 一次，只剩來源頁那一處；連過去的新連結 `docs-check` exit 0。（`docs-audit` 的 pairs 按兩頁共用的原始檔配對，不按句子，這兩對改完仍會列出） | §10 | 兩處 | 一處 |
 | `todo-check` exit 0，`## Needs a decision` 0 條，`:119` 在 `## Ready` | §20 | 19 條 | 0 條 |
 | 產出物：渲染後的 session 頁，各站主迴圈回合數加總等於頁上的總回合數；400k 以上回合的花費不超過該站花費 | §4 | 沒有這列 | 相符 |
 
