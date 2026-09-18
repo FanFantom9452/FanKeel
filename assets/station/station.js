@@ -950,7 +950,7 @@
             profileCard: profileCard,
             openSections: openSections, niceStep: niceStep, downsample: downsample, lineChart: lineChart,
             comma: comma, riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
-            dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml,
+            dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, splitHtml: splitHtml,
             todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
             figures: figures, compareHtml: compareHtml,
             routeGroups: routeGroups, routeLedger: routeLedger,
@@ -1531,6 +1531,7 @@
     function detailSections(s, x, open) {
         return sec('s-ctx', 'context', tokens(x.peak) + ' 峰值 · ' + x.requests + ' requests', ctxSection(s, x), open)
             + sec('s-order', '階段順序', x.seq.length + ' 步 · 倒退 ' + x.backtracks, orderSection(s, x), open)
+            + sec('s-split', '分工', splitCount(x), splitHtml(x), open)
             + sec('s-tasks', '任務', taskCount(x.tasks), tasksHtml(x.tasks), open)
             + sec('s-disp', '派工', x.rows.length + ' 個 agent · ' + cents(x.agentCents), dispatchHtml(x), open)
             + sec('s-rp', '過程還原', x.events.length + ' 列', replayHtml(x), open);
@@ -1540,7 +1541,7 @@
     // file; an ended one is reviewed for what it cost. The replay starts closed
     // whatever the state: it is the longest section and the last one read.
     function openSections(s) {
-        return s && s.state === 'live' ? ['s-sum', 's-claims'] : ['s-ctx', 's-disp'];
+        return s && s.state === 'live' ? ['s-sum', 's-claims', 's-split'] : ['s-ctx', 's-disp', 's-split'];
     }
     function secOpen(id, title, count, open) {
         return '<details class="sec" id="' + id + '"' + (open.indexOf(id) >= 0 ? ' open' : '') + '><summary>'
@@ -1691,6 +1692,80 @@
             + '<p class="tally">次序取 ' + (x.seqSource === 'task.js' ? 'transcript 裡真正執行的 task.js 指令'
                 : x.seqSource === 'moves' ? 'moves（transcript 裡沒有 task.js 指令）'
                     : 'clock（沒有指令也沒有 moves，看不出回頭）') + '；倒退 ' + x.backtracks + ' 次</p>';
+    }
+    // 分工: a short prose account of how the main loop divided dispatch, one
+    // line per stage in the order `seq` first entered it. A dispatch's stage
+    // is its `out` time run through the same rule as `lib/detail.js:397`'s
+    // `stageWhen` — the last `seq` entry at or before it, or `task 開始前`
+    // when there is none.
+    function splitStage(seq, t) {
+        var st = null;
+        (seq || []).forEach(function (m) { if (m.at <= t) st = m.stage; });
+        return st;
+    }
+    function splitCount(x) {
+        var turns = (x.loops || []).reduce(function (a, l) { return a + l.turns; }, 0);
+        return (x.loops && x.loops.length ? '主迴圈 ' + turns + ' 回合 · ' : '') + '派工 ' + (x.dispatches || []).length + ' 次';
+    }
+    function splitHtml(x) {
+        var order = [], by = {};
+        var row = function (st) {
+            var k = st || 'task 開始前';
+            if (!by[k]) { by[k] = { stage: k, turns: 0, single: 0, early: 0, multi: {}, wf: 0, wfN: 0, models: {} }; order.push(k); }
+            return by[k];
+        };
+        var hasLoops = !!(x.loops && x.loops.length);
+        (x.seq || []).forEach(function (s) { row(s.stage); });
+        (x.loops || []).forEach(function (l) { row(l.stage).turns += l.turns; });
+        (x.dispatches || []).forEach(function (d, i) {
+            var r = row(splitStage(x.seq, d.out));
+            var kids = (x.rows || []).filter(function (k) { return k.disp === i; });
+            if (d.surface === 'workflow') { r.wf++; r.wfN += kids.length; }
+            else if (d.surface === 'agents') r.multi[d.turn] = (r.multi[d.turn] || 0) + Math.max(1, kids.length);
+            else r.single++;
+            kids.forEach(function (k) { var f = family(k.model || k.alias); r.models[f] = (r.models[f] || 0) + 1; });
+        });
+        var singles = (x.dispatches || []).filter(function (d) { return d.surface === 'agent' && isFinite(d.out); })
+            .sort(function (a, b) { return a.out - b.out; });
+        for (var si = 1; si < singles.length; si++) {
+            var p = singles[si - 1], q = singles[si];
+            if (isFinite(p.back) && q.out < p.back && q.turn !== p.turn) row(splitStage(x.seq, q.out)).early++;
+        }
+        var lines = order.map(function (k) { return by[k]; })
+            .filter(function (r) { return r.turns || r.single || Object.keys(r.multi).length || r.wf; })
+            .map(function (r) {
+                var parts = [];
+                if (r.wf) parts.push('Workflow ' + r.wf + ' 次（' + r.wfN + ' 個 agent）');
+                var multiKeys = Object.keys(r.multi);
+                if (multiKeys.length) {
+                    var multiTotal = multiKeys.reduce(function (a, t) { return a + r.multi[t]; }, 0);
+                    parts.push('同一回應並發 ' + multiKeys.length + ' 回（共 ' + multiTotal + ' 個）');
+                }
+                if (r.single) {
+                    parts.push('單發 ' + r.single + ' 次' + (r.single > 1 ? '，各佔一個回合' : '')
+                        + (r.early ? '，其中 ' + r.early + ' 次在前一次回來前就派出，本可一次發出' : ''));
+                }
+                var models = Object.keys(r.models).map(function (m) { return m + ' ×' + r.models[m]; }).join('、');
+                return esc(r.stage) + ' — ' + (hasLoops ? '主迴圈 ' + r.turns + ' 回合；' : '')
+                    + (parts.length ? '派工：' + parts.join('、') + (models ? '；' + models : '') : '沒有派工');
+            });
+        if (!hasLoops) lines.push('這份快取沒有逐站回合數（寫於 loops 欄位出現之前）');
+        (x.tasks || []).forEach(function (p) {
+            var hinted = p.groups.filter(function (g) { return g.hint; });
+            var none = p.groups.filter(function (g) { return !g.turns.length; });
+            var one = p.groups.length - hinted.length - none.length;
+            var bits = [];
+            if (one) bits.push(one + ' 組各在一個回合內派出');
+            if (none.length) bits.push(none.length + ' 組沒有派工紀錄');
+            if (hinted.length) {
+                bits.push(hinted.length + ' 組本可一次發出：' + hinted.map(function (g) {
+                    return 'G' + g.g + '（task ' + g.tasks.join('、') + '，分 ' + g.turns.length + ' 個回合）';
+                }).join('、'));
+            }
+            lines.push('plan ' + esc(String(p.plan).split('/').pop()) + '：' + p.tasks.length + ' 個 task 分 ' + p.groups.length + ' 組；' + bits.join('、'));
+        });
+        if (!(x.tasks || []).length && (x.dispatches || []).length > 1) lines.push('這頁沒有任務表：其餘派工是否互不相依，無從判斷');
+        return lines.map(function (l) { return '<p class="tally">' + l + '</p>'; }).join('');
     }
     function cents(c) { return '$' + ((c || 0) / 100).toFixed(2); }
     function dur(sec) {

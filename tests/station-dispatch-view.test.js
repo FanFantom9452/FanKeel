@@ -90,3 +90,91 @@ test('the replay is one row per event with a filter per kind, a gate shows the a
     assert.equal(V.dur(59), '59s');
     assert.equal(V.dur(3725), '1h02m');
 });
+
+test('splitHtml lists one line per stage in the order seq first entered it, even across a backtrack, with the turn counts summed', () => {
+    const s = {
+        seq: [{ stage: 'build', at: 0 }, { stage: 'verify', at: 50 }, { stage: 'build', at: 100 }],
+        loops: [{ stage: 'build', turns: 10 }, { stage: 'verify', turns: 4 }, { stage: 'build', turns: 5 }],
+        dispatches: [], rows: [], tasks: [],
+    };
+    const html = V.splitHtml(s);
+    assert.ok(html.indexOf('build') < html.indexOf('verify'), 'build was entered first, so its line leads even though the backtrack revisits it after verify');
+    assert.match(html, /<p class="tally">build — 主迴圈 15 回合；沒有派工<\/p>/, 'the two loops entries for build sum to one line');
+    assert.match(html, /<p class="tally">verify — 主迴圈 4 回合；沒有派工<\/p>/);
+});
+
+test('concurrent dispatch is grouped by turn, not counted per call', () => {
+    const s = {
+        seq: [{ stage: 'build', at: 0 }],
+        loops: [{ stage: 'build', turns: 8 }],
+        dispatches: [
+            { turn: 3, surface: 'agents', out: 10, back: 20 }, { turn: 3, surface: 'agents', out: 10, back: 20 },
+            { turn: 6, surface: 'agents', out: 30, back: 40 }, { turn: 6, surface: 'agents', out: 30, back: 40 },
+        ],
+        rows: [
+            { disp: 0, model: 'claude-sonnet-5' }, { disp: 1, model: 'claude-sonnet-5' },
+            { disp: 2, model: 'claude-sonnet-5' }, { disp: 3, model: 'claude-sonnet-5' },
+        ],
+        tasks: [],
+    };
+    const html = V.splitHtml(s);
+    assert.match(html, /同一回應並發 2 回（共 4 個）/, 'two turns carried the four calls, so it reads 2 回 not 4 回');
+    assert.match(html, /sonnet ×4/);
+});
+
+test('an overlapping single dispatch is counted once as could-have-gone-in-one-turn', () => {
+    const s = {
+        seq: [{ stage: 'build', at: 0 }],
+        loops: [{ stage: 'build', turns: 8 }],
+        dispatches: [
+            { turn: 1, surface: 'agent', out: 0, back: 100 },
+            { turn: 2, surface: 'agent', out: 50, back: 150 },
+            { turn: 3, surface: 'agent', out: 200, back: 300 },
+        ],
+        rows: [{ disp: 0, model: 'claude-sonnet-5' }, { disp: 1, model: 'claude-sonnet-5' }, { disp: 2, model: 'claude-sonnet-5' }],
+        tasks: [],
+    };
+    const html = V.splitHtml(s);
+    assert.match(html, /單發 3 次，各佔一個回合，其中 1 次在前一次回來前就派出，本可一次發出/);
+    assert.equal((html.match(/本可一次發出/g) || []).length, 1, 'turn 2 overlaps turn 1 once; turn 3 does not overlap turn 2, so the credit is not doubled');
+});
+
+test('a cache with no loops field says so plainly instead of printing a guessed turn count', () => {
+    const s = {
+        seq: [{ stage: 'survey', at: 0 }],
+        dispatches: [{ turn: 1, surface: 'agent', out: 10, back: 20 }],
+        rows: [{ disp: 0, model: 'claude-sonnet-5' }],
+        tasks: [],
+    };
+    const html = V.splitHtml(s);
+    assert.match(html, /<p class="tally">這份快取沒有逐站回合數（寫於 loops 欄位出現之前）<\/p>/);
+    assert.equal(html.includes('主迴圈'), false, 'no loops field means no turn count is printed anywhere');
+    assert.match(html, /survey — 派工：單發 1 次；sonnet ×1/);
+});
+
+test('a plan line reports its groups in three states: dispatched in one turn, never dispatched, and could-have-gone-in-one', () => {
+    const tasks = [{
+        plan: 'docs/plans/2026-09-01-x.md',
+        tasks: [{ n: 1 }, { n: 2 }, { n: 3 }],
+        groups: [
+            { g: 1, tasks: [1], turns: [3], hint: false },
+            { g: 2, tasks: [2], turns: [], hint: false },
+            { g: 3, tasks: [3], turns: [5, 7], hint: true },
+        ],
+    }];
+    const html = V.splitHtml({ seq: [], loops: [], dispatches: [], rows: [], tasks });
+    assert.match(html, /plan 2026-09-01-x\.md：3 個 task 分 3 組；1 組各在一個回合內派出、1 組沒有派工紀錄、1 組本可一次發出：G3（task 3，分 2 個回合）/);
+});
+
+test('a page with more than one dispatch and no task table says the rest cannot be judged independent', () => {
+    const s = {
+        seq: [{ stage: 'build', at: 0 }],
+        loops: [{ stage: 'build', turns: 4 }],
+        dispatches: [{ turn: 1, surface: 'agent', out: 0, back: 10 }, { turn: 2, surface: 'agent', out: 20, back: 30 }],
+        rows: [{ disp: 0, model: 'claude-sonnet-5' }, { disp: 1, model: 'claude-sonnet-5' }],
+        tasks: [],
+    };
+    assert.match(V.splitHtml(s), /這頁沒有任務表：其餘派工是否互不相依，無從判斷/);
+    const one = Object.assign({}, s, { dispatches: [s.dispatches[0]], rows: [s.rows[0]] });
+    assert.equal(V.splitHtml(one).includes('這頁沒有任務表'), false, 'a single dispatch has nothing else to judge independence against');
+});

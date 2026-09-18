@@ -243,6 +243,24 @@ A step to an earlier stage on the route is a backtrack, marked `↩` with how
 long the stage before it lasted. Each backtrack links to the replay rows
 between entering the stage it left and the step back.
 
+**分工** sits third, between 階段順序 and 任務: a short prose account of how
+the main loop divided dispatch. One line per stage, in the order `seq` first
+entered it — a dispatch's stage is its `out` time run through the same rule
+`lib/detail.js:397`'s `stageWhen` uses: the last `seq` entry at or before it,
+or `task 開始前` when there is none. Turn counts come from `x.loops`; a cache
+written before that field existed has none, and the line says so
+(`這份快取沒有逐站回合數（寫於 loops 欄位出現之前）`) instead of printing a
+guessed zero. Concurrent dispatch — two or more `Agent` calls in one response
+— is grouped by `turn`, not counted per call: `同一回應並發 N 回（共 M 個）`.
+A single dispatch (`agent`) whose `out` lands before the previous single's
+`back`, on a different turn, is marked `本可一次發出` once per such overlap —
+the main loop did not wait for the prior result. Each line ends with the
+stage's models, by `family()`. Where the session claimed a plan, one line per
+plan gives its groups in three states: dispatched inside one turn, never
+dispatched, or `本可一次發出` by the group's own `hint`. A page with more than
+one dispatch and no plan gets one line saying the rest cannot be judged
+independent or not.
+
 **任務** is the plan the session claimed — a `docs/plans/<stem>.md` among its
 claims, not the `-design` one — with its tasks from the plan and each one's
 status from `.fankeel/build/<stem>/progress.md`. A task still open has no
