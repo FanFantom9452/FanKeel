@@ -68,8 +68,6 @@ entry waited for actually happening. It shrank when somebody read it.
 
 ## Ready
 
-- 〔caveman〕解除安裝：程式碼零硬依賴，`settings.json` 的 `enabledPlugins` 09-15 已設 false，兩個反向測試守著 — [tests/badge.test.js](tests/badge.test.js).
-
 ## Needs a decision
 
 - 〔cuts〕沒人用的：`lib/docs.js:198` 的 `bucketFor` 零呼叫；`scripts/stage-registry.js` 的 `--root`、`--print` 沒有呼叫端。09-18 audit，約 -19 行 — [lib/docs.js](lib/docs.js).
