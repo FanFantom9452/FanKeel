@@ -282,7 +282,7 @@ test('leave writes gates from the transcript\'s AskUserQuestion calls, with the 
     const out = run({ session_id: SID, transcript_path: f.transcript, cwd: f.root, reason: 'clear', hook_event_name: 'SessionEnd' }, f.cfg);
     assert.equal(out, '');
     const d = registry.readSession(f.root, SID);
-    assert.deepEqual(d.gates, [{ at: askedAt, stage: 'design', header: 'survey', labels: ['進 design', '留在 survey'], picked: '進 design' }]);
+    assert.deepEqual(d.gates, [{ at: askedAt, stage: 'design', header: 'survey', question: 'Which way?', labels: ['進 design', '留在 survey'], descriptions: ['', ''], picked: '進 design' }]);
 });
 
 // Mutation that reddens this: append `.reverse()` to the `.map(...)` that
@@ -415,6 +415,37 @@ test('gatesFrom clips a label and an answer at PICK_LEN', () => {
     assert.equal(out[0].labels[0].length, 120);
     assert.equal(out[0].picked.length, 120);
     assert.equal(out[0].labels[1], 'B', 'a short label beside it is untouched');
+});
+
+// `TODO.md:77`: each gate row also carries the question text and a parallel
+// `descriptions` array, one per option, clipped the same way labels are but
+// at their own caps.
+test('gatesFrom carries the question and each option\'s description, clipped at their own caps', () => {
+    const askedAt = Date.parse('2026-09-18T00:00:00.000Z');
+    const longQuestion = 'q '.repeat(150);
+    const longDescription = 'd '.repeat(150);
+    const entries = [
+        {
+            type: 'assistant', timestamp: '2026-09-18T00:00:00.000Z',
+            message: { content: [{
+                type: 'tool_use', id: 'a1', name: 'AskUserQuestion',
+                input: { questions: [{
+                    question: longQuestion, header: 'design',
+                    options: [{ label: 'A', description: longDescription }, { label: 'B' }],
+                }] },
+            }] },
+        },
+        {
+            type: 'user', timestamp: '2026-09-18T00:00:01.000Z',
+            message: { content: [{ type: 'tool_result', tool_use_id: 'a1' }] },
+            toolUseResult: { answers: { [longQuestion]: 'A' } },
+        },
+    ];
+    const out = gates.gatesFrom(entries, [['design', askedAt - 1]], function (a) { return a; });
+    assert.equal(out[0].question.length, 200);
+    assert.equal(out[0].descriptions.length, 2);
+    assert.equal(out[0].descriptions[0].length, 200);
+    assert.equal(out[0].descriptions[1], '', 'a missing description keeps its slot, same as an empty label');
 });
 
 test('a session with no AskUserQuestion writes no gates field', () => {

@@ -251,14 +251,20 @@ nothing else:
   Both halves are deleted from `usage` before that field is written, so every
   existing reader of `usage` still sees the shape it always had.
   [station.md](station.md) has where the per-stage curve reads it from.
-- `gates` — an array of `{ at, stage, header, labels, picked }`, one entry
-  per `AskUserQuestion` `lib/gates.js` finds in the transcript: `stage` is
-  read off `moves` at that point, `labels` is every option's text in the
-  order `AskUserQuestion` declared them — each capped at 120 characters, an
-  empty one kept in place rather than filtered out, since dropping it would
-  shift every later index — and `picked` is the chosen option's label, the
-  same cap, the text typed when it was Other, and `null` when the question
-  was never answered. That null is kept rather than clipped to `''`, because
+- `gates` — an array of `{ at, stage, header, question, labels, descriptions,
+  picked }`, one entry per `AskUserQuestion` `lib/gates.js` finds in the
+  transcript: `stage` is read off `moves` at that point, `question` is the
+  question text itself, capped at `QUESTION_LEN` (200) characters, `labels`
+  is every option's text in the order `AskUserQuestion` declared them — each
+  capped at 120 characters, an empty one kept in place rather than filtered
+  out, since dropping it would shift every later index — `descriptions` is
+  each option's description text, the same length and order as `labels`,
+  capped at `DESCRIPTION_LEN` (200) the same way, an empty slot kept for the
+  same reason — and `picked` is the chosen option's label, the same cap as
+  `labels`, the text typed when it was Other, and `null` when the question
+  was never answered. `question` and `descriptions` are new sibling fields;
+  `labels` itself did not change shape, so both of [station.md](station.md)'s
+  `gateSummary()` readers of it are untouched. That null is kept rather than clipped to `''`, because
   `gateSummary()` runs one guard over rows from either source, and that
   guard skips a null. An `''` is not the same thing: `answerOf` returns one
   for an empty multi-select too, and both sources count that alike. Clipped,
