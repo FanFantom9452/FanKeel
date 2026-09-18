@@ -287,11 +287,13 @@ test('leave writes gates from the transcript\'s AskUserQuestion calls, with the 
 
 // Mutation that reddens this: append `.reverse()` to the `.map(...)` that
 // builds `labels` in `gatesFrom`. Three options with three different labels is
-// what makes order visible here. It reddens the null test below as well —
-// `['A', 'B']` reversed differs — and leaves the empty-slot test green, because
-// `['', 'B', '']` reversed is itself. Two of three is the honest count: the
-// three tests cover adjacent halves of one field, and a mutation that moved
-// order without touching either of the others would have to be contrived.
+// what makes order visible here. Measured, it reddens four of the fifty-seven
+// cases in these three files: this one, the `picked null` case below, the
+// `PICK_LEN` case below that, and the whole-record deepEqual at the top of the
+// gates block. Perfect isolation would have to be contrived — several cases
+// read the same field. What is worth knowing is the one it leaves green: the
+// empty-slot case, because `['', 'B', '']` reversed is itself, so that case
+// pins position-keeping and pins nothing about order.
 test('gatesFrom keeps every option label in the order AskUserQuestion declared them', () => {
     const askedAt = Date.parse('2026-09-18T00:00:00.000Z');
     const entries = [
