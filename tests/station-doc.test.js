@@ -10,12 +10,13 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { acceptedFlags } = require('../lib/skills.js');
 
 const ROOT = path.join(__dirname, '..');
 
 test('every flag the station CLI parses appears on docs/station.md', () => {
     const src = fs.readFileSync(path.join(ROOT, 'scripts', 'station.js'), 'utf8');
-    const flags = [...new Set([...src.matchAll(/a === '(--[a-z]+)'/g)].map((m) => m[1]))];
+    const flags = [...acceptedFlags(src)];
     assert.ok(flags.length >= 5, 'the parser moved: ' + flags.join(', '));
     const page = fs.readFileSync(path.join(ROOT, 'docs', 'station.md'), 'utf8');
     for (const flag of flags) {

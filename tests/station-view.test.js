@@ -694,6 +694,52 @@ test('頁面對帳：the session cost tab\'s total equals the sum of that sessio
     }
 });
 
+test('costHtml gains a 主迴圈 row per stage from x.loops, and the row rendered proves two things: turns sum to the page\'s total, and no stage\'s BUSY-and-over cost exceeds that stage\'s own total', () => {
+    const days = [
+        dayRow('2026-09-14', 'survey', 'claude-sonnet-5', 'main', 1, 100),
+        dayRow('2026-09-14', 'build', 'claude-sonnet-5', 'main', 2, 1000),
+        dayRow('2026-09-14', 'build', 'claude-opus-5', 'agent', 1, 500),
+        dayRow('2026-09-14', 'verify', 'claude-sonnet-5', 'main', 2, 800),
+    ];
+    const m = V.costModel(days);
+    const x = { loops: [
+        { stage: 'survey', turns: 4, over: 0, overUsd: 0 },
+        { stage: 'build', turns: 5, over: 2, overUsd: 0.5 },
+        { stage: 'verify', turns: 3, over: 3, overUsd: 1.2 },
+    ] };
+    const html = V.costHtml(m, x);
+    const blocks = html.split('<tfoot>')[0].split('<tr class="sub">').slice(1);
+    assert.equal(blocks.length, 3, 'one block per stage in m.stages, survey/build/verify in route order');
+    const toNum = (s) => (s === '—' ? 0 : Number(s.replace(/[$,]/g, '')));
+    let sumTurns = 0;
+    blocks.forEach((b) => {
+        const subRow = b.slice(0, b.indexOf('</tr>'));
+        const cells = [...subRow.matchAll(/<td class="r[^"]*">(\$[\d.,]+|—)<\/td>/g)];
+        const stageUsd = toNum(cells[cells.length - 1][1]);
+        const turns = Number(b.match(/<span><b>(\d+)<\/b>回合<\/span>/)[1]);
+        const overUsd = toNum(b.match(/<b>(\$[\d.,]+|—)<\/b>那些回合/)[1]);
+        sumTurns += turns;
+        assert.ok(overUsd <= stageUsd + 1e-9, 'a stage\'s BUSY-and-over cost does not exceed its own total: ' + overUsd + ' vs ' + stageUsd);
+    });
+    const foot = html.split('<tfoot>')[1];
+    const footTurns = Number(foot.match(/<span><b>(\d+)<\/b>回合<\/span>/)[1]);
+    assert.equal(sumTurns, footTurns, 'the per-stage turn counts sum to the page\'s total main-loop turn count');
+    assert.equal(footTurns, 4 + 5 + 3);
+    // The footer row sits under 主 session / agent / 合計, so its label takes the
+    // first cell as theirs do, and its share is of the session, not of a stage.
+    assert.match(foot, /<tr class="loop"><td><span class="lp">主迴圈<\/span><\/td><td><\/td>/);
+    assert.match(foot, /<\/b>佔 session<\/span>/);
+    assert.match(blocks[1], /<tr class="loop"><td><\/td><td><span class="lp">主迴圈<\/span><\/td>[\s\S]*<\/b>佔這一站<\/span>/);
+    assert.match(blocks[0], /<span class="zero"><b>0<\/b>回合 ≥ 400k<\/span>/, 'a stage with no BUSY-and-over turn is styled zero');
+    assert.match(blocks[0], /<span class="zero"><b>—<\/b>那些回合<\/span>/, 'and its dollar figure is a dash, not $0.00');
+});
+
+test('costHtml with no detail loaded yet renders no 主迴圈 row and no stray NaN or undefined', () => {
+    const m = V.costModel([dayRow('2026-09-14', 'build', 'claude-sonnet-5', 'main', 1, 100)]);
+    const html = V.costHtml(m);
+    assert.doesNotMatch(html, /主迴圈|NaN|undefined/);
+});
+
 test('the dispatch tab adds input and output tokens and USD per row, and the events tab says how long each gate waited', () => {
     const html = V.dispatchHtml(DETAIL_X);
     assert.match(html, /<th class="r">input<\/th><th class="r">input USD<\/th><th class="r">output<\/th><th class="r">output USD<\/th>/);
@@ -903,4 +949,79 @@ test('a poll finding no change does not redraw, and each state flip redraws once
     assert.equal(draws, atLoad + 2, 'the flip back to live did not redraw exactly once');
     tick(); await settle(); await settle();
     assert.equal(draws, atLoad + 2, 'a poll on a live server redrew the page');
+});
+
+const DOC_A = {
+    pkey: 'F:\\ws\\alpha', generatedAt: '2026-09-18T16:16:00.000Z', total: 201,
+    buckets: [{ label: 'current', count: 89 }, { label: 'planned', count: 2 }, { label: 'retired', count: 102 }, { label: 'undeclared', count: 8 }],
+    plannedNotBuilt: ['docs/improvement-brief.md'],
+    undeclared: { count: 2, note: 'dated by git rather than by anyone reading them', paths: ['docs/a.md', 'docs/b.md'] },
+    filing: { index: 'docs/README.md', rows: [
+        { bucket: 'docs/archive', role: 'archive', note: '102, the whole archive bucket' },
+        { bucket: 'docs/plans', role: 'plan', note: null },
+    ] },
+};
+
+test('docsCardHtml quotes one project\'s map.md into a section: counts, both lists, the filing table with its retired note, and when it was generated', () => {
+    const o = { names: { 'F:\\ws\\alpha': 'alpha' }, pkeys: ['F:\\ws\\alpha'] };
+    const html = V.docsCardHtml([DOC_A], o);
+    assert.match(html, /<div class="h2">文件 /);
+    assert.match(html, />alpha</);
+    assert.match(html, /201 markdown files/);
+    assert.match(html, /current <b>89<\/b>/);
+    assert.match(html, /docs\/improvement-brief\.md/);
+    assert.match(html, /docs\/a\.md/);
+    assert.match(html, /dated by git rather than by anyone reading them/);
+    assert.match(html, /docs\/archive[\s\S]*archive[\s\S]*retired — 102, the whole archive bucket/);
+    assert.match(html, /docs\/plans[\s\S]*plan/);
+    assert.match(html, /2026-09-18 16:16/);
+    // Every bar segment and every legend swatch carries a real `background:`
+    // declaration — the retired one's hatch too, which a bare value would drop.
+    const split = html.slice(html.indexOf('<div class="split-bar"'), html.indexOf('</div></div>', html.indexOf('<div class="split-leg">')));
+    const styles = split.match(/style="[^"]*"/g);
+    assert.equal(styles.length, DOC_A.buckets.length * 2, 'one bar segment and one legend swatch per bucket');
+    for (const style of styles) {
+        assert.equal((style.match(/background:/g) || []).length, 1, style);
+    }
+    assert.match(html, /<i title="retired 102" style="flex:102 1 0;background:var\(--hatch-bg\)/);
+});
+
+test('docsCardHtml is empty with no project map, so the whole card is left out', () => {
+    assert.equal(V.docsCardHtml([], { names: {}, pkeys: [] }), '');
+});
+
+// 首頁 used to put the machine profile card last, and it was missed twice
+// there; it now opens the page. Booted the way the 清單 test above boots it,
+// on the home route, so the order is read off what the page rendered.
+test('首頁 opens with the machine profile card, ahead of the hero panel', () => {
+    const vm = require('node:vm');
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    const els = {};
+    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
+    const doc = {
+        getElementById: (id) => els[id] || (els[id] = el()),
+        addEventListener() {},
+        createElement: el,
+        head: { appendChild() {} },
+        querySelectorAll: () => [],
+    };
+    const win = {
+        location: { hash: '' }, addEventListener() {}, scrollTo() {},
+        STATION: {
+            generatedAt: new Date(2026, 8, 14, 21).toISOString(), configDir: 'C:\\cfg',
+            pricesVerified: '2026-09-04', serve: false,
+            projects: [{ root: 'F:\\ws\\alpha', gone: false, unreadable: 0, build: [], mapAt: null }],
+            profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} },
+            profileKeys: {}, classes: {}, sessions: [],
+        },
+    };
+    vm.runInNewContext(src, { window: win, document: doc, URLSearchParams, fetch() {} });
+    const html = els.page.innerHTML;
+    const card = html.indexOf('machine profile');
+    const hero = html.indexOf('class="panel hero"');
+    assert.ok(card >= 0, 'the machine profile card is on 首頁');
+    assert.ok(hero >= 0, 'the hero panel is on 首頁');
+    assert.ok(card < hero, 'the profile card comes before the hero panel');
 });

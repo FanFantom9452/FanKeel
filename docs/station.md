@@ -105,7 +105,7 @@ agents ran, as a bare count beside the total rather than a request count or a
 wall-clock of its own.
 
 Every row also carries the registry it belongs to, as `root` on its session
-object (`lib/station.js:503`, `root: s.root`) — the raw path, not the
+object (`lib/station.js:587`, `root: s.root`) — the raw path, not the
 shortened label shown on the row — and `match()` filters on that same field
 (`assets/station/station.js:139`, `s.root !== f.project`) rather than a DOM
 attribute, because every row here is rebuilt from `window.STATION` in the
@@ -114,29 +114,29 @@ below.
 
 A project whose profile sets `station.hide: 'true'` produces no row at
 all — not a greyed-out one, an absent one. The check is one function,
-`hiddenPkeys()` (`lib/station.js:382`, `function hiddenPkeys(model) {`),
+`hiddenPkeys()` (`lib/station.js:465`, `function hiddenPkeys(model) {`),
 and every session under a hidden project is dropped before anything else on
 the page is built from it: `flatten()` is where that happens
-(`lib/station.js:410`, `if (hidden.has(pkeyOf(row))) continue;`), and
+(`lib/station.js:493`, `if (hidden.has(pkeyOf(row))) continue;`), and
 everything the page renders — the facets, the charts, four of the home
 page's five cards — reads `flatten()`'s output rather than the model
 itself, so no view filters a second time. Every aggregation that walks
 `model.registries` instead carries its own check, and a new one has to:
 the live/stale/down counts `write()` returns for the terminal summary
-(`lib/station.js:570`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
+(`lib/station.js:654`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
 the fifth card's gate tally
-(`lib/station.js:441`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`),
+(`lib/station.js:524`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`),
 the profile list `serialize()` hands the page
-(`lib/station.js:494`, `if (values && values['station.hide'] === true) continue;`) —
+(`lib/station.js:578`, `if (values && values['station.hide'] === true) continue;`) —
 an inline copy of the predicate rather than a `hiddenPkeys()` call, because
 that loop is keyed by the raw profiles directory rather than by pkey —
 `write()`'s detail-file loop described below, and `--json`'s own pass
 outside this file
-(`scripts/station.js:679`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
+(`scripts/station.js:708`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
 There is no trace on
 the page that a project was left out: no count, no note on the footer. `station.js`'s own text
 summary — not the served page — does print how many projects it excluded
-(`scripts/station.js:780`, `hidden by station.hide`), but names none of
+(`scripts/station.js:809`, `hidden by station.hide`), but names none of
 them; the terminal is the only place the fact surfaces at all.
 
 ### The stage strip
@@ -150,7 +150,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:1368`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:1457`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -166,7 +166,7 @@ before this shipped ever will — and even once it exists, a stage whose models
 the price table does not know has no dollar figure, not a figure of zero:
 `costOf` returns `usd: 0` there, and `gather` reads `priced.length` before
 believing it, so an unpriced stage's own `usd` is `null` rather than a silent
-zero (`lib/station.js:311`, `usd: priced ? mine + agents : null`) — the same
+zero (`lib/station.js:383`, `usd: priced ? mine + agents : null`) — the same
 line that folds the session and its agents together rather than pricing the
 parent alone, which is why the ledger's total already matches `cost(s)`'s own
 combined figure, agents included.
@@ -199,7 +199,14 @@ agents. Its total is the sum of `days[].usd` — the figure the home and project
 pages sum too — and a live session has one, because `days` comes from the
 transcript read in `extract()` rather than from `spend`, which `hooks/leave.js`
 still writes only at session end. A model the price table does not know gives
-its rows `cost: null` and `usd: null`: no figure, rather than a zero.
+its rows `cost: null` and `usd: null`: no figure, rather than a zero. Each
+stage also carries a 主迴圈 row: how many of the session's own requests it
+held, how many already carried `BUSY` tokens or more (`lib/context.js`, not
+retyped here), what those turns cost, and their share of the stage's own
+total — from `lib/detail.js`'s `loopsOf()`, computed from the same
+per-request series `days` is folded from rather than a new recorded field. A
+stage with no such turn shows the count and a dash rather than a zero dollar
+figure.
 
 ### One session, opened
 
@@ -211,7 +218,7 @@ way. Everything below claims is the session's detail, read out of its
 transcript by `lib/detail.js` and loaded the first time the session is opened;
 a session with no transcript under this machine's config directory and no
 detail cached here has none, and the panel says so rather than drawing an empty
-chart. Where one was cached here once, `lib/detail.js:675` keeps it and the
+chart. Where one was cached here once, `lib/detail.js:694` keeps it and the
 panel draws that instead — a transcript Claude Code has since deleted leaves
 the cache as all there is.
 
@@ -283,10 +290,9 @@ deliberately. So the stages are derived rather than recorded: `clock` already
 holds when each stage was entered, `registry.windowsFrom` turns that into
 windows, and `hooks/leave.js` passes them into the same single pass that was
 already happening — the parent's pass and each agent's alike, since
-`summariseTree` hands the windows to both halves. Each request lands in the
-window holding its **last** line's timestamp — the same "last line winning"
-rule the `requestId` de-duplication already uses, so a request whose lines
-straddle a boundary is decided by one rule and not two.
+`summariseTree` hands the windows to both halves. Which window a request lands
+in is the same tie-break [registry.md](registry.md) states for `spend`, so a
+request whose lines straddle a boundary is decided by one rule and not two.
 
 Each window runs to the **next stage's start**, not to its own last touch. The
 first starts at `-Infinity`, because the prompt that created the entry is older
@@ -354,7 +360,7 @@ them on this page. Every filter from here down narrows what the browser
 draws from data that already arrived: clearing a facet or the search box
 brings a row straight back, because it was in `window.STATION` all along.
 `station.hide` instead runs once, before that, in `flatten()`
-(`lib/station.js:404`, `function flatten(model) {`), which `serialize()`
+(`lib/station.js:487`, `function flatten(model) {`), which `serialize()`
 calls to build `sessions` before any of it reaches the browser (see What
 each row holds, above). There is no view state that could bring a hidden
 project's rows back, because the browser never received them; the only way
@@ -362,7 +368,7 @@ is to change the profile and reload.
 
 The facets are on 清單, above its table — state and stage with a count on each
 button, registry with one button per root
-(`assets/station/station.js:1170`, `moved onto the page they narrow`) — and
+(`assets/station/station.js:1259`, `moved onto the page they narrow`) — and
 the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed. On 清單,
 selecting a registry recomputes the page below the facets: `goneNote()`'s card
@@ -372,14 +378,14 @@ above the list otherwise; it does not merely hide rows.
 A gone registry keeps its facet button, labelled `— gone`, rather than
 dropping off the row, so selecting one never returns a blank pane with nothing
 on the page saying why:
-`goneNote()` (`assets/station/station.js:1008`, `function goneNote(root)`) prints a
+`goneNote()` (`assets/station/station.js:1096`, `function goneNote(root)`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card once it is the one selected on
 清單, and every project page carries the same card for its own registry no
 matter what is selected there: `registryNote()`
-(`assets/station/station.js:1025`, `function registryNote(root)`) prints its
+(`assets/station/station.js:1113`, `function registryNote(root)`) prints its
 own unreadable-session count, its `map.md` date — or `不存在` when there is
 none — and its build directories with each one's file count, or says there
 are none. The old page carried all three on a per-registry meta line; the
@@ -387,9 +393,9 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:1402`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:1491`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
-(`lib/station.js:340`, `gone: true, unreadable: 0`); everywhere
+(`lib/station.js:423`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
 count — the footer keeps the total, so a corrupt entry is never a click away
 from being found.
@@ -415,15 +421,15 @@ before them — the window's spend, tokens, active time and waiting ratio —
 and the fifth does not compare windows at all: it
 names the option-one gate wording most often swapped for another answer,
 `最常被換掉`, with how many times out of how many it was asked beneath it
-(`lib/station.js:432`, `function gateSummary(model, hidden) {`;
+(`lib/station.js:515`, `function gateSummary(model, hidden) {`;
 `assets/station/station.js:377`, `roHtml('最常被換掉'`). Unlike the other
 four, it does not move with the 30-day window or the search box: it is
 counted once, across every shown session's gate answers
-(`lib/station.js:501`, `gates: gateSummary(model, hidden),`), not from the
+(`lib/station.js:585`, `gates: gateSummary(model, hidden),`), not from the
 filtered set the other four sum. It walks the model rather than
 `flatten()`'s output, so it takes the hidden set as an argument and skips
 those sessions itself
-(`lib/station.js:441`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).
+(`lib/station.js:524`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).
 While a session's transcript is still there, its source is `lib/detail.js`'s
 own replay; once the transcript is gone, `gateSummary()` falls back to the
 entry's own `gates` (see [registry.md](registry.md)), so this denominator no
@@ -445,12 +451,22 @@ counts — is counted in its group but kept out of its averages, on a `有倒退
 row of its own, and every group's heading says how many such sessions it has
 and how many backward steps between them.
 
+**文件** is a card on 首頁, one section per project whose `.fankeel/map.md`
+exists: the registry root's own, plus `<root>/<project>/.fankeel/map.md` for
+each project a session under that registry names — one section per file
+found, and a project with none gets no section. It quotes what `map.js`
+already computed rather than reading the tree itself (`lib/station.js`'s
+`parseMapCard`): the document counts and their split by status,
+`planned, not built`, `undeclared`, the filing table with each bucket's
+role, and when the file was generated. It never runs a docs scan of its own,
+and a registry with no project's map anywhere gets no card at all.
+
 **清單** is the sortable table and a detail pane. Clicking a row fills the pane
 rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:1161`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:1250`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較** is a third view. Tick two sessions on 清單 or a project page — only a
@@ -493,9 +509,9 @@ and the eyebrow's cannot disagree.
 
 Both decisions are pure functions above the `module.exports` guard, so both
 are unit tested: what to say
-(`assets/station/station.js:843`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
+(`assets/station/station.js:931`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
 and what the eyebrow reads
-(`assets/station/station.js:853`, `function heroEyebrow(frozenAt) {`). The
+(`assets/station/station.js:941`, `function heroEyebrow(frozenAt) {`). The
 fetch that feeds them, the bar they fill and the pill are the document half
 below the guard. The eyebrow is rendered rather than patched, so it takes a
 redraw — but only as the state flips, never on a poll that finds nothing
@@ -530,7 +546,7 @@ says when it was generated.
 A session under a hidden project produces no `station/detail/<id>.js`
 either, on every one of those four writes. `write()` walks
 `model.registries` directly for this loop rather than through `flatten()`,
-so it carries its own check (`lib/station.js:629`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
+so it carries its own check (`lib/station.js:713`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
 hiding a project after its sessions already had a detail file does not
 delete that file, it just stops being rewritten — nothing in `write()`
 removes a file it once wrote.
@@ -595,7 +611,7 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:1063`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:1152`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button, and every registry card now carries one:
@@ -623,8 +639,8 @@ notes and its `next` intact.
 
 ## Setting a profile from the page
 
-No session view carries a **profile** card. 首頁 ends with the machine
-defaults' card, after its projects and recent sessions; each registry's card —
+No session view carries a **profile** card. 首頁 opens with the machine
+defaults' card, before its projects and recent sessions; each registry's card —
 on 清單 once that registry is selected, and on every project page for its own
 registry — ends with one card per project it holds. A card is one row per key
 in `profileKeys` (`lib/profile.js`'s
@@ -659,7 +675,7 @@ from 清單 — `serialize()`'s `profiles.projects` drops it exactly where
 button left on the served page to reach it again. This is not because the
 `POST` above would refuse it: `known` here builds its own fresh, unfiltered
 model rather than reading the page's filtered one
-(`scripts/station.js:545`, `const known = model.registries.some(`), so a
+(`scripts/station.js:574`, `const known = model.registries.some(`), so a
 hidden project's directory is still in it, and a request naming one that
 somehow still reached the server would succeed, not `404`. The card is
 simply never drawn to click, so unhiding is

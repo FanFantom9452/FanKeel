@@ -173,10 +173,10 @@ anything written outside them unstaged rather than committed.
 
 ## What the guard does not watch
 
-The scope guard's collision check is wired to one matcher: `.claude-plugin/plugin.json:85` reads `"matcher": "Edit|Write|NotebookEdit"`.
+The scope guard's collision check is wired to one matcher: `.claude-plugin/plugin.json:75` reads `"matcher": "Edit|Write|NotebookEdit"`.
 Inside it, `hooks/guard.js:71` calls `targetOf(payload)`, which reads only
 `tool_input.file_path` and `tool_input.notebook_path`, and `hooks/guard.js:72` is the whole branch for anything else: `if (!file) return;`.
-The same hook has a second entry, `.claude-plugin/plugin.json:107` `"matcher": "Bash|PowerShell"`, and it stops short of that check:
+The same hook has a second entry, `.claude-plugin/plugin.json:97` `"matcher": "Bash|PowerShell"`, and it stops short of that check:
 `hooks/guard.js:44` `if (payload.tool_name === 'Bash' || payload.tool_name === 'PowerShell') {` ends in a `return` of its own, and
 `hooks/guard.js:52` `if (!payload.agent_id) return;` lets a session with no `agent_id` — the main thread of an `--agent` session, not a subagent — through before the type is even read, and
 `hooks/guard.js:53` `if (!readOnlyAgentType(payload.agent_type)) return;` then lets every agent but a read-only one through before the command is read. Both fields are checked because `agent_type` alone is a trap: it is set inside a subagent and on the main thread of an `--agent` session alike, and only `agent_id` tells those two apart — see [subagents.md](subagents.md).
@@ -246,8 +246,12 @@ or `$null`, never counting `=>`, `->`, `>&` or a `>` inside quotes,
 `tee`, `rm`, `mv`, `cp`, `sed -i` or `--in-place`, a `git`
 subcommand that writes the tree or the index (`add`, `commit`, `checkout`,
 `switch`, `restore`, `reset`, `stash`, `clean`, `apply`, `am`, `merge`,
-`rebase`, `cherry-pick`, `revert`, `pull`), or one of eight PowerShell
-cmdlets. `fankeel-verifier` is not on the list —
+`rebase`, `cherry-pick`, `revert`, `pull`), one of eight PowerShell
+cmdlets, a `node -e`/`--eval` script that calls a write (`writeFile`,
+`appendFile`, `createWriteStream`, `rename`, `unlink`, `rm`, `mkdir`,
+`copyFile`), or a `python -c` one that opens a file in a write mode, calls
+`write_text` or `os.remove`, or uses `shutil` at all (`lib/guard.js`'s
+`NODE_EVAL_WRITE` and `PYTHON_WRITE`). `fankeel-verifier` is not on the list —
 writing its own evidence file is what it is for.
 
 The list is a denylist rather than an allowlist for the reason the rejected

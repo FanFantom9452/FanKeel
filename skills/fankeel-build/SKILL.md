@@ -56,8 +56,14 @@ they chose, and do not ask again.
 
 ```
 node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md show
-node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md init
+node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md --range <the sha before the plan was written>..<the sha init is run at, before Task 1's BASE> init
 ```
+
+**Pass the plan stage's own range on `init`.** `--range` is optional and records
+the commits that wrote the plan itself — `ranges` then lists that row beside
+the tasks, and verify no longer reads the plan's own commit as a change
+nobody reviewed. Written once: a second `init --range` on the same ledger
+leaves the first recording in place.
 
 **`--plan` goes before the verb, always.** Everything after the verb is text, so
 a completion note or a ruling keeps every word — including one spelled exactly

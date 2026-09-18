@@ -968,6 +968,14 @@ test('acceptedFlags() reads all three parse shapes off their own real source', (
     'docs-check.js\'s parseArgs options table does not include --role');
 });
 
+test('acceptedFlags() is non-empty for every CLI a skill\'s Bash line can name a flag on', () => {
+  const { acceptedFlags } = require('../lib/skills.js');
+  const src = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  for (const rel of ['scripts/judge.js', 'scripts/ledger.js', 'scripts/task.js', 'scripts/station.js', 'scripts/survey.js']) {
+    assert.ok(acceptedFlags(src(rel)).size > 0, rel + '\'s acceptedFlags() came back empty');
+  }
+});
+
 // classify() — six tags, four fail:true (missing-script, unknown-flag,
 // core-dropped, empty-scan) and two fail:false (bare-reference,
 // unnamed-script). Each test below builds the smallest {refs, present,

@@ -8,7 +8,9 @@ source_of_truth: this file is the index; each page below is its own source
 
 Eleven pages, one question each. The front page has install, update and
 uninstall, the two diagrams and a short introduction to each of these;
-everything that needs more than a paragraph is here.
+everything that needs more than a paragraph is here. For a person who is not
+running a session, the station's home page turns each project's own
+`.fankeel/map.md` into a 文件 card; see [station.md](station.md).
 
 | I want to know | Page |
 |---|---|
@@ -120,9 +122,13 @@ everything that needs more than a paragraph is here.
 | Why only five of the user's fifteen spoken improvements were gaps — three already shipped, six already ruled on, one already measured — plus the four things audit's own adversary defeated, including a claim that the fortnightly pair sweep had run | [decisions/2026-09-18-skill-improvements.md](decisions/2026-09-18-skill-improvements.md) — *繁體中文* |
 | Why the fifteen become ten entries and one rewrite rather than fifteen changes, and why the release that unblocks two of them is an entry rather than a push | `docs/archive/2026-09-18-skill-improvements-design.md` — *built, 繁體中文* |
 | The one task: ten entries and one rewrite into `TODO.md`, with the red-green control run on `todo-check.js` itself because a document carries no test | `docs/archive/2026-09-18-skill-improvements.md` — *built, 繁體中文* |
+| Why none of caveman's three absorbable groups — `caveman-stats`, Native Core's six process skills, `cavecrew`'s delegation guide — gained a fankeel rule, and what already covers each one instead | [decisions/2026-09-18-caveman-absorb-none.md](decisions/2026-09-18-caveman-absorb-none.md) — *繁體中文* |
 | Why the five Ready entries went through a plan, why two plan-stage commits ended up outside every ledger row, and the three rows verify's adversaries defeated — all three written in this session | [decisions/2026-09-18-ready-five.md](decisions/2026-09-18-ready-five.md) — *繁體中文* |
 | Why all five `## Ready` entries of 09-18 were ready as written, and the three things survey found that they did not say: a test pinning `v: 2`, one VERSION bump covering `wakes` too, and a `sources.md` sentence the new row makes false | `docs/archive/2026-09-18-ready-five-design.md` — *built, 繁體中文* |
 | The five tasks: the detail cache's VERSION to 3, `wakes` on the session header, memory-check counting entries rather than citations, one paragraph for the reader, and the missing `sources.md` row with a guard against the next one | `docs/archive/2026-09-18-ready-five.md` — *built, 繁體中文* |
+| Where each of the nineteen `## Needs a decision` entries of 09-18 landed, the four pages verify and audit sent back — a missed citation, `Glob` not reading `.ignore`, a test the plan called impossible, a guard list left short — and the four commits the branch sat red | [decisions/2026-09-18-todo-nineteen.md](decisions/2026-09-18-todo-nineteen.md) — *繁體中文* |
+| Why all nineteen entries were settled in one design, entry by entry, and what each one became: code, a test, a page, or a closed line | `docs/archive/2026-09-18-todo-nineteen-design.md` — *built, 繁體中文* |
+| The nineteen tasks that land them, with thirteen fix rows — three sent back by verify, one by audit | `docs/archive/2026-09-18-todo-nineteen.md` — *built, 繁體中文* |
 | Why the scratch area could not be declared however legal the path looks, how one root cause survived nine rounds of review and then reappeared inside its own fix, and the six findings filed rather than built | [decisions/2026-09-11-todo-three.md](decisions/2026-09-11-todo-three.md) — *繁體中文* |
 | Why the five 09-11 directions were filed as TODO entries rather than built, the four places the approved draft departed from judgement 8, and the empty answer the first record filed | [decisions/2026-09-11-todo-split.md](decisions/2026-09-11-todo-split.md) — *繁體中文* |
 | Why the scratch area cannot be a `docs.json` bucket however legal the path looks, who owns each of three twice-described mechanisms, and why `source_of_truth` gets no single-owner rule | `docs/archive/2026-09-11-todo-three-design.md` — *built, 繁體中文* |

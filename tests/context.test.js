@@ -62,6 +62,7 @@ test('the line names what was lost and how to carry the task over', () => {
   const line = ctx.contextLine({ dropped: 326893, used: 287578 });
   assert.match(line, /327k tokens dropped/);
   assert.match(line, /288k in play/);
+  assert.match(line, /fourth option, hand off: set next/);
   assert.match(line, /\/fankeel → Adopt/);
   // Not yet the stronger wording: one compaction is a fact, not an emergency.
   assert.doesNotMatch(line, /Start a fresh session before the next one/);
@@ -134,6 +135,23 @@ test('the render block carries the line only when there is one', () => {
   assert.doesNotMatch(render(base), /context:/);
 });
 
+// The other half of the same block-carrying question: the post-answer block
+// gets the line too now, from the same transcript, threaded through the same
+// way render() already was.
+test('renderResume carries the line only when there is one', () => {
+  const { renderResume } = require('../lib/render.js');
+  const mine = { sessionId: 'a', data: { task: 'x', stage: 'build', active: true, updated: new Date().toISOString() } };
+
+  const quiet = renderResume({ mine, transcript: transcript([usage(1000)]) }) || '';
+  assert.doesNotMatch(quiet, /context:/);
+
+  const loud = renderResume({ mine, transcript: transcript([usage(1000), compaction(500000)]) }) || '';
+  assert.match(loud, /context: 500k tokens dropped/);
+
+  // No transcript at all must not change what comes out.
+  assert.doesNotMatch(renderResume({ mine }) || '', /context:/);
+});
+
 // Waiting for the first compaction means the warning always arrives after the
 // loss. 400k is the line, set from a session that sat around 300k doing ordinary
 // work.
@@ -141,6 +159,7 @@ test('a busy session is warned before it loses anything', () => {
   assert.equal(ctx.contextLine({ dropped: 0, used: 308000 }), null);
   const line = ctx.contextLine({ dropped: 0, used: ctx.BUSY });
   assert.match(line, /400k in play, nothing dropped yet/);
+  assert.match(line, /fourth option, hand off: set next/);
   assert.match(line, /\/fankeel → Adopt/);
 });
 

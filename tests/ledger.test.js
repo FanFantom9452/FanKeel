@@ -371,6 +371,46 @@ test('the short shas the build loop records are accepted', () => {
   assert.match(out, /1 4aacd71\.\.94ec4b3/);
 });
 
+test('a plan line carries its range and parses back', () => {
+  const line = ledger.planLine('a1b2c3d..e4f5a6b');
+  assert.equal(line, 'Plan: [a1b2c3d..e4f5a6b]');
+  assert.equal(ledger.planRange(line), 'a1b2c3d..e4f5a6b');
+  assert.equal(ledger.planRange('no plan line here'), null);
+});
+
+test('init --range records the plan stage\'s own range, and ranges lists it before any task completes', () => {
+  const dir = root();
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', 'aaaaaaa..bbbbbbb', 'init'], { cwd: dir, encoding: 'utf8' });
+  const contents = fs.readFileSync(ledger.ledgerPath(dir, 'p.md'), 'utf8');
+  assert.equal(ledger.planRange(contents), 'aaaaaaa..bbbbbbb');
+  const out = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'ranges'], { cwd: dir, encoding: 'utf8' });
+  assert.match(out, /plan aaaaaaa\.\.bbbbbbb/);
+  assert.equal(/nothing complete yet/.test(out), false);
+});
+
+test('a second init --range does not duplicate the plan row', () => {
+  const dir = root();
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', 'aaaaaaa..bbbbbbb', 'init'], { cwd: dir, encoding: 'utf8' });
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', 'ccccccc..ddddddd', 'init'], { cwd: dir, encoding: 'utf8' });
+  const contents = fs.readFileSync(ledger.ledgerPath(dir, 'p.md'), 'utf8');
+  assert.equal((contents.match(/^Plan: /gm) || []).length, 1);
+  assert.equal(ledger.planRange(contents), 'aaaaaaa..bbbbbbb');
+});
+
+test('init --range is refused the same way complete and fix refuse an unreadable range', () => {
+  const dir = root();
+  let out = '';
+  let code = 0;
+  try {
+    execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', 'HEAD~1..HEAD', 'init'], { cwd: dir, encoding: 'utf8' });
+  } catch (e) {
+    out = String(e.stdout || '');
+    code = e.status;
+  }
+  assert.equal(code, 1);
+  assert.match(out, /--range wants two commit shas/);
+});
+
 function git(dir, args) {
   execFileSync('git', args, { cwd: dir, stdio: ['ignore', 'ignore', 'ignore'] });
 }

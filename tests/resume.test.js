@@ -93,6 +93,27 @@ test('an answered question brings the stage rules back', () => {
   assert.match(ctx, /output shape:/);
 });
 
+// The one thing only this block is placed to see: the gate itself is an
+// AskUserQuestion, so a session driven entirely by its own answers would
+// otherwise never see a busy or compacted context reported at all.
+test('a busy transcript rides the resume block the same way it rides the prompt block', () => {
+  const root = tmp('fankeel-resume-');
+  seed(root, MINE);
+  const dir = tmp('fankeel-transcript-');
+  const file = path.join(dir, 'session.jsonl');
+  fs.writeFileSync(file, '{"type":"assistant","message":{"usage":{"input_tokens":2,'
+    + '"cache_creation_input_tokens":2362,"cache_read_input_tokens":397636,"output_tokens":275}}}\n');
+  const ctx = context(run({ session_id: MINE, cwd: root, transcript_path: file }));
+  assert.match(ctx, /context: 400k in play, nothing dropped yet\. This stage's gate gets a fourth option, hand off: set next/);
+});
+
+test('with no transcript_path the resume block still says nothing about context', () => {
+  const root = tmp('fankeel-resume-');
+  seed(root, MINE);
+  const ctx = context(run({ session_id: MINE, cwd: root }));
+  assert.doesNotMatch(ctx, /context:/);
+});
+
 // It is the short form on purpose. Everything the full block carries that cannot
 // have moved between a question and its answer stays out, because this runs
 // several times a stage and each copy is permanent in the context.
@@ -219,21 +240,12 @@ test('the manifest runs it on AskUserQuestion and on nothing else', () => {
 test('the drift hook runs on writes and on nothing else', () => {
   const plugin = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
   const post = plugin.hooks.PostToolUse;
-  assert.equal(post.length, 3, 'an unreviewed fourth PostToolUse entry has appeared');
+  assert.equal(post.length, 2, 'an unreviewed third PostToolUse entry has appeared');
   const touch = post.filter((e) => e.hooks.some((h) => /hooks\/touch\.js/.test(h.command)));
   assert.equal(touch.length, 1);
   assert.equal(touch[0].matcher, 'Edit|Write|NotebookEdit');
   assert.equal(touch[0].hooks.length, 1);
   assert.equal(touch[0].hooks[0].timeout, 5);
-
-  // hooks/size.js: reviewed in — no matcher, so it runs on every tool in every
-  // session, which is the point (the reminder has to see every tool result to
-  // measure it).
-  const size = post.filter((e) => e.hooks.some((h) => /hooks\/size\.js/.test(h.command)));
-  assert.equal(size.length, 1);
-  assert.equal(size[0].matcher, undefined);
-  assert.equal(size[0].hooks.length, 1);
-  assert.equal(size[0].hooks[0].timeout, 5);
 });
 
 test('every hook the manifest names is a file that exists', () => {

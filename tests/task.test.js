@@ -97,6 +97,13 @@ test('start writes the entry, at survey, active, holding nothing', () => {
   assert.equal('claims' in data, false);
 });
 
+test('start writes the plugin\'s own package.json version onto the entry', () => {
+  const dir = root();
+  started(dir, A, 'tidy the project cards', 'Waypoint');
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+  assert.equal(entry(dir, A).version, pkg.version);
+});
+
 // The reason this script exists at all. Hand-writing the JSON left this file out
 // every time, and `sessions/` was then one `git add -A` from being committed.
 test('start creates .fankeel/.gitignore, which hand-writing the JSON never did', () => {
@@ -526,6 +533,21 @@ test('adopt inherits the start time rather than re-stamping it', () => {
   run(dir, ['adopt', A, '--session', B]);
   assert.equal(entry(dir, B).started, source.started);
   assert.ok(Date.parse(entry(dir, B).updated) > Date.parse(source.started));
+});
+
+// `version` records which process wrote the entry, not which task it is — a
+// session started under an older plugin and adopted here must show this
+// process's own version, not the one it inherited.
+test('adopt writes this process\'s own version, not the source\'s', () => {
+  const dir = root();
+  started(dir, A, 'tidy the project cards', 'Waypoint');
+  const source = entry(dir, A);
+  source.version = '0.1.0';
+  registry.writeSession(dir, A, source);
+
+  run(dir, ['adopt', A, '--session', B]);
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+  assert.equal(entry(dir, B).version, pkg.version);
 });
 
 // `burn` is two sightings of one session's context and `clock` is two of the

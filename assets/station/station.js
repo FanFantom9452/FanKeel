@@ -515,6 +515,59 @@
                     + '<td>' + statePill(s) + '</td></tr>';
             }).join('') + '</tbody></table></div>';
     }
+    // The 文件 card: one section per project whose `.fankeel/map.md` was
+    // found, quoting `parseMapCard`'s own reading of it rather than
+    // recomputing anything here. `d.label` colours and `o.names` name it the
+    // same way every other project-keyed row on this page does.
+    var DOC_STATUS_COLOUR = { current: 'var(--good)', planned: 'var(--p-0)', generated: 'var(--m-haiku)', undeclared: 'var(--stale)' };
+    var DOC_HATCH = 'var(--hatch-bg) repeating-linear-gradient(45deg,var(--hatch) 0 1.3px,transparent 1.3px 4.5px)';
+    function docSplitHtml(d) {
+        if (!d.buckets.length || !d.total) return '';
+        var swatch = function (label) {
+            return 'background:' + (label === 'retired' ? DOC_HATCH : DOC_STATUS_COLOUR[label] || 'var(--muted)');
+        };
+        var legend = d.buckets.map(function (b) {
+            return '<span><i class="sw" style="' + swatch(b.label) + '"></i>'
+                + esc(b.label) + ' <b>' + b.count + '</b><em>' + Math.round(b.count / d.total * 100) + '%</em></span>';
+        }).join('');
+        var bar = d.buckets.map(function (b) {
+            return '<i title="' + esc(b.label) + ' ' + b.count + '" style="flex:' + b.count + ' 1 0;' + swatch(b.label) + '"></i>';
+        }).join('');
+        return '<div class="split"><div class="split-h"><span>狀態</span><span class="num mono">' + d.total + ' markdown files</span></div>'
+            + '<div class="split-bar" role="img">' + bar + '</div><div class="split-leg">' + legend + '</div></div>';
+    }
+    function docPathList(paths) {
+        return '<div class="claims">' + paths.map(function (p) { return '<div title="' + esc(p) + '">' + esc(p) + '</div>'; }).join('') + '</div>';
+    }
+    function docFilingHtml(filing) {
+        if (!filing || !filing.rows.length) return '';
+        return '<table class="t"><thead><tr><th>bucket</th><th>role</th><th></th></tr></thead><tbody>'
+            + filing.rows.map(function (r) {
+                return '<tr><td class="mono">' + esc(r.bucket) + '</td><td><span class="chip">' + esc(r.role) + '</span></td>'
+                    + '<td class="muted mono" style="font-size:11px;white-space:normal;line-height:1.35">'
+                    + (r.note ? esc('retired — ' + r.note) : '') + '</td></tr>';
+            }).join('') + '</tbody></table>';
+    }
+    function docProjectHtml(d, o, open) {
+        return '<details class="dproj"' + (open ? ' open' : '') + '><summary><span class="nm"><i class="sw" style="background:'
+            + colorOf('project', d.pkey, o.pkeys) + '"></i>' + esc(o.names[d.pkey] || d.pkey) + '</span>'
+            + '<span class="mono muted">.fankeel/map.md</span><span class="spacer"></span>'
+            + '<span class="when">生成於 <span class="mono">' + stamp(Date.parse(d.generatedAt)) + '</span></span></summary>'
+            + docSplitHtml(d)
+            + '<div class="dgrid"><div>'
+            + (d.plannedNotBuilt.length ? '<div class="dsub">還沒建 <span class="n">planned, not built — ' + d.plannedNotBuilt.length + '</span></div>'
+                + docPathList(d.plannedNotBuilt) : '')
+            + (d.undeclared.count ? '<div class="dsub">沒宣告狀態 <span class="n">undeclared — ' + d.undeclared.count + '</span></div>'
+                + (d.undeclared.note ? '<div class="dnote">' + esc(d.undeclared.note) + '</div>' : '') + docPathList(d.undeclared.paths) : '')
+            + '</div><div>'
+            + (d.filing ? '<div class="dsub">歸檔位置 <span class="n">filing · index: ' + esc(d.filing.index) + '</span></div>' + docFilingHtml(d.filing) : '')
+            + '</div></div></details>';
+    }
+    function docsCardHtml(list, o) {
+        if (!list.length) return '';
+        return '<section class="panel docs"><div class="h2">文件 <small>各專案已生成的 <span class="mono">.fankeel/map.md</span>，找不到的不列</small></div>'
+            + list.map(function (d, i) { return docProjectHtml(d, o, i === 0); }).join('') + '</section>';
+    }
 
     // ---- the project page -------------------------------------------------
     function dayStart(day) {
@@ -781,7 +834,38 @@
         });
         return out;
     }
-    function costHtml(m) {
+    // One 主迴圈 row's arithmetic: how many of the session's own requests a
+    // stage held, how many already carried `BUSY` tokens or more, what those
+    // turns cost, and their share of the stage's own total (main and agents
+    // alike — the same total the sub row's own last cell already prints).
+    // `lp` is one row of `x.loops`, or `null` for a stage no main request
+    // landed in; `usd()` already prints a dash for a zero dollar figure.
+    // `foot` is the tfoot row: its label takes the first cell, as 主 session,
+    // agent and 合計 do, and its share is of the whole session.
+    function loopRow(lp, stageUsd, foot) {
+        lp = lp || { turns: 0, over: 0, overUsd: 0 };
+        var pct = stageUsd ? lp.overUsd / stageUsd * 100 : 0;
+        var z = lp.over === 0;
+        return '<tr class="loop">' + (foot ? '<td><span class="lp">主迴圈</span></td><td></td>' : '<td></td><td><span class="lp">主迴圈</span></td>')
+            + '<td colspan="8"><div class="lf">'
+            + '<span><b>' + lp.turns + '</b>回合</span>'
+            + '<span' + (z ? ' class="zero"' : '') + '><b>' + lp.over + '</b>回合 ≥ 400k</span>'
+            + '<span' + (z ? ' class="zero"' : '') + '><b>' + usd(lp.overUsd) + '</b>那些回合</span>'
+            + '<span' + (z ? ' class="zero"' : '') + '><i class="mini" style="display:inline-flex;width:72px;vertical-align:middle;margin-right:8px">'
+            + '<span style="width:' + Math.round(pct) + '%"></span></i><b>' + Math.round(pct) + '%</b>' + (foot ? '佔 session' : '佔這一站') + '</span>'
+            + '</div></td><td class="r"></td></tr>';
+    }
+    function sumLoops(loops) {
+        return (loops || []).reduce(function (a, r) {
+            return { turns: a.turns + r.turns, over: a.over + r.over, overUsd: a.overUsd + r.overUsd };
+        }, { turns: 0, over: 0, overUsd: 0 });
+    }
+    // `x` is the session's detail (as everywhere else on this page — see
+    // `sessionHeadHtml(s, x)`, `ctxSection(s, x)`) — optional, since the cost
+    // tab answers before the detail script has loaded. With none, no 主迴圈
+    // row is drawn: `x.loops` is what `lib/detail.js`'s `loopsOf` computed,
+    // and there is nothing to show before it arrives.
+    function costHtml(m, x) {
         var KINDS = [['input', 'input', '--t-in'], ['output', 'output', '--t-out'], ['cacheRead', 'cache read', '--t-cr'],
             ['cacheWrite', 'cache write', '--t-cw']];
         var cells = function (a, cls) {
@@ -791,6 +875,9 @@
         };
         var share = function (v) { return m.total.usd ? Math.round(v / m.total.usd * 1000) / 10 + '%' : '—'; };
         var allTok = KINDS.reduce(function (n, k) { return n + m.total.tokens[k[0]]; }, 0);
+        var loops = x && Array.isArray(x.loops) ? x.loops : null;
+        var loopBy = {};
+        (loops || []).forEach(function (r) { loopBy[r.stage === null ? 'none' : r.stage] = r; });
         return '<div class="sumline"><div>合計花費<b>' + usd(m.total.usd) + '</b></div><div>主 session<b>' + usd(m.main.usd) + '</b></div>'
             + '<div>派工（agent + workflow）<b>' + usd(m.agent.usd) + '</b></div><div>output 佔花費<b>' + share(m.total.cost.output) + '</b></div>'
             + '<div>cache read 佔 token<b>' + (allTok ? Math.round(m.total.tokens.cacheRead / allTok * 1000) / 10 + '%' : '—') + '</b></div></div>'
@@ -802,14 +889,15 @@
             + m.stages.map(function (g) {
                 return '<tr class="sub"><td><span class="pchip"><i class="sw" style="background:' + colorOf('stage', g.stage) + '"></i>'
                     + esc(g.stage === 'none' ? '第一步之前' : g.stage) + '</span></td><td class="muted">' + share(g.sub.usd) + '</td>'
-                    + cells(g.sub, '') + '</tr>' + g.models.map(function (x) {
-                        return '<tr class="child"><td></td><td><span class="pchip"><i class="sw" style="background:var(--m-' + family(x.model)
-                            + ')"></i>' + esc(String(x.model).replace(/^claude-/, '')) + '</span></td>' + cells(x.cell, '') + '</tr>';
-                    }).join('');
+                    + cells(g.sub, '') + '</tr>' + g.models.map(function (mm) {
+                        return '<tr class="child"><td></td><td><span class="pchip"><i class="sw" style="background:var(--m-' + family(mm.model)
+                            + ')"></i>' + esc(String(mm.model).replace(/^claude-/, '')) + '</span></td>' + cells(mm.cell, '') + '</tr>';
+                    }).join('') + (loops ? loopRow(loopBy[g.stage], g.sub.usd) : '');
             }).join('') + '</tbody><tfoot>'
             + '<tr><td>主 session</td><td></td>' + cells(m.main, 'total') + '</tr>'
             + '<tr><td>agent</td><td></td>' + cells(m.agent, 'total') + '</tr>'
-            + '<tr><td>合計</td><td></td>' + cells(m.total, 'total') + '</tr></tfoot></table></div>';
+            + '<tr><td>合計</td><td></td>' + cells(m.total, 'total') + '</tr>'
+            + (loops ? loopRow(sumLoops(loops), m.total.usd, true) : '') + '</tfoot></table></div>';
     }
     function sessionHeadHtml(s, x) {
         var t = sessionTotals(s), m = x ? timelineModel(x) : null, agentUsd = costModel(s.days).agent.usd;
@@ -874,7 +962,7 @@
             projectSessionsHtml: projectSessionsHtml,
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
             sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost,
-            heroEyebrow: heroEyebrow,
+            heroEyebrow: heroEyebrow, docsCardHtml: docsCardHtml,
         };
     }
     if (!doc) return;
@@ -1060,7 +1148,9 @@
         var o = { metric: view.metric, dim: view.dim, sel: sel, today: TODAY, days: DAYS, names: NAMES, pkeys: PKEYS };
         var bars = dayBars(R, view.metric, view.dim, DAYS);
         var recent = R.slice().sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); }).slice(0, 12);
+        var docsList = [].concat.apply([], S.projects.map(function (p) { return p.docs || []; }));
         return (isFinite(S.cleared) ? '<p class="cleared">cleared ' + S.cleared + ' stale rows</p>' : '')
+            + profileCard('machine profile', 'machine', null, S.profiles && S.profiles.machine)
             + '<section class="panel hero"><div class="hero-top"><div class="hero-title"><div class="eyebrow">'
             + heroEyebrow(frozenAt) + '</div>'
             + '<h1><b>' + DAYS[0].slice(5) + '</b> — <b>' + TODAY.slice(5) + '</b></h1></div>'
@@ -1074,8 +1164,7 @@
             + '<div class="chart">' + histSvg(bars, o) + '</div></section>'
             + (sel ? dayPanelHtml(dayPanel(R, sel), o) : '')
             + '<div class="grid2"><section class="panel">' + projectsHtml(projectRows(R, DAYS), o) + '</section>'
-            + '<section class="panel">' + recentHtml(recent, o) + '</section></div>'
-            + profileCard('machine profile', 'machine', null, S.profiles && S.profiles.machine);
+            + '<div class="rcol"><section class="panel">' + recentHtml(recent, o) + '</section>' + docsCardHtml(docsList, o) + '</div></div>';
     }
     view.pMetric = 'usd';
     view.compare = '';
@@ -1129,7 +1218,7 @@
         var x = DETAIL[s.id] || null;
         // The cost tab reads `days` off the data file, so it answers before the
         // detail script has loaded; the other three need the detail.
-        var body = r.tab === 'cost' ? costHtml(costModel(s.days))
+        var body = r.tab === 'cost' ? costHtml(costModel(s.days), x)
             : !x ? detailNote(s)
                 : r.tab === 'dispatch' ? '<div class="det">' + dispatchHtml(x) + '</div>'
                     : r.tab === 'events' ? '<div class="det">' + replayHtml(x) + '</div>'

@@ -558,7 +558,7 @@ test('the init block is capped like every other block of rules', (t) => {
 // fankeel skill already holds left it, and the cap did not move.
 test('the init block carries the station line when it is given one, and stays under the cap with it', (t) => {
   const out = renderInit({ sessionId: MINE, station: { file: 'C:/Users/you/.claude/fankeel/station.html', live: 2, stale: 8, down: 131 } });
-  assert.match(out, /^station: 8 stale, 2 live — C:\/Users\/you\/\.claude\/fankeel\/station\.html$/m);
+  assert.match(out, /^station: 8 stale, 2 live — C:\/Users\/you\/\.claude\/fankeel\/station\.html\. Edit the profile with station\.js serve --open\.$/m);
   const size = sizeAtReference(out);
   t.diagnostic('init+st'.padEnd(7) + size + ' chars at a ' + REFERENCE_ROOT + '-char root  (' + out.length + ' here)');
   assert.ok(size < 1400, 'init block with a station line is ' + size + ' chars');

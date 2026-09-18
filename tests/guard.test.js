@@ -464,3 +464,43 @@ test('writesFiles does not mistake =>, ->, >&, a quoted > or >> /dev/null for a 
     assert.equal(guard.writesFiles(cmd), true, cmd);
   }
 });
+
+// §12: a `node -e`/`--eval` script's own fs writes were invisible to every
+// pattern above — this closes it — and a read-only `node -e` (`readFileSync`,
+// `require`) still passes, same as before.
+test('writesFiles catches a node -e/--eval script that writes a file, and still allows a read-only one', () => {
+  for (const cmd of [
+    "node -e \"require('fs').writeFileSync('x', 'y')\"",
+    "node --eval \"require('fs').appendFileSync('x', 'y')\"",
+    "node -e \"fs.createWriteStream('x')\"",
+    "node -e \"require('fs').renameSync('a', 'b')\"",
+    "node -e \"require('fs').unlinkSync('x')\"",
+    "node -e \"require('fs').rmSync('x')\"",
+    "node -e \"require('fs').mkdirSync('x')\"",
+    "node -e \"require('fs').copyFileSync('a', 'b')\"",
+  ]) {
+    assert.equal(guard.writesFiles(cmd), true, cmd);
+  }
+  for (const cmd of [
+    "node -e \"console.log(require('fs').readFileSync('x', 'utf8'))\"",
+    "node -e \"console.log(require('./x.js'))\"",
+  ]) {
+    assert.equal(guard.writesFiles(cmd), false, cmd);
+  }
+});
+
+// §12: same shape for `python -c` — `open(..., 'w'|'a'|'x')`, `write_text`,
+// `os.remove`, and any use of `shutil` all count as a write.
+test('writesFiles catches a python -c script that writes a file', () => {
+  for (const cmd of [
+    "python -c \"open('f.txt', 'w').write('y')\"",
+    "python3 -c \"open('f.txt', 'a').write('y')\"",
+    "python -c \"open('f.txt', 'x').write('y')\"",
+    "python -c \"import pathlib; pathlib.Path('f.txt').write_text('y')\"",
+    "python -c \"import os; os.remove('f.txt')\"",
+    "python -c \"import shutil; shutil.rmtree('f')\"",
+  ]) {
+    assert.equal(guard.writesFiles(cmd), true, cmd);
+  }
+  assert.equal(guard.writesFiles("python -c \"print(open('f.txt').read())\""), false);
+});

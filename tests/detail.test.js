@@ -105,6 +105,35 @@ test('risesOf ranks the rises and names each cause: what arrived before it, or t
     assert.equal(detail.risesOf(series, into, own, 1).length, 1);
 });
 
+// ---- loops -------------------------------------------------------------
+
+test('loopsOf sums each stage\'s own requests, its BUSY-and-over turns and what they cost; a request before the first stage lands under stage null', () => {
+    const { BUSY } = require('../lib/context.js');
+    const seq = [{ stage: 'design', at: 0, source: 'cmd' }, { stage: 'build', at: 100, source: 'cmd' }];
+    const tok = (n) => ({ input: n, output: n / 10, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 });
+    const series = [
+        { at: -10, model: 'claude-sonnet-5', context: 500, tokens: tok(10) },
+        { at: 10, model: 'claude-sonnet-5', context: 1000, tokens: tok(20) },
+        { at: 150, model: 'claude-sonnet-5', context: BUSY, tokens: tok(1000) },
+        { at: 160, model: 'claude-sonnet-5', context: BUSY + 1, tokens: tok(2000) },
+    ];
+    const out = detail.loopsOf(series, seq);
+    assert.deepEqual(out.map((r) => [r.stage, r.turns, r.over]), [[null, 1, 0], ['design', 1, 0], ['build', 2, 2]]);
+    const build = out.find((r) => r.stage === 'build');
+    assert.ok(build.overUsd > 0 && build.overUsd < 1, 'the two BUSY-and-over turns are priced, not zero and not runaway: ' + build.overUsd);
+    assert.equal(out.reduce((n, r) => n + r.turns, 0), series.length, 'every request lands in exactly one row');
+});
+
+test('loopsOf prices nothing for a model the price table does not know, rather than crediting it as free', () => {
+    const { BUSY } = require('../lib/context.js');
+    const seq = [{ stage: 'build', at: 0, source: 'cmd' }];
+    const out = detail.loopsOf(
+        [{ at: 10, model: 'claude-nope', context: BUSY, tokens: { input: 1, output: 1, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } }],
+        seq,
+    );
+    assert.deepEqual([out[0].over, out[0].overUsd], [1, 0]);
+});
+
 // ---- by day ----------------------------------------------------------------
 
 const SID = '11111111-2222-4333-8444-555555555555';

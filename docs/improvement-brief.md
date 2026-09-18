@@ -989,7 +989,7 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 東西會回頭重驗。
 
 - 本專案 09-11 的索引有 76 條，多數引了檔名、旗標、行號或量測數字，正是最會過期的那一類。
-- fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:592`（`## Task memory`）那一節的路由表把
+- fankeel 只負責把耐久的事實送去那裡：`skills/fankeel/SKILL.md:597`（`## Task memory`）那一節的路由表把
   durable fact 指向 memory 目錄，`lib/registry.js:18`（`Task memory is two fields on the entry`）的註解說明 fankeel 不另開一份記憶。
   讀、稽核、清理那個目錄的程式碼一行都沒有。
 
@@ -1033,6 +1033,13 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
    verify 會跑的那個檢查；第二次倒退時停下來說，而不是默默再來一輪。
 4. 串接的 fan-out 改走 Workflow，中間結果留在 script 裡，回主 session 的只有 join。
 
+**定案（09-18，TODO 十九條）**：選候選 2——`lib/context.js` 的 `contextLine` 在
+`BUSY` 以上時，把接手（設 `next`、開新終端機、`/fankeel` → Adopt）接到這一站的 gate
+當第四個選項，回答後的區塊（`renderResume`）也帶這行。候選 1（hooks/size.js，已刪除）已依
+09-11 訂的規則拿掉——再量沒降就拿掉，改後 bigPerSession 從 0.3846 升到 0.6136。候選 4
+（串接的 fan-out 走 Workflow）已經是現行做法。候選 3（把 verify 的檢查往 build 搬）不
+做——它處理的是倒退，不是堆疊。
+
 ### 6.3 station 單 session
 
 使用者要的是：這個 session 有幾個 task、每個 task 負責什麼、主 agent 怎麼切片、哪裡
@@ -1041,12 +1048,12 @@ call、subagent 無 registry entry）今天全部沒被驗證過。A11–A14 全
 | 缺口 | 現況 |
 |---|---|
 | (a) plan 的 task 與各自做了什麼 | 沒有：`lib/station.js` 完全不讀 build ledger（2026-09-12 backlog-all build 已關閉：Task 23、25 加了 `tasksOf`，由 `lib/station.js` 讀取；現況見 `docs/station.md`「任務」節） |
-| (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:240` 的 `agentsOf` 只回一個數字（2026-09-11 已關閉：90be646 加了 `dispatchesOf`，`lib/usage.js:457`（`surface: flow ? 'workflow'`）為每筆派工標出 agent、agents 或 workflow） |
+| (b) 主 agent 怎麼切派工 | 只有總數：`lib/usage.js:218` 的 `agentsOf` 只回一個數字（2026-09-11 已關閉：90be646 加了 `dispatchesOf`，`lib/usage.js:435`（`surface: flow ? 'workflow'`）為每筆派工標出 agent、agents 或 workflow） |
 | (c) 每個 stage 花多少錢 | 刻意拿掉：`docs/station.md` 當時說 a stage's own cost surfaces only in the aggregate，只出現在總覽的總帳（2026-09-14 已關閉：session 頁的花費分頁從 `days` 列出 stage × model 的金額；現況見 `docs/station.md`「The session page」） |
-| (d) stage 來回 | 結構上看不到：`lib/registry.js:435` 的 `touch` 以 stage 名為鍵，只存最早與最近兩個時間 |
+| (d) stage 來回 | 結構上看不到：`lib/registry.js:442` 的 `touch` 以 stage 名為鍵，只存最早與最近兩個時間 |
 | (e) 哪一段可以平行 | 沒有 |
 
-(b) 還少一層：`lib/usage.js:171` 的 `agentFiles` 把一般 agent 和 workflow 裡的 agent 攤成
+(b) 還少一層：`lib/usage.js:160` 的 `agentFiles` 把一般 agent 和 workflow 裡的 agent 攤成
 同一個清單，派工的形狀（agent、agents、workflow）在這裡就丟了。這一層也由 90be646 關閉：
 `dispatchesOf` 把形狀接回 `agentFiles` 的每一列。
 
@@ -1066,6 +1073,10 @@ skill、hook 或 agent。2026-09-09 的 `65f1490` 已經把它讀進 repo：兩�
 hook（SessionStart 啟動它的模式，UserPromptSubmit 追蹤模式）。本檔第一部掃過一次：§1.5
 列了六個可搬項目，`docs/judgements/2026-09-10-pattern-skill.md` 判過 pattern skill 那一類。
 使用者的立場是不用、不重裝，要的功能改寫成 fankeel 自己的規則。
+
+**三項候選都定案為不吸收**：`caveman-stats`、Native Core 六個流程 skill、
+`cavecrew` 的委派指南，每項對到的 fankeel 現有機制與理由都在
+[docs/decisions/2026-09-18-caveman-absorb-none.md](decisions/2026-09-18-caveman-absorb-none.md)。
 
 **fankeel 這邊的耦合很少**，沒有一處是功能上的依賴：
 

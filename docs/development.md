@@ -23,13 +23,13 @@ ends in a four-statement block reading stdin and writing stdout, because
 `lib/tracked.js` spawns it as a child process to read several repositories at
 once; it sits in `lib/` rather than `scripts/` because nothing in `lib/` may reach
 the other way, which is the rule that put `lib/tracked.js` there to begin with.
-`hooks/` is where stdin, stdout and process exit otherwise live, and all nine
+`hooks/` is where stdin, stdout and process exit otherwise live, and all eight
 hooks are tested as subprocesses with real payloads.
 
 Every hook exits 0 on every path, including every error path. A `UserPromptSubmit`
 hook that throws blocks the prompt it was called for and a `PreToolUse` hook that
 throws blocks the edit, and a plugin that can wedge your terminal is worse than no
-plugin. The other six are not load-bearing that way, but a stack trace in front of
+plugin. The other five are not load-bearing that way, but a stack trace in front of
 the user in the middle of somebody else's turn is its own kind of broken.
 
 ## `todo-check.js` — whether `TODO.md` is still an index
@@ -76,7 +76,8 @@ it sets them all; with `--changes` it lists the commits since the last
 `chore: <x.y.z>`, which is what a release contains. `npm test` fails when the thirteen
 disagree, so the script is what makes them agree rather than what notices. A
 release used to be eleven edits, and missing one left a skill announcing a version
-the plugin is not — right in ten places, which is how it went unnoticed.
+the plugin is not, unnoticed until [`tests/contract.test.js`](../tests/contract.test.js)
+started running — its comment carries the count now, not this page.
 
 ## Releasing — the steps this repository actually takes
 
@@ -157,7 +158,7 @@ knip 6.32.2 does not resolve CJS namespace property access, so it called 146
 genuinely used exports unused. One barrel shows it with one variable changed:
 `knip --trace-export badgeWord`, destructured at `tests/badge.test.js:9`,
 returns `import[badgeWord] ⎆ ✓`; `knip --trace-export clearBadge`, reached as
-`badge.clearBadge`, returns `(no imports found) ✗` — and `scripts/task.js:127`
+`badge.clearBadge`, returns `(no imports found) ✗` — and `scripts/task.js:138`
 and `hooks/inject.js:120` call it. The shape is not rare here: counting lines
 under `tests/` that bind a module from `../lib/`, `../scripts/` or `../hooks/`
 to a plain identifier rather than destructuring it gives 60 lines across 40 of

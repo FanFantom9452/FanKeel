@@ -37,6 +37,17 @@ const docs = require('../lib/docs.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
 
+// The plugin's own package.json version — not a commit sha, because the
+// installed cache has no .git and scripts/version.js does not bake one in at
+// release time.
+function pluginVersion() {
+    try {
+        return JSON.parse(fs.readFileSync(path.join(PLUGIN, 'package.json'), 'utf8')).version;
+    } catch (e) {
+        return undefined;
+    }
+}
+
 // Minutes, rounded, with hours above sixty of them. Seconds are not offered: a
 // stage that took forty seconds is one nobody is asking the cost of, and a
 // second-precision figure invites reading noise as signal.
@@ -540,6 +551,10 @@ function cmdStart(root, opts) {
         // is, and liveness is read from CLAUDE_CONFIG_DIR. `--claude-dir` moves
         // the badge and nothing else.
         configDir: live.liveConfigDir() || undefined,
+        // The plugin's own package.json version at the moment this ran. Only
+        // the version number: the installed cache has no .git for a commit
+        // sha, and scripts/version.js does not bake one in at release time.
+        version: pluginVersion(),
         stage: route[0],
         active: true,
         started: stamp,
@@ -888,6 +903,10 @@ function cmdAdopt(root, opts) {
         // the directory belongs to the session — the one giving it up may
         // already have exited.
         configDir: live.liveConfigDir() || undefined,
+        // This session's own, matching `configDir` above — not copied from
+        // `source`, because the version records which process wrote the
+        // record and a fresh session may be running a different one.
+        version: pluginVersion(),
         active: true,
         // The source's, not this stamp. `started` is the tie-break, and adopting
         // transfers the work rather than re-answering which session reached these

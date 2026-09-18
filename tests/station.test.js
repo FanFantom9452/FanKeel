@@ -10,6 +10,44 @@ const badge = require('../lib/badge.js');
 const station = require('../lib/station.js');
 const tmp = require('./tmp.js');
 
+const SAMPLE_MAP = [
+    '---',
+    'status: generated',
+    'source_of_truth: generated-by scripts/map.js',
+    '---',
+    '',
+    '# fankeel — map',
+    '',
+    'Generated. Do not edit; re-run `node scripts/map.js` instead.',
+    '',
+    'read first: README.md',
+    '',
+    '| | |',
+    '|---|---|',
+    '| `node scripts/docs-check.js` | Every reference still resolves. |',
+    '',
+    'filing: index: docs/README.md',
+    '  docs/judgements — report',
+    '  .claude/agents — reference',
+    '  docs/archive — archive',
+    '  docs/plans — plan',
+    '',
+    'documents: 201 markdown files — 89 current, 2 planned, 102 retired, 8 undeclared',
+    'a page named nowhere below is current.',
+    '',
+    'planned, not built — 2:',
+    '  docs/improvement-brief.md',
+    '  docs/plans/2026-09-09-design-class-prompt.md',
+    '',
+    'retired, do not follow — 102:',
+    '  docs/archive — 102, the whole archive bucket',
+    '',
+    'undeclared — 8, dated by git rather than by anyone reading them:',
+    '  docs/judgements/2026-09-10-exception-cases.md',
+    '  docs/judgements/2026-09-11-todo-split.md',
+    '',
+].join('\n');
+
 const LIVE = 'aaaaaaaa-1111-4111-8111-111111111111';
 const STALE = 'bbbbbbbb-2222-4222-8222-222222222222';
 const DOWN = 'cccccccc-3333-4333-8333-333333333333';
@@ -642,6 +680,45 @@ test('gather carries a session record\'s gates onto the session row', () => {
 test('gather gives a session with no gates record a null gates field', () => {
     const m = chartFixture('eeeeeeee-4444-4444-8444-444444444444', {});
     assert.equal(m.registries[0].sessions[0].gates, null);
+});
+
+test('parseMapCard reads map.js\'s own generated figures, quoted rather than re-derived', () => {
+    const card = station.parseMapCard(SAMPLE_MAP);
+    assert.equal(card.total, 201);
+    assert.deepEqual(card.buckets, [{ label: 'current', count: 89 }, { label: 'planned', count: 2 },
+        { label: 'retired', count: 102 }, { label: 'undeclared', count: 8 }]);
+    assert.deepEqual(card.plannedNotBuilt, ['docs/improvement-brief.md', 'docs/plans/2026-09-09-design-class-prompt.md']);
+    assert.deepEqual(card.undeclared, {
+        count: 8, note: 'dated by git rather than by anyone reading them',
+        paths: ['docs/judgements/2026-09-10-exception-cases.md', 'docs/judgements/2026-09-11-todo-split.md'],
+    });
+    assert.deepEqual(card.filing, {
+        index: 'docs/README.md',
+        rows: [
+            { bucket: 'docs/judgements', role: 'report', note: null },
+            { bucket: '.claude/agents', role: 'reference', note: null },
+            { bucket: 'docs/archive', role: 'archive', note: '102, the whole archive bucket' },
+            { bucket: 'docs/plans', role: 'plan', note: null },
+        ],
+    });
+});
+
+test('parseMapCard returns null with no documents line, and empty lists with no filing when a section is missing', () => {
+    assert.equal(station.parseMapCard('nothing here'), null);
+    assert.deepEqual(station.parseMapCard('documents: 3 markdown files\n'),
+        { total: 3, buckets: [], plannedNotBuilt: [], undeclared: { count: 0, note: null, paths: [] }, filing: null });
+});
+
+test('gather reads each registry root\'s own map.md, and each named project\'s under it', () => {
+    const f = fixture();
+    fs.writeFileSync(path.join(f.r1, '.fankeel', 'map.md'), SAMPLE_MAP);
+    const m = station.gather({ configDir: f.cfg });
+    const one = m.registries.find((r) => r.root === path.resolve(f.r1));
+    const two = m.registries.find((r) => r.root === path.resolve(f.r2));
+    assert.equal(one.docs.length, 1, 'r1 has a map.md at its root; its one session\'s project dir does not exist on disk');
+    assert.equal(one.docs[0].pkey, path.resolve(f.r1));
+    assert.equal(one.docs[0].total, 201);
+    assert.equal(two.docs.length, 0, 'r2 has no map.md anywhere, so no card for it');
 });
 
 

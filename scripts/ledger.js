@@ -251,7 +251,7 @@ function groupsReport(root, planOpt) {
 // other heading is invisible to it and survives untouched, which is what makes
 // a hand-kept table beside a generated one safe.
 const SCAN_HEADING = '## groups';
-const LEDGER_LINE = /^(Task \d+: complete\b|Ruling: |Fix: |## )/;
+const LEDGER_LINE = /^(Task \d+: complete\b|Ruling: |Fix: |Plan: |## )/;
 
 // Replaces `scan`'s previous block in place, rather than appending a second
 // copy below whatever was written after it. Not found is not a failure: the
@@ -391,6 +391,26 @@ function main(argv) {
         // taken here, where the plan path this verb was given is already at
         // hand and `plantasks` is already required.
         const ledgerFile = ledger.init(root, opts.plan);
+        // `--range` is optional and, when given, is the plan stage's own
+        // commit range — refused on the way in, the same as `complete` and
+        // `fix` refuse one, so a typo never reaches the file and reads back
+        // as no range at all. Written once: a ledger that already carries a
+        // `Plan:` line keeps it, the same way `ledger.init` itself leaves an
+        // existing ledger alone rather than opening a second one.
+        let rangeNote = '';
+        if (opts.range !== undefined) {
+            if (!ledger.isRange(opts.range)) {
+                fail('--range wants two commit shas: <base>..<head>, 7 to 40 hex each. '
+                    + '"' + opts.range + '" would reach the file and read back as no range at all.');
+            }
+            const already = ledger.planRange(fs.readFileSync(ledgerFile, 'utf8'));
+            if (already === null) {
+                ledger.append(root, opts.plan, ledger.planLine(opts.range));
+                rangeNote = '\n\nPlan range recorded: ' + opts.range;
+            } else {
+                rangeNote = '\n\nPlan range already recorded: ' + already;
+            }
+        }
         const planFile = path.resolve(root, opts.plan);
         let planText = null;
         try {
@@ -403,15 +423,15 @@ function main(argv) {
         }
         if (planText === null) {
             return 'fankeel ledger — ' + ledgerFile
-                + '\n\nNo file at ' + planFile + '. The ledger is open regardless.';
+                + '\n\nNo file at ' + planFile + '. The ledger is open regardless.' + rangeNote;
         }
         const tasks = plantasks.parseTasks(planText);
         if (!tasks.length) {
             return 'fankeel ledger — ' + ledgerFile
-                + '\n\nNo task headings found in ' + planFile + '. ' + CONFORMING_HEADING;
+                + '\n\nNo task headings found in ' + planFile + '. ' + CONFORMING_HEADING + rangeNote;
         }
         return 'fankeel ledger — ' + ledgerFile
-            + '\n\n' + tasks.length + ' tasks in ' + planFile;
+            + '\n\n' + tasks.length + ' tasks in ' + planFile + rangeNote;
     }
 
     if (verb === 'complete') {
@@ -549,10 +569,12 @@ function main(argv) {
         if (!ledger.owns(contents, opts.plan)) {
             return 'fankeel ledger — ' + file + ' belongs to another plan. Leave it; `init` starts your own.';
         }
+        const plan = ledger.planRange(contents);
         const rows = ledger.completions(contents);
         const fixed = ledger.fixes(contents);
-        if (!rows.length && !fixed.length) return 'fankeel ledger — nothing complete yet at ' + file;
-        const lines = rows.map((r) => '  ' + r.n + ' ' + (r.range || '(no range recorded)'))
+        if (!plan && !rows.length && !fixed.length) return 'fankeel ledger — nothing complete yet at ' + file;
+        const lines = (plan ? ['  plan ' + plan] : [])
+            .concat(rows.map((r) => '  ' + r.n + ' ' + (r.range || '(no range recorded)')))
             .concat(fixed.map((r) => '  fix ' + (r.range || '(no range recorded)') + ' — ' + r.what));
         // A missing range is named rather than dropped. Silence here is a task
         // that landed and never got a verifier, which is the failure this verb
@@ -561,7 +583,8 @@ function main(argv) {
         // Only rows with a range are comparable at all — a blind row already
         // gets the paragraph above sending the reader to git log instead of
         // here, so it is left out rather than counted as overlapping nothing.
-        const entries = rows.filter((r) => r.range).map((r) => ({ label: 'Task ' + r.n + ' (' + r.range + ')', range: r.range }))
+        const entries = (plan ? [{ label: 'the plan (' + plan + ')', range: plan }] : [])
+            .concat(rows.filter((r) => r.range).map((r) => ({ label: 'Task ' + r.n + ' (' + r.range + ')', range: r.range })))
             .concat(fixed.filter((r) => r.range).map((r) => ({ label: 'the fix (' + r.range + ')', range: r.range })));
         return 'fankeel ledger — ' + file + '\n\n' + lines.join('\n')
             + (blind ? '\n\nA row with no range was completed before this field existed, or without\n--range. Read it against git log rather than here.' : '')

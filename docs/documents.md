@@ -20,6 +20,12 @@ and the role says how long a document is meant to stay true:
 | `archive` | retired; checked only that nothing current points at it | yes |
 | `fixture` | a test's own input — describes nothing about the system, checked for links and line numbers only | n/a |
 
+A root `.ignore` holding `docs/archive/` keeps ripgrep — the `Grep` tool here —
+from searching it by default; naming `docs/archive` explicitly still searches
+it. The `Glob` tool does not read `.ignore` and still lists archive files, and
+`docs-check`, `docs-audit` and `survey.js` read `git ls-files` directly, so none
+of them is affected either way.
+
 The two shapes that ship — `flat` and `phased` — and what happens to a markdown
 file in no bucket are stated in [the skill](../skills/fankeel/SKILL.md), under
 *Where documents live*. What belongs here is why the question is put that way:
@@ -141,22 +147,25 @@ report where a real parser would cost a dependency this plugin does not have.
 是純字串前綴比對，`skills`、`evals`、`agents` 都是 `docs/` 以外的 bucket。擋住
 的是列檔的那一層，而那一層是同一個函式：下面第一條是它跑的旗標，其後七條是它
 的七個呼叫端，`scripts/` 六處與 `lib/` 一處。每一行的引文都必須
-跟它的行號同行。`scripts/docs-check.js:187` 是 `function quoteBeside(text, from) {`，
+跟它的行號同行。`scripts/docs-check.js:229` 是 `function quoteBeside(text, from) {`，
 它只掃到換行為止，而同一行上的第二個路徑會被它自己的 `PATHISH` 擋掉——所以擠
 在一行的兩個引用等於兩個都沒有引文，而被硬換行拆開的引文等於沒寫。
 
 - `lib/tracked.js:31` 是 `const args = ['ls-files', '-z', '--cached', '--others', '--exclude-standard'];`
 - `scripts/docs-audit.js:400` 是 `const listed = trackedFiles(root);`
-- `scripts/docs-check.js:366` 是 `const result = trackedFiles(root);`
+- `scripts/docs-check.js:414` 是 `const result = trackedFiles(root);`
 - `scripts/layout.js:59` 是 `const found = trackedFiles(root);`
 - `scripts/memory-check.js:143` 是 `const tracked = trackedFiles(root);`
-- `scripts/orient.js:225` 是 `result = trackedFiles(dir, { stats });`
+- `scripts/orient.js:286` 是 `result = trackedFiles(dir, { stats });`
 - `scripts/survey.js:176` 是 `const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt`
 - `lib/map.js:235` 是 `const found = trackedFiles(root);`，七個之中只有這個檔案直接讀 `.buckets`
 
 `--exclude-standard` 套用 `.gitignore`，所以宣告出來的 bucket 會
 永遠列出零個檔。這張表是這幾區唯一的說明，`node scripts/residue.js` 是它們當下
 的清單——表格給角色，`residue.js` 給有哪些與多大。
+
+`.fankeel/build/` 不進 `docs.json` 當 bucket 是定案，不是漏掉沒做：宣告一個被
+`.gitignore` 擋住的路徑當 bucket，列檔那層永遠回零個檔，宣告了也沒有作用。
 
 ## What a document says about itself
 
@@ -197,8 +206,12 @@ frontmatter — it does not know the block is there. It scans the file for markd
 links and code spans, that block included, so a path written into a key is
 treated exactly as one written in a sentence and the rules below apply to it
 unchanged. What is never read is a bare path, in either place, and the markup
-rather than the place is the whole of it. How much of a link or a span is acted
-on is the role's again: a reference page has both checked; a plan or a decision
+rather than the place is the whole of it. A link into another `.md` file that
+carries a `#fragment` is checked against that file's own headings, slugged the
+way GitHub does it — lowercase, punctuation dropped (CJK and other letters and
+digits kept, along with `-` and `_`), each space its own `-`, and a heading
+repeated in the same document getting `-1`, `-2`. How much of a link or a span
+is acted on is the role's again: a reference page has both checked; a plan or a decision
 record has its links checked, and of its code spans only that a `path:line`
 overshot the file, never that the path is gone, since a plan names code that is
 not built yet and a decision names code that was there when it was written; an

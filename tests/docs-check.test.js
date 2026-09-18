@@ -77,7 +77,7 @@ test('one finding is a reference, not references', () => {
 // A project that declares a tree has decided how everything is filed. A page
 // outside every bucket is not a reference by default any more — it gets no
 // role at all, and none of the reference checks (like the symbol check below)
-// run against it. `docs/documents.md:265-267` is the page this follows.
+// run against it. `docs/documents.md:278-280` is the page this follows.
 test('a file outside the doc root gets no role, and no findings, once a tree is declared', () => {
   const root = tmp('fankeel-docscheck-role-');
   execFileSync('git', ['init', '-q'], { cwd: root });
@@ -278,4 +278,50 @@ test('a range citation whose quote sits inside it is not reported', () => {
   const scanned = scan(root, []);
   assert.equal(scanned.findings.filter((f) => f.tag === 'moved').length, 0);
   assert.equal(scanned.findings.filter((f) => f.tag === 'past-end').length, 0);
+});
+
+test('a fragment into a CJK heading resolves', () => {
+  const root = repoWith('fankeel-docscheck-frag-cjk-', {
+    'docs/README.md': '# index\n',
+    'docs/target.md': '# 索引\n\n## 你好，世界\n\ntext\n',
+    'docs/page.md': 'See [target](target.md#你好世界).\n',
+  });
+  const gone = scan(root, []).findings.filter((f) => f.tag === 'gone');
+  assert.equal(gone.length, 0);
+});
+
+test('a bad fragment into a real page is reported the same way a dead link is', () => {
+  const root = repoWith('fankeel-docscheck-frag-bad-', {
+    'docs/README.md': '# index\n',
+    'docs/target.md': '# index\n\n## Real Heading\n\ntext\n',
+    'docs/page.md': 'See [target](target.md#not-a-real-heading).\n',
+  });
+  const gone = scan(root, []).findings.filter((f) => f.tag === 'gone');
+  assert.equal(gone.length, 1);
+  assert.equal(gone[0].tag, 'gone');
+  assert.match(gone[0].what, /links to target\.md#not-a-real-heading/);
+});
+
+test('a heading repeated in one document resolves its second copy at -1', () => {
+  const root = repoWith('fankeel-docscheck-frag-dup-', {
+    'docs/README.md': '# index\n',
+    'docs/target.md': '# index\n\n## Notes\n\nfirst\n\n## Notes\n\nsecond\n',
+    'docs/page.md': 'See [again](target.md#notes-1).\n',
+  });
+  const gone = scan(root, []).findings.filter((f) => f.tag === 'gone');
+  assert.equal(gone.length, 0);
+});
+
+// GitHub keeps an underscore inside a code span or a word and drops only the
+// ones that mark emphasis — docs/improvement-brief.md's `check_versions.py`
+// headings are the real case.
+test('an underscore in a code span or a word stays in the slug; one marking emphasis does not', () => {
+  const root = repoWith('fankeel-docscheck-frag-underscore-', {
+    'docs/README.md': '# index\n',
+    'docs/target.md': '# index\n\n## E1. `check_versions.py` rules\n\n## tool_used now\n\n## an _emphasised_ word\n',
+    'docs/page.md': 'See [a](target.md#e1-check_versionspy-rules), [b](target.md#tool_used-now)'
+      + ' and [c](target.md#an-emphasised-word).\n',
+  });
+  const gone = scan(root, []).findings.filter((f) => f.tag === 'gone');
+  assert.deepEqual(gone.map((f) => f.text || f.ref || f.line), []);
 });

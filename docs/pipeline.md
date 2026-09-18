@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-13
-source_of_truth: lib/stages.js, lib/render.js, lib/profile.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js, lib/skill-overlap.js
+source_of_truth: lib/stages.js, lib/render.js, lib/profile.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js, scripts/orient.js
 ---
 
 # The pipeline
@@ -239,10 +239,10 @@ would be right until the next clause landed and then wrong with nothing to say
 so. That is exactly how three of the seven figures in this paragraph went
 stale at once on 2026-09-10 — nothing was there to redden. `node --test
 tests/resume.test.js` is what closes it. It prints every class, stage and
-profile combination on each run — `tests/resume.test.js:304`, `t.diagnostic(cls + '@' + stage` —
+profile combination on each run — `tests/resume.test.js:316`, `t.diagnostic(cls + '@' + stage` —
 and its own assertion holds the worst of them, `bounded@design` and
 `bounded@land` tied at 2,545, under 2,600 characters at the same 59-character
-reference root: `tests/resume.test.js:308`, `assert.ok(worst < 2600`. The 55
+reference root: `tests/resume.test.js:320`, `assert.ok(worst < 2600`. The 55
 characters of headroom are about three more profile keys.
 
 `tests/render.test.js` caps a narrower thing, the seven stage preambles alone,
@@ -298,10 +298,10 @@ it has you do. The second question is answered stage by stage in
 While a task is active, the `fankeel-<stage>` skill is the procedure for that
 step. Where another installed plugin ships a process skill for the same
 step, it is set aside — named the first time it is, not silently.
-`lib/skill-overlap.js`'s `OVERLAPS` is the source of truth for which skills
-these are; `scripts/orient.js` prints an `overlap:` line naming whichever of
-them the config directory's own `plugins/installed_plugins.json` actually
-has installed.
+`scripts/orient.js`'s `OVERLAPS` is the source of truth for which skills
+these are; it also prints an `overlap:` line naming whichever of them the
+config directory's own `plugins/installed_plugins.json` actually has
+installed.
 
 | plugin | skill | stage |
 |---|---|---|
@@ -982,8 +982,8 @@ while the code it names moved on — and a fortnight is what makes one worth a
 reading session. A landed plan is a different question: everything it named
 exists or git has seen it deleted, and nobody has come back to it. That is a
 settle period, and it is three days. A plan that declares itself `design-intent`
-is not judged at all — it is a statement of work not yet done, and the files it
-names are what it tells the reader to go read, not evidence the work happened.
+is not judged at all — why, and what a reader does with its named files
+instead, is in [`skills/fankeel-audit/rationale.md`](../skills/fankeel-audit/rationale.md).
 Sharing one number made the landed check unable to fire on a repository younger
 than a fortnight, which is every repository for its first two weeks. An explicit
 `--since` still sets both, so `--since 0` shows everything either one is holding

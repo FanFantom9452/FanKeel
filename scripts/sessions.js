@@ -3,8 +3,8 @@
 
 // 升格自 .fankeel/build/ask/measure-sessions.js（09-11 一次性量測腳本）。09-11 的
 // 那張表——峰值中位數與 p90、subagent 回傳佔比、倒退次數——現在是這支腳本的輸出，
-// 而不是一次跑完就丟的手稿：第 6 節 `hooks/size.js` 要不要留，就是靠這支腳本改
-// 前跑一次、改後跑一次比較。
+// 而不是一次跑完就丟的手稿：09-18 拿掉主 session 大輸出提醒的那個 PostToolUse hook
+// 前，就是靠這支腳本改前跑一次、改後跑一次比較，量出 bigPerSession 不降反升。
 
 const fs = require('fs');
 const path = require('path');
@@ -13,7 +13,7 @@ const { parseArgs: parseArgv } = require('node:util');
 
 const FULL_ROUTE = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
 const routeIndex = new Map(FULL_ROUTE.map((s, i) => [s, i]));
-// hooks/size.js 的 THRESHOLD，同一個數：改前改後量的就是那支 hook 提醒的那一種輸出。
+// 拿掉的那個提醒 hook 用的同一個門檻：改前改後量的就是它曾經提醒的那一種輸出。
 const BIG = 20000;
 
 function parseArgs(argv) {
@@ -120,7 +120,7 @@ async function processFile(file) {
           if (idKind.get(c.tool_use_id) === 'agent' && txt.indexOf('Async agent launched successfully') === -1) {
             subagentChars += txt.length;
           } else if (txt.length > BIG) {
-            // hooks/size.js 提醒的就是這一種：主 session 自己的一次工具輸出超過 20,000 字元。
+            // 已拿掉的那個提醒 hook 盯的就是這一種：主 session 自己的一次工具輸出超過 20,000 字元。
             bigToolResults++;
           }
         }

@@ -28,7 +28,7 @@ workspace/                     <- Claude Code opened here
 
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `start` for `guard`, read from the effective profile whenever it is not the builtin default `ask` — a `guard` set later by hand overwrites it the same way any other write does; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `leave.js` for `ended`, `model`, `usage`, `spend` and `gates`, once, at `SessionEnd`; `task.js land` for `land`, once per invocation — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `start` and `adopt` for `version`, the plugin's own `package.json` version at the moment either ran — `task` (the rename) leaves it, and an entry written before this field existed reads as unknown rather than being backfilled; `start` for `guard`, read from the effective profile whenever it is not the builtin default `ask` — a `guard` set later by hand overwrites it the same way any other write does; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `leave.js` for `ended`, `model`, `usage`, `spend` and `gates`, once, at `SessionEnd`; `task.js land` for `land`, once per invocation — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | `lib/registry.js:221` creates it holding `sessions/` alone; `registry.ensureIgnored` appends what is missing — `scripts/map.js:39` asks for `sessions/`, `build/` and `map.md` on every map run, `lib/station.js` for `index.html` and `station/` on every write of the copy — two names that cover the four files it emits, rather than the `EMITTED` list itself, because a directory is one line where four paths under it would be four |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
@@ -91,7 +91,7 @@ A third field is written by nobody the user talks to. `claims` holds every file
 this task has edited — at most sixty, each recorded whole and never truncated,
 because nothing here is a path a human retypes. The two writers reach that cap
 from opposite directions. A path arriving on its own drops the oldest to make
-room (`lib/registry.js:675`, `slice(-MAX_CLAIMS)`); a git pass holding more than sixty is refused
+room (`lib/registry.js:672`, `slice(-MAX_CLAIMS)`); a git pass holding more than sixty is refused
 whole rather than trimmed (`lib/dirty.js:176`, `declined: written.length`), because trimming it would evict
 every claim an edit earned and put build output in its place.
 [collisions.md](collisions.md) is the page for that. Two hooks append to it,
@@ -251,14 +251,20 @@ nothing else:
   Both halves are deleted from `usage` before that field is written, so every
   existing reader of `usage` still sees the shape it always had.
   [station.md](station.md) has where the per-stage curve reads it from.
-- `gates` — an array of `{ at, stage, header, labels, picked }`, one entry
-  per `AskUserQuestion` `lib/gates.js` finds in the transcript: `stage` is
-  read off `moves` at that point, `labels` is every option's text in the
-  order `AskUserQuestion` declared them — each capped at 120 characters, an
-  empty one kept in place rather than filtered out, since dropping it would
-  shift every later index — and `picked` is the chosen option's label, the
-  same cap, the text typed when it was Other, and `null` when the question
-  was never answered. That null is kept rather than clipped to `''`, because
+- `gates` — an array of `{ at, stage, header, question, labels, descriptions,
+  picked }`, one entry per `AskUserQuestion` `lib/gates.js` finds in the
+  transcript: `stage` is read off `moves` at that point, `question` is the
+  question text itself, capped at `QUESTION_LEN` (200) characters, `labels`
+  is every option's text in the order `AskUserQuestion` declared them — each
+  capped at 120 characters, an empty one kept in place rather than filtered
+  out, since dropping it would shift every later index — `descriptions` is
+  each option's description text, the same length and order as `labels`,
+  capped at `DESCRIPTION_LEN` (200) the same way, an empty slot kept for the
+  same reason — and `picked` is the chosen option's label, the same cap as
+  `labels`, the text typed when it was Other, and `null` when the question
+  was never answered. `question` and `descriptions` are new sibling fields;
+  `labels` itself did not change shape, so both of [station.md](station.md)'s
+  `gateSummary()` readers of it are untouched. That null is kept rather than clipped to `''`, because
   `gateSummary()` runs one guard over rows from either source, and that
   guard skips a null. An `''` is not the same thing: `answerOf` returns one
   for an empty multi-select too, and both sources count that alike. Clipped,
@@ -267,7 +273,7 @@ nothing else:
   (60), oldest dropped. Written only when the session ends cleanly, because
   `hooks/leave.js` runs at `SessionEnd` alone — a session that never reaches
   it carries no `gates` at all. While the transcript is still there, the
-  detail page's own replay (`lib/detail.js:613`) is still the source for the
+  detail page's own replay (`lib/detail.js:637`) is still the source for the
   same questions and answers. Once it is gone, [station.md](station.md)'s
   `gateSummary()` reads `labels` back from here instead — that is why they
   are stored: without them the `swapped` card's denominator would quietly
@@ -381,8 +387,8 @@ never takes the task with it.
 ```
 context: 1.1M tokens dropped to compaction so far, 308k in play now,
 --session 302790e6-e652-4cab-af1c-e45d239516cc. Start a fresh session before the
-next one. A new terminal and /fankeel → Adopt carries this task over with its
-notes and its route.
+next one. This stage's gate gets a fourth option, hand off: set next, then a new
+terminal and /fankeel → Adopt.
 ```
 
 Read from the transcript, which records what every compaction cost:
@@ -495,7 +501,7 @@ Two things close it, both upstream of the hooks:
 
 | | |
 |---|---|
-| `scripts/task.js` | `--session` is checked against Claude Code's own `<config>/sessions/<pid>.json`. An id refused is one the scan did not find **while finding others**, and the message lists those with the directory each was opened in. Two results allow: a directory that cannot be read, and a scan that found nobody at all. Neither is evidence, because a refusal must never come from a failed measurement — and a scan that cannot see the session doing the asking has failed, whatever it returned. `lib/live.js:124` (`!ids.has(mySessionId)`) keeps the same rule for the same directory. |
+| `scripts/task.js` | `--session` is checked against Claude Code's own `<config>/sessions/<pid>.json`. An id refused is one the scan did not find **while finding others**, and the message lists those with the directory each was opened in. Two results allow: a directory that cannot be read, and a scan that found nobody at all. Neither is evidence, because a refusal must never come from a failed measurement — and a scan that cannot see the session doing the asking has failed, whatever it returned. `lib/live.js:122` (`!ids.has(mySessionId)`) keeps the same rule for the same directory. |
 | `hooks/inject.js` | a `/fankeel` prompt is answered with the `init` block: this session's id — the one that hook is itself holding — and the rules for the step before there is a task. |
 
 `clear <id>` and `adopt <id>` take the other session's id positionally rather
