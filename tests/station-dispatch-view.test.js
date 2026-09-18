@@ -183,3 +183,24 @@ test('a page with more than one dispatch and no task table says the rest cannot 
     const one = Object.assign({}, s, { dispatches: [s.dispatches[0]], rows: [s.rows[0]] });
     assert.equal(V.splitHtml(one).includes('這頁沒有任務表'), false, 'a single dispatch has nothing else to judge independence against');
 });
+
+test('splitCount renders the 分工 header: turn sum and dispatch count with loops, dispatch count alone without', () => {
+    const dispatches = [{ turn: 1, surface: 'agent', out: 0, back: 10 }, { turn: 2, surface: 'agent', out: 20, back: 30 },
+        { turn: 3, surface: 'agent', out: 40, back: 50 }];
+    assert.equal(V.splitCount({ loops: [{ stage: 'build', turns: 10 }, { stage: 'verify', turns: 5 }], dispatches }),
+        '主迴圈 15 回合 · 派工 3 次');
+    assert.equal(V.splitCount({ dispatches }), '派工 3 次');
+    assert.equal(V.splitCount({ loops: [], dispatches }), '派工 3 次', 'an empty loops array reads the same as a missing one');
+});
+
+test('a workflow dispatch counts its own agents, and its rows still tally into the stage models', () => {
+    const s = {
+        seq: [{ stage: 'survey', at: 0 }],
+        loops: [{ stage: 'survey', turns: 8 }],
+        dispatches: [{ turn: 2, surface: 'workflow', out: 10, back: 20 }],
+        rows: [{ disp: 0, model: 'claude-sonnet-5' }, { disp: 0, model: 'claude-sonnet-5' }, { disp: 0, model: 'claude-opus-4' }],
+        tasks: [],
+    };
+    const html = V.splitHtml(s);
+    assert.match(html, /<p class="tally">survey — 主迴圈 8 回合；派工：Workflow 1 次（3 個 agent）；sonnet ×2、opus ×1<\/p>/);
+});

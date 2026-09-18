@@ -951,6 +951,7 @@
             openSections: openSections, niceStep: niceStep, downsample: downsample, lineChart: lineChart,
             comma: comma, riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
             dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, splitHtml: splitHtml,
+            splitCount: splitCount,
             todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
             figures: figures, compareHtml: compareHtml,
             routeGroups: routeGroups, routeLedger: routeLedger,
@@ -1704,7 +1705,7 @@
         return st;
     }
     function splitCount(x) {
-        var turns = (x.loops || []).reduce(function (a, l) { return a + l.turns; }, 0);
+        var turns = sumLoops(x.loops).turns;
         return (x.loops && x.loops.length ? '主迴圈 ' + turns + ' 回合 · ' : '') + '派工 ' + (x.dispatches || []).length + ' 次';
     }
     function splitHtml(x) {
