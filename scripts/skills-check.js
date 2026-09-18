@@ -36,19 +36,14 @@ function parseArgs(argv) {
 // hand-rolled walk is cheaper than a dependency, and it is the same bargain
 // scripts/survey.js already makes. An unreadable directory is not here, not a
 // crash: a fresh `--root` with no skills/ yet is a real state to scan.
-function walkSkillMd(dir, out) {
-    let entries;
+function walkSkillMd(dir) {
+    let names;
     try {
-        entries = fs.readdirSync(dir, { withFileTypes: true });
+        names = fs.readdirSync(dir, { recursive: true });
     } catch (e) {
-        return out;
+        return [];
     }
-    for (const entry of entries) {
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) walkSkillMd(full, out);
-        else if (entry.name === 'SKILL.md') out.push(full);
-    }
-    return out;
+    return names.filter((n) => path.basename(n) === 'SKILL.md').map((n) => path.join(dir, n));
 }
 
 // The two places a script or flag can be named. Order does not matter to
@@ -57,7 +52,7 @@ function walkSkillMd(dir, out) {
 // reader sees first in the printed findings for the common case of one file
 // naming a script twice.
 function scanTargets(root) {
-    const files = walkSkillMd(path.join(root, 'skills'), []);
+    const files = walkSkillMd(path.join(root, 'skills'));
     const stagesFile = path.join(root, 'lib', 'stages.js');
     if (fs.existsSync(stagesFile)) files.push(stagesFile);
     return files;
