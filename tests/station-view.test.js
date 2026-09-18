@@ -694,6 +694,47 @@ test('頁面對帳：the session cost tab\'s total equals the sum of that sessio
     }
 });
 
+test('costHtml gains a 主迴圈 row per stage from x.loops, and the row rendered proves two things: turns sum to the page\'s total, and no stage\'s BUSY-and-over cost exceeds that stage\'s own total', () => {
+    const days = [
+        dayRow('2026-09-14', 'survey', 'claude-sonnet-5', 'main', 1, 100),
+        dayRow('2026-09-14', 'build', 'claude-sonnet-5', 'main', 2, 1000),
+        dayRow('2026-09-14', 'build', 'claude-opus-5', 'agent', 1, 500),
+        dayRow('2026-09-14', 'verify', 'claude-sonnet-5', 'main', 2, 800),
+    ];
+    const m = V.costModel(days);
+    const x = { loops: [
+        { stage: 'survey', turns: 4, over: 0, overUsd: 0 },
+        { stage: 'build', turns: 5, over: 2, overUsd: 0.5 },
+        { stage: 'verify', turns: 3, over: 3, overUsd: 1.2 },
+    ] };
+    const html = V.costHtml(m, x);
+    const blocks = html.split('<tfoot>')[0].split('<tr class="sub">').slice(1);
+    assert.equal(blocks.length, 3, 'one block per stage in m.stages, survey/build/verify in route order');
+    const toNum = (s) => (s === '—' ? 0 : Number(s.replace(/[$,]/g, '')));
+    let sumTurns = 0;
+    blocks.forEach((b) => {
+        const subRow = b.slice(0, b.indexOf('</tr>'));
+        const cells = [...subRow.matchAll(/<td class="r[^"]*">(\$[\d.,]+|—)<\/td>/g)];
+        const stageUsd = toNum(cells[cells.length - 1][1]);
+        const turns = Number(b.match(/<span><b>(\d+)<\/b>回合<\/span>/)[1]);
+        const overUsd = toNum(b.match(/<b>(\$[\d.,]+|—)<\/b>那些回合/)[1]);
+        sumTurns += turns;
+        assert.ok(overUsd <= stageUsd + 1e-9, 'a stage\'s BUSY-and-over cost does not exceed its own total: ' + overUsd + ' vs ' + stageUsd);
+    });
+    const foot = html.split('<tfoot>')[1];
+    const footTurns = Number(foot.match(/<span><b>(\d+)<\/b>回合<\/span>/)[1]);
+    assert.equal(sumTurns, footTurns, 'the per-stage turn counts sum to the page\'s total main-loop turn count');
+    assert.equal(footTurns, 4 + 5 + 3);
+    assert.match(blocks[0], /<span class="zero"><b>0<\/b>回合 ≥ 400k<\/span>/, 'a stage with no BUSY-and-over turn is styled zero');
+    assert.match(blocks[0], /<span class="zero"><b>—<\/b>那些回合<\/span>/, 'and its dollar figure is a dash, not $0.00');
+});
+
+test('costHtml with no detail loaded yet renders no 主迴圈 row and no stray NaN or undefined', () => {
+    const m = V.costModel([dayRow('2026-09-14', 'build', 'claude-sonnet-5', 'main', 1, 100)]);
+    const html = V.costHtml(m);
+    assert.doesNotMatch(html, /主迴圈|NaN|undefined/);
+});
+
 test('the dispatch tab adds input and output tokens and USD per row, and the events tab says how long each gate waited', () => {
     const html = V.dispatchHtml(DETAIL_X);
     assert.match(html, /<th class="r">input<\/th><th class="r">input USD<\/th><th class="r">output<\/th><th class="r">output USD<\/th>/);

@@ -150,7 +150,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:1422`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:1454`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -199,7 +199,14 @@ agents. Its total is the sum of `days[].usd` — the figure the home and project
 pages sum too — and a live session has one, because `days` comes from the
 transcript read in `extract()` rather than from `spend`, which `hooks/leave.js`
 still writes only at session end. A model the price table does not know gives
-its rows `cost: null` and `usd: null`: no figure, rather than a zero.
+its rows `cost: null` and `usd: null`: no figure, rather than a zero. Each
+stage also carries a 主迴圈 row: how many of the session's own requests it
+held, how many already carried `BUSY` tokens or more (`lib/context.js`, not
+retyped here), what those turns cost, and their share of the stage's own
+total — from `lib/detail.js`'s `loopsOf()`, computed from the same
+per-request series `days` is folded from rather than a new recorded field. A
+stage with no such turn shows the count and a dash rather than a zero dollar
+figure.
 
 ### One session, opened
 
@@ -211,7 +218,7 @@ way. Everything below claims is the session's detail, read out of its
 transcript by `lib/detail.js` and loaded the first time the session is opened;
 a session with no transcript under this machine's config directory and no
 detail cached here has none, and the panel says so rather than drawing an empty
-chart. Where one was cached here once, `lib/detail.js:675` keeps it and the
+chart. Where one was cached here once, `lib/detail.js:694` keeps it and the
 panel draws that instead — a transcript Claude Code has since deleted leaves
 the cache as all there is.
 
@@ -362,7 +369,7 @@ is to change the profile and reload.
 
 The facets are on 清單, above its table — state and stage with a count on each
 button, registry with one button per root
-(`assets/station/station.js:1224`, `moved onto the page they narrow`) — and
+(`assets/station/station.js:1256`, `moved onto the page they narrow`) — and
 the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed. On 清單,
 selecting a registry recomputes the page below the facets: `goneNote()`'s card
@@ -372,14 +379,14 @@ above the list otherwise; it does not merely hide rows.
 A gone registry keeps its facet button, labelled `— gone`, rather than
 dropping off the row, so selecting one never returns a blank pane with nothing
 on the page saying why:
-`goneNote()` (`assets/station/station.js:1061`, `function goneNote(root)`) prints a
+`goneNote()` (`assets/station/station.js:1093`, `function goneNote(root)`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card once it is the one selected on
 清單, and every project page carries the same card for its own registry no
 matter what is selected there: `registryNote()`
-(`assets/station/station.js:1078`, `function registryNote(root)`) prints its
+(`assets/station/station.js:1110`, `function registryNote(root)`) prints its
 own unreadable-session count, its `map.md` date — or `不存在` when there is
 none — and its build directories with each one's file count, or says there
 are none. The old page carried all three on a per-registry meta line; the
@@ -387,7 +394,7 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:1456`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:1488`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
 (`lib/station.js:423`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
@@ -460,7 +467,7 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:1215`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:1247`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較** is a third view. Tick two sessions on 清單 or a project page — only a
@@ -503,9 +510,9 @@ and the eyebrow's cannot disagree.
 
 Both decisions are pure functions above the `module.exports` guard, so both
 are unit tested: what to say
-(`assets/station/station.js:896`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
+(`assets/station/station.js:928`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
 and what the eyebrow reads
-(`assets/station/station.js:906`, `function heroEyebrow(frozenAt) {`). The
+(`assets/station/station.js:938`, `function heroEyebrow(frozenAt) {`). The
 fetch that feeds them, the bar they fill and the pill are the document half
 below the guard. The eyebrow is rendered rather than patched, so it takes a
 redraw — but only as the state flips, never on a poll that finds nothing
@@ -605,7 +612,7 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:1117`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:1149`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button, and every registry card now carries one:

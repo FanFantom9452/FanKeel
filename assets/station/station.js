@@ -834,7 +834,35 @@
         });
         return out;
     }
-    function costHtml(m) {
+    // One 主迴圈 row's arithmetic: how many of the session's own requests a
+    // stage held, how many already carried `BUSY` tokens or more, what those
+    // turns cost, and their share of the stage's own total (main and agents
+    // alike — the same total the sub row's own last cell already prints).
+    // `lp` is one row of `x.loops`, or `null` for a stage no main request
+    // landed in; `usd()` already prints a dash for a zero dollar figure.
+    function loopRow(lp, stageUsd) {
+        lp = lp || { turns: 0, over: 0, overUsd: 0 };
+        var pct = stageUsd ? lp.overUsd / stageUsd * 100 : 0;
+        var z = lp.over === 0;
+        return '<tr class="loop"><td></td><td><span class="lp">主迴圈</span></td><td colspan="8"><div class="lf">'
+            + '<span><b>' + lp.turns + '</b>回合</span>'
+            + '<span' + (z ? ' class="zero"' : '') + '><b>' + lp.over + '</b>回合 ≥ 400k</span>'
+            + '<span' + (z ? ' class="zero"' : '') + '><b>' + usd(lp.overUsd) + '</b>那些回合</span>'
+            + '<span' + (z ? ' class="zero"' : '') + '><i class="mini" style="display:inline-flex;width:72px;vertical-align:middle;margin-right:8px">'
+            + '<span style="width:' + Math.round(pct) + '%"></span></i><b>' + Math.round(pct) + '%</b>佔這一站</span>'
+            + '</div></td><td class="r"></td></tr>';
+    }
+    function sumLoops(loops) {
+        return (loops || []).reduce(function (a, r) {
+            return { turns: a.turns + r.turns, over: a.over + r.over, overUsd: a.overUsd + r.overUsd };
+        }, { turns: 0, over: 0, overUsd: 0 });
+    }
+    // `x` is the session's detail (as everywhere else on this page — see
+    // `sessionHeadHtml(s, x)`, `ctxSection(s, x)`) — optional, since the cost
+    // tab answers before the detail script has loaded. With none, no 主迴圈
+    // row is drawn: `x.loops` is what `lib/detail.js`'s `loopsOf` computed,
+    // and there is nothing to show before it arrives.
+    function costHtml(m, x) {
         var KINDS = [['input', 'input', '--t-in'], ['output', 'output', '--t-out'], ['cacheRead', 'cache read', '--t-cr'],
             ['cacheWrite', 'cache write', '--t-cw']];
         var cells = function (a, cls) {
@@ -844,6 +872,9 @@
         };
         var share = function (v) { return m.total.usd ? Math.round(v / m.total.usd * 1000) / 10 + '%' : '—'; };
         var allTok = KINDS.reduce(function (n, k) { return n + m.total.tokens[k[0]]; }, 0);
+        var loops = x && Array.isArray(x.loops) ? x.loops : null;
+        var loopBy = {};
+        (loops || []).forEach(function (r) { loopBy[r.stage === null ? 'none' : r.stage] = r; });
         return '<div class="sumline"><div>合計花費<b>' + usd(m.total.usd) + '</b></div><div>主 session<b>' + usd(m.main.usd) + '</b></div>'
             + '<div>派工（agent + workflow）<b>' + usd(m.agent.usd) + '</b></div><div>output 佔花費<b>' + share(m.total.cost.output) + '</b></div>'
             + '<div>cache read 佔 token<b>' + (allTok ? Math.round(m.total.tokens.cacheRead / allTok * 1000) / 10 + '%' : '—') + '</b></div></div>'
@@ -855,14 +886,15 @@
             + m.stages.map(function (g) {
                 return '<tr class="sub"><td><span class="pchip"><i class="sw" style="background:' + colorOf('stage', g.stage) + '"></i>'
                     + esc(g.stage === 'none' ? '第一步之前' : g.stage) + '</span></td><td class="muted">' + share(g.sub.usd) + '</td>'
-                    + cells(g.sub, '') + '</tr>' + g.models.map(function (x) {
-                        return '<tr class="child"><td></td><td><span class="pchip"><i class="sw" style="background:var(--m-' + family(x.model)
-                            + ')"></i>' + esc(String(x.model).replace(/^claude-/, '')) + '</span></td>' + cells(x.cell, '') + '</tr>';
-                    }).join('');
+                    + cells(g.sub, '') + '</tr>' + g.models.map(function (mm) {
+                        return '<tr class="child"><td></td><td><span class="pchip"><i class="sw" style="background:var(--m-' + family(mm.model)
+                            + ')"></i>' + esc(String(mm.model).replace(/^claude-/, '')) + '</span></td>' + cells(mm.cell, '') + '</tr>';
+                    }).join('') + (loops ? loopRow(loopBy[g.stage], g.sub.usd) : '');
             }).join('') + '</tbody><tfoot>'
             + '<tr><td>主 session</td><td></td>' + cells(m.main, 'total') + '</tr>'
             + '<tr><td>agent</td><td></td>' + cells(m.agent, 'total') + '</tr>'
-            + '<tr><td>合計</td><td></td>' + cells(m.total, 'total') + '</tr></tfoot></table></div>';
+            + '<tr><td>合計</td><td></td>' + cells(m.total, 'total') + '</tr>'
+            + (loops ? loopRow(sumLoops(loops), m.total.usd) : '') + '</tfoot></table></div>';
     }
     function sessionHeadHtml(s, x) {
         var t = sessionTotals(s), m = x ? timelineModel(x) : null, agentUsd = costModel(s.days).agent.usd;
@@ -1183,7 +1215,7 @@
         var x = DETAIL[s.id] || null;
         // The cost tab reads `days` off the data file, so it answers before the
         // detail script has loaded; the other three need the detail.
-        var body = r.tab === 'cost' ? costHtml(costModel(s.days))
+        var body = r.tab === 'cost' ? costHtml(costModel(s.days), x)
             : !x ? detailNote(s)
                 : r.tab === 'dispatch' ? '<div class="det">' + dispatchHtml(x) + '</div>'
                     : r.tab === 'events' ? '<div class="det">' + replayHtml(x) + '</div>'

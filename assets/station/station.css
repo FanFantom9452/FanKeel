@@ -136,6 +136,13 @@ table.t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .t tfoot td{border-bottom:0;border-top:1px solid var(--rule2);font-weight:600}
 .t tr.sub td{background:var(--wash);font-weight:600}
 .t tr.child td:first-child{padding-left:26px}
+.t tr.loop td{background:var(--wash);padding-top:6px;padding-bottom:6px}
+.t tr.loop td:first-child{box-shadow:inset 2px 0 0 var(--ind)}
+.t tfoot tr.loop td{border-top:1px solid var(--rule2)}
+.lp{font:600 11.5px var(--f-ui);color:var(--ind);white-space:nowrap}
+.lf{display:flex;flex-wrap:wrap;gap:4px 18px;align-items:center;font-size:12px;color:var(--ink2);font-weight:400}
+.lf b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;margin-right:4px}
+.lf .zero b{color:var(--muted);font-weight:400}
 .chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:1px 7px 1px 5px;border-radius:5px;background:var(--inset);color:var(--ink2);white-space:nowrap}
 .chip .sw{width:8px;height:8px}
 .pchip{display:inline-flex;align-items:center;gap:6px;color:var(--ink2)}
