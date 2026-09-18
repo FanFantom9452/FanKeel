@@ -213,14 +213,14 @@ figure.
 Opening a row in 清單 fills the side panel with sections that open and close, and which
 start open is the session's state — `openSections()` in the view script: a
 live session opens on 摘要 and claims, who is in which file; one that has
-ended opens on context and 派工, what it cost. 過程還原 starts closed either
-way. Everything below claims is the session's detail, read out of its
-transcript by `lib/detail.js` and loaded the first time the session is opened;
-a session with no transcript under this machine's config directory and no
-detail cached here has none, and the panel says so rather than drawing an empty
-chart. Where one was cached here once, `lib/detail.js:694` keeps it and the
-panel draws that instead — a transcript Claude Code has since deleted leaves
-the cache as all there is.
+ended opens on context and 派工, what it cost. 分工 opens by default either
+way, and 過程還原 starts closed either way. Everything below claims is the
+session's detail, read out of its transcript by `lib/detail.js` and loaded
+the first time the session is opened; a session with no transcript under
+this machine's config directory and no detail cached here has none, and the
+panel says so rather than drawing an empty chart. Where one was cached here
+once, `lib/detail.js:694` keeps it and the panel draws that instead — a
+transcript Claude Code has since deleted leaves the cache as all there is.
 
 **context** is one line. x is time and y the context each request carried —
 input, cache read and both cache writes — taken from `summarise()`'s own
@@ -243,9 +243,10 @@ A step to an earlier stage on the route is a backtrack, marked `↩` with how
 long the stage before it lasted. Each backtrack links to the replay rows
 between entering the stage it left and the step back.
 
-**分工** sits third, between 階段順序 and 任務: a short prose account of how
-the main loop divided dispatch. One line per stage, in the order `seq` first
-entered it — a dispatch's stage is its `out` time run through the same rule
+**分工** sits third, between 階段順序 and 任務, and opens by default whether
+the session is live or has ended: a short prose account of how the main loop
+divided dispatch. One line per stage, in the order `seq` first entered it —
+a dispatch's stage is its `out` time run through the same rule
 `lib/detail.js:397`'s `stageWhen` uses: the last `seq` entry at or before it,
 or `task 開始前` when there is none. Turn counts come from `x.loops`; a cache
 written before that field existed has none, and the line says so

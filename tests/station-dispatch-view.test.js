@@ -139,17 +139,22 @@ test('an overlapping single dispatch is counted once as could-have-gone-in-one-t
     assert.equal((html.match(/本可一次發出/g) || []).length, 1, 'turn 2 overlaps turn 1 once; turn 3 does not overlap turn 2, so the credit is not doubled');
 });
 
-test('a cache with no loops field says so plainly instead of printing a guessed turn count', () => {
-    const s = {
+test('a cache with no loops field, or an empty one, says so plainly instead of printing a guessed turn count', () => {
+    const base = {
         seq: [{ stage: 'survey', at: 0 }],
         dispatches: [{ turn: 1, surface: 'agent', out: 10, back: 20 }],
         rows: [{ disp: 0, model: 'claude-sonnet-5' }],
         tasks: [],
     };
-    const html = V.splitHtml(s);
-    assert.match(html, /<p class="tally">這份快取沒有逐站回合數（寫於 loops 欄位出現之前）<\/p>/);
-    assert.equal(html.includes('主迴圈'), false, 'no loops field means no turn count is printed anywhere');
-    assert.match(html, /survey — 派工：單發 1 次；sonnet ×1/);
+    // Missing entirely (a cache older than the `loops` field) and present but
+    // empty (a stage that ran with no requests of its own) must read alike:
+    // both are "no per-stage turn count", not a printed zero.
+    for (const s of [base, Object.assign({}, base, { loops: [] })]) {
+        const html = V.splitHtml(s);
+        assert.match(html, /<p class="tally">這份快取沒有逐站回合數（寫於 loops 欄位出現之前）<\/p>/);
+        assert.equal(html.includes('主迴圈'), false, 'no loops field means no turn count is printed anywhere');
+        assert.match(html, /survey — 派工：單發 1 次；sonnet ×1/);
+    }
 });
 
 test('a plan line reports its groups in three states: dispatched in one turn, never dispatched, and could-have-gone-in-one', () => {
