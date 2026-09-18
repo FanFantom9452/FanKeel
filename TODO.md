@@ -102,6 +102,8 @@ entry waited for actually happening. It shrank when somebody read it.
 
 - 〔docs〕`docs/sources.md` 的 Cited by 欄 21 列有 13 列漏了 grep 找得到的 `docs/` 頁，而 `sources.md:4` 說這欄「filled by hand from grep」 — [docs/sources.md](docs/sources.md). 待決：一次補齊、加測試比對 grep，還是改寫那句話。
 
+- 〔ledger〕plan 階段的 commit 不在 ledger 任何一列：`ranges` 從 Task 1 的 BASE 起算，verify 會把它報成沒人審 — [scripts/ledger.js](scripts/ledger.js). 待決：`init` 記下 plan 的範圍、plan reviewer 寫帶範圍的行，或讓 verify 認得它。
+
 ## Waiting
 
 - 〔build〕knip 的 unused exports 一格關著：6.32.2 認不得 CJS namespace 取用，開著回 146 個假陽性 — [docs/development.md](docs/development.md). lifts when: knip 認得 CJS namespace property access. 09-13.
