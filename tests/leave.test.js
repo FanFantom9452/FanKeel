@@ -308,6 +308,32 @@ test('gatesFrom keeps every option label in the order AskUserQuestion declared t
     assert.equal(out[0].picked, '留在 design');
 });
 
+// Fix round 1: an empty or missing label must keep its slot rather than being
+// dropped, because `labels[0]` is read as option one — dropping a blank
+// label would shift every label after it up one index.
+test('gatesFrom keeps an empty or missing label\'s slot so labels[0] is still option one', () => {
+    const askedAt = Date.parse('2026-09-18T00:00:00.000Z');
+    const entries = [
+        {
+            type: 'assistant', timestamp: '2026-09-18T00:00:00.000Z',
+            message: { content: [{
+                type: 'tool_use', id: 'a1', name: 'AskUserQuestion',
+                input: { questions: [{
+                    question: 'q', header: 'design',
+                    options: [{ label: '' }, { label: 'B' }, {}],
+                }] },
+            }] },
+        },
+        {
+            type: 'user', timestamp: '2026-09-18T00:00:01.000Z',
+            message: { content: [{ type: 'tool_result', tool_use_id: 'a1' }] },
+            toolUseResult: { answers: { q: 'B' } },
+        },
+    ];
+    const out = gates.gatesFrom(entries, [['design', askedAt - 1]], function (a) { return a; });
+    assert.deepEqual(out[0].labels, ['', 'B', '']);
+});
+
 test('a session with no AskUserQuestion writes no gates field', () => {
     const f = fixture();
     const out = run({ session_id: SID, transcript_path: f.transcript, cwd: f.root, reason: 'clear', hook_event_name: 'SessionEnd' }, f.cfg);
