@@ -36,9 +36,9 @@ function seed(root, over) {
 // The project file, not the machine one: `hooks/brief.js` (copying
 // hooks/resume.js) resolves the project root as `docs.projectRootsFor(root,
 // mine.project ? [mine.project] : [])[0] || root`, and none of these records
-// set `project`, so that call returns `root` itself. The machine file would
-// mean writing under `CLAUDE_CONFIG_DIR`/HOME, outside this test's tmp dir —
-// real, shared, machine-wide state a test must not touch.
+// set `project`, so that call returns `root` itself. The machine file is the
+// other half of the read, and `run` points `CLAUDE_CONFIG_DIR` at an empty
+// tmp dir so the real one — shared, machine-wide — is never what a test reads.
 function seedProfile(root, values) {
   const dir = path.join(root, '.fankeel');
   fs.mkdirSync(dir, { recursive: true });
@@ -49,7 +49,7 @@ function run(root, payload) {
   return execFileSync(process.execPath, [HOOK], {
     input: typeof payload === 'string' ? payload : JSON.stringify(payload),
     encoding: 'utf8',
-    env: Object.assign({}, process.env, { CLAUDE_PROJECT_DIR: root }),
+    env: Object.assign({}, process.env, { CLAUDE_PROJECT_DIR: root, CLAUDE_CONFIG_DIR: mkTmp('fankeel-cfg-') }),
   });
 }
 
