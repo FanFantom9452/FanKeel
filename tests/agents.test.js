@@ -90,3 +90,11 @@ test('the stage agent writes its handoff and dispatches readers, on opus', () =>
     assert.ok(!tools.includes('Edit'), 'it changes no source');
     assert.equal(f.model, 'opus');
 });
+
+// Its brief says to read cited lines with `sed -n` in one Bash call; a Tools
+// section keeping Bash to git and the plugin's scripts would forbid exactly that.
+test('the stage agent may read with sed in Bash', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8');
+    const tools = text.split('\n## Tools\n')[1].split('\n## ')[0];
+    assert.match(tools, /`sed -n`/);
+});

@@ -242,6 +242,8 @@ test('a stage agent gets its stage\'s rules and shape, its skill, and where to w
   // Run one command per call, the stage agent took 34 and 48 tool calls over a
   // survey a main session did in 5 and 6, each call re-sending its context.
   assert.ok(text.includes('Run independent commands in one Bash call'), 'the brief must ask for batched commands');
+  // Batched, it still opened each cited place with a Read of its own, 18 and 17 of them.
+  assert.ok(text.includes('Read the lines you cite with `sed -n'), 'the brief must ask for cited lines read in Bash');
   assert.ok(text.length < 10000, 'brain brief is ' + text.length + ' chars');
 });
 

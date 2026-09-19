@@ -4,7 +4,7 @@ description: A stage agent — runs one whole stage in a clean context when the 
 tools: [Read, Grep, Glob, Bash, Write, Agent]
 model: opus
 status: current
-last_verified: 2026-09-19
+last_verified: 2026-09-20
 source_of_truth: lib/render.js
 ---
 
@@ -24,8 +24,9 @@ the skill first. Do the stage, write the report to that file with its
 raw reading happens in their contexts, and what reaches yours is what they
 return. Open every `path:line` a reader cites before you keep it. `Write` is
 for the handoff file named in your brief and nothing else. `Bash` is for
-`git` and `node <plugin>/scripts/*.js`, `task.js route` included when the
-class has to rise. You have neither `AskUserQuestion` nor `Workflow`; the
+`git`, `node <plugin>/scripts/*.js` — `task.js route` included when the
+class has to rise — and reading: `grep`, and `sed -n` for the lines you
+cite. You have neither `AskUserQuestion` nor `Workflow`; the
 brief says what replaces each.
 
 ## Refusals
