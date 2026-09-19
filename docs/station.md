@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-14
-source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/registry.js, lib/prices.js, lib/clear.js, lib/profile.js
+source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/registry.js, lib/prices.js, lib/clear.js, lib/profile.js, lib/serve.js, hooks/inject.js
 ---
 
 # The station
@@ -14,15 +14,51 @@ and, for how it is found and when it is written,
 for the curve, the controls and why a deadline replaced a depth,
 `docs/archive/2026-09-06-station-reads-back-design.md`.
 
-To open it: `.fankeel/index.html` in the registry you are in is the copy
-beside you, `node scripts/station.js --open` opens the newest, and
-`node scripts/station.js serve --open` runs it as a page with a `clear`
-button on every stale row. The `/fankeel` prompt writes the page and names it
-on the block's `station:` line, so there is nothing to invoke. An argument
-`scripts/station.js` does not know exits 2 before anything is written.
-`/fankeel-station` is a skill for the same `serve --open` — it runs that one
-command and reads back the URL it printed, nothing more; the routes, states
-and fields below stay owned by this page rather than copied into the skill.
+To open it: `/fankeel` does. The prompt writes the page, asks whether a
+station is serving, starts one when none is, and names the served page on the
+block's `station:` line — the next section has how. `.fankeel/index.html` in
+the registry you are in is the static copy beside you,
+`node scripts/station.js --open` opens the newest as a file, and
+`node scripts/station.js serve --open` runs the served page by hand, with a
+`clear` button on every stale row. An argument `scripts/station.js` does not
+know exits 2 before anything is written. `/fankeel-station` is a skill for the
+same `serve --open`, for reopening the station by hand once `/fankeel` has
+started it — it runs that one command and reads back the URL it printed,
+nothing more; the routes, states and fields below stay owned by this page
+rather than copied into the skill.
+
+## The `station:` line
+
+The `/fankeel` prompt writes the page, then asks whether a station is serving,
+and the `station:` line of the block it injects says what it found. The asking
+is `ensureServe` in `lib/serve.js`: `<configDir>/fankeel/serve.json`, then a
+`GET` of that record's `station/health`, which has to answer inside a second
+and name the record's pid. The line ends one of four ways:
+
+| the line ends | when |
+|---|---|
+| `<url> (serve was running).` | a recorded station answered; nothing was started and no browser opened |
+| `<url> (serve started, browser opened).` | none answered, so the hook started `station.js serve --open` detached, and its `serve.json` appeared in time |
+| `serve is starting; until then <file>.` | it was started, and had not written its record when the hook had to answer |
+| `<file>. Edit the profile with station.js serve --open.` | `FANKEEL_SERVE=off` is set, or the start itself failed |
+
+All of it — the page write, the probe and the wait for the record — stays
+inside four seconds of the hook starting, one short of the five
+`.claude-plugin/plugin.json` gives every hook. A probe too slow to see a
+station that is running starts a second `serve`, and that is safe: a second
+`serve` joins the first (under *When it is written, and where*), opens the
+browser on its url and exits — the one case where a running station gets a
+second tab. No other prompt asks: an ordinary prompt, and every prompt of a
+session with a task, never loads `lib/serve.js` at all.
+
+The station it starts is a process of its own — detached, with no console and
+no window — so it outlives the hook and the Claude Code session that ran it,
+and runs until stopped, like any `serve`, unless given `--idle`.
+`tests/serve.test.js` starts one from a process that exits at once, under a
+second process that exits too, and finds it answering afterwards.
+`FANKEEL_SERVE=off` in the environment turns the probe and the start off and
+leaves the file on the line; the test suite runs with it, since a test must not
+open a browser.
 
 ## Where the registries come from
 

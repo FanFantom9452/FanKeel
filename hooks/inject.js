@@ -40,7 +40,47 @@ const startsFankeel = (prompt) =>
 // Flags belonging to sessions that ended a month ago are litter, not state.
 const BADGE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
+// What a `/fankeel` prompt may spend on the page, the probe and a station's
+// start together, counted from this hook's start: four of the five seconds
+// `.claude-plugin/plugin.json` gives it, the fifth being node starting and the
+// block going out.
+const SERVE_BUDGET_MS = 4000;
+
+// The statusline for a session with no active entry, written once the block is
+// out: the block is why this process was started, and nothing after it may
+// cost it.
+function initBadge(dir, sessionId, mine, starting, root) {
+    if (!dir) return;
+    try {
+        if (!mine && starting) {
+            // Step 0 of a route nobody has chosen, so there is no
+            // denominator either. Seven used to go here, being what
+            // `task.js start` defaults to with no class given, and a
+            // `bounded` task then showed five where it had just shown
+            // seven. A count the next command contradicts is worse than
+            // no count: with `steps` absent the statusline draws none
+            // until a route exists to draw. TokenBar's `StepDots`
+            // returns nothing without a denominator and says why —
+            // "inventing a denominator would draw a progress bar out of
+            // nothing" — so this is its contract, not a workaround.
+            // Measured 2026-08-27: seven hollow dots before, none now.
+            badge.writeBadge(dir, sessionId, 'init');
+            badge.writeLead(dir, sessionId, { word: 'init', step: 0, root });
+        } else if (mine || badge.readBadge(dir, sessionId) === 'init') {
+            // An entry that exists but is stood down means this session
+            // *was* in the mode and its badge still says otherwise. An
+            // `init` with no entry behind it is one this hook raised for a
+            // `/fankeel` that never started anything. Only those two — a
+            // session that never used the plugin is left alone, which is
+            // what keeps it free.
+            badge.clearBadge(dir, sessionId);
+            badge.clearLead(dir, sessionId);
+        }
+    } catch (e) { /* housekeeping */ }
+}
+
 function main(raw) {
+    const began = Date.now();
     const payload = parse(raw);
     if (!payload) return;
 
@@ -77,51 +117,44 @@ function main(raw) {
         // that is the common case worth staying quiet for.
         //
         // The page is written before the output because the block names it;
-        // the badge and lead below still come after the output, in the order
-        // the injection below keeps and for the same reason.
+        // the badge and lead still come after the output, in `initBadge`, in
+        // the order the injection below keeps and for the same reason.
         //
         // `sessionPath` is the shape check, borrowed rather than repeated: it
         // answers null for anything that is not a session id. What it is doing
         // here is refusing to read an unvalidated payload field back into the
         // conversation — the id is Claude Code's to send, not this hook's to
         // vouch for.
-        if (starting && registry.sessionPath(root, sessionId)) {
-            process.stdout.write(JSON.stringify({
-                hookSpecificOutput: {
-                    hookEventName: 'UserPromptSubmit',
-                    additionalContext: renderInit({ sessionId, station: page }),
-                },
-            }));
-        }
+        const speaks = Boolean(starting && registry.sessionPath(root, sessionId));
+        const finish = (serve) => {
+            if (speaks) {
+                process.stdout.write(JSON.stringify({
+                    hookSpecificOutput: {
+                        hookEventName: 'UserPromptSubmit',
+                        additionalContext: renderInit({ sessionId, station: page, serve }),
+                    },
+                }));
+            }
+            initBadge(dir, sessionId, mine, starting, root);
+        };
 
-        if (dir) {
-            try {
-                if (!mine && starting) {
-                    // Step 0 of a route nobody has chosen, so there is no
-                    // denominator either. Seven used to go here, being what
-                    // `task.js start` defaults to with no class given, and a
-                    // `bounded` task then showed five where it had just shown
-                    // seven. A count the next command contradicts is worse than
-                    // no count: with `steps` absent the statusline draws none
-                    // until a route exists to draw. TokenBar's `StepDots`
-                    // returns nothing without a denominator and says why —
-                    // "inventing a denominator would draw a progress bar out of
-                    // nothing" — so this is its contract, not a workaround.
-                    // Measured 2026-08-27: seven hollow dots before, none now.
-                    badge.writeBadge(dir, sessionId, 'init');
-                    badge.writeLead(dir, sessionId, { word: 'init', step: 0, root });
-                } else if (mine || badge.readBadge(dir, sessionId) === 'init') {
-                    // An entry that exists but is stood down means this session
-                    // *was* in the mode and its badge still says otherwise. An
-                    // `init` with no entry behind it is one this hook raised for a
-                    // `/fankeel` that never started anything. Only those two — a
-                    // session that never used the plugin is left alone, which is
-                    // what keeps it free.
-                    badge.clearBadge(dir, sessionId);
-                    badge.clearLead(dir, sessionId);
-                }
-            } catch (e) { /* housekeeping */ }
+        // Whether a station is serving, asked only on the prompt whose block
+        // names one; every other prompt stays two missing files. `ensureServe`
+        // gives `serve.json` a second to answer and starts `station.js serve
+        // --open` detached when nothing does, so the browser opens only when
+        // this prompt started the station, and `began + SERVE_BUDGET_MS`
+        // bounds the page write above and all of this together. Required here
+        // rather than at the top, so a prompt that never asks never loads it.
+        // It never rejects; the `catch` is for `finish`, since a rejection left
+        // unhandled would end this process non-zero. `FANKEEL_SERVE=off` turns
+        // the asking off and leaves the file on the line — the tests run so.
+        if (speaks && page && dir && process.env.FANKEEL_SERVE !== 'off') {
+            require('../lib/serve.js').ensureServe({ configDir: dir, plugin: PLUGIN_ROOT, until: began + SERVE_BUDGET_MS })
+                .then(finish, () => finish(null))
+                .catch(() => {});
+            return;
         }
+        finish(null);
         return;
     }
 

@@ -643,3 +643,25 @@ test('the profile reaches the rules, and never a line of its own', () => {
   assert.doesNotMatch(bad, /^profile:/m);
   assert.match(bad, /Integration — no land answer in the profile: open the menu\./);
 });
+
+// The `station:` line names where to look: the served url when a station
+// answered or this prompt started one, the file while one is still binding,
+// and the file with the command otherwise. Every form stays under the init cap.
+test('the station line names the served url, a station still starting, or the file', (t) => {
+  const page = { file: 'C:/Users/you/.claude/fankeel/station.html', live: 2, stale: 8, down: 131 };
+  const at = (serve) => renderInit({ sessionId: MINE, station: page, serve });
+  assert.match(at({ state: 'running', url: 'http://127.0.0.1:7817/' }),
+    /^station: 8 stale, 2 live — http:\/\/127\.0\.0\.1:7817\/ \(serve was running\)\.$/m);
+  assert.match(at({ state: 'started', url: 'http://127.0.0.1:7817/' }),
+    /^station: 8 stale, 2 live — http:\/\/127\.0\.0\.1:7817\/ \(serve started, browser opened\)\.$/m);
+  assert.match(at({ state: 'starting', url: null }),
+    /^station: 8 stale, 2 live — serve is starting; until then C:\/Users\/you\/\.claude\/fankeel\/station\.html\.$/m);
+  for (const serve of [null, undefined, { state: 'failed', url: null }]) {
+    assert.match(at(serve), /^station: 8 stale, 2 live — C:\/Users\/you\/\.claude\/fankeel\/station\.html\. Edit the profile with station\.js serve --open\.$/m);
+  }
+  for (const serve of [{ state: 'running', url: 'http://127.0.0.1:7817/' }, { state: 'started', url: 'http://127.0.0.1:7817/' }, { state: 'starting', url: null }]) {
+    const size = sizeAtReference(at(serve));
+    t.diagnostic(('init+' + serve.state).padEnd(15) + size + ' chars at a ' + REFERENCE_ROOT + '-char root');
+    assert.ok(size < 1400, 'init block with a ' + serve.state + ' station line is ' + size + ' chars');
+  }
+});

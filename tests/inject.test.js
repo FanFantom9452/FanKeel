@@ -5,7 +5,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, execFile } = require('node:child_process');
+const http = require('node:http');
 
 const tmp = require('./tmp.js');
 
@@ -48,12 +49,13 @@ function seedLive(cfg, entries) {
 }
 
 // Runs the real hook the way Claude Code does: payload on stdin, everything else
-// from the environment.
+// from the environment. `FANKEEL_SERVE=off` keeps a `/fankeel` prompt from
+// starting a station — a test that opened a browser is a test nobody runs twice.
 function run(payload, claudeDir) {
   const out = execFileSync(process.execPath, [HOOK], {
     input: typeof payload === 'string' ? payload : JSON.stringify(payload),
     encoding: 'utf8',
-    env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: claudeDir || tmp('fankeel-cfg-') }),
+    env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: claudeDir || tmp('fankeel-cfg-'), FANKEEL_SERVE: 'off' }),
   });
   return out;
 }
@@ -513,4 +515,96 @@ test('a project profile reaches the injected rules, never a line of its own', ()
   const ctx = context(run({ session_id: MINE, cwd: root }));
   assert.doesNotMatch(ctx, /^profile:/m);
   assert.match(ctx, /Integration — profile: land merge, no push — do that, say so, skip the menu\./);
+});
+
+// The hook, spawned without blocking this process: a station this test serves
+// has to answer the hook's probe from this same event loop, which
+// `execFileSync` would hold. `FANKEEL_SERVE` is whatever `env` says, and unset
+// otherwise.
+function runAsync(payload, claudeDir, env) {
+  const e = Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: claudeDir }, env || {});
+  if (!env || !('FANKEEL_SERVE' in env)) delete e.FANKEEL_SERVE;
+  return new Promise((resolve, reject) => {
+    const child = execFile(process.execPath, [HOOK], { env: e, encoding: 'utf8', timeout: 10000 },
+      (err, stdout) => (err ? reject(err) : resolve(stdout)));
+    child.stdin.end(JSON.stringify(payload));
+  });
+}
+
+// A station this test serves: `/station/health` names this process's pid, and
+// `serve.json` names the same pid and this listener's url — the pair `probe()`
+// in lib/serve.js takes for a running station.
+function fakeStation(cfg) {
+  let hits = 0;
+  const server = http.createServer((req, res) => {
+    if (req.url !== '/station/health') { res.writeHead(404); res.end(); return; }
+    hits += 1;
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ station: true, pid: process.pid, started: new Date().toISOString() }));
+  });
+  return new Promise((resolve) => {
+    server.listen(0, '127.0.0.1', () => {
+      const url = 'http://127.0.0.1:' + server.address().port + '/';
+      fs.mkdirSync(path.join(cfg, 'fankeel'), { recursive: true });
+      fs.writeFileSync(path.join(cfg, 'fankeel', 'serve.json'),
+        JSON.stringify({ pid: process.pid, port: server.address().port, url, started: new Date().toISOString() }) + '\n');
+      resolve({ url, hits: () => hits, close: () => new Promise((r) => { server.close(r); }) });
+    });
+  });
+}
+
+// Should the hook have started a station after all, serve.json names that
+// station's pid by now: stop it rather than leave it running.
+function stopStarted(cfg) {
+  try {
+    const rec = JSON.parse(fs.readFileSync(path.join(cfg, 'fankeel', 'serve.json'), 'utf8'));
+    if (rec.pid !== process.pid) process.kill(rec.pid);
+  } catch (e) { /* nothing was started */ }
+}
+
+test('a /fankeel prompt names a station that answers by its url, and starts none', async () => {
+  const root = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  const st = await fakeStation(cfg);
+  try {
+    const text = context(await runAsync({ session_id: MINE, cwd: root, prompt: '/fankeel' }, cfg));
+    const url = st.url.replace(/[.]/g, '\\.');
+    assert.match(text, new RegExp('^station: \\d+ stale, \\d+ live — ' + url + ' \\(serve was running\\)\\.$', 'm'));
+    assert.ok(st.hits() >= 1, 'the hook never asked the station');
+    assert.equal(JSON.parse(fs.readFileSync(path.join(cfg, 'fankeel', 'serve.json'), 'utf8')).pid, process.pid,
+      'a second station was started over one that answered');
+  } finally {
+    stopStarted(cfg);
+    await st.close();
+  }
+});
+
+// The pair of the test above: a prompt that is not `/fankeel` — with no entry,
+// and with an active one — never asks.
+test('no prompt but /fankeel asks the station anything', async () => {
+  const root = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  const st = await fakeStation(cfg);
+  try {
+    await runAsync({ session_id: MINE, cwd: root, prompt: 'what does this repository do' }, cfg);
+    seed(root, MINE);
+    await runAsync({ session_id: MINE, cwd: root, prompt: 'carry on' }, cfg);
+    assert.equal(st.hits(), 0);
+  } finally {
+    stopStarted(cfg);
+    await st.close();
+  }
+});
+
+test('FANKEEL_SERVE=off leaves the file on the station line and asks nothing', async () => {
+  const root = tmp('fankeel-hook-');
+  const cfg = tmp('fankeel-cfg-');
+  const st = await fakeStation(cfg);
+  try {
+    const text = context(await runAsync({ session_id: MINE, cwd: root, prompt: '/fankeel' }, cfg, { FANKEEL_SERVE: 'off' }));
+    assert.match(text, /^station: \d+ stale, \d+ live — .+\. Edit the profile with station\.js serve --open\.$/m);
+    assert.equal(st.hits(), 0);
+  } finally {
+    await st.close();
+  }
 });

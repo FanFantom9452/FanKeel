@@ -16,8 +16,8 @@
 // binding a second port: `<configDir>/fankeel/serve.json` is what it reads to
 // know. `--detach` runs the server as a background process and returns once
 // that file appears, so closing the terminal does not take the station with
-// it. Nothing here is started for the user by anything else, and no session
-// holds a port on its own.
+// it. `hooks/inject.js` starts one the same way on a `/fankeel` prompt when
+// none answers (`ensureServe` in lib/serve.js); no session holds a port of its own.
 // `--scan` walks a directory for registries once; what it finds is remembered
 // in `<configDir>/fankeel/roots.json`, so it is run once per drive. With no
 // roots.json at all — this config dir's first-ever run — every drive is
