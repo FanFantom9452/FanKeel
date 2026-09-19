@@ -260,18 +260,19 @@ test('a bare idleMs never ends the calling process, but main()\'s own --idle fla
         'a bare idleMs ended its own process before it could finish: ' + inProcess.stdout + inProcess.stderr);
 
     // main()'s own `serve` verb is the one caller that should still opt in —
-    // `--idle` has always meant "exit the process" for the real CLI. A
-    // timing check cannot tell this apart from the default: with nothing
-    // else open, a standalone `node scripts/station.js serve` process ends
-    // on its own once `server.close()` empties the event loop, whether or
-    // not `process.exit(0)` was ever called — measured, not assumed: exit
-    // code 0 in about the same 1.4s either way. So this reads the source
-    // instead, for the one line an accidental revert would actually change.
-    const source = fs.readFileSync(CLI, 'utf8');
-    const mainCall = /if \(args\.verb === 'serve'\) \{\r?\n\s*serve\(\{([^)]*?)\}\)\.then/.exec(source);
-    assert.ok(mainCall, 'could not find main()\'s own serve() call to check');
-    assert.match(mainCall[1], /exitOnIdle:\s*true/,
-        'main()\'s own serve() call no longer opts in with exitOnIdle: true');
+    // `--idle` has always meant "exit the process" for the real CLI. Run it
+    // for real rather than in-process, and watch the process end on its own;
+    // `timeout` below kills it if it does not, so a regression reads as a red
+    // assertion here rather than a hung test or an orphaned process. `--idle`
+    // is minutes: 0.005 is 300ms, well inside the 10-second deadline.
+    const cfg2 = tmp('fankeel-idle-');
+    const began = Date.now();
+    const cli = spawnSync(process.execPath, [CLI, 'serve', '--port', '0', '--idle', '0.005'],
+        { encoding: 'utf8', env: { ...process.env, CLAUDE_CONFIG_DIR: cfg2 }, timeout: 10000 });
+    const took = Date.now() - began;
+    assert.ok(cli.status !== null,
+        'the CLI --idle path did not exit on its own within 10s and was killed: ' + JSON.stringify({ signal: cli.signal, took }));
+    assert.equal(cli.status, 0, 'the CLI --idle path exited nonzero: ' + cli.stderr);
 });
 
 test('--detach is parsed, and portWasExplicit only when --port was given', () => {
