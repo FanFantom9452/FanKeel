@@ -259,3 +259,18 @@ test('runningIds still drops a session whose process is gone', () => {
   assert.equal(ids.has(SID), true);
   assert.equal(ids.has(OTHER), false);
 });
+
+// The station tells an agent the running process owns from one an earlier
+// process of the same session left open, and for that it needs when the
+// process started. Claude Code writes a number; a fixture may write a date.
+test('runningSessions carries when each process started, from a number or an ISO string', () => {
+  const num = tmpConfig();
+  seedRaw(num, process.pid + '.json', JSON.stringify({ pid: process.pid, sessionId: SID, cwd: '/a', startedAt: 1789780091319 }));
+  assert.equal(live.runningSessions(num)[0].startedAt, 1789780091319);
+  const iso = tmpConfig();
+  seedRaw(iso, process.pid + '.json', JSON.stringify({ pid: process.pid, sessionId: SID, startedAt: '2026-09-19T01:00:00.000Z' }));
+  assert.equal(live.runningSessions(iso)[0].startedAt, Date.parse('2026-09-19T01:00:00.000Z'));
+  const none = tmpConfig();
+  seedRaw(none, process.pid + '.json', JSON.stringify({ pid: process.pid, sessionId: SID }));
+  assert.equal(live.runningSessions(none)[0].startedAt, null);
+});

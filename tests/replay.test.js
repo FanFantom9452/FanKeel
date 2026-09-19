@@ -105,11 +105,16 @@ test('stepsOf keeps edits and commands before reads and searches, and counts wha
     const line = (o) => JSON.stringify(o) + '\n';
     fs.writeFileSync(file, [
         said('a1', 0, [use('s1', 'Read', { file_path: 'r/lib/x.js' })]),
+        result(1, 's1', 'x'),
         said('a2', 1, [use('s2', 'Grep', { pattern: 'foo' })]),
+        result(2, 's2', 'x'),
         said('a3', 2, [use('s3', 'Bash', { command: 'npm test' })]),
         result(3, 's3', '\nℹ pass 1\nℹ fail 0'),
         said('a4', 4, [use('s4', 'Write', { file_path: 'r/lib/y.js' })]),
+        result(4, 's4', 'x'),
         said('a5', 5, [use('s5', 'Skill', { skill: 'x' })]),
+        result(5, 's5', 'x'),
+        said('a6', 6, [{ type: 'text', text: 'done' }]),
     ].map((o) => line(Object.assign({ isSidechain: true }, o))).join(''));
     const out = replay.stepsOf(file, 3);
     assert.deepEqual(out.steps, [
@@ -121,4 +126,53 @@ test('stepsOf keeps edits and commands before reads and searches, and counts wha
     assert.deepEqual(out.dropped, { find: 1, other: 1 });
     assert.equal(out.droppedN, 2);
     assert.equal(replay.stepsOf(file).steps.length, 5);
+});
+
+// The agent's own transcript says where it is. The fixture stops on a tool_use
+// with no tool_result: open, and that tool is `cur`. The same lines with the
+// result and a closing text line: finished. A line cut mid-message is not a
+// close.
+test('stepsOf reads an agent as open on a tool_use with no result, and finished once it has one and a closing line', () => {
+    const dir = tmp('fankeel-steps-');
+    const write = (file, rows) => fs.writeFileSync(file, rows.map((o) => JSON.stringify(Object.assign({ isSidechain: true }, o)) + '\n').join(''));
+    const lines = [
+        { type: 'user', timestamp: T(0), message: { content: 'Build Task 3.\nRun its test.' } },
+        said('b1', 1, [use('u1', 'Read', { file_path: 'r/lib/x.js' })]),
+        result(2, 'u1', 'x'),
+        said('b2', 3, [use('u2', 'Bash', { command: 'node --test tests/x.test.js' })]),
+    ];
+    const open = path.join(dir, 'agent-a1.jsonl');
+    write(open, lines);
+    const a = replay.stepsOf(open);
+    assert.equal(a.open, true);
+    assert.deepEqual(a.cur, { n: 'Bash', t: Date.parse(T(3)), k: 'cmd', c: 'node --test tests/x.test.js' });
+    assert.deepEqual(a.steps, [{ k: 'read', f: 'r/lib/x.js' }], 'the tool in progress is not one of the steps');
+    assert.deepEqual([a.prompt, a.promptLen, a.lastAt], ['Build Task 3.\nRun its test.', 27, Date.parse(T(3))]);
+    const done = path.join(dir, 'agent-a2.jsonl');
+    write(done, lines.concat([result(4, 'u2', 'ℹ pass 3'), said('b3', 5, [{ type: 'text', text: 'Done.' }])]));
+    const b = replay.stepsOf(done);
+    assert.deepEqual([b.open, b.cur], [false, null]);
+    assert.deepEqual(b.steps.map((s) => s.k), ['read', 'cmd']);
+    const mid = path.join(dir, 'agent-a3.jsonl');
+    write(mid, lines.concat([result(4, 'u2', 'ℹ pass 3'), { type: 'assistant', requestId: 'b3', timestamp: T(5),
+        message: { model: 'claude-opus-5', usage: { input_tokens: 1 }, stop_reason: null, content: [{ type: 'text', text: 'Now' }] } }]));
+    assert.equal(replay.stepsOf(mid).open, true);
+});
+
+// Forty-five searches answered, then a forty-sixth still running. By priority
+// and age the cap would drop that one first: a search, and the newest. It is
+// `cur`, outside the forty, so it cannot be dropped.
+test('the tool in progress is never one the cap drops, however many steps came before it', () => {
+    const file = path.join(tmp('fankeel-steps-'), 'agent-a4.jsonl');
+    const rows = [];
+    for (let i = 0; i < 45; i++) {
+        rows.push(said('r' + i, i * 10, [use('g' + i, 'Grep', { pattern: 'p' + i })]));
+        rows.push(result(i * 10 + 1, 'g' + i, 'x'));
+    }
+    rows.push(said('rz', 999, [use('z', 'Grep', { pattern: 'the last one' })]));
+    fs.writeFileSync(file, rows.map((o) => JSON.stringify(Object.assign({ isSidechain: true }, o)) + '\n').join(''));
+    const out = replay.stepsOf(file);
+    assert.equal(out.steps.length, 40);
+    assert.equal(out.droppedN, 5);
+    assert.deepEqual([out.cur.k, out.cur.c], ['find', 'Grep the last one']);
 });
