@@ -15,7 +15,8 @@ const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-v
 // hook matches `Edit|Write|NotebookEdit` (`.claude-plugin/plugin.json`), so
 // `Write` is guarded; `Bash`, which all five of them hold, is matched by a
 // second `guard.js` entry (matcher `Bash|PowerShell`) for three of them —
-// not `fankeel-verifier`, per `lib/guard.js`'s `readOnlyAgentType` list.
+// not `fankeel-verifier` or `fankeel-brain`, per `lib/guard.js`'s
+// `readOnlyAgentType` list.
 // `fankeel-fixer` is the second named exception: it makes the small edit
 // itself rather than returning it for the parent to apply, so it needs both
 // `Edit` and `Write` — never `Bash`, so it never runs the test the edit would
