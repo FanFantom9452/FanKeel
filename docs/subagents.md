@@ -447,8 +447,11 @@ session:
 | the answer | `hooks/resume.js` | writes it to the answer file; the controller's `SendMessage` names the path |
 | a pause | `task.js next --from-gate` | reads the block's `next` line |
 
-The stage agent's readers are a second layer down; `agentFiles()` in
-`lib/usage.js` reads the first, so the station does not show them yet.
+The stage agent's readers are a second layer down, but their transcripts land
+in the same `subagents/` directory as the stage agent's, each `.meta.json`
+naming its `parentAgentId` at `spawnDepth` 2 — so `agentFiles()` in
+`lib/usage.js` counts them, flat, beside the agent that sent them (a run on
+2026-09-20: one stage agent and five readers in one directory).
 
 # Telling a subagent apart, when a hook has to
 

@@ -223,6 +223,9 @@ test('a stage agent gets its stage\'s rules and shape, its skill, and where to w
   assert.ok(text.includes('/.fankeel/build/task-20260919T093012/survey.md'));
   assert.ok(text.includes(SESSION));
   assert.ok(!text.includes(RETURN_RULES[2]), 'the no-dispatch rule is left out');
+  // The controller prints the path and never the report, so a gate that says
+  // "the answer is above" points at a line holding nothing but a path.
+  assert.ok(text.includes('The user sees only the path to your report'), 'the gate must stand on its own');
   assert.ok(text.length < 10000, 'brain brief is ' + text.length + ' chars');
 });
 
