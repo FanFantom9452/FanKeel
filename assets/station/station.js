@@ -1032,7 +1032,7 @@
             sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost,
             heroEyebrow: heroEyebrow, docsCardHtml: docsCardHtml,
             stageNow: stageNow, runningTag: runningTag, railHtml: railHtml, liveTag: liveTag, agoText: agoText,
-            clockSec: clockSec, tk: tk, agentState: agentState, toolText: toolText,
+            clockSec: clockSec, tk: tk,
         };
     }
     if (!doc) return;
@@ -2167,7 +2167,6 @@
             + (n.lost ? '<p class="tally">lost 的列沒有回傳字元：它的結果沒有進主 context。耗時算到它 transcript 的最後一行。</p>' : '');
     }
     function stepsFor(x, d) {
-        var SK = { read: '讀', edit: '改', cmd: '指令', find: '搜', other: '其他' };
         if (!d) return '';
         var ids = d.ids.filter(function (id) { return x.steps[id]; });
         if (!ids.length) return '';
@@ -2179,13 +2178,13 @@
                 var r = x.rows.filter(function (y) { return y.id === id; })[0];
                 return (ids.length > 1 ? '<div class="stg">' + esc(r ? r.label : id) + '</div>' : '')
                     + '<ul class="stp">' + st.steps.map(function (y) {
-                        return '<li' + (y.p ? ' class="cur"' : '') + '><span class="sk ' + y.k + '">' + (y.k === 'edit' && y.w ? '寫' : SK[y.k]) + '</span><div>'
+                        return '<li' + (y.p ? ' class="cur"' : '') + '><span class="sk ' + y.k + '">' + stepLabel(y.k, y.w) + '</span><div>'
                             + (y.f ? '<span class="fl">' + esc(y.f) + '</span>' : '<span class="cm">' + esc(y.c) + '</span>')
                             + (y.r ? '<div class="rl">' + esc(y.r) + '</div>' : '')
                             + (y.p ? '<span class="pg"><i class="dot live"></i>進行中</span>' : '') + '</div></li>';
                     }).join('') + '</ul>'
                     + (st.droppedN ? '<p class="stn">上限 40 步，另有 ' + st.droppedN + ' 步沒列出（'
-                        + Object.keys(st.dropped).map(function (k) { return SK[k] + ' ' + st.dropped[k]; }).join('、') + '）</p>' : '');
+                        + Object.keys(st.dropped).map(function (k) { return stepLabel(k) + ' ' + st.dropped[k]; }).join('、') + '）</p>' : '');
             }).join('') + '</details>';
     }
     // One row per event in time order. Each dispatch's row opens into its
