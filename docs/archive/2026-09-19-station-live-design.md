@@ -9,7 +9,7 @@ last_verified: 2026-09-19
 session 跑到哪一站、派了幾個 agent、每個 agent 現在在做什麼、它裡面做了哪些事。另外把
 map 缺的「目錄 → 職責」補上。
 
-這是 [2026-09-19-stage-agents-design.md](2026-09-19-stage-agents-design.md) 的前提：主控
+這是 [2026-09-19-stage-agents-design.md](../plans/2026-09-19-stage-agents-design.md) 的前提：主控
 安靜之後，看進度只能看 station；站 agent 決定讀哪些路徑，要靠 map。
 
 mockup：`.fankeel/build/2026-09-19-station-live/mockup.html`（不 commit）。

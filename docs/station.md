@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-14
+last_verified: 2026-09-19
 source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/registry.js, lib/prices.js, lib/clear.js, lib/profile.js, lib/serve.js, hooks/inject.js, lib/detail.js, lib/replay.js, assets/station/station.js
 ---
 
@@ -339,9 +339,14 @@ band and the footer are the sums of the rows under them, and the tally under
 the table sets the rows' dollar sum against `agentsOf()`'s total and the
 workflow rows against the run files' own count.
 
-An agent's state is `running`, `done` or `lost`, read off its own transcript,
-its `.meta.json` and its session's liveness by `statesOf` in `lib/detail.js`;
-no hook writes it. It has finished when its last assistant line carries no
+An agent's state is `running`, `done` or `lost`, read by `statesOf(d, live,
+since)` in `lib/detail.js` from three things: the agent's own transcript —
+`stepsOf`'s `open` and `lastAt`, or, when there are no steps, whether its
+dispatch came back — whether the session is live, and `since`, the session's
+current process's start (`startedAt` in Claude Code's
+`sessions/<pid>.json`). It reads no `.meta.json`; that file only links an
+agent's file to its dispatch row (`lib/usage.js:494`). No hook writes any of
+it. It has finished when its last assistant line carries no
 `tool_use`, every `tool_use` it made has its `tool_result`, and that line
 closes a message. Not finished, it is `running` while its session is live and
 the process now running the session was already running when the agent last
@@ -412,8 +417,9 @@ carries its version in its path and the copy under `<root>/.fankeel/` would
 otherwise point outside the repository it sits in.
 
 `write()` compares the three copied files before writing them, so a prompt that
-changed nothing rewrites `station-data.js` alone. `hooks/inject.js` calls it on
-every prompt, which is the reason that comparison is there.
+changed nothing rewrites `station-data.js` alone. It is written at several
+moments, not only on a prompt — *When it is written, and where*, below —
+which is why that comparison is there.
 
 The directory is `station/detail/`: one file per session whose transcript is
 under this machine's config directory, `station/detail/<id>.js`, holding that
@@ -678,7 +684,8 @@ and `--forget` with exit 2.
 `--idle <minutes>` brings back an idle exit — and renders afresh on
 every request, takes a POST from the clear button on a `stale` row, answers
 `409` for a `live` one and for a row touched in the last twelve hours unless
-`force` is ticked, and `403` without the per-run nonce. It binds the fixed
+`force` is ticked — the age-and-liveness rule is
+[collisions.md](collisions.md)'s — and `403` without the per-run nonce. It binds the fixed
 port `7817` by default, falling back to an ephemeral one only when `7817` is
 already taken — and then keeps trying `7817` every thirty seconds; the first
 time it binds, a second listener on the same handler takes it, `serve.json`
