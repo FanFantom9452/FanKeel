@@ -244,6 +244,8 @@ test('a stage agent gets its stage\'s rules and shape, its skill, and where to w
   assert.ok(text.includes('Run independent commands in one Bash call'), 'the brief must ask for batched commands');
   // Batched, it still opened each cited place with a Read of its own, 18 and 17 of them.
   assert.ok(text.includes('Read the lines you cite with `sed -n'), 'the brief must ask for cited lines read in Bash');
+  // The shape's own word cap said nothing about the file, and the handoffs ran 6–9 KB.
+  assert.ok(text.includes("The output rule's word count is this file's"), 'the brief must bind the word cap to the handoff');
   assert.ok(text.length < 10000, 'brain brief is ' + text.length + ' chars');
 });
 
