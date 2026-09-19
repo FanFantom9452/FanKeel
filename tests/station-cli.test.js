@@ -239,6 +239,42 @@ test('idleMs: 0 arms no timer, rather than the old default falling back on a fal
     }
 });
 
+// A dozen tests in this file call `serve()` in-process with `idleMs: 60e3`
+// on the assumption that a minute is long enough never to fire during a
+// test. Measured wrong: one full-suite run under real load left this whole
+// file missing from the output — no failure, no file name, just gone — and
+// idleMs: 500 with no `exitOnIdle` proved why in isolation: `touch()`'s idle
+// timer called `process.exit(0)` inside the very process running the test,
+// silently ending it with a clean exit code before it could finish. Each
+// half below runs as its own child process, so a regression here costs that
+// throwaway child rather than this file's own run.
+test('a bare idleMs never ends the calling process, but main()\'s own --idle flag still does', () => {
+    const cfg = tmp('fankeel-idle-');
+    const probe = "const { serve } = require(" + JSON.stringify(CLI) + ");"
+        + "(async () => { const s = await serve({ configDir: " + JSON.stringify(cfg)
+        + ", port: 0, idleMs: 300, open: false });"
+        + " await new Promise((r) => setTimeout(r, 900)); console.log('SURVIVED'); s.close(); })();";
+    const inProcess = spawnSync(process.execPath, ['-e', probe], { encoding: 'utf8', timeout: 5000 });
+    assert.equal(inProcess.status, 0, 'the probe child did not exit cleanly: ' + inProcess.stderr);
+    assert.match(inProcess.stdout, /SURVIVED/,
+        'a bare idleMs ended its own process before it could finish: ' + inProcess.stdout + inProcess.stderr);
+
+    // main()'s own `serve` verb is the one caller that should still opt in —
+    // `--idle` has always meant "exit the process" for the real CLI. Run it
+    // for real rather than in-process, and watch the process end on its own;
+    // `timeout` below kills it if it does not, so a regression reads as a red
+    // assertion here rather than a hung test or an orphaned process. `--idle`
+    // is minutes: 0.005 is 300ms, well inside the 10-second deadline.
+    const cfg2 = tmp('fankeel-idle-');
+    const began = Date.now();
+    const cli = spawnSync(process.execPath, [CLI, 'serve', '--port', '0', '--idle', '0.005'],
+        { encoding: 'utf8', env: { ...process.env, CLAUDE_CONFIG_DIR: cfg2 }, timeout: 10000 });
+    const took = Date.now() - began;
+    assert.ok(cli.status !== null,
+        'the CLI --idle path did not exit on its own within 10s and was killed: ' + JSON.stringify({ signal: cli.signal, took }));
+    assert.equal(cli.status, 0, 'the CLI --idle path exited nonzero: ' + cli.stderr);
+});
+
 test('--detach is parsed, and portWasExplicit only when --port was given', () => {
     const { parseArgs } = require('../scripts/station.js');
     const a = parseArgs(['serve', '--detach']);

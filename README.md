@@ -184,6 +184,66 @@ headline counts, is in [docs/documents.md](docs/documents.md).
 
 The full index, question by question, is [docs/README.md](docs/README.md).
 
+## What lives where
+
+One row per directory, and under the three that run, every hook and the
+`lib/` and `scripts/` files worth opening first: `hooks/` is what Claude Code
+calls, `scripts/` is what a person or a skill runs, and `lib/` is what both of
+them call.
+`node scripts/layout.js` prints the half of this a listing can derive; the
+right-hand column is the half it cannot.
+
+```
+fankeel/
+├── .claude-plugin/    plugin.json — the skills, the five agents, every hook and its timeout — and marketplace.json
+├── .fankeel/          this repository's own settings: docs.json files each page, profile.json answers gates, .gitignore
+├── agents/            the five subagents the stages dispatch — reader, reviewer, verifier, judge, fixer — with their tools and model
+├── assets/            the station page: index.html, station.css and station.js, copied beside every page a write produces
+├── docs/              reference pages, with decisions/, plans/, reports/, judgements/ and archive/ each filed by what it records
+├── evals/             behaviour eval cases, one directory each, graded by scripts/eval.js with claude -p
+├── hooks/             every hook Claude Code runs; each reads stdin, exits 0 on every path and leaves the work to lib/
+│   ├── inject.js      UserPromptSubmit: the block on every prompt, the init block on /fankeel, the badge
+│   ├── resume.js      PostToolUse on AskUserQuestion: the stage's rules again once a gate is answered
+│   ├── gate.js        PreToolUse on AskUserQuestion: stamps when a gate opened, so the wait can be timed
+│   ├── guard.js       PreToolUse on writes and shells: the scope guard, and read-only agents kept read-only
+│   ├── touch.js       PostToolUse on Edit, Write, NotebookEdit: the files this task touched
+│   ├── brief.js       SubagentStart: what a subagent is told about the task it was sent from
+│   ├── carry.js       SessionStart on clear or fork: offers the task a /clear left behind
+│   └── leave.js       SessionEnd: how the session ended and what it spent, and the station rewritten
+├── lib/               the logic, as functions tested directly; nothing here reaches into scripts/ or hooks/
+│   ├── registry.js    one entry per session under .fankeel/sessions/, written by rename so no read is torn
+│   ├── stages.js      the seven stages, the three classes and their routes, every stage's rules and output shape
+│   ├── render.js      the injected blocks: every prompt, after a gate, on /fankeel, for a subagent, after /clear
+│   ├── live.js        which sessions are running, read from Claude Code's own sessions/<pid>.json
+│   ├── overlap.js     which live sessions have touched the same files
+│   ├── guard.js       the scope guard's answer to an edit in another live session's files: nothing, ask or deny
+│   ├── badge.js       the statusline word and lead line TokenBar draws
+│   ├── map.js         .fankeel/map.md: the signpost, the filing, this tree, the planned and retired pages
+│   ├── docs.js        docs.json: buckets, roles, and which pages may be out of date
+│   ├── station.js     the station's model: finding every registry, the rows, the data and detail scripts
+│   ├── detail.js      one session taken apart for the station, cached by its files' size and mtime
+│   ├── usage.js       what a transcript spent: requests, models, agents and every dispatch
+│   ├── replay.js      a session's events in time order, and one agent's own steps
+│   ├── plantasks.js   a plan's tasks, and which of them may run at once
+│   └── profile.js     the project and machine profile: the standing answers to a gate
+├── scripts/           the command line, thin wrappers over lib/
+│   ├── task.js        start a task, move its stage, note, pause, stand it down
+│   ├── orient.js      what is under this directory, before /fankeel asks anything
+│   ├── map.js         writes .fankeel/map.md
+│   ├── layout.js      prints the half of this tree a listing can derive
+│   ├── survey.js      what already exists here, for the survey stage
+│   ├── ledger.js      the build ledger: init, complete, groups, lint, brief
+│   ├── station.js     writes the station page, or serves it live
+│   ├── docs-check.js  every reference in the documents still resolves
+│   ├── docs-audit.js  which pages stopped being true, and which two disagree
+│   ├── residue.js     what is in the tree that nobody decided about
+│   ├── todo-check.js  whether TODO.md is still an index
+│   ├── judge.js       files what a fankeel-judge answered, verbatim
+│   └── version.js     the release number, in every place that carries it
+├── skills/            one directory per skill — fankeel, one per stage, ask, explain, station — and registry.json
+└── tests/             node --test, one file per module or behaviour; tmp.js is where every scratch directory comes from
+```
+
 ## Development
 
 ```

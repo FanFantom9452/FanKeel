@@ -79,8 +79,8 @@ test('a cache from an older VERSION is read again while the transcript is there,
     const { file } = oldCache(f, { key: detail.keyOf(f.t), at: Date.parse(T(30)) });
     const ended = Object.assign({}, f.data, { ended: { at: T(20), reason: 'exit' } });
     const got = detail.detailOf(f.cfg, SID, ended);
-    assert.deepEqual([got.fresh, got.detail.v, Array.isArray(got.detail.days)], [true, 4, true]);
-    assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).v, 4, 'the cache is rewritten at the new version');
+    assert.deepEqual([got.fresh, got.detail.v, Array.isArray(got.detail.days)], [true, 5, true]);
+    assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).v, 5, 'the cache is rewritten at the new version');
 });
 
 test('a cache from an older VERSION is kept as it stands once the transcript is gone, and a spent budget returns it too', () => {
@@ -97,7 +97,7 @@ test('a VERSION 2 cache, written before gate questions carried their labels, is 
     const f = setup();
     oldCache(f, { v: 2, key: detail.keyOf(f.t), at: Date.parse(T(30)) });
     const got = detail.detailOf(f.cfg, SID, f.data);
-    assert.deepEqual([got.fresh, got.detail.v], [true, 4]);
+    assert.deepEqual([got.fresh, got.detail.v], [true, 5]);
 });
 
 test('wakes counts the task notifications that reached the main transcript', () => {
@@ -106,4 +106,37 @@ test('wakes counts the task notifications that reached the main transcript', () 
     fs.appendFileSync(f.t, line({ type: 'user', timestamp: T(4),
         message: { content: '<task-notification><tool-use-id>b9</tool-use-id><status>completed</status></task-notification>' } }));
     assert.equal(detail.detailOf(f.cfg, SID, f.data).detail.wakes, 1, 'the grown transcript is read again');
+});
+
+// A server keeps each detail in memory while nothing under it moved. The
+// control is the cache file: removed after the first read, a second read that
+// went to disk would find nothing and write it again.
+test('with a memo, an unchanged set of files is answered from memory, not the cache file; a grown one is read again', () => {
+    const f = setup();
+    const memo = new Map();
+    const first = detail.detailOf(f.cfg, SID, f.data, { memo });
+    assert.equal(first.fresh, true);
+    fs.rmSync(detail.cachePath(f.cfg, SID));
+    const again = detail.detailOf(f.cfg, SID, f.data, { memo });
+    assert.equal(again.fresh, false);
+    assert.equal(again.detail, first.detail, 'the same object, held');
+    assert.equal(fs.existsSync(detail.cachePath(f.cfg, SID)), false, 'nothing was read or rewritten');
+    fs.appendFileSync(f.t, said('r3', 4, 6000));
+    const grown = detail.detailOf(f.cfg, SID, f.data, { memo });
+    assert.deepEqual([grown.fresh, grown.detail.requests], [true, 3]);
+    assert.equal(memo.get(SID), grown.detail);
+});
+
+test('with a memo, an older VERSION kept under a spent budget is not held, so the next read with time replaces it', () => {
+    const f = setup();
+    const cache = detail.cachePath(f.cfg, SID);
+    fs.mkdirSync(path.dirname(cache), { recursive: true });
+    fs.writeFileSync(cache, JSON.stringify({ v: 1, sessionId: SID, rows: [], key: 'old', at: 0 }));
+    const memo = new Map();
+    const kept = detail.detailOf(f.cfg, SID, f.data, { memo, reuse: true });
+    assert.equal(kept.detail.v, 1);
+    assert.equal(memo.has(SID), false);
+    const read = detail.detailOf(f.cfg, SID, f.data, { memo });
+    assert.deepEqual([read.fresh, read.detail.v], [true, 5]);
+    assert.equal(memo.get(SID), read.detail);
 });

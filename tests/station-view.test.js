@@ -834,7 +834,7 @@ test('selecting a registry on 清單 keeps its unreadable-session count on the c
 // on both a `file:` and an `http:` `location.protocol` so a guard that
 // stopped checking the protocol would show up on the `file:` arm, not just
 // vanish into an already-skipped block.
-test('the health poll never arms under file:, and does arm every 5s once served', () => {
+test('under file: nothing arms; served, the page re-reads every 3s, ticks every second and polls health every 5s', () => {
     const vm = require('node:vm');
     const fs = require('node:fs');
     const path = require('node:path');
@@ -865,7 +865,7 @@ test('the health poll never arms under file:, and does arm every 5s once served'
         return calls;
     };
     assert.deepEqual(armed('file:'), [], 'a bare file open schedules no poll at all');
-    assert.deepEqual(armed('http:'), [5000], 'a served page polls every 5s');
+    assert.deepEqual(armed('http:'), [3000, 1000, 5000], 'a served page re-reads, ticks and polls, in that order');
 });
 
 // The frozen eyebrow is rendered rather than patched, so the flip into and

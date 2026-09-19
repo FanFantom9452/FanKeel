@@ -105,11 +105,16 @@ test('stepsOf keeps edits and commands before reads and searches, and counts wha
     const line = (o) => JSON.stringify(o) + '\n';
     fs.writeFileSync(file, [
         said('a1', 0, [use('s1', 'Read', { file_path: 'r/lib/x.js' })]),
+        result(1, 's1', 'x'),
         said('a2', 1, [use('s2', 'Grep', { pattern: 'foo' })]),
+        result(2, 's2', 'x'),
         said('a3', 2, [use('s3', 'Bash', { command: 'npm test' })]),
         result(3, 's3', '\nℹ pass 1\nℹ fail 0'),
         said('a4', 4, [use('s4', 'Write', { file_path: 'r/lib/y.js' })]),
+        result(4, 's4', 'x'),
         said('a5', 5, [use('s5', 'Skill', { skill: 'x' })]),
+        result(5, 's5', 'x'),
+        said('a6', 6, [{ type: 'text', text: 'done' }]),
     ].map((o) => line(Object.assign({ isSidechain: true }, o))).join(''));
     const out = replay.stepsOf(file, 3);
     assert.deepEqual(out.steps, [
@@ -121,4 +126,81 @@ test('stepsOf keeps edits and commands before reads and searches, and counts wha
     assert.deepEqual(out.dropped, { find: 1, other: 1 });
     assert.equal(out.droppedN, 2);
     assert.equal(replay.stepsOf(file).steps.length, 5);
+});
+
+// The agent's own transcript says where it is. The fixture stops on a tool_use
+// with no tool_result: open, and that tool is `cur`. The same lines with the
+// result and a closing text line: finished. A line cut mid-message is not a
+// close.
+test('stepsOf reads an agent as open on a tool_use with no result, and finished once it has one and a closing line', () => {
+    const dir = tmp('fankeel-steps-');
+    const write = (file, rows) => fs.writeFileSync(file, rows.map((o) => JSON.stringify(Object.assign({ isSidechain: true }, o)) + '\n').join(''));
+    const lines = [
+        { type: 'user', timestamp: T(0), message: { content: 'Build Task 3.\nRun its test.' } },
+        said('b1', 1, [use('u1', 'Read', { file_path: 'r/lib/x.js' })]),
+        result(2, 'u1', 'x'),
+        said('b2', 3, [use('u2', 'Bash', { command: 'node --test tests/x.test.js' })]),
+    ];
+    const open = path.join(dir, 'agent-a1.jsonl');
+    write(open, lines);
+    const a = replay.stepsOf(open);
+    assert.equal(a.open, true);
+    assert.deepEqual(a.cur, { n: 'Bash', t: Date.parse(T(3)), k: 'cmd', c: 'node --test tests/x.test.js' });
+    assert.deepEqual(a.steps, [{ k: 'read', f: 'r/lib/x.js' }, { k: 'cmd', c: 'node --test tests/x.test.js', p: true }],
+        'the tool in progress is a step too, marked p: true');
+    assert.deepEqual([a.prompt, a.promptLen, a.lastAt], ['Build Task 3.\nRun its test.', 27, Date.parse(T(3))]);
+    const done = path.join(dir, 'agent-a2.jsonl');
+    write(done, lines.concat([result(4, 'u2', 'ℹ pass 3'), said('b3', 5, [{ type: 'text', text: 'Done.' }])]));
+    const b = replay.stepsOf(done);
+    assert.deepEqual([b.open, b.cur], [false, null]);
+    assert.deepEqual(b.steps.map((s) => s.k), ['read', 'cmd']);
+    const mid = path.join(dir, 'agent-a3.jsonl');
+    write(mid, lines.concat([result(4, 'u2', 'ℹ pass 3'), { type: 'assistant', requestId: 'b3', timestamp: T(5),
+        message: { model: 'claude-opus-5', usage: { input_tokens: 1 }, stop_reason: null, content: [{ type: 'text', text: 'Now' }] } }]));
+    assert.equal(replay.stepsOf(mid).open, true);
+});
+
+// Forty-five searches answered, then a forty-sixth still running. By priority
+// and age the cap would drop that one first: a search, and the newest. It is
+// outside the forty answered ones, marked `p: true`, and named by `cur` — it
+// cannot be dropped either way.
+test('the tool in progress is never one the cap drops, however many steps came before it', () => {
+    const file = path.join(tmp('fankeel-steps-'), 'agent-a4.jsonl');
+    const rows = [];
+    for (let i = 0; i < 45; i++) {
+        rows.push(said('r' + i, i * 10, [use('g' + i, 'Grep', { pattern: 'p' + i })]));
+        rows.push(result(i * 10 + 1, 'g' + i, 'x'));
+    }
+    rows.push(said('rz', 999, [use('z', 'Grep', { pattern: 'the last one' })]));
+    fs.writeFileSync(file, rows.map((o) => JSON.stringify(Object.assign({ isSidechain: true }, o)) + '\n').join(''));
+    const out = replay.stepsOf(file);
+    assert.equal(out.steps.length, 41, 'the 40 kept answered searches, plus the one still open');
+    assert.equal(out.droppedN, 5);
+    assert.deepEqual([out.cur.k, out.cur.c], ['find', 'Grep the last one']);
+    assert.deepEqual(out.steps[out.steps.length - 1], { k: 'find', c: 'Grep the last one', p: true });
+});
+
+// Two tool_use blocks in one message, neither answered — a parallel call, not
+// only the last one `cur` names. Both must survive the cap and both must
+// carry `p: true`; a step that did get its result never carries it.
+test('every tool_use still without a result carries p: true and survives the cap, not only the one cur names', () => {
+    const file = path.join(tmp('fankeel-steps-'), 'agent-a5.jsonl');
+    const rows = [];
+    for (let i = 0; i < 45; i++) {
+        rows.push(said('r' + i, i * 10, [use('g' + i, 'Grep', { pattern: 'p' + i })]));
+        rows.push(result(i * 10 + 1, 'g' + i, 'x'));
+    }
+    rows.push(said('rz', 999, [
+        use('z1', 'Read', { file_path: 'r/lib/parallel-a.js' }),
+        use('z2', 'Bash', { command: 'node --test tests/parallel.test.js' }),
+    ]));
+    fs.writeFileSync(file, rows.map((o) => JSON.stringify(Object.assign({ isSidechain: true }, o)) + '\n').join(''));
+    const out = replay.stepsOf(file);
+    const a = out.steps.find((s) => s.f === 'r/lib/parallel-a.js');
+    const b = out.steps.find((s) => s.c === 'node --test tests/parallel.test.js');
+    assert.deepEqual([a.p, b.p], [true, true]);
+    assert.deepEqual([out.cur.k, out.cur.c], ['cmd', 'node --test tests/parallel.test.js'], 'cur names the second');
+    assert.equal(out.droppedN, 5, 'the answered searches are capped the same as when only one tool_use was open');
+    const finishedStep = out.steps.find((s) => s.k === 'find');
+    assert.equal(finishedStep.p, undefined, 'a finished step never carries p');
 });

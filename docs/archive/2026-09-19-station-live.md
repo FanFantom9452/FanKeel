@@ -2314,10 +2314,10 @@ git commit -o assets/station/station.js assets/station/station.css docs/station.
 
 ## Task 7: 派工面板：狀態、目前的工具、展開的 agent
 
-mockup 的 #3（每列的狀態、running 的列寫它正在跑的工具、篩選）、#4（展開看 prompt 與步驟，執行中那一步在最後）、#5（workflow 的階段帶每個 agent 的點與統計）、空狀態，以及「接回來」那一列。重讀之間，展開的列、打開的 prompt、階段、篩選與事件的種類都留著。最後一條測試在真的 serve 上跑頁面腳本本身，驗 design 的兩條「頁面（artefact）」。
+mockup 的 #3（每列的狀態、running 的列寫它正在跑的工具、篩選）、#4（展開看 prompt 與步驟，執行中的步驟在最後）、#5（workflow 的階段帶每個 agent 的點與統計）、空狀態，以及「接回來」那一列。重讀之間，展開的列、打開的 prompt、階段、篩選與事件的種類都留著。最後一條測試在真的 serve 上跑頁面腳本本身，驗 design 的兩條「頁面（artefact）」。
 
 **Files:**
-- Modify: `assets/station/station.js` — `numCells(t, unpriced, time)`；`isNum`、`agentState`、`toolText`、`stepLabel`、`stepLi`、`agentPill`、`agdots`、`stateTally`、`modelOf`、`nowLine`、`agentCounts`、`agentRow(r, cls, attr, x, s, u)`、`agentBody`；`dispatchHtml(x, s, ui)` 改寫；`stepsFor` 的 `data-key`；`replayHtml(x, hidden)`；`sessionHeadHtml`、`tabsHtml` 的 running 數；exports；guard 以下的 `view` 狀態、`dispatchUi`、兩處呼叫、點擊處理
+- Modify: `assets/station/station.js` — `numCells(t, unpriced, time)`；`isNum`、`agentState`、`toolText`、`stepLabel`、`stepLi`、`agentPill`、`agdots`、`stateTally`、`modelOf`、`nowLine`、`agentCounts`、`agentRow(r, cls, attr, x, s, u)`、`agentBody`；`dispatchHtml(x, s, ui)` 改寫；`stepsFor` 的 `data-key` 與步驟清單的 `p`；`replayHtml(x, hidden)`；`sessionHeadHtml`、`tabsHtml` 的 running 數；exports；guard 以下的 `view` 狀態、`dispatchUi`、兩處呼叫、點擊處理
 - Modify: `assets/station/station.css` — 檔尾附加 #3–#5、空狀態、分頁上的點
 - Modify: `docs/station.md` — **派工** 那段、session 頁的讀數與分頁、重畫保留的東西、frontmatter；docs-check 報的行號
 - Read: `scripts/station.js` — `serve(opts)`（頁面測試用真的 serve）
@@ -2341,7 +2341,7 @@ In `tests/station-dispatch-view.test.js`, append at the end of the file:
 ```js
 // The live dispatch table (docs/plans/2026-09-19-station-live-design.md §3–§4):
 // a state on every row, the tool a running agent is on, and a row that opens
-// into its prompt and its steps with the step in progress last.
+// into its prompt and its steps with any not yet answered last.
 const T9 = 1789800000000;
 const live = {
     dispatches: [
@@ -2361,7 +2361,11 @@ const live = {
     steps: {
         r1: { steps: [{ k: 'read', f: 'lib/detail.js' }, { k: 'cmd', c: 'node --test tests/detail.test.js', r: 'ℹ pass 41' }], total: { read: 1, cmd: 1 }, dropped: {}, droppedN: 0,
             open: false, cur: null, lastAt: T9 + 58000, prompt: 'Build Task 1.', promptLen: 13 },
-        r2: { steps: [{ k: 'read', f: 'assets/station/station.js' }], total: { read: 1 }, dropped: { find: 3 }, droppedN: 3,
+        // `stepsOf` keeps a tool_use with no `tool_result` in `steps` itself now,
+        // marked `p: true`, at its own chronological position — `cur` names the
+        // same one (the last), with the timing `steps` does not carry.
+        r2: { steps: [{ k: 'read', f: 'assets/station/station.js' }, { k: 'cmd', c: 'node --test tests/station.test.js', p: true }],
+            total: { read: 1 }, dropped: { find: 3 }, droppedN: 3,
             open: true, cur: { n: 'Bash', t: T9 + 240000, k: 'cmd', c: 'node --test tests/station.test.js' }, lastAt: T9 + 250000, prompt: 'Build Task 2.', promptLen: 13 },
         w1: { steps: [{ k: 'edit', f: 'assets/station/station.js' }], total: { edit: 1 }, dropped: {}, droppedN: 0, open: false, cur: null, lastAt: T9 + 400000, prompt: 'impl', promptLen: 4 },
         w2: { steps: [], total: {}, dropped: {}, droppedN: 0, open: true, cur: { n: 'Read', t: T9 + 450000, k: 'read', f: 'station/station.js' }, lastAt: T9 + 460000, prompt: 'review', promptLen: 6 },
@@ -2397,10 +2401,24 @@ test('an opened agent shows its prompt folded, its steps with the one in progres
     const steps = r2.slice(r2.indexOf('<ul class="stp">'), r2.indexOf('</ul>'));
     assert.ok(steps.indexOf('station/station.js') < steps.indexOf('class="cur"'), 'the step in progress is last');
     assert.match(steps, /<li class="cur"><span class="sk cmd">指令<\/span><div><span class="cm">node --test tests\/station\.test\.js<\/span><\/div><span class="pg"><i class="dot live"><\/i>進行中 <span class="tkr"/);
-    assert.match(r2, /上限 40 步，另有 3 步沒列出（搜 3）；進行中的這一步不算在上限裡，永遠留在最後/);
+    assert.match(r2, /上限 40 步，另有 3 步沒列出（搜 3）；進行中的步驟不算在上限裡，永遠留在最後/);
     assert.match(r2, /<span><b>5<\/b> 步<\/span>/, 'one kept, three dropped, one in progress');
     assert.match(html, /<tr class="ax ag is-done">[\s\S]*? 回來，回傳 <b>1,102<\/b> 字元進主 context/);
     assert.match(V.dispatchHtml(live, LIVE_ROW, { open: { r2: true }, prm: { r2: true } }), /<div class="prm open">/);
+});
+
+test('two unanswered calls in the same message both render in progress, and the cap sentence still only excludes what was actually dropped', () => {
+    const twoPending = Object.assign({}, live, { steps: Object.assign({}, live.steps, {
+        r2: Object.assign({}, live.steps.r2, { steps: [
+            { k: 'read', f: 'assets/station/station.js' },
+            { k: 'read', f: 'lib/detail.js', p: true },
+            { k: 'cmd', c: 'node --test tests/station.test.js', p: true },
+        ] }),
+    }) });
+    const html = V.dispatchHtml(twoPending, LIVE_ROW, { now: T9 + 480000, live: true, open: { r2: true } });
+    const r2 = html.slice(html.indexOf('<tr class="ax ag is-running">'));
+    assert.equal(count(r2, /<li class="cur"/g), 2, 'both the earlier parallel call and the one cur names render in progress');
+    assert.match(r2, /上限 40 步，另有 3 步沒列出（搜 3）；進行中的步驟不算在上限裡，永遠留在最後/, 'still three dropped finds, not the two in-progress steps');
 });
 
 test('the filter shows one state at a time, opens a workflow\'s phases to do it, and cannot pick a state no agent is in', () => {
@@ -2577,7 +2595,7 @@ node --test tests/station-shell.test.js
 node --test tests/station-live-page.test.js
 ```
 
-預期：dispatch-view 的六條新測試 `✖`（沒有 `is-running`），改過 regex 的那條也 `✖`（列上還沒有狀態）；shell `✖ no rule for .dhead`；live-page `✖`（清單有 `running 1`，派工頁沒有 `is-running` 的列）。
+預期：dispatch-view 的七條新測試 `✖`（沒有 `is-running`），改過 regex 的那條也 `✖`（列上還沒有狀態）；shell `✖ no rule for .dhead`；live-page `✖`（清單有 `running 1`，派工頁沒有 `is-running` 的列）。
 
 - [ ] **Step 3：派工面板的純函式。**
 
@@ -2674,22 +2692,24 @@ In `assets/station/station.js`, replace `function agentRow(r, cls, attr) {` and 
             + (open ? agentBody(r, cls, x, st, steps, u) : '');
     }
     // One agent opened: when it started and how long it ran, what it was sent
-    // (three lines until opened in full), its steps in order with the one in
-    // progress last — `stepsOf` keeps it out of the forty the cap counts — and
-    // what it returned.
+    // (three lines until opened in full), its steps in order with any not yet
+    // answered marked in progress at their own position — `stepsOf` keeps
+    // every one of those out of the forty the cap counts — and what it
+    // returned. A `tool_use` still without a `tool_result` can only be the
+    // last thing in the transcript (nothing answered runs before it gets its
+    // result), so it and any other unanswered one from the same message are
+    // always the list's trailing entries; only the last of them is the one
+    // `cur` names and carries a start time — an earlier parallel call has
+    // none, so it gets the same marker with no ticking clock.
     function agentBody(r, cls, x, st, steps, u) {
         var d = r.disp === null || r.disp === undefined ? null : x.dispatches[r.disp];
         var list = steps ? steps.steps || [] : [], cur = steps ? steps.cur : null, popen = !!u.prm[r.id];
-        var n = list.length + (steps ? steps.droppedN || 0 : 0) + (cur ? 1 : 0);
-        var last = !cur ? ''
-            : st === 'running' ? stepLi(cur, 'cur', '<span class="pg"><i class="dot live"></i>進行中 '
-                + (isNum(cur.t) ? tk(-cur.t / 1000, 1, u.live, u.now / 1000) : '') + '</span>')
-                : st === 'lost' ? stepLi(cur, 'stop', '<span class="pg lost">沒跑完'
-                    + (isNum(cur.t) && isNum(steps.lastAt) ? '・跑了 ' + dur(Math.round((steps.lastAt - cur.t) / 1000)) : '') + '</span>')
-                    : stepLi(cur);
+        var lastP = -1;
+        list.forEach(function (y, i) { if (y.p) lastP = i; });
+        var n = list.length + (steps ? steps.droppedN || 0 : 0);
         var note = steps && steps.droppedN ? '<p class="stn">上限 40 步，另有 ' + steps.droppedN + ' 步沒列出（'
             + Object.keys(steps.dropped || {}).map(function (k) { return stepLabel(k) + ' ' + steps.dropped[k]; }).join('、') + '）'
-            + (cur && st === 'running' ? '；進行中的這一步不算在上限裡，永遠留在最後' : '') + '</p>' : '';
+            + (cur && st === 'running' ? '；進行中的步驟不算在上限裡，永遠留在最後' : '') + '</p>' : '';
         var end = st === 'lost' && steps && isNum(steps.lastAt) ? steps.lastAt : r.to;
         var ran = st === 'running' ? '已跑 <b>' + tk(-r.from / 1000, 1, u.live, u.now / 1000) + '</b>'
             : '跑了 <b>' + (isNum(end) ? dur(Math.round((end - r.from) / 1000)) : '—') + '</b>';
@@ -2715,7 +2735,18 @@ In `assets/station/station.js`, replace `function agentRow(r, cls, attr) {` and 
             + '<span><b>' + n + '</b> 步</span><span>' + esc(modelOf(r)) + '</span></div>'
             + prompt
             + '<div><div class="axl">步驟 <span class="n">照順序，最新在下</span></div><ul class="stp">'
-            + list.map(function (y) { return stepLi(y); }).join('') + last + '</ul>' + note + '</div>'
+            + list.map(function (y, i) {
+                if (!y.p) return stepLi(y);
+                var mode = st === 'lost' ? 'stop' : 'cur';
+                var tail = st === 'running'
+                    ? '<span class="pg"><i class="dot live"></i>進行中' + (i === lastP && isNum(cur && cur.t)
+                        ? ' ' + tk(-cur.t / 1000, 1, u.live, u.now / 1000) : '') + '</span>'
+                    : st === 'lost'
+                        ? '<span class="pg lost">沒跑完' + (i === lastP && isNum(cur && cur.t) && isNum(steps.lastAt)
+                            ? '・跑了 ' + dur(Math.round((steps.lastAt - cur.t) / 1000)) : '') + '</span>'
+                        : '';
+                return stepLi(y, mode, tail);
+            }).join('') + '</ul>' + note + '</div>'
             + foot + '</div></td></tr>';
     }
 ```
@@ -2840,6 +2871,19 @@ In `assets/station/station.js`, in `stepsFor`, change `return '<details class="s
 
 ```js
         return '<details class="stw" data-key="stw-' + esc(d.key) + '"><summary class="rpx">展開它自己的步驟 <span class="n">'
+```
+
+In `assets/station/station.js`, in the same `stepsFor`, this list has no per-agent state and, for anything but the one `cur` names, no start time either, so a step still without a `tool_result` (`stepsOf`'s `p: true`) gets the same marker whatever the agent turns out to be doing next, without a ticking clock. Change `return '<li><span class="sk ' + y.k + '">' + (y.k === 'edit' && y.w ? '寫' : SK[y.k]) + '</span><div>'` to:
+
+```js
+                        return '<li' + (y.p ? ' class="cur"' : '') + '><span class="sk ' + y.k + '">' + (y.k === 'edit' && y.w ? '寫' : SK[y.k]) + '</span><div>'
+```
+
+In `assets/station/station.js`, in the same `stepsFor`, change `+ (y.r ? '<div class="rl">' + esc(y.r) + '</div>' : '') + '</div></li>';` to:
+
+```js
+                            + (y.r ? '<div class="rl">' + esc(y.r) + '</div>' : '')
+                            + (y.p ? '<span class="pg"><i class="dot live"></i>進行中</span>' : '') + '</div></li>';
 ```
 
 In `assets/station/station.js`, in `replayHtml`, change the signature to `function replayHtml(x, hidden) {`, add `var off = hidden || {};` as its first line, and change the filter button's opening line, `return '<button type="button" data-rk="' + k[0] + '" aria-pressed="true">' + k[1] + '<span class="n">'`, to:
@@ -3046,8 +3090,9 @@ filter shows one state at a time, opening a workflow's phases to do it.
 A row opens into what the agent was sent — its first user message that is not
 a system reminder, folded to three lines until opened in full, kept up to
 12,000 characters with its whole length beside it — and its steps in order,
-the step in progress last. That step is kept out of the forty the cap counts
-(`stepsOf` in `lib/replay.js`), so the cap never drops it. A `done` row's foot
+any not yet answered last, in the order they were made — a parallel call can
+leave more than one. Those are kept out of the forty the cap counts (`stepsOf`
+in `lib/replay.js`), so the cap never drops them. A `done` row's foot
 says what it returned: the characters its dispatch put into the parent's
 context, or, for a workflow's agent, that its result went into the workflow's.
 A session with no dispatch yet says so, and under `serve` says the next re-read
@@ -3095,7 +3140,7 @@ git commit -o assets/station/station.js assets/station/station.css docs/station.
 | 判斷只讀 transcript、`.meta.json` 與 session 的存活，不新增 hook。 | Task 4（`statesOf` 只收 detail、存活與行程啟動時間；沒有 task 改 `.claude-plugin/plugin.json`） |
 | Workflow 裡的 agent 用同一套判斷。 | Task 4（測試「a Workflow agent is judged by the same reading」） |
 | 展開一個 agent，看得到它收到的 prompt（預設收合）與它的步驟。 | Task 4（`prompt`）、Task 7（`agentBody`） |
-| 執行中的那一步標在列表最後，而且不會被 `MAX_STEPS` 擠掉。 | Task 4（`cur` 不進 `steps`）、Task 7（`li.cur` 在最後） |
+| 執行中的步驟（平行的工具呼叫可能不只一個）標在列表最後，而且不會被 `MAX_STEPS` 擠掉。 | Task 4（未回應的 tool_use 在 steps 裡帶 p，不受上限）、Task 7（p 步驟標為進行中） |
 | `done` 的 agent 顯示它回傳了多少。 | Task 7（`retl`） |
 | `README.md` 加上一棵目錄樹：11 個目錄各一行職責，`lib/`、`scripts/`、`hooks/` 另列出入口 | Task 2 |
 | `node scripts/map.js` 印出 `tree —` 那一行，而且沒有 `with no responsibility`。 | Task 2 |

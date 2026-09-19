@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-09-14
-source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/registry.js, lib/prices.js, lib/clear.js, lib/profile.js
+last_verified: 2026-09-19
+source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/registry.js, lib/prices.js, lib/clear.js, lib/profile.js, lib/serve.js, hooks/inject.js, lib/detail.js, lib/replay.js, assets/station/station.js
 ---
 
 # The station
@@ -14,15 +14,51 @@ and, for how it is found and when it is written,
 for the curve, the controls and why a deadline replaced a depth,
 `docs/archive/2026-09-06-station-reads-back-design.md`.
 
-To open it: `.fankeel/index.html` in the registry you are in is the copy
-beside you, `node scripts/station.js --open` opens the newest, and
-`node scripts/station.js serve --open` runs it as a page with a `clear`
-button on every stale row. The `/fankeel` prompt writes the page and names it
-on the block's `station:` line, so there is nothing to invoke. An argument
-`scripts/station.js` does not know exits 2 before anything is written.
-`/fankeel-station` is a skill for the same `serve --open` — it runs that one
-command and reads back the URL it printed, nothing more; the routes, states
-and fields below stay owned by this page rather than copied into the skill.
+To open it: `/fankeel` does. The prompt writes the page, asks whether a
+station is serving, starts one when none is, and names the served page on the
+block's `station:` line — the next section has how. `.fankeel/index.html` in
+the registry you are in is the static copy beside you,
+`node scripts/station.js --open` opens the newest as a file, and
+`node scripts/station.js serve --open` runs the served page by hand, with a
+`clear` button on every stale row. An argument `scripts/station.js` does not
+know exits 2 before anything is written. `/fankeel-station` is a skill for the
+same `serve --open`, for reopening the station by hand once `/fankeel` has
+started it — it runs that one command and reads back the URL it printed,
+nothing more; the routes, states and fields below stay owned by this page
+rather than copied into the skill.
+
+## The `station:` line
+
+The `/fankeel` prompt writes the page, then asks whether a station is serving,
+and the `station:` line of the block it injects says what it found. The asking
+is `ensureServe` in `lib/serve.js`: `<configDir>/fankeel/serve.json`, then a
+`GET` of that record's `station/health`, which has to answer inside a second
+and name the record's pid. The line ends one of four ways:
+
+| the line ends | when |
+|---|---|
+| `<url> (serve was running).` | a recorded station answered; nothing was started and no browser opened |
+| `<url> (serve started, browser opened).` | none answered, so the hook started `station.js serve --open` detached, and its `serve.json` appeared in time |
+| `serve is starting; until then <file>.` | it was started, and had not written its record when the hook had to answer |
+| `<file>. Edit the profile with station.js serve --open.` | `FANKEEL_SERVE=off` is set, or the start itself failed |
+
+All of it — the page write, the probe and the wait for the record — stays
+inside four seconds of the hook starting, one short of the five
+`.claude-plugin/plugin.json` gives every hook. A probe too slow to see a
+station that is running starts a second `serve`, and that is safe: a second
+`serve` joins the first (under *When it is written, and where*), opens the
+browser on its url and exits — the one case where a running station gets a
+second tab. No other prompt asks: an ordinary prompt, and every prompt of a
+session with a task, never loads `lib/serve.js` at all.
+
+The station it starts is a process of its own — detached, with no console and
+no window — so it outlives the hook and the Claude Code session that ran it,
+and runs until stopped, like any `serve`, unless given `--idle`.
+`tests/serve.test.js` starts one from a process that exits at once, under a
+second process that exits too, and finds it answering afterwards.
+`FANKEEL_SERVE=off` in the environment turns the probe and the start off and
+leaves the file on the line; the test suite runs with it, since a test must not
+open a browser.
 
 ## Where the registries come from
 
@@ -105,7 +141,7 @@ agents ran, as a bare count beside the total rather than a request count or a
 wall-clock of its own.
 
 Every row also carries the registry it belongs to, as `root` on its session
-object (`lib/station.js:587`, `root: s.root`) — the raw path, not the
+object (`lib/station.js:612`, `root: s.root`) — the raw path, not the
 shortened label shown on the row — and `match()` filters on that same field
 (`assets/station/station.js:139`, `s.root !== f.project`) rather than a DOM
 attribute, because every row here is rebuilt from `window.STATION` in the
@@ -114,29 +150,29 @@ below.
 
 A project whose profile sets `station.hide: 'true'` produces no row at
 all — not a greyed-out one, an absent one. The check is one function,
-`hiddenPkeys()` (`lib/station.js:465`, `function hiddenPkeys(model) {`),
+`hiddenPkeys()` (`lib/station.js:490`, `function hiddenPkeys(model) {`),
 and every session under a hidden project is dropped before anything else on
 the page is built from it: `flatten()` is where that happens
-(`lib/station.js:493`, `if (hidden.has(pkeyOf(row))) continue;`), and
+(`lib/station.js:518`, `if (hidden.has(pkeyOf(row))) continue;`), and
 everything the page renders — the facets, the charts, four of the home
 page's five cards — reads `flatten()`'s output rather than the model
 itself, so no view filters a second time. Every aggregation that walks
 `model.registries` instead carries its own check, and a new one has to:
 the live/stale/down counts `write()` returns for the terminal summary
-(`lib/station.js:654`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
+(`lib/station.js:686`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
 the fifth card's gate tally
-(`lib/station.js:524`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`),
+(`lib/station.js:549`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`),
 the profile list `serialize()` hands the page
-(`lib/station.js:578`, `if (values && values['station.hide'] === true) continue;`) —
+(`lib/station.js:603`, `if (values && values['station.hide'] === true) continue;`) —
 an inline copy of the predicate rather than a `hiddenPkeys()` call, because
 that loop is keyed by the raw profiles directory rather than by pkey —
 `write()`'s detail-file loop described below, and `--json`'s own pass
 outside this file
-(`scripts/station.js:704`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
+(`scripts/station.js:656`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
 There is no trace on
 the page that a project was left out: no count, no note on the footer. `station.js`'s own text
 summary — not the served page — does print how many projects it excluded
-(`scripts/station.js:805`, `hidden by station.hide`), but names none of
+(`scripts/station.js:757`, `hidden by station.hide`), but names none of
 them; the terminal is the only place the fact surfaces at all.
 
 ### The stage strip
@@ -150,7 +186,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:1457`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:1538`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -166,7 +202,7 @@ before this shipped ever will — and even once it exists, a stage whose models
 the price table does not know has no dollar figure, not a figure of zero:
 `costOf` returns `usd: 0` there, and `gather` reads `priced.length` before
 believing it, so an unpriced stage's own `usd` is `null` rather than a silent
-zero (`lib/station.js:383`, `usd: priced ? mine + agents : null`) — the same
+zero (`lib/station.js:403`, `usd: priced ? mine + agents : null`) — the same
 line that folds the session and its agents together rather than pricing the
 parent alone, which is why the ledger's total already matches `cost(s)`'s own
 combined figure, agents included.
@@ -180,6 +216,20 @@ A session also opens on a page of its own, `#/s/<id>`, in four tabs — 時間�
 and output tokens, read from `split`, and its dollars, read from `cost`; 事件 is
 the replay, each gate's row carrying how long it waited. The side panel in the
 next section is the other way in, from 清單, and keeps its claims.
+
+Under the title, the session's state and — served — how fresh the page is:
+`即時・剛更新`, then `即時・N 秒前更新`, while the session is live, and
+`已停止更新・最後一次 hh:mm:ss` once it is not. Under that, the route
+as a rail: a stop per stage,
+each one behind the current stage timed by the registry's clock for it, the
+current one ringed and, on a live session under `serve`, counting up from when
+it was entered. The rail replaces the route dots and the route text the line
+used to carry. On 首頁's recent sessions a live row rings the stage it is in,
+names it and its number, and says how many of its agents are `running` this
+moment — `running` on the list data, counted from each agent's state; 清單
+carries the same count beside the state. A row that is not live names its stage
+and counts nothing. The 派工 readout counts the agents running and lost besides
+the total, and the 派工 tab carries a green dot while any agent is running.
 
 時間線 draws the session against real elapsed time: one axis from the first
 step of `seq` to the last request, so a ten-minute session and a ten-hour one
@@ -273,19 +323,52 @@ the ones naming no task are listed under the table.
 
 **派工** is one band per dispatch in turn order, `agent`, `agents` (two or more
 dispatch calls in one response) or `workflow` on it, and one row per agent: its
-wall-clock from its own transcript, its tokens, and its dollars priced from its
-own per-kind counts — `workflow_agent.tokens` is one undivided number and cannot
-be priced — with the price table's `verified` date beside them and `unpriced`
-where the table does not know the model. Every workflow run the session made is
-read, not only the newest. A workflow folds into one row per phase until the
-phase is opened. The last column is the characters the dispatch's result put
-into the parent's context: the task-notification for a background agent or a
-workflow, the tool result for a foreground one; the acknowledgement a background
-launch returns at once is not counted, and the page says how much it came to.
-The seconds, thousands and cents are each rounded by the largest remainder in
-`lib/detail.js`, so every band and the footer are the sums of the rows under
-them, and the tally under the table sets the rows' dollar sum against
-`agentsOf()`'s total and the workflow rows against the run files' own count.
+state, its wall-clock from its own transcript, its tokens, and its dollars
+priced from its own per-kind counts — `workflow_agent.tokens` is one undivided
+number and cannot be priced — with the price table's `verified` date beside
+them and `unpriced` where the table does not know the model. Every workflow run
+the session made is read, not only the newest. A workflow folds into one row
+per phase until the phase is opened, each phase row carrying a dot per agent
+in its state's colour and how many are in each state. The last column is the
+characters the dispatch's result put into the parent's context: the
+task-notification for a background agent or a workflow, the tool result for a
+foreground one; the acknowledgement a background launch returns at once is not
+counted, and the page says how much it came to. The seconds, thousands and
+cents are each rounded by the largest remainder in `lib/detail.js`, so every
+band and the footer are the sums of the rows under them, and the tally under
+the table sets the rows' dollar sum against `agentsOf()`'s total and the
+workflow rows against the run files' own count.
+
+An agent's state is `running`, `done` or `lost`, read by `statesOf(d, live,
+since)` in `lib/detail.js` from three things: the agent's own transcript —
+`stepsOf`'s `open` and `lastAt`, or, when there are no steps, whether its
+dispatch came back — whether the session is live, and `since`, the session's
+current process's start (`startedAt` in Claude Code's
+`sessions/<pid>.json`). It reads no `.meta.json`; that file only links an
+agent's file to its dispatch row (`lib/usage.js:494`). No hook writes any of
+it. It has finished when its last assistant line carries no
+`tool_use`, every `tool_use` it made has its `tool_result`, and that line
+closes a message. Not finished, it is `running` while its session is live and
+the process now running the session was already running when the agent last
+wrote, and `lost` otherwise — the session ended, or came back under the same id
+in a new process, and a row between the dispatches says where that happened. A
+workflow's agents are read the same way. A `running` row names the tool it is
+on and what at — the last `tool_use` with no `tool_result` yet — and how long it
+has been on it; a `lost` row names where it stopped. The page reads `lost` for
+an agent still `running` in a detail once the list says its session is no
+longer live, since that detail is not re-read any more. Above the table a
+filter shows one state at a time, opening a workflow's phases to do it.
+
+A row opens into what the agent was sent — its first user message that is not
+a system reminder, folded to three lines until opened in full, kept up to
+12,000 characters with its whole length beside it — and its steps in order,
+any not yet answered last, in the order they were made — a parallel call can
+leave more than one. Those are kept out of the forty the cap counts (`stepsOf`
+in `lib/replay.js`), so the cap never drops them. A `done` row's foot
+says what it returned: the characters its dispatch put into the parent's
+context, or, for a workflow's agent, that its result went into the workflow's.
+A session with no dispatch yet says so, and under `serve` says the next re-read
+will show one.
 
 **過程還原** is one row per event in time order: prompts (their first sixty
 characters), stage moves, each gate's question and the answer chosen, each
@@ -334,8 +417,9 @@ carries its version in its path and the copy under `<root>/.fankeel/` would
 otherwise point outside the repository it sits in.
 
 `write()` compares the three copied files before writing them, so a prompt that
-changed nothing rewrites `station-data.js` alone. `hooks/inject.js` calls it on
-every prompt, which is the reason that comparison is there.
+changed nothing rewrites `station-data.js` alone. It is written at several
+moments, not only on a prompt — *When it is written, and where*, below —
+which is why that comparison is there.
 
 The directory is `station/detail/`: one file per session whose transcript is
 under this machine's config directory, `station/detail/<id>.js`, holding that
@@ -379,7 +463,7 @@ them on this page. Every filter from here down narrows what the browser
 draws from data that already arrived: clearing a facet or the search box
 brings a row straight back, because it was in `window.STATION` all along.
 `station.hide` instead runs once, before that, in `flatten()`
-(`lib/station.js:487`, `function flatten(model) {`), which `serialize()`
+(`lib/station.js:512`, `function flatten(model) {`), which `serialize()`
 calls to build `sessions` before any of it reaches the browser (see What
 each row holds, above). There is no view state that could bring a hidden
 project's rows back, because the browser never received them; the only way
@@ -387,7 +471,7 @@ is to change the profile and reload.
 
 The facets are on 清單, above its table — state and stage with a count on each
 button, registry with one button per root
-(`assets/station/station.js:1259`, `moved onto the page they narrow`) — and
+(`assets/station/station.js:1340`, `moved onto the page they narrow`) — and
 the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed. On 清單,
 selecting a registry recomputes the page below the facets: `goneNote()`'s card
@@ -397,14 +481,14 @@ above the list otherwise; it does not merely hide rows.
 A gone registry keeps its facet button, labelled `— gone`, rather than
 dropping off the row, so selecting one never returns a blank pane with nothing
 on the page saying why:
-`goneNote()` (`assets/station/station.js:1096`, `function goneNote(root)`) prints a
+`goneNote()` (`assets/station/station.js:1164`, `function goneNote(root)`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card once it is the one selected on
 清單, and every project page carries the same card for its own registry no
 matter what is selected there: `registryNote()`
-(`assets/station/station.js:1113`, `function registryNote(root)`) prints its
+(`assets/station/station.js:1181`, `function registryNote(root)`) prints its
 own unreadable-session count, its `map.md` date — or `不存在` when there is
 none — and its build directories with each one's file count, or says there
 are none. The old page carried all three on a per-registry meta line; the
@@ -412,9 +496,9 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:1491`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:1572`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
-(`lib/station.js:423`, `gone: true, unreadable: 0`); everywhere
+(`lib/station.js:448`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
 count — the footer keeps the total, so a corrupt entry is never a click away
 from being found.
@@ -440,15 +524,15 @@ before them — the window's spend, tokens, active time and waiting ratio —
 and the fifth does not compare windows at all: it
 names the option-one gate wording most often swapped for another answer,
 `最常被換掉`, with how many times out of how many it was asked beneath it
-(`lib/station.js:515`, `function gateSummary(model, hidden) {`;
+(`lib/station.js:540`, `function gateSummary(model, hidden) {`;
 `assets/station/station.js:376`, `roHtml('最常被換掉'`). Unlike the other
 four, it does not move with the 30-day window or the search box: it is
 counted once, across every shown session's gate answers
-(`lib/station.js:585`, `gates: gateSummary(model, hidden),`), not from the
+(`lib/station.js:610`, `gates: gateSummary(model, hidden),`), not from the
 filtered set the other four sum. It walks the model rather than
 `flatten()`'s output, so it takes the hidden set as an argument and skips
 those sessions itself
-(`lib/station.js:524`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).
+(`lib/station.js:549`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`).
 While a session's transcript is still there, its source is `lib/detail.js`'s
 own replay; once the transcript is gone, `gateSummary()` falls back to the
 entry's own `gates` (see [registry.md](registry.md)), so this denominator no
@@ -485,7 +569,7 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:1250`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:1331`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較** is a third view. Tick two sessions on 清單 or a project page — only a
@@ -498,13 +582,31 @@ backward steps side by side, each from the same field that session's own panel
 prints it from; and both stage sequences. It is the before-and-after view for a
 change to a skill.
 
-Two things differ between the served page and the file. A stale row's clear
+Three things differ between the served page and the file. A stale row's clear
 control is the first: `window.STATION.serve` is true only when a server
 produced the data, and then the pane shows a form posting to `/clear` with
 that run's nonce. A file on disk has neither, so it prints the `task.js
 clear` command to copy.
 
-The second is that the served page watches for its own server dying. Every
+The second is that the served page keeps itself current. Every three seconds
+it loads `station/station-data.js` again — the list, rebuilt by the server on
+every request — and, while the session whose detail is on screen (the session
+page, or the row selected on 清單) is `live`, that session's
+`station/detail/<id>.js` too. A session that is no longer live has its detail
+re-read no more, because nothing under it can move; a hidden tab re-reads
+nothing. Each re-read is a script tag, as on the first load, with a `?t=` the
+server ignores added so nothing in between answers from a cache. A redraw
+keeps which sections were open, the
+agents, prompts and phases opened on 派工 and its state filter, the replay's
+hidden kinds, where the page and the list were scrolled, and which control had
+focus; a reader
+typing into a field on the page holds it back until the next re-read. Figures
+that move between re-reads — how long a stage has run — tick once a second,
+and the footer says when the last re-read landed, on every view. The file
+`/fankeel` writes does none of this: `window.STATION.serve` is false in it, it
+has no server to ask, and it shows the moment it was written.
+
+The third is that the served page watches for its own server dying, which is all the health poll is for: the re-read above keeps the data current, and this asks nothing but whether the process is still there. Every
 five seconds it fetches `station/health`; when nothing has answered for
 fifteen, a full-width bar appears under the masthead and the page below it
 drops to `opacity: .72` with `saturate(.3)` — dimmed and desaturated, but
@@ -528,9 +630,9 @@ and the eyebrow's cannot disagree.
 
 Both decisions are pure functions above the `module.exports` guard, so both
 are unit tested: what to say
-(`assets/station/station.js:930`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
+(`assets/station/station.js:998`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
 and what the eyebrow reads
-(`assets/station/station.js:940`, `function heroEyebrow(frozenAt) {`). The
+(`assets/station/station.js:1008`, `function heroEyebrow(frozenAt) {`). The
 fetch that feeds them, the bar they fill and the pill are the document half
 below the guard. The eyebrow is rendered rather than patched, so it takes a
 redraw — but only as the state flips, never on a poll that finds nothing
@@ -547,7 +649,7 @@ carries a class that sets `display`, which beats the browser's own
 and opens it, and there is no server behind a `file:` URL, so a page that
 polled there would show a death banner for a state that is simply normal —
 the guard checks `w.location.protocol !== 'file:'` before scheduling
-anything.
+anything. Neither does the re-read, which also needs `window.STATION.serve`: data a server did not write is data no server will write again.
 
 ## When it is written, and where
 
@@ -565,7 +667,7 @@ says when it was generated.
 A session under a hidden project produces no `station/detail/<id>.js`
 either, on every one of those four writes. `write()` walks
 `model.registries` directly for this loop rather than through `flatten()`,
-so it carries its own check (`lib/station.js:713`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
+so it carries its own check (`lib/station.js:745`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
 hiding a project after its sessions already had a detail file does not
 delete that file, it just stops being rewritten — nothing in `write()`
 removes a file it once wrote.
@@ -582,7 +684,8 @@ and `--forget` with exit 2.
 `--idle <minutes>` brings back an idle exit — and renders afresh on
 every request, takes a POST from the clear button on a `stale` row, answers
 `409` for a `live` one and for a row touched in the last twelve hours unless
-`force` is ticked, and `403` without the per-run nonce. It binds the fixed
+`force` is ticked — the age-and-liveness rule is
+[collisions.md](collisions.md)'s — and `403` without the per-run nonce. It binds the fixed
 port `7817` by default, falling back to an ephemeral one only when `7817` is
 already taken — and then keeps trying `7817` every thirty seconds; the first
 time it binds, a second listener on the same handler takes it, `serve.json`
@@ -594,6 +697,18 @@ there is none unless it is given. `--detach` runs the server as a background
 process and returns once it has started, so closing the terminal does not
 take the station with it. The static copies carry the `task.js clear`
 command on each `stale` row instead of the button.
+
+Rendering afresh does not mean reading everything afresh. A running `serve`
+holds every session's detail in memory and answers from it while nothing under
+it moved — an ended session held since after it ended without so much as a
+stat, any other once `keyOf()` in `lib/detail.js`, the size and mtime of the
+transcript and of every agent and run file, says what it said when the detail
+was read — so a re-read of an unchanged session reads neither the transcript
+nor the cache file, and computes nothing. A request spends at most the second
+and a half on transcripts that the `/fankeel` write does (`DETAIL_BUDGET_MS` in
+`lib/station.js`) and answers past it from what is cached; the detail route
+reads the one session it was asked for rather than every session on the
+machine.
 
 A second `serve` against the same config directory joins the first rather
 than starting one: `<configDir>/fankeel/serve.json` holds the pid, port, url
@@ -630,7 +745,7 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:1152`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:1220`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button, and every registry card now carries one:
@@ -694,7 +809,7 @@ from 清單 — `serialize()`'s `profiles.projects` drops it exactly where
 button left on the served page to reach it again. This is not because the
 `POST` above would refuse it: `known` here builds its own fresh, unfiltered
 model rather than reading the page's filtered one
-(`scripts/station.js:570`, `const known = model.registries.some(`), so a
+(`scripts/station.js:522`, `const known = model.registries.some(`), so a
 hidden project's directory is still in it, and a request naming one that
 somehow still reached the server would succeed, not `404`. The card is
 simply never drawn to click, so unhiding is

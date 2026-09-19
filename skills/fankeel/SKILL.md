@@ -652,12 +652,16 @@ cost. Nothing here deletes, so that is a month of finished tasks and the only
 view of them.
 
 For every registry on the machine rather than this one, the station. The
-`station:` line of the `/fankeel` block names the page and counts its `stale`
-rows; `.fankeel/index.html` in the registry is the copy beside you, and
-`node <plugin>/scripts/station.js --open` opens the newest. `serve --open` in
-place of `--open` runs it as a page with a `clear` button on every stale row.
-The page is written at this prompt, before the block that names it, so there
-is nothing to invoke; [docs/station.md](../../docs/station.md) is the reference.
+`/fankeel` prompt detects and opens it: the hook writes the page, asks
+`serve.json` whether a station answers, and when none does starts
+`node <plugin>/scripts/station.js serve --open` detached, so the browser opens
+only when this prompt started it. The block's `station:` line counts the
+`stale` and `live` rows and names the served url — say it. A line ending
+`serve is starting` names the file until the server binds; one ending in the
+file and `serve --open` means nothing was started (`FANKEEL_SERVE=off`, or the
+start failed). `.fankeel/index.html` in the registry is the static copy beside
+you, written at this prompt. There is nothing to invoke;
+[docs/station.md](../../docs/station.md) is the reference.
 
 The page is also where a file that does not parse is counted. The hooks drop
 those silently and correctly — a miss is what a session not using the plugin

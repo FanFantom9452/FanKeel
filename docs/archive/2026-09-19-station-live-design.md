@@ -9,7 +9,7 @@ last_verified: 2026-09-19
 session 跑到哪一站、派了幾個 agent、每個 agent 現在在做什麼、它裡面做了哪些事。另外把
 map 缺的「目錄 → 職責」補上。
 
-這是 [2026-09-19-stage-agents-design.md](2026-09-19-stage-agents-design.md) 的前提：主控
+這是 [2026-09-19-stage-agents-design.md](../plans/2026-09-19-stage-agents-design.md) 的前提：主控
 安靜之後，看進度只能看 station；站 agent 決定讀哪些路徑，要靠 map。
 
 mockup：`.fankeel/build/2026-09-19-station-live/mockup.html`（不 commit）。
@@ -61,7 +61,7 @@ mockup：`.fankeel/build/2026-09-19-station-live/mockup.html`（不 commit）。
 ## 4. agent 裡面
 
 - 展開一個 agent，看得到它收到的 prompt（預設收合）與它的步驟。
-- 執行中的那一步標在列表最後，而且不會被 `MAX_STEPS` 擠掉。
+- 執行中的步驟（平行的工具呼叫可能不只一個）標在列表最後，而且不會被 `MAX_STEPS` 擠掉。
 - `done` 的 agent 顯示它回傳了多少。
 
 ## 5. map 目錄職責

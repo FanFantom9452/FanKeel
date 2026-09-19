@@ -53,8 +53,8 @@ test('the dispatch footer and each band are the sums of their rows, and the tall
 test('a workflow folds into one row per phase, its agents hidden until the phase opens; an unknown model reads unpriced', () => {
     const html = V.dispatchHtml(x);
     assert.equal(count(html, /data-ph="/g), 2);
-    assert.equal(count(html, /class="wa" data-in="ph-1-0" hidden/g), 2);
-    assert.equal(count(html, /class="wa" data-in="ph-1-1" hidden/g), 1);
+    assert.equal(count(html, /class="wa is-done" data-in="ph-1-0" hidden/g), 2);
+    assert.equal(count(html, /class="wa is-done" data-in="ph-1-1" hidden/g), 1);
     assert.match(html, /title="價目表不認得：claude-mystery-9">unpriced/);
     assert.match(html, /<span class="sf workflow">workflow<\/span>/);
 });
@@ -203,4 +203,113 @@ test('a workflow dispatch counts its own agents, and its rows still tally into t
     };
     const html = V.splitHtml(s);
     assert.match(html, /<p class="tally">survey — 主迴圈 8 回合；派工：Workflow 1 次（3 個 agent）；sonnet ×2、opus ×1<\/p>/);
+});
+
+// The live dispatch table (docs/plans/2026-09-19-station-live-design.md §3–§4):
+// a state on every row, the tool a running agent is on, and a row that opens
+// into its prompt and its steps with any not yet answered last.
+const T9 = 1789800000000;
+const live = {
+    dispatches: [
+        { key: 'd0', turn: 3, surface: 'agent', text: 'Task 1', out: T9, back: T9 + 60000, ret: 1102, launch: 0, ids: ['r1'] },
+        { key: 'd1', turn: 5, surface: 'agent', text: 'Task 2', out: T9 + 70000, back: null, ret: null, launch: 900, ids: ['r2'] },
+        { key: 'd2', turn: 6, surface: 'workflow', text: 'build', out: T9 + 80000, back: null, ret: null, launch: 800, run: 'wf_1', ids: ['w1', 'w2'] },
+    ],
+    rows: [
+        { id: 'r1', disp: 0, surface: 'agent', label: 'Task 1', agentType: 'general-purpose', model: 'claude-sonnet-5', phase: null, c: 49, k: 1210, s: 376, unpriced: [], from: T9 + 2000, to: T9 + 58000 },
+        { id: 'r2', disp: 1, surface: 'agent', label: 'Task 2', agentType: 'general-purpose', model: 'claude-sonnet-5', phase: null, c: 37, k: 880, s: 180, unpriced: [], from: T9 + 72000, to: T9 + 250000 },
+        { id: 'w1', disp: 2, surface: 'workflow', label: 'impl:a', agentType: null, model: 'claude-sonnet-5', phase: 'Implement', c: 46, k: 1120, s: 335, unpriced: [], from: T9 + 82000, to: T9 + 400000 },
+        { id: 'w2', disp: 2, surface: 'workflow', label: 'review:a', agentType: null, model: 'claude-sonnet-5', phase: 'Review', c: 17, k: 410, s: 60, unpriced: [], from: T9 + 400000, to: T9 + 460000 },
+    ],
+    runs: [{ run: 'wf_1', name: 'build', agents: 2 }], agentCents: 149, agentsTotal: { cents: 149 }, unpriced: [], events: [], dropped: 0,
+    at: T9 + 470000,
+    states: { r1: 'done', r2: 'running', w1: 'done', w2: 'running' },
+    steps: {
+        r1: { steps: [{ k: 'read', f: 'lib/detail.js' }, { k: 'cmd', c: 'node --test tests/detail.test.js', r: 'ℹ pass 41' }], total: { read: 1, cmd: 1 }, dropped: {}, droppedN: 0,
+            open: false, cur: null, lastAt: T9 + 58000, prompt: 'Build Task 1.', promptLen: 13 },
+        // `stepsOf` keeps a tool_use with no `tool_result` in `steps` itself now,
+        // marked `p: true`, at its own chronological position — `cur` names the
+        // same one (the last), with the timing `steps` does not carry.
+        r2: { steps: [{ k: 'read', f: 'assets/station/station.js' }, { k: 'cmd', c: 'node --test tests/station.test.js', p: true }],
+            total: { read: 1 }, dropped: { find: 3 }, droppedN: 3,
+            open: true, cur: { n: 'Bash', t: T9 + 240000, k: 'cmd', c: 'node --test tests/station.test.js' }, lastAt: T9 + 250000, prompt: 'Build Task 2.', promptLen: 13 },
+        w1: { steps: [{ k: 'edit', f: 'assets/station/station.js' }], total: { edit: 1 }, dropped: {}, droppedN: 0, open: false, cur: null, lastAt: T9 + 400000, prompt: 'impl', promptLen: 4 },
+        w2: { steps: [], total: {}, dropped: {}, droppedN: 0, open: true, cur: { n: 'Read', t: T9 + 450000, k: 'read', f: 'station/station.js' }, lastAt: T9 + 460000, prompt: 'review', promptLen: 6 },
+    },
+};
+const LIVE_ROW = { id: 's1', state: 'live' };
+
+test('every agent row carries its state, and a running one names the tool it is on and how long it has been on it', () => {
+    const html = V.dispatchHtml(live, LIVE_ROW, { now: T9 + 480000, live: true });
+    assert.equal(count(html, /<tr class="(?:ag|wa) is-running"/g), 2);
+    assert.equal(count(html, /<tr class="(?:ag|wa) is-done"/g), 2);
+    assert.match(html, /<span class="pill sm running"[^>]*><i class="dot live"><\/i>running<\/span>/);
+    assert.match(html, /<span class="k">正在<\/span><span class="c" title="Bash: node --test tests\/station\.test\.js">/);
+    assert.match(html, /<span class="c" title="Read station\/station\.js">[\s\S]*?<span class="tkr" data-b="-/);
+    assert.match(html, /<span class="agdots" aria-hidden="true"><i class="done"><\/i><i class="running"><\/i><\/span><span class="phs">1 \/ 2 done<\/span>/);
+    assert.match(html, /data-seg="dfilter"[\s\S]*?>running 2<\/button>/);
+    assert.match(html, /running 的 2 列是到 \d\d:\d\d:\d\d 為止/);
+});
+
+test('once the list says the session is not live, a running agent reads lost, and says where it stopped', () => {
+    const html = V.dispatchHtml(live, { id: 's1', state: 'stale' }, { now: T9 + 480000 });
+    assert.equal(count(html, /is-running/g), 0);
+    assert.equal(count(html, /<tr class="(?:ag|wa) is-lost"/g), 2);
+    assert.match(html, /<span class="k">停在<\/span><span class="c" title="Bash: node --test tests\/station\.test\.js">[^<]*<\/span><span class="e">跑了 10s<\/span>/);
+    assert.match(html, /→沒回來/);
+    assert.doesNotMatch(html, /class="tkr"/, 'nothing ticks on a session that stopped');
+});
+
+test('an opened agent shows its prompt folded, its steps with the one in progress last and outside the cap, and what a done one returned', () => {
+    const html = V.dispatchHtml(live, LIVE_ROW, { now: T9 + 480000, live: true, open: { r1: true, r2: true } });
+    const r2 = html.slice(html.indexOf('<tr class="ax ag is-running">'));
+    assert.match(r2, /<div class="prm"><div class="axl">prompt <span class="n">13 字元<\/span><button type="button" class="lkb" data-prm="r2" data-key="prm-r2" aria-expanded="false">展開全部<\/button><\/div><pre>Build Task 2\.<\/pre><\/div>/);
+    const steps = r2.slice(r2.indexOf('<ul class="stp">'), r2.indexOf('</ul>'));
+    assert.ok(steps.indexOf('station/station.js') < steps.indexOf('class="cur"'), 'the step in progress is last');
+    assert.match(steps, /<li class="cur"><span class="sk cmd">指令<\/span><div><span class="cm">node --test tests\/station\.test\.js<\/span><\/div><span class="pg"><i class="dot live"><\/i>進行中 <span class="tkr"/);
+    assert.match(r2, /上限 40 步，另有 3 步沒列出（搜 3）；進行中的步驟不算在上限裡，永遠留在最後/);
+    assert.match(r2, /<span><b>5<\/b> 步<\/span>/, 'one kept, three dropped, one in progress');
+    assert.match(html, /<tr class="ax ag is-done">[\s\S]*? 回來，回傳 <b>1,102<\/b> 字元進主 context/);
+    assert.match(V.dispatchHtml(live, LIVE_ROW, { open: { r2: true }, prm: { r2: true } }), /<div class="prm open">/);
+});
+
+test('two unanswered calls in the same message both render in progress, and the cap sentence still only excludes what was actually dropped', () => {
+    const twoPending = Object.assign({}, live, { steps: Object.assign({}, live.steps, {
+        r2: Object.assign({}, live.steps.r2, { steps: [
+            { k: 'read', f: 'assets/station/station.js' },
+            { k: 'read', f: 'lib/detail.js', p: true },
+            { k: 'cmd', c: 'node --test tests/station.test.js', p: true },
+        ] }),
+    }) });
+    const html = V.dispatchHtml(twoPending, LIVE_ROW, { now: T9 + 480000, live: true, open: { r2: true } });
+    const r2 = html.slice(html.indexOf('<tr class="ax ag is-running">'));
+    assert.equal(count(r2, /<li class="cur"/g), 2, 'both the earlier parallel call and the one cur names render in progress');
+    assert.match(r2, /上限 40 步，另有 3 步沒列出（搜 3）；進行中的步驟不算在上限裡，永遠留在最後/, 'still three dropped finds, not the two in-progress steps');
+});
+
+test('the filter shows one state at a time, opens a workflow\'s phases to do it, and cannot pick a state no agent is in', () => {
+    const html = V.dispatchHtml(live, LIVE_ROW, { filter: 'running', live: true, now: T9 + 480000 });
+    assert.equal(count(html, /<tr class="(?:ag|wa) is-done"/g), 0);
+    assert.equal(count(html, /<tr class="(?:ag|wa) is-running"/g), 2);
+    assert.doesNotMatch(html, /data-in="[^"]*" hidden/, 'a phase holding a match opens');
+    assert.match(html, /<button type="button" data-v="lost" aria-pressed="false" disabled title="沒有這個狀態的 agent">lost 0<\/button>/);
+});
+
+test('a session with no dispatch says what comes next, and one resumed under its id marks where the process changed', () => {
+    const none = Object.assign({}, live, { rows: [], dispatches: [] });
+    assert.match(V.dispatchHtml(none, LIVE_ROW, { live: true }), /<div class="emptyd"><p class="et">還沒派出 agent<\/p><p class="es">一派出，它會在下一次更新（3 秒內）出現在這裡/);
+    assert.match(V.dispatchHtml(none, { state: 'down' }), /這個 session 沒有派出任何 agent/);
+    const resumed = Object.assign({}, live, { since: T9 + 75000, points: [{ n: 1, t: T9 + 71000, y: 1 }] });
+    const html = V.dispatchHtml(resumed, LIVE_ROW, {});
+    const gap = html.indexOf('<tr class="gaprow">');
+    assert.ok(gap > html.indexOf('Task 2') && gap < html.indexOf('>build<'), 'between the last dispatch before the restart and the first after it');
+    assert.match(html, /session <b>\d\d:\d\d<\/b> 結束，<b>\d\d:\d\d<\/b> 以同一個 session id 接回來/);
+});
+
+test('the session header counts the running and lost agents, and the 派工 tab carries a dot while one is running', () => {
+    const s = { id: 's1', state: 'live', days: [], spans: [] };
+    assert.match(V.sessionHeadHtml(s, live), /<span class="runn"><i class="dot live"><\/i>2 running<\/span> · 1 個 workflow/);
+    assert.match(V.sessionHeadHtml(Object.assign({}, s, { state: 'stale' }), live), /2 lost · 1 個 workflow/);
+    assert.match(V.tabsHtml(s, 'dispatch', live), /派工<small>4<\/small><i class="dot live" title="2 個 agent running"><\/i><\/a>/);
+    assert.doesNotMatch(V.tabsHtml(Object.assign({}, s, { state: 'stale' }), 'dispatch', live), /dot live/);
 });

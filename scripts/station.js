@@ -16,8 +16,8 @@
 // binding a second port: `<configDir>/fankeel/serve.json` is what it reads to
 // know. `--detach` runs the server as a background process and returns once
 // that file appears, so closing the terminal does not take the station with
-// it. Nothing here is started for the user by anything else, and no session
-// holds a port on its own.
+// it. `hooks/inject.js` starts one the same way on a `/fankeel` prompt when
+// none answers (`ensureServe` in lib/serve.js); no session holds a port of its own.
 // `--scan` walks a directory for registries once; what it finds is remembered
 // in `<configDir>/fankeel/roots.json`, so it is run once per drive. With no
 // roots.json at all — this config dir's first-ever run — every drive is
@@ -37,6 +37,7 @@ const { parseArgs: parseArgv } = require('node:util');
 const station = require('../lib/station.js');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
+const { serveRecordPath, readServeRecord, probe } = require('../lib/serve.js');
 const { clearEntry } = require('../lib/clear.js');
 const profile = require('../lib/profile.js');
 const todoCheck = require('./todo-check.js');
@@ -229,71 +230,6 @@ const readBody = (req) => new Promise((resolve) => {
     req.on('error', () => resolve(''));
 });
 
-// The record a bound `serve()` leaves behind, and what a later call reads to
-// decide whether to join it rather than binding its own port. Any failure —
-// missing file, a session's half-written temp, bytes that are not JSON — reads
-// as "nothing to join", the same as no file at all.
-function serveRecordPath(configDir) {
-    return path.join(configDir, 'fankeel', 'serve.json');
-}
-
-function readServeRecord(configDir) {
-    try {
-        return JSON.parse(fs.readFileSync(serveRecordPath(configDir), 'utf8'));
-    } catch (e) {
-        return null;
-    }
-}
-
-// Whether `record` names a station actually listening, not merely a pid the
-// OS still hands back. `process.kill(pid, 0)` alone passes a recycled pid, or
-// a crashed station whose port some other process now holds, and hands the
-// caller a dead or foreign URL either way. A GET of the record's own health
-// route is answered only by an actual station, and the body's pid is checked
-// against the record's so a foreign listener on the same loopback port cannot
-// pass either. Never rejects: any error, timeout, non-200, a body that is not
-// JSON, or a pid that does not match reads the same as no station there.
-function probe(record) {
-    return new Promise((resolve) => {
-        let settled = false;
-        const done = (ok) => {
-            if (settled) return;
-            settled = true;
-            resolve(ok);
-        };
-        // A pid the OS already denies existing cannot be the one answering
-        // below, whatever is or is not listening on the port — so it is worth
-        // ruling out before the network round trip rather than after it.
-        // `live.running` cannot stand in for the request itself: a recycled
-        // pid or a foreign listener both pass it, which is why a live pid
-        // still falls through to the GET.
-        if (!live.running(record.pid)) return done(false);
-        let req;
-        try {
-            req = http.get(record.url + 'station/health', { timeout: 500 }, (res) => {
-                let text = '';
-                res.setEncoding('utf8');
-                res.on('data', (c) => { text += c; });
-                res.on('end', () => {
-                    if (res.statusCode !== 200) return done(false);
-                    let body;
-                    try {
-                        body = JSON.parse(text);
-                    } catch (e) {
-                        return done(false);
-                    }
-                    done(!!body && body.pid === record.pid);
-                });
-                res.on('error', () => done(false));
-            });
-        } catch (e) {
-            return done(false);
-        }
-        req.on('timeout', () => { req.destroy(); done(false); });
-        req.on('error', () => done(false));
-    });
-}
-
 // The one write behind 記成 TODO. The entry goes under `## Needs a decision` in
 // the project's TODO.md, and only once `scripts/todo-check.js`'s own `check()`
 // has passed it: the line is put into a copy of the file, written beside the
@@ -376,12 +312,21 @@ async function serve(opts) {
     // succeeds names the same start time as its first write, not the moment
     // the retry happened to land.
     const started = new Date().toISOString();
+    // What this server remembers between requests: every session's detail,
+    // held while `keyOf` says nothing under it moved (`detailOf` in
+    // lib/detail.js). The page re-reads the list every three seconds and the
+    // detail it shows while its session is live; without this each re-read
+    // parsed every cached detail on the machine again.
+    const memo = new Map();
     // A deadline is an absolute moment, so it is taken per request rather than
     // once at listen: a `--scan` here is re-walked on every render, and one
     // timestamp fixed at startup would leave every later request walking with a
-    // deadline already spent.
-    const modelNow = () => station.gather(Object.assign({}, gatherOpts,
-        { deadline: scanDeadline(gatherOpts.scan) }));
+    // deadline already spent. The transcript budget is `write()`'s: past it a
+    // request answers from what is cached and the next one carries on, so a
+    // cache from an older VERSION is read again a few sessions at a time rather
+    // than all in one request the page gives up on.
+    const modelNow = (extra) => station.gather(Object.assign({}, gatherOpts,
+        { deadline: scanDeadline(gatherOpts.scan), memo, detailBudgetMs: station.DETAIL_BUDGET_MS }, extra));
     let timer = null;
     let server;
     const touch = () => {
@@ -389,7 +334,14 @@ async function serve(opts) {
         if (!(opts.idleMs > 0)) return;
         timer = setTimeout(() => {
             server.close();
-            if (opts.exitOnIdle !== false) process.exit(0);
+            // Off by default: `serve()` is also called in-process by tests
+            // (station-cli, station-detail, station-todo), and an idle exit
+            // there would end that whole test file's own process rather than
+            // a station's — silently, with exit code 0, so `node --test`
+            // reports no failure and the file's remaining tests simply never
+            // ran. Only `main()`'s own `serve` verb — the real `--idle`
+            // flag — opts in.
+            if (opts.exitOnIdle === true) process.exit(0);
         }, opts.idleMs);
     };
     // Named rather than inline, so a second `http.createServer` — the
@@ -450,7 +402,7 @@ async function serve(opts) {
             // One session's detail, the script `write()` leaves beside the
             // data file, rendered from this request's model rather than read
             // off disk.
-            const hit = modelNow().registries.flatMap((r) => r.sessions).find((s) => s.sessionId === wanted[1]);
+            const hit = modelNow({ details: wanted[1] }).registries.flatMap((r) => r.sessions).find((s) => s.sessionId === wanted[1]);
             if (!hit || !hit.detail) {
                 fail(404, 'no detail for that session');
                 return;
@@ -761,7 +713,7 @@ function main() {
         return;
     }
     if (args.verb === 'serve') {
-        serve({ configDir, roots: args.roots, scan: args.scan, port: args.port, idleMs: args.idleMs, open: args.open, portWasExplicit: args.portWasExplicit }).then((s) => {
+        serve({ configDir, roots: args.roots, scan: args.scan, port: args.port, idleMs: args.idleMs, open: args.open, portWasExplicit: args.portWasExplicit, exitOnIdle: true }).then((s) => {
             process.stdout.write('fankeel station — ' + s.url
                 + (args.idleMs > 0 ? '  (exits after ' + Math.round(args.idleMs / 60e3) + ' idle minutes, or Ctrl+C)' : '  (Ctrl+C to exit)') + '\n');
         }, (e) => {

@@ -383,11 +383,32 @@
                 return (i / n * (W - 4) + 2).toFixed(1) + ',' + (H - 3 - v / mx * (H - 7)).toFixed(1);
             }).join(' ') + '" style="fill:none;stroke:' + colour + ';stroke-width:1.5;stroke-linejoin:round"/></svg>';
     }
-    function routeDots(s) {
+    // `ring` circles the stage a live session is in, so a row that is still
+    // running reads apart from one that stopped there.
+    function routeDots(s, ring) {
         var route = s.route || [], at = route.indexOf(s.stage);
         return '<span class="route" aria-label="route ' + esc(route.join(' → ')) + '">' + route.map(function (k, i) {
+            if (i === at && ring) {
+                return '<i title="' + esc(k) + '（現在）" class="now" style="--c:var(--st-' + esc(k) + ');background:var(--c)"></i>';
+            }
             return '<i title="' + esc(k) + '"' + (i <= at ? ' style="background:var(--st-' + esc(k) + ')"' : ' class="todo"') + '></i>';
         }).join('') + '</span>';
+    }
+    // The stage a row is at, by name and number beside its dots; the dots ring
+    // it only while the session is live.
+    function stageNow(s) {
+        return routeDots(s, s.state === 'live') + '<span class="stname">' + esc(s.stage || '—')
+            + (s.steps ? '<span class="of">' + s.step + '/' + s.steps + '</span>' : '') + '</span>';
+    }
+    // How many of a live row's agents are running this moment — `running` on the
+    // list data, counted by lib/station.js from each agent's state. A row that is
+    // not live, or has no detail to count from, says nothing rather than a zero
+    // nobody measured.
+    function runningTag(s) {
+        if (s.state !== 'live' || typeof s.running !== 'number') return '';
+        return s.running
+            ? '<span class="runn" title="此刻有 ' + s.running + ' 個 agent 是 running"><i class="dot live"></i>running ' + s.running + '</span>'
+            : '<span class="runn zero" title="此刻沒有 agent 是 running">running 0</span>';
     }
     // `off` maps an option to the reason it cannot be chosen right now.
     function segHtml(key, opts, current, off) {
@@ -510,8 +531,8 @@
                 return '<tr class="link" data-href="' + sessionHash(s.id) + '"><td class="task"><a href="' + sessionHash(s.id) + '">'
                     + esc(s.task || '（未命名）') + '</a></td><td><span class="pchip"><i class="sw" style="background:'
                     + colorOf('project', s.pkey, o.pkeys) + '"></i>' + esc(o.names[s.pkey] || s.pkey) + '</span></td>'
-                    + '<td>' + routeDots(s) + '</td><td class="r">' + usd(t.usd) + '</td><td class="r muted">' + tokens(t.tokens) + '</td>'
-                    + '<td>' + statePill(s) + '</td></tr>';
+                    + '<td class="c-stage">' + stageNow(s) + '</td><td class="r">' + usd(t.usd) + '</td><td class="r muted">' + tokens(t.tokens) + '</td>'
+                    + '<td class="c-state">' + statePill(s) + runningTag(s) + '</td></tr>';
             }).join('') + '</tbody></table></div>';
     }
     // The 文件 card: one section per project whose `.fankeel/map.md` was
@@ -907,7 +928,7 @@
             + roHtml('<i class="hatchsw"></i>等你回答', mins(waited), m ? m.waits.length + ' 次 gate' : '讀取細節…')
             + roHtml('花費', usd(t.usd), t.usd ? '派工佔 ' + Math.round(agentUsd / t.usd * 100) + '%' : '沒有按日的花費')
             + roHtml('token', tokens(t.tokens), x ? x.requests + ' 次主 session 請求' : '')
-            + roHtml('派工', x ? x.rows.length + '<span class="u">agent</span>' : '—', x ? x.runs.length + ' 個 workflow' : '')
+            + roHtml('派工', x ? x.rows.length + '<span class="u">agent</span>' : '—', x ? agentCounts(x, s) + x.runs.length + ' 個 workflow' : '')
             + roHtml('叫醒', wakes === null ? '—' : wakes + '<span class="u">次</span>', wakes === null ? '' : '派工回報叫醒主 session')
             + roHtml('context 峰值', x ? tokens(x.peak) : '—', '')
             + '</div>';
@@ -915,10 +936,57 @@
     function tabsHtml(s, tab, x) {
         var label = { timeline: '時間線', cost: '花費', dispatch: '派工', events: '事件' };
         var n = { dispatch: x ? x.rows.length : null, events: x ? x.events.length : null };
+        var run = x ? x.rows.filter(function (r) { return agentState(x, r, s) === 'running'; }).length : 0;
         return '<nav class="tabs" aria-label="session 檢視">' + TABS.map(function (k) {
             return '<a href="' + sessionHash(s.id, k) + '"' + (k === tab ? ' class="on" aria-current="page"' : '') + '>' + label[k]
-                + (n[k] !== null && n[k] !== undefined ? '<small>' + n[k] + '</small>' : '') + '</a>';
+                + (n[k] !== null && n[k] !== undefined ? '<small>' + n[k] + '</small>' : '')
+                + (k === 'dispatch' && run ? '<i class="dot live" title="' + run + ' 個 agent running"></i>' : '') + '</a>';
         }).join('') + '</nav>';
+    }
+
+    // ---- the live page --------------------------------------------------------
+    // A time to the second, for when the page last re-read and when a step began.
+    function clockSec(ms) {
+        var d = new Date(ms);
+        return [d.getHours(), d.getMinutes(), d.getSeconds()].map(function (n) { return String(n).padStart(2, '0'); }).join(':');
+    }
+    function agoText(sec) { return sec <= 0 ? '剛更新' : sec + ' 秒前更新'; }
+    // A figure that keeps moving between re-reads, in seconds, `b + m × now`:
+    // an elapsed time is `-start, 1`. Printed once from `nowSec`, and — only
+    // while `live` — marked for the once-a-second tick below the guard to move.
+    // `tkr`, because 比較 already gives `tk` to a task name.
+    function tk(b, m, live, nowSec) {
+        var v = dur(Math.max(0, Math.round(b + m * nowSec)));
+        return live && m ? '<span class="tkr" data-b="' + b + '" data-m="' + m + '">' + v + '</span>' : v;
+    }
+    // Beside the session's state on its page, served: `即時` and how long ago the
+    // page last re-read while the session is live, the moment it stopped once
+    // it is not.
+    function liveTag(live, polledMs, nowMs) {
+        return live
+            ? '<span class="livetag" title="最後一次更新 ' + clockSec(polledMs) + '；session 還活著，這頁每 3 秒重拉一次，結束就停"><b>即時</b>・<span data-ago>'
+                + agoText(Math.round((nowMs - polledMs) / 1000)) + '</span></span>'
+            : '<span class="livetag off" title="session 結束後不再重拉"><b>已停止更新</b>・最後一次 ' + clockSec(polledMs) + '</span>';
+    }
+    // The route as a rail: a stop per stage, each one behind the current stage
+    // timed by the registry's clock for it (`stages[].from` and `to`), the
+    // current one ringed and — while `live` — counting up from when it was
+    // entered. Not live, it keeps the time the stage had when the session stopped.
+    function railHtml(s, live, nowMs) {
+        var route = s.route || [], at = route.indexOf(s.stage), win = {};
+        (s.stages || []).forEach(function (w) { win[w.stage] = w; });
+        return '<ol class="rail" style="--n:' + route.length + '" aria-label="route ' + esc(route.join(' → '))
+            + (at >= 0 ? '；現在在 ' + esc(s.stage) + '，第 ' + (at + 1) + ' 站，共 ' + route.length + ' 站' : '') + '">'
+            + route.map(function (k, i) {
+                var w = win[k], cls = at < 0 || i > at ? 'todo' : i < at ? 'done' : 'now' + (live ? ' live' : ''), tm = '';
+                if (i < at && w) tm = '<span class="tm">' + mins(w.to - w.from) + '</span>';
+                else if (i === at && w) {
+                    tm = '<span class="tm">' + (live ? tk(-w.from / 1000, 1, true, nowMs / 1000) : mins(w.to - w.from)) + '</span>'
+                        + '<span class="since">' + clock(w.from) + (live ? ' 進站' : ' 進站，停在這站') + '</span>';
+                }
+                return '<li class="' + cls + '" style="--c:var(--st-' + esc(k) + ')"' + (i === at ? ' aria-current="step"' : '') + '>'
+                    + '<span class="pt"></span><span class="nm">' + esc(k) + '</span>' + tm + '</li>';
+            }).join('') + '</ol>';
     }
 
     // Whether the served page has lost its server, and what to say. Pure, so
@@ -963,6 +1031,8 @@
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
             sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost,
             heroEyebrow: heroEyebrow, docsCardHtml: docsCardHtml,
+            stageNow: stageNow, runningTag: runningTag, railHtml: railHtml, liveTag: liveTag, agoText: agoText,
+            clockSec: clockSec, tk: tk,
         };
     }
     if (!doc) return;
@@ -974,19 +1044,17 @@
     // the bottom of this file owns it; the hero's eyebrow reads it, which is
     // why it is declared out here rather than beside the poll.
     var frozenAt = null;
+    // When the data on screen was last read: at load, then at every re-read
+    // below. The session page's live tag and the footer both say it.
+    var polledAt = Date.now();
     // The sessions ticked for 比較, oldest tick first; a third tick drops the first.
     var picked = [];
-    var NOW = Date.parse(S.generatedAt);
-    var LAB = labels(S.projects.map(function (p) { return p.root; }));
-    // `serialize()` never emits a `label` field — the shortest-unique-tail
-    // rule lives only here, in `labels()`, since `navLabels` was deleted from
-    // `lib/station.js` on purpose so the rule would not exist in two places.
-    // `match()`'s haystack still reads `s.label`, so it is attached here,
-    // once, before anything renders.
-    S.sessions.forEach(function (s) { s.label = LAB[s.root]; });
-    var DAYS = lastDays(NOW, 30), PREV = lastDays(NOW - 30 * 864e5, 30), TODAY = DAYS[DAYS.length - 1];
-    var NAMES = projectNames(S.sessions);
-    var PKEYS = projectRows(S.sessions, DAYS).map(function (r) { return r.pkey; });
+    // `NOW`, `LAB`, `DAYS`, `PREV`, `TODAY`, `NAMES` and `PKEYS` are derived
+    // from `S` by `freshen()`, below the live-refresh guard — called here for
+    // the first draw and again on every re-read, so there is one derivation
+    // rather than two that could drift apart.
+    var NOW, LAB, DAYS, PREV, TODAY, NAMES, PKEYS;
+    freshen();
     var VIEWS = {}, CRUMBS = {};
     var rows = function () {
         return S.sessions.filter(function (s) { return match(s, f); });
@@ -1211,6 +1279,18 @@
     VIEWS.project = projectPage;
     CRUMBS.project = function (r) { return [[NAMES[r.pkey] || r.pkey, null]]; };
     view.closed = {};
+    // What 派工 and 事件 are showing, kept across every redraw: the agents and
+    // prompts opened, the phases opened, the state filter, the replay's hidden
+    // kinds — and, from `dispatchUi`, the clock its tickers start from.
+    view.open = {};
+    view.prm = {};
+    view.ph = {};
+    view.kinds = {};
+    view.dfilter = 'all';
+    function dispatchUi(s) {
+        return { open: view.open, prm: view.prm, ph: view.ph, filter: view.dfilter,
+            now: S.serve ? Date.now() : NOW, live: Boolean(S.serve) && Boolean(s) && s.state === 'live' };
+    }
     function sessionPage(r) {
         var s = S.sessions.filter(function (x) { return x.id === r.id; })[0];
         if (!s) return '<section class="panel"><p class="note">這頁上沒有 session ' + esc(r.id) + '</p></section>';
@@ -1220,8 +1300,8 @@
         // detail script has loaded; the other three need the detail.
         var body = r.tab === 'cost' ? costHtml(costModel(s.days), x)
             : !x ? detailNote(s)
-                : r.tab === 'dispatch' ? '<div class="det">' + dispatchHtml(x) + '</div>'
-                    : r.tab === 'events' ? '<div class="det">' + replayHtml(x) + '</div>'
+                : r.tab === 'dispatch' ? '<div class="det">' + dispatchHtml(x, s, dispatchUi(s)) + '</div>'
+                    : r.tab === 'events' ? '<div class="det">' + replayHtml(x, view.kinds) + '</div>'
                         : '<div class="lane-legend"><span><i class="hatchsw"></i>等你回答（gate）</span>'
                         + '<span><i class="sw ln" style="background:var(--ctx)"></i>主 session context</span>'
                         + MODEL_KEYS.map(function (k) {
@@ -1235,9 +1315,10 @@
         return '<section class="panel"><div class="eyebrow">session <span class="mono">' + esc(String(s.id).slice(0, 8)) + '</span> · '
             + '<a href="' + projectHash(s.pkey) + '">' + esc(NAMES[s.pkey] || s.pkey) + '</a> · ' + stamp(Date.parse(s.started)) + '</div>'
             + '<h1 class="s-title">' + esc(s.task || '（未命名）') + '</h1>'
-            + '<div class="s-meta">' + routeDots(s) + '<span class="mono">' + esc((s.route || []).join(' → ')) + '</span>' + statePill(s)
+            + '<div class="s-meta">' + statePill(s) + (S.serve ? liveTag(s.state === 'live', polledAt, Date.now()) : '')
             + (s.model ? '<span class="chip"><i class="sw" style="background:var(--m-' + family(s.model) + ')"></i>主 session <span class="mono">'
                 + esc(s.model) + '</span></span>' : '') + '</div>'
+            + railHtml(s, Boolean(S.serve) && s.state === 'live', S.serve ? Date.now() : NOW)
             + sessionHeadHtml(s, x) + '</section>'
             + tabsHtml(s, r.tab, x) + '<section class="panel">' + body + '</section>';
     }
@@ -1287,7 +1368,7 @@
             + '<div class="listwrap">'
             + '<div class="card listcard"><div class="scroll"><table>'
             + '<colgroup><col style="width:34px"><col><col style="width:130px"><col style="width:80px">'
-            + '<col style="width:78px"><col style="width:86px"><col style="width:86px">'
+            + '<col style="width:78px"><col style="width:170px"><col style="width:86px">'
             + '<col style="width:92px"></colgroup>'
             + '<thead id="lh"></thead><tbody id="lb"></tbody></table></div></div>'
             + '<div class="card det" id="det"></div></div>';
@@ -1317,7 +1398,7 @@
                 + '<td>' + taskCell(s) + '</td><td>' + stageCell(s) + '</td>'
                 + '<td class="r num mute">' + tokens(s.burn) + '</td>'
                 + '<td class="r num">' + usd(cost(s)) + '</td>'
-                + '<td>' + statePill(s) + '</td>'
+                + '<td class="c-state">' + statePill(s) + runningTag(s) + '</td>'
                 + '<td class="num mute" style="font-size:11.5px">' + day(s.started) + '</td>'
                 + '<td class="num mute" style="font-size:11.5px">' + ago(s.updated) + '</td></tr>';
         }).join('') || '<tr><td colspan="8"><div class="empty">沒有符合的 session</div></td></tr>';
@@ -1502,7 +1583,7 @@
             + (S.scanStats && S.scanStats.timedOut ? ' · 掃描逾時未跑完' : '')
             + (!(route.view === 'list' && f.project) && totalUnreadable
                 ? ' · ' + totalUnreadable + ' 個 session 檔案讀不到' : '')
-            + (S.serve ? ' · 每次載入都重讀 registry' : '');
+            + (S.serve ? ' · 每 3 秒重讀一次，最後一次 ' + clockSec(polledAt) : '');
     }
     // ---- the detail panel ----------------------------------------------
     // One session's detail is a script of its own, `station/detail/<id>.js`,
@@ -1534,8 +1615,8 @@
             + sec('s-order', '階段順序', x.seq.length + ' 步 · 倒退 ' + x.backtracks, orderSection(s, x), open)
             + sec('s-split', '分工', splitCount(x), splitHtml(x), open)
             + sec('s-tasks', '任務', taskCount(x.tasks), tasksHtml(x.tasks), open)
-            + sec('s-disp', '派工', x.rows.length + ' 個 agent · ' + cents(x.agentCents), dispatchHtml(x), open)
-            + sec('s-rp', '過程還原', x.events.length + ' 列', replayHtml(x), open);
+            + sec('s-disp', '派工', x.rows.length + ' 個 agent · ' + cents(x.agentCents), dispatchHtml(x, s, dispatchUi(s)), open)
+            + sec('s-rp', '過程還原', x.events.length + ' 列', replayHtml(x, view.kinds), open);
     }
 
     // Which sections start open. A live session is watched for who is in which
@@ -1827,26 +1908,177 @@
             return a;
         }, { c: 0, k: 0, s: 0, ti: 0, to: 0, ci: 0, co: 0 });
     }
-    function numCells(t, unpriced) {
-        return '<td class="r">' + dur(t.s) + '</td><td class="r">' + comma(t.k) + 'k</td><td class="r"'
+    function numCells(t, unpriced, time) {
+        return '<td class="r">' + (time || dur(t.s)) + '</td><td class="r">' + comma(t.k) + 'k</td><td class="r"'
             + (unpriced ? ' title="價目表不認得：' + esc(unpriced) + '"' : '') + '>'
             + (unpriced && !t.c ? 'unpriced' : cents(t.c)) + '</td>'
             + '<td class="r">' + tokens(t.ti || 0) + '</td><td class="r">$' + (t.ci || 0).toFixed(2) + '</td>'
             + '<td class="r">' + tokens(t.to || 0) + '</td><td class="r">$' + (t.co || 0).toFixed(2) + '</td>';
     }
-    function agentRow(r, cls, attr) {
-        return '<tr class="' + cls + '"' + (attr || '') + '><td><div class="lab" title="' + esc(r.label) + '">'
-            + esc(r.label || r.id) + '</div><div class="l2">' + esc((r.agentType || '—') + ' · '
-            + String(r.model || r.alias || '—').replace(/^claude-/, '')) + '</div></td>'
-            + numCells(sums([r]), (r.unpriced || []).join(', ')) + '<td class="r rc"></td></tr>';
+    // `isFinite(null)` is true, and a dispatch that has not come back carries a
+    // null `back`; every time below is asked this instead.
+    function isNum(v) { return typeof v === 'number' && isFinite(v); }
+    // ---- 派工: each agent's state, what it is on, and what it holds -------
+    // `x.states` is the server's reading (`statesOf` in lib/detail.js) when the
+    // detail was written. The list is re-read more often than the detail, and a
+    // session that stops being live stops having its detail re-read, so an agent
+    // still `running` there in a session the list now says is not live is
+    // `lost`. A detail from before states existed reads `done`.
+    function agentState(x, r, s) {
+        var st = (x && x.states && x.states[r.id]) || 'done';
+        return st === 'running' && s && s.state !== 'live' ? 'lost' : st;
     }
-    // One band per dispatch, in turn order, `surface` on the band; a workflow
-    // folds into one row per phase until that phase is opened. Agents that no
-    // dispatch in the transcript accounts for are a band of their own.
-    function dispatchHtml(x) {
+    // The tool a step names, the way the transcript named it.
+    function toolText(c) {
+        if (!c) return '';
+        if (c.k === 'read' || c.k === 'edit') return (c.n || (c.k === 'read' ? 'Read' : c.w ? 'Write' : 'Edit')) + ' ' + c.f;
+        if (c.k === 'cmd') return (c.n || 'Bash') + ': ' + c.c;
+        return c.c || c.n || '';
+    }
+    function stepLabel(k, w) {
+        if (k === 'edit' && w) return '寫';
+        return { read: '讀', edit: '改', cmd: '指令', find: '搜', other: '其他' }[k] || k;
+    }
+    // One step; `mode` is `cur` for the step in progress and `stop` for the one a
+    // lost agent never finished, and `tail` goes after it.
+    function stepLi(y, mode, tail) {
+        return '<li' + (mode ? ' class="' + mode + '"' : '') + '><span class="sk ' + esc(y.k) + '">' + stepLabel(y.k, y.w) + '</span><div>'
+            + (y.f ? '<span class="fl">' + esc(y.f) + '</span>' : '<span class="cm">' + esc(y.c) + '</span>')
+            + (!mode && y.r ? '<div class="rl">' + esc(y.r) + '</div>' : '') + '</div>' + (tail || '') + '</li>';
+    }
+    function agentPill(st) {
+        var title = st === 'running' ? 'running：還沒回來，它的 transcript 還在長'
+            : st === 'done' ? 'done：已經結束' : 'lost：它還沒結束，跑它的 session 就停了';
+        return '<span class="pill sm ' + st + '" title="' + title + '"><i class="dot '
+            + (st === 'running' ? 'live' : st === 'done' ? 'down' : 'lost') + '"></i>' + st + '</span>';
+    }
+    function agdots(x, list, s) {
+        return '<span class="agdots" aria-hidden="true">' + list.map(function (r) {
+            return '<i class="' + agentState(x, r, s) + '"></i>';
+        }).join('') + '</span>';
+    }
+    function stateTally(x, list, s) {
+        var c = { running: 0, done: 0, lost: 0 };
+        list.forEach(function (r) { c[agentState(x, r, s)] += 1; });
+        return ['running', 'done', 'lost'].filter(function (k) { return c[k]; }).map(function (k) { return c[k] + ' ' + k; }).join(' · ');
+    }
+    function modelOf(r) { return (r.agentType || '—') + ' · ' + String(r.model || r.alias || '—').replace(/^claude-/, ''); }
+    // Under a row's label: the tool a running agent is on and how long it has
+    // been on it, or where a lost one stopped and how long it had been at it by
+    // its transcript's last line.
+    function nowLine(st, steps, u) {
+        var cur = steps && steps.cur;
+        if (!cur || (st !== 'running' && st !== 'lost')) return '';
+        var what = esc(toolText(cur));
+        if (st === 'running') {
+            return '<div class="nowl"><span class="k">正在</span><span class="c" title="' + what + '">' + what + '</span>'
+                + (isNum(cur.t) ? '<span class="e">' + tk(-cur.t / 1000, 1, u.live, u.now / 1000) + '</span>' : '') + '</div>';
+        }
+        return '<div class="nowl lost"><span class="k">停在</span><span class="c" title="' + what + '">' + what + '</span>'
+            + (isNum(cur.t) && isNum(steps.lastAt) ? '<span class="e">跑了 ' + dur(Math.round((steps.lastAt - cur.t) / 1000)) + '</span>' : '') + '</div>';
+    }
+    // The running and lost counts, for the session header's 派工 readout.
+    function agentCounts(x, s) {
+        var run = 0, lost = 0;
+        x.rows.forEach(function (r) {
+            var st = agentState(x, r, s);
+            if (st === 'running') run += 1;
+            else if (st === 'lost') lost += 1;
+        });
+        return (run ? '<span class="runn"><i class="dot live"></i>' + run + ' running</span> · ' : '') + (lost ? lost + ' lost · ' : '');
+    }
+    function agentRow(r, cls, attr, x, s, u) {
+        var st = agentState(x, r, s), steps = x && x.steps ? x.steps[r.id] : null, open = !!u.open[r.id];
+        var time = st === 'running' && isNum(r.from) ? tk(-r.from / 1000, 1, u.live, u.now / 1000) : null;
+        return '<tr class="' + cls + ' is-' + st + '"' + (attr || '') + '><td><div class="stc">' + agentPill(st) + '<div class="bd">'
+            + '<button type="button" class="axt" data-ag="' + esc(r.id) + '" data-key="ag-' + esc(r.id) + '" aria-expanded="' + open + '"'
+            + ' title="' + (open ? '收起' : '展開') + ' prompt 與步驟"><span class="lab">' + esc(r.label || r.id) + '</span></button>'
+            + '<div class="l2">' + esc(modelOf(r)) + '</div>' + nowLine(st, steps, u) + '</div></div></td>'
+            + numCells(sums([r]), (r.unpriced || []).join(', '), time) + '<td class="r rc"></td></tr>'
+            + (open ? agentBody(r, cls, x, st, steps, u) : '');
+    }
+    // One agent opened: when it started and how long it ran, what it was sent
+    // (three lines until opened in full), its steps in order with any not yet
+    // answered marked in progress at their own position — `stepsOf` keeps
+    // every one of those out of the forty the cap counts — and what it
+    // returned. A `tool_use` still without a `tool_result` can only be the
+    // last thing in the transcript (nothing answered runs before it gets its
+    // result), so it and any other unanswered one from the same message are
+    // always the list's trailing entries; only the last of them is the one
+    // `cur` names and carries a start time — an earlier parallel call has
+    // none, so it gets the same marker with no ticking clock.
+    function agentBody(r, cls, x, st, steps, u) {
+        var d = r.disp === null || r.disp === undefined ? null : x.dispatches[r.disp];
+        var list = steps ? steps.steps || [] : [], cur = steps ? steps.cur : null, popen = !!u.prm[r.id];
+        var lastP = -1;
+        list.forEach(function (y, i) { if (y.p) lastP = i; });
+        var n = list.length + (steps ? steps.droppedN || 0 : 0);
+        var note = steps && steps.droppedN ? '<p class="stn">上限 40 步，另有 ' + steps.droppedN + ' 步沒列出（'
+            + Object.keys(steps.dropped || {}).map(function (k) { return stepLabel(k) + ' ' + steps.dropped[k]; }).join('、') + '）'
+            + (cur && st === 'running' ? '；進行中的步驟不算在上限裡，永遠留在最後' : '') + '</p>' : '';
+        var end = st === 'lost' && steps && isNum(steps.lastAt) ? steps.lastAt : r.to;
+        var ran = st === 'running' ? '已跑 <b>' + tk(-r.from / 1000, 1, u.live, u.now / 1000) + '</b>'
+            : '跑了 <b>' + (isNum(end) ? dur(Math.round((end - r.from) / 1000)) : '—') + '</b>';
+        var prompt = steps && typeof steps.prompt === 'string'
+            ? '<div class="prm' + (popen ? ' open' : '') + '"><div class="axl">prompt <span class="n">' + comma(steps.promptLen || steps.prompt.length) + ' 字元'
+                + (steps.promptLen > steps.prompt.length ? '，存了前 ' + comma(steps.prompt.length) : '') + '</span>'
+                + '<button type="button" class="lkb" data-prm="' + esc(r.id) + '" data-key="prm-' + esc(r.id) + '" aria-expanded="' + popen + '">'
+                + (popen ? '收起' : '展開全部') + '</button></div><pre>' + esc(steps.prompt) + '</pre></div>'
+            : '<div class="prm"><div class="axl">prompt <span class="n">transcript 裡沒有</span></div></div>';
+        var foot;
+        if (st === 'running') foot = '<div class="retl">還沒回來。回來後，這裡寫它回傳了多少字元。</div>';
+        else if (st === 'lost') foot = '<div class="retl lost">沒有回傳：它還沒結束，跑它的 session 就停了，結果沒有進主 context。</div>';
+        else if (!d) foot = '<div class="retl">沒有對上派工，不知道它回傳了多少。</div>';
+        else if (d.surface === 'workflow') {
+            foot = '<div class="retl">' + (steps && isNum(steps.lastAt) ? clockSec(steps.lastAt) + ' ' : '') + '結束。它的結果併在 workflow 的回報裡'
+                + (isNum(d.back) && d.ret !== null && d.ret !== undefined ? '；workflow 回傳 <b>' + comma(d.ret) + '</b> 字元進主 context'
+                    : '；workflow 還沒回來，還沒有回傳字元') + '。</div>';
+        } else if (isNum(d.back) && d.ret !== null && d.ret !== undefined) {
+            foot = '<div class="retl">' + clockSec(d.back) + ' 回來，回傳 <b>' + comma(d.ret) + '</b> 字元進主 context</div>';
+        } else foot = '<div class="retl">已經結束，回報還沒進主 context。</div>';
+        return '<tr class="ax ' + cls + ' is-' + st + '"><td colspan="9"><div class="axw">'
+            + '<div class="axh">' + (isNum(r.from) ? '<span>派出 <b>' + clockSec(r.from) + '</b></span><span>' + ran + '</span>' : '')
+            + '<span><b>' + n + '</b> 步</span><span>' + esc(modelOf(r)) + '</span></div>'
+            + prompt
+            + '<div><div class="axl">步驟 <span class="n">照順序，最新在下</span></div><ul class="stp">'
+            + list.map(function (y, i) {
+                if (!y.p) return stepLi(y);
+                var mode = st === 'lost' ? 'stop' : 'cur';
+                var tail = st === 'running'
+                    ? '<span class="pg"><i class="dot live"></i>進行中' + (i === lastP && isNum(cur && cur.t)
+                        ? ' ' + tk(-cur.t / 1000, 1, u.live, u.now / 1000) : '') + '</span>'
+                    : st === 'lost'
+                        ? '<span class="pg lost">沒跑完' + (i === lastP && isNum(cur && cur.t) && isNum(steps.lastAt)
+                            ? '・跑了 ' + dur(Math.round((steps.lastAt - cur.t) / 1000)) : '') + '</span>'
+                        : '';
+                return stepLi(y, mode, tail);
+            }).join('') + '</ul>' + note + '</div>'
+            + foot + '</div></td></tr>';
+    }
+    // One band per dispatch in turn order, `surface` on the band, and a row per
+    // agent carrying its state; a workflow folds into one row per phase until
+    // the phase is opened, and agents no dispatch accounts for are a band of
+    // their own. `s` is the session's list row — its liveness decides `lost` —
+    // and `ui` what the reader has open: `open` and `prm` by agent id, `ph` by
+    // phase key, `filter` one state or `all`, `now` the clock tickers start
+    // from and `live` whether they tick. Both may be left out.
+    function dispatchHtml(x, s, ui) {
+        var u = {
+            open: (ui && ui.open) || {}, prm: (ui && ui.prm) || {}, ph: (ui && ui.ph) || {},
+            filter: (ui && ui.filter) || 'all', now: ui && isNum(ui.now) ? ui.now : Date.now(), live: !!(ui && ui.live),
+        };
+        if (!x.rows.length) {
+            return '<div class="h2">派工 <small>這個 session 還沒派出 agent</small></div><div class="emptyd"><p class="et">還沒派出 agent</p><p class="es">'
+                + (u.live && s && s.state === 'live' ? '一派出，它會在下一次更新（3 秒內）出現在這裡，連同它正在跑的工具。這頁不必重新整理。'
+                    : '這個 session 沒有派出任何 agent。') + '</p></div>';
+        }
+        var n = { all: x.rows.length, running: 0, done: 0, lost: 0 };
+        x.rows.forEach(function (r) { n[agentState(x, r, s)] += 1; });
+        var filter = u.filter !== 'all' && n[u.filter] ? u.filter : 'all';
+        var pass = function (r) { return filter === 'all' || agentState(x, r, s) === filter; };
         var groups = {}, order = [];
         x.rows.forEach(function (r) {
-            var k = r.disp === null ? 'none' : String(r.disp);
+            var k = r.disp === null || r.disp === undefined ? 'none' : String(r.disp);
             if (!groups[k]) { groups[k] = []; order.push(k); }
             groups[k].push(r);
         });
@@ -1856,33 +2088,67 @@
             var da = x.dispatches[a], db = x.dispatches[b];
             return (da.turn || 0) - (db.turn || 0) || (da.out || 0) - (db.out || 0);
         });
+        // A session resumed under the same id: the process running it now
+        // started after some of these went out, and any of those not back is
+        // lost. One row says where the process changed.
+        var since = isNum(x.since) ? x.since : null, gapDone = false;
+        var early = since !== null && order.some(function (k) {
+            return k !== 'none' && isNum(x.dispatches[k].out) && x.dispatches[k].out < since;
+        });
+        var gap = function () {
+            var end = null;
+            (x.points || []).forEach(function (p) { if (isNum(p.t) && p.t < since && (end === null || p.t > end)) end = p.t; });
+            return '<tr class="gaprow"><td colspan="9">session ' + (end !== null ? '<b>' + clock(end) + '</b> 結束，' : '')
+                + '<b>' + clock(since) + '</b> 以同一個 session id 接回來；結束前派出、還沒回來的 agent 標成 lost</td></tr>';
+        };
         var body = order.map(function (k) {
-            var list = groups[k], d = k === 'none' ? null : x.dispatches[k];
+            var list = groups[k], d = k === 'none' ? null : x.dispatches[k], lead = '';
+            if (early && !gapDone && d && isNum(d.out) && d.out >= since) {
+                gapDone = true;
+                if (filter === 'all' || filter === 'lost') lead = gap();
+            }
+            var vis = list.filter(pass);
+            if (!vis.length) return lead;
+            var wf = !!d && d.surface === 'workflow';
+            var gone = !!d && !isNum(d.back) && list.every(function (r) { return agentState(x, r, s) !== 'running'; })
+                && list.some(function (r) { return agentState(x, r, s) === 'lost'; });
             var head = '<tr class="band"><td><div class="bandrow"><span class="sf ' + (d ? d.surface : 'agent') + '">'
                 + (d ? d.surface : '—') + '</span><span class="ell">' + esc(d ? d.text : '沒有對上派工的 agent') + '</span>'
+                + (wf ? agdots(x, list, s) + '<span class="phs">' + list.filter(function (r) { return agentState(x, r, s) === 'done'; }).length
+                    + ' / ' + list.length + ' done</span>' : '')
                 + '<span class="rt">' + (d && d.turn ? '回合 ' + d.turn : '')
-                + (d && isFinite(d.out) ? ' · ' + stamp(d.out).slice(11) + '→' + (isFinite(d.back) ? stamp(d.back).slice(11) : '…') : '')
+                + (d && isNum(d.out) ? ' · ' + stamp(d.out).slice(11) + '→' + (isNum(d.back) ? stamp(d.back).slice(11) : gone ? '沒回來' : '…') : '')
                 + '</span></div></td>' + numCells(sums(list), '') + '<td class="r rc">'
-                + (d && d.ret !== null && d.ret !== undefined ? comma(d.ret) : '—') + '</td></tr>';
-            if (!d || d.surface !== 'workflow') return head + list.map(function (r) { return agentRow(r, 'ag', ''); }).join('');
+                + (d && d.ret !== null && d.ret !== undefined ? comma(d.ret) : d && !gone && !isNum(d.back) ? '…' : '—') + '</td></tr>';
+            if (!wf) return lead + head + vis.map(function (r) { return agentRow(r, 'ag', '', x, s, u); }).join('');
             var phases = [];
             list.forEach(function (r) { var p = r.phase || '—'; if (phases.indexOf(p) < 0) phases.push(p); });
-            return head + phases.map(function (p, i) {
+            return lead + head + phases.map(function (p, i) {
                 var pr = list.filter(function (r) { return (r.phase || '—') === p; });
-                var key = 'ph-' + k + '-' + i;
-                return '<tr class="phr"><td><button type="button" class="phb" data-ph="' + key + '" aria-expanded="false">'
-                    + esc(p) + '<span class="n">· ' + pr.length + ' agents</span></button></td>' + numCells(sums(pr), '')
+                var shown = pr.filter(pass);
+                if (!shown.length) return '';
+                var key = 'ph-' + k + '-' + i, open = !!u.ph[key] || filter !== 'all';
+                return '<tr class="phr"><td><div class="phl"><button type="button" class="phb" data-ph="' + key + '" data-key="' + key
+                    + '" aria-expanded="' + open + '">' + esc(p) + '<span class="n">· ' + pr.length + ' agents</span></button>'
+                    + agdots(x, pr, s) + '<span class="phs">' + stateTally(x, pr, s) + '</span></div></td>' + numCells(sums(pr), '')
                     + '<td class="r rc"></td></tr>'
-                    + pr.map(function (r) { return agentRow(r, 'wa', ' data-in="' + key + '" hidden'); }).join('');
+                    + shown.map(function (r) { return agentRow(r, 'wa', ' data-in="' + key + '"' + (open ? '' : ' hidden'), x, s, u); }).join('');
             }).join('');
         }).join('');
+        if (early && !gapDone && (filter === 'all' || filter === 'lost')) body += gap();
+        var off = {};
+        ['running', 'done', 'lost'].forEach(function (k) { if (!n[k]) off[k] = '沒有這個狀態的 agent'; });
+        var dhead = '<div class="dhead"><div class="h2">派工 <small>這個 session 派了 <b>' + x.rows.length + '</b> 個 agent，分 '
+            + x.dispatches.length + ' 次派工</small></div><span class="spacer"></span>'
+            + segHtml('dfilter', [['all', '全部 ' + n.all], ['running', 'running ' + n.running], ['done', 'done ' + n.done], ['lost', 'lost ' + n.lost]], filter, off)
+            + '</div>';
         var all = sums(x.rows);
-        var ret = x.dispatches.reduce(function (n, d) { return n + (d.ret || 0); }, 0);
-        var launch = x.dispatches.reduce(function (n, d) { return n + (d.launch || 0); }, 0);
-        var wf = x.rows.filter(function (r) { return r.surface === 'workflow'; }).length;
-        var wfRun = x.runs.reduce(function (n, r) { return n + r.agents; }, 0);
+        var ret = x.dispatches.reduce(function (m, d) { return m + (d.ret || 0); }, 0);
+        var launch = x.dispatches.reduce(function (m, d) { return m + (d.launch || 0); }, 0);
+        var wfRows = x.rows.filter(function (r) { return r.surface === 'workflow'; }).length;
+        var wfRun = x.runs.reduce(function (m, r) { return m + r.agents; }, 0);
         var eq = function (a, b) { return '<span class="' + (a === b ? 'eq">＝' : 'ne">≠') + '</span>'; };
-        return '<table class="x dx"><colgroup><col><col style="width:50px"><col style="width:54px"><col style="width:54px">'
+        return dhead + '<table class="x dx"><colgroup><col><col style="width:50px"><col style="width:54px"><col style="width:54px">'
             + '<col style="width:48px"><col style="width:54px"><col style="width:48px"><col style="width:54px">'
             + '<col style="width:58px"></colgroup><thead><tr><th>派工</th><th class="r">耗時</th><th class="r">tokens</th>'
             + '<th class="r">USD</th><th class="r">input</th><th class="r">input USD</th><th class="r">output</th><th class="r">output USD</th>'
@@ -1890,37 +2156,41 @@
             + '<tbody>' + body + '</tbody><tfoot><tr><td>' + x.rows.length + ' 個 agent</td>' + numCells(all, '')
             + '<td class="r rc">' + comma(ret) + '</td></tr></tfoot></table>'
             + '<p class="tally">各列美元相加 <b>' + cents(all.c) + '</b> ' + eq(all.c, x.agentsTotal.cents) + ' agentsOf() 的 '
-            + cents(x.agentsTotal.cents) + '；workflow 派工 ' + wf + ' 列 ' + eq(wf, wfRun) + ' run 檔的 workflow_agent '
+            + cents(x.agentsTotal.cents) + '；workflow 派工 ' + wfRows + ' 列 ' + eq(wfRows, wfRun) + ' run 檔的 workflow_agent '
             + wfRun + ' 列</p>'
             + '<p class="tally">回傳字元是派工的結果進入主 context 的長度：背景 agent 與 workflow 取 task-notification，前景的取 Agent 的'
             + ' tool_result。背景啟動時回來的確認不算在內，這個 session 合計 ' + comma(launch) + ' 字元。美元照價目表 '
             + esc(S.pricesVerified || '—') + (x.unpriced.length ? '；價目表不認得、寫 unpriced 的：' + x.unpriced.map(esc).join('、') : '')
-            + '</p>';
+            + '</p>'
+            + (n.running ? '<p class="tally">running 的 ' + n.running + ' 列是到 ' + clockSec(isNum(x.at) ? x.at : u.now)
+                + ' 為止的 tokens 與美元，下一次重拉會再變；耗時照秒走。</p>' : '')
+            + (n.lost ? '<p class="tally">lost 的列沒有回傳字元：它的結果沒有進主 context。耗時算到它 transcript 的最後一行。</p>' : '');
     }
     function stepsFor(x, d) {
-        var SK = { read: '讀', edit: '改', cmd: '指令', find: '搜', other: '其他' };
         if (!d) return '';
         var ids = d.ids.filter(function (id) { return x.steps[id]; });
         if (!ids.length) return '';
         var shown = 0, total = 0;
         ids.forEach(function (id) { shown += x.steps[id].steps.length; total += x.steps[id].steps.length + x.steps[id].droppedN; });
-        return '<details class="stw"><summary class="rpx">展開它自己的步驟 <span class="n">' + shown + ' / ' + total + ' 步'
+        return '<details class="stw" data-key="stw-' + esc(d.key) + '"><summary class="rpx">展開它自己的步驟 <span class="n">' + shown + ' / ' + total + ' 步'
             + (ids.length > 1 ? ' · ' + ids.length + ' agents' : '') + '</span></summary>' + ids.map(function (id) {
                 var st = x.steps[id];
                 var r = x.rows.filter(function (y) { return y.id === id; })[0];
                 return (ids.length > 1 ? '<div class="stg">' + esc(r ? r.label : id) + '</div>' : '')
                     + '<ul class="stp">' + st.steps.map(function (y) {
-                        return '<li><span class="sk ' + y.k + '">' + (y.k === 'edit' && y.w ? '寫' : SK[y.k]) + '</span><div>'
+                        return '<li' + (y.p ? ' class="cur"' : '') + '><span class="sk ' + y.k + '">' + stepLabel(y.k, y.w) + '</span><div>'
                             + (y.f ? '<span class="fl">' + esc(y.f) + '</span>' : '<span class="cm">' + esc(y.c) + '</span>')
-                            + (y.r ? '<div class="rl">' + esc(y.r) + '</div>' : '') + '</div></li>';
+                            + (y.r ? '<div class="rl">' + esc(y.r) + '</div>' : '')
+                            + (y.p ? '<span class="pg"><i class="dot live"></i>進行中</span>' : '') + '</div></li>';
                     }).join('') + '</ul>'
                     + (st.droppedN ? '<p class="stn">上限 40 步，另有 ' + st.droppedN + ' 步沒列出（'
-                        + Object.keys(st.dropped).map(function (k) { return SK[k] + ' ' + st.dropped[k]; }).join('、') + '）</p>' : '');
+                        + Object.keys(st.dropped).map(function (k) { return stepLabel(k) + ' ' + st.dropped[k]; }).join('、') + '）</p>' : '');
             }).join('') + '</details>';
     }
     // One row per event in time order. Each dispatch's row opens into its
     // own steps, read from its own transcript; each kind can be hidden.
-    function replayHtml(x) {
+    function replayHtml(x, hidden) {
+        var off = hidden || {};
         var KINDS = [['prompt', 'prompt'], ['stage', '階段'], ['gate', 'gate'], ['out', '派出'], ['back', '回來'],
             ['edit', '改檔'], ['commit', 'commit'], ['test', '測試']];
         var tag = {};
@@ -1928,7 +2198,7 @@
         var count = {};
         x.events.forEach(function (e) { count[e.kind] = (count[e.kind] || 0) + 1; });
         var bar = '<div class="rpf" role="group" aria-label="事件種類">' + KINDS.map(function (k) {
-            return '<button type="button" data-rk="' + k[0] + '" aria-pressed="true">' + k[1] + '<span class="n">'
+            return '<button type="button" data-rk="' + k[0] + '" data-key="rk-' + k[0] + '" aria-pressed="' + !off[k[0]] + '">' + k[1] + '<span class="n">'
                 + (count[k[0]] || 0) + '</span></button>';
         }).join('') + '</div>';
         var list = x.events.map(function (e) {
@@ -1951,7 +2221,7 @@
                 body = e.files.map(function (f) { return '<span class="fl">' + esc(f.f) + (f.n > 1 ? ' ×' + f.n : '') + '</span>'; }).join('、');
             } else if (e.kind === 'commit') body = '<span class="sha">' + esc(e.sha) + '</span>' + esc(e.text);
             else body = esc(e.text);
-            return '<li data-kind="' + esc(e.kind) + '" data-t="' + (isFinite(e.t) ? e.t : '') + '"><span class="tm">'
+            return '<li data-kind="' + esc(e.kind) + '"' + (off[e.kind] ? ' hidden' : '') + ' data-t="' + (isFinite(e.t) ? e.t : '') + '"><span class="tm">'
                 + (isFinite(e.t) ? stamp(e.t).slice(11) : '—') + '</span><div class="tx"><span class="tg ' + esc(e.kind) + '">'
                 + esc(tag[e.kind] || e.kind) + '</span>' + body + '</div></li>';
         }).join('');
@@ -2106,19 +2376,20 @@
             });
             return;
         }
-        // A workflow phase opens into its agents.
+        // A workflow phase opens into its agents, an agent into its prompt and
+        // steps, a prompt in full. Each is remembered, so a re-read keeps it.
         var ph = e.target.closest('[data-ph]');
-        if (ph) {
-            var shown = ph.getAttribute('aria-expanded') !== 'true';
-            ph.setAttribute('aria-expanded', String(shown));
-            [].forEach.call(doc.querySelectorAll('[data-in="' + ph.getAttribute('data-ph') + '"]'), function (r) { r.hidden = !shown; });
-            return;
-        }
+        if (ph) { view.ph[ph.getAttribute('data-ph')] = ph.getAttribute('aria-expanded') !== 'true'; repaint(); return; }
+        var ag = e.target.closest('[data-ag]');
+        if (ag) { view.open[ag.getAttribute('data-ag')] = ag.getAttribute('aria-expanded') !== 'true'; repaint(); return; }
+        var pm = e.target.closest('[data-prm]');
+        if (pm) { view.prm[pm.getAttribute('data-prm')] = pm.getAttribute('aria-expanded') !== 'true'; repaint(); return; }
         // A replay kind is hidden or shown again.
         var rk = e.target.closest('[data-rk]');
         if (rk) {
             var on = rk.getAttribute('aria-pressed') !== 'true';
             rk.setAttribute('aria-pressed', String(on));
+            view.kinds[rk.getAttribute('data-rk')] = !on;
             [].forEach.call(doc.querySelectorAll('.rp > li[data-kind="' + rk.getAttribute('data-rk') + '"]'), function (li) { li.hidden = !on; });
             return;
         }
@@ -2194,8 +2465,136 @@
         || S.configDir;
     doc.getElementById('cfg').title = S.configDir || '';
 
+    // ---- live refresh --------------------------------------------------------
+    // Served, the page keeps itself current: every three seconds it re-reads the
+    // list and — while the session whose detail is on screen is live — that
+    // session's detail, each through a script tag the way it loaded them the
+    // first time, with a query string that only keeps the browser from answering
+    // out of its cache. A session no longer live has its detail re-read no more:
+    // nothing under it can move. A hidden tab re-reads nothing. The file
+    // `/fankeel` writes has no server to ask and keeps the moment it was written,
+    // so `S.serve` gates all of this as well as the protocol. Armed before the
+    // health poll, which stays the last interval this file sets.
+    var POLL_MS = 3000;
+    var busy = false;
+    // Everything worked out from `S`: at load, above, and again on every
+    // re-read below — one derivation rather than two that could drift apart.
+    // `serialize()` never emits a `label` field — the shortest-unique-tail
+    // rule lives only here, in `labels()`, since `navLabels` was deleted from
+    // `lib/station.js` on purpose so the rule would not exist in two places —
+    // and `match()`'s haystack still reads `s.label`, so it is reattached on
+    // every call rather than once.
+    function freshen() {
+        NOW = Date.parse(S.generatedAt);
+        LAB = labels(S.projects.map(function (p) { return p.root; }));
+        S.sessions.forEach(function (s) { s.label = LAB[s.root]; });
+        DAYS = lastDays(NOW, 30);
+        PREV = lastDays(NOW - 30 * 864e5, 30);
+        TODAY = DAYS[DAYS.length - 1];
+        NAMES = projectNames(S.sessions);
+        PKEYS = projectRows(S.sessions, DAYS).map(function (r) { return r.pkey; });
+    }
+    // A few seconds — well under anything a healthy local server needs — past
+    // which a script that neither loaded nor errored (a hung server, a stuck
+    // connection) is given up on: the tag is dropped and `done(false)` runs,
+    // so `busy` always clears and the next tick tries again rather than going
+    // silent forever. `settled` keeps a late `onload` after that point from
+    // running `done` a second time.
+    var RELOAD_TIMEOUT_MS = 4000;
+    function reload(src, done) {
+        var el = doc.createElement('script');
+        var settled = false;
+        var timer = w.setTimeout(function () {
+            if (settled) return;
+            settled = true;
+            if (el.parentNode) el.parentNode.removeChild(el);
+            done(false);
+        }, RELOAD_TIMEOUT_MS);
+        var finish = function (ok) {
+            if (settled) return;
+            settled = true;
+            w.clearTimeout(timer);
+            if (el.parentNode) el.parentNode.removeChild(el);
+            done(ok);
+        };
+        el.onload = function () { finish(true); };
+        el.onerror = function () { finish(false); };
+        el.src = src + (src.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now();
+        doc.head.appendChild(el);
+    }
+    // The session whose detail is on screen: the session page's, or the row
+    // selected on 清單.
+    function watched() {
+        var id = route.view === 'session' ? route.id : route.view === 'list' ? sel : null;
+        return id ? S.sessions.filter(function (x) { return x.id === id; })[0] || null : null;
+    }
+    function refresh() {
+        if (busy || doc.hidden) return;
+        busy = true;
+        reload('station/station-data.js', function (ok) {
+            if (!ok || !w.STATION || w.STATION === S) { busy = false; return; }
+            // `cleared` rides on the one load `/clear-stale` redirected to, and
+            // stays on the page rather than vanishing three seconds later.
+            if (isFinite(S.cleared) && w.STATION.cleared === undefined) w.STATION.cleared = S.cleared;
+            S = w.STATION;
+            freshen();
+            polledAt = Date.now();
+            var s = watched();
+            var done = function () { busy = false; repaint(); };
+            if (s && s.state === 'live' && s.hasDetail) reload('station/detail/' + encodeURIComponent(s.id) + '.js', done);
+            else done();
+        });
+    }
+    // A redraw that keeps what the reader had: which sections were open, where
+    // the list and the page were scrolled, and which control had focus, found
+    // again by its `data-key`. A reader typing into a field on the page holds
+    // the redraw back — it would throw the typing away — until the next re-read.
+    function repaint() {
+        var ae = doc.activeElement;
+        var typing = ae && (ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT'
+            || (ae.tagName === 'INPUT' && ae.id !== 'q' && !/^(checkbox|radio|button|submit)$/.test(ae.type || '')));
+        if (typing) return;
+        var key = ae && ae.getAttribute ? ae.getAttribute('data-key') : null;
+        var open = {};
+        [].forEach.call(doc.querySelectorAll('details[id],details[data-key]'), function (d) {
+            open[d.id || d.getAttribute('data-key')] = d.open;
+        });
+        var box = doc.querySelectorAll('.listcard .scroll')[0];
+        var boxTop = box ? box.scrollTop : 0;
+        var y = w.scrollY || 0;
+        draw();
+        [].forEach.call(doc.querySelectorAll('details[id],details[data-key]'), function (d) {
+            var k = d.id || d.getAttribute('data-key');
+            if (Object.prototype.hasOwnProperty.call(open, k)) d.open = open[k];
+        });
+        var again = doc.querySelectorAll('.listcard .scroll')[0];
+        if (again) again.scrollTop = boxTop;
+        if (typeof w.scrollTo === 'function') w.scrollTo(0, y);
+        if (key) {
+            var el = doc.querySelectorAll('[data-key="' + key + '"]')[0];
+            if (el && el.focus) el.focus();
+        }
+    }
+    // Once a second: every figure `tk()` marked, read through `tk()` itself
+    // (`live: false` so it hands back the bare text rather than a span to
+    // nest inside the one already on the page) rather than a second copy of
+    // its arithmetic, and the `N 秒前更新` beside the live tag.
+    function tickNow() {
+        var now = Date.now();
+        [].forEach.call(doc.querySelectorAll('.tkr'), function (el) {
+            el.textContent = tk(Number(el.getAttribute('data-b')), Number(el.getAttribute('data-m')), false, now / 1000);
+        });
+        [].forEach.call(doc.querySelectorAll('[data-ago]'), function (el) {
+            el.textContent = agoText(Math.round((now - polledAt) / 1000));
+        });
+    }
+    if (S.serve && w.location && w.location.protocol !== 'file:' && typeof w.setInterval === 'function') {
+        w.setInterval(refresh, POLL_MS);
+        w.setInterval(tickNow, 1000);
+    }
+
     // ---- serve health polling ----------------------------------------------
-    // Only `serve` (not `--open`, scripts/station.js:766) puts a server behind
+    // Only `serve` (not `--open`, which writes a file) puts a server behind
     // this fetch, so a page opened straight from disk must never start the
     // poll — it would show a permanent death banner for a state that is
     // simply normal there. `w.setInterval` is also checked so a stripped-down

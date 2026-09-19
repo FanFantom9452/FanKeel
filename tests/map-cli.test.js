@@ -77,3 +77,42 @@ test('without --print the map is still written', () => {
   run(dir);
   assert.ok(fs.existsSync(path.join(dir, '.fankeel', 'map.md')), 'no map written');
 });
+
+// This repository's own tree, read the way every stage reads it. The design
+// (docs/plans/2026-09-19-station-live-design.md §5) asked for the eleven
+// top-level directories with a responsibility each and the entry files of
+// lib/, scripts/ and hooks/, inside the fifty rows MAX_TREE carries. The top
+// rows are checked against the tracked tree, so a directory added later
+// without a row fails here, and every entry file against the disk.
+test('this repository\'s README carries a tree the map reads whole, with no row left unfilled', () => {
+  const ROOT = path.join(__dirname, '..');
+  const out = execFileSync(process.execPath, [SCRIPT, '--print', '--root', ROOT], { encoding: 'utf8' });
+  const lines = out.split(/\r?\n/);
+  const head = lines.find((l) => l.startsWith('tree — '));
+  assert.ok(head, 'no tree line: ' + lines.filter((l) => /tree/.test(l)).join(' | '));
+  assert.match(head, /^tree — \d+ rows from README\.md, under What lives where$/);
+  assert.doesNotMatch(head, /with no responsibility/);
+  assert.doesNotMatch(head, /shown/, 'the map cut the tree short');
+  assert.ok(Number(/^tree — (\d+) rows/.exec(head)[1]) <= 50, head);
+  // Tracked only: `--cached` alone, never `trackedFiles`'s `--others`, so a
+  // scratch directory a browser tool or an editor drops at the top of a
+  // developer's tree — untracked, unignored — cannot redden this. README's
+  // tree is compared against what is actually part of the project.
+  const { rows } = require('../scripts/layout.js');
+  const cached = execFileSync('git', ['ls-files', '-z', '--cached'], { cwd: ROOT, encoding: 'utf8' }).split('\0').filter(Boolean);
+  const dirs = [...rows(ROOT, cached).dirs.keys()].sort().map((d) => d + '/');
+  const top = lines.filter((l) => /^ {2}[├└]── /.test(l)).map((l) => l.slice(6).split(/\s+/)[0]);
+  assert.deepEqual(top, dirs, 'one row per top-level directory, in order');
+  const entries = {};
+  let current = null;
+  for (const l of lines) {
+    const t = /^ {2}[├└]── (\S+)/.exec(l);
+    if (t) { current = t[1]; continue; }
+    const e = /^ {2}[│ ] {3}[├└]── (\S+)/.exec(l);
+    if (e && current) (entries[current] = entries[current] || []).push(e[1]);
+  }
+  assert.deepEqual(Object.keys(entries).sort(), ['hooks/', 'lib/', 'scripts/']);
+  for (const dir of Object.keys(entries)) {
+    for (const name of entries[dir]) assert.ok(fs.existsSync(path.join(ROOT, dir, name)), dir + name + ' is in the tree and not on disk');
+  }
+});
