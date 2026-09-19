@@ -6,7 +6,7 @@ source_of_truth: 兩次互動實跑（session 5121ea58、942566e9）的 transcri
 
 # survey 交給 Opus 大腦：新舊模式的量測 — 2026-09-20
 
-**新模式跑得通：Sonnet 主控派 Opus 大腦、大腦派 Sonnet reader、使用者看到的關卡題目就是交接檔裡的原文。但在這個 survey 題目上它每一組都比舊模式慢、也比較貴，主控的 context 也沒有一致地變小。大腦派四個 reader 時慢 9–10 倍、貴 4.0–5.6 倍；拿掉 reader 仍慢 6.5–9.0 倍、貴 2.5–2.8 倍。之後兩次改大腦的 brief（`577f3e1`、`357924c`），把它的工具次數從 34、48 次壓到 11、18 次，花費比仍是 2.6–2.8 倍：大腦單獨的花費就超過整個舊模式，它的 output 是舊模式的 3.6–4.7 倍。**
+**新模式跑得通：Sonnet 主控派 Opus 大腦、大腦派 Sonnet reader、使用者看到的關卡題目就是交接檔裡的原文。但在這個 survey 題目上它每一組都比舊模式慢、也比較貴，主控的 context 也沒有一致地變小。大腦派四個 reader 時慢 9–10 倍、貴 4.0–5.6 倍；拿掉 reader 仍慢 6.5–9.0 倍、貴 2.5–2.8 倍。之後兩次改大腦的 brief（`577f3e1`、`357924c`），把它的工具次數從 34、48 次壓到 11、18 次，花費比仍是 2.6–2.8 倍：大腦單獨的花費就超過整個舊模式，它的 output 是舊模式的 3.6–4.7 倍——過半是 thinking（舊模式的 2.5–4.0 倍），其餘裡最大的一筆是交接檔，光它就比舊模式整站看得到的 output 多。**
 
 這是 [docs/plans/2026-09-19-survey-brain.md](../plans/2026-09-19-survey-brain.md) 的 Task 7，回答設計頁 [§8 量測](../plans/2026-09-19-survey-brain-design.md) 的問題。報告以實際跑的日期命名。
 
@@ -77,7 +77,7 @@ survey exit=0 shell_seconds=388
 
 ## 4. 怎麼讀這組數字
 
-- **這不是主控的價錢。** 舊模式在 `-p` 裡由 Opus 自己掃、自己讀，四臂裡沒有一次派 reader；新模式的大腦兩次都派了四個。多出來的 output tokens 大多是 reader 與大腦的，主控自己的 output 在 5,017 與 6,038 之間，跟舊模式的主 session（4,958 與 6,925）同一個量級。
+- **這不是主控的價錢。** 舊模式在 `-p` 裡由 Opus 自己掃、自己讀，四臂裡沒有一次派 reader；新模式的大腦兩次都派了四個。多出來的 output tokens 大多是 reader 與大腦的，主控自己的 output 是 2,805 與 3,330，跟舊模式的主 session（3,364 與 2,557）同一個量級（`ab-context.txt`；`ab-context.js` 原本把同一則訊息的每一行都算一次，後來改成每則只算一次）。
 - **主控的 context 沒有變小。** 設計的前提是每站一個乾淨 context、主控只留路徑與關卡。在 survey 這麼小的一站，舊模式的主 session 也只有 5.8–6.7 萬；新模式的主控 7.0–8.2 萬，互動那次 8.7 萬。survey 本身占掉的 context 比 skill、注入與大腦回傳的訊息還少，主控省不到東西。
 - **`-p` 沒有 `AskUserQuestion`。** 四臂都用文字列出關卡；新模式的主控因此把關卡原文打了一遍，這在互動模式不會發生。題目逐字相同這件事是第 2 節的互動實跑證明的，不是這一節。
 - **n=2。** 兩組方向一致，大小差了將近一倍（組 1 的新模式比組 2 多花 $2.09）；兩組都不足以說出穩定的倍數。
@@ -159,8 +159,24 @@ survey exit=0 shell_seconds=388
 - **nor5 的主控多查了兩次。** 它看到注入的 `<plugin>` 指向 scratchpad 的副本，先用兩個 Bash 確認才派大腦（指令在 `ab4-tools.txt`）。這是 `--plugin-dir` 指向副本才會有的事，互動使用不會發生；第 5 節 nor1 的那次 `ls` scratchpad 看來是同一件事。nor5 的 Sonnet 因此花 $0.37，其他 nor 臂 $0.23–0.29。
 - **n=2**，理由同第 4 節。
 
-## 8. 還沒量到的
+## 8. 大腦的 output 花在哪
+
+transcript 不存 thinking 的文字，thinking 區塊只留 signature。`ab-output.js` 取 ab2–ab4 每一則 assistant 訊息（依 message id 去重），把它的 output tokens 對三樣東西做不含截距的最小平方法：看得到的內容（文字與工具輸入）裡的 CJK 字數、其他字元數，和 signature 長度。208 則訊息，每個 CJK 字 1.184 token、其他字元 0.408、signature 每字元 0.269，R² 0.984（`ab-output.txt`）。每個 transcript 的 output 總數都與 `ab2`–`ab4-table.txt` 的 per model 相同；thinking 與看得到的部分是從這條式子拆出來的估計值。
+
+第 7 節那一組：
+
+| transcript | output | thinking（估） | 看得到的（估） | 其中交接檔的 Write（估） |
+|---|---|---|---|---|
+| old7 主 session | 2,839 | 2,231 | 1,458 | — |
+| nor5 大腦 | 10,109 | 5,513 | 4,354 | 2,654 |
+| old8 主 session | 2,911 | 1,842 | 1,656 | — |
+| nor6 大腦 | 13,636 | 7,310 | 5,872 | 3,795 |
+
+- **過半是 thinking。** 六個大腦估出的 thinking 占它 thinking 加看得到的部分 52–69%。上表兩個大腦的 thinking 是同組舊模式的 2.5 與 4.0 倍；ab2–ab4 的六個大腦在 5,513–11,906，六個舊模式主 session 在 1,731–2,478。
+- **看得到的部分裡，交接檔最大。** 大腦寫交接檔的那一次 Write 約 2,654 與 3,795 tokens，已經比同組舊模式整站看得到的 output（1,458 與 1,656）多。
+- **主控也在想。** nor 臂主控的 thinking 估 2,009–6,447，舊模式整個主 session 是 1,731–2,478。
+
+## 9. 還沒量到的
 
 - 兩邊寫出來的 survey 誰比較完整、比較對。這四組只量時間、花費與 context；大腦多花的 output 換到了什麼，沒有人比過。
-- 大腦的 output 花在哪裡：交接檔、thinking，還是別的。`claude -p` 的結果只給每個模型的總數。
 - 一站大到會把 context 撐開的情形（build），也就是設計頁想省的那一種；survey 撐不開。

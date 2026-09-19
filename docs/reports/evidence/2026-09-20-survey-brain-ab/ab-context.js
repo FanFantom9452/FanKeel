@@ -14,13 +14,16 @@ function fromLog(file) {
     return out;
 }
 function scan(file) {
-    let last = null, out = 0, model = null;
+    // One message can span several lines, each repeating its usage: output counts once per id.
+    let last = null, model = null;
+    const outById = new Map();
     for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
         let o; try { o = JSON.parse(line); } catch (e) { continue; }
         const m = o.message;
-        if (o.type === 'assistant' && m && m.usage) { last = m.usage; out += m.usage.output_tokens || 0; model = m.model || model; }
+        if (o.type === 'assistant' && m && m.usage) { last = m.usage; outById.set(m.id, Math.max(outById.get(m.id) || 0, m.usage.output_tokens || 0)); model = m.model || model; }
     }
     const ctx = last ? (last.input_tokens || 0) + (last.cache_read_input_tokens || 0) + (last.cache_creation_input_tokens || 0) : 0;
+    const out = [...outById.values()].reduce((a, n) => a + n, 0);
     return { ctx, out, model };
 }
 for (const [arm, s] of Object.entries(ARMS)) {

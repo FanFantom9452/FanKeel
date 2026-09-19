@@ -1,0 +1,38 @@
+old3 main: messages 6, output tokens 3069, visible chars 3562 (CJK 384), signature chars 7536
+nor1 main: messages 8, output tokens 5462, visible chars 4126 (CJK 325), signature chars 14524
+nor1 brain: messages 26, output tokens 17106, visible chars 18775 (CJK 457), signature chars 31988, the Write message: output tokens 5871, Write input chars 9175
+old4 main: messages 8, output tokens 3884, visible chars 4305 (CJK 434), signature chars 9208
+nor2 main: messages 9, output tokens 4598, visible chars 3448 (CJK 140), signature chars 13244
+nor2 brain: messages 26, output tokens 19436, visible chars 12401 (CJK 364), signature chars 44240, the Write message: output tokens 5536, Write input chars 6733
+old5 main: messages 6, output tokens 2897, visible chars 3577 (CJK 312), signature chars 6432
+nor3 main: messages 8, output tokens 3807, visible chars 2181 (CJK 306), signature chars 11344
+nor3 brain: messages 16, output tokens 12631, visible chars 11138 (CJK 393), signature chars 23852, the Write message: output tokens 4314, Write input chars 8144
+old6 main: messages 7, output tokens 2855, visible chars 3686 (CJK 325), signature chars 6688
+nor4 main: messages 9, output tokens 4560, visible chars 3299 (CJK 387), signature chars 12332
+nor4 brain: messages 16, output tokens 14766, visible chars 12502 (CJK 429), signature chars 31176, the Write message: output tokens 4397, Write input chars 9154
+old7 main: messages 6, output tokens 2839, visible chars 3038 (CJK 283), signature chars 8288
+nor5 main: messages 12, output tokens 7991, visible chars 5012 (CJK 154), signature chars 23956
+nor5 brain: messages 12, output tokens 10109, visible chars 9295 (CJK 728), signature chars 20484, the Write message: output tokens 4616, Write input chars 5124
+old8 main: messages 6, output tokens 2911, visible chars 3485 (CJK 303), signature chars 6844
+nor6 main: messages 8, output tokens 3279, visible chars 3011 (CJK 329), signature chars 7464
+nor6 brain: messages 19, output tokens 13636, visible chars 12094 (CJK 1213), signature chars 27160, the Write message: output tokens 4366, Write input chars 7000
+
+fit over 208 messages: tokens per CJK char 1.184, per other char 0.408, per signature char 0.269, R² 0.984
+  old3 main: output 3069 ≈ thinking 2028 + visible 1750 (of which the handoff Write 0)
+  nor1 main: output 5462 ≈ thinking 3909 + visible 1934 (of which the handoff Write 0)
+  nor1 brain: output 17106 ≈ thinking 8609 + visible 8009 (of which the handoff Write 4095)
+  old4 main: output 3884 ≈ thinking 2478 + visible 2092 (of which the handoff Write 0)
+  nor2 main: output 4598 ≈ thinking 3564 + visible 1514 (of which the handoff Write 0)
+  nor2 brain: output 19436 ≈ thinking 11906 + visible 5338 (of which the handoff Write 3027)
+  old5 main: output 2897 ≈ thinking 1731 + visible 1700 (of which the handoff Write 0)
+  nor3 main: output 3807 ≈ thinking 3053 + visible 1127 (of which the handoff Write 0)
+  nor3 brain: output 12631 ≈ thinking 6419 + visible 4846 (of which the handoff Write 3625)
+  old6 main: output 2855 ≈ thinking 1800 + visible 1755 (of which the handoff Write 0)
+  nor4 main: output 4560 ≈ thinking 3319 + visible 1645 (of which the handoff Write 0)
+  nor4 brain: output 14766 ≈ thinking 8390 + visible 5430 (of which the handoff Write 4063)
+  old7 main: output 2839 ≈ thinking 2231 + visible 1458 (of which the handoff Write 0)
+  nor5 main: output 7991 ≈ thinking 6447 + visible 2163 (of which the handoff Write 0)
+  nor5 brain: output 10109 ≈ thinking 5513 + visible 4354 (of which the handoff Write 2654)
+  old8 main: output 2911 ≈ thinking 1842 + visible 1656 (of which the handoff Write 0)
+  nor6 main: output 3279 ≈ thinking 2009 + visible 1483 (of which the handoff Write 0)
+  nor6 brain: output 13636 ≈ thinking 7310 + visible 5872 (of which the handoff Write 3795)

@@ -1,21 +1,21 @@
-old1  main (claude-opus-5): context at last turn 66902, output 6925
-new1  main (claude-sonnet-5): context at last turn 69840, output 5017
-    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 24879, output 4741
-    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 70640, output 21470
-    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 64229, output 12569
-    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 36162, output 8133
-    fankeel:fankeel-brain depth 1 (claude-opus-5): context at last turn 96605, output 28845
-old2  main (claude-opus-5): context at last turn 58420, output 4958
-new2  main (claude-sonnet-5): context at last turn 81675, output 6038
-    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 20996, output 2737
-    fankeel:fankeel-brain depth 1 (claude-opus-5): context at last turn 82886, output 17837
-    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 28839, output 6090
-    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 22341, output 3213
-    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 26000, output 4144
-interactive  main (claude-sonnet-5): context at last turn 86842, output 3524
-    fankeel:fankeel-brain depth 1 (claude-opus-5): context at last turn 87776, output 19212
-    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 27076, output 4930
-    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 27709, output 4224
-    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 40956, output 11954
-    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 46759, output 5054
-    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 48267, output 13983
+old1  main (claude-opus-5): context at last turn 66902, output 3364
+new1  main (claude-sonnet-5): context at last turn 69840, output 2805
+    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 24879, output 4682
+    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 70640, output 19479
+    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 64229, output 12445
+    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 36162, output 8041
+    fankeel:fankeel-brain depth 1 (claude-opus-5): context at last turn 96605, output 28436
+old2  main (claude-opus-5): context at last turn 58420, output 2557
+new2  main (claude-sonnet-5): context at last turn 81675, output 3330
+    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 20996, output 2700
+    fankeel:fankeel-brain depth 1 (claude-opus-5): context at last turn 82886, output 17601
+    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 28839, output 6010
+    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 22341, output 3150
+    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 26000, output 4065
+interactive  main (claude-sonnet-5): context at last turn 86842, output 1683
+    fankeel:fankeel-brain depth 1 (claude-opus-5): context at last turn 87776, output 19066
+    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 27076, output 4590
+    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 27709, output 4188
+    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 40956, output 11803
+    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 46759, output 3953
+    fankeel:fankeel-reader depth 2 (claude-sonnet-5): context at last turn 48267, output 13865
