@@ -33,6 +33,18 @@ function seed(root, over) {
   }, over), null, 2) + '\n');
 }
 
+// The project file, not the machine one: `hooks/brief.js` (copying
+// hooks/resume.js) resolves the project root as `docs.projectRootsFor(root,
+// mine.project ? [mine.project] : [])[0] || root`, and none of these records
+// set `project`, so that call returns `root` itself. The machine file would
+// mean writing under `CLAUDE_CONFIG_DIR`/HOME, outside this test's tmp dir —
+// real, shared, machine-wide state a test must not touch.
+function seedProfile(root, values) {
+  const dir = path.join(root, '.fankeel');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'profile.json'), JSON.stringify(values, null, 2) + '\n');
+}
+
 function run(root, payload) {
   return execFileSync(process.execPath, [HOOK], {
     input: typeof payload === 'string' ? payload : JSON.stringify(payload),
@@ -214,6 +226,7 @@ test('a stage agent gets its stage\'s rules and shape, its skill, and where to w
   const { SCRIPTS, PLUGIN_ROOT, RETURN_RULES } = require('../lib/render.js');
   const { landClause } = require('../lib/profile.js');
   const root = tmp();
+  seedProfile(root, { 'stage.agents': true });
   seed(root, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
   const expected = rulesFor('survey', Object.assign({ next: 'design', profileLand: landClause({}) }, SCRIPTS));
@@ -227,6 +240,29 @@ test('a stage agent gets its stage\'s rules and shape, its skill, and where to w
   // "the answer is above" points at a line holding nothing but a path.
   assert.ok(text.includes('The user sees only the path to your report'), 'the gate must stand on its own');
   assert.ok(text.length < 10000, 'brain brief is ' + text.length + ' chars');
+});
+
+// `stage.agents` gates the brain branch itself, not just the mechanism around
+// it: `renderBrief` never read a profile before this, so `hooks/brief.js`
+// never passed one, and `fankeel-brain` got the controller's block regardless
+// of the switch — a handoff nothing reads. docs/subagents.md's own opening
+// sentence says otherwise.
+test('a stage agent with stage.agents off gets the ordinary brief', () => {
+  const root = tmp();
+  seed(root, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.ok(!text.includes('stage rules:'));
+  assert.ok(!text.includes('survey.md'));
+  assert.ok(text.length < 1400, 'brief is ' + text.length + ' chars');
+});
+
+test('a stage agent at a stage with no controller gets the ordinary brief', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': true });
+  seed(root, { stage: 'design', started: '2026-09-19T09:30:12.345Z' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.ok(!text.includes('stage rules:'));
+  assert.ok(!text.includes('design.md'));
 });
 
 test('every other agent type at survey gets no stage rules', () => {

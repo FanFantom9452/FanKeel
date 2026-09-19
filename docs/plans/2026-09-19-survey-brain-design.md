@@ -21,7 +21,7 @@ survey 換成新模式，其餘各站照舊；用 profile 開關決定走哪一�
 | `PreToolUse` 的 `updatedInput` 會取代整個 tool input；文件寫的 `AskUserQuestion` 用法是 `allow` 加 `updatedInput` 由程式代答 | 同上，行 1064、1794、1814 |
 | 實測：hook 只回 `updatedInput`、不帶 `permissionDecision` 時，`AskUserQuestion` 顯示換過的題目，照樣讓人點選，模型收到的回答對應換過的題目（它也看得出題目被換過） | 2026-09-20，Claude Code v2.1.278 互動模式；[plan](2026-09-19-survey-brain.md) Task 1 |
 | 七站 skill 有六份超過 10,000 字（`wc -c`：design 9,672，build 26,379） | 本 repo，2026-09-19 |
-| 一站的 `rulesFor` 加 `templateFor` 是 1,955–2,092 字；現在的 brief 1,067 字，測試上限 1,400 | `tests/brief.test.js:133` |
+| 一站的 `rulesFor` 加 `templateFor` 是 1,955–2,092 字；現在的 brief 1,067 字，測試上限 1,400 | `tests/brief.test.js:145` |
 
 所以 skill 不走 hook：brief 只給 skill 的路徑，大腦自己 Read。站別從 registry 的
 `stage` 讀，因為 payload 裡沒有 prompt。

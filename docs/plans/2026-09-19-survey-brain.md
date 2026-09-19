@@ -18,7 +18,7 @@ last_verified: 2026-09-19
 - `README.md` 的目錄樹（`.fankeel/map.md` 轉載）：`hooks/` 裡每個 hook「reads stdin, exits 0 on every path and leaves the work to lib/」；`lib/` 是「the logic, as functions tested directly; nothing here reaches into scripts/ or hooks/」；`tests/` 是「node --test, one file per module or behaviour; tmp.js is where every scratch directory comes from」。
 - `.claude-plugin/plugin.json`：`gate.js`、`resume.js`、`brief.js`、`inject.js` 的 `timeout` 都是 5 秒。
 - commit 格式照 `lib/stages.js:211` 的 `COMMIT`：「Commit: `type: what changed` under 60 characters; one bullet per change, `- <what changed> — <module>`; one paragraph only for what a bullet cannot hold.」
-- `tests/brief.test.js:133`：一般 agent type 的 brief 必須 `text.length < 1400`。大腦的 brief 另有上限 10,000（Claude Code 對單一 `additionalContext` 的上限，hooks.md 行 941）。
+- `tests/brief.test.js:145`：一般 agent type 的 brief 必須 `text.length < 1400`。大腦的 brief 另有上限 10,000（Claude Code 對單一 `additionalContext` 的上限，hooks.md 行 941）。
 - `tests/render.test.js:527`：每一站的主區塊在 `REFERENCE_ROOT`（`tests/reference-size.js:19`，59 字）下必須短於 2400；`tests/render.test.js:479`：最壞情況整段注入短於 3000。
 - `tests/agents.test.js:10` 的 `NAMES` 必須和 `.claude-plugin/plugin.json` 的 `agents` 同順序（`:54`），也必須和 `agents/` 目錄的檔案一一對應（`:56`）。
 - `tests/source.test.js`：每個 export 都要有人 import，而且它讀 `git ls-files`，所以新檔要先 `git add` 再跑。
