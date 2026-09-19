@@ -680,6 +680,18 @@ test('stage.agents true at survey: the controller\'s block replaces the stage\'s
   }
 });
 
+test('stage.agents true at survey, the route ending there: option one stands the task down', () => {
+  const { renderResume } = require('../lib/render.js');
+  const readRule = byName('survey').rules.find((r) => r.startsWith('Read whatever documents'));
+  const on = { values: { 'stage.agents': true }, sources: {}, unreadable: [] };
+  const mine = entry(MINE, { stage: 'survey', route: ['survey'], started: '2026-09-19T09:30:12.345Z' });
+  for (const out of [render({ mine, others: [], now: NOW, root: '/r', profile: on }), renderResume({ mine, profile: on, root: '/r' })]) {
+    assert.ok(out.includes('fankeel:fankeel-brain'), out);
+    assert.ok(out.includes(' down --session ' + MINE), out);
+    assert.ok(!out.includes(readRule), 'the survey rules go to the stage agent');
+  }
+});
+
 test('stage.agents false or absent, or a stage with no controller: the block it always was', () => {
   const readRule = byName('survey').rules.find((r) => r.startsWith('Read whatever documents'));
   const mine = entry(MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });

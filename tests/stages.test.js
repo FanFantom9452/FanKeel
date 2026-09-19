@@ -850,7 +850,7 @@ test('every rule reaches the injected block, and removing one drops only it', ()
 
 test('controlFor fills every token it is given, and only survey has one', () => {
   const { controlFor, controlling } = require('../lib/stages.js');
-  const c = controlFor('survey', { next: 'design', task: '<plugin>/scripts/task.js', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
+  const c = controlFor('survey', { advance: 'stage design', task: '<plugin>/scripts/task.js', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
   assert.ok(c.rules.length > 0);
   assert.ok(!c.rules.join(' ').includes('{{'), c.rules.join('\n'));
   assert.ok(c.rules.join(' ').includes('fankeel:fankeel-brain'));

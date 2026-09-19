@@ -38,6 +38,7 @@ survey 換成新模式，其餘各站照舊；用 profile 開關決定走哪一�
 - `stage.agents` 為 `true`、站在 `survey` 時，`hooks/inject.js` 注入的 `stage rules:` 和
   `output shape:` 換成主控規則與主控形狀；其他站照舊。`hooks/resume.js` 在關卡答完後
   重送的區塊也照這個規則換。
+  - `task.js start` 與 `task` 在這一站印出的第一步也換成主控規則：task 開始的那一輪還沒有任何注入，主控只看得到這一行。
 - 主控規則只有這幾步：派一個 `fankeel:fankeel-brain`，prompt 只寫站名；它回傳後，印出
   交接檔路徑一行，然後呼叫 `AskUserQuestion`；使用者的選擇照下面的表處理。
 - 主控不轉述交接檔的內容。使用者要讀的報告就是那份檔。
@@ -45,7 +46,7 @@ survey 換成新模式，其餘各站照舊；用 profile 開關決定走哪一�
 
 | 使用者選了 | 主控做的事 |
 |---|---|
-| 選項一 | `task.js stage <下一站>`，下一站由 `{{NEXT}}` 代入，跟現在一樣 |
+| 選項一 | `task.js stage <下一站>`，下一站由 `{{NEXT}}` 代入；route 在這一站結束時是 `task.js down` |
 | 留在這一站，或 Other | `SendMessage` 給大腦，內容固定一句：「使用者的回答在 `<回答檔>`」；大腦改寫交接檔之後，回到 `AskUserQuestion` |
 | 暫停 | `task.js next --from-gate`，暫停時要寫的那一行由 script 從關卡區塊讀 |
 
@@ -71,7 +72,7 @@ survey 換成新模式，其餘各站照舊；用 profile 開關決定走哪一�
 ## 5. 交接檔
 
 - 路徑是 `.fankeel/build/task-<started>/<stage>.md`，`<started>` 取 registry 的 `started`
-  （adopt 會保留它，`scripts/task.js:926`）。
+  （adopt 會保留它，`scripts/task.js:950`）。
 - 路徑由新檔 `lib/handoff.js` 的一個函式算；brief、`gate.js`、`resume.js`、`task.js` 都
   呼叫這一個函式。
 - 內容是這一站 output shape 填好的報告，後面接一個 `json gate` 區塊：

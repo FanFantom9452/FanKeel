@@ -935,6 +935,52 @@ test('task refuses when this session owns nothing, and names what begins one', (
   assert.equal(entry(dir, A), null);
 });
 
+// The turn `start` prints in has no injection yet — `hooks/inject.js` runs on
+// the next prompt, not this one — so where `stage.agents` is on for the stage
+// just entered, the controller's rules have to be the FIRST_STEP line itself.
+test('start at survey with stage.agents true prints the controller\'s rules, not the scanner step', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  run(dir, ['profile', 'set', 'stage.agents', 'true', '--default'], { CLAUDE_CONFIG_DIR: cfg });
+
+  const { out, code } = run(dir, ['start', '--session', A, '--task', 'x', '--route', 'survey,design'], { CLAUDE_CONFIG_DIR: cfg });
+  assert.equal(code, 0, out);
+  assert.match(out, /fankeel:fankeel-brain/);
+  assert.match(out, new RegExp('stage design --session ' + A));
+  assert.doesNotMatch(out, /run the scanner/);
+
+  // A fresh registry, its own machine profile: a route ending at survey gets
+  // the controller's block too, with option one standing the task down.
+  const dir2 = root();
+  const cfg2 = path.join(dir2, 'cfg');
+  run(dir2, ['profile', 'set', 'stage.agents', 'true', '--default'], { CLAUDE_CONFIG_DIR: cfg2 });
+  const second = run(dir2, ['start', '--session', A, '--task', 'y', '--route', 'survey'], { CLAUDE_CONFIG_DIR: cfg2 });
+  assert.equal(second.code, 0, second.out);
+  assert.match(second.out, new RegExp(' down --session ' + A));
+});
+
+test('start at survey with stage.agents false keeps the scanner step', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  run(dir, ['profile', 'set', 'stage.agents', 'false', '--default'], { CLAUDE_CONFIG_DIR: cfg });
+
+  const { out, code } = run(dir, ['start', '--session', A, '--task', 'x', '--route', 'survey,design'], { CLAUDE_CONFIG_DIR: cfg });
+  assert.equal(code, 0, out);
+  assert.match(out, /run the scanner/);
+  assert.doesNotMatch(out, /fankeel:fankeel-brain/);
+});
+
+test('task at survey with stage.agents true prints the controller\'s rules', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  run(dir, ['profile', 'set', 'stage.agents', 'true', '--default'], { CLAUDE_CONFIG_DIR: cfg });
+  run(dir, ['start', '--session', A, '--task', 'x', '--route', 'survey,design'], { CLAUDE_CONFIG_DIR: cfg });
+
+  const { out, code } = run(dir, ['task', 'another question', '--session', A], { CLAUDE_CONFIG_DIR: cfg });
+  assert.equal(code, 0, out);
+  assert.match(out, /fankeel:fankeel-brain/);
+});
+
 // Two readers of liveness sit in this file — the collision scan and the listing
 // `show` prints — and only the first was pinned. Deleting the filter from the
 // listing left 599 of 599 tests passing; deleting the same filter from the
