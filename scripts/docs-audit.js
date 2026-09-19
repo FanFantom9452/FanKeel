@@ -642,12 +642,19 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     // and the worse wording of it: an index is a markdown file like any other, so
     // anything it fails to list is unreachable by definition. Two names for one
     // problem is how a report starts looking longer than it is.
+    //
+    // Archives and fixtures are left out for the reasons the index check above
+    // gives. This branch runs only where no index has been written, so on this
+    // repository it is the empty list either way — but the check is not scoped
+    // to this repository, and a project with fixtures and no index yet would
+    // otherwise be told its test inputs are pages the tree has lost.
     const pointedTo = new Set();
     for (const rel of markdown) for (const target of points.get(rel).markdown) pointedTo.add(target);
     const orphans = index.exists ? [] : markdown.filter((rel) => rel.split('/')[0] === docRoot
         && rel !== indexRel
         && !pointedTo.has(rel)
-        && docs.roleOf(tree, rel) !== 'archive');
+        && docs.roleOf(tree, rel) !== 'archive'
+        && docs.roleOf(tree, rel) !== 'fixture');
 
     // 6. Code nothing describes. Top level only: a directory with no reference
     // document naming anything inside it is a part of the system documentation

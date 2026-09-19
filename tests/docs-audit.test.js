@@ -500,6 +500,27 @@ test('with no index, a document nothing links to is named', () => {
   assert.deepEqual(sweep(root).orphans, ['docs/02-b.md']);
 });
 
+// The same exemption as the index check above, on the branch that runs when no
+// index has been written. A fixture linked from nowhere is a test's own input
+// sitting where it belongs, not a page the tree has lost track of, and a
+// project with fixtures and no index yet would otherwise be told it has.
+test('with no index written, a fixture is not an orphan either', () => {
+  const root = tree({
+    '.fankeel/docs.json': { age: 1, body: JSON.stringify({
+      buckets: [
+        { path: 'docs', role: 'reference', depth: 1 },
+        { path: 'docs/reports/evidence', role: 'fixture' },
+      ],
+    }) },
+    'docs/01-a.md': { age: 1, body: '# a\n' },
+    'docs/02-b.md': { age: 1, body: '[a](01-a.md)\n' },
+    'docs/reports/evidence/2026-01-01-run/handoff.md': { age: 1, body: '# raw\n' },
+  });
+  const r = sweep(root);
+  assert.equal(r.index.exists, false, 'the branch under test only runs with no index written');
+  assert.deepEqual(r.orphans, ['docs/02-b.md']);
+});
+
 // Where an index exists it is a markdown file like any other, so a document it
 // does not list is unreachable by definition — and "missing from the index" is
 // the same finding said better.
