@@ -27,13 +27,14 @@ survey 換成新模式，其餘各站照舊；用 profile 開關決定走哪一�
 
 ## 1. 開關
 
-- `lib/profile.js` 的 `KEYS` 加一個 `stage.agents`，值是 `off` 或 `on`，builtin 是 `off`。
-- `on` 只改變有主控規則的站；這一刀只有 `survey` 有。
-- `off` 時，每一個注入區塊跟現在逐字相同。
+- `lib/profile.js` 的 `KEYS` 加一個 `stage.agents`，值是 `true` 或 `false`，builtin 是 `false`。不用 `on`／`off`：`parseValue` 只把
+  `true`／`false` 轉成布林，`lib/stages.js` 的 `holds()` 會把字串 `off` 當成開。
+- `true` 只改變有主控規則的站；這一刀只有 `survey` 有。
+- `false` 時，每一個注入區塊跟現在逐字相同。
 
 ## 2. 主控規則
 
-- `stage.agents` 為 `on`、站在 `survey` 時，`hooks/inject.js` 注入的 `stage rules:` 和
+- `stage.agents` 為 `true`、站在 `survey` 時，`hooks/inject.js` 注入的 `stage rules:` 和
   `output shape:` 換成主控規則與主控形狀；其他站照舊。`hooks/resume.js` 在關卡答完後
   重送的區塊也照這個規則換。
 - 主控規則只有這幾步：派一個 `fankeel:fankeel-brain`，prompt 只寫站名；它回傳後，印出
@@ -87,7 +88,7 @@ survey 換成新模式，其餘各站照舊；用 profile 開關決定走哪一�
 ## 7. 文件
 
 - `skills/fankeel/SKILL.md` 的「Delegate a job inside a stage; never the stage itself」
-  加上例外：`stage.agents` 為 `on` 時的大腦。
+  加上例外：`stage.agents` 為 `true` 時的大腦。
 - `docs/subagents.md` 補上大腦的 brief 與主控規則；`docs/pipeline.md` 補上 `stage.agents`
   與大腦 brief 的 10,000 字上限。
 - 寫「five」個 agent 的地方改成六個：`README.md`、`docs/README.md`、`docs/subagents.md`。
@@ -105,10 +106,10 @@ survey 換成新模式，其餘各站照舊；用 profile 開關決定走哪一�
 
 ## 證明做完
 
-- `tests/brief.test.js`：`fankeel-brain` 在 survey、`stage.agents` 為 `on` 時，brief 帶有
+- `tests/brief.test.js`：`fankeel-brain` 在 survey、`stage.agents` 為 `true` 時，brief 帶有
   `rulesFor('survey')` 每一行、`templateFor('survey')`、skill 路徑、交接檔路徑，而且短於
   10,000 字。現在會失敗。
-- `tests/render.test.js`：`on` 加 survey 時注入的是主控規則、不是 survey 的規則；`off` 時跟
+- `tests/render.test.js`：`true` 加 survey 時注入的是主控規則、不是 survey 的規則；`false` 時跟
   沒有這個鍵的輸出逐字相同。
 - `gate.js` 的測試：交接檔有關卡區塊時，`updatedInput.questions` 等於檔案裡的原文。
 - 產出物：一次實跑之後，transcript 裡 `AskUserQuestion` 的 input 和交接檔的關卡區塊逐字
