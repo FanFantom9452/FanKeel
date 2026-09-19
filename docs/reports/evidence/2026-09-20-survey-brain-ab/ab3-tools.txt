@@ -1,0 +1,16 @@
+old5  main: tool calls 4 (Bash 4), first to last timestamp 45s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session 53648dd3-4db5-459c-ba76-ce03012df6b4 --task "survey only: which code reads the registry's started field, a
+    $ cd F:/ymlab/fankeel && cat skills/fankeel-survey/SKILL.md; echo ======; node scripts/map.js; echo "exit $?"; echo ======; node scripts/survey.js started; echo "
+    $ cd F:/ymlab/fankeel && sed -n '/planned, not built/,/^## /p' .fankeel/map.md | head -30; echo =====; git grep -n -E "\bstarted\b" -- lib hooks scripts assets ':
+    $ cd F:/ymlab/fankeel && sed -n 80,92p lib/guard.js; git grep -n "startedAt" -- lib hooks scripts; echo ==dirty; sed -n 96,102p lib/dirty.js; sed -n 144,156p lib/
+nor3  main: tool calls 6 (Bash 1, Agent 1, ToolSearch 3, Read 1), first to last timestamp 205s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session 441e07e0-4fc2-454e-81c6-3bfb38b98764 --task "survey only: which code reads the registry's started field, a
+    fankeel:fankeel-brain: tool calls 30 (Read 18, Bash 2, Grep 9, Write 1; Read with a line range 14), first to last timestamp 159s
+old6  main: tool calls 6 (Bash 4, Skill 1, Grep 1), first to last timestamp 46s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session 9fa90075-07b6-42f8-a5a6-7445643a4b76 --task "survey only: which code reads the registry's started field, a
+    $ cd F:/ymlab/fankeel && node scripts/orient.js; echo "---MAP"; node scripts/map.js; echo "---TREE"; node scripts/survey.js --tree; echo "---SCAN"; node scripts/s
+    $ cd F:/ymlab/fankeel && sed -n '/planned, not built/,/^## /p' .fankeel/map.md | head -20; for s in "lib/guard.js 80 100" "lib/dirty.js 140 160" "lib/handoff.js 1
+    $ cd F:/ymlab/fankeel && grep -n "claimWrites" hooks/*.js lib/*.js scripts/*.js; sed -n '360,368p' lib/station.js; git status --porcelain | grep -v '^??'
+nor4  main: tool calls 7 (Bash 1, Agent 1, ToolSearch 4, Read 1), first to last timestamp 251s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session 77c619a4-2f96-4c0e-9623-0ea9ad485051 --task "survey only: which code reads the registry's started field, a
+    fankeel:fankeel-brain: tool calls 28 (Read 17, Bash 6, Grep 4, Write 1; Read with a line range 12), first to last timestamp 187s

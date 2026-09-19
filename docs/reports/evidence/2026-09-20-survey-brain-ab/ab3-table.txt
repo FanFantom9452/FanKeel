@@ -1,0 +1,14 @@
+| arm | model | stage.agents | shell s | cost (modelUsage) | total_cost_usd | input | output | cache read | cache write | turns | subagents | handoff |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| old5 | claude-opus-5 | false | 35 | $0.48 | $0.48 | 12 | 2897 | 198439 | 30407 | 4 | none | session 53648dd3 |
+| nor3 | claude-sonnet-5 + claude-opus-5[1m] | true | 196 | $1.34 | $1.34 | 48 | 16438 | 1075576 | 104111 | 6 | 1 fankeel-brain | session 441e07e0 |
+| old6 | claude-opus-5 | false | 36 | $0.72 | $0.72 | 14 | 2855 | 281630 | 50794 | 7 | none | session 9fa90075 |
+| nor4 | claude-sonnet-5 + claude-opus-5[1m] | true | 237 | $1.60 | $1.60 | 50 | 19326 | 1295552 | 121226 | 7 | 1 fankeel-brain | session 77c619a4 |
+
+per model, per arm:
+  old5  claude-opus-5  $0.4758  in 12  out 2897  cacheR 198439  cacheW 30407
+  nor3  claude-sonnet-5  $0.2651  in 16  out 3807  cacheR 381051  cacheW 37709
+  nor3  claude-opus-5[1m]  $1.0782  in 32  out 12631  cacheR 694525  cacheW 66402
+  old6  claude-opus-5  $0.7202  in 14  out 2855  cacheR 281630  cacheW 50794
+  nor4  claude-sonnet-5  $0.2887  in 18  out 4560  cacheR 428288  cacheW 39356
+  nor4  claude-opus-5[1m]  $1.3146  in 32  out 14766  cacheR 867264  cacheW 81870

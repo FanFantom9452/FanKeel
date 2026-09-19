@@ -15,4 +15,4 @@ old4  main: tool calls 6 (Bash 5, Skill 1), first to last timestamp 59s
 nor2  main: tool calls 6 (Bash 2, Agent 1, ToolSearch 3), first to last timestamp 327s
     $ cd F:/ymlab/fankeel && node scripts/task.js start --session f7fe80c2-9b13-4f07-bfd9-ada3cdd7c85e --task "survey only: which code reads the registry's started fi
     $ cat "F:/ymlab/fankeel/.fankeel/build/task-20260919T195332/survey.md"
-    fankeel:fankeel-brain: tool calls 48 (Read 17, Bash 20, Grep 10, Write 1), first to last timestamp 259s
+    fankeel:fankeel-brain: tool calls 48 (Read 17, Bash 20, Grep 10, Write 1; Read with a line range 15), first to last timestamp 259s
