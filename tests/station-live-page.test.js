@@ -104,7 +104,15 @@ test('on the served page a live row\'s running count equals its running rows, an
     const s = await serve({ configDir: f.cfg, roots: [f.ws], port: 0, idleMs: 60e3, open: false });
     try {
         const home = await openPage(s.url, '#/');
-        const listed = /running (\d+)<\/span>/.exec(home.html());
+        // From F:/ymlab/fankeel, `serve()`'s own `cwd: process.cwd()` (Task 1)
+        // also lists the real fankeel registry, which can hold a real, live
+        // session more recent than the fixture's — so the first `running N`
+        // on the page is not necessarily the fixture's. The row for `SID`
+        // carries it in `data-href="#/s/<id>"` (`recentHtml`); anchor on that.
+        const rowAt = home.html().indexOf('data-href="#/s/' + SID + '"');
+        assert.ok(rowAt >= 0, 'the fixture session has no row on the home page');
+        const row = home.html().slice(rowAt, home.html().indexOf('</tr>', rowAt));
+        const listed = /running (\d+)<\/span>/.exec(row);
         assert.ok(listed, 'the live row carries no running count');
         const on = await openPage(s.url, '#/s/' + SID + '/dispatch');
         const rows = (on.html().match(/<tr class="[^"]*\bis-running\b/g) || []).length;
