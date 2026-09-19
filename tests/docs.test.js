@@ -524,21 +524,21 @@ test('the lifetime table names every ignored path under .fankeel/', () => {
   const end = rest.indexOf('\n## ');
   const section = end === -1 ? rest : rest.slice(0, end);
 
-  const ours = fs.readFileSync(path.join(root, '.fankeel', '.gitignore'), 'utf8')
-    .split(/\r?\n/)
-    .filter(Boolean);
+  const ours = fs.readFileSync(path.join(root, '.fankeel', '.gitignore'), 'utf8').split(/\r?\n/).filter(Boolean);
   assert.ok(ours.length, '.fankeel/.gitignore names no path');
 
-  // Only the table's rows count. The prose under it names `.fankeel/build/` as
-  // well, so a match over the whole section stayed green with the build row
-  // deleted — the mutation this guard's comment promises reddened nothing.
-  const rows = section.split(/\r?\n/).filter((l) => l.startsWith('|'));
+  // Only each row's path cell counts. The prose under the table names
+  // `.fankeel/build/` as well, so a match over the whole section stayed green
+  // with the build row deleted — the mutation this guard's comment promises
+  // reddened nothing — and another row's lifetime cell quotes `report`, which a
+  // leaf of that name would have matched without any row describing it.
+  const cells = section.split(/\r?\n/).filter((l) => l.startsWith('|')).map((l) => l.split('|')[1] || '');
 
   for (const p of ours) {
     // The table names the leaf — `build/<plan>/`, `sessions/<id>.json` — rather
     // than the line the ignore file holds, so the leaf is what is matched.
     const leaf = p.replace(/\/$/, '');
-    assert.ok(rows.some((r) => r.includes('`' + leaf)),
+    assert.ok(cells.some((c) => c.includes(leaf)),
       'the lifetime table in docs/documents.md does not name .fankeel/' + p);
   }
 });
