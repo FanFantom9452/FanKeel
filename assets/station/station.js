@@ -383,11 +383,32 @@
                 return (i / n * (W - 4) + 2).toFixed(1) + ',' + (H - 3 - v / mx * (H - 7)).toFixed(1);
             }).join(' ') + '" style="fill:none;stroke:' + colour + ';stroke-width:1.5;stroke-linejoin:round"/></svg>';
     }
-    function routeDots(s) {
+    // `ring` circles the stage a live session is in, so a row that is still
+    // running reads apart from one that stopped there.
+    function routeDots(s, ring) {
         var route = s.route || [], at = route.indexOf(s.stage);
         return '<span class="route" aria-label="route ' + esc(route.join(' → ')) + '">' + route.map(function (k, i) {
+            if (i === at && ring) {
+                return '<i title="' + esc(k) + '（現在）" class="now" style="--c:var(--st-' + esc(k) + ');background:var(--c)"></i>';
+            }
             return '<i title="' + esc(k) + '"' + (i <= at ? ' style="background:var(--st-' + esc(k) + ')"' : ' class="todo"') + '></i>';
         }).join('') + '</span>';
+    }
+    // The stage a row is at, by name and number beside its dots; the dots ring
+    // it only while the session is live.
+    function stageNow(s) {
+        return routeDots(s, s.state === 'live') + '<span class="stname">' + esc(s.stage || '—')
+            + (s.steps ? '<span class="of">' + s.step + '/' + s.steps + '</span>' : '') + '</span>';
+    }
+    // How many of a live row's agents are running this moment — `running` on the
+    // list data, counted by lib/station.js from each agent's state. A row that is
+    // not live, or has no detail to count from, says nothing rather than a zero
+    // nobody measured.
+    function runningTag(s) {
+        if (s.state !== 'live' || typeof s.running !== 'number') return '';
+        return s.running
+            ? '<span class="runn" title="此刻有 ' + s.running + ' 個 agent 是 running"><i class="dot live"></i>running ' + s.running + '</span>'
+            : '<span class="runn zero" title="此刻沒有 agent 是 running">running 0</span>';
     }
     // `off` maps an option to the reason it cannot be chosen right now.
     function segHtml(key, opts, current, off) {
@@ -510,8 +531,8 @@
                 return '<tr class="link" data-href="' + sessionHash(s.id) + '"><td class="task"><a href="' + sessionHash(s.id) + '">'
                     + esc(s.task || '（未命名）') + '</a></td><td><span class="pchip"><i class="sw" style="background:'
                     + colorOf('project', s.pkey, o.pkeys) + '"></i>' + esc(o.names[s.pkey] || s.pkey) + '</span></td>'
-                    + '<td>' + routeDots(s) + '</td><td class="r">' + usd(t.usd) + '</td><td class="r muted">' + tokens(t.tokens) + '</td>'
-                    + '<td>' + statePill(s) + '</td></tr>';
+                    + '<td class="c-stage">' + stageNow(s) + '</td><td class="r">' + usd(t.usd) + '</td><td class="r muted">' + tokens(t.tokens) + '</td>'
+                    + '<td class="c-state">' + statePill(s) + runningTag(s) + '</td></tr>';
             }).join('') + '</tbody></table></div>';
     }
     // The 文件 card: one section per project whose `.fankeel/map.md` was
@@ -921,6 +942,51 @@
         }).join('') + '</nav>';
     }
 
+    // ---- the live page --------------------------------------------------------
+    // A time to the second, for when the page last re-read and when a step began.
+    function clockSec(ms) {
+        var d = new Date(ms);
+        return [d.getHours(), d.getMinutes(), d.getSeconds()].map(function (n) { return String(n).padStart(2, '0'); }).join(':');
+    }
+    function agoText(sec) { return sec <= 0 ? '剛更新' : sec + ' 秒前更新'; }
+    // A figure that keeps moving between re-reads, in seconds, `b + m × now`:
+    // an elapsed time is `-start, 1`. Printed once from `nowSec`, and — only
+    // while `live` — marked for the once-a-second tick below the guard to move.
+    // `tkr`, because 比較 already gives `tk` to a task name.
+    function tk(b, m, live, nowSec) {
+        var v = dur(Math.max(0, Math.round(b + m * nowSec)));
+        return live && m ? '<span class="tkr" data-b="' + b + '" data-m="' + m + '">' + v + '</span>' : v;
+    }
+    // Beside the session's state on its page, served: `即時` and how long ago the
+    // page last re-read while the session is live, the moment it stopped once
+    // it is not.
+    function liveTag(live, polledMs, nowMs) {
+        return live
+            ? '<span class="livetag" title="最後一次更新 ' + clockSec(polledMs) + '；session 還活著，這頁每 3 秒重拉一次，結束就停"><b>即時</b>・<span data-ago>'
+                + agoText(Math.round((nowMs - polledMs) / 1000)) + '</span></span>'
+            : '<span class="livetag off" title="session 結束後不再重拉"><b>已停止更新</b>・最後一次 ' + clockSec(polledMs) + '</span>';
+    }
+    // The route as a rail: a stop per stage, each one behind the current stage
+    // timed by the registry's clock for it (`stages[].from` and `to`), the
+    // current one ringed and — while `live` — counting up from when it was
+    // entered. Not live, it keeps the time the stage had when the session stopped.
+    function railHtml(s, live, nowMs) {
+        var route = s.route || [], at = route.indexOf(s.stage), win = {};
+        (s.stages || []).forEach(function (w) { win[w.stage] = w; });
+        return '<ol class="rail" style="--n:' + route.length + '" aria-label="route ' + esc(route.join(' → '))
+            + (at >= 0 ? '；現在在 ' + esc(s.stage) + '，第 ' + (at + 1) + ' 站，共 ' + route.length + ' 站' : '') + '">'
+            + route.map(function (k, i) {
+                var w = win[k], cls = at < 0 || i > at ? 'todo' : i < at ? 'done' : 'now' + (live ? ' live' : ''), tm = '';
+                if (i < at && w) tm = '<span class="tm">' + mins(w.to - w.from) + '</span>';
+                else if (i === at && w) {
+                    tm = '<span class="tm">' + (live ? tk(-w.from / 1000, 1, true, nowMs / 1000) : mins(w.to - w.from)) + '</span>'
+                        + '<span class="since">' + clock(w.from) + (live ? ' 進站' : ' 進站，停在這站') + '</span>';
+                }
+                return '<li class="' + cls + '" style="--c:var(--st-' + esc(k) + ')"' + (i === at ? ' aria-current="step"' : '') + '>'
+                    + '<span class="pt"></span><span class="nm">' + esc(k) + '</span>' + tm + '</li>';
+            }).join('') + '</ol>';
+    }
+
     // Whether the served page has lost its server, and what to say. Pure, so
     // it is unit tested; the fetch that feeds it and the banner it fills are
     // the document half below the guard. The sentence starts at 底下 rather
@@ -963,6 +1029,8 @@
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
             sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost,
             heroEyebrow: heroEyebrow, docsCardHtml: docsCardHtml,
+            stageNow: stageNow, runningTag: runningTag, railHtml: railHtml, liveTag: liveTag, agoText: agoText,
+            clockSec: clockSec, tk: tk,
         };
     }
     if (!doc) return;
@@ -974,6 +1042,9 @@
     // the bottom of this file owns it; the hero's eyebrow reads it, which is
     // why it is declared out here rather than beside the poll.
     var frozenAt = null;
+    // When the data on screen was last read: at load, then at every re-read
+    // below. The session page's live tag and the footer both say it.
+    var polledAt = Date.now();
     // The sessions ticked for 比較, oldest tick first; a third tick drops the first.
     var picked = [];
     var NOW = Date.parse(S.generatedAt);
@@ -1235,9 +1306,10 @@
         return '<section class="panel"><div class="eyebrow">session <span class="mono">' + esc(String(s.id).slice(0, 8)) + '</span> · '
             + '<a href="' + projectHash(s.pkey) + '">' + esc(NAMES[s.pkey] || s.pkey) + '</a> · ' + stamp(Date.parse(s.started)) + '</div>'
             + '<h1 class="s-title">' + esc(s.task || '（未命名）') + '</h1>'
-            + '<div class="s-meta">' + routeDots(s) + '<span class="mono">' + esc((s.route || []).join(' → ')) + '</span>' + statePill(s)
+            + '<div class="s-meta">' + statePill(s) + (S.serve ? liveTag(s.state === 'live', polledAt, Date.now()) : '')
             + (s.model ? '<span class="chip"><i class="sw" style="background:var(--m-' + family(s.model) + ')"></i>主 session <span class="mono">'
                 + esc(s.model) + '</span></span>' : '') + '</div>'
+            + railHtml(s, Boolean(S.serve) && s.state === 'live', S.serve ? Date.now() : NOW)
             + sessionHeadHtml(s, x) + '</section>'
             + tabsHtml(s, r.tab, x) + '<section class="panel">' + body + '</section>';
     }
@@ -1287,7 +1359,7 @@
             + '<div class="listwrap">'
             + '<div class="card listcard"><div class="scroll"><table>'
             + '<colgroup><col style="width:34px"><col><col style="width:130px"><col style="width:80px">'
-            + '<col style="width:78px"><col style="width:86px"><col style="width:86px">'
+            + '<col style="width:78px"><col style="width:170px"><col style="width:86px">'
             + '<col style="width:92px"></colgroup>'
             + '<thead id="lh"></thead><tbody id="lb"></tbody></table></div></div>'
             + '<div class="card det" id="det"></div></div>';
@@ -1317,7 +1389,7 @@
                 + '<td>' + taskCell(s) + '</td><td>' + stageCell(s) + '</td>'
                 + '<td class="r num mute">' + tokens(s.burn) + '</td>'
                 + '<td class="r num">' + usd(cost(s)) + '</td>'
-                + '<td>' + statePill(s) + '</td>'
+                + '<td class="c-state">' + statePill(s) + runningTag(s) + '</td>'
                 + '<td class="num mute" style="font-size:11.5px">' + day(s.started) + '</td>'
                 + '<td class="num mute" style="font-size:11.5px">' + ago(s.updated) + '</td></tr>';
         }).join('') || '<tr><td colspan="8"><div class="empty">沒有符合的 session</div></td></tr>';
@@ -1502,7 +1574,7 @@
             + (S.scanStats && S.scanStats.timedOut ? ' · 掃描逾時未跑完' : '')
             + (!(route.view === 'list' && f.project) && totalUnreadable
                 ? ' · ' + totalUnreadable + ' 個 session 檔案讀不到' : '')
-            + (S.serve ? ' · 每次載入都重讀 registry' : '');
+            + (S.serve ? ' · 每 3 秒重讀一次，最後一次 ' + clockSec(polledAt) : '');
     }
     // ---- the detail panel ----------------------------------------------
     // One session's detail is a script of its own, `station/detail/<id>.js`,
@@ -2194,8 +2266,111 @@
         || S.configDir;
     doc.getElementById('cfg').title = S.configDir || '';
 
+    // ---- live refresh --------------------------------------------------------
+    // Served, the page keeps itself current: every three seconds it re-reads the
+    // list and — while the session whose detail is on screen is live — that
+    // session's detail, each through a script tag the way it loaded them the
+    // first time, with a query string that only keeps the browser from answering
+    // out of its cache. A session no longer live has its detail re-read no more:
+    // nothing under it can move. A hidden tab re-reads nothing. The file
+    // `/fankeel` writes has no server to ask and keeps the moment it was written,
+    // so `S.serve` gates all of this as well as the protocol. Armed before the
+    // health poll, which stays the last interval this file sets.
+    var POLL_MS = 3000;
+    var busy = false;
+    // Everything below the guard that was worked out from `S` once, at load.
+    function freshen() {
+        NOW = Date.parse(S.generatedAt);
+        LAB = labels(S.projects.map(function (p) { return p.root; }));
+        S.sessions.forEach(function (s) { s.label = LAB[s.root]; });
+        DAYS = lastDays(NOW, 30);
+        PREV = lastDays(NOW - 30 * 864e5, 30);
+        TODAY = DAYS[DAYS.length - 1];
+        NAMES = projectNames(S.sessions);
+        PKEYS = projectRows(S.sessions, DAYS).map(function (r) { return r.pkey; });
+    }
+    function reload(src, done) {
+        var el = doc.createElement('script');
+        var finish = function (ok) {
+            if (el.parentNode) el.parentNode.removeChild(el);
+            done(ok);
+        };
+        el.onload = function () { finish(true); };
+        el.onerror = function () { finish(false); };
+        el.src = src + (src.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now();
+        doc.head.appendChild(el);
+    }
+    // The session whose detail is on screen: the session page's, or the row
+    // selected on 清單.
+    function watched() {
+        var id = route.view === 'session' ? route.id : route.view === 'list' ? sel : null;
+        return id ? S.sessions.filter(function (x) { return x.id === id; })[0] || null : null;
+    }
+    function refresh() {
+        if (busy || doc.hidden) return;
+        busy = true;
+        reload('station/station-data.js', function (ok) {
+            if (!ok || !w.STATION || w.STATION === S) { busy = false; return; }
+            // `cleared` rides on the one load `/clear-stale` redirected to, and
+            // stays on the page rather than vanishing three seconds later.
+            if (isFinite(S.cleared) && w.STATION.cleared === undefined) w.STATION.cleared = S.cleared;
+            S = w.STATION;
+            freshen();
+            polledAt = Date.now();
+            var s = watched();
+            var done = function () { busy = false; repaint(); };
+            if (s && s.state === 'live' && s.hasDetail) reload('station/detail/' + encodeURIComponent(s.id) + '.js', done);
+            else done();
+        });
+    }
+    // A redraw that keeps what the reader had: which sections were open, where
+    // the list and the page were scrolled, and which control had focus, found
+    // again by its `data-key`. A reader typing into a field on the page holds
+    // the redraw back — it would throw the typing away — until the next re-read.
+    function repaint() {
+        var ae = doc.activeElement;
+        var typing = ae && (ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT'
+            || (ae.tagName === 'INPUT' && ae.id !== 'q' && !/^(checkbox|radio|button|submit)$/.test(ae.type || '')));
+        if (typing) return;
+        var key = ae && ae.getAttribute ? ae.getAttribute('data-key') : null;
+        var open = {};
+        [].forEach.call(doc.querySelectorAll('details[id],details[data-key]'), function (d) {
+            open[d.id || d.getAttribute('data-key')] = d.open;
+        });
+        var box = doc.querySelectorAll('.listcard .scroll')[0];
+        var boxTop = box ? box.scrollTop : 0;
+        var y = w.scrollY || 0;
+        draw();
+        [].forEach.call(doc.querySelectorAll('details[id],details[data-key]'), function (d) {
+            var k = d.id || d.getAttribute('data-key');
+            if (Object.prototype.hasOwnProperty.call(open, k)) d.open = open[k];
+        });
+        var again = doc.querySelectorAll('.listcard .scroll')[0];
+        if (again) again.scrollTop = boxTop;
+        if (typeof w.scrollTo === 'function') w.scrollTo(0, y);
+        if (key) {
+            var el = doc.querySelectorAll('[data-key="' + key + '"]')[0];
+            if (el && el.focus) el.focus();
+        }
+    }
+    // Once a second: every figure `tk()` marked, and the `N 秒前更新` beside the
+    // live tag.
+    function tickNow() {
+        var now = Date.now();
+        [].forEach.call(doc.querySelectorAll('.tkr'), function (el) {
+            el.textContent = dur(Math.max(0, Math.round(Number(el.getAttribute('data-b')) + Number(el.getAttribute('data-m')) * now / 1000)));
+        });
+        [].forEach.call(doc.querySelectorAll('[data-ago]'), function (el) {
+            el.textContent = agoText(Math.round((now - polledAt) / 1000));
+        });
+    }
+    if (S.serve && w.location && w.location.protocol !== 'file:' && typeof w.setInterval === 'function') {
+        w.setInterval(refresh, POLL_MS);
+        w.setInterval(tickNow, 1000);
+    }
+
     // ---- serve health polling ----------------------------------------------
-    // Only `serve` (not `--open`, scripts/station.js:766) puts a server behind
+    // Only `serve` (not `--open`, which writes a file) puts a server behind
     // this fetch, so a page opened straight from disk must never start the
     // poll — it would show a permanent death banner for a state that is
     // simply normal there. `w.setInterval` is also checked so a stripped-down

@@ -508,3 +508,35 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .rgh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin:14px 0 4px;font-size:12.5px}
 .rgh:first-child{margin-top:0}
 .rgh .mute{font-size:11px}
+
+/* The live station, after the 2026-09-19 mockup. A live row rings the stage it
+   is in and says how many of its agents are running; the session page draws
+   the route as a rail and says when it last re-read. The colours are the
+   session's own: nothing here adds a swatch. */
+.route i.now{margin:0 3px;box-shadow:0 0 0 1.5px var(--panel),0 0 0 3px var(--c)}
+.stname{font:500 11.5px var(--f-mono);color:var(--ink2);margin-left:9px;vertical-align:middle}
+.stname .of{color:var(--muted);font-weight:400;margin-left:2px}
+.c-state{white-space:nowrap}
+.runn{display:inline-flex;align-items:center;gap:5px;font:600 11.5px var(--f-ui);color:var(--live);white-space:nowrap}
+.runn.zero{font-weight:400;color:var(--muted)}
+.c-state .runn{margin-left:10px}
+.tkr{font-variant-numeric:tabular-nums}
+.s-meta .livetag{font-size:12px;color:var(--ink2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.livetag b{font-weight:600;color:var(--live)}
+.livetag.off b{color:var(--ink2)}
+.rail{list-style:none;margin:4px 0 26px;padding:0;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));max-width:980px}
+.rail li{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0}
+.rail li::after{content:"";position:absolute;top:10px;left:calc(50% + 12px);width:calc(100% - 24px);height:2px;background:var(--ink2);border-radius:1px}
+.rail li:last-child::after{display:none}
+.rail li.now::after,.rail li.todo::after{background:repeating-linear-gradient(90deg,var(--rule2) 0 5px,transparent 5px 10px)}
+.rail .pt{position:relative;width:14px;height:14px;margin:4px 0 8px;border-radius:50%;background:var(--c)}
+.rail .todo .pt{background:transparent;box-shadow:inset 0 0 0 1.5px var(--rule2)}
+.rail .now .pt{width:22px;height:22px;margin:0 0 4px;box-shadow:inset 0 0 0 4px var(--panel),0 0 0 1.5px var(--c)}
+.rail .now.live .pt::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:1.5px solid var(--c);opacity:.5;animation:p 2.4s ease-out infinite}
+.rail .nm{font:500 12px/1.3 var(--f-mono);color:var(--ink2);max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.rail .todo .nm{color:var(--muted);font-weight:400}
+.rail .now .nm{font-size:13.5px;font-weight:700;color:var(--ink)}
+.rail .tm{font:11px/1.45 var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.rail .now .tm{font-size:12.5px;font-weight:600;color:var(--ink)}
+.rail .since{font-size:11px;color:var(--muted);white-space:nowrap}
+@media(prefers-reduced-motion:reduce){.rail .now.live .pt::after{animation:none;opacity:.35}}
