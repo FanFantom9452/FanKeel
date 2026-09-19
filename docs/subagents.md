@@ -53,10 +53,10 @@ says this is a subagent at all: the main thread of a session started with
 `--agent` carries the type without it and must be able to write, so the id is
 checked first (`hooks/guard.js:52`, `if (!payload.agent_id) return;`).
 [collisions.md](collisions.md)
-carries what that denylist actually matches, not restated here. Four of
-the five agents hold `Bash`; `fankeel-fixer` is the one that does not,
+carries what that denylist actually matches, not restated here. Five of
+the six agents hold `Bash`; `fankeel-fixer` is the one that does not,
 because it edits the file itself rather than returning something for the
-parent to run a test against. `tests/agents.test.js` names both writers as
+parent to run a test against. `tests/agents.test.js` names all three writers as
 exemptions, each with its argument beside it, rather than dropping the assertion.
 
 `fankeel-reader` runs at `model: sonnet`, the floor the survey, verify and audit
