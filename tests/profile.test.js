@@ -165,12 +165,10 @@ test('station.hide refuses an illegal value and accepts true', () => {
 });
 
 test('stage.agents is false unless a profile turns it on', () => {
-    const mkScratch = require('./tmp.js');
-    const agentsProfile = require('../lib/profile.js');
-    const projectRoot = mkScratch('fankeel-profile-agents-');
-    const cfg = mkScratch('fankeel-profile-cfg-');
-    assert.equal(agentsProfile.read(projectRoot, cfg).values['stage.agents'], false);
+    const projectRoot = tmp('fankeel-profile-agents-');
+    const cfg = tmp('fankeel-profile-cfg-');
+    assert.equal(profile.read(projectRoot, cfg).values['stage.agents'], false);
     fs.mkdirSync(path.join(projectRoot, '.fankeel'), { recursive: true });
     fs.writeFileSync(path.join(projectRoot, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'true' }));
-    assert.equal(agentsProfile.read(projectRoot, cfg).values['stage.agents'], true);
+    assert.equal(profile.read(projectRoot, cfg).values['stage.agents'], true);
 });
