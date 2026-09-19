@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain'];
 
 // `fankeel-verifier` is the one named exception: it writes evidence rows to a
 // file for the Workflow join, and `Write` is what that takes. It is not less
@@ -20,7 +20,7 @@ const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-v
 // itself rather than returning it for the parent to apply, so it needs both
 // `Edit` and `Write` — never `Bash`, so it never runs the test the edit would
 // need.
-const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'] };
+const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'], 'fankeel-brain': ['Write'] };
 
 function front(file) {
     const m = FRONT.exec(fs.readFileSync(file, 'utf8'));
@@ -76,4 +76,13 @@ test('the reader is told to send reads that do not depend on each other in one r
     const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reader.md'), 'utf8');
     const searching = text.split('\n## Searching\n')[1].split('\n## ')[0];
     assert.match(searching, /same response/);
+});
+
+test('the stage agent writes its handoff and dispatches readers, on opus', () => {
+    const f = front(path.join(ROOT, 'agents', 'fankeel-brain.md'));
+    const tools = f.tools.slice(1, -1).split(',').map((s) => s.trim());
+    assert.ok(tools.includes('Agent'), 'it dispatches its readers');
+    assert.ok(tools.includes('Write'), 'it writes its handoff');
+    assert.ok(!tools.includes('Edit'), 'it changes no source');
+    assert.equal(f.model, 'opus');
 });
