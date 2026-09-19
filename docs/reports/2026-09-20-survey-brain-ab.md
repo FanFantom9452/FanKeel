@@ -6,7 +6,7 @@ source_of_truth: 兩次互動實跑（session 5121ea58、942566e9）的 transcri
 
 # survey 交給 Opus 大腦：新舊模式的量測 — 2026-09-20
 
-**新模式跑得通：Sonnet 主控派 Opus 大腦、大腦派 Sonnet reader、使用者看到的關卡題目就是交接檔裡的原文。但在這個 survey 題目上它每一組都比舊模式慢、也比較貴，主控的 context 也沒有一致地變小。大腦派四個 reader 時慢 9–10 倍、貴 4.0–5.6 倍；拿掉 reader 仍慢 6.5–9.0 倍、貴 2.5–2.8 倍。之後兩次改大腦的 brief（`577f3e1`、`357924c`），把它的工具次數從 34、48 次壓到 11、18 次，花費比仍是 2.6–2.8 倍：大腦單獨的花費就超過整個舊模式，它的 output 是舊模式的 3.6–4.7 倍——過半是 thinking（舊模式的 2.5–4.0 倍），其餘裡最大的一筆是交接檔，光它就比舊模式整站看得到的 output 多。把大腦降到 `effort: medium` 之後 thinking 確實少了，但單價拆開來看，output 只占大腦花費的三成，其餘是多開一個 context 的 cache，所以這條路最多只動得了 8–9%。**
+**新模式跑得通：Sonnet 主控派 Opus 大腦、大腦派 Sonnet reader、使用者看到的關卡題目就是交接檔裡的原文。但在這個 survey 題目上它每一組都比舊模式慢、也比較貴，主控的 context 也沒有一致地變小。大腦派四個 reader 時慢 9–10 倍、貴 4.0–5.6 倍；拿掉 reader 仍慢 6.5–9.0 倍、貴 2.5–2.8 倍。之後兩次改大腦的 brief（`577f3e1`、`357924c`），把它的工具次數從 34、48 次壓到 11、18 次，花費比仍是 2.6–2.8 倍：大腦單獨的花費就超過整個舊模式，它的 output 是舊模式的 3.6–4.7 倍——過半是 thinking（舊模式的 2.5–4.0 倍），其餘裡最大的一筆是交接檔，光它就比舊模式整站看得到的 output 多。把大腦降到 `effort: medium` 之後 thinking 確實少了，但單價拆開來看，output 只占大腦花費的三成，其餘是多開一個 context 的 cache，所以這條路最多只動得了約 8%。**
 
 這是 [docs/plans/2026-09-19-survey-brain.md](../plans/2026-09-19-survey-brain.md) 的 Task 7，回答設計頁 [§8 量測](../plans/2026-09-19-survey-brain-design.md) 的問題。報告以實際跑的日期命名。
 
@@ -195,7 +195,7 @@ transcript 不存 thinking 的文字，thinking 區塊只留 signature。`ab-out
 組內：時間 4.5×、花費 1.55×、output 3.6×（`ab5-table.txt`、`ab5-tools.txt`、`ab5-output.txt`）。
 
 - **thinking 確實降了。** nor7 大腦估出的 thinking 是 3,386，第 7 節兩個跑 `high` 的大腦是 5,513 與 7,310；大腦的 output 從 10,109、13,636 降到 8,063，工具 13 次、131 秒。
-- **但省得有限，而且這在改之前就算得出來。** `ab-price.js` 從 `modelUsage` 反推單價，同一模型的每一列都對得上（最大誤差 $0.0000）：Opus 的 output 每百萬 $25、cache read $0.50、cache write 在舊模式主 session 是 $10、在大腦是 $6.25。第 7 節大腦的花費裡 output 只占 30–31%，cache read 25–36%，cache write 34–44%（`ab-price.txt`）。thinking 只是 output 的一半多，所以砍半也只動得了大腦花費的 8–9%；其餘是多開一個 context 的固定成本。
+- **但省得有限，而且這在改之前就算得出來。** `ab-price.js` 從 `modelUsage` 反推單價，兩個 Opus 模型的每一列都對得上（最大誤差 $0.0000；Sonnet 那一組差到 $0.0270，本節不用它）：Opus 的 output 每百萬 $25、cache read $0.50、cache write 在舊模式主 session 是 $10、在大腦是 $6.25。第 7 節大腦的花費裡 output 只占 30–31%，cache read 25–36%，cache write 34–44%（`ab-price.txt`）。thinking 只是 output 的一半多，所以砍半也只動得了大腦花費的約 8%（nor5 8.5%、nor6 8.1%）；其餘是多開一個 context 的固定成本。
 - **n=1**，而且 old9 是舊模式偏貴的一端（$0.73；第 7 節是 $0.45 與 $0.49）。這一對的 1.55× 不能當成 `medium` 的效果。
 - **沒量到的是品質。** `medium` 讓大腦想得少，survey 寫得好不好沒有人比過，這是拿判斷換錢。
 
