@@ -213,7 +213,7 @@ fankeel/
 ├── lib/               the logic, as functions tested directly; nothing here reaches into scripts/ or hooks/
 │   ├── registry.js    one entry per session under .fankeel/sessions/, written by rename so no read is torn
 │   ├── stages.js      the seven stages, the three classes and their routes, every stage's rules and output shape
-│   ├── render.js      the injected blocks: every prompt, after a gate, on /fankeel, for a subagent, after /clear
+│   ├── render.js      the injected blocks: every prompt, after a gate, on /fankeel, when a task is renamed, for a subagent, after /clear
 │   ├── live.js        which sessions are running, read from Claude Code's own sessions/<pid>.json
 │   ├── overlap.js     which live sessions have touched the same files
 │   ├── guard.js       the scope guard's answer to an edit in another live session's files: nothing, ask or deny

@@ -75,7 +75,7 @@ EOF
 ```
 
 - [ ] **Step 2: 跑 `none`。** 請使用者開一個新 terminal，`cd` 到 `$P`，執行 `claude`，信任這個目錄，然後輸入：「Use AskUserQuestion to ask me whether I prefer red or blue.」記下三件事：畫面上的題目是不是 `PROBE none: ...`、能不能點選、模型收到的回答是什麼。
-- [ ] **Step 3: 跑 `ask`。** 把 settings.json 裡的 `none` 改成 `ask`，關掉那個 `claude` 再重開（hook 清單在 process 啟動時就定了），重複 Step 2。
+- [ ] **Step 3: 跑 `ask`。** 把 settings.json 裡的 `none` 改成 `ask`，關掉那個 `claude` 再重開（hook 清單在 process 啟動時就定了），重複 Step 2。struck — 沒跑。Step 4 的判準是「兩種都行時取 `none`」，所以 `none` 一通過，`GATE_DECISION` 就定了：`ask` 不管是哪個結果都改不動它。2026-09-20 的 verify 發現這一步被當成跑過的，補記於此。
 - [ ] **Step 4: 定出 `GATE_DECISION`。** 題目被換掉、又能點選的那一種就是答案，兩種都行時取 `none`；兩種都不行就是 `fallback`。
 - [ ] **Step 5: 寫進 spec。** 在 `docs/plans/2026-09-19-survey-brain-design.md` 的「前提」表加一列，內容是這次的觀察和日期；刪掉「沒驗證的」那一節，改成一行「`updatedInput` 已於 <日期> 實測，結果見前提表」。
 - [ ] **Step 6: commit。** `docs: updatedInput 換 AskUserQuestion 題目的實測結果`
