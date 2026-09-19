@@ -1,0 +1,31 @@
+old12  main: tool calls 14 (Bash 12, ToolSearch 2), first to last timestamp 105s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session f4032f75-b948-4e7b-b25a-41a4550fe8f5 --task "survey only: which code reads the registry's started field, a
+    $ cd F:/ymlab/fankeel && cat skills/fankeel-survey/SKILL.md
+    $ cd F:/ymlab/fankeel && node scripts/map.js 2>&1 | head -80
+    $ cd F:/ymlab/fankeel && node scripts/orient.js 2>&1 | head -40; echo "=== TREE ==="; node scripts/survey.js --tree 2>&1 | head -60
+    $ cd F:/ymlab/fankeel && sed -n '1,120p' .fankeel/map.md
+    $ cd F:/ymlab/fankeel && node scripts/survey.js started startedAt 2>&1 | head -60
+    $ cd F:/ymlab/fankeel && grep -rn "started" --include=*.js lib scripts hooks agents assets | grep -v "^tests/" | head -80
+    $ cd F:/ymlab/fankeel && for f in lib/detail.js lib/dirty.js lib/guard.js lib/handoff.js lib/station.js lib/badge.js lib/overlap.js lib/render.js lib/registry.js 
+    $ cd F:/ymlab/fankeel && echo "=== dirty.js 90-160"; sed -n '90,160p' lib/dirty.js; echo "=== guard.js 78,105"; sed -n '78,105p' lib/guard.js; echo "=== handoff.j
+    $ cd F:/ymlab/fankeel && echo "=== detail.js 640,660"; sed -n '640,660p' lib/detail.js; echo "=== station.js 355,375"; sed -n '355,375p' lib/station.js; echo "===
+    $ cd F:/ymlab/fankeel && echo "=== task.js 555,570"; sed -n '555,570p' scripts/task.js; echo "=== task.js 700,715"; sed -n '700,715p' scripts/task.js; echo "=== t
+    $ cd F:/ymlab/fankeel && grep -rn "\`started\`" docs/*.md README.md skills/*/SKILL.md 2>/dev/null | head -20; echo "=== station.js frontend uses"; grep -n "s.star
+nor10  main: tool calls 7 (Bash 1, Agent 1, ToolSearch 4, Read 1), first to last timestamp 147s
+    $ node C:/Users/Owner/AppData/Local/Temp/claude/F--ymlab-fankeel/9e36bfd6-a380-425d-82ca-5d9c22f28a4f/scratchpad/noreader-plugin-1789854229/scripts/task.js start 
+    fankeel:fankeel-brain: tool calls 14 (Read 1, Bash 11, Grep 1, Write 1), first to last timestamp 99s
+old13  main: tool calls 13 (Bash 11, ToolSearch 2), first to last timestamp 92s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session d42ee50c-4d47-4d8e-bd95-279237e7b13a --task "survey only: which code reads the registry's started field, a
+    $ cd F:/ymlab/fankeel && node scripts/map.js 2>&1 | head -60
+    $ cd F:/ymlab/fankeel && cat skills/fankeel-survey/SKILL.md
+    $ cd F:/ymlab/fankeel && node scripts/orient.js 2>&1 | head -40
+    $ cd F:/ymlab/fankeel && sed -n '1,200p' .fankeel/map.md
+    $ cd F:/ymlab/fankeel && node scripts/survey.js --tree 2>&1 | head -60
+    $ cd F:/ymlab/fankeel && node scripts/survey.js started 2>&1 | head -80
+    $ cd F:/ymlab/fankeel && grep -rn "started" lib/ hooks/ scripts/ agents/ skills/ assets/ 2>/dev/null | grep -v "^docs/" | head -80
+    $ cd F:/ymlab/fankeel && git ls-files | grep -vE '\.(js|md)$' | xargs grep -ln "started" 2>/dev/null | head -20; echo "--- size-cap file:"; git ls-files | xargs l
+    $ cd F:/ymlab/fankeel && echo "== guard.js 80-102"; sed -n '80,102p' lib/guard.js; echo "== dirty.js 140,158"; sed -n '140,158p' lib/dirty.js; echo "== handoff.js
+    $ cd F:/ymlab/fankeel && echo "== station.js 360,372"; sed -n '360,372p' lib/station.js; echo "== station.js 524,536"; sed -n '524,536p' lib/station.js; echo "== 
+nor11  main: tool calls 8 (Bash 1, Agent 1, ToolSearch 5, Read 1), first to last timestamp 147s
+    $ node C:/Users/Owner/AppData/Local/Temp/claude/F--ymlab-fankeel/9e36bfd6-a380-425d-82ca-5d9c22f28a4f/scratchpad/noreader-plugin-1789854229/scripts/task.js start 
+    fankeel:fankeel-brain: tool calls 9 (Read 1, Bash 7, Write 1), first to last timestamp 79s

@@ -1,0 +1,155 @@
+date: 2026-09-19T21:43:49Z
+HEAD: 0e32d9ab6d9b05dce2542a3a9c2db66f65ee4ac9
+porcelain:
+?? docs/plans/2026-08-26-session-id-design.md
+?? docs/plans/2026-08-28-task-end-design.md
+?? docs/plans/2026-08-28-task-end.md
+?? docs/plans/2026-08-30-parallel-build-design.md
+?? docs/plans/2026-08-30-parallel-build.md
+?? docs/plans/2026-08-30-tracked-concurrency-design.md
+?? docs/plans/2026-08-30-tracked-concurrency.md
+?? docs/plans/2026-08-31-todo-waiting-backlog.md
+?? docs/plans/2026-09-01-stage-timing-design.md
+?? docs/plans/2026-09-01-stage-timing.md
+?? session-31b5f48b-full.md
+claude: 2.1.278 (Claude Code)
+patched: 3 edits in agents/fankeel-brain.md, lib/render.js
+copy: C:/Users/Owner/AppData/Local/Temp/claude/F--ymlab-fankeel/9e36bfd6-a380-425d-82ca-5d9c22f28a4f/scratchpad/noreader-plugin-1789854229, from HEAD 0e32d9ab6d9b05dce2542a3a9c2db66f65ee4ac9
+--- agents/fankeel-brain.md	2026-09-20 05:10:47.289722500 +0800
++++ C:/Users/Owner/AppData/Local/Temp/claude/F--ymlab-fankeel/9e36bfd6-a380-425d-82ca-5d9c22f28a4f/scratchpad/noreader-plugin-1789854229/agents/fankeel-brain.md	2026-09-20 05:43:50.087944500 +0800
+@@ -1,7 +1,7 @@
+ ---
+ name: fankeel-brain
+ description: A stage agent — runs one whole stage in a clean context when the profile's stage.agents is true, dispatches fankeel-reader for the reading, and writes its report and its gate to a handoff file. The session that dispatched it asks the gate. Cannot call Edit or NotebookEdit.
+-tools: [Read, Grep, Glob, Bash, Write, Agent]
++tools: [Read, Grep, Glob, Bash, Write]
+ model: opus
+ effort: medium
+ status: current
+@@ -21,9 +21,7 @@
+ 
+ ## Tools
+ 
+-`Agent` is for `fankeel:fankeel-reader`, at most four in one response: the
+-raw reading happens in their contexts, and what reaches yours is what they
+-return. Open every `path:line` a reader cites before you keep it. `Write` is
++You have no `Agent`: do the reading yourself. `Write` is
+ for the handoff file named in your brief and nothing else. `Bash` is for
+ `git`, `node <plugin>/scripts/*.js` — `task.js route` included when the
+ class has to rise — and reading: `grep`, and `sed -n` for the lines you
+--- lib/render.js	2026-09-20 05:41:58.945370000 +0800
++++ C:/Users/Owner/AppData/Local/Temp/claude/F--ymlab-fankeel/9e36bfd6-a380-425d-82ca-5d9c22f28a4f/scratchpad/noreader-plugin-1789854229/lib/render.js	2026-09-20 05:43:50.089494400 +0800
+@@ -409,7 +409,7 @@
+     lines.push('  - Before anything else, Read ' + PLUGIN_ROOT + '/skills/fankeel-' + stage + '/SKILL.md: the stage\'s procedure. Where it and a line here disagree, the line here wins.');
+     lines.push('  - Write your report to ' + handoff + ': the output shape below, filled in, then one fenced block whose info string is `json gate`, holding {"questions": [<AskUserQuestion input>], "next": "<one line, 120 characters at most, for a pause>"}. Return that path and nothing else.');
+     lines.push('  - You cannot call AskUserQuestion. The gate in that block is what the user is asked, word for word: this replaces the rule below that says to ask. The user sees only the path to your report, not its text, so the question and every description must read on their own — never "above".');
+-    lines.push('  - You cannot run Workflow. Dispatch `fankeel:fankeel-reader` with the Agent tool, at most four in one response, and open every path:line one cites before you keep it: this replaces "one workflow" below.');
++    lines.push('  - You cannot run Workflow or dispatch agents. Do the reading yourself: this replaces "one workflow" below.');
+     // One command per call took a survey 34 and 48 tool calls where a main session took 5 and 6.
+     lines.push('  - Run independent commands in one Bash call, joined with `;`: the skill\'s opening scripts are one call, not one each. Every call re-sends your whole context.');
+     // Batched, it still opened each cited place with a Read of its own: 18 and 17 of them.
+every other file identical: 0 differing
+--- old12  model=opus stage.agents=false plugin=F:/ymlab/fankeel session f4032f75-b948-4e7b-b25a-41a4550fe8f5
+$ node scripts/task.js profile set stage.agents false --default
+fankeel — profile: stage.agents = false  → C:\Users\Owner\.claude\fankeel\profile.json
+$ claude -p Run\ this\ command\ and\ report\ its\ output\,\ nothing\ else:\ node\ F:/ymlab/fankeel/scripts/task.js\ start\ --session\ f4032f75-b948-4e7b-b25a-41a4550fe8f5\ --task\ \"survey\ only:\ which\ code\ reads\ the\ registry\'s\ started\ field\,\ and\ what\ each\ reader\ does\ with\ it\"\ --route\ survey\,design --session-id f4032f75-b948-4e7b-b25a-41a4550fe8f5 --model opus --output-format json --setting-sources project --plugin-dir F:/ymlab/fankeel --permission-mode bypassPermissions
+start exit=0
+$ claude -p Do\ the\ survey\ stage\ for\ this\ task\,\ up\ to\ its\ gate. --resume f4032f75-b948-4e7b-b25a-41a4550fe8f5 --model opus --output-format json --setting-sources project --plugin-dir F:/ymlab/fankeel --permission-mode bypassPermissions
+survey exit=0 shell_seconds=93
+$ node scripts/task.js clear f4032f75-b948-4e7b-b25a-41a4550fe8f5 --force --session 9e36bfd6-a380-425d-82ca-5d9c22f28a4f
+fankeel — cleared: survey only: which code reads the registry's started field, and what each reader does with it @ survey
+That badge is down. This one is not: the clash clears on the next prompt.
+The entry is still there, notes and all, and `adopt` takes the task back —
+from a session owning no active task of its own, which is the only caller
+it accepts.
+porcelain after old12:
+?? docs/plans/2026-08-26-session-id-design.md
+?? docs/plans/2026-08-28-task-end-design.md
+?? docs/plans/2026-08-28-task-end.md
+?? docs/plans/2026-08-30-parallel-build-design.md
+?? docs/plans/2026-08-30-parallel-build.md
+?? docs/plans/2026-08-30-tracked-concurrency-design.md
+?? docs/plans/2026-08-30-tracked-concurrency.md
+?? docs/plans/2026-08-31-todo-waiting-backlog.md
+?? docs/plans/2026-09-01-stage-timing-design.md
+?? docs/plans/2026-09-01-stage-timing.md
+?? session-31b5f48b-full.md
+--- nor10  model=sonnet stage.agents=true plugin=C:/Users/Owner/AppData/Local/Temp/claude/F--ymlab-fankeel/9e36bfd6-a380-425d-82ca-5d9c22f28a4f/scratchpad/noreader-plugin-1789854229 session ce59a0ff-efb1-459f-9126-1b8f475a2946
+$ node scripts/task.js profile set stage.agents true --default
+fankeel — profile: stage.agents = true  → C:\Users\Owner\.claude\fankeel\profile.json
+$ claude -p Run\ this\ command\ and\ report\ its\ output\,\ nothing\ else:\ node\ C:/Users/Owner/AppData/Local/Temp/claude/F--ymlab-fankeel/9e36bfd6-a380-425d-82ca-5d9c22f28a4f/scratchpad/noreader-plugin-1789854229/scripts/task.js\ start\ --session\ ce59a0ff-efb1-459f-9126-1b8f475a2946\ --task\ \"survey\ only:\ which\ code\ reads\ the\ registry\'s\ started\ field\,\ and\ what\ each\ reader\ does\ with\ it\"\ --route\ survey\,design --session-id ce59a0ff-efb1-459f-9126-1b8f475a2946 --model sonnet --output-format json --setting-sources project --plugin-dir C:/Users/Owner/AppData/Local/Temp/claude/F--ymlab-fankeel/9e36bfd6-a380-425d-82ca-5d9c22f28a4f/scratchpad/noreader-plugin-1789854229 --permission-mode bypassPermissions
+start exit=0
+$ claude -p Do\ the\ survey\ stage\ for\ this\ task\,\ up\ to\ its\ gate. --resume ce59a0ff-efb1-459f-9126-1b8f475a2946 --model sonnet --output-format json --setting-sources project --plugin-dir C:/Users/Owner/AppData/Local/Temp/claude/F--ymlab-fankeel/9e36bfd6-a380-425d-82ca-5d9c22f28a4f/scratchpad/noreader-plugin-1789854229 --permission-mode bypassPermissions
+survey exit=0 shell_seconds=134
+$ node scripts/task.js clear ce59a0ff-efb1-459f-9126-1b8f475a2946 --force --session 9e36bfd6-a380-425d-82ca-5d9c22f28a4f
+fankeel — cleared: survey only: which code reads the registry's started field, and what each reader does with it @ survey
+That badge is down. This one is not: the clash clears on the next prompt.
+The entry is still there, notes and all, and `adopt` takes the task back —
+from a session owning no active task of its own, which is the only caller
+it accepts.
+porcelain after nor10:
+?? docs/plans/2026-08-26-session-id-design.md
+?? docs/plans/2026-08-28-task-end-design.md
+?? docs/plans/2026-08-28-task-end.md
+?? docs/plans/2026-08-30-parallel-build-design.md
+?? docs/plans/2026-08-30-parallel-build.md
+?? docs/plans/2026-08-30-tracked-concurrency-design.md
+?? docs/plans/2026-08-30-tracked-concurrency.md
+?? docs/plans/2026-08-31-todo-waiting-backlog.md
+?? docs/plans/2026-09-01-stage-timing-design.md
+?? docs/plans/2026-09-01-stage-timing.md
+?? session-31b5f48b-full.md
+--- old13  model=opus stage.agents=false plugin=F:/ymlab/fankeel session d42ee50c-4d47-4d8e-bd95-279237e7b13a
+$ node scripts/task.js profile set stage.agents false --default
+fankeel — profile: stage.agents = false  → C:\Users\Owner\.claude\fankeel\profile.json
+$ claude -p Run\ this\ command\ and\ report\ its\ output\,\ nothing\ else:\ node\ F:/ymlab/fankeel/scripts/task.js\ start\ --session\ d42ee50c-4d47-4d8e-bd95-279237e7b13a\ --task\ \"survey\ only:\ which\ code\ reads\ the\ registry\'s\ started\ field\,\ and\ what\ each\ reader\ does\ with\ it\"\ --route\ survey\,design --session-id d42ee50c-4d47-4d8e-bd95-279237e7b13a --model opus --output-format json --setting-sources project --plugin-dir F:/ymlab/fankeel --permission-mode bypassPermissions
+start exit=0
+$ claude -p Do\ the\ survey\ stage\ for\ this\ task\,\ up\ to\ its\ gate. --resume d42ee50c-4d47-4d8e-bd95-279237e7b13a --model opus --output-format json --setting-sources project --plugin-dir F:/ymlab/fankeel --permission-mode bypassPermissions
+survey exit=0 shell_seconds=82
+$ node scripts/task.js clear d42ee50c-4d47-4d8e-bd95-279237e7b13a --force --session 9e36bfd6-a380-425d-82ca-5d9c22f28a4f
+fankeel — cleared: survey only: which code reads the registry's started field, and what each reader does with it @ survey
+That badge is down. This one is not: the clash clears on the next prompt.
+The entry is still there, notes and all, and `adopt` takes the task back —
+from a session owning no active task of its own, which is the only caller
+it accepts.
+porcelain after old13:
+?? docs/plans/2026-08-26-session-id-design.md
+?? docs/plans/2026-08-28-task-end-design.md
+?? docs/plans/2026-08-28-task-end.md
+?? docs/plans/2026-08-30-parallel-build-design.md
+?? docs/plans/2026-08-30-parallel-build.md
+?? docs/plans/2026-08-30-tracked-concurrency-design.md
+?? docs/plans/2026-08-30-tracked-concurrency.md
+?? docs/plans/2026-08-31-todo-waiting-backlog.md
+?? docs/plans/2026-09-01-stage-timing-design.md
+?? docs/plans/2026-09-01-stage-timing.md
+?? session-31b5f48b-full.md
+--- nor11  model=sonnet stage.agents=true plugin=C:/Users/Owner/AppData/Local/Temp/claude/F--ymlab-fankeel/9e36bfd6-a380-425d-82ca-5d9c22f28a4f/scratchpad/noreader-plugin-1789854229 session 6444bc74-e25b-4c23-9297-d679daf59d8b
+$ node scripts/task.js profile set stage.agents true --default
+fankeel — profile: stage.agents = true  → C:\Users\Owner\.claude\fankeel\profile.json
+$ claude -p Run\ this\ command\ and\ report\ its\ output\,\ nothing\ else:\ node\ C:/Users/Owner/AppData/Local/Temp/claude/F--ymlab-fankeel/9e36bfd6-a380-425d-82ca-5d9c22f28a4f/scratchpad/noreader-plugin-1789854229/scripts/task.js\ start\ --session\ 6444bc74-e25b-4c23-9297-d679daf59d8b\ --task\ \"survey\ only:\ which\ code\ reads\ the\ registry\'s\ started\ field\,\ and\ what\ each\ reader\ does\ with\ it\"\ --route\ survey\,design --session-id 6444bc74-e25b-4c23-9297-d679daf59d8b --model sonnet --output-format json --setting-sources project --plugin-dir C:/Users/Owner/AppData/Local/Temp/claude/F--ymlab-fankeel/9e36bfd6-a380-425d-82ca-5d9c22f28a4f/scratchpad/noreader-plugin-1789854229 --permission-mode bypassPermissions
+start exit=0
+$ claude -p Do\ the\ survey\ stage\ for\ this\ task\,\ up\ to\ its\ gate. --resume 6444bc74-e25b-4c23-9297-d679daf59d8b --model sonnet --output-format json --setting-sources project --plugin-dir C:/Users/Owner/AppData/Local/Temp/claude/F--ymlab-fankeel/9e36bfd6-a380-425d-82ca-5d9c22f28a4f/scratchpad/noreader-plugin-1789854229 --permission-mode bypassPermissions
+survey exit=0 shell_seconds=129
+$ node scripts/task.js clear 6444bc74-e25b-4c23-9297-d679daf59d8b --force --session 9e36bfd6-a380-425d-82ca-5d9c22f28a4f
+fankeel — cleared: survey only: which code reads the registry's started field, and what each reader does with it @ survey
+That badge is down. This one is not: the clash clears on the next prompt.
+The entry is still there, notes and all, and `adopt` takes the task back —
+from a session owning no active task of its own, which is the only caller
+it accepts.
+porcelain after nor11:
+?? docs/plans/2026-08-26-session-id-design.md
+?? docs/plans/2026-08-28-task-end-design.md
+?? docs/plans/2026-08-28-task-end.md
+?? docs/plans/2026-08-30-parallel-build-design.md
+?? docs/plans/2026-08-30-parallel-build.md
+?? docs/plans/2026-08-30-tracked-concurrency-design.md
+?? docs/plans/2026-08-30-tracked-concurrency.md
+?? docs/plans/2026-08-31-todo-waiting-backlog.md
+?? docs/plans/2026-09-01-stage-timing-design.md
+?? docs/plans/2026-09-01-stage-timing.md
+?? session-31b5f48b-full.md
+$ node scripts/task.js profile set stage.agents false --default
+fankeel — profile: stage.agents = false  → C:\Users\Owner\.claude\fankeel\profile.json
+HEAD after: 0e32d9ab6d9b05dce2542a3a9c2db66f65ee4ac9
+done
