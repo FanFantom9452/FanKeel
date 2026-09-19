@@ -165,7 +165,8 @@ test('every class the three levels render has a rule', () => {
         'day-body', 'split', 'split-h', 'split-bar', 'split-leg', 's-title', 's-meta', 'tabs',
         'lane-legend', 'tl', 'note', 'sumline', 'mini-mix',
         'card', 'phead', 'ctl', 'listwrap', 'det', 'sec', 'tally', 'seq', 'rp',
-        'cmpcard', 'pill', 'delta', 'mute', 'rail', 'livetag', 'runn', 'stname', 'c-state', 'tkr'];
+        'cmpcard', 'pill', 'delta', 'mute', 'rail', 'livetag', 'runn', 'stname', 'c-state', 'tkr', 'dhead', 'stc', 'axt', 'nowl', 'agdots', 'phl', 'phs', 'axw', 'axh', 'axl', 'lkb',
+        'prm', 'retl', 'emptyd', 'gaprow'];
     for (const c of classes) {
         assert.match(css, new RegExp('\\.' + c + '[\\s{,:.>\\[)]'), 'no rule for .' + c);
         assert.ok(emitted.has(c), 'no element emits .' + c);

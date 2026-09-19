@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-14
-source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/registry.js, lib/prices.js, lib/clear.js, lib/profile.js, lib/serve.js, hooks/inject.js
+source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/registry.js, lib/prices.js, lib/clear.js, lib/profile.js, lib/serve.js, hooks/inject.js, lib/detail.js, lib/replay.js, assets/station/station.js
 ---
 
 # The station
@@ -186,7 +186,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:1524`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:1538`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -227,7 +227,8 @@ used to carry. On 首頁's recent sessions a live row rings the stage it is in,
 names it and its number, and says how many of its agents are `running` this
 moment — `running` on the list data, counted from each agent's state; 清單
 carries the same count beside the state. A row that is not live names its stage
-and counts nothing.
+and counts nothing. The 派工 readout counts the agents running and lost besides
+the total, and the 派工 tab carries a green dot while any agent is running.
 
 時間線 draws the session against real elapsed time: one axis from the first
 step of `seq` to the last request, so a ten-minute session and a ten-hour one
@@ -321,19 +322,47 @@ the ones naming no task are listed under the table.
 
 **派工** is one band per dispatch in turn order, `agent`, `agents` (two or more
 dispatch calls in one response) or `workflow` on it, and one row per agent: its
-wall-clock from its own transcript, its tokens, and its dollars priced from its
-own per-kind counts — `workflow_agent.tokens` is one undivided number and cannot
-be priced — with the price table's `verified` date beside them and `unpriced`
-where the table does not know the model. Every workflow run the session made is
-read, not only the newest. A workflow folds into one row per phase until the
-phase is opened. The last column is the characters the dispatch's result put
-into the parent's context: the task-notification for a background agent or a
-workflow, the tool result for a foreground one; the acknowledgement a background
-launch returns at once is not counted, and the page says how much it came to.
-The seconds, thousands and cents are each rounded by the largest remainder in
-`lib/detail.js`, so every band and the footer are the sums of the rows under
-them, and the tally under the table sets the rows' dollar sum against
-`agentsOf()`'s total and the workflow rows against the run files' own count.
+state, its wall-clock from its own transcript, its tokens, and its dollars
+priced from its own per-kind counts — `workflow_agent.tokens` is one undivided
+number and cannot be priced — with the price table's `verified` date beside
+them and `unpriced` where the table does not know the model. Every workflow run
+the session made is read, not only the newest. A workflow folds into one row
+per phase until the phase is opened, each phase row carrying a dot per agent
+in its state's colour and how many are in each state. The last column is the
+characters the dispatch's result put into the parent's context: the
+task-notification for a background agent or a workflow, the tool result for a
+foreground one; the acknowledgement a background launch returns at once is not
+counted, and the page says how much it came to. The seconds, thousands and
+cents are each rounded by the largest remainder in `lib/detail.js`, so every
+band and the footer are the sums of the rows under them, and the tally under
+the table sets the rows' dollar sum against `agentsOf()`'s total and the
+workflow rows against the run files' own count.
+
+An agent's state is `running`, `done` or `lost`, read off its own transcript,
+its `.meta.json` and its session's liveness by `statesOf` in `lib/detail.js`;
+no hook writes it. It has finished when its last assistant line carries no
+`tool_use`, every `tool_use` it made has its `tool_result`, and that line
+closes a message. Not finished, it is `running` while its session is live and
+the process now running the session was already running when the agent last
+wrote, and `lost` otherwise — the session ended, or came back under the same id
+in a new process, and a row between the dispatches says where that happened. A
+workflow's agents are read the same way. A `running` row names the tool it is
+on and what at — the last `tool_use` with no `tool_result` yet — and how long it
+has been on it; a `lost` row names where it stopped. The page reads `lost` for
+an agent still `running` in a detail once the list says its session is no
+longer live, since that detail is not re-read any more. Above the table a
+filter shows one state at a time, opening a workflow's phases to do it.
+
+A row opens into what the agent was sent — its first user message that is not
+a system reminder, folded to three lines until opened in full, kept up to
+12,000 characters with its whole length beside it — and its steps in order,
+any not yet answered last, in the order they were made — a parallel call can
+leave more than one. Those are kept out of the forty the cap counts (`stepsOf`
+in `lib/replay.js`), so the cap never drops them. A `done` row's foot
+says what it returned: the characters its dispatch put into the parent's
+context, or, for a workflow's agent, that its result went into the workflow's.
+A session with no dispatch yet says so, and under `serve` says the next re-read
+will show one.
 
 **過程還原** is one row per event in time order: prompts (their first sixty
 characters), stage moves, each gate's question and the answer chosen, each
@@ -435,7 +464,7 @@ is to change the profile and reload.
 
 The facets are on 清單, above its table — state and stage with a count on each
 button, registry with one button per root
-(`assets/station/station.js:1326`, `moved onto the page they narrow`) — and
+(`assets/station/station.js:1340`, `moved onto the page they narrow`) — and
 the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed. On 清單,
 selecting a registry recomputes the page below the facets: `goneNote()`'s card
@@ -445,14 +474,14 @@ above the list otherwise; it does not merely hide rows.
 A gone registry keeps its facet button, labelled `— gone`, rather than
 dropping off the row, so selecting one never returns a blank pane with nothing
 on the page saying why:
-`goneNote()` (`assets/station/station.js:1162`, `function goneNote(root)`) prints a
+`goneNote()` (`assets/station/station.js:1164`, `function goneNote(root)`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card once it is the one selected on
 清單, and every project page carries the same card for its own registry no
 matter what is selected there: `registryNote()`
-(`assets/station/station.js:1179`, `function registryNote(root)`) prints its
+(`assets/station/station.js:1181`, `function registryNote(root)`) prints its
 own unreadable-session count, its `map.md` date — or `不存在` when there is
 none — and its build directories with each one's file count, or says there
 are none. The old page carried all three on a per-registry meta line; the
@@ -460,7 +489,7 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:1558`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:1572`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
 (`lib/station.js:448`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
@@ -533,7 +562,7 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:1317`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:1331`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較** is a third view. Tick two sessions on 清單 or a project page — only a
@@ -559,8 +588,10 @@ page, or the row selected on 清單) is `live`, that session's
 `station/detail/<id>.js` too. A session that is no longer live has its detail
 re-read no more, because nothing under it can move; a hidden tab re-reads
 nothing. Each load is a script tag with a `?t=` the server ignores, the way the
-page loaded both the first time. A redraw keeps which sections were open, where
-the page and the list were scrolled, and which control had focus; a reader
+page loaded both the first time. A redraw keeps which sections were open, the
+agents, prompts and phases opened on 派工 and its state filter, the replay's
+hidden kinds, where the page and the list were scrolled, and which control had
+focus; a reader
 typing into a field on the page holds it back until the next re-read. Figures
 that move between re-reads — how long a stage has run — tick once a second,
 and the footer says when the last re-read landed, on every view. The file
@@ -591,9 +622,9 @@ and the eyebrow's cannot disagree.
 
 Both decisions are pure functions above the `module.exports` guard, so both
 are unit tested: what to say
-(`assets/station/station.js:996`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
+(`assets/station/station.js:998`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
 and what the eyebrow reads
-(`assets/station/station.js:1006`, `function heroEyebrow(frozenAt) {`). The
+(`assets/station/station.js:1008`, `function heroEyebrow(frozenAt) {`). The
 fetch that feeds them, the bar they fill and the pill are the document half
 below the guard. The eyebrow is rendered rather than patched, so it takes a
 redraw — but only as the state flips, never on a poll that finds nothing
@@ -705,7 +736,7 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:1218`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:1220`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button, and every registry card now carries one:
