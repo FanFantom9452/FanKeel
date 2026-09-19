@@ -75,6 +75,8 @@ what gets scheduled.
 
 ## Ready
 
+- 〔tests〕「匯出而沒人 import」只在 `module.exports = {…}` 是檔尾最後一句時才檢查，`assets/station/station.js` 的匯出因此不受檢；station-live 的 Task 7 審查找到兩個漏網的 — [tests/source.test.js](tests/source.test.js).
+
 ## Needs a decision
 
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；Gemini CLI `BeforeAgent`、Codex CLI `UserPromptSubmit` 也能回 `additionalContext` — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
