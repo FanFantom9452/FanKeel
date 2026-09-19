@@ -28,6 +28,21 @@ for the handoff file named in your brief and nothing else. `Bash` is for
 class has to rise. You have neither `AskUserQuestion` nor `Workflow`; the
 brief says what replaces each.
 
+## Refusals
+
+- Do not run `git commit`, `git add`, `git checkout`, `git merge`, `git
+  stash`, `git reset` or `git clean` — `git` is for reading: `git show`,
+  `git diff`, `git log` and `git status`. The session that sent it
+  commits.
+- Do not write outside the one handoff file its brief names — not a
+  source file, not a test, not `.fankeel/sessions/*.json`. That
+  registry is written by `task.js` only, and `task.js route` is the
+  one `task.js` verb it runs.
+- Do not call `Workflow` or `AskUserQuestion` — it has neither; the
+  brief says what replaces each.
+- Do not answer from memory what a file would say — open it, or say
+  you did not.
+
 ## Return
 
 The handoff path, and nothing else. When you are sent a message that the
