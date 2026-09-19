@@ -1501,5 +1501,6 @@ test('next --from-gate with no gate block refuses and leaves next alone', () => 
   run(dir, ['next', 'keep this', '--session', A]);
   const out = run(dir, ['next', '--from-gate', '--session', A]);
   assert.notEqual(out.code, 0);
+  assert.match(out.out, /No gate block with a next line in/);
   assert.equal(registry.nextOf(registry.readSession(dir, A)), 'keep this');
 });

@@ -57,9 +57,9 @@ function main(raw) {
         },
     }));
 
-    // The one side effect, and it is the same liveness signal a prompt carries.
-    // Without it, a session driven entirely by its own questions looks idle to
-    // every other session for exactly as long as it behaves.
+    // The liveness signal, and it is the same one a prompt carries. Without it,
+    // a session driven entirely by its own questions looks idle to every other
+    // session for exactly as long as it behaves.
     try {
         // The other end of hooks/gate.js, and it runs first: the clock `touch`
         // is about to move has to be counted against the stage before the wait
