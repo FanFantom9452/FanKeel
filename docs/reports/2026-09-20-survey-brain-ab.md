@@ -1,12 +1,12 @@
 ---
 status: current
 last_verified: 2026-09-20
-source_of_truth: 兩次互動實跑（session 5121ea58、942566e9）的 transcript，與一組四臂 headless 量測（`ab.sh`，2026-09-19T18:59Z 起，`HEAD 315f58bb7fb5945e9df9c7f4783a03e356f3829e`）的直接輸出；全部複製在 [evidence/2026-09-20-survey-brain-ab/](evidence/2026-09-20-survey-brain-ab/)。本頁每一個數字都從那裡的檔案來，本頁不會重新產生
+source_of_truth: 兩次互動實跑（session 5121ea58、942566e9）的 transcript，與一組四臂 headless 量測（`ab.sh`，2026-09-19T18:59Z 起，`HEAD 315f58bb7fb5945e9df9c7f4783a03e356f3829e`）與一組四臂對照（`ab2.sh`，2026-09-19T19:45Z 起，`HEAD f34f846f9dfe04607a82d014b73d606dcdc1533f`）的直接輸出；全部複製在 [evidence/2026-09-20-survey-brain-ab/](evidence/2026-09-20-survey-brain-ab/)。本頁每一個數字都從那裡的檔案來，本頁不會重新產生
 ---
 
 # survey 交給 Opus 大腦：新舊模式的量測 — 2026-09-20
 
-**新模式跑得通：Sonnet 主控派 Opus 大腦、大腦派 Sonnet reader、使用者看到的關卡題目就是交接檔裡的原文。但在這個 survey 題目上，新模式比舊模式慢 9–10 倍、貴 4.0–5.6 倍，而主控走到關卡時的 context 沒有比較小。差距主要來自大腦每次都派四個 reader，舊模式在 `-p` 裡一個也沒派——這組數字量的是「派不派」，不是「誰當主控」。**
+**新模式跑得通：Sonnet 主控派 Opus 大腦、大腦派 Sonnet reader、使用者看到的關卡題目就是交接檔裡的原文。但在這個 survey 題目上它比舊模式慢、也比較貴，主控的 context 也沒省下多少。大腦派了四個 reader 的那組慢 9–10 倍、貴 4.0–5.6 倍；把大腦的 `Agent` 拿掉的對照組仍然慢 6.5–9.0 倍、貴 2.5–2.8 倍。主控自己只花 $0.23–0.25，差距在大腦：它把步驟拆開做，用了 34 與 48 次工具，舊模式的主 session 整站 5 與 6 次。**
 
 這是 [docs/plans/2026-09-19-survey-brain.md](../plans/2026-09-19-survey-brain.md) 的 Task 7，回答設計頁 [§8 量測](../plans/2026-09-19-survey-brain-design.md) 的問題。報告以實際跑的日期命名。
 
@@ -82,7 +82,33 @@ survey exit=0 shell_seconds=388
 - **`-p` 沒有 `AskUserQuestion`。** 四臂都用文字列出關卡；新模式的主控因此把關卡原文打了一遍，這在互動模式不會發生。題目逐字相同這件事是第 2 節的互動實跑證明的，不是這一節。
 - **n=2。** 兩組方向一致，大小差了將近一倍（組 1 的新模式比組 2 多花 $2.09）；兩組都不足以說出穩定的倍數。
 
-## 5. 還沒量到的
+## 5. 對照：大腦不派 reader
 
-- 大腦在窄問題上不派 reader 時，新模式的價錢——也就是把「誰當主控」和「派不派」拆開的那一組。
+`ab2.sh` 在同一個迴圈裡交替跑 old3、nor1、old4、nor2。old 與第 3 節的舊模式相同。nor 是新模式，但 `--plugin-dir` 指向 scratchpad 裡的一份 HEAD 副本，`noreader-patch.js` 在副本裡改了三處：`fankeel-brain` 的 `tools` 拿掉 `Agent`、agent 檔的 Tools 段改成自己讀、`lib/render.js` 給大腦的 brief 把派 reader 那一行換成自己讀。其餘追蹤檔 0 個不同。副本放在 repo 外，大腦自己的 Grep 與 Glob 才不會掃到第二份程式碼。兩個檔案的 diff 全文、HEAD、claude `2.1.278` 都在 `ab2/provenance.txt`；porcelain 前後都只有未追蹤檔，`stage.agents` 最後設回 `false`。
+
+| arm | 時間（秒） | 花費（`modelUsage`） | output tokens | cache read | subagents | 主 session 在最後一輪的 context |
+|---|---|---|---|---|---|---|
+| old3 | 37 | $0.64 | 3,069 | 210,335 | 無 | 62,928 |
+| nor1 | 334 | $1.82 | 22,568 | 1,728,533 | 1 brain | 54,399 |
+| old4 | 48 | $0.68 | 3,884 | 315,048 | 無 | 59,062 |
+| nor2 | 313 | $1.70 | 24,034 | 1,578,998 | 1 brain | 57,969 |
+
+數字來自 `ab2-table.txt`、`ab2-context.txt` 與 `ab2-tools.txt`，產生它們的是同目錄的 `ab-table.js ab2 old3 nor1 old4 nor2`、`ab-context.js ab2` 與 `ab2-tools.js`。
+
+組內比較（nor／old）：
+
+| 組 | 時間 | 花費 | output tokens |
+|---|---|---|---|
+| 3 | 9.0× | 2.8× | 7.4× |
+| 4 | 6.5× | 2.5× | 6.2× |
+
+- **兩個 nor 臂都沒有 reader。** `<session>/subagents/` 裡只有一個 `fankeel-brain`。
+- **主控很便宜。** nor 臂裡只有主控是 Sonnet，花 $0.23 與 $0.25；大腦（Opus）花 $1.59 與 $1.46。主控在關卡時的 context 是 54,399 與 57,969，比同組舊模式少 8,529 與 1,093。
+- **時間與花費都在大腦。** 大腦的 transcript 從頭到尾 283 與 259 秒，用了 34 與 48 次工具。舊模式的主 session 整站 5 與 6 次（含 `task.js start` 那一次），第一個 survey 指令就把 `orient.js`、`map.js`、`survey.js --tree` 與掃描串在同一個 Bash 裡。大腦把步驟拆開做：nor1 是 31 次 Bash，nor2 是 20 次 Bash 加 27 次 Read 與 Grep。
+- **reader 花的是錢，不是時間。** 跨批只能粗看（兩批的舊模式都落在 $0.58–0.79、31–48 秒）：派 reader 的 new 臂花 $2.33–4.42、278–388 秒，不派的 nor 臂花 $1.70–1.82、313–334 秒。
+- **n=2**，理由同第 4 節。
+
+## 6. 還沒量到的
+
+- 兩邊寫出來的 survey 誰比較完整、比較對。這兩組只量時間、花費與 context；大腦多用的工具次數換到了什麼，沒有人比過。
 - 一站大到會把 context 撐開的情形（build），也就是設計頁想省的那一種；survey 撐不開。

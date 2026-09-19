@@ -1,14 +1,14 @@
 // Task 7 Step 3: one row per arm, read from each arm's `claude -p --output-format json`
 // result and the script's own provenance log.
-// usage: node ab-table.js
+// usage: node ab-table.js [dir arm...] — defaults to ab/ and the first batch's four arms
 'use strict';
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const DIR = path.join(__dirname, 'ab');
+const DIR = path.join(__dirname, process.argv[2] || 'ab');
 const log = fs.readFileSync(path.join(DIR, 'provenance.txt'), 'utf8');
-const ARMS = ['old1', 'new1', 'old2', 'new2'];
+const ARMS = process.argv.length > 3 ? process.argv.slice(3) : ['old1', 'new1', 'old2', 'new2'];
 
 // A result file can hold the result line more than once; take the largest cost.
 function results(file) {
@@ -51,7 +51,7 @@ for (const arm of ARMS) {
     const kinds = {};
     for (const a of agents) kinds[a] = (kinds[a] || 0) + 1;
     const sh = shellSeconds(arm);
-    const isNew = arm.startsWith('new');
+    const isNew = !arm.startsWith('old');
     console.log('| ' + [arm, Object.keys(mu).join(' + ') || '?', isNew ? 'true' : 'false',
         sh ? sh.seconds + (sh.exit ? ' (exit ' + sh.exit + ')' : '') : '?',
         '$' + cost.toFixed(2), r.total_cost_usd != null ? '$' + Number(r.total_cost_usd).toFixed(2) : '?',
