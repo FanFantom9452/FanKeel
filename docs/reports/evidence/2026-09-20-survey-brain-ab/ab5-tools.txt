@@ -1,0 +1,30 @@
+old9  main: tool calls 8 (Bash 6, Grep 2), first to last timestamp 59s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session 34abdd48-1bd6-4786-aa4c-f00982fe08e9 --task "survey only: which code reads the registry's started field, a
+    $ cd F:/ymlab/fankeel; cat skills/fankeel-survey/SKILL.md; echo ----; node scripts/map.js; echo "exit=$?"; echo ----; git rev-parse --short HEAD; git status --por
+    $ cd F:/ymlab/fankeel; sed -n '/planned, not built/,/^## /p' .fankeel/map.md | head -30; echo ----; node scripts/survey.js --tree; echo ----; node scripts/survey.
+    $ cd F:/ymlab/fankeel; sed -n '78,110p' lib/guard.js; echo ---; grep -n startedAt lib/*.js hooks/*.js scripts/*.js; echo ---; sed -n '96,100p;136,160p' lib/dirty.
+    $ cd F:/ymlab/fankeel; sed -n '31p' docs/registry.md | grep -o '.\{200\}`started`.\{250\}'; grep -n 'tie-break\|claimedFirst' docs/*.md | head
+    $ cd F:/ymlab/fankeel; sed -n '31p' docs/registry.md | grep -o '.\{0,120\}started.\{0,160\}'
+nor7  main: tool calls 8 (Bash 2, ToolSearch 4, Agent 1, Read 1), first to last timestamp 217s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session 8e5db3ef-a98d-4d94-aa41-eac66be090b3 --task "survey only: which code reads the registry's started field, a
+    $ echo test
+    fankeel:fankeel-brain: tool calls 13 (Read 1, Bash 11, Write 1), first to last timestamp 131s
+old10  main: tool calls 18 (Bash 16, ToolSearch 2), first to last timestamp 112s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session 1d12cbbc-7f62-4645-bf90-84cae1064a7c --task "survey only: which code reads the registry's started field, a
+    $ sed -n '1,200p' skills/fankeel-survey/SKILL.md
+    $ node scripts/map.js 2>&1 | head -60; echo "=== profile ==="; cat .fankeel/profile.json 2>/dev/null || ls .fankeel/
+    $ sed -n '200,320p' skills/fankeel-survey/SKILL.md
+    $ node scripts/orient.js 2>&1 | head -40; echo "=== tree ==="; node scripts/survey.js --tree 2>&1 | head -50
+    $ node scripts/survey.js started startedAt 2>&1 | head -60
+    $ echo "=== planned, not built ==="; sed -n '/planned, not built/,/^## /p' .fankeel/map.md | head -30
+    $ grep -rn "started" --include=*.js --include=*.mjs lib/ scripts/ hooks/ assets/ | grep -v "^tests/" | head -80
+    $ echo "--- guard.js 78-110"; sed -n '78,110p' lib/guard.js; echo "--- dirty.js 92,132-160"; sed -n '92,104p;132,160p' lib/dirty.js; echo "--- handoff.js 1,20"; s
+    $ echo "--- detail.js 645-660"; sed -n '645,660p' lib/detail.js; echo "--- station.js 360-370"; sed -n '360,370p' lib/station.js; echo "--- station.js 522-536"; s
+    $ grep -rn "\.started\b\|started\s*:" --include=*.js lib/ scripts/ hooks/ assets/ evals/ 2>/dev/null | grep -v "startedAt" | grep -v "^docs/" | wc -l; echo "--- f
+    $ grep -n "updatedAt" lib/registry.js | head -10; echo "--- registry started"; grep -n "started" lib/registry.js | head -20; echo "=== docs that describe it ===";
+    $ grep -n -B2 -A4 '`started`' docs/registry.md | head -60
+    $ grep -n -A3 '`started`' docs/collisions.md docs/station.md docs/subagents.md | head -50; echo "=== porcelain ==="; git status --porcelain | head
+    $ grep -n "started" docs/registry.md | head -20; echo "=== entry class ==="; node -e "const d=require('F:/ymlab/fankeel/.fankeel/sessions/1d12cbbc-7f62-4645-bf90-
+    $ grep -rn "classForRoute" lib/stages.js | head -5; node -e "const s=require('F:/ymlab/fankeel/lib/stages.js');console.log(s.classForRoute?s.classForRoute(['surve
+nor8  main: tool calls 1 (Bash 1), first to last timestamp 128s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session 6664db6c-e85b-428c-bc9d-78e3d59881b9 --task "survey only: which code reads the registry's started field, a

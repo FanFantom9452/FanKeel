@@ -6,7 +6,7 @@ source_of_truth: 兩次互動實跑（session 5121ea58、942566e9）的 transcri
 
 # survey 交給 Opus 大腦：新舊模式的量測 — 2026-09-20
 
-**新模式跑得通：Sonnet 主控派 Opus 大腦、大腦派 Sonnet reader、使用者看到的關卡題目就是交接檔裡的原文。但在這個 survey 題目上它每一組都比舊模式慢、也比較貴，主控的 context 也沒有一致地變小。大腦派四個 reader 時慢 9–10 倍、貴 4.0–5.6 倍；拿掉 reader 仍慢 6.5–9.0 倍、貴 2.5–2.8 倍。之後兩次改大腦的 brief（`577f3e1`、`357924c`），把它的工具次數從 34、48 次壓到 11、18 次，花費比仍是 2.6–2.8 倍：大腦單獨的花費就超過整個舊模式，它的 output 是舊模式的 3.6–4.7 倍——過半是 thinking（舊模式的 2.5–4.0 倍），其餘裡最大的一筆是交接檔，光它就比舊模式整站看得到的 output 多。**
+**新模式跑得通：Sonnet 主控派 Opus 大腦、大腦派 Sonnet reader、使用者看到的關卡題目就是交接檔裡的原文。但在這個 survey 題目上它每一組都比舊模式慢、也比較貴，主控的 context 也沒有一致地變小。大腦派四個 reader 時慢 9–10 倍、貴 4.0–5.6 倍；拿掉 reader 仍慢 6.5–9.0 倍、貴 2.5–2.8 倍。之後兩次改大腦的 brief（`577f3e1`、`357924c`），把它的工具次數從 34、48 次壓到 11、18 次，花費比仍是 2.6–2.8 倍：大腦單獨的花費就超過整個舊模式，它的 output 是舊模式的 3.6–4.7 倍——過半是 thinking（舊模式的 2.5–4.0 倍），其餘裡最大的一筆是交接檔，光它就比舊模式整站看得到的 output 多。把大腦降到 `effort: medium` 之後 thinking 確實少了，但單價拆開來看，output 只占大腦花費的三成，其餘是多開一個 context 的 cache，所以這條路最多只動得了 8–9%。**
 
 這是 [docs/plans/2026-09-19-survey-brain.md](../plans/2026-09-19-survey-brain.md) 的 Task 7，回答設計頁 [§8 量測](../plans/2026-09-19-survey-brain-design.md) 的問題。報告以實際跑的日期命名。
 
@@ -176,7 +176,30 @@ transcript 不存 thinking 的文字，thinking 區塊只留 signature。`ab-out
 - **看得到的部分裡，交接檔最大。** 大腦寫交接檔的那一次 Write 約 2,654 與 3,795 tokens，已經比同組舊模式整站看得到的 output（1,458 與 1,656）多。
 - **主控也在想。** nor 臂主控的 thinking 估 2,009–6,447，舊模式整個主 session 是 1,731–2,478。
 
-## 9. 還沒量到的
+## 9. 大腦改成 `effort: medium`
+
+`d3d6913` 在 `agents/fankeel-brain.md` 的 frontmatter 加上 `effort: medium`。在這之前，舊模式的主 session 與大腦都跑在 session 的 `high`（兩邊 transcript 裡的 `"effort":"high"`）。`ab5.sh` 是 `ab4.sh` 換輸出目錄與臂名；`ab6.sh` 設定相同，只跑一對，補 ab5 作廢的那一對。
+
+**兩件事讓這一組只剩一對有效，兩件都記在這裡而不是丟掉：**
+
+- **兩個 nor 臂的主控沒有派大腦。** nor8 與 nor9 看到注入的 `<plugin>` 指向 scratchpad 的副本，停下來問而不是派工（`ab5/nor8-survey.json`、`ab6/nor9-survey.json` 的 `result`；`ab5-table.txt`、`ab6-table.txt` 的 subagents 欄是 `none`、turns 1 與 4）。這是第 7 節那個假象的更重一版：同一件事在 nor1 只花一次 `ls`、在 nor5 花兩次 Bash，在這裡讓整臂作廢。副本路徑是量測才有的，互動使用不會出現。
+- **掃描面在這幾組之間變大了。** 大腦交接檔引用的掃描標頭：ab4 的兩份都是 `566 files`，ab5 的 nor7 是 `592 files`（`ab5/handoff-nor7.md`），寫這一節時是 `629 files`（`ab6/scan-at-d3d6913.txt`）。原因是這些量測自己把 evidence 交接檔提交進 repo，裡面都有 `started`。舊模式因此也變慢變貴：old10 103 秒 $0.99、old11 126 秒 $1.22，第 7 節的 old7、old8 是 35 秒 $0.45 與 $0.49。跨批只能更粗略地看，組內仍然公平——兩臂看到的是同一棵樹。
+
+有效的那一對：
+
+| arm | 時間（秒） | 花費 | output | subagents | 大腦（Opus） |
+|---|---|---|---|---|---|
+| old9 | 44 | $0.73 | 3,695 | 無 | — |
+| nor7 | 200 | $1.13 | 13,313 | 1 brain | $0.78、8,063 tokens、13 次工具、131 秒 |
+
+組內：時間 4.5×、花費 1.55×、output 3.6×（`ab5-table.txt`、`ab5-tools.txt`、`ab5-output.txt`）。
+
+- **thinking 確實降了。** nor7 大腦估出的 thinking 是 3,386，第 7 節兩個跑 `high` 的大腦是 5,513 與 7,310；大腦的 output 從 10,109、13,636 降到 8,063，工具 13 次、131 秒。
+- **但省得有限，而且這在改之前就算得出來。** `ab-price.js` 從 `modelUsage` 反推單價，同一模型的每一列都對得上（最大誤差 $0.0000）：Opus 的 output 每百萬 $25、cache read $0.50、cache write 在舊模式主 session 是 $10、在大腦是 $6.25。第 7 節大腦的花費裡 output 只占 30–31%，cache read 25–36%，cache write 34–44%（`ab-price.txt`）。thinking 只是 output 的一半多，所以砍半也只動得了大腦花費的 8–9%；其餘是多開一個 context 的固定成本。
+- **n=1**，而且 old9 是舊模式偏貴的一端（$0.73；第 7 節是 $0.45 與 $0.49）。這一對的 1.55× 不能當成 `medium` 的效果。
+- **沒量到的是品質。** `medium` 讓大腦想得少，survey 寫得好不好沒有人比過，這是拿判斷換錢。
+
+## 10. 還沒量到的
 
 - 兩邊寫出來的 survey 誰比較完整、比較對。這四組只量時間、花費與 context；大腦多花的 output 換到了什麼，沒有人比過。
 - 一站大到會把 context 撐開的情形（build），也就是設計頁想省的那一種；survey 撐不開。

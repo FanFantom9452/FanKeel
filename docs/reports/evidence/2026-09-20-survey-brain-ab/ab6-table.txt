@@ -1,0 +1,8 @@
+| arm | model | stage.agents | shell s | cost (modelUsage) | total_cost_usd | input | output | cache read | cache write | turns | subagents | handoff |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| old11 | claude-opus-5 | false | 126 | $1.22 | $1.22 | 26 | 9585 | 686304 | 63554 | 20 | none | session 29290851 |
+| nor9 | claude-sonnet-5 | true | 42 | $0.19 | $0.19 | 12 | 4309 | 258317 | 23259 | 4 | none | session a842a88a |
+
+per model, per arm:
+  old11  claude-opus-5  $1.2184  in 26  out 9585  cacheR 686304  cacheW 63554
+  nor9  claude-sonnet-5  $0.1878  in 12  out 4309  cacheR 258317  cacheW 23259

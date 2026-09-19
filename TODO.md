@@ -81,7 +81,7 @@ what gets scheduled.
 
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；Gemini CLI `BeforeAgent`、Codex CLI `UserPromptSubmit` 也能回 `additionalContext` — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
 - 〔stage-agents〕主控＋站 agent 要不要推到其餘各站：看 survey 的量測；build 要 script 產生 workflow、design 要 SendMessage 轉話、station 要把第二層掛在派它的 agent 底下（現在平鋪）、插話要有人接 — [lib/stages.js](lib/stages.js).
-- 〔stage-agents〕survey 的大腦仍貴 2.6–2.8 倍：output 過半是 thinking（舊模式的 2.5–4 倍），交接檔一項就比舊模式整站看得到的 output 多；要不要降它的 effort、縮短交接檔的形狀 — [agents/fankeel-brain.md](agents/fankeel-brain.md).
+- 〔stage-agents〕survey 的大腦已降到 `effort: medium`，thinking 少了，但 output 只占它花費的 26–31%，其餘是多開一個 context 的 cache：要繼續縮交接檔，還是認定 survey 這站不值得派 — [agents/fankeel-brain.md](agents/fankeel-brain.md).
 
 ## Waiting
 

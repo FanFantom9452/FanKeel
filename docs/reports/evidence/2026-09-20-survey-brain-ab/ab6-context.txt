@@ -1,0 +1,2 @@
+old11  main (claude-opus-5): context at last turn 81395, output 9585
+nor9  main (claude-sonnet-5): context at last turn 52424, output 4309

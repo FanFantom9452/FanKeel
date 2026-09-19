@@ -1,0 +1,5 @@
+old9  main (claude-opus-5): context at last turn 61147, output 3695
+nor7  main (claude-sonnet-5): context at last turn 74814, output 5250
+    fankeel:fankeel-brain depth 1 (claude-opus-5): context at last turn 52393, output 8063
+old10  main (claude-opus-5): context at last turn 64988, output 7709
+nor8  main (claude-sonnet-5): context at last turn 45799, output 5163
