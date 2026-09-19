@@ -43,7 +43,9 @@ for reference-page corrections and small fixes that need no test run. The
 verifier adds `Write`, because verify's per-task verifier writes its evidence rows
 to a file and returns the path — what that keeps the rows out of is a
 Workflow's join, not this session's context, which a return value never
-reaches anyway. `Write` is matched by `guard.js`'s `PreToolUse` hook,
+reaches anyway. `fankeel-brain` carries `Write` for one file, its handoff:
+the report and gate block a controller hands on by path rather than retyping
+(the `stage.agents` section below). `Write` is matched by `guard.js`'s `PreToolUse` hook,
 whose matcher is `Edit|Write|NotebookEdit`. `Bash` is matched now too:
 `.claude-plugin/plugin.json` registers `hooks/guard.js` a second time,
 matcher `Bash|PowerShell`, and it denies a command that writes files —
