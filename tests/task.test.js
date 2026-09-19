@@ -14,6 +14,7 @@ const { execFileSync, spawnSync, spawn } = require('node:child_process');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'task.js');
 const registry = require('../lib/registry.js');
+const { PLUGIN_ROOT } = require('../lib/render.js');
 const tmp = require('./tmp.js');
 
 const A = 'aaaaaaaa-1111-2222-3333-444444444444';
@@ -948,6 +949,9 @@ test('start at survey with stage.agents true prints the controller\'s rules, not
   assert.match(out, /fankeel:fankeel-brain/);
   assert.match(out, new RegExp('stage design --session ' + A));
   assert.doesNotMatch(out, /run the scanner/);
+  // The rules name `<plugin>`, and this output is not an injection: it says
+  // what that resolves to itself.
+  assert.ok(out.includes('<plugin> = ' + PLUGIN_ROOT), out);
 
   // A fresh registry, its own machine profile: a route ending at survey gets
   // the controller's block too, with option one standing the task down.

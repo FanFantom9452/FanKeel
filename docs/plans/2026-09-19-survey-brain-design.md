@@ -72,7 +72,7 @@ survey 換成新模式，其餘各站照舊；用 profile 開關決定走哪一�
 ## 5. 交接檔
 
 - 路徑是 `.fankeel/build/task-<started>/<stage>.md`，`<started>` 取 registry 的 `started`
-  （adopt 會保留它，`scripts/task.js:950`）。
+  （adopt 會保留它，`scripts/task.js:951`）。
 - 路徑由新檔 `lib/handoff.js` 的一個函式算；brief、`gate.js`、`resume.js`、`task.js` 都
   呼叫這一個函式。
 - 內容是這一站 output shape 填好的報告，後面接一個 `json gate` 區塊：

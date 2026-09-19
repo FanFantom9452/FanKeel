@@ -35,7 +35,7 @@ const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseR
 const profile = require('../lib/profile.js');
 const docs = require('../lib/docs.js');
 const { handoffPath, readGate } = require('../lib/handoff.js');
-const { controlRulesFor } = require('../lib/render.js');
+const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT } = require('../lib/render.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
 
@@ -633,6 +633,7 @@ function controllerLines(root, id, data, values) {
     const control = controlRulesFor(data, { values }, { root, sessionId: id });
     if (!control) return null;
     const lines = ['Now ' + data.stage + ', through its stage agent. You are its controller:'];
+    if (control.rules.some((rule) => rule.includes(PLUGIN_MARK))) lines.push(PLUGIN_MARK + ' = ' + PLUGIN_ROOT);
     for (const rule of control.rules) lines.push('  - ' + rule);
     return lines;
 }
