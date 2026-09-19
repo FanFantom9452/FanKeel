@@ -84,7 +84,7 @@ survey exit=0 shell_seconds=388
 
 ## 5. 對照：大腦不派 reader
 
-`ab2.sh` 在同一個迴圈裡交替跑 old3、nor1、old4、nor2。old 與第 3 節的舊模式相同。nor 是新模式，但 `--plugin-dir` 指向 scratchpad 裡的一份 HEAD 副本，`noreader-patch.js` 在副本裡改了三處：`fankeel-brain` 的 `tools` 拿掉 `Agent`、agent 檔的 Tools 段改成自己讀、`lib/render.js` 給大腦的 brief 把派 reader 那一行換成自己讀。其餘追蹤檔 0 個不同。副本放在 repo 外，大腦自己的 Grep 與 Glob 才不會掃到第二份程式碼。兩個檔案的 diff 全文、HEAD、claude `2.1.278` 都在 `ab2/provenance.txt`；porcelain 前後都只有未追蹤檔，`stage.agents` 最後設回 `false`。
+`ab2.sh` 在同一個迴圈裡交替跑 old3、nor1、old4、nor2。old 與第 3 節的舊模式相同。nor 是新模式，但 `--plugin-dir` 指向 scratchpad 裡的一份 HEAD 副本，`noreader-patch.js` 在副本裡改了三處：`fankeel-brain` 的 `tools` 拿掉 `Agent`、agent 檔的 Tools 段改成自己讀、`lib/render.js` 給大腦的 brief 把派 reader 那一行換成自己讀。其餘追蹤檔 0 個不同。副本放在 repo 外，大腦自己的 Grep 與 Glob 才不會掃到第二份程式碼。兩個檔案的 diff 全文、HEAD、claude `2.1.278` 都在 `ab2/provenance.txt`；開跑前的 porcelain 只有未追蹤檔；每一臂跑完多了兩行 ` M`，是 `ab-table.js` 與 `ab-context.js`——這兩支 evidence 腳本是在跑的期間改的（加上目錄與臂名參數），不屬於外掛，也不在 survey 題目的範圍內。`stage.agents` 最後設回 `false`。
 
 | arm | 時間（秒） | 花費（`modelUsage`） | output tokens | cache read | subagents | 主 session 在最後一輪的 context |
 |---|---|---|---|---|---|---|
