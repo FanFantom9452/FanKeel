@@ -118,3 +118,39 @@ test('an answer with no stamp says the gate hook did not run', () => {
   assert.match(context(out), /^gate: .*hooks\/gate\.js did not run/m);
   assert.equal(readEntry(root, MINE).waited, undefined);
 });
+
+function handoff(root, gate) {
+  const file = path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'survey.md');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const TICKS = '`'.repeat(3);
+  fs.writeFileSync(file, '# report\n\n' + TICKS + 'json gate\n' + JSON.stringify(gate) + '\n' + TICKS + '\n');
+}
+const QUESTIONS = [{ question: 'survey 的結論可以進 design 嗎？', header: 'survey', multiSelect: false, options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }] }];
+const PLACEHOLDER = { questions: [{ question: 'placeholder', header: 'x', multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }] }] };
+const agentsOn = (root) => fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'true' }));
+
+test('stage.agents at survey: the gate in the handoff replaces the question', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  const out = JSON.parse(run(GATE, root, { tool_input: PLACEHOLDER }));
+  assert.deepEqual(out.hookSpecificOutput.updatedInput.questions, QUESTIONS);
+  assert.equal(Number.isFinite(readEntry(root, MINE).gateAt), true);
+});
+
+test('stage.agents off: the question goes out as sent, even with a gate on disk', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  assert.equal(run(GATE, root, { tool_input: PLACEHOLDER }).trim(), '');
+});
+
+test('stage.agents at survey: the answer is written beside the handoff', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', gateAt: Date.now(), configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  run(RESUME, root, { tool_response: { answers: { 'q?': '暫停' } } });
+  const file = path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'survey-answer.md');
+  assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { answers: { 'q?': '暫停' } });
+});

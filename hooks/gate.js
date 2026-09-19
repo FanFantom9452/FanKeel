@@ -17,6 +17,10 @@
 // about any tool. It only notes the time.
 
 const registry = require('../lib/registry.js');
+const docs = require('../lib/docs.js');
+const profileLib = require('../lib/profile.js');
+const { controlling } = require('../lib/stages.js');
+const { handoffPath, readGate } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 
 function main(raw) {
@@ -30,8 +34,20 @@ function main(raw) {
     try {
         registry.gateOpen(root, payload.session_id);
     } catch (e) { /* housekeeping */ }
+
+    // `stage.agents`: the question is the stage agent's, word for word. What the
+    // controller sent is a placeholder and does not count, so nothing it could
+    // have mistyped reaches the user. docs/plans/2026-09-19-survey-brain-design.md §6.
+    let gate = null;
+    try {
+        const projectRoot = docs.projectRootsFor(root, mine.project ? [mine.project] : [])[0] || root;
+        const values = profileLib.read(projectRoot, mine.configDir || profileLib.configDirOf()).values;
+        if (controlling(mine.stage, values)) gate = readGate(handoffPath(root, mine, mine.stage));
+    } catch (e) { /* housekeeping */ }
+    if (!gate) return;
+
+    const updatedInput = Object.assign({}, payload.tool_input || {}, { questions: gate.questions });
+    process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', updatedInput } }));
 }
 
-// Deliberately silent, and deliberately answerless. Whatever went wrong, the
-// question still has to reach the user.
 run(main);

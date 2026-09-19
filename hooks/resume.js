@@ -21,6 +21,8 @@ const registry = require('../lib/registry.js');
 const { renderResume } = require('../lib/render.js');
 const docs = require('../lib/docs.js');
 const profileLib = require('../lib/profile.js');
+const { controlling } = require('../lib/stages.js');
+const { answerPath, writeAnswer } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 
 function main(raw) {
@@ -64,6 +66,16 @@ function main(raw) {
         // is taken out of it.
         registry.gateClose(root, sessionId);
         registry.touch(root, sessionId);
+    } catch (e) { /* housekeeping */ }
+
+    // `stage.agents`: the answer left where the stage agent is told to look, so
+    // the controller relays a path and never retypes what the user said.
+    try {
+        if (controlling(mine.stage, profile && profile.values)) {
+            const file = answerPath(root, mine, mine.stage);
+            const response = payload.tool_response;
+            if (file && response != null) writeAnswer(file, typeof response === 'string' ? response : JSON.stringify(response, null, 2));
+        }
     } catch (e) { /* housekeeping */ }
 }
 

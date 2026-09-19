@@ -34,6 +34,7 @@ const { splitAroundVerb } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 const profile = require('../lib/profile.js');
 const docs = require('../lib/docs.js');
+const { handoffPath, readGate } = require('../lib/handoff.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
 
@@ -205,6 +206,7 @@ function parseArgs(head, whole) {
     if (whole.includes('--default')) opts.default = true;
     if (whole.includes('--push')) opts.push = true;
     if (whole.includes('--no-push')) opts.push = false;
+    if (whole.includes('--from-gate')) opts.fromGate = true;
     return opts;
 }
 
@@ -755,7 +757,16 @@ function cmdNote(root, opts) {
 
 function cmdNext(root, opts) {
     const id = requireSession(opts);
-    const text = opts.positional.join(' ');
+    let text = opts.positional.join(' ');
+    // `--from-gate`: the line a stage agent wrote for a pause, read from its
+    // handoff rather than retyped by the controller.
+    if (opts.fromGate === true) {
+        const data = registry.readSession(root, id);
+        const file = data ? handoffPath(root, data, data.stage) : null;
+        const gate = file ? readGate(file) : null;
+        if (!gate || typeof gate.next !== 'string' || !gate.next.trim()) fail('No gate block with a next line in ' + (file || 'this task\'s handoff'));
+        text = gate.next;
+    }
     if (!registry.setNext(root, id, text)) fail('No entry for this session under ' + root);
     return text.trim() ? 'fankeel — next: ' + registry.nextOf(registry.readSession(root, id)) : 'fankeel — next cleared.';
 }

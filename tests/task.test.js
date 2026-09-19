@@ -1480,3 +1480,26 @@ test('land refuses a verb that is not merge, pr or keep', () => {
   const out = run(dir, ['land', 'discard', '--session', A]);
   assert.equal(out.code, 1);
 });
+
+test('next --from-gate takes the pause line from the stage agent\'s gate', () => {
+  const { handoffPath } = require('../lib/handoff.js');
+  const dir = root();
+  assert.equal(run(dir, ['start', '--session', A, '--task', 'survey brain', '--route', 'survey,design']).code, 0);
+  const file = handoffPath(dir, registry.readSession(dir, A), 'survey');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const TICKS = '`'.repeat(3);
+  const gate = { questions: [{ question: 'q', header: 'h', multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }] }], next: 'survey 待核可：讀 survey.md' };
+  fs.writeFileSync(file, 'report\n\n' + TICKS + 'json gate\n' + JSON.stringify(gate) + '\n' + TICKS + '\n');
+  const out = run(dir, ['next', '--from-gate', '--session', A]);
+  assert.equal(out.code, 0, out.out);
+  assert.equal(registry.nextOf(registry.readSession(dir, A)), 'survey 待核可：讀 survey.md');
+});
+
+test('next --from-gate with no gate block refuses and leaves next alone', () => {
+  const dir = root();
+  run(dir, ['start', '--session', A, '--task', 'survey brain', '--route', 'survey,design']);
+  run(dir, ['next', 'keep this', '--session', A]);
+  const out = run(dir, ['next', '--from-gate', '--session', A]);
+  assert.notEqual(out.code, 0);
+  assert.equal(registry.nextOf(registry.readSession(dir, A)), 'keep this');
+});
