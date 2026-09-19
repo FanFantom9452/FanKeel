@@ -440,7 +440,7 @@ session:
 | piece | where | what it does |
 |---|---|---|
 | controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` and printed by `task.js start` and `task` in place of their first step | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns, ask; option one advances the stage, or stands the task down where the route ends |
-| the stage agent | `agents/fankeel-brain.md` | opus; `Write` for its handoff, `Agent` for its readers |
+| the stage agent | `agents/fankeel-brain.md` | opus at `effort: medium`; `Write` for its handoff, `Agent` for its readers |
 | its brief | `renderBrief` in `lib/render.js` | the stage's rules and shape, the skill's path, the handoff path, what replaces AskUserQuestion and Workflow, and one Bash call for independent commands and for the lines it cites — under Claude Code's 10,000-character cap on one `additionalContext` |
 | the handoff | `handoffPath`, `answerPath`, `readGate` and `writeAnswer` in `lib/handoff.js` | `.fankeel/build/task-<started>/survey.md`, ending in a `json gate` block; the answer beside it as `survey-answer.md` |
 | the gate | `hooks/gate.js` | replaces the controller's placeholder question with the block's, word for word |

@@ -89,6 +89,8 @@ test('the stage agent writes its handoff and dispatches readers, on opus', () =>
     assert.ok(tools.includes('Write'), 'it writes its handoff');
     assert.ok(!tools.includes('Edit'), 'it changes no source');
     assert.equal(f.model, 'opus');
+    // At the session's `high` it thought 2.5–4× what the main session did over the same survey.
+    assert.equal(f.effort, 'medium');
 });
 
 // Its brief says to read cited lines with `sed -n` in one Bash call; a Tools
