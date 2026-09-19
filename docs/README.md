@@ -216,6 +216,7 @@ is explained, and it is the one thing to know before adding a page here.
 | `docs/decisions/` | decision | it records what was decided then, so yes |
 | `docs/plans/` | plan | until the work lands, then it is archived |
 | `docs/reports/` | report | it is a dated snapshot |
+| `docs/reports/evidence/` | fixture | n/a — the raw output a report cites rather than a page about the system, so it is not expected in this index either |
 | `docs/archive/` | archive | that is the point of it |
 | `docs/judgements/` | report | it is what `fankeel-judge` answered on that day, filed verbatim by `scripts/judge.js` |
 | `skills/` | reference | no |

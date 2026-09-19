@@ -602,7 +602,11 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     //
     // Archived documents are not expected in it. An index of current material
     // that also lists everything retired is an index that stopped distinguishing
-    // the two, which was the point of having an archive.
+    // the two, which was the point of having an archive. A fixture is left out
+    // for the same reason one step further along: it is a test's own input, the
+    // raw evidence a report cites rather than a page about the system, and an
+    // index carrying every handoff dump beside the documents has stopped
+    // telling documents and data apart.
     // Only when the documentation directory exists. A project with no `docs/` at
     // all has not forgotten to write an index; it has not started keeping
     // documents there, and saying otherwise is a finding about nothing.
@@ -625,7 +629,8 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
             for (const rel of markdown) {
                 if (rel === indexRel) continue;
                 if (rel.split('/')[0] !== docRoot) continue;
-                if (docs.roleOf(tree, rel) === 'archive') continue;
+                const role = docs.roleOf(tree, rel);
+                if (role === 'archive' || role === 'fixture') continue;
                 if (!linked.has(rel)) index.missing.push(rel);
             }
         }

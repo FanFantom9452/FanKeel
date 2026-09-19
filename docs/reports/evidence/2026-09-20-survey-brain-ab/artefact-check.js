@@ -4,7 +4,7 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { readGate } = require('../../../lib/handoff.js');
+const { readGate } = require('../../../../lib/handoff.js');
 
 const [session, handoff] = process.argv.slice(2);
 const transcript = path.join(os.homedir(), '.claude', 'projects', 'F--ymlab-fankeel', session + '.jsonl');

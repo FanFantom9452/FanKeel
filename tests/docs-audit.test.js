@@ -455,6 +455,26 @@ test('the archive is not expected in an index of current material', () => {
   assert.deepEqual(sweep(root).index.missing, []);
 });
 
+// A fixture is a test's own input rather than a page about the system: the raw
+// evidence a report cites, most of a directory of which is not markdown at all.
+// An index that lists every handoff dump beside the documents has stopped
+// telling the two apart, which is the argument the archive above already makes.
+test('a fixture is not expected in an index of current material', () => {
+  const root = tree({
+    '.fankeel/docs.json': { age: 1, body: JSON.stringify({
+      index: 'docs/README.md',
+      buckets: [
+        { path: 'docs', role: 'reference', depth: 1 },
+        { path: 'docs/reports/evidence', role: 'fixture' },
+      ],
+    }) },
+    'docs/README.md': { age: 1, body: '- [Architecture](01-architecture.md)\n' },
+    'docs/01-architecture.md': { age: 1, body: '# a\n' },
+    'docs/reports/evidence/2026-01-01-run/handoff.md': { age: 1, body: '# raw\n' },
+  });
+  assert.deepEqual(sweep(root).index.missing, []);
+});
+
 test('a declared index that was never written is a finding', () => {
   const root = withTree(tree({ 'docs/01-x.md': '# a\n' }), 'flat');
   const r = sweep(root);
