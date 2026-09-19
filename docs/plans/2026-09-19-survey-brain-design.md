@@ -19,6 +19,7 @@ survey 換成新模式，其餘各站照舊；用 profile 開關決定走哪一�
 | 一個 hook 的 `additionalContext` 上限 10,000 字；超過的存成檔，只給 2,000 字預覽，不叫模型去讀 | https://code.claude.com/docs/en/hooks.md，行 941 |
 | `SubagentStart` 收到 `session_id`、`transcript_path`、`cwd`、`agent_id`、`agent_type`，沒有 prompt | 同上，行 2367 |
 | `PreToolUse` 的 `updatedInput` 會取代整個 tool input；文件寫的 `AskUserQuestion` 用法是 `allow` 加 `updatedInput` 由程式代答 | 同上，行 1064、1794、1814 |
+| 實測：hook 只回 `updatedInput`、不帶 `permissionDecision` 時，`AskUserQuestion` 顯示換過的題目，照樣讓人點選，模型收到的回答對應換過的題目（它也看得出題目被換過） | 2026-09-20，Claude Code v2.1.278 互動模式；[plan](2026-09-19-survey-brain.md) Task 1 |
 | 七站 skill 有六份超過 10,000 字（`wc -c`：design 9,672，build 26,379） | 本 repo，2026-09-19 |
 | 一站的 `rulesFor` 加 `templateFor` 是 1,955–2,092 字；現在的 brief 1,067 字，測試上限 1,400 | `tests/brief.test.js:133` |
 
@@ -117,6 +118,4 @@ survey 換成新模式，其餘各站照舊；用 profile 開關決定走哪一�
 
 ## 沒驗證的
 
-- `updatedInput` 在互動模式下，能不能只換掉 `AskUserQuestion` 的題目、同時照樣讓人選。
-  文件只寫了 `allow` 加 `updatedInput` 由程式代答的用法。hook 清單在 process 啟動時就定了，
-  所以要在一個新開的 session 裡實測。
+`updatedInput` 已於 2026-09-20 實測，結果見前提表。
