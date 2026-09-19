@@ -1,12 +1,12 @@
 ---
 status: current
 last_verified: 2026-09-20
-source_of_truth: 兩次互動實跑（session 5121ea58、942566e9）的 transcript，與一組四臂 headless 量測（`ab.sh`，2026-09-19T18:59Z 起，`HEAD 315f58bb7fb5945e9df9c7f4783a03e356f3829e`）一組四臂對照（`ab2.sh`，2026-09-19T19:45Z 起，`HEAD f34f846f9dfe04607a82d014b73d606dcdc1533f`）與它在大腦改 brief 之後的重跑（`ab3.sh`，`HEAD 577f3e1d6fb7305cf632c65795895660e891ce61`）的直接輸出；全部複製在 [evidence/2026-09-20-survey-brain-ab/](evidence/2026-09-20-survey-brain-ab/)。本頁每一個數字都從那裡的檔案來，本頁不會重新產生
+source_of_truth: 兩次互動實跑（session 5121ea58、942566e9）的 transcript，與一組四臂 headless 量測（`ab.sh`，2026-09-19T18:59Z 起，`HEAD 315f58bb7fb5945e9df9c7f4783a03e356f3829e`）一組四臂對照（`ab2.sh`，2026-09-19T19:45Z 起，`HEAD f34f846f9dfe04607a82d014b73d606dcdc1533f`）與它在大腦改 brief 之後的兩次重跑（`ab3.sh`，`HEAD 577f3e1d6fb7305cf632c65795895660e891ce61`；`ab4.sh`，`HEAD 357924cc2ecea2546785145df722e7b1d0af712a`）的直接輸出；全部複製在 [evidence/2026-09-20-survey-brain-ab/](evidence/2026-09-20-survey-brain-ab/)。本頁每一個數字都從那裡的檔案來，本頁不會重新產生
 ---
 
 # survey 交給 Opus 大腦：新舊模式的量測 — 2026-09-20
 
-**新模式跑得通：Sonnet 主控派 Opus 大腦、大腦派 Sonnet reader、使用者看到的關卡題目就是交接檔裡的原文。但在這個 survey 題目上它比舊模式慢、也比較貴，主控的 context 也沒省下多少。大腦派了四個 reader 的那組慢 9–10 倍、貴 4.0–5.6 倍；把大腦的 `Agent` 拿掉的對照組仍然慢 6.5–9.0 倍、貴 2.5–2.8 倍。主控自己只花 $0.23–0.25，差距在大腦：它把步驟拆開做，用了 34 與 48 次工具，舊模式的主 session 整站 5 與 6 次。再叫大腦把獨立的指令放進同一個 Bash（`577f3e1`），它的 Bash 從 31、20 次降到 2、6 次，也快了，但它仍一處一處用 Read 打開要引用的位置，整站 30、28 次工具，組內仍貴 2.2–2.8 倍。**
+**新模式跑得通：Sonnet 主控派 Opus 大腦、大腦派 Sonnet reader、使用者看到的關卡題目就是交接檔裡的原文。但在這個 survey 題目上它每一組都比舊模式慢、也比較貴，主控的 context 也沒有一致地變小。大腦派四個 reader 時慢 9–10 倍、貴 4.0–5.6 倍；拿掉 reader 仍慢 6.5–9.0 倍、貴 2.5–2.8 倍。之後兩次改大腦的 brief（`577f3e1`、`357924c`），把它的工具次數從 34、48 次壓到 11、18 次，花費比仍是 2.6–2.8 倍：大腦單獨的花費就超過整個舊模式，它的 output 是舊模式的 3.6–4.7 倍。**
 
 這是 [docs/plans/2026-09-19-survey-brain.md](../plans/2026-09-19-survey-brain.md) 的 Task 7，回答設計頁 [§8 量測](../plans/2026-09-19-survey-brain-design.md) 的問題。報告以實際跑的日期命名。
 
@@ -133,8 +133,34 @@ survey exit=0 shell_seconds=388
 - **主控這次沒有比較省。** 主控在關卡時的 context 是 66,874 與 68,521，比同組舊模式多 19,631 與 891；主控花 $0.27 與 $0.29。old5 這次特別小，三批的舊模式在 47,243–67,630 之間。
 - **n=2**，理由同第 4 節。
 
-## 7. 還沒量到的
+## 7. 大腦用 `sed -n` 讀之後
 
-- 兩邊寫出來的 survey 誰比較完整、比較對。這三組只量時間、花費與 context；大腦多用的工具次數換到了什麼，沒有人比過。
-- 大腦若把一處一處的 Read 也串進一個 Bash 的 `sed -n`，會不會再便宜。第 6 節只改了一個變數，這是下一個。
+`357924c` 在 brief 再加一行：要引用的行用 `sed -n` 讀、串進同一個 Bash。`agents/fankeel-brain.md` 原本把 Bash 限在 `git` 與 plugin 的 script，正好擋住這種讀法，同一個 commit 放寬成也可以用 `grep` 與 `sed -n` 讀。`ab4.sh` 就是 `ab3.sh`，只換輸出目錄與臂名；副本從 `357924c` 取。跑的期間沒有動追蹤檔，四臂跑完的 porcelain 都只有未追蹤檔。
+
+| arm | 時間（秒） | 花費（`modelUsage`） | output tokens | cache read | subagents | 主 session 在最後一輪的 context |
+|---|---|---|---|---|---|---|
+| old7 | 35 | $0.45 | 2,839 | 196,725 | 無 | 45,117 |
+| nor5 | 264 | $1.18 | 18,100 | 1,016,046 | 1 brain | 70,890 |
+| old8 | 35 | $0.49 | 2,911 | 197,279 | 無 | 48,669 |
+| nor6 | 273 | $1.37 | 16,915 | 1,182,663 | 1 brain | 62,462 |
+
+數字來自 `ab4-table.txt`、`ab4-context.txt` 與 `ab4-tools.txt`，由 `ab-table.js ab4 old7 nor5 old8 nor6`、`ab-context.js ab4` 與 `ab2-tools.js ab4` 產生。
+
+組內比較（nor／old）：
+
+| 組 | 時間 | 花費 | output tokens |
+|---|---|---|---|
+| 7 | 7.5× | 2.6× | 6.4× |
+| 8 | 7.8× | 2.8× | 5.8× |
+
+- **工具次數降了，價錢沒降。** 大腦整站 11 與 18 次工具（Bash 9 與 16，Read 只剩 1 次），第 6 節是 30 與 28 次；組內花費比 2.6–2.8 倍，跟第 5、6 節差不多，時間比反而是 7.5–7.8 倍。工具次數不是大腦貴的原因。
+- **大腦自己就比整個舊模式貴。** 大腦（Opus）花 $0.81 與 $1.14，同組舊模式整站 $0.45 與 $0.49。大腦的 output 10,109 與 13,636 tokens，是舊模式 2,839 與 2,911 的 3.6–4.7 倍；cache write 56,858 與 61,427，約是舊模式 28,281 與 31,833 的兩倍（`ab4-table.txt` 的 per model）。它寫的交接檔 6,376 與 9,202 bytes（`ab4/handoff-nor5.md`、`ab4/handoff-nor6.md`），舊模式印出的報告 1,874 與 2,049 bytes（`ab4/old7-survey.json`、`ab4/old8-survey.json` 的 `result`）。
+- **主控的 context 仍比舊模式大**：70,890 與 62,462，同組舊模式 45,117 與 48,669。
+- **nor5 的主控多查了兩次。** 它看到注入的 `<plugin>` 指向 scratchpad 的副本，先用兩個 Bash 確認才派大腦（指令在 `ab4-tools.txt`）。這是 `--plugin-dir` 指向副本才會有的事，互動使用不會發生；第 5 節 nor1 的那次 `ls` scratchpad 看來是同一件事。nor5 的 Sonnet 因此花 $0.37，其他 nor 臂 $0.23–0.29。
+- **n=2**，理由同第 4 節。
+
+## 8. 還沒量到的
+
+- 兩邊寫出來的 survey 誰比較完整、比較對。這四組只量時間、花費與 context；大腦多花的 output 換到了什麼，沒有人比過。
+- 大腦的 output 花在哪裡：交接檔、thinking，還是別的。`claude -p` 的結果只給每個模型的總數。
 - 一站大到會把 context 撐開的情形（build），也就是設計頁想省的那一種；survey 撐不開。
