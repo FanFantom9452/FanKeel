@@ -521,6 +521,29 @@ test('with no index written, a fixture is not an orphan either', () => {
   assert.deepEqual(r.orphans, ['docs/02-b.md']);
 });
 
+// The other half of the same predicate, and it had no test before the fixture
+// clause arrived beside it: every archive fixture in this file sits under a
+// preset that writes `docs/README.md`, so `index.exists` is true and this
+// branch never runs for them. A change that dropped `archive` from the list
+// passed all 1,633 tests, which is what a reviewer found by reading rather
+// than by running.
+test('with no index written, an archive is not an orphan either', () => {
+  const root = tree({
+    '.fankeel/docs.json': { age: 1, body: JSON.stringify({
+      buckets: [
+        { path: 'docs', role: 'reference', depth: 1 },
+        { path: 'docs/archive', role: 'archive' },
+      ],
+    }) },
+    'docs/01-a.md': { age: 1, body: '# a\n' },
+    'docs/02-b.md': { age: 1, body: '[a](01-a.md)\n' },
+    'docs/archive/2026-01-01-old.md': { age: 1, body: '# old\n' },
+  });
+  const r = sweep(root);
+  assert.equal(r.index.exists, false, 'the branch under test only runs with no index written');
+  assert.deepEqual(r.orphans, ['docs/02-b.md']);
+});
+
 // Where an index exists it is a markdown file like any other, so a document it
 // does not list is unreachable by definition — and "missing from the index" is
 // the same finding said better.
