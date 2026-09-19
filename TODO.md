@@ -135,3 +135,8 @@ lifts when: 下一個前端任務出現. 09-18.
 lifts when: knip 認得 CJS namespace property access. 09-18.
 
 - 〔build〕knip 的 unused exports 一格關著：6.37.0 仍認不得 CJS namespace 取用，開著回 156 個假陽性（09-18 重跑） — [docs/development.md](docs/development.md).
+
+### guard 測試再紅一次
+lifts when: `a claim whose process is gone does not block` 在整套裡再紅一次. 09-19.
+
+- 〔tests〕09-19 在 39efee9 整套紅過一次（1563/1564，已死的 pid 被當 live 而 deny），同樹重跑 1564/0、單跑 5/5 綠；疑 `deadPid()` 的 pid 在並行時被重用，未證實 — [tests/guard.test.js](tests/guard.test.js).
