@@ -94,9 +94,13 @@ test('this repository\'s README carries a tree the map reads whole, with no row 
   assert.doesNotMatch(head, /with no responsibility/);
   assert.doesNotMatch(head, /shown/, 'the map cut the tree short');
   assert.ok(Number(/^tree — (\d+) rows/.exec(head)[1]) <= 50, head);
-  const { trackedFiles } = require('../lib/tracked.js');
+  // Tracked only: `--cached` alone, never `trackedFiles`'s `--others`, so a
+  // scratch directory a browser tool or an editor drops at the top of a
+  // developer's tree — untracked, unignored — cannot redden this. README's
+  // tree is compared against what is actually part of the project.
   const { rows } = require('../scripts/layout.js');
-  const dirs = [...rows(ROOT, trackedFiles(ROOT).files).dirs.keys()].sort().map((d) => d + '/');
+  const cached = execFileSync('git', ['ls-files', '-z', '--cached'], { cwd: ROOT, encoding: 'utf8' }).split('\0').filter(Boolean);
+  const dirs = [...rows(ROOT, cached).dirs.keys()].sort().map((d) => d + '/');
   const top = lines.filter((l) => /^ {2}[├└]── /.test(l)).map((l) => l.slice(6).split(/\s+/)[0]);
   assert.deepEqual(top, dirs, 'one row per top-level directory, in order');
   const entries = {};

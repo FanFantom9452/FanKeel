@@ -186,10 +186,11 @@ The full index, question by question, is [docs/README.md](docs/README.md).
 
 ## What lives where
 
-One row per directory, and the entry files of the three that run: `hooks/` is
-what Claude Code calls, `scripts/` is what a person or a skill runs, and `lib/`
-is what both of them call. `node scripts/layout.js` prints the half of this a
-listing can derive; the right-hand column is the half it cannot.
+One row per directory, and, in the three that run, the files worth opening
+first — not every file in them: `hooks/` is what Claude Code calls, `scripts/`
+is what a person or a skill runs, and `lib/` is what both of them call.
+`node scripts/layout.js` prints the half of this a listing can derive; the
+right-hand column is the half it cannot.
 
 ```
 fankeel/
