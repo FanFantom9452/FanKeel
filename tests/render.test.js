@@ -665,3 +665,30 @@ test('the station line names the served url, a station still starting, or the fi
     assert.ok(size < 1400, 'init block with a ' + serve.state + ' station line is ' + size + ' chars');
   }
 });
+
+test('stage.agents true at survey: the controller\'s block replaces the stage\'s', () => {
+  const { renderResume } = require('../lib/render.js');
+  const readRule = byName('survey').rules.find((r) => r.startsWith('Read whatever documents'));
+  const on = { values: { 'stage.agents': true }, sources: { 'stage.agents': 'project' }, unreadable: [] };
+  const mine = entry(MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });
+  for (const out of [render({ mine, others: [], now: NOW, root: '/r', profile: on }), renderResume({ mine, profile: on, root: '/r' })]) {
+    assert.ok(out.includes('fankeel:fankeel-brain'), out);
+    assert.ok(out.includes('/r/.fankeel/build/task-20260919T093012/survey.md'));
+    assert.ok(out.includes('/r/.fankeel/build/task-20260919T093012/survey-answer.md'));
+    assert.ok(out.includes('stage design --session ' + MINE));
+    assert.ok(!out.includes(readRule), 'the survey rules go to the stage agent');
+  }
+});
+
+test('stage.agents false or absent, or a stage with no controller: the block it always was', () => {
+  const readRule = byName('survey').rules.find((r) => r.startsWith('Read whatever documents'));
+  const mine = entry(MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });
+  const off = { values: { 'stage.agents': false }, sources: {}, unreadable: [] };
+  const none = { values: {}, sources: {}, unreadable: [] };
+  const a = render({ mine, others: [], now: NOW, root: '/r', profile: off });
+  assert.equal(a, render({ mine, others: [], now: NOW, root: '/r', profile: none }));
+  assert.ok(a.includes(readRule));
+  const on = { values: { 'stage.agents': true }, sources: {}, unreadable: [] };
+  const design = render({ mine: entry(MINE, { stage: 'design', started: '2026-09-19T09:30:12.345Z' }), others: [], now: NOW, root: '/r', profile: on });
+  assert.ok(!design.includes('fankeel:fankeel-brain'));
+});

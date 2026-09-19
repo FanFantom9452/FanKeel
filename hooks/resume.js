@@ -45,7 +45,7 @@ function main(raw) {
     // No badge written and no other session read. Neither can have changed since
     // the question went out a few seconds ago, and this hook runs several times a
     // stage — what it does has to stay proportionate to that.
-    const context = renderResume({ mine: { sessionId, data: mine }, profile, transcript: payload.transcript_path });
+    const context = renderResume({ mine: { sessionId, data: mine }, profile, transcript: payload.transcript_path, root });
     if (!context) return;
 
     process.stdout.write(JSON.stringify({

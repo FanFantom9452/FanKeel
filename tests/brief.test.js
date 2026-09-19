@@ -208,3 +208,35 @@ test('the brief tells a subagent not to dispatch subagents of its own', () => {
   seed(root);
   assert.match(contextOf(run(root, start(root))), /not dispatch subagents of your own/i);
 });
+
+test('a stage agent gets its stage\'s rules and shape, its skill, and where to write', () => {
+  const { rulesFor, templateFor } = require('../lib/stages.js');
+  const { SCRIPTS, PLUGIN_ROOT, RETURN_RULES } = require('../lib/render.js');
+  const { landClause } = require('../lib/profile.js');
+  const root = tmp();
+  seed(root, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  const expected = rulesFor('survey', Object.assign({ next: 'design', profileLand: landClause({}) }, SCRIPTS));
+  for (const rule of expected) assert.ok(text.includes('  - ' + rule), 'missing rule: ' + rule.slice(0, 60));
+  for (const line of templateFor('survey').split('\n').filter(Boolean)) assert.ok(text.includes('  ' + line), 'missing shape line: ' + line);
+  assert.ok(text.includes(PLUGIN_ROOT + '/skills/fankeel-survey/SKILL.md'));
+  assert.ok(text.includes('/.fankeel/build/task-20260919T093012/survey.md'));
+  assert.ok(text.includes(SESSION));
+  assert.ok(!text.includes(RETURN_RULES[2]), 'the no-dispatch rule is left out');
+  assert.ok(text.length < 10000, 'brain brief is ' + text.length + ' chars');
+});
+
+test('every other agent type at survey gets no stage rules', () => {
+  const root = tmp();
+  seed(root, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-reader' })));
+  assert.ok(!text.includes('stage rules:'));
+  assert.ok(text.length < 1400, 'brief is ' + text.length + ' chars');
+});
+
+test('a stage agent on a record with no started gets the ordinary brief', () => {
+  const root = tmp();
+  seed(root, { stage: 'survey', started: undefined });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.ok(!text.includes('stage rules:'));
+});

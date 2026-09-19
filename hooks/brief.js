@@ -33,10 +33,11 @@ function main(raw) {
     // used as a registry key: a subagent is not a session, it does not own a
     // task, and giving it an entry would put a second claimant on the parent's
     // own files.
-    const mine = registry.readSession(registry.rootFor(payload), payload.session_id);
+    const root = registry.rootFor(payload);
+    const mine = registry.readSession(root, payload.session_id);
     if (!mine || mine.active !== true) return;
 
-    const text = renderBrief({ mine: { sessionId: payload.session_id, data: mine }, agentType: payload.agent_type });
+    const text = renderBrief({ mine: { sessionId: payload.session_id, data: mine }, agentType: payload.agent_type, root });
     if (!text) return;
 
     process.stdout.write(JSON.stringify({
