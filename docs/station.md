@@ -218,8 +218,9 @@ the replay, each gate's row carrying how long it waited. The side panel in the
 next section is the other way in, from 清單, and keeps its claims.
 
 Under the title, the session's state and — served — how fresh the page is:
-`即時・N 秒前更新` while the session is live, `已停止更新・最後一次
-hh:mm:ss` once it is not. Under that, the route as a rail: a stop per stage,
+`即時・剛更新`, then `即時・N 秒前更新`, while the session is live, and
+`已停止更新・最後一次 hh:mm:ss` once it is not. Under that, the route
+as a rail: a stop per stage,
 each one behind the current stage timed by the registry's clock for it, the
 current one ringed and, on a live session under `serve`, counting up from when
 it was entered. The rail replaces the route dots and the route text the line
@@ -587,8 +588,9 @@ every request — and, while the session whose detail is on screen (the session
 page, or the row selected on 清單) is `live`, that session's
 `station/detail/<id>.js` too. A session that is no longer live has its detail
 re-read no more, because nothing under it can move; a hidden tab re-reads
-nothing. Each load is a script tag with a `?t=` the server ignores, the way the
-page loaded both the first time. A redraw keeps which sections were open, the
+nothing. Each re-read is a script tag, as on the first load, with a `?t=` the
+server ignores added so nothing in between answers from a cache. A redraw
+keeps which sections were open, the
 agents, prompts and phases opened on 派工 and its state filter, the replay's
 hidden kinds, where the page and the list were scrolled, and which control had
 focus; a reader
