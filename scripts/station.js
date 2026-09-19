@@ -312,12 +312,21 @@ async function serve(opts) {
     // succeeds names the same start time as its first write, not the moment
     // the retry happened to land.
     const started = new Date().toISOString();
+    // What this server remembers between requests: every session's detail,
+    // held while `keyOf` says nothing under it moved (`detailOf` in
+    // lib/detail.js). The page re-reads the list every three seconds and the
+    // detail it shows while its session is live; without this each re-read
+    // parsed every cached detail on the machine again.
+    const memo = new Map();
     // A deadline is an absolute moment, so it is taken per request rather than
     // once at listen: a `--scan` here is re-walked on every render, and one
     // timestamp fixed at startup would leave every later request walking with a
-    // deadline already spent.
-    const modelNow = () => station.gather(Object.assign({}, gatherOpts,
-        { deadline: scanDeadline(gatherOpts.scan) }));
+    // deadline already spent. The transcript budget is `write()`'s: past it a
+    // request answers from what is cached and the next one carries on, so a
+    // cache from an older VERSION is read again a few sessions at a time rather
+    // than all in one request the page gives up on.
+    const modelNow = (extra) => station.gather(Object.assign({}, gatherOpts,
+        { deadline: scanDeadline(gatherOpts.scan), memo, detailBudgetMs: station.DETAIL_BUDGET_MS }, extra));
     let timer = null;
     let server;
     const touch = () => {
@@ -393,7 +402,7 @@ async function serve(opts) {
             // One session's detail, the script `write()` leaves beside the
             // data file, rendered from this request's model rather than read
             // off disk.
-            const hit = modelNow().registries.flatMap((r) => r.sessions).find((s) => s.sessionId === wanted[1]);
+            const hit = modelNow({ details: wanted[1] }).registries.flatMap((r) => r.sessions).find((s) => s.sessionId === wanted[1]);
             if (!hit || !hit.detail) {
                 fail(404, 'no detail for that session');
                 return;

@@ -132,3 +132,39 @@ test('station-data.js carries each session days and spans, a kept cache usd on i
     const root = path.resolve(f.r1);
     assert.deepEqual([by[SID].pkey, by[KEPT].pkey, by[OTHER].pkey], [root, root + '/app-a', root + '/app-b']);
 });
+
+// Under serve the page re-reads the detail of the session it shows every three
+// seconds. Nothing moved: the answer is the same and the cache file is not
+// written again, which a recomputed detail would do. An agent's transcript
+// grew: the next answer carries the tool it moved on to.
+test('serve answers an unchanged detail without writing its cache again, and the next request after an agent writes shows it', async () => {
+    const f = fixture();
+    registry.writeSession(f.r1, SID, { task: 'live one', stage: 'build', route: ['survey', 'build'], active: true,
+        claims: [], started: T(0), updated: T(9), configDir: f.cfg });
+    const sub = path.join(f.cfg, 'projects', 'ws-slug', SID, 'subagents');
+    fs.mkdirSync(sub, { recursive: true });
+    const agent = path.join(sub, 'agent-a1b2c3.jsonl');
+    const said = (s, content) => line({ type: 'assistant', isSidechain: true, requestId: 'q' + s, timestamp: T(s),
+        message: { model: 'claude-sonnet-5', usage: { input_tokens: 5 }, content } });
+    fs.writeFileSync(agent, line({ type: 'user', isSidechain: true, timestamp: T(3), message: { content: 'look' } })
+        + said(4, [{ type: 'tool_use', id: 'u1', name: 'Read', input: { file_path: 'F:/ws/lib/a.js' } }]));
+    const { serve } = require('../scripts/station.js');
+    const s = await serve({ configDir: f.cfg, roots: [f.r1], port: 0, idleMs: 60e3, open: false });
+    try {
+        const url = s.url + 'station/detail/' + SID + '.js';
+        const first = await get(url);
+        assert.equal(run(first.text).STATION_DETAIL[SID].steps.a1b2c3.cur.f, 'ws/lib/a.js');
+        const cache = detail.cachePath(f.cfg, SID);
+        const at = fs.statSync(cache).mtimeMs;
+        const second = await get(url);
+        assert.equal(second.text, first.text);
+        assert.equal(fs.statSync(cache).mtimeMs, at, 'nothing moved, and the detail was computed again');
+        fs.appendFileSync(agent, line({ type: 'user', isSidechain: true, timestamp: T(5),
+            message: { content: [{ type: 'tool_result', tool_use_id: 'u1', content: 'x' }] } })
+            + said(6, [{ type: 'tool_use', id: 'u2', name: 'Grep', input: { pattern: 'keyOf' } }]));
+        const third = await get(url);
+        assert.equal(run(third.text).STATION_DETAIL[SID].steps.a1b2c3.cur.c, 'Grep keyOf');
+    } finally {
+        s.close();
+    }
+});

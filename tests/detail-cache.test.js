@@ -107,3 +107,36 @@ test('wakes counts the task notifications that reached the main transcript', () 
         message: { content: '<task-notification><tool-use-id>b9</tool-use-id><status>completed</status></task-notification>' } }));
     assert.equal(detail.detailOf(f.cfg, SID, f.data).detail.wakes, 1, 'the grown transcript is read again');
 });
+
+// A server keeps each detail in memory while nothing under it moved. The
+// control is the cache file: removed after the first read, a second read that
+// went to disk would find nothing and write it again.
+test('with a memo, an unchanged set of files is answered from memory, not the cache file; a grown one is read again', () => {
+    const f = setup();
+    const memo = new Map();
+    const first = detail.detailOf(f.cfg, SID, f.data, { memo });
+    assert.equal(first.fresh, true);
+    fs.rmSync(detail.cachePath(f.cfg, SID));
+    const again = detail.detailOf(f.cfg, SID, f.data, { memo });
+    assert.equal(again.fresh, false);
+    assert.equal(again.detail, first.detail, 'the same object, held');
+    assert.equal(fs.existsSync(detail.cachePath(f.cfg, SID)), false, 'nothing was read or rewritten');
+    fs.appendFileSync(f.t, said('r3', 4, 6000));
+    const grown = detail.detailOf(f.cfg, SID, f.data, { memo });
+    assert.deepEqual([grown.fresh, grown.detail.requests], [true, 3]);
+    assert.equal(memo.get(SID), grown.detail);
+});
+
+test('with a memo, an older VERSION kept under a spent budget is not held, so the next read with time replaces it', () => {
+    const f = setup();
+    const cache = detail.cachePath(f.cfg, SID);
+    fs.mkdirSync(path.dirname(cache), { recursive: true });
+    fs.writeFileSync(cache, JSON.stringify({ v: 1, sessionId: SID, rows: [], key: 'old', at: 0 }));
+    const memo = new Map();
+    const kept = detail.detailOf(f.cfg, SID, f.data, { memo, reuse: true });
+    assert.equal(kept.detail.v, 1);
+    assert.equal(memo.has(SID), false);
+    const read = detail.detailOf(f.cfg, SID, f.data, { memo });
+    assert.deepEqual([read.fresh, read.detail.v], [true, 5]);
+    assert.equal(memo.get(SID), read.detail);
+});
