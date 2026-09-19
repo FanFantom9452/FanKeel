@@ -340,7 +340,7 @@ branch that would populate
 built, not a gap in the check.
 
 Orphans never fail a run. `defects()` opens at
-`scripts/docs-audit.js:899` (`function defects(r) {`) and sums drift, landed
+`scripts/docs-audit.js:898` (`function defects(r) {`) and sums drift, landed
 plans, a broken index and diagrams; `orphans` is not a term in that sum.
 
 ## The list is the output, not the count

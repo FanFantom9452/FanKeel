@@ -653,8 +653,7 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     const orphans = index.exists ? [] : markdown.filter((rel) => rel.split('/')[0] === docRoot
         && rel !== indexRel
         && !pointedTo.has(rel)
-        && docs.roleOf(tree, rel) !== 'archive'
-        && docs.roleOf(tree, rel) !== 'fixture');
+        && !['archive', 'fixture'].includes(docs.roleOf(tree, rel)));
 
     // 6. Code nothing describes. Top level only: a directory with no reference
     // document naming anything inside it is a part of the system documentation
