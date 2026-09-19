@@ -52,6 +52,6 @@ function main(raw) {
     process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', updatedInput } }));
 }
 
-// Whatever goes wrong on the way to a gate, this stays silent: the question
-// goes out exactly as sent.
+// Deliberately silent. Whatever went wrong, the question still has to reach
+// the user.
 run(main);
