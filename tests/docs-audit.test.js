@@ -524,9 +524,7 @@ test('with no index written, a fixture is not an orphan either', () => {
 // The other half of the same predicate, and it had no test before the fixture
 // clause arrived beside it: every archive fixture in this file sits under a
 // preset that writes `docs/README.md`, so `index.exists` is true and this
-// branch never runs for them. A change that dropped `archive` from the list
-// passed all 1,633 tests, which is what a reviewer found by reading rather
-// than by running.
+// branch never runs for them.
 test('with no index written, an archive is not an orphan either', () => {
   const root = tree({
     '.fankeel/docs.json': { age: 1, body: JSON.stringify({
