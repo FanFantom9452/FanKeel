@@ -1093,6 +1093,13 @@ rule at once, and nothing anywhere says so. What you dispatch is a question with
 an answer — *read these six documents and say whether any contradicts the code*.
 The judgement it feeds, the evidence and the gate stay here, where the rules are.
 
+One exception, behind a profile key. With `stage.agents` true, `survey` goes
+to a `fankeel:fankeel-brain` stage agent and this session gets the
+controller's block in place of the stage's: the brief carries the stage's
+rules and shape, the report and its gate come back as a file under
+`.fankeel/build/`, and the gate is still asked here, filled from that file by
+`hooks/gate.js`. [docs/subagents.md](../../docs/subagents.md) has how.
+
 `survey` dispatches readers; `build` dispatches per task, and the plan's
 `**Dispatch:**` line is where that was decided.
 

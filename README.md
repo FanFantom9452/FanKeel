@@ -195,9 +195,9 @@ right-hand column is the half it cannot.
 
 ```
 fankeel/
-├── .claude-plugin/    plugin.json — the skills, the five agents, every hook and its timeout — and marketplace.json
+├── .claude-plugin/    plugin.json — the skills, the six agents, every hook and its timeout — and marketplace.json
 ├── .fankeel/          this repository's own settings: docs.json files each page, profile.json answers gates, .gitignore
-├── agents/            the five subagents the stages dispatch — reader, reviewer, verifier, judge, fixer — with their tools and model
+├── agents/            the six subagents the stages dispatch — reader, reviewer, verifier, judge, fixer, brain — with their tools and model
 ├── assets/            the station page: index.html, station.css and station.js, copied beside every page a write produces
 ├── docs/              reference pages, with decisions/, plans/, reports/, judgements/ and archive/ each filed by what it records
 ├── evals/             behaviour eval cases, one directory each, graded by scripts/eval.js with claude -p
@@ -225,6 +225,7 @@ fankeel/
 │   ├── usage.js       what a transcript spent: requests, models, agents and every dispatch
 │   ├── replay.js      a session's events in time order, and one agent's own steps
 │   ├── plantasks.js   a plan's tasks, and which of them may run at once
+│   ├── handoff.js     a stage agent's report and the user's answer, under .fankeel/build/task-<started>/
 │   └── profile.js     the project and machine profile: the standing answers to a gate
 ├── scripts/           the command line, thin wrappers over lib/
 │   ├── task.js        start a task, move its stage, note, pause, stand it down

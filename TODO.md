@@ -80,6 +80,7 @@ what gets scheduled.
 ## Needs a decision
 
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；Gemini CLI `BeforeAgent`、Codex CLI `UserPromptSubmit` 也能回 `additionalContext` — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
+- 〔stage-agents〕主控＋站 agent 要不要推到其餘各站：看 survey 的量測；build 要 script 產生 workflow、design 要 SendMessage 轉話、station 要看得到第二層、插話要有人接 — [lib/stages.js](lib/stages.js).
 
 ## Waiting
 

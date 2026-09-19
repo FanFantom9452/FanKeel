@@ -25,12 +25,11 @@ reproduce whatever had been put in front of them, with no needle in the prompt t
 find — a third never launched, and a cell that did not run is not a result
 ([reports/2026-09-04-subagent-brief-probe.md](reports/2026-09-04-subagent-brief-probe.md)).
 
-## The five agents this plugin defines
+## The six agents this plugin defines
 
-Five subagent types are not just described in prose — they are declared as
+Six subagent types are not just described in prose — they are declared as
 `agents` in `.claude-plugin/plugin.json` and shipped as files under `agents/`:
-`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier` and
-`fankeel-fixer`.
+`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier`, `fankeel-fixer` and `fankeel-brain`.
 The first three carry `tools: [Read, Grep, Glob, Bash]` — Edit, Write and
 NotebookEdit are simply absent from the list, so calling any of them to change
 a file is refused by the harness rather than left to a rule somebody has to
@@ -429,6 +428,25 @@ twice the rate. Worth typing when
 Not worth typing when the answer is somewhere in the repository and nobody has
 looked yet, when the scope is already pinned and only the typing is left, or
 when what you want is a second opinion on something you have already decided.
+
+## A stage agent, behind `stage.agents`
+
+Everything above holds with the profile's `stage.agents` at its default,
+`false`. Set it `true` and `survey` is run by a stage agent instead of by the
+session:
+
+| piece | where | what it does |
+|---|---|---|
+| controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns, ask |
+| the stage agent | `agents/fankeel-brain.md` | opus; `Write` for its handoff, `Agent` for its readers |
+| its brief | `renderBrief` in `lib/render.js` | the stage's rules and shape, the skill's path, the handoff path, and what replaces AskUserQuestion and Workflow — under Claude Code's 10,000-character cap on one `additionalContext` |
+| the handoff | `handoffPath`, `answerPath`, `readGate` and `writeAnswer` in `lib/handoff.js` | `.fankeel/build/task-<started>/survey.md`, ending in a `json gate` block; the answer beside it as `survey-answer.md` |
+| the gate | `hooks/gate.js` | replaces the controller's placeholder question with the block's, word for word |
+| the answer | `hooks/resume.js` | writes it to the answer file; the controller's `SendMessage` names the path |
+| a pause | `task.js next --from-gate` | reads the block's `next` line |
+
+The stage agent's readers are a second layer down; `agentFiles()` in
+`lib/usage.js` reads the first, so the station does not show them yet.
 
 # Telling a subagent apart, when a hook has to
 
