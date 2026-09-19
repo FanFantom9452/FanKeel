@@ -239,6 +239,41 @@ test('idleMs: 0 arms no timer, rather than the old default falling back on a fal
     }
 });
 
+// A dozen tests in this file call `serve()` in-process with `idleMs: 60e3`
+// on the assumption that a minute is long enough never to fire during a
+// test. Measured wrong: one full-suite run under real load left this whole
+// file missing from the output — no failure, no file name, just gone — and
+// idleMs: 500 with no `exitOnIdle` proved why in isolation: `touch()`'s idle
+// timer called `process.exit(0)` inside the very process running the test,
+// silently ending it with a clean exit code before it could finish. Each
+// half below runs as its own child process, so a regression here costs that
+// throwaway child rather than this file's own run.
+test('a bare idleMs never ends the calling process, but main()\'s own --idle flag still does', () => {
+    const cfg = tmp('fankeel-idle-');
+    const probe = "const { serve } = require(" + JSON.stringify(CLI) + ");"
+        + "(async () => { const s = await serve({ configDir: " + JSON.stringify(cfg)
+        + ", port: 0, idleMs: 300, open: false });"
+        + " await new Promise((r) => setTimeout(r, 900)); console.log('SURVIVED'); s.close(); })();";
+    const inProcess = spawnSync(process.execPath, ['-e', probe], { encoding: 'utf8', timeout: 5000 });
+    assert.equal(inProcess.status, 0, 'the probe child did not exit cleanly: ' + inProcess.stderr);
+    assert.match(inProcess.stdout, /SURVIVED/,
+        'a bare idleMs ended its own process before it could finish: ' + inProcess.stdout + inProcess.stderr);
+
+    // main()'s own `serve` verb is the one caller that should still opt in —
+    // `--idle` has always meant "exit the process" for the real CLI. A
+    // timing check cannot tell this apart from the default: with nothing
+    // else open, a standalone `node scripts/station.js serve` process ends
+    // on its own once `server.close()` empties the event loop, whether or
+    // not `process.exit(0)` was ever called — measured, not assumed: exit
+    // code 0 in about the same 1.4s either way. So this reads the source
+    // instead, for the one line an accidental revert would actually change.
+    const source = fs.readFileSync(CLI, 'utf8');
+    const mainCall = /if \(args\.verb === 'serve'\) \{\r?\n\s*serve\(\{([^)]*?)\}\)\.then/.exec(source);
+    assert.ok(mainCall, 'could not find main()\'s own serve() call to check');
+    assert.match(mainCall[1], /exitOnIdle:\s*true/,
+        'main()\'s own serve() call no longer opts in with exitOnIdle: true');
+});
+
 test('--detach is parsed, and portWasExplicit only when --port was given', () => {
     const { parseArgs } = require('../scripts/station.js');
     const a = parseArgs(['serve', '--detach']);

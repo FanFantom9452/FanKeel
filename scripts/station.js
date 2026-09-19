@@ -325,7 +325,14 @@ async function serve(opts) {
         if (!(opts.idleMs > 0)) return;
         timer = setTimeout(() => {
             server.close();
-            if (opts.exitOnIdle !== false) process.exit(0);
+            // Off by default: `serve()` is also called in-process by tests
+            // (station-cli, station-detail, station-todo), and an idle exit
+            // there would end that whole test file's own process rather than
+            // a station's — silently, with exit code 0, so `node --test`
+            // reports no failure and the file's remaining tests simply never
+            // ran. Only `main()`'s own `serve` verb — the real `--idle`
+            // flag — opts in.
+            if (opts.exitOnIdle === true) process.exit(0);
         }, opts.idleMs);
     };
     // Named rather than inline, so a second `http.createServer` — the
@@ -697,7 +704,7 @@ function main() {
         return;
     }
     if (args.verb === 'serve') {
-        serve({ configDir, roots: args.roots, scan: args.scan, port: args.port, idleMs: args.idleMs, open: args.open, portWasExplicit: args.portWasExplicit }).then((s) => {
+        serve({ configDir, roots: args.roots, scan: args.scan, port: args.port, idleMs: args.idleMs, open: args.open, portWasExplicit: args.portWasExplicit, exitOnIdle: true }).then((s) => {
             process.stdout.write('fankeel station — ' + s.url
                 + (args.idleMs > 0 ? '  (exits after ' + Math.round(args.idleMs / 60e3) + ' idle minutes, or Ctrl+C)' : '  (Ctrl+C to exit)') + '\n');
         }, (e) => {
