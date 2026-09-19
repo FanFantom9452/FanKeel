@@ -37,6 +37,7 @@ const { parseArgs: parseArgv } = require('node:util');
 const station = require('../lib/station.js');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
+const { serveRecordPath, readServeRecord, probe } = require('../lib/serve.js');
 const { clearEntry } = require('../lib/clear.js');
 const profile = require('../lib/profile.js');
 const todoCheck = require('./todo-check.js');
@@ -228,71 +229,6 @@ const readBody = (req) => new Promise((resolve) => {
     req.on('end', () => resolve(text));
     req.on('error', () => resolve(''));
 });
-
-// The record a bound `serve()` leaves behind, and what a later call reads to
-// decide whether to join it rather than binding its own port. Any failure —
-// missing file, a session's half-written temp, bytes that are not JSON — reads
-// as "nothing to join", the same as no file at all.
-function serveRecordPath(configDir) {
-    return path.join(configDir, 'fankeel', 'serve.json');
-}
-
-function readServeRecord(configDir) {
-    try {
-        return JSON.parse(fs.readFileSync(serveRecordPath(configDir), 'utf8'));
-    } catch (e) {
-        return null;
-    }
-}
-
-// Whether `record` names a station actually listening, not merely a pid the
-// OS still hands back. `process.kill(pid, 0)` alone passes a recycled pid, or
-// a crashed station whose port some other process now holds, and hands the
-// caller a dead or foreign URL either way. A GET of the record's own health
-// route is answered only by an actual station, and the body's pid is checked
-// against the record's so a foreign listener on the same loopback port cannot
-// pass either. Never rejects: any error, timeout, non-200, a body that is not
-// JSON, or a pid that does not match reads the same as no station there.
-function probe(record) {
-    return new Promise((resolve) => {
-        let settled = false;
-        const done = (ok) => {
-            if (settled) return;
-            settled = true;
-            resolve(ok);
-        };
-        // A pid the OS already denies existing cannot be the one answering
-        // below, whatever is or is not listening on the port — so it is worth
-        // ruling out before the network round trip rather than after it.
-        // `live.running` cannot stand in for the request itself: a recycled
-        // pid or a foreign listener both pass it, which is why a live pid
-        // still falls through to the GET.
-        if (!live.running(record.pid)) return done(false);
-        let req;
-        try {
-            req = http.get(record.url + 'station/health', { timeout: 500 }, (res) => {
-                let text = '';
-                res.setEncoding('utf8');
-                res.on('data', (c) => { text += c; });
-                res.on('end', () => {
-                    if (res.statusCode !== 200) return done(false);
-                    let body;
-                    try {
-                        body = JSON.parse(text);
-                    } catch (e) {
-                        return done(false);
-                    }
-                    done(!!body && body.pid === record.pid);
-                });
-                res.on('error', () => done(false));
-            });
-        } catch (e) {
-            return done(false);
-        }
-        req.on('timeout', () => { req.destroy(); done(false); });
-        req.on('error', () => done(false));
-    });
-}
 
 // The one write behind 記成 TODO. The entry goes under `## Needs a decision` in
 // the project's TODO.md, and only once `scripts/todo-check.js`'s own `check()`
