@@ -1047,17 +1047,12 @@
     var polledAt = Date.now();
     // The sessions ticked for 比較, oldest tick first; a third tick drops the first.
     var picked = [];
-    var NOW = Date.parse(S.generatedAt);
-    var LAB = labels(S.projects.map(function (p) { return p.root; }));
-    // `serialize()` never emits a `label` field — the shortest-unique-tail
-    // rule lives only here, in `labels()`, since `navLabels` was deleted from
-    // `lib/station.js` on purpose so the rule would not exist in two places.
-    // `match()`'s haystack still reads `s.label`, so it is attached here,
-    // once, before anything renders.
-    S.sessions.forEach(function (s) { s.label = LAB[s.root]; });
-    var DAYS = lastDays(NOW, 30), PREV = lastDays(NOW - 30 * 864e5, 30), TODAY = DAYS[DAYS.length - 1];
-    var NAMES = projectNames(S.sessions);
-    var PKEYS = projectRows(S.sessions, DAYS).map(function (r) { return r.pkey; });
+    // `NOW`, `LAB`, `DAYS`, `PREV`, `TODAY`, `NAMES` and `PKEYS` are derived
+    // from `S` by `freshen()`, below the live-refresh guard — called here for
+    // the first draw and again on every re-read, so there is one derivation
+    // rather than two that could drift apart.
+    var NOW, LAB, DAYS, PREV, TODAY, NAMES, PKEYS;
+    freshen();
     var VIEWS = {}, CRUMBS = {};
     var rows = function () {
         return S.sessions.filter(function (s) { return match(s, f); });
@@ -2278,7 +2273,13 @@
     // health poll, which stays the last interval this file sets.
     var POLL_MS = 3000;
     var busy = false;
-    // Everything below the guard that was worked out from `S` once, at load.
+    // Everything worked out from `S`: at load, above, and again on every
+    // re-read below — one derivation rather than two that could drift apart.
+    // `serialize()` never emits a `label` field — the shortest-unique-tail
+    // rule lives only here, in `labels()`, since `navLabels` was deleted from
+    // `lib/station.js` on purpose so the rule would not exist in two places —
+    // and `match()`'s haystack still reads `s.label`, so it is reattached on
+    // every call rather than once.
     function freshen() {
         NOW = Date.parse(S.generatedAt);
         LAB = labels(S.projects.map(function (p) { return p.root; }));
@@ -2289,9 +2290,26 @@
         NAMES = projectNames(S.sessions);
         PKEYS = projectRows(S.sessions, DAYS).map(function (r) { return r.pkey; });
     }
+    // A few seconds — well under anything a healthy local server needs — past
+    // which a script that neither loaded nor errored (a hung server, a stuck
+    // connection) is given up on: the tag is dropped and `done(false)` runs,
+    // so `busy` always clears and the next tick tries again rather than going
+    // silent forever. `settled` keeps a late `onload` after that point from
+    // running `done` a second time.
+    var RELOAD_TIMEOUT_MS = 4000;
     function reload(src, done) {
         var el = doc.createElement('script');
+        var settled = false;
+        var timer = w.setTimeout(function () {
+            if (settled) return;
+            settled = true;
+            if (el.parentNode) el.parentNode.removeChild(el);
+            done(false);
+        }, RELOAD_TIMEOUT_MS);
         var finish = function (ok) {
+            if (settled) return;
+            settled = true;
+            w.clearTimeout(timer);
             if (el.parentNode) el.parentNode.removeChild(el);
             done(ok);
         };
@@ -2353,12 +2371,14 @@
             if (el && el.focus) el.focus();
         }
     }
-    // Once a second: every figure `tk()` marked, and the `N 秒前更新` beside the
-    // live tag.
+    // Once a second: every figure `tk()` marked, read through `tk()` itself
+    // (`live: false` so it hands back the bare text rather than a span to
+    // nest inside the one already on the page) rather than a second copy of
+    // its arithmetic, and the `N 秒前更新` beside the live tag.
     function tickNow() {
         var now = Date.now();
         [].forEach.call(doc.querySelectorAll('.tkr'), function (el) {
-            el.textContent = dur(Math.max(0, Math.round(Number(el.getAttribute('data-b')) + Number(el.getAttribute('data-m')) * now / 1000)));
+            el.textContent = tk(Number(el.getAttribute('data-b')), Number(el.getAttribute('data-m')), false, now / 1000);
         });
         [].forEach.call(doc.querySelectorAll('[data-ago]'), function (el) {
             el.textContent = agoText(Math.round((now - polledAt) / 1000));

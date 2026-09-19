@@ -68,7 +68,11 @@ const station = (state, task, serve) => ({
 });
 
 // The page as the browser runs it. `answer(src, win)` plays the server for
-// each script the page appends; `loaded` is every src it asked for.
+// each script the page appends and may return `'hang'` (neither `onload` nor
+// `onerror` ever fires — a stuck connection) or `'error'` (`onerror` fires);
+// anything else, including nothing, is an ordinary `onload`. `loaded` is
+// every src it asked for, and `fireTimeouts()` fires every deadline
+// `reload()` has armed right now, the same one-shot a real `setTimeout` gives.
 function boot(hash, first, answer, protocol) {
     const els = {};
     let html = '';
@@ -79,15 +83,33 @@ function boot(hash, first, answer, protocol) {
     els.page = page;
     const loaded = [];
     const timers = {};
+    let timeoutSeq = 0;
+    const timeouts = [];
     const win = { location: { hash, protocol: protocol || 'http:' }, addEventListener() {}, scrollTo() {},
-        setInterval: (fn, ms) => { timers[ms] = fn; return 1; }, STATION: first };
+        setInterval: (fn, ms) => { timers[ms] = fn; return 1; },
+        setTimeout: (fn) => { const id = ++timeoutSeq; timeouts.push({ id, fn }); return id; },
+        clearTimeout: (id) => { const i = timeouts.findIndex((t) => t.id === id); if (i >= 0) timeouts.splice(i, 1); },
+        STATION: first };
     const doc = {
+        hidden: false,
         getElementById: (id) => els[id] || (els[id] = el()), addEventListener() {}, createElement: el, querySelectorAll: () => [],
         querySelector: () => ({ parentNode: { insertBefore() {} }, nextSibling: null }),
-        head: { appendChild(s) { loaded.push(s.src); s.parentNode = { removeChild() {} }; answer(s.src, win); setImmediate(() => s.onload()); } },
+        head: {
+            appendChild(s) {
+                loaded.push(s.src);
+                s.parentNode = { removeChild() {} };
+                const mode = answer(s.src, win);
+                if (mode === 'hang') return;
+                if (mode === 'error') { setImmediate(() => s.onerror()); return; }
+                setImmediate(() => s.onload());
+            },
+        },
     };
     vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams, fetch: () => Promise.resolve({ ok: true }) });
-    return { html: () => html, loaded, timers, gen: () => els.gen.textContent };
+    return {
+        html: () => html, loaded, timers, gen: () => els.gen.textContent, doc,
+        fireTimeouts: () => { timeouts.splice(0, timeouts.length).forEach((t) => t.fn()); },
+    };
 }
 
 test('served, the page re-reads the list and the live session on screen every three seconds, and stops re-reading one that ended', async () => {
@@ -116,4 +138,82 @@ test('served, the page re-reads the list and the live session on screen every th
 test('the file /fankeel writes re-reads nothing: no timer under file:, and only the health poll for data no server wrote', () => {
     assert.deepEqual(Object.keys(boot('#/', station('live', 'x', false), () => {}, 'file:').timers), []);
     assert.deepEqual(Object.keys(boot('#/', station('live', 'x', false), () => {}, 'http:').timers).map(Number), [5000]);
+});
+
+test('a re-read whose script never loads or errors gives up after its deadline, and the next tick tries again', async () => {
+    let hang = false;
+    const p = boot('#/s/aaaa1111-0000/cost', station('live', 'first'), (src, win) => {
+        if (src.indexOf('station/station-data.js') !== 0) return undefined;
+        if (hang) return 'hang';
+        win.STATION = station('live', 'second');
+        return undefined;
+    });
+    await settle(); await settle();
+    hang = true;
+    const at = p.loaded.length;
+    p.timers[3000]();
+    await settle(); await settle();
+    assert.equal(p.loaded.length, at + 1, 'one attempt was made');
+    assert.match(p.html(), /<h1 class="s-title">first<\/h1>/, 'a hung load has not redrawn the page yet');
+    // The deadline passing, simulated: the same one-shot a real setTimeout gives.
+    p.fireTimeouts();
+    await settle(); await settle();
+    hang = false;
+    const again = p.loaded.length;
+    p.timers[3000]();
+    await settle(); await settle(); await settle();
+    assert.deepEqual(p.loaded.slice(again).map((s) => s.split('?')[0]), ['station/station-data.js', 'station/detail/aaaa1111-0000.js'],
+        'the next 3-second tick tried again once the deadline cleared busy');
+    assert.match(p.html(), /<h1 class="s-title">second<\/h1>/, 'and that attempt landed');
+});
+
+test('two 3-second ticks fired before the first re-read settles load station-data.js only once', async () => {
+    const p = boot('#/s/aaaa1111-0000/cost', station('live', 'first'), (src) => {
+        if (src.indexOf('station/station-data.js') === 0) return 'hang';
+        return undefined;
+    });
+    await settle(); await settle();
+    const at = p.loaded.length;
+    p.timers[3000]();
+    p.timers[3000]();
+    await settle(); await settle();
+    assert.equal(p.loaded.length, at + 1, 'the second tick found the first still in flight and loaded nothing');
+});
+
+test('a hidden tab re-reads nothing on its tick', async () => {
+    const p = boot('#/s/aaaa1111-0000/cost', station('live', 'first'), (src, win) => {
+        if (src.indexOf('station/station-data.js') === 0) win.STATION = station('live', 'second');
+        return undefined;
+    });
+    await settle(); await settle();
+    p.doc.hidden = true;
+    const at = p.loaded.length;
+    p.timers[3000]();
+    await settle(); await settle();
+    assert.equal(p.loaded.length, at, 'nothing was loaded while the tab was hidden');
+});
+
+test('a re-read that errors leaves the page\'s data as it was, and clears busy for the next tick', async () => {
+    let mode = null;
+    const p = boot('#/s/aaaa1111-0000/cost', station('live', 'first'), (src, win) => {
+        if (src.indexOf('station/station-data.js') !== 0) return undefined;
+        if (mode === 'error') { win.STATION = station('live', 'errored'); return 'error'; }
+        win.STATION = station('live', 'second');
+        return undefined;
+    });
+    await settle(); await settle();
+    mode = 'error';
+    const at = p.loaded.length;
+    p.timers[3000]();
+    await settle(); await settle();
+    assert.equal(p.loaded.length, at + 1, 'one attempt was made');
+    assert.match(p.html(), /<h1 class="s-title">first<\/h1>/,
+        'a failed re-read leaves the page showing what it had, not the half-written data behind it');
+    mode = null;
+    const again = p.loaded.length;
+    p.timers[3000]();
+    await settle(); await settle(); await settle();
+    assert.deepEqual(p.loaded.slice(again).map((s) => s.split('?')[0]), ['station/station-data.js', 'station/detail/aaaa1111-0000.js'],
+        'busy cleared, so the next tick tried again');
+    assert.match(p.html(), /<h1 class="s-title">second<\/h1>/, 'and that attempt landed');
 });
