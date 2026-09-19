@@ -13,6 +13,7 @@ const path = require('node:path');
 const http = require('node:http');
 const { spawnSync } = require('node:child_process');
 const serve = require('../lib/serve.js');
+const live = require('../lib/live.js');
 const tmp = require('./tmp.js');
 
 const PLUGIN = path.join(__dirname, '..');
@@ -99,15 +100,16 @@ test('a serve started detached outlives the process that started it and the one 
         // with the station still alive and still the one answering: measured
         // under 28 competing busy loops, `live.running` said alive both
         // before and after a timed-out probe, and a retried probe with more
-        // budget then answered true in 3.6s. So this retries within an outer
-        // 10-second budget rather than asking once — a genuinely dead
-        // station answers false on every attempt, at once, so this still
-        // fails promptly in that case.
+        // budget then answered true in 3.6s. So this retries while the
+        // recorded pid is still running, up to an outer 10-second budget —
+        // and a genuinely dead station stops this at once, on the first
+        // `live.running` check that finds the pid gone, rather than waiting
+        // out the whole budget.
         const patience = Date.now() + 10000;
         let alive = false;
         for (;;) {
             alive = await serve.probe(rec, 2000);
-            if (alive || Date.now() >= patience) break;
+            if (alive || !live.running(rec.pid) || Date.now() >= patience) break;
             await sleep(200);
         }
         assert.equal(alive, true, 'the station died with the process that started it');
