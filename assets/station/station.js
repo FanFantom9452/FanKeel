@@ -280,10 +280,7 @@
     // bucket is "older than the field", not "not one of ours". Every other
     // key's label is the whole story, so this returns '' for them.
     function keyHint(dim, key) {
-        if (dim === 'version' && key === 'none') {
-            return '跑的時候 registry 還沒有 version 這個欄位，不是別處來的 session';
-        }
-        return '';
+        return dim === 'version' && key === 'none' ? '跑的時候 registry 還沒有 version 這個欄位，不是別處來的 session' : '';
     }
     function projectNames(sessions) {
         var lab = labels(sessions.map(function (s) { return s.root; }));

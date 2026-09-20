@@ -1,6 +1,6 @@
 'use strict';
 // lib/spend.js: what a session's `spend` field turns into once `lib/prices.js`'s
-// rates are applied — the four dollar components `assets/station/station.js:981`
+// rates are applied — the four dollar components `assets/station/station.js:978`
 // already displays, folding `cacheWrite5m` and `cacheWrite1h` the same way, and
 // `buckets()` grouping sessions by how long they ran.
 //
