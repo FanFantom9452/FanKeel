@@ -129,7 +129,9 @@ the loud side, as it does everywhere in this plugin.
 ## What each row holds
 
 From the entry: `task`, `project`, `stage` on its `route`, `started`,
-`updated`, `claims`, `notes`, `next`, `guard`, and the stage sums of `burn`,
+`updated`, `claims`, `notes`, `next`, `guard`, the `version` of the plugin that
+started it — `null` on a record written before that field existed, which is most
+of them — and the stage sums of `burn`,
 `clock` and `waited`. From `hooks/leave.js`: `ended`, `model`, `usage`,
 `spend`, `gates` — see [registry.md](registry.md). From `lib/prices.js`: the dollar figure, and the
 date the table was read. The dollar figure shown is one total: `cost(s)` in
@@ -517,8 +519,14 @@ root separates on its own and always did.
 
 **首頁**, `#/`, is a 30-day histogram — one bar per local day, today at the
 right — whose height switches between tokens, dollars and time and whose
-segments switch between model, project, stage and main session against
-agent; time has no model, so that pairing is disabled and says why. Five
+segments switch between model, project, stage, main session against agent,
+the plugin `version` that ran the session, and the four cost components the
+cost tab already splits — input, output, cache read and the two cache-write
+rates folded into one. Two of those six are disabled under time and say why:
+a span records only a stage and who was running, so it carries no model and
+no tokens to split into components. `version` is not one of them — it belongs
+to the session rather than to the row, so it applies to a span as much as to a
+day. Five
 cards sit above it. Four of them compare the last 30 days with the 30
 before them — the window's spend, tokens, active time and waiting ratio —
 and the fifth does not compare windows at all: it
