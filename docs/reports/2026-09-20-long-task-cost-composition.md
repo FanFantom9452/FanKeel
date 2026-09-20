@@ -90,4 +90,4 @@ node scripts/spend.js              # 全機器，discover 找到的每一個 reg
 node scripts/spend.js --root <dir> # 只看一個
 ```
 
-站台首頁的分段控制也加了 `依成分` 與 `依版本` 兩格（[station.md](../station.md)）。**對照數字之前，先確認是哪一個母體。** 站台的花費不只一種來源，三種都查證過：本頁與專案頁的 route 帳（`routeGroups`）讀 registry 的 `spend` 欄，這兩邊 78 筆逐筆到分相同；首頁整張長條圖加的是 `days[].usd`，那是從 transcript 讀的；session 清單的花費欄用的又是 `usage`（`cost(s)`）。哪一個畫面用哪一種，目前沒有任何一頁寫下來。
+站台首頁的分段控制也加了 `依成分` 與 `依版本` 兩格（[station.md](../station.md)）。**本頁的總額比站台小，差在覆蓋範圍，不在算法。** 這一點量過：在這個 repo 的 registry 上，91 筆同時有 `usage` 與 `days[].usd` 的，兩邊逐筆到分相同；其中 78 筆也有 `spend` 的，`stages[].usd` 的總和也逐筆相同。三個欄位是同一個量測，差別只在誰有——`days` 只要有 transcript，`usage` 在 session 結束時才寫，`spend` 是更後來才加的。所以本頁只能為 311 個 session 檔裡的 94 個定價，而首頁能為每一個有 transcript 的定價。

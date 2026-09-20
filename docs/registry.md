@@ -256,11 +256,14 @@ nothing else:
   splits a session's own cost from its subagents', and buckets the sessions by
   request count. `scripts/spend.js` resolves those roots — `lib/station.js`'s
   `discover()`, or `--root` — and prints its two tables under a line saying how
-  many session files it scanned to fill them. Its figures and the ones the
-  station prices out of this same field agree to the cent — 78 of 78 sessions
-  in this repository's own registry, measured 2026-09-20 — but most costs the
-  station shows are not priced out of this field at all, and which ones are is
-  not written down anywhere. `TODO.md` carries that.
+  many session files it scanned to fill them. Where its totals differ from the
+  station's, the difference is coverage rather than method: measured over this
+  registry on 2026-09-20, `usage` and the sum of `days[].usd` agreed to the
+  cent on all 91 sessions carrying both, and the sum of `stages[].usd` on all
+  78 that also carry a `spend`. What they do not share is who has them — `days`
+  needs only a transcript, `usage` is written at session end, and `spend` only
+  since it was added, so 94 of the 311 session files here can be priced from
+  it and every session with a transcript can be priced from `days`.
 - `gates` — an array of `{ at, stage, header, question, labels, descriptions,
   picked }`, one entry per `AskUserQuestion` `lib/gates.js` finds in the
   transcript: `stage` is read off `moves` at that point, `question` is the
