@@ -78,6 +78,7 @@ what gets scheduled.
 - 〔tests〕「匯出而沒人 import」只在 `module.exports = {…}` 是檔尾最後一句時才檢查，`assets/station/station.js` 的匯出因此不受檢；station-live 的 Task 7 審查找到兩個漏網的 — [tests/source.test.js](tests/source.test.js).
 - 〔docs〕`conflict()` 有四個 predicate，`read` 那個（`Read:` 擋鄰居的 `Modify`/`Test`）在 `docs/subagents.md`、`docs/collisions.md`、`docs/pipeline.md` 三頁都沒提，三頁各自只算到兩三個 — [lib/plantasks.js](lib/plantasks.js).
 - 〔station〕首頁長條圖的分段控制（`依專案`／`依模型`／`依階段`／`依誰`／`依成分`／`依版本`，以及哪幾格在 `時間` 下會被停用）整組都沒有被文件點名過 — [docs/station.md](docs/station.md).
+- 〔tests〕程式註解裡的 `path:line` 沒人驗，docs-check 只看 markdown：`fb2f734` 就有三條歪的，一在 [tests/station-hide.test.js](tests/station-hide.test.js)、二在 [tests/station-view.test.js](tests/station-view.test.js)，其一指到不存在的行。
 
 ## Needs a decision
 

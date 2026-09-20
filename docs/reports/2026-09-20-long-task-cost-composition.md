@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-20
-source_of_truth: 這台機器上 11 個 registry 的 `spend` 欄位，由 `node scripts/spend.js` 在 `983823ad38f4ffd65cc11ce9581e24a799714d0c` 一次印出，全文存在 [evidence/2026-09-20-long-task-cost-composition/spend-at-983823a.txt](evidence/2026-09-20-long-task-cost-composition/spend-at-983823a.txt)；本頁的桶內占比與主 session 占比再由 [derived-at-983823a.txt](evidence/2026-09-20-long-task-cost-composition/derived-at-983823a.txt) 從那張表自己的欄位重算，awk 程式與兩次執行的輸出都在裡面。單價來自 `lib/prices.js`（`verified: 2026-09-04`）。本頁每一個數字都從那兩個檔來，本頁不會重新產生
+source_of_truth: 這台機器上 11 個 registry 的 `spend` 欄位，由 `node scripts/spend.js` 在 `983823ad38f4ffd65cc11ce9581e24a799714d0c` 一次印出，全文存在 [evidence/2026-09-20-long-task-cost-composition/spend-at-983823a.txt](evidence/2026-09-20-long-task-cost-composition/spend-at-983823a.txt)；本頁的桶內占比與主 session 占比再由 [derived-at-983823a.txt](evidence/2026-09-20-long-task-cost-composition/derived-at-983823a.txt) 從那張表自己的欄位重算，awk 程式與兩次執行的輸出都在裡面。本頁的量測數字全部從那兩個檔來，每百萬 token 的單價從 `lib/prices.js`（`verified: 2026-09-04`）來，本頁不會重新產生
 ---
 
 # 長任務的成本成分 — 2026-09-20
@@ -37,15 +37,15 @@ source_of_truth: 這台機器上 11 個 registry 的 `spend` 欄位，由 `node 
 | `50-199` | 10 | $108.75 | $9.69 | 25.4% | 50.0% | 24.6% | 83.0% |
 | `200-799` | 28 | $1226.00 | $36.37 | 19.5% | 59.6% | 20.9% | 76.4% |
 | `800+` | 28 | $5003.90 | $134.35 | 18.4% | 61.4% | 20.2% | 59.4% |
-| 全體 | 94 | $6377.57 | | 18.7% | 60.7% | 20.5% | 63.1% |
+| 全體 | 94 | $6377.56 | | 18.7% | 60.7% | 20.5% | 63.1% |
 
-`input` 不在表上，因為它四桶都是 0%：全體 94 筆的未命中輸入合計佔 0.1%，幾乎所有輸入都命中快取。
+`input` 不在表上，因為它四桶都印成 0%：全體 94 筆的未命中輸入合計只有 **$0.87**，佔 0.014%，幾乎所有輸入都命中快取。
 
-總額那一欄是 `scripts/spend.js` 自己未取整的合計；成分與主 session 兩組百分比是從印出來的（已取整到分的）欄位重算的，所以兩者的總額會差一兩分（$38.91 對 $38.92）。
+四桶的總額是 `scripts/spend.js` 自己的合計，全體那一格是那四個數字相加（$6377.56）。成分與主 session 兩組百分比則是從印出來的、已經取整到分的每一筆重算的，所以同一個量會差一兩分——桶內是 $38.91 對 $38.92，全體是 $6377.56 對 $6377.59。這一頁引用哪一個就寫哪一個，不互相換算。
 
 ## 3. 移動的是什麼
 
-**cache write 換成 cache read。** 短任務每一輪都在寫新的快取；長任務寫過的東西被讀很多次。`lib/prices.js` 裡 5m 寫是 input 的 1.25 倍、1h 寫是 2 倍，而讀是 input 的 1/20（opus：input 5、cacheRead 0.5、cacheWrite5m 6.25、cacheWrite1h 10，每百萬）。所以同一筆 token，寫進去一次很貴、讀出來很便宜——長任務的便宜之處就在這裡，而它的貴之處是讀的次數。
+**cache write 換成 cache read。** 短任務每一輪都在寫新的快取；長任務寫過的東西被讀很多次。`lib/prices.js` 裡 5m 寫是 input 的 1.25 倍、1h 寫是 2 倍，而讀是 input 的 1/10（opus：input 5、cacheRead 0.5、cacheWrite5m 6.25、cacheWrite1h 10，每百萬）。所以同一筆 token，寫進去一次很貴、讀出來很便宜——長任務的便宜之處就在這裡，而它的貴之處是讀的次數。
 
 **output 的占比反而在降**（24.4% → 18.4%）。長任務不是寫出更多字，是重讀更多東西。
 
