@@ -189,19 +189,34 @@ node docs/reports/evidence/2026-09-21-quota-calibration/sonnet.js
 ```
 
 每一支把自己的輸出寫成 `<name>-at-<sha>.txt`，sha 取自跑的時候的 HEAD。**那個
-sha 要是真的，產生輸出的那個 commit 就不能同時改腳本。** 這裡是三對 commit，一對一次修改：
-`43daef5`／`640309e` 是四支腳本與它們的第一批輸出；`3784eb7`／`7a91474` 是 `basis.js`
-的修改與它的新輸出；`b5abad3`／`80742ae` 是 `drift.js` 與 `sonnet.js` 的修改與它們的。
-三個放輸出的 commit 裡 `.js` 檔案數都是 0，而 `windows.js` 自 `43daef5` 起沒動過，
-所以它的檔名仍然是真的：
+sha 要是真的，產生輸出的那個 commit 就不能同時改腳本。**
+
+不要列 commit 對照表——那種表每改一次腳本就得重寫一次，而它自己就是會過期的數字。
+這個規則是整條 branch 的性質，所以直接查那個性質：每一個 commit 裡，「加了輸出」與
+「改了腳本」不能同時為真。
 
 ```
-for c in 640309e 7a91474 80742ae; do git diff-tree --no-commit-id --name-only -r $c | grep -c '\.js$'; done
-git diff --stat 43daef5..HEAD -- docs/reports/evidence/2026-09-21-quota-calibration/windows.js
+git log --format=%h ad14458..HEAD | while read c; do
+  a=$(git diff-tree --no-commit-id --diff-filter=A --name-only -r $c | grep -c 'at-[0-9a-f]*\.txt$')
+  j=$(git diff-tree --no-commit-id --name-only -r $c | grep -c '\.js$')
+  echo "$c added-outputs=$a scripts-touched=$j"
+done
 ```
+
+任何一行兩個都大於 0，就是一份檔名說謊的輸出。這個檢查會失敗——把腳本和它的輸出
+塞進同一個 commit，那一行立刻兩邊都大於 0。
+
+`--diff-filter=A` 不是裝飾。這個檢查的第一版沒有它，跑起來就在自己的 branch 上判了
+一個 commit 有罪：那一個同時改了兩支腳本並**刪掉**三份過期輸出，而 `--name-only`
+把刪除也列出來，所以「加了輸出」被算成 3。規則講的是「新增一份輸出」，所以只數新增。
 
 `grep -c` 回 0 時結束碼是 1，所以上面用 `for` 而不是 `&&` 串——串起來會在第一個
-0 就斷掉，而 0 正是要的答案。這個坑也踩過。
+0 就斷掉，而 0 正是要的答案。這一頁從來沒有寫成 `&&`；踩到的是查證它的那個殼層，
+兩次：一次把 `docs-check` 的結束碼換成了 `tail` 的，一次把三個 `grep -c` 串起來而
+只跑到第一個。`for` 的每一圈不看上一圈的結束碼，所以三個都會印。
+
+它擋不住的是另一件事：sha 打錯時 `grep -c` 對著空輸入也印 0，只有夾在中間的
+`fatal: ambiguous argument` 會透露。要真的分辨，先 `git cat-file -e <sha>`。
 
 用 `git diff-tree --name-only` 而不是 `git show --stat | grep`：後者會把 commit
 訊息也算進去，而這份報告的訊息裡就寫著 `.js`，所以那個寫法會回報 1。這個坑是落地

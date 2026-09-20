@@ -87,7 +87,20 @@ function stageCalls(file, notBefore) {
             // other way is still found.
             if (c.name !== 'Bash' && c.name !== 'PowerShell') continue;
             const cmd = c.input && typeof c.input.command === 'string' ? c.input.command : '';
-            const m = cmd.match(/task\.js stage ([a-z]+)/);
+            // `--session` required, and the separator allows a line
+            // continuation. Measured over 241 top-level transcripts: the
+            // plain-single-space form matched 509, allowing `\` and a newline
+            // matches 510 — one real invocation the narrower form missed — and
+            // requiring `--session` leaves 507, dropping three that quote the
+            // command without running it, one of them a heredoc writing a
+            // progress file.
+            //
+            // The residual, named rather than claimed closed: a shell command
+            // that quotes the WHOLE invocation including `--session` still
+            // passes. So the remaining error runs in both directions, not only
+            // the conservative one.
+            if (!cmd.includes('--session')) continue;
+            const m = cmd.match(/task\.js[\s\\]+stage[\s\\]+([a-z]+)/);
             if (m) found.push({ stage: m[1], at });
         }
     }

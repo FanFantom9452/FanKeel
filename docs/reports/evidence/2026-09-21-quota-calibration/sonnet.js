@@ -180,7 +180,10 @@ function stageCalls(file, notBefore) {
             // Write that quoted the command as if it had run.
             if (c.name !== 'Bash' && c.name !== 'PowerShell') continue;
             const cmd = c.input && typeof c.input.command === 'string' ? c.input.command : '';
-            const m = cmd.match(/task\.js stage ([a-z]+)/);
+            // Same filter and same measured reasoning as drift.js, including the
+            // named residual: a command quoting the whole invocation still passes.
+            if (!cmd.includes('--session')) continue;
+            const m = cmd.match(/task\.js[\s\\]+stage[\s\\]+([a-z]+)/);
             if (m) found.push({ stage: m[1], at });
         }
     }
