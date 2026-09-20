@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-21
-source_of_truth: 兩支 evidence 腳本與它們綁著 sha 的輸出——`docs/reports/evidence/2026-09-21-long-task-projection/stages.js`（輸出 [evidence/2026-09-21-long-task-projection/stages-at-8365088.txt](evidence/2026-09-21-long-task-projection/stages-at-8365088.txt)，在 `8365088` 產生）與同目錄的 `project.js`（輸出 [project-at-f24916f.txt](evidence/2026-09-21-long-task-projection/project-at-f24916f.txt)，在 `f24916f` 產生）。逐站的錢由 `lib/registry.js` 的 `seriesOf` 與 `lib/prices.js` 的 `costOf` 算出，不是本頁算的；價格比由 `project.js` 從 `lib/prices.js` 的費率表逐分量算出來而不是寫死。S 的兩個端點來自 [evidence/2026-09-20-survey-brain-ab/ab7-table.txt](evidence/2026-09-20-survey-brain-ab/ab7-table.txt) 的逐模型列。額度讀數來自一次 statusline payload 捕捉，2026-09-20T16:30:41Z。本頁每一個數字都從那些檔來，本頁不會重新產生
+source_of_truth: 兩支 evidence 腳本與它們綁著 sha 的輸出——`docs/reports/evidence/2026-09-21-long-task-projection/stages.js`（輸出 [evidence/2026-09-21-long-task-projection/stages-at-869c3ea.txt](evidence/2026-09-21-long-task-projection/stages-at-869c3ea.txt)，在 `869c3ea` 產生）與同目錄的 `project.js`（輸出 [project-at-55ad54e.txt](evidence/2026-09-21-long-task-projection/project-at-55ad54e.txt)，在 `55ad54e` 產生）。逐站的錢由 `lib/registry.js` 的 `seriesOf` 與 `lib/prices.js` 的 `costOf` 算出，不是本頁算的；價格比由 `project.js` 從 `lib/prices.js` 的費率表逐分量算出來而不是寫死。S 的兩個端點來自 [evidence/2026-09-20-survey-brain-ab/ab7-table.txt](evidence/2026-09-20-survey-brain-ab/ab7-table.txt) 的逐模型列。第 5 節的額度視窗是 `stages.js` 的 block 3c，錨定在 [evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt](evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt) 記下的那一次 statusline payload 捕捉（2026-09-20T16:30:41Z，n=1），那個檔也在 repo 裡。本頁每一個數字都從那些檔來，本頁不會重新產生
 ---
 
 # 長任務換 Sonnet 主控的投影 — 2026-09-21
@@ -95,7 +95,13 @@ break-even k (new_total == old_total, survey held at S_low): 2.5052
 
 那個 5 小時視窗裡只有這一個 session：同期另外兩個 transcript，一個在視窗內只有 1 行且 0 token，另一個最後的內容停在前一天。
 
-**7d 的 0% 與 registry 對不起來。**以 `resets_at` 往前推七天，該視窗從 2026-09-17T19:00Z 開始；registry 在那之後記到 **$1,094.68**、**18.9 億 token**、43 個 session、190 個 stage 列。若計量與這些成正比，三天前就該撞牆。它不是，而**一個整數讀數只給得出上界**，給不出分母。那 18.9 億裡 95.8% 是快取讀取、非快取（input+output）只有 1,676 萬——就算計量完全不算快取讀取，0% 反推出來的週額度仍要大於 33 億非快取 token，一樣不可信。
+**但 registry 對那個視窗一無所知。**block 3c 的 5h 那一列是 0 個 session、0 個 stage 列、$0——不是因為沒人在跑，而是因為 `spend` 由 `hooks/leave.js` 在 session **結束時**才寫，所以填滿那個視窗的 session 當時還在跑，registry 裡還沒有它。**一個 live session 的額度讀數與它的 registry 紀錄，在時間上碰不到面**：要拿 5h 的百分比對上 token，只能等那個 session 結束，而那時視窗多半已經翻頁。7d 視窗長到足以蓋住已經結束的 session，所以 3c 的 7d 那一列有數字，5h 那一列沒有。
+
+**7d 的 0% 與 registry 對不起來。**以 `resets_at` 往前推七天，該視窗從 2026-09-17T19:00Z 開始；registry 在那之後記到 **$1,094.68**、**18.9 億 token**、190 個 stage 列，來自 43 個 session。
+
+**那 43 個不是第 1 節的 43 筆。**兩個數字相等純屬巧合，而且只有 12 筆重疊：第 1 節的 43 筆是按 `requests` 分桶篩出來的長任務，這裡的 43 個是按時間落在額度視窗內的全部 session，其中 31 個是 `<50` 與 `50-199` 的短任務。額度視窗不分桶，所以這裡本來就該是全 population。**追著「43」讀這一頁會把兩群不相干的 session 讀成同一群。**
+
+若計量與這些成正比，三天前就該撞牆。它不是，而**一個整數讀數只給得出上界**，給不出分母。那 18.9 億裡 95.8% 是快取讀取、非快取（input+output）只有 1,676 萬——就算計量完全不算快取讀取，0% 反推出來的週額度仍要大於 33 億非快取 token，一樣不可信。
 
 能說的只有兩句：**這個帳號當下在 5h 2%、7d 0%**；以及**花費與額度怎麼掛勾，一個點測不出來，要序列**。序列要靠 TokenBar 把它已經組好的那一行寫成檔案，那是另一個 repo，記在 `TODO.md` 的 `## Needs a decision`。
 
@@ -115,7 +121,7 @@ break-even k (new_total == old_total, survey held at S_low): 2.5052
 
 `## Needs a decision` 有一條問：survey 的大腦調過四輪後花費已打平、時間仍 1.4–1.6 倍、主控 context 仍多 8k，**要再調還是認定這樣就夠**。
 
-這一頁給的答案是：**再調大腦，對長任務幾乎沒有意義。**大腦只在一站，而那一站在長任務裡的中位數佔比是 7.96%。把大腦的成本再壓一成，全局動的是 0.8%。
+這一頁給的答案是：**再調大腦，對長任務幾乎沒有意義。**算式要點名分母，否則同一句話可以寫出三個不同的數字：43 筆長任務的 survey 站**合計**佔舊制總額 7.10%（第 3 節的 7.96% 是**中位數**，不是這個），換算成新制是 $265.9957、佔新制總額 15.68%；大腦又只是新制 survey 的一部分，照 ab7 的逐模型列是 58.6%–68.4%（0.4673÷0.7976 與 0.6655÷0.9731）。所以大腦佔新制帳單 9.19%–10.73%、佔現行帳單 4.05%–4.73%。**把大腦成本再壓一成，新制總額動 0.92%–1.07%，對現行帳單則是 0.41%–0.47%。**
 
 真正沒被量的是另一件事——**Sonnet 主控在沒有大腦的六站上表現如何**。那裡的槓桿是 0.4，破平衡點是 2.5 倍，而那一格是空的。所以下一步不是繼續調 survey 的大腦，是去量那六站。
 
@@ -126,6 +132,8 @@ node docs/reports/evidence/2026-09-21-long-task-projection/stages.js
 node docs/reports/evidence/2026-09-21-long-task-projection/project.js
 ```
 
-第一支讀 `.fankeel/sessions`，第二支讀第一支的輸出表——**derived 檔從來源表自己的欄位重算**，和 [2026-09-20-long-task-cost-composition.md](2026-09-20-long-task-cost-composition.md) 同一個慣例。兩支都只寫自己的輸出檔，不碰別的。
+第一支讀 `.fankeel/sessions` 並印出 block 1 到 3c，第二支讀第一支的輸出表——**derived 檔從來源表自己的欄位重算**，和 [2026-09-20-long-task-cost-composition.md](2026-09-20-long-task-cost-composition.md) 同一個慣例。第 5 節的兩個額度視窗是 block 3c，所以這兩行也重跑得出它。兩支都只寫自己的輸出檔，不碰別的。
 
-額度那一格要重取，把 `CLAUDE_STATUSLINE_DEBUG=1` 放進 `~/.claude/settings.json` 的 `env`，statusline 下一次 render 就會把整包 payload 丟到 `%TEMP%\claude-statusline-payload.json`。**不需要重開 Claude Code**，這一點實測過。
+輸出檔名綁著產生它的 sha，所以每次重跑都會換名字；`project.js` 因此不寫死來源檔名，而是掃同目錄的 `stages-at-*.txt`，**恰好一個才繼續**，否則丟出錯誤列出找到了什麼。同理 `project.js` 只在 `lib/prices.js` 四個分量的價格比相同時成立，不相同就 throw 而不是改用另一條沒人走過的路徑。
+
+額度那一格要重取，把 `CLAUDE_STATUSLINE_DEBUG=1` 放進 `~/.claude/settings.json` 的 `env`，statusline 下一次 render 就會把整包 payload 丟到 `%TEMP%\claude-statusline-payload.json`。**不需要重開 Claude Code**，這一點實測過。取到新的 `resets_at` 之後，block 3c 的兩個視窗常數要跟著換。
