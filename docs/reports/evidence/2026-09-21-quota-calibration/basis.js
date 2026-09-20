@@ -120,37 +120,55 @@ say('One compaction sits inside the A..B segment. A compaction re-reads the whol
 say('context to summarise it, and that call is not written to the transcript as an');
 say('assistant turn, so its tokens are outside this basis by construction.');
 say('');
-// Located from the transcript rather than asserted: the boundary line and the
-// summary line Claude Code writes for a compaction, and the largest raw
-// `input_tokens` on any request — which is what a full uncached read would show
-// up as if one were recorded.
-const lines = fs.readFileSync(path.join(HERE, OPUS + '.jsonl'), 'utf8').split('\n');
-const marks = [];
-const byRequest = new Map();
-for (const l of lines) {
-    if (!l.trim()) continue;
-    let j;
-    try { j = JSON.parse(l); } catch (e) { continue; }
-    const s = JSON.stringify(j);
-    if (/"isCompactSummary":true/.test(s) || /"subtype":"compact_boundary"/.test(s)) {
-        marks.push({ at: j.timestamp, type: j.type, compact: /isCompactSummary/.test(s) });
+// Located from the transcripts rather than asserted. BOTH sessions are read, not
+// only the Opus one: the A..B total below sums both, so a floor claim over that
+// total has to cover both. A reviewer caught this file checking one and the
+// report claiming the floor for the sum.
+function compactionsIn(sessionId) {
+    const file = path.join(HERE, sessionId + '.jsonl');
+    const marks = [];
+    const byRequest = new Map();
+    for (const l of fs.readFileSync(file, 'utf8').split('\n')) {
+        if (!l.trim()) continue;
+        let j;
+        try { j = JSON.parse(l); } catch (e) { continue; }
+        const s = JSON.stringify(j);
+        if (/"isCompactSummary":true/.test(s) || /"subtype":"compact_boundary"/.test(s)) {
+            marks.push({ at: j.timestamp, type: j.type, compact: /isCompactSummary/.test(s) });
+        }
+        if (j.type === 'assistant' && j.message && j.message.usage && j.requestId) {
+            byRequest.set(j.requestId, { at: j.timestamp, u: j.message.usage });
+        }
     }
-    if (j.type === 'assistant' && j.message && j.message.usage && j.requestId) {
-        byRequest.set(j.requestId, { at: j.timestamp, u: j.message.usage, model: j.message.model });
+    const biggest = [...byRequest.values()].sort((a, b) => (b.u.input_tokens || 0) - (a.u.input_tokens || 0))[0];
+    return { marks, biggestInput: biggest ? biggest.u.input_tokens : null };
+}
+let insideAB = 0;
+for (const [label, id] of [['417fef89 (Opus, open across both readings)', OPUS],
+    ['c5571add (the Sonnet run, inside A..B)', SONNET]]) {
+    const r = compactionsIn(id);
+    say(label + ':');
+    say('  compaction markers: ' + r.marks.length);
+    for (const m of r.marks) {
+        const inAB = Date.parse(m.at) > A.at && Date.parse(m.at) < B.at;
+        if (inAB) insideAB += 1;
+        say('    ' + m.at + '  ' + m.type + (m.compact ? '  isCompactSummary' : '  compact_boundary')
+            + (inAB ? '   <- inside A..B' : ''));
     }
+    say('  largest raw input_tokens on any one request: ' + r.biggestInput
+        + ' — a full uncached context read would appear here as a large number');
 }
-say('compaction markers in this transcript: ' + marks.length);
-for (const m of marks) {
-    say('  ' + m.at + '  ' + m.type + (m.compact ? '  isCompactSummary' : '  compact_boundary')
-        + (Date.parse(m.at) > A.at && Date.parse(m.at) < B.at ? '   <- inside A..B' : ''));
-}
-const biggest = [...byRequest.values()].sort((a, b) => (b.u.input_tokens || 0) - (a.u.input_tokens || 0))[0];
-say('largest raw input_tokens on any one request: ' + (biggest ? biggest.u.input_tokens : 'n/a')
-    + ' — every request is a cache read, so no full-context read is recorded here');
-say('minutes from the compaction to reading B: ' + ((B.at - COMPACT_AT) / 60000).toFixed(1));
 say('');
-say('So the A..B spend below is a FLOOR, and every per-point rate derived from it');
-say('is a lower bound rather than a point estimate.');
+say('marker lines inside A..B, across both sessions: ' + insideAB);
+say('minutes from the located compaction to reading B: ' + ((B.at - COMPACT_AT) / 60000).toFixed(1));
+say('');
+say('What this shows is narrower than a mechanism: a compaction happened inside');
+say('the segment, and no request in either transcript carries an input large');
+say('enough to be a whole-context read. Whether Claude Code writes a');
+say('summarisation call to the transcript at all is not demonstrated here.');
+say('Either way the direction holds — a cost this basis cannot see can only be');
+say('missing, never double-counted — so the A..B spend below is a FLOOR and every');
+say('per-point rate derived from it is a lower bound.');
 
 say('');
 say('## block 3 — the segment that moved both meters');
@@ -184,6 +202,55 @@ const seven = meter('seven-day meter', A.seven, B.seven);
 say('');
 say('one seven-day point is worth ' + (seven[0] / five[1]).toFixed(1) + '-'
     + (seven[1] / five[0]).toFixed(1) + ' five-hour points of the same spend.');
+
+say('');
+say('## block 4 — what else on disk carries a rate limit');
+say('An earlier draft of the report claimed nothing but the statusline payload');
+say('holds anything about rate limits, and that transcripts do not. That is wrong,');
+say('and this block is what corrected it: a transcript can carry a `quotaLimits`');
+say('field. It holds no percentage, so it is no use as a series — but it records');
+say('the moment a request was REFUSED for hitting a cap, which a percentage never');
+say('does. Counted over every transcript on the machine, top level and subagents.');
+say('');
+const seenQuota = [];
+let scanned = 0;
+(function walk(dir) {
+    let names;
+    try { names = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
+    for (const d of names) {
+        const full = path.join(dir, d.name);
+        if (d.isDirectory()) { walk(full); continue; }
+        if (!d.name.endsWith('.jsonl')) continue;
+        scanned += 1;
+        let text;
+        try { text = fs.readFileSync(full, 'utf8'); } catch (e) { continue; }
+        if (!text.includes('quotaLimits')) continue;
+        for (const l of text.split('\n')) {
+            if (!l.includes('quotaLimits')) continue;
+            let j;
+            try { j = JSON.parse(l); } catch (e) { continue; }
+            if (!j.quotaLimits || typeof j.quotaLimits !== 'object') continue;
+            seenQuota.push({ file: d.name.replace(/\.jsonl$/, '').slice(0, 8), at: j.timestamp, q: j.quotaLimits });
+        }
+    }
+}(PROJECTS));
+say('transcripts scanned (top level and every subagents tree): ' + scanned);
+say('lines carrying a `quotaLimits` object: ' + seenQuota.length);
+const fields = new Set();
+for (const s of seenQuota) for (const k of Object.keys(s.q)) fields.add(k);
+say('fields it ever carries: ' + [...fields].sort().join(', '));
+say('a percentage among them? ' + ([...fields].some((f) => /percent/i.test(f)) ? 'yes' : 'NO'));
+say('');
+say(['session', 'at', 'rateLimitType', 'status', 'resetsAt'].join('\t'));
+for (const s of seenQuota.sort((a, b) => String(a.at).localeCompare(String(b.at)))) {
+    say([s.file, s.at, s.q.rateLimitType, s.q.status,
+        Number.isFinite(s.q.resetsAt) ? new Date(s.q.resetsAt * 1000).toISOString() : String(s.q.resetsAt)].join('\t'));
+}
+say('');
+say('Each of these is a cap actually reached. That is a stronger anchor than a');
+say('rounded percentage — at the moment of a refusal the meter is at its limit, so');
+say('the window spend up to that instant is a denominator and not a band. Nothing');
+say('in this report uses it yet; it is the next measurement, not this one.');
 
 let sha = 'unknown';
 try {
