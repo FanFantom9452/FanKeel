@@ -280,8 +280,11 @@ per-request map, so the tally under it (the points plus the requests with no
 time equal the request count on 摘要) holds by construction and is printed
 anyway. A request with no timestamp is counted, not drawn; past 240 points the
 line keeps each bucket's highest point, so the peak it names is on it. Stage
-moves are vertical lines at the time of the `task.js` command that made them,
-dispatches out and back are dots, and the five largest rises are numbered and
+moves are vertical lines, at the `task.js` command's own moment where one made
+the move and at the hook's sighting where none did — `touch()` still appends a
+move of its own when a stage change arrives with no command before it, which is
+what an answered gate looks like — dispatches out and back are dots, and the
+five largest rises are numbered and
 listed with their cause: what arrived between the two requests — tool results,
 notifications and prompts, largest first, in characters — or the model's own
 output, when the previous response's output tokens are at least half the rise.

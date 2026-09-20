@@ -134,11 +134,12 @@ process has one, from 2026-09-02 on. [docs/registry.md](../../docs/registry.md)
 has that run, and what the older process looked like from inside.
 
 `moves` is the order those stages came in: one `[stage, at, used]` for each
-change of stage, stamped with the sighting `clock` takes, so a verify that went
-back to build and returned reads as two visits rather than one long one. `used`
-is the context reading at that moment, left off when there was none, so what a
-return to `build` cost is the gap between two readings. Sixty at most, oldest
-dropped.
+change of stage, stamped by the `task.js` command that made the change, so a
+verify that went back to build and returned reads as two visits rather than
+one long one. `used` is the context reading, filled in afterwards by the
+first `touch()` that has one, because a command has no transcript to read one
+from at the time; so what a return to `build` cost is the gap between two
+readings. Sixty at most, oldest dropped.
 
 `clock` and `burn` part company in one place: `burn` is only written when a
 token figure arrives, and an answered question is not a prompt, so a stage that

@@ -121,11 +121,12 @@ written by `hooks/leave.js` once, at `SessionEnd`, and its shape is under
 ```
 
 `moves` sits beside them and is not a cost. It is one `[stage, at, used]` for
-each change of stage, appended by the same `touch` that writes `clock` and
-stamped with the same sighting, so the entry opening a stage's first visit
-carries that stage's `clock` first. `used` is the context reading `touch()`
-had in hand at that moment (`hooks/inject.js`); where none was available the
-entry keeps the older two-element shape, `[stage, at]`. What one stage's
+each change of stage, stamped by the command that made the change —
+`task.js stage` and `task.js start`, through `stampEntry` — so the entry
+opening a stage's first visit carries that stage's `clock` first. A command
+has no transcript to read a context figure from, so it writes the entry as
+`[stage, at]`; `used` arrives afterwards, filled in by the first `touch()`
+that has one (`hooks/inject.js`) to give. What one stage's
 regression to `build` cost is the difference between two adjacent `used`
 readings. `clock` keeps one pair per stage, which makes a verify
 that went back to build and returned read as one long verify; `moves` keeps the
