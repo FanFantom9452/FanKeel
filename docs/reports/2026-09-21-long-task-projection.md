@@ -15,7 +15,7 @@ source_of_truth: 兩支 evidence 腳本與它們綁著 sha 的輸出——`docs/
 
 `.fankeel/sessions` 掃到 180 個 entry，0 個讀不出來，其中 **79 個帶 `spend` 欄位**。那 79 個攤開成 **551 個 stage 列**（parent 與 subagents 分開記），合計 **$3,966.20**、**67.9 億 token**。
 
-551 列裡**沒有一列是無報價的**。registry 存的模型 id 是 `claude-opus-5`、`claude-sonnet-5`、`claude-fable-5-1`、`claude-haiku-4-5-20251001`，加上一個 `<synthetic>`——`[1m]` 那個後綴在寫進 registry 之前就被去掉了，所以 1M context 的 session 是按標準 Opus 費率計價的。第 6 節再談這件事。
+551 列裡**沒有一列是無報價的**。registry 存的模型 id 是 `claude-opus-5`、`claude-sonnet-5`、`claude-fable-5-1`、`claude-haiku-4-5-20251001`，加上一個 `<synthetic>`。`<synthetic>` 是唯一沒有費率的，它的 token 被排除在美元之外而不是當成 0，這一點第 6 節再談。
 
 投影只取 `requests` 落在 `200-799` 或 `800+` 兩桶的 session，共 **43 筆**（22 + 21），合計 **$3,848.10**——長任務吃掉這個 registry 97% 的錢。桶由 `lib/spend.js` 自己的 `buckets` 分，本頁沒有複製邊界。
 
@@ -36,6 +36,8 @@ four ratios equal: yes, r = 0.4
 ```
 
 對上 Opus 的 `5 / 25 / 0.5 / 6.25 / 10`，五個都是 0.4，含兩種快取寫入 TTL。**這件事讓後面的換算變乾淨**：既然每個分量的比值相同，成分組合就不影響結果，一段工作換模型之後的花費比值等於 `0.4 ×（token 量的倍數）`。
+
+費率表本身在 2026-09-21 對過一次公布的價目，四個模型逐列相符：Opus 5 $5／$25、Sonnet 5 $2／$10、Haiku 4.5 $1／$5、Fable 5.1 $10／$50。Fable 的 `cacheRead` 是 0.25 而不是 input 的 0.1 倍，那是它自己的特例費率，表裡也是這樣寫的。所以 `lib/prices.js` 的 `verified: 2026-09-04` 到這一天仍然成立。
 
 ## 3. 投影
 
@@ -114,7 +116,7 @@ break-even k (new_total == old_total, survey held at S_low): 2.5052
 - **不是隨機分派。**43 筆是觀察到的長任務，沒有人把任務指派到某一桶。
 - **樣本是這個 repo 自己的開發**，和 [2026-09-20-long-task-cost-composition.md](2026-09-20-long-task-cost-composition.md) 第五節同一條限制。
 - **`<synthetic>` 的 token 被排除在美元之外，卻留在 token 總數裡。**兩個數字的母體因此差一點點。
-- **1M context 可能被低估。**`[1m]` 後綴在進 registry 前被去掉，所以本頁所有的錢都是按標準費率算的。如果 1M 變體在 20 萬 context 以上有溢價，這個專案的每一筆都偏低——而這個專案幾乎都跑在 1M。沒有查證。
+- **1M context 不是一條限制，查過了。**寫這一頁的過程中一度以為 `[1m]` 後綴被丟掉會讓 1M context 的 session 少算錢。查證結果是沒有這回事：Opus 5 的 context 本來就是 1M、就是 $5／$25，沒有分開計價的變體，也沒有 20 萬以上的溢價；而 transcript 記的本來就是 `claude-opus-5`，後綴只出現在 statusline payload 與 headless 的 `modelUsage`，從來沒進過 registry。留著這一條是因為下一個讀的人會同樣起疑。
 - **兩筆沒有 survey 站的 session**，見第 1 節。
 
 ## 7. 對 `TODO.md` 那條決策的意義
