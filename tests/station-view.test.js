@@ -543,18 +543,26 @@ test('a kept v1 cache\'s single row counts its dollars and zero tokens, and brea
 // since every session before this field existed lands there — pushed to the
 // back instead of the front, and the newer real version read ahead of the
 // older one instead of both landing in alphabetical order.
+//
+// Each carries spans as well, and their millisecond figures share no value
+// with the `usd` figures beside them, so a `時間` split that came out of
+// `s.days` by mistake could not produce the numbers a span split does.
 const VER = [
     { id: 'ffff6666-0000', root: 'F:\\ws\\alpha', project: null, pkey: 'F:\\ws\\alpha', task: 'old version',
       state: 'down', stage: 'build', route: ['survey', 'build'], started: local(9, 10, 10), updated: NOW,
-      usd: 99, agentUsd: 99, hasDetail: true, version: '0.74.0', spans: null,
+      usd: 99, agentUsd: 99, hasDetail: true, version: '0.74.0',
+      spans: [{ day: '2026-09-10', stage: 'build', who: 'main', ms: 600000 }],
       days: [dayRow('2026-09-10', 'build', 'claude-opus-5', 'main', 1, 100)] },
     { id: 'gggg7777-0000', root: 'F:\\ws\\alpha', project: null, pkey: 'F:\\ws\\alpha', task: 'new version',
       state: 'down', stage: 'build', route: ['survey', 'build'], started: local(9, 10, 11), updated: NOW,
-      usd: 99, agentUsd: 99, hasDetail: true, version: '0.80.0', spans: null,
+      usd: 99, agentUsd: 99, hasDetail: true, version: '0.80.0',
+      spans: [{ day: '2026-09-10', stage: 'build', who: 'main', ms: 1200000 }],
       days: [dayRow('2026-09-10', 'build', 'claude-opus-5', 'main', 1, 100)] },
     { id: 'hhhh8888-0000', root: 'F:\\ws\\alpha', project: null, pkey: 'F:\\ws\\alpha', task: 'no version recorded',
       state: 'down', stage: 'build', route: ['survey', 'build'], started: local(9, 10, 12), updated: NOW,
-      usd: 99, agentUsd: 99, hasDetail: true, version: null, spans: null,
+      usd: 99, agentUsd: 99, hasDetail: true, version: null,
+      spans: [{ day: '2026-09-10', stage: 'build', who: 'main', ms: 300000 },
+          { day: '2026-09-10', stage: 'build', who: 'wait', ms: 999000 }],
       days: [dayRow('2026-09-10', 'build', 'claude-opus-5', 'main', 5, 100)] },
 ];
 
@@ -564,6 +572,17 @@ test('dayBars splits kind into the cost tab\'s four segments and folds the two c
     assert.deepEqual(bars.days[i].parts, { input: 1.6875, output: 3.375, cacheRead: 0.84375, cacheWrite: 0.84375 });
     assert.equal(bars.days[i].total, 6.75, 'a kind bar is still the sum of its four segments');
     assert.deepEqual(bars.keys, ['input', 'output', 'cacheRead', 'cacheWrite'], 'the cost tab\'s own fixed order');
+});
+
+test('a kind split under token counts reads r.tokens, not r.cost, and folds the two cache writes the same way', () => {
+    const i = DAYS.indexOf('2026-09-14');
+    const bars = V.dayBars(HOME, 'tokens', 'kind', DAYS);
+    // 4,300 input tokens over the day's three rows, and `tok5`'s fixed ratios
+    // off that: output a tenth, cache read four times, the 5m and 1h writes a
+    // half and a quarter folded into one. Reading `r.cost` here instead would
+    // give the 花費 figures above, which share no value with these.
+    assert.deepEqual(bars.days[i].parts, { input: 4300, output: 430, cacheRead: 17200, cacheWrite: 3225 });
+    assert.equal(bars.days[i].total, 25155, 'a kind bar is its four segments summed under tokens as under 花費');
 });
 
 test('kind is disabled under 時間, like model: a span carries no cost or tokens to split by kind', () => {
@@ -609,6 +628,20 @@ test('version gives each real version its own palette slot in newest-first order
     assert.match(svg, /fill:var\(--p-0\)/, 'the newest version, 0.80.0, is --p-0');
     assert.match(svg, /fill:var\(--p-1\)/, 'the older version, 0.74.0, gets a different slot from the newest');
     assert.doesNotMatch(svg, /fill:var\(--p-5\)/, 'with only two real versions, neither falls through to the overflow slot');
+});
+
+// `version` is the one of the two new dims that `時間` keeps. A span records
+// only a stage and who was running, so it carries nothing to split by model
+// or by kind — but a version belongs to the session rather than to the row,
+// so it applies to a span as much as to a day row. That is the mockup's
+// panel C: `依成分` greyed out under 時間 and `依版本` still live.
+test('a version split under 時間 comes from the spans, keeps the newest-first order, and is not disabled the way model and kind are', () => {
+    const i = DAYS.indexOf('2026-09-10');
+    const bars = V.dayBars(VER, 'time', 'version', DAYS);
+    assert.equal(bars.disabled, null, 'version survives 時間 where model and kind are turned off');
+    assert.deepEqual(bars.days[i].parts, { '0.74.0': 600000, '0.80.0': 1200000, none: 300000 });
+    assert.equal(bars.days[i].total, 2100000, 'the wait span is left out here as it is for every other dim');
+    assert.deepEqual(bars.keys, ['0.80.0', '0.74.0', 'none']);
 });
 
 test('dayPanel folds kind into a fifth by-bucket the same way dayBars does', () => {
