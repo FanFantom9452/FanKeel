@@ -1,13 +1,20 @@
 'use strict';
 
-// Projects the per-stage dollar table at `stages-at-8365088.txt` onto "what
-// would this long task have cost with Sonnet as the main controller instead
-// of Opus" -- the second row of the "does moving the controller to Sonnet
-// make a seven-stage long task cheaper" file table. It reads that table's
-// own columns and recomputes from them; it does not rescan
-// `.fankeel/sessions` itself, per this repo's evidence convention that a
-// derived file trusts its source table's own fields rather than re-deriving
-// them from the registry.
+// Projects the per-stage dollar table produced by `stages.js` (a sibling
+// `stages-at-<sha>.txt`) onto "what would this long task have cost with
+// Sonnet as the main controller instead of Opus" -- the second row of the
+// "does moving the controller to Sonnet make a seven-stage long task
+// cheaper" file table. It reads that table's own columns and recomputes
+// from them; it does not rescan `.fankeel/sessions` itself, per this repo's
+// evidence convention that a derived file trusts its source table's own
+// fields rather than re-deriving them from the registry.
+//
+// The source filename is found by pattern (`stages-at-*.txt` next to this
+// script), not hardcoded: `stages.js` names its own output after the sha it
+// was run at, so that name changes every time `stages.js` is rerun at a new
+// commit and the old file is deleted. Exactly one match is required --
+// zero or more than one is an error naming what was found, never a guess
+// and never "take the newest".
 //
 //   node docs/reports/evidence/2026-09-21-long-task-projection/project.js
 //
@@ -17,10 +24,11 @@
 //   1. Sonnet/Opus price ratio per component, read from `lib/prices.js`
 //      (never hardcoded) -- input, output, cacheRead, cacheWrite(5m). All
 //      four turn out equal (0.4), so the rest of this file calls that one
-//      value `r`. Had they not been equal, the non-survey projection below
-//      would need its own per-component recompute instead of a single
-//      scaling factor; `projectNonSurveyUsd` below carries that path even
-//      though the live pricing table never exercises it.
+//      value `r` and scales a stage's whole `usd` by it. This script is
+//      evidence pinned to a sha's pricing table, not a library meant to
+//      outlive a repricing, so if the four ever stop being equal it throws
+//      instead of quietly falling back to some other math -- the four
+//      values are in the thrown message.
 //   2. Per-session projection for the long-task buckets (`200-799`, `800+`):
 //      every stage but `survey` is scaled by `r` -- no brain runs there, so
 //      the controller is the whole cost. `survey` is scaled by `S_low` /
@@ -68,7 +76,6 @@ const { execSync } = require('node:child_process');
 const prices = require('../../../../lib/prices.js');
 
 const ROOT = path.resolve(__dirname, '..', '..', '..', '..');
-const SRC = path.join(__dirname, 'stages-at-8365088.txt');
 
 const S_LOW = 0.973;
 const S_HIGH = 1.049;
@@ -77,11 +84,25 @@ const LONG_BUCKETS = new Set(['200-799', '800+']);
 
 // --- read block 1 of the source table ---------------------------------------
 
+// Exactly one `stages-at-*.txt` is expected next to this script -- see the
+// file header for why this is discovered by pattern rather than hardcoded.
+function findSourceFile() {
+    const matches = fs.readdirSync(__dirname).filter((f) => /^stages-at-.*\.txt$/.test(f));
+    if (matches.length !== 1) {
+        throw new Error(
+            'expected exactly one stages-at-*.txt in ' + __dirname + ', found ' + matches.length
+            + (matches.length ? ' (' + matches.join(', ') + ')' : '')
+        );
+    }
+    return path.join(__dirname, matches[0]);
+}
+
 function readStageRows() {
-    const text = fs.readFileSync(SRC, 'utf8');
+    const src = findSourceFile();
+    const text = fs.readFileSync(src, 'utf8');
     const lines = text.split('\n').map((l) => l.replace(/\r$/, ''));
     const headerIdx = lines.findIndex((l) => l.startsWith('session\tversion\trequests\tbucket\tstage\t'));
-    if (headerIdx === -1) throw new Error('block 1 header not found in ' + SRC);
+    if (headerIdx === -1) throw new Error('block 1 header not found in ' + src);
     const rows = [];
     for (let i = headerIdx + 1; i < lines.length; i++) {
         const line = lines[i];
@@ -115,35 +136,35 @@ function priceRatio() {
     const cacheWrite1h = sonnet.cacheWrite1h / opus.cacheWrite1h;
     const values = [ratio.input, ratio.output, ratio.cacheRead, ratio.cacheWrite];
     const allEqual = values.every((v) => Math.abs(v - values[0]) < 1e-9);
-    return { ratio, cacheWrite1h, allEqual, r: allEqual ? values[0] : null };
+    if (!allEqual) {
+        // This script is evidence pinned to a sha's pricing table, not a
+        // library meant to survive a future repricing -- if the four
+        // components ever stop scaling by one number, every stage-level
+        // multiplication below (`row.usd * r`) becomes wrong in a way this
+        // file cannot silently correct for, so it stops here instead.
+        throw new Error(
+            'Sonnet/Opus price ratios are not equal (input=' + ratio.input + ', output=' + ratio.output
+            + ', cacheRead=' + ratio.cacheRead + ', cacheWrite=' + ratio.cacheWrite
+            + ') -- this script\'s projection only holds when a single ratio r applies to every component'
+        );
+    }
+    return { ratio, cacheWrite1h, allEqual, r: values[0] };
 }
 
 function block1Text(pr) {
     const lines = [];
     lines.push('## block 1: Sonnet/Opus price ratio per component (lib/prices.js: claude-sonnet-5 / claude-opus-5)');
     lines.push(`input=${pr.ratio.input.toFixed(6)}  output=${pr.ratio.output.toFixed(6)}  cacheRead=${pr.ratio.cacheRead.toFixed(6)}  cacheWrite(5m)=${pr.ratio.cacheWrite.toFixed(6)}  [cacheWrite(1h)=${pr.cacheWrite1h.toFixed(6)}, not one of the four, checked for consistency]`);
-    if (pr.allEqual) {
-        lines.push('four ratios equal: yes, r = ' + pr.r);
-    } else {
-        lines.push('four ratios equal: no -- keeping all four, applying each one to its own component below, not an average');
-    }
+    lines.push('four ratios equal: yes, r = ' + pr.r);
     return lines.join('\n');
 }
 
-// Dollar projection for one non-survey row. When the four component ratios
-// are equal this is just old_usd * r. When they are not, old_usd cannot be
-// rescaled by one number (it was a mix of differently-priced components), so
-// this recomputes straight from the row's own token columns at Sonnet's
-// per-component rates instead.
+// Dollar projection for one non-survey row: old_usd scaled by the single
+// Sonnet/Opus ratio `r` established in block 1 -- `priceRatio()` above
+// already throws before this is ever called if the four components are not
+// equal, so there is no second path here for that case.
 function projectNonSurveyUsd(row, pr) {
-    if (pr.allEqual) return row.usd * pr.r;
-    const sonnet = prices.perMillion['claude-sonnet-5'];
-    return (
-        row.input * sonnet.input
-        + row.output * sonnet.output
-        + row.cacheRead * sonnet.cacheRead
-        + row.cacheWrite * sonnet.cacheWrite5m
-    ) / 1e6;
+    return row.usd * pr.r;
 }
 
 // --- block 2: per-session projection ----------------------------------------
