@@ -77,12 +77,13 @@ what gets scheduled.
 
 - 〔tests〕「匯出而沒人 import」只在 `module.exports = {…}` 是檔尾最後一句時才檢查，`assets/station/station.js` 的匯出因此不受檢；station-live 的 Task 7 審查找到兩個漏網的 — [tests/source.test.js](tests/source.test.js).
 - 〔docs〕`conflict()` 有四個 predicate，`read` 那個（`Read:` 擋鄰居的 `Modify`/`Test`）在 `docs/subagents.md`、`docs/collisions.md`、`docs/pipeline.md` 三頁都沒提，三頁各自只算到兩三個 — [lib/plantasks.js](lib/plantasks.js).
+- 〔station〕首頁長條圖的分段控制（`依專案`／`依模型`／`依階段`／`依誰`／`依成分`／`依版本`，以及哪幾格在 `時間` 下會被停用）整組都沒有被文件點名過 — [docs/station.md](docs/station.md).
 
 ## Needs a decision
 
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；Gemini CLI `BeforeAgent`、Codex CLI `UserPromptSubmit` 也能回 `additionalContext` — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
 - 〔stage-agents〕主控＋站 agent 要不要推到其餘各站：看 survey 的量測；build 要 script 產生 workflow、design 要 SendMessage 轉話、station 要把第二層掛在派它的 agent 底下（現在平鋪）、插話要有人接 — [lib/stages.js](lib/stages.js).
-- 〔stage-agents〕survey 的大腦調過四輪後組內花費已打平（1.05×、0.97×），但時間仍 1.4–1.6 倍、主控 context 仍多 8k，交接檔守字數上限那一行沒生效：要再調，還是認定這樣就夠 — [lib/render.js](lib/render.js).
+- 〔stage-agents〕survey 的大腦調過四輪後組內花費已打平（1.05×、0.97×），但時間仍 1.4–1.6 倍、主控 context 仍多 8k，交接檔守字數上限那一行沒生效：要再調，還是認定這樣就夠 — [lib/render.js](lib/render.js). 再量成本時 version 是混淆變數：94 筆可定價的只有 34 筆帶版本。
 - 〔docs〕寫成 `path:行-行` 的引用不帶引文，docs-check 只列不驗：一條這樣歪了四個 commit 沒人發現。剩三條要改寫，還是讓 docs-check 把範圍本身當缺陷 — [scripts/docs-check.js](scripts/docs-check.js).
 
 ## Waiting
