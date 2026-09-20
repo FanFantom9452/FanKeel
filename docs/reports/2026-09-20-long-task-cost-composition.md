@@ -90,4 +90,4 @@ node scripts/spend.js              # 全機器，discover 找到的每一個 reg
 node scripts/spend.js --root <dir> # 只看一個
 ```
 
-站台首頁的分段控制也加了 `依成分` 與 `依版本` 兩格（[station.md](../station.md)）。**本頁的總額比站台小，差在覆蓋範圍，不在算法。** 這一點量過：在這個 repo 的 registry 上，91 筆同時有 `usage` 與 `days[].usd` 的，兩邊逐筆到分相同；其中 78 筆也有 `spend` 的，`stages[].usd` 的總和也逐筆相同。三個欄位是同一個量測，差別只在誰有——`days` 只要有 transcript，`usage` 在 session 結束時才寫，`spend` 則只有 2026-09-07 之後結束的 session 才有——比加它的 commit 晚兩天，不是程式碼落地那天。所以本頁只能為全機器 311 個 session 檔裡的 94 個定價，而首頁能為每一個有 transcript 的定價。（上面那組逐筆比對只跑這一個 repo 的 registry：179 個檔、78 個帶 `spend`。兩組數字分母不同，別混著引。）
+站台首頁的分段控制也加了 `依成分` 與 `依版本` 兩格（[station.md](../station.md)）。**本頁的總額比站台小，差在覆蓋範圍，不在算法。** 這一點量過：在這個 repo 的 registry 上，91 筆同時有 `usage` 與 `days[].usd` 的，兩邊逐筆到分相同；其中 78 筆也有 `spend` 的，`stages[].usd` 的總和也逐筆相同。三個欄位是同一個量測，差別只在誰有——`days` 只要有 transcript，`usage` 在 session 結束時才寫，`spend` 則只有 2026-09-07 之後結束的 session 才有——比加它的 commit 晚兩天，不是程式碼落地那天。為什麼晚兩天沒有查。所以本頁只能為全機器 311 個 session 檔裡的 94 個定價，而首頁能為每一個有 transcript 的定價。（上面那組逐筆比對只跑這一個 repo 的 registry：179 個檔、78 個帶 `spend`。兩組數字分母不同，別混著引。）
