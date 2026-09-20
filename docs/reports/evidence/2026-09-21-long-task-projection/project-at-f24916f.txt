@@ -47,6 +47,7 @@ d4d41f05	800+	7	194.1772	86.0797	87.1950	0.4433	0.4490
 d569a03e	800+	7	148.6602	67.4369	68.4943	0.4536	0.4607
 e6f10192	200-799	4	24.9784	9.9914	9.9914	0.4000	0.4000
 ed78f9a0	800+	7	155.6987	65.2646	65.6605	0.4192	0.4217
+sessions with no survey stage: 2 (2bbed13d, e6f10192)
 TOTAL	43 sessions	-	3848.0960	1695.8834	1716.6600	0.4407	0.4461
 skipped rows with usd = "—" (no quote, excluded from every sum above): 0
 
@@ -96,6 +97,7 @@ d569a03e	13.9141	148.6602	9.36%
 e6f10192	0.0000	24.9784	0.00%
 ed78f9a0	5.2096	155.6987	3.35%
 median survey share across 43 sessions: 7.96%
+(2 of those sessions have no survey stage and are counted at 0.00% above)
 
 ## block 4: sensitivity -- non-survey stages projected at old_usd * r * k, survey stages fixed at S_low
 k	old_total	new_total	ratio

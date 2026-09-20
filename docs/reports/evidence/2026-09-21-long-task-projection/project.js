@@ -26,8 +26,20 @@
 //      the controller is the whole cost. `survey` is scaled by `S_low` /
 //      `S_high` instead, because the new mode's survey stage buys a whole
 //      extra Opus brain on top of the cheaper controller.
+//
+//      The unit here is a session, not a task: a long task's survey stage
+//      can have run in a different session, or the task may never have gone
+//      through survey at all. A session whose block 1 rows contain no
+//      `survey` stage gets its whole total scaled by `r` alone, and its
+//      ratio_low/ratio_high print out as exactly `r` -- that is the correct
+//      projection for a session with nothing to apply `S` to, not a bug.
+//      Those sessions are named on their own line in block 2's output
+//      rather than left for a reader to notice from a suspiciously round
+//      ratio.
 //   3. What share of a long task's total the survey stage is -- how diluted
-//      that one expensive station gets across a seven-stage run.
+//      that one expensive station gets across a seven-stage run. The same
+//      no-survey sessions from block 2 show up here at 0.00% and are still
+//      counted in the median.
 //   4. Sensitivity: block 2 assumes Sonnet spends exactly as many tokens as
 //      Opus did on every non-survey stage, only at a cheaper rate. That is
 //      unverified, so this sweeps a multiplier `k` on non-survey token
@@ -35,12 +47,20 @@
 //      being cheaper than the observed one.
 //
 // S_low = 0.973 and S_high = 1.049 are not derived here -- they are the two
-// ab7 pairs' measured (new total / old total) from
-// docs/reports/2026-09-20-survey-brain-ab.md section 10 ("交接檔的字數上限"):
-// group 13 (nor11 $0.80 / old13 $0.82) and group 12 (nor10 $0.97 / old12
-// $0.93). ab7 is the last-revised brain, so it is the closest thing this
-// project has to a real cost ratio for a survey stage run under the new
-// brain-delegating mode.
+// ab7 pairs' measured (new total / old total), from the unrounded per-model
+// figures in the "per model, per arm:" section of
+// docs/reports/evidence/2026-09-20-survey-brain-ab/ab7-table.txt (not the
+// pre-rounded per-arm dollar figures in the report's own table, which do not
+// divide back out to these constants):
+//
+//   group 13: (nor11 sonnet $0.3303 + nor11 opus $0.4673) / old13 $0.8199
+//             = 0.7976 / 0.8199 = 0.9728 -> S_low  0.973
+//   group 12: (nor10 sonnet $0.3076 + nor10 opus $0.6655) / old12 $0.9279
+//             = 0.9731 / 0.9279 = 1.0487 -> S_high 1.049
+//
+// ab7 is the last-revised brain, so it is the closest thing this project has
+// to a real cost ratio for a survey stage run under the new brain-delegating
+// mode.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -67,9 +87,9 @@ function readStageRows() {
         const line = lines[i];
         if (!line || line.startsWith('##')) break;
         const cells = line.split('\t');
-        const [session, version, requests, bucket, stage, from, to, who, usd, cIn, cOut, cacheR, cacheW] = cells;
+        const [session, , , bucket, stage, , , , usd, cIn, cOut, cacheR, cacheW] = cells;
         rows.push({
-            session, version, requests, bucket, stage, from, to, who,
+            session, bucket, stage,
             usd: usd === '—' ? null : Number(usd),
             input: Number(cIn), output: Number(cOut), cacheRead: Number(cacheR), cacheWrite: Number(cacheW),
         });
@@ -101,13 +121,7 @@ function priceRatio() {
 function block1Text(pr) {
     const lines = [];
     lines.push('## block 1: Sonnet/Opus price ratio per component (lib/prices.js: claude-sonnet-5 / claude-opus-5)');
-    lines.push(
-        'input=' + pr.ratio.input.toFixed(6)
-        + '  output=' + pr.ratio.output.toFixed(6)
-        + '  cacheRead=' + pr.ratio.cacheRead.toFixed(6)
-        + '  cacheWrite(5m)=' + pr.ratio.cacheWrite.toFixed(6)
-        + '  [cacheWrite(1h)=' + pr.cacheWrite1h.toFixed(6) + ', not one of the four, checked for consistency]'
-    );
+    lines.push(`input=${pr.ratio.input.toFixed(6)}  output=${pr.ratio.output.toFixed(6)}  cacheRead=${pr.ratio.cacheRead.toFixed(6)}  cacheWrite(5m)=${pr.ratio.cacheWrite.toFixed(6)}  [cacheWrite(1h)=${pr.cacheWrite1h.toFixed(6)}, not one of the four, checked for consistency]`);
     if (pr.allEqual) {
         lines.push('four ratios equal: yes, r = ' + pr.r);
     } else {
@@ -180,6 +194,9 @@ function block2(rows, pr) {
             (s.oldTotal ? s.newHigh / s.oldTotal : 0).toFixed(4),
         ].join('\t'));
     }
+    const noSurvey = sessions.filter((s) => !s.stages.has('survey'));
+    lines.push('sessions with no survey stage: ' + noSurvey.length
+        + (noSurvey.length ? ' (' + noSurvey.map((s) => s.session).join(', ') + ')' : ''));
     lines.push([
         'TOTAL', String(sessions.length) + ' sessions', '-',
         totalOld.toFixed(4), totalLow.toFixed(4), totalHigh.toFixed(4),
@@ -188,7 +205,7 @@ function block2(rows, pr) {
     ].join('\t'));
     lines.push('skipped rows with usd = "—" (no quote, excluded from every sum above): ' + skipped);
 
-    return { text: lines.join('\n'), sessions, totalOld, totalLow, totalHigh, skipped };
+    return { text: lines.join('\n'), sessions, totalOld, totalLow, totalHigh, skipped, noSurvey };
 }
 
 // --- block 3: survey share ----------------------------------------------------
@@ -211,7 +228,9 @@ function block3(sessions) {
         lines.push([s.session, s.surveyUsd.toFixed(4), s.oldTotal.toFixed(4), pct.toFixed(2) + '%'].join('\t'));
     }
     const median = medianOf(pcts);
+    const noSurveyCount = sessions.filter((s) => !s.stages.has('survey')).length;
     lines.push('median survey share across ' + sessions.length + ' sessions: ' + median.toFixed(2) + '%');
+    lines.push('(' + noSurveyCount + ' of those sessions have no survey stage and are counted at 0.00% above)');
     return { text: lines.join('\n'), median };
 }
 
