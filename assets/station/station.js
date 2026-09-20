@@ -161,8 +161,15 @@
     var TABS = ['timeline', 'cost', 'dispatch', 'events'];
     var MODEL_KEYS = ['fable', 'opus', 'sonnet', 'haiku', 'other'];
     var TOKEN_KEYS = ['input', 'output', 'cacheRead', 'cacheWrite5m', 'cacheWrite1h'];
+    // `kind` splits a day's cost or tokens by where they went, folding the two
+    // cache-write rates `TOKEN_KEYS` keeps apart back into one segment — the
+    // same four kinds and order the cost tab's `costHtml` already shows.
+    var KIND_KEYS = ['input', 'output', 'cacheRead', 'cacheWrite'];
+    var KIND_LABEL = { input: 'input', output: 'output', cacheRead: 'cache read', cacheWrite: 'cache write' };
+    var KIND_COLOR = { input: '--t-in', output: '--t-out', cacheRead: '--t-cr', cacheWrite: '--t-cw' };
     var WHO_LABEL = { main: '主 session', agent: '背景 agent', workflow: 'workflow' };
-    var DIM_LABEL = { model: '依 model', project: '依專案', stage: '依 stage', who: '主 session 對 agent' };
+    var DIM_LABEL = { model: '依 model', project: '依專案', stage: '依 stage', who: '主 session 對 agent',
+        version: '依版本', kind: '依成分' };
     var METRIC_LABEL = { usd: '花費', tokens: 'token', time: '時間' };
     function localDay(ms) {
         var d = new Date(ms);
@@ -200,27 +207,60 @@
     function tokenSum(t) {
         return t ? TOKEN_KEYS.reduce(function (n, k) { return n + (t[k] || 0); }, 0) : 0;
     }
+    // `kind` is not here: it is not one key per row, it is four (see
+    // `dayBars`), so it never goes through `dimKey`.
     function dimKey(dim, s, r) {
         if (dim === 'model') return family(r.model);
         if (dim === 'project') return s.pkey;
         if (dim === 'stage') return r.stage || 'none';
+        if (dim === 'version') return s.version || 'none';
         return r.who;
     }
-    // Models bottom-up by price, stages in route order, projects by size.
+    // Versions parsed as dotted numbers and compared newest first; a version
+    // that does not parse falls back to a plain string compare so it still
+    // sorts somewhere rather than throwing.
+    function verCmp(a, b) {
+        var pa = String(a).split('.'), pb = String(b).split('.'), n = Math.max(pa.length, pb.length);
+        for (var i = 0; i < n; i++) {
+            var na = Number(pa[i]), nb = Number(pb[i]);
+            if (isNaN(na) || isNaN(nb)) return pa[i] === pb[i] ? 0 : (pa[i] || '') < (pb[i] || '') ? -1 : 1;
+            if (na !== nb) return na - nb;
+        }
+        return 0;
+    }
+    // Models bottom-up by price, stages in route order, projects by size,
+    // kind in the cost tab's order, versions newest first. `'none'` is put
+    // last for `version` on purpose: it is usually the biggest group — every
+    // session before this field existed lands there — and size-descending
+    // would put it first, reading as "the newest version" when it means the
+    // opposite.
     function orderKeys(dim, seen) {
         var fixed = dim === 'model' ? MODEL_KEYS : dim === 'stage' ? ROUTE.concat(['none'])
-            : dim === 'who' ? ['main', 'agent', 'workflow'] : null;
+            : dim === 'who' ? ['main', 'agent', 'workflow'] : dim === 'kind' ? KIND_KEYS : null;
         var keys = Object.keys(seen).filter(function (k) { return seen[k]; });
+        if (dim === 'version') {
+            var real = keys.filter(function (k) { return k !== 'none'; }).sort(verCmp).reverse();
+            return seen['none'] ? real.concat(['none']) : real;
+        }
         if (!fixed) return keys.sort(function (a, b) { return seen[b] - seen[a] || (a < b ? -1 : 1); });
         return fixed.filter(function (k) { return seen[k]; })
             .concat(keys.filter(function (k) { return fixed.indexOf(k) < 0; }).sort());
     }
     // A project's colour is its place in `pkeys`, the 30-day order, so it is
-    // the same on every chart; the sixth project on shares `--p-5`.
+    // the same on every chart; the sixth project on shares `--p-5`. `kind`
+    // instead reuses the cost tab's own four custom properties. `version` has
+    // no equivalent 30-day-order list of its own, so its callers hand this
+    // the current bar set's own `bars.keys` in `pkeys`' place — already
+    // newest-first from `orderKeys` — so the newest version lands on `--p-0`,
+    // the next on `--p-1`, and so on, capped at `--p-5` the same way project
+    // is; `'none'` is forced to the quiet grey before reaching that index so
+    // it never claims a slot or reads as a colour peer of a real version.
     function colorOf(dim, key, pkeys) {
         if (dim === 'model') return 'var(--m-' + key + ')';
         if (dim === 'stage') return ROUTE.indexOf(key) >= 0 ? 'var(--st-' + key + ')' : 'var(--st-none)';
         if (dim === 'who') return 'var(--s-' + key + ')';
+        if (dim === 'kind') return 'var(' + (KIND_COLOR[key] || '--st-none') + ')';
+        if (dim === 'version' && key === 'none') return 'var(--st-none)';
         var i = (pkeys || []).indexOf(key);
         return 'var(--p-' + (i < 0 ? 5 : Math.min(i, 5)) + ')';
     }
@@ -228,6 +268,8 @@
         if (dim === 'who') return WHO_LABEL[key] || key;
         if (dim === 'stage') return key === 'none' ? '第一步之前' : key;
         if (dim === 'project') return (names && names[key]) || key;
+        if (dim === 'kind') return KIND_LABEL[key] || key;
+        if (dim === 'version') return key === 'none' ? '未記版本' : key;
         return key;
     }
     function projectNames(sessions) {
@@ -285,6 +327,13 @@
         if (metric === 'time' && dim === 'model') {
             return { days: [], keys: [], max: 0, disabled: '時間沒有 model 可分：spans 只記 stage 與誰在跑，不記 model' };
         }
+        // Same reason as `model`, just above: with `時間` the bars come from
+        // `s.spans`, and a span records only stage and who, so it carries no
+        // tokens and no cost to split into kinds. `version` needs no such
+        // guard — it is a property of the session, so it applies to spans too.
+        if (metric === 'time' && dim === 'kind') {
+            return { days: [], keys: [], max: 0, disabled: '時間沒有成分可分：spans 只記 stage 與誰在跑，不記 token 或花費' };
+        }
         var at = {}, seen = {};
         days.forEach(function (d) { at[d] = { day: d, total: 0, parts: {} }; });
         var add = function (d, key, v) {
@@ -299,6 +348,22 @@
                 return;
             }
             (s.days || []).forEach(function (r) {
+                // `kind` is four segments of the same row, not one key per
+                // row, so it calls `add` four times instead of once — the
+                // comment above this function still holds: the total is
+                // added in the same pass as the parts, so it stays their sum.
+                // `r.cost`/`r.tokens` is null for a model `lib/prices.js` has
+                // no rate for (or a kept v1 row with no detail); skip it, the
+                // same as `r.usd || 0` already does for every other dim.
+                if (dim === 'kind') {
+                    var src = metric === 'usd' ? r.cost : r.tokens;
+                    if (!src) return;
+                    add(r.day, 'input', src.input);
+                    add(r.day, 'output', src.output);
+                    add(r.day, 'cacheRead', src.cacheRead);
+                    add(r.day, 'cacheWrite', (src.cacheWrite5m || 0) + (src.cacheWrite1h || 0));
+                    return;
+                }
                 add(r.day, dimKey(dim, s, r), metric === 'usd' ? r.usd || 0 : tokenSum(r.tokens));
             });
         });
@@ -309,7 +374,13 @@
         };
     }
     function dayPanel(sessions, day) {
-        var out = { day: day, usd: 0, tokens: 0, active: 0, wait: 0, by: { project: {}, model: {}, stage: {}, who: {} }, sessions: [] };
+        // `kind` gets a fifth `by` bucket, filled the same four-way `dayBars`
+        // fills it rather than through `dimKey` (see the note there) — chosen
+        // over leaving it out so the day panel's 依成分 split matches the
+        // home chart's rather than silently missing whenever that dim is
+        // picked.
+        var out = { day: day, usd: 0, tokens: 0, active: 0, wait: 0,
+            by: { project: {}, model: {}, stage: {}, who: {}, kind: {} }, sessions: [] };
         sessions.forEach(function (s) {
             var mine = { id: s.id, task: s.task, pkey: s.pkey, usd: 0, tokens: 0, active: 0, wait: 0 };
             (s.days || []).forEach(function (r) {
@@ -321,6 +392,12 @@
                     var k = dimKey(dim, s, r);
                     out.by[dim][k] = (out.by[dim][k] || 0) + u;
                 });
+                if (r.cost) {
+                    out.by.kind.input = (out.by.kind.input || 0) + r.cost.input;
+                    out.by.kind.output = (out.by.kind.output || 0) + r.cost.output;
+                    out.by.kind.cacheRead = (out.by.kind.cacheRead || 0) + r.cost.cacheRead;
+                    out.by.kind.cacheWrite = (out.by.kind.cacheWrite || 0) + (r.cost.cacheWrite5m || 0) + (r.cost.cacheWrite1h || 0);
+                }
             });
             (s.spans || []).forEach(function (r) {
                 if (r.day !== day) return;
@@ -445,7 +522,7 @@
                 if (!b.parts[k]) return;
                 var h = y(b.parts[k]);
                 out += '<rect x="' + x0 + '" y="' + (base - c - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="'
-                    + Math.max(h - 1, 0.5).toFixed(1) + '" style="fill:' + colorOf(o.dim, k, o.pkeys) + '"/>';
+                    + Math.max(h - 1, 0.5).toFixed(1) + '" style="fill:' + colorOf(o.dim, k, o.dim === 'version' ? bars.keys : o.pkeys) + '"/>';
                 c += h;
             });
             out += '</g>'
@@ -471,7 +548,7 @@
             return i >= 0 && i < 5;
         });
         return '<span class="muted">由下而上</span>' + own.map(function (k) {
-            return '<span><i class="sw" style="background:' + colorOf(o.dim, k, o.pkeys) + '"></i>' + esc(keyLabel(o.dim, k, o.names)) + '</span>';
+            return '<span><i class="sw" style="background:' + colorOf(o.dim, k, o.dim === 'version' ? bars.keys : o.pkeys) + '"></i>' + esc(keyLabel(o.dim, k, o.names)) + '</span>';
         }).join('') + (own.length < bars.keys.length
             ? '<span><i class="sw" style="background:var(--p-5)"></i>其他 ' + (bars.keys.length - own.length) + ' 個</span>' : '');
     }
@@ -496,7 +573,7 @@
             + '<div class="day-nav">' + (i > 0 ? '<a class="btn" href="#/d/' + o.days[i - 1] + '">‹ 前一天</a>' : '')
             + (i >= 0 && i < o.days.length - 1 ? '<a class="btn" href="#/d/' + o.days[i + 1] + '">後一天 ›</a>' : '')
             + '<a class="btn" href="#/" aria-label="收起某日花費">收起 ✕</a></div></div>'
-            + '<div class="day-body"><div>' + ['project', 'model', 'stage', 'who'].map(split).join('') + '</div>'
+            + '<div class="day-body"><div>' + ['project', 'model', 'stage', 'who', 'kind'].map(split).join('') + '</div>'
             + '<div><div class="h2">當日 sessions <small>' + p.sessions.length + ' 個 · 只計這一天內發生的花費</small></div>'
             + '<div class="tbl-wrap"><table class="t"><thead><tr><th>任務</th><th class="r">active</th><th class="r">等待</th>'
             + '<th class="r">當日花費</th><th class="r">佔當日</th></tr></thead><tbody>'
@@ -1226,8 +1303,9 @@
             + '<div class="controls"><div class="ctlgrp"><label>長條高度</label>'
             + segHtml('metric', [['tokens', 'token'], ['usd', '花費'], ['time', '時間']], view.metric) + '</div>'
             + '<div class="ctlgrp"><label>分段</label>'
-            + segHtml('dim', [['model', '依 model'], ['project', '依專案'], ['stage', '依 stage'], ['who', '主 session 對 agent']],
-                view.dim, view.metric === 'time' ? { model: '時間沒有 model 可分' } : null) + '</div>'
+            + segHtml('dim', [['model', '依 model'], ['project', '依專案'], ['stage', '依 stage'], ['who', '主 session 對 agent'],
+                ['version', '依版本'], ['kind', '依成分']],
+                view.dim, view.metric === 'time' ? { model: '時間沒有 model 可分', kind: '時間沒有成分可分' } : null) + '</div>'
             + '<div class="legend">' + legendHtml(bars, o) + '</div></div>'
             + '<div class="chart">' + histSvg(bars, o) + '</div></section>'
             + (sel ? dayPanelHtml(dayPanel(R, sel), o) : '')

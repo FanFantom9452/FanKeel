@@ -528,11 +528,98 @@ test('a kept v1 cache\'s single row counts its dollars and zero tokens, and brea
     const tok = V.dayBars([KEPT], 'tokens', 'model', DAYS);
     assert.deepEqual([tok.days[i].total, tok.keys, tok.max], [0, [], 0]);
     assert.deepEqual(V.dayBars([KEPT], 'time', 'who', DAYS).days[i].parts, {});
+    const keptKind = V.dayBars([KEPT], 'usd', 'kind', DAYS);
+    assert.deepEqual([keptKind.days[i].total, keptKind.keys], [0, []], 'a null cost split gives kind nothing, not a crash');
     assert.equal(V.dayPanel([KEPT], '2026-09-10').usd, 2.5);
     assert.deepEqual(V.sessionTotals(KEPT), { usd: 2.5, tokens: 0, active: 0, main: 0, wait: 0, models: { opus: 2.5 } });
     assert.deepEqual(V.windowTotals([KEPT], DAYS), { usd: 2.5, tokens: 0, active: 0, main: 0, wait: 0 });
     assert.match(V.recentHtml([KEPT], O), /\$2\.50<\/td><td class="r muted">0<\/td>/);
     assert.equal(count(V.histSvg(V.dayBars([KEPT], 'tokens', 'model', DAYS), O), /<rect class="hit"/g), 30);
+});
+
+// Two sessions with different fankeel versions and one with none recorded, on
+// the same day, so a version split can be checked for the two things a
+// biggest-group-first sort would get backwards: `'none'` — the biggest slice,
+// since every session before this field existed lands there — pushed to the
+// back instead of the front, and the newer real version read ahead of the
+// older one instead of both landing in alphabetical order.
+const VER = [
+    { id: 'ffff6666-0000', root: 'F:\\ws\\alpha', project: null, pkey: 'F:\\ws\\alpha', task: 'old version',
+      state: 'down', stage: 'build', route: ['survey', 'build'], started: local(9, 10, 10), updated: NOW,
+      usd: 99, agentUsd: 99, hasDetail: true, version: '0.74.0', spans: null,
+      days: [dayRow('2026-09-10', 'build', 'claude-opus-5', 'main', 1, 100)] },
+    { id: 'gggg7777-0000', root: 'F:\\ws\\alpha', project: null, pkey: 'F:\\ws\\alpha', task: 'new version',
+      state: 'down', stage: 'build', route: ['survey', 'build'], started: local(9, 10, 11), updated: NOW,
+      usd: 99, agentUsd: 99, hasDetail: true, version: '0.80.0', spans: null,
+      days: [dayRow('2026-09-10', 'build', 'claude-opus-5', 'main', 1, 100)] },
+    { id: 'hhhh8888-0000', root: 'F:\\ws\\alpha', project: null, pkey: 'F:\\ws\\alpha', task: 'no version recorded',
+      state: 'down', stage: 'build', route: ['survey', 'build'], started: local(9, 10, 12), updated: NOW,
+      usd: 99, agentUsd: 99, hasDetail: true, version: null, spans: null,
+      days: [dayRow('2026-09-10', 'build', 'claude-opus-5', 'main', 5, 100)] },
+];
+
+test('dayBars splits kind into the cost tab\'s four segments and folds the two cache-write rates into one', () => {
+    const i = DAYS.indexOf('2026-09-14');
+    const bars = V.dayBars(HOME, 'usd', 'kind', DAYS);
+    assert.deepEqual(bars.days[i].parts, { input: 1.6875, output: 3.375, cacheRead: 0.84375, cacheWrite: 0.84375 });
+    assert.equal(bars.days[i].total, 6.75, 'a kind bar is still the sum of its four segments');
+    assert.deepEqual(bars.keys, ['input', 'output', 'cacheRead', 'cacheWrite'], 'the cost tab\'s own fixed order');
+});
+
+test('kind is disabled under 時間, like model: a span carries no cost or tokens to split by kind', () => {
+    const off = V.dayBars(HOME, 'time', 'kind', DAYS);
+    assert.deepEqual([off.days.length, off.keys.length, off.max], [0, 0, 0]);
+    assert.match(off.disabled, /成分/);
+});
+
+test('a kind split\'s segments across the whole window sum to the same 花費 the hero KPI shows for it, because both come from s.days', () => {
+    const bars = V.dayBars(HOME, 'usd', 'kind', DAYS);
+    const total = bars.days.reduce((n, b) => n + b.total, 0);
+    assert.equal(total, V.windowTotals(HOME, DAYS).usd, 'a fold or a dropped segment would show up here as a mismatch');
+});
+
+test('a version split takes version from the session, sorts real versions newest first, and puts a null-recorded version last though it is by far the biggest group', () => {
+    const i = DAYS.indexOf('2026-09-10');
+    const bars = V.dayBars(VER, 'usd', 'version', DAYS);
+    assert.deepEqual(bars.days[i].parts, { '0.74.0': 1, '0.80.0': 1, none: 5 });
+    assert.deepEqual(bars.keys, ['0.80.0', '0.74.0', 'none']);
+});
+
+test('version colours \'none\' the quiet grey rather than a palette slot, so it never reads as a colour peer of a real version', () => {
+    const bars = V.dayBars(VER, 'usd', 'version', DAYS);
+    const o = { metric: 'usd', dim: 'version', sel: null, today: '2026-09-14', days: DAYS, names: {}, pkeys: [] };
+    const svg = V.histSvg(bars, o);
+    assert.match(svg, /未記版本/);
+    assert.match(svg, /0\.74\.0/);
+    assert.match(svg, /0\.80\.0/);
+    assert.equal(count(svg, /fill:var\(--st-none\)/g), 1, '\'none\' never claims a palette slot');
+});
+
+// The mockup this row implements (`.fankeel/build/2026-09-20-cost-composition/
+// mockup.html`, panel A) draws the three real versions in `--p-0`, `--p-1` and
+// `--p-2` — distinct slots, newest first — with `未記版本` quiet and separate.
+// `colorOf`'s fallback indexes into whichever array it is handed, so this is
+// really a test of what `histSvg`/`legendHtml` hand it for `version`: the
+// bar's own `bars.keys`, already newest-first from `orderKeys`, in place of
+// the project list a version is never found in.
+test('version gives each real version its own palette slot in newest-first order, not the same slot for every version', () => {
+    const bars = V.dayBars(VER, 'usd', 'version', DAYS);
+    const o = { metric: 'usd', dim: 'version', sel: null, today: '2026-09-14', days: DAYS, names: {}, pkeys: [] };
+    const svg = V.histSvg(bars, o);
+    assert.match(svg, /fill:var\(--p-0\)/, 'the newest version, 0.80.0, is --p-0');
+    assert.match(svg, /fill:var\(--p-1\)/, 'the older version, 0.74.0, gets a different slot from the newest');
+    assert.doesNotMatch(svg, /fill:var\(--p-5\)/, 'with only two real versions, neither falls through to the overflow slot');
+});
+
+test('dayPanel folds kind into a fifth by-bucket the same way dayBars does', () => {
+    const p = V.dayPanel(HOME, '2026-09-14');
+    assert.deepEqual(p.by.kind, { input: 1.6875, output: 3.375, cacheRead: 0.84375, cacheWrite: 0.84375 });
+});
+
+test('dayPanelHtml renders the day panel\'s kind split rather than silently dropping a fifth dimension', () => {
+    const panel = V.dayPanelHtml(V.dayPanel(HOME, '2026-09-14'), O);
+    assert.match(panel, /依成分/);
+    assert.match(panel, /cache write/);
 });
 
 // --- the three levels: project -----------------------------------------------
