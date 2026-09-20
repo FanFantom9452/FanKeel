@@ -333,11 +333,11 @@ unreachable regardless of what else in the tree links there. Two names for one
 problem is how a report starts looking longer than it is.
 
 Both branches are tested, one test each. Cited by line and quote rather than by
-range, because a range carries no quote and nothing then checks it: the second
-of them pointed at the wrong test for two commits running while `docs-check`
-stayed green, and a quote is what makes that shift a reported defect instead of
-a silent one. The first never moved, which is the point — nothing here could
-tell you that either way.
+range, because a range carries no quote and nothing then checks it: two later
+inserts pushed the second of them off its test, where it sat through four
+commits with `docs-check` green the whole way, and a quote is what makes that
+shift a reported defect instead of a silent one. The first never moved, which
+is the point — nothing here could tell you that either way.
 
 - `tests/docs-audit.test.js:495` is `test('with no index, a document nothing links to is named', () => {`
 - `tests/docs-audit.test.js:548` is `test('with an index, unreachable is reported once, not twice', () => {`
