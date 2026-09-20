@@ -4,12 +4,20 @@
 // already displays, folding `cacheWrite5m` and `cacheWrite1h` the same way, and
 // `buckets()` grouping sessions by how long they ran.
 //
+// `scripts/spend.js`'s own two helpers — `parseArgs` and `resolveRoots` — are
+// covered here too, the way `scripts/station.js`'s `parseArgs` and
+// `scanDeadline` are covered by that script's own test rather than a separate
+// `scripts/*.test.js` file.
+//
 // Every fixture is a session file under a scratch root from `tests/tmp.js` —
 // never this machine's real registries.
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const path = require('node:path');
 const registry = require('../lib/registry.js');
 const spend = require('../lib/spend.js');
+const station = require('../lib/station.js');
+const { main, parseArgs, resolveRoots } = require('../scripts/spend.js');
 const tmp = require('./tmp.js');
 
 const NOW = new Date().toISOString();
@@ -21,6 +29,7 @@ const ID5 = 'aaaaaaaa-5555-1111-1111-111111111111';
 const ID6 = 'aaaaaaaa-6666-1111-1111-111111111111';
 const ID7 = 'aaaaaaaa-7777-1111-1111-111111111111';
 const ID8 = 'aaaaaaaa-8888-1111-1111-111111111111';
+const ID9 = 'aaaaaaaa-9999-1111-1111-111111111111';
 
 function root() {
     return tmp('fankeel-spend-');
@@ -134,4 +143,41 @@ test('buckets groups sessions by request count into the four ranges and shares e
     assert.equal(mid.count, 0);
     assert.equal(mid.total, 0);
     assert.equal(mid.median, null);
+});
+
+test('scripts/spend.js parseArgs reads --root, and leaves it null with none given', () => {
+    assert.equal(parseArgs(['--root', 'X:/somewhere']).root, 'X:/somewhere');
+    assert.equal(parseArgs([]).root, null);
+});
+
+test('resolveRoots takes the override route with --root, and station.discover otherwise', () => {
+    const overridden = resolveRoots(path.join('some', 'dir'));
+    assert.equal(overridden.via, 'override');
+    assert.deepEqual(overridden.roots, [path.resolve('some', 'dir')]);
+
+    const real = station.discover;
+    const seen = [];
+    station.discover = (opts) => { seen.push(opts); return { roots: ['R'], gone: [] }; };
+    try {
+        assert.deepEqual(resolveRoots(null), { roots: ['R'], via: 'station.discover' });
+        assert.equal(seen.length, 1);
+        assert.equal(seen[0].cwd, process.cwd());
+        assert.equal(typeof seen[0].configDir, 'string');
+    } finally {
+        station.discover = real;
+    }
+});
+
+test('scripts/spend.js main --root prints the session and bucket tables for that one root', () => {
+    const r = root();
+    registry.writeSession(r, ID9, base({
+        spend: { build: { requests: 10, models: {
+            'claude-sonnet-5': { input: 1_000_000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+        } } },
+    }));
+    const { text } = main(['--root', r]);
+    assert.match(text, /^roots \(override\): /);
+    assert.match(text, new RegExp(ID9));
+    assert.match(text, /buckets by request count/);
+    assert.match(text, /\$2\.00/, 'the $2.00 session cost prints somewhere in the tables');
 });
