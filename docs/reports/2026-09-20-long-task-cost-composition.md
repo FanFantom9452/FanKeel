@@ -90,4 +90,4 @@ node scripts/spend.js              # 全機器，discover 找到的每一個 reg
 node scripts/spend.js --root <dir> # 只看一個
 ```
 
-站台首頁的分段控制也加了 `依成分` 與 `依版本` 兩格（[station.md](../station.md)）。要注意那是**另一個母體**：站台的數字讀 transcript，`scripts/spend.js` 讀 registry 的 `spend` 欄，兩邊的筆數與總額不會相等。
+站台首頁的分段控制也加了 `依成分` 與 `依版本` 兩格（[station.md](../station.md)）。要注意站台有**兩種**數字：首頁與專案頁把 `days[].usd` 加起來，那是從 transcript 讀的，和本頁的筆數與總額不會相等；而 session 詳情裡的分階段曲線讀的是 registry 的同一個 `spend` 欄，那一邊和 `scripts/spend.js` 是同一個母體。

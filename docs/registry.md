@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-13
-source_of_truth: lib/registry.js, lib/station.js, lib/render.js, lib/context.js, lib/dirty.js, lib/live.js, lib/usage.js, lib/profile.js, scripts/task.js, hooks/touch.js, hooks/inject.js, hooks/carry.js, hooks/gate.js, hooks/resume.js, hooks/leave.js
+source_of_truth: lib/registry.js, lib/station.js, lib/render.js, lib/context.js, lib/dirty.js, lib/live.js, lib/usage.js, lib/profile.js, lib/spend.js, scripts/task.js, scripts/spend.js, hooks/touch.js, hooks/inject.js, hooks/carry.js, hooks/gate.js, hooks/resume.js, hooks/leave.js
 ---
 
 # The registry, and what it remembers
@@ -251,14 +251,14 @@ nothing else:
   Both halves are deleted from `usage` before that field is written, so every
   existing reader of `usage` still sees the shape it always had.
   [station.md](station.md) has where the per-stage curve reads it from.
-  `lib/spend.js` is the other reader, and a whole-machine one: it prices this
-  field with `lib/prices.js` across every registry `lib/station.js`'s
-  `discover()` finds, folds each session into four dollar components, splits a
-  session's own cost from its subagents', and buckets the sessions by request
-  count; `scripts/spend.js` prints that table and states how many session files
-  it scanned to get it. It is a different population from the station's own
-  figures, which come from the transcript rather than from this field, so the
-  two do not add up to each other and are not meant to.
+  `lib/spend.js` is the other reader: it prices this field with `lib/prices.js`
+  over the roots it is handed, folds each session into four dollar components,
+  splits a session's own cost from its subagents', and buckets the sessions by
+  request count. `scripts/spend.js` resolves those roots — `lib/station.js`'s
+  `discover()`, or `--root` — and prints its two tables under a line saying how
+  many session files it scanned to fill them. It reads the same field the
+  per-stage curve does, so those two are one population; what it is not is the
+  home and project pages, which sum `days[].usd` from the transcript instead.
 - `gates` — an array of `{ at, stage, header, question, labels, descriptions,
   picked }`, one entry per `AskUserQuestion` `lib/gates.js` finds in the
   transcript: `stage` is read off `moves` at that point, `question` is the
