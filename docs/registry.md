@@ -262,8 +262,10 @@ nothing else:
   cent on all 91 sessions carrying both, and the sum of `stages[].usd` on all
   78 that also carry a `spend`. What they do not share is who has them — `days`
   needs only a transcript, `usage` is written at session end, and `spend` only
-  since it was added, so 94 of the 311 session files here can be priced from
-  it and every session with a transcript can be priced from `days`.
+  since it was added. So 78 of the 179 session files in this repository's own
+  registry carry a `spend`, and 94 of 311 across the eleven registries this
+  machine holds, while every session with a transcript can be priced from
+  `days`.
 - `gates` — an array of `{ at, stage, header, question, labels, descriptions,
   picked }`, one entry per `AskUserQuestion` `lib/gates.js` finds in the
   transcript: `stage` is read off `moves` at that point, `question` is the
