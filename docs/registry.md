@@ -262,7 +262,9 @@ nothing else:
   cent on all 91 sessions carrying both, and the sum of `stages[].usd` on all
   78 that also carry a `spend`. What they do not share is who has them — `days`
   needs only a transcript, `usage` is written at session end, and `spend` only
-  since it was added. So 78 of the 179 session files in this repository's own
+  on sessions that ended after 2026-09-07T20:08Z here — two days after the
+  commit that added it, the same shape of gap this page settles for `waited`
+  above. So 78 of the 179 session files in this repository's own
   registry carry a `spend`, and 94 of 311 across the eleven registries this
   machine holds, while every session with a transcript can be priced from
   `days`.
