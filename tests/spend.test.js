@@ -13,6 +13,7 @@
 // never this machine's real registries.
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 const registry = require('../lib/registry.js');
 const spend = require('../lib/spend.js');
@@ -45,7 +46,7 @@ test('sessionsOf prices the four displayed components from known token counts', 
             'claude-sonnet-5': { input: 2_000_000, output: 500_000, cacheRead: 3_000_000, cacheWrite5m: 0, cacheWrite1h: 0 },
         } } },
     }));
-    const rows = spend.sessionsOf([r]);
+    const { rows } = spend.sessionsOf([r]);
     assert.equal(rows.length, 1);
     const row = rows[0];
     assert.equal(row.sessionId, ID1);
@@ -62,7 +63,7 @@ test('cacheWrite folds ephemeral 5m and 1h writes together, at their own rates',
             'claude-sonnet-5': { input: 0, output: 0, cacheRead: 0, cacheWrite5m: 200_000, cacheWrite1h: 100_000 },
         } } },
     }));
-    const row = spend.sessionsOf([r])[0];
+    const row = spend.sessionsOf([r]).rows[0];
     // 200,000 * 2.5/1e6 + 100,000 * 4/1e6 = 0.5 + 0.4
     assert.equal(row.cost.cacheWrite, 0.9);
 });
@@ -74,7 +75,7 @@ test('a record with no version carries version as null, never invented', () => {
             'claude-sonnet-5': { input: 1, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
         } } },
     }));
-    assert.equal(spend.sessionsOf([r])[0].version, null);
+    assert.equal(spend.sessionsOf([r]).rows[0].version, null);
 });
 
 test('a model lib/prices.js does not price is reported as unpriced, not counted as zero', () => {
@@ -85,7 +86,7 @@ test('a model lib/prices.js does not price is reported as unpriced, not counted 
             'claude-unknown-model': { input: 999_000_000, output: 999_000_000, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
         } } },
     }));
-    const row = spend.sessionsOf([r])[0];
+    const row = spend.sessionsOf([r]).rows[0];
     assert.deepEqual(row.unpriced, ['claude-unknown-model']);
     assert.equal(row.cost.input, 2, 'the unpriced model\'s 999M input tokens must not be folded in as zero');
 });
@@ -93,7 +94,11 @@ test('a model lib/prices.js does not price is reported as unpriced, not counted 
 test('a record with no spend field is skipped, not an error', () => {
     const r = root();
     registry.writeSession(r, ID5, base());
-    assert.deepEqual(spend.sessionsOf([r]), []);
+    const out = spend.sessionsOf([r]);
+    assert.deepEqual(out.rows, []);
+    assert.equal(out.scanned, 1);
+    assert.equal(out.noSpend, 1);
+    assert.equal(out.unreadable, 0);
 });
 
 test('requests sum stage and subagents requests across stages, and own cost is split from subagents\'', () => {
@@ -109,7 +114,7 @@ test('requests sum stage and subagents requests across stages, and own cost is s
             } } },
         },
     }));
-    const row = spend.sessionsOf([r])[0];
+    const row = spend.sessionsOf([r]).rows[0];
     assert.equal(row.requests, 2 + 3 + 5);
     assert.equal(row.own, 2, 'sonnet input priced at 2/million, from the survey stage alone');
     assert.equal(row.subagents, 5, 'opus input priced at 5/million, from build\'s subagents alone');
@@ -127,7 +132,7 @@ test('buckets groups sessions by request count into the four ranges and shares e
             'claude-sonnet-5': { input: 0, output: 1_000_000, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
         } } },
     })); // usd 10, all output, requests 900 -> '800+'
-    const rows = spend.sessionsOf([r]);
+    const { rows } = spend.sessionsOf([r]);
     const b = spend.buckets(rows);
     assert.deepEqual(b.map((x) => x.range), ['<50', '50-199', '200-799', '800+']);
     const under50 = b.find((x) => x.range === '<50');
@@ -143,6 +148,29 @@ test('buckets groups sessions by request count into the four ranges and shares e
     assert.equal(mid.count, 0);
     assert.equal(mid.total, 0);
     assert.equal(mid.median, null);
+});
+
+test('sessionsOf counts a priced record, a spend-less one and one that does not parse, and only the priced one is a row', () => {
+    const r = root();
+    const PRICED = 'aaaaaaaa-1111-1111-1111-111111111111';
+    const BARE = 'aaaaaaaa-2222-1111-1111-111111111111';
+    const BROKEN = 'aaaaaaaa-0bad-1111-1111-111111111111';
+    registry.writeSession(r, PRICED, base({
+        spend: { build: { requests: 1, models: {
+            'claude-sonnet-5': { input: 1_000_000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+        } } },
+    }));
+    registry.writeSession(r, BARE, base());
+    const sessionsDir = path.join(r, '.fankeel', 'sessions');
+    fs.mkdirSync(sessionsDir, { recursive: true });
+    fs.writeFileSync(path.join(sessionsDir, BROKEN + '.json'), 'not valid json{');
+
+    const { rows, scanned, noSpend, unreadable } = spend.sessionsOf([r]);
+    assert.equal(scanned, 3, 'every session file looked at, parsed or not');
+    assert.equal(noSpend, 1, 'the bare record, parsed but with nothing to price');
+    assert.equal(unreadable, 1, 'the broken file, counted by registry.readAll itself');
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].sessionId, PRICED);
 });
 
 test('scripts/spend.js parseArgs reads --root, and leaves it null with none given', () => {

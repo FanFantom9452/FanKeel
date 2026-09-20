@@ -69,9 +69,17 @@ function bucketsTable(list) {
 function main(argv) {
     const { root: overrideRoot } = parseArgs(argv);
     const { roots, via } = resolveRoots(overrideRoot);
-    const rows = spend.sessionsOf(roots);
+    const { rows, scanned, noSpend, unreadable } = spend.sessionsOf(roots);
     const bs = spend.buckets(rows);
-    const text = 'roots (' + via + '): ' + (roots.length ? roots.join(', ') : '(none found)') + '\n\n'
+    // The denominator, stated rather than left for a reader to infer: a
+    // record with no `spend` field is the normal shape of a session still
+    // running, or one written before `hooks/leave.js` learned to bucket
+    // cost, and the priced count below is a fraction of `scanned`, not all
+    // of it.
+    const denom = roots.length + ' registries, ' + scanned + ' session files scanned — '
+        + noSpend + ' skipped (no spend), ' + unreadable + ' unreadable, ' + rows.length + ' priced';
+    const text = 'roots (' + via + '): ' + (roots.length ? roots.join(', ') : '(none found)') + '\n'
+        + denom + '\n\n'
         + 'sessions\n' + sessionsTable(rows) + '\n\n'
         + 'buckets by request count\n' + bucketsTable(bs);
     return { text };
