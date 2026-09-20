@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-21
-source_of_truth: 四份輸出都由 `docs/reports/evidence/2026-09-21-quota-calibration/` 底下同名腳本產生，各自帶著產生它的那個 sha — `windows-at-43daef5.txt`（全機 427 份頂層 transcript 的逐分段表）在 `43daef5`；`basis-at-3784eb7.txt`（兩次捕捉的對照、下限論證與 `quotaLimits`）在 `3784eb7`；`drift-at-b5abad3.txt`（66 個 session 的重分配）與 `sonnet-at-b5abad3.txt`（Sonnet 主控那一趟）在 `b5abad3`。三個 sha 是三次審查之後的修改：basis 補上第二份 transcript，drift 與 sonnet 把「文件裡提到指令」與「指令真的跑過」分開。`windows.js` 自 `43daef5` 起一個位元都沒動。兩次 statusline 捕捉分別是 `evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt` 與 `evidence/2026-09-21-quota-calibration/quota-capture-260920T203515Z.txt`。費率表那次讀取的引文在 `pricing-read-260921.txt`。
+source_of_truth: 四份輸出都由 `docs/reports/evidence/2026-09-21-quota-calibration/` 底下同名腳本產生，各自帶著產生它的那個 sha — `windows-at-43daef5.txt`（全機 427 份頂層 transcript 的逐分段表）在 `43daef5`；`basis-at-3784eb7.txt`（兩次捕捉的對照、下限論證與 `quotaLimits`）在 `3784eb7`；`drift-at-512710e.txt`（66 個 session 的重分配）與 `sonnet-at-512710e.txt`（Sonnet 主控那一趟）在 `512710e`。三個 sha 是三次審查之後的修改：basis 補上第二份 transcript，drift 與 sonnet 把「文件裡提到指令」與「指令真的跑過」分開。`windows.js` 自 `43daef5` 起一個位元都沒動。兩次 statusline 捕捉分別是 `evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt` 與 `evidence/2026-09-21-quota-calibration/quota-capture-260920T203515Z.txt`。費率表那次讀取的引文在 `pricing-read-260921.txt`。
 ---
 
 # 5h 與 7d 額度怎麼掛勾，與逐站帳的戳記偏移
@@ -141,7 +141,7 @@ transcript 重算。
 
 ## 6. Sonnet 主控那一趟
 
-一條臂，沒有配對。`sonnet-at-b5abad3.txt`：
+一條臂，沒有配對。`sonnet-at-512710e.txt`：
 
 - 主 transcript 每一輪都是 `claude-sonnet-5`，6 個 subagent 也全是。沒有 Opus。
 - 五站走完、本地 merge，合完的那個 commit `ad14458` 上整套 1658 綠。那個數字不在
@@ -210,7 +210,7 @@ done
 一個 commit 有罪：那一個同時改了兩支腳本並**刪掉**三份過期輸出，而 `--name-only`
 把刪除也列出來，所以「加了輸出」被算成 3。規則講的是「新增一份輸出」，所以只數新增。
 
-`grep -c` 回 0 時結束碼是 1，所以上面用 `for` 而不是 `&&` 串——串起來會在第一個
+`grep -c` 回 0 時結束碼是 1，所以上面用 `while read` 的迴圈而不是 `&&` 串——串起來會在第一個
 0 就斷掉，而 0 正是要的答案。這一頁從來沒有寫成 `&&`；踩到的是查證它的那個殼層，
 兩次：一次把 `docs-check` 的結束碼換成了 `tail` 的，一次把三個 `grep -c` 串起來而
 只跑到第一個。`for` 的每一圈不看上一圈的結束碼，所以三個都會印。
