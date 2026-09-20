@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-21
-source_of_truth: 兩支 evidence 腳本與它們綁著 sha 的輸出——`docs/reports/evidence/2026-09-21-long-task-projection/stages.js`（輸出 [evidence/2026-09-21-long-task-projection/stages-at-869c3ea.txt](evidence/2026-09-21-long-task-projection/stages-at-869c3ea.txt)，在 `869c3ea` 產生）與同目錄的 `project.js`（輸出 [project-at-7785a75.txt](evidence/2026-09-21-long-task-projection/project-at-7785a75.txt)，在 `7785a75` 產生）。逐站的錢由 `lib/registry.js` 的 `seriesOf` 與 `lib/prices.js` 的 `costOf` 算出，不是本頁算的；價格比由 `project.js` 從 `lib/prices.js` 的費率表逐分量算出來而不是寫死。S 的兩個端點來自 [evidence/2026-09-20-survey-brain-ab/ab7-table.txt](evidence/2026-09-20-survey-brain-ab/ab7-table.txt) 的逐模型列。第 5 節的額度視窗是 `stages.js` 的 block 3c，錨定在 [evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt](evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt) 記下的那一次 statusline payload 捕捉（2026-09-20T16:30:41Z，n=1），那個檔也在 repo 裡。本頁每一個數字都從那些檔來，本頁不會重新產生
+source_of_truth: 兩支 evidence 腳本與它們綁著 sha 的輸出——`docs/reports/evidence/2026-09-21-long-task-projection/stages.js`（輸出 [evidence/2026-09-21-long-task-projection/stages-at-3886dc8.txt](evidence/2026-09-21-long-task-projection/stages-at-3886dc8.txt)，在 `3886dc8` 產生）與同目錄的 `project.js`（輸出 [project-at-3886dc8.txt](evidence/2026-09-21-long-task-projection/project-at-3886dc8.txt)，在 `3886dc8` 產生）。逐站的錢由 `lib/registry.js` 的 `seriesOf` 與 `lib/prices.js` 的 `costOf` 算出，不是本頁算的；價格比由 `project.js` 從 `lib/prices.js` 的費率表逐分量算出來而不是寫死。S 的兩個端點來自 [evidence/2026-09-20-survey-brain-ab/ab7-table.txt](evidence/2026-09-20-survey-brain-ab/ab7-table.txt) 的逐模型列。第 5 節的額度視窗是 `stages.js` 的 block 3c，錨定在 [evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt](evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt) 記下的那一次 statusline payload 捕捉（2026-09-20T16:30:41Z，n=1），那個檔也在 repo 裡。本頁每一個數字都從那些檔來，本頁不會重新產生
 ---
 
 # 長任務換 Sonnet 主控的投影 — 2026-09-21
@@ -93,7 +93,7 @@ break-even k (new_total == old_total, survey held at S_low): 2.5052
 |---|---|
 | 5h | 用掉 **2%**，視窗 2026-09-20T15:40Z 開始，20:40Z 重置 |
 | 7d | 用掉 **0%**，2026-09-24T19:00Z 重置 |
-| 這個 session 當下 | $12.80，45 分鐘 |
+| 這個 session 在捕捉當下 | $12.56，44 分鐘 |
 
 那個 5 小時視窗裡只有這一個 session：同期另外兩個 transcript，一個在視窗內只有 1 行且 0 token，另一個最後的內容停在前一天。
 
@@ -111,7 +111,7 @@ break-even k (new_total == old_total, survey held at S_low): 2.5052
 
 ## 6. 這一頁答不了什麼
 
-- **最大的一條：`k` 在 build 與 verify 上沒有任何量測。**整個投影的支點是它，而第 4 節唯一的實測來自一個把工作交出去的主控。要驗只能真的跑一對長任務。**那一對要花多少，`project.js` 的 block 5 印出來了**：43 筆長任務的 `old_usd` 中位數是 $61.57（四分位 $32.63–$129.98，全距 $19.85–$319.67），而 **n=43 是奇數**，所以內插式的中位數剛好落在一筆真實的 session 上——`05de9a54`。這是這批資料的巧合不是通則：n 為偶數時中位數是兩筆之間的內插值，沒有一筆可以點名，`project.js` 在那種情況下會丟錯而不是默默挑一筆。舊臂是它的 $61.57；新臂的下界用**它自己那一列算出來的** $27.84，不是拿全體的聚合比值 0.4407 乘上去——那等於把別人的成分套在它身上；上界是 $61.57，也就是 parity：新臂完全沒省。一對合計 **$89–$123**（block 5 印的是未捨入的 89.41–123.15）。**四分位用的是內插式**（位置 `1 + p×(n-1)` 線性內插，等同 R type 7／numpy 預設／Excel `PERCENTILE.INC`）；排除式會給出不同的 Q1／Q3，所以引用這兩個數字要連算法一起引。而 n=1 的一對說不出穩定的倍數——[2026-09-20 的 A/B](2026-09-20-survey-brain-ab.md) 用 n=2 仍然只敢說組內可比。
+- **最大的一條：`k` 在 build 與 verify 上沒有任何量測。**整個投影的支點是它，而第 4 節唯一的實測來自一個把工作交出去的主控。要驗只能真的跑一對長任務。**那一對要花多少，`project.js` 的 block 5 印出來了**：43 筆長任務的 `old_usd` 中位數是 $61.57——算式只用到中位數，block 5 另外印了四分位與全距，連同它用的四分位算法。而 **n=43 是奇數**，所以中位數剛好落在一筆真實的 session 上：`05de9a54`。這是這批資料的巧合不是通則，n 為偶數時 `project.js` 會丟錯而不是默默挑一筆。舊臂是它的 $61.57；新臂的下界用**它自己那一列算出來的** $27.84，不是拿全體的聚合比值 0.4407 乘上去——那等於把別人的成分套在它身上；上界是 $61.57，也就是 parity：新臂完全沒省。一對合計 **$89–$123**（block 5 印的是未捨入的 89.41–123.15）。而 n=1 的一對說不出穩定的倍數——[2026-09-20 的 A/B](2026-09-20-survey-brain-ab.md) 用 n=2 仍然只敢說組內可比。
 - **S 只有 n=2**，而且來自 survey 一站、六到十四輪的短任務。
 - **不是隨機分派。**43 筆是觀察到的長任務，沒有人把任務指派到某一桶。
 - **樣本是這個 repo 自己的開發**，和 [2026-09-20-long-task-cost-composition.md](2026-09-20-long-task-cost-composition.md) 第五節同一條限制。
@@ -135,6 +135,8 @@ node docs/reports/evidence/2026-09-21-long-task-projection/project.js
 ```
 
 第一支讀 `.fankeel/sessions` 並印出 block 1 到 3c，第二支讀第一支的輸出表並印出 block 1 到 5——**derived 檔從來源表自己的欄位重算**，和 [2026-09-20-long-task-cost-composition.md](2026-09-20-long-task-cost-composition.md) 同一個慣例。第 5 節的兩個額度視窗是 `stages.js` 的 block 3c，第 6 節那一對的價錢是 `project.js` 的 block 5，所以這兩行把本頁引用的統計量全部重跑得出來。兩支都只寫自己的輸出檔，不碰別的。
+
+**那個 sha 要是真的，產生輸出的那個 commit 就不能同時改腳本。**這個分支上犯過兩次：在 `HEAD = X` 跑、把輸出命名成 `-at-X`，然後把腳本的改動與輸出**一起** commit 成 `Y`——檔名寫著 `X`，內容卻要 `Y` 的程式碼才產得出來，checkout 到 `X` 再跑並不會得到它。現在這兩個檔是在腳本定稿並 commit 於 `3886dc8` **之後**才重跑的，所以 checkout 到 `3886dc8` 再跑，只要 registry 沒有移動就會得到同樣的位元組。
 
 輸出檔名綁著產生它的 sha，所以每次重跑都會換名字；`project.js` 因此不寫死來源檔名，而是掃同目錄的 `stages-at-*.txt`，**恰好一個才繼續**，否則丟出錯誤列出找到了什麼。同理 `project.js` 只在 `lib/prices.js` 四個分量的價格比相同時成立，不相同就 throw 而不是改用另一條沒人走過的路徑。
 
