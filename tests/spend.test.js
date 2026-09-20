@@ -1,0 +1,137 @@
+'use strict';
+// lib/spend.js: what a session's `spend` field turns into once `lib/prices.js`'s
+// rates are applied — the four dollar components `assets/station/station.js:889`
+// already displays, folding `cacheWrite5m` and `cacheWrite1h` the same way, and
+// `buckets()` grouping sessions by how long they ran.
+//
+// Every fixture is a session file under a scratch root from `tests/tmp.js` —
+// never this machine's real registries.
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const registry = require('../lib/registry.js');
+const spend = require('../lib/spend.js');
+const tmp = require('./tmp.js');
+
+const NOW = new Date().toISOString();
+const ID1 = 'aaaaaaaa-1111-1111-1111-111111111111';
+const ID2 = 'aaaaaaaa-2222-1111-1111-111111111111';
+const ID3 = 'aaaaaaaa-3333-1111-1111-111111111111';
+const ID4 = 'aaaaaaaa-4444-1111-1111-111111111111';
+const ID5 = 'aaaaaaaa-5555-1111-1111-111111111111';
+const ID6 = 'aaaaaaaa-6666-1111-1111-111111111111';
+const ID7 = 'aaaaaaaa-7777-1111-1111-111111111111';
+const ID8 = 'aaaaaaaa-8888-1111-1111-111111111111';
+
+function root() {
+    return tmp('fankeel-spend-');
+}
+function base(extra) {
+    return Object.assign({ task: 't', stage: 'build', route: ['build'], active: true, started: NOW, updated: NOW }, extra);
+}
+
+test('sessionsOf prices the four displayed components from known token counts', () => {
+    const r = root();
+    registry.writeSession(r, ID1, base({
+        spend: { build: { requests: 3, models: {
+            'claude-sonnet-5': { input: 2_000_000, output: 500_000, cacheRead: 3_000_000, cacheWrite5m: 0, cacheWrite1h: 0 },
+        } } },
+    }));
+    const rows = spend.sessionsOf([r]);
+    assert.equal(rows.length, 1);
+    const row = rows[0];
+    assert.equal(row.sessionId, ID1);
+    assert.equal(row.root, r);
+    // sonnet: input 2, output 10, cacheRead 0.2 per million.
+    assert.deepEqual(row.cost, { input: 4, output: 5, cacheRead: 0.6, cacheWrite: 0 });
+    assert.equal(row.usd, 9.6);
+});
+
+test('cacheWrite folds ephemeral 5m and 1h writes together, at their own rates', () => {
+    const r = root();
+    registry.writeSession(r, ID2, base({
+        spend: { build: { requests: 1, models: {
+            'claude-sonnet-5': { input: 0, output: 0, cacheRead: 0, cacheWrite5m: 200_000, cacheWrite1h: 100_000 },
+        } } },
+    }));
+    const row = spend.sessionsOf([r])[0];
+    // 200,000 * 2.5/1e6 + 100,000 * 4/1e6 = 0.5 + 0.4
+    assert.equal(row.cost.cacheWrite, 0.9);
+});
+
+test('a record with no version carries version as null, never invented', () => {
+    const r = root();
+    registry.writeSession(r, ID3, base({
+        spend: { build: { requests: 1, models: {
+            'claude-sonnet-5': { input: 1, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+        } } },
+    }));
+    assert.equal(spend.sessionsOf([r])[0].version, null);
+});
+
+test('a model lib/prices.js does not price is reported as unpriced, not counted as zero', () => {
+    const r = root();
+    registry.writeSession(r, ID4, base({
+        spend: { build: { requests: 2, models: {
+            'claude-sonnet-5': { input: 1_000_000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+            'claude-unknown-model': { input: 999_000_000, output: 999_000_000, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+        } } },
+    }));
+    const row = spend.sessionsOf([r])[0];
+    assert.deepEqual(row.unpriced, ['claude-unknown-model']);
+    assert.equal(row.cost.input, 2, 'the unpriced model\'s 999M input tokens must not be folded in as zero');
+});
+
+test('a record with no spend field is skipped, not an error', () => {
+    const r = root();
+    registry.writeSession(r, ID5, base());
+    assert.deepEqual(spend.sessionsOf([r]), []);
+});
+
+test('requests sum stage and subagents requests across stages, and own cost is split from subagents\'', () => {
+    const r = root();
+    registry.writeSession(r, ID6, base({
+        route: ['survey', 'build'],
+        spend: {
+            survey: { requests: 2, models: {
+                'claude-sonnet-5': { input: 1_000_000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+            } },
+            build: { requests: 3, models: {}, subagents: { requests: 5, models: {
+                'claude-opus-5': { input: 1_000_000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+            } } },
+        },
+    }));
+    const row = spend.sessionsOf([r])[0];
+    assert.equal(row.requests, 2 + 3 + 5);
+    assert.equal(row.own, 2, 'sonnet input priced at 2/million, from the survey stage alone');
+    assert.equal(row.subagents, 5, 'opus input priced at 5/million, from build\'s subagents alone');
+});
+
+test('buckets groups sessions by request count into the four ranges and shares each component', () => {
+    const r = root();
+    registry.writeSession(r, ID7, base({
+        spend: { build: { requests: 10, models: {
+            'claude-sonnet-5': { input: 1_000_000, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+        } } },
+    })); // usd 2, all input, requests 10 -> '<50'
+    registry.writeSession(r, ID8, base({
+        spend: { build: { requests: 900, models: {
+            'claude-sonnet-5': { input: 0, output: 1_000_000, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 },
+        } } },
+    })); // usd 10, all output, requests 900 -> '800+'
+    const rows = spend.sessionsOf([r]);
+    const b = spend.buckets(rows);
+    assert.deepEqual(b.map((x) => x.range), ['<50', '50-199', '200-799', '800+']);
+    const under50 = b.find((x) => x.range === '<50');
+    const mid = b.find((x) => x.range === '50-199');
+    const over800 = b.find((x) => x.range === '800+');
+    assert.equal(under50.count, 1);
+    assert.equal(under50.total, 2);
+    assert.equal(under50.median, 2);
+    assert.equal(under50.share.input, 1);
+    assert.equal(over800.count, 1);
+    assert.equal(over800.total, 10);
+    assert.equal(over800.share.output, 1);
+    assert.equal(mid.count, 0);
+    assert.equal(mid.total, 0);
+    assert.equal(mid.median, null);
+});
