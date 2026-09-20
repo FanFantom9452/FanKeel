@@ -76,6 +76,7 @@ what gets scheduled.
 ## Ready
 
 - 〔tests〕「匯出而沒人 import」只在 `module.exports = {…}` 是檔尾最後一句時才檢查，`assets/station/station.js` 的匯出因此不受檢；station-live 的 Task 7 審查找到兩個漏網的 — [tests/source.test.js](tests/source.test.js).
+- 〔docs〕`conflict()` 有四個 predicate，三頁只算到兩三個，`read` 一頁都沒提：`docs/subagents.md:323`、`docs/collisions.md:169`、`docs/pipeline.md:564` — [lib/plantasks.js](lib/plantasks.js).
 
 ## Needs a decision
 
