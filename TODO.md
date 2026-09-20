@@ -85,7 +85,7 @@ what gets scheduled.
 
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；Gemini CLI `BeforeAgent`、Codex CLI `UserPromptSubmit` 也能回 `additionalContext` — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
 - 〔stage-agents〕主控＋站 agent 要不要推到其餘各站：看 survey 的量測；build 要 script 產生 workflow、design 要 SendMessage 轉話、station 要把第二層掛在派它的 agent 底下（現在平鋪）、插話要有人接 — [lib/stages.js](lib/stages.js).
-- 〔stage-agents〕再調 survey 大腦對長任務幾乎無效：它只在一站，而 survey 的中位數佔比 7.96%。沒量過的是 Sonnet 主控在沒有大腦的六站上的 token 倍數，破平衡點 2.5 — [lib/render.js](lib/render.js).
+- 〔stage-agents〕要不要花 $70–270 跑一對長任務，量 Sonnet 主控在沒有大腦那六站的 token 倍數：投影說省 56%、破平衡點 2.5，但那一格沒人量過。再調 survey 大腦則幾乎無效，它只佔中位數 7.96% — [lib/render.js](lib/render.js).
 - 〔agents〕要不要一個專審前端是否符合期待的 agent：這次 `依版本` 整片灰是把頁面 render 出來才抓到的，unit test 全綠；順帶評估 Jev 這類小判斷模型當篩子 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 - 〔station〕`--detach` 的 serve 在啟動時就把 `lib/station.js` 讀進記憶體：改完程式它照樣產生新資料、用舊程式，外觀完全正常。要不要讓它自己察覺 — [lib/serve.js](lib/serve.js).
 - 〔docs〕寫成 `path:行-行` 的引用不帶引文，docs-check 只列不驗：一條這樣歪了四個 commit 沒人發現。剩三條要改寫，還是讓 docs-check 把範圍本身當缺陷 — [scripts/docs-check.js](scripts/docs-check.js).
