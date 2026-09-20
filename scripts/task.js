@@ -578,6 +578,13 @@ function cmdStart(root, opts) {
     // one session id could both pass it. That is a different race and a rarer
     // one — a session cannot run two commands at once — and closing it would
     // mean refusing from inside the lock, where `fail` exits without releasing.
+    // The first stage gets the same stamp every later one does, taken from the
+    // record's own `started` rather than a fresh reading: `windowsFrom` runs the
+    // first window from -Infinity so bucketing does not need it, but `clockOf`
+    // does, and without it the opening stage's duration was the gap between two
+    // hook sightings rather than how long the stage ran.
+    registry.stampEntry(data, route[0], Date.parse(stamp));
+
     if (!registry.replace(root, id, data)) fail('Could not write the entry under ' + root);
 
     // No collision check here, because there is nothing yet to collide. A task
@@ -666,7 +673,11 @@ function cmdStage(root, opts) {
         }
 
         from = d.stage;
-        d.stage = name;
+        // The stamp goes down here, inside the callback that just cleared the
+        // route and liveness checks, so the change and its timestamp are one
+        // write. Leaving it to the hook put the boundary at the next prompt
+        // instead — minutes later, and the per-stage cost split with it.
+        registry.stampEntry(d, name);
         data = d;
         return true;
     });
@@ -690,7 +701,11 @@ function cmdStage(root, opts) {
             + (held ? ', ' + mins(held) + ' of it at the gate' : '') : '');
     // 只在「已經有一次」之後才說，因為第一次 verify→build 就是這條 pipeline
     // 本來的走法。只是 script 輸出，不佔注入——build 自己的區塊已經是 2393 / 2400。
-    if (name === 'build' && from === 'verify' && registry.returnsTo(data, 'verify', 'build') > 0) {
+    // `> 1`, not `> 0`: `stampEntry` above appended this very move before the
+    // count is read, so the return being announced is now inside it. One counted
+    // pair is the first return — the pipeline working as written — and two is the
+    // one worth saying something about.
+    if (name === 'build' && from === 'verify' && registry.returnsTo(data, 'verify', 'build') > 1) {
         line += NL + 'second return to build from verify — name what verify caught that build\'s'
             + NL + 'review did not, and add that check to the review';
     }
