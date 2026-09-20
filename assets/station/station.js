@@ -272,6 +272,19 @@
         if (dim === 'version') return key === 'none' ? '未記版本' : key;
         return key;
     }
+    // One key so far needs more than its label. `version`'s `'none'` is drawn
+    // in the quiet grey rather than a palette slot, and the grey has to say
+    // what it means: the session ran before the registry carried a `version`
+    // at all. It is not a session from somewhere else — every row on this page
+    // comes from a registry entry, and only this plugin writes those — so the
+    // bucket is "older than the field", not "not one of ours". Every other
+    // key's label is the whole story, so this returns '' for them.
+    function keyHint(dim, key) {
+        if (dim === 'version' && key === 'none') {
+            return '跑的時候 registry 還沒有 version 這個欄位，不是別處來的 session';
+        }
+        return '';
+    }
     function projectNames(sessions) {
         var lab = labels(sessions.map(function (s) { return s.root; }));
         var out = {};
@@ -548,7 +561,9 @@
             return i >= 0 && i < 5;
         });
         return '<span class="muted">由下而上</span>' + own.map(function (k) {
-            return '<span><i class="sw" style="background:' + colorOf(o.dim, k, o.dim === 'version' ? bars.keys : o.pkeys) + '"></i>' + esc(keyLabel(o.dim, k, o.names)) + '</span>';
+            var hint = keyHint(o.dim, k);
+            return '<span' + (hint ? ' title="' + esc(hint) + '"' : '') + '><i class="sw" style="background:'
+                + colorOf(o.dim, k, o.dim === 'version' ? bars.keys : o.pkeys) + '"></i>' + esc(keyLabel(o.dim, k, o.names)) + '</span>';
         }).join('') + (own.length < bars.keys.length
             ? '<span><i class="sw" style="background:var(--p-5)"></i>其他 ' + (bars.keys.length - own.length) + ' 個</span>' : '');
     }
@@ -1102,7 +1117,7 @@
             routeGroups: routeGroups, routeLedger: routeLedger,
             localDay: localDay, lastDays: lastDays, parseHash: parseHash, family: family, sessionTotals: sessionTotals,
             windowTotals: windowTotals, dayBars: dayBars, dayPanel: dayPanel, projectRows: projectRows, kpiHtml: kpiHtml,
-            histSvg: histSvg, dayPanelHtml: dayPanelHtml, projectsHtml: projectsHtml, recentHtml: recentHtml,
+            histSvg: histSvg, legendHtml: legendHtml, dayPanelHtml: dayPanelHtml, projectsHtml: projectsHtml, recentHtml: recentHtml,
             dayStart: dayStart, projectHead: projectHead, sessionPoints: sessionPoints, projectChart: projectChart,
             projectSessionsHtml: projectSessionsHtml,
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,

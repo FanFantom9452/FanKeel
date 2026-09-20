@@ -630,6 +630,18 @@ test('version gives each real version its own palette slot in newest-first order
     assert.doesNotMatch(svg, /fill:var\(--p-5\)/, 'with only two real versions, neither falls through to the overflow slot');
 });
 
+// The grey says "not a real version" and cannot say why, so the legend entry
+// carries the why. It matters which why: every row on this page is built from
+// a registry entry and only this plugin writes those, so `'none'` is a session
+// older than the field, never a session from somewhere else.
+test('the 未記版本 legend entry carries the reason for its grey, and a real version carries no tooltip', () => {
+    const bars = V.dayBars(VER, 'usd', 'version', DAYS);
+    const o = { metric: 'usd', dim: 'version', sel: null, today: '2026-09-14', days: DAYS, names: {}, pkeys: [] };
+    const html = V.legendHtml(bars, o);
+    assert.match(html, /<span title="[^"]*registry 還沒有 version[^"]*"><i class="sw" style="background:var\(--st-none\)"><\/i>未記版本<\/span>/);
+    assert.equal(count(html, /<span title=/g), 1, 'only \'none\' is annotated — 0.80.0 and 0.74.0 are their own explanation');
+});
+
 // `version` is the one of the two new dims that `時間` keeps. A span records
 // only a stage and who was running, so it carries nothing to split by model
 // or by kind — but a version belongs to the session rather than to the row,

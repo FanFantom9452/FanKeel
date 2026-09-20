@@ -186,7 +186,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:1616`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:1631`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -471,7 +471,7 @@ is to change the profile and reload.
 
 The facets are on 清單, above its table — state and stage with a count on each
 button, registry with one button per root
-(`assets/station/station.js:1418`, `moved onto the page they narrow`) — and
+(`assets/station/station.js:1433`, `moved onto the page they narrow`) — and
 the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed. On 清單,
 selecting a registry recomputes the page below the facets: `goneNote()`'s card
@@ -481,14 +481,14 @@ above the list otherwise; it does not merely hide rows.
 A gone registry keeps its facet button, labelled `— gone`, rather than
 dropping off the row, so selecting one never returns a blank pane with nothing
 on the page saying why:
-`goneNote()` (`assets/station/station.js:1241`, `function goneNote(root)`) prints a
+`goneNote()` (`assets/station/station.js:1256`, `function goneNote(root)`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card once it is the one selected on
 清單, and every project page carries the same card for its own registry no
 matter what is selected there: `registryNote()`
-(`assets/station/station.js:1258`, `function registryNote(root)`) prints its
+(`assets/station/station.js:1273`, `function registryNote(root)`) prints its
 own unreadable-session count, its `map.md` date — or `不存在` when there is
 none — and its build directories with each one's file count, or says there
 are none. The old page carried all three on a per-registry meta line; the
@@ -496,7 +496,7 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:1650`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:1665`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
 (`lib/station.js:449`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
@@ -525,7 +525,7 @@ and the fifth does not compare windows at all: it
 names the option-one gate wording most often swapped for another answer,
 `最常被換掉`, with how many times out of how many it was asked beneath it
 (`lib/station.js:541`, `function gateSummary(model, hidden) {`;
-`assets/station/station.js:453`, `roHtml('最常被換掉'`). Unlike the other
+`assets/station/station.js:466`, `roHtml('最常被換掉'`). Unlike the other
 four, it does not move with the 30-day window or the search box: it is
 counted once, across every shown session's gate answers
 (`lib/station.js:611`, `gates: gateSummary(model, hidden),`), not from the
@@ -569,7 +569,7 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:1409`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:1424`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較** is a third view. Tick two sessions on 清單 or a project page — only a
@@ -630,9 +630,9 @@ and the eyebrow's cannot disagree.
 
 Both decisions are pure functions above the `module.exports` guard, so both
 are unit tested: what to say
-(`assets/station/station.js:1075`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
+(`assets/station/station.js:1090`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
 and what the eyebrow reads
-(`assets/station/station.js:1085`, `function heroEyebrow(frozenAt) {`). The
+(`assets/station/station.js:1100`, `function heroEyebrow(frozenAt) {`). The
 fetch that feeds them, the bar they fill and the pill are the document half
 below the guard. The eyebrow is rendered rather than patched, so it takes a
 redraw — but only as the state flips, never on a poll that finds nothing
@@ -745,7 +745,7 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:1297`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:1312`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button, and every registry card now carries one:
