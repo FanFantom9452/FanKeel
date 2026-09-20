@@ -77,7 +77,17 @@ function stageCalls(file, notBefore) {
         if (!Number.isFinite(at) || at < notBefore) continue;
         for (const c of j.message.content || []) {
             if (c.type !== 'tool_use') continue;
-            const m = JSON.stringify(c.input || {}).match(/task\.js stage ([a-z]+)/);
+            // An invocation, not a mention of one. Matching the whole tool input
+            // counted a Write whose body quoted the command as if it were the
+            // command: on the session that found this, 7 such mentions against 13
+            // real invocations, and one placed a stamp 170 seconds BEFORE the
+            // command it was supposedly taken from. A shell tool, and the match
+            // inside its own `command` field, is what tells them apart. Not
+            // narrowed further with `--session`, so an invocation written some
+            // other way is still found.
+            if (c.name !== 'Bash' && c.name !== 'PowerShell') continue;
+            const cmd = c.input && typeof c.input.command === 'string' ? c.input.command : '';
+            const m = cmd.match(/task\.js stage ([a-z]+)/);
             if (m) found.push({ stage: m[1], at });
         }
     }

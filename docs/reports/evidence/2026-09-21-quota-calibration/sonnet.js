@@ -175,7 +175,12 @@ function stageCalls(file, notBefore) {
         if (!Number.isFinite(at) || at < notBefore) continue;
         for (const c of j.message.content || []) {
             if (c.type !== 'tool_use') continue;
-            const m = JSON.stringify(c.input || {}).match(/task\.js stage ([a-z]+)/);
+            // An invocation, not a mention of one — see the same filter and the
+            // same reason in drift.js. Matching the whole tool input counted a
+            // Write that quoted the command as if it had run.
+            if (c.name !== 'Bash' && c.name !== 'PowerShell') continue;
+            const cmd = c.input && typeof c.input.command === 'string' ? c.input.command : '';
+            const m = cmd.match(/task\.js stage ([a-z]+)/);
             if (m) found.push({ stage: m[1], at });
         }
     }
