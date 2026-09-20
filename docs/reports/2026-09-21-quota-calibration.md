@@ -130,7 +130,8 @@ session 當成 mismatch 丟掉並回報，這一趟是 0 個。
 一條臂，沒有配對。`sonnet-at-43daef5.txt`：
 
 - 主 transcript 每一輪都是 `claude-sonnet-5`，6 個 subagent 也全是。沒有 Opus。
-- 五站走完、本地 merge，合完的樹整套 1658 綠。
+- 五站走完、本地 merge，合完的那個 commit `ad14458` 上整套 1658 綠。那個數字不在
+  任何 evidence 輸出裡，是另外跑的，所以它帶著 sha —— 換一個 commit 就是別的數字。
 - **$6.9784**、1,555 萬 token。逐站（照指令邊界）：survey $0.64、design $0.24、
   build $2.51、verify $2.99、land $0.60。
 - registry 裡沒有 `spend`：`hooks/leave.js` 在 session 結束才寫，那個終端機當時
@@ -171,3 +172,9 @@ git show 43daef5 --stat --format='%h %s'
 `drift.js` 的數字會隨 registry 長大而動 —— 同一支腳本四十分鐘前量到 61 個
 session，落地時量到 66 個，因為量測用的那個 session 自己又換了幾次站。這正是
 輸出要釘 sha 的理由，也是引用時要連 sha 一起引的理由。
+
+**上面的散文有捨入，輸出沒有。** 「1.59 億 token」是 `159,071,706`、「1,555 萬」是
+`15,550,552`、「差 1.5%／10.7%」是 `+1.48%`／`-10.69%`、「$11.85」是 `$11.8476`、
+逐站的 `$0.24`／`$2.99` 是 `$0.2396`／`$2.9856`。有疑問時以 `-at-43daef5.txt` 為準。
+整份報告 110 個數字裡，只有 §6 那個 1658 不出自任何 evidence 輸出，所以它帶著
+它自己的 sha。
