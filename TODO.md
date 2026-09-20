@@ -88,7 +88,7 @@ what gets scheduled.
 - 〔agents〕要不要一個專審前端是否符合期待的 agent：這次 `依版本` 整片灰是把頁面 render 出來才抓到的，unit test 全綠；順帶評估 Jev 這類小判斷模型當篩子 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 - 〔station〕`--detach` 的 serve 在啟動時就把 `lib/station.js` 讀進記憶體：改完程式它照樣產生新資料、用舊程式，外觀完全正常。要不要讓它自己察覺 — [lib/serve.js](lib/serve.js).
 - 〔docs〕寫成 `path:行-行` 的引用不帶引文，docs-check 只列不驗：一條這樣歪了四個 commit 沒人發現。剩三條要改寫，還是讓 docs-check 把範圍本身當缺陷 — [scripts/docs-check.js](scripts/docs-check.js).
-- 〔quota〕花費與 5h／7d 額度怎麼掛勾未知：一次校準（5h 2%、7d 0%）與同期 registry 的 $1,094.68、18.9 億 token 對不起來。要不要讓 TokenBar 記下序列（另一個 repo）— [scripts/spend.js](scripts/spend.js).
+- 〔quota〕要不要讓 TokenBar 把 5h／7d 讀數記成序列（另一個 repo）：兩次讀數已給出 5h 按錢走、$7.64–$8.50 一點，但 7d 的水位兩點仍差 4.7 倍，要第三點才分得出是延遲還是計別的 — [scripts/spend.js](scripts/spend.js).
 
 ## Waiting
 
