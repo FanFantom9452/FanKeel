@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-21
-source_of_truth: 兩支 evidence 腳本與它們綁著 sha 的輸出——`docs/reports/evidence/2026-09-21-long-task-projection/stages.js`（輸出 [evidence/2026-09-21-long-task-projection/stages-at-3886dc8.txt](evidence/2026-09-21-long-task-projection/stages-at-3886dc8.txt)，在 `3886dc8` 產生）與同目錄的 `project.js`（輸出 [project-at-3886dc8.txt](evidence/2026-09-21-long-task-projection/project-at-3886dc8.txt)，在 `3886dc8` 產生）。逐站的錢由 `lib/registry.js` 的 `seriesOf` 與 `lib/prices.js` 的 `costOf` 算出，不是本頁算的；價格比由 `project.js` 從 `lib/prices.js` 的費率表逐分量算出來而不是寫死。S 的兩個端點來自 [evidence/2026-09-20-survey-brain-ab/ab7-table.txt](evidence/2026-09-20-survey-brain-ab/ab7-table.txt) 的逐模型列。第 5 節的額度視窗是 `stages.js` 的 block 3c，錨定在 [evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt](evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt) 記下的那一次 statusline payload 捕捉（2026-09-20T16:30:41Z，n=1），那個檔也在 repo 裡。本頁每一個數字都從那些檔來，本頁不會重新產生
+source_of_truth: 兩支 evidence 腳本與它們綁著 sha 的輸出——`docs/reports/evidence/2026-09-21-long-task-projection/stages.js`（輸出 [evidence/2026-09-21-long-task-projection/stages-at-3886dc8.txt](evidence/2026-09-21-long-task-projection/stages-at-3886dc8.txt)，由 `3886dc8` 上的那一版腳本產生）與同目錄的 `project.js`（輸出 [project-at-3886dc8.txt](evidence/2026-09-21-long-task-projection/project-at-3886dc8.txt)，由 `3886dc8` 上的那一版腳本產生）。逐站的錢由 `lib/registry.js` 的 `seriesOf` 與 `lib/prices.js` 的 `costOf` 算出，不是本頁算的；價格比由 `project.js` 從 `lib/prices.js` 的費率表逐分量算出來而不是寫死。S 的兩個端點來自 [evidence/2026-09-20-survey-brain-ab/ab7-table.txt](evidence/2026-09-20-survey-brain-ab/ab7-table.txt) 的逐模型列。第 5 節的額度視窗是 `stages.js` 的 block 3c，錨定在 [evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt](evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt) 記下的那一次 statusline payload 捕捉（2026-09-20T16:30:41Z，n=1），那個檔也在 repo 裡。本頁每一個數字都從那些檔來，本頁不會重新產生
 ---
 
 # 長任務換 Sonnet 主控的投影 — 2026-09-21
@@ -136,7 +136,9 @@ node docs/reports/evidence/2026-09-21-long-task-projection/project.js
 
 第一支讀 `.fankeel/sessions` 並印出 block 1 到 3c，第二支讀第一支的輸出表並印出 block 1 到 5——**derived 檔從來源表自己的欄位重算**，和 [2026-09-20-long-task-cost-composition.md](2026-09-20-long-task-cost-composition.md) 同一個慣例。第 5 節的兩個額度視窗是 `stages.js` 的 block 3c，第 6 節那一對的價錢是 `project.js` 的 block 5，所以這兩行把本頁引用的統計量全部重跑得出來。兩支都只寫自己的輸出檔，不碰別的。
 
-**那個 sha 要是真的，產生輸出的那個 commit 就不能同時改腳本。**這個分支上犯過兩次：在 `HEAD = X` 跑、把輸出命名成 `-at-X`，然後把腳本的改動與輸出**一起** commit 成 `Y`——檔名寫著 `X`，內容卻要 `Y` 的程式碼才產得出來，checkout 到 `X` 再跑並不會得到它。現在這兩個檔是在腳本定稿並 commit 於 `3886dc8` **之後**才重跑的，所以 checkout 到 `3886dc8` 再跑，只要 registry 沒有移動就會得到同樣的位元組。
+**那個 sha 要是真的，產生輸出的那個 commit 就不能同時改腳本。**這個分支上犯過兩次：在 `HEAD = X` 跑、把輸出命名成 `-at-X`，然後把腳本的改動與輸出**一起** commit 成 `Y`——檔名寫著 `X`，內容卻要 `Y` 的程式碼才產得出來，checkout 到 `X` 再跑並不會得到它。現在這兩個檔名指的是**一個腳本已經定稿的 commit**：`stages.js` 自 `55ad54e`、`project.js` 自 `acce9d5` 之後就沒再改過，而 `3886dc8` 上的那兩支與產生這兩份輸出的程式碼逐位元組相同。所以 checkout 到 `3886dc8` 再跑，只要 `.fankeel/sessions` 沒有移動就會得到同樣的位元組。
+
+**這裡能保證的是那個性質，不是「某個時刻真的跑過」這個事件。**兩者在 git 裡長得一樣：把輸出重跑一次而位元組沒變，留下的痕跡就只是一次改名，倉庫本身分辨不出來。所以這一段只宣稱前者。
 
 輸出檔名綁著產生它的 sha，所以每次重跑都會換名字；`project.js` 因此不寫死來源檔名，而是掃同目錄的 `stages-at-*.txt`，**恰好一個才繼續**，否則丟出錯誤列出找到了什麼。同理 `project.js` 只在 `lib/prices.js` 四個分量的價格比相同時成立，不相同就 throw 而不是改用另一條沒人走過的路徑。
 
