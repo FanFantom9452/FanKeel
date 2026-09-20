@@ -368,6 +368,14 @@ instead of a filter: two `when` entries, keyed `land.archivePlan` and
 whether the profile already answered, rather than a token filling a blank
 in one shared sentence.
 
+One key swaps a stage's whole block rather than a rule in it. `stage.agents`,
+`false` by default, hands `survey` to a stage agent: `rulesLines` in
+`lib/render.js` injects `controlFor`'s controller block from `lib/stages.js`
+in place of the stage's rules and shape, and the stage's own rules go to the
+agent through `renderBrief`. That brief is held under Claude Code's
+10,000-character cap on one `additionalContext`, not this page's 2400.
+[subagents.md](subagents.md) has the rest.
+
 A rule's token is one of two kinds, and a test depends on the difference — a
 **script token**'s value is a path, the same on every prompt: `{{SURVEY}}`
 among them, filled with `<plugin>/scripts/survey.js`, the root printed once

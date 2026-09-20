@@ -1,0 +1,12 @@
+claude-opus-5 (11 rows): $ per million — output 25.00, cache read 0.500, cache write 10.000 (input 8.31, not determined); largest error $0.0000
+    old7 $0.4522: output $0.071 (16%), cache read $0.098 (22%), cache write $0.283 (63%)
+    old8 $0.4898: output $0.073 (15%), cache read $0.099 (20%), cache write $0.318 (65%)
+    old9 $0.7282: output $0.092 (13%), cache read $0.193 (26%), cache write $0.443 (61%)
+claude-sonnet-5 (11 rows): $ per million — output 3.56, cache read 0.379, cache write 2.533 (input 263.56, not determined); largest error $0.0270
+    nor5 $0.3684: output $0.028 (8%), cache read $0.230 (62%), cache write $0.106 (29%)
+    nor6 $0.2385: output $0.012 (5%), cache read $0.137 (58%), cache write $0.084 (35%)
+    nor7 $0.3455: output $0.019 (5%), cache read $0.209 (61%), cache write $0.116 (33%)
+claude-opus-5[1m] (9 rows): $ per million — output 25.01, cache read 0.500, cache write 6.249 (input 6.39, not determined); largest error $0.0000
+    nor5 $0.8125: output $0.253 (31%), cache read $0.204 (25%), cache write $0.355 (44%)
+    nor6 $1.1352: output $0.341 (30%), cache read $0.410 (36%), cache write $0.384 (34%)
+    nor7 $0.7802: output $0.202 (26%), cache read $0.251 (32%), cache write $0.327 (42%)

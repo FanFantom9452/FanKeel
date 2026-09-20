@@ -163,3 +163,12 @@ test('station.hide refuses an illegal value and accepts true', () => {
     assert.equal(profile.write(file, 'station.hide', 'true').ok, true);
     assert.equal(JSON.parse(fs.readFileSync(file, 'utf8'))['station.hide'], true);
 });
+
+test('stage.agents is false unless a profile turns it on', () => {
+    const projectRoot = tmp('fankeel-profile-agents-');
+    const cfg = tmp('fankeel-profile-cfg-');
+    assert.equal(profile.read(projectRoot, cfg).values['stage.agents'], false);
+    fs.mkdirSync(path.join(projectRoot, '.fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(projectRoot, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'true' }));
+    assert.equal(profile.read(projectRoot, cfg).values['stage.agents'], true);
+});

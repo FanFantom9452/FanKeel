@@ -33,11 +33,23 @@ function seed(root, over) {
   }, over), null, 2) + '\n');
 }
 
+// The project file, not the machine one: `hooks/brief.js` (copying
+// hooks/resume.js) resolves the project root as `docs.projectRootsFor(root,
+// mine.project ? [mine.project] : [])[0] || root`, and none of these records
+// set `project`, so that call returns `root` itself. The machine file is the
+// other half of the read, and `run` points `CLAUDE_CONFIG_DIR` at an empty
+// tmp dir so the real one — shared, machine-wide — is never what a test reads.
+function seedProfile(root, values) {
+  const dir = path.join(root, '.fankeel');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'profile.json'), JSON.stringify(values, null, 2) + '\n');
+}
+
 function run(root, payload) {
   return execFileSync(process.execPath, [HOOK], {
     input: typeof payload === 'string' ? payload : JSON.stringify(payload),
     encoding: 'utf8',
-    env: Object.assign({}, process.env, { CLAUDE_PROJECT_DIR: root }),
+    env: Object.assign({}, process.env, { CLAUDE_PROJECT_DIR: root, CLAUDE_CONFIG_DIR: mkTmp('fankeel-cfg-') }),
   });
 }
 
@@ -207,4 +219,70 @@ test('the brief tells a subagent not to dispatch subagents of its own', () => {
   const root = tmp();
   seed(root);
   assert.match(contextOf(run(root, start(root))), /not dispatch subagents of your own/i);
+});
+
+test('a stage agent gets its stage\'s rules and shape, its skill, and where to write', () => {
+  const { rulesFor, templateFor } = require('../lib/stages.js');
+  const { SCRIPTS, PLUGIN_ROOT, RETURN_RULES } = require('../lib/render.js');
+  const { landClause } = require('../lib/profile.js');
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': true });
+  seed(root, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  const expected = rulesFor('survey', Object.assign({ next: 'design', profileLand: landClause({}) }, SCRIPTS));
+  for (const rule of expected) assert.ok(text.includes('  - ' + rule), 'missing rule: ' + rule.slice(0, 60));
+  for (const line of templateFor('survey').split('\n').filter(Boolean)) assert.ok(text.includes('  ' + line), 'missing shape line: ' + line);
+  assert.ok(text.includes(PLUGIN_ROOT + '/skills/fankeel-survey/SKILL.md'));
+  assert.ok(text.includes('/.fankeel/build/task-20260919T093012/survey.md'));
+  assert.ok(text.includes(SESSION));
+  assert.ok(!text.includes(RETURN_RULES[2]), 'the no-dispatch rule is left out');
+  // The controller prints the path and never the report, so a gate that says
+  // "the answer is above" points at a line holding nothing but a path.
+  assert.ok(text.includes('The user sees only the path to your report'), 'the gate must stand on its own');
+  // Run one command per call, the stage agent took 34 and 48 tool calls over a
+  // survey a main session did in 5 and 6, each call re-sending its context.
+  assert.ok(text.includes('Run independent commands in one Bash call'), 'the brief must ask for batched commands');
+  // Batched, it still opened each cited place with a Read of its own, 18 and 17 of them.
+  assert.ok(text.includes('Read the lines you cite with `sed -n'), 'the brief must ask for cited lines read in Bash');
+  // The shape's own word cap said nothing about the file, and the handoffs ran 6–9 KB.
+  assert.ok(text.includes("The output rule's word count is this file's"), 'the brief must bind the word cap to the handoff');
+  assert.ok(text.length < 10000, 'brain brief is ' + text.length + ' chars');
+});
+
+// `stage.agents` gates the brain branch itself, not just the mechanism around
+// it: `renderBrief` never read a profile before this, so `hooks/brief.js`
+// never passed one, and `fankeel-brain` got the controller's block regardless
+// of the switch — a handoff nothing reads. docs/subagents.md's own opening
+// sentence says otherwise.
+test('a stage agent with stage.agents off gets the ordinary brief', () => {
+  const root = tmp();
+  seed(root, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.ok(!text.includes('stage rules:'));
+  assert.ok(!text.includes('survey.md'));
+  assert.ok(text.length < 1400, 'brief is ' + text.length + ' chars');
+});
+
+test('a stage agent at a stage with no controller gets the ordinary brief', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': true });
+  seed(root, { stage: 'design', started: '2026-09-19T09:30:12.345Z' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.ok(!text.includes('stage rules:'));
+  assert.ok(!text.includes('design.md'));
+});
+
+test('every other agent type at survey gets no stage rules', () => {
+  const root = tmp();
+  seed(root, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-reader' })));
+  assert.ok(!text.includes('stage rules:'));
+  assert.ok(text.length < 1400, 'brief is ' + text.length + ' chars');
+});
+
+test('a stage agent on a record with no started gets the ordinary brief', () => {
+  const root = tmp();
+  seed(root, { stage: 'survey', started: undefined });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.ok(!text.includes('stage rules:'));
 });

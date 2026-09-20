@@ -20,6 +20,10 @@
       "role": "report"
     },
     {
+      "path": "docs/reports/evidence",
+      "role": "fixture"
+    },
+    {
       "path": "docs/archive",
       "role": "archive"
     },

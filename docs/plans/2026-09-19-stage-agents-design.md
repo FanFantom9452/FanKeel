@@ -60,7 +60,7 @@ last_verified: 2026-09-19
 
 ## fankeel 要改的地方
 
-- 站規則從 `SubagentStart` 送進站 agent。現在 `renderBrief`（`lib/render.js:346`）只帶
+- 站規則從 `SubagentStart` 送進站 agent。現在 `renderBrief`（`lib/render.js:358`）只帶
   task、stage、touched、回傳規則和 map 位置，不帶站規則，也不帶 output shape。不依賴
   `UserPromptSubmit` 在 subagent 裡觸發。
 - 主 session 改拿「主控規則」：派哪一站、傳哪個路徑、問哪道關卡。現在的站規則由
@@ -90,7 +90,11 @@ last_verified: 2026-09-19
 
 ## 未決
 
-- 新舊兩種模式要不要並存、用 profile 切換，好讓同一類任務能比時間、token、花費。
-- build 站內部怎麼派工：站 agent 在第 1 層，它派的 implementer 與 reviewer 在第 2 層，
-  預設上限是 3 層。
-- 使用者提到的「JEV」模型是哪一個，還沒確認。
+09-19 的下一個 session 答了三條，第一刀見
+[../archive/2026-09-19-survey-brain-design.md](../archive/2026-09-19-survey-brain-design.md)：
+
+- 新舊兩種模式並存，用 profile 的 `stage.agents` 切換。
+- build 站內部怎麼派工留到後面那一刀。站 agent 開不了 `Workflow`（每個 subagent 都拿不到），
+  所以 build 的 workflow 由 script 產生、主控用 `scriptPath` 開。
+- 「JEV」：原話是「jev 這個模型它本身也只是一個做判斷 tool calling…會不會有危險」，
+  講的是判斷工具呼叫風險的模型，不在這個架構裡。

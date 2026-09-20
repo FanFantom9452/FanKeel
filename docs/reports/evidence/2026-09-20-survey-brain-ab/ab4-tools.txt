@@ -1,0 +1,18 @@
+old7  main: tool calls 4 (Bash 4), first to last timestamp 46s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session b578f9e8-c5f4-4ddc-80d0-74bb23797900 --task "survey only: which code reads the registry's started field, a
+    $ cd F:/ymlab/fankeel && cat skills/fankeel-survey/SKILL.md; echo ===MAP; node scripts/map.js; echo ===SURVEY; node scripts/survey.js started; echo "exit $?"
+    $ cd F:/ymlab/fankeel && git status --porcelain | head -0; grep -nE "\bstarted\b" lib/*.js hooks/*.js scripts/*.js assets/station/index.html | grep -vE "^\S+:\s*(
+    $ cd F:/ymlab/fankeel && for s in "lib/detail.js 645 655" "lib/dirty.js 140 156" "lib/guard.js 80 100" "lib/handoff.js 8 18" "lib/station.js 360 368" "lib/station
+nor5  main: tool calls 9 (Bash 3, Agent 1, ToolSearch 4, Read 1), first to last timestamp 278s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session 003af3fa-30e5-46d4-b5ff-897f1b996815 --task "survey only: which code reads the registry's started field, a
+    $ echo "--- session file ---"; cat "F:/ymlab/fankeel/.fankeel/sessions/003af3fa-30e5-46d4-b5ff-897f1b996815.json" 2>/dev/null; echo "--- scratchpad dir ---"; ls -
+    $ echo "--- real plugin agents/fankeel-brain.md exists? ---"; ls -la "F:/ymlab/fankeel/agents/fankeel-brain.md" 2>/dev/null; echo "--- scratchpad plugin agents/fa
+    fankeel:fankeel-brain: tool calls 11 (Read 1, Bash 9, Write 1), first to last timestamp 167s
+old8  main: tool calls 4 (Bash 4), first to last timestamp 45s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session b7386530-9627-44bd-87be-a66dde41dca8 --task "survey only: which code reads the registry's started field, a
+    $ cd F:/ymlab/fankeel; cat skills/fankeel-survey/SKILL.md; echo ----; node scripts/map.js; echo "map exit=$?"; echo ----; cat .fankeel/profile.json 2>/dev/null ||
+    $ cd F:/ymlab/fankeel; node scripts/orient.js | head -30; echo ----; sed -n '/planned, not built/,/^## /p' .fankeel/map.md | head -30; echo ----; node scripts/sur
+    $ cd F:/ymlab/fankeel; git ls-files | grep -vE '^(docs|tests|evals)/' | xargs grep -nw "started" 2>/dev/null | grep -vE '^(lib|hooks|scripts)/.*\.js:' | head -40;
+nor6  main: tool calls 6 (Bash 1, Agent 1, ToolSearch 3, Read 1), first to last timestamp 289s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session 45fffbe1-21e6-4cc0-80d4-b324043011e7 --task "survey only: which code reads the registry's started field, a
+    fankeel:fankeel-brain: tool calls 18 (Read 1, Bash 16, Write 1), first to last timestamp 231s

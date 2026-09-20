@@ -22,6 +22,8 @@
 
 const registry = require('../lib/registry.js');
 const { renderBrief } = require('../lib/render.js');
+const docs = require('../lib/docs.js');
+const profileLib = require('../lib/profile.js');
 const { run, parse } = require('../lib/hook.js');
 
 function main(raw) {
@@ -33,10 +35,21 @@ function main(raw) {
     // used as a registry key: a subagent is not a session, it does not own a
     // task, and giving it an entry would put a second claimant on the parent's
     // own files.
-    const mine = registry.readSession(registry.rootFor(payload), payload.session_id);
+    const root = registry.rootFor(payload);
+    const mine = registry.readSession(root, payload.session_id);
     if (!mine || mine.active !== true) return;
 
-    const text = renderBrief({ mine: { sessionId: payload.session_id, data: mine }, agentType: payload.agent_type });
+    // The project's standing answers, read exactly the way hooks/resume.js
+    // does: a read failure costs one line, never the brief. Without this,
+    // `renderBrief` cannot tell whether `stage.agents` is on, and the brain
+    // branch it gates would have to guess.
+    let profile;
+    try {
+        const projectRoot = docs.projectRootsFor(root, mine.project ? [mine.project] : [])[0] || root;
+        profile = profileLib.read(projectRoot, mine.configDir || profileLib.configDirOf());
+    } catch (e) { /* housekeeping */ }
+
+    const text = renderBrief({ mine: { sessionId: payload.session_id, data: mine }, agentType: payload.agent_type, root, profile });
     if (!text) return;
 
     process.stdout.write(JSON.stringify({

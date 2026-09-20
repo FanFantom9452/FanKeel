@@ -1,0 +1,6 @@
+old11 main: messages 13, output tokens 9585, visible chars 7256 (CJK 502), signature chars 21244
+nor9 main: messages 6, output tokens 4309, visible chars 4130 (CJK 0), signature chars 11060
+
+fit over 19 messages: tokens per CJK char 1.552, per other char 0.384, per signature char 0.274, R² 0.979
+  old11 main: output 9585 ≈ thinking 5814 + visible 3374 (of which the handoff Write 0)
+  nor9 main: output 4309 ≈ thinking 3027 + visible 1587 (of which the handoff Write 0)

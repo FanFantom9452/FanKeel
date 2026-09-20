@@ -7,20 +7,24 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain'];
 
 // `fankeel-verifier` is the one named exception: it writes evidence rows to a
 // file for the Workflow join, and `Write` is what that takes. It is not less
 // constrained than the other three for holding it — `guard.js`'s PreToolUse
 // hook matches `Edit|Write|NotebookEdit` (`.claude-plugin/plugin.json`), so
-// `Write` is guarded; `Bash`, which all four agents hold, is matched by a
+// `Write` is guarded; `Bash`, which all five of them hold, is matched by a
 // second `guard.js` entry (matcher `Bash|PowerShell`) for three of them —
-// not `fankeel-verifier`, per `lib/guard.js`'s `readOnlyAgentType` list.
+// not `fankeel-verifier` or `fankeel-brain`, per `lib/guard.js`'s
+// `readOnlyAgentType` list.
 // `fankeel-fixer` is the second named exception: it makes the small edit
 // itself rather than returning it for the parent to apply, so it needs both
 // `Edit` and `Write` — never `Bash`, so it never runs the test the edit would
 // need.
-const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'] };
+// `fankeel-brain` is the third: it writes one file, its handoff — the report
+// and gate block a controller hands on by path (`lib/handoff.js`) — so it
+// takes `Write` and nothing that edits in place.
+const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'], 'fankeel-brain': ['Write'] };
 
 function front(file) {
     const m = FRONT.exec(fs.readFileSync(file, 'utf8'));
@@ -76,4 +80,23 @@ test('the reader is told to send reads that do not depend on each other in one r
     const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reader.md'), 'utf8');
     const searching = text.split('\n## Searching\n')[1].split('\n## ')[0];
     assert.match(searching, /same response/);
+});
+
+test('the stage agent writes its handoff and dispatches readers, on opus', () => {
+    const f = front(path.join(ROOT, 'agents', 'fankeel-brain.md'));
+    const tools = f.tools.slice(1, -1).split(',').map((s) => s.trim());
+    assert.ok(tools.includes('Agent'), 'it dispatches its readers');
+    assert.ok(tools.includes('Write'), 'it writes its handoff');
+    assert.ok(!tools.includes('Edit'), 'it changes no source');
+    assert.equal(f.model, 'opus');
+    // At the session's `high` it thought 2.5–4× what the main session did over the same survey.
+    assert.equal(f.effort, 'medium');
+});
+
+// Its brief says to read cited lines with `sed -n` in one Bash call; a Tools
+// section keeping Bash to git and the plugin's scripts would forbid exactly that.
+test('the stage agent may read with sed in Bash', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8');
+    const tools = text.split('\n## Tools\n')[1].split('\n## ')[0];
+    assert.match(tools, /`sed -n`/);
 });

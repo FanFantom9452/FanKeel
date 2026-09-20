@@ -602,7 +602,11 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     //
     // Archived documents are not expected in it. An index of current material
     // that also lists everything retired is an index that stopped distinguishing
-    // the two, which was the point of having an archive.
+    // the two, which was the point of having an archive. A fixture is left out
+    // for the same reason one step further along: it is a test's own input, the
+    // raw evidence a report cites rather than a page about the system, and an
+    // index carrying every handoff dump beside the documents has stopped
+    // telling documents and data apart.
     // Only when the documentation directory exists. A project with no `docs/` at
     // all has not forgotten to write an index; it has not started keeping
     // documents there, and saying otherwise is a finding about nothing.
@@ -625,7 +629,8 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
             for (const rel of markdown) {
                 if (rel === indexRel) continue;
                 if (rel.split('/')[0] !== docRoot) continue;
-                if (docs.roleOf(tree, rel) === 'archive') continue;
+                const role = docs.roleOf(tree, rel);
+                if (role === 'archive' || role === 'fixture') continue;
                 if (!linked.has(rel)) index.missing.push(rel);
             }
         }
@@ -637,12 +642,18 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     // and the worse wording of it: an index is a markdown file like any other, so
     // anything it fails to list is unreachable by definition. Two names for one
     // problem is how a report starts looking longer than it is.
+    //
+    // Archives and fixtures are left out for the reasons the index check above
+    // gives. This branch runs only where no index has been written, so on this
+    // repository it is the empty list either way — but the check is not scoped
+    // to this repository, and a project with fixtures and no index yet would
+    // otherwise be told its test inputs are pages the tree has lost.
     const pointedTo = new Set();
     for (const rel of markdown) for (const target of points.get(rel).markdown) pointedTo.add(target);
     const orphans = index.exists ? [] : markdown.filter((rel) => rel.split('/')[0] === docRoot
         && rel !== indexRel
         && !pointedTo.has(rel)
-        && docs.roleOf(tree, rel) !== 'archive');
+        && !['archive', 'fixture'].includes(docs.roleOf(tree, rel)));
 
     // 6. Code nothing describes. Top level only: a directory with no reference
     // document naming anything inside it is a part of the system documentation

@@ -34,6 +34,8 @@ const { splitAroundVerb } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 const profile = require('../lib/profile.js');
 const docs = require('../lib/docs.js');
+const { handoffPath, readGate } = require('../lib/handoff.js');
+const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT } = require('../lib/render.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
 
@@ -205,6 +207,7 @@ function parseArgs(head, whole) {
     if (whole.includes('--default')) opts.default = true;
     if (whole.includes('--push')) opts.push = true;
     if (whole.includes('--no-push')) opts.push = false;
+    if (whole.includes('--from-gate')) opts.fromGate = true;
     return opts;
 }
 
@@ -611,8 +614,28 @@ function cmdStart(root, opts) {
     }
 
     lines.push('');
-    lines.push(FIRST_STEP[data.stage] || 'Begin at ' + data.stage + '. Do not stop to ask whether to start.');
+    const controller = controllerLines(root, id, data, prof.values);
+    if (controller) {
+        for (const line of controller) lines.push(line);
+    } else {
+        lines.push(FIRST_STEP[data.stage] || 'Begin at ' + data.stage + '. Do not stop to ask whether to start.');
+    }
     return lines.join('\n');
+}
+
+// The turn `start` or `task` prints in carries no injection at all — that
+// rides `hooks/inject.js` on the *next* prompt — so FIRST_STEP above is the
+// controller's only instruction until then. Where `stage.agents` is on for
+// the stage just entered, this replaces it with the controller's own rules
+// instead of the ordinary next-step line.
+// docs/archive/2026-09-19-survey-brain-design.md's nested bullet under §2.
+function controllerLines(root, id, data, values) {
+    const control = controlRulesFor(data, { values }, { root, sessionId: id });
+    if (!control) return null;
+    const lines = ['Now ' + data.stage + ', through its stage agent. You are its controller:'];
+    if (control.rules.some((rule) => rule.includes(PLUGIN_MARK))) lines.push(PLUGIN_MARK + ' = ' + PLUGIN_ROOT);
+    for (const rule of control.rules) lines.push('  - ' + rule);
+    return lines;
 }
 
 function cmdStage(root, opts) {
@@ -739,9 +762,13 @@ function cmdTask(root, opts) {
     // Holding nothing, so overlapping nothing.
     showBadge(opts, id, badge.badgeWord(data.stage, false), data, root);
 
+    const prof = profile.read(projectRootFor(root, opts), claudeDir(opts));
+    const controller = controllerLines(root, id, data, prof.values);
+    const tail = controller ? controller.join(NL) : (FIRST_STEP[data.stage] || 'Begin at ' + data.stage + '.');
+
     return 'fankeel — task: ' + text
         + NL + '           at ' + data.stage + ', holding nothing.'
-        + NL + (FIRST_STEP[data.stage] || 'Begin at ' + data.stage + '.');
+        + NL + tail;
 }
 
 function cmdNote(root, opts) {
@@ -755,7 +782,16 @@ function cmdNote(root, opts) {
 
 function cmdNext(root, opts) {
     const id = requireSession(opts);
-    const text = opts.positional.join(' ');
+    let text = opts.positional.join(' ');
+    // `--from-gate`: the line a stage agent wrote for a pause, read from its
+    // handoff rather than retyped by the controller.
+    if (opts.fromGate === true) {
+        const data = registry.readSession(root, id);
+        const file = data ? handoffPath(root, data, data.stage) : null;
+        const gate = file ? readGate(file) : null;
+        if (!gate || typeof gate.next !== 'string' || !gate.next.trim()) fail('No gate block with a next line in ' + (file || 'this task\'s handoff'));
+        text = gate.next;
+    }
     if (!registry.setNext(root, id, text)) fail('No entry for this session under ' + root);
     return text.trim() ? 'fankeel — next: ' + registry.nextOf(registry.readSession(root, id)) : 'fankeel — next cleared.';
 }

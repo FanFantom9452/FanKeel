@@ -455,6 +455,26 @@ test('the archive is not expected in an index of current material', () => {
   assert.deepEqual(sweep(root).index.missing, []);
 });
 
+// A fixture is a test's own input rather than a page about the system: the raw
+// evidence a report cites, most of a directory of which is not markdown at all.
+// An index that lists every handoff dump beside the documents has stopped
+// telling the two apart, which is the argument the archive above already makes.
+test('a fixture is not expected in an index of current material', () => {
+  const root = tree({
+    '.fankeel/docs.json': { age: 1, body: JSON.stringify({
+      index: 'docs/README.md',
+      buckets: [
+        { path: 'docs', role: 'reference', depth: 1 },
+        { path: 'docs/reports/evidence', role: 'fixture' },
+      ],
+    }) },
+    'docs/README.md': { age: 1, body: '- [Architecture](01-architecture.md)\n' },
+    'docs/01-architecture.md': { age: 1, body: '# a\n' },
+    'docs/reports/evidence/2026-01-01-run/handoff.md': { age: 1, body: '# raw\n' },
+  });
+  assert.deepEqual(sweep(root).index.missing, []);
+});
+
 test('a declared index that was never written is a finding', () => {
   const root = withTree(tree({ 'docs/01-x.md': '# a\n' }), 'flat');
   const r = sweep(root);
@@ -478,6 +498,48 @@ test('with no index, a document nothing links to is named', () => {
     'docs/02-b.md': '[a](01-a.md)\n',
   }), 'flat');
   assert.deepEqual(sweep(root).orphans, ['docs/02-b.md']);
+});
+
+// The same exemption as the index check above, on the branch that runs when no
+// index has been written. A fixture linked from nowhere is a test's own input
+// sitting where it belongs, not a page the tree has lost track of, and a
+// project with fixtures and no index yet would otherwise be told it has.
+test('with no index written, a fixture is not an orphan either', () => {
+  const root = tree({
+    '.fankeel/docs.json': { age: 1, body: JSON.stringify({
+      buckets: [
+        { path: 'docs', role: 'reference', depth: 1 },
+        { path: 'docs/reports/evidence', role: 'fixture' },
+      ],
+    }) },
+    'docs/01-a.md': { age: 1, body: '# a\n' },
+    'docs/02-b.md': { age: 1, body: '[a](01-a.md)\n' },
+    'docs/reports/evidence/2026-01-01-run/handoff.md': { age: 1, body: '# raw\n' },
+  });
+  const r = sweep(root);
+  assert.equal(r.index.exists, false, 'the branch under test only runs with no index written');
+  assert.deepEqual(r.orphans, ['docs/02-b.md']);
+});
+
+// The other half of the same predicate, and it had no test before the fixture
+// clause arrived beside it: every archive fixture in this file sits under a
+// preset that writes `docs/README.md`, so `index.exists` is true and this
+// branch never runs for them.
+test('with no index written, an archive is not an orphan either', () => {
+  const root = tree({
+    '.fankeel/docs.json': { age: 1, body: JSON.stringify({
+      buckets: [
+        { path: 'docs', role: 'reference', depth: 1 },
+        { path: 'docs/archive', role: 'archive' },
+      ],
+    }) },
+    'docs/01-a.md': { age: 1, body: '# a\n' },
+    'docs/02-b.md': { age: 1, body: '[a](01-a.md)\n' },
+    'docs/archive/2026-01-01-old.md': { age: 1, body: '# old\n' },
+  });
+  const r = sweep(root);
+  assert.equal(r.index.exists, false, 'the branch under test only runs with no index written');
+  assert.deepEqual(r.orphans, ['docs/02-b.md']);
 });
 
 // Where an index exists it is a markdown file like any other, so a document it

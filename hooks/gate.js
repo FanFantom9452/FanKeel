@@ -11,12 +11,18 @@
 // responding — this pipeline's gate is a tool call, so Stop never fires at one.
 //
 // Same two rules as guard.js: exit 0 on every path, and cost nothing for a
-// session that is not in the mode. It goes further on one — it never writes a
-// decision at all. A PreToolUse hook that answers about a tool it has no opinion
-// on is overriding the user's own permission rules, and this one has no opinion
-// about any tool. It only notes the time.
+// session that is not in the mode. It never writes a permission decision:
+// `updatedInput` alone is not one — the probe behind this found that a
+// PreToolUse hook returning only `updatedInput` still lets the user pick.
+// With `stage.agents` on at survey, that is the field it uses to replace the
+// placeholder question with the gate block a stage agent left in its handoff;
+// every other session gets none of this, and only the time is noted.
 
 const registry = require('../lib/registry.js');
+const docs = require('../lib/docs.js');
+const profileLib = require('../lib/profile.js');
+const { controlling } = require('../lib/stages.js');
+const { handoffPath, readGate } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 
 function main(raw) {
@@ -30,8 +36,22 @@ function main(raw) {
     try {
         registry.gateOpen(root, payload.session_id);
     } catch (e) { /* housekeeping */ }
+
+    // `stage.agents`: the question is the stage agent's, word for word. What the
+    // controller sent is a placeholder and does not count, so nothing it could
+    // have mistyped reaches the user. docs/archive/2026-09-19-survey-brain-design.md §6.
+    let gate = null;
+    try {
+        const projectRoot = docs.projectRootsFor(root, mine.project ? [mine.project] : [])[0] || root;
+        const values = profileLib.read(projectRoot, mine.configDir || profileLib.configDirOf()).values;
+        if (controlling(mine.stage, values)) gate = readGate(handoffPath(root, mine, mine.stage));
+    } catch (e) { /* housekeeping */ }
+    if (!gate) return;
+
+    const updatedInput = Object.assign({}, payload.tool_input || {}, { questions: gate.questions });
+    process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', updatedInput } }));
 }
 
-// Deliberately silent, and deliberately answerless. Whatever went wrong, the
-// question still has to reach the user.
+// Deliberately silent. Whatever went wrong, the question still has to reach
+// the user.
 run(main);

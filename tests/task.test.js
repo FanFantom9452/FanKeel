@@ -14,6 +14,7 @@ const { execFileSync, spawnSync, spawn } = require('node:child_process');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'task.js');
 const registry = require('../lib/registry.js');
+const { PLUGIN_ROOT } = require('../lib/render.js');
 const tmp = require('./tmp.js');
 
 const A = 'aaaaaaaa-1111-2222-3333-444444444444';
@@ -935,6 +936,55 @@ test('task refuses when this session owns nothing, and names what begins one', (
   assert.equal(entry(dir, A), null);
 });
 
+// The turn `start` prints in has no injection yet — `hooks/inject.js` runs on
+// the next prompt, not this one — so where `stage.agents` is on for the stage
+// just entered, the controller's rules have to be the FIRST_STEP line itself.
+test('start at survey with stage.agents true prints the controller\'s rules, not the scanner step', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  run(dir, ['profile', 'set', 'stage.agents', 'true', '--default'], { CLAUDE_CONFIG_DIR: cfg });
+
+  const { out, code } = run(dir, ['start', '--session', A, '--task', 'x', '--route', 'survey,design'], { CLAUDE_CONFIG_DIR: cfg });
+  assert.equal(code, 0, out);
+  assert.match(out, /fankeel:fankeel-brain/);
+  assert.match(out, new RegExp('stage design --session ' + A));
+  assert.doesNotMatch(out, /run the scanner/);
+  // The rules name `<plugin>`, and this output is not an injection: it says
+  // what that resolves to itself.
+  assert.ok(out.includes('<plugin> = ' + PLUGIN_ROOT), out);
+
+  // A fresh registry, its own machine profile: a route ending at survey gets
+  // the controller's block too, with option one standing the task down.
+  const dir2 = root();
+  const cfg2 = path.join(dir2, 'cfg');
+  run(dir2, ['profile', 'set', 'stage.agents', 'true', '--default'], { CLAUDE_CONFIG_DIR: cfg2 });
+  const second = run(dir2, ['start', '--session', A, '--task', 'y', '--route', 'survey'], { CLAUDE_CONFIG_DIR: cfg2 });
+  assert.equal(second.code, 0, second.out);
+  assert.match(second.out, new RegExp(' down --session ' + A));
+});
+
+test('start at survey with stage.agents false keeps the scanner step', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  run(dir, ['profile', 'set', 'stage.agents', 'false', '--default'], { CLAUDE_CONFIG_DIR: cfg });
+
+  const { out, code } = run(dir, ['start', '--session', A, '--task', 'x', '--route', 'survey,design'], { CLAUDE_CONFIG_DIR: cfg });
+  assert.equal(code, 0, out);
+  assert.match(out, /run the scanner/);
+  assert.doesNotMatch(out, /fankeel:fankeel-brain/);
+});
+
+test('task at survey with stage.agents true prints the controller\'s rules', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  run(dir, ['profile', 'set', 'stage.agents', 'true', '--default'], { CLAUDE_CONFIG_DIR: cfg });
+  run(dir, ['start', '--session', A, '--task', 'x', '--route', 'survey,design'], { CLAUDE_CONFIG_DIR: cfg });
+
+  const { out, code } = run(dir, ['task', 'another question', '--session', A], { CLAUDE_CONFIG_DIR: cfg });
+  assert.equal(code, 0, out);
+  assert.match(out, /fankeel:fankeel-brain/);
+});
+
 // Two readers of liveness sit in this file — the collision scan and the listing
 // `show` prints — and only the first was pinned. Deleting the filter from the
 // listing left 599 of 599 tests passing; deleting the same filter from the
@@ -1479,4 +1529,28 @@ test('land refuses a verb that is not merge, pr or keep', () => {
   started(dir, A, 'ship it');
   const out = run(dir, ['land', 'discard', '--session', A]);
   assert.equal(out.code, 1);
+});
+
+test('next --from-gate takes the pause line from the stage agent\'s gate', () => {
+  const { handoffPath } = require('../lib/handoff.js');
+  const dir = root();
+  assert.equal(run(dir, ['start', '--session', A, '--task', 'survey brain', '--route', 'survey,design']).code, 0);
+  const file = handoffPath(dir, registry.readSession(dir, A), 'survey');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const TICKS = '`'.repeat(3);
+  const gate = { questions: [{ question: 'q', header: 'h', multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }] }], next: 'survey 待核可：讀 survey.md' };
+  fs.writeFileSync(file, 'report\n\n' + TICKS + 'json gate\n' + JSON.stringify(gate) + '\n' + TICKS + '\n');
+  const out = run(dir, ['next', '--from-gate', '--session', A]);
+  assert.equal(out.code, 0, out.out);
+  assert.equal(registry.nextOf(registry.readSession(dir, A)), 'survey 待核可：讀 survey.md');
+});
+
+test('next --from-gate with no gate block refuses and leaves next alone', () => {
+  const dir = root();
+  run(dir, ['start', '--session', A, '--task', 'survey brain', '--route', 'survey,design']);
+  run(dir, ['next', 'keep this', '--session', A]);
+  const out = run(dir, ['next', '--from-gate', '--session', A]);
+  assert.notEqual(out.code, 0);
+  assert.match(out.out, /No gate block with a next line in/);
+  assert.equal(registry.nextOf(registry.readSession(dir, A)), 'keep this');
 });

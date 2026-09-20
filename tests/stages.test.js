@@ -847,3 +847,17 @@ test('every rule reaches the injected block, and removing one drops only it', ()
   // returning nothing would look identical to every rule being reachable.
   assert.ok(checked > 50, 'the reachability loop only checked ' + checked + ' rules');
 });
+
+test('controlFor fills every token it is given, and only survey has one', () => {
+  const { controlFor, controlling } = require('../lib/stages.js');
+  const c = controlFor('survey', { advance: 'stage design', task: '<plugin>/scripts/task.js', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
+  assert.ok(c.rules.length > 0);
+  assert.ok(!c.rules.join(' ').includes('{{'), c.rules.join('\n'));
+  assert.ok(c.rules.join(' ').includes('fankeel:fankeel-brain'));
+  assert.equal(c.template, '<the path the agent returned>\nthen AskUserQuestion');
+  assert.equal(controlFor('design', {}), null);
+  assert.equal(controlling('survey', { 'stage.agents': true }), true);
+  assert.equal(controlling('survey', { 'stage.agents': false }), false);
+  assert.equal(controlling('survey', {}), false);
+  assert.equal(controlling('design', { 'stage.agents': true }), false);
+});

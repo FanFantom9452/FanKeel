@@ -139,6 +139,9 @@ running a session, the station's home page turns each project's own
 | Why `/fankeel` starts a detached `serve --open` inside the hook's budget instead of leaving the station a file nobody reopens, why the served page re-reads its list and the open session's detail every 3 s rather than only polling health, why an agent's `running`/`done`/`lost` state and the tool it is on come from its own transcript with no new hook, and why the phone-width layout was cut | `docs/archive/2026-09-19-station-live-design.md` — *built, 繁體中文* |
 | The seven tasks that build it — `lib/serve.js`'s probe and detached start, the `README.md` tree `node scripts/map.js` reads, the `/fankeel` hook that detects and opens the station, agent state read off `stepsOf`/`statesOf`, a detail memo, the served page's 3 s re-read loop, then the dispatch panel showing each agent's state and the tool it is on — with twelve fix rows | `docs/archive/2026-09-19-station-live.md` — *built, 繁體中文* |
 | A prompt for a later session: each stage starts from a clean context — a Sonnet controller that only dispatches, hands off through a file's path rather than its content, and leaves every gate in the main session — read from platform facts checked 2026-09-19, not yet run | [plans/2026-09-19-stage-agents-design.md](plans/2026-09-19-stage-agents-design.md) — *design-intent, 繁體中文* |
+| The first cut of that: `survey` handed to an Opus stage agent behind `stage.agents`, its brief carrying the stage's rules, its report and gate a file under `.fankeel/build/`, the gate filled from that file by `hooks/gate.js` | `docs/archive/2026-09-19-survey-brain-design.md` — *built, 繁體中文* |
+| The seven tasks that build it: the `updatedInput` probe first, a handoff module, the controller's block and the stage agent's brief, the gate hook, the agent file, the documents, and a measurement against the old mode last | `docs/archive/2026-09-19-survey-brain.md` — *built, 繁體中文* |
+| What that settled — the handoff carries a path rather than content, the gate stays in the main session through `updatedInput`, `fankeel-brain` is the third agent holding `Write` and why that does not make it a second claimant — and what seven rounds of A/B measured: cost level within a pair, time still 1.4–1.6×, and why a second context is what stops it going lower | [decisions/2026-09-20-survey-brain.md](decisions/2026-09-20-survey-brain.md) — *繁體中文* |
 | Why the scratch area could not be declared however legal the path looks, how one root cause survived nine rounds of review and then reappeared inside its own fix, and the six findings filed rather than built | [decisions/2026-09-11-todo-three.md](decisions/2026-09-11-todo-three.md) — *繁體中文* |
 | Why the five 09-11 directions were filed as TODO entries rather than built, the four places the approved draft departed from judgement 8, and the empty answer the first record filed | [decisions/2026-09-11-todo-split.md](decisions/2026-09-11-todo-split.md) — *繁體中文* |
 | Why the scratch area cannot be a `docs.json` bucket however legal the path looks, who owns each of three twice-described mechanisms, and why `source_of_truth` gets no single-owner rule | `docs/archive/2026-09-11-todo-three-design.md` — *built, 繁體中文* |
@@ -161,6 +164,7 @@ running a session, the station's home page turns each project's own
 | Why neither candidate signal for a landed-but-unflipped `design-intent` plan holds up — named-files-exist and named-files-changed-after-filing both score identical to a landed control — so neither `docs-audit`'s landed check nor `lib/map.js`'s planned-not-built list gains one | [reports/2026-09-12-intent-plan-signal.md](reports/2026-09-12-intent-plan-signal.md) — *a dated snapshot, 繁體中文* |
 | 五條 `## Waiting` 各跑一次探測的結果：`permissions.deny` 在 `auto` 與 `bypassPermissions` 下都擋得住，`--allowedTools` 不限制 `Agent` 而 `--disallowedTools` 兩種拼法都認，`SKILL.md` 的相對連結兩個模型四次都沒跟，兩支 eval 各連跑五次 | [reports/2026-09-15-waiting-probes.md](reports/2026-09-15-waiting-probes.md) — *a dated snapshot, 繁體中文* |
 | 使用者 09-18 下午十七項意見的逐條現況：十三項早上處理過、三項是新的，以及為什麼不建議讓 Sonnet 當主控 | [reports/2026-09-18-seventeen-items.md](reports/2026-09-18-seventeen-items.md) — *a dated snapshot, 繁體中文* |
+| survey 交給 Opus 大腦的實跑與量測：關卡題目逐字相同，但新模式慢 9–10 倍、貴 4.0–5.6 倍，主控的 context 也沒變小——差在大腦派了 reader | [reports/2026-09-20-survey-brain-ab.md](reports/2026-09-20-survey-brain-ab.md) — *a dated snapshot, 繁體中文* |
 | What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 | Why three lib modules with one caller each were not folded into their callers | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *one caller is not evidence on its own* |
@@ -213,11 +217,12 @@ is explained, and it is the one thing to know before adding a page here.
 | `docs/decisions/` | decision | it records what was decided then, so yes |
 | `docs/plans/` | plan | until the work lands, then it is archived |
 | `docs/reports/` | report | it is a dated snapshot |
+| `docs/reports/evidence/` | fixture | n/a — the raw output a report cites rather than a page about the system, so it is not expected in this index either |
 | `docs/archive/` | archive | that is the point of it |
 | `docs/judgements/` | report | it is what `fankeel-judge` answered on that day, filed verbatim by `scripts/judge.js` |
 | `skills/` | reference | no |
 | `evals/` | fixture | n/a — a test's own input; a prompt names paths only its scaffold has, so it is checked for links and line numbers only, never for symbols |
 | `.claude/agents/` | reference | no |
-| `agents/` | reference | no — the five agents the plugin ships, read by Claude Code at process start |
+| `agents/` | reference | no — the six agents the plugin ships, read by Claude Code at process start |
 
 [Back to the front page](../README.md)

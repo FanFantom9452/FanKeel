@@ -1,0 +1,18 @@
+old3  main: tool calls 5 (Bash 3, Skill 1, Grep 1), first to last timestamp 48s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session 25997ee1-38dc-4672-98b5-e70cb1bed8e6 --task "survey only: which code reads the registry's started field, a
+    $ cd F:/ymlab/fankeel; node scripts/orient.js; echo ===; node scripts/map.js; echo ===; node scripts/survey.js --tree; echo ===; node scripts/survey.js started st
+    $ cd F:/ymlab/fankeel; grep -nE '\{[^}]*\bstarted\b[^}]*\}\s*=' lib hooks scripts assets -r --include=*.js | grep -v '^tests'; echo "=== guard"; sed -n 80,100p li
+nor1  main: tool calls 6 (Bash 2, Agent 1, ToolSearch 2, Read 1), first to last timestamp 345s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session 38483a85-6b09-4c72-be40-52eec246146f --task "survey only: which code reads the registry's started field, a
+    $ ls -la "C:/Users/Owner/AppData/Local/Temp/claude/F--ymlab-fankeel/9e36bfd6-a380-425d-82ca-5d9c22f28a4f/scratchpad/" 2>&1
+    fankeel:fankeel-brain: tool calls 34 (Read 2, Bash 31, Write 1), first to last timestamp 283s
+old4  main: tool calls 6 (Bash 5, Skill 1), first to last timestamp 59s
+    $ node F:/ymlab/fankeel/scripts/task.js start --session 624c57de-ccf9-45a4-a051-af6ea4b5f042 --task "survey only: which code reads the registry's started field, a
+    $ cd F:/ymlab/fankeel && node scripts/orient.js; echo ---; node scripts/map.js; echo ---; node scripts/survey.js --tree; echo ---; node scripts/survey.js started
+    $ cd F:/ymlab/fankeel && cat .fankeel/profile.json; echo ---; sed -n '/planned, not built/,/^## /p' .fankeel/map.md | head -30; echo ---; git grep -nE "\.started\
+    $ cd F:/ymlab/fankeel && git grep -nE "\{[^}]*\bstarted\b[^}]*\}\s*=" -- lib hooks scripts assets; for f in lib/detail.js:640:656 lib/dirty.js:140:160 lib/guard.j
+    $ cd F:/ymlab/fankeel && git grep -nE "claimWrites\(|claimedFirst\(|dirFor\(|handoffPath\(|answerPath\(|keptDays\(" -- lib hooks scripts | grep -v "^lib/.*functio
+nor2  main: tool calls 6 (Bash 2, Agent 1, ToolSearch 3), first to last timestamp 327s
+    $ cd F:/ymlab/fankeel && node scripts/task.js start --session f7fe80c2-9b13-4f07-bfd9-ada3cdd7c85e --task "survey only: which code reads the registry's started fi
+    $ cat "F:/ymlab/fankeel/.fankeel/build/task-20260919T195332/survey.md"
+    fankeel:fankeel-brain: tool calls 48 (Read 17, Bash 20, Grep 10, Write 1; Read with a line range 15), first to last timestamp 259s

@@ -1,0 +1,14 @@
+old12 main: messages 11, output tokens 7383, visible chars 5607 (CJK 434), signature chars 16632
+nor10 main: messages 10, output tokens 2507, visible chars 2332 (CJK 293), signature chars 5944
+nor10 brain: messages 12, output tokens 7597, visible chars 10830 (CJK 344), signature chars 9480, the Write message: output tokens 3962, Write input chars 7229
+old13 main: messages 9, output tokens 6263, visible chars 4665 (CJK 338), signature chars 14012
+nor11 main: messages 11, output tokens 3964, visible chars 3483 (CJK 369), signature chars 10064
+nor11 brain: messages 9, output tokens 6026, visible chars 7569 (CJK 824), signature chars 7584, the Write message: output tokens 3261, Write input chars 4999
+
+fit over 62 messages: tokens per CJK char 1.154, per other char 0.433, per signature char 0.261, R² 0.993
+  old12 main: output 7383 ≈ thinking 4348 + visible 2740 (of which the handoff Write 0)
+  nor10 main: output 2507 ≈ thinking 1554 + visible 1221 (of which the handoff Write 0)
+  nor10 brain: output 7597 ≈ thinking 2478 + visible 4935 (of which the handoff Write 3377)
+  old13 main: output 6263 ≈ thinking 3663 + visible 2263 (of which the handoff Write 0)
+  nor11 main: output 3964 ≈ thinking 2631 + visible 1773 (of which the handoff Write 0)
+  nor11 brain: output 6026 ≈ thinking 1983 + visible 3870 (of which the handoff Write 2758)

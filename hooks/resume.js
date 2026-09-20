@@ -21,6 +21,8 @@ const registry = require('../lib/registry.js');
 const { renderResume } = require('../lib/render.js');
 const docs = require('../lib/docs.js');
 const profileLib = require('../lib/profile.js');
+const { controlling } = require('../lib/stages.js');
+const { answerPath, writeAnswer } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 
 function main(raw) {
@@ -45,7 +47,7 @@ function main(raw) {
     // No badge written and no other session read. Neither can have changed since
     // the question went out a few seconds ago, and this hook runs several times a
     // stage — what it does has to stay proportionate to that.
-    const context = renderResume({ mine: { sessionId, data: mine }, profile, transcript: payload.transcript_path });
+    const context = renderResume({ mine: { sessionId, data: mine }, profile, transcript: payload.transcript_path, root });
     if (!context) return;
 
     process.stdout.write(JSON.stringify({
@@ -55,15 +57,25 @@ function main(raw) {
         },
     }));
 
-    // The one side effect, and it is the same liveness signal a prompt carries.
-    // Without it, a session driven entirely by its own questions looks idle to
-    // every other session for exactly as long as it behaves.
+    // The liveness signal, and it is the same one a prompt carries. Without it,
+    // a session driven entirely by its own questions looks idle to every other
+    // session for exactly as long as it behaves.
     try {
         // The other end of hooks/gate.js, and it runs first: the clock `touch`
         // is about to move has to be counted against the stage before the wait
         // is taken out of it.
         registry.gateClose(root, sessionId);
         registry.touch(root, sessionId);
+    } catch (e) { /* housekeeping */ }
+
+    // `stage.agents`: the answer left where the stage agent is told to look, so
+    // the controller relays a path and never retypes what the user said.
+    try {
+        if (controlling(mine.stage, profile && profile.values)) {
+            const file = answerPath(root, mine, mine.stage);
+            const response = payload.tool_response;
+            if (file && response != null) writeAnswer(file, typeof response === 'string' ? response : JSON.stringify(response, null, 2));
+        }
     } catch (e) { /* housekeeping */ }
 }
 
