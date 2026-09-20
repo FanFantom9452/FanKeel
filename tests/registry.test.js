@@ -846,12 +846,24 @@ test('touch appends a two-element move when no finite reading is available', () 
 // still the hook's: a CLI has no transcript to take one from, so `touch()`
 // fills it into the move the command already appended rather than appending a
 // second one.
-test('enter stamps the move at the command, and a later touch fills in the reading', () => {
+// What `scripts/task.js`'s `stage` and `start` actually do: `stampEntry` from
+// inside their own open `update` callback, so the change and its stamp are one
+// write. Spelled out here rather than exported as a `registry.enter`, because
+// such a wrapper would have had no production caller — both call sites are
+// already inside an `update`, and a second one would re-enter the same session's
+// lock and spin until the outer one looked stale.
+const enter = (root, id, stage) => registry.update(root, id, (d) => {
+  d.updated = new Date().toISOString();
+  registry.stampEntry(d, stage, Date.parse(d.updated));
+  return true;
+});
+
+test('a command-time stamp opens the move, and a later touch fills in the reading', () => {
   const root = tmpRoot();
   registry.writeSession(root, SID, task({ stage: 'build' }));
   registry.touch(root, SID, 1000);
 
-  registry.enter(root, SID, 'verify');
+  enter(root, SID, 'verify');
   const entered = registry.readSession(root, SID);
   const at = entered.clock.verify[0];
   assert.equal(entered.stage, 'verify');
@@ -870,11 +882,11 @@ test('enter stamps the move at the command, and a later touch fills in the readi
 // Re-entering a stage keeps that stage's first sighting, the way `touch()`
 // already does: `clock` holds one pair per stage, so a verify that went back to
 // build and returned is one long verify with two moves beside it.
-test('enter on a second visit keeps the first clock sighting and appends a move', () => {
+test('a second visit keeps the first clock sighting and appends a move', () => {
   const root = tmpRoot();
   registry.writeSession(root, SID, task({ stage: 'build', clock: { build: [1000, 2000] } }));
-  registry.enter(root, SID, 'verify');
-  registry.enter(root, SID, 'build');
+  enter(root, SID, 'verify');
+  enter(root, SID, 'build');
   const after = registry.readSession(root, SID);
   assert.equal(after.clock.build[0], 1000);
   assert.deepEqual(after.moves.map((m) => m[0]), ['verify', 'build']);

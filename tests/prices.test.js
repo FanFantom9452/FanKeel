@@ -13,12 +13,13 @@ test('the table carries a date and five rates per model', () => {
     }
 });
 
-// Two ids this machine's transcripts carry that the table could not price:
-// `claude-fable-5`, on 8,649,431 tokens, and `claude-opus-4-8`, on 33,335,478 —
-// both found on 2026-09-21 while bucketing all 427 transcripts into a rate-limit
-// window, and both only in requests older than that window, so no figure already
-// published was short. The rows are what the table published says; this pins
-// them so a hand-edit cannot quietly move one.
+// Two ids this machine's transcripts carry that the table could not price,
+// found on 2026-09-21 while bucketing every transcript into a rate-limit window.
+// Both appear only in requests older than the window that was open then, so no
+// figure already published was short; what each carried is in block 4 of
+// `docs/reports/evidence/2026-09-21-quota-calibration/windows-at-<sha>.txt`. The
+// rates are what `pricing-read-260921.txt` beside it quotes from the published
+// table; this pins them so a hand-edit cannot quietly move one.
 test('the two ids found unpriced on 2026-09-21 carry the published rates', () => {
     assert.deepEqual(prices.rateFor('claude-fable-5'),
         { input: 10, output: 50, cacheRead: 1, cacheWrite5m: 12.5, cacheWrite1h: 20 });
