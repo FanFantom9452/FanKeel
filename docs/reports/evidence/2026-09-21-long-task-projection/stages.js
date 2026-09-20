@@ -12,11 +12,32 @@
 // repo already uses: `lib/registry.js`'s `seriesOf` for what a stage's
 // window and recorded spend are, `lib/prices.js`'s `costOf` for what a set
 // of models cost, and `lib/spend.js`'s `sessionsOf` for the whole-session
-// total this file's own per-stage sum is checked against in block 2. Nothing
-// here carries its own rate table or re-derives a stage boundary.
+// total block 1's per-stage sum is checked against in block 2. The
+// request-count bucket printed in block 1 also comes from `lib/spend.js`,
+// through its exported `buckets()` rather than the module's own un-exported
+// `rangeFor` — called on a one-row array, so whichever of the four ranges
+// comes back with `count: 1` is this session's bucket, with no boundary
+// copied here and no change made to `lib/`.
 //
-// Two choices this file makes on its own, stated here because nothing else
-// states them:
+// Two populations, because block 1/2 and block 3 answer different
+// questions:
+//
+// - Block 1 and block 2 cover every session that carries a `spend` field —
+//   79 of them on the day this was written, `<50` and `50-199` request
+//   buckets included. Each block 1 row names its session's bucket in the
+//   `bucket` column; a reader who only wants the long-task end of that
+//   (`200-799`, `800+`) filters on that column themselves rather than this
+//   script deciding it for them.
+//
+// - Block 3's rolling windows answer a different question — what an
+//   account-level 5-hour or 7-day usage cap actually saw — and a cap does
+//   not care which request-count bucket a session falls in. Filtering short
+//   sessions out of block 3 would understate every window's real total, so
+//   block 3 deliberately keeps the same full, unfiltered population as
+//   block 1 and block 2.
+//
+// Two further choices this file makes on its own, stated here because
+// nothing else states them:
 //
 // - `who`: a stage's parent tokens and its subagents' tokens print as two
 //   rows (`who` = `parent` / `agents`), not added into one. That mirrors
@@ -35,12 +56,6 @@
 //   it read. `to` is where `lib/registry.js`'s own `clock` entry for the
 //   stage ends, so it is also the one timestamp every priced stage already
 //   carries, comparable across sessions with no extra assumption.
-//
-// Window scope (block 3): only stages belonging to sessions that carry a
-// `spend` field at all — the same population block 1 and block 2 use. A
-// session with no `spend` field has no per-stage token breakdown to place on
-// the timeline, so including it would only ever add zero, never change a
-// window's rank.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -83,9 +98,22 @@ const tokenTotal = (t) => t.input + t.output + t.cacheRead + t.cacheWrite;
 // same "$0.00".
 const usdCell = (n) => (n == null ? '—' : n.toFixed(4));
 
+// One header row and a matching list of cell-arrays becomes one
+// tab-separated table — the one shape all four tables below share.
+const tsv = (header, rows) => [header, ...rows].map((r) => r.join('\t')).join('\n');
+
+// The request-count bucket `lib/spend.js`'s own `buckets()` would put this
+// row in — asked for through that exported function rather than its
+// un-exported `rangeFor`, by handing it a one-row array and reading off
+// whichever of the four ranges comes back with `count: 1`.
+function bucketFor(row) {
+    const hit = spend.buckets([row]).find((b) => b.count === 1);
+    return hit ? hit.range : '—';
+}
+
 // --- block 1: per-stage rows ------------------------------------------------
 
-function stageRows(sessionId, data) {
+function stageRows(sessionId, data, requests, bucket) {
     const version = typeof data.version === 'string' ? data.version : '—';
     const rows = [];
     for (const w of registry.seriesOf(data)) {
@@ -104,7 +132,7 @@ function stageRows(sessionId, data) {
             const usd = cost && cost.priced.length ? cost.usd : null;
             const tok = models ? tokensOf(models) : { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
             rows.push({
-                session: short8(sessionId), version, stage: w.stage, from: w.from, to: w.to,
+                session: short8(sessionId), version, requests, bucket, stage: w.stage, from: w.from, to: w.to,
                 who, usd, input: tok.input, output: tok.output, cacheRead: tok.cacheRead, cacheWrite: tok.cacheWrite,
             });
         }
@@ -113,15 +141,12 @@ function stageRows(sessionId, data) {
 }
 
 function stageTable(rows) {
-    const header = ['session', 'version', 'stage', 'from', 'to', 'who', 'usd', 'in', 'out', 'cacheR', 'cacheW'];
-    const lines = [header.join('\t')];
-    for (const r of rows) {
-        lines.push([
-            r.session, r.version, r.stage, r.from, r.to, r.who, usdCell(r.usd),
-            r.input, r.output, r.cacheRead, r.cacheWrite,
-        ].join('\t'));
-    }
-    return lines.join('\n');
+    const header = ['session', 'version', 'requests', 'bucket', 'stage', 'from', 'to', 'who', 'usd', 'in', 'out', 'cacheR', 'cacheW'];
+    const body = rows.map((r) => [
+        r.session, r.version, r.requests, r.bucket, r.stage, r.from, r.to, r.who, usdCell(r.usd),
+        r.input, r.output, r.cacheRead, r.cacheWrite,
+    ]);
+    return tsv(header, body);
 }
 
 // --- block 2: crosscheck -----------------------------------------------------
@@ -141,9 +166,8 @@ function stageSumOf(data) {
     return total;
 }
 
-function crosscheck(root, spendEntries) {
-    const { rows } = spend.sessionsOf([root]);
-    const wholeOf = new Map(rows.map((r) => [r.sessionId, r.usd]));
+function crosscheck(sessionRows, spendEntries) {
+    const wholeOf = new Map(sessionRows.map((r) => [r.sessionId, r.usd]));
     let compared = 0;
     const mismatches = [];
     for (const { sessionId, data } of spendEntries) {
@@ -164,16 +188,13 @@ function crosscheck(root, spendEntries) {
 
 function crosscheckTable(mismatches) {
     const header = ['session', 'stage-sum-usd', 'whole-usd', 'diff'];
-    const lines = [header.join('\t')];
-    for (const m of mismatches) {
-        lines.push([
-            short8(m.sessionId),
-            m.stageSum.toFixed(4),
-            m.whole == null ? 'missing' : m.whole.toFixed(4),
-            m.diff == null ? 'n/a' : m.diff.toFixed(4),
-        ].join('\t'));
-    }
-    return lines.join('\n');
+    const body = mismatches.map((m) => [
+        short8(m.sessionId),
+        m.stageSum.toFixed(4),
+        m.whole == null ? 'missing' : m.whole.toFixed(4),
+        m.diff == null ? 'n/a' : m.diff.toFixed(4),
+    ]);
+    return tsv(header, body);
 }
 
 // --- block 3: windows ---------------------------------------------------------
@@ -220,11 +241,8 @@ function rollingWindows(events, hours) {
 
 function windowTable(list) {
     const header = ['window start(ISO)', 'tokens', 'sessions', 'stages'];
-    const lines = [header.join('\t')];
-    for (const w of list) {
-        lines.push([new Date(w.start).toISOString(), w.tokens, w.sessions, w.stages].join('\t'));
-    }
-    return lines.join('\n');
+    const body = list.map((w) => [new Date(w.start).toISOString(), w.tokens, w.sessions, w.stages]);
+    return tsv(header, body);
 }
 
 // Natural, non-overlapping 7-day bins starting at the earliest event on the
@@ -257,13 +275,10 @@ function sevenDayBins(events) {
 
 function binsTable(list) {
     const header = ['window start(ISO)', 'window end(ISO)', 'tokens', 'sessions', 'stages'];
-    const lines = [header.join('\t')];
-    for (const b of list) {
-        lines.push([
-            new Date(b.start).toISOString(), new Date(b.end).toISOString(), b.tokens, b.sessions, b.stages,
-        ].join('\t'));
-    }
-    return lines.join('\n');
+    const body = list.map((b) => [
+        new Date(b.start).toISOString(), new Date(b.end).toISOString(), b.tokens, b.sessions, b.stages,
+    ]);
+    return tsv(header, body);
 }
 
 // --- main -----------------------------------------------------------------
@@ -274,12 +289,18 @@ function main() {
         .map((e) => ({ sessionId: e.sessionId, data: e.data }))
         .filter((e) => spendFieldOf(e.data));
 
+    const { rows: sessionRows } = spend.sessionsOf([ROOT]);
+    const rowBySession = new Map(sessionRows.map((r) => [r.sessionId, r]));
+
     let allRows = [];
     for (const { sessionId, data } of spendEntries) {
-        allRows = allRows.concat(stageRows(sessionId, data));
+        const row = rowBySession.get(sessionId) || null;
+        const requests = row ? row.requests : '—';
+        const bucket = row ? bucketFor(row) : '—';
+        allRows = allRows.concat(stageRows(sessionId, data, requests, bucket));
     }
 
-    const { compared, mismatches } = crosscheck(ROOT, spendEntries);
+    const { compared, mismatches } = crosscheck(sessionRows, spendEntries);
 
     const events = stageEvents(spendEntries);
     const rolling = rollingWindows(events, 5);
@@ -290,7 +311,7 @@ function main() {
     parts.push('# .fankeel/sessions scanned: ' + entries.length + ' entries, ' + unreadable
         + ' unreadable (parse failures skipped and counted), ' + spendEntries.length + ' carry a spend field');
     parts.push('');
-    parts.push('## block 1: per-stage');
+    parts.push('## block 1: per-stage (every spend-bearing session, all buckets — filter on `bucket` for the long-task end)');
     parts.push(stageTable(allRows));
     parts.push('');
     parts.push('## block 2: crosscheck (per-stage usd summed vs. lib/spend.js sessionsOf whole-session usd)');
@@ -299,10 +320,10 @@ function main() {
     }
     parts.push('crosscheck: ' + compared + ' sessions compared, ' + mismatches.length + ' mismatched');
     parts.push('');
-    parts.push('## block 3a: rolling 5-hour windows, top 10 by total tokens');
+    parts.push('## block 3a: rolling 5-hour windows, top 10 by total tokens (full population, not bucket-filtered — a usage cap does not care which bucket a session is in)');
     parts.push(windowTable(top10));
     parts.push('');
-    parts.push('## block 3b: natural 7-day windows (from the earliest event)');
+    parts.push('## block 3b: natural 7-day windows, from the earliest event (full population, not bucket-filtered)');
     parts.push(binsTable(bins));
 
     const text = parts.join('\n') + '\n';
@@ -319,11 +340,4 @@ function main() {
     return { outPath, compared, mismatches, top10, bins };
 }
 
-if (require.main === module) {
-    main();
-}
-
-module.exports = {
-    main, spendFieldOf, tokensOf, tokenTotal, stageRows, stageSumOf, crosscheck,
-    stageEvents, rollingWindows, sevenDayBins,
-};
+main();
