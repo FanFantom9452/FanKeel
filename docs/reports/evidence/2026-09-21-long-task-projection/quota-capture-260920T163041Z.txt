@@ -1,0 +1,45 @@
+# statusline payload capture — the one reading behind §5 of
+# docs/reports/2026-09-21-long-task-projection.md
+#
+# how it was taken
+#   `"env": { "CLAUDE_STATUSLINE_DEBUG": "1" }` added to C:\Users\Owner\.claude\settings.json.
+#   TokenBar's statusline.ps1 dumps the whole payload it was handed to
+#   %TEMP%\claude-statusline-payload.json on the next render. No relaunch of
+#   Claude Code was needed — the file appeared on the following turn, which is
+#   itself worth recording: a settings `env` entry reached the statusline child
+#   process live, where a hook manifest entry would not have.
+#
+# n = 1. An integer `used_percentage` at 2% bounds a denominator, it does not
+# give one. This file is the reading, not a series.
+#
+# what was dropped, and why
+#   session_id, transcript_path, cwd, prompt_id, session_name, workspace.repo
+#   — machine- and session-specific, and none of them bears on the quota
+#   question. Everything the report quotes is below.
+
+captured at (file mtime, UTC)  2026-09-20T16:30:41.226Z
+claude version                 2.1.278
+model.id                       claude-opus-5[1m]
+
+rate_limits.five_hour.used_percentage   2
+rate_limits.five_hour.resets_at         1789936800   = 2026-09-20T20:40:00.000Z
+                                                     window therefore opened 2026-09-20T15:40:00.000Z
+
+rate_limits.seven_day.used_percentage   0
+rate_limits.seven_day.resets_at         1790276400   = 2026-09-24T19:00:00.000Z
+                                                     window therefore opened 2026-09-17T19:00:00.000Z
+
+cost.total_cost_usd            12.561022100000004
+cost.total_duration_ms         2660788
+context_window.used_percentage 24
+context_window.size            1000000
+prompt_cache.ttl               1h
+prompt_cache.hit_ratio         0.9733462162353108
+
+# who else was in that five-hour window
+#   Two other transcripts under ~/.claude/projects/F--ymlab-fankeel had an mtime
+#   inside it. Counting lines by timestamp:
+#     d1621c14  3374 lines, 1 inside the window, 0 tokens on it, last 2026-09-20T15:46:22.921Z
+#     942566e9    74 lines, 0 inside the window,                 last 2026-09-19T18:57:29.929Z
+#   So the window's content is this session and essentially nothing else, which
+#   is what makes the 2% reading attributable at all.
