@@ -90,4 +90,4 @@ node scripts/spend.js              # 全機器，discover 找到的每一個 reg
 node scripts/spend.js --root <dir> # 只看一個
 ```
 
-站台首頁的分段控制也加了 `依成分` 與 `依版本` 兩格（[station.md](../station.md)）。要注意站台有**兩種**花費數字，而且分界不在頁面、在數字本身。`spend` 欄被定價成 `stages[].usd`，瀏覽器裡只有專案頁的 route 帳（`routeGroups`）加它，那一邊和本頁同一個母體。其餘每一個花費數字都是加 `days[].usd`，來自 transcript——首頁整張長條圖、專案頁與 session 頁的標題，還有最容易搞混的那一個：session 成本分頁自己的分階段拆分，那是 `costModel(s.days)`，根本不讀 `spend` 欄。
+站台首頁的分段控制也加了 `依成分` 與 `依版本` 兩格（[station.md](../station.md)）。**對照數字之前，先確認是哪一個母體。** 站台的花費不只一種來源，三種都查證過：本頁與專案頁的 route 帳（`routeGroups`）讀 registry 的 `spend` 欄，這兩邊 78 筆逐筆到分相同；首頁整張長條圖加的是 `days[].usd`，那是從 transcript 讀的；session 清單的花費欄用的又是 `usage`（`cost(s)`）。哪一個畫面用哪一種，目前沒有任何一頁寫下來。

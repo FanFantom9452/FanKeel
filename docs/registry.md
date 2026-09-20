@@ -256,16 +256,11 @@ nothing else:
   splits a session's own cost from its subagents', and buckets the sessions by
   request count. `scripts/spend.js` resolves those roots — `lib/station.js`'s
   `discover()`, or `--root` — and prints its two tables under a line saying how
-  many session files it scanned to fill them. Which station figure it
-  reconciles with is decided by the figure rather than by the page. This field
-  is priced into `stages[].usd`, and the project page's route ledger
-  (`routeGroups` in `assets/station/station.js`) is the only thing in the
-  browser that sums it; those figures and `lib/spend.js`'s agree, because both
-  price the same entries from the same table. Every other cost on the station
-  sums `days[].usd`, which comes from the transcript rather than from here —
-  the home page's whole histogram, the project and session headlines, and,
-  confusingly, the session cost tab's own per-stage split, which is
-  `costModel(s.days)` and not this field at all.
+  many session files it scanned to fill them. Its figures and the ones the
+  station prices out of this same field agree to the cent — 78 of 78 sessions
+  in this repository's own registry, measured 2026-09-20 — but most costs the
+  station shows are not priced out of this field at all, and which ones are is
+  not written down anywhere. `TODO.md` carries that.
 - `gates` — an array of `{ at, stage, header, question, labels, descriptions,
   picked }`, one entry per `AskUserQuestion` `lib/gates.js` finds in the
   transcript: `stage` is read off `moves` at that point, `question` is the
