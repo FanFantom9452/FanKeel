@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-21
-source_of_truth: 四份輸出都由 `docs/reports/evidence/2026-09-21-quota-calibration/` 底下同名腳本在 `43daef5` 上產生 — `windows-at-43daef5.txt`（全機 427 份 transcript 的逐分段表）、`basis-at-43daef5.txt`（兩次捕捉的對照與下限論證）、`drift-at-43daef5.txt`（66 個 session 的重分配）、`sonnet-at-43daef5.txt`（Sonnet 主控那一趟）。兩次 statusline 捕捉分別是 `evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt` 與 `evidence/2026-09-21-quota-calibration/quota-capture-260920T203515Z.txt`。費率表那次讀取的引文在 `pricing-read-260921.txt`。
+source_of_truth: 四份輸出都由 `docs/reports/evidence/2026-09-21-quota-calibration/` 底下同名腳本產生，各自帶著產生它的那個 sha — `windows-at-43daef5.txt`（全機 427 份頂層 transcript 的逐分段表）、`drift-at-43daef5.txt`（66 個 session 的重分配）、`sonnet-at-43daef5.txt`（Sonnet 主控那一趟）三份在 `43daef5`；`basis-at-3784eb7.txt`（兩次捕捉的對照、下限論證與 `quotaLimits`）在 `3784eb7`，因為那支腳本在審查之後改過，另外三支自 `43daef5` 起一個位元都沒動。兩次 statusline 捕捉分別是 `evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt` 與 `evidence/2026-09-21-quota-calibration/quota-capture-260920T203515Z.txt`。費率表那次讀取的引文在 `pricing-read-260921.txt`。
 ---
 
 # 5h 與 7d 額度怎麼掛勾，與逐站帳的戳記偏移
@@ -23,11 +23,16 @@ source_of_truth: 四份輸出都由 `docs/reports/evidence/2026-09-21-quota-cali
 兩次的 `resets_at` 在兩支表上都相同（5h `1789936800`、7d `1790276400`），所以是
 同一組視窗的兩個時刻，差值才成立。
 
-**為什麼只有兩點。** `rate_limits` 只出現在 statusline payload 裡，沒有任何地方
-留存它 —— registry 沒有、transcript 沒有、session 紀錄也沒有。TokenBar 的
-`statusline.ps1` 只在 `CLAUDE_STATUSLINE_DEBUG=1` 時把 payload 傾印到一個檔，
-而那個檔被之後每一次 render 覆寫。有讀數，是因為有人在下一次 render 之前把檔
-複製走了。
+**為什麼只有兩點。** 額度的**水位**只出現在 statusline payload 裡，而 TokenBar 的
+`statusline.ps1` 只在 `CLAUDE_STATUSLINE_DEBUG=1` 時把 payload 傾印到一個檔，那個
+檔被之後每一次 render 覆寫。有讀數，是因為有人在下一次 render 之前把檔複製走了。
+registry 裡沒有，`lib/`、`hooks/`、`scripts/` 裡也沒有任何程式讀它。
+
+**但 transcript 不是什麼都沒有。** 這一句我原本寫成「transcript 沒有」，是錯的：
+assistant 行會帶一個 `quotaLimits` 物件。全機 4,687 份 transcript（含每一個
+subagents 樹）裡有 13 筆，欄位是 `status`、`rateLimitType`、`resetsAt`、
+`overageStatus` 那一組 —— **沒有任何百分比欄**。所以它當不了序列。它記的是別的東西，
+見 §7。
 
 中間那一段：244.6 分鐘、760 個 request、1.59 億 token、**$91.68**。全機 427 份
 transcript 裡只有兩個 session 在這個 5 小時視窗裡有 request，所以那不是抽樣，
@@ -61,7 +66,9 @@ token 只值 $6.98 —— 所以 token／點暴衝而 $／點沒動。**「這�
 **$26.19–$45.84**，一週約 $2,619–$4,584。一個 7d 點值 2.9–6.0 個 5h 點。
 
 但**累積讀數與這個矛盾**。讀數 A 那一刻，7 天視窗（09-17T19:00Z 開）裡已經有
-**$1,231.94、21.0 億 token、16,536 個 request**，表卻讀 **0%**：
+**$1,231.94、21.13 億 token、16,659 個 request**，表卻讀 **0%**（那是
+`7d-open..5h-open` 與 `5h-open..A` 兩段相加 —— 16,536+123 與
+2,099,537,625+13,073,975，不是任何單一列）：
 
 ```
   at A the window held $1231.94 and the meter read 0%
@@ -86,12 +93,18 @@ reading A 16:30:41Z    $12.7472           $12.5610           +$0.1862   +1.48%
 reading B 20:35:15Z    $97.4441           $109.1055          $-11.6614  -10.69%
 ```
 
-讀數 A 差 1.5%，讀數 B 差 −10.7%，中間開了 $11.85 的口。那一段裡只發生過一次
-compaction（20:33:29.8Z，讀數 B 前 1.8 分鐘），而全 session 單筆最大的 raw
-`input_tokens` 是 **2** —— 每一筆都是快取讀取，所以那次摘要呼叫的 token 根本不在
-transcript 裡，照定義就在這個基準之外。
+讀數 A 差 1.5%，讀數 B 差 −10.7%，中間開了 $11.85 的口。那一段裡發生過一次
+compaction（20:33:29.8Z，讀數 B 前 1.8 分鐘），而**兩個** session 的 transcript
+裡單筆最大的 raw `input_tokens` 是 2 與 4 —— 沒有任何一筆看起來像整段 context 的
+未快取讀取。
 
-**因此 $91.68 是下限**，上面每一個 $／點也都是下限。不把 $7.64–$9.17 當定值。
+這比一個機制弱：它沒有證明 Claude Code 不把摘要呼叫寫進 transcript，只證明
+transcript 裡找不到那樣一筆。但方向是穩的 —— 這個基準看不見的成本只可能是漏算，
+不可能是重複計算。**因此 $91.68 是下限**，上面每一個 $／點也都是下限。不把
+$7.64–$9.17 當定值。
+
+（`basis.js` 原本只查 Opus 那一份 transcript，而 $91.68 是兩個 session 相加，所以
+下限只對一半成立。審查抓到，現在兩份都查。）
 
 ## 5. 逐站的帳歪了多少
 
@@ -147,6 +160,20 @@ session 當成 mismatch 丟掉並回報，這一趟是 0 個。
 - **`before-7d` 那 $11,900.41 涵蓋 2026-09-17 之前的全部歷史**，不是這個帳號的
   帳單，是 API 等價估算。
 
+**而下一次量測該用什麼，這一趟順手找到了。** `quotaLimits` 沒有百分比，但它記的是
+**請求被拒的那一刻** —— 額度確實用盡，也就是 100%。那是定錨，不是區間。全機 13 筆，
+分三次：
+
+| 何時 | 哪支表 | 視窗重設於 | 幾筆 |
+|---|---|---|---|
+| 2026-08-20T18:38Z | `seven_day` | 2026-08-20T19:00Z | 1 |
+| 2026-09-02T04:47Z–13:13Z | `five_hour` | 三個不同視窗 | 6 |
+| 2026-09-09T22:58Z | `seven_day` | 2026-09-10T04:00Z | 5 |
+
+拿其中一次被拒的時刻，把該視窗開窗到那一刻的花費算出來，就得到「100% 值多少錢」，
+不必再猜整數讀數的 ±0.5。這份報告沒有用它 —— 它是另一次量測，`basis-at-*.txt`
+block 4 是它的入口。
+
 ## 8. 怎麼自己重跑
 
 四支腳本都只讀、不寫任何倉庫狀態，路徑一律從 `__dirname` 往上解，transcript
@@ -160,14 +187,20 @@ node docs/reports/evidence/2026-09-21-quota-calibration/sonnet.js
 ```
 
 每一支把自己的輸出寫成 `<name>-at-<sha>.txt`，sha 取自跑的時候的 HEAD。**那個
-sha 要是真的，產生輸出的那個 commit 就不能同時改腳本。** 這裡是兩個 commit：
-`43daef5` 放四支腳本，`640309e` 只放它們在 `43daef5` 上的輸出，那個 commit 裡
-`.js` 檔案數是 0。查得出來：
+sha 要是真的，產生輸出的那個 commit 就不能同時改腳本。** 這裡是兩對 commit：
+`43daef5` 放四支腳本、`640309e` 只放輸出；審查之後 `basis.js` 改過，所以
+`3784eb7` 放那次修改、`7a91474` 只放它的新輸出。兩個放輸出的 commit 裡 `.js` 檔案
+數都是 0，而另外三支腳本自 `43daef5` 起沒動過，所以它們的檔名仍然是真的：
 
 ```
-git show --stat 640309e | grep -c '\.js'
-git show 43daef5 --stat --format='%h %s'
+git diff-tree --no-commit-id --name-only -r 640309e | grep -c '\.js$'
+git diff-tree --no-commit-id --name-only -r 7a91474 | grep -c '\.js$'
+git diff --stat 43daef5..HEAD -- docs/reports/evidence/2026-09-21-quota-calibration/windows.js
 ```
+
+用 `git diff-tree --name-only` 而不是 `git show --stat | grep`：後者會把 commit
+訊息也算進去，而這份報告的訊息裡就寫著 `.js`，所以那個寫法會回報 1。這個坑是落地
+前一刻踩到的。
 
 `drift.js` 的數字會隨 registry 長大而動 —— 同一支腳本四十分鐘前量到 61 個
 session，落地時量到 66 個，因為量測用的那個 session 自己又換了幾次站。這正是
@@ -175,6 +208,8 @@ session，落地時量到 66 個，因為量測用的那個 session 自己又換
 
 **上面的散文有捨入，輸出沒有。** 「1.59 億 token」是 `159,071,706`、「1,555 萬」是
 `15,550,552`、「差 1.5%／10.7%」是 `+1.48%`／`-10.69%`、「$11.85」是 `$11.8476`、
-逐站的 `$0.24`／`$2.99` 是 `$0.2396`／`$2.9856`。有疑問時以 `-at-43daef5.txt` 為準。
-整份報告 110 個數字裡，只有 §6 那個 1658 不出自任何 evidence 輸出，所以它帶著
-它自己的 sha。
+逐站的 `$0.24`／`$2.99` 是 `$0.2396`／`$2.9856`。有疑問時以 `-at-*.txt` 為準。
+整份報告的數字裡，只有 §6 那個 1658 不出自任何 evidence 輸出，所以它帶著它自己的
+sha。那一輪機械比對還漏了一個：§3 的 request 數本來抄了 `7d-open..5h-open` 單獨
+一列的 16,536，而該處要的是那一列加上 `5h-open..A` 的 123。逐字比對抓得到「不在
+輸出裡」，抓不到「抄錯了輸出裡的哪一列」。

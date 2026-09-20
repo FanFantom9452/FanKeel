@@ -80,6 +80,8 @@ what gets scheduled.
 - 〔docs〕`conflict()` 有四個 predicate，`read` 那個（`Read:` 擋鄰居的 `Modify`/`Test`）在 `docs/subagents.md`、`docs/collisions.md`、`docs/pipeline.md` 三頁都沒提，三頁各自只算到兩三個 — [lib/plantasks.js](lib/plantasks.js).
 - 〔tests〕程式註解裡的 `path:line` 沒人驗，docs-check 只看 markdown：`fb2f734` 就有三條歪的，一在 [tests/station-hide.test.js](tests/station-hide.test.js)、二在 [tests/station-view.test.js](tests/station-view.test.js)，其一指到不存在的行。
 
+- 〔quota〕用 `quotaLimits` 的 13 筆被拒紀錄定錨 100%：取一次 `five_hour`、一次 `seven_day` 被拒的時刻，算該視窗到那一刻的花費，就不必再猜整數讀數的 ±0.5 — [scripts/spend.js](scripts/spend.js).
+
 ## Needs a decision
 
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；Gemini CLI `BeforeAgent`、Codex CLI `UserPromptSubmit` 也能回 `additionalContext` — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
@@ -147,6 +149,11 @@ lifts when: 下一個前端任務出現. 09-18.
 lifts when: knip 認得 CJS namespace property access. 09-18.
 
 - 〔build〕knip 的 unused exports 一格關著：6.37.0 仍認不得 CJS namespace 取用，開著回 156 個假陽性（09-18 重跑） — [docs/development.md](docs/development.md).
+
+### 鎖等待測試再紅一次
+lifts when: `a writer waits out a lock somebody else is holding` 在整套裡再紅一次. 09-21.
+
+- 〔tests〕09-21 在 3784eb7 整套紅過一次（1662/1663，該測試跑了 8.3 秒後判定「放棄而非等待」），單跑該檔三次各 90/0、整套重跑 1663/0 綠；疑並行下 CPU 飢餓讓外層鎖看起來過期，未證實 — [tests/registry.test.js](tests/registry.test.js).
 
 ### guard 測試再紅一次
 lifts when: `a claim whose process is gone does not block` 在整套裡再紅一次. 09-19.
