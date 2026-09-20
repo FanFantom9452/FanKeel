@@ -120,6 +120,20 @@ test('gather classifies live, stale and down, counts unreadable, prices usage, l
     assert.equal(m.pricesVerified.length, 10);
 });
 
+// The model is not what the page reads. `serialize()` rebuilds each session
+// field by field, so a field added to `gather()`'s row and nowhere else is on
+// the model and absent from `window.STATION` — which is exactly what the
+// assertion above could not see, and what rendering the page found: every bar
+// of 依版本 came out grey because no session reaching the browser had one.
+test('serialize carries version onto the page\'s session, not only onto the model', () => {
+    const f = fixture();
+    const m = station.gather({ configDir: f.cfg });
+    const data = JSON.parse(station.serialize(m, {}).replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
+    const byId = Object.fromEntries(data.sessions.map((s) => [s.id, s]));
+    assert.equal(byId[DOWN].version, '0.74.0', 'the registry entry\'s version reaches the browser');
+    assert.equal(byId[LIVE].version, null, 'a record without one carries null, never invented');
+});
+
 test('gather reads a project profile from .fankeel/profile.json, and serialize carries profileKeys', () => {
     const f = fixture();
     fs.writeFileSync(path.join(f.r1, '.fankeel', 'profile.json'), JSON.stringify({ 'land.integration': 'merge' }));
