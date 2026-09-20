@@ -574,3 +574,8 @@ window start(ISO)	tokens	sessions	stages
 window start(ISO)	window end(ISO)	tokens	sessions	stages
 2026-09-07T17:07:15.090Z	2026-09-14T17:07:15.090Z	4089270089	30	173
 2026-09-14T17:07:15.090Z	2026-09-21T17:07:15.090Z	2696534186	50	145
+
+## block 3c: account quota windows (full population, not bucket-filtered — anchored to the resets_at in quota-capture-260920T163041Z.txt)
+window	from(ISO)	to(ISO)	sessions	stage_rows	usd	in	out	cacheR	cacheW	total_tokens	cacheR_pct	non_cache
+5h	2026-09-20T15:40:00.000Z	2026-09-20T20:40:00.000Z	0	0	0.0000	0	0	0	0	0	0.0%	0
+7d	2026-09-17T19:00:00.000Z	2026-09-24T19:00:00.000Z	43	190	1094.6776	30570	16733420	1809894243	62013599	1888671832	95.8%	16763990

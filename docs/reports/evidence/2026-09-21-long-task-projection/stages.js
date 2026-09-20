@@ -56,6 +56,15 @@
 //   it read. `to` is where `lib/registry.js`'s own `clock` entry for the
 //   stage ends, so it is also the one timestamp every priced stage already
 //   carries, comparable across sessions with no extra assumption.
+//
+// Block 3a and 3b's windows are cut by this script — a rolling 5-hour slide
+// and a natural 7-day bin from the earliest event, both arbitrary starting
+// points chosen here. Block 3c's two windows are not: they are the
+// account's own quota windows, anchored to the `resets_at` Claude Code
+// itself reported, captured in this directory's
+// `quota-capture-260920T163041Z.txt`. All three answer "how many tokens
+// landed in some window", but the three windows start at three different
+// times, and a figure read from one is not a figure from another.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -65,6 +74,16 @@ const prices = require('../../../../lib/prices.js');
 const spend = require('../../../../lib/spend.js');
 
 const ROOT = path.resolve(__dirname, '..', '..', '..', '..');
+
+// The account's two quota windows, read once from this directory's
+// `quota-capture-260920T163041Z.txt` (a single statusline payload capture,
+// n = 1) rather than computed here — `resets_at` is not on disk anywhere
+// this script already reads, and deriving it from anything else would be a
+// third clock this file invented.
+const QUOTA_WINDOWS = [
+    { window: '5h', from: '2026-09-20T15:40:00.000Z', to: '2026-09-20T20:40:00.000Z' },
+    { window: '7d', from: '2026-09-17T19:00:00.000Z', to: '2026-09-24T19:00:00.000Z' },
+];
 
 const short8 = (id) => String(id).slice(0, 8);
 
@@ -281,6 +300,44 @@ function binsTable(list) {
     return tsv(header, body);
 }
 
+// --- block 3c: quota windows -------------------------------------------------
+
+// Block 1's own rows (full population, all buckets — a quota window does not
+// care which bucket a session's request count fell in, for the same reason
+// block 3a and 3b do not) filtered to the two windows in `QUOTA_WINDOWS`, by
+// the same `to`-timestamp placement block 3a and 3b use.
+function quotaWindowRows(allRows) {
+    return QUOTA_WINDOWS.map((win) => {
+        const from = Date.parse(win.from);
+        const to = Date.parse(win.to);
+        const hit = allRows.filter((r) => r.to >= from && r.to < to);
+        const sessions = new Set(hit.map((r) => r.session)).size;
+        const usd = hit.reduce((n, r) => n + (r.usd == null ? 0 : r.usd), 0);
+        const input = hit.reduce((n, r) => n + r.input, 0);
+        const output = hit.reduce((n, r) => n + r.output, 0);
+        const cacheRead = hit.reduce((n, r) => n + r.cacheRead, 0);
+        const cacheWrite = hit.reduce((n, r) => n + r.cacheWrite, 0);
+        const totalTokens = input + output + cacheRead + cacheWrite;
+        const nonCache = input + output;
+        const cacheReadPct = totalTokens > 0 ? (cacheRead / totalTokens) * 100 : 0;
+        return {
+            window: win.window, from: win.from, to: win.to,
+            sessions, stageRows: hit.length, usd,
+            input, output, cacheRead, cacheWrite, totalTokens, cacheReadPct, nonCache,
+        };
+    });
+}
+
+function quotaTable(list) {
+    const header = ['window', 'from(ISO)', 'to(ISO)', 'sessions', 'stage_rows', 'usd', 'in', 'out', 'cacheR', 'cacheW', 'total_tokens', 'cacheR_pct', 'non_cache'];
+    const body = list.map((q) => [
+        q.window, q.from, q.to, q.sessions, q.stageRows, usdCell(q.usd),
+        q.input, q.output, q.cacheRead, q.cacheWrite, q.totalTokens,
+        q.cacheReadPct.toFixed(1) + '%', q.nonCache,
+    ]);
+    return tsv(header, body);
+}
+
 // --- main -----------------------------------------------------------------
 
 function main() {
@@ -325,6 +382,9 @@ function main() {
     parts.push('');
     parts.push('## block 3b: natural 7-day windows, from the earliest event (full population, not bucket-filtered)');
     parts.push(binsTable(bins));
+    parts.push('');
+    parts.push('## block 3c: account quota windows (full population, not bucket-filtered — anchored to the resets_at in quota-capture-260920T163041Z.txt)');
+    parts.push(quotaTable(quotaWindowRows(allRows)));
 
     const text = parts.join('\n') + '\n';
 
