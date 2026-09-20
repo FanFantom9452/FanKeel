@@ -88,7 +88,9 @@ function imported(exporter, files, body) {
 // swallowed that block into the last name and dropped it; inside a `typeof
 // module` guard with 1,600 lines after it (assets/station/station.js) it matched
 // nothing, and eight dead names went unchecked. Counting braces from the opening
-// one ends the list at its own close, whatever follows.
+// one ends the list at its own close, whatever follows. It takes every brace it
+// meets at face value, so a `{` or `}` inside a string or comment in the list
+// would end the scan early or late without a word; none does today.
 function exportedNames(src) {
     const open = /module\.exports\s*=\s*\{/.exec(src);
     if (!open) return [];

@@ -41,7 +41,8 @@ test('a directory that cannot be read is not an error', () => {
   assert.deepEqual(out, { scanned: 0, removed: 0, failed: 0 });
 });
 
-// `main` is exported, so something has to import it: `tests/source.test.js:92`
+// `main` is exported, so something has to import it: the test in
+// `tests/source.test.js` named `every exported name is imported by something`
 // fails a tracked non-test file that exports a name nothing reads. It is given
 // a scratch root rather than being called bare: bare, it sweeps the real temp
 // directory, which is this plan's one irreversible step and not a test's to take.
