@@ -85,6 +85,8 @@ what gets scheduled.
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；Gemini CLI `BeforeAgent`、Codex CLI `UserPromptSubmit` 也能回 `additionalContext` — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
 - 〔stage-agents〕主控＋站 agent 要不要推到其餘各站：看 survey 的量測；build 要 script 產生 workflow、design 要 SendMessage 轉話、station 要把第二層掛在派它的 agent 底下（現在平鋪）、插話要有人接 — [lib/stages.js](lib/stages.js).
 - 〔stage-agents〕survey 的大腦調過四輪後組內花費已打平（1.05×、0.97×），但時間仍 1.4–1.6 倍、主控 context 仍多 8k，交接檔守字數上限那一行沒生效：要再調，還是認定這樣就夠 — [lib/render.js](lib/render.js). 再量成本時 version 是混淆變數：94 筆可定價的只有 34 筆帶版本。
+- 〔agents〕要不要一個專審前端是否符合期待的 agent：這次 `依版本` 整片灰是把頁面 render 出來才抓到的，unit test 全綠；順帶評估 Jev 這類小判斷模型當篩子 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
+- 〔station〕`--detach` 的 serve 在啟動時就把 `lib/station.js` 讀進記憶體：改完程式它照樣產生新資料、用舊程式，外觀完全正常。要不要讓它自己察覺 — [lib/serve.js](lib/serve.js).
 - 〔docs〕寫成 `path:行-行` 的引用不帶引文，docs-check 只列不驗：一條這樣歪了四個 commit 沒人發現。剩三條要改寫，還是讓 docs-check 把範圍本身當缺陷 — [scripts/docs-check.js](scripts/docs-check.js).
 
 ## Waiting
