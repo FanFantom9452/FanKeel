@@ -108,3 +108,9 @@ k	old_total	new_total	ratio
 2.50	3848.0960	3840.7148	0.9981
 3.00	3848.0960	4555.6586	1.1839
 break-even k (new_total == old_total, survey held at S_low): 2.5052
+
+## block 5: long-task old_usd distribution, and what one A/B pair would cost
+quantiles: linear interpolation on sorted old_usd (position = 1 + p*(n-1)) -- R type 7 / numpy default / Excel PERCENTILE.INC; the exclusion method gives different Q1/Q3
+n	min	q1	median	q3	max
+43	19.85	32.63	61.57	129.98	319.67
+pair at the median: old arm 61.57, new arm 27.14 to 61.57, total 88.71 to 123.15

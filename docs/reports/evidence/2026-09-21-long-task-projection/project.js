@@ -18,7 +18,7 @@
 //
 //   node docs/reports/evidence/2026-09-21-long-task-projection/project.js
 //
-// Four blocks, printed to stdout and also written to `project-at-<sha>.txt`
+// Five blocks, printed to stdout and also written to `project-at-<sha>.txt`
 // (`<sha>` = `git rev-parse --short HEAD`):
 //
 //   1. Sonnet/Opus price ratio per component, read from `lib/prices.js`
@@ -53,6 +53,21 @@
 //      unverified, so this sweeps a multiplier `k` on non-survey token
 //      spend and solves for the `k` at which the projected total stops
 //      being cheaper than the observed one.
+//   5. The distribution of block 2's 43 long-task `old_usd` values (min,
+//      quartiles, max), and what one A/B pair would cost at the median.
+//      Quartiles use linear interpolation on the sorted values at position
+//      `1 + p*(n-1)` (1-indexed) -- this is R's default `type = 7`, numpy's
+//      default `interpolation='linear'`, and Excel's `PERCENTILE.INC`. The
+//      exclusive method (Excel's `PERCENTILE.EXC`, R's `type = 6`) gives
+//      different Q1/Q3 from the same data; block 5's own printout names
+//      which one it used so a reader quoting these two numbers knows which
+//      algorithm they came from.
+//      The pair line's upper bound uses a cost ratio of 1.0 -- the point at
+//      which the new arm costs the same as the old one -- not the token
+//      multiplier `k = 2.5052` from block 4's break-even. Those are two
+//      different axes (dollars vs. a token-count multiplier on non-survey
+//      stages) that happen to both be "the break-even point"; reusing `k`
+//      here would silently mix them.
 //
 // S_low = 0.973 and S_high = 1.049 are not derived here -- they are the two
 // ab7 pairs' measured (new total / old total), from the unrounded per-model
@@ -285,6 +300,52 @@ function block4(sessions, pr) {
     return { text: lines.join('\n'), kBreakeven };
 }
 
+// --- block 5: long-task old_usd distribution, and one A/B pair's cost -------
+
+// Linear-interpolation quantile on a value already sorted ascending --
+// R's default `type = 7`, numpy's default, Excel's `PERCENTILE.INC`. See
+// the file header for why this method was picked over the exclusive one.
+function quantile(sortedAsc, p) {
+    const n = sortedAsc.length;
+    if (n === 0) return 0;
+    if (n === 1) return sortedAsc[0];
+    const pos = 1 + p * (n - 1);
+    const lo = Math.floor(pos);
+    const hi = Math.ceil(pos);
+    const frac = pos - lo;
+    return sortedAsc[lo - 1] + frac * (sortedAsc[hi - 1] - sortedAsc[lo - 1]);
+}
+
+const money = (n) => n.toFixed(2);
+
+function block5(sessions, ratioLow) {
+    const sorted = sessions.map((s) => s.oldTotal).sort((a, b) => a - b);
+    const n = sorted.length;
+    const min = sorted[0];
+    const max = sorted[n - 1];
+    const q1 = quantile(sorted, 0.25);
+    const median = quantile(sorted, 0.5);
+    const q3 = quantile(sorted, 0.75);
+
+    const oldArm = median;
+    const newArmLow = median * ratioLow;
+    const newArmHigh = median * 1.0;
+    const totalLow = oldArm + newArmLow;
+    const totalHigh = oldArm + newArmHigh;
+
+    const lines = [];
+    lines.push('## block 5: long-task old_usd distribution, and what one A/B pair would cost');
+    lines.push('quantiles: linear interpolation on sorted old_usd (position = 1 + p*(n-1)) -- R type 7 / numpy default / Excel PERCENTILE.INC; the exclusion method gives different Q1/Q3');
+    lines.push(['n', 'min', 'q1', 'median', 'q3', 'max'].join('\t'));
+    lines.push([n, money(min), money(q1), money(median), money(q3), money(max)].join('\t'));
+    lines.push(
+        'pair at the median: old arm ' + money(oldArm)
+        + ', new arm ' + money(newArmLow) + ' to ' + money(newArmHigh)
+        + ', total ' + money(totalLow) + ' to ' + money(totalHigh)
+    );
+    return { text: lines.join('\n'), n, min, q1, median, q3, max };
+}
+
 // --- main --------------------------------------------------------------------
 
 function main() {
@@ -295,8 +356,10 @@ function main() {
     const b2 = block2(rows, pr);
     const b3 = block3(b2.sessions);
     const b4 = block4(b2.sessions, pr);
+    const ratioLow = b2.totalOld ? b2.totalLow / b2.totalOld : 0;
+    const b5 = block5(b2.sessions, ratioLow);
 
-    const text = [b1, '', b2.text, '', b3.text, '', b4.text, ''].join('\n');
+    const text = [b1, '', b2.text, '', b3.text, '', b4.text, '', b5.text, ''].join('\n');
 
     let sha = 'unknown';
     try {
@@ -307,7 +370,7 @@ function main() {
     const outPath = path.join(__dirname, 'project-at-' + sha + '.txt');
     fs.writeFileSync(outPath, text, { encoding: 'utf8' });
     process.stdout.write(text);
-    return { outPath, b2, b3, b4 };
+    return { outPath, b2, b3, b4, b5 };
 }
 
 main();
