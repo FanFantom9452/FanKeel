@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-13
-source_of_truth: lib/registry.js, lib/station.js, lib/render.js, lib/context.js, lib/dirty.js, lib/live.js, lib/usage.js, lib/profile.js, scripts/task.js, hooks/touch.js, hooks/inject.js, hooks/carry.js, hooks/gate.js, hooks/resume.js, hooks/leave.js
+source_of_truth: lib/registry.js, lib/station.js, lib/render.js, lib/context.js, lib/dirty.js, lib/live.js, lib/usage.js, lib/profile.js, lib/spend.js, scripts/task.js, scripts/spend.js, hooks/touch.js, hooks/inject.js, hooks/carry.js, hooks/gate.js, hooks/resume.js, hooks/leave.js
 ---
 
 # The registry, and what it remembers
@@ -251,6 +251,24 @@ nothing else:
   Both halves are deleted from `usage` before that field is written, so every
   existing reader of `usage` still sees the shape it always had.
   [station.md](station.md) has where the per-stage curve reads it from.
+  `lib/spend.js` is the other reader: it prices this field with `lib/prices.js`
+  over the roots it is handed, folds each session into four dollar components,
+  splits a session's own cost from its subagents', and buckets the sessions by
+  request count. `scripts/spend.js` resolves those roots — `lib/station.js`'s
+  `discover()`, or `--root` — and prints its two tables under a line saying how
+  many session files it scanned to fill them. Where its totals differ from the
+  station's, the difference is coverage rather than method: measured over this
+  registry on 2026-09-20, `usage` and the sum of `days[].usd` agreed to the
+  cent on all 91 sessions carrying both, and the sum of `stages[].usd` on all
+  78 that also carry a `spend`. What they do not share is who has them — `days`
+  needs only a transcript, `usage` is written at session end, and `spend` only
+  on sessions that ended after 2026-09-07T20:08Z here, two days after the
+  commit that added it. Why those two days is not established — `hooks/leave.js`
+  was already registered when that commit landed, so it is not `waited`'s
+  registration gap. So 78 of the 179 session files in this repository's own
+  registry carry a `spend`, and 94 of 311 across the eleven registries this
+  machine holds, while every session with a transcript can be priced from
+  `days`.
 - `gates` — an array of `{ at, stage, header, question, labels, descriptions,
   picked }`, one entry per `AskUserQuestion` `lib/gates.js` finds in the
   transcript: `stage` is read off `moves` at that point, `question` is the

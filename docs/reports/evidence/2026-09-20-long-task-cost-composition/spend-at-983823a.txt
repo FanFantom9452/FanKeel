@@ -1,0 +1,115 @@
+# provenance
+HEAD: 983823ad38f4ffd65cc11ce9581e24a799714d0c
+branch: spend-composition
+tracked files dirty at generation: 0
+command: node scripts/spend.js
+prices: lib/prices.js, verified 2026-09-04
+suite at this HEAD: npm test — 1655 tests, 1655 pass, 0 fail, exit 0
+at: 2026-09-20T06:35:00Z
+
+roots (station.discover): F:\MC_Server\MinecraftServer\00_Day_of_Killing_II_DEV\world\datapacks, F:\MC_Server\MinecraftServer\00_DeathArenaII_DEV\world\datapacks, F:\ymlab\EMU3000_Web, F:\ymlab\Latex\production, F:\ymlab\PaperResearcher, F:\ymlab\SBIR\ProjectWorkspace, F:\ymlab\School_ClassProjects\ESP32s3-pressure, F:\ymlab\School_ClassProjects\ccexp, F:\ymlab\claude-kit, F:\ymlab\fankeel, F:\ymlab\sec-test
+11 registries, 311 session files scanned — 217 skipped (no spend), 0 unreadable, 94 priced
+
+sessions
+session	root	version	requests	own	agents	input	output	cacheRead	cacheWrite	usd	unpriced
+2af84565-d089-43d7-a85f-68799f8447a0	F:\MC_Server\MinecraftServer\00_Day_of_Killing_II_DEV\world\datapacks	—	736	$43.51	$20.11	$0.00	$11.81	$41.18	$10.62	$63.62	—
+7adf4bdb-f4fd-43bc-bf8d-925d242cf1f3	F:\MC_Server\MinecraftServer\00_Day_of_Killing_II_DEV\world\datapacks	—	947	$68.12	$24.22	$0.01	$16.21	$61.98	$14.14	$92.34	<synthetic>
+40839801-0f03-4729-9813-faaf8ff55a05	F:\ymlab\SBIR\ProjectWorkspace	—	498	$101.20	$8.25	$0.00	$10.66	$87.78	$11.01	$109.45	—
+64c2029b-2aa5-42f1-a7be-fa3e45d41ad0	F:\ymlab\SBIR\ProjectWorkspace	—	565	$103.18	$6.70	$0.00	$10.10	$81.42	$18.36	$109.88	<synthetic>
+6c292aac-7844-4015-9340-a13d9759c6ce	F:\ymlab\SBIR\ProjectWorkspace	—	929	$120.60	$14.77	$0.01	$18.35	$96.46	$20.55	$135.37	—
+6cb74012-f904-4592-9794-e50fd823c0c1	F:\ymlab\SBIR\ProjectWorkspace	—	308	$63.78	$2.02	$0.00	$8.20	$41.11	$16.48	$65.80	<synthetic>
+85fb1533-846c-4bed-901f-7ac2483111be	F:\ymlab\SBIR\ProjectWorkspace	—	141	$18.59	$2.08	$0.00	$3.39	$13.00	$4.28	$20.67	—
+cac5774f-b0ca-4ef1-8360-b97069d6db42	F:\ymlab\SBIR\ProjectWorkspace	—	274	$32.06	$3.75	$0.00	$5.71	$22.41	$7.68	$35.80	—
+d60be191-d5ab-452f-a24e-dde0aad31022	F:\ymlab\SBIR\ProjectWorkspace	—	217	$50.23	$0.00	$0.00	$5.02	$39.28	$5.92	$50.23	—
+e0e4ea99-b732-4dcb-89a3-028e85f163ea	F:\ymlab\SBIR\ProjectWorkspace	—	7056	$390.90	$390.35	$0.09	$113.14	$526.18	$141.85	$781.25	<synthetic>
+eb43d1f0-9c5f-4838-b39e-1c7a2c695e93	F:\ymlab\SBIR\ProjectWorkspace	—	3406	$405.13	$73.44	$0.02	$46.14	$349.94	$82.46	$478.57	<synthetic>
+fd801301-9bc2-48c1-8d40-157c104795bd	F:\ymlab\SBIR\ProjectWorkspace	—	849	$96.97	$20.79	$0.01	$13.18	$81.59	$22.99	$117.76	—
+057c0c2a-2244-4ebe-b47d-f3192fbcdfbd	F:\ymlab\School_ClassProjects\ESP32s3-pressure	—	3173	$170.55	$73.17	$0.02	$48.72	$150.15	$44.84	$243.73	<synthetic>
+3517d0c1-d734-4fd7-99f9-be37f3f50c1a	F:\ymlab\School_ClassProjects\ESP32s3-pressure	—	40	$4.72	$0.00	$0.00	$1.14	$2.24	$1.34	$4.72	—
+5707b82d-8f1c-4f92-b85b-017a5a247e0d	F:\ymlab\School_ClassProjects\ESP32s3-pressure	—	1111	$72.16	$25.84	$0.01	$16.55	$65.12	$16.33	$98.00	—
+f005d003-fa33-4905-aff0-1783aaf9fec7	F:\ymlab\School_ClassProjects\ESP32s3-pressure	—	71	$7.05	$0.53	$0.00	$1.95	$3.72	$1.91	$7.58	—
+003af3fa-30e5-46d4-b5ff-897f1b996815	F:\ymlab\fankeel	0.74.0	24	$0.37	$0.81	$0.00	$0.33	$0.33	$0.52	$1.18	—
+05de9a54-0910-4c98-bfc4-1278bc167e8c	F:\ymlab\fankeel	—	711	$41.10	$20.47	$0.00	$12.40	$35.87	$13.29	$61.57	—
+0e6bf834-a451-48c2-a7a9-b642d4e5ffd9	F:\ymlab\fankeel	—	867	$33.47	$20.41	$0.02	$14.40	$27.91	$11.54	$53.87	—
+1239ca79-271f-47ed-b0a4-5c74b30d2897	F:\ymlab\fankeel	—	2263	$157.64	$63.12	$0.01	$24.32	$159.54	$36.89	$220.76	—
+13ebea34-67f5-4db3-a14d-09623cd37c0e	F:\ymlab\fankeel	—	4313	$93.42	$173.48	$0.09	$55.23	$154.45	$57.13	$266.90	—
+13f0ab63-75c0-4b3b-a548-83aa90945c2c	F:\ymlab\fankeel	—	980	$67.05	$20.04	$0.01	$17.58	$51.62	$17.88	$87.09	—
+1ad5d010-7f9a-4639-afe9-4c27f5d9c291	F:\ymlab\fankeel	—	34	$6.42	$0.00	$0.01	$2.38	$1.18	$2.85	$6.42	—
+1d12cbbc-7f62-4645-bf90-84cae1064a7c	F:\ymlab\fankeel	0.74.0	13	$0.99	$0.00	$0.00	$0.19	$0.30	$0.50	$0.99	—
+25997ee1-38dc-4672-98b5-e70cb1bed8e6	F:\ymlab\fankeel	0.74.0	6	$0.64	$0.00	$0.00	$0.08	$0.11	$0.46	$0.64	—
+25f398b0-a0d7-417f-9f19-af3d4b25bff2	F:\ymlab\fankeel	0.72.0	338	$14.92	$10.26	$0.00	$5.13	$14.34	$5.71	$25.18	—
+290d5cd1-9270-428d-9a7f-116f1e900110	F:\ymlab\fankeel	—	40	$3.86	$1.27	$0.00	$1.20	$1.75	$2.18	$5.13	—
+29290851-5a31-413f-8afe-c9f88385a327	F:\ymlab\fankeel	0.74.0	13	$1.22	$0.00	$0.00	$0.24	$0.34	$0.64	$1.22	—
+294b9287-d521-40dc-8975-2c2fc57a0a42	F:\ymlab\fankeel	0.73.0	137	$8.68	$1.93	$0.00	$2.29	$5.80	$2.52	$10.61	—
+2bbed13d-b530-4d08-ac8e-61997f789efd	F:\ymlab\fankeel	—	478	$33.15	$8.92	$0.02	$8.17	$21.99	$11.89	$42.07	—
+3298a25a-4840-43f7-a6ce-79a981729057	F:\ymlab\fankeel	0.74.0	57	$0.37	$1.96	$0.00	$0.63	$0.84	$0.85	$2.33	—
+32f38b18-f4b5-4f4d-871e-399ce7063687	F:\ymlab\fankeel	—	515	$26.73	$10.21	$0.00	$8.28	$20.08	$8.57	$36.94	—
+34abdd48-1bd6-4786-aa4c-f00982fe08e9	F:\ymlab\fankeel	0.74.0	9	$0.73	$0.00	$0.00	$0.09	$0.19	$0.44	$0.73	—
+37250c73-d961-4e6b-a70a-ae41d171de21	F:\ymlab\fankeel	—	277	$22.23	$5.96	$0.00	$6.77	$16.29	$5.13	$28.19	—
+38483a85-6b09-4c72-be40-52eec246146f	F:\ymlab\fankeel	0.74.0	34	$0.23	$1.59	$0.00	$0.48	$0.76	$0.58	$1.82	—
+3b0008b3-141c-43bb-8858-1b3f951654a3	F:\ymlab\fankeel	0.72.0	77	$4.13	$0.86	$0.00	$1.02	$2.48	$1.48	$4.99	—
+3b86035f-a9e0-4729-b392-184c1d4c1889	F:\ymlab\fankeel	0.74.0	104	$0.30	$4.12	$0.00	$1.19	$2.02	$1.22	$4.42	—
+406ba345-a340-4262-a565-0ddede1ba942	F:\ymlab\fankeel	—	1331	$57.93	$63.02	$0.05	$32.02	$41.95	$46.92	$120.95	<synthetic>
+441e07e0-4fc2-454e-81c6-3bfb38b98764	F:\ymlab\fankeel	0.74.0	24	$0.27	$1.08	$0.00	$0.35	$0.42	$0.57	$1.34	—
+45fffbe1-21e6-4cc0-80d4-b324043011e7	F:\ymlab\fankeel	0.74.0	27	$0.24	$1.14	$0.00	$0.37	$0.48	$0.52	$1.37	—
+47b58818-6e63-4418-bb12-94d690cbbd81	F:\ymlab\fankeel	—	2129	$70.42	$56.21	$0.01	$31.69	$65.50	$29.42	$126.63	—
+4b24d237-2171-4a6b-91b5-001009b61c5b	F:\ymlab\fankeel	0.73.0	2499	$87.04	$144.66	$0.01	$41.41	$142.86	$47.42	$231.70	—
+5121ea58-ba2e-49ae-8160-5b456ebb264c	F:\ymlab\fankeel	0.74.0	27	$0.89	$0.00	$0.00	$0.09	$0.51	$0.29	$0.89	—
+53648dd3-4db5-459c-ba76-ce03012df6b4	F:\ymlab\fankeel	0.74.0	6	$0.48	$0.00	$0.00	$0.07	$0.10	$0.30	$0.48	—
+54e93a90-1898-4f84-ab2f-e5a1da33c3fe	F:\ymlab\fankeel	—	424	$18.78	$10.45	$0.01	$8.84	$13.04	$7.34	$29.23	—
+5eda0ca3-b94a-4e7a-a680-2b126437506b	F:\ymlab\fankeel	—	118	$14.99	$1.66	$0.01	$5.12	$7.60	$3.92	$16.65	—
+624c57de-ccf9-45a4-a051-af6ea4b5f042	F:\ymlab\fankeel	0.74.0	8	$0.68	$0.00	$0.00	$0.10	$0.16	$0.42	$0.68	—
+6444bc74-e25b-4c23-9297-d679daf59d8b	F:\ymlab\fankeel	0.74.0	20	$0.33	$0.47	$0.00	$0.19	$0.23	$0.38	$0.80	—
+6664db6c-e85b-428c-bc9d-78e3d59881b9	F:\ymlab\fankeel	0.74.0	3	$0.14	$0.00	$0.00	$0.05	$0.02	$0.06	$0.14	—
+6ef14250-3d92-42c6-9c2b-712ad50c56bc	F:\ymlab\fankeel	—	2079	$53.65	$58.32	$0.03	$33.83	$48.20	$29.90	$111.97	—
+73b21b2c-1679-4a14-9e70-f82f396f3ece	F:\ymlab\fankeel	—	301	$13.45	$11.15	$0.02	$7.69	$8.48	$8.40	$24.60	—
+77118316-3c35-4725-a9f0-6605e036f422	F:\ymlab\fankeel	—	255	$13.25	$6.68	$0.00	$5.54	$9.67	$4.72	$19.93	—
+77c619a4-2f96-4c0e-9623-0ea9ad485051	F:\ymlab\fankeel	0.74.0	25	$0.29	$1.31	$0.00	$0.41	$0.52	$0.67	$1.60	—
+78168ff0-3a45-45f8-864e-b9e722542270	F:\ymlab\fankeel	—	832	$44.29	$24.00	$0.00	$11.03	$44.89	$12.36	$68.29	—
+78c807fd-deb9-4215-91d4-b5c1163eaa1c	F:\ymlab\fankeel	—	814	$30.47	$33.66	$0.00	$11.73	$40.15	$12.24	$64.13	—
+7fc555ac-54b6-4315-969a-56f5a1516456	F:\ymlab\fankeel	—	445	$20.26	$8.94	$0.00	$6.89	$16.56	$5.74	$29.19	—
+8033f98e-7481-4239-91a1-8616dce76514	F:\ymlab\fankeel	—	401	$22.83	$8.62	$0.00	$6.06	$19.21	$6.18	$31.46	—
+844093d2-61c4-43e5-8151-5c3a1305983d	F:\ymlab\fankeel	—	1893	$101.35	$56.82	$0.01	$34.81	$89.99	$33.36	$158.17	—
+862d2d16-5f24-46fe-ae46-10cdb7f8c74e	F:\ymlab\fankeel	0.74.0	9	$0.79	$0.00	$0.00	$0.08	$0.18	$0.52	$0.79	—
+8676de40-175a-4fa7-9c67-34fb4da5c8fe	F:\ymlab\fankeel	—	212	$15.58	$4.28	$0.00	$4.27	$9.38	$6.20	$19.85	—
+8c3ad314-6e8e-4a37-8a86-86be8932e59b	F:\ymlab\fankeel	—	2103	$48.82	$64.93	$0.08	$25.16	$54.53	$33.98	$113.75	—
+8db09de2-27e0-478e-a529-9e2c825835cb	F:\ymlab\fankeel	—	749	$47.66	$16.01	$0.02	$13.54	$37.68	$12.43	$63.67	—
+8e5db3ef-a98d-4d94-aa41-eac66be090b3	F:\ymlab\fankeel	0.74.0	24	$0.35	$0.78	$0.00	$0.25	$0.36	$0.51	$1.13	—
+98873819-d200-4e3b-be77-be352547e51e	F:\ymlab\fankeel	—	1922	$82.90	$55.91	$0.03	$31.21	$80.92	$26.66	$138.82	—
+995b6185-81ef-4af6-983d-180496f2d4d2	F:\ymlab\fankeel	—	325	$27.55	$6.25	$0.00	$8.39	$18.32	$7.10	$33.80	—
+99d06072-debe-4f11-a112-275d00664ac4	F:\ymlab\fankeel	—	444	$22.21	$13.19	$0.00	$6.47	$18.41	$10.51	$35.40	—
+9e36bfd6-a380-425d-82ca-5d9c22f28a4f	F:\ymlab\fankeel	0.73.0	2683	$138.08	$76.53	$0.02	$37.80	$129.44	$47.35	$214.61	—
+9fa90075-07b6-42f8-a5a6-7445643a4b76	F:\ymlab\fankeel	0.74.0	7	$0.72	$0.00	$0.00	$0.07	$0.14	$0.51	$0.72	—
+a0a40606-d123-4ee4-a157-32292a3ece95	F:\ymlab\fankeel	—	1769	$96.73	$36.60	$0.01	$27.74	$83.14	$22.45	$133.34	—
+a40efcd3-4fa3-459e-aa5b-7246d9a4ddd3	F:\ymlab\fankeel	—	607	$22.45	$15.99	$0.00	$10.06	$18.88	$9.50	$38.44	—
+a842a88a-db22-403d-8ca6-45e022ef400f	F:\ymlab\fankeel	0.74.0	6	$0.19	$0.00	$0.00	$0.04	$0.05	$0.09	$0.19	—
+b578f9e8-c5f4-4ddc-80d0-74bb23797900	F:\ymlab\fankeel	0.74.0	6	$0.45	$0.00	$0.00	$0.07	$0.10	$0.28	$0.45	—
+b5bd1b30-92d1-4bc4-8f18-0c54ce653f99	F:\ymlab\fankeel	—	1088	$30.50	$24.86	$0.02	$16.61	$24.42	$14.31	$55.36	—
+b5d479a6-2dfc-4c4c-80f2-a26916612b7c	F:\ymlab\fankeel	—	463	$28.23	$11.08	$0.00	$9.41	$20.91	$8.99	$39.31	—
+b7386530-9627-44bd-87be-a66dde41dca8	F:\ymlab\fankeel	0.74.0	6	$0.49	$0.00	$0.00	$0.07	$0.10	$0.32	$0.49	—
+b8478bb9-6360-4862-9818-0198af526d8f	F:\ymlab\fankeel	—	1123	$46.55	$25.80	$0.01	$17.39	$40.97	$13.99	$72.35	—
+c4a832ae-b381-4959-b25f-3b42fba6b689	F:\ymlab\fankeel	0.72.0	793	$39.37	$23.11	$0.00	$15.25	$33.03	$14.19	$62.48	—
+c7788483-59f5-464c-b491-80446709676e	F:\ymlab\fankeel	0.74.0	6	$0.58	$0.00	$0.00	$0.06	$0.10	$0.42	$0.58	—
+c7ed14d0-41c4-44e2-bab0-fc3b8bbacf71	F:\ymlab\fankeel	—	620	$40.62	$16.65	$0.00	$10.21	$36.07	$11.00	$57.27	—
+c8b4833c-7378-4362-a387-b614c594cfbe	F:\ymlab\fankeel	0.72.0	354	$11.90	$8.42	$0.00	$5.16	$10.12	$5.04	$20.32	—
+ca4b952b-74b3-45b3-9c67-1a5a058beb0a	F:\ymlab\fankeel	—	598	$30.42	$15.33	$0.04	$14.89	$17.59	$13.22	$45.75	—
+cd86c49b-a4dc-4e5a-856b-a85895d97c8e	F:\ymlab\fankeel	—	217	$18.46	$3.12	$0.01	$6.31	$10.39	$4.87	$21.58	—
+ce59a0ff-efb1-459f-9126-1b8f475a2946	F:\ymlab\fankeel	0.74.0	22	$0.31	$0.67	$0.00	$0.21	$0.28	$0.48	$0.97	—
+d39444fc-4097-4d32-8fd1-b6bfd10eea2d	F:\ymlab\fankeel	—	3908	$184.73	$134.93	$0.07	$76.47	$169.51	$73.61	$319.67	—
+d42ee50c-4d47-4d8e-bd95-279237e7b13a	F:\ymlab\fankeel	0.74.0	9	$0.82	$0.00	$0.00	$0.16	$0.19	$0.47	$0.82	—
+d4d41f05-3dc6-4b34-a8ea-1d6407b877e3	F:\ymlab\fankeel	—	3329	$76.70	$117.47	$0.02	$42.97	$111.28	$39.91	$194.18	—
+d569a03e-0af0-4524-a433-2d832a8d3716	F:\ymlab\fankeel	—	2717	$58.46	$90.20	$0.01	$34.69	$79.21	$34.75	$148.66	—
+d7f5452e-4120-4e59-bc37-19b2aca38816	F:\ymlab\fankeel	—	197	$19.34	$2.78	$0.01	$6.38	$11.17	$4.56	$22.12	—
+de01f526-db03-43f1-b919-6d65b55bcdaf	F:\ymlab\fankeel	—	69	$8.11	$0.72	$0.01	$2.77	$3.62	$2.43	$8.83	—
+e6f10192-8cd9-45e2-9397-d921553bca6b	F:\ymlab\fankeel	—	597	$11.46	$13.52	$0.01	$7.68	$10.88	$6.42	$24.98	—
+ed78f9a0-95b2-4a01-988d-bb8223e7ba77	F:\ymlab\fankeel	—	2157	$85.75	$69.95	$0.01	$29.20	$102.00	$24.49	$155.70	—
+f4032f75-b948-4e7b-b25a-41a4550fe8f5	F:\ymlab\fankeel	0.74.0	11	$0.93	$0.00	$0.00	$0.18	$0.25	$0.49	$0.93	—
+f6d0edbf-84e0-4e47-8145-3ecf8b6c6b65	F:\ymlab\fankeel	—	101	$8.69	$1.87	$0.01	$2.84	$4.13	$3.59	$10.56	—
+f7fe80c2-9b13-4f07-bfd9-ada3cdd7c85e	F:\ymlab\fankeel	0.74.0	35	$0.25	$1.46	$0.00	$0.53	$0.66	$0.51	$1.70	—
+
+buckets by request count
+range	sessions	total	median	input%	output%	cacheRead%	cacheWrite%
+<50	28	$38.91	$0.91	0%	24.5%	31%	44.5%
+50-199	10	$108.75	$9.69	0%	25.4%	50%	24.6%
+200-799	28	$1226.00	$36.37	0%	19.5%	59.6%	20.9%
+800+	28	$5003.90	$134.35	0%	18.4%	61.4%	20.2%

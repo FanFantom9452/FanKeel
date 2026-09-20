@@ -49,6 +49,13 @@ last_verified: 2026-09-20
 26–31%，其餘是「多開一個 context」的固定成本。要真的變便宜，得讓其中一邊真的縮短，
 而不是換模型。這條仍開著，在 `TODO.md` 的 `## Needs a decision`。
 
+**這一節量的是 survey 一站、六到十四輪的短任務，不能外推到長任務。**
+[reports/2026-09-20-long-task-cost-composition.md](../reports/2026-09-20-long-task-cost-composition.md)
+把全機器 11 個 registry 的 94 筆可定價 session 按 request 數分成四桶，成本成分是移動的：
+cache write 從 44.5% 掉到 20.2%，cache read 從 31% 升到 61.4%，主 session 從 72.9% 掉到 59.4%。
+這一節的 A/B 落在最小那一桶附近，那裡 cache write 還是大宗；七站來回的任務落在最大那一桶，
+那裡 cache read 佔六成。換模型省的是什麼、值多少，在兩端不是同一件事。
+
 ## 四、build、verify、audit 抓到的
 
 - **Task 7 的互動實跑揭出入口缺口**：`start` 與 `task` 沒有印主控規則，最後一站的選項一不是 `down`。headless 四臂量不出來，只有真的走一次才會撞到

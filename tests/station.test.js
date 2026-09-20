@@ -73,7 +73,7 @@ function fixture() {
     registry.writeSession(r2, DOWN, { task: 'down two', stage: 'land', route: ['survey', 'build', 'land'],
         active: false, claims: [], started: at(now - 2 * DAY), updated: at(now - DAY), configDir: cfg,
         notes: ['a note'], next: 'nothing',
-        model: 'claude-sonnet-5', usage: { requests: 3, models: { 'claude-sonnet-5': { input: 1e6, output: 1e6, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } },
+        model: 'claude-sonnet-5', version: '0.74.0', usage: { requests: 3, models: { 'claude-sonnet-5': { input: 1e6, output: 1e6, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } },
             subagents: { agents: 2, requests: 5, wallMs: 60000, models: { 'claude-sonnet-5': { input: 1e6, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 } } } } });
     fs.writeFileSync(path.join(r2, '.fankeel', 'sessions', 'deadbeef-0000-4000-8000-000000000000.json'), '{not json');
     fs.mkdirSync(path.join(r1, '.fankeel', 'build', '2026-09-04-thing'), { recursive: true });
@@ -114,8 +114,24 @@ test('gather classifies live, stale and down, counts unreadable, prices usage, l
     assert.deepEqual(down.cost.unpriced, []);
     assert.equal(down.agentCost.usd, 2);
     assert.equal(down.agents.agents, 2);
+    assert.equal(down.version, '0.74.0');
+    assert.equal(one.sessions[0].version, null);
     assert.equal(one.sessions[1].ended.reason, 'clear');
     assert.equal(m.pricesVerified.length, 10);
+});
+
+// The model is not what the page reads. `serialize()` rebuilds each session
+// field by field, so a field added to `gather()`'s row and nowhere else is on
+// the model and absent from `window.STATION` — which is exactly what the
+// assertion above could not see, and what rendering the page found: every bar
+// of 依版本 came out grey because no session reaching the browser had one.
+test('serialize carries version onto the page\'s session, not only onto the model', () => {
+    const f = fixture();
+    const m = station.gather({ configDir: f.cfg });
+    const data = JSON.parse(station.serialize(m, {}).replace(/^window\.STATION = /, '').replace(/;\n$/, ''));
+    const byId = Object.fromEntries(data.sessions.map((s) => [s.id, s]));
+    assert.equal(byId[DOWN].version, '0.74.0', 'the registry entry\'s version reaches the browser');
+    assert.equal(byId[LIVE].version, null, 'a record without one carries null, never invented');
 });
 
 test('gather reads a project profile from .fankeel/profile.json, and serialize carries profileKeys', () => {
