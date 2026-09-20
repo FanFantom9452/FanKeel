@@ -1,6 +1,6 @@
 ---
-status: design-intent
-last_verified: 2026-09-19
+status: archived
+last_verified: 2026-09-20
 ---
 
 # survey 交給 Opus 大腦：主控只派工，交接走檔案

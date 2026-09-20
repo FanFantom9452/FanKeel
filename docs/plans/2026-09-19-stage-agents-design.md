@@ -91,7 +91,7 @@ last_verified: 2026-09-19
 ## 未決
 
 09-19 的下一個 session 答了三條，第一刀見
-[2026-09-19-survey-brain-design.md](2026-09-19-survey-brain-design.md)：
+[../archive/2026-09-19-survey-brain-design.md](../archive/2026-09-19-survey-brain-design.md)：
 
 - 新舊兩種模式並存，用 profile 的 `stage.agents` 切換。
 - build 站內部怎麼派工留到後面那一刀。站 agent 開不了 `Workflow`（每個 subagent 都拿不到），

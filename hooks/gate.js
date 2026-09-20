@@ -39,7 +39,7 @@ function main(raw) {
 
     // `stage.agents`: the question is the stage agent's, word for word. What the
     // controller sent is a placeholder and does not count, so nothing it could
-    // have mistyped reaches the user. docs/plans/2026-09-19-survey-brain-design.md §6.
+    // have mistyped reaches the user. docs/archive/2026-09-19-survey-brain-design.md §6.
     let gate = null;
     try {
         const projectRoot = docs.projectRootsFor(root, mine.project ? [mine.project] : [])[0] || root;

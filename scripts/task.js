@@ -628,7 +628,7 @@ function cmdStart(root, opts) {
 // controller's only instruction until then. Where `stage.agents` is on for
 // the stage just entered, this replaces it with the controller's own rules
 // instead of the ordinary next-step line.
-// docs/plans/2026-09-19-survey-brain-design.md's nested bullet under §2.
+// docs/archive/2026-09-19-survey-brain-design.md's nested bullet under §2.
 function controllerLines(root, id, data, values) {
     const control = controlRulesFor(data, { values }, { root, sessionId: id });
     if (!control) return null;
