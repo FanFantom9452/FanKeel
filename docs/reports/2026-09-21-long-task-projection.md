@@ -139,7 +139,14 @@ node docs/reports/evidence/2026-09-21-long-task-projection/project.js
 **那個 sha 要是真的，產生輸出的那個 commit 就不能同時改腳本。**這個分支上犯過兩次：在 `HEAD = X` 跑、把輸出命名成 `-at-X`，然後把腳本的改動與輸出**一起** commit 成 `Y`——檔名寫著 `X`，內容卻要 `Y` 的程式碼才產得出來，checkout 到 `X` 再跑並不會得到它。現在這兩個檔名指的是**一個腳本已經定稿的 commit**，而這件事讀者自己驗得掉，不必相信任何人。兩步：
 
 - `stages.js` 自 `55ad54e`、`project.js` 自 `acce9d5` 之後就沒再改過（`git log --follow`）。
-- **輸出的內容自己把版本釘住了。**`project-at-3886dc8.txt` 的 pair 行印的是 `27.84` 與 `89.41`，而那兩個數字只有 `acce9d5` 改寫 block 5 之後的公式印得出來——同一個檔在 `acce9d5~1` 印的是 `27.14` 與 `88.71`。block 3c 同理，只有 `55ad54e` 之後的 `stages.js` 印得出那一段。
+- **輸出的內容自己把版本釘住了。**兩邊各一條可以照抄的指令。注意輸出檔每次重生成都改名，所以歷史上的路徑不是現在的路徑：
+
+```
+git show acce9d5~1:docs/reports/evidence/2026-09-21-long-task-projection/project-at-6f93d14.txt
+git show 55ad54e~1:docs/reports/evidence/2026-09-21-long-task-projection/stages-at-8365088.txt
+```
+
+  第一條的 pair 行印 `27.14` 與 `88.71`，而現在的 `project-at-3886dc8.txt` 印 `27.84` 與 `89.41`——那兩個數字只有 `acce9d5` 改寫 block 5 之後的公式印得出來。第二條整份找不到 `block 3c`——那一段只有 `55ad54e` 之後的 `stages.js` 印得出來。
 
 兩步合起來，產生這兩份輸出的程式碼就被夾在 `3886dc8` 上的那一版。所以 checkout 到 `3886dc8` 再跑，只要 `.fankeel/sessions` 沒有移動就會得到同樣的位元組。
 
