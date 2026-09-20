@@ -332,10 +332,17 @@ an index is a markdown file like any other, so anything it fails to list is
 unreachable regardless of what else in the tree links there. Two names for one
 problem is how a report starts looking longer than it is.
 
-Both branches are tested. `tests/docs-audit.test.js:495-501` covers the
-no-index case; `tests/docs-audit.test.js:506-515` covers the index case and
-asserts `orphans` comes back empty. This project declares an index, so the
-branch that would populate
+Both branches are tested, one test each. Cited by line and quote rather than by
+range, because a range carries no quote and nothing then checks it: these two
+pointed at the wrong tests for two commits running while `docs-check` stayed
+green, and a quote is what makes that shift a reported defect instead of a
+silent one.
+
+- `tests/docs-audit.test.js:495` is `test('with no index, a document nothing links to is named', () => {`
+- `tests/docs-audit.test.js:548` is `test('with an index, unreachable is reported once, not twice', () => {`
+
+The second asserts `orphans` comes back empty. This project declares an index,
+so the branch that would populate
 `orphans` never runs here — the empty result is the index case behaving as
 built, not a gap in the check.
 
