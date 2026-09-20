@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-21
-source_of_truth: 兩支 evidence 腳本與它們綁著 sha 的輸出——`docs/reports/evidence/2026-09-21-long-task-projection/stages.js`（輸出 [evidence/2026-09-21-long-task-projection/stages-at-869c3ea.txt](evidence/2026-09-21-long-task-projection/stages-at-869c3ea.txt)，在 `869c3ea` 產生）與同目錄的 `project.js`（輸出 [project-at-6f93d14.txt](evidence/2026-09-21-long-task-projection/project-at-6f93d14.txt)，在 `6f93d14` 產生）。逐站的錢由 `lib/registry.js` 的 `seriesOf` 與 `lib/prices.js` 的 `costOf` 算出，不是本頁算的；價格比由 `project.js` 從 `lib/prices.js` 的費率表逐分量算出來而不是寫死。S 的兩個端點來自 [evidence/2026-09-20-survey-brain-ab/ab7-table.txt](evidence/2026-09-20-survey-brain-ab/ab7-table.txt) 的逐模型列。第 5 節的額度視窗是 `stages.js` 的 block 3c，錨定在 [evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt](evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt) 記下的那一次 statusline payload 捕捉（2026-09-20T16:30:41Z，n=1），那個檔也在 repo 裡。本頁每一個數字都從那些檔來，本頁不會重新產生
+source_of_truth: 兩支 evidence 腳本與它們綁著 sha 的輸出——`docs/reports/evidence/2026-09-21-long-task-projection/stages.js`（輸出 [evidence/2026-09-21-long-task-projection/stages-at-869c3ea.txt](evidence/2026-09-21-long-task-projection/stages-at-869c3ea.txt)，在 `869c3ea` 產生）與同目錄的 `project.js`（輸出 [project-at-7785a75.txt](evidence/2026-09-21-long-task-projection/project-at-7785a75.txt)，在 `7785a75` 產生）。逐站的錢由 `lib/registry.js` 的 `seriesOf` 與 `lib/prices.js` 的 `costOf` 算出，不是本頁算的；價格比由 `project.js` 從 `lib/prices.js` 的費率表逐分量算出來而不是寫死。S 的兩個端點來自 [evidence/2026-09-20-survey-brain-ab/ab7-table.txt](evidence/2026-09-20-survey-brain-ab/ab7-table.txt) 的逐模型列。第 5 節的額度視窗是 `stages.js` 的 block 3c，錨定在 [evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt](evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt) 記下的那一次 statusline payload 捕捉（2026-09-20T16:30:41Z，n=1），那個檔也在 repo 裡。本頁每一個數字都從那些檔來，本頁不會重新產生
 ---
 
 # 長任務換 Sonnet 主控的投影 — 2026-09-21
@@ -111,7 +111,7 @@ break-even k (new_total == old_total, survey held at S_low): 2.5052
 
 ## 6. 這一頁答不了什麼
 
-- **最大的一條：`k` 在 build 與 verify 上沒有任何量測。**整個投影的支點是它，而第 4 節唯一的實測來自一個把工作交出去的主控。要驗只能真的跑一對長任務。**那一對要花多少，`project.js` 的 block 5 印出來了**：43 筆長任務的 `old_usd` 中位數是 $61.57（四分位 $32.63–$129.98，全距 $19.85–$319.67），舊臂就是那個數；新臂落在 0.4407 倍到 1.0 倍之間，也就是 $27.14–$61.57——那個 1.0 是**破平衡點上的花費比值**（依定義 `new_total = old_total`），不是把 `k = 2.5052` 這個 token 倍數當成花費倍數。一對合計 **$89–$123**（block 5 印的是未捨入的 88.71–123.15）。**四分位用的是內插式**（位置 `1 + p×(n-1)` 線性內插，等同 R type 7／numpy 預設／Excel `PERCENTILE.INC`）；排除式會給出不同的 Q1／Q3，所以引用這兩個數字要連算法一起引。而 n=1 的一對說不出穩定的倍數——[2026-09-20 的 A/B](2026-09-20-survey-brain-ab.md) 用 n=2 仍然只敢說組內可比。
+- **最大的一條：`k` 在 build 與 verify 上沒有任何量測。**整個投影的支點是它，而第 4 節唯一的實測來自一個把工作交出去的主控。要驗只能真的跑一對長任務。**那一對要花多少，`project.js` 的 block 5 印出來了**：43 筆長任務的 `old_usd` 中位數是 $61.57（四分位 $32.63–$129.98，全距 $19.85–$319.67），而那個中位數不是一個抽象值，它就是 block 2 裡一筆具名的 session，`05de9a54`。舊臂是它的 $61.57；新臂的下界用**它自己那一列算出來的** $27.84，不是拿全體的聚合比值 0.4407 乘上去——那等於把別人的成分套在它身上；上界是 $61.57，也就是 parity：新臂完全沒省。一對合計 **$89–$123**（block 5 印的是未捨入的 89.41–123.15）。**四分位用的是內插式**（位置 `1 + p×(n-1)` 線性內插，等同 R type 7／numpy 預設／Excel `PERCENTILE.INC`）；排除式會給出不同的 Q1／Q3，所以引用這兩個數字要連算法一起引。而 n=1 的一對說不出穩定的倍數——[2026-09-20 的 A/B](2026-09-20-survey-brain-ab.md) 用 n=2 仍然只敢說組內可比。
 - **S 只有 n=2**，而且來自 survey 一站、六到十四輪的短任務。
 - **不是隨機分派。**43 筆是觀察到的長任務，沒有人把任務指派到某一桶。
 - **樣本是這個 repo 自己的開發**，和 [2026-09-20-long-task-cost-composition.md](2026-09-20-long-task-cost-composition.md) 第五節同一條限制。

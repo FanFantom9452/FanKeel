@@ -62,12 +62,14 @@
 //      different Q1/Q3 from the same data; block 5's own printout names
 //      which one it used so a reader quoting these two numbers knows which
 //      algorithm they came from.
-//      The pair line's upper bound uses a cost ratio of 1.0 -- the point at
-//      which the new arm costs the same as the old one -- not the token
-//      multiplier `k = 2.5052` from block 4's break-even. Those are two
-//      different axes (dollars vs. a token-count multiplier on non-survey
-//      stages) that happen to both be "the break-even point"; reusing `k`
-//      here would silently mix them.
+//      The pair line's lower bound is the median session's own `new_low`
+//      from block 2 -- not block 2 TOTAL's aggregate `ratio_low` applied to
+//      the median. That aggregate is a population-wide blend across
+//      sessions with different stage mixes (some have no survey stage at
+//      all -- see point 2); multiplying it onto one named session would
+//      throw away that session's own composition. The upper bound is
+//      parity -- that same session's own `old_usd` -- the new arm costing
+//      exactly what the old one did and saving nothing.
 //
 // S_low = 0.973 and S_high = 1.049 are not derived here -- they are the two
 // ab7 pairs' measured (new total / old total), from the unrounded per-model
@@ -318,7 +320,7 @@ function quantile(sortedAsc, p) {
 
 const money = (n) => n.toFixed(2);
 
-function block5(sessions, ratioLow) {
+function block5(sessions) {
     const sorted = sessions.map((s) => s.oldTotal).sort((a, b) => a - b);
     const n = sorted.length;
     const min = sorted[0];
@@ -327,9 +329,24 @@ function block5(sessions, ratioLow) {
     const median = quantile(sorted, 0.5);
     const q3 = quantile(sorted, 0.75);
 
-    const oldArm = median;
-    const newArmLow = median * ratioLow;
-    const newArmHigh = median * 1.0;
+    // The median lands exactly on one session's own old_usd (n is odd, so
+    // the type-7 interpolation above returns a sorted array element
+    // unchanged, not a blend of two). That specific session, not the block
+    // 2 TOTAL row's population-wide ratio, is what the pair line below
+    // projects from -- exactly one match is required; zero or more than
+    // one is an error naming what was found, not a guess.
+    const medianSessions = sessions.filter((s) => Math.abs(s.oldTotal - median) < 1e-9);
+    if (medianSessions.length !== 1) {
+        throw new Error(
+            'expected exactly one session at the old_usd median ' + median + ', found ' + medianSessions.length
+            + (medianSessions.length ? ' (' + medianSessions.map((s) => s.session).join(', ') + ')' : '')
+        );
+    }
+    const medianSession = medianSessions[0];
+
+    const oldArm = medianSession.oldTotal;
+    const newArmLow = medianSession.newLow;
+    const newArmHigh = medianSession.oldTotal; // parity: the new arm costs exactly what the old one did
     const totalLow = oldArm + newArmLow;
     const totalHigh = oldArm + newArmHigh;
 
@@ -339,11 +356,12 @@ function block5(sessions, ratioLow) {
     lines.push(['n', 'min', 'q1', 'median', 'q3', 'max'].join('\t'));
     lines.push([n, money(min), money(q1), money(median), money(q3), money(max)].join('\t'));
     lines.push(
-        'pair at the median: old arm ' + money(oldArm)
-        + ', new arm ' + money(newArmLow) + ' to ' + money(newArmHigh)
+        'pair at the median (session ' + medianSession.session + '): old arm ' + money(oldArm)
+        + ', new arm ' + money(newArmLow) + ' (that session\'s own projection) to '
+        + money(newArmHigh) + ' (parity, saves nothing)'
         + ', total ' + money(totalLow) + ' to ' + money(totalHigh)
     );
-    return { text: lines.join('\n'), n, min, q1, median, q3, max };
+    return { text: lines.join('\n'), n, min, q1, median, q3, max, medianSession };
 }
 
 // --- main --------------------------------------------------------------------
@@ -356,8 +374,7 @@ function main() {
     const b2 = block2(rows, pr);
     const b3 = block3(b2.sessions);
     const b4 = block4(b2.sessions, pr);
-    const ratioLow = b2.totalOld ? b2.totalLow / b2.totalOld : 0;
-    const b5 = block5(b2.sessions, ratioLow);
+    const b5 = block5(b2.sessions);
 
     const text = [b1, '', b2.text, '', b3.text, '', b4.text, '', b5.text, ''].join('\n');
 
