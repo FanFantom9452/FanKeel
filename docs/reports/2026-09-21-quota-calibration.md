@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-21
-source_of_truth: 四份輸出都由 `docs/reports/evidence/2026-09-21-quota-calibration/` 底下同名腳本產生，各自帶著產生它的那個 sha — `windows-at-43daef5.txt`（全機 427 份頂層 transcript 的逐分段表）、`drift-at-43daef5.txt`（66 個 session 的重分配）、`sonnet-at-43daef5.txt`（Sonnet 主控那一趟）三份在 `43daef5`；`basis-at-3784eb7.txt`（兩次捕捉的對照、下限論證與 `quotaLimits`）在 `3784eb7`，因為那支腳本在審查之後改過，另外三支自 `43daef5` 起一個位元都沒動。兩次 statusline 捕捉分別是 `evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt` 與 `evidence/2026-09-21-quota-calibration/quota-capture-260920T203515Z.txt`。費率表那次讀取的引文在 `pricing-read-260921.txt`。
+source_of_truth: 四份輸出都由 `docs/reports/evidence/2026-09-21-quota-calibration/` 底下同名腳本產生，各自帶著產生它的那個 sha — `windows-at-43daef5.txt`（全機 427 份頂層 transcript 的逐分段表）在 `43daef5`；`basis-at-3784eb7.txt`（兩次捕捉的對照、下限論證與 `quotaLimits`）在 `3784eb7`；`drift-at-b5abad3.txt`（66 個 session 的重分配）與 `sonnet-at-b5abad3.txt`（Sonnet 主控那一趟）在 `b5abad3`。三個 sha 是三次審查之後的修改：basis 補上第二份 transcript，drift 與 sonnet 把「文件裡提到指令」與「指令真的跑過」分開。`windows.js` 自 `43daef5` 起一個位元都沒動。兩次 statusline 捕捉分別是 `evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt` 與 `evidence/2026-09-21-quota-calibration/quota-capture-260920T203515Z.txt`。費率表那次讀取的引文在 `pricing-read-260921.txt`。
 ---
 
 # 5h 與 7d 額度怎麼掛勾，與逐站帳的戳記偏移
@@ -34,7 +34,7 @@ subagents 樹）裡有 13 筆，欄位是 `status`、`rateLimitType`、`resetsAt
 `overageStatus` 那一組 —— **沒有任何百分比欄**。所以它當不了序列。它記的是別的東西，
 見 §7。
 
-中間那一段：244.6 分鐘、760 個 request、1.59 億 token、**$91.68**。全機 427 份
+中間那一段：244.6 分鐘、760 個 request、1.59 億 token、**$91.68**。全機 427 份**頂層**
 transcript 裡只有兩個 session 在這個 5 小時視窗裡有 request，所以那不是抽樣，
 就是整個視窗（`windows-at-43daef5.txt` block 2）。
 
@@ -118,7 +118,7 @@ $7.64–$9.17 當定值。
 
 | | |
 |---|---|
-| 量到的 session | 66，共 279 個邊界 |
+| 量到的 session | 66，共 280 個邊界 |
 | 中位數有多少花費換了站 | **13.9%** |
 | 超過一成的 | 44 個 |
 | 低於 2% 的 | 3 個 |
@@ -135,12 +135,13 @@ session 當成 mismatch 丟掉並回報，這一趟是 0 個。
 是**高估**，所以「再調 survey 大腦幾乎無效」更強而不是更弱。
 
 修法是 `task.js` 自己蓋戳（`registry.stampEntry`），和 `lib/detail.js` 的
-`stageSequence` 早就在做的事對齊，`docs/station.md` 也早就這樣承諾。舊的 181 筆
-紀錄不遷移：它們的偏移只能像這裡一樣從 transcript 重算。
+`stageSequence` 早就在做的事對齊，`docs/station.md` 也早就這樣承諾。已經寫下的紀錄不遷移
+（數量每天在長，所以這裡不給一個會過期的計數）：它們的偏移只能像這裡一樣從
+transcript 重算。
 
 ## 6. Sonnet 主控那一趟
 
-一條臂，沒有配對。`sonnet-at-43daef5.txt`：
+一條臂，沒有配對。`sonnet-at-b5abad3.txt`：
 
 - 主 transcript 每一輪都是 `claude-sonnet-5`，6 個 subagent 也全是。沒有 Opus。
 - 五站走完、本地 merge，合完的那個 commit `ad14458` 上整套 1658 綠。那個數字不在
@@ -168,7 +169,7 @@ session 當成 mismatch 丟掉並回報，這一趟是 0 個。
 |---|---|---|---|
 | 2026-08-20T18:38Z | `seven_day` | 2026-08-20T19:00Z | 1 |
 | 2026-09-02T04:47Z–13:13Z | `five_hour` | 三個不同視窗 | 6 |
-| 2026-09-09T22:58Z | `seven_day` | 2026-09-10T04:00Z | 5 |
+| 2026-09-09T22:58Z | `seven_day` | 2026-09-10T04:00Z | 6 |
 
 拿其中一次被拒的時刻，把該視窗開窗到那一刻的花費算出來，就得到「100% 值多少錢」，
 不必再猜整數讀數的 ±0.5。這份報告沒有用它 —— 它是另一次量測，`basis-at-*.txt`
@@ -176,7 +177,8 @@ block 4 是它的入口。
 
 ## 8. 怎麼自己重跑
 
-四支腳本都只讀、不寫任何倉庫狀態，路徑一律從 `__dirname` 往上解，transcript
+四支腳本都不改倉庫狀態——不碰 git、不碰 registry、不碰工作樹裡任何別人的檔；
+它們唯一寫的就是自己那份輸出，見下一段。路徑一律從 `__dirname` 往上解，transcript
 目錄走 `lib/live.js` 的 `liveConfigDir()`：
 
 ```
@@ -187,16 +189,19 @@ node docs/reports/evidence/2026-09-21-quota-calibration/sonnet.js
 ```
 
 每一支把自己的輸出寫成 `<name>-at-<sha>.txt`，sha 取自跑的時候的 HEAD。**那個
-sha 要是真的，產生輸出的那個 commit 就不能同時改腳本。** 這裡是兩對 commit：
-`43daef5` 放四支腳本、`640309e` 只放輸出；審查之後 `basis.js` 改過，所以
-`3784eb7` 放那次修改、`7a91474` 只放它的新輸出。兩個放輸出的 commit 裡 `.js` 檔案
-數都是 0，而另外三支腳本自 `43daef5` 起沒動過，所以它們的檔名仍然是真的：
+sha 要是真的，產生輸出的那個 commit 就不能同時改腳本。** 這裡是三對 commit，一對一次修改：
+`43daef5`／`640309e` 是四支腳本與它們的第一批輸出；`3784eb7`／`7a91474` 是 `basis.js`
+的修改與它的新輸出；`b5abad3`／`80742ae` 是 `drift.js` 與 `sonnet.js` 的修改與它們的。
+三個放輸出的 commit 裡 `.js` 檔案數都是 0，而 `windows.js` 自 `43daef5` 起沒動過，
+所以它的檔名仍然是真的：
 
 ```
-git diff-tree --no-commit-id --name-only -r 640309e | grep -c '\.js$'
-git diff-tree --no-commit-id --name-only -r 7a91474 | grep -c '\.js$'
+for c in 640309e 7a91474 80742ae; do git diff-tree --no-commit-id --name-only -r $c | grep -c '\.js$'; done
 git diff --stat 43daef5..HEAD -- docs/reports/evidence/2026-09-21-quota-calibration/windows.js
 ```
+
+`grep -c` 回 0 時結束碼是 1，所以上面用 `for` 而不是 `&&` 串——串起來會在第一個
+0 就斷掉，而 0 正是要的答案。這個坑也踩過。
 
 用 `git diff-tree --name-only` 而不是 `git show --stat | grep`：後者會把 commit
 訊息也算進去，而這份報告的訊息裡就寫著 `.js`，所以那個寫法會回報 1。這個坑是落地
@@ -209,7 +214,12 @@ session，落地時量到 66 個，因為量測用的那個 session 自己又換
 **上面的散文有捨入，輸出沒有。** 「1.59 億 token」是 `159,071,706`、「1,555 萬」是
 `15,550,552`、「差 1.5%／10.7%」是 `+1.48%`／`-10.69%`、「$11.85」是 `$11.8476`、
 逐站的 `$0.24`／`$2.99` 是 `$0.2396`／`$2.9856`。有疑問時以 `-at-*.txt` 為準。
-整份報告的數字裡，只有 §6 那個 1658 不出自任何 evidence 輸出，所以它帶著它自己的
-sha。那一輪機械比對還漏了一個：§3 的 request 數本來抄了 `7d-open..5h-open` 單獨
-一列的 16,536，而該處要的是那一列加上 `5h-open..A` 的 123。逐字比對抓得到「不在
-輸出裡」，抓不到「抄錯了輸出裡的哪一列」。
+機械比對的結果，逐項算出來而不是估的：120 個數字，16 個不是逐字出現在輸出裡 ——
+5 個是 commit sha 的片段、8 個是上一段列的捨入、2 個是檔名裡的日期（`203515`、
+`260921`），剩下 1 個就是 §6 那個 1658，報告自己已經標明它不出自任何輸出。
+
+這個比對抓得到「不在輸出裡」，抓不到兩件事，兩件都真的發生過：**抄錯了輸出裡的哪
+一列** —— §3 的 request 數原本抄了 `7d-open..5h-open` 單獨一列的 16,536，而該處要
+的是它加上 `5h-open..A` 的 123；以及**把表裡的數字加錯** —— §7 那張表的第三列原本
+寫 5 筆，輸出裡是 6 筆，而同一段的散文寫著 13 筆，1+6+5 湊不出 13。兩個都是審查
+抓的，不是這個比對抓的。
