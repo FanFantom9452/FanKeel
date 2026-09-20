@@ -846,12 +846,16 @@ test('touch appends a two-element move when no finite reading is available', () 
 // still the hook's: a CLI has no transcript to take one from, so `touch()`
 // fills it into the move the command already appended rather than appending a
 // second one.
-// What `scripts/task.js`'s `stage` and `start` actually do: `stampEntry` from
-// inside their own open `update` callback, so the change and its stamp are one
-// write. Spelled out here rather than exported as a `registry.enter`, because
-// such a wrapper would have had no production caller — both call sites are
-// already inside an `update`, and a second one would re-enter the same session's
-// lock and spin until the outer one looked stale.
+// What `scripts/task.js` does, in the two different shapes it does it. `cmdStage`
+// calls `stampEntry` from inside its own open `update` callback and passes no
+// `at`, so the route check and the stamp are one write. `cmdStart` has no
+// `update` at all: it builds the record from scratch, calls `stampEntry` with
+// `Date.parse(started)` so the first move and `started` agree to the
+// millisecond, and writes once with `replace`. This helper is `start`'s shape.
+//
+// Neither site wanted a `registry.enter` wrapper, for two different reasons —
+// `cmdStage` is already inside an `update` and a second one would re-enter the
+// same session's lock, and `cmdStart` has no `update` to be inside.
 const enter = (root, id, stage) => registry.update(root, id, (d) => {
   d.updated = new Date().toISOString();
   registry.stampEntry(d, stage, Date.parse(d.updated));

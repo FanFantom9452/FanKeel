@@ -91,7 +91,7 @@ A third field is written by nobody the user talks to. `claims` holds every file
 this task has edited — at most sixty, each recorded whole and never truncated,
 because nothing here is a path a human retypes. The two writers reach that cap
 from opposite directions. A path arriving on its own drops the oldest to make
-room (`lib/registry.js:672`, `slice(-MAX_CLAIMS)`); a git pass holding more than sixty is refused
+room (`lib/registry.js:722`, `slice(-MAX_CLAIMS)`); a git pass holding more than sixty is refused
 whole rather than trimmed (`lib/dirty.js:176`, `declined: written.length`), because trimming it would evict
 every claim an edit earned and put build output in its place.
 [collisions.md](collisions.md) is the page for that. Two hooks append to it,
@@ -121,12 +121,16 @@ written by `hooks/leave.js` once, at `SessionEnd`, and its shape is under
 ```
 
 `moves` sits beside them and is not a cost. It is one `[stage, at, used]` for
-each change of stage, stamped by the command that made the change —
-`task.js stage` and `task.js start`, through `stampEntry` — so the entry
-opening a stage's first visit carries that stage's `clock` first. A command
-has no transcript to read a context figure from, so it writes the entry as
-`[stage, at]`; `used` arrives afterwards, filled in by the first `touch()`
-that has one (`hooks/inject.js`) to give. What one stage's
+each change of stage. Where a command made the change — `task.js stage` and
+`task.js start`, through `stampEntry` — the entry is stamped at that command's
+own moment, so the entry opening a stage's first visit carries that stage's
+`clock` first. Where none did, `touch()` still appends one itself, stamped at
+its own sighting: an answered gate reaches `hooks/resume.js` with no command
+before it, and `task.js task` clears `moves` on a rename and leaves the new
+task's opening entry to whichever `touch()` comes next. A command has no
+transcript to read a context figure from, so it writes the entry as
+`[stage, at]`, and `used` arrives afterwards — filled in by the first `touch()`
+that has one to give (`hooks/inject.js`). What one stage's
 regression to `build` cost is the difference between two adjacent `used`
 readings. `clock` keeps one pair per stage, which makes a verify
 that went back to build and returned read as one long verify; `moves` keeps the
