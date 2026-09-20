@@ -99,7 +99,6 @@ function exportedNames(src) {
         if (src[i] === '{') depth++;
         else if (src[i] === '}' && --depth === 0) end = i;
     }
-    if (end < 0) return [];
     return src.slice(start, end).split(',')
         .map((entry) => entry.trim().split(':')[0].trim())
         .filter((name) => /^[A-Za-z_$][\w$]*$/.test(name));
@@ -133,9 +132,10 @@ test('every exported name is imported by something', () => {
 
 // The control for the test above. Over the tree an empty answer and a right one
 // read the same, because nothing exported for nobody is what a clean tree looks
-// like — so the scan is shown finding names in the three places the tail-anchored
-// one could not: at the end, before a `require.main` block, and inside a guard
-// with code after it.
+// like — so the scan is shown finding names in three placements. At the tail the
+// tail-anchored regex worked too, and that case checks the scan still agrees with
+// it there; before a `require.main` block and inside a guard with code after it
+// are the two it could not read.
 test('an export list is found wherever in the file it sits', () => {
     const atTail = 'const x = 1;\nmodule.exports = { a, b: c };\n';
     const beforeMain = 'module.exports = { fanout };\n\nif (require.main === module) {\n    run();\n}\n';
