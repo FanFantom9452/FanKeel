@@ -81,6 +81,31 @@ function imported(exporter, files, body) {
     return names;
 }
 
+// The names in a `module.exports = {…}`, wherever in the file it sits. The first
+// version anchored on the end of the file and read everything up to the last `}`
+// in it, so it only worked while the export was the final statement. Followed by
+// an `if (require.main === module) {…}` (lib/fanout.js, scripts/version.js) it
+// swallowed that block into the last name and dropped it; inside a `typeof
+// module` guard with 1,600 lines after it (assets/station/station.js) it matched
+// nothing, and eight dead names went unchecked. Counting braces from the opening
+// one ends the list at its own close, whatever follows. It takes every brace it
+// meets at face value, so a `{` or `}` inside a string or comment in the list
+// would end the scan early or late without a word; none does today.
+function exportedNames(src) {
+    const open = /module\.exports\s*=\s*\{/.exec(src);
+    if (!open) return [];
+    const start = open.index + open[0].length;
+    let depth = 1;
+    let end = -1;
+    for (let i = start; i < src.length && end < 0; i++) {
+        if (src[i] === '{') depth++;
+        else if (src[i] === '}' && --depth === 0) end = i;
+    }
+    return src.slice(start, end).split(',')
+        .map((entry) => entry.trim().split(':')[0].trim())
+        .filter((name) => /^[A-Za-z_$][\w$]*$/.test(name));
+}
+
 // An exported name nobody imports is not dead code — the function behind it is
 // almost always still called inside its own file. It is a dead *name*, and what
 // it costs is the interface: a module that exports thirty names of which twelve
@@ -96,17 +121,34 @@ test('every exported name is imported by something', () => {
 
     for (const rel of files) {
         if (rel.startsWith('tests/')) continue;
-        const block = body.get(rel).match(/module\.exports\s*=\s*\{([\s\S]*?)\n?\};?\s*$/);
-        if (!block) continue;
+        const names = exportedNames(body.get(rel));
+        if (!names.length) continue;
         const used = imported(rel, files, body);
-        for (const entry of block[1].split(',')) {
-            const name = entry.trim().split(':')[0].trim();
-            if (!/^[A-Za-z_$][\w$]*$/.test(name)) continue;
+        for (const name of names) {
             if (!used.has(name)) orphans.push(rel + ' — ' + name);
         }
     }
 
     assert.deepEqual(orphans, [], 'exported, and imported by nothing');
+});
+
+// The control for the test above. Over the tree an empty answer and a right one
+// read the same, because nothing exported for nobody is what a clean tree looks
+// like — so the scan is shown finding names in three placements. At the tail the
+// tail-anchored regex worked too, and that case checks the scan still agrees with
+// it there; before a `require.main` block and inside a guard with code after it
+// are the two it could not read.
+test('an export list is found wherever in the file it sits', () => {
+    const atTail = 'const x = 1;\nmodule.exports = { a, b: c };\n';
+    const beforeMain = 'module.exports = { fanout };\n\nif (require.main === module) {\n    run();\n}\n';
+    const inGuard = '(function () {\n    if (typeof module !== "undefined" && module.exports) {\n'
+        + '        module.exports = {\n            tokens: tokens, mins: mins,\n            usd: usd,\n        };\n'
+        + '    }\n    if (!doc) return;\n})();\n';
+
+    assert.deepEqual(exportedNames(atTail), ['a', 'b']);
+    assert.deepEqual(exportedNames(beforeMain), ['fanout']);
+    assert.deepEqual(exportedNames(inGuard), ['tokens', 'mins', 'usd']);
+    assert.deepEqual(exportedNames('module.exports = run;\n'), []);
 });
 
 // `contractOf` in `lib/docs.js` reads three frontmatter keys and no others, and

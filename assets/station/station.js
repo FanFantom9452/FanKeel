@@ -1103,10 +1103,9 @@
             tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
             stamp: stamp, esc: esc, cost: cost, labels: labels, delta: delta, match: match,
             statePill: statePill, clearStaleControl: clearStaleControl,
-            profileRows: profileRows, applyMachineControl: applyMachineControl,
             profileCard: profileCard,
-            openSections: openSections, niceStep: niceStep, downsample: downsample, lineChart: lineChart,
-            comma: comma, riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
+            openSections: openSections, downsample: downsample, lineChart: lineChart,
+            riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
             dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, splitHtml: splitHtml,
             splitCount: splitCount,
             todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
@@ -1120,8 +1119,8 @@
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
             sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost,
             heroEyebrow: heroEyebrow, docsCardHtml: docsCardHtml,
-            stageNow: stageNow, runningTag: runningTag, railHtml: railHtml, liveTag: liveTag, agoText: agoText,
-            clockSec: clockSec, tk: tk,
+            railHtml: railHtml, liveTag: liveTag,
+            tk: tk,
         };
     }
     if (!doc) return;
