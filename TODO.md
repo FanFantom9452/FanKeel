@@ -77,6 +77,7 @@ what gets scheduled.
 
 - 〔tests〕「匯出而沒人 import」只在 `module.exports = {…}` 是檔尾最後一句時才檢查，`assets/station/station.js` 的匯出因此不受檢；station-live 的 Task 7 審查找到兩個漏網的 — [tests/source.test.js](tests/source.test.js).
 - 〔station〕`serve` 送 `/station/station.js` 與 `.css` 時不帶 `cache-control`，而同一支裡 `/`、`station-data.js`、detail 三條都帶 `no-store`：升版後瀏覽器可能跑舊的用戶端腳本 — [scripts/station.js](scripts/station.js).
+- 〔station〕首頁圖例在 `依版本` 下不收攏：`colorOf` 把第七個以後的版本全給 `--p-5`，而 `legendHtml` 只為 `project` 印「其他 N 個」，所以八個版本會有三個同色的圖例項與三段分不開的堆疊 — [assets/station/station.js](assets/station/station.js).
 - 〔docs〕`conflict()` 有四個 predicate，`read` 那個（`Read:` 擋鄰居的 `Modify`/`Test`）在 `docs/subagents.md`、`docs/collisions.md`、`docs/pipeline.md` 三頁都沒提，三頁各自只算到兩三個 — [lib/plantasks.js](lib/plantasks.js).
 - 〔tests〕程式註解裡的 `path:line` 沒人驗，docs-check 只看 markdown：`fb2f734` 就有三條歪的，一在 [tests/station-hide.test.js](tests/station-hide.test.js)、二在 [tests/station-view.test.js](tests/station-view.test.js)，其一指到不存在的行。
 
