@@ -100,6 +100,8 @@ what gets scheduled.
 - 〔quota〕要不要讓 TokenBar 把 5h／7d 讀數記成序列（另一個 repo）：兩次讀數已給出 5h 不是數未加權 token、$7.64–$8.50 一點，但 7d 的水位兩點仍差 4.7 倍，要第三點才分得出是延遲還是計別的 — [scripts/spend.js](scripts/spend.js).
 - 〔station〕首頁整頁要不要改成三欄的完整工作站、並把 profile 的逐列設計併進去：這一輪只做三張習慣預設卡與每鍵一句說明，逐列標記、清成 (ask)、stage.agents 七站 toggle 沒做；先要量整個首頁版面 — [assets/station/station.js](assets/station/station.js).
 - 〔docs〕`docs/README.md` 有六列標 *built* 但頁面 frontmatter 是 design-intent，另有一列相反：改標籤還是改 frontmatter，要一頁頁看 — [docs/README.md](docs/README.md).
+- 〔tests〕`a writer waits out a lock somebody else is holding` 整套裡第二次紅：09-21 在 3784eb7、09-22 在 40e3e12，單跑都綠；放寬測試裡 300ms 對 1s 的時序，還是查並行下外層鎖被判過期 — [tests/registry.test.js](tests/registry.test.js).
+- 〔stage-agents〕auto mode 分類器對站 agent 與 implementer 的 Write／Edit 回「no verdict」（09-22 一場 session 六次以上），受控站的 handoff 檔因此寫不出來；要不要讓站 agent 寫不出時改把報告回在訊息裡 — [docs/subagents.md](docs/subagents.md).
 
 ## Waiting
 
@@ -157,11 +159,6 @@ lifts when: 下一個前端任務出現. 09-18.
 lifts when: knip 認得 CJS namespace property access. 09-18.
 
 - 〔build〕knip 的 unused exports 一格關著：6.37.0 仍認不得 CJS namespace 取用，開著回 156 個假陽性（09-18 重跑） — [docs/development.md](docs/development.md).
-
-### 鎖等待測試再紅一次
-lifts when: `a writer waits out a lock somebody else is holding` 在整套裡再紅一次. 09-21.
-
-- 〔tests〕09-21 在 3784eb7 整套紅過一次（1662/1663，該測試跑了 8.3 秒後判定「放棄而非等待」），單跑該檔三次各 90/0、整套重跑 1663/0 綠；疑並行下 CPU 飢餓讓外層鎖看起來過期，未證實 — [tests/registry.test.js](tests/registry.test.js).
 
 ### guard 測試再紅一次
 lifts when: `a claim whose process is gone does not block` 在整套裡再紅一次. 09-19.
