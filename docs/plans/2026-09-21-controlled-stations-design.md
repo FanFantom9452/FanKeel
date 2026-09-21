@@ -65,6 +65,15 @@ last_verified: 2026-09-21
 - `profile show` 的表格欄寬跟著最長的值，不再把 `survey,build,verify` 與來源層黏在一起。
 - 畫面只取 mockup 上方的「快速設定」三張卡與「套用」；mockup 在 .fankeel/build/2026-09-21-controlled-stations/mockup.html，不提交（那個目錄在 gitignore 下）。下方的逐列設計不做，見「不做的」。
 
+## 5. 受控 build 的提交與 verify 的 mutation（build 收尾時使用者定的）
+
+build 的整支分支 review 找到：brain 被禁 `git commit`、`git add`、`git checkout`，而 controller 只派工與發問，所以受控的 build 沒人能提交，受控的 verify 沒人能套 mutation。使用者在 build 關卡選了「controller 依回傳提交」。
+
+- 受控的 build 由 controller 提交：brain 寫一個 commit 檔（每行一個路徑、一個空行、訊息）並回傳 `commit <檔>`，controller 跑 `scripts/commit.js <檔>`，再用 SendMessage 把它印出的 `<base>..<sha>` 原樣回給 brain，那就是該 task 的 reviewer 釘住的範圍。
+- `scripts/commit.js` 只提交檔內列的路徑（`git commit -o`），其餘已暫存或未提交的留在原處；無空行、無訊息、或 git 拒絕的路徑（repo 外、不存在、像旗標），都回 1 且不動 HEAD。
+- controller 每個 task 因此多一次 Bash 與一次 SendMessage，會吃掉一部分 context 回收；另外兩個做法是 brain 依 brief 提交、build／verify 維持不受控，A/B 要把這個成本算進去。
+- verify 的 brain 也不能編輯或還原檔案，所以 `STAGE_AGENTS` 的 verify 多一個 implementer，專門套 mutation、跑測試、還原。
+
 ## 檔案與派工
 
 | file | change | dispatch |
@@ -94,3 +103,4 @@ last_verified: 2026-09-21
 ## 未驗證
 
 - 裝機版怎麼在**不 push** 的前提下拿到新碼：沒有查出 `a6a3da7` 是怎麼裝進去的。發版那一步先問，不猜。
+- 受控 build 的提交來回（brain → controller → brain）沒有端到端跑過，只有腳本與兩邊文字的測試；controller 每個 task 多兩個回合的成本待 A/B 量。

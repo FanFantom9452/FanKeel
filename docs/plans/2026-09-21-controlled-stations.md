@@ -51,6 +51,10 @@ Generated from `node scripts/map.js` (232 markdown files, 4 planned, not built),
 | 每個 `KEYS` 都有非空 `desc`；現在沒有（`tests/profile.test.js`）。 | Task 4 |
 | **產出物那一列**：把站頁 render 出來，DOM 裡有說明的列數等於 `Object.keys(KEYS).length`， | Task 6 (the card's HTML string, since `node --test` has no DOM); the verify stage renders the served page with Playwright |
 | `scripts/ctx.js` 對一份手算過的 fixture，峰值等於手算值。 | Task 3 |
+| 受控的 build 由 controller 提交：brain 寫一個 commit 檔（每行一個路徑、一個空行、訊息）並回傳 `commit <檔>`， | Task 7 |
+| `scripts/commit.js` 只提交檔內列的路徑（`git commit -o`），其餘已暫存或未提交的留在原處； | Task 7 |
+| controller 每個 task 因此多一次 Bash 與一次 SendMessage，會吃掉一部分 context 回收； | Task 7 (nothing to build; the cost is what `scripts/ctx.js` measures in the A/B) |
+| verify 的 brain 也不能編輯或還原檔案，所以 `STAGE_AGENTS` 的 verify 多一個 implementer， | Task 7 |
 
 ## Task 1: Release what is already on main
 
@@ -957,3 +961,27 @@ npm test
 The parent reads the exit code, not a tail of the output.
 
 What this task cannot do is render the page: `node --test` has no DOM, so the tests above match the card's HTML string against `profile.display`. The design's artefact row — the rendered page, its described rows counted against `Object.keys(KEYS).length`, each value compared with what `task.js profile show` prints — is the verify stage's, run against the served page with Playwright.
+
+## Task 7: A controlled build's commits go through its controller
+
+Design §5. Added at the end of build, after the whole-branch review found that a controlled build had nobody who could commit, and the user chose the controller. Not part of the approved six.
+
+**Files:**
+- Modify: `scripts/commit.js` — new file, `main(argv, cwd)`: reads a commit file, `git add` then `git commit -o` of the listed paths, prints `<base>..<sha>`
+- Modify: `lib/handoff.js` — `commitPath(root, data, stage)` beside `handoffPath`
+- Modify: `lib/stages.js` — `SCRIPT_TOKENS.commit`, `COMMIT_RULE` in `controlRules` for `build` only, an implementer in `STAGE_AGENTS.verify`
+- Modify: `lib/render.js` — `SCRIPTS.commit`, and in `renderBrainBrief` the build line (write the commit file, return `commit <path>`) and the verify line (send an implementer for a mutation)
+- Modify: `agents/fankeel-brain.md` — Tools, Refusals and Return name the commit file
+- Modify: `docs/subagents.md` — the protocol table gains the commit row, the `build` paragraph says what is and is not run
+- Modify: `TODO.md` — the 〔stage-agents〕 entry loses the commit gap
+- Test: `tests/commit.test.js` — new file
+- Test: `tests/brief.test.js`
+- Test: `tests/render.test.js`
+
+**Interfaces:**
+- Consumes: `handoffPath`'s directory rule in `lib/handoff.js`; `agentsFor(stage)` and `controlRules(stage)` in `lib/stages.js`
+- Produces: `commit.main(argv, cwd) → { text, code? }`; `commitPath(root, data, stage) → string | null`; the commit file's shape, paths one per line, a blank line, then the message
+
+**Dispatch:** in-session — the script, the controller's rule and the brain's brief line are one protocol, and splitting it across contexts costs more than the reading saves.
+
+Done as one red-then-green pass: `tests/commit.test.js` written first and run red (`Cannot find module`), then the script; the two render tests and the brief tests pin the wording on both sides of the protocol. The controller commits with `git commit -o`, so a commit made this way carries no `Co-Authored-By` trailer; that is accepted rather than fixed here.

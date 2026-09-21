@@ -1,0 +1,52 @@
+#!/usr/bin/env node
+'use strict';
+
+// Commits one task for a stage agent that is refused git writes. The agent
+// writes a commit file — the paths it owns one per line, a blank line, then the
+// message — and the controller runs this and messages the agent what it printed:
+// `<base>..<sha>`, the range that task's reviewer is pinned to. `git commit -o`
+// takes only the listed paths, so whatever else is staged or dirty stays as it
+// was. It runs `git` in the current directory and leaves a path outside the
+// repository, or one that is not a path, for git to refuse.
+
+const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
+
+function parse(text) {
+    const at = text.search(/\r?\n[ \t]*\r?\n/);
+    if (at < 0) return { error: 'no blank line between the paths and the message' };
+    const paths = text.slice(0, at).split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    const message = text.slice(at).trim();
+    if (!paths.length) return { error: 'no paths' };
+    if (!message) return { error: 'no message' };
+    return { paths, message };
+}
+
+function main(argv, cwd) {
+    if (argv.length !== 1) return { text: 'usage: commit.js <commit file>', code: 2 };
+    let raw;
+    try {
+        raw = fs.readFileSync(argv[0], 'utf8');
+    } catch (e) {
+        return { text: 'commit.js: cannot read ' + argv[0], code: 1 };
+    }
+    const parsed = parse(raw.trimStart());
+    if (parsed.error) return { text: 'commit.js: ' + parsed.error, code: 1 };
+
+    const git = (args, input) => spawnSync('git', args, { cwd, encoding: 'utf8', input });
+    const base = git(['rev-parse', 'HEAD']);
+    if (base.status !== 0) return { text: 'commit.js: no git repository with a commit here', code: 1 };
+    const add = git(['add', '--'].concat(parsed.paths));
+    if (add.status !== 0) return { text: 'commit.js: git add failed: ' + add.stderr.trim(), code: 1 };
+    const made = git(['commit', '-o', '-F', '-', '--'].concat(parsed.paths), parsed.message + '\n');
+    if (made.status !== 0) return { text: 'commit.js: git commit failed: ' + (made.stderr || made.stdout).trim(), code: 1 };
+    return { text: base.stdout.trim() + '..' + git(['rev-parse', 'HEAD']).stdout.trim() };
+}
+
+if (require.main === module) {
+    const { text, code } = main(process.argv.slice(2));
+    process.stdout.write(text + '\n');
+    if (code) process.exitCode = code;
+}
+
+module.exports = { main };

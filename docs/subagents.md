@@ -467,7 +467,7 @@ empty list is refused with, in the shape every other bad profile value takes
 (`lib/profile.js:93`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
-file could change (`lib/stages.js:616`, `const raw = values && values['stage.agents'];`),
+file could change (`lib/stages.js:622`, `const raw = values && values['stage.agents'];`),
 so which stages are controlled is a profile answer, not a constant. Put a
 stage on that list and it is run by a stage agent instead of by the session:
 
@@ -480,6 +480,7 @@ stage on that list and it is run by a stage agent instead of by the session:
 | the gate | `hooks/gate.js` | replaces the controller's placeholder question with the block's, word for word |
 | the answer | `hooks/resume.js` | writes it to the answer file; the controller's `SendMessage` names the path |
 | a pause | `task.js next --from-gate` | reads the block's `next` line |
+| a commit (`build` only) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/build-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back `<base>..<sha>` |
 
 The agents a stage agent dispatches — readers and reviewers, and on `build` also a fixer and implementers, on `verify` a verifier and a fixer — are a second layer down, but their transcripts land
 in the same `subagents/` directory as the stage agent's, each `.meta.json`
@@ -509,17 +510,19 @@ landed on this same branch) — `stage.agents` can now name `build` or
 `verify`, but nothing has measured either one there, and those are the two
 stages a default would actually move the number on.
 
-And `build` can be tried now, though it has a gap a measurement would not
-close: `STAGE_AGENTS` in `lib/stages.js` gives its stage agent readers,
-reviewers, a fixer and implementers, all through the `Agent` tool. The guard
-above locks the *controller* out of `Edit`, `Write` and `NotebookEdit`; the
-stage agent has no `Edit` and no `Workflow`, and gets its edits made by the
-implementers it sends (`agents/fankeel-brain.md:4`, `tools: [Read, Grep, Glob, Bash, Write, Agent]`,
-where `Write` is for its handoff file).
-What is not settled is who commits, and who applies a mutation to a committed
-file to watch a test redden: the agent's Refusals forbid `git commit`, `git add`
-and `git checkout`, and the controller's rules keep it to dispatching and
-asking. `TODO.md` carries it, and a default should wait for it.
+And `build` can be tried now, but has not been run end to end: `STAGE_AGENTS` in
+`lib/stages.js` gives its stage agent readers, reviewers, a fixer and
+implementers, all through the `Agent` tool. The guard above locks the
+*controller* out of `Edit`, `Write` and `NotebookEdit`; the stage agent has no
+`Edit` and no `Workflow`, and gets its edits made by the implementers it sends
+(`agents/fankeel-brain.md:4`, `tools: [Read, Grep, Glob, Bash, Write, Agent]`,
+where `Write` is for its handoff file). It is refused `git commit` too, so it
+asks for each one through a commit file and the controller runs
+`scripts/commit.js` — a Bash call and a message back per task, in the
+controller's own context, which is a cost the A/B has to count rather than
+assume away. `verify` gets an implementer for the one thing its agent cannot do,
+applying a mutation and restoring the file. A default should wait for that
+measurement.
 
 # Telling a subagent apart, when a hook has to
 

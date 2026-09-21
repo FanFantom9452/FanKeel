@@ -680,6 +680,19 @@ test('stage.agents true at survey: the controller\'s block replaces the stage\'s
   }
 });
 
+test('a controlled build tells its controller to run commit.js on `commit <file>`, and no other controlled stage does', () => {
+  const { renderResume } = require('../lib/render.js');
+  const on = { values: { 'stage.agents': ['survey', 'build', 'verify'] }, sources: {}, unreadable: [] };
+  const at = (stage) => entry(MINE, { stage, started: '2026-09-19T09:30:12.345Z' });
+  for (const out of [render({ mine: at('build'), others: [], now: NOW, root: '/r', profile: on }), renderResume({ mine: at('build'), profile: on, root: '/r' })]) {
+    assert.match(out, /If it returns `commit <file>` instead of a report path, run `node <plugin>\/scripts\/commit\.js <file>` and SendMessage it what that printed/);
+    assert.equal(out.includes('{{'), false);
+  }
+  for (const stage of ['survey', 'verify']) {
+    assert.doesNotMatch(render({ mine: at(stage), others: [], now: NOW, root: '/r', profile: on }), /commit <file>/, stage);
+  }
+});
+
 test('stage.agents true at survey, the route ending there: option one stands the task down', () => {
   const { renderResume } = require('../lib/render.js');
   const readRule = byName('survey').rules.find((r) => r.startsWith('Read whatever documents'));

@@ -316,7 +316,7 @@ test('a stage agent on a record with no started gets the ordinary brief', () => 
   assert.ok(!text.includes('stage rules:'));
 });
 
-test('a build brain may dispatch a fixer and an implementer, a verify brain a verifier, a survey brain neither', () => {
+test('a build brain may dispatch a fixer and an implementer, a verify brain a verifier, a fixer and an implementer, a survey brain neither', () => {
   const dispatchLine = (stage) => {
     const root = tmp();
     seedProfile(root, { 'stage.agents': [stage] });
@@ -329,11 +329,29 @@ test('a build brain may dispatch a fixer and an implementer, a verify brain a ve
   assert.match(build, /implementer/);
   assert.match(build, /`fankeel:fankeel-reviewer`, `fankeel:fankeel-fixer` or an implementer/);
   assert.match(dispatchLine('verify'), /fankeel:fankeel-verifier/);
-  assert.match(dispatchLine('verify'), /`fankeel:fankeel-verifier` or `fankeel:fankeel-fixer` with the Agent tool/);
+  assert.match(dispatchLine('verify'), /`fankeel:fankeel-verifier`, `fankeel:fankeel-fixer` or an implementer \(`general-purpose`, on the `dispatch.floor` model/);
   const survey = dispatchLine('survey');
   assert.match(survey, /fankeel:fankeel-reader/);
   assert.match(survey, /Dispatch `fankeel:fankeel-reader` or `fankeel:fankeel-reviewer` with the Agent tool/);
   assert.doesNotMatch(survey, /fankeel-fixer|fankeel-verifier|implementer/);
+});
+
+test('a build brain is told to ask for its commits through a commit file, a verify brain to send an implementer for a mutation', () => {
+  const brief = (stage) => {
+    const root = tmp();
+    seedProfile(root, { 'stage.agents': [stage] });
+    seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
+    return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  };
+  const commitFile = /\.fankeel\/build\/task-20260919T093012\/build-commit\.md/;
+  const build = brief('build');
+  assert.match(build, /You cannot commit: `git commit` and `git add` are refused to you\. When a task's implementer has returned[^\n]*write [^\n]*build-commit\.md[^\n]*return `commit [^\n]*build-commit\.md` and nothing else\. The controller commits and messages you `<base>\.\.<sha>`/);
+  assert.match(build, commitFile);
+  assert.doesNotMatch(build, /You cannot edit or restore a file/);
+  const verify = brief('verify');
+  assert.match(verify, /You cannot edit or restore a file\. To apply a mutation, run the test and restore the file, send an implementer/);
+  assert.doesNotMatch(verify, /You cannot commit/);
+  assert.doesNotMatch(brief('survey'), /You cannot commit|You cannot edit or restore/);
 });
 
 test('the brain\'s own ## Tools names every plugin agent its stage table lets it dispatch', () => {
