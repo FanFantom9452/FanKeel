@@ -89,6 +89,13 @@ test('outside a repository it exits 1 and says so', () => {
     assert.match(none.text, /^commit\.js: not inside a git repository/);
 });
 
+test('a repository with no commit yet exits 1 and says so', () => {
+    const dir = tmp('fankeel-commit-empty-');
+    git(dir, 'init', '-q');
+    fs.writeFileSync(path.join(dir, 'a.txt'), 'a\n');
+    assert.deepEqual(commit.main([requestFile('a.txt\n\nfeat: first\n')], dir), { text: 'commit.js: the repository has no commit yet', code: 1 });
+});
+
 test('a path with nothing to commit says so in the words the brain is told to look for', () => {
     const dir = repo();
     assert.ok(!commit.main([requestFile('a.txt\n\nfeat: once\n')], dir).code);

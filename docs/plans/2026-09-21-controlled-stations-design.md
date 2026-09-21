@@ -38,8 +38,8 @@ last_verified: 2026-09-21
 ## 2. brain 半邊：每站可派的 agent 是一張表
 
 - `lib/stages.js` 加一張 `STAGE_AGENTS`：survey → reader、reviewer；build → reader、reviewer、fixer，
-  外加帶 model 的 implementer；verify → reader、reviewer、verifier、fixer。
-- `renderBrainBrief` 讀這張表，不再寫死兩個名字；`controlRules` 不動。
+  外加帶 model 的 implementer；verify → reader、reviewer、verifier、fixer（§5 之後 verify 也有 implementer）。
+- `renderBrainBrief` 讀這張表，不再寫死兩個名字；`controlRules` 不動（§5 之後 build 的 `controlRules` 多一條提交規則）。
 - build 的組在 brain 裡用 Agent 分回合派（一回合最多四個），**不開 Workflow**。
   因此這個任務**不做**「由 script 從 plan 產生 workflow」：主控 context 的回收來自站 agent 吞掉中間過程，
   與 Workflow 無關；那條 TODO 留著，等量測顯示 brain 自己的 context 撐不住再做。

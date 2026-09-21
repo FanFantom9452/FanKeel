@@ -685,8 +685,9 @@ test('a controlled build tells its controller to run commit.js on `commit <file>
   const on = { values: { 'stage.agents': ['survey', 'build', 'verify'] }, sources: {}, unreadable: [] };
   const at = (stage) => entry(MINE, { stage, started: '2026-09-19T09:30:12.345Z' });
   for (const out of [render({ mine: at('build'), others: [], now: NOW, root: '/r', profile: on }), renderResume({ mine: at('build'), profile: on, root: '/r' })]) {
-    assert.match(out, /If it returns `commit <file>` instead of a report path, run `node <plugin>\/scripts\/commit\.js "<file>"` and SendMessage it what that printed/);
+    assert.match(out, /If it returns `commit <file>` instead of a report path, run `node <plugin>\/scripts\/commit\.js "<file>"` and SendMessage it what that printed, exactly\. No gate, nothing else; wait for it to return again\./);
     assert.equal(out.includes('{{'), false);
+    assert.ok(out.length < 2400, 'a controlled build block is ' + out.length + ' chars');
   }
   for (const stage of ['survey', 'verify']) {
     assert.doesNotMatch(render({ mine: at(stage), others: [], now: NOW, root: '/r', profile: on }), /commit <file>/, stage);

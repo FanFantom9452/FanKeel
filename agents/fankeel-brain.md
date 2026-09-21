@@ -43,6 +43,7 @@ each.
   stash`, `git reset` or `git clean` — `git` is for reading: `git show`,
   `git diff`, `git log` and `git status`. The session that sent it
   commits.
+- Do not run `scripts/commit.js`: the controller does, on your `commit <path>`.
 - Do not write outside the handoff file its brief names, and on a build
   stage the commit file — not a source file, not a test, not `.fankeel/sessions/*.json`. That
   registry is written by `task.js` only, and `task.js route` is the

@@ -350,9 +350,37 @@ test('a build brain is told to ask for its commits through a commit file, a veri
   assert.match(build, /relative to the repository root\. The reply is `<base>\.\.<sha>` or one line `commit\.js: <why>`\. If <why> is about your file or the paths you listed \([^)]*nothing to commit, cannot read\): fix it and ask again, but the same error twice means the stage is blocked\. If it is anything else \([^)]*usage\): the stage is blocked, so say so in the report\. Return the report path when the whole stage is done or blocked\./);
   assert.doesNotMatch(build, /You cannot edit or restore a file/);
   const verify = brief('verify');
-  assert.match(verify, /You cannot edit or restore a file\. To apply a mutation, run the test and restore the file, send an implementer: it does all three, and you read what it returns/);
+  assert.match(verify, /You cannot edit or restore a file\. To apply a mutation, run the test and restore the file, send an implementer on model `sonnet`: it does all three, and you read what it returns/);
   assert.doesNotMatch(verify, /You cannot commit/);
   assert.doesNotMatch(brief('survey'), /You cannot commit|You cannot edit or restore/);
+});
+
+test('a verify brain is told the profile\'s dispatch.floor as the model for its mutation implementer', () => {
+  const brief = (values) => {
+    const root = tmp();
+    seedProfile(root, Object.assign({ 'stage.agents': ['verify'] }, values));
+    seed(root, { stage: 'verify', started: '2026-09-19T09:30:12.345Z' });
+    return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  };
+  assert.match(brief({}), /send an implementer on model `sonnet`: it does all three/);
+  assert.match(brief({ 'dispatch.floor': 'opus' }), /send an implementer on model `opus`: it does all three/);
+});
+
+test('the brain agent file names the commit file it may write and refuses to run commit.js itself', () => {
+  const file = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
+  const section = (name) => file.split(/^## /m).find((s) => s.startsWith(name));
+  assert.match(section('Tools'), /on a build stage, the commit\s+file it names/);
+  assert.match(section('Refusals'), /on a build\s+stage the commit file/);
+  assert.match(section('Refusals'), /Do not run `scripts\/commit\.js`/);
+  assert.match(section('Return'), /`commit <path>` for a task to commit/);
+});
+
+test('a controlled build\'s brain brief stays under the 10,000-character cap on one additionalContext', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.ok(text.length < 10000, 'brain brief is ' + text.length + ' chars');
 });
 
 test('the brain\'s own ## Tools names every plugin agent its stage table lets it dispatch', () => {

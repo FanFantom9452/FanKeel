@@ -35,7 +35,7 @@ Generated from `node scripts/map.js` (232 markdown files, 4 planned, not built),
 | push 另外問。現況：裝機版標的 `a6a3da7` 是本地 merge、不在 origin 上，所以先前有一條本地安裝路， | Task 1 |
 | 完成的判準：`diff -rq <裝機版>/lib lib` 為空，而且新開的 terminal 裡 `controlling('build', …)` 為真。 | Task 1 |
 | `lib/stages.js` 加一張 `STAGE_AGENTS`：survey → reader、reviewer；build → reader、reviewer、fixer， | Task 2 |
-| `renderBrainBrief` 讀這張表，不再寫死兩個名字；`controlRules` 不動。 | Task 2 |
+| `renderBrainBrief` 讀這張表，不再寫死兩個名字；`controlRules` 不動（§5 之後 build 的 `controlRules` 多一條提交規則）。 | Task 2 (and Task 7 for the commit rule) |
 | build 的組在 brain 裡用 Agent 分回合派（一回合最多四個），**不開 Workflow**。 | Task 2 (the brief line, and the brain's own Tools section, which has to permit it) |
 | `scripts/ctx.js <transcript\|session-id>` 印主 session 每回合的 context（input＋cache read＋cache | Task 3 (a session id is turned into its transcript by the finder in lib/detail.js; the turns print on one line) |
 | `scripts/ctx.js --compare <a> <b>` 並排兩個 session。 | Task 3 |

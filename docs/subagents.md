@@ -72,8 +72,8 @@ deliberate: the check runs before `guardMode(mine)` is even read
 to `guard: off` is not exempt from it. `Bash` and `PowerShell` are
 deliberately left out of the set it tests (`hooks/guard.js:26`, `const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);`):
 the controller still has to run `scripts/task.js` to dispatch, relay a path
-and ask, and that runs through `Bash` — the matcher above, not this one,
-still governs it.
+and ask — and, on `build`, `scripts/commit.js` — and those run through `Bash`;
+the matcher above, not this one, still governs them.
 
 `fankeel-reader` runs at `model: sonnet` by default — the profile's
 `dispatch.floor`, which the survey, verify and audit skills ask their reader

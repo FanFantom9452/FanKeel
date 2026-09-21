@@ -21,9 +21,10 @@ const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-v
 // itself rather than returning it for the parent to apply, so it needs both
 // `Edit` and `Write` — never `Bash`, so it never runs the test the edit would
 // need.
-// `fankeel-brain` is the third: it writes one file, its handoff — the report
-// and gate block a controller hands on by path (`lib/handoff.js`) — so it
-// takes `Write` and nothing that edits in place.
+// `fankeel-brain` is the third: it writes its handoff — the report and gate
+// block a controller hands on by path (`lib/handoff.js`) — and, on a build
+// stage, the commit file its controller commits from, so it takes `Write` and
+// nothing that edits in place.
 const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'], 'fankeel-brain': ['Write'] };
 
 function front(file) {
