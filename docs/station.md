@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-19
+last_verified: 2026-09-21
 source_of_truth: lib/station.js, scripts/station.js, hooks/leave.js, lib/usage.js, lib/registry.js, lib/prices.js, lib/clear.js, lib/profile.js, lib/serve.js, hooks/inject.js, lib/detail.js, lib/replay.js, assets/station/station.js
 ---
 

@@ -4,7 +4,7 @@ description: Read-only reader for a stage's reading fan-outs — reads files, ru
 tools: [Read, Grep, Glob, Bash]
 model: sonnet
 status: current
-last_verified: 2026-09-11
+last_verified: 2026-09-21
 source_of_truth: lib/render.js
 ---
 

@@ -5,7 +5,7 @@ tools: [Read, Grep, Glob, Bash, Write, Agent]
 model: opus
 effort: medium
 status: current
-last_verified: 2026-09-20
+last_verified: 2026-09-21
 source_of_truth: lib/render.js
 ---
 
