@@ -538,7 +538,7 @@ async function serve(opts) {
             // Validate every pair before writing any, so a bad second key
             // does not leave the first one applied. An empty value clears the key.
             for (let i = 0; i < keys.length; i++) {
-                if (!profile.KEYS[keys[i]] || (values[i] !== '' && profile.parseValue(keys[i], values[i]).error)) {
+                if (!Object.prototype.hasOwnProperty.call(profile.KEYS, keys[i]) || (values[i] !== '' && profile.parseValue(keys[i], values[i]).error)) {
                     fail(400, 'not a profile key/value: ' + keys[i] + '=' + values[i]);
                     return;
                 }

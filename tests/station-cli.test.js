@@ -9,6 +9,7 @@ const { execFileSync, spawnSync } = require('node:child_process');
 const registry = require('../lib/registry.js');
 const badge = require('../lib/badge.js');
 const station = require('../lib/station.js');
+const profile = require('../lib/profile.js');
 const tmp = require('./tmp.js');
 
 const CLI = path.join(__dirname, '..', 'scripts', 'station.js');
@@ -972,6 +973,97 @@ test('POST /profile takes a stage list and an empty value clears a key; the data
         assert.equal((await post([['key', 'land.push'], ['value', 'false'], ['key', 'stage.agents'], ['value', '']])).status, 303);
         assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { 'land.push': false });
         assert.equal((await post([['key', 'stage.agents'], ['value', 'survey,nope']])).status, 400);
+    } finally {
+        s.close();
+    }
+});
+
+// A profile form posts pairs and a preset posts several in one request, so a
+// test needs the same request to carry a key more than once; `served()` above
+// takes an object and cannot.
+async function servedPairs(f) {
+    const { serve } = require('../scripts/station.js');
+    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
+    try {
+        const data = await request(s.url + 'station/station-data.js', { method: 'GET' });
+        const nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
+        const post = (pairs, scope) => request(s.url + 'profile', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } },
+            new URLSearchParams([['nonce', nonce], ['scope', scope || 'project'], ['project', f.r1]].concat(pairs)).toString());
+        return { s, post };
+    } catch (e) {
+        s.close();
+        throw e;
+    }
+}
+
+test('POST /profile clears every enum key with an empty value, as the manual preset sends them', async () => {
+    const f = fixture();
+    const file = path.join(f.r1, '.fankeel', 'profile.json');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify({ 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': true, 'class.default': 'spike', guard: 'deny' }) + '\n');
+    const { s, post } = await servedPairs(f);
+    try {
+        // `land.push` and its neighbours have no empty form of their own, so the
+        // empty value has to be let through by the route rather than by parseValue.
+        const res = await post([['key', 'land.integration'], ['value', ''], ['key', 'land.push'], ['value', ''],
+            ['key', 'land.archivePlan'], ['value', ''], ['key', 'class.default'], ['value', ''],
+            ['key', 'guard'], ['value', 'ask'], ['key', 'stage.agents'], ['value', 'false']]);
+        assert.equal(res.status, 303);
+        assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { guard: 'ask', 'stage.agents': [] });
+    } finally {
+        s.close();
+    }
+});
+
+test('POST /profile refuses an empty value for a key that does not exist, before any pair is written', async () => {
+    const f = fixture();
+    const file = path.join(f.r1, '.fankeel', 'profile.json');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify({ 'land.push': false }) + '\n');
+    const before = fs.readFileSync(file, 'utf8');
+    const { s, post } = await servedPairs(f);
+    try {
+        // The first pair is well formed and would change the file; the second is a
+        // clear of a name that is no key, and nothing may have landed when it answers.
+        assert.equal((await post([['key', 'land.push'], ['value', 'true'], ['key', 'colour'], ['value', '']])).status, 400);
+        assert.equal(fs.readFileSync(file, 'utf8'), before);
+    } finally {
+        s.close();
+    }
+});
+
+test('POST /profile with scope machine clears a key from the machine file and leaves the project file alone', async () => {
+    const f = fixture();
+    const project = path.join(f.r1, '.fankeel', 'profile.json');
+    const machine = profile.machineFile(f.cfg);
+    fs.mkdirSync(path.dirname(project), { recursive: true });
+    fs.writeFileSync(project, JSON.stringify({ guard: 'deny', 'land.push': false }) + '\n');
+    fs.writeFileSync(machine, JSON.stringify({ guard: 'deny', 'land.push': true }) + '\n');
+    const before = fs.readFileSync(project, 'utf8');
+    const { s, post } = await servedPairs(f);
+    try {
+        assert.equal((await post([['key', 'guard'], ['value', '']], 'machine')).status, 303);
+        assert.deepEqual(JSON.parse(fs.readFileSync(machine, 'utf8')), { 'land.push': true });
+        assert.equal(fs.readFileSync(project, 'utf8'), before);
+    } finally {
+        s.close();
+    }
+});
+
+test('POST /profile answers 400 for a name every object has, not only for one the table lacks', async () => {
+    const f = fixture();
+    const file = path.join(f.r1, '.fankeel', 'profile.json');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify({ 'land.push': false }) + '\n');
+    const before = fs.readFileSync(file, 'utf8');
+    const { s, post } = await servedPairs(f);
+    try {
+        // `KEYS.constructor` is a function, so a truthiness test lets an empty
+        // value through and the route answers 303 having done nothing.
+        for (const name of ['constructor', 'toString', '__proto__']) {
+            assert.equal((await post([['key', name], ['value', '']])).status, 400, name);
+        }
+        assert.equal(fs.readFileSync(file, 'utf8'), before);
     } finally {
         s.close();
     }
