@@ -275,7 +275,7 @@ the class step 5 arrived at, when it differs:
 node <plugin>/scripts/task.js route "survey,design,build,verify,land" --session <id>
 ```
 
-`route` takes the stages and derives the class from them (`scripts/task.js:1140`, `classForRoute(given)`);
+`route` takes the stages and derives the class from them (`scripts/task.js:1143`, `classForRoute(given)`);
 the stage the task is in has to be on the new route. Quote its output on the
 `route:` line of the report, or write `unchanged`. Up is always allowed. Down is
 allowed only from the seven-stage default nobody said — a class someone said at

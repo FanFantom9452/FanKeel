@@ -988,6 +988,18 @@ test('stage into a controlled build prints the controller\'s rules with the comm
   assert.doesNotMatch(verify.out, /fankeel:fankeel-brain|commit\.js/);
 });
 
+test('stage reads stage.agents from the record\'s project, as the hooks do, since the controller passes no --project', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  fs.mkdirSync(path.join(dir, 'sub', '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'sub', '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': ['build'] }));
+  const started = run(dir, ['start', '--session', A, '--task', 'x', '--project', 'sub', '--route', 'design,build'], { CLAUDE_CONFIG_DIR: cfg });
+  assert.equal(started.code, 0, started.out);
+  const build = run(dir, ['stage', 'build', '--session', A], { CLAUDE_CONFIG_DIR: cfg });
+  assert.equal(build.code, 0, build.out);
+  assert.match(build.out, /Now build, through its stage agent\. You are its controller:/);
+});
+
 test('start at survey with stage.agents false keeps the scanner step', () => {
   const dir = root();
   const cfg = path.join(dir, 'cfg');

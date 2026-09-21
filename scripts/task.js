@@ -732,7 +732,10 @@ function cmdStage(root, opts) {
     // was still current, so nothing has injected the new stage's rules yet. Where
     // `stage.agents` names the stage just entered, print the controller's block
     // now, as `start` and `task` do, or it dispatches with the last stage's rules.
-    const controller = controllerLines(root, id, Object.assign({}, data, { stage: name }), profile.read(projectRootFor(root, opts), claudeDir(opts)).values);
+    // The profile is read from the record's project and config dir, as the hooks
+    // read it: the controller's `stage <next> --session <id>` carries no --project.
+    const projectRoot = docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
+    const controller = controllerLines(root, id, data, profile.read(projectRoot, data.configDir || claudeDir(opts)).values);
     if (controller) line += NL + controller.join(NL);
     return line;
 }

@@ -347,7 +347,9 @@ test('a build brain is told to ask for its commits through a commit file, a veri
   const build = brief('build');
   assert.match(build, /You cannot commit: `git commit` and `git add` are refused to you\. When a task's implementer has returned[^\n]*write [^\n]*build-commit\.md[^\n]*return `commit [^\n]*build-commit\.md` and nothing else\. The controller commits and messages you `<base>\.\.<sha>`/);
   assert.match(build, commitFile);
-  assert.match(build, /You have no Edit\. A task whose Dispatch line says in-session goes to an implementer on model `sonnet` like any other: send it the task's brief file\./);
+  assert.match(build, /You have no Edit\. A task whose Dispatch line says in-session goes to an implementer on model `sonnet` like any other: send it the task's brief\./);
+  assert.doesNotMatch(brief('verify'), /You have no Edit/);
+  assert.doesNotMatch(brief('survey'), /You have no Edit/);
   assert.match(build, /relative to the repository root\. The reply is `<base>\.\.<sha>` or one line `commit\.js: <why>`\. If <why> is about your file or the paths you listed \([^)]*nothing to commit, cannot read\): fix it and ask again, but the same error twice means the stage is blocked\. If it is anything else \([^)]*usage\): the stage is blocked, so say so in the report\. Return the report path when the whole stage is done or blocked\./);
   assert.doesNotMatch(build, /You cannot edit or restore a file/);
   const verify = brief('verify');
@@ -356,15 +358,16 @@ test('a build brain is told to ask for its commits through a commit file, a veri
   assert.doesNotMatch(brief('survey'), /You cannot commit|You cannot edit or restore/);
 });
 
-test('a verify brain is told the profile\'s dispatch.floor as the model for its mutation implementer', () => {
-  const brief = (values) => {
+test('a brain is told the profile\'s dispatch.floor as the model for the implementer it sends itself', () => {
+  const brief = (stage, values) => {
     const root = tmp();
-    seedProfile(root, Object.assign({ 'stage.agents': ['verify'] }, values));
-    seed(root, { stage: 'verify', started: '2026-09-19T09:30:12.345Z' });
+    seedProfile(root, Object.assign({ 'stage.agents': [stage] }, values));
+    seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
     return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
   };
-  assert.match(brief({}), /send an implementer on model `sonnet`: it does all three/);
-  assert.match(brief({ 'dispatch.floor': 'opus' }), /send an implementer on model `opus`: it does all three/);
+  assert.match(brief('verify', {}), /send an implementer on model `sonnet`: it does all three/);
+  assert.match(brief('verify', { 'dispatch.floor': 'opus' }), /send an implementer on model `opus`: it does all three/);
+  assert.match(brief('build', { 'dispatch.floor': 'opus' }), /in-session goes to an implementer on model `opus` like any other/);
 });
 
 test('the brain agent file names the commit file it may write and refuses to run commit.js itself', () => {

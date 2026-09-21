@@ -473,7 +473,7 @@ stage on that list and it is run by a stage agent instead of by the session:
 
 | piece | where | what it does |
 |---|---|---|
-| controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` and printed by `task.js start`, `task` and `stage` in place of their first step | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns, ask (on `build`, first relay each `commit <file>`); option one advances the stage, or stands the task down where the route ends |
+| controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` and printed by `task.js start` and `task` in place of their first step, and by `stage` after its one-line move | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns, ask (on `build`, first relay each `commit <file>`); option one advances the stage, or stands the task down where the route ends |
 | the stage agent | `agents/fankeel-brain.md` | opus at `effort: medium`; `Write` for its handoff (and, on build, its commit file), `Agent` for its readers and reviewers, and on build a fixer and implementers, on verify a verifier, a fixer and an implementer — which of them, and when, its stage's own rules decide |
 | its brief | `renderBrief` in `lib/render.js` | the stage's rules and shape, the skill's path, the handoff path, what replaces AskUserQuestion and Workflow, one Bash call for independent commands and for the lines it cites, and the output rule's word count as the file's — under Claude Code's 10,000-character cap on one `additionalContext` |
 | the handoff | `handoffPath`, `answerPath`, `readGate` and `writeAnswer` in `lib/handoff.js` | `.fankeel/build/task-<started>/<stage>.md`, ending in a `json gate` block; the answer beside it as `<stage>-answer.md` — `survey.md` and `survey-answer.md` when `survey` is the stage on the list |
@@ -542,11 +542,12 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   agent" line and no registry field says one is in flight, so an interjection during
   a long stage can start a second stage agent on the same handoff and commit files.
   This is the existing "interjections have nobody" gap, now with a longer stage.
-- **The profile moves under a running stage.** `hooks/gate.js`, `hooks/resume.js` and
-  `hooks/guard.js` re-read it on every call, and a session record does not store
-  `stage.agents`; a preset applied from the station mid-stage changes what those hooks
-  do to that session's next call. The presets also write `guard: ask`, which lowers a
-  project that had `deny`.
+- **The profile moves under a running stage.** `hooks/gate.js` and `hooks/resume.js`
+  re-read it on every call, `hooks/guard.js` on every main-thread `Edit`, `Write` or
+  `NotebookEdit`, and a session record does not store `stage.agents`; a preset applied
+  from the station mid-stage changes what those hooks do to that session's next call.
+  The presets also write `guard: ask`, which lowers the project's stored `deny` for the
+  sessions that start after it; a running session keeps the guard mode its record holds.
 - **A stale gate.** `readGate` has no freshness check, so a handoff file left by an
   earlier lap of the same task is shown as the gate if the controller asks before a
   fresh report exists.
@@ -562,8 +563,9 @@ what to watch, and so the profile's `lean` preset is not read as proven.
 - **Claims.** A verify implementer's mutation edit carries the controller's session
   id, so the mutated file lands on its claims and a second live session sees a
   collision; the ordinary `verify` has the same effect from the parent's own mutation.
-- **Where it commits.** `scripts/commit.js` commits in the repository the controller
-  is standing in, which is neither the task's `project` nor a worktree.
+- **Where it commits.** `scripts/commit.js` commits in the repository at the
+  controller's working directory. It does not consult the task's `project`, and it
+  knows nothing of a worktree.
 
 # Telling a subagent apart, when a hook has to
 
