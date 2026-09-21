@@ -1,12 +1,12 @@
 ---
 status: current
 last_verified: 2026-09-21
-source_of_truth: 一支腳本一份輸出——`docs/reports/evidence/2026-09-21-controller-budget/budget.js`，輸出 [evidence/2026-09-21-controller-budget/budget-at-e21f60d.txt](evidence/2026-09-21-controller-budget/budget-at-e21f60d.txt)，由 `e21f60d` 上的那一版腳本在同一個 sha 上跑出來。`50f1bc8` 上跑過一份同名輸出，`e21f60d` 只拿掉了那支腳本的 `module.exports`，兩份輸出的 md5 相同（`7f74a4fb2fd8f6c79987f66d16c052fd`），所以那次修改沒有動到任何一個數字。**第 1 到第 5 節每一個數字都出自那份輸出，本頁不重算**；兩處例外各自指名了出處——第 4 節末的 `$400` 是 `3 × $133.34`，兩個乘數都在輸出裡，乘法在本頁；第 6 節的注入上限出自 `tests/render.test.js:527` 與一次 `render` 實測，那兩個數字跟這支腳本無關。腳本的 block 1-4 由 `lib/spend.js`、`lib/prices.js`、`lib/station.js` 算出；block 5 讀 [evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt](evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt) 與 [evidence/2026-09-21-quota-calibration/quota-capture-260920T203515Z.txt](evidence/2026-09-21-quota-calibration/quota-capture-260920T203515Z.txt) 兩份捕捉，以及 [evidence/2026-09-21-quota-calibration/windows-at-43daef5.txt](evidence/2026-09-21-quota-calibration/windows-at-43daef5.txt) 的 `A..B` 那一列，不重打。
+source_of_truth: 一支腳本一份輸出——`docs/reports/evidence/2026-09-21-controller-budget/budget.js`，輸出 [evidence/2026-09-21-controller-budget/budget-at-5a93f31.txt](evidence/2026-09-21-controller-budget/budget-at-5a93f31.txt)，由 `5a93f31` 上的那一版腳本在同一個 sha 上跑出來。腳本在這條 branch 上改過兩次——`e21f60d` 拿掉 `module.exports`、`5a93f31` 把定價換成 `lib/prices.js` 的 `costOf`——三次輸出的 md5 都是 `7f74a4fb2fd8f6c79987f66d16c052fd`，所以兩次修改都沒有動到任何一個數字。**本頁的每一個數字只能是三種之一**：逐字出自那份輸出；本頁自己做的算術，而且乘數與加數就寫在該處（`63.9% = 40.4% ＋ 23.5%`、`$400 = 3 × $133.34`、`48% = $400 ÷ $833.45`）；或明確標注出處的他頁數字（第 5 節的 `k = 2.5052` 出自 [2026-09-21-long-task-projection.md](2026-09-21-long-task-projection.md)，第 6 節的注入上限出自 `tests/render.test.js:527` 與一次 `render` 實測）。沒有第四種。腳本的 block 1-4 由 `lib/spend.js`、`lib/prices.js`、`lib/station.js` 算出；block 5 讀 [evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt](evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt) 與 [evidence/2026-09-21-quota-calibration/quota-capture-260920T203515Z.txt](evidence/2026-09-21-quota-calibration/quota-capture-260920T203515Z.txt) 兩份捕捉，以及 [evidence/2026-09-21-quota-calibration/windows-at-43daef5.txt](evidence/2026-09-21-quota-calibration/windows-at-43daef5.txt) 的 `A..B` 那一列，不重打。
 ---
 
 # 主控佔長任務花費的 57.4%，與三專案並行的七天上限 — 2026-09-21
 
-**這個 registry 的 44 筆長任務花掉 $3,970.46，其中 $2,280.42（57.4%）是主 session 自己燒的，$1,690.04（42.6%）才是它派出去的 agent。成分上 cacheRead 佔 56.5%——付的是重讀，不是新讀。一個七天視窗值 $3,056.00，長任務中位數 $133.34，所以一週裝得下 22 個；三個專案並行就是每個專案每週 7.3 個。主控換 Sonnet 的投影是每個專案 11.3 個，但那個投影架在一個沒人量過的假設上，見第 5 節。**
+**這個 registry 的 44 筆長任務花掉 $3,970.46，其中 $2,280.42（57.4%）是主 session 自己燒的，$1,690.04（42.6%）才是它派出去的 agent。成分上 cacheRead 佔 56.5%——付的是重讀，不是新讀。一個七天視窗值 $3,056.00，長任務中位數 $133.34，所以一週裝得下 22 個；三個專案並行就是每個專案每週 7.3 個。主控換 Sonnet 的投影是每個專案 11.3 個。7.3 與 11.3 站在同一個 n = 2 的額度讀數上（第 4 節），而 11.3 還多站一個沒人量過的假設（第 5 節）。**
 
 這一頁回答的是一個使用者的問題：一個任務吃掉 5h 額度的一成、7d 的 3%，那一次跑三個專案會怎樣。前一頁
 [2026-09-21-quota-calibration.md](2026-09-21-quota-calibration.md) 把額度的換算做完了，
@@ -52,7 +52,7 @@ source_of_truth: 一支腳本一份輸出——`docs/reports/evidence/2026-09-21
 | land | $94.90 | $3.06 | $97.96 | 2.5% | 96.9% |
 | TOTAL | $2,280.42 | $1,690.04 | $3,970.46 | 100.0% | — |
 
-**build 加 verify 是 63.9%。** 這一格是這一頁最有用的一個數字，因為 `stage.agents` 這個開關到 2026-09-21 為止只作用在 survey 一站，而 survey 佔 **7.0%**。
+**build 加 verify 是 63.9%（40.4% ＋ 23.5%，本頁的加法）。** 這一格是這一頁最有用的一個數字，因為 `stage.agents` 這個開關到 2026-09-21 為止只作用在 survey 一站，而 survey 佔 **7.0%**。
 [2026-09-20-survey-brain-ab.md](2026-09-20-survey-brain-ab.md) 在那一站量到打平，於是很容易讀成「換這個架構沒有用」——但它量的是佔 7.0% 的那一格，沒有量過佔 63.9% 的那兩格。
 
 block 3 的逐站總額與 block 2 的逐 session 總額是同一筆錢的兩種讀法，腳本自己比對過，兩邊都是 $3,970.46。不符的話輸出會自己說出來。
@@ -83,7 +83,7 @@ block 3 的逐站總額與 block 2 的逐 session 總額是同一筆錢的兩種
 | 三個專案分完 | 每個專案每週 **7.3 個** |
 | 5h 視窗裝得下 | 6 個 |
 
-**先撞到的是 7d，不是 5h。** 三個專案同時各跑一個長任務是 `3 × $133.34 = $400`，對 $833.45 的五小時格子是 48%，過得去；但七天的格子只有一個，而且是全帳號共用的——這台機器上有 11 個 registry，它們分的是同一格。「三個專案」不是三份預算。
+**先撞到的是 7d，不是 5h。** 三個專案同時各跑一個長任務是 `3 × $133.34 = $400`，除以 $833.45 的五小時格子是 48%（這兩步都是本頁的算術），過得去；但七天的格子只有一個，而且是全帳號共用的——這台機器上有 11 個 registry，它們分的是同一格。「三個專案」不是三份預算。
 
 中位數是全機的，主控佔比是這個 registry 的。兩個分母不同，混用是這一節唯一的近似。
 
@@ -98,7 +98,7 @@ block 3 的逐站總額與 block 2 的逐 session 總額是同一筆錢的兩種
 | 7d 裝得下 | **34 個** |
 | 三個專案分完 | 每個專案每週 **11.3 個** |
 
-**「token 量不變」是這一節唯一的假設，而它沒有被量過。**
+**這一節站不穩的地方有兩個，不是一個。** 第一個是 n = 2：上面那四個數字全部是拿第 4 節的 $3,056.00 除下來的，換模型只改了分子，分母的脆弱度一點沒變——34 跟 22 一樣薄。第二個是「token 量不變」，而它沒有被量過。
 [2026-09-21-long-task-projection.md](2026-09-21-long-task-projection.md) 把破平衡點算成 `k = 2.5052`：Sonnet 要在沒有站 agent 的那些站上燒掉超過 2.5 倍的 token，換主控才會變貴。2.5 倍是很寬的餘裕，但餘裕不是量測。
 
 所以這一頁對主控模型的主張只有一句：**這是一個可以一行指令切回去的設定，不是一個要先證明的架構。**
