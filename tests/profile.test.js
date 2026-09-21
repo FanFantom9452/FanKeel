@@ -281,3 +281,13 @@ test('showLines pads each column to its longest cell and ends every line with th
     const starts = new Set(lines.map((l, i) => l.length - profile.KEYS[keys[i]].desc.length));
     assert.equal(starts.size, 1, 'every description starts in the same column');
 });
+
+test('the three presets set exactly what the design says, and null is what clears', () => {
+    assert.deepEqual(profile.PRESETS.manual.set, {
+        'land.integration': null, 'land.push': null, 'land.archivePlan': null, 'class.default': null, guard: 'ask', 'stage.agents': 'false',
+    });
+    const habit = { 'land.integration': 'merge', 'land.push': 'false', 'land.archivePlan': 'true', guard: 'ask' };
+    assert.deepEqual(profile.PRESETS.balanced.set, Object.assign({}, habit, { 'stage.agents': 'survey' }));
+    assert.deepEqual(profile.PRESETS.lean.set, Object.assign({}, habit, { 'stage.agents': 'survey,build,verify' }));
+    assert.equal('class.default' in profile.PRESETS.balanced.set, false, 'balanced leaves class.default untouched');
+});
