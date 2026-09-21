@@ -55,15 +55,15 @@ last_verified: 2026-09-21
 
 - `lib/profile.js` 的 `KEYS[key]` 加 `desc`（一句話）；`profile show` 與站上都印它，`lib/station.js`
   的 `serialize` 也要帶出（`gather` 與 `serialize` 是兩個 builder，頁面讀的是後者）。
-- `POST /profile` 改用 `profile.parseValue` 驗；空值清回 (ask)，新增 `profile.unset`。
+- `POST /profile` 改用 `profile.parseValue` 驗；預設「手動」要把鍵清回 (ask)，所以新增 `profile.unset`，不做逐列的清除按鈕。
 - 三個習慣預設（手動／平衡／省 context），一次 POST 全套用，先驗全部再寫（現有行為）。
   - 手動：所有 `land.*` 與 `class.default` 清成 (ask)，`stage.agents` = false，`guard` = ask。
   - 平衡：`land.integration` = merge、`land.push` = false、`land.archivePlan` = true、`guard` = ask、`stage.agents` = survey，`class.default` 不動。
   - 省 context：平衡，再把 `stage.agents` 設成 survey,build,verify。
 - 預設寫進**這張卡自己的那一層**：專案卡寫 `.fankeel/profile.json`，machine 卡寫機器層。專案層蓋過機器層（`lib/profile.js` 的 `read`），所以在 machine 卡套「手動」不會改變已經有專案值的專案；專案卡上「清成 (ask)」是把那個鍵從專案檔拿掉，值落回機器層或 builtin。mockup 把兩層畫成一張 machine 卡、又顯示 project 來源，這一點以本條為準。
-- `stage.agents` 用七個站的 toggle，不是 `<select>`。
+- `stage.agents` 維持 `<select>`，現值不在三個固定值時當額外選項（現有行為）；送出改由 `parseValue` 驗，所以不再 400。七站 toggle 不做。
 - `profile show` 的表格欄寬跟著最長的值，不再把 `survey,build,verify` 與來源層黏在一起。
-- 畫面以 mockup 為準，它在 .fankeel/build/2026-09-21-controlled-stations/mockup.html，不提交（那個目錄在 gitignore 下）。
+- 畫面只取 mockup 上方的「快速設定」三張卡與「套用」；mockup 在 .fankeel/build/2026-09-21-controlled-stations/mockup.html，不提交（那個目錄在 gitignore 下）。下方的逐列設計不做，見「不做的」。
 
 ## 檔案與派工
 
@@ -74,9 +74,14 @@ last_verified: 2026-09-21
 | scripts/ctx.js、tests/ctx.test.js | 新增：per-turn context 與 compare，附手算峰值的 fixture | implementer, sonnet |
 | lib/profile.js、scripts/task.js | `desc`、`PRESETS`、`unset`；`profile show` 欄寬 | implementer, sonnet |
 | scripts/station.js、lib/station.js | `POST /profile` 用 `parseValue`、清回 (ask)；`serialize` 帶 `desc` | implementer, sonnet |
-| assets/station/station.js、assets/station/station.css | 首頁卡照 mockup | implementer, sonnet |
+| assets/station/station.js、assets/station/station.css | 卡上方加三張預設卡與一個「套用」，逐列只多一欄說明 | implementer, sonnet |
 | tests/profile.test.js、tests/station-cli.test.js、tests/station-view.test.js | 先紅再綠的測試 | 隨各自的 implementer |
 | docs/plans/2026-09-19-stage-agents-design.md | 「build 的 workflow 由 script 產生」那句改記為本頁取代 | in-session — 一行編輯 |
+
+## 不做的
+
+- 由 script 從 plan 產生 workflow：見第 2 節。
+- 首頁整頁改成三欄的完整工作站、並把 profile 的逐列設計併進去：進 TODO，要先量現在首頁的版面，這一輪的 survey 只讀了 profile 卡。mockup 下方的逐列「將改為」標記、每列「清成 (ask)」、七站 toggle 與「套用後」狀態都屬於那一條。
 
 ## 完成的判準
 
