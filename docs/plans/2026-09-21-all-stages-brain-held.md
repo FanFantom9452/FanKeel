@@ -580,10 +580,12 @@ test('a design and a plan brain may write one file under docs/plans/ and commit 
   };
   const design = brief('design');
   assert.match(design, /artifact: besides your report you may Write one file, docs\/plans\/<date>-<topic>-design\.md, and only where the design skill calls for a spec/);
+  assert.match(design, /\(the architectural class\)\. Put its path on the report's `spec:` line\./);
   assert.match(design, /You cannot commit: `git commit` and `git add` are refused to you\. When that file is written, write [^\n]*design-commit\.md/);
   assert.ok(design.length < 10000, 'design brief is ' + design.length + ' chars');
   const plan = brief('plan');
-  assert.match(plan, /artifact: besides your report you may Write one file, docs\/plans\/<date>-<topic>\.md\. Put its path/);
+  assert.match(plan, /artifact: besides your report you may Write one file, docs\/plans\/<date>-<topic>\.md\. Its path is the first line of your report\./);
+  assert.doesNotMatch(plan, /Put its path on the report's/);
   assert.match(plan, /write [^\n]*plan-commit\.md/);
   assert.ok(plan.length < 10000, 'plan brief is ' + plan.length + ' chars');
   for (const stage of ['survey', 'build', 'verify']) assert.doesNotMatch(brief(stage), /artifact: besides your report/, stage);
@@ -632,7 +634,7 @@ In `lib/render.js`, inside `renderBrainBrief`, directly after the closing brace 
     if (stage === 'design' || stage === 'plan') {
         const commit = commitPath(root, data, stage);
         const file = stage === 'plan' ? 'docs/plans/<date>-<topic>.md' : 'docs/plans/<date>-<topic>-design.md, and only where the design skill calls for a spec (the architectural class)';
-        lines.push('  - artifact: besides your report you may Write one file, ' + file + '. Put its path on the report\'s `spec:` line. Nothing else outside the report is yours to write.');
+        lines.push('  - artifact: besides your report you may Write one file, ' + file + '. ' + (stage === 'plan' ? 'Its path is the first line of your report.' : 'Put its path on the report\'s `spec:` line.') + ' Nothing else outside the report is yours to write.');
         lines.push('  - You cannot commit: `git commit` and `git add` are refused to you. When that file is written, write ' + commit + ' — its path, a blank line, then the commit message — and return `commit ' + commit + '` and nothing else. The controller commits and messages you `<base>..<sha>` or one line `commit.js: <why>`. If <why> is about your file or the path you listed: fix it and ask again, and the same error twice means the stage is blocked. Anything else: the stage is blocked, so say so in the report. Return the report path when the stage is done or blocked.');
     }
 ```

@@ -81,7 +81,7 @@ context，不是品質。
 ## 4. `artifact:`：design 與 plan 的檔，audit 與 land 的改動
 
 - brief 在 design（架構級）與 plan 站多一行 `artifact:`，指向 `docs/plans/`：brain 除了 handoff 只准 Write 那裡的一個檔，
-  名稱依日期與主題，寫進 handoff 的 `spec:` 行。這仍是 prose 規則，跟現在「不寫 handoff 與 build 的 commit 檔以外」一樣，沒有 hook 擋。
+  名稱依日期與主題；design 寫進 handoff 的 `spec:` 行，plan 是報告的第一行（plan 報告的第一行本來就是 plan 路徑）。這仍是 prose 規則，跟現在「不寫 handoff 與 build 的 commit 檔以外」一樣，沒有 hook 擋。
 - design 與 plan 站的提交走 commit 檔，跟 build 今天一樣：兩站的 `controlRules` 也帶 `COMMIT_RULE`
   （`lib/stages.js:611` 現在只在 build 帶）。
 - audit 與 land：brain 沒有 Edit、也不做 git 寫入；audit 要改的頁面、land 的搬檔、merge 與清理，都交給
