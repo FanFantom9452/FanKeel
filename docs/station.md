@@ -188,7 +188,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:1627`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:1643`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -501,7 +501,7 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:1661`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:1677`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
 (`lib/station.js:449`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's

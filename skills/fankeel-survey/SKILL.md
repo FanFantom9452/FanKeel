@@ -268,14 +268,14 @@ classification made silently is one nobody can disagree with.
 The entry already exists: `task.js start` ran at `/fankeel`, with the class said
 there — or, when none was said, the profile's `class.default`, or all seven
 stages when there is none — and `start` refuses an active entry
-(`scripts/task.js:495`, `already owns an active task`). What this step writes is
+(`scripts/task.js:512`, `already owns an active task`). What this step writes is
 the class step 5 arrived at, when it differs:
 
 ```
 node <plugin>/scripts/task.js route "survey,design,build,verify,land" --session <id>
 ```
 
-`route` takes the stages and derives the class from them (`scripts/task.js:1118`, `classForRoute(given)`);
+`route` takes the stages and derives the class from them (`scripts/task.js:1141`, `classForRoute(given)`);
 the stage the task is in has to be on the new route. Quote its output on the
 `route:` line of the report, or write `unchanged`. Up is always allowed. Down is
 allowed only from the seven-stage default nobody said — a class someone said at
