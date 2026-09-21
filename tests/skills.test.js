@@ -614,11 +614,14 @@ test('survey no longer offers a fourth option to authorise more reading', () => 
 test('the plan template carries the dispatch slot and names its floor', () => {
   const text = read('fankeel-plan');
   assert.match(text, /\*\*Dispatch:\*\*/);
-  // The floor rule, not the word. `/sonnet/` matched the worked example in the
-  // template above it, so deleting the rule that makes sonnet the floor left
-  // this green — the one thing the test is named for.
-  assert.match(text, /\*\*`sonnet` is the floor and the default\*\*/);
-  assert.match(text, /\*\*Anything above `sonnet` names why on that same line\.\*\*/);
+  // The floor rule, not a model name. `/sonnet/` matched the worked example in
+  // the template above it, so deleting the rule that sets the floor left this
+  // green — the one thing the test is named for. Both assertions anchor on the
+  // bolded rule text for that reason, and both name the floor as the profile's
+  // `dispatch.floor` rather than as one model: `sonnet` is its builtin, not the
+  // floor itself, and `haiku` sits below it.
+  assert.match(text, /\*\*The profile's `dispatch\.floor` is the floor/);
+  assert.match(text, /\*\*Anything above the floor names why on that same line\.\*\*/);
   assert.match(text, /opus/);
 });
 

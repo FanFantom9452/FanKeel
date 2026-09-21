@@ -182,11 +182,12 @@ Four rules about that line:
 
 1. **Every task carries one.** A task without it is a plan failure, in the same
    list as `TBD` and "similar to Task N".
-2. **`sonnet` is the floor and the default**, and needs no argument. The unit
+2. **The profile's `dispatch.floor` is the floor, `sonnet` unless a profile
+   says otherwise**, and the floor needs no argument. The unit
    that matters is not token price but whether the task finishes on the first
    dispatch: a model that needs two attempts re-reads everything the first one
    read, and costs more in wall-clock and attention than the tier above it.
-3. **Anything above `sonnet` names why on that same line.** "Complex" is not a
+3. **Anything above the floor names why on that same line.** "Complex" is not a
    why. A protocol to reason about, a design judgement, a change whose shape is
    not in the plan — those are.
 4. **Where it says `implementer`, this line is what `build` says out loud.** The

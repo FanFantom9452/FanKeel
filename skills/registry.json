@@ -19,7 +19,7 @@
       "name": "plan",
       "entry_condition": "Read:, a fence names its file, ## Coverage.",
       "stop_condition": "Done when every task carries its own test cycle, its `**Files:**` block and its `Dispatch:` line, `## Global Constraints` has been generated from the project rather than remembered, and the plan file is written.",
-      "prompt_bytes": 2366,
+      "prompt_bytes": 2388,
       "prompt_byte_budget": 2400
     },
     {

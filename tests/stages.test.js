@@ -556,7 +556,10 @@ test('survey re-runs a capped scan before it dispatches, and dispatches on nothi
 test('plan makes the dispatch decision a slot every task has to fill', () => {
   const text = byName('plan').rules.join(' ');
   assert.match(text, /\*\*Dispatch:\*\*/);
-  assert.match(text, /sonnet/);
+  // The tier, not a model name: the floor is the profile's `dispatch.floor`,
+  // whose builtin is `sonnet` and which also takes `haiku` below it. Matching
+  // `/sonnet/` here pinned the builtin as though it were the rule.
+  assert.match(text, /dispatch\.floor/);
 });
 
 // Every branch of the dispatch rule fired on something the scanner had already
