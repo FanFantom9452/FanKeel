@@ -542,9 +542,10 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   agent" line and no registry field says one is in flight, so an interjection during
   a long stage can start a second stage agent on the same handoff and commit files.
   This is the existing "interjections have nobody" gap, now with a longer stage.
-- **The profile moves under a running stage.** `hooks/gate.js` and `hooks/resume.js`
-  re-read it on every call, `hooks/guard.js` on every main-thread `Edit`, `Write` or
-  `NotebookEdit`, and a session record does not store `stage.agents`; a preset applied
+- **The profile moves under a running stage.** `hooks/inject.js` re-reads it on every
+  prompt, `hooks/brief.js` on every subagent start, `hooks/gate.js` and
+  `hooks/resume.js` on every call, `hooks/guard.js` on every main-thread `Edit`,
+  `Write` or `NotebookEdit`, and a session record does not store `stage.agents`; a preset applied
   from the station mid-stage changes what those hooks do to that session's next call.
   The presets also write `guard: ask`, which lowers the project's stored `deny` for the
   sessions that start after it; a running session keeps the guard mode its record holds.

@@ -732,10 +732,7 @@ function cmdStage(root, opts) {
     // was still current, so nothing has injected the new stage's rules yet. Where
     // `stage.agents` names the stage just entered, print the controller's block
     // now, as `start` and `task` do, or it dispatches with the last stage's rules.
-    // The profile is read from the record's project and config dir, as the hooks
-    // read it: the controller's `stage <next> --session <id>` carries no --project.
-    const projectRoot = docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
-    const controller = controllerLines(root, id, data, profile.read(projectRoot, data.configDir || claudeDir(opts)).values);
+    const controller = controllerLines(root, id, data, valuesOfRecord(root, data, opts));
     if (controller) line += NL + controller.join(NL);
     return line;
 }
@@ -805,8 +802,7 @@ function cmdTask(root, opts) {
     // Holding nothing, so overlapping nothing.
     showBadge(opts, id, badge.badgeWord(data.stage, false), data, root);
 
-    const prof = profile.read(projectRootFor(root, opts), claudeDir(opts));
-    const controller = controllerLines(root, id, data, prof.values);
+    const controller = controllerLines(root, id, data, valuesOfRecord(root, data, opts));
     const tail = controller ? controller.join(NL) : (FIRST_STEP[data.stage] || 'Begin at ' + data.stage + '.');
 
     return 'fankeel — task: ' + text
@@ -837,6 +833,14 @@ function cmdNext(root, opts) {
     }
     if (!registry.setNext(root, id, text)) fail('No entry for this session under ' + root);
     return text.trim() ? 'fankeel — next: ' + registry.nextOf(registry.readSession(root, id)) : 'fankeel — next cleared.';
+}
+
+// The values the hooks see for a session: its record's project and config dir,
+// not the `--project` or `--claude-dir` this command was run with. `stage` and
+// `task` are run by the controller as `<verb> --session <id>`, with neither flag.
+function valuesOfRecord(root, data, opts) {
+    const projectRoot = docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
+    return profile.read(projectRoot, data.configDir || claudeDir(opts)).values;
 }
 
 // The project a profile belongs to: the registry root, or the directory

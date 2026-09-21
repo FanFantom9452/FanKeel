@@ -1000,6 +1000,30 @@ test('stage reads stage.agents from the record\'s project, as the hooks do, sinc
   assert.match(build.out, /Now build, through its stage agent\. You are its controller:/);
 });
 
+test('stage reads the machine profile from the record\'s config dir, not from the --claude-dir it is run with', () => {
+  const dir = root();
+  const other = path.join(dir, 'other-cfg');
+  fs.mkdirSync(path.join(other, 'fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(other, 'fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': ['build'] }));
+  const started = run(dir, ['start', '--session', A, '--task', 'x', '--route', 'design,build'], { CLAUDE_CONFIG_DIR: other });
+  assert.equal(started.code, 0, started.out);
+  const build = run(dir, ['stage', 'build', '--session', A], { CLAUDE_CONFIG_DIR: other });
+  assert.equal(build.code, 0, build.out);
+  assert.match(build.out, /Now build, through its stage agent\. You are its controller:/);
+});
+
+test('task reads stage.agents from the record\'s project, as the hooks do, since the controller passes no --project', () => {
+  const dir = root();
+  fs.mkdirSync(path.join(dir, 'sub', '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'sub', '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': ['build'] }));
+  const started = run(dir, ['start', '--session', A, '--task', 'x', '--project', 'sub', '--route', 'build,verify']);
+  assert.equal(started.code, 0, started.out);
+  assert.match(started.out, /You are its controller:/);
+  const next = run(dir, ['task', 'another question', '--session', A]);
+  assert.equal(next.code, 0, next.out);
+  assert.match(next.out, /Now build, through its stage agent\. You are its controller:/);
+});
+
 test('start at survey with stage.agents false keeps the scanner step', () => {
   const dir = root();
   const cfg = path.join(dir, 'cfg');
