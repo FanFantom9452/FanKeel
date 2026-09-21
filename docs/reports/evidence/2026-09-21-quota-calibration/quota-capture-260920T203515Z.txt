@@ -1,0 +1,72 @@
+# statusline payload capture — reading B, the second of the two behind
+# docs/reports/2026-09-21-quota-calibration.md
+#
+# reading A is the other one, committed at
+#   docs/reports/evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt
+# and its own header explains how the dump is produced. In short:
+# `"env": { "CLAUDE_STATUSLINE_DEBUG": "1" }` in C:\Users\Owner\.claude\settings.json
+# makes TokenBar's statusline.ps1 write the whole payload it was handed to
+# %TEMP%\claude-statusline-payload.json on the next render.
+#
+# why there are two and not a series
+#   That dump is ONE file, overwritten by every later render from any session. So
+#   a reading exists only where somebody copied the file out before the next
+#   render. Two were. Nothing persists `rate_limits` anywhere else — not the
+#   registry, not the transcript, not the session record.
+#
+# what makes these two comparable
+#   Both carry the SAME `resets_at` on both meters: 1789936800 for the five-hour
+#   window and 1790276400 for the seven-day one. Same windows, two instants —
+#   which is what lets a difference be taken at all. Reading A alone bounded a
+#   denominator; a pair gives a rate.
+#
+# what was dropped, and why
+#   session_id, transcript_path, cwd, prompt_id, session_name, workspace.repo —
+#   machine- and session-specific, and none of them bears on the quota question.
+#   Everything any figure in the report rests on is below.
+
+captured at (file mtime, UTC)   2026-09-20T20:35:15.617Z
+claude version                  2.1.278
+model.id                        claude-opus-5[1m]
+effort.level                    xhigh
+fast_mode                       false
+
+rate_limits.five_hour.used_percentage   13
+rate_limits.five_hour.resets_at         1789936800   = 2026-09-20T20:40:00.000Z
+                                                     window therefore opened 2026-09-20T15:40:00.000Z
+                                                     4.7 minutes of it left at this reading
+
+rate_limits.seven_day.used_percentage   3
+rate_limits.seven_day.resets_at         1790276400   = 2026-09-24T19:00:00.000Z
+                                                     window therefore opened 2026-09-17T19:00:00.000Z
+
+cost.total_cost_usd             109.1054969
+cost.total_duration_ms          17358281
+cost.total_api_duration_ms      15542577
+cost.total_lines_added          1299
+cost.total_lines_removed        161
+
+context_window.used_percentage  11
+context_window.size             1000000
+exceeds_200k_tokens             false
+
+prompt_cache.ttl                1h
+prompt_cache.warm               true
+prompt_cache.requests           270
+prompt_cache.misses             0
+prompt_cache.hit_ratio          0.9931138673224154
+prompt_cache.cache_write_tokens 804028
+
+# the same two fields from reading A, for the difference this file exists to make
+# possible — quoted from that capture, not recomputed here
+#
+#   2026-09-20T16:30:41.226Z   five_hour 2%   seven_day 0%   cost.total_cost_usd 12.561022100000004
+#   2026-09-20T20:35:15.617Z   five_hour 13%  seven_day 3%   cost.total_cost_usd 109.1054969
+#
+# so across 244.6 minutes the five-hour meter moved 11 displayed points and the
+# seven-day meter moved 3, on the same spend.
+#
+# `cost.total_cost_usd` here is Claude Code's own figure for THIS SESSION only,
+# not for the window. The window held a second session as well; basis-at-*.txt
+# is where the two are put side by side, and where this number is used as the
+# control on the transcript-derived basis rather than as the window total.

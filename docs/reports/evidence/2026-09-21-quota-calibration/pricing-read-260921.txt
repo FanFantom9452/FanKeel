@@ -1,0 +1,75 @@
+# the read of the published price table behind the two rows added to
+# lib/prices.js on 2026-09-21
+#
+# why this file exists
+#   The rows are a claim about what someone else publishes, and a comment saying
+#   "read on 2026-09-21" is not distinguishable from a comment saying it from
+#   memory. A reviewer named that gap; this is the answer to it. It is the quoted
+#   extract, not a copy of the page: only the rows and footnotes the two new rows
+#   rest on.
+#
+# read from
+#   https://platform.claude.com/docs/en/about-claude/pricing
+#   on 2026-09-21, by the session that added the rows. The same page had returned
+#   404 on 2026-09-04, which is why the earlier read went to
+#   platform.claude.com/docs/en/build-with-claude/prompt-caching instead and why
+#   `verified` had sat at that date.
+#
+# a pricing page is not a stable source. This is the reading, dated. If the
+# numbers move, `verified` moves with them and this file is replaced rather than
+# edited — the same rule the other evidence directories here follow.
+
+## the two rows the change needed, quoted from the model-pricing table
+
+| Model           | Base input | 5m cache writes | 1h cache writes | Cache hits and refreshes | Output      |
+| Claude Fable 5  | $10 / MTok | $12.50 / MTok   | $20 / MTok      | $1 / MTok                | $50 / MTok  |
+| Claude Opus 4.8 | $5 / MTok  | $6.25 / MTok    | $10 / MTok      | $0.50 / MTok             | $25 / MTok  |
+
+## the four rows already in the table, quoted from the same read
+## (so the 2026-09-21 date covers the whole table and not only the additions)
+
+| Claude Fable 5.1 | $10 / MTok | $12.50 / MTok | $20 / MTok | $0.25 / MTok | $50 / MTok |
+| Claude Opus 5    | $5 / MTok  | $6.25 / MTok  | $10 / MTok | $0.50 / MTok | $25 / MTok |
+| Claude Sonnet 5  | $2 / MTok  | $2.50 / MTok  | $4 / MTok  | $0.20 / MTok | $10 / MTok |
+| Claude Haiku 4.5 | $1 / MTok  | $1.25 / MTok  | $2 / MTok  | $0.10 / MTok | $5 / MTok  |
+
+All six match `lib/prices.js` row for row.
+
+## the footnote that makes Fable 5.1 the exception and Fable 5 not
+
+  "Cache hits and refreshes on Claude Fable 5.1 and Claude Mythos 5.1 are priced
+  at 0.025x the base input price. All other models use the standard 0.1x
+  multiplier."
+
+So Fable 5.1's $0.25 against a $10 input is 0.025x, and Fable 5's $1 against the
+same $10 input is 0.1x: the exception is the version, not the family. That is the
+distinction `tests/prices.test.js`'s ratio test encodes.
+
+## the cache multipliers, quoted
+
+  | 5-minute cache write | 1.25x base input price |
+  | 1-hour cache write   | 2x base input price    |
+  | Cache read (hit)     | 0.1x base input price (0.025x on Claude Fable 5.1 and Claude Mythos 5.1) |
+
+## what is deliberately NOT in lib/prices.js, and why
+
+Claude Mythos 5 and Claude Mythos 5.1 are on the published table, both marked
+"limited availability". They are absent from `lib/prices.js` for the same reason
+every other published row is absent: the table holds the ids this machine's
+transcripts carry. Nothing here has scanned for a Mythos id and found none — the
+claim is only that none was found while looking for unpriced ids, which is a
+weaker statement, and it is the one being made.
+
+Opus 4.7, 4.6, 4.5, Sonnet 4.6, 4.5 and the retired rows are absent on the same
+grounds.
+
+## one line worth recording, not acted on
+
+  "Claude 4.6 and later models and Claude Mythos Preview include the full 1M
+  token context window at standard pricing. (A 900k-token request is billed at
+  the same per-token rate as a 9k-token request.)"
+
+This is why a transcript's `claude-opus-5` needs no long-context variant. It was
+already the conclusion of
+docs/reports/2026-09-21-long-task-projection.md, reached on 2026-09-21 from a
+different route; this read agrees with it. No row here depends on it.

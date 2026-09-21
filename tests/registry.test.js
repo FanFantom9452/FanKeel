@@ -837,6 +837,65 @@ test('touch appends a two-element move when no finite reading is available', () 
   assert.deepEqual(last, ['verify', after.clock.verify[0]]);
 });
 
+// The defect this pins: `clock` and `moves` were stamped only by `touch()`,
+// which runs on the next prompt, so a boundary landed at the next sighting
+// rather than at the `task.js stage` command that caused it. Measured over 65
+// sessions on 2026-09-21, a median 14.1% of a session's cost sat in the wrong
+// stage — 7.9% on the thirty at or above $50 — and the worst single boundary
+// was 183 minutes late. `enter()` is the command's own stamp. The reading is
+// still the hook's: a CLI has no transcript to take one from, so `touch()`
+// fills it into the move the command already appended rather than appending a
+// second one.
+// What `scripts/task.js` does, in the two different shapes it does it. `cmdStage`
+// calls `stampEntry` from inside its own open `update` callback and passes no
+// `at`, so the route check and the stamp are one write. `cmdStart` has no
+// `update` at all: it builds the record from scratch, calls `stampEntry` with
+// `Date.parse(started)` so the first move and `started` agree to the
+// millisecond, and writes once with `replace`. This helper is `start`'s shape.
+//
+// Neither site wanted a `registry.enter` wrapper, for two different reasons —
+// `cmdStage` is already inside an `update` and a second one would re-enter the
+// same session's lock, and `cmdStart` has no `update` to be inside.
+const enter = (root, id, stage) => registry.update(root, id, (d) => {
+  d.updated = new Date().toISOString();
+  registry.stampEntry(d, stage, Date.parse(d.updated));
+  return true;
+});
+
+test('a command-time stamp opens the move, and a later touch fills in the reading', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task({ stage: 'build' }));
+  registry.touch(root, SID, 1000);
+
+  enter(root, SID, 'verify');
+  const entered = registry.readSession(root, SID);
+  const at = entered.clock.verify[0];
+  assert.equal(entered.stage, 'verify');
+  assert.deepEqual(entered.moves[entered.moves.length - 1], ['verify', at]);
+
+  registry.touch(root, SID, 4321);
+  const after = registry.readSession(root, SID);
+  // The boundary is the command's moment, not the sighting that followed it.
+  assert.equal(after.clock.verify[0], at);
+  assert.equal(after.clock.verify[1] >= at, true);
+  // One move for this change of stage, and it now carries the reading.
+  assert.equal(after.moves.filter((m) => m[0] === 'verify').length, 1);
+  assert.deepEqual(after.moves[after.moves.length - 1], ['verify', at, 4321]);
+});
+
+// Re-entering a stage keeps that stage's first sighting, the way `touch()`
+// already does: `clock` holds one pair per stage, so a verify that went back to
+// build and returned is one long verify with two moves beside it.
+test('a second visit keeps the first clock sighting and appends a move', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task({ stage: 'build', clock: { build: [1000, 2000] } }));
+  enter(root, SID, 'verify');
+  enter(root, SID, 'build');
+  const after = registry.readSession(root, SID);
+  assert.equal(after.clock.build[0], 1000);
+  assert.deepEqual(after.moves.map((m) => m[0]), ['verify', 'build']);
+});
+
 test('moves keeps the latest MAX_MOVES and drops the oldest', () => {
   const root = tmpRoot();
   const moves = [];

@@ -28,7 +28,7 @@ workspace/                     <- Claude Code opened here
 
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `start` and `adopt` for `version`, the plugin's own `package.json` version at the moment either ran — `task` (the rename) leaves it, and an entry written before this field existed reads as unknown rather than being backfilled; `start` for `guard`, read from the effective profile whenever it is not the builtin default `ask` — a `guard` set later by hand overwrites it the same way any other write does; `inject.js` / `resume.js` for `updated` and `clock`; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `leave.js` for `ended`, `model`, `usage`, `spend` and `gates`, once, at `SessionEnd`; `task.js land` for `land`, once per invocation — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `start` and `adopt` for `version`, the plugin's own `package.json` version at the moment either ran — `task` (the rename) leaves it, and an entry written before this field existed reads as unknown rather than being backfilled; `start` for `guard`, read from the effective profile whenever it is not the builtin default `ask` — a `guard` set later by hand overwrites it the same way any other write does; `task.js stage` and `task.js start` for `clock` and `moves`, stamped at the command that made the change; `inject.js` / `resume.js` for `updated`, and for `clock` and `moves` where no command preceded them — an answered gate, and the rename that clears `moves` without stamping a new one; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `leave.js` for `ended`, `model`, `usage`, `spend` and `gates`, once, at `SessionEnd`; `task.js land` for `land`, once per invocation — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | `lib/registry.js:221` creates it holding `sessions/` alone; `registry.ensureIgnored` appends what is missing — `scripts/map.js:39` asks for `sessions/`, `build/` and `map.md` on every map run, `lib/station.js` for `index.html` and `station/` on every write of the copy — two names that cover the four files it emits, rather than the `EMITTED` list itself, because a directory is one line where four paths under it would be four |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
@@ -91,7 +91,7 @@ A third field is written by nobody the user talks to. `claims` holds every file
 this task has edited — at most sixty, each recorded whole and never truncated,
 because nothing here is a path a human retypes. The two writers reach that cap
 from opposite directions. A path arriving on its own drops the oldest to make
-room (`lib/registry.js:672`, `slice(-MAX_CLAIMS)`); a git pass holding more than sixty is refused
+room (`lib/registry.js:722`, `slice(-MAX_CLAIMS)`); a git pass holding more than sixty is refused
 whole rather than trimmed (`lib/dirty.js:176`, `declined: written.length`), because trimming it would evict
 every claim an edit earned and put build output in its place.
 [collisions.md](collisions.md) is the page for that. Two hooks append to it,
@@ -121,11 +121,16 @@ written by `hooks/leave.js` once, at `SessionEnd`, and its shape is under
 ```
 
 `moves` sits beside them and is not a cost. It is one `[stage, at, used]` for
-each change of stage, appended by the same `touch` that writes `clock` and
-stamped with the same sighting, so the entry opening a stage's first visit
-carries that stage's `clock` first. `used` is the context reading `touch()`
-had in hand at that moment (`hooks/inject.js`); where none was available the
-entry keeps the older two-element shape, `[stage, at]`. What one stage's
+each change of stage. Where a command made the change — `task.js stage` and
+`task.js start`, through `stampEntry` — the entry is stamped at that command's
+own moment, so the entry opening a stage's first visit carries that stage's
+`clock` first. Where none did, `touch()` still appends one itself, stamped at
+its own sighting: an answered gate reaches `hooks/resume.js` with no command
+before it, and `task.js task` clears `moves` on a rename and leaves the new
+task's opening entry to whichever `touch()` comes next. A command has no
+transcript to read a context figure from, so it writes the entry as
+`[stage, at]`, and `used` arrives afterwards — filled in by the first `touch()`
+that has one to give (`hooks/inject.js`). What one stage's
 regression to `build` cost is the difference between two adjacent `used`
 readings. `clock` keeps one pair per stage, which makes a verify
 that went back to build and returned read as one long verify; `moves` keeps the

@@ -1471,6 +1471,21 @@ test('a second verify->build return says so; the first does not', () => {
   assert.match(second.out, /second return to build from verify — name what verify caught/);
 });
 
+// The opening stage gets its stamp from `start` itself, taken from the record's
+// own `started` rather than a second reading a millisecond later. `windowsFrom`
+// runs the first window from -Infinity so the cost bucketing never needed it, but
+// `clockOf` did: without this the opening stage's duration was the gap between
+// two hook sightings, which on one real session printed nine minutes for a stage
+// that had run forty.
+test('start stamps the opening stage at the command, from the record\'s own started', () => {
+  const dir = root();
+  started(dir, A, 'ship it');
+  const data = entry(dir, A);
+  const at = Date.parse(data.started);
+  assert.deepEqual(data.clock.survey, [at, at]);
+  assert.deepEqual(data.moves, [['survey', at]]);
+});
+
 test('start reads class.default when neither --class nor --route is given', () => {
   const dir = root();
   run(dir, ['profile', 'set', 'class.default', 'bounded']);
