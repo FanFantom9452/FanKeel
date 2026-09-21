@@ -315,3 +315,31 @@ test('a stage agent on a record with no started gets the ordinary brief', () => 
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
   assert.ok(!text.includes('stage rules:'));
 });
+
+test('a build brain may dispatch a fixer and an implementer, a verify brain a verifier, a survey brain neither', () => {
+  const dispatchLine = (stage) => {
+    const root = tmp();
+    seedProfile(root, { 'stage.agents': [stage] });
+    seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
+    const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+    return text.match(/You cannot run Workflow\. Dispatch[^\n]*/)[0];
+  };
+  const build = dispatchLine('build');
+  assert.match(build, /fankeel:fankeel-fixer/);
+  assert.match(build, /implementer/);
+  assert.match(dispatchLine('verify'), /fankeel:fankeel-verifier/);
+  const survey = dispatchLine('survey');
+  assert.match(survey, /fankeel:fankeel-reader/);
+  assert.doesNotMatch(survey, /fankeel-fixer|fankeel-verifier|implementer/);
+});
+
+test('the brain\'s own ## Tools names every plugin agent its stage table lets it dispatch', () => {
+  const { agentsFor } = require('../lib/stages.js');
+  const agentFile = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
+  const tools = agentFile.split(/^## /m).find((s) => s.startsWith('Tools'));
+  for (const stage of ['survey', 'build', 'verify']) {
+    for (const agent of agentsFor(stage).filter((a) => a.startsWith('fankeel:'))) {
+      assert.ok(tools.includes(agent), '## Tools must name ' + agent + ', which the ' + stage + ' brief lists');
+    }
+  }
+});

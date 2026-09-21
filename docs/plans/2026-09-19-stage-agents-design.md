@@ -95,6 +95,6 @@ last_verified: 2026-09-19
 
 - 新舊兩種模式並存，用 profile 的 `stage.agents` 切換。
 - build 站內部怎麼派工留到後面那一刀。站 agent 開不了 `Workflow`（每個 subagent 都拿不到），
-  所以 build 的 workflow 由 script 產生、主控用 `scriptPath` 開。
+  所以 build 站在 brain 裡用 Agent 分回合派、一回合最多四個；由 script 產生 workflow 這條被 [2026-09-21-controlled-stations-design.md](2026-09-21-controlled-stations-design.md) 取代，留在 TODO 的 Waiting。
 - 「JEV」：原話是「jev 這個模型它本身也只是一個做判斷 tool calling…會不會有危險」，
   講的是判斷工具呼叫風險的模型，不在這個架構裡。
