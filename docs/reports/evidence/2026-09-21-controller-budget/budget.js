@@ -278,6 +278,8 @@ function main(argv) {
     return out.join('\n') + '\n';
 }
 
+// No `module.exports`: the other twenty-one scripts under
+// `docs/reports/evidence/` have none either, and `tests/source.test.js`'s
+// "every exported name is imported by something" counts an evidence script's
+// exports as orphans the moment the file is tracked.
 if (require.main === module) process.stdout.write(main(process.argv.slice(2)));
-
-module.exports = { main, readCapture, readWindowSegment };
