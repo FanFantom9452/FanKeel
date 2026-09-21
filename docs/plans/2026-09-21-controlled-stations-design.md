@@ -60,6 +60,7 @@ last_verified: 2026-09-21
   - 手動：所有 `land.*` 與 `class.default` 清成 (ask)，`stage.agents` = false，`guard` = ask。
   - 平衡：`land.integration` = merge、`land.push` = false、`land.archivePlan` = true、`guard` = ask、`stage.agents` = survey，`class.default` 不動。
   - 省 context：平衡，再把 `stage.agents` 設成 survey,build,verify。
+- 預設寫進**這張卡自己的那一層**：專案卡寫 `.fankeel/profile.json`，machine 卡寫機器層。專案層蓋過機器層（`lib/profile.js` 的 `read`），所以在 machine 卡套「手動」不會改變已經有專案值的專案；專案卡上「清成 (ask)」是把那個鍵從專案檔拿掉，值落回機器層或 builtin。mockup 把兩層畫成一張 machine 卡、又顯示 project 來源，這一點以本條為準。
 - `stage.agents` 用七個站的 toggle，不是 `<select>`。
 - `profile show` 的表格欄寬跟著最長的值，不再把 `survey,build,verify` 與來源層黏在一起。
 - 畫面以 mockup 為準，它在 .fankeel/build/2026-09-21-controlled-stations/mockup.html，不提交（那個目錄在 gitignore 下）。
