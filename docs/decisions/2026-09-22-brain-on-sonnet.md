@@ -22,6 +22,16 @@ last_verified: 2026-09-22
 ## 二、沒量過的
 
 - **Sonnet 站 agent 沒有量過。**2026-09-20 的 A/B 與之後所有量測用的都是 Opus 站 agent；換了模型，`docs/subagents.md` 裡的成本與品質數字都不能直接套用。
-- **派工傳的 `model` 蓋過 agent 檔這件事，只有工具的文件這樣說，這個 repo 沒有探測過。**跑完之後，該 session 的 `modelUsage` 會顯示每一個站 agent 實際用了哪個模型。
+- **派工傳的 `model` 蓋過 agent 檔這件事，只有工具的文件這樣說，這個 repo 沒有探測過。**跑完之後，該 session 的 `modelUsage` 只按模型加總，能看出 opus 與 sonnet 各花了多少，分不出是哪個站；逐站用了哪個模型，要看該 session 旁邊 `subagents/` 底下每個站 agent 的 transcript。
 - 量測在發版之後：使用者把 `stage.agents` 設成 `all` 跑一個真實 task，用 `node scripts/ctx.js <session> --by-stage` 與該 session 的 `modelUsage` 讀；門檻沿用設計的主控至多 60 turns、最後一關低於 200k。這一份不預設結果。
 - 要回頭：把 `agents/fankeel-brain.md` 的 `model` 改回 `opus`，並拿掉 `controlRules` 那一行的 `model: opus` 分支；`tests/agents.test.js` 與 `tests/stages.test.js` 各有一個測試釘住現在的樣子，會跟著紅。
+
+## 三、探測
+
+放行前後各派一個 sonnet 的 general-purpose agent，用 Write 在 `.fankeel/build/` 建一個檔：兩次探測在同一個 session、同一個 permission mode（auto，`~/.claude/settings.json` 的 `permissions.defaultMode`）下跑，唯一的差別是 `.claude/settings.local.json` 存不存在。探測檔名用 `probe-before.md` 與 `probe-after.md`，沒有照計畫用時間戳。
+
+| test | before the rule | after the rule |
+|---|---|---|
+| 一個 agent 用 Write 建立 `.fankeel/build/probe-<before 或 after>.md`，內容一行 `probe`（2026-09-22 06:42:59 與 06:46:47） | `File created successfully at: F:\ymlab\fankeel\.fankeel\build\probe-before.md` | `File created successfully at: F:\ymlab\fankeel\.fankeel\build\probe-after.md` |
+
+放行後的探測寫成功了，但放行前的也寫成功，所以這次沒有觀察到規則帶來的差別：規則有沒有效，在這台機器上無法證明；2026-09-22 那場 session 的 no verdict 這次沒有重現。規則仍照使用者的決定加進去，當作保險，只放行 gitignored 的 `.fankeel/build/`。
