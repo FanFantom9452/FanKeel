@@ -143,7 +143,7 @@ agents ran, as a bare count beside the total rather than a request count or a
 wall-clock of its own.
 
 Every row also carries the registry it belongs to, as `root` on its session
-object (`lib/station.js:613`, `root: s.root`) — the raw path, not the
+object (`lib/station.js:614`, `root: s.root`) — the raw path, not the
 shortened label shown on the row — and `match()` filters on that same field
 (`assets/station/station.js:139`, `s.root !== f.project`) rather than a DOM
 attribute, because every row here is rebuilt from `window.STATION` in the
@@ -161,7 +161,7 @@ page's five cards — reads `flatten()`'s output rather than the model
 itself, so no view filters a second time. Every aggregation that walks
 `model.registries` instead carries its own check, and a new one has to:
 the live/stale/down counts `write()` returns for the terminal summary
-(`lib/station.js:687`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
+(`lib/station.js:688`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
 the fifth card's gate tally
 (`lib/station.js:550`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`),
 the profile list `serialize()` hands the page
@@ -170,11 +170,11 @@ an inline copy of the predicate rather than a `hiddenPkeys()` call, because
 that loop is keyed by the raw profiles directory rather than by pkey —
 `write()`'s detail-file loop described below, and `--json`'s own pass
 outside this file
-(`scripts/station.js:656`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
+(`scripts/station.js:655`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
 There is no trace on
 the page that a project was left out: no count, no note on the footer. `station.js`'s own text
 summary — not the served page — does print how many projects it excluded
-(`scripts/station.js:757`, `hidden by station.hide`), but names none of
+(`scripts/station.js:756`, `hidden by station.hide`), but names none of
 them; the terminal is the only place the fact surfaces at all.
 
 ### The stage strip
@@ -188,7 +188,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:1643`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:1666`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -501,7 +501,7 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:1677`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:1700`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
 (`lib/station.js:449`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
@@ -539,7 +539,7 @@ names the option-one gate wording most often swapped for another answer,
 `assets/station/station.js:463`, `roHtml('最常被換掉'`). Unlike the other
 four, it does not move with the 30-day window or the search box: it is
 counted once, across every shown session's gate answers
-(`lib/station.js:611`, `gates: gateSummary(model, hidden),`), not from the
+(`lib/station.js:612`, `gates: gateSummary(model, hidden),`), not from the
 filtered set the other four sum. It walks the model rather than
 `flatten()`'s output, so it takes the hidden set as an argument and skips
 those sessions itself
@@ -678,7 +678,7 @@ says when it was generated.
 A session under a hidden project produces no `station/detail/<id>.js`
 either, on every one of those four writes. `write()` walks
 `model.registries` directly for this loop rather than through `flatten()`,
-so it carries its own check (`lib/station.js:746`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
+so it carries its own check (`lib/station.js:747`, `hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))`):
 hiding a project after its sessions already had a detail file does not
 delete that file, it just stops being rewritten — nothing in `write()`
 removes a file it once wrote.
@@ -789,8 +789,11 @@ defaults' card, before its projects and recent sessions; each registry's card �
 on 清單 once that registry is selected, and on every project page for its own
 registry — ends with one card per project it holds. A card is one row per key
 in `profileKeys` (`lib/profile.js`'s
-`KEYS`), each showing the effective value, which layer it came from, and the
-values that key allows. The quick-apply button sits on each project's card,
+`KEYS`), each showing the effective value, which layer it came from, the
+values that key allows, and the key's one-line `desc`. On a served page a strip
+of three habit presets (`profilePresets`, `lib/profile.js`'s `PRESETS`) sits above
+the rows, and each one posts every key it sets in a single request; a `null` in a
+preset clears that key from the card's own file. The quick-apply button sits on each project's card,
 not on the machine card — `applyMachineControl` is spliced in only when the
 card's scope is `project` — and walks the machine's keys onto that project one
 write at a time rather than opening a second endpoint for it. (The design put
@@ -807,8 +810,10 @@ makes between `serve` and a file on disk.
 `scripts/station.js serve` answers that button at `POST /profile`, taking
 `scope` (`project` or `machine`), `project`, and a repeated `key`/`value`
 pair per row changed in one request. A wrong nonce is `403`. A bad `scope`,
-no pair or an unequal count, an unknown key, or a value off its list, is
-`400`; an unknown project `404`, a refused write `409`; one that lands redirects
+no pair or an unequal count, an unknown key, or a value `profile.parseValue`
+refuses (a `stage.agents` stage list is one it accepts), is `400`; an empty
+value is not refused but clears that key from the scope's file
+(`profile.unset`); an unknown project `404`, a refused write `409`; one that lands redirects
 `303` back to the page it came from — the same shape `/clear` and
 `/clear-stale` already use.
 

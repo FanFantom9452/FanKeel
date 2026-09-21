@@ -481,7 +481,7 @@ stage on that list and it is run by a stage agent instead of by the session:
 | the answer | `hooks/resume.js` | writes it to the answer file; the controller's `SendMessage` names the path |
 | a pause | `task.js next --from-gate` | reads the block's `next` line |
 
-The stage agent's readers and reviewers are a second layer down, but their transcripts land
+The agents a stage agent dispatches — readers and reviewers, and on `build` and `verify` also fixers, verifiers and implementers — are a second layer down, but their transcripts land
 in the same `subagents/` directory as the stage agent's, each `.meta.json`
 naming its `parentAgentId` at `spawnDepth` 2 — so `agentFiles()` in
 `lib/usage.js` counts them, flat, beside the agent that sent them (a run on
@@ -509,13 +509,16 @@ landed on this same branch) — `stage.agents` can now name `build` or
 `verify`, but nothing has measured either one there, and those are the two
 stages a default would actually move the number on.
 
-And `build` could not run this way today even if it had been measured: the
-guard above locks the controller out of `Edit`, `Write` and `NotebookEdit`
-for the whole of any stage on the list, and the workflow generator `build`'s
-own task loop needs is not a tool a stage agent can reach — `fankeel-brain`
-carries no `Workflow` in its own list (`agents/fankeel-brain.md:4`, `tools: [Read, Grep, Glob, Bash, Write, Agent]`).
-Turning `build` on by default would lock editing out of the stage that needs
-it most, for a tool the stage agent cannot open at all.
+And `build` has not been measured either, though it can be tried now:
+`STAGE_AGENTS` in `lib/stages.js` gives its stage agent readers, reviewers, a
+fixer and implementers, all through the `Agent` tool. The guard above locks the
+*controller* out of `Edit`, `Write` and `NotebookEdit`; the stage agent never
+needed them, because it edits through the implementers it sends and carries no
+`Workflow` (`agents/fankeel-brain.md:4`, `tools: [Read, Grep, Glob, Bash, Write, Agent]`).
+What is not settled is who commits, and who applies a mutation to a committed
+file to watch a test redden: the agent's Refusals forbid `git commit`, `git add`
+and `git checkout`, and the controller's rules keep it to dispatching and
+asking. `TODO.md` carries it, and a default should wait for it.
 
 # Telling a subagent apart, when a hook has to
 
