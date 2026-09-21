@@ -41,7 +41,6 @@ const isWake = (entry) => usage.notificationOf(entry) || (entry.origin && entry.
 // followed a subagent's return with no tool result in between, which is what a dispatch
 // cost the main thread, as against the turns it spent on its own tool loop. `gates` is
 // `measure`'s list of turn numbers that asked a question, already one per request.
-// `taskCalls` gives a `stage` only for `start` and `stage`; `route` carries none.
 function stageRows(entries, turn, contexts, commands, gates) {
     const rows = [{ stage: null, from: 1 }];
     for (const c of commands) {
