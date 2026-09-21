@@ -396,3 +396,45 @@ test('the brain\'s own ## Tools names every plugin agent its stage table lets it
     if (agentsFor(stage).some((a) => !a.startsWith('fankeel:'))) assert.match(tools, /implementer/, '## Tools must permit an implementer, which the ' + stage + ' brief lists');
   }
 });
+
+test('a brain is told what to read first: the last stage\'s report and the lines it left under reads:', () => {
+  const { handoffPath } = require('../lib/handoff.js');
+  const started = '2026-09-19T09:30:12.345Z';
+  const moves = [['build', 1], ['verify', 2], ['build', 3]];
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started, moves });
+  const verifyFile = handoffPath(root, { started, moves: moves.slice(0, 2) }, 'verify');
+  fs.mkdirSync(path.dirname(verifyFile), { recursive: true });
+  fs.writeFileSync(verifyFile, 'report\n\nreads:\n- lib/a.js — the row that failed\n- docs/b.md — the contract it broke\n\n');
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.match(text, /read first: \S+\/\.fankeel\/build\/task-20260919T093012\/verify\.md/);
+  assert.ok(text.includes('lib/a.js — the row that failed'));
+  assert.ok(text.includes('docs/b.md — the contract it broke'));
+  assert.ok(text.includes('The next brief copies them for it'), 'the brain is told to write the block');
+  assert.ok(text.length < 10000, 'brain brief is ' + text.length + ' chars');
+});
+
+test('read first says none when no earlier stage left a report, and says how many lines it left out', () => {
+  const { handoffPath } = require('../lib/handoff.js');
+  const started = '2026-09-19T09:30:12.345Z';
+  const brief = (reads) => {
+    const moves = [['verify', 1], ['build', 2]];
+    const root = tmp();
+    seedProfile(root, { 'stage.agents': ['build'] });
+    seed(root, { stage: 'build', started, moves });
+    if (reads) {
+      const file = handoffPath(root, { started, moves: moves.slice(0, 1) }, 'verify');
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, 'reads:\n' + reads.map((r) => '- ' + r).join('\n') + '\n\n');
+    }
+    return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  };
+  assert.match(brief(null), /read first: none — the map \(\.fankeel\/map\.md\) and the task line/);
+  const many = brief(Array.from({ length: 30 }, (_, i) => 'f' + i + '.js — why'));
+  assert.ok(many.includes('f11.js — why') && !many.includes('f12.js — why'), 'twelve lines are shown');
+  assert.ok(many.includes('18 more not listed'));
+  const long = brief(['x'.repeat(600) + ' — a', 'y'.repeat(600) + ' — b']);
+  assert.ok(long.includes('x'.repeat(600)) && !long.includes('y'.repeat(600)), 'the character budget stops the second');
+  assert.ok(long.includes('1 more not listed'));
+});

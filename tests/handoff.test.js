@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const tmp = require('./tmp.js');
-const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed } = require('../lib/handoff.js');
+const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff } = require('../lib/handoff.js');
 
 const DATA = { started: '2026-09-19T09:30:12.345Z' };
 const TICKS = '`'.repeat(3);
@@ -87,4 +87,37 @@ test('a renamed task numbers its laps past the ones the old task used', () => {
   assert.equal(lapsUsed(DATA), 1);
   assert.equal(lapsUsed(moved('build', 'verify', 'build')), 2);
   assert.equal(lapsUsed(renamed('build')), 3);
+});
+
+const report = (reads) => '# report\n\nbody\n\n' + (reads ? 'reads:\n' + reads.map((r) => '- ' + r).join('\n') + '\n\n' : '') + block(gateOf('q'));
+
+test('readsOf returns the lines under the last reads: line and stops at the blank line', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'r.md');
+  fs.writeFileSync(file, 'reads:\n- old — superseded\n\nprose\n\n' + report(['lib/a.js — the caller', 'docs/b.md — the contract']));
+  assert.deepEqual(readsOf(file), ['lib/a.js — the caller', 'docs/b.md — the contract']);
+  fs.writeFileSync(file, report(null));
+  assert.deepEqual(readsOf(file), []);
+  assert.deepEqual(readsOf(path.join(path.dirname(file), 'missing.md')), []);
+});
+
+test('previousHandoff walks moves back to the newest earlier stage that left a report', () => {
+  const root = tmp('fankeel-handoff-');
+  const write = (data, stage) => {
+    const file = handoffPath(root, data, stage);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, 'x');
+    return file;
+  };
+  const now = moved('build', 'verify', 'build');
+  assert.equal(previousHandoff(root, now), null);
+  const buildOne = write(moved('build'), 'build');
+  assert.equal(previousHandoff(root, now), buildOne);
+  const verifyOne = write(moved('build', 'verify'), 'verify');
+  assert.equal(previousHandoff(root, now), verifyOne);
+  assert.equal(previousHandoff(root, moved('build')), null);
+  // A renamed task's laps start past the old task's: `verify.md` above is not its report.
+  const renamed = Object.assign({}, now, { lapped: 2 });
+  assert.equal(previousHandoff(root, renamed), null);
+  const later = write(Object.assign({}, moved('build', 'verify'), { lapped: 2 }), 'verify');
+  assert.equal(previousHandoff(root, renamed), later);
 });
