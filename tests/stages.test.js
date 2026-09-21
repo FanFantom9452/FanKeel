@@ -915,7 +915,7 @@ test('the controller passes model opus for design and plan and no model for the 
   for (const stage of all) {
     const dispatch = controlFor(stage, values, {}).rules.find((r) => r.startsWith('Dispatch one Agent'));
     const opus = stage === 'design' || stage === 'plan';
-    assert.ok(dispatch.includes('plus one line only when the user has just given a new instruction for it; '), stage + ': ' + dispatch);
+    assert.ok(dispatch.includes('prompt `' + stage + '`, plus one line only when the user has just given a new instruction for it; '), stage + ': ' + dispatch);
     assert.equal(dispatch.includes('`model: opus`'), opus, stage + ': ' + dispatch);
     assert.equal(dispatch.includes('no model'), !opus, stage + ': ' + dispatch);
     assert.equal(dispatch.includes('opus'), opus, stage + ': ' + dispatch);
