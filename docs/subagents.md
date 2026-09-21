@@ -43,7 +43,7 @@ for reference-page corrections and small fixes that need no test run. The
 verifier adds `Write`, because verify's per-task verifier writes its evidence rows
 to a file and returns the path — what that keeps the rows out of is a
 Workflow's join, not this session's context, which a return value never
-reaches anyway. `fankeel-brain` carries `Write` for one file, its handoff:
+reaches anyway. `fankeel-brain` carries `Write` for its handoff — and on `build` its commit file:
 the report and gate block a controller hands on by path rather than retyping
 (the `stage.agents` section below). `Write` is matched by `guard.js`'s `PreToolUse` hook,
 whose matcher is `Edit|Write|NotebookEdit`. `Bash` is matched now too:
@@ -474,7 +474,7 @@ stage on that list and it is run by a stage agent instead of by the session:
 | piece | where | what it does |
 |---|---|---|
 | controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` and printed by `task.js start` and `task` in place of their first step | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns, ask; option one advances the stage, or stands the task down where the route ends |
-| the stage agent | `agents/fankeel-brain.md` | opus at `effort: medium`; `Write` for its handoff, `Agent` for its readers and reviewers, and on build and verify its fixer, verifier and implementers — which of them, and when, its stage's own rules decide |
+| the stage agent | `agents/fankeel-brain.md` | opus at `effort: medium`; `Write` for its handoff (and, on build, its commit file), `Agent` for its readers and reviewers, and on build a fixer and implementers, on verify a verifier, a fixer and an implementer — which of them, and when, its stage's own rules decide |
 | its brief | `renderBrief` in `lib/render.js` | the stage's rules and shape, the skill's path, the handoff path, what replaces AskUserQuestion and Workflow, one Bash call for independent commands and for the lines it cites, and the output rule's word count as the file's — under Claude Code's 10,000-character cap on one `additionalContext` |
 | the handoff | `handoffPath`, `answerPath`, `readGate` and `writeAnswer` in `lib/handoff.js` | `.fankeel/build/task-<started>/<stage>.md`, ending in a `json gate` block; the answer beside it as `<stage>-answer.md` — `survey.md` and `survey-answer.md` when `survey` is the stage on the list |
 | the gate | `hooks/gate.js` | replaces the controller's placeholder question with the block's, word for word |
@@ -482,7 +482,7 @@ stage on that list and it is run by a stage agent instead of by the session:
 | a pause | `task.js next --from-gate` | reads the block's `next` line |
 | a commit (`build` only) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/build-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back `<base>..<sha>` |
 
-The agents a stage agent dispatches — readers and reviewers, and on `build` also a fixer and implementers, on `verify` a verifier and a fixer — are a second layer down, but their transcripts land
+The agents a stage agent dispatches — readers and reviewers, and on `build` also a fixer and implementers, on `verify` a verifier, a fixer and an implementer — are a second layer down, but their transcripts land
 in the same `subagents/` directory as the stage agent's, each `.meta.json`
 naming its `parentAgentId` at `spawnDepth` 2 — so `agentFiles()` in
 `lib/usage.js` counts them, flat, beside the agent that sent them (a run on

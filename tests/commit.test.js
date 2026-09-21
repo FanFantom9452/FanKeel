@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 const commit = require('../scripts/commit.js');
 const tmp = require('./tmp.js');
 
@@ -61,7 +61,6 @@ test('a request it cannot trust commits nothing and says why', () => {
     const bad = {
         'no blank line between paths and message': 'a.txt\nfeat: x\n',
         'no message': 'a.txt\n\n   \n',
-        'no paths': '\n\nfeat: x\n',
         'an absolute path': '/etc/passwd\n\nfeat: x\n',
         'a drive path': 'C:\\x\n\nfeat: x\n',
         'a path that leaves the repository': '../x\n\nfeat: x\n',
@@ -74,6 +73,46 @@ test('a request it cannot trust commits nothing and says why', () => {
         assert.match(res.text, /^commit\.js: /, why);
         assert.equal(git(dir, 'rev-parse', 'HEAD'), before, why + ' moved HEAD');
     }
+});
+
+test('runs from the top of the repository, whatever directory it is started in', () => {
+    const dir = repo();
+    fs.mkdirSync(path.join(dir, 'sub'));
+    const res = commit.main([requestFile('a.txt\n\nfeat: from a subdirectory\n')], path.join(dir, 'sub'));
+    assert.ok(!res.code, res.text);
+    assert.equal(git(dir, 'show', '--name-only', '--format=', 'HEAD'), 'a.txt');
+});
+
+test('outside a repository, and when git refuses the commit, it exits 1 and moves nothing', () => {
+    const none = commit.main([requestFile('a.txt\n\nfeat: x\n')], tmp('fankeel-commit-none-'));
+    assert.equal(none.code, 1);
+    assert.match(none.text, /^commit\.js: not inside a git repository/);
+    const dir = repo();
+    assert.ok(!commit.main([requestFile('a.txt\n\nfeat: once\n')], dir).code);
+    const before = git(dir, 'rev-parse', 'HEAD');
+    const again = commit.main([requestFile('a.txt\n\nfeat: twice\n')], dir);
+    assert.equal(again.code, 1);
+    assert.match(again.text, /^commit\.js: git commit failed/);
+    assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
+});
+
+test('a CRLF request with a leading blank line and a non-ASCII message commits', () => {
+    const dir = repo();
+    const res = commit.main([requestFile('\r\n\r\na.txt\r\n\r\nfeat: 受控 build 的提交\r\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(git(dir, 'log', '-1', '--format=%s'), 'feat: 受控 build 的提交');
+});
+
+test('the command line prints the range and exits 0, or one line beginning commit.js: and exits 1', () => {
+    const dir = repo();
+    const script = path.join(__dirname, '..', 'scripts', 'commit.js');
+    const before = git(dir, 'rev-parse', 'HEAD');
+    const ok = spawnSync(process.execPath, [script, requestFile('a.txt\n\nfeat: cli\n')], { cwd: dir, encoding: 'utf8' });
+    assert.equal(ok.status, 0, ok.stderr);
+    assert.equal(ok.stdout, before + '..' + git(dir, 'rev-parse', 'HEAD') + '\n');
+    const bad = spawnSync(process.execPath, [script, requestFile('a.txt\nno blank line\n')], { cwd: dir, encoding: 'utf8' });
+    assert.equal(bad.status, 1);
+    assert.match(bad.stdout, /^commit\.js: [^\n]*\n$/);
 });
 
 test('wrong arguments print a usage line, an unreadable file exits 1', () => {

@@ -14,7 +14,7 @@ last_verified: 2026-09-21
 
 ## 現況（survey 讀過的，附行）
 
-- 主控那半邊對 build／verify 已通用：`lib/stages.js:603` 的 `controlRules` 不含站名，
+- 主控那半邊對 build／verify 已通用：survey 讀到時 `controlRules` 不含站名（§5 之後多了 build 專屬的一條），
   `tests/stages.test.js:874` 已斷言 build 受控。
 - brain 那半邊沒有：`lib/render.js:412` 只點名 `fankeel-reader` 與 `fankeel-reviewer`。
 - 裝機版比倉庫舊：`lib/` 有五個檔不同，裝機的 `lib/stages.js:598` 仍是

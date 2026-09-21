@@ -6,8 +6,9 @@
 // message — and the controller runs this and messages the agent what it printed:
 // `<base>..<sha>`, the range that task's reviewer is pinned to. `git commit -o`
 // takes only the listed paths, so whatever else is staged or dirty stays as it
-// was. It runs `git` in the current directory and leaves a path outside the
-// repository, or one that is not a path, for git to refuse.
+// was. It runs `git` from the top of the repository the current directory is
+// in, so the paths are relative to that, and leaves a path outside it, or one
+// that is not a path, for git to refuse.
 
 const fs = require('node:fs');
 const { spawnSync } = require('node:child_process');
@@ -17,7 +18,6 @@ function parse(text) {
     if (at < 0) return { error: 'no blank line between the paths and the message' };
     const paths = text.slice(0, at).split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
     const message = text.slice(at).trim();
-    if (!paths.length) return { error: 'no paths' };
     if (!message) return { error: 'no message' };
     return { paths, message };
 }
@@ -33,9 +33,12 @@ function main(argv, cwd) {
     const parsed = parse(raw.trimStart());
     if (parsed.error) return { text: 'commit.js: ' + parsed.error, code: 1 };
 
-    const git = (args, input) => spawnSync('git', args, { cwd, encoding: 'utf8', input });
+    const run = (dir, args, input) => spawnSync('git', args, { cwd: dir, encoding: 'utf8', input });
+    const top = run(cwd, ['rev-parse', '--show-toplevel']);
+    if (top.status !== 0) return { text: 'commit.js: not inside a git repository', code: 1 };
+    const git = (args, input) => run(top.stdout.trim(), args, input);
     const base = git(['rev-parse', 'HEAD']);
-    if (base.status !== 0) return { text: 'commit.js: no git repository with a commit here', code: 1 };
+    if (base.status !== 0) return { text: 'commit.js: the repository has no commit yet', code: 1 };
     const add = git(['add', '--'].concat(parsed.paths));
     if (add.status !== 0) return { text: 'commit.js: git add failed: ' + add.stderr.trim(), code: 1 };
     const made = git(['commit', '-o', '-F', '-', '--'].concat(parsed.paths), parsed.message + '\n');
