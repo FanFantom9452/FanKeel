@@ -161,6 +161,6 @@ lifts when: `a claim whose process is gone does not block` 在整套裡再紅一
 - 〔tests〕09-19 在 39efee9 整套紅過一次（1563/1564，已死的 pid 被當 live 而 deny），同樹重跑 1564/0、單跑 5/5 綠；疑 `deadPid()` 的 pid 在並行時被重用，未證實 — [tests/guard.test.js](tests/guard.test.js).
 
 ### 受控站開到 build
-lifts when: 第一次有長任務在 `stage.agents` 含 build 或 verify 之下跑完——沒有任何欄位記得住這件事，開的人自己知道. 09-21.
+lifts when: 上面 ## Ready 那條〔registry〕落地，session 記錄開始存 stage.agents，這件事才有人查得到. 09-21.
 
 - 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過 — [lib/render.js](lib/render.js).
