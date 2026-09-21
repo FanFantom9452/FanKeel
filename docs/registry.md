@@ -135,7 +135,11 @@ regression to `build` cost is the difference between two adjacent `used`
 readings. `clock` keeps one pair per stage, which makes a verify
 that went back to build and returned read as one long verify; `moves` keeps the
 order. Sixty at most, oldest dropped — `MAX_MOVES` in `lib/registry.js`. `task`
-clears it with the four above.
+clears it with the four above, but first writes `lapped`, the number of laps the
+old task used; `adopt` carries it across. A rename keeps `started`, so the new
+task's handoff files sit in the old task's directory, and `lapOf` in
+`lib/handoff.js` numbers its laps on from `lapped` — the first lap of any stage
+is a file nothing wrote, and the old task's gate is never read.
 
 `waited` is a gate that stayed open four minutes. Until 2026-09-02 no hook had
 written one — the one record carrying it, session `cb8cee7b`'s

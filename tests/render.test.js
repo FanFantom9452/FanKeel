@@ -694,6 +694,24 @@ test('a controlled build tells its controller to run commit.js on `commit <file>
   }
 });
 
+test('every controlled stage\'s block stays under the 2,400-character cap at a real plugin root, from render and from renderResume', (t) => {
+  const { renderResume } = require('../lib/render.js');
+  const on = { values: { 'stage.agents': NAMES.slice() }, sources: {}, unreadable: [] };
+  assert.equal(NAMES.length, 7);
+  for (const stage of NAMES) {
+    const mine = entry(MINE, { stage, started: '2026-09-19T09:30:12.345Z' });
+    const outs = { render: render({ mine, others: [], now: NOW, root: '/r', profile: on }), renderResume: renderResume({ mine, profile: on, root: '/r' }) };
+    for (const from of Object.keys(outs)) {
+      const out = outs[from];
+      assert.ok(out.includes('fankeel:fankeel-brain'), stage + ' ' + from + ' is not a controlled block');
+      assert.equal(out.includes('{{'), false, stage + ' ' + from);
+      const size = sizeAtReference(out);
+      t.diagnostic((stage + ' ' + from).padEnd(20) + size + ' chars at a ' + REFERENCE_ROOT + '-char root');
+      assert.ok(size < 2400, 'a controlled ' + stage + ' block from ' + from + ' is ' + size + ' chars at a real plugin root');
+    }
+  }
+});
+
 test('stage.agents true at survey, the route ending there: option one stands the task down', () => {
   const { renderResume } = require('../lib/render.js');
   const readRule = byName('survey').rules.find((r) => r.startsWith('Read whatever documents'));

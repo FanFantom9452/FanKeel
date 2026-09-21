@@ -226,10 +226,13 @@ test('a stage agent gets its stage\'s rules and shape, its skill, and where to w
   const { SCRIPTS, PLUGIN_ROOT, RETURN_RULES } = require('../lib/render.js');
   const { landClause } = require('../lib/profile.js');
   const root = tmp();
-  seedProfile(root, { 'stage.agents': true });
+  // The rules are rendered with the profile's values, not without one: a brief
+  // that pinned `landClause({})` here pinned the bug, not the behaviour.
+  const values = { 'stage.agents': true, 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': true };
+  seedProfile(root, values);
   seed(root, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
-  const expected = rulesFor('survey', Object.assign({ next: 'design', profileLand: landClause({}) }, SCRIPTS));
+  const expected = rulesFor('survey', Object.assign({ next: 'design', profileLand: landClause(values) }, SCRIPTS), values);
   for (const rule of expected) assert.ok(text.includes('  - ' + rule), 'missing rule: ' + rule.slice(0, 60));
   for (const line of templateFor('survey').split('\n').filter(Boolean)) assert.ok(text.includes('  ' + line), 'missing shape line: ' + line);
   assert.ok(text.includes(PLUGIN_ROOT + '/skills/fankeel-survey/SKILL.md'));
@@ -247,6 +250,31 @@ test('a stage agent gets its stage\'s rules and shape, its skill, and where to w
   // The shape's own word cap said nothing about the file, and the handoffs ran 6–9 KB.
   assert.ok(text.includes("The output rule's word count is this file's"), 'the brief must bind the word cap to the handoff');
   assert.ok(text.length < 10000, 'brain brief is ' + text.length + ' chars');
+});
+
+test('a brain\'s stage rules are rendered with the profile: a land brain carries the clause and the archive rule the profile answers, a design brain the mockup rule', () => {
+  const { landClause } = require('../lib/profile.js');
+  const values = { 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': true };
+  const brief = (stage, over) => {
+    const root = tmp();
+    seedProfile(root, Object.assign({ 'stage.agents': [stage] }, over));
+    seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
+    return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  };
+  const land = brief('land', values);
+  assert.ok(land.includes('  - Integration — ' + landClause(values) + '.'), 'the land brief must carry ' + landClause(values));
+  assert.doesNotMatch(land, /open the menu/);
+  assert.match(land, /archived; the profile said so, no question/);
+  assert.doesNotMatch(land, /archived, after asking/);
+  // The other side: with no land answer in the profile the menu is still what it says.
+  const bare = brief('land', {});
+  assert.match(bare, /Integration — no land answer in the profile: open the menu/);
+  assert.match(bare, /archived, after asking/);
+  const mockup = /Frontend work gets a mockup first: one page at `design\.mockup`'s model/;
+  const design = brief('design', { 'design.mockup': 'sonnet' });
+  assert.match(design, mockup);
+  assert.doesNotMatch(brief('design', {}), mockup);
+  for (const [name, text] of [['land', land], ['design', design]]) assert.ok(text.length < 10000, name + ' brief is ' + text.length + ' chars');
 });
 
 // `stage.agents` gates the brain branch itself, not just the mechanism around
