@@ -48,7 +48,7 @@ function main(argv, cwd) {
         return { text: 'commit.js: nothing to commit in ' + parsed.paths.join(', '), code: 1 };
     }
     const made = git(['commit', '-o', '-F', '-', '--'].concat(parsed.paths), parsed.message + '\n');
-    if (made.status !== 0) return { text: 'commit.js: git commit failed: ' + oneLine(made.stderr + ' ' + made.stdout), code: 1 };
+    if (made.status !== 0) return { text: 'commit.js: git commit failed: ' + oneLine(made.stderr || made.stdout), code: 1 };
     return { text: base.stdout.trim() + '..' + git(['rev-parse', 'HEAD']).stdout.trim() };
 }
 
