@@ -47,7 +47,7 @@ that size, not a bound. Every per-point rate below inherits that.
 length     244.6 minutes
 requests   760   (622 from 417fef89, 138 from c5571add)
 tokens     159,071,706
-usd        $91.6753   (+/- roughly 10%, per block 2 — not a bound)
+usd        $91.6753   (block 1 puts this basis +1.48% high at A and -10.69% low at B — two observations, asymmetric, not a bound and not a +/- band)
 
 five-hour meter: 2% -> 13%,  delta 10.0-12.0 points
   $ per point        $7.64-$9.17   (the band is the meter rounding only; the basis adds its own +/- ~10%)
@@ -67,7 +67,7 @@ field. It holds no percentage, so it is no use as a series — but it records
 the moment a request was REFUSED for hitting a cap, which a percentage never
 does. Counted over every transcript on the machine, top level and subagents.
 
-transcripts scanned (top level and every subagents tree): 4691
+transcripts scanned (top level and every subagents tree): 4692
 lines carrying a `quotaLimits` object: 13
 fields it ever carries: isUsingOverage, lowPriorityMaxWaitSeconds, lowPriorityOffer, lowPriorityRetryAfterSeconds, overageDisabledReason, overageStatus, rateLimitType, resetsAt, status, unifiedRateLimitFallbackAvailable
 a percentage among them? NO
