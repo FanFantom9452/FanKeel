@@ -188,7 +188,8 @@ say('length     ' + ((B.at - A.at) / 60000).toFixed(1) + ' minutes');
 say('requests   ' + segReq + '   (' + opusAB.requests + ' from ' + OPUS.slice(0, 8)
     + ', ' + sonnetAB.requests + ' from ' + SONNET.slice(0, 8) + ')');
 say('tokens     ' + num(segTokens));
-say('usd        ' + usd(segUsd) + '   (+/- roughly 10%, per block 2 — not a bound)');
+say('usd        ' + usd(segUsd) + '   (block 1 puts this basis +1.48% high at A and'
+    + ' -10.69% low at B — two observations, asymmetric, not a bound and not a +/- band)');
 say('');
 
 // A displayed integer p means [p-0.5, p+0.5). A displayed 0 does not widen
