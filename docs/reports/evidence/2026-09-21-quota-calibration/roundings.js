@@ -79,13 +79,39 @@ say('absent as a whole token         ' + absent.length);
 say('  sha fragments                 ' + shaFrag.length + '   ' + shaFrag.sort().join(' '));
 say('  everything else               ' + rest.length);
 say('');
+// A rounding is not a prefix. `0.24` rounds `0.2396`, and `0.2396` does not start
+// with `0.24` — an earlier version of this classifier looked for prefixes only,
+// so every figure that rounded UP was dumped into the catch-all and mislabelled
+// as a stated sum or a filename date. So: round every number in the outputs to
+// the figure's own number of decimals and look for a match.
+const outputNumbers = [...new Set(hay.match(/[0-9][0-9,]*(?:\.[0-9]+)?/g) || [])]
+    .map((t) => ({ text: t, value: Number(t.replace(/,/g, '')) }))
+    .filter((x) => Number.isFinite(x.value));
+
+function roundsFrom(figure) {
+    const bare = figure.replace(/,/g, '');
+    const dot = bare.indexOf('.');
+    const decimals = dot === -1 ? 0 : bare.length - dot - 1;
+    const target = Number(bare);
+    if (!Number.isFinite(target)) return null;
+    const hits = outputNumbers.filter((x) => {
+        if (x.text === figure || x.text === bare) return false;
+        const r = Number(x.value.toFixed(decimals));
+        return r === target && x.value !== target;
+    });
+    if (!hits.length) return null;
+    // The closest one: many outputs share leading digits, and the nearest value
+    // is the one the page plausibly rounded.
+    hits.sort((a, b) => Math.abs(a.value - target) - Math.abs(b.value - target));
+    return hits[0].text;
+}
+
 say('everything else, and what each one is:');
 for (const n of rest.sort()) {
-    const near = [...new Set(hay.match(new RegExp(esc(n) + '[0-9]*', 'g')) || [])]
-        .sort((a, b) => b.length - a.length)[0];
-    say('  ' + n.padEnd(12) + (near && near !== n
-        ? 'a rounding of ' + near
-        : 'not a prefix of anything in the outputs — a stated sum, a filename date, or a figure the page flags itself'));
+    const from = roundsFrom(n);
+    say('  ' + n.padEnd(12) + (from
+        ? 'a rounding of ' + from
+        : 'no output value rounds to it — a 萬/億 unit conversion, a stated sum, a filename date, or a figure the page flags itself'));
 }
 
 let sha = 'unknown';
