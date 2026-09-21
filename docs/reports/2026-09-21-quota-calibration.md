@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-21
-source_of_truth: 五份輸出都由 `docs/reports/evidence/2026-09-21-quota-calibration/` 底下同名腳本產生，各自帶著產生它的那個 sha — `windows-at-43daef5.txt`（全機 427 份頂層 transcript 的逐分段表）在 `43daef5`；`basis-at-e2d90fa.txt`（兩次捕捉的對照、基準本身的兩側不確定，與 `quotaLimits`）在 `e2d90fa`；`drift-at-512710e.txt`（66 個 session 的重分配）與 `sonnet-at-512710e.txt`（Sonnet 主控那一趟）在 `512710e`；`roundings-at-e2d90fa.txt`（頁面上哪些數字不是逐字的，逐項分類）在 `e2d90fa`。三個 sha 是三次審查之後的修改：basis 補上第二份 transcript，drift 與 sonnet 把「文件裡提到指令」與「指令真的跑過」分開。`windows.js` 自 `43daef5` 起一個位元都沒動。兩次 statusline 捕捉分別是 `evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt` 與 `evidence/2026-09-21-quota-calibration/quota-capture-260920T203515Z.txt`。費率表那次讀取的引文在 `pricing-read-260921.txt`。
+source_of_truth: 五份輸出都由 `docs/reports/evidence/2026-09-21-quota-calibration/` 底下同名腳本產生，各自帶著產生它的那個 sha — `windows-at-43daef5.txt`（全機 427 份頂層 transcript 的逐分段表）在 `43daef5`；`basis-at-e2d90fa.txt`（兩次捕捉的對照、基準本身的兩側不確定，與 `quotaLimits`）在 `e2d90fa`；`drift-at-512710e.txt`（66 個 session 的重分配）與 `sonnet-at-512710e.txt`（Sonnet 主控那一趟）在 `512710e`；`roundings-at-ed550a4.txt`（頁面上哪些數字不是逐字的，逐項分類）在 `ed550a4`。三個 sha 是三次審查之後的修改：basis 補上第二份 transcript，drift 與 sonnet 把「文件裡提到指令」與「指令真的跑過」分開。`windows.js` 自 `43daef5` 起一個位元都沒動。兩次 statusline 捕捉分別是 `evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt` 與 `evidence/2026-09-21-quota-calibration/quota-capture-260920T203515Z.txt`。費率表那次讀取的引文在 `pricing-read-260921.txt`。
 ---
 
 # 5h 與 7d 額度怎麼掛勾，與逐站帳的戳記偏移
