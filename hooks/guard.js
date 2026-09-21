@@ -14,7 +14,16 @@
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { decide, guardMode, targetOf, readOnlyAgentType, writesFiles } = require('../lib/guard.js');
+const docs = require('../lib/docs.js');
+const profileLib = require('../lib/profile.js');
+const { controlling } = require('../lib/stages.js');
 const { run, parse } = require('../lib/hook.js');
+
+// The tool names the controlled-stage matcher below cares about. A module
+// constant rather than a literal in the condition, for the same reason
+// `lib/guard.js`'s `READ_ONLY_AGENTS` is a set: three names compared once
+// each read better than three `===`s repeated at every call site.
+const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);
 
 function main(raw) {
     const payload = parse(raw);
@@ -64,6 +73,34 @@ function main(raw) {
             },
         }));
         return;
+    }
+
+    // A third matcher, `Edit|Write|NotebookEdit`, checked before the collision
+    // guard below and independent of `guard` mode entirely: during a stage
+    // handed to a stage agent, the controller's own write is refused outright
+    // rather than asked about, because the whole point of a controlled stage
+    // is that the controller dispatches, relays a path and asks — it does not
+    // edit. `agent_id` absent is the main thread, read the same way the
+    // Bash|PowerShell matcher above reads it. This hook has not loaded the
+    // profile before now; wired the way `hooks/inject.js` loads it.
+    if (!payload.agent_id && WRITE_TOOLS.has(payload.tool_name)) {
+        let controlled = false;
+        try {
+            const projectRoot = docs.projectRootsFor(root, mine.project ? [mine.project] : [])[0] || root;
+            const values = profileLib.read(projectRoot, mine.configDir || profileLib.configDirOf()).values;
+            controlled = controlling(mine.stage, values);
+        } catch (e) { /* housekeeping */ }
+        if (controlled) {
+            process.stdout.write(JSON.stringify({
+                hookSpecificOutput: {
+                    hookEventName: 'PreToolUse',
+                    permissionDecision: 'deny',
+                    permissionDecisionReason: 'fankeel: ' + mine.stage + ' is a controlled stage — its stage '
+                        + 'agent does the writing here, not the controller. Dispatch it, relay a path, ask.',
+                },
+            }));
+            return;
+        }
     }
 
     if (!guardMode(mine)) return;

@@ -1505,7 +1505,9 @@
             var spec = S.profileKeys[key];
             var v = prof.values[key];
             var src = prof.sources[key] || '';
-            var shown = v === undefined ? '(ask)' : String(v);
+            // `stage.agents` is the one array value: String([]) is '', which
+            // would show as a blank rather than the off it means.
+            var shown = v === undefined ? '(ask)' : (Array.isArray(v) ? (v.length ? v.join(',') : 'false') : String(v));
             var ctl;
             if (S.serve) {
                 ctl = '<form method="post" action="/profile" class="pf">'

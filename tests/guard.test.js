@@ -504,3 +504,64 @@ test('writesFiles catches a python -c script that writes a file', () => {
   }
   assert.equal(guard.writesFiles("python -c \"print(open('f.txt').read())\""), false);
 });
+
+// ---- the controlled-stage matcher: the controller cannot write during one -
+
+const agentsOn = (root, value) => {
+  fs.mkdirSync(path.join(root, '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': value }));
+};
+
+test('a main-thread Edit is denied while its stage is controlled', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'survey', claims: [] });
+  agentsOn(root, 'true'); // true means survey only
+  const out = run(root, edit(root, path.join(root, 'notes.md')));
+  assert.equal(decisionOf(out), 'deny');
+  assert.match(reasonOf(out), /survey/);
+});
+
+test('a main-thread Write is denied when the stage is on a custom stage.agents list', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'build', claims: [] });
+  agentsOn(root, 'survey,build,verify');
+  const out = run(root, edit(root, path.join(root, 'notes.md'), 'Write'));
+  assert.equal(decisionOf(out), 'deny');
+});
+
+test('NotebookEdit is denied the same way', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'survey', claims: [] });
+  agentsOn(root, 'true');
+  const out = run(root, edit(root, path.join(root, 'a.ipynb'), 'NotebookEdit'));
+  assert.equal(decisionOf(out), 'deny');
+});
+
+test('a main-thread Edit is allowed at a stage off stage.agents\'s list', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'build', claims: [] });
+  agentsOn(root, 'true'); // true means survey only — build is not controlled
+  assert.equal(run(root, edit(root, path.join(root, 'notes.md'))), '');
+});
+
+test('a subagent Edit (agent_id set) is not denied by the controlled-stage matcher', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'survey', claims: [] });
+  agentsOn(root, 'true');
+  const payload = edit(root, path.join(root, 'notes.md'));
+  payload.agent_id = 'agt_01';
+  assert.equal(run(root, payload), '');
+});
+
+test('Bash is untouched by the controlled-stage matcher, even during a controlled stage', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'survey', claims: [] });
+  agentsOn(root, 'true');
+  assert.equal(run(root, { session_id: MINE, cwd: root, tool_name: 'Bash', tool_input: { command: 'node scripts/task.js stage design' } }), '');
+});
+
+test('with no profile at all, stage.agents defaults off and nothing is denied', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'survey', claims: [] });
+  assert.equal(run(root, edit(root, path.join(root, 'notes.md'))), '');
+});

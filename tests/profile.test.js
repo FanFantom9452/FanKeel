@@ -164,11 +164,53 @@ test('station.hide refuses an illegal value and accepts true', () => {
     assert.equal(JSON.parse(fs.readFileSync(file, 'utf8'))['station.hide'], true);
 });
 
-test('stage.agents is false unless a profile turns it on', () => {
+// `stage.agents` used to be a plain boolean; it is an array of controlled
+// stage names now, so its builtin off position is `[]` rather than `false`,
+// and `true` still normalizes to `['survey']` — every doc and the A/B mean
+// survey by `true`, so that backward-compatible reading has to survive.
+test('stage.agents is [] unless a profile turns it on; true still means survey alone', () => {
     const projectRoot = tmp('fankeel-profile-agents-');
     const cfg = tmp('fankeel-profile-cfg-');
-    assert.equal(profile.read(projectRoot, cfg).values['stage.agents'], false);
+    assert.deepEqual(profile.read(projectRoot, cfg).values['stage.agents'], []);
     fs.mkdirSync(path.join(projectRoot, '.fankeel'), { recursive: true });
     fs.writeFileSync(path.join(projectRoot, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'true' }));
-    assert.equal(profile.read(projectRoot, cfg).values['stage.agents'], true);
+    assert.deepEqual(profile.read(projectRoot, cfg).values['stage.agents'], ['survey']);
+});
+
+// The row this task adds: `all`, and a comma list of stages normalized to
+// `lib/stages.js`'s own order regardless of what order or how many repeats
+// arrived, so two profiles naming the same set always compare equal.
+test('stage.agents accepts a comma list of stages, normalized to canonical order and deduped', () => {
+    const d = dir();
+    const file = profile.projectFile(d);
+    const out = profile.write(file, 'stage.agents', 'verify,survey,build,survey');
+    assert.equal(out.ok, true);
+    assert.deepEqual(out.value, ['survey', 'build', 'verify']);
+    assert.deepEqual(profile.read(d, null).values['stage.agents'], ['survey', 'build', 'verify']);
+});
+
+test('stage.agents all is every canonical stage, reused from lib/stages.js rather than retyped', () => {
+    const { FULL_ROUTE } = require('../lib/stages.js');
+    const d = dir();
+    const out = profile.write(profile.projectFile(d), 'stage.agents', 'all');
+    assert.equal(out.ok, true);
+    assert.deepEqual(out.value, FULL_ROUTE);
+});
+
+test('stage.agents rejects an unknown stage name in the same error shape as any other bad value', () => {
+    const d = dir();
+    const out = profile.write(profile.projectFile(d), 'stage.agents', 'survey,orbital');
+    assert.equal(out.ok, false);
+    assert.match(out.reason, /stage\.agents/);
+    assert.match(out.reason, /orbital/);
+});
+
+test('dispatch.floor and judge.model accept haiku as a cheap judge', () => {
+    assert.equal(profile.write(profile.projectFile(dir()), 'dispatch.floor', 'haiku').ok, true);
+    assert.equal(profile.write(profile.projectFile(dir()), 'judge.model', 'haiku').ok, true);
+});
+
+test('parseValue is exported, and false/true are the array stage.agents means them as', () => {
+    assert.deepEqual(profile.parseValue('stage.agents', 'false').value, []);
+    assert.deepEqual(profile.parseValue('stage.agents', 'true').value, ['survey']);
 });

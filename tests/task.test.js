@@ -985,6 +985,44 @@ test('task at survey with stage.agents true prints the controller\'s rules', () 
   assert.match(out, /fankeel:fankeel-brain/);
 });
 
+// PROVES IT DONE #5: a route long enough that the controller is doing real
+// work of its own — dispatching, relaying, asking, stage after stage — is
+// worth a cheaper model, and a two-stage route is not.
+test('start recommends /model sonnet once the route reaches four stages, and not before', () => {
+  const dir = root();
+  const long = run(dir, ['start', '--session', A, '--task', 'x', '--class', 'bounded']);
+  assert.match(long.out, /\/model sonnet/);
+
+  const dir2 = root();
+  const short = run(dir2, ['start', '--session', A, '--task', 'x', '--route', 'build,verify']);
+  assert.equal(/sonnet/i.test(short.out), false, short.out);
+});
+
+test('route recommends the same hint once the new route reaches four stages, and not for a short one', () => {
+  // `route` refuses a route that drops the task's current stage, so both
+  // routes below keep `survey`, which is where `started` leaves it.
+  const dir = root();
+  started(dir, A, 'x');
+  const grown = run(dir, ['route', 'survey,design,plan,build', '--session', A]);
+  assert.match(grown.out, /\/model sonnet/);
+
+  const dir2 = root();
+  started(dir2, A, 'x');
+  const shrunk = run(dir2, ['route', 'survey,build', '--session', A]);
+  assert.equal(/sonnet/i.test(shrunk.out), false, shrunk.out);
+});
+
+// The ratio is read from lib/prices.js at call time rather than written down
+// in scripts/task.js, so a rate change there does not leave a stale number
+// here — this pins that it is actually computed, not a hardcoded 0.4.
+test('the model hint\'s ratio comes from lib/prices.js, not a hardcoded number', () => {
+  const { rateFor } = require('../lib/prices.js');
+  const ratio = rateFor('claude-sonnet-5').input / rateFor('claude-opus-5').input;
+  const dir = root();
+  const { out } = run(dir, ['start', '--session', A, '--task', 'x', '--class', 'bounded']);
+  assert.match(out, new RegExp('sonnet runs at ' + ratio + 'x opus'));
+});
+
 // Two readers of liveness sit in this file — the collision scan and the listing
 // `show` prints — and only the first was pinned. Deleting the filter from the
 // listing left 599 of 599 tests passing; deleting the same filter from the

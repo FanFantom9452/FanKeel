@@ -36,6 +36,7 @@ const profile = require('../lib/profile.js');
 const docs = require('../lib/docs.js');
 const { handoffPath, readGate } = require('../lib/handoff.js');
 const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT } = require('../lib/render.js');
+const { rateFor } = require('../lib/prices.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
 
@@ -80,6 +81,22 @@ const FIRST_STEP = {
     audit:  'Now audit: run the documents check and quote it before judging anything.',
     land:   'Now land: commit the reason, close the TODO entries, leave nothing dangling.',
 };
+
+// A route this long is real spend on the controller alone: four or more
+// stages of dispatching, relaying and asking, on whatever model the session
+// happens to be running. `sonnet` is cheap enough that the difference is
+// worth a line, and the ratio is computed from `lib/prices.js` at call time
+// rather than written down here, so a rate change does not leave a stale
+// number in this file.
+const LONG_ROUTE = 4;
+function modelHint(route) {
+    if (!Array.isArray(route) || route.length < LONG_ROUTE) return null;
+    const sonnet = rateFor('claude-sonnet-5');
+    const opus = rateFor('claude-opus-5');
+    const ratio = sonnet && opus && opus.input ? sonnet.input / opus.input : null;
+    return route.length + ' stages: /model sonnet for the controller'
+        + (ratio ? ' — sonnet runs at ' + ratio + 'x opus, per token' : '');
+}
 
 // The badge is written here as well as by the hook, and the reason is a full
 // prompt of latency otherwise.
@@ -597,6 +614,8 @@ function cmdStart(root, opts) {
         + '   route: ' + route.join(' → ')];
     const skippedStages = FULL_ROUTE.filter((s) => !route.includes(s));
     if (skippedStages.length) lines.push('skipping: ' + skippedStages.join(', ') + ' — say which and why');
+    const hint = modelHint(route);
+    if (hint) lines.push(hint);
     lines.push('');
     for (const line of describe(root, id, data)) lines.push('  ' + line);
     if (prof.sources.guard && prof.sources.guard !== 'builtin') lines[lines.findIndex((l) => l.startsWith('  guard:'))] += ' (profile)';
@@ -827,8 +846,12 @@ function cmdProfile(root, opts) {
     if (verb === 'show') {
         const { values, sources, unreadable } = profile.read(projectRoot, cfg);
         const lines = ['fankeel — profile for ' + projectRoot];
+        // `stage.agents` is the one value an array: `String([])` is `''`, which
+        // would print as a blank rather than as the off it means. A plain
+        // `String()` still reads the same for every other key, array or not.
+        const shown = (v) => (Array.isArray(v) ? (v.length ? v.join(',') : 'false') : String(v));
         for (const key of Object.keys(profile.KEYS)) {
-            lines.push('  ' + key.padEnd(18) + (values[key] === undefined ? '(ask)' : String(values[key])).padEnd(8) + (sources[key] || ''));
+            lines.push('  ' + key.padEnd(18) + (values[key] === undefined ? '(ask)' : shown(values[key])).padEnd(8) + (sources[key] || ''));
         }
         for (const f of unreadable) lines.push('  unreadable: ' + f);
         return lines.join('\n');
@@ -1126,8 +1149,10 @@ function cmdRoute(root, opts) {
 
     const at = positionIn(given, data.stage);
     const skippedStages = FULL_ROUTE.filter((s) => !given.includes(s));
+    const hint = modelHint(given);
     const shown = 'fankeel — route: ' + before.join(' → ') + NL + '           now: ' + given.join(' → ')
-        + (skippedStages.length ? NL + '           skipping: ' + skippedStages.join(', ') + ' — say which and why' : '');
+        + (skippedStages.length ? NL + '           skipping: ' + skippedStages.join(', ') + ' — say which and why' : '')
+        + (hint ? NL + hint : '');
     if (!at) return shown;
     return shown + NL + '           at ' + data.stage + ', ' + at.step + ' of ' + at.steps;
 }
