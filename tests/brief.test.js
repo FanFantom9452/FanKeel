@@ -268,9 +268,13 @@ test('a brain running a stage whose rules name a reviewer may dispatch one', () 
   // The brief is half of it. `## Tools` in the agent file is the other half —
   // the section a stage agent reads as its permission scope — and a brief
   // permitting what that section forbids is the silent rule collision this
-  // test exists to prevent. Scoped to the section on purpose: a whole-file
-  // match is satisfied by the frontmatter `description` alone, so stripping
-  // the permission and leaving the summary would have passed. `tools:`
+  // test exists to prevent. Scoped to the section on purpose, though not
+  // because an unscoped match was failing: the prefixed `fankeel:fankeel-…`
+  // form appears only here, so matching the whole file happened to reach
+  // this section and nothing else. That is an accident of how the
+  // frontmatter is worded — write the prefix into the `description` and an
+  // unscoped assertion goes slack with nothing to say so. Scoping makes it
+  // hold by construction instead. `tools:`
   // carrying `Agent` is pinned by tests/agents.test.js off the parsed
   // frontmatter and is not restated here.
   const agentFile = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
