@@ -265,6 +265,15 @@ test('a brain running a stage whose rules name a reviewer may dispatch one', () 
   seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
   assert.match(text, /fankeel:fankeel-reviewer/, 'the brief must name fankeel:fankeel-reviewer as an Agent the brain may dispatch');
+  // The brief is half of it. The agent file is what anyone reading the
+  // contract opens, and a brief permitting what the file forbids is the
+  // silent rule collision this test exists to prevent — so both halves are
+  // pinned here and fail together. Nothing gates `subagent_type` at dispatch
+  // (no `Agent` matcher in `.claude-plugin/plugin.json`'s PreToolUse list),
+  // so the prose in these two places is the whole of the contract.
+  const agentFile = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
+  assert.match(agentFile, /fankeel:fankeel-reviewer/, 'agents/fankeel-brain.md must name the reviewer too, or its contract contradicts the brief');
+  assert.match(agentFile, /^tools:.*\bAgent\b/m, 'agents/fankeel-brain.md must carry the Agent tool, or neither dispatch is possible');
 });
 
 test('a stage agent with stage.agents off gets the ordinary brief', () => {

@@ -474,14 +474,14 @@ stage on that list and it is run by a stage agent instead of by the session:
 | piece | where | what it does |
 |---|---|---|
 | controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` and printed by `task.js start` and `task` in place of their first step | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns, ask; option one advances the stage, or stands the task down where the route ends |
-| the stage agent | `agents/fankeel-brain.md` | opus at `effort: medium`; `Write` for its handoff, `Agent` for its readers |
+| the stage agent | `agents/fankeel-brain.md` | opus at `effort: medium`; `Write` for its handoff, `Agent` for its readers and — where the stage it was given names one in its own rules — a reviewer |
 | its brief | `renderBrief` in `lib/render.js` | the stage's rules and shape, the skill's path, the handoff path, what replaces AskUserQuestion and Workflow, one Bash call for independent commands and for the lines it cites, and the output rule's word count as the file's — under Claude Code's 10,000-character cap on one `additionalContext` |
 | the handoff | `handoffPath`, `answerPath`, `readGate` and `writeAnswer` in `lib/handoff.js` | `.fankeel/build/task-<started>/<stage>.md`, ending in a `json gate` block; the answer beside it as `<stage>-answer.md` — `survey.md` and `survey-answer.md` when `survey` is the stage on the list |
 | the gate | `hooks/gate.js` | replaces the controller's placeholder question with the block's, word for word |
 | the answer | `hooks/resume.js` | writes it to the answer file; the controller's `SendMessage` names the path |
 | a pause | `task.js next --from-gate` | reads the block's `next` line |
 
-The stage agent's readers are a second layer down, but their transcripts land
+The stage agent's readers and reviewers are a second layer down, but their transcripts land
 in the same `subagents/` directory as the stage agent's, each `.meta.json`
 naming its `parentAgentId` at `spawnDepth` 2 — so `agentFiles()` in
 `lib/usage.js` counts them, flat, beside the agent that sent them (a run on

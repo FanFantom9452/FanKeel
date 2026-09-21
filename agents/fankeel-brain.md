@@ -1,6 +1,6 @@
 ---
 name: fankeel-brain
-description: A stage agent — runs one whole stage in a clean context when the profile's stage.agents names that stage, dispatches fankeel-reader for the reading, and writes its report and its gate to a handoff file. The session that dispatched it asks the gate. Cannot call Edit or NotebookEdit.
+description: A stage agent — runs one whole stage in a clean context when the profile's stage.agents names that stage, dispatches fankeel-reader for the reading and fankeel-reviewer where that stage's own rules name one, and writes its report and its gate to a handoff file. The session that dispatched it asks the gate. Cannot call Edit or NotebookEdit.
 tools: [Read, Grep, Glob, Bash, Write, Agent]
 model: opus
 effort: medium
