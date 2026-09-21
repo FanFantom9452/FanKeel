@@ -195,7 +195,8 @@ then AskUserQuestion
 Under 200 words. One approach, not a catalogue.
 
 The third column is the plan's `**Dispatch:**` line in its two forms —
-`implementer, <model>` with `sonnet` as the floor, or `in-session — <why>` — and
+`implementer, <model>` with the profile's `dispatch.floor` as the floor, or
+`in-session — <why>` — and
 the same two exceptions decide it: a pipe already removes the leftovers, or it
 is one tool call. Everything else is an implementer, and
 a row without one is a design failure, in the same list as a `change` cell that
