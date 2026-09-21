@@ -22,6 +22,7 @@ const detail = require('../lib/detail.js');
 const usage = require('../lib/usage.js');
 
 const OPTIONS = { compare: { type: 'boolean' }, 'claude-dir': { type: 'string' } };
+const USAGE = 'usage: node scripts/ctx.js <transcript.jsonl|session-id>  |  --compare <a> <b>   [--claude-dir <dir>]';
 
 function asksAQuestion(entry) {
     const content = entry && entry.message && entry.message.content;
@@ -32,7 +33,7 @@ function asksAQuestion(entry) {
 function measure(file) {
     const entries = usage.entriesOf(file);
     const summary = entries && usage.summarise(file, { series: true });
-    if (!summary || !summary.series) return null;
+    if (!summary) return null;
     const contexts = summary.series.map((row) => row.context);
     const turn = usage.turnIndex(entries);
     const gates = [];
@@ -47,7 +48,7 @@ function measure(file) {
         perTurn: contexts,
         peak,
         peakTurn: contexts.indexOf(peak) + 1,
-        last: contexts.length ? contexts[contexts.length - 1] : 0,
+        last: contexts[contexts.length - 1],
         gates: gates.map((n) => contexts[n - 1]),
         agents: agents ? agents.agents : 0,
         agentTokens: agents ? usage.tokensOf(usage.splitOf(agents.models)) : 0,
@@ -69,10 +70,14 @@ function describe(label, m) {
 }
 
 function main(argv) {
-    const { values, positionals } = parseArgv({ args: argv, options: OPTIONS, allowPositionals: true, strict: true });
-    if (positionals.length !== (values.compare ? 2 : 1)) {
-        return { text: 'usage: node scripts/ctx.js <transcript.jsonl|session-id>  |  --compare <a> <b>   [--claude-dir <dir>]', code: 2 };
+    let parsed;
+    try {
+        parsed = parseArgv({ args: argv, options: OPTIONS, allowPositionals: true, strict: true });
+    } catch (e) {
+        return { text: USAGE, code: 2 };
     }
+    const { values, positionals } = parsed;
+    if (positionals.length !== (values.compare ? 2 : 1)) return { text: USAGE, code: 2 };
     const claudeDir = values['claude-dir'] || process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
     const files = positionals.map((p) => (p.endsWith('.jsonl') ? p : detail.transcriptOf(claudeDir, p)));
     const ms = files.map((file) => (file ? measure(file) : null));
@@ -80,7 +85,9 @@ function main(argv) {
     if (values.compare && ms[0] && ms[1]) {
         out.push('b minus a   peak ' + signed(ms[1].peak - ms[0].peak) + '   subagent tokens ' + signed(ms[1].agentTokens - ms[0].agentTokens));
     }
-    return { text: out.join('\n\n') };
+    // A lookup that found nothing is a failure a wrapping script must see; the
+    // text still prints, with `unreadable` under the argument that failed.
+    return ms.some((m) => !m) ? { text: out.join('\n\n'), code: 1 } : { text: out.join('\n\n') };
 }
 
 if (require.main === module) {

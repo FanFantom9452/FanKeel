@@ -51,7 +51,9 @@ test('measure puts the subagents beside the session, never into it', () => {
         message: { model: 'claude-sonnet-5', usage: { input_tokens: 100, output_tokens: 50 } },
     }));
     const m = ctx.measure(file);
+    assert.equal(m.turns, 3);
     assert.equal(m.peak, 3020);
+    assert.equal(m.last, 2130);
     assert.equal(m.agents, 1);
     assert.equal(m.agentTokens, 150);
 });
@@ -61,12 +63,20 @@ test('a session id is looked up under every project directory of the config dire
     const dir = path.join(cfg, 'projects', 'some-slug');
     fs.mkdirSync(dir, { recursive: true });
     session(dir, '11111111-2222-4333-8444-555555555555.jsonl');
-    assert.match(ctx.main(['11111111-2222-4333-8444-555555555555', '--claude-dir', cfg]).text, /peak 3,020/);
-    assert.match(ctx.main(['22222222-2222-4333-8444-555555555555', '--claude-dir', cfg]).text, /unreadable/);
+    const known = ctx.main(['11111111-2222-4333-8444-555555555555', '--claude-dir', cfg]);
+    assert.match(known.text, /peak 3,020/);
+    assert.equal(known.code, undefined);
+    const unknown = ctx.main(['22222222-2222-4333-8444-555555555555', '--claude-dir', cfg]);
+    assert.match(unknown.text, /unreadable/);
+    assert.equal(unknown.code, 1);
 });
 
 test('measure is null for a file that cannot be read', () => {
-    assert.equal(ctx.measure(path.join(tmp('fankeel-ctx-'), 'missing.jsonl')), null);
+    const missing = path.join(tmp('fankeel-ctx-'), 'missing.jsonl');
+    assert.equal(ctx.measure(missing), null);
+    const out = ctx.main([missing]);
+    assert.match(out.text, /unreadable/);
+    assert.equal(out.code, 1);
 });
 
 test('--compare prints both sessions and the difference in peak', () => {
@@ -77,9 +87,21 @@ test('--compare prints both sessions and the difference in peak', () => {
     assert.match(text, /3,020/);
     assert.match(text, /1,000/);
     assert.match(text, /-2,020/);
+    // One unreadable side fails the run, whichever side it is, and prints no difference.
+    const half = ctx.main(['--compare', a, path.join(path.dirname(b), 'missing.jsonl')]);
+    assert.equal(half.code, 1);
+    assert.doesNotMatch(half.text, /b minus a/);
 });
 
 test('a wrong number of paths is a usage line and a non-zero code', () => {
     assert.equal(ctx.main([]).code, 2);
     assert.equal(ctx.main(['--compare', 'only-one.jsonl']).code, 2);
+});
+
+test('a flag that does not exist is the usage line and code 2, not a stack trace', () => {
+    for (const argv of [['--bogus'], ['x.jsonl', '--claude-dir']]) {
+        const out = ctx.main(argv);
+        assert.equal(out.code, 2);
+        assert.match(out.text, /^usage: node scripts\/ctx\.js/);
+    }
 });
