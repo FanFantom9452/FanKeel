@@ -536,16 +536,15 @@ async function serve(opts) {
                 return;
             }
             // Validate every pair before writing any, so a bad second key
-            // does not leave the first one applied.
+            // does not leave the first one applied. An empty value clears the key.
             for (let i = 0; i < keys.length; i++) {
-                const spec = profile.KEYS[keys[i]];
-                if (!spec || !spec.values.includes(String(values[i]).toLowerCase())) {
+                if (!profile.KEYS[keys[i]] || (values[i] !== '' && profile.parseValue(keys[i], values[i]).error)) {
                     fail(400, 'not a profile key/value: ' + keys[i] + '=' + values[i]);
                     return;
                 }
             }
             for (let i = 0; i < keys.length; i++) {
-                const out = profile.write(file, keys[i], values[i]);
+                const out = values[i] === '' ? profile.unset(file, keys[i]) : profile.write(file, keys[i], values[i]);
                 if (!out.ok) {
                     fail(409, out.reason);
                     return;

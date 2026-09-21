@@ -952,3 +952,27 @@ test('GET /station/health names this process', async () => {
         s.close();
     }
 });
+
+test('POST /profile takes a stage list and an empty value clears a key; the data carries the presets', async () => {
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
+    try {
+        const data = await request(s.url + 'station/station-data.js', { method: 'GET' });
+        const nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
+        assert.match(data.text, /"profilePresets":\{"manual":/);
+        const file = path.join(f.r1, '.fankeel', 'profile.json');
+        const post = (pairs) => request(s.url + 'profile', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } },
+            new URLSearchParams([['nonce', nonce], ['scope', 'project'], ['project', f.r1]].concat(pairs)).toString());
+        // The page offers a project's own stage list back as the selected option,
+        // so sending it back unchanged has to be accepted.
+        assert.equal((await post([['key', 'stage.agents'], ['value', 'survey,build,verify']])).status, 303);
+        assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { 'stage.agents': ['survey', 'build', 'verify'] });
+        // A preset is several pairs in one request; an empty value removes that key from this file.
+        assert.equal((await post([['key', 'land.push'], ['value', 'false'], ['key', 'stage.agents'], ['value', '']])).status, 303);
+        assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { 'land.push': false });
+        assert.equal((await post([['key', 'stage.agents'], ['value', 'survey,nope']])).status, 400);
+    } finally {
+        s.close();
+    }
+});
