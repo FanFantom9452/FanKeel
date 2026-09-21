@@ -519,7 +519,8 @@ implementers, all through the `Agent` tool. The guard above locks the
 where `Write` is for its handoff file). It is refused `git commit` too, so it
 asks for each one through a commit file and the controller runs
 `scripts/commit.js` — a Bash call and a message back per task, in the
-controller's own context, which is a cost the A/B has to count rather than
+controller's own context, in the repository the controller is standing in (a
+worktree the implementers build in is not handled), which is a cost the A/B has to count rather than
 assume away. `verify` gets an implementer for the one thing its agent cannot do,
 applying a mutation and restoring the file. A default should wait for that
 measurement.

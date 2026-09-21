@@ -93,6 +93,7 @@ test('outside a repository, and when git refuses the commit, it exits 1 and move
     const again = commit.main([requestFile('a.txt\n\nfeat: twice\n')], dir);
     assert.equal(again.code, 1);
     assert.match(again.text, /^commit\.js: git commit failed/);
+    assert.doesNotMatch(again.text, /\n/, 'git prints several lines, and the controller relays exactly one');
     assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
 });
 
@@ -103,16 +104,20 @@ test('a CRLF request with a leading blank line and a non-ASCII message commits',
     assert.equal(git(dir, 'log', '-1', '--format=%s'), 'feat: 受控 build 的提交');
 });
 
-test('the command line prints the range and exits 0, or one line beginning commit.js: and exits 1', () => {
+test('the command line, started in a subdirectory, prints the range and exits 0, or one commit.js: line and exits 1', () => {
     const dir = repo();
+    fs.mkdirSync(path.join(dir, 'sub'));
     const script = path.join(__dirname, '..', 'scripts', 'commit.js');
+    const cli = (body) => spawnSync(process.execPath, [script, requestFile(body)], { cwd: path.join(dir, 'sub'), encoding: 'utf8' });
     const before = git(dir, 'rev-parse', 'HEAD');
-    const ok = spawnSync(process.execPath, [script, requestFile('a.txt\n\nfeat: cli\n')], { cwd: dir, encoding: 'utf8' });
+    const ok = cli('a.txt\n\nfeat: cli\n');
     assert.equal(ok.status, 0, ok.stderr);
     assert.equal(ok.stdout, before + '..' + git(dir, 'rev-parse', 'HEAD') + '\n');
-    const bad = spawnSync(process.execPath, [script, requestFile('a.txt\nno blank line\n')], { cwd: dir, encoding: 'utf8' });
-    assert.equal(bad.status, 1);
-    assert.match(bad.stdout, /^commit\.js: [^\n]*\n$/);
+    for (const body of ['a.txt\nno blank line\n', 'a.txt\n\nfeat: nothing left to commit\n']) {
+        const bad = cli(body);
+        assert.equal(bad.status, 1, body);
+        assert.match(bad.stdout, /^commit\.js: [^\n]*\n$/, body);
+    }
 });
 
 test('wrong arguments print a usage line, an unreadable file exits 1', () => {

@@ -347,7 +347,7 @@ test('a build brain is told to ask for its commits through a commit file, a veri
   const build = brief('build');
   assert.match(build, /You cannot commit: `git commit` and `git add` are refused to you\. When a task's implementer has returned[^\n]*write [^\n]*build-commit\.md[^\n]*return `commit [^\n]*build-commit\.md` and nothing else\. The controller commits and messages you `<base>\.\.<sha>`/);
   assert.match(build, commitFile);
-  assert.match(build, /relative to the repository root\. An error about your file [^\n]*fix the file and ask again\. An error about anything else \(no repository, usage\): the stage is blocked/);
+  assert.match(build, /relative to the repository root\. The reply is `<base>\.\.<sha>` or one line `commit\.js: <why>`\. If <why> is about your file or the paths you listed \([^)]*nothing to commit, cannot read\): fix it and ask again\. If it is anything else \([^)]*usage\): the stage is blocked, so say so in the report\. Return the report path when the whole stage is done or blocked\./);
   assert.doesNotMatch(build, /You cannot edit or restore a file/);
   const verify = brief('verify');
   assert.match(verify, /You cannot edit or restore a file\. To apply a mutation, run the test and restore the file, send an implementer: it does all three, and you read what it returns/);

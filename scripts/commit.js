@@ -40,9 +40,10 @@ function main(argv, cwd) {
     const base = git(['rev-parse', 'HEAD']);
     if (base.status !== 0) return { text: 'commit.js: the repository has no commit yet', code: 1 };
     const add = git(['add', '--'].concat(parsed.paths));
-    if (add.status !== 0) return { text: 'commit.js: git add failed: ' + add.stderr.trim(), code: 1 };
+    const oneLine = (text) => text.trim().replace(/\s+/g, ' ');
+    if (add.status !== 0) return { text: 'commit.js: git add failed: ' + oneLine(add.stderr), code: 1 };
     const made = git(['commit', '-o', '-F', '-', '--'].concat(parsed.paths), parsed.message + '\n');
-    if (made.status !== 0) return { text: 'commit.js: git commit failed: ' + (made.stderr || made.stdout).trim(), code: 1 };
+    if (made.status !== 0) return { text: 'commit.js: git commit failed: ' + oneLine(made.stderr || made.stdout), code: 1 };
     return { text: base.stdout.trim() + '..' + git(['rev-parse', 'HEAD']).stdout.trim() };
 }
 
