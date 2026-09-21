@@ -85,6 +85,7 @@ what gets scheduled.
 
 ## Needs a decision
 
+- 〔profile〕使用者看不出那十個鍵在做什麼：station 的 profile 卡只印鍵名、值與來源層，一句說明都沒有，而那張卡本身也沒設計過。要逐鍵一句寫在卡上，還是另開一頁 — [lib/profile.js](lib/profile.js).
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；Gemini CLI `BeforeAgent`、Codex CLI `UserPromptSubmit` 也能回 `additionalContext` — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
 - 〔stage-agents〕受控站要不要推到 build／verify：survey 的量測外推不了（它 7.0%，那兩站 63.9%），有沒有用未知；另三缺口——design 要能跨輪存活來回對話、station 第二層仍平鋪、插話沒人接 — [lib/stages.js](lib/stages.js).
 - 〔agents〕要不要一個專審前端是否符合期待的 agent：這次 `依版本` 整片灰是把頁面 render 出來才抓到的，unit test 全綠；順帶評估 Jev 這類小判斷模型當篩子 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
