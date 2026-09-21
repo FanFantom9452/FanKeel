@@ -167,7 +167,7 @@ running a session, the station's home page turns each project's own
 | survey 交給 Opus 大腦的實跑與量測：關卡題目逐字相同，但新模式慢 9–10 倍、貴 4.0–5.6 倍，主控的 context 也沒變小——差在大腦派了 reader | [reports/2026-09-20-survey-brain-ab.md](reports/2026-09-20-survey-brain-ab.md) — *a dated snapshot, 繁體中文* |
 | 94 筆可定價 session 按 request 數分四桶：cache write 從 44.5% 掉到 20.2%、cache read 從 31% 升到 61.4%、主 session 從 72.9% 掉到 59.4%，所以短任務的 A/B 不能外推到長任務 | [reports/2026-09-20-long-task-cost-composition.md](reports/2026-09-20-long-task-cost-composition.md) — *a dated snapshot, 繁體中文* |
 | 43 筆長任務 session 換 Sonnet 主控的投影：$3,848.10 → $1,695.88–1,716.66，破平衡點 2.5 倍 token，而 survey 的中位數佔比只有 7.96%——所以再調大腦對長任務幾乎無效，沒量過的是另外六站 | [reports/2026-09-21-long-task-projection.md](reports/2026-09-21-long-task-projection.md) — *a dated snapshot, 繁體中文* |
-| 同一個視窗裡的兩次額度讀數：5h 不是在數未加權的 token（$7.64–$8.50 一點，是下限，而「按錢走」與「按價格加權的 token 走」分不開），7d 的絕對水位差 4.7 倍對不上；順帶量到逐站的花費帳中位數有 13.9% 坐在錯的站 | [reports/2026-09-21-quota-calibration.md](reports/2026-09-21-quota-calibration.md) — *a dated snapshot, 繁體中文* |
+| 同一個視窗裡的兩次額度讀數：5h 不是在數未加權的 token（$7.64–$8.50 一點，各帶約 ±10% 兩側不確定，而「按錢走」與「按價格加權的 token 走」分不開），7d 的絕對水位差 4.7 倍對不上；順帶量到逐站的花費帳中位數有 13.9% 坐在錯的站 | [reports/2026-09-21-quota-calibration.md](reports/2026-09-21-quota-calibration.md) — *a dated snapshot, 繁體中文* |
 | What every earlier version was for, design and task list both | `docs/archive/`, one pair per release from 0.24.0 — including the directory tree, measured against 43 real README files |
 | Why any of it was built this way | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) |
 | Why three lib modules with one caller each were not folded into their callers | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *one caller is not evidence on its own* |

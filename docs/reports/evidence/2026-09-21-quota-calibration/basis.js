@@ -10,8 +10,10 @@
 // repository has ever published is transcript-derived; the two statusline
 // captures are the only places a second, independent figure for the same session
 // at the same moment is on record. If the two agree, the basis is sound. Where
-// they do not, the direction of the gap decides whether a rate computed from the
-// transcript is an estimate or a bound — and it turns out to be a bound.
+// they do not, the gap is what a rate computed from the transcript is uncertain
+// by — and it turns out to run BOTH ways: +1.48% at reading A, -10.69% at reading
+// B. An earlier version of this file called the segment total a floor on the
+// strength of the second and did not look at the first.
 //
 // It also computes each meter's rate from the one segment that moved both, which
 // is the reading that needs no assumption about what a window holds when it
@@ -121,9 +123,9 @@ say('context to summarise it, and that call is not written to the transcript as 
 say('assistant turn, so its tokens are outside this basis by construction.');
 say('');
 // Located from the transcripts rather than asserted. BOTH sessions are read, not
-// only the Opus one: the A..B total below sums both, so a floor claim over that
+// only the Opus one: the A..B total below sums both, so any claim over that
 // total has to cover both. A reviewer caught this file checking one and the
-// report claiming the floor for the sum.
+// report generalising from the one.
 function compactionsIn(sessionId) {
     const file = path.join(HERE, sessionId + '.jsonl');
     const marks = [];
@@ -166,9 +168,15 @@ say('What this shows is narrower than a mechanism: a compaction happened inside'
 say('the segment, and no request in either transcript carries an input large');
 say('enough to be a whole-context read. Whether Claude Code writes a');
 say('summarisation call to the transcript at all is not demonstrated here.');
-say('Either way the direction holds — a cost this basis cannot see can only be');
-say('missing, never double-counted — so the A..B spend below is a FLOOR and every');
-say('per-point rate derived from it is a lower bound.');
+say('');
+say('And the direction does NOT follow. An earlier version of this file argued');
+say('that a cost the basis cannot see can only be missing, never double-counted,');
+say('so the segment total was a FLOOR. Block 1 above refutes that in its own');
+say('first row: at reading A the transcript basis is +1.48% ABOVE Claude Code\'s');
+say('own figure. The same method overstates there. So the disagreement runs both');
+say('ways across the two observations that exist — +1.48% at A, -10.69% at B —');
+say('and the segment total is a figure with a two-sided uncertainty of roughly');
+say('that size, not a bound. Every per-point rate below inherits that.');
 
 say('');
 say('## block 3 — the segment that moved both meters');
@@ -180,7 +188,7 @@ say('length     ' + ((B.at - A.at) / 60000).toFixed(1) + ' minutes');
 say('requests   ' + segReq + '   (' + opusAB.requests + ' from ' + OPUS.slice(0, 8)
     + ', ' + sonnetAB.requests + ' from ' + SONNET.slice(0, 8) + ')');
 say('tokens     ' + num(segTokens));
-say('usd        ' + usd(segUsd) + '   (floor, per block 2)');
+say('usd        ' + usd(segUsd) + '   (+/- roughly 10%, per block 2 — not a bound)');
 say('');
 
 // A displayed integer p means [p-0.5, p+0.5). A displayed 0 does not widen
@@ -192,7 +200,8 @@ const meter = (label, from, to) => {
     const perLo = segUsd / dHi;
     const perHi = segUsd / dLo;
     say(label + ': ' + from + '% -> ' + to + '%,  delta ' + dLo.toFixed(1) + '-' + dHi.toFixed(1) + ' points');
-    say('  $ per point        $' + perLo.toFixed(2) + '-$' + perHi.toFixed(2) + '   (each a floor)');
+    say('  $ per point        $' + perLo.toFixed(2) + '-$' + perHi.toFixed(2)
+        + '   (the band is the meter rounding only; the basis adds its own +/- ~10%)');
     say('  a full 100 points  $' + num(perLo * 100) + '-$' + num(perHi * 100));
     return [perLo, perHi];
 };
