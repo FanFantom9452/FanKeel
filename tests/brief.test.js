@@ -389,7 +389,7 @@ test('the brain\'s own ## Tools names every plugin agent its stage table lets it
   const { agentsFor } = require('../lib/stages.js');
   const agentFile = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
   const tools = agentFile.split(/^## /m).find((s) => s.startsWith('Tools'));
-  for (const stage of ['survey', 'build', 'verify']) {
+  for (const stage of ['survey', 'build', 'verify', 'audit', 'land']) {
     for (const agent of agentsFor(stage).filter((a) => a.startsWith('fankeel:'))) {
       assert.ok(tools.includes(agent), '## Tools must name ' + agent + ', which the ' + stage + ' brief lists');
     }
@@ -457,4 +457,19 @@ test('a design and a plan brain may write one file under docs/plans/ and commit 
   assert.match(plan, /write [^\n]*plan-commit\.md/);
   assert.ok(plan.length < 10000, 'plan brief is ' + plan.length + ' chars');
   for (const stage of ['survey', 'build', 'verify']) assert.doesNotMatch(brief(stage), /artifact: besides your report/, stage);
+});
+
+test('an audit brain sends page corrections to the fixer, a land brain sends moves and git to an implementer', () => {
+  const brief = (stage, values) => {
+    const root = tmp();
+    seedProfile(root, Object.assign({ 'stage.agents': [stage] }, values));
+    seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
+    return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  };
+  assert.match(brief('audit'), /You cannot edit a page or run a git write\. Send one change at a time to `fankeel:fankeel-fixer` \(a page correction\) or an implementer on model `sonnet` \(a move, a merge, a cleanup\), and read what it returns before you send the next\./);
+  const land = brief('land', { 'dispatch.floor': 'opus' });
+  assert.match(land, /You cannot edit a page or run a git write\. Send one change at a time to an implementer on model `opus` \(a move, a merge, a cleanup\)/);
+  assert.doesNotMatch(land, /fankeel-fixer` \(a page correction\)/);
+  assert.ok(land.length < 10000, 'land brief is ' + land.length + ' chars');
+  for (const stage of ['survey', 'build']) assert.doesNotMatch(brief(stage), /You cannot edit a page or run a git write/, stage);
 });

@@ -907,3 +907,11 @@ test('a controlled stage\'s dispatch prompt is the stage name, plus one line whe
     assert.ok(dispatch.includes('prompt `' + stage + '`, plus one line only when the user has just given a new instruction for it; no model.'), stage + ': ' + dispatch);
   }
 });
+
+test('audit may dispatch a fixer and an implementer, land only an implementer', () => {
+  const { agentsFor } = require('../lib/stages.js');
+  assert.ok(agentsFor('audit').includes('fankeel:fankeel-fixer'));
+  assert.ok(agentsFor('audit').some((a) => a.startsWith('an implementer')));
+  assert.equal(agentsFor('land').includes('fankeel:fankeel-fixer'), false);
+  assert.ok(agentsFor('land').some((a) => a.startsWith('an implementer')));
+});
