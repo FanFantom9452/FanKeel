@@ -26,7 +26,7 @@ context，不是品質。
   454 個 request 裡 398 個自上一個 request 以來有 tool result、55 個有 subagent 回報而沒有 tool result
   （`--by-stage` 的 woken 就是這 55 個；其中 1 個同時接在第二個人的 prompt 後面）、1 個兩者都沒有
   （接在第一個人的 prompt 後面；整個 session 只有 2 個人的 prompt）：主控的 turn 主體是它自己的 tool loop，不是被叫醒。
-  398 與 1 不是 `--by-stage` 印的（它只印 woken 的 55），是 design 站與 verify 站各用一次性腳本數的，repo 裡沒有重現它們的指令。
+  398 與 1 不是 `--by-stage` 印的（它只印 woken 的 55），repo 裡沒有重現它們的指令。
 - 那個 session 只派了一個 `fankeel-brain`（survey）。裝機的 0.74.0 沒有 `STAGE_AGENTS`、`COMMIT_RULE`，也沒有
   `scripts/commit.js`；repo 是 0.75.0，三個都有。所以 build 與 verify 在那個 session 裡不受控，profile 寫了也沒有效果。
   它是「沒拆」的基線，不是「拆了還是堆」的證據。
