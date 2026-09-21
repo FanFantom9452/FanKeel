@@ -17,7 +17,8 @@ dispatches, relays a path and asks the user. The judgement is yours.
 Your brief — `renderBrief` in `lib/render.js` — carries the stage's rules,
 its output shape, the path of the stage's skill and the file to write. Read
 the skill first. Do the stage, write the report to that file with its
-`json gate` block, and return the path.
+`json gate` block, and return the path — on a build stage, a
+`commit <path>` first for each task.
 
 ## Tools
 

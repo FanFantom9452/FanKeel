@@ -728,6 +728,12 @@ function cmdStage(root, opts) {
         line += NL + 'second return to build from verify — name what verify caught that build\'s'
             + NL + 'review did not, and add that check to the review';
     }
+    // The answer that sent the session here fired `resume.js` while the old stage
+    // was still current, so nothing has injected the new stage's rules yet. Where
+    // `stage.agents` names the stage just entered, print the controller's block
+    // now, as `start` and `task` do, or it dispatches with the last stage's rules.
+    const controller = controllerLines(root, id, Object.assign({}, data, { stage: name }), profile.read(projectRootFor(root, opts), claudeDir(opts)).values);
+    if (controller) line += NL + controller.join(NL);
     return line;
 }
 

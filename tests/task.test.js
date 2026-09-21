@@ -963,6 +963,31 @@ test('start at survey with stage.agents true prints the controller\'s rules, not
   assert.match(second.out, new RegExp(' down --session ' + A));
 });
 
+// `stage` is the move a controller makes on option one, and the answer that
+// triggered it was injected while the old stage was still current.
+test('stage into a controlled build prints the controller\'s rules with the commit relay, and into an uncontrolled stage prints only the move', () => {
+  const dir = root();
+  const cfg = path.join(dir, 'cfg');
+  run(dir, ['profile', 'set', 'stage.agents', 'survey,build', '--default'], { CLAUDE_CONFIG_DIR: cfg });
+  run(dir, ['start', '--session', A, '--task', 'x', '--route', 'survey,design,build,verify'], { CLAUDE_CONFIG_DIR: cfg });
+
+  const design = run(dir, ['stage', 'design', '--session', A], { CLAUDE_CONFIG_DIR: cfg });
+  assert.equal(design.code, 0, design.out);
+  assert.doesNotMatch(design.out, /fankeel:fankeel-brain/);
+
+  const build = run(dir, ['stage', 'build', '--session', A], { CLAUDE_CONFIG_DIR: cfg });
+  assert.equal(build.code, 0, build.out);
+  assert.match(build.out, /Now build, through its stage agent\. You are its controller:/);
+  assert.match(build.out, /fankeel:fankeel-brain/);
+  assert.match(build.out, /run `node <plugin>\/scripts\/commit\.js "<file>"`/);
+  assert.match(build.out, new RegExp('stage verify --session ' + A));
+  assert.ok(build.out.includes('<plugin> = ' + PLUGIN_ROOT), build.out);
+
+  const verify = run(dir, ['stage', 'verify', '--session', A], { CLAUDE_CONFIG_DIR: cfg });
+  assert.equal(verify.code, 0, verify.out);
+  assert.doesNotMatch(verify.out, /fankeel:fankeel-brain|commit\.js/);
+});
+
 test('start at survey with stage.agents false keeps the scanner step', () => {
   const dir = root();
   const cfg = path.join(dir, 'cfg');

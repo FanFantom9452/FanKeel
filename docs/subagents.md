@@ -473,7 +473,7 @@ stage on that list and it is run by a stage agent instead of by the session:
 
 | piece | where | what it does |
 |---|---|---|
-| controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` and printed by `task.js start` and `task` in place of their first step | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns, ask; option one advances the stage, or stands the task down where the route ends |
+| controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` and printed by `task.js start`, `task` and `stage` in place of their first step | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns, ask (on `build`, first relay each `commit <file>`); option one advances the stage, or stands the task down where the route ends |
 | the stage agent | `agents/fankeel-brain.md` | opus at `effort: medium`; `Write` for its handoff (and, on build, its commit file), `Agent` for its readers and reviewers, and on build a fixer and implementers, on verify a verifier, a fixer and an implementer — which of them, and when, its stage's own rules decide |
 | its brief | `renderBrief` in `lib/render.js` | the stage's rules and shape, the skill's path, the handoff path, what replaces AskUserQuestion and Workflow, one Bash call for independent commands and for the lines it cites, and the output rule's word count as the file's — under Claude Code's 10,000-character cap on one `additionalContext` |
 | the handoff | `handoffPath`, `answerPath`, `readGate` and `writeAnswer` in `lib/handoff.js` | `.fankeel/build/task-<started>/<stage>.md`, ending in a `json gate` block; the answer beside it as `<stage>-answer.md` — `survey.md` and `survey-answer.md` when `survey` is the stage on the list |
@@ -524,6 +524,46 @@ back per task, in the controller's own context, which is a cost the A/B has to
 count rather than assume away. `verify` gets an implementer for the one thing its agent cannot do,
 applying a mutation and restoring the file. A default should wait for that
 measurement.
+
+## What a controlled `build` and `verify` have not been run through
+
+`survey` is the only controlled stage anything has run end to end. A whole-branch
+audit of the seams for `build` and `verify` (2026-09-21) found these, none of them
+exercised by a test or a real session; they are listed here so an A/B run knows
+what to watch, and so the profile's `lean` preset is not read as proven.
+
+- **What the stage agent cannot do.** It has no `AskUserQuestion`, `Edit` or
+  `SendMessage`. `skills/fankeel-build/SKILL.md` tells whoever runs the stage to ask
+  consent before building on `main`, to use a worktree, to add a `TODO.md` line and
+  to resume the same implementer for a fix round. The brief covers `in-session` rows
+  (they go to an implementer) and questions (they go in the gate at the end); consent
+  at the start, a worktree, a `TODO.md` line and a resumed implementer are not covered.
+- **A second agent.** Every user prompt re-injects the controller's "dispatch one
+  agent" line and no registry field says one is in flight, so an interjection during
+  a long stage can start a second stage agent on the same handoff and commit files.
+  This is the existing "interjections have nobody" gap, now with a longer stage.
+- **The profile moves under a running stage.** `hooks/gate.js`, `hooks/resume.js` and
+  `hooks/guard.js` re-read it on every call, and a session record does not store
+  `stage.agents`; a preset applied from the station mid-stage changes what those hooks
+  do to that session's next call. The presets also write `guard: ask`, which lowers a
+  project that had `deny`.
+- **A stale gate.** `readGate` has no freshness check, so a handoff file left by an
+  earlier lap of the same task is shown as the gate if the controller asks before a
+  fresh report exists.
+- **Accounting.** A controlled build's commits run as `scripts/commit.js`, not as
+  `git commit` in the main transcript, so the station's replay shows none of them, and
+  the agents' own edits are sidechain and not replayed either. `scripts/ctx.js` prints
+  the controller's series and one summed figure for the agents, where the trigger in
+  `TODO.md` for a stage agent's own context past 400k needs the per-agent series
+  `lib/usage.js` already computes. Whether a resumed agent's returns keep one
+  notification per dispatch in that accounting, whether a resume re-fires the
+  subagent brief, and whether the transcript keeps the controller's placeholder gate
+  rather than the text `hooks/gate.js` put in its place, have not been checked.
+- **Claims.** A verify implementer's mutation edit carries the controller's session
+  id, so the mutated file lands on its claims and a second live session sees a
+  collision; the ordinary `verify` has the same effect from the parent's own mutation.
+- **Where it commits.** `scripts/commit.js` commits in the repository the controller
+  is standing in, which is neither the task's `project` nor a worktree.
 
 # Telling a subagent apart, when a hook has to
 
