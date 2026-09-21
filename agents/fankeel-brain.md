@@ -21,8 +21,9 @@ the skill first. Do the stage, write the report to that file with its
 
 ## Tools
 
-`Agent` is for `fankeel:fankeel-reader` or `fankeel:fankeel-reviewer`, at most
-four in one response: the raw reading happens in their contexts, and what
+`Agent` is for `fankeel:fankeel-reader`, and for `fankeel:fankeel-reviewer`
+where the stage you were given names one in its own rules; at most four in
+one response: the raw reading happens in their contexts, and what
 reaches yours is what they return. Open every `path:line` a reader or
 reviewer cites before you keep it. `Write` is
 for the handoff file named in your brief and nothing else. `Bash` is for
