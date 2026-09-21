@@ -3,7 +3,7 @@ name: fankeel-design
 description: The design stage — one approach with its trade-offs, a success criterion that can fail, and a check against the project map before anything is built. Use for the design stage of a fankeel task, choosing between approaches, writing a spec, or when an approach needs approving before implementation.
 version: 0.74.0
 status: current
-last_verified: 2026-09-11
+last_verified: 2026-09-21
 source_of_truth: lib/stages.js, lib/plantasks.js
 ---
 
@@ -195,7 +195,8 @@ then AskUserQuestion
 Under 200 words. One approach, not a catalogue.
 
 The third column is the plan's `**Dispatch:**` line in its two forms —
-`implementer, <model>` with `sonnet` as the floor, or `in-session — <why>` — and
+`implementer, <model>` with the profile's `dispatch.floor` as the floor, or
+`in-session — <why>` — and
 the same two exceptions decide it: a pipe already removes the leftovers, or it
 is one tool call. Everything else is an implementer, and
 a row without one is a design failure, in the same list as a `change` cell that

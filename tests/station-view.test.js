@@ -322,6 +322,45 @@ test('profileCard posts to /profile with a select when served, prints the comman
     assert.match(staticMachineOut, /--default/);
 });
 
+// `stage.agents` is the one profile value that is an array, and the served
+// <select>'s options are the three fixed words `profile.KEYS` lists —
+// `false`, `true`, `all` — not the stage names or lists the array actually
+// holds. `String(array) === 'false'|'true'|'all'` never matches any of the
+// three, so before this the dropdown showed the current value as selected
+// for no key at all once it held `[]`, `['survey']` or a custom list — and
+// resubmitting the form unchanged silently replaced whatever list a project
+// had set with whichever fixed option the browser happened to render first.
+test('profileRows marks the current stage.agents value selected, including one that is not among the fixed three', () => {
+    global.window.STATION.profileKeys = profile.KEYS;
+    global.window.STATION.serve = true;
+    global.window.STATION.nonce = 'tok-9';
+    global.window.STATION.profiles = { machine: { values: {}, sources: {}, unreadable: [] } };
+
+    const off = { values: { 'stage.agents': [] }, sources: { 'stage.agents': 'project' } };
+    assert.match(V.profileCard('t', 'project', '/proj', off), /<option selected>false<\/option>/);
+
+    // 'survey' is not one of the fixed false/true/all options, so it has to
+    // be rendered as an extra option and marked selected — the fixed `true`
+    // option must not be silently selected instead, because posting it back
+    // unchanged would round-trip through `parseValue` fine here but only by
+    // coincidence of the backward-compatible reading; for any other single
+    // stage there is no fixed option to fall back on at all.
+    const survey = { values: { 'stage.agents': ['survey'] }, sources: { 'stage.agents': 'project' } };
+    const outSurvey = V.profileCard('t', 'project', '/proj', survey);
+    assert.match(outSurvey, /<option selected>survey<\/option>/);
+    assert.doesNotMatch(outSurvey, /<option selected>true<\/option>/);
+
+    // The case that loses data: a multi-stage list has no fixed option at
+    // all, so without the extra option, submitting the form unchanged posts
+    // back whichever of false/true/all render first and silently overwrites
+    // the list a project had actually set.
+    const list = { values: { 'stage.agents': ['survey', 'build', 'verify'] }, sources: { 'stage.agents': 'project' } };
+    const outList = V.profileCard('t', 'project', '/proj', list);
+    assert.match(outList, /<option selected>survey,build,verify<\/option>/);
+    const selected = /<option selected>([^<]*)<\/option>/.exec(outList)[1];
+    assert.deepEqual(profile.parseValue('stage.agents', selected).value, ['survey', 'build', 'verify']);
+});
+
 // --- the three levels: home -------------------------------------------------
 // Sessions in the shape `serialize()` gives them from 2026-09-14 on: `days` rows
 // per local day x stage x model x who, `spans` rows of milliseconds, and `pkey`.

@@ -556,7 +556,10 @@ test('survey re-runs a capped scan before it dispatches, and dispatches on nothi
 test('plan makes the dispatch decision a slot every task has to fill', () => {
   const text = byName('plan').rules.join(' ');
   assert.match(text, /\*\*Dispatch:\*\*/);
-  assert.match(text, /sonnet/);
+  // The tier, not a model name: the floor is the profile's `dispatch.floor`,
+  // whose builtin is `sonnet` and which also takes `haiku` below it. Matching
+  // `/sonnet/` here pinned the builtin as though it were the rule.
+  assert.match(text, /dispatch\.floor/);
 });
 
 // Every branch of the dispatch rule fired on something the scanner had already
@@ -850,14 +853,40 @@ test('every rule reaches the injected block, and removing one drops only it', ()
 
 test('controlFor fills every token it is given, and only survey has one', () => {
   const { controlFor, controlling } = require('../lib/stages.js');
-  const c = controlFor('survey', { advance: 'stage design', task: '<plugin>/scripts/task.js', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
+  const values = { 'stage.agents': ['survey'] };
+  const c = controlFor('survey', values, { advance: 'stage design', task: '<plugin>/scripts/task.js', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
   assert.ok(c.rules.length > 0);
   assert.ok(!c.rules.join(' ').includes('{{'), c.rules.join('\n'));
   assert.ok(c.rules.join(' ').includes('fankeel:fankeel-brain'));
   assert.equal(c.template, '<the path the agent returned>\nthen AskUserQuestion');
-  assert.equal(controlFor('design', {}), null);
+  assert.equal(controlFor('design', values, {}), null);
+  // A bare `true` is read the backward-compatible way, for a `values` object
+  // built by hand rather than through `lib/profile.js`'s `read`.
   assert.equal(controlling('survey', { 'stage.agents': true }), true);
   assert.equal(controlling('survey', { 'stage.agents': false }), false);
   assert.equal(controlling('survey', {}), false);
   assert.equal(controlling('design', { 'stage.agents': true }), false);
+});
+
+// The row this task adds: the controlled set is `stage.agents`'s own array,
+// not a constant only this file could change, and `controlFor` reads it the
+// same way `controlling` does.
+test('controlling and controlFor read the controlled set from stage.agents\'s array, not a fixed constant', () => {
+  const { controlFor, controlling } = require('../lib/stages.js');
+  const values = { 'stage.agents': ['survey', 'build', 'verify'] };
+  assert.equal(controlling('build', values), true);
+  assert.equal(controlling('design', values), false);
+  assert.ok(controlFor('build', values, { advance: 'stage verify', session: 'sid' }));
+  assert.equal(controlFor('design', values, {}), null);
+});
+
+// PROVES IT DONE #3: `true` keeps meaning survey alone even once other
+// stages can be named — it is not "the first stage of whatever route", it is
+// specifically the one stage every doc and the A/B already mean by it.
+test('stage.agents true still means survey only, once other stages are controllable by name', () => {
+  const { controlling } = require('../lib/stages.js');
+  const trueValue = require('../lib/profile.js').parseValue('stage.agents', 'true').value;
+  assert.deepEqual(trueValue, ['survey']);
+  assert.equal(controlling('survey', { 'stage.agents': trueValue }), true);
+  assert.equal(controlling('build', { 'stage.agents': trueValue }), false);
 });

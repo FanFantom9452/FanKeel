@@ -14,7 +14,7 @@
 // session that is not in the mode. It never writes a permission decision:
 // `updatedInput` alone is not one — the probe behind this found that a
 // PreToolUse hook returning only `updatedInput` still lets the user pick.
-// With `stage.agents` on at survey, that is the field it uses to replace the
+// With `stage.agents` naming the task's own stage, that is the field it uses to replace the
 // placeholder question with the gate block a stage agent left in its handoff;
 // every other session gets none of this, and only the time is noted.
 

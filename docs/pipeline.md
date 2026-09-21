@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-13
+last_verified: 2026-09-21
 source_of_truth: lib/stages.js, lib/render.js, lib/profile.js, skills/fankeel-survey/SKILL.md, skills/fankeel-design/SKILL.md, skills/fankeel-plan/SKILL.md, skills/fankeel-build/SKILL.md, skills/fankeel-verify/SKILL.md, skills/fankeel-audit/SKILL.md, skills/fankeel-land/SKILL.md, scripts/residue.js, hooks/carry.js, scripts/orient.js
 ---
 
@@ -369,7 +369,7 @@ whether the profile already answered, rather than a token filling a blank
 in one shared sentence.
 
 One key swaps a stage's whole block rather than a rule in it. `stage.agents`,
-`false` by default, hands `survey` to a stage agent: `rulesLines` in
+`false` by default, hands whichever stages it names to a stage agent: `rulesLines` in
 `lib/render.js` injects `controlFor`'s controller block from `lib/stages.js`
 in place of the stage's rules and shape, and the stage's own rules go to the
 agent through `renderBrief`. That brief is held under Claude Code's
@@ -650,7 +650,7 @@ flowchart TD
     C["then you cannot claim it yet.<br/>Run it."]
     D0["<b>where a ledger exists</b><br/>ledger.js ranges — one verifier per row, a task's or a fix's<br/><i>pinned at both ends is not the same as disjoint</i><br/><i>the last paragraph says what to send</i>"]
     D["docs-check<br/><i>which page did this change<br/>just make untrue?</i><br/><i>a coverage claim states its denominator</i>"]
-    D1["<b>dispatch readers</b><br/>several in one response, one per page<br/><i>four the ceiling, sonnet the floor</i><br/><i>say how many, and on which model</i><br/><i>the path to a diff file, never a pasted diff</i>"]
+    D1["<b>dispatch readers</b><br/>several in one response, one per page<br/><i>four the ceiling, dispatch.floor the floor</i><br/><i>say how many, and on which model</i><br/><i>the path to a diff file, never a pasted diff</i>"]
     D2["<b>the adversary</b><br/>read-only, over the evidence table<br/><i>was it run · on what · could it have<br/>failed · out of what</i><br/><i>paths never a paste — only the rows it defeats</i><br/><i>where the host opens it, the chain is one workflow</i>"]
     E{"anything half-built?"}
     F["back to build.<br/>Verify is not where<br/>the bar gets lowered."]
@@ -702,7 +702,7 @@ flowchart TD
     E3["<b>weight · empty directories</b><br/>a 73 GB build directory is not a bug;<br/>not knowing about it is"]
     E4["<b>source_of_truth resolving to nothing</b><br/>a typo and a legitimate sentence are<br/>the same silence until one is printed"]
     F["<b>the part only reading finds</b><br/>open both, find the claim each makes<br/>about that file, say which one the<br/>code supports. Name the line."]
-    F1["<b>dispatch readers</b><br/>several in one response, one per pair<br/><i>four the ceiling, sonnet the floor</i><br/><i>say how many, and on which model</i><br/><i>compare what comes back against itself</i>"]
+    F1["<b>dispatch readers</b><br/>several in one response, one per pair<br/><i>four the ceiling, dispatch.floor the floor</i><br/><i>say how many, and on which model</i><br/><i>compare what comes back against itself</i>"]
     F2["<b>the adversary</b><br/>read-only, over the findings<br/><i>only the findings it defeats</i><br/><i>one workflow where the host opens it</i>"]
     G["<b>report, then ask, then act</b><br/><i>never move a document unasked —<br/>every one is a link somebody holds</i>"]
 

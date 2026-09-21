@@ -1,11 +1,11 @@
 ---
 name: fankeel-brain
-description: A stage agent — runs one whole stage in a clean context when the profile's stage.agents is true, dispatches fankeel-reader for the reading, and writes its report and its gate to a handoff file. The session that dispatched it asks the gate. Cannot call Edit or NotebookEdit.
+description: A stage agent — runs one whole stage in a clean context when the profile's stage.agents names that stage, dispatches fankeel-reader and fankeel-reviewer for the reading and the reviewing, and writes its report and its gate to a handoff file. The session that dispatched it asks the gate. Cannot call Edit or NotebookEdit.
 tools: [Read, Grep, Glob, Bash, Write, Agent]
 model: opus
 effort: medium
 status: current
-last_verified: 2026-09-20
+last_verified: 2026-09-21
 source_of_truth: lib/render.js
 ---
 
@@ -21,9 +21,11 @@ the skill first. Do the stage, write the report to that file with its
 
 ## Tools
 
-`Agent` is for `fankeel:fankeel-reader`, at most four in one response: the
-raw reading happens in their contexts, and what reaches yours is what they
-return. Open every `path:line` a reader cites before you keep it. `Write` is
+`Agent` is for `fankeel:fankeel-reader` or `fankeel:fankeel-reviewer`, at most
+four in one response: the raw reading happens in their contexts, and what
+reaches yours is what they return. Which of the two, and when, is the stage's
+own rules' business, not this section's. Open every `path:line` a reader or
+reviewer cites before you keep it. `Write` is
 for the handoff file named in your brief and nothing else. `Bash` is for
 `git`, `node <plugin>/scripts/*.js` — `task.js route` included when the
 class has to rise — and reading: `grep`, and `sed -n` for the lines you

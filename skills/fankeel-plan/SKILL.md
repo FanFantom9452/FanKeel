@@ -3,7 +3,7 @@ name: fankeel-plan
 description: The plan stage — decompose an approved design into tasks someone with no context could execute, with constraints generated from the project rather than remembered. Use for the plan stage of a fankeel task, writing an implementation plan, or breaking a spec into tasks before any code is written.
 version: 0.74.0
 status: current
-last_verified: 2026-09-11
+last_verified: 2026-09-21
 source_of_truth: lib/stages.js, scripts/map.js, lib/plantasks.js, scripts/ledger.js
 ---
 
@@ -36,7 +36,7 @@ missing one of those, the stage is finished.
 | Looks like a finding | Why it is not |
 |---|---|
 | Setup, config or docs with no task of their own | `lib/stages.js:279` folds them in on purpose (`Fold setup and docs into the task needing them`) — a task with no matching bullet was never meant to have one. |
-| A `**Dispatch:**` line naming `sonnet` with no reason given | Only the tiers above the floor owe one — `lib/stages.js:282` (`and anything above it names why on that line`); `sonnet` needing no argument is the rule working. |
+| A `**Dispatch:**` line naming the floor — `sonnet` unless a profile moved it — with no reason given | Only the tiers above the floor owe one — `lib/stages.js:282` (`and anything above it names why on that line`); the floor needing no argument is the rule working. |
 | A plan reviewer's return holding only two kinds of line | `lib/stages.js:281` names its whole charter (`returning only promises with no task and Files blocks that disagree with their task.`) — nothing else is in its scope, so nothing else missing is a gap. |
 
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
@@ -182,11 +182,12 @@ Four rules about that line:
 
 1. **Every task carries one.** A task without it is a plan failure, in the same
    list as `TBD` and "similar to Task N".
-2. **`sonnet` is the floor and the default**, and needs no argument. The unit
+2. **The profile's `dispatch.floor` is the floor, `sonnet` unless a profile
+   says otherwise**, and the floor needs no argument. The unit
    that matters is not token price but whether the task finishes on the first
    dispatch: a model that needs two attempts re-reads everything the first one
    read, and costs more in wall-clock and attention than the tier above it.
-3. **Anything above `sonnet` names why on that same line.** "Complex" is not a
+3. **Anything above the floor names why on that same line.** "Complex" is not a
    why. A protocol to reason about, a design judgement, a change whose shape is
    not in the plan — those are.
 4. **Where it says `implementer`, this line is what `build` says out loud.** The

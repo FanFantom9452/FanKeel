@@ -3,7 +3,7 @@ name: fankeel-verify
 description: The verify stage — evidence before claims, requirements checked line by line, and the documents this change just made false. Use for the verify stage of a fankeel task, before claiming work is complete or passing, before a commit or PR, or when checking whether a change broke the documentation describing it.
 version: 0.74.0
 status: current
-last_verified: 2026-09-11
+last_verified: 2026-09-21
 source_of_truth: lib/stages.js, scripts/docs-check.js
 ---
 
@@ -198,7 +198,7 @@ stages: the verifier for a task writes its evidence rows to a file under
 `.fankeel/build/<plan>/`, not a scratchpad that gets cleared, and returns the
 path; the adversary for that task reads the path and returns, under a
 `schema`, only the rows it defeats. Every `agent` call carries `model`, and
-`sonnet` is the floor there as it is here. What returns is the join — per
+the profile's `dispatch.floor` is the floor there as it is here. What returns is the join — per
 task, the rows and the rows defeated. An `agent` call's own return already
 stays in the script rather than reaching this context, so writing to a file
 buys nothing there; what it keeps the rows out of is the join itself, the

@@ -3,7 +3,7 @@ name: fankeel
 description: Task registry and development discipline for long-running projects. Use for /fankeel, starting or pausing a task, asking what this or another session is working on, moving to the next stage, or the station — "show all sessions", "which sessions are still open", "clean up old sessions", "監控站". Runs a task through a route it picks from survey, design, plan, build, verify, audit and land, and warns — optionally blocks — when another live session shares your files.
 version: 0.74.0
 status: current
-last_verified: 2026-09-11
+last_verified: 2026-09-21
 source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js, lib/guard.js, docs/collisions.md, docs/registry.md, docs/station.md, docs/statusline.md
 ---
 
@@ -1007,14 +1007,15 @@ Five rules that make it work, each of which fails silently when missed:
 
 - **Several dispatches in one response run at once.** One per response runs them
   in sequence — the cost of parallelism with none of it.
-- **Always pass the model, and `sonnet` is the floor.** An omitted model
+- **Always pass the model, and the profile's `dispatch.floor` is the floor —
+  `sonnet` by default.** An omitted model
   inherits this session's, which is usually the most capable and most expensive
   one available. The exception is a dispatch whose `subagent_type` is an
   agent file that pins its own — `fankeel-reviewer` for plan's, build's and
   verify's reviewers, and `fankeel-verifier` for verify's per-row
   verifiers — where omitting it is the point: the file's `model:` is
   the floor the harness itself enforces. Inside a Workflow script the same rule holds: every `agent`
-  call carries `model` and `sonnet` is the floor there too; the authoring
+  call carries `model` and the profile's `dispatch.floor` is the floor there too; the authoring
   reference's advice to omit it and inherit is the host's default, not this
   plugin's. `subagent_type: "fork"` is a second exception, and the wrong
   direction: it inherits the whole context and ignores `model` outright — the
@@ -1095,7 +1096,7 @@ rule at once, and nothing anywhere says so. What you dispatch is a question with
 an answer — *read these six documents and say whether any contradicts the code*.
 The judgement it feeds, the evidence and the gate stay here, where the rules are.
 
-One exception, behind a profile key. With `stage.agents` true, `survey` goes
+One exception, behind a profile key. Each stage `stage.agents` names goes
 to a `fankeel:fankeel-brain` stage agent and this session gets the
 controller's block in place of the stage's: the brief carries the stage's
 rules and shape, the report and its gate come back as a file under

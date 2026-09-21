@@ -80,12 +80,13 @@ what gets scheduled.
 - 〔docs〕`conflict()` 有四個 predicate，`read` 那個（`Read:` 擋鄰居的 `Modify`/`Test`）在 `docs/subagents.md`、`docs/collisions.md`、`docs/pipeline.md` 三頁都沒提，三頁各自只算到兩三個 — [lib/plantasks.js](lib/plantasks.js).
 - 〔tests〕程式註解裡的 `path:line` 沒人驗，docs-check 只看 markdown：`fb2f734` 就有三條歪的，一在 [tests/station-hide.test.js](tests/station-hide.test.js)、二在 [tests/station-view.test.js](tests/station-view.test.js)，其一指到不存在的行。
 - 〔quota〕用 `quotaLimits` 的 13 筆被拒紀錄定錨 100%：取一次 `five_hour`、一次 `seven_day` 被拒的時刻，算該視窗到那一刻的花費，就不必再猜整數讀數的 ±0.5 — [scripts/spend.js](scripts/spend.js).
+- 〔stage-agents〕站 agent 拿不到 `Workflow` 工具，所以 build 那一站的 workflow 要由 script 從 plan 的分組產生、主控用 `scriptPath` 開；分組與 surface 由 `ledger.js groups` 算好了 — [lib/plantasks.js](lib/plantasks.js).
+- 〔registry〕session 記錄只存 guard，且只在偏離預設時才存；其餘 profile 值一律不存（182 筆都落在後者），換了設定有沒有比較好事後查不到；start 時抄一份 values 進去就夠 — [scripts/task.js](scripts/task.js).
 
 ## Needs a decision
 
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；Gemini CLI `BeforeAgent`、Codex CLI `UserPromptSubmit` 也能回 `additionalContext` — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
-- 〔stage-agents〕主控＋站 agent 要不要推到其餘各站：看 survey 的量測；build 要 script 產生 workflow、design 要 SendMessage 轉話、station 要把第二層掛在派它的 agent 底下（現在平鋪）、插話要有人接 — [lib/stages.js](lib/stages.js).
-- 〔stage-agents〕要不要花 $89–123 跑一對長任務，量 Sonnet 主控在沒有大腦那六站的 token 倍數：投影說省 55–56%、破平衡點 2.5，但那一格沒人量過。再調 survey 大腦則幾乎無效，它只佔中位數 7.96% — [lib/render.js](lib/render.js).
+- 〔stage-agents〕受控站要不要推到 build／verify：survey 的量測外推不了（它 7.0%，那兩站 63.9%），有沒有用未知；另三缺口——design 要能跨輪存活來回對話、station 第二層仍平鋪、插話沒人接 — [lib/stages.js](lib/stages.js).
 - 〔agents〕要不要一個專審前端是否符合期待的 agent：這次 `依版本` 整片灰是把頁面 render 出來才抓到的，unit test 全綠；順帶評估 Jev 這類小判斷模型當篩子 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 - 〔station〕`--detach` 的 serve 在啟動時就把 `lib/station.js` 讀進記憶體：改完程式它照樣產生新資料、用舊程式，外觀完全正常。要不要讓它自己察覺 — [lib/serve.js](lib/serve.js).
 - 〔docs〕寫成 `path:行-行` 的引用不帶引文，docs-check 只列不驗：一條這樣歪了四個 commit 沒人發現。剩三條要改寫，還是讓 docs-check 把範圍本身當缺陷 — [scripts/docs-check.js](scripts/docs-check.js).
@@ -158,3 +159,8 @@ lifts when: `a writer waits out a lock somebody else is holding` 在整套裡再
 lifts when: `a claim whose process is gone does not block` 在整套裡再紅一次. 09-19.
 
 - 〔tests〕09-19 在 39efee9 整套紅過一次（1563/1564，已死的 pid 被當 live 而 deny），同樹重跑 1564/0、單跑 5/5 綠；疑 `deadPid()` 的 pid 在並行時被重用，未證實 — [tests/guard.test.js](tests/guard.test.js).
+
+### 受控站開到 build
+lifts when: 上面 ## Ready 那條〔registry〕落地，session 記錄開始存 stage.agents，這件事才有人查得到. 09-21.
+
+- 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過 — [lib/render.js](lib/render.js).
