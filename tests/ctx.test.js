@@ -136,7 +136,8 @@ test('a flag that does not exist is the usage line and code 2, not a stack trace
 // t0 arrives with a tool result before r3 (so r3 was not woken), a peer hand-back comes before r5, and t2 is
 // a task-notification before r7. r6 is written on two lines, as a real response is, and t1 lands between
 // them: the second line is not a new request, so it is not woken and verify has one woken turn, r7 (by t2).
-// Counting the second line as a request would give verify two.
+// Counting the second line as a request would give verify two. r3 runs `task.js route`, which enters no stage:
+// a route command carries no stage name, and it must not cut the build stage in two.
 function staged(dir) {
     const file = path.join(dir, 'staged.jsonl');
     const bash = (id, command) => [{ type: 'tool_use', id, name: 'Bash', input: { command } }];
@@ -156,7 +157,7 @@ function staged(dir) {
         assistant('s1', use(100)),
         assistant('s2', use(200), bash('b1', 'node C:/p/scripts/task.js start --session s --task t --route build,verify')),
         notice('t0'), result,
-        assistant('s3', use(300)),
+        assistant('s3', use(300), bash('b3', 'node C:/p/scripts/task.js route "build,verify" --session s')),
         assistant('s4', use(400), ask),
         peer,
         assistant('s5', use(500), bash('b2', 'node "C:/p/scripts/task.js" stage verify --session s')),
@@ -186,4 +187,33 @@ test('--by-stage prints one line per stage under the session, and without the fl
     assert.match(on, /build\s+turns   3   woken  1   gates  1   context 300 → 500   re-read 1,200/);
     assert.match(on, /verify\s+turns   2   woken  1   gates  1   context 600 → 700   re-read 1,300/);
     assert.doesNotMatch(ctx.main([file]).text, /by stage/);
+});
+
+// A command in the last request enters a stage that has no request after it; that stage has no row, and
+// `--by-stage` prints no line for it (a row with no first context would have nothing to print).
+test('a stage command in the last request enters a stage with no requests: no row, no line, no throw', () => {
+    const file = path.join(tmp('fankeel-ctx-'), 'last.jsonl');
+    const use = (context) => ({ input_tokens: context, output_tokens: 1 });
+    const bash = [{ type: 'tool_use', id: 'b1', name: 'Bash', input: { command: 'node C:/p/scripts/task.js stage verify --session s' } }];
+    fs.writeFileSync(file, [assistant('l1', use(100)), assistant('l2', use(200)), assistant('l3', use(300), bash)].join(''));
+    assert.deepEqual(ctx.measure(file).stages, [
+        { stage: null, turns: 3, woken: 0, gates: 0, first: 100, last: 300, reread: 600 },
+    ]);
+    const text = ctx.main([file, '--by-stage']).text;
+    assert.match(text, /\(before\)\s+turns   3/);
+    assert.doesNotMatch(text, /^\s+verify\s+turns/m);
+});
+
+// A `task.js` command can sit on an assistant line that is no request (here one with no usage, as `turnIndex`
+// and `summarise` both skip it), so its turn is null. It cannot say where a stage begins, and it enters none.
+test('a stage command on a line that is no request enters no stage', () => {
+    const file = path.join(tmp('fankeel-ctx-'), 'unturned.jsonl');
+    const use = (context) => ({ input_tokens: context, output_tokens: 1 });
+    const bash = [{ type: 'tool_use', id: 'b1', name: 'Bash', input: { command: 'node C:/p/scripts/task.js stage verify --session s' } }];
+    fs.writeFileSync(file, [
+        assistant('n1', use(100)), assistant('n2', use(200)), assistant('n2b', undefined, bash), assistant('n3', use(300)),
+    ].join(''));
+    assert.deepEqual(ctx.measure(file).stages, [
+        { stage: null, turns: 3, woken: 0, gates: 0, first: 100, last: 300, reread: 600 },
+    ]);
 });
