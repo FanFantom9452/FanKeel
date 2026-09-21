@@ -37,9 +37,11 @@ const isWake = (entry) => usage.notificationOf(entry) || (entry.origin && entry.
 // The main thread cut by stage, at the `task.js` commands the session itself ran. A
 // stage owns the requests after the command that entered it, up to and including the
 // request that runs the next one: that request still belongs to the stage it leaves.
-// Requests before the first command are `stage: null`. `woken` counts the requests that
-// followed a subagent's return with no tool result in between, which is what a dispatch
-// cost the main thread, as against the turns it spent on its own tool loop. `gates` is
+// Requests before the first command are `stage: null`. `woken` counts the requests where a
+// subagent's return arrived since the previous request and no tool result did, before or
+// after that return: a tool result would have led to the request anyway, so the return was
+// not its only cause. That is what a dispatch cost the main thread, as against the turns
+// it spent on its own tool loop. `gates` is
 // `measure`'s list of turn numbers that asked a question, already one per request.
 function stageRows(entries, turn, contexts, commands, gates) {
     const rows = [{ stage: null, from: 1 }];
@@ -122,7 +124,7 @@ function describe(label, m, byStage) {
         '  each turn: ' + m.perTurn.join(' '),
         '  subagents ' + n(m.agents) + '   tokens ' + n(m.agentTokens),
     ];
-    if (byStage) out.push('  by stage (woken: a request that followed a subagent\'s return, not a tool result):', ...m.stages.map(stageLine));
+    if (byStage) out.push('  by stage (woken: a subagent\'s return since the last request, and no tool result):', ...m.stages.map(stageLine));
     return out.join('\n');
 }
 

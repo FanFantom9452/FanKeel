@@ -133,7 +133,7 @@ test('a flag that does not exist is the usage line and code 2, not a stack trace
 
 // Seven requests with contexts 100..700. r2 runs `task.js start --route build,verify`; r5 runs `task.js stage verify`
 // with the script path quoted, the form a regex on `task.js stage` misses. r4 and r7 ask a question. Wake-ups:
-// t0 arrives with a tool result before r3 (so r3 was not woken), a peer hand-back comes before r5, and t2 is
+// t0 arrives and a tool result follows it before r3 (so r3 was not woken), a peer hand-back comes before r5, and t2 is
 // a task-notification before r7. r6 is written on two lines, as a real response is, and t1 lands between
 // them: the second line is not a new request, so it is not woken and verify has one woken turn, r7 (by t2).
 // Counting the second line as a request would give verify two. r3 runs `task.js route`, which enters no stage:
@@ -202,6 +202,27 @@ test('a stage command in the last request enters a stage with no requests: no ro
     const text = ctx.main([file, '--by-stage']).text;
     assert.match(text, /\(before\)\s+turns   3/);
     assert.doesNotMatch(text, /^\s+verify\s+turns/m);
+});
+
+// A request is woken when a subagent's return arrived since the previous request and no tool result did, before
+// or after that return. Here the result comes first, then the return, then the request: the result would have led
+// to that request anyway, so it is not woken. The same session with the result removed is woken.
+test('a request that follows a tool result and then a return is not woken, and one that follows the return alone is', () => {
+    const dir = tmp('fankeel-ctx-');
+    const at = '2026-09-21T00:00:00.000Z';
+    const use = (context) => ({ input_tokens: context, output_tokens: 1 });
+    const result = line({ type: 'user', timestamp: at, message: { content: [{ type: 'tool_result', tool_use_id: 'x1', content: 'ok' }] } });
+    const notice = line({
+        type: 'user', origin: { kind: 'task-notification' }, timestamp: at,
+        message: { content: '<task-notification><tool-use-id>x2</tool-use-id></task-notification>' },
+    });
+    const woken = (name, between) => {
+        const file = path.join(dir, name);
+        fs.writeFileSync(file, [assistant('o1', use(100)), ...between, assistant('o2', use(200))].join(''));
+        return ctx.measure(file).stages.map((r) => r.woken);
+    };
+    assert.deepEqual(woken('result-then-return.jsonl', [result, notice]), [0]);
+    assert.deepEqual(woken('return-only.jsonl', [notice]), [1]);
 });
 
 // A `task.js` command can sit on an assistant line that is no request (here one with no usage, as `turnIndex`
