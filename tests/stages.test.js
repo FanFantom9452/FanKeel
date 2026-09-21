@@ -890,3 +890,20 @@ test('stage.agents true still means survey only, once other stages are controlla
   assert.equal(controlling('survey', { 'stage.agents': trueValue }), true);
   assert.equal(controlling('build', { 'stage.agents': trueValue }), false);
 });
+
+test('a controlled design and plan relay a commit like build; the other controlled stages do not', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const values = { 'stage.agents': ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'] };
+  const carries = (stage) => controlFor(stage, values, {}).rules.some((r) => r.includes('commit <file>'));
+  for (const stage of ['design', 'plan', 'build']) assert.equal(carries(stage), true, stage);
+  for (const stage of ['survey', 'verify', 'audit', 'land']) assert.equal(carries(stage), false, stage);
+});
+
+test('a controlled stage\'s dispatch prompt is the stage name, plus one line when the user just gave a new instruction', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const values = { 'stage.agents': ['survey', 'design', 'build', 'land'] };
+  for (const stage of ['survey', 'design', 'build', 'land']) {
+    const dispatch = controlFor(stage, values, {}).rules.find((r) => r.startsWith('Dispatch one Agent'));
+    assert.ok(dispatch.includes('prompt `' + stage + '`, plus one line only when the user has just given a new instruction for it; no model.'), stage + ': ' + dispatch);
+  }
+});

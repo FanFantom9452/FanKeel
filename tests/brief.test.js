@@ -438,3 +438,21 @@ test('read first says none when no earlier stage left a report, and says how man
   assert.ok(long.includes('x'.repeat(600)) && !long.includes('y'.repeat(600)), 'the character budget stops the second');
   assert.ok(long.includes('1 more not listed'));
 });
+
+test('a design and a plan brain may write one file under docs/plans/ and commit it through a commit file; the other stages may not', () => {
+  const brief = (stage) => {
+    const root = tmp();
+    seedProfile(root, { 'stage.agents': [stage] });
+    seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
+    return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  };
+  const design = brief('design');
+  assert.match(design, /artifact: besides your report you may Write one file, docs\/plans\/<date>-<topic>-design\.md, and only where the design skill calls for a spec/);
+  assert.match(design, /You cannot commit: `git commit` and `git add` are refused to you\. When that file is written, write [^\n]*design-commit\.md/);
+  assert.ok(design.length < 10000, 'design brief is ' + design.length + ' chars');
+  const plan = brief('plan');
+  assert.match(plan, /artifact: besides your report you may Write one file, docs\/plans\/<date>-<topic>\.md\. Put its path/);
+  assert.match(plan, /write [^\n]*plan-commit\.md/);
+  assert.ok(plan.length < 10000, 'plan brief is ' + plan.length + ' chars');
+  for (const stage of ['survey', 'build', 'verify']) assert.doesNotMatch(brief(stage), /artifact: besides your report/, stage);
+});
