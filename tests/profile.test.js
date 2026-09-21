@@ -224,3 +224,60 @@ test('parseValue is exported, and false/true are the array stage.agents means th
     assert.deepEqual(profile.parseValue('stage.agents', 'false').value, []);
     assert.deepEqual(profile.parseValue('stage.agents', 'true').value, ['survey']);
 });
+
+test('every key carries a one-line description', () => {
+    for (const [key, spec] of Object.entries(profile.KEYS)) {
+        assert.equal(typeof spec.desc, 'string', key);
+        assert.ok(spec.desc.length > 0 && !spec.desc.includes('\n'), key + ' needs a one-line desc');
+    }
+});
+
+test('a preset only sets keys that exist, to values the table accepts', () => {
+    assert.deepEqual(Object.keys(profile.PRESETS), ['manual', 'balanced', 'lean']);
+    for (const [id, preset] of Object.entries(profile.PRESETS)) {
+        assert.ok(preset.label && preset.blurb, id + ' needs a label and a blurb');
+        for (const [key, value] of Object.entries(preset.set)) {
+            assert.ok(profile.KEYS[key], id + ' sets an unknown key: ' + key);
+            if (value !== null) assert.ok(!profile.parseValue(key, value).error, id + ' sets ' + key + ' to a value the table refuses: ' + value);
+        }
+    }
+});
+
+test('unset removes one key from one file and leaves the rest', () => {
+    const file = path.join(dir(), 'profile.json');
+    profile.write(file, 'land.push', 'false');
+    profile.write(file, 'guard', 'deny');
+    assert.equal(profile.unset(file, 'land.push').ok, true);
+    assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { guard: 'deny' });
+    assert.equal(profile.unset(file, 'class.default').ok, true, 'a key that is not there is not an error');
+    assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { guard: 'deny' });
+});
+
+test('unset never creates a file, refuses an unknown key, and names a file that does not parse', () => {
+    const file = path.join(dir(), 'profile.json');
+    assert.equal(profile.unset(file, 'land.push').ok, true);
+    assert.equal(fs.existsSync(file), false);
+    assert.equal(profile.unset(file, 'nope').ok, false);
+    fs.writeFileSync(file, '{ not json');
+    assert.equal(profile.unset(file, 'land.push').ok, false);
+});
+
+test('display is the one text a value prints as', () => {
+    assert.equal(profile.display(undefined), '(ask)');
+    assert.equal(profile.display([]), 'false');
+    assert.equal(profile.display(['survey', 'build', 'verify']), 'survey,build,verify');
+    assert.equal(profile.display(false), 'false');
+    assert.equal(profile.display('merge'), 'merge');
+});
+
+test('showLines pads each column to its longest cell and ends every line with the description', () => {
+    const lines = profile.showLines({ 'stage.agents': ['survey', 'build', 'verify'], guard: 'ask' }, { 'stage.agents': 'project', guard: 'builtin' });
+    const keys = Object.keys(profile.KEYS);
+    assert.equal(lines.length, keys.length);
+    const agents = lines[keys.indexOf('stage.agents')];
+    const wideKey = Math.max(...keys.map((k) => k.length));
+    assert.ok(agents.startsWith('  ' + 'stage.agents'.padEnd(wideKey) + '  survey,build,verify  project  '), 'each column is as wide as its longest cell: ' + JSON.stringify(agents));
+    assert.ok(agents.endsWith(profile.KEYS['stage.agents'].desc));
+    const starts = new Set(lines.map((l, i) => l.length - profile.KEYS[keys[i]].desc.length));
+    assert.equal(starts.size, 1, 'every description starts in the same column');
+});

@@ -845,14 +845,7 @@ function cmdProfile(root, opts) {
     const cfg = claudeDir(opts);
     if (verb === 'show') {
         const { values, sources, unreadable } = profile.read(projectRoot, cfg);
-        const lines = ['fankeel — profile for ' + projectRoot];
-        // `stage.agents` is the one value an array: `String([])` is `''`, which
-        // would print as a blank rather than as the off it means. A plain
-        // `String()` still reads the same for every other key, array or not.
-        const shown = (v) => (Array.isArray(v) ? (v.length ? v.join(',') : 'false') : String(v));
-        for (const key of Object.keys(profile.KEYS)) {
-            lines.push('  ' + key.padEnd(18) + (values[key] === undefined ? '(ask)' : shown(values[key])).padEnd(8) + (sources[key] || ''));
-        }
+        const lines = ['fankeel — profile for ' + projectRoot].concat(profile.showLines(values, sources));
         for (const f of unreadable) lines.push('  unreadable: ' + f);
         return lines.join('\n');
     }
