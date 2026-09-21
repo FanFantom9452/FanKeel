@@ -1,0 +1,83 @@
+## block 1 — denominator
+
+registry                  F:\ymlab\fankeel
+session files scanned     182
+priced (have `spend`)     81   skipped 101, unreadable 0
+long (requests >= 200)   44
+
+## block 2 — long sessions in this registry: who spent it, and on what
+
+half	usd	share
+parent (the controller)	$2280.42	57.4%
+subagents	$1690.04	42.6%
+total	$3970.46	100.0%
+
+component	usd	share
+input	$0.70	0.0%
+output	$854.99	21.5%
+cacheRead	$2243.93	56.5%
+cacheWrite	$870.84	21.9%
+
+## block 3 — the same money, per stage
+
+stage	parent	agents	total	share of all stages	parent share of stage
+survey	$187.02	$92.21	$279.23	7.0%	67.0%
+design	$155.35	$207.41	$362.76	9.1%	42.8%
+plan	$134.08	$116.57	$250.64	6.3%	53.5%
+build	$862.79	$740.58	$1603.37	40.4%	53.8%
+verify	$537.10	$395.99	$933.09	23.5%	57.6%
+audit	$309.18	$134.22	$443.40	11.2%	69.7%
+land	$94.90	$3.06	$97.96	2.5%	96.9%
+TOTAL	$2280.42	$1690.04	$3970.46	100.0%	—
+
+unpriced model ids in this block: <synthetic>
+
+block 3's grand total and block 2's total are the same money read two ways —
+per stage against per session — so they agree or one of them is wrong:
+  block 2 total  $3970.46
+  block 3 total  $3970.46
+  agree          yes
+
+## block 4 — the machine, not this repo
+
+registries discovered     11
+session files scanned     314   priced 97
+
+range	sessions	total	median	cacheRead share
+<50	28	$38.91	$0.91	31.0%
+50-199	12	$119.14	$8.20	49.3%
+200-799	28	$1226.00	$36.37	59.6%
+800+	29	$5126.26	$133.34	61.6%
+
+## block 5 — how many long tasks fit in a seven-day window
+
+READ, not retyped. n = 2 — the water-line lives only in a statusline payload,
+and two captures of it survive. Everything below inherits that n.
+
+reading	file	5h used	7d used	that session's own usd
+A	quota-capture-260920T163041Z.txt	2%	0%	$12.56
+B	quota-capture-260920T203515Z.txt	13%	3%	$109.11
+
+the window between them, every session in it, from windows-at-43daef5.txt:
+  A..B  760  159,071,706  $91.68  —
+
+moved	5h 11 points	7d 3 points	on $91.68
+
+so one full window is worth, at these prices:
+  5h   $833.45
+  7d   $3056.00
+
+a long task's median cost, machine-wide, 800+ bucket: $133.34
+  long tasks per 7d window      22
+  ... split three ways          7.3 per project
+  long tasks per 5h window      6
+
+the same, if the controller ran on Sonnet instead of Opus. The four rate
+components are all exactly 0.4, so a model swap scales spend by 0.4 times
+whatever token multiple Sonnet turns out to need — and that multiple has
+never been measured. At a multiple of 1.0 the parent share alone falls:
+  price ratio, computed        0.4
+  parent share, block 2        57.4%
+  median long task would be    $87.39
+  long tasks per 7d window     34
+  ... split three ways         11.3 per project
