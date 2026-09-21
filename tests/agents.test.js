@@ -75,6 +75,15 @@ test('the reviewer carries the cut tags build and audit ask for', () => {
     assert.match(build, /Part 4 — cuts/);
 });
 
+// Each sentence is pinned to its own Part: one moved into another Part fails.
+test('the reviewer template asks Part 2 for a control and Part 3 for the page made false', () => {
+    const build = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-build', 'SKILL.md'), 'utf8');
+    const part2 = build.split('Part 2 —')[1].split('Part 3 —')[0];
+    const part3 = build.split('Part 3 —')[1].split('Part 4 —')[0];
+    assert.match(part2, /has never failed/);
+    assert.match(part3, /makes false/);
+});
+
 // A reader that sends one call per turn reads like a slow pipeline; what is
 // slow is the turn count, not git.
 test('the reader is told to send reads that do not depend on each other in one response', () => {
