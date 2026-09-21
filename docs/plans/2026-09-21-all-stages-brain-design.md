@@ -26,16 +26,16 @@ context，不是品質。
   才算出「verify 125 turn、兩站佔 94%」；那組數字已被這一條取代。
   454 個 request 裡 398 個自上一個 request 以來有 tool result、55 個有 subagent 回報而沒有 tool result
   （`--by-stage` 的 woken 就是這 55 個；其中 1 個同時接在第二個人的 prompt 後面）、1 個兩者都沒有
-  （接在第一個人的 prompt 後面；整個 session 只有 2 個人的 prompt）：主控的 turn 主體是它自己的 tool loop，不是被叫醒。
+  （接在第一個人的 prompt 後面；整個 session 只有 2 個 `origin.kind` 是 `human` 的 prompt（`/compact`、`/model` 與中斷不算））：主控的 turn 主體是它自己的 tool loop，不是被叫醒。
   398 與 1 不是 `--by-stage` 印的（它只印 woken 的 55），repo 裡沒有重現它們的指令。
 - 那個 session 只派了一個 `fankeel-brain`（survey）。裝機的 0.74.0 沒有 `STAGE_AGENTS`、`COMMIT_RULE`，也沒有
   `scripts/commit.js`；repo 是 0.75.0，三個都有。所以 build 與 verify 在那個 session 裡不受控，profile 寫了也沒有效果。
   它是「沒拆」的基線，不是「拆了還是堆」的證據。
-- `renderBrainBrief`（`lib/render.js:397`）給 brain 的是規則、skill 路徑、handoff 路徑；沒有任何一行說先讀什麼。
-  主控的 prompt 只有站名（`lib/stages.js:608`）。
+- `renderBrainBrief`（`lib/render.js:397`）給 brain 的是規則、skill 路徑、handoff 路徑；沒有任何一行列出要先讀上一站的哪些檔（只有一行叫它先讀 skill：`lib/render.js:409`）。
+  主控的 prompt 只有站名（`lib/stages.js:610`）。
 - handoff 檔名是 `<stage>.md`（`lib/handoff.js:18`）：verify 退回 build，第二圈寫在第一圈同一個路徑，
   `readGate`（`lib/handoff.js:39`）也沒有新鮮度檢查。
-- `fankeel-brain` 只准寫 handoff 檔、被拒絕 `git add`／`commit`／`merge`（`agents/fankeel-brain.md`）。
+- `fankeel-brain` 只准寫 handoff 檔（build 站另加它的 commit 檔）、被拒絕 `git add`／`commit`／`merge`（`agents/fankeel-brain.md`）。
   design 的 spec、plan 檔、audit 的改檔、land 的合併都是這兩類事。
 
 ## 1. 先量：用 0.75.0 把現有的受控 build 與 verify 跑一輪
@@ -43,7 +43,7 @@ context，不是品質。
 - 用 `claude --plugin-dir F:/ymlab/fankeel` 開新終端機，或重裝；確認 `controlling('build', …)` 為真才開始。profile 用
   現有的 `stage.agents: survey,build,verify`，不動 builtin。
 - 量的是一個有 plan 的真實 task，不是 fixture。跑完用 `node scripts/ctx.js` 取主控每站的 turn 數、被叫醒次數、
-  每個 gate 當下的 context，加上每個 brain 自己的 context 序列。
+  每個 gate 當下的 context，加上每個 brain 自己的 context 序列（對每個 `subagents/agent-<id>.jsonl` 各跑一次，`ctx.js` 認得 subagent 檔）。
 - 結果落成一份 dated report（`docs/reports/`），至少回答三件事：主控每個 task 的提交來回實際佔幾個 turn；build brain
   跑完整份 plan 有沒有超過 400k；stage 來回跳時，回頭那一站的 brain 冷啟動讀了多少。
 - 這個 task 只加量測工具、不改任何行為：`node scripts/ctx.js <session> --by-stage` 印出每站的主控 turn 數、被叫醒的 turn 數（自上一個 request 以來收到 subagent 回報、且沒有收到任何 tool result 的 request；人的 prompt 不影響這個判斷）、gate 數與 context。後面四節裡依賴這份數字的，各自寫明「等量測」。
@@ -53,11 +53,17 @@ context，不是品質。
 - 一站的第一次進場沿用現在的檔名（`build.md`、`build-answer.md`、`build-commit.md`）；第 n 次進場（n ≥ 2，數法是
   這一站在 `moves` 裡出現幾次）用 `<stage>-<n>.md`、`<stage>-<n>-answer.md`、`<stage>-<n>-commit.md`。
 - `handoffPath`、`answerPath`、`commitPath` 三個函式是唯一算圈號的地方；`hooks/gate.js:47` 讀 gate、`hooks/resume.js`
-  寫 answer、`renderBrainBrief` 給路徑，都經過它們，所以使用者看到的 gate、brain 讀的 answer、commit 檔屬於同一圈。
+  寫 answer、`renderBrainBrief` 給路徑、`scripts/task.js:829` 的 `next --from-gate` 讀 gate、`lib/render.js:115-119` 的 controller 區塊填 `{{HANDOFF}}`／`{{ANSWER}}`，都經過它們，所以使用者看到的 gate、brain 讀的 answer、commit 檔屬於同一圈。
 - 上一圈的 gate 不會被當成這一圈的：這一圈的檔還沒寫，`readGate` 讀不到就回 null，gate hook 照舊放行主控自己的問題。
 - `task.js stage` 經 `stampEntry`（`lib/registry.js:510`）在派 brain 之前就蓋好這一次進場的戳，而且只在這一站與上一筆
   不同時才加，所以派工當下 `moves` 已含這一次，重複下同一個 `stage` 指令也不會多算一圈。
 - `moves` 只留最近 60 筆（`MAX_MOVES`，`lib/registry.js:51`），同一站進場次數超過保留窗時圈號可能重複；已知的上限，不處理。
+- 改任務名的 `cmdTask`（`scripts/task.js`）刪掉 `moves` 卻保留
+  `started`，而 `started` 是 handoff 目錄的鍵（`lib/handoff.js:11-16`）；
+  所以改名後的 task 會在還留著舊圈檔案的目錄裡從第 1 圈重來，舊圈的 gate
+  也會被當成這一圈的。`cmdTask` 還把 `stage` 設成 route 的第一站卻不蓋戳
+  （沒有 `stampEntry`），所以那一刻 `moves` 是空的：上面「派工當下 `moves`
+  已含這一次」只對 `task.js stage` 成立。已知，動圈號之前要先處理。
 
 ## 3. brief 的 `read first:`
 
@@ -75,7 +81,7 @@ context，不是品質。
 ## 4. `artifact:`：design 與 plan 的檔，audit 與 land 的改動
 
 - brief 在 design（架構級）與 plan 站多一行 `artifact:`，指向 `docs/plans/`：brain 除了 handoff 只准 Write 那裡的一個檔，
-  名稱依日期與主題，寫進 handoff 的 `spec:` 行。這仍是 prose 規則，跟現在「不寫 handoff 以外」一樣，沒有 hook 擋。
+  名稱依日期與主題，寫進 handoff 的 `spec:` 行。這仍是 prose 規則，跟現在「不寫 handoff 與 build 的 commit 檔以外」一樣，沒有 hook 擋。
 - design 與 plan 站的提交走 commit 檔，跟 build 今天一樣：兩站的 `controlRules` 也帶 `COMMIT_RULE`
   （`lib/stages.js:611` 現在只在 build 帶）。
 - audit 與 land：brain 沒有 Edit、也不做 git 寫入；audit 要改的頁面、land 的搬檔、merge 與清理，都交給
@@ -112,7 +118,7 @@ context，不是品質。
 
 ## 不做的
 
-- brain 以 ledger 接力：等 §1 量到 build brain 超過 400k 再做（TODO 的 Waiting「交接後 context 仍過 400k」）。
+- brain 以 ledger 接力：等 §1 量到 build brain 超過 400k 再做（TODO 的 Waiting「brain 的 context 撐不住」）。
 - brain 自己跑 `commit.js`：使用者上次在 build 關卡選了主控提交，要推翻它得先有 §1 量出來的兩個 turn 的實際成本。
 - 主控讀報告後挑讀取清單：主控沒讀原檔，只能從摘要挑；清單由讀過內容的 brain 寫、hook 抄。
 - 把 builtin 翻成 `all`：`docs/subagents.md` 寫「default 要等量測」。

@@ -37,7 +37,7 @@ Generated from `node scripts/map.js` (235 markdown files, 4 planned, not built, 
 | promise | task |
 |---|---|
 | 用 `claude --plugin-dir F:/ymlab/fankeel` 開新終端機，或重裝；確認 `controlling('build', …)` 為真才開始。profile 用 | struck — a person opens a terminal and runs a real task; Task 1 builds the script that reads it afterwards |
-| 量的是一個有 plan 的真實 task，不是 fixture。跑完用 `node scripts/ctx.js` 取主控每站的 turn 數、被叫醒次數、 | Task 1 — the `--by-stage` view is what "取主控每站的 turn 數" needs; the run itself is the user's |
+| 量的是一個有 plan 的真實 task，不是 fixture。跑完用 `node scripts/ctx.js` 取主控每站的 turn 數、被叫醒次數、 | Task 1 — the `--by-stage` view is what "取主控每站的 turn 數" needs; the run itself is the user's; reading a brain's own context series needed `ctx.js` to accept a subagent transcript, which Task 1 as built did not do and fix round 8 added |
 | 結果落成一份 dated report（`docs/reports/`），至少回答三件事：主控每個 task 的提交來回實際佔幾個 turn；build brain | struck — written from a real run, which only a person can start; verify records it as unverified |
 | 這個 task 只加量測工具、不改任何行為：`node scripts/ctx.js <session> --by-stage` 印出每站的主控 turn 數、 | Task 1 — amended: the task adds `ctx.js --by-stage` and no other code; the spec sentence is rewritten in the plan-gate commit, not in a task |
 | 一站的第一次進場沿用現在的檔名（`build.md`、`build-answer.md`、`build-commit.md`）；第 n 次進場（n ≥ 2，數法是 | struck — held until the measurement: the held file's Task 2 |
