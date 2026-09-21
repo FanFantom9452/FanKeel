@@ -393,5 +393,6 @@ test('the brain\'s own ## Tools names every plugin agent its stage table lets it
     for (const agent of agentsFor(stage).filter((a) => a.startsWith('fankeel:'))) {
       assert.ok(tools.includes(agent), '## Tools must name ' + agent + ', which the ' + stage + ' brief lists');
     }
+    if (agentsFor(stage).some((a) => !a.startsWith('fankeel:'))) assert.match(tools, /implementer/, '## Tools must permit an implementer, which the ' + stage + ' brief lists');
   }
 });

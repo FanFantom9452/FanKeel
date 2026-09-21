@@ -1506,6 +1506,15 @@ test('profile set writes the project file, show reads it with its source, and an
   assert.match(run(dir, ['profile', 'show']).out, /guard\s+deny\s+machine/);
 });
 
+test('profile show prints each key\'s description and keeps a stage list apart from its source', () => {
+  const dir = root();
+  const profileLib = require('../lib/profile.js');
+  assert.equal(run(dir, ['profile', 'set', 'stage.agents', 'survey,build,verify']).code, 0);
+  const shown = run(dir, ['profile', 'show']).out;
+  assert.match(shown, /stage\.agents\s{2,}survey,build,verify\s{2,}project\s{2,}\S/);
+  for (const [key, spec] of Object.entries(profileLib.KEYS)) assert.ok(shown.includes(spec.desc), key + ' prints its description');
+});
+
 test('start takes guard from the profile and says so; without one the field stays absent', () => {
   const dir = root();
   run(dir, ['start', '--session', A, '--task', 'plain']);

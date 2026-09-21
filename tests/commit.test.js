@@ -75,6 +75,12 @@ test('a request it cannot trust commits nothing and says why', () => {
     }
 });
 
+test('the two parse refusals each name their own reason', () => {
+    const dir = repo();
+    assert.equal(commit.main([requestFile('a.txt\nfeat: x\n')], dir).text, 'commit.js: no blank line between the paths and the message');
+    assert.equal(commit.main([requestFile('a.txt\n\n   \n')], dir).text, 'commit.js: no message');
+});
+
 test('runs from the top of the repository, whatever directory it is started in', () => {
     const dir = repo();
     fs.mkdirSync(path.join(dir, 'sub'));

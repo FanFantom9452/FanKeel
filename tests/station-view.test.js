@@ -1226,6 +1226,37 @@ test('presetStrip is empty on a static page', () => {
     assert.equal(V.presetStrip('machine', null), '');
 });
 
+test('each preset form posts to /profile and shows its label, blurb, changes and apply button', () => {
+    global.window.STATION.serve = true;
+    global.window.STATION.nonce = 'tok-1';
+    global.window.STATION.profilePresets = profile.PRESETS;
+    const out = V.presetStrip('machine', null);
+    const n = Object.keys(profile.PRESETS).length;
+    assert.equal((out.match(/<form method="post" action="\/profile" class="preset">/g) || []).length, n);
+    assert.equal((out.match(/class="mono changes"/g) || []).length, n);
+    for (const p of Object.values(profile.PRESETS)) {
+        assert.ok(out.includes('<b>' + p.label + '</b><div class="mute">' + p.blurb + '</div>'), p.label + ' carries its label and blurb');
+        assert.ok(out.includes('套用「' + p.label + '」</button>'), p.label + ' has its apply button');
+    }
+    assert.ok(out.includes('land.push → (ask)'), 'a null shows as (ask) in the changes list, not as null or blank');
+    assert.ok(out.includes('stage.agents → survey,build,verify'));
+});
+
+test('a served profileCard carries the preset strip above its table, and a static one does not', () => {
+    global.window.STATION.serve = true;
+    global.window.STATION.nonce = 'tok-1';
+    global.window.STATION.profilePresets = profile.PRESETS;
+    global.window.STATION.profileKeys = profile.KEYS;
+    const card = { values: {}, sources: {}, unreadable: [] };
+    const served = V.profileCard('project profile', 'project', '/proj', card);
+    const strip = V.presetStrip('project', '/proj');
+    assert.notEqual(strip, '');
+    assert.ok(served.includes(strip), 'the strip is in the card');
+    assert.ok(served.indexOf(strip) < served.indexOf('<table>'), 'and above the table');
+    global.window.STATION.serve = false;
+    assert.ok(!V.profileCard('project profile', 'project', '/proj', card).includes('class="presets"'));
+});
+
 test('the card prints a description for every key, and each value it shows is the one profile.display gives', () => {
     const values = { 'land.push': false, 'stage.agents': ['survey', 'build', 'verify'], guard: 'ask' };
     const sources = { 'land.push': 'project', 'stage.agents': 'project', guard: 'builtin' };

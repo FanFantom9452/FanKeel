@@ -26,7 +26,7 @@ const USAGE = 'usage: node scripts/ctx.js <transcript.jsonl|session-id>  |  --co
 
 function asksAQuestion(entry) {
     const content = entry && entry.message && entry.message.content;
-    return Boolean(entry && entry.type === 'assistant' && entry.isSidechain !== true && Array.isArray(content)
+    return Boolean(entry && entry.type === 'assistant' && Array.isArray(content)
         && content.some((c) => c && c.type === 'tool_use' && c.name === 'AskUserQuestion'));
 }
 
