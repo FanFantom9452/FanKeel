@@ -103,12 +103,11 @@ context，不是品質。
 
 | file | change | dispatch |
 |---|---|---|
-| `scripts/ctx.js`、`tests/ctx.test.js` | §1 的量測工具：`--by-stage` | implementer, sonnet |
 | 量測的 dated report（§1） | 要真的開新終端機跑，不是 build 的產物 | in-session — subagent 開不了新終端機，量測由使用者開、這裡讀 ctx.js |
 
-等量測之後才做的，held 檔的 Task 2 到 6（開工前把下面這張表的表頭改回 `file`，再跑一次 `ledger.js lint`）：
+held 檔的 Task 2 到 6（2026-09-22 起不再等量測，見 §6；第一列已由 Task 1 做完，這張表的表頭已改回 `file`）：
 
-| held file | change | dispatch |
+| file | change | dispatch |
 |---|---|---|
 | `lib/handoff.js` | 三個 path 函式加圈號；`readsOf`、`previousHandoff` | implementer, sonnet |
 | `lib/render.js` | `read first:`、`reads:` 的輸出規則、`artifact:`、audit 與 land 的 implementer 規則；hook 那一側已把 root 與 record 交過來，不用動 | implementer, sonnet |
@@ -143,5 +142,14 @@ context，不是品質。
   §1 就是補這個；不補，後面四節蓋在沒跑過的東西上。
 - land 交給 brain：brain 被拒絕 `git merge`、`checkout`，要靠 implementer 代做，這條路沒人走過。
 - `moves` 保留窗 60 筆，圈號在極端任務上可能重複（§2）。
+
+## 6. 2026-09-22 修訂（站 agent 推到七站，brain 改 Sonnet）
+
+- brain 的模型：`agents/fankeel-brain.md` 改成 `model: sonnet`；主控派 design 與 plan 時指定 `model: opus`，其餘五站不傳 model。理由：使用者要 Opus 只用在關鍵處；決策 2026-09-20 與所有量測用的都是 Opus brain，Sonnet brain 沒量過。
+- handoff 寫入不再被分類器擋：`.claude/settings.local.json`（每台機器，不進版控）放 `permissions.allow: ["Edit(/.fankeel/build/**)"]`，由使用者放行；站 agent 與 implementer 都不得自行寫入任何設定檔。
+- design 與 plan 由 brain 完成：held Task 2 至 4 照原文，brain 能寫一個 `docs/plans` 檔並走 `commit <file>`。
+- audit 與 land 進 `STAGE_AGENTS`：held Task 5 照原文，帶 implementer 做移檔、merge 與清理，整合方式仍在關卡問。
+- 改名不留舊圈：`task.js task` 改名之後，新一圈的 `readGate` 在目錄仍留舊圈檔案時回 null；補 held Task 2 缺的一步，`scripts/task.js` 列入 `Files:`。
+- 發版在前、翻開關在後：安裝版 0.74.0 沒有 `STAGE_AGENTS`，`profile show` 也把清單讀成 `false`，所以先發版，再由使用者把 `stage.agents` 設成 `all`；成本門檻沿用本 spec 的 controller 至多 60 turns、最後一關低於 200k，用 `ctx.js --by-stage` 與 `modelUsage` 一次量出。
 
 [Back to the index](../README.md)
