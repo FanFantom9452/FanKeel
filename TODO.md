@@ -81,6 +81,7 @@ what gets scheduled.
 - 〔tests〕程式註解裡的 `path:line` 沒人驗，docs-check 只看 markdown：`fb2f734` 就有三條歪的，一在 [tests/station-hide.test.js](tests/station-hide.test.js)、二在 [tests/station-view.test.js](tests/station-view.test.js)，其一指到不存在的行。
 - 〔quota〕用 `quotaLimits` 的 13 筆被拒紀錄定錨 100%：取一次 `five_hour`、一次 `seven_day` 被拒的時刻，算該視窗到那一刻的花費，就不必再猜整數讀數的 ±0.5 — [scripts/spend.js](scripts/spend.js).
 - 〔stage-agents〕站 agent 拿不到 `Workflow` 工具，所以 build 那一站的 workflow 要由 script 從 plan 的分組產生、主控用 `scriptPath` 開；分組與 surface 由 `ledger.js groups` 算好了 — [lib/plantasks.js](lib/plantasks.js).
+- 〔registry〕session 記錄不存任何 profile 值（182 筆都沒有），所以「換了設定之後有沒有比較好」事後查不到，上面那條 Waiting 正是卡在這裡；start 時抄一份 values 進去就夠 — [scripts/task.js](scripts/task.js).
 
 ## Needs a decision
 
@@ -160,6 +161,6 @@ lifts when: `a claim whose process is gone does not block` 在整套裡再紅一
 - 〔tests〕09-19 在 39efee9 整套紅過一次（1563/1564，已死的 pid 被當 live 而 deny），同樹重跑 1564/0、單跑 5/5 綠；疑 `deadPid()` 的 pid 在並行時被重用，未證實 — [tests/guard.test.js](tests/guard.test.js).
 
 ### 受控站開到 build
-lifts when: registry 裡出現任一筆 `stage.agents` 含 build 或 verify 的長任務 session. 09-21.
+lifts when: 第一次有長任務在 `stage.agents` 含 build 或 verify 之下跑完——沒有任何欄位記得住這件事，開的人自己知道. 09-21.
 
 - 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過 — [lib/render.js](lib/render.js).
