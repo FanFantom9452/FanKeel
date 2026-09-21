@@ -100,6 +100,18 @@ test('readsOf returns the lines under the last reads: line and stops at the blan
   assert.deepEqual(readsOf(path.join(path.dirname(file), 'missing.md')), []);
 });
 
+test('readsOf stops at the gate fence when no blank line comes before it', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'r.md');
+  fs.writeFileSync(file, 'body\n\nreads:\n- lib/a.js — the caller\n- docs/b.md — the contract\n' + block(gateOf('q')));
+  assert.deepEqual(readsOf(file), ['lib/a.js — the caller', 'docs/b.md — the contract']);
+});
+
+test('readsOf keeps an unbulleted line whose path is inline code', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'r.md');
+  fs.writeFileSync(file, 'reads:\n`lib/a.js` — the caller\n`docs/b.md` — the contract\n\n' + block(gateOf('q')));
+  assert.deepEqual(readsOf(file), ['`lib/a.js` — the caller', '`docs/b.md` — the contract']);
+});
+
 test('previousHandoff walks moves back to the newest earlier stage that left a report', () => {
   const root = tmp('fankeel-handoff-');
   const write = (data, stage) => {
