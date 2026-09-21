@@ -81,7 +81,9 @@ test('the reviewer template asks Part 2 for a control and Part 3 for the page ma
     const part2 = build.split('Part 2 —')[1].split('Part 3 —')[0];
     const part3 = build.split('Part 3 —')[1].split('Part 4 —')[0];
     assert.match(part2, /has never failed/);
+    assert.match(part2, /must reject/);
     assert.match(part3, /makes false/);
+    assert.match(part3, /page:line/);
 });
 
 // A reader that sends one call per turn reads like a slow pipeline; what is
