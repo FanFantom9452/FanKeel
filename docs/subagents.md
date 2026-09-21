@@ -451,7 +451,7 @@ when what you want is a second opinion on something you have already decided.
 ## A stage agent, behind `stage.agents`
 
 Everything above holds with the profile's `stage.agents` at its default,
-`false` — nothing is controlled (`lib/profile.js:31`, `'stage.agents': { values: ['false', 'true', 'all'], builtin: 'false' },`).
+`false` — nothing is controlled (`lib/profile.js:31`, `'stage.agents': { values: ['false', 'true', 'all'], builtin: 'false',`).
 `parseStageAgents` in `lib/profile.js` reads the key as one of four forms:
 `false` controls no stage (`lib/profile.js:84`, `if (s === 'false' || s === '') return { value: [] };`);
 `true` controls `survey` alone — kept for that one meaning rather than "the
