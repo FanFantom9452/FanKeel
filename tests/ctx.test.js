@@ -204,6 +204,51 @@ test('a stage command in the last request enters a stage with no requests: no ro
     assert.doesNotMatch(text, /^\s+verify\s+turns/m);
 });
 
+// A subagent's own transcript (`subagents/agent-<id>.jsonl`) marks every line `isSidechain: true`. It is read as
+// the main thread of that agent: three requests, a1 10 + 1000 = 1010, a2 20 + 3000 = 3020 (on two lines, and it
+// asks a question), a3 30 + 2000 = 2030. Its `stages` are the one `stage: null` row, since an agent runs no `task.js`.
+test('an agent transcript, every line a sidechain line, is measured as that agent\'s own thread', () => {
+    const file = path.join(tmp('fankeel-ctx-'), 'agent-ab12cd34.jsonl');
+    const side = (l) => line({ ...JSON.parse(l), isSidechain: true });
+    const ask = [{ type: 'tool_use', name: 'AskUserQuestion', input: {} }];
+    fs.writeFileSync(file, [
+        assistant('a1', { input_tokens: 10, cache_read_input_tokens: 1000, output_tokens: 5 }),
+        assistant('a2', { input_tokens: 20, cache_read_input_tokens: 3000, output_tokens: 7 }, ask),
+        assistant('a2', { input_tokens: 20, cache_read_input_tokens: 3000, output_tokens: 9 }, ask),
+        assistant('a3', { input_tokens: 30, cache_read_input_tokens: 2000, output_tokens: 3 }),
+    ].map(side).join(''));
+    const m = ctx.measure(file);
+    assert.equal(m.turns, 3);
+    assert.deepEqual(m.perTurn, [1010, 3020, 2030]);
+    assert.equal(m.peak, 3020);
+    assert.equal(m.peakTurn, 2);
+    assert.equal(m.last, 2030);
+    assert.deepEqual(m.gates, [3020]);
+    assert.equal(m.agents, 0);
+    assert.deepEqual(m.stages, [{ stage: null, turns: 3, woken: 0, gates: 1, first: 1010, last: 2030, reread: 6060 }]);
+    const out = ctx.main([file, '--by-stage']);
+    assert.doesNotMatch(out.text, /unreadable/);
+    assert.match(out.text, /peak 3,020 \(turn 2\)/);
+    assert.equal(out.code, undefined);
+});
+
+// The other direction: a session's own file that carries a few sidechain lines among its main ones is still a
+// main thread. Only the main requests count, whatever the sidechain lines hold.
+test('a session file that mixes a few sidechain requests with its main ones counts only the main ones', () => {
+    const file = session(tmp('fankeel-ctx-'));
+    const side = (id, content) => line({
+        type: 'assistant', isSidechain: true, requestId: id, timestamp: '2026-09-21T00:00:02.000Z',
+        message: { model: 'claude-sonnet-5', usage: { input_tokens: 99999, output_tokens: 1 }, content },
+    });
+    fs.appendFileSync(file, side('x1', []) + side('x2', [{ type: 'tool_use', name: 'AskUserQuestion', input: {} }]));
+    const m = ctx.measure(file);
+    assert.equal(m.turns, 3);
+    assert.deepEqual(m.perTurn, [1510, 3020, 2130]);
+    assert.equal(m.peak, 3020);
+    assert.deepEqual(m.gates, [3020]);
+    assert.deepEqual(m.stages, [{ stage: null, turns: 3, woken: 0, gates: 1, first: 1510, last: 2130, reread: 6660 }]);
+});
+
 // A request is woken when a subagent's return arrived since the previous request and no tool result did, before
 // or after that return. Here the result comes first, then the return, then the request: the result would have led
 // to that request anyway, so it is not woken. The same session with the result removed is woken.

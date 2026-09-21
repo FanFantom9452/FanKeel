@@ -81,10 +81,28 @@ function stageRows(entries, turn, contexts, commands, gates) {
     return rows.filter((r) => r.turns > 0).map(({ from, ...row }) => row);
 }
 
+// A subagent's own transcript (`subagents/agent-<id>.jsonl`) marks every line `isSidechain: true`, so read
+// as a session it has no request at all. It is told by its content, not its path: it has requests, and
+// every one of them is a sidechain line. A session's file that carries a few sidechain lines among its main
+// ones is still a session, and those lines stay ignored.
+const isRequest = (entry) => Boolean(entry && entry.type === 'assistant' && entry.message && typeof entry.message === 'object'
+    && typeof entry.message.model === 'string' && entry.message.usage && typeof entry.message.usage === 'object');
+const isAgentFile = (entries) => {
+    const requests = entries.filter(isRequest);
+    return requests.length > 0 && requests.every((entry) => entry.isSidechain === true);
+};
+
+// An agent file is measured as that agent's own main thread: `summarise` is told to count sidechain lines,
+// and each line is copied with `isSidechain` false so `turnIndex`, `stageRows` and the gate scan, which skip
+// sidechain lines, need no change. Its `stages` are normally the one `stage: null` row, an agent running no
+// `task.js`.
 function measure(file) {
-    const entries = usage.entriesOf(file);
-    const summary = entries && usage.summarise(file, { series: true });
+    const raw = usage.entriesOf(file);
+    if (!raw) return null;
+    const agentFile = isAgentFile(raw);
+    const summary = usage.summarise(file, agentFile ? { sidechain: true, series: true } : { series: true });
     if (!summary) return null;
+    const entries = agentFile ? raw.map((entry) => (entry && entry.isSidechain === true ? { ...entry, isSidechain: false } : entry)) : raw;
     const contexts = summary.series.map((row) => row.context);
     const turn = usage.turnIndex(entries);
     const gates = [];
