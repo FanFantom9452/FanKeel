@@ -48,22 +48,14 @@ const WINDOWS = path.join(REPO, 'docs', 'reports', 'evidence',
 const usd = (n) => (n == null ? '—' : '$' + n.toFixed(2));
 const pct = (n) => (n == null ? '—' : (Math.round(n * 1000) / 10).toFixed(1) + '%');
 
-// One `models` object to dollars, through the repo's own rate table. A model
-// with no rate is named rather than charged zero, the same way `lib/spend.js`
-// treats one.
+// One `models` object to dollars — `lib/prices.js`'s own `costOf`, which is
+// what `lib/detail.js` and `lib/station.js` already price this exact registry
+// shape with. Naming an unpriced model rather than charging it zero is that
+// function's behaviour, not a rule this page re-implements.
 function usdOf(models, unpriced) {
-    let total = 0;
-    for (const id of Object.keys(models || {})) {
-        const rate = prices.rateFor(id);
-        if (!rate) { unpriced.add(id); continue; }
-        const u = models[id];
-        total += (u.input || 0) / 1e6 * rate.input
-            + (u.output || 0) / 1e6 * rate.output
-            + (u.cacheRead || 0) / 1e6 * rate.cacheRead
-            + (u.cacheWrite5m || 0) / 1e6 * rate.cacheWrite5m
-            + (u.cacheWrite1h || 0) / 1e6 * rate.cacheWrite1h;
-    }
-    return total;
+    const priced = prices.costOf(models);
+    priced.unpriced.forEach((id) => unpriced.add(id));
+    return priced.usd;
 }
 
 // `used_percentage` and `total_cost_usd` out of one capture. The dump is a
