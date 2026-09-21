@@ -199,10 +199,20 @@ test('stage.agents all is every canonical stage, reused from lib/stages.js rathe
 
 test('stage.agents rejects an unknown stage name in the same error shape as any other bad value', () => {
     const d = dir();
-    const out = profile.write(profile.projectFile(d), 'stage.agents', 'survey,orbital');
-    assert.equal(out.ok, false);
-    assert.match(out.reason, /stage\.agents/);
-    assert.match(out.reason, /orbital/);
+    // The exact shape every other bad value in this file returns —
+    // `key + ' is one of: ' + values.join(', ')`, which the `guard` test a
+    // few lines up pins with `/guard is one of/` — not a message naming the
+    // bad token, which none of this file's other refusals do either.
+    const EXPECTED = 'stage.agents is one of: false, true, all, or a comma-separated list of: survey, design, plan, build, verify, audit, land';
+    const unknown = profile.write(profile.projectFile(d), 'stage.agents', 'survey,orbital');
+    assert.equal(unknown.ok, false);
+    assert.equal(unknown.reason, EXPECTED);
+
+    // A comma list with nothing left after trimming empty pieces shares the
+    // same refusal rather than a shape of its own.
+    const empty = profile.write(profile.projectFile(d), 'stage.agents', ',,,');
+    assert.equal(empty.ok, false);
+    assert.equal(empty.reason, EXPECTED);
 });
 
 test('dispatch.floor and judge.model accept haiku as a cheap judge', () => {

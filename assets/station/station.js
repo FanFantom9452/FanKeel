@@ -1506,17 +1506,31 @@
             var v = prof.values[key];
             var src = prof.sources[key] || '';
             // `stage.agents` is the one array value: String([]) is '', which
-            // would show as a blank rather than the off it means.
+            // would show as a blank rather than the off it means. This is
+            // also the round-trippable text form of the value the <select>
+            // below matches its options against.
             var shown = v === undefined ? '(ask)' : (Array.isArray(v) ? (v.length ? v.join(',') : 'false') : String(v));
             var ctl;
             if (S.serve) {
+                // `spec.values` is the three fixed forms KEYS lists —
+                // `false`, `true`, `all` — and stage.agents also accepts a
+                // fourth, a comma-separated stage list, that this table does
+                // not enumerate (widening it would mean naming every
+                // combination of seven stages). So when the current value's
+                // text is none of the three, it is offered as an extra
+                // option and marked selected, rather than leaving nothing
+                // selected — without this, submitting the form unchanged
+                // silently replaced a stage list with whichever option the
+                // browser happened to render first.
+                var extra = v !== undefined && spec.values.indexOf(shown) === -1
+                    ? '<option selected>' + esc(shown) + '</option>' : '';
                 ctl = '<form method="post" action="/profile" class="pf">'
                     + '<input type="hidden" name="nonce" value="' + esc(S.nonce || '') + '">'
                     + '<input type="hidden" name="scope" value="' + scope + '">'
                     + (projectPath ? '<input type="hidden" name="project" value="' + esc(projectPath) + '">' : '')
                     + '<input type="hidden" name="key" value="' + esc(key) + '">'
-                    + '<select name="value">' + spec.values.map(function (o) {
-                        return '<option' + (String(v) === o ? ' selected' : '') + '>' + esc(o) + '</option>';
+                    + '<select name="value">' + extra + spec.values.map(function (o) {
+                        return '<option' + (v !== undefined && shown === o ? ' selected' : '') + '>' + esc(o) + '</option>';
                     }).join('') + '</select><button class="ctl" type="submit">set</button></form>';
             } else {
                 ctl = '<code class="mono">node ' + esc(S.plugin || '<plugin>') + '/scripts/task.js profile set '
