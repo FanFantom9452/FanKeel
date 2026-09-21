@@ -43,7 +43,7 @@ for reference-page corrections and small fixes that need no test run. The
 verifier adds `Write`, because verify's per-task verifier writes its evidence rows
 to a file and returns the path — what that keeps the rows out of is a
 Workflow's join, not this session's context, which a return value never
-reaches anyway. `fankeel-brain` carries `Write` for its handoff — and on `build` its commit file:
+reaches anyway. `fankeel-brain` carries `Write` for its handoff — and on `build` its commit file, and on `design` and `plan` the one `docs/plans/` file its brief names and that file's commit file:
 the report and gate block a controller hands on by path rather than retyping
 (the `stage.agents` section below). `Write` is matched by `guard.js`'s `PreToolUse` hook,
 whose matcher is `Edit|Write|NotebookEdit`. `Bash` is matched now too:
@@ -478,16 +478,33 @@ stage on that list and it is run by a stage agent instead of by the session:
 
 | piece | where | what it does |
 |---|---|---|
-| controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` and printed by `task.js start` and `task` in place of their first step, and by `stage` after its one-line move | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns, ask (on `build`, first relay each `commit <file>`); option one advances the stage, or stands the task down where the route ends |
-| the stage agent | `agents/fankeel-brain.md` | opus at `effort: medium`; `Write` for its handoff (and, on build, its commit file), `Agent` for its readers and reviewers, and on build a fixer and implementers, on verify a verifier, a fixer and an implementer — which of them, and when, its stage's own rules decide |
+| controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` and printed by `task.js start` and `task` in place of their first step, and by `stage` after its one-line move | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns, ask (on `build`, `design` and `plan`, first relay each `commit <file>`); option one advances the stage, or stands the task down where the route ends |
+| the stage agent | `agents/fankeel-brain.md` | sonnet at `effort: medium` (the controller's dispatch passes `model: opus` for `design` and `plan`); `Write` for its handoff (and, on build, design and plan, its commit file; on design and plan also one `docs/plans/` file), `Agent` for its readers and reviewers, and on build a fixer and implementers, on verify a verifier, a fixer and an implementer, on audit a fixer and an implementer, on land an implementer — which of them, and when, its stage's own rules decide |
 | its brief | `renderBrief` in `lib/render.js` | the stage's rules and shape, the skill's path, the handoff path, what replaces AskUserQuestion and Workflow, one Bash call for independent commands and for the lines it cites, and the output rule's word count as the file's — under Claude Code's 10,000-character cap on one `additionalContext` |
-| the handoff | `handoffPath`, `answerPath`, `readGate` and `writeAnswer` in `lib/handoff.js` | `.fankeel/build/task-<started>/<stage>.md`, ending in a `json gate` block; the answer beside it as `<stage>-answer.md` — `survey.md` and `survey-answer.md` when `survey` is the stage on the list |
+| the handoff | `handoffPath`, `answerPath`, `readGate` and `writeAnswer` in `lib/handoff.js` | `.fankeel/build/task-<started>/<stage>.md`, ending in a `json gate` block; the answer beside it as `<stage>-answer.md` — `survey.md` and `survey-answer.md` when `survey` is the stage on the list; a stage's n-th visit (n ≥ 2, counted from the record's `moves`) is `<stage>-<n>.md`, `<stage>-<n>-answer.md` and `<stage>-<n>-commit.md`, so a return to `build` never overwrites its first lap; a renamed task keeps the directory and numbers on from the laps the old task used (`lapped` on the record, written by `task.js task`), so it never reads the old task's gate |
 | the gate | `hooks/gate.js` | replaces the controller's placeholder question with the block's, word for word |
 | the answer | `hooks/resume.js` | writes it to the answer file; the controller's `SendMessage` names the path |
 | a pause | `task.js next --from-gate` | reads the block's `next` line |
-| a commit (`build` only) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/build-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back its one line, `<base>..<sha>` or `commit.js: <why>` |
+| a commit (`build`, `design`, `plan`) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/<stage>-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back its one line, `<base>..<sha>` or `commit.js: <why>` |
 
-The agents a stage agent dispatches — readers and reviewers, and on `build` also a fixer and implementers, on `verify` a verifier, a fixer and an implementer — are a second layer down, but their transcripts land
+### What a stage agent is told to read, and what it may write
+
+`renderBrainBrief` prints a `read first:` rule: the newest earlier stage's report
+(`previousHandoff` in `lib/handoff.js` walks the record's `moves` back to the first
+stage whose report is on disk) and the lines that report left under its `reads:`
+block, at most 12 lines and 1,000 characters, with what was left out counted. The
+report's own author wrote that block — it is the agent that had read the content —
+and `hooks/brief.js` copies it, so the controller opens neither file. A stage with no
+earlier report gets `read first: none`. Every brain is told to end its report with
+that block.
+
+A `design` or `plan` brain may also write one file under `docs/plans/`, named in an
+`artifact:` rule, and commits it through a commit file as `build` does; an `audit`
+or `land` brain has no Edit and no git write, so `STAGE_AGENTS` gives them
+`fankeel-fixer` (audit only) and an implementer. Whether `land` works this way has
+not been run.
+
+The agents a stage agent dispatches — readers and reviewers, and on `build` also a fixer and implementers, on `verify` a verifier, a fixer and an implementer, on `audit` a fixer and an implementer, on `land` an implementer — are a second layer down, but their transcripts land
 in the same `subagents/` directory as the stage agent's, each `.meta.json`
 naming its `parentAgentId` at `spawnDepth` 2 — so `agentFiles()` in
 `lib/usage.js` counts them, flat, beside the agent that sent them (a run on
@@ -530,6 +547,38 @@ count rather than assume away. `verify` gets an implementer for the one thing it
 applying a mutation and restoring the file. A default should wait for that
 measurement.
 
+### Which model a stage agent runs on, what lets it write, and what comes before the switch
+
+`agents/fankeel-brain.md` pins `model: sonnet`. The controller's dispatch rule
+(`controlRules` in `lib/stages.js`) passes `model: opus` for `design` and `plan`, the
+two stages whose product is a judgement, and no model for the other five, so Opus is
+spent where the user asked for it and nowhere else. Every measurement in this
+repository before 2026-09-22 ran an Opus stage agent; a Sonnet one has not been
+measured. [decisions/2026-09-22-brain-on-sonnet.md](decisions/2026-09-22-brain-on-sonnet.md)
+records the choice.
+
+On 2026-09-22 the auto mode classifier answered "no verdict" to a stage agent's and an
+implementer's Write and Edit into `.fankeel/build/`, six times or more in one session,
+so a handoff file could not be written. The remedy tried is a permission and not code:
+`.claude/settings.local.json`, per machine and ignored by git, holds
+`{"permissions": {"allow": ["Edit(/.fankeel/build/**)"]}}`, and the user put it there.
+It is not proven to help: a Sonnet subagent's Write under `.fankeel/build/` succeeded
+both before the rule and after it, so nothing could be compared, and the failure did
+not recur to be tested; the two outcomes are in the decision record's third section.
+No stage agent and no implementer writes any settings file. The fallback the TODO entry
+asked about, a report returned in the message when the write fails, is not built.
+
+The installed 0.74.0 has no `STAGE_AGENTS`, and `profile show` reads the list as `false`
+there, so the order is a release first and the switch after: the user releases (see
+`Releasing` in [development.md](development.md)), and only once the installed copy
+carries `STAGE_AGENTS` sets the profile with
+`node scripts/task.js profile set stage.agents all`, which writes the project's profile.
+The builtin stays `false`.
+What the switch costs is read afterwards from the run it enables, with
+`node scripts/ctx.js <session> --by-stage` and that run's `modelUsage`, against the
+thresholds in [the spec](plans/2026-09-21-all-stages-brain-design.md): a controller of
+at most 60 turns and a last gate below 200k. That run has not happened.
+
 ## What a controlled `build` and `verify` have not been run through
 
 `survey` is the only controlled stage anything has run end to end. A whole-branch
@@ -554,9 +603,6 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   from the station mid-stage changes what those hooks do to that session's next call.
   The presets also write `guard: ask`, which lowers the project's stored `deny` for the
   sessions that start after it; a running session keeps the guard mode its record holds.
-- **A stale gate.** `readGate` has no freshness check, so a handoff file left by an
-  earlier lap of the same task is shown as the gate if the controller asks before a
-  fresh report exists.
 - **Accounting.** A controlled build's commits run as `scripts/commit.js`, not as
   `git commit` in the main transcript, so the station's replay shows none of them, and
   the agents' own edits are sidechain and not replayed either. `scripts/ctx.js` prints

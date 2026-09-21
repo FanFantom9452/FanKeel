@@ -31,7 +31,7 @@ context，不是品質。
 - 那個 session 只派了一個 `fankeel-brain`（survey）。裝機的 0.74.0 沒有 `STAGE_AGENTS`、`COMMIT_RULE`，也沒有
   `scripts/commit.js`；repo 是 0.75.0，三個都有。所以 build 與 verify 在那個 session 裡不受控，profile 寫了也沒有效果。
   它是「沒拆」的基線，不是「拆了還是堆」的證據。
-- `renderBrainBrief`（`lib/render.js:397`）給 brain 的是規則、skill 路徑、handoff 路徑；沒有任何一行列出要先讀上一站的哪些檔（只有一行叫它先讀 skill：`lib/render.js:409`）。
+- `renderBrainBrief`（`lib/render.js:417`）給 brain 的是規則、skill 路徑、handoff 路徑；沒有任何一行列出要先讀上一站的哪些檔（只有一行叫它先讀 skill：`lib/render.js:429`）。
   主控的 prompt 只有站名（`lib/stages.js:610`）。
 - handoff 檔名是 `<stage>.md`（`lib/handoff.js:18`）：verify 退回 build，第二圈寫在第一圈同一個路徑，
   `readGate`（`lib/handoff.js:39`）也沒有新鮮度檢查。
@@ -75,7 +75,7 @@ context，不是品質。
 - 讀 `reads:` 的是 `hooks/brief.js`（SubagentStart），不是主控；主控一份 handoff 也不打開。
 - 主控派工的 prompt 除了站名可以再加一行（使用者剛給的新指示）。那一行本來就在 brain 的第一則訊息裡，brief 不轉印：
   SubagentStart 的 payload 沒有 prompt。
-- `read first:` 最多印 12 行、1000 字元，超過的寫「另有 N 行未列」，不默默截掉；整份 brief 仍在 Claude Code 對單一
+- `read first:` 最多印 12 行、1000 字元，超過的寫「N more not listed」，不默默截掉；整份 brief 仍在 Claude Code 對單一
   `additionalContext` 的 10,000 字元之內。
 
 ## 4. `artifact:`：design 與 plan 的檔，audit 與 land 的改動
@@ -97,8 +97,8 @@ context，不是品質。
 
 ## 檔案與派工
 
-分期（plan 關卡，2026-09-22，使用者決定）：先只做第一列，其餘等 §1 的量測。計畫在
-[2026-09-21-all-stages-brain.md](../archive/2026-09-21-all-stages-brain.md)，沒做的五個 task 在
+分期（plan 關卡，2026-09-22，使用者決定）：先只做第一列。同日使用者開了跑（§6），其餘不再等 §1 的量測：Task 2 到 6，加上新增的 Task 7 到 9（brain 改 Sonnet、放行 handoff 寫入、發版）。第一列的計畫在
+[2026-09-21-all-stages-brain.md](../archive/2026-09-21-all-stages-brain.md)，其餘在
 [2026-09-21-all-stages-brain-held.md](2026-09-21-all-stages-brain-held.md)。
 
 | file | change | dispatch |
@@ -128,7 +128,7 @@ held 檔的 Task 2 到 6（2026-09-22 起不再等量測，見 §6；第一列�
   `[build]` 時以 `build.md` 結尾；只有 `build.md` 存在且含 gate 時，`readGate(build-2.md)` 回 null。第 1、3 條現在紅
   （同一個路徑、回上一圈的 gate），第 2 條是不變條件，現在就綠。
 - `tests/brief.test.js`：seed 一份帶 `reads:` 的 verify handoff、`moves` 以 verify、build 結尾，build brain 的 brief 在
-  `read first:` 下含每個列出的路徑；`reads:` 有 30 行時印 12 行並寫「另有 18 行」；上一站沒有 handoff 時印
+  `read first:` 下含每個列出的路徑；`reads:` 有 30 行時印 12 行並寫「18 more not listed」；上一站沒有 handoff 時印
   `read first: none`。現在都紅（沒有這個區塊）。
 - `tests/stages.test.js`：design、plan 的 `controlRules` 含 `commit <file>` 那條，audit、land 不含。
 - 一條對成品：§1 之後的第二次真實受控跑，取一個 brain 的 transcript（`subagents/agent-<id>.jsonl`）的第一則訊息，

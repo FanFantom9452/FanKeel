@@ -91,7 +91,7 @@ what gets scheduled.
 
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；Gemini CLI `BeforeAgent`、Codex CLI `UserPromptSubmit` 也能回 `additionalContext` — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
 - 〔stage-agents〕受控站還有三缺口：design 跨輪對話、station 第二層平鋪、插話沒人接；build 每個 task 的提交要經 controller 兩回合，省不省 context 待 ctx.js 實跑 A/B — [lib/stages.js](lib/stages.js).
-- 〔stage-agents〕受控 build／verify 還有十來個接縫沒實跑過：stage agent 沒有 AskUserQuestion／Edit、插話會起第二個、profile 中途翻轉、gate 檔沒有新鮮度 — [docs/subagents.md](docs/subagents.md).
+- 〔stage-agents〕受控 build／verify 還有十來個接縫沒實跑過：stage agent 沒有 AskUserQuestion／Edit、插話會起第二個、profile 中途翻轉 — [docs/subagents.md](docs/subagents.md).
 - 〔agents〕要不要一個專審前端是否符合期待的 agent：這次 `依版本` 整片灰是把頁面 render 出來才抓到的，unit test 全綠；順帶評估 Jev 這類小判斷模型當篩子 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 - 〔station〕`--detach` 的 serve 在啟動時就把 `lib/station.js` 讀進記憶體：改完程式它照樣產生新資料、用舊程式，外觀完全正常。要不要讓它自己察覺 — [lib/serve.js](lib/serve.js).
 - 〔docs〕寫成 `path:行-行` 的引用不帶引文，docs-check 只列不驗：一條這樣歪了四個 commit 沒人發現。剩三條要改寫，還是讓 docs-check 把範圍本身當缺陷 — [scripts/docs-check.js](scripts/docs-check.js).
@@ -100,7 +100,6 @@ what gets scheduled.
 - 〔station〕首頁整頁要不要改成三欄的完整工作站、並把 profile 的逐列設計併進去：這一輪只做三張習慣預設卡與每鍵一句說明，逐列標記、清成 (ask)、stage.agents 七站 toggle 沒做；先要量整個首頁版面 — [assets/station/station.js](assets/station/station.js).
 - 〔docs〕`docs/README.md` 有六列標 *built* 但頁面 frontmatter 是 design-intent，另有一列相反：改標籤還是改 frontmatter，要一頁頁看 — [docs/README.md](docs/README.md).
 - 〔tests〕`a writer waits out a lock somebody else is holding` 整套裡第二次紅：09-21 在 3784eb7、09-22 在 40e3e12，單跑都綠；放寬測試裡 300ms 對 1s 的時序，還是查並行下外層鎖被判過期 — [tests/registry.test.js](tests/registry.test.js).
-- 〔stage-agents〕auto mode 分類器對站 agent 與 implementer 的 Write／Edit 回「no verdict」（09-22 一場 session 六次以上），受控站的 handoff 檔因此寫不出來；要不要讓站 agent 寫不出時改把報告回在訊息裡 — [docs/subagents.md](docs/subagents.md).
 
 ## Waiting
 
@@ -173,3 +172,8 @@ lifts when: 上面 ## Ready 那條〔registry〕落地，session 記錄開始存
 lifts when: `scripts/ctx.js` 量到 build 或 verify 的站 agent 自己的 context 過 400k（`lib/context.js` 的線）. 09-21.
 
 - 〔stage-agents〕站 agent 拿不到 `Workflow` 工具，所以 build 那一站的 workflow 要由 script 從 plan 的分組產生、主控用 `scriptPath` 開；分組與 surface 由 `ledger.js groups` 算好了 — [lib/plantasks.js](lib/plantasks.js).
+
+### 放行規則有沒有效
+lifts when: 放行規則存在下 no verdict 再發生一次. 09-22.
+
+- 〔stage-agents〕auto mode 分類器曾對站 agent 與 implementer 的 Write／Edit 回 no verdict（09-22 六次以上）；已加放行規則 `Edit(/.fankeel/build/**)`，但放行前後探測都寫成功，效果無法證明；再發生時查規則有沒有被讀到 — [docs/subagents.md](docs/subagents.md).
