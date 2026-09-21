@@ -91,6 +91,11 @@ test('--compare prints both sessions and the difference in peak', () => {
     const half = ctx.main(['--compare', a, path.join(path.dirname(b), 'missing.jsonl')]);
     assert.equal(half.code, 1);
     assert.doesNotMatch(half.text, /b minus a/);
+    const first = ctx.main(['--compare', path.join(path.dirname(b), 'missing.jsonl'), b]);
+    assert.equal(first.code, 1);
+    assert.match(first.text, /unreadable/);
+    assert.match(first.text, /peak 1,000/);
+    assert.doesNotMatch(first.text, /b minus a/);
 });
 
 test('a wrong number of paths is a usage line and a non-zero code', () => {

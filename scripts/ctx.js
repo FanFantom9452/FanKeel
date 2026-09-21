@@ -86,7 +86,8 @@ function main(argv) {
         out.push('b minus a   peak ' + signed(ms[1].peak - ms[0].peak) + '   subagent tokens ' + signed(ms[1].agentTokens - ms[0].agentTokens));
     }
     // A lookup that found nothing is a failure a wrapping script must see; the
-    // text still prints, with `unreadable` under the argument that failed.
+    // text still prints, with `unreadable` under the argument that failed. So does
+    // a readable transcript with no assistant request: `summarise` gives null for it.
     return ms.some((m) => !m) ? { text: out.join('\n\n'), code: 1 } : { text: out.join('\n\n') };
 }
 
