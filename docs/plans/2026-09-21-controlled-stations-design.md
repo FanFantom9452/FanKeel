@@ -19,7 +19,7 @@ last_verified: 2026-09-21
 - brain 那半邊沒有：`lib/render.js:412` 只點名 `fankeel-reader` 與 `fankeel-reviewer`。
 - 裝機版比倉庫舊：`lib/` 有五個檔不同，裝機的 `lib/stages.js:598` 仍是
   `CONTROLLED = ['survey']`，所以 `stage.agents` 的陣列對正在跑的 hook 不生效。
-- 量測沒有工具：`docs/reports/2026-09-20-survey-brain-ab.md:10` 量到的是主控 context 在有派工的
+- 量測沒有工具：`docs/reports/2026-09-20-survey-brain-ab.md:9` 量到的是主控 context 在有派工的
   組反而變大；7.0%／63.9% 是錢的佔比，不是 context 的佔比。
 - 首頁 profile 卡已能設定（`POST /profile`），缺說明；而且現值 `survey,build,verify`
   原樣送出會 400，因為 `scripts/station.js:541` 用 `spec.values.includes()` 驗，
