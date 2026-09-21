@@ -687,7 +687,7 @@ test('a controlled build tells its controller to run commit.js on `commit <file>
   for (const out of [render({ mine: at('build'), others: [], now: NOW, root: '/r', profile: on }), renderResume({ mine: at('build'), profile: on, root: '/r' })]) {
     assert.match(out, /If it returns `commit <file>` instead of a report path, run `node <plugin>\/scripts\/commit\.js "<file>"` and SendMessage it what that printed, exactly\. No gate, nothing else; wait for it to return again\./);
     assert.equal(out.includes('{{'), false);
-    assert.ok(out.length < 2400, 'a controlled build block is ' + out.length + ' chars');
+    assert.ok(sizeAtReference(out) < 2400, 'a controlled build block is ' + sizeAtReference(out) + ' chars at a real plugin root');
   }
   for (const stage of ['survey', 'verify']) {
     assert.doesNotMatch(render({ mine: at(stage), others: [], now: NOW, root: '/r', profile: on }), /commit <file>/, stage);
