@@ -54,6 +54,9 @@ matcher `Bash|PowerShell`, and it denies a command that writes files —
 says this is a subagent at all: the main thread of a session started with
 `--agent` carries the type without it and must be able to write, so the id is
 checked first (`hooks/guard.js:61`, `if (!payload.agent_id) return;`).
+Before any of that, `hooks/guard.js` returns unless the dispatching session has an
+active registry entry (`hooks/guard.js:34`, `if (!mine || mine.active !== true) return;`),
+so a read-only subagent under a session with no active task is not denied.
 [collisions.md](collisions.md)
 carries what that denylist actually matches, not restated here. Five of
 the six agents hold `Bash`; `fankeel-fixer` is the one that does not,
@@ -125,11 +128,12 @@ from `fankeel-reader` is not the tool list — both carry the same four — but
 the shape of the question: a reader is asked what a file says, a reviewer
 is asked what a diff, a table or the tree gets wrong — or, when the brief asks
 for cuts, what it could lose — and it returns only what it defeats and those
-cuts. It is one of two dispatches where nobody types a model at all —
-`fankeel-verifier` is the other: `skills/fankeel-verify/SKILL.md:171`, `not typed by hand`,
-and it was added on the same branch as this sentence —
+cuts. It is one of several dispatches where nobody types a model at all —
+`fankeel-verifier` is another: `skills/fankeel-verify/SKILL.md:171`, `not typed by hand`,
+and it was added on the same branch as this sentence; the stage agent `fankeel-brain` and `fankeel-fixer` type none either —
 so the file's pin is the only floor — the literal `sonnet`, not `dispatch.floor`,
-which nothing in `agents/` or `hooks/` reads: `SubagentStart`'s payload
+which no reader or reviewer agent file and no hook reads to pin a model — only the
+stage agent's brief carries it, for the implementers the stage agent sends itself: `SubagentStart`'s payload
 carries no model (`agent_id`, `agent_type`, `session_id`, `cwd`), so a hook
 cannot see, and cannot check, what a dispatch asked for — the agent file's
 `model:` is the one pin the harness itself reads before launch.
@@ -305,13 +309,14 @@ figures live in the report, dated, which is why none is quoted here.
 
 That report describes the run json as holding three fields, because three were
 what that day's run was checked for — a dated snapshot being accurate about its
-own date. The file on disk holds 19 keys: `runId, timestamp, taskId, script,
-scriptPath, args, result, agentCount, logs, durationMs, summary, workflowName,
+own date. The file on disk holds 18 keys in the two chain runs (some run files also carry `args`, after `scriptPath`): `runId, timestamp, taskId, script,
+scriptPath, result, agentCount, logs, durationMs, summary, workflowName,
 status, startTime, phases, defaultModel, workflowProgress, totalTokens,
 totalToolCalls`. `agentCount` **does** exist — how many agents the run held.
-`phases` carries each phase's `title` and `detail`. `defaultModel` records the
-model the script asked for. There is still no per-agent token split in that
-file. A directory sits beside it that the report never names:
+`phases` carries each phase's `title` and `detail`. `defaultModel` is not the model
+the script asked for: in both chain runs it reads `claude-fable-5-1` while every agent ran `claude-sonnet-5`. Each `workflow_agent` row in `workflowProgress`
+carries `tokens`, `toolCalls`, `durationMs` and `model`, but `tokens` is one undivided
+number: there is still no split by category in that file. A directory sits beside it that the report never names:
 `subagents/workflows/<run id>/`, holding one `agent-<id>.jsonl` transcript per
 agent the run spawned — `AGENT_FILE` in `lib/usage.js` is what matches them, and
 `lib/prices.js` is what puts a figure on them —

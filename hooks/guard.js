@@ -56,8 +56,8 @@ function main(raw) {
         // session that owns tasks and must be able to write. `agent_id` is
         // present only inside a subagent, so both are needed: the id says
         // whether this is a subagent at all, the type says whether it is a
-        // read-only one. docs/subagents.md:430-440 quotes Claude Code's own
-        // wording on the field to use.
+        // read-only one. docs/subagents.md quotes Claude Code's own wording
+        // on the field to use — search it for "offered one".
         if (!payload.agent_id) return;
         if (!readOnlyAgentType(payload.agent_type)) return;
         const command = (payload.tool_input && payload.tool_input.command) || '';

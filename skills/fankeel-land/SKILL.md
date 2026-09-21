@@ -70,7 +70,8 @@ difference between "somebody touched this file" and "somebody read it and it was
 true"; a whitespace fix does the first and proves nothing.
 
 A landed plan leaves a decision record behind — what was decided and why — and is
-then archived, **after asking**. An unarchived plan gets read as current.
+then archived — with no question when the profile's `land.archivePlan` is true,
+**after asking** when it is not. An unarchived plan gets read as current.
 
 ## 2a. The release number, when the work is one
 
@@ -194,8 +195,9 @@ the profile already answering it — run
 `node <plugin>/scripts/task.js land merge|pr|keep [--push|--no-push]` before
 step 7 executes it: `merge` for option 1, `pr` for option 2 (which always
 pushes), `keep` for option 3. `profile suggest` counts these across a
-project's past sessions, which is the only way `pr` and `keep` ever become a
-suggested answer — git's merge history only speaks to `merge`.
+project's past sessions, which is the only way `keep` ever becomes a
+suggested answer — git's merge history speaks to `merge`, and to `pr` where
+subjects read `Merge pull request`.
 
 ## 7. Execute
 

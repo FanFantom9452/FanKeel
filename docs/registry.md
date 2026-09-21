@@ -32,7 +32,7 @@ workspace/                     <- Claude Code opened here
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | `lib/registry.js:221` creates it holding `sessions/` alone; `registry.ensureIgnored` appends what is missing — `scripts/map.js:39` asks for `sessions/`, `build/` and `map.md` on every map run, `lib/station.js` for `index.html` and `station/` on every write of the copy — two names that cover the four files it emits, rather than the `EMITTED` list itself, because a directory is one line where four paths under it would be four |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
-| `<project>/.fankeel/profile.json` | Yes | `task.js profile set <key> <value> --project` through `profile.write`; the project layer, which wins over the machine file below, which wins over the builtins in `lib/profile.js`'s `KEYS` — merged per key, each value tagged with the layer it came from. One key's value is not a scalar: `stage.agents` parses to an array of stage names, not the string or boolean every other key holds — `false` is `[]`, `true` is `['survey']` (kept for that one meaning rather than "the route's first stage"), `all` is every stage, and anything else is a comma-separated list — and its builtin stayed `[]` on this branch. A stage on that array is run by a stage agent instead of by the controller, and the controller is then refused `Edit`, `Write` and `NotebookEdit` outright for as long as it is the task's current stage — a check `hooks/guard.js` runs ahead of the profile's `guard` key (the earlier row above), not gated by it. [subagents.md](subagents.md) has the four forms, that check, and why the builtin did not move |
+| `<project>/.fankeel/profile.json` | Yes | `task.js profile set <key> <value>` through `profile.write`; the project layer, which wins over the machine file below, which wins over the builtins in `lib/profile.js`'s `KEYS` — merged per key, each value tagged with the layer it came from. One key's value is not a scalar: `stage.agents` parses to an array of stage names, not the string or boolean every other key holds — `false` is `[]`, `true` is `['survey']` (kept for that one meaning rather than "the route's first stage"), `all` is every stage, and anything else is a comma-separated list — and its builtin stayed `[]` on this branch. A stage on that array is run by a stage agent instead of by the controller, and the controller is then refused `Edit`, `Write` and `NotebookEdit` outright for as long as it is the task's current stage — a check `hooks/guard.js` runs ahead of the profile's `guard` key (the earlier row above), not gated by it. [subagents.md](subagents.md) has the four forms, that check, and why the builtin did not move |
 | `<configDir>/fankeel/profile.json` | n/a | `task.js profile set <key> <value> --default`; the machine layer, one file for every project this config directory runs |
 | `~/.claude/modes/{session_id}/fankeel` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
 | `~/.claude/modes/{session_id}/fankeel.lead` | n/a | `task.js`, on the turn it changes; `inject.js`, every prompt |
@@ -423,14 +423,17 @@ Read from the transcript, which records what every compaction cost:
 
 Cumulative, so the most recent entry is the whole answer — no counting, and no
 need for the window size, which neither the hook payload nor the transcript
-carries. The trigger is that a compaction happened at all: one is already proof
-the window filled, which is what a percentage would only be a proxy for.
+carries. One trigger is that a compaction happened at all: one is already proof
+the window filled, which is what a percentage would only be a proxy for. The
+other is 400k or more in play with nothing dropped yet (`BUSY` in
+`lib/context.js`), which prints `context: 452k in play, nothing dropped yet.`
+and the same hand-off advice, with no `--session` id.
 
-The session id rides this line and only this line. It is disclosed in the `init`
+The session id rides the compaction form of this line and only that one. It is disclosed in the `init`
 block, which a session sees only while it has no task; once it owns one the block
 never repeats it, so the session that most needs it is the one that cannot get
 it — after a compaction the id is out of context and every `task.js` call needs
-`--session <id>`. This line is already conditional on something having been
+`--session <id>`. The compaction form is already conditional on something having been
 dropped, which is exactly that case, so a session that has never compacted still
 has the id where it first saw it and pays nothing.
 
@@ -471,14 +474,16 @@ another session's, and never deletes one.
 
 Writing the file is atomic — a sibling, then a rename — but reading it, changing
 one field and writing it back is not, and that is what every writer here does.
-Four of them are registered in hooks. `inject.js` writes
+Five of them are registered in hooks. `inject.js` writes
 on every prompt — once for `updated`, and once more for every new path the git
 pass claims, since `lib/dirty.js:183` calls `addClaim` per path and each one
 takes the lock — in every session on the machine. That second number is usually
 zero after a task's first prompt, because `covers` skips a path already held.
-`resume.js` writes once per answered question, and `gate.js` once per question
-asked, in a process that registered it — the reason above — so four writers
-contend here, and three in a process that did not.
+`resume.js` writes twice per answered question (`registry.gateClose`, then
+`registry.touch`), `gate.js` once per question
+asked, in a process that registered it — the reason above — and `leave.js` once,
+at `SessionEnd`, so five writers
+contend here, and four in a process that did not.
 
 `touch.js` fires on every edit but writes on almost none of them: it
 returns at `hooks/touch.js:42` (`covers(registry.claimsOf(mine), rel)`) when the path is already claimed, which is what

@@ -44,7 +44,7 @@ and name the record's pid. The line ends one of four ways:
 
 All of it — the page write, the probe and the wait for the record — stays
 inside four seconds of the hook starting, one short of the five
-`.claude-plugin/plugin.json` gives every hook. A probe too slow to see a
+`.claude-plugin/plugin.json` gives every hook but `SessionEnd`'s. A probe too slow to see a
 station that is running starts a second `serve`, and that is safe: a second
 `serve` joins the first (under *When it is written, and where*), opens the
 browser on its url and exits — the one case where a running station gets a
@@ -57,8 +57,8 @@ and runs until stopped, like any `serve`, unless given `--idle`.
 `tests/serve.test.js` starts one from a process that exits at once, under a
 second process that exits too, and finds it answering afterwards.
 `FANKEEL_SERVE=off` in the environment turns the probe and the start off and
-leaves the file on the line; the test suite runs with it, since a test must not
-open a browser.
+leaves the file on the line; `tests/inject.test.js` runs the hook with it, since
+a test must not open a browser.
 
 ## Where the registries come from
 
@@ -164,6 +164,8 @@ the live/stale/down counts `write()` returns for the terminal summary
 (`lib/station.js:688`, `if (hidden.has(s.project ? r.root + '/' + s.project : r.root)) continue;`),
 the fifth card's gate tally
 (`lib/station.js:550`, `if (hidden.has(pkeyOf(Object.assign({ root: r.root }, s)))) continue;`),
+the `docs` list `serialize()` hands the page for the 文件 card
+(`lib/station.js:596`, `docs: (r.docs || []).filter((d) => !hidden.has(d.pkey)),`),
 the profile list `serialize()` hands the page
 (`lib/station.js:604`, `if (values && values['station.hide'] === true) continue;`) —
 an inline copy of the predicate rather than a `hiddenPkeys()` call, because
@@ -764,8 +766,8 @@ the single-row button, and every registry card now carries one:
 page is served, and prints the copyable command when it is not — a static
 file cannot post.
 
-`POST /todo` is the third write the served page can make, and the only one
-outside the registry: one entry under `## Needs a decision` in the session's
+`POST /todo` is the third write the served page can make, and one of two
+outside the registry (`POST /profile`, below, is the other): one entry under `## Needs a decision` in the session's
 project's `TODO.md`, or the registry root's when the project has none. It takes
 `root`, `id`, `text` and `link` with the run's nonce, builds the line with the
 page's own `todoEntry`, and checks it with `scripts/todo-check.js`'s own
@@ -814,7 +816,7 @@ no pair or an unequal count, an unknown key, or a value `profile.parseValue`
 refuses (a `stage.agents` stage list is one it accepts), is `400`; an empty
 value is not refused but clears that key from the scope's file
 (`profile.unset`); an unknown project `404`, a refused write `409`; one that lands redirects
-`303` back to the page it came from — the same shape `/clear` and
+`303` to `/` — the same shape `/clear` and
 `/clear-stale` already use.
 
 Hiding a project (`station.hide: 'true'`) costs two things, both accepted

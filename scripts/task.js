@@ -1165,8 +1165,8 @@ function cmdRoute(root, opts) {
 
 // 使用者在 land 選單實際答的（或 profile 已經答的），寫一次進 entry。不動 stage、
 // 不動 badge——land 這個時間點通常已經在往 down 走，不是 collision 相關的欄位。
-// `profile.suggest` 讀回這裡的紀錄，是 `pr` 與 `keep` 唯一能被建議出來的路徑：
-// git 的 merge 歷史只看得到 `merge`。
+// `profile.suggest` 讀回這裡的紀錄，是 `keep` 唯一能被建議出來的路徑：
+// git 的 merge 歷史看得到 `merge`，以及 subject 為 `Merge pull request` 的 `pr`。
 function cmdLand(root, opts) {
     const id = requireSession(opts);
     const verb = String(opts.positional[0] || '').toLowerCase();

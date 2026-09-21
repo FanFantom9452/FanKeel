@@ -236,7 +236,8 @@ write, outside a script. `files_ref.txt` is that record.
 
 This is narrower than what was rejected. `.claude-plugin/plugin.json` now
 registers `hooks/guard.js` a second time, matcher `Bash|PowerShell`, and the
-hook denies a command only when all three are true: `payload.agent_id` is
+hook denies a command only when the dispatching session has an active registry
+entry — `guard.js` returns first otherwise — and all three of these are true: `payload.agent_id` is
 set — present only inside a subagent, absent on the main thread of an
 `--agent` session — `payload.agent_type` — read bare or with a `fankeel:`
 prefix, `lib/guard.js`'s `readOnlyAgentType` —
