@@ -2,10 +2,10 @@
 name: fankeel-brain
 description: A stage agent — runs one whole stage in a clean context when the profile's stage.agents names that stage, dispatches fankeel-reader and fankeel-reviewer for the reading and the reviewing, on a build stage its fixer and implementers, on a verify stage its verifier, fixer and an implementer for a mutation, and writes its report and its gate to a handoff file. The session that dispatched it asks the gate. Cannot call Edit or NotebookEdit.
 tools: [Read, Grep, Glob, Bash, Write, Agent]
-model: opus
+model: sonnet
 effort: medium
 status: current
-last_verified: 2026-09-21
+last_verified: 2026-09-22
 source_of_truth: lib/render.js
 ---
 

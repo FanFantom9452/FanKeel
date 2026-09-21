@@ -94,13 +94,14 @@ test('the reader is told to send reads that do not depend on each other in one r
     assert.match(searching, /same response/);
 });
 
-test('the stage agent writes its handoff and dispatches readers, on opus', () => {
+test('the stage agent writes its handoff and dispatches readers, on sonnet', () => {
     const f = front(path.join(ROOT, 'agents', 'fankeel-brain.md'));
     const tools = f.tools.slice(1, -1).split(',').map((s) => s.trim());
     assert.ok(tools.includes('Agent'), 'it dispatches its readers');
     assert.ok(tools.includes('Write'), 'it writes its handoff');
     assert.ok(!tools.includes('Edit'), 'it changes no source');
-    assert.equal(f.model, 'opus');
+    // Design and plan run on opus: the controller's dispatch passes `model: opus`, which replaces this pin.
+    assert.equal(f.model, 'sonnet');
     // At the session's `high` it thought 2.5–4× what the main session did over the same survey.
     assert.equal(f.effort, 'medium');
 });
