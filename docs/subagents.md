@@ -53,13 +53,27 @@ matcher `Bash|PowerShell`, and it denies a command that writes files —
 `fankeel-reader`, `fankeel-reviewer` or `fankeel-judge`. The id is the half that
 says this is a subagent at all: the main thread of a session started with
 `--agent` carries the type without it and must be able to write, so the id is
-checked first (`hooks/guard.js:52`, `if (!payload.agent_id) return;`).
+checked first (`hooks/guard.js:61`, `if (!payload.agent_id) return;`).
 [collisions.md](collisions.md)
 carries what that denylist actually matches, not restated here. Five of
 the six agents hold `Bash`; `fankeel-fixer` is the one that does not,
 because it edits the file itself rather than returning something for the
 parent to run a test against. `tests/agents.test.js` names all three writers as
 exemptions, each with its argument beside it, rather than dropping the assertion.
+
+`Edit|Write|NotebookEdit` carries a second check besides the collision guard
+just described: when `agent_id` is absent — the main thread, read the same
+way the `Bash|PowerShell` matcher above reads it — and the task's own stage
+is on `stage.agents`'s list, an `Edit`, `Write` or `NotebookEdit` from the
+controller is denied outright (`hooks/guard.js:86`, `if (!payload.agent_id && WRITE_TOOLS.has(payload.tool_name))`),
+ahead of both `guard` mode and the collision guard below it. That ordering is
+deliberate: the check runs before `guardMode(mine)` is even read
+(`hooks/guard.js:106`, `if (!guardMode(mine)) return;`), so a controller set
+to `guard: off` is not exempt from it. `Bash` and `PowerShell` are
+deliberately left out of the set it tests (`hooks/guard.js:26`, `const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);`):
+the controller still has to run `scripts/task.js` to dispatch, relay a path
+and ask, and that runs through `Bash` — the matcher above, not this one,
+still governs it.
 
 `fankeel-reader` runs at `model: sonnet`, the floor the survey, verify and audit
 skills ask their reader fan-outs to use (survey's stage rule names the type, no
@@ -434,15 +448,31 @@ when what you want is a second opinion on something you have already decided.
 ## A stage agent, behind `stage.agents`
 
 Everything above holds with the profile's `stage.agents` at its default,
-`false`. Set it `true` and `survey` is run by a stage agent instead of by the
-session:
+`false` — nothing is controlled (`lib/profile.js:31`, `'stage.agents': { values: ['false', 'true', 'all'], builtin: 'false' },`).
+`parseStageAgents` in `lib/profile.js` reads the key as one of four forms:
+`false` controls no stage (`lib/profile.js:85`, `if (s === 'false' || s === '') return { value: [] };`);
+`true` controls `survey` alone — kept for that one meaning rather than "the
+route's first stage" because every existing doc and the 2026-09-20 A/B
+already mean survey by `true` (`lib/profile.js:86`, `if (s === 'true') return { value: ['survey'] };`);
+`all` controls every stage in `lib/stages.js`'s `FULL_ROUTE`
+(`lib/profile.js:88`, `if (s === 'all') return { value: canon.slice() };`);
+and anything else is a comma-separated list of stage names, lowercased,
+deduped and reordered to `FULL_ROUTE`'s own order regardless of what order or
+how many repeats they arrived in, so two profiles naming the same set always
+compare equal — an unknown name in that list errors in the same shape as any
+other bad profile value (`lib/profile.js:92`, `if (unknown) return { error: 'stage.agents: not a stage: ' + unknown + '. One of: ' + canon.join(', ') };`).
+`controlling()` and `controlFor()` in `lib/stages.js` read that array
+straight off the profile's `values` rather than off a fixed list only that
+file could change (`lib/stages.js:622`, `return controlledList(values).includes(String(stage || '').trim().toLowerCase());`),
+so which stages are controlled is a profile answer, not a constant. Put a
+stage on that list and it is run by a stage agent instead of by the session:
 
 | piece | where | what it does |
 |---|---|---|
 | controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` and printed by `task.js start` and `task` in place of their first step | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns, ask; option one advances the stage, or stands the task down where the route ends |
 | the stage agent | `agents/fankeel-brain.md` | opus at `effort: medium`; `Write` for its handoff, `Agent` for its readers |
 | its brief | `renderBrief` in `lib/render.js` | the stage's rules and shape, the skill's path, the handoff path, what replaces AskUserQuestion and Workflow, one Bash call for independent commands and for the lines it cites, and the output rule's word count as the file's — under Claude Code's 10,000-character cap on one `additionalContext` |
-| the handoff | `handoffPath`, `answerPath`, `readGate` and `writeAnswer` in `lib/handoff.js` | `.fankeel/build/task-<started>/survey.md`, ending in a `json gate` block; the answer beside it as `survey-answer.md` |
+| the handoff | `handoffPath`, `answerPath`, `readGate` and `writeAnswer` in `lib/handoff.js` | `.fankeel/build/task-<started>/<stage>.md`, ending in a `json gate` block; the answer beside it as `<stage>-answer.md` — `survey.md` and `survey-answer.md` when `survey` is the stage on the list |
 | the gate | `hooks/gate.js` | replaces the controller's placeholder question with the block's, word for word |
 | the answer | `hooks/resume.js` | writes it to the answer file; the controller's `SendMessage` names the path |
 | a pause | `task.js next --from-gate` | reads the block's `next` line |
@@ -452,6 +482,36 @@ in the same `subagents/` directory as the stage agent's, each `.meta.json`
 naming its `parentAgentId` at `spawnDepth` 2 — so `agentFiles()` in
 `lib/usage.js` counts them, flat, beside the agent that sent them (a run on
 2026-09-20: one stage agent and five readers in one directory).
+
+`survey` is still the only stage this has ever run for, and that is exactly
+why the builtin stayed `false` rather than moving to `true` or `all`, for
+three checkable reasons.
+
+The one stage that has been measured came back a tie, not a win.
+[reports/2026-09-20-survey-brain-ab.md](reports/2026-09-20-survey-brain-ab.md)'s
+last round — after four rounds of fixing the stage agent's brief — found the
+controlled arm's cost within 1.05× and 0.97× of the uncontrolled one and its
+time within 1.44× and 1.57×. Every pair in that report whose context was
+recorded shows the controller with *more* context at the gate under the
+controlled arm than under the uncontrolled one, including the tied round —
+except §5's, where the stage agent dispatched no reader at all, and the
+controller came out with less.
+
+The stage a tie was measured on is also the cheapest one to get wrong. Over
+this registry's long tasks, `survey` is 7.0% of the spend where `build` and
+`verify` together are 63.9%
+([reports/2026-09-21-controller-budget.md](reports/2026-09-21-controller-budget.md) §3,
+landed on this same branch) — `stage.agents` can now name `build` or
+`verify`, but nothing has measured either one there, and those are the two
+stages a default would actually move the number on.
+
+And `build` could not run this way today even if it had been measured: the
+guard above locks the controller out of `Edit`, `Write` and `NotebookEdit`
+for the whole of any stage on the list, and the workflow generator `build`'s
+own task loop needs is not a tool a stage agent can reach — `fankeel-brain`
+carries no `Workflow` in its own list (`agents/fankeel-brain.md:4`, `tools: [Read, Grep, Glob, Bash, Write, Agent]`).
+Turning `build` on by default would lock editing out of the stage that needs
+it most, for a tool the stage agent cannot open at all.
 
 # Telling a subagent apart, when a hook has to
 
