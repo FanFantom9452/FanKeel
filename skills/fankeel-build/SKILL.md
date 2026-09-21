@@ -311,10 +311,9 @@ runs one row per pass, and every other step of the loop is unchanged.
      it must reject and confirm it rejects it. One that has never failed
      has not shown it can.
    Part 3 — every changed line traces to the task's text; the patterns
-     already in the repository are followed.
-     Then name the page this
+     already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed
-     flag) as `page:line`, or say none was found.
+     flag) as `page:line`.
    Part 4 — cuts, over the lines this diff added and no others, in the
      format of the `## Cuts` section of your agent file. A cut is a finding.
 
