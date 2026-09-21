@@ -41,15 +41,24 @@ test('measure counts each request once: peak, last, and the context at a gate', 
     assert.equal(m.agents, 0);
 });
 
+// A real response's copies differ only in output_tokens (tests/usage.test.js pins that); this one also
+// varies cache_read so the difference between first-wins and last-wins shows in `context`.
 test('a request written on several lines is counted once, at the last line\'s usage', () => {
     const file = path.join(tmp('fankeel-ctx-'), 'grow.jsonl');
     fs.writeFileSync(file, [
         assistant('g1', { input_tokens: 10, cache_read_input_tokens: 100, output_tokens: 1 }),
         assistant('g1', { input_tokens: 10, cache_read_input_tokens: 150, output_tokens: 40 }),
     ].join(''));
-    const m = ctx.measure(file);
-    assert.equal(m.turns, 1);
-    assert.deepEqual(m.perTurn, [160]);
+    assert.deepEqual(ctx.measure(file).perTurn, [160]);
+});
+
+test('a sidechain line never counts as a gate, even when it shares a request id with a counted main request', () => {
+    const file = session(tmp('fankeel-ctx-'));
+    fs.appendFileSync(file, line({
+        type: 'assistant', isSidechain: true, requestId: 'r1', timestamp: '2026-09-21T00:00:02.000Z',
+        message: { model: 'claude-sonnet-5', usage: { input_tokens: 1, output_tokens: 1 }, content: [{ type: 'tool_use', name: 'AskUserQuestion', input: {} }] },
+    }));
+    assert.deepEqual(ctx.measure(file).gates, [3020]);
 });
 
 test('measure puts the subagents beside the session, never into it', () => {

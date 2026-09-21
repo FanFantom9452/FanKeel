@@ -18,6 +18,16 @@ function transcript(lines) {
     return file;
 }
 
+test('a request written twice with growing output counts once, at the last line', () => {
+    const file = transcript([
+        assistant('req_g', 'claude-sonnet-5', { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 100 }),
+        assistant('req_g', 'claude-sonnet-5', { input_tokens: 10, output_tokens: 100, cache_read_input_tokens: 100 }),
+    ]);
+    const summary = usage.summarise(file);
+    assert.equal(summary.usage.requests, 1);
+    assert.equal(summary.usage.models['claude-sonnet-5'].output, 100);
+});
+
 test('one request written three times counts once; the model with more output is the model', () => {
     const file = transcript([
         line({ type: 'user', message: { role: 'user', content: 'hi' } }),

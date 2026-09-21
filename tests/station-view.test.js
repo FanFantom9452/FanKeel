@@ -1235,7 +1235,7 @@ test('each preset form posts to /profile and shows its label, blurb, changes and
     assert.equal((out.match(/<form method="post" action="\/profile" class="preset">/g) || []).length, n);
     assert.equal((out.match(/class="mono changes"/g) || []).length, n);
     for (const p of Object.values(profile.PRESETS)) {
-        assert.ok(out.includes('<b>' + p.label + '</b><div class="mute">' + p.blurb + '</div>'), p.label + ' carries its label and blurb');
+        assert.ok(out.includes('<b>' + V.esc(p.label) + '</b><div class="mute">' + V.esc(p.blurb) + '</div>'), p.label + ' carries its label and blurb');
         assert.ok(out.includes('套用「' + p.label + '」</button>'), p.label + ' has its apply button');
     }
     assert.ok(out.includes('land.push → (ask)'), 'a null shows as (ask) in the changes list, not as null or blank');
