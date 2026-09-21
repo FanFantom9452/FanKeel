@@ -17,9 +17,12 @@ context，不是品質。
 
 - session 4f52fd18 用 Sonnet 5 主控：454 個主控 request（Sonnet 5 佔 439）、context 69k → 952k、63 個 subagent
   （`node scripts/ctx.js 4f52fd18-c00c-4ec9-a0aa-f752120abd0c` 印得出這幾個數）。
-- 逐站拆開是 design 站一次性的內嵌腳本算的，沒進 repo：build 258 turn、verify 125 turn，兩站佔主控重讀量
-  186.8M token 的 94%；454 個 request 裡 398 個接在主控自己的 tool result 後面、55 個接在 subagent 回報後面、1 個接在人的 prompt 後面（整個 session 只有 2 個人的 prompt）：主控的 turn 主體是它自己的 tool loop，不是被叫醒。registry 記了 9 次站切換，
-  transcript 只配到 6 個 `task.js stage` 指令，plan、audit、land 的 turn 併在前一站的列裡。
+- 逐站拆開現在由 `node scripts/ctx.js 4f52fd18-c00c-4ec9-a0aa-f752120abd0c --by-stage` 印出，和 registry 記的 9 次站切換
+  （survey、design、plan、build、verify、build、verify、audit、land）逐站對得上：build 232＋26＝258 turn、verify 62＋11＝73、
+  audit 33、land 19；主控重讀量 186.8M token 裡 build 加 verify 佔 129.5M（69%），audit 與 land 佔 45.3M。design 站當時一次性的
+  內嵌腳本只配到 6 個 `task.js stage` 指令，把 plan、audit、land 的 turn 併進前一站，才算出「verify 125 turn、兩站佔 94%」；
+  那組數字已被這一條取代。454 個 request 裡 398 個接在主控自己的 tool result 後面、55 個只接在 subagent 回報後面（前面沒有 tool result）、
+  1 個接在人的 prompt 後面（整個 session 只有 2 個人的 prompt）：主控的 turn 主體是它自己的 tool loop，不是被叫醒。
 - 那個 session 只派了一個 `fankeel-brain`（survey）。裝機的 0.74.0 沒有 `STAGE_AGENTS`、`COMMIT_RULE`，也沒有
   `scripts/commit.js`；repo 是 0.75.0，三個都有。所以 build 與 verify 在那個 session 裡不受控，profile 寫了也沒有效果。
   它是「沒拆」的基線，不是「拆了還是堆」的證據。
@@ -38,7 +41,7 @@ context，不是品質。
   每個 gate 當下的 context，加上每個 brain 自己的 context 序列。
 - 結果落成一份 dated report（`docs/reports/`），至少回答三件事：主控每個 task 的提交來回實際佔幾個 turn；build brain
   跑完整份 plan 有沒有超過 400k；stage 來回跳時，回頭那一站的 brain 冷啟動讀了多少。
-- 這個 task 只加量測工具、不改任何行為：`node scripts/ctx.js <session> --by-stage` 印出每站的主控 turn 數、被叫醒的 turn 數（接在 subagent 回報後面、中間沒有 tool result）、gate 數與 context。後面四節裡依賴這份數字的，各自寫明「等量測」。
+- 這個 task 只加量測工具、不改任何行為：`node scripts/ctx.js <session> --by-stage` 印出每站的主控 turn 數、被叫醒的 turn 數（只被 subagent 回報叫醒：自上一個 request 以來收到回報、且沒有 tool result，回報之前或之後都算）、gate 數與 context。後面四節裡依賴這份數字的，各自寫明「等量測」。
 
 ## 2. handoff 按圈編號
 
