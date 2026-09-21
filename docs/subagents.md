@@ -551,8 +551,9 @@ measurement.
 
 `agents/fankeel-brain.md` pins `model: sonnet`. The controller's dispatch rule
 (`controlRules` in `lib/stages.js`) passes `model: opus` for `design` and `plan`, the
-two stages whose product is a judgement, and no model for the other five, so Opus is
-spent where the user asked for it and nowhere else. Every measurement in this
+two stages whose product is a judgement, and no model for the other five, so a stage agent
+uses Opus where the user asked for it and nowhere else (an implementer runs on the model
+its task's Dispatch line names). Every measurement in this
 repository before 2026-09-22 ran an Opus stage agent; a Sonnet one has not been
 measured. [decisions/2026-09-22-brain-on-sonnet.md](decisions/2026-09-22-brain-on-sonnet.md)
 records the choice.
@@ -561,12 +562,13 @@ On 2026-09-22 the auto mode classifier answered "no verdict" to a stage agent's 
 implementer's Write and Edit into `.fankeel/build/`, six times or more in one session,
 so a handoff file could not be written. The remedy tried is a permission and not code:
 `.claude/settings.local.json`, per machine and ignored by git, holds
-`{"permissions": {"allow": ["Edit(/.fankeel/build/**)"]}}`, and the user put it there.
+`{"permissions": {"allow": ["Edit(/.fankeel/build/**)"]}}`, and the session wrote it there after the user agreed.
 It is not proven to help: a Sonnet subagent's Write under `.fankeel/build/` succeeded
 both before the rule and after it, so nothing could be compared, and the failure did
 not recur to be tested; the two outcomes are in the decision record's third section.
-No stage agent and no implementer writes any settings file. The fallback the TODO entry
-asked about, a report returned in the message when the write fails, is not built.
+No stage agent and no implementer is to write any settings file: that is a rule from
+the spec, and no hook enforces it. The fallback an earlier TODO entry asked about, a
+report returned in the message when the write fails, is not built.
 
 The installed 0.74.0 has no `STAGE_AGENTS`, and `profile show` reads the list as `false`
 there, so the order is a release first and the switch after: the user releases (see
