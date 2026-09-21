@@ -226,8 +226,10 @@ test('a stage agent gets its stage\'s rules and shape, its skill, and where to w
   const { SCRIPTS, PLUGIN_ROOT, RETURN_RULES } = require('../lib/render.js');
   const { landClause } = require('../lib/profile.js');
   const root = tmp();
-  // The rules are rendered with the profile's values, not without one: a brief
-  // that pinned `landClause({})` here pinned the bug, not the behaviour.
+  // Seeded with the land answers so the expected rules are built from the same
+  // values the brief was rendered with. A survey brief has no rule that reads them,
+  // so this test cannot tell a brief rendered without a profile from one rendered
+  // with it; the land and design test below is the control for that.
   const values = { 'stage.agents': true, 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': true };
   seedProfile(root, values);
   seed(root, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });
