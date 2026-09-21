@@ -1464,6 +1464,41 @@ test('renaming the task forgets the moves, as it forgets the clock', () => {
   assert.equal(entry(dir, A).moves, undefined);
 });
 
+test('renaming the task numbers its laps past the old task\'s, so an old gate is not the new task\'s', () => {
+  const { handoffPath, readGate } = require('../lib/handoff.js');
+  const dir = root();
+  started(dir, A, 'rework the colour ramp');
+  const old = entry(dir, A);
+  old.moves = [['survey', 1000], ['build', 2000], ['verify', 3000], ['build', 4000]];
+  registry.writeSession(dir, A, old);
+  // What an unfixed rename would read: the first lap of the first stage, still on disk.
+  const stale = handoffPath(dir, { started: old.started }, 'survey');
+  fs.mkdirSync(path.dirname(stale), { recursive: true });
+  const fence = '`'.repeat(3);
+  fs.writeFileSync(stale, fence + 'json gate\n' + JSON.stringify({ questions: [{ question: 'the old task' }] }) + '\n' + fence + '\n');
+  assert.equal(readGate(stale).questions[0].question, 'the old task');
+
+  assert.equal(run(dir, ['task', 'something else entirely', '--session', A]).code, 0);
+  const after = entry(dir, A);
+  assert.equal(readGate(handoffPath(dir, after, after.stage)), null);
+  assert.equal(after.lapped, 2);
+  assert.ok(handoffPath(dir, after, after.stage).endsWith('/survey-3.md'));
+
+  assert.equal(run(dir, ['stage', 'build', '--session', A]).code, 0);
+  assert.ok(handoffPath(dir, entry(dir, A), 'build').endsWith('/build-3.md'));
+});
+
+test('adopt carries lapped, so a renamed task adopted elsewhere keeps counting past the old laps', () => {
+  const dir = root();
+  started(dir, A, 'tidy the project cards', 'Waypoint');
+  const source = entry(dir, A);
+  source.updated = new Date(Date.now() - 16 * DAY).toISOString();
+  source.lapped = 3;
+  registry.writeSession(dir, A, source);
+  assert.equal(run(dir, ['adopt', A, '--session', B]).code, 0);
+  assert.equal(entry(dir, B).lapped, 3);
+});
+
 test('show prints a time line for the stages that have one', () => {
   const dir = root();
   started(dir, A, 'rework the colour ramp');

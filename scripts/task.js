@@ -34,7 +34,7 @@ const { splitAroundVerb } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 const profile = require('../lib/profile.js');
 const docs = require('../lib/docs.js');
-const { handoffPath, readGate } = require('../lib/handoff.js');
+const { handoffPath, readGate, lapsUsed } = require('../lib/handoff.js');
 const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT } = require('../lib/render.js');
 const { rateFor } = require('../lib/prices.js');
 
@@ -776,6 +776,12 @@ function cmdTask(root, opts) {
         // bills the rename to whatever stage the next answer lands in.
         delete d.clock;
         delete d.waited;
+        // The handoff directory is keyed by `started`, which a rename keeps, so the new
+        // task's files land beside the old task's. `lapped` is how many laps the old
+        // task used, and `lib/handoff.js` numbers this task's laps from there: its first
+        // lap of any stage is a file nothing wrote, so `readGate` finds no old gate.
+        // It reads `moves`, so it comes before the `delete d.moves` below.
+        d.lapped = lapsUsed(d);
         // The order of stages, for the same reason: the names come round again,
         // and a move left here draws the old task's visits into the new one.
         delete d.moves;
@@ -998,6 +1004,9 @@ function cmdAdopt(root, opts) {
     if (source.notes) data.notes = source.notes;
     if (source.next) data.next = source.next;
     if (source.guard) data.guard = source.guard;
+    // The rename's lap base goes with the task. `moves` crosses over below, and without
+    // this a renamed task adopted here would number its laps from the old task's again.
+    if (Number.isInteger(source.lapped) && source.lapped > 0) data.lapped = source.lapped;
 
     // The cost history splits by what it measures, and only one half survives a
     // change of session. `clock` and `waited` are wall-clock, which does not
