@@ -484,7 +484,7 @@ async function served(f) {
     const post = (route, fields) => request(s.url + route,
         { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } },
         new URLSearchParams({ nonce, ...fields }).toString());
-    return { s, post };
+    return { s, post, nonce };
 }
 
 test('GET /station/station.css answers 404 when the asset cannot be read', async (t) => {
@@ -982,18 +982,10 @@ test('POST /profile takes a stage list and an empty value clears a key; the data
 // test needs the same request to carry a key more than once; `served()` above
 // takes an object and cannot.
 async function servedPairs(f) {
-    const { serve } = require('../scripts/station.js');
-    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
-    try {
-        const data = await request(s.url + 'station/station-data.js', { method: 'GET' });
-        const nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
-        const post = (pairs, scope) => request(s.url + 'profile', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } },
-            new URLSearchParams([['nonce', nonce], ['scope', scope || 'project'], ['project', f.r1]].concat(pairs)).toString());
-        return { s, post };
-    } catch (e) {
-        s.close();
-        throw e;
-    }
+    const { s, nonce } = await served(f);
+    const post = (pairs, scope) => request(s.url + 'profile', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } },
+        new URLSearchParams([['nonce', nonce], ['scope', scope || 'project'], ['project', f.r1]].concat(pairs)).toString());
+    return { s, post };
 }
 
 test('POST /profile clears every enum key with an empty value, as the manual preset sends them', async () => {
