@@ -327,9 +327,12 @@ test('a build brain may dispatch a fixer and an implementer, a verify brain a ve
   const build = dispatchLine('build');
   assert.match(build, /fankeel:fankeel-fixer/);
   assert.match(build, /implementer/);
+  assert.match(build, /`fankeel:fankeel-reviewer`, `fankeel:fankeel-fixer` or an implementer/);
   assert.match(dispatchLine('verify'), /fankeel:fankeel-verifier/);
+  assert.match(dispatchLine('verify'), /`fankeel:fankeel-verifier` or `fankeel:fankeel-fixer` with the Agent tool/);
   const survey = dispatchLine('survey');
   assert.match(survey, /fankeel:fankeel-reader/);
+  assert.match(survey, /Dispatch `fankeel:fankeel-reader` or `fankeel:fankeel-reviewer` with the Agent tool/);
   assert.doesNotMatch(survey, /fankeel-fixer|fankeel-verifier|implementer/);
 });
 

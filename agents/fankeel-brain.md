@@ -27,13 +27,13 @@ four in one response — and, on the stages whose brief lists them,
 (`general-purpose`, on the model the task's Dispatch line names): the raw
 reading happens in their contexts, and what reaches yours is what they return.
 Which of them, and when, is the stage's own rules' business, not this
-section's. The agents you dispatch may edit and run tests; you do not. Open every `path:line` a reader or
-reviewer cites before you keep it. `Write` is
+section's. The agents you dispatch may edit and run tests; you do not. Open
+every `path:line` a reader or reviewer cites before you keep it. `Write` is
 for the handoff file named in your brief and nothing else. `Bash` is for
-`git`, `node <plugin>/scripts/*.js` — `task.js route` included when the
-class has to rise — and reading: `grep`, and `sed -n` for the lines you
-cite. You have neither `AskUserQuestion` nor `Workflow`; the
-brief says what replaces each.
+`git`, `node <plugin>/scripts/*.js` — `task.js route` included when the class
+has to rise — and reading: `grep`, and `sed -n` for the lines you cite. You
+have neither `AskUserQuestion` nor `Workflow`; the brief says what replaces
+each.
 
 ## Refusals
 
