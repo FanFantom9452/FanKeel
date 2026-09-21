@@ -1196,3 +1196,36 @@ test('首頁 opens with the machine profile card, ahead of the hero panel', () =
     assert.ok(hero >= 0, 'the hero panel is on 首頁');
     assert.ok(card < hero, 'the profile card comes before the hero panel');
 });
+
+test('presetStrip is one form per preset, each carrying every key it sets, and clears with an empty value', () => {
+    global.window.STATION.serve = true;
+    global.window.STATION.nonce = 'tok-1';
+    global.window.STATION.profilePresets = profile.PRESETS;
+    const out = V.presetStrip('project', '/proj');
+    assert.equal((out.match(/<form /g) || []).length, Object.keys(profile.PRESETS).length);
+    assert.match(out, /name="key" value="land\.push"><input type="hidden" name="value" value="">/, 'the manual preset clears land.push with an empty value, not the text null');
+    assert.match(out, /name="key" value="stage\.agents"><input type="hidden" name="value" value="survey,build,verify">/);
+    assert.match(out, /name="project" value="\/proj"/);
+    assert.match(out, /name="scope" value="project"/);
+});
+
+test('presetStrip is empty on a static page', () => {
+    global.window.STATION.serve = false;
+    global.window.STATION.profilePresets = profile.PRESETS;
+    assert.equal(V.presetStrip('machine', null), '');
+});
+
+test('the card prints a description for every key, and each value it shows is the one profile.display gives', () => {
+    const values = { 'land.push': false, 'stage.agents': ['survey', 'build', 'verify'], guard: 'ask' };
+    const sources = { 'land.push': 'project', 'stage.agents': 'project', guard: 'builtin' };
+    global.window.STATION.profileKeys = profile.KEYS;
+    global.window.STATION.serve = false;
+    const out = V.profileCard('t', 'project', '/proj', { values, sources, unreadable: [] });
+    const rows = out.match(/<tr><td class="mono">[\s\S]*?<\/tr>/g);
+    const keys = Object.keys(profile.KEYS);
+    assert.equal(rows.length, keys.length);
+    keys.forEach((key, i) => {
+        assert.ok(rows[i].includes(profile.KEYS[key].desc), key + ' row carries its description');
+        assert.ok(rows[i].includes('<td>' + profile.display(values[key]) + '</td>'), key + ' row shows ' + profile.display(values[key]));
+    });
+});

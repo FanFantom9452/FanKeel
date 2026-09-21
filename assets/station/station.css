@@ -323,6 +323,10 @@ table:not(.t) tbody tr:last-child td{border-bottom:0}
 .profile table{width:100%;margin-top:8px}
 .profile td,.profile th{padding:4px 6px;text-align:left;font-size:12px}
 .pf{display:inline-flex;gap:6px;align-items:center}
+.presets{display:flex;gap:10px;margin:8px 0}
+.preset{flex:1;display:flex;flex-direction:column;gap:6px;padding:10px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}
+.preset .changes{font-size:11px;line-height:1.5}
+.profile .desc{font:11px system-ui,sans-serif;margin-top:2px}
 
 /* The detail panel: sections that open and close, the context line, its
    rises, and the stage order. */

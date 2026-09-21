@@ -1103,7 +1103,7 @@
             tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
             stamp: stamp, esc: esc, cost: cost, labels: labels, delta: delta, match: match,
             statePill: statePill, clearStaleControl: clearStaleControl,
-            profileCard: profileCard,
+            profileCard: profileCard, presetStrip: presetStrip,
             openSections: openSections, downsample: downsample, lineChart: lineChart,
             riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
             dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, splitHtml: splitHtml,
@@ -1536,7 +1536,7 @@
                 ctl = '<code class="mono">node ' + esc(S.plugin || '<plugin>') + '/scripts/task.js profile set '
                     + esc(key) + ' &lt;value&gt;' + (scope === 'machine' ? ' --default' : ' --project "' + esc(projectPath) + '"') + '</code>';
             }
-            out += '<tr><td class="mono">' + esc(key) + '</td><td>' + esc(shown) + '</td><td class="mute">' + esc(src) + '</td><td>' + ctl + '</td></tr>';
+            out += '<tr><td class="mono">' + esc(key) + '<div class="mute desc">' + esc(spec.desc || '') + '</div></td><td>' + esc(shown) + '</td><td class="mute">' + esc(src) + '</td><td>' + ctl + '</td></tr>';
         });
         return out;
     }
@@ -1554,12 +1554,35 @@
             }).join('')
             + '<button class="ctl" type="submit">套用機器預設（' + keys.length + ' 鍵）</button></form>';
     }
+    // The habits `lib/profile.js` calls PRESETS, one form each: a card that says what
+    // it sets and one button that sends every key of it in a single POST. An empty
+    // value means "clear this key from this card's own file". Only when served: a
+    // static page has nothing to post to.
+    function presetStrip(scope, projectPath) {
+        var presets = S.profilePresets || {};
+        var ids = Object.keys(presets);
+        if (!S.serve || !ids.length) return '';
+        return '<div class="presets">' + ids.map(function (id) {
+            var p = presets[id];
+            var keys = Object.keys(p.set);
+            return '<form method="post" action="/profile" class="preset">'
+                + '<input type="hidden" name="nonce" value="' + esc(S.nonce || '') + '">'
+                + '<input type="hidden" name="scope" value="' + scope + '">'
+                + (projectPath ? '<input type="hidden" name="project" value="' + esc(projectPath) + '">' : '')
+                + keys.map(function (k) {
+                    return '<input type="hidden" name="key" value="' + esc(k) + '"><input type="hidden" name="value" value="' + esc(p.set[k] === null ? '' : p.set[k]) + '">';
+                }).join('')
+                + '<b>' + esc(p.label) + '</b><div class="mute">' + esc(p.blurb) + '</div>'
+                + '<div class="mono changes">' + keys.map(function (k) { return esc(k) + ' → ' + (p.set[k] === null ? '(ask)' : esc(p.set[k])); }).join('<br>') + '</div>'
+                + '<button class="ctl" type="submit">套用「' + esc(p.label) + '」</button></form>';
+        }).join('') + '</div>';
+    }
     function profileCard(title, scope, projectPath, prof) {
         if (!prof) return '';
         var bad = (prof.unreadable || []).length ? '<div class="mute">unreadable: ' + esc(prof.unreadable.join(', ')) + '</div>' : '';
         return '<div class="card profile"><div class="chead"><b>' + esc(title) + '</b>'
             + (scope === 'project' ? applyMachineControl(projectPath) : '') + '</div>'
-            + bad + '<table><thead><tr><th>key</th><th>value</th><th>source</th><th></th></tr></thead><tbody>'
+            + bad + presetStrip(scope, projectPath) + '<table><thead><tr><th>key</th><th>value</th><th>source</th><th></th></tr></thead><tbody>'
             + profileRows(scope, projectPath, prof) + '</tbody></table></div>';
     }
     // A registry-level bulk clear, beside its card's heading rather than a
