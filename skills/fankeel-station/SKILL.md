@@ -1,7 +1,7 @@
 ---
 name: fankeel-station
 description: Reopen the station by hand — every fankeel session on this machine on one page, served live. `/fankeel` already starts it and names its url on the block's station line, so this is for a station that was stopped or a tab that was closed. Use for /fankeel-station, "開站", or when the station has to be a server rather than a file. Reading that file, and the station's other phrases like "監控站", stay with the fankeel skill.
-version: 0.75.0
+version: 0.76.0
 status: current
 last_verified: 2026-09-19
 source_of_truth: scripts/station.js, lib/serve.js, docs/station.md
