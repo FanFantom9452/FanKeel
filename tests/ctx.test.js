@@ -130,3 +130,56 @@ test('a flag that does not exist is the usage line and code 2, not a stack trace
         assert.match(out.text, /^usage: node scripts\/ctx\.js/);
     }
 });
+
+// Seven requests with contexts 100..700. r2 runs `task.js start --route build,verify`; r5 runs `task.js stage verify`
+// with the script path quoted, the form a regex on `task.js stage` misses. r4 and r7 ask a question. Wake-ups:
+// t0 arrives with a tool result before r3 (so r3 was not woken), t1 is a peer hand-back before r5, t2 a
+// task-notification before r7.
+function staged(dir) {
+    const file = path.join(dir, 'staged.jsonl');
+    const bash = (id, command) => [{ type: 'tool_use', id, name: 'Bash', input: { command } }];
+    const ask = [{ type: 'tool_use', name: 'AskUserQuestion', input: {} }];
+    const at = '2026-09-21T00:00:00.000Z';
+    const notice = (id) => line({
+        type: 'user', origin: { kind: 'task-notification' }, timestamp: at,
+        message: { content: '<task-notification><tool-use-id>' + id + '</tool-use-id></task-notification>' },
+    });
+    const peer = line({ type: 'user', origin: { kind: 'peer', from: 'a1' }, timestamp: at, message: { content: 'report' } });
+    const result = line({
+        type: 'user', timestamp: at,
+        message: { content: [{ type: 'tool_result', tool_use_id: 'b1', content: 'ok' }] },
+    });
+    const use = (context) => ({ input_tokens: context, output_tokens: 1 });
+    fs.writeFileSync(file, [
+        assistant('s1', use(100)),
+        assistant('s2', use(200), bash('b1', 'node C:/p/scripts/task.js start --session s --task t --route build,verify')),
+        notice('t0'), result,
+        assistant('s3', use(300)),
+        assistant('s4', use(400), ask),
+        peer,
+        assistant('s5', use(500), bash('b2', 'node "C:/p/scripts/task.js" stage verify --session s')),
+        assistant('s6', use(600)),
+        notice('t2'),
+        assistant('s7', use(700), ask),
+    ].join(''));
+    return file;
+}
+
+test('measure cuts the main thread by stage at the task.js commands: turns, woken, gates, context', () => {
+    const m = ctx.measure(staged(tmp('fankeel-ctx-')));
+    assert.deepEqual(m.stages, [
+        { stage: null, turns: 2, woken: 0, gates: 0, first: 100, last: 200, reread: 300 },
+        { stage: 'build', turns: 3, woken: 1, gates: 1, first: 300, last: 500, reread: 1200 },
+        { stage: 'verify', turns: 2, woken: 1, gates: 1, first: 600, last: 700, reread: 1300 },
+    ]);
+});
+
+test('--by-stage prints one line per stage under the session, and without the flag prints none', () => {
+    const file = staged(tmp('fankeel-ctx-'));
+    const on = ctx.main([file, '--by-stage']).text;
+    assert.match(on, /by stage/);
+    assert.match(on, /\(before\)\s+turns   2   woken  0   gates  0   context 100 → 200   re-read 300/);
+    assert.match(on, /build\s+turns   3   woken  1   gates  1   context 300 → 500   re-read 1,200/);
+    assert.match(on, /verify\s+turns   2   woken  1   gates  1   context 600 → 700   re-read 1,300/);
+    assert.doesNotMatch(ctx.main([file]).text, /by stage/);
+});
