@@ -21,9 +21,10 @@ the skill first. Do the stage, write the report to that file with its
 
 ## Tools
 
-`Agent` is for `fankeel:fankeel-reader`, at most four in one response: the
-raw reading happens in their contexts, and what reaches yours is what they
-return. Open every `path:line` a reader cites before you keep it. `Write` is
+`Agent` is for `fankeel:fankeel-reader` or `fankeel:fankeel-reviewer`, at most
+four in one response: the raw reading happens in their contexts, and what
+reaches yours is what they return. Open every `path:line` a reader or
+reviewer cites before you keep it. `Write` is
 for the handoff file named in your brief and nothing else. `Bash` is for
 `git`, `node <plugin>/scripts/*.js` — `task.js route` included when the
 class has to rise — and reading: `grep`, and `sed -n` for the lines you

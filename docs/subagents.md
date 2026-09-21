@@ -82,7 +82,8 @@ model) — a `subagent_type`
 that is structurally read-only standing in for what those dispatches used to
 send as `general-purpose`.
 
-`fankeel-judge` runs at `model: fable`, and answers a different kind of
+`fankeel-judge` runs at `model: fable` by default — the profile's
+`judge.model` — and answers a different kind of
 question: not a multi-file read inside a stage's own work, but the in-stage
 question that would otherwise stop the stage to ask a person — design's one
 question at a time, survey's class, plan's split, build's stop-and-ask. No

@@ -254,6 +254,19 @@ test('a stage agent gets its stage\'s rules and shape, its skill, and where to w
 // never passed one, and `fankeel-brain` got the controller's block regardless
 // of the switch — a handoff nothing reads. docs/subagents.md's own opening
 // sentence says otherwise.
+// `stage.agents` can now hand the brain any stage, not only `survey`, and a
+// stage's own rules can name a reviewer by name (`lib/stages.js:281,304`).
+// The brief's Workflow override used to name only the reader as what
+// replaces "one workflow" below, so a brain running `build` was handed a
+// rule it had no legal way to follow. lib/render.js:412 is the fix.
+test('a brain running a stage whose rules name a reviewer may dispatch one', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.match(text, /fankeel:fankeel-reviewer/, 'the brief must name fankeel:fankeel-reviewer as an Agent the brain may dispatch');
+});
+
 test('a stage agent with stage.agents off gets the ordinary brief', () => {
   const root = tmp();
   seed(root, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });
