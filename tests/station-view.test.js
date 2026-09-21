@@ -1207,6 +1207,17 @@ test('presetStrip is one form per preset, each carrying every key it sets, and c
     assert.match(out, /name="key" value="stage\.agents"><input type="hidden" name="value" value="survey,build,verify">/);
     assert.match(out, /name="project" value="\/proj"/);
     assert.match(out, /name="scope" value="project"/);
+    assert.equal((out.match(/name="nonce" value="tok-1"/g) || []).length, Object.keys(profile.PRESETS).length, 'every preset form carries the nonce, or the served page fails every POST');
+});
+
+test('presetStrip on the machine card carries no project, only its scope', () => {
+    global.window.STATION.serve = true;
+    global.window.STATION.nonce = 'tok-1';
+    global.window.STATION.profilePresets = profile.PRESETS;
+    const out = V.presetStrip('machine', null);
+    assert.notEqual(out, '', 'a served page with presets is not the empty case');
+    assert.ok(!out.includes('name="project"'), 'no project input when projectPath is null');
+    assert.match(out, /name="scope" value="machine"/);
 });
 
 test('presetStrip is empty on a static page', () => {
