@@ -45,6 +45,7 @@ Generated from `node scripts/map.js` (235 markdown files, 4 planned, not built, 
 | 上一圈的 gate 不會被當成這一圈的：這一圈的檔還沒寫，`readGate` 讀不到就回 null，gate hook 照舊放行主控自己的問題。 | struck — held until the measurement: the held file's Task 2 |
 | `task.js stage` 經 `stampEntry`（`lib/registry.js:510`）在派 brain 之前就蓋好這一次進場的戳，而且只在這一站與上一筆 | struck — held until the measurement: the held file's Task 2 |
 | `moves` 只留最近 60 筆（`MAX_MOVES`，`lib/registry.js:51`），同一站進場次數超過保留窗時圈號可能重複；已知的上限，不處理。 | struck — held until the measurement: the held file's Task 2 |
+| 改任務名的 `cmdTask`（`scripts/task.js`）刪掉 `moves` 卻保留 | struck — held until the measurement: a known limit the spec records, and the held file's Task 2 must handle it before laps are numbered |
 | 每份 handoff 在 `json gate` 區塊之前多一個 `reads:` 區塊：每行 `<路徑> — <為什麼>`，最多 8 行。寫的是剛讀完內容的 | struck — held until the measurement: the held file's Task 3 |
 | `renderBrainBrief` 印一段 `read first:`：從 `moves` 找上一次進場的那一站，取它那一圈的 handoff 路徑，加上該檔 | struck — held until the measurement: the held file's Task 3 |
 | 讀 `reads:` 的是 `hooks/brief.js`（SubagentStart），不是主控；主控一份 handoff 也不打開。 | struck — held until the measurement: the held file's Task 3 |

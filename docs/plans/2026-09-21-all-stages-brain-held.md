@@ -56,6 +56,7 @@ Generated from `node scripts/map.js` (235 markdown files, 4 planned, not built, 
 | 上一圈的 gate 不會被當成這一圈的：這一圈的檔還沒寫，`readGate` 讀不到就回 null，gate hook 照舊放行主控自己的問題。 | Task 2 |
 | `task.js stage` 經 `stampEntry`（`lib/registry.js:510`）在派 brain 之前就蓋好這一次進場的戳，而且只在這一站與上一筆 | Task 2 — relies on it and says so in `lapOf`'s comment; nothing to build |
 | `moves` 只留最近 60 筆（`MAX_MOVES`，`lib/registry.js:51`），同一站進場次數超過保留窗時圈號可能重複；已知的上限，不處理。 | Task 2 — written down in `lapOf`'s comment, not handled |
+| 改任務名的 `cmdTask`（`scripts/task.js`）刪掉 `moves` 卻保留 | Task 2 — NOT yet planned: see the note at the top of Task 2 |
 | 每份 handoff 在 `json gate` 區塊之前多一個 `reads:` 區塊：每行 `<路徑> — <為什麼>`，最多 8 行。寫的是剛讀完內容的 | Task 3 |
 | `renderBrainBrief` 印一段 `read first:`：從 `moves` 找上一次進場的那一站，取它那一圈的 handoff 路徑，加上該檔 | Task 3 |
 | 讀 `reads:` 的是 `hooks/brief.js`（SubagentStart），不是主控；主控一份 handoff 也不打開。 | Task 3 — `hooks/brief.js` already passes `root` and the record to `renderBrief`; the read happens there |
@@ -72,6 +73,8 @@ Generated from `node scripts/map.js` (235 markdown files, 4 planned, not built, 
 | `tests/stages.test.js`：design、plan 的 `controlRules` 含 `commit <file>` 那條，audit、land 不含。 | Task 4 |
 
 ## Task 2: Handoff files per lap
+
+**Before this task, decide the rename case.** The spec's last bullet in section 2 records that `cmdTask` in `scripts/task.js` deletes `moves` but keeps `started`, and `started` is the handoff directory's key (`dirFor` in `lib/handoff.js`), so a renamed task would restart at lap 1 in a directory that still holds the earlier laps, and `moves` is empty right after `cmdTask` (it sets `stage` without `stampEntry`). No step below handles that: either give it a step in `scripts/task.js` (stamp `moves` when `cmdTask` sets `stage`, and decide whether a rename starts a new directory) or record a ruling that a renamed task's first lap may reuse the earlier directory.
 
 **Files:**
 - Modify: `lib/handoff.js` — `handoffPath`, `commitPath` and `answerPath` number a stage's second and later visits
