@@ -75,8 +75,9 @@ the controller still has to run `scripts/task.js` to dispatch, relay a path
 and ask, and that runs through `Bash` — the matcher above, not this one,
 still governs it.
 
-`fankeel-reader` runs at `model: sonnet`, the floor the survey, verify and audit
-skills ask their reader fan-outs to use (survey's stage rule names the type, no
+`fankeel-reader` runs at `model: sonnet` by default — the profile's
+`dispatch.floor`, which the survey, verify and audit skills ask their reader
+fan-outs to use (survey's stage rule names the type, no
 model) — a `subagent_type`
 that is structurally read-only standing in for what those dispatches used to
 send as `general-purpose`.
@@ -234,7 +235,8 @@ Five things that fail silently when missed: several dispatches must be in **one
 response** to run concurrently; the **model must be passed explicitly**, since an
 omitted one inherits the parent's, unless the `subagent_type` is an agent file
 that pins its own — inside a Workflow script too, where every
-`agent` call carries `model` and `sonnet` is the floor, and the authoring
+`agent` call carries `model` and the profile's `dispatch.floor` is the floor,
+and the authoring
 reference's omit-and-inherit is the host's default, not this plugin's — and
 `subagent_type: "fork"` inherits the whole context and ignores `model`
 regardless, which is why fankeel never dispatches one; the

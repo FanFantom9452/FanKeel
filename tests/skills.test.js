@@ -810,7 +810,7 @@ test('verify and audit run their chain as one workflow where the host opens it',
     assert.match(flat, /\bWorkflow\b/, n + ' never names the Workflow tool');
     assert.match(flat, /where the host opens it/i,
       n + ' does not say when the chain is a workflow');
-    assert.match(flat, /`model`[^.]{0,160}`sonnet`/,
+    assert.match(flat, /`model`[^.]{0,160}`dispatch\.floor`/,
       n + ' does not carry the model floor into the script');
     assert.match(flat, /\bAgent\b[^.]{0,200}\bfallback\b/,
       n + ' keeps no Agent form for a declined dialog');

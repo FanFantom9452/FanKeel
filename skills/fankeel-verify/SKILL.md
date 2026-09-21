@@ -198,7 +198,7 @@ stages: the verifier for a task writes its evidence rows to a file under
 `.fankeel/build/<plan>/`, not a scratchpad that gets cleared, and returns the
 path; the adversary for that task reads the path and returns, under a
 `schema`, only the rows it defeats. Every `agent` call carries `model`, and
-`sonnet` is the floor there as it is here. What returns is the join — per
+the profile's `dispatch.floor` is the floor there as it is here. What returns is the join — per
 task, the rows and the rows defeated. An `agent` call's own return already
 stays in the script rather than reaching this context, so writing to a file
 buys nothing there; what it keeps the rows out of is the join itself, the

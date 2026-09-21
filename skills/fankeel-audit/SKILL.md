@@ -161,8 +161,8 @@ So dispatch it: one reader per pair, **several in one response** so they run at
 once, each told the file they share and asked which page the code supports. Four
 in one response is the ceiling — the fankeel skill's *Dispatch by default, never
 the filtering* says why, and pairs past that are one reader with a list. Pass
-`subagent_type: fankeel:fankeel-reader` and the model explicitly — `sonnet` is the
-floor — and compare what comes back
+`subagent_type: fankeel:fankeel-reader` and the model explicitly — the profile's
+`dispatch.floor`, `sonnet` by default — and compare what comes back
 against itself before acting, because readers dispatched from one prompt make
 correlated mistakes. Say how many are going and on which model as they go out:
 a pair count nobody announced is spend the user is paying for and could not see
@@ -189,8 +189,8 @@ here — the Workflow tool pipelines over a list it is handed; it does not go
 looking for one. Run the pairs through a `pipeline`: the reader for a pair
 returns, under a `schema`, which page the code supports and the `file:line` it
 stands on; the adversary for that pair reads the same two pages and returns
-what it defeats. Every `agent` call carries `model`, and `sonnet` is the floor
-there as it is here. What returns is the join, per pair. The ruling and the
+what it defeats. Every `agent` call carries `model`, and the profile's
+`dispatch.floor` is the floor there as it is here. What returns is the join, per pair. The ruling and the
 `routed:` line stay here. The Agent form below is the fallback, for a session
 where the user said not to dispatch, or declined the host's run dialog.
 

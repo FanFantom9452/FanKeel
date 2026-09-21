@@ -81,12 +81,12 @@ what gets scheduled.
 - 〔tests〕程式註解裡的 `path:line` 沒人驗，docs-check 只看 markdown：`fb2f734` 就有三條歪的，一在 [tests/station-hide.test.js](tests/station-hide.test.js)、二在 [tests/station-view.test.js](tests/station-view.test.js)，其一指到不存在的行。
 - 〔quota〕用 `quotaLimits` 的 13 筆被拒紀錄定錨 100%：取一次 `five_hour`、一次 `seven_day` 被拒的時刻，算該視窗到那一刻的花費，就不必再猜整數讀數的 ±0.5 — [scripts/spend.js](scripts/spend.js).
 - 〔stage-agents〕站 agent 拿不到 `Workflow` 工具，所以 build 那一站的 workflow 要由 script 從 plan 的分組產生、主控用 `scriptPath` 開；分組與 surface 由 `ledger.js groups` 算好了 — [lib/plantasks.js](lib/plantasks.js).
-- 〔registry〕session 記錄不存任何 profile 值（182 筆都沒有），所以「換了設定之後有沒有比較好」事後查不到，上面那條 Waiting 正是卡在這裡；start 時抄一份 values 進去就夠 — [scripts/task.js](scripts/task.js).
+- 〔registry〕session 記錄只存 guard，且只在偏離預設時才存；其餘 profile 值一律不存（182 筆都落在後者），換了設定有沒有比較好事後查不到；start 時抄一份 values 進去就夠 — [scripts/task.js](scripts/task.js).
 
 ## Needs a decision
 
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；Gemini CLI `BeforeAgent`、Codex CLI `UserPromptSubmit` 也能回 `additionalContext` — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
-- 〔stage-agents〕受控站要不要推到 build／verify：survey 的量測外推不了（它 7.0%，那兩站 63.9%），有沒有用未知；另三缺口——design 要 SendMessage 轉話、station 第二層仍平鋪、插話沒人接 — [lib/stages.js](lib/stages.js).
+- 〔stage-agents〕受控站要不要推到 build／verify：survey 的量測外推不了（它 7.0%，那兩站 63.9%），有沒有用未知；另三缺口——design 要能跨輪存活來回對話、station 第二層仍平鋪、插話沒人接 — [lib/stages.js](lib/stages.js).
 - 〔agents〕要不要一個專審前端是否符合期待的 agent：這次 `依版本` 整片灰是把頁面 render 出來才抓到的，unit test 全綠；順帶評估 Jev 這類小判斷模型當篩子 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 - 〔station〕`--detach` 的 serve 在啟動時就把 `lib/station.js` 讀進記憶體：改完程式它照樣產生新資料、用舊程式，外觀完全正常。要不要讓它自己察覺 — [lib/serve.js](lib/serve.js).
 - 〔docs〕寫成 `path:行-行` 的引用不帶引文，docs-check 只列不驗：一條這樣歪了四個 commit 沒人發現。剩三條要改寫，還是讓 docs-check 把範圍本身當缺陷 — [scripts/docs-check.js](scripts/docs-check.js).
