@@ -83,6 +83,7 @@ what gets scheduled.
 - 〔registry〕session 記錄只存 guard，且只在偏離預設時才存；其餘 profile 值一律不存（182 筆都落在後者），換了設定有沒有比較好事後查不到；start 時抄一份 values 進去就夠 — [scripts/task.js](scripts/task.js).
 - 〔docs〕`registry.md` 的「寫入的檔案」表缺 `build/task-<時間>/` 的交接檔（`<stage>.md`、`-answer.md`、`-commit.md`）、`serve.json`、`station/detail/` 與 `station/cache/` — [docs/registry.md](docs/registry.md).
 - 〔docs〕`development.md` 與 land skill 的 `last_verified` 早於後來加的內容，重讀後再標；`tests/render.test.js` 與 `scripts/task.js` 兩處註解的 2397／2393 也過期 — [docs/development.md](docs/development.md).
+- 〔stage-agents〕`ctx.js --by-stage` 的 `stageRows` 還有兩個小尾巴：`isSidechain === true` 那個 skip 沒有 fixture 釘住，`t === null` 的 return 多餘（`null > seen` 本來就為假） — [scripts/ctx.js](scripts/ctx.js).
 
 ## Needs a decision
 

@@ -15,8 +15,9 @@ context，不是品質。
 
 ## 現況（design 站讀過的；第二條的逐站數字是 build 站之後用 --by-stage 重算的）
 
-- session 4f52fd18 用 Sonnet 5 主控：454 個主控 request（Sonnet 5 佔 439）、context 69k → 952k、63 個 subagent
-  （`node scripts/ctx.js 4f52fd18-c00c-4ec9-a0aa-f752120abd0c` 印得出這幾個數）。
+- session 4f52fd18 用 Sonnet 5 主控：454 個主控 request、context 69k → 952k、63 個 subagent
+  （`node scripts/ctx.js 4f52fd18-c00c-4ec9-a0aa-f752120abd0c` 印得出這三個數）；其中 Sonnet 5 佔 439、Opus 5 佔 15，
+  ctx.js 不印 model，是另外對 transcript 的 `message.model` 數的。
 - 逐站拆開現在由 `node scripts/ctx.js 4f52fd18-c00c-4ec9-a0aa-f752120abd0c --by-stage` 印出，和 registry 記的 9 次站切換
   （survey、design、plan、build、verify、build、verify、audit、land）站名與順序對得上（每次切換落在哪個 turn 沒有另外核對）：
   build 232＋26＝258 turn、verify 62＋11＝73、
