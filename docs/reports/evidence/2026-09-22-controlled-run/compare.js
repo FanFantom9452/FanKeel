@@ -131,5 +131,3 @@ if (require.main === module) {
     (code ? process.stderr : process.stdout).write(text + '\n');
     if (code) process.exitCode = code;
 }
-
-module.exports = { main };
