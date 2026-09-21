@@ -480,7 +480,7 @@ stage on that list and it is run by a stage agent instead of by the session:
 | the gate | `hooks/gate.js` | replaces the controller's placeholder question with the block's, word for word |
 | the answer | `hooks/resume.js` | writes it to the answer file; the controller's `SendMessage` names the path |
 | a pause | `task.js next --from-gate` | reads the block's `next` line |
-| a commit (`build` only) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/build-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back `<base>..<sha>` |
+| a commit (`build` only) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/build-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back its one line, `<base>..<sha>` or `commit.js: <why>` |
 
 The agents a stage agent dispatches — readers and reviewers, and on `build` also a fixer and implementers, on `verify` a verifier, a fixer and an implementer — are a second layer down, but their transcripts land
 in the same `subagents/` directory as the stage agent's, each `.meta.json`
@@ -518,10 +518,10 @@ implementers, all through the `Agent` tool. The guard above locks the
 (`agents/fankeel-brain.md:4`, `tools: [Read, Grep, Glob, Bash, Write, Agent]`,
 where `Write` is for its handoff file). It is refused `git commit` too, so it
 asks for each one through a commit file and the controller runs
-`scripts/commit.js` — a Bash call and a message back per task, in the
-controller's own context, in the repository the controller is standing in (a
-worktree the implementers build in is not handled), which is a cost the A/B has to count rather than
-assume away. `verify` gets an implementer for the one thing its agent cannot do,
+`scripts/commit.js`, in the repository the controller is standing in (a
+worktree the implementers build in is not handled) — a Bash call and a message
+back per task, in the controller's own context, which is a cost the A/B has to
+count rather than assume away. `verify` gets an implementer for the one thing its agent cannot do,
 applying a mutation and restoring the file. A default should wait for that
 measurement.
 

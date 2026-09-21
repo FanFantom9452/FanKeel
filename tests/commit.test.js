@@ -83,17 +83,35 @@ test('runs from the top of the repository, whatever directory it is started in',
     assert.equal(git(dir, 'show', '--name-only', '--format=', 'HEAD'), 'a.txt');
 });
 
-test('outside a repository, and when git refuses the commit, it exits 1 and moves nothing', () => {
+test('outside a repository it exits 1 and says so', () => {
     const none = commit.main([requestFile('a.txt\n\nfeat: x\n')], tmp('fankeel-commit-none-'));
     assert.equal(none.code, 1);
     assert.match(none.text, /^commit\.js: not inside a git repository/);
+});
+
+test('a path with nothing to commit says so in the words the brain is told to look for', () => {
     const dir = repo();
     assert.ok(!commit.main([requestFile('a.txt\n\nfeat: once\n')], dir).code);
     const before = git(dir, 'rev-parse', 'HEAD');
-    const again = commit.main([requestFile('a.txt\n\nfeat: twice\n')], dir);
-    assert.equal(again.code, 1);
-    assert.match(again.text, /^commit\.js: git commit failed/);
-    assert.doesNotMatch(again.text, /\n/, 'git prints several lines, and the controller relays exactly one');
+    assert.deepEqual(commit.main([requestFile('a.txt\n\nfeat: twice\n')], dir), { text: 'commit.js: nothing to commit in a.txt', code: 1 });
+    assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
+});
+
+test('a refusal from git reaches the controller as one bounded line, from add and from commit', () => {
+    const dir = repo();
+    const before = git(dir, 'rev-parse', 'HEAD');
+    fs.writeFileSync(path.join(dir, '.gitignore'), 'ignored.txt\n');
+    fs.writeFileSync(path.join(dir, 'ignored.txt'), 'x\n');
+    const add = commit.main([requestFile('ignored.txt\n\nfeat: x\n')], dir);
+    assert.equal(add.code, 1);
+    assert.match(add.text, /^commit\.js: git add failed: [^\n]+$/);
+    const hook = path.join(dir, '.git', 'hooks', 'pre-commit');
+    fs.writeFileSync(hook, '#!/bin/sh\necho first line\necho ' + 'x'.repeat(500) + '\nexit 1\n');
+    fs.chmodSync(hook, 0o755);
+    const refused = commit.main([requestFile('a.txt\n\nfeat: x\n')], dir);
+    assert.equal(refused.code, 1);
+    assert.match(refused.text, /^commit\.js: git commit failed: [^\n]*first line x+$/);
+    assert.ok(refused.text.length <= 'commit.js: git commit failed: '.length + 300, 'the line is bounded');
     assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
 });
 
@@ -123,6 +141,8 @@ test('the command line, started in a subdirectory, prints the range and exits 0,
 test('wrong arguments print a usage line, an unreadable file exits 1', () => {
     assert.equal(commit.main([]).code, 2);
     assert.equal(commit.main(['a', 'b']).code, 2);
-    assert.match(commit.main([]).text, /^usage: /);
-    assert.equal(commit.main([path.join(tmp('fankeel-commit-'), 'nope.md')]).code, 1);
+    assert.match(commit.main([]).text, /^commit\.js: usage: /);
+    const unreadable = commit.main([path.join(tmp('fankeel-commit-'), 'nope.md')]);
+    assert.equal(unreadable.code, 1);
+    assert.match(unreadable.text, /^commit\.js: cannot read /);
 });
