@@ -18,7 +18,7 @@ context，不是品質。
 - session 4f52fd18 用 Sonnet 5 主控：454 個主控 request（Sonnet 5 佔 439）、context 69k → 952k、63 個 subagent
   （`node scripts/ctx.js 4f52fd18-c00c-4ec9-a0aa-f752120abd0c` 印得出這幾個數）。
 - 逐站拆開是 design 站一次性的內嵌腳本算的，沒進 repo：build 258 turn、verify 125 turn，兩站佔主控重讀量
-  186.8M token 的 94%；59 次 subagent 回來各叫醒主控一個 turn（verify 27、build 22）。registry 記了 9 次站切換，
+  186.8M token 的 94%；454 個 request 裡 398 個接在主控自己的 tool result 後面、55 個接在 subagent 回報後面、1 個接在人的 prompt 後面（整個 session 只有 2 個人的 prompt）：主控的 turn 主體是它自己的 tool loop，不是被叫醒。registry 記了 9 次站切換，
   transcript 只配到 6 個 `task.js stage` 指令，plan、audit、land 的 turn 併在前一站的列裡。
 - 那個 session 只派了一個 `fankeel-brain`（survey）。裝機的 0.74.0 沒有 `STAGE_AGENTS`、`COMMIT_RULE`，也沒有
   `scripts/commit.js`；repo 是 0.75.0，三個都有。所以 build 與 verify 在那個 session 裡不受控，profile 寫了也沒有效果。
@@ -38,7 +38,7 @@ context，不是品質。
   每個 gate 當下的 context，加上每個 brain 自己的 context 序列。
 - 結果落成一份 dated report（`docs/reports/`），至少回答三件事：主控每個 task 的提交來回實際佔幾個 turn；build brain
   跑完整份 plan 有沒有超過 400k；stage 來回跳時，回頭那一站的 brain 冷啟動讀了多少。
-- 這個 task 不改任何程式。後面四節裡依賴這份數字的，各自寫明「等量測」。
+- 這個 task 只加量測工具、不改任何行為：`node scripts/ctx.js <session> --by-stage` 印出每站的主控 turn 數、被叫醒的 turn 數（接在 subagent 回報後面、中間沒有 tool result）、gate 數與 context。後面四節裡依賴這份數字的，各自寫明「等量測」。
 
 ## 2. handoff 按圈編號
 
@@ -83,14 +83,24 @@ context，不是品質。
 
 ## 檔案與派工
 
+分期（plan 關卡，2026-09-22，使用者決定）：先只做第一列，其餘等 §1 的量測。計畫在
+[2026-09-21-all-stages-brain.md](2026-09-21-all-stages-brain.md)，沒做的五個 task 在
+[2026-09-21-all-stages-brain-held.md](2026-09-21-all-stages-brain-held.md)。
+
 | file | change | dispatch |
 |---|---|---|
-| `lib/handoff.js` | 三個 path 函式加圈號 | implementer, sonnet |
-| `lib/render.js`、`hooks/brief.js` | `read first:`、`reads:` 的輸出規則、`artifact:` | implementer, sonnet |
-| `lib/stages.js` | design、plan 也帶 `COMMIT_RULE` | implementer, sonnet |
+| `scripts/ctx.js`、`tests/ctx.test.js` | §1 的量測工具：`--by-stage` | implementer, sonnet |
+| 量測的 dated report（§1） | 要真的開新終端機跑，不是 build 的產物 | in-session — subagent 開不了新終端機，量測由使用者開、這裡讀 ctx.js |
+
+等量測之後才做的，held 檔的 Task 2 到 6（開工前把下面這張表的表頭改回 `file`，再跑一次 `ledger.js lint`）：
+
+| held file | change | dispatch |
+|---|---|---|
+| `lib/handoff.js` | 三個 path 函式加圈號；`readsOf`、`previousHandoff` | implementer, sonnet |
+| `lib/render.js` | `read first:`、`reads:` 的輸出規則、`artifact:`、audit 與 land 的 implementer 規則；hook 那一側已把 root 與 record 交過來，不用動 | implementer, sonnet |
+| `lib/stages.js`、`agents/fankeel-brain.md` | design、plan 也帶 `COMMIT_RULE`；audit、land 進 `STAGE_AGENTS`；brain 能寫的那一個檔 | implementer, sonnet |
 | `tests/handoff.test.js`、`tests/brief.test.js`、`tests/stages.test.js` | 下面「完成的判準」的前三條 | implementer, sonnet |
-| `docs/reports/`（§1） | 量測的 dated report，要真的開新終端機跑 | in-session — subagent 開不了新終端機，量測由使用者開、這裡讀 ctx.js |
-| `docs/subagents.md`、`skills/fankeel-*/SKILL.md` 的那一句 | §5 | in-session — 一頁文字，一個指令查引用 |
+| `docs/subagents.md`、`skills/fankeel/SKILL.md`、`TODO.md` | §5 | in-session — 三頁文字，一個指令查引用 |
 
 ## 不做的
 
