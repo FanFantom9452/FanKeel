@@ -32,18 +32,20 @@ function asksAQuestion(entry) {
 
 // A dispatch's return reaches the main thread on a user line, not as a tool result:
 // `peer` for a hand-back, `task-notification` for a background agent or a workflow.
-const isWake = (entry) => Boolean(usage.notificationOf(entry) || (entry.origin && entry.origin.kind === 'peer'));
+const isWake = (entry) => usage.notificationOf(entry) || (entry.origin && entry.origin.kind === 'peer');
 
 // The main thread cut by stage, at the `task.js` commands the session itself ran. A
 // stage owns the requests after the command that entered it, up to and including the
 // request that runs the next one: that request still belongs to the stage it leaves.
 // Requests before the first command are `stage: null`. `woken` counts the requests that
 // followed a subagent's return with no tool result in between, which is what a dispatch
-// cost the main thread, as against the turns it spent on its own tool loop.
-function stageRows(entries, turn, contexts, commands) {
+// cost the main thread, as against the turns it spent on its own tool loop. `gates` is
+// `measure`'s list of turn numbers that asked a question, already one per request.
+// `taskCalls` gives a `stage` only for `start` and `stage`; `route` carries none.
+function stageRows(entries, turn, contexts, commands, gates) {
     const rows = [{ stage: null, from: 1 }];
     for (const c of commands) {
-        if ((c.verb === 'start' || c.verb === 'stage') && c.stage && Number.isFinite(c.turn)) rows.push({ stage: c.stage, from: c.turn + 1 });
+        if (c.stage && Number.isFinite(c.turn)) rows.push({ stage: c.stage, from: c.turn + 1 });
     }
     for (const r of rows) Object.assign(r, { turns: 0, woken: 0, gates: 0, first: null, last: 0, reread: 0 });
     const at = (t) => rows.reduce((found, r) => (r.from <= t ? r : found), rows[0]);
@@ -57,7 +59,6 @@ function stageRows(entries, turn, contexts, commands) {
     let seen = 0;
     let sawResult = false;
     let sawWake = false;
-    const asked = new Set();
     entries.forEach((entry, i) => {
         if (!entry || entry.isSidechain === true) return;
         if (entry.type === 'user') {
@@ -74,11 +75,8 @@ function stageRows(entries, turn, contexts, commands) {
             sawResult = false;
             sawWake = false;
         }
-        if (asksAQuestion(entry) && !asked.has(t)) {
-            asked.add(t);
-            at(t).gates++;
-        }
     });
+    for (const g of gates) at(g).gates++;
     return rows.filter((r) => r.turns > 0).map(({ from, ...row }) => row);
 }
 
@@ -95,7 +93,7 @@ function measure(file) {
     });
     const peak = contexts.reduce((a, b) => Math.max(a, b), 0);
     const agents = usage.agentsOf(file);
-    const stages = stageRows(entries, turn, contexts, detail.stageCommands(entries, turn));
+    const stages = stageRows(entries, turn, contexts, detail.stageCommands(entries, turn), gates);
     return {
         turns: contexts.length,
         perTurn: contexts,

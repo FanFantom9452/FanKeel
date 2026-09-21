@@ -133,8 +133,10 @@ test('a flag that does not exist is the usage line and code 2, not a stack trace
 
 // Seven requests with contexts 100..700. r2 runs `task.js start --route build,verify`; r5 runs `task.js stage verify`
 // with the script path quoted, the form a regex on `task.js stage` misses. r4 and r7 ask a question. Wake-ups:
-// t0 arrives with a tool result before r3 (so r3 was not woken), t1 is a peer hand-back before r5, t2 a
-// task-notification before r7.
+// t0 arrives with a tool result before r3 (so r3 was not woken), a peer hand-back comes before r5, and t2 is
+// a task-notification before r7. r6 is written on two lines, as a real response is, and t1 lands between
+// them: the second line is not a new request, so t1's wake carries on to r7 and verify has one woken turn.
+// Counting the second line as a request would give verify two.
 function staged(dir) {
     const file = path.join(dir, 'staged.jsonl');
     const bash = (id, command) => [{ type: 'tool_use', id, name: 'Bash', input: { command } }];
@@ -159,6 +161,8 @@ function staged(dir) {
         peer,
         assistant('s5', use(500), bash('b2', 'node "C:/p/scripts/task.js" stage verify --session s')),
         assistant('s6', use(600)),
+        notice('t1'),
+        assistant('s6', use(600), [{ type: 'text', text: 'done' }]),
         notice('t2'),
         assistant('s7', use(700), ask),
     ].join(''));
