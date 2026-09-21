@@ -1,12 +1,12 @@
 ---
-status: design-intent
+status: archived
 last_verified: 2026-09-21
 ---
 
 # 受控站推到 build／verify：先發版、再量、首頁快速設定
 
 這頁描述要做成的樣子，不是現在的樣子。它接在
-[2026-09-19-stage-agents-design.md](2026-09-19-stage-agents-design.md) 後面，只處理那頁「未決」
+[2026-09-19-stage-agents-design.md](../plans/2026-09-19-stage-agents-design.md) 後面，只處理那頁「未決」
 留下的第二條：build／verify 也交給站 agent，並且量主控 context 到底有沒有回收。
 
 **主控用 Sonnet 是前提，不是變數。** 品質由站 agent（Opus）負責，主控只轉路徑、問關卡，所以

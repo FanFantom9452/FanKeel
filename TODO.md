@@ -81,6 +81,8 @@ what gets scheduled.
 - 〔tests〕程式註解裡的 `path:line` 沒人驗，docs-check 只看 markdown：`fb2f734` 就有三條歪的，一在 [tests/station-hide.test.js](tests/station-hide.test.js)、二在 [tests/station-view.test.js](tests/station-view.test.js)，其一指到不存在的行。
 - 〔quota〕用 `quotaLimits` 的 13 筆被拒紀錄定錨 100%：取一次 `five_hour`、一次 `seven_day` 被拒的時刻，算該視窗到那一刻的花費，就不必再猜整數讀數的 ±0.5 — [scripts/spend.js](scripts/spend.js).
 - 〔registry〕session 記錄只存 guard，且只在偏離預設時才存；其餘 profile 值一律不存（182 筆都落在後者），換了設定有沒有比較好事後查不到；start 時抄一份 values 進去就夠 — [scripts/task.js](scripts/task.js).
+- 〔docs〕`registry.md` 的「寫入的檔案」表缺 `build/task-<時間>/` 的交接檔（`<stage>.md`、`-answer.md`、`-commit.md`）、`serve.json`、`station/detail/` 與 `station/cache/` — [docs/registry.md](docs/registry.md).
+- 〔docs〕`development.md` 與 land skill 的 `last_verified` 早於後來加的內容，重讀後再標；`tests/render.test.js` 與 `scripts/task.js` 兩處註解的 2397／2393 也過期 — [docs/development.md](docs/development.md).
 
 ## Needs a decision
 
@@ -93,6 +95,7 @@ what gets scheduled.
 - 〔registry〕`task.js task` 改名時清掉 `moves` 卻不蓋新戳記，開頭那站的邊界仍落在下一次 hook sighting。要補蓋得先定「忘掉 moves」是清空還是重新開始 — [scripts/task.js](scripts/task.js).
 - 〔quota〕要不要讓 TokenBar 把 5h／7d 讀數記成序列（另一個 repo）：兩次讀數已給出 5h 不是數未加權 token、$7.64–$8.50 一點，但 7d 的水位兩點仍差 4.7 倍，要第三點才分得出是延遲還是計別的 — [scripts/spend.js](scripts/spend.js).
 - 〔station〕首頁整頁要不要改成三欄的完整工作站、並把 profile 的逐列設計併進去：這一輪只做三張習慣預設卡與每鍵一句說明，逐列標記、清成 (ask)、stage.agents 七站 toggle 沒做；先要量整個首頁版面 — [assets/station/station.js](assets/station/station.js).
+- 〔docs〕`docs/README.md` 有六列標 *built* 但頁面 frontmatter 是 design-intent，另有一列相反：改標籤還是改 frontmatter，要一頁頁看 — [docs/README.md](docs/README.md).
 
 ## Waiting
 
