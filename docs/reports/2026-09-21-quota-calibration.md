@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-21
-source_of_truth: 四份輸出都由 `docs/reports/evidence/2026-09-21-quota-calibration/` 底下同名腳本產生，各自帶著產生它的那個 sha — `windows-at-43daef5.txt`（全機 427 份頂層 transcript 的逐分段表）在 `43daef5`；`basis-at-3784eb7.txt`（兩次捕捉的對照、下限論證與 `quotaLimits`）在 `3784eb7`；`drift-at-512710e.txt`（66 個 session 的重分配）與 `sonnet-at-512710e.txt`（Sonnet 主控那一趟）在 `512710e`。三個 sha 是三次審查之後的修改：basis 補上第二份 transcript，drift 與 sonnet 把「文件裡提到指令」與「指令真的跑過」分開。`windows.js` 自 `43daef5` 起一個位元都沒動。兩次 statusline 捕捉分別是 `evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt` 與 `evidence/2026-09-21-quota-calibration/quota-capture-260920T203515Z.txt`。費率表那次讀取的引文在 `pricing-read-260921.txt`。
+source_of_truth: 五份輸出都由 `docs/reports/evidence/2026-09-21-quota-calibration/` 底下同名腳本產生，各自帶著產生它的那個 sha — `windows-at-43daef5.txt`（全機 427 份頂層 transcript 的逐分段表）在 `43daef5`；`basis-at-3784eb7.txt`（兩次捕捉的對照、下限論證與 `quotaLimits`）在 `3784eb7`；`drift-at-512710e.txt`（66 個 session 的重分配）與 `sonnet-at-512710e.txt`（Sonnet 主控那一趟）在 `512710e`。三個 sha 是三次審查之後的修改：basis 補上第二份 transcript，drift 與 sonnet 把「文件裡提到指令」與「指令真的跑過」分開。`windows.js` 自 `43daef5` 起一個位元都沒動。兩次 statusline 捕捉分別是 `evidence/2026-09-21-long-task-projection/quota-capture-260920T163041Z.txt` 與 `evidence/2026-09-21-quota-calibration/quota-capture-260920T203515Z.txt`。費率表那次讀取的引文在 `pricing-read-260921.txt`。
 ---
 
 # 5h 與 7d 額度怎麼掛勾，與逐站帳的戳記偏移
@@ -177,7 +177,7 @@ block 4 是它的入口。
 
 ## 8. 怎麼自己重跑
 
-四支腳本都不改倉庫狀態——不碰 git、不碰 registry、不碰工作樹裡任何別人的檔；
+五支腳本都不改倉庫狀態——不碰 git、不碰 registry、不碰工作樹裡任何別人的檔；
 它們唯一寫的就是自己那份輸出，見下一段。路徑一律從 `__dirname` 往上解，transcript
 目錄走 `lib/live.js` 的 `liveConfigDir()`：
 
@@ -186,6 +186,7 @@ node docs/reports/evidence/2026-09-21-quota-calibration/windows.js
 node docs/reports/evidence/2026-09-21-quota-calibration/basis.js
 node docs/reports/evidence/2026-09-21-quota-calibration/drift.js
 node docs/reports/evidence/2026-09-21-quota-calibration/sonnet.js
+node docs/reports/evidence/2026-09-21-quota-calibration/roundings.js
 ```
 
 每一支把自己的輸出寫成 `<name>-at-<sha>.txt`，sha 取自跑的時候的 HEAD。**那個
@@ -226,15 +227,27 @@ done
 session，落地時量到 66 個，因為量測用的那個 session 自己又換了幾次站。這正是
 輸出要釘 sha 的理由，也是引用時要連 sha 一起引的理由。
 
-**上面的散文有捨入，輸出沒有。** 「1.59 億 token」是 `159,071,706`、「1,555 萬」是
-`15,550,552`、「差 1.5%／10.7%」是 `+1.48%`／`-10.69%`、「$11.85」是 `$11.8476`、
-逐站的 `$0.24`／`$2.99` 是 `$0.2396`／`$2.9856`。有疑問時以 `-at-*.txt` 為準。
-機械比對的結果，逐項算出來而不是估的：120 個數字，16 個不是逐字出現在輸出裡 ——
-5 個是 commit sha 的片段、8 個是上一段列的捨入、2 個是檔名裡的日期（`203515`、
-`260921`），剩下 1 個就是 §6 那個 1658，報告自己已經標明它不出自任何輸出。
+**上面的散文有捨入，輸出沒有。** 有疑問時以 `-at-*.txt` 為準。哪些數字不是逐字出現
+在輸出裡、每一個又是為什麼，由第五支腳本算：
 
-這個比對抓得到「不在輸出裡」，抓不到兩件事，兩件都真的發生過：**抄錯了輸出裡的哪
-一列** —— §3 的 request 數原本抄了 `7d-open..5h-open` 單獨一列的 16,536，而該處要
-的是它加上 `5h-open..A` 的 123；以及**把表裡的數字加錯** —— §7 那張表的第三列原本
-寫 5 筆，輸出裡是 6 筆，而同一段的散文寫著 13 筆，1+6+5 湊不出 13。兩個都是審查
-抓的，不是這個比對抓的。
+```
+node docs/reports/evidence/2026-09-21-quota-calibration/roundings.js
+```
+
+它把它們分成四類：**commit sha 的片段**、**捨入**（`1.59 億` 對 `159,071,706`、
+`$2.51` 對 `$2.5105`、`29.8` 對 `29.833` 這種）、**檔名裡的日期**，以及**報告自己
+標明不出自輸出的**（§6 那個 1658）。此外 §3 那兩個數字是兩列相加，加式就寫在那一段裡。
+
+**這一段刻意不寫總數。** 寫進來的任何一個總數，自己就變成那支腳本要數的下一個數字，
+於是每次校正都會讓它再錯一次 —— 這正是這一頁犯過兩次的毛病：§7 那張表寫 5 筆而輸出
+是 6 筆，同段散文卻寫 13 筆；這一段的前一版列了 7 個捨入卻宣稱 8 個。所以類別寫在這裡，
+數目留在腳本的輸出裡。
+
+那支腳本自己也錯過兩次，兩次都值得記著。第一版用 `String.includes` 比對，而捨入正好
+是「短的是長的前綴」，所以 `6.98` 在 `6.9784` 裡被判定為找到了 —— 它對自己要找的那
+一類是全盲的。改成整詞比對（前後不能是數字、逗號或小數點）才看得見。第二版的分類是
+算術套在猜上面。
+
+**它抓不到的，說清楚：**抄自輸出裡**錯的那一列**，數字是逐字的，所以會過。§3 的
+request 數原本抄了 `7d-open..5h-open` 單獨一列的 16,536，而該處要的是它加上
+`5h-open..A` 的 123。那一次和 §7 加錯那一次，都是人讀出來的，不是這支腳本。
