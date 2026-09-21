@@ -448,10 +448,12 @@ test('a design and a plan brain may write one file under docs/plans/ and commit 
   };
   const design = brief('design');
   assert.match(design, /artifact: besides your report you may Write one file, docs\/plans\/<date>-<topic>-design\.md, and only where the design skill calls for a spec/);
+  assert.match(design, /\(the architectural class\)\. Put its path on the report's `spec:` line\./);
   assert.match(design, /You cannot commit: `git commit` and `git add` are refused to you\. When that file is written, write [^\n]*design-commit\.md/);
   assert.ok(design.length < 10000, 'design brief is ' + design.length + ' chars');
   const plan = brief('plan');
-  assert.match(plan, /artifact: besides your report you may Write one file, docs\/plans\/<date>-<topic>\.md\. Put its path/);
+  assert.match(plan, /artifact: besides your report you may Write one file, docs\/plans\/<date>-<topic>\.md\. Its path is the first line of your report\./);
+  assert.doesNotMatch(plan, /Put its path on the report's/);
   assert.match(plan, /write [^\n]*plan-commit\.md/);
   assert.ok(plan.length < 10000, 'plan brief is ' + plan.length + ' chars');
   for (const stage of ['survey', 'build', 'verify']) assert.doesNotMatch(brief(stage), /artifact: besides your report/, stage);
