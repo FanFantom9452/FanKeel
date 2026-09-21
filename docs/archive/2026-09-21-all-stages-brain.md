@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: archived
 last_verified: 2026-09-22
 ---
 
@@ -8,8 +8,8 @@ last_verified: 2026-09-22
 **Goal:** `scripts/ctx.js --by-stage` says where a controlled session's main-thread turns go, stage by stage: turns, how many followed a subagent's return, gates, context. It is the first of the design's six tasks and the only one built now: the user chose at the plan gate (2026-09-22) to measure before changing anything else.
 **Architecture:** `scripts/ctx.js` reads the `task.js` commands the session ran with `detail.stageCommands`, cuts `usage.turnIndex`'s turns at them, and counts wake-ups from `usage.notificationOf` and the `peer` origin. No new file, no new dependency, no change to `lib/`, `hooks/` or any behaviour.
 **Tech Stack:** Node, zero dependencies (`package.json` has no `dependencies` or `devDependencies`), `node --test`.
-**Spec:** [2026-09-21-all-stages-brain-design.md](2026-09-21-all-stages-brain-design.md)
-**Held:** [2026-09-21-all-stages-brain-held.md](2026-09-21-all-stages-brain-held.md) — Tasks 2 to 6 of the design, reviewed and not built. They wait for a real controlled run read with this task's flag; the report that run makes may reorder or drop them.
+**Spec:** [2026-09-21-all-stages-brain-design.md](../plans/2026-09-21-all-stages-brain-design.md)
+**Held:** [2026-09-21-all-stages-brain-held.md](../plans/2026-09-21-all-stages-brain-held.md) — Tasks 2 to 6 of the design, reviewed and not built. They wait for a real controlled run read with this task's flag; the report that run makes may reorder or drop them.
 **At land:** archive this plan only. The spec and the held file stay in `docs/plans/`: the held tasks still cite the spec.
 
 ## Global Constraints

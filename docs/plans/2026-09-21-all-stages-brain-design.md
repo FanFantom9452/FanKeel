@@ -1,6 +1,6 @@
 ---
 status: design-intent
-last_verified: 2026-09-21
+last_verified: 2026-09-22
 ---
 
 # 全部 stage 交給 brain：讀取清單由上一站寫、圈號檔名、先量再改
@@ -98,7 +98,7 @@ context，不是品質。
 ## 檔案與派工
 
 分期（plan 關卡，2026-09-22，使用者決定）：先只做第一列，其餘等 §1 的量測。計畫在
-[2026-09-21-all-stages-brain.md](2026-09-21-all-stages-brain.md)，沒做的五個 task 在
+[2026-09-21-all-stages-brain.md](../archive/2026-09-21-all-stages-brain.md)，沒做的五個 task 在
 [2026-09-21-all-stages-brain-held.md](2026-09-21-all-stages-brain-held.md)。
 
 | file | change | dispatch |

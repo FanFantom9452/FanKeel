@@ -5,7 +5,7 @@ last_verified: 2026-09-22
 
 # All-stages brain: held tasks 2 to 6
 
-**Held, not built.** These five tasks are the rest of [the plan](2026-09-21-all-stages-brain.md). They were cut off at its gate (2026-09-22), where the user chose to build only that plan's Task 1, `ctx.js --by-stage`, and measure before anything else. A `fankeel-reviewer` read them against the spec once and its four gaps were fixed; nothing here has run. Read them again against the measurement report before building any of them: a report that shows the controller's commit round trip too dear moves `COMMIT_RULE` (Task 4), and one that shows a build brain past 400k moves the ledger relay the spec leaves out.
+**Held, not built.** These five tasks are the rest of [the plan](../archive/2026-09-21-all-stages-brain.md). They were cut off at its gate (2026-09-22), where the user chose to build only that plan's Task 1, `ctx.js --by-stage`, and measure before anything else. A `fankeel-reviewer` read them against the spec once and its four gaps were fixed; nothing here has run. Read them again against the measurement report before building any of them: a report that shows the controller's commit round trip too dear moves `COMMIT_RULE` (Task 4), and one that shows a build brain past 400k moves the ledger relay the spec leaves out.
 
 **Task numbers stay as they were** (2 to 6), so a `Task 2` written inside a task below is the task of this file, and Task 1 is the one already built.
 
