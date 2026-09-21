@@ -13,16 +13,20 @@ last_verified: 2026-09-21
 **主控用 Sonnet 是前提。** 主控只轉手路徑、問關卡；讀內容與判斷在 brain。所以這個任務量的是主控的 turn 數與
 context，不是品質。
 
-## 現況（design 站讀過的）
+## 現況（design 站讀過的；第二條的逐站數字是 build 站之後用 --by-stage 重算的）
 
 - session 4f52fd18 用 Sonnet 5 主控：454 個主控 request（Sonnet 5 佔 439）、context 69k → 952k、63 個 subagent
   （`node scripts/ctx.js 4f52fd18-c00c-4ec9-a0aa-f752120abd0c` 印得出這幾個數）。
 - 逐站拆開現在由 `node scripts/ctx.js 4f52fd18-c00c-4ec9-a0aa-f752120abd0c --by-stage` 印出，和 registry 記的 9 次站切換
-  （survey、design、plan、build、verify、build、verify、audit、land）逐站對得上：build 232＋26＝258 turn、verify 62＋11＝73、
+  （survey、design、plan、build、verify、build、verify、audit、land）站名與順序對得上（每次切換落在哪個 turn 沒有另外核對）：
+  build 232＋26＝258 turn、verify 62＋11＝73、
   audit 33、land 19；主控重讀量 186.8M token 裡 build 加 verify 佔 129.5M（69%），audit 與 land 佔 45.3M。design 站當時一次性的
-  內嵌腳本只配到 6 個 `task.js stage` 指令，把 plan、audit、land 的 turn 併進前一站，才算出「verify 125 turn、兩站佔 94%」；
-  那組數字已被這一條取代。454 個 request 裡 398 個接在主控自己的 tool result 後面、55 個只接在 subagent 回報後面（前面沒有 tool result）、
-  1 個接在人的 prompt 後面（整個 session 只有 2 個人的 prompt）：主控的 turn 主體是它自己的 tool loop，不是被叫醒。
+  內嵌腳本（不在 repo，它說的「6 個 `task.js stage` 指令」沒有重算過）把 plan、audit、land 的 turn 併進前一站，
+  才算出「verify 125 turn、兩站佔 94%」；那組數字已被這一條取代。
+  454 個 request 裡 398 個自上一個 request 以來有 tool result、55 個有 subagent 回報而沒有 tool result
+  （`--by-stage` 的 woken 就是這 55 個；其中 1 個同時接在第二個人的 prompt 後面）、1 個兩者都沒有
+  （接在第一個人的 prompt 後面；整個 session 只有 2 個人的 prompt）：主控的 turn 主體是它自己的 tool loop，不是被叫醒。
+  398 與 1 不是 `--by-stage` 印的（它只印 woken 的 55），是 design 站與 verify 站各用一次性腳本數的，repo 裡沒有重現它們的指令。
 - 那個 session 只派了一個 `fankeel-brain`（survey）。裝機的 0.74.0 沒有 `STAGE_AGENTS`、`COMMIT_RULE`，也沒有
   `scripts/commit.js`；repo 是 0.75.0，三個都有。所以 build 與 verify 在那個 session 裡不受控，profile 寫了也沒有效果。
   它是「沒拆」的基線，不是「拆了還是堆」的證據。
@@ -41,7 +45,7 @@ context，不是品質。
   每個 gate 當下的 context，加上每個 brain 自己的 context 序列。
 - 結果落成一份 dated report（`docs/reports/`），至少回答三件事：主控每個 task 的提交來回實際佔幾個 turn；build brain
   跑完整份 plan 有沒有超過 400k；stage 來回跳時，回頭那一站的 brain 冷啟動讀了多少。
-- 這個 task 只加量測工具、不改任何行為：`node scripts/ctx.js <session> --by-stage` 印出每站的主控 turn 數、被叫醒的 turn 數（只被 subagent 回報叫醒：自上一個 request 以來收到回報、且沒有 tool result，回報之前或之後都算）、gate 數與 context。後面四節裡依賴這份數字的，各自寫明「等量測」。
+- 這個 task 只加量測工具、不改任何行為：`node scripts/ctx.js <session> --by-stage` 印出每站的主控 turn 數、被叫醒的 turn 數（自上一個 request 以來收到 subagent 回報、且沒有收到任何 tool result 的 request；人的 prompt 不影響這個判斷）、gate 數與 context。後面四節裡依賴這份數字的，各自寫明「等量測」。
 
 ## 2. handoff 按圈編號
 
