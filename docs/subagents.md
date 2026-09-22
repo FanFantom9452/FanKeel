@@ -608,8 +608,9 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   (they go to an implementer) and questions (they go in the gate at the end); consent
   at the start, a worktree, a `TODO.md` line and a resumed implementer are not covered.
 - **A second agent.** Every user prompt re-injects the controller's "dispatch one
-  agent" line. `hooks/brief.js` now writes `inflight` — `{ stage, at, agentId }` —
-  on the session's record when a `fankeel-brain` starts, and while it names the
+  agent" line. `hooks/brief.js` now writes `inflight` — `{ stage, at, agentId? }`
+  ([registry.md](registry.md) has the field) — on the session's record when a
+  `fankeel-brain` starts, and while it names the
   current stage the controller's block carries one line before the dispatch line:
   that agent is already running, SendMessage it, and dispatch another only if
   SendMessage says it is gone (`controlFor` in `lib/stages.js`). `hooks/gate.js`
