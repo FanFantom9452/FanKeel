@@ -75,19 +75,13 @@ what gets scheduled.
 
 ## Ready
 
-- 〔stage-agents〕`ctx.js` 讀 agent 檔還有兩個小尾巴未收：`isAgentFile` 未簡化、`woken` 的 fixture 未釘住 — [scripts/ctx.js](scripts/ctx.js).
+- 〔station〕首頁照已核可的 mockup 改成左側功能列＋七步設定精靈（按鈕切換、無下拉、含 `design.skill`）；版面與 mockup 路徑見 `docs/plans/2026-09-23-todo-ten-design.md` §7 — [assets/station/station.js](assets/station/station.js).
 
 ## Needs a decision
 
-- 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；Gemini CLI `BeforeAgent`、Codex CLI `UserPromptSubmit` 也能回 `additionalContext` — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
-- 〔stage-agents〕受控站還有三缺口：design 跨輪對話、station 第二層平鋪、插話沒人接；build 每個 task 的提交要經 controller 兩回合，省不省 context 待 ctx.js 實跑 A/B — [lib/stages.js](lib/stages.js).
-- 〔agents〕要不要一個專審前端是否符合期待的 agent：這次 `依版本` 整片灰是把頁面 render 出來才抓到的，unit test 全綠；順帶評估 Jev 這類小判斷模型當篩子 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
-- 〔station〕`--detach` 的 serve 在啟動時就把 `lib/station.js` 讀進記憶體：改完程式它照樣產生新資料、用舊程式，外觀完全正常。要不要讓它自己察覺 — [lib/serve.js](lib/serve.js).
-- 〔docs〕寫成 `path:行-行` 的引用不帶引文，docs-check 只列不驗：一條這樣歪了四個 commit 沒人發現。剩三條要改寫，還是讓 docs-check 把範圍本身當缺陷 — [scripts/docs-check.js](scripts/docs-check.js).
-- 〔registry〕`task.js task` 改名時清掉 `moves` 卻不蓋新戳記，開頭那站的邊界仍落在下一次 hook sighting。要補蓋得先定「忘掉 moves」是清空還是重新開始 — [scripts/task.js](scripts/task.js).
-- 〔quota〕要不要讓 TokenBar 把 5h／7d 讀數記成序列（另一個 repo）：兩次讀數已給出 5h 不是數未加權 token、$7.64–$8.50 一點，但 7d 的水位兩點仍差 4.7 倍，要第三點才分得出是延遲還是計別的 — [scripts/spend.js](scripts/spend.js).
-- 〔station〕首頁整頁要不要改成三欄的完整工作站、並把 profile 的逐列設計併進去：這一輪只做三張習慣預設卡與每鍵一句說明，逐列標記、清成 (ask)、stage.agents 七站 toggle 沒做；先要量整個首頁版面 — [assets/station/station.js](assets/station/station.js).
-- 〔docs〕`docs/README.md` 有六列標 *built* 但頁面 frontmatter 是 design-intent，另有一列相反：改標籤還是改 frontmatter，要一頁頁看 — [docs/README.md](docs/README.md).
+- 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過；session 記錄已存 `stage.agents`（6fb1b3a），缺的是一次真實的量測 — [lib/render.js](lib/render.js).
+- 〔docs〕計畫封存時 `status` 沒從 `design-intent` 翻成 `current`（2026-09-23 抓到六頁），封存後 docs-audit 不再看它：改 land 的封存步驟，還是讓 docs-audit 也看 archive 的 `status` — [scripts/docs-audit.js](scripts/docs-audit.js).
+- 〔agents〕「Jev 這類小判斷模型當篩子」：repo 裡查不到 Jev 指什麼，要先說清楚是哪個模型，才能評估它當 render 前的篩子 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 
 ## Waiting
 
@@ -151,11 +145,6 @@ lifts when: `a claim whose process is gone does not block` 在整套裡再紅一
 
 - 〔tests〕09-19 在 39efee9 整套紅過一次（1563/1564，已死的 pid 被當 live 而 deny），同樹重跑 1564/0、單跑 5/5 綠；疑 `deadPid()` 的 pid 在並行時被重用，未證實 — [tests/guard.test.js](tests/guard.test.js).
 
-### 受控站開到 build
-lifts when: 上面 ## Ready 那條〔registry〕落地，session 記錄開始存 stage.agents，這件事才有人查得到. 09-21.
-
-- 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過 — [lib/render.js](lib/render.js).
-
 ### brain 的 context 撐不住
 lifts when: `scripts/ctx.js` 量到 build 或 verify 的站 agent 自己的 context 過 400k（`lib/context.js` 的線）. 09-21.
 
@@ -165,6 +154,7 @@ lifts when: `scripts/ctx.js` 量到 build 或 verify 的站 agent 自己的 cont
 lifts when: main 已 push（08c4ecf 起），新 terminal 更新插件到 0.76.0 以後，並跑過一次 stage.agents=all 的真實 task. 09-22.
 
 - 〔stage-agents〕安裝版還沒這次改動、本 session 的 hook 也釘死在 0.74.0，兩者都量不了：新 terminal 更新插件、`stage.agents` 設 all、跑一個真實 task，用 `ctx.js --by-stage` 與 `modelUsage` 讀 — [docs/subagents.md](docs/subagents.md).
+- 〔stage-agents〕design 站跨輪對話已寫（`lib/stages.js` 的 `controlFor`）但沒實跑；build 每個 task 的提交要經 controller 兩回合，省不省 context 由同一次實跑的 `ctx.js --by-stage` 讀 — [lib/stages.js](lib/stages.js).
 
 ### 放行規則有沒有效
 lifts when: 放行規則存在下 no verdict 再發生一次. 09-22.
@@ -175,3 +165,13 @@ lifts when: 放行規則存在下 no verdict 再發生一次. 09-22.
 lifts when: 十來個接縫（缺 AskUserQuestion/Edit、插話起第二個 brain、profile 翻轉、accounting、claims、commit 位置）任一個被觀察到. 09-22.
 
 - 〔stage-agents〕受控 build／verify 還有十來個接縫沒實跑過：stage agent 沒有 AskUserQuestion／Edit、插話會起第二個、profile 中途翻轉 — [docs/subagents.md](docs/subagents.md).
+
+### 第二個平台的使用者
+lifts when: 出現第二個 host（Gemini CLI、Codex CLI 等）的使用者或 issue. 09-23.
+
+- 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；hook 對等只查過 Gemini CLI `BeforeAgent` 與 Codex CLI `UserPromptSubmit` 兩個 — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
+
+### 序列累積到第三點
+lifts when: TokenBar 的 `tokenbar-usage.jsonl` 累積到跨過一次 7d reset 的讀數. 09-23.
+
+- 〔quota〕7d 水位兩點差 4.7 倍，是延遲還是計別的：TokenBar 每次 render 已把 5h／7d 讀數 append 到 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`（TokenBar 的 `statusline.ps1`／`.sh`），拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
