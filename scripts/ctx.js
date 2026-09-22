@@ -69,7 +69,6 @@ function stageRows(entries, turn, contexts, commands, gates) {
             return;
         }
         const t = turn(i);
-        if (t === null) return;
         if (t > seen) {
             seen = t;
             if (sawWake && !sawResult) at(t).woken++;
@@ -93,7 +92,8 @@ const isAgentFile = (entries) => {
 };
 
 // An agent file is measured as that agent's own main thread: `summarise` is told to count sidechain lines,
-// and each line is copied with `isSidechain` false so `turnIndex`, `stageRows` and the gate scan, which skip
+// and only the lines whose `isSidechain` is already `true` are rewritten to `false`; the rest of an agent
+// file's lines pass through unchanged, so `turnIndex`, `stageRows` and the gate scan, which skip
 // sidechain lines, need no change. Its `stages` are normally the one `stage: null` row, an agent running no
 // `task.js`.
 function measure(file) {

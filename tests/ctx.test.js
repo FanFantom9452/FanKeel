@@ -249,6 +249,26 @@ test('a session file that mixes a few sidechain requests with its main ones coun
     assert.deepEqual(m.stages, [{ stage: null, turns: 3, woken: 0, gates: 1, first: 1510, last: 2130, reread: 6660 }]);
 });
 
+// stageRows skips a sidechain line outright (ctx.js:64), before it can touch sawResult/sawWake: a sidechain
+// tool_result sitting between a wake and the next main request must not be read as the main thread's own
+// tool result, which would wrongly swallow the woken count that belongs to the main thread.
+test('stageRows skips a sidechain line, so a sidechain tool result does not swallow a woken turn', () => {
+    const dir = tmp('fankeel-ctx-');
+    const at = '2026-09-21T00:00:00.000Z';
+    const use = (context) => ({ input_tokens: context, output_tokens: 1 });
+    const notice = line({
+        type: 'user', origin: { kind: 'task-notification' }, timestamp: at,
+        message: { content: '<task-notification><tool-use-id>x2</tool-use-id></task-notification>' },
+    });
+    const sideResult = line({
+        type: 'user', isSidechain: true, timestamp: at,
+        message: { content: [{ type: 'tool_result', tool_use_id: 'sub1', content: 'ok' }] },
+    });
+    const file = path.join(dir, 'mixed-wake.jsonl');
+    fs.writeFileSync(file, [assistant('m1', use(100)), notice, sideResult, assistant('m2', use(200))].join(''));
+    assert.deepEqual(ctx.measure(file).stages.map((r) => r.woken), [1]);
+});
+
 // A request is woken when a subagent's return arrived since the previous request and no tool result did, before
 // or after that return. Here the result comes first, then the return, then the request: the result would have led
 // to that request anyway, so it is not woken. The same session with the result removed is woken.
