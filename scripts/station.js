@@ -431,6 +431,7 @@ async function serve(opts) {
             res.writeHead(200, {
                 'content-type': name.endsWith('.css')
                     ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8',
+                'cache-control': 'no-store',
             });
             res.end(body);
             return;

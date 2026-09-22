@@ -75,7 +75,6 @@ what gets scheduled.
 
 ## Ready
 
-- 〔station〕`serve` 送 `/station/station.js` 與 `.css` 時不帶 `cache-control`，而同一支裡 `/`、`station-data.js`、detail 三條都帶 `no-store`：升版後瀏覽器可能跑舊的用戶端腳本 — [scripts/station.js](scripts/station.js).
 - 〔station〕首頁圖例在 `依版本` 下不收攏：`colorOf` 把第七個以後的版本全給 `--p-5`，而 `legendHtml` 只為 `project` 印「其他 N 個」，所以八個版本會有三個同色的圖例項與三段分不開的堆疊 — [assets/station/station.js](assets/station/station.js).
 - 〔tests〕程式註解裡的 `path:line` 沒人驗，docs-check 只看 markdown：`fb2f734` 就有三條歪的，一在 [tests/station-hide.test.js](tests/station-hide.test.js)、二在 [tests/station-view.test.js](tests/station-view.test.js)，其一指到不存在的行。
 - 〔quota〕用 `quotaLimits` 的 13 筆被拒紀錄定錨 100%：取一次 `five_hour`、一次 `seven_day` 被拒的時刻，算該視窗到那一刻的花費，就不必再猜整數讀數的 ±0.5 — [scripts/spend.js](scripts/spend.js).

@@ -151,7 +151,9 @@ test('serve answers the shell and its three siblings', async () => {
         assert.match(data.text, /"serve":true/);
 
         assert.equal((await request(s.url + 'station/station.css', { method: 'GET' })).status, 200);
+        assert.equal((await request(s.url + 'station/station.css', { method: 'GET' })).headers['cache-control'], 'no-store');
         assert.equal((await request(s.url + 'station/station.js', { method: 'GET' })).status, 200);
+        assert.equal((await request(s.url + 'station/station.js', { method: 'GET' })).headers['cache-control'], 'no-store');
         assert.equal((await request(s.url + 'nothing', { method: 'GET' })).status, 404);
     } finally {
         s.close();
