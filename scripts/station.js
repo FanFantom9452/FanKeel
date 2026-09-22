@@ -561,7 +561,10 @@ async function serve(opts) {
                     return;
                 }
             }
-            res.writeHead(303, { location: '/' });
+            // The wizard posts from #/settings and wants to land there again;
+            // anything but a bare page hash is ignored rather than followed.
+            const back = String(form.get('back') || '');
+            res.writeHead(303, { location: '/' + (/^#\/[a-z]*$/.test(back) ? back : '') });
             res.end();
             return;
         }

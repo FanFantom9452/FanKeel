@@ -466,6 +466,28 @@ test('POST /profile writes a project key, refuses a bad nonce, a bad key, and an
     }
 });
 
+test('POST /profile goes back to the hash it was sent from, and only to a hash', async () => {
+    const f = fixture();
+    const { serve } = require('../scripts/station.js');
+    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
+    try {
+        const data = await request(s.url + 'station/station-data.js', { method: 'GET' });
+        const nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
+        const form = (o) => new URLSearchParams(o).toString();
+        const post = (body) => request(s.url + 'profile', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' } }, body);
+        const back = await post(form({ scope: 'project', project: f.r1, key: 'land.push', value: 'false', nonce, back: '#/settings' }));
+        assert.equal(back.status, 303);
+        assert.equal(back.headers.location, '/#/settings');
+        const away = await post(form({ scope: 'project', project: f.r1, key: 'land.push', value: 'true', nonce, back: 'https://example.com/' }));
+        assert.equal(away.status, 303);
+        assert.equal(away.headers.location, '/', 'a back that is not a hash on this page is ignored');
+        const none = await post(form({ scope: 'project', project: f.r1, key: 'land.push', value: 'false', nonce }));
+        assert.equal(none.headers.location, '/');
+    } finally {
+        s.close();
+    }
+});
+
 // --- the seven refusals no test reached ---
 
 // On 2026-09-14 the seven replies `scripts/station.js` had just moved onto
