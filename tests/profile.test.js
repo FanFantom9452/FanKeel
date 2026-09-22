@@ -149,7 +149,13 @@ test('mockupClause reads as the rule did before design.skill existed, unset; nam
     assert.equal(profile.mockupClause({}),
         'under `.fankeel/build/`, path on `spec:` — the gate approves the page, not the paragraph.');
     assert.equal(profile.mockupClause({ 'design.skill': 'impeccable:impeccable' }),
-        'naming `impeccable:impeccable`, path on `spec:` — the gate approves the page.');
+        'naming `impeccable:impeccable`, under `.fankeel/build/`, path on `spec:`.');
+});
+
+test('mockupClause set branch still carries the build path and names the skill', () => {
+    const set = profile.mockupClause({ 'design.skill': 'impeccable:impeccable' });
+    assert.match(set, /`\.fankeel\/build\/`/, 'the set branch dropped the output location the unset branch keeps');
+    assert.match(set, /impeccable:impeccable/, 'the set branch must still name the picked skill');
 });
 
 test('class.default is a class name, and stays out of summary', () => {

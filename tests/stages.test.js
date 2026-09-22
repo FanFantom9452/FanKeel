@@ -753,9 +753,8 @@ test('the mockup rule names the profile-picked skill, and reads as today unset',
 
   const on = { 'design.mockup': 'opus', 'design.skill': 'taste-skill:taste-skill' };
   const onRule = rulesFor('design', { designMockupClause: mockupClause(on) }, on).join('\n');
-  assert.match(onRule, /naming `taste-skill:taste-skill`, path on `spec:` — the gate approves the page\./,
-    'design.skill set must name the picked skill in the mockup rule');
-  assert.doesNotMatch(onRule, /under `\.fankeel\/build\/`/, 'the two branches must not both appear at once');
+  assert.match(onRule, /naming `taste-skill:taste-skill`, under `\.fankeel\/build\/`, path on `spec:`\./,
+    'design.skill set must name the picked skill and still carry the build path in the mockup rule');
 });
 
 // The template is not filtered by `when`, so a slot added there is paid for by
