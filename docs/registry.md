@@ -28,7 +28,7 @@ workspace/                     <- Claude Code opened here
 
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `start` and `adopt` for `version`, the plugin's own `package.json` version at the moment either ran — `task` (the rename) leaves it, and an entry written before this field existed reads as unknown rather than being backfilled; `start` for `guard`, read from the effective profile whenever it is not the builtin default `ask` — a `guard` set later by hand overwrites it the same way any other write does; `start` for `profile`, a snapshot of every other `lib/profile.js` `KEYS` value whose source is not `builtin`, taken the same way and keyed by profile key — absent entirely when every other key is still at its builtin default; `task.js stage`, `task.js start` and `task.js task` for `clock` and `moves`, stamped at the command that made the change; `inject.js` / `resume.js` for `updated`, and for `clock` and `moves` where no command preceded them — an answered gate alone, now that a rename stamps its own opening entry rather than leaving one for the next sighting; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `leave.js` for `ended`, `model`, `usage`, `spend` and `gates`, once, at `SessionEnd`; `task.js land` for `land`, once per invocation — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `start` and `adopt` for `version`, the plugin's own `package.json` version at the moment either ran — `task` (the rename) leaves it, and an entry written before this field existed reads as unknown rather than being backfilled; `start` for `guard`, read from the effective profile whenever it is not the builtin default `ask` — a `guard` set later by hand overwrites it the same way any other write does; `start` for `profile`, a snapshot of every other `lib/profile.js` `KEYS` value whose source is not `builtin`, taken the same way and keyed by profile key — absent entirely when every other key is still at its builtin default; `task.js stage`, `task.js start` and `task.js task` for `clock` and `moves`, stamped at the command that made the change; `inject.js` / `resume.js` for `updated`, and for `clock` and `moves` where no command preceded them — an answered gate alone, now that a rename stamps its own opening entry rather than leaving one for the next sighting; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `brief.js` for `inflight`, which `gate.js` deletes; `leave.js` for `ended`, `model`, `usage`, `spend` and `gates`, once, at `SessionEnd`; `task.js land` for `land`, once per invocation — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | `lib/registry.js:221` creates it holding `sessions/` alone; `registry.ensureIgnored` appends what is missing — `scripts/map.js:39` asks for `sessions/`, `build/` and `map.md` on every map run, `lib/station.js` for `index.html` and `station/` on every write of the copy — two names that cover the four files it emits, rather than the `EMITTED` list itself, because a directory is one line where four paths under it would be four |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
@@ -216,9 +216,17 @@ tool call has not finished responding — this pipeline's gate is a tool call, s
 `Stop` never fires at one. It would have measured the typing gap between two
 turns and missed the wait this pipeline actually accumulates.
 
-`gateAt` is the one transient field here. A `gateAt` nothing consumes — the
+`gateAt` is one of two transient fields here. A `gateAt` nothing consumes — the
 session dies at a gate — is overwritten by the next one rather than repaired:
 the interval it measured has no end, so there is nothing to recover.
+
+`inflight` — `{ stage, at, agentId? }` — is the other transient field, and not a
+cost. `hooks/brief.js` writes it through `registry.markInflight` when a
+`fankeel-brain` starts; `hooks/gate.js` deletes it through `registry.clearInflight`
+once that stage's handoff carries a gate; `controlFor` in `lib/stages.js` reads it
+and, while it names the current stage, tells the controller to SendMessage that
+agent rather than dispatch another. `adopt` builds a fresh record and does not
+carry it. [subagents.md](subagents.md) has the two cases it does not cover.
 
 None of the three reaches the injected block, which is capped at 2400 characters
 and renders its widest stages, `design` and `land`, at 2396 — `node --test tests/render.test.js` prints the

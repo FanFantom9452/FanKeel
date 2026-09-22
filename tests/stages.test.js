@@ -936,3 +936,17 @@ test('audit may dispatch a fixer and an implementer, land only an implementer', 
   assert.equal(agentsFor('land').includes('fankeel:fankeel-fixer'), false);
   assert.ok(agentsFor('land').some((a) => a.startsWith('an implementer')));
 });
+
+// An interjection mid-stage re-injects the controller's block; with a stage
+// agent in flight for this stage, the block says to SendMessage it first.
+test('an in-flight mark for the stage says to SendMessage the running agent; one for another stage, or none, says nothing', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const values = { 'stage.agents': ['survey', 'build'] };
+  const line = (c) => c.rules.find((r) => r.includes('already running'));
+  const on = controlFor('build', values, {}, { stage: 'build', at: 1, agentId: 'a3f9c2' });
+  assert.equal(line(on), 'A build stage agent is already running (`a3f9c2`): SendMessage it the user\'s new line and wait for it. Do not dispatch another unless SendMessage says it is gone.');
+  assert.ok(on.rules.indexOf(line(on)) < on.rules.findIndex((r) => r.startsWith('Dispatch one Agent')), 'the line comes before the dispatch line');
+  assert.equal(line(controlFor('build', values, {}, { stage: 'survey', at: 1, agentId: 'a3f9c2' })), undefined);
+  assert.equal(line(controlFor('build', values, {})), undefined);
+  assert.match(line(controlFor('survey', values, {}, { stage: 'survey', at: 1 })), /^A survey stage agent is already running: SendMessage/);
+});

@@ -154,3 +154,15 @@ test('stage.agents at survey: the answer is written beside the handoff', () => {
   const file = path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'survey-answer.md');
   assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { answers: { 'q?': '暫停' } });
 });
+
+test('stage.agents at survey: the gate arriving clears the in-flight mark; with no gate on disk the mark stays', () => {
+  const mark = { stage: 'survey', at: 1758000000000, agentId: 'a3f9c2' };
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-'), inflight: mark });
+  agentsOn(root);
+  run(GATE, root, { tool_input: PLACEHOLDER });
+  assert.deepEqual(readEntry(root, MINE).inflight, mark, 'no handoff yet: still in flight');
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  run(GATE, root, { tool_input: PLACEHOLDER });
+  assert.equal(readEntry(root, MINE).inflight, undefined);
+});

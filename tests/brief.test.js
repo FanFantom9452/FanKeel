@@ -544,3 +544,17 @@ test('an audit brain sends page corrections to the fixer, a land brain sends mov
   assert.ok(land.length < 10000, 'land brief is ' + land.length + ' chars');
   for (const stage of ['survey', 'build']) assert.doesNotMatch(briefFor(stage), /You cannot edit a page or run a git write/, stage);
 });
+
+test('a stage agent starting marks its stage in flight on the parent\'s record; any other agent marks nothing', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const read = () => JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), 'utf8'));
+  run(root, start(root, { agent_type: 'fankeel:fankeel-reader', agent_id: 'a0b1' }));
+  assert.equal(read().inflight, undefined);
+  const before = Date.now();
+  run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a3f9c2' }));
+  const mark = read().inflight;
+  assert.deepEqual([mark.stage, mark.agentId], ['build', 'a3f9c2']);
+  assert.ok(mark.at >= before && mark.at <= Date.now(), String(mark.at));
+});

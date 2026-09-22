@@ -48,6 +48,13 @@ function main(raw) {
     } catch (e) { /* housekeeping */ }
     if (!gate) return;
 
+    // The stage agent has handed its gate back, so it is no longer in flight.
+    // There is no SubagentStop hook in .claude-plugin/plugin.json; this is the
+    // one place the mark is cleared.
+    try {
+        registry.clearInflight(root, payload.session_id);
+    } catch (e) { /* housekeeping */ }
+
     const updatedInput = Object.assign({}, payload.tool_input || {}, { questions: gate.questions });
     process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', updatedInput } }));
 }

@@ -39,6 +39,16 @@ function main(raw) {
     const mine = registry.readSession(root, payload.session_id);
     if (!mine || mine.active !== true) return;
 
+    // A stage agent starting is the in-flight mark the controller's block
+    // reads (`controlFor` in lib/stages.js), so an interjection mid-stage is
+    // told to SendMessage it rather than start a second one. The parent's
+    // record, not an entry for the subagent: `agent_id` is a value here.
+    if (mine.stage && String(payload.agent_type || '').replace(/^fankeel:/, '') === 'fankeel-brain') {
+        try {
+            registry.markInflight(root, payload.session_id, mine.stage, payload.agent_id);
+        } catch (e) { /* housekeeping */ }
+    }
+
     // The project's standing answers, read exactly the way hooks/resume.js
     // does: a read failure costs one line, never the brief. Without this,
     // `renderBrief` cannot tell whether `stage.agents` is on, and the brain

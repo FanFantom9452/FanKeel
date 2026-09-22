@@ -474,7 +474,7 @@ empty list is refused with, in the shape every other bad profile value takes
 (`lib/profile.js:93`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
-file could change (`lib/stages.js:628`, `const raw = values && values['stage.agents'];`),
+file could change (`lib/stages.js:635`, `const raw = values && values['stage.agents'];`),
 so which stages are controlled is a profile answer, not a constant. Put a
 stage on that list and it is run by a stage agent instead of by the session:
 
@@ -608,9 +608,17 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   (they go to an implementer) and questions (they go in the gate at the end); consent
   at the start, a worktree, a `TODO.md` line and a resumed implementer are not covered.
 - **A second agent.** Every user prompt re-injects the controller's "dispatch one
-  agent" line and no registry field says one is in flight, so an interjection during
-  a long stage can start a second stage agent on the same handoff and commit files.
-  This is the existing "interjections have nobody" gap, now with a longer stage.
+  agent" line. `hooks/brief.js` now writes `inflight` — `{ stage, at, agentId }` —
+  on the session's record when a `fankeel-brain` starts, and while it names the
+  current stage the controller's block carries one line before the dispatch line:
+  that agent is already running, SendMessage it, and dispatch another only if
+  SendMessage says it is gone (`controlFor` in `lib/stages.js`). `hooks/gate.js`
+  clears it once the handoff's gate arrives; `.claude-plugin/plugin.json` has no
+  `SubagentStop` hook, so nothing else does. Two cases it does not cover: after a
+  gate answered with anything but option one the controller SendMessages the same
+  agent, no `SubagentStart` fires, and the mark is already gone while that agent
+  works again; and an agent that died leaves its mark until the next gate or the
+  SendMessage fallback.
 - **The profile moves under a running stage.** `hooks/inject.js` re-reads it on every
   prompt, `hooks/brief.js` on every subagent start, `hooks/gate.js` and
   `hooks/resume.js` on every call, `hooks/guard.js` on every main-thread `Edit`,
