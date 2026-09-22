@@ -85,13 +85,11 @@ what gets scheduled.
 - 〔docs〕`development.md` 與 land skill 的 `last_verified` 早於後來加的內容，重讀後再標；`tests/render.test.js` 與 `scripts/task.js` 兩處註解的 2397／2393 也過期 — [docs/development.md](docs/development.md).
 - 〔stage-agents〕`ctx.js --by-stage` 的 `stageRows` 還有兩個小尾巴：`isSidechain === true` 那個 skip 沒有 fixture 釘住，`t === null` 的 return 多餘（`null > seen` 本來就為假） — [scripts/ctx.js](scripts/ctx.js).
 - 〔stage-agents〕`ctx.js` 讀 agent 檔還有三個小尾巴：fixture 只有 assistant 行（`woken` 沒被釘住）、`isAgentFile` 可改用 `summarise` 是否為 null（少 6 行）、`:96` 的註解說每行都複製（其實只複製 sidechain 行） — [scripts/ctx.js](scripts/ctx.js).
-- 〔docs〕`docs/subagents.md` 的 Accounting 條說 400k 的觸發還缺 per-agent series，現在 `ctx.js <agent 檔>` 印得出來，那句要改 — [docs/subagents.md](docs/subagents.md).
 
 ## Needs a decision
 
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；Gemini CLI `BeforeAgent`、Codex CLI `UserPromptSubmit` 也能回 `additionalContext` — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
 - 〔stage-agents〕受控站還有三缺口：design 跨輪對話、station 第二層平鋪、插話沒人接；build 每個 task 的提交要經 controller 兩回合，省不省 context 待 ctx.js 實跑 A/B — [lib/stages.js](lib/stages.js).
-- 〔stage-agents〕受控 build／verify 還有十來個接縫沒實跑過：stage agent 沒有 AskUserQuestion／Edit、插話會起第二個、profile 中途翻轉 — [docs/subagents.md](docs/subagents.md).
 - 〔agents〕要不要一個專審前端是否符合期待的 agent：這次 `依版本` 整片灰是把頁面 render 出來才抓到的，unit test 全綠；順帶評估 Jev 這類小判斷模型當篩子 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 - 〔station〕`--detach` 的 serve 在啟動時就把 `lib/station.js` 讀進記憶體：改完程式它照樣產生新資料、用舊程式，外觀完全正常。要不要讓它自己察覺 — [lib/serve.js](lib/serve.js).
 - 〔docs〕寫成 `path:行-行` 的引用不帶引文，docs-check 只列不驗：一條這樣歪了四個 commit 沒人發現。剩三條要改寫，還是讓 docs-check 把範圍本身當缺陷 — [scripts/docs-check.js](scripts/docs-check.js).
@@ -182,3 +180,8 @@ lifts when: main 已 push（08c4ecf 起），新 terminal 更新插件到 0.76.0
 lifts when: 放行規則存在下 no verdict 再發生一次. 09-22.
 
 - 〔stage-agents〕auto mode 分類器曾對站 agent 與 implementer 的 Write／Edit 回 no verdict（09-22 六次以上）；已加放行規則 `Edit(/.fankeel/build/**)`，但放行前後探測都寫成功，效果無法證明；再發生時查規則有沒有被讀到 — [docs/subagents.md](docs/subagents.md).
+
+### build/verify 接縫一次
+lifts when: 十來個接縫（缺 AskUserQuestion/Edit、插話起第二個 brain、profile 翻轉、accounting、claims、commit 位置）任一個被觀察到. 2026-09-22.
+
+- 〔stage-agents〕受控 build／verify 還有十來個接縫沒實跑過：stage agent 沒有 AskUserQuestion／Edit、插話會起第二個、profile 中途翻轉 — [docs/subagents.md](docs/subagents.md).

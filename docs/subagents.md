@@ -619,9 +619,10 @@ what to watch, and so the profile's `lean` preset is not read as proven.
 - **Accounting.** A controlled build's commits run as `scripts/commit.js`, not as
   `git commit` in the main transcript, so the station's replay shows none of them, and
   the agents' own edits are sidechain and not replayed either. `scripts/ctx.js` prints
-  the controller's series and one summed figure for the agents, where the trigger in
-  `TODO.md` for a stage agent's own context past 400k needs the per-agent series
-  `lib/usage.js` already computes. Whether a resumed agent's returns keep one
+  the controller's series and one summed figure for the agents by default; given a
+  single agent's transcript file, `node scripts/ctx.js <agent 檔>` now prints that
+  agent's own series directly, which covers the trigger in `TODO.md` for a stage
+  agent's own context past 400k. Whether a resumed agent's returns keep one
   notification per dispatch in that accounting, whether a resume re-fires the
   subagent brief, and whether the transcript keeps the controller's placeholder gate
   rather than the text `hooks/gate.js` put in its place, have not been checked.
