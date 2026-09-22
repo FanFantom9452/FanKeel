@@ -67,6 +67,13 @@ const contextOf = (out) => {
   return parsed.hookSpecificOutput.additionalContext;
 };
 
+function briefFor(stage, values) {
+  const root = tmp();
+  seedProfile(root, Object.assign({ 'stage.agents': [stage] }, values));
+  seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
+  return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+}
+
 const entry = (over) => ({
   sessionId: SESSION,
   data: Object.assign({
@@ -505,13 +512,7 @@ test('read first\'s character cap is exactly 1000: one line of 1000 characters p
 // also placed before its confirmatory match, so a mutation that corrupts that
 // brief's own sentence cannot hide a doesNotMatch that would otherwise redden.
 test('a design brain may write one file under docs/plans/ and commit it through a commit file', () => {
-  const brief = (stage) => {
-    const root = tmp();
-    seedProfile(root, { 'stage.agents': [stage] });
-    seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
-    return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
-  };
-  const design = brief('design');
+  const design = briefFor('design');
   assert.doesNotMatch(design, /Its path is the first line of your report\./, 'design must not carry the plan\'s artifact sentence');
   assert.match(design, /artifact: besides your report you may Write one file, docs\/plans\/<date>-<topic>-design\.md, and only where the design skill calls for a spec/);
   assert.match(design, /\(the architectural class\)\. Put its path on the report's `spec:` line\./);
@@ -520,13 +521,7 @@ test('a design brain may write one file under docs/plans/ and commit it through 
 });
 
 test('a plan brain may write one file under docs/plans/ and commit it through a commit file', () => {
-  const brief = (stage) => {
-    const root = tmp();
-    seedProfile(root, { 'stage.agents': [stage] });
-    seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
-    return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
-  };
-  const plan = brief('plan');
+  const plan = briefFor('plan');
   assert.doesNotMatch(plan, /Put its path on the report's/, 'plan must not carry the design\'s artifact sentence');
   assert.match(plan, /artifact: besides your report you may Write one file, docs\/plans\/<date>-<topic>\.md\. Its path is the first line of your report\./);
   assert.match(plan, /write [^\n]*plan-commit\.md/);
@@ -534,26 +529,14 @@ test('a plan brain may write one file under docs/plans/ and commit it through a 
 });
 
 test('no stage besides design and plan may write an artifact', () => {
-  const brief = (stage) => {
-    const root = tmp();
-    seedProfile(root, { 'stage.agents': [stage] });
-    seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
-    return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
-  };
-  for (const stage of ['survey', 'build', 'verify']) assert.doesNotMatch(brief(stage), /artifact: besides your report/, stage);
+  for (const stage of ['survey', 'build', 'verify']) assert.doesNotMatch(briefFor(stage), /artifact: besides your report/, stage);
 });
 
 test('an audit brain sends page corrections to the fixer, a land brain sends moves and git to an implementer', () => {
-  const brief = (stage, values) => {
-    const root = tmp();
-    seedProfile(root, Object.assign({ 'stage.agents': [stage] }, values));
-    seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
-    return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
-  };
-  assert.match(brief('audit'), /You cannot edit a page or run a git write\. Send one change at a time to `fankeel:fankeel-fixer` \(a page correction\) or an implementer on model `sonnet` \(a move, a merge, a cleanup\), and read what it returns before you send the next\./);
-  const land = brief('land', { 'dispatch.floor': 'opus' });
+  assert.match(briefFor('audit'), /You cannot edit a page or run a git write\. Send one change at a time to `fankeel:fankeel-fixer` \(a page correction\) or an implementer on model `sonnet` \(a move, a merge, a cleanup\), and read what it returns before you send the next\./);
+  const land = briefFor('land', { 'dispatch.floor': 'opus' });
   assert.match(land, /You cannot edit a page or run a git write\. Send one change at a time to an implementer on model `opus` \(a move, a merge, a cleanup\)/);
   assert.doesNotMatch(land, /fankeel-fixer` \(a page correction\)/);
   assert.ok(land.length < 10000, 'land brief is ' + land.length + ' chars');
-  for (const stage of ['survey', 'build']) assert.doesNotMatch(brief(stage), /You cannot edit a page or run a git write/, stage);
+  for (const stage of ['survey', 'build']) assert.doesNotMatch(briefFor(stage), /You cannot edit a page or run a git write/, stage);
 });
