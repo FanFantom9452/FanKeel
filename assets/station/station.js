@@ -1599,6 +1599,15 @@
         chartHover = false;
         chartAt = null;
     }
+    // Beside the pointer, flipped to its other side at the window's right or
+    // bottom edge — measured against the card as it is now.
+    function chartPlace(px, py) {
+        var t = chartTipEl(), pad = 14, r = t.getBoundingClientRect(), x = px + pad, y = py + pad;
+        if (x + r.width > w.innerWidth - 8) x = px - pad - r.width;
+        if (y + r.height > w.innerHeight - 8) y = py - pad - r.height;
+        t.style.left = Math.max(8, x) + 'px';
+        t.style.top = Math.max(8, y) + 'px';
+    }
     // The 3 s re-read redraws the chart under a pointer that has not moved:
     // redraw the card from the new bars and light the same things again.
     function chartRestore() {
@@ -1607,6 +1616,7 @@
         var html = segTip(chartBars, chartOpts, chartAt.day, chartAt.key);
         if (!html) { chartHide(); return; }
         chartTipEl().innerHTML = html;
+        chartPlace(chartAt.px, chartAt.py);
         chartGuide(chartAt.cx);
         chartFocus(chartAt.key || chartPin);
     }
@@ -1625,15 +1635,12 @@
         var t = chartTipEl();
         t.innerHTML = segTip(chartBars, chartOpts, cell.getAttribute('data-day'), seg ? seg.getAttribute('data-key') : null);
         t.setAttribute('data-on', '');
-        var pad = 14, r = t.getBoundingClientRect(), x = e.clientX + pad, y = e.clientY + pad;
-        if (x + r.width > w.innerWidth - 8) x = e.clientX - pad - r.width;
-        if (y + r.height > w.innerHeight - 8) y = e.clientY - pad - r.height;
-        t.style.left = Math.max(8, x) + 'px';
-        t.style.top = Math.max(8, y) + 'px';
+        chartPlace(e.clientX, e.clientY);
         chartGuide(cell.getAttribute('data-cx'));
         chartFocus(seg ? seg.getAttribute('data-key') : chartPin);
         chartHover = true;
-        chartAt = { day: cell.getAttribute('data-day'), key: seg ? seg.getAttribute('data-key') : null, cx: cell.getAttribute('data-cx') };
+        chartAt = { day: cell.getAttribute('data-day'), key: seg ? seg.getAttribute('data-key') : null, cx: cell.getAttribute('data-cx'),
+            px: e.clientX, py: e.clientY };
     });
     // 近 30 天: the hero that used to open the home page. A day in the hash is
     // marked on the chart; there is no day panel any more.
