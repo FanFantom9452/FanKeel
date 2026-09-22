@@ -1,3 +1,8 @@
+---
+status: design-intent
+last_verified: 2026-09-23
+---
+
 # 清 TODO：Ready 11 項 + 三個待決定項 Implementation Plan
 
 **Goal:** 把 TODO.md 的 Ready 段 11 項與三個已決定的「需要決定」項目（design.mockup 濾規則、

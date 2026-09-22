@@ -614,7 +614,9 @@ what to watch, and so the profile's `lean` preset is not read as proven.
 - **The profile moves under a running stage.** `hooks/inject.js` re-reads it on every
   prompt, `hooks/brief.js` on every subagent start, `hooks/gate.js` and
   `hooks/resume.js` on every call, `hooks/guard.js` on every main-thread `Edit`,
-  `Write` or `NotebookEdit`, and a session record does not store `stage.agents`; a preset applied
+  `Write` or `NotebookEdit`, and a session record now stores `stage.agents` in the `profile`
+  field `task.js start` snapshots — the same mechanism as the rest of that field, present
+  whenever its source is not `builtin`; a preset applied
   from the station mid-stage changes what those hooks do to that session's next call.
   The presets also write `guard: ask`, which lowers the project's stored `deny` for the
   sessions that start after it; a running session keeps the guard mode its record holds.
