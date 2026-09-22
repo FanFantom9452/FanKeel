@@ -81,6 +81,7 @@ what gets scheduled.
 
 - 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過；session 記錄已存 `stage.agents`（6fb1b3a），缺的是一次真實的量測 — [lib/render.js](lib/render.js).
 - 〔docs〕計畫封存時 `status` 沒從 `design-intent` 翻成 `current`（2026-09-23 抓到六頁），封存後 docs-audit 不再看它：改 land 的封存步驟，還是讓 docs-audit 也看 archive 的 `status` — [scripts/docs-audit.js](scripts/docs-audit.js).
+- 〔design〕mockup 只定方向：核可後加一步「切區塊、逐塊即時調」（`data-block` 標記、只重寫一塊、serve 重新整理看），station 首頁的 build 當第一例再定 skill；參考 `impeccable` live edit — [skills/fankeel-design/SKILL.md](skills/fankeel-design/SKILL.md).
 - 〔agents〕「Jev 這類小判斷模型當篩子」：repo 裡查不到 Jev 指什麼，要先說清楚是哪個模型，才能評估它當 render 前的篩子 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 
 ## Waiting
