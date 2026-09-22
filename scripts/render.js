@@ -23,6 +23,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { pathToFileURL } = require('node:url');
 
 // `ms-playwright` names each install `chromium-<build number>`; the highest
 // number is the newest download, not necessarily the one `readdirSync`
@@ -85,7 +86,22 @@ function parseArgs(argv) {
 
 function toUrl(target) {
     if (/^https?:\/\//.test(target)) return target;
-    return 'file://' + path.resolve(target).replace(/\\/g, '/');
+    return pathToFileURL(path.resolve(target)).href;
+}
+
+// Runs `browser` headless with `extraArgs` appended after the two flags
+// every call shares, and exits the process the same way on failure: a
+// `render: <label> failed: ...` line on stderr, the browser's own exit
+// status (or 1 if it has none). The screenshot and dump-dom calls in
+// main() differ only in their label, their extra flags and what the
+// caller does with a successful result.
+function runHeadless(browser, label, extraArgs) {
+    const result = spawnSync(browser, ['--headless=new', '--disable-gpu', ...extraArgs], { encoding: 'utf8' });
+    if (result.status !== 0) {
+        process.stderr.write('render: ' + label + ' failed: ' + (result.stderr || result.status) + '\n');
+        process.exit(result.status || 1);
+    }
+    return result;
 }
 
 function main() {
@@ -105,19 +121,9 @@ function main() {
     const html = path.join(outDir, 'render.html');
     const url = toUrl(args.target);
 
-    const shot = spawnSync(browser, [
-        '--headless=new', '--disable-gpu', '--screenshot=' + png, '--window-size=' + args.size, url,
-    ], { encoding: 'utf8' });
-    if (shot.status !== 0) {
-        process.stderr.write('render: screenshot failed: ' + (shot.stderr || shot.status) + '\n');
-        process.exit(shot.status || 1);
-    }
+    runHeadless(browser, 'screenshot', ['--screenshot=' + png, '--window-size=' + args.size, url]);
 
-    const dump = spawnSync(browser, ['--headless=new', '--disable-gpu', '--dump-dom', url], { encoding: 'utf8' });
-    if (dump.status !== 0) {
-        process.stderr.write('render: dump-dom failed: ' + (dump.stderr || dump.status) + '\n');
-        process.exit(dump.status || 1);
-    }
+    const dump = runHeadless(browser, 'dump-dom', ['--dump-dom', url]);
     fs.writeFileSync(html, dump.stdout);
 
     process.stdout.write(png + '\n');

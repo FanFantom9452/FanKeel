@@ -33,16 +33,24 @@ const FIXTURE_HTML = '<!DOCTYPE html>\n<html><head><title>fixture</title></head>
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
+// A fresh tmp dir with FIXTURE_HTML written into it, the way
+// tests/station-cli.test.js's own fixture() hands each test a ready
+// working directory instead of repeating tmp() plus the write.
+function fixture() {
+    const dir = tmp('fankeel-render-');
+    const file = path.join(dir, 'fixture.html');
+    fs.writeFileSync(file, FIXTURE_HTML);
+    return { dir, file };
+}
+
 test('renders a PNG and a DOM that shows what the inline script wrote', (t) => {
     if (!findBrowser()) {
         t.skip('no Chromium-family browser on this machine (FANKEEL_BROWSER, Edge, Chrome, or an ms-playwright cache)');
         return;
     }
-    const dir = tmp('fankeel-render-');
-    const fixture = path.join(dir, 'fixture.html');
-    fs.writeFileSync(fixture, FIXTURE_HTML);
+    const { dir, file } = fixture();
     const outDir = path.join(dir, 'out');
-    const result = spawnSync(process.execPath, [CLI, fixture, '--out', outDir, '--size', '400,300'], { encoding: 'utf8' });
+    const result = spawnSync(process.execPath, [CLI, file, '--out', outDir, '--size', '400,300'], { encoding: 'utf8' });
     assert.equal(result.status, 0, 'render exited ' + result.status + ': ' + result.stderr);
     const lines = result.stdout.trim().split('\n');
     assert.equal(lines.length, 2, 'stdout is not exactly two paths: ' + JSON.stringify(result.stdout));
@@ -51,18 +59,16 @@ test('renders a PNG and a DOM that shows what the inline script wrote', (t) => {
     assert.deepEqual(bytes.subarray(0, 8), PNG_SIGNATURE, png + ' does not start with the PNG signature');
     const dom = fs.readFileSync(html, 'utf8');
     assert.match(dom, /AFTER_JS/, 'the dumped DOM does not show what the inline script wrote');
-    assert.doesNotMatch(fs.readFileSync(fixture, 'utf8'), /AFTER_JS/, 'the fixture source already said AFTER_JS; the test proves nothing');
+    assert.doesNotMatch(fs.readFileSync(file, 'utf8'), /AFTER_JS/, 'the fixture source already said AFTER_JS; the test proves nothing');
 });
 
 test('FANKEEL_BROWSER at a path that does not exist, with fallback off, fails and says why', () => {
-    const dir = tmp('fankeel-render-');
-    const fixture = path.join(dir, 'fixture.html');
-    fs.writeFileSync(fixture, FIXTURE_HTML);
+    const { dir, file } = fixture();
     const env = Object.assign({}, process.env, {
         FANKEEL_BROWSER: path.join(dir, 'no-such-browser.exe'),
         FANKEEL_NO_FALLBACK: '1',
     });
-    const result = spawnSync(process.execPath, [CLI, fixture, '--out', path.join(dir, 'out')], { encoding: 'utf8', env });
+    const result = spawnSync(process.execPath, [CLI, file, '--out', path.join(dir, 'out')], { encoding: 'utf8', env });
     assert.notEqual(result.status, 0, 'a missing FANKEEL_BROWSER with fallback off exited 0');
     assert.match(result.stderr, /no Chromium-family browser found/);
 });
