@@ -553,7 +553,8 @@ measurement.
 (`controlRules` in `lib/stages.js`) passes `model: opus` for `design` and `plan`, the
 two stages whose product is a judgement, and no model for the other five, so a stage agent
 uses Opus where the user asked for it and nowhere else (a build implementer runs on the model
-its task's Dispatch line names; a verify, audit or land implementer runs on `dispatch.floor`). Every measurement in this
+its task's Dispatch line names, or on `dispatch.floor` when that line says in-session; a
+verify, audit or land implementer runs on `dispatch.floor`). Every measurement in this
 repository before 2026-09-22 ran an Opus stage agent; a Sonnet one has not been
 measured. [decisions/2026-09-22-brain-on-sonnet.md](decisions/2026-09-22-brain-on-sonnet.md)
 records the choice.

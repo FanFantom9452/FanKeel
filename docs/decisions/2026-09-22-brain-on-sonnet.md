@@ -28,7 +28,7 @@ last_verified: 2026-09-22
 
 ## 三、探測
 
-這裡的「規則」是 `.claude/settings.local.json` 裡的一條 `permissions.allow`：`Edit(/.fankeel/build/**)`（每台機器一份，不進版控）。起因是 2026-09-22 一場 session 裡，auto mode 的分類器對站 agent 與 implementer 的 Write／Edit 回 no verdict 六次以上，handoff 檔因此寫不出來（當時記在 `TODO.md` 的〔stage-agents〕條目）。放行前後各派一個 sonnet 的 general-purpose agent，用 Write 在 `.fankeel/build/` 建一個檔：兩次探測在同一個 session、同一個 permission mode（auto，`~/.claude/settings.json` 的 `permissions.defaultMode`）下跑，有意改的只有 `.claude/settings.local.json` 存不存在；兩次之間 `.gitignore` 也多了一行、另有一個 agent 在背景改檔，這兩件事不太可能影響分類器，但沒有單獨排除。探測檔名用 `probe-before.md` 與 `probe-after.md`，沒有照計畫用時間戳。
+這裡的「規則」是 `.claude/settings.local.json` 裡的一條 `permissions.allow`：`Edit(/.fankeel/build/**)`（每台機器一份，不進版控）。起因是 2026-09-22 一場 session 裡，auto mode 的分類器對站 agent 與 implementer 的 Write／Edit 回 no verdict 六次以上，handoff 檔因此寫不出來（當時記在 `TODO.md` 的〔stage-agents〕條目）。放行前後各派一個 sonnet 的 general-purpose agent，用 Write 在 `.fankeel/build/` 建一個檔：兩次探測在同一個 session、同一個 permission mode（auto，`~/.claude/settings.json` 的 `permissions.defaultMode`）下跑，有意改的只有 `.claude/settings.local.json` 存不存在；兩次之間 `.gitignore` 也多了一行、另有一個 agent 在背景改檔，這兩件事沒有單獨排除。探測檔名用 `probe-before.md` 與 `probe-after.md`，沒有照計畫用時間戳。
 
 | test | before the rule | after the rule |
 |---|---|---|
