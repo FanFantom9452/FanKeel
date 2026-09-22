@@ -351,8 +351,11 @@ since)` in `lib/detail.js` from three things: the agent's own transcript —
 `stepsOf`'s `open` and `lastAt`, or, when there are no steps, whether its
 dispatch came back — whether the session is live, and `since`, the session's
 current process's start (`startedAt` in Claude Code's
-`sessions/<pid>.json`). It reads no `.meta.json`; that file only links an
-agent's file to its dispatch row (`lib/usage.js:494`). No hook writes any of
+`sessions/<pid>.json`). It reads no `.meta.json`; that file links an agent's
+file to its dispatch row (`lib/usage.js:494`).
+Through `parentAgentId`, the same file also names the stage agent that
+dispatched it — the row the 派工 table indents this row under, one level
+deep. No hook writes any of
 it. It has finished when its last assistant line carries no
 `tool_use`, every `tool_use` it made has its `tool_result`, and that line
 closes a message. Not finished, it is `running` while its session is live and

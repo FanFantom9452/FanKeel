@@ -313,3 +313,28 @@ test('the session header counts the running and lost agents, and the 派工 tab 
     assert.match(V.tabsHtml(s, 'dispatch', live), /派工<small>4<\/small><i class="dot live" title="2 個 agent running"><\/i><\/a>/);
     assert.doesNotMatch(V.tabsHtml(Object.assign({}, s, { state: 'stale' }), 'dispatch', live), /dot live/);
 });
+
+// A stage agent's readers sit under it, not in the band for agents no dispatch
+// accounts for; an agent whose parent is not in the list stays in that band.
+const nested = {
+    dispatches: [{ key: 't9', turn: 2, surface: 'agent', text: 'Run survey stage', out: 1000, back: 90000, ret: 400, launch: 50, ids: ['b1'] }],
+    rows: [
+        { id: 'b1', disp: 0, surface: 'agent', label: 'Run survey stage', agentType: 'fankeel:fankeel-brain', model: 'claude-opus-5', phase: null, parent: null, c: 100, k: 20, s: 60, unpriced: [] },
+        { id: 'k1', disp: null, surface: 'agent', label: 'inner read', agentType: 'fankeel:fankeel-reader', model: 'claude-sonnet-5', phase: null, parent: 'b1', c: 23, k: 4, s: 10, unpriced: [] },
+        { id: 'o1', disp: null, surface: 'agent', label: 'orphan', agentType: 'general-purpose', model: 'claude-sonnet-5', phase: null, parent: 'gone', c: 7, k: 1, s: 5, unpriced: [] },
+    ],
+    runs: [], agentCents: 130, agentsTotal: { cents: 130 }, unpriced: [], steps: {}, events: [], dropped: 0,
+};
+
+test('an agent a stage agent dispatched is indented under it, and its cost is in that dispatch\'s band', () => {
+    const html = V.dispatchHtml(nested);
+    assert.equal(count(html, /<tr class="ag kid is-done"/g), 1);
+    const brain = html.indexOf('data-ag="b1"');
+    const kid = html.indexOf('data-ag="k1"');
+    const none = html.indexOf('沒有對上派工的 agent');
+    const orphan = html.indexOf('data-ag="o1"');
+    assert.ok(brain >= 0 && brain < kid && kid < none && none < orphan, [brain, kid, none, orphan].join(' '));
+    const band = html.slice(html.indexOf('<tr class="band">'), brain);
+    assert.match(band, /\$1\.23/);
+    assert.match(html.slice(html.indexOf('<tfoot>')), /3 個 agent/);
+});

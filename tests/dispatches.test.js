@@ -222,3 +222,18 @@ test('a run file nothing launched places nothing: both its agents are rows on no
     assert.deepEqual(out.runs.find((r) => r.run === 'wf_b'), { run: 'wf_b', name: 'flow-b', agents: 2 });
     assert.deepEqual(out.dispatches[0].ids, ['a1a1']);
 });
+
+// A stage agent's own readers: their `.meta.json` names the stage agent as
+// `parentAgentId` (spawnDepth 2), and their `toolUseId` is a call in the stage
+// agent's transcript, not the parent's, so no dispatch matches them.
+test('an agent a stage agent dispatched carries that agent\'s id as parent; every other row carries null', () => {
+    const t = session();
+    const sub = path.join(path.dirname(t), 'sess', 'subagents');
+    fs.writeFileSync(path.join(sub, 'agent-abc7.jsonl'), agentLine('r7', 12, 'claude-sonnet-5', { input_tokens: 3 }));
+    fs.writeFileSync(path.join(sub, 'agent-abc7.meta.json'), JSON.stringify({
+        agentType: 'fankeel:fankeel-reader', description: 'inner read', toolUseId: 'toolu_inner', parentAgentId: 'aaa1', spawnDepth: 2,
+    }));
+    const by = Object.fromEntries(usage.dispatchesOf(t).rows.map((r) => [r.id, r]));
+    assert.deepEqual([by.abc7.parent, by.abc7.disp, by.abc7.label], ['aaa1', null, 'inner read']);
+    for (const id of ['aaa1', 'bbb2', 'ccc3', 'ddd4', 'eee5']) assert.equal(by[id].parent, null, id);
+});

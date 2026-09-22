@@ -2205,8 +2205,28 @@
         x.rows.forEach(function (r) { n[agentState(x, r, s)] += 1; });
         var filter = u.filter !== 'all' && n[u.filter] ? u.filter : 'all';
         var pass = function (r) { return filter === 'all' || agentState(x, r, s) === filter; };
+        // A stage agent's own agents: `parent` is the `parentAgentId` their
+        // `.meta.json` names (`dispatchesOf` in lib/usage.js). One level: a row
+        // whose parent is in the list and is itself at the top sits under it, in
+        // its band; any other row is grouped as before.
+        var byId = {};
+        x.rows.forEach(function (r) { byId[r.id] = r; });
+        var under = function (r) {
+            var p = r.parent ? byId[r.parent] : null;
+            return !!p && p !== r && !(p.parent && byId[p.parent]);
+        };
+        var kids = {};
+        x.rows.forEach(function (r) { if (under(r)) (kids[r.parent] = kids[r.parent] || []).push(r); });
+        var fam = function (list) { return list.reduce(function (m, r) { return m.concat([r], kids[r.id] || []); }, []); };
+        var shows = function (r) { return pass(r) || (kids[r.id] || []).some(pass); };
+        var withKids = function (r, cls, attr) {
+            return agentRow(r, cls, attr, x, s, u) + (kids[r.id] || []).filter(pass).map(function (k) {
+                return agentRow(k, cls + ' kid', attr, x, s, u);
+            }).join('');
+        };
         var groups = {}, order = [];
         x.rows.forEach(function (r) {
+            if (under(r)) return;
             var k = r.disp === null || r.disp === undefined ? 'none' : String(r.disp);
             if (!groups[k]) { groups[k] = []; order.push(k); }
             groups[k].push(r);
@@ -2236,7 +2256,7 @@
                 gapDone = true;
                 if (filter === 'all' || filter === 'lost') lead = gap();
             }
-            var vis = list.filter(pass);
+            var vis = list.filter(shows);
             if (!vis.length) return lead;
             var wf = !!d && d.surface === 'workflow';
             var gone = !!d && !isNum(d.back) && list.every(function (r) { return agentState(x, r, s) !== 'running'; })
@@ -2247,21 +2267,21 @@
                     + ' / ' + list.length + ' done</span>' : '')
                 + '<span class="rt">' + (d && d.turn ? '回合 ' + d.turn : '')
                 + (d && isNum(d.out) ? ' · ' + stamp(d.out).slice(11) + '→' + (isNum(d.back) ? stamp(d.back).slice(11) : gone ? '沒回來' : '…') : '')
-                + '</span></div></td>' + numCells(sums(list), '') + '<td class="r rc">'
+                + '</span></div></td>' + numCells(sums(fam(list)), '') + '<td class="r rc">'
                 + (d && d.ret !== null && d.ret !== undefined ? comma(d.ret) : d && !gone && !isNum(d.back) ? '…' : '—') + '</td></tr>';
-            if (!wf) return lead + head + vis.map(function (r) { return agentRow(r, 'ag', '', x, s, u); }).join('');
+            if (!wf) return lead + head + vis.map(function (r) { return withKids(r, 'ag', ''); }).join('');
             var phases = [];
             list.forEach(function (r) { var p = r.phase || '—'; if (phases.indexOf(p) < 0) phases.push(p); });
             return lead + head + phases.map(function (p, i) {
                 var pr = list.filter(function (r) { return (r.phase || '—') === p; });
-                var shown = pr.filter(pass);
+                var shown = pr.filter(shows);
                 if (!shown.length) return '';
                 var key = 'ph-' + k + '-' + i, open = !!u.ph[key] || filter !== 'all';
                 return '<tr class="phr"><td><div class="phl"><button type="button" class="phb" data-ph="' + key + '" data-key="' + key
                     + '" aria-expanded="' + open + '">' + esc(p) + '<span class="n">· ' + pr.length + ' agents</span></button>'
-                    + agdots(x, pr, s) + '<span class="phs">' + stateTally(x, pr, s) + '</span></div></td>' + numCells(sums(pr), '')
+                    + agdots(x, pr, s) + '<span class="phs">' + stateTally(x, pr, s) + '</span></div></td>' + numCells(sums(fam(pr)), '')
                     + '<td class="r rc"></td></tr>'
-                    + shown.map(function (r) { return agentRow(r, 'wa', ' data-in="' + key + '"' + (open ? '' : ' hidden'), x, s, u); }).join('');
+                    + shown.map(function (r) { return withKids(r, 'wa', ' data-in="' + key + '"' + (open ? '' : ' hidden')); }).join('');
             }).join('');
         }).join('');
         if (early && !gapDone && (filter === 'all' || filter === 'lost')) body += gap();
