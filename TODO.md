@@ -75,7 +75,6 @@ what gets scheduled.
 
 ## Ready
 
-- 〔docs〕`registry.md` 的「寫入的檔案」表缺 `build/task-<時間>/` 的交接檔（`<stage>.md`、`-answer.md`、`-commit.md`）、`serve.json`、`station/detail/` 與 `station/cache/` — [docs/registry.md](docs/registry.md).
 - 〔docs〕`development.md` 與 land skill 的 `last_verified` 早於後來加的內容，重讀後再標；`tests/render.test.js` 與 `scripts/task.js` 兩處註解的 2397／2393 也過期 — [docs/development.md](docs/development.md).
 - 〔stage-agents〕`ctx.js --by-stage` 的 `stageRows` 還有兩個小尾巴：`isSidechain === true` 那個 skip 沒有 fixture 釘住，`t === null` 的 return 多餘（`null > seen` 本來就為假） — [scripts/ctx.js](scripts/ctx.js).
 - 〔stage-agents〕`ctx.js` 讀 agent 檔還有三個小尾巴：fixture 只有 assistant 行（`woken` 沒被釘住）、`isAgentFile` 可改用 `summarise` 是否為 null（少 6 行）、`:96` 的註解說每行都複製（其實只複製 sidechain 行） — [scripts/ctx.js](scripts/ctx.js).
