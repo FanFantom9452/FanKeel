@@ -535,7 +535,7 @@ Paths: `lib/handoff.js`, `lib/render.js`, `tests/handoff.test.js`, `tests/brief.
 **Files:**
 - Modify: `lib/stages.js` — `controlRules` puts `COMMIT_RULE` on design and plan as well as build, and lets the dispatch prompt carry one line of the user's new instruction after the stage name
 - Modify: `lib/render.js` — `renderBrainBrief` gets an `artifact:` rule and a commit rule for design and plan
-- Modify: `agents/fankeel-brain.md` — `## Tools`, `## Refusals` and `## Return` name the one file a design or plan brain may write
+- Modify: `agents/fankeel-brain.md` — `## Job`, `## Tools`, `## Refusals` and `## Return` name the one file a design or plan brain may write
 - Test: `tests/stages.test.js`
 - Test: `tests/brief.test.js`
 
@@ -637,6 +637,22 @@ In `lib/render.js`, inside `renderBrainBrief`, directly after the closing brace 
         lines.push('  - artifact: besides your report you may Write one file, ' + file + '. ' + (stage === 'plan' ? 'Its path is the first line of your report.' : 'Put its path on the report\'s `spec:` line.') + ' Nothing else outside the report is yours to write.');
         lines.push('  - You cannot commit: `git commit` and `git add` are refused to you. When that file is written, write ' + commit + ' — its path, a blank line, then the commit message — and return `commit ' + commit + '` and nothing else. The controller commits and messages you `<base>..<sha>` or one line `commit.js: <why>`. If <why> is about your file or the path you listed: fix it and ask again, and the same error twice means the stage is blocked. Anything else: the stage is blocked, so say so in the report. Return the report path when the stage is done or blocked.');
     }
+```
+
+In `agents/fankeel-brain.md`, in `## Job`, replace
+
+```
+Do the stage, write the report to that file with its
+`json gate` block, and return the path — on a build stage, a
+`commit <path>` first for each task.
+```
+
+with
+
+```
+Do the stage, write the report to that file with its
+`json gate` block, and return the path — on a build, design or plan stage, a
+`commit <path>` first for each task or file.
 ```
 
 In `agents/fankeel-brain.md`, in `## Tools`, replace
