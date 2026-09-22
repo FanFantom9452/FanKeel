@@ -561,7 +561,7 @@ report counts against, the row's `dispatch` cell is read where a plan's
 completion line goes in the response and then the commit message, and the
 memory is a conversation again. Those rows run in order. Grouping is computed
 from a plan's `**Files:**` and `**Interfaces:**` blocks; a file table has
-neither, so there is nothing for the two predicates to compare and nothing that
+neither, so there is nothing for the four predicates to compare and nothing that
 could say two rows may overlap.
 
 ```mermaid

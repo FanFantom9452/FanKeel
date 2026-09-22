@@ -166,10 +166,13 @@ parent's session id, so two implementers dispatched by one session are
 invisible to each other here however the guard is set. That was inert while
 `build` dispatched one at a time. It is not inert now: `build` sends a whole
 group at once wherever there is a plan to compute one from, and what keeps
-those apart instead is the pair of predicates in
+those apart instead is the four predicates in
 [subagents.md](subagents.md) — disjoint `**Files:**`, no producer/consumer
 edge — plus the parent staging each task's declared paths, which leaves
-anything written outside them unstaged rather than committed.
+anything written outside them unstaged rather than committed. One of the four
+also fires when one task's `Read:` names a file a neighbour in the same group
+declares `Modify:` or `Test:`, which serializes that pair rather than running
+them at once.
 
 ## What the guard does not watch
 

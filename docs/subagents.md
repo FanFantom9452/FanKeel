@@ -336,29 +336,31 @@ anything afterward.
 
 [collisions.md](collisions.md) owns the blind spot itself — `lib/guard.js` is
 in its `source_of_truth` and not in this page's. The link runs the other way:
-that page points back here for the pair of predicates, which is the mitigation
+that page points back here for the four predicates, which is the mitigation
 rather than the fact. This is the short form, not the only copy.
 
 The commit moved to the parent, one task at a time, as each implementer
 returns — never the implementer itself, which now returns paths, never a diff.
 That is what makes overlap in wall-clock safe even though the index still has
-one writer. What decides whether a *pair* may overlap is three predicates,
+one writer. What decides whether a *pair* may overlap is four predicates,
 computed from the plan rather than judged. A task that declared no
 `Files: Modify` at all conflicts with everything, because nothing declared is
 not the same as nothing shared. Past that, tasks in one group have disjoint
-`Files:` lists, `Modify` and `Test` compared every way round, and neither's
+`Files:` lists, `Modify` and `Test` compared every way round; one task's
+`Read:` colliding with a neighbour's `Modify:` or `Test:` also conflicts —
+serialized rather than run in parallel; and neither's
 `Consumes` names anything the other `Produces` — the half file overlap alone
 cannot see. The two halves fail opposite ways on purpose, and `conflict()` in
 `lib/plantasks.js` carries why:
 an empty `Files:` is a task nobody finished writing, where an empty `Consumes`
 or `Produces` is an answer plans give constantly — the first task of one
 consumes nothing and the last produces nothing.
-`node scripts/ledger.js --plan <file> groups` computes all three over a whole plan
+`node scripts/ledger.js --plan <file> groups` computes all four over a whole plan
 and prints which tasks may share one response. Two tasks in different groups
 never run at once, and the ceiling above still bounds how many of one group go
-out together. It prints a fourth thing that is not a predicate and moves no
+out together. It prints a fifth thing that is not a predicate and moves no
 task: a `Consumes:` entry whose text names a task already in its own group.
-Prose declares no identifier for a `Produces` to match, so the third predicate
+Prose declares no identifier for a `Produces` to match, so the fourth predicate
 cannot see such a dependency at all, and the literal `Task <n>` is the only part
 of the line a command can read. A report carrying that flag withholds its
 closing line about disjoint files — for the whole report rather than the flagged
