@@ -158,7 +158,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的十一個 task | `docs/archive/2026-09-23-todo-ten.md` — *built, 繁體中文* |
 | 那十條各自怎麼定、落地範圍、build／verify／audit 各抓到什麼（inject 模擬站被 kill、render 相對路徑、六條行號位移、stale 用詞），以及沒做的三件 | [decisions/2026-09-23-todo-ten.md](decisions/2026-09-23-todo-ten.md) — *繁體中文* |
 | 站首頁照核可的 mockup 改成左側功能列、五個「看」的 view 與七步設定精靈，拿掉 profile 卡與 `<select>`，`POST /profile` 加 `back`，最後逐塊即時調 | [plans/2026-09-23-station-home-design.md](plans/2026-09-23-station-home-design.md) — *design-intent, 繁體中文* |
-| 那份設計的五個 task | [plans/2026-09-23-station-home.md](plans/2026-09-23-station-home.md) — *design-intent, 繁體中文* |
+| 那份設計的六個 task | [plans/2026-09-23-station-home.md](plans/2026-09-23-station-home.md) — *design-intent, 繁體中文* |
 | Why the scratch area could not be declared however legal the path looks, how one root cause survived nine rounds of review and then reappeared inside its own fix, and the six findings filed rather than built | [decisions/2026-09-11-todo-three.md](decisions/2026-09-11-todo-three.md) — *繁體中文* |
 | Why the five 09-11 directions were filed as TODO entries rather than built, the four places the approved draft departed from judgement 8, and the empty answer the first record filed | [decisions/2026-09-11-todo-split.md](decisions/2026-09-11-todo-split.md) — *繁體中文* |
 | Why the scratch area cannot be a `docs.json` bucket however legal the path looks, who owns each of three twice-described mechanisms, and why `source_of_truth` gets no single-owner rule | `docs/archive/2026-09-11-todo-three-design.md` — *built, 繁體中文* |
