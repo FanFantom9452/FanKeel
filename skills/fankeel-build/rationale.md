@@ -129,7 +129,7 @@ range `BASE..sha`, and that sha does not exist until the parent commits it. A
 Workflow's hops run inside its own script, where the parent cannot commit
 between them — which is why `verify`'s chain, whose reviewer reads a file the
 first hop wrote rather than a git range, could become one and `build`'s
-cannot. `docs/reports/2026-09-04-chains-as-workflows.md:41-44` records the one
+cannot. `docs/reports/2026-09-04-chains-as-workflows.md:41-44` (`parent 端在鏈的兩跳之間**沒有** commit`) records the one
 trial run this way and states plainly that its parent did not commit between
 hops — one trial, no control arm.
 

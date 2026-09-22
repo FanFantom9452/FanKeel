@@ -107,7 +107,7 @@ node scripts/judge.js record --session <id> --brief <path> --answer <path|-> --s
 It writes `docs/judgements/<date>-<slug>.md`: frontmatter carrying `judged`,
 `model`, `agent: fankeel-judge`, `task`, `session` and `stage`, then the brief
 and the answer copied in whole rather than summarised
-(`scripts/judge.js:97-117`).
+(`scripts/judge.js:97-117`, `answer.trimEnd(),`).
 A slug already on disk gets `-2` rather than overwriting the first record
 (`scripts/judge.js:46-50`, `freePath`), and a missing `--session`, `--brief`,
 `--answer` or `--slug` exits 1 before anything is written. It then appends a
