@@ -232,6 +232,29 @@ test('an agent transcript, every line a sidechain line, is measured as that agen
     assert.equal(out.code, undefined);
 });
 
+// A pure sidechain (agent) file with a wake in the middle: `measure()` rewrites
+// every `isSidechain: true` line to `false` (:110) before `stageRows` runs, so
+// this wake line is read as the main thread's own — the path the existing
+// agent-file fixture above never exercises, since it has none.
+test('an agent file with a wake-triggering user line counts a woken turn in its one stage row', () => {
+    const file = path.join(tmp('fankeel-ctx-'), 'agent-9a8b7c6d.jsonl');
+    const side = (l) => line({ ...JSON.parse(l), isSidechain: true });
+    const at = '2026-09-21T00:00:00.000Z';
+    const notice = (id) => line({
+        type: 'user', origin: { kind: 'task-notification' }, timestamp: at,
+        message: { content: '<task-notification><tool-use-id>' + id + '</tool-use-id></task-notification>' },
+    });
+    fs.writeFileSync(file, [
+        assistant('a1', { input_tokens: 10, output_tokens: 5 }),
+        notice('t0'),
+        assistant('a2', { input_tokens: 20, output_tokens: 7 }),
+    ].map(side).join(''));
+    const m = ctx.measure(file);
+    assert.deepEqual(m.stages, [
+        { stage: null, turns: 2, woken: 1, gates: 0, first: 10, last: 20, reread: 30 },
+    ]);
+});
+
 // The other direction: a session's own file that carries a few sidechain lines among its main ones is still a
 // main thread. Only the main requests count, whatever the sidechain lines hold.
 test('a session file that mixes a few sidechain requests with its main ones counts only the main ones', () => {
