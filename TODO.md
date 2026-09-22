@@ -174,6 +174,11 @@ lifts when: `scripts/ctx.js` 量到 build 或 verify 的站 agent 自己的 cont
 
 - 〔stage-agents〕站 agent 拿不到 `Workflow` 工具，所以 build 那一站的 workflow 要由 script 從 plan 的分組產生、主控用 `scriptPath` 開；分組與 surface 由 `ledger.js groups` 算好了 — [lib/plantasks.js](lib/plantasks.js).
 
+### 受控 build/verify 實跑
+lifts when: main 已 push（08c4ecf 起），新 terminal 更新插件到 0.76.0 以後，並跑過一次 stage.agents=all 的真實 task. 09-22.
+
+- 〔stage-agents〕安裝版還沒這次改動、本 session 的 hook 也釘死在 0.74.0，兩者都量不了：新 terminal 更新插件、`stage.agents` 設 all、跑一個真實 task，用 `ctx.js --by-stage` 與 `modelUsage` 讀 — [docs/subagents.md](docs/subagents.md).
+
 ### 放行規則有沒有效
 lifts when: 放行規則存在下 no verdict 再發生一次. 09-22.
 
