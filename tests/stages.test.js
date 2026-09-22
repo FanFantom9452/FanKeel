@@ -737,6 +737,13 @@ test('the mockup rule is on only where design.mockup names a model', () => {
   assert.equal(/mockup/.test(absent), false, 'an unset key is not the off position');
 });
 
+test('the mockup rule is filtered when design is controlled, even with a model named', () => {
+  const uncontrolled = rulesFor('design', null, { 'design.mockup': 'opus' }).join('\n');
+  assert.match(uncontrolled, /mockup/, 'sanity: the rule is on with no stage.agents at all');
+  const controlled = rulesFor('design', null, { 'design.mockup': 'opus', 'stage.agents': ['design'] }).join('\n');
+  assert.equal(/mockup/.test(controlled), false, 'a controlled design station has no agent that can write the page');
+});
+
 // The template is not filtered by `when`, so a slot added there is paid for by
 // every project. The path goes on the existing `spec:` line instead.
 test('the design template gained no slot', () => {

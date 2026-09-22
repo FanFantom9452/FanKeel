@@ -504,6 +504,15 @@ or `land` brain has no Edit and no git write, so `STAGE_AGENTS` gives them
 `fankeel-fixer` (audit only) and an implementer. Whether `land` works this way has
 not been run.
 
+A brain's `Write` is only ever its handoff, `build`'s/`design`'s/`plan`'s commit
+file, and `design`'s/`plan`'s one `docs/plans/` file (`docs/subagents.md:46`
+above) — never the `mockup.html` a frontend `design` task's `design.mockup` rule
+asks for, and `agentsFor('design')` gives a controlled design station only a
+reader and a reviewer, no agent that can write a page. So a controlled design
+station has that rule filtered out rather than handed to a brain that cannot
+follow it; an implementer path for it waits on an actual frontend task landing
+under a controlled design station (`TODO.md`'s `下一個前端任務` section).
+
 The agents a stage agent dispatches — readers and reviewers, and on `build` also a fixer and implementers, on `verify` a verifier, a fixer and an implementer, on `audit` a fixer and an implementer, on `land` an implementer — are a second layer down, but their transcripts land
 in the same `subagents/` directory as the stage agent's, each `.meta.json`
 naming its `parentAgentId` at `spawnDepth` 2 — so `agentFiles()` in
