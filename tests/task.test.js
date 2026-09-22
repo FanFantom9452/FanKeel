@@ -1436,7 +1436,7 @@ test('a flag does not spend a verb, and is named rather than printing the usage'
 // latent, because `hooks/leave.js` writes it at session end and a rename only
 // reaches a session still running, but a rename that drops three of the four
 // bills the new task for whatever the fourth remembers.
-test('renaming the task forgets the clock, the wait, the per-stage spend and any open gate', () => {
+test('renaming the task forgets the wait, the per-stage spend and any open gate, but stamps a fresh clock', () => {
   const dir = root();
   started(dir, A, 'rework the colour ramp');
   const data = entry(dir, A);
@@ -1446,22 +1446,32 @@ test('renaming the task forgets the clock, the wait, the per-stage spend and any
   data.gateAt = 1000;
   registry.writeSession(dir, A, data);
 
+  const before = Date.now();
   run(dir, ['task', 'something else entirely', '--session', A]);
-  const after = entry(dir, A);
-  assert.equal(after.clock, undefined);
-  assert.equal(after.waited, undefined);
-  assert.equal(after.spend, undefined);
-  assert.equal(after.gateAt, undefined);
+  const after = Date.now();
+  const result = entry(dir, A);
+  assert.deepEqual(Object.keys(result.clock), ['survey']);
+  assert.equal(result.clock.survey[0], result.clock.survey[1]);
+  assert.ok(result.clock.survey[1] >= before && result.clock.survey[1] <= after);
+  assert.equal(result.waited, undefined);
+  assert.equal(result.spend, undefined);
+  assert.equal(result.gateAt, undefined);
 });
 
-test('renaming the task forgets the moves, as it forgets the clock', () => {
+test('renaming the task starts moves over at the stage it opens, timed at the rename itself', () => {
   const dir = root();
   started(dir, A, 'rework the colour ramp');
   const data = entry(dir, A);
   data.moves = [['survey', 1000], ['design', 61000]];
   registry.writeSession(dir, A, data);
+  const before = Date.now();
   run(dir, ['task', 'something else entirely', '--session', A]);
-  assert.equal(entry(dir, A).moves, undefined);
+  const after = Date.now();
+  const result = entry(dir, A);
+  assert.equal(result.moves.length, 1);
+  assert.equal(result.moves[0][0], 'survey');
+  assert.ok(result.moves[0][1] >= before && result.moves[0][1] <= after,
+    'the move is timed at the rename, not at the next hook sighting');
 });
 
 test('renaming the task numbers its laps past the old task\'s, so an old gate is not the new task\'s', () => {

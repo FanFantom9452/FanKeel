@@ -760,6 +760,7 @@ function cmdTask(root, opts) {
     const id = requireSession(opts);
     const text = opts.positional.join(' ').replace(/\s+/g, ' ').trim();
     if (!text) fail('Give the new task, in one line.');
+    const stamp = now();
 
     // Under the lock, and this is the command with the most to lose to a claim
     // arriving mid-write: it is clearing the claim list on purpose, so an
@@ -807,6 +808,7 @@ function cmdTask(root, opts) {
         const route = normaliseRoute(d.route) || FULL_ROUTE.slice();
         d.route = route;
         d.stage = route[0];
+        registry.stampEntry(d, route[0], Date.parse(stamp));
         data = d;
         return true;
     });
