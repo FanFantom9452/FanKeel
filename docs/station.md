@@ -828,7 +828,7 @@ The wizard is seven questions, each a habit (`WIZ_STEPS`): `收尾` sets
 its fine-tune list once `design.mockup` is on — set to anything but `(ask)`
 or `false`; `context` sets `stage.agents`; `撞檔` sets `guard`; `模型` sets
 `dispatch.floor` and `judge.model`; `監控站` sets `station.hide`. Each step
-shows three or four habit buttons; pressing one sets every key it lists and
+shows two to four habit buttons; pressing one sets every key it lists and
 records it as that step's recommendation, and a habit is pre-picked on load
 when every key it sets already matches the effective value (`wizLoad`). A
 fine-tune row under the habits lets each key be pushed off its
