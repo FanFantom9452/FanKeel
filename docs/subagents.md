@@ -458,23 +458,23 @@ when what you want is a second opinion on something you have already decided.
 ## A stage agent, behind `stage.agents`
 
 Everything above holds with the profile's `stage.agents` at its default,
-`false` — nothing is controlled (`lib/profile.js:31`, `'stage.agents': { values: ['false', 'true', 'all'], builtin: 'false',`).
+`false` — nothing is controlled (`lib/profile.js:32`, `'stage.agents': { values: ['false', 'true', 'all'], builtin: 'false',`).
 `parseStageAgents` in `lib/profile.js` reads the key as one of four forms:
-`false` controls no stage (`lib/profile.js:84`, `if (s === 'false' || s === '') return { value: [] };`);
+`false` controls no stage (`lib/profile.js:85`, `if (s === 'false' || s === '') return { value: [] };`);
 `true` controls `survey` alone — kept for that one meaning rather than "the
 route's first stage" because every existing doc and the 2026-09-20 A/B
-already mean survey by `true` (`lib/profile.js:85`, `if (s === 'true') return { value: ['survey'] };`);
+already mean survey by `true` (`lib/profile.js:86`, `if (s === 'true') return { value: ['survey'] };`);
 `all` controls every stage in `lib/stages.js`'s `FULL_ROUTE`
-(`lib/profile.js:87`, `if (s === 'all') return { value: canon.slice() };`);
+(`lib/profile.js:88`, `if (s === 'all') return { value: canon.slice() };`);
 and anything else is a comma-separated list of stage names, lowercased,
 deduped and reordered to `FULL_ROUTE`'s own order regardless of what order or
 how many repeats they arrived in, so two profiles naming the same set always
 compare equal — an unknown name in that list is refused with the one message an
 empty list is refused with, in the shape every other bad profile value takes
-(`lib/profile.js:93`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
+(`lib/profile.js:94`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
-file could change (`lib/stages.js:635`, `const raw = values && values['stage.agents'];`),
+file could change (`lib/stages.js:636`, `const raw = values && values['stage.agents'];`),
 so which stages are controlled is a profile answer, not a constant. Put a
 stage on that list and it is run by a stage agent instead of by the session:
 
