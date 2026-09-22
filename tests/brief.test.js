@@ -469,7 +469,42 @@ test('read first says none when no earlier stage left a report, and says how man
   assert.ok(long.includes('1 more not listed'));
 });
 
-test('a design and a plan brain may write one file under docs/plans/ and commit it through a commit file; the other stages may not', () => {
+// The test above only proves the cap lies somewhere between a line that fits
+// (604 chars) and two lines whose sum does not (1208) — a gap of hundreds of
+// characters. A single line of exactly the cap, and one of cap+1, pin the
+// constant itself: the first must always be kept whole (nothing "over" a cap
+// it does not exceed), the second must always be replaced by the count.
+test('read first\'s character cap is exactly 1000: one line of 1000 characters prints in full, one of 1001 does not', () => {
+  const { handoffPath } = require('../lib/handoff.js');
+  const started = '2026-09-19T09:30:12.345Z';
+  const brief = (reads) => {
+    const moves = [['verify', 1], ['build', 2]];
+    const root = tmp();
+    seedProfile(root, { 'stage.agents': ['build'] });
+    seed(root, { stage: 'build', started, moves });
+    const file = handoffPath(root, { started, moves: moves.slice(0, 1) }, 'verify');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, 'reads:\n' + reads.map((r) => '- ' + r).join('\n') + '\n\n');
+    return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  };
+  const atCap = brief(['x'.repeat(1000)]);
+  assert.ok(atCap.includes('x'.repeat(1000)), 'a single line of exactly 1000 characters must print in full');
+  assert.ok(!atCap.includes('more not listed'), 'nothing is left out when the one line fits the cap exactly');
+  const overCap = brief(['x'.repeat(1001)]);
+  assert.ok(!overCap.includes('x'.repeat(1001)), 'a single line of 1001 characters must not print in full');
+  assert.ok(overCap.includes('1 more not listed'), 'the one line over the cap is counted as left out');
+});
+
+// Split into three tests, one per brief, rather than one test asserting all of
+// them in sequence. In the single-test version, `assert.doesNotMatch(plan, ...)`
+// sat after an `assert.match` on the same rendered text, and once any earlier
+// assertion in the function threw — a node:test function stops at its first
+// throw — nothing after it, including that doesNotMatch, ever ran. Splitting
+// means a mutation that only breaks plan's rendering cannot stop design's
+// assertions from running, and vice versa; each test's own doesNotMatch is
+// also placed before its confirmatory match, so a mutation that corrupts that
+// brief's own sentence cannot hide a doesNotMatch that would otherwise redden.
+test('a design brain may write one file under docs/plans/ and commit it through a commit file', () => {
   const brief = (stage) => {
     const root = tmp();
     seedProfile(root, { 'stage.agents': [stage] });
@@ -477,15 +512,34 @@ test('a design and a plan brain may write one file under docs/plans/ and commit 
     return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
   };
   const design = brief('design');
+  assert.doesNotMatch(design, /Its path is the first line of your report\./, 'design must not carry the plan\'s artifact sentence');
   assert.match(design, /artifact: besides your report you may Write one file, docs\/plans\/<date>-<topic>-design\.md, and only where the design skill calls for a spec/);
   assert.match(design, /\(the architectural class\)\. Put its path on the report's `spec:` line\./);
   assert.match(design, /You cannot commit: `git commit` and `git add` are refused to you\. When that file is written, write [^\n]*design-commit\.md/);
   assert.ok(design.length < 10000, 'design brief is ' + design.length + ' chars');
+});
+
+test('a plan brain may write one file under docs/plans/ and commit it through a commit file', () => {
+  const brief = (stage) => {
+    const root = tmp();
+    seedProfile(root, { 'stage.agents': [stage] });
+    seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
+    return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  };
   const plan = brief('plan');
+  assert.doesNotMatch(plan, /Put its path on the report's `spec:` line\./, 'plan must not carry the design\'s artifact sentence');
   assert.match(plan, /artifact: besides your report you may Write one file, docs\/plans\/<date>-<topic>\.md\. Its path is the first line of your report\./);
-  assert.doesNotMatch(plan, /Put its path on the report's/);
   assert.match(plan, /write [^\n]*plan-commit\.md/);
   assert.ok(plan.length < 10000, 'plan brief is ' + plan.length + ' chars');
+});
+
+test('no stage besides design and plan may write an artifact', () => {
+  const brief = (stage) => {
+    const root = tmp();
+    seedProfile(root, { 'stage.agents': [stage] });
+    seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
+    return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  };
   for (const stage of ['survey', 'build', 'verify']) assert.doesNotMatch(brief(stage), /artifact: besides your report/, stage);
 });
 

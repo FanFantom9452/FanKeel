@@ -112,6 +112,35 @@ test('readsOf keeps an unbulleted line whose path is inline code', () => {
   assert.deepEqual(readsOf(file), ['`lib/a.js` — the caller', '`docs/b.md` — the contract']);
 });
 
+// Four behaviours the doc comment above readsOf claims and none of the tests
+// above exercise: CRLF line endings, a `*` bullet, trailing spaces after the
+// `reads:` mark itself, and the block sitting at the very end of the file
+// with no trailing newline.
+
+test('readsOf splits on \\r\\n as well as \\n, trimming the \\r from each line', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'r.md');
+  fs.writeFileSync(file, '# report\r\n\r\nreads:\r\n- a — why\r\n\r\n' + block(gateOf('q')));
+  assert.deepEqual(readsOf(file), ['a — why']);
+});
+
+test('readsOf strips a star bullet the same as a dash', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'r.md');
+  fs.writeFileSync(file, 'reads:\n- a — why\n* b — why2\n\n' + block(gateOf('q')));
+  assert.deepEqual(readsOf(file), ['a — why', 'b — why2']);
+});
+
+test('readsOf matches the reads: mark line even with trailing spaces after it', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'r.md');
+  fs.writeFileSync(file, 'reads:   \n- a — why\n\n' + block(gateOf('q')));
+  assert.deepEqual(readsOf(file), ['a — why']);
+});
+
+test('readsOf reads the block when it is the last content in the file with no trailing newline', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'r.md');
+  fs.writeFileSync(file, '# report\n\nreads:\n- a — why');
+  assert.deepEqual(readsOf(file), ['a — why']);
+});
+
 test('previousHandoff walks moves back to the newest earlier stage that left a report', () => {
   const root = tmp('fankeel-handoff-');
   const write = (data, stage) => {
