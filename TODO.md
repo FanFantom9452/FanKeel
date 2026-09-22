@@ -75,7 +75,7 @@ what gets scheduled.
 
 ## Ready
 
-- 〔stage-agents〕`ctx.js` 讀 agent 檔還有兩個小尾巴：fixture 只有 assistant 行（`woken` 沒被釘住）、`isAgentFile` 可改用 `summarise` 是否為 null（少 6 行）——查證後兩者形狀不能互換：`summarise(file, { sidechain: true })` 回傳非 null 只代表「至少一筆 request」，不代表「全部 sidechain」；一個混了主線與 sidechain 的檔案（例如 `tests/ctx.test.js` 的「a session file that mixes a few sidechain requests with its main ones」fixture）在此選項下一樣回傳非 null，換成這個判斷會把它誤判成 agent 檔，讀壞既有測試，故保留 `isAgentFile` 現有實作 — [scripts/ctx.js](scripts/ctx.js).
+- 〔stage-agents〕`ctx.js` 讀 agent 檔還有兩個小尾巴未收：`isAgentFile` 未簡化、`woken` 的 fixture 未釘住 — [scripts/ctx.js](scripts/ctx.js).
 
 ## Needs a decision
 

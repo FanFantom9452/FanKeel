@@ -86,6 +86,11 @@ function stageRows(entries, turn, contexts, commands, gates) {
 // ones is still a session, and those lines stay ignored.
 const isRequest = (entry) => Boolean(entry && entry.type === 'assistant' && entry.message && typeof entry.message === 'object'
     && typeof entry.message.model === 'string' && entry.message.usage && typeof entry.message.usage === 'object');
+
+// `usage.summarise(file, { sidechain: true })` returning non-null only says at least one
+// request exists, not that every request is sidechain, so it cannot stand in for the check
+// below: a file mixing main-thread and sidechain requests (the `tests/ctx.test.js` fixture
+// that mixes a few sidechain requests with its main ones) would misread as a pure agent file.
 const isAgentFile = (entries) => {
     const requests = entries.filter(isRequest);
     return requests.length > 0 && requests.every((entry) => entry.isSidechain === true);
