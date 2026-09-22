@@ -261,7 +261,7 @@ test('a stage agent gets its stage\'s rules and shape, its skill, and where to w
   assert.ok(text.length < 10000, 'brain brief is ' + text.length + ' chars');
 });
 
-test('a brain\'s stage rules are rendered with the profile: a land brain carries the clause and the archive rule the profile answers, a design brain the mockup rule', () => {
+test('a brain\'s stage rules are rendered with the profile: a land brain carries the clause and the archive rule the profile answers, a controlled design brain never the mockup rule', () => {
   const { landClause } = require('../lib/profile.js');
   const values = { 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': true };
   const brief = (stage, over) => {
@@ -279,9 +279,13 @@ test('a brain\'s stage rules are rendered with the profile: a land brain carries
   const bare = brief('land', {});
   assert.match(bare, /Integration — no land answer in the profile: open the menu/);
   assert.match(bare, /archived, after asking/);
+  // A controlled design brain has no agent that can Write or Edit a mockup
+  // page (agentsFor('design') is reader and reviewer only), so the rule is
+  // filtered out of its brief even with a model named — this `brief` helper
+  // always controls the stage it asks for.
   const mockup = /Frontend work gets a mockup first: one page at `design\.mockup`'s model/;
   const design = brief('design', { 'design.mockup': 'sonnet' });
-  assert.match(design, mockup);
+  assert.doesNotMatch(design, mockup);
   assert.doesNotMatch(brief('design', {}), mockup);
   for (const [name, text] of [['land', land], ['design', design]]) assert.ok(text.length < 10000, name + ' brief is ' + text.length + ' chars');
 });
