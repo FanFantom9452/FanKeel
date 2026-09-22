@@ -681,6 +681,31 @@ test('the 未記版本 legend entry carries the reason for its grey, and a real 
     assert.equal(count(html, /<span title=/g), 1, 'only \'none\' is annotated — 0.80.0 and 0.74.0 are their own explanation');
 });
 
+// `colorOf` caps a version's fallback slot at `--p-5` the same way it caps
+// `project`'s, once there are more than five real versions — but before this
+// fix `legendHtml` only narrowed `own` for `dim: 'project'`, so `version`'s
+// `own` stayed `bars.keys` itself and the overflow line never triggered:
+// every version beyond the fifth still printed its own row even though
+// several of them shared the same `--p-5` swatch.
+const MANY_VER = ['0.81.0', '0.82.0', '0.83.0', '0.84.0', '0.85.0', '0.86.0', '0.87.0', '0.88.0'].map((v, i) => ({
+    id: 'iiii' + (9000 + i) + '-0000', root: 'F:\\ws\\alpha', project: null, pkey: 'F:\\ws\\alpha', task: 'version ' + v,
+    state: 'down', stage: 'build', route: ['survey', 'build'], started: local(9, 10, 10), updated: NOW,
+    usd: 1, agentUsd: 1, hasDetail: true, version: v,
+    spans: [{ day: '2026-09-10', stage: 'build', who: 'main', ms: 60000 }],
+    days: [dayRow('2026-09-10', 'build', 'claude-opus-5', 'main', 1, 100)],
+}));
+
+test('a version legend with more than five real versions collapses the overflow into 其他 N 個 the same way project does', () => {
+    const bars = V.dayBars(MANY_VER, 'usd', 'version', DAYS);
+    const o = { metric: 'usd', dim: 'version', sel: null, today: '2026-09-14', days: DAYS, names: {}, pkeys: [] };
+    const html = V.legendHtml(bars, o);
+    assert.equal(bars.keys.length, 8, 'eight distinct real versions, newest first');
+    assert.match(html, /0\.88\.0/, 'the newest version keeps its own legend row');
+    assert.doesNotMatch(html, /0\.83\.0/, 'the third version past the fifth slot falls into the overflow instead of its own row');
+    assert.match(html, /其他 3 個/, 'three versions past the fifth slot collapse into one line');
+    assert.equal(count(html, /class="sw"/g), 6, 'five kept versions plus one overflow swatch, not eight individual rows');
+});
+
 // `version` is the one of the two new dims that `時間` keeps. A span records
 // only a stage and who was running, so it carries nothing to split by model
 // or by kind — but a version belongs to the session rather than to the row,

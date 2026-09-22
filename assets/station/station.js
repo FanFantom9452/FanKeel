@@ -553,8 +553,9 @@
     }
     function legendHtml(bars, o) {
         if (bars.disabled) return '';
-        var own = o.dim !== 'project' ? bars.keys : bars.keys.filter(function (k) {
-            var i = o.pkeys.indexOf(k);
+        var own = (o.dim !== 'project' && o.dim !== 'version') ? bars.keys : bars.keys.filter(function (k) {
+            if (o.dim === 'version' && k === 'none') return true;
+            var i = (o.dim === 'version' ? bars.keys : o.pkeys).indexOf(k);
             return i >= 0 && i < 5;
         });
         return '<span class="muted">由下而上</span>' + own.map(function (k) {
