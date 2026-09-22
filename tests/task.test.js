@@ -1571,6 +1571,14 @@ test('start takes guard from the profile and says so; without one the field stay
   assert.equal(registry.readSession(dir3, A).guard, 'deny');
 });
 
+test('start snapshots every non-builtin profile key besides guard into data.profile', () => {
+  const dir = root();
+  run(dir, ['profile', 'set', 'class.default', 'bounded']);
+  run(dir, ['profile', 'set', 'dispatch.floor', 'opus']);
+  run(dir, ['start', '--session', A, '--task', 'profiled']);
+  assert.deepEqual(registry.readSession(dir, A).profile, { 'class.default': 'bounded', 'dispatch.floor': 'opus' });
+});
+
 test('profile suggest writes nothing and says what the history answers', () => {
   const dir = root();
   const out = run(dir, ['profile', 'suggest']);

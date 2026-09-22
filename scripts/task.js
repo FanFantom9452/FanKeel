@@ -586,6 +586,17 @@ function cmdStart(root, opts) {
     // not the script choosing a mode — which is what invariant 6 forbids.
     if (prof.sources.guard && prof.sources.guard !== 'builtin') data.guard = prof.values.guard;
 
+    // Every other profile key whose source is not `builtin`, snapshotted the
+    // same way `guard` is above but into its own field: `guard` stays where
+    // existing readers expect it, and this is additive rather than a
+    // replacement for it.
+    const profileSnapshot = {};
+    for (const key of Object.keys(profile.KEYS)) {
+        if (key === 'guard') continue;
+        if (prof.sources[key] && prof.sources[key] !== 'builtin') profileSnapshot[key] = prof.values[key];
+    }
+    if (Object.keys(profileSnapshot).length) data.profile = profileSnapshot;
+
     // `replace` rather than `update`: this record was built from scratch a few
     // lines up, so there is nothing of anyone else's in the file to preserve.
     // What the lock buys is that a hook firing on the prompt that ran this
