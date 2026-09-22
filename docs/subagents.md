@@ -152,7 +152,7 @@ it every single time, and it is worth it even when nothing else about the
 delegation changes.
 
 The brief is capped, and the cap is a test rather than a habit:
-`tests/brief.test.js:145`, `assert.ok(text.length < 1400`. Measured 2026-09-11
+`tests/brief.test.js:152`, `assert.ok(text.length < 1400`. Measured 2026-09-11
 against that test's own seed, the rendered brief is 1,098 characters — 823 before
 the working-tree rule was added to `RETURN_RULES`. A `TODO.md` entry carried 777
 as the figure until it closed on 2026-09-11; it matched nothing, in the code or
@@ -579,8 +579,9 @@ carries `STAGE_AGENTS` sets the profile with
 The builtin stays `false`.
 What the switch costs is read afterwards from the run it enables, with
 `node scripts/ctx.js <session> --by-stage` and that run's `modelUsage`, against the
-thresholds in [the spec](plans/2026-09-21-all-stages-brain-design.md): a controller of
-at most 60 turns and a last gate below 200k. That run has not happened.
+thresholds the design set (a controller of at most 60 turns and a last gate below
+200k — [2026-09-22-all-stages-brain-promoted.md](decisions/2026-09-22-all-stages-brain-promoted.md)
+has the current record). That run has not happened.
 
 ## What a controlled `build` and `verify` have not been run through
 

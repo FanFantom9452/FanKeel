@@ -6,9 +6,9 @@ last_verified: 2026-09-22
 # ctx.js --by-stage 先做、其餘五個 task 等量測 — 決策紀錄
 
 起點是使用者的觀察：主控用 Sonnet 5 很省，但主 session 還是被不斷叫起、stage 來回跳讓 context 堆得很快，所以每個 stage 都要拆出去。
-設計見 [../plans/2026-09-21-all-stages-brain-design.md](../plans/2026-09-21-all-stages-brain-design.md)，
+設計見 [../archive/2026-09-21-all-stages-brain-design.md](../archive/2026-09-21-all-stages-brain-design.md)，
 計畫見 [../archive/2026-09-21-all-stages-brain.md](../archive/2026-09-21-all-stages-brain.md)，
-沒做的五個 task 在 [../plans/2026-09-21-all-stages-brain-held.md](../plans/2026-09-21-all-stages-brain-held.md)。
+沒做的五個 task 後來在 2026-09-22 由使用者開跑補齊，見 [2026-09-22-all-stages-brain-promoted.md](2026-09-22-all-stages-brain-promoted.md)；計畫已落地封存於 [../archive/2026-09-21-all-stages-brain-held.md](../archive/2026-09-21-all-stages-brain-held.md)。
 **主控用 Sonnet 是前提，品質由 stage agent 負責**，所以這個任務量的是主控的 turn 與 context，不是品質。
 
 ## 一、定案

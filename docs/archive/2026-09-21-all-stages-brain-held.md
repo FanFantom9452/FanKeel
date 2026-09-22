@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: archived
 last_verified: 2026-09-22
 ---
 

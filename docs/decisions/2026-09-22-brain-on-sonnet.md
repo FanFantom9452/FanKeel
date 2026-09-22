@@ -6,8 +6,8 @@ last_verified: 2026-09-22
 # 站 agent 改用 Sonnet，design 與 plan 留給 Opus — 決策紀錄
 
 使用者 2026-09-22 開了跑：每一站都交給 Sonnet 的站 agent，Opus 只留給判官與關鍵處。
-設計見 [../plans/2026-09-21-all-stages-brain-design.md](../plans/2026-09-21-all-stages-brain-design.md) 的 §6，
-計畫見 [../plans/2026-09-21-all-stages-brain-held.md](../plans/2026-09-21-all-stages-brain-held.md)。
+設計見 [../archive/2026-09-21-all-stages-brain-design.md](../archive/2026-09-21-all-stages-brain-design.md) 的 §6，
+計畫見 [../archive/2026-09-21-all-stages-brain-held.md](../archive/2026-09-21-all-stages-brain-held.md)（已落地封存）。
 這份只取代 [2026-09-20-survey-brain.md](2026-09-20-survey-brain.md) 第一節第二列（「主控與站 agent 怎麼分工」）裡
 站 agent 用 Opus 的那個**模型**選擇；分工本身——判斷留在讀了整站的那一邊，主控只照檔案執行——不動。
 
