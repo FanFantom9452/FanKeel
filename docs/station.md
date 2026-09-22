@@ -577,6 +577,7 @@ the same axes, lists its sessions, and carries the per-route stage ledger. A del
 `前期無資料` rather than a percentage against zero, because this repository's
 usage records begin on 2026-09-04 and its burn records on 08-28; the waiting
 ratio moves in percentage points, and a rise in it is the bad direction.
+每一段各自可 hover，出現跟著滑鼠的資訊卡（`segTip`：日期、那一段的 key 與數值、占當天比例、當天各段與合計），同 key 的段一起亮、其他淡出，那天有一條參考線；圖例 hover 高亮整條序列，點一下固定、再點取消。
 
 The stage ledger is grouped by route, because a seven-stage session and a
 three-stage one averaged together describe neither: `spike`, `bounded` and

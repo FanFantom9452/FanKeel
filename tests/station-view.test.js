@@ -466,7 +466,8 @@ test('sessionTotals and projectRows sum days and spans per session and per proje
 test('the home builders print dollars from days and link every row to its level', () => {
     const svg = V.histSvg(V.dayBars(HOME, 'usd', 'model', DAYS), O);
     assert.equal(count(svg, /<rect class="hit"/g), 30);
-    assert.match(svg, /<rect class="hit" data-href="#\/"[^>]*><title>2026-09-13 /, 'the open day closes');
+    assert.match(svg, /<rect class="hit" data-href="#\/"[^>]*aria-label="2026-09-13 /, 'the open day closes');
+    assert.doesNotMatch(svg, /<title>/, 'no native tooltip: the card replaces it');
     assert.match(svg, /<rect class="hit" data-href="#\/d\/2026-09-14"/);
     assert.match(V.histSvg(V.dayBars(HOME, 'time', 'model', DAYS), O), /^<p class="note">時間沒有 model 可分/);
     assert.match(V.projectsHtml(V.projectRows(HOME, DAYS), O), /href="#\/p\/F%3A%5Cws%5Calpha%2FBeta"/);
@@ -590,8 +591,8 @@ test('the 未記版本 legend entry carries the reason for its grey, and a real 
     const bars = V.dayBars(VER, 'usd', 'version', DAYS);
     const o = { metric: 'usd', dim: 'version', sel: null, today: '2026-09-14', days: DAYS, names: {}, pkeys: [] };
     const html = V.legendHtml(bars, o);
-    assert.match(html, /<span title="[^"]*registry 還沒有 version[^"]*"><i class="sw" style="background:var\(--st-none\)"><\/i>未記版本<\/span>/);
-    assert.equal(count(html, /<span title=/g), 1, 'only \'none\' is annotated — 0.80.0 and 0.74.0 are their own explanation');
+    assert.match(html, /<span data-key="none" title="[^"]*registry 還沒有 version[^"]*"><i class="sw" style="background:var\(--st-none\)"><\/i>未記版本<\/span>/);
+    assert.equal(count(html, /<span[^>]* title=/g), 1, 'only \'none\' is annotated — 0.80.0 and 0.74.0 are their own explanation');
 });
 
 // `colorOf` caps a version's fallback slot at `--p-5` the same way it caps
@@ -1128,5 +1129,33 @@ test('the live badge counts exactly the rows 現在 marks live', () => {
     assert.equal(c.sessions, V.recentRows(NAV_SESSIONS, NAV_DAYS).length);
     assert.equal(c.usd, 3);
     assert.equal(c.docs, 1);
+});
+
+test('every non-zero segment is its own hover target, behind nothing', () => {
+    const bars = V.dayBars(HOME, 'usd', 'model', DAYS);
+    const svg = V.histSvg(bars, O);
+    const parts = bars.days.reduce((n, b) => n + bars.keys.filter((k) => b.parts[k]).length, 0);
+    assert.ok(parts > 1);
+    assert.equal(count(svg, /<rect class="hseg" data-day="/g), parts);
+    assert.match(svg, /<line class="hguide"/);
+    // The column's hit rect comes before its bar group, so a segment is on top of it.
+    assert.ok(svg.indexOf('<rect class="hit" data-href="#/d/2026-09-14"') < svg.indexOf('<rect class="hseg" data-day="2026-09-14"'));
+    assert.match(V.legendHtml(bars, O), /<span data-key="/);
+});
+
+test('segTip lists the day\'s segments, marks the hovered one, and its parts add up to the total', () => {
+    const bars = V.dayBars(HOME, 'usd', 'model', DAYS);
+    const b = bars.days.find((d) => bars.keys.filter((k) => d.parts[k]).length >= 2);
+    assert.ok(b, 'the fixture has a day with two segments');
+    const keys = bars.keys.filter((k) => b.parts[k]);
+    const tip = V.segTip(bars, O, b.day, keys[0]);
+    assert.match(tip, new RegExp(b.day));
+    assert.equal(count(tip, /<li/g), keys.length);
+    assert.equal(count(tip, /<li data-hot/g), 1);
+    assert.match(tip, /class="tt-main"/);
+    assert.ok(Math.abs(keys.reduce((s, k) => s + b.parts[k], 0) - b.total) < 1e-9);
+    assert.match(tip, /當天合計/);
+    assert.doesNotMatch(V.segTip(bars, O, b.day, null), /class="tt-main"/, 'the column alone: no segment headline');
+    assert.equal(V.segTip(bars, O, '1999-01-01', null), '');
 });
 

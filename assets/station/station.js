@@ -492,11 +492,19 @@
         bars.days.forEach(function (b, i) {
             var cx = (L + i * slot + slot / 2).toFixed(1), x0 = (L + i * slot + slot / 2 - bw / 2).toFixed(1);
             var c = 0, open = b.day === o.sel, mark = open || b.day === o.today;
+            var href = open ? '#/' : '#/d/' + b.day;
+            var label = b.day + ' 合計 ' + metricText(o.metric, b.total) + bars.keys.filter(function (k) { return b.parts[k]; })
+                .map(function (k) { return '；' + keyLabel(o.dim, k, o.names) + ' ' + metricText(o.metric, b.parts[k]); }).join('');
+            // The column's hit area goes first, so every segment drawn after it
+            // sits on top and takes the hover itself.
+            out += '<rect class="hit" data-href="' + href + '" data-day="' + b.day + '" data-cx="' + cx + '" x="' + (L + i * slot).toFixed(1)
+                + '" y="' + (T - 10) + '" width="' + slot.toFixed(1) + '" height="' + (plotH + AX) + '" aria-label="' + esc(label) + '"/>';
             out += '<g class="bar"' + (o.sel && !open ? ' style="opacity:.36"' : '') + '>';
             bars.keys.forEach(function (k) {
                 if (!b.parts[k]) return;
                 var h = y(b.parts[k]);
-                out += '<rect x="' + x0 + '" y="' + (base - c - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="'
+                out += '<rect class="hseg" data-day="' + b.day + '" data-key="' + esc(k) + '" data-cx="' + cx + '" data-href="' + href
+                    + '" x="' + x0 + '" y="' + (base - c - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="'
                     + Math.max(h - 1, 0.5).toFixed(1) + '" style="fill:' + colorOf(o.dim, k, o.dim === 'version' ? bars.keys : o.pkeys) + '"/>';
                 c += h;
             });
@@ -507,14 +515,9 @@
                 + (mark ? ' style="fill:var(--ink);font-weight:600"' : '') + '>' + Number(b.day.slice(8)) + '</text>'
                 + (b.day === o.today || b.day.slice(8) === '01' || i === 0
                     ? '<text x="' + cx + '" y="' + (base + 33) + '" text-anchor="middle">'
-                    + (b.day === o.today ? '今天' : Number(b.day.slice(5, 7)) + '月') + '</text>' : '')
-                + '<rect class="hit" data-href="' + (open ? '#/' : '#/d/' + b.day) + '" x="' + (L + i * slot).toFixed(1)
-                + '" y="' + (T - 10) + '" width="' + slot.toFixed(1) + '" height="' + (plotH + AX) + '"><title>'
-                + esc(b.day + ' 合計 ' + metricText(o.metric, b.total) + bars.keys.filter(function (k) { return b.parts[k]; })
-                    .map(function (k) { return '\n' + keyLabel(o.dim, k, o.names) + ' ' + metricText(o.metric, b.parts[k]); }).join(''))
-                + '</title></rect>';
+                    + (b.day === o.today ? '今天' : Number(b.day.slice(5, 7)) + '月') + '</text>' : '');
         });
-        return out + '</svg>';
+        return out + '<line class="hguide" x1="0" x2="0" y1="' + T + '" y2="' + base + '"/></svg>';
     }
     function legendHtml(bars, o) {
         if (bars.disabled) return '';
@@ -525,10 +528,32 @@
         });
         return '<span class="muted">由下而上</span>' + own.map(function (k) {
             var hint = keyHint(o.dim, k);
-            return '<span' + (hint ? ' title="' + esc(hint) + '"' : '') + '><i class="sw" style="background:'
+            return '<span data-key="' + esc(k) + '"' + (hint ? ' title="' + esc(hint) + '"' : '') + '><i class="sw" style="background:'
                 + colorOf(o.dim, k, o.dim === 'version' ? bars.keys : o.pkeys) + '"></i>' + esc(keyLabel(o.dim, k, o.names)) + '</span>';
         }).join('') + (own.length < bars.keys.length
             ? '<span><i class="sw" style="background:var(--p-5)"></i>其他 ' + (bars.keys.length - own.length) + ' 個</span>' : '');
+    }
+    // The hover card for one column of the 30-day chart: the day, the segment
+    // under the pointer (none when the pointer is on the column's empty part),
+    // every segment of that day top-down as stacked, and the day's total.
+    function segTip(bars, o, day, key) {
+        var b = null;
+        bars.days.forEach(function (d) { if (d.day === day) b = d; });
+        if (!b) return '';
+        var pk = o.dim === 'version' ? bars.keys : o.pkeys;
+        var sw = function (k) { return '<i class="sw" style="background:' + colorOf(o.dim, k, pk) + '"></i>'; };
+        var pct = function (v) { return b.total ? Math.round(v / b.total * 100) + '%' : '—'; };
+        var keys = bars.keys.filter(function (k) { return b.parts[k]; });
+        return '<div class="tt-day">' + esc(day) + (day === o.today ? ' · 今天' : '') + '</div>'
+            + (key && b.parts[key]
+                ? '<div class="tt-main">' + sw(key) + '<b>' + esc(keyLabel(o.dim, key, o.names)) + '</b></div>'
+                    + '<div class="tt-val"><b>' + metricText(o.metric, b.parts[key]) + '</b><span>當天的 ' + pct(b.parts[key]) + '</span></div>'
+                : '')
+            + '<ul class="tt-list">' + keys.slice().reverse().map(function (k) {
+                return '<li' + (k === key ? ' data-hot' : '') + '>' + sw(k) + '<span>' + esc(keyLabel(o.dim, k, o.names))
+                    + '</span><span class="tt-n">' + metricText(o.metric, b.parts[k]) + '</span></li>';
+            }).join('') + '</ul>'
+            + '<div class="tt-sum">當天合計 <b>' + metricText(o.metric, b.total) + '</b></div>';
     }
     function projectsHtml(rows, o) {
         return '<div class="h2">專案 <small>近 30 天</small></div>'
@@ -1354,6 +1379,7 @@
             railHtml: railHtml, liveTag: liveTag,
             navHtml: navHtml, navCounts: navCounts, recentRows: recentRows, nowHtml: nowHtml,
             WIZ_STEPS: WIZ_STEPS, wizLoad: wizLoad, wizApply: wizApply, wizChanges: wizChanges, wizHtml: wizHtml,
+            segTip: segTip,
             tk: tk,
         };
     }
@@ -1533,6 +1559,66 @@
         return (isFinite(S.cleared) ? '<p class="cleared">cleared ' + S.cleared + ' stale rows</p>' : '')
             + nowHtml(S.projects, homeRows());
     }
+    // What daysPage last drew, so the hover card reads the same bars the chart
+    // did; `chartPin` is the legend key clicked to hold a series lit.
+    var chartBars = null, chartOpts = null, chartPin = null, chartHover = false;
+    function chartTipEl() {
+        var t = doc.getElementById('charttip');
+        if (!t) {
+            t = doc.createElement('div');
+            t.id = 'charttip';
+            t.setAttribute('role', 'tooltip');
+            doc.body.appendChild(t);
+        }
+        return t;
+    }
+    // Light one series everywhere — its segments and its legend entry. null clears.
+    function chartFocus(key) {
+        var svg = doc.querySelector('.chart svg');
+        if (!svg) return;
+        if (key) svg.setAttribute('data-focus', key); else svg.removeAttribute('data-focus');
+        Array.prototype.forEach.call(doc.querySelectorAll('.chart .hseg, .legend [data-key]'), function (el) {
+            if (key && el.getAttribute('data-key') === key) el.setAttribute('data-hot', ''); else el.removeAttribute('data-hot');
+        });
+    }
+    function chartGuide(cx) {
+        var g = doc.querySelector('.chart .hguide');
+        if (!g) return;
+        if (cx === null) { g.removeAttribute('data-on'); return; }
+        g.setAttribute('x1', cx);
+        g.setAttribute('x2', cx);
+        g.setAttribute('data-on', '');
+    }
+    function chartHide() {
+        chartTipEl().removeAttribute('data-on');
+        chartGuide(null);
+        chartFocus(chartPin);
+        chartHover = false;
+    }
+    doc.addEventListener('mousemove', function (e) {
+        if (route.view !== 'days' || !chartBars || !e.target.closest) return;
+        var lk = e.target.closest('.legend [data-key]');
+        if (lk) {
+            chartTipEl().removeAttribute('data-on');
+            chartGuide(null);
+            chartFocus(lk.getAttribute('data-key'));
+            chartHover = true;
+            return;
+        }
+        var seg = e.target.closest('.chart .hseg'), cell = seg || e.target.closest('.chart .hit');
+        if (!cell) { if (chartHover) chartHide(); return; }
+        var t = chartTipEl();
+        t.innerHTML = segTip(chartBars, chartOpts, cell.getAttribute('data-day'), seg ? seg.getAttribute('data-key') : null);
+        t.setAttribute('data-on', '');
+        var pad = 14, r = t.getBoundingClientRect(), x = e.clientX + pad, y = e.clientY + pad;
+        if (x + r.width > w.innerWidth - 8) x = e.clientX - pad - r.width;
+        if (y + r.height > w.innerHeight - 8) y = e.clientY - pad - r.height;
+        t.style.left = Math.max(8, x) + 'px';
+        t.style.top = Math.max(8, y) + 'px';
+        chartGuide(cell.getAttribute('data-cx'));
+        chartFocus(seg ? seg.getAttribute('data-key') : chartPin);
+        chartHover = true;
+    });
     // 近 30 天: the hero that used to open the home page. A day in the hash is
     // marked on the chart; there is no day panel any more.
     function daysPage(r) {
@@ -1540,6 +1626,8 @@
         var sel = r.day && DAYS.indexOf(r.day) >= 0 ? r.day : null;
         var o = homeOpts(sel);
         var bars = dayBars(R, view.metric, view.dim, DAYS);
+        chartBars = bars;
+        chartOpts = o;
         return '<section class="panel hero" data-block="days"><div class="hero-top"><div class="hero-title"><div class="eyebrow">'
             + heroEyebrow(frozenAt) + '</div>'
             + '<h1><b>' + DAYS[0].slice(5) + '</b> — <b>' + TODAY.slice(5) + '</b></h1></div>'
@@ -2654,6 +2742,7 @@
         p.className = 'page' + (route.view === 'list' ? ' fixed' : '');
         p.innerHTML = (VIEWS[route.view] || nowPage)(route);
         if (route.view === 'list') drawList();
+        if (route.view === 'days') chartFocus(chartPin); else if (chartHover) chartHide();
         doc.getElementById('nav').innerHTML = navHtml(route.view, navCounts(homeRows(), S.projects, DAYS));
         drawSide();
         doc.getElementById('gen').textContent = genText();
@@ -2670,6 +2759,12 @@
         if (wzt) {
             wiz = wizApply(wiz, S.profileKeys || {}, S.profiles || { machine: null, projects: {} }, wzt.dataset);
             draw();
+            return;
+        }
+        var lg = route.view === 'days' && e.target.closest ? e.target.closest('.legend [data-key]') : null;
+        if (lg) {
+            chartPin = chartPin === lg.getAttribute('data-key') ? null : lg.getAttribute('data-key');
+            chartFocus(chartPin);
             return;
         }
         // 記成 TODO: the server checks the line and answers with the rule it
