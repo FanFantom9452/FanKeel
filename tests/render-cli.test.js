@@ -62,6 +62,25 @@ test('renders a PNG and a DOM that shows what the inline script wrote', (t) => {
     assert.doesNotMatch(fs.readFileSync(file, 'utf8'), /AFTER_JS/, 'the fixture source already said AFTER_JS; the test proves nothing');
 });
 
+test('a relative --out still lands the PNG, not just print a path nothing is at', (t) => {
+    // `--out 'out'` with the CLI's cwd set to a tmp dir: if render.js hands
+    // that relative path straight to the browser's own `--screenshot=`
+    // flag, the browser can resolve it against its own working directory
+    // instead of the one it was spawned with, and no PNG ever lands at the
+    // path this test — and the CLI's own stdout — say it did.
+    if (!findBrowser()) {
+        t.skip('no Chromium-family browser on this machine (FANKEEL_BROWSER, Edge, Chrome, or an ms-playwright cache)');
+        return;
+    }
+    const { dir, file } = fixture();
+    const result = spawnSync(process.execPath, [CLI, file, '--out', 'out', '--size', '400,300'], { encoding: 'utf8', cwd: dir });
+    assert.equal(result.status, 0, 'render exited ' + result.status + ': ' + result.stderr);
+    const png = path.join(dir, 'out', 'render.png');
+    assert.ok(fs.existsSync(png), png + ' was not written even though render.js exited 0 and printed a path for it');
+    const bytes = fs.readFileSync(png);
+    assert.deepEqual(bytes.subarray(0, 8), PNG_SIGNATURE, png + ' does not start with the PNG signature');
+});
+
 test('FANKEEL_BROWSER at a path that does not exist, with fallback off, fails and says why', () => {
     const { dir, file } = fixture();
     const env = Object.assign({}, process.env, {

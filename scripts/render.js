@@ -115,13 +115,22 @@ function main() {
         process.stderr.write('render: no Chromium-family browser found (FANKEEL_BROWSER, Edge, Chrome, or an ms-playwright cache)\n');
         process.exit(2);
     }
-    const outDir = args.out || path.join(process.cwd(), '.fankeel', 'build', 'render');
+    // Resolved to absolute before it ever reaches the browser: a relative
+    // `--out` handed straight to the browser's own `--screenshot=` flag can
+    // be resolved against the browser's working directory rather than this
+    // process's, so the PNG lands somewhere other than the path this tool
+    // prints — or nowhere at all.
+    const outDir = path.resolve(args.out || path.join(process.cwd(), '.fankeel', 'build', 'render'));
     fs.mkdirSync(outDir, { recursive: true });
     const png = path.join(outDir, 'render.png');
     const html = path.join(outDir, 'render.html');
     const url = toUrl(args.target);
 
     runHeadless(browser, 'screenshot', ['--screenshot=' + png, '--window-size=' + args.size, url]);
+    if (!fs.existsSync(png)) {
+        process.stderr.write('render: screenshot exited 0 but did not write ' + png + '\n');
+        process.exit(1);
+    }
 
     const dump = runHeadless(browser, 'dump-dom', ['--dump-dom', url]);
     fs.writeFileSync(html, dump.stdout);
