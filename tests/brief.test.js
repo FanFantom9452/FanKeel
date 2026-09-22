@@ -527,7 +527,7 @@ test('a plan brain may write one file under docs/plans/ and commit it through a 
     return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
   };
   const plan = brief('plan');
-  assert.doesNotMatch(plan, /Put its path on the report's `spec:` line\./, 'plan must not carry the design\'s artifact sentence');
+  assert.doesNotMatch(plan, /Put its path on the report's/, 'plan must not carry the design\'s artifact sentence');
   assert.match(plan, /artifact: besides your report you may Write one file, docs\/plans\/<date>-<topic>\.md\. Its path is the first line of your report\./);
   assert.match(plan, /write [^\n]*plan-commit\.md/);
   assert.ok(plan.length < 10000, 'plan brief is ' + plan.length + ' chars');
