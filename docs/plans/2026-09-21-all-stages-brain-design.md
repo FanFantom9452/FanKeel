@@ -84,7 +84,8 @@ context，不是品質。
   名稱依日期與主題；design 寫進 handoff 的 `spec:` 行，plan 是報告的第一行（plan 報告的第一行本來就是 plan 路徑）。這仍是 prose 規則，跟現在「不寫 handoff 與 build 的 commit 檔以外」一樣，沒有 hook 擋。
 - design 與 plan 站的提交走 commit 檔，跟 build 今天一樣：兩站的 `controlRules` 也帶 `COMMIT_RULE`
   （`lib/stages.js:611` 現在只在 build 帶）。
-- audit 與 land：brain 沒有 Edit、也不做 git 寫入；audit 要改的頁面、land 的搬檔、merge 與清理，都交給
+- audit 與 land：brain 沒有 Edit、也不做 git 寫入；audit 要改的頁面交給 `fankeel-fixer`（audit 的 `STAGE_AGENTS` 帶它），
+  audit 的搬檔或 git 寫入、land 的搬檔、merge 與清理，交給
   `dispatch.floor` 的 implementer（跟 verify 的 mutation 同一條路），land 的整合方式仍經 gate 由使用者選。
 - 等量測：§1 若顯示主控的提交來回太貴，`COMMIT_RULE` 的位置要重審，這一節的提交那條跟著改。
 

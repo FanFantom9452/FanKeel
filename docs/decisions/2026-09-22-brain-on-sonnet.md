@@ -28,10 +28,10 @@ last_verified: 2026-09-22
 
 ## 三、探測
 
-這裡的「規則」是 `.claude/settings.local.json` 裡的一條 `permissions.allow`：`Edit(/.fankeel/build/**)`（每台機器一份，不進版控）。起因是 2026-09-22 一場 session 裡，auto mode 的分類器對站 agent 與 implementer 的 Write／Edit 回 no verdict 六次以上，handoff 檔因此寫不出來（當時記在 `TODO.md` 的〔stage-agents〕條目）。放行前後各派一個 sonnet 的 general-purpose agent，用 Write 在 `.fankeel/build/` 建一個檔：兩次探測在同一個 session、同一個 permission mode（auto，`~/.claude/settings.json` 的 `permissions.defaultMode`）下跑，唯一的差別是 `.claude/settings.local.json` 存不存在。探測檔名用 `probe-before.md` 與 `probe-after.md`，沒有照計畫用時間戳。
+這裡的「規則」是 `.claude/settings.local.json` 裡的一條 `permissions.allow`：`Edit(/.fankeel/build/**)`（每台機器一份，不進版控）。起因是 2026-09-22 一場 session 裡，auto mode 的分類器對站 agent 與 implementer 的 Write／Edit 回 no verdict 六次以上，handoff 檔因此寫不出來（當時記在 `TODO.md` 的〔stage-agents〕條目）。放行前後各派一個 sonnet 的 general-purpose agent，用 Write 在 `.fankeel/build/` 建一個檔：兩次探測在同一個 session、同一個 permission mode（auto，`~/.claude/settings.json` 的 `permissions.defaultMode`）下跑，有意改的只有 `.claude/settings.local.json` 存不存在；兩次之間 `.gitignore` 也多了一行、另有一個 agent 在背景改檔，這兩件事不太可能影響分類器，但沒有單獨排除。探測檔名用 `probe-before.md` 與 `probe-after.md`，沒有照計畫用時間戳。
 
 | test | before the rule | after the rule |
 |---|---|---|
-| 一個 agent 用 Write 建立 `.fankeel/build/probe-<before 或 after>.md`，內容一行 `probe`（2026-09-22 06:42:59 與 06:46:47） | `File created successfully at: F:\ymlab\fankeel\.fankeel\build\probe-before.md` | `File created successfully at: F:\ymlab\fankeel\.fankeel\build\probe-after.md` |
+| 一個 agent 用 Write 建立 `.fankeel/build/probe-<before 或 after>.md`，內容一行 `probe`（2026-09-22 06:42:59 與 06:46:47） | `File created successfully at: F:\ymlab\fankeel\.fankeel\build\probe-before.md (file state is current in your context — no need to Read it back)` | `File created successfully at: F:\ymlab\fankeel\.fankeel\build\probe-after.md (file state is current in your context — no need to Read it back)` |
 
 放行後的探測寫成功了，但放行前的也寫成功，所以這次沒有觀察到規則帶來的差別：規則有沒有效，在這台機器上無法證明；no verdict 這次沒有重現，但每邊只探一次、探的是 general-purpose agent 而不是站 agent，所以不能據此說問題已經消失。規則仍照使用者的決定加進去，當作保險，只放行 gitignored 的 `.fankeel/build/`。
