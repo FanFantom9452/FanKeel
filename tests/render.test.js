@@ -484,9 +484,9 @@ test('no stage’s rules cost more than a readable preamble', (t) => {
   // stage rather than only on the one the fixture happens to sit in, and each
   // size is reported so the margin is visible without editing this file.
   //
-  // 2400 is the third raise on this branch and should be the last. `audit` is
-  // the binding stage at 2397, with `build` at 2396, `survey` and `plan` at 2395
-  // and `verify` at 2391. This line said 2387, 2382 and 2364 until 2026-08-29, when the run
+  // 2400 is the third raise on this branch and should be the last. `design`
+  // and `land` are the binding stage at 2396, with `audit` at 2391, `verify`
+  // at 2372, `survey` and `plan` at 2350 and `build` at 2254. This line said 2387, 2382 and 2364 until 2026-08-29, when the run
   // said otherwise — the prose had been kept by hand and the diagnostics by the
   // machine, and only one of them was right. It is the same failure the plugin
   // exists to catch, in the file that reports the number. `build` reached 2399

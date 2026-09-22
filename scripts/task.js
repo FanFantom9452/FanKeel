@@ -719,7 +719,7 @@ function cmdStage(root, opts) {
 
     // What the stage just left cost, said at the one moment it is a finished
     // number. It goes here rather than into the injected block because `build`
-    // already renders at 2393 characters against a cap of 2400, and a figure
+    // already renders at 2254 characters against a cap of 2400, and a figure
     // nobody can read is worse than one printed where the move is announced.
     const at = positionIn(route, name);
     const spent = registry.burnOf(data, from);
@@ -730,7 +730,7 @@ function cmdStage(root, opts) {
         + (took ? '   ' + from + ' took ' + mins(took)
             + (held ? ', ' + mins(held) + ' of it at the gate' : '') : '');
     // 只在「已經有一次」之後才說，因為第一次 verify→build 就是這條 pipeline
-    // 本來的走法。只是 script 輸出，不佔注入——build 自己的區塊已經是 2393 / 2400。
+    // 本來的走法。只是 script 輸出，不佔注入——build 自己的區塊已經是 2254 / 2400。
     // `> 1`, not `> 0`: `stampEntry` above appended this very move before the
     // count is read, so the return being announced is now inside it. One counted
     // pair is the first return — the pipeline working as written — and two is the
