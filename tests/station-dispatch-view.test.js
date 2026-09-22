@@ -338,3 +338,22 @@ test('an agent a stage agent dispatched is indented under it, and its cost is in
     assert.match(band, /\$1\.23/);
     assert.match(html.slice(html.indexOf('<tfoot>')), /3 個 agent/);
 });
+
+// The same nesting inside a workflow phase: `withKids(r, 'wa', …)` renders
+// the kid as `wa kid`, not `ag kid`, and it still follows its parent row.
+const wfNested = {
+    dispatches: [{ key: 't10', turn: 4, surface: 'workflow', text: 'build', out: 1000, back: 90000, ret: 300, launch: 40, run: 'wf_5', ids: ['ab10'] }],
+    rows: [
+        { id: 'ab10', disp: 0, surface: 'workflow', label: 'impl:a', agentType: null, model: 'claude-sonnet-5', phase: 'Implement', parent: null, c: 50, k: 10, s: 30, unpriced: [] },
+        { id: 'ab11', disp: null, surface: 'agent', label: 'inner read', agentType: 'fankeel:fankeel-reader', model: 'claude-sonnet-5', phase: null, parent: 'ab10', c: 8, k: 2, s: 4, unpriced: [] },
+    ],
+    runs: [{ run: 'wf_5', name: 'build', agents: 1 }], agentCents: 58, agentsTotal: { cents: 58 }, unpriced: [], steps: {}, events: [], dropped: 0,
+};
+
+test('a workflow phase agent a stage agent dispatched is indented under it as a wa kid row, after its parent', () => {
+    const html = V.dispatchHtml(wfNested);
+    assert.equal(count(html, /<tr class="wa kid is-done"/g), 1);
+    const parent = html.indexOf('data-ag="ab10"');
+    const kid = html.indexOf('<tr class="wa kid');
+    assert.ok(parent >= 0 && parent < kid, [parent, kid].join(' '));
+});
