@@ -744,6 +744,20 @@ test('the mockup rule is filtered when design is controlled, even with a model n
   assert.equal(/mockup/.test(controlled), false, 'a controlled design station has no agent that can write the page');
 });
 
+test('the mockup rule names the profile-picked skill, and reads as today unset', () => {
+  const { mockupClause } = require('../lib/profile.js');
+  const off = { 'design.mockup': 'opus' };
+  const offRule = rulesFor('design', { designMockupClause: mockupClause(off) }, off).join('\n');
+  assert.match(offRule, /under `\.fankeel\/build\/`, path on `spec:` — the gate approves the page, not the paragraph\./,
+    'design.skill unset must read exactly as the rule did before design.skill existed');
+
+  const on = { 'design.mockup': 'opus', 'design.skill': 'taste-skill:taste-skill' };
+  const onRule = rulesFor('design', { designMockupClause: mockupClause(on) }, on).join('\n');
+  assert.match(onRule, /naming `taste-skill:taste-skill`, path on `spec:` — the gate approves the page\./,
+    'design.skill set must name the picked skill in the mockup rule');
+  assert.doesNotMatch(onRule, /under `\.fankeel\/build\/`/, 'the two branches must not both appear at once');
+});
+
 // The template is not filtered by `when`, so a slot added there is paid for by
 // every project. The path goes on the existing `spec:` line instead.
 test('the design template gained no slot', () => {

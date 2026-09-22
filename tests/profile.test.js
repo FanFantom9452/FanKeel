@@ -120,6 +120,38 @@ test('summary names design.mockup once somebody sets it', () => {
     assert.equal(profile.summary({ 'design.mockup': false }, { 'design.mockup': 'builtin' }), '');
 });
 
+test('design.skill is one of the six design skills; unset carries no source', () => {
+    const d = dir();
+    const cfg = path.join(d, 'cfg');
+    fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
+    fs.mkdirSync(path.join(cfg, 'fankeel'), { recursive: true });
+    // builtin is null: unset is absent from both values and sources, not a fourth state.
+    const off = profile.read(d, cfg);
+    assert.equal(off.values['design.skill'], undefined);
+    assert.equal(off.sources['design.skill'], undefined);
+    fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'design.skill': 'frontend-design:frontend-design' }));
+    const on = profile.read(d, cfg);
+    assert.equal(on.values['design.skill'], 'frontend-design:frontend-design');
+    assert.equal(on.sources['design.skill'], 'project');
+    // Anything outside the six is refused, not silently taken.
+    fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'design.skill': 'made-up:skill' }));
+    assert.equal(profile.read(d, cfg).values['design.skill'], undefined);
+});
+
+test('summary names design.skill once somebody sets it', () => {
+    const values = { 'design.skill': 'impeccable:impeccable' };
+    const sources = { 'design.skill': 'project' };
+    assert.match(profile.summary(values, sources), /design\.skill impeccable:impeccable/);
+    assert.equal(profile.summary({}, {}), '');
+});
+
+test('mockupClause reads as the rule did before design.skill existed, unset; names the skill, set', () => {
+    assert.equal(profile.mockupClause({}),
+        'under `.fankeel/build/`, path on `spec:` — the gate approves the page, not the paragraph.');
+    assert.equal(profile.mockupClause({ 'design.skill': 'impeccable:impeccable' }),
+        'naming `impeccable:impeccable`, path on `spec:` — the gate approves the page.');
+});
+
 test('class.default is a class name, and stays out of summary', () => {
     const d = dir();
     fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
