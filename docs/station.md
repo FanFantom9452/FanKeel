@@ -616,7 +616,7 @@ replaces sorted by it (`assets/station/station.js:1421`, `a sort key with no hea
 
 **比較** is a third view. Tick two sessions on 清單 or a project page — only a
 session with a detail can be ticked, and a third tick drops the first — and
-比較 in the top bar opens them one above the other: two context lines on one y
+比較 in the left bar opens them one above the other: two context lines on one y
 axis and one x
 length, x being the time since each one's first request, each still a single
 line; under them their peak context, request count, dispatch dollars and

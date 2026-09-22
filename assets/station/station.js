@@ -2741,7 +2741,10 @@
         p.className = 'page' + (route.view === 'list' ? ' fixed' : '');
         p.innerHTML = (VIEWS[route.view] || nowPage)(route);
         if (route.view === 'list') drawList();
-        if (route.view === 'days') chartFocus(chartPin); else if (chartHover) chartHide();
+        // A redraw (the 3 s re-read too) replaces the chart under a live hover;
+        // drop the card and the guide rather than leave them describing the old
+        // bars. chartHide re-applies the pin; the next mousemove brings the card back.
+        if (chartHover) chartHide(); else if (route.view === 'days') chartFocus(chartPin);
         doc.getElementById('nav').innerHTML = navHtml(route.view, navCounts(homeRows(), S.projects, DAYS));
         drawSide();
         doc.getElementById('gen').textContent = genText();
