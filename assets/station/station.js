@@ -1562,6 +1562,9 @@
     // What daysPage last drew, so the hover card reads the same bars the chart
     // did; `chartPin` is the legend key clicked to hold a series lit.
     var chartBars = null, chartOpts = null, chartPin = null, chartHover = false;
+    // What the pointer is on — a column `{day, key, cx}` or a legend entry
+    // `{legend}` — so a redraw under a still pointer can put the hover back.
+    var chartAt = null;
     function chartTipEl() {
         var t = doc.getElementById('charttip');
         if (!t) {
@@ -1594,6 +1597,18 @@
         chartGuide(null);
         chartFocus(chartPin);
         chartHover = false;
+        chartAt = null;
+    }
+    // The 3 s re-read redraws the chart under a pointer that has not moved:
+    // redraw the card from the new bars and light the same things again.
+    function chartRestore() {
+        if (!chartAt) { chartHide(); return; }
+        if (chartAt.legend) { chartFocus(chartAt.legend); return; }
+        var html = segTip(chartBars, chartOpts, chartAt.day, chartAt.key);
+        if (!html) { chartHide(); return; }
+        chartTipEl().innerHTML = html;
+        chartGuide(chartAt.cx);
+        chartFocus(chartAt.key || chartPin);
     }
     doc.addEventListener('mousemove', function (e) {
         if (route.view !== 'days' || !chartBars || !e.target.closest) return;
@@ -1602,6 +1617,7 @@
             chartHide();
             chartFocus(lk.getAttribute('data-key'));
             chartHover = true;
+            chartAt = { legend: lk.getAttribute('data-key') };
             return;
         }
         var seg = e.target.closest('.chart .hseg'), cell = seg || e.target.closest('.chart .hit');
@@ -1617,6 +1633,7 @@
         chartGuide(cell.getAttribute('data-cx'));
         chartFocus(seg ? seg.getAttribute('data-key') : chartPin);
         chartHover = true;
+        chartAt = { day: cell.getAttribute('data-day'), key: seg ? seg.getAttribute('data-key') : null, cx: cell.getAttribute('data-cx') };
     });
     // 近 30 天: the hero that used to open the home page. A day in the hash is
     // marked on the chart; there is no day panel any more.
@@ -2741,10 +2758,11 @@
         p.className = 'page' + (route.view === 'list' ? ' fixed' : '');
         p.innerHTML = (VIEWS[route.view] || nowPage)(route);
         if (route.view === 'list') drawList();
-        // A redraw (the 3 s re-read too) replaces the chart under a live hover;
-        // drop the card and the guide rather than leave them describing the old
-        // bars. chartHide re-applies the pin; the next mousemove brings the card back.
-        if (chartHover) chartHide(); else if (route.view === 'days') chartFocus(chartPin);
+        // A redraw (the 3 s re-read too) replaces the chart under a live hover:
+        // on 近 30 天 the hover is put back from the new bars, anywhere else it goes.
+        if (chartHover && route.view === 'days') chartRestore();
+        else if (chartHover) chartHide();
+        else if (route.view === 'days') chartFocus(chartPin);
         doc.getElementById('nav').innerHTML = navHtml(route.view, navCounts(homeRows(), S.projects, DAYS));
         drawSide();
         doc.getElementById('gen').textContent = genText();
