@@ -9,10 +9,8 @@
   <span class="pill down" id="servedown" hidden><i class="dot down"></i>serve 已停</span>
   <nav class="crumbs" id="side" aria-label="位置"></nav>
   <label class="search"><input id="q" placeholder="搜尋任務、session、碰過的檔案…" aria-label="搜尋"><span class="k">/</span></label>
-  <a class="btn" href="#/list">清單</a>
-  <a class="btn" href="#/cmp">比較</a>
 </header>
-<main class="page" id="page"></main>
+<div class="shell"><aside id="nav"></aside><main class="page" id="page"></main></div>
 <footer class="foot"><span id="gen"></span> · <span id="nreg"></span> · config dir <span class="mono" id="cfg">&mdash;</span></footer>
 <script>(function(){var v=new URLSearchParams(location.search).get('cleared');var q=v!==null&&/^\d+$/.test(v)?'?cleared='+v:'';document.write('<script src="station/station-data.js'+q+'"><\/script>')})()</script>
 <script src="station/station.js"></script>

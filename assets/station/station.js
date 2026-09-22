@@ -184,19 +184,23 @@
         }
         return out;
     }
-    // `#/`, `#/d/<day>`, `#/p/<encodeURIComponent(pkey)>`, `#/s/<id>[/<tab>]`, and
-    // `#/list` and `#/cmp` for the two pages that stayed. A hash is what a page
-    // opened from file:// can go back through.
+    // `#/` is 現在; `#/days`, `#/d/<day>`, `#/sessions`, `#/projects`, `#/docs`
+    // and `#/settings` are the other pages the left bar opens; `#/p/<pkey>`,
+    // `#/s/<id>[/<tab>]`, `#/list` and `#/cmp` are the pages that stayed. A hash
+    // is what a page opened from file:// can go back through.
+    var PAGES = ['sessions', 'projects', 'docs', 'settings'];
     function parseHash(hash) {
         var p = String(hash || '').replace(/^#\/?/, '').split('/');
         var dec = function (v) { try { return decodeURIComponent(v); } catch (e) { return null; } };
-        if (p[0] === 'd' && /^\d{4}-\d{2}-\d{2}$/.test(p[1] || '')) return { view: 'home', day: p[1] };
+        if (p[0] === 'd' && /^\d{4}-\d{2}-\d{2}$/.test(p[1] || '')) return { view: 'days', day: p[1] };
+        if (p[0] === 'days') return { view: 'days', day: null };
         var key = p[0] === 'p' && p[1] ? dec(p.slice(1).join('/')) : null;
         if (key !== null) return { view: 'project', pkey: key };
         var id = p[0] === 's' && p[1] ? dec(p[1]) : null;
         if (id !== null) return { view: 'session', id: id, tab: TABS.indexOf(p[2]) >= 0 ? p[2] : 'timeline' };
         if (p[0] === 'list' || p[0] === 'cmp') return { view: p[0] };
-        return { view: 'home', day: null };
+        if (PAGES.indexOf(p[0]) >= 0) return { view: p[0] };
+        return { view: 'now' };
     }
     function projectHash(pkey) { return '#/p/' + encodeURIComponent(pkey); }
     function sessionHash(id, tab) { return '#/s/' + encodeURIComponent(id) + (tab && tab !== 'timeline' ? '/' + tab : ''); }
@@ -383,45 +387,6 @@
             max: Math.max.apply(null, list.map(function (b) { return b.total; }).concat([0])),
         };
     }
-    function dayPanel(sessions, day) {
-        // `kind` gets a fifth `by` bucket, filled the same four-way `dayBars`
-        // fills it rather than through `dimKey` (see the note there) — chosen
-        // over leaving it out so the day panel's 依成分 split matches the
-        // home chart's rather than silently missing whenever that dim is
-        // picked.
-        var out = { day: day, usd: 0, tokens: 0, active: 0, wait: 0,
-            by: { project: {}, model: {}, stage: {}, who: {}, kind: {} }, sessions: [] };
-        sessions.forEach(function (s) {
-            var mine = { id: s.id, task: s.task, pkey: s.pkey, usd: 0, tokens: 0, active: 0, wait: 0 };
-            (s.days || []).forEach(function (r) {
-                if (r.day !== day) return;
-                var u = r.usd || 0;
-                mine.usd += u;
-                mine.tokens += tokenSum(r.tokens);
-                ['project', 'model', 'stage', 'who'].forEach(function (dim) {
-                    var k = dimKey(dim, s, r);
-                    out.by[dim][k] = (out.by[dim][k] || 0) + u;
-                });
-                if (r.cost) {
-                    out.by.kind.input = (out.by.kind.input || 0) + r.cost.input;
-                    out.by.kind.output = (out.by.kind.output || 0) + r.cost.output;
-                    out.by.kind.cacheRead = (out.by.kind.cacheRead || 0) + r.cost.cacheRead;
-                    out.by.kind.cacheWrite = (out.by.kind.cacheWrite || 0) + (r.cost.cacheWrite5m || 0) + (r.cost.cacheWrite1h || 0);
-                }
-            });
-            (s.spans || []).forEach(function (r) {
-                if (r.day !== day) return;
-                if (r.who === 'wait') mine.wait += r.ms; else mine.active += r.ms;
-            });
-            out.usd += mine.usd;
-            out.tokens += mine.tokens;
-            out.active += mine.active;
-            out.wait += mine.wait;
-            if (mine.usd || mine.tokens) out.sessions.push(mine);
-        });
-        out.sessions.sort(function (a, b) { return b.usd - a.usd; });
-        return out;
-    }
     // A session counts toward a project's `n` when it spent inside the window
     // or started inside it; one with no transcript has only its start.
     function projectRows(sessions, days) {
@@ -564,40 +529,6 @@
                 + colorOf(o.dim, k, o.dim === 'version' ? bars.keys : o.pkeys) + '"></i>' + esc(keyLabel(o.dim, k, o.names)) + '</span>';
         }).join('') + (own.length < bars.keys.length
             ? '<span><i class="sw" style="background:var(--p-5)"></i>其他 ' + (bars.keys.length - own.length) + ' 個</span>' : '');
-    }
-    function dayPanelHtml(p, o) {
-        var i = o.days.indexOf(p.day);
-        var split = function (dim) {
-            var by = p.by[dim], keys = orderKeys(dim, by);
-            return '<div class="split"><div class="split-h"><span>' + DIM_LABEL[dim] + '</span><span class="num">' + usd(p.usd) + '</span></div>'
-                + '<div class="split-bar">' + keys.map(function (k) {
-                    return '<i title="' + esc(keyLabel(dim, k, o.names) + ' ' + usd(by[k])) + '" style="flex:' + by[k] + ' 1 0;background:'
-                        + colorOf(dim, k, o.pkeys) + '"></i>';
-                }).join('') + '</div><div class="split-leg">' + keys.map(function (k) {
-                    return '<span><i class="sw" style="background:' + colorOf(dim, k, o.pkeys) + '"></i>' + esc(keyLabel(dim, k, o.names))
-                        + ' <b>' + usd(by[k]) + '</b><em>' + Math.round(by[k] / (p.usd || 1) * 100) + '%</em></span>';
-                }).join('') + '</div></div>';
-        };
-        var ro = function (l, v) { return '<div class="ro sm"><div class="l">' + l + '</div><div class="v">' + v + '</div></div>'; };
-        return '<section class="panel day" id="daypanel" aria-label="某日花費"><div class="day-head">'
-            + '<div><div class="eyebrow">某日花費</div><h2>' + esc(p.day) + (p.day === o.today ? ' <small class="muted">今天</small>' : '') + '</h2></div>'
-            + '<div class="readouts">' + ro('當日花費', usd(p.usd)) + ro('token', tokens(p.tokens)) + ro('active', hours(p.active))
-            + ro('<i class="hatchsw"></i>等待', hours(p.wait)) + '</div>'
-            + '<div class="day-nav">' + (i > 0 ? '<a class="btn" href="#/d/' + o.days[i - 1] + '">‹ 前一天</a>' : '')
-            + (i >= 0 && i < o.days.length - 1 ? '<a class="btn" href="#/d/' + o.days[i + 1] + '">後一天 ›</a>' : '')
-            + '<a class="btn" href="#/" aria-label="收起某日花費">收起 ✕</a></div></div>'
-            + '<div class="day-body"><div>' + ['project', 'model', 'stage', 'who', 'kind'].map(split).join('') + '</div>'
-            + '<div><div class="h2">當日 sessions <small>' + p.sessions.length + ' 個 · 只計這一天內發生的花費</small></div>'
-            + '<div class="tbl-wrap"><table class="t"><thead><tr><th>任務</th><th class="r">active</th><th class="r">等待</th>'
-            + '<th class="r">當日花費</th><th class="r">佔當日</th></tr></thead><tbody>'
-            + p.sessions.map(function (s) {
-                return '<tr class="link" data-href="' + sessionHash(s.id) + '"><td class="task"><a href="' + sessionHash(s.id) + '">'
-                    + esc(s.task || '（未命名）') + '</a><div class="muted"><i class="sw" style="background:' + colorOf('project', s.pkey, o.pkeys)
-                    + '"></i> ' + esc(o.names[s.pkey] || s.pkey) + '</div></td>'
-                    + '<td class="r">' + hours(s.active) + '</td><td class="r muted">' + hours(s.wait) + '</td>'
-                    + '<td class="r">' + usd(s.usd) + '</td><td class="r muted">' + Math.round(s.usd / (p.usd || 1) * 100) + '%</td></tr>';
-            }).join('') + '</tbody><tfoot><tr><td>合計</td><td class="r">' + hours(p.active) + '</td><td class="r">' + hours(p.wait)
-            + '</td><td class="r">' + usd(p.usd) + '</td><td class="r">100%</td></tr></tfoot></table></div></div></div></section>';
     }
     function projectsHtml(rows, o) {
         return '<div class="h2">專案 <small>近 30 天</small></div>'
@@ -1091,6 +1022,60 @@
         return '底下所有數字與狀態都凍結在 ' + genAbs + '（' + genRel + '），不會再更新。每 5 秒重試一次。';
     }
 
+    // ---- the left bar -------------------------------------------------------
+    // What 最近 sessions lists: anything that spent inside the window, and
+    // anything still live whether or not it has spent yet. Newest first.
+    function recentRows(sessions, days) {
+        var inside = {};
+        days.forEach(function (d) { inside[d] = true; });
+        return sessions.filter(function (s) {
+            return s.state === 'live' || (s.days || []).some(function (r) { return inside[r.day]; });
+        }).sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); });
+    }
+    // Every badge is the count of what its page shows, from the same rows.
+    function navCounts(sessions, projects, days) {
+        return {
+            live: sessions.filter(function (s) { return s.state === 'live'; }).length,
+            usd: windowTotals(sessions, days).usd,
+            sessions: recentRows(sessions, days).length,
+            projects: projectRows(sessions, days).length,
+            docs: [].concat.apply([], projects.map(function (p) { return p.docs || []; })).length,
+        };
+    }
+    function navHtml(active, c) {
+        var on = active === 'project' ? 'projects' : active === 'session' ? 'sessions' : active;
+        var item = function (v, href, label, badge, cls) {
+            return '<li><a href="' + href + '"' + (on === v ? ' aria-current="page"' : '') + '><span>' + label + '</span>'
+                + (badge === '' ? '' : '<span class="nb' + (cls ? ' ' + cls : '') + '">' + badge + '</span>') + '</a></li>';
+        };
+        return '<nav class="sidenav" data-block="nav" aria-label="功能">'
+            + '<div class="navgrp">看</div><ul>'
+            + item('now', '#/', '現在', c.live + ' live', c.live ? 'live' : '')
+            + item('days', '#/days', '近 30 天', usd(c.usd))
+            + item('sessions', '#/sessions', '最近 sessions', c.sessions)
+            + item('projects', '#/projects', '專案', c.projects)
+            + item('docs', '#/docs', '文件', c.docs) + '</ul>'
+            + '<div class="navgrp">調</div><ul>' + item('settings', '#/settings', '設定', '精靈') + '</ul>'
+            + '<div class="navgrp">其他頁</div><ul>' + item('list', '#/list', '清單', '全部 session', 'ext')
+            + item('cmp', '#/cmp', '比較', '') + '</ul></nav>';
+    }
+    // 現在: one card per registry that is still there, its live and stale
+    // sessions under it. A session that is down has finished and is on
+    // 最近 sessions instead.
+    function nowHtml(projects, sessions) {
+        var cards = projects.filter(function (p) { return !p.gone; }).map(function (p) {
+            var own = sessions.filter(function (s) { return s.root === p.root && (s.state === 'live' || s.state === 'stale'); });
+            return '<section class="reg"><div class="reg-h"><b class="mono reg-root">' + esc(p.root) + '</b><span class="spacer"></span>'
+                + clearStaleControl(p, own) + '</div>'
+                + (own.length ? own.map(function (s) {
+                    return '<a class="srow ' + s.state + '" data-state="' + s.state + '" href="' + sessionHash(s.id) + '">'
+                        + '<div class="srow-a">' + statePill(s) + '<span>' + esc(s.task || '（未命名）') + '</span></div>'
+                        + '<div class="srow-b"><span class="mono">' + esc(s.stage || '—') + '</span><span class="ago">' + ago(s.updated) + '</span></div></a>';
+                }).join('') : '<p class="none">沒有進行中的 session</p>') + '</section>';
+        });
+        return '<div class="phead"><h1>現在</h1></div><div class="regs" data-block="now">'
+            + (cards.length ? cards.join('') : '<p class="mute">沒有 registry</p>') + '</div>';
+    }
     // The hero's eyebrow carries the frozen moment too, so a reader who has
     // scrolled past the bar is not reading numbers they take for live. The
     // hh:mm is the caller's, off the same `stamp()` the bar's absolute time
@@ -1104,7 +1089,6 @@
             tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
             stamp: stamp, esc: esc, cost: cost, labels: labels, delta: delta, match: match,
             statePill: statePill, clearStaleControl: clearStaleControl,
-            profileCard: profileCard, presetStrip: presetStrip,
             openSections: openSections, downsample: downsample, lineChart: lineChart,
             riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
             dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, splitHtml: splitHtml,
@@ -1113,14 +1097,15 @@
             figures: figures, compareHtml: compareHtml,
             routeGroups: routeGroups, routeLedger: routeLedger,
             localDay: localDay, lastDays: lastDays, parseHash: parseHash, family: family, sessionTotals: sessionTotals,
-            windowTotals: windowTotals, dayBars: dayBars, dayPanel: dayPanel, projectRows: projectRows, kpiHtml: kpiHtml,
-            histSvg: histSvg, legendHtml: legendHtml, dayPanelHtml: dayPanelHtml, projectsHtml: projectsHtml, recentHtml: recentHtml,
+            windowTotals: windowTotals, dayBars: dayBars, projectRows: projectRows, kpiHtml: kpiHtml,
+            histSvg: histSvg, legendHtml: legendHtml, projectsHtml: projectsHtml, recentHtml: recentHtml,
             dayStart: dayStart, projectHead: projectHead, sessionPoints: sessionPoints, projectChart: projectChart,
             projectSessionsHtml: projectSessionsHtml,
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
             sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost,
             heroEyebrow: heroEyebrow, docsCardHtml: docsCardHtml,
             railHtml: railHtml, liveTag: liveTag,
+            navHtml: navHtml, navCounts: navCounts, recentRows: recentRows, nowHtml: nowHtml,
             tk: tk,
         };
     }
@@ -1273,7 +1258,6 @@
         if (!hit.length || hit[0].gone) return '';
         var p = hit[0];
         var own = S.sessions.filter(function (s) { return s.root === p.root; });
-        var projectProfiles = (S.profiles && S.profiles.projects) || {};
         return '<div class="card" style="margin-bottom:14px"><div class="cbody">'
             + '<div style="display:flex;align-items:center;gap:10px">'
             + '<p class="mute" style="margin:0;flex:1">' + p.unreadable
@@ -1285,12 +1269,7 @@
                     return esc(b.name) + ' (' + b.files + ')';
                 }).join('、') + '</p>'
                 : '<p class="mute" style="margin:4px 0 0">沒有 build 資料夾</p>')
-            + '</div></div>'
-            + Object.keys(projectProfiles).filter(function (pp) {
-                return pp.indexOf(p.root) === 0;
-            }).map(function (pp) {
-                return profileCard(LAB[pp] || pp, 'project', pp, projectProfiles[pp]);
-            }).join('');
+            + '</div></div>';
     }
 
     // The home page answers the search box and nothing else: the list page's
@@ -1299,16 +1278,21 @@
     function homeRows() {
         return S.sessions.filter(function (s) { return match(s, { q: f.q, state: '', project: '', stage: '' }); });
     }
-    function homePage(r) {
+    function homeOpts(sel) {
+        return { metric: view.metric, dim: view.dim, sel: sel, today: TODAY, days: DAYS, names: NAMES, pkeys: PKEYS };
+    }
+    function nowPage() {
+        return (isFinite(S.cleared) ? '<p class="cleared">cleared ' + S.cleared + ' stale rows</p>' : '')
+            + nowHtml(S.projects, homeRows());
+    }
+    // 近 30 天: the hero that used to open the home page. A day in the hash is
+    // marked on the chart; there is no day panel any more.
+    function daysPage(r) {
         var R = homeRows();
         var sel = r.day && DAYS.indexOf(r.day) >= 0 ? r.day : null;
-        var o = { metric: view.metric, dim: view.dim, sel: sel, today: TODAY, days: DAYS, names: NAMES, pkeys: PKEYS };
+        var o = homeOpts(sel);
         var bars = dayBars(R, view.metric, view.dim, DAYS);
-        var recent = R.slice().sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); }).slice(0, 12);
-        var docsList = [].concat.apply([], S.projects.map(function (p) { return p.docs || []; }));
-        return (isFinite(S.cleared) ? '<p class="cleared">cleared ' + S.cleared + ' stale rows</p>' : '')
-            + profileCard('machine profile', 'machine', null, S.profiles && S.profiles.machine)
-            + '<section class="panel hero"><div class="hero-top"><div class="hero-title"><div class="eyebrow">'
+        return '<section class="panel hero" data-block="days"><div class="hero-top"><div class="hero-title"><div class="eyebrow">'
             + heroEyebrow(frozenAt) + '</div>'
             + '<h1><b>' + DAYS[0].slice(5) + '</b> — <b>' + TODAY.slice(5) + '</b></h1></div>'
             + kpiHtml(windowTotals(R, DAYS), windowTotals(R, PREV)) + '</div>'
@@ -1319,10 +1303,18 @@
                 ['version', '依版本'], ['kind', '依成分']],
                 view.dim, view.metric === 'time' ? { model: '時間沒有 model 可分', kind: '時間沒有成分可分' } : null) + '</div>'
             + '<div class="legend">' + legendHtml(bars, o) + '</div></div>'
-            + '<div class="chart">' + histSvg(bars, o) + '</div></section>'
-            + (sel ? dayPanelHtml(dayPanel(R, sel), o) : '')
-            + '<div class="grid2"><section class="panel">' + projectsHtml(projectRows(R, DAYS), o) + '</section>'
-            + '<div class="rcol"><section class="panel">' + recentHtml(recent, o) + '</section>' + docsCardHtml(docsList, o) + '</div></div>';
+            + '<div class="chart">' + histSvg(bars, o) + '</div></section>';
+    }
+    function sessionsPage() {
+        return '<section class="panel" data-block="sessions">' + recentHtml(recentRows(homeRows(), DAYS), homeOpts(null)) + '</section>';
+    }
+    function projectsPage() {
+        return '<section class="panel" data-block="projects">' + projectsHtml(projectRows(homeRows(), DAYS), homeOpts(null)) + '</section>';
+    }
+    function docsPage() {
+        var list = [].concat.apply([], S.projects.map(function (p) { return p.docs || []; }));
+        return '<div data-block="docs">' + (list.length ? docsCardHtml(list, homeOpts(null))
+            : '<p class="mute">還沒有專案生成 <span class="mono">.fankeel/map.md</span></p>') + '</div>';
     }
     view.pMetric = 'usd';
     view.compare = '';
@@ -1452,9 +1444,9 @@
         // rather than sitting above it and pushing the list off the bottom.
         var head = '<div class="phead"><h1>清單</h1><span class="chip" id="cnt"></span><span class="spacer"></span>';
         var gone = goneNote(f.project);
-        if (gone) return head + '<a class="ctl" href="#/">▦ 首頁</a></div>' + facetsHtml() + gone;
+        if (gone) return head + '<a class="ctl" href="#/">▦ 現在</a></div>' + facetsHtml() + gone;
         return head + '<a class="ctl" href="#/cmp">⇅ 比較勾選的 <b id="ncmp">' + picked.length + '</b> 個</a>'
-            + '<a class="ctl" href="#/">▦ 首頁</a></div>' + facetsHtml() + registryNote(f.project)
+            + '<a class="ctl" href="#/">▦ 現在</a></div>' + facetsHtml() + registryNote(f.project)
             + '<div class="listwrap">'
             + '<div class="card listcard"><div class="scroll"><table>'
             + '<colgroup><col style="width:34px"><col><col style="width:130px"><col style="width:80px">'
@@ -1496,96 +1488,6 @@
         drawDetail();
     }
 
-    // One row per key: the value in force, where it came from, and — served —
-    // a select that posts the change. The static file prints the command
-    // instead, the same way the clear control does.
-    function profileRows(scope, projectPath, prof) {
-        var keys = Object.keys(S.profileKeys || {});
-        var out = '';
-        keys.forEach(function (key) {
-            var spec = S.profileKeys[key];
-            var v = prof.values[key];
-            var src = prof.sources[key] || '';
-            // `stage.agents` is the one array value: String([]) is '', which
-            // would show as a blank rather than the off it means. This is
-            // also the round-trippable text form of the value the <select>
-            // below matches its options against.
-            var shown = v === undefined ? '(ask)' : (Array.isArray(v) ? (v.length ? v.join(',') : 'false') : String(v));
-            var ctl;
-            if (S.serve) {
-                // `spec.values` is the three fixed forms KEYS lists —
-                // `false`, `true`, `all` — and stage.agents also accepts a
-                // fourth, a comma-separated stage list, that this table does
-                // not enumerate (widening it would mean naming every
-                // combination of seven stages). So when the current value's
-                // text is none of the three, it is offered as an extra
-                // option and marked selected, rather than leaving nothing
-                // selected — without this, submitting the form unchanged
-                // silently replaced a stage list with whichever option the
-                // browser happened to render first.
-                var extra = v !== undefined && spec.values.indexOf(shown) === -1
-                    ? '<option selected>' + esc(shown) + '</option>' : '';
-                ctl = '<form method="post" action="/profile" class="pf">'
-                    + '<input type="hidden" name="nonce" value="' + esc(S.nonce || '') + '">'
-                    + '<input type="hidden" name="scope" value="' + scope + '">'
-                    + (projectPath ? '<input type="hidden" name="project" value="' + esc(projectPath) + '">' : '')
-                    + '<input type="hidden" name="key" value="' + esc(key) + '">'
-                    + '<select name="value">' + extra + spec.values.map(function (o) {
-                        return '<option' + (v !== undefined && shown === o ? ' selected' : '') + '>' + esc(o) + '</option>';
-                    }).join('') + '</select><button class="ctl" type="submit">set</button></form>';
-            } else {
-                ctl = '<code class="mono">node ' + esc(S.plugin || '<plugin>') + '/scripts/task.js profile set '
-                    + esc(key) + ' &lt;value&gt;' + (scope === 'machine' ? ' --default' : ' --project "' + esc(projectPath) + '"') + '</code>';
-            }
-            out += '<tr><td class="mono">' + esc(key) + '<div class="mute desc">' + esc(spec.desc || '') + '</div></td><td>' + esc(shown) + '</td><td class="mute">' + esc(src) + '</td><td>' + ctl + '</td></tr>';
-        });
-        return out;
-    }
-    function applyMachineControl(projectPath) {
-        var m = S.profiles && S.profiles.machine ? S.profiles.machine : null;
-        if (!S.serve || !m) return '';
-        var keys = Object.keys(m.values).filter(function (k) { return m.sources[k] === 'machine'; });
-        if (!keys.length) return '';
-        return '<form method="post" action="/profile" class="pf">'
-            + '<input type="hidden" name="nonce" value="' + esc(S.nonce || '') + '">'
-            + '<input type="hidden" name="scope" value="project">'
-            + '<input type="hidden" name="project" value="' + esc(projectPath) + '">'
-            + keys.map(function (k) {
-                return '<input type="hidden" name="key" value="' + esc(k) + '"><input type="hidden" name="value" value="' + esc(String(m.values[k])) + '">';
-            }).join('')
-            + '<button class="ctl" type="submit">套用機器預設（' + keys.length + ' 鍵）</button></form>';
-    }
-    // The habits `lib/profile.js` calls PRESETS, one form each: a card that says what
-    // it sets and one button that sends every key of it in a single POST. An empty
-    // value means "clear this key from this card's own file". Only when served: a
-    // static page has nothing to post to.
-    function presetStrip(scope, projectPath) {
-        var presets = S.profilePresets || {};
-        var ids = Object.keys(presets);
-        if (!S.serve || !ids.length) return '';
-        return '<div class="presets">' + ids.map(function (id) {
-            var p = presets[id];
-            var keys = Object.keys(p.set);
-            return '<form method="post" action="/profile" class="preset">'
-                + '<input type="hidden" name="nonce" value="' + esc(S.nonce || '') + '">'
-                + '<input type="hidden" name="scope" value="' + scope + '">'
-                + (projectPath ? '<input type="hidden" name="project" value="' + esc(projectPath) + '">' : '')
-                + keys.map(function (k) {
-                    return '<input type="hidden" name="key" value="' + esc(k) + '"><input type="hidden" name="value" value="' + esc(p.set[k] === null ? '' : p.set[k]) + '">';
-                }).join('')
-                + '<b>' + esc(p.label) + '</b><div class="mute">' + esc(p.blurb) + '</div>'
-                + '<div class="mono changes">' + keys.map(function (k) { return esc(k) + ' → ' + (p.set[k] === null ? '(ask)' : esc(p.set[k])); }).join('<br>') + '</div>'
-                + '<button class="ctl" type="submit">套用「' + esc(p.label) + '」</button></form>';
-        }).join('') + '</div>';
-    }
-    function profileCard(title, scope, projectPath, prof) {
-        if (!prof) return '';
-        var bad = (prof.unreadable || []).length ? '<div class="mute">unreadable: ' + esc(prof.unreadable.join(', ')) + '</div>' : '';
-        return '<div class="card profile"><div class="chead"><b>' + esc(title) + '</b>'
-            + (scope === 'project' ? applyMachineControl(projectPath) : '') + '</div>'
-            + bad + presetStrip(scope, projectPath) + '<table><thead><tr><th>key</th><th>value</th><th>source</th><th></th></tr></thead><tbody>'
-            + profileRows(scope, projectPath, prof) + '</tbody></table></div>';
-    }
     // A registry-level bulk clear, beside its card's heading rather than a
     // row: counts how many of the rows handed to it are stale and, offline,
     // prints the same kind of copyable command each per-row control prints —
@@ -2475,31 +2377,35 @@
             + (xa && xb ? compareHtml(two[0], xa, two[1], xb) : '<p class="mute">讀取細節…</p>') + '</div></div>';
     }
 
+    var NAV_LABEL = { days: '近 30 天', sessions: '最近 sessions', projects: '專案', docs: '文件', settings: '設定', list: '清單', cmp: '比較' };
     function drawSide() {
         var tail = CRUMBS[route.view] ? CRUMBS[route.view](route)
-            : route.view === 'list' ? [['清單', null]] : route.view === 'cmp' ? [['比較', null]]
-                : route.day ? [[route.day, null]] : [];
-        doc.getElementById('side').innerHTML = crumbHtml([['首頁', '#/']].concat(tail));
+            : route.view === 'days' && route.day ? [['近 30 天', '#/days'], [route.day, null]]
+                : NAV_LABEL[route.view] ? [[NAV_LABEL[route.view], null]] : [];
+        doc.getElementById('side').innerHTML = crumbHtml([['現在', '#/']].concat(tail));
     }
-    VIEWS.home = homePage;
+    VIEWS.now = nowPage;
+    VIEWS.days = daysPage;
+    VIEWS.sessions = sessionsPage;
+    VIEWS.projects = projectsPage;
+    VIEWS.docs = docsPage;
     VIEWS.list = listPage;
     VIEWS.cmp = cmpPage;
     function draw() {
         route = parseHash(w.location.hash);
         var p = doc.getElementById('page');
         p.className = 'page' + (route.view === 'list' ? ' fixed' : '');
-        p.innerHTML = (VIEWS[route.view] || homePage)(route);
+        p.innerHTML = (VIEWS[route.view] || nowPage)(route);
         if (route.view === 'list') drawList();
+        doc.getElementById('nav').innerHTML = navHtml(route.view, navCounts(homeRows(), S.projects, DAYS));
         drawSide();
         doc.getElementById('gen').textContent = genText();
     }
-    // Back, forward and every link on the page arrive here; opening a day keeps
-    // the chart in view instead of jumping to the top.
+    // Back, forward and every link on the page arrive here.
     w.addEventListener('hashchange', function () {
         sel = null;
         draw();
-        var dp = route.view === 'home' && route.day ? doc.getElementById('daypanel') : null;
-        if (dp) dp.scrollIntoView({ block: 'nearest' }); else w.scrollTo(0, 0);
+        w.scrollTo(0, 0);
     });
     doc.addEventListener('click', function (e) {
         // 記成 TODO: the server checks the line and answers with the rule it

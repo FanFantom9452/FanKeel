@@ -288,79 +288,6 @@ test('labels keeps a nested root as its own card', () => {
     assert.equal(Object.keys(out).length, 2);
 });
 
-test('profileCard posts to /profile with a select when served, prints the command when not, and offers a machine-default button only when the machine profile has a machine-sourced key', () => {
-    global.window.STATION.profileKeys = profile.KEYS;
-    const projectProfile = { values: { 'land.push': false }, sources: { 'land.push': 'project' } };
-
-    global.window.STATION.serve = true;
-    global.window.STATION.nonce = 'tok-9';
-    global.window.STATION.profiles = { machine: { values: {}, sources: {}, unreadable: [] } };
-    let out = V.profileCard('project profile', 'project', '/proj', projectProfile);
-    assert.match(out, /action="\/profile"/);
-    assert.match(out, /<select name="value">/);
-    assert.doesNotMatch(out, /套用機器預設/);
-    // Not a fixed literal: `scope` and `project` are the function's own
-    // arguments threaded into the hidden fields, so this is what tells apart
-    // a project card from a machine card once served.
-    assert.match(out, /name="scope" value="project"/);
-    assert.match(out, /name="project" value="\/proj"/);
-
-    const machineOut = V.profileCard('machine profile', 'machine', null, global.window.STATION.profiles.machine);
-    assert.match(machineOut, /name="scope" value="machine"/);
-    assert.doesNotMatch(machineOut, /name="project"/);
-
-    global.window.STATION.profiles.machine = { values: { guard: 'ask' }, sources: { guard: 'machine' }, unreadable: [] };
-    out = V.profileCard('project profile', 'project', '/proj', projectProfile);
-    assert.match(out, /套用機器預設/);
-
-    global.window.STATION.serve = false;
-    out = V.profileCard('project profile', 'project', '/proj', projectProfile);
-    assert.match(out, /profile set land\.push/);
-    assert.doesNotMatch(out, /<form/);
-
-    const staticMachineOut = V.profileCard('machine profile', 'machine', null, global.window.STATION.profiles.machine);
-    assert.match(staticMachineOut, /--default/);
-});
-
-// `stage.agents` is the one profile value that is an array, and the served
-// <select>'s options are the three fixed words `profile.KEYS` lists —
-// `false`, `true`, `all` — not the stage names or lists the array actually
-// holds. `String(array) === 'false'|'true'|'all'` never matches any of the
-// three, so before this the dropdown showed the current value as selected
-// for no key at all once it held `[]`, `['survey']` or a custom list — and
-// resubmitting the form unchanged silently replaced whatever list a project
-// had set with whichever fixed option the browser happened to render first.
-test('profileRows marks the current stage.agents value selected, including one that is not among the fixed three', () => {
-    global.window.STATION.profileKeys = profile.KEYS;
-    global.window.STATION.serve = true;
-    global.window.STATION.nonce = 'tok-9';
-    global.window.STATION.profiles = { machine: { values: {}, sources: {}, unreadable: [] } };
-
-    const off = { values: { 'stage.agents': [] }, sources: { 'stage.agents': 'project' } };
-    assert.match(V.profileCard('t', 'project', '/proj', off), /<option selected>false<\/option>/);
-
-    // 'survey' is not one of the fixed false/true/all options, so it has to
-    // be rendered as an extra option and marked selected — the fixed `true`
-    // option must not be silently selected instead, because posting it back
-    // unchanged would round-trip through `parseValue` fine here but only by
-    // coincidence of the backward-compatible reading; for any other single
-    // stage there is no fixed option to fall back on at all.
-    const survey = { values: { 'stage.agents': ['survey'] }, sources: { 'stage.agents': 'project' } };
-    const outSurvey = V.profileCard('t', 'project', '/proj', survey);
-    assert.match(outSurvey, /<option selected>survey<\/option>/);
-    assert.doesNotMatch(outSurvey, /<option selected>true<\/option>/);
-
-    // The case that loses data: a multi-stage list has no fixed option at
-    // all, so without the extra option, submitting the form unchanged posts
-    // back whichever of false/true/all render first and silently overwrites
-    // the list a project had actually set.
-    const list = { values: { 'stage.agents': ['survey', 'build', 'verify'] }, sources: { 'stage.agents': 'project' } };
-    const outList = V.profileCard('t', 'project', '/proj', list);
-    assert.match(outList, /<option selected>survey,build,verify<\/option>/);
-    const selected = /<option selected>([^<]*)<\/option>/.exec(outList)[1];
-    assert.deepEqual(profile.parseValue('stage.agents', selected).value, ['survey', 'build', 'verify']);
-});
-
 // --- the three levels: home -------------------------------------------------
 // Sessions in the shape `serialize()` gives them from 2026-09-14 on: `days` rows
 // per local day x stage x model x who, `spans` rows of milliseconds, and `pkey`.
@@ -424,18 +351,20 @@ test('lastDays counts local calendar days back from now, today last, across a mo
 });
 
 test('parseHash reads every route the three levels use and falls back to home', () => {
-    const key = 'F:\\ws\\alpha/Beta';
-    assert.deepEqual(V.parseHash(''), { view: 'home', day: null });
-    assert.deepEqual(V.parseHash('#/'), { view: 'home', day: null });
-    assert.deepEqual(V.parseHash('#/d/2026-09-13'), { view: 'home', day: '2026-09-13' });
-    assert.deepEqual(V.parseHash('#/d/yesterday'), { view: 'home', day: null });
+    const key = 'F:\\ymlab\\fankeel';
+    assert.deepEqual(V.parseHash(''), { view: 'now' });
+    assert.deepEqual(V.parseHash('#/'), { view: 'now' });
+    assert.deepEqual(V.parseHash('#/days'), { view: 'days', day: null });
+    assert.deepEqual(V.parseHash('#/d/2026-09-13'), { view: 'days', day: '2026-09-13' });
+    assert.deepEqual(V.parseHash('#/d/yesterday'), { view: 'now' });
+    for (const v of ['sessions', 'projects', 'docs', 'settings']) assert.deepEqual(V.parseHash('#/' + v), { view: v });
     assert.deepEqual(V.parseHash('#/p/' + encodeURIComponent(key)), { view: 'project', pkey: key });
     assert.deepEqual(V.parseHash('#/s/aaaa1111-0000'), { view: 'session', id: 'aaaa1111-0000', tab: 'timeline' });
     assert.deepEqual(V.parseHash('#/s/aaaa1111-0000/cost'), { view: 'session', id: 'aaaa1111-0000', tab: 'cost' });
     assert.deepEqual(V.parseHash('#/s/aaaa1111-0000/nope'), { view: 'session', id: 'aaaa1111-0000', tab: 'timeline' });
     assert.deepEqual(V.parseHash('#/list'), { view: 'list' });
     assert.deepEqual(V.parseHash('#/cmp'), { view: 'cmp' });
-    assert.deepEqual(V.parseHash('#/p/%E0%A4%A'), { view: 'home', day: null }, 'a key that does not decode is no route');
+    assert.deepEqual(V.parseHash('#/p/%E0%A4%A'), { view: 'now' }, 'a key that does not decode is no route');
 });
 
 test('family names the model line and calls anything else other', () => {
@@ -462,15 +391,6 @@ test('dayBars stacks each day from days and spans, not from the registry, and ti
     }
 });
 
-test('dayPanel splits one day four ways and lists the sessions that spent on it', () => {
-    const p = V.dayPanel(HOME, '2026-09-14');
-    assert.deepEqual([p.usd, p.active, p.wait], [6.75, 1800000 + 300000 + 2400000, 600000]);
-    assert.deepEqual(p.by.who, { main: 6, workflow: 0.75 });
-    assert.deepEqual(p.by.stage, { verify: 2, none: 0.75, plan: 4 });
-    assert.deepEqual(p.by.project, { 'F:\\ws\\alpha': 2, 'F:\\ws\\alpha/Beta': 4.75 });
-    assert.deepEqual(p.sessions.map((s) => [s.id, s.usd]), [['bbbb2222-0000', 4.75], ['aaaa1111-0000', 2]]);
-});
-
 test('頁面對帳：a day\'s bar total equals its day panel total equals that day\'s days[].usd across sessions', () => {
     for (const dim of ['model', 'project', 'stage', 'who']) {
         const bars = V.dayBars(HOME, 'usd', dim, DAYS);
@@ -478,7 +398,6 @@ test('頁面對帳：a day\'s bar total equals its day panel total equals that d
             let rows = 0;
             for (const s of HOME) for (const r of s.days || []) if (r.day === day) rows += r.usd;
             assert.equal(bars.days[i].total, rows, dim + ' ' + day + ': the bar');
-            assert.equal(V.dayPanel(HOME, day).usd, rows, day + ': the day panel');
         });
     }
 });
@@ -550,11 +469,6 @@ test('the home builders print dollars from days and link every row to its level'
     assert.match(svg, /<rect class="hit" data-href="#\/"[^>]*><title>2026-09-13 /, 'the open day closes');
     assert.match(svg, /<rect class="hit" data-href="#\/d\/2026-09-14"/);
     assert.match(V.histSvg(V.dayBars(HOME, 'time', 'model', DAYS), O), /^<p class="note">時間沒有 model 可分/);
-    const panel = V.dayPanelHtml(V.dayPanel(HOME, '2026-09-14'), O);
-    assert.match(panel, /當日花費<\/div><div class="v">\$6\.75/);
-    assert.match(panel, /href="#\/d\/2026-09-13"/);
-    assert.doesNotMatch(panel, /#\/d\/2026-09-15/, 'no day after today');
-    assert.match(panel, /data-href="#\/s\/bbbb2222-0000"/);
     assert.match(V.projectsHtml(V.projectRows(HOME, DAYS), O), /href="#\/p\/F%3A%5Cws%5Calpha%2FBeta"/);
     const recent = V.recentHtml(HOME.slice(0, 2), O);
     assert.match(recent, /data-href="#\/s\/aaaa1111-0000"[\s\S]*?\$3\.75/);
@@ -569,7 +483,6 @@ test('a kept v1 cache\'s single row counts its dollars and zero tokens, and brea
     assert.deepEqual(V.dayBars([KEPT], 'time', 'who', DAYS).days[i].parts, {});
     const keptKind = V.dayBars([KEPT], 'usd', 'kind', DAYS);
     assert.deepEqual([keptKind.days[i].total, keptKind.keys], [0, []], 'a null cost split gives kind nothing, not a crash');
-    assert.equal(V.dayPanel([KEPT], '2026-09-10').usd, 2.5);
     assert.deepEqual(V.sessionTotals(KEPT), { usd: 2.5, tokens: 0, active: 0, main: 0, wait: 0, models: { opus: 2.5 } });
     assert.deepEqual(V.windowTotals([KEPT], DAYS), { usd: 2.5, tokens: 0, active: 0, main: 0, wait: 0 });
     assert.match(V.recentHtml([KEPT], O), /\$2\.50<\/td><td class="r muted">0<\/td>/);
@@ -718,17 +631,6 @@ test('a version split under 時間 comes from the spans, keeps the newest-first 
     assert.deepEqual(bars.days[i].parts, { '0.74.0': 600000, '0.80.0': 1200000, none: 300000 });
     assert.equal(bars.days[i].total, 2100000, 'the wait span is left out here as it is for every other dim');
     assert.deepEqual(bars.keys, ['0.80.0', '0.74.0', 'none']);
-});
-
-test('dayPanel folds kind into a fifth by-bucket the same way dayBars does', () => {
-    const p = V.dayPanel(HOME, '2026-09-14');
-    assert.deepEqual(p.by.kind, { input: 1.6875, output: 3.375, cacheRead: 0.84375, cacheWrite: 0.84375 });
-});
-
-test('dayPanelHtml renders the day panel\'s kind split rather than silently dropping a fifth dimension', () => {
-    const panel = V.dayPanelHtml(V.dayPanel(HOME, '2026-09-14'), O);
-    assert.match(panel, /依成分/);
-    assert.match(panel, /cache write/);
 });
 
 // --- the three levels: project -----------------------------------------------
@@ -1186,113 +1088,45 @@ test('docsCardHtml is empty with no project map, so the whole card is left out',
     assert.equal(V.docsCardHtml([], { names: {}, pkeys: [] }), '');
 });
 
-// 首頁 used to put the machine profile card last, and it was missed twice
-// there; it now opens the page. Booted the way the 清單 test above boots it,
-// on the home route, so the order is read off what the page rendered.
-test('首頁 opens with the machine profile card, ahead of the hero panel', () => {
-    const vm = require('node:vm');
-    const fs = require('node:fs');
-    const path = require('node:path');
-    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
-    const els = {};
-    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
-    const doc = {
-        getElementById: (id) => els[id] || (els[id] = el()),
-        addEventListener() {},
-        createElement: el,
-        head: { appendChild() {} },
-        querySelectorAll: () => [],
-    };
-    const win = {
-        location: { hash: '' }, addEventListener() {}, scrollTo() {},
-        STATION: {
-            generatedAt: new Date(2026, 8, 14, 21).toISOString(), configDir: 'C:\\cfg',
-            pricesVerified: '2026-09-04', serve: false,
-            projects: [{ root: 'F:\\ws\\alpha', gone: false, unreadable: 0, build: [], mapAt: null }],
-            profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} },
-            profileKeys: {}, classes: {}, sessions: [],
-        },
-    };
-    vm.runInNewContext(src, { window: win, document: doc, URLSearchParams, fetch() {} });
-    const html = els.page.innerHTML;
-    const card = html.indexOf('machine profile');
-    const hero = html.indexOf('class="panel hero"');
-    assert.ok(card >= 0, 'the machine profile card is on 首頁');
-    assert.ok(hero >= 0, 'the hero panel is on 首頁');
-    assert.ok(card < hero, 'the profile card comes before the hero panel');
-});
+const NAV_DAYS = ['2026-09-22', '2026-09-23'];
+const NAV_SESSIONS = [
+    { id: 'n1', root: '/r', pkey: 'p', state: 'live', task: 'one', stage: 'build', updated: 30, days: [{ day: '2026-09-23', usd: 2, tokens: {} }] },
+    { id: 'n2', root: '/r', pkey: 'p', state: 'stale', task: 'two', stage: 'plan', updated: 20, days: [{ day: '2026-09-22', usd: 1, tokens: {} }] },
+    { id: 'n3', root: '/r', pkey: 'p', state: 'down', task: 'three', stage: 'land', updated: 10, days: [{ day: '2026-09-01', usd: 5, tokens: {} }] },
+];
+const NAV_PROJECTS = [{ root: '/r', gone: false, docs: [{ pkey: 'p' }] }, { root: '/gone', gone: true, docs: [] }];
 
-test('presetStrip is one form per preset, each carrying every key it sets, and clears with an empty value', () => {
-    global.window.STATION.serve = true;
-    global.window.STATION.nonce = 'tok-1';
-    global.window.STATION.profilePresets = profile.PRESETS;
-    const out = V.presetStrip('project', '/proj');
-    assert.equal((out.match(/<form /g) || []).length, Object.keys(profile.PRESETS).length);
-    assert.match(out, /name="key" value="land\.push"><input type="hidden" name="value" value="">/, 'the manual preset clears land.push with an empty value, not the text null');
-    assert.match(out, /name="key" value="stage\.agents"><input type="hidden" name="value" value="survey,build,verify">/);
-    assert.match(out, /name="project" value="\/proj"/);
-    assert.match(out, /name="scope" value="project"/);
-    assert.equal((out.match(/name="nonce" value="tok-1"/g) || []).length, Object.keys(profile.PRESETS).length, 'every preset form carries the nonce, or the served page fails every POST');
-});
-
-test('presetStrip on the machine card carries no project, only its scope', () => {
-    global.window.STATION.serve = true;
-    global.window.STATION.nonce = 'tok-1';
-    global.window.STATION.profilePresets = profile.PRESETS;
-    const out = V.presetStrip('machine', null);
-    assert.notEqual(out, '', 'a served page with presets is not the empty case');
-    assert.ok(!out.includes('name="project"'), 'no project input when projectPath is null');
-    assert.match(out, /name="scope" value="machine"/);
-});
-
-test('presetStrip is empty on a static page', () => {
-    global.window.STATION.serve = false;
-    global.window.STATION.profilePresets = profile.PRESETS;
-    assert.equal(V.presetStrip('machine', null), '');
-});
-
-test('each preset form posts to /profile and shows its label, blurb, changes and apply button', () => {
-    global.window.STATION.serve = true;
-    global.window.STATION.nonce = 'tok-1';
-    global.window.STATION.profilePresets = profile.PRESETS;
-    const out = V.presetStrip('machine', null);
-    const n = Object.keys(profile.PRESETS).length;
-    assert.equal((out.match(/<form method="post" action="\/profile" class="preset">/g) || []).length, n);
-    assert.equal((out.match(/class="mono changes"/g) || []).length, n);
-    for (const p of Object.values(profile.PRESETS)) {
-        assert.ok(out.includes('<b>' + V.esc(p.label) + '</b><div class="mute">' + V.esc(p.blurb) + '</div>'), p.label + ' carries its label and blurb');
-        assert.ok(out.includes('套用「' + p.label + '」</button>'), p.label + ' has its apply button');
+test('navHtml marks the current page, links every page, and has no dropdown', () => {
+    const out = V.navHtml('days', { live: 2, usd: 12.5, sessions: 3, projects: 1, docs: 0 });
+    assert.match(out, /<a href="#\/days" aria-current="page">/);
+    for (const h of ['#/', '#/sessions', '#/projects', '#/docs', '#/settings', '#/list', '#/cmp']) {
+        assert.ok(out.includes('<a href="' + h + '"'), h);
     }
-    assert.ok(out.includes('land.push → (ask)'), 'a null shows as (ask) in the changes list, not as null or blank');
-    assert.ok(out.includes('stage.agents → survey,build,verify'));
+    assert.match(out, /data-block="nav"/);
+    assert.match(out, /2 live/);
+    assert.ok(!out.includes('<select'));
+    assert.match(V.navHtml('project', { live: 0, usd: 0, sessions: 0, projects: 0, docs: 0 }), /<a href="#\/projects" aria-current="page">/);
+    assert.match(V.navHtml('session', { live: 0, usd: 0, sessions: 0, projects: 0, docs: 0 }), /<a href="#\/sessions" aria-current="page">/);
 });
 
-test('a served profileCard carries the preset strip above its table, and a static one does not', () => {
-    global.window.STATION.serve = true;
-    global.window.STATION.nonce = 'tok-1';
-    global.window.STATION.profilePresets = profile.PRESETS;
-    global.window.STATION.profileKeys = profile.KEYS;
-    const card = { values: {}, sources: {}, unreadable: [] };
-    const served = V.profileCard('project profile', 'project', '/proj', card);
-    const strip = V.presetStrip('project', '/proj');
-    assert.notEqual(strip, '');
-    assert.ok(served.includes(strip), 'the strip is in the card');
-    assert.ok(served.indexOf(strip) < served.indexOf('<table>'), 'and above the table');
-    global.window.STATION.serve = false;
-    assert.ok(!V.profileCard('project profile', 'project', '/proj', card).includes('class="presets"'));
+test('recentRows keeps what spent inside the window or is still live, newest first', () => {
+    const rows = V.recentRows(NAV_SESSIONS, NAV_DAYS);
+    assert.deepEqual(rows.map((s) => s.id), ['n1', 'n2']);
 });
 
-test('the card prints a description for every key, and each value it shows is the one profile.display gives', () => {
-    const values = { 'land.push': false, 'stage.agents': ['survey', 'build', 'verify'], guard: 'ask' };
-    const sources = { 'land.push': 'project', 'stage.agents': 'project', guard: 'builtin' };
-    global.window.STATION.profileKeys = profile.KEYS;
+test('the live badge counts exactly the rows 現在 marks live', () => {
     global.window.STATION.serve = false;
-    const out = V.profileCard('t', 'project', '/proj', { values, sources, unreadable: [] });
-    const rows = out.match(/<tr><td class="mono">[\s\S]*?<\/tr>/g);
-    const keys = Object.keys(profile.KEYS);
-    assert.equal(rows.length, keys.length);
-    keys.forEach((key, i) => {
-        assert.ok(rows[i].includes(profile.KEYS[key].desc), key + ' row carries its description');
-        assert.ok(rows[i].includes('<td>' + profile.display(values[key]) + '</td>'), key + ' row shows ' + profile.display(values[key]));
-    });
+    const c = V.navCounts(NAV_SESSIONS, NAV_PROJECTS, NAV_DAYS);
+    const now = V.nowHtml(NAV_PROJECTS, NAV_SESSIONS);
+    assert.equal(c.live, 1);
+    assert.equal((now.match(/data-state="live"/g) || []).length, c.live);
+    assert.equal((now.match(/data-state="stale"/g) || []).length, 1);
+    assert.ok(!now.includes('data-state="down"'), 'a session that is down is not on 現在');
+    assert.ok(!now.includes('/gone'), 'a gone registry gets no card');
+    assert.match(now, /data-block="now"/);
+    assert.ok(!now.includes('<select'));
+    assert.equal(c.sessions, V.recentRows(NAV_SESSIONS, NAV_DAYS).length);
+    assert.equal(c.usd, 3);
+    assert.equal(c.docs, 1);
 });
+

@@ -85,7 +85,8 @@ test('the shell is the mockup\'s masthead: a home link, the crumbs on #side, the
     assert.match(html, /<a class="brand" href="#\/"/);
     assert.match(html, /<nav class="crumbs" id="side"/);
     assert.match(html, /<main class="page" id="page"><\/main>/);
-    assert.match(html, /<a class="btn" href="#\/list">/);
+    assert.doesNotMatch(html, /href="#\/list"/, 'no list button in the masthead');
+    assert.match(html, /<div class="shell"><aside id="nav"><\/aside><main class="page" id="page"><\/main><\/div>/);
     assert.match(html, /<footer class="foot">/);
 });
 
@@ -161,8 +162,8 @@ test('every class the three levels render has a rule', () => {
     const emitted = classTokens(shell() + fs.readFileSync(JS, 'utf8'));
     const classes = ['mast', 'crumbs', 'search', 'foot', 'page', 'fixed', 'panel', 'eyebrow', 'h2', 'readouts', 'ro',
         'hatchsw', 'controls', 'ctlgrp', 'seg', 'legend', 'sw', 'chart', 'hit', 'tbl-wrap', 't', 'link', 'chip',
-        'pchip', 'route', 'grid2', 'hero-top', 'projrow', 'pth', 'day', 'day-head', 'day-nav', 'btn',
-        'day-body', 'split', 'split-h', 'split-bar', 'split-leg', 's-title', 's-meta', 'tabs',
+        'pchip', 'route', 'hero-top', 'projrow', 'pth', 'btn',
+        'split', 'split-h', 'split-bar', 'split-leg', 's-title', 's-meta', 'tabs',
         'lane-legend', 'tl', 'note', 'sumline', 'mini-mix',
         'card', 'phead', 'ctl', 'listwrap', 'det', 'sec', 'tally', 'seq', 'rp',
         'cmpcard', 'pill', 'delta', 'mute', 'rail', 'livetag', 'runn', 'stname', 'c-state', 'tkr', 'dhead', 'stc', 'axt', 'nowl', 'agdots', 'phl', 'phs', 'axw', 'axh', 'axl', 'lkb',
