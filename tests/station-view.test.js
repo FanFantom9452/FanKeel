@@ -769,7 +769,7 @@ test('the project sessions table ticks for 比較, and prints dollars and a mode
 // A detail in the shape `serializeDetail()` writes from 2026-09-14 on: `points`
 // carry their model, `waits` their two moments, dispatch rows `from`, `to` and
 // a five-key `cost` (one of them null, as an unpriced row arrives), and the
-// five-key token `split` every row already carries (lib/usage.js:470).
+// five-key token `split` every row already carries (lib/usage.js:468, defined at :366).
 const T0 = new Date(2026, 8, 13, 22, 0).getTime();
 const DETAIL_X = {
     requests: 3, wakes: 4, peak: 90000, peakN: 3, noTime: 0, backtracks: 0, marks: [], rises: [], backs: [], tasks: [],
@@ -1021,7 +1021,7 @@ test('selecting a registry on 清單 keeps its unreadable-session count on the c
 });
 
 // --- fix: the health poll must never arm on a page opened as a bare file ---
-// `--open` (scripts/station.js:766) writes the page and opens it with no
+// `--open` (scripts/station.js:758) writes the page and opens it with no
 // server behind it, so the poll has to switch itself off there rather than
 // show a permanent death banner. The smoke test above stubs `document` but
 // gives `win` no `setInterval` at all, which is exactly why the poll block
@@ -1072,7 +1072,7 @@ test('under file: nothing arms; served, the page re-reads every 3s, ticks every 
 // the test above captures the interval's period without ever invoking its
 // callback. So this one drives the callback, with a `Date` it moves and a
 // `#page` that counts how often it is written — `draw()` assigns
-// `p.innerHTML` (assets/station/station.js:2072), which is what the counter
+// `p.innerHTML` (assets/station/station.js:2471), which is what the counter
 // below is on.
 test('a poll finding no change does not redraw, and each state flip redraws once', async () => {
     const vm = require('node:vm');

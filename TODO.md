@@ -75,7 +75,6 @@ what gets scheduled.
 
 ## Ready
 
-- 〔tests〕程式註解裡的 `path:line` 沒人驗，docs-check 只看 markdown：`fb2f734` 就有三條歪的，一在 [tests/station-hide.test.js](tests/station-hide.test.js)、二在 [tests/station-view.test.js](tests/station-view.test.js)，其一指到不存在的行。
 - 〔quota〕用 `quotaLimits` 的 13 筆被拒紀錄定錨 100%：取一次 `five_hour`、一次 `seven_day` 被拒的時刻，算該視窗到那一刻的花費，就不必再猜整數讀數的 ±0.5 — [scripts/spend.js](scripts/spend.js).
 - 〔registry〕session 記錄只存 guard，且只在偏離預設時才存；其餘 profile 值一律不存（182 筆都落在後者），換了設定有沒有比較好事後查不到；start 時抄一份 values 進去就夠 — [scripts/task.js](scripts/task.js).
 - 〔docs〕`registry.md` 的「寫入的檔案」表缺 `build/task-<時間>/` 的交接檔（`<stage>.md`、`-answer.md`、`-commit.md`）、`serve.json`、`station/detail/` 與 `station/cache/` — [docs/registry.md](docs/registry.md).
