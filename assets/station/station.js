@@ -1076,6 +1076,257 @@
         return '<div class="phead"><h1>現在</h1></div><div class="regs" data-block="now">'
             + (cards.length ? cards.join('') : '<p class="mute">沒有 registry</p>') + '</div>';
     }
+    // ---- 設定: the seven-step wizard ----------------------------------------
+    // Every question is a habit; a habit card recommends values and the
+    // buttons under it take them or not. `val` holds strings or null (ask).
+    var WIZ_STAGES = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
+    var WIZ_STEPS = [
+        { id: 'land', t: '收尾', q: '一件工作做完，你通常怎麼收？', sub: '這決定 land 站停不停下來問你。選一個最像你的習慣，下面可以逐鍵改。', keys: ['land.integration', 'land.push', 'land.archivePlan'],
+            habits: [
+                { l: '本機 merge 就好', b: '直接合回 main，commit 留在本機，我自己決定什麼時候推。', s: { 'land.integration': 'merge', 'land.push': 'false', 'land.archivePlan': 'true' } },
+                { l: '開 PR 給人看', b: '推上去開 PR，review 過再合。', s: { 'land.integration': 'pr', 'land.push': 'true', 'land.archivePlan': 'true' } },
+                { l: '留在分支', b: '分支先留著，整合我自己來。計畫也先別封存。', s: { 'land.integration': 'keep', 'land.push': 'false', 'land.archivePlan': null } },
+                { l: '每次都問我', b: '每個 repo 不一樣，到了收尾再決定。', s: { 'land.integration': null, 'land.push': null, 'land.archivePlan': null } },
+            ] },
+        { id: 'class', t: '任務大小', q: '你起的任務，多半是多大？', sub: '起任務沒指定類別時用這個預設；它決定走哪幾站。', keys: ['class.default'],
+            habits: [
+                { l: '試水溫', b: '先做個小實驗看行不行，做完可能丟掉。', s: { 'class.default': 'spike' } },
+                { l: '範圍清楚的功能', b: '知道要改哪裡、改完怎麼驗。', s: { 'class.default': 'bounded' } },
+                { l: '常動到架構', b: '牽動好幾個模組，需要先設計再動手。', s: { 'class.default': 'architectural' } },
+                { l: '每次不一樣', b: '起任務時問我。', s: { 'class.default': null } },
+            ] },
+        { id: 'front', t: '前端', q: '這個專案有前端畫面嗎？', sub: '有的話，design 站會先做一頁 mockup 給你看，再談實作。', keys: ['design.mockup', 'design.skill'],
+            habits: [
+                { l: '沒有前端', b: 'CLI、函式庫或純文件，不用畫頁面。', s: { 'design.mockup': 'false' } },
+                { l: '有，快速草圖', b: '先看個大概，sonnet 畫就夠。', s: { 'design.mockup': 'sonnet' } },
+                { l: '有，要仔細畫', b: '畫面是重點，用 opus 做完整的頁面。', s: { 'design.mockup': 'opus' } },
+                { l: '有，用最強的', b: '交給 fable 畫。', s: { 'design.mockup': 'fable' } },
+            ] },
+        { id: 'agents', t: 'context', q: '你在不在意主 session 的 context 被吃掉？', sub: '交給站 agent 的站，會在自己乾淨的 context 裡跑，主控只拿回一個路徑。', keys: ['stage.agents'],
+            habits: [
+                { l: '不在意，全部自己跑', b: '每一站都在主 session 裡，看得最清楚。', s: { 'stage.agents': 'false' } },
+                { l: '只交出 survey', b: '讀 repo 最吃 context，只把這站交出去。', s: { 'stage.agents': 'survey' } },
+                { l: '省 context', b: 'survey、build、verify 三站交出去。', s: { 'stage.agents': 'survey,build,verify' } },
+                { l: '全部交出去', b: '主控只轉路徑，七站都給站 agent。', s: { 'stage.agents': 'all' } },
+            ] },
+        { id: 'guard', t: '撞檔', q: '別的 session 正在改同一個檔案時，你要怎樣？', sub: '兩個 session 同時動一個檔案，其中一邊的改動可能被蓋掉。', keys: ['guard'],
+            habits: [
+                { l: '先問我', b: '停下來讓我決定要不要繼續。', s: { guard: 'ask' } },
+                { l: '直接擋掉', b: '被佔的檔案不准改，等對方放手。', s: { guard: 'deny' } },
+                { l: '提醒一下就好', b: '我知道自己在做什麼，警告但不停。', s: { guard: 'off' } },
+            ] },
+        { id: 'model', t: '模型', q: '派出去的 agent，你比較在意錢還是品質？', sub: '最低模型是實作者和 reader 的下限；判官是卡住時問的那一個。', keys: ['dispatch.floor', 'judge.model'],
+            habits: [
+                { l: '省錢', b: '讀檔用 haiku 就夠，判官用 opus。', s: { 'dispatch.floor': 'haiku', 'judge.model': 'opus' } },
+                { l: '平衡', b: '實作至少 sonnet，判官用 fable。', s: { 'dispatch.floor': 'sonnet', 'judge.model': 'fable' } },
+                { l: '品質優先', b: '實作至少 opus，判官用 fable。', s: { 'dispatch.floor': 'opus', 'judge.model': 'fable' } },
+            ] },
+        { id: 'station', t: '監控站', q: '這個專案要出現在監控站上嗎？', sub: '隱藏後它的 session 和 profile 卡都不會在這頁出現；要再打開得用指令。', keys: ['station.hide'],
+            habits: [
+                { l: '要，照常顯示', b: '', s: { 'station.hide': 'false' } },
+                { l: '不要，藏起來', b: '私人或暫時的專案。', s: { 'station.hide': 'true' } },
+            ] },
+    ];
+    function wizList(v) { return v === null || v === 'false' ? [] : v === 'true' ? ['survey'] : v === 'all' ? WIZ_STAGES.slice() : v.split(','); }
+    function wizNorm(arr) {
+        arr = WIZ_STAGES.filter(function (s) { return arr.indexOf(s) >= 0; });
+        return !arr.length ? 'false' : arr.length === WIZ_STAGES.length ? 'all' : arr.join(',');
+    }
+    // A value off `lib/profile.js` `read()` — a boolean, a stage array or a
+    // string — in the text form the buttons and the POST use.
+    function wizText(v) {
+        if (v === undefined || v === null) return null;
+        return Array.isArray(v) ? wizNorm(v) : String(v);
+    }
+    function wizShow(v) { return v === null ? '(ask)' : String(v); }
+    function wizSame(a, b) { return String(a) === String(b); }
+    function wizOverridden(W, k) { return Object.prototype.hasOwnProperty.call(W.rec, k) && !wizSame(W.rec[k], W.val[k]); }
+    // What this scope's own file holds for k.
+    function wizOwn(profiles, scope, k) {
+        var p = scope === 'machine' ? profiles.machine : (profiles.projects || {})[scope];
+        var want = scope === 'machine' ? 'machine' : 'project';
+        return p && p.sources && p.sources[k] === want ? { has: true, v: wizText(p.values[k]) } : { has: false, v: null };
+    }
+    // What the layers under this scope supply: machine, then builtin.
+    function wizBelow(profiles, keys, scope, k) {
+        var m = profiles.machine;
+        if (scope !== 'machine' && m && m.sources && m.sources[k] === 'machine') return { v: wizText(m.values[k]), src: 'machine' };
+        var b = keys[k] ? keys[k].builtin : null;
+        return b !== null && b !== undefined ? { v: String(b), src: 'builtin' } : { v: null, src: '' };
+    }
+    function wizEff(profiles, keys, scope, k) {
+        var own = wizOwn(profiles, scope, k);
+        return own.has ? { v: own.v, src: scope === 'machine' ? 'machine' : 'project' } : wizBelow(profiles, keys, scope, k);
+    }
+    function wizLoad(profiles, keys, scope) {
+        var W = { step: 0, scope: scope, pick: {}, val: {}, rec: {} };
+        Object.keys(keys).forEach(function (k) { W.val[k] = wizEff(profiles, keys, scope, k).v; });
+        // A habit card is pre-picked when every value it sets is what is effective today.
+        WIZ_STEPS.forEach(function (st, i) {
+            st.habits.forEach(function (h, j) {
+                if (W.pick[i] !== undefined) return;
+                if (Object.keys(h.s).every(function (k) { return wizSame(h.s[k], W.val[k]); })) {
+                    W.pick[i] = j;
+                    Object.keys(h.s).forEach(function (k) { W.rec[k] = h.s[k]; });
+                }
+            });
+        });
+        return W;
+    }
+    function wizDefaultScope(profiles) {
+        var dirs = Object.keys((profiles && profiles.projects) || {});
+        return dirs.length ? dirs[0] : 'machine';
+    }
+    function wizScopes(profiles, configDir) {
+        var out = [{ id: 'machine', label: '機器預設', file: (configDir ? String(configDir).replace(/[\\/]+$/, '') + '/' : '') + 'fankeel/profile.json' }];
+        Object.keys((profiles && profiles.projects) || {}).forEach(function (dir) {
+            out.push({ id: dir, label: dir.split(/[\\/]/).filter(Boolean).pop() || dir, file: dir.replace(/[\\/]+$/, '') + '/.fankeel/profile.json' });
+        });
+        return out;
+    }
+    // One entry per key the write would touch. A key this file does not hold
+    // is written only when the choice differs from what the layers below give;
+    // a key it does hold and that is now null is cleared (value '').
+    function wizChanges(keys, W, profiles) {
+        return Object.keys(keys).filter(function (k) {
+            var own = wizOwn(profiles, W.scope, k), v = W.val[k];
+            return own.has ? !wizSame(own.v, v) : v !== null && !wizSame(wizEff(profiles, keys, W.scope, k).v, v);
+        }).map(function (k) { return { key: k, value: W.val[k] === null ? '' : String(W.val[k]) }; });
+    }
+    // One click, as the button's dataset. The station chip carries both
+    // `k` and `st`, so `st` is read first.
+    function wizApply(W, keys, profiles, d) {
+        var n = WIZ_STEPS.length;
+        if (d.go !== undefined) { var g = Number(d.go); if (g >= 0 && g <= n) W.step = g; return W; }
+        if (d.h !== undefined) {
+            var hb = WIZ_STEPS[W.step].habits[Number(d.h)];
+            W.pick[W.step] = Number(d.h);
+            Object.keys(hb.s).forEach(function (k) { W.rec[k] = hb.s[k]; W.val[k] = hb.s[k]; });
+            return W;
+        }
+        if (d.st !== undefined) {
+            var on = wizList(W.val['stage.agents']), i = on.indexOf(d.st);
+            if (i >= 0) on.splice(i, 1); else on.push(d.st);
+            W.val['stage.agents'] = wizNorm(on);
+            return W;
+        }
+        if (d.k !== undefined) { W.val[d.k] = d.o === '' ? null : d.o; return W; }
+        if (d.ask !== undefined) { W.val[d.ask] = null; return W; }
+        if (d.scope !== undefined) { var step = W.step; W = wizLoad(profiles, keys, d.scope); W.step = step; return W; }
+        return W;
+    }
+    function wizOpts(keys, W, profiles, k) {
+        var v = W.val[k], r = W.rec[k], hasRec = Object.prototype.hasOwnProperty.call(W.rec, k);
+        if (k === 'stage.agents') {
+            var on = wizList(v), ron = hasRec ? wizList(r) : [];
+            return '<div class="stations" role="group" aria-label="stage.agents 七站">' + WIZ_STAGES.map(function (s) {
+                var p = on.indexOf(s) >= 0;
+                return '<button type="button" class="wstn' + (ron.indexOf(s) >= 0 ? ' rec' : '') + '" data-k="' + k + '" data-st="' + s
+                    + '" aria-pressed="' + p + '" style="--c:var(--st-' + s + ')"><i class="wpt"></i><span class="wnm">' + s
+                    + '</span><span class="wst">' + (p ? '站 agent' : '主控') + '</span></button>';
+            }).join('') + '</div><div class="stkey"><span>' + on.length + ' / 7 站交出去</span>'
+                + (hasRec ? '<span><i></i>建議開的站</span>' : '') + '<span>寫進檔的值 <span class="wout">' + esc(wizNorm(on)) + '</span></span></div>';
+        }
+        var spec = keys[k], opts = spec.values.slice();
+        if (spec.builtin === null) opts.push(null);
+        var inh = v === null ? wizBelow(profiles, keys, W.scope, k).v : null;
+        return '<span class="opts" role="group" aria-label="' + esc(k) + '">' + opts.map(function (o) {
+            return '<button type="button" class="opt' + (o === null ? ' ask' : '') + (hasRec && wizSame(r, o) ? ' rec' : '')
+                + (inh !== null && wizSame(inh, o) ? ' inh' : '') + '" data-k="' + esc(k) + '" data-o="' + (o === null ? '' : esc(o))
+                + '" aria-pressed="' + wizSame(v, o) + '">' + (o === null ? '每次問我' : esc(o)) + '</button>';
+        }).join('') + '</span>';
+    }
+    function wizStepsHtml(W) {
+        var n = WIZ_STEPS.length;
+        return WIZ_STEPS.map(function (st, i) {
+            var c = i === W.step ? 'wcur' : (W.pick[i] !== undefined ? 'wdone' : '');
+            var s = st.keys.map(function (k) { return wizShow(W.val[k]); }).join(' · ');
+            return '<li class="' + c + '"><button type="button" data-go="' + i + '"><span class="wdotn">' + (i + 1) + '</span><span class="wt">'
+                + st.t + '</span><span class="ws">' + esc(s) + '</span></button></li>';
+        }).join('') + '<li class="wsumli' + (W.step === n ? ' wcur' : '') + '"><button type="button" data-go="' + n
+            + '"><span class="wdotn">✓</span><span class="wt">摘要與寫入</span><span class="ws">' + Object.keys(W.val).length + ' 鍵</span></button></li>';
+    }
+    function wizStepHtml(keys, W, profiles) {
+        var n = WIZ_STEPS.length, st = WIZ_STEPS[W.step];
+        var fine = st.keys.filter(function (k) {
+            return k !== 'design.skill' || (W.val['design.mockup'] !== null && W.val['design.mockup'] !== 'false');
+        });
+        return '<div class="wcard" data-block="wizard-step"><div class="prog" aria-hidden="true"><i style="width:' + Math.round((W.step + 1) / (n + 1) * 100) + '%"></i></div>'
+            + '<div class="wtop"><span class="eyebrow">第 ' + (W.step + 1) + ' 題 · ' + st.t + '</span><span class="wof">' + (W.step + 1) + ' / ' + n
+            + '</span><span class="spacer"></span><button class="wlk" type="button" data-go="' + n + '">跳到摘要 →</button></div>'
+            + '<h2 class="wq">' + st.q + '</h2><p class="wqsub">' + st.sub + '</p>'
+            + '<div class="habits" role="group" aria-label="' + st.t + '">' + st.habits.map(function (hb, j) {
+                return '<button type="button" class="habit" data-h="' + j + '" aria-pressed="' + (W.pick[W.step] === j) + '"><b>' + hb.l + '</b>'
+                    + (hb.b ? '<span class="wbl">' + hb.b + '</span>' : '')
+                    + '<span class="wsets">' + Object.keys(hb.s).map(function (k) { return esc(k) + ' → ' + esc(wizShow(hb.s[k])); }).join('<br>') + '</span></button>';
+            }).join('') + '</div>'
+            + '<div class="fine"><div class="eyebrow">細調 · 這一題會設的鍵</div>' + fine.map(function (k) {
+                return '<div class="fk"><span class="wk">' + esc(k) + '</span><span class="wd">' + esc(keys[k].desc || '') + '</span><span class="ctlc">'
+                    + wizOpts(keys, W, profiles, k) + (wizOverridden(W, k) ? '<span class="ovr">改過建議</span>' : '') + '</span></div>';
+            }).join('') + '</div>'
+            + (st.id === 'station' && W.scope === 'machine' ? '<p class="wnote">現在寫的是機器預設：station.hide 設在這裡，會讓每個沒寫這個鍵的專案都跟著隱藏。</p>' : '')
+            + '<div class="wnav"><button class="ctl" type="button" data-go="' + (W.step - 1) + '"' + (W.step ? '' : ' disabled') + '>← 上一題</button><span class="spacer"></span>'
+            + '<span class="whint">' + (W.pick[W.step] === undefined ? '沒選也可以往下，這題的鍵維持現在的值' : '') + '</span>'
+            + '<button class="ctl" type="button" data-go="' + (W.step + 1) + '">' + (W.step === n - 1 ? '看摘要 →' : '下一題 →') + '</button></div></div>';
+    }
+    function wizWriteHtml(ch, W, ctx, file) {
+        var label = '寫入 ' + ch.length + ' 鍵';
+        if (!ch.length) return '<button class="ctl" type="button" disabled>' + label + '</button>';
+        if (!ctx.serve) {
+            return '<div class="wcmd mono">' + ch.map(function (c) {
+                return c.value === '' ? '從 ' + esc(file) + ' 刪掉 ' + esc(c.key)
+                    : 'node ' + esc(ctx.plugin || '<plugin>') + '/scripts/task.js profile set ' + esc(c.key) + ' ' + esc(c.value)
+                        + (W.scope === 'machine' ? ' --default' : ' --project "' + esc(W.scope) + '"');
+            }).join('<br>') + '</div>';
+        }
+        return '<form method="post" action="/profile" class="wform">'
+            + '<input type="hidden" name="nonce" value="' + esc(ctx.nonce || '') + '">'
+            + '<input type="hidden" name="scope" value="' + (W.scope === 'machine' ? 'machine' : 'project') + '">'
+            + (W.scope === 'machine' ? '' : '<input type="hidden" name="project" value="' + esc(W.scope) + '">')
+            + '<input type="hidden" name="back" value="#/settings">'
+            + ch.map(function (c) {
+                return '<input type="hidden" name="key" value="' + esc(c.key) + '"><input type="hidden" name="value" value="' + esc(c.value) + '">';
+            }).join('')
+            + '<button class="ctl" type="submit">' + label + '</button></form>';
+    }
+    function wizSummaryHtml(keys, W, profiles, ctx) {
+        var n = WIZ_STEPS.length, ch = wizChanges(keys, W, profiles), moved = {}, ov = 0;
+        ch.forEach(function (c) { moved[c.key] = true; });
+        var rows = Object.keys(keys).map(function (k) {
+            var now = wizEff(profiles, keys, W.scope, k), v = W.val[k], m = Boolean(moved[k]), o = wizOverridden(W, k);
+            var own = wizOwn(profiles, W.scope, k), src, from;
+            if (o) ov++;
+            if (m && v === null) {
+                var inh = wizBelow(profiles, keys, W.scope, k);
+                src = inh.src;
+                from = inh.src ? '往下讀到 <span class="mono">' + inh.src + ': ' + esc(inh.v) + '</span>' : '沒有下層值，到時候會問';
+            } else if (m) { src = W.scope === 'machine' ? 'machine' : 'project'; from = '寫入後'; }
+            else { src = now.src; from = src ? '' : '沒有值'; }
+            return '<div class="sr' + (o ? ' ov' : '') + (m ? ' moved' : '') + '" data-key="' + esc(k) + '"><span class="wk">' + esc(k) + '</span><span class="wd">' + esc(keys[k].desc || '') + '</span>'
+                + '<span class="ctlc">' + wizOpts(keys, W, profiles, k) + (o ? '<span class="ovr">改過建議 · 建議是 <span class="mono">' + esc(wizShow(W.rec[k])) + '</span></span>' : '') + '</span>'
+                + '<span class="wmeta"><span class="from">' + from + (src ? ' <span class="src ' + src + (m && v !== null ? ' wpend' : '') + '">' + src + '</span>' : '') + '</span>'
+                + '<button type="button" class="askb" data-ask="' + esc(k) + '"' + (v === null || (!own.has && !m) ? ' disabled' : '') + '>清成 <span class="wm">(ask)</span></button></span></div>';
+        }).join('');
+        var scopes = wizScopes(profiles, ctx.configDir), file = '';
+        scopes.forEach(function (s) { if (s.id === W.scope) file = s.file; });
+        return '<div class="wcard" data-block="wizard-summary"><div class="prog" aria-hidden="true"><i style="width:100%"></i></div>'
+            + '<div class="wtop"><span class="eyebrow">摘要</span><span class="wof">' + Object.keys(keys).length + ' 鍵</span><span class="spacer"></span>'
+            + '<button class="wlk" type="button" data-go="0">← 從第 1 題重來</button></div>'
+            + '<h2 class="wq">答案換成的設定</h2><p class="wqsub">每一列都能直接按鈕改；和精靈建議不一樣的列會標出來。「清成 (ask)」是把這一鍵從這一層的檔案拿掉，改讀下一層。</p>'
+            + '<div class="scopebar"><label>寫到</label><span class="seg" role="group" aria-label="寫到哪一層">' + scopes.map(function (s) {
+                return '<button type="button" data-scope="' + esc(s.id) + '" aria-pressed="' + (W.scope === s.id) + '">' + esc(s.label) + '</button>';
+            }).join('') + '</span></div>'
+            + '<div class="pf-file">' + esc(file) + (W.scope === 'machine' ? ' · 每個專案沒寫的鍵都讀這裡' : ' · 沒寫的鍵往下讀機器預設，再往下是 builtin') + '</div>'
+            + '<div class="srows">' + rows + '</div>'
+            + '<div class="writebar"><span class="wsum">會改 <b>' + ch.length + '</b> 鍵' + (ov ? '，其中 <b>' + ov + '</b> 鍵和建議不同' : '') + '</span><span class="spacer"></span>'
+            + '<button class="ctl" type="button" data-go="' + (n - 1) + '">← 回上一題</button>' + wizWriteHtml(ch, W, ctx, file) + '</div></div>';
+    }
+    function wizHtml(keys, W, profiles, ctx) {
+        var body = W.step >= WIZ_STEPS.length ? wizSummaryHtml(keys, W, profiles, ctx) : wizStepHtml(keys, W, profiles);
+        return '<div class="phead"><h1>設定</h1></div><div class="wz" data-block="wizard"><ol class="steps" data-block="wizard-steps">'
+            + wizStepsHtml(W) + '</ol><div class="wbody">' + body + '</div></div>';
+    }
+
     // The hero's eyebrow carries the frozen moment too, so a reader who has
     // scrolled past the bar is not reading numbers they take for live. The
     // hh:mm is the caller's, off the same `stamp()` the bar's absolute time
@@ -1106,6 +1357,7 @@
             heroEyebrow: heroEyebrow, docsCardHtml: docsCardHtml,
             railHtml: railHtml, liveTag: liveTag,
             navHtml: navHtml, navCounts: navCounts, recentRows: recentRows, nowHtml: nowHtml,
+            WIZ_STEPS: WIZ_STEPS, wizLoad: wizLoad, wizApply: wizApply, wizChanges: wizChanges, wizHtml: wizHtml,
             tk: tk,
         };
     }
@@ -2391,6 +2643,15 @@
     VIEWS.docs = docsPage;
     VIEWS.list = listPage;
     VIEWS.cmp = cmpPage;
+    // The wizard's state lives as long as the page: a re-read of the data
+    // (the poll) keeps it, a write reloads the page and starts it fresh.
+    var wiz = null;
+    function settingsPage() {
+        var profiles = S.profiles || { machine: null, projects: {} }, keys = S.profileKeys || {};
+        if (!wiz) wiz = wizLoad(profiles, keys, wizDefaultScope(profiles));
+        return wizHtml(keys, wiz, profiles, { serve: Boolean(S.serve), nonce: S.nonce, plugin: S.plugin, configDir: S.configDir });
+    }
+    VIEWS.settings = settingsPage;
     function draw() {
         route = parseHash(w.location.hash);
         var p = doc.getElementById('page');
@@ -2408,6 +2669,13 @@
         w.scrollTo(0, 0);
     });
     doc.addEventListener('click', function (e) {
+        var wzt = route.view === 'settings' && e.target.closest
+            ? e.target.closest('.wz [data-go], .wz [data-h], .wz [data-st], .wz [data-k], .wz [data-ask], .wz [data-scope]') : null;
+        if (wzt) {
+            wiz = wizApply(wiz, S.profileKeys || {}, S.profiles || { machine: null, projects: {} }, wzt.dataset);
+            draw();
+            return;
+        }
         // 記成 TODO: the server checks the line and answers with the rule it
         // failed, or with the line it wrote.
         var todo = e.target.closest('[data-todo]');
