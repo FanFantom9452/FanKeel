@@ -718,8 +718,9 @@ test('a writer waits out a lock somebody else is holding', async () => {
     + 'Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Number(ms));\n'
     + 'fs.rmdirSync(lock);\n');
   // Well past a spin, and well inside both the 1s cap and the 5s staleness
-  // threshold — so this measures waiting rather than breaking.
-  const kid = spawn(process.execPath, [releaser, lock, '300'], { stdio: 'ignore' });
+  // threshold — 150ms leaves far more margin against the 1s cap under load
+  // than 300ms did, so this measures waiting rather than breaking.
+  const kid = spawn(process.execPath, [releaser, lock, '150'], { stdio: 'ignore' });
 
   const ok = registry.addClaim(root, SID, 'waited.js');
   await new Promise((done) => kid.on('exit', done));

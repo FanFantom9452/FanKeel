@@ -97,7 +97,6 @@ what gets scheduled.
 - 〔quota〕要不要讓 TokenBar 把 5h／7d 讀數記成序列（另一個 repo）：兩次讀數已給出 5h 不是數未加權 token、$7.64–$8.50 一點，但 7d 的水位兩點仍差 4.7 倍，要第三點才分得出是延遲還是計別的 — [scripts/spend.js](scripts/spend.js).
 - 〔station〕首頁整頁要不要改成三欄的完整工作站、並把 profile 的逐列設計併進去：這一輪只做三張習慣預設卡與每鍵一句說明，逐列標記、清成 (ask)、stage.agents 七站 toggle 沒做；先要量整個首頁版面 — [assets/station/station.js](assets/station/station.js).
 - 〔docs〕`docs/README.md` 有六列標 *built* 但頁面 frontmatter 是 design-intent，另有一列相反：改標籤還是改 frontmatter，要一頁頁看 — [docs/README.md](docs/README.md).
-- 〔tests〕`a writer waits out a lock somebody else is holding` 整套裡第二次紅：09-21 在 3784eb7、09-22 在 40e3e12，單跑都綠；放寬測試裡 300ms 對 1s 的時序，還是查並行下外層鎖被判過期 — [tests/registry.test.js](tests/registry.test.js).
 
 ## Waiting
 
