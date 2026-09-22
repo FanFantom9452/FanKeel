@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # 站首頁：左側功能列與設定精靈 Implementation Plan

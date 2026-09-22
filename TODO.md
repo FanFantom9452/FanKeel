@@ -75,8 +75,6 @@ what gets scheduled.
 
 ## Ready
 
-- 〔station〕首頁照已核可的 mockup 改成左側功能列＋七步設定精靈（按鈕切換、無下拉、含 `design.skill`）；版面與 mockup 路徑見 `docs/archive/2026-09-23-todo-ten-design.md` §7 — [assets/station/station.js](assets/station/station.js).
-
 ## Needs a decision
 
 - 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過；session 記錄已存 `stage.agents`（6fb1b3a），缺的是一次真實的量測 — [lib/render.js](lib/render.js).
