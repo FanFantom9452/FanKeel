@@ -182,6 +182,6 @@ lifts when: 放行規則存在下 no verdict 再發生一次. 09-22.
 - 〔stage-agents〕auto mode 分類器曾對站 agent 與 implementer 的 Write／Edit 回 no verdict（09-22 六次以上）；已加放行規則 `Edit(/.fankeel/build/**)`，但放行前後探測都寫成功，效果無法證明；再發生時查規則有沒有被讀到 — [docs/subagents.md](docs/subagents.md).
 
 ### build/verify 接縫一次
-lifts when: 十來個接縫（缺 AskUserQuestion/Edit、插話起第二個 brain、profile 翻轉、accounting、claims、commit 位置）任一個被觀察到. 2026-09-22.
+lifts when: 十來個接縫（缺 AskUserQuestion/Edit、插話起第二個 brain、profile 翻轉、accounting、claims、commit 位置）任一個被觀察到. 09-22.
 
 - 〔stage-agents〕受控 build／verify 還有十來個接縫沒實跑過：stage agent 沒有 AskUserQuestion／Edit、插話會起第二個、profile 中途翻轉 — [docs/subagents.md](docs/subagents.md).
