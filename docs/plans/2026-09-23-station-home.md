@@ -43,14 +43,19 @@ status: design-intent
 | 「寫入 N 鍵」的 N 是 `wizChanges` 的長度，也就是摘要裡標成會改的列數… | Task 3 |
 | `POST /profile` 讀選填欄位 `back`：符合 `^#/[a-z]*$` 時 303 到 `/` 加上它，否則照舊回 `/`。 | Task 1 |
 | 每個 view 與精靈區塊帶 `data-block`：`nav`、`now`、`days`、`sessions`、`projects`、`docs`、`wizard`… | Task 2, Task 3 |
-| build 最後一個 task 在 session 內與使用者逐塊調：開 serve、用 `scripts/render.js` 截圖，只改被點名的區塊，其餘不動。 | Task 5 |
+| build 最後一個 task 在 session 內與使用者逐塊調：開 serve、用 `scripts/render.js` 截圖，只改被點名的區塊，其餘不動。 | Task 6 |
 | `docs/station.md` 的首頁、文件卡與「Setting a profile from the page」三節改寫成新版面。 | Task 4 |
 | `parseHash('#/settings').view === 'settings'`，`parseHash('#/')` 是 `now` | Task 2 |
 | 每個新 view 的輸出都不含 `<select` | Task 2, Task 3 |
 | 精靈摘要列出 11 鍵，含 `design.skill` | Task 3 |
 | `POST /profile` 帶 `back=#/settings` 回 303，`location` 是 `/#/settings`；帶 `back=https://x` 仍回 `/` | Task 1 |
-| 「寫入 N 鍵」的 N 等於摘要裡標成會改的列數 | Task 3, Task 5 |
-| 功能列「現在」的 live 數等於現在頁 live 的列數 | Task 2, Task 5 |
+| 「寫入 N 鍵」的 N 等於摘要裡標成會改的列數 | Task 3, Task 6 |
+| 功能列「現在」的 live 數等於現在頁 live 的列數 | Task 2, Task 6 |
+| 每一段是自己的 `rect.hseg`，帶 `data-day`、`data-key`、`data-cx`、`data-href`；整欄的 `rect.hit` 移到長條後面，不再有 `<title>`，改帶同樣文字的 `aria-label`。 | Task 5 |
+| hover 一段時出現跟著滑鼠的資訊卡 `#charttip`，內容由純函式 `segTip(bars, o, day, key)` 產生… | Task 5 |
+| hover 時同一個 key 的所有段亮起、其餘淡出，那一天有一條垂直參考線 `line.hguide`，圖例對應那一項也亮起。 | Task 5 |
+| 圖例每一項帶 `data-key`：hover 高亮整條序列，點一下固定，再點一下取消；重畫後固定仍在。 | Task 5 |
+| `histSvg` 每個非零的段各有一個 `rect.hseg`，資訊卡的清單列數等於當天非零段數、合計等於各段相加 | Task 5 |
 
 ## Task 1: `POST /profile` 的 `back` 欄位
 
@@ -999,7 +1004,256 @@ and in `assets/station/station.js`, in the existing `doc.addEventListener('click
 - [ ] **Step 5：驗。** `node scripts/docs-check.js` 不比 Step 1 多出任何一行；`grep -n "profileCard\|presetStrip\|<select\|套用機器預設" docs/station.md` 只剩說明「已拿掉」的句子。
 - [ ] **Step 6：提交。** `git commit -o docs/station.md -m "docs: station.md 跟上左側功能列與設定精靈"`（結尾加 Co-Authored-By 行）。
 
-## Task 5: 逐塊即時調
+## Task 5: 近 30 天圖表的即時互動
+
+加入於 build 中途（ledger 的 ruling：使用者選「加成這次的 Task」）。原本的逐塊即時調順延為 Task 6，好讓逐塊調整時能在頁面上試這些互動。
+
+**Files:**
+- Modify: `assets/station/station.js` — guard 以上改 `histSvg`、`legendHtml`，新增 `segTip` 與 export；guard 以下加資訊卡、hover、圖例固定
+- Modify: `assets/station/station.css` — 資訊卡、段的淡出與高亮、參考線、圖例
+- Modify: `docs/station.md` — 近 30 天那段加一句互動說明
+- Test: `tests/station-view.test.js`
+
+**Interfaces:**
+- Consumes: Task 2 的 `daysPage`、`draw()`、`route`；guard 以上既有的 `colorOf(dim, key, pkeys)`、`keyLabel(dim, key, names)`、`metricText(metric, v)`、`esc`。
+- Produces: `segTip(bars, o, day: string, key: string|null): string`；`histSvg` 輸出的 `rect.hseg[data-day][data-key][data-cx][data-href]`、`rect.hit[data-day][data-cx][aria-label]`、`line.hguide`；`legendHtml` 每一項的 `span[data-key]`。
+
+**Dispatch:** implementer, sonnet — 純函式、測試與 DOM 接線的程式碼在下面給全，工作是轉錄加跑測試。
+
+- [ ] **Step 1：改測試，讓它們失敗。** In `tests/station-view.test.js`, in the test `the home builders print dollars from days and link every row to its level`, replace the line
+
+```js
+    assert.match(svg, /<rect class="hit" data-href="#\/"[^>]*><title>2026-09-13 /, 'the open day closes');
+```
+
+with, in `tests/station-view.test.js`:
+
+```js
+    assert.match(svg, /<rect class="hit" data-href="#\/"[^>]*aria-label="2026-09-13 /, 'the open day closes');
+    assert.doesNotMatch(svg, /<title>/, 'no native tooltip: the card replaces it');
+```
+
+and at the end of `tests/station-view.test.js`, add:
+
+```js
+test('every non-zero segment is its own hover target, behind nothing', () => {
+    const bars = V.dayBars(HOME, 'usd', 'model', DAYS);
+    const svg = V.histSvg(bars, O);
+    const parts = bars.days.reduce((n, b) => n + bars.keys.filter((k) => b.parts[k]).length, 0);
+    assert.ok(parts > 1);
+    assert.equal(count(svg, /<rect class="hseg" data-day="/g), parts);
+    assert.match(svg, /<line class="hguide"/);
+    // The column's hit rect comes before its bar group, so a segment is on top of it.
+    assert.ok(svg.indexOf('<rect class="hit" data-href="#/d/2026-09-14"') < svg.indexOf('<rect class="hseg" data-day="2026-09-14"'));
+    assert.match(V.legendHtml(bars, O), /<span data-key="/);
+});
+
+test('segTip lists the day\'s segments, marks the hovered one, and its parts add up to the total', () => {
+    const bars = V.dayBars(HOME, 'usd', 'model', DAYS);
+    const b = bars.days.find((d) => bars.keys.filter((k) => d.parts[k]).length >= 2);
+    assert.ok(b, 'the fixture has a day with two segments');
+    const keys = bars.keys.filter((k) => b.parts[k]);
+    const tip = V.segTip(bars, O, b.day, keys[0]);
+    assert.match(tip, new RegExp(b.day));
+    assert.equal(count(tip, /<li/g), keys.length);
+    assert.equal(count(tip, /<li data-hot/g), 1);
+    assert.match(tip, /class="tt-main"/);
+    assert.ok(Math.abs(keys.reduce((s, k) => s + b.parts[k], 0) - b.total) < 1e-9);
+    assert.match(tip, /當天合計/);
+    assert.doesNotMatch(V.segTip(bars, O, b.day, null), /class="tt-main"/, 'the column alone: no segment headline');
+    assert.equal(V.segTip(bars, O, '1999-01-01', null), '');
+});
+```
+
+- [ ] **Step 2：跑它，看它失敗。** `node --test tests/station-view.test.js`——預期上面三處失敗（`V.segTip is not a function` 等）。
+
+- [ ] **Step 3：`histSvg`。** In `assets/station/station.js`, in `histSvg`, replace the whole body of `bars.days.forEach(function (b, i) { ... });` (from `var cx =` through the `+ '</title></rect>';` line) with:
+
+```js
+            var cx = (L + i * slot + slot / 2).toFixed(1), x0 = (L + i * slot + slot / 2 - bw / 2).toFixed(1);
+            var c = 0, open = b.day === o.sel, mark = open || b.day === o.today;
+            var href = open ? '#/' : '#/d/' + b.day;
+            var label = b.day + ' 合計 ' + metricText(o.metric, b.total) + bars.keys.filter(function (k) { return b.parts[k]; })
+                .map(function (k) { return '；' + keyLabel(o.dim, k, o.names) + ' ' + metricText(o.metric, b.parts[k]); }).join('');
+            // The column's hit area goes first, so every segment drawn after it
+            // sits on top and takes the hover itself.
+            out += '<rect class="hit" data-href="' + href + '" data-day="' + b.day + '" data-cx="' + cx + '" x="' + (L + i * slot).toFixed(1)
+                + '" y="' + (T - 10) + '" width="' + slot.toFixed(1) + '" height="' + (plotH + AX) + '" aria-label="' + esc(label) + '"/>';
+            out += '<g class="bar"' + (o.sel && !open ? ' style="opacity:.36"' : '') + '>';
+            bars.keys.forEach(function (k) {
+                if (!b.parts[k]) return;
+                var h = y(b.parts[k]);
+                out += '<rect class="hseg" data-day="' + b.day + '" data-key="' + esc(k) + '" data-cx="' + cx + '" data-href="' + href
+                    + '" x="' + x0 + '" y="' + (base - c - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="'
+                    + Math.max(h - 1, 0.5).toFixed(1) + '" style="fill:' + colorOf(o.dim, k, o.dim === 'version' ? bars.keys : o.pkeys) + '"/>';
+                c += h;
+            });
+            out += '</g>'
+                + (b.total ? '<text class="tick" x="' + cx + '" y="' + (base - c - 7).toFixed(1) + '" text-anchor="middle">'
+                    + metricText(o.metric, b.total) + '</text>' : '')
+                + '<text class="tick" x="' + cx + '" y="' + (base + 17) + '" text-anchor="middle"'
+                + (mark ? ' style="fill:var(--ink);font-weight:600"' : '') + '>' + Number(b.day.slice(8)) + '</text>'
+                + (b.day === o.today || b.day.slice(8) === '01' || i === 0
+                    ? '<text x="' + cx + '" y="' + (base + 33) + '" text-anchor="middle">'
+                    + (b.day === o.today ? '今天' : Number(b.day.slice(5, 7)) + '月') + '</text>' : '');
+```
+
+and in the same function in `assets/station/station.js` replace its last line `return out + '</svg>';` with:
+
+```js
+        return out + '<line class="hguide" x1="0" x2="0" y1="' + T + '" y2="' + base + '"/></svg>';
+```
+
+- [ ] **Step 4：`legendHtml` 與 `segTip`。** In `assets/station/station.js`, in `legendHtml`, replace `return '<span' + (hint ? ' title="' + esc(hint) + '"' : '') + '><i class="sw"` with `return '<span data-key="' + esc(k) + '"' + (hint ? ' title="' + esc(hint) + '"' : '') + '><i class="sw"`. Then directly after the closing `}` of `legendHtml`, add, in `assets/station/station.js`:
+
+```js
+    // The hover card for one column of the 30-day chart: the day, the segment
+    // under the pointer (none when the pointer is on the column's empty part),
+    // every segment of that day top-down as stacked, and the day's total.
+    function segTip(bars, o, day, key) {
+        var b = null;
+        bars.days.forEach(function (d) { if (d.day === day) b = d; });
+        if (!b) return '';
+        var pk = o.dim === 'version' ? bars.keys : o.pkeys;
+        var sw = function (k) { return '<i class="sw" style="background:' + colorOf(o.dim, k, pk) + '"></i>'; };
+        var pct = function (v) { return b.total ? Math.round(v / b.total * 100) + '%' : '—'; };
+        var keys = bars.keys.filter(function (k) { return b.parts[k]; });
+        return '<div class="tt-day">' + esc(day) + (day === o.today ? ' · 今天' : '') + '</div>'
+            + (key && b.parts[key]
+                ? '<div class="tt-main">' + sw(key) + '<b>' + esc(keyLabel(o.dim, key, o.names)) + '</b></div>'
+                    + '<div class="tt-val"><b>' + metricText(o.metric, b.parts[key]) + '</b><span>當天的 ' + pct(b.parts[key]) + '</span></div>'
+                : '')
+            + '<ul class="tt-list">' + keys.slice().reverse().map(function (k) {
+                return '<li' + (k === key ? ' data-hot' : '') + '>' + sw(k) + '<span>' + esc(keyLabel(o.dim, k, o.names))
+                    + '</span><span class="tt-n">' + metricText(o.metric, b.parts[k]) + '</span></li>';
+            }).join('') + '</ul>'
+            + '<div class="tt-sum">當天合計 <b>' + metricText(o.metric, b.total) + '</b></div>';
+    }
+```
+
+and add `segTip: segTip,` to the `module.exports` object before `tk: tk,`.
+
+- [ ] **Step 5：接上頁面。** In `assets/station/station.js`, in `daysPage`, directly after the line `var bars = dayBars(R, view.metric, view.dim, DAYS);`, add:
+
+```js
+        chartBars = bars;
+        chartOpts = o;
+```
+
+Directly above `function daysPage(r) {` in `assets/station/station.js`, add:
+
+```js
+    // What daysPage last drew, so the hover card reads the same bars the chart
+    // did; `chartPin` is the legend key clicked to hold a series lit.
+    var chartBars = null, chartOpts = null, chartPin = null, chartHover = false;
+    function chartTipEl() {
+        var t = doc.getElementById('charttip');
+        if (!t) {
+            t = doc.createElement('div');
+            t.id = 'charttip';
+            t.setAttribute('role', 'tooltip');
+            doc.body.appendChild(t);
+        }
+        return t;
+    }
+    // Light one series everywhere — its segments and its legend entry. null clears.
+    function chartFocus(key) {
+        var svg = doc.querySelector('.chart svg');
+        if (!svg) return;
+        if (key) svg.setAttribute('data-focus', key); else svg.removeAttribute('data-focus');
+        Array.prototype.forEach.call(doc.querySelectorAll('.chart .hseg, .legend [data-key]'), function (el) {
+            if (key && el.getAttribute('data-key') === key) el.setAttribute('data-hot', ''); else el.removeAttribute('data-hot');
+        });
+    }
+    function chartGuide(cx) {
+        var g = doc.querySelector('.chart .hguide');
+        if (!g) return;
+        if (cx === null) { g.removeAttribute('data-on'); return; }
+        g.setAttribute('x1', cx);
+        g.setAttribute('x2', cx);
+        g.setAttribute('data-on', '');
+    }
+    function chartHide() {
+        chartTipEl().removeAttribute('data-on');
+        chartGuide(null);
+        chartFocus(chartPin);
+        chartHover = false;
+    }
+    doc.addEventListener('mousemove', function (e) {
+        if (route.view !== 'days' || !chartBars || !e.target.closest) return;
+        var lk = e.target.closest('.legend [data-key]');
+        if (lk) {
+            chartTipEl().removeAttribute('data-on');
+            chartGuide(null);
+            chartFocus(lk.getAttribute('data-key'));
+            chartHover = true;
+            return;
+        }
+        var seg = e.target.closest('.chart .hseg'), cell = seg || e.target.closest('.chart .hit');
+        if (!cell) { if (chartHover) chartHide(); return; }
+        var t = chartTipEl();
+        t.innerHTML = segTip(chartBars, chartOpts, cell.getAttribute('data-day'), seg ? seg.getAttribute('data-key') : null);
+        t.setAttribute('data-on', '');
+        var pad = 14, r = t.getBoundingClientRect(), x = e.clientX + pad, y = e.clientY + pad;
+        if (x + r.width > w.innerWidth - 8) x = e.clientX - pad - r.width;
+        if (y + r.height > w.innerHeight - 8) y = e.clientY - pad - r.height;
+        t.style.left = Math.max(8, x) + 'px';
+        t.style.top = Math.max(8, y) + 'px';
+        chartGuide(cell.getAttribute('data-cx'));
+        chartFocus(seg ? seg.getAttribute('data-key') : chartPin);
+        chartHover = true;
+    });
+```
+
+In `assets/station/station.js`, in `draw()`, directly after the line `if (route.view === 'list') drawList();`, add:
+
+```js
+        if (route.view === 'days') chartFocus(chartPin); else chartTipEl().removeAttribute('data-on');
+```
+
+and in the existing `doc.addEventListener('click', function (e) {` handler in `assets/station/station.js`, directly after the wizard block Task 3 put first, add:
+
+```js
+        var lg = route.view === 'days' && e.target.closest ? e.target.closest('.legend [data-key]') : null;
+        if (lg) {
+            chartPin = chartPin === lg.getAttribute('data-key') ? null : lg.getAttribute('data-key');
+            chartFocus(chartPin);
+            return;
+        }
+```
+
+- [ ] **Step 6：CSS。** Append to `assets/station/station.css`:
+
+```css
+/* ---- 近 30 天: the hover card and series focus (2026-09-23) ---- */
+.chart .hseg{transition:opacity .15s ease-out}
+.chart svg[data-focus] .hseg{opacity:.22}
+.chart svg[data-focus] .hseg[data-hot]{opacity:1}
+.chart .hguide{stroke:var(--ink2);stroke-width:1;stroke-dasharray:3 3;pointer-events:none;opacity:0}
+.chart .hguide[data-on]{opacity:.7}
+.legend [data-key]{cursor:pointer;border-radius:4px;padding:0 4px}
+.legend [data-key][data-hot]{background:var(--wash);color:var(--ink);font-weight:600}
+#charttip{position:fixed;z-index:30;pointer-events:none;min-width:210px;max-width:320px;padding:10px 12px;background:var(--panel);color:var(--ink);border:1px solid var(--rule2);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.16);font-size:12px;line-height:1.45;opacity:0;transition:opacity .12s ease-out}
+#charttip[data-on]{opacity:1}
+#charttip .tt-day{font:600 11px var(--f-mono);color:var(--muted);margin-bottom:6px}
+#charttip .tt-main{display:flex;align-items:center;gap:7px;font-size:13.5px}
+#charttip .tt-val{display:flex;align-items:baseline;gap:8px;margin:2px 0 8px}
+#charttip .tt-val b{font:700 18px var(--f-mono)}
+#charttip .tt-val span{color:var(--muted)}
+#charttip .tt-list{list-style:none;margin:0;padding:6px 0 0;border-top:1px solid var(--rule)}
+#charttip .tt-list li{display:flex;align-items:center;gap:7px;padding:1px 0;color:var(--ink2)}
+#charttip .tt-list li[data-hot]{color:var(--ink);font-weight:700}
+#charttip .tt-n{margin-left:auto;font-family:var(--f-mono)}
+#charttip .tt-sum{margin-top:6px;padding-top:6px;border-top:1px solid var(--rule);color:var(--muted)}
+#charttip .tt-sum b{color:var(--ink);font-family:var(--f-mono)}
+@media(prefers-reduced-motion:reduce){.chart .hseg,#charttip{transition:none}}
+```
+
+- [ ] **Step 7：文件。** In `docs/station.md`, in the paragraph Task 4 wrote about **近 30 天**（`#/days`）, add one sentence: 每一段各自可 hover，出現跟著滑鼠的資訊卡（`segTip`：日期、那一段的 key 與數值、占當天比例、當天各段與合計），同 key 的段一起亮、其他淡出，那天有一條參考線；圖例 hover 高亮整條序列，點一下固定、再點取消。
+- [ ] **Step 8：跑它，看它通過。** `node --test tests/station-view.test.js tests/station-shell.test.js` 全綠（shell 測試會檢查每個 class 都有 CSS 規則、每條規則都有元素）；若 shell 測試要求把新 class 加進它的清單，不要改它，回報 `blocked:` 並說是哪個 class。
+- [ ] **Step 9：提交。** `git commit -o assets/station/station.js assets/station/station.css docs/station.md tests/station-view.test.js -m "feat: 近 30 天圖表每段可 hover，浮動資訊卡與同序列高亮"`（結尾加 Co-Authored-By 行）。
+
+## Task 6: 逐塊即時調
 
 **Files:**
 - Modify: `assets/station/station.css` — 使用者點名的區塊的樣式

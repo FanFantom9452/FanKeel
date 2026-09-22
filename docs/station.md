@@ -532,7 +532,17 @@ are one directory spelled two ways; `tests/station-view.test.js` carries both
 fixtures, the one that must merge and the nested root that must not. A nested
 root separates on its own and always did.
 
-**首頁**, `#/`, is a 30-day histogram — one bar per local day, today at the
+`#/` is **現在**: `nowHtml` draws one card per registry that is not `gone`,
+with its live and stale sessions under it; a session that is down has
+finished and moved onto 最近 sessions instead. The left nav (`navHtml`,
+`data-block="nav"`) groups its links into three: 看 (現在, 近 30 天, 最近
+sessions, 專案, 文件), 調 (設定), and 其他頁 (清單, 比較). Each badge is
+what `navCounts` counts off those same rows, except 現在's, which counts
+only `live` sessions where its cards also show `stale` ones, and 近 30 天's,
+which shows the window's spend rather than a count.
+
+The 30-day histogram that used to open the page is now **近 30 天**,
+`#/days` — one bar per local day, today at the
 right — whose height switches between tokens, dollars and time and whose
 segments switch between model, project, stage, main session against agent,
 the plugin `version` that ran the session, and the four cost components the
@@ -548,7 +558,7 @@ and the fifth does not compare windows at all: it
 names the option-one gate wording most often swapped for another answer,
 `最常被換掉`, with how many times out of how many it was asked beneath it
 (`lib/station.js:541`, `function gateSummary(model, hidden) {`;
-`assets/station/station.js:463`, `roHtml('最常被換掉'`). Unlike the other
+`assets/station/station.js:428`, `roHtml('最常被換掉'`). Unlike the other
 four, it does not move with the 30-day window or the search box: it is
 counted once, across every shown session's gate answers
 (`lib/station.js:612`, `gates: gateSummary(model, hidden),`), not from the
@@ -559,8 +569,9 @@ those sessions itself
 While a session's transcript is still there, its source is `lib/detail.js`'s
 own replay; once the transcript is gone, `gateSummary()` falls back to the
 entry's own `gates` (see [registry.md](registry.md)), so this denominator no
-longer shrinks quietly as transcripts age. Clicking a bar opens that day, `#/d/<day>`, with its
-breakdown and the sessions that spent on it. A project, `#/p/<pkey>` with the key URI-encoded, plots its
+longer shrinks quietly as transcripts age. A day in the hash, `#/d/<day>`,
+only marks that day on the chart now — there is no day panel any more. A
+project, `#/p/<pkey>` with the key URI-encoded, plots its
 sessions as points over the same 30 days, can lay a second project's line on
 the same axes, lists its sessions, and carries the per-route stage ledger. A delta whose previous window holds nothing prints
 `前期無資料` rather than a percentage against zero, because this repository's
@@ -577,7 +588,12 @@ counts — is counted in its group but kept out of its averages, on a `有倒退
 row of its own, and every group's heading says how many such sessions it has
 and how many backward steps between them.
 
-**文件** is a card on 首頁, one section per project whose `.fankeel/map.md`
+**最近 sessions** is its own page, `#/sessions`: `recentRows` — a session
+with spend inside the window, or one still `live` whether or not it has
+spent yet — newest first, with the full list shown rather than cut to 12
+rows. **專案** is `#/projects`.
+
+**文件** is its own page, `#/docs`, one section per project whose `.fankeel/map.md`
 exists: the registry root's own, plus `<root>/<project>/.fankeel/map.md` for
 each project a session under that registry names — one section per file
 found, and a project with none gets no section. It quotes what `map.js`
@@ -585,7 +601,9 @@ already computed rather than reading the tree itself (`lib/station.js`'s
 `parseMapCard`): the document counts and their split by status,
 `planned, not built`, `undeclared`, the filing table with each bucket's
 role, and when the file was generated. It never runs a docs scan of its own,
-and a registry with no project's map anywhere gets no card at all.
+and a registry with no project's map anywhere contributes no section; with
+nothing anywhere across every registry, the page prints "還沒有專案生成
+`.fankeel/map.md`" instead of a list.
 
 **清單** is the sortable table and a detail pane. Clicking a row fills the pane
 rather than expanding the row, so two sessions can be compared without
@@ -796,42 +814,61 @@ notes and its `next` intact.
 
 ## Setting a profile from the page
 
-No session view carries a **profile** card. 首頁 opens with the machine
-defaults' card, before its projects and recent sessions; each registry's card —
-on 清單 once that registry is selected, and on every project page for its own
-registry — ends with one card per project it holds. A card is one row per key
-in `profileKeys` (`lib/profile.js`'s
-`KEYS`), each showing the effective value, which layer it came from, the
-values that key allows, and the key's one-line `desc`. On a served page a strip
-of three habit presets (`profilePresets`, `lib/profile.js`'s `PRESETS`) sits above
-the rows, and each one posts every key it sets in a single request; a `null` in a
-preset clears that key from the card's own file. The quick-apply button sits on each project's card,
-not on the machine card — `applyMachineControl` is spliced in only when the
-card's scope is `project` — and walks the machine's keys onto that project one
-write at a time rather than opening a second endpoint for it. (The design put
-the project card in the
-detail pane; the plan's Task 8 moved it into the registry card so the two
-identities of the page stay on the two pages they already had.)
+No session view carries a **profile** card any more, and neither does 首頁:
+a profile is set at one page only, `#/settings`. There is no `<select>`,
+and no 套用機器預設 button — the served page's old strip of three habit
+presets (`profilePresets`, `lib/profile.js`'s `PRESETS`) is gone from the
+client too; what recommends and applies values now is the wizard's own
+habit cards, one set per step.
 
-Where the page is served, each row is a `<select>` and an apply button in
-place of static text; a static file prints the equivalent
+The wizard is seven questions, each a habit (`WIZ_STEPS`): `收尾` sets
+`land.integration`, `land.push` and `land.archivePlan`; `任務大小` sets
+`class.default`; `前端` sets `design.mockup`, and adds `design.skill` to
+its fine-tune list once `design.mockup` is on — set to anything but `(ask)`
+or `false`; `context` sets `stage.agents`; `撞檔` sets `guard`; `模型` sets
+`dispatch.floor` and `judge.model`; `監控站` sets `station.hide`. Each step
+shows three or four habit buttons; pressing one sets every key it lists and
+records it as that step's recommendation, and a habit is pre-picked on load
+when every key it sets already matches the effective value (`wizLoad`). A
+fine-tune row under the habits lets each key be pushed off its
+recommendation on its own.
+
+`settingsPage()` opens the wizard on the first `profiles.projects`
+directory if the registry holds one, the machine profile otherwise —
+`wizDefaultScope` was folded into `settingsPage` itself rather than staying
+a separate function. The last step is a summary: one row per key in
+`profileKeys` (`lib/profile.js`'s `KEYS`) with its current value, source
+layer and `desc`, and a scope bar of buttons — 機器預設 plus one per
+`profiles.projects` directory (`wizScopes`) — naming which file the write
+would land in.
+
+`wizChanges` decides what actually gets written: a key this scope's own
+file does not already hold is skipped unless the chosen value differs from
+what the layers below it give (machine, then the key's builtin default); a
+key the file does hold is included whenever the choice now differs from
+what's on file, including a choice of `(ask)`, which is sent as an empty
+value to clear it. The summary's `寫入 N 鍵` button — disabled with nothing
+to write — posts all of it in one `POST /profile`, with `back=#/settings`.
+Where there is no server, the same control prints
 `node <plugin>/scripts/task.js profile set <key> <value> --project <path>`
-for a person to copy — the same split every other write on this page already
-makes between `serve` and a file on disk.
+(`--default` in place of `--project <path>` for the machine scope) for a
+person to run, one line per key — except a cleared key, which prints
+`從 <file> 刪掉 <key>` instead.
 
-`scripts/station.js serve` answers that button at `POST /profile`, taking
-`scope` (`project` or `machine`), `project`, and a repeated `key`/`value`
-pair per row changed in one request. A wrong nonce is `403`. A bad `scope`,
-no pair or an unequal count, an unknown key, or a value `profile.parseValue`
-refuses (a `stage.agents` stage list is one it accepts), is `400`; an empty
-value is not refused but clears that key from the scope's file
-(`profile.unset`); an unknown project `404`, a refused write `409`; one that lands redirects
-`303` to `/` — the same shape `/clear` and
-`/clear-stale` already use.
+`scripts/station.js serve` still answers at `POST /profile`, taking `scope`
+(`project` or `machine`), `project`, and a repeated `key`/`value` pair per
+row changed. A wrong nonce is `403`. Every pair is checked — an unknown
+key, or a value `profile.parseValue` refuses (a `stage.agents` stage list
+is one it accepts) — before any of them is written, and a bad `scope`, no
+pair or an unequal count fail the same way, `400`; an empty value is not
+refused but clears that key from the scope's file (`profile.unset`); an
+unknown project `404`, a refused write `409`. One that lands redirects
+`303`: to `/` + `back` when `back` matches `^#/[a-z]*$` — the wizard always
+sends `back=#/settings` — and to bare `/` otherwise.
 
 Hiding a project (`station.hide: 'true'`) costs two things, both accepted
-rather than treated as defects. First: the project's own card disappears
-from every registry's profile section, the same way its sessions disappear
+rather than treated as defects. First: the project drops out of the
+wizard's scope buttons (`wizScopes`), the same way its sessions disappear
 from 清單 — `serialize()`'s `profiles.projects` drops it exactly where
 `flatten()` drops its sessions (see What each row holds) — so there is no
 button left on the served page to reach it again. This is not because the
@@ -839,15 +876,15 @@ button left on the served page to reach it again. This is not because the
 model rather than reading the page's filtered one
 (`scripts/station.js:533`, `const known = model.registries.some(`), so a
 hidden project's directory is still in it, and a request naming one that
-somehow still reached the server would succeed, not `404`. The card is
-simply never drawn to click, so unhiding is
+somehow still reached the server would succeed, not `404`. The scope button
+is simply never drawn to click, so unhiding is
 `node <plugin>/scripts/task.js profile set station.hide false --project <path>`,
 run by hand.
 
 Second: a project's colour, `--p-0` through `--p-5`
 (`assets/station/station.css:15`, `--p-0:#015f98`), is its position in the
 page's own project list, not anything tied to the project itself
-(`assets/station/station.js:264`, `var i = (pkeys || []).indexOf(key);`).
+(`assets/station/station.js:268`, `var i = (pkeys || []).indexOf(key);`).
 Hiding one shifts every project after it into the next colour. Accepted as
 the cost of a colour meaning "position" rather than "identity" — a
 hash-based scheme would stop that shift but would move every existing

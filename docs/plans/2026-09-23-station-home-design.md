@@ -44,6 +44,15 @@ status: design-intent
 
 - `docs/station.md` 的首頁、文件卡與「Setting a profile from the page」三節改寫成新版面。
 
+## 7. 近 30 天圖表的即時互動
+
+使用者於 build 中途（2026-09-23）加入，在 build 關卡前的 AskUserQuestion 核可。參考 lieflat-charts：它的長條也只用原生 `<title>`，真正的自訂互動在 `templates/big-threads.html`（hover 高亮、其餘淡出、點擊固定），資訊卡是這裡自己做的。
+
+- 每一段是自己的 `rect.hseg`，帶 `data-day`、`data-key`、`data-cx`、`data-href`；整欄的 `rect.hit` 移到長條後面，不再有 `<title>`，改帶同樣文字的 `aria-label`。
+- hover 一段時出現跟著滑鼠的資訊卡 `#charttip`，內容由純函式 `segTip(bars, o, day, key)` 產生：日期、這一段的模型與數值、占當天百分比、當天各段清單（hover 的那段標 `data-hot`）與當天合計；碰到視窗右緣或下緣會翻到另一側。
+- hover 時同一個 key 的所有段亮起、其餘淡出，那一天有一條垂直參考線 `line.hguide`，圖例對應那一項也亮起。
+- 圖例每一項帶 `data-key`：hover 高亮整條序列，點一下固定，再點一下取消；重畫後固定仍在。
+
 ## What proves it done
 
 | check | how |
@@ -54,3 +63,4 @@ status: design-intent
 | `POST /profile` 帶 `back=#/settings` 回 303，`location` 是 `/#/settings`；帶 `back=https://x` 仍回 `/` | `tests/station-cli.test.js` |
 | 「寫入 N 鍵」的 N 等於摘要裡標成會改的列數 | `tests/station-wizard.test.js`，並在 render 出的頁面上數一次 |
 | 功能列「現在」的 live 數等於現在頁 live 的列數 | `tests/station-view.test.js`，並在 render 出的頁面上數一次 |
+| `histSvg` 每個非零的段各有一個 `rect.hseg`，資訊卡的清單列數等於當天非零段數、合計等於各段相加 | `tests/station-view.test.js` |
