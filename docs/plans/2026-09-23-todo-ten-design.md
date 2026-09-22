@@ -22,9 +22,9 @@ compiler 掛起）。每一節是一條 TODO，節內第一層 bullet 是承諾�
 
 ## 3. `path:行-行` 引用補引文
 
-- 五條沒帶引文的範圍引用各補一句短引文，走 docs-check 既有的引文比對（`scripts/docs-check.js:366-385`）：`docs/collisions.md:305`、`docs/subagents.md:110`、`docs/subagents.md:112`、`docs/subagents.md:116`、`skills/fankeel-build/rationale.md:132`。
+- 三條沒帶引文的範圍引用各補一句短引文，走 docs-check 既有的引文比對（`scripts/docs-check.js:366-385`）：`docs/collisions.md:305`、`docs/subagents.md:110`、`skills/fankeel-build/rationale.md:132`；`docs/subagents.md:112` 與 `:116` 已帶引文，不動。
 - docs-check 的嚴重度不改：沒帶引文的範圍仍只列不擋。
-- `docs-check` 的 `cited with no quote` 計數由 5 降到 0。
+- `docs-check` 的 `cited with no quote` 計數少掉這三條。
 
 ## 4. `task.js task` 改名時蓋戳
 
@@ -64,7 +64,7 @@ compiler 掛起）。每一節是一條 TODO，節內第一層 bullet 是承諾�
 
 - `F:\ymlab\TokenBar` 的 `statusline.ps1` 在 payload 解析後（約 `:371`）無條件 append 一行 JSONL：時間、`five_hour.used_percentage`、`five_hour.resets_at`、`seven_day.used_percentage`、`seven_day.resets_at`、`cost.total_cost_usd`。
 - `statusline.sh` 做同樣的事；plan 先讀它確認結構。
-- TokenBar 自己 commit，fankeel 這邊只刪那條 TODO 並在 `scripts/spend.js` 相關文件記下序列檔的位置。
+- TokenBar 自己 commit；fankeel 這邊刪掉 Needs a decision 那條，在 `## Waiting` 加一個 timing「序列累積到第三點」，條目寫下序列檔位置 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`，等讀數夠分辨 7d 是延遲還是計別的。
 
 ## 10. 多平台 compiler 與 Waiting 的整理
 
@@ -72,9 +72,16 @@ compiler 掛起）。每一節是一條 TODO，節內第一層 bullet 是承諾�
 - 「受控站開到 build」timing 已解除（`6fb1b3a` 讓 session 記錄存 `stage.agents`），它的條目移到 `## Needs a decision`，那個 timing 刪掉。
 - `node scripts/todo-check.js` exit 0。
 
+## 11. `design.skill`：mockup 用哪個 design skill 可設定
+
+- `lib/profile.js` 的 `KEYS` 新增 `design.skill`，值為 fankeel-design skill 列的六個：`taste-skill:taste-skill`、`taste-skill:soft-skill`、`taste-skill:minimalist-skill`、`frontend-design:frontend-design`、`ui-ux-pro-max:ui-ux-pro-max`、`impeccable:impeccable`；`builtin` 為 `null`（沒設時由派工的 session 挑一個，與今天相同）；與其他鍵一樣可 `--default`（全域）或 `--project` 設定，專案層優先。
+- 設定了 `design.skill` 時，design 站注入的 mockup 規則（`lib/stages.js` 裡 `when: 'design.mockup'` 那條）把 skill 名字寫進去，派 mockup 的 prompt 照用；`skills/fankeel-design/SKILL.md` 步驟 3 說明這個鍵。
+- profile 摘要行（`lib/profile.js` 約 `:268` 的迴圈）在非 builtin 時列出 `design.skill`。
+- 使用者提出於 2026-09-23 的 plan 階段，不是原本十條之一；站頁精靈第 3 步（前端）的按鈕在首頁實作的 task 裡做。
+
 ## 成功條件
 
 - 新測試（§1、§4、§5、§6、§8）在改動前紅、改動後綠，整套 `npm test` 綠。
-- `node scripts/docs-check.js` 的 unquoted 計數為 0，其餘不增。
+- `node scripts/docs-check.js` 的 unquoted 計數少三條，其餘不增。
 - `node scripts/todo-check.js` exit 0，`## Needs a decision` 由 9 條變為本 spec 留下的條數。
 - 產出物一列：`scripts/render.js` 對真實站頁產出的 PNG 裡，首頁的 session 總數與 DOM 裡同一來源的列數相等。
