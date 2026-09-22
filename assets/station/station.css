@@ -639,7 +639,7 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .wz li.wcur .wt{color:var(--ink);font-weight:600}
 .wz li.wsumli{margin-top:6px;padding-top:6px;border-top:1px solid var(--rule)}
 .wz .prog{height:4px;border-radius:2px;background:var(--inset);margin:0 0 18px;overflow:hidden}
-.wz .prog i{display:block;height:100%;background:var(--ink);transition:width .25s ease-out}
+.wz .prog i{display:block;height:100%;background:var(--ink)}
 .wz .wcard{background:var(--panel);border-radius:var(--r);padding:22px 26px 20px}
 .wz .wtop{display:flex;align-items:center;gap:10px;margin-bottom:6px}
 .wz .wof{font:11px var(--f-mono);color:var(--muted)}
@@ -718,4 +718,3 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
   .wz .steps li{flex:none}
   .wz .ws{display:none}
 }
-@media(prefers-reduced-motion:reduce){.wz .prog i{transition:none}}

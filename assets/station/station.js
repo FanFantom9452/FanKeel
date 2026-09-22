@@ -1173,10 +1173,6 @@
         });
         return W;
     }
-    function wizDefaultScope(profiles) {
-        var dirs = Object.keys((profiles && profiles.projects) || {});
-        return dirs.length ? dirs[0] : 'machine';
-    }
     function wizScopes(profiles, configDir) {
         var out = [{ id: 'machine', label: '機器預設', file: (configDir ? String(configDir).replace(/[\\/]+$/, '') + '/' : '') + 'fankeel/profile.json' }];
         Object.keys((profiles && profiles.projects) || {}).forEach(function (dir) {
@@ -2648,7 +2644,7 @@
     var wiz = null;
     function settingsPage() {
         var profiles = S.profiles || { machine: null, projects: {} }, keys = S.profileKeys || {};
-        if (!wiz) wiz = wizLoad(profiles, keys, wizDefaultScope(profiles));
+        if (!wiz) wiz = wizLoad(profiles, keys, Object.keys(profiles.projects || {})[0] || 'machine');
         return wizHtml(keys, wiz, profiles, { serve: Boolean(S.serve), nonce: S.nonce, plugin: S.plugin, configDir: S.configDir });
     }
     VIEWS.settings = settingsPage;
