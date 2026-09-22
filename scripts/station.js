@@ -37,7 +37,7 @@ const { parseArgs: parseArgv } = require('node:util');
 const station = require('../lib/station.js');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
-const { serveRecordPath, readServeRecord, probe } = require('../lib/serve.js');
+const { serveRecordPath, readServeRecord, probe, diskFingerprint } = require('../lib/serve.js');
 const { clearEntry } = require('../lib/clear.js');
 const profile = require('../lib/profile.js');
 const todoCheck = require('./todo-check.js');
@@ -312,6 +312,13 @@ async function serve(opts) {
     // succeeds names the same start time as its first write, not the moment
     // the retry happened to land.
     const started = new Date().toISOString();
+    // Computed once, not per request — the same reasoning as `started`
+    // above. A `lib/station.js` or `assets/station/station.js` edited after
+    // this process started serving is invisible to it either way: the
+    // require cache holds what was on disk at `:37` and `:44`. Recomputing
+    // this on every `/station/health` request would answer a question the
+    // files on disk can no longer help this process answer honestly.
+    const fingerprint = diskFingerprint(PLUGIN);
     // What this server remembers between requests: every session's detail,
     // held while `keyOf` says nothing under it moved (`detailOf` in
     // lib/detail.js). The page re-reads the list every three seconds and the
@@ -415,8 +422,11 @@ async function serve(opts) {
             // Read-only and identifies the process, nothing else — no nonce,
             // so `probe` above (and a `--detach` poll) can tell a live station
             // from a recycled pid or a foreign listener without fetching one.
+            // `fingerprint` is what lets `ensureServe` tell a live station
+            // from a live station running old code — the same pid, a
+            // different answer to "what is on disk right now."
             res.writeHead(200, { 'content-type': 'application/json' });
-            res.end(JSON.stringify({ station: true, pid: process.pid, started }));
+            res.end(JSON.stringify({ station: true, pid: process.pid, started, fingerprint }));
             return;
         }
         if (req.method === 'GET' && (url.pathname === '/station/station.css' || url.pathname === '/station/station.js')) {

@@ -9,8 +9,10 @@ const { execFileSync, execFile } = require('node:child_process');
 const http = require('node:http');
 
 const tmp = require('./tmp.js');
+const serve = require('../lib/serve.js');
 
 const HOOK = path.join(__dirname, '..', 'hooks', 'inject.js');
+const PLUGIN = path.join(__dirname, '..');
 
 const MINE = 'aaaaaaaa-0000-4000-8000-000000000001';
 const THEIRS = 'bbbbbbbb-0000-4000-8000-000000000002';
@@ -533,14 +535,18 @@ function runAsync(payload, claudeDir, env) {
 
 // A station this test serves: `/station/health` names this process's pid, and
 // `serve.json` names the same pid and this listener's url — the pair `probe()`
-// in lib/serve.js takes for a running station.
+// in lib/serve.js takes for a running station. The fingerprint rides along
+// too, matching what's on disk right now for the plugin dir the hook passes
+// as `o.plugin` (`PLUGIN_ROOT` in lib/render.js, this repo's root) — without
+// it, `ensureServe`'s staleness check reads this fixture as a station running
+// code from before some edit and kills its pid, which is this test runner's.
 function fakeStation(cfg) {
   let hits = 0;
   const server = http.createServer((req, res) => {
     if (req.url !== '/station/health') { res.writeHead(404); res.end(); return; }
     hits += 1;
     res.writeHead(200, { 'content-type': 'application/json' });
-    res.end(JSON.stringify({ station: true, pid: process.pid, started: new Date().toISOString() }));
+    res.end(JSON.stringify({ station: true, pid: process.pid, started: new Date().toISOString(), fingerprint: serve.diskFingerprint(PLUGIN) }));
   });
   return new Promise((resolve) => {
     server.listen(0, '127.0.0.1', () => {

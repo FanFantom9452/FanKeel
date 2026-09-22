@@ -32,8 +32,15 @@ rather than copied into the skill.
 The `/fankeel` prompt writes the page, then asks whether a station is serving,
 and the `station:` line of the block it injects says what it found. The asking
 is `ensureServe` in `lib/serve.js`: `<configDir>/fankeel/serve.json`, then a
-`GET` of that record's `station/health`, which has to answer inside a second
-and name the record's pid. The line ends one of four ways:
+`GET` of that record's `station/health`, which has to answer inside a
+second, name the record's pid, and carry a fingerprint matching what is on
+disk right now — the mtime and size of `lib/station.js` and
+`assets/station/station.js`, and `package.json`'s `version`, all computed
+once when `scripts/station.js` started serving. A station answering with
+the old fingerprint counts the same as one not answering at all:
+`ensureServe` stops its pid and asks for a fresh one, rather than handing
+back a page a newer checkout no longer matches. The line ends one of four
+ways:
 
 | the line ends | when |
 |---|---|
@@ -172,11 +179,11 @@ an inline copy of the predicate rather than a `hiddenPkeys()` call, because
 that loop is keyed by the raw profiles directory rather than by pkey —
 `write()`'s detail-file loop described below, and `--json`'s own pass
 outside this file
-(`scripts/station.js:656`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
+(`scripts/station.js:666`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
 There is no trace on
 the page that a project was left out: no count, no note on the footer. `station.js`'s own text
 summary — not the served page — does print how many projects it excluded
-(`scripts/station.js:757`, `hidden by station.hide`), but names none of
+(`scripts/station.js:767`, `hidden by station.hide`), but names none of
 them; the terminal is the only place the fact surfaces at all.
 
 ### The stage strip
@@ -830,7 +837,7 @@ from 清單 — `serialize()`'s `profiles.projects` drops it exactly where
 button left on the served page to reach it again. This is not because the
 `POST` above would refuse it: `known` here builds its own fresh, unfiltered
 model rather than reading the page's filtered one
-(`scripts/station.js:523`, `const known = model.registries.some(`), so a
+(`scripts/station.js:533`, `const known = model.registries.some(`), so a
 hidden project's directory is still in it, and a request naming one that
 somehow still reached the server would succeed, not `404`. The card is
 simply never drawn to click, so unhiding is

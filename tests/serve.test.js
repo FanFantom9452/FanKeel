@@ -11,7 +11,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
-const { spawnSync } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
 const serve = require('../lib/serve.js');
 const live = require('../lib/live.js');
 const tmp = require('./tmp.js');
@@ -39,7 +39,9 @@ function writeRecord(cfg, rec) {
 }
 
 // A listener in this process answering /station/health for `pid` — or, with
-// `hang`, taking the request and never answering it.
+// `hang`, taking the request and never answering it. `fingerprint`, when
+// given, rides along in the body the same way `scripts/station.js` puts one
+// there for real.
 function listener(opts) {
     const o = opts || {};
     let hits = 0;
@@ -51,8 +53,10 @@ function listener(opts) {
         }
         hits += 1;
         if (o.hang) return;
+        const body = { station: true, pid: o.pid, started: new Date().toISOString() };
+        if (o.fingerprint !== undefined) body.fingerprint = o.fingerprint;
         res.writeHead(200, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ station: true, pid: o.pid, started: new Date().toISOString() }));
+        res.end(JSON.stringify(body));
     });
     return new Promise((resolve) => {
         server.listen(0, '127.0.0.1', () => {
@@ -113,6 +117,19 @@ test('a serve started detached outlives the process that started it and the one 
             await sleep(200);
         }
         assert.equal(alive, true, 'the station died with the process that started it');
+        // The wiring, not just the unit: a real `scripts/station.js serve`
+        // has to put the fingerprint in its own health body, or every live
+        // station would read as stale to `ensureServe`'s `o.plugin` check.
+        const body = await new Promise((resolve, reject) => {
+            http.get(rec.url + 'station/health', { agent: false }, (res) => {
+                let text = '';
+                res.setEncoding('utf8');
+                res.on('data', (c) => { text += c; });
+                res.on('end', () => resolve(JSON.parse(text)));
+            }).on('error', reject);
+        });
+        assert.equal(body.fingerprint, serve.diskFingerprint(PLUGIN),
+            'scripts/station.js does not put the disk fingerprint in /station/health');
     } finally {
         try { process.kill(rec.pid); } catch (e) { /* already gone */ }
     }
@@ -147,7 +164,7 @@ test('probe is true only for a listener naming the recorded pid, and false for a
 
 test('a station that answers is running, and nothing is started', async () => {
     const cfg = tmp('fankeel-serve-');
-    const st = await listener({ pid: process.pid });
+    const st = await listener({ pid: process.pid, fingerprint: serve.diskFingerprint(PLUGIN) });
     writeRecord(cfg, { pid: process.pid, port: 0, url: st.url, started: new Date().toISOString() });
     const calls = [];
     try {
@@ -213,4 +230,40 @@ test('a start that throws is failed, and never a rejection', async () => {
     const cfg = tmp('fankeel-serve-');
     const got = await serve.ensureServe({ configDir: cfg, plugin: PLUGIN, start: () => { throw new Error('spawn EACCES'); } });
     assert.deepEqual(got, { state: 'failed', url: null });
+});
+
+test('a station whose fingerprint no longer matches disk is stopped and started fresh', async () => {
+    const cfg = tmp('fankeel-serve-');
+    // A stand-in for the old station's OS process: a real child, so
+    // `process.kill` and `live.running` both see something real, without
+    // spawning `scripts/station.js` itself — this test is about
+    // `ensureServe`'s decision, not a second real serve.
+    const oldChild = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)']);
+    const st = await listener({ pid: oldChild.pid, fingerprint: 'stale-fingerprint' });
+    writeRecord(cfg, { pid: oldChild.pid, port: 0, url: st.url, started: 'old' });
+    const calls = [];
+    try {
+        const got = await serve.ensureServe({
+            configDir: cfg, plugin: PLUGIN,
+            start: (o) => {
+                calls.push(o);
+                setTimeout(() => writeRecord(cfg, { pid: 4321, port: 7817, url: 'http://127.0.0.1:7817/', started: 'new' }), 50);
+            },
+            until: Date.now() + 2000,
+        });
+        assert.deepEqual(got, { state: 'started', url: 'http://127.0.0.1:7817/' });
+        assert.equal(calls.length, 1, 'a stale fingerprint is a station to start, same as none');
+        // The stale process is not left running: ensureServe stops it before
+        // asking for a fresh one, so a hook that gets "started" back never
+        // leaves two stations pointed at one port.
+        let dead = false;
+        for (let i = 0; i < 50 && !dead; i++) {
+            dead = !live.running(oldChild.pid);
+            if (!dead) await sleep(50);
+        }
+        assert.ok(dead, 'the stale station is still running after ensureServe replaced it');
+    } finally {
+        try { oldChild.kill(); } catch (e) { /* already gone, which is the point */ }
+        await st.close();
+    }
 });
