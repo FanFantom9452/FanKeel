@@ -135,8 +135,10 @@ has that run, and what the older process looked like from inside.
 
 `moves` is the order those stages came in: one `[stage, at, used]` for each
 change of stage, stamped at the `task.js` command that made it where one did,
-and at the next `touch()` sighting where none did — an answered gate and a
-rename both reach a stage that way. So a verify that went back to build and
+and at the next `touch()` sighting where none did — only an answered gate
+still reaches a stage that way; `task.js task`, the rename, now stamps its
+own move through `stampEntry` too, the same as `start` and `stage`. So a
+verify that went back to build and
 returned reads as two visits rather than one long one. `used` is the context
 reading, filled in afterwards by the first `touch()` that has one, because a
 command has no transcript to read one from at the time; so what a return to
@@ -150,9 +152,13 @@ is not `Stop`, and what it does instead of measuring anything, is in
 [docs/registry.md](../../docs/registry.md) — this is the short form, not the
 only copy.
 
-A fifteenth, `gateAt`, is deliberately not below. It exists only between a
-question going out and its answer arriving — and a record that lacks it when the
-answer arrives is what the `gate:` line under **While the mode is on** reports.
+A fifteenth and sixteenth, `gateAt` and `inflight`, are deliberately not
+below. `gateAt` exists only between a question going out and its answer
+arriving — and a record that lacks it when the answer arrives is what the
+`gate:` line under **While the mode is on** reports. `inflight` —
+`{ stage, at, agentId? }` — is the other transient field: `hooks/brief.js`
+marks it when a stage agent starts and `hooks/gate.js` clears it when that
+stage's handoff arrives.
 
 ```json
 {

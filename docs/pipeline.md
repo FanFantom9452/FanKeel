@@ -381,11 +381,13 @@ A rule's token is one of two kinds, and a test depends on the difference — a
 among them, filled with `<plugin>/scripts/survey.js`, the root printed once
 above the rules, so `survey`'s scan rule reads `node {{SURVEY}} <term>...` with
 no root hard-coded here. A **render token**'s value is computed per stage and differs —
-`{{NEXT}}` and `{{PROFILE_LAND}}`, which `land`'s own rules
-carry as `Integration — {{PROFILE_LAND}}.`; `lib/profile.js`'s `landClause`
-fills it with `profile: land merge, no push — do that, say so, skip the
-menu` when the profile already answered, or `no land answer in the profile:
-open the menu` when it has not.
+`{{NEXT}}`, `{{PROFILE_LAND}}`, and `{{DESIGN_MOCKUP_CLAUSE}}` among them:
+`land`'s own rules carry `{{PROFILE_LAND}}` as `Integration — {{PROFILE_LAND}}.`;
+`lib/profile.js`'s `landClause` fills it with `profile: land merge, no push —
+do that, say so, skip the menu` when the profile already answered, or `no
+land answer in the profile: open the menu` when it has not, and
+`lib/render.js`'s `subsFor` fills `{{DESIGN_MOCKUP_CLAUSE}}` from
+`lib/profile.js`'s `mockupClause` the same way, per stage.
 
 ## Inside each stage
 
