@@ -549,7 +549,7 @@
                 ? '<div class="tt-main">' + sw(key) + '<b>' + esc(keyLabel(o.dim, key, o.names)) + '</b></div>'
                     + '<div class="tt-val"><b>' + metricText(o.metric, b.parts[key]) + '</b><span>當天的 ' + pct(b.parts[key]) + '</span></div>'
                 : '')
-            + '<ul class="tt-list">' + keys.slice().reverse().map(function (k) {
+            + '<ul class="tt-list">' + keys.reverse().map(function (k) {
                 return '<li' + (k === key ? ' data-hot' : '') + '>' + sw(k) + '<span>' + esc(keyLabel(o.dim, k, o.names))
                     + '</span><span class="tt-n">' + metricText(o.metric, b.parts[k]) + '</span></li>';
             }).join('') + '</ul>'
@@ -1577,7 +1577,7 @@
         var svg = doc.querySelector('.chart svg');
         if (!svg) return;
         if (key) svg.setAttribute('data-focus', key); else svg.removeAttribute('data-focus');
-        Array.prototype.forEach.call(doc.querySelectorAll('.chart .hseg, .legend [data-key]'), function (el) {
+        [].forEach.call(doc.querySelectorAll('.chart .hseg, .legend [data-key]'), function (el) {
             if (key && el.getAttribute('data-key') === key) el.setAttribute('data-hot', ''); else el.removeAttribute('data-hot');
         });
     }
@@ -1599,8 +1599,7 @@
         if (route.view !== 'days' || !chartBars || !e.target.closest) return;
         var lk = e.target.closest('.legend [data-key]');
         if (lk) {
-            chartTipEl().removeAttribute('data-on');
-            chartGuide(null);
+            chartHide();
             chartFocus(lk.getAttribute('data-key'));
             chartHover = true;
             return;
