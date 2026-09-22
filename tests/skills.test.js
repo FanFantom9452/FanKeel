@@ -661,6 +661,16 @@ test('the verify skill separates what a pipe removes from what a reader answers'
   assert.match(text, BOUNDARY);
 });
 
+// The reviewer's render lens is opt-in — most verify tasks have no screen —
+// so the skill that dispatches it has to say when, in the same breath as
+// the dispatch itself, or an implementer reads the agent's own file and
+// never finds out the lens exists.
+test('fankeel-verify says when to pass the reviewer its render lens', () => {
+    const text = read('fankeel-verify');
+    assert.match(text, /`render` lens/, 'no mention of the render lens');
+    assert.match(text, /served page shows/, 'does not say when to pass it');
+});
+
 // Measured on this branch: a reviewer told to return three lines returned three
 // plus a twelve-bullet log; the next, told the same and why, returned three. The
 // clause that carries the reason is the whole rule, so that is what gets pinned —

@@ -75,6 +75,16 @@ test('the reviewer carries the cut tags build and audit ask for', () => {
     assert.match(build, /Part 4 — cuts/);
 });
 
+// The lens is optional — only some briefs put something on a screen — but
+// the tool it needs is not: a reviewer whose Tools section still said "git
+// and nothing else" would refuse the one command this lens runs.
+test('the reviewer carries a render lens and the Bash allowance to run it', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reviewer.md'), 'utf8');
+    assert.match(text, /^## Render$/m, 'no ## Render section');
+    const tools = text.split('\n## Tools\n')[1].split('\n## ')[0];
+    assert.match(tools, /scripts\/render\.js/, 'Tools does not widen Bash to scripts/render.js');
+});
+
 // Each sentence is pinned to its own Part: one moved into another Part fails.
 test('the reviewer template asks Part 2 for a control and Part 3 for the page made false', () => {
     const build = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-build', 'SKILL.md'), 'utf8');

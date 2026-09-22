@@ -3,7 +3,7 @@ name: fankeel-verify
 description: The verify stage — evidence before claims, requirements checked line by line, and the documents this change just made false. Use for the verify stage of a fankeel task, before claiming work is complete or passing, before a commit or PR, or when checking whether a change broke the documentation describing it.
 version: 0.76.0
 status: current
-last_verified: 2026-09-21
+last_verified: 2026-09-23
 source_of_truth: lib/stages.js, scripts/docs-check.js
 ---
 
@@ -223,7 +223,9 @@ It gets **paths, never a paste**, and is asked only for the rows it defeats — 
 why, because every line it returns lands here and is re-read on every later turn.
 Dispatch it as `subagent_type: fankeel:fankeel-reviewer` too — the same agent as
 build's per-task reviewer — and let its file pin the model rather than
-typing one here.
+typing one here. Pass its `render` lens when the claim under evidence is
+about what a served page shows — a count or a label derived from data on
+it — and leave it off a change with no screen behind it.
 
 It **reads the method rather than probing it.** Red-green belongs to this session
 and is already in the table above, and an adversary that mutates the tree cannot
