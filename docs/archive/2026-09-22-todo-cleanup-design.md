@@ -1,6 +1,6 @@
 ---
-status: design-intent
-last_verified: 2026-09-22
+status: archived
+last_verified: 2026-09-23
 ---
 
 # 清 TODO：Ready 11 項 + 三個待決定項
