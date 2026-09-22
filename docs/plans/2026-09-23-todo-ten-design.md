@@ -45,10 +45,12 @@ compiler 掛起）。每一節是一條 TODO，節內第一層 bullet 是承諾�
 - `lib/serve.js` 的 `probe()`／`ensureServe`（`:46-85`、`:114-143`）比對磁碟上的 fingerprint，不一致時結束舊的 process 並起新的，當作「沒在跑」處理。
 - 測試：改一個被 fingerprint 的檔之後，`ensureServe` 回報重啟。
 
-## 7. 站首頁三欄
+## 7. 站首頁：左側功能列與設定精靈
 
-- 這一輪只交 mockup：`.fankeel/build/2026-09-23-todo-ten/mockup.html`，由 opus 產出，不提交。
-- 三欄、profile 逐列、每列的差異標記與「清成 (ask)」、`stage.agents` 七站 toggle 的實作另開一個 task；那條 Needs a decision 改寫成指向 mockup 已核可、等實作的 `## Ready` 條目，或在 mockup 未核可時留著。
+- 這一輪只交 mockup：`.fankeel/build/2026-09-23-todo-ten/mockup.html`，由 opus 產出，不提交。三欄版在 design 關卡被否決，核可的是第二版。
+- 核可的版面：左側功能列切換「現在／近 30 天／最近 sessions／專案／文件／設定」；設定是七步精靈（收尾、任務大小、前端、context、撞檔、模型、監控站），以開發習慣的問題推出 `lib/profile.js` 全部十個 `KEYS`；所有選擇是按鈕群組或 chip，沒有下拉選單；最後一頁逐列改值、標出改過建議、每列「清成 (ask)」、選寫入範圍後一顆「寫入 N 鍵」。
+- 三張習慣預設卡併入精靈第 4 步與第 1 步；日細節面板、清掉 stale 的提示、專案卡的「套用機器預設」鈕這版不放。
+- 實作另開一個 task：那條 Needs a decision 改寫成 `## Ready` 的一條，指向本 spec §7 與 mockup 的路徑。
 
 ## 8. 前端審查：render 腳本與 reviewer 的 lens
 
