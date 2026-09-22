@@ -75,7 +75,7 @@ what gets scheduled.
 
 ## Ready
 
-- 〔station〕首頁照已核可的 mockup 改成左側功能列＋七步設定精靈（按鈕切換、無下拉、含 `design.skill`）；版面與 mockup 路徑見 `docs/plans/2026-09-23-todo-ten-design.md` §7 — [assets/station/station.js](assets/station/station.js).
+- 〔station〕首頁照已核可的 mockup 改成左側功能列＋七步設定精靈（按鈕切換、無下拉、含 `design.skill`）；版面與 mockup 路徑見 `docs/archive/2026-09-23-todo-ten-design.md` §7 — [assets/station/station.js](assets/station/station.js).
 
 ## Needs a decision
 

@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO.md 全清：Ready 1 條與 Needs a decision 9 條
