@@ -75,7 +75,6 @@ what gets scheduled.
 
 ## Ready
 
-- 〔quota〕用 `quotaLimits` 的 13 筆被拒紀錄定錨 100%：取一次 `five_hour`、一次 `seven_day` 被拒的時刻，算該視窗到那一刻的花費，就不必再猜整數讀數的 ±0.5 — [scripts/spend.js](scripts/spend.js).
 - 〔registry〕session 記錄只存 guard，且只在偏離預設時才存；其餘 profile 值一律不存（182 筆都落在後者），換了設定有沒有比較好事後查不到；start 時抄一份 values 進去就夠 — [scripts/task.js](scripts/task.js).
 - 〔docs〕`registry.md` 的「寫入的檔案」表缺 `build/task-<時間>/` 的交接檔（`<stage>.md`、`-answer.md`、`-commit.md`）、`serve.json`、`station/detail/` 與 `station/cache/` — [docs/registry.md](docs/registry.md).
 - 〔docs〕`development.md` 與 land skill 的 `last_verified` 早於後來加的內容，重讀後再標；`tests/render.test.js` 與 `scripts/task.js` 兩處註解的 2397／2393 也過期 — [docs/development.md](docs/development.md).
