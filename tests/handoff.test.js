@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const tmp = require('./tmp.js');
-const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff, ledgerCommitPath, newestCommit } = require('../lib/handoff.js');
+const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff, ledgerCommitPath, newestCommit, skipReason } = require('../lib/handoff.js');
 
 const DATA = { started: '2026-09-19T09:30:12.345Z' };
 const TICKS = '`'.repeat(3);
@@ -257,4 +257,22 @@ test('previousHandoff walks moves back to the newest earlier stage that left a r
   assert.equal(previousHandoff(root, renamed), null);
   const later = write(Object.assign({}, moved('build', 'verify'), { lapped: 2 }), 'verify');
   assert.equal(previousHandoff(root, renamed), later);
+});
+
+// 2026-09-23: a fankeel-brain ran `design`, stage.agents was
+// `survey,build,verify`, and the user was asked "design gate placeholder".
+test('skipReason names a brain dispatched for a stage stage.agents does not name', () => {
+  const mark = { stage: 'design', at: 1758000000000 };
+  assert.match(skipReason({ stage: 'design', controlled: false, agents: 'survey,build,verify', inflight: mark, handoff: '/r/design.md' }),
+    /fankeel-brain was dispatched for `design`, but stage\.agents \(survey,build,verify\) does not name `design`/);
+  assert.equal(skipReason({ stage: 'design', controlled: false, agents: 'survey', inflight: null, handoff: '/r/design.md' }), null);
+  assert.equal(skipReason({ stage: 'design', controlled: false, agents: 'survey', inflight: { stage: 'survey' }, handoff: '/r/design.md' }), null);
+});
+
+test('skipReason on a controlled stage says which of the two in-file conditions failed', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'survey.md');
+  assert.match(skipReason({ stage: 'survey', controlled: true, handoff: null }), /no handoff path/);
+  assert.match(skipReason({ stage: 'survey', controlled: true, handoff: file }), /does not exist yet/);
+  fs.writeFileSync(file, 'a report with no gate block\n');
+  assert.match(skipReason({ stage: 'survey', controlled: true, handoff: file }), /no readable `json gate` block/);
 });

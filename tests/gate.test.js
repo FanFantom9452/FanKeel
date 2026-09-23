@@ -213,3 +213,20 @@ test('stage.agents: the pair in order, a substituted gate clears the mark and it
   run(RESUME, root, { tool_response: { answers: { 'q?': '進 design' } } });
   assert.ok(fs.existsSync(path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'survey-answer.md')));
 });
+
+test('stage.agents at survey with no handoff yet: the gate hook says why it substituted nothing', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  const out = JSON.parse(run(GATE, root, { tool_input: PLACEHOLDER }));
+  assert.match(out.systemMessage, /^fankeel: gate not substituted — .*survey\.md does not exist yet/);
+  assert.equal(out.hookSpecificOutput, undefined);
+});
+
+test('a brain dispatched for a stage stage.agents does not name: the gate hook says so by name', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'design', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-'), inflight: { stage: 'design', at: 1758000000000, agentId: 'b1' } });
+  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'survey,build,verify' }));
+  const out = JSON.parse(run(GATE, root, { tool_input: PLACEHOLDER }));
+  assert.match(out.systemMessage, /dispatched for `design`, but stage\.agents \(survey,build,verify\) does not name `design`/);
+});

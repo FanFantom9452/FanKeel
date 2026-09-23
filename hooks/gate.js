@@ -24,8 +24,15 @@ const registry = require('../lib/registry.js');
 const docs = require('../lib/docs.js');
 const profileLib = require('../lib/profile.js');
 const { controlling, nextStage } = require('../lib/stages.js');
-const { handoffPath, readGate } = require('../lib/handoff.js');
+const { handoffPath, readGate, skipReason } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
+
+// `stage.agents` as the profile holds it, for a sentence.
+const agentsText = (values) => {
+    const raw = values ? values['stage.agents'] : undefined;
+    if (Array.isArray(raw)) return raw.length ? raw.join(',') : 'none';
+    return raw === undefined ? 'unset' : String(raw);
+};
 
 function main(raw) {
     const payload = parse(raw);
@@ -43,12 +50,22 @@ function main(raw) {
     // controller sent is a placeholder and does not count, so nothing it could
     // have mistyped reaches the user. docs/archive/2026-09-19-survey-brain-design.md §6.
     let gate = null;
+    let skip = null;
     try {
         const projectRoot = docs.projectRootsFor(root, mine.project ? [mine.project] : [])[0] || root;
         const values = profileLib.read(projectRoot, mine.configDir || profileLib.configDirOf()).values;
-        if (controlling(mine.stage, values)) gate = readGate(handoffPath(root, mine, mine.stage), nextStage(mine.stage, mine.route));
+        const controlled = controlling(mine.stage, values);
+        const file = handoffPath(root, mine, mine.stage);
+        if (controlled) gate = readGate(file, nextStage(mine.stage, mine.route));
+        if (!gate) skip = skipReason({ stage: mine.stage, controlled, agents: agentsText(values), inflight: mine.inflight, handoff: file });
     } catch (e) { /* housekeeping */ }
-    if (!gate) return;
+    // Silent before 2026-09-24, so a gate that was never substituted left no
+    // trace of which condition failed. A message, not a decision: the question
+    // still goes out.
+    if (!gate) {
+        if (skip) process.stdout.write(JSON.stringify({ systemMessage: 'fankeel: gate not substituted — ' + skip + '.' }));
+        return;
+    }
 
     // A gate AskUserQuestion would reject: substituting it would fail the call
     // with a schema error the controller cannot read back to its agent. Deny
