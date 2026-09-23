@@ -157,7 +157,7 @@ report where a real parser would cost a dependency this plugin does not have.
 - `scripts/layout.js:59` 是 `const found = trackedFiles(root);`
 - `scripts/memory-check.js:143` 是 `const tracked = trackedFiles(root);`
 - `scripts/orient.js:286` 是 `result = trackedFiles(dir, { stats });`
-- `scripts/survey.js:176` 是 `const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt`
+- `scripts/survey.js:177` 是 `const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt`
 - `lib/map.js:235` 是 `const found = trackedFiles(root);`，七個之中只有這個檔案直接讀 `.buckets`
 
 `--exclude-standard` 套用 `.gitignore`，所以宣告出來的 bucket 會

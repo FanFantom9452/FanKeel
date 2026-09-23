@@ -877,3 +877,53 @@ test('a truncated walk says so in terms of its ceiling, not its files', () => {
   result.truncated = true;
   assert.match(survey.report(result, ['widget']), /the walk stopped at its 20000 ceiling/);
 });
+
+const DOCS_JSON = JSON.stringify({ buckets: [{ path: 'docs', role: 'reference', depth: 1 }, { path: 'docs/archive', role: 'archive' }] });
+
+test('archive-role files are left out by default and counted on the header', () => {
+  const root = repo({
+    '.fankeel/docs.json': DOCS_JSON,
+    'docs/archive/old.md': '# Widget old\n',
+    'lib/a.js': 'function widgetFactory() {}\n',
+  });
+  const out = run(root, 'widget');
+  assert.doesNotMatch(out, /docs\/archive\/old\.md/);
+  assert.match(out, /lib\/a\.js:1 {2}function widgetFactory/);
+  assert.match(out, /excluded: 1 archive file under docs\/archive — pass --archive to include/);
+  const result = survey.scan(root, ['widget']);
+  assert.equal(result.excluded.count, 1);
+  assert.deepEqual(result.excluded.buckets, ['docs/archive']);
+});
+
+test('--archive puts archive-role files back and prints no excluded line', () => {
+  const root = repo({
+    '.fankeel/docs.json': DOCS_JSON,
+    'docs/archive/old.md': '# Widget old\n',
+    'lib/a.js': 'function widgetFactory() {}\n',
+  });
+  const out = run(root, '--archive', 'widget');
+  assert.match(out, /docs\/archive\/old\.md/);
+  assert.doesNotMatch(out, /excluded:/);
+  assert.equal(survey.parseArgs(['--archive', 'x']).archive, true);
+});
+
+test('a root with no docs.json excludes nothing', () => {
+  const root = repo({ 'docs/archive/old.md': '# Widget old\n', 'lib/a.js': 'function widgetFactory() {}\n' });
+  const out = run(root, 'widget');
+  assert.match(out, /docs\/archive\/old\.md/);
+  assert.doesNotMatch(out, /excluded:/);
+  assert.equal(survey.scan(root, ['widget']).excluded.count, 0);
+});
+
+test('the excluded count is what the scan actually dropped', () => {
+  const root = repo({
+    '.fankeel/docs.json': DOCS_JSON,
+    'docs/archive/a.md': '# a\n',
+    'docs/archive/b.md': '# b\n',
+    'lib/a.js': 'function widgetFactory() {}\n',
+  });
+  const all = survey.scan(root, [], { archive: true });
+  const some = survey.scan(root, []);
+  assert.equal(all.files.length - some.files.length, some.excluded.count);
+  assert.match(survey.report(some, [], {}), new RegExp('excluded: ' + some.excluded.count + ' archive files under docs/archive'));
+});

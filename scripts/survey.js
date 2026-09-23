@@ -27,6 +27,7 @@ const path = require('node:path');
 const { trackedFiles, MAX_WALK_FILES, SKIP_EXT } = require('../lib/tracked.js');
 const { human, plural, section } = require('../lib/report.js');
 const { resolveRoot } = require('../lib/registry.js');
+const docsTree = require('../lib/docs.js');
 
 // The default, not the law. `--max N` and `--all` move it, because a report that
 // silently stops at 25 answers a different question than the one that was asked —
@@ -162,7 +163,7 @@ function matches(terms, ...fields) {
     return terms.some((t) => hay.includes(t));
 }
 
-function scan(root, terms) {
+function scan(root, terms, opts) {
     // `null` from `trackedFiles` means nothing readable, and a root whose only
     // subtree could not be listed is nothing readable — every other caller wants
     // that answer and two of them are gates. This one wants to say *why*, so it
@@ -177,7 +178,25 @@ function scan(root, terms) {
         ? { files: [], repos: [], walked: true, truncated: false, unlistable: stats.unlistable, skippedExt: stats.skippedExt }
         : null);
     if (tracked === null) return null;
-    const { files: entries, repos, walked, truncated, unlistable, skippedExt } = tracked;
+    const { files: listed, repos, walked, truncated, unlistable, skippedExt } = tracked;
+
+    // Retired pages are read as current when a search returns them beside the
+    // live ones, so an `archive` bucket is out of the scan unless asked for.
+    // Counted, never silently subtracted: the header says how many and where.
+    // No docs.json means no tree, `roleOf` answers null, and nothing is dropped.
+    const { tree } = docsTree.read(root);
+    const excluded = { count: 0, buckets: [] };
+    const entries = [];
+    for (const entry of listed) {
+        const rel = String(entry).replace(/\\/g, '/');
+        if (!(opts && opts.archive) && tree && docsTree.roleOf(tree, rel) === 'archive') {
+            excluded.count++;
+            const bucket = tree.buckets.find((b) => b.role === 'archive' && rel.startsWith(b.path + '/'));
+            if (bucket && !excluded.buckets.includes(bucket.path)) excluded.buckets.push(bucket.path);
+            continue;
+        }
+        entries.push(entry);
+    }
 
     // A nested repository has no extension, so it used to fall through to
     // `noPattern` — an entire unread repository counted as one file of an
@@ -283,7 +302,7 @@ function scan(root, terms) {
     // `nested` is not returned on its own. It was, read by nothing, while
     // `report` used `skipped.nested` and `treeLines` worked it out again — which
     // is where the two answers to "is this a subtree" came from.
-    return { total: files.length, files: entries, repos, walked, truncated, decls, docs, named, skipped };
+    return { total: files.length, files: entries, repos, walked, truncated, decls, docs, named, skipped, excluded };
 }
 
 // `slice(0, Infinity)` is the whole array and `length > Infinity` is false, so
@@ -346,7 +365,7 @@ function report(result, terms, opts) {
         return 'fankeel survey: nothing readable under that root — no repository, and no files.\n'
              + 'Search by hand and say what you searched for.';
     }
-    const { total, repos, walked, truncated, decls, docs, named, skipped } = result;
+    const { total, repos, walked, truncated, decls, docs, named, skipped, excluded } = result;
     const head = terms.length
         ? 'fankeel survey — ' + total + ' files, matching: ' + terms.join(', ')
         : 'fankeel survey — ' + total + ' files, everything declared';
@@ -390,6 +409,9 @@ function report(result, terms, opts) {
         if (skipped.unlistable) skips.push(skipped.unlistable + (skipped.unlistable === 1 ? ' directory' : ' directories') + ' that could not be listed');
     }
     if (skips.length) note.push('skipped: ' + skips.join(', '));
+    if (excluded && excluded.count) {
+        note.push('excluded: ' + excluded.count + (excluded.count === 1 ? ' archive file' : ' archive files') + ' under ' + excluded.buckets.join(', ') + ' — pass --archive to include');
+    }
 
     // The split is said out loud rather than left for the reader to infer from
     // the ordering. A section that silently mixes two kinds of match is a
@@ -454,6 +476,7 @@ function parseArgs(argv) {
     let root = process.cwd();
     let max = DEFAULT_MAX;
     let tree = false;
+    let archive = false;
     const terms = [];
     for (let i = 0; i < argv.length; i++) {
         if (argv[i] === '--root') {
@@ -475,16 +498,17 @@ function parseArgs(argv) {
         }
         if (argv[i] === '--all') { max = Infinity; continue; }
         if (argv[i] === '--tree') { tree = true; continue; }
+        if (argv[i] === '--archive') { archive = true; continue; }
         if (argv[i].startsWith('--')) continue;
         const term = String(argv[i]).toLowerCase().trim();
         if (term && !terms.includes(term)) terms.push(term);
     }
-    return { root, terms, max, tree };
+    return { root, terms, max, tree, archive };
 }
 
 function main(argv) {
-    const { root, terms, max, tree } = parseArgs(argv);
-    return report(scan(root, terms), terms, { max, tree, root });
+    const { root, terms, max, tree, archive } = parseArgs(argv);
+    return report(scan(root, terms, { archive }), terms, { max, tree, root });
 }
 
 if (require.main === module) {
