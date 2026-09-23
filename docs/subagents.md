@@ -499,8 +499,10 @@ stage whose report is on disk) and the lines that report left under its `reads:`
 block, at most 12 lines and 1,000 characters, with what was left out counted. The
 report's own author wrote that block — it is the agent that had read the content —
 and `hooks/brief.js` copies it, so the controller opens neither file. A stage with no
-earlier report gets `read first: none`. Every brain is told to end its report with
-that block.
+earlier report gets pointed at the newest `docs/plans/*.md` file written since the
+task started, if one exists (`newestPlan` in `lib/render.js`); only when neither an
+earlier report nor a qualifying plan file exists does it get `read first: none`.
+Every brain is told to end its report with that block.
 
 A `design` or `plan` brain may also write one file under `docs/plans/`, named in an
 `artifact:` rule, and commits it through a commit file as `build` does; an `audit`
