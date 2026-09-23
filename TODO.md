@@ -175,7 +175,7 @@ lifts when: TokenBar 的 `tokenbar-usage.jsonl` 累積到跨過一次 7d reset �
 
 - 〔quota〕7d 水位兩點差 4.7 倍，是延遲還是計別的：TokenBar 每次 render 已把 5h／7d 讀數 append 到 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`（TokenBar 的 `statusline.ps1`／`.sh`），拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
 
-### 渲染審查要本地篩子
+### sonnet 花費成瓶頸或要離線
 lifts when: 渲染審查的 sonnet 花費成了瓶頸，或需要離線跑. 09-23.
 
 - 〔render〕本地判斷模型當渲染審查前的篩子：moondream2（`ollama run moondream`）判畫面是否正常、UI-TARS 驅動頁面；兩者都沒在本機試過，Jev 是雲端不吃圖 — [agents/fankeel-render-reviewer.md](agents/fankeel-render-reviewer.md).

@@ -18,8 +18,11 @@ plan 見 [../plans/2026-09-23-render-review.md](../plans/2026-09-23-render-revie
 | 逐塊即時調 | 注入式：`scripts/tune.js` 在送出 HTML 時注入 overlay，點區塊、寫要怎麼改，`done` 擋下區塊外的改動並還原 | 使用者在 design 關卡選了注入式而非輕量迴圈；注入在送出時做，原始檔不改，不用收尾 |
 | Jev | 不採用 | TypeSafe AI 的 System One 模型，雲端 API、不吃圖（官方頁：「not on images (yet…)」） |
 | 本地判斷模型 | 不做，掛 `TODO.md` 的 `## Waiting` | 要求本身不需要；moondream、UI-TARS 都沒在本機試過 |
+| 逐塊即時調的檔名 | `lib/live.js` 與 `tests/live.test.js` 早已是 session-liveness 模組，所以改名 `lib/tune.js`、`scripts/tune.js`、`assets/tune/overlay.js`；HTTP 端點刻意保留 `/__live/*`（協定名，不撞檔名） | plan 誤標為新檔，Task 3 的 implementer 以 blocked 擋下 |
+| build 的主控 | 由主 session 直接派 implementer 與 reviewer，沒走 `fankeel-brain` | session 的 hook 釘在 0.74.0，`lib/stages.js` 在那一版只認 `stage.agents === true`，profile 的陣列落空；使用者在關卡選了本 session、直接在 main |
 
 ## 二、沒做的
 
 - 框架產生的頁面不能逐塊調：`data-block` 必須逐字寫在所服務的檔案裡。
 - 新 agent 在寫下它的那個 session 派不到（安裝版 0.74.0），受控跑由 parent 以 `general-purpose` 帶 agent 檔全文代跑。
+- 受控 build（stage agent）這次沒跑到，這份 plan 的派工與提交順序未必與 0.76.0 的受控 build 一致。
