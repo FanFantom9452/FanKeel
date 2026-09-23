@@ -21,8 +21,8 @@ const { run, parse } = require('../lib/hook.js');
 
 // The tool names the controlled-stage matcher below cares about. A module
 // constant rather than a literal in the condition, for the same reason
-// `lib/guard.js`'s `READ_ONLY_AGENTS` is a set: three names compared once
-// each read better than three `===`s repeated at every call site.
+// `lib/guard.js`'s `READ_ONLY_AGENTS` is a set: four names compared once
+// each read better than four `===`s repeated at every call site.
 const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);
 
 function main(raw) {

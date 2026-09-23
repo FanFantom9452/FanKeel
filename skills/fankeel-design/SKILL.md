@@ -117,9 +117,9 @@ to change — a list is easier to answer than an empty question. Then loop:
 `node <plugin>/scripts/tune.js wait` prints the next request as JSON;
 dispatch one implementer at `design.mockup`'s model to rewrite only the
 element carrying that `data-block` in the file it names; then
-`node <plugin>/scripts/tune.js done <id>`. It puts the file back and names
-the block that was touched when the edit strayed outside, and reloads the
-page when it did not. Static HTML only: a block has to be written literally
+`node <plugin>/scripts/tune.js done <id>`. Either way the page reloads — a
+kept edit flashes its block, a stray one is put back and the page marks the
+blocks it touched. Static HTML only: a block has to be written literally
 in the served file.
 
 ### 4. The success criterion

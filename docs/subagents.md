@@ -30,11 +30,12 @@ find — a third never launched, and a cell that did not run is not a result
 Seven subagent types are not just described in prose — they are declared as
 `agents` in `.claude-plugin/plugin.json` and shipped as files under `agents/`:
 `fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier`, `fankeel-fixer`, `fankeel-brain` and `fankeel-render-reviewer`.
-The first three carry `tools: [Read, Grep, Glob, Bash]` — Edit, Write and
+Four of them — `fankeel-reader`, `fankeel-judge`, `fankeel-reviewer` and
+`fankeel-render-reviewer` — carry `tools: [Read, Grep, Glob, Bash]` — Edit, Write and
 NotebookEdit are simply absent from the list, so calling any of them to change
 a file is refused by the harness rather than left to a rule somebody has to
 remember. Bash stays on the list for `git` — and, for the reader, this plugin's
-own scripts — a named residual rather than a claim that any of the three cannot
+own scripts — a named residual rather than a claim that any of the four cannot
 write anything.
 
 `fankeel-verifier` is no longer the only agent carrying `Write` —
