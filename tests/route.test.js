@@ -289,6 +289,28 @@ test('a class picks the route and is recorded on the entry', () => {
   assert.match(r.out, /spike/);
 });
 
+test('a class said at start is a floor the route cannot drop below', () => {
+  const dir = root();
+  let r = run(dir, ['start', '--session', A, '--task', 'probe the ramp', '--project', 'lib', '--class', 'architectural']);
+  assert.equal(r.code, 0, r.out);
+  assert.equal(registry.readSession(dir, A).floor, 'architectural');
+  r = run(dir, ['route', 'survey,design,build,verify,land', '--session', A]);
+  assert.equal(r.code, 1, r.out);
+  assert.match(r.out, /floor/);
+  assert.match(r.out, /plan, audit/);
+  assert.equal(registry.readSession(dir, A).route.length, 7);
+  r = run(dir, ['route', 'survey,design,plan,build,verify,audit,land', '--session', A]);
+  assert.equal(r.code, 0, r.out);
+});
+
+test('a route or a profile default at start sets no floor', () => {
+  const dir = root();
+  const r = run(dir, ['start', '--session', A, '--task', 'probe the ramp', '--project', 'lib', '--route', 'survey,design,plan,build,verify,audit,land']);
+  assert.equal(r.code, 0, r.out);
+  assert.equal(registry.readSession(dir, A).floor, undefined);
+  assert.equal(run(dir, ['route', 'survey,build', '--session', A]).code, 0);
+});
+
 test('a class and an explicit route together are refused, not silently ranked', () => {
   const dir = root();
   const r = run(dir, ['start', '--session', A, '--task', 't', '--project', 'lib',
@@ -317,11 +339,14 @@ test('neither given still works, and still records no class', () => {
 // `survey,build` is spike's route. Leaving `class: bounded` on a record whose
 // route has become spike's puts a sentence in front of the model every turn
 // describing a design stage the route no longer contains.
+// Widening rather than narrowing: `bounded` down to `spike` is exactly the
+// floor test above forbids, so this proves the recompute the other direction,
+// where the floor has nothing to say.
 test('re-routing recomputes the class rather than leaving the old one', () => {
   const dir = root();
-  run(dir, ['start', '--session', A, '--task', 'x', '--class', 'bounded']);
-  run(dir, ['route', 'survey,build', '--session', A]);
-  assert.equal(registry.readSession(dir, A).class, 'spike');
+  run(dir, ['start', '--session', A, '--task', 'x', '--class', 'spike']);
+  run(dir, ['route', 'survey,design,build,verify,land', '--session', A]);
+  assert.equal(registry.readSession(dir, A).class, 'bounded');
 });
 
 // A route nobody presets has no class. The alternative is a record naming a
@@ -329,7 +354,9 @@ test('re-routing recomputes the class rather than leaving the old one', () => {
 test('a route matching no class leaves the record with none', () => {
   const dir = root();
   run(dir, ['start', '--session', A, '--task', 'x', '--class', 'bounded']);
-  run(dir, ['route', 'survey,build,audit', '--session', A]);
+  // Superset of bounded's own route — the floor allows it — but with `audit`
+  // added and no `plan`, it matches no preset.
+  run(dir, ['route', 'survey,design,build,verify,audit,land', '--session', A]);
   assert.equal('class' in registry.readSession(dir, A), false);
 });
 

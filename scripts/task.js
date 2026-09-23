@@ -563,6 +563,10 @@ function cmdStart(root, opts) {
         project,
         route,
         class: cls ? String(cls).trim().toLowerCase() : undefined,
+        // The class said on this command line, and only that one: the floor a
+        // later `route` may add to and never drop below. A profile default or a
+        // hand-written route is not a decision anyone said, so it sets none.
+        floor: opts.class ? String(opts.class).trim().toLowerCase() : undefined,
         // Which registry answers "is that session still running". Only this
         // session knows, and a reader under a different CLAUDE_CONFIG_DIR has no
         // way to guess it — without this it judged a running neighbour dead.
@@ -1017,6 +1021,7 @@ function cmdAdopt(root, opts) {
     if (source.notes) data.notes = source.notes;
     if (source.next) data.next = source.next;
     if (source.guard) data.guard = source.guard;
+    if (source.floor) data.floor = source.floor;
     // The rename's lap base goes with the task. `moves` crosses over below, and without
     // this a renamed task adopted here would number its laps from the old task's again.
     if (Number.isInteger(source.lapped) && source.lapped > 0) data.lapped = source.lapped;
@@ -1158,6 +1163,15 @@ function cmdRoute(root, opts) {
     if (!given.includes(data.stage)) {
         fail('This task is at `' + data.stage + '`, which that route does not contain.'
             + NL + 'Move to a stage on the new route first, or include it.');
+    }
+    // A class said at `start` is the floor. 2026-09-23: a survey stage agent ran
+    // this command and took an architectural task down to bounded, dropping plan
+    // and audit, with nothing to stop it.
+    const floorRoute = routeForClass(data.floor);
+    const dropped = floorRoute ? floorRoute.filter((s) => !given.includes(s)) : [];
+    if (dropped.length) {
+        fail('This task was started as `' + data.floor + '`, and that is its floor: a route may add stages, never drop them.'
+            + NL + 'Dropped: ' + dropped.join(', ') + '. Going lighter is a new task, and the user decides that.');
     }
 
     const before = normaliseRoute(data.route) || FULL_ROUTE;
