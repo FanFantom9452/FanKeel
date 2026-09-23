@@ -159,3 +159,41 @@ test('wrong arguments print a usage line, an unreadable file exits 1', () => {
     assert.equal(unreadable.code, 1);
     assert.match(unreadable.text, /^commit\.js: cannot read /);
 });
+
+test('a file of two blocks commits twice, in order, and prints two chained ranges', () => {
+    const dir = repo();
+    const before = git(dir, 'rev-parse', 'HEAD');
+    const res = commit.main([requestFile('a.txt\n\nfeat: change a\n---\nb.txt\n\nfeat: change b\n')], dir);
+    assert.ok(!res.code, res.text);
+    const first = git(dir, 'rev-parse', 'HEAD~1');
+    const second = git(dir, 'rev-parse', 'HEAD');
+    assert.equal(res.text, 'a.txt: ' + before + '..' + first + '\n' + 'b.txt: ' + first + '..' + second);
+    assert.equal(git(dir, 'show', '--name-only', '--format=', 'HEAD~1'), 'a.txt');
+    assert.equal(git(dir, 'show', '--name-only', '--format=', 'HEAD'), 'b.txt');
+    assert.equal(git(dir, 'log', '-1', '--format=%B', 'HEAD~1'), 'feat: change a');
+});
+
+test('a failing second block keeps the first commit and names the block that failed', () => {
+    const dir = repo();
+    fs.writeFileSync(path.join(dir, 'c.txt'), 'c\n');
+    git(dir, 'add', 'c.txt');
+    git(dir, 'commit', '-qm', 'c');
+    const base = git(dir, 'rev-parse', 'HEAD');
+    const res = commit.main([requestFile('a.txt\n\nfeat: change a\n---\nc.txt\n\nfeat: nothing here\n---\nb.txt\n\nfeat: change b\n')], dir);
+    assert.equal(res.code, 1);
+    const lines = res.text.split('\n');
+    assert.equal(lines.length, 2);
+    assert.equal(lines[0], 'a.txt: ' + base + '..' + git(dir, 'rev-parse', 'HEAD'));
+    assert.equal(lines[1], 'commit.js: block 2: nothing to commit in c.txt');
+    assert.equal(git(dir, 'show', '--name-only', '--format=', 'HEAD'), 'a.txt');
+    assert.equal(git(dir, 'diff', '--name-only'), 'b.txt');
+});
+
+test('a block that does not parse commits nothing at all', () => {
+    const dir = repo();
+    const before = git(dir, 'rev-parse', 'HEAD');
+    const res = commit.main([requestFile('a.txt\n\nfeat: change a\n---\nb.txt\n')], dir);
+    assert.equal(res.code, 1);
+    assert.equal(res.text, 'commit.js: block 2: no blank line between the paths and the message');
+    assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
+});

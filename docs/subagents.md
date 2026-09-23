@@ -488,7 +488,7 @@ stage on that list and it is run by a stage agent instead of by the session:
 | the gate | `hooks/gate.js` | replaces the controller's placeholder question with the block's, word for word |
 | the answer | `hooks/resume.js` | writes it to the answer file; the controller's `SendMessage` names the path |
 | a pause | `task.js next --from-gate` | reads the block's `next` line |
-| a commit (`build`, `design`, `plan`) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/<stage>-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back its one line, `<base>..<sha>` or `commit.js: <why>` |
+| a commit (`build`, `design`, `plan`) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/<stage>-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back its one line, `<base>..<sha>` or `commit.js: <why>`; on build, tasks dispatched together may share one file — blocks separated by a `---` line, one `<paths>: <base>..<sha>` line back per block |
 
 ### What a stage agent is told to read, and what it may write
 
