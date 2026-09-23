@@ -57,32 +57,32 @@ mockup：`.fankeel/build/2026-09-23-render-review/mockup.html`（不提交），
   `skills/fankeel-verify/SKILL.md` 改派新 agent；`lib/guard.js` 的
   `READ_ONLY_AGENTS` 與 `lib/stages.js` 的 `STAGE_AGENTS`（build、verify）加上它。
 
-## 3. 注入式逐塊即時調：`scripts/live.js`
+## 3. 注入式逐塊即時調：`scripts/tune.js`
 
-- `node scripts/live.js serve <dir> [--port]` 對一個靜態目錄起本機 server，
+- `node scripts/tune.js serve <dir> [--port]` 對一個靜態目錄起本機 server，
   回 HTML 時在 `</body>` 前注入 `<script src="/__live/overlay.js">`；
   原始檔不被修改，所以沒有收尾要清。
-- overlay（`assets/live/overlay.js`）照 mockup 的五個狀態：hover 描出
+- overlay（`assets/tune/overlay.js`）照 mockup 的五個狀態：hover 描出
   `data-block` 與名稱、點選後停靠的小面板、送出後的狀態膠囊與佇列數、
   完成時閃一下、被退回時的警示；角落有開關，`Esc` 關面板。
 - 送出是 `POST /__live/request { page, block, note }`，server 附上 id 寫進
-  `.fankeel/build/live/queue.jsonl`。
-- session 端 `node scripts/live.js wait` 阻塞到下一筆請求，印出 JSON；
+  `.fankeel/build/tune/queue.jsonl`。
+- session 端 `node scripts/tune.js wait` 阻塞到下一筆請求，印出 JSON；
   parent 派 implementer 只重寫那個 `data-block` 元素，完成後跑
-  `node scripts/live.js done <id>`。
+  `node scripts/tune.js done <id>`。
 - `done` 先檢查：把改動前後的檔案各自拿掉該區塊元素，剩下的必須逐字相同；
   不同就把檔案還原、回報被動到的區塊名，overlay 顯示退回。
 - 通過後 server 經 SSE 通知頁面重新載入，overlay 標出剛改的區塊。
 - 只支援 `data-block` 逐字寫在所服務檔案裡的靜態 HTML（mockup 與靜態頁）；
   框架產生的頁面不在這次範圍。
 - `skills/fankeel-design/SKILL.md` 的 mockup 步驟之後加「逐塊即時調」：
-  mockup 帶 `data-block`，核可前可用 `live.js` 逐塊調。
+  mockup 帶 `data-block`，核可前可用 `tune.js` 逐塊調。
 
 ## 4. 測試
 
 - `tests/render-cli.test.js`：兩角色 × 兩頁的 `render.json` 產出四組檔案，
   `index.json` 列四格；壞設定非零退出。現在會紅（`--config` 是未知旗標）。
-- `tests/live.test.js`：`POST /__live/request` 後 `wait` 印出同一筆；改到區塊外的
+- `tests/tune.test.js`：`POST /__live/request` 後 `wait` 印出同一筆；改到區塊外的
   `done` 還原檔案並回報區塊名；只改區塊內的 `done` 通過；注入後的 HTML
   帶 overlay script 而磁碟上的檔案不變。
 - agent 的受控跑一次：一張 mockup 有 `nav`、實作少了 `nav` 的截圖，應回 `fix`

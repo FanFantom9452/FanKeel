@@ -4,8 +4,8 @@ status: design-intent
 
 # 渲染審查與逐塊即時調 Implementation Plan
 
-**Goal:** render.js 依 `.fankeel/render.json` 截每個角色 × 頁面，新 agent `fankeel-render-reviewer` 拿截圖逐 `data-block` 對照核可的 mockup，`scripts/live.js` 注入 overlay 讓使用者一次只改一塊。
-**Architecture:** 純函式放 `lib/`（`lib/shots.js` 讀 render.json、`lib/live.js` 算區塊範圍與區塊外檢查），`scripts/render.js` 與 `scripts/live.js` 只是薄殼。overlay 是一支無框架的瀏覽器 script，由 live server 在送出 HTML 時注入，磁碟上的檔不改。新 agent 以 agent 檔的形式接進 build 與 verify，舊 reviewer 的 `render` lens 收回。
+**Goal:** render.js 依 `.fankeel/render.json` 截每個角色 × 頁面，新 agent `fankeel-render-reviewer` 拿截圖逐 `data-block` 對照核可的 mockup，`scripts/tune.js` 注入 overlay 讓使用者一次只改一塊。
+**Architecture:** 純函式放 `lib/`（`lib/shots.js` 讀 render.json、`lib/tune.js` 算區塊範圍與區塊外檢查），`scripts/render.js` 與 `scripts/tune.js` 只是薄殼。overlay 是一支無框架的瀏覽器 script，由 live server 在送出 HTML 時注入，磁碟上的檔不改。新 agent 以 agent 檔的形式接進 build 與 verify，舊 reviewer 的 `render` lens 收回。
 **Tech Stack:** Node.js（`node:http`、`node:util` 的 `parseArgs`、`node:child_process`），`node --test`，零 npm 依賴（`package.json` 沒有 `dependencies`）；截圖用本機 Edge／Chrome 的 `--headless=new`。
 **Spec:** [2026-09-23-render-review-design.md](2026-09-23-render-review-design.md)
 
@@ -43,16 +43,16 @@ status: design-intent
 | 回傳第一行是 `disposition: recapture|fix|ship` 三字之一，接逐元素表… | Task 2 |
 | build 裡每個動到頁面的 task 落地後派它；verify 對所有角色與頁面完整跑一輪。 | Task 2 |
 | `fankeel-reviewer.md` 的 `## Render` 一節與 Bash 的 `render.js` 權限收回… | Task 2 |
-| `node scripts/live.js serve <dir> [--port]` 對一個靜態目錄起本機 server… | Task 3 |
-| overlay（`assets/live/overlay.js`）照 mockup 的五個狀態：hover 描出… | Task 4 |
+| `node scripts/tune.js serve <dir> [--port]` 對一個靜態目錄起本機 server… | Task 3 |
+| overlay（`assets/tune/overlay.js`）照 mockup 的五個狀態：hover 描出… | Task 4 |
 | 送出是 `POST /__live/request { page, block, note }`，server 附上 id 寫進… | Task 3 |
-| session 端 `node scripts/live.js wait` 阻塞到下一筆請求，印出 JSON… | Task 3 |
+| session 端 `node scripts/tune.js wait` 阻塞到下一筆請求，印出 JSON… | Task 3 |
 | `done` 先檢查：把改動前後的檔案各自拿掉該區塊元素，剩下的必須逐字相同… | Task 3 |
 | 通過後 server 經 SSE 通知頁面重新載入，overlay 標出剛改的區塊。 | Task 3（server 送事件）、Task 4（頁面重新載入並標出） |
 | 只支援 `data-block` 逐字寫在所服務檔案裡的靜態 HTML（mockup 與靜態頁）… | Task 3 |
 | `skills/fankeel-design/SKILL.md` 的 mockup 步驟之後加「逐塊即時調」… | Task 4 |
 | `tests/render-cli.test.js`：兩角色 × 兩頁的 `render.json` 產出四組檔案… | Task 1 |
-| `tests/live.test.js`：`POST /__live/request` 後 `wait` 印出同一筆… | Task 3 |
+| `tests/tune.test.js`：`POST /__live/request` 後 `wait` 印出同一筆… | Task 3 |
 | agent 的受控跑一次：一張 mockup 有 `nav`、實作少了 `nav` 的截圖… | verify — 新 agent 在本 session 派不到（見 Global Constraints 最後一條），由 parent 在 verify 跑 |
 | 產物列：`index.json` 列出的格數等於磁碟上 `.png` 的數量。 | Task 1 |
 | 新增決策紀錄，說明為何推翻 2026-09-23 的「不另開 agent」。 | Task 5 |
@@ -68,9 +68,9 @@ status: design-intent
 | `agents/fankeel-render-reviewer.md`（新） | 渲染審查的契約 |
 | `agents/fankeel-reviewer.md` | 拿掉 `## Render` 與 Bash 的 render.js 權限 |
 | `lib/guard.js`、`lib/stages.js`、`.claude-plugin/plugin.json` | 新 agent 的身分表、站 agent 可派名單、manifest |
-| `lib/live.js`（新） | `inject`、`outside`（區塊外檢查）、`diffLines`、`queueState` |
-| `scripts/live.js`（新） | `serve`／`wait`／`done` 三個子命令 |
-| `assets/live/overlay.js`（新） | 注入頁面的 overlay |
+| `lib/tune.js`（新） | `inject`、`outside`（區塊外檢查）、`diffLines`、`queueState` |
+| `scripts/tune.js`（新） | `serve`／`wait`／`done` 三個子命令 |
+| `assets/tune/overlay.js`（新） | 注入頁面的 overlay |
 | `skills/fankeel-design/SKILL.md`、`skills/fankeel-build/SKILL.md`、`skills/fankeel-verify/SKILL.md`、`skills/fankeel/SKILL.md` | 流程接線 |
 
 ## Task 1: `render.json` 與 render.js 的 `--config`、`login`
@@ -702,22 +702,22 @@ In `skills/fankeel-build/SKILL.md`:
 - [ ] **Step 7：驗文件。** `node scripts/docs-check.js` — 最後一行仍是 `Every reference resolves.`；`node scripts/stage-registry.js && git diff --stat skills/registry.json`，有變就一起提交。
 - [ ] **Step 8：提交。** `git add agents/fankeel-render-reviewer.md` 後 `git commit -o agents/fankeel-render-reviewer.md agents/fankeel-reviewer.md .claude-plugin/plugin.json lib/guard.js lib/stages.js skills/fankeel-build/SKILL.md skills/fankeel-verify/SKILL.md skills/fankeel/SKILL.md docs/subagents.md tests/agents.test.js tests/guard.test.js tests/brief.test.js -m "feat: fankeel-render-reviewer 接手渲染審查，reviewer 收回 render lens"`（有 `skills/registry.json` 的變動就一起列入）。
 
-## Task 3: `lib/live.js` 與 `scripts/live.js`
+## Task 3: `lib/tune.js` 與 `scripts/tune.js`
 
 **Files:**
-- Modify: `lib/live.js` — 新檔：`inject`、`outside`、`diffLines`、`queueState`
-- Modify: `scripts/live.js` — 新檔：`serve`、`wait`、`done`
-- Test: `tests/live.test.js`
+- Modify: `lib/tune.js` — 新檔：`inject`、`outside`、`diffLines`、`queueState`
+- Modify: `scripts/tune.js` — 新檔：`serve`、`wait`、`done`
+- Test: `tests/tune.test.js`
 
 **Interfaces:**
 - Consumes: none
-- Produces: HTTP 端點（Task 4 的 overlay 用）：`GET /__live/overlay.js`（讀 `assets/live/overlay.js`，檔不存在回 404）、`GET /__live/events`（SSE，`data:` 是 JSON：`{ type: 'queued', id, block }`、`{ type: 'done', id, block }`、`{ type: 'rejected', id, block, touched: string[] }`）、`GET /__live/queue`（`{ pending: number }`）、`POST /__live/request`（body `{ page, block, note }`，回 `{ id }`，id 形如 `r-0001`）、`GET /__live/diff/<id>`（text/plain）、`POST /__live/result`（`done` 用來廣播事件）。注入的標籤是 `<script src="/__live/overlay.js"></script>`。狀態檔在 cwd 下 `.fankeel/build/live/`：`queue.jsonl`、`<id>.before.html`、`<id>.diff.txt`、`serve.json`（`{ port, dir, pid }`）。
+- Produces: HTTP 端點（Task 4 的 overlay 用）：`GET /__live/overlay.js`（讀 `assets/tune/overlay.js`，檔不存在回 404）、`GET /__live/events`（SSE，`data:` 是 JSON：`{ type: 'queued', id, block }`、`{ type: 'done', id, block }`、`{ type: 'rejected', id, block, touched: string[] }`）、`GET /__live/queue`（`{ pending: number }`）、`POST /__live/request`（body `{ page, block, note }`，回 `{ id }`，id 形如 `r-0001`）、`GET /__live/diff/<id>`（text/plain）、`POST /__live/result`（`done` 用來廣播事件）。注入的標籤是 `<script src="/__live/overlay.js"></script>`。狀態檔在 cwd 下 `.fankeel/build/tune/`：`queue.jsonl`、`<id>.before.html`、`<id>.diff.txt`、`serve.json`（`{ port, dir, pid }`）。
 
 **Dispatch:** implementer, sonnet — 計畫帶了全部程式碼，轉錄加測試。
 
 - [ ] **Step 1：寫失敗測試。**
 
-In `tests/live.test.js`:
+In `tests/tune.test.js`:
 
 ```js
 'use strict';
@@ -727,10 +727,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
 const { spawn, spawnSync } = require('node:child_process');
-const { inject, outside, diffLines, queueState } = require('../lib/live.js');
+const { inject, outside, diffLines, queueState } = require('../lib/tune.js');
 const tmp = require('./tmp.js');
 
-const CLI = path.join(__dirname, '..', 'scripts', 'live.js');
+const CLI = path.join(__dirname, '..', 'scripts', 'tune.js');
 const PAGE = [
     '<!DOCTYPE html><html><body>',
     '<main data-block="page">',
@@ -788,7 +788,7 @@ function startServer(t, cwd) {
             out += d;
             if (out.includes('\n')) resolve(out.trim());
         });
-        child.on('exit', (code) => reject(new Error('live serve exited ' + code)));
+        child.on('exit', (code) => reject(new Error('tune serve exited ' + code)));
     });
 }
 
@@ -805,7 +805,7 @@ function request(url, method, body) {
 }
 
 test('serve injects without touching the file; request, wait and done round-trip; a stray edit is put back', async (t) => {
-    const cwd = tmp('fankeel-live-');
+    const cwd = tmp('fankeel-tune-');
     fs.mkdirSync(path.join(cwd, 'site'));
     const file = path.join(cwd, 'site', 'page.html');
     fs.writeFileSync(file, PAGE);
@@ -851,21 +851,21 @@ test('serve injects without touching the file; request, wait and done round-trip
 });
 
 test('wait with nothing queued gives up with exit 3', () => {
-    const cwd = tmp('fankeel-live-');
+    const cwd = tmp('fankeel-tune-');
     const r = spawnSync(process.execPath, [CLI, 'wait', '--timeout', '1'], { cwd, encoding: 'utf8' });
     assert.equal(r.status, 3);
     assert.match(r.stderr, /no request in 1s/);
 });
 ```
 
-- [ ] **Step 2：跑它，看它紅。** `node --test tests/live.test.js` — `Cannot find module '../lib/live.js'`。
-- [ ] **Step 3：寫 `lib/live.js`。**
+- [ ] **Step 2：跑它，看它紅。** `node --test tests/tune.test.js` — `Cannot find module '../lib/tune.js'`。
+- [ ] **Step 3：寫 `lib/tune.js`。**
 
-In `lib/live.js`:
+In `lib/tune.js`:
 
 ```js
 'use strict';
-// lib/live.js: the pure half of `scripts/live.js` — where a `data-block`
+// lib/tune.js: the pure half of `scripts/tune.js` — where a `data-block`
 // element starts and ends in a file's text, whether an edit stayed inside
 // it, the overlay tag spliced into served HTML, a short diff, and the request
 // queue read back from its JSONL. No file, socket or clock here.
@@ -984,20 +984,20 @@ module.exports = { inject, outside, diffLines, queueState };
 
 注意 `outside` 的 `contains` 過濾：測試 `an edit to a sibling block names that block` 裡 `page` 包著 `sessions`，兩者都變了，只回報最內層的 `sessions`；`an edit in markup no inner block owns` 裡只有 `page` 變，回報 `page`。
 
-- [ ] **Step 4：寫 `scripts/live.js`。**
+- [ ] **Step 4：寫 `scripts/tune.js`。**
 
-In `scripts/live.js`:
+In `scripts/tune.js`:
 
 ```js
 #!/usr/bin/env node
 'use strict';
-// scripts/live.js: tune a static page one `data-block` at a time.
+// scripts/tune.js: tune a static page one `data-block` at a time.
 //
-//   node scripts/live.js serve <dir> [--port 7819]   serve <dir> with the overlay injected
-//   node scripts/live.js wait [--timeout 600]          block until the next request; print it as JSON
-//   node scripts/live.js done <id>                     check the edit stayed in its block; tell the page
+//   node scripts/tune.js serve <dir> [--port 7819]   serve <dir> with the overlay injected
+//   node scripts/tune.js wait [--timeout 600]          block until the next request; print it as JSON
+//   node scripts/tune.js done <id>                     check the edit stayed in its block; tell the page
 //
-// State lives in `.fankeel/build/live/` under the cwd: `queue.jsonl`, a
+// State lives in `.fankeel/build/tune/` under the cwd: `queue.jsonl`, a
 // `<id>.before.html` snapshot taken when a request is waited for, a
 // `<id>.diff.txt` when one is rejected, and `serve.json` naming the port a
 // running server listens on. `serve` never writes into <dir>; `done` writes
@@ -1006,19 +1006,19 @@ const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
 const { parseArgs } = require('node:util');
-const { inject, outside, diffLines, queueState } = require('../lib/live.js');
+const { inject, outside, diffLines, queueState } = require('../lib/tune.js');
 
-const STATE = path.resolve('.fankeel', 'build', 'live');
+const STATE = path.resolve('.fankeel', 'build', 'tune');
 const QUEUE = path.join(STATE, 'queue.jsonl');
 const SERVE = path.join(STATE, 'serve.json');
-const OVERLAY = path.join(__dirname, '..', 'assets', 'live', 'overlay.js');
+const OVERLAY = path.join(__dirname, '..', 'assets', 'tune', 'overlay.js');
 const TYPES = {
     '.html': 'text/html; charset=utf-8', '.htm': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
     '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8',
 };
 
 function die(msg, code) {
-    process.stderr.write('live: ' + msg + '\n');
+    process.stderr.write('tune: ' + msg + '\n');
     process.exit(code || 2);
 }
 
@@ -1164,7 +1164,7 @@ function notify(event, then) {
 function done(id) {
     const r = requests().find((x) => x.id === id);
     if (!r) die('no request ' + id);
-    if (r.status !== 'taken') die(id + ' is ' + r.status + ', not taken — run `live.js wait` first');
+    if (r.status !== 'taken') die(id + ' is ' + r.status + ', not taken — run `tune.js wait` first');
     const before = fs.readFileSync(path.join(STATE, id + '.before.html'), 'utf8');
     const after = fs.readFileSync(r.file, 'utf8');
     const verdict = outside(before, after, r.block);
@@ -1177,10 +1177,10 @@ function done(id) {
     const event = verdict.ok ? { type, id, block: r.block } : { type, id, block: r.block, touched: verdict.touched };
     notify(event, () => {
         if (verdict.ok) {
-            process.stdout.write('live: ' + id + ' done — only ' + r.block + ' changed\n');
+            process.stdout.write('tune: ' + id + ' done — only ' + r.block + ' changed\n');
             return;
         }
-        process.stderr.write('live: ' + id + ' rejected — the edit changed ' + verdict.touched.join(', ') + '; ' + r.file + ' is back as it was\n');
+        process.stderr.write('tune: ' + id + ' rejected — the edit changed ' + verdict.touched.join(', ') + '; ' + r.file + ' is back as it was\n');
         process.exit(1);
     });
 }
@@ -1197,52 +1197,52 @@ function main() {
     if (cmd === 'serve' && arg) return serve(arg, values.port === undefined ? 7819 : Number(values.port));
     if (cmd === 'wait') return wait(values.timeout === undefined ? 600 : Number(values.timeout));
     if (cmd === 'done' && arg) return done(arg);
-    return die('usage: live.js serve <dir> [--port N] | wait [--timeout S] | done <id>');
+    return die('usage: tune.js serve <dir> [--port N] | wait [--timeout S] | done <id>');
 }
 
 if (require.main === module) main();
 ```
 
-- [ ] **Step 5：跑它，看它綠。** `node --test tests/live.test.js` — 全綠。
-- [ ] **Step 6：提交。** `git add lib/live.js scripts/live.js tests/live.test.js` 後 `git commit -o lib/live.js scripts/live.js tests/live.test.js -m "feat: live.js 逐塊即時調的 server、wait、done 與區塊外檢查"`。
+- [ ] **Step 5：跑它，看它綠。** `node --test tests/tune.test.js` — 全綠。
+- [ ] **Step 6：提交。** `git add lib/tune.js scripts/tune.js tests/tune.test.js` 後 `git commit -o lib/tune.js scripts/tune.js tests/tune.test.js -m "feat: live.js 逐塊即時調的 server、wait、done 與區塊外檢查"`。
 
 ## Task 4: overlay 與 design skill 的逐塊即時調
 
 **Files:**
-- Modify: `assets/live/overlay.js` — 新檔，全文如下
+- Modify: `assets/tune/overlay.js` — 新檔，全文如下
 - Modify: `skills/fankeel-design/SKILL.md` — mockup 步驟加 `data-block` 與逐塊即時調
-- Read: `scripts/live.js` — Task 3 的端點，不修改
+- Read: `scripts/tune.js` — Task 3 的端點，不修改
 - Read: `.fankeel/build/2026-09-23-render-review/mockup.html` — 核可的外觀，不修改（在主 checkout，未提交）
-- Test: `tests/live-overlay.test.js`
+- Test: `tests/tune-overlay.test.js`
 
 **Interfaces:**
-- Consumes: Task 3 的 `GET /__live/events`（`queued`／`done`／`rejected` 事件）、`GET /__live/queue`、`POST /__live/request`、`GET /__live/diff/<id>`；`scripts/live.js serve` 會把 `assets/live/overlay.js` 送到 `/__live/overlay.js`。
+- Consumes: Task 3 的 `GET /__live/events`（`queued`／`done`／`rejected` 事件）、`GET /__live/queue`、`POST /__live/request`、`GET /__live/diff/<id>`；`scripts/tune.js serve` 會把 `assets/tune/overlay.js` 送到 `/__live/overlay.js`。
 - Produces: none
 
 **Dispatch:** implementer, sonnet — overlay 程式碼在計畫裡；樣式照 mockup 的色值轉錄。
 
 - [ ] **Step 1：寫失敗測試。**
 
-In `tests/live-overlay.test.js`:
+In `tests/tune-overlay.test.js`:
 
 ```js
 'use strict';
-// assets/live/overlay.js runs in a browser that this suite does not have, so
+// assets/tune/overlay.js runs in a browser that this suite does not have, so
 // what is checked here is what can be checked without one: it parses, it
-// talks to the endpoints scripts/live.js serves, and scripts/live.js serves
+// talks to the endpoints scripts/tune.js serves, and scripts/tune.js serves
 // it. What it looks like is the render reviewer's question, at verify.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const SRC = path.join(__dirname, '..', 'assets', 'live', 'overlay.js');
+const SRC = path.join(__dirname, '..', 'assets', 'tune', 'overlay.js');
 
 test('the overlay parses as a script', () => {
     assert.doesNotThrow(() => new Function(fs.readFileSync(SRC, 'utf8')));
 });
 
-test('the overlay speaks every endpoint live.js serves it for', () => {
+test('the overlay speaks every endpoint tune.js serves it for', () => {
     const text = fs.readFileSync(SRC, 'utf8');
     for (const s of ['/__live/request', '/__live/events', '/__live/queue', '/__live/diff/', 'data-block', 'Escape']) {
         assert.ok(text.includes(s), 'overlay.js never mentions ' + s);
@@ -1257,13 +1257,13 @@ test('the five states carry the words the approved mockup shows', () => {
 });
 ```
 
-- [ ] **Step 2：跑它，看它紅。** `node --test tests/live-overlay.test.js` — `ENOENT ... overlay.js`。
+- [ ] **Step 2：跑它，看它紅。** `node --test tests/tune-overlay.test.js` — `ENOENT ... overlay.js`。
 - [ ] **Step 3：寫 overlay。** 色值取自核可的 mockup：石墨底 `#1d2026`、字 `#e8e8e3`、青色描邊 `#22b8cf`、綠色完成 `#2f9e44`、琥珀退回 `#e0a526`、等寬字 `ui-monospace, Menlo, Consolas, monospace`、直角。
 
-In `assets/live/overlay.js`:
+In `assets/tune/overlay.js`:
 
 ```js
-// assets/live/overlay.js: injected by `scripts/live.js serve` into every page
+// assets/tune/overlay.js: injected by `scripts/tune.js serve` into every page
 // it sends. Hover outlines a `data-block`; a click docks a panel under it; a
 // request goes to POST /__live/request; the server's events reload the page,
 // and the state that caused the reload is shown on the block afterwards. Its
@@ -1484,28 +1484,28 @@ In `assets/live/overlay.js`:
 }());
 ```
 
-- [ ] **Step 4：跑它，看它綠。** `node --test tests/live-overlay.test.js tests/live.test.js` — 全綠。
+- [ ] **Step 4：跑它，看它綠。** `node --test tests/tune-overlay.test.js tests/tune.test.js` — 全綠。
 - [ ] **Step 5：design skill。** 在 `skills/fankeel-design/SKILL.md` 的 `### 3. The mockup — frontend work only` 一節：在 `The artefact is one HTML page covering every screen the approach changes,` 那段的末尾加一句 `Every block the approach changes carries \`data-block="<name>"\`, written in the page's own markup — the name is how the user, the tuning step below and the render reviewer point at it.`；在 `the page. The gate approves the page, not the paragraph.` 之後、`### 4. The success criterion` 之前，加：
 
 In `skills/fankeel-design/SKILL.md`:
 
 ```md
 **Before the gate, the page can be tuned one block at a time.** Run
-`node <plugin>/scripts/live.js serve <the mockup's directory>` and give the
+`node <plugin>/scripts/tune.js serve <the mockup's directory>` and give the
 user the url it prints: hovering outlines a block, a click opens a panel for
 what to change. List what you see, block by block, before asking which one
 to change — a list is easier to answer than an empty question. Then loop:
-`node <plugin>/scripts/live.js wait` prints the next request as JSON;
+`node <plugin>/scripts/tune.js wait` prints the next request as JSON;
 dispatch one implementer at `design.mockup`'s model to rewrite only the
 element carrying that `data-block` in the file it names; then
-`node <plugin>/scripts/live.js done <id>`. It puts the file back and names
+`node <plugin>/scripts/tune.js done <id>`. It puts the file back and names
 the block that was touched when the edit strayed outside, and reloads the
 page when it did not. Static HTML only: a block has to be written literally
 in the served file.
 ```
 
 - [ ] **Step 6：驗文件。** `node scripts/docs-check.js` 最後一行仍是 `Every reference resolves.`；`node scripts/stage-registry.js && git diff --stat skills/registry.json`，有變就一起提交。
-- [ ] **Step 7：提交。** `git add assets/live/overlay.js tests/live-overlay.test.js` 後 `git commit -o assets/live/overlay.js tests/live-overlay.test.js skills/fankeel-design/SKILL.md -m "feat: live overlay 與 design 的逐塊即時調"`（有 `skills/registry.json` 的變動就一起列入）。
+- [ ] **Step 7：提交。** `git add assets/tune/overlay.js tests/tune-overlay.test.js` 後 `git commit -o assets/tune/overlay.js tests/tune-overlay.test.js skills/fankeel-design/SKILL.md -m "feat: live overlay 與 design 的逐塊即時調"`（有 `skills/registry.json` 的變動就一起列入）。
 
 ## Task 5: 決策紀錄與 TODO
 
@@ -1517,7 +1517,7 @@ in the served file.
 - Read: `docs/plans/2026-09-23-render-review-design.md` — 設計，不修改
 
 **Interfaces:**
-- Consumes: Task 1–4 落地的檔名：`scripts/render.js`、`lib/shots.js`、`agents/fankeel-render-reviewer.md`、`scripts/live.js`、`lib/live.js`、`assets/live/overlay.js`。
+- Consumes: Task 1–4 落地的檔名：`scripts/render.js`、`lib/shots.js`、`agents/fankeel-render-reviewer.md`、`scripts/tune.js`、`lib/tune.js`、`assets/tune/overlay.js`。
 - Produces: none
 
 **Dispatch:** implementer, sonnet — 內容都在下面，照寫。
@@ -1544,7 +1544,7 @@ plan 見 [../plans/2026-09-23-render-review.md](../plans/2026-09-23-render-revie
 | 前端審查 agent | 另開 `fankeel-render-reviewer`（sonnet），推翻 [2026-09-23-todo-ten.md](2026-09-23-todo-ten.md) 的「不另開 agent」 | 使用者在 survey 關卡指出 reviewer 與 verifier 都不做「實際渲染後對照要求」；舊 `render` lens 只比同源數字。獨立的 agent 有自己的回傳格式（逐 `data-block` × 角色的表與 `recapture`／`fix`／`ship`），不和程式碼審查的規則混在一起 |
 | 出場點 | build 每個動到頁面的 task，加上 verify 的完整一輪 | 偏差在 build 就抓到，verify 補全部角色與頁面 |
 | 角色 | `.fankeel/render.json` 宣告頁面與角色；每個角色一個瀏覽器 profile（`--user-data-dir`），`render.js login` 手動登入一次 | browser-use 的做法可借、套件不借：它要 Python、Playwright 與 LLM API key，本專案零 npm 依賴 |
-| 逐塊即時調 | 注入式：`scripts/live.js` 在送出 HTML 時注入 overlay，點區塊、寫要怎麼改，`done` 擋下區塊外的改動並還原 | 使用者在 design 關卡選了注入式而非輕量迴圈；注入在送出時做，原始檔不改，不用收尾 |
+| 逐塊即時調 | 注入式：`scripts/tune.js` 在送出 HTML 時注入 overlay，點區塊、寫要怎麼改，`done` 擋下區塊外的改動並還原 | 使用者在 design 關卡選了注入式而非輕量迴圈；注入在送出時做，原始檔不改，不用收尾 |
 | Jev | 不採用 | TypeSafe AI 的 System One 模型，雲端 API、不吃圖（官方頁：「not on images (yet…)」） |
 | 本地判斷模型 | 不做，掛 `TODO.md` 的 `## Waiting` | 要求本身不需要；moondream、UI-TARS 都沒在本機試過 |
 
