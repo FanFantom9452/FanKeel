@@ -78,6 +78,7 @@ what gets scheduled.
 ## Needs a decision
 
 - 〔method〕ponytail 沒收的六個候選還沒問使用者：`AskUserQuestion` 在這個 subagent 不可用，逐條問這一步要在有這個工具的 session 補做 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴).
+- 〔skill〕skill-repos 對照列出的六個候選也還沒問使用者：寫頁面當下沒有 `AskUserQuestion` 通道，挑選待補 — [subagents](docs/subagents.md).
 
 ## Waiting
 

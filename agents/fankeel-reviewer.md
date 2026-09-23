@@ -72,8 +72,8 @@ are never cuts; they belong to the parts of the brief that ask for them.
 
 When the brief asks for the security lens — verify's adversary, once, over
 the branch's whole range — read the diff for a vulnerability it adds. Four
-classes, adapted from `cloudflare/security-audit-skill`
-(`skills/security-audit/ATTACK-CLASSES.md`, MIT). One line per finding:
+classes, adapted from the `cloudflare/security-audit-skill` project's
+`ATTACK-CLASSES.md` (MIT). One line per finding:
 
 `path:line: <tag> <source> → <sink>. <the fix>.`
 
