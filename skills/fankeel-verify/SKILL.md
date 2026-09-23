@@ -223,7 +223,9 @@ It gets **paths, never a paste**, and is asked only for the rows it defeats — 
 why, because every line it returns lands here and is re-read on every later turn.
 Dispatch it as `subagent_type: fankeel:fankeel-reviewer` too — the same agent as
 build's per-task reviewer — and let its file pin the model rather than
-typing one here. When the claim under evidence is about what a page shows,
+typing one here. Its brief also asks for the `## Security` lens of its agent
+file, once, over the branch's whole range: a finding there is a defeated row
+like any other. When the claim under evidence is about what a page shows,
 dispatch `subagent_type: fankeel:fankeel-render-reviewer` beside it — its
 file pins `sonnet` — with the ask, the approved mockup's path and
 `.fankeel/render.json`; it shoots every role and page itself, and its first

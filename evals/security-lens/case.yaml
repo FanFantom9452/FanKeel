@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: security-lens
+context:
+  scaffold_script: "git init -q && printf 'const http = require(\"node:http\");\\n' > app.js && git add -A && git -c user.email=eval@fankeel -c user.name=eval commit -qm base && printf 'const { exec } = require(\"node:child_process\");\\nhttp.createServer((req, res) => {\\n  const dir = new URL(req.url, \"http://x\").searchParams.get(\"dir\");\\n  exec(\"ls \" + dir, (e, out) => res.end(out));\\n}).listen(8080);\\n' >> app.js && git add -A && git -c user.email=eval@fankeel -c user.name=eval commit -qm 'list a directory'"

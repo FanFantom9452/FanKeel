@@ -76,6 +76,25 @@ test('the reviewer carries the cut tags build and audit ask for', () => {
     assert.match(build, /Part 4 — cuts/);
 });
 
+// The security lens: four classes adapted from cloudflare/security-audit-skill,
+// defined here once and asked for by verify's adversary.
+test('the reviewer carries the security lens and verify asks for it once', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reviewer.md'), 'utf8');
+    assert.match(text, /^## Security$/m);
+    const lens = text.split('\n## Security\n')[1].split('\n## ')[0];
+    for (const tag of ['inject:', 'access:', 'file:', 'secret:']) assert.ok(lens.includes('`' + tag + '`'), 'the lens does not define ' + tag);
+    assert.match(lens, /security: <N> findings\./);
+    const verify = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-verify', 'SKILL.md'), 'utf8').replace(/\s+/g, ' ');
+    assert.match(verify, /`## Security` lens/);
+});
+
+test('the security-lens eval case parses, with a grader on the sink and one on the dispatch', () => {
+    const ev = require('../lib/eval.js');
+    const c = ev.parseCase(path.join(ROOT, 'evals', 'security-lens'));
+    assert.equal(c.name, 'security-lens');
+    assert.equal(c.graders.length, 2);
+});
+
 // The render lens moved out of the reviewer into its own agent on 2026-09-23
 // (docs/decisions/2026-09-23-render-review.md). The new agent needs Bash for
 // scripts/render.js; the reviewer no longer does, and still saying so would

@@ -4,7 +4,7 @@ description: Read-only reviewer for the plan review, build's per-task review, ve
 tools: [Read, Grep, Glob, Bash]
 model: sonnet
 status: current
-last_verified: 2026-09-23
+last_verified: 2026-09-24
 source_of_truth: lib/render.js
 ---
 
@@ -19,7 +19,8 @@ evidence table — and hold it against the claim it was supposed to prove.
 Plan's reviewer, build's per-task reviewer and verify's adversary are the
 same contract read over three shapes: a plan against its design, a diff
 against a brief, or a table against the claims it carries. Audit's code half is a fourth
-use: the whole tree, read for cuts only — `## Cuts` below. Everything you open is spent in a context
+use: the whole tree, read for cuts only — `## Cuts` below. Verify's adversary is
+also sent once with the security lens — `## Security` below. Everything you open is spent in a context
 that is thrown away; what you return lands in the parent's and stays
 there for the rest of its session, so say only what you defeat, and why.
 
@@ -66,6 +67,28 @@ the caller does not otherwise have nor put a unit test behind a process spawn �
 [docs/decisions/fankeel-shell.md](../docs/decisions/fankeel-shell.md), under
 *One caller is not evidence on its own*. Correctness, security and performance
 are never cuts; they belong to the parts of the brief that ask for them.
+
+## Security
+
+When the brief asks for the security lens — verify's adversary, once, over
+the branch's whole range — read the diff for a vulnerability it adds. Four
+classes, adapted from `cloudflare/security-audit-skill`
+(`skills/security-audit/ATTACK-CLASSES.md`, MIT). One line per finding:
+
+`path:line: <tag> <source> → <sink>. <the fix>.`
+
+| tag | the diff adds | look for |
+|---|---|---|
+| `inject:` | untrusted input reaching a dangerous sink | a shell command, SQL, HTML, a template, `eval` or `new Function`, a file path or a redirect built from a request, an argument, an environment variable or a file's contents — through keys, headers and field names as well as values |
+| `access:` | a caller doing something outside its authority | a new path to a state change that checks a weaker permission, authentication with no authorisation, a request field that overrides what the check restricted |
+| `file:` | resource and file handling | path traversal through `..`, symlinks or encoded sequences; a fetch of a caller-chosen URL; unsafe deserialisation; archive extraction; temp files; a check-then-use race |
+| `secret:` | cryptography and secrets | a secret hardcoded or written to a log, an error, a URL or a response; `Math.random` for a token or key; a secret compared in non-constant time |
+
+Trace from the source to the sink before writing the line; a sink with no
+untrusted source reaching it is not a finding. End with
+`security: <N> findings.`, or the single word `none`. A class not on this
+list is out of this lens's scope, not a finding. The lens runs on this
+file's own model, never a frontier one.
 
 ## Return
 

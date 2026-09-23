@@ -77,7 +77,6 @@ what gets scheduled.
 
 ## Needs a decision
 
-- 〔security〕reviewer／verifier 沒有資安審查：照 cloudflare/security-audit-skill 的漏洞清單用本地模型掃，避開雲端模型的安全攔截；和另一個專案 AI CODING SECURITY 一起定 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 - 〔method〕ponytail 沒收的六個候選還沒問使用者：`AskUserQuestion` 在這個 subagent 不可用，逐條問這一步要在有這個工具的 session 補做 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴).
 
 ## Waiting
@@ -183,3 +182,8 @@ lifts when: 渲染審查的 sonnet 花費成了瓶頸，或需要離線跑. 09-2
 lifts when: 使用者點頭跑一次成對量測. 09-24.
 
 - 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過；session 記錄已存 `stage.agents`（6fb1b3a），缺的是一次真實的量測 — [lib/render.js](lib/render.js).
+
+### AI CODING SECURITY 定案
+lifts when: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃描模型. 09-24.
+
+- 〔security〕reviewer 的 `## Security` lens 已落地（四類、reviewer 自己的模型）；改走本地模型、清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
