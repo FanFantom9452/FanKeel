@@ -582,3 +582,65 @@ test('a profile read that throws does not deny — the catch does not swallow a 
   seed(root, MINE, { stage: 'survey', claims: [], configDir: 123 });
   assert.equal(run(root, edit(root, path.join(root, 'notes.md'))), '');
 });
+
+// ---- the brain-dispatch matcher: no stage agent for a stage nobody handed to one -
+// 2026-09-23, design: a fankeel-brain was dispatched for a stage stage.agents
+// did not name, gate.js substituted nothing, and the user read the placeholder.
+
+const dispatch = (root, type, tool) => ({
+  session_id: MINE,
+  cwd: root,
+  tool_name: tool || 'Agent',
+  tool_input: { subagent_type: type, description: 'stage agent', prompt: 'design' },
+});
+
+test('a fankeel-brain dispatched for a stage stage.agents does not name is denied, and told to do the stage here', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'design', claims: [] });
+  agentsOn(root, 'survey,build,verify');
+  const out = run(root, dispatch(root, 'fankeel:fankeel-brain'));
+  assert.equal(decisionOf(out), 'deny');
+  assert.match(reasonOf(out), /`design` is not on stage\.agents \(survey,build,verify\)/);
+  assert.match(reasonOf(out), /Do the stage here, in this session\./);
+});
+
+test('the bare agent name and the Task tool name are read the same way', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'design', claims: [] });
+  agentsOn(root, 'survey');
+  assert.equal(decisionOf(run(root, dispatch(root, 'fankeel-brain', 'Task'))), 'deny');
+});
+
+test('with stage.agents unset, a fankeel-brain is denied', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'survey', claims: [] });
+  assert.match(reasonOf(run(root, dispatch(root, 'fankeel:fankeel-brain'))), /is not on stage\.agents \(none\)/);
+});
+
+test('a fankeel-brain for a controlled stage is let through', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'build', claims: [] });
+  agentsOn(root, 'survey,build,verify');
+  assert.equal(run(root, dispatch(root, 'fankeel:fankeel-brain')), '');
+});
+
+test('any other subagent is let through on a stage nobody controls', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'design', claims: [] });
+  agentsOn(root, 'survey');
+  assert.equal(run(root, dispatch(root, 'fankeel:fankeel-reader')), '');
+  assert.equal(run(root, dispatch(root, 'general-purpose')), '');
+});
+
+test('a profile read that throws lets the dispatch through', () => {
+  const root = tmp();
+  seed(root, MINE, { stage: 'design', claims: [], configDir: 123 });
+  assert.equal(run(root, dispatch(root, 'fankeel:fankeel-brain')), '');
+});
+
+test('the manifest sends Agent and Task calls to the guard', () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '.claude-plugin', 'plugin.json'), 'utf8'));
+  const entry = manifest.hooks.PreToolUse.find((g) => g.matcher === 'Agent|Task');
+  assert.ok(entry, 'no PreToolUse entry matches Agent|Task');
+  assert.match(entry.hooks[0].command, /hooks\/guard\.js/);
+});

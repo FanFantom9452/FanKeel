@@ -103,6 +103,17 @@
             "statusMessage": "Checking whether a read-only agent is about to write..."
           }
         ]
+      },
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guard.js\"",
+            "timeout": 5,
+            "statusMessage": "Checking whether this stage has a stage agent..."
+          }
+        ]
       }
     ],
     "SessionEnd": [

@@ -101,6 +101,32 @@ function main(raw) {
         }
     }
 
+    // A fourth matcher, `Agent|Task` — both names, because which one the host
+    // sends for the subagent tool was not verified when this was added. A
+    // `fankeel-brain` dispatched for a stage `stage.agents` does not name has no
+    // gate hooks/gate.js will substitute, so the user would be asked the
+    // controller's placeholder (2026-09-23, design). Denied before it starts.
+    // A profile that cannot be read lets the dispatch through, as above.
+    if (payload.tool_name === 'Agent' || payload.tool_name === 'Task') {
+        const type = String((payload.tool_input && payload.tool_input.subagent_type) || '').replace(/^fankeel:/, '');
+        if (type !== 'fankeel-brain') return;
+        let values;
+        try {
+            values = profileLib.profileFor(root, mine).values;
+        } catch (e) { return; }
+        if (controlling(mine.stage, values)) return;
+        const listed = Array.isArray(values['stage.agents']) && values['stage.agents'].length ? values['stage.agents'].join(',') : 'none';
+        process.stdout.write(JSON.stringify({
+            hookSpecificOutput: {
+                hookEventName: 'PreToolUse',
+                permissionDecision: 'deny',
+                permissionDecisionReason: 'fankeel: `' + (mine.stage || 'no stage') + '` is not on stage.agents (' + listed
+                    + '), so no fankeel-brain runs it and its gate would never be substituted. Do the stage here, in this session.',
+            },
+        }));
+        return;
+    }
+
     if (!guardMode(mine)) return;
 
     const file = targetOf(payload);
