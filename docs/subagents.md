@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-23
-source_of_truth: hooks/brief.js, lib/render.js, lib/stages.js, hooks/carry.js, lib/plantasks.js, lib/usage.js, lib/prices.js, scripts/judge.js
+source_of_truth: hooks/brief.js, lib/render.js, lib/stages.js, hooks/carry.js, lib/plantasks.js, lib/usage.js, lib/prices.js, scripts/judge.js, scripts/await.js, scripts/commit.js
 ---
 
 # Subagents
@@ -478,20 +478,44 @@ empty list is refused with, in the shape every other bad profile value takes
 (`lib/profile.js:94`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
-file could change (`lib/stages.js:636`, `const raw = values && values['stage.agents'];`),
+file could change (`lib/stages.js:644`, `const raw = values && values['stage.agents'];`),
 so which stages are controlled is a profile answer, not a constant. Put a
 stage on that list and it is run by a stage agent instead of by the session:
 
 | piece | where | what it does |
 |---|---|---|
-| controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` and printed by `task.js start` and `task` in place of their first step, and by `stage` after its one-line move | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns, ask (on `build`, `design` and `plan`, first relay each `commit <file>`); a return that is not a path is not relayed — the controller waits, and a finished agent whose path never arrived is asked from its handoff file; option one advances the stage, or stands the task down where the route ends |
+| controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` and printed by `task.js start` and `task` in place of their first step, and by `stage` after its one-line move | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns, ask (on `build`, `design` and `plan`, first relay each `commit <file>`); a return that is not a path is not relayed; after the dispatch, each `SendMessage` and a notification that the agent finished with no path, the controller runs `scripts/await.js` in the background and does what its one line says (below); option one advances the stage, or stands the task down where the route ends |
 | the stage agent | `agents/fankeel-brain.md` | sonnet at `effort: medium` (the controller's dispatch passes `model: opus` for `design` and `plan`); `Write` for its handoff (and, on build, design and plan, its commit file; on design and plan also one `docs/plans/` file), `Agent` for its readers and reviewers, and on build a fixer and implementers, on verify a verifier, a fixer and an implementer, on audit a fixer and an implementer, on land an implementer — which of them, and when, its stage's own rules decide |
 | its brief | `renderBrief` in `lib/render.js` | the stage's rules and shape, the skill's path, the handoff path, the gate's shape, the newest `docs/plans/` file written since the task started when no earlier stage left a report, on `verify` the `subagents/` directory, what replaces AskUserQuestion and Workflow, one Bash call for independent commands and for the lines it cites, and the output rule's word count as the file's — under Claude Code's 10,000-character cap on one `additionalContext` |
 | the handoff | `handoffPath`, `answerPath`, `readGate` and `writeAnswer` in `lib/handoff.js` | `.fankeel/build/task-<started>/<stage>.md`, ending in a `json gate` block; the answer beside it as `<stage>-answer.md` — `survey.md` and `survey-answer.md` when `survey` is the stage on the list; a stage's n-th visit (n ≥ 2, counted from the record's `moves`) is `<stage>-<n>.md`, `<stage>-<n>-answer.md` and `<stage>-<n>-commit.md`, so a return to `build` never overwrites its first lap; a renamed task keeps the directory and numbers on from the laps the old task used (`lapped` on the record, written by `task.js task`), so it never reads the old task's gate |
 | the gate | `hooks/gate.js` | replaces the controller's placeholder question with the block's, word for word — when `readGate` finds the block's shape sound: every question with `header` (12 columns at most), `question` and 2–4 `options` each carrying `label` and `description`, and option one naming the next stage (or standing down at the route's end). A block that fails is denied with the field named, and the controller sends it back to its agent |
 | the answer | `hooks/resume.js` | writes it to the answer file; the controller's `SendMessage` names the path |
 | a pause | `task.js next --from-gate` | reads the block's `next` line |
-| a commit (`build`, `design`, `plan`) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/<stage>-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back its one line, `<base>..<sha>` or `commit.js: <why>`; on build, tasks dispatched together may share one file — blocks separated by a `---` line, one `<paths>: <base>..<sha>` line back per block |
+| a commit (`build`, `design`, `plan`) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/<stage>-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back its one line, `<base>..<sha>` or `commit.js: <why>`; on build, tasks dispatched together may share one file — blocks separated by a `---` line, one `<paths>: <base>..<sha>` line back per block; once every block has landed, `commit.js` renames the file to `<stage>-commit.done.md`, so a `-commit.md` on disk is always a commit still to make |
+
+### How the controller waits
+
+A stage agent's hand-back is not guaranteed to arrive. On 2026-09-23 a
+`SendMessage` to a stopped brain showed `queued` and was lost, twice, and one
+brain's `commit` hand-back never reached its controller. So the controller
+does not wait on delivery: after it dispatches the stage agent, after every
+`SendMessage` to it, and when a notification says it finished with no path,
+it runs `node <plugin>/scripts/await.js --session <id>` with Bash
+`run_in_background` and ends its turn. The script reads the stage, the
+handoff and commit paths and the agent's id (`inflight`, written by
+`hooks/brief.js`) off the record, and exits on the first of four lines:
+`commit <file>`, a `<stage>-commit.md` newer than `--since`; `handoff <file>`,
+the report rewritten after `--since`, which defaults to the stage's answer
+file; `lost <id>`, neither, and no `agent-*.jsonl` in the session's
+`subagents/` directory has moved for two minutes; or `timeout` after thirty.
+The whole directory rather than the agent's own file, because a brain waiting
+on a child makes no tool call — 52 seconds in
+[the 2026-09-23 run](reports/2026-09-23-brain-wakeup.md). Each line says what
+to do next, so the controller's rule only says to run it: with that rule a
+controlled build block is within 40 characters of its 2400. Nothing loops: `awaitHandoff` in
+`lib/handoff.js` wakes on `fs.watch` of the handoff directory and on one timer
+set for the moment the agent would count as lost. Whether a background Bash
+exit wakes the controller the way a hand-back does has not been observed.
 
 ### What a stage agent is told to read, and what it may write
 

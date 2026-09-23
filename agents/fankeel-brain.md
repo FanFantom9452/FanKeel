@@ -71,3 +71,11 @@ returns; nothing is lost by not polling — never wait by polling with `sleep`
 or `echo waiting` in Bash, re-sending your whole context on every call.
 2026-09-23: a build agent burned 261 of 295 Bash calls on `sleep`/`echo`
 polling loops this way, each one re-sending its whole context.
+
+Your return reaches the controller only through `SubagentHandback`: the word
+`waiting` never does, and a return can still be lost on the way, so the
+controller also watches your handoff and commit files. Write the file before
+you return its path. That the wait works was measured, not assumed:
+[2026-09-23-brain-wakeup.md](../docs/reports/2026-09-23-brain-wakeup.md) —
+a subagent that ended its turn with `waiting` made no tool call for 52
+seconds and was woken within 3 seconds of its child's result.
