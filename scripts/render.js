@@ -5,6 +5,16 @@
 // everywhere else in this repository — package.json has no "dependencies".
 //
 //   node scripts/render.js <url-or-file> [--out <dir>] [--size 1600,1000]
+//   node scripts/render.js --config [<render.json>] [--out <dir>] [--size W,H]
+//   node scripts/render.js login <role> <url-or-file> [--out <dir>]
+//
+// `--config` shoots every role × page `.fankeel/render.json` declares
+// (`lib/shots.js` reads it) into `<out>/<role>/<page>.png|.html`, each role
+// with its own browser profile at `<out>/profiles/<role>`, and writes
+// `<out>/index.json` listing every cell with `ok` and, when it failed, `error`.
+// It prints the index path, and exits 1 when any cell failed. `login` opens
+// that role's profile in a window for a person to sign in once; the cookies
+// stay in the profile, under `.fankeel/build/`, which git ignores.
 //
 // Two files land in `--out` (default `.fankeel/build/render/`): `render.png`,
 // a `--headless=new` screenshot at `--size`, and `render.html`, the DOM
@@ -25,6 +35,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { pathToFileURL } = require('node:url');
 const { parseArgs: parseArgv } = require('node:util');
+const { parseTargets, cells, NAME } = require('../lib/shots.js');
 
 // `ms-playwright` names each install `chromium-<build number>`; the highest
 // number is the newest download, not necessarily the one `readdirSync`
@@ -84,6 +95,7 @@ function findBrowser() {
 const OPTIONS = {
     out: { type: 'string' },
     size: { type: 'string' },
+    config: { type: 'boolean' },
 };
 
 function parseArgs(argv) {
@@ -99,7 +111,8 @@ function parseArgs(argv) {
     return {
         out: values.out !== undefined ? values.out : null,
         size: values.size !== undefined ? values.size : '1600,1000',
-        target: positionals[0] || null,
+        config: values.config === true,
+        positionals,
     };
 }
 
@@ -108,52 +121,125 @@ function toUrl(target) {
     return pathToFileURL(path.resolve(target)).href;
 }
 
-// Runs `browser` headless with `extraArgs` appended after the two flags
-// every call shares, and exits the process the same way on failure: a
-// `render: <label> failed: ...` line on stderr, the browser's own exit
-// status (or 1 if it has none). The screenshot and dump-dom calls in
-// main() differ only in their label, their extra flags and what the
-// caller does with a successful result.
-function runHeadless(browser, label, extraArgs) {
-    const result = spawnSync(browser, ['--headless=new', '--disable-gpu', ...extraArgs], { encoding: 'utf8' });
-    if (result.status !== 0) {
-        process.stderr.write('render: ' + label + ' failed: ' + (result.stderr || result.status) + '\n');
-        process.exit(result.status || 1);
-    }
-    return result;
-}
-
-function main() {
-    const args = parseArgs(process.argv.slice(2));
-    if (!args.target) {
-        process.stderr.write('render: give a URL or a file path\n');
-        process.exit(2);
-    }
+function needBrowser() {
     const browser = findBrowser();
     if (!browser) {
         process.stderr.write('render: no Chromium-family browser found (FANKEEL_BROWSER, Edge, Chrome, or an ms-playwright cache)\n');
         process.exit(2);
     }
-    // Resolved to absolute before it ever reaches the browser: a relative
-    // `--out` handed straight to the browser's own `--screenshot=` flag can
-    // be resolved against the browser's working directory rather than this
-    // process's, so the PNG lands somewhere other than the path this tool
-    // prints — or nowhere at all.
-    const outDir = path.resolve(args.out || path.join(process.cwd(), '.fankeel', 'build', 'render'));
+    return browser;
+}
+
+// Resolved to absolute before it ever reaches the browser: a relative
+// `--out` handed straight to the browser's own `--screenshot=` flag can be
+// resolved against the browser's working directory rather than this
+// process's, so the PNG lands somewhere other than the path this tool
+// prints — or nowhere at all.
+function outDirOf(args) {
+    return path.resolve(args.out || path.join(process.cwd(), '.fankeel', 'build', 'render'));
+}
+
+// One screenshot and one DOM dump of `url`. `extra` goes in front of both
+// calls — `--user-data-dir=` for a role. A PNG left from an earlier run is
+// removed first, so "exited 0 but wrote nothing" cannot pass on a stale file.
+// Returns null, or `{ label, status, message }` for the first call that
+// failed: --config records it and goes on to the next cell, the one-page
+// mode exits on it.
+function shoot(browser, url, png, html, size, extra) {
+    fs.rmSync(png, { force: true });
+    const base = ['--headless=new', '--disable-gpu', ...extra];
+    const shot = spawnSync(browser, [...base, '--screenshot=' + png, '--window-size=' + size, url], { encoding: 'utf8' });
+    if (shot.status !== 0) return { label: 'screenshot', status: shot.status || 1, message: shot.stderr || String(shot.status) };
+    if (!fs.existsSync(png)) return { label: 'screenshot', status: 1, message: 'exited 0 but did not write ' + png };
+    const dump = spawnSync(browser, [...base, '--dump-dom', url], { encoding: 'utf8' });
+    if (dump.status !== 0) return { label: 'dump-dom', status: dump.status || 1, message: dump.stderr || String(dump.status) };
+    fs.writeFileSync(html, dump.stdout);
+    return null;
+}
+
+// Width and height out of a PNG's IHDR chunk (bytes 16-23, big-endian), so
+// index.json can say what size each shot actually came out at — the render
+// reviewer holds that against `size` rather than trusting the flag was obeyed.
+function pngSize(file) {
+    const head = Buffer.alloc(24);
+    const fd = fs.openSync(file, 'r');
+    try {
+        fs.readSync(fd, head, 0, 24, 0);
+    } finally {
+        fs.closeSync(fd);
+    }
+    return { width: head.readUInt32BE(16), height: head.readUInt32BE(20) };
+}
+
+// The config is read before a browser is looked for, so a bad render.json
+// fails the same way on a machine with no browser at all.
+function runConfig(args) {
+    const file = path.resolve(args.positionals[0] || path.join('.fankeel', 'render.json'));
+    let targets;
+    try {
+        targets = parseTargets(fs.readFileSync(file, 'utf8'));
+    } catch (e) {
+        process.stderr.write('render: ' + (e.code === 'ENOENT' ? 'no ' + file : e.message) + '\n');
+        process.exit(2);
+    }
+    const browser = needBrowser();
+    const outDir = outDirOf(args);
+    const rows = [];
+    for (const c of cells(targets, path.dirname(file))) {
+        const dir = path.join(outDir, c.role);
+        fs.mkdirSync(dir, { recursive: true });
+        const png = path.join(dir, c.page + '.png');
+        const html = path.join(dir, c.page + '.html');
+        const err = shoot(browser, toUrl(c.url), png, html, args.size, ['--user-data-dir=' + path.join(outDir, 'profiles', c.role)]);
+        const row = { role: c.role, page: c.page, url: c.url, png, html, ok: !err };
+        if (err) row.error = err.label + ': ' + String(err.message).trim();
+        else Object.assign(row, pngSize(png));
+        rows.push(row);
+    }
+    const index = path.join(outDir, 'index.json');
+    fs.writeFileSync(index, JSON.stringify({ config: file, size: args.size, cells: rows }, null, 2) + '\n');
+    process.stdout.write(index + '\n');
+    if (rows.some((r) => !r.ok)) process.exit(1);
+}
+
+// A window, not headless: a person signs in, then closes it. The browser
+// runs in the foreground with this role's own profile directory, so it is a
+// separate instance from any browser already open, and this call returns
+// when that window closes.
+function runLogin(args) {
+    const role = args.positionals[1];
+    const target = args.positionals[2];
+    if (!role || !NAME.test(role) || role === 'profiles' || !target) {
+        process.stderr.write('render: login needs <role> <url-or-file>\n');
+        process.exit(2);
+    }
+    const browser = needBrowser();
+    const dir = path.join(outDirOf(args), 'profiles', role);
+    fs.mkdirSync(dir, { recursive: true });
+    process.stdout.write('render: sign in as ' + role + ' in the window that opened, then close it — the profile is ' + dir + '\n');
+    const r = spawnSync(browser, ['--user-data-dir=' + dir, '--no-first-run', '--new-window', toUrl(target)], { stdio: 'inherit' });
+    process.exit(r.status || 0);
+}
+
+function main() {
+    const args = parseArgs(process.argv.slice(2));
+    if (args.positionals[0] === 'login') return runLogin(args);
+    if (args.config) return runConfig(args);
+    const target = args.positionals[0];
+    if (!target) {
+        process.stderr.write('render: give a URL or a file path\n');
+        process.exit(2);
+    }
+    const browser = needBrowser();
+    const outDir = outDirOf(args);
     fs.mkdirSync(outDir, { recursive: true });
     const png = path.join(outDir, 'render.png');
     const html = path.join(outDir, 'render.html');
-    const url = toUrl(args.target);
-
-    runHeadless(browser, 'screenshot', ['--screenshot=' + png, '--window-size=' + args.size, url]);
-    if (!fs.existsSync(png)) {
-        process.stderr.write('render: screenshot exited 0 but did not write ' + png + '\n');
-        process.exit(1);
+    const err = shoot(browser, toUrl(target), png, html, args.size, []);
+    if (err) {
+        process.stderr.write('render: ' + err.label + ' failed: ' + err.message + '\n');
+        process.exit(err.status);
     }
-
-    const dump = runHeadless(browser, 'dump-dom', ['--dump-dom', url]);
-    fs.writeFileSync(html, dump.stdout);
-
     process.stdout.write(png + '\n');
     process.stdout.write(html + '\n');
 }
