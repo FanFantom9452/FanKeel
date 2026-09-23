@@ -421,9 +421,9 @@ function report(result, terms, opts) {
     }
     if (skips.length) note.push('skipped: ' + skips.join(', '));
     if (excluded && excluded.count) {
-        const roles = excluded.roles || {};
+        const roles = excluded.roles;
         const parts = EXCLUDED_ROLES.filter((r) => roles[r]).map((r) => roles[r] + ' ' + r + (roles[r] === 1 ? ' file' : ' files'));
-        note.push('excluded: ' + (parts.length ? parts.join(', ') : excluded.count + ' files') + ' under ' + excluded.buckets.join(', ')
+        note.push('excluded: ' + parts.join(', ') + ' under ' + excluded.buckets.join(', ')
             + ' — pass --include-role <role,...> to include');
     }
 
