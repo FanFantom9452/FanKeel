@@ -78,7 +78,7 @@ what gets scheduled.
 ## Needs a decision
 
 - 〔security〕reviewer／verifier 沒有資安審查：照 cloudflare/security-audit-skill 的漏洞清單用本地模型掃，避開雲端模型的安全攔截；和另一個專案 AI CODING SECURITY 一起定 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
-- 〔method〕深度分析 ponytail：09-12 只收了三項（reviewer 的 `## Cuts`、audit 三個 lens、design 的 ladder），其餘做法還有什麼值得收 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴).
+- 〔method〕ponytail 沒收的六個候選還沒問使用者：`AskUserQuestion` 在這個 subagent 不可用，逐條問這一步要在有這個工具的 session 補做 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴).
 
 ## Waiting
 
