@@ -72,6 +72,14 @@ true"; a whitespace fix does the first and proves nothing.
 A landed plan leaves a decision record behind — what was decided and why — and is
 then archived — with no question when the profile's `land.archivePlan` is true,
 **after asking** when it is not. An unarchived plan gets read as current.
+Archive with the script, the plan and its design together:
+
+node <plugin>/scripts/archive.js docs/plans/<plan>.md docs/plans/<plan>-design.md
+
+It moves each into the `archive` bucket and turns `status: design-intent` into
+`status: current` in the same staged change: the page now describes what
+shipped, and `docs-audit` never reads an archived page again. Its row in the
+docs index changes from *design-intent* to *built* by hand.
 
 ## 2a. The release number, when the work is one
 
