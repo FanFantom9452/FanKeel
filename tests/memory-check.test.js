@@ -35,6 +35,15 @@ test('projectSlug replaces :, \\ and / each with -', () => {
   assert.equal(projectSlug('F:\\ymlab\\fankeel'), 'F--ymlab-fankeel');
 });
 
+// Claude Code's own directory names, read off ~/.claude/projects on
+// 2026-09-24: `F--ymlab-EMU3000-Web`, `F--ymlab-fankeel--claude-worktrees-...`.
+// Every character that is not a letter or a digit becomes `-`, not only the
+// three path separators.
+test('projectSlug turns every character that is not a letter or digit into -', () => {
+  assert.equal(projectSlug('F:\\ymlab\\EMU3000_Web'), 'F--ymlab-EMU3000-Web');
+  assert.equal(projectSlug('F:\\ymlab\\fankeel\\.claude\\worktrees\\x'), 'F--ymlab-fankeel--claude-worktrees-x');
+});
+
 test('memoryDir composes configDir/projects/<slug>/memory', () => {
   const configDir = tmpConfig();
   const root = 'F:\\ymlab\\fankeel';

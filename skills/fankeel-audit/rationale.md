@@ -16,7 +16,7 @@ contradict each other, and nothing here pretends to: what the sweep does is turn
 the same source file, and one has not been touched since before it changed".
 That is a shortlist someone can finish.
 
-## Run all four
+## Run all five
 
 That fortnight is the **drift** window, and drift's alone — it measures how long
 a page has been wrong while the code it names moved on. The landed-plan check

@@ -34,12 +34,11 @@ const { LINK, CODE, PATHISH, resolveRef, external } = require('./docs-check.js')
 
 const MAX_FINDINGS = 200;
 
-// `F:\ymlab\fankeel` -> `F--ymlab-fankeel`. The three characters a Windows or
-// POSIX path can carry that a directory name cannot, each turned into the one
-// character every path already avoids — Claude Code's own scheme, read off a
-// real memory directory rather than guessed at.
+// `F:\ymlab\EMU3000_Web` -> `F--ymlab-EMU3000-Web`. Every character that is
+// not a letter or a digit becomes `-` — Claude Code's own scheme, read off
+// ~/.claude/projects on 2026-09-24, where `_` and `.` are replaced too.
 function projectSlug(root) {
-    return path.resolve(root).replace(/[:\\/]/g, '-');
+    return path.resolve(root).replace(/[^A-Za-z0-9]/g, '-');
 }
 
 function memoryDir(configDir, root) {

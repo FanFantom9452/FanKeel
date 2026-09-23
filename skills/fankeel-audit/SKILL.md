@@ -50,13 +50,14 @@ same logic in the shape the other six skills carry.
 
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
 
-## Run all four
+## Run all five
 
 ```
 node <plugin>/scripts/docs-check.js [--root <dir>]
 node <plugin>/scripts/residue.js [--root <dir>]
 node <plugin>/scripts/docs-audit.js [--root <dir>] [--since <days>]
 node <plugin>/scripts/memory-check.js [--root <dir>] [--config-dir <dir>]
+node <plugin>/scripts/input-check.js [--root <dir>] [--config-dir <dir>]
 ```
 
 `--root` picks one project out of a workspace holding several. `--since`
@@ -116,6 +117,16 @@ A memory entry `memory-check` finds wrong is corrected by adding a
 rewrite — `workflow-run-meta-json.md`'s own corrected line is the working
 example. Deletion is the user's call: remove only the entry the user points
 at from the findings, never one inferred from a scanner alone.
+
+### What every session loads
+
+`input-check.js` lists every file loaded into every session's input — the
+global `CLAUDE.md` under the config directory, each `CLAUDE.md` above the root,
+each project's `CLAUDE.md` and each project's `MEMORY.md` — largest first, with
+bytes and an estimated token count, then per file the trim candidates: an entry
+said twice, a link to a file that is gone, a section over 4,000 bytes. It never
+fails the run and never edits: offer the trim at the gate, and change a file in
+another repository only in a task on that repository.
 
 ## What the sweep reports
 
