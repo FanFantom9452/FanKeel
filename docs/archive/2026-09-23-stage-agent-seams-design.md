@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # Stage agent 交接六接縫 — design
