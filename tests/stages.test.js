@@ -874,7 +874,7 @@ test('every rule reaches the injected block, and removing one drops only it', ()
 test('controlFor fills every token it is given, and only survey has one', () => {
   const { controlFor, controlling } = require('../lib/stages.js');
   const values = { 'stage.agents': ['survey'] };
-  const c = controlFor('survey', values, { advance: 'stage design', task: '<plugin>/scripts/task.js', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
+  const c = controlFor('survey', values, { advance: 'stage design', task: '<plugin>/scripts/task.js', await: '<plugin>/scripts/await.js', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
   assert.ok(c.rules.length > 0);
   assert.ok(!c.rules.join(' ').includes('{{'), c.rules.join('\n'));
   assert.ok(c.rules.join(' ').includes('fankeel:fankeel-brain'));
@@ -888,12 +888,30 @@ test('controlFor fills every token it is given, and only survey has one', () => 
   assert.equal(controlling('design', { 'stage.agents': true }), false);
 });
 
-test('the controller waits out a return that is not a path, and reads the handoff when none arrives', () => {
+test('the controller waits out a return that is not a path, and sends a finished agent with no path to the await', () => {
   const { controlFor } = require('../lib/stages.js');
-  const c = controlFor('survey', { 'stage.agents': ['survey'] }, { advance: 'stage design', task: 't', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
+  const c = controlFor('survey', { 'stage.agents': ['survey'] }, { advance: 'stage design', task: 't', await: 'w', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
   const text = c.rules.join('\n');
   assert.match(text, /not a path or `commit <path>` is not its report: relay nothing and wait/);
-  assert.match(text, /finished with no path in hand: if \/r\/h\.md exists, ask the same way/);
+  assert.doesNotMatch(text, /if \/r\/h\.md exists, ask the same way/);
+  assert.match(text, /a notification that it finished with no path in hand, run `node w --session sid`/);
+});
+
+// docs/plans/2026-09-23-controller-await-design.md §1: every controlled stage,
+// committing or not, backgrounds the await after the dispatch and each
+// SendMessage. The token is a script path like `{{COMMIT}}`, so lib/render.js
+// fills it from SCRIPTS; what to do on each result rides the await's own line.
+test('every controlled stage runs the await in the background after each dispatch and SendMessage', () => {
+  const { controlFor, SCRIPT_TOKENS } = require('../lib/stages.js');
+  assert.equal(SCRIPT_TOKENS.await, '{{AWAIT}}');
+  const all = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
+  for (const stage of all) {
+    const rules = controlFor(stage, { 'stage.agents': all }, { await: '<plugin>/scripts/await.js', session: 'sid' }).rules;
+    const rule = rules.find((r) => r.startsWith('After the dispatch, each SendMessage to it'));
+    assert.ok(rule, stage + ': no await rule');
+    assert.ok(rule.includes('run `node <plugin>/scripts/await.js --session sid` with Bash `run_in_background` and end your turn; never poll.'), stage + ': ' + rule);
+    assert.ok(rules.indexOf(rule) > rules.findIndex((r) => r.startsWith('Dispatch one Agent')), stage + ': the await rule comes after the dispatch');
+  }
 });
 
 // The row this task adds: the controlled set is `stage.agents`'s own array,
