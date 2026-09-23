@@ -517,6 +517,19 @@ controlled build block is within 40 characters of its 2400. Nothing loops: `awai
 set for the moment the agent would count as lost. Whether a background Bash
 exit wakes the controller the way a hand-back does has not been observed.
 
+The unit tests above were all this had until the first live run: on `build`
+the brain wrote every commit file to `.fankeel/build/<plan file's basename>/`
+— the directory `lib/ledger.js`'s `ledgerPath` already keys `progress.md` and
+every task brief under, and the one its own skill points it at all through
+the task loop — instead of the exact `commitPath()` path its brief named,
+three real commits in a row, and `commit` never fired once; the only wake was
+`handoff` when `build.md` was written at the very end
+([the 2026-09-23 run](reports/2026-09-23-brain-wakeup.md)). `commit` in
+`awaitState`/`awaitHandoff` now takes either a bare path or a list of
+candidates, and on `build` `await.js` watches both `commitPath()` and
+`ledgerCommitPath()` (the same plan-stem directory) at once — whichever one a
+stage agent actually writes to still wakes the controller.
+
 ### What a stage agent is told to read, and what it may write
 
 `renderBrainBrief` prints a `read first:` rule: the newest earlier stage's report

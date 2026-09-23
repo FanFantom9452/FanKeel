@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const tmp = require('./tmp.js');
-const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff } = require('../lib/handoff.js');
+const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff, ledgerCommitPath, newestCommit } = require('../lib/handoff.js');
 
 const DATA = { started: '2026-09-19T09:30:12.345Z' };
 const TICKS = '`'.repeat(3);
@@ -110,6 +110,29 @@ test('the answer is written where answerPath says, directories made', () => {
   const file = answerPath(tmp('fankeel-handoff-'), DATA, 'survey');
   writeAnswer(file, 'Other: read lib/ first');
   assert.equal(fs.readFileSync(file, 'utf8'), 'Other: read lib/ first');
+});
+
+test("ledgerCommitPath mirrors the plan-stem dir lib/ledger.js's ledgerPath uses, for a stage agent that writes commits there instead", () => {
+  assert.equal(ledgerCommitPath('/r', 'docs/plans/2026-09-23-controller-await.md', 'build'), '/r/.fankeel/build/2026-09-23-controller-await/build-commit.md');
+  assert.equal(ledgerCommitPath('/r', null, 'build'), null);
+  assert.equal(ledgerCommitPath('/r', 'docs/plans/x.md', null), null);
+  assert.equal(ledgerCommitPath(null, 'docs/plans/x.md', 'build'), null);
+});
+
+test('newestCommit accepts a bare path or a list, and answers the newest one after since', () => {
+  const dir = tmp('fankeel-handoff-');
+  const a = path.join(dir, 'a-commit.md');
+  const b = path.join(dir, 'b-commit.md');
+  fs.writeFileSync(a, 'x');
+  fs.utimesSync(a, 1000, 1000);
+  assert.equal(newestCommit(a, 0), a);
+  assert.equal(newestCommit(a, 2000000), null, 'older than since is not news');
+  assert.equal(newestCommit([a, b], 0), a, 'b does not exist yet');
+  fs.writeFileSync(b, 'x');
+  fs.utimesSync(b, 2000, 2000);
+  assert.equal(newestCommit([a, b], 0), b, 'the newer of the two candidates');
+  assert.equal(newestCommit(null, 0), null);
+  assert.equal(newestCommit([], 0), null);
 });
 
 test('a stage keeps its file names on the first visit and numbers each return', () => {

@@ -107,6 +107,21 @@ test('await.js prints the line for each state, reading paths and the agent off t
     assert.equal(lost.text, 'lost a3f9c2 — the stage agent stopped with neither file written: dispatch a fresh one with the same line.');
 });
 
+// 2026-09-23: the build stage's own brain wrote every commit file to the
+// plan-stem ledger directory (`.fankeel/build/<plan file>/`, the directory
+// `lib/ledger.js`'s `ledgerPath` uses for `progress.md`) instead of the exact
+// path its brief named (`commitPath()`'s task-stamp directory). Three real
+// commits landed there in a row and `commit` never fired once, only `handoff`
+// at the very end. docs/reports/2026-09-23-brain-wakeup.md.
+test('await.js finds a commit file the stage agent wrote to the ledger directory instead of commitPath()', async () => {
+    const f = fixture({});
+    at(path.join(f.root, 'docs', 'plans', '2026-09-23-controller-await.md'), Date.parse('2026-09-23T10:05:00.000Z'));
+    const ledgerCommit = path.join(f.root, '.fankeel', 'build', '2026-09-23-controller-await', 'build-commit.md').split(path.sep).join('/');
+    at(ledgerCommit, Date.now());
+    const commit = await awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '0.5'], f.env);
+    assert.ok(commit.text.startsWith('commit ' + ledgerCommit + ' — run'), commit.text);
+});
+
 test('await.js refuses a missing session and bad arguments, from the command line too', async () => {
     const f = fixture({});
     const none = await awaitCli.main(['--session', 'bbbbbbbb-0000-4000-8000-000000000002', '--root', f.root], f.env);

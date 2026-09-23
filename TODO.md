@@ -88,6 +88,7 @@ what gets scheduled.
 - 〔stage-agents〕受控站裡主控自己問的中途題，答案被寫進 `<stage>-answer.md`，看起來像 gate 答案：`hooks/resume.js` 要不要只收 gate 替換過的題 — [hooks/resume.js](hooks/resume.js).
 - 〔stage-agents〕09-23 build 的 gate 沒被替換，使用者只看到佔位題，原因未查：舊 process 的 hook，或 `hooks/gate.js` 的條件 — [hooks/gate.js](hooks/gate.js).
 - 〔stage-agents〕受控 build／verify 還有十來個接縫沒實跑過：stage agent 沒有 AskUserQuestion／Edit、插話會起第二個、profile 中途翻轉 — [docs/subagents.md](docs/subagents.md).
+- 〔stage-agents〕09-23 verify 退回 build 的 gate，option one 不是路由下一站，被 `readGate` 判 label 無效：要不要讓 `next` 也能表達「退回 <stage>」 — [lib/handoff.js](lib/handoff.js).
 
 ## Waiting
 

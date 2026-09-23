@@ -19,7 +19,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const registry = require('../lib/registry.js');
-const { handoffPath, commitPath, answerPath, awaitHandoff } = require('../lib/handoff.js');
+const { handoffPath, commitPath, ledgerCommitPath, answerPath, awaitHandoff, newestCommit } = require('../lib/handoff.js');
+const { newestPlan } = require('../lib/render.js');
 const { transcriptOf } = require('../lib/detail.js');
 const { sessionDirOf, agentFiles } = require('../lib/usage.js');
 const { configDirOf } = require('../lib/profile.js');
@@ -46,6 +47,22 @@ function parseArgs(argv) {
     return opts.session ? opts : null;
 }
 
+// The commit file candidates: `commitPath()`, the exact path a stage agent's
+// brief names, and — on `build` only — the plan-stem ledger directory
+// `lib/ledger.js` already uses for `progress.md` and every task brief, which is
+// where a stage agent writes out of habit when it does not follow the exact
+// path. Both are watched; whichever lands first is the commit found.
+// docs/reports/2026-09-23-brain-wakeup.md.
+function commitCandidates(root, data) {
+    const candidates = [commitPath(root, data, data.stage)];
+    if (data.stage === 'build') {
+        const plan = newestPlan(root, data.started);
+        const ledger = ledgerCommitPath(root, plan, data.stage);
+        if (ledger) candidates.push(ledger);
+    }
+    return candidates.filter(Boolean);
+}
+
 // What `awaitHandoff` is given, from the record. The agent counts as lost only
 // when its own transcript exists: an agent nobody can find is never judged.
 function waitFor(opts, env) {
@@ -66,14 +83,16 @@ function waitFor(opts, env) {
         const own = path.join(dir, 'subagents', 'agent-' + agentId + '.jsonl');
         activity = () => (fs.existsSync(own) ? agentFiles(dir) : []);
     }
-    return { handoff, commit: commitPath(root, data, data.stage), since, agentId, activity, idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000 };
+    return { handoff, commit: commitCandidates(root, data), since, agentId, activity, idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000 };
 }
 
 // The word first, so the controller's rule can name it; then what to do, so
 // the rule does not have to carry every case under the injection's cap.
-function lineFor(state, o) {
+// `commitFile` is the candidate that actually matched — `o.commit` may be
+// several paths, and only one of them was written.
+function lineFor(state, o, commitFile) {
     if (state === 'handoff') return 'handoff ' + o.handoff + ' — print this path and ask its gate as your rules say, unless you already asked it and the file has not changed since.';
-    if (state === 'commit') return 'commit ' + o.commit + ' — run `node ' + COMMIT_SCRIPT + ' "' + o.commit + '"` and SendMessage the agent what it printed, exactly. After a `commit.js:` line, run await again with `--since "' + o.commit + '"` added.';
+    if (state === 'commit') return 'commit ' + commitFile + ' — run `node ' + COMMIT_SCRIPT + ' "' + commitFile + '"` and SendMessage the agent what it printed, exactly. After a `commit.js:` line, run await again with `--since "' + commitFile + '"` added.';
     if (state === 'lost') return 'lost ' + o.agentId + ' — the stage agent stopped with neither file written: dispatch a fresh one with the same line.';
     return 'timeout — nothing moved in ' + Math.round(o.timeoutMs / 60000) + ' minutes: run await again.';
 }
@@ -83,7 +102,7 @@ function main(argv, env) {
     if (!opts) return Promise.resolve({ text: USAGE, code: 2 });
     const o = waitFor(opts, env || process.env);
     if (o.error) return Promise.resolve({ text: 'await.js: ' + o.error, code: 1 });
-    return awaitHandoff(o).then((state) => ({ text: lineFor(state, o) }));
+    return awaitHandoff(o).then((state) => ({ text: lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null) }));
 }
 
 if (require.main === module) {
