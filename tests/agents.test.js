@@ -132,3 +132,9 @@ test('the stage agent may read with sed in Bash', () => {
     const tools = text.split('\n## Tools\n')[1].split('\n## ')[0];
     assert.match(tools, /`sed -n`/);
 });
+
+test('the stage agent returns once, after every agent it dispatched has come back', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8');
+    const ret = text.split('\n## Return\n')[1];
+    assert.match(ret, /never while an agent you dispatched is still running/);
+});

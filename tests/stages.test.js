@@ -888,6 +888,14 @@ test('controlFor fills every token it is given, and only survey has one', () => 
   assert.equal(controlling('design', { 'stage.agents': true }), false);
 });
 
+test('the controller waits out a return that is not a path, and reads the handoff when none arrives', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const c = controlFor('survey', { 'stage.agents': ['survey'] }, { advance: 'stage design', task: 't', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
+  const text = c.rules.join('\n');
+  assert.match(text, /not a path or `commit <path>` is not its report: relay nothing and wait/);
+  assert.match(text, /finished with no path in hand: if \/r\/h\.md exists, ask the same way/);
+});
+
 // The row this task adds: the controlled set is `stage.agents`'s own array,
 // not a constant only this file could change, and `controlFor` reads it the
 // same way `controlling` does.

@@ -63,3 +63,9 @@ The handoff path, and nothing else; on a build stage, when its brief says so,
 `commit <path>` for a task to commit; on a design or plan stage, `commit <path>` for its file. When you are sent a message that the
 user's answer is in a file, read it, rewrite the report and its gate, and
 return the path again.
+
+Return once, when the stage is done or blocked — never while an agent you dispatched is still running.
+Wait for every one to come back first: a return saying you are waiting ends
+your turn, and your controller takes it for your report. 2026-09-23: a survey
+returned "four reader dispatches in flight", and its real report never
+reached the controller.
