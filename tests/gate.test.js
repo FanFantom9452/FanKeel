@@ -230,3 +230,29 @@ test('a brain dispatched for a stage stage.agents does not name: the gate hook s
   const out = JSON.parse(run(GATE, root, { tool_input: PLACEHOLDER }));
   assert.match(out.systemMessage, /dispatched for `design`, but stage\.agents \(survey,build,verify\) does not name `design`/);
 });
+
+function verifyGate(root, label) {
+  const file = path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'verify.md');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const questions = [{ question: 'verify 抓到兩條，怎麼辦？', header: 'verify', multiSelect: false, options: [{ label, description: 'a' }, { label: '暫停', description: 'b' }] }];
+  fs.writeFileSync(file, '# report\n\n' + '`'.repeat(3) + 'json gate\n' + JSON.stringify({ questions, next: 'n' }) + '\n' + '`'.repeat(3) + '\n');
+  return questions;
+}
+
+test('verify sending the work back to build on its own route is asked, not denied', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'verify', route: ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'], started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'all' }));
+  const questions = verifyGate(root, '退回 build');
+  const out = JSON.parse(run(GATE, root, { tool_input: PLACEHOLDER }));
+  assert.deepEqual(out.hookSpecificOutput.updatedInput.questions, questions);
+});
+
+test('a stage the route does not have is still denied', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'verify', route: ['build', 'verify', 'audit'], started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'all' }));
+  verifyGate(root, '退回 design');
+  const out = JSON.parse(run(GATE, root, { tool_input: PLACEHOLDER }));
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
+});

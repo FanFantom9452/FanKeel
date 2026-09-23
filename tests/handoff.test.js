@@ -120,6 +120,18 @@ test('option one names the next stage when one is given, or standing down at the
   assert.equal(readGate(file, null).invalid, 'questions[0].options[0].label');
 });
 
+// 2026-09-23: verify's gate offered "退回 build" as option one and readGate
+// refused it, because only the forward stage counted.
+test('option one may send the work back to any stage on the route, never one off it', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'verify.md');
+  const g = gateOf('v');
+  g.questions[0].options[0].label = '退回 build';
+  fs.writeFileSync(file, block(g));
+  assert.deepEqual(readGate(file, 'audit', ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land']), g);
+  assert.equal(readGate(file, 'audit', ['survey', 'verify', 'audit']).invalid, 'questions[0].options[0].label');
+  assert.equal(readGate(file, 'audit').invalid, 'questions[0].options[0].label');
+});
+
 test('the answer is written where answerPath says, directories made', () => {
   const file = answerPath(tmp('fankeel-handoff-'), DATA, 'survey');
   writeAnswer(file, 'Other: read lib/ first');

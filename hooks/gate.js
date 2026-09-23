@@ -23,7 +23,7 @@
 const registry = require('../lib/registry.js');
 const docs = require('../lib/docs.js');
 const profileLib = require('../lib/profile.js');
-const { controlling, nextStage } = require('../lib/stages.js');
+const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
 const { handoffPath, readGate, skipReason } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 
@@ -56,7 +56,7 @@ function main(raw) {
         const values = profileLib.read(projectRoot, mine.configDir || profileLib.configDirOf()).values;
         const controlled = controlling(mine.stage, values);
         const file = handoffPath(root, mine, mine.stage);
-        if (controlled) gate = readGate(file, nextStage(mine.stage, mine.route));
+        if (controlled) gate = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE);
         if (!gate) skip = skipReason({ stage: mine.stage, controlled, agents: agentsText(values), inflight: mine.inflight, handoff: file });
     } catch (e) { /* housekeeping */ }
     // Silent before 2026-09-24, so a gate that was never substituted left no
@@ -78,7 +78,7 @@ function main(raw) {
                 permissionDecisionReason: 'fankeel: the gate in ' + handoffPath(root, mine, mine.stage)
                     + ' cannot be asked — `' + gate.invalid + '`: ' + gate.detail + '. SendMessage the stage agent to'
                     + ' rewrite the gate block at the end of that file so `' + gate.invalid + '` holds (option one names'
-                    + ' the next stage), then ask again when it returns the path. Do not write the question yourself.',
+                    + ' the next stage, or a stage on this route to send the work back to), then ask again when it returns the path. Do not write the question yourself.',
             },
         }));
         return;
