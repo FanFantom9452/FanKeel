@@ -66,7 +66,8 @@ test('docs-audit names nothing about the page once it is archived', () => {
 test('a page already archived, or not there, is refused and nothing moves', () => {
     const root = repo();
     assert.match(archive(root, 'docs/plans/nope.md', 'docs/archive').error, /is not there/);
-    const r = main(['--root', root, 'docs/plans/nope.md', 'docs/plans/2026-09-24-x.md']);
+    const r = main(['--root', root, 'docs/plans/2026-09-24-x.md', 'docs/plans/nope.md']);
     assert.equal(r.code, 1);
     assert.ok(fs.existsSync(path.join(root, 'docs', 'plans', '2026-09-24-x.md')), 'a refused batch moved one page anyway');
+    assert.equal(fs.existsSync(path.join(root, 'docs', 'archive', '2026-09-24-x.md')), false, 'the good page moved before the bad one was hit');
 });
