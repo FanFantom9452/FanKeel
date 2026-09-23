@@ -33,8 +33,7 @@ test('an edit inside the block is ok, even when the block nests its own tag', ()
 test('an edit to a sibling block names that block', () => {
     const after = PAGE.replace('<p>design</p>', '<p>build</p>');
     const got = outside(PAGE, after, 'now');
-    assert.equal(got.ok, false);
-    assert.ok(got.touched.includes('sessions'), JSON.stringify(got));
+    assert.deepEqual(got, { ok: false, touched: ['sessions'] });
 });
 
 test('an edit in markup no inner block owns names the block around it', () => {
@@ -70,16 +69,9 @@ function startServer(t, cwd) {
     });
 }
 
-function request(url, method, body) {
-    return new Promise((resolve, reject) => {
-        const req = http.request(url, { method, headers: { 'content-type': 'application/json' } }, (res) => {
-            let text = '';
-            res.on('data', (d) => { text += d; });
-            res.on('end', () => resolve({ status: res.statusCode, text }));
-        });
-        req.on('error', reject);
-        req.end(body ? JSON.stringify(body) : undefined);
-    });
+async function request(url, method, body) {
+    const res = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    return { status: res.status, text: await res.text() };
 }
 
 test('serve injects without touching the file; request, wait and done round-trip; a stray edit is put back', async (t) => {

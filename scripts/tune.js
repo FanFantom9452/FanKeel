@@ -162,12 +162,7 @@ function notify(event, then) {
     } catch (e) {
         return then();
     }
-    const req = http.request({ host: '127.0.0.1', port, path: '/__live/result', method: 'POST', headers: { 'content-type': 'application/json' } }, (res) => {
-        res.resume();
-        res.on('end', then);
-    });
-    req.on('error', () => then());
-    return req.end(JSON.stringify(event));
+    fetch('http://127.0.0.1:' + port + '/__live/result', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(event) }).then(() => then(), () => then());
 }
 
 function done(id) {
