@@ -41,6 +41,21 @@ const MAX_FILE_BYTES = 512 * 1024;
 // plans, decisions and reports 4.9% together. Each comes back by name.
 const EXCLUDED_ROLES = ['archive', 'plan', 'decision', 'report'];
 
+// The printed report's own ceiling. On 2026-09-23, 6 of 44 runs went past
+// it, and every character printed stays in the context of whoever ran it.
+// `--all` lifts it with the per-section cap.
+const MAX_OUTPUT_CHARS = 8000;
+
+function capOutput(text, limit) {
+    if (text.length <= limit) return text;
+    const cut = text.slice(0, limit);
+    const at = cut.lastIndexOf('\n');
+    const kept = at > 0 ? cut.slice(0, at) : cut;
+    const n = (v) => v.toLocaleString('en-US');
+    return kept + '\n\n... output cut at ' + n(kept.length) + ' of ' + n(text.length) + ' characters.'
+        + ' Narrow it: --root <subdirectory>, or a more specific term; --all prints it whole.';
+}
+
 // One pattern per language, capturing the declared name. Deliberately shallow:
 // the point is to notice that something with that name exists, not to parse the
 // language. A missed declaration costs one line of a report; a parser costs a
@@ -532,11 +547,12 @@ function parseArgs(argv) {
 
 function main(argv) {
     const { root, terms, max, tree, archive, include } = parseArgs(argv);
-    return report(scan(root, terms, { archive, include }), terms, { max, tree, root });
+    const text = report(scan(root, terms, { archive, include }), terms, { max, tree, root });
+    return max === Infinity ? text : capOutput(text, MAX_OUTPUT_CHARS);
 }
 
 if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
 
-module.exports = { scan, report, parseArgs, trackedFiles, isSubtree, treeLines };
+module.exports = { scan, report, parseArgs, trackedFiles, isSubtree, treeLines, capOutput };

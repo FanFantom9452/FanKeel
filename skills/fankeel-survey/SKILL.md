@@ -128,6 +128,12 @@ round and acted on in the next has spent a round on nothing, which is the waste
 one `fankeel-reader`, the model the profile's `dispatch.floor` — as they go
 out: that is a report, not a request, and nothing waits on it.
 
+**A reader greps before it reads.** Each `fankeel-reader` brief says so: grep
+the term first, read only the matched range — `Read` with an `offset` and a
+`limit` — and open a whole file only when grep cannot place the answer in it.
+On 2026-09-23, 74 surveys spent 33% of their reads on whole files and read one
+file again 104 times.
+
 ```
 node <plugin>/scripts/survey.js [--root <dir>] <term>...
 ```
@@ -164,6 +170,8 @@ node <plugin>/scripts/survey.js --include-role archive,plan <term>...  # those r
 ```
 
 The default scan leaves out every file whose role is `archive`, `plan`, `decision` or `report` and says how many of each on its `excluded:` line — pages that record a moment rather than the present. `--include-role <role,...>` puts back the ones it names; `--archive` is the older spelling of `--include-role archive`.
+
+The whole report stops at 8,000 characters, cut at a line, and says how to narrow it; `--all` lifts that too.
 
 A section overflowing by five filenames is not wide reading; dispatching there
 delegates what a flag already removes.

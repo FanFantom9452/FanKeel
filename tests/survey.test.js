@@ -965,3 +965,22 @@ test('the excluded count is what the scan actually dropped', () => {
   assert.equal(all.files.length - some.files.length, some.excluded.count);
   assert.match(survey.report(some, [], {}), new RegExp('excluded: ' + some.excluded.count + ' archive files under docs/archive'));
 });
+
+// 2026-09-23: 6 of 44 survey.js runs printed more than 8,000 characters.
+test('capOutput leaves a short report alone and cuts a long one at a line', () => {
+  assert.equal(survey.capOutput('a\nb', 10), 'a\nb');
+  assert.match(survey.capOutput('aaaa\nbbbb\ncccc', 7), /^aaaa\n\n\.\.\. output cut at 4 of 14 characters/);
+});
+
+test('output past 8,000 characters is cut with the way to narrow it, and --all prints it whole', () => {
+  const files = {};
+  for (let i = 0; i < 150; i++) files['lib/widget' + i + '.js'] = 'function widgetFactoryWithALongDescriptiveName' + i + '() {}\n';
+  const root = repo(files);
+  const out = run(root, '--max', '1000', 'widget');
+  assert.ok(out.length <= 8000 + 400, 'printed ' + out.length);
+  assert.match(out, /output cut at [\d,]+ of [\d,]+ characters/);
+  assert.match(out, /--root <subdirectory>/);
+  const whole = run(root, '--all', 'widget');
+  assert.doesNotMatch(whole, /output cut at/);
+  assert.ok(whole.length > 8000, 'the fixture is too small to test the cap: ' + whole.length);
+});
