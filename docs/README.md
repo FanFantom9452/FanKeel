@@ -171,6 +171,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 主控改成看檔案等站 agent：`scripts/await.js` 在背景等 handoff 檔、commit 檔，或等 transcript 停擺；`commit.js` 提交後把 commit 檔改名為 `.done.md`；brain 的 `waiting` 規則附上實驗 | `docs/archive/2026-09-23-controller-await-design.md` — *built, 繁體中文* |
 | 那份設計的三個 task | `docs/archive/2026-09-23-controller-await.md` — *built, 繁體中文* |
 | 為何主控改看檔案、實跑抓到的三個缺口（commit 檔寫錯目錄、兩個 120 秒撞在一起、gate 不能退回），以及還沒量的 | [decisions/2026-09-23-controller-await.md](decisions/2026-09-23-controller-await.md) — *繁體中文* |
+| TODO 的 Needs a decision 全部 15 條一次定案：每條只做最小的修改；CLAUDE.md 那條擴成所有每次都載入的輸入（`scripts/input-check.js`）；〔method〕、〔security〕排最後 | [plans/2026-09-23-needs-a-decision-batch-design.md](plans/2026-09-23-needs-a-decision-batch-design.md) — *design-intent, English* |
+| 那份設計的十四個 task | [plans/2026-09-24-needs-a-decision-batch.md](plans/2026-09-24-needs-a-decision-batch.md) — *design-intent, 繁體中文* |
 | Why the scratch area could not be declared however legal the path looks, how one root cause survived nine rounds of review and then reappeared inside its own fix, and the six findings filed rather than built | [decisions/2026-09-11-todo-three.md](decisions/2026-09-11-todo-three.md) — *繁體中文* |
 | Why the five 09-11 directions were filed as TODO entries rather than built, the four places the approved draft departed from judgement 8, and the empty answer the first record filed | [decisions/2026-09-11-todo-split.md](decisions/2026-09-11-todo-split.md) — *繁體中文* |
 | Why the scratch area cannot be a `docs.json` bucket however legal the path looks, who owns each of three twice-described mechanisms, and why `source_of_truth` gets no single-owner rule | `docs/archive/2026-09-11-todo-three-design.md` — *built, 繁體中文* |
