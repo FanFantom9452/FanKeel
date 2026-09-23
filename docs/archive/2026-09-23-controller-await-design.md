@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # 主控看檔案等站 agent — design

@@ -84,7 +84,10 @@ what gets scheduled.
 - 〔method〕深度分析 ponytail：09-12 只收了三項（reviewer 的 `## Cuts`、audit 三個 lens、design 的 ladder），其餘做法還有什麼值得收 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴).
 - 〔survey〕`survey.js` 已預設排除 archive；09-23 量 74 次 survey 共 284 萬字元，archive 只占 1.5%、plans／decisions／reports 合計 4.9%：依 role 再排除值不值得、旗標叫什麼 — [scripts/survey.js](scripts/survey.js).
 - 〔survey〕Read 效率：09-23 量 74 次 survey，整檔 Read 占 33%、同檔重讀 104 次、`survey.js` 輸出 6／44 次過 8,000 字元：reader 先 grep 再切片、輸出設上限 — [skills/fankeel-survey/SKILL.md](skills/fankeel-survey/SKILL.md).
-- 〔stage-agents〕SendMessage 給已停下的 brain 顯示 queued 後遺失（09-23 兩次），brain 交回的 `commit` 也有一次沒到主控：主控要不要改看 handoff 目錄的檔案 — [docs/subagents.md](docs/subagents.md).
+- 〔memory〕memory 整理功能：本專案 MEMORY.md 已 131 行、132 檔，每 session 全載；合併重複、刪過期、分主題，由誰觸發、多久一次 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
+- 〔memory〕CLAUDE.md 極簡化功能：把 CLAUDE.md 壓到只剩每次都要的規則，其餘移去 docs 或 skill；做成 land 步驟還是獨立指令 — [skills/fankeel-land/SKILL.md](skills/fankeel-land/SKILL.md).
+- 〔station〕`lib/prices.js` 的 `perMillion` 缺 `claude-opus-5-5`：09-23 主控與 plan agent 都跑它，station 全算 `unpriced`；之後的 sonnet-5-5、haiku-5-5 同理。補價附官方價表；未知 id 要不要在 station 上標出來 — [lib/prices.js](lib/prices.js).
+- 〔stage-agents〕gate 的 header 超寬被擋兩次（09-23 verify 15 欄），`hooks/gate.js` 只說 missing or wrong：錯誤訊息要不要帶實際寬度與上限 12，或 brain 寫之前先自驗 — [lib/handoff.js](lib/handoff.js).
 - 〔stage-agents〕受控站裡主控自己問的中途題，答案被寫進 `<stage>-answer.md`，看起來像 gate 答案：`hooks/resume.js` 要不要只收 gate 替換過的題 — [hooks/resume.js](hooks/resume.js).
 - 〔stage-agents〕09-23 build 的 gate 沒被替換，使用者只看到佔位題，原因未查：舊 process 的 hook，或 `hooks/gate.js` 的條件 — [hooks/gate.js](hooks/gate.js).
 - 〔stage-agents〕受控 build／verify 還有十來個接縫沒實跑過：stage agent 沒有 AskUserQuestion／Edit、插話會起第二個、profile 中途翻轉 — [docs/subagents.md](docs/subagents.md).
