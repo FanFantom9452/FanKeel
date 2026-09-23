@@ -237,7 +237,7 @@ the reasoning under it did not:
 Dispatch was dearer and slower in every one of the three, without exception —
 1.85×, 1.59× and 2.12× the money, 1.75×, 2.77× and 2.70× the wall-clock.
 
-Five things that fail silently when missed: several dispatches must be in **one
+Six things that fail silently when missed: several dispatches must be in **one
 response** to run concurrently; the **model must be passed explicitly**, since an
 omitted one inherits the parent's, unless the `subagent_type` is an agent file
 that pins its own — inside a Workflow script too, where every
@@ -248,7 +248,9 @@ reference's omit-and-inherit is the host's default, not this plugin's — and
 regardless, which is why fankeel never dispatches one; the
 **count and the model must be said out loud**, in the response that sends
 them, because a fan-out nobody announced is spend the user is paying for and
-could not see coming; the returns must be
+could not see coming; the **description must open with the model** —
+`sonnet: survey stage agent` — because it is the title a background agent runs
+under and the one place the user sees what is spending while it runs; the returns must be
 **compared against each other**, because agents dispatched from one prompt style
 make correlated mistakes that per-agent reading will not catch; and the **return
 contract must state why it costs**, because naming the shape without the reason

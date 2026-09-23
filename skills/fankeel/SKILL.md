@@ -1014,7 +1014,7 @@ is mostly whether the question has to find things — as a gradient, not a step
 | **delegate** | wide reading with a narrow answer — *read these six documents and say whether any contradicts the code*. A judgement, so no filter can pick it out. Most of the payoff is in the **finding** — 1.52× where the files were already named against 9.23× where they were not — but this row's own example still joins across those documents, and a named question that joins measured 2.55× |
 | **do not delegate** | anything a pipe already removes. One command's output is not worth a system prompt |
 
-Five rules that make it work, each of which fails silently when missed:
+Six rules that make it work, each of which fails silently when missed:
 
 - **Several dispatches in one response run at once.** One per response runs them
   in sequence — the cost of parallelism with none of it.
@@ -1037,6 +1037,11 @@ Five rules that make it work, each of which fails silently when missed:
   coming, and for a long time `survey` was the only stage that said it — which
   read as though survey were the only one that cost anything. `plan`, `build`,
   `verify` and `audit` all dispatch too, and all four say it now.
+- **Open the `description` with the model.** `sonnet: survey stage agent`,
+  `opus: write plan` — the description is the title a background agent runs
+  under, and the one place the user sees while it runs. For a `subagent_type`
+  that pins its own model, write the model its file pins. The user asked for
+  it on 2026-09-23.
 - **Spot-check the results against each other.** Independently dispatched agents
   share a prompt style and a model, so they make correlated mistakes that reading
   each summary on its own will not catch.
