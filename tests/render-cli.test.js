@@ -108,13 +108,9 @@ function configFixture() {
     return { dir, conf };
 }
 
+// Every .png under `dir`, the login profiles excepted.
 function pngsUnder(dir) {
-    let n = 0;
-    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        if (e.isDirectory() && e.name !== 'profiles') n += pngsUnder(path.join(dir, e.name));
-        else if (e.isFile() && e.name.endsWith('.png')) n += 1;
-    }
-    return n;
+    return fs.readdirSync(dir, { recursive: true }).filter((f) => f.endsWith('.png') && !f.split(path.sep).includes('profiles')).length;
 }
 
 test('a render.json of two roles and two pages writes four cells and an index that counts them', (t) => {
