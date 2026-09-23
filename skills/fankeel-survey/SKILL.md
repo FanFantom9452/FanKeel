@@ -160,10 +160,10 @@ the rows it cut, for the cost of one command:
 ```
 node <plugin>/scripts/survey.js --all <term>...      # every match, no cap
 node <plugin>/scripts/survey.js --tree               # every directory, with sizes
-node <plugin>/scripts/survey.js --archive <term>...  # archive-role files too
+node <plugin>/scripts/survey.js --include-role archive,plan <term>...  # those roles too
 ```
 
-The default scan leaves out every file in an `archive` bucket and says how many on its `excluded:` line — the same pages step 3 calls retired. `--archive` puts them back, for confirming something was retired rather than moved.
+The default scan leaves out every file whose role is `archive`, `plan`, `decision` or `report` and says how many of each on its `excluded:` line — pages that record a moment rather than the present. `--include-role <role,...>` puts back the ones it names; `--archive` is the older spelling of `--include-role archive`.
 
 A section overflowing by five filenames is not wide reading; dispatching there
 delegates what a flag already removes.

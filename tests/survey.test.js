@@ -880,6 +880,44 @@ test('a truncated walk says so in terms of its ceiling, not its files', () => {
 
 const DOCS_JSON = JSON.stringify({ buckets: [{ path: 'docs', role: 'reference', depth: 1 }, { path: 'docs/archive', role: 'archive' }] });
 
+const ROLES_JSON = JSON.stringify({ buckets: [
+  { path: 'docs', role: 'reference', depth: 1 },
+  { path: 'docs/plans', role: 'plan' },
+  { path: 'docs/decisions', role: 'decision' },
+  { path: 'docs/reports', role: 'report' },
+  { path: 'docs/archive', role: 'archive' },
+] });
+const rolesRepo = () => repo({
+  '.fankeel/docs.json': ROLES_JSON,
+  'docs/plans/p.md': '# Widget plan\n',
+  'docs/decisions/d.md': '# Widget decision\n',
+  'docs/reports/r.md': '# Widget report\n',
+  'docs/archive/a.md': '# Widget old\n',
+  'docs/guide.md': '# Widget guide\n',
+  'lib/a.js': 'function widgetFactory() {}\n',
+});
+
+// 2026-09-23: 74 surveys, 2.84M characters; archive 1.5%, plans, decisions
+// and reports 4.9% together. All four record a moment, not the present.
+test('plan, decision, report and archive pages are all left out by default, each counted', () => {
+  const root = rolesRepo();
+  const out = run(root, 'widget');
+  for (const f of [/docs\/plans\/p\.md/, /docs\/decisions\/d\.md/, /docs\/reports\/r\.md/, /docs\/archive\/a\.md/]) assert.doesNotMatch(out, f);
+  assert.match(out, /docs\/guide\.md/);
+  assert.match(out, /excluded: 1 archive file, 1 plan file, 1 decision file, 1 report file under /);
+  assert.deepEqual(survey.scan(root, ['widget']).excluded.roles, { archive: 1, plan: 1, decision: 1, report: 1 });
+});
+
+test('--include-role puts back only the roles it names', () => {
+  const root = rolesRepo();
+  const out = run(root, '--include-role', 'plan', 'widget');
+  assert.match(out, /docs\/plans\/p\.md/);
+  assert.doesNotMatch(out, /docs\/decisions\/d\.md/);
+  assert.match(out, /excluded: 1 archive file, 1 decision file, 1 report file under /);
+  assert.deepEqual(survey.parseArgs(['--include-role', 'Plan, report', 'x']).include, ['plan', 'report']);
+  assert.deepEqual(survey.parseArgs(['--include-role', 'plan', 'x']).terms, ['x']);
+});
+
 test('archive-role files are left out by default and counted on the header', () => {
   const root = repo({
     '.fankeel/docs.json': DOCS_JSON,
@@ -889,7 +927,7 @@ test('archive-role files are left out by default and counted on the header', () 
   const out = run(root, 'widget');
   assert.doesNotMatch(out, /docs\/archive\/old\.md/);
   assert.match(out, /lib\/a\.js:1 {2}function widgetFactory/);
-  assert.match(out, /excluded: 1 archive file under docs\/archive — pass --archive to include/);
+  assert.match(out, /excluded: 1 archive file under docs\/archive — pass --include-role <role,\.\.\.> to include/);
   const result = survey.scan(root, ['widget']);
   assert.equal(result.excluded.count, 1);
   assert.deepEqual(result.excluded.buckets, ['docs/archive']);

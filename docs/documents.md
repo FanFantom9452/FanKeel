@@ -24,9 +24,9 @@ A root `.ignore` holding `docs/archive/` keeps ripgrep — the `Grep` tool here 
 from searching it by default; naming `docs/archive` explicitly still searches
 it. The `Glob` tool does not read `.ignore` and still lists archive files, and
 `docs-check`, `docs-audit` and `survey.js` read `git ls-files` directly, so none
-of them is affected either way. `survey.js` leaves archive pages out by role
-instead: every file in an `archive` bucket is dropped and counted on its
-`excluded:` line unless `--archive` is passed.
+of them is affected either way. `survey.js` leaves pages out by role instead:
+every file whose role is `archive`, `plan`, `decision` or `report` is dropped
+and counted on its `excluded:` line unless `--include-role` names that role.
 
 The two shapes that ship — `flat` and `phased` — and what happens to a markdown
 file in no bucket are stated in [the skill](../skills/fankeel/SKILL.md), under
@@ -159,7 +159,7 @@ report where a real parser would cost a dependency this plugin does not have.
 - `scripts/layout.js:59` 是 `const found = trackedFiles(root);`
 - `scripts/memory-check.js:143` 是 `const tracked = trackedFiles(root);`
 - `scripts/orient.js:286` 是 `result = trackedFiles(dir, { stats });`
-- `scripts/survey.js:177` 是 `const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt`
+- `scripts/survey.js:183` 是 `const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt`
 - `lib/map.js:235` 是 `const found = trackedFiles(root);`，七個之中只有這個檔案直接讀 `.buckets`
 
 `--exclude-standard` 套用 `.gitignore`，所以宣告出來的 bucket 會

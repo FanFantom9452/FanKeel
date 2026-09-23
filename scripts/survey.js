@@ -35,6 +35,12 @@ const docsTree = require('../lib/docs.js');
 const DEFAULT_MAX = 25;
 const MAX_FILE_BYTES = 512 * 1024;
 
+// The roles a default scan leaves out: the four whose pages record a moment
+// rather than the present, the same four `todo-check` refuses a link into.
+// Measured 2026-09-23 over 74 surveys: archive 1.5% of the characters read,
+// plans, decisions and reports 4.9% together. Each comes back by name.
+const EXCLUDED_ROLES = ['archive', 'plan', 'decision', 'report'];
+
 // One pattern per language, capturing the declared name. Deliberately shallow:
 // the point is to notice that something with that name exists, not to parse the
 // language. A missed declaration costs one line of a report; a parser costs a
@@ -181,17 +187,22 @@ function scan(root, terms, opts) {
     const { files: listed, repos, walked, truncated, unlistable, skippedExt } = tracked;
 
     // Retired pages are read as current when a search returns them beside the
-    // live ones, so an `archive` bucket is out of the scan unless asked for.
+    // live ones, and a plan, a decision or a report is the same mistake one
+    // step earlier, so those four roles are out of the scan unless asked for.
     // Counted, never silently subtracted: the header says how many and where.
     // No docs.json means no tree, `roleOf` answers null, and nothing is dropped.
     const { tree } = docsTree.read(root);
-    const excluded = { count: 0, buckets: [] };
+    const include = new Set(opts && Array.isArray(opts.include) ? opts.include : []);
+    if (opts && opts.archive) include.add('archive');
+    const excluded = { count: 0, buckets: [], roles: {} };
     const entries = [];
     for (const entry of listed) {
         const rel = String(entry).replace(/\\/g, '/');
-        if (!(opts && opts.archive) && tree && docsTree.roleOf(tree, rel) === 'archive') {
+        const role = tree ? docsTree.roleOf(tree, rel) : null;
+        if (role && EXCLUDED_ROLES.includes(role) && !include.has(role)) {
             excluded.count++;
-            const bucket = tree.buckets.find((b) => b.role === 'archive' && rel.startsWith(b.path + '/'));
+            excluded.roles[role] = (excluded.roles[role] || 0) + 1;
+            const bucket = tree.buckets.find((b) => b.role === role && rel.startsWith(b.path + '/'));
             if (bucket && !excluded.buckets.includes(bucket.path)) excluded.buckets.push(bucket.path);
             continue;
         }
@@ -410,7 +421,10 @@ function report(result, terms, opts) {
     }
     if (skips.length) note.push('skipped: ' + skips.join(', '));
     if (excluded && excluded.count) {
-        note.push('excluded: ' + excluded.count + (excluded.count === 1 ? ' archive file' : ' archive files') + ' under ' + excluded.buckets.join(', ') + ' — pass --archive to include');
+        const roles = excluded.roles || {};
+        const parts = EXCLUDED_ROLES.filter((r) => roles[r]).map((r) => roles[r] + ' ' + r + (roles[r] === 1 ? ' file' : ' files'));
+        note.push('excluded: ' + (parts.length ? parts.join(', ') : excluded.count + ' files') + ' under ' + excluded.buckets.join(', ')
+            + ' — pass --include-role <role,...> to include');
     }
 
     // The split is said out loud rather than left for the reader to infer from
@@ -477,6 +491,7 @@ function parseArgs(argv) {
     let max = DEFAULT_MAX;
     let tree = false;
     let archive = false;
+    const include = [];
     const terms = [];
     for (let i = 0; i < argv.length; i++) {
         if (argv[i] === '--root') {
@@ -499,16 +514,25 @@ function parseArgs(argv) {
         if (argv[i] === '--all') { max = Infinity; continue; }
         if (argv[i] === '--tree') { tree = true; continue; }
         if (argv[i] === '--archive') { archive = true; continue; }
+        if (argv[i] === '--include-role') {
+            if (argv[i + 1] !== undefined) {
+                for (const r of String(argv[++i]).split(',')) {
+                    const role = r.trim().toLowerCase();
+                    if (role && !include.includes(role)) include.push(role);
+                }
+            }
+            continue;
+        }
         if (argv[i].startsWith('--')) continue;
         const term = String(argv[i]).toLowerCase().trim();
         if (term && !terms.includes(term)) terms.push(term);
     }
-    return { root, terms, max, tree, archive };
+    return { root, terms, max, tree, archive, include };
 }
 
 function main(argv) {
-    const { root, terms, max, tree, archive } = parseArgs(argv);
-    return report(scan(root, terms, { archive }), terms, { max, tree, root });
+    const { root, terms, max, tree, archive, include } = parseArgs(argv);
+    return report(scan(root, terms, { archive, include }), terms, { max, tree, root });
 }
 
 if (require.main === module) {
