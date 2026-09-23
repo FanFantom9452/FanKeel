@@ -855,3 +855,18 @@ test('a groups table under another heading survives a scan write', () => {
   assert.ok(!written.includes('stale content that should be replaced'),
     'the first ## groups block is the one scan owns');
 });
+
+// `ranges` and `show` share one opening: no ledger yet, or one written for
+// another plan. Pinned before the two became one function, and after.
+for (const verb of ['ranges', 'show']) {
+  test(verb + ' names a missing ledger and refuses one written for another plan', () => {
+    const dir = root();
+    const none = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', verb], { cwd: dir, encoding: 'utf8' });
+    assert.match(none, /^fankeel ledger — none yet at .*progress\.md\nRun `init` before the first task\.\n$/);
+    const file = ledger.ledgerPath(dir, 'p.md');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, ledger.header('other.md') + '\n');
+    const foreign = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', verb], { cwd: dir, encoding: 'utf8' });
+    assert.match(foreign, /^fankeel ledger — .*progress\.md belongs to another plan\. Leave it; `init` starts your own\.\n$/);
+  });
+}

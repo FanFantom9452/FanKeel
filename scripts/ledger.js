@@ -373,6 +373,22 @@ function overlapNote(root, entries) {
     return 'One verifier per row, pinned at both ends. The rows do not overlap, so\nthey may go out in one response.';
 }
 
+// `ranges` and `show` both start here: this plan's ledger, or the one line
+// saying why there is none to read.
+function readOwnLedger(root, opts) {
+    const file = ledger.ledgerPath(root, opts.plan);
+    let contents;
+    try {
+        contents = fs.readFileSync(file, 'utf8');
+    } catch (e) {
+        return { file, refusal: 'fankeel ledger — none yet at ' + file + '\nRun `init` before the first task.' };
+    }
+    if (!ledger.owns(contents, opts.plan)) {
+        return { file, refusal: 'fankeel ledger — ' + file + ' belongs to another plan. Leave it; `init` starts your own.' };
+    }
+    return { file, contents };
+}
+
 function main(argv) {
     const { head, verb: named, text } = splitAtVerb(argv, STRING_FLAGS, VERBS);
     const opts = parseArgs(head);
@@ -559,16 +575,8 @@ function main(argv) {
     }
 
     if (verb === 'ranges') {
-        const file = ledger.ledgerPath(root, opts.plan);
-        let contents = '';
-        try {
-            contents = fs.readFileSync(file, 'utf8');
-        } catch (e) {
-            return 'fankeel ledger — none yet at ' + file + '\nRun `init` before the first task.';
-        }
-        if (!ledger.owns(contents, opts.plan)) {
-            return 'fankeel ledger — ' + file + ' belongs to another plan. Leave it; `init` starts your own.';
-        }
+        const { file, contents, refusal } = readOwnLedger(root, opts);
+        if (refusal) return refusal;
         const plan = ledger.planRange(contents);
         const rows = ledger.completions(contents);
         const fixed = ledger.fixes(contents);
@@ -592,16 +600,8 @@ function main(argv) {
     }
 
     if (verb === 'show') {
-        const file = ledger.ledgerPath(root, opts.plan);
-        let contents = '';
-        try {
-            contents = fs.readFileSync(file, 'utf8');
-        } catch (e) {
-            return 'fankeel ledger — none yet at ' + file + '\nRun `init` before the first task.';
-        }
-        if (!ledger.owns(contents, opts.plan)) {
-            return 'fankeel ledger — ' + file + ' belongs to another plan. Leave it; `init` starts your own.';
-        }
+        const { file, contents, refusal } = readOwnLedger(root, opts);
+        if (refusal) return refusal;
         const done = ledger.completed(contents);
         return 'fankeel ledger — ' + file
             + '\n\n  complete: ' + (done.length ? done.join(', ') : 'nothing yet')
