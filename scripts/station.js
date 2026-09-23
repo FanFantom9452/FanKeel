@@ -38,6 +38,7 @@ const station = require('../lib/station.js');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { serveRecordPath, readServeRecord, probe, diskFingerprint } = require('../lib/serve.js');
+const { readBody } = require('../lib/body.js');
 const { clearEntry } = require('../lib/clear.js');
 const profile = require('../lib/profile.js');
 const todoCheck = require('./todo-check.js');
@@ -221,14 +222,6 @@ function openInBrowser(target) {
         process.stderr.write('station: could not open a browser; open ' + target + ' yourself\n');
     }
 }
-
-const readBody = (req) => new Promise((resolve) => {
-    let text = '';
-    req.setEncoding('utf8');
-    req.on('data', (c) => { if (text.length < 65536) text += c; });
-    req.on('end', () => resolve(text));
-    req.on('error', () => resolve(''));
-});
 
 // The one write behind 記成 TODO. The entry goes under `## Needs a decision` in
 // the project's TODO.md, and only once `scripts/todo-check.js`'s own `check()`

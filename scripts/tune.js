@@ -16,6 +16,7 @@ const path = require('node:path');
 const http = require('node:http');
 const { parseArgs } = require('node:util');
 const { inject, outside, diffLines, queueState } = require('../lib/tune.js');
+const { readBody } = require('../lib/body.js');
 
 const STATE = path.resolve('.fankeel', 'build', 'tune');
 const QUEUE = path.join(STATE, 'queue.jsonl');
@@ -94,12 +95,7 @@ function serve(dir, port) {
             return fs.existsSync(f) ? send(res, 200, TYPES['.txt'], fs.readFileSync(f)) : send(res, 404, TYPES['.txt'], 'no diff');
         }
         if (req.method === 'POST' && (pathname === '/__live/request' || pathname === '/__live/result')) {
-            let body = '';
-            req.on('data', (c) => {
-                body += c;
-                if (body.length > 65536) req.destroy();
-            });
-            req.on('end', () => {
+            readBody(req, { destroyOnOverflow: true }).then((body) => {
                 let data;
                 try {
                     data = JSON.parse(body);
