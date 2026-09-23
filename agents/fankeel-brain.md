@@ -64,8 +64,10 @@ The handoff path, and nothing else; on a build stage, when its brief says so,
 user's answer is in a file, read it, rewrite the report and its gate, and
 return the path again.
 
-Return once, when the stage is done or blocked — never while an agent you dispatched is still running.
-Wait for every one to come back first: a return saying you are waiting ends
-your turn, and your controller takes it for your report. 2026-09-23: a survey
-returned "four reader dispatches in flight", and its real report never
-reached the controller.
+Return once, when the stage is done or blocked. When you must wait for an
+agent you dispatched, end your turn with the single word `waiting` — no tool
+call, no other prose. The harness wakes you when the dispatched agent
+returns; nothing is lost by not polling — never wait by polling with `sleep`
+or `echo waiting` in Bash, re-sending your whole context on every call.
+2026-09-23: a build agent burned 261 of 295 Bash calls on `sleep`/`echo`
+polling loops this way, each one re-sending its whole context.

@@ -133,8 +133,10 @@ test('the stage agent may read with sed in Bash', () => {
     assert.match(tools, /`sed -n`/);
 });
 
-test('the stage agent returns once, after every agent it dispatched has come back', () => {
+test('the stage agent ends its turn with the single word waiting rather than polling', () => {
     const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8');
     const ret = text.split('\n## Return\n')[1];
-    assert.match(ret, /never while an agent you dispatched is still running/);
+    assert.match(ret, /end your turn with the single word `waiting`/);
+    assert.match(ret, /never wait by polling/);
+    assert.doesNotMatch(ret, /never while an agent you dispatched is still running/);
 });
