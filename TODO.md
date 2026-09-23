@@ -77,8 +77,12 @@ what gets scheduled.
 
 ## Needs a decision
 
-- 〔method〕ponytail 沒收的六個候選還沒問使用者：`AskUserQuestion` 在這個 subagent 不可用，逐條問這一步要在有這個工具的 session 補做 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴).
-- 〔skill〕skill-repos 對照列出的六個候選也還沒問使用者：寫頁面當下沒有 `AskUserQuestion` 通道，挑選待補 — [subagents](docs/subagents.md).
+- 〔stage-agents〕`readGate` 沒驗題數：09-24 verify 的 gate 放了 5 題，被 `AskUserQuestion` 上限 4 擋了兩次；題數 ≤4、選項 2–4 要不要在 brain 寫檔時就擋 — [lib/handoff.js](lib/handoff.js).
+- 〔stage-agents〕`gate.js` 把受控站中主控自己問的題換成該站的舊 gate（09-24 verify，使用者看到舊題）：要不要只替換佔位形狀的題 — [hooks/gate.js](hooks/gate.js).
+- 〔stage-agents〕主控對不在 `stage.agents` 的站派了 brain，gate 沒替換（09-23 design）：`task.js stage` 或 `hooks/brief.js` 要不要直接拒絕 — [hooks/brief.js](hooks/brief.js).
+- 〔stage-agents〕受控 build 主控替 brain 提交 19 次（09-24，14 task），每次一個主控來回：`commit.js` 早就收 `---` 分隔的多組，是 brain 一個 task 交一次；要不要讓它攢滿一組再交 — [scripts/commit.js](scripts/commit.js).
+- 〔memory〕各站注入重講同一批名詞：參考 mattpocock 的 `CONTEXT.md`，共用詞彙放一處只引用，接在 `input-check.js` 之後 — [lib/stages.js](lib/stages.js).
+- 〔method〕skill-repos 與 ponytail 的候選改從 fankeel 自己的問題出發（09-24 使用者定調：優化自己為主，對方只參考），不問「收哪幾條」；上面五條就是這樣挑出來的，其餘候選對不上問題就不問 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
 
 ## Waiting
 

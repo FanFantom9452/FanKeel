@@ -686,13 +686,15 @@ is the same claim.
 
 ### audit
 
-Three scanners, and then the part none of them can do.
+Five scanners, and then the part none of them can do.
 
 ```mermaid
 flowchart TD
     A["docs-check<br/><i>dead references, never opinions</i>"]
     B["docs-audit<br/><i>the deeper sweep<br/>drift 14 days · landed settles at 3</i>"]
     A2["residue<br/><i>the one not about documents</i>"]
+    A3["memory-check<br/><i>Claude Code's own memory for this project</i>"]
+    A4["input-check<br/><i>what every session loads · lists, never fails</i>"]
     C{"what came back?"}
     D1["<b>fallen behind the code they describe</b>"]
     D2["<b>plans look landed</b><br/>a record, not a plan"]
@@ -711,6 +713,8 @@ flowchart TD
     A --> C
     B --> C
     A2 --> C
+    A3 --> C
+    A4 --> C
     C -- "defects · the run fails" --> D1
     C -- "defects" --> D2
     C -- "defects" --> D3

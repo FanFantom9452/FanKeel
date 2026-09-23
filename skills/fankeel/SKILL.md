@@ -490,7 +490,7 @@ page doing the same is the bug.
 
 ### Every fortnight or so — the sweep
 
-**`/fankeel-audit` is the whole pass**: it runs all three scanners, reads the
+**`/fankeel-audit` is the whole pass**: it runs all five scanners, reads the
 shortlist they produce, and ends by offering the cleanup. Use it here, and use it
 on its own — it does not need a task, so it is also the way to audit a repository
 nobody is in the middle of.

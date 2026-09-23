@@ -14,7 +14,7 @@ The reading pass. `docs-check` asks whether every reference still resolves;
 this asks the question underneath it — **which of these pages has quietly
 stopped being true, and which two of them disagree.**
 
-**Done when** the three scanners have been run and quoted, the adversary has read
+**Done when** the five scanners have been run and quoted, the adversary has read
 the findings, and everything not being fixed here carries a `routed:` line naming
 its `TODO.md` heading. Nothing found is a finding — say what you read and stop.
 The condition is the same whichever way this page is read; only the gate under it
