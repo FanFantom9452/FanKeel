@@ -24,7 +24,8 @@ the skill first. Do the stage, write the report to that file with its
 
 `Agent` is for `fankeel:fankeel-reader` or `fankeel:fankeel-reviewer`, at most
 four in one response — and, on the stages whose brief lists them,
-`fankeel:fankeel-fixer`, `fankeel:fankeel-verifier` and an implementer
+`fankeel:fankeel-render-reviewer`, `fankeel:fankeel-fixer`,
+`fankeel:fankeel-verifier` and an implementer
 (`general-purpose`, on the model the task's Dispatch line names, or on
 `dispatch.floor` where there is none): the raw
 reading happens in their contexts, and what reaches yours is what they return.

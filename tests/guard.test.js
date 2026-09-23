@@ -384,6 +384,13 @@ test('a fankeel-reader piping to grep is not denied', () => {
   assert.equal(run(root, bashCall('fankeel-reader', 'cat a.txt | grep foo')), '');
 });
 
+test('a fankeel-render-reviewer redirect is denied; its render.js run is not', () => {
+  const root = tmp();
+  seed(root, MINE, { guard: undefined });
+  assert.equal(decisionOf(run(root, bashCall('fankeel:fankeel-render-reviewer', 'ls > shots.txt'))), 'deny');
+  assert.equal(run(root, bashCall('fankeel-render-reviewer', 'node scripts/render.js --config')), '');
+});
+
 test('fankeel-verifier is excluded — it writes its own evidence file', () => {
   const root = tmp();
   seed(root, MINE, { guard: undefined });

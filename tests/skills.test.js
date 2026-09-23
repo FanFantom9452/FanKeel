@@ -42,6 +42,7 @@ const KNOWN_LEDGER_PARAGRAPHS = [
   "   THE RANGE, pinned at both ends: <BASE>..<sha>",
   "   Part 1 — against the brief and the coverage rows, in this",
   "   Give it the brief path and the range — never a paste of t",
+  "   **A task that changes a page gets a second reviewer** in ",
   "The same asymmetry runs the other way. What you send is read",
 ];
 
@@ -661,14 +662,17 @@ test('the verify skill separates what a pipe removes from what a reader answers'
   assert.match(text, BOUNDARY);
 });
 
-// The reviewer's render lens is opt-in — most verify tasks have no screen —
-// so the skill that dispatches it has to say when, in the same breath as
-// the dispatch itself, or an implementer reads the agent's own file and
-// never finds out the lens exists.
-test('fankeel-verify says when to pass the reviewer its render lens', () => {
+// The render reviewer is a separate dispatch, opt-in — most verify tasks
+// have no screen — so the skill that dispatches it has to say when, in the
+// same breath as the dispatch itself, or an implementer reads the agent's
+// own file and never finds out it exists. The render lens moved out of the
+// reviewer into its own agent on 2026-09-23; the skill must not still
+// describe the old lens.
+test('fankeel-verify names the render reviewer and says when to dispatch it', () => {
     const text = read('fankeel-verify');
-    assert.match(text, /`render` lens/, 'no mention of the render lens');
-    assert.match(text, /served page shows/, 'does not say when to pass it');
+    assert.match(text, /fankeel:fankeel-render-reviewer/, 'no mention of the render reviewer');
+    assert.match(text, /what a page shows/, 'does not say when to dispatch it');
+    assert.doesNotMatch(text, /`render` lens/, 'still describes the old render lens');
 });
 
 // Measured on this branch: a reviewer told to return three lines returned three

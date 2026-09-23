@@ -328,6 +328,13 @@ runs one row per pass, and every other step of the loop is unchanged.
    history. Dispatch it as `subagent_type: fankeel:fankeel-reviewer`; the model
    comes from that agent file, not typed by hand here.
 
+   **A task that changes a page gets a second reviewer** in the same response:
+   `subagent_type: fankeel:fankeel-render-reviewer`, whose file pins `sonnet`.
+   Give it the brief path, the mockup path from the design's `spec:` line, and
+   `.fankeel/render.json` where the project has one — a page path otherwise.
+   Its first line is `disposition: recapture`, `fix` or `ship`; anything but
+   `ship` goes back to the implementer like the first reviewer's findings.
+
    **When the user has said, this session, not to dispatch**, the reviewer runs
    here, in this session. That is a ruling, not a stopper: the four things that
    stop the loop are listed below, and a dispatch the user declined is not among

@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer'];
 
 // `fankeel-verifier` is the one named exception: it writes evidence rows to a
 // file for the Workflow join, and `Write` is what that takes. It is not less
@@ -75,14 +75,22 @@ test('the reviewer carries the cut tags build and audit ask for', () => {
     assert.match(build, /Part 4 — cuts/);
 });
 
-// The lens is optional — only some briefs put something on a screen — but
-// the tool it needs is not: a reviewer whose Tools section still said "git
-// and nothing else" would refuse the one command this lens runs.
-test('the reviewer carries a render lens and the Bash allowance to run it', () => {
-    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reviewer.md'), 'utf8');
-    assert.match(text, /^## Render$/m, 'no ## Render section');
+// The render lens moved out of the reviewer into its own agent on 2026-09-23
+// (docs/decisions/2026-09-23-render-review.md). The new agent needs Bash for
+// scripts/render.js; the reviewer no longer does, and still saying so would
+// hand it a tool its job no longer uses.
+test('the render reviewer carries the rendering contract; the reviewer no longer does', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-render-reviewer.md'), 'utf8');
+    for (const h of ['## Tools', '## Input', '## Evidence', '## Matrix', '## Return']) {
+        assert.match(text, new RegExp('^' + h + '$', 'm'), 'no ' + h);
+    }
     const tools = text.split('\n## Tools\n')[1].split('\n## ')[0];
-    assert.match(tools, /scripts\/render\.js/, 'Tools does not widen Bash to scripts/render.js');
+    assert.match(tools, /scripts\/render\.js/);
+    for (const word of ['recapture', 'fix', 'ship']) assert.ok(text.includes('`disposition: ' + word + '`'), 'no disposition ' + word);
+    assert.equal(front(path.join(ROOT, 'agents', 'fankeel-render-reviewer.md')).model, 'sonnet');
+    const reviewer = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reviewer.md'), 'utf8');
+    assert.doesNotMatch(reviewer, /^## Render$/m);
+    assert.doesNotMatch(reviewer.split('\n## Tools\n')[1].split('\n## ')[0], /render\.js/);
 });
 
 // Each sentence is pinned to its own Part: one moved into another Part fails.

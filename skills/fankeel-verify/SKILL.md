@@ -223,9 +223,12 @@ It gets **paths, never a paste**, and is asked only for the rows it defeats — 
 why, because every line it returns lands here and is re-read on every later turn.
 Dispatch it as `subagent_type: fankeel:fankeel-reviewer` too — the same agent as
 build's per-task reviewer — and let its file pin the model rather than
-typing one here. Pass its `render` lens when the claim under evidence is
-about what a served page shows — a count or a label derived from data on
-it — and leave it off a change with no screen behind it.
+typing one here. When the claim under evidence is about what a page shows,
+dispatch `subagent_type: fankeel:fankeel-render-reviewer` beside it — its
+file pins `sonnet` — with the ask, the approved mockup's path and
+`.fankeel/render.json`; it shoots every role and page itself, and its first
+line is `disposition: recapture`, `fix` or `ship`. Anything but `ship` is a
+defeated row. Leave it off a change with no screen behind it.
 
 It **reads the method rather than probing it.** Red-green belongs to this session
 and is already in the table above, and an adversary that mutates the tree cannot

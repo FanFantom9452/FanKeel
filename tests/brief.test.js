@@ -368,13 +368,13 @@ test('a build brain may dispatch a fixer and an implementer, a verify brain a ve
   const build = dispatchLine('build');
   assert.match(build, /fankeel:fankeel-fixer/);
   assert.match(build, /implementer/);
-  assert.match(build, /`fankeel:fankeel-reviewer`, `fankeel:fankeel-fixer` or an implementer/);
+  assert.match(build, /`fankeel:fankeel-reviewer`, `fankeel:fankeel-render-reviewer`, `fankeel:fankeel-fixer` or an implementer/);
   assert.match(dispatchLine('verify'), /fankeel:fankeel-verifier/);
-  assert.match(dispatchLine('verify'), /`fankeel:fankeel-verifier`, `fankeel:fankeel-fixer` or an implementer \(`general-purpose`, on the `dispatch.floor` model/);
+  assert.match(dispatchLine('verify'), /`fankeel:fankeel-render-reviewer`, `fankeel:fankeel-verifier`, `fankeel:fankeel-fixer` or an implementer \(`general-purpose`, on the `dispatch.floor` model/);
   const survey = dispatchLine('survey');
   assert.match(survey, /fankeel:fankeel-reader/);
   assert.match(survey, /Dispatch `fankeel:fankeel-reader` or `fankeel:fankeel-reviewer` with the Agent tool/);
-  assert.doesNotMatch(survey, /fankeel-fixer|fankeel-verifier|implementer/);
+  assert.doesNotMatch(survey, /fankeel-fixer|fankeel-verifier|fankeel-render-reviewer|implementer/);
 });
 
 test('a build brain is told to ask for its commits through a commit file, a verify brain to send an implementer for a mutation', () => {
