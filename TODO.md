@@ -75,6 +75,12 @@ what gets scheduled.
 
 ## Ready
 
+- 〔shrink〕5 個 hook 各自重寫一遍 profile 讀取：收成 `lib/profile.js` 的 `profileFor(root, mine, docs)`（gate、brief、resume、inject、guard；net -12，09-24 audit） — [lib/profile.js](lib/profile.js).
+- 〔shrink〕暫存檔＋`renameRetrying` 的原子寫入重複 5 處（`lib/detail.js`、`lib/station.js`、`scripts/station.js` ×3）：收成 `registry.writeAtomic(file, contents)`（net -8） — [lib/registry.js](lib/registry.js).
+- 〔shrink〕`scripts/layout.js` 與 `scripts/residue.js` 的 `parseArgs` 逐字相同：收成一個只收 `--root` 的共用函式（net -6） — [scripts/residue.js](scripts/residue.js).
+- 〔shrink〕`ledger.js` 的 `ranges` 與 `show` 各有同一段讀 ledger、查歸屬：收成 `readOwnLedger(root, opts)`（net -5） — [scripts/ledger.js](scripts/ledger.js).
+- 〔shrink〕`burnOf` 與 `clockOf` 只差讀 `burn` 還是 `clock`：收成一個 `forwardPair(pair)`（`lib/usage.js` 已有 `spanOf`，別撞名），兩個變一行包裝（net -5） — [lib/registry.js](lib/registry.js).
+
 ## Needs a decision
 
 - 〔stage-agents〕`readGate` 沒驗題數：09-24 verify 的 gate 放了 5 題，被 `AskUserQuestion` 上限 4 擋了兩次；題數 ≤4、選項 2–4 要不要在 brain 寫檔時就擋 — [lib/handoff.js](lib/handoff.js).
