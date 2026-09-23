@@ -5,8 +5,8 @@ last_verified: 2026-09-23
 
 # 渲染審查獨立成 agent、逐塊即時調做成注入式 — 決策紀錄
 
-design 見 [../plans/2026-09-23-render-review-design.md](../plans/2026-09-23-render-review-design.md)，
-plan 見 [../plans/2026-09-23-render-review.md](../plans/2026-09-23-render-review.md)。
+design 見 [../archive/2026-09-23-render-review-design.md](../archive/2026-09-23-render-review-design.md)，
+plan 見 [../archive/2026-09-23-render-review.md](../archive/2026-09-23-render-review.md)（已落地封存）。
 
 ## 一、定案
 

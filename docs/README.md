@@ -161,8 +161,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的六個 task | `docs/archive/2026-09-23-station-home.md` — *built, 繁體中文* |
 | 站首頁改版怎麼定、build 中途加進來的即時互動圖表，以及 verify 在瀏覽器裡量到、單元測試量不到的那個 hover 缺陷 | [decisions/2026-09-23-station-home.md](decisions/2026-09-23-station-home.md) — *繁體中文* |
 | 渲染審查為何獨立成 `fankeel-render-reviewer`、角色用 `render.json` 與每角色一個瀏覽器 profile、逐塊即時調為何做成注入式，以及 Jev 與本地判斷模型為何不做 | [decisions/2026-09-23-render-review.md](decisions/2026-09-23-render-review.md) — *繁體中文* |
-| 渲染審查與逐塊即時調：render.js 依 `render.json` 截每個角色 × 頁面、新 agent `fankeel-render-reviewer` 逐 `data-block` 對照核可的 mockup、`tune.js` 注入 overlay 一次只改一塊 | [plans/2026-09-23-render-review-design.md](plans/2026-09-23-render-review-design.md) — *design-intent, 繁體中文* |
-| 那份設計的五個 task | [plans/2026-09-23-render-review.md](plans/2026-09-23-render-review.md) — *design-intent, 繁體中文* |
+| 渲染審查與逐塊即時調：render.js 依 `render.json` 截每個角色 × 頁面、新 agent `fankeel-render-reviewer` 逐 `data-block` 對照核可的 mockup、`tune.js` 注入 overlay 一次只改一塊 | `docs/archive/2026-09-23-render-review-design.md` — *built, 繁體中文* |
+| 那份設計的五個 task | `docs/archive/2026-09-23-render-review.md` — *built, 繁體中文* |
 | Why the scratch area could not be declared however legal the path looks, how one root cause survived nine rounds of review and then reappeared inside its own fix, and the six findings filed rather than built | [decisions/2026-09-11-todo-three.md](decisions/2026-09-11-todo-three.md) — *繁體中文* |
 | Why the five 09-11 directions were filed as TODO entries rather than built, the four places the approved draft departed from judgement 8, and the empty answer the first record filed | [decisions/2026-09-11-todo-split.md](decisions/2026-09-11-todo-split.md) — *繁體中文* |
 | Why the scratch area cannot be a `docs.json` bucket however legal the path looks, who owns each of three twice-described mechanisms, and why `source_of_truth` gets no single-owner rule | `docs/archive/2026-09-11-todo-three-design.md` — *built, 繁體中文* |

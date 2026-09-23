@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # 渲染審查與逐塊即時調 Implementation Plan

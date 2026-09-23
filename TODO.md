@@ -75,6 +75,9 @@ what gets scheduled.
 
 ## Ready
 
+- 〔tests〕`tests/registry.test.js:728` 鎖等待測試在整套負載下偶發紅（子程序啟動就超過 1 秒上限）：讓子程序先回報已啟動，主程序才開始計時 — [tests/registry.test.js](tests/registry.test.js).
+- 〔lib〕`scripts/tune.js` 讀 request body、`scripts/render.js` 擷取未知參數，兩段都與 `scripts/station.js` 重複：抽到 `lib/` 共用 — [scripts/station.js](scripts/station.js).
+
 ## Needs a decision
 
 - 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過；session 記錄已存 `stage.agents`（6fb1b3a），缺的是一次真實的量測 — [lib/render.js](lib/render.js).
