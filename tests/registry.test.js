@@ -1032,3 +1032,28 @@ test('returnsTo counts prior from->to steps out of moves, not clock', () => {
   assert.equal(registry.returnsTo({}, 'verify', 'build'), 0);
   assert.equal(registry.returnsTo({ moves: [['survey', 1]] }, 'verify', 'build'), 0);
 });
+
+test('writeAtomic replaces the file whole and leaves no temp file beside it', () => {
+  const dir = tmp('fankeel-atomic-');
+  const file = path.join(dir, 'x.json');
+  fs.writeFileSync(file, 'old');
+  registry.writeAtomic(file, 'new\n');
+  assert.equal(fs.readFileSync(file, 'utf8'), 'new\n');
+  assert.deepEqual(fs.readdirSync(dir), ['x.json']);
+});
+
+// scripts/station.js's TODO write relies on the directory being there already,
+// so creating it is each caller's call, not this function's.
+test('writeAtomic does not create the directory', () => {
+  const file = path.join(tmp('fankeel-atomic-'), 'missing', 'x.json');
+  assert.throws(() => registry.writeAtomic(file, 'x'), { code: 'ENOENT' });
+});
+
+test('burnOf and clockOf are null for no record at all, and read their own field only', () => {
+  assert.equal(registry.burnOf(null, 'survey'), null);
+  assert.equal(registry.clockOf(undefined, 'survey'), null);
+  assert.equal(registry.burnOf({ clock: { survey: [1, 5] } }, 'survey'), null);
+  assert.equal(registry.clockOf({ burn: { survey: [1, 5] } }, 'survey'), null);
+  assert.equal(registry.burnOf({ burn: { survey: [1, 5] } }, 'survey'), 4);
+  assert.equal(registry.clockOf({ clock: { survey: [1, 5] } }, 'survey'), 4);
+});
