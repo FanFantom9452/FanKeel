@@ -69,9 +69,16 @@ function startServer(t, cwd) {
     });
 }
 
-async function request(url, method, body) {
-    const res = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
-    return { status: res.status, text: await res.text() };
+function request(url, method, body) {
+    return new Promise((resolve, reject) => {
+        const req = http.request(url, { method, agent: false, headers: { 'content-type': 'application/json' } }, (res) => {
+            let text = '';
+            res.on('data', (d) => { text += d; });
+            res.on('end', () => resolve({ status: res.statusCode, text }));
+        });
+        req.on('error', reject);
+        req.end(body ? JSON.stringify(body) : undefined);
+    });
 }
 
 test('serve injects without touching the file; request, wait and done round-trip; a stray edit is put back', async (t) => {
