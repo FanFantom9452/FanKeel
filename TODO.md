@@ -77,7 +77,6 @@ what gets scheduled.
 
 ## Needs a decision
 
-- 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過；session 記錄已存 `stage.agents`（6fb1b3a），缺的是一次真實的量測 — [lib/render.js](lib/render.js).
 - 〔docs〕計畫封存時 `status` 沒從 `design-intent` 翻成 `current`（2026-09-23 抓到六頁），封存後 docs-audit 不再看它：改 land 的封存步驟，還是讓 docs-audit 也看 archive 的 `status` — [scripts/docs-audit.js](scripts/docs-audit.js).
 - 〔security〕reviewer／verifier 沒有資安審查：照 cloudflare/security-audit-skill 的漏洞清單用本地模型掃，避開雲端模型的安全攔截；和另一個專案 AI CODING SECURITY 一起定 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 - 〔method〕開發方法要和使用者討論：對照 addyosmani/agent-skills 與 mattpocock/skills 兩套 skill 的做法 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
@@ -185,3 +184,8 @@ lifts when: TokenBar 的 `tokenbar-usage.jsonl` 累積到跨過一次 7d reset �
 lifts when: 渲染審查的 sonnet 花費成了瓶頸，或需要離線跑. 09-23.
 
 - 〔render〕本地判斷模型當渲染審查前的篩子：moondream2（`ollama run moondream`）判畫面是否正常、UI-TARS 驅動頁面；兩者都沒在本機試過，Jev 是雲端不吃圖 — [agents/fankeel-render-reviewer.md](agents/fankeel-render-reviewer.md).
+
+### 倍數量測
+lifts when: 使用者點頭跑一次成對量測. 09-24.
+
+- 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過；session 記錄已存 `stage.agents`（6fb1b3a），缺的是一次真實的量測 — [lib/render.js](lib/render.js).
