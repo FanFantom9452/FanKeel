@@ -554,8 +554,9 @@ where `Write` is for its handoff file). It is refused `git commit` too, so it
 asks for each one through a commit file and the controller runs
 `scripts/commit.js`, in the repository the controller is standing in (a
 worktree the implementers build in is not handled) — a Bash call and a message
-back per task, in the controller's own context, which is a cost the A/B has to
-count rather than assume away. `verify` gets an implementer for the one thing its agent cannot do,
+back per task, or per batch when a brain shares one commit file across the
+tasks it dispatched together, in the controller's own context, which is a
+cost the A/B has to count rather than assume away. `verify` gets an implementer for the one thing its agent cannot do,
 applying a mutation and restoring the file. A default should wait for that
 measurement.
 
