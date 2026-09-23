@@ -135,6 +135,26 @@ test('a render.json of two roles and two pages writes four cells and an index th
     for (const role of ['guest', 'admin']) assert.ok(fs.existsSync(path.join(out, 'profiles', role)), 'no profile dir for ' + role);
 });
 
+test('render --config exits 1 and every cell says ok: false, when every shot fails', () => {
+    // FANKEEL_BROWSER points at node itself — not a browser at all, so every
+    // `--headless=new` shot it is handed rejects the flag and exits nonzero.
+    // No real Chromium is needed for this path, and FANKEEL_NO_FALLBACK=1
+    // keeps a real one on the machine from being found instead.
+    const { dir, conf } = configFixture();
+    const out = path.join(dir, 'out');
+    const env = Object.assign({}, process.env, { FANKEEL_BROWSER: process.execPath, FANKEEL_NO_FALLBACK: '1' });
+    const result = spawnSync(process.execPath, [CLI, '--config', conf, '--out', out], { encoding: 'utf8', env });
+    assert.equal(result.status, 1, 'render --config with every shot failing did not exit 1: ' + result.stderr);
+    assert.equal(result.stdout.trim(), path.join(out, 'index.json'));
+    const index = JSON.parse(fs.readFileSync(path.join(out, 'index.json'), 'utf8'));
+    assert.ok(index.cells.length > 0, 'no cells written');
+    for (const c of index.cells) {
+        assert.equal(c.ok, false, c.role + '/' + c.page + ': expected ok: false');
+        assert.equal(typeof c.error, 'string', c.role + '/' + c.page + ' has no error string');
+        assert.ok(c.error.length > 0, c.role + '/' + c.page + ' has an empty error string');
+    }
+});
+
 test('a role naming an undeclared page fails before any browser is looked for', () => {
     const { dir, conf } = configFixture();
     fs.writeFileSync(conf, JSON.stringify({ pages: [{ name: 'a', url: 'a.html' }], roles: [{ name: 'admin', pages: ['c'] }] }));

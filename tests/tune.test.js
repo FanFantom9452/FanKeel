@@ -79,6 +79,8 @@ test('serve injects without touching the file; request, wait and done round-trip
     fs.mkdirSync(path.join(cwd, 'site'));
     const file = path.join(cwd, 'site', 'page.html');
     fs.writeFileSync(file, PAGE);
+    const secret = 'top secret, outside site/';
+    fs.writeFileSync(path.join(cwd, 'secret.txt'), secret);
     const base = await startServer(t, cwd);
 
     const served = await request(base + 'page.html', 'GET');
@@ -86,6 +88,15 @@ test('serve injects without touching the file; request, wait and done round-trip
     assert.match(served.text, /<script src="\/__live\/overlay\.js"><\/script><\/body>/);
     assert.equal(fs.readFileSync(file, 'utf8'), PAGE, 'serving changed the file on disk');
     assert.equal((await request(base + '../package.json', 'GET')).status, 404);
+
+    // The plain `../secret.txt` above is normalised away by the URL parser
+    // before it ever reaches the server. An encoded slash survives that
+    // parse — url.pathname keeps the literal "%2F" — and is only turned
+    // into a real `/` by the server's own decodeURIComponent, so this is
+    // the request that actually exercises resolveInside's root check.
+    const escaped = await request(base + '..%2Fsecret.txt', 'GET');
+    assert.equal(escaped.status, 404, 'an encoded ../ climbed out of site/: ' + escaped.text);
+    assert.ok(!escaped.text.includes(secret), 'the response leaked secret.txt: ' + escaped.text);
 
     const events = [];
     const sse = http.get(base + '__live/events', (res) => res.on('data', (d) => events.push(String(d))));
