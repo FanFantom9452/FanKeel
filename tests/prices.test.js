@@ -27,6 +27,15 @@ test('the two ids found unpriced on 2026-09-21 carry the published rates', () =>
         { input: 5, output: 25, cacheRead: 0.5, cacheWrite5m: 6.25, cacheWrite1h: 10 });
 });
 
+// Read 2026-09-24 from platform.claude.com/docs/en/about-claude/pricing:
+// Opus 5.5 is $4 in, $20 out, $5 and $8 for the two cache writes, and $0.20
+// for a cache hit — 0.05x its input, the page's footnote 2. Every transcript
+// this machine wrote that day carries `claude-opus-5-5`.
+test('claude-opus-5-5 carries the rates published 2026-09-24', () => {
+    assert.deepEqual(prices.rateFor('claude-opus-5-5'),
+        { input: 4, output: 20, cacheRead: 0.2, cacheWrite5m: 5, cacheWrite1h: 8 });
+});
+
 // The published multipliers, asserted over every row rather than row by row: a
 // cache read is 0.1x that row's own input, a five-minute write 1.25x and an hour
 // write 2x. Fable 5.1 is the single exception and the reason this is a ratio test
@@ -35,7 +44,7 @@ test('the two ids found unpriced on 2026-09-21 carry the published rates', () =>
 test('every row carries the published cache multipliers of its own input rate', () => {
     const near = (a, b) => Math.abs(a - b) < 1e-9;
     for (const [id, r] of Object.entries(prices.perMillion)) {
-        const read = id === 'claude-fable-5-1' ? 0.025 : 0.1;
+        const read = { 'claude-fable-5-1': 0.025, 'claude-opus-5-5': 0.05 }[id] || 0.1;
         assert.ok(near(r.cacheRead / r.input, read), id + ' cacheRead / input = ' + (r.cacheRead / r.input));
         assert.ok(near(r.cacheWrite5m / r.input, 1.25), id + ' cacheWrite5m / input = ' + (r.cacheWrite5m / r.input));
         assert.ok(near(r.cacheWrite1h / r.input, 2), id + ' cacheWrite1h / input = ' + (r.cacheWrite1h / r.input));

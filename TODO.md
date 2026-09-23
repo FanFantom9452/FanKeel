@@ -80,7 +80,6 @@ what gets scheduled.
 - 〔security〕reviewer／verifier 沒有資安審查：照 cloudflare/security-audit-skill 的漏洞清單用本地模型掃，避開雲端模型的安全攔截；和另一個專案 AI CODING SECURITY 一起定 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 - 〔method〕開發方法要和使用者討論：對照 addyosmani/agent-skills 與 mattpocock/skills 兩套 skill 的做法 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
 - 〔method〕深度分析 ponytail：09-12 只收了三項（reviewer 的 `## Cuts`、audit 三個 lens、design 的 ladder），其餘做法還有什麼值得收 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴).
-- 〔station〕`lib/prices.js` 的 `perMillion` 缺 `claude-opus-5-5`：09-23 主控與 plan agent 都跑它，station 全算 `unpriced`；之後的 sonnet-5-5、haiku-5-5 同理。補價附官方價表；未知 id 要不要在 station 上標出來 — [lib/prices.js](lib/prices.js).
 - 〔stage-agents〕gate 的 header 超寬被擋兩次（09-23 verify 15 欄），`hooks/gate.js` 只說 missing or wrong：錯誤訊息要不要帶實際寬度與上限 12，或 brain 寫之前先自驗 — [lib/handoff.js](lib/handoff.js).
 - 〔stage-agents〕受控站裡主控自己問的中途題，答案被寫進 `<stage>-answer.md`，看起來像 gate 答案：`hooks/resume.js` 要不要只收 gate 替換過的題 — [hooks/resume.js](hooks/resume.js).
 - 〔stage-agents〕09-23 build 的 gate 沒被替換，使用者只看到佔位題，原因未查：舊 process 的 hook，或 `hooks/gate.js` 的條件 — [hooks/gate.js](hooks/gate.js).
