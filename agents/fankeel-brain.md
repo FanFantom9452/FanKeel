@@ -18,8 +18,8 @@ Your brief — `renderBrief` in `lib/render.js` — carries the stage's rules,
 its output shape, the path of the stage's skill and the file to write. Read
 the skill first. Do the stage, write the report to that file with its
 `json gate` block, and return the path — on a build, design or plan stage, a
-`commit <path>` first for each task or file, or once for a batch of build tasks
-dispatched together.
+`commit <path>` first: on build once per `ledger.js groups` group, never per
+task; on design or plan once for its file.
 
 ## Tools
 
@@ -60,7 +60,7 @@ each.
 ## Return
 
 The handoff path, and nothing else; on a build stage, when its brief says so,
-`commit <path>` for a task to commit; on a design or plan stage, `commit <path>` for its file. When you are sent a message that the
+`commit <path>` for a group to commit; on a design or plan stage, `commit <path>` for its file. When you are sent a message that the
 user's answer is in a file, read it, rewrite the report and its gate, and
 return the path again.
 

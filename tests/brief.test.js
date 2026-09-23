@@ -386,10 +386,10 @@ test('a build brain is told to ask for its commits through a commit file, a veri
   };
   const commitFile = /\.fankeel\/build\/task-20260919T093012\/build-commit\.md/;
   const build = brief('build');
-  assert.match(build, /You cannot commit: `git commit` and `git add` are refused to you\. When a task's implementer has returned[^\n]*write [^\n]*build-commit\.md[^\n]*return `commit [^\n]*build-commit\.md` and nothing else\. The controller commits and messages you `<base>\.\.<sha>`/);
+  assert.match(build, /You cannot commit: `git commit` and `git add` are refused to you\. Commit once per group[^\n]*write [^\n]*build-commit\.md[^\n]*return `commit [^\n]*build-commit\.md` and nothing else\. The controller commits and messages you `<base>\.\.<sha>`/);
   assert.match(build, commitFile);
   assert.match(build, /You have no Edit\. A task whose Dispatch line says in-session goes to an implementer on model `sonnet` like any other: send it the task's brief\./);
-  assert.match(build, /relative to the repository root\. The reply is `<base>\.\.<sha>` or one line `commit\.js: <why>`\. If <why> is about your file or the paths you listed \([^)]*nothing to commit, cannot read\): fix it and ask again, but the same error twice means the stage is blocked\. If it is anything else \([^)]*usage\): the stage is blocked, so say so in the report\. Return the report path when the whole stage is done or blocked\./);
+  assert.match(build, /relative to the repository root\. The reply is those lines or one line `commit\.js: <why>`; a failure stops at `commit\.js: block <n>: <why>` after the lines that landed\. If <why> is about your file or the paths you listed \([^)]*nothing to commit, cannot read\): fix it and ask again, but the same error twice means the stage is blocked\. If it is anything else \([^)]*usage\): the stage is blocked, so say so in the report\. Return the report path when the whole stage is done or blocked\./);
   assert.doesNotMatch(build, /You cannot edit or restore a file/);
   const verify = brief('verify');
   assert.match(verify, /You cannot edit or restore a file\. To apply a mutation, run the test and restore the file, send an implementer on model `sonnet`: it does all three, and you read what it returns/);
@@ -415,7 +415,7 @@ test('the brain agent file names the commit file it may write and refuses to run
   assert.match(section('Tools'), /on a build stage, the commit\s+file it names/);
   assert.match(section('Refusals'), /on a build\s+stage the commit file/);
   assert.match(section('Refusals'), /Do not run `scripts\/commit\.js`/);
-  assert.match(section('Return'), /`commit <path>` for a task to commit/);
+  assert.match(section('Return'), /`commit <path>` for a group to commit/);
 });
 
 test('a controlled build\'s brain brief stays under the 10,000-character cap on one additionalContext', () => {
@@ -593,4 +593,19 @@ test('a stage agent starting marks its stage in flight on the parent\'s record; 
   const mark = read().inflight;
   assert.deepEqual([mark.stage, mark.agentId], ['build', 'a3f9c2']);
   assert.ok(mark.at >= before && mark.at <= Date.now(), String(mark.at));
+});
+
+// 2026-09-24: a controlled build of 14 tasks sent its controller 19 commits,
+// one round trip each. One commit request per `ledger.js groups` group.
+test('a build brain commits once per ledger.js groups group, never per task', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const build = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.match(build, /Commit once per group `ledger\.js groups` printed, never per task: when every task in the group has returned/);
+  assert.match(build, /one block per task, the paths it owns one per line, a blank line, then its commit message, and a line `---` between blocks/);
+  assert.doesNotMatch(build, /may share one file/);
+  const file = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
+  assert.match(file, /on build once per `ledger\.js groups` group, never per\s+task/);
+  assert.doesNotMatch(file, /first for each task or file/);
 });
