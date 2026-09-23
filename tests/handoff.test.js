@@ -62,7 +62,9 @@ test('readGate refuses a gate shape AskUserQuestion would reject, and keeps next
     const g = JSON.parse(JSON.stringify(good));
     spoil(g.questions[0]);
     fs.writeFileSync(file, block(g));
-    assert.deepEqual(readGate(file), { invalid: field, next: g.next }, field);
+    const got = readGate(file);
+    assert.deepEqual({ invalid: got.invalid, next: got.next }, { invalid: field, next: g.next }, field);
+    assert.equal(typeof got.detail, 'string', field + ' has no detail');
   }
   fs.writeFileSync(file, block(good));
   assert.deepEqual(readGate(file), good);
@@ -85,7 +87,19 @@ test('the survey gate with no header that reached AskUserQuestion on 2026-09-23 
     next: 'confirm bounded route and move to design for the four stage-agent handoff gaps',
   };
   fs.writeFileSync(file, block(g));
-  assert.deepEqual(readGate(file, 'design'), { invalid: 'questions[0].header', next: g.next });
+  assert.deepEqual(readGate(file, 'design'), { invalid: 'questions[0].header', detail: 'header is missing or empty', next: g.next });
+});
+
+// 2026-09-23: a design gate headed "15 條一起 design" was refused with only
+// "missing or wrong". Sixteen columns: four CJK characters count two each.
+test('an over-wide header is refused with its width and the cap', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'design.md');
+  const g = gateOf('w');
+  g.questions[0].header = '15 條一起 design';
+  fs.writeFileSync(file, block(g));
+  const got = readGate(file);
+  assert.equal(got.invalid, 'questions[0].header');
+  assert.match(got.detail, /"15 條一起 design" is 16 columns, 12 is the cap/);
 });
 
 test('option one names the next stage when one is given, or standing down at the end', () => {

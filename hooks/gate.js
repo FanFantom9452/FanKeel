@@ -59,7 +59,7 @@ function main(raw) {
                 hookEventName: 'PreToolUse',
                 permissionDecision: 'deny',
                 permissionDecisionReason: 'fankeel: the gate in ' + handoffPath(root, mine, mine.stage)
-                    + ' cannot be asked — `' + gate.invalid + '` is missing or wrong. SendMessage the stage agent to'
+                    + ' cannot be asked — `' + gate.invalid + '`: ' + gate.detail + '. SendMessage the stage agent to'
                     + ' rewrite the gate block at the end of that file so `' + gate.invalid + '` holds (option one names'
                     + ' the next stage), then ask again when it returns the path. Do not write the question yourself.',
             },

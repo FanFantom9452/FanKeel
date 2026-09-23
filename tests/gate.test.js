@@ -152,6 +152,18 @@ test('stage.agents: a gate AskUserQuestion would reject is denied, naming the fi
   assert.equal(out.hookSpecificOutput.updatedInput, undefined);
 });
 
+test('stage.agents: an over-wide header is denied with its width and the cap, not "missing or wrong"', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-gate-cfg-') });
+  agentsOn(root);
+  const questions = JSON.parse(JSON.stringify(QUESTIONS));
+  questions[0].header = '15 條一起 design';
+  handoff(root, { questions, next: 'n' });
+  const reason = JSON.parse(run(GATE, root, { tool_input: PLACEHOLDER })).hookSpecificOutput.permissionDecisionReason;
+  assert.match(reason, /is 16 columns, 12 is the cap/);
+  assert.doesNotMatch(reason, /missing or wrong/);
+});
+
 test('stage.agents off: the question goes out as sent, even with a gate on disk', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
