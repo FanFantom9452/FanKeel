@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # Needs a decision 十五條 Implementation Plan

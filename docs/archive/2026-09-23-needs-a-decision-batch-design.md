@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # Needs a decision — all 15, one design

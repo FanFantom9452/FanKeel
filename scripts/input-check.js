@@ -13,7 +13,7 @@
 // re-read on every turn of every session opened there. It reports and never
 // edits: the cleanup is offered at a gate, and a file in another repository
 // is changed only by a task on that repository.
-// docs/plans/2026-09-23-needs-a-decision-batch-design.md §6.
+// docs/archive/2026-09-23-needs-a-decision-batch-design.md §6.
 
 const fs = require('node:fs');
 const path = require('node:path');

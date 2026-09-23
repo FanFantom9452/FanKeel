@@ -9,7 +9,7 @@
 // Land used to move the file and nothing else, so an archived plan kept
 // `status: design-intent` — six pages on 2026-09-23 — and `docs-audit.js`,
 // which skips every archived page by role, never looked again. The write is
-// what was wrong, not the read. docs/plans/2026-09-23-needs-a-decision-batch-design.md §2.
+// what was wrong, not the read. docs/archive/2026-09-23-needs-a-decision-batch-design.md §2.
 
 const fs = require('node:fs');
 const path = require('node:path');
