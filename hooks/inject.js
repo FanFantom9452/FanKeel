@@ -23,7 +23,6 @@ const { overlapPaths } = require('../lib/overlap.js');
 const { guardMode } = require('../lib/guard.js');
 const { positionIn } = require('../lib/stages.js');
 const { claimWrites } = require('../lib/dirty.js');
-const docs = require('../lib/docs.js');
 const profileLib = require('../lib/profile.js');
 const { run, parse } = require('../lib/hook.js');
 
@@ -204,8 +203,7 @@ function main(raw) {
     // `projectRootsFor` stats the disk and this stays inside a try regardless.
     let profile;
     try {
-        const projectRoot = docs.projectRootsFor(root, mine.project ? [mine.project] : [])[0] || root;
-        profile = profileLib.read(projectRoot, mine.configDir || profileLib.configDirOf());
+        profile = profileLib.profileFor(root, mine);
     } catch (e) { /* housekeeping */ }
 
     // Output first, side effects after. A failure while refreshing a timestamp or

@@ -329,3 +329,16 @@ test('the three presets set exactly what the design says, and null is what clear
     assert.deepEqual(profile.PRESETS.lean.set, Object.assign({}, habit, { 'stage.agents': 'survey,build,verify' }));
     assert.equal('class.default' in profile.PRESETS.balanced.set, false, 'balanced leaves class.default untouched');
 });
+
+test('profileFor reads the project the session names, else the registry root', () => {
+    const d = dir();
+    const cfg = path.join(d, 'cfg');
+    fs.mkdirSync(path.join(d, 'app', '.fankeel'), { recursive: true });
+    fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
+    fs.writeFileSync(profile.projectFile(path.join(d, 'app')), JSON.stringify({ guard: 'deny' }));
+    fs.writeFileSync(profile.projectFile(d), JSON.stringify({ guard: 'off' }));
+    assert.equal(profile.profileFor(d, { project: 'app', configDir: cfg }).values.guard, 'deny');
+    assert.equal(profile.profileFor(d, { configDir: cfg }).values.guard, 'off');
+    assert.equal(profile.profileFor(d, { project: 'gone', configDir: cfg }).values.guard, 'off', 'a project directory that is not there falls back to the root');
+    assert.throws(() => profile.profileFor(d, { configDir: 123 }), 'a configDir that is not a string still throws, for the hook to catch');
+});

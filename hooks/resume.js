@@ -19,7 +19,6 @@
 
 const registry = require('../lib/registry.js');
 const { renderResume } = require('../lib/render.js');
-const docs = require('../lib/docs.js');
 const profileLib = require('../lib/profile.js');
 const { controlling } = require('../lib/stages.js');
 const { answerPath, writeAnswer } = require('../lib/handoff.js');
@@ -40,8 +39,7 @@ function main(raw) {
     // `projectRootsFor` stats the disk and this stays inside a try regardless.
     let profile;
     try {
-        const projectRoot = docs.projectRootsFor(root, mine.project ? [mine.project] : [])[0] || root;
-        profile = profileLib.read(projectRoot, mine.configDir || profileLib.configDirOf());
+        profile = profileLib.profileFor(root, mine);
     } catch (e) { /* housekeeping */ }
 
     // No badge written and no other session read. Neither can have changed since

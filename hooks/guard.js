@@ -14,7 +14,6 @@
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
 const { decide, guardMode, targetOf, readOnlyAgentType, writesFiles } = require('../lib/guard.js');
-const docs = require('../lib/docs.js');
 const profileLib = require('../lib/profile.js');
 const { controlling } = require('../lib/stages.js');
 const { run, parse } = require('../lib/hook.js');
@@ -81,13 +80,12 @@ function main(raw) {
     // rather than asked about, because the whole point of a controlled stage
     // is that the controller dispatches, relays a path and asks — it does not
     // edit. `agent_id` absent is the main thread, read the same way the
-    // Bash|PowerShell matcher above reads it. This hook has not loaded the
-    // profile before now; wired the way `hooks/inject.js` loads it.
+    // Bash|PowerShell matcher above reads it. The profile is read through
+    // `profileFor` in lib/profile.js, the way every other hook reads it.
     if (!payload.agent_id && WRITE_TOOLS.has(payload.tool_name)) {
         let controlled = false;
         try {
-            const projectRoot = docs.projectRootsFor(root, mine.project ? [mine.project] : [])[0] || root;
-            const values = profileLib.read(projectRoot, mine.configDir || profileLib.configDirOf()).values;
+            const values = profileLib.profileFor(root, mine).values;
             controlled = controlling(mine.stage, values);
         } catch (e) { /* housekeeping */ }
         if (controlled) {

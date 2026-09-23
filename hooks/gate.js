@@ -21,7 +21,6 @@
 // every other session gets none of this, and only the time is noted.
 
 const registry = require('../lib/registry.js');
-const docs = require('../lib/docs.js');
 const profileLib = require('../lib/profile.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
 const { handoffPath, readGate, skipReason } = require('../lib/handoff.js');
@@ -52,8 +51,7 @@ function main(raw) {
     let gate = null;
     let skip = null;
     try {
-        const projectRoot = docs.projectRootsFor(root, mine.project ? [mine.project] : [])[0] || root;
-        const values = profileLib.read(projectRoot, mine.configDir || profileLib.configDirOf()).values;
+        const values = profileLib.profileFor(root, mine).values;
         const controlled = controlling(mine.stage, values);
         const file = handoffPath(root, mine, mine.stage);
         if (controlled) gate = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE);

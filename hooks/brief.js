@@ -22,7 +22,6 @@
 
 const registry = require('../lib/registry.js');
 const { renderBrief } = require('../lib/render.js');
-const docs = require('../lib/docs.js');
 const profileLib = require('../lib/profile.js');
 const { run, parse } = require('../lib/hook.js');
 
@@ -55,8 +54,7 @@ function main(raw) {
     // branch it gates would have to guess.
     let profile;
     try {
-        const projectRoot = docs.projectRootsFor(root, mine.project ? [mine.project] : [])[0] || root;
-        profile = profileLib.read(projectRoot, mine.configDir || profileLib.configDirOf());
+        profile = profileLib.profileFor(root, mine);
     } catch (e) { /* housekeeping */ }
 
     const text = renderBrief({ mine: { sessionId: payload.session_id, data: mine }, agentType: payload.agent_type, root, profile, transcriptPath: payload.transcript_path });
