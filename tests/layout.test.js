@@ -70,3 +70,14 @@ test('rows groups by first segment and counts what is below', () => {
   assert.deepEqual([...dirs.get('lib').below], ['sub']);
   assert.deepEqual(loose.map((f) => f.rel), ['top.js']);
 });
+
+test('layout reads --root with residue\'s parser, the one copy both scripts share', () => {
+  const { parseArgs } = require('../scripts/residue.js');
+  const dir = tmp('fankeel-layout-');
+  assert.equal(parseArgs(['--root', dir]).root, path.resolve(dir));
+  assert.equal(parseArgs(['--root']).root, parseArgs([]).root, 'a bare --root falls back to the default');
+  assert.equal(parseArgs(['--quiet', 'x']).root, parseArgs([]).root, 'an unknown flag stays silent');
+  const src = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'layout.js'), 'utf8');
+  assert.match(src, /require\('\.\/residue\.js'\)/);
+  assert.doesNotMatch(src, /function parseArgs/);
+});
