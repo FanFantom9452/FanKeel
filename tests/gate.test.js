@@ -126,7 +126,8 @@ function handoff(root, gate) {
   fs.writeFileSync(file, '# report\n\n' + TICKS + 'json gate\n' + JSON.stringify(gate) + '\n' + TICKS + '\n');
 }
 const QUESTIONS = [{ question: 'survey 的結論可以進 design 嗎？', header: 'survey', multiSelect: false, options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }] }];
-const PLACEHOLDER = { questions: [{ question: 'placeholder', header: 'x', multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }] }] };
+const placeholder = (header) => ({ questions: [{ question: 'placeholder', header, multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }] }] });
+const PLACEHOLDER = placeholder('survey');
 const agentsOn = (root) => fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'true' }));
 
 test('stage.agents at survey: the gate in the handoff replaces the question', () => {
@@ -244,7 +245,7 @@ test('verify sending the work back to build on its own route is asked, not denie
   seed(root, MINE, { stage: 'verify', route: ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'], started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'all' }));
   const questions = verifyGate(root, '退回 build');
-  const out = JSON.parse(run(GATE, root, { tool_input: PLACEHOLDER }));
+  const out = JSON.parse(run(GATE, root, { tool_input: placeholder('verify') }));
   assert.deepEqual(out.hookSpecificOutput.updatedInput.questions, questions);
 });
 
@@ -253,6 +254,40 @@ test('a stage the route does not have is still denied', () => {
   seed(root, MINE, { stage: 'verify', route: ['build', 'verify', 'audit'], started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'all' }));
   verifyGate(root, '退回 design');
-  const out = JSON.parse(run(GATE, root, { tool_input: PLACEHOLDER }));
+  const out = JSON.parse(run(GATE, root, { tool_input: placeholder('verify') }));
   assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
+});
+
+// 2026-09-24, verify: the controller asked its own question mid-stage and the
+// user was shown the stage's old gate instead. Only the placeholder's shape —
+// one question, headed with the stage's name — is swapped.
+test('stage.agents at survey: a question that is not the placeholder goes out as written, and says why', () => {
+  const root = tmp('fankeel-gate-');
+  const mark = { stage: 'survey', at: 1758000000000, agentId: 'a3f9c2' };
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-'), inflight: mark });
+  agentsOn(root);
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  const out = JSON.parse(run(GATE, root, { tool_input: placeholder('開新任務') }));
+  assert.equal(out.hookSpecificOutput, undefined);
+  assert.match(out.systemMessage, /^fankeel: gate not substituted — .*not the placeholder/);
+  assert.deepEqual(readEntry(root, MINE).inflight, mark, 'a question the controller asked itself does not clear the mark');
+});
+
+test('two questions are not the placeholder, even when the first is headed with the stage', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  const one = placeholder('survey').questions[0];
+  const out = JSON.parse(run(GATE, root, { tool_input: { questions: [one, one] } }));
+  assert.equal(out.hookSpecificOutput, undefined);
+});
+
+test('the placeholder header matches the stage in any case', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  const out = JSON.parse(run(GATE, root, { tool_input: placeholder('SURVEY') }));
+  assert.deepEqual(out.hookSpecificOutput.updatedInput.questions, QUESTIONS);
 });

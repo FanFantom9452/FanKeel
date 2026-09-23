@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const tmp = require('./tmp.js');
-const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff, ledgerCommitPath, newestCommit, skipReason } = require('../lib/handoff.js');
+const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff, ledgerCommitPath, newestCommit, skipReason, isPlaceholder } = require('../lib/handoff.js');
 
 const DATA = { started: '2026-09-19T09:30:12.345Z' };
 const TICKS = '`'.repeat(3);
@@ -287,4 +287,34 @@ test('skipReason on a controlled stage says which of the two in-file conditions 
   assert.match(skipReason({ stage: 'survey', controlled: true, handoff: file }), /does not exist yet/);
   fs.writeFileSync(file, 'a report with no gate block\n');
   assert.match(skipReason({ stage: 'survey', controlled: true, handoff: file }), /no readable `json gate` block/);
+});
+
+// 2026-09-24: verify's gate held five questions and AskUserQuestion refused it
+// twice. Four is the cap, and the fifth is refused before the call.
+test('readGate refuses a fifth question and names the count', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'survey.md');
+  const g = { questions: [1, 2, 3, 4, 5].map((n) => gateOf('q' + n).questions[0]), next: 'n' };
+  fs.writeFileSync(file, block(g));
+  assert.deepEqual(readGate(file), { invalid: 'questions', detail: '5 questions, 4 is the cap', next: 'n' });
+  g.questions.pop();
+  fs.writeFileSync(file, block(g));
+  assert.deepEqual(readGate(file), g);
+});
+
+test('isPlaceholder is exactly one question headed with the stage name, any case', () => {
+  const q = (header) => ({ header, question: 'q', options: [] });
+  assert.equal(isPlaceholder([q('survey')], 'survey'), true);
+  assert.equal(isPlaceholder([q('Survey')], 'survey'), true);
+  assert.equal(isPlaceholder([q('design')], 'survey'), false);
+  assert.equal(isPlaceholder([q('survey'), q('survey')], 'survey'), false);
+  assert.equal(isPlaceholder([], 'survey'), false);
+  assert.equal(isPlaceholder(undefined, 'survey'), false);
+  assert.equal(isPlaceholder([{}], 'survey'), false);
+  assert.equal(isPlaceholder([null], 'survey'), false);
+});
+
+test('skipReason says a controlled stage\'s question was not the placeholder', () => {
+  assert.match(skipReason({ stage: 'survey', controlled: true, placeholder: false, handoff: '/r/survey.md' }),
+    /not the placeholder \(exactly one question whose header is `survey`\)/);
+  assert.equal(skipReason({ stage: 'survey', controlled: false, placeholder: false, inflight: null }), null);
 });

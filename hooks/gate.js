@@ -17,13 +17,15 @@
 // probe behind this found that a PreToolUse hook returning only `updatedInput`
 // still lets the user pick.
 // With `stage.agents` naming the task's own stage, that is the field it uses to replace the
-// placeholder question with the gate block a stage agent left in its handoff;
-// every other session gets none of this, and only the time is noted.
+// placeholder — exactly one question whose `header` is the stage's name, any case,
+// `isPlaceholder` in lib/handoff.js — with the gate block a stage agent left in its
+// handoff. Any other question goes out as the controller wrote it, with a message
+// saying so; every other session gets none of this, and only the time is noted.
 
 const registry = require('../lib/registry.js');
 const profileLib = require('../lib/profile.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
-const { handoffPath, readGate, skipReason } = require('../lib/handoff.js');
+const { handoffPath, readGate, skipReason, isPlaceholder } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 
 // `stage.agents` as the profile holds it, for a sentence.
@@ -46,16 +48,19 @@ function main(raw) {
     } catch (e) { /* housekeeping */ }
 
     // `stage.agents`: the question is the stage agent's, word for word. What the
-    // controller sent is a placeholder and does not count, so nothing it could
-    // have mistyped reaches the user. docs/archive/2026-09-19-survey-brain-design.md §6.
+    // controller sent, when it is the placeholder, does not count, so nothing it
+    // could have mistyped reaches the user. A question of its own is not the
+    // placeholder and is left alone: on 2026-09-24 one was replaced by an old
+    // gate. docs/archive/2026-09-19-survey-brain-design.md §6.
     let gate = null;
     let skip = null;
     try {
         const values = profileLib.profileFor(root, mine).values;
         const controlled = controlling(mine.stage, values);
+        const placeholder = isPlaceholder(payload.tool_input && payload.tool_input.questions, mine.stage);
         const file = handoffPath(root, mine, mine.stage);
-        if (controlled) gate = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE);
-        if (!gate) skip = skipReason({ stage: mine.stage, controlled, agents: agentsText(values), inflight: mine.inflight, handoff: file });
+        if (controlled && placeholder) gate = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE);
+        if (!gate) skip = skipReason({ stage: mine.stage, controlled, placeholder, agents: agentsText(values), inflight: mine.inflight, handoff: file });
     } catch (e) { /* housekeeping */ }
     // Silent before 2026-09-24, so a gate that was never substituted left no
     // trace of which condition failed. A message, not a decision: the question
