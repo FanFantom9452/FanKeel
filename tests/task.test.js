@@ -1485,7 +1485,7 @@ test('renaming the task numbers its laps past the old task\'s, so an old gate is
   const stale = handoffPath(dir, { started: old.started }, 'survey');
   fs.mkdirSync(path.dirname(stale), { recursive: true });
   const fence = '`'.repeat(3);
-  fs.writeFileSync(stale, fence + 'json gate\n' + JSON.stringify({ questions: [{ question: 'the old task' }] }) + '\n' + fence + '\n');
+  fs.writeFileSync(stale, fence + 'json gate\n' + JSON.stringify({ questions: [{ question: 'the old task', header: 'survey', multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }] }] }) + '\n' + fence + '\n');
   assert.equal(readGate(stale).questions[0].question, 'the old task');
 
   assert.equal(run(dir, ['task', 'something else entirely', '--session', A]).code, 0);
