@@ -83,6 +83,8 @@ what gets scheduled.
 - 〔method〕開發方法要和使用者討論：對照 addyosmani/agent-skills 與 mattpocock/skills 兩套 skill 的做法 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
 - 〔method〕深度分析 ponytail：09-12 只收了三項（reviewer 的 `## Cuts`、audit 三個 lens、design 的 ladder），其餘做法還有什麼值得收 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴).
 - 〔survey〕搜尋預設只看現行文件：`.ignore` 只把 `docs/archive/` 擋在 Grep 外（Glob 不吃），decision／report／plan 的歷史頁照樣被搜到；只有要比對開發歷史的任務才打開 — [scripts/survey.js](scripts/survey.js).
+- 〔stage-agents〕受控 build／verify 還有十來個接縫沒實跑過：stage agent 沒有 AskUserQuestion／Edit、插話會起第二個、profile 中途翻轉 — [docs/subagents.md](docs/subagents.md).
+- 〔stage-agents〕09-23 實撞：brain 回報一次後要等主控回話才能再回報，fix 串中途的 commit 請求被擋、`SendMessage` 又關著；改 brain 指令還是 commit 交接 — [docs/subagents.md](docs/subagents.md).
 
 ## Waiting
 
@@ -161,11 +163,6 @@ lifts when: main 已 push（08c4ecf 起），新 terminal 更新插件到 0.76.0
 lifts when: 放行規則存在下 no verdict 再發生一次. 09-22.
 
 - 〔stage-agents〕auto mode 分類器曾對站 agent 與 implementer 的 Write／Edit 回 no verdict（09-22 六次以上）；已加放行規則 `Edit(/.fankeel/build/**)`，但放行前後探測都寫成功，效果無法證明；再發生時查規則有沒有被讀到 — [docs/subagents.md](docs/subagents.md).
-
-### build/verify 接縫一次
-lifts when: 十來個接縫（缺 AskUserQuestion/Edit、插話起第二個 brain、profile 翻轉、accounting、claims、commit 位置）任一個被觀察到. 09-22.
-
-- 〔stage-agents〕受控 build／verify 還有十來個接縫沒實跑過：stage agent 沒有 AskUserQuestion／Edit、插話會起第二個、profile 中途翻轉 — [docs/subagents.md](docs/subagents.md).
 
 ### 第二個平台的使用者
 lifts when: 出現第二個 host（Gemini CLI、Codex CLI 等）的使用者或 issue. 09-23.
