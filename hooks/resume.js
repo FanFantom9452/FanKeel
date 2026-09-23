@@ -69,9 +69,12 @@ function main(raw) {
     } catch (e) { /* housekeeping */ }
 
     // `stage.agents`: the answer left where the stage agent is told to look, so
-    // the controller relays a path and never retypes what the user said.
+    // the controller relays a path and never retypes what the user said. Only a
+    // gate hooks/gate.js substituted: it clears `inflight` when it does, so a
+    // mark still standing here means the controller asked this one itself, and
+    // its answer is not the stage agent's to read.
     try {
-        if (controlling(mine.stage, profile && profile.values)) {
+        if (controlling(mine.stage, profile && profile.values) && !mine.inflight) {
             const file = answerPath(root, mine, mine.stage);
             const response = payload.tool_response;
             if (file && response != null) writeAnswer(file, typeof response === 'string' ? response : JSON.stringify(response, null, 2));

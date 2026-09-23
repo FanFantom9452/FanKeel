@@ -191,3 +191,25 @@ test('stage.agents at survey: the gate arriving clears the in-flight mark; with 
   run(GATE, root, { tool_input: PLACEHOLDER });
   assert.equal(readEntry(root, MINE).inflight, undefined);
 });
+
+// 2026-09-23: a question the controller asked on its own while its stage
+// agent was still working was written to `<stage>-answer.md`, where the agent
+// reads a gate answer. gate.js clears `inflight` only when it substitutes a
+// gate, so a mark still standing when the answer arrives is the controller's.
+test('stage.agents: an answer while the stage agent is still in flight is not written as the gate answer', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', gateAt: Date.now(), configDir: tmp('fankeel-cfg-'), inflight: { stage: 'survey', at: 1758000000000, agentId: 'a3f9c2' } });
+  agentsOn(root);
+  run(RESUME, root, { tool_response: { answers: { 'q?': 'yes' } } });
+  assert.equal(fs.existsSync(path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'survey-answer.md')), false);
+});
+
+test('stage.agents: the pair in order, a substituted gate clears the mark and its answer is written', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-'), inflight: { stage: 'survey', at: 1758000000000, agentId: 'a3f9c2' } });
+  agentsOn(root);
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  run(GATE, root, { tool_input: PLACEHOLDER });
+  run(RESUME, root, { tool_response: { answers: { 'q?': '進 design' } } });
+  assert.ok(fs.existsSync(path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'survey-answer.md')));
+});
