@@ -47,6 +47,65 @@ test('a missing file, no block, bad json or no questions read as no gate', () =>
   assert.equal(readGate(file), null);
 });
 
+test('readGate refuses a gate shape AskUserQuestion would reject, and keeps next for a pause', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'survey.md');
+  const good = gateOf('ok');
+  const cases = [
+    [(q) => { delete q.header; }, 'questions[0].header'],
+    [(q) => { q.header = '一二三四五六七'; }, 'questions[0].header'],
+    [(q) => { delete q.question; }, 'questions[0].question'],
+    [(q) => { q.options = [q.options[0]]; }, 'questions[0].options'],
+    [(q) => { delete q.options[1].description; }, 'questions[0].options[1]'],
+    [(q) => { q.multiSelect = 'no'; }, 'questions[0].multiSelect'],
+  ];
+  for (const [spoil, field] of cases) {
+    const g = JSON.parse(JSON.stringify(good));
+    spoil(g.questions[0]);
+    fs.writeFileSync(file, block(g));
+    assert.deepEqual(readGate(file), { invalid: field, next: g.next }, field);
+  }
+  fs.writeFileSync(file, block(good));
+  assert.deepEqual(readGate(file), good);
+});
+
+// 2026-09-23: this survey gate reached AskUserQuestion through gate.js and was
+// rejected there for `questions[0].header`, after readGate had accepted it.
+test('the survey gate with no header that reached AskUserQuestion on 2026-09-23 is refused', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'survey.md');
+  const g = {
+    questions: [{
+      question: 'Survey found four confirmed gaps in the stage-agent dispatch/gate/brief mechanism. Proceed to design as bounded?',
+      options: [
+        { label: 'Yes — design next (Recommended)', description: 'Accept bounded classification and the five-stage route already applied.' },
+        { label: 'Split into separate tasks', description: 'The four seams are independent.' },
+        { label: 'Something else', description: 'A different scope, route, or a seam to drop or add.' },
+      ],
+      multiSelect: false,
+    }],
+    next: 'confirm bounded route and move to design for the four stage-agent handoff gaps',
+  };
+  fs.writeFileSync(file, block(g));
+  assert.deepEqual(readGate(file, 'design'), { invalid: 'questions[0].header', next: g.next });
+});
+
+test('option one names the next stage when one is given, or standing down at the end', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'verify.md');
+  const g = gateOf('v');
+  g.questions[0].options[0].label = '退回 build';
+  fs.writeFileSync(file, block(g));
+  assert.equal(readGate(file, 'audit').invalid, 'questions[0].options[0].label');
+  assert.deepEqual(readGate(file), g);
+  g.questions[0].options[0].label = '進 audit (Recommended)';
+  fs.writeFileSync(file, block(g));
+  assert.deepEqual(readGate(file, 'audit'), g);
+  g.questions[0].options[0].label = 'Stand down';
+  fs.writeFileSync(file, block(g));
+  assert.deepEqual(readGate(file, null), g);
+  g.questions[0].options[0].label = '進 audit';
+  fs.writeFileSync(file, block(g));
+  assert.equal(readGate(file, null).invalid, 'questions[0].options[0].label');
+});
+
 test('the answer is written where answerPath says, directories made', () => {
   const file = answerPath(tmp('fankeel-handoff-'), DATA, 'survey');
   writeAnswer(file, 'Other: read lib/ first');

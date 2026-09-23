@@ -139,6 +139,19 @@ test('stage.agents at survey: the gate in the handoff replaces the question', ()
   assert.equal(Number.isFinite(readEntry(root, MINE).gateAt), true);
 });
 
+test('stage.agents: a gate AskUserQuestion would reject is denied, naming the field', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-gate-cfg-') });
+  agentsOn(root);
+  const questions = JSON.parse(JSON.stringify(QUESTIONS));
+  delete questions[0].header;
+  handoff(root, { questions, next: 'n' });
+  const out = JSON.parse(run(GATE, root, { tool_input: PLACEHOLDER }));
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /questions\[0\]\.header/);
+  assert.equal(out.hookSpecificOutput.updatedInput, undefined);
+});
+
 test('stage.agents off: the question goes out as sent, even with a gate on disk', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });

@@ -11,9 +11,11 @@
 // responding — this pipeline's gate is a tool call, so Stop never fires at one.
 //
 // Same two rules as guard.js: exit 0 on every path, and cost nothing for a
-// session that is not in the mode. It never writes a permission decision:
-// `updatedInput` alone is not one — the probe behind this found that a
-// PreToolUse hook returning only `updatedInput` still lets the user pick.
+// session that is not in the mode. It writes a permission decision in one case
+// only: a stage agent's gate that AskUserQuestion would reject is denied,
+// naming the field. Otherwise `updatedInput` alone is not a decision — the
+// probe behind this found that a PreToolUse hook returning only `updatedInput`
+// still lets the user pick.
 // With `stage.agents` naming the task's own stage, that is the field it uses to replace the
 // placeholder question with the gate block a stage agent left in its handoff;
 // every other session gets none of this, and only the time is noted.
@@ -21,7 +23,7 @@
 const registry = require('../lib/registry.js');
 const docs = require('../lib/docs.js');
 const profileLib = require('../lib/profile.js');
-const { controlling } = require('../lib/stages.js');
+const { controlling, nextStage } = require('../lib/stages.js');
 const { handoffPath, readGate } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 
@@ -44,9 +46,26 @@ function main(raw) {
     try {
         const projectRoot = docs.projectRootsFor(root, mine.project ? [mine.project] : [])[0] || root;
         const values = profileLib.read(projectRoot, mine.configDir || profileLib.configDirOf()).values;
-        if (controlling(mine.stage, values)) gate = readGate(handoffPath(root, mine, mine.stage));
+        if (controlling(mine.stage, values)) gate = readGate(handoffPath(root, mine, mine.stage), nextStage(mine.stage, mine.route));
     } catch (e) { /* housekeeping */ }
     if (!gate) return;
+
+    // A gate AskUserQuestion would reject: substituting it would fail the call
+    // with a schema error the controller cannot read back to its agent. Deny
+    // instead, naming the field, so the controller can send it back.
+    if (gate.invalid) {
+        process.stdout.write(JSON.stringify({
+            hookSpecificOutput: {
+                hookEventName: 'PreToolUse',
+                permissionDecision: 'deny',
+                permissionDecisionReason: 'fankeel: the gate in ' + handoffPath(root, mine, mine.stage)
+                    + ' cannot be asked — `' + gate.invalid + '` is missing or wrong. SendMessage the stage agent to'
+                    + ' rewrite the gate block at the end of that file so `' + gate.invalid + '` holds (option one names'
+                    + ' the next stage), then ask again when it returns the path. Do not write the question yourself.',
+            },
+        }));
+        return;
+    }
 
     // The stage agent has handed its gate back, so it is no longer in flight.
     // There is no SubagentStop hook in .claude-plugin/plugin.json; this is the
