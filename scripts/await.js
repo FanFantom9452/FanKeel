@@ -30,7 +30,16 @@ const COMMIT_SCRIPT = path.join(__dirname, 'commit.js').replace(/\\/g, '/');
 
 // Flag and value pairs only. Null for anything else, which prints the usage line.
 function parseArgs(argv) {
-    const opts = { idle: 120, timeout: 1800 };
+    // idle was 120 (two minutes) until 2026-09-23, the same number as the
+    // Claude Code harness's own default foreground-Bash timeout — so one
+    // ordinary foreground Bash call from the stage agent itself (not a child
+    // it dispatched) that ran close to that ceiling was fatally coincident
+    // with this threshold: the harness's tool_result can land ~121-125 wall-
+    // clock seconds after the tool_use, past await.js's old 120s idle mark,
+    // so the idle check fired and read `lost` before the real result arrived.
+    // 180 (three minutes) clears the observed 121.5s gap with 58+ seconds of
+    // margin. docs/reports/2026-09-23-brain-wakeup.md.
+    const opts = { idle: 180, timeout: 1800 };
     for (let i = 0; i < argv.length; i += 2) {
         const key = argv[i];
         const value = argv[i + 1];

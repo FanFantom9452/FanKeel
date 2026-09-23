@@ -507,10 +507,19 @@ handoff and commit paths and the agent's id (`inflight`, written by
 `commit <file>`, a `<stage>-commit.md` newer than `--since`; `handoff <file>`,
 the report rewritten after `--since`, which defaults to the stage's answer
 file; `lost <id>`, neither, and no `agent-*.jsonl` in the session's
-`subagents/` directory has moved for two minutes; or `timeout` after thirty.
+`subagents/` directory has moved for three minutes; or `timeout` after thirty.
 The whole directory rather than the agent's own file, because a brain waiting
 on a child makes no tool call — 52 seconds in
-[the 2026-09-23 run](reports/2026-09-23-brain-wakeup.md). Each line says what
+[the 2026-09-23 run](reports/2026-09-23-brain-wakeup.md). A second, different
+gap can read as lost the same way: one ordinary foreground Bash call the
+stage agent itself runs, not a child it dispatches, leaves its own transcript
+unwritten until the harness returns the tool_result, and that can land up to
+about 121-125 wall-clock seconds after a call this long hits the harness's
+own default foreground-Bash timeout (120 seconds) — a two-minute idle mark
+used to sit right on that ceiling, so one ordinary call near it could read as
+lost 1500ms before the real result arrived, even though the agent made a
+tool call and was never idle. The mark is three minutes now, clear of that
+ceiling with margin. Each line says what
 to do next, so the controller's rule only says to run it: with that rule a
 controlled build block is within 40 characters of its 2400. Nothing loops: `awaitHandoff` in
 `lib/handoff.js` wakes on `fs.watch` of the handoff directory and on one timer

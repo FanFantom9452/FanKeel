@@ -107,6 +107,40 @@ test('await.js prints the line for each state, reading paths and the agent off t
     assert.equal(lost.text, 'lost a3f9c2 — the stage agent stopped with neither file written: dispatch a fresh one with the same line.');
 });
 
+// 2026-09-23: the stage agent ran a foreground (not run_in_background) Bash
+// tool call — `node --test tests/await.test.js tests/handoff.test.js` — that
+// did not finish before the harness's own default foreground-Bash timeout
+// (120000ms). The harness auto-backgrounds the call and the tool_result lands
+// 121500ms after the tool_use, so the agent's own transcript file goes
+// unwritten for that whole gap even though the agent was never idle. With the
+// old 120s idle default that gap alone read as `lost`, 1500ms before the real
+// tool_result would have landed. subagents/agent-a3e5d0d818fdea28f.jsonl lines
+// 139-140; docs/reports/2026-09-23-brain-wakeup.md.
+//
+// awaitHandoff measures the idle gap off the real clock (`Date.now()` inside
+// its own Promise executor), and its idle timer is a real `setTimeout`, so a
+// CLI-level test cannot reach the idle branch inside a short `--timeout`
+// without either waiting the real two (or three) minutes or controlling the
+// clock the code itself reads. `node:test`'s built-in timer mock advances
+// `Date` and `setTimeout` together, which lets this run the real default —
+// no `--idle` flag — and land in well under a second of wall time.
+test('await.js does not read one long foreground Bash call as a lost agent, at the real idle default', async () => {
+    const t = test.mock.timers;
+    t.enable({ apis: ['Date', 'setTimeout'] });
+    try {
+        const f = fixture({ inflight: { stage: 'build', at: 1, agentId: 'a3e5d0' } });
+        at(path.join(f.config, 'projects', 'F--x', SID + '.jsonl'), Date.now());
+        at(path.join(f.config, 'projects', 'F--x', SID, 'subagents', 'agent-a3e5d0.jsonl'), Date.now());
+        const p = awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '122'], f.env);
+        t.tick(122000);
+        const out = await p;
+        assert.notEqual(out.text.split(' ')[0], 'lost', out.text);
+        assert.match(out.text, /^timeout — /, out.text);
+    } finally {
+        t.reset();
+    }
+});
+
 // 2026-09-23: the build stage's own brain wrote every commit file to the
 // plan-stem ledger directory (`.fankeel/build/<plan file>/`, the directory
 // `lib/ledger.js`'s `ledgerPath` uses for `progress.md`) instead of the exact
