@@ -59,7 +59,7 @@ function main(raw) {
         profile = profileLib.read(projectRoot, mine.configDir || profileLib.configDirOf());
     } catch (e) { /* housekeeping */ }
 
-    const text = renderBrief({ mine: { sessionId: payload.session_id, data: mine }, agentType: payload.agent_type, root, profile });
+    const text = renderBrief({ mine: { sessionId: payload.session_id, data: mine }, agentType: payload.agent_type, root, profile, transcriptPath: payload.transcript_path });
     if (!text) return;
 
     process.stdout.write(JSON.stringify({

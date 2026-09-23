@@ -480,6 +480,42 @@ test('read first says none when no earlier stage left a report, and says how man
   assert.ok(long.includes('1 more not listed'));
 });
 
+test('with no earlier report, a brain is pointed at the plan this task wrote after it started', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const plans = path.join(root, 'docs', 'plans');
+  fs.mkdirSync(plans, { recursive: true });
+  const old = path.join(plans, '2026-09-01-old.md');
+  fs.writeFileSync(old, '# old\n');
+  fs.utimesSync(old, new Date('2026-09-01T00:00:00Z'), new Date('2026-09-01T00:00:00Z'));
+  fs.writeFileSync(path.join(plans, '2026-09-19-x-design.md'), '# design\n');
+  fs.writeFileSync(path.join(plans, '2026-09-19-x.md'), '# plan\n');
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.match(text, /read first: \S*2026-09-19-x\.md — the plan/);
+  assert.doesNotMatch(text, /2026-09-01-old/);
+});
+
+test('a verify brain is given the subagents directory; other stages are not', () => {
+  const brief = (stage) => {
+    const root = tmp();
+    seedProfile(root, { 'stage.agents': [stage] });
+    seed(root, { stage, started: '2026-09-19T09:30:12.345Z' });
+    return contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', transcript_path: path.join(root, 'sess.jsonl') })));
+  };
+  assert.match(brief('verify'), /subagents: \S*sess[\\/]subagents/);
+  assert.doesNotMatch(brief('build'), /subagents: /);
+});
+
+test('a brain is told the gate shape and that option one names the next stage', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['survey'] });
+  seed(root, { stage: 'survey', started: '2026-09-19T09:30:12.345Z' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.match(text, /carries `header` \(12 columns at most/);
+  assert.match(text, /option one's label names `design`/);
+});
+
 // The test above only proves the cap lies somewhere between a line that fits
 // (604 chars) and two lines whose sum does not (1208) — a gap of hundreds of
 // characters. A single line of exactly the cap, and one of cap+1, pin the
