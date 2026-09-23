@@ -84,10 +84,6 @@ what gets scheduled.
 - 〔method〕深度分析 ponytail：09-12 只收了三項（reviewer 的 `## Cuts`、audit 三個 lens、design 的 ladder），其餘做法還有什麼值得收 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴).
 - 〔survey〕`survey.js` 已預設排除 archive（`--archive` 打開），decision／report／plan 的歷史頁仍照樣被掃到；要不要也依 role 排除、旗標叫什麼 — [scripts/survey.js](scripts/survey.js).
 - 〔stage-agents〕受控 build／verify 還有十來個接縫沒實跑過：stage agent 沒有 AskUserQuestion／Edit、插話會起第二個、profile 中途翻轉 — [docs/subagents.md](docs/subagents.md).
-- 〔stage-agents〕plan 在主 session 跑時沒有 plan.md handoff，build 的 brain 找不到 plan、改照 design 報告的表做；brief 要不要讀 `docs/plans/` 最新一份 — [lib/render.js](lib/render.js).
-- 〔stage-agents〕brain 在子 agent 還在跑時就回報（09-23 三次），另有兩次回報訊息沒到主控、只從 touched 看到檔案；要不要改 brain 指令只在有東西交時回報 — [docs/subagents.md](docs/subagents.md).
-- 〔stage-agents〕verify 的 brain 把 gate 的 option one 寫成「退回 build」，主控規則卻把 option one 綁成下一站；`readGate` 要不要驗 option one — [lib/handoff.js](lib/handoff.js).
-- 〔stage-agents〕verify 的對手看不到 subagent transcript，兩次把真派過的 re-review 判成自述；brief 要不要給 `<session>/subagents/` 路徑 — [lib/render.js](lib/render.js).
 
 ## Waiting
 

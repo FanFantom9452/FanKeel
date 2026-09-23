@@ -230,6 +230,12 @@ file pins `sonnet` — with the ask, the approved mockup's path and
 line is `disposition: recapture`, `fix` or `ship`. Anything but `ship` is a
 defeated row. Leave it off a change with no screen behind it.
 
+**Give it the transcripts.** A brain's verify brief carries a `subagents:` line —
+`<session>/subagents/`, one `agent-<id>.jsonl` per subagent this session
+dispatched. Pass that path with the others, so *was it run?* is checked against
+the transcript rather than against a report saying so. 2026-09-23: without it,
+the adversary ruled two re-reviews that did run as self-report.
+
 It **reads the method rather than probing it.** Red-green belongs to this session
 and is already in the table above, and an adversary that mutates the tree cannot
 run beside anything else. Where the method does not say whether a check could have

@@ -124,6 +124,11 @@ that refreshes `updated`.
 integration is chosen — `push` is absent unless `--push` or `--no-push` said
 so.
 
+`floor` is the class said on `start`'s own command line, and only that — a
+profile default or a `--route` sets none. `task.js route` refuses a route that
+drops any stage of that class's route; adding stages is still free. `adopt`
+copies it and `task` leaves it.
+
 `clock` is those same two slots with a wall-clock reading in place of the token
 count — epoch milliseconds, which `task.js` renders as minutes — and `waited` is
 how much of that the user spent at a gate. It is written only in a process that
