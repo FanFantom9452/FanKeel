@@ -6,6 +6,7 @@
 // message — and the controller runs this and messages the agent what it printed:
 // `<base>..<sha>`, the range that task's reviewer is pinned to.
 // Several tasks' blocks, separated by a `---` line, print one `<paths>: <base>..<sha>` each, in order.
+// Once every block has committed, the file is renamed to `<name>.done.md`.
 // `git commit -o`
 // takes only the listed paths, so whatever else is staged or dirty stays as it
 // was. It runs `git` from the top of the repository the current directory is
@@ -75,6 +76,14 @@ function main(argv, cwd) {
         if (made.status !== 0) return fail('git commit failed: ' + oneLine(made.stderr || made.stdout));
         out.push((many ? paths.join(', ') + ': ' : '') + base + '..' + git(['rev-parse', 'HEAD']).stdout.trim());
     }
+    // Every block landed, so the file is renamed out of the way: a
+    // `-commit.md` still on disk always means a commit nobody has made, which
+    // is how scripts/await.js reads it. A failure returned above and left the
+    // file for the agent to fix. The rename replaces the last batch's
+    // `.done.md`; if it fails, the commits stand and only the marker stays.
+    try {
+        fs.renameSync(argv[0], argv[0].replace(/(\.md)?$/, '.done.md'));
+    } catch (e) { /* the commits are made; the next await reports the file again */ }
     return { text: out.join('\n') };
 }
 

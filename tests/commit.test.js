@@ -197,3 +197,20 @@ test('a block that does not parse commits nothing at all', () => {
     assert.equal(res.text, 'commit.js: block 2: no blank line between the paths and the message');
     assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
 });
+
+// docs/plans/2026-09-23-controller-await-design.md §1: scripts/await.js reads
+// a `-commit.md` on disk as a commit still to make, so one that fully landed
+// has to leave that name, and one that failed has to keep it.
+test('a file whose every block committed is renamed to .done.md over the last one; a failed one stays where it was', () => {
+    const dir = repo();
+    const file = requestFile('a.txt\n\nfeat: change a\n');
+    const done = file.replace(/\.md$/, '.done.md');
+    fs.writeFileSync(done, 'the batch before\n');
+    assert.ok(!commit.main([file], dir).code);
+    assert.equal(fs.existsSync(file), false);
+    assert.equal(fs.readFileSync(done, 'utf8'), 'a.txt\n\nfeat: change a\n');
+    const failed = requestFile('a.txt\n\nfeat: nothing left\n---\nb.txt\n\nfeat: change b\n');
+    assert.equal(commit.main([failed], dir).code, 1);
+    assert.equal(fs.existsSync(failed), true);
+    assert.equal(fs.existsSync(failed.replace(/\.md$/, '.done.md')), false);
+});
