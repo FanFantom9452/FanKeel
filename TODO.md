@@ -75,7 +75,6 @@ what gets scheduled.
 
 ## Ready
 
-- 〔tests〕`tests/registry.test.js:728` 鎖等待測試在整套負載下偶發紅（子程序啟動就超過 1 秒上限）：讓子程序先回報已啟動，主程序才開始計時 — [tests/registry.test.js](tests/registry.test.js).
 - 〔lib〕`scripts/tune.js` 讀 request body、`scripts/render.js` 擷取未知參數，兩段都與 `scripts/station.js` 重複：抽到 `lib/` 共用 — [scripts/station.js](scripts/station.js).
 
 ## Needs a decision
