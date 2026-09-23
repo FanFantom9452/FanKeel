@@ -50,7 +50,7 @@ whose matcher is `Edit|Write|NotebookEdit`. `Bash` is matched now too:
 `.claude-plugin/plugin.json` registers `hooks/guard.js` a second time,
 matcher `Bash|PowerShell`, and it denies a command that writes files —
 `lib/guard.js`'s `writesFiles` — when `agent_id` is set **and** `agent_type` is
-`fankeel-reader`, `fankeel-reviewer` or `fankeel-judge`. The id is the half that
+`fankeel-reader`, `fankeel-reviewer`, `fankeel-judge` or `fankeel-render-reviewer`. The id is the half that
 says this is a subagent at all: the main thread of a session started with
 `--agent` carries the type without it and must be able to write, so the id is
 checked first (`hooks/guard.js:61`, `if (!payload.agent_id) return;`).

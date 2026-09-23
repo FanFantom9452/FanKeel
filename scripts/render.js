@@ -19,9 +19,8 @@
 // Two files land in `--out` (default `.fankeel/build/render/`): `render.png`,
 // a `--headless=new` screenshot at `--size`, and `render.html`, the DOM
 // `--dump-dom` prints after the page's own script has run — the second is
-// what a reviewer's `render` lens reads to prove a figure came from a
-// script rather than being typed into the markup by hand. Both paths print
-// on stdout, one per line, nothing else.
+// what `fankeel-render-reviewer` reads for what the page's own script
+// wrote. Both paths print on stdout, one per line, nothing else.
 //
 // `FANKEEL_BROWSER` names a browser directly and is tried first, ahead of
 // every other lookup. `FANKEEL_NO_FALLBACK=1` turns off every lookup but

@@ -1,7 +1,7 @@
 'use strict';
 // scripts/render.js: a screenshot and the DOM after JS ran, from whatever
 // Chromium-family browser this machine already has — what
-// `fankeel-reviewer`'s `render` lens runs. `tests/render.test.js` already
+// `fankeel-render-reviewer` runs. `tests/render.test.js` already
 // covers `lib/render.js` (the injection block builder), an unrelated module
 // this repository happens to also call "render" — this file is the CLI's
 // own tests, named the way `tests/station-cli.test.js` is
