@@ -715,12 +715,19 @@ test('a writer waits out a lock somebody else is holding', async () => {
   fs.writeFileSync(releaser,
     'const fs = require("node:fs");\n'
     + 'const [lock, ms] = process.argv.slice(2);\n'
+    + 'process.stdout.write("started\\n");\n'
     + 'Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Number(ms));\n'
     + 'fs.rmdirSync(lock);\n');
   // Well past a spin, and well inside both the 1s cap and the 5s staleness
   // threshold — 150ms leaves far more margin against the 1s cap under load
   // than 300ms did, so this measures waiting rather than breaking.
-  const kid = spawn(process.execPath, [releaser, lock, '150'], { stdio: 'ignore' });
+  const kid = spawn(process.execPath, [releaser, lock, '150'], { stdio: ['ignore', 'pipe', 'ignore'] });
+
+  // Start the 1s spin's clock only once node has finished booting the child,
+  // so a slow spawn under load doesn't eat into the 150ms-vs-1000ms margin.
+  await new Promise((started) => kid.stdout.on('data', (chunk) => {
+    if (chunk.includes('started')) started();
+  }));
 
   const ok = registry.addClaim(root, SID, 'waited.js');
   await new Promise((done) => kid.on('exit', done));
