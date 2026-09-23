@@ -84,6 +84,8 @@ what gets scheduled.
 - 〔docs〕計畫封存時 `status` 沒從 `design-intent` 翻成 `current`（2026-09-23 抓到六頁），封存後 docs-audit 不再看它：改 land 的封存步驟，還是讓 docs-audit 也看 archive 的 `status` — [scripts/docs-audit.js](scripts/docs-audit.js).
 - 〔security〕reviewer／verifier 沒有資安審查：照 cloudflare/security-audit-skill 的漏洞清單用本地模型掃，避開雲端模型的安全攔截；和另一個專案 AI CODING SECURITY 一起定 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 - 〔method〕開發方法要和使用者討論：對照 addyosmani/agent-skills 與 mattpocock/skills 兩套 skill 的做法 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
+- 〔method〕深度分析 ponytail：09-12 只收了三項（reviewer 的 `## Cuts`、audit 三個 lens、design 的 ladder），其餘做法還有什麼值得收 — [簡報 §6.5](docs/improvement-brief.md#65-ponytail-去依賴).
+- 〔survey〕搜尋預設只看現行文件：`.ignore` 只把 `docs/archive/` 擋在 Grep 外（Glob 不吃），decision／report／plan 的歷史頁照樣被搜到；只有要比對開發歷史的任務才打開 — [scripts/survey.js](scripts/survey.js).
 
 ## Waiting
 
