@@ -33,7 +33,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { pathToFileURL } = require('node:url');
-const { parseArgs: parseArgv } = require('node:util');
+const { parseArgsOrExit } = require('../lib/cli.js');
 const { parseTargets, cells, NAME } = require('../lib/shots.js');
 
 // `ms-playwright` names each install `chromium-<build number>`; the highest
@@ -85,12 +85,9 @@ function findBrowser() {
 }
 
 // `--out` and `--size` are the only flags; the target is the one positional
-// argv carries. The same `node:util` parser every other script in this
-// directory uses (`scripts/station.js:58-96` is the pattern) rather than a
-// hand-rolled loop of its own. `strict: true` is what refuses an
-// unrecognised flag; the shape it throws for is caught below and turned into
-// a `render: unknown argument <flag>` message, in the style this file's
-// other errors already use.
+// argv carries. `lib/cli.js`'s `parseArgsOrExit` is the parser and the
+// refusal, shared with `scripts/station.js`: an unrecognised flag becomes a
+// `render: unknown argument <flag>` message and exit 2.
 const OPTIONS = {
     out: { type: 'string' },
     size: { type: 'string' },
@@ -98,15 +95,7 @@ const OPTIONS = {
 };
 
 function parseArgs(argv) {
-    let values;
-    let positionals;
-    try {
-        ({ values, positionals } = parseArgv({ args: argv, options: OPTIONS, allowPositionals: true, strict: true }));
-    } catch (e) {
-        const bad = /'(--?[a-zA-Z0-9-]+)/.exec(e.message);
-        process.stderr.write('render: unknown argument ' + (bad ? bad[1] : String(e.message)) + '\n');
-        process.exit(2);
-    }
+    const { values, positionals } = parseArgsOrExit('render', argv, OPTIONS);
     return {
         out: values.out !== undefined ? values.out : null,
         size: values.size !== undefined ? values.size : '1600,1000',

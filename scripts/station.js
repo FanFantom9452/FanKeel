@@ -33,7 +33,7 @@ const path = require('node:path');
 const http = require('node:http');
 const crypto = require('node:crypto');
 const { spawn } = require('node:child_process');
-const { parseArgs: parseArgv } = require('node:util');
+const { parseArgsOrExit } = require('../lib/cli.js');
 const station = require('../lib/station.js');
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
@@ -51,7 +51,7 @@ const ASSETS = path.join(PLUGIN, 'assets', 'station');
 // back as an array of every occurrence, in order, rather than a hand-rolled
 // `.push()` per token. `strict: true` is what refuses an unrecognised flag;
 // the shapes it throws for — an unknown option, or a declared flag given no
-// value — are caught below and turned into the same
+// value — are caught in lib/cli.js and turned into the same
 // `station: unknown argument <flag>` message and exit code this file has
 // always used, so a script piping this CLI's stderr sees no difference.
 // `serve` is the one positional this file reads; any other bare word is the
@@ -68,15 +68,7 @@ const OPTIONS = {
 };
 
 function parseArgs(argv) {
-    let values;
-    let positionals;
-    try {
-        ({ values, positionals } = parseArgv({ args: argv, options: OPTIONS, allowPositionals: true, strict: true }));
-    } catch (e) {
-        const bad = /'(--?[a-zA-Z0-9-]+)/.exec(e.message);
-        process.stderr.write('station: unknown argument ' + (bad ? bad[1] : String(e.message)) + '\n');
-        process.exit(2);
-    }
+    const { values, positionals } = parseArgsOrExit('station', argv, OPTIONS);
     const extra = positionals.filter((p) => p !== 'serve');
     if (extra.length) {
         process.stderr.write('station: unknown argument ' + extra[0] + '\n');
