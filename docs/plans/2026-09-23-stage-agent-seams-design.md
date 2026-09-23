@@ -44,7 +44,7 @@ status: design-intent
 ## 6. 文件跟上
 
 - `docs/subagents.md`：gate 替換不再是無條件照抄——驗不過會被擋；brain 回報時機；verify brief 的 `subagents:` 行。
-- `docs/registry.md` 與 `skills/fankeel/SKILL.md`：新欄位 `floor`，以及「每個 session 帶的欄位」計數。
+- `docs/registry.md` 與 `skills/fankeel/SKILL.md`：新欄位 `floor`，SKILL.md 裡另寫一段；「每個 session 帶的欄位」計數不動，因為只有 `--class` 開的 task 才帶 `floor`。
 - TODO.md 的四條 〔stage-agents〕 在交付它們的 task 裡拿掉。
 
 ## 驗收
