@@ -88,7 +88,10 @@ The artefact is one HTML page covering every screen the approach changes, at
 `.fankeel/build/<date>-<topic>/mockup.html`, uncommitted. The design file, the
 plan and the plan's ledger all take that stem, so where a ledger appears later
 the page is already beside it. A `bounded` task gets no plan and no ledger, and
-still takes the stem from the date and the topic.
+still takes the stem from the date and the topic. Every block the approach
+changes carries `data-block="<name>"`, written in the page's own markup — the
+name is how the user, the tuning step below and the render reviewer point at
+it.
 
 Dispatch it as `implementer, <the value of design.mockup>`. Visual design does
 not take `dispatch.floor`, which is why the key carries a model at all. Name one
@@ -105,6 +108,19 @@ copy that name into the prompt rather than picking one.
 
 Then the path goes on the `spec:` line, and option one's description points at
 the page. The gate approves the page, not the paragraph.
+
+**Before the gate, the page can be tuned one block at a time.** Run
+`node <plugin>/scripts/tune.js serve <the mockup's directory>` and give the
+user the url it prints: hovering outlines a block, a click opens a panel for
+what to change. List what you see, block by block, before asking which one
+to change — a list is easier to answer than an empty question. Then loop:
+`node <plugin>/scripts/tune.js wait` prints the next request as JSON;
+dispatch one implementer at `design.mockup`'s model to rewrite only the
+element carrying that `data-block` in the file it names; then
+`node <plugin>/scripts/tune.js done <id>`. It puts the file back and names
+the block that was touched when the edit strayed outside, and reloads the
+page when it did not. Static HTML only: a block has to be written literally
+in the served file.
 
 ### 4. The success criterion
 
