@@ -861,7 +861,9 @@ fankeel — started, at build   route: build → verify
 
 Every step must be one of the stages above, no repeats, `land` last if it is
 there at all. `stage` refuses a stage that is not on the route; `route` changes
-the route when the task turns out to be a different shape than it looked.
+the route when the task turns out to be a different shape than it looked — it
+can add stages freely, but not drop one below the floor the task's starting
+class implied, and going lighter than that is a new task.
 
 A fixed five made the progress indicator lie in both directions — two-stage work
 sat at 2 of 5 looking permanently unfinished, and longer work got no credit for
