@@ -1108,7 +1108,7 @@ to a `fankeel:fankeel-brain` stage agent and this session gets the
 controller's block in place of the stage's: the brief carries the stage's
 rules and shape, the report and its gate come back as a file under
 `.fankeel/build/` (on `build`, `design` and `plan`, a commit request comes back first for each
-task and this session relays it), and the gate is still asked here, filled from that file by
+task, or once for a batch dispatched together, and this session relays it), and the gate is still asked here, filled from that file by
 `hooks/gate.js`. [docs/subagents.md](../../docs/subagents.md) has how.
 
 `survey` dispatches readers; `build` dispatches per task, and the plan's

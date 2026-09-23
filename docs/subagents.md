@@ -341,7 +341,8 @@ that page points back here for the four predicates, which is the mitigation
 rather than the fact. This is the short form, not the only copy.
 
 The commit moved to the parent, one task at a time, as each implementer
-returns — never the implementer itself, which now returns paths, never a diff.
+returns — or, for a build stage agent, once for a batch it dispatched together
+and has read back, one block per task — never the implementer itself, which now returns paths, never a diff.
 That is what makes overlap in wall-clock safe even though the index still has
 one writer. What decides whether a *pair* may overlap is four predicates,
 computed from the plan rather than judged. A task that declared no

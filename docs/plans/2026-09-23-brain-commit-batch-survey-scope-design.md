@@ -13,7 +13,7 @@ describes what is meant to be, not what is today — `lib/stages.js`'s
 design-intent until a plan and a build land it.
 
 Survey's read: `lib/stages.js:595-664` (`COMMIT_RULE`, `controlRules`,
-`controlFor`), `lib/tracked.js:357-420` (`trackedFiles`, no role filter),
+`controlFor`), `lib/tracked.js:357-397` (`trackedFiles`, no role filter),
 `lib/docs.js:177-230` (`roleOf`, the bucket table `map.js` already reads),
 `scripts/commit.js` (one commit file → one commit), `scripts/survey.js`
 (`scan`, `parseArgs`, no `docs.js` consultation).

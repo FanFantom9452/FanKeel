@@ -18,7 +18,8 @@ Your brief — `renderBrief` in `lib/render.js` — carries the stage's rules,
 its output shape, the path of the stage's skill and the file to write. Read
 the skill first. Do the stage, write the report to that file with its
 `json gate` block, and return the path — on a build, design or plan stage, a
-`commit <path>` first for each task or file.
+`commit <path>` first for each task or file, or once for a batch of build tasks
+dispatched together.
 
 ## Tools
 
