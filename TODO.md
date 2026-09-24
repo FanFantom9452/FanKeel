@@ -75,8 +75,6 @@ what gets scheduled.
 
 ## Ready
 
-- 〔station〕回放在真 station 上逐塊調（09-24 plan 的 Task 8，跳過）：`tune.js serve --proxy http://127.0.0.1:7817 --src assets/station/station.js,assets/station/station.css` — [docs/station.md](docs/station.md).
-
 ## Needs a decision
 
 - 〔docs〕要不要 ADR：參考 Trovara 的 `docs/04-architecture/adr/`，只在做架構選擇時寫、不是每個 task 都呼叫；在哪一站、由誰觸發，要人來定 — [docs/documents.md](docs/documents.md).
@@ -194,3 +192,48 @@ lifts when: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃
 lifts when: 共用樹上出現一次 implementer 蓋掉另一個 implementer 的改動. 09-24.
 
 - 〔build〕ready-queue 的 worktree 那一半：每個 implementer 各開 worktree、由 brain merge；`scripts/commit.js` 認不得 worktree、brain 不能 `git commit`，兩者都得先改 — [docs/subagents.md](docs/subagents.md).
+
+### 站頁介面只有中文
+lifts when: 有使用者需要非中文的 station 介面出現. 09-25.
+
+- 〔station〕assets/station/station.js 與 station.css 的介面文字（約 519 行 UI 字串）目前只有中文，沒有 i18n 機制 — [docs/station.md](docs/station.md).
+
+### 文件全文搜尋有人要
+lifts when: 有人要 文件 頁的全文搜尋. 09-25.
+
+- 〔station〕文件頁只讀 map.js 算好的統計卡，沒有全文搜尋；要做的話得加一個 server-side 的搜尋 payload — [docs/station.md](docs/station.md).
+
+### 首次繪圖變慢一次
+lifts when: station-data.js 每次請求重算拖慢首次繪圖一次. 09-25.
+
+- 〔station〕station-data.js 每個請求都重算，沒有 server cache；量到首次繪圖變慢時，加一個伺服端快取 — [lib/station.js](lib/station.js).
+
+### gate 等待時間量不準
+lifts when: dashboard 的等你回答量到不準的等待時間一次. 09-25.
+
+- 〔station〕dashboard 的『等你回答』卡片算等待時間，但 lib/handoff.js 沒留下 gate 的 `at`，量出來不是真的等待起點 — [lib/handoff.js](lib/handoff.js).
+
+### 進行中卡片改版第二步
+lifts when: 有人排進「進行中」卡片改版第二步. 09-25.
+
+- 〔station〕「進行中」（`#/live`）的 card 改版第二步已核准但還沒做 — [docs/station.md](docs/station.md).
+
+### tune 還原誤刪一次
+lifts when: tune.js done 在 live 模式又因為 untracked 檔誤還原一次改動. 09-25.
+
+- 〔build〕tune.js 的 live 模式 `done` 在 --src 出現 untracked 檔（例如 .playwright-mcp）時會連它一起還原；09-24 這樣悄悄清掉過一次 r-0017 — [scripts/tune.js](scripts/tune.js).
+
+### 即時 session 缺 subagent
+lifts when: 有人需要在即時 session 上看到進行中的 subagent. 09-25.
+
+- 〔station〕station 讀不到 live session 的 subagent：只讀 leave.js 寫的 usage，不讀 subagents/*.meta.json 與 inflight 標記 — [lib/station.js](lib/station.js).
+
+### git mv 漏一半提交
+lifts when: 出現一次 git mv 需要連刪除一起提交. 09-25.
+
+- 〔build〕scripts/commit.js 加不了 git mv 的刪除那一半 — [scripts/commit.js](scripts/commit.js).
+
+### 兩個 hook 逾時
+lifts when: UserPromptSubmit 或 PreToolUse Bash guard 再逾時一次. 09-25.
+
+- 〔hooks〕/doctor 09-25 報 UserPromptSubmit 逾時 4/4 次（中位數 7.9s）、PreToolUse:Bash scope guard 逾時 2/2 次（50 個 session 裡） — [hooks/brief.js](hooks/brief.js).

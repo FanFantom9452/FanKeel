@@ -29,7 +29,10 @@
   --teal-soft:rgba(20,147,141,.12); --teal-ink:#0f6f6a;
   --mono:var(--f-mono); --sans:var(--f-ui); --sh:none;
 }
-@media(prefers-color-scheme:dark){:root{
+/* Dark: the system's choice unless the reader forced 淺色, and forced 深色
+   whatever the system says. The two selectors cannot share one block (a media
+   query is not a selector), so the palette is written once more below. */
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){
   color-scheme:dark;
   --ground:#0e1311; --panel:#161c1a; --inset:#1e2522;
   --ink:#e8ece6; --ink2:#a9b3ae; --muted:#8a9590; --faint:#65706b;
@@ -48,6 +51,26 @@
   --stale-ink:#e0a53a; --down:#8a9590;
   --teal-soft:rgba(32,153,147,.16); --teal-ink:#5fd0c9;
 }}
+:root[data-theme=dark]{
+  color-scheme:dark;
+  --ground:#0e1311; --panel:#161c1a; --inset:#1e2522;
+  --ink:#e8ece6; --ink2:#a9b3ae; --muted:#8a9590; --faint:#65706b;
+  --rule:#29312e; --rule2:#36403c; --grid:#232b28; --wash:rgba(232,236,230,.05);
+  --hatch:rgba(232,236,230,.40); --hatch-bg:rgba(232,236,230,.05);
+  --good:#5cc27a; --bad:#ef8a6a;
+  --st-survey:#488acb; --st-design:#bf860c; --st-plan:#c35c9b; --st-build:#5e9f50;
+  --st-verify:#8071c8; --st-audit:#d15d51; --st-land:#209993; --st-none:#65706b;
+  --m-fable:#c5d3cd; --m-opus:#9aa8a2; --m-sonnet:#727f7a; --m-haiku:#4d5a55; --m-other:#36403c;
+  --p-0:#4a8fd6; --p-1:#d76797; --p-2:#ae931d; --p-3:#8071c8; --p-4:#209993; --p-5:#65706b;
+  --s-main:#93a39d; --s-agent:#bf8b1f; --s-workflow:#c9553c;
+  --t-in:#8bbcef; --t-cw:#5b90c7; --t-cr:#32669a; --t-out:#dd6d45;
+  --ctx:#e8ece6; --ctx-wash:rgba(232,236,230,.08);
+  --up-bg:rgba(92,194,122,.14); --dn-bg:rgba(239,138,106,.14);
+  --live:#5cc27a; --live-bg:rgba(92,194,122,.14); --stale:#e0a53a; --stale-bg:rgba(224,165,58,.16);
+  --stale-ink:#e0a53a; --down:#8a9590;
+  --teal-soft:rgba(32,153,147,.16); --teal-ink:#5fd0c9;
+}
+:root[data-theme=light]{color-scheme:light}
 
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -277,6 +300,28 @@ table.t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
   border-radius:8px;padding:5px 10px}
 .mast .search input{border:0;background:transparent;outline:0;font:inherit;color:var(--ink);width:100%}
 .mast .search .k{font:11px var(--f-mono);color:var(--muted);border:1px solid var(--rule2);border-radius:5px;padding:0 6px}
+/* The grouped results under the box, anchored to its right edge because the
+   box is the last thing in the masthead. */
+.mast .search{position:relative}
+.qpop{position:absolute;top:calc(100% + 6px);right:0;width:min(520px,calc(100vw - 48px));max-height:70vh;overflow:auto;z-index:40;
+  background:var(--panel);border:1px solid var(--rule);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px}
+.qpop[hidden]{display:none}
+.qg+.qg{border-top:1px solid var(--rule);margin-top:4px;padding-top:4px}
+.qh{display:flex;align-items:center;gap:7px;padding:6px 8px 4px;font-size:11px;color:var(--muted)}
+.qh .ico{width:13px;height:13px}
+.qh b{font-weight:600;color:var(--ink2)}
+.qn{font:600 10.5px var(--f-mono);background:var(--inset);border-radius:var(--r-pill);padding:0 6px;font-variant-numeric:tabular-nums}
+.qrow{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:6px;text-decoration:none;color:inherit;font-size:12.5px;min-width:0}
+.qall{display:block;padding:5px 8px;border-radius:6px;font-size:12px;color:var(--muted);text-decoration:none}
+.qrow:hover,.qall:hover,.qrow[aria-selected="true"],.qall[aria-selected="true"]{background:var(--wash);color:var(--ink)}
+.qrow[aria-selected="true"],.qall[aria-selected="true"]{box-shadow:inset 2px 0 0 var(--ink)}
+.qt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.qid{flex:none;font-size:11px;color:var(--muted)}
+.qp{flex:none;max-width:35%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:11.5px}
+.qs{flex:none;color:var(--muted);font-size:11px}
+.qa{flex:none;min-width:52px;text-align:right;color:var(--faint);font-size:11px}
+.qpop mark{background:var(--stale-bg);color:inherit;border-radius:2px;padding:0 1px}
+.qnone{margin:0;padding:18px 12px;text-align:center;color:var(--muted);font-size:12.5px}
 .mast .btn{white-space:nowrap}
 .foot{max-width:1440px;margin:0 auto;padding:0 32px 28px;color:var(--muted);font-size:12px}
 .page.fixed{height:calc(100vh - 52px);overflow:hidden;display:flex;flex-direction:column;padding-bottom:22px}
@@ -287,6 +332,18 @@ table.t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .projrow .pth{display:block}
 .tl .wf-toggle{fill:transparent}
 .tl .wf-toggle:hover{fill:var(--wash)}
+/* The timeline's stage columns, their names, and the reading under the pointer. */
+.tl .seg{opacity:.13;transition:opacity .15s}
+.tl svg[data-hi] .seg{opacity:.05}
+.tl svg[data-hi] .seg[data-on]{opacity:.3}
+.tl .segl{stroke-width:1;opacity:.55}
+.tl .segn{font-size:11.5px;font-weight:600}
+.tl .segn .segd{font-weight:400;fill:var(--muted);font-size:10.5px}
+.tl .hitc{fill:transparent;cursor:pointer}
+.tl .hitc:hover{fill:var(--ctx-wash)}
+.tl .rb circle{fill:var(--panel);stroke:var(--ink);stroke-width:1.5}
+.tl .rb text{font:700 9.5px var(--f-mono);fill:var(--ink)}
+.tl .rb{pointer-events:none}
 .mute{color:var(--muted)}
 
 /* The list page, the detail panel, and the compare page: rules the mockup does
@@ -750,10 +807,39 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 /* ---- the left bar and 現在 (2026-09-23) ---- */
 .shell{display:grid;grid-template-columns:208px minmax(0,1fr);max-width:1440px;margin:0 auto}
 .shell>.page{max-width:none;margin:0;min-width:0;padding-left:20px}
-.sidenav{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding:8px 0 24px 32px}
-.sidenav .navgrp{font-size:10px;letter-spacing:.14em;color:var(--faint);text-transform:uppercase;font-weight:500;padding:10px 10px 4px}
-.sidenav ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
-.sidenav a{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;text-decoration:none;color:var(--ink2);font-size:13.5px;line-height:16px}
+.sidenav{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding:8px 0 8px 32px}
+.sidenav ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.sidenav a{display:flex;align-items:center;gap:9px;padding:6px 10px;border-radius:7px;text-decoration:none;color:var(--ink2);font-size:13.5px;line-height:16px}
+/* Five categories; one with sub-pages is a heading over them, indented to
+   the heading's label so the icon column stays clear. */
+.sidenav .navcat+.navcat{margin-top:4px}
+.sidenav .navcat.in .navhd{color:var(--ink);font-weight:600}
+.sidenav .navcat.in .navhd .ico{color:var(--ink)}
+.sidenav .navkids a{padding:4px 10px 4px 35px;font-size:12.5px}
+/* A fold is one button, the whole row, that only opens and shuts; the kids
+   navigate. The chevron shows which. Height runs on a
+   0fr/1fr grid row so it needs no measure. */
+.sidenav .navrow{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:9px;width:100%;padding:6px 6px 6px 10px;border-radius:7px;
+  color:var(--ink2);font-size:13.5px;line-height:16px;cursor:pointer;user-select:none}
+.sidenav .navrow .ico{color:var(--muted)}
+.sidenav .navrow:hover{background:var(--wash);color:var(--ink)}
+.sidenav .navrow:hover .ico{color:inherit}
+.sidenav .navrow:focus-visible,.themebtn:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.sidenav .navrow>span:not(.navchev){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.navchev{margin-left:auto;display:grid;place-items:center;width:16px;height:16px}
+.sidenav .navrow .navchev .ico{width:14px;height:14px;color:var(--muted);transition:transform .2s ease}
+.navcat.shut .navchev .ico{transform:rotate(-90deg)}
+.sidenav .navwrap{display:grid;grid-template-rows:1fr;transition:grid-template-rows .2s ease}
+.sidenav .navwrap>.navkids{min-height:0;overflow:hidden}
+.navcat.shut .navwrap{grid-template-rows:0fr}
+/* Shut over the page being read: the heading carries the mark instead. */
+.sidenav .navcat.in.shut .navhd{background:var(--ink);color:var(--panel)}
+.sidenav .navcat.in.shut .navhd .ico{color:inherit}
+.sidenav .navcat.in.shut .navhd:hover{background:var(--ink2);color:var(--panel)}
+.navfoot{display:flex;margin-top:6px;padding:0 4px}
+.themebtn{all:unset;box-sizing:border-box;display:grid;place-items:center;width:28px;height:28px;border-radius:7px;color:var(--muted);cursor:pointer}
+.themebtn:hover{background:var(--wash);color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.navchev .ico,.sidenav .navwrap{transition:none}}
 /* A page's icon: the same shape in the left bar and in that page's header. */
 .ico{display:block;flex:none;width:16px;height:16px}
 .sidenav a .ico{color:var(--muted)}
@@ -927,3 +1013,94 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .pg .act{margin-top:8px}
 .pg .pgr.ok{color:var(--fg-2)}
 .pg .pgr.bad{color:var(--ind)}
+
+/* ---- the tab strip under a Sessions or 花費 page (2026-09-25) ---- */
+.subtabs{display:inline-flex;gap:2px;padding:3px;margin:-6px 0 14px;background:var(--inset);border-radius:9px;flex:none;align-self:flex-start}
+.subtabs a{padding:5px 13px;border-radius:7px;text-decoration:none;color:var(--ink2);font-size:12.5px;line-height:16px;white-space:nowrap}
+.subtabs a:hover{color:var(--ink);background:var(--wash)}
+.subtabs a[aria-current="page"]{background:var(--panel);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.subtabs a:focus-visible,.dcard a:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+
+/* ---- 儀表板 (2026-09-25): four cards on one grid ---- */
+.dash{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;align-items:start}
+.dcard{background:var(--panel);border-radius:var(--r);padding:16px 18px 14px;min-width:0}
+.dcard-h{display:flex;align-items:center;gap:8px;font-size:13.5px}
+.dcard-h .ico{color:var(--muted)}
+.dmore{font-size:12px;color:var(--muted);text-decoration:none;white-space:nowrap}
+.dmore:hover{color:var(--ink)}
+.dbig{font:600 30px/1.1 var(--f-mono);font-variant-numeric:tabular-nums;margin:12px 0 10px;display:flex;align-items:baseline;gap:8px}
+.dbig small{font:12px var(--f-ui);color:var(--muted)}
+.dbig.warn{color:var(--stale-ink)}
+.dlist{display:flex;flex-direction:column}
+.drow{display:flex;align-items:center;gap:9px;padding:7px 6px;border-top:1px solid var(--rule);text-decoration:none;color:inherit;border-radius:5px;font-size:12.5px;min-width:0}
+.drow:hover{background:var(--wash)}
+.drow .dp{flex:none;max-width:30%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:11.5px}
+.drow .dt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.drow .route{flex:none}
+.drow .ds{flex:none;color:var(--muted);font-size:11px}
+.drow .dc{flex:none;min-width:48px;text-align:right;font-variant-numeric:tabular-nums}
+.drow .dr{flex:none;min-width:44px;text-align:right;color:var(--muted);font-size:11.5px;font-variant-numeric:tabular-nums}
+.dnone{margin:0;padding:10px 6px;border-top:1px solid var(--rule);font-size:12px;color:var(--muted)}
+.dspark{display:block;width:100%;height:56px}
+.dspark rect{fill:var(--m-sonnet)}
+.dspark rect.today{fill:var(--ink)}
+.dspark line{stroke:var(--rule2);stroke-width:1;vector-effect:non-scaling-stroke}
+.dkv{display:flex;gap:18px;margin-top:8px;font-size:12px;color:var(--muted)}
+.dkv b{font:600 12.5px var(--f-mono);color:var(--ink);font-variant-numeric:tabular-nums;margin-left:4px}
+
+/* ---- first load (2026-09-25) ----
+   The page waits on station/station-data.js, which serve computes per request,
+   and station.js is loaded after it, so no script runs until the data is here:
+   these placeholders are the stylesheet's alone, on the three boxes the shell
+   leaves empty. The hash is not something CSS can read, so #page takes the
+   儀表板's shape, the page a bare load opens. */
+#side:empty::before{content:"";width:12px;height:12px;border-radius:50%;border:2px solid var(--rule2);border-top-color:var(--ink2);
+  animation:spin .8s linear infinite;flex:none}
+#side:empty::after{content:"計算中…";font-size:12.5px;color:var(--muted)}
+@keyframes spin{to{transform:rotate(360deg)}}
+#nav:empty{min-height:330px;margin:14px 0 0 42px;
+  background:repeating-linear-gradient(to bottom,var(--inset) 0 14px,transparent 14px 30px) 0 0/140px 330px no-repeat}
+#page:empty{position:relative;overflow:hidden;min-height:520px;background-origin:content-box;background-clip:content-box;background-repeat:no-repeat;
+  background-image:linear-gradient(var(--inset),var(--inset)),
+    linear-gradient(var(--inset),var(--inset)),linear-gradient(var(--inset),var(--inset)),
+    linear-gradient(var(--inset),var(--inset)),linear-gradient(var(--inset),var(--inset)),
+    linear-gradient(var(--panel),var(--panel)),linear-gradient(var(--panel),var(--panel)),
+    linear-gradient(var(--panel),var(--panel)),linear-gradient(var(--panel),var(--panel));
+  background-size:170px 24px,
+    120px 12px,120px 12px,90px 30px,90px 30px,
+    calc(50% - 7px) 210px,calc(50% - 7px) 210px,calc(50% - 7px) 210px,calc(50% - 7px) 210px;
+  background-position:0 0,
+    18px 58px,calc(50% + 85px) 58px,18px 86px,calc(50% + 70px) 86px,
+    0 40px,100% 40px,0 264px,100% 264px}
+#page:empty::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 30%,rgba(128,128,128,.13) 50%,transparent 70%);
+  transform:translateX(-100%);animation:shimmer 1.5s ease-in-out infinite}
+@keyframes shimmer{to{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){#side:empty::before,#page:empty::after{animation:none}#page:empty::after{display:none}}
+
+/* ---- 概覽's money (2026-09-25): one bar by stage, the table under it, the
+   stage × model 明細 folded below, and 派工's chips back to it ---- */
+.cshare{margin-bottom:22px}
+.csbar{display:flex;gap:2px;height:34px;margin:12px 0 14px;border-radius:7px;overflow:hidden}
+.csseg{all:unset;box-sizing:border-box;min-width:3px;display:flex;flex-direction:column;justify-content:center;padding:0 9px;
+  color:#fff;font-size:11px;line-height:1.2;cursor:pointer;overflow:hidden;white-space:nowrap;transition:opacity .15s}
+.csseg span{font-weight:600}
+.csseg b{font:600 10.5px var(--f-mono);opacity:.9}
+.csbar:has(.on) .csseg:not(.on){opacity:.35}
+.csseg:focus-visible,.csrow:focus-visible,.cschip:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.cstbl .csrow{cursor:pointer}
+.cstbl .csrow:hover td{background:var(--wash)}
+.cstbl .csrow.on td{background:var(--inset)}
+.cstbl .csrow.on td:first-child{box-shadow:inset 3px 0 0 var(--ink)}
+.csplit{display:inline-flex;width:70px;height:6px;border-radius:3px;overflow:hidden;vertical-align:middle;margin-right:8px;background:var(--inset)}
+.csplit[hidden]{display:none}
+.csmore{margin-top:18px;border-top:1px solid var(--rule);padding-top:12px}
+.csmore>summary{cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink2)}
+.csmore>summary small{font-weight:400;color:var(--muted);margin-left:6px}
+.csmore[open]>summary{margin-bottom:12px}
+.csagent{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-bottom:14px;font-size:12px}
+.cschip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:var(--r-pill);background:var(--inset);
+  text-decoration:none;color:var(--ink2)}
+.cschip:hover{color:var(--ink);background:var(--wash)}
+.cschip b{font:600 11.5px var(--f-mono);color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.csseg,.tl .seg{transition:none}}

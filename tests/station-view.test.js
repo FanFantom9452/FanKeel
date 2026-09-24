@@ -858,10 +858,13 @@ test('the session header reads dollars from days and time from the timeline; the
     assert.match(head, /叫醒<\/div><div class="v">4<span class="u">次<\/span>/);
     assert.match(V.sessionHeadHtml(HOME[0], Object.assign({}, DETAIL_X, { wakes: undefined })), /叫醒<\/div><div class="v">—</, 'a cache from before wakes shows a dash, not a zero');
     assert.doesNotMatch(head, /\$99|\$198/);
-    const tabs = V.tabsHtml(HOME[0], 'cost', DETAIL_X);
+    const tabs = V.tabsHtml(HOME[0], 'dispatch', DETAIL_X);
     assert.deepEqual([...tabs.matchAll(/href="([^"]+)"/g)].map((x) => x[1]),
-        ['#/s/aaaa1111-0000', '#/s/aaaa1111-0000/cost', '#/s/aaaa1111-0000/dispatch', '#/s/aaaa1111-0000/events']);
-    assert.match(tabs, /<a href="#\/s\/aaaa1111-0000\/cost" class="on" aria-current="page">花費</);
+        ['#/s/aaaa1111-0000', '#/s/aaaa1111-0000/dispatch', '#/s/aaaa1111-0000/events']);
+    assert.match(tabs, /<a href="#\/s\/aaaa1111-0000\/dispatch" class="on" aria-current="page">派工</);
+    // The 花費 tab folded into 概覽: an old `/cost` link still parses, and opens 概覽.
+    assert.match(V.tabsHtml(HOME[0], V.parseHash('#/s/aaaa1111-0000/cost').tab, DETAIL_X),
+        /<a href="#\/s\/aaaa1111-0000" class="on" aria-current="page">概覽</);
 });
 
 test('a kept v1 cache\'s single row: the cost tab counts its dollars, zero tokens and no per-kind dollars', () => {

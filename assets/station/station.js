@@ -9,6 +9,18 @@
 // no dependencies, so there is no DOM in `node --test` to render into.
 
 (function (w, doc) {
+    // The reader's theme goes on <html> before anything is drawn, so a page
+    // set to 深色 does not flash light first. No attribute is 跟隨系統: the
+    // stylesheet's media query decides. localStorage can throw (file://,
+    // private mode) or be missing (node), and then there is no preference.
+    function stored(k) { try { return w.localStorage.getItem(k); } catch (e) { return null; } }
+    function store(k, v) { try { if (v === null) w.localStorage.removeItem(k); else w.localStorage.setItem(k, v); } catch (e) { /* not kept */ } }
+    function themeSet(t) {
+        if (!doc || !doc.documentElement) return;
+        if (t === 'light' || t === 'dark') doc.documentElement.setAttribute('data-theme', t);
+        else doc.documentElement.removeAttribute('data-theme');
+    }
+    themeSet(stored('station.theme'));
     var S = w.STATION || { sessions: [], projects: [] };
     var ROUTE = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
     var STAGE_C = {
@@ -184,11 +196,12 @@
         }
         return out;
     }
-    // `#/` is 現在; `#/days`, `#/d/<day>`, `#/sessions`, `#/projects`, `#/docs`
-    // and `#/settings` are the other pages the left bar opens; `#/p/<pkey>`,
-    // `#/s/<id>[/<tab>]`, `#/list` and `#/cmp` are the pages that stayed. A hash
-    // is what a page opened from file:// can go back through.
-    var PAGES = ['sessions', 'projects', 'docs', 'settings'];
+    // `#/` is 儀表板 (the `now` view); `#/live` (what `#/` used to be, 現在),
+    // `#/days`, `#/d/<day>`, `#/sessions`, `#/projects`, `#/docs`, `#/settings`,
+    // `#/list` and `#/cmp` are the other pages the left bar opens; `#/p/<pkey>`
+    // and `#/s/<id>[/<tab>]` are opened from rows. A hash is what a page opened
+    // from file:// can go back through.
+    var PAGES = ['live', 'sessions', 'projects', 'docs', 'settings'];
     function parseHash(hash) {
         var p = String(hash || '').replace(/^#\/?/, '').split('/');
         var dec = function (v) { try { return decodeURIComponent(v); } catch (e) { return null; } };
@@ -835,6 +848,7 @@
             ticks: pts.map(function (p) { return { t: p.t, family: family(p.model) }; }),
             rets: (x.dispatches || []).filter(function (d) { return isFinite(d.back) && d.ret !== null && d.ret !== undefined; })
                 .map(function (d) { return { t: d.back, chars: d.ret }; }),
+            rises: x.rises || [],
         };
     }
     // Roughly how wide a label is: a CJK glyph is about the font size, the rest
@@ -857,16 +871,22 @@
             return true;
         };
     }
-    function timelineSvg(m, closed) {
+    function timelineSvg(m, closed, hi) {
         if (!(m.t1 > m.t0)) return '<p class="note">這個 session 沒有帶時間的 request，畫不出時間線</p>';
         var shown = m.bars.filter(function (b) { return b.kind !== 'kid' || !closed[b.key]; });
-        var W = 1200, G = 160, R = 18, RH = 26, ctx0 = 34, ctxH = 150, ctxB = ctx0 + ctxH;
-        var st0 = ctxB + 22, stH = 34, wl = st0 + stH + 15, rq0 = wl + 16, rqH = 20, d0 = rq0 + rqH + 22;
+        // One picture on one time axis, top to bottom: the stage names over
+        // their columns, the context curve drawn across those columns on its
+        // own token axis, the waits' lengths, a tick per request, then a row
+        // per agent. A stage is a tinted column as wide as it lasted; a wait is
+        // hatched through everything below the clock.
+        var W = 1200, G = 160, R = 18, RH = 26, sl = 30, ctx0 = 56, ctxH = 160, ctxB = ctx0 + ctxH;
+        var wl = ctxB + 15, rq0 = wl + 8, rqH = 14, d0 = rq0 + rqH + 26;
         var H = d0 + Math.max(1, shown.length) * RH + 34, bottom = H - 26;
         var X = function (t) { return G + (Math.min(Math.max(t, m.t0), m.t1) - m.t0) / (m.t1 - m.t0) * (W - G - R); };
         var ctop = niceTop(Math.max.apply(null, m.points.map(function (p) { return p.y; }).concat([1])));
         var Yc = function (v) { return ctxB - v / ctop * ctxH; };
         var yAt = function (t) { var y = 0; m.points.forEach(function (p) { if (p.t <= t) y = p.y; }); return y; };
+        var segAt = function (t) { var g = null; m.segs.forEach(function (x) { if (x.from <= t) g = x; }); return g; };
         var f1 = function (n) { return n.toFixed(1); };
         // A bar's label sits to its right, and at the end of a session there is
         // no right left: one that would run past the edge takes the space on the
@@ -876,48 +896,51 @@
             return '<text x="' + f1(left ? x0 - 8 : x1 + 8) + '" y="' + y + '"' + (left ? ' text-anchor="end"' : '')
                 + ' style="font-size:11.5px;fill:var(--ink2)">' + esc(text) + '</text>';
         };
-        var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="session 時間線"><defs>'
+        var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="session 時間線"' + (hi ? ' data-hi' : '') + '><defs>'
             + '<pattern id="hw" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">'
             + '<rect width="5" height="5" style="fill:var(--hatch-bg)"/><rect width="1.4" height="5" style="fill:var(--hatch)"/></pattern></defs>'
             + '<text x="' + G + '" y="16" style="fill:var(--ink);font-weight:600">' + clock(m.t0) + '</text>'
             + '<text x="' + (W - R) + '" y="16" text-anchor="end" style="fill:var(--ink);font-weight:600">' + clock(m.t1) + '</text>'
             + '<text class="tick" x="' + (W - R) + '" y="' + (H - 8) + '" text-anchor="end">共 ' + mins(m.t1 - m.t0) + '</text>';
-        m.waits.forEach(function (w) {
-            out += '<rect class="wait" x="' + f1(X(w.from)) + '" y="' + (ctx0 - 6) + '" width="' + f1(Math.max(X(w.to) - X(w.from), 1))
-                + '" height="' + (bottom - ctx0 + 6) + '" style="fill:url(#hw);opacity:.38"/>';
-        });
-        out += '<text class="lane-l" x="0" y="' + (ctx0 + 10) + '">主 session context</text>'
+        // The gutter's lane names stay clear of the token ticks, which end
+        // 8px left of G and are at most five characters wide.
+        out += '<text class="lane-l" x="0" y="' + (sl + 13) + '">stage</text>'
+            + '<text class="lane-l" x="0" y="' + (ctx0 + 10) + '">主 session context</text>'
             + '<text class="lane-s" x="0" y="' + (ctx0 + 26) + '">token；◆ 是 agent 回傳</text>';
-        [0, 0.5, 1].forEach(function (f) {
-            out += '<line class="' + (f ? 'gridl' : 'base') + '" x1="' + G + '" x2="' + (W - R) + '" y1="' + f1(Yc(ctop * f)) + '" y2="' + f1(Yc(ctop * f)) + '"/>'
-                + '<text class="tick" x="' + (G - 8) + '" y="' + f1(Yc(ctop * f) + 4) + '" text-anchor="end">' + tokens(ctop * f) + '</text>';
+        // The stage columns first, so everything else draws over them.
+        var stRoom = labelRoom();
+        m.segs.forEach(function (g) {
+            var x0 = X(g.from), w = Math.max(X(g.to) - x0, 0.5), c = colorOf('stage', g.stage);
+            var text = g.stage + ' ' + mins(g.to - g.from) + (isFinite(g.usd) && g.usd ? ' · ' + usd(g.usd) : ''), lw = textW(g.stage, 11.5) + 12;
+            out += '<rect class="seg" x="' + f1(x0) + '" y="' + sl + '" width="' + f1(w) + '" height="' + (ctxB - sl) + '"'
+                + (hi === g.stage ? ' data-on' : '') + ' style="fill:' + c + '"><title>' + esc(text) + '</title></rect>'
+                + '<rect class="segcap" x="' + f1(x0) + '" y="' + sl + '" width="' + f1(w) + '" height="3" style="fill:' + c + '"/>'
+                + '<line class="segl" x1="' + f1(x0) + '" x2="' + f1(x0) + '" y1="' + sl + '" y2="' + ctxB + '" style="stroke:' + c + '"/>'
+                + (w > lw && stRoom(x0 + 6, x0 + 6 + lw)
+                    ? '<text class="segn" x="' + f1(x0 + 6) + '" y="' + (sl + 16) + '" style="fill:' + c + '">' + esc(g.stage)
+                        + (w > lw + textW(mins(g.to - g.from), 10.5) + 8 ? '<tspan class="segd"> ' + mins(g.to - g.from) + '</tspan>' : '') + '</text>'
+                    : '');
         });
+        m.waits.forEach(function (w) {
+            out += '<rect class="wait" x="' + f1(X(w.from)) + '" y="' + (sl - 6) + '" width="' + f1(Math.max(X(w.to) - X(w.from), 1))
+                + '" height="' + (bottom - sl + 6) + '" style="fill:url(#hw);opacity:.38"/>';
+        });
+        var step = niceStep(ctop);
+        for (var gv = 0; gv <= ctop; gv += step) {
+            out += '<line class="' + (gv ? 'gridl' : 'base') + '" x1="' + G + '" x2="' + (W - R) + '" y1="' + f1(Yc(gv)) + '" y2="' + f1(Yc(gv)) + '"/>'
+                + '<text class="tick" x="' + (G - 8) + '" y="' + f1(Yc(gv) + 4) + '" text-anchor="end">' + tokens(gv) + '</text>';
+        }
         if (m.points.length) {
             out += '<path d="' + m.points.map(function (p, i) { return (i ? 'L' : 'M') + f1(X(p.t)) + ',' + f1(Yc(p.y)); }).join('')
                 + '" style="fill:none;stroke:var(--ctx);stroke-width:2;stroke-linejoin:round"/>';
         }
-        var retRoom = labelRoom();
-        m.rets.forEach(function (q) {
-            var x = X(q.t), y = Yc(yAt(q.t));
-            var lab = '+' + (q.chars >= 1000 ? (q.chars / 1000).toFixed(1) + 'k' : q.chars) + ' 字元', lw = textW(lab, 10.5);
-            // It ends 9px left of its mark. No edge to clear: the chart starts
-            // at G, so even the widest of these labels ends well inside it.
-            var lx = x - 9;
-            out += '<path d="M' + f1(x) + ' ' + f1(y - 6) + ' ' + f1(x + 6) + ' ' + f1(y) + ' ' + f1(x) + ' ' + f1(y + 6) + ' ' + f1(x - 6) + ' ' + f1(y)
-                + 'Z" style="fill:var(--ink);stroke:var(--panel);stroke-width:2"><title>' + esc(lab) + '</title></path>'
-                + (retRoom(lx - lw, lx)
-                    ? '<text x="' + f1(lx) + '" y="' + f1(y - 9)
-                        + '" text-anchor="end" style="font-size:10.5px;fill:var(--ink2)">' + lab + '</text>'
-                    : '');
+        // The five largest rises, numbered as the list under the chart numbers them.
+        (m.rises || []).forEach(function (r, i) {
+            if (!isFinite(r.t)) return;
+            out += '<g class="rb"><circle r="7" cx="' + f1(X(r.t)) + '" cy="' + f1(Yc(r.y1)) + '"/><text x="' + f1(X(r.t)) + '" y="'
+                + f1(Yc(r.y1) + 3) + '" text-anchor="middle">' + (i + 1) + '</text></g>';
         });
-        out += '<text class="lane-l" x="0" y="' + (st0 + 15) + '">stage</text><text class="lane-s" x="0" y="' + (st0 + 30) + '">寬度 = 實際經過時間</text>';
-        m.segs.forEach(function (g) {
-            var x0 = X(g.from) + 1, w = Math.max(X(g.to) - x0 - 1, 0.5), text = g.stage + ' ' + mins(g.to - g.from);
-            out += '<rect class="seg" x="' + f1(x0) + '" y="' + st0 + '" width="' + f1(w) + '" height="' + stH + '" rx="3" style="fill:'
-                + colorOf('stage', g.stage) + '"><title>' + esc(text) + '</title></rect>'
-                + (w > text.length * 7 + 14 ? '<text x="' + f1(x0 + 7) + '" y="' + (st0 + 21)
-                    + '" style="fill:#fff;font-size:12px;font-weight:600;pointer-events:none">' + esc(text) + '</text>' : '');
-        });
+        // A wait's length, under the curve where no stage name competes with it.
         var waitRoom = labelRoom();
         m.waits.forEach(function (w) {
             var x0 = X(w.from), wd = Math.max(X(w.to) - x0, 1);
@@ -925,7 +948,7 @@
             // Centred on the band, except where that would hang off an edge: the
             // last wait of a session sits against the right margin.
             var cx = Math.min(x0 + wd / 2, W - R - lw / 2);
-            out += '<rect class="waitst" x="' + f1(x0) + '" y="' + st0 + '" width="' + f1(wd) + '" height="' + stH
+            out += '<rect class="waitst" x="' + f1(x0) + '" y="' + ctx0 + '" width="' + f1(wd) + '" height="' + ctxH
                 + '" style="fill:url(#hw)"><title>' + esc(lab) + '</title></rect>'
                 + (waitRoom(cx - lw / 2, cx + lw / 2)
                     ? '<text x="' + f1(cx) + '" y="' + wl + '" text-anchor="middle" style="font-size:11px;fill:var(--ink);font-weight:500">'
@@ -936,6 +959,33 @@
             + m.ticks.length + ' 次，顏色 = model</text>';
         m.ticks.forEach(function (q) {
             out += '<rect class="rq" x="' + f1(X(q.t) - 0.75) + '" y="' + rq0 + '" width="1.5" height="' + rqH + '" style="fill:var(--m-' + q.family + ')"/>';
+        });
+        // The reading under the pointer: a column per point (at most 240, the
+        // peak kept), from halfway to the one before to halfway to the next.
+        var hp = downsample(m.points, 240);
+        hp.forEach(function (p, i) {
+            var x = X(p.t), a = i ? (X(hp[i - 1].t) + x) / 2 : G, b = i + 1 < hp.length ? (x + X(hp[i + 1].t)) / 2 : W - R;
+            var g = segAt(p.t);
+            out += '<rect class="hitc" x="' + f1(a) + '" y="' + sl + '" width="' + f1(Math.max(b - a, 1)) + '" height="' + (rq0 + rqH - sl) + '"'
+                + (g ? ' data-hist="' + esc(g.stage) + '"' : '') + '><title>'
+                + esc((g ? g.stage : '—') + ' · ' + stamp(p.t) + ' · context ' + comma(p.y) + ' tokens'
+                    + (p.model ? ' · ' + String(p.model).replace(/^claude-/, '') : '')
+                    + (g && isFinite(g.usd) && g.usd ? ' · 這段 stage ' + usd(g.usd) : '')) + '</title></rect>';
+        });
+        // The returns go over the reading columns, so each keeps its own title.
+        var retRoom = labelRoom();
+        m.rets.forEach(function (q) {
+            var x = X(q.t), y = Yc(yAt(q.t));
+            var lab = '+' + (q.chars >= 1000 ? (q.chars / 1000).toFixed(1) + 'k' : q.chars) + ' 字元', lw = textW(lab, 10.5);
+            // It ends 9px left of its mark, unless that would run into the
+            // token ticks left of G: then it starts 9px right of it instead.
+            var right = x - 9 - lw < G + 2, lx = right ? x + 9 : x - 9;
+            out += '<path d="M' + f1(x) + ' ' + f1(y - 6) + ' ' + f1(x + 6) + ' ' + f1(y) + ' ' + f1(x) + ' ' + f1(y + 6) + ' ' + f1(x - 6) + ' ' + f1(y)
+                + 'Z" style="fill:var(--ink);stroke:var(--panel);stroke-width:2"><title>' + esc(lab) + '</title></path>'
+                + (retRoom(right ? lx : lx - lw, right ? lx + lw : lx)
+                    ? '<text x="' + f1(lx) + '" y="' + f1(y - 9) + '"' + (right ? '' : ' text-anchor="end"')
+                        + ' style="font-size:10.5px;fill:var(--ink2)">' + lab + '</text>'
+                    : '');
         });
         out += '<line class="base" x1="0" x2="' + (W - R) + '" y1="' + (d0 - 10) + '" y2="' + (d0 - 10) + '"/>';
         if (!shown.length) out += '<text class="lane-s" x="' + G + '" y="' + (d0 + 16) + '">這個 session 沒有派出 agent 或 workflow</text>';
@@ -1022,6 +1072,72 @@
     // tab answers before the detail script has loaded. With none, no 主迴圈
     // row is drawn: `x.loops` is what `lib/detail.js`'s `loopsOf` computed,
     // and there is nothing to show before it arrives.
+    // 概覽's money, stage by stage: dollars from the session's `days` (main
+    // and agent apart, the split costModel makes), time from the data file's
+    // `stages`, requests from the detail's points placed by `seq`. `req` is
+    // null until the detail is here.
+    function stageShare(s, x) {
+        var by = {}, order = [], total = 0;
+        var row = function (k) {
+            if (!by[k]) { by[k] = { stage: k, ms: null, usd: 0, main: 0, agent: 0, req: x ? 0 : null }; order.push(k); }
+            return by[k];
+        };
+        (s.days || []).forEach(function (r) {
+            var g = row(r.stage || 'none'), v = r.usd || 0;
+            g.usd += v;
+            total += v;
+            if (r.who === 'main') g.main += v; else g.agent += v;
+        });
+        (s.stages || []).forEach(function (w) { var g = row(w.stage); g.ms = (g.ms || 0) + Math.max(w.to - w.from, 0); });
+        if (x) {
+            (x.points || []).forEach(function (pt) {
+                var k = 'none';
+                (x.seq || []).forEach(function (m) { if (m.at <= pt.t) k = m.stage; });
+                row(k).req++;
+            });
+        }
+        var rank = function (k) { var i = ROUTE.indexOf(k); return i < 0 ? ROUTE.length : i; };
+        return { total: total, rows: order.sort(function (a, b) { return rank(a) - rank(b); }).map(function (k) { return by[k]; })
+            .filter(function (g) { return g.usd || g.ms || g.req; }) };
+    }
+    // One bar split by stage in the timeline's stage tints, and the table under
+    // it. A segment or a row is a toggle: `hi` is the stage the timeline marks.
+    function costShareHtml(L, hi) {
+        var pct = function (v) { return L.total ? Math.round(v / L.total * 1000) / 10 : 0; };
+        var name = function (k) { return k === 'none' ? '第一步之前' : k; };
+        var paid = L.rows.filter(function (g) { return g.usd > 0; });
+        return '<div class="cshare" data-block="cost-share"><div class="h2">' + icon('spend') + '各 stage 花費占比'
+            + '<small>合計 ' + usd(L.total) + '；點一段或一列，時間線標出那個 stage</small></div>'
+            + (paid.length ? '<div class="csbar" role="group" aria-label="各 stage 花費占比">' + paid.map(function (g) {
+                var p = pct(g.usd), on = hi === g.stage;
+                return '<button type="button" class="csseg' + (on ? ' on' : '') + '" data-hist="' + esc(g.stage) + '" aria-pressed="' + on + '"'
+                    + ' title="' + esc(name(g.stage) + ' ' + usd(g.usd) + ' · ' + p + '%') + '" style="flex:' + g.usd + ' 1 0;background:'
+                    + colorOf('stage', g.stage) + '">' + (p >= 9 ? '<span>' + esc(name(g.stage)) + '</span><b>' + usd(g.usd) + ' · ' + p + '%</b>' : '')
+                    + '</button>';
+            }).join('') + '</div>' : '<p class="tally">這個 session 沒有按日的花費</p>')
+            + '<div class="tbl-wrap"><table class="t cstbl"><thead><tr><th>stage</th><th class="r">時間</th><th class="r">花費</th><th class="r">占比</th>'
+            + '<th>主 session / agent</th><th class="r">請求</th></tr></thead><tbody>' + L.rows.map(function (g) {
+                var on = hi === g.stage;
+                return '<tr class="csrow' + (on ? ' on' : '') + '" data-hist="' + esc(g.stage) + '" tabindex="0" aria-pressed="' + on + '">'
+                    + '<td><span class="pchip"><i class="sw" style="background:' + colorOf('stage', g.stage) + '"></i>' + esc(name(g.stage)) + '</span></td>'
+                    + '<td class="r muted">' + (g.ms === null ? '—' : mins(g.ms)) + '</td><td class="r">' + usd(g.usd) + '</td>'
+                    + '<td class="r muted">' + (g.usd ? pct(g.usd) + '%' : '—') + '</td>'
+                    + '<td><span class="csplit"' + (g.usd ? '' : ' hidden') + '><i style="flex:' + g.main + ' 1 0;background:var(--s-main)"></i>'
+                    + '<i style="flex:' + g.agent + ' 1 0;background:var(--s-agent)"></i></span>'
+                    + '<span class="muted">' + usd(g.main) + ' / ' + usd(g.agent) + '</span></td>'
+                    + '<td class="r muted">' + (g.req === null ? '—' : g.req) + '</td></tr>';
+            }).join('') + '</tbody></table></div></div>';
+    }
+    // 派工's tie to that bar: each stage's agent dollars, a link back to 概覽
+    // with that stage marked.
+    function dispatchStagesHtml(L, id) {
+        var paid = L.rows.filter(function (g) { return g.agent > 0; });
+        if (!paid.length) return '';
+        return '<div class="csagent" data-block="dispatch-stages"><span class="muted">派工花費，依 stage</span>' + paid.map(function (g) {
+            return '<a class="cschip" href="' + sessionHash(id) + '" data-hist="' + esc(g.stage) + '"><i class="sw" style="background:'
+                + colorOf('stage', g.stage) + '"></i>' + esc(g.stage === 'none' ? '第一步之前' : g.stage) + '<b>' + usd(g.agent) + '</b></a>';
+        }).join('') + '</div>';
+    }
     function costHtml(m, x) {
         var KINDS = [['input', 'input', '--t-in'], ['output', 'output', '--t-out'], ['cacheRead', 'cache read', '--t-cr'],
             ['cacheWrite', 'cache write', '--t-cw']];
@@ -1070,11 +1186,17 @@
             + roHtml('context 峰值', x ? tokens(x.peak) : '—', '')
             + '</div>';
     }
+    // Three tabs by what a reader comes for: 概覽 is the session's story —
+    // time, context and money stage by stage — and 派工 and 事件 are its two
+    // long lists. `cost` is still in TABS so an old `/cost` link parses; it
+    // opens 概覽, which now holds everything that tab showed.
+    var TAB_SHOWN = ['timeline', 'dispatch', 'events'];
     function tabsHtml(s, tab, x) {
-        var label = { timeline: '時間線', cost: '花費', dispatch: '派工', events: '事件' };
+        var label = { timeline: '概覽', dispatch: '派工', events: '事件' };
         var n = { dispatch: x ? x.rows.length : null, events: x ? x.events.length : null };
         var run = x ? x.rows.filter(function (r) { return agentState(x, r, s) === 'running'; }).length : 0;
-        return '<nav class="tabs" aria-label="session 檢視">' + TABS.map(function (k) {
+        if (tab === 'cost') tab = 'timeline';
+        return '<nav class="tabs" aria-label="session 檢視">' + TAB_SHOWN.map(function (k) {
             return '<a href="' + sessionHash(s.id, k) + '"' + (k === tab ? ' class="on" aria-current="page"' : '') + '>' + label[k]
                 + (n[k] !== null && n[k] !== undefined ? '<small>' + n[k] + '</small>' : '')
                 + (k === 'dispatch' && run ? '<i class="dot live" title="' + run + ' 個 agent running"></i>' : '') + '</a>';
@@ -1170,32 +1292,80 @@
         settings: '<path d="M2.5 4h6M11.5 4h2M2.5 8h2M7.5 8h6M2.5 12h7M12.5 12h1"/><circle cx="10" cy="4" r="1.5"/><circle cx="6" cy="8" r="1.5"/><circle cx="11" cy="12" r="1.5"/>',
         list: '<rect x="2" y="2.8" width="12" height="10.4" rx="1.2"/><path d="M2 6.3h12M2 9.8h12M6 2.8v10.4"/>',
         cmp: '<rect x="2" y="2.5" width="5" height="11" rx="1"/><rect x="9" y="2.5" width="5" height="11" rx="1"/><path d="M4.5 9.5v1.5M11.5 6.5V11"/>',
+        dash: '<rect x="2" y="2" width="5" height="6" rx="1"/><rect x="9" y="2" width="5" height="3.5" rx="1"/>'
+            + '<rect x="2" y="10" width="5" height="4" rx="1"/><rect x="9" y="7.5" width="5" height="6.5" rx="1"/>',
+        spend: '<circle cx="8" cy="8" r="6"/><path d="M10 5.8c-.4-.6-1.1-.9-2-.9-1.2 0-2 .6-2 1.5 0 2 4 1.1 4 3.1 0 .9-.9 1.6-2 1.6-.9 0-1.7-.4-2.1-1M8 3.6v1.3M8 11.1v1.3"/>',
+        chev: '<path d="M4.5 6.2 8 9.8l3.5-3.6"/>',
+        sun: '<circle cx="8" cy="8" r="2.8"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/>',
+        moon: '<path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/>',
+        auto: '<circle cx="8" cy="8" r="6"/><path d="M8 2v12a6 6 0 0 0 0-12z" fill="currentColor"/>',
+        gate: '<path d="M8 1.8 13.5 4v4c0 3-2.4 5.3-5.5 6.2C4.9 13.3 2.5 11 2.5 8V4z"/><path d="M8 5.2v3.3M8 10.8v.01"/>',
     };
     function icon(name) {
         return ICONS[name] ? '<svg class="ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor"'
             + ' stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + ICONS[name] + '</svg>' : '';
     }
-    function navHtml(active, c) {
-        var on = active === 'project' ? 'projects' : active === 'session' ? 'sessions' : active;
-        var item = function (v, href, label, badge, cls) {
-            return '<li><a href="' + href + '"' + (on === v ? ' aria-current="page"' : '') + '>' + icon(v) + '<span>' + label + '</span>'
-                + (badge === '' ? '' : '<span class="nb' + (cls ? ' ' + cls : '') + '">' + badge + '</span>') + '</a></li>';
-        };
-        return '<nav class="sidenav" data-block="nav" aria-label="功能">'
-            + '<div class="navgrp">看</div><ul>'
-            + item('now', '#/', '現在', c.live + ' live', c.live ? 'live' : '')
-            + item('days', '#/days', '近 30 天', usd(c.usd))
-            + item('sessions', '#/sessions', '最近 sessions', c.sessions)
-            + item('projects', '#/projects', '專案', c.projects)
-            + item('docs', '#/docs', '文件', c.docs) + '</ul>'
-            + '<div class="navgrp">調</div><ul>' + item('settings', '#/settings', '設定', '精靈') + '</ul>'
-            + '<div class="navgrp">其他頁</div><ul>' + item('list', '#/list', '清單', '全部 session', 'ext')
-            + item('cmp', '#/cmp', '比較', '') + '</ul></nav>';
+    // Five categories. A category with `kids` is a heading over its sub-pages,
+    // and those same kids are the tab strip on each of their pages
+    // (`subtabsHtml`), so the bar and the strip cannot list different pages.
+    var NAV_TREE = [
+        { ico: 'dash', label: '儀表板', v: 'now', href: '#/' },
+        { ico: 'sessions', label: 'Sessions', fold: 'sessions', kids: [['live', '#/live', '進行中'], ['sessions', '#/sessions', '最近'],
+            ['list', '#/list', '全部清單'], ['cmp', '#/cmp', '比較']] },
+        { ico: 'spend', label: '花費', fold: 'spend', kids: [['days', '#/days', '近 30 天'], ['projects', '#/projects', '依專案']] },
+        { ico: 'docs', label: '文件', v: 'docs', href: '#/docs' },
+        { ico: 'settings', label: '設定', kids: [['settings', '#/settings', '精靈']] },
+    ];
+    // A detail page lights the page it was opened from.
+    function navOn(active) { return active === 'project' ? 'projects' : active === 'session' ? 'sessions' : active; }
+    function navGroup(v) {
+        return NAV_TREE.filter(function (g) { return (g.kids || []).some(function (k) { return k[0] === v; }); })[0] || null;
     }
-    // 現在: one card per registry that is still there, its live and stale
-    // sessions under it. A session that is down has finished and is on
-    // 最近 sessions instead.
-    function nowHtml(projects, sessions) {
+    // The three theme states the button at the foot of the bar cycles
+    // through: [state, icon, what it says, the state a click moves to].
+    var THEMES = { system: ['auto', '跟隨系統', 'light'], light: ['sun', '淺色', 'dark'], dark: ['moon', '深色', 'system'] };
+    // `ui.shut` holds the `fold` keys the reader collapsed; `ui.theme` is one
+    // of THEMES. A category with `fold` is one button, the whole row, that only
+    // opens and shuts; its kids do the navigating. The chevron shows which.
+    function navHtml(active, c, ui) {
+        var on = navOn(active), shut = (ui && ui.shut) || {}, th = THEMES[ui && ui.theme] ? ui.theme : 'system';
+        // Each badge sits on the page whose rows it counts.
+        var badges = { now: null, live: [c.live + ' live', c.live ? 'live' : ''], days: [usd(c.usd)], sessions: [c.sessions],
+            projects: [c.projects], docs: [c.docs] };
+        var link = function (v, href, inner) {
+            var b = badges[v];
+            return '<a href="' + href + '"' + (on === v ? ' aria-current="page"' : '') + '>' + inner
+                + (b ? '<span class="nb' + (b[1] ? ' ' + b[1] : '') + '">' + b[0] + '</span>' : '') + '</a>';
+        };
+        var t = THEMES[th];
+        return '<nav class="sidenav" data-block="nav" aria-label="功能"><ul>' + NAV_TREE.map(function (g) {
+            if (!g.kids) return '<li class="navcat">' + link(g.v, g.href, icon(g.ico) + '<span>' + g.label + '</span>') + '</li>';
+            var inside = g.kids.some(function (k) { return k[0] === on; }), closed = Boolean(g.fold && shut[g.fold]);
+            var kids = '<ul class="navkids"' + (g.fold ? ' id="navkids-' + g.fold + '"' : '') + '>' + g.kids.map(function (k) {
+                return '<li>' + link(k[0], k[1], '<span>' + k[2] + '</span>') + '</li>';
+            }).join('') + '</ul>';
+            return '<li class="navcat' + (inside ? ' in' : '') + (closed ? ' shut' : '') + '"' + (g.fold ? ' data-fold="' + g.fold + '"' : '') + '>'
+                + (g.fold ? '<button type="button" class="navrow navhd" data-navfold="' + g.fold + '"'
+                    + ' aria-controls="navkids-' + g.fold + '" aria-expanded="' + !closed + '">' + icon(g.ico) + '<span>' + g.label + '</span>'
+                    + '<span class="navchev">' + icon('chev') + '</span></button>'
+                    : '<a class="navhd" href="' + g.kids[0][1] + '">' + icon(g.ico) + '<span>' + g.label + '</span></a>') + (g.fold ? '<div class="navwrap">' + kids + '</div>' : kids) + '</li>';
+        }).join('') + '</ul><div class="navfoot"><button type="button" class="themebtn" data-themecycle="' + t[2] + '"'
+            + ' title="主題：' + t[1] + '（按一下換' + THEMES[t[2]][1] + '）" aria-label="主題：' + t[1] + '，按一下換' + THEMES[t[2]][1] + '">'
+            + icon(t[0]) + '</button></div></nav>';
+    }
+    // The tab strip under a Sessions or 花費 page's header: its category's
+    // kids, the current one marked. Empty for a page with no siblings.
+    function subtabsHtml(active) {
+        var g = navGroup(active);
+        if (!g || g.kids.length < 2) return '';
+        return '<nav class="subtabs" data-block="subtabs" aria-label="' + esc(g.label) + '">' + g.kids.map(function (k) {
+            return '<a href="' + k[1] + '"' + (k[0] === active ? ' aria-current="page"' : '') + '>' + k[2] + '</a>';
+        }).join('') + '</nav>';
+    }
+    // 現在 (進行中, `#/live`): one card per registry that is still there, its
+    // live and stale sessions under it. A session that is down has finished
+    // and is on 最近 sessions instead. `tabs` is the Sessions tab strip.
+    function nowHtml(projects, sessions, tabs) {
         var cards = projects.filter(function (p) { return !p.gone; }).map(function (p) {
             var own = sessions.filter(function (s) { return s.root === p.root && (s.state === 'live' || s.state === 'stale'); });
             return '<section class="reg"><div class="reg-h"><b class="mono reg-root">' + esc(p.root) + '</b><span class="spacer"></span>'
@@ -1206,7 +1376,7 @@
                         + '<div class="srow-b"><span class="mono">' + esc(s.stage || '—') + '</span><span class="ago">' + ago(s.updated) + '</span></div></a>';
                 }).join('') : '<p class="none">沒有進行中的 session</p>') + '</section>';
         });
-        return '<div class="phead"><h1>' + icon('now') + '現在</h1></div><div class="regs" data-block="now">'
+        return '<div class="phead"><h1>' + icon('now') + '現在</h1></div>' + (tabs || '') + '<div class="regs" data-block="now">'
             + (cards.length ? cards.join('') : '<p class="mute">沒有 registry</p>') + '</div>';
     }
     // ---- 設定: the seven-step wizard ----------------------------------------
@@ -1693,9 +1863,76 @@
     function homeOpts(sel) {
         return { metric: view.metric, dim: view.dim, sel: sel, today: TODAY, days: DAYS, names: NAMES, pkeys: PKEYS };
     }
-    function nowPage() {
+    function livePage() {
         return (isFinite(S.cleared) ? '<p class="cleared">cleared ' + S.cleared + ' stale rows</p>' : '')
-            + nowHtml(S.projects, homeRows());
+            + nowHtml(S.projects, homeRows(), subtabsHtml('live'));
+    }
+    // ---- 儀表板 (`#/`): four cards, each read off the rows its full page reads
+    // — `homeRows()` through the same filters — so a card's number is the
+    // number that page shows.
+    function msOf(t) { return typeof t === 'number' ? t : Date.parse(t); }
+    // Each card writes its own `data-block` literally, so the tune proxy and
+    // tests/station-dispatch-view.test.js can find it in this file.
+    function dashHead(ico, title, href) {
+        return '<div class="dcard-h">' + icon(ico) + '<b>' + title + '</b><span class="spacer"></span>'
+            + '<a class="dmore" href="' + href + '">查看全部 →</a></div>';
+    }
+    function dashRowName(s) { return esc(shortLabel(NAMES[s.pkey] || s.pkey)); }
+    function dashLive(R) {
+        var live = R.filter(function (s) { return s.state === 'live'; });
+        return '<section class="dcard" data-block="dash-live">' + dashHead('now', '進行中', '#/live')
+            + '<div class="dbig">' + live.length + '<small>個 live session</small></div>'
+            + (live.length ? '<div class="dlist">' + live.map(function (s) {
+                return '<a class="drow" href="' + sessionHash(s.id) + '"><span class="dp">' + dashRowName(s) + '</span>'
+                    + '<span class="dt">' + esc(s.task || '（未命名）') + '</span>' + routeDots(s, true)
+                    + '<span class="dr mono">' + mins(Date.now() - msOf(s.started)) + '</span></a>';
+            }).join('') + '</div>' : '<p class="dnone">沒有進行中的 session</p>') + '</section>';
+    }
+    // Waiting is what `pendingGateHtml` answers: a pending file with questions.
+    // The file's own start is not in the data, so the wait runs from the
+    // session's last registry write, which is the gate's stage opening or later.
+    function dashGate(R) {
+        var now = S.serve ? Date.now() : NOW;
+        var at = R.filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
+        return '<section class="dcard" data-block="dash-gate">' + dashHead('gate', '等你回答', '#/live')
+            + '<div class="dbig' + (at.length ? ' warn' : '') + '">' + at.length + '<small>個 gate 在等</small></div>'
+            + (at.length ? '<div class="dlist">' + at.map(function (s) {
+                var since = msOf(s.pending.at || s.updated), q = s.pending.questions[0];
+                return '<a class="drow" href="' + sessionHash(s.id) + '"><span class="dp">' + dashRowName(s) + '</span>'
+                    + '<span class="dt">' + esc(q.header || q.question || s.task || '') + '</span>'
+                    + '<span class="dr mono" title="還剩 ' + dur(Math.max(0, Math.round((s.pending.until - now) / 1000))) + '">等了 '
+                    + (isFinite(since) ? mins(now - since) : '—') + '</span></a>';
+            }).join('') + '</div>' : '<p class="dnone">沒有在等你的 gate</p>') + '</section>';
+    }
+    // The 近 30 天 chart's own bars, summed per day, drawn without axes.
+    function dashSpend(R) {
+        var list = dayBars(R, 'usd', 'project', DAYS).days, mx = Math.max.apply(null, list.map(function (b) { return b.total; }).concat([0])) || 1;
+        var W = 300, H = 56, bw = W / list.length, tot = windowTotals(R, DAYS).usd;
+        var svg = '<svg class="dspark" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="近 30 天每日花費">'
+            + list.map(function (b, i) {
+                var h = b.total ? Math.max(2, b.total / mx * (H - 2)) : 0;
+                return '<rect x="' + (i * bw + 1).toFixed(1) + '" y="' + (H - h).toFixed(1) + '" width="' + Math.max(1, bw - 2).toFixed(1)
+                    + '" height="' + h.toFixed(1) + '" rx="1"' + (i === list.length - 1 ? ' class="today"' : '')
+                    + '><title>' + b.day + ' ' + usd(b.total) + '</title></rect>';
+            }).join('') + '<line x1="0" x2="' + W + '" y1="' + (H - .5) + '" y2="' + (H - .5) + '"/></svg>';
+        var at = function (i) { var b = list[list.length - i]; return b ? usd(b.total) : '—'; };
+        return '<section class="dcard" data-block="dash-spend">' + dashHead('spend', '近 30 天花費', '#/days')
+            + '<div class="dbig">' + (tot ? usd(tot) : '$0') + '</div>' + svg
+            + '<div class="dkv"><span>今天 <b>' + at(1) + '</b></span><span>昨天 <b>' + at(2) + '</b></span></div></section>';
+    }
+    function dashRecent(R) {
+        var list = recentRows(R, DAYS).slice(0, 5);
+        return '<section class="dcard" data-block="dash-recent">' + dashHead('sessions', '最近 sessions', '#/sessions')
+            + (list.length ? '<div class="dlist">' + list.map(function (s) {
+                return '<a class="drow" href="' + sessionHash(s.id) + '"><span class="dp">' + dashRowName(s) + '</span>'
+                    + '<span class="dt">' + esc(s.task || '（未命名）') + '</span><span class="ds mono">' + esc(s.stage || '—') + '</span>'
+                    + '<span class="dc mono">' + usd(sessionTotals(s).usd) + '</span><span class="dr">' + ago(s.updated) + '</span></a>';
+            }).join('') + '</div>' : '<p class="dnone">近 30 天沒有 session</p>') + '</section>';
+    }
+    function dashPage() {
+        var R = homeRows();
+        return '<div class="phead"><h1>' + icon('dash') + '儀表板</h1></div><div class="dash" data-block="dashboard">'
+            + dashLive(R) + dashGate(R) + dashSpend(R) + dashRecent(R) + '</div>';
     }
     // What daysPage last drew, so the hover card reads the same bars the chart
     // did. `chartOff` holds, per dim, the legend entries clicked out of the
@@ -1794,7 +2031,7 @@
         var all = dayBars(R, view.metric, view.dim, DAYS), bars = visibleBars(all, o);
         chartBars = bars;
         chartOpts = o;
-        return '<section class="panel hero" data-block="days"><div class="hero-top"><div class="hero-title"><div class="eyebrow">' + icon('days')
+        return subtabsHtml('days') + '<section class="panel hero" data-block="days"><div class="hero-top"><div class="hero-title"><div class="eyebrow">' + icon('days')
             + heroEyebrow(frozenAt) + '</div>'
             + '<h1><b>' + DAYS[0].slice(5) + '</b> — <b>' + TODAY.slice(5) + '</b></h1></div>'
             + kpiHtml(windowTotals(R, DAYS), windowTotals(R, PREV)) + '</div>'
@@ -1811,10 +2048,10 @@
             + '<div class="chart">' + histSvg(bars, o) + '</div></section>';
     }
     function sessionsPage() {
-        return '<section class="panel" data-block="sessions">' + recentHtml(recentRows(homeRows(), DAYS), homeOpts(null)) + '</section>';
+        return subtabsHtml('sessions') + '<section class="panel" data-block="sessions">' + recentHtml(recentRows(homeRows(), DAYS), homeOpts(null)) + '</section>';
     }
     function projectsPage() {
-        return '<section class="panel" data-block="projects">' + projectsHtml(projectRows(homeRows(), DAYS), homeOpts(null)) + '</section>';
+        return subtabsHtml('projects') + '<section class="panel" data-block="projects">' + projectsHtml(projectRows(homeRows(), DAYS), homeOpts(null)) + '</section>';
     }
     function docsPage() {
         var list = [].concat.apply([], S.projects.map(function (p) { return p.docs || []; }));
@@ -1878,27 +2115,46 @@
         return { open: view.open, prm: view.prm, ph: view.ph, filter: view.dfilter,
             now: S.serve ? Date.now() : NOW, live: Boolean(S.serve) && Boolean(s) && s.state === 'live' };
     }
+    // A stage column's dollars, from the data file's per-stage `usd`. A stage
+    // the session went through twice has one figure for both visits, so
+    // neither column claims it.
+    function stageCost(m, s) {
+        var by = {}, n = {};
+        (s.stages || []).forEach(function (w) { by[w.stage] = w.usd; });
+        m.segs.forEach(function (g) { n[g.stage] = (n[g.stage] || 0) + 1; });
+        m.segs.forEach(function (g) { if (n[g.stage] === 1 && isFinite(by[g.stage])) g.usd = by[g.stage]; });
+        return m;
+    }
     function sessionPage(r) {
         var s = S.sessions.filter(function (x) { return x.id === r.id; })[0];
         if (!s) return '<section class="panel"><p class="note">這頁上沒有 session ' + esc(r.id) + '</p></section>';
         needDetail(s);
         var x = DETAIL[s.id] || null;
-        // The cost tab reads `days` off the data file, so it answers before the
-        // detail script has loaded; the other three need the detail.
-        var body = r.tab === 'cost' ? costHtml(costModel(s.days), x)
-            : !x ? detailNote(s)
-                : r.tab === 'dispatch' ? '<div class="det">' + dispatchHtml(x, s, dispatchUi(s)) + '</div>'
-                    : r.tab === 'events' ? '<div class="det">' + replayHtml(x, view.kinds, s) + '</div>'
-                        : '<div class="lane-legend"><span><i class="hatchsw"></i>等你回答（gate）</span>'
-                        + '<span><i class="sw ln" style="background:var(--ctx)"></i>主 session context</span>'
-                        + MODEL_KEYS.map(function (k) {
-                            return '<span><i class="sw" style="background:var(--m-' + k + ')"></i>' + k + '</span>';
-                        }).join('')
-                        + '<span><i class="sw" style="background:var(--s-agent)"></i>背景 agent</span>'
-                        + '<span><i class="sw" style="background:var(--s-workflow)"></i>workflow</span></div>'
-                        + '<div class="chart tl">' + timelineSvg(timelineModel(x), view.closed) + '</div>'
-                        + '<div class="note">橫軸是真實時間：stage 的寬度等於實際經過的時間；點 workflow 那列收合或展開。</div>'
-                        + '<div class="det">' + ctxSection(s, x) + tasksHtml(x.tasks) + '</div>';
+        // 概覽 draws its money from `days` on the data file, so that half answers
+        // before the detail script has loaded; the timeline and the two lists
+        // need the detail. The old 花費 tab's stage × model table is the
+        // 明細 under the bar.
+        var L = stageShare(s, x), hi = view.hiId === s.id ? view.hi : null;
+        var legend = '<div class="lane-legend"><span><i class="sw" style="background:var(--st-build);opacity:.35"></i>stage 底色</span>'
+            + '<span><i class="hatchsw"></i>等你回答（gate）</span>'
+            + '<span><i class="sw ln" style="background:var(--ctx)"></i>主 session context</span>'
+            + MODEL_KEYS.map(function (k) {
+                return '<span><i class="sw" style="background:var(--m-' + k + ')"></i>' + k + '</span>';
+            }).join('')
+            + '<span><i class="sw" style="background:var(--s-agent)"></i>背景 agent</span>'
+            + '<span><i class="sw" style="background:var(--s-workflow)"></i>workflow</span></div>';
+        // The bar leads: it is short, and the timeline under it can run to
+        // dozens of agent rows.
+        var overview = costShareHtml(L, hi) + (x ? legend + '<div class="chart tl">' + timelineSvg(stageCost(timelineModel(x), s), view.closed, hi) + '</div>'
+                + '<div class="note">橫軸是真實時間：stage 的底色寬度等於實際經過的時間，context 曲線畫在上面；'
+                + '游標停在圖上看那一刻的 stage、時間與 context；點一下標出那個 stage；點 workflow 那列收合或展開。</div>'
+            : detailNote(s))
+            + '<details class="csmore"><summary>stage × model 明細 <small>token 與各自的 USD，主迴圈</small></summary>'
+            + costHtml(costModel(s.days), x) + '</details>'
+            + (x ? '<div class="det">' + ctxSection(s, x, true) + tasksHtml(x.tasks) + '</div>' : '');
+        var body = r.tab === 'dispatch' ? (x ? dispatchStagesHtml(L, s.id) + '<div class="det">' + dispatchHtml(x, s, dispatchUi(s)) + '</div>' : detailNote(s))
+            : r.tab === 'events' ? (x ? '<div class="det">' + replayHtml(x, view.kinds, s) + '</div>' : detailNote(s))
+                : overview;
         return '<section class="panel"><div class="eyebrow">session <span class="mono">' + esc(String(s.id).slice(0, 8)) + '</span> · '
             + '<a href="' + projectHash(s.pkey) + '">' + esc(NAMES[s.pkey] || s.pkey) + '</a> · ' + stamp(Date.parse(s.started)) + '</div>'
             + '<h1 class="s-title">' + esc(s.task || '（未命名）') + '</h1>'
@@ -2017,7 +2273,7 @@
         // rather than sitting above it and pushing the list off the bottom.
         var head = '<div class="phead"><h1>' + icon('list') + '清單</h1><span class="chip" id="cnt"></span><span class="spacer"></span>';
         var gone = goneNote(f.project);
-        var now = '<a class="ctl" href="#/">' + icon('now') + '現在</a></div>';
+        var now = '<a class="ctl" href="#/live">' + icon('now') + '現在</a></div>' + subtabsHtml('list');
         if (gone) return head + now + facetsHtml() + gone;
         return head + now + selbarHtml() + facetsHtml() + registryNote(f.project)
             + '<div class="listwrap">'
@@ -2324,7 +2580,9 @@
                 + '</div></li>';
         }).join('') + '</ol>';
     }
-    function ctxSection(s, x) {
+    // `bare` leaves the small chart and its key out: the 時間線 tab draws the
+    // same curve in its timeline, and the rises listed here are numbered there.
+    function ctxSection(s, x, bare) {
         var P = x.points;
         var step = niceStep(x.peak || 1);
         var dots = [];
@@ -2334,13 +2592,13 @@
         });
         var same = P.length + x.noTime === x.requests;
         return '<div class="srcline">summarise() 的 byRequest：每個 request 的 input ＋ cache read ＋ cache write</div>'
-            + (P.length ? '<div class="cx">' + lineChart(P, {
+            + (P.length && !bare ? '<div class="cx">' + lineChart(P, {
                 W: 340, H: 170, t0: P[0].t, t1: P[P.length - 1].t, ymax: Math.ceil((x.peak || 1) / step) * step,
                 marks: x.marks, dots: dots, rises: x.rises,
                 label: String(s.id).slice(0, 8) + ' 的 context，' + P.length + ' 點，峰值 ' + tokens(x.peak),
             }) + '</div>' : '')
-            + '<div class="key" aria-hidden="true"><span><i class="kl"></i>context / request</span>'
-            + '<span><i class="ko"></i>派出</span><span><i class="kb"></i>回來</span><span><i class="ks"></i>階段</span></div>'
+            + (bare ? '' : '<div class="key" aria-hidden="true"><span><i class="kl"></i>context / request</span>'
+                + '<span><i class="ko"></i>派出</span><span><i class="kb"></i>回來</span><span><i class="ks"></i>階段</span></div>')
             + '<p class="tally">折線 <b>' + P.length + ' 點</b>' + (x.noTime ? ' ＋ ' + x.noTime + ' requests with no time' : '')
             + ' ＝ 摘要的 ' + x.requests + ' requests <span class="' + (same ? 'eq' : 'ne') + '">' + (same ? '一致' : '不一致')
             + '</span>' + (P.length > 240 ? ' · 超過 240 點，降取樣並保留峰值' : '')
@@ -3066,7 +3324,7 @@
             return S.sessions.filter(function (s) { return s.id === id; })[0];
         }).filter(Boolean);
         var head = '<div class="phead"><h1>' + icon('cmp') + '比較</h1><span class="spacer"></span>'
-            + '<a class="ctl" href="#/list">☰ 回清單</a></div>';
+            + '<a class="ctl" href="#/list">☰ 回清單</a></div>' + subtabsHtml('cmp');
         if (two.length < 2) {
             return head + '<div class="card"><div class="cbody"><p class="mute">在專案頁或清單上勾兩個有細節的 session，'
                 + '這裡就上下並排比較它們。</p></div></div>';
@@ -3077,14 +3335,15 @@
             + (xa && xb ? compareHtml(two[0], xa, two[1], xb) : '<p class="mute">讀取細節…</p>') + '</div></div>';
     }
 
-    var NAV_LABEL = { days: '近 30 天', sessions: '最近 sessions', projects: '專案', docs: '文件', settings: '設定', list: '清單', cmp: '比較' };
+    var NAV_LABEL = { live: '現在', days: '近 30 天', sessions: '最近 sessions', projects: '專案', docs: '文件', settings: '設定', list: '清單', cmp: '比較' };
     function drawSide() {
         var tail = CRUMBS[route.view] ? CRUMBS[route.view](route)
             : route.view === 'days' && route.day ? [['近 30 天', '#/days'], [route.day, null]]
                 : NAV_LABEL[route.view] ? [[NAV_LABEL[route.view], null]] : [];
-        doc.getElementById('side').innerHTML = crumbHtml([['現在', '#/']].concat(tail));
+        doc.getElementById('side').innerHTML = crumbHtml([['儀表板', '#/']].concat(tail));
     }
-    VIEWS.now = nowPage;
+    VIEWS.now = dashPage;
+    VIEWS.live = livePage;
     VIEWS.days = daysPage;
     VIEWS.sessions = sessionsPage;
     VIEWS.projects = projectsPage;
@@ -3117,7 +3376,7 @@
         var rAct = pickOpen && doc.activeElement && doc.activeElement.closest ? doc.activeElement.closest('.rpop [data-v], .rpop [data-pickq]') : null;
         var rAt = rAct ? (rAct.hasAttribute('data-pickq') ? { q: rAct.selectionStart } : { v: rAct.getAttribute('data-v') }) : null;
         var rPop = pickOpen && doc.querySelector ? doc.querySelector('.rpop .seg') : null, rTop = rPop ? rPop.scrollTop : 0;
-        p.innerHTML = (VIEWS[route.view] || nowPage)(route);
+        p.innerHTML = (VIEWS[route.view] || dashPage)(route);
         if (rTop && (rPop = doc.querySelector('.rpop .seg'))) rPop.scrollTop = rTop;
         if (rAt && rAt.v !== undefined) pickFocus(rAt.v);
         if (rAt && rAt.q !== undefined) {
@@ -3135,10 +3394,78 @@
         else if (chartHover) chartHide();
         else if (route.view === 'days') chartFocus(chartPin);
         if (route.view === 'days') legendArm();
-        doc.getElementById('nav').innerHTML = navHtml(route.view, navCounts(homeRows(), S.projects, DAYS));
+        drawNav();
         drawSide();
         doc.getElementById('gen').textContent = genText();
     }
+    // The left bar's folds, kept as `{fold: true}` for each one the reader
+    // shut. Arriving on a page opens its category once; shutting it again
+    // while there holds through the 3 s redraw, and the heading shows active.
+    var navShut = (function () { try { return JSON.parse(stored('station.nav.collapsed')) || {}; } catch (e) { return {}; } }());
+    var navFold = null;
+    function navSave() { store('station.nav.collapsed', JSON.stringify(navShut)); }
+    function drawNav() {
+        var g = navGroup(navOn(route.view)), fold = g && g.fold || null;
+        if (fold && fold !== navFold && navShut[fold]) { delete navShut[fold]; navSave(); }
+        navFold = fold;
+        // A redraw under a focused chevron or theme button keeps the focus.
+        var a = doc.activeElement && doc.activeElement.getAttribute ? doc.activeElement : null;
+        var keep = a && a.hasAttribute('data-navfold') ? '[data-navfold="' + a.getAttribute('data-navfold') + '"]'
+            : a && a.hasAttribute('data-themecycle') ? '[data-themecycle]' : null;
+        doc.getElementById('nav').innerHTML = navHtml(route.view, navCounts(homeRows(), S.projects, DAYS),
+            { shut: navShut, theme: stored('station.theme') });
+        var back = keep && doc.querySelector ? doc.querySelector('#nav ' + keep) : null;
+        if (back) back.focus();
+    }
+    // Folding changes the class on the row already drawn rather than
+    // redrawing, so the height and chevron transitions have something to run.
+    function navFoldSet(fold, closed) {
+        if (closed) navShut[fold] = true; else delete navShut[fold];
+        navSave();
+        var li = doc.querySelector('#nav [data-fold="' + fold + '"]');
+        if (!li) return;
+        li.classList.toggle('shut', closed);
+        var b = li.querySelector('[data-navfold]');
+        if (b) b.setAttribute('aria-expanded', String(!closed));
+    }
+    doc.addEventListener('click', function (e) {
+        var n = e.target.closest ? e.target.closest('#nav [data-navfold], #nav [data-themecycle]') : null;
+        if (!n) return;
+        if (n.hasAttribute('data-navfold')) {
+            var fold = n.getAttribute('data-navfold');
+            navFoldSet(fold, !navShut[fold]);
+            return;
+        }
+        var t = n.getAttribute('data-themecycle');
+        store('station.theme', t === 'system' ? null : t);
+        themeSet(t);
+        drawNav();
+    });
+    // 概覽's stage mark. Set from the bar, the table, the timeline or 派工's
+    // chips; a second press on the same stage clears it. Keyed to the session
+    // so another session's page opens unmarked.
+    view.hi = null;
+    view.hiId = null;
+    function hiToggle(el) {
+        var k = el.getAttribute('data-hist'), id = route.id, again = view.hiId === id && view.hi === k;
+        view.hi = again ? null : k;
+        view.hiId = id;
+        var keep = doc.activeElement === el && el.tagName !== 'rect' ? '.' + el.getAttribute('class').split(' ')[0] : null;
+        draw();
+        var back = keep ? doc.querySelector(keep + '[data-hist="' + cssKey(k) + '"]') : null;
+        if (back) back.focus();
+    }
+    doc.addEventListener('click', function (e) {
+        var h = route.view === 'session' && e.target.closest ? e.target.closest('[data-hist]') : null;
+        if (h) hiToggle(h);
+    });
+    doc.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        var h = route.view === 'session' && e.target.closest ? e.target.closest('tr[data-hist]') : null;
+        if (!h) return;
+        e.preventDefault();
+        hiToggle(h);
+    });
     // Back, forward and every link on the page arrive here.
     w.addEventListener('hashchange', function () {
         sel = null;
@@ -3376,6 +3703,127 @@
         f.q = e.target.value;
         draw();
     });
+    // ---- the header search: results grouped under the box ------------------
+    // The box still filters every page through `f.q`, as it always has; 200 ms
+    // after the typing stops it also opens a popover grouping what matches:
+    // sessions by `match()` itself (so its count is the 清單 page's count),
+    // projects by name or path, and the doc paths the map cards carry. A map
+    // card holds no titles and no page text, only the paths it lists (還沒建,
+    // 沒宣告狀態) and the filing buckets, so those are all 文件 can match.
+    var qBox = doc.getElementById('q'), qPop = null, qTimer = null, qAt = -1;
+    function qMark(text, q) {
+        var s = String(text === null || text === undefined ? '' : text), i = q ? s.toLowerCase().indexOf(q.toLowerCase()) : -1;
+        return i < 0 ? esc(s) : esc(s.slice(0, i)) + '<mark>' + esc(s.slice(i, i + q.length)) + '</mark>' + esc(s.slice(i + q.length));
+    }
+    function qHas(v, q) { return v !== null && v !== undefined && String(v).toLowerCase().indexOf(q.toLowerCase()) >= 0; }
+    function qGroups(q) {
+        var sess = S.sessions.filter(function (s) { return match(s, { q: q, state: '', project: '', stage: '' }); })
+            .sort(function (a, b) { return (b.state === 'live') - (a.state === 'live') || (b.updated || 0) - (a.updated || 0); });
+        var seen = {}, proj = [], docs = [];
+        S.sessions.forEach(function (s) {
+            if (seen[s.pkey]) return;
+            seen[s.pkey] = true;
+            if (qHas(NAMES[s.pkey], q) || qHas(s.pkey, q)) proj.push(s.pkey);
+        });
+        S.projects.forEach(function (p) {
+            (p.docs || []).forEach(function (d) {
+                var add = function (path, kind) { if (qHas(path, q)) docs.push({ pkey: d.pkey, path: path, kind: kind }); };
+                (d.plannedNotBuilt || []).forEach(function (x) { add(x, '還沒建'); });
+                ((d.undeclared && d.undeclared.paths) || []).forEach(function (x) { add(x, '沒宣告狀態'); });
+                ((d.filing && d.filing.rows) || []).forEach(function (r) { add(r.bucket, r.role); });
+            });
+        });
+        var pname = function (pkey) { return shortLabel(NAMES[pkey] || pkey); };
+        return [
+            { t: 'Sessions', ico: 'sessions', n: sess.length, all: '#/list', rows: sess.slice(0, 5).map(function (s) {
+                return { href: sessionHash(s.id), html: '<span class="qt">' + qMark(s.task || '（未命名）', q) + '</span>'
+                    + (qHas(s.id, q) && !qHas(s.task, q) ? '<span class="qid mono">' + qMark(s.id, q) + '</span>' : '')
+                    + '<span class="qp">' + qMark(pname(s.pkey), q) + '</span><span class="qs mono">' + esc(s.stage || '—') + '</span>'
+                    + '<span class="qa">' + ago(s.updated) + '</span>' };
+            }) },
+            { t: '專案', ico: 'projects', n: proj.length, all: '#/projects', rows: proj.slice(0, 5).map(function (k) {
+                return { href: projectHash(k), html: '<span class="qt">' + qMark(pname(k), q) + '</span><span class="qp mono">' + qMark(k, q) + '</span>' };
+            }) },
+            { t: '文件', ico: 'docs', n: docs.length, all: '#/docs', rows: docs.slice(0, 5).map(function (d) {
+                return { href: '#/docs', html: '<span class="qt mono">' + qMark(d.path, q) + '</span><span class="qp">' + esc(pname(d.pkey))
+                    + '</span><span class="qs">' + esc(d.kind) + '</span>' };
+            }) },
+        ].filter(function (g) { return g.n; });
+    }
+    function qClose() {
+        if (qTimer) { w.clearTimeout(qTimer); qTimer = null; }
+        if (qPop) qPop.hidden = true;
+        qAt = -1;
+        qBox.setAttribute('aria-expanded', 'false');
+        qBox.removeAttribute('aria-activedescendant');
+    }
+    function qDraw() {
+        var q = qBox.value.trim(), i = 0;
+        if (!q) { qClose(); return; }
+        if (!qPop) {
+            qPop = doc.createElement('div');
+            qPop.id = 'qpop';
+            qPop.className = 'qpop';
+            // A press inside keeps the caret in the box; the click still lands.
+            qPop.addEventListener('mousedown', function (e) { e.preventDefault(); });
+            qPop.addEventListener('click', function (e) { if (e.target.closest('[data-qi]')) qClose(); });
+            qBox.parentNode.appendChild(qPop);
+        }
+        var gs = qGroups(q), row = function (href, html, cls) {
+            var n = i++;
+            return '<a class="' + cls + '" id="qr-' + n + '" data-qi="' + n + '" role="option" aria-selected="false" href="' + href + '">' + html + '</a>';
+        };
+        qPop.innerHTML = '<div class="qin" data-block="search" role="listbox" aria-label="搜尋結果">' + (gs.length ? gs.map(function (g) {
+            return '<div class="qg"><div class="qh">' + icon(g.ico) + '<b>' + g.t + '</b><span class="qn">' + g.n + '</span></div>'
+                + g.rows.map(function (r) { return row(r.href, r.html, 'qrow'); }).join('')
+                + (g.n > g.rows.length ? row(g.all, '看全部 ' + g.n + ' 筆 →', 'qall') : '') + '</div>';
+        }).join('') : '<p class="qnone">沒有符合 “' + esc(q) + '” 的結果</p>') + '</div>';
+        qPop.hidden = false;
+        qAt = -1;
+        qBox.setAttribute('aria-expanded', 'true');
+        qBox.removeAttribute('aria-activedescendant');
+    }
+    function qMove(to) {
+        var all = qPop ? qPop.querySelectorAll('[data-qi]') : [];
+        if (!all.length) return;
+        qAt = (to + all.length) % all.length;
+        [].forEach.call(all, function (el, k) { el.setAttribute('aria-selected', String(k === qAt)); });
+        all[qAt].scrollIntoView({ block: 'nearest' });
+        qBox.setAttribute('aria-activedescendant', all[qAt].id);
+    }
+    // Guarded: tests/station-view.test.js hands in a stub box with no attributes.
+    if (qBox.setAttribute) {
+        qBox.setAttribute('role', 'combobox');
+        qBox.setAttribute('aria-autocomplete', 'list');
+        qBox.setAttribute('aria-controls', 'qpop');
+        qBox.setAttribute('aria-expanded', 'false');
+    }
+    qBox.addEventListener('input', function () {
+        if (qTimer) w.clearTimeout(qTimer);
+        qTimer = w.setTimeout(function () { qTimer = null; qDraw(); }, 200);
+    });
+    qBox.addEventListener('focus', function () { if (qBox.value.trim()) qDraw(); });
+    qBox.addEventListener('blur', qClose);
+    qBox.addEventListener('keydown', function (e) {
+        var open = qPop && !qPop.hidden;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            if (!open) qDraw();
+            e.preventDefault();
+            qMove(e.key === 'ArrowDown' ? qAt + 1 : qAt < 0 ? -1 : qAt - 1);
+            return;
+        }
+        // Enter on nothing picked keeps what the box did before: the filter
+        // stays on the page underneath, the popover gets out of its way.
+        if (e.key === 'Enter' && open) {
+            e.preventDefault();
+            var pick = qAt >= 0 ? qPop.querySelectorAll('[data-qi]')[qAt] : null;
+            qClose();
+            if (pick) w.location.hash = pick.getAttribute('href');
+            return;
+        }
+        if (e.key === 'Escape' && open) qClose();
+    });
+    w.addEventListener('hashchange', qClose);
     // Every legend entry is a toggle: armed here rather than in legendHtml so
     // the entry markup the tests read stays what it was.
     function legendArm() {

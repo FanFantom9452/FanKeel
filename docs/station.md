@@ -143,7 +143,7 @@ of them — and the stage sums of `burn`,
 `spend`, `gates` — see [registry.md](registry.md). From `lib/prices.js`: the dollar figure, and the
 date the table was read. The dollar figure shown is one total: `cost(s)` in
 the browser adds the session's own `usd` and its agents' `agentUsd` together
-(`assets/station/station.js:52`, `(s.usd || 0) + (s.agentUsd || 0)`) rather
+(`assets/station/station.js:64`, `(s.usd || 0) + (s.agentUsd || 0)`) rather
 than printing them side by side — `agentCost` is `usage.subagents`, priced
 the same way as the session's own `usage`. Opening a row appends how many
 agents ran, as a bare count beside the total rather than a request count or a
@@ -152,7 +152,7 @@ wall-clock of its own.
 Every row also carries the registry it belongs to, as `root` on its session
 object (`lib/station.js:614`, `root: s.root`) — the raw path, not the
 shortened label shown on the row — and `match()` filters on that same field
-(`assets/station/station.js:139`, `s.root !== f.project`) rather than a DOM
+(`assets/station/station.js:151`, `s.root !== f.project`) rather than a DOM
 attribute, because every row here is rebuilt from `window.STATION` in the
 browser instead of arriving as markup; see Filtering, and the two views
 below.
@@ -197,7 +197,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:1960`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:2398`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -220,13 +220,20 @@ combined figure, agents included.
 
 ### The session page
 
-A session also opens on a page of its own, `#/s/<id>`, in four tabs — 時間線,
-花費, 派工 and 事件 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
-`cost`, `dispatch` or `events`. 時間線 is the default, with the context chart,
-任務 and the list of the largest rises under it; 派工 gives every row its input
-and output tokens, read from `split`, and its dollars, read from `cost`; 事件 is
-the replay, each gate's row carrying how long it waited. The side panel in the
-next section is the other way in, from 清單, and keeps its claims.
+A session also opens on a page of its own, `#/s/<id>`, in three tabs — 概覽,
+派工 and 事件 — and `#/s/<id>/<tab>` opens one directly, with `timeline`,
+`dispatch` or `events`. 概覽 is the default and now folds together what were
+separately 時間線 and 花費: the context chart, 任務 and the list of the
+largest rises, plus the per-stage spend bar and the stage × model table that
+used to be 花費's own tab (see below). An old `#/s/<id>/cost` link still
+parses — `cost` stays a valid `TABS` value in `parseHash` — but now opens
+概覽 rather than a separate tab, since `tabsHtml`'s `TAB_SHOWN`
+(`assets/station/station.js:1193`, `['timeline', 'dispatch', 'events']`) maps
+`cost` back to `timeline`. 派工 gives
+every row its input and output tokens, read from `split`, and its dollars,
+read from `cost`; 事件 is the replay, each gate's row carrying how long it
+waited. The side panel in the next section is the other way in, from 清單,
+and keeps its claims.
 
 Under the title, the session's state and — served — how fresh the page is:
 `即時・剛更新`, then `即時・N 秒前更新`, while the session is live, and
@@ -253,10 +260,23 @@ into its agents. A lane of ticks marks every main-session request in its
 model's colour, and the context line above shares the axis, marked where an
 agent's return entered the main context.
 
-花費 is where a stage's dollars live: a stage × model table summed from the
-session's `days`, with input, output, cache-read and cache-write tokens and
-dollars in their own columns and a subtotal each for the main session and its
-agents. Its total is the sum of `days[].usd` — the figure the home and project
+Where a stage's dollars live is no longer its own tab: the stage × model
+table now sits inside 概覽, under a `<details>` element titled "stage × model
+明細" (`assets/station/station.js:2152`, `<details class="csmore">`). Above
+it, when the session has a detail loaded, sits the timeline chart, which now
+also tints its background by stage; and above that sits `costShareHtml`
+(`assets/station/station.js:1105`, `function costShareHtml(L, hi) {`), a bar
+with one segment per stage that has paid, each segment sized by its share of
+the session's total dollars — clicking a segment, or a row of the table under
+it, marks that stage on the timeline below (`data-hist`). 派工 also gets a
+small strip, `dispatchStagesHtml`
+(`assets/station/station.js:1133`, `function dispatchStagesHtml(L, id) {`),
+linking each stage's agent dollars back to 概覽 with that stage marked. The
+table itself: a stage
+× model table summed from the session's `days`, with input, output,
+cache-read and cache-write tokens and dollars in their own columns and a
+subtotal each for the main session and its agents. Its total is the sum of
+`days[].usd` — the figure the home and project
 pages sum too — and a live session has one, because `days` comes from the
 transcript read in `extract()` rather than from `spend`, which `hooks/leave.js`
 still writes only at session end. A model the price table does not know gives
@@ -500,7 +520,7 @@ is to change the profile and reload.
 
 The facets are on 清單, above its table — state and stage with a count on each
 button, registry with one button per root
-(`assets/station/station.js:1813`, `moved onto the page they narrow`) — and
+(`assets/station/station.js:2230`, `moved onto the page they narrow`) — and
 the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed. On 清單,
 selecting a registry recomputes the page below the facets: `goneNote()`'s card
@@ -510,14 +530,14 @@ above the list otherwise; it does not merely hide rows.
 A gone registry keeps its facet button, labelled `— gone`, rather than
 dropping off the row, so selecting one never returns a blank pane with nothing
 on the page saying why:
-`goneNote()` (`assets/station/station.js:1542`, `function goneNote(root)`) prints a
+`goneNote()` (`assets/station/station.js:1820`, `function goneNote(root)`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card once it is the one selected on
 清單, and every project page carries the same card for its own registry no
 matter what is selected there: `registryNote()`
-(`assets/station/station.js:1559`, `function registryNote(root)`) prints its
+(`assets/station/station.js:1837`, `function registryNote(root)`) prints its
 own unreadable-session count, its `map.md` date — or `不存在` when there is
 none — and its build directories with each one's file count, or says there
 are none. The old page carried all three on a per-registry meta line; the
@@ -525,7 +545,7 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:1994`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:2432`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
 (`lib/station.js:449`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
@@ -544,14 +564,42 @@ are one directory spelled two ways; `tests/station-view.test.js` carries both
 fixtures, the one that must merge and the nested root that must not. A nested
 root separates on its own and always did.
 
-`#/` is **現在**: `nowHtml` draws one card per registry that is not `gone`,
-with its live and stale sessions under it; a session that is down has
-finished and moved onto 最近 sessions instead. The left nav (`navHtml`,
-`data-block="nav"`) groups its links into three: 看 (現在, 近 30 天, 最近
-sessions, 專案, 文件), 調 (設定), and 其他頁 (清單, 比較). Each badge is
-what `navCounts` counts off those same rows, except 現在's, which counts
-only `live` sessions where its cards also show `stale` ones, and 近 30 天's,
-which shows the window's spend rather than a count.
+`#/` is now **儀表板**, a dashboard of four cards, each reading the same rows
+its own full page reads so its numbers always match that page:
+`dashLive` (`assets/station/station.js:1881`, `function dashLive(R) {`)
+counts today's `live` sessions and lists them, each row linking to `#/live`;
+`dashGate` (`assets/station/station.js:1894`, `function dashGate(R) {`)
+counts the sessions with a pending gate — `s.pending.questions` non-empty —
+and how long each has waited, also linking to `#/live`; `dashSpend`
+(`assets/station/station.js:1908`, `function dashSpend(R) {`) is a small bar
+spark of the last 30 days' spend with today's and yesterday's figures beside
+it, linking to `#/days`; and `dashRecent`
+(`assets/station/station.js:1923`, `function dashRecent(R) {`) lists the 5
+newest sessions out of the 30-day window, linking to `#/sessions`. What used
+to be `#/`'s own registry-card content — one card per registry that is not
+`gone`, with its live and stale sessions under it; a session that is down has
+finished and moved onto 最近 sessions instead — is unchanged in what
+`nowHtml` draws, but it now lives at `#/live` (進行中) instead, and
+`livePage` (`assets/station/station.js:1866`, `function livePage() {`) now
+also passes a subtabs strip above the cards (`subtabsHtml('live')`).
+
+The left nav (`navHtml`, `data-block="nav"`) no longer groups its links into
+three loose headings; `NAV_TREE`
+(`assets/station/station.js:1311`, `var NAV_TREE = [`) defines five ordered
+categories instead. 儀表板 is a single link, `#/`, with no sub-pages.
+Sessions is a folding category — its heading is a toggle button rather than
+a link — with four kids: 進行中 `#/live`, 最近 `#/sessions`, 全部清單
+`#/list` and 比較 `#/cmp`. 花費 is a folding category with two kids: 近 30 天
+`#/days` and 依專案 `#/projects`. 文件 is a single link, `#/docs`. 設定 is a
+folding category with one kid, 精靈 `#/settings`. A folding category's kids
+also appear as a subtabs strip under the page itself
+(`assets/station/station.js:1358`, `function subtabsHtml(active) {`) — the
+same list drives both the nav and the strip, so they can never list
+different pages. Each badge is what
+`navCounts` counts off those same rows, except 進行中's, which counts only
+`live` sessions where its own card also shows `stale` ones, and 近 30 天's,
+which shows the window's spend rather than a count; 儀表板 itself carries no
+badge.
 
 The 30-day histogram that used to open the page is now **近 30 天**,
 `#/days` — one bar per local day, today at the
@@ -570,7 +618,7 @@ and the fifth does not compare windows at all: it
 names the option-one gate wording most often swapped for another answer,
 `最常被換掉`, with how many times out of how many it was asked beneath it
 (`lib/station.js:541`, `function gateSummary(model, hidden) {`;
-`assets/station/station.js:428`, `roHtml('最常被換掉'`). Unlike the other
+`assets/station/station.js:441`, `roHtml('最常被換掉'`). Unlike the other
 four, it does not move with the 30-day window or the search box: it is
 counted once, across every shown session's gate answers
 (`lib/station.js:612`, `gates: gateSummary(model, hidden),`), not from the
@@ -623,7 +671,7 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:1804`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:2175`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較** is a third view. Tick two sessions on 清單 or a project page — only a
@@ -684,9 +732,9 @@ and the eyebrow's cannot disagree.
 
 Both decisions are pure functions above the `module.exports` guard, so both
 are unit tested: what to say
-(`assets/station/station.js:1044`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
+(`assets/station/station.js:1257`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
 and what the eyebrow reads
-(`assets/station/station.js:1385`, `function heroEyebrow(frozenAt) {`). The
+(`assets/station/station.js:1663`, `function heroEyebrow(frozenAt) {`). The
 fetch that feeds them, the bar they fill and the pill are the document half
 below the guard. The eyebrow is rendered rather than patched, so it takes a
 redraw — but only as the state flips, never on a poll that finds nothing
@@ -694,7 +742,7 @@ changed, because a redraw every five seconds would throw away a scroll
 position and an opened row on a page whose numbers cannot move any more.
 
 One stylesheet line is load-bearing for all of it
-(`assets/station/station.css:64`, `[hidden]{display:none!important}`): the
+(`assets/station/station.css:87`, `[hidden]{display:none!important}`): the
 bar and the pill are hidden with `el.hidden`, and every element here also
 carries a class that sets `display`, which beats the browser's own
 `[hidden]` rule. Without that line the bar would appear and never leave.
@@ -799,7 +847,7 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:1589`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:1867`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button, and every registry card now carries one:
@@ -917,7 +965,7 @@ run by hand.
 Second: a project's colour, `--p-0` through `--p-5`
 (`assets/station/station.css:15`, `--p-0:#015f98`), is its position in the
 page's own project list, not anything tied to the project itself
-(`assets/station/station.js:268`, `var i = (pkeys || []).indexOf(key);`).
+(`assets/station/station.js:281`, `var i = (pkeys || []).indexOf(key);`).
 Hiding one shifts every project after it into the next colour. Accepted as
 the cost of a colour meaning "position" rather than "identity" — a
 hash-based scheme would stop that shift but would move every existing
