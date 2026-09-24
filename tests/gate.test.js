@@ -126,7 +126,7 @@ function handoff(root, gate) {
   fs.writeFileSync(file, '# report\n\n' + TICKS + 'json gate\n' + JSON.stringify(gate) + '\n' + TICKS + '\n');
 }
 const QUESTIONS = [{ question: 'survey 的結論可以進 design 嗎？', header: 'survey', multiSelect: false, options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }] }];
-const placeholder = (header) => ({ questions: [{ question: 'placeholder', header, multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }] }] });
+const placeholder = (header) => ({ questions: [{ question: 'gate', header, multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }] }] });
 const PLACEHOLDER = placeholder('survey');
 const agentsOn = (root) => fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'true' }));
 

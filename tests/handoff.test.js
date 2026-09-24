@@ -301,8 +301,8 @@ test('readGate refuses a fifth question and names the count', () => {
   assert.deepEqual(readGate(file), g);
 });
 
-test('isPlaceholder is exactly one question headed with the stage name, any case', () => {
-  const q = (header) => ({ header, question: 'q', options: [] });
+test('isPlaceholder is exactly one question headed with the stage name, any case, whose question is exactly `gate`', () => {
+  const q = (header) => ({ header, question: 'gate', options: [] });
   assert.equal(isPlaceholder([q('survey')], 'survey'), true);
   assert.equal(isPlaceholder([q('Survey')], 'survey'), true);
   assert.equal(isPlaceholder([q('design')], 'survey'), false);
@@ -311,6 +311,12 @@ test('isPlaceholder is exactly one question headed with the stage name, any case
   assert.equal(isPlaceholder(undefined, 'survey'), false);
   assert.equal(isPlaceholder([{}], 'survey'), false);
   assert.equal(isPlaceholder([null], 'survey'), false);
+  // A real question can happen to be headed with the stage name too — 2026-09-24,
+  // build, twice — so the header alone cannot tell it apart from the placeholder.
+  assert.equal(isPlaceholder([{ header: 'survey', question: 'not-gate', options: [] }], 'survey'), false);
+  // Case-sensitive, unlike the header check: the controller sends the literal
+  // lowercase `gate`, so anything else is the agent's own question.
+  assert.equal(isPlaceholder([{ header: 'survey', question: 'Gate', options: [] }], 'survey'), false);
 });
 
 test('skipReason says a controlled stage\'s question was not the placeholder', () => {

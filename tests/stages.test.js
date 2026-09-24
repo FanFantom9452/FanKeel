@@ -994,6 +994,6 @@ test('the controller is told the one shape hooks/gate.js swaps: a placeholder he
   const { controlFor } = require('../lib/stages.js');
   for (const stage of ['survey', 'build', 'verify']) {
     const rules = controlFor(stage, { 'stage.agents': [stage] }, { handoff: '/r/h.md' }).rules;
-    assert.ok(rules.some((r) => r.includes('call AskUserQuestion with one placeholder, header `' + stage + '`: `hooks/gate.js` swaps in the gate in /r/h.md.')), stage);
+    assert.ok(rules.some((r) => r.includes('call AskUserQuestion with one placeholder, header `' + stage + '`, question `gate`: `hooks/gate.js` swaps in the gate in /r/h.md.')), stage);
   }
 });
