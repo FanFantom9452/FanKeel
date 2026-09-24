@@ -78,61 +78,57 @@ what gets scheduled.
 ## Needs a decision
 
 - 〔docs〕要不要 ADR：參考 Trovara 的 `docs/04-architecture/adr/`，只在做架構選擇時寫、不是每個 task 都呼叫；在哪一站、由誰觸發，要人來定 — [docs/documents.md](docs/documents.md).
+- 〔fankeel〕看 survey 是否把只有人看得到的事件放進一次 `multiSelect` 問完、build 是否整批移走並換戳記 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
 
 ## Waiting
 
 ### gates 滿一週
-lifts when: 09-25 起，registry 的 `gates` 累積滿一週. 09-18.
+lifts when: 10-02 起，registry 的 `gates` 累積滿一週. 09-25.
 
 - 〔profile〕`suggest` 只推 `land.*`：`class.default`、`design.mockup` 可以從 gate 答案推 — [lib/profile.js](lib/profile.js).
 
-### 第一次處理 Waiting
-lifts when: 09-25 起，第一次在 `/fankeel` 選了處理 Waiting. 09-19.
-
-- 〔fankeel〕看 survey 是否把只有人看得到的事件放進一次 `multiSelect` 問完、build 是否整批移走並換戳記 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
-
 ### 交接後 context 仍過 400k
-lifts when: 交接選項（簡報 §6.2）實施後 context 仍常過 400k. 09-18.
+lifts when: 交接選項（簡報 §6.2）實施後 context 仍常過 400k. 09-25.
 
 - 〔session〕極端版：driver 逐站開 headless session、狀態走檔案、關卡問題走 station，每站從零開始；缺總輪數、花費、時間上限與回報 `status` 欄位 — [scripts/station.js](scripts/station.js).
 
 ### docs-audit 報未點名模組
-lifts when: docs-audit 學會報未被點名的模組. 09-18.
+lifts when: docs-audit 學會報未被點名的模組. 09-25.
 
 - 〔docs〕兩個 `lib/*.js` 沒有 reference-role 頁面點名：`hook.js`、`report.js`；09-09 記的五個裡另外三個後來被點到了 — [docs/documents.md](docs/documents.md).
 
 ### 行內容漂移一次
-lifts when: 一條沒帶引文的行內容漂移. 09-18.
+lifts when: 一條沒帶引文的行內容漂移. 09-25.
 
 - 〔docs〕todo-check 不驗 `path:line` 的行號：改成不存在的行仍然 exit 0 — [scripts/todo-check.js](scripts/todo-check.js). docs-check 補得到一部分，但卡 role、引文與讀得到目標三個前提。
 
 ### 判官歸檔造假一次
-lifts when: 看到一次宣稱派了卻沒派的歸檔. 09-18.
+lifts when: 看到一次宣稱派了卻沒派的歸檔. 09-25.
 
 - 〔judge〕`judge.js record` 要不要驗證這個 session 底下真的有 `fankeel-judge` 的 subagent transcript — [scripts/judge.js](scripts/judge.js).
 
 ### 旗標被忽略一次
-lifts when: a run is seen ignoring a flag. 09-18.
+lifts when: a run is seen ignoring a flag. 09-25.
 
 - 〔ledger〕Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it.
 
 ### fanoutSync 溢位一次
-lifts when: a `fanoutSync` overflow is observed. 09-18.
+lifts when: a `fanoutSync` overflow is observed. 09-25.
 
 - 〔lib〕Whether `fanoutSync`'s payload costs anything: a 64MB overflow discards every answer and re-reads all thirty serially — [lib/tracked.js](lib/tracked.js).
 
 ### 需要第十一種語言
-lifts when: a repository needs an eleventh language. 09-18.
+lifts when: a repository needs an eleventh language. 09-25.
 
 - 〔survey〕Language patterns beyond the ten [scripts/survey.js](scripts/survey.js) knows. Anything else is listed under `skipped.noPattern` for a human.
 
 ### 下一個前端任務
-lifts when: 下一個前端任務出現. 09-18.
+lifts when: 下一個前端任務出現. 09-25.
 
 - 〔design〕design class：mockup 已落地，其餘是另一個 architectural 任務；計畫的三份必讀來源已不存在，內容多半已併進簡報 — [簡報 §4.1](docs/improvement-brief.md#41-design-階段的-mockup-步驟前端任務).
 
 ### knip 認得 CJS namespace
-lifts when: knip 認得 CJS namespace property access. 09-18.
+lifts when: knip 認得 CJS namespace property access. 09-25.
 
 - 〔build〕knip 的 unused exports 一格關著：6.37.0 仍認不得 CJS namespace 取用，開著回 156 個假陽性（09-18 重跑） — [docs/development.md](docs/development.md).
 
