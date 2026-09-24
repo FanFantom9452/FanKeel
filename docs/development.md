@@ -46,6 +46,15 @@ is over, the 40 s per-file target, on load noise rather than a code change
 between the two runs. The ruling recorded this rather than splitting the file
 further.
 
+The table above was first measured while `tests/render.test.js` was still
+failing on a wording mismatch this same task had just introduced in
+`docs/pipeline.md`; that assertion has since been fixed and committed. A
+follow-up re-measurement at `c9748f47`, with the tree green (`node --test`
+exit 0, 1968/1968 passing), landed at 73.5 s whole-suite and 47.6 s for
+`tests/station-post.test.js`, with the same five slowest files in the same
+order — within the run-to-run noise already described above — so the table
+and the numbers below it are left as measured.
+
 ## Where the code lives
 
 `lib/` is pure logic, tested directly. The one exception is `lib/fanout.js`, which
