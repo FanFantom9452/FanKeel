@@ -119,8 +119,20 @@ dispatch one implementer at `design.mockup`'s model to rewrite only the
 element carrying that `data-block` in the file it names; then
 `node <plugin>/scripts/tune.js done <id>`. Either way the page reloads — a
 kept edit flashes its block, a stray one is put back and the page marks the
-blocks it touched. Static HTML only: a block has to be written literally
-in the served file.
+blocks it touched. In this form the page is static HTML: a block has to be
+written literally in the served file.
+
+**Two ways through the gate, and the user picks one there.** Option one's
+description names both, and the answer says which: **方向** — the mockup is
+approved as it stands, and the details are the render reviewer's at build;
+**逐塊** — the mockup fixes the direction only, and once build has written the
+real page it is tuned block by block on that page, in `tune.js`'s live mode,
+before the work goes on to verify. Write the choice beside the mockup path on
+the design's `spec:` line, so build reads it rather than asks again. Either
+way a block that is to be tuned carries `data-block="<name>"` written
+literally in the source that draws it: live mode finds a block by searching
+the source for that exact string, and a name built by concatenation is never
+found.
 
 ### 4. The success criterion
 
