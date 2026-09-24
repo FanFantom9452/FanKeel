@@ -947,7 +947,7 @@ test('start at survey with stage.agents true prints the controller\'s rules, not
   const { out, code } = run(dir, ['start', '--session', A, '--task', 'x', '--route', 'survey,design'], { CLAUDE_CONFIG_DIR: cfg });
   assert.equal(code, 0, out);
   assert.match(out, /fankeel:fankeel-brain/);
-  assert.match(out, new RegExp('Option one: strip `\\(Recommended\\)`; run `node <plugin>/scripts/task\\.js stage <word left> --session ' + A));
+  assert.match(out, new RegExp('Option one: strip `\\(Recommended\\)`, then `node <plugin>/scripts/task\\.js stage <word>`/`down` --session ' + A));
   assert.doesNotMatch(out, /run the scanner/);
   // The rules name `<plugin>`, and this output is not an injection: it says
   // what that resolves to itself.
@@ -961,7 +961,7 @@ test('start at survey with stage.agents true prints the controller\'s rules, not
   run(dir2, ['profile', 'set', 'stage.agents', 'true', '--default'], { CLAUDE_CONFIG_DIR: cfg2 });
   const second = run(dir2, ['start', '--session', A, '--task', 'y', '--route', 'survey'], { CLAUDE_CONFIG_DIR: cfg2 });
   assert.equal(second.code, 0, second.out);
-  assert.match(second.out, new RegExp('Option one: strip `\\(Recommended\\)`; run `node <plugin>/scripts/task\\.js stage <word left> --session ' + A));
+  assert.match(second.out, new RegExp('Option one: strip `\\(Recommended\\)`, then `node <plugin>/scripts/task\\.js stage <word>`/`down` --session ' + A));
 });
 
 // `stage` is the move a controller makes on option one, and the answer that
@@ -981,7 +981,7 @@ test('stage into a controlled build prints the controller\'s rules with the comm
   assert.match(build.out, /Now build, through its stage agent\. You are its controller:/);
   assert.match(build.out, /fankeel:fankeel-brain/);
   assert.match(build.out, /run `node <plugin>\/scripts\/commit\.js "<file>"`/);
-  assert.match(build.out, new RegExp('Option one: strip `\\(Recommended\\)`; run `node <plugin>/scripts/task\\.js stage <word left> --session ' + A));
+  assert.match(build.out, new RegExp('Option one: strip `\\(Recommended\\)`, then `node <plugin>/scripts/task\\.js stage <word>`/`down` --session ' + A));
   assert.ok(build.out.includes('<plugin> = ' + PLUGIN_ROOT), build.out);
 
   const verify = run(dir, ['stage', 'verify', '--session', A], { CLAUDE_CONFIG_DIR: cfg });

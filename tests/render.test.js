@@ -675,7 +675,7 @@ test('stage.agents true at survey: the controller\'s block replaces the stage\'s
     assert.ok(out.includes('fankeel:fankeel-brain'), out);
     assert.ok(out.includes('/r/.fankeel/build/task-20260919T093012/survey.md'));
     assert.ok(out.includes('/r/.fankeel/build/task-20260919T093012/survey-answer.md'));
-    assert.ok(out.includes('Option one: strip `(Recommended)`; run `node <plugin>/scripts/task.js stage <word left> --session ' + MINE));
+    assert.ok(out.includes('Option one: strip `(Recommended)`, then `node <plugin>/scripts/task.js stage <word>`/`down` --session ' + MINE));
     assert.ok(!out.includes(readRule), 'the survey rules go to the stage agent');
   }
 });
@@ -725,7 +725,7 @@ test('stage.agents true at survey, the route ending there: option one still read
   const mine = entry(MINE, { stage: 'survey', route: ['survey'], started: '2026-09-19T09:30:12.345Z' });
   for (const out of [render({ mine, others: [], now: NOW, root: '/r', profile: on }), renderResume({ mine, profile: on, root: '/r' })]) {
     assert.ok(out.includes('fankeel:fankeel-brain'), out);
-    assert.ok(out.includes('Option one: strip `(Recommended)`; run `node <plugin>/scripts/task.js stage <word left> --session ' + MINE), out);
+    assert.ok(out.includes('Option one: strip `(Recommended)`, then `node <plugin>/scripts/task.js stage <word>`/`down` --session ' + MINE), out);
     assert.ok(!out.includes(readRule), 'the survey rules go to the stage agent');
   }
 });

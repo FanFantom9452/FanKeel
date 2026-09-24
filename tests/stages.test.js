@@ -901,8 +901,8 @@ test('option one is told to run the stage its own label names, not a pre-baked a
   const text = c.rules.join('\n');
   assert.doesNotMatch(text, /\{\{ADVANCE\}\}/, 'a bare, unexplained {{ADVANCE}} would still be the old static wording');
   assert.doesNotMatch(text, /node <plugin>\/scripts\/task\.js stage audit --session sid/, 'option one must not name the forward-next stage regardless of the label just read');
-  assert.match(text, /Option one: strip `\(Recommended\)`; run `node <plugin>\/scripts\/task\.js stage <word left> --session sid`/, 'option one runs the command built from the label just read, not a baked-in stage');
-  assert.match(text, /or `down` for down\/收工/, 'a label that says down/收工 runs `down`, not `stage down`');
+  assert.match(text, /Option one: strip `\(Recommended\)`, then `node <plugin>\/scripts\/task\.js stage <word>`\/`down` --session sid/, 'option one runs the command built from the label just read, not a baked-in stage, and keeps `down` inside the same command clause as --session');
+  assert.match(text, /— down\/收工 is `down`/, 'a label that says down/收工 runs `down`, not `stage down`');
 });
 
 test('the controller waits out a return that is not a path, and sends a finished agent with no path to the await', () => {
