@@ -139,10 +139,10 @@ approved as it stands, and the details are the render reviewer's at build;
 real page it is tuned block by block on that page, in `tune.js`'s live mode,
 before the work goes on to verify. Write the choice beside the mockup path on
 the design's `spec:` line, so build reads it rather than asks again. Either
-way a block that is to be tuned carries `data-block="<name>"` written
-literally in the source that draws it: live mode finds a block by searching
-the source for that exact string, and a name built by concatenation is never
-found.
+way a block meant to be tuned should still carry a literal
+`data-block="<name>"` in the source that draws it, because live mode ranks
+that exact string first; an element without one is still found through its
+class names, less precisely, and a concatenated name is found only that way.
 
 ### 4. The success criterion
 
