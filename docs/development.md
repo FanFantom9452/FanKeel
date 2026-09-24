@@ -19,7 +19,7 @@ knip
 ## How long the suite takes
 
 Measured on 2026-09-24, Windows 11 and Node v24.9.0, by
-`docs/plans/2026-09-24-todo-clear.md` Task 7 step 6: each file alone with
+`docs/archive/2026-09-24-todo-clear.md` Task 7 step 6: each file alone with
 `node --test <file>`, one after another, wall-clock from the shell; then the
 whole suite with `node --test`, which runs files in parallel.
 

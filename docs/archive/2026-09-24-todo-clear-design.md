@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全清：Ready 五條 ＋ Needs a decision 兩條 ＋ ADR 一條 — design
