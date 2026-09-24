@@ -143,7 +143,10 @@ backticked token on the line is the path, as for the other two kinds.
 `**Files:**` and by whether one consumes what another produces, then gives each
 group a dispatch surface: one task is `agent`, two are `agents` in one response,
 three or more are one `workflow`. `node <plugin>/scripts/ledger.js --plan <f>
-groups` prints it, and `build` dispatches on what it printed.
+groups` prints it, and `build` sends from `ledger.js ready`, which asks the same
+predicates per task: a task goes out once every earlier task it conflicts with
+is complete, and `TODO.md` and `docs/README.md` do not count as a shared file
+there.
 
 Every task carries an **Interfaces** block, and `none` is an answer — the block
 is what says so. A task without it has declared nothing, and `ledger.js groups`
@@ -161,8 +164,7 @@ session that wrote the plan, which has all of it — the block is still written,
 because which tasks are dispatched can change after the plan is approved and a
 reviewer reads it either way.
 
-And one line saying whether that implementer is dispatched at all. Three
-alternatives, one of which every task carries:
+And one line saying whether that implementer is dispatched at all. Four alternatives, one of which every task carries:
 
 ```markdown
 **Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
@@ -176,6 +178,11 @@ one change across two contexts costs more than the reading saves.
 ```markdown
 **Dispatch:** implementer, opus — the lock protocol has to be reasoned about,
 not transcribed.
+```
+
+```markdown
+**Dispatch:** user — run `/doctor` in this session and say when it is done; no
+subagent can run a slash command.
 ```
 
 Four rules about that line:
@@ -195,10 +202,17 @@ Four rules about that line:
    which model — and for a task that sentence comes from here, so write it as a
    statement of what the task costs rather than as a note to yourself.
 
-**One dispatch per task, and no third form of the line.** The build loop records
+**One dispatch per task, and no batch form of the line.** The build loop records
 a BASE, reviews one range and marks one `complete <n>` per task; a dispatch
 spanning Tasks 4-5 has no shape it can record, and a half-finished batch leaves
 the ledger saying both are open.
+
+**`user` is the task the user does with their own hands** — a slash command, a
+browser, an interactive probe `claude -p` cannot stand in for. `build` never
+dispatches it: `ledger.js ready` leaves it out, `ledger.js hands` lists it, and
+the session holding `AskUserQuestion` asks about it the moment build opens and
+runs it with the user after every dispatched task and before build's gate. So
+no dispatched task may depend on it: put it last.
 
 **A user who has said, this session, not to dispatch settles the line for every
 task.** Each one reads `in-session — the user said so this session` on Task 1

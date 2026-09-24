@@ -35,8 +35,6 @@ const KNOWN_LEDGER_PARAGRAPHS = [
   "   ```",
   "   and holds the plan's goal and spec line, the `## Global C",
   "   A dispatched implementer **does not commit. It returns a ",
-  "   **A whole group goes out in one response**, and the `grou",
-  "   `groups` answers which tasks *may* run together, never ho",
   "   Every implementer in the run gets its brief file, and the",
   "   Anything written outside those paths stays unstaged, so `",
   "   THE RANGE, pinned at both ends: <BASE>..<sha>",
@@ -1273,4 +1271,19 @@ test('fankeel-land: uninstalling a decoupled plugin is offered, never run here',
   const flat = read('fankeel-land').replace(/\s+/g, ' ');
   assert.match(flat, /Neither is uninstalling a plugin this session decoupled from/);
   assert.match(flat, /offered here rather than run/);
+});
+
+// 2026-09-24: build sends what `ledger.js ready` lists, one task at a time as
+// its dependencies land, and asks about the user's own tasks before the first
+// dispatch. The plan skill carries the fourth Dispatch form that marks them.
+test('build sends what ledger.js ready lists and asks about the hands first; plan carries the user form', () => {
+  const build = read('fankeel-build');
+  assert.match(build, /ledger\.js --plan docs\/plans\/<file>\.md ready/);
+  assert.match(build, /ledger\.js --plan\s+docs\/plans\/<file>\.md hands/);
+  assert.doesNotMatch(build, /A whole group goes out in one response/);
+  const plan = read('fankeel-plan');
+  assert.match(plan, /\*\*Dispatch:\*\* user — /);
+  assert.match(plan, /Four alternatives, one of which every task carries/);
+  assert.doesNotMatch(plan, /no third form of the line/);
+  assert.match(plan, /put it last/);
 });

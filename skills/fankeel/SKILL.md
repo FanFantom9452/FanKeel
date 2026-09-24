@@ -1136,9 +1136,16 @@ One exception, behind a profile key. Each stage `stage.agents` names goes
 to a `fankeel:fankeel-brain` stage agent and this session gets the
 controller's block in place of the stage's: the brief carries the stage's
 rules and shape, the report and its gate come back as a file under
-`.fankeel/build/` (on `build`, `design` and `plan`, a commit request comes back first — on `build` once per
-`ledger.js groups` group, never per task — and this session relays it), and the gate is still asked here: this session copies that file's
+`.fankeel/build/` (on `build`, `design` and `plan`, a commit request comes back first — on `build` each time
+none of its implementers is still running, never per task — and this session relays it), and the gate is still asked here: this session copies that file's
 gate word for word, and `hooks/gate.js` only checks the copy. [docs/subagents.md](../../docs/subagents.md) has how.
+
+A plan task whose `**Dispatch:**` line reads `user` is this session's, never the
+stage agent's. `task.js stage build` lists them: ask the user right then —
+after the other tasks and before the stage's gate, they do it first, or skip —
+note the answer with `task.js note`, and run them with the user once the stage
+agent's report is in and before you ask its gate, sending any edit the guard
+refuses you here to an implementer.
 
 `survey` dispatches readers; `build` dispatches per task, and the plan's
 `**Dispatch:**` line is where that was decided.

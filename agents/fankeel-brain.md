@@ -18,8 +18,12 @@ Your brief — `renderBrief` in `lib/render.js` — carries the stage's rules,
 its output shape, the path of the stage's skill and the file to write. Read
 the skill first. Do the stage, write the report to that file with its
 `json gate` block, and return the path — on a build, design or plan stage, a
-`commit <path>` first: on build once per `ledger.js groups` group, never per
-task; on design or plan once for its file. Open every dispatch's own
+`commit <path>` first: on build each time none of the implementers you sent is
+still running, one block per task that returned since the last one, never per
+task; on design or plan once for its file. On build, what you send is what
+`ledger.js ready` lists: run it again each time a task is recorded complete and
+send what it newly lists in that same response. A task whose Dispatch line
+reads `user` is never listed and never yours. Open every dispatch's own
 `description` `<alias> <version> · <effort>: <title>` — version off the
 session's environment block, effort off the dispatched agent file's
 `effort:` frontmatter or `inherit` — the same rule the plain session's
@@ -64,7 +68,7 @@ each.
 ## Return
 
 The handoff path, and nothing else; on a build stage, when its brief says so,
-`commit <path>` for a group to commit; on a design or plan stage, `commit <path>` for its file. When you are sent a message that the
+`commit <path>` for the tasks that returned since the last commit; on a design or plan stage, `commit <path>` for its file. When you are sent a message that the
 user's answer is in a file, read it, rewrite the report and its gate, and
 return the path again.
 

@@ -140,15 +140,15 @@ compare things a file-table row does not carry — one pair of tasks
 against another's interfaces, one task's specified tests against its specified
 code — and there is no ledger to write it into either.
 
-`groups` now prints a surface beside each group, and it is the dispatch
-decision rather than an input to one:
+`groups` now prints a surface beside each group, and it is the batch
+shape the scan records; what goes out next is step 2's `ledger.js ready`:
 
     1: 1, 2, 3  — workflow
     2: 4        — agent
 
 `agent` is one dispatch, `agents` two in one response, and `workflow` one
 Workflow whose fan-out is that group. It is the batch shape only — a task
-whose `**Dispatch:**` line reads `in-session` is not dispatched at all,
+whose `**Dispatch:**` line reads `in-session` or `user` is not dispatched at all,
 whatever its group carries. Do not re-derive the surface from the group size:
 a group of three carrying a prose `Consumes:` or a task with no `**Files:**`
 block prints `agents`, and the size alone cannot tell you that.
@@ -158,7 +158,7 @@ block prints `agents`, and the size alone cannot tell you that.
 For each task the denominator does not list as complete:
 
 **Where there is no plan there are no groups.** Everything below that names one —
-the group in step 1's BASE rule, the whole group going out in step 2, the
+the group in step 1's BASE rule, the tasks `ledger.js ready` sends in step 2, the
 `groups` command itself — is the plan path. **The rest of step 2 is not**: a
 `| file | change | dispatch |` row carries its `**Dispatch:**` line in the third
 cell, in the same two forms, and the loop reads it there. The three things a
@@ -176,6 +176,21 @@ dependent chain, and the registry's `next` line is its ledger. The implementer
 does not commit; step 4 stages the paths in the row's `file` cell, which may name
 more than one, and step 5 reviews the range as it would a task's. A no-plan route
 runs one row per pass, and every other step of the loop is unchanged.
+
+**Before the first task, the hands** — on the plan path; a file table (no
+plan) has no such row. `node <plugin>/scripts/ledger.js --plan
+docs/plans/<file>.md hands` lists every task whose `**Dispatch:**` line reads
+`user — <what the user does>`, and `none` when there is none. `task.js stage
+build` already printed the same list to the session holding
+`AskUserQuestion`, which asks the user then and there — after the other tasks
+and before this stage's gate, in this session with them; they do it first and
+say when; or skip, each becoming a `TODO.md` entry — and notes the answer with
+`task.js note`, so it rides every prompt. A stage agent asks nothing and sends
+none of them: `ready` never lists them, and its report names them on a line
+`hands: <n>, <n>`. When the dispatched tasks are done, the session holding
+`AskUserQuestion` runs them with the user — an edit the guard refuses it goes
+to an implementer — commits and reviews each like any other task, and only
+then asks this stage's gate.
 
 1. Record `git rev-parse HEAD` as BASE — **immediately before this task's
    commit, not when its group went out.** The tasks in a group that committed
@@ -223,14 +238,26 @@ runs one row per pass, and every other step of the loop is unchanged.
    implementer's first turn, never built around — that is a plan defect, ruled
    on here, and a task built around it ships a feature nothing can reach.
 
-   **A whole group goes out in one response**, and the `groups` command above
-   says which tasks that is. Two tasks in different groups never run at once.
-   Say how many and on which model in the response that sends them.
+   **What goes out is what `ledger.js ready` lists**, on the plan path — with
+   no plan the rows run one per pass, as above.
+   `node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md ready` prints,
+   one number a line, every task the ledger does not list as complete whose
+   earlier tasks it conflicts with all are, and `none` when there is nothing
+   to send. Send every task it lists that is not already out, in one
+   response, and say how many and on which model. Each time a task is
+   recorded complete, run it again and send what it newly lists in that same
+   response: a task leaves the moment what it depends on has landed, not when
+   a greedy group closes. `TODO.md` and `docs/README.md` do not count as a
+   shared file there (`INDEX_FILES` in `lib/plantasks.js`): `Edit` refuses an
+   `old_string` that moved, so the second implementer re-reads rather than
+   writing over the first. A task whose `**Dispatch:**` line reads `user` is
+   never listed — the hands paragraph above step 1 has it.
 
-   `groups` answers which tasks *may* run together, never how many to send at
-   once, so it does not cap a group at anything. **The ceiling of four dispatches
-   in one response is still the ceiling**: a group of six goes out four and then
-   two.
+   **The ceiling of four in flight is still the ceiling**, and it binds only
+   with a plan — with no plan one row is out at a time: `ready` listing six
+   sends four, then one more as each returns. Three or more listed at once
+   with nothing else in flight may go as one Workflow, step 4's `workflow`
+   case; anything else goes as Agents.
 3. **`in-session` only** — test first where the task says so. If you did not
    watch the test fail, you do not know it tests the right thing. A dispatched
    implementer did this inside its own run; it does not happen twice.
