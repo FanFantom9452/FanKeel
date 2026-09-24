@@ -126,17 +126,18 @@ function handoff(root, gate) {
   fs.writeFileSync(file, '# report\n\n' + TICKS + 'json gate\n' + JSON.stringify(gate) + '\n' + TICKS + '\n');
 }
 const QUESTIONS = [{ question: 'survey 的結論可以進 design 嗎？', header: 'survey', multiSelect: false, options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }] }];
-const placeholder = (header) => ({ questions: [{ question: 'gate', header, multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }] }] });
-const PLACEHOLDER = placeholder('survey');
+// What the controller now sends when it does its job correctly: an exact
+// copy of the handoff file's own `json gate` block, never a placeholder.
+const askOf = (questions) => ({ questions: JSON.parse(JSON.stringify(questions)) });
 const agentsOn = (root) => fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'true' }));
 
-test('stage.agents at survey: the gate in the handoff replaces the question', () => {
+test('stage.agents at survey: a verbatim copy of the handoff gate produces no updatedInput, and stamps gateAt', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsOn(root);
   handoff(root, { questions: QUESTIONS, next: 'n' });
-  const out = JSON.parse(run(GATE, root, { tool_input: PLACEHOLDER }));
-  assert.deepEqual(out.hookSpecificOutput.updatedInput.questions, QUESTIONS);
+  const out = run(GATE, root, { tool_input: askOf(QUESTIONS) }).trim();
+  assert.equal(out, '', 'the input was already correct: nothing to substitute');
   assert.equal(Number.isFinite(readEntry(root, MINE).gateAt), true);
 });
 
@@ -147,7 +148,7 @@ test('stage.agents: a gate AskUserQuestion would reject is denied, naming the fi
   const questions = JSON.parse(JSON.stringify(QUESTIONS));
   delete questions[0].header;
   handoff(root, { questions, next: 'n' });
-  const out = JSON.parse(run(GATE, root, { tool_input: PLACEHOLDER }));
+  const out = JSON.parse(run(GATE, root, { tool_input: askOf(questions) }));
   assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
   assert.match(out.hookSpecificOutput.permissionDecisionReason, /questions\[0\]\.header/);
   assert.equal(out.hookSpecificOutput.updatedInput, undefined);
@@ -160,7 +161,7 @@ test('stage.agents: an over-wide header is denied with its width and the cap, no
   const questions = JSON.parse(JSON.stringify(QUESTIONS));
   questions[0].header = '15 條一起 design';
   handoff(root, { questions, next: 'n' });
-  const reason = JSON.parse(run(GATE, root, { tool_input: PLACEHOLDER })).hookSpecificOutput.permissionDecisionReason;
+  const reason = JSON.parse(run(GATE, root, { tool_input: askOf(questions) })).hookSpecificOutput.permissionDecisionReason;
   assert.match(reason, /is 16 columns, 12 is the cap/);
   assert.doesNotMatch(reason, /missing or wrong/);
 });
@@ -169,7 +170,7 @@ test('stage.agents off: the question goes out as sent, even with a gate on disk'
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   handoff(root, { questions: QUESTIONS, next: 'n' });
-  assert.equal(run(GATE, root, { tool_input: PLACEHOLDER }).trim(), '');
+  assert.equal(run(GATE, root, { tool_input: askOf(QUESTIONS) }).trim(), '');
 });
 
 test('stage.agents at survey: the answer is written beside the handoff', () => {
@@ -181,22 +182,23 @@ test('stage.agents at survey: the answer is written beside the handoff', () => {
   assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { answers: { 'q?': '暫停' } });
 });
 
-test('stage.agents at survey: the gate arriving clears the in-flight mark; with no gate on disk the mark stays', () => {
+test('stage.agents at survey: a matching gate clears the in-flight mark; with no gate on disk the mark stays', () => {
   const mark = { stage: 'survey', at: 1758000000000, agentId: 'a3f9c2' };
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-'), inflight: mark });
   agentsOn(root);
-  run(GATE, root, { tool_input: PLACEHOLDER });
+  run(GATE, root, { tool_input: askOf(QUESTIONS) });
   assert.deepEqual(readEntry(root, MINE).inflight, mark, 'no handoff yet: still in flight');
   handoff(root, { questions: QUESTIONS, next: 'n' });
-  run(GATE, root, { tool_input: PLACEHOLDER });
+  run(GATE, root, { tool_input: askOf(QUESTIONS) });
   assert.equal(readEntry(root, MINE).inflight, undefined);
 });
 
 // 2026-09-23: a question the controller asked on its own while its stage
 // agent was still working was written to `<stage>-answer.md`, where the agent
-// reads a gate answer. gate.js clears `inflight` only when it substitutes a
-// gate, so a mark still standing when the answer arrives is the controller's.
+// reads a gate answer. gate.js clears `inflight` only when the question
+// reaching the user matches the file's gate, so a mark still standing when
+// the answer arrives is the controller's.
 test('stage.agents: an answer while the stage agent is still in flight is not written as the gate answer', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', gateAt: Date.now(), configDir: tmp('fankeel-cfg-'), inflight: { stage: 'survey', at: 1758000000000, agentId: 'a3f9c2' } });
@@ -205,22 +207,22 @@ test('stage.agents: an answer while the stage agent is still in flight is not wr
   assert.equal(fs.existsSync(path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'survey-answer.md')), false);
 });
 
-test('stage.agents: the pair in order, a substituted gate clears the mark and its answer is written', () => {
+test('stage.agents: the pair in order, a matching gate clears the mark and its answer is written', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-'), inflight: { stage: 'survey', at: 1758000000000, agentId: 'a3f9c2' } });
   agentsOn(root);
   handoff(root, { questions: QUESTIONS, next: 'n' });
-  run(GATE, root, { tool_input: PLACEHOLDER });
+  run(GATE, root, { tool_input: askOf(QUESTIONS) });
   run(RESUME, root, { tool_response: { answers: { 'q?': '進 design' } } });
   assert.ok(fs.existsSync(path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'survey-answer.md')));
 });
 
-test('stage.agents at survey with no handoff yet: the gate hook says why it substituted nothing', () => {
+test('stage.agents at survey with no handoff yet: the gate hook says why it confirmed nothing', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsOn(root);
-  const out = JSON.parse(run(GATE, root, { tool_input: PLACEHOLDER }));
-  assert.match(out.systemMessage, /^fankeel: gate not substituted — .*survey\.md does not exist yet/);
+  const out = JSON.parse(run(GATE, root, { tool_input: askOf(QUESTIONS) }));
+  assert.match(out.systemMessage, /^fankeel: gate not confirmed — .*survey\.md does not exist yet/);
   assert.equal(out.hookSpecificOutput, undefined);
 });
 
@@ -228,7 +230,7 @@ test('a brain dispatched for a stage stage.agents does not name: the gate hook s
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'design', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-'), inflight: { stage: 'design', at: 1758000000000, agentId: 'b1' } });
   fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'survey,build,verify' }));
-  const out = JSON.parse(run(GATE, root, { tool_input: PLACEHOLDER }));
+  const out = JSON.parse(run(GATE, root, { tool_input: askOf(QUESTIONS) }));
   assert.match(out.systemMessage, /dispatched for `design`, but stage\.agents \(survey,build,verify\) does not name `design`/);
 });
 
@@ -245,49 +247,73 @@ test('verify sending the work back to build on its own route is asked, not denie
   seed(root, MINE, { stage: 'verify', route: ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'], started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'all' }));
   const questions = verifyGate(root, '退回 build');
-  const out = JSON.parse(run(GATE, root, { tool_input: placeholder('verify') }));
-  assert.deepEqual(out.hookSpecificOutput.updatedInput.questions, questions);
+  const out = run(GATE, root, { tool_input: askOf(questions) }).trim();
+  assert.equal(out, '', 'a verbatim copy of a route-back gate is asked, not substituted or denied');
 });
 
 test('a stage the route does not have is still denied', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'verify', route: ['build', 'verify', 'audit'], started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'all' }));
-  verifyGate(root, '退回 design');
-  const out = JSON.parse(run(GATE, root, { tool_input: placeholder('verify') }));
+  const questions = verifyGate(root, '退回 design');
+  const out = JSON.parse(run(GATE, root, { tool_input: askOf(questions) }));
   assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
 });
 
 // 2026-09-24, verify: the controller asked its own question mid-stage and the
-// user was shown the stage's old gate instead. Only the placeholder's shape —
-// one question, headed with the stage's name — is swapped.
-test('stage.agents at survey: a question that is not the placeholder goes out as written, and says why', () => {
+// user was shown the stage's old gate instead. Now nothing is substituted, so
+// the risk is inverted: a question the controller wrote for itself, headed
+// with something other than the stage's name, must be left alone rather than
+// mistaken for a botched gate copy.
+test('stage.agents at survey: a question headed with something other than the stage goes out as written, and says why', () => {
   const root = tmp('fankeel-gate-');
   const mark = { stage: 'survey', at: 1758000000000, agentId: 'a3f9c2' };
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-'), inflight: mark });
   agentsOn(root);
   handoff(root, { questions: QUESTIONS, next: 'n' });
-  const out = JSON.parse(run(GATE, root, { tool_input: placeholder('開新任務') }));
+  const own = { questions: [{ header: '開新任務', question: '要不要先開一個新任務？', options: [{ label: '要', description: 'a' }, { label: '不要', description: 'b' }] }] };
+  const out = JSON.parse(run(GATE, root, { tool_input: own }));
   assert.equal(out.hookSpecificOutput, undefined);
-  assert.match(out.systemMessage, /^fankeel: gate not substituted — .*not the placeholder/);
+  assert.match(out.systemMessage, /^fankeel: gate not confirmed — .*does not copy the handoff's gate word for word/);
   assert.deepEqual(readEntry(root, MINE).inflight, mark, 'a question the controller asked itself does not clear the mark');
 });
 
-test('two questions are not the placeholder, even when the first is headed with the stage', () => {
+// The deny-on-mismatch path: the first question is headed with the stage's
+// name — this looks like an attempt to copy the gate — but the content is
+// not a word-for-word match (a paraphrase here). Denied, naming the file and
+// telling the controller to copy the file's `questions` array exactly.
+test('a question headed with the stage that does not match the file word for word is denied', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsOn(root);
   handoff(root, { questions: QUESTIONS, next: 'n' });
-  const one = placeholder('survey').questions[0];
-  const out = JSON.parse(run(GATE, root, { tool_input: { questions: [one, one] } }));
-  assert.equal(out.hookSpecificOutput, undefined);
+  const paraphrased = JSON.parse(JSON.stringify(QUESTIONS));
+  paraphrased[0].question = '要不要繼續往 design 走？'; // same header, reworded question
+  const out = JSON.parse(run(GATE, root, { tool_input: { questions: paraphrased } }));
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /survey\.md/);
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /word for word/);
 });
 
-test('the placeholder header matches the stage in any case', () => {
+test('two questions headed with the stage do not match a one-question gate, and are denied', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   agentsOn(root);
   handoff(root, { questions: QUESTIONS, next: 'n' });
-  const out = JSON.parse(run(GATE, root, { tool_input: placeholder('SURVEY') }));
-  assert.deepEqual(out.hookSpecificOutput.updatedInput.questions, QUESTIONS);
+  const one = QUESTIONS[0];
+  const out = JSON.parse(run(GATE, root, { tool_input: { questions: [one, one] } }));
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /word for word/);
+});
+
+test('the header match deciding whether a mismatch is an attempted gate copy is case-insensitive', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  const upper = JSON.parse(JSON.stringify(QUESTIONS));
+  upper[0].header = 'SURVEY';
+  const out = JSON.parse(run(GATE, root, { tool_input: { questions: upper } }));
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny', 'SURVEY still reads as an attempt at the survey gate');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /word for word/);
 });

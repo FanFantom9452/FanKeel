@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const tmp = require('./tmp.js');
-const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff, ledgerCommitPath, newestCommit, skipReason, isPlaceholder } = require('../lib/handoff.js');
+const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff, ledgerCommitPath, newestCommit, skipReason, gateMatches } = require('../lib/handoff.js');
 
 const DATA = { started: '2026-09-19T09:30:12.345Z' };
 const TICKS = '`'.repeat(3);
@@ -102,32 +102,6 @@ test('an over-wide header is refused with its width and the cap', () => {
   assert.match(got.detail, /"15 條一起 design" is 16 columns, 12 is the cap/);
 });
 
-// 2026-09-24: two single-variable rounds on this session's own build-stage
-// gate isolated option label width, not description length, as the reason
-// AskUserQuestion silently dropped a stage agent's real gate on 5 of 6 gates
-// on 09-24. A 73-column label was dropped; a 20-column label (paired with a
-// 385-column description) went through verbatim. 20 columns is the highest
-// verified-good width, so it is the cap here — not a guess between it and 73.
-test('an option label at exactly 20 columns is still accepted', () => {
-  const file = path.join(tmp('fankeel-handoff-'), 'build.md');
-  const g = gateOf('ok');
-  g.questions[0].options[0].label = '一二三四五六七八九十'; // 10 CJK chars, 20 columns
-  fs.writeFileSync(file, block(g));
-  assert.deepEqual(readGate(file), g);
-});
-
-// 2026-09-24: round 1 of the measurement above used a 73-column label and was
-// dropped. This is the boundary one column past the verified-good width.
-test('an option label at 21+ columns is refused with its width and the cap', () => {
-  const file = path.join(tmp('fankeel-handoff-'), 'build.md');
-  const g = gateOf('ok');
-  g.questions[0].options[0].label = '一二三四五六七八九十一'; // 11 CJK chars, 22 columns
-  fs.writeFileSync(file, block(g));
-  const got = readGate(file);
-  assert.equal(got.invalid, 'questions[0].options[0].label');
-  assert.match(got.detail, /"一二三四五六七八九十一" is 22 columns, 20 is the cap/);
-});
-
 // 2026-09-24: round 2 of the measurement paired a short (20-column) label
 // with a 385-column description and it was still shown correctly — no
 // evidence description length matters, so it stays uncapped.
@@ -146,7 +120,7 @@ test('option one names the next stage when one is given, or standing down at the
   fs.writeFileSync(file, block(g));
   assert.equal(readGate(file, 'audit').invalid, 'questions[0].options[0].label');
   assert.deepEqual(readGate(file), g);
-  g.questions[0].options[0].label = '進 audit'; // narrowed to fit MAX_LABEL_WIDTH; this test is about naming, not width
+  g.questions[0].options[0].label = '進 audit'; // this test is about naming, not width
   fs.writeFileSync(file, block(g));
   assert.deepEqual(readGate(file, 'audit'), g);
   g.questions[0].options[0].label = 'Stand down';
@@ -338,26 +312,48 @@ test('readGate refuses a fifth question and names the count', () => {
   assert.deepEqual(readGate(file), g);
 });
 
-test('isPlaceholder is exactly one question headed with the stage name, any case, whose question is exactly `gate`', () => {
-  const q = (header) => ({ header, question: 'gate', options: [] });
-  assert.equal(isPlaceholder([q('survey')], 'survey'), true);
-  assert.equal(isPlaceholder([q('Survey')], 'survey'), true);
-  assert.equal(isPlaceholder([q('design')], 'survey'), false);
-  assert.equal(isPlaceholder([q('survey'), q('survey')], 'survey'), false);
-  assert.equal(isPlaceholder([], 'survey'), false);
-  assert.equal(isPlaceholder(undefined, 'survey'), false);
-  assert.equal(isPlaceholder([{}], 'survey'), false);
-  assert.equal(isPlaceholder([null], 'survey'), false);
-  // A real question can happen to be headed with the stage name too — 2026-09-24,
-  // build, twice — so the header alone cannot tell it apart from the placeholder.
-  assert.equal(isPlaceholder([{ header: 'survey', question: 'not-gate', options: [] }], 'survey'), false);
-  // Case-sensitive, unlike the header check: the controller sends the literal
-  // lowercase `gate`, so anything else is the agent's own question.
-  assert.equal(isPlaceholder([{ header: 'survey', question: 'Gate', options: [] }], 'survey'), false);
+test('skipReason says a controlled stage\'s question does not copy the handoff\'s gate word for word', () => {
+  assert.match(skipReason({ stage: 'survey', controlled: true, matches: false, handoff: '/r/survey.md' }),
+    /does not copy the handoff's gate word for word/);
+  assert.equal(skipReason({ stage: 'survey', controlled: false, matches: false, inflight: null }), null);
 });
 
-test('skipReason says a controlled stage\'s question was not the placeholder', () => {
-  assert.match(skipReason({ stage: 'survey', controlled: true, placeholder: false, handoff: '/r/survey.md' }),
-    /not the placeholder \(exactly one question whose header is `survey`\)/);
-  assert.equal(skipReason({ stage: 'survey', controlled: false, placeholder: false, inflight: null }), null);
+// gateMatches replaces isPlaceholder as the check hooks/gate.js runs: not "is
+// this the fixed placeholder shape" but "does what the controller actually
+// asked equal, value for value, what the handoff file's own gate holds".
+test('gateMatches: identical questions arrays match', () => {
+  const asked = gateOf('q').questions;
+  const filed = JSON.parse(JSON.stringify(asked));
+  assert.equal(gateMatches(asked, filed), true);
+});
+
+test('gateMatches: a question with different question text does not match', () => {
+  const filed = gateOf('q').questions;
+  const asked = JSON.parse(JSON.stringify(filed));
+  asked[0].question = 'q（改過的字）';
+  assert.equal(gateMatches(asked, filed), false);
+});
+
+test('gateMatches: a differently-worded option label does not match', () => {
+  const filed = gateOf('q').questions;
+  const asked = JSON.parse(JSON.stringify(filed));
+  asked[0].options[0].label = 'not a';
+  assert.equal(gateMatches(asked, filed), false);
+});
+
+// Picked behaviour: missing vs. present `false` for multiSelect are NOT
+// treated as equal — a value dropped in transit is a real difference the
+// controller should be told about, not one gateMatches papers over.
+test('gateMatches: a missing multiSelect does not match a present multiSelect: false', () => {
+  const filed = gateOf('q').questions;
+  const asked = JSON.parse(JSON.stringify(filed));
+  delete asked[0].multiSelect;
+  assert.equal(gateMatches(asked, filed), false);
+});
+
+test('gateMatches: non-array input never matches', () => {
+  const filed = gateOf('q').questions;
+  assert.equal(gateMatches(null, filed), false);
+  assert.equal(gateMatches(filed, null), false);
+  assert.equal(gateMatches(undefined, undefined), false);
 });

@@ -990,10 +990,10 @@ test('an in-flight mark for the stage says to SendMessage the running agent; one
   assert.match(line(controlFor('survey', values, {}, { stage: 'survey', at: 1 })), /^A survey stage agent is already running: SendMessage/);
 });
 
-test('the controller is told the one shape hooks/gate.js swaps: a placeholder headed with the stage', () => {
+test('the controller is told to copy the handoff\'s own gate verbatim, never a placeholder', () => {
   const { controlFor } = require('../lib/stages.js');
   for (const stage of ['survey', 'build', 'verify']) {
     const rules = controlFor(stage, { 'stage.agents': [stage] }, { handoff: '/r/h.md' }).rules;
-    assert.ok(rules.some((r) => r.includes('call AskUserQuestion with one placeholder, header `' + stage + '`, question `gate`: `hooks/gate.js` swaps in the gate in /r/h.md.')), stage);
+    assert.ok(rules.some((r) => r.includes('read /r/h.md\'s last `json gate` block and call AskUserQuestion with `questions` copied verbatim')), stage);
   }
 });
