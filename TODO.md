@@ -18,7 +18,7 @@ often one that is ready and one that is still an argument.
 |---|---|---|
 | `## Ready` | nothing but someone's hands. The bullet is the specification | the whole section is offered as **one** task |
 | `## Needs a decision` | a person, to settle what the change should be | the newest few `orient` lists, one task each, starting at `design` |
-| `## Waiting` | something that is not a person: real use, upstream, or another entry landing | grouped under `### <timing>`; every timing listed, one option once any is due |
+| `## Waiting` | something that is not a person: real use, upstream, or another entry landing | grouped under `### <timing>`; every timing listed, one option whenever any exists |
 
 Whoever defers a thing picks its heading, because they know at that moment which
 of the three they are short of. A later reader has to guess.
