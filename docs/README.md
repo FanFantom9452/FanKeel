@@ -176,9 +176,10 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的十四個 task | `docs/archive/2026-09-24-needs-a-decision-batch.md` — *built, 繁體中文* |
 | 這一批定了什麼：CLAUDE.md 那條擴成所有每次都載入的輸入、候選改從 fankeel 自己的問題出發，以及跑的時候抓到的六個主控與站 agent 接縫 | [decisions/2026-09-24-needs-a-decision-batch.md](decisions/2026-09-24-needs-a-decision-batch.md) — *繁體中文* |
 | 對照 addyosmani/agent-skills 與 mattpocock/skills 三軸（skill 怎麼切與寫、版本怎麼管、agent 怎麼派），列出六個 fankeel 沒有的做法，使用者挑選尚未進行 | [decisions/2026-09-24-skill-repos.md](decisions/2026-09-24-skill-repos.md) — *繁體中文* |
-| TODO 全清：Ready 五條 shrink 各收成一個共用函式，Needs a decision 六條照 design 關卡的答案落地——gate 題數上限、只換佔位題、brain 派工擋下、commit 一組交一次，共用詞彙與 method 兩條以決策紀錄關掉 | [plans/2026-09-24-todo-sweep-design.md](plans/2026-09-24-todo-sweep-design.md) — *design-intent, 繁體中文* |
-| 那份設計的九個 task | [plans/2026-09-24-todo-sweep.md](plans/2026-09-24-todo-sweep.md) — *design-intent, 繁體中文* |
+| TODO 全清：Ready 五條 shrink 各收成一個共用函式，Needs a decision 六條照 design 關卡的答案落地——gate 題數上限、只換佔位題、brain 派工擋下、commit 一組交一次，共用詞彙與 method 兩條以決策紀錄關掉 | `docs/archive/2026-09-24-todo-sweep-design.md` — *built, 繁體中文* |
+| 那份設計的九個 task | `docs/archive/2026-09-24-todo-sweep.md` — *built, 繁體中文* |
 | TODO 全清（第二輪）：build 改 ready-queue、plan 多 `Dispatch: user`、await 改讀 inflight 的 lap、profile 的 `prompt.<stage|all>`、兩個慢測試檔拆開；ADR 只記 TODO | [plans/2026-09-24-todo-clear-design.md](plans/2026-09-24-todo-clear-design.md) — *design-intent, 繁體中文* |
+| 那份設計的九個 task：`plantasks.ready` 與 `ledger.js ready`、`Dispatch: user` 與 `ledger.js hands`、build 與 brain 的規則、`inflight.lap`、`prompt.*`、測試拆檔、文件與量測，加上兩個使用者親手的 task | [plans/2026-09-24-todo-clear.md](plans/2026-09-24-todo-clear.md) — *design-intent, 繁體中文* |
 | TODO 四條＋tune live：description 帶版本與 effort、gate 問法分情境（`preview` 驗證）、station 答 gate 先探測再做成 profile 設定、station 回放照 mockup 方向重畫、`tune.js` 能在真實頁面上逐塊調 | `docs/archive/2026-09-24-todo-four-design.md` — *built, 繁體中文* |
 | 那份設計的十一個 task（Task 8 跳過，記成 TODO） | `docs/archive/2026-09-24-todo-four.md` — *built, 繁體中文* |
 | 對照外部 repo 從 fankeel 自己的問題出發、對方只作參考；skill-repos 與 ponytail 的十二條候選逐條對照、全部不問，以及共用詞彙那條為什麼關掉 | [decisions/2026-09-24-optimise-own-first.md](decisions/2026-09-24-optimise-own-first.md) — *繁體中文* |

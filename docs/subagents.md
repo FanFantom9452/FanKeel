@@ -358,8 +358,8 @@ that page points back here for the four predicates, which is the mitigation
 rather than the fact. This is the short form, not the only copy.
 
 The commit moved to the parent, one task at a time, as each implementer
-returns — or, for a build stage agent, once per `ledger.js groups` group
-after every task in it is read back, one block per task — never the implementer itself, which now returns paths, never a diff.
+returns — or, for a build stage agent, each time none of its implementers is
+still running, one block per task that returned since the last one — never the implementer itself, which now returns paths, never a diff.
 That is what makes overlap in wall-clock safe even though the index still has
 one writer. What decides whether a *pair* may overlap is four predicates,
 computed from the plan rather than judged. A task that declared no
@@ -375,15 +375,28 @@ an empty `Files:` is a task nobody finished writing, where an empty `Consumes`
 or `Produces` is an answer plans give constantly — the first task of one
 consumes nothing and the last produces nothing.
 `node scripts/ledger.js --plan <file> groups` computes all four over a whole plan
-and prints which tasks may share one response. Two tasks in different groups
-never run at once, and the ceiling above still bounds how many of one group go
-out together. It prints a fifth thing that is not a predicate and moves no
+and prints the groups they make. The build loop sends from `ledger.js ready`
+instead, which asks the same four per task: a task goes out once every earlier
+task it conflicts with is complete, so it no longer waits for a greedy group to
+close, and `TODO.md` and `docs/README.md` (`INDEX_FILES` in `lib/plantasks.js`)
+do not count as a shared file there — `Edit` refuses an `old_string` that moved,
+so a second implementer re-reads rather than writing over the first. The
+ceiling above still bounds how many are in flight.
+It prints a fifth thing that is not a predicate and moves no
 task: a `Consumes:` entry whose text names a task already in its own group.
 Prose declares no identifier for a `Produces` to match, so the fourth predicate
 cannot see such a dependency at all, and the literal `Task <n>` is the only part
 of the line a command can read. A report carrying that flag withholds its
 closing line about disjoint files — for the whole report rather than the flagged
 group.
+
+A task whose `**Dispatch:**` line reads `user — <what the user does>` is not
+dispatched at all: `ledger.js ready` leaves it out and `ledger.js hands` lists
+it. `task.js stage build` prints that list to the session holding
+`AskUserQuestion` — the controller, when `stage.agents` names build — which asks
+the user then and there, notes the answer, and runs the task with them after
+every dispatched task and before the stage's gate; an edit the guard refuses the
+controller goes through an implementer.
 
 That is `build`'s unit. Every stage has one or has none, and the rows with none
 are the ones worth reading: they are where a fan-out does not belong.
@@ -479,18 +492,18 @@ when what you want is a second opinion on something you have already decided.
 Everything above holds with the profile's `stage.agents` at its default,
 `false` — nothing is controlled (`lib/profile.js:36`, `'stage.agents': { values: ['false', 'true', 'all'], builtin: 'false',`).
 `parseStageAgents` in `lib/profile.js` reads the key as one of four forms:
-`false` controls no stage (`lib/profile.js:89`, `if (s === 'false' || s === '') return { value: [] };`);
+`false` controls no stage (`lib/profile.js:106`, `if (s === 'false' || s === '') return { value: [] };`);
 `true` controls `survey` alone — kept for that one meaning rather than "the
 route's first stage" because every existing doc and the 2026-09-20 A/B
-already mean survey by `true` (`lib/profile.js:90`, `if (s === 'true') return { value: ['survey'] };`);
+already mean survey by `true` (`lib/profile.js:107`, `if (s === 'true') return { value: ['survey'] };`);
 `all` controls every stage in `lib/stages.js`'s `FULL_ROUTE`
-(`lib/profile.js:92`, `if (s === 'all') return { value: canon.slice() };`);
+(`lib/profile.js:109`, `if (s === 'all') return { value: canon.slice() };`);
 and anything else is a comma-separated list of stage names, lowercased,
 deduped and reordered to `FULL_ROUTE`'s own order regardless of what order or
 how many repeats they arrived in, so two profiles naming the same set always
 compare equal — an unknown name in that list is refused with the one message an
 empty list is refused with, in the shape every other bad profile value takes
-(`lib/profile.js:98`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
+(`lib/profile.js:115`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
 file could change (`lib/stages.js:651`, `const raw = values && values['stage.agents'];`),
@@ -506,7 +519,7 @@ stage on that list and it is run by a stage agent instead of by the session:
 | the gate | `hooks/gate.js` | validates rather than substitutes: the controller itself reads the handoff file's last `json gate` block and copies its `questions` array into its own `AskUserQuestion` call, word for word — no placeholder, no swap. `hooks/gate.js` checks the file's own gate is sound with `readGate`: at most 4 questions, every question with `header` (12 columns at most), `question` and 2–4 `options` each carrying a `label` and a `description` — and, where an option carries a `preview`, a non-empty string on a question that is not `multiSelect` (no label-width cap — that only ever bounded a hook `updatedInput` substitution this file no longer performs), and option one naming the next stage, another stage on the task's own route to send the work back to, or standing down at the route's end. A file gate that fails this is denied with the field named, and the controller sends it back to its agent. Once the file's gate is sound, `gateMatches` compares it against what the controller actually asked: a match clears the in-flight mark and writes nothing — unless `gate.station` is set and the station's answer arrived in time, in which case it allows the call with `updatedInput.answers` (docs/station.md, "Answering a gate from the page"); a mismatch whose first question is headed with the stage's name (any case) is not enough by itself to convict it: `looksLikeAttempt` also runs `charOverlap` — a normalized (lowercased, whitespace-stripped) character-overlap ratio between the asked question's text plus option labels and the file's own gate's first question — and only denies it as a botched copy attempt (a paraphrase, a typo, a stale draft), naming the file and telling the controller to copy `questions` exactly, once that ratio passes `ATTEMPT_THRESHOLD` (0.5); a header-matching question whose content overlap stays below that threshold — a genuinely different question the controller is legitimately asking during a controlled stage — goes out untouched, the same as one headed with something else entirely. When nothing is confirmed and nothing is denied either, it writes a `systemMessage` naming which condition failed — a stage agent for a stage `stage.agents` does not name, a question that does not copy the handoff's gate word for word, no handoff file, or no readable gate in it — from `skipReason` in `lib/handoff.js`. A `fankeel-brain` dispatched for a stage `stage.agents` does not name never gets this far: `hooks/guard.js` denies the dispatch itself (matcher `Agent\|Task`) |
 | the answer | `hooks/resume.js` | writes it to the answer file — only once `inflight` is clear, which `hooks/gate.js` does when the question reaching the user matches the file's gate; a question asked while the stage agent is still in flight writes nothing; the controller's `SendMessage` names the path |
 | a pause | `task.js next --from-gate` | reads the block's `next` line |
-| a commit (`build`, `design`, `plan`) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/<stage>-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back its one line, `<base>..<sha>` or `commit.js: <why>`; on build, one file per `ledger.js groups` group, never one per task — blocks separated by a `---` line, one `<paths>: <base>..<sha>` line back per block, or `<base>..<sha>` for a one-task group; once every block has landed, `commit.js` renames the file to `<stage>-commit.done.md`, so a `-commit.md` on disk is always a commit still to make |
+| a commit (`build`, `design`, `plan`) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/<stage>-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back its one line, `<base>..<sha>` or `commit.js: <why>`; on build, one file each time none of its implementers is still running, never one per task — blocks separated by a `---` line, one `<paths>: <base>..<sha>` line back per block, or `<base>..<sha>` for a one-block file; once every block has landed, `commit.js` renames the file to `<stage>-commit.done.md`, so a `-commit.md` on disk is always a commit still to make |
 
 ### How the controller waits
 
@@ -620,7 +633,7 @@ where `Write` is for its handoff file). It is refused `git commit` too, so it
 asks for each one through a commit file and the controller runs
 `scripts/commit.js`, in the repository the controller is standing in (a
 worktree the implementers build in is not handled) — a Bash call and a message
-back once per `ledger.js groups` group, never per task, in the controller's
+back each time none of its implementers is still running, never per task, in the controller's
 own context, which is a cost the A/B has to count rather than assume away. `verify` gets an implementer for the one thing its agent cannot do,
 applying a mutation and restoring the file. A default should wait for that
 measurement.

@@ -75,16 +75,12 @@ what gets scheduled.
 
 ## Ready
 
-- 〔tests〕整套 `node --test` 約 110 秒，每組 commit 前都得跑一次；找出拖慢的測試檔 — [docs/development.md](docs/development.md).
-- 〔build〕派工改成 ready-queue：依賴滿足就派、implementer 各開 worktree 由 brain merge、`TODO.md` 與索引不算撞檔（09-24 build 七個 task 有五輪被迫串行） — [lib/plantasks.js](lib/plantasks.js).
-- 〔plan〕plan 標出要使用者親手做的 task（互動探測、`claude -p`），build 一開跑就問，不等站 agent 被擋再回報 — [skills/fankeel-plan/SKILL.md](skills/fankeel-plan/SKILL.md).
-- 〔stage-agents〕重回 build 後主控規則與 `await.js` 盯 `build-3`，站 agent 仍寫 `build-2-commit`，三次誤報 lost — [scripts/await.js](scripts/await.js).
 - 〔station〕回放在真 station 上逐塊調（09-24 plan 的 Task 8，跳過）：`tune.js serve --proxy http://127.0.0.1:7817 --src assets/station/station.js,assets/station/station.css` — [docs/station.md](docs/station.md).
 
 ## Needs a decision
 
-- 〔profile〕profile 可設各 stage（或全部）注入自訂 prompt，例如「用繁體中文回答」；設定時警告每輪多耗多少 token（使用者 09-24 提） — [lib/profile.js](lib/profile.js).
 - 〔memory〕優化 CLAUDE.md 與記憶：先跑官方 `/doctor`（v2.1.206 起會去重、瘦身、搬進 skill），剩下的 fankeel 補；`MEMORY.md` 每 session 約 4,641 tok — [scripts/input-check.js](scripts/input-check.js).
+- 〔docs〕要不要 ADR：參考 Trovara 的 `docs/04-architecture/adr/`，只在做架構選擇時寫、不是每個 task 都呼叫；在哪一站、由誰觸發，要人來定 — [docs/documents.md](docs/documents.md).
 
 ## Waiting
 
@@ -194,3 +190,8 @@ lifts when: 使用者點頭跑一次成對量測. 09-24.
 lifts when: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃描模型. 09-24.
 
 - 〔security〕reviewer 的 `## Security` lens 已落地（四類、reviewer 自己的模型）；改走本地模型、清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
+
+### implementer 互相蓋檔
+lifts when: 共用樹上出現一次 implementer 蓋掉另一個 implementer 的改動. 09-24.
+
+- 〔build〕ready-queue 的 worktree 那一半：每個 implementer 各開 worktree、由 brain merge；`scripts/commit.js` 認不得 worktree、brain 不能 `git commit`，兩者都得先改 — [docs/subagents.md](docs/subagents.md).

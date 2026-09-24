@@ -518,7 +518,7 @@ flowchart TD
     C["<b>Global Constraints</b><br/><i>generated from map.md, not remembered</i><br/>exact values copied, not restated"]
     D["<b>file structure, before tasks</b><br/>what each file is responsible for"]
     E["<b>right-size the tasks</b><br/>the smallest unit carrying its own<br/>test cycle. Fold setup and docs into<br/>the task needing them"]
-    F["<b>per task</b><br/>files, read as well as modified · interfaces consumed and produced ·<br/><b>Dispatch:</b> in-session, or a model said out loud<br/>· steps, every fence naming its file"]
+    F["<b>per task</b><br/>files, read as well as modified · interfaces consumed and produced ·<br/><b>Dispatch:</b> in-session, a model said out loud,<br/>or user — what the user does<br/>· steps, every fence naming its file"]
     G["<b>every step is two to five minutes</b><br/>write the failing test → watch it fail →<br/>implement → watch it pass → commit"]
     H{"<b>self-review, before the gate</b>"}
     H1["every design promise has a task —<br/>a Coverage table, ledger lint, then a reviewer"]
@@ -541,10 +541,14 @@ spec.
 The only stage that loops, and the only one whose memory is a file rather than a
 conversation.
 
-**It executes rather than decides.** `ledger.js groups` prints a dispatch
-surface beside each group — `agent`, `agents` or `workflow` — and the loop reads
-it instead of re-deriving one from the group's size, which cannot see the
-diagnostics that downgrade a group. The brief a dispatch carries is one file,
+**It executes rather than decides.** `ledger.js ready` prints which tasks may go
+out now — every task not yet complete whose earlier tasks it conflicts with all
+are, with `TODO.md` and `docs/README.md` not counted as shared — and the loop
+sends each as it appears rather than waiting for a greedy group to close;
+`ledger.js groups` still prints the groups and their surface for the scan. A
+task whose `**Dispatch:**` line reads `user` is never sent: `task.js stage
+build` names it to the session holding `AskUserQuestion`, which asks the user at
+once and runs it with them after the other tasks, before the gate. The brief a dispatch carries is one file,
 written by `ledger.js brief <n>` from the plan — the constraints, the task's
 section, what it consumes, and the rules an implementer cannot infer — and a
 line saying where the task fits, none of it chosen per task. What is left to
@@ -552,8 +556,8 @@ decide here is the ruling and the commit message; everything else the loop
 needs is a runtime fact taken when it is needed.
 
 The second and third setup steps below are the path with a plan, and so is every
-node under them naming a ledger, a group or an implementer: the gate asking for a
-group the ledger has not completed, the node sending a whole group out in one
+node under them naming a ledger, a group or an implementer: the gate asking what
+`ledger.js ready` lists, the node sending every task it lists out in one
 response, the commit node staging a task's declared paths rather than an
 implementer's, and the `ledger complete` closing each task. A `bounded` or
 `spike` route reaches this stage without one, and then there is no ledger to open
@@ -571,15 +575,15 @@ flowchart TD
     S1["<b>an isolated workspace</b>"]
     S2["<b>open the ledger</b><br/>ledger show<br/><i>after a compaction, trust it over memory</i>"]
     S3["<b>scan the plan first</b><br/>tasks that contradict each other,<br/>or contradict the constraints"]
-    L{"a group holding a task the ledger<br/>does not list as complete?"}
-    D["<b>the whole group, on the surface groups printed</b><br/>agent · agents · workflow<br/><i>pass the model explicitly, say how many<br/>and on which model. Four dispatches at a time</i>"]
-    T2a["<b>implement here</b><br/>the group's in-session tasks<br/><i>every changed line traces to the task.<br/>Do not improve adjacent code on the way past</i>"]
+    L{"ledger.js ready lists a task<br/>not already out?"}
+    D["<b>every task ready lists, in one response</b><br/>four in flight at most<br/><i>pass the model explicitly, say how many<br/>and on which model</i>"]
+    T2a["<b>implement here</b><br/>the in-session tasks among them<br/><i>every changed line traces to the task.<br/>Do not improve adjacent code on the way past</i>"]
     T2b1["implement one task"]
     T2b2["implement one task"]
     T2b3["…"]
     T3["test first where the task says so<br/><i>a test you did not watch fail is a test<br/>whose meaning you do not know</i>"]
-    E{"a task in this group<br/>not committed yet?"}
-    T1["record BASE<br/><i>now — not when the group went out</i>"]
+    E{"a returned task<br/>not committed yet?"}
+    T1["record BASE<br/><i>now — not when it went out</i>"]
     T4["<b>commit</b><br/>the parent stages that one task's declared paths<br/><i>never the implementer — it returns paths, never a diff</i>"]
     T5["<b>one reviewer</b><br/>the task text, BASE..&lt;sha&gt;,<br/>and map.md — never the session's history"]
     T6{"findings?"}

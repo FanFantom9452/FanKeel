@@ -7,7 +7,7 @@ last_verified: 2026-09-24
 
 一句結論：對照別的 repo 時，先有 fankeel 自己的問題——`TODO.md` 的一條，或記錄過的一次事故——再去看對方怎麼處理；「對方有、fankeel 沒有」本身不是收的理由。照這條走完 [skill-repos](2026-09-24-skill-repos.md) 的六條與 [ponytail 報告](../reports/2026-09-24-ponytail-remainder.md) 的六條，十二條都對不上，一條都不問，`TODO.md` 沒有新增條目。
 
-design 見 [../plans/2026-09-24-todo-sweep-design.md](../plans/2026-09-24-todo-sweep-design.md) 第 10、11 節，計畫見 [../plans/2026-09-24-todo-sweep.md](../plans/2026-09-24-todo-sweep.md) 的 Task 9。
+design 見 [../archive/2026-09-24-todo-sweep-design.md](../archive/2026-09-24-todo-sweep-design.md) 第 10、11 節，計畫見 [../archive/2026-09-24-todo-sweep.md](../archive/2026-09-24-todo-sweep.md) 的 Task 9。
 
 ## 規則
 

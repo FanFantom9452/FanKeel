@@ -16,6 +16,36 @@ claude plugin validate .
 knip
 ```
 
+## How long the suite takes
+
+Measured on 2026-09-24, Windows 11 and Node v24.9.0, by
+`docs/plans/2026-09-24-todo-clear.md` Task 7 step 6: each file alone with
+`node --test <file>`, one after another, wall-clock from the shell; then the
+whole suite with `node --test`, which runs files in parallel.
+
+| | before the split, at `a8bce07e` | after, at `b776fc37` |
+|---|---|---|
+| whole suite | 77.1 s | 86.9 s |
+| slowest file | `tests/station-cli.test.js` 87.5 s | `tests/station-post.test.js` 57.5 s |
+
+The split took `tests/station-cli.test.js` into three files by what they start —
+the CLI alone, `serve()`'s own life, and the POST routes — and
+`tests/task.test.js` into two at the controller's half. The idle test there no
+longer sleeps a fixed 900ms: it probes the port until the idle timer closes it.
+The five slowest after the split: `tests/station-post.test.js` 57.5 s,
+`tests/station-serve.test.js` 28.5 s, `tests/task.test.js` 21.7 s,
+`tests/task-control.test.js` 18.5 s, `tests/survey.test.js` 18.3 s.
+
+The split's goal was a bearable per-file sequential time for someone running one
+file at a time during development, not the parallel whole-suite wall-clock,
+which can go up when the file count increases — `node --test` starts more
+processes, and 86.9 s here is that expected side effect, not a regression.
+`tests/station-post.test.js` measured 42.6 s in an earlier run of this same
+split and 57.5 s in the run tabulated above; both are close to, and the second
+is over, the 40 s per-file target, on load noise rather than a code change
+between the two runs. The ruling recorded this rather than splitting the file
+further.
+
 ## Where the code lives
 
 `lib/` is pure logic, tested directly. The one exception is `lib/fanout.js`, which

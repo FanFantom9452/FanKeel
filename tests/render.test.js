@@ -302,8 +302,8 @@ test('the build section marks the loop grouping as plan-only, not just the setup
   // are plan-only, and a sentence that gestures at the loop without naming them
   // leaves the same diagram unreadable on a bounded route.
   for (const [pattern, node] of [
-    [/gate\s+asking\s+for\s+a\s+group/, 'the group gate'],
-    [/whole\s+group\s+out\s+in\s+one/, 'the group dispatch'],
+    [/gate\s+asking\s+what/, 'the group gate'],
+    [/every\s+task\s+it\s+lists\s+out\s+in\s+one/, 'the group dispatch'],
     [/`ledger\s+complete`/, 'the ledger completion'],
     // The commit node names neither a ledger nor a group, which is how it stayed
     // off this list, and it is plan-only twice over: it stages a task's *declared*
