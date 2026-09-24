@@ -155,16 +155,16 @@ test('gather reads a project profile from .fankeel/profile.json, and serialize c
     assert.match(data, /"profileKeys"/);
 });
 // `gather()` and `serialize()` are two builders and the page reads the second:
-// a projection of `profile.KEYS` written later would drop `desc` and nothing
-// else would fail.
-test('serialize carries profile.KEYS and profile.PRESETS whole', () => {
+// a projection of `profile.WIZARD_KEYS` written later would drop `desc` and
+// nothing else would fail.
+test('serialize carries profile.WIZARD_KEYS and profile.PRESETS whole', () => {
     const f = fixture();
     const profile = require('../lib/profile.js');
     const ctx = { window: {} };
     vm.runInNewContext(station.serialize(station.gather({ configDir: f.cfg }), {}), ctx);
     const served = ctx.window.STATION;
     const plain = (v) => JSON.parse(JSON.stringify(v));
-    assert.deepEqual(plain(served.profileKeys), plain(profile.KEYS));
+    assert.deepEqual(plain(served.profileKeys), plain(profile.WIZARD_KEYS));
     assert.deepEqual(plain(served.profilePresets), plain(profile.PRESETS));
 });
 // A registry of its own per test below, rather than the shared fixture: each

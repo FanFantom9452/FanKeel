@@ -354,3 +354,71 @@ test('gate.station is off or whole seconds from 1 to 600, off by default', () =>
     assert.equal(profile.read(d, null).values['gate.station'], 'off');
     assert.equal(profile.read(d, null).sources['gate.station'], 'builtin');
 });
+
+test('prompt.all and prompt.<stage> take one line of free text, 1 to 200 characters, case kept', () => {
+    const { FULL_ROUTE } = require('../lib/stages.js');
+    assert.deepEqual(Object.keys(profile.KEYS).filter((k) => k.startsWith('prompt.')), ['prompt.all', ...FULL_ROUTE.map((s) => 'prompt.' + s)]);
+    assert.equal(profile.parseValue('prompt.all', '  Use British spelling  ').value, 'Use British spelling');
+    assert.equal(profile.parseValue('prompt.verify', '用繁體中文回答').value, '用繁體中文回答');
+    assert.equal(profile.parseValue('prompt.all', 'x'.repeat(200)).value.length, 200);
+    for (const bad of ['', '   ', 'two\nlines', 'x'.repeat(201)]) {
+        assert.ok(profile.parseValue('prompt.all', bad).error, JSON.stringify(bad.slice(0, 20)));
+    }
+    const d = dir();
+    fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
+    profile.write(profile.projectFile(d), 'prompt.verify', 'Run the suite first');
+    assert.equal(profile.read(d, null).values['prompt.verify'], 'Run the suite first');
+});
+
+test('the station wizard gets every key but the free-text prompts', () => {
+    const wizard = Object.keys(profile.WIZARD_KEYS);
+    assert.ok(!wizard.some((k) => k.startsWith('prompt.')));
+    assert.deepEqual(wizard, Object.keys(profile.KEYS).filter((k) => !k.startsWith('prompt.')));
+});
+
+// docs/plans/2026-09-24-todo-clear.md, "起草時查到": the printed N is
+// estimateTokens of the line as injected, newline and `  - ` included, and the
+// whole block grows by N or N-1 — estimateTokens rounds each call's ASCII up
+// to a quarter, so two calls on overlapping text can differ by one.
+test('profile set prompt.* prints what the line costs a turn and each stage\'s room under the cap', () => {
+    const { estimateTokens } = require('../scripts/input-check.js');
+    const { render } = require('../lib/render.js');
+    const d = dir();
+    const cfg = path.join(d, 'cfg');
+    const TASK = path.join(__dirname, '..', 'scripts', 'task.js');
+    const run = (...args) => execFileSync(process.execPath, [TASK, ...args, '--root', d, '--claude-dir', cfg],
+        { encoding: 'utf8', env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg }) });
+    const sentence = '用繁體中文回答';
+    const out = run('profile', 'set', 'prompt.all', sentence);
+    const n = Number(/^\+~(\d+) tok\/輪/m.exec(out)[1]);
+    assert.equal(n, estimateTokens('\n  - ' + sentence), 'the printed figure is estimateTokens of the injected line');
+    const mine = { sessionId: 'aaaaaaaa-0000-4000-8000-000000000001', data: { task: 't', stage: 'survey', active: true } };
+    const at = (values) => render({ mine, others: [], now: Date.now(), profile: { values, sources: {}, unreadable: [] } });
+    const grew = estimateTokens(at({ 'prompt.all': sentence })) - estimateTokens(at({}));
+    assert.ok(grew === n || grew === n - 1, 'the block grew by ' + grew + ' tok against ' + n + ' printed');
+    const roomLine = /^room under 2400: (.*)$/m.exec(out)[1];
+    assert.match(out, /^room under 2400: survey -?\d+ · design -?\d+ · plan -?\d+ · build -?\d+ · verify -?\d+ · audit -?\d+ · land -?\d+$/m);
+    // audit's stage-rules block already sits over the 2400 cap under a plain default profile
+    // (docs/plans/2026-09-24-todo-clear.md ledger: a pre-existing condition, not this test's mechanism),
+    // so it is asserted separately as the one stage allowed to be over.
+    const room = Object.fromEntries(roomLine.split(' · ').map((p) => p.split(' ')).map(([s, r]) => [s, Number(r)]));
+    for (const s of ['survey', 'design', 'plan', 'build', 'verify', 'land']) {
+        assert.ok(room[s] > 0, s + ' stays under the cap: ' + roomLine);
+    }
+    assert.ok(room.audit <= 0, 'audit is expected to already be over the cap: ' + roomLine);
+    assert.match(out, /^over the cap: audit — set anyway/m);
+    assert.equal(run('profile', 'set', 'guard', 'deny').trim().split('\n').length, 1, 'a key that is not a prompt prints the one line it always did');
+});
+
+test('profile set prompt.all names every stage it pushes over the cap, and still writes it', () => {
+    const d = dir();
+    const cfg = path.join(d, 'cfg');
+    const TASK = path.join(__dirname, '..', 'scripts', 'task.js');
+    const out = execFileSync(process.execPath, [TASK, 'profile', 'set', 'prompt.all', 'x'.repeat(200), '--root', d, '--claude-dir', cfg],
+        { encoding: 'utf8', env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg }) });
+    const room = /^room under 2400: (.*)$/m.exec(out)[1].split(' · ').map((p) => p.split(' '));
+    const over = room.filter(([, r]) => Number(r) <= 0).map(([s]) => s);
+    assert.ok(over.length > 0, 'a 200-character sentence on blocks within a few hundred characters of the cap: ' + out);
+    assert.match(out, new RegExp('^over the cap: ' + over.join(', ') + ' — set anyway', 'm'));
+    assert.equal(JSON.parse(fs.readFileSync(profile.projectFile(d), 'utf8'))['prompt.all'], 'x'.repeat(200));
+});

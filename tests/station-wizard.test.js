@@ -11,7 +11,7 @@ const profile = require('../lib/profile.js');
 
 global.window = { STATION: {} };
 const V = require('../assets/station/station.js');
-const KEYS = profile.KEYS;
+const KEYS = profile.WIZARD_KEYS;
 const APP = '/w/app';
 const PROFILES = {
     machine: {

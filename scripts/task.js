@@ -35,7 +35,8 @@ const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseR
 const profile = require('../lib/profile.js');
 const docs = require('../lib/docs.js');
 const { handoffPath, readGate, lapsUsed } = require('../lib/handoff.js');
-const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT, newestPlan } = require('../lib/render.js');
+const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT, newestPlan, blockSizes, BLOCK_CAP } = require('../lib/render.js');
+const { estimateTokens } = require('./input-check.js');
 const plantasks = require('../lib/plantasks.js');
 const { rateFor } = require('../lib/prices.js');
 
@@ -898,6 +899,22 @@ function projectRootFor(root, opts) {
     return roots[0] || root;
 }
 
+// What a `prompt.*` sentence costs, said when it is set: the tokens its
+// injected line adds to every prompt, by input-check.js's own estimate, and
+// each stage's block against the cap with the profile as it now reads. A
+// warning, never a refusal — the cap is the tests', and the sentence is the
+// user's.
+function promptCost(root, projectRoot, cfg, sentence) {
+    const n = estimateTokens('\n  - ' + sentence);
+    const sizes = blockSizes(profile.read(projectRoot, cfg), root);
+    const over = FULL_ROUTE.filter((s) => sizes[s] >= BLOCK_CAP);
+    return [
+        '+~' + n + ' tok/輪 — the injected line, by input-check.js estimateTokens',
+        'room under ' + BLOCK_CAP + ': ' + FULL_ROUTE.map((s) => s + ' ' + (BLOCK_CAP - sizes[s])).join(' · '),
+        over.length ? 'over the cap: ' + over.join(', ') + ' — set anyway; this is a warning, not a refusal' : 'every stage stays under the cap',
+    ];
+}
+
 // Nothing here touches a session entry: a profile is the project's, not the
 // task's, so `--session` is not required and no badge is written.
 function cmdProfile(root, opts) {
@@ -918,7 +935,8 @@ function cmdProfile(root, opts) {
         if (!file) fail('No config directory to write the machine default to.');
         const out = profile.write(file, key, value);
         if (!out.ok) fail(out.reason);
-        return 'fankeel — profile: ' + key + ' = ' + out.value + '  → ' + file;
+        const head = 'fankeel — profile: ' + key + ' = ' + out.value + '  → ' + file;
+        return key.startsWith('prompt.') ? [head].concat(promptCost(root, projectRoot, cfg, out.value)).join('\n') : head;
     }
     if (verb === 'suggest') {
         const { values, evidence } = profile.suggest(projectRoot, root);

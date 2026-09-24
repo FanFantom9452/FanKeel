@@ -754,3 +754,30 @@ test('stage.agents false or absent, or a stage with no controller: the block it 
   const design = render({ mine: entry(MINE, { stage: 'design', started: '2026-09-19T09:30:12.345Z' }), others: [], now: NOW, root: '/r', profile: on });
   assert.ok(!design.includes('fankeel:fankeel-brain'));
 });
+
+// docs/plans/2026-09-24-todo-clear-design.md §4: the user's own sentence, last
+// in every block a person reads the result of — every prompt, after a gate,
+// the controller's, the stage agent's — and never in a reader's brief, whose
+// return goes to the controller rather than to the person who wrote it.
+test('prompt.all rides every stage\'s block and the stage agent\'s brief; prompt.<stage> only its own stage', () => {
+  const { renderResume, renderBrief } = require('../lib/render.js');
+  const values = { 'prompt.all': '用繁體中文回答', 'prompt.verify': '先跑整套測試' };
+  const plain = { values, sources: {}, unreadable: [] };
+  for (const stage of NAMES) {
+    const mine = entry(MINE, { stage, started: '2026-09-19T09:30:12.345Z' });
+    for (const out of [render({ mine, others: [], now: NOW, root: '/r', profile: plain }), renderResume({ mine, profile: plain, root: '/r' })]) {
+      assert.ok(out.includes('\n  - 用繁體中文回答'), stage);
+      assert.equal(out.includes('先跑整套測試'), stage === 'verify', stage);
+    }
+  }
+  const on = { values: Object.assign({ 'stage.agents': NAMES.slice(), 'dispatch.floor': 'sonnet' }, values), sources: {}, unreadable: [] };
+  const verify = entry(MINE, { stage: 'verify', started: '2026-09-19T09:30:12.345Z' });
+  const controller = render({ mine: verify, others: [], now: NOW, root: '/r', profile: on });
+  assert.ok(controller.includes('fankeel:fankeel-brain') && controller.includes('\n  - 用繁體中文回答') && controller.includes('\n  - 先跑整套測試'), 'the controller\'s block');
+  const brain = renderBrief({ mine: verify, agentType: 'fankeel:fankeel-brain', root: '/r', profile: on });
+  assert.ok(brain.includes('\n  - 用繁體中文回答') && brain.includes('\n  - 先跑整套測試'), 'the stage agent\'s brief');
+  const reader = renderBrief({ mine: verify, agentType: 'fankeel:fankeel-reader', root: '/r', profile: on });
+  assert.ok(!reader.includes('用繁體中文回答'), 'a reader\'s brief');
+  const none = render({ mine: verify, others: [], now: NOW, root: '/r', profile: { values: {}, sources: {}, unreadable: [] } });
+  assert.equal(render({ mine: verify, others: [], now: NOW, root: '/r', profile: { values: { 'prompt.design': 'x' }, sources: {}, unreadable: [] } }), none, 'another stage\'s prompt adds nothing');
+});
