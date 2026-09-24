@@ -1287,3 +1287,25 @@ test('build sends what ledger.js ready lists and asks about the hands first; pla
   assert.doesNotMatch(plan, /no third form of the line/);
   assert.match(plan, /put it last/);
 });
+
+// The Waiting rule used to live only as prose in skills/fankeel/SKILL.md, which
+// neither the survey nor the build stage-agent reads — a real 2026-09-25 survey
+// run skipped the multiSelect step because nothing in its own skill said to do
+// it. Each stage skill now carries its own half, and fankeel/SKILL.md's
+// shortened paragraph points at both by path instead of repeating the detail.
+test('survey and build each carry their own half of the Waiting rule; fankeel points at both', () => {
+  const survey = read('fankeel-survey');
+  assert.match(survey, /## Waiting tasks/);
+  const surveySection = survey.slice(survey.indexOf('## Waiting tasks'));
+  assert.match(surveySection, /multiSelect: true/);
+
+  const build = read('fankeel-build');
+  assert.match(build, /## Waiting tasks/);
+  const buildSection = build.slice(build.indexOf('## Waiting tasks'));
+  assert.match(buildSection, /## Ready/);
+  assert.match(buildSection, /lifts when:/);
+
+  const fankeel = read('fankeel');
+  assert.match(fankeel, /skills\/fankeel-survey\/SKILL\.md.*## Waiting tasks/s);
+  assert.match(fankeel, /skills\/fankeel-build\/SKILL\.md.*## Waiting tasks/s);
+});
