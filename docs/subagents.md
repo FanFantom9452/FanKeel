@@ -261,8 +261,10 @@ reference's omit-and-inherit is the host's default, not this plugin's — and
 regardless, which is why fankeel never dispatches one; the
 **count and the model must be said out loud**, in the response that sends
 them, because a fan-out nobody announced is spend the user is paying for and
-could not see coming; the **description must open with the model** —
-`sonnet: survey stage agent` — because it is the title a background agent runs
+could not see coming; the **description must open with the model, its version
+and its effort** — `sonnet 5 · medium: survey stage agent`, the version read
+off the session's environment block and the effort off the agent file's
+`effort:` or `inherit` — because it is the title a background agent runs
 under and the one place the user sees what is spending while it runs; the returns must be
 **compared against each other**, because agents dispatched from one prompt style
 make correlated mistakes that per-agent reading will not catch; and the **return
