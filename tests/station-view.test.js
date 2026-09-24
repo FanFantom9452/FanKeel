@@ -1113,6 +1113,271 @@ test('navHtml marks the current page, links every page, and has no dropdown', ()
     assert.match(V.navHtml('session', { live: 0, usd: 0, sessions: 0, projects: 0, docs: 0 }), /<a href="#\/sessions" aria-current="page">/);
 });
 
+// NAV_TREE's five categories, unreachable directly (it is not in
+// module.exports), so this reads them off what navHtml renders instead.
+test('navHtml renders all five NAV_TREE categories', () => {
+    const out = V.navHtml('now', { live: 0, usd: 0, sessions: 0, projects: 0, docs: 0 });
+    for (const label of ['儀表板', 'Sessions', '花費', '文件', '設定']) {
+        assert.ok(out.includes('<span>' + label + '</span>'), label);
+    }
+});
+
+test('navHtml folds a shut category under aria-expanded="false" and leaves an unshut one open, while the fold-less 設定 category never gets a toggle button', () => {
+    const c = { live: 0, usd: 0, sessions: 0, projects: 0, docs: 0 };
+    const shut = V.navHtml('live', c, { shut: { sessions: true } });
+    // Sessions is shut and its active page ('live') is inside it: both classes apply.
+    assert.match(shut, /<li class="navcat in shut" data-fold="sessions">/);
+    assert.match(shut, /<button type="button" class="navrow navhd" data-navfold="sessions"[^>]*aria-expanded="false"/);
+    // 花費 was not named in `ui.shut`, so it stays open even though it too has a fold key.
+    assert.match(shut, /<button type="button" class="navrow navhd" data-navfold="spend"[^>]*aria-expanded="true"/);
+    // Its kids still render in the markup either way — CSS, not the server, hides them.
+    assert.match(shut, /<span>進行中<\/span>/);
+    assert.match(shut, /<span>最近<\/span>/);
+    // 設定 has no `fold`, so it is always a plain link to its first (only) kid, never a button.
+    assert.doesNotMatch(shut, /data-navfold="settings"/);
+    assert.match(shut, /<a class="navhd" href="#\/settings">/);
+    assert.match(shut, /<span>精靈<\/span>/);
+    // With no `ui` at all every fold defaults open.
+    const open = V.navHtml('now', c);
+    assert.match(open, /data-navfold="sessions"[^>]*aria-expanded="true"/);
+});
+
+test('navHtml badges follow the new `badges` map: live gets a live-class count, 儀表板 and 文件 carry no badge at all', () => {
+    const out = V.navHtml('days', { live: 3, usd: 12.5, sessions: 0, projects: 0, docs: 4 });
+    assert.match(out, /<a href="#\/live"><span>進行中<\/span><span class="nb live">3 live<\/span><\/a>/);
+    // `v: 'now'` (儀表板) maps to `badges.now === null` — no badge span at all.
+    const dashLink = out.match(/<a href="#\/">[\s\S]*?<\/a>/)[0];
+    assert.match(dashLink, /<span>儀表板<\/span><\/a>$/, '儀表板\'s label is the last thing in its link, nothing after it');
+    assert.doesNotMatch(dashLink, /class="nb/, '儀表板 never gets a badge');
+    // 文件 (`v: 'docs'`) does carry a badge, the doc count.
+    const docsLink = out.match(/<a href="#\/docs">[\s\S]*?<\/a>/)[0];
+    assert.match(docsLink, /<span>文件<\/span><span class="nb">4<\/span><\/a>$/);
+    assert.equal(V.navCounts([{ state: 'live' }], [], []).live, 1, 'the count navHtml\'s live badge is built from');
+});
+
+// --- fix: stageShare, costShareHtml, subtabsHtml and the four 儀表板 cards —
+// seven functions the reviewer flagged as defined but not covered, and it
+// turned out `module.exports` did not even carry them to `require()`. Fixed
+// alongside these tests: the nine missing keys (these seven plus `NAV_TREE`
+// and the session detail page had already reached `navHtml`'s tests above).
+
+// Matches the reachability check from the fix's own step 2 (`typeof V.x ===
+// 'function'`/`'object'` off a bare `require()`), and doubles as
+// tests/source.test.js's control: that test flags an exported name nobody's
+// `V.<name>` (or a bound require's own alias) ever reaches, and
+// `dashSpend`/`dashRecent`/`dashPage` below are only driven through `DASH.
+// <name>`, never `V.<name>`, because calling them off the plain `require()`
+// crashes (see `DASH` below) — this line is what keeps their names counted
+// as used without adding a crashing call.
+test('the nine newly exported names are reachable off a plain require()', () => {
+    assert.equal(typeof V.stageShare, 'function');
+    assert.equal(typeof V.costShareHtml, 'function');
+    assert.equal(typeof V.subtabsHtml, 'function');
+    assert.equal(typeof V.dashLive, 'function');
+    assert.equal(typeof V.dashGate, 'function');
+    assert.equal(typeof V.dashSpend, 'function');
+    assert.equal(typeof V.dashRecent, 'function');
+    assert.equal(typeof V.dashPage, 'function');
+    assert.ok(Array.isArray(V.NAV_TREE));
+});
+
+// `stageShare`'s `s.stages` windows accumulate onto the same row when a stage
+// is visited twice (`design` below visits once with a zero-length window, on
+// purpose, so it has no `usd`/`ms`/`req` at all and drops out of `L.rows`);
+// `s.days` and `s.stages` are inserted out of `ROUTE` order (`build`,
+// `verify`, `survey`, then `design`) so a `L.rows` order that just matched
+// insertion order would show up here as a failure.
+const STAGE_S = {
+    days: [
+        { stage: 'build', who: 'main', usd: 1 },
+        { stage: 'verify', who: 'main', usd: 2 },
+        { stage: 'build', who: 'agent', usd: 0.5 },
+        { stage: 'survey', who: 'main', usd: 0.3 },
+    ],
+    stages: [
+        { stage: 'verify', from: 1000000, to: 1300000 },
+        { stage: 'build', from: 0, to: 600000 },
+        { stage: 'build', from: 700000, to: 1000000 },
+        { stage: 'design', from: 500, to: 500 },
+    ],
+};
+const STAGE_X = {
+    points: [{ t: 100 }, { t: 700 }, { t: 1200 }],
+    seq: [{ at: 0, stage: 'survey' }, { at: 600, stage: 'build' }, { at: 1000, stage: 'verify' }],
+};
+
+test('stageShare sums usd across days, splits main/agent by who, sums ms across a stage\'s two windows, orders by ROUTE and drops a stage with nothing in it', () => {
+    const L = V.stageShare(STAGE_S, STAGE_X);
+    assert.equal(L.total, 3.8, 'every days row\'s usd, regardless of stage');
+    assert.deepEqual(L.rows.map((r) => r.stage), ['survey', 'build', 'verify'], 'ROUTE order (survey, build, verify), not insertion order, and design is gone');
+    assert.deepEqual(L.rows[0], { stage: 'survey', ms: null, usd: 0.3, main: 0.3, agent: 0, req: 1 });
+    assert.deepEqual(L.rows[1], { stage: 'build', ms: 900000, usd: 1.5, main: 1, agent: 0.5, req: 1 },
+        'build\'s two stages windows (600000 + 300000) summed onto one row — confirmed correct, not a bug');
+    assert.deepEqual(L.rows[2], { stage: 'verify', ms: 300000, usd: 2, main: 2, agent: 0, req: 1 });
+});
+
+test('stageShare with x omitted leaves req null on every row rather than 0', () => {
+    const L = V.stageShare(STAGE_S, null);
+    assert.equal(L.rows.length, 3);
+    for (const r of L.rows) assert.equal(r.req, null);
+});
+
+test('costShareHtml marks the bar segment and table row matching hi with on/aria-pressed, and leaves every other stage plain', () => {
+    const L = V.stageShare(STAGE_S, null);
+    const html = V.costShareHtml(L, 'build');
+    assert.match(html, /<button type="button" class="csseg on" data-hist="build" aria-pressed="true"/);
+    assert.match(html, /<tr class="csrow on" data-hist="build" tabindex="0" aria-pressed="true"/);
+    assert.doesNotMatch(html, /class="csseg on" data-hist="survey"/);
+    assert.doesNotMatch(html, /class="csrow on" data-hist="survey"/);
+    assert.match(html, /<button type="button" class="csseg" data-hist="survey" aria-pressed="false"/);
+    assert.match(html, /<tr class="csrow" data-hist="survey" tabindex="0" aria-pressed="false"/);
+});
+
+test('costShareHtml with no paid stage prints the 沒有按日的花費 line instead of a bar', () => {
+    const empty = V.costShareHtml({ total: 0, rows: [] }, null);
+    assert.match(empty, /這個 session 沒有按日的花費/);
+    assert.doesNotMatch(empty, /<div class="csbar"/);
+    const zero = V.costShareHtml({ total: 0, rows: [{ stage: 'build', ms: null, usd: 0, main: 0, agent: 0, req: null }] }, null);
+    assert.match(zero, /這個 session 沒有按日的花費/);
+    assert.doesNotMatch(zero, /<div class="csbar"/);
+});
+
+test('subtabsHtml is empty for a single-link category and a strip with aria-current for a multi-kid one', () => {
+    assert.equal(V.subtabsHtml('now'), '', '儀表板 has no kids');
+    assert.equal(V.subtabsHtml('docs'), '', '文件 has no kids');
+    const live = V.subtabsHtml('live');
+    assert.match(live, /<nav class="subtabs" data-block="subtabs" aria-label="Sessions">/);
+    for (const label of ['進行中', '最近', '全部清單', '比較']) assert.ok(live.includes(label));
+    assert.match(live, /<a href="#\/live" aria-current="page">進行中<\/a>/);
+    assert.doesNotMatch(live, /<a href="#\/sessions" aria-current="page">/);
+    const days = V.subtabsHtml('days');
+    assert.match(days, /<a href="#\/days" aria-current="page">近 30 天<\/a>/);
+    assert.match(days, /<a href="#\/projects">依專案<\/a>/);
+});
+
+// `dashLive`, `dashGate`, `dashSpend` and `dashRecent` all read at least one
+// module-scoped var (`NAMES` via `dashRowName`, or `DAYS` via `dayBars`/
+// `recentRows`) that only `freshen()` sets, behind the `if (!doc) return`
+// guard `require()` never crosses — `doc` is `window.document`, undefined in
+// this file's plain Node `require()`, so calling any of them off the `V`
+// above throws ("Cannot read properties of undefined"). `DASH` runs the same
+// source through `vm.runInNewContext` the way the smoke tests further down
+// already do for DOM-touching code, but also hands the sandbox a `module`
+// object — with `document` truthy too, `freshen()` runs before the IIFE
+// returns, so the closures `module.exports` captures are the ones with
+// `NAMES`/`DAYS` already filled in. `DASH.dashLive` etc. can then be called
+// directly, the same as any function on the plain `V`.
+const DASH = (() => {
+    const vm = require('node:vm');
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    const els = {};
+    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', addEventListener() {} });
+    const doc = {
+        getElementById: (id) => els[id] || (els[id] = el()),
+        addEventListener: () => {},
+        createElement: el,
+        head: { appendChild() {} },
+        querySelectorAll: () => [],
+    };
+    const win = {
+        location: { hash: '#/' }, addEventListener() {}, scrollTo() {},
+        STATION: {
+            generatedAt: new Date(NOW).toISOString(), configDir: 'C:\\cfg',
+            pricesVerified: '2026-09-04', serve: false,
+            projects: [{ root: 'F:\\ws\\alpha', gone: false, unreadable: 0, build: [], mapAt: null }],
+            profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} },
+            profileKeys: {}, classes: {}, sessions: [],
+        },
+    };
+    const sandbox = { window: win, document: doc, URLSearchParams, fetch() {}, module: { exports: {} } };
+    vm.runInNewContext(src, sandbox);
+    return sandbox.module.exports;
+})();
+
+const DASH_LIVE = [
+    { id: 'dl-live', pkey: 'F:\\ws\\alpha', task: 'live one', state: 'live', updated: NOW - 1000, started: NOW - 120000, route: [], stage: 'build' },
+    { id: 'dl-stale', pkey: 'F:\\ws\\alpha', task: 'stale one', state: 'stale', updated: NOW - 2000, started: NOW - 90000, route: [], stage: 'plan' },
+    { id: 'dl-down', pkey: 'F:\\ws\\alpha', task: 'down one', state: 'down', updated: NOW - 3000, started: NOW - 60000, route: [], stage: 'verify' },
+];
+
+test('dashLive counts and lists only the live rows, each linking to its session hash', () => {
+    const html = DASH.dashLive(DASH_LIVE);
+    assert.match(html, /data-block="dash-live"/);
+    assert.match(html, /<div class="dbig">1<small>個 live session<\/small><\/div>/);
+    assert.equal(count(html, /class="drow"/g), 1);
+    assert.match(html, /<a class="drow" href="#\/s\/dl-live"/);
+    assert.doesNotMatch(html, /#\/s\/dl-stale|#\/s\/dl-down/);
+    assert.match(DASH.dashLive([]), /沒有進行中的 session/);
+});
+
+const DASH_GATE = [
+    { id: 'dg-open', pkey: 'F:\\ws\\alpha', task: 'waiting', updated: NOW - 500000,
+      pending: { questions: [{ header: 'q1' }], at: NOW - 400000, until: NOW + 600000 } },
+    { id: 'dg-none', pkey: 'F:\\ws\\alpha', task: 'no pending field', updated: NOW - 500000, pending: undefined },
+    { id: 'dg-empty', pkey: 'F:\\ws\\alpha', task: 'empty questions', updated: NOW - 500000, pending: { questions: [] } },
+];
+
+test('dashGate counts and lists only rows with a non-empty pending.questions', () => {
+    const html = DASH.dashGate(DASH_GATE);
+    assert.match(html, /data-block="dash-gate"/);
+    assert.match(html, /<div class="dbig warn">1<small>個 gate 在等<\/small><\/div>/);
+    assert.equal(count(html, /class="drow"/g), 1);
+    assert.match(html, /<a class="drow" href="#\/s\/dg-open"/);
+    assert.doesNotMatch(html, /#\/s\/dg-none|#\/s\/dg-empty/);
+    assert.match(DASH.dashGate([]), /沒有在等你的 gate/);
+});
+
+const DASH_SPEND_R = [
+    { id: 'ds1', pkey: 'F:\\ws\\alpha', days: [dayRow('2026-09-14', 'build', 'claude-opus-5', 'main', 3, 100)] },
+    { id: 'ds2', pkey: 'F:\\ws\\alpha', days: [dayRow('2026-09-13', 'build', 'claude-opus-5', 'main', 2, 100)] },
+];
+
+test('dashSpend does not throw on an empty or single-session R, and its dbig total matches windowTotals(R, DAYS).usd', () => {
+    assert.doesNotThrow(() => DASH.dashSpend([]));
+    assert.doesNotThrow(() => DASH.dashSpend([DASH_SPEND_R[0]]));
+    const html = DASH.dashSpend(DASH_SPEND_R);
+    assert.match(html, /data-block="dash-spend"/);
+    const tot = V.windowTotals(DASH_SPEND_R, DAYS).usd;
+    assert.equal(tot, 5);
+    assert.ok(html.includes('<div class="dbig">' + V.usd(tot) + '</div>'), html);
+});
+
+const DASH_RECENT_R = Array.from({ length: 7 }, (_, i) => ({
+    id: 'rec' + i, pkey: 'F:\\ws\\alpha', task: 'task ' + i, state: 'down', stage: 'build',
+    updated: NOW - i * 60000, days: [dayRow('2026-09-14', 'build', 'claude-opus-5', 'main', 1, 10)],
+}));
+
+test('dashRecent lists exactly 5 rows out of more than 5 eligible ones, newest first by recentRows\' own order', () => {
+    const html = DASH.dashRecent(DASH_RECENT_R);
+    assert.match(html, /data-block="dash-recent"/);
+    assert.equal(count(html, /class="drow"/g), 5);
+    const ids = [...html.matchAll(/href="#\/s\/(rec\d)"/g)].map((m) => m[1]);
+    assert.deepEqual(ids, ['rec0', 'rec1', 'rec2', 'rec3', 'rec4'],
+        'the five most recently updated, in the same order recentRows sorts them');
+    assert.match(DASH.dashRecent([]), /近 30 天沒有 session/);
+});
+
+// `dashPage()` reads `S`/`homeRows()` the same way `sessionsPage`/`nowPage`
+// do, and this file has no existing pattern for driving that class of
+// function directly (no other test calls `nowHtml`/`sessionsPage` through
+// module state rather than a plain parameter list). `DASH.dashPage()` is
+// reachable here only because building `DASH` above already routes around
+// the same `doc`/`freshen()` gap; boot-time `STATION.sessions` is `[]`, so
+// this checks assembly and order rather than card content, which the four
+// tests above already cover directly off explicit rows.
+test('dashPage assembles all four cards in dashLive, dashGate, dashSpend, dashRecent order', () => {
+    const html = DASH.dashPage();
+    assert.match(html, /<h1>.*儀表板<\/h1>/);
+    for (const key of ['dash-live', 'dash-gate', 'dash-spend', 'dash-recent']) {
+        assert.match(html, new RegExp('data-block="' + key + '"'));
+    }
+    assert.ok(html.indexOf('dash-live') < html.indexOf('dash-gate'));
+    assert.ok(html.indexOf('dash-gate') < html.indexOf('dash-spend'));
+    assert.ok(html.indexOf('dash-spend') < html.indexOf('dash-recent'));
+});
+
 test('recentRows keeps what spent inside the window or is still live, newest first', () => {
     const rows = V.recentRows(NAV_SESSIONS, NAV_DAYS);
     assert.deepEqual(rows.map((s) => s.id), ['n1', 'n2']);

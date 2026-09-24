@@ -1689,6 +1689,9 @@
             WIZ_STEPS: WIZ_STEPS, wizLoad: wizLoad, wizApply: wizApply, wizChanges: wizChanges, wizHtml: wizHtml,
             segTip: segTip,
             tk: tk,
+            stageShare: stageShare, costShareHtml: costShareHtml, subtabsHtml: subtabsHtml,
+            dashLive: dashLive, dashGate: dashGate, dashSpend: dashSpend, dashRecent: dashRecent, dashPage: dashPage,
+            NAV_TREE: NAV_TREE,
         };
     }
     if (!doc) return;
