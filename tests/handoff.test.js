@@ -102,6 +102,43 @@ test('an over-wide header is refused with its width and the cap', () => {
   assert.match(got.detail, /"15 條一起 design" is 16 columns, 12 is the cap/);
 });
 
+// 2026-09-24: two single-variable rounds on this session's own build-stage
+// gate isolated option label width, not description length, as the reason
+// AskUserQuestion silently dropped a stage agent's real gate on 5 of 6 gates
+// on 09-24. A 73-column label was dropped; a 20-column label (paired with a
+// 385-column description) went through verbatim. 20 columns is the highest
+// verified-good width, so it is the cap here — not a guess between it and 73.
+test('an option label at exactly 20 columns is still accepted', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'build.md');
+  const g = gateOf('ok');
+  g.questions[0].options[0].label = '一二三四五六七八九十'; // 10 CJK chars, 20 columns
+  fs.writeFileSync(file, block(g));
+  assert.deepEqual(readGate(file), g);
+});
+
+// 2026-09-24: round 1 of the measurement above used a 73-column label and was
+// dropped. This is the boundary one column past the verified-good width.
+test('an option label at 21+ columns is refused with its width and the cap', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'build.md');
+  const g = gateOf('ok');
+  g.questions[0].options[0].label = '一二三四五六七八九十一'; // 11 CJK chars, 22 columns
+  fs.writeFileSync(file, block(g));
+  const got = readGate(file);
+  assert.equal(got.invalid, 'questions[0].options[0].label');
+  assert.match(got.detail, /"一二三四五六七八九十一" is 22 columns, 20 is the cap/);
+});
+
+// 2026-09-24: round 2 of the measurement paired a short (20-column) label
+// with a 385-column description and it was still shown correctly — no
+// evidence description length matters, so it stays uncapped.
+test('a 200+ column description is not capped', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'build.md');
+  const g = gateOf('ok');
+  g.questions[0].options[0].description = '字'.repeat(200); // 400 columns
+  fs.writeFileSync(file, block(g));
+  assert.deepEqual(readGate(file), g);
+});
+
 test('option one names the next stage when one is given, or standing down at the end', () => {
   const file = path.join(tmp('fankeel-handoff-'), 'verify.md');
   const g = gateOf('v');
@@ -109,7 +146,7 @@ test('option one names the next stage when one is given, or standing down at the
   fs.writeFileSync(file, block(g));
   assert.equal(readGate(file, 'audit').invalid, 'questions[0].options[0].label');
   assert.deepEqual(readGate(file), g);
-  g.questions[0].options[0].label = '進 audit (Recommended)';
+  g.questions[0].options[0].label = '進 audit'; // narrowed to fit MAX_LABEL_WIDTH; this test is about naming, not width
   fs.writeFileSync(file, block(g));
   assert.deepEqual(readGate(file, 'audit'), g);
   g.questions[0].options[0].label = 'Stand down';
