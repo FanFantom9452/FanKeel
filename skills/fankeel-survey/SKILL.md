@@ -300,6 +300,23 @@ edits land.
 One-way. Hidden complexity found mid-task upgrades the route — stop, say so, and
 re-route with `task.js route`. Nothing downgrades mid-task.
 
+## Waiting tasks
+
+A task started by picking `## Waiting` at `/fankeel` arrives on
+`--route "survey,build,land"`, and this stage's job on it is narrower than the
+six steps above: judge the due timings only. An event whose evidence sits in
+the repository, its registry (`.fankeel/sessions/*.json` and the like) or
+upstream is checked there directly, the same way the rest of this stage checks
+anything. The timings that are witness-only — something only a person could
+have seen happen, with no trace anywhere checkable — are never folded into
+this stage's own strategic gate question, and never asked one by one either:
+every one of them goes into exactly one `AskUserQuestion` call with
+`multiSelect: true`, one option per such timing, that option's `description`
+naming its event, and the question itself asking which of these has happened.
+That question is asked before this stage's own gate — the ordinary three-option
+one from the Output section below — never merged into it: the gate stays a
+separate, later question.
+
 ## Output
 
 ```
