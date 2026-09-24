@@ -674,6 +674,40 @@ thresholds the design set (a controller of at most 60 turns and a last gate belo
 200k — [2026-09-22-all-stages-brain-promoted.md](decisions/2026-09-22-all-stages-brain-promoted.md)
 has the current record). That run has not happened.
 
+## A user's own sentence, behind `prompt.*`
+
+`stage.agents`, `dispatch.floor` and the rest above are all from a fixed
+list of values. `prompt.*` is the one profile family that is free text: set
+`prompt.all` and any of `prompt.survey`, `prompt.design`, `prompt.plan`,
+`prompt.build`, `prompt.verify`, `prompt.audit` or `prompt.land` with
+`node scripts/task.js profile set prompt.<key> "<sentence>"` and that sentence
+is appended as the rules block's last line, `  - <sentence>`, on every prompt
+that block reaches — `prompt.all` first, then `prompt.<the current stage>`,
+so a task with both set carries two extra rule lines, not one
+(`lib/render.js:118`, `function promptRules(values, stage) {`). `parsePrompt`
+in `lib/profile.js` holds it to one line and 200 characters — trimmed but not
+lowercased, and refused if it is empty, carries a newline, or runs long
+(`lib/profile.js:140`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
+`promptRules` is called once, inside `rulesLines`
+(`lib/render.js:164`, `.concat(promptRules(values, data && data.stage));`),
+and by `controlBlock` for a controlled stage's own block
+(`lib/render.js:135`, `return control && Object.assign({}, control, { rules: control.rules.concat(promptRules(values, stage)) });`),
+so `render`, `renderResume` and `renderBrainBrief` — every path that calls
+`rulesLines` — all carry it, controlled stage or not. `renderBrief`, the brief
+a reader, reviewer, fixer or implementer gets, never calls `rulesLines` and so
+never reaches `promptRules` — that return goes to the controller, not to
+whoever typed the sentence
+(`lib/render.js:116`, `never reaches this — a reader's return is`).
+
+Setting the key prints what it costs: the estimated tokens the injected line
+adds per prompt, and each stage's remaining room under the reference-root
+2400-character cap with the profile as it now reads — a warning, never a
+refusal, since the cap belongs to the tests and the sentence belongs to the
+user (`scripts/task.js:936`, `set anyway; this is a warning, not a refusal`)
+— computed in `cmdProfile`'s `set` branch off `input-check.js`'s
+`estimateTokens` and `lib/render.js`'s `blockSizes`
+(`scripts/task.js:929`, `const n = estimateTokens('\n  - ' + out.value);`).
+
 ## What a controlled `build` and `verify` have not been run through
 
 `survey` is the only controlled stage anything has run end to end. A whole-branch
