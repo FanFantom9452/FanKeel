@@ -387,14 +387,26 @@ context, or, for a workflow's agent, that its result went into the workflow's.
 A session with no dispatch yet says so, and under `serve` says the next re-read
 will show one.
 
-**過程還原** is one row per event in time order: prompts (their first sixty
-characters), stage moves, each gate's question and the answer chosen, each
-dispatch out and back, the files each turn edited (one row per turn), each
-commit's subject and each test run's `ℹ pass` and `ℹ fail` lines. A dispatch's
-row opens into its own steps — what it read, edited and ran — from its own
-transcript, capped at forty with edits and commands kept first. Past 300 rows
-only the gates, stage moves, commits and dispatches are kept and the page says
-how many were dropped.
+**過程還原** is the session's events in time order, in one folding section
+per stage it entered (`segmentsOf` in `assets/station/station.js`: an event
+belongs to the last stage entered at or before it, the way `windowsFrom` in
+`lib/registry.js` buckets). Above the sections sit a strip of each stage's
+share of the time, with each gate's wait hatched over it, and of its dollars;
+a table of contents by segment listing its gates, dispatches and commits; and
+the kind filter with 全部展開. Each segment's header carries its time, its
+context burn and its dollars, all off the session row's `stages` — the same
+figures the summary table prints — and a line under the strip adds the
+headers' burn up against the session's `burn`, `＝` or `≠`. The rows are
+prompts (their first sixty characters), stage moves, each gate's question
+with the options offered and the answer chosen, each dispatch out and back,
+the files each turn edited (one row per turn, folded to a count), each
+commit's subject and each test run's `ℹ pass` and `ℹ fail` lines. A
+dispatch's row is a card from out to back that opens into its own steps —
+what it read, edited and ran — from its own transcript, capped at forty with
+edits and commands kept first. Past 300 rows only the gates, stage moves,
+commits and dispatches are kept and the page says how many were dropped.
+Every block the page draws here carries its `data-block` name literally in
+`assets/station/station.js`, so `tune.js`'s live mode can point at it.
 
 Beside each rise with a cause and each backtrack sits **記成 TODO**: a line
 starting `〔station〕`, prefilled with what the panel just showed, and a link.

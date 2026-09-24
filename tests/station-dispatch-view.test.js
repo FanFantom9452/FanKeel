@@ -4,6 +4,8 @@
 // rows handed in.
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 global.window = { STATION: { serve: false, pricesVerified: '2026-09-04' } };
 const V = require('../assets/station/station.js');
@@ -356,4 +358,66 @@ test('a workflow phase agent a stage agent dispatched is indented under it as a 
     const parent = html.indexOf('data-ag="ab10"');
     const kid = html.indexOf('<tr class="wa kid');
     assert.ok(parent >= 0 && parent < kid, [parent, kid].join(' '));
+});
+
+// §4 of the 2026-09-24 design: the replay in segments, one per stage, whose
+// headers add up to the session's burn.
+const ROW = { burn: 3500, stages: [
+    { stage: 'survey', from: 0, to: 900, burn: 1000, usd: 0.5, waited: null },
+    { stage: 'build', from: 900, to: 70000, burn: 2500, usd: 1.25, waited: 15000 },
+] };
+
+test('the replay is one segment per stage, and the segment headers add up to the session burn', () => {
+    const html = V.replayHtml(x, {}, ROW);
+    const heads = [...html.matchAll(/data-block="segment-header" data-burn="(\d*)"/g)].map((m) => Number(m[1] || 0));
+    assert.deepEqual(heads, [1000, 2500]);
+    assert.equal(heads.reduce((a, b) => a + b, 0), ROW.burn);
+    assert.match(html, /各段 context 相加 <b>3,500<\/b> <span class="eq">＝<\/span> 這個 session 的 burn 3,500/);
+    assert.match(V.replayHtml(x, {}, Object.assign({}, ROW, { burn: 3600 })), /class="ne">≠/);
+    const survey = html.slice(html.indexOf('id="rs-0"'), html.indexOf('id="rs-1"'));
+    assert.deepEqual([...survey.matchAll(/<li data-kind="(\w+)"/g)].map((m) => m[1]), ['prompt', 'gate']);
+    const build = html.slice(html.indexOf('id="rs-1"'));
+    assert.deepEqual([...build.matchAll(/<li data-kind="(\w+)"/g)].map((m) => m[1]), ['out', 'back', 'commit']);
+});
+
+test('V.segmentsOf buckets events into their stage by t against each stage\'s from', () => {
+    const events = [{ t: -100, kind: 'prompt' }, { t: 500, kind: 'stage' }, { t: 900, kind: 'out' }, { t: 50000, kind: 'commit' }];
+    const segs = V.segmentsOf(events, ROW.stages);
+    assert.deepEqual(segs.map((s) => s.stage), [null, 'survey', 'build']);
+    assert.deepEqual(segs[0].rows.map((r) => r.i), [0]);
+    assert.deepEqual(segs[1].rows.map((r) => r.i), [1]);
+    assert.deepEqual(segs[2].rows.map((r) => r.i), [2, 3]);
+});
+
+test('V.segmentsOf drops the loose bucket when every event lands inside a stage', () => {
+    const events = [{ t: 0 }, { t: 900 }];
+    const segs = V.segmentsOf(events, ROW.stages);
+    assert.deepEqual(segs.map((s) => s.stage), ['survey', 'build']);
+});
+
+test('every replay block the mockup names is written literally in the source that draws it', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    for (const n of ['cost-strip', 'toc', 'filter-bar', 'segment-header', 'gate-pair', 'agent-dispatch', 'tool-collapsed', 'tool-output']) {
+        assert.ok(src.includes('data-block="' + n + '"'), n + ' is not written literally in assets/station/station.js');
+    }
+});
+
+test('an edit row and a dispatch\'s steps start folded to one line, and the page can open them all', () => {
+    const withEdit = Object.assign({}, x, { events: x.events.concat([{ t: 63000, kind: 'edit', turn: 6, files: [{ f: 'lib/a.js', n: 2 }, { f: 'lib/b.js', n: 1 }] }]) });
+    const html = V.replayHtml(withEdit, {}, ROW);
+    assert.match(html, /<details class="tc" data-block="tool-collapsed" data-key="tc-5"><summary><span class="tg edit">改檔<\/span>改了 2 個檔<\/summary><div class="to" data-block="tool-output"><span class="fl">lib\/a\.js ×2<\/span>/);
+    assert.match(html, /<details class="stw" data-block="tool-collapsed"/);
+    assert.doesNotMatch(html, /<details class="(tc|stw)"[^>]* open/);
+    assert.match(html, /data-xall>全部展開<\/button>/);
+    assert.match(html, /data-block="gate-pair"><span class="tg gate">gate<\/span>/);
+    assert.match(html, /data-block="agent-dispatch"><span class="tg out">派出<\/span>Review task 1/);
+});
+
+test('without a session row the replay is one segment, every row still there, with its contents and filter', () => {
+    const html = V.replayHtml(x);
+    assert.equal(count(html, /data-block="segment-header"/g), 1);
+    assert.equal(count(html, /<li data-kind=/g), 5);
+    assert.match(html, /data-block="toc"/);
+    assert.match(html, /data-block="filter-bar"/);
+    assert.doesNotMatch(html, /各段 context 相加/, 'no session row, no burn to add up to');
 });

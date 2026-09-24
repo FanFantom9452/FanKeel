@@ -77,7 +77,6 @@ what gets scheduled.
 
 ## Needs a decision
 
-- 〔station〕點進單一 session 後的回放呈現：history message 資料已還原，呈現還能更好（使用者 09-24 提），屬 station 前端最佳化 — [docs/station.md](docs/station.md).
 
 ## Waiting
 

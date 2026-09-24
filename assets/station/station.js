@@ -1393,7 +1393,7 @@
             statePill: statePill, clearStaleControl: clearStaleControl,
             openSections: openSections, downsample: downsample, lineChart: lineChart,
             riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
-            dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, splitHtml: splitHtml,
+            dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, segmentsOf: segmentsOf, splitHtml: splitHtml,
             splitCount: splitCount,
             pendingGateHtml: pendingGateHtml, todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
             figures: figures, compareHtml: compareHtml,
@@ -1773,7 +1773,7 @@
         var body = r.tab === 'cost' ? costHtml(costModel(s.days), x)
             : !x ? detailNote(s)
                 : r.tab === 'dispatch' ? '<div class="det">' + dispatchHtml(x, s, dispatchUi(s)) + '</div>'
-                    : r.tab === 'events' ? '<div class="det">' + replayHtml(x, view.kinds) + '</div>'
+                    : r.tab === 'events' ? '<div class="det">' + replayHtml(x, view.kinds, s) + '</div>'
                         : '<div class="lane-legend"><span><i class="hatchsw"></i>等你回答（gate）</span>'
                         + '<span><i class="sw ln" style="background:var(--ctx)"></i>主 session context</span>'
                         + MODEL_KEYS.map(function (k) {
@@ -2038,7 +2038,7 @@
             + sec('s-split', '分工', splitCount(x), splitHtml(x), open)
             + sec('s-tasks', '任務', taskCount(x.tasks), tasksHtml(x.tasks), open)
             + sec('s-disp', '派工', x.rows.length + ' 個 agent · ' + cents(x.agentCents), dispatchHtml(x, s, dispatchUi(s)), open)
-            + sec('s-rp', '過程還原', x.events.length + ' 列', replayHtml(x, view.kinds), open);
+            + sec('s-rp', '過程還原', x.events.length + ' 列', replayHtml(x, view.kinds, s), open);
     }
 
     // Which sections start open. A live session is watched for who is in which
@@ -2614,8 +2614,8 @@
         if (!ids.length) return '';
         var shown = 0, total = 0;
         ids.forEach(function (id) { shown += x.steps[id].steps.length; total += x.steps[id].steps.length + x.steps[id].droppedN; });
-        return '<details class="stw" data-key="stw-' + esc(d.key) + '"><summary class="rpx">展開它自己的步驟 <span class="n">' + shown + ' / ' + total + ' 步'
-            + (ids.length > 1 ? ' · ' + ids.length + ' agents' : '') + '</span></summary>' + ids.map(function (id) {
+        return '<details class="stw" data-block="tool-collapsed" data-key="stw-' + esc(d.key) + '"><summary class="rpx">展開它自己的步驟 <span class="n">' + shown + ' / ' + total + ' 步'
+            + (ids.length > 1 ? ' · ' + ids.length + ' agents' : '') + '</span></summary>' + '<div class="to" data-block="tool-output">' + ids.map(function (id) {
                 var st = x.steps[id];
                 var r = x.rows.filter(function (y) { return y.id === id; })[0];
                 return (ids.length > 1 ? '<div class="stg">' + esc(r ? r.label : id) + '</div>' : '')
@@ -2627,48 +2627,175 @@
                     }).join('') + '</ul>'
                     + (st.droppedN ? '<p class="stn">上限 40 步，另有 ' + st.droppedN + ' 步沒列出（'
                         + Object.keys(st.dropped).map(function (k) { return stepLabel(k) + ' ' + st.dropped[k]; }).join('、') + '）</p>' : '');
-            }).join('') + '</details>';
+            }).join('') + '</div></details>';
     }
-    // One row per event in time order. Each dispatch's row opens into its
-    // own steps, read from its own transcript; each kind can be hidden.
-    function replayHtml(x, hidden) {
-        var off = hidden || {};
-        var KINDS = [['prompt', 'prompt'], ['stage', '階段'], ['gate', 'gate'], ['out', '派出'], ['back', '回來'],
+    // The replay in segments, the direction the 2026-09-24 mockup approved:
+    // a strip of what each stage took, a table of contents by segment, the
+    // kind filter, then one folding section per stage. `s` is the session's
+    // row: its `stages` carry each segment's window, `burn` and `usd` — the
+    // same figures the summary table prints, and the only ones that add up to
+    // the session's `burn`. Without it the rows are one segment.
+    // A function, not a var: the module export above returns before a var
+    // this far down is assigned, and a declaration is hoisted.
+    function rpKinds() {
+        return [['prompt', 'prompt'], ['stage', '階段'], ['gate', 'gate'], ['out', '派出'], ['back', '回來'],
             ['edit', '改檔'], ['commit', 'commit'], ['test', '測試']];
-        var tag = {};
-        KINDS.forEach(function (k) { tag[k[0]] = k[1]; });
-        var count = {};
-        x.events.forEach(function (e) { count[e.kind] = (count[e.kind] || 0) + 1; });
-        var bar = '<div class="rpf" role="group" aria-label="事件種類">' + KINDS.map(function (k) {
-            return '<button type="button" data-rk="' + k[0] + '" data-key="rk-' + k[0] + '" aria-pressed="' + !off[k[0]] + '">' + k[1] + '<span class="n">'
-                + (count[k[0]] || 0) + '</span></button>';
-        }).join('') + '</div>';
-        var list = x.events.map(function (e) {
+    }
+    // Each event goes to the last stage entered at or before it, the way
+    // `windowsFrom` in lib/registry.js buckets; one before every stage, or
+    // with no time, goes to a segment of its own.
+    function segmentsOf(events, stages) {
+        var st = (stages || []).filter(function (w) { return w && isNum(w.from); })
+            .slice().sort(function (a, b) { return a.from - b.from; });
+        var segs = st.map(function (w) {
+            return { stage: w.stage, from: w.from, to: isNum(w.to) ? w.to : null, burn: isNum(w.burn) ? w.burn : null,
+                usd: isNum(w.usd) ? w.usd : null, waited: isNum(w.waited) ? w.waited : null, rows: [] };
+        });
+        var loose = { stage: null, from: null, to: null, burn: null, usd: null, waited: null, rows: [] };
+        (events || []).forEach(function (e, i) {
+            var k = -1;
+            if (isNum(e.t)) for (var j = 0; j < segs.length; j++) if (segs[j].from <= e.t) k = j;
+            (k < 0 ? loose : segs[k]).rows.push({ e: e, i: i });
+        });
+        return (loose.rows.length || !segs.length ? [loose] : []).concat(segs);
+    }
+    function rpTag(kind, extra) {
+        var name = kind;
+        rpKinds().forEach(function (k) { if (k[0] === kind) name = k[1]; });
+        return '<span class="tg ' + esc(kind) + (extra ? ' ' + extra : '') + '">' + esc(name) + '</span>';
+    }
+    // A span of milliseconds to the second, the way the mockup reads a
+    // segment's time; `mins` rounds too hard for a stage of a few minutes.
+    function took(ms) { return isNum(ms) ? dur(Math.round(Math.max(ms, 0) / 1000)) : '—'; }
+    function replayRow(x, e, i, off) {
+        var tx;
+        if (e.kind === 'gate') {
+            // The question, the options offered with the one taken marked,
+            // and the answer: a gate reads as the pair it was.
+            tx = '<div class="gp" data-block="gate-pair">' + rpTag('gate')
+                + (isFinite(e.askedAt) ? '等了 ' + dur(Math.round((e.t - e.askedAt) / 1000)) + '<span class="w">' + stamp(e.askedAt).slice(11) + ' 問 → '
+                    + (isFinite(e.t) ? stamp(e.t).slice(11) : '—') + ' 答</span>' : '')
+                + e.qs.map(function (q) {
+                    var labels = Array.isArray(q.labels) ? q.labels : [];
+                    return '<div class="qa"><span class="k">問</span><div class="q">' + esc(q.q)
+                        + (labels.length ? '<div class="opts">' + labels.map(function (l) {
+                            return '<span' + (l === q.a ? ' class="on"' : '') + '>' + esc(l) + '</span>';
+                        }).join('') + '</div>' : '')
+                        + '</div><span class="k">答</span><div class="a">'
+                        + esc(q.a === null ? '（沒有答案）' : q.a) + (q.own ? '<span class="own">自己寫的</span>' : '') + '</div></div>';
+                }).join('') + '</div>';
+        } else if (e.kind === 'out') {
+            // A dispatch is one card from out to back: who went, how long it
+            // was away, what it returned, and its own steps folded.
+            var d = x.dispatches[e.disp];
+            var back = d && isNum(d.back) ? d.back : null;
+            tx = '<div class="ad" data-block="agent-dispatch">' + rpTag('out') + esc(e.text) + '<div class="sub">'
+                + esc(e.surface + (e.agentType ? ' · ' + e.agentType : '') + (e.alias ? ' · ' + e.alias : '')) + '</div>'
+                + (d && isNum(d.out) ? '<div class="span"><span class="tt">' + stamp(d.out).slice(11) + '</span><span class="ln' + (back === null ? ' open' : '') + '"></span>'
+                    + '<span class="tt">' + (back === null ? '還沒回來' : stamp(back).slice(11) + ' · ' + took(back - d.out)
+                        + (isNum(d.ret) ? ' · 回傳 ' + comma(d.ret) + ' 字元' : '')) + '</span></div>' : '')
+                + stepsFor(x, d) + '</div>';
+        } else if (e.kind === 'edit') {
+            tx = '<details class="tc" data-block="tool-collapsed" data-key="tc-' + i + '"><summary>' + rpTag('edit') + '改了 ' + e.files.length + ' 個檔</summary>'
+                + '<div class="to" data-block="tool-output">' + e.files.map(function (f) {
+                    return '<span class="fl">' + esc(f.f) + (f.n > 1 ? ' ×' + f.n : '') + '</span>';
+                }).join('、') + '</div></details>';
+        } else {
             var body;
-            if (e.kind === 'prompt') body = esc(e.text) + (e.cmd ? '<div class="sub">' + esc(e.cmd) + '</div>' : '');
+            if (e.kind === 'prompt') body = '<span class="q">' + esc(e.text) + '</span>' + (e.cmd ? '<div class="sub">' + esc(e.cmd) + '</div>' : '');
             else if (e.kind === 'stage') {
                 body = esc(e.verb === 'stage' ? e.stage : e.verb + (e.stage ? ' · ' + e.stage : ''))
                     + (e.text ? '<div class="sub">' + esc(e.text) + '</div>' : '');
-            } else if (e.kind === 'gate') {
-                body = (isFinite(e.askedAt) ? '等了 ' + dur(Math.round((e.t - e.askedAt) / 1000)) : '') + e.qs.map(function (q) {
-                    return '<div class="qa"><div class="q">' + esc(q.q) + '</div><div class="a">'
-                        + esc(q.a === null ? '（沒有答案）' : q.a) + (q.own ? '<span class="own">自己寫的</span>' : '') + '</div></div>';
-                }).join('');
-            } else if (e.kind === 'out') {
-                body = esc(e.text) + '<div class="sub">' + esc(e.surface + (e.agentType ? ' · ' + e.agentType : '')
-                    + (e.alias ? ' · ' + e.alias : '')) + '</div>' + stepsFor(x, x.dispatches[e.disp]);
             } else if (e.kind === 'back') {
                 body = esc(e.text) + '<div class="sub">回傳 ' + (e.ret === null || e.ret === undefined ? '—' : comma(e.ret) + ' 字元') + '</div>';
-            } else if (e.kind === 'edit') {
-                body = e.files.map(function (f) { return '<span class="fl">' + esc(f.f) + (f.n > 1 ? ' ×' + f.n : '') + '</span>'; }).join('、');
             } else if (e.kind === 'commit') body = '<span class="sha">' + esc(e.sha) + '</span>' + esc(e.text);
             else body = esc(e.text);
-            return '<li data-kind="' + esc(e.kind) + '"' + (off[e.kind] ? ' hidden' : '') + ' data-t="' + (isFinite(e.t) ? e.t : '') + '"><span class="tm">'
-                + (isFinite(e.t) ? stamp(e.t).slice(11) : '—') + '</span><div class="tx"><span class="tg ' + esc(e.kind) + '">'
-                + esc(tag[e.kind] || e.kind) + '</span>' + body + '</div></li>';
+            tx = rpTag(e.kind, e.kind === 'test' && /ℹ fail 0(?!\d)/.test(e.text || '') ? 'ok' : '') + body;
+        }
+        return '<li data-kind="' + esc(e.kind) + '" id="rv-' + i + '"' + (off[e.kind] ? ' hidden' : '') + ' data-t="' + (isFinite(e.t) ? e.t : '') + '"><span class="tm">'
+            + (isFinite(e.t) ? stamp(e.t).slice(11) : '—') + '</span><div class="tx">' + tx + '</div></li>';
+    }
+    function replayHtml(x, hidden, s) {
+        var off = hidden || {};
+        var count = {};
+        x.events.forEach(function (e) { count[e.kind] = (count[e.kind] || 0) + 1; });
+        var segs = segmentsOf(x.events, s && s.stages);
+        var span = function (g) { return isNum(g.from) && isNum(g.to) ? Math.max(g.to - g.from, 0) : null; };
+        var total = segs.reduce(function (n, g) { return n + (span(g) || 0); }, 0);
+        var usdAll = segs.reduce(function (n, g) { return n + (g.usd || 0); }, 0);
+        var waitAll = segs.reduce(function (n, g) { return n + (g.waited || 0); }, 0);
+        var name = function (g) { return g.stage || '未分段'; };
+        var color = function (g) { return STAGE_C[g.stage] || '#888'; };
+        var burnSum = segs.reduce(function (n, g) { return n + (g.burn || 0); }, 0);
+        var pct = function (v) { return Math.min(Math.max(v, 0), 100).toFixed(1) + '%'; };
+        // Where the session sat waiting on a gate, hatched over the stage it
+        // was asked in: each gate row's askedAt to its answer, placed inside
+        // its own segment's share of the track.
+        var waits = function (g) {
+            var sp = span(g);
+            if (!sp) return '';
+            return g.rows.filter(function (r) { return r.e.kind === 'gate' && isNum(r.e.askedAt) && isNum(r.e.t); }).map(function (r) {
+                var a = Math.max(r.e.askedAt, g.from), b = Math.min(r.e.t, g.to);
+                if (b <= a) return '';
+                return '<i class="wait" style="left:' + pct((a - g.from) / sp * 100) + ';width:' + pct((b - a) / sp * 100) + '"></i>';
+            }).join('');
+        };
+        var track = function (label, value, share, text) {
+            return '<span class="lab">' + label + '</span><div class="trk">' + segs.map(function (g, k) {
+                var w = share(g);
+                if (!w) return '';
+                return '<button type="button" class="rs" data-rs="rs-' + k + '" style="flex:0 0 ' + w.toFixed(1) + '%;background:' + color(g) + '" title="'
+                    + esc(name(g)) + ' · ' + took(span(g)) + ' · context ' + tokens(g.burn) + (g.usd === null ? '' : ' · ' + usd(g.usd)) + '">'
+                    + (w > 9 ? text(g) : '') + (label === '時間' ? waits(g) : '') + '</button>';
+            }).join('') + '</div><span class="val">' + value + '</span>';
+        };
+        var strip = '<div class="rpcs" data-block="cost-strip">' + (total ? '<div class="cs">'
+            + track('時間', took(total), function (g) { return span(g) === null ? 0 : span(g) / total * 100; }, function (g) {
+                return esc(name(g)) + '<span class="v">' + took(span(g)) + '</span>';
+            })
+            + (usdAll ? track('花費', usd(usdAll), function (g) { return (g.usd || 0) / usdAll * 100; }, function (g) { return usd(g.usd); }) : '')
+            + '<div class="key">' + (waitAll ? '<span><i class="sw hatch"></i>等你回答 gate（' + took(waitAll) + '，佔 '
+                + Math.round(waitAll / total * 100) + '%）</span>' : '') + '<span>點一段就跳到那個階段</span></div></div>' : '')
+            + (s ? '<p class="tally">各段 context 相加 <b>' + comma(burnSum) + '</b> <span class="' + (burnSum === (s.burn || 0) ? 'eq">＝' : 'ne">≠')
+                + '</span> 這個 session 的 burn ' + comma(s.burn || 0) + '</p>' : '') + '</div>';
+        var KEY = { gate: 1, out: 1, commit: 1 };
+        var keyText = function (e) {
+            var t = e.kind === 'gate' ? (e.qs[0] ? (e.qs[0].a === null ? '（沒有答案）' : e.qs[0].a) : '')
+                : e.kind === 'commit' ? e.sha + ' ' + e.text : e.text;
+            return String(t || '').slice(0, 40);
+        };
+        var last = null;
+        x.events.forEach(function (e) { if (isNum(e.t) && (last === null || e.t > last)) last = e.t; });
+        var toc = '<nav class="rptoc" data-block="toc" aria-label="段落目錄"><div class="h">目錄</div><ol>' + segs.map(function (g, k) {
+            var keys = g.rows.filter(function (r) { return KEY[r.e.kind]; });
+            return '<li><button type="button" class="rs sg" data-rs="rs-' + k + '"><i class="bar" style="background:' + color(g) + '"></i><b>' + esc(name(g)) + '</b>'
+                + '<span class="d">' + took(span(g)) + '</span><span class="m">' + (isNum(g.from) ? stamp(g.from).slice(11, 16) + ' · ' : '')
+                + 'context ' + tokens(g.burn) + (g.usd === null ? '' : ' · ' + usd(g.usd)) + ' · ' + g.rows.length + ' 列</span></button>'
+                + (keys.length ? '<ol>' + keys.map(function (r) {
+                    return '<li><button type="button" class="rs" data-rs="rv-' + r.i + '"><span class="tm">' + (isFinite(r.e.t) ? stamp(r.e.t).slice(11, 16) : '—')
+                        + '</span>' + rpTag(r.e.kind) + '<span class="kt">' + esc(keyText(r.e)) + '</span></button></li>';
+                }).join('') + '</ol>' : '') + '</li>';
+        }).join('') + '</ol><div class="tf">' + x.events.length + ' 列' + (last === null ? '' : '<br>最後一列 ' + stamp(last).slice(11)) + '</div></nav>';
+        var bar = '<div class="rpf" data-block="filter-bar" role="group" aria-label="事件種類">' + rpKinds().map(function (k) {
+            return '<button type="button" data-rk="' + k[0] + '" data-key="rk-' + k[0] + '" aria-pressed="' + !off[k[0]] + '">' + k[1] + '<span class="n">'
+                + (count[k[0]] || 0) + '</span></button>';
+        }).join('') + '<span class="spacer"></span><button type="button" class="rpx-all" data-xall>全部展開</button></div>';
+        var body = segs.map(function (g, k) {
+            var n = function (kind) { return g.rows.filter(function (r) { return r.e.kind === kind; }).length; };
+            var prev = k > 0 && segs[k - 1].stage ? segs[k - 1].stage + ' → ' + name(g) : 'start';
+            return '<details class="rpseg" id="rs-' + k + '" open><summary class="sh" data-block="segment-header" data-burn="' + (g.burn === null ? '' : g.burn) + '">'
+                + '<i class="band" style="background:' + color(g) + '"></i><div><div class="t"><b>' + esc(name(g)) + '</b>'
+                + (isNum(g.from) ? '<span class="from">' + esc(prev) + ' · ' + stamp(g.from).slice(11) + '</span>' : '')
+                + '<span class="caret" aria-hidden="true">▶</span></div>'
+                + '<div class="ct"><span><b>' + n('gate') + '</b> gate</span><span><b>' + n('out') + '</b> 派出</span><span><b>' + n('commit') + '</b> commit</span>'
+                + '<span>' + g.rows.length + ' 列</span></div></div>'
+                + '<dl class="m"><dt>耗時</dt><dd class="big">' + took(span(g)) + '</dd><dt>context</dt><dd>' + tokens(g.burn) + '</dd>'
+                + (g.usd === null ? '' : '<dt>花費</dt><dd>' + usd(g.usd) + '</dd>')
+                + (g.waited ? '<dt>等 gate</dt><dd>' + took(g.waited) + '</dd>' : '') + '</dl></summary>'
+                + '<ol class="rp">' + g.rows.map(function (r) { return replayRow(x, r.e, r.i, off); }).join('') + '</ol></details>';
         }).join('');
-        return bar + '<ol class="rp">' + list + '</ol><p class="tally">' + x.events.length + ' 列'
-            + (x.dropped ? '；超過 300 列，只留 gate、階段、commit 與派工，丟掉了 ' + x.dropped + ' 列' : '') + '</p>';
+        return '<div class="rpw">' + strip + '<div class="rpb">' + toc + '<div class="rpm">' + bar + body + '<p class="tally">' + x.events.length + ' 列'
+            + (x.dropped ? '；超過 300 列，只留 gate、階段、commit 與派工，丟掉了 ' + x.dropped + ' 列' : '') + '</p></div></div></div>';
     }
 
     // ---- 記成 TODO -------------------------------------------------------
@@ -2890,6 +3017,24 @@
         if (ag) { view.open[ag.getAttribute('data-ag')] = ag.getAttribute('aria-expanded') !== 'true'; repaint(); return; }
         var pm = e.target.closest('[data-prm]');
         if (pm) { view.prm[pm.getAttribute('data-prm')] = pm.getAttribute('aria-expanded') !== 'true'; repaint(); return; }
+        // The replay's strip and contents jump to a segment or a row, opening
+        // the segment it sits in; 全部展開 opens every folded step, or shuts
+        // them all when none is shut.
+        var rs = e.target.closest('[data-rs]');
+        if (rs) {
+            var to = doc.getElementById(rs.getAttribute('data-rs'));
+            if (!to) return;
+            var seg = to.closest('details.rpseg');
+            if (seg) seg.open = true;
+            to.scrollIntoView({ block: 'start' });
+            return;
+        }
+        if (e.target.closest('[data-xall]')) {
+            var folds = doc.querySelectorAll('.rpw details.tc, .rpw details.stw');
+            var shut = [].some.call(folds, function (d) { return !d.open; });
+            [].forEach.call(folds, function (d) { d.open = shut; });
+            return;
+        }
         // A replay kind is hidden or shown again.
         var rk = e.target.closest('[data-rk]');
         if (rk) {
@@ -2915,7 +3060,7 @@
                 li.classList.toggle('hl', hit);
                 if (hit && !first) first = li;
             });
-            if (first) first.scrollIntoView({ block: 'center' });
+            if (first) { var inSeg = first.closest('details.rpseg'); if (inSeg) inSeg.open = true; first.scrollIntoView({ block: 'center' }); }
             return;
         }
         var cb = e.target.closest('input[data-cmp]');
