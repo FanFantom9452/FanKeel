@@ -357,3 +357,14 @@ test('gateMatches: non-array input never matches', () => {
   assert.equal(gateMatches(filed, null), false);
   assert.equal(gateMatches(undefined, undefined), false);
 });
+
+// A model reconstructing the AskUserQuestion call from the handoff file
+// reproduces every value but is not a byte-for-byte copy — key order inside
+// an option or a question can differ from what readGate parsed off the file.
+// That is still a correct copy and must match.
+test('gateMatches: same values, different key order inside an option, still matches', () => {
+  const filed = gateOf('q').questions;
+  const asked = JSON.parse(JSON.stringify(filed));
+  asked[0].options[0] = { description: asked[0].options[0].description, label: asked[0].options[0].label };
+  assert.equal(gateMatches(asked, filed), true);
+});
