@@ -9,7 +9,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawn } = require('node:child_process');
 
 const tmp = require('./tmp.js');
 
@@ -332,4 +332,66 @@ test('stage.agents at survey: a genuinely different question headed with the sta
   const different = { questions: [{ header: 'survey', question: '要不要先開一個新任務？', options: [{ label: '要', description: 'a' }, { label: '不要', description: 'b' }] }] };
   const out = JSON.parse(run(GATE, root, { tool_input: different }));
   assert.equal(out.hookSpecificOutput, undefined, 'a low-overlap question sharing only the header is not an attempted copy');
+});
+
+// gate.station: the hook holds the question while the station can answer it.
+function runAsync(hook, root, payload) {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [hook], { env: Object.assign({}, process.env, { CLAUDE_PROJECT_DIR: root }) });
+    let out = '';
+    child.stdout.on('data', (d) => { out += d; });
+    child.on('close', () => resolve(out));
+    child.stdin.end(JSON.stringify(Object.assign({ session_id: MINE, cwd: root, tool_name: 'AskUserQuestion' }, payload)));
+  });
+}
+const stationOn = (root, secs) => fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'gate.station': secs }));
+const taskDir = (root) => path.join(root, '.fankeel', 'build', 'task-20260919T093012');
+
+test('gate.station: an answer the station writes while the hook waits goes out as the answer', async () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'design', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  stationOn(root, 5);
+  const pending = path.join(taskDir(root), 'design-pending.json');
+  const answer = path.join(taskDir(root), 'design-answer.md');
+  const asked = askOf(QUESTIONS);
+  const done = runAsync(GATE, root, { tool_input: asked });
+  let seen = null;
+  for (let i = 0; i < 50 && !seen; i++) {
+    await new Promise((r) => setTimeout(r, 100));
+    if (fs.existsSync(pending)) seen = JSON.parse(fs.readFileSync(pending, 'utf8'));
+  }
+  assert.ok(seen, 'the hook never wrote the pending file');
+  assert.deepEqual(seen.questions, asked.questions);
+  fs.writeFileSync(answer, JSON.stringify({ answers: { [QUESTIONS[0].question]: '暫停' } }));
+  const out = JSON.parse(await done);
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'allow');
+  assert.deepEqual(out.hookSpecificOutput.updatedInput.answers, { [QUESTIONS[0].question]: '暫停' });
+  assert.deepEqual(out.hookSpecificOutput.updatedInput.questions, asked.questions);
+  assert.equal(fs.existsSync(pending), false, 'the pending file outlived the wait');
+});
+
+test('gate.station: no answer in time leaves the question to the terminal, and an older answer file is not this gate\'s', async () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'design', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  stationOn(root, 1);
+  const answer = path.join(taskDir(root), 'design-answer.md');
+  fs.mkdirSync(taskDir(root), { recursive: true });
+  fs.writeFileSync(answer, JSON.stringify({ answers: { [QUESTIONS[0].question]: '進 design' } }));
+  const past = new Date(Date.now() - 60e3);
+  fs.utimesSync(answer, past, past);
+  const started = Date.now();
+  const out = await runAsync(GATE, root, { tool_input: askOf(QUESTIONS) });
+  assert.equal(out.trim(), '', 'an answer written before the wait was taken for this gate');
+  assert.ok(Date.now() - started >= 900, 'the hook did not wait');
+  assert.equal(fs.existsSync(path.join(taskDir(root), 'design-pending.json')), false);
+});
+
+test('gate.station off: the hook neither waits nor writes a pending file', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'design', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  stationOn(root, 'off');
+  const started = Date.now();
+  assert.equal(run(GATE, root, { tool_input: askOf(QUESTIONS) }).trim(), '');
+  assert.ok(Date.now() - started < 3000);
+  assert.equal(fs.existsSync(path.join(taskDir(root), 'design-pending.json')), false);
 });

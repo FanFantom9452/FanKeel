@@ -1151,6 +1151,12 @@
                 { l: '要，照常顯示', b: '', s: { 'station.hide': 'false' } },
                 { l: '不要，藏起來', b: '私人或暫時的專案。', s: { 'station.hide': 'true' } },
             ] },
+        { id: 'answer', t: '答 gate', q: '要不要在監控站上直接回答 gate？', sub: 'gate 發出後，terminal 先等監控站的答案這麼多秒，逾時才在 terminal 問你；等的時候 terminal 不顯示問題。', keys: ['gate.station'],
+            habits: [
+                { l: '不用，在 terminal 答', b: '', s: { 'gate.station': 'off' } },
+                { l: '等一分鐘', b: '人就在頁面旁邊時。', s: { 'gate.station': '60' } },
+                { l: '等五分鐘', b: '常離開座位、用手機看頁面時。', s: { 'gate.station': '300' } },
+            ] },
     ];
     function wizList(v) { return v === null || v === 'false' ? [] : v === 'true' ? ['survey'] : v === 'all' ? WIZ_STAGES.slice() : v.split(','); }
     function wizNorm(arr) {
@@ -1348,6 +1354,30 @@
             + wizStepsHtml(W) + '</ol><div class="wbody">' + body + '</div></div>';
     }
 
+    // A gate hooks/gate.js is holding for this page (`gate.station`): the
+    // questions, and under `serve` a form whose answer goes to `/answer`.
+    // `picked` is what was ticked before the last re-read, keyed `<id>:<n>`,
+    // so the three-second poll does not clear a half-answered form.
+    function pendingGateHtml(s, picked) {
+        var p = s && s.pending;
+        if (!p || !p.questions || !p.questions.length) return '';
+        var on = picked || {};
+        var left = Math.max(0, Math.round((p.until - (S.serve ? Date.now() : NOW)) / 1000));
+        var qs = p.questions.map(function (q, i) {
+            var had = on[s.id + ':' + i] || [];
+            return '<fieldset class="pgq"><legend>' + esc(q.header || '') + ' · ' + esc(q.question) + '</legend>'
+                + (q.options || []).map(function (o) {
+                    return '<label class="pgo"><input type="' + (q.multiSelect ? 'checkbox' : 'radio') + '" name="pg-' + i + '" value="' + esc(o.label) + '"'
+                        + (had.indexOf(o.label) >= 0 ? ' checked' : '') + (S.serve ? '' : ' disabled') + '> <b>' + esc(o.label) + '</b> <span class="mute">'
+                        + esc(o.description || '') + '</span></label>';
+                }).join('') + '</fieldset>';
+        }).join('');
+        return '<div class="pg" data-block="pending-gate" data-pg-root="' + esc(s.root) + '" data-pg-id="' + esc(s.id) + '">'
+            + '<div class="h2">懸著的 gate <small>terminal 還等 ' + dur(left) + '，逾時就回 terminal 問</small></div>' + qs
+            + (S.serve ? '<div class="act"><button type="button" class="go" data-answer>送出答案</button></div><div class="pgr" role="status" aria-live="polite"></div>'
+                : '<p class="tally">靜態頁不能作答：開 serve 的頁面，或回 terminal 答。</p>') + '</div>';
+    }
+
     // The hero's eyebrow carries the frozen moment too, so a reader who has
     // scrolled past the bar is not reading numbers they take for live. The
     // hh:mm is the caller's, off the same `stamp()` the bar's absolute time
@@ -1365,7 +1395,7 @@
             riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
             dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, splitHtml: splitHtml,
             splitCount: splitCount,
-            todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
+            pendingGateHtml: pendingGateHtml, todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
             figures: figures, compareHtml: compareHtml,
             routeGroups: routeGroups, routeLedger: routeLedger,
             localDay: localDay, lastDays: lastDays, parseHash: parseHash, family: family, sessionTotals: sessionTotals,
@@ -1727,6 +1757,7 @@
     view.prm = {};
     view.ph = {};
     view.kinds = {};
+    view.pg = {};
     view.dfilter = 'all';
     function dispatchUi(s) {
         return { open: view.open, prm: view.prm, ph: view.ph, filter: view.dfilter,
@@ -1760,6 +1791,7 @@
             + (s.model ? '<span class="chip"><i class="sw" style="background:var(--m-' + family(s.model) + ')"></i>主 session <span class="mono">'
                 + esc(s.model) + '</span></span>' : '') + '</div>'
             + railHtml(s, Boolean(S.serve) && s.state === 'live', S.serve ? Date.now() : NOW)
+            + pendingGateHtml(s, view.pg)
             + sessionHeadHtml(s, x) + '</section>'
             + tabsHtml(s, r.tab, x) + '<section class="panel">' + body + '</section>';
     }
@@ -2792,6 +2824,39 @@
         if (lg) {
             chartPin = chartPin === lg.getAttribute('data-key') ? null : lg.getAttribute('data-key');
             chartFocus(chartPin);
+            return;
+        }
+        // 懸著的 gate: a tick is remembered across the poll's re-read, and
+        // 送出答案 posts every question's picks to `/answer`.
+        var pgi = e.target.closest('.pg input');
+        if (pgi) {
+            var pgb = pgi.closest('.pg'), pgn = pgi.getAttribute('name').slice(3);
+            view.pg[pgb.getAttribute('data-pg-id') + ':' + pgn] = [].map.call(pgb.querySelectorAll('input[name="pg-' + pgn + '"]:checked'), function (el) { return el.value; });
+            return;
+        }
+        var ans = e.target.closest('[data-answer]');
+        if (ans) {
+            var pg = ans.closest('.pg'), pgr = pg.querySelector('.pgr');
+            var who = S.sessions.filter(function (x) { return x.id === pg.getAttribute('data-pg-id'); })[0];
+            var answers = {};
+            ((who && who.pending && who.pending.questions) || []).forEach(function (q, i) {
+                var got = [].map.call(pg.querySelectorAll('input[name="pg-' + i + '"]:checked'), function (el) { return el.value; });
+                if (got.length) answers[q.question] = got.join(', ');
+            });
+            var form = new URLSearchParams();
+            form.set('nonce', S.nonce || '');
+            form.set('root', pg.getAttribute('data-pg-root'));
+            form.set('id', pg.getAttribute('data-pg-id'));
+            form.set('answers', JSON.stringify(answers));
+            fetch('answer', { method: 'POST', body: form }).then(function (r) {
+                return r.text().then(function (t) {
+                    pgr.className = 'pgr ' + (r.ok ? 'ok' : 'bad');
+                    pgr.textContent = (r.ok ? '已送出：' : r.status + ' — ') + t.trim();
+                });
+            }, function () {
+                pgr.className = 'pgr bad';
+                pgr.textContent = '送不出去：serve 還在跑嗎？';
+            });
             return;
         }
         // 記成 TODO: the server checks the line and answers with the rule it

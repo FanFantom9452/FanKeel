@@ -77,7 +77,6 @@ what gets scheduled.
 
 ## Needs a decision
 
-- 〔station〕能否在 station 直接答 gate：答案已寫成 `<stage>-answer.md`，缺的是 terminal 裡懸著的 `AskUserQuestion` 怎麼收掉，未實測 — [docs/station.md](docs/station.md).
 - 〔station〕點進單一 session 後的回放呈現：history message 資料已還原，呈現還能更好（使用者 09-24 提），屬 station 前端最佳化 — [docs/station.md](docs/station.md).
 
 ## Waiting

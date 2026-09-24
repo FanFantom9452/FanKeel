@@ -38,11 +38,17 @@
 // controller's own question and goes out as written, with a message saying
 // so when there is something worth saying; every other session gets none of
 // this, and only the time is noted.
+//
+// With `gate.station` set to a number of seconds, every question this hook
+// lets through first waits that long for the station's answer
+// (`stationAnswers` below); one that arrives goes out already answered, and
+// one that does not leaves the question to the terminal.
 
+const fs = require('node:fs');
 const registry = require('../lib/registry.js');
 const profileLib = require('../lib/profile.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
-const { handoffPath, readGate, skipReason, gateMatches } = require('../lib/handoff.js');
+const { handoffPath, answerPath, pendingPath, answersSince, writeAnswer, readGate, skipReason, gateMatches } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 
 // `stage.agents` as the profile holds it, for a sentence.
@@ -74,6 +80,52 @@ function charOverlap(a, b) {
 // does not. Picked against tests/gate.test.js's own cases.
 const ATTEMPT_THRESHOLD = 0.5;
 
+// How often the wait reads the answer file.
+const POLL_MS = 200;
+
+// The station's answers to `questions`, or null. Holds the question for
+// `gate.station` seconds: writes the pending file the station shows, reads the
+// answer file every POLL_MS, and removes the pending file however it ends.
+// Synchronous on purpose — `run(main)` calls main once and does not await it.
+function stationAnswers(root, mine, values, questions) {
+    const wait = values ? values['gate.station'] : 'off';
+    if (!Number.isInteger(wait) || wait <= 0 || !Array.isArray(questions) || !questions.length) return null;
+    const pending = pendingPath(root, mine, mine.stage);
+    const answer = answerPath(root, mine, mine.stage);
+    if (!pending || !answer) return null;
+    const since = Date.now();
+    const nap = new Int32Array(new SharedArrayBuffer(4));
+    try {
+        writeAnswer(pending, JSON.stringify({ questions, at: since, until: since + wait * 1000 }) + '\n');
+        for (;;) {
+            const got = answersSince(answer, since);
+            if (got) return got;
+            if (Date.now() - since >= wait * 1000) return null;
+            Atomics.wait(nap, 0, 0, POLL_MS);
+        }
+    } finally {
+        try { fs.unlinkSync(pending); } catch (e) { /* already gone */ }
+    }
+}
+
+// What this hook has to say, once the station has had its chance: an answer
+// that arrived in time goes out as an allowed call carrying `answers`.
+function emit(out, payload, root, mine, values) {
+    let answers = null;
+    try {
+        answers = stationAnswers(root, mine, values, payload.tool_input && payload.tool_input.questions);
+    } catch (e) { /* housekeeping: the question goes to the terminal */ }
+    if (answers) {
+        out.hookSpecificOutput = {
+            hookEventName: 'PreToolUse',
+            permissionDecision: 'allow',
+            permissionDecisionReason: 'fankeel: answered on the station',
+            updatedInput: Object.assign({}, payload.tool_input, { answers }),
+        };
+    }
+    if (Object.keys(out).length) process.stdout.write(JSON.stringify(out));
+}
+
 function main(raw) {
     const payload = parse(raw);
     if (!payload) return;
@@ -95,8 +147,9 @@ function main(raw) {
     let file = null;
     let controlled = false;
     let agents = 'unset';
+    let values = null;
     try {
-        const values = profileLib.profileFor(root, mine).values;
+        values = profileLib.profileFor(root, mine).values;
         controlled = controlling(mine.stage, values);
         agents = agentsText(values);
         file = handoffPath(root, mine, mine.stage);
@@ -108,10 +161,7 @@ function main(raw) {
     // stage is not controlled. Silent before 2026-09-24, so a question that was
     // never checked left no trace of which condition failed. A message, not a
     // decision: the question still goes out.
-    if (!gate) {
-        if (skip) process.stdout.write(JSON.stringify({ systemMessage: 'fankeel: gate not confirmed — ' + skip + '.' }));
-        return;
-    }
+    if (!gate) return emit(skip ? { systemMessage: 'fankeel: gate not confirmed — ' + skip + '.' } : {}, payload, root, mine, values);
 
     // A gate AskUserQuestion would reject: the file's own gate must be
     // well-formed even though the controller is the one typing it now. Deny
@@ -164,8 +214,7 @@ function main(raw) {
             return;
         }
         skip = skipReason({ stage: mine.stage, controlled, matches: false, agents, inflight: mine.inflight, handoff: file });
-        if (skip) process.stdout.write(JSON.stringify({ systemMessage: 'fankeel: gate not confirmed — ' + skip + '.' }));
-        return;
+        return emit(skip ? { systemMessage: 'fankeel: gate not confirmed — ' + skip + '.' } : {}, payload, root, mine, values);
     }
 
     // The controller's own AskUserQuestion call already copies the file's gate
@@ -176,6 +225,7 @@ function main(raw) {
     try {
         registry.clearInflight(root, payload.session_id);
     } catch (e) { /* housekeeping */ }
+    return emit({}, payload, root, mine, values);
 }
 
 // Deliberately silent. Whatever went wrong, the question still has to reach

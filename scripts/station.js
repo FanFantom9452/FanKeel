@@ -41,6 +41,7 @@ const { serveRecordPath, readServeRecord, probe, diskFingerprint } = require('..
 const { readBody } = require('../lib/body.js');
 const { clearEntry } = require('../lib/clear.js');
 const profile = require('../lib/profile.js');
+const handoff = require('../lib/handoff.js');
 const todoCheck = require('./todo-check.js');
 const view = require('../assets/station/station.js');
 
@@ -498,6 +499,36 @@ async function serve(opts) {
             const out = addTodo(file, view.todoEntry(form.get('text') || '', form.get('link') || ''));
             res.writeHead(out.status, { 'content-type': 'text/plain; charset=utf-8' });
             res.end(out.text + '\n');
+            return;
+        }
+        // A gate hooks/gate.js is holding (`gate.station`): the answer goes to
+        // the file the hook is reading, in the shape hooks/resume.js writes.
+        if (req.method === 'POST' && url.pathname === '/answer') {
+            const form = await formOf();
+            if (!form) return;
+            const model = modelNow();
+            const reg = model.registries.find((r) => r.root === path.resolve(form.get('root') || ''));
+            const mine = reg ? registry.readSession(reg.root, form.get('id') || '') : null;
+            if (!mine) {
+                fail(404, 'no such session on this page');
+                return;
+            }
+            const pending = handoff.readPending(reg.root, mine);
+            if (!pending) {
+                fail(409, 'no gate is waiting on the station for this session');
+                return;
+            }
+            let answers = null;
+            try { answers = JSON.parse(form.get('answers') || ''); } catch (e) { answers = null; }
+            const asked = new Set(pending.questions.map((q) => q && q.question));
+            const keys = answers && typeof answers === 'object' && !Array.isArray(answers) ? Object.keys(answers) : [];
+            if (!keys.length || keys.some((k) => !asked.has(k) || typeof answers[k] !== 'string' || !answers[k].trim())) {
+                fail(400, 'answers maps each question asked to a non-empty answer');
+                return;
+            }
+            handoff.writeAnswer(handoff.answerPath(reg.root, mine, mine.stage), JSON.stringify({ answers }, null, 2) + '\n');
+            res.writeHead(201, { 'content-type': 'text/plain; charset=utf-8' });
+            res.end('answered ' + keys.length + ' question' + (keys.length === 1 ? '' : 's') + '\n');
             return;
         }
         if (req.method === 'POST' && url.pathname === '/profile') {

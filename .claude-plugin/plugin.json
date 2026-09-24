@@ -88,8 +88,8 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/gate.js\"",
-            "timeout": 5,
-            "statusMessage": "Noting when the gate opened..."
+            "timeout": 605,
+            "statusMessage": "Noting when the gate opened, or waiting for the station's answer..."
           }
         ]
       },

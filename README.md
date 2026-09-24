@@ -206,7 +206,7 @@ fankeel/
 ├── hooks/             every hook Claude Code runs; each reads stdin, exits 0 on every path and leaves the work to lib/
 │   ├── inject.js      UserPromptSubmit: the block on every prompt, the init block on /fankeel, the badge
 │   ├── resume.js      PostToolUse on AskUserQuestion: the stage's rules again once a gate is answered
-│   ├── gate.js        PreToolUse on AskUserQuestion: stamps when a gate opened, so the wait can be timed; on a controlled stage it also validates that the controller's own question copies the handoff's gate word for word, denying a botched attempt or a malformed file gate
+│   ├── gate.js        PreToolUse on AskUserQuestion: stamps when a gate opened, so the wait can be timed; on a controlled stage it also validates that the controller's own question copies the handoff's gate word for word, denying a botched attempt or a malformed file gate; with `gate.station` set, it first waits that many seconds for the station's answer
 │   ├── guard.js       PreToolUse on writes, shells and subagent dispatches: the scope guard, read-only agents kept read-only, and no fankeel-brain for a stage stage.agents does not name
 │   ├── touch.js       PostToolUse on Edit, Write, NotebookEdit: the files this task touched
 │   ├── brief.js       SubagentStart: what a subagent is told about the task it was sent from

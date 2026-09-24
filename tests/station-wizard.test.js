@@ -49,7 +49,7 @@ test('the summary lists every profile key, design.skill included, with no dropdo
     const out = summary(load());
     const rows = out.match(/<div class="sr[^"]*" data-key="/g) || [];
     assert.equal(rows.length, Object.keys(KEYS).length);
-    assert.equal(rows.length, 11);
+    assert.equal(rows.length, 12);
     assert.match(out, /data-key="design\.skill"/);
     assert.match(out, /data-block="wizard-summary"/);
     assert.ok(!out.includes('<select'));
@@ -136,5 +136,16 @@ test('every step renders, with no dropdown', () => {
         assert.match(out, /data-block="wizard-steps"/);
         assert.ok(!out.includes('<select'), 'step ' + i);
     }
-    assert.equal(V.WIZ_STEPS.length, 7);
+    assert.equal(V.WIZ_STEPS.length, 8);
+});
+
+test('the 答 gate step sets gate.station, off by default', () => {
+    const W = load();
+    assert.equal(W.val['gate.station'], 'off', 'the builtin');
+    const i = V.WIZ_STEPS.findIndex((s) => s.id === 'answer');
+    assert.equal(i, V.WIZ_STEPS.length - 1, 'the last question, so no earlier step index moves');
+    let W2 = V.wizApply(W, KEYS, PROFILES, { go: String(i) });
+    W2 = V.wizApply(W2, KEYS, PROFILES, { h: '1' });
+    assert.equal(W2.val['gate.station'], '60');
+    assert.deepEqual(V.wizChanges(KEYS, W2, PROFILES).filter((c) => c.key === 'gate.station'), [{ key: 'gate.station', value: '60' }]);
 });

@@ -342,3 +342,15 @@ test('profileFor reads the project the session names, else the registry root', (
     assert.equal(profile.profileFor(d, { project: 'gone', configDir: cfg }).values.guard, 'off', 'a project directory that is not there falls back to the root');
     assert.throws(() => profile.profileFor(d, { configDir: 123 }), 'a configDir that is not a string still throws, for the hook to catch');
 });
+
+test('gate.station is off or whole seconds from 1 to 600, off by default', () => {
+    assert.deepEqual(profile.parseValue('gate.station', 'off'), { value: 'off' });
+    assert.deepEqual(profile.parseValue('gate.station', '60'), { value: 60 });
+    assert.deepEqual(profile.parseValue('gate.station', 90), { value: 90 });
+    for (const bad of ['0', '601', '1.5', 'soon']) {
+        assert.match(profile.parseValue('gate.station', bad).error, /gate\.station is off or a number of seconds from 1 to 600/, bad);
+    }
+    const d = dir();
+    assert.equal(profile.read(d, null).values['gate.station'], 'off');
+    assert.equal(profile.read(d, null).sources['gate.station'], 'builtin');
+});

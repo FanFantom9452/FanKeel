@@ -741,3 +741,12 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 #charttip .tt-sum{margin-top:6px;padding-top:6px;border-top:1px solid var(--rule);color:var(--muted)}
 #charttip .tt-sum b{color:var(--ink);font-family:var(--f-mono)}
 @media(prefers-reduced-motion:reduce){.chart .hseg,#charttip{transition:none}}
+
+/* 懸著的 gate: a question hooks/gate.js is holding for this page */
+.pg{margin:10px 0;padding:10px 12px;border:1px solid var(--ind-2);border-radius:8px;background:var(--soft)}
+.pg .pgq{border:0;margin:8px 0 0;padding:0}
+.pg .pgq legend{font-weight:600;color:var(--fg);margin-bottom:4px}
+.pg .pgo{display:block;padding:3px 0;cursor:pointer}
+.pg .act{margin-top:8px}
+.pg .pgr.ok{color:var(--fg-2)}
+.pg .pgr.bad{color:var(--ind)}
