@@ -168,3 +168,35 @@ test('await.js refuses a missing session and bad arguments, from the command lin
     assert.equal(cli.status, 2);
     assert.match(cli.stdout, /^await\.js: usage: /);
 });
+
+// 2026-09-24: three `lost` reports on a build whose stage agent was still
+// running. `moves` gained a `build` entry after the dispatch, so await
+// recomputed lap 3 and watched `build-3-commit.md` while the agent, briefed at
+// lap 2, wrote `build-2-commit.md`. The in-flight mark carries the lap the
+// brief used, whatever added the move.
+test('await.js watches the lap the in-flight mark carries, not one recomputed from moves', async () => {
+    const moves = [['build', 1], ['build', 2], ['build', 3]];
+    const f = fixture({ moves, inflight: { stage: 'build', at: 1, lap: 2 } });
+    const lap2 = path.join(f.task, 'build-2-commit.md').split(path.sep).join('/');
+    at(lap2, Date.now());
+    const out = await awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '0.5'], f.env);
+    assert.ok(out.text.startsWith('commit ' + lap2 + ' — run'), out.text);
+
+    const g = fixture({ moves, inflight: { stage: 'verify', at: 1, lap: 2 } });
+    const lap3 = path.join(g.task, 'build-3-commit.md').split(path.sep).join('/');
+    at(lap3, Date.now());
+    const other = await awaitCli.main(['--session', SID, '--root', g.root, '--timeout', '0.5'], g.env);
+    assert.ok(other.text.startsWith('commit ' + lap3 + ' — run'), 'a mark for another stage is not this stage\'s lap: ' + other.text);
+});
+
+test('a stage agent starting stamps the lap its brief named on the in-flight mark', () => {
+    const f = fixture({ moves: [['build', 1], ['build', 2]] });
+    const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'hooks', 'brief.js')], {
+        input: JSON.stringify({ session_id: SID, cwd: f.root, hook_event_name: 'SubagentStart', agent_id: 'a3f9c2', agent_type: 'fankeel:fankeel-brain' }),
+        encoding: 'utf8',
+        env: Object.assign({}, process.env, { CLAUDE_PROJECT_DIR: f.root, CLAUDE_CONFIG_DIR: f.config }),
+    });
+    assert.equal(r.status, 0, r.stderr);
+    const mark = JSON.parse(fs.readFileSync(path.join(f.root, '.fankeel', 'sessions', SID + '.json'), 'utf8')).inflight;
+    assert.deepEqual([mark.stage, mark.agentId, mark.lap], ['build', 'a3f9c2', 2]);
+});

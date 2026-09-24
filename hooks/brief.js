@@ -23,6 +23,7 @@
 const registry = require('../lib/registry.js');
 const { renderBrief } = require('../lib/render.js');
 const profileLib = require('../lib/profile.js');
+const { lapOf } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 
 function main(raw) {
@@ -42,9 +43,10 @@ function main(raw) {
     // reads (`controlFor` in lib/stages.js), so an interjection mid-stage is
     // told to SendMessage it rather than start a second one. The parent's
     // record, not an entry for the subagent: `agent_id` is a value here.
+    // `lap` is the one `renderBrief` below builds the brief's paths with.
     if (mine.stage && String(payload.agent_type || '').replace(/^fankeel:/, '') === 'fankeel-brain') {
         try {
-            registry.markInflight(root, payload.session_id, mine.stage, payload.agent_id);
+            registry.markInflight(root, payload.session_id, mine.stage, payload.agent_id, lapOf(mine, mine.stage));
         } catch (e) { /* housekeeping */ }
     }
 

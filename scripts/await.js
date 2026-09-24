@@ -62,8 +62,8 @@ function parseArgs(argv) {
 // where a stage agent writes out of habit when it does not follow the exact
 // path. Both are watched; whichever lands first is the commit found.
 // docs/reports/2026-09-23-brain-wakeup.md.
-function commitCandidates(root, data) {
-    const candidates = [commitPath(root, data, data.stage)];
+function commitCandidates(root, data, lap) {
+    const candidates = [commitPath(root, data, data.stage, lap)];
     if (data.stage === 'build') {
         const plan = newestPlan(root, data.started);
         const ledger = ledgerCommitPath(root, plan, data.stage);
@@ -78,21 +78,26 @@ function waitFor(opts, env) {
     const root = opts.root ? registry.resolveRoot(opts.root) : registry.rootFor({ cwd: process.cwd() });
     const data = registry.readSession(root, opts.session);
     if (!data) return { error: 'no session ' + opts.session + ' under ' + root };
-    const handoff = handoffPath(root, data, data.stage);
+    // The lap the running stage agent was briefed with, off its in-flight mark
+    // (hooks/brief.js). A `moves` entry added after the dispatch — three false
+    // `lost` reports on 2026-09-24 — would otherwise move the watch to a lap the
+    // agent never writes. No mark for this stage: the lap from `moves`, as before.
+    const mark = data.inflight && data.inflight.stage === data.stage ? data.inflight : null;
+    const lap = mark && Number.isInteger(mark.lap) && mark.lap > 0 ? mark.lap : undefined;
+    const handoff = handoffPath(root, data, data.stage, lap);
     if (!handoff) return { error: 'session ' + opts.session + ' has no stage or no started time, so no handoff path' };
     let since = 0;
     try {
-        since = fs.statSync(opts.since || answerPath(root, data, data.stage)).mtimeMs;
+        since = fs.statSync(opts.since || answerPath(root, data, data.stage, lap)).mtimeMs;
     } catch (e) { /* nothing answered yet: any report counts */ }
-    const mark = data.inflight;
-    const agentId = mark && mark.stage === data.stage && typeof mark.agentId === 'string' && mark.agentId ? mark.agentId : null;
+    const agentId = mark && typeof mark.agentId === 'string' && mark.agentId ? mark.agentId : null;
     let activity = () => [];
     const dir = agentId ? sessionDirOf(transcriptOf(data.configDir || configDirOf(env), opts.session)) : null;
     if (dir) {
         const own = path.join(dir, 'subagents', 'agent-' + agentId + '.jsonl');
         activity = () => (fs.existsSync(own) ? agentFiles(dir) : []);
     }
-    return { handoff, commit: commitCandidates(root, data), since, agentId, activity, idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000 };
+    return { handoff, commit: commitCandidates(root, data, lap), since, agentId, activity, idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000 };
 }
 
 // The word first, so the controller's rule can name it; then what to do, so

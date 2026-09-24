@@ -220,13 +220,20 @@ turns and missed the wait this pipeline actually accumulates.
 session dies at a gate — is overwritten by the next one rather than repaired:
 the interval it measured has no end, so there is nothing to recover.
 
-`inflight` — `{ stage, at, agentId? }` — is the other transient field, and not a
+`inflight` — `{ stage, at, agentId?, lap? }` — is the other transient field, and not a
 cost. `hooks/brief.js` writes it through `registry.markInflight` when a
 `fankeel-brain` starts; `hooks/gate.js` deletes it through `registry.clearInflight`
 once that stage's handoff carries a gate; `controlFor` in `lib/stages.js` reads it
 and, while it names the current stage, tells the controller to SendMessage that
 agent rather than dispatch another. `adopt` builds a fresh record and does not
 carry it. [subagents.md](subagents.md) has the two cases it does not cover.
+
+`lap` is the lap `hooks/brief.js` built the brief's handoff and commit paths
+with (`lapOf` in `lib/handoff.js`); while the mark names the current stage,
+`scripts/await.js` watches that lap's files rather than one recomputed from
+`moves`, so a `build` entry added after the dispatch — three false `lost`
+reports on 2026-09-24 — no longer moves the watch off the files the stage agent
+writes.
 
 None of the three reaches the injected block, which is capped at 2400 characters
 and renders its widest stages, `design` and `land`, at 2396 — `node --test tests/render.test.js` prints the
