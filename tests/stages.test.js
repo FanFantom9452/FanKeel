@@ -901,8 +901,16 @@ test('option one is told to run the stage its own label names, not a pre-baked a
   const text = c.rules.join('\n');
   assert.doesNotMatch(text, /\{\{ADVANCE\}\}/, 'a bare, unexplained {{ADVANCE}} would still be the old static wording');
   assert.doesNotMatch(text, /node <plugin>\/scripts\/task\.js stage audit --session sid/, 'option one must not name the forward-next stage regardless of the label just read');
-  assert.match(text, /Option one: strip `\(Recommended\)`, then `node <plugin>\/scripts\/task\.js stage <word>`\/`down` --session sid/, 'option one runs the command built from the label just read, not a baked-in stage, and keeps `down` inside the same command clause as --session');
-  assert.match(text, /— down\/收工 is `down`/, 'a label that says down/收工 runs `down`, not `stage down`');
+  // Round 2 left `--session sid` outside both branches' backticks, sharing one
+  // trailing flag between a backtick-quoted `stage <word>` fragment and a
+  // backtick-quoted `down` fragment joined by a bare slash — neither branch was
+  // a single, self-contained, runnable command. Each assertion below demands
+  // its own command run its own `--session sid` inside its own backtick span;
+  // reverting to the round-2 wording puts `--session sid` outside both spans
+  // and reddens both matches.
+  assert.match(text, /`node <plugin>\/scripts\/task\.js stage <word> --session sid`/, 'the stage-word branch must be one self-contained backtick command including --session');
+  assert.match(text, /`node <plugin>\/scripts\/task\.js down --session sid`/, 'the down branch must be one self-contained backtick command including --session, not a bare down word');
+  assert.match(text, /for down\/收工/, 'a label that says down/收工 runs the down command, not `stage down`');
 });
 
 test('the controller waits out a return that is not a path, and sends a finished agent with no path to the await', () => {
