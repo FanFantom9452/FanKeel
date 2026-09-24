@@ -752,14 +752,10 @@ marks a timing `due` — its date has come, or nobody has re-read it in seven
 days. Its timings are never options one by one — six unpickable rows are how a
 menu stops being read — but every one is listed in that block each time, so what
 is waiting is on screen whether or not it is offered. Picking it starts a task
-with `--route "survey,build,land"`. `survey` judges the due timings only: an
-event whose evidence is in the repository, its registry or upstream is checked
-there, and the ones only a person could have witnessed go into one
-`AskUserQuestion`, `multiSelect`, one option per timing with its event as the
-description — which of these has happened? `build` moves a lifted timing's
-entries together to `## Ready` or `## Needs a decision` and drops its `###` and
-its `lifts when:` line; a timing still waiting gets today's stamp, and one whose
-date came without its event gets a new date. `land` runs `todo-check`. Any other heading, or
+with `--route "survey,build,land"`. `survey`'s own skill and `build`'s own
+skill each carry their half of what that route does with a Waiting task —
+`skills/fankeel-survey/SKILL.md`'s `## Waiting tasks` and
+`skills/fankeel-build/SKILL.md`'s `## Waiting tasks`. `land` runs `todo-check`. Any other heading, or
 none, means clustering by hand — two bullets touching the same file or settling
 the same question are one task and one option, not two. A repository with no
 `TODO.md` is where guessing from the recent commits belongs, one option each,

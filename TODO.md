@@ -78,7 +78,6 @@ what gets scheduled.
 ## Needs a decision
 
 - 〔docs〕要不要 ADR：參考 Trovara 的 `docs/04-architecture/adr/`，只在做架構選擇時寫、不是每個 task 都呼叫；在哪一站、由誰觸發，要人來定 — [docs/documents.md](docs/documents.md).
-- 〔fankeel〕看 survey 是否把只有人看得到的事件放進一次 `multiSelect` 問完、build 是否整批移走並換戳記 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
 
 ## Waiting
 
