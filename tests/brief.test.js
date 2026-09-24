@@ -609,3 +609,11 @@ test('a build brain commits once per ledger.js groups group, never per task', ()
   assert.match(file, /on build once per `ledger\.js groups` group, never per\s+task/);
   assert.doesNotMatch(file, /first for each task or file/);
 });
+
+test('a build brain is told a user task is not its to send', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const build = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.match(build, /One whose Dispatch line says user is not yours to send: `ledger\.js ready` never lists it, the controller runs it with the user after your report, and your report names it on a line `hands: <n>, <n>`\./);
+});

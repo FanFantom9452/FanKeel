@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-// The ledger, from the command line. Ten verbs, because ten is what the build
+// The ledger, from the command line. Twelve verbs, because twelve is what the build
 // loop actually does to it: open it, say a task is done, and — after a compaction
 // — ask what it already knows, and ask which of a plan's tasks may go out together.
 // `lint`, `brief` and `fix` came with the 2026-09-07 plan-quality change: check a
@@ -9,6 +9,7 @@
 // `scan` came the same day: it writes the `groups` report into the ledger, so the
 // build stage's step-3 scan table has one producer instead of a session pasting
 // it in by hand.
+// `ready` and `hands` came on 2026-09-24: which tasks go out now, and which are the user's.
 //
 // **Flags precede the verb.** Everything after it is the user's words, down to a
 // word spelled exactly like a flag. `--plan` and `--root` are both paths, and a
@@ -43,7 +44,7 @@ const STRING_FLAGS = { root: 'root', plan: 'plan', range: 'range' };
 // than four literals for the same reason the flags are a table: `splitAtVerb`
 // reads it too, so that no flag spends one, and two lists of the same verbs
 // drift.
-const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'ready', 'scan', 'ranges', 'lint', 'brief', 'fix']);
+const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'ready', 'hands', 'scan', 'ranges', 'lint', 'brief', 'fix']);
 
 // `strict: false` keeps an unknown flag silent. A declared flag given no value
 // comes back `true` rather than a string, and that is the refusal below: a flag
@@ -484,12 +485,24 @@ function main(argv) {
     if (verb === 'ready') {
         // What the build loop sends next, asked again each time a task lands.
         // The completion set is this plan's own ledger, refused the way `show`
-        // refuses one: none yet, or one belonging to another plan.
+        // refuses one: none yet, or one belonging to another plan. A `user`
+        // task is never sent, so it is never listed — `hands` lists it.
         const { contents, refusal } = readOwnLedger(root, opts);
         if (refusal) return refusal;
         const { text: planText } = readPlan(root, opts.plan);
-        const open = plantasks.ready(plantasks.parseTasks(planText), ledger.completed(contents));
+        const tasks = plantasks.parseTasks(planText);
+        const open = plantasks.ready(tasks, ledger.completed(contents))
+            .filter((n) => tasks.find((t) => t.n === n).dispatch !== 'user');
         return open.length ? open.join('\n') : 'none';
+    }
+
+    if (verb === 'hands') {
+        // The tasks whose Dispatch line reads `user`: the ones the session
+        // holding AskUserQuestion runs with the user, after every dispatched
+        // task and before build's gate.
+        const { text: planText } = readPlan(root, opts.plan);
+        const mine = plantasks.parseTasks(planText).filter((t) => t.dispatch === 'user');
+        return mine.length ? mine.map((t) => t.n + ' — ' + (t.dispatchNote || t.name)).join('\n') : 'none';
     }
 
     if (verb === 'scan') {

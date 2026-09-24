@@ -35,7 +35,8 @@ const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseR
 const profile = require('../lib/profile.js');
 const docs = require('../lib/docs.js');
 const { handoffPath, readGate, lapsUsed } = require('../lib/handoff.js');
-const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT } = require('../lib/render.js');
+const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT, newestPlan } = require('../lib/render.js');
+const plantasks = require('../lib/plantasks.js');
 const { rateFor } = require('../lib/prices.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
@@ -679,6 +680,26 @@ function controllerLines(root, id, data, values) {
     return lines;
 }
 
+// The plan tasks the user does with their own hands: `**Dispatch:** user — …`.
+// Said the moment build opens, to whichever session is running it — the
+// controller when `stage.agents` names build, the session itself otherwise —
+// because that is the one holding AskUserQuestion. A stage agent has no way to
+// ask, and a gate in its handoff cannot carry this: option one of every such
+// gate moves the stage. The answer goes into `note`, which rides every prompt
+// until build's gate. docs/plans/2026-09-24-todo-clear.md, Task 2.
+function handsLines(root, data) {
+    const projectRoot = docs.projectRootsFor(root, data.project ? [data.project] : [])[0] || root;
+    const plan = newestPlan(projectRoot, data.started);
+    if (!plan || plan.endsWith('-design.md')) return null;
+    let text;
+    try { text = fs.readFileSync(plan, 'utf8'); } catch (e) { return null; }
+    const mine = plantasks.parseTasks(text).filter((t) => t.dispatch === 'user');
+    if (!mine.length) return null;
+    return ['hands — ' + path.relative(projectRoot, plan).split(path.sep).join('/') + ':']
+        .concat(mine.map((t) => '  Task ' + t.n + ' — ' + (t.dispatchNote || t.name)))
+        .concat(['Ask the user now, before the first dispatch: after the other tasks and before build\'s gate, in this session with them (Recommended); they do it first and say when; or skip, each becoming a TODO.md entry. Then `task.js note "hands: <the answer>"`.']);
+}
+
 function cmdStage(root, opts) {
     const id = requireSession(opts);
     const name = String(opts.positional[0] || '').toLowerCase();
@@ -749,6 +770,10 @@ function cmdStage(root, opts) {
     // now, as `start` and `task` do, or it dispatches with the last stage's rules.
     const controller = controllerLines(root, id, data, valuesOfRecord(root, data, opts));
     if (controller) line += NL + controller.join(NL);
+    if (name === 'build') {
+        const hands = handsLines(root, data);
+        if (hands) line += NL + hands.join(NL);
+    }
     return line;
 }
 

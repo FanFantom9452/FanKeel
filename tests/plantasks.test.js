@@ -441,3 +441,19 @@ test('ready fails closed on a task with no Files block', () => {
   assert.deepEqual(plantasks.ready([a, bare], []), [1]);
   assert.deepEqual(plantasks.ready([a, bare], [1]), [2]);
 });
+
+test('the first word of a Dispatch line is the task\'s dispatch, and the text after the dash its note', () => {
+  const body = (line) => [
+    '## Task 1: name', '', '**Files:**', '- Modify: `lib/a.js`', '',
+    '**Interfaces:**', '- Consumes: nothing.', '- Produces: nothing.', '',
+    line, '',
+  ].join('\n');
+  const [user] = parseTasks(body('**Dispatch:** user — 跑 /doctor'));
+  assert.equal(user.dispatch, 'user');
+  assert.equal(user.dispatchNote, '跑 /doctor');
+  assert.equal(parseTasks(body('**Dispatch:** implementer, sonnet — transcription.'))[0].dispatch, 'implementer');
+  assert.equal(parseTasks(body('**Dispatch:** in-session — the user said so this session'))[0].dispatch, 'in-session');
+  assert.equal(parseTasks(body('No dispatch line here.'))[0].dispatch, null);
+  const fenced = parseTasks(body('```markdown\n**Dispatch:** user — an example\n```\n\n**Dispatch:** implementer, sonnet'));
+  assert.equal(fenced[0].dispatch, 'implementer', 'a fenced example is not the task\'s own line');
+});
