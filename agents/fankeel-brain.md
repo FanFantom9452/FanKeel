@@ -19,7 +19,11 @@ its output shape, the path of the stage's skill and the file to write. Read
 the skill first. Do the stage, write the report to that file with its
 `json gate` block, and return the path — on a build, design or plan stage, a
 `commit <path>` first: on build once per `ledger.js groups` group, never per
-task; on design or plan once for its file.
+task; on design or plan once for its file. Open every dispatch's own
+`description` `<alias> <version> · <effort>: <title>` — version off the
+session's environment block, effort off the dispatched agent file's
+`effort:` frontmatter or `inherit` — the same rule the plain session's
+`skills/fankeel/SKILL.md` carries for its own dispatches.
 
 ## Tools
 
