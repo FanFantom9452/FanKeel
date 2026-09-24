@@ -480,7 +480,7 @@
         if (bars.disabled) return '<p class="note">' + esc(bars.disabled) + '</p>';
         var W = 1200, H = 318, L = 52, R = 4, T = 26, AX = 48, plotH = H - T - AX, base = T + plotH;
         var n = bars.days.length || 1, slot = (W - L - R) / n, bw = Math.min(24, slot * 0.6);
-        var top = niceTop(bars.max), y = function (v) { return v / top * plotH; };
+        var top = niceTop(bars.max), y = function (v) { return v / top * plotH; }, pal = paletteOf(bars, o);
         var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="近 ' + n + ' 天每日'
             + METRIC_LABEL[o.metric] + '，' + DIM_LABEL[o.dim] + '">';
         [0, 0.25, 0.5, 0.75, 1].forEach(function (f) {
@@ -505,7 +505,7 @@
                 var h = y(b.parts[k]);
                 out += '<rect class="hseg" data-day="' + b.day + '" data-key="' + esc(k) + '" data-cx="' + cx + '" data-href="' + href
                     + '" x="' + x0 + '" y="' + (base - c - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="'
-                    + Math.max(h - 1, 0.5).toFixed(1) + '" style="fill:' + colorOf(o.dim, k, o.dim === 'version' ? bars.keys : o.pkeys) + '"/>';
+                    + Math.max(h - 1, 0.5).toFixed(1) + '" style="fill:' + colorOf(o.dim, k, pal) + '"/>';
                 c += h;
             });
             out += '</g>'
@@ -519,19 +519,110 @@
         });
         return out + '<line class="hguide" x1="0" x2="0" y1="' + T + '" y2="' + base + '"/></svg>';
     }
-    function legendHtml(bars, o) {
-        if (bars.disabled) return '';
-        var own = (o.dim !== 'project' && o.dim !== 'version') ? bars.keys : bars.keys.filter(function (k) {
+    // The order `colorOf` ranks a palette dim by, with the keys in `o.off`
+    // taken out first — so what the filter leaves is ranked, and coloured,
+    // afresh. With nothing off it is the list the chart always used.
+    function paletteOf(bars, o) {
+        var off = o.off || {};
+        return (o.dim === 'version' ? bars.keys : o.pkeys || []).filter(function (k) { return !off[k]; });
+    }
+    // The shown keys that get a legend entry of their own; the rest share
+    // 其他 N 個. Pass an `o` without `off` for the unfiltered grouping.
+    function legendOwn(bars, o) {
+        var off = o.off || {}, rank = paletteOf(bars, o);
+        var keys = bars.keys.filter(function (k) { return !off[k]; });
+        return (o.dim !== 'project' && o.dim !== 'version') ? keys : keys.filter(function (k) {
             if (o.dim === 'version' && k === 'none') return true;
-            var i = (o.dim === 'version' ? bars.keys : o.pkeys).indexOf(k);
+            var i = rank.indexOf(k);
             return i >= 0 && i < 5;
         });
-        return '<span class="muted">由下而上</span>' + own.map(function (k) {
+    }
+    // The shown keys folded into 其他 N 個.
+    function legendRest(bars, o) {
+        var off = o.off || {}, own = legendOwn(bars, o);
+        return bars.keys.filter(function (k) { return !off[k] && own.indexOf(k) < 0; });
+    }
+    // A project's label is `<root tail> / <project>`, and a root tail can be a
+    // long path: the legend shows the part after the last ` / `, or else the
+    // last path segment, and leaves the whole label to the entry's title.
+    function shortLabel(full) {
+        var s = String(full), i = s.lastIndexOf(' / ');
+        if (i >= 0) return s.slice(i + 3);
+        var parts = s.split(/[\\/]/).filter(Boolean);
+        return parts.length > 1 ? parts[parts.length - 1] : s;
+    }
+    // The order hint's tooltip is the SVG's own <title>, so the legend's only
+    // span with a title stays an entry that needs one.
+    var ICON_ORDER = '<svg viewBox="0 0 12 12" width="12" height="12" role="img" aria-label="由下而上"><title>由下而上：列在前面的疊在最底下</title>'
+        + '<path d="M6 10.5V2M3 4.8 6 1.8l3 3"'
+        + ' fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    var ICON_FUNNEL = '<svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M1.8 2.5h10.4L8.3 7.2v3.9l-2.6 1.3V7.2z"'
+        + ' fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+    // `o.off` is the set of keys clicked out of the chart. The legend is the
+    // chart after the filter — its own entries and 其他 re-ranked from what is
+    // shown — plus, dimmed and `data-off`, each hidden key that had an entry
+    // unfiltered, so a click can put it back. 其他 whose members are all hidden
+    // stays as one dimmed entry that puts them back.
+    function legendHtml(bars, o) {
+        if (bars.disabled) return '';
+        var off = o.off || {}, base = { dim: o.dim, pkeys: o.pkeys };
+        var vis = legendOwn(bars, o), rest = legendRest(bars, o), own0 = legendOwn(bars, base);
+        var gone0 = legendRest(bars, base).filter(function (k) { return off[k]; });
+        var own = bars.keys.filter(function (k) { return vis.indexOf(k) >= 0 || (off[k] && own0.indexOf(k) >= 0); });
+        var pal = paletteOf(bars, o), pal0 = paletteOf(bars, base);
+        var full = own.map(function (k) { return keyLabel(o.dim, k, o.names); });
+        var short = full.map(shortLabel);
+        return '<span class="lord">' + ICON_ORDER + '</span>' + own.map(function (k, i) {
             var hint = keyHint(o.dim, k);
-            return '<span data-key="' + esc(k) + '"' + (hint ? ' title="' + esc(hint) + '"' : '') + '><i class="sw" style="background:'
-                + colorOf(o.dim, k, o.dim === 'version' ? bars.keys : o.pkeys) + '"></i>' + esc(keyLabel(o.dim, k, o.names)) + '</span>';
-        }).join('') + (own.length < bars.keys.length
-            ? '<span><i class="sw" style="background:var(--p-5)"></i>其他 ' + (bars.keys.length - own.length) + ' 個</span>' : '');
+            // A short form only where it names one series alone; a label that
+            // is shortened, or long anyway, is clipped and carries its whole self.
+            var s = short.filter(function (x) { return x === short[i]; }).length > 1 ? full[i] : short[i];
+            var cut = s !== full[i] || s.length > 20;
+            var title = [cut ? full[i] : '', hint].filter(Boolean).join('\n');
+            return '<span data-key="' + esc(k) + '"' + (title ? ' title="' + esc(title) + '"' : '') + (off[k] ? ' data-off' : '')
+                + '><i class="sw" style="background:'
+                + colorOf(o.dim, k, off[k] ? pal0 : pal) + '"></i>'
+                + (cut ? '<span class="lt">' + esc(s) + '</span>' : esc(s)) + '</span>';
+        }).join('') + (rest.length
+            ? '<span data-rest><i class="sw" style="background:var(--p-5)"></i>其他 ' + rest.length + ' 個</span>'
+            : gone0.length ? '<span data-rest data-off><i class="sw" style="background:var(--p-5)"></i>其他 ' + gone0.length + ' 個</span>' : '');
+    }
+    // The 篩選 panel: every series one checkbox, grouped the unfiltered way so
+    // the list holds still while boxes are ticked; a swatch is the colour the
+    // chart draws that series in now, or its unfiltered one while it is off.
+    function filterHtml(bars, o) {
+        if (bars.disabled || !bars.keys.length) return '';
+        var off = o.off || {}, base = { dim: o.dim, pkeys: o.pkeys }, own = legendOwn(bars, base), rest = legendRest(bars, base);
+        var pal = paletteOf(bars, o), pal0 = paletteOf(bars, base), n = bars.keys.filter(function (k) { return off[k]; }).length;
+        var row = function (k) {
+            return '<label><input type="checkbox" data-fk="' + esc(k) + '"' + (off[k] ? '' : ' checked') + '><i class="sw" style="background:'
+                + colorOf(o.dim, k, off[k] ? pal0 : pal) + '"></i><span title="' + esc(keyLabel(o.dim, k, o.names)) + '">'
+                + esc(keyLabel(o.dim, k, o.names)) + '</span></label>';
+        };
+        return '<div class="fwrap"><button type="button" class="fbtn" data-fbtn aria-haspopup="true" aria-expanded="' + !!o.panel + '"'
+            + ' aria-label="篩選' + (n ? '：顯示 ' + (bars.keys.length - n) + ' / ' + bars.keys.length : '') + '" title="篩選圖表的系列">' + ICON_FUNNEL
+            + (n ? '<b>' + (bars.keys.length - n) + '/' + bars.keys.length + '</b>' : '') + '</button>'
+            + (o.panel ? '<div class="fpanel" role="group" aria-label="圖表顯示哪些">'
+                + '<div class="fall"><button type="button" data-fall="on">全選</button><button type="button" data-fall="off">全不選</button></div>'
+                + own.map(row).join('')
+                + (rest.length ? '<div class="fsub">其他 ' + rest.length + ' 個</div>' + rest.map(row).join('') : '')
+                + '</div>' : '') + '</div>';
+    }
+    // The bars with the clicked-out series taken away: each day's total and
+    // the max are summed again from what is left, so the axis fits the rest.
+    // `keys` stays whole — the stacking order — and the colours come from
+    // `paletteOf`, which ranks what is left.
+    function visibleBars(bars, o) {
+        var off = o.off || {};
+        var gone = function (k) { return off[k]; };
+        if (bars.disabled || !bars.keys.some(gone)) return bars;
+        var list = bars.days.map(function (b) {
+            var parts = {}, total = 0;
+            Object.keys(b.parts).forEach(function (k) { if (!gone(k)) { parts[k] = b.parts[k]; total += b.parts[k]; } });
+            return { day: b.day, total: total, parts: parts };
+        });
+        return { days: list, keys: bars.keys, disabled: null,
+            max: Math.max.apply(null, list.map(function (b) { return b.total; }).concat([0])) };
     }
     // The hover card for one column of the 30-day chart: the day, the segment
     // under the pointer (none when the pointer is on the column's empty part),
@@ -540,7 +631,7 @@
         var b = null;
         bars.days.forEach(function (d) { if (d.day === day) b = d; });
         if (!b) return '';
-        var pk = o.dim === 'version' ? bars.keys : o.pkeys;
+        var pk = paletteOf(bars, o);
         var sw = function (k) { return '<i class="sw" style="background:' + colorOf(o.dim, k, pk) + '"></i>'; };
         var pct = function (v) { return b.total ? Math.round(v / b.total * 100) + '%' : '—'; };
         var keys = bars.keys.filter(function (k) { return b.parts[k]; });
@@ -556,7 +647,7 @@
             + '<div class="tt-sum">當天合計 <b>' + metricText(o.metric, b.total) + '</b></div>';
     }
     function projectsHtml(rows, o) {
-        return '<div class="h2">專案 <small>近 30 天</small></div>'
+        return '<div class="h2">' + icon('projects') + '專案 <small>近 30 天</small></div>'
             + '<div class="projrow head"><span>專案</span><span>每日花費</span><span class="r">花費</span><span class="r">session</span>'
             + '<span class="r">最後活動</span></div>'
             + (rows.length ? rows.map(function (r) {
@@ -568,7 +659,7 @@
             }).join('') : '<p class="note">這台機器上沒有 session</p>');
     }
     function recentHtml(list, o) {
-        return '<div class="h2">最近 sessions <small>依最後動作，最新在上</small><span class="spacer"></span>'
+        return '<div class="h2">' + icon('sessions') + '最近 sessions <small>依最後動作，最新在上</small><span class="spacer"></span>'
             + '<a class="btn" href="#/list">看全部 →</a></div>'
             + '<div class="tbl-wrap"><table class="t"><thead><tr><th>任務</th><th>專案</th><th>stage</th><th class="r">花費</th>'
             + '<th class="r">token</th><th>狀態</th></tr></thead><tbody>'
@@ -1067,10 +1158,27 @@
             docs: [].concat.apply([], projects.map(function (p) { return p.docs || []; })).length,
         };
     }
+    // One line icon per page, 16px on a 1.5px stroke in currentColor: the left
+    // bar and each page's own header draw the same one, so a page is known by
+    // its shape wherever it is named. Decoration only, hidden from readers.
+    var ICONS = {
+        now: '<circle cx="8" cy="8" r="1.5"/><path d="M5.2 5.2a4 4 0 0 0 0 5.6M10.8 5.2a4 4 0 0 1 0 5.6M3 3a7 7 0 0 0 0 10M13 3a7 7 0 0 1 0 10"/>',
+        days: '<path d="M2 13.5h12M4 11V7.5M7 11V3.5M10 11V6M13 11V8.5"/>',
+        sessions: '<circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.5"/>',
+        projects: '<path d="M2 4.5a1 1 0 0 1 1-1h3.3L8 5h5a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/>',
+        docs: '<path d="M4 1.8h5l3.2 3.2v9.2H4z"/><path d="M8.8 1.8v3.4h3.4M6 8.3h4.2M6 11h4.2"/>',
+        settings: '<path d="M2.5 4h6M11.5 4h2M2.5 8h2M7.5 8h6M2.5 12h7M12.5 12h1"/><circle cx="10" cy="4" r="1.5"/><circle cx="6" cy="8" r="1.5"/><circle cx="11" cy="12" r="1.5"/>',
+        list: '<rect x="2" y="2.8" width="12" height="10.4" rx="1.2"/><path d="M2 6.3h12M2 9.8h12M6 2.8v10.4"/>',
+        cmp: '<rect x="2" y="2.5" width="5" height="11" rx="1"/><rect x="9" y="2.5" width="5" height="11" rx="1"/><path d="M4.5 9.5v1.5M11.5 6.5V11"/>',
+    };
+    function icon(name) {
+        return ICONS[name] ? '<svg class="ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor"'
+            + ' stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + ICONS[name] + '</svg>' : '';
+    }
     function navHtml(active, c) {
         var on = active === 'project' ? 'projects' : active === 'session' ? 'sessions' : active;
         var item = function (v, href, label, badge, cls) {
-            return '<li><a href="' + href + '"' + (on === v ? ' aria-current="page"' : '') + '><span>' + label + '</span>'
+            return '<li><a href="' + href + '"' + (on === v ? ' aria-current="page"' : '') + '>' + icon(v) + '<span>' + label + '</span>'
                 + (badge === '' ? '' : '<span class="nb' + (cls ? ' ' + cls : '') + '">' + badge + '</span>') + '</a></li>';
         };
         return '<nav class="sidenav" data-block="nav" aria-label="功能">'
@@ -1098,7 +1206,7 @@
                         + '<div class="srow-b"><span class="mono">' + esc(s.stage || '—') + '</span><span class="ago">' + ago(s.updated) + '</span></div></a>';
                 }).join('') : '<p class="none">沒有進行中的 session</p>') + '</section>';
         });
-        return '<div class="phead"><h1>現在</h1></div><div class="regs" data-block="now">'
+        return '<div class="phead"><h1>' + icon('now') + '現在</h1></div><div class="regs" data-block="now">'
             + (cards.length ? cards.join('') : '<p class="mute">沒有 registry</p>') + '</div>';
     }
     // ---- 設定: the seven-step wizard ----------------------------------------
@@ -1350,7 +1458,7 @@
     }
     function wizHtml(keys, W, profiles, ctx) {
         var body = W.step >= WIZ_STEPS.length ? wizSummaryHtml(keys, W, profiles, ctx) : wizStepHtml(keys, W, profiles);
-        return '<div class="phead"><h1>設定</h1></div><div class="wz" data-block="wizard"><ol class="steps" data-block="wizard-steps">'
+        return '<div class="phead"><h1>' + icon('settings') + '設定</h1></div><div class="wz" data-block="wizard"><ol class="steps" data-block="wizard-steps">'
             + wizStepsHtml(W) + '</ol><div class="wbody">' + body + '</div></div>';
     }
 
@@ -1590,8 +1698,11 @@
             + nowHtml(S.projects, homeRows());
     }
     // What daysPage last drew, so the hover card reads the same bars the chart
-    // did; `chartPin` is the legend key clicked to hold a series lit.
-    var chartBars = null, chartOpts = null, chartPin = null, chartHover = false;
+    // did. `chartOff` holds, per dim, the legend entries clicked out of the
+    // chart — in memory only, so the 3 s redraw keeps them and a reload clears
+    // them. `chartPin` is never set now that a click hides instead of pins;
+    // `chartPanel` is whether the 篩選 panel is open, kept across redraws too.
+    var chartBars = null, chartOpts = null, chartPin = null, chartHover = false, chartOff = {}, chartPanel = false;
     // What the pointer is on — a column `{day, key, cx}` or a legend entry
     // `{legend}` — so a redraw under a still pointer can put the hover back.
     var chartAt = null;
@@ -1652,7 +1763,7 @@
     }
     doc.addEventListener('mousemove', function (e) {
         if (route.view !== 'days' || !chartBars || !e.target.closest) return;
-        var lk = e.target.closest('.legend [data-key]');
+        var lk = e.target.closest('.legend [data-key]:not([data-off])');
         if (lk) {
             chartHide();
             chartFocus(lk.getAttribute('data-key'));
@@ -1678,10 +1789,12 @@
         var R = homeRows();
         var sel = r.day && DAYS.indexOf(r.day) >= 0 ? r.day : null;
         var o = homeOpts(sel);
-        var bars = dayBars(R, view.metric, view.dim, DAYS);
+        o.off = chartOff[view.dim] || {};
+        o.panel = chartPanel;
+        var all = dayBars(R, view.metric, view.dim, DAYS), bars = visibleBars(all, o);
         chartBars = bars;
         chartOpts = o;
-        return '<section class="panel hero" data-block="days"><div class="hero-top"><div class="hero-title"><div class="eyebrow">'
+        return '<section class="panel hero" data-block="days"><div class="hero-top"><div class="hero-title"><div class="eyebrow">' + icon('days')
             + heroEyebrow(frozenAt) + '</div>'
             + '<h1><b>' + DAYS[0].slice(5) + '</b> — <b>' + TODAY.slice(5) + '</b></h1></div>'
             + kpiHtml(windowTotals(R, DAYS), windowTotals(R, PREV)) + '</div>'
@@ -1690,8 +1803,11 @@
             + '<div class="ctlgrp"><label>分段</label>'
             + segHtml('dim', [['model', '依 model'], ['project', '依專案'], ['stage', '依 stage'], ['who', '主 session 對 agent'],
                 ['version', '依版本'], ['kind', '依成分']],
-                view.dim, view.metric === 'time' ? { model: '時間沒有 model 可分', kind: '時間沒有成分可分' } : null) + '</div>'
-            + '<div class="legend">' + legendHtml(bars, o) + '</div></div>'
+                view.dim, view.metric === 'time' ? { model: '時間沒有 model 可分', kind: '時間沒有成分可分' } : null) + '</div></div>'
+            // The legend has a strip of its own, one line high: however many
+            // series a dim has, the switches above and the chart below stay
+            // where they are. What does not fit scrolls; 篩選 lists everything.
+            + '<div class="lstrip"><div class="legend">' + legendHtml(all, o) + '</div>' + filterHtml(all, o) + '</div>'
             + '<div class="chart">' + histSvg(bars, o) + '</div></section>';
     }
     function sessionsPage() {
@@ -1743,8 +1859,7 @@
             + '<div class="note">每個點是一個 session，放在它開始的時刻；線依時間先後連接，點一下開啟那個 session。</div></section>'
             + registryNote(all[0].root)
             + '<section class="panel"><div class="h2">Sessions <small>近 30 天 ' + list.length + ' 個，最新在上；勾兩列進比較</small>'
-            + '<span class="spacer"></span><a class="ctl" href="#/cmp">⇅ 比較勾選的 <b>' + picked.length + '</b> 個</a></div>'
-            + projectSessionsHtml(list, picked) + '</section>'
+            + '</div>' + projectSessionsHtml(list, picked) + selbarHtml() + '</section>'
             + '<section class="panel"><div class="h2">各 route 的階段 <small>只算這個專案</small></div>' + routeLedger(mine) + '</section>';
     }
     VIEWS.project = projectPage;
@@ -1810,34 +1925,101 @@
         if (k === 'started') return Date.parse(s.started) || 0;
         return s[k];
     }
+    // The 清單 facets' group icons, drawn the way `icon()` draws a page's.
+    var FICON = {
+        state: '<svg class="ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5">'
+            + '<circle cx="8" cy="8" r="5.8"/><path d="M8 2.2a5.8 5.8 0 0 1 0 11.6z" fill="currentColor" stroke="none"/></svg>',
+        stage: '<svg class="ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"'
+            + ' stroke-linecap="round"><circle cx="3" cy="8" r="1.6"/><circle cx="8" cy="8" r="1.6"/><circle cx="13" cy="8" r="1.6"/>'
+            + '<path d="M4.6 8h1.8M9.6 8h1.8"/></svg>',
+    };
+    // Every 清單 facet is one pick, and in a row their options no longer fit,
+    // so each is a trigger — its icon, the current pick with its count, a
+    // caret — and its options live in a popover under it. The options are
+    // still `[data-facet] button`s with `data-v` and `aria-pressed`, so the facet
+    // click handler picks from here unchanged. A pick other than 全部 marks
+    // the trigger and gets a × that puts it back. `pickOpen` (which one is
+    // open) and `pickQ` (Registry's search box) are in memory, so the 3 s
+    // redraw keeps the popover open and filtered.
+    var pickOpen = null, pickQ = '', pickLast = null;
+    var CARET = '<svg class="caret" viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M2 3.8 5 6.8l3-3" fill="none"'
+        + ' stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    // `items` are `{ v, main, sub, n, lead, bar }`: `sub` a muted second line (and the
+    // title), `lead` markup before the label, `bar` a 0–1 share drawn under it;
+    // `search` puts a box over the rows.
+    function pickHtml(key, ico, name, items, search) {
+        var open = pickOpen === key, q = open ? pickQ.toLowerCase() : '', cur = items[0];
+        items.forEach(function (it) { if (it.v === f[key]) cur = it; });
+        // A pick whose option has gone (its last session moved on) still filters, so it still shows.
+        if (f[key] && cur.v !== f[key]) cur = { v: f[key], main: f[key], n: 0 };
+        var opt = function (it) {
+            var on = f[key] === it.v, hide = q && (it.main + ' ' + (it.sub || '')).toLowerCase().indexOf(q) < 0;
+            return '<button type="button" role="option" data-v="' + esc(it.v) + '" aria-pressed="' + on + '" aria-selected="' + on + '"'
+                + (hide ? ' hidden' : '') + (it.sub ? ' title="' + esc(it.sub) + '"' : '') + '>' + (it.lead || '')
+                + '<span class="ro-m"><span class="fl">' + esc(it.main) + '</span>'
+                + (it.sub ? '<small>' + esc(it.sub) + '</small>' : '')
+                + (it.bar !== undefined ? '<i class="rbar"><i style="width:' + Math.round(it.bar * 100) + '%"></i></i>' : '') + '</span>'
+                + '<b class="fc">' + it.n + '</b></button>';
+        };
+        return '<div class="ctlgrp fg-' + key + '"><div class="rwrap"' + (cur.v ? ' data-set' : '') + '>'
+            + '<button type="button" class="rbtn" data-pick="' + key + '" aria-haspopup="listbox" aria-expanded="' + open + '"'
+            + ' aria-label="' + name + '：' + esc(cur.sub || cur.main) + '" title="' + name + (cur.sub ? '：' + esc(cur.sub) : '') + '">'
+            + ico + (cur.lead || '') + '<span class="fl">' + esc(cur.main) + '</span><b class="fc">' + cur.n + '</b>' + CARET + '</button>'
+            + (cur.v ? '<button type="button" class="rclr" data-pickclr="' + key + '" aria-label="' + name + '回到全部" title="回到全部">×</button>' : '')
+            + (open ? '<div class="rpop">'
+                + (search ? '<input type="search" data-pickq placeholder="找 ' + name + '" aria-label="找 ' + name + '" value="' + esc(pickQ) + '">' : '')
+                + '<div class="seg" role="listbox" aria-label="' + name + '" data-facet="' + key + '">' + items.map(opt).join('') + '</div></div>' : '')
+            + '</div></div>';
+    }
     // The side bar's three facets, moved onto the page they narrow.
     function facetsHtml() {
-        var n = { live: 0, stale: 0, down: 0 }, byStage = {};
-        S.sessions.forEach(function (s) { n[s.state]++; byStage[s.stage] = (byStage[s.stage] || 0) + 1; });
-        var seg = function (key, items) {
-            return '<div class="seg" role="group" data-facet="' + key + '">' + items.map(function (it) {
-                return '<button type="button" data-v="' + esc(it[0]) + '" aria-pressed="' + (f[key] === it[0]) + '"'
-                    + (it[2] ? ' title="' + esc(it[2]) + '"' : '') + '>' + esc(it[1]) + '</button>';
-            }).join('') + '</div>';
-        };
-        return '<div class="controls">'
-            + '<div class="ctlgrp"><label>狀態</label>' + seg('state', [['', '全部 ' + S.sessions.length], ['live', 'live ' + n.live],
-                ['stale', 'stale ' + n.stale], ['down', 'down ' + n.down]]) + '</div>'
-            + '<div class="ctlgrp"><label>Registry</label>' + seg('project', [['', '全部']].concat(S.projects.map(function (p) {
-                return [p.root, LAB[p.root] + (p.gone ? ' — gone' : ''), p.root];
-            }))) + '</div>'
-            + '<div class="ctlgrp"><label>停在哪一階段</label>' + seg('stage', [['', '全部']].concat(ROUTE.filter(function (k) {
-                return byStage[k];
-            }).map(function (k) { return [k, k + ' ' + byStage[k]]; }))) + '</div></div>';
+        var n = { live: 0, stale: 0, down: 0 }, byStage = {}, byRoot = {}, all = S.sessions.length;
+        S.sessions.forEach(function (s) {
+            n[s.state]++;
+            byStage[s.stage] = (byStage[s.stage] || 0) + 1;
+            byRoot[s.root] = (byRoot[s.root] || 0) + 1;
+        });
+        var tail = S.projects.map(function (p) { return shortLabel(LAB[p.root] || p.root); });
+        var stages = ROUTE.filter(function (k) { return byStage[k]; });
+        var top = Math.max.apply(null, stages.map(function (k) { return byStage[k]; }).concat([1]));
+        return '<div class="controls lctl">'
+            + pickHtml('state', FICON.state, '狀態', [{ v: '', main: '全部', n: all }].concat(['live', 'stale', 'down'].map(function (k) {
+                return { v: k, main: k, n: n[k], lead: '<i class="dot ' + k + '"></i>' };
+            })))
+            + pickHtml('project', icon('projects'), 'Registry', [{ v: '', main: '全部', n: all }].concat(S.projects.map(function (p, i) {
+                // The path's last segment, unless another registry ends the same way.
+                var t = tail.filter(function (x) { return x === tail[i]; }).length > 1 ? LAB[p.root] || p.root : tail[i];
+                return { v: p.root, main: t + (p.gone ? ' — gone' : ''), sub: p.root, n: byRoot[p.root] || 0 };
+            })), S.projects.length > 6)
+            // A stage's bar is its count against the busiest stage's.
+            + pickHtml('stage', FICON.stage, '停在哪一階段', [{ v: '', main: '全部', n: all }].concat(stages.map(function (k) {
+                return { v: k, main: k, n: byStage[k], lead: '<i class="dot" style="background:var(--st-' + esc(k) + ')"></i>', bar: byStage[k] / top };
+            })))
+            + '</div>';
+    }
+    // Ticking rows to compare: nothing in the header until one is ticked, then
+    // a bar slides up from the bottom — how many, 比較 (live from two, since
+    // 比較 lays two sessions side by side; a third tick drops the oldest), and
+    // 清除. `#ncmp` is the count, rewritten in place on every tick.
+    function selbarInner() {
+        var n = picked.length;
+        return icon('cmp') + '<span>已選 <b id="ncmp">' + n + '</b> 個</span>'
+            + (n >= 2 ? '<a class="sbtn pri" href="#/cmp">比較</a>'
+                : '<span title="至少選 2 個"><button type="button" class="sbtn pri" disabled>比較</button></span>')
+            + '<button type="button" class="sbtn" data-cmpclear' + (n ? '' : ' tabindex="-1"') + '>清除</button>';
+    }
+    function selbarHtml() {
+        return '<div class="selbar" id="selbar" role="region" aria-label="比較勾選的 session"' + (picked.length ? ' data-on' : ' aria-hidden="true"') + '>'
+            + selbarInner() + '</div>';
     }
     function listPage() {
         // A gone registry has no rows to lay out, so the note replaces the table
         // rather than sitting above it and pushing the list off the bottom.
-        var head = '<div class="phead"><h1>清單</h1><span class="chip" id="cnt"></span><span class="spacer"></span>';
+        var head = '<div class="phead"><h1>' + icon('list') + '清單</h1><span class="chip" id="cnt"></span><span class="spacer"></span>';
         var gone = goneNote(f.project);
-        if (gone) return head + '<a class="ctl" href="#/">▦ 現在</a></div>' + facetsHtml() + gone;
-        return head + '<a class="ctl" href="#/cmp">⇅ 比較勾選的 <b id="ncmp">' + picked.length + '</b> 個</a>'
-            + '<a class="ctl" href="#/">▦ 現在</a></div>' + facetsHtml() + registryNote(f.project)
+        var now = '<a class="ctl" href="#/">' + icon('now') + '現在</a></div>';
+        if (gone) return head + now + facetsHtml() + gone;
+        return head + now + selbarHtml() + facetsHtml() + registryNote(f.project)
             + '<div class="listwrap">'
             + '<div class="card listcard"><div class="scroll"><table>'
             + '<colgroup><col style="width:34px"><col><col style="width:130px"><col style="width:80px">'
@@ -1857,7 +2039,7 @@
             return sortDir * ((x || 0) - (y || 0));
         });
         doc.getElementById('cnt').textContent = R.length + ' / ' + S.sessions.length;
-        doc.getElementById('lh').innerHTML = '<tr><th aria-label="選來比較"></th>' + COLS.map(function (c) {
+        doc.getElementById('lh').innerHTML = '<tr><th class="cmpth" aria-label="選來比較" title="勾兩個 session 來比較">' + icon('cmp') + '</th>' + COLS.map(function (c) {
             return '<th data-k="' + c[0] + '"'
                 + (['burn', 'cost'].indexOf(c[0]) >= 0 ? ' class="r"' : '')
                 + (sortKey === c[0] ? ' data-dir="' + (sortDir > 0 ? 'asc' : 'desc') + '"' : '')
@@ -2883,7 +3065,7 @@
         var two = picked.map(function (id) {
             return S.sessions.filter(function (s) { return s.id === id; })[0];
         }).filter(Boolean);
-        var head = '<div class="phead"><h1>比較</h1><span class="spacer"></span>'
+        var head = '<div class="phead"><h1>' + icon('cmp') + '比較</h1><span class="spacer"></span>'
             + '<a class="ctl" href="#/list">☰ 回清單</a></div>';
         if (two.length < 2) {
             return head + '<div class="card"><div class="cbody"><p class="mute">在專案頁或清單上勾兩個有細節的 session，'
@@ -2922,13 +3104,37 @@
         route = parseHash(w.location.hash);
         var p = doc.getElementById('page');
         p.className = 'page' + (route.view === 'list' ? ' fixed' : '');
+        // A 篩選 checkbox with focus keeps it through the 3 s redraw.
+        var fkAt = doc.activeElement && doc.activeElement.getAttribute ? doc.activeElement.getAttribute('data-fk') : null;
+        // So does how far the days legend strip was scrolled.
+        var STRIPS = '.lstrip .legend', stripKey = function () { return 'legend'; };
+        var scrolled = {};
+        if (doc.querySelectorAll && route.view === 'days') {
+            [].forEach.call(doc.querySelectorAll(STRIPS), function (el) { if (el.scrollLeft) scrolled[stripKey(el)] = el.scrollLeft; });
+        }
+        // And an open facet popover keeps its focused row or search caret
+        // and how far its list was scrolled.
+        var rAct = pickOpen && doc.activeElement && doc.activeElement.closest ? doc.activeElement.closest('.rpop [data-v], .rpop [data-pickq]') : null;
+        var rAt = rAct ? (rAct.hasAttribute('data-pickq') ? { q: rAct.selectionStart } : { v: rAct.getAttribute('data-v') }) : null;
+        var rPop = pickOpen && doc.querySelector ? doc.querySelector('.rpop .seg') : null, rTop = rPop ? rPop.scrollTop : 0;
         p.innerHTML = (VIEWS[route.view] || nowPage)(route);
+        if (rTop && (rPop = doc.querySelector('.rpop .seg'))) rPop.scrollTop = rTop;
+        if (rAt && rAt.v !== undefined) pickFocus(rAt.v);
+        if (rAt && rAt.q !== undefined) {
+            var rq = doc.querySelector('.rpop [data-pickq]');
+            if (rq) { rq.focus(); try { rq.setSelectionRange(rAt.q, rAt.q); } catch (err) { /* not a text box */ } }
+        }
+        if (Object.keys(scrolled).length) {
+            [].forEach.call(doc.querySelectorAll(STRIPS), function (el) { if (scrolled[stripKey(el)]) el.scrollLeft = scrolled[stripKey(el)]; });
+        }
+        if (fkAt !== null) { var fkEl = doc.querySelector('.fpanel [data-fk="' + cssKey(fkAt) + '"]'); if (fkEl) fkEl.focus(); }
         if (route.view === 'list') drawList();
         // A redraw (the 3 s re-read too) replaces the chart under a live hover:
         // on 近 30 天 the hover is put back from the new bars, anywhere else it goes.
         if (chartHover && route.view === 'days') chartRestore();
         else if (chartHover) chartHide();
         else if (route.view === 'days') chartFocus(chartPin);
+        if (route.view === 'days') legendArm();
         doc.getElementById('nav').innerHTML = navHtml(route.view, navCounts(homeRows(), S.projects, DAYS));
         drawSide();
         doc.getElementById('gen').textContent = genText();
@@ -2947,12 +3153,18 @@
             draw();
             return;
         }
-        var lg = route.view === 'days' && e.target.closest ? e.target.closest('.legend [data-key]') : null;
-        if (lg) {
-            chartPin = chartPin === lg.getAttribute('data-key') ? null : lg.getAttribute('data-key');
-            chartFocus(chartPin);
-            return;
+        // 篩選: the button opens and shuts the panel, a checkbox is one key,
+        // 全選/全不選 are every key; a click anywhere else shuts it.
+        if (route.view === 'days' && e.target.closest) {
+            if (e.target.closest('[data-fbtn]')) { chartPanel = !chartPanel; draw(); var fb = doc.querySelector('[data-fbtn]'); if (fb) fb.focus(); return; }
+            var fk = e.target.closest('.fpanel [data-fk]');
+            if (fk) { chartSet([fk.getAttribute('data-fk')], fk.checked, '.fpanel [data-fk="' + cssKey(fk.getAttribute('data-fk')) + '"]'); return; }
+            var fa = e.target.closest('.fpanel [data-fall]');
+            if (fa) { chartSet(chartBars.keys, fa.getAttribute('data-fall') === 'on', '.fpanel [data-fall="' + fa.getAttribute('data-fall') + '"]'); return; }
+            if (chartPanel && !e.target.closest('.fwrap')) { chartPanel = false; draw(); }
         }
+        var lg = route.view === 'days' && e.target.closest ? e.target.closest('.legend [data-key], .legend [data-rest]') : null;
+        if (lg) { legendToggle(lg); return; }
         // 懸著的 gate: a tick is remembered across the poll's re-read, and
         // 送出答案 posts every question's picks to `/answer`.
         var pgi = e.target.closest('.pg input');
@@ -3063,6 +3275,14 @@
             if (first) { var inSeg = first.closest('details.rpseg'); if (inSeg) inSeg.open = true; first.scrollIntoView({ block: 'center' }); }
             return;
         }
+        if (e.target.closest('[data-cmpclear]')) {
+            picked = [];
+            if (route.view === 'project') { draw(); return; }
+            selbarDraw();
+            drawList();
+            drawSide();
+            return;
+        }
         var cb = e.target.closest('input[data-cmp]');
         if (cb) {
             var id = cb.getAttribute('data-cmp');
@@ -3070,16 +3290,40 @@
             if (cb.checked) picked.push(id);
             if (picked.length > 2) picked.shift();
             if (route.view === 'project') { draw(); return; }
-            var nc = doc.getElementById('ncmp');
-            if (nc) nc.textContent = picked.length;
+            selbarDraw();
             drawList();
             drawSide();
             return;
         }
         var sg = e.target.closest('[data-seg] button');
         if (sg) { view[sg.parentNode.getAttribute('data-seg')] = sg.getAttribute('data-v'); draw(); return; }
+        // 清單's facet triggers: one opens its popover (and shuts any other),
+        // its × puts the facet back to 全部, and a click outside the open one
+        // shuts it and still does whatever it was aimed at.
+        if (route.view === 'list') {
+            var pk = e.target.closest('[data-pick]');
+            if (pk) {
+                var pkKey = pk.getAttribute('data-pick');
+                pickOpen = pickOpen === pkKey ? null : pkKey;
+                pickLast = pkKey;
+                pickQ = '';
+                draw();
+                pickFocus(pickOpen ? 'first' : 'btn');
+                return;
+            }
+            var pc = e.target.closest('[data-pickclr]');
+            if (pc) { pickLast = pc.getAttribute('data-pickclr'); f[pickLast] = ''; pickOpen = null; draw(); pickFocus('btn'); return; }
+            if (pickOpen && !e.target.closest('.rpop')) { pickOpen = null; draw(); }
+        }
         var fc = e.target.closest('[data-facet] button');
-        if (fc) { f[fc.parentNode.getAttribute('data-facet')] = fc.getAttribute('data-v'); draw(); return; }
+        if (fc) {
+            var fcKey = fc.parentNode.getAttribute('data-facet');
+            f[fcKey] = fc.getAttribute('data-v');
+            // A pick in a popover shuts it and hands focus back to its trigger.
+            if (pickOpen) { pickOpen = null; draw(); pickFocus('btn'); return; }
+            draw();
+            return;
+        }
         var wfRow = e.target.closest('[data-wf]');
         if (wfRow) { view.closed[wfRow.getAttribute('data-wf')] = !view.closed[wfRow.getAttribute('data-wf')]; draw(); return; }
         var go = e.target.closest('[data-href]');
@@ -3101,11 +3345,97 @@
             drawDetail();
         }
     });
+    // The selection bar redrawn in place — the same element, so it slides
+    // rather than reappears, and the table under it keeps its scroll.
+    function selbarDraw() {
+        var sb = doc.getElementById('selbar');
+        if (!sb) return;
+        sb.innerHTML = selbarInner();
+        if (picked.length) { sb.setAttribute('data-on', ''); sb.removeAttribute('aria-hidden'); }
+        else { sb.removeAttribute('data-on'); sb.setAttribute('aria-hidden', 'true'); }
+    }
+    // Put focus on the last-opened facet trigger (`btn`), the popover's first way in
+    // (`first`: the search box, or else the picked row), or a row by value.
+    function pickFocus(what) {
+        var el = what === 'btn' ? doc.querySelector('[data-pick="' + pickLast + '"]')
+            : what === 'first' ? doc.querySelector('.rpop [data-pickq]') || doc.querySelector('.rpop [aria-pressed="true"]') || doc.querySelector('.rpop [data-v]')
+            : [].filter.call(doc.querySelectorAll('.rpop [data-v]'), function (x) { return x.getAttribute('data-v') === what; })[0];
+        if (el) el.focus();
+    }
+    // Typing in the popover's search box hides the rows that do not match,
+    // in place, so the box keeps its caret; `pickQ` carries it into a redraw.
+    doc.addEventListener('input', function (e) {
+        if (!e.target.hasAttribute || !e.target.hasAttribute('data-pickq')) return;
+        pickQ = e.target.value;
+        var q = pickQ.toLowerCase();
+        [].forEach.call(doc.querySelectorAll('.rpop [data-v]'), function (el) {
+            el.hidden = !!q && el.textContent.concat(' ', el.title || '').toLowerCase().indexOf(q) < 0;
+        });
+    });
     doc.getElementById('q').addEventListener('input', function (e) {
         f.q = e.target.value;
         draw();
     });
+    // Every legend entry is a toggle: armed here rather than in legendHtml so
+    // the entry markup the tests read stays what it was.
+    function legendArm() {
+        [].forEach.call(doc.querySelectorAll('.legend [data-key], .legend [data-rest]'), function (el) {
+            var off = el.hasAttribute('data-off');
+            el.setAttribute('role', 'button');
+            el.setAttribute('tabindex', '0');
+            el.setAttribute('aria-pressed', off ? 'false' : 'true');
+            if (!el.title) el.title = off ? '按一下放回圖表' : '按一下先從圖表拿掉';
+        });
+    }
+    // Set some keys off (`on` false) or back on, redraw, and put focus back on
+    // whatever `sel` finds in the new DOM — the redraw lost the old element.
+    function chartSet(keys, on, sel) {
+        var off = chartOff[view.dim] || (chartOff[view.dim] = {});
+        keys.forEach(function (k) { if (on) delete off[k]; else off[k] = true; });
+        chartHover = false;
+        chartAt = null;
+        chartTipEl().removeAttribute('data-on');
+        draw();
+        var back = sel && doc.querySelector(sel);
+        if (back) back.focus();
+    }
+    function cssKey(k) { return String(k).replace(/["\\]/g, '\\$&'); }
+    // A legend entry takes its key out or puts it back; 其他 N 個 does all its
+    // members at once — the shown ones out, or, dimmed, its hidden ones back.
+    function legendToggle(el) {
+        if (el.hasAttribute('data-rest')) {
+            var back = el.hasAttribute('data-off'), off = chartOpts.off || {};
+            chartSet(back ? legendRest(chartBars, { dim: chartOpts.dim, pkeys: chartOpts.pkeys }).filter(function (k) { return off[k]; })
+                : legendRest(chartBars, chartOpts), back, '.legend [data-rest]');
+            return;
+        }
+        var k = el.getAttribute('data-key');
+        chartSet([k], el.hasAttribute('data-off'), '.legend [data-key="' + cssKey(k) + '"]');
+    }
+    function panelShut(focusBtn) {
+        chartPanel = false;
+        draw();
+        if (focusBtn) { var b = doc.querySelector('[data-fbtn]'); if (b) b.focus(); }
+    }
     doc.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && chartPanel && route.view === 'days') { e.preventDefault(); panelShut(true); return; }
+        // An open facet popover: Esc shuts it, the arrows walk the rows shown
+        // (from the search box too), Enter in the search box takes the first.
+        if (pickOpen && route.view === 'list' && e.target.closest && e.target.closest('.rpop, .rwrap')) {
+            var ropts = [].filter.call(doc.querySelectorAll('.rpop [data-v]'), function (el) { return !el.hidden; });
+            var ri = ropts.indexOf(e.target);
+            if (e.key === 'Escape') { e.preventDefault(); pickOpen = null; draw(); pickFocus('btn'); return; }
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                var rn = e.key === 'ArrowDown' ? Math.min(ri + 1, ropts.length - 1) : ri <= 0 ? -1 : ri - 1;
+                var rto = rn < 0 ? doc.querySelector('.rpop [data-pickq]') || ropts[0] : ropts[rn];
+                if (rto) rto.focus();
+                return;
+            }
+            if (e.key === 'Enter' && e.target.hasAttribute('data-pickq') && ropts[0]) { e.preventDefault(); ropts[0].click(); return; }
+        }
+        var lgk = route.view === 'days' && e.target.closest ? e.target.closest('.legend [data-key], .legend [data-rest]') : null;
+        if (lgk && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); legendToggle(lgk); return; }
         if (e.target.tagName === 'INPUT') { if (e.key === 'Escape') e.target.blur(); return; }
         if (e.key === '/') { e.preventDefault(); doc.getElementById('q').focus(); }
     });

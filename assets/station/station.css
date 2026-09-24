@@ -109,8 +109,56 @@ h1,h2,h3{margin:0;font-weight:600}
 .seg button{border:0;background:transparent;padding:4px 11px;border-radius:6px;cursor:pointer;font-size:12.5px;color:var(--ink2);white-space:nowrap}
 .seg button:hover{color:var(--ink)}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
-.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink2);justify-content:flex-end;flex:1}
-.legend span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;font-size:11.5px;color:var(--ink2);justify-content:flex-end;flex:1;min-width:0}
+.legend>span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;min-width:0}
+/* A long series name is clipped; the entry's title carries the whole of it. */
+.legend .lt{display:inline-block;max-width:13em;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+.legend .lord{color:var(--muted);cursor:help;padding:0 2px}
+.legend .lord svg{display:block}
+/* 近 30 天: the legend's own one-line strip under the switches, 篩選 pinned at
+   its right. A fixed height, so a dim with many series cannot move anything. */
+.lstrip{display:flex;align-items:center;gap:10px;height:28px;margin:0 0 6px;border-top:1px solid var(--rule);padding-top:6px;box-sizing:content-box}
+.lstrip .legend{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;overflow-y:hidden;height:100%;scrollbar-width:thin;
+  -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);padding-right:28px}
+.lstrip .legend>span{flex:none}
+.lstrip .legend [role=button]:focus-visible{outline-offset:-2px}
+/* 清單's facets: one line of three compact triggers, whatever the registries
+   are called or how many stages have sessions, so the row never wraps. */
+.lctl{flex-wrap:nowrap;gap:8px;min-width:0}
+.lctl .ctlgrp{flex:none;gap:0}
+/* Each facet is a trigger in the row and its options in a popover under it. */
+.rwrap{position:relative;display:inline-flex;align-items:center;border-radius:8px;background:var(--inset);box-shadow:inset 0 0 0 1px transparent}
+.rwrap[data-set]{box-shadow:inset 0 0 0 1.5px var(--ink2);background:var(--panel)}
+.rbtn{display:inline-flex;align-items:center;gap:7px;border:0;background:transparent;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:12.5px;color:var(--ink);white-space:nowrap}
+.rwrap[data-set] .rbtn{padding-right:4px}
+.rbtn .ico{color:var(--muted)}
+.rbtn .fl{max-width:16em;overflow:hidden;text-overflow:ellipsis}
+.rbtn .caret{display:block;color:var(--muted);transition:transform .15s ease-out}
+.rbtn[aria-expanded="true"] .caret{transform:rotate(180deg)}
+.rbtn:hover .ico,.rbtn:hover .caret{color:var(--ink)}
+.rbtn:focus-visible,.rclr:focus-visible{outline:2px solid var(--ink2);outline-offset:1px}
+.rclr{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:4px 8px 4px 2px;border-radius:0 8px 8px 0}
+.rclr:hover{color:var(--ink)}
+.lctl .fc{font:600 10.5px var(--f-mono);font-variant-numeric:tabular-nums;padding:1px 6px;border-radius:999px;background:var(--wash);color:var(--ink2)}
+.lctl .dot{width:7px;height:7px}
+.lctl .dot.live{animation:fpulse 1.8s ease-out infinite}
+@keyframes fpulse{0%{box-shadow:0 0 0 0 var(--live-bg)}70%{box-shadow:0 0 0 5px transparent}100%{box-shadow:0 0 0 0 transparent}}
+@media (prefers-reduced-motion:reduce){.lctl .dot{animation:none}}
+.rpop{position:absolute;left:0;top:calc(100% + 6px);z-index:20;width:320px;max-width:80vw;padding:6px;background:var(--panel);border:1px solid var(--rule2);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.16)}
+.fg-project .rpop{width:360px}
+.rpop input{width:100%;box-sizing:border-box;margin:0 0 6px;padding:6px 9px;border:1px solid var(--rule2);border-radius:6px;background:var(--ground);color:var(--ink);font-size:12.5px}
+.lctl .rpop .seg{display:flex;flex-direction:column;background:transparent;padding:0;border-radius:0;max-height:320px;overflow-y:auto;overflow-x:hidden;max-width:none}
+.lctl .rpop .seg button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:6px 8px;border-radius:6px;color:var(--ink)}
+.lctl .rpop .seg button[hidden]{display:none}
+.lctl .rpop .seg button:hover{background:var(--wash)}
+.lctl .rpop .seg button[aria-pressed="true"]{background:var(--wash);color:var(--ink);box-shadow:inset 2px 0 0 var(--ink)}
+.lctl .rpop .seg button:focus-visible{outline:2px solid var(--ink2);outline-offset:-2px}
+.rpop .ro-m{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.rpop .ro-m .fl{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rpop .ro-m small{font:10.5px var(--f-mono);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* A stage row's count against the busiest stage, as a thin bar. */
+.rpop .rbar{display:block;height:3px;border-radius:2px;background:var(--wash)}
+.rpop .rbar>i{display:block;height:100%;border-radius:2px;background:var(--ink2);opacity:.55}
 .sw{display:inline-block;width:10px;height:10px;border-radius:2.5px;flex:none}
 .sw.ln{height:2px;width:14px;border-radius:1px}
 
@@ -251,6 +299,25 @@ table.t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
   cursor:pointer;white-space:nowrap}
 .ctl:hover{border-color:var(--ind);color:var(--ind)}
 .ctl .cr{color:var(--mute);font-size:10px}
+.ctl .ico{width:14px;height:14px}
+/* Ticking sessions to compare: the checkbox column says what it is for, and
+   a bar slides up from the bottom once one is ticked. */
+.cmpth .ico{width:14px;height:14px;color:var(--muted);margin:0 auto}
+input[data-cmp]{width:15px;height:15px;accent-color:var(--ink);cursor:pointer;vertical-align:middle}
+input[data-cmp]:disabled{cursor:not-allowed;opacity:.4}
+.selbar{position:fixed;left:50%;bottom:18px;z-index:25;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 14px;
+  background:var(--ink);color:var(--panel);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.22);font-size:13px;
+  transform:translate(-50%,calc(100% + 30px));opacity:0;pointer-events:none;transition:transform .22s cubic-bezier(.2,.8,.2,1),opacity .18s ease-out}
+.selbar[data-on]{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+.selbar .ico{opacity:.7}
+.selbar b{font:600 13px var(--f-mono);font-variant-numeric:tabular-nums}
+.sbtn{border:0;border-radius:8px;padding:6px 14px;font:inherit;font-size:12.5px;cursor:pointer;text-decoration:none;background:transparent;color:inherit;opacity:.8}
+.sbtn:hover{opacity:1;background:rgba(255,255,255,.1)}
+.sbtn.pri{background:var(--panel);color:var(--ink);font-weight:600;opacity:1}
+.sbtn.pri:hover{background:var(--ground)}
+.sbtn:disabled{opacity:.45;cursor:not-allowed}
+.sbtn:focus-visible{outline:2px solid var(--panel);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.selbar{transition:none}}
 
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
 .cbody{padding:14px 18px 18px}
@@ -684,9 +751,18 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .shell{display:grid;grid-template-columns:208px minmax(0,1fr);max-width:1440px;margin:0 auto}
 .shell>.page{max-width:none;margin:0;min-width:0;padding-left:20px}
 .sidenav{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding:8px 0 24px 32px}
-.sidenav .navgrp{font-size:10.5px;letter-spacing:.14em;color:var(--faint);text-transform:uppercase;font-weight:500;padding:12px 10px 5px}
+.sidenav .navgrp{font-size:10px;letter-spacing:.14em;color:var(--faint);text-transform:uppercase;font-weight:500;padding:10px 10px 4px}
 .sidenav ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
-.sidenav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;text-decoration:none;color:var(--ink2);font-size:13.5px}
+.sidenav a{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;text-decoration:none;color:var(--ink2);font-size:13.5px;line-height:16px}
+/* A page's icon: the same shape in the left bar and in that page's header. */
+.ico{display:block;flex:none;width:16px;height:16px}
+.sidenav a .ico{color:var(--muted)}
+.sidenav a:hover .ico,.sidenav a[aria-current="page"] .ico{color:inherit}
+.sidenav a>span:not(.nb){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.phead h1{display:flex;align-items:center;gap:9px}
+.phead h1 .ico{width:20px;height:20px;color:var(--muted)}
+.h2 .ico{align-self:center;color:var(--muted)}
+.eyebrow .ico{display:inline-block;vertical-align:-3px;margin-right:6px;width:14px;height:14px}
 .sidenav a:hover{background:var(--wash);color:var(--ink)}
 .sidenav a .nb{margin-left:auto;font:600 11px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
 .sidenav a .nb.live{color:var(--live)}
@@ -806,7 +882,27 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .chart svg[data-focus] .hseg[data-hot]{opacity:1}
 .chart .hguide{stroke:var(--ink2);stroke-width:1;stroke-dasharray:3 3;pointer-events:none;opacity:0}
 .chart .hguide[data-on]{opacity:.7}
-.legend [data-key]{cursor:pointer;border-radius:4px;padding:0 4px}
+.legend [data-key],.legend [data-rest]{cursor:pointer;border-radius:4px;padding:0 4px;user-select:none}
+/* A series clicked out of the chart stays listed, faded and struck through. */
+.legend [data-off]{opacity:.45;text-decoration:line-through}
+.legend [data-off] .sw{background:transparent!important;box-shadow:inset 0 0 0 1px var(--ink2)}
+.legend [role=button]:focus-visible{outline:2px solid var(--ink2);outline-offset:1px}
+/* 篩選: a button beside the legend, its panel listing every series, 其他's members too. */
+.fwrap{position:relative;flex:none}
+.fbtn{display:inline-flex;align-items:center;gap:5px;border:0;background:var(--inset);padding:4px 8px;border-radius:8px;cursor:pointer;font-size:12px;color:var(--ink2);white-space:nowrap}
+.fbtn svg{display:block}
+.fbtn:hover,.fbtn[aria-expanded="true"]{color:var(--ink)}
+.fbtn b{font:600 11px var(--f-mono);color:var(--ink)}
+.fpanel{position:absolute;right:0;top:calc(100% + 6px);z-index:20;min-width:220px;max-height:360px;overflow-y:auto;padding:8px;background:var(--panel);border:1px solid var(--rule2);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.16);font-size:12.5px}
+.fpanel label{display:flex;align-items:center;gap:7px;padding:3px 6px;border-radius:4px;cursor:pointer;white-space:nowrap}
+.fpanel label:hover{background:var(--wash)}
+.fpanel input{margin:0}
+.fpanel label span{max-width:340px;overflow:hidden;text-overflow:ellipsis}
+.fpanel .fall{display:flex;gap:6px;padding:0 0 6px;margin-bottom:4px;border-bottom:1px solid var(--rule)}
+.fpanel .fall button{border:0;background:var(--inset);padding:3px 9px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--ink2)}
+.fpanel .fall button:hover{color:var(--ink)}
+.fpanel .fsub{font-size:11px;color:var(--muted);padding:6px 6px 2px;border-top:1px solid var(--rule);margin-top:4px}
+.fbtn:focus-visible,.fpanel :focus-visible{outline:2px solid var(--ink2);outline-offset:1px}
 .legend [data-key][data-hot]{background:var(--wash);color:var(--ink);font-weight:600}
 #charttip{position:fixed;z-index:30;pointer-events:none;min-width:210px;max-width:320px;padding:10px 12px;background:var(--panel);color:var(--ink);border:1px solid var(--rule2);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.16);font-size:12px;line-height:1.45;opacity:0;transition:opacity .12s ease-out}
 #charttip[data-on]{opacity:1}
