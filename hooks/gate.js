@@ -27,12 +27,17 @@
 // compared against what the controller actually asked (`gateMatches` in
 // lib/handoff.js). A match reaching the user is the real gate, correctly
 // typed: the in-flight mark clears and nothing more is written. A mismatch
-// whose first question is headed with the stage's name reads as a botched
-// copy attempt — a paraphrase, a typo, a stale draft — and is denied. Any
-// other question, headed with something else entirely, is the controller's
-// own and goes out as written, with a message saying so when there is
-// something worth saying; every other session gets none of this, and only the
-// time is noted.
+// whose first question is headed with the stage's name is a candidate for a
+// botched copy attempt — a paraphrase, a typo, a stale draft — but the header
+// alone is not enough to convict it: every question the controller asks
+// during a controlled stage carries that same header by convention, gate or
+// not, so a genuinely different question sharing only the header would be
+// denied by mistake. It is denied only when its content — the question text
+// and its option labels — is also substantially similar to the gate's own
+// first question; a header match with low content overlap is the
+// controller's own question and goes out as written, with a message saying
+// so when there is something worth saying; every other session gets none of
+// this, and only the time is noted.
 
 const registry = require('../lib/registry.js');
 const profileLib = require('../lib/profile.js');
@@ -46,6 +51,28 @@ const agentsText = (values) => {
     if (Array.isArray(raw)) return raw.length ? raw.join(',') : 'none';
     return raw === undefined ? 'unset' : String(raw);
 };
+
+// Normalized character-overlap ratio, for telling a botched copy of the gate
+// (typo, paraphrase, stale draft — high overlap) from a different question
+// that only happens to share the stage-name header (low overlap). Character
+// overlap rather than word overlap because whitespace-splitting into words is
+// unreliable for mixed Chinese/English text.
+function charOverlap(a, b) {
+    const norm = (s) => String(s || '').toLowerCase().replace(/\s+/g, '');
+    a = norm(a); b = norm(b);
+    const counts = new Map();
+    for (const ch of a) counts.set(ch, (counts.get(ch) || 0) + 1);
+    let shared = 0;
+    for (const ch of b) {
+        const n = counts.get(ch) || 0;
+        if (n > 0) { shared++; counts.set(ch, n - 1); }
+    }
+    return shared / Math.max(a.length, b.length, 1);
+}
+// A paraphrase of the same gate question, keeping the same options, still
+// overlaps heavily; a genuinely different question sharing only the header
+// does not. Picked against tests/gate.test.js's own cases.
+const ATTEMPT_THRESHOLD = 0.5;
 
 function main(raw) {
     const payload = parse(raw);
@@ -108,14 +135,22 @@ function main(raw) {
 
     if (!matches) {
         // Does the question in hand look like an attempt at this gate at all?
-        // The same heuristic that used to pick out the placeholder — the first
-        // question's header equalling the stage name, any case — now decides
-        // whether a mismatch is worth denying (a paraphrase, a typo, a stale
-        // copy) or is simply some other question the controller or its agent
-        // is legitimately asking, which goes out untouched.
+        // Header equality alone used to decide this, and every question the
+        // controller asks during a controlled stage carries the stage's own
+        // header by convention — so a legitimate, different question sharing
+        // only the header was denied as if it were a botched copy. Header
+        // match is now necessary but not sufficient: the asked question's
+        // content — its `question` text plus its option labels — must also
+        // be substantially similar to the gate's own first question, using a
+        // normalized character-overlap ratio (works across mixed
+        // Chinese/English text, where splitting into words is unreliable).
         const first = Array.isArray(asked) && asked[0];
-        const looksLikeAttempt = !!first && typeof first.header === 'string'
+        const gateFirst = Array.isArray(gate.questions) && gate.questions[0];
+        const headerMatches = !!first && typeof first.header === 'string'
             && first.header.toLowerCase() === String(mine.stage || '').toLowerCase();
+        const textOf = (q) => (q && q.question || '') + '|' + (Array.isArray(q && q.options) ? q.options.map((o) => o && o.label).join('|') : '');
+        const looksLikeAttempt = headerMatches
+            && charOverlap(textOf(first), textOf(gateFirst)) > ATTEMPT_THRESHOLD;
         if (looksLikeAttempt) {
             process.stdout.write(JSON.stringify({
                 hookSpecificOutput: {

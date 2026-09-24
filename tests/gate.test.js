@@ -317,3 +317,19 @@ test('the header match deciding whether a mismatch is an attempted gate copy is 
   assert.equal(out.hookSpecificOutput.permissionDecision, 'deny', 'SURVEY still reads as an attempt at the survey gate');
   assert.match(out.hookSpecificOutput.permissionDecisionReason, /word for word/);
 });
+
+// Header equality alone used to deny this: every question asked during a
+// controlled stage carries the stage's own header by convention, gate or
+// not, so a genuinely different question — different `question` text,
+// different option labels, low overlap with the seeded gate — headed with
+// the stage's name must still go out untouched. .fankeel/build/task-
+// 20260923T194111/verify-3.md, "New finding, still open".
+test('stage.agents at survey: a genuinely different question headed with the stage still goes out as written', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  const different = { questions: [{ header: 'survey', question: '要不要先開一個新任務？', options: [{ label: '要', description: 'a' }, { label: '不要', description: 'b' }] }] };
+  const out = JSON.parse(run(GATE, root, { tool_input: different }));
+  assert.equal(out.hookSpecificOutput, undefined, 'a low-overlap question sharing only the header is not an attempted copy');
+});

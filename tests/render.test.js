@@ -675,7 +675,7 @@ test('stage.agents true at survey: the controller\'s block replaces the stage\'s
     assert.ok(out.includes('fankeel:fankeel-brain'), out);
     assert.ok(out.includes('/r/.fankeel/build/task-20260919T093012/survey.md'));
     assert.ok(out.includes('/r/.fankeel/build/task-20260919T093012/survey-answer.md'));
-    assert.ok(out.includes('stage design --session ' + MINE));
+    assert.ok(out.includes('Option one `node <plugin>/scripts/task.js stage <label>`/`down` --session ' + MINE));
     assert.ok(!out.includes(readRule), 'the survey rules go to the stage agent');
   }
 });
@@ -712,14 +712,20 @@ test('every controlled stage\'s block stays under the 2,400-character cap at a r
   }
 });
 
-test('stage.agents true at survey, the route ending there: option one stands the task down', () => {
+// Option one no longer bakes the route's forward-next stage in at render time
+// — verify-3.md's own gate named `build` as option one while verify's
+// forward-next was `audit`, so a baked value could contradict the label the
+// user is actually shown. `stage <label>`/`down` is offered literally, for
+// the controller to resolve from the label it just read, whether or not the
+// route ends here.
+test('stage.agents true at survey, the route ending there: option one still reads from the label, not a route-computed advance', () => {
   const { renderResume } = require('../lib/render.js');
   const readRule = byName('survey').rules.find((r) => r.startsWith('Read whatever documents'));
   const on = { values: { 'stage.agents': true }, sources: {}, unreadable: [] };
   const mine = entry(MINE, { stage: 'survey', route: ['survey'], started: '2026-09-19T09:30:12.345Z' });
   for (const out of [render({ mine, others: [], now: NOW, root: '/r', profile: on }), renderResume({ mine, profile: on, root: '/r' })]) {
     assert.ok(out.includes('fankeel:fankeel-brain'), out);
-    assert.ok(out.includes(' down --session ' + MINE), out);
+    assert.ok(out.includes('Option one `node <plugin>/scripts/task.js stage <label>`/`down` --session ' + MINE), out);
     assert.ok(!out.includes(readRule), 'the survey rules go to the stage agent');
   }
 });

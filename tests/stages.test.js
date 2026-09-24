@@ -888,6 +888,22 @@ test('controlFor fills every token it is given, and only survey has one', () => 
   assert.equal(controlling('design', { 'stage.agents': true }), false);
 });
 
+// verify-3.md's own gate had option one labelled "build (Recommended)" while
+// the stage was verify — whose forward-next is audit. A controller mechanically
+// following a pre-baked `{{ADVANCE}}` (always the forward-next stage) would run
+// `stage audit` for an option labelled "build", silently advancing instead of
+// routing back. The rule text now sends the controller to the label it just
+// read, not to a stage baked in before the stage agent ran.
+test('option one is told to run the stage its own label names, not a pre-baked advance token', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const values = { 'stage.agents': ['verify'] };
+  const c = controlFor('verify', values, { advance: 'stage audit', task: '<plugin>/scripts/task.js', session: 'sid' });
+  const text = c.rules.join('\n');
+  assert.doesNotMatch(text, /\{\{ADVANCE\}\}/, 'a bare, unexplained {{ADVANCE}} would still be the old static wording');
+  assert.doesNotMatch(text, /node <plugin>\/scripts\/task\.js stage audit --session sid/, 'option one must not name the forward-next stage regardless of the label just read');
+  assert.match(text, /Option one `node <plugin>\/scripts\/task\.js stage <label>`\/`down`/, 'option one runs the command built from the label just read, not a baked-in stage');
+});
+
 test('the controller waits out a return that is not a path, and sends a finished agent with no path to the await', () => {
   const { controlFor } = require('../lib/stages.js');
   const c = controlFor('survey', { 'stage.agents': ['survey'] }, { advance: 'stage design', task: 't', await: 'w', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });

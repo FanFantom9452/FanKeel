@@ -947,20 +947,21 @@ test('start at survey with stage.agents true prints the controller\'s rules, not
   const { out, code } = run(dir, ['start', '--session', A, '--task', 'x', '--route', 'survey,design'], { CLAUDE_CONFIG_DIR: cfg });
   assert.equal(code, 0, out);
   assert.match(out, /fankeel:fankeel-brain/);
-  assert.match(out, new RegExp('stage design --session ' + A));
+  assert.match(out, new RegExp('Option one `node <plugin>/scripts/task\\.js stage <label>`/`down` --session ' + A));
   assert.doesNotMatch(out, /run the scanner/);
   // The rules name `<plugin>`, and this output is not an injection: it says
   // what that resolves to itself.
   assert.ok(out.includes('<plugin> = ' + PLUGIN_ROOT), out);
 
   // A fresh registry, its own machine profile: a route ending at survey gets
-  // the controller's block too, with option one standing the task down.
+  // the controller's block too, with option one still reading from the
+  // label rather than a route-computed advance.
   const dir2 = root();
   const cfg2 = path.join(dir2, 'cfg');
   run(dir2, ['profile', 'set', 'stage.agents', 'true', '--default'], { CLAUDE_CONFIG_DIR: cfg2 });
   const second = run(dir2, ['start', '--session', A, '--task', 'y', '--route', 'survey'], { CLAUDE_CONFIG_DIR: cfg2 });
   assert.equal(second.code, 0, second.out);
-  assert.match(second.out, new RegExp(' down --session ' + A));
+  assert.match(second.out, new RegExp('Option one `node <plugin>/scripts/task\\.js stage <label>`/`down` --session ' + A));
 });
 
 // `stage` is the move a controller makes on option one, and the answer that
@@ -980,7 +981,7 @@ test('stage into a controlled build prints the controller\'s rules with the comm
   assert.match(build.out, /Now build, through its stage agent\. You are its controller:/);
   assert.match(build.out, /fankeel:fankeel-brain/);
   assert.match(build.out, /run `node <plugin>\/scripts\/commit\.js "<file>"`/);
-  assert.match(build.out, new RegExp('stage verify --session ' + A));
+  assert.match(build.out, new RegExp('Option one `node <plugin>/scripts/task\\.js stage <label>`/`down` --session ' + A));
   assert.ok(build.out.includes('<plugin> = ' + PLUGIN_ROOT), build.out);
 
   const verify = run(dir, ['stage', 'verify', '--session', A], { CLAUDE_CONFIG_DIR: cfg });
