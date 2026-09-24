@@ -553,7 +553,7 @@ where you are, rather than being a defect in a document.
 
 A task started by picking `## Waiting` at `/fankeel` arrives on
 `--route "survey,build,land"`. By the time it reaches this stage, `survey` has
-already judged every due timing — checking what the repository, its registry
+already judged every timing — checking what the repository, its registry
 or upstream could show directly, and putting the witness-only ones to the user
 in its own `AskUserQuestion` before this stage ever starts — so there is no
 gate left to ask here, only the moves that answer decides. A timing that

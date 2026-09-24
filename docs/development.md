@@ -102,7 +102,7 @@ waits for has happened. What it can know is a date, and how long since a person
 last said it had not. On 2026-09-18 two entries left because their events had
 happened, and both were found by somebody reading the section rather than by the
 event announcing itself — so the reading is what gets scheduled: `orient` lists
-every timing each time, and `/fankeel` offers one option once any is due.
+every timing each time, and `/fankeel` offers one option whenever it holds any.
 
 `## Needs a decision` gets a due list of its own, read off git blame rather
 than a stamp — nobody writes `lifts when:` or a date on those bullets. An

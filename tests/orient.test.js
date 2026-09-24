@@ -594,7 +594,34 @@ test('the todo: block offers the newest edits under Needs a decision, oldest edi
   const headingIdx = lines.findIndex((l) => /Needs a decision 5/.test(l));
   assert.match(lines[headingIdx + 1], /Entry A rewritten text/);
   assert.match(out, /and 1 more, not listed — Other takes one by name/);
-  assert.match(out, /Waiting 0 timings, 0 entries — none due, not offered/);
+  assert.match(out, /Waiting 0 timings, 0 entries — none, not offered/);
+});
+
+test('a non-due Waiting timing still takes a slot from Needs a decision', () => {
+  const root = workspace({});
+  const opts = initGit(root);
+  const body = [
+    '## Ready',
+    '',
+    '## Needs a decision',
+    '- Entry one',
+    '- Entry two',
+    '- Entry three',
+    '- Entry four',
+    '- Entry five',
+    '',
+    '## Waiting',
+    '',
+    '### gates a week old',
+    'lifts when: 09-25 onward, a week of gates. 09-18.',
+    '',
+    '- a',
+  ].join('\n') + '\n';
+  commitTodo(root, opts, body, '2026-09-18T00:00:00Z');
+
+  const out = reportAt(root, 2026, 9, 20);
+  assert.match(out, /Needs a decision 5 — newest 3 by last edit, offer these:/);
+  assert.match(out, /Waiting 1 timing, 1 entry — 0 due, offer one option/);
 });
 
 test('a Ready entry drops the offer from 4 to 3', () => {
@@ -661,9 +688,10 @@ test('the todo: block lists every Waiting timing and marks the due ones', () => 
   assert.match(late, /Waiting 2 timings, 3 entries — 2 due, offer one option/);
 });
 
-// The control: a due timing takes one of AskUserQuestion's four slots, so
-// Needs a decision gets one fewer — and with none due it gets them back.
-test('a due timing takes one option from Needs a decision', () => {
+// The control: a timing takes one of AskUserQuestion's four slots whenever it
+// is present, whether or not it is due — the slot does not come and go with
+// `due`.
+test('a Waiting timing takes one option from Needs a decision whether or not it is due', () => {
   const root = workspace({});
   const opts = initGit(root);
   const body = [
@@ -685,7 +713,7 @@ test('a due timing takes one option from Needs a decision', () => {
   ].join('\n') + '\n';
   commitTodo(root, opts, body, '2026-09-01T00:00:00Z');
   assert.match(reportAt(root, 2026, 9, 20), /Needs a decision 5 — newest 3 by last edit, offer these:/);
-  assert.match(reportAt(root, 2026, 9, 3), /Needs a decision 5 — newest 4 by last edit, offer these:/);
+  assert.match(reportAt(root, 2026, 9, 3), /Needs a decision 5 — newest 3 by last edit, offer these:/);
 });
 
 test('what is offered plus "and N more" equals todo-check\'s own count', () => {

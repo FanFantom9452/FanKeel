@@ -507,9 +507,10 @@ function todoBlock(dir, now) {
     const dueCount = timings.filter((t) => t.due).length;
     const needsCount = needs.length;
     // AskUserQuestion takes four. Ready's section is one option when it has
-    // entries, and Waiting's due timings are one more between them, so each
-    // takes a slot from Needs a decision's newest few.
-    const limit = 4 - (readyCount > 0 ? 1 : 0) - (dueCount > 0 ? 1 : 0);
+    // entries, and Waiting's timings are one more whenever it holds any, not
+    // only when one is due, so each takes a slot from Needs a decision's
+    // newest few.
+    const limit = 4 - (readyCount > 0 ? 1 : 0) - (timings.length > 0 ? 1 : 0);
     const shown = ordered.slice(0, limit);
 
     const lines = ['todo: TODO.md', '  Ready ' + readyCount];
@@ -529,7 +530,7 @@ function todoBlock(dir, now) {
     // it is offered, the way a skill's description is. The due ones first.
     lines.push('  Waiting ' + timings.length + (timings.length === 1 ? ' timing, ' : ' timings, ')
         + waitingCount + (waitingCount === 1 ? ' entry' : ' entries') + ' — '
-        + (dueCount ? dueCount + ' due, offer one option' : 'none due, not offered'));
+        + (timings.length ? dueCount + ' due, offer one option' : 'none, not offered'));
     for (const t of timings.filter((x) => x.due).concat(timings.filter((x) => !x.due))) {
         const col = t.due ? 'due' : t.date !== null ? todoCheck.mmdd(t.date) : '';
         lines.push('    ' + col.padEnd(7) + t.title + ' (' + t.items.length + ')');

@@ -747,9 +747,8 @@ loop's place with it. `## Needs a decision` offers the ones `orient`'s `todo:`
 block lists — the newest by last edit, because `AskUserQuestion` holds four and
 `## Ready` takes one when it has entries — one option each, because each is a
 different question for a person, with the rest reachable by name through
-**Other**. `## Waiting` is one option, and only when `orient`'s `todo:` block
-marks a timing `due` — its date has come, or nobody has re-read it in seven
-days. Its timings are never options one by one — six unpickable rows are how a
+**Other**. `## Waiting` is one option whenever `orient`'s `todo:` block lists
+any timing. Its timings are never options one by one — six unpickable rows are how a
 menu stops being read — but every one is listed in that block each time, so what
 is waiting is on screen whether or not it is offered. Picking it starts a task
 with `--route "survey,build,land"`. `survey`'s own skill and `build`'s own
