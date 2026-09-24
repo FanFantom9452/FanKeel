@@ -441,6 +441,16 @@ two names a decision there exactly as it does everywhere else.
 One question per call. A second belongs in the same call only when it is
 genuinely independent — a decision the answer to the first would not change.
 
+**Three shapes, by what is being asked.** A stage gate keeps the three
+options above, plus the hand-off wherever the `context:` line has appeared. A
+single-select question whose options have to be compared by their content —
+two wordings, two layouts, two diffs — gives each option a `preview`: the
+content itself, which the host shows beside the option being considered. A
+`multiSelect` question takes no `preview` — the host shows none, and a stage
+agent's gate that carries one is refused (`gateProblem` in `lib/handoff.js`) —
+so there each option's description is the one line that can be compared, a
+path or a first sentence, and never the reason for picking it.
+
 **When the user's language is not English**, two failures show up in tool input
 before they show up in prose, because tool input is where the writing is
 quickest:

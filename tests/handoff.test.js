@@ -368,3 +368,48 @@ test('gateMatches: same values, different key order inside an option, still matc
   asked[0].options[0] = { description: asked[0].options[0].description, label: asked[0].options[0].label };
   assert.equal(gateMatches(asked, filed), true);
 });
+
+// §2 of the 2026-09-24 design: a single-select option may carry a `preview`,
+// a multiSelect one may not, and a preview is a non-empty string.
+const previewGate = (multiSelect, preview) => {
+  const g = gateOf('p');
+  g.questions[0].multiSelect = multiSelect;
+  g.questions[0].options[0].preview = preview;
+  return g;
+};
+
+test('readGate: a single-select option may carry a preview', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'survey.md');
+  const g = previewGate(false, '<b>layout A</b>');
+  fs.writeFileSync(file, block(g));
+  assert.deepEqual(readGate(file), g);
+});
+
+test('readGate refuses a preview on a multiSelect question, naming the option', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'survey.md');
+  fs.writeFileSync(file, block(previewGate(true, '<b>layout A</b>')));
+  const got = readGate(file);
+  assert.equal(got.invalid, 'questions[0].options[0].preview');
+  assert.match(got.detail, /multiSelect/);
+});
+
+test('readGate refuses a preview that is not a non-empty string', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'survey.md');
+  for (const bad of [42, '   ', null]) {
+    fs.writeFileSync(file, block(previewGate(false, bad)));
+    const got = readGate(file);
+    assert.equal(got.invalid, 'questions[0].options[0].preview', JSON.stringify(bad));
+    assert.match(got.detail, /non-empty string/);
+  }
+});
+
+test('gateMatches: a copy that drops or rewords a preview does not match', () => {
+  const filed = previewGate(false, '<b>layout A</b>').questions;
+  const dropped = JSON.parse(JSON.stringify(filed));
+  delete dropped[0].options[0].preview;
+  assert.equal(gateMatches(dropped, filed), false);
+  const reworded = JSON.parse(JSON.stringify(filed));
+  reworded[0].options[0].preview = '<b>layout B</b>';
+  assert.equal(gateMatches(reworded, filed), false);
+  assert.equal(gateMatches(JSON.parse(JSON.stringify(filed)), filed), true);
+});
