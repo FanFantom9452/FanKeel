@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 四條＋tune live：description 版本與 effort、gate 問法分情境、station 答 gate、station 回放、真實頁面逐塊調 — design
