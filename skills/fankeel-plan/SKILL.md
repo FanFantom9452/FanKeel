@@ -164,7 +164,8 @@ session that wrote the plan, which has all of it — the block is still written,
 because which tasks are dispatched can change after the plan is approved and a
 reviewer reads it either way.
 
-And one line saying whether that implementer is dispatched at all. Four alternatives, one of which every task carries:
+And one line saying whether that implementer is dispatched at all.
+Four alternatives, one of which every task carries:
 
 ```markdown
 **Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
