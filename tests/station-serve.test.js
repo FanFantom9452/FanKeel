@@ -3,10 +3,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
 const http = require('node:http');
-const { execFileSync, spawnSync } = require('node:child_process');
 const registry = require('../lib/registry.js');
 const badge = require('../lib/badge.js');
 const station = require('../lib/station.js');
