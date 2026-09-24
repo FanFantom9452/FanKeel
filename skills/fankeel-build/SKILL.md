@@ -549,6 +549,27 @@ task-boundary half has nothing to say there — a row is a line in a table, not 
 task carrying its own test cycle — so a row that turns out to need two is split
 where you are, rather than being a defect in a document.
 
+## Waiting tasks
+
+A task started by picking `## Waiting` at `/fankeel` arrives on
+`--route "survey,build,land"`. By the time it reaches this stage, `survey` has
+already judged every due timing — checking what the repository, its registry
+or upstream could show directly, and putting the witness-only ones to the user
+in its own `AskUserQuestion` before this stage ever starts — so there is no
+gate left to ask here, only the moves that answer decides. A timing that
+lifted this round has its whole entry moved, together, to `## Ready` or to
+`## Needs a decision`, whichever survey's own judgement sent it to, and the
+move drops both its `###` heading and its `lifts when:` line — a lifted
+timing no longer needs either, since what it was waiting for has already
+happened. A timing that is still waiting, not lifted this round, gets today's
+date stamped onto its entry instead. A timing whose date arrived — it went
+`due` — but whose event still did not check out is not lifted either: it gets
+a new date, moved forward rather than lifted. All of a batch's changes land in
+one commit — the date stamps and any lift together, not staged apart from one
+another — the same way this was verified once already in this repository, on
+2026-09-25 in commit `22eff773`, where a batch's date changes and one lift
+landed together in a single commit, one hunk each.
+
 ## Output
 
 ```
