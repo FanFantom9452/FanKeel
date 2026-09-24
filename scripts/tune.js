@@ -4,6 +4,7 @@
 //
 //   node scripts/tune.js serve <dir> [--port 7819]   serve <dir> with the overlay injected
 //   node scripts/tune.js serve <dir> --src <file,...> --rebuild "<cmd>"   live mode: the page is built from --src
+//   node scripts/tune.js serve --proxy <url> --src <file,...> [--rebuild "<cmd>"]   the real server's pages, overlay spliced into its HTML
 //   node scripts/tune.js wait [--timeout 600]          block until the next request; print it as JSON
 //   node scripts/tune.js done <id>                     check the edit stayed in its block; tell the page
 //
@@ -20,7 +21,7 @@ const http = require('node:http');
 const crypto = require('node:crypto');
 const { execFileSync, spawnSync } = require('node:child_process');
 const { parseArgs } = require('node:util');
-const { inject, outside, diffLines, queueState, sourcesOf, changedPaths } = require('../lib/tune.js');
+const { inject, outside, diffLines, queueState, sourcesOf, changedPaths, rankSources } = require('../lib/tune.js');
 const { readBody } = require('../lib/body.js');
 
 const STATE = path.resolve('.fankeel', 'build', 'tune');
@@ -60,14 +61,42 @@ function resolveInside(root, rel) {
     return file.startsWith(root + path.sep) ? file : null;
 }
 
+// Proxy mode: the request goes to the real server as it came. An HTML answer
+// comes back with the overlay spliced in; anything else is streamed through
+// byte for byte, so a script, a poll or an event stream arrives as it would
+// have. `accept-encoding` is dropped so an HTML body arrives uncompressed.
+function forward(req, res, upstream) {
+    const target = new URL(req.url, upstream);
+    const headers = Object.assign({}, req.headers, { host: target.host });
+    delete headers['accept-encoding'];
+    const out = http.request(target, { method: req.method, headers }, (up) => {
+        if (!/^text\/html/i.test(String(up.headers['content-type'] || ''))) {
+            res.writeHead(up.statusCode, up.headers);
+            up.pipe(res);
+            return;
+        }
+        const chunks = [];
+        up.on('data', (c) => chunks.push(c));
+        up.on('end', () => {
+            const body = Buffer.from(inject(Buffer.concat(chunks).toString('utf8')), 'utf8');
+            const h = Object.assign({}, up.headers, { 'content-length': String(body.length) });
+            delete h['transfer-encoding'];
+            res.writeHead(up.statusCode, h);
+            res.end(body);
+        });
+    });
+    out.on('error', (e) => send(res, 502, TYPES['.txt'], 'tune: the proxied server did not answer: ' + e.message));
+    req.pipe(out);
+}
+
 function send(res, status, type, body) {
     res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store' });
     res.end(body);
 }
 
-function serve(dir, port, live) {
-    const root = path.resolve(dir);
-    if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) die('not a directory: ' + root);
+function serve(dir, port, live, upstream) {
+    const root = upstream ? null : path.resolve(dir);
+    if (!upstream && (!fs.existsSync(root) || !fs.statSync(root).isDirectory())) die('not a directory: ' + root);
     const clients = new Set();
     const broadcast = (event) => {
         for (const c of clients) c.write('data: ' + JSON.stringify(event) + '\n\n');
@@ -112,19 +141,26 @@ function serve(dir, port, live) {
                     broadcast(data);
                     return send(res, 204, TYPES['.txt'], '');
                 }
-                const file = resolveInside(root, String(data.page || ''));
-                const block = typeof data.block === 'string' ? data.block : '';
-                const note = typeof data.note === 'string' ? data.note.trim() : '';
-                if (!file || !/\.html?$/i.test(file) || !fs.existsSync(file) || !block || !note) {
-                    return send(res, 400, TYPES['.txt'], 'page, block and note are required');
+                const page = String(data.page || '');
+                const file = upstream ? null : resolveInside(root, page);
+                const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
+                const block = str(data.block, 200);
+                const note = str(data.note, 4000);
+                const selector = str(data.selector, 500);
+                const text = str(data.text, 80);
+                const classes = Array.isArray(data.classes) ? data.classes.filter((c) => typeof c === 'string').slice(0, 20) : [];
+                if (!note || (!block && !selector)) return send(res, 400, TYPES['.txt'], 'a note, and a block or a selector, are required');
+                if (!upstream && (!file || !/\.html?$/i.test(file) || !fs.existsSync(file) || !block)) {
+                    return send(res, 400, TYPES['.txt'], 'a static page takes a data-block element on an html file under the served directory');
                 }
                 const id = 'r-' + String(requests().length + 1).padStart(4, '0');
-                append({ id, status: 'queued', page: path.relative(root, file).replace(/\\/g, '/'), file, block, note });
+                append({ id, status: 'queued', page: upstream ? page : path.relative(root, file).replace(/\\/g, '/'), file, block, selector, classes, text, note });
                 send(res, 200, TYPES['.json'], JSON.stringify({ id }));
-                return broadcast({ type: 'queued', id, block });
+                return broadcast({ type: 'queued', id, block, selector });
             });
             return undefined;
         }
+        if (upstream) return forward(req, res, upstream);
         const file = resolveInside(root, pathname);
         if (!file || !fs.existsSync(file) || !fs.statSync(file).isFile()) return send(res, 404, TYPES['.txt'], 'not found');
         const ext = path.extname(file).toLowerCase();
@@ -134,7 +170,7 @@ function serve(dir, port, live) {
     server.listen(port, '127.0.0.1', () => {
         const actual = server.address().port;
         fs.mkdirSync(STATE, { recursive: true });
-        fs.writeFileSync(SERVE, JSON.stringify(Object.assign({ port: actual, dir: root, pid: process.pid }, live || {})) + '\n');
+        fs.writeFileSync(SERVE, JSON.stringify(Object.assign({ port: actual, dir: root, proxy: upstream ? upstream.href : null, pid: process.pid }, live || {})) + '\n');
         process.stdout.write('http://127.0.0.1:' + actual + '/\n');
     });
 }
@@ -150,8 +186,8 @@ function wait(timeoutSec) {
             if (live) takeSnapshot(next.id, live.src);
             else fs.copyFileSync(next.file, path.join(STATE, next.id + '.before.html'));
             append({ id: next.id, status: 'taken' });
-            const job = { id: next.id, page: next.page, file: next.file, block: next.block, note: next.note };
-            if (live) job.sources = sourcesOf(live.src.map((f) => ({ file: f, text: fs.readFileSync(f, 'utf8') })), next.block);
+            const job = { id: next.id, page: next.page, file: next.file, block: next.block, selector: next.selector || '', classes: next.classes || [], text: next.text || '', note: next.note };
+            if (live) job.sources = rankSources(live.src.map((f) => ({ file: f, text: fs.readFileSync(f, 'utf8') })), { block: next.block, classes: next.classes || [] });
             process.stdout.write(JSON.stringify(job) + '\n');
             return;
         }
@@ -168,7 +204,7 @@ function wait(timeoutSec) {
 function liveOf() {
     try {
         const rec = JSON.parse(fs.readFileSync(SERVE, 'utf8'));
-        return Array.isArray(rec.src) && rec.src.length && typeof rec.rebuild === 'string' ? { src: rec.src, rebuild: rec.rebuild } : null;
+        return Array.isArray(rec.src) && rec.src.length ? { src: rec.src, rebuild: typeof rec.rebuild === 'string' ? rec.rebuild : null } : null;
     } catch (e) {
         return null;
     }
@@ -277,7 +313,7 @@ function notify(event, then) {
 function settle(r, ok, touched, message) {
     const type = ok ? 'done' : 'rejected';
     append({ id: r.id, status: type, touched });
-    const event = ok ? { type, id: r.id, block: r.block } : { type, id: r.id, block: r.block, touched };
+    const event = ok ? { type, id: r.id, block: r.block, selector: r.selector || '' } : { type, id: r.id, block: r.block, touched, selector: r.selector || '' };
     notify(event, () => {
         if (ok) {
             process.stdout.write('tune: ' + r.id + ' done — ' + message + '\n');
@@ -318,6 +354,7 @@ function doneLive(r, live) {
         fs.writeFileSync(path.join(STATE, r.id + '.diff.txt'), stray.map((p) => '! ' + p + '\n').join(''));
         return settle(r, false, stray, 'the edit changed ' + stray.join(', ') + ' outside --src; every file it touched is back as it was');
     }
+    if (!live.rebuild) return settle(r, true, [], 'nothing outside --src changed; no --rebuild, the proxied server reads --src as it is');
     const built = spawnSync(live.rebuild, { shell: true, encoding: 'utf8' });
     if (built.status !== 0) {
         restore(r.id, snap, changed);
@@ -328,11 +365,14 @@ function doneLive(r, live) {
     return settle(r, true, [], 'rebuilt with `' + live.rebuild + '`');
 }
 
-// `--src` and `--rebuild` come together or not at all: live mode checks an
-// edit against the one and rebuilds the page with the other.
-function liveArgs(values) {
-    if (values.src === undefined && values.rebuild === undefined) return null;
-    if (!values.src || !values.rebuild) die('--src and --rebuild go together: the files an edit may touch, and the command that rebuilds the page from them');
+// `--src` names the files an edit may touch. With a directory it comes with
+// `--rebuild`, which regenerates the page from them; with `--proxy` it is
+// required and `--rebuild` is optional, because a server that reads --src on
+// every request needs nothing rebuilt.
+function liveArgs(values, proxied) {
+    if (values.src === undefined && values.rebuild === undefined && !proxied) return null;
+    if (proxied && !values.src) die('--proxy needs --src: the files an edit may touch');
+    if (!proxied && (!values.src || !values.rebuild)) die('--src and --rebuild go together: the files an edit may touch, and the command that rebuilds the page from them');
     const src = values.src.split(',').map((s) => s.trim()).filter(Boolean).map(rel);
     for (const f of src) if (!fs.existsSync(f)) die('no such --src file: ' + f);
     try {
@@ -340,22 +380,36 @@ function liveArgs(values) {
     } catch (e) {
         die('live mode compares the tree against git HEAD, and there is no HEAD here');
     }
-    return { src, rebuild: values.rebuild };
+    return { src, rebuild: values.rebuild || null };
+}
+
+function serveArgs(dir, values) {
+    const port = values.port === undefined ? 7819 : Number(values.port);
+    if (values.proxy === undefined) return serve(dir, port, liveArgs(values, false), null);
+    if (dir) die('--proxy or a directory, not both: a proxied page comes from the server, a directory from disk');
+    let upstream;
+    try {
+        upstream = new URL(values.proxy);
+    } catch (e) {
+        die('--proxy is not a url: ' + values.proxy);
+    }
+    if (upstream.protocol !== 'http:') die('--proxy takes an http:// url');
+    return serve(null, port, liveArgs(values, true), upstream);
 }
 
 function main() {
     let parsed;
     try {
-        parsed = parseArgs({ args: process.argv.slice(2), options: { port: { type: 'string' }, timeout: { type: 'string' }, src: { type: 'string' }, rebuild: { type: 'string' } }, allowPositionals: true, strict: true });
+        parsed = parseArgs({ args: process.argv.slice(2), options: { port: { type: 'string' }, timeout: { type: 'string' }, src: { type: 'string' }, rebuild: { type: 'string' }, proxy: { type: 'string' } }, allowPositionals: true, strict: true });
     } catch (e) {
         die(e.message);
     }
     const { values, positionals } = parsed;
     const [cmd, arg] = positionals;
-    if (cmd === 'serve' && arg) return serve(arg, values.port === undefined ? 7819 : Number(values.port), liveArgs(values));
+    if (cmd === 'serve' && (arg || values.proxy !== undefined)) return serveArgs(arg, values);
     if (cmd === 'wait') return wait(values.timeout === undefined ? 600 : Number(values.timeout));
     if (cmd === 'done' && arg) return done(arg);
-    return die('usage: tune.js serve <dir> [--port N] [--src <file,...> --rebuild "<cmd>"] | wait [--timeout S] | done <id>');
+    return die('usage: tune.js serve <dir> [--port N] [--src <file,...> --rebuild "<cmd>"] | serve --proxy <url> --src <file,...> [--rebuild "<cmd>"] [--port N] | wait [--timeout S] | done <id>');
 }
 
 if (require.main === module) main();

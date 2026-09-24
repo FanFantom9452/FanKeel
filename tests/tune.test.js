@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
 const { spawn, spawnSync, execFileSync } = require('node:child_process');
-const { inject, outside, diffLines, queueState, sourcesOf, changedPaths } = require('../lib/tune.js');
+const { inject, outside, diffLines, queueState, sourcesOf, changedPaths, rankSources } = require('../lib/tune.js');
 const tmp = require('./tmp.js');
 
 const CLI = path.join(__dirname, '..', 'scripts', 'tune.js');
@@ -247,4 +247,116 @@ test('--src without --rebuild is refused before anything is served', () => {
     const r = spawnSync(process.execPath, [CLI, 'serve', 'site', '--port', '0', '--src', 'src/view.js'], { cwd, encoding: 'utf8', timeout: 5000 });
     assert.equal(r.status, 2);
     assert.match(r.stderr, /--src and --rebuild go together/);
+});
+
+test('rankSources puts the block\'s own lines first, then lines by how many of the element\'s classes they name, ten at most', () => {
+    const js = [
+        "h += '<div class=\"rpcs\" data-block=\"cost-strip\">';",
+        "h += '<button type=\"button\" class=\"rs\" data-rs=\"x\">';",
+        "h += '<button class=\"rs big\">';",
+        "var k = 'big';",
+        "h += '<i class=\"fk-live-box\">';",
+    ].join('\n');
+    const css = '.rs{border:0}\n.rsx{color:red}\n.big .rs{flex:1}\n';
+    const src = [{ file: 'a.js', text: js }, { file: 'a.css', text: css }];
+    assert.deepEqual(rankSources(src, { block: 'cost-strip', classes: ['rs', 'big'] }),
+        ['a.js:1', 'a.js:3', 'a.css:3', 'a.js:2', 'a.js:4', 'a.css:1']);
+    assert.deepEqual(rankSources(src, { block: '', classes: ['fk-live-box'] }), [], 'the overlay\'s own classes are never a source');
+    const many = Array.from({ length: 30 }, () => "h += '<b class=\"rs\">';").join('\n');
+    assert.equal(rankSources([{ file: 'm.js', text: many }], { block: '', classes: ['rs'] }).length, 10);
+});
+
+// An upstream the proxy sits in front of: an HTML page, a script whose bytes
+// must pass untouched, and a POST that echoes its body back.
+function upstreamServer(t) {
+    const js = Buffer.from([0x2f, 0x2f, 0x20, 0xe4, 0xb8, 0xad, 0x0a, 0x00, 0xff]);
+    return new Promise((resolve) => {
+        const server = http.createServer((req, res) => {
+            if (req.url === '/') {
+                res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'x-up': 'yes' });
+                return res.end('<!DOCTYPE html><html><body><div data-block="now"><b class="rs">3 個 session</b></div></body></html>');
+            }
+            if (req.url === '/app.js') {
+                res.writeHead(200, { 'content-type': 'text/javascript' });
+                return res.end(js);
+            }
+            if (req.method === 'POST' && req.url === '/echo') {
+                const chunks = [];
+                req.on('data', (c) => chunks.push(c));
+                return req.on('end', () => { res.writeHead(201, { 'content-type': 'text/plain' }); res.end(Buffer.concat(chunks)); });
+            }
+            res.writeHead(404, { 'content-type': 'text/plain' });
+            return res.end('nope');
+        });
+        t.after(() => server.close());
+        server.listen(0, '127.0.0.1', () => resolve({ url: 'http://127.0.0.1:' + server.address().port, js }));
+    });
+}
+
+function startProxy(t, cwd, args) {
+    return new Promise((resolve, reject) => {
+        const child = spawn(process.execPath, [CLI, 'serve', '--port', '0'].concat(args), { cwd });
+        t.after(() => child.kill());
+        let out = '';
+        child.stdout.on('data', (d) => {
+            out += d;
+            if (out.includes('\n')) resolve(out.trim());
+        });
+        child.on('exit', (code) => reject(new Error('tune serve exited ' + code)));
+    });
+}
+
+function getBytes(url) {
+    return new Promise((resolve, reject) => {
+        http.get(url, { agent: false }, (res) => {
+            const chunks = [];
+            res.on('data', (c) => chunks.push(c));
+            res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks) }));
+        }).on('error', reject);
+    });
+}
+
+test('--proxy: HTML gets the overlay, everything else passes byte for byte, a POST reaches the server, /__live stays local', async (t) => {
+    const cwd = liveRepo();
+    const up = await upstreamServer(t);
+    const base = await startProxy(t, cwd, ['--proxy', up.url, '--src', 'src/view.js']);
+    const page = await getBytes(base);
+    assert.equal(page.status, 200);
+    assert.equal(page.headers['x-up'], 'yes', 'the upstream headers were dropped');
+    assert.match(page.body.toString('utf8'), /<script src="\/__live\/overlay\.js"><\/script><\/body>/);
+    assert.equal(Number(page.headers['content-length']), page.body.length);
+    const js = await getBytes(base + 'app.js');
+    assert.ok(js.body.equals(up.js), 'a non-HTML body changed on the way through');
+    const echo = await request(base + 'echo', 'POST', { a: 1 });
+    assert.deepEqual([echo.status, echo.text], [201, '{"a":1}']);
+    assert.equal((await getBytes(base + 'missing')).status, 404);
+    assert.equal(JSON.parse((await request(base + '__live/queue', 'GET')).text).pending, 0);
+});
+
+test('--proxy: a request with classes and no block gets the class lines as sources, and done needs no --rebuild', async (t) => {
+    const cwd = liveRepo();
+    fs.writeFileSync(path.join(cwd, 'src', 'view.js'), VIEW.replace('<b>', '<b class="rs">'));
+    git(cwd, ['commit', '-qam', 'class']);
+    const up = await upstreamServer(t);
+    const base = await startProxy(t, cwd, ['--proxy', up.url, '--src', 'src/view.js']);
+    const made = JSON.parse((await request(base + '__live/request', 'POST', { page: '/', block: '', selector: 'body > div:nth-of-type(1) > b:nth-of-type(1)', classes: ['rs'], text: '3 個 session', note: '粗一點' })).text);
+    assert.equal(made.id, 'r-0001');
+    const waited = spawnSync(process.execPath, [CLI, 'wait', '--timeout', '5'], { cwd, encoding: 'utf8' });
+    const job = JSON.parse(waited.stdout);
+    assert.deepEqual([job.sources, job.selector, job.classes, job.text], [['src/view.js:2'], 'body > div:nth-of-type(1) > b:nth-of-type(1)', ['rs'], '3 個 session']);
+    fs.writeFileSync(path.join(cwd, 'src', 'view.js'), VIEW.replace('<b>', '<b class="rs big">'));
+    const ok = spawnSync(process.execPath, [CLI, 'done', 'r-0001'], { cwd, encoding: 'utf8' });
+    assert.equal(ok.status, 0, ok.stderr);
+    assert.match(ok.stdout, /no --rebuild/);
+    assert.equal((await request(base + '__live/request', 'POST', { page: '/', note: 'x' })).status, 400, 'neither a block nor a selector');
+});
+
+test('--proxy and <dir> are one or the other, and --proxy needs --src', () => {
+    const cwd = liveRepo();
+    const both = spawnSync(process.execPath, [CLI, 'serve', 'site', '--port', '0', '--proxy', 'http://127.0.0.1:1', '--src', 'src/view.js'], { cwd, encoding: 'utf8', timeout: 5000 });
+    assert.equal(both.status, 2);
+    assert.match(both.stderr, /--proxy or a directory, not both/);
+    const bare = spawnSync(process.execPath, [CLI, 'serve', '--port', '0', '--proxy', 'http://127.0.0.1:1'], { cwd, encoding: 'utf8', timeout: 5000 });
+    assert.equal(bare.status, 2);
+    assert.match(bare.stderr, /--proxy needs --src/);
 });
