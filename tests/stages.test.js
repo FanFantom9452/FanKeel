@@ -874,7 +874,7 @@ test('every rule reaches the injected block, and removing one drops only it', ()
 test('controlFor fills every token it is given, and only survey has one', () => {
   const { controlFor, controlling } = require('../lib/stages.js');
   const values = { 'stage.agents': ['survey'] };
-  const c = controlFor('survey', values, { advance: 'stage design', task: '<plugin>/scripts/task.js', await: '<plugin>/scripts/await.js', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
+  const c = controlFor('survey', values, { task: '<plugin>/scripts/task.js', await: '<plugin>/scripts/await.js', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
   assert.ok(c.rules.length > 0);
   assert.ok(!c.rules.join(' ').includes('{{'), c.rules.join('\n'));
   assert.ok(c.rules.join(' ').includes('fankeel:fankeel-brain'));
@@ -915,7 +915,7 @@ test('option one is told to run the stage its own label names, not a pre-baked a
 
 test('the controller waits out a return that is not a path, and sends a finished agent with no path to the await', () => {
   const { controlFor } = require('../lib/stages.js');
-  const c = controlFor('survey', { 'stage.agents': ['survey'] }, { advance: 'stage design', task: 't', await: 'w', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
+  const c = controlFor('survey', { 'stage.agents': ['survey'] }, { task: 't', await: 'w', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });
   const text = c.rules.join('\n');
   assert.match(text, /not a path or `commit <path>` is not its report: relay nothing and wait/);
   assert.doesNotMatch(text, /if \/r\/h\.md exists, ask the same way/);
@@ -947,7 +947,7 @@ test('controlling and controlFor read the controlled set from stage.agents\'s ar
   const values = { 'stage.agents': ['survey', 'build', 'verify'] };
   assert.equal(controlling('build', values), true);
   assert.equal(controlling('design', values), false);
-  assert.ok(controlFor('build', values, { advance: 'stage verify', session: 'sid' }));
+  assert.ok(controlFor('build', values, { session: 'sid' }));
   assert.equal(controlFor('design', values, {}), null);
 });
 

@@ -101,7 +101,7 @@ function main(raw) {
         agents = agentsText(values);
         file = handoffPath(root, mine, mine.stage);
         if (controlled) gate = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE);
-        if (!gate || gate.invalid) skip = skipReason({ stage: mine.stage, controlled, agents, inflight: mine.inflight, handoff: file });
+        if (!gate) skip = skipReason({ stage: mine.stage, controlled, agents, inflight: mine.inflight, handoff: file });
     } catch (e) { /* housekeeping */ }
 
     // No file gate to check against at all — missing file, unreadable, or the
