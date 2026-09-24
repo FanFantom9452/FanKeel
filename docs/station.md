@@ -204,8 +204,9 @@ Below the strip is the table it is drawn from — one row per stage, with the
 minutes, the burn distance and a third column, `等你`: how much of that
 stage's minutes went on a gate rather than on work. Neither carries a dollar
 figure any more; a stage's own cost surfaces in the per-route stage
-ledger on each project page, and per stage and model on the session page's
-花費 tab — not on this table's rows.
+ledger on each project page, and per stage and model inside the session
+page's 概覽, under a `<details class="csmore">` element
+(`assets/station/station.js:2155`) — not on this table's rows.
 
 A stage's dollar figure needs `spend`, which `hooks/leave.js` writes once, at
 session end — a live session does not have it yet, and no session that ended
@@ -465,6 +466,13 @@ else. The shell is copied rather than pointed at, because the plugin directory
 carries its version in its path and the copy under `<root>/.fankeel/` would
 otherwise point outside the repository it sits in.
 
+Before `station-data.js` arrives the shell has nothing to draw, so
+`station.css` alone fills that wait
+(`assets/station/station.css:1051`, `first load`): CSS-only placeholders
+stand in for the nav and the page, with a `計算中…` spinner beside where the
+side panel would sit, and the placeholders hold still rather than animate
+under `prefers-reduced-motion`.
+
 `write()` compares the three copied files before writing them, so a prompt that
 changed nothing rewrites `station-data.js` alone. It is written at several
 moments, not only on a prompt — *When it is written, and where*, below —
@@ -522,8 +530,21 @@ The facets are on 清單, above its table — state and stage with a count on ea
 button, registry with one button per root
 (`assets/station/station.js:2233`, `moved onto the page they narrow`) — and
 the search box in the top bar matches task, project, session id, registry
-label, model, state, next, the files touched and its notes — AND-ed. On 清單,
-selecting a registry recomputes the page below the facets: `goneNote()`'s card
+label, model, state, next, the files touched and its notes — AND-ed.
+
+The same box also opens a grouped-results popover about 200 ms after typing
+stops (`assets/station/station.js:3806`, `}, 200)`): `qGroups`
+(`assets/station/station.js:3722`, `function qGroups(q) {`) buckets what
+matches into Sessions, 專案 and 文件, up to five rows each with a 看全部 link
+when there are more, and `qDraw`
+(`assets/station/station.js:3763`, `function qDraw() {`) draws it with each
+match highlighted. `/` focuses the box from anywhere on the page
+(`assets/station/station.js:3891`, `if (e.key === '/')`), the arrow keys
+move the selection, Enter opens what is picked and Esc closes the popover.
+文件 matches only the paths and buckets the page's own data carries, because
+there is no doc body on the client to search.
+
+On 清單, selecting a registry recomputes the page below the facets: `goneNote()`'s card
 replaces the list when the registry is gone, and `registryNote()`'s card sits
 above the list otherwise; it does not merely hide rows.
 
@@ -590,8 +611,15 @@ categories instead. 儀表板 is a single link, `#/`, with no sub-pages.
 Sessions is a folding category — its heading is a toggle button rather than
 a link — with four kids: 進行中 `#/live`, 最近 `#/sessions`, 全部清單
 `#/list` and 比較 `#/cmp`. 花費 is a folding category with two kids: 近 30 天
-`#/days` and 依專案 `#/projects`. 文件 is a single link, `#/docs`. 設定 is a
-folding category with one kid, 精靈 `#/settings`. A folding category's kids
+`#/days` and 依專案 `#/projects`. 文件 is a single link, `#/docs`. 設定 has one
+kid, 精靈 `#/settings`, but no `fold` key on it: its `NAV_TREE` entry
+(`assets/station/station.js:1317`,
+`kids: [['settings', '#/settings', '精靈']]`) carries none, so `navHtml`
+(`assets/station/station.js:1343`) renders it as a plain link straight to
+`#/settings` rather than a toggle. Only Sessions and 花費 fold — a category
+with `fold` is one button, the whole row, that only opens and shuts; its
+kids do the navigating (`assets/station/station.js:1328`), and it never
+navigates on its own. A folding category's kids
 also appear as a subtabs strip under the page itself
 (`assets/station/station.js:1358`, `function subtabsHtml(active) {`) — the
 same list drives both the nav and the strip, so they can never list
@@ -600,6 +628,19 @@ different pages. Each badge is what
 `live` sessions where its own card also shows `stale` ones, and 近 30 天's,
 which shows the window's spend rather than a count; 儀表板 itself carries no
 badge.
+
+Two keys in `localStorage` carry the reader's own state across visits, both
+read with `stored()`'s try/catch so a `file:` page or private mode with no
+`localStorage` just has no preference. `station.nav.collapsed` holds which
+categories are folded shut — read once into `navShut` on load and written
+back by `navFoldSet` on every press of a fold button
+(`assets/station/station.js:3407`, `'station.nav.collapsed'`). `station.theme`
+holds the three-state 跟隨系統/淺色/深色 button at the foot of the sidenav; a
+click cycles it and writes the new value
+(`assets/station/station.js:3443`, `'station.theme'`), and the
+stored value is read and set as `data-theme` on `<html>` before the page's
+first paint, so a reader on 深色 never sees a flash of light first
+(`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
 
 The 30-day histogram that used to open the page is now **近 30 天**,
 `#/days` — one bar per local day, today at the
@@ -762,9 +803,9 @@ block it injects), every `task.js` verb that moves an entry — `start`,
 `next` — every session end (`hooks/leave.js`), and `node scripts/station.js`.
 Each writes `~/.claude/fankeel/index.html`, the copy that is always newest,
 and, when the caller is inside a registry, the same page at
-`<registry>/.fankeel/index.html`, kept out of git by a line the write adds.
-That copy is refreshed by the sessions in its registry; the footer on both
-says when it was generated.
+`<registry>/.fankeel/index.html`, kept out of git — the mechanism is in
+[registry.md](registry.md). That copy is refreshed by the sessions in its
+registry; the footer on both says when it was generated.
 
 A session under a hidden project produces no `station/detail/<id>.js`
 either, on every one of those four writes. `write()` walks
@@ -925,8 +966,9 @@ would land in.
 
 `wizChanges` decides what actually gets written: a key this scope's own
 file does not already hold is skipped unless the chosen value differs from
-what the layers below it give (machine, then the key's builtin default); a
-key the file does hold is included whenever the choice now differs from
+what the layers below it give — the precedence across project, machine and
+builtin is in [registry.md](registry.md); a key the file does hold is
+included whenever the choice now differs from
 what's on file, including a choice of `(ask)`, which is sent as an empty
 value to clear it. The summary's `寫入 N 鍵` button — disabled with nothing
 to write — posts all of it in one `POST /profile`, with `back=#/settings`.
