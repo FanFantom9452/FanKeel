@@ -54,12 +54,25 @@ status: design-intent
 - `skills/fankeel-build/SKILL.md` 寫明選了逐塊時，前端 task 落地後開 live 模式、迴圈到使用者說好，每則請求一個 implementer（`design.mockup` 的模型）。
 - 前提寫進兩份 skill：要調的區塊必須在原始碼裡字面寫出 `data-block="<name>"`，拼接出來的名稱 grep 不到。
 
+## 6. 貼近真頁面：proxy、Alt+click、任意元素、mockup 引用真元件
+
+使用者 09-24 在 build 關卡看了 §5 落地的 7830：只有一頁、元件的互動全不見、只能選大區塊。原因各一：overlay 攔下每個 click（`preventDefault`）；只認 `data-block`，`station.js` 只有 20 個；`tune.js serve .fankeel` 送的是靜態副本，要伺服器的功能都沒有。使用者提的方向：像專案共用的 CSS 元件一樣，引用真的東西。
+
+- `scripts/tune.js serve --proxy <url> --src <files>`：把請求轉給真的伺服器（station 是 `station.js serve`），HTML 回應注入 overlay，其餘原樣轉送。所有頁面、路由、細節載入、答題表單都是真的。`--proxy` 與 `<dir>` 擇一；給 `--proxy` 時 `--rebuild` 可省，因為 `station.js serve` 每次請求都重讀 `assets/station/` 的 css 與 js。
+- overlay 改成一般 click 照常給頁面，**Alt+click** 才選取；按住 Alt 時才畫外框。靜態模式同樣適用，拿掉右下角的 live 開關。
+- 任何元素都能選，不限 `data-block`：Alt+click 選最內層元素，Alt+滾輪往父層走、面板上列出路徑可點回。請求帶 `selector`（路徑）、`classes`、`text`（前 80 字）、最近的 `block`（沒有就空）。
+- `wait` 的 `sources` 改成：先 grep 字面 `data-block="<block>"`，再逐一 grep 元素的 class 名（`class="..."` 或 `'<class>'` 字面出現處）於 `--src` 檔案，依命中數排序回傳 `file:line`，最多 10 筆。
+- `done` 的 live 檢查不變：`--src` 以外有改動就退回並拒絕。
+- `skills/fankeel-design/SKILL.md` 第 3 步：mockup 必須引用專案自己的樣式與元件——`<link>` 專案真的 CSS 檔（不複製，複製會走鐘），從真頁面渲染出的 DOM 起稿（`node scripts/render.js` 抓），只改要重新設計的部分；新加的東西才寫新樣式。mockup 放在能用相對路徑連到專案 CSS 的地方，或由 `tune.js serve --proxy` 供應。
+- `skills/fankeel-build/SKILL.md` 逐塊迴圈改用 `--proxy`，並寫明 Alt+click 與任意元素。
+
 ## 驗收
 
 - 第 2 條：`tests/` 新增 `gateProblem` 測試——帶 `preview` 的單選通過、`multiSelect` 帶 `preview` 被拒、`preview` 非字串被拒；現在三個都不會照預期回報，改完才會。
 - 第 3 條：探測輸出本身就是證據；成功的話再加 `hooks/gate.js` 讀到答案檔即回填、逾時放行的測試。
 - 第 4 條：渲染出來的頁面上，每段標頭的花費加總要等於該 session `burn` 的總和（同一來源兩個數字要對得上）；render reviewer 對照 mockup 拍。
 - 第 5 條：`tests/` 新增 live 模式測試——`wait` 回傳 `data-block` 所在的 `file:line`、`done` 在 `--src` 以外有改動時退回並拒絕、`--rebuild` 失敗時拒絕；沒給 `--src` 時既有 tune 測試全綠。
+- 第 6 條：`tests/tune.test.js` 新增——`--proxy` 時 HTML 回應帶 overlay、非 HTML 原樣轉送（位元組相同）；`wait` 對只有 class 沒有 `data-block` 的請求回傳 class 命中的 `file:line`；overlay 的單純 click 不被攔（jsdom 或字串斷言 handler 先檢查 `altKey`）。在真 station 上 Alt+click 一個按鈕、送一則改動，頁面重載後只有那個元素變了——使用者親眼確認。
 - 全部：整套測試前後都綠，`node scripts/todo-check.js` 綠。
 
 ## 對照 map
@@ -68,4 +81,4 @@ status: design-intent
 
 ## 沒驗過的
 
-`updatedInput.answers` 能不能跳過提問——第 3 條整條都押在這個探測上。第 5 條另有一件沒驗：station 頁在 `tune.js serve .fankeel/` 底下能不能正常載入它的資料腳本（今天它由 `station.js serve` 供應）。
+`updatedInput.answers` 能不能跳過提問——第 3 條整條都押在這個探測上。第 5 條另有一件沒驗：station 頁在 `tune.js serve .fankeel/` 底下能不能正常載入它的資料腳本（今天它由 `station.js serve` 供應）。第 6 條沒驗：`station.js serve` 的即時更新（它的輪詢或 event stream）經過 proxy 是否照常；不行的話 proxy 對那條路徑改成串流轉送。
