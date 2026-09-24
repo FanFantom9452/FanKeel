@@ -79,7 +79,6 @@ what gets scheduled.
 
 ## Needs a decision
 
-- 〔memory〕優化 CLAUDE.md 與記憶：先跑官方 `/doctor`（v2.1.206 起會去重、瘦身、搬進 skill），剩下的 fankeel 補；`MEMORY.md` 每 session 約 4,641 tok — [scripts/input-check.js](scripts/input-check.js).
 - 〔docs〕要不要 ADR：參考 Trovara 的 `docs/04-architecture/adr/`，只在做架構選擇時寫、不是每個 task 都呼叫；在哪一站、由誰觸發，要人來定 — [docs/documents.md](docs/documents.md).
 
 ## Waiting
