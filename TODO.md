@@ -75,10 +75,18 @@ what gets scheduled.
 
 ## Ready
 
+- 〔docs〕todo-check 不驗 `path:line` 的行號：改成不存在的行仍然 exit 0 — [scripts/todo-check.js](scripts/todo-check.js). docs-check 補得到一部分，但卡 role、引文與讀得到目標三個前提。
+- 〔quota〕7d 水位兩點差 4.7 倍，是延遲還是計別的：TokenBar 每次 render 已把 5h／7d 讀數 append 到 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`（TokenBar 的 `statusline.ps1`／`.sh`），拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
+- 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過；session 記錄已存 `stage.agents`（6fb1b3a），缺的是一次真實的量測 — [lib/render.js](lib/render.js).
+- 〔security〕reviewer 的 `## Security` lens 已落地（四類、reviewer 自己的模型）；改走本地模型、清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
+
 ## Needs a decision
 
 - 〔stage-agents〕design 在 session 內跑、build 交站 agent 時，chat 裡核准的設計沒有管道交給它：主控寫 `design.md` 被 hook 擋，09-25 只能用 SendMessage 補；該讓 design 站自己落檔，還是 dispatch 帶一行 — [docs/subagents.md](docs/subagents.md).
 - 〔docs〕要不要 ADR：參考 Trovara 的 `docs/04-architecture/adr/`，只在做架構選擇時寫、不是每個 task 都呼叫；在哪一站、由誰觸發，要人來定 — [docs/documents.md](docs/documents.md).
+- 〔judge〕`judge.js record` 要不要驗證這個 session 底下真的有 `fankeel-judge` 的 subagent transcript — [scripts/judge.js](scripts/judge.js).
+- 〔ledger〕Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it.
+- 〔lib〕Whether `fanoutSync`'s payload costs anything: a 64MB overflow discards every answer and re-reads all thirty serially — [lib/tracked.js](lib/tracked.js).
 
 ## Waiting
 
@@ -97,26 +105,6 @@ lifts when: docs-audit 學會報未被點名的模組. 09-25.
 
 - 〔docs〕兩個 `lib/*.js` 沒有 reference-role 頁面點名：`hook.js`、`report.js`；09-09 記的五個裡另外三個後來被點到了 — [docs/documents.md](docs/documents.md).
 
-### 行內容漂移一次
-lifts when: 一條沒帶引文的行內容漂移. 09-25.
-
-- 〔docs〕todo-check 不驗 `path:line` 的行號：改成不存在的行仍然 exit 0 — [scripts/todo-check.js](scripts/todo-check.js). docs-check 補得到一部分，但卡 role、引文與讀得到目標三個前提。
-
-### 判官歸檔造假一次
-lifts when: 看到一次宣稱派了卻沒派的歸檔. 09-25.
-
-- 〔judge〕`judge.js record` 要不要驗證這個 session 底下真的有 `fankeel-judge` 的 subagent transcript — [scripts/judge.js](scripts/judge.js).
-
-### 旗標被忽略一次
-lifts when: a run is seen ignoring a flag. 09-25.
-
-- 〔ledger〕Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it.
-
-### fanoutSync 溢位一次
-lifts when: a `fanoutSync` overflow is observed. 09-25.
-
-- 〔lib〕Whether `fanoutSync`'s payload costs anything: a 64MB overflow discards every answer and re-reads all thirty serially — [lib/tracked.js](lib/tracked.js).
-
 ### 需要第十一種語言
 lifts when: a repository needs an eleventh language. 09-25.
 
@@ -133,17 +121,17 @@ lifts when: knip 認得 CJS namespace property access. 09-25.
 - 〔build〕knip 的 unused exports 一格關著：6.37.0 仍認不得 CJS namespace 取用，開著回 156 個假陽性（09-18 重跑） — [docs/development.md](docs/development.md).
 
 ### guard 測試再紅一次
-lifts when: `a claim whose process is gone does not block` 在整套裡再紅一次. 09-19.
+lifts when: `a claim whose process is gone does not block` 在整套裡再紅一次. 09-25.
 
 - 〔tests〕09-19 在 39efee9 整套紅過一次（1563/1564，已死的 pid 被當 live 而 deny），同樹重跑 1564/0、單跑 5/5 綠；疑 `deadPid()` 的 pid 在並行時被重用，未證實 — [tests/guard.test.js](tests/guard.test.js).
 
 ### brain 的 context 撐不住
-lifts when: `scripts/ctx.js` 量到 build 或 verify 的站 agent 自己的 context 過 400k（`lib/context.js` 的線）. 09-21.
+lifts when: `scripts/ctx.js` 量到 build 或 verify 的站 agent 自己的 context 過 400k（`lib/context.js` 的線）. 09-25.
 
 - 〔stage-agents〕站 agent 拿不到 `Workflow` 工具，所以 build 那一站的 workflow 要由 script 從 plan 的分組產生、主控用 `scriptPath` 開；分組與 surface 由 `ledger.js groups` 算好了 — [lib/plantasks.js](lib/plantasks.js).
 
 ### 受控 build/verify 實跑
-lifts when: main 已 push（08c4ecf 起），新 terminal 更新插件到 0.76.0 以後，並跑過一次 stage.agents=all 的真實 task. 09-24.
+lifts when: main 已 push（08c4ecf 起），新 terminal 更新插件到 0.76.0 以後，並跑過一次 stage.agents=all 的真實 task. 09-25.
 
 - 〔stage-agents〕安裝版還沒這次改動、本 session 的 hook 也釘死在 0.74.0，兩者都量不了：新 terminal 更新插件、`stage.agents` 設 all、跑一個真實 task，用 `ctx.js --by-stage` 與 `modelUsage` 讀 — [docs/subagents.md](docs/subagents.md).
 - 〔stage-agents〕design 站跨輪對話已寫（`lib/stages.js` 的 `controlFor`）但沒實跑；build 每個 task 的提交要經 controller 兩回合，省不省 context 由同一次實跑的 `ctx.js --by-stage` 讀 — [lib/stages.js](lib/stages.js).
@@ -155,37 +143,22 @@ lifts when: main 已 push（08c4ecf 起），新 terminal 更新插件到 0.76.0
 - 〔stage-agents〕接縫「在哪提交」：task 的 `project` 不是 cwd、或在 worktree 裡時跑受控 build，看 `scripts/commit.js` 提交到哪個 repo — [docs/subagents.md](docs/subagents.md).
 
 ### 放行規則有沒有效
-lifts when: 放行規則存在下 no verdict 再發生一次. 09-22.
+lifts when: 放行規則存在下 no verdict 再發生一次. 09-25.
 
 - 〔stage-agents〕auto mode 分類器曾對站 agent 與 implementer 的 Write／Edit 回 no verdict（09-22 六次以上）；已加放行規則 `Edit(/.fankeel/build/**)`，但放行前後探測都寫成功，效果無法證明；再發生時查規則有沒有被讀到 — [docs/subagents.md](docs/subagents.md).
 
 ### 第二個平台的使用者
-lifts when: 出現第二個 host（Gemini CLI、Codex CLI 等）的使用者或 issue. 09-23.
+lifts when: 出現第二個 host（Gemini CLI、Codex CLI 等）的使用者或 issue. 09-25.
 
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；hook 對等只查過 Gemini CLI `BeforeAgent` 與 Codex CLI `UserPromptSubmit` 兩個 — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
 
-### 序列累積到第三點
-lifts when: TokenBar 的 `tokenbar-usage.jsonl` 累積到跨過一次 7d reset 的讀數. 09-23.
-
-- 〔quota〕7d 水位兩點差 4.7 倍，是延遲還是計別的：TokenBar 每次 render 已把 5h／7d 讀數 append 到 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`（TokenBar 的 `statusline.ps1`／`.sh`），拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
-
 ### sonnet 花費成瓶頸或要離線
-lifts when: 渲染審查的 sonnet 花費成了瓶頸，或需要離線跑. 09-23.
+lifts when: 渲染審查的 sonnet 花費成了瓶頸，或需要離線跑. 09-25.
 
 - 〔render〕本地判斷模型當渲染審查前的篩子：moondream2（`ollama run moondream`）判畫面是否正常、UI-TARS 驅動頁面；兩者都沒在本機試過，Jev 是雲端不吃圖 — [agents/fankeel-render-reviewer.md](agents/fankeel-render-reviewer.md).
 
-### 倍數量測
-lifts when: 使用者點頭跑一次成對量測. 09-24.
-
-- 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過；session 記錄已存 `stage.agents`（6fb1b3a），缺的是一次真實的量測 — [lib/render.js](lib/render.js).
-
-### AI CODING SECURITY 定案
-lifts when: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃描模型. 09-24.
-
-- 〔security〕reviewer 的 `## Security` lens 已落地（四類、reviewer 自己的模型）；改走本地模型、清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
-
 ### implementer 互相蓋檔
-lifts when: 共用樹上出現一次 implementer 蓋掉另一個 implementer 的改動. 09-24.
+lifts when: 共用樹上出現一次 implementer 蓋掉另一個 implementer 的改動. 09-25.
 
 - 〔build〕ready-queue 的 worktree 那一半：每個 implementer 各開 worktree、由 brain merge；`scripts/commit.js` 認不得 worktree、brain 不能 `git commit`，兩者都得先改 — [docs/subagents.md](docs/subagents.md).
 
