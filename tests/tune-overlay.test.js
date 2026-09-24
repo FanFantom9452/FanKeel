@@ -27,3 +27,40 @@ test('the five states carry the words the approved mockup shows', () => {
         assert.ok(text.includes(s), 'overlay.js is missing ' + s);
     }
 });
+
+const { selectorOf, labelOf, pathOf } = require('../assets/tune/overlay.js');
+
+// A few element-shaped objects: enough of the DOM for the pure half.
+function node(tag, attrs, kids) {
+    const n = Object.assign({ nodeType: 1, tagName: tag.toUpperCase(), id: '', className: '', children: [], parentNode: null }, attrs);
+    n.classList = String(n.className).split(/\s+/).filter(Boolean);
+    for (const k of kids || []) { k.parentNode = n; n.children.push(k); }
+    return n;
+}
+
+test('a plain click reaches the page: the click handler returns before anything else unless Alt is held', () => {
+    const text = fs.readFileSync(SRC, 'utf8');
+    assert.match(text, /addEventListener\('click', function \(ev\) \{\s*if \(!ev\.altKey\) return;/);
+    assert.match(text, /addEventListener\('wheel', function \(ev\) \{\s*if \(!ev\.altKey/);
+    assert.ok(!text.includes('fk-live-toggle') && !text.includes('fk-live-off'), 'the live toggle is still there');
+});
+
+test('the request carries selector, classes, text and the nearest block', () => {
+    const text = fs.readFileSync(SRC, 'utf8');
+    const call = /fetch\('\/__live\/request'[\s\S]*?\}\)\s*\}\)/.exec(text);
+    assert.ok(call, 'no request is sent');
+    for (const k of ['page:', 'note:', 'block:', 'selector:', 'classes:', 'text:']) assert.ok(call[0].includes(k), 'the request has no ' + k);
+    assert.match(text, /\.slice\(0, 80\)/);
+});
+
+test('selectorOf, labelOf and pathOf describe any element, stopping at an id or the body', () => {
+    const b2 = node('b', { className: 'rs big' });
+    const b1 = node('b');
+    const div = node('div', { className: 'card' }, [b1, node('i'), b2]);
+    const main = node('main', { id: 'app' }, [node('div'), div]);
+    const body = node('body', {}, [main]);
+    assert.equal(selectorOf(b2, body), 'main#app > div:nth-of-type(2) > b:nth-of-type(2)');
+    assert.equal(labelOf(b2), 'b.rs.big');
+    assert.equal(labelOf(main), 'main#app');
+    assert.deepEqual(pathOf(b2, body).map(labelOf), ['b.rs.big', 'div.card', 'main#app']);
+});
