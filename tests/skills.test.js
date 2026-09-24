@@ -1296,12 +1296,16 @@ test('build sends what ledger.js ready lists and asks about the hands first; pla
 test('survey and build each carry their own half of the Waiting rule; fankeel points at both', () => {
   const survey = read('fankeel-survey');
   assert.match(survey, /## Waiting tasks/);
-  const surveySection = survey.slice(survey.indexOf('## Waiting tasks'));
+  const surveyStart = survey.indexOf('## Waiting tasks');
+  const surveyEnd = survey.indexOf('\n## ', surveyStart);
+  const surveySection = surveyEnd === -1 ? survey.slice(surveyStart) : survey.slice(surveyStart, surveyEnd);
   assert.match(surveySection, /multiSelect: true/);
 
   const build = read('fankeel-build');
   assert.match(build, /## Waiting tasks/);
-  const buildSection = build.slice(build.indexOf('## Waiting tasks'));
+  const buildStart = build.indexOf('## Waiting tasks');
+  const buildEnd = build.indexOf('\n## ', buildStart);
+  const buildSection = buildEnd === -1 ? build.slice(buildStart) : build.slice(buildStart, buildEnd);
   assert.match(buildSection, /## Ready/);
   assert.match(buildSection, /lifts when:/);
 
