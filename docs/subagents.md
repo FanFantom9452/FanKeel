@@ -491,7 +491,7 @@ empty list is refused with, in the shape every other bad profile value takes
 (`lib/profile.js:94`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
-file could change (`lib/stages.js:650`, `const raw = values && values['stage.agents'];`),
+file could change (`lib/stages.js:651`, `const raw = values && values['stage.agents'];`),
 so which stages are controlled is a profile answer, not a constant. Put a
 stage on that list and it is run by a stage agent instead of by the session:
 
