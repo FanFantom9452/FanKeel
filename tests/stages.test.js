@@ -901,7 +901,8 @@ test('option one is told to run the stage its own label names, not a pre-baked a
   const text = c.rules.join('\n');
   assert.doesNotMatch(text, /\{\{ADVANCE\}\}/, 'a bare, unexplained {{ADVANCE}} would still be the old static wording');
   assert.doesNotMatch(text, /node <plugin>\/scripts\/task\.js stage audit --session sid/, 'option one must not name the forward-next stage regardless of the label just read');
-  assert.match(text, /Option one `node <plugin>\/scripts\/task\.js stage <label>`\/`down`/, 'option one runs the command built from the label just read, not a baked-in stage');
+  assert.match(text, /Option one: strip `\(Recommended\)`; run `node <plugin>\/scripts\/task\.js stage <word left> --session sid`/, 'option one runs the command built from the label just read, not a baked-in stage');
+  assert.match(text, /or `down` for down\/收工/, 'a label that says down/收工 runs `down`, not `stage down`');
 });
 
 test('the controller waits out a return that is not a path, and sends a finished agent with no path to the await', () => {
@@ -910,7 +911,7 @@ test('the controller waits out a return that is not a path, and sends a finished
   const text = c.rules.join('\n');
   assert.match(text, /not a path or `commit <path>` is not its report: relay nothing and wait/);
   assert.doesNotMatch(text, /if \/r\/h\.md exists, ask the same way/);
-  assert.match(text, /a notification that it finished with no path in hand, run `node w --session sid`/);
+  assert.match(text, /a no-path finish notification, run `node w --session sid`/);
 });
 
 // docs/plans/2026-09-23-controller-await-design.md §1: every controlled stage,
@@ -923,9 +924,9 @@ test('every controlled stage runs the await in the background after each dispatc
   const all = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
   for (const stage of all) {
     const rules = controlFor(stage, { 'stage.agents': all }, { await: '<plugin>/scripts/await.js', session: 'sid' }).rules;
-    const rule = rules.find((r) => r.startsWith('After the dispatch, each SendMessage to it'));
+    const rule = rules.find((r) => r.startsWith('After the dispatch, each SendMessage'));
     assert.ok(rule, stage + ': no await rule');
-    assert.ok(rule.includes('run `node <plugin>/scripts/await.js --session sid` with Bash `run_in_background` and end your turn; never poll.'), stage + ': ' + rule);
+    assert.ok(rule.includes('run `node <plugin>/scripts/await.js --session sid` with Bash `run_in_background`, end your turn; never poll.'), stage + ': ' + rule);
     assert.ok(rules.indexOf(rule) > rules.findIndex((r) => r.startsWith('Dispatch one Agent')), stage + ': the await rule comes after the dispatch');
   }
 });
