@@ -483,7 +483,7 @@ const TODO_ENTRY_WIDTH = 100;
 // so this is not a listing of the section — it is the subset init can turn
 // into options, ordered by which entry was touched most recently, plus the
 // count of what got left out rather than a silent drop of it.
-// Waiting is listed in full, one line per timing, and offered as one option once any is due.
+// Waiting is listed in full, one line per timing, and offered as one option whenever any exists.
 //
 // null when there is nothing to say: no TODO.md at `dir`, or it could not be
 // read. The `readFileSync` below is the only check that needs to exist for

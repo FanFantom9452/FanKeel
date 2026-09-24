@@ -50,7 +50,7 @@ This is the only heading that asks for a timing. `## Ready` and
 menu, so those get looked at whether anyone meant to or not. `## Waiting` is the
 section nothing made you open, which is why it has to say what it is waiting for
 and when you last agreed it was — and why `orient` now lists every timing each
-time, and `/fankeel` offers one option to handle them once any is due.
+time, and `/fankeel` offers one option to handle them whenever any exists.
 
 `node scripts/todo-check.js` enforces all nine: a link that no longer resolves is
 an entry someone forgot to close, a link that still resolves but points at a
