@@ -43,7 +43,7 @@ const STRING_FLAGS = { root: 'root', plan: 'plan', range: 'range' };
 // than four literals for the same reason the flags are a table: `splitAtVerb`
 // reads it too, so that no flag spends one, and two lists of the same verbs
 // drift.
-const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'scan', 'ranges', 'lint', 'brief', 'fix']);
+const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'ready', 'scan', 'ranges', 'lint', 'brief', 'fix']);
 
 // `strict: false` keeps an unknown flag silent. A declared flag given no value
 // comes back `true` rather than a string, and that is the refusal below: a flag
@@ -479,6 +479,17 @@ function main(argv) {
 
     if (verb === 'groups') {
         return groupsReport(root, opts.plan);
+    }
+
+    if (verb === 'ready') {
+        // What the build loop sends next, asked again each time a task lands.
+        // The completion set is this plan's own ledger, refused the way `show`
+        // refuses one: none yet, or one belonging to another plan.
+        const { contents, refusal } = readOwnLedger(root, opts);
+        if (refusal) return refusal;
+        const { text: planText } = readPlan(root, opts.plan);
+        const open = plantasks.ready(plantasks.parseTasks(planText), ledger.completed(contents));
+        return open.length ? open.join('\n') : 'none';
     }
 
     if (verb === 'scan') {

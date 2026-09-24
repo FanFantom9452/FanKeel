@@ -400,3 +400,44 @@ test('lint names a js fence with no file line above it, and a named path outside
   const routes = readTask(1, ['lib/a.js'], [], ['In `lib/a.js`, `POST /clear-stale` writes `roots.json` beside `/clear`; `source_of_truth: lib/b.js` stays:', '', '```js', 'x', '```']);
   assert.deepEqual(plantasks.lint(routes, design([], [])), []);
 });
+
+// 2026-09-24: seven tasks, five rounds forced serial. A greedy group closes at
+// the first conflict, and a task independent of the one that closed it waits
+// for the next group anyway. `ready` is asked per task, every time one lands,
+// and an index file is not a shared file there.
+test('ready sends every task whose earlier conflicts are complete, and an index file is not one', () => {
+  const text = task(1, ['lib/a.js', 'TODO.md'], [], [], [])
+    + task(2, ['lib/a.js'], [], [], [])
+    + task(3, ['lib/c.js'], [], [], [])
+    + task(4, ['docs/d.md', 'TODO.md'], [], [], []);
+  assert.deepEqual(plantasks.ready(text, []), [1, 3, 4]);
+  assert.deepEqual(plantasks.ready(text, [1]), [2, 3, 4]);
+  const released = plantasks.ready(text, [1]).filter((n) => !plantasks.ready(text, []).includes(n));
+  assert.deepEqual(released, [2], 'what completing Task 1 releases');
+  assert.deepEqual(plantasks.ready(text, [1, 2, 3, 4]), []);
+});
+
+test('the index exemption is ready()\'s alone: conflict() and groups() still count TODO.md', () => {
+  const [a, , , d] = parseTasks(task(1, ['lib/a.js', 'TODO.md'], [], [], [])
+    + task(2, ['lib/a.js'], [], [], [])
+    + task(3, ['lib/c.js'], [], [], [])
+    + task(4, ['docs/d.md', 'TODO.md'], [], [], []));
+  assert.equal(conflict(a, d), 'files');
+  assert.equal(conflict(a, d, ['TODO.md']), null);
+  assert.deepEqual(groups([a, d]), [[1], [4]]);
+});
+
+test('ready still waits on a Read of a neighbour\'s file and on an interface edge', () => {
+  const text = task(1, ['lib/a.js'], [], [], ['makeA'])
+    + task(2, ['lib/b.js'], [], ['makeA'], [])
+    + readTask(3, ['lib/c.js'], ['lib/a.js']);
+  assert.deepEqual(plantasks.ready(text, []), [1]);
+  assert.deepEqual(plantasks.ready(text, [1]), [2, 3]);
+});
+
+test('ready fails closed on a task with no Files block', () => {
+  const [a] = parseTasks(task(1, ['lib/a.js'], [], [], []));
+  const bare = { n: 2, name: 'x', modify: [], test: [], read: [], consumes: [], produces: [] };
+  assert.deepEqual(plantasks.ready([a, bare], []), [1]);
+  assert.deepEqual(plantasks.ready([a, bare], [1]), [2]);
+});

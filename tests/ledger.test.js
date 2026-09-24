@@ -870,3 +870,31 @@ for (const verb of ['ranges', 'show']) {
     assert.match(foreign, /^fankeel ledger — .*progress\.md belongs to another plan\. Leave it; `init` starts your own\.\n$/);
   });
 }
+
+// The loop asks this every time a task lands, so it prints nothing but the
+// numbers: one a line, in plan order, or `none`.
+test('ready prints the tasks that may go out now, one number a line, and none when nothing may', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, [
+    '## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', '- Modify: `TODO.md`', '',
+    '## Task 2: two', '', '**Files:**', '- Modify: `lib/a.js`', '',
+    '## Task 3: three', '', '**Files:**', '- Modify: `lib/c.js`', '- Modify: `TODO.md`', '',
+  ].join('\n'));
+  const cli = (...args) => execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, ...args], { encoding: 'utf8' });
+  cli('init');
+  assert.equal(cli('ready'), '1\n3\n');
+  cli('complete', '1', 'a.js');
+  assert.equal(cli('ready'), '2\n3\n');
+  cli('complete', '2', 'a.js again');
+  cli('complete', '3', 'c.js');
+  assert.equal(cli('ready'), 'none\n');
+});
+
+test('ready with no ledger yet says so, the way show does', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, ['## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', ''].join('\n'));
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'ready'], { encoding: 'utf8' });
+  assert.match(out, /none yet at .*Run `init` before the first task\./s);
+});
