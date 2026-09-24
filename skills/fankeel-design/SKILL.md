@@ -93,6 +93,14 @@ changes carries `data-block="<name>"`, written in the page's own markup — the
 name is how the user, the tuning step below and the render reviewer point at
 it.
 
+**The mockup is built from the project's own parts.** It links the project's
+real stylesheets with `<link>` rather than copying them — a copy drifts the
+day the original changes — and starts from the DOM of the real page as it
+renders, captured with `node <plugin>/scripts/render.js <the page's url>`, with
+only the part being redesigned rewritten. New styles are written only for
+what is new. Put the page where a relative path reaches the project's CSS, or
+serve it through `tune.js serve --proxy` from the project's own server.
+
 Dispatch it as `implementer, <the value of design.mockup>`. Visual design does
 not take `dispatch.floor`, which is why the key carries a model at all. Name one
 installed design skill in the prompt — `taste-skill:taste-skill`,
@@ -111,8 +119,10 @@ the page. The gate approves the page, not the paragraph.
 
 **Before the gate, the page can be tuned one block at a time.** Run
 `node <plugin>/scripts/tune.js serve <the mockup's directory>` and give the
-user the url it prints: hovering outlines a block, a click opens a panel for
-what to change. List what you see, block by block, before asking which one
+user the url it prints: a plain click still reaches the page, holding Alt
+outlines the element under the pointer, Alt+wheel walks out to its parents,
+and Alt+click opens a panel for what to change. List what you see, block by
+block, before asking which one
 to change — a list is easier to answer than an empty question. Then loop:
 `node <plugin>/scripts/tune.js wait` prints the next request as JSON;
 dispatch one implementer at `design.mockup`'s model to rewrite only the

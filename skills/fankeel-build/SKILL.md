@@ -336,19 +336,22 @@ runs one row per pass, and every other step of the loop is unchanged.
    `ship` goes back to the implementer like the first reviewer's findings.
 
    **Where the design gate chose 逐塊**, a task that changes a page is
-   followed, once it lands, by a tuning loop on the real page:
-   `node <plugin>/scripts/tune.js serve <the page's directory> --src <the
-   files that draw it> --rebuild "<the command that regenerates it>"`, and the
-   url it prints goes to the user. Loop until the user says the page is done:
-   `node <plugin>/scripts/tune.js wait` prints the next request with
-   `sources`, the `file:line` of each place its `data-block` is written;
-   dispatch one implementer at `design.mockup`'s model per request to change
-   the source there and nothing else; then
+   followed, once it lands, by a tuning loop on the real page, served by the
+   project's own server through
+   `node <plugin>/scripts/tune.js serve --proxy <the server's url> --src <the
+   files that draw it>` — add `--rebuild "<cmd>"` only where the server does
+   not read those files on every request — and the url it prints goes to the
+   user. Every route, form and poll on that page is the real one; a plain
+   click still reaches the page, and Alt+click picks any element, with
+   Alt+wheel walking out to its parents. Loop until the user says the page is
+   done: `node <plugin>/scripts/tune.js wait` prints the next request with the
+   element's `selector`, `classes` and `text`, and `sources`, up to ten
+   `file:line` places — its `data-block` first, then the lines naming its
+   classes; dispatch one implementer at `design.mockup`'s model per request to
+   change the source there and nothing else; then
    `node <plugin>/scripts/tune.js done <id>`, which puts back and refuses an
-   edit that touched anything outside `--src`, rebuilds, and refuses a failed
-   rebuild the same way. Verify comes after the loop, not during it. A block
-   drawn by code carries `data-block="<name>"` literally in that code — a
-   concatenated name cannot be found.
+   edit that touched anything outside `--src`, and refuses a failed rebuild
+   the same way. Verify comes after the loop, not during it.
 
    **When the user has said, this session, not to dispatch**, the reviewer runs
    here, in this session. That is a ruling, not a stopper: the four things that
