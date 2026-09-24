@@ -54,9 +54,9 @@ matcher `Bash|PowerShell`, and it denies a command that writes files —
 `fankeel-reader`, `fankeel-reviewer`, `fankeel-judge` or `fankeel-render-reviewer`. The id is the half that
 says this is a subagent at all: the main thread of a session started with
 `--agent` carries the type without it and must be able to write, so the id is
-checked first (`hooks/guard.js:61`, `if (!payload.agent_id) return;`).
+checked first (`hooks/guard.js:60`, `if (!payload.agent_id) return;`).
 Before any of that, `hooks/guard.js` returns unless the dispatching session has an
-active registry entry (`hooks/guard.js:34`, `if (!mine || mine.active !== true) return;`),
+active registry entry (`hooks/guard.js:33`, `if (!mine || mine.active !== true) return;`),
 so a read-only subagent under a session with no active task is not denied.
 [collisions.md](collisions.md)
 carries what that denylist actually matches, not restated here. Six of
@@ -69,15 +69,27 @@ exemptions, each with its argument beside it, rather than dropping the assertion
 just described: when `agent_id` is absent — the main thread, read the same
 way the `Bash|PowerShell` matcher above reads it — and the task's own stage
 is on `stage.agents`'s list, an `Edit`, `Write` or `NotebookEdit` from the
-controller is denied outright (`hooks/guard.js:86`, `if (!payload.agent_id && WRITE_TOOLS.has(payload.tool_name))`),
+controller is denied outright (`hooks/guard.js:85`, `if (!payload.agent_id && WRITE_TOOLS.has(payload.tool_name))`),
 ahead of both `guard` mode and the collision guard below it. That ordering is
 deliberate: the check runs before `guardMode(mine)` is even read
-(`hooks/guard.js:106`, `if (!guardMode(mine)) return;`), so a controller set
+(`hooks/guard.js:130`, `if (!guardMode(mine)) return;`), so a controller set
 to `guard: off` is not exempt from it. `Bash` and `PowerShell` are
-deliberately left out of the set it tests (`hooks/guard.js:26`, `const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);`):
+deliberately left out of the set it tests (`hooks/guard.js:25`, `const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);`):
 the controller still has to run `scripts/task.js` to dispatch, relay a path
 and ask — and, on `build`, `design` and `plan`, `scripts/commit.js` — and those run through `Bash`;
 the matcher above, not this one, still governs them.
+
+A fourth entry, matcher `Agent|Task` — both names, because which one the
+host sends for the subagent tool was not verified when it was added — sends
+every subagent dispatch through `hooks/guard.js`
+as well. It denies one kind: a `fankeel-brain` (with or without the
+`fankeel:` prefix) dispatched while the task's own stage is not on
+`stage.agents`'s list. A stage agent run for a stage nobody handed to one
+leaves a gate `hooks/gate.js` will not substitute, so the user would be asked
+the controller's placeholder — what happened at `design` on 2026-09-23. The
+reason it gives names the stage and the list and says to do the stage in this
+session. Every other subagent type passes, and a profile that cannot be read
+lets the dispatch through.
 
 `fankeel-reader` runs at `model: sonnet` by default — the profile's
 `dispatch.floor`, which the survey, verify and audit skills ask their reader
@@ -343,8 +355,8 @@ that page points back here for the four predicates, which is the mitigation
 rather than the fact. This is the short form, not the only copy.
 
 The commit moved to the parent, one task at a time, as each implementer
-returns — or, for a build stage agent, once for a batch it dispatched together
-and has read back, one block per task — never the implementer itself, which now returns paths, never a diff.
+returns — or, for a build stage agent, once per `ledger.js groups` group
+after every task in it is read back, one block per task — never the implementer itself, which now returns paths, never a diff.
 That is what makes overlap in wall-clock safe even though the index still has
 one writer. What decides whether a *pair* may overlap is four predicates,
 computed from the plan rather than judged. A task that declared no
@@ -488,10 +500,10 @@ stage on that list and it is run by a stage agent instead of by the session:
 | the stage agent | `agents/fankeel-brain.md` | sonnet at `effort: medium` (the controller's dispatch passes `model: opus` for `design` and `plan`); `Write` for its handoff (and, on build, design and plan, its commit file; on design and plan also one `docs/plans/` file), `Agent` for its readers and reviewers, and on build a fixer and implementers, on verify a verifier, a fixer and an implementer, on audit a fixer and an implementer, on land an implementer — which of them, and when, its stage's own rules decide |
 | its brief | `renderBrief` in `lib/render.js` | the stage's rules and shape, the skill's path, the handoff path, the gate's shape, the newest `docs/plans/` file written since the task started when no earlier stage left a report, on `verify` the `subagents/` directory, what replaces AskUserQuestion and Workflow, one Bash call for independent commands and for the lines it cites, and the output rule's word count as the file's — under Claude Code's 10,000-character cap on one `additionalContext` |
 | the handoff | `handoffPath`, `answerPath`, `readGate` and `writeAnswer` in `lib/handoff.js` | `.fankeel/build/task-<started>/<stage>.md`, ending in a `json gate` block; the answer beside it as `<stage>-answer.md` — `survey.md` and `survey-answer.md` when `survey` is the stage on the list; a stage's n-th visit (n ≥ 2, counted from the record's `moves`) is `<stage>-<n>.md`, `<stage>-<n>-answer.md` and `<stage>-<n>-commit.md`, so a return to `build` never overwrites its first lap; a renamed task keeps the directory and numbers on from the laps the old task used (`lapped` on the record, written by `task.js task`), so it never reads the old task's gate |
-| the gate | `hooks/gate.js` | replaces the controller's placeholder question with the block's, word for word — when `readGate` finds the block's shape sound: every question with `header` (12 columns at most), `question` and 2–4 `options` each carrying `label` and `description`, and option one naming the next stage, another stage on the task's own route to send the work back to, or standing down at the route's end. A block that fails is denied with the field named, and the controller sends it back to its agent; when nothing is substituted and nothing is denied either (a controlled stage where `readGate` finds no gate to act on), it writes a `systemMessage` naming which of the two substitution conditions failed, from `skipReason` in `lib/handoff.js` |
+| the gate | `hooks/gate.js` | replaces the controller's placeholder question with the block's, word for word — only when the controller sent the placeholder's shape, exactly one question whose `header` is the stage's name in any case (`isPlaceholder` in `lib/handoff.js`), and only when `readGate` finds the block's shape sound: at most 4 questions, every question with `header` (12 columns at most), `question` and 2–4 `options` each carrying `label` and `description`, and option one naming the next stage, another stage on the task's own route to send the work back to, or standing down at the route's end. A block that fails is denied with the field named, and the controller sends it back to its agent; any other question the controller asks goes out as it wrote it. When nothing is substituted and nothing is denied either, it writes a `systemMessage` naming which condition failed — a stage agent for a stage `stage.agents` does not name, a question that is not the placeholder, no handoff file, or no readable gate in it — from `skipReason` in `lib/handoff.js`. A `fankeel-brain` dispatched for a stage `stage.agents` does not name never gets this far: `hooks/guard.js` denies the dispatch itself (matcher `Agent\|Task`) |
 | the answer | `hooks/resume.js` | writes it to the answer file — only once `inflight` is clear, which `hooks/gate.js` does when it substitutes a gate; a question asked while the stage agent is still in flight writes nothing; the controller's `SendMessage` names the path |
 | a pause | `task.js next --from-gate` | reads the block's `next` line |
-| a commit (`build`, `design`, `plan`) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/<stage>-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back its one line, `<base>..<sha>` or `commit.js: <why>`; on build, tasks dispatched together may share one file — blocks separated by a `---` line, one `<paths>: <base>..<sha>` line back per block; once every block has landed, `commit.js` renames the file to `<stage>-commit.done.md`, so a `-commit.md` on disk is always a commit still to make |
+| a commit (`build`, `design`, `plan`) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/<stage>-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back its one line, `<base>..<sha>` or `commit.js: <why>`; on build, one file per `ledger.js groups` group, never one per task — blocks separated by a `---` line, one `<paths>: <base>..<sha>` line back per block, or `<base>..<sha>` for a one-task group; once every block has landed, `commit.js` renames the file to `<stage>-commit.done.md`, so a `-commit.md` on disk is always a commit still to make |
 
 ### How the controller waits
 

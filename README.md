@@ -207,7 +207,7 @@ fankeel/
 │   ├── inject.js      UserPromptSubmit: the block on every prompt, the init block on /fankeel, the badge
 │   ├── resume.js      PostToolUse on AskUserQuestion: the stage's rules again once a gate is answered
 │   ├── gate.js        PreToolUse on AskUserQuestion: stamps when a gate opened, so the wait can be timed; on a controlled stage it also swaps the controller's placeholder question for the one in the handoff
-│   ├── guard.js       PreToolUse on writes and shells: the scope guard, and read-only agents kept read-only
+│   ├── guard.js       PreToolUse on writes, shells and subagent dispatches: the scope guard, read-only agents kept read-only, and no fankeel-brain for a stage stage.agents does not name
 │   ├── touch.js       PostToolUse on Edit, Write, NotebookEdit: the files this task touched
 │   ├── brief.js       SubagentStart: what a subagent is told about the task it was sent from
 │   ├── carry.js       SessionStart on clear or fork: offers the task a /clear left behind
