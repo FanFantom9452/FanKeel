@@ -221,13 +221,24 @@
         var m = /claude-(fable|opus|sonnet|haiku)/.exec(String(model || ''));
         return m ? m[1] : 'other';
     }
+    // The model dimension is the version: `claude-<family>-<major>[-<minor>]`,
+    // with a trailing date or `[1m]` dropped. `family()` stays for colour.
+    function modelKey(model) {
+        var m = /claude-(fable|opus|sonnet|haiku)-(\d{1,2})(?:-(\d{1,2}))?(?!\d)/.exec(String(model || ''));
+        return m ? m[1] + '-' + m[2] + (m[3] ? '-' + m[3] : '') : 'other';
+    }
+    function modelLabel(key) {
+        var p = String(key).split('-');
+        if (p.length < 2) return String(key);
+        return p[0].charAt(0).toUpperCase() + p[0].slice(1) + ' ' + p.slice(1).join('.');
+    }
     function tokenSum(t) {
         return t ? TOKEN_KEYS.reduce(function (n, k) { return n + (t[k] || 0); }, 0) : 0;
     }
     // `kind` is not here: it is not one key per row, it is four (see
     // `dayBars`), so it never goes through `dimKey`.
     function dimKey(dim, s, r) {
-        if (dim === 'model') return family(r.model);
+        if (dim === 'model') return modelKey(r.model);
         if (dim === 'project') return s.pkey;
         if (dim === 'stage') return r.stage || 'none';
         if (dim === 'version') return s.version || 'none';
@@ -252,7 +263,13 @@
     // would put it first, reading as "the newest version" when it means the
     // opposite.
     function orderKeys(dim, seen) {
-        var fixed = dim === 'model' ? MODEL_KEYS : dim === 'stage' ? ROUTE.concat(['none'])
+        if (dim === 'model') {
+            var fam = function (k) { var i = MODEL_KEYS.indexOf(String(k).split('-')[0]); return i < 0 ? MODEL_KEYS.length : i; };
+            var ver = function (k) { return String(k).split('-').slice(1).join('.'); };
+            return Object.keys(seen).filter(function (k) { return seen[k]; })
+                .sort(function (a, b) { return fam(a) - fam(b) || verCmp(ver(b), ver(a)); });
+        }
+        var fixed = dim === 'stage' ? ROUTE.concat(['none'])
             : dim === 'who' ? ['main', 'agent', 'workflow'] : dim === 'kind' ? KIND_KEYS : null;
         var keys = Object.keys(seen).filter(function (k) { return seen[k]; });
         if (dim === 'version') {
@@ -273,7 +290,16 @@
     // is; `'none'` is forced to the quiet grey before reaching that index so
     // it never claims a slot or reads as a colour peer of a real version.
     function colorOf(dim, key, pkeys) {
-        if (dim === 'model') return 'var(--m-' + key + ')';
+        // One hue per family, from `--m-<family>`; the newest version on the
+        // chart is that colour, each older one mixed 30% further toward the
+        // panel. `pkeys` is the bar set's own keys here, newest first.
+        if (dim === 'model') {
+            var f = String(key).split('-')[0];
+            if (MODEL_KEYS.indexOf(f) < 0) f = 'other';
+            var peers = (pkeys || []).filter(function (k) { return String(k).split('-')[0] === f; });
+            var n = Math.max(0, peers.indexOf(key));
+            return n === 0 ? 'var(--m-' + f + ')' : 'color-mix(in oklab, var(--m-' + f + ') ' + Math.max(100 - 30 * n, 25) + '%, var(--panel))';
+        }
         if (dim === 'stage') return ROUTE.indexOf(key) >= 0 ? 'var(--st-' + key + ')' : 'var(--st-none)';
         if (dim === 'who') return 'var(--s-' + key + ')';
         if (dim === 'kind') return 'var(' + (KIND_COLOR[key] || '--st-none') + ')';
@@ -287,6 +313,7 @@
         if (dim === 'project') return (names && names[key]) || key;
         if (dim === 'kind') return KIND_LABEL[key] || key;
         if (dim === 'version') return key === 'none' ? '未記版本' : key;
+        if (dim === 'model') return modelLabel(key);
         return key;
     }
     // One key so far needs more than its label. `version`'s `'none'` is drawn
@@ -537,7 +564,7 @@
     // afresh. With nothing off it is the list the chart always used.
     function paletteOf(bars, o) {
         var off = o.off || {};
-        return (o.dim === 'version' ? bars.keys : o.pkeys || []).filter(function (k) { return !off[k]; });
+        return ((o.dim === 'version' || o.dim === 'model') ? bars.keys : o.pkeys || []).filter(function (k) { return !off[k]; });
     }
     // The shown keys that get a legend entry of their own; the rest share
     // 其他 N 個. Pass an `o` without `off` for the unfiltered grouping.
@@ -1760,7 +1787,7 @@
             pendingGateHtml: pendingGateHtml, pgAnswers: pgAnswers, todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
             figures: figures, compareHtml: compareHtml,
             routeGroups: routeGroups, routeLedger: routeLedger,
-            localDay: localDay, lastDays: lastDays, parseHash: parseHash, family: family, sessionTotals: sessionTotals,
+            localDay: localDay, lastDays: lastDays, parseHash: parseHash, family: family, modelKey: modelKey, modelLabel: modelLabel, sessionTotals: sessionTotals,
             windowTotals: windowTotals, dayBars: dayBars, projectRows: projectRows, kpiHtml: kpiHtml,
             histSvg: histSvg, legendHtml: legendHtml, projectsHtml: projectsHtml, recentHtml: recentHtml,
             dayStart: dayStart, projectHead: projectHead, sessionPoints: sessionPoints, projectChart: projectChart,

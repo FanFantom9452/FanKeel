@@ -372,11 +372,43 @@ test('family names the model line and calls anything else other', () => {
         ['fable', 'opus', 'sonnet', 'haiku', 'other', 'other']);
 });
 
+// docs/plans/2026-09-26-station-redesign.md Task 9: the model dimension is
+// the version; `family` stays the colour.
+test('modelKey tells versions of one family apart, and modelLabel names them', () => {
+    assert.deepEqual(['claude-opus-5-5', 'claude-opus-5', 'claude-opus-5-5[1m]', 'claude-haiku-4-5-20251001', 'claude-opus-4-20250514', 'gpt-x', null].map(V.modelKey),
+        ['opus-5-5', 'opus-5', 'opus-5-5', 'haiku-4-5', 'opus-4', 'other', 'other']);
+    assert.notEqual(V.modelKey('claude-opus-5-5'), V.modelKey('claude-opus-5'));
+    assert.equal(V.modelLabel('opus-5-5'), 'Opus 5.5');
+    assert.equal(V.modelLabel('sonnet-5'), 'Sonnet 5');
+    assert.equal(V.modelLabel('other'), 'other');
+});
+
+const TWO = [{ id: 'vvvv1111-0000', root: 'F:\\ws\\alpha', project: null, pkey: 'F:\\ws\\alpha', task: 'two opus',
+    state: 'down', stage: 'build', route: ['survey', 'build'], started: local(9, 13, 10), updated: NOW, usd: 9, agentUsd: 9, hasDetail: true,
+    days: [dayRow('2026-09-13', 'build', 'claude-opus-5-5', 'main', 1.25, 100), dayRow('2026-09-13', 'build', 'claude-opus-5-5', 'agent', 2, 100),
+        dayRow('2026-09-13', 'build', 'claude-opus-5', 'main', 0.5, 100)], spans: [] }];
+
+test('the Opus 5.5 segment is the sum of its own rows, in the family hue, the older version lighter', () => {
+    const bars = V.dayBars(TWO, 'usd', 'model', DAYS);
+    const i = DAYS.indexOf('2026-09-13');
+    assert.equal(bars.days[i].parts['opus-5-5'], 3.25);
+    assert.equal(bars.days[i].parts['opus-5'], 0.5);
+    assert.deepEqual(bars.keys, ['opus-5-5', 'opus-5'], 'newest first');
+    const o = Object.assign({}, O, { sel: null });
+    const tip = V.segTip(bars, o, '2026-09-13', 'opus-5-5');
+    assert.match(tip, /Opus 5\.5/);
+    assert.match(tip, /\$3\.25/);
+    const svg = V.histSvg(bars, o);
+    assert.match(svg, /fill:var\(--m-opus\)/, 'the newest version is the family colour itself');
+    assert.match(svg, /fill:color-mix\(in oklab, var\(--m-opus\) 70%, var\(--panel\)\)/, 'the older one is derived from it');
+    assert.match(V.legendHtml(bars, o), /Opus 5\.5/);
+});
+
 test('dayBars stacks each day from days and spans, not from the registry, and time has no model split', () => {
     const usd = V.dayBars(HOME, 'usd', 'model', DAYS);
-    assert.deepEqual([usd.days[29].day, usd.days[29].total, usd.days[29].parts], ['2026-09-14', 6.75, { opus: 2, haiku: 0.75, fable: 4 }]);
-    assert.deepEqual([usd.days[28].total, usd.days[28].parts], [1.75, { opus: 1.25, sonnet: 0.5 }]);
-    assert.deepEqual(usd.keys, ['fable', 'opus', 'sonnet', 'haiku'], 'model keys in price order');
+    assert.deepEqual([usd.days[29].day, usd.days[29].total, usd.days[29].parts], ['2026-09-14', 6.75, { 'opus-5': 2, 'haiku-4-5': 0.75, 'fable-5-1': 4 }]);
+    assert.deepEqual([usd.days[28].total, usd.days[28].parts], [1.75, { 'opus-5': 1.25, 'sonnet-5': 0.5 }]);
+    assert.deepEqual(usd.keys, ['fable-5-1', 'opus-5', 'sonnet-5', 'haiku-4-5'], 'model keys in price order, then newest version first');
     assert.equal(usd.max, 6.75);
     assert.equal(usd.days.reduce((n, b) => n + b.total, 0), 8.5, '08-01 is outside the window');
     assert.deepEqual(V.dayBars(HOME, 'time', 'who', DAYS).days[28].parts, { main: 3600000, agent: 600000 }, 'waiting is not time');
