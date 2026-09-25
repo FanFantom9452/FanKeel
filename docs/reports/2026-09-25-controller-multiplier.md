@@ -49,3 +49,13 @@ verify 的兩個數字不是同一種東西，這裡直說原因：sonnet contro
 ## 6. 這次跑歪的地方（也是記錄的一部分）
 
 第一次嘗試在花錢之前就中止了:`--project` 需要給值,而且一個沒有 `.fankeel/sessions/` 的 worktree 會回頭讀到主 repo 的 profile——這在 `0e02a65d` 修掉了。第二次只跑到 opus,因為 `ab.sh` 在跑的過程中被改動,bash 讀到偏移後的檔案位置,導致 `arm sonnet` 從沒跑起來——那份 opus 資料留存為第一輪(`run1-opus-only/`)。整次量測總花費 $42.84,在 $125 預算之內。
+
+## 7. 追加診斷：sonnet 為什麼會在 verify 站派 brain（更正）
+
+上一版這一節的結論是錯的：不是 sonnet 主控自己模仿 controller 模式、也不是 controlling() 誤判。直接讀 session 的 transcript（`~/.claude/projects/F--ymlab-fankeel--fankeel-build-2026-09-25-controller-multiplier-wt-sonnet/c48565bc-06b8-4108-90c4-5b552912a365.jsonl`）找到的是一個 harness 缺陷。
+
+record 592 附近：sonnet 的 verify 站一開始確實在 session 內自己做——`git stash push -u -m verify-stage-check-9e54e1b7-baseline`、`git checkout 9e54e1b7 -- .`、跑 docs-check、`git checkout HEAD -- .`，這是它自己驗東西的正常流程。但 604-606 它接著把這個暫存的 stash **drop** 掉（"Dropping the temporary stash"），而不是 pop 回去。`ab.sh` 寫進 worktree 的 `stage.agents false` 是 `.fankeel/profile.json` 上一筆沒有 commit 的修改，這次 stash 連它一起帶走、drop 掉之後，profile 就回到 commit 過的原始值 `["survey","build","verify"]`——670-671 它自己 `cat .fankeel/profile.json` 印出來的正是這個陣列。663/673/675：下一次背景 reader 的 task-notification，prompt hook 看到 profile 又列了 verify，就照常注入了「You are the controller for verify. ...」那段 controller 規則；684：sonnet 照規則派了 `Agent(fankeel:fankeel-brain, prompt "verify", run_in_background)`，然後等 `await.js`，`-p` 就在這裡結束。json 裡的 `num_turns: 1`會誤導人：verify 站其實已經在 session 內做了約 30 筆紀錄的真實工作（docs-check、4 個 reader、1 個 verifier）才走到 684 那步。
+
+所以根因是 harness：`ab.sh` 把 `stage.agents` 的 override 寫成 worktree 裡未 commit 的檔案，一旦 arm 自己的工作流程跑了 `git stash`/`git checkout` 這類會動到工作目錄的指令，這筆 override 就可能被連帶清掉，profile 一回到原始值，下一次 prompt 注入就會把它當成受控站處理。要修，需要讓這個 override 撐過 stash——例如在 arm 開始前把它 commit 進 worktree 自己的一個 commit，或是寫在 git 完全管不到的地方（例如 worktree 外、或 `.git/info/` 之類不受 `git stash`/`checkout` 影響的位置）。這也表示 verify 站的主控倍數量測仍然是空的，不是這次量到又被誤讀。
+
+附帶一個發現：這個 arm 的 `git stash -u` 之後直接 drop，等於把當時工作目錄裡未追蹤的修改一起丟掉——跟本 repo 已知的另一起事件是同一種模式（stash 之後沒 pop 就 drop，遺失了本來該留住的東西）。
