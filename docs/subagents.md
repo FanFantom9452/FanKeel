@@ -492,18 +492,18 @@ when what you want is a second opinion on something you have already decided.
 Everything above holds with the profile's `stage.agents` at its default,
 `false` — nothing is controlled (`lib/profile.js:36`, `'stage.agents': { values: ['false', 'true', 'all'], builtin: 'false',`).
 `parseStageAgents` in `lib/profile.js` reads the key as one of four forms:
-`false` controls no stage (`lib/profile.js:106`, `if (s === 'false' || s === '') return { value: [] };`);
+`false` controls no stage (`lib/profile.js:111`, `if (s === 'false' || s === '') return { value: [] };`);
 `true` controls `survey` alone — kept for that one meaning rather than "the
 route's first stage" because every existing doc and the 2026-09-20 A/B
-already mean survey by `true` (`lib/profile.js:107`, `if (s === 'true') return { value: ['survey'] };`);
+already mean survey by `true` (`lib/profile.js:112`, `if (s === 'true') return { value: ['survey'] };`);
 `all` controls every stage in `lib/stages.js`'s `FULL_ROUTE`
-(`lib/profile.js:109`, `if (s === 'all') return { value: canon.slice() };`);
+(`lib/profile.js:114`, `if (s === 'all') return { value: canon.slice() };`);
 and anything else is a comma-separated list of stage names, lowercased,
 deduped and reordered to `FULL_ROUTE`'s own order regardless of what order or
 how many repeats they arrived in, so two profiles naming the same set always
 compare equal — an unknown name in that list is refused with the one message an
 empty list is refused with, in the shape every other bad profile value takes
-(`lib/profile.js:115`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
+(`lib/profile.js:120`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
 file could change (`lib/stages.js:662`, `const raw = values && values['stage.agents'];`),
@@ -686,8 +686,9 @@ has the current record). That run has not happened.
 ## A user's own sentence, behind `prompt.*`
 
 `stage.agents`, `dispatch.floor` and the rest above are all from a fixed
-list of values. `prompt.*` is the one profile family that is free text: set
-`prompt.all` and any of `prompt.survey`, `prompt.design`, `prompt.plan`,
+list of values. `prompt.*` and `security.local` are the profile keys that
+are free text; `prompt.*` takes a sentence, `security.local` an ollama
+model name or `false`. Set `prompt.all` and any of `prompt.survey`, `prompt.design`, `prompt.plan`,
 `prompt.build`, `prompt.verify`, `prompt.audit` or `prompt.land` with
 `node scripts/task.js profile set prompt.<key> "<sentence>"` and that sentence
 is appended as the rules block's last line, `  - <sentence>`, on every prompt
@@ -696,7 +697,7 @@ so a task with both set carries two extra rule lines, not one
 (`lib/render.js:118`, `function promptRules(values, stage) {`). `parsePrompt`
 in `lib/profile.js` holds it to one line and 200 characters — trimmed but not
 lowercased, and refused if it is empty, carries a newline, or runs long
-(`lib/profile.js:140`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
+(`lib/profile.js:145`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
 `promptRules` is called once, inside `rulesLines`
 (`lib/render.js:170`, `.concat(promptRules(values, data && data.stage));`),
 and by `controlBlock` for a controlled stage's own block
