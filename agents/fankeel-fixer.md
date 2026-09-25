@@ -4,7 +4,7 @@ description: Surgical fixer for a reference-page correction or a one-line code f
 tools: [Read, Edit, Write, Grep, Glob]
 model: sonnet
 status: current
-last_verified: 2026-09-11
+last_verified: 2026-09-26
 source_of_truth: lib/render.js
 ---
 

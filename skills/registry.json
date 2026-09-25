@@ -12,7 +12,7 @@
       "name": "design",
       "entry_condition": "spec file, self-review.",
       "stop_condition": "Done when one approach, its file table, the criterion that fails now and passes after, the check against the map and the one unverified thing are all on screen.",
-      "prompt_bytes": 2434,
+      "prompt_bytes": 2429,
       "prompt_byte_budget": 2500
     },
     {

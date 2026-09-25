@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { ALWAYS, STAGES, NAMES, FULL_ROUTE, byName, nextStage, rulesFor, templateFor } = require('../lib/stages.js');
+const { ALWAYS, STAGES, NAMES, FULL_ROUTE, CLASSES, byName, nextStage, rulesFor, templateFor } = require('../lib/stages.js');
 const { KEYS } = require('../lib/profile.js');
 const { render } = require('../lib/render.js');
 const { MAX_WORD } = require('../lib/badge.js');
@@ -667,7 +667,7 @@ test('the design rules tell the gate when the route needs plan', () => {
 test('design, plan, build and verify carry the anchors the design paid for', () => {
   const rules = (n) => rulesFor(n).join(' ');
   assert.match(rules('design'), /Read the fankeel-design skill on entry: spec file, self-review\./);
-  assert.match(templateFor('design'), /^spec: <the docs\/plans path — architectural — or "in chat">$/m);
+  assert.match(templateFor('design'), /^spec: <docs\/plans path, build handoff path, or "in chat">$/m);
   assert.match(rules('plan'), /carries `\*\*Files:\*\*`, `\*\*Interfaces:\*\*` and a `\*\*Dispatch:\*\*` line/);
   // `, resume the fixer` was cut for the render cap (once the judge rule's
   // token started substituting to a real path and design gained the
@@ -675,6 +675,15 @@ test('design, plan, build and verify carry the anchors the design paid for', () 
   assert.match(rules('build'), /Read the fankeel-build skill on entry: worktree consent, brief file, reviewer template, fix rows, five rounds, commit shape\./);
   assert.doesNotMatch(rules('build'), /skill has loop and scan/);
   assert.match(templateFor('verify'), /- adversary: <the claim it defeated → build, or "nothing">/);
+});
+
+// docs/subagents.md's DESIGN_TO_BUILD paragraph: a controlled build reads
+// design's approved shape from a handoff file, never this chat, so both the
+// bounded class description and design's `spec:` slot are false the moment
+// they claim "no spec file" / "in chat" is the only case.
+test('bounded\'s class description and design\'s spec slot both allow for the build handoff', () => {
+  assert.match(CLASSES.bounded.means, /no spec or plan file — only a handoff\.$/);
+  assert.match(templateFor('design'), /^spec: <docs\/plans path, build handoff path, or "in chat">$/m);
 });
 
 // The last three anchors and two words on build's pointer

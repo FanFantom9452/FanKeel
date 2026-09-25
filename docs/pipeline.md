@@ -321,7 +321,7 @@ stages of work hang off it.
 | Class | Route | What it means |
 |---|---|---|
 | `spike` | `survey,build` | a feasibility question whose output is an answer. Anything built is labelled throwaway |
-| `bounded` | `survey,design,build,verify,land` | a scoped change to a flow already in this repository. Design happens in chat: no spec file, no plan file |
+| `bounded` | `survey,design,build,verify,land` | a scoped change to a flow already in this repository. Design happens in chat: no spec or plan file — only a handoff |
 | `architectural` | all seven | a new subsystem, or a change to an interface something else depends on |
 
 ```

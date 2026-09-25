@@ -3,7 +3,7 @@ name: fankeel-build
 description: The build stage — run a plan's tasks, or a design's file table where there is no plan, in a loop that does not stop to ask, keeping its place in a ledger and reviewing each task as it lands. Use for the build stage of a fankeel task, implementing an approved plan, resuming build work after a compaction, or when a task loop needs a ledger.
 version: 0.79.0
 status: current
-last_verified: 2026-09-11
+last_verified: 2026-09-26
 source_of_truth: lib/stages.js, lib/ledger.js, lib/plantasks.js, scripts/ledger.js
 ---
 
@@ -170,9 +170,13 @@ Global Constraints would be and the brief's footer rules said in the dispatch;
 and a return contract in place of a report path: a status line — `done`,
 `partial: <what>` or `blocked: <why>` — the paths written, one line on the tests
 and one per new test naming the mutation that reddens it, with no report file. A
-no-plan route keeps nothing on disk on purpose: `design` puts `plan` on the route
-the moment two rows are independent, so what runs without one is a short
-dependent chain, and the registry's `next` line is its ledger. The implementer
+no-plan route keeps nothing on disk on purpose, with one exception: where build
+runs as a controlled stage agent, design's approved shape is already on disk at
+the handoff path build reads first
+([docs/subagents.md](../../docs/subagents.md)'s `DESIGN_TO_BUILD`) — otherwise
+`design` puts `plan` on the route the moment two rows are independent, so what
+runs without one is a short dependent chain, and the registry's `next` line is
+its ledger. The implementer
 does not commit; step 4 stages the paths in the row's `file` cell, which may name
 more than one, and step 5 reviews the range as it would a task's. A no-plan route
 runs one row per pass, and every other step of the loop is unchanged.

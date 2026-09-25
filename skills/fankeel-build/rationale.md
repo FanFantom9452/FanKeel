@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-11
+last_verified: 2026-09-26
 source_of_truth: lib/stages.js, lib/ledger.js, lib/plantasks.js, scripts/ledger.js, skills/fankeel-build/SKILL.md
 ---
 
@@ -25,7 +25,10 @@ Two plans can share a basename, and that is the one case where reusing the
 file would silently skip tasks nobody ran.
 
 What is lost is the recovery: nothing is on disk, so a compaction takes the
-place with it, and `git log` is all that is left. A task that cannot afford
+place with it, and `git log` is all that is left — except where a controlled
+build received design's handoff file, which a compacted or restarted build
+agent reads first (`DESIGN_TO_BUILD` in
+[docs/subagents.md](../../docs/subagents.md)). A task that cannot afford
 that wants a plan, which is what upgrading the route is for.
 
 A bounded task whose rows really are independent — several `TODO.md` entries
