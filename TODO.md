@@ -77,6 +77,7 @@ what gets scheduled.
 ## Ready
 
 - 〔security〕reviewer 的 `## Security` lens 已落地（四類、reviewer 自己的模型）；改走本地模型、清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
+- 〔stage-agents〕verify 站的主控倍數還沒量到：sonnet 主控在 verify 站自己派了 fankeel-brain，儘管 stage.agents 已設 false；不確定是 controlling() 的問題，查主控為什麼會自己選擇派工 — [lib/stages.js](lib/stages.js).
 
 ## Needs a decision
 
