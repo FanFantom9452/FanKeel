@@ -62,7 +62,7 @@ so a read-only subagent under a session with no active task is not denied.
 carries what that denylist actually matches, not restated here. Seven of
 the eight agents hold `Bash`; `fankeel-fixer` is the one that does not,
 because it edits the file itself rather than returning something for the
-parent to run a test against. `tests/agents.test.js` names all three writers as
+parent to run a test against. `tests/agents.test.js` names all four writers as
 exemptions, each with its argument beside it, rather than dropping the assertion.
 `fankeel-mockup` carries `Edit` and `Write` for the mockup page it draws under
 `.fankeel/build/` and the one block a tuning request names, and `Skill`, to
