@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # todo-check 驗行號，與 Sonnet 主控倍數的一次實測

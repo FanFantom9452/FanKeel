@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # todo-check 驗行號與主控倍數實測 Implementation Plan

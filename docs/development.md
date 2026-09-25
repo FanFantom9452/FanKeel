@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-23
+last_verified: 2026-09-26
 source_of_truth: package.json, .claude-plugin/plugin.json, knip.json, scripts/todo-check.js, scripts/version.js, scripts/skills-check.js, scripts/stage-registry.js
 ---
 
@@ -77,7 +77,10 @@ the user in the middle of somebody else's turn is its own kind of broken.
 every link resolving, none of them landing on a document whose declared role
 records a moment rather than the present, no entry carrying detail that belongs
 in the file it points at, and every entry filed under `## Ready`, `## Needs a decision` or
-`## Waiting`, which is what says whether it can be started today. Where *no*
+`## Waiting`, which is what says whether it can be started today. A link that
+names a line — `path:12` or `path:12-18` — has to land inside the file too: a
+line past its end fails as `past end`, counted by `docs-check.js`'s own
+`lineCount`. Where *no*
 entry uses those three and every one of them sits under a heading of its own,
 that is a repository with its own vocabulary rather than one leaving entries
 unfiled, so it is said once and does not fail the run. An entry under no heading
