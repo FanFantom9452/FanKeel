@@ -76,8 +76,6 @@ what gets scheduled.
 
 ## Ready
 
-- 〔security〕reviewer 的 `## Security` lens 已落地（四類、reviewer 自己的模型）；改走本地模型、清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
-
 ## Needs a decision
 
 - 〔render〕bounded route 開 `design.mockup` 時 design 的注入量到 2410，已過 2400 上限；`tests/render.test.js` 只量 architectural 的 route，要讓哪一條讓位要人定 — [tests/render.test.js](tests/render.test.js).
@@ -145,6 +143,11 @@ lifts when: main 已 push（08c4ecf 起），新 terminal 更新插件到 0.76.0
 lifts when: 放行規則存在下 no verdict 再發生一次. 09-25.
 
 - 〔stage-agents〕auto mode 分類器曾對站 agent 與 implementer 的 Write／Edit 回 no verdict（09-22 六次以上）；已加放行規則 `Edit(/.fankeel/build/**)`，但放行前後探測都寫成功，效果無法證明；再發生時查規則有沒有被讀到 — [docs/subagents.md](docs/subagents.md).
+
+### AI CODING SECURITY 定案
+lifts when: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃描模型. 09-26.
+
+- 〔security〕reviewer 的 `## Security` lens 可先交本地模型篩（`security.local`）；四類清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 
 ### 第二個平台的使用者
 lifts when: 出現第二個 host（Gemini CLI、Codex CLI 等）的使用者或 issue. 09-25.

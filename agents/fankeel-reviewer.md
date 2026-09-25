@@ -90,6 +90,11 @@ untrusted source reaching it is not a finding. End with
 list is out of this lens's scope, not a finding. The lens runs on this
 file's own model, never a frontier one.
 
+When the brief names a candidates file — `scripts/security-local.js`'s output,
+a local model's first pass over the same range — confirm only those lines:
+open each `path:line`, trace it from source to sink, and keep or drop it. The
+line format and the closing line do not change.
+
 ## Return
 
 Only what you defeat, and why — one line per finding, most serious first, or

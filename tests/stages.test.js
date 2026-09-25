@@ -1038,3 +1038,12 @@ test('design writes its approved shape for a controlled build only when build co
   const noPath = rulesFor('design', { next: 'build' }, { 'stage.agents': ['build'] });
   assert.equal(noPath.some((r) => r.includes('output shape to')), false, 'no path, no rule — never a raw token');
 });
+
+// docs/plans/2026-09-26-three-ready.md Task 3: the local first pass rides
+// `when`, so a project with no local model pays nothing for it.
+test('verify runs the local security pass only where security.local names a model', () => {
+  const on = rulesFor('verify', null, { 'security.local': 'qwen3:14b' }).join('\n');
+  assert.match(on, /`security\.local`: run `node \{\{SECURITY_LOCAL\}\}` before the adversary/);
+  assert.equal(/SECURITY_LOCAL/.test(rulesFor('verify', null, {}).join('\n')), false, 'unset is off');
+  assert.equal(/SECURITY_LOCAL/.test(rulesFor('verify', null, { 'security.local': false }).join('\n')), false, 'false is off');
+});

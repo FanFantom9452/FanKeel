@@ -232,6 +232,16 @@ file pins `sonnet` — with the ask, the approved mockup's path and
 line is `disposition: recapture`, `fix` or `ship`. Anything but `ship` is a
 defeated row. Leave it off a change with no screen behind it.
 
+**`security.local` set: a local first pass.** Before dispatching the adversary,
+run `node <plugin>/scripts/security-local.js --range <base>..HEAD --model <the value> --out .fankeel/build/task-<started>/security-local.txt`,
+the value read off `node <plugin>/scripts/task.js profile show`. It reads the
+`## Security` section of `agents/fankeel-reviewer.md` itself, sends it and the
+range's diff to ollama, and keeps only the reply's `path:line: <tag>` lines. Put
+the file's path in the adversary's brief: the lens then confirms those lines one
+by one instead of reading the whole range. A non-zero exit — ollama not running,
+the model not pulled — goes in the report with the line it printed, and the lens
+runs in full, as it would with the key unset.
+
 **Give it the transcripts.** A brain's verify brief carries a `subagents:` line —
 `<session>/subagents/`, one `agent-<id>.jsonl` per subagent this session
 dispatched. Pass that path with the others, so *was it run?* is checked against

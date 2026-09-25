@@ -798,3 +798,15 @@ test('a design going straight to a controlled build names design.md relative to 
   const planned = render({ mine: entry(MINE, { stage: 'design', started }), others: [], now: NOW, root: '/r', profile });
   assert.equal(planned.includes('output shape to'), false, 'the full route has plan after design');
 });
+
+// docs/plans/2026-09-26-three-ready.md Task 3. Paid for by the docs-check
+// rule's second sentence, which skills/fankeel-verify/SKILL.md already carries.
+test('verify with security.local set names the script and stays under the cap', (t) => {
+  const values = { 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': true, guard: 'ask', 'dispatch.floor': 'sonnet', 'judge.model': 'fable', 'design.mockup': 'opus', 'security.local': 'qwen3:14b' };
+  const out = render({ mine: entry(MINE, { stage: 'verify' }), others: [], now: NOW, profile: { values, sources: {}, unreadable: [] } });
+  assert.ok(out.includes('`node <plugin>/scripts/security-local.js`'), out);
+  assert.equal(out.includes('{{'), false, 'a token shipped raw');
+  const size = sizeAtReference(out);
+  t.diagnostic('verify with security.local ' + size + ' chars at a ' + REFERENCE_ROOT + '-char root');
+  assert.ok(size < 2400, 'verify with security.local is ' + size + ' chars');
+});

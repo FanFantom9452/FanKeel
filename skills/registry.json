@@ -33,7 +33,7 @@
       "name": "verify",
       "entry_condition": "ledger ranges, red-green, line by line.",
       "stop_condition": "Done when every claim has a row with the evidence beside it, the adversary has read that table, and `docs-check` has been run.",
-      "prompt_bytes": 2406,
+      "prompt_bytes": 2311,
       "prompt_byte_budget": 2500
     },
     {
