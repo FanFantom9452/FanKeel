@@ -77,11 +77,10 @@ what gets scheduled.
 ## Ready
 
 - 〔security〕reviewer 的 `## Security` lens 已落地（四類、reviewer 自己的模型）；改走本地模型、清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
-- 〔stage-agents〕verify 缺：ab.sh 的 stage.agents 沒 commit，stash 清掉自派 brain — [docs/reports/evidence/2026-09-25-controller-multiplier/ab.sh](docs/reports/evidence/2026-09-25-controller-multiplier/ab.sh).
 
 ## Needs a decision
 
-- 〔stage-agents〕design 在 session 內跑、build 交站 agent 時，chat 裡核准的設計沒有管道交給它：主控寫 `design.md` 被 hook 擋，09-25 只能用 SendMessage 補；該讓 design 站自己落檔，還是 dispatch 帶一行 — [docs/subagents.md](docs/subagents.md).
+- 〔render〕bounded route 開 `design.mockup` 時 design 的注入量到 2410，已過 2400 上限；`tests/render.test.js` 只量 architectural 的 route，要讓哪一條讓位要人定 — [tests/render.test.js](tests/render.test.js).
 - 〔stage-agents〕要不要把通用的 `fankeel-brain` 拆成各站專屬 agent：只拆工具或模型不同的站（design 的 mockup、verify 的 mutation）；等 verify 的 k 重跑再定 — [docs/subagents.md](docs/subagents.md).
 - 〔docs〕要不要 ADR：參考 Trovara 的 `docs/04-architecture/adr/`，只在做架構選擇時寫、不是每個 task 都呼叫；在哪一站、由誰觸發，要人來定 — [docs/documents.md](docs/documents.md).
 - 〔judge〕`judge.js record` 要不要驗證這個 session 底下真的有 `fankeel-judge` 的 subagent transcript — [scripts/judge.js](scripts/judge.js).
@@ -211,3 +210,8 @@ lifts when: UserPromptSubmit 或 PreToolUse Bash guard 再逾時一次. 09-25.
 lifts when: `tokenbar-usage.jsonl` 有跨過一次 7d reset 的真實讀數；09-25 查到的 347 行全落在 09-22 的 15 分鐘內，是測試資料，09-23 起沒再寫. 09-25.
 
 - 〔quota〕7d 水位兩點差 4.7 倍，是延遲還是計別的：TokenBar 每次 render 已把 5h／7d 讀數 append 到 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`（TokenBar 的 `statusline.ps1`／`.sh`），拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
+
+### 重跑成對量測
+lifts when: 使用者核准重跑成對量測的花費（09-25 兩個 arm 合計約 $30）. 09-26.
+
+- 〔stage-agents〕ab.sh 改成在 worktree 裡 commit profile（`pin.sh`）；修好的 script 還沒重跑 — [docs/reports/evidence/2026-09-26-ab-profile-pin/ab.sh](docs/reports/evidence/2026-09-26-ab-profile-pin/ab.sh).
