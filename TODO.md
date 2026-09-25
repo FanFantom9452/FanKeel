@@ -52,8 +52,9 @@ section nothing made you open, which is why it has to say what it is waiting for
 and when you last agreed it was — and why `orient` now lists every timing each
 time, and `/fankeel` offers one option to handle them whenever any exists.
 
-`node scripts/todo-check.js` enforces all nine: a link that no longer resolves is
-an entry someone forgot to close, a link that still resolves but points at a
+`node scripts/todo-check.js` enforces all ten: a link that no longer resolves is
+an entry someone forgot to close, a `path:line` whose line is past the end of the
+file is a citation the code moved out from under, a link that still resolves but points at a
 plan, a decision record, a report or an archive is the same entry one step
 earlier — those four roles record a moment rather than the present, so the detail
 behind the bullet is pointing at history however fresh that history is — an entry
@@ -75,8 +76,6 @@ what gets scheduled.
 
 ## Ready
 
-- 〔docs〕todo-check 不驗 `path:line` 的行號：改成不存在的行仍然 exit 0 — [scripts/todo-check.js](scripts/todo-check.js). docs-check 補得到一部分，但卡 role、引文與讀得到目標三個前提。
-- 〔quota〕7d 水位兩點差 4.7 倍，是延遲還是計別的：TokenBar 每次 render 已把 5h／7d 讀數 append 到 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`（TokenBar 的 `statusline.ps1`／`.sh`），拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
 - 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過；session 記錄已存 `stage.agents`（6fb1b3a），缺的是一次真實的量測 — [lib/render.js](lib/render.js).
 - 〔security〕reviewer 的 `## Security` lens 已落地（四類、reviewer 自己的模型）；改走本地模型、清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 
@@ -206,3 +205,8 @@ lifts when: 出現一次 git mv 需要連刪除一起提交. 09-25.
 lifts when: UserPromptSubmit 或 PreToolUse Bash guard 再逾時一次. 09-25.
 
 - 〔hooks〕/doctor 09-25 報 UserPromptSubmit 逾時 4/4 次（中位數 7.9s）、PreToolUse:Bash scope guard 逾時 2/2 次（50 個 session 裡） — [hooks/brief.js](hooks/brief.js).
+
+### TokenBar 寫出真實序列
+lifts when: `tokenbar-usage.jsonl` 有跨過一次 7d reset 的真實讀數；09-25 查到的 347 行全落在 09-22 的 15 分鐘內，是測試資料，09-23 起沒再寫. 09-25.
+
+- 〔quota〕7d 水位兩點差 4.7 倍，是延遲還是計別的：TokenBar 每次 render 已把 5h／7d 讀數 append 到 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`（TokenBar 的 `statusline.ps1`／`.sh`），拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).

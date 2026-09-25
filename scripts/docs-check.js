@@ -559,4 +559,4 @@ if (require.main === module) {
     process.exit(code);
 }
 
-module.exports = { scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown };
+module.exports = { scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown, lineCount };

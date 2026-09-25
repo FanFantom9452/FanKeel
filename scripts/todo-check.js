@@ -42,6 +42,10 @@ const { parseArgs } = require('node:util');
 const docs = require('../lib/docs.js');
 const { resolveRoot } = require('../lib/registry.js');
 const { blameTimes } = require('../lib/blame.js');
+// A line cited past the end of its file is a citation that moved. The pattern
+// and the count are docs-check's, so the two scripts agree on what `path:12-30`
+// means and on how a trailing newline counts.
+const { PATHISH, lineCount } = require('./docs-check.js');
 
 // Long enough for a sentence and a link, short enough that a paragraph does not
 // fit. Detail that will not compress to this belongs in the file being pointed
@@ -246,6 +250,25 @@ function entries(text) {
     return out;
 }
 
+// `path:N` or `path:N-M` at the end of a link target. Split off before the
+// existence check, which would otherwise look for a file named `a.js:12`.
+const LINE_SUFFIX = /:(\d+)(?:[-–](\d+))?$/;
+
+// Every line citation an entry makes, from a backticked span or a link target:
+// `{ target, from, to }`. `#L12` is not read — docs-check does not read it either.
+function citationsIn(text) {
+    const out = [];
+    for (const m of text.matchAll(/`([^`]+)`/g)) {
+        const c = PATHISH.exec(m[1].trim());
+        if (c && c[2]) out.push({ target: c[1], from: +c[2], to: c[3] ? +c[3] : +c[2] });
+    }
+    for (const raw of linksIn(text)) {
+        const at = LINE_SUFFIX.exec(raw);
+        if (at) out.push({ target: raw.slice(0, at.index), from: +at[1], to: at[2] ? +at[2] : +at[1] });
+    }
+    return out;
+}
+
 function linksIn(text) {
     const out = [];
     LINK.lastIndex = 0;
@@ -337,7 +360,9 @@ function check(file, now) {
                 detail: len + ' characters, cap is ' + MAX_ENTRY_CHARS + '. Move the detail into the file this points at.',
             });
         }
-        for (const target of linksIn(entry.text)) {
+        for (const raw of linksIn(entry.text)) {
+            const at = LINE_SUFFIX.exec(raw);
+            const target = at ? raw.slice(0, at.index) : raw;
             const full = path.resolve(base, target);
             if (!fs.existsSync(full)) {
                 problems.push({
@@ -355,6 +380,18 @@ function check(file, now) {
                     detail: target + ' is filed as ' + role + ', a role that records a moment rather than the present. Point at the code this is about, or at a reference page.',
                 });
             }
+        }
+        // A file that is missing was already reported as a dead link above, or,
+        // for a backticked span, is docs-check's to report; only the line is new.
+        for (const c of citationsIn(entry.text)) {
+            const n = lineCount(base, c.target);
+            if (n === null || c.to <= n) continue;
+            const cited = c.target + ':' + c.from + (c.to !== c.from ? '-' + c.to : '');
+            problems.push({
+                line: entry.line,
+                kind: 'past end',
+                detail: cited + ' is past the end — ' + c.target + ' has ' + n + ' lines. The code moved; cite where it is now.',
+            });
         }
     }
 

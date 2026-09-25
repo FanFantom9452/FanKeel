@@ -62,6 +62,24 @@ test('a link to a file that no longer exists is a dead entry', () => {
   assert.match(out, /docs\/plans\/gone\.md does not exist/);
 });
 
+test('a backticked path:line past the end of its file is past end', () => {
+  const file = fixture('# TODO\n\n## Ready\n\n- see `lib/a.js:9`.\n', { 'lib/a.js': 'one\ntwo\n' });
+  const { out, code } = run(file);
+  assert.equal(code, 1);
+  assert.match(out, /past end/);
+  assert.match(out, /lib\/a\.js:9 is past the end — lib\/a\.js has 2 lines/);
+});
+
+test('a link whose target carries a line past the end is past end, not a dead link', () => {
+  const file = fixture('# TODO\n\n## Ready\n\n- see [a](lib/a.js:3-9).\n', { 'lib/a.js': 'one\ntwo\n' });
+  assert.deepEqual(kinds(file), ['past end']);
+});
+
+test('a line inside the file passes, in either form', () => {
+  const file = fixture('# TODO\n\n## Ready\n\n- see `lib/a.js:2` and [a](lib/a.js:1-2).\n', { 'lib/a.js': 'one\ntwo\n' });
+  assert.deepEqual(kinds(file), []);
+});
+
 test('the line number points at the entry, not at the file', () => {
   const file = fixture('# TODO\n\n## Ready\n\n- fine\n- [gone](nope.md)\n');
   assert.equal(todo.check(file).problems[0].line, 6);
