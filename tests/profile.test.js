@@ -370,10 +370,11 @@ test('prompt.all and prompt.<stage> take one line of free text, 1 to 200 charact
     assert.equal(profile.read(d, null).values['prompt.verify'], 'Run the suite first');
 });
 
-test('the station wizard gets every key but the free-text prompts', () => {
+test('the station wizard gets every key that offers a choice: not the prompts, not security.local', () => {
     const wizard = Object.keys(profile.WIZARD_KEYS);
     assert.ok(!wizard.some((k) => k.startsWith('prompt.')));
-    assert.deepEqual(wizard, Object.keys(profile.KEYS).filter((k) => !k.startsWith('prompt.')));
+    assert.ok(!wizard.includes('security.local'));
+    assert.deepEqual(wizard, Object.keys(profile.KEYS).filter((k) => profile.KEYS[k].values.length > 0));
 });
 
 // docs/plans/2026-09-24-todo-clear.md, "起草時查到": the printed N is
@@ -421,4 +422,22 @@ test('profile set prompt.all names every stage it pushes over the cap, and still
     assert.ok(over.length > 0, 'a 200-character sentence on blocks within a few hundred characters of the cap: ' + out);
     assert.match(out, new RegExp('^over the cap: ' + over.join(', ') + ' — set anyway', 'm'));
     assert.equal(JSON.parse(fs.readFileSync(profile.projectFile(d), 'utf8'))['prompt.all'], 'x'.repeat(200));
+});
+
+// docs/plans/2026-09-26-three-ready.md Task 2: an ollama model name, or false.
+test('security.local takes an ollama model name or false, and profile set accepts qwen3:14b', () => {
+    assert.equal(profile.parseValue('security.local', ' qwen3:14b ').value, 'qwen3:14b');
+    assert.equal(profile.parseValue('security.local', 'library/llama3.1:8b-instruct-q4_K_M').value, 'library/llama3.1:8b-instruct-q4_K_M');
+    assert.equal(profile.parseValue('security.local', 'false').value, false);
+    for (const bad of ['', 'two words', '-rm', 'a;b', 'x'.repeat(101)]) {
+        assert.ok(profile.parseValue('security.local', bad).error, JSON.stringify(bad.slice(0, 20)));
+    }
+    const d = dir();
+    const cfg = path.join(d, 'cfg');
+    const TASK = path.join(__dirname, '..', 'scripts', 'task.js');
+    const out = execFileSync(process.execPath, [TASK, 'profile', 'set', 'security.local', 'qwen3:14b', '--root', d, '--claude-dir', cfg],
+        { encoding: 'utf8', env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg }) });
+    assert.match(out, /security\.local = qwen3:14b/);
+    assert.equal(profile.read(d, null).values['security.local'], 'qwen3:14b');
+    assert.equal(profile.read(dir(), null).values['security.local'], undefined, 'unset by default');
 });
