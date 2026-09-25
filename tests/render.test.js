@@ -784,7 +784,8 @@ test('prompt.all rides every stage\'s block and the stage agent\'s brief; prompt
 
 // docs/plans/2026-09-26-three-ready.md Task 1. Relative to the registry root,
 // because an absolute path put the bounded design block over the cap at a
-// 30-character root; the mockup key is off here — see TODO.md's render entry.
+// 30-character root; the mockup key is off here; the bounded + mockup case
+// has its own test below.
 test('a design going straight to a controlled build names design.md relative to the registry, under the cap', (t) => {
   const route = ['survey', 'design', 'build', 'verify', 'land'];
   const profile = { values: { 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': true, guard: 'ask', 'dispatch.floor': 'sonnet', 'judge.model': 'fable', 'design.mockup': false, 'stage.agents': ['build'] }, sources: {}, unreadable: [] };
@@ -809,4 +810,19 @@ test('verify with security.local set names the script and stays under the cap', 
   const size = sizeAtReference(out);
   t.diagnostic('verify with security.local ' + size + ' chars at a ' + REFERENCE_ROOT + '-char root');
   assert.ok(size < 2400, 'verify with security.local is ' + size + ' chars');
+});
+
+// docs/plans/2026-09-26-station-redesign.md Task 1. The cap test at :527
+// measures the architectural route only; a bounded route with a front end
+// switched on measured 2420 on 2026-09-26, over the cap. Shortening the
+// mockup rule's opening is what brings it back.
+test('a bounded design with design.mockup on and no stage agents is under the cap', (t) => {
+  const { BLOCK_CAP } = require('../lib/render.js');
+  const route = ['survey', 'design', 'build', 'verify', 'land'];
+  const profile = { values: { 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': true, guard: 'ask', 'dispatch.floor': 'sonnet', 'judge.model': 'fable', 'design.mockup': 'opus' }, sources: {}, unreadable: [] };
+  const out = render({ mine: entry(MINE, { stage: 'design', class: 'bounded', route }), others: [], now: NOW, profile });
+  assert.match(out, /Mockup first: one page at `design\.mockup`'s model/, 'the rule is in the block being measured');
+  const size = sizeAtReference(out);
+  t.diagnostic('bounded design with a mockup ' + size + ' chars at a ' + REFERENCE_ROOT + '-char root');
+  assert.ok(size < BLOCK_CAP, 'the bounded design block with design.mockup on is ' + size + ' chars');
 });

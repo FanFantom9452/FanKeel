@@ -283,7 +283,7 @@ test('a brain\'s stage rules are rendered with the profile: a land brain carries
   // page (agentsFor('design') is reader and reviewer only), so the rule is
   // filtered out of its brief even with a model named — this `brief` helper
   // always controls the stage it asks for.
-  const mockup = /Frontend work gets a mockup first: one page at `design\.mockup`'s model/;
+  const mockup = /Mockup first: one page at `design\.mockup`'s model/;
   const design = brief('design', { 'design.mockup': 'sonnet' });
   assert.doesNotMatch(design, mockup);
   assert.doesNotMatch(brief('design', {}), mockup);
