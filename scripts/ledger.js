@@ -46,14 +46,20 @@ const STRING_FLAGS = { root: 'root', plan: 'plan', range: 'range' };
 // drift.
 const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'ready', 'hands', 'scan', 'ranges', 'lint', 'brief', 'fix']);
 
-// `strict: false` keeps an unknown flag silent. A declared flag given no value
-// comes back `true` rather than a string, and that is the refusal below: a flag
-// typed with nothing after it is a mistake worth naming, not a default worth
-// guessing at.
+// The flags each verb takes. `--root` and `--plan` everywhere; `--range` only
+// where a range is recorded. A flag outside its verb's list is refused rather
+// than ignored: `ranges --range x` used to exit 0 having read nothing of it.
+const BASE_FLAGS = ['root', 'plan'];
+const VERB_FLAGS = { init: BASE_FLAGS.concat(['range']), complete: BASE_FLAGS.concat(['range']), fix: BASE_FLAGS.concat(['range']) };
+
+// `strict: false` lets an unknown flag through to the verb check below, which
+// refuses it by name. A declared flag given no value comes back `true` rather
+// than a string, and that is the refusal below: a flag typed with nothing
+// after it is a mistake worth naming, not a default worth guessing at.
 //
 // It is given the head alone, never the whole argv — which is what stops a note
 // from being read as a flag.
-function parseArgs(argv) {
+function parseArgs(argv, verb) {
     const options = {};
     for (const flag of Object.keys(STRING_FLAGS)) options[flag] = { type: 'string' };
 
@@ -63,6 +69,13 @@ function parseArgs(argv) {
         if (values[flag] === undefined) continue;
         if (typeof values[flag] !== 'string') fail('--' + flag + ' needs a value.');
         opts[key] = values[flag];
+    }
+    // After the value check, so a flag left without its value is still named
+    // as that — the refusal tests/ledger.test.js pins for `--root` and `--plan`.
+    const allowed = VERB_FLAGS[verb] || BASE_FLAGS;
+    const stray = Object.keys(values).filter((flag) => !allowed.includes(flag));
+    if (stray.length) {
+        fail(verb + ' takes ' + allowed.map((f) => '--' + f).join(', ') + '; refused: ' + stray.map((f) => '--' + f).join(', ') + '.');
     }
     return opts;
 }
@@ -392,10 +405,10 @@ function readOwnLedger(root, opts) {
 
 function main(argv) {
     const { head, verb: named, text } = splitAtVerb(argv, STRING_FLAGS, VERBS);
-    const opts = parseArgs(head);
+    const verb = String(named || 'show').toLowerCase();
+    const opts = parseArgs(head, verb);
     const root = path.resolve(opts.root || process.cwd());
     if (!opts.plan) fail('--plan <path to the plan file> is required.');
-    const verb = String(named || 'show').toLowerCase();
 
     if (verb === 'init') {
         // `lib/ledger.js`'s own `init()` only opens the progress file; it never

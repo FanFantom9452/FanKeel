@@ -339,6 +339,28 @@ test('ranges names a completed task that recorded no range', () => {
   assert.match(out, /no range recorded/);
 });
 
+// docs/plans/2026-09-26-station-redesign.md Task 4. `strict: false` kept every
+// flag a verb does not read silent, so `--range x ranges` exited 0 having read
+// nothing of it. Each verb now has the flags it takes; any other is refused.
+test('a flag its verb does not take is refused, not ignored', () => {
+  const dir = root();
+  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', 'init'], { cwd: dir, encoding: 'utf8' });
+  for (const argv of [['--range', 'x', 'ranges'], ['--range', 'aaaaaaa..bbbbbbb', 'show'], ['--bogus=y', 'groups']]) {
+    let out = '';
+    let code = 0;
+    try {
+      execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', ...argv], { cwd: dir, encoding: 'utf8' });
+    } catch (e) {
+      out = String(e.stdout || '');
+      code = e.status;
+    }
+    assert.equal(code, 1, argv.join(' ') + ' should exit 1');
+    assert.match(out, /refused: --(range|bogus)/, argv.join(' '));
+  }
+  const ok = execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', 'aaaaaaa..bbbbbbb', 'complete', '1', 'first'], { cwd: dir, encoding: 'utf8' });
+  assert.match(ok, /Task 1 complete/, 'complete still takes --range');
+});
+
 // The write side took any string and the read side reads one shape, so
 // `--range HEAD~1..HEAD` landed on disk and came back from `ranges` as
 // `(no range recorded)` -- above a message naming two causes, neither of which
