@@ -149,3 +149,23 @@ test('the 答 gate step sets gate.station, off by default', () => {
     assert.equal(W2.val['gate.station'], '60');
     assert.deepEqual(V.wizChanges(KEYS, W2, PROFILES).filter((c) => c.key === 'gate.station'), [{ key: 'gate.station', value: '60' }]);
 });
+
+// docs/plans/2026-09-26-station-redesign.md Task 11: one card per option, and
+// a moving picture for the five habits the mockup animates.
+test('each option is a card carrying data-k and data-o, with a scene on the five animated keys', () => {
+    const W = load();
+    W.step = 0;
+    const land = V.wizHtml(KEYS, W, PROFILES, CTX);
+    for (const o of ['merge', 'pr', 'keep']) assert.match(land, new RegExp('class="ch[^"]*" data-k="land\\.integration" data-o="' + o + '"[^>]*>[\\s\\S]*?<svg class="vg'));
+    assert.match(land, /class="ch ask" data-k="land\.integration" data-o=""/);
+    assert.match(land, /data-k="land\.push" data-o="true"[^>]*>[\s\S]*?<svg class="vg/);
+    assert.match(land, /data-k="land\.archivePlan" data-o="true"[^>]*>[\s\S]*?<svg class="vg/);
+    W.step = V.WIZ_STEPS.findIndex((s) => s.id === 'guard');
+    assert.match(V.wizHtml(KEYS, W, PROFILES, CTX), /data-k="guard" data-o="deny"[^>]*>[\s\S]*?<svg class="vg/);
+    W.step = V.WIZ_STEPS.findIndex((s) => s.id === 'agents');
+    assert.match(V.wizHtml(KEYS, W, PROFILES, CTX), /data-k="stage\.agents" data-o="survey,build,verify"[^>]*>[\s\S]*?<svg class="vg/);
+    W.step = V.WIZ_STEPS.findIndex((s) => s.id === 'model');
+    assert.doesNotMatch(V.wizHtml(KEYS, W, PROFILES, CTX), /<svg class="vg/, 'a key with no habit to show gets no scene');
+    const again = V.wizApply(load(), KEYS, PROFILES, { k: 'land.integration', o: 'pr' });
+    assert.equal(again.val['land.integration'], 'pr', 'a card click is the click wizApply already reads');
+});

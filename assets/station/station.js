@@ -1410,6 +1410,116 @@
     // Every question is a habit; a habit card recommends values and the
     // buttons under it take them or not. `val` holds strings or null (ask).
     var WIZ_STAGES = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
+    // One scene per card on the five keys that have a habit to show, copied
+    // from the 2026-09-26 mockup. Each rests on its end frame; `.play` plus a
+    // chosen or hovered card runs it from the start (station.css).
+    var WIZ_SCENES = {
+        'land.integration': {
+            merge: '<svg class="vg" viewBox="0 0 220 76" aria-hidden="true">'
+                + '<path class="ln" d="M12 54H208"/><circle class="cm" cx="26" cy="54" r="3.2"/><text class="lbl" x="12" y="71">main</text>'
+                + '<g class="scene"><path class="br dr d1" pathLength="1" d="M40 54C56 54 54 24 72 24H128"/>'
+                + '<circle class="cb p1" cx="88" cy="24" r="3.4"/><circle class="cb p2" cx="112" cy="24" r="3.4"/>'
+                + '<path class="br dr d3" pathLength="1" d="M128 24C146 24 144 54 162 54"/>'
+                + '<circle class="cmg p4" cx="162" cy="54" r="5"/></g></svg>',
+            pr: '<svg class="vg" viewBox="0 0 220 76" aria-hidden="true">'
+                + '<path class="ln" d="M12 54H208"/><circle class="cm" cx="26" cy="54" r="3.2"/><text class="lbl" x="12" y="71">main</text>'
+                + '<g class="scene"><path class="br dr d1" pathLength="1" d="M40 54C56 54 54 30 72 30H106"/>'
+                + '<circle class="cb p1" cx="80" cy="30" r="3.4"/><circle class="cb p2" cx="98" cy="30" r="3.4"/>'
+                + '<g class="rise"><rect class="pr" x="112" y="6" width="56" height="22" rx="5"/><text class="prt" x="120" y="21">PR</text>'
+                + '<path class="ok dr d4" pathLength="1" d="M146 17l3.5 3.5 7-7"/></g>'
+                + '<path class="br dr d5" pathLength="1" d="M106 30C150 30 150 54 172 54"/>'
+                + '<circle class="cmg p6" cx="172" cy="54" r="5"/></g></svg>',
+            keep: '<svg class="vg" viewBox="0 0 220 76" aria-hidden="true">'
+                + '<path class="ln" d="M12 54H208"/><circle class="cm" cx="26" cy="54" r="3.2"/><text class="lbl" x="12" y="71">main</text>'
+                + '<g class="scene"><path class="br dr d1" pathLength="1" d="M40 54C56 54 54 28 72 28H128"/>'
+                + '<circle class="cb p1" cx="88" cy="28" r="3.4"/><circle class="cb p2" cx="110" cy="28" r="3.4"/>'
+                + '<g class="p3"><circle class="tipr" cx="130" cy="28" r="6"/><path class="pen" d="M130 22V6h14l-4 4 4 4h-14"/></g>'
+                + '<circle class="cm p4" cx="158" cy="54" r="3.2"/><circle class="cm p6" cx="188" cy="54" r="3.2"/></g></svg>',
+        },
+        'land.push': {
+            'true': '<svg class="vg" viewBox="0 0 220 76" aria-hidden="true">'
+                + '<rect class="box" x="10" y="16" width="70" height="42" rx="6"/><text class="lblc" x="45" y="71" text-anchor="middle">本機</text>'
+                + '<rect class="box" x="140" y="16" width="70" height="42" rx="6"/><text class="lblc" x="175" y="71" text-anchor="middle">遠端</text>'
+                + '<path class="link" d="M80 37H140"/>'
+                + '<g class="scene"><circle class="cb mvR" cx="175" cy="37" r="5.5"/>'
+                + '<rect class="box hot p3" x="140" y="16" width="70" height="42" rx="6"/>'
+                + '<path class="ok dr d5" pathLength="1" d="M194 25l3 3 6-6"/></g></svg>',
+            'false': '<svg class="vg" viewBox="0 0 220 76" aria-hidden="true">'
+                + '<rect class="box" x="10" y="16" width="70" height="42" rx="6"/><text class="lblc" x="45" y="71" text-anchor="middle">本機</text>'
+                + '<rect class="box ghost" x="140" y="16" width="70" height="42" rx="6"/><text class="lblc" x="175" y="71" text-anchor="middle">遠端</text>'
+                + '<path class="link" d="M80 37H140" style="opacity:.5"/>'
+                + '<g class="scene"><circle class="cb p1" cx="29" cy="37" r="5"/><circle class="cb p2" cx="45" cy="37" r="5"/><circle class="cb p3" cx="61" cy="37" r="5"/></g></svg>',
+        },
+        'land.archivePlan': {
+            'true': '<svg class="vg" viewBox="0 0 220 76" aria-hidden="true">'
+                + '<rect class="box" x="138" y="34" width="68" height="34" rx="4"/>'
+                + '<g class="scene"><g class="mvDoc"><rect class="doc" x="156" y="36" width="30" height="36" rx="3"/><path class="docl" d="M162 45h18M162 51h18M162 57h11"/></g>'
+                + '<rect class="front" x="138" y="46" width="68" height="22" rx="4"/><path class="handle" d="M162 57h20"/>'
+                + '<path class="ok dr d5" pathLength="1" d="M190 52l3 3 6-6"/></g></svg>',
+            'false': '<svg class="vg" viewBox="0 0 220 76" aria-hidden="true">'
+                + '<rect class="box ghost" x="138" y="34" width="68" height="34" rx="4"/>'
+                + '<g class="scene"><rect class="doc" x="52" y="10" width="44" height="54" rx="3"/>'
+                + '<path class="docl dr d1" pathLength="1" d="M60 22h28"/><path class="docl dr d2" pathLength="1" d="M60 31h28"/><path class="docl dr d3" pathLength="1" d="M60 40h18"/>'
+                + '<circle class="cb p4" cx="88" cy="52" r="3.4"/></g></svg>',
+        },
+        guard: {
+            ask: '<svg class="vg" viewBox="0 0 220 76" aria-hidden="true">'
+                + '<path class="file" d="M96 18h20l8 8v32H96z"/><path class="file" d="M116 18v8h8" style="fill:none"/>'
+                + '<g class="scene"><rect class="own p2" x="91" y="13" width="38" height="50" rx="5"/>'
+                + '<g class="mvA"><circle class="sa" cx="84" cy="38" r="8.5"/><text class="sl" x="84" y="41.5" text-anchor="middle">A</text></g>'
+                + '<g class="mvBask"><g class="wait"><circle class="sb" cx="148" cy="38" r="8.5"/><text class="sl" x="148" y="41.5" text-anchor="middle">B</text></g></g>'
+                + '<g class="p3 og-b"><rect class="bub" x="134" y="4" width="58" height="18" rx="9"/><path class="bub" d="M146 21.4l2 5 4-5" style="stroke-linejoin:round"/><text class="bubt" x="163" y="16.5" text-anchor="middle">要繼續？</text></g>'
+                + '</g></svg>',
+            deny: '<svg class="vg" viewBox="0 0 220 76" aria-hidden="true">'
+                + '<path class="file" d="M96 18h20l8 8v32H96z"/><path class="file" d="M116 18v8h8" style="fill:none"/>'
+                + '<g class="scene"><rect class="own p2" x="91" y="13" width="38" height="50" rx="5"/>'
+                + '<rect class="wall p2" x="136" y="12" width="5" height="52" rx="2"/>'
+                + '<g class="mvA"><circle class="sa" cx="84" cy="38" r="8.5"/><text class="sl" x="84" y="41.5" text-anchor="middle">A</text></g>'
+                + '<g class="mvBdeny"><circle class="sb" cx="176" cy="38" r="8.5"/><text class="sl" x="176" y="41.5" text-anchor="middle">B</text></g>'
+                + '</g></svg>',
+            off: '<svg class="vg" viewBox="0 0 220 76" aria-hidden="true">'
+                + '<path class="file warn" d="M96 18h20l8 8v32H96z"/><path class="file warn" d="M116 18v8h8" style="fill:none"/>'
+                + '<g class="scene"><g class="mvA"><circle class="sa" cx="84" cy="38" r="8.5"/><text class="sl" x="84" y="41.5" text-anchor="middle">A</text></g>'
+                + '<g class="mvBoff"><circle class="sb" cx="130" cy="38" r="8.5"/><text class="sl" x="130" y="41.5" text-anchor="middle">B</text></g>'
+                + '<g class="warn"><path class="tri" d="M110 0.5l10 17h-20z"/><path class="tri-x" d="M110 6.5v5M110 14.6v.1"/></g>'
+                + '</g></svg>',
+        },
+        'stage.agents': {
+            'false': '<svg class="vg short" viewBox="0 0 220 60" aria-hidden="true">'
+                + '<path class="ln" d="M12 30H208" style="stroke-width:5;opacity:.85"/><text class="lbl" x="12" y="52">主線</text></svg>',
+            survey: '<svg class="vg short" viewBox="0 0 220 60" aria-hidden="true">'
+                + '<path class="ln" d="M12 16H208"/><text class="lbl" x="12" y="54">主線</text>'
+                + '<g class="scene"><path class="lane dr d1" pathLength="1" d="M48 16C60 16 58 36 70 36H150C162 36 160 16 172 16"/></g></svg>',
+            'survey,build,verify': '<svg class="vg short" viewBox="0 0 220 60" aria-hidden="true">'
+                + '<path class="ln" d="M12 12H208"/><text class="lbl" x="12" y="56">主線</text>'
+                + '<g class="scene"><path class="lane dr d1" pathLength="1" d="M48 12C60 12 58 26 70 26H150C162 26 160 12 172 12"/>'
+                + '<path class="lane dr d1" pathLength="1" d="M48 12C60 12 58 36 70 36H150C162 36 160 12 172 12"/>'
+                + '<path class="lane dr d1" pathLength="1" d="M48 12C60 12 58 46 70 46H150C162 46 160 12 172 12"/></g></svg>',
+            all: '<svg class="vg short" viewBox="0 0 220 60" aria-hidden="true">'
+                + '<path class="ln" d="M12 10H208"/><text class="lbl" x="12" y="57">主線</text>'
+                + '<g class="scene"><path class="lane dr d1" pathLength="1" d="M48 10C60 10 58 20 70 20H150C162 20 160 10 172 10"/>'
+                + '<path class="lane dr d1" pathLength="1" d="M48 10C60 10 58 25.5 70 25.5H150C162 25.5 160 10 172 10"/>'
+                + '<path class="lane dr d1" pathLength="1" d="M48 10C60 10 58 31 70 31H150C162 31 160 10 172 10"/>'
+                + '<path class="lane dr d1" pathLength="1" d="M48 10C60 10 58 36.5 70 36.5H150C162 36.5 160 10 172 10"/>'
+                + '<path class="lane dr d1" pathLength="1" d="M48 10C60 10 58 42 70 42H150C162 42 160 10 172 10"/>'
+                + '<path class="lane dr d1" pathLength="1" d="M48 10C60 10 58 47.5 70 47.5H150C162 47.5 160 10 172 10"/>'
+                + '<path class="lane dr d1" pathLength="1" d="M48 10C60 10 58 53 70 53H150C162 53 160 10 172 10"/></g></svg>',
+        },
+    };
+    var WIZ_CARD_TEXT = {
+        'land.integration': { merge: { l: '本機合併', d: '分支併回 main，留在本機。' }, pr: { l: '開 PR', d: '推上去，review 過再合。' }, keep: { l: '留在分支', d: '分支停著，之後自己整合。' } },
+        'land.push': { 'true': { l: '推上去', d: '收尾就 push。' }, 'false': { l: '留在本機', d: 'commit 在手上，自己推。' } },
+        'land.archivePlan': { 'true': { l: '封存', d: '做完就收進 archive。' }, 'false': { l: '先留著', d: '計畫繼續開著。' } },
+        guard: { ask: { l: '先問我', d: 'B 停下來等你點頭。' }, deny: { l: '擋掉', d: '等 A 放手才能改。' }, off: { l: '只提醒', d: '兩邊都改，閃個警告。' } },
+        'stage.agents': { 'false': { l: '全自己跑', d: '看得最清楚。' }, survey: { l: '只交 survey', d: '讀 repo 最吃 context。' },
+            'survey,build,verify': { l: '交三站', d: 'survey、build、verify。' }, all: { l: '全交出去', d: '主線只轉路徑。' } },
+    };
+    // `stage.agents` is offered as the four the mockup draws; the seven-stage
+    // toggles under them (`wizOpts`) still set any other list.
+    var WIZ_CARD_VALUES = { 'stage.agents': ['false', 'survey', 'survey,build,verify', 'all'] };
+    // How much of the main session's context each stage.agents card leaves
+    // in use — the mockup's meter under the card, a picture not a measurement.
+    var WIZ_ASK_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4A2.5 2.5 0 0 1 4 13.5z"/><path d="M10 7.8a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6 1v.4"/><path d="M12 13.2h.01"/></svg>';
     var WIZ_STEPS = [
         { id: 'land', t: '收尾', q: '一件工作做完，你通常怎麼收？', sub: '這決定 land 站停不停下來問你。選一個最像你的習慣，下面可以逐鍵改。', keys: ['land.integration', 'land.push', 'land.archivePlan'],
             habits: [
@@ -1568,38 +1678,69 @@
                 + '" aria-pressed="' + wizSame(v, o) + '">' + (o === null ? '每次問我' : esc(o)) + '</button>';
         }).join('') + '</span>';
     }
+    // One card per value: a label, one line, and on the five keys in
+    // WIZ_SCENES a scene that plays while its card is chosen or hovered.
+    // `data-k`/`data-o` are what `wizApply` reads, so a card click is the same
+    // click the buttons were.
+    function wizCards(keys, W, k) {
+        var v = W.val[k], r = W.rec[k], hasRec = Object.prototype.hasOwnProperty.call(W.rec, k);
+        var opts = (WIZ_CARD_VALUES[k] || keys[k].values).slice(), n = opts.length;
+        if (keys[k].builtin === null) opts.push(null);
+        var text = WIZ_CARD_TEXT[k] || {}, scenes = WIZ_SCENES[k] || {};
+        // c<n> counts the valued cards; the ask card, when there is one, takes
+        // the narrow last column the mockup gives it.
+        return '<div class="chs c' + n + (n === opts.length ? ' na' : '') + '" role="group" aria-label="' + esc(k) + '">' + opts.map(function (o) {
+            var id = o === null ? '' : o, t = text[id] || { l: o === null ? '問我' : o, d: o === null ? '到時再決定。' : '' };
+            var scene = o === null ? WIZ_ASK_ICON : (scenes[id] || '');
+            return '<button type="button" class="ch' + (o === null ? ' ask' : '') + '" data-k="' + esc(k) + '" data-o="' + esc(id)
+                + '" aria-pressed="' + wizSame(v, o) + '">' + (hasRec && wizSame(r, o) ? '<span class="rec">建議</span>' : '')
+                + (scene ? '<span class="wstg">' + scene + '</span>' : '')
+                + '<span class="cl">' + esc(t.l) + '</span>' + (t.d ? '<span class="cd">' + esc(t.d) + '</span>' : '')
+                + (o === null ? '' : '<span class="cv">' + esc(o) + '</span>') + '</button>';
+        }).join('') + '</div>';
+    }
+    var WIZ_TICK = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.3 5 8.6l4.5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    var WIZ_LIST = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3.5h6M3 6h6M3 8.5h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
     function wizStepsHtml(W) {
-        var n = WIZ_STEPS.length;
-        return WIZ_STEPS.map(function (st, i) {
-            var c = i === W.step ? 'wcur' : (W.pick[i] !== undefined ? 'wdone' : '');
+        var n = WIZ_STEPS.length, done = 0;
+        var items = WIZ_STEPS.map(function (st, i) {
+            var d = W.pick[i] !== undefined, c = i === W.step ? 'cur' : (d ? 'done' : '');
+            if (d) done++;
             var s = st.keys.map(function (k) { return wizShow(W.val[k]); }).join(' · ');
-            return '<li class="' + c + '"><button type="button" data-go="' + i + '"><span class="wdotn">' + (i + 1) + '</span><span class="wt">'
-                + st.t + '</span><span class="ws">' + esc(s) + '</span></button></li>';
-        }).join('') + '<li class="wsumli' + (W.step === n ? ' wcur' : '') + '"><button type="button" data-go="' + n
-            + '"><span class="wdotn">✓</span><span class="wt">摘要與寫入</span><span class="ws">' + Object.keys(W.val).length + ' 鍵</span></button></li>';
+            return '<li' + (c ? ' class="' + c + '"' : '') + '><button class="ri" type="button" data-go="' + i + '"><span class="rn">' + (c === 'done' ? WIZ_TICK : i + 1)
+                + '</span><span class="rt">' + st.t + '</span><span class="rv">' + esc(s) + '</span></button></li>';
+        }).join('');
+        return '<nav class="wrail" data-block="wizard-steps" aria-label="精靈進度"><div class="rhead"><span>已答</span><b>' + done + ' / ' + n + '</b></div>'
+            + '<div class="rbarx" aria-hidden="true"><i style="width:' + (done / n * 100) + '%"></i></div><ol>' + items
+            + '<li class="sum' + (W.step === n ? ' cur' : '') + '"><button class="ri" type="button" data-go="' + n + '"><span class="rn">' + WIZ_LIST
+            + '</span><span class="rt">摘要與寫入</span><span class="rv">' + Object.keys(W.val).length + ' 鍵</span></button></li></ol></nav>';
     }
     function wizStepHtml(keys, W, profiles) {
         var n = WIZ_STEPS.length, st = WIZ_STEPS[W.step];
-        var fine = st.keys.filter(function (k) {
+        var shown = st.keys.filter(function (k) {
             return k !== 'design.skill' || (W.val['design.mockup'] !== null && W.val['design.mockup'] !== 'false');
         });
-        return '<div class="wcard" data-block="wizard-step"><div class="prog" aria-hidden="true"><i style="width:' + Math.round((W.step + 1) / (n + 1) * 100) + '%"></i></div>'
-            + '<div class="wtop"><span class="eyebrow">第 ' + (W.step + 1) + ' 題 · ' + st.t + '</span><span class="wof">' + (W.step + 1) + ' / ' + n
-            + '</span><span class="spacer"></span><button class="wlk" type="button" data-go="' + n + '">跳到摘要 →</button></div>'
-            + '<h2 class="wq">' + st.q + '</h2><p class="wqsub">' + st.sub + '</p>'
-            + '<div class="habits" role="group" aria-label="' + st.t + '">' + st.habits.map(function (hb, j) {
-                return '<button type="button" class="habit" data-h="' + j + '" aria-pressed="' + (W.pick[W.step] === j) + '"><b>' + hb.l + '</b>'
-                    + (hb.b ? '<span class="wbl">' + hb.b + '</span>' : '')
-                    + '<span class="wsets">' + Object.keys(hb.s).map(function (k) { return esc(k) + ' → ' + esc(wizShow(hb.s[k])); }).join('<br>') + '</span></button>';
-            }).join('') + '</div>'
-            + '<div class="fine"><div class="eyebrow">細調 · 這一題會設的鍵</div>' + fine.map(function (k) {
-                return '<div class="fk"><span class="wk">' + esc(k) + '</span><span class="wd">' + esc(keys[k].desc || '') + '</span><span class="ctlc">'
-                    + wizOpts(keys, W, profiles, k) + (wizOverridden(W, k) ? '<span class="ovr">改過建議</span>' : '') + '</span></div>';
-            }).join('') + '</div>'
+        var ovr = function (k) { return wizOverridden(W, k) ? '<span class="ovr">改過建議</span>' : ''; };
+        var full = shown.filter(function (k) { return WIZ_SCENES[k]; }), mini = shown.filter(function (k) { return !WIZ_SCENES[k]; });
+        return '<div class="wcard" data-block="wizard-step" data-step="' + st.id + '">'
+            + '<div class="top"><span class="of">' + (W.step + 1) + ' / ' + n + '</span><span class="spacer"></span>'
+            + '<button class="lk" type="button" data-go="' + n + '">跳到摘要</button></div>'
+            + '<h2 class="q">' + st.q + '</h2><p class="wqs">' + st.sub + '</p>'
+            + '<div class="presets"><span class="plab">常見組合</span><span class="pills" role="group" aria-label="' + st.t + ' 常見組合">' + st.habits.map(function (hb, j) {
+                return '<button type="button" class="pc" data-h="' + j + '" aria-pressed="' + (W.pick[W.step] === j) + '" title="'
+                    + Object.keys(hb.s).map(function (k) { return esc(k) + ' → ' + esc(wizShow(hb.s[k])); }).join('&#10;') + '">' + hb.l + '</button>';
+            }).join('') + '</span></div>'
+            + full.map(function (k) {
+                return '<div class="grp" role="group" aria-label="' + esc(k) + '"><div class="gh"><b>' + esc(keys[k].desc || k) + '</b><code>' + esc(k) + '</code>' + ovr(k) + '</div>'
+                    + wizCards(keys, W, k) + (k === 'stage.agents' ? '<div class="stfine">' + wizOpts(keys, W, profiles, k) + '</div>' : '') + '</div>';
+            }).join('')
+            + (mini.length ? '<div class="wmini">' + mini.map(function (k) {
+                return '<div class="mrow"><b>' + esc(keys[k].desc || k) + '<code>' + esc(k) + '</code></b><span class="ctlc">' + wizOpts(keys, W, profiles, k) + ovr(k) + '</span></div>';
+            }).join('') + '</div>' : '')
             + (st.id === 'station' && W.scope === 'machine' ? '<p class="wnote">現在寫的是機器預設：station.hide 設在這裡，會讓每個沒寫這個鍵的專案都跟著隱藏。</p>' : '')
-            + '<div class="wnav"><button class="ctl" type="button" data-go="' + (W.step - 1) + '"' + (W.step ? '' : ' disabled') + '>← 上一題</button><span class="spacer"></span>'
-            + '<span class="whint">' + (W.pick[W.step] === undefined ? '沒選也可以往下，這題的鍵維持現在的值' : '') + '</span>'
-            + '<button class="ctl" type="button" data-go="' + (W.step + 1) + '">' + (W.step === n - 1 ? '看摘要 →' : '下一題 →') + '</button></div></div>';
+            + '<div class="nav"><button class="ctl" type="button" data-go="' + (W.step - 1) + '"' + (W.step ? '' : ' disabled') + '>← 上一題</button><span class="spacer"></span>'
+            + '<span class="whint">' + (W.pick[W.step] === undefined ? '不選也能往下，這題的鍵維持現在的值' : '') + '</span>'
+            + '<button class="ctl pri" type="button" data-go="' + (W.step + 1) + '">' + (W.step === n - 1 ? '看摘要 →' : '下一題 →') + '</button></div></div>';
     }
     function wizWriteHtml(ch, W, ctx, file) {
         var label = '寫入 ' + ch.length + ' 鍵';
@@ -1655,8 +1796,8 @@
     }
     function wizHtml(keys, W, profiles, ctx) {
         var body = W.step >= WIZ_STEPS.length ? wizSummaryHtml(keys, W, profiles, ctx) : wizStepHtml(keys, W, profiles);
-        return '<div class="phead"><h1>' + icon('settings') + '設定</h1></div><div class="wz" data-block="wizard"><ol class="steps" data-block="wizard-steps">'
-            + wizStepsHtml(W) + '</ol><div class="wbody">' + body + '</div></div>';
+        return '<div class="phead"><h1>' + icon('settings') + '設定</h1></div><div class="wz play" data-block="wizard">'
+            + wizStepsHtml(W) + '<div class="body">' + body + '</div></div>';
     }
 
     // ---- tune: a block changed ----------------------------------------------

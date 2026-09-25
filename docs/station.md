@@ -197,7 +197,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:2513`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:2659`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -206,7 +206,7 @@ stage's minutes went on a gate rather than on work. Neither carries a dollar
 figure any more; a stage's own cost surfaces in the per-route stage
 ledger on each project page, and per stage and model inside the session
 page's 概覽, under a `<details class="csmore">` element
-(`assets/station/station.js:2240`) — not on this table's rows.
+(`assets/station/station.js:2415`) — not on this table's rows.
 
 A stage's dollar figure needs `spend`, which `hooks/leave.js` writes once, at
 session end — a live session does not have it yet, and no session that ended
@@ -263,7 +263,7 @@ agent's return entered the main context.
 
 Where a stage's dollars live is no longer its own tab: the stage × model
 table now sits inside 概覽, under a `<details>` element titled "stage × model
-明細" (`assets/station/station.js:2267`, `<details class="csmore">`). Above
+明細" (`assets/station/station.js:2413`, `<details class="csmore">`). Above
 it, when the session has a detail loaded, sits the timeline chart, which now
 also tints its background by stage; and above that sits `costShareHtml`
 (`assets/station/station.js:1132`, `function costShareHtml(L, hi) {`), a bar
@@ -468,7 +468,7 @@ otherwise point outside the repository it sits in.
 
 Before `station-data.js` arrives the shell has nothing to draw, so
 `station.css` alone fills that wait
-(`assets/station/station.css:1071`, `first load`): CSS-only placeholders
+(`assets/station/station.css:1224`, `first load`): CSS-only placeholders
 stand in for the nav and the page, with a `計算中…` spinner beside where the
 side panel would sit, and the placeholders hold still rather than animate
 under `prefers-reduced-motion`.
@@ -528,18 +528,18 @@ is to change the profile and reload.
 
 The facets are on 清單, above its table — state and stage with a count on each
 button, registry with one button per root
-(`assets/station/station.js:2345`, `moved onto the page they narrow`) — and
+(`assets/station/station.js:2491`, `moved onto the page they narrow`) — and
 the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed.
 
 The same box also opens a grouped-results popover about 200 ms after typing
-stops (`assets/station/station.js:3928`, `}, 200)`): `qGroups`
-(`assets/station/station.js:3844`, `function qGroups(q) {`) buckets what
+stops (`assets/station/station.js:4074`, `}, 200)`): `qGroups`
+(`assets/station/station.js:3990`, `function qGroups(q) {`) buckets what
 matches into Sessions, 專案 and 文件, up to five rows each with a 看全部 link
 when there are more, and `qDraw`
-(`assets/station/station.js:3885`, `function qDraw() {`) draws it with each
+(`assets/station/station.js:4031`, `function qDraw() {`) draws it with each
 match highlighted. `/` focuses the box from anywhere on the page
-(`assets/station/station.js:4013`, `if (e.key === '/')`), the arrow keys
+(`assets/station/station.js:4159`, `if (e.key === '/')`), the arrow keys
 move the selection, Enter opens what is picked and Esc closes the popover.
 文件 matches only the paths and buckets the page's own data carries, because
 there is no doc body on the client to search.
@@ -551,14 +551,14 @@ above the list otherwise; it does not merely hide rows.
 A gone registry keeps its facet button, labelled `— gone`, rather than
 dropping off the row, so selecting one never returns a blank pane with nothing
 on the page saying why:
-`goneNote()` (`assets/station/station.js:1935`, `function goneNote(root)`) prints a
+`goneNote()` (`assets/station/station.js:2081`, `function goneNote(root)`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card once it is the one selected on
 清單, and every project page carries the same card for its own registry no
 matter what is selected there: `registryNote()`
-(`assets/station/station.js:1952`, `function registryNote(root)`) prints its
+(`assets/station/station.js:2098`, `function registryNote(root)`) prints its
 own unreadable-session count, its `map.md` date — or `不存在` when there is
 none — and its build directories with each one's file count, or says there
 are none. The old page carried all three on a per-registry meta line; the
@@ -566,7 +566,7 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:2547`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:2693`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
 (`lib/station.js:478`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
@@ -587,21 +587,21 @@ root separates on its own and always did.
 
 `#/` is now **儀表板**, a dashboard of four cards, each reading the same rows
 its own full page reads so its numbers always match that page:
-`dashLive` (`assets/station/station.js:1996`, `function dashLive(R) {`)
+`dashLive` (`assets/station/station.js:2142`, `function dashLive(R) {`)
 counts today's `live` sessions and lists them, each row linking to `#/live`;
-`dashGate` (`assets/station/station.js:2009`, `function dashGate(R) {`)
+`dashGate` (`assets/station/station.js:2155`, `function dashGate(R) {`)
 counts the sessions with a pending gate — `s.pending.questions` non-empty —
 and how long each has waited, also linking to `#/live`; `dashSpend`
-(`assets/station/station.js:2023`, `function dashSpend(R) {`) is a small bar
+(`assets/station/station.js:2169`, `function dashSpend(R) {`) is a small bar
 spark of the last 30 days' spend with today's and yesterday's figures beside
 it, linking to `#/days`; and `dashRecent`
-(`assets/station/station.js:2038`, `function dashRecent(R) {`) lists the 5
+(`assets/station/station.js:2184`, `function dashRecent(R) {`) lists the 5
 newest sessions out of the 30-day window, linking to `#/sessions`. What used
 to be `#/`'s own registry-card content — one card per registry that is not
 `gone`, with its live and stale sessions under it; a session that is down has
 finished and moved onto 最近 sessions instead — is unchanged in what
 `nowHtml` draws, but it now lives at `#/live` (進行中) instead, and
-`livePage` (`assets/station/station.js:1981`, `function livePage() {`) now
+`livePage` (`assets/station/station.js:2127`, `function livePage() {`) now
 also passes a subtabs strip above the cards (`subtabsHtml('live')`).
 
 The left nav (`navHtml`, `data-block="nav"`) no longer groups its links into
@@ -634,10 +634,10 @@ read with `stored()`'s try/catch so a `file:` page or private mode with no
 `localStorage` just has no preference. `station.nav.collapsed` holds which
 categories are folded shut — read once into `navShut` on load and written
 back by `navFoldSet` on every press of a fold button
-(`assets/station/station.js:3527`, `'station.nav.collapsed'`). `station.theme`
+(`assets/station/station.js:3673`, `'station.nav.collapsed'`). `station.theme`
 holds the three-state 跟隨系統/淺色/深色 button at the foot of the sidenav; a
 click cycles it and writes the new value
-(`assets/station/station.js:3561`, `'station.theme'`), and the
+(`assets/station/station.js:3707`, `'station.theme'`), and the
 stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
@@ -714,7 +714,7 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:2290`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:2436`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較** is a third view. Tick two sessions on 清單 or a project page — only a
@@ -777,7 +777,7 @@ Both decisions are pure functions above the `module.exports` guard, so both
 are unit tested: what to say
 (`assets/station/station.js:1284`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
 and what the eyebrow reads
-(`assets/station/station.js:1774`, `function heroEyebrow(frozenAt) {`). The
+(`assets/station/station.js:1920`, `function heroEyebrow(frozenAt) {`). The
 fetch that feeds them, the bar they fill and the pill are the document half
 below the guard. The eyebrow is rendered rather than patched, so it takes a
 redraw — but only as the state flips, never on a poll that finds nothing
@@ -890,7 +890,7 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:1982`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:2128`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button, and every registry card now carries one:
@@ -962,19 +962,27 @@ a profile is set at one page only, `#/settings`. There is no `<select>`,
 and no 套用機器預設 button — the served page's old strip of three habit
 presets (`profilePresets`, `lib/profile.js`'s `PRESETS`) is gone from the
 client too; what recommends and applies values now is the wizard's own
-habit cards, one set per step.
+habit pills, one row per step.
 
 The wizard is eight questions, each a habit (`WIZ_STEPS`): `收尾` sets
 `land.integration`, `land.push` and `land.archivePlan`; `任務大小` sets
-`class.default`; `前端` sets `design.mockup`, and adds `design.skill` to
-its fine-tune list once `design.mockup` is on — set to anything but `(ask)`
+`class.default`; `前端` sets `design.mockup`, and adds a `design.skill` row
+once `design.mockup` is on — set to anything but `(ask)`
 or `false`; `context` sets `stage.agents`; `撞檔` sets `guard`; `模型` sets
 `dispatch.floor` and `judge.model`; `監控站` sets `station.hide`; `答 gate` sets `gate.station`. Each step
-shows two to four habit buttons; pressing one sets every key it lists and
-records it as that step's recommendation, and a habit is pre-picked on load
-when every key it sets already matches the effective value (`wizLoad`). A
-fine-tune row under the habits lets each key be pushed off its
-recommendation on its own.
+opens with a row of `常見組合` pills, two to four of them; pressing one sets
+every key it lists and records it as that step's recommendation, and a
+habit is pre-picked on load when every key it sets already matches the
+effective value (`wizLoad`). Under the pills each key is a group of cards,
+one card per value (`wizCards`), with an ask card where the key has no
+builtin — a card carries the same `data-k`/`data-o` the buttons did, so it
+sets that key alone, off its recommendation if need be. The cards of
+`land.integration`, `land.push`, `land.archivePlan`, `stage.agents` and
+`guard` each hold a small scene (`WIZ_SCENES`), and only the chosen card
+and the one under the pointer play theirs; under
+`prefers-reduced-motion: reduce` every scene rests on its last frame.
+`stage.agents` keeps its seven per-stage toggles under its four cards.
+Every other key is one compact row of options.
 
 `settingsPage()` opens the wizard on the first `profiles.projects`
 directory if the registry holds one, the machine profile otherwise —
