@@ -12,7 +12,7 @@ status: design-intent
 - `scripts/todo-check.js` 讀每條 bullet 裡的兩種位置：反引號包住、符合 `PATHISH` 的 span，以及 markdown 連結的 target。行號（`:N` 或 `:N-M`）超過 `lineCount` 時報 `past end`，exit 1。
 - 連結 target 帶 `:N` 時，先把 `:N` 拆掉再檢查檔案存不存在。今天整串被當成檔名，報的是 `dead link`，理由錯了。
 - 不支援 `#L12`。docs-check 也不認這個寫法，TODO.md 現在也沒有人用；要支援是另一件事。
-- `past end` 不看 role，所以放在 `dead link` 之後、`stale citation` 之前。
+- `past end` 不看 role，所以放在整個連結迴圈之後，自成一個迴圈；同一條 bullet 的 `dead link` 與 `stale citation` 會先印。
 - TODO.md 開頭「enforces all nine」的敘述跟著改成十條，並補上這一條在檢查什麼。
 
 ## 2. 倍數量測：一對，預算 $125
