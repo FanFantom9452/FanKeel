@@ -82,6 +82,7 @@ what gets scheduled.
 ## Needs a decision
 
 - 〔stage-agents〕design 在 session 內跑、build 交站 agent 時，chat 裡核准的設計沒有管道交給它：主控寫 `design.md` 被 hook 擋，09-25 只能用 SendMessage 補；該讓 design 站自己落檔，還是 dispatch 帶一行 — [docs/subagents.md](docs/subagents.md).
+- 〔stage-agents〕要不要把通用的 `fankeel-brain` 拆成各站專屬 agent：只拆工具或模型確實不同的站（受控 design 無法 Write 所以做不了 mockup、verify 要跑 mutation），其餘站續用 brain；等 verify 的 k 重跑出來再定（09-25 可比三站 k 2.29–2.74，破平衡點 2.5052） — [docs/subagents.md](docs/subagents.md).
 - 〔docs〕要不要 ADR：參考 Trovara 的 `docs/04-architecture/adr/`，只在做架構選擇時寫、不是每個 task 都呼叫；在哪一站、由誰觸發，要人來定 — [docs/documents.md](docs/documents.md).
 - 〔judge〕`judge.js record` 要不要驗證這個 session 底下真的有 `fankeel-judge` 的 subagent transcript — [scripts/judge.js](scripts/judge.js).
 - 〔ledger〕Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it.
