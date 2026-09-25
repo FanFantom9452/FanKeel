@@ -1,0 +1,7 @@
+ TODO.md                                            |   7 +-
+ .../2026-09-25-todo-check-linecount-design.md      |  54 ++++++
+ docs/plans/2026-09-25-todo-check-linecount.md      | 201 +++++++++++++++++++++
+ scripts/docs-check.js                              |   2 +-
+ scripts/todo-check.js                              |  33 +++-
+ tests/todo-check.test.js                           |  32 ++++
+ 6 files changed, 324 insertions(+), 5 deletions(-)

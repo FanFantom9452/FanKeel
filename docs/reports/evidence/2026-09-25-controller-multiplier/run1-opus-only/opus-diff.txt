@@ -1,0 +1,10 @@
+ .fankeel/profile.json                           |   6 +-
+ TODO.md                                         |   1 -
+ docs/development.md                             |   3 +-
+ docs/plans/2026-09-25-todo-check-line-design.md |  40 +++++++
+ docs/plans/2026-09-25-todo-check-line.md        | 139 ++++++++++++++++++++++++
+ scripts/memory-check.js                         |   2 +-
+ scripts/todo-check.js                           |  23 ++++
+ tests/todo-check.test.js                        |  14 +++
+ 8 files changed, 220 insertions(+), 8 deletions(-)
+ M .fankeel/profile.json

@@ -1,0 +1,417 @@
+diff --git a/TODO.md b/TODO.md
+index ef81896d..2fe6a955 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -52,8 +52,10 @@ section nothing made you open, which is why it has to say what it is waiting for
+ and when you last agreed it was — and why `orient` now lists every timing each
+ time, and `/fankeel` offers one option to handle them whenever any exists.
+ 
+-`node scripts/todo-check.js` enforces all nine: a link that no longer resolves is
+-an entry someone forgot to close, a link that still resolves but points at a
++`node scripts/todo-check.js` enforces all ten: a link that no longer resolves is
++an entry someone forgot to close, a citation whose `path:line` runs past the end
++of the file it names is the same failure caught one line late, a link that still
++resolves but points at a
+ plan, a decision record, a report or an archive is the same entry one step
+ earlier — those four roles record a moment rather than the present, so the detail
+ behind the bullet is pointing at history however fresh that history is — an entry
+@@ -75,7 +77,6 @@ what gets scheduled.
+ 
+ ## Ready
+ 
+-- 〔docs〕todo-check 不驗 `path:line` 的行號：改成不存在的行仍然 exit 0 — [scripts/todo-check.js](scripts/todo-check.js). docs-check 補得到一部分，但卡 role、引文與讀得到目標三個前提。
+ - 〔quota〕7d 水位兩點差 4.7 倍，是延遲還是計別的：TokenBar 每次 render 已把 5h／7d 讀數 append 到 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`（TokenBar 的 `statusline.ps1`／`.sh`），拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
+ - 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過；session 記錄已存 `stage.agents`（6fb1b3a），缺的是一次真實的量測 — [lib/render.js](lib/render.js).
+ - 〔security〕reviewer 的 `## Security` lens 已落地（四類、reviewer 自己的模型）；改走本地模型、清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
+diff --git a/docs/plans/2026-09-25-todo-check-linecount-design.md b/docs/plans/2026-09-25-todo-check-linecount-design.md
+new file mode 100644
+index 00000000..fba71e17
+--- /dev/null
++++ b/docs/plans/2026-09-25-todo-check-linecount-design.md
+@@ -0,0 +1,54 @@
++---
++status: design-intent
++---
++
++# todo-check 驗 `path:line` 的行號
++
++**Goal:** `node scripts/todo-check.js` 目前只驗連結指到的檔案存不存在，從不檢查一則引用的行號
++（`path:line` 或 `path:line-line`）是否還在檔案範圍內；改成一個不存在的行仍然 exit 0。
++
++**Architecture:** `scripts/docs-check.js` 已經為別的文件角色實作過同一件事（`PATHISH` 解析
++`path:line`、`lineCount` 算檔案總行數、`past-end` 判斷），三個腳本已經 `require('./docs-check.js')`
++重用它的 `CODE`/`PATHISH`/`resolveRef`。`todo-check.js` 照同一個先例，多匯出一個 `lineCount`，
++不另外寫一份行數計算或正規表示式。
++
++## 1. `scripts/docs-check.js` 多匯出 `lineCount`
++
++- `lineCount(root, rel)` 已經存在（算檔案行數，處理結尾換行），只是沒進 `module.exports`。加進去，
++  和 `CODE`、`PATHISH` 並列。
++
++## 2. `scripts/todo-check.js` 驗證 `path:line`
++
++- 每條 bullet 檢查兩種位置：反引號包住、整段符合 `PATHISH` 的 span，以及 markdown 連結的
++  target。帶 `:N` 或 `:N-M` 時，行號超過 `lineCount` 就報一個新的問題種類 `past end`，
++  讓 `main()` 照現有規則 exit 1。
++- 連結 target 帶 `:N` 時，先用 `PATHISH` 把 `:N` 拆掉，用拆掉之後的路徑做
++  `fs.existsSync`。今天整串（含 `:N`）被當成檔名，檔案存在但整串不存在，報的是
++  `dead link`，理由是錯的；拆開後才問得出「檔案在不在」和「行號在不在」兩個各自的問題。
++- 不支援 `#L12` 這種寫法：`docs-check.js` 的 `PATHISH` 也不認，`TODO.md` 現在也沒人用；
++  要支援是另一件事，不在這次範圍內。
++- `past end` 不看文件角色（`STALE_ROLES`），檢查順序放在 `dead link` 之後、
++  `stale citation` 之前：一個死連結不用再問行號，行號問題也和角色無關。
++
++## 3. `TODO.md` 的說明文字
++
++- 第 55 行「`node scripts/todo-check.js` enforces all nine」改成 `ten`，並在同一段列舉的
++  子句裡加一句說新的檢查在查什麼：一則引用的行號超過檔案結尾。
++- `## Ready` 底下「〔docs〕todo-check 不驗 `path:line` 的行號」那條，這次改動一落地就刪掉
++  ——這正是它自己在描述、而這個任務在修的事。
++
++## 4. 測試
++
++- `tests/todo-check.test.js` 新增三條，每條先紅後綠：
++  - 反引號引用 `` `<fixture 檔>:<超過行數的行號>` ``，exit 1，輸出含 `past end`。
++  - markdown 連結 `[x](<fixture 檔>:<超過行數的行號>)`，同樣 exit 1、`past end`，而不是
++    `dead link`。
++  - 行號在範圍內時兩種寫法都 exit 0。
++
++## What proves it done
++
++| test | before | after |
++|---|---|---|
++| 引用行號超過目標檔案的行數 | `node scripts/todo-check.js` exit 0 | exit 1，輸出含 `past end` |
++| 連結 target 帶 `:N` 但行號超界 | 誤報 `dead link`（整串被當檔名） | 正確報 `past end`，檔案本身若存在不再誤報 `dead link` |
++| 行號在範圍內 | exit 0 | 仍然 exit 0（不迴歸） |
+diff --git a/docs/plans/2026-09-25-todo-check-linecount.md b/docs/plans/2026-09-25-todo-check-linecount.md
+new file mode 100644
+index 00000000..afa2dda6
+--- /dev/null
++++ b/docs/plans/2026-09-25-todo-check-linecount.md
+@@ -0,0 +1,201 @@
++---
++status: design-intent
++---
++
++# todo-check Line-Number Validation Implementation Plan
++
++**Goal:** `node scripts/todo-check.js` reports an entry citing a `path:line` past the end of its
++target file, instead of exiting 0.
++**Architecture:** Reuse `scripts/docs-check.js`'s existing `PATHISH` parser and a newly-exported
++`lineCount`, applied to `TODO.md`'s own two citation shapes — a backtick span and a markdown
++link's target — inside `todo-check.js`'s per-entry loop. No new regex, no new dependency.
++**Tech Stack:** Node.js built-ins only (`node:fs`, `node:path`), `node --test` (this repo carries
++no other test runner and no `dependencies` in `package.json`).
++**Spec:** [2026-09-25-todo-check-linecount-design.md](2026-09-25-todo-check-linecount-design.md)
++
++## Global Constraints
++
++- `node --test` is the only test command (`package.json` `scripts.test`); no dependency may be
++  added — `package.json` has no `dependencies` block at all.
++- `tests/` is one file per module/behaviour; a new scratch file or directory comes from
++  `tests/tmp.js`, never a hand-rolled temp path.
++- `TODO.md`'s role is `reference` (`lib/docs.js` `ROOT_REFERENCE`), already scanned by
++  `scripts/docs-check.js` for the same `path:line` convention project-wide; this task adds the
++  same check to `todo-check.js`'s own standalone run, it does not replace or duplicate
++  `docs-check.js`'s regex — three scripts already do this by requiring it:
++  `scripts/input-check.js:23`, `scripts/docs-audit.js:32`, `scripts/memory-check.js:33`.
++- No `CLAUDE.md` exists in this repository.
++
++## Task 1: todo-check validates a `path:line` citation's line number
++
++**Files:**
++- Modify: `scripts/docs-check.js` — export `lineCount` alongside `CODE`/`PATHISH`
++- Modify: `scripts/todo-check.js` — require `CODE`/`PATHISH`/`lineCount` from `./docs-check.js`;
++  check a backtick `path:line` span and a markdown link's `:line` suffix against the target
++  file's line count; strip a link target's `:line` suffix before the existence check
++- Modify: `TODO.md` — "enforces all nine" → "ten" with the new clause; remove the
++  `〔docs〕todo-check 不驗 path:line 的行號` bullet this task delivers
++- Test: `tests/todo-check.test.js` — three new cases
++
++**Interfaces:**
++- Consumes: `docs-check.js`'s exported `CODE` (matches one backtick-delimited span, 2-120 chars),
++  `PATHISH` (matches an optional `./`, then a path, then an optional `:line` or `:line-line`;
++  capture groups 1=path, 2=start line, 3=end line), and the new `lineCount(root, rel)` →
++  `number|null`.
++- Produces: none — this is the only task.
++
++**Dispatch:** implementer, sonnet — a transcription-plus-tests change against two already-read
++files.
++
++In `scripts/docs-check.js`, at the end of the file:
++
++```js
++module.exports = { scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown, lineCount };
++```
++
++In `scripts/todo-check.js`, add near the other `require`s:
++
++```js
++const { CODE, PATHISH, lineCount } = require('./docs-check.js');
++```
++
++In `scripts/todo-check.js`, replace the `for (const target of linksIn(entry.text))` loop (the one
++checking `dead link` and `stale citation`) with:
++
++```js
++        for (const target of linksIn(entry.text)) {
++            const hit = PATHISH.exec(target);
++            const filePath = hit ? hit[1] : target;
++            const full = path.resolve(base, filePath);
++            if (!fs.existsSync(full)) {
++                problems.push({
++                    line: entry.line,
++                    kind: 'dead link',
++                    detail: target + ' does not exist. Either the entry is finished and should be removed, or the detail moved.',
++                });
++                continue;
++            }
++            if (hit && hit[2]) {
++                const wanted = parseInt(hit[2], 10);
++                const wantedEnd = hit[3] ? parseInt(hit[3], 10) : null;
++                const n = lineCount(base, filePath);
++                const label = filePath + ':' + wanted + (wantedEnd ? '-' + wantedEnd : '');
++                if (n !== null && (wantedEnd || wanted) > n) {
++                    problems.push({
++                        line: entry.line,
++                        kind: 'past end',
++                        detail: label + ' but the file ends at ' + n,
++                    });
++                }
++            }
++            const role = docs.roleOf(tree, path.relative(base, full));
++            if (STALE_ROLES.includes(role)) {
++                problems.push({
++                    line: entry.line,
++                    kind: 'stale citation',
++                    detail: target + ' is filed as ' + role + ', a role that records a moment rather than the present. Point at the code this is about, or at a reference page.',
++                });
++            }
++        }
++
++        CODE.lastIndex = 0;
++        let codeHit;
++        while ((codeHit = CODE.exec(entry.text)) !== null) {
++            const hit = PATHISH.exec(codeHit[1].trim());
++            if (!hit || !hit[2]) continue;
++            const ref = hit[1];
++            const full = path.resolve(base, ref);
++            if (!fs.existsSync(full)) continue;
++            const wanted = parseInt(hit[2], 10);
++            const wantedEnd = hit[3] ? parseInt(hit[3], 10) : null;
++            const n = lineCount(base, ref);
++            const label = ref + ':' + wanted + (wantedEnd ? '-' + wantedEnd : '');
++            if (n !== null && (wantedEnd || wanted) > n) {
++                problems.push({
++                    line: entry.line,
++                    kind: 'past end',
++                    detail: label + ' but the file ends at ' + n,
++                });
++            }
++        }
++    }
++```
++
++(The closing `}` on the last line closes the `for (const entry of found)` loop already in the
++file — this block replaces everything from the existing `for (const target of linksIn(...))` line
++through its own closing brace, one level up from that loop's `}`.)
++
++In `TODO.md`, line 55, replace:
++
++```md
++`node scripts/todo-check.js` enforces all nine: a link that no longer resolves is
++an entry someone forgot to close, a link that still resolves but points at a
++```
++
++with, still in `TODO.md`:
++
++```md
++`node scripts/todo-check.js` enforces all ten: a link that no longer resolves is
++an entry someone forgot to close, a citation whose `path:line` runs past the end
++of the file it names is the same failure caught one line late, a link that still
++resolves but points at a
++```
++
++In `TODO.md`, under `## Ready`, delete this bullet entirely (the fix this task ships is what it
++describes):
++
++```md
++- 〔docs〕todo-check 不驗 `path:line` 的行號：改成不存在的行仍然 exit 0 — [scripts/todo-check.js](scripts/todo-check.js). docs-check 補得到一部分，但卡 role、引文與讀得到目標三個前提。
++```
++
++In `tests/todo-check.test.js`, add after the existing `'a link to a file that no longer exists is a dead entry'` test:
++
++```js
++test('a citation whose line number runs past the end of its file is a problem', () => {
++  const file = fixture(
++    '# TODO\n\n## Ready\n\n- see `short.js:5` for it.\n',
++    { 'short.js': 'one\ntwo\n' },
++  );
++  const { out, code } = run(file);
++  assert.equal(code, 1);
++  assert.match(out, /past end/);
++  assert.match(out, /short\.js:5 but the file ends at 2/);
++});
++
++test('a link whose target carries a line number past the end is a problem, not a dead link', () => {
++  const file = fixture(
++    '# TODO\n\n## Ready\n\n- [see](short.js:5) for it.\n',
++    { 'short.js': 'one\ntwo\n' },
++  );
++  const { out, code } = run(file);
++  assert.equal(code, 1);
++  assert.match(out, /past end/);
++  assert.doesNotMatch(out, /dead link/);
++});
++
++test('a citation whose line number is in range passes', () => {
++  const file = fixture(
++    '# TODO\n\n## Ready\n\n- see `short.js:2` and [also](short.js:1) for it.\n',
++    { 'short.js': 'one\ntwo\n' },
++  );
++  const { out, code } = run(file);
++  assert.equal(code, 0);
++  assert.doesNotMatch(out, /past end/);
++});
++```
++
++## Coverage
++
++| promise | task |
++|---|---|
++| `lineCount(root, rel)` 已經存在（算檔案行數，處理結尾換行），只是沒進 `module.exports`。加進去，和 `CODE`、`PATHISH` 並列。 | Task 1 |
++| 每條 bullet 檢查兩種位置：反引號包住、整段符合 `PATHISH` 的 span，以及 markdown 連結的 target。帶 `:N` 或 `:N-M` 時，行號超過 `lineCount` 就報一個新的問題種類 `past end`，讓 `main()` 照現有規則 exit 1。 | Task 1 |
++| 連結 target 帶 `:N` 時，先用 `PATHISH` 把 `:N` 拆掉，用拆掉之後的路徑做 `fs.existsSync`。今天整串（含 `:N`）被當成檔名，檔案存在但整串不存在，報的是 `dead link`，理由是錯的；拆開後才問得出「檔案在不在」和「行號在不在」兩個各自的問題。 | Task 1 |
++| 不支援 `#L12` 這種寫法：`docs-check.js` 的 `PATHISH` 也不認，`TODO.md` 現在也沒人用；要支援是另一件事，不在這次範圍內。 | Task 1 |
++| `past end` 不看文件角色（`STALE_ROLES`），檢查順序放在 `dead link` 之後、`stale citation` 之前：一個死連結不用再問行號，行號問題也和角色無關。 | Task 1 |
++| 第 55 行「`node scripts/todo-check.js` enforces all nine」改成 `ten`，並在同一段列舉的子句裡加一句說新的檢查在查什麼：一則引用的行號超過檔案結尾。 | Task 1 |
++| `## Ready` 底下「〔docs〕todo-check 不驗 `path:line` 的行號」那條，這次改動一落地就刪掉——這正是它自己在描述、而這個任務在修的事。 | Task 1 |
++| `tests/todo-check.test.js` 新增三條，每條先紅後綠： | Task 1 |
++| 引用行號超過目標檔案的行數 | Task 1 |
++| 連結 target 帶 `:N` 但行號超界 | Task 1 |
++| 行號在範圍內 | Task 1 |
+diff --git a/scripts/docs-check.js b/scripts/docs-check.js
+index 02cdbf83..68eb391d 100644
+--- a/scripts/docs-check.js
++++ b/scripts/docs-check.js
+@@ -559,4 +559,4 @@ if (require.main === module) {
+     process.exit(code);
+ }
+ 
+-module.exports = { scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown };
++module.exports = { scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown, lineCount };
+diff --git a/scripts/todo-check.js b/scripts/todo-check.js
+index fd55a1ed..008e05fe 100644
+--- a/scripts/todo-check.js
++++ b/scripts/todo-check.js
+@@ -42,6 +42,7 @@ const { parseArgs } = require('node:util');
+ const docs = require('../lib/docs.js');
+ const { resolveRoot } = require('../lib/registry.js');
+ const { blameTimes } = require('../lib/blame.js');
++const { CODE, PATHISH, lineCount } = require('./docs-check.js');
+ 
+ // Long enough for a sentence and a link, short enough that a paragraph does not
+ // fit. Detail that will not compress to this belongs in the file being pointed
+@@ -289,6 +290,14 @@ function timings(text, now) {
+     return out;
+ }
+ 
++function pastEndDetail(base, ref, hit) {
++    const wanted = parseInt(hit[2], 10);
++    const wantedEnd = hit[3] ? parseInt(hit[3], 10) : null;
++    const n = lineCount(base, ref);
++    if (n === null || (wantedEnd || wanted) <= n) return null;
++    return ref + ':' + wanted + (wantedEnd ? '-' + wantedEnd : '') + ' but the file ends at ' + n;
++}
++
+ function check(file, now) {
+     const at = now === undefined ? Date.now() : now;
+     let text;
+@@ -338,7 +347,9 @@ function check(file, now) {
+             });
+         }
+         for (const target of linksIn(entry.text)) {
+-            const full = path.resolve(base, target);
++            const hit = PATHISH.exec(target);
++            const filePath = hit ? hit[1] : target;
++            const full = path.resolve(base, filePath);
+             if (!fs.existsSync(full)) {
+                 problems.push({
+                     line: entry.line,
+@@ -347,6 +358,12 @@ function check(file, now) {
+                 });
+                 continue;
+             }
++            if (hit && hit[2]) {
++                const detail = pastEndDetail(base, filePath, hit);
++                if (detail) {
++                    problems.push({ line: entry.line, kind: 'past end', detail });
++                }
++            }
+             const role = docs.roleOf(tree, path.relative(base, full));
+             if (STALE_ROLES.includes(role)) {
+                 problems.push({
+@@ -356,6 +373,20 @@ function check(file, now) {
+                 });
+             }
+         }
++
++        CODE.lastIndex = 0;
++        let codeHit;
++        while ((codeHit = CODE.exec(entry.text)) !== null) {
++            const hit = PATHISH.exec(codeHit[1].trim());
++            if (!hit || !hit[2]) continue;
++            const ref = hit[1];
++            const full = path.resolve(base, ref);
++            if (!fs.existsSync(full)) continue;
++            const detail = pastEndDetail(base, ref, hit);
++            if (detail) {
++                problems.push({ line: entry.line, kind: 'past end', detail });
++            }
++        }
+     }
+ 
+     // The stamp and the event live on the timing now, one line for every entry
+diff --git a/tests/todo-check.test.js b/tests/todo-check.test.js
+index 8f28b71f..13b5400a 100644
+--- a/tests/todo-check.test.js
++++ b/tests/todo-check.test.js
+@@ -62,6 +62,38 @@ test('a link to a file that no longer exists is a dead entry', () => {
+   assert.match(out, /docs\/plans\/gone\.md does not exist/);
+ });
+ 
++test('a citation whose line number runs past the end of its file is a problem', () => {
++  const file = fixture(
++    '# TODO\n\n## Ready\n\n- see `sub/short.js:5` for it.\n',
++    { 'sub/short.js': 'one\ntwo\n' },
++  );
++  const { out, code } = run(file);
++  assert.equal(code, 1);
++  assert.match(out, /past end/);
++  assert.match(out, /sub\/short\.js:5 but the file ends at 2/);
++});
++
++test('a link whose target carries a line number past the end is a problem, not a dead link', () => {
++  const file = fixture(
++    '# TODO\n\n## Ready\n\n- [see](sub/short.js:5) for it.\n',
++    { 'sub/short.js': 'one\ntwo\n' },
++  );
++  const { out, code } = run(file);
++  assert.equal(code, 1);
++  assert.match(out, /past end/);
++  assert.doesNotMatch(out, /dead link/);
++});
++
++test('a citation whose line number is in range passes', () => {
++  const file = fixture(
++    '# TODO\n\n## Ready\n\n- see `sub/short.js:2` and [also](sub/short.js:1) for it.\n',
++    { 'sub/short.js': 'one\ntwo\n' },
++  );
++  const { out, code } = run(file);
++  assert.equal(code, 0);
++  assert.doesNotMatch(out, /past end/);
++});
++
+ test('the line number points at the entry, not at the file', () => {
+   const file = fixture('# TODO\n\n## Ready\n\n- fine\n- [gone](nope.md)\n');
+   assert.equal(todo.check(file).problems[0].line, 6);

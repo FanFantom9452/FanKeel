@@ -1,0 +1,419 @@
+diff --git a/.fankeel/profile.json b/.fankeel/profile.json
+index 40d08d75..cf2f6178 100644
+--- a/.fankeel/profile.json
++++ b/.fankeel/profile.json
+@@ -3,10 +3,6 @@
+   "land.push": false,
+   "land.archivePlan": true,
+   "design.mockup": "opus",
+-  "stage.agents": [
+-    "survey",
+-    "build",
+-    "verify"
+-  ],
++  "stage.agents": [],
+   "guard": "deny"
+ }
+diff --git a/TODO.md b/TODO.md
+index ef81896d..ff280a1e 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -52,7 +52,7 @@ section nothing made you open, which is why it has to say what it is waiting for
+ and when you last agreed it was — and why `orient` now lists every timing each
+ time, and `/fankeel` offers one option to handle them whenever any exists.
+ 
+-`node scripts/todo-check.js` enforces all nine: a link that no longer resolves is
++`node scripts/todo-check.js` enforces all ten: a link that no longer resolves is
+ an entry someone forgot to close, a link that still resolves but points at a
+ plan, a decision record, a report or an archive is the same entry one step
+ earlier — those four roles record a moment rather than the present, so the detail
+@@ -62,7 +62,8 @@ under any other heading is one nobody said the state of, a `## Waiting` entry
+ under no timing is one nobody said what it waits for, a timing with no stamp is
+ one nobody can tell a fresh deferral from a forgotten one, a timing with no
+ `lifts when:` is one nobody is waiting for, a timing with no entries is waiting
+-for nothing, and a title over 28 columns is a sentence where a name belongs.
++for nothing, a title over 28 columns is a sentence where a name belongs, and a
++`path:N` past the end of its file is a citation whose code moved without it.
+ 
+ It also prints, without failing the run, every timing that is due — its date has
+ come, or its stamp is seven days old — with its event, so what you are asked is
+@@ -75,7 +76,6 @@ what gets scheduled.
+ 
+ ## Ready
+ 
+-- 〔docs〕todo-check 不驗 `path:line` 的行號：改成不存在的行仍然 exit 0 — [scripts/todo-check.js](scripts/todo-check.js). docs-check 補得到一部分，但卡 role、引文與讀得到目標三個前提。
+ - 〔quota〕7d 水位兩點差 4.7 倍，是延遲還是計別的：TokenBar 每次 render 已把 5h／7d 讀數 append 到 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`（TokenBar 的 `statusline.ps1`／`.sh`），拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
+ - 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過；session 記錄已存 `stage.agents`（6fb1b3a），缺的是一次真實的量測 — [lib/render.js](lib/render.js).
+ - 〔security〕reviewer 的 `## Security` lens 已落地（四類、reviewer 自己的模型）；改走本地模型、清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
+diff --git a/docs/plans/2026-09-25-todo-check-line.md b/docs/plans/2026-09-25-todo-check-line.md
+new file mode 100644
+index 00000000..ff28777d
+--- /dev/null
++++ b/docs/plans/2026-09-25-todo-check-line.md
+@@ -0,0 +1,219 @@
++---
++status: design-intent
++---
++
++# todo-check 驗 path:line 行號 Implementation Plan
++
++**Goal:** `todo-check` 對 TODO.md entry 裡超出檔尾的 `path:N` / `path:N-M` 報 `past end` 並 exit 1。
++**Architecture:** `scripts/docs-check.js` 已有 `lineCount`、`PATHISH`、`CODE`；把 `lineCount` 加進它的 exports，`scripts/todo-check.js` 在既有的連結迴圈裡剝掉 `:N` 後綴再查檔案，另掃反引號 span，兩者都經同一個 `pastEnd` 檢查。TODO.md 刪掉本條 entry，並把「enforces all nine」改成十條。
++**Tech Stack:** Node（`node:test`、`node:assert/strict`），`package.json` 沒有任何 dependency，測試指令是 `node --test`。
++**Spec:** [design](../../.fankeel/build/2026-09-25-todo-check-line/design.md)
++
++## Global Constraints
++
++- 不新增 dependency：`package.json` 只有 `"test": "node --test"` 與 `"clean"` 兩個 script，沒有 `dependencies` 欄位。
++- `scripts/*.js` 縮排 4 格、`'use strict'`；`tests/*.test.js` 縮排 2 格——照各檔現有寫法。
++- `.fankeel/map.md:77` 把 `todo-check.js` 定義為「whether TODO.md is still an index」；`.fankeel/map.md:74` 把 `docs-check.js` 定義為「every reference in the documents still resolves」。行數計算屬於後者，todo-check 只引用、不複製。
++- `scripts/docs-check.js:155` `lineCount(root, rel)` 回傳行數，檔案讀不到時回傳 `null`；結尾換行不算一行（`scripts/docs-check.js:145-149`）。
++- `scripts/docs-check.js:94` `PATHISH` 要求路徑至少含一個 `/`，行號分隔可為 `-` 或 `–`；`scripts/docs-check.js:38` `CODE` 是 global regex，用前要複製一份，不能共用 `lastIndex`。
++- `scripts/todo-check.js:470` 以 `<file>:<line>  <kind> — <detail>` 印出每個 problem；`scripts/todo-check.js:523` 有 problem 即 exit 1。
++- `tests/todo-check.test.js:129` 斷言 `linksIn` 的回傳值——`linksIn` 不改。
++- 實作者只跑自己的測試檔：`node --test tests/todo-check.test.js`；上層在 commit 前跑整套 `npm test`。
++
++## Task 1: todo-check 報 `past end`
++
++**Files:**
++- Modify: `scripts/docs-check.js` — `module.exports` 加上 `lineCount`
++- Modify: `scripts/todo-check.js` — require docs-check；新增 `LINE_SUFFIX`、`splitLine`、`citationsIn`；`check()` 裡加 `pastEnd`
++- Modify: `TODO.md` — 刪 `## Ready` 的 `〔docs〕todo-check 不驗` entry；「enforces all nine」改成 ten 並補一句
++- Test: `tests/todo-check.test.js`
++
++**Interfaces:**
++- Consumes: `lineCount(root, rel) → number | null`、`PATHISH`、`CODE`，皆出自 `scripts/docs-check.js`
++- Produces: problem kind 字串 `'past end'`。`citationsIn` 不匯出：`tests/source.test.js:117` 要求每個匯出都有 importer，而沒有人用它（build ruling）。
++
++**Dispatch:** implementer, sonnet — 程式碼都在 plan 裡，照抄加跑測試。
++
++### Step 1: 寫會失敗的測試
++
++In `tests/todo-check.test.js`, after the test `'the line number points at the entry, not at the file'`, add:
++
++```js
++// A citation's line number is checked against the file it names. The file
++// here has three lines, so 99 and 2-9 are past its end and 2 and 2-3 are not.
++const THREE = { 'lib/a.js': 'one\ntwo\nthree\n' };
++
++test('a backticked path:line past the end of its file fails the run', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- Fix — see `lib/a.js:99`.\n', THREE);
++  const { out, code } = run(file);
++  assert.equal(code, 1);
++  assert.match(out, /past end/);
++  assert.match(out, /lib\/a\.js:99 but the file ends at 3/);
++});
++
++test('a link to path:line past the end is past end, not a dead link', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- Fix — see [a](lib/a.js:99).\n', THREE);
++  assert.deepEqual(kinds(file), ['past end']);
++});
++
++test('a line or a range inside the file passes', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- Fix — `lib/a.js:2` and [a](lib/a.js:2-3).\n', THREE);
++  const { code } = run(file);
++  assert.equal(code, 0);
++});
++
++test('a range that runs past the end is past end', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- Fix — see `lib/a.js:2-9`.\n', THREE);
++  assert.deepEqual(kinds(file), ['past end']);
++});
++```
++
++### Step 2: 跑，看它失敗
++
++```
++node --test tests/todo-check.test.js
++```
++
++預期：第一條 exit 0（找不到 `past end`）、第二條得到 `['dead link']`、第四條得到 `[]`；第三條失敗於 `dead link`（連結 target 含 `:2-3`）。
++
++### Step 3: 匯出 `lineCount`
++
++In `scripts/docs-check.js`, replace the `module.exports` line (line 562):
++
++```js
++module.exports = { scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, lineCount, external, readFile, isMarkdown };
++```
++
++### Step 4: 讀行號、報 `past end`
++
++In `scripts/todo-check.js`, after `const { blameTimes } = require('../lib/blame.js');`, add:
++
++```js
++const { CODE, PATHISH, lineCount } = require('./docs-check.js');
++```
++
++In `scripts/todo-check.js`, directly after the `linksIn` function, add:
++
++```js
++// A link target may end in `:N` or `:N-M`. Left on, the whole string was taken
++// as the file name and reported as a dead link — the file was there, the reason
++// was wrong. Split off, the file is checked as a file and the number as a line.
++const LINE_SUFFIX = /:(\d+)(?:[-–](\d+))?$/;
++function splitLine(target) {
++    const m = LINE_SUFFIX.exec(target);
++    if (!m) return { target, from: null, to: null };
++    return { target: target.slice(0, m.index), from: parseInt(m[1], 10), to: m[2] ? parseInt(m[2], 10) : null };
++}
++
++// Every backticked span shaped like a path with a line number — the same shape
++// docs-check reads. A span naming a file that is not here is docs-check's
++// `gone`, not this; only the line number is asked about here.
++function citationsIn(text) {
++    const out = [];
++    const code = new RegExp(CODE.source, 'g');
++    let m;
++    while ((m = code.exec(text)) !== null) {
++        const hit = PATHISH.exec(m[1].trim());
++        if (!hit || !hit[2]) continue;
++        out.push({ target: hit[1], from: parseInt(hit[2], 10), to: hit[3] ? parseInt(hit[3], 10) : null });
++    }
++    return out;
++}
++```
++
++In `scripts/todo-check.js`, in `check()`, directly after `const found = entries(text);`, add:
++
++```js
++    // A line number past the end of its file is a citation that stopped being
++    // true: the code moved and the entry did not.
++    const pastEnd = (entry, target, full, from, to) => {
++        if (from === null) return;
++        const n = lineCount(base, path.relative(base, full));
++        const label = target + ':' + from + (to !== null ? '-' + to : '');
++        let why = null;
++        if (to !== null && from > to) why = ' — the range starts after it ends';
++        else if (n !== null && (to !== null ? to : from) > n) why = ' but the file ends at ' + n;
++        if (why) {
++            problems.push({
++                line: entry.line,
++                kind: 'past end',
++                detail: label + why + '. The code moved and the entry did not — point it at the line it means.',
++            });
++        }
++    };
++```
++
++In `scripts/todo-check.js`, in `check()`, replace the start of the link loop:
++
++```js
++        for (const target of linksIn(entry.text)) {
++            const full = path.resolve(base, target);
++```
++
++with, in `scripts/todo-check.js`:
++
++```js
++        for (const link of linksIn(entry.text)) {
++            const { target, from, to } = splitLine(link);
++            const full = path.resolve(base, target);
++```
++
++In `scripts/todo-check.js`, in the same loop, directly before `const role = docs.roleOf(tree, path.relative(base, full));`, add:
++
++```js
++            pastEnd(entry, target, full, from, to);
++```
++
++In `scripts/todo-check.js`, directly after the closing `}` of that link loop (still inside `for (const entry of found)`), add:
++
++```js
++        for (const c of citationsIn(entry.text)) {
++            const full = path.resolve(base, c.target);
++            if (!fs.existsSync(full)) continue;
++            pastEnd(entry, c.target, full, c.from, c.to);
++        }
++```
++
++
++### Step 5: TODO.md
++
++In `TODO.md`, delete the whole `## Ready` bullet that begins `- 〔docs〕todo-check 不驗 \`path:line\` 的行號`（目前在 `TODO.md:78`，一行）。
++
++In `TODO.md`, replace `` `node scripts/todo-check.js` enforces all nine: a link that no longer resolves is `` with `` `node scripts/todo-check.js` enforces all ten: a link that no longer resolves is ``, and replace `for nothing, and a title over 28 columns is a sentence where a name belongs.` with:
++
++```md
++for nothing, a title over 28 columns is a sentence where a name belongs, and a
++`path:N` past the end of its file is a citation whose code moved without it.
++```
++
++### Step 6: 跑，看它通過
++
++```
++node --test tests/todo-check.test.js
++node scripts/todo-check.js
++```
++
++預期：測試全綠；repo 自己的 TODO.md exit 0。
++
++### Step 7: Commit
++
++```
++git add scripts/docs-check.js scripts/todo-check.js tests/todo-check.test.js TODO.md
++git commit -m "feat: todo-check reports a path:line past the end of its file"
++```
++
++## Coverage
++
++| promise | task |
++|---|---|
++| 連結目標：剝掉結尾的 `:N` 或 `:N-M` 再做 `existsSync` | Task 1 |
++| 反引號 span：符合 docs-check 的 `PATHISH` 且帶行號 | Task 1 |
++| 行數用 `scripts/docs-check.js` 的 `lineCount(root, rel)` | Task 1 |
++| 起始行大於結束行，或 N／M 大於行數 → `{ line: entry.line, kind: 'past end', detail: '<path>:<N> but the file ends at <K>. …' }` | Task 1 |
++| `past end` 放在 `dead link` 之後、`stale citation` 之前 | Task 1 |
++| 反引號 `` `lib/a.js:99` ``、a.js 只有 3 行 → exit 1 | Task 1 |
++| 連結 `[x](lib/a.js:99)` → `past end`，不是 `dead link` | Task 1 |
++| `lib/a.js:2` 與 `lib/a.js:2-3`（3 行檔）→ exit 0 | Task 1 |
++| 範圍 `lib/a.js:2-9`（3 行檔）→ `past end` | Task 1 |
++| 刪掉 `〔docs〕todo-check 不驗 path:line 的行號` 這條 Ready entry | Task 1 |
++| 「`node scripts/todo-check.js` enforces all nine」改成 ten | Task 1 |
+diff --git a/scripts/docs-check.js b/scripts/docs-check.js
+index 02cdbf83..ca22a106 100644
+--- a/scripts/docs-check.js
++++ b/scripts/docs-check.js
+@@ -559,4 +559,4 @@ if (require.main === module) {
+     process.exit(code);
+ }
+ 
+-module.exports = { scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown };
++module.exports = { scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, lineCount, external, readFile, isMarkdown };
+diff --git a/scripts/todo-check.js b/scripts/todo-check.js
+index fd55a1ed..6648d62f 100644
+--- a/scripts/todo-check.js
++++ b/scripts/todo-check.js
+@@ -42,6 +42,7 @@ const { parseArgs } = require('node:util');
+ const docs = require('../lib/docs.js');
+ const { resolveRoot } = require('../lib/registry.js');
+ const { blameTimes } = require('../lib/blame.js');
++const { CODE, PATHISH, lineCount } = require('./docs-check.js');
+ 
+ // Long enough for a sentence and a link, short enough that a paragraph does not
+ // fit. Detail that will not compress to this belongs in the file being pointed
+@@ -258,6 +259,31 @@ function linksIn(text) {
+     return out;
+ }
+ 
++// A link target may end in `:N` or `:N-M`. Left on, the whole string was taken
++// as the file name and reported as a dead link — the file was there, the reason
++// was wrong. Split off, the file is checked as a file and the number as a line.
++const LINE_SUFFIX = /:(\d+)(?:[-–](\d+))?$/;
++function splitLine(target) {
++    const m = LINE_SUFFIX.exec(target);
++    if (!m) return { target, from: null, to: null };
++    return { target: target.slice(0, m.index), from: parseInt(m[1], 10), to: m[2] ? parseInt(m[2], 10) : null };
++}
++
++// Every backticked span shaped like a path with a line number — the same shape
++// docs-check reads. A span naming a file that is not here is docs-check's
++// `gone`, not this; only the line number is asked about here.
++function citationsIn(text) {
++    const out = [];
++    const code = new RegExp(CODE.source, 'g');
++    let m;
++    while ((m = code.exec(text)) !== null) {
++        const hit = PATHISH.exec(m[1].trim());
++        if (!hit || !hit[2]) continue;
++        out.push({ target: hit[1], from: parseInt(hit[2], 10), to: hit[3] ? parseInt(hit[3], 10) : null });
++    }
++    return out;
++}
++
+ // Every `###` under `## Waiting`, with the line after it read as its lifts line:
+ // the event it waits for and the day somebody last agreed it still does. The
+ // first non-blank line is taken whatever it says, so a line with a stamp and no
+@@ -306,6 +332,23 @@ function check(file, now) {
+     let problems = [];
+     const overdue = [];
+     const found = entries(text);
++    // A line number past the end of its file is a citation that stopped being
++    // true: the code moved and the entry did not.
++    const pastEnd = (entry, target, full, from, to) => {
++        if (from === null) return;
++        const n = lineCount(base, path.relative(base, full));
++        const label = target + ':' + from + (to !== null ? '-' + to : '');
++        let why = null;
++        if (to !== null && from > to) why = ' — the range starts after it ends';
++        else if (n !== null && (to !== null ? to : from) > n) why = ' but the file ends at ' + n;
++        if (why) {
++            problems.push({
++                line: entry.line,
++                kind: 'past end',
++                detail: label + why + '. The code moved and the entry did not — point it at the line it means.',
++            });
++        }
++    };
+     for (const entry of found) {
+         // The stamp is asked for under `Waiting` and nowhere else. `Ready` and
+         // `Needs a decision`'s newest few are read every time `/fankeel` offers
+@@ -337,7 +380,8 @@ function check(file, now) {
+                 detail: len + ' characters, cap is ' + MAX_ENTRY_CHARS + '. Move the detail into the file this points at.',
+             });
+         }
+-        for (const target of linksIn(entry.text)) {
++        for (const link of linksIn(entry.text)) {
++            const { target, from, to } = splitLine(link);
+             const full = path.resolve(base, target);
+             if (!fs.existsSync(full)) {
+                 problems.push({
+@@ -347,6 +391,7 @@ function check(file, now) {
+                 });
+                 continue;
+             }
++            pastEnd(entry, target, full, from, to);
+             const role = docs.roleOf(tree, path.relative(base, full));
+             if (STALE_ROLES.includes(role)) {
+                 problems.push({
+@@ -356,6 +401,11 @@ function check(file, now) {
+                 });
+             }
+         }
++        for (const c of citationsIn(entry.text)) {
++            const full = path.resolve(base, c.target);
++            if (!fs.existsSync(full)) continue;
++            pastEnd(entry, c.target, full, c.from, c.to);
++        }
+     }
+ 
+     // The stamp and the event live on the timing now, one line for every entry
+diff --git a/tests/todo-check.test.js b/tests/todo-check.test.js
+index 8f28b71f..b5d0d461 100644
+--- a/tests/todo-check.test.js
++++ b/tests/todo-check.test.js
+@@ -67,6 +67,34 @@ test('the line number points at the entry, not at the file', () => {
+   assert.equal(todo.check(file).problems[0].line, 6);
+ });
+ 
++// A citation's line number is checked against the file it names. The file
++// here has three lines, so 99 and 2-9 are past its end and 2 and 2-3 are not.
++const THREE = { 'lib/a.js': 'one\ntwo\nthree\n' };
++
++test('a backticked path:line past the end of its file fails the run', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- Fix — see `lib/a.js:99`.\n', THREE);
++  const { out, code } = run(file);
++  assert.equal(code, 1);
++  assert.match(out, /past end/);
++  assert.match(out, /lib\/a\.js:99 but the file ends at 3/);
++});
++
++test('a link to path:line past the end is past end, not a dead link', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- Fix — see [a](lib/a.js:99).\n', THREE);
++  assert.deepEqual(kinds(file), ['past end']);
++});
++
++test('a line or a range inside the file passes', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- Fix — `lib/a.js:2` and [a](lib/a.js:2-3).\n', THREE);
++  const { code } = run(file);
++  assert.equal(code, 0);
++});
++
++test('a range that runs past the end is past end', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- Fix — see `lib/a.js:2-9`.\n', THREE);
++  assert.deepEqual(kinds(file), ['past end']);
++});
++
+ test('an entry longer than the cap is detail, not an index entry', () => {
+   const long = 'x'.repeat(todo.MAX_ENTRY_CHARS + 1);
+   const file = fixture('# TODO\n\n## Ready\n\n- ' + long + '\n');

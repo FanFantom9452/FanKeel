@@ -1,0 +1,8 @@
+ .fankeel/profile.json                    |   6 +-
+ TODO.md                                  |   6 +-
+ docs/plans/2026-09-25-todo-check-line.md | 219 +++++++++++++++++++++++++++++++
+ scripts/docs-check.js                    |   2 +-
+ scripts/todo-check.js                    |  52 +++++++-
+ tests/todo-check.test.js                 |  28 ++++
+ 6 files changed, 303 insertions(+), 10 deletions(-)
+ M .fankeel/profile.json

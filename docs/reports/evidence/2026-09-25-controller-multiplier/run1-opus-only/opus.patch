@@ -1,0 +1,316 @@
+diff --git a/.fankeel/profile.json b/.fankeel/profile.json
+index 40d08d75..cf2f6178 100644
+--- a/.fankeel/profile.json
++++ b/.fankeel/profile.json
+@@ -3,10 +3,6 @@
+   "land.push": false,
+   "land.archivePlan": true,
+   "design.mockup": "opus",
+-  "stage.agents": [
+-    "survey",
+-    "build",
+-    "verify"
+-  ],
++  "stage.agents": [],
+   "guard": "deny"
+ }
+diff --git a/TODO.md b/TODO.md
+index ef81896d..dd00408b 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -75,7 +75,6 @@ what gets scheduled.
+ 
+ ## Ready
+ 
+-- 〔docs〕todo-check 不驗 `path:line` 的行號：改成不存在的行仍然 exit 0 — [scripts/todo-check.js](scripts/todo-check.js). docs-check 補得到一部分，但卡 role、引文與讀得到目標三個前提。
+ - 〔quota〕7d 水位兩點差 4.7 倍，是延遲還是計別的：TokenBar 每次 render 已把 5h／7d 讀數 append 到 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`（TokenBar 的 `statusline.ps1`／`.sh`），拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
+ - 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過；session 記錄已存 `stage.agents`（6fb1b3a），缺的是一次真實的量測 — [lib/render.js](lib/render.js).
+ - 〔security〕reviewer 的 `## Security` lens 已落地（四類、reviewer 自己的模型）；改走本地模型、清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
+diff --git a/docs/development.md b/docs/development.md
+index 7df20f0c..75aa2909 100644
+--- a/docs/development.md
++++ b/docs/development.md
+@@ -75,7 +75,8 @@ the user in the middle of somebody else's turn is its own kind of broken.
+ 
+ `node scripts/todo-check.js` says whether [TODO.md](../TODO.md) is still an index —
+ every link resolving, none of them landing on a document whose declared role
+-records a moment rather than the present, no entry carrying detail that belongs
++records a moment rather than the present, every backticked `path:line` within
++the file it names, no entry carrying detail that belongs
+ in the file it points at, and every entry filed under `## Ready`, `## Needs a decision` or
+ `## Waiting`, which is what says whether it can be started today. Where *no*
+ entry uses those three and every one of them sits under a heading of its own,
+diff --git a/docs/plans/2026-09-25-todo-check-line-design.md b/docs/plans/2026-09-25-todo-check-line-design.md
+new file mode 100644
+index 00000000..1f89691b
+--- /dev/null
++++ b/docs/plans/2026-09-25-todo-check-line-design.md
+@@ -0,0 +1,40 @@
++---
++status: design-intent
++---
++
++# todo-check verifies a `path:line` citation's line number — design
++
++`scripts/todo-check.js` checks that a markdown link in a `TODO.md` entry
++resolves, and nothing else about a citation. A backticked `path:line` whose line
++is past the end of its file passes with exit 0. This closes that one gap by
++reusing the reader `scripts/memory-check.js` already has for the same shape.
++
++Approved in chat at the design gate, 2026-09-25; written here so build reads it.
++
++## 1. The check
++
++- For every entry, each backticked `path:line` span that `citations()` in `scripts/memory-check.js` returns with a line number, resolved with `resolveRef` from `scripts/docs-check.js` against the directory holding `TODO.md`, is reported as `past-end` when its line is greater than the file's line count.
++- A span whose file does not resolve is skipped, exactly as today — a missing file named only in backticks is out of scope.
++- The problem carries the entry's own line, like every other kind, so the exit code turns 1 through the existing path.
++
++## 2. Reuse
++
++- `scripts/memory-check.js` exports `lineCount`, which it already defines, so `todo-check.js` counts lines the same way `memory-check.js` does (a trailing newline is not a line).
++
++## What proves it done
++
++| test | criterion |
++|---|---|
++| `tests/todo-check.test.js` — a backticked `docs/why.md:99` against a one-line file | exits 1 and prints `past-end` and `the file ends at 1`; exits 0 before the change |
++| `tests/todo-check.test.js` — a backticked `docs/why.md:1` against the same file | exits 0 |
++| `node scripts/todo-check.js` on this repository's `TODO.md` | same exit as before the change (it holds no backticked `path:line` today) |
++
++## Files
++
++| file | change | dispatch |
++|---|---|---|
++| `scripts/memory-check.js` | add `lineCount` to `module.exports` | implementer, sonnet |
++| `scripts/todo-check.js` | a citation loop in `check()` after the link loop; `roots` from `trackedFiles(base)` | implementer, sonnet |
++| `tests/todo-check.test.js` | the two fixtures above | implementer, sonnet |
++
++Unverified: `citations()` ignores a range's end (`a.js:10-20` checks only `10`); kept as is.
+diff --git a/docs/plans/2026-09-25-todo-check-line.md b/docs/plans/2026-09-25-todo-check-line.md
+new file mode 100644
+index 00000000..c8fbfe25
+--- /dev/null
++++ b/docs/plans/2026-09-25-todo-check-line.md
+@@ -0,0 +1,139 @@
++---
++status: design-intent
++---
++
++# todo-check line-number check Implementation Plan
++
++**Goal:** `node scripts/todo-check.js` exits 1 when a `TODO.md` entry cites a backticked `path:line` past the end of its file.
++**Architecture:** `check()` in `scripts/todo-check.js` gains one loop per entry that reuses `citations()` and `lineCount()` from `scripts/memory-check.js` and `resolveRef()` from `scripts/docs-check.js`, pushing a `past-end` problem onto the existing `problems` list. No new module, no new output path.
++**Tech Stack:** Node built-ins only (`node:fs`, `node:path`, `node:test`); `npm test` is `node --test`.
++**Spec:** [2026-09-25-todo-check-line-design.md](2026-09-25-todo-check-line-design.md)
++
++## Global Constraints
++
++- `package.json` declares no `dependencies`; add none (CONTRIBUTING.md:36 — "new dependency" is outside a behaviour-neutral change).
++- `scripts/` is 4-space indented, `'use strict'`, CommonJS; `tests/` is 2-space indented, `node:test` + `node:assert/strict`.
++- `.fankeel/map.md`: `todo-check.js` answers "whether TODO.md is still an index" — the new problem is one more kind on the same list, not a new report section.
++- `docs.STATE_DIR` paths are runtime, never a citation — `citations()` already skips them; do not re-add them.
++- An implementer runs only `node --test tests/todo-check.test.js`; the parent runs the full `npm test` before committing.
++
++## Task 1: past-end citations in todo-check
++
++**Files:**
++- Modify: `scripts/todo-check.js` — require the helpers; compute `roots` once in `check()`; add the citation loop after the `linksIn` loop
++- Modify: `scripts/memory-check.js` — add `lineCount` to `module.exports`
++- Read: `scripts/docs-check.js` — `resolveRef(root, fromRel, ref)` and `PATHISH` (a path needs a `/`)
++- Read: `lib/tracked.js` — `trackedFiles(root)` returns `{ files }` with posix paths, walking when `root` is not a repository
++- Test: `tests/todo-check.test.js`
++
++**Interfaces:**
++- Consumes: `citations(text, roots) -> [{ ref: string, wanted: number|null }]` and `lineCount(file) -> number|null` from `scripts/memory-check.js`; `resolveRef(root, fromRel, ref) -> string|null` from `scripts/docs-check.js`; `trackedFiles(root) -> { files: string[] } | null` from `lib/tracked.js`
++- Produces: `lineCount` exported from `scripts/memory-check.js`; a problem `{ line, kind: 'past-end', detail }` from `check()`
++
++**Dispatch:** implementer, sonnet — the plan carries the code; transcription plus tests.
++
++- [ ] **Step 1: Write the failing tests.** In `tests/todo-check.test.js`, after the test `'the line number points at the entry, not at the file'`, add:
++
++```js
++test('a backticked path:line past the end of its file is reported', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- Publishing — see `docs/why.md:99`.\n', { 'docs/why.md': '# why\n' });
++  const { out, code } = run(file);
++  assert.equal(code, 1);
++  assert.match(out, /past-end/);
++  assert.match(out, /docs\/why\.md:99 but the file ends at 1/);
++});
++
++test('a backticked path:line inside its file passes', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- Publishing — see `docs/why.md:1`.\n', { 'docs/why.md': '# why\n' });
++  const { code } = run(file);
++  assert.equal(code, 0);
++});
++```
++
++- [ ] **Step 2: Run it and watch the first fail.**
++
++```
++node --test tests/todo-check.test.js
++```
++
++Expected: `a backticked path:line past the end of its file is reported` fails on `code` (0, not 1); the second passes.
++
++- [ ] **Step 3: Export `lineCount`.** In `scripts/memory-check.js`, replace the `module.exports` line with:
++
++```js
++module.exports = { scan, report, parseArgs, main, projectSlug, memoryDir, indexEntries, citations, lastCommit, lineCount };
++```
++
++- [ ] **Step 4: Require the helpers.** In `scripts/todo-check.js`, after `const { blameTimes } = require('../lib/blame.js');`, add:
++
++```js
++const { trackedFiles } = require('../lib/tracked.js');
++const { resolveRef } = require('./docs-check.js');
++const { citations, lineCount } = require('./memory-check.js');
++```
++
++- [ ] **Step 5: Compute `roots` once.** In `scripts/todo-check.js`, in `check()`, directly after `const found = entries(text);`, add:
++
++```js
++    // The first segment of every file here, so a backticked `path:line` is
++    // read as a citation only when it is rooted somewhere this tree has —
++    // the same rule `memory-check.js` applies to the same spans.
++    const tracked = trackedFiles(base);
++    const roots = new Set((tracked ? tracked.files : []).map((f) => f.split('/')[0]));
++```
++
++- [ ] **Step 6: Add the citation loop.** In `scripts/todo-check.js`, in `check()`, inside `for (const entry of found)`, directly after the closing `}` of `for (const target of linksIn(entry.text)) { ... }`, add:
++
++```js
++        // A backticked `path:line` names a line, and a line can be deleted
++        // out from under it while the file stays. A missing file named only
++        // in backticks is not checked here; a link is how an entry says that.
++        for (const { ref, wanted } of citations(entry.text, roots)) {
++            if (wanted === null) continue;
++            const hit = resolveRef(base, '', ref);
++            if (hit === null) continue;
++            const n = lineCount(path.join(base, hit));
++            if (n !== null && wanted > n) {
++                problems.push({
++                    line: entry.line,
++                    kind: 'past-end',
++                    detail: ref + ':' + wanted + ' but the file ends at ' + n + '. Point at the line it moved to, or drop the line number.',
++                });
++            }
++        }
++```
++
++- [ ] **Step 7: Run it and watch both pass.**
++
++```
++node --test tests/todo-check.test.js
++```
++
++Expected: every test passes, including the two new ones.
++
++- [ ] **Step 8: Run it on this repository's own index.**
++
++```
++node scripts/todo-check.js
++```
++
++Expected: the same exit code and problem list as before Step 3 — `TODO.md` holds no backticked `path:line` today.
++
++- [ ] **Step 9: Commit.**
++
++```
++git add scripts/todo-check.js scripts/memory-check.js tests/todo-check.test.js
++git commit -m "fix: todo-check reports a backticked path:line past the end of its file"
++```
++
++## Coverage
++
++| promise | task |
++|---|---|
++| For every entry, each backticked `path:line` span that `citations()` in `scripts/memory-check.js` returns with a line number | Task 1 |
++| A span whose file does not resolve is skipped, exactly as today | Task 1 |
++| The problem carries the entry's own line, like every other kind | Task 1 |
++| `scripts/memory-check.js` exports `lineCount`, which it already defines | Task 1 |
++| `tests/todo-check.test.js` — a backticked `docs/why.md:99` against a one-line file | Task 1 |
++| `tests/todo-check.test.js` — a backticked `docs/why.md:1` against the same file | Task 1 |
++| `node scripts/todo-check.js` on this repository's `TODO.md` | Task 1 |
+diff --git a/scripts/memory-check.js b/scripts/memory-check.js
+index 6f04f613..c89a8ae0 100644
+--- a/scripts/memory-check.js
++++ b/scripts/memory-check.js
+@@ -224,4 +224,4 @@ if (require.main === module) {
+     process.exit(code);
+ }
+ 
+-module.exports = { scan, report, parseArgs, main, projectSlug, memoryDir, indexEntries, citations, lastCommit };
++module.exports = { scan, report, parseArgs, main, projectSlug, memoryDir, indexEntries, citations, lastCommit, lineCount };
+diff --git a/scripts/todo-check.js b/scripts/todo-check.js
+index fd55a1ed..df455a3b 100644
+--- a/scripts/todo-check.js
++++ b/scripts/todo-check.js
+@@ -42,6 +42,8 @@ const { parseArgs } = require('node:util');
+ const docs = require('../lib/docs.js');
+ const { resolveRoot } = require('../lib/registry.js');
+ const { blameTimes } = require('../lib/blame.js');
++const { resolveRef } = require('./docs-check.js');
++const { citations, lineCount } = require('./memory-check.js');
+ 
+ // Long enough for a sentence and a link, short enough that a paragraph does not
+ // fit. Detail that will not compress to this belongs in the file being pointed
+@@ -306,6 +308,11 @@ function check(file, now) {
+     let problems = [];
+     const overdue = [];
+     const found = entries(text);
++    // The top-level names here, so a backticked `path:line` is read as a
++    // citation only when it is rooted somewhere this tree has — the rule
++    // `memory-check.js` applies to the same spans. `resolveRef` below still
++    // requires the file itself, so a directory listing is all this needs.
++    const roots = new Set(fs.readdirSync(base));
+     for (const entry of found) {
+         // The stamp is asked for under `Waiting` and nowhere else. `Ready` and
+         // `Needs a decision`'s newest few are read every time `/fankeel` offers
+@@ -356,6 +363,22 @@ function check(file, now) {
+                 });
+             }
+         }
++        // A backticked `path:line` names a line, and a line can be deleted
++        // out from under it while the file stays. A missing file named only
++        // in backticks is not checked here; a link is how an entry says that.
++        for (const { ref, wanted } of citations(entry.text, roots)) {
++            if (wanted === null) continue;
++            const hit = resolveRef(base, '', ref);
++            if (hit === null) continue;
++            const n = lineCount(path.join(base, hit));
++            if (n !== null && wanted > n) {
++                problems.push({
++                    line: entry.line,
++                    kind: 'past-end',
++                    detail: ref + ':' + wanted + ' but the file ends at ' + n + '. Point at the line it moved to, or drop the line number.',
++                });
++            }
++        }
+     }
+ 
+     // The stamp and the event live on the timing now, one line for every entry
+diff --git a/tests/todo-check.test.js b/tests/todo-check.test.js
+index 8f28b71f..eae27106 100644
+--- a/tests/todo-check.test.js
++++ b/tests/todo-check.test.js
+@@ -67,6 +67,20 @@ test('the line number points at the entry, not at the file', () => {
+   assert.equal(todo.check(file).problems[0].line, 6);
+ });
+ 
++test('a backticked path:line past the end of its file is reported', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- Publishing — see `docs/why.md:99`.\n', { 'docs/why.md': '# why\n' });
++  const { out, code } = run(file);
++  assert.equal(code, 1);
++  assert.match(out, /past-end/);
++  assert.match(out, /docs\/why\.md:99 but the file ends at 1/);
++});
++
++test('a backticked path:line inside its file passes', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- Publishing — see `docs/why.md:1`.\n', { 'docs/why.md': '# why\n' });
++  const { code } = run(file);
++  assert.equal(code, 0);
++});
++
+ test('an entry longer than the cap is detail, not an index entry', () => {
+   const long = 'x'.repeat(todo.MAX_ENTRY_CHARS + 1);
+   const file = fixture('# TODO\n\n## Ready\n\n- ' + long + '\n');

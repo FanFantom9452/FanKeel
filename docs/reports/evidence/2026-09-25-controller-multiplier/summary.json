@@ -1,0 +1,58 @@
+{
+  "base": "9e54e1b70a1dd0ad943b2534d8113bacbee0b7f4",
+  "arms": {
+    "opus": {
+      "usd": 11.468572499999993,
+      "tokens": 19012857,
+      "stages": {
+        "build": 3.1911371999999987,
+        "design": 0.4084568,
+        "plan": 1.3604157,
+        "start": 0.1475562,
+        "verify": 6.361006599999995
+      },
+      "models": {
+        "claude-opus-5-5": {
+          "usd": 6.399749599999998,
+          "input": 270,
+          "output": 90018,
+          "cacheRead": 9841868,
+          "cacheWrite5m": 328742,
+          "cacheWrite1h": 0
+        },
+        "claude-sonnet-5": {
+          "usd": 5.068822900000001,
+          "input": 390,
+          "output": 129321,
+          "cacheRead": 7730777,
+          "cacheWrite5m": 891471,
+          "cacheWrite1h": 0
+        }
+      }
+    },
+    "sonnet": {
+      "usd": 18.617388700000006,
+      "tokens": 48994907,
+      "stages": {
+        "build": 6.047027100000001,
+        "design": 0.826331,
+        "plan": 2.698059300000001,
+        "start": 0.099758,
+        "verify": 8.946213300000005
+      },
+      "models": {
+        "claude-sonnet-5": {
+          "usd": 18.617388700000006,
+          "input": 980,
+          "output": 429385,
+          "cacheRead": 47009721,
+          "cacheWrite5m": 1554821,
+          "cacheWrite1h": 0
+        }
+      }
+    }
+  },
+  "oldAtSonnetRates": 8.759771500000001,
+  "k": 2.125328120716391,
+  "kTokens": 2.5769355441951727
+}
