@@ -76,14 +76,10 @@ what gets scheduled.
 
 ## Ready
 
-## Needs a decision
+- 〔audit〕`/fankeel-audit` 擴充成定期清理機制：docs tree 合規、搬遷對照表、大 repo 分批、排程提醒；先搬 fankeel 自己的 docs，再跑 Trovara — [docs/documents.md](docs/documents.md).
+- 〔context〕任務交換區 `.fankeel/build/task-*/context.md`：已驗證事實附 file:line 與 sha，brief 只給路徑、按需讀，上限 40 條，量省多少 — [docs/subagents.md](docs/subagents.md).
 
-- 〔render〕bounded route 開 `design.mockup` 時 design 的注入量到 2410，已過 2400 上限；`tests/render.test.js` 只量 architectural 的 route，要讓哪一條讓位要人定 — [tests/render.test.js](tests/render.test.js).
-- 〔stage-agents〕要不要把通用的 `fankeel-brain` 拆成各站專屬 agent：只拆工具或模型不同的站（design 的 mockup、verify 的 mutation）；等 verify 的 k 重跑再定 — [docs/subagents.md](docs/subagents.md).
-- 〔docs〕要不要 ADR：參考 Trovara 的 `docs/04-architecture/adr/`，只在做架構選擇時寫、不是每個 task 都呼叫；在哪一站、由誰觸發，要人來定 — [docs/documents.md](docs/documents.md).
-- 〔judge〕`judge.js record` 要不要驗證這個 session 底下真的有 `fankeel-judge` 的 subagent transcript — [scripts/judge.js](scripts/judge.js).
-- 〔ledger〕Whether an ignored flag should be refused — [scripts/ledger.js](scripts/ledger.js), `parseArgs`. `--range x ranges` exits 0; `complete` refuses it.
-- 〔lib〕Whether `fanoutSync`'s payload costs anything: a 64MB overflow discards every answer and re-reads all thirty serially — [lib/tracked.js](lib/tracked.js).
+## Needs a decision
 
 ## Waiting
 
@@ -138,6 +134,7 @@ lifts when: main 已 push（08c4ecf 起），新 terminal 更新插件到 0.76.0
 - 〔stage-agents〕接縫「記帳」：受控 build 後查續用的 agent 是否一次派工一則 notification、續用會不會重發 brief、transcript 留的是不是佔位題 — [docs/subagents.md](docs/subagents.md).
 - 〔stage-agents〕接縫「claims」：受控 verify 的 mutation 編輯之後，看另一個 live session 會不會被報撞檔 — [docs/subagents.md](docs/subagents.md).
 - 〔stage-agents〕接縫「在哪提交」：task 的 `project` 不是 cwd、或在 worktree 裡時跑受控 build，看 `scripts/commit.js` 提交到哪個 repo — [docs/subagents.md](docs/subagents.md).
+- 〔stage-agents〕verify 的 mutation 要不要專屬 agent（工具或模型跟 fankeel-brain 不同才拆）；等受控 verify 實跑、k 重跑後再定 — [docs/subagents.md](docs/subagents.md).
 
 ### 放行規則有沒有效
 lifts when: 放行規則存在下 no verdict 再發生一次. 09-25.
