@@ -46,7 +46,7 @@ status: design-intent
 - Test: `tests/todo-check.test.js`
 
 **Interfaces:**
-- Consumes: `PATHISH`，也就是 `/^(?:\.\/)?([\w.-]+\/[\w./-]+)(?::(\d+)(?:[-–](\d+))?)?$/`；以及 `lineCount(root: string, rel: string) => number|null`，兩個都來自 `scripts/docs-check.js`
+- Consumes: `PATHISH`，也就是 `/^(?:\.\/)?([\w.-]+\/[\w./-]+)(?::(\d+)(?:[-–]``(\d+))?)?$/`；以及 `lineCount(root: string, rel: string) => number|null`，兩個都來自 `scripts/docs-check.js`
 - Produces: `check()` 的 `problems` 裡多一種 `kind: 'past end'`
 
 **Dispatch:** implementer, sonnet — 程式碼都寫在 plan 裡，照抄再補測試。
@@ -403,5 +403,5 @@ process.stdout.write(JSON.stringify(summary, null, 2) + '\n');
 | `〔docs〕todo-check 不驗行號` 與 `〔stage-agents〕量 Sonnet 主控倍數` 由交付它們的 task 刪掉 | Task 1、Task 3 |
 | `〔quota〕7d 水位` 退回 `## Waiting`，新的 timing 是「TokenBar 寫出真實序列」 | Task 1 |
 | `〔security〕` 不動，留在 `## Ready` | struck — 不動就是交付，不需要 task |
-| `tests/todo-check.test.js` 新增：bullet 帶 `` `scripts/todo-check.js:99999` `` 時 exit 1 | Task 1（fixture 用 `lib/a.js:9`，形式相同） |
+| `tests/todo-check.test.js` 新增：bullet 帶 `` `scripts/todo-check.js` 指向第 99999 行 `` 時 exit 1 | Task 1（fixture 用 `lib/a.js:9`，形式相同） |
 | artefact 這一格：報告頁裡的 `k`，要等於同頁兩個 arm 的 token 數相除 | Task 3 步驟 4（`k` 是花費比；token 比另列為 `kTokens`，design 的說法在這裡修正） |

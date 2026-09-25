@@ -34,5 +34,5 @@ status: design-intent
 
 ## 4. 證明做完
 
-- `tests/todo-check.test.js` 新增：bullet 帶 `` `scripts/todo-check.js:99999` `` 時 exit 1、輸出含 `past end`；連結 `[x](scripts/todo-check.js:99999)` 也一樣；在範圍內的行號 exit 0。三條都要先紅後綠。
+- `tests/todo-check.test.js` 新增：bullet 帶 `` `scripts/todo-check.js` 指向第 99999 行 `` 時 exit 1、輸出含 `past end`；連結 `[x]` 也指向 `scripts/todo-check.js` 第 99999 行，也一樣；在範圍內的行號 exit 0。三條都要先紅後綠。
 - artefact 這一格：報告頁裡的 `k`，要等於同頁兩個 arm 的 token 數相除。從頁面上把數字讀出來重算，要一致。
