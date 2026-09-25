@@ -602,6 +602,8 @@ a document is meant to stay true, and therefore what is worth checking.
 | `archive` | retired. Checked for one thing only — that nothing current still points at it. |
 | `fixture` | a test's own input. Describes nothing about the system, so it cannot drift from it; checked for links and line numbers only, never for symbols or paths its scaffold creates. |
 
+A decision may carry `binding: true`: an ADR is a decision, not another role. At most seven stand at once — docs-check counts them, and `superseded_by` retires one.
+
 Three shapes ship: `flat` (one `docs/` with a numbered series) and `phased`
 (`01-vision` through `99-archive`), both taken from real repositories, and
 `audience` — the folders a person reads numbered to the front (`01-guide`,

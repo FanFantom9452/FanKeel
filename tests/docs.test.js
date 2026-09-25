@@ -701,3 +701,24 @@ test('the sentence above the list says seven, and six under scripts/', () => {
   assert.ok(flat.includes('七個之中只有這個檔案直接讀'),
     'the lib/map.js bullet does not say 七個之中');
 });
+
+// docs/plans/2026-09-26-station-redesign.md Task 6. A decision marked
+// `binding: true` changes how code is written from then on; seven at most
+// stand at once, and one with `superseded_by` has stopped counting.
+test('an eighth binding decision fails docs-check; a superseded one does not count', () => {
+  const files = {};
+  for (let i = 1; i <= 8; i++) {
+    files['docs/decisions/2026-09-2' + i + '-d' + i + '.md'] = '---\nstatus: current\nbinding: true\n---\n\n# d' + i + '\n';
+  }
+  const root = withTree(tree(files), 'flat');
+  const over = run(root);
+  assert.equal(over.code, 1, over.out);
+  assert.match(over.out, /binding: docs\/decisions\/2026-09-28-d8\.md:1  8 binding decisions, at most 7/);
+  fs.writeFileSync(path.join(root, 'docs', 'decisions', '2026-09-21-d1.md'),
+    '---\nstatus: current\nbinding: true\nsuperseded_by: docs/decisions/2026-09-28-d8.md\n---\n\n# d1\n');
+  const under = run(root);
+  assert.equal(under.code, 0, under.out);
+  assert.doesNotMatch(under.out, /binding decisions/);
+  assert.equal(docs.isBinding('---\nbinding: true\n---\n'), true);
+  assert.equal(docs.isBinding('---\nbinding: false\n---\n'), false);
+});

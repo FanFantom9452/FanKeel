@@ -356,6 +356,16 @@ Orphans never fail a run. `defects()` opens at
 `scripts/docs-audit.js:898` (`function defects(r) {`) and sums drift, landed
 plans, a broken index and diagrams; `orphans` is not a term in that sum.
 
+### `binding: true`, seven at most
+
+An ADR is a `decision` page and nothing else: there is no seventh role for it.
+What sets some decisions apart is `binding: true` in the frontmatter — the
+record changes how code is written from then on, rather than explaining why
+something was done. `docs-check` reports the eighth and every one after it, in
+filename order, and a record carrying `superseded_by` has stopped counting.
+`scripts/map.js` lists them under **binding decisions**, which is where design
+reads them; no injected block carries them. Land is where one is marked.
+
 ## The list is the output, not the count
 
 `docs-check` prints the findings themselves, not a summary of them — the role

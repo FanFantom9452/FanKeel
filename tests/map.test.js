@@ -382,3 +382,18 @@ test('a fully described tree says nothing about unfilled rows', () => {
   });
   assert.match(map.buildMap(dir), /tree — 3 rows from README\.md, under Layout\n/);
 });
+
+// docs/plans/2026-09-26-station-redesign.md Task 6: the binding decisions are
+// on the map, which design reads at its step 5; a superseded one is not.
+test('the map lists binding decisions, and not one that was superseded', () => {
+  const dir = withFiles({
+    '.fankeel/docs.json': JSON.stringify(docs.PRESETS.flat),
+    'docs/decisions/a.md': '---\nstatus: current\nbinding: true\n---\n# a\n',
+    'docs/decisions/b.md': '---\nstatus: current\nbinding: true\nsuperseded_by: docs/decisions/a.md\n---\n# b\n',
+    'docs/decisions/c.md': '---\nstatus: current\n---\n# c\n',
+  });
+  const out = map.buildMap(dir);
+  assert.match(out, /\nbinding decisions — 1:\n  docs\/decisions\/a\.md\n/);
+  assert.doesNotMatch(out, /docs\/decisions\/b\.md/);
+  assert.doesNotMatch(out, /docs\/decisions\/c\.md/);
+});

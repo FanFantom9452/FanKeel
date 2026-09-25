@@ -73,6 +73,12 @@ A page under a bucket marked `audience: human` that this change touched is
 named to the user at the gate: the person it is written for reads it, not a
 reviewer.
 
+Mark the record `binding: true` in its frontmatter only when it changes how
+code is written from here on — never for one that explains why something was
+done. `docs-check` refuses an eighth; when a record replaces another, give the
+old one `superseded_by: <path>` and it stops counting. The map lists every
+binding record, and design reads them there at its step 5.
+
 A landed plan leaves a decision record behind — what was decided and why — and is
 then archived — with no question when the profile's `land.archivePlan` is true,
 **after asking** when it is not. An unarchived plan gets read as current.

@@ -471,6 +471,17 @@ function scan(root, roles) {
         }
     }
 
+    // Seven binding decisions at most. The eighth and after, in filename order,
+    // are the findings, so the fix — `superseded_by` on the one each replaces —
+    // is named where it is needed.
+    const binding = docs.bindingOf(root, tree, markdown);
+    for (const rel of binding.slice(docs.BINDING_CAP)) {
+        findings.push({
+            role: 'decision', file: rel, line: 1, tag: 'binding',
+            what: binding.length + ' binding decisions, at most ' + docs.BINDING_CAP + ' — give the one this replaces superseded_by',
+        });
+    }
+
     const unquoted = findings.filter((f) => f.tag === 'unquoted')
         .map((f) => f.file + ':' + f.line + '  ' + f.what);
     const failing = findings.filter((f) => f.tag !== 'unquoted');
@@ -486,7 +497,7 @@ function scan(root, roles) {
     };
 }
 
-const ORDER = ['open-fence', 'gone', 'past-end', 'moved', 'orphan', 'into-archive'];
+const ORDER = ['open-fence', 'gone', 'past-end', 'moved', 'orphan', 'into-archive', 'binding'];
 
 function report(result) {
     if (!result) return 'fankeel docs-check: nothing readable under this directory.';
