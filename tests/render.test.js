@@ -781,3 +781,20 @@ test('prompt.all rides every stage\'s block and the stage agent\'s brief; prompt
   const none = render({ mine: verify, others: [], now: NOW, root: '/r', profile: { values: {}, sources: {}, unreadable: [] } });
   assert.equal(render({ mine: verify, others: [], now: NOW, root: '/r', profile: { values: { 'prompt.design': 'x' }, sources: {}, unreadable: [] } }), none, 'another stage\'s prompt adds nothing');
 });
+
+// docs/plans/2026-09-26-three-ready.md Task 1. Relative to the registry root,
+// because an absolute path put the bounded design block over the cap at a
+// 30-character root; the mockup key is off here — see TODO.md's render entry.
+test('a design going straight to a controlled build names design.md relative to the registry, under the cap', (t) => {
+  const route = ['survey', 'design', 'build', 'verify', 'land'];
+  const profile = { values: { 'land.integration': 'merge', 'land.push': false, 'land.archivePlan': true, guard: 'ask', 'dispatch.floor': 'sonnet', 'judge.model': 'fable', 'design.mockup': false, 'stage.agents': ['build'] }, sources: {}, unreadable: [] };
+  const started = '2026-09-19T09:30:12.345Z';
+  const out = render({ mine: entry(MINE, { stage: 'design', class: 'bounded', route, started }), others: [], now: NOW, root: '/r', profile });
+  assert.ok(out.includes('Write the approved output shape to `.fankeel/build/task-20260919T093012/design.md`'), out);
+  assert.equal(out.includes('{{'), false, 'a token shipped raw');
+  const size = sizeAtReference(out);
+  t.diagnostic('design → controlled build ' + size + ' chars at a ' + REFERENCE_ROOT + '-char root');
+  assert.ok(size < 2400, 'the design block with the handoff rule is ' + size + ' chars');
+  const planned = render({ mine: entry(MINE, { stage: 'design', started }), others: [], now: NOW, root: '/r', profile });
+  assert.equal(planned.includes('output shape to'), false, 'the full route has plan after design');
+});

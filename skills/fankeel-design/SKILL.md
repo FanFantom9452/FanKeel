@@ -208,6 +208,14 @@ frontmatter, committed.
 A design is not filed as reference: it describes what is meant to be, and the
 documentation sweep grades reference pages as claims about what is.
 
+**Bounded, with build handed to a stage agent.** There is no spec file, but the
+design still has to reach build: where the route goes from design straight to
+build and the profile's `stage.agents` names build and not design, the stage's
+rules name `.fankeel/build/task-<started>/design.md`. Write the approved output
+shape there before the gate and put that path on `spec:` — build's agent opens
+that file first and never sees this chat. With `plan` on the route, write
+nothing there: the plan is what build reads.
+
 ### 8. Self-review, then a person reads it
 
 1. **Placeholders** — any TBD, incomplete section, or vague requirement. Fix them.

@@ -621,3 +621,23 @@ test('a build brain is told a user task is not its to send', () => {
   const build = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
   assert.match(build, /One whose Dispatch line says user is not yours to send: `ledger\.js ready` never lists it, the controller runs it with the user after your report, and your report names it on a line `hands: <n>, <n>`\./);
 });
+
+// docs/plans/2026-09-26-three-ready.md Task 1, the artefact row: the path the
+// design block names is the file the build brain is told to read first.
+test('the file a design block names for a controlled build is what the build brain reads first', () => {
+  const { render } = require('../lib/render.js');
+  const started = '2026-09-19T09:30:12.345Z';
+  const route = ['survey', 'design', 'build', 'verify', 'land'];
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  const design = { task: 'rework the colour ramp', claims: [], stage: 'design', route, active: true, started, moves: [['survey', 1], ['design', 2]] };
+  const block = render({ mine: { sessionId: SESSION, data: design }, others: [], now: Date.parse(started) + 60e3, root, profile: { values: { 'stage.agents': ['build'] }, sources: {}, unreadable: [] } });
+  const m = /Write the approved output shape to `([^`]+)`/.exec(block);
+  assert.ok(m, 'the design block names no file');
+  const file = path.join(root, m[1]);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, 'the approach, one sentence\n');
+  seed(root, { stage: 'build', started, route, moves: [['survey', 1], ['design', 2], ['build', 3]] });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.match(text, /read first: \S+\/\.fankeel\/build\/task-20260919T093012\/design\.md — the last stage's report/);
+});

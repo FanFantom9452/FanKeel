@@ -506,7 +506,7 @@ empty list is refused with, in the shape every other bad profile value takes
 (`lib/profile.js:115`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
-file could change (`lib/stages.js:651`, `const raw = values && values['stage.agents'];`),
+file could change (`lib/stages.js:662`, `const raw = values && values['stage.agents'];`),
 so which stages are controlled is a profile answer, not a constant. Put a
 stage on that list and it is run by a stage agent instead of by the session:
 
@@ -578,6 +578,15 @@ and `hooks/brief.js` copies it, so the controller opens neither file. A stage wi
 earlier report gets pointed at the newest `docs/plans/*.md` file written since the
 task started, if one exists (`newestPlan` in `lib/render.js`); only when neither an
 earlier report nor a qualifying plan file exists does it get `read first: none`.
+
+A `design` run in the session writes no report, so a controlled `build` right
+after it would start from nothing. Where the route goes from design straight to
+build, and `stage.agents` names build but not design, design's own rules carry
+one more line (`DESIGN_TO_BUILD` in `lib/stages.js`): before its gate, write the
+approved output shape to `.fankeel/build/task-<started>/design.md`, the file
+`previousHandoff` finds first. With `plan` between them the line is off — a
+design.md there would be found before the plan `newestPlan` picks.
+
 Every brain is told to end its report with that block.
 
 A `design` or `plan` brain may also write one file under `docs/plans/`, named in an
@@ -689,7 +698,7 @@ in `lib/profile.js` holds it to one line and 200 characters — trimmed but not
 lowercased, and refused if it is empty, carries a newline, or runs long
 (`lib/profile.js:140`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
 `promptRules` is called once, inside `rulesLines`
-(`lib/render.js:164`, `.concat(promptRules(values, data && data.stage));`),
+(`lib/render.js:170`, `.concat(promptRules(values, data && data.stage));`),
 and by `controlBlock` for a controlled stage's own block
 (`lib/render.js:135`, `return control && Object.assign({}, control, { rules: control.rules.concat(promptRules(values, stage)) });`),
 so `render`, `renderResume` and `renderBrainBrief` — every path that calls

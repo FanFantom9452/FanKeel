@@ -1022,3 +1022,19 @@ test('the controller is told to copy the handoff\'s own gate verbatim, never a p
     assert.ok(rules.some((r) => r.includes('read /r/h.md\'s last `json gate` block and call AskUserQuestion with `questions` copied verbatim')), stage);
   }
 });
+
+// docs/plans/2026-09-26-three-ready.md Task 1: a design run in the session
+// hands a controlled build its approved shape through a file — only when
+// build is next, build is controlled, design is not, and a path was given.
+test('design writes its approved shape for a controlled build only when build comes next and design is not controlled', () => {
+  const file = '.fankeel/build/task-20260919T093012/design.md';
+  const subs = (route) => ({ next: nextStage('design', route), designHandoff: file });
+  const has = (rules) => rules.some((r) => r.includes('Write the approved output shape to `' + file + '`'));
+  const direct = ['survey', 'design', 'build'];
+  assert.ok(has(rulesFor('design', subs(direct), { 'stage.agents': ['build'] })), 'design → build with build controlled carries no handoff rule');
+  assert.equal(has(rulesFor('design', subs(['survey', 'design', 'plan', 'build']), { 'stage.agents': ['build'] })), false, 'with plan on the route a design.md would hide the plan file');
+  assert.equal(has(rulesFor('design', subs(direct), { 'stage.agents': ['design', 'build'] })), false, 'a controlled design writes its own handoff');
+  assert.equal(has(rulesFor('design', subs(direct), { 'stage.agents': [] })), false, 'an uncontrolled build reads the chat');
+  const noPath = rulesFor('design', { next: 'build' }, { 'stage.agents': ['build'] });
+  assert.equal(noPath.some((r) => r.includes('output shape to')), false, 'no path, no rule — never a raw token');
+});
