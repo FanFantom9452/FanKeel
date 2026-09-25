@@ -1134,7 +1134,6 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .toast{position:relative;display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:2px 11px;padding:13px 14px 14px;border-radius:9px;background:var(--panel);
   box-shadow:0 1px 2px rgba(0,0,0,.08),0 10px 30px -6px rgba(0,0,0,.22),inset 0 0 0 1px var(--rule2);overflow:hidden}
 .toast .ti{width:22px;height:22px;border-radius:50%;display:grid;place-items:center}
-.toast .ti svg{width:12px;height:12px}
 .toast.done .ti{background:var(--up-bg);color:var(--good)}
 .toast.rej .ti{background:var(--dn-bg);color:var(--bad)}
 .toast .tt{font-size:13px;font-weight:600;align-self:center;line-height:1.35}
@@ -1143,9 +1142,6 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .toast .tx:hover{background:var(--wash);color:var(--ink)}
 .toast .tx:focus-visible{outline:2px solid var(--ink)}
 .toast .tb{grid-column:2 / -1;font-size:12px;color:var(--muted);line-height:1.45}
-.toast .ta{grid-column:2 / -1;display:flex;gap:12px;margin-top:6px;font-size:12px}
-.toast .ta a{color:var(--ink2);text-underline-offset:3px}
-.toast .ta a:hover{color:var(--ink)}
 @keyframes tin{from{opacity:0;transform:translateY(14px) scale(.98);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
 @keyframes tdrain{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 @media (prefers-reduced-motion:reduce){.toasts .toast,.tchip .dot.live{animation:none!important}}
