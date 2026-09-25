@@ -25,11 +25,11 @@ reproduce whatever had been put in front of them, with no needle in the prompt t
 find — a third never launched, and a cell that did not run is not a result
 ([reports/2026-09-04-subagent-brief-probe.md](reports/2026-09-04-subagent-brief-probe.md)).
 
-## The seven agents this plugin defines
+## The eight agents this plugin defines
 
-Seven subagent types are not just described in prose — they are declared as
+Eight subagent types are not just described in prose — they are declared as
 `agents` in `.claude-plugin/plugin.json` and shipped as files under `agents/`:
-`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier`, `fankeel-fixer`, `fankeel-brain` and `fankeel-render-reviewer`.
+`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier`, `fankeel-fixer`, `fankeel-brain`, `fankeel-render-reviewer` and `fankeel-mockup`.
 Four of them — `fankeel-reader`, `fankeel-judge`, `fankeel-reviewer` and
 `fankeel-render-reviewer` — carry `tools: [Read, Grep, Glob, Bash]` — Edit, Write and
 NotebookEdit are simply absent from the list, so calling any of them to change
@@ -59,11 +59,14 @@ Before any of that, `hooks/guard.js` returns unless the dispatching session has 
 active registry entry (`hooks/guard.js:33`, `if (!mine || mine.active !== true) return;`),
 so a read-only subagent under a session with no active task is not denied.
 [collisions.md](collisions.md)
-carries what that denylist actually matches, not restated here. Six of
-the seven agents hold `Bash`; `fankeel-fixer` is the one that does not,
+carries what that denylist actually matches, not restated here. Seven of
+the eight agents hold `Bash`; `fankeel-fixer` is the one that does not,
 because it edits the file itself rather than returning something for the
 parent to run a test against. `tests/agents.test.js` names all three writers as
 exemptions, each with its argument beside it, rather than dropping the assertion.
+`fankeel-mockup` carries `Edit` and `Write` for the mockup page it draws under
+`.fankeel/build/` and the one block a tuning request names, and `Skill`, to
+load the design skill its prompt names.
 
 `Edit|Write|NotebookEdit` carries a second check besides the collision guard
 just described: when `agent_id` is absent — the main thread, read the same

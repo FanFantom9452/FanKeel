@@ -197,9 +197,9 @@ right-hand column is the half it cannot.
 
 ```
 fankeel/
-├── .claude-plugin/    plugin.json — the skills, the six agents, every hook and its timeout — and marketplace.json
+├── .claude-plugin/    plugin.json — the skills, the eight agents, every hook and its timeout — and marketplace.json
 ├── .fankeel/          this repository's own settings: docs.json files each page, profile.json answers gates, .gitignore
-├── agents/            the six subagents the stages dispatch — reader, reviewer, verifier, judge, fixer, brain — with their tools and model
+├── agents/            the eight subagents the stages dispatch — reader, reviewer, verifier, judge, fixer, brain, render-reviewer, mockup — with their tools and model
 ├── assets/            the station page: index.html, station.css and station.js, copied beside every page a write produces
 ├── docs/              reference pages, with decisions/, plans/, reports/, judgements/ and archive/ each filed by what it records
 ├── evals/             behaviour eval cases, one directory each, graded by scripts/eval.js with claude -p

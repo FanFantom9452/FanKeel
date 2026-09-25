@@ -378,7 +378,8 @@ then asks this stage's gate.
    done: `node <plugin>/scripts/tune.js wait` prints the next request with the
    element's `selector`, `classes` and `text`, and `sources`, up to ten
    `file:line` places — its `data-block` first, then the lines naming its
-   classes; dispatch one implementer at `design.mockup`'s model per request to
+   classes; dispatch one `subagent_type: fankeel:fankeel-mockup` per request —
+   no model unless `design.mockup` names one other than opus — to
    change the source there and nothing else; then
    `node <plugin>/scripts/tune.js done <id>`, which puts back and refuses an
    edit that touched anything outside `--src`, and refuses a failed rebuild

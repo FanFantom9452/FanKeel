@@ -101,14 +101,17 @@ only the part being redesigned rewritten. New styles are written only for
 what is new. Put the page where a relative path reaches the project's CSS, or
 serve it through `tune.js serve --proxy` from the project's own server.
 
-Dispatch it as `implementer, <the value of design.mockup>`. Visual design does
-not take `dispatch.floor`, which is why the key carries a model at all. Name one
+Dispatch it as `subagent_type: fankeel:fankeel-mockup` and pass no model: the
+agent file pins `opus`, and that is the floor. Pass `model` only when
+`design.mockup` names something other than `opus`. Visual design does not take
+`dispatch.floor`, which is why the key carries a model at all. Name one
 installed design skill in the prompt — `taste-skill:taste-skill`,
 `taste-skill:soft-skill`, `taste-skill:minimalist-skill`,
 `frontend-design:frontend-design`, `ui-ux-pro-max:ui-ux-pro-max` or
-`impeccable:impeccable` — one, not the list. **No profile value reaches a
-subagent**, so the model and the output path have to be written into the prompt
-by the session dispatching it.
+`impeccable:impeccable` — one, not the list; the agent loads it with the Skill
+tool before it draws. **No profile value reaches a subagent**, so the skill and
+the output path have to be written into the prompt by the session dispatching
+it.
 
 `design.skill` can pin that choice in the profile instead of leaving it
 free per task. When it is set, the injected mockup rule already names it —
@@ -125,7 +128,8 @@ and Alt+click opens a panel for what to change. List what you see, block by
 block, before asking which one
 to change — a list is easier to answer than an empty question. Then loop:
 `node <plugin>/scripts/tune.js wait` prints the next request as JSON;
-dispatch one implementer at `design.mockup`'s model to rewrite only the
+dispatch one `subagent_type: fankeel:fankeel-mockup` — no model, the same
+rule as above — to rewrite only the
 element carrying that `data-block` in the file it names; then
 `node <plugin>/scripts/tune.js done <id>`. Either way the page reloads — a
 kept edit flashes its block, a stray one is put back and the page marks the

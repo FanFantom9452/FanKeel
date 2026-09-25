@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup'];
 
 // `fankeel-verifier` is the one named exception: it writes evidence rows to a
 // file for the Workflow join, and `Write` is what that takes. It is not less
@@ -26,7 +26,10 @@ const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-v
 // block a controller hands on by path (`lib/handoff.js`) — and, on a build
 // stage, the commit file its controller commits from, so it takes `Write` and
 // nothing that edits in place.
-const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'], 'fankeel-brain': ['Write'] };
+// `fankeel-mockup` is the fourth: it draws the design stage's mockup page and,
+// in a tuning loop, rewrites the one block it is sent — `Edit` and `Write` on
+// that page, which is the whole of its job.
+const MAY_WRITE = { 'fankeel-verifier': ['Write'], 'fankeel-fixer': ['Edit', 'Write'], 'fankeel-brain': ['Write'], 'fankeel-mockup': ['Edit', 'Write'] };
 
 function front(file) {
     const m = FRONT.exec(fs.readFileSync(file, 'utf8'));
@@ -168,4 +171,19 @@ test('the stage agent\'s Return section cites the wake-up report and names Subag
     assert.match(ret, /\(\.\.\/docs\/reports\/2026-09-23-brain-wakeup\.md\)/);
     assert.ok(fs.existsSync(path.join(ROOT, 'docs', 'reports', '2026-09-23-brain-wakeup.md')));
     assert.match(ret, /only through `SubagentHandback`/);
+});
+
+// docs/plans/2026-09-26-station-redesign.md Task 2: the mockup has its own
+// agent, pinned to opus, and the design skill sends both of its dispatches
+// there by type rather than as an implementer at a model.
+test('the mockup agent is pinned to opus and the design skill dispatches it by type', () => {
+    const f = front(path.join(ROOT, 'agents', 'fankeel-mockup.md'));
+    assert.equal(f.model, 'opus');
+    const tools = f.tools.slice(1, -1).split(',').map((s) => s.trim());
+    assert.ok(tools.includes('Skill'), 'the agent loads the named design skill itself');
+    const design = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-design', 'SKILL.md'), 'utf8');
+    const step3 = design.split('### 3. The mockup')[1].split('### 4.')[0].replace(/\s+/g, ' ');
+    assert.equal((step3.match(/`subagent_type: fankeel:fankeel-mockup`/g) || []).length, 2, 'drawing and tuning both go to the agent');
+    assert.doesNotMatch(step3, /implementer at `design\.mockup`'s model/);
+    assert.doesNotMatch(step3, /Dispatch it as `implementer, <the value of design\.mockup>`/);
 });
