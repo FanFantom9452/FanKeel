@@ -79,8 +79,8 @@ test('a cache from an older VERSION is read again while the transcript is there,
     const { file } = oldCache(f, { key: detail.keyOf(f.t), at: Date.parse(T(30)) });
     const ended = Object.assign({}, f.data, { ended: { at: T(20), reason: 'exit' } });
     const got = detail.detailOf(f.cfg, SID, ended);
-    assert.deepEqual([got.fresh, got.detail.v, Array.isArray(got.detail.days)], [true, 6, true]);
-    assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).v, 6, 'the cache is rewritten at the new version');
+    assert.deepEqual([got.fresh, got.detail.v, Array.isArray(got.detail.days)], [true, 7, true]);
+    assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).v, 7, 'the cache is rewritten at the new version');
 });
 
 test('a cache from an older VERSION is kept as it stands once the transcript is gone, and a spent budget returns it too', () => {
@@ -97,7 +97,7 @@ test('a VERSION 2 cache, written before gate questions carried their labels, is 
     const f = setup();
     oldCache(f, { v: 2, key: detail.keyOf(f.t), at: Date.parse(T(30)) });
     const got = detail.detailOf(f.cfg, SID, f.data);
-    assert.deepEqual([got.fresh, got.detail.v], [true, 6]);
+    assert.deepEqual([got.fresh, got.detail.v], [true, 7]);
 });
 
 test('wakes counts the task notifications that reached the main transcript', () => {
@@ -137,6 +137,6 @@ test('with a memo, an older VERSION kept under a spent budget is not held, so th
     assert.equal(kept.detail.v, 1);
     assert.equal(memo.has(SID), false);
     const read = detail.detailOf(f.cfg, SID, f.data, { memo });
-    assert.deepEqual([read.fresh, read.detail.v], [true, 6]);
+    assert.deepEqual([read.fresh, read.detail.v], [true, 7]);
     assert.equal(memo.get(SID), read.detail);
 });

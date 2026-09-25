@@ -1767,6 +1767,11 @@
                 : '<p class="tally">靜態頁不能作答：開 serve 的頁面，或回 terminal 答。</p>') + '</div>';
     }
 
+    // The main session's effort, when its transcript said; nothing otherwise.
+    function effortChip(effort) {
+        return effort ? '<span class="chip" title="主 session 最後一次請求的 effort">effort <span class="mono">' + esc(effort) + '</span></span>' : '';
+    }
+
     // The hero's eyebrow carries the frozen moment too, so a reader who has
     // scrolled past the bar is not reading numbers they take for live. The
     // hh:mm is the caller's, off the same `stamp()` the bar's absolute time
@@ -1794,7 +1799,7 @@
             projectSessionsHtml: projectSessionsHtml,
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
             sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost,
-            heroEyebrow: heroEyebrow, docsCardHtml: docsCardHtml,
+            heroEyebrow: heroEyebrow, effortChip: effortChip, docsCardHtml: docsCardHtml,
             railHtml: railHtml, liveTag: liveTag,
             navHtml: navHtml, navCounts: navCounts, recentRows: recentRows, nowHtml: nowHtml,
             WIZ_STEPS: WIZ_STEPS, wizLoad: wizLoad, wizApply: wizApply, wizChanges: wizChanges, wizHtml: wizHtml,
@@ -2275,7 +2280,7 @@
             + '<h1 class="s-title">' + esc(s.task || '（未命名）') + '</h1>'
             + '<div class="s-meta">' + statePill(s) + (S.serve ? liveTag(s.state === 'live', polledAt, Date.now()) : '')
             + (s.model ? '<span class="chip"><i class="sw" style="background:var(--m-' + family(s.model) + ')"></i>主 session <span class="mono">'
-                + esc(s.model) + '</span></span>' : '') + '</div>'
+                + esc(s.model) + '</span></span>' : '') + effortChip(s.effort) + '</div>'
             + railHtml(s, Boolean(S.serve) && s.state === 'live', S.serve ? Date.now() : NOW)
             + pendingGateHtml(s, view.pg)
             + sessionHeadHtml(s, x) + '</section>'
