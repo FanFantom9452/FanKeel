@@ -49,11 +49,12 @@ arm () {
 
   if [ -z "$DRY" ]; then
     git worktree add --detach "$wt" "$BASE" >> "$LOG" 2>&1 || { echo "worktree failed" >> "$LOG"; return 1; }
+    mkdir -p "$wt/.fankeel/sessions"
     mkdir -p "$wt/.fankeel/build" && cp "$SURVEY" "$wt/.fankeel/build/survey.md"
-    (cd "$wt" && node scripts/task.js profile set stage.agents false --project >> "$LOG" 2>&1)
+    (cd "$wt" && node scripts/task.js profile set stage.agents false >> "$LOG" 2>&1)
     (cd "$wt" && node scripts/task.js profile show | grep '^  stage.agents' >> "$LOG")
     (cd "$wt" && node scripts/task.js profile show | grep -q '^  stage.agents  *false ') \
-      || { echo "stage.agents is not false in $wt — abort" >> "$LOG"; return 1; }
+      || { echo "stage.agents is not false in $wt — abort" >> "$LOG"; git worktree remove --force "$wt" >> "$LOG" 2>&1; return 1; }
   fi
 
   local common=(--setting-sources project --plugin-dir "$wt" --permission-mode bypassPermissions --model "$model" --output-format json)
@@ -81,7 +82,6 @@ arm () {
   if [ -z "$DRY" ]; then
     (cd "$wt" && git diff "$BASE" --stat && git status --porcelain) > "$EVID/$name-diff.txt" 2>&1
     (cd "$wt" && git diff "$BASE") > "$EVID/$name.patch" 2>&1
-    node scripts/task.js clear "$U" --force --session "$PARENT" >> "$LOG" 2>&1
     git worktree remove --force "$wt" >> "$LOG" 2>&1
   fi
 }
