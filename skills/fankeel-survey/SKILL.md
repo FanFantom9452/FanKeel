@@ -90,6 +90,14 @@ document is being read by guesswork. If it names a parse error, say so — a
 broken `docs.json` looks exactly like an absent one everywhere else, so the
 project reads as unfiled rather than as broken.
 
+With no `docs.json`, ask once, here, whether to lay a tree down — one
+`AskUserQuestion`, `audience` as option one (a person's folders numbered
+first, an agent's under `90-agent/`), the shape `lib/docs.js`'s `detect()`
+names as option two, and "leave it undeclared" last. An answer writes
+`.fankeel/docs.json` with `lib/docs.js`'s `write(root, PRESETS[<shape>])`. A
+project that already has a `docs.json` is not asked: moving an existing tree
+is the `/fankeel-audit` follow-up's work, not survey's.
+
 ### 3. Take stock of the contracts
 
 The section headed **planned, not built** is the one to read first. Those pages

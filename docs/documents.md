@@ -28,12 +28,15 @@ of them is affected either way. `survey.js` leaves pages out by role instead:
 every file whose role is `archive`, `plan`, `decision` or `report` is dropped
 and counted on its `excluded:` line unless `--include-role` names that role.
 
-The two shapes that ship — `flat` and `phased` — and what happens to a markdown
-file in no bucket are stated in [the skill](../skills/fankeel/SKILL.md), under
-*Where documents live*. What belongs here is why the question is put that way:
-`detect()` names the shape a repository already resembles, so the offer is "this
-one?" rather than "which of these?" — a project that already has habits is not
-asked to choose again.
+The three shapes that ship — `flat`, `phased` and `audience` — and what happens
+to a markdown file in no bucket are stated in [the skill](../skills/fankeel/SKILL.md),
+under *Where documents live*. What belongs here is why the question is put that
+way: it is asked once, at survey, and only where no `docs.json` exists.
+`audience` comes first because it is the one shape that says which reader each
+folder is for; `detect()`'s answer comes second, so a project that already has
+habits still sees its own shape on the list. A project with a `docs.json` is
+not asked again — moving an existing tree is the `/fankeel-audit` follow-up's
+work.
 
 ## `layout`, which points at a tree rather than holding one
 
@@ -145,7 +148,7 @@ report where a real parser would cost a dependency this plugin does not have.
 生成的快照。
 
 這幾區**不能**是 `.fankeel/docs.json` 的一個 bucket，而這值得寫下來，因為路徑
-本身是合法的：`lib/docs.js:185` 的 `if (!p.startsWith(b.path + '/')) continue;`
+本身是合法的：`lib/docs.js:209` 的 `if (!p.startsWith(b.path + '/')) continue;`
 是純字串前綴比對，`skills`、`evals`、`agents` 都是 `docs/` 以外的 bucket。擋住
 的是列檔的那一層，而那一層是同一個函式：下面第一條是它跑的旗標，其後七條是它
 的七個呼叫端，`scripts/` 六處與 `lib/` 一處。每一行的引文都必須

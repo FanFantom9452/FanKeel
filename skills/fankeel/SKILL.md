@@ -602,12 +602,17 @@ a document is meant to stay true, and therefore what is worth checking.
 | `archive` | retired. Checked for one thing only — that nothing current still points at it. |
 | `fixture` | a test's own input. Describes nothing about the system, so it cannot drift from it; checked for links and line numbers only, never for symbols or paths its scaffold creates. |
 
-Two shapes ship, both taken from real repositories: `flat` (one `docs/` with a
-numbered series) and `phased` (`01-vision` through `99-archive`). Neither is
-imposed. At Start, if there is no `docs.json`, look at what the repository already
-does — `lib/docs.js` will say which shape it resembles — and offer that one,
-adjusted to what is actually there. A project that has its own habits keeps them;
-the roles are what fankeel needs, not the paths.
+Three shapes ship: `flat` (one `docs/` with a numbered series) and `phased`
+(`01-vision` through `99-archive`), both taken from real repositories, and
+`audience` — the folders a person reads numbered to the front (`01-guide`,
+`02-architecture`, `03-decisions`), everything written for an agent under
+`90-agent/`, and `99-archive` last. A bucket may carry `audience: human` or
+`audience: agent`: a person's page is short, in the user's language, and read
+by the user at land; an agent's is dense, cites `path:line`, and docs-check
+reads it. Only a project with no `docs.json` is asked, once, at survey — step 2
+of the fankeel-survey skill — with `audience` first and the shape `detect()`
+names second. A project that already has one is not asked again; the roles are
+what fankeel needs, not the paths.
 
 A markdown file in no bucket is reported. Not as an error — as the thing nobody
 decided the lifetime of, which is the one most likely to rot unnoticed.

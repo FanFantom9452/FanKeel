@@ -69,6 +69,10 @@ Update `last_verified` on every page you re-read and found true. That date is th
 difference between "somebody touched this file" and "somebody read it and it was
 true"; a whitespace fix does the first and proves nothing.
 
+A page under a bucket marked `audience: human` that this change touched is
+named to the user at the gate: the person it is written for reads it, not a
+reviewer.
+
 A landed plan leaves a decision record behind — what was decided and why — and is
 then archived — with no question when the profile's `land.archivePlan` is true,
 **after asking** when it is not. An unarchived plan gets read as current.

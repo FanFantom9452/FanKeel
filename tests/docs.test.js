@@ -60,6 +60,27 @@ test('depth stops a flat bucket swallowing its own subdirectories', () => {
   assert.equal(docs.roleOf(t, 'docs/notes/deep/x.md'), null);
 });
 
+// docs/plans/2026-09-26-station-redesign.md Task 5. The third shape: a
+// person's pages numbered to the front, an agent's under one folder, and a
+// bucket that says which reader it is for.
+test('the audience shape files each folder by role and says who reads it', () => {
+  const t = docs.normalise(docs.PRESETS.audience);
+  assert.equal(t.preset, 'audience');
+  assert.equal(docs.roleOf(t, 'docs/01-guide/start.md'), 'reference');
+  assert.equal(docs.roleOf(t, 'docs/03-decisions/2026-09-26-x.md'), 'decision');
+  assert.equal(docs.roleOf(t, 'docs/90-agent/plans/2026-09-26-x.md'), 'plan');
+  assert.equal(docs.roleOf(t, 'docs/90-agent/reports/x.md'), 'report');
+  assert.equal(docs.roleOf(t, 'docs/99-archive/x.md'), 'archive');
+  const by = Object.fromEntries(t.buckets.map((b) => [b.path, b.audience]));
+  assert.equal(by['docs/02-architecture'], 'human');
+  assert.equal(by['docs/90-agent/reference'], 'agent');
+  assert.equal(by['docs/99-archive'], undefined, 'an archive is read by nobody');
+  const odd = docs.normalise({ buckets: [{ path: 'docs', role: 'reference', audience: 'robots' }] });
+  assert.equal(odd.buckets[0].audience, undefined, 'an audience that is neither word is dropped');
+  const root = tree({ 'docs/90-agent/plans/.keep': '', 'docs/01-guide/.keep': '' });
+  assert.equal(docs.detect(root), 'audience');
+});
+
 test('root files are reference even with no tree declared', () => {
   assert.equal(docs.roleOf(null, 'README.md'), 'reference');
   assert.equal(docs.roleOf(null, 'CLAUDE.md'), 'reference');
