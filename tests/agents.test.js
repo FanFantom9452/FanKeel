@@ -187,3 +187,20 @@ test('the mockup agent is pinned to opus and the design skill dispatches it by t
     assert.doesNotMatch(step3, /implementer at `design\.mockup`'s model/);
     assert.doesNotMatch(step3, /Dispatch it as `implementer, <the value of design\.mockup>`/);
 });
+
+// docs/plans/2026-09-26-station-redesign.md Task 3. The effort each role runs
+// at, pinned per agent; none at `max`, which the user observed over-reasons
+// (2026-09-26). `fankeel-brain` already carried `medium`.
+const EFFORT = {
+    'fankeel-reader': 'medium', 'fankeel-reviewer': 'medium', 'fankeel-verifier': 'medium',
+    'fankeel-render-reviewer': 'medium', 'fankeel-fixer': 'low', 'fankeel-judge': 'xhigh',
+    'fankeel-brain': 'medium', 'fankeel-mockup': 'high',
+};
+test('every agent names its effort, and none of them is max', () => {
+    for (const name of NAMES) {
+        const f = front(path.join(ROOT, 'agents', name + '.md'));
+        assert.ok(f.effort, name + ' names no effort');
+        assert.notEqual(f.effort, 'max', name + ' runs at max');
+        assert.equal(f.effort, EFFORT[name], name);
+    }
+});

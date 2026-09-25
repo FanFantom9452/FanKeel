@@ -3,6 +3,7 @@ name: fankeel-reviewer
 description: Read-only reviewer for the plan review, build's per-task review, verify's adversary and audit's code half — reads a diff, a brief, an evidence table or the whole tree against what it was supposed to prove, and returns only what it defeats and, when asked, what could be cut. Cannot call Edit, Write or NotebookEdit.
 tools: [Read, Grep, Glob, Bash]
 model: sonnet
+effort: medium
 status: current
 last_verified: 2026-09-24
 source_of_truth: lib/render.js

@@ -3,6 +3,7 @@ name: fankeel-render-reviewer
 description: Rendering reviewer for build's frontend tasks and verify — shoots every role and page .fankeel/render.json declares with the plugin's render script, shoots the approved mockup at the same size, and returns a data-block by role matrix and a disposition of recapture, fix or ship. Cannot call Edit, Write or NotebookEdit.
 tools: [Read, Grep, Glob, Bash]
 model: sonnet
+effort: medium
 status: current
 last_verified: 2026-09-23
 source_of_truth: scripts/render.js, lib/shots.js

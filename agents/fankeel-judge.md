@@ -3,6 +3,7 @@ name: fankeel-judge
 description: One-shot judgement for a question the session would otherwise put to the user mid-stage — a design clarification, a class, a plan split, a build choice. Reads the brief and the files it names, answers once in a fixed shape, and is not consulted again. Cannot call Edit, Write or NotebookEdit.
 tools: [Read, Grep, Glob, Bash]
 model: fable
+effort: xhigh
 status: current
 last_verified: 2026-09-26
 source_of_truth: lib/render.js

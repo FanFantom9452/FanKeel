@@ -3,6 +3,7 @@ name: fankeel-fixer
 description: Surgical fixer for a reference-page correction or a one-line code fix that needs no test run — verify's and audit's dead references and false sentences, and the small code fixes a reviewer already named. Refuses a fix that touches 3 or more files. Cannot call Bash, PowerShell or NotebookEdit.
 tools: [Read, Edit, Write, Grep, Glob]
 model: sonnet
+effort: low
 status: current
 last_verified: 2026-09-26
 source_of_truth: lib/render.js

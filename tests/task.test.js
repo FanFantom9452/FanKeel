@@ -936,3 +936,20 @@ test('task refuses when this session owns nothing, and names what begins one', (
   assert.equal(entry(dir, A), null);
 });
 
+// docs/plans/2026-09-26-station-redesign.md Task 3: the main session's effort,
+// suggested on the command's own output and never injected. Architectural
+// design and plan are xhigh; every other stage, and every stage of a bounded
+// or spike task, is medium.
+test('start and stage print the effort suggested for the stage entered', () => {
+  const dir = root();
+  const arch = run(dir, ['start', '--session', A, '--task', 'x', '--class', 'architectural']);
+  assert.equal(arch.code, 0, arch.out);
+  assert.match(arch.out, /effort: medium suggested for the main session at survey/);
+  assert.match(run(dir, ['stage', 'design', '--session', A]).out, /effort: xhigh suggested for the main session at design/);
+  assert.match(run(dir, ['stage', 'plan', '--session', A]).out, /effort: xhigh suggested for the main session at plan/);
+  assert.match(run(dir, ['stage', 'build', '--session', A]).out, /effort: medium suggested for the main session at build/);
+  const other = root();
+  assert.equal(run(other, ['start', '--session', B, '--task', 'y', '--class', 'bounded']).code, 0);
+  assert.match(run(other, ['stage', 'design', '--session', B]).out, /effort: medium suggested for the main session at design/);
+});
+

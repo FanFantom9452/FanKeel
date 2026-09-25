@@ -3,6 +3,7 @@ name: fankeel-reader
 description: Read-only reader for a stage's reading fan-outs — reads files, runs git and the plugin's scripts, and returns only the lines that decide the question it was sent with. Cannot call Edit, Write or NotebookEdit.
 tools: [Read, Grep, Glob, Bash]
 model: sonnet
+effort: medium
 status: current
 last_verified: 2026-09-21
 source_of_truth: lib/render.js

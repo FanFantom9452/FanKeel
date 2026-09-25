@@ -100,6 +100,15 @@ function modelHint(route) {
         + (ratio ? ' — sonnet runs at ' + ratio + 'x opus, per token' : '');
 }
 
+// The main session's effort, suggested per stage. Printed on `start` and
+// `stage` only — never injected, so it costs the 2400-character block nothing,
+// and it is advice: the plugin cannot set a session's effort. Architectural
+// design and plan reason about structure; everything else is medium.
+function effortHint(cls, stage) {
+    const heavy = cls === 'architectural' && (stage === 'design' || stage === 'plan');
+    return 'effort: ' + (heavy ? 'xhigh' : 'medium') + ' suggested for the main session at ' + stage + ' — the plugin cannot set it';
+}
+
 // The badge is written here as well as by the hook, and the reason is a full
 // prompt of latency otherwise.
 //
@@ -633,6 +642,7 @@ function cmdStart(root, opts) {
     if (skippedStages.length) lines.push('skipping: ' + skippedStages.join(', ') + ' — say which and why');
     const hint = modelHint(route);
     if (hint) lines.push(hint);
+    lines.push(effortHint(data.class || classForRoute(route), data.stage));
     lines.push('');
     for (const line of describe(root, id, data)) lines.push('  ' + line);
     if (prof.sources.guard && prof.sources.guard !== 'builtin') lines[lines.findIndex((l) => l.startsWith('  guard:'))] += ' (profile)';
@@ -765,6 +775,7 @@ function cmdStage(root, opts) {
         line += NL + 'second return to build from verify — name what verify caught that build\'s'
             + NL + 'review did not, and add that check to the review';
     }
+    line += NL + effortHint(data.class || classForRoute(route), name);
     // The answer that sent the session here fired `resume.js` while the old stage
     // was still current, so nothing has injected the new stage's rules yet. Where
     // `stage.agents` names the stage just entered, print the controller's block
