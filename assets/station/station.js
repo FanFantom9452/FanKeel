@@ -1632,6 +1632,21 @@
             + wizStepsHtml(W) + '</ol><div class="wbody">' + body + '</div></div>';
     }
 
+    // What 送出答案 sends, and how many questions have no answer yet. Typed
+    // 其他 text is the answer on a single-choice question and one more pick on a
+    // multi-select one; the `__other` box itself is never an answer.
+    function pgAnswers(questions, picks, others) {
+        var answers = {}, missing = 0;
+        (questions || []).forEach(function (q, i) {
+            var labels = ((picks || {})[i] || []).filter(function (l) { return l !== '__other'; });
+            var text = String((others || {})[i] || '').trim();
+            var a = q.multiSelect ? labels.concat(text ? [text] : []).join(', ') : (text || labels[0] || '');
+            if (a) answers[q.question] = a;
+            else missing++;
+        });
+        return { answers: answers, missing: missing };
+    }
+
     // A gate hooks/gate.js is holding for this page (`gate.station`): the
     // questions, and under `serve` a form whose answer goes to `/answer`.
     // `picked` is what was ticked before the last re-read, keyed `<id>:<n>`,
@@ -1641,18 +1656,30 @@
         if (!p || !p.questions || !p.questions.length) return '';
         var on = picked || {};
         var left = Math.max(0, Math.round((p.until - (S.serve ? Date.now() : NOW)) / 1000));
+        var picks = {}, others = {};
+        p.questions.forEach(function (q, i) { picks[i] = on[s.id + ':' + i] || []; others[i] = on[s.id + ':' + i + ':other'] || ''; });
+        var got = pgAnswers(p.questions, picks, others), n = p.questions.length;
+        var dis = S.serve ? '' : ' disabled';
         var qs = p.questions.map(function (q, i) {
-            var had = on[s.id + ':' + i] || [];
-            return '<fieldset class="pgq"><legend>' + esc(q.header || '') + ' · ' + esc(q.question) + '</legend>'
+            var type = q.multiSelect ? 'checkbox' : 'radio', had = picks[i];
+            return '<fieldset class="pgq"><legend>' + esc(q.header || '') + ' · ' + esc(q.question)
+                + (q.multiSelect ? '<span class="multi">可多選</span>' : '') + '</legend><div class="opts2">'
                 + (q.options || []).map(function (o) {
-                    return '<label class="pgo"><input type="' + (q.multiSelect ? 'checkbox' : 'radio') + '" name="pg-' + i + '" value="' + esc(o.label) + '"'
-                        + (had.indexOf(o.label) >= 0 ? ' checked' : '') + (S.serve ? '' : ' disabled') + '> <b>' + esc(o.label) + '</b> <span class="mute">'
-                        + esc(o.description || '') + '</span></label>';
-                }).join('') + '</fieldset>';
+                    return '<label class="pgo o"><input type="' + type + '" name="pg-' + i + '" value="' + esc(o.label) + '"'
+                        + (had.indexOf(o.label) >= 0 ? ' checked' : '') + dis + '> <b>' + esc(o.label) + '</b> <small>'
+                        + esc(o.description || '') + '</small></label>';
+                }).join('')
+                + '<label class="pgo o other"><input type="' + type + '" name="pg-' + i + '" value="__other"'
+                + (had.indexOf('__other') >= 0 ? ' checked' : '') + dis + '> <b>其他</b><input type="text" class="pgt" data-pg-other="' + i
+                + '" value="' + esc(others[i]) + '" placeholder="自己寫…" aria-label="' + esc(q.header || q.question) + '：其他"' + dis + '></label>'
+                + '</div></fieldset>';
         }).join('');
-        return '<div class="pg" data-block="pending-gate" data-pg-root="' + esc(s.root) + '" data-pg-id="' + esc(s.id) + '">'
+        return '<div class="pg gp" data-block="pending-gate" data-pg-root="' + esc(s.root) + '" data-pg-id="' + esc(s.id) + '">'
             + '<div class="h2">懸著的 gate <small>terminal 還等 ' + dur(left) + '，逾時就回 terminal 問</small></div>' + qs
-            + (S.serve ? '<div class="act"><button type="button" class="go" data-answer>送出答案</button></div><div class="pgr" role="status" aria-live="polite"></div>'
+            + (S.serve ? '<div class="act gpf"><span class="cnt">已答 <b class="pgn">' + (n - got.missing) + ' / ' + n + '</b></span>'
+                + '<span class="why">每題都要有答案</span><span class="spacer"></span>'
+                + '<button type="button" class="go" data-answer' + (got.missing ? ' disabled' : '') + '>送出答案</button></div>'
+                + '<div class="pgr" role="status" aria-live="polite"></div>'
                 : '<p class="tally">靜態頁不能作答：開 serve 的頁面，或回 terminal 答。</p>') + '</div>';
     }
 
@@ -1673,7 +1700,7 @@
             riseText: riseText, ctxSection: ctxSection, seqHtml: seqHtml, orderSection: orderSection,
             dur: dur, tasksHtml: tasksHtml, dispatchHtml: dispatchHtml, replayHtml: replayHtml, segmentsOf: segmentsOf, splitHtml: splitHtml,
             splitCount: splitCount,
-            pendingGateHtml: pendingGateHtml, todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
+            pendingGateHtml: pendingGateHtml, pgAnswers: pgAnswers, todoEntry: todoEntry, riseTodo: riseTodo, backTodo: backTodo, todoSpot: todoSpot,
             figures: figures, compareHtml: compareHtml,
             routeGroups: routeGroups, routeLedger: routeLedger,
             localDay: localDay, lastDays: lastDays, parseHash: parseHash, family: family, sessionTotals: sessionTotals,
@@ -3495,23 +3522,21 @@
         }
         var lg = route.view === 'days' && e.target.closest ? e.target.closest('.legend [data-key], .legend [data-rest]') : null;
         if (lg) { legendToggle(lg); return; }
-        // 懸著的 gate: a tick is remembered across the poll's re-read, and
-        // 送出答案 posts every question's picks to `/answer`.
-        var pgi = e.target.closest('.pg input');
+        // 懸著的 gate: a tick is remembered across the poll's re-read, the
+        // count and the button follow it, and 送出答案 posts every answer.
+        var pgi = e.target.closest('.pg input[name^="pg-"]');
         if (pgi) {
-            var pgb = pgi.closest('.pg'), pgn = pgi.getAttribute('name').slice(3);
-            view.pg[pgb.getAttribute('data-pg-id') + ':' + pgn] = [].map.call(pgb.querySelectorAll('input[name="pg-' + pgn + '"]:checked'), function (el) { return el.value; });
+            var pgb = pgi.closest('.pg');
+            pgSync(pgb);
             return;
         }
         var ans = e.target.closest('[data-answer]');
         if (ans) {
             var pg = ans.closest('.pg'), pgr = pg.querySelector('.pgr');
             var who = S.sessions.filter(function (x) { return x.id === pg.getAttribute('data-pg-id'); })[0];
-            var answers = {};
-            ((who && who.pending && who.pending.questions) || []).forEach(function (q, i) {
-                var got = [].map.call(pg.querySelectorAll('input[name="pg-' + i + '"]:checked'), function (el) { return el.value; });
-                if (got.length) answers[q.question] = got.join(', ');
-            });
+            var read = pgRead(pg, (who && who.pending && who.pending.questions) || []);
+            if (read.missing) { pgr.className = 'pgr bad'; pgr.textContent = '還有 ' + read.missing + ' 題沒答'; return; }
+            var answers = read.answers;
             var form = new URLSearchParams();
             form.set('nonce', S.nonce || '');
             form.set('root', pg.getAttribute('data-pg-root'));
@@ -3954,6 +3979,34 @@
         el.src = src + (src.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now();
         doc.head.appendChild(el);
     }
+    // The answers the form holds right now, read off the DOM with `pgAnswers`,
+    // and the same read written back into `view.pg` so a redraw keeps them.
+    function pgRead(pgb, questions) {
+        var id = pgb.getAttribute('data-pg-id'), picks = {}, others = {};
+        questions.forEach(function (q, i) {
+            picks[i] = [].map.call(pgb.querySelectorAll('input[name="pg-' + i + '"]:checked'), function (el) { return el.value; });
+            var t = pgb.querySelector('[data-pg-other="' + i + '"]');
+            others[i] = t ? t.value : '';
+            view.pg[id + ':' + i] = picks[i];
+            view.pg[id + ':' + i + ':other'] = others[i];
+        });
+        return pgAnswers(questions, picks, others);
+    }
+    function pgSync(pgb) {
+        var who = S.sessions.filter(function (x) { return x.id === pgb.getAttribute('data-pg-id'); })[0];
+        var qs = (who && who.pending && who.pending.questions) || [];
+        var got = pgRead(pgb, qs), btn = pgb.querySelector('[data-answer]'), cnt = pgb.querySelector('.pgn');
+        if (btn) btn.disabled = got.missing > 0;
+        if (cnt) cnt.textContent = (qs.length - got.missing) + ' / ' + qs.length;
+    }
+    // Typing in 其他 ticks its box, the way the mockup does, and re-counts.
+    doc.addEventListener('input', function (e) {
+        var t = e.target && e.target.closest ? e.target.closest('.pg [data-pg-other]') : null;
+        if (!t) return;
+        var box = t.closest('.o').querySelector('input[value="__other"]');
+        if (box) box.checked = t.value.trim() !== '';
+        pgSync(t.closest('.pg'));
+    });
     // The session whose detail is on screen: the session page's, or the row
     // selected on 清單.
     function watched() {

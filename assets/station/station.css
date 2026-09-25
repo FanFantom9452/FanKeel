@@ -1013,6 +1013,34 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .pg .act{margin-top:8px}
 .pg .pgr.ok{color:var(--fg-2)}
 .pg .pgr.bad{color:var(--ind)}
+.gp{background:var(--panel);border-radius:var(--r);padding:20px 24px 18px;max-width:760px;box-shadow:inset 0 0 0 1.5px var(--ink)}
+.gp .gph{display:flex;align-items:center;gap:10px}
+.gp .gph h3{font-size:15px}
+.gp .gpsrc{font-size:12px;color:var(--muted);margin:2px 0 0;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.gp .gpsrc code{font:11px var(--f-mono);color:var(--ink2)}
+.gp fieldset{border:0;margin:16px 0 0;padding:14px 0 0;border-top:1px solid var(--rule)}
+.gp legend{padding:0;font-size:14px;font-weight:600;display:flex;align-items:baseline;gap:8px;width:100%}
+.gp legend .gtag{font:600 11px var(--f-ui);letter-spacing:.06em;color:var(--ink2);background:var(--inset);padding:1px 7px;border-radius:var(--r-pill)}
+.gp legend .multi{font:400 11px var(--f-ui);color:var(--muted)}
+.gp legend .st{margin-left:auto;font:400 11px var(--f-ui);color:var(--muted)}
+.gp legend .st.on{color:var(--good)}
+.gp .opts2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.gp .o{position:relative;display:grid;grid-template-columns:16px minmax(0,1fr);gap:2px 9px;padding:10px 12px;border-radius:8px;box-shadow:inset 0 0 0 1px var(--rule2);cursor:pointer;transition:box-shadow .15s var(--ez),background .15s var(--ez)}
+.gp .o:hover{background:var(--wash)}
+.gp .o input{margin:2px 0 0;accent-color:var(--ink);width:14px;height:14px}
+.gp .o b{font-size:13px;font-weight:600}
+.gp .o small{grid-column:2;font-size:11.5px;color:var(--muted);line-height:1.4}
+.gp .o:has(input:checked){box-shadow:inset 0 0 0 1.5px var(--ink)}
+.gp .o:has(input:focus-visible){outline:2px solid var(--ink);outline-offset:2px}
+.gp .o.other{grid-column:1 / -1;align-items:center}
+.gp .o.other input[type=text]{grid-column:2;width:100%;margin:4px 0 0;padding:7px 10px;border:1px solid var(--rule2);border-radius:6px;background:var(--ground);color:var(--ink);font:12.5px var(--f-ui);accent-color:auto;height:auto}
+.gp .o.other input[type=text]::placeholder{color:var(--muted)}
+.gp .o.other input[type=text]:focus{outline:2px solid var(--ink);outline-offset:0;border-color:transparent}
+.gp .rec2{font:600 11px var(--f-ui);padding:0 5px;border-radius:3px;background:var(--good);color:var(--panel);line-height:15px;margin-left:6px;vertical-align:1px}
+.gp .gpf{display:flex;align-items:center;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid var(--rule2)}
+.gp .cnt{font-size:12px;color:var(--ink2)}
+.gp .cnt b{font-family:var(--f-mono)}
+.gp .why{font-size:11.5px;color:var(--muted)}
 
 /* ---- the tab strip under a Sessions or 花費 page (2026-09-25) ---- */
 .subtabs{display:inline-flex;gap:2px;padding:3px;margin:-6px 0 14px;background:var(--inset);border-radius:9px;flex:none;align-self:flex-start}

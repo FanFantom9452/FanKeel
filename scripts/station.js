@@ -526,6 +526,12 @@ async function serve(opts) {
                 fail(400, 'answers maps each question asked to a non-empty answer');
                 return;
             }
+            // Every question asked, not some: a partial answer used to reach the
+            // file, and the hook sent the gate out answered with the rest blank.
+            if (keys.length !== asked.size) {
+                fail(400, 'answers every question asked — ' + asked.size + ' asked, ' + keys.length + ' answered');
+                return;
+            }
             handoff.writeAnswer(handoff.answerPath(reg.root, mine, mine.stage), JSON.stringify({ answers }, null, 2) + '\n');
             res.writeHead(201, { 'content-type': 'text/plain; charset=utf-8' });
             res.end('answered ' + keys.length + ' question' + (keys.length === 1 ? '' : 's') + '\n');

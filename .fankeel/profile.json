@@ -8,5 +8,6 @@
     "build",
     "verify"
   ],
-  "guard": "deny"
+  "guard": "deny",
+  "gate.station": 300
 }

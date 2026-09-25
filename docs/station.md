@@ -179,11 +179,11 @@ an inline copy of the predicate rather than a `hiddenPkeys()` call, because
 that loop is keyed by the raw profiles directory rather than by pkey —
 `write()`'s detail-file loop described below, and `--json`'s own pass
 outside this file
-(`scripts/station.js:679`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
+(`scripts/station.js:685`, `r.sessions = r.sessions.filter((s) => !hidden.has(s.project ? r.root + '/' + s.project : r.root));`).
 There is no trace on
 the page that a project was left out: no count, no note on the footer. `station.js`'s own text
 summary — not the served page — does print how many projects it excluded
-(`scripts/station.js:780`, `hidden by station.hide`), but names none of
+(`scripts/station.js:786`, `hidden by station.hide`), but names none of
 them; the terminal is the only place the fact surfaces at all.
 
 ### The stage strip
@@ -197,7 +197,7 @@ time: every row's strip fills the same width, so a ten-minute session and a
 ten-hour one look the same size — only their segments' own widths differ.
 
 No stages at all draws no strip and no table, just one line —
-`沒有分階段紀錄` (`assets/station/station.js:2401`, `沒有分階段紀錄`) — a
+`沒有分階段紀錄` (`assets/station/station.js:2428`, `沒有分階段紀錄`) — a
 session that has not crossed a stage boundary has nothing to proportion.
 
 Below the strip is the table it is drawn from — one row per stage, with the
@@ -206,7 +206,7 @@ stage's minutes went on a gate rather than on work. Neither carries a dollar
 figure any more; a stage's own cost surfaces in the per-route stage
 ledger on each project page, and per stage and model inside the session
 page's 概覽, under a `<details class="csmore">` element
-(`assets/station/station.js:2155`) — not on this table's rows.
+(`assets/station/station.js:2182`) — not on this table's rows.
 
 A stage's dollar figure needs `spend`, which `hooks/leave.js` writes once, at
 session end — a live session does not have it yet, and no session that ended
@@ -263,7 +263,7 @@ agent's return entered the main context.
 
 Where a stage's dollars live is no longer its own tab: the stage × model
 table now sits inside 概覽, under a `<details>` element titled "stage × model
-明細" (`assets/station/station.js:2155`, `<details class="csmore">`). Above
+明細" (`assets/station/station.js:2182`, `<details class="csmore">`). Above
 it, when the session has a detail loaded, sits the timeline chart, which now
 also tints its background by stage; and above that sits `costShareHtml`
 (`assets/station/station.js:1105`, `function costShareHtml(L, hi) {`), a bar
@@ -468,7 +468,7 @@ otherwise point outside the repository it sits in.
 
 Before `station-data.js` arrives the shell has nothing to draw, so
 `station.css` alone fills that wait
-(`assets/station/station.css:1051`, `first load`): CSS-only placeholders
+(`assets/station/station.css:1079`, `first load`): CSS-only placeholders
 stand in for the nav and the page, with a `計算中…` spinner beside where the
 side panel would sit, and the placeholders hold still rather than animate
 under `prefers-reduced-motion`.
@@ -528,18 +528,18 @@ is to change the profile and reload.
 
 The facets are on 清單, above its table — state and stage with a count on each
 button, registry with one button per root
-(`assets/station/station.js:2233`, `moved onto the page they narrow`) — and
+(`assets/station/station.js:2260`, `moved onto the page they narrow`) — and
 the search box in the top bar matches task, project, session id, registry
 label, model, state, next, the files touched and its notes — AND-ed.
 
 The same box also opens a grouped-results popover about 200 ms after typing
-stops (`assets/station/station.js:3806`, `}, 200)`): `qGroups`
-(`assets/station/station.js:3722`, `function qGroups(q) {`) buckets what
+stops (`assets/station/station.js:3831`, `}, 200)`): `qGroups`
+(`assets/station/station.js:3747`, `function qGroups(q) {`) buckets what
 matches into Sessions, 專案 and 文件, up to five rows each with a 看全部 link
 when there are more, and `qDraw`
-(`assets/station/station.js:3763`, `function qDraw() {`) draws it with each
+(`assets/station/station.js:3788`, `function qDraw() {`) draws it with each
 match highlighted. `/` focuses the box from anywhere on the page
-(`assets/station/station.js:3891`, `if (e.key === '/')`), the arrow keys
+(`assets/station/station.js:3916`, `if (e.key === '/')`), the arrow keys
 move the selection, Enter opens what is picked and Esc closes the popover.
 文件 matches only the paths and buckets the page's own data carries, because
 there is no doc body on the client to search.
@@ -551,14 +551,14 @@ above the list otherwise; it does not merely hide rows.
 A gone registry keeps its facet button, labelled `— gone`, rather than
 dropping off the row, so selecting one never returns a blank pane with nothing
 on the page saying why:
-`goneNote()` (`assets/station/station.js:1823`, `function goneNote(root)`) prints a
+`goneNote()` (`assets/station/station.js:1850`, `function goneNote(root)`) prints a
 card reading `gone — no sessions/ here any more` in its place, alongside the
 `--forget` that would drop it for good.
 
 A registry that is not gone gets its own card once it is the one selected on
 清單, and every project page carries the same card for its own registry no
 matter what is selected there: `registryNote()`
-(`assets/station/station.js:1840`, `function registryNote(root)`) prints its
+(`assets/station/station.js:1867`, `function registryNote(root)`) prints its
 own unreadable-session count, its `map.md` date — or `不存在` when there is
 none — and its build directories with each one's file count, or says there
 are none. The old page carried all three on a per-registry meta line; the
@@ -566,7 +566,7 @@ redesign dropped that line, and this card is where its contents live now. The
 footer's own unreadable count stays the total across every registry and is
 hidden only on 清單 once a registry there is selected: one that is not gone
 carries the same count on its own card
-(`assets/station/station.js:2435`, `a corrupt-entry count must`), and a gone
+(`assets/station/station.js:2462`, `a corrupt-entry count must`), and a gone
 one has no session files left to count
 (`lib/station.js:449`, `gone: true, unreadable: 0`); everywhere
 else — a project page included, whose own card shows only its registry's
@@ -587,21 +587,21 @@ root separates on its own and always did.
 
 `#/` is now **儀表板**, a dashboard of four cards, each reading the same rows
 its own full page reads so its numbers always match that page:
-`dashLive` (`assets/station/station.js:1884`, `function dashLive(R) {`)
+`dashLive` (`assets/station/station.js:1911`, `function dashLive(R) {`)
 counts today's `live` sessions and lists them, each row linking to `#/live`;
-`dashGate` (`assets/station/station.js:1897`, `function dashGate(R) {`)
+`dashGate` (`assets/station/station.js:1924`, `function dashGate(R) {`)
 counts the sessions with a pending gate — `s.pending.questions` non-empty —
 and how long each has waited, also linking to `#/live`; `dashSpend`
-(`assets/station/station.js:1911`, `function dashSpend(R) {`) is a small bar
+(`assets/station/station.js:1938`, `function dashSpend(R) {`) is a small bar
 spark of the last 30 days' spend with today's and yesterday's figures beside
 it, linking to `#/days`; and `dashRecent`
-(`assets/station/station.js:1926`, `function dashRecent(R) {`) lists the 5
+(`assets/station/station.js:1953`, `function dashRecent(R) {`) lists the 5
 newest sessions out of the 30-day window, linking to `#/sessions`. What used
 to be `#/`'s own registry-card content — one card per registry that is not
 `gone`, with its live and stale sessions under it; a session that is down has
 finished and moved onto 最近 sessions instead — is unchanged in what
 `nowHtml` draws, but it now lives at `#/live` (進行中) instead, and
-`livePage` (`assets/station/station.js:1869`, `function livePage() {`) now
+`livePage` (`assets/station/station.js:1896`, `function livePage() {`) now
 also passes a subtabs strip above the cards (`subtabsHtml('live')`).
 
 The left nav (`navHtml`, `data-block="nav"`) no longer groups its links into
@@ -634,10 +634,10 @@ read with `stored()`'s try/catch so a `file:` page or private mode with no
 `localStorage` just has no preference. `station.nav.collapsed` holds which
 categories are folded shut — read once into `navShut` on load and written
 back by `navFoldSet` on every press of a fold button
-(`assets/station/station.js:3407`, `'station.nav.collapsed'`). `station.theme`
+(`assets/station/station.js:3434`, `'station.nav.collapsed'`). `station.theme`
 holds the three-state 跟隨系統/淺色/深色 button at the foot of the sidenav; a
 click cycles it and writes the new value
-(`assets/station/station.js:3443`, `'station.theme'`), and the
+(`assets/station/station.js:3470`, `'station.theme'`), and the
 stored value is read and set as `data-theme` on `<html>` before the page's
 first paint, so a reader on 深色 never sees a flash of light first
 (`assets/station/station.js:23`, `themeSet(stored('station.theme'));`).
@@ -712,7 +712,7 @@ rather than expanding the row, so two sessions can be compared without
 scrolling. Sorting is by task, stage, context, cost, state, started or last
 action, clicking twice to reverse — `started` keeps a column and header of its
 own so it stays reachable as a sort key, the same reason the page this
-replaces sorted by it (`assets/station/station.js:2178`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
+replaces sorted by it (`assets/station/station.js:2205`, `a sort key with no header is a sort nobody can reach`). `gather` still returns sessions ordered by
 `updated` descending, so the page's first sort is the one it arrived in.
 
 **比較** is a third view. Tick two sessions on 清單 or a project page — only a
@@ -775,7 +775,7 @@ Both decisions are pure functions above the `module.exports` guard, so both
 are unit tested: what to say
 (`assets/station/station.js:1257`, `function serveLost(lastOkMs, nowMs, genAbs, genRel) {`)
 and what the eyebrow reads
-(`assets/station/station.js:1663`, `function heroEyebrow(frozenAt) {`). The
+(`assets/station/station.js:1690`, `function heroEyebrow(frozenAt) {`). The
 fetch that feeds them, the bar they fill and the pill are the document half
 below the guard. The eyebrow is rendered rather than patched, so it takes a
 redraw — but only as the state flips, never on a poll that finds nothing
@@ -888,7 +888,7 @@ for the child cannot read the old url as the new one.
 `clearEntry` once per row so the checks are the same list rather than a
 second copy of them. A clean run redirects to `/?cleared=N`, and the reloaded
 page still prints that count in a banner above the rows
-(`assets/station/station.js:1870`, `cleared ' + S.cleared + ' stale rows`); a
+(`assets/station/station.js:1897`, `cleared ' + S.cleared + ' stale rows`); a
 refusal answers `409` with which rows it refused and why, since a redirect
 has nowhere to say it. It takes the same `force` tick and the same nonce as
 the single-row button, and every registry card now carries one:
@@ -922,9 +922,14 @@ writes the questions to `<stage>-pending.json` beside the task's
 `<stage>-answer.md` (`pendingPath` in `lib/handoff.js`), reads the answer
 file every 200 ms, and removes the pending file however the wait ends. The
 session's page shows the held gate as **懸著的 gate**; served, each question
-is a set of options and 送出答案 posts them to `POST /answer`, which checks
+is a set of options. Every question also has a 其他 box: typed text is the
+answer on a single-choice question and one more pick on a multi-select one
+(`pgAnswers`), and 送出答案 stays disabled until every question has an
+answer. 送出答案 posts them to `POST /answer`, which checks
 the nonce, that the session has a gate held (`readPending`, 409 otherwise)
-and that every answer names a question asked (400 otherwise), then writes
+and that every answer names a question asked, and that every question asked
+has one (400 otherwise — a partial answer is refused rather than sent on),
+then writes
 `{ "answers": { … } }` — the shape `hooks/resume.js` writes after a gate —
 to the answer file. The hook sends the question out already answered
 (`permissionDecision: allow` with `updatedInput.answers`, the shape the
@@ -997,7 +1002,7 @@ from 清單 — `serialize()`'s `profiles.projects` drops it exactly where
 button left on the served page to reach it again. This is not because the
 `POST` above would refuse it: `known` here builds its own fresh, unfiltered
 model rather than reading the page's filtered one
-(`scripts/station.js:543`, `const known = model.registries.some(`), so a
+(`scripts/station.js:549`, `const known = model.registries.some(`), so a
 hidden project's directory is still in it, and a request naming one that
 somehow still reached the server would succeed, not `404`. The scope button
 is simply never drawn to click, so unhiding is
