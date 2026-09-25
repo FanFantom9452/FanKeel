@@ -1632,6 +1632,63 @@
             + wizStepsHtml(W) + '</ol><div class="wbody">' + body + '</div></div>';
     }
 
+    // ---- tune: a block changed ----------------------------------------------
+    // One project's queue can sit on several sessions' rows; an id is one
+    // request wherever it appears. `tuneEvents` is every request that was in
+    // progress on the last read and has settled on this one — a request first
+    // seen settled is not news.
+    function tuneItems(sessions) {
+        var out = {};
+        (sessions || []).forEach(function (s) {
+            ((s.tune && s.tune.items) || []).forEach(function (it) { out[it.id] = it; });
+        });
+        return out;
+    }
+    function tuneOpen(sessions) {
+        return (sessions || []).some(function (s) { return s.tune && s.tune.open > 0; });
+    }
+    function tuneEvents(prev, next) {
+        var was = tuneItems(prev), now = tuneItems(next), out = [];
+        Object.keys(now).forEach(function (id) {
+            var a = was[id], b = now[id];
+            if (a && (a.status === 'queued' || a.status === 'taken') && (b.status === 'done' || b.status === 'rejected')) {
+                out.push({ id: b.id, block: b.block, status: b.status });
+            }
+        });
+        return out;
+    }
+    function toastText(ev) {
+        return (ev.status === 'done' ? '已修改完成：' : '沒有修改：') + ev.block;
+    }
+    function toastHtml(ev) {
+        var done = ev.status === 'done';
+        return '<div class="toast ' + (done ? 'done' : 'rej') + '" data-toast="' + esc(ev.id) + '">'
+            + '<span class="ti">' + (done ? '✓' : '✕') + '</span>'
+            + '<span class="tt">' + (done ? '已修改完成：' : '沒有修改：') + '<code>' + esc(ev.block) + '</code></span>'
+            + '<button class="tx" type="button" data-toast-x aria-label="關閉">×</button>'
+            + '<span class="tb">' + (done ? '改過的頁面由 tune 自己重新載入。' : '要求超出這個 block，已退回。') + '</span></div>';
+    }
+    // The masthead chip: in progress and done across every project on the
+    // page, and the tune server's url when one project has one. `permission` is
+    // `Notification.permission`; `default` adds the button that asks for it.
+    function tuneChipHtml(sessions, permission) {
+        var open = 0, done = 0, url = null, seen = {};
+        (sessions || []).forEach(function (s) {
+            if (!s.tune) return;
+            var key = s.tune.url || s.root;
+            if (seen[key]) return;
+            seen[key] = true;
+            open += s.tune.open;
+            done += s.tune.done;
+            url = url || s.tune.url;
+        });
+        if (!Object.keys(seen).length) return '';
+        return '<a class="tchip"' + (url ? ' href="' + esc(url) + '" target="_blank" rel="noopener"' : '') + ' title="打開 tune 頁">'
+            + '<i class="dot' + (open ? ' live' : '') + '"></i>tune 進行中 <b>' + open + '</b><i class="sep"></i>完成 <b>' + done + '</b>'
+            + (url ? '<code>' + esc(url.replace(/^https?:\/\//, '').replace(/\/$/, '')) + '</code>' : '') + '</a>'
+            + (permission === 'default' ? '<button type="button" class="btn" data-tune-notify>背景時通知我</button>' : '');
+    }
+
     // What 送出答案 sends, and how many questions have no answer yet. Typed
     // 其他 text is the answer on a single-choice question and one more pick on a
     // multi-select one; the `__other` box itself is never an answer.
@@ -1719,6 +1776,7 @@
             stageShare: stageShare, costShareHtml: costShareHtml, subtabsHtml: subtabsHtml,
             dashLive: dashLive, dashGate: dashGate, dashSpend: dashSpend, dashRecent: dashRecent, dashPage: dashPage,
             NAV_TREE: NAV_TREE,
+            tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastHtml: toastHtml, toastText: toastText, tuneChipHtml: tuneChipHtml,
         };
     }
     if (!doc) return;
@@ -3424,6 +3482,12 @@
         else if (chartHover) chartHide();
         else if (route.view === 'days') chartFocus(chartPin);
         if (route.view === 'days') legendArm();
+        var tc = doc.getElementById('tunechip');
+        if (tc) {
+            var chip = tuneChipHtml(S.sessions, w.Notification ? w.Notification.permission : 'denied');
+            tc.innerHTML = chip;
+            tc.hidden = !chip;
+        }
         drawNav();
         drawSide();
         doc.getElementById('gen').textContent = genText();
@@ -3522,6 +3586,12 @@
         }
         var lg = route.view === 'days' && e.target.closest ? e.target.closest('.legend [data-key], .legend [data-rest]') : null;
         if (lg) { legendToggle(lg); return; }
+        var tx = e.target.closest('[data-toast-x]');
+        if (tx) { var t = tx.closest('.toast'); if (t && t.parentNode) t.parentNode.removeChild(t); return; }
+        if (e.target.closest('[data-tune-notify]') && w.Notification) {
+            w.Notification.requestPermission().then(function () { draw(); });
+            return;
+        }
         // 懸著的 gate: a tick is remembered across the poll's re-read, the
         // count and the button follow it, and 送出答案 posts every answer.
         var pgi = e.target.closest('.pg input[name^="pg-"]');
@@ -4013,9 +4083,22 @@
         var id = route.view === 'session' ? route.id : route.view === 'list' ? sel : null;
         return id ? S.sessions.filter(function (x) { return x.id === id; })[0] || null : null;
     }
+    // A settled tune request, said as a toast here and — with the tab in the
+    // background and permission given — as a browser notification. The
+    // changed page reloads itself through tune's own overlay.
+    function tuneNotify(prev, next) {
+        var box = doc.getElementById('toasts');
+        tuneEvents(prev, next).forEach(function (ev) {
+            if (box) box.innerHTML += toastHtml(ev);
+            if (doc.hidden && w.Notification && w.Notification.permission === 'granted') {
+                try { new w.Notification(toastText(ev)); } catch (err) { /* the browser refused it */ }
+            }
+        });
+    }
     function refresh() {
-        if (busy || doc.hidden) return;
+        if (busy || (doc.hidden && !tuneOpen(S.sessions))) return;
         busy = true;
+        var before = S.sessions;
         reload('station/station-data.js', function (ok) {
             if (!ok || !w.STATION || w.STATION === S) { busy = false; return; }
             // `cleared` rides on the one load `/clear-stale` redirected to, and
@@ -4024,6 +4107,8 @@
             S = w.STATION;
             freshen();
             polledAt = Date.now();
+            tuneNotify(before, S.sessions);
+            if (doc.hidden) { busy = false; return; }
             var s = watched();
             var done = function () { busy = false; repaint(); };
             if (s && s.state === 'live' && s.hasDetail) reload('station/detail/' + encodeURIComponent(s.id) + '.js', done);

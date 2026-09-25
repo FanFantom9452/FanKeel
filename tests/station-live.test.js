@@ -105,6 +105,7 @@ function boot(hash, first, answer, protocol) {
             },
         },
     };
+    doc.__win = win;
     vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams, fetch: () => Promise.resolve({ ok: true }) });
     return {
         html: () => html, loaded, timers, gen: () => els.gen.textContent, doc,
@@ -191,6 +192,34 @@ test('a hidden tab re-reads nothing on its tick', async () => {
     p.timers[3000]();
     await settle(); await settle();
     assert.equal(p.loaded.length, at, 'nothing was loaded while the tab was hidden');
+});
+
+// docs/plans/2026-09-26-station-redesign.md Task 8. The one exception to the
+// test above: while a tune request is in progress the hidden tab keeps
+// reading, so it can say the block was changed — a toast, and a browser
+// notification when permission was given. With nothing in progress it still
+// reads nothing, which is the test above.
+test('a hidden tab with a tune request in progress re-reads, and says when the block is done', async () => {
+    const tuned = (status) => Object.assign(station('live', 'tune ' + status), {
+        sessions: [Object.assign({}, ROW, { state: 'live', task: 't', hasDetail: false,
+            tune: { open: status === 'taken' ? 1 : 0, done: status === 'done' ? 1 : 0, rejected: 0, url: 'http://127.0.0.1:7819/',
+                items: [{ id: 'r-0001', block: 'wizard-step', status }] } })],
+    });
+    const p = boot('#/s/aaaa1111-0000/cost', tuned('taken'), (src, win) => {
+        if (src.indexOf('station/station-data.js') === 0) win.STATION = tuned('done');
+    });
+    const said = [];
+    const win = p.doc.__win;
+    win.Notification = function (text) { said.push(text); };
+    win.Notification.permission = 'granted';
+    await settle(); await settle();
+    p.doc.hidden = true;
+    const before = p.loaded.length;
+    p.timers[3000]();
+    await settle(); await settle();
+    assert.equal(p.loaded.length, before + 1, 'the hidden tab read once');
+    assert.deepEqual(said, ['已修改完成：wizard-step']);
+    assert.match(p.doc.getElementById('toasts').innerHTML, /已修改完成：<code>wizard-step<\/code>/);
 });
 
 test('a re-read that errors leaves the page\'s data as it was, and clears busy for the next tick', async () => {
