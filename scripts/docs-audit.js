@@ -402,12 +402,20 @@ function diagramsIn(text) {
 // date by design and a fixture describes nothing — and the root signposts are
 // one batch of their own, `.`.
 const BATCH_PAGES = 40;
+
+// The tree to read by: the project's own docs.json if it declared one, else
+// the preset `detect()` infers, and which of the two it was — sweep()'s
+// return value reports `implied`; batches() only needs the tree.
+function resolveTree(root) {
+    const declared = docs.read(root);
+    const implied = declared.tree ? null : docs.detect(root);
+    return { tree: declared.tree || (implied ? docs.normalise(docs.PRESETS[implied]) : null), implied };
+}
+
 function batches(root) {
     const listed = trackedFiles(root);
     if (!listed) return [];
-    const declared = docs.read(root);
-    const implied = declared.tree ? null : docs.detect(root);
-    const tree = declared.tree || (implied ? docs.normalise(docs.PRESETS[implied]) : null);
+    const tree = resolveTree(root).tree;
     const groups = new Map();
     for (const rel of listed.files.filter(isMarkdown)) {
         const b = docs.isSignpost(rel) ? { path: '.', role: 'reference' }
@@ -453,8 +461,7 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     // shape on disk is what stops the first run on an unconfigured project
     // reporting every plan as a reference document that has fallen behind.
     const declared = docs.read(root);
-    const implied = declared.tree ? null : docs.detect(root);
-    const tree = declared.tree || (implied ? docs.normalise(docs.PRESETS[implied]) : null);
+    const { tree, implied } = resolveTree(root);
     const error = declared.error;
     const files = listed.files;
     const markdown = files.filter(isMarkdown);

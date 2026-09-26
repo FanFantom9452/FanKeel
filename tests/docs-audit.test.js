@@ -77,6 +77,9 @@ test('--batches lists the batches, --batch <n> prints one batch\'s pages, --reco
   assert.deepEqual(one.text.split('\n'), ['docs/p40.md', 'docs/p41.md', 'docs/p42.md', 'docs/p43.md', 'docs/p44.md']);
   assert.equal(audit.main(['--root', root, '--batch', '9'], NOW).code, 2);
   assert.equal(fs.existsSync(path.join(root, '.fankeel', 'audit.json')), false, 'listing batches is not a run');
+  assert.equal(audit.BATCH_PAGES, 40);
+  const written = audit.recordRun(root, NOW);
+  assert.equal(written, path.join(root, '.fankeel', 'audit.json'));
   audit.main(['--root', root, '--record'], NOW);
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'audit.json'), 'utf8')), { last: '2026-08-21' });
 });
