@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 分類重設：Waiting 拆成 Blocked 與 Watch — 設計

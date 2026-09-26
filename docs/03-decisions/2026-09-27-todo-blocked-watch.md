@@ -7,7 +7,7 @@ last_verified: 2026-09-27
 
 一句話：`TODO.md` 的 `## Waiting` 拆成兩個標題。`## Blocked` 放能檢查的等待，條件行是 `on: MM-DD`、`after: <文字>` 或 `upstream: <文字>`；`## Watch` 放只有撞到的人知道的事，條件行是 `if: <事件>`。
 
-設計見 [../90-agent/plans/2026-09-27-todo-blocked-watch-design.md](../90-agent/plans/2026-09-27-todo-blocked-watch-design.md)，計畫見 [../90-agent/plans/2026-09-27-todo-blocked-watch.md](../90-agent/plans/2026-09-27-todo-blocked-watch.md)。
+設計見 [archive/2026-09-27-todo-blocked-watch-design.md](../99-archive/2026-09-27-todo-blocked-watch-design.md)，計畫見 [archive/2026-09-27-todo-blocked-watch.md](../99-archive/2026-09-27-todo-blocked-watch.md)。
 
 ## 為什麼
 
