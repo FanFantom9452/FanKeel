@@ -77,7 +77,6 @@ what gets scheduled.
 ## Ready
 
 - 〔audit〕`/fankeel-audit` 擴充成定期清理機制：docs tree 合規、搬遷對照表、大 repo 分批、排程提醒；先搬 fankeel 自己的 docs，再跑 Trovara — [docs/documents.md](docs/documents.md).
-- 〔context〕任務交換區 `.fankeel/build/task-*/context.md`：已驗證事實附 file:line 與 sha，brief 只給路徑、按需讀，上限 40 條，量省多少 — [docs/subagents.md](docs/subagents.md).
 - 〔wizard〕auto 選項缺 mockup 有畫的外開圖示（`fopen`）：`seg()` 樣板沒吐出來 — [assets/station/station.js](assets/station/station.js).
 
 ## Needs a decision

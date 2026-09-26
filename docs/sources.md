@@ -12,7 +12,7 @@ reverse-index column so that changing a figure says which pages have to
 change with it. This page is that mechanism for fankeel's own dated reports.
 
 Every row below is one of the dated reports at the top level of
-`docs/reports/`. Twenty-seven sit there and twenty-seven have a row; the heading
+`docs/reports/`. Thirty sit there and thirty have a row; the heading
 counts rows across both tables, not files. A row is still added by hand, and
 `tests/sources-doc.test.js` fails while a report there has none — the heading
 is the one number left to keep in step by hand.
@@ -36,7 +36,7 @@ dispatch-vs-inline residue (9.2× / 2.55× / 1.5×), which is one gradient, not
 three disagreeing numbers, once each row's Scope says which variable it held
 fixed.
 
-## The twenty-seven reports
+## The thirty reports
 
 | ID | What it measured | Link | Checked | Evidence level | Scope | Cited by |
 |---|---|---|---|---|---|---|
@@ -68,6 +68,7 @@ fixed.
 | `PONYTAIL-REMAINDER-260924` | ponytail 4.9.0 沒收的六個候選（`ponytail-debt`、`ponytail-gain`、`ponytail-help`、三個 hook）逐條做什麼、§6.5 為什麼沒收、今天的 fankeel 有沒有等價機制 | [reports/2026-09-24-ponytail-remainder.md](reports/2026-09-24-ponytail-remainder.md) | 2026-09-24 | documentation read, not measured — 對照 `docs/improvement-brief.md` §6.5 與本機仍在的安裝副本 `~/.claude/plugins/cache/ponytail-per-session/ponytail/4.9.0`（六個 skill 的 `SKILL.md`、三個 hook 的原始碼），逐條列出候選表，沒有跑任何腳本或分數 | 六個候選裡三個「沒有等價」或「部分等價」列出具體差異；`AskUserQuestion` 在派出這份檔的 in-session subagent 不可用，六題全部留白待問，`TODO.md` 尚未因任一答案加新條目 | `docs/README.md`, `docs/decisions/2026-09-24-optimise-own-first.md` |
 | `BRAIN-WAKEUP-260923` | 一個用單一個字 `waiting` 結束 turn 的 subagent，在它派出去的子 agent 完成後會不會被 harness 自動喚醒，以及那個 `waiting` 會不會被父層誤當成回報 | [reports/2026-09-23-brain-wakeup.md](reports/2026-09-23-brain-wakeup.md) | 2026-09-23 | measured, n=1 — 主 session 在 2026-09-23 10:28 派一個 general-purpose subagent，它再派一個子 agent 做約 45 秒的工作後自己用 `waiting` 結束 turn；兩份 transcript 留在本機、沒有提交，本頁不會重新產生 | 子 agent 結果到達後 3 秒內喚醒，之前 52 秒沒有任何 tool call，父層從頭到尾沒看到 `waiting` 這個字：brain 的 Return 段用 `waiting` 結束 turn 不輪詢的做法成立。回報只經由 `SubagentHandback` 到達父層，而那條路會掉——同一天對已停下的 brain 兩次 `SendMessage` 顯示 `queued` 後遺失、一次 `commit` hand-back 沒到主控——所以主控改成在背景跑 `scripts/await.js` 等檔案 | `agents/fankeel-brain.md`, `docs/README.md`, `docs/decisions/2026-09-23-controller-await.md`, `docs/subagents.md` |
 | `CONTROLLER-MULTIPLIER-260925` | 投影空著的 k 第一次實測，一對 opus／sonnet 主控跑同一個小 task，可比三站 k 2.29–2.74 夾住破平衡點 2.5052 | [reports/2026-09-25-controller-multiplier.md](reports/2026-09-25-controller-multiplier.md) | 2026-09-25 | measured (paired A/B on one small task — todo-check 行號那條，約 3 個檔；sonnet arm n=1, opus arm n=2 after a failed first run) | 只有 design+plan+build 能比：sonnet 的 verify 自己另外派了一個 `fankeel:fankeel-brain`，那次 `-p` 呼叫在等 `await.js` 時就結束了，verify 從沒跑完，所以「全部」那個 k=2.125 不是站得住的標題數字。可比的幾站上 k 落在 2.29–2.74（看用哪一輪 opus 當分母），剛好跨在投影頁的破平衡點 2.5052 兩側；兩次 opus 重跑本身就差了 11%（$11.47 對 $12.75），這是一對量測能解析到的極限。sonnet 在 design 與 plan 多跑了不少輪（33 對 10、39 對 19）。總花費 $42.84，在 $125 預算之內 | `docs/README.md`, `docs/decisions/2026-09-25-todo-line-and-multiplier.md` |
+| `CONTEXT-MD-260926` | `context.md` 這條任務交換區能不能省 subagent brief 的 token — 一對 with/without worktree，brief 是否點名 `context.md`，跑同一個過期 todo-check bug 任務 | [reports/2026-09-26-context-md.md](reports/2026-09-26-context-md.md) | 2026-09-26 | measured, but the mechanism under test never ran (paired A/B, n=1 per arm) | `with` $2.5394805999999996／6,039,357 tokens 對 `without` $10.281673999999999／29,539,693 tokens（4.049×／4.891×），但兩個 arm 在 design 站都獨立發現任務描述的 bug 已被 `02d32348`（2026-09-25）修掉，`with` 的 build 產出 0 檔案改動，`without` 產出 85 行文件；**兩個 arm 都從未派出任何 subagent**（`<session>/subagents/*.jsonl` 兩邊皆空），而 `context.md` 存在的唯一理由就是縮短派給 subagent 的 brief，所以這次比值量到的是兩個頂層 session 各自追查同一個過期 bug 報告的成本，不是 `context.md` 的效果——它完全沒被觸發過一次 | `docs/README.md`, `docs/subagents.md` |
 
 ## Consulted with no usable numbers
 
