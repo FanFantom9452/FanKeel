@@ -1287,8 +1287,8 @@ test('fankeel-land: uninstalling a decoupled plugin is offered, never run here',
 // dispatch. The plan skill carries the fourth Dispatch form that marks them.
 test('build sends what ledger.js ready lists and asks about the hands first; plan carries the user form', () => {
   const build = read('fankeel-build');
-  assert.match(build, /ledger\.js --plan docs\/plans\/<file>\.md ready/);
-  assert.match(build, /ledger\.js --plan\s+docs\/plans\/<file>\.md hands/);
+  assert.match(build, /ledger\.js --plan <plan bucket>\/<file>\.md ready/);
+  assert.match(build, /ledger\.js --plan\s+<plan bucket>\/<file>\.md hands/);
   assert.doesNotMatch(build, /A whole group goes out in one response/);
   const plan = read('fankeel-plan');
   assert.match(plan, /\*\*Dispatch:\*\* user — /);

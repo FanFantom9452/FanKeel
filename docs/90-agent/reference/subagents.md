@@ -509,7 +509,7 @@ empty list is refused with, in the shape every other bad profile value takes
 (`lib/profile.js:120`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
-file could change (`lib/stages.js:666`, `const raw = values && values['stage.agents'];`),
+file could change (`lib/stages.js:667`, `const raw = values && values['stage.agents'];`),
 so which stages are controlled is a profile answer, not a constant. Put a
 stage on that list and it is run by a stage agent instead of by the session:
 
@@ -714,7 +714,7 @@ in `lib/profile.js` holds it to one line and 200 characters — trimmed but not
 lowercased, and refused if it is empty, carries a newline, or runs long
 (`lib/profile.js:156`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
 `promptRules` is called once, inside `rulesLines`
-(`lib/render.js:170`, `.concat(promptRules(values, data && data.stage));`),
+(`lib/render.js:171`, `.concat(promptRules(values, data && data.stage));`),
 and by `controlBlock` for a controlled stage's own block
 (`lib/render.js:135`, `return control && Object.assign({}, control, { rules: control.rules.concat(promptRules(values, stage)) });`),
 so `render`, `renderResume` and `renderBrainBrief` — every path that calls

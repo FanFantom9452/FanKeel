@@ -12,14 +12,14 @@
       "name": "design",
       "entry_condition": "spec file, self-review.",
       "stop_condition": "Done when one approach, its file table, the criterion that fails now and passes after, the check against the map and the one unverified thing are all on screen.",
-      "prompt_bytes": 2408,
+      "prompt_bytes": 2405,
       "prompt_byte_budget": 2500
     },
     {
       "name": "plan",
       "entry_condition": "Read:, a fence names its file, ## Coverage.",
       "stop_condition": "Done when every task carries its own test cycle, its `**Files:**` block and its `Dispatch:` line, `## Global Constraints` has been generated from the project rather than remembered, and the plan file is written.",
-      "prompt_bytes": 2388,
+      "prompt_bytes": 2371,
       "prompt_byte_budget": 2400
     },
     {

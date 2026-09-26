@@ -667,7 +667,7 @@ test('the design rules tell the gate when the route needs plan', () => {
 test('design, plan, build and verify carry the anchors the design paid for', () => {
   const rules = (n) => rulesFor(n).join(' ');
   assert.match(rules('design'), /Read the fankeel-design skill on entry: spec file, self-review\./);
-  assert.match(templateFor('design'), /^spec: <docs\/plans path, build handoff path, or "in chat">$/m);
+  assert.match(templateFor('design'), /^spec: <plan-bucket path, build handoff path, or "in chat">$/m);
   assert.match(rules('plan'), /carries `\*\*Files:\*\*`, `\*\*Interfaces:\*\*` and a `\*\*Dispatch:\*\*` line/);
   // `, resume the fixer` was cut for the render cap (once the judge rule's
   // token started substituting to a real path and design gained the
@@ -683,7 +683,7 @@ test('design, plan, build and verify carry the anchors the design paid for', () 
 // they claim "no spec file" / "in chat" is the only case.
 test('bounded\'s class description and design\'s spec slot both allow for the build handoff', () => {
   assert.match(CLASSES.bounded.means, /no spec or plan file — only a handoff\.$/);
-  assert.match(templateFor('design'), /^spec: <docs\/plans path, build handoff path, or "in chat">$/m);
+  assert.match(templateFor('design'), /^spec: <plan-bucket path, build handoff path, or "in chat">$/m);
 });
 
 // The last three anchors and two words on build's pointer

@@ -6,14 +6,15 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { render, renderInit, SCRIPTS, PLUGIN_ROOT, PLUGIN_MARK, SURVEY_SCRIPT, TODO_CHECK_SCRIPT } = require('../lib/render.js');
+const { render, renderInit, SCRIPTS, PLUGIN_ROOT, PLUGIN_MARK, SURVEY_SCRIPT, TODO_CHECK_SCRIPT, planDir } = require('../lib/render.js');
+const tmp = require('./tmp.js');
 const { ALWAYS, NAMES, byName, rulesFor, SURVEY_TOKEN, TOKENS, SCRIPT_TOKENS, nextStage, templateFor } = require('../lib/stages.js');
 
 // The rendered block substitutes the next stage on the route, so a comparison
 // against the rules has to substitute it the same way. Going through `nextStage`
 // rather than a literal is what stops the two from drifting apart.
 const sub = (stage, route) => rulesFor(stage, Object.assign(
-  { next: nextStage(stage, route) || 'standing the task down' }, SCRIPTS));
+  { next: nextStage(stage, route) || 'standing the task down', planDir: 'docs/plans' }, SCRIPTS));
 
 const NOW = Date.parse('2026-08-21T12:00:00.000Z');
 const ago = (ms) => new Date(NOW - ms).toISOString();
@@ -825,4 +826,31 @@ test('a bounded design with design.mockup on and no stage agents is under the ca
   const size = sizeAtReference(out);
   t.diagnostic('bounded design with a mockup ' + size + ' chars at a ' + REFERENCE_ROOT + '-char root');
   assert.ok(size < BLOCK_CAP, 'the bounded design block with design.mockup on is ' + size + ' chars');
+});
+
+test('the plan rule names the plan bucket the project\'s docs.json declares', () => {
+  const root = tmp('plandir-');
+  fs.mkdirSync(path.join(root, '.fankeel'));
+  fs.writeFileSync(path.join(root, '.fankeel', 'docs.json'),
+    JSON.stringify({ buckets: [{ path: 'docs/90-agent/plans', role: 'plan' }] }));
+  const out = render({ mine: entry(MINE, { stage: 'plan', project: undefined }), others: [], now: NOW, root });
+  assert.match(out, /Write docs\/90-agent\/plans\/<date>-<topic>\.md/);
+  assert.doesNotMatch(out, /docs\/plans\//);
+});
+
+test('without a docs.json the plan rule falls back to docs/plans, never a raw token', () => {
+  const out = render({ mine: entry(MINE, { stage: 'plan' }), others: [], now: NOW, root: '/r' });
+  assert.match(out, /Write docs\/plans\/<date>-<topic>\.md/);
+  assert.doesNotMatch(out, /\{\{PLAN_DIR\}\}/);
+});
+
+test('planDir reads the plan bucket off a project\'s docs.json, and falls back with none', () => {
+  const root = tmp('plandir-fn-');
+  fs.mkdirSync(path.join(root, '.fankeel'));
+  fs.writeFileSync(path.join(root, '.fankeel', 'docs.json'),
+    JSON.stringify({ buckets: [{ path: 'docs/90-agent/plans', role: 'plan' }] }));
+  assert.equal(planDir(root), 'docs/90-agent/plans');
+
+  const bare = tmp('plandir-fn-bare-');
+  assert.equal(planDir(bare), 'docs/plans');
 });

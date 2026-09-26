@@ -84,7 +84,7 @@ then archived — with no question when the profile's `land.archivePlan` is true
 **after asking** when it is not. An unarchived plan gets read as current.
 Archive with the script, the plan and its design together:
 
-node <plugin>/scripts/archive.js docs/plans/<plan>.md docs/plans/<plan>-design.md
+node <plugin>/scripts/archive.js <plan bucket>/<plan>.md <plan bucket>/<plan>-design.md
 
 It moves each into the `archive` bucket and turns `status: design-intent` into
 `status: current` in the same staged change: the page now describes what

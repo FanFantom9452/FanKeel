@@ -80,10 +80,6 @@ what gets scheduled.
 - 〔audit〕fankeel 第一次深度巡檢：47 組頁面對讀、分批讀 293 頁、3 個 code reviewer 找能刪的東西，跑完用 `--record` 寫入 `.fankeel/audit.json`；沒有這個檔，`orient` 不會提醒 — [scripts/orient.js](scripts/orient.js).
 - 〔wizard〕auto 選項缺 mockup 有畫的外開圖示（`fopen`）：`seg()` 樣板沒吐出來 — [assets/station/station.js](assets/station/station.js).
 
-## Needs a decision
-
-- 〔docs〕lib/stages.js 的 design/plan artifact 仍寫 docs/plans/；fankeel 改 audience 後計畫桶是 docs/90-agent/plans——改讀 docs.json 的 plan 桶，同 newestPlan — [lib/stages.js](lib/stages.js).
-
 ## Waiting
 
 ### gates 滿一週

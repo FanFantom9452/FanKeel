@@ -46,7 +46,7 @@ read the tasks out of order.
 
 ## Where it goes
 
-`docs/plans/YYYY-MM-DD-<topic>.md`, `status: design-intent` frontmatter,
+`<plan bucket>/YYYY-MM-DD-<topic>.md` — the `role: plan` bucket in `docs.json`, `docs/plans/` where none is declared — , `status: design-intent` frontmatter,
 committed. It becomes `status: current` when the work lands and is archived after
 that — an unarchived plan gets read as current.
 
@@ -297,7 +297,7 @@ These are **plan failures**, not shorthand:
 4. **Lint**, and it must be clean:
 
    ```
-   node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md lint
+   node <plugin>/scripts/ledger.js --plan <plan bucket>/<file>.md lint
    ```
 
    It reads the design off the plan's `**Spec:**` line and reports, one line
@@ -320,7 +320,7 @@ Fix inline. If a requirement has no task, add the task.
 ## Output
 
 ```
-docs/plans/<date>-<topic>.md — <n> tasks
+<plan path> — <n> tasks
 
 1. <name> — path, path
 2. <name> — path

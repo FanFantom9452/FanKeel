@@ -55,8 +55,8 @@ they chose, and do not ask again.
 ### 2. Open the ledger
 
 ```
-node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md show
-node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md --range <the sha before the plan was written>..<the sha init is run at, before Task 1's BASE> init
+node <plugin>/scripts/ledger.js --plan <plan bucket>/<file>.md show
+node <plugin>/scripts/ledger.js --plan <plan bucket>/<file>.md --range <the sha before the plan was written>..<the sha init is run at, before Task 1's BASE> init
 ```
 
 **Pass the plan stage's own range on `init`.** `--range` is optional and records
@@ -115,7 +115,7 @@ ruling.
 Then run it rather than remembering it:
 
 ```
-node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md groups
+node <plugin>/scripts/ledger.js --plan <plan bucket>/<file>.md groups
 ```
 
 It computes the first row's predicates over the whole plan: tasks in one group
@@ -127,7 +127,7 @@ on that file would be.
 Record it in the ledger beside the table:
 
 ```
-node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md scan
+node <plugin>/scripts/ledger.js --plan <plan bucket>/<file>.md scan
 ```
 
 `scan` writes exactly what `groups` just printed — the thing two sessions on
@@ -183,7 +183,7 @@ runs one row per pass, and every other step of the loop is unchanged.
 
 **Before the first task, the hands** — on the plan path; a file table (no
 plan) has no such row. `node <plugin>/scripts/ledger.js --plan
-docs/plans/<file>.md hands` lists every task whose `**Dispatch:**` line reads
+<plan bucket>/<file>.md hands` lists every task whose `**Dispatch:**` line reads
 `user — <what the user does>`, and `none` when there is none. `task.js stage
 build` already printed the same list to the session holding
 `AskUserQuestion`, which asks the user then and there — after the other tasks
@@ -214,7 +214,7 @@ then asks this stage's gate.
    file, and the path it must write its report to. The brief is written by
 
    ```
-   node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md brief <n>
+   node <plugin>/scripts/ledger.js --plan <plan bucket>/<file>.md brief <n>
    ```
 
    and holds the plan's goal and spec line, the `## Global Constraints` block
@@ -244,7 +244,7 @@ then asks this stage's gate.
 
    **What goes out is what `ledger.js ready` lists**, on the plan path — with
    no plan the rows run one per pass, as above.
-   `node <plugin>/scripts/ledger.js --plan docs/plans/<file>.md ready` prints,
+   `node <plugin>/scripts/ledger.js --plan <plan bucket>/<file>.md ready` prints,
    one number a line, every task the ledger does not list as complete whose
    earlier tasks it conflicts with all are, and `none` when there is nothing
    to send. Send every task it lists that is not already out, in one

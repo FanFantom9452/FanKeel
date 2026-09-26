@@ -33,7 +33,7 @@ screen. A second approach is a catalogue, not more design.
 | Looks like a finding | Why it is not |
 |---|---|
 | Only one approach presented, no rejected alternative shown | `lib/stages.js:254` calls a second one a catalogue (`not a catalogue`) — trade-offs on the one approach chosen are the design, not a comparison table. |
-| The map check returning `no conflict` with nothing else said | `lib/stages.js:251` allows exactly that (`say none was found`) — a stated absence is a complete answer, not a check cut short. |
+| The map check returning `no conflict` with nothing else said | `lib/stages.js:251` allows exactly that (`say none found`) — a stated absence is a complete answer, not a check cut short. |
 | Config, error handling or abstraction the ask never requested, left out | `lib/stages.js:249` requires it (`Cut whatever the stated ask does not require`) — the smaller design is the correct one, not an unfinished one. |
 | A design with no mockup | `lib/stages.js:258` puts the step behind a condition (`when: 'design.mockup'`) — a project with no front end never reaches it, and on one that does, whether this task touches a screen is step 3's per-task judgement. |
 
@@ -214,7 +214,7 @@ boundaries need work.
 
 ### 7. The spec — `architectural` only
 
-`docs/plans/YYYY-MM-DD-<topic>-design.md`, with `status: design-intent`
+`<plan bucket>/YYYY-MM-DD-<topic>-design.md` — the `role: plan` bucket in `docs.json`, `docs/plans/` where none is declared — , with `status: design-intent`
 frontmatter, committed.
 
 A design is not filed as reference: it describes what is meant to be, and the
@@ -250,7 +250,7 @@ Then ask the user to read it, and wait.
 proves it done: <the test that fails now and passes after>
 against the map: <the page it touches, or "no conflict">
 unverified: <the one thing you have not checked>
-spec: <docs/plans path, build handoff path, or "in chat">
+spec: <plan-bucket path, build handoff path, or "in chat">
 then AskUserQuestion
 ```
 
