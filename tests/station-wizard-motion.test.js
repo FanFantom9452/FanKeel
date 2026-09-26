@@ -32,8 +32,12 @@ function page() {
         + '</script></body></html>';
 }
 
+// Its own profile per spawn. Two Chromium processes on the default profile
+// hand the second one's URL to the first, and the second exits with nothing
+// on stdout — the `the page never reported` failure the suite saw on 09-26.
 function shoot(file, reduce) {
-    const args = ['--headless=new', '--disable-gpu', '--no-first-run', '--virtual-time-budget=2000'];
+    const profileDir = tmp('fankeel-wizmotion-profile-');
+    const args = ['--headless=new', '--disable-gpu', '--no-first-run', '--user-data-dir=' + profileDir, '--virtual-time-budget=2000'];
     if (reduce) args.push('--force-prefers-reduced-motion');
     const r = spawnSync(findBrowser(), args.concat(['--dump-dom', pathToFileURL(file).href]), { encoding: 'utf8', timeout: 60000 });
     const m = /RUN=(\d+) RM=(true|false)/.exec(r.stdout || '');

@@ -80,7 +80,6 @@ what gets scheduled.
 - 〔context〕任務交換區 `.fankeel/build/task-*/context.md`：已驗證事實附 file:line 與 sha，brief 只給路徑、按需讀，上限 40 條，量省多少 — [docs/subagents.md](docs/subagents.md).
 - 〔design〕下一個前端 design 任務：design.mockup 加 auto、skill 自動開頁；浮動圖示做通知/待回覆單一管道＋編輯中區塊動畫；station 局部重繪；design.skill 多選＋萃取四家設計技能精華，lib/profile.js schema 跟進 — [docs/station.md](docs/station.md).
 - 〔gate〕網頁答題改選用：精靈問要不要開、建議 60 秒；待答亮通知圖示＋倒數，附「交給終端／手機」鍵；逾時留給終端與 Remote Control。主要給逐塊調 mockup 用 — [hooks/gate.js](hooks/gate.js).
-- 〔test〕wizard-motion 測試整套跑偶發失敗（09-26 三次，斷言不同），單獨跑都過；station-cli 偶發一次。查 shoot() 的 timing 競態 — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
 
 ## Needs a decision
 

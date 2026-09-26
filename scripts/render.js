@@ -32,6 +32,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const os = require('node:os');
 const { pathToFileURL } = require('node:url');
 const { parseArgsOrExit } = require('../lib/cli.js');
 const { parseTargets, cells, NAME } = require('../lib/shots.js');
@@ -223,7 +224,16 @@ function main() {
     fs.mkdirSync(outDir, { recursive: true });
     const png = path.join(outDir, 'render.png');
     const html = path.join(outDir, 'render.html');
-    const err = shoot(browser, toUrl(target), png, html, args.size, []);
+    // A profile of its own for this run, removed after: two renders at once on
+    // the default profile hand one URL to the other browser, and the second
+    // exits having written nothing.
+    const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-render-'));
+    let err;
+    try {
+        err = shoot(browser, toUrl(target), png, html, args.size, ['--user-data-dir=' + profileDir]);
+    } finally {
+        fs.rmSync(profileDir, { recursive: true, force: true });
+    }
     if (err) {
         process.stderr.write('render: ' + err.label + ' failed: ' + err.message + '\n');
         process.exit(err.status);
