@@ -4,7 +4,7 @@ description: Interrupt the stage you are in and put one question to a stronger m
 argument-hint: "[the question, in one line]"
 version: 0.79.0
 status: current
-last_verified: 2026-09-11
+last_verified: 2026-09-26
 source_of_truth: scripts/judge.js
 ---
 
@@ -80,8 +80,9 @@ the stage produces; it does not approve it.
 
    Pipe the answer in on stdin rather than retyping it — retyping is where a
    judgement quietly becomes a paraphrase of one. This is what writes it,
-   dated, under `docs/judgements/`, and adds its row to the index where the
-   project has a `## Judgements` table.
+   dated, under the project's own judgements bucket — wherever `.fankeel/docs.json`
+   declares one, or `docs/judgements/` when it declares none — and adds its
+   row to the index where the project has a `## Judgements` table.
 
    The answer is the judge's last assistant message. For a background
    dispatch that is in `<session>/subagents/agent-<id>.jsonl` — its
@@ -99,6 +100,10 @@ reads on every prompt — which is the same reason no rule announces this
 command. If you are reading this, the decision has already been made.
 
 ## Output
+
+The `filed` path lands wherever this project's judgements bucket resolves to
+(`docs/judgements/` if none is declared) — the example below is illustrative,
+not fixed:
 
 ```
 judged: <the question, one line>
