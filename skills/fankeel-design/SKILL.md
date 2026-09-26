@@ -113,9 +113,9 @@ tool before it draws. **No profile value reaches a subagent**, so the skill and
 the output path have to be written into the prompt by the session dispatching
 it.
 
-`design.skill` can pin that choice in the profile instead of leaving it
-free per task. When it is set, the injected mockup rule already names it —
-copy that name into the prompt rather than picking one.
+`design.skill` can pin one or more choices in the profile instead of leaving
+it free per task. When it is set, the injected mockup rule already names
+them — copy the names into the prompt rather than picking one.
 
 Then the path goes on the `spec:` line, and option one's description points at
 the page. The gate approves the page, not the paragraph.
