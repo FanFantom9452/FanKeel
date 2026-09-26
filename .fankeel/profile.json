@@ -9,5 +9,5 @@
     "verify"
   ],
   "guard": "deny",
-  "gate.station": 300
+  "gate.station": "off"
 }
