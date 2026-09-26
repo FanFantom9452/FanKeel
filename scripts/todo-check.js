@@ -21,13 +21,15 @@
 // belongs.
 // An entry under no known heading is one nobody said the state of, and `init`
 // then has to guess which entries can become a task today.
-// Under `## Waiting` entries sit beneath a `###` timing — what they wait for —
-// and the timing carries what each entry used to: a line naming the event with
-// `lifts when:`, ending in a date stamp. A timing with no stamp is one nobody
-// can age, and one with no event is one nobody is waiting for: the stamp says
-// when somebody last looked, and a person can always refresh that honestly, so
-// it cannot say whether there is anything left to look for — on 2026-09-06
-// twelve of thirteen entries named no event at all.
+// Under `## Blocked` and `## Watch` entries sit beneath a `###` timing — what
+// they wait for — and the line after it carries a typed condition ending in a
+// date stamp. Blocked takes `on: MM-DD`, `after: <work>` and `upstream: <thing>`:
+// conditions a session can go and check. Watch takes `if: <event>`: an incident
+// or a demand only whoever meets it will know of. A timing with no stamp is one
+// nobody can age, one with no condition is one nobody is waiting for, and a
+// condition under the other heading is misfiled — on 2026-09-27 a patrol found
+// sixteen timings whose only question was "has it happened", which nobody could
+// answer.
 //
 // Nothing else is judged, and the re-read list below is deliberately not a
 // judgement. Whether the work is still worth doing is not a thing a script can
@@ -62,7 +64,20 @@ const MAX_ENTRY_CHARS = 200;
 // answer the wrong question: what `init` needs to know is which entries can
 // become a task today, and two bullets about one file are as often one that is
 // ready and one that is still an argument.
-const SECTIONS = ['Ready', 'Needs a decision', 'Waiting'];
+const SECTIONS = ['Ready', 'Needs a decision', 'Blocked', 'Watch'];
+
+// Under these two a `###` is a timing, not a heading, and each takes its own
+// conditions. `Waiting` is the heading both replaced on 2026-09-27: a `###`
+// under it still groups (so its entries report as unclassified under
+// "Waiting", not under the timing's title), and it is never spared as another
+// vocabulary.
+const TIMED = ['Blocked', 'Watch'];
+const CONDITIONS = { Blocked: ['on', 'after', 'upstream'], Watch: ['if'] };
+const RETIRED = 'Waiting';
+
+// A Watch timing is never due: nobody can check its event. What can go stale
+// is the decision to keep watching, and sixty days is when it is asked again.
+const STALE_DAYS = 60;
 
 // The roles `docs.json` declares for documents that record a moment rather than
 // the present: a decision record says why something was decided then, a plan
@@ -112,25 +127,18 @@ const REREAD_DAYS = 7;
 // hand, and a year is noise 364 days out of 365.
 const STAMP = /(?:^|\s)(\d{2})-(\d{2})\.?$/;
 
-// The event that would lift the entry, named rather than left to the reader.
-// `## Waiting` already declares what it waits on — real use, upstream, or
-// another entry landing — and this is that declaration written down per entry
-// instead of per heading. It sits before the stamp because `STAMP` is anchored
-// at the end, and it is read by stripping that stamp back off the tail.
-// What this cannot do, and it is the limit of the rule rather than of the
-// regex: it checks that a clause is there, not that the clause names anything.
-// `lifts when: it seems worth revisiting.` passes, and an entry carrying that
-// is exactly as unfinishable as the twelve that named nothing at all. Of the
-// five events left on 2026-09-06 a script could have checked two — a count of
-// `docs/archive/`, a language in `skipped.noPattern` — and not the other three,
-// so this asks a person for the sentence rather than trying to grade it.
-const LIFTS = /\blifts when:\s*(.+)$/i;
+// The condition line: a key naming the kind of wait, then what it waits for,
+// then the stamp. Anchored at the start of the line — a key buried mid-sentence
+// is prose, not a condition. The stamp is stripped off the tail the same way
+// `STAMP` finds it. What this cannot do: grade whether the text names anything
+// real. `after: it seems worth revisiting.` passes.
+const CONDITION = /^(on|after|upstream|if):\s*(.*)$/i;
 
-function liftsAt(text) {
-    const m = LIFTS.exec(text.replace(/\s+/g, ' ').trim());
+function conditionAt(text) {
+    const m = CONDITION.exec(text.replace(/\s+/g, ' ').trim());
     if (!m) return null;
-    const event = m[1].replace(STAMP, '').trim().replace(/\.$/, '').trim();
-    return event || null;
+    const event = m[2].replace(STAMP, '').trim().replace(/\.$/, '').trim();
+    return { kind: m[1].toLowerCase(), event: event || null };
 }
 
 // A timing's title, in terminal columns rather than characters. A CJK or
@@ -164,6 +172,17 @@ function dateAt(event, stamped) {
         if (at.getTime() >= stamped) return at.getTime();
     }
     return null;
+}
+
+// Whether an `on:` names a day the calendar has. 2000 is a leap year, so
+// `02-29` is accepted here and left to `dateAt` to place in a year that has it.
+function validOn(event) {
+    const m = event === null ? null : DATE.exec(event);
+    if (!m) return false;
+    const month = Number(m[1]);
+    const day = Number(m[2]);
+    const at = new Date(2000, month - 1, day);
+    return at.getMonth() === month - 1 && at.getDate() === day;
 }
 
 // Whether the day arithmetic slips a day across a DST transition is untested.
@@ -222,10 +241,12 @@ function entries(text) {
         const line = lines[i];
         if (/^#{1,6}\s/.test(line)) {
             close();
-            // Under `## Waiting` a `###` is a timing, not a section: the entries
-            // below it wait for the same thing and lift together. Anywhere else
-            // it is a heading like any other, and still unclassified.
-            if (/^#{3,6}\s/.test(line) && section === 'Waiting') {
+            // Under `## Blocked` or `## Watch` a `###` is a timing, not a
+            // section: the entries below it wait for the same thing and lift
+            // together. Under the retired `## Waiting` it groups too, so its
+            // entries are reported under "Waiting". Anywhere else it is a
+            // heading like any other, and still unclassified.
+            if (/^#{3,6}\s/.test(line) && (TIMED.includes(section) || section === RETIRED)) {
                 timing = i + 1;
                 continue;
             }
@@ -281,10 +302,12 @@ function linksIn(text) {
     return out;
 }
 
-// Every `###` under `## Waiting`, with the line after it read as its lifts line:
-// the event it waits for and the day somebody last agreed it still does. The
-// first non-blank line is taken whatever it says, so a line with a stamp and no
-// `lifts when:` is `unlifted` rather than `undated` too.
+// Every `###` under `## Blocked` or `## Watch`, with the line after it read as
+// its condition: the kind of wait, what it waits for, and the day somebody last
+// agreed it still does. The first non-blank line is taken whatever it says, so
+// a line with a stamp and no key is `unconditioned` rather than `undated` too.
+// Blocked is due — `on:` from its date, the others seven days after the stamp;
+// Watch is never due and goes stale sixty days after the stamp.
 function timings(text, now) {
     const at = now === undefined ? Date.now() : now;
     const lines = text.split(/\r?\n/);
@@ -294,16 +317,21 @@ function timings(text, now) {
     for (let i = 0; i < lines.length; i++) {
         const h = /^(#{1,6})\s+(.*)$/.exec(lines[i]);
         if (!h) continue;
-        if (h[1].length >= 3 && section === 'Waiting') {
+        if (h[1].length >= 3 && (TIMED.includes(section) || section === RETIRED)) {
+            if (section === RETIRED) continue;
             let j = i + 1;
             while (j < lines.length && !lines[j].trim()) j++;
             const next = j < lines.length && !/^#{1,6}\s|^[-*]\s/.test(lines[j]) ? lines[j] : '';
-            const event = next ? liftsAt(next) : null;
+            const cond = next ? conditionAt(next) : null;
+            const kind = cond ? cond.kind : null;
+            const event = cond ? cond.event : null;
             const stamp = next ? stampAt(next, at) : null;
-            const date = dateAt(event, stamp);
+            const date = kind === 'on' ? dateAt(event, stamp) : null;
             const days = stamp === null ? null : Math.floor((at - stamp) / 86400000);
-            const due = date !== null ? at >= date : days !== null && days >= REREAD_DAYS;
-            out.push({ line: i + 1, title: h[2].trim(), event, stamp, date, days, due,
+            const watch = section === 'Watch';
+            const due = watch ? false : date !== null ? at >= date : days !== null && days >= REREAD_DAYS;
+            const stale = watch && days !== null && days >= STALE_DAYS;
+            out.push({ line: i + 1, section, title: h[2].trim(), kind, event, stamp, date, days, due, stale,
                 items: found.filter((e) => e.timing === i + 1) });
             continue;
         }
@@ -318,7 +346,7 @@ function check(file, now) {
     try {
         text = fs.readFileSync(file, 'utf8');
     } catch (e) {
-        return { file, missing: true, problems: [], overdue: [] };
+        return { file, missing: true, problems: [], overdue: [], stale: [] };
     }
     const base = path.dirname(file);
     // No `docs.json` is not a failure. `read` hands back a null tree, `roleOf`
@@ -328,19 +356,22 @@ function check(file, now) {
     const { tree } = docs.read(base);
     let problems = [];
     const overdue = [];
+    const stale = [];
     const found = entries(text);
     for (const entry of found) {
-        // The stamp is asked for under `Waiting` and nowhere else. `Ready` and
-        // `Needs a decision`'s newest few are read every time `/fankeel` offers
-        // a menu, so those are looked at whether or not anyone meant to;
-        // `Waiting` is the one that is skipped by design and therefore the one
-        // that needs a date to say when it last was not.
-        if (entry.section === 'Waiting' && entry.timing === null) {
+        // The stamp is asked for under `Blocked` and `Watch` and nowhere else.
+        // `Ready` and `Needs a decision`'s newest few are read every time
+        // `/fankeel` offers a menu, so those are looked at whether or not anyone
+        // meant to; the two timed sections are the ones that are skipped by
+        // design and therefore the ones that need a date to say when they last
+        // were not.
+        if (TIMED.includes(entry.section) && entry.timing === null) {
+            const line = entry.section === 'Watch' ? 'if: <the event>' : 'on: MM-DD, after: <what> or upstream: <what>';
             problems.push({
                 line: entry.line,
                 kind: 'untimed',
-                detail: 'under ## Waiting but under no ### timing. Put it beneath the ### naming what it'
-                    + ' waits for, or open one: a title, then a "lifts when: <the event>. MM-DD." line.',
+                detail: 'under ## ' + entry.section + ' but under no ### timing. Put it beneath the ### naming what it'
+                    + ' waits for, or open one: a title, then a "' + line + '. MM-DD." line.',
             });
         }
         if (!SECTIONS.includes(entry.section)) {
@@ -349,7 +380,10 @@ function check(file, now) {
                 kind: 'unclassified',
                 detail: (entry.section ? 'under "' + entry.section + '"' : 'under no heading')
                     + '. Every entry sits under one of ' + SECTIONS.map((s) => '## ' + s).join(' · ')
-                    + ', which is what says whether it can be started today.',
+                    + ', which is what says whether it can be started today.'
+                    + (entry.section === RETIRED
+                        ? ' ## Waiting was split on 2026-09-27: ## Blocked takes on:, after: and upstream:; ## Watch takes if:.'
+                        : ''),
             });
         }
         const len = entry.text.replace(/\s+/g, ' ').trim().length;
@@ -395,25 +429,40 @@ function check(file, now) {
         }
     }
 
-    // The stamp and the event live on the timing now, one line for every entry
-    // beneath it, so what used to be asked of each Waiting entry is asked here.
+    // The stamp and the condition live on the timing, one line for every entry
+    // beneath it, so what used to be asked of each entry is asked here.
     for (const t of timings(text, at)) {
         if (t.stamp === null) {
             problems.push({
                 line: t.line,
                 kind: 'undated',
-                detail: 'no MM-DD stamp on its lifts line. End that line with the date somebody last read'
-                    + ' this timing and confirmed it is still waiting — without one it cannot be told from'
+                detail: 'no MM-DD stamp on its condition line. End that line with the date somebody last read'
+                    + ' this timing and confirmed it still holds — without one it cannot be told from'
                     + ' one nobody has looked at since it was filed.',
             });
         }
-        if (t.event === null) {
+        if (t.kind === null || (t.event === null && t.kind !== 'on')) {
             problems.push({
                 line: t.line,
-                kind: 'unlifted',
-                detail: 'no "lifts when:" on the line after it. Name the event that would make its entries'
-                    + ' actionable — real use, upstream, or another entry landing. A timing that cannot'
+                kind: 'unconditioned',
+                detail: 'no condition on the line after it. Under ## Blocked write "on: MM-DD", "after: <what>"'
+                    + ' or "upstream: <what>"; under ## Watch, "if: <the event>". A timing that cannot'
                     + ' name one is not waiting for anything.',
+            });
+        } else if (!CONDITIONS[t.section].includes(t.kind)) {
+            problems.push({
+                line: t.line,
+                kind: 'wrong section',
+                detail: '"' + t.kind + ':" belongs under ' + (t.kind === 'if' ? '## Watch' : '## Blocked')
+                    + ', not ## ' + t.section + '. Blocked takes on:, after: and upstream: — something a session'
+                    + ' can check; Watch takes if: — an event only whoever meets it knows.',
+            });
+        } else if (t.kind === 'on' && !validOn(t.event)) {
+            problems.push({
+                line: t.line,
+                kind: 'bad date',
+                detail: '"on:" is not followed by an MM-DD. It is the day the date is compared against;'
+                    + ' a wait with no day is an "after:".',
             });
         }
         if (!t.items.length) {
@@ -430,10 +479,11 @@ function check(file, now) {
                 line: t.line,
                 kind: 'long title',
                 detail: w + ' columns, cap is ' + MAX_TITLE_WIDTH + ' — a CJK character counts two.'
-                    + ' The title names the timing; the event goes on its lifts line.',
+                    + ' The title names the timing; the condition goes on the line after it.',
             });
         }
-        if (t.due) overdue.push({ line: t.line, days: t.days, title: t.title, lifts: t.event, date: t.date, count: t.items.length });
+        if (t.due) overdue.push({ line: t.line, days: t.days, title: t.title, kind: t.kind, event: t.event, date: t.date, count: t.items.length });
+        if (t.stale) stale.push({ line: t.line, days: t.days, title: t.title, event: t.event, count: t.items.length });
     }
     problems.sort((a, b) => a.line - b.line);
 
@@ -474,13 +524,15 @@ function check(file, now) {
     const vocabulary = found.length > 0
         && named.length === found.length
         && off.length === found.length
+        && !found.some((e) => e.section === RETIRED)
         ? [...new Set(found.map((e) => e.section))]
         : null;
     if (vocabulary) problems = problems.filter((p) => p.kind !== 'unclassified');
     const counts = {};
     for (const name of SECTIONS) counts[name] = found.filter((e) => e.section === name).length;
     overdue.sort((a, b) => b.days - a.days);
-    return { file, missing: false, count: found.length, counts, problems, overdue, needsDecisionDue, vocabulary };
+    stale.sort((a, b) => b.days - a.days);
+    return { file, missing: false, count: found.length, counts, problems, overdue, stale, needsDecisionDue, vocabulary };
 }
 
 function report(result) {
@@ -493,9 +545,9 @@ function report(result) {
     const split = SECTIONS.map((s) => (result.counts[s] || 0) + ' ' + s.toLowerCase()).join(', ');
     const lines = [];
     if (result.vocabulary) {
-        lines.push('This TODO.md does not use the three headings ' + SECTIONS.map((s) => '## ' + s).join(' · ')
+        lines.push('This TODO.md does not use the four headings ' + SECTIONS.map((s) => '## ' + s).join(' · ')
             + ' — it uses ' + result.vocabulary.map((s) => '## ' + s).join(' · ')
-            + '. Nothing here says which entries can be started today, which is what those three are for.');
+            + '. Nothing here says which entries can be started today, which is what those four are for.');
     }
     if (!result.problems.length) {
         lines.push('fankeel todo-check: ' + result.count + ' entries — ' + split
@@ -507,18 +559,26 @@ function report(result) {
             lines.push('  ' + result.file + ':' + p.line + '  ' + p.kind + ' — ' + p.detail);
         }
     }
-    // Below the verdict and outside it. These are not defects — an entry can sit
-    // under `Waiting` for a month and be filed correctly the whole time — so the
-    // run stays green and the list is the prompt to go and look.
+    // Below the verdict and outside it. These are not defects — a timing can
+    // sit correctly filed for a month — so the run stays green and the list is
+    // the prompt to go and look.
     if (result.overdue && result.overdue.length) {
-        lines.push('', '  due for a re-read — the date has come, or nobody has checked the event in '
+        lines.push('', '  due for a re-read — the date has come, or nobody has checked the condition in '
             + REREAD_DAYS + ' days or more:');
         for (const o of result.overdue) {
-            // The event, not the entries. What a reader can act on is whether the
-            // thing has happened; the entries are what they skip until it has.
             const when = o.date !== null ? mmdd(o.date) + '   ' : String(o.days).padStart(3) + ' days';
-            const short = (o.title + ' (' + o.count + ') — ' + (o.lifts || '')).replace(/\s+/g, ' ').trim();
+            const short = (o.title + ' (' + o.count + ') — ' + (o.kind ? o.kind + ': ' : '') + (o.event || '')).replace(/\s+/g, ' ').trim();
             lines.push('    ' + result.file + ':' + o.line + '  ' + when + '  '
+                + (short.length > 72 ? short.slice(0, 71) + '…' : short));
+        }
+    }
+    // Watch is never due. What a stale one asks is whether to keep watching —
+    // keep it and restamp, or drop it — not whether its event happened.
+    if (result.stale && result.stale.length) {
+        lines.push('', '  ## Watch timings not re-read in ' + STALE_DAYS + ' days or more — keep and restamp, or drop:');
+        for (const o of result.stale) {
+            const short = (o.title + ' (' + o.count + ') — if: ' + (o.event || '')).replace(/\s+/g, ' ').trim();
+            lines.push('    ' + result.file + ':' + o.line + '  ' + String(o.days).padStart(3) + ' days  '
                 + (short.length > 72 ? short.slice(0, 71) + '…' : short));
         }
     }
@@ -560,4 +620,4 @@ if (require.main === module) {
     process.exit(ok ? 0 : 1);
 }
 
-module.exports = { MAX_ENTRY_CHARS, REREAD_DAYS, SECTIONS, linksIn, entries, timings, width, mmdd, check, report, main };
+module.exports = { MAX_ENTRY_CHARS, REREAD_DAYS, STALE_DAYS, SECTIONS, linksIn, entries, timings, width, mmdd, check, report, main };

@@ -576,7 +576,7 @@ test('the todo: block offers the newest edits under Needs a decision, oldest edi
     '- Entry D',
     '- Entry E',
     '',
-    '## Waiting',
+    '## Blocked',
   ].join('\n') + '\n';
   commitTodo(root, opts, bodyV1, '2026-01-01T00:00:00Z');
 
@@ -594,10 +594,12 @@ test('the todo: block offers the newest edits under Needs a decision, oldest edi
   const headingIdx = lines.findIndex((l) => /Needs a decision 5/.test(l));
   assert.match(lines[headingIdx + 1], /Entry A rewritten text/);
   assert.match(out, /and 1 more, not listed — Other takes one by name/);
-  assert.match(out, /Waiting 0 timings, 0 entries — none, not offered/);
+  assert.match(out, /Blocked 0 timings, 0 entries — 0 due/);
+  assert.match(out, /Watch 0 timings, 0 entries — 0 stale/);
+  assert.match(out, /patrol: none due or stale, not offered/);
 });
 
-test('a non-due Waiting timing still takes a slot from Needs a decision', () => {
+test('a Blocked timing that is not due takes no slot from Needs a decision', () => {
   const root = workspace({});
   const opts = initGit(root);
   const body = [
@@ -610,18 +612,19 @@ test('a non-due Waiting timing still takes a slot from Needs a decision', () => 
     '- Entry four',
     '- Entry five',
     '',
-    '## Waiting',
+    '## Blocked',
     '',
     '### gates a week old',
-    'lifts when: 09-25 onward, a week of gates. 09-18.',
+    'on: 09-25 onward, a week of gates. 09-18.',
     '',
     '- a',
   ].join('\n') + '\n';
   commitTodo(root, opts, body, '2026-09-18T00:00:00Z');
 
   const out = reportAt(root, 2026, 9, 20);
-  assert.match(out, /Needs a decision 5 — newest 3 by last edit, offer these:/);
-  assert.match(out, /Waiting 1 timing, 1 entry — 0 due, offer one option/);
+  assert.match(out, /Needs a decision 5 — newest 4 by last edit, offer these:/);
+  assert.match(out, /Blocked 1 timing, 1 entry — 0 due/);
+  assert.match(out, /patrol: none due or stale, not offered/);
 });
 
 test('a Ready entry drops the offer from 4 to 3', () => {
@@ -637,7 +640,7 @@ test('a Ready entry drops the offer from 4 to 3', () => {
     '- Entry three',
     '- Entry four',
     '',
-    '## Waiting',
+    '## Blocked',
   ].join('\n') + '\n';
   commitTodo(root, opts, body, '2026-01-01T00:00:00Z');
 
@@ -654,7 +657,7 @@ const reportAt = (root, y, m, d) => {
   return orient.report(r);
 };
 
-test('the todo: block lists every Waiting timing and marks the due ones', () => {
+test('the todo: block lists every Blocked timing and marks the due ones', () => {
   const root = workspace({});
   const opts = initGit(root);
   const body = [
@@ -662,15 +665,15 @@ test('the todo: block lists every Waiting timing and marks the due ones', () => 
     '',
     '## Needs a decision',
     '',
-    '## Waiting',
+    '## Blocked',
     '',
     '### gates a week old',
-    'lifts when: 09-25 onward, a week of gates. 09-18.',
+    'on: 09-25 onward, a week of gates. 09-18.',
     '',
     '- a',
     '',
     '### an overflow seen',
-    'lifts when: an overflow is observed. 09-01.',
+    'after: an overflow is observed. 09-01.',
     '',
     '- b',
     '- c',
@@ -678,20 +681,53 @@ test('the todo: block lists every Waiting timing and marks the due ones', () => 
   commitTodo(root, opts, body, '2026-09-18T00:00:00Z');
 
   const early = reportAt(root, 2026, 9, 20);
-  assert.match(early, /Waiting 2 timings, 3 entries — 1 due, offer one option/);
+  assert.match(early, /Blocked 2 timings, 3 entries — 1 due/);
   const lines = early.split(/\r?\n/);
-  const head = lines.findIndex((l) => /Waiting 2 timings/.test(l));
+  const head = lines.findIndex((l) => /Blocked 2 timings/.test(l));
   assert.match(lines[head + 1], /^\s+due\s+an overflow seen \(2\)$/, 'the due timing comes first');
   assert.match(lines[head + 2], /^\s+09-25\s+gates a week old \(1\)$/, 'a date not yet reached shows the date');
+  assert.match(early, /patrol: 1 due \+ 0 stale, offer one option/);
 
   const late = reportAt(root, 2026, 9, 26);
-  assert.match(late, /Waiting 2 timings, 3 entries — 2 due, offer one option/);
+  assert.match(late, /Blocked 2 timings, 3 entries — 2 due/);
 });
 
-// The control: a timing takes one of AskUserQuestion's four slots whenever it
-// is present, whether or not it is due — the slot does not come and go with
-// `due`.
-test('a Waiting timing takes one option from Needs a decision whether or not it is due', () => {
+test('the todo: block lists every Watch timing, stale ones first, and never marks one due', () => {
+  const root = workspace({});
+  const opts = initGit(root);
+  const body = [
+    '## Ready',
+    '',
+    '## Needs a decision',
+    '',
+    '## Watch',
+    '',
+    '### a demand appears',
+    'if: someone asks for it. 09-01.',
+    '',
+    '- a',
+    '',
+    '### an incident again',
+    'if: it breaks again. 07-01.',
+    '',
+    '- b',
+    '- c',
+  ].join('\n') + '\n';
+  commitTodo(root, opts, body, '2026-09-01T00:00:00Z');
+
+  const out = reportAt(root, 2026, 9, 3);
+  assert.match(out, /Blocked 0 timings, 0 entries — 0 due/);
+  assert.match(out, /Watch 2 timings, 3 entries — 1 stale/);
+  const lines = out.split(/\r?\n/);
+  const head = lines.findIndex((l) => /Watch 2 timings/.test(l));
+  assert.match(lines[head + 1], /^\s+stale\s+an incident again \(2\)$/, 'the stale timing comes first');
+  assert.match(lines[head + 2], /^\s+a demand appears \(1\)$/);
+  assert.match(out, /patrol: 0 due \+ 1 stale, offer one option/);
+});
+
+// The control: the patrol takes one of AskUserQuestion's four slots only while
+// a Blocked timing is due or a Watch timing is stale, and one slot covers both.
+test('the patrol takes one option from Needs a decision only while something is due or stale', () => {
   const root = workspace({});
   const opts = initGit(root);
   const body = [
@@ -704,16 +740,24 @@ test('a Waiting timing takes one option from Needs a decision whether or not it 
     '- Entry four',
     '- Entry five',
     '',
-    '## Waiting',
+    '## Blocked',
     '',
     '### an overflow seen',
-    'lifts when: an overflow is observed. 09-01.',
+    'after: an overflow is observed. 09-01.',
     '',
     '- b',
+    '',
+    '## Watch',
+    '',
+    '### a demand appears',
+    'if: someone asks for it. 09-01.',
+    '',
+    '- w',
   ].join('\n') + '\n';
   commitTodo(root, opts, body, '2026-09-01T00:00:00Z');
-  assert.match(reportAt(root, 2026, 9, 20), /Needs a decision 5 — newest 3 by last edit, offer these:/);
-  assert.match(reportAt(root, 2026, 9, 3), /Needs a decision 5 — newest 3 by last edit, offer these:/);
+  assert.match(reportAt(root, 2026, 9, 3), /Needs a decision 5 — newest 4 by last edit, offer these:/, 'nothing due or stale: no slot');
+  assert.match(reportAt(root, 2026, 9, 20), /Needs a decision 5 — newest 3 by last edit, offer these:/, 'a due Blocked timing: one slot');
+  assert.match(reportAt(root, 2026, 11, 5), /Needs a decision 5 — newest 3 by last edit, offer these:/, 'due and stale together: still one slot');
 });
 
 test('what is offered plus "and N more" equals todo-check\'s own count', () => {
@@ -725,7 +769,7 @@ test('what is offered plus "and N more" equals todo-check\'s own count', () => {
     '## Needs a decision',
     '- One', '- Two', '- Three', '- Four', '- Five', '- Six',
     '',
-    '## Waiting',
+    '## Blocked',
   ].join('\n') + '\n';
   commitTodo(root, opts, body, '2026-01-01T00:00:00Z');
 
@@ -734,7 +778,7 @@ test('what is offered plus "and N more" equals todo-check\'s own count', () => {
 
   const out = run(['--root', root]);
   const start = out.indexOf('todo: TODO.md');
-  const waitingIdx = out.indexOf('\n  Waiting ', start);
+  const waitingIdx = out.indexOf('\n  Blocked ', start);
   const block = out.slice(start, waitingIdx);
   const offered = block.split(/\r?\n/).filter((l) => /^    \S/.test(l) && !/^    and \d+ more/.test(l)).length;
   const more = /and (\d+) more, not listed/.exec(block);
@@ -767,7 +811,7 @@ test('editing only the heading after the last entry does not touch that entry\'s
     '- Entry four',
     '- Entry five',
     '',
-    '## Waiting',
+    '## Blocked',
   ].join('\n') + '\n';
   commitTodo(root, opts, body, '2026-01-01T00:00:00Z');
 
@@ -781,7 +825,7 @@ test('editing only the heading after the last entry does not touch that entry\'s
   // bullet line is untouched. A span that leaked past Entry five's own line
   // would pick this commit up as an edit to Entry five and — being later than
   // Entry two's — put Entry five first instead.
-  const bodyV3 = bodyV2.replace('## Waiting', '##  Waiting');
+  const bodyV3 = bodyV2.replace('## Blocked', '##  Blocked');
   commitTodo(root, opts, bodyV3, '2026-01-03T00:00:00Z');
 
   const out = run(['--root', root]);
@@ -808,7 +852,7 @@ test('an edit to a continuation line alone moves its entry to first', () => {
     '- Entry four',
     '- Entry five',
     '',
-    '## Waiting',
+    '## Blocked',
   ].join('\n') + '\n';
   commitTodo(root, opts, body, '2026-01-01T00:00:00Z');
 
@@ -838,7 +882,7 @@ test('a tie keeps the entry later in the file first, all the way down the shown 
     '- Entry four',
     '- Entry five',
     '',
-    '## Waiting',
+    '## Blocked',
   ].join('\n') + '\n';
   commitTodo(root, opts, body, '2026-01-01T00:00:00Z');
 
@@ -869,7 +913,7 @@ test('an uncommitted edit outranks even a commit dated in the future', () => {
     '- Entry four',
     '- Entry five',
     '',
-    '## Waiting',
+    '## Blocked',
   ].join('\n') + '\n';
   commitTodo(root, opts, body, '2030-01-01T00:00:00Z');
 
@@ -955,7 +999,7 @@ test('claude.md: and overlap: read the config directory, and print neither when 
 test('the todo: block says how many days since the last audit once it is past 14, and nothing before', () => {
   const root = workspace({ '.fankeel/audit.json': JSON.stringify({ last: '2026-09-01' }) + '\n' });
   const opts = initGit(root);
-  commitTodo(root, opts, '## Ready\n\n## Needs a decision\n\n## Waiting\n', '2026-09-01T00:00:00Z');
+  commitTodo(root, opts, '## Ready\n\n## Needs a decision\n\n## Blocked\n', '2026-09-01T00:00:00Z');
   assert.match(reportAt(root, 2026, 9, 16), /^ {2}audit: 15 天未跑$/m);
   assert.doesNotMatch(reportAt(root, 2026, 9, 14), /audit:/);
   assert.doesNotMatch(reportAt(root, 2026, 9, 15), /audit:/, '14 days is not more than 14');
