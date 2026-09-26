@@ -740,11 +740,13 @@ page, or the row selected on 清單) is `live`, that session's
 `station/detail/<id>.js` too. A session that is no longer live has its detail
 re-read no more, because nothing under it can move; a hidden tab re-reads
 nothing. Each re-read is a script tag, as on the first load, with a `?t=` the
-server ignores added so nothing in between answers from a cache. A redraw
-keeps which sections were open, the
-agents, prompts and phases opened on 派工 and its state filter, the replay's
-hidden kinds, where the page and the list were scrolled, and which control had
-focus; a reader
+server ignores added so nothing in between answers from a cache. A redraw on
+the same view replaces only the top-level blocks whose markup changed since
+the last draw (`changedParts`), so an unchanged section keeps its DOM, its
+scroll and its focus; a view that changed shape is drawn whole. A redraw
+keeps which sections were open, the agents, prompts and phases opened on
+派工 and its state filter, the replay's hidden kinds, where the page and the
+list were scrolled, and which control had focus; a reader
 typing into a field on the page holds it back until the next re-read. Figures
 that move between re-reads — how long a stage has run — tick once a second,
 and the footer says when the last re-read landed, on every view. The file

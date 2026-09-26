@@ -2086,6 +2086,17 @@
                 : '<p class="tally">靜態頁不能作答：開 serve 的頁面，或回 terminal 答。</p>') + '</div>';
     }
 
+    // Which of the page's top-level blocks a redraw has to replace: the
+    // indices whose markup changed, or null when the list changed shape and
+    // the page is drawn whole. `was` is what the last draw wrote, not what the
+    // DOM holds now — a <details> the reader opened is the reader's.
+    function changedParts(was, now) {
+        if (!was || !now || was.length !== now.length) return null;
+        var out = [];
+        for (var i = 0; i < now.length; i++) if (was[i] !== now[i]) out.push(i);
+        return out;
+    }
+
     // The main session's effort, when its transcript said; nothing otherwise.
     function effortChip(effort) {
         return effort ? '<span class="chip" title="主 session 最後一次請求的 effort">effort <span class="mono">' + esc(effort) + '</span></span>' : '';
@@ -2128,6 +2139,7 @@
             dashLive: dashLive, dashGate: dashGate, dashSpend: dashSpend, dashRecent: dashRecent, dashPage: dashPage,
             NAV_TREE: NAV_TREE,
             tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
+            changedParts: changedParts,
         };
     }
     if (!doc) return;
@@ -3873,6 +3885,17 @@
     }
     VIEWS.settings = settingsPage;
     var drawnHash = null;
+    var drawnParts = null;
+    // The page's top-level elements as markup, or null where this document
+    // cannot parse a fragment (the test harness's fake DOM) or the view put
+    // bare text at the top level — both mean draw it whole.
+    function partsOf(html) {
+        var t = doc.createElement('template');
+        if (!t || !t.content || !t.content.children) return null;
+        t.innerHTML = html;
+        var loose = [].some.call(t.content.childNodes, function (n) { return n.nodeType === 3 && n.textContent.trim(); });
+        return loose ? null : [].map.call(t.content.children, function (c) { return c.outerHTML; });
+    }
     function drawFloat() {
         var fk = doc.getElementById('fk');
         if (!fk) return;
@@ -3904,7 +3927,19 @@
         var dets = {}, samePage = w.location.hash === drawnHash;
         if (samePage && doc.querySelectorAll) [].forEach.call(doc.querySelectorAll(DETS), function (d) { dets[detKey(d)] = d.open; });
         drawnHash = w.location.hash;
-        p.innerHTML = (VIEWS[route.view] || dashPage)(route);
+        var html = (VIEWS[route.view] || dashPage)(route);
+        var parts = partsOf(html);
+        var changed = samePage && parts ? changedParts(drawnParts, parts) : null;
+        if (changed && p.children && p.children.length === parts.length) {
+            changed.forEach(function (i) {
+                var t = doc.createElement('template');
+                t.innerHTML = parts[i];
+                p.replaceChild(t.content.firstElementChild, p.children[i]);
+            });
+        } else {
+            p.innerHTML = html;
+        }
+        drawnParts = parts;
         if (samePage && doc.querySelectorAll) {
             [].forEach.call(doc.querySelectorAll(DETS), function (d) {
                 var k = detKey(d);
