@@ -1,5 +1,5 @@
 {
   "entry": ["hooks/*.js", "scripts/*.js", "tests/**/*.test.js"],
-  "ignore": [".fankeel/**", "docs/reports/evidence/**"],
+  "ignore": [".fankeel/**", "docs/90-agent/reports/evidence/**"],
   "exclude": ["exports"]
 }

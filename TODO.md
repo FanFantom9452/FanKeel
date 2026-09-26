@@ -76,10 +76,12 @@ what gets scheduled.
 
 ## Ready
 
-- 〔audit〕`/fankeel-audit` 擴充成定期清理機制：docs tree 合規、搬遷對照表、大 repo 分批、排程提醒；先搬 fankeel 自己的 docs，再跑 Trovara — [docs/documents.md](docs/documents.md).
+- 〔audit〕`/fankeel-audit` 擴充成定期清理機制：docs tree 合規、搬遷對照表、大 repo 分批、排程提醒；先搬 fankeel 自己的 docs，再跑 Trovara — [docs/documents.md](docs/90-agent/reference/documents.md).
 - 〔wizard〕auto 選項缺 mockup 有畫的外開圖示（`fopen`）：`seg()` 樣板沒吐出來 — [assets/station/station.js](assets/station/station.js).
 
 ## Needs a decision
+
+- 〔docs〕lib/stages.js 的 design/plan artifact 仍寫 docs/plans/；fankeel 改 audience 後計畫桶是 docs/90-agent/plans——改讀 docs.json 的 plan 桶，同 newestPlan — [lib/stages.js](lib/stages.js).
 
 ## Waiting
 
@@ -96,7 +98,7 @@ lifts when: 交接選項（簡報 §6.2）實施後 context 仍常過 400k. 09-2
 ### docs-audit 報未點名模組
 lifts when: docs-audit 學會報未被點名的模組. 09-25.
 
-- 〔docs〕兩個 `lib/*.js` 沒有 reference-role 頁面點名：`hook.js`、`report.js`；09-09 記的五個裡另外三個後來被點到了 — [docs/documents.md](docs/documents.md).
+- 〔docs〕兩個 `lib/*.js` 沒有 reference-role 頁面點名：`hook.js`、`report.js`；09-09 記的五個裡另外三個後來被點到了 — [docs/documents.md](docs/90-agent/reference/documents.md).
 
 ### 需要第十一種語言
 lifts when: a repository needs an eleventh language. 09-25.
@@ -106,12 +108,12 @@ lifts when: a repository needs an eleventh language. 09-25.
 ### 下一個前端任務
 lifts when: 下一個前端任務出現. 09-25.
 
-- 〔design〕design class：mockup 已落地，其餘是另一個 architectural 任務；計畫的三份必讀來源已不存在，內容多半已併進簡報 — [簡報 §4.1](docs/improvement-brief.md#41-design-階段的-mockup-步驟前端任務).
+- 〔design〕design class：mockup 已落地，其餘是另一個 architectural 任務；計畫的三份必讀來源已不存在，內容多半已併進簡報 — [簡報 §4.1](docs/90-agent/reference/improvement-brief.md#41-design-階段的-mockup-步驟前端任務).
 
 ### knip 認得 CJS namespace
 lifts when: knip 認得 CJS namespace property access. 09-25.
 
-- 〔build〕knip 的 unused exports 一格關著：6.37.0 仍認不得 CJS namespace 取用，開著回 156 個假陽性（09-18 重跑） — [docs/development.md](docs/development.md).
+- 〔build〕knip 的 unused exports 一格關著：6.37.0 仍認不得 CJS namespace 取用，開著回 156 個假陽性（09-18 重跑） — [docs/development.md](docs/01-guide/development.md).
 
 ### guard 測試再紅一次
 lifts when: `a claim whose process is gone does not block` 在整套裡再紅一次. 09-25.
@@ -126,20 +128,20 @@ lifts when: `scripts/ctx.js` 量到 build 或 verify 的站 agent 自己的 cont
 ### 受控 build/verify 實跑
 lifts when: main 已 push（08c4ecf 起），新 terminal 更新插件到 0.76.0 以後，並跑過一次 stage.agents=all 的真實 task. 09-25.
 
-- 〔stage-agents〕安裝版還沒這次改動、本 session 的 hook 也釘死在 0.74.0，兩者都量不了：新 terminal 更新插件、`stage.agents` 設 all、跑一個真實 task，用 `ctx.js --by-stage` 與 `modelUsage` 讀 — [docs/subagents.md](docs/subagents.md).
+- 〔stage-agents〕安裝版還沒這次改動、本 session 的 hook 也釘死在 0.74.0，都量不了：新 terminal 更新插件、`stage.agents` 設 all、跑真實 task，用 `ctx.js --by-stage` 與 `modelUsage` 讀 — [subagents.md](docs/90-agent/reference/subagents.md).
 - 〔stage-agents〕design 站跨輪對話已寫（`lib/stages.js` 的 `controlFor`）但沒實跑；build 每個 task 的提交要經 controller 兩回合，省不省 context 由同一次實跑的 `ctx.js --by-stage` 讀 — [lib/stages.js](lib/stages.js).
-- 〔stage-agents〕接縫「站 agent 做不到的事」：受控 build 開跑時看 brain 在 main 上有沒有先問同意、開 worktree、加 TODO 行、續用同一個 implementer — [docs/subagents.md](docs/subagents.md).
-- 〔stage-agents〕接縫「第二個 agent」：gate 選 option one 以外、主控 SendMessage 同一個 agent 時看 `inflight` 是否已清；殺掉 agent 後看標記留多久 — [docs/subagents.md](docs/subagents.md).
-- 〔stage-agents〕接縫「profile 中途翻轉」：受控站跑到一半在站頁套 preset，看下一次 inject、brief、gate、resume、guard 各做了什麼 — [docs/subagents.md](docs/subagents.md).
-- 〔stage-agents〕接縫「記帳」：受控 build 後查續用的 agent 是否一次派工一則 notification、續用會不會重發 brief、transcript 留的是不是佔位題 — [docs/subagents.md](docs/subagents.md).
-- 〔stage-agents〕接縫「claims」：受控 verify 的 mutation 編輯之後，看另一個 live session 會不會被報撞檔 — [docs/subagents.md](docs/subagents.md).
-- 〔stage-agents〕接縫「在哪提交」：task 的 `project` 不是 cwd、或在 worktree 裡時跑受控 build，看 `scripts/commit.js` 提交到哪個 repo — [docs/subagents.md](docs/subagents.md).
-- 〔stage-agents〕verify 的 mutation 要不要專屬 agent（工具或模型跟 fankeel-brain 不同才拆）；等受控 verify 實跑、k 重跑後再定 — [docs/subagents.md](docs/subagents.md).
+- 〔stage-agents〕接縫「站 agent 做不到的事」：受控 build 開跑時看 brain 在 main 上有沒有先問同意、開 worktree、加 TODO 行、續用同一個 implementer — [docs/subagents.md](docs/90-agent/reference/subagents.md).
+- 〔stage-agents〕接縫「第二個 agent」：gate 選 option one 以外、主控 SendMessage 同一個 agent 時看 `inflight` 是否已清；殺掉 agent 後看標記留多久 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
+- 〔stage-agents〕接縫「profile 中途翻轉」：受控站跑到一半在站頁套 preset，看下一次 inject、brief、gate、resume、guard 各做了什麼 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
+- 〔stage-agents〕接縫「記帳」：受控 build 後查續用的 agent 是否一次派工一則 notification、續用會不會重發 brief、transcript 留的是不是佔位題 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
+- 〔stage-agents〕接縫「claims」：受控 verify 的 mutation 編輯之後，看另一個 live session 會不會被報撞檔 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
+- 〔stage-agents〕接縫「在哪提交」：task 的 `project` 不是 cwd、或在 worktree 裡時跑受控 build，看 `scripts/commit.js` 提交到哪個 repo — [docs/subagents.md](docs/90-agent/reference/subagents.md).
+- 〔stage-agents〕verify 的 mutation 要不要專屬 agent（工具或模型跟 fankeel-brain 不同才拆）；等受控 verify 實跑、k 重跑後再定 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 
 ### 放行規則有沒有效
 lifts when: 放行規則存在下 no verdict 再發生一次. 09-25.
 
-- 〔stage-agents〕auto mode 分類器曾對站 agent 與 implementer 的 Write／Edit 回 no verdict（09-22 六次以上）；已加放行規則 `Edit(/.fankeel/build/**)`，但放行前後探測都寫成功，效果無法證明；再發生時查規則有沒有被讀到 — [docs/subagents.md](docs/subagents.md).
+- 〔stage-agents〕auto mode 曾對站 agent／implementer 的 Write／Edit 回 no verdict（09-22 六次以上）；已加規則 `Edit(/.fankeel/build/**)`，但放行前後探測都成功，證不出效果；再發生時查有沒有被讀到 — [subagents.md](docs/90-agent/reference/subagents.md).
 
 ### AI CODING SECURITY 定案
 lifts when: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃描模型. 09-26.
@@ -149,7 +151,7 @@ lifts when: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃
 ### 第二個平台的使用者
 lifts when: 出現第二個 host（Gemini CLI、Codex CLI 等）的使用者或 issue. 09-25.
 
-- 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；hook 對等只查過 Gemini CLI `BeforeAgent` 與 Codex CLI `UserPromptSubmit` 兩個 — [簡報 §2.7](docs/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
+- 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；hook 對等只查過 Gemini CLI `BeforeAgent` 與 Codex CLI `UserPromptSubmit` 兩個 — [簡報 §2.7](docs/90-agent/reference/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
 
 ### sonnet 花費成瓶頸或要離線
 lifts when: 渲染審查的 sonnet 花費成了瓶頸，或需要離線跑. 09-25.
@@ -159,17 +161,17 @@ lifts when: 渲染審查的 sonnet 花費成了瓶頸，或需要離線跑. 09-2
 ### implementer 互相蓋檔
 lifts when: 共用樹上出現一次 implementer 蓋掉另一個 implementer 的改動. 09-25.
 
-- 〔build〕ready-queue 的 worktree 那一半：每個 implementer 各開 worktree、由 brain merge；`scripts/commit.js` 認不得 worktree、brain 不能 `git commit`，兩者都得先改 — [docs/subagents.md](docs/subagents.md).
+- 〔build〕ready-queue 的 worktree 那一半：每個 implementer 各開 worktree、由 brain merge；`scripts/commit.js` 認不得 worktree、brain 不能 `git commit`，兩者都得先改 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 
 ### 站頁介面只有中文
 lifts when: 有使用者需要非中文的 station 介面出現. 09-25.
 
-- 〔station〕assets/station/station.js 與 station.css 的介面文字（約 519 行 UI 字串）目前只有中文，沒有 i18n 機制 — [docs/station.md](docs/station.md).
+- 〔station〕assets/station/station.js 與 station.css 的介面文字（約 519 行 UI 字串）目前只有中文，沒有 i18n 機制 — [docs/station.md](docs/90-agent/reference/station.md).
 
 ### 文件全文搜尋有人要
 lifts when: 有人要 文件 頁的全文搜尋. 09-25.
 
-- 〔station〕文件頁只讀 map.js 算好的統計卡，沒有全文搜尋；要做的話得加一個 server-side 的搜尋 payload — [docs/station.md](docs/station.md).
+- 〔station〕文件頁只讀 map.js 算好的統計卡，沒有全文搜尋；要做的話得加一個 server-side 的搜尋 payload — [docs/station.md](docs/90-agent/reference/station.md).
 
 ### 首次繪圖變慢一次
 lifts when: station-data.js 每次請求重算拖慢首次繪圖一次. 09-25.
@@ -184,7 +186,7 @@ lifts when: dashboard 的等你回答量到不準的等待時間一次. 09-25.
 ### 進行中卡片改版第二步
 lifts when: 有人排進「進行中」卡片改版第二步. 09-25.
 
-- 〔station〕「進行中」（`#/live`）的 card 改版第二步已核准但還沒做 — [docs/station.md](docs/station.md).
+- 〔station〕「進行中」（`#/live`）的 card 改版第二步已核准但還沒做 — [docs/station.md](docs/90-agent/reference/station.md).
 
 ### tune 還原誤刪一次
 lifts when: tune.js done 在 live 模式又因為 untracked 檔誤還原一次改動. 09-25.
@@ -214,4 +216,4 @@ lifts when: `tokenbar-usage.jsonl` 有跨過一次 7d reset 的真實讀數；09
 ### 重跑成對量測
 lifts when: 使用者核准重跑成對量測的花費（09-25 兩個 arm 合計約 $30）. 09-26.
 
-- 〔stage-agents〕ab.sh 改成在 worktree 裡 commit profile（`pin.sh`）；修好的 script 還沒重跑 — [docs/reports/evidence/2026-09-26-ab-profile-pin/ab.sh](docs/reports/evidence/2026-09-26-ab-profile-pin/ab.sh).
+- 〔stage-agents〕ab.sh 改成在 worktree 裡 commit profile（`pin.sh`）；修好的 script 還沒重跑 — [docs/reports/evidence/2026-09-26-ab-profile-pin/ab.sh](docs/90-agent/reports/evidence/2026-09-26-ab-profile-pin/ab.sh).

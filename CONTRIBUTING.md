@@ -13,14 +13,14 @@ changing it.
 | Area | Source of truth | Contribution rule |
 |---|---|---|
 | Core logic | `lib/*.js` | Pure functions, tested directly. Nothing in `lib/` reaches into `scripts/` or `hooks/` — only the other direction. |
-| CLI entry points | `scripts/*.js` | Thin wrappers over `lib/`. A new flag on the station CLI needs a row on `docs/station.md`, or `tests/station-doc.test.js` fails. |
+| CLI entry points | `scripts/*.js` | Thin wrappers over `lib/`. A new flag on the station CLI needs a row on `docs/90-agent/reference/station.md`, or `tests/station-doc.test.js` fails. |
 | Hooks | `hooks/*.js` | Every hook exits `0` on every path, including its own errors — see `## Development` for why that is load-bearing. |
 | Skills | `skills/*/SKILL.md` | Keep an operation's skill thin. Do not copy routing tables, domain rules, or shared conventions out of the skill that owns them and into a wrapper. |
 | Tests | `tests/*.test.js` | `node --test`. Every exported name needs an importer, and a new file has to be staged (`git add`) before `tests/source.test.js` can see it. |
-| Documentation | `docs/README.md`, the hand-maintained index | Filing follows `.fankeel/map.md`: `docs` is reference, `docs/plans` is plan, `docs/decisions` is decision, `docs/reports` is report, `docs/archive` is archive. A new or renamed page gets its index row in the same change. |
+| Documentation | `docs/README.md`, the hand-maintained index | Filing follows `.fankeel/docs.json`'s `audience` preset: `docs/01-guide` and `docs/02-architecture` are reference for humans, `docs/03-decisions` is decision, `docs/90-agent/reference` and `docs/90-agent/reports` are the agent-facing reference and report buckets, `docs/90-agent/plans` is plan, `docs/99-archive` is archive. A new or renamed page gets its index row in the same change. |
 | Generated station output | `lib/station.js`, the `EMITTED` list | Never hand-edit a file `station.js serve` writes. If a name stops being emitted, remove it from the committed `.fankeel/.gitignore` by hand — appending is automatic there, removing is not. |
 | `TODO.md` | itself | One bullet per deferred thing, filed under `## Ready`, `## Needs a decision` or `## Waiting`. No detail that belongs in the file the bullet links to. |
-| Borrowing from another repository | [docs/decisions/2026-09-24-optimise-own-first.md](docs/decisions/2026-09-24-optimise-own-first.md) | Start from a fankeel problem — a `TODO.md` entry or a recorded incident — and read the other repository for how it handled that. A practice that answers none of ours is not put to the user as a pick. |
+| Borrowing from another repository | [docs/decisions/2026-09-24-optimise-own-first.md](docs/03-decisions/2026-09-24-optimise-own-first.md) | Start from a fankeel problem — a `TODO.md` entry or a recorded incident — and read the other repository for how it handled that. A practice that answers none of ours is not put to the user as a pick. |
 | Version numbers | `scripts/version.js` | Run it to move the number. It is what keeps thirteen files in agreement; hand-editing any one of them is how they stop agreeing. |
 
 ## Issue first

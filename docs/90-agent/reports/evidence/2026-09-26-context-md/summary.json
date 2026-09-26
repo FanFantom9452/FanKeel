@@ -1,0 +1,20 @@
+{
+  "base": "9e54e1b70a1dd0ad943b2534d8113bacbee0b7f4",
+  "arms": {
+    "opus": {
+      "usd": 0,
+      "tokens": 0,
+      "stages": {},
+      "models": {}
+    },
+    "sonnet": {
+      "usd": 0,
+      "tokens": 0,
+      "stages": {},
+      "models": {}
+    }
+  },
+  "oldAtSonnetRates": 0,
+  "k": null,
+  "kTokens": null
+}

@@ -168,8 +168,8 @@ test('the stage agent ends its turn with the single word waiting rather than pol
 test('the stage agent\'s Return section cites the wake-up report and names SubagentHandback', () => {
     const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8');
     const ret = text.split('\n## Return\n')[1];
-    assert.match(ret, /\(\.\.\/docs\/reports\/2026-09-23-brain-wakeup\.md\)/);
-    assert.ok(fs.existsSync(path.join(ROOT, 'docs', 'reports', '2026-09-23-brain-wakeup.md')));
+    assert.match(ret, /\(\.\.\/docs\/90-agent\/reports\/2026-09-23-brain-wakeup\.md\)/);
+    assert.ok(fs.existsSync(path.join(ROOT, 'docs', '90-agent', 'reports', '2026-09-23-brain-wakeup.md')));
     assert.match(ret, /only through `SubagentHandback`/);
 });
 

@@ -835,7 +835,7 @@ test('lint reads a bare Spec path as well as a markdown link', () => {
 test('lint on the 2026-09-06 station plan names the promises it dropped and the fence that named no file', () => {
   const dir = root();
   const repo = path.join(__dirname, '..');
-  const find = (name) => ['docs/plans', 'docs/archive'].map((d) => path.join(repo, d, name)).find((p) => fs.existsSync(p));
+  const find = (name) => ['docs/90-agent/plans', 'docs/99-archive'].map((d) => path.join(repo, d, name)).find((p) => fs.existsSync(p));
   fs.copyFileSync(find('2026-09-06-station-reads-back.md'), path.join(dir, 'plan.md'));
   fs.copyFileSync(find('2026-09-06-station-reads-back-design.md'), path.join(dir, '2026-09-06-station-reads-back-design.md'));
   const { out, code } = run(dir, path.join(dir, 'plan.md'), 'lint');

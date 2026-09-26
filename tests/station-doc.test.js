@@ -18,7 +18,7 @@ test('every flag the station CLI parses appears on docs/station.md', () => {
     const src = fs.readFileSync(path.join(ROOT, 'scripts', 'station.js'), 'utf8');
     const flags = [...acceptedFlags(src)];
     assert.ok(flags.length >= 5, 'the parser moved: ' + flags.join(', '));
-    const page = fs.readFileSync(path.join(ROOT, 'docs', 'station.md'), 'utf8');
+    const page = fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'station.md'), 'utf8');
     for (const flag of flags) {
         assert.ok(page.includes(flag), flag + ' is on no page');
     }

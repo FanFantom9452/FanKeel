@@ -91,7 +91,9 @@ function record(opts) {
     if (!answer.trim()) fail('The answer is empty, so there is nothing to record. A background judge\'s answer is the last assistant message in <session>/subagents/agent-<id>.jsonl; its tasks/<id>.output is 0 bytes.');
     const judged = new Date().toISOString();
     const model = opts.model || 'fable';
-    const dir = path.join(projectRoot, 'docs', 'judgements');
+    const { tree } = docs.read(projectRoot);
+    const bucket = tree && tree.buckets.find((b) => /(^|\/)judgements$/.test(b.path));
+    const dir = path.join(projectRoot, ...(bucket ? bucket.path : 'docs/judgements').split('/'));
     fs.mkdirSync(dir, { recursive: true });
     const file = freePath(dir, judged.slice(0, 10) + '-' + opts.slug);
     const body = [
@@ -117,7 +119,7 @@ function record(opts) {
     ].join('\n');
     fs.writeFileSync(file, body);
     const indexFile = path.join(projectRoot, 'docs', 'README.md');
-    const rel = 'judgements/' + path.basename(file);
+    const rel = path.relative(path.dirname(indexFile), file).split(path.sep).join('/');
     const indexed = indexRow(indexFile, firstLine(brief), rel, judged, model);
     return 'fankeel — judgement filed: ' + file + '\n' + (indexed ? 'index row: ' + indexFile : 'no ## Judgements table in ' + indexFile + '; add the row by hand');
 }

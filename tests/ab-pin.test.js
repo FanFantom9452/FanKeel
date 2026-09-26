@@ -8,7 +8,7 @@ const { execFileSync } = require('node:child_process');
 const tmp = require('./tmp.js');
 
 const ROOT = path.join(__dirname, '..');
-const PIN = path.join(ROOT, 'docs', 'reports', 'evidence', '2026-09-26-ab-profile-pin', 'pin.sh');
+const PIN = path.join(ROOT, 'docs', '90-agent', 'reports', 'evidence', '2026-09-26-ab-profile-pin', 'pin.sh');
 const TASK_JS = path.join(ROOT, 'scripts', 'task.js');
 const slash = (p) => p.replace(/\\/g, '/');
 

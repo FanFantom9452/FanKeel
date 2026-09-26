@@ -1,0 +1,820 @@
+---
+status: current
+last_verified: 2026-09-23
+source_of_truth: hooks/brief.js, lib/render.js, lib/stages.js, hooks/carry.js, lib/plantasks.js, lib/usage.js, lib/prices.js, scripts/judge.js, scripts/await.js, scripts/commit.js
+---
+
+# Subagents
+
+What a subagent is told when it starts, and why the return value is the expensive half.
+
+A subagent starts with its own context and none of the parent's. The per-prompt
+injection never reaches it — that rides on the user's prompt, and a subagent does
+not have one. So a `SubagentStart` hook hands it a brief instead: the task,
+the files that task has touched, and what its return value costs. A build
+implementer receives a second brief beside it, a file `ledger.js brief <n>`
+writes from the plan; the hook's brief says which task and which files, the
+task brief says what to build.
+Background subagents get the same brief. One started with an isolated context
+does not, which is Claude Code's decision rather than something to work around.
+A **Workflow** agent gets it too, byte for byte, and its `agent_type` reads
+`workflow-subagent` — a value no test here had ever seen. That the brief arrives
+at all was assumed until 2026-09-04 and is measured now: `tests/brief.test.js`
+asserts the hook process's stdout and stops there, so two cells were asked to
+reproduce whatever had been put in front of them, with no needle in the prompt to
+find — a third never launched, and a cell that did not run is not a result
+([reports/2026-09-04-subagent-brief-probe.md](../reports/2026-09-04-subagent-brief-probe.md)).
+
+## The eight agents this plugin defines
+
+Eight subagent types are not just described in prose — they are declared as
+`agents` in `.claude-plugin/plugin.json` and shipped as files under `agents/`:
+`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier`, `fankeel-fixer`, `fankeel-brain`, `fankeel-render-reviewer` and `fankeel-mockup`.
+Four of them — `fankeel-reader`, `fankeel-judge`, `fankeel-reviewer` and
+`fankeel-render-reviewer` — carry `tools: [Read, Grep, Glob, Bash]` — Edit, Write and
+NotebookEdit are simply absent from the list, so calling any of them to change
+a file is refused by the harness rather than left to a rule somebody has to
+remember. Bash stays on the list for `git` — and, for the reader, this plugin's
+own scripts — a named residual rather than a claim that any of the four cannot
+write anything.
+
+`fankeel-verifier` is no longer the only agent carrying `Write` —
+`fankeel-fixer` does too, with `Edit` beside it and no `Bash` at all,
+for reference-page corrections and small fixes that need no test run. The
+verifier adds `Write`, because verify's per-task verifier writes its evidence rows
+to a file and returns the path — what that keeps the rows out of is a
+Workflow's join, not this session's context, which a return value never
+reaches anyway. `fankeel-brain` carries `Write` for its handoff — and on `build` its commit file, and on `design` and `plan` the one `docs/plans/` file its brief names and that file's commit file:
+the report and gate block a controller hands on by path rather than retyping
+(the `stage.agents` section below). `Write` is matched by `guard.js`'s `PreToolUse` hook,
+whose matcher is `Edit|Write|NotebookEdit`. `Bash` is matched now too:
+`.claude-plugin/plugin.json` registers `hooks/guard.js` a second time,
+matcher `Bash|PowerShell`, and it denies a command that writes files —
+`lib/guard.js`'s `writesFiles` — when `agent_id` is set **and** `agent_type` is
+`fankeel-reader`, `fankeel-reviewer`, `fankeel-judge` or `fankeel-render-reviewer`. The id is the half that
+says this is a subagent at all: the main thread of a session started with
+`--agent` carries the type without it and must be able to write, so the id is
+checked first (`hooks/guard.js:60`, `if (!payload.agent_id) return;`).
+Before any of that, `hooks/guard.js` returns unless the dispatching session has an
+active registry entry (`hooks/guard.js:33`, `if (!mine || mine.active !== true) return;`),
+so a read-only subagent under a session with no active task is not denied.
+[collisions.md](collisions.md)
+carries what that denylist actually matches, not restated here. Seven of
+the eight agents hold `Bash`; `fankeel-fixer` is the one that does not,
+because it edits the file itself rather than returning something for the
+parent to run a test against. `tests/agents.test.js` names all four writers as
+exemptions, each with its argument beside it, rather than dropping the assertion.
+`fankeel-mockup` carries `Edit` and `Write` for the mockup page it draws under
+`.fankeel/build/` and the one block a tuning request names, and `Skill`, to
+load the design skill its prompt names.
+
+`Edit|Write|NotebookEdit` carries a second check besides the collision guard
+just described: when `agent_id` is absent — the main thread, read the same
+way the `Bash|PowerShell` matcher above reads it — and the task's own stage
+is on `stage.agents`'s list, an `Edit`, `Write` or `NotebookEdit` from the
+controller is denied outright (`hooks/guard.js:85`, `if (!payload.agent_id && WRITE_TOOLS.has(payload.tool_name))`),
+ahead of both `guard` mode and the collision guard below it. That ordering is
+deliberate: the check runs before `guardMode(mine)` is even read
+(`hooks/guard.js:130`, `if (!guardMode(mine)) return;`), so a controller set
+to `guard: off` is not exempt from it. `Bash` and `PowerShell` are
+deliberately left out of the set it tests (`hooks/guard.js:25`, `const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);`):
+the controller still has to run `scripts/task.js` to dispatch, relay a path
+and ask — and, on `build`, `design` and `plan`, `scripts/commit.js` — and those run through `Bash`;
+the matcher above, not this one, still governs them.
+
+A fourth entry, matcher `Agent|Task` — both names, because which one the
+host sends for the subagent tool was not verified when it was added — sends
+every subagent dispatch through `hooks/guard.js`
+as well. It denies one kind: a `fankeel-brain` (with or without the
+`fankeel:` prefix) dispatched while the task's own stage is not on
+`stage.agents`'s list. A stage agent run for a stage nobody handed to one
+writes a gate the running session never reads: that session is not the
+controller for the stage, so it never opens the handoff file at all and asks
+its own question directly instead — what happened at `design` on 2026-09-23.
+The reason it gives names the stage and the list and says to do the stage in
+this session. Every other subagent type passes, and a profile that cannot be
+read lets the dispatch through.
+
+`fankeel-reader` runs at `model: sonnet` by default — the profile's
+`dispatch.floor`, which the survey, verify and audit skills ask their reader
+fan-outs to use (survey's stage rule names the type, no
+model) — a `subagent_type`
+that is structurally read-only standing in for what those dispatches used to
+send as `general-purpose`.
+
+`fankeel-judge` runs at `model: fable` by default — the profile's
+`judge.model` — and answers a different kind of
+question: not a multi-file read inside a stage's own work, but the in-stage
+question that would otherwise stop the stage to ask a person — design's one
+question at a time, survey's class, plan's split, build's stop-and-ask. No
+stage carries a rule for it any more: it runs when the user types
+`/fankeel-ask`, and [the skill](../../../skills/fankeel-ask/SKILL.md) carries
+the whole procedure from there. `lib/render.js`'s `renderBrief`, which
+`hooks/brief.js` calls, gives it one line the reader's brief does not carry,
+when `payload.agent_type` is `fankeel-judge`: *answer once; the parent will
+not message you again.*
+
+Its answer does not stay in the judge's own context — the parent files it,
+verbatim:
+
+```
+node scripts/judge.js record --session <id> --brief <path> --answer <path|-> --slug <a-z0-9-> [--model <m>] [--root <dir>] [--project <dir>]
+```
+
+It writes `docs/judgements/<date>-<slug>.md`: frontmatter carrying `judged`,
+`model`, `agent: fankeel-judge`, `task`, `session` and `stage`, then the brief
+and the answer copied in whole rather than summarised
+(`scripts/judge.js:97-117`, `answer.trimEnd(),`).
+A slug already on disk gets `-2` rather than overwriting the first record
+(`scripts/judge.js:46-50`, `freePath`), and a missing `--session`, `--brief`,
+`--answer` or `--slug` exits 1 before anything is written. It then appends a
+row to `docs/README.md`'s own `## Judgements` table when that heading exists,
+and says so plainly when it does not rather than inventing one
+(`scripts/judge.js:61-77`, `indexRow`).
+
+[The fankeel-ask skill](../../../skills/fankeel-ask/SKILL.md) owns this command and
+every flag on it. The pointer earlier in this section comes *before* the
+restatement above and so does not stop it; this one comes after. This is the
+short form, not the only copy.
+
+`fankeel-reviewer` runs at `model: sonnet`, and answers neither kind of
+question above: it is the shared contract behind plan's reviewer, build's
+per-task reviewer, verify's adversary and audit's code half, all four of which
+dispatch `subagent_type: fankeel:fankeel-reviewer` instead of writing a model by hand. What tells it apart
+from `fankeel-reader` is not the tool list — both carry the same four — but
+the shape of the question: a reader is asked what a file says, a reviewer
+is asked what a diff, a table or the tree gets wrong — or, when the brief asks
+for cuts, what it could lose — and it returns only what it defeats and those
+cuts. It is one of several dispatches where nobody types a model at all —
+`fankeel-verifier` is another: `skills/fankeel-verify/SKILL.md:171`, `not typed by hand`,
+and it was added on the same branch as this sentence; the stage agent `fankeel-brain` and `fankeel-fixer` type none either —
+so the file's pin is the only floor — the literal `sonnet`, not `dispatch.floor`,
+which no reader or reviewer agent file and no hook reads to pin a model — only the
+stage agent's brief carries it, for the implementers the stage agent sends itself: `SubagentStart`'s payload
+carries no model (`agent_id`, `agent_type`, `session_id`, `cwd`), so a hook
+cannot see, and cannot check, what a dispatch asked for — the agent file's
+`model:` is the one pin the harness itself reads before launch.
+
+## Why this is the best-value text in the plugin
+
+The arithmetic is lopsided in a way nothing else here is.
+
+Everything a subagent **reads** costs input tokens in a context that is thrown
+away the moment it finishes. What it **returns** costs output tokens — five times
+the price — and then sits in the parent's context for the rest of the session,
+competing for the window and pulling compaction forward.
+
+So spending 280 tokens on a brief to take a thousand off a return value is worth
+it every single time, and it is worth it even when nothing else about the
+delegation changes.
+
+The brief is capped, and the cap is a test rather than a habit:
+`tests/brief.test.js:152`, `assert.ok(text.length < 1400`. Measured 2026-09-11
+against that test's own seed, the rendered brief is 1,098 characters — 823 before
+the working-tree rule was added to `RETURN_RULES`. A `TODO.md` entry carried 777
+as the figure until it closed on 2026-09-11; it matched nothing, in the code or
+in the test, and two independent measurements put the pre-rule brief at 823 and
+830 depending on the task line and the claim count. The figure moves with those,
+which is why it is quoted here with the fixture it came from and not on its own.
+
+## When to dispatch one
+
+The section below says what a subagent is *not*. This is the other half.
+
+| | |
+|---|---|
+| **dispatch** | by default. Anything that would leave files, output or dead ends in the parent's context, where they are re-read on every later turn. The payoff is concentrated in questions that have to **find** things; measured, a named question still joining across files bought 2.55× where the same question unnamed bought 9.23× |
+| **do not** | only two cases — a pipe already removes the residue, or it is a single tool call. `npm test` is tens of thousands of characters and the two lines that decide it are 24; `grep` does that for nothing |
+
+A user who has said, this session, not to dispatch is neither case: nothing
+removes the residue, and the work stays in the parent — for that session, and
+written down as that session's. The plan's `**Dispatch:**` lines read
+`in-session — the user said so this session` on Task 1 and `same reason as
+Task 1` after it, the build reviewer runs in the session as a ruling recorded
+once, and the fankeel-build skill's rationale.md, under its task loop, says
+what that costs and how half of it is bought back. Nothing else settles it that
+way. The host opens one tool,
+**Workflow**, on five things: `ultracode` in the prompt, ultracode on for the
+session, the user asking for a workflow in their own words, a skill the user
+invoked whose instructions say to run one, or a saved workflow by name; the
+**Agent** tool has no gate. A session that read *only when the user has opted
+in* off the wrong tool and stopped sending Agent readers had forbidden itself
+— 2026-09-01, and two builds ran in-session over it.
+
+Measured on 2026-08-26, one fan-out of four readers with a lens each: 240,881
+tokens spent inside them, about 4,000 characters returned, and 121 seconds rather
+than 352 because all four went out in one response. A second fan-out, measured the
+same day during this branch's own verify stage, sent four readers out in one
+response for 614 seconds of combined agent time against 235 seconds of wall-clock
+— the slowest one.
+
+Neither of those had a control: they counted what readers spent and compared it
+to nothing. Measured on 2026-09-03, one pair that did — the same wide question
+put to two fresh sessions, one dispatching four `sonnet` readers and one with the
+`Agent` tool taken away. Dispatch left 57,652 tokens in the parent against
+532,322, and paid for that with $2.23 against $1.21, 2.5 million tokens against
+543,000, and 280 seconds of wall-clock against 160. Dispatch is not cheaper and
+not faster. It buys residue, and that is the price of it:
+[reports/2026-09-03-dispatch-vs-inline.md](../reports/2026-09-03-dispatch-vs-inline.md).
+
+A second pair the same day changed one thing about that question: it named the
+seven files it wanted read, so neither arm had to search for them — one
+dispatch, one joint question, the inline arm asked the same. The residue
+advantage fell from 9.2× to 1.5× — 74,603 tokens in the parent against 113,518 —
+while the money stayed at 1.59× and the wall-clock got worse, 2.77×:
+[reports/2026-09-03-dispatch-vs-inline-named.md](../reports/2026-09-03-dispatch-vs-inline-named.md).
+
+A third pair filled the middle — the first pair's question with its eight files
+spelled out, so the join stayed and the searching went. Three points now, each
+one variable from its neighbour:
+
+| the question | residue advantage |
+|---|---|
+| unnamed, cross-file join | 9.23× |
+| **named, cross-file join** | **2.55×** |
+| named, per-file classification | 1.52× |
+
+Naming with the join held drops it 3.62×; the join with naming held raises it
+1.68×. **Both are real, and naming is the larger** — so what decides whether a
+dispatch pays is mostly whether the question has to **find** things, but it is a
+gradient and not a step: a named question that still has to join across files
+buys 2.55×, which is not nothing.
+
+`num_turns` is the mechanism, and all three pairs had it in hand from the start
+without using it. The inline arms ran 8, 9 and 13 turns for 113,518, 160,728 and
+532,322 tokens of residue — turns rise 1.63× where residue rises 4.69×, because
+every turn re-reads the accumulated context. Searching adds turns, and turns
+compound. That also retires the second pair's own argument for its conclusion:
+*no amount of reading 106KB costs 532,322 tokens* ignores turn count, and 106KB
+across thirteen turns reaches it with no searching at all. The conclusion held;
+the reasoning under it did not:
+[reports/2026-09-03-dispatch-vs-inline-join.md](../reports/2026-09-03-dispatch-vs-inline-join.md).
+
+Dispatch was dearer and slower in every one of the three, without exception —
+1.85×, 1.59× and 2.12× the money, 1.75×, 2.77× and 2.70× the wall-clock.
+
+Six things that fail silently when missed: several dispatches must be in **one
+response** to run concurrently; the **model must be passed explicitly**, since an
+omitted one inherits the parent's, unless the `subagent_type` is an agent file
+that pins its own — inside a Workflow script too, where every
+`agent` call carries `model` and the profile's `dispatch.floor` is the floor,
+and the authoring
+reference's omit-and-inherit is the host's default, not this plugin's — and
+`subagent_type: "fork"` inherits the whole context and ignores `model`
+regardless, which is why fankeel never dispatches one; the
+**count and the model must be said out loud**, in the response that sends
+them, because a fan-out nobody announced is spend the user is paying for and
+could not see coming; the **description must open with the model, its version
+and its effort** — `sonnet 5 · medium: survey stage agent`, the version read
+off the session's environment block and the effort off the agent file's
+`effort:` or `inherit` — because it is the title a background agent runs
+under and the one place the user sees what is spending while it runs; the returns must be
+**compared against each other**, because agents dispatched from one prompt style
+make correlated mistakes that per-agent reading will not catch; and the **return
+contract must state why it costs**, because naming the shape without the reason
+is a preference, not a contract, and a subagent told the reason returns the
+shape.
+
+## The one thing four dispatches cannot do
+
+Four in one response is the working ceiling, and the reason is that past four you
+are guessing at the split rather than deciding it. A script does not guess. It
+holds the list, and it holds the join.
+
+So there is exactly one shape the ceiling cannot cover: **a fan-out whose output
+feeds another fan-out.** Review six dimensions, then verify each finding the
+review returned. Run as dispatches, that is two round-trips through the parent's
+context, and every intermediate finding lands there permanently even though only
+the verified ones survive. Run as a `pipeline` in Claude Code's **Workflow**
+tool, the intermediates stay inside the script and what returns is the join.
+
+## The other threshold, which is size
+
+The shape above is one question. **How many independent tasks are in front of
+you** is a different one, and `plan` answers it durably: `lib/plantasks.js`
+groups a plan's tasks by disjoint `**Files:**` and by whether one consumes what
+another produces, and `surfaces()` gives each group its dispatch surface — one
+task is `agent`, two are `agents` in one response, three or more are
+`workflow`.
+
+A group carrying a diagnostic never reaches `workflow`, whatever its size.
+`conflict()` reads only a backticked identifier out of `Consumes:`, so a
+dependency written as prose declares nothing for the other side to match and
+the pair looks independent. Two Agents survive that: the parent reads both
+returns and the grouping's mistake is in front of it. A Workflow does not come
+back between its steps, so it wants a group shown to be disjoint rather than one
+merely not refuted.
+
+The two thresholds meet in `build`, which is the only stage that has groups at
+all: a group of implementers whose output feeds a reviewer each is the shape
+rule and the size rule naming the same run.
+
+**`/fankeel` is the fourth of those five.** Where a stage's rule names a chain
+as one workflow, that rule is the opt-in, and the host's own run dialog is where
+the spend is authorised — it lists the phases and the agent count before
+anything runs. A shape no rule names is offered, not launched: the plugin's part
+is to name it and roughly what it would cost, and to let the user say so. This
+is not the foreordained gate the pipeline removes elsewhere — reading never
+needs authorising, and a dozen agents always does. One is work; the other is
+spend.
+
+Nor does it become a way to run a stage. A workflow's `phases` are its own,
+declared in its script; they are not the route, and none of them is a gate.
+
+**This is unmeasured against a control.** Chains have run as workflows on this
+repository — one task's own build and verify, written up in
+[reports/2026-09-04-chains-as-workflows.md](../reports/2026-09-04-chains-as-workflows.md)
+— with no four-dispatch arm beside either. The argument above is still
+structural — it turns on where the intermediate output lands — and the
+figures live in the report, dated, which is why none is quoted here.
+
+That report describes the run json as holding three fields, because three were
+what that day's run was checked for — a dated snapshot being accurate about its
+own date. The file on disk holds 18 keys in the two chain runs (some run files also carry `args`, after `scriptPath`): `runId, timestamp, taskId, script,
+scriptPath, result, agentCount, logs, durationMs, summary, workflowName,
+status, startTime, phases, defaultModel, workflowProgress, totalTokens,
+totalToolCalls`. `agentCount` **does** exist — how many agents the run held.
+`phases` carries each phase's `title` and `detail`. `defaultModel` is not the model
+the script asked for: in both chain runs it reads `claude-fable-5-1` while every agent ran `claude-sonnet-5`. Each `workflow_agent` row in `workflowProgress`
+carries `tokens`, `toolCalls`, `durationMs` and `model`, but `tokens` is one undivided
+number: there is still no split by category in that file. A directory sits beside it that the report never names:
+`subagents/workflows/<run id>/`, holding one `agent-<id>.jsonl` transcript per
+agent the run spawned — `AGENT_FILE` in `lib/usage.js` is what matches them, and
+`lib/prices.js` is what puts a figure on them —
+and a `journal.jsonl` of `started` and `result` events, one line each, which is
+what a resume replays from rather than a transcript.
+
+How much a workflow run wakes the parent is its own measurement:
+[reports/2026-09-04-agent-wakeups.md](../reports/2026-09-04-agent-wakeups.md).
+
+## The unit of independent work, per stage
+
+Two dispatched implementers used to be a flat no. They share one checkout,
+`hooks/guard.js` does not protect a task from its own dispatches — both carry
+the same parent `session_id` — and an implementer used to commit, so two
+commits in one checkout would interleave and no review range would mean
+anything afterward.
+
+[collisions.md](collisions.md) owns the blind spot itself — `lib/guard.js` is
+in its `source_of_truth` and not in this page's. The link runs the other way:
+that page points back here for the four predicates, which is the mitigation
+rather than the fact. This is the short form, not the only copy.
+
+The commit moved to the parent, one task at a time, as each implementer
+returns — or, for a build stage agent, each time none of its implementers is
+still running, one block per task that returned since the last one — never the implementer itself, which now returns paths, never a diff.
+That is what makes overlap in wall-clock safe even though the index still has
+one writer. What decides whether a *pair* may overlap is four predicates,
+computed from the plan rather than judged. A task that declared no
+`Files: Modify` at all conflicts with everything, because nothing declared is
+not the same as nothing shared. Past that, tasks in one group have disjoint
+`Files:` lists, `Modify` and `Test` compared every way round; one task's
+`Read:` colliding with a neighbour's `Modify:` or `Test:` also conflicts —
+serialized rather than run in parallel; and neither's
+`Consumes` names anything the other `Produces` — the half file overlap alone
+cannot see. The two halves fail opposite ways on purpose, and `conflict()` in
+`lib/plantasks.js` carries why:
+an empty `Files:` is a task nobody finished writing, where an empty `Consumes`
+or `Produces` is an answer plans give constantly — the first task of one
+consumes nothing and the last produces nothing.
+`node scripts/ledger.js --plan <file> groups` computes all four over a whole plan
+and prints the groups they make. The build loop sends from `ledger.js ready`
+instead, which asks the same four per task: a task goes out once every earlier
+task it conflicts with is complete, so it no longer waits for a greedy group to
+close, and `TODO.md` and `docs/README.md` (`INDEX_FILES` in `lib/plantasks.js`)
+do not count as a shared file there — `Edit` refuses an `old_string` that moved,
+so a second implementer re-reads rather than writing over the first. The
+ceiling above still bounds how many are in flight.
+It prints a fifth thing that is not a predicate and moves no
+task: a `Consumes:` entry whose text names a task already in its own group.
+Prose declares no identifier for a `Produces` to match, so the fourth predicate
+cannot see such a dependency at all, and the literal `Task <n>` is the only part
+of the line a command can read. A report carrying that flag withholds its
+closing line about disjoint files — for the whole report rather than the flagged
+group.
+
+A task whose `**Dispatch:**` line reads `user — <what the user does>` is not
+dispatched at all: `ledger.js ready` leaves it out and `ledger.js hands` lists
+it. `task.js stage build` prints that list to the session holding
+`AskUserQuestion` — the controller, when `stage.agents` names build — which asks
+the user then and there, notes the answer, and runs the task with them after
+every dispatched task and before the stage's gate; an edit the guard refuses the
+controller goes through an implementer.
+
+That is `build`'s unit. Every stage has one or has none, and the rows with none
+are the ones worth reading: they are where a fan-out does not belong.
+
+**`unit` here is not the `slice` of the next section.** That one divides one
+tree among several readers and loses the findings a fan-out is for. This one is
+how many independent pieces of work a stage's own product breaks into.
+
+| stage | unit | computed by |
+|---|---|---|
+| `survey` | a lens over the whole tree | judged — see the next section for why not a slice |
+| `design` | **none.** One approach for one gate; N approaches do not compose | — |
+| `plan` | **none.** The stage's own check is global consistency — a name a later task uses is one an earlier task defined — which parallel authors break precisely | — |
+| `build` | a group of tasks | `scripts/ledger.js --plan <f> groups` |
+| `verify` | one row's pinned range, a task's or a fix round's, qualified by the report's last paragraph: what to send where rows are not independent, and the ranges it could not check | `scripts/ledger.js --plan <f> ranges` |
+| `audit` | a pair of documents describing one source file | `scripts/docs-audit.js` |
+| `land` | **none.** Moving files, then `todo-check.js`, then `map.js` is a dependency chain, not an ordering. Only the suite is free, and it cannot overlap the edits before it | — |
+
+## Split it by lens, not by slice
+
+Once you have decided to fan out, there are two ways to divide the work and they
+are not equivalent.
+
+| | |
+|---|---|
+| **by slice** | reader one gets `lib/`, reader two gets `scripts/`, reader three gets `hooks/`. Each sees a third of the tree |
+| **by lens** | every reader gets the whole tree and one question. One looks for dead code, one for reinvented standard library, one for duplication |
+
+**Slicing loses exactly the findings a fan-out is for.** "Nothing calls this" and
+"this abstraction has one implementation" are answers no reader holding a third
+of the tree can give: the caller it is looking for is in somebody else's slice,
+so every reader reports a maybe and the parent has to redo the join. Measured on
+this repository: `lib/dirty.js` has exactly one production caller,
+`hooks/inject.js`, and a reader holding only `lib/` would have reported none —
+seeing it takes `lib/` and `hooks/` at once.
+
+A lens costs more per reader — each reads the whole tree — and it buys an answer
+that does not need reassembling. The reading is thrown away either way; what
+survives is the answer, and a narrow answer from a wide read is the trade the
+whole mechanism is making.
+
+Slice only where the question is genuinely local. "Does this file's own logic
+agree with itself" is per-file and splits cleanly; "is this used" never does.
+
+## Say the denominator
+
+A fan-out reads part of something. **Say what the part is out of.** Four readers
+over four pages of forty-three is four readers over 9% of the documents, and a
+report that says "four readers found nothing" without the forty-three reads as a
+clean sweep of the whole thing.
+
+This is the rule `lib/map.js` states for its own caps — the count of what was
+dropped is still printed, because a silent cap reads as "that is all there is".
+A fan-out is a cap somebody chose, and it fails the same way.
+
+`PostToolUse` fires inside a subagent under the **parent's** session id — measured,
+not assumed — so a dispatched implementer's edits are claimed for the task that
+dispatched it and the collision warning keeps covering them.
+
+## Asking a stronger model, when you decide it is worth it
+
+`/fankeel-ask` interrupts whatever stage you are in, puts one question to a
+one-shot judge running on whatever `judge.model` says — Fable unless the
+profile says otherwise — files the answer verbatim under `docs/judgements/`,
+and hands it back to the stage. It never opens the gate; that stays yours, at
+the end of the stage, as always.
+
+**Nothing in fankeel ever suggests it.** No rule mentions the judge, on any
+stage, and that absence is deliberate rather than an oversight: a line riding
+every prompt to say a stronger model is available is an invitation to defer to
+it, and the model running your session is not weak enough to need the crutch.
+The command exists for the times *you* decide it is worth the money.
+
+Fable is about twice the per-token rate of the Opus tier — `lib/prices.js`
+carries the table this repository bills against, rather than a second copy of
+it here. That ratio is why a single bounded question is the only shape that
+pays: you are buying one judgement at twice the rate, not running a session at
+twice the rate. Worth typing when
+
+- the question spans subsystems and the answer is a judgement rather than a
+  lookup — no amount of grepping settles it;
+- being wrong is expensive later, because something else gets built on top —
+  an interface, a data shape, a migration;
+- or the stage has genuinely stalled and the alternative is stopping to ask
+  you, which costs a round of your attention either way.
+
+Not worth typing when the answer is somewhere in the repository and nobody has
+looked yet, when the scope is already pinned and only the typing is left, or
+when what you want is a second opinion on something you have already decided.
+
+## A stage agent, behind `stage.agents`
+
+Everything above holds with the profile's `stage.agents` at its default,
+`false` — nothing is controlled (`lib/profile.js:36`, `'stage.agents': { values: ['false', 'true', 'all'], builtin: 'false',`).
+`parseStageAgents` in `lib/profile.js` reads the key as one of four forms:
+`false` controls no stage (`lib/profile.js:111`, `if (s === 'false' || s === '') return { value: [] };`);
+`true` controls `survey` alone — kept for that one meaning rather than "the
+route's first stage" because every existing doc and the 2026-09-20 A/B
+already mean survey by `true` (`lib/profile.js:112`, `if (s === 'true') return { value: ['survey'] };`);
+`all` controls every stage in `lib/stages.js`'s `FULL_ROUTE`
+(`lib/profile.js:114`, `if (s === 'all') return { value: canon.slice() };`);
+and anything else is a comma-separated list of stage names, lowercased,
+deduped and reordered to `FULL_ROUTE`'s own order regardless of what order or
+how many repeats they arrived in, so two profiles naming the same set always
+compare equal — an unknown name in that list is refused with the one message an
+empty list is refused with, in the shape every other bad profile value takes
+(`lib/profile.js:120`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
+`controlling()` and `controlFor()` in `lib/stages.js` read that array
+straight off the profile's `values` rather than off a fixed list only that
+file could change (`lib/stages.js:666`, `const raw = values && values['stage.agents'];`),
+so which stages are controlled is a profile answer, not a constant. Put a
+stage on that list and it is run by a stage agent instead of by the session:
+
+| piece | where | what it does |
+|---|---|---|
+| controller's block | `controlFor` in `lib/stages.js`, injected by `rulesLines` in `lib/render.js` and printed by `task.js start` and `task` in place of their first step, and by `stage` after its one-line move | replaces the stage's rules and shape: dispatch one `fankeel:fankeel-brain`, print the path it returns, ask (on `build`, `design` and `plan`, first relay each `commit <file>`); a return that is not a path is not relayed; after the dispatch, each `SendMessage` and a notification that the agent finished with no path, the controller runs `scripts/await.js` in the background and does what its one line says (below); option one advances the stage, sends it back to any other stage on the task's own route, or stands the task down where the route ends |
+| the stage agent | `agents/fankeel-brain.md` | sonnet at `effort: medium` (the controller's dispatch passes `model: opus` for `design` and `plan`); `Write` for its handoff (and, on build, design and plan, its commit file; on design and plan also one `docs/plans/` file), `Agent` for its readers and reviewers, and on build a render reviewer, a fixer and implementers, on verify a render reviewer, a verifier, a fixer and an implementer, on audit a fixer and an implementer, on land an implementer — which of them, and when, its stage's own rules decide |
+| its brief | `renderBrief` in `lib/render.js` | the stage's rules and shape, the skill's path, the handoff path, the gate's shape, the newest `docs/plans/` file written since the task started when no earlier stage left a report, on `verify` the `subagents/` directory, what replaces AskUserQuestion and Workflow, one Bash call for independent commands and for the lines it cites, and the output rule's word count as the file's — under Claude Code's 10,000-character cap on one `additionalContext` |
+| the handoff | `handoffPath`, `answerPath`, `readGate` and `writeAnswer` in `lib/handoff.js` | `.fankeel/build/task-<started>/<stage>.md`, ending in a `json gate` block; the answer beside it as `<stage>-answer.md` — `survey.md` and `survey-answer.md` when `survey` is the stage on the list; a stage's n-th visit (n ≥ 2, counted from the record's `moves`) is `<stage>-<n>.md`, `<stage>-<n>-answer.md` and `<stage>-<n>-commit.md`, so a return to `build` never overwrites its first lap; a renamed task keeps the directory and numbers on from the laps the old task used (`lapped` on the record, written by `task.js task`), so it never reads the old task's gate |
+| the gate | `hooks/gate.js` | validates rather than substitutes: the controller itself reads the handoff file's last `json gate` block and copies its `questions` array into its own `AskUserQuestion` call, word for word — no placeholder, no swap. `hooks/gate.js` checks the file's own gate is sound with `readGate`: at most 4 questions, every question with `header` (12 columns at most), `question` and 2–4 `options` each carrying a `label` and a `description` — and, where an option carries a `preview`, a non-empty string on a question that is not `multiSelect` (no label-width cap — that only ever bounded a hook `updatedInput` substitution this file no longer performs), and option one naming the next stage, another stage on the task's own route to send the work back to, or standing down at the route's end. A file gate that fails this is denied with the field named, and the controller sends it back to its agent. Once the file's gate is sound, `gateMatches` compares it against what the controller actually asked: a match clears the in-flight mark and writes nothing — unless `gate.station` is set and the station's answer arrived in time, in which case it allows the call with `updatedInput.answers` (docs/station.md, "Answering a gate from the page"); a mismatch whose first question is headed with the stage's name (any case) is not enough by itself to convict it: `looksLikeAttempt` also runs `charOverlap` — a normalized (lowercased, whitespace-stripped) character-overlap ratio between the asked question's text plus option labels and the file's own gate's first question — and only denies it as a botched copy attempt (a paraphrase, a typo, a stale draft), naming the file and telling the controller to copy `questions` exactly, once that ratio passes `ATTEMPT_THRESHOLD` (0.5); a header-matching question whose content overlap stays below that threshold — a genuinely different question the controller is legitimately asking during a controlled stage — goes out untouched, the same as one headed with something else entirely. When nothing is confirmed and nothing is denied either, it writes a `systemMessage` naming which condition failed — a stage agent for a stage `stage.agents` does not name, a question that does not copy the handoff's gate word for word, no handoff file, or no readable gate in it — from `skipReason` in `lib/handoff.js`. A `fankeel-brain` dispatched for a stage `stage.agents` does not name never gets this far: `hooks/guard.js` denies the dispatch itself (matcher `Agent\|Task`) |
+| the answer | `hooks/resume.js` | writes it to the answer file — only once `inflight` is clear, which `hooks/gate.js` does when the question reaching the user matches the file's gate; a question asked while the stage agent is still in flight writes nothing; the controller's `SendMessage` names the path |
+| a pause | `task.js next --from-gate` | reads the block's `next` line |
+| a commit (`build`, `design`, `plan`) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/<stage>-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back its one line, `<base>..<sha>` or `commit.js: <why>`; on build, one file each time none of its implementers is still running, never one per task — blocks separated by a `---` line, one `<paths>: <base>..<sha>` line back per block, or `<base>..<sha>` for a one-block file; once every block has landed, `commit.js` renames the file to `<stage>-commit.done.md`, so a `-commit.md` on disk is always a commit still to make |
+
+### How the controller waits
+
+A stage agent's hand-back is not guaranteed to arrive. On 2026-09-23 a
+`SendMessage` to a stopped brain showed `queued` and was lost, twice, and one
+brain's `commit` hand-back never reached its controller. So the controller
+does not wait on delivery: after it dispatches the stage agent, after every
+`SendMessage` to it, and when a notification says it finished with no path,
+it runs `node <plugin>/scripts/await.js --session <id>` with Bash
+`run_in_background` and ends its turn. The script reads the stage, the
+handoff and commit paths and the agent's id (`inflight`, written by
+`hooks/brief.js`) off the record, and exits on the first of four lines:
+`commit <file>`, a `<stage>-commit.md` newer than `--since`; `handoff <file>`,
+the report rewritten after `--since`, which defaults to the stage's answer
+file; `lost <id>`, neither, and no `agent-*.jsonl` in the session's
+`subagents/` directory has moved for three minutes; or `timeout` after thirty.
+The whole directory rather than the agent's own file, because a brain waiting
+on a child makes no tool call — 52 seconds in
+[the 2026-09-23 run](../reports/2026-09-23-brain-wakeup.md). A second, different
+gap can read as lost the same way: one ordinary foreground Bash call the
+stage agent itself runs, not a child it dispatches, leaves its own transcript
+unwritten until the harness returns the tool_result, and that can land up to
+about 121-125 wall-clock seconds after a call this long hits the harness's
+own default foreground-Bash timeout (120 seconds) — a two-minute idle mark
+used to sit right on that ceiling, so one ordinary call near it could read as
+lost 1500ms before the real result arrived, even though the agent made a
+tool call and was never idle. The mark is three minutes now, clear of that
+ceiling with margin. Each line says what
+to do next, so the controller's rule only says to run it: with that rule a
+controlled build block is within 40 characters of its 2400. Nothing loops: `awaitHandoff` in
+`lib/handoff.js` wakes on `fs.watch` of the handoff directory and on one timer
+set for the moment the agent would count as lost. Whether a background Bash
+exit wakes the controller the way a hand-back does has not been observed.
+
+The unit tests above were all this had until the first live run: on `build`
+the brain wrote every commit file to `.fankeel/build/<plan file's basename>/`
+— the directory `lib/ledger.js`'s `ledgerPath` already keys `progress.md` and
+every task brief under, and the one its own skill points it at all through
+the task loop — instead of the exact `commitPath()` path its brief named,
+three real commits in a row, and `commit` never fired once; the only wake was
+`handoff` when `build.md` was written at the very end
+([the 2026-09-23 run](../reports/2026-09-23-brain-wakeup.md)). `commit` in
+`awaitState`/`awaitHandoff` now takes either a bare path or a list of
+candidates, and on `build` `await.js` watches both `commitPath()` and
+`ledgerCommitPath()` (the same plan-stem directory) at once — whichever one a
+stage agent actually writes to still wakes the controller.
+
+### What a stage agent is told to read, and what it may write
+
+`renderBrainBrief` prints a `read first:` rule: the newest earlier stage's report
+(`previousHandoff` in `lib/handoff.js` walks the record's `moves` back to the first
+stage whose report is on disk) and the lines that report left under its `reads:`
+block, at most 12 lines and 1,000 characters, with what was left out counted. The
+report's own author wrote that block — it is the agent that had read the content —
+and `hooks/brief.js` copies it, so the controller opens neither file. A stage with no
+earlier report gets pointed at the newest `docs/plans/*.md` file written since the
+task started, if one exists (`newestPlan` in `lib/render.js`); only when neither an
+earlier report nor a qualifying plan file exists does it get `read first: none`.
+
+A `design` run in the session writes no report, so a controlled `build` right
+after it would start from nothing. Where the route goes from design straight to
+build, and `stage.agents` names build but not design, design's own rules carry
+one more line (`DESIGN_TO_BUILD` in `lib/stages.js`): before its gate, write the
+approved output shape to `.fankeel/build/task-<started>/design.md`, the file
+`previousHandoff` finds first. With `plan` between them the line is off — a
+design.md there would be found before the plan `newestPlan` picks.
+
+Every brain is told to end its report with that block.
+
+A `design` or `plan` brain may also write one file under `docs/plans/`, named in an
+`artifact:` rule, and commits it through a commit file as `build` does; an `audit`
+or `land` brain has no Edit and no git write, so `STAGE_AGENTS` gives them
+`fankeel-fixer` (audit only) and an implementer. Whether `land` works this way has
+not been run.
+
+A brain's `Write` is only ever its handoff, `build`'s/`design`'s/`plan`'s commit
+file, and `design`'s/`plan`'s one `docs/plans/` file (`docs/90-agent/reference/subagents.md:46`
+above) — never the `mockup.html` a frontend `design` task's `design.mockup` rule
+asks for, and `agentsFor('design')` gives a controlled design station only a
+reader and a reviewer, no agent that can write a page. So a controlled design
+station has that rule filtered out rather than handed to a brain that cannot
+follow it; an implementer path for it waits on an actual frontend task landing
+under a controlled design station (`TODO.md`'s `下一個前端任務` section).
+
+The agents a stage agent dispatches — readers and reviewers, and on `build` also a render reviewer, a fixer and implementers, on `verify` a render reviewer, a verifier, a fixer and an implementer, on `audit` a fixer and an implementer, on `land` an implementer — are a second layer down, but their transcripts land
+in the same `subagents/` directory as the stage agent's, each `.meta.json`
+naming its `parentAgentId` at `spawnDepth` 2 — so `agentFiles()` in
+`lib/usage.js` counts them, flat, beside the agent that sent them (a run on
+2026-09-20: one stage agent and five readers in one directory).
+
+`survey` is still the only stage this has ever run for, and that is exactly
+why the builtin stayed `false` rather than moving to `true` or `all`, for
+three checkable reasons.
+
+The one stage that has been measured came back a tie, not a win.
+[reports/2026-09-20-survey-brain-ab.md](../reports/2026-09-20-survey-brain-ab.md)'s
+last round — after four rounds of fixing the stage agent's brief — found the
+controlled arm's cost within 1.05× and 0.97× of the uncontrolled one and its
+time within 1.44× and 1.57×. Every pair in that report whose context was
+recorded shows the controller with *more* context at the gate under the
+controlled arm than under the uncontrolled one, including the tied round —
+except §5's, where the stage agent dispatched no reader at all, and the
+controller came out with less.
+
+The stage a tie was measured on is also the cheapest one to get wrong. Over
+this registry's long tasks, `survey` is 7.0% of the spend where `build` and
+`verify` together are 63.9%
+([reports/2026-09-21-controller-budget.md](../reports/2026-09-21-controller-budget.md) §3,
+landed on this same branch) — `stage.agents` can now name `build` or
+`verify`, but nothing has measured either one there, and those are the two
+stages a default would actually move the number on.
+
+And `build` can be tried now, but has not been run end to end: `STAGE_AGENTS` in
+`lib/stages.js` gives its stage agent readers, reviewers, a render reviewer, a
+fixer and implementers, all through the `Agent` tool. The guard above locks the
+*controller* out of `Edit`, `Write` and `NotebookEdit`; the stage agent has no
+`Edit` and no `Workflow`, and gets its edits made by the implementers it sends
+(`agents/fankeel-brain.md:4`, `tools: [Read, Grep, Glob, Bash, Write, Agent]`,
+where `Write` is for its handoff file). It is refused `git commit` too, so it
+asks for each one through a commit file and the controller runs
+`scripts/commit.js`, in the repository the controller is standing in (a
+worktree the implementers build in is not handled) — a Bash call and a message
+back each time none of its implementers is still running, never per task, in the controller's
+own context, which is a cost the A/B has to count rather than assume away. `verify` gets an implementer for the one thing its agent cannot do,
+applying a mutation and restoring the file. A default should wait for that
+measurement.
+
+### The task's context.md
+
+`.fankeel/build/task-<started>/context.md` (`contextPath` in `lib/handoff.js`)
+holds what a subagent verified, one fact a line: the fact, `path:line`, and the
+short sha it was read at. `scripts/context.js add "<fact>" --at <path:line>
+--session <id>` is the only writer — any subagent may call it — and keeps the
+newest 40, dropping an exact duplicate and replacing a fact read again at a
+new sha. `context.js show` marks a line whose sha is not HEAD `(舊)`. The
+ordinary brief names the file's path and never its contents, where the
+`reads:` block above is copied inline; whether that saves anything is
+measured, not assumed — `docs/90-agent/reports/2026-09-26-context-md.md`.
+
+### Which model a stage agent runs on, what lets it write, and what comes before the switch
+
+`agents/fankeel-brain.md` pins `model: sonnet`. The controller's dispatch rule
+(`controlRules` in `lib/stages.js`) passes `model: opus` for `design` and `plan`, the
+two stages whose product is a judgement, and no model for the other five, so a stage agent
+uses Opus where the user asked for it and nowhere else (a build implementer runs on the model
+its task's Dispatch line names, or on `dispatch.floor` when that line says in-session; a
+verify, audit or land implementer runs on `dispatch.floor`). Every measurement in this
+repository before 2026-09-22 ran an Opus stage agent; a Sonnet one has not been
+measured. [decisions/2026-09-22-brain-on-sonnet.md](../../03-decisions/2026-09-22-brain-on-sonnet.md)
+records the choice.
+
+On 2026-09-22 the auto mode classifier answered "no verdict" to a stage agent's and an
+implementer's Write and Edit into `.fankeel/build/`, six times or more in one session,
+so a handoff file could not be written. The remedy tried is a permission and not code:
+`.claude/settings.local.json`, per machine and ignored by git, holds
+`{"permissions": {"allow": ["Edit(/.fankeel/build/**)"]}}`, and the session wrote it there after the user agreed.
+It is not proven to help: a Sonnet subagent's Write under `.fankeel/build/` succeeded
+both before the rule and after it, so nothing could be compared, and the failure did
+not recur to be tested; the two outcomes are in the decision record's third section.
+No stage agent and no implementer is to write any settings file: that is a rule from
+the spec, and no hook enforces it. The fallback an earlier TODO entry asked about, a
+report returned in the message when the write fails, is not built.
+
+The installed 0.74.0 has no `STAGE_AGENTS`, and `profile show` reads the list as `false`
+there, so the order is a release first and the switch after: the user releases (see
+`Releasing` in [development.md](../../01-guide/development.md)), and only once the installed copy
+carries `STAGE_AGENTS` sets the profile with
+`node scripts/task.js profile set stage.agents all`, which writes the project's profile.
+The builtin stays `false`.
+What the switch costs is read afterwards from the run it enables, with
+`node scripts/ctx.js <session> --by-stage` and that run's `modelUsage`, against the
+thresholds the design set (a controller of at most 60 turns and a last gate below
+200k — [2026-09-22-all-stages-brain-promoted.md](../../03-decisions/2026-09-22-all-stages-brain-promoted.md)
+has the current record). That run has not happened.
+
+## A user's own sentence, behind `prompt.*`
+
+`stage.agents`, `dispatch.floor` and the rest above are all from a fixed
+list of values. `prompt.*` and `security.local` are the profile keys that
+are free text; `prompt.*` takes a sentence, `security.local` an ollama
+model name or `false`. Set `prompt.all` and any of `prompt.survey`, `prompt.design`, `prompt.plan`,
+`prompt.build`, `prompt.verify`, `prompt.audit` or `prompt.land` with
+`node scripts/task.js profile set prompt.<key> "<sentence>"` and that sentence
+is appended as the rules block's last line, `  - <sentence>`, on every prompt
+that block reaches — `prompt.all` first, then `prompt.<the current stage>`,
+so a task with both set carries two extra rule lines, not one
+(`lib/render.js:118`, `function promptRules(values, stage) {`). `parsePrompt`
+in `lib/profile.js` holds it to one line and 200 characters — trimmed but not
+lowercased, and refused if it is empty, carries a newline, or runs long
+(`lib/profile.js:156`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
+`promptRules` is called once, inside `rulesLines`
+(`lib/render.js:170`, `.concat(promptRules(values, data && data.stage));`),
+and by `controlBlock` for a controlled stage's own block
+(`lib/render.js:135`, `return control && Object.assign({}, control, { rules: control.rules.concat(promptRules(values, stage)) });`),
+so `render`, `renderResume` and `renderBrainBrief` — every path that calls
+`rulesLines` — all carry it, controlled stage or not. `renderBrief`, the brief
+a reader, reviewer, fixer or implementer gets, never calls `rulesLines` and so
+never reaches `promptRules` — that return goes to the controller, not to
+whoever typed the sentence
+(`lib/render.js:116`, `never reaches this — a reader's return is`).
+
+Setting the key prints what it costs: the estimated tokens the injected line
+adds per prompt, and each stage's remaining room under the reference-root
+2400-character cap with the profile as it now reads — a warning, never a
+refusal, since the cap belongs to the tests and the sentence belongs to the
+user (`scripts/task.js:947`, `set anyway; this is a warning, not a refusal`)
+— computed in `cmdProfile`'s `set` branch off `input-check.js`'s
+`estimateTokens` and `lib/render.js`'s `blockSizes`
+(`scripts/task.js:940`, `const n = estimateTokens('\n  - ' + out.value);`).
+
+## What a controlled `build` and `verify` have not been run through
+
+`survey` is the only controlled stage anything has run end to end. A whole-branch
+audit of the seams for `build` and `verify` (2026-09-21) found these, none of them
+exercised by a test or a real session; they are listed here so an A/B run knows
+what to watch, and so the profile's `lean` preset is not read as proven.
+
+- **What the stage agent cannot do.** It has no `AskUserQuestion`, `Edit` or
+  `SendMessage`. `skills/fankeel-build/SKILL.md` tells whoever runs the stage to ask
+  consent before building on `main`, to use a worktree, to add a `TODO.md` line and
+  to resume the same implementer for a fix round. The brief covers `in-session` rows
+  (they go to an implementer) and questions (they go in the gate at the end); consent
+  at the start, a worktree, a `TODO.md` line and a resumed implementer are not covered.
+- **A second agent.** Every user prompt re-injects the controller's "dispatch one
+  agent" line. `hooks/brief.js` now writes `inflight` — `{ stage, at, agentId?, lap? }`
+  ([registry.md](registry.md) has the field) — on the session's record when a
+  `fankeel-brain` starts, and while it names the
+  current stage the controller's block carries one line before the dispatch line:
+  that agent is already running, SendMessage it, and dispatch another only if
+  SendMessage says it is gone (`controlFor` in `lib/stages.js`). `hooks/gate.js`
+  clears it once the handoff's gate arrives; `.claude-plugin/plugin.json` has no
+  `SubagentStop` hook, so nothing else does. Two cases it does not cover: after a
+  gate answered with anything but option one the controller SendMessages the same
+  agent, no `SubagentStart` fires, and the mark is already gone while that agent
+  works again; and an agent that died leaves its mark until the next gate or the
+  SendMessage fallback.
+- **The profile moves under a running stage.** `hooks/inject.js` re-reads it on every
+  prompt, `hooks/brief.js` on every subagent start, `hooks/gate.js` and
+  `hooks/resume.js` on every call, `hooks/guard.js` on every main-thread `Edit`,
+  `Write` or `NotebookEdit`, and a session record now stores `stage.agents` in the `profile`
+  field `task.js start` snapshots — the same mechanism as the rest of that field, present
+  whenever its source is not `builtin`; a preset applied
+  from the station mid-stage changes what those hooks do to that session's next call.
+  The presets also write `guard: ask`, which lowers the project's stored `deny` for the
+  sessions that start after it; a running session keeps the guard mode its record holds.
+- **Accounting.** A controlled build's commits run as `scripts/commit.js`, not as
+  `git commit` in the main transcript, so the station's replay shows none of them, and
+  the agents' own edits are sidechain and not replayed either. `scripts/ctx.js` prints
+  the controller's series and one summed figure for the agents by default; given a
+  single agent's transcript file, `node scripts/ctx.js <agent 檔>` now prints that
+  agent's own series directly, which covers the trigger in `TODO.md` for a stage
+  agent's own context past 400k. Whether a resumed agent's returns keep one
+  notification per dispatch in that accounting, and whether a resume re-fires the
+  subagent brief, have not been checked.
+- **Claims.** A verify implementer's mutation edit carries the controller's session
+  id, so the mutated file lands on its claims and a second live session sees a
+  collision; the ordinary `verify` has the same effect from the parent's own mutation.
+- **Where it commits.** `scripts/commit.js` commits in the repository at the
+  controller's working directory. It does not consult the task's `project`, and it
+  knows nothing of a worktree.
+
+# Telling a subagent apart, when a hook has to
+
+`hooks/carry.js` has to, because a subagent owns no task and must never be
+offered one. The field for it is **`agent_id`**, and Claude Code says so itself:
+
+> Subagent identifier. Present only when the hook fires from within a subagent
+> (e.g., a tool called by an AgentTool worker). Absent for the main thread, even
+> in `--agent` sessions. **Use this field (not `agent_type`) to distinguish
+> subagent calls from main-thread calls.**
+
+`agent_type` is the trap. It is set inside a subagent *and* on the main thread of
+a session started with `--agent` — and that second one is a real session, which
+does own tasks and does get the offer. A hook filtering on the type would refuse
+the person it was written for.
+
+## What it deliberately is not
+
+- **Not the stage rules.** A subagent is not running the pipeline; it is doing one
+  bounded job inside somebody else's stage. "One bullet per change, with its
+  module" is instructions for work it is not doing.
+- **Not a registry entry.** A subagent is not a session and does not own a task.
+  Giving it one would put a second claimant on its own parent's files.
+- **Not a replacement for what compressing agents already do.** If a subagent
+  already knows how to return little, this adds the thing it cannot know: which
+  task it belongs to and which files are spoken for.
+
+The scope guard reaches subagents on its own — `PreToolUse` fires inside them —
+so a subagent editing a file another live session claimed hits the same block the
+parent would. `PostToolUse` fires there too and looks the entry up by the parent's
+session id, so what a subagent edits is claimed by the task that dispatched it.
+That is why the brief carries the touched list and asks for nothing back about it:
+a returned file list would be a slower, unparsed copy of a record already written.
+
+[Back to the index](../../README.md) · [Back to the front page](../../../README.md)

@@ -159,7 +159,7 @@ test('every place that teaches the Waiting convention names the event before the
   // lines, so whitespace is flattened and each check runs in a bounded window
   // starting at the sentence's own anchor rather than across the whole file.
   const prose = [
-    ['docs/development.md', path.join(ROOT, 'docs', 'development.md'),
+    ['docs/development.md', path.join(ROOT, 'docs', '01-guide', 'development.md'),
       '### <timing>` heading'],
     ['skills/fankeel-audit/rationale.md', path.join(DIR, 'fankeel-audit', 'rationale.md'),
       'One routed to `## Waiting`'],
@@ -512,8 +512,17 @@ test('the opening question asks which project, in the words the design fixed', (
 // else here notices.
 test('no live page offers a flag the task script no longer takes', () => {
   const pages = names.map((n) => [path.join('skills', n, 'SKILL.md'), read(n)]);
-  for (const name of fs.readdirSync(path.join(ROOT, 'docs')).filter((n) => n.endsWith('.md'))) {
-    pages.push([path.join('docs', name), fs.readFileSync(path.join(ROOT, 'docs', name), 'utf8')]);
+  const { trackedFiles } = require('../lib/tracked.js');
+  const { read: readDocs } = require('../lib/docs.js');
+  const { tree } = readDocs(ROOT);
+  // A page is not "live" once it has moved into a role of `archive` or
+  // `plan` — frozen history and work-in-progress respectively — the same
+  // exemption a flat, non-recursive scan of docs/ gave them for free by
+  // never looking inside their subdirectories at all.
+  const frozen = tree.buckets.filter((b) => b.role === 'archive' || b.role === 'plan').map((b) => b.path);
+  for (const rel of trackedFiles(ROOT).files.filter((f) => f.startsWith('docs/') && f.endsWith('.md'))) {
+    if (frozen.some((p) => rel === p || rel.startsWith(p + '/'))) continue;
+    pages.push([rel, fs.readFileSync(path.join(ROOT, rel), 'utf8')]);
   }
   for (const [rel, text] of pages) {
     assert.equal(text.includes('--scope'), false, rel + ' still offers --scope');
@@ -694,7 +703,7 @@ test('dispatching is the default and the two exceptions are named', () => {
   assert.match(text, /it is one tool call/);
   // The same default has to land where the standalone doc states the rule, not
   // just in the skill.
-  const docsText = fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8');
+  const docsText = fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'subagents.md'), 'utf8');
   assert.match(docsText, /\*\*dispatch\*\* \| by default/);
   assert.match(docsText, /a pipe already removes the residue/);
   assert.match(docsText, /a single tool call/);
@@ -709,7 +718,7 @@ test('dispatching is the default and the two exceptions are named', () => {
 // replaced it: in-session is the user's call for that session, not the host's.
 test('in-session is the user\'s call for this session, never the host\'s', () => {
   const texts = [read('fankeel'), read('fankeel-plan'), read('fankeel-build'),
-    fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8')];
+    fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'subagents.md'), 'utf8')];
   for (const text of texts) {
     assert.doesNotMatch(text, /allows a subagent only on the user's own word/,
       'the host-property misreading is back in one of the four pages');
@@ -723,7 +732,7 @@ test('in-session is the user\'s call for this session, never the host\'s', () =>
     'the skill does not say the Agent tool has no gate');
   assert.match(top, /ultracode/,
     'the skill does not name the Workflow tool\'s ultracode gate');
-  const mirror = fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8');
+  const mirror = fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'subagents.md'), 'utf8');
   assert.match(mirror, /neither case/,
     'docs/subagents.md does not say neither case is a third exception');
   assert.match(mirror, /has no\s+gate/,
@@ -757,7 +766,7 @@ test('the dispatch rule count agrees with the bullet list under it, and with the
   assert.equal(claimed, bulletCount,
     `the lead-in says "${leadIn[1]}" but ${bulletCount} bullets follow it`);
 
-  const docsText = fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8');
+  const docsText = fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'subagents.md'), 'utf8');
   const docsLeadIn = /^(\w+) things that fail silently when missed:([\s\S]*?)\r?\n\r?\n/m.exec(docsText);
   assert.ok(docsLeadIn, 'docs/subagents.md has no matching lead-in to compare');
   assert.equal(WORDS[docsLeadIn[1].toLowerCase()], bulletCount,
@@ -784,7 +793,7 @@ test('the dispatch rule count agrees with the bullet list under it, and with the
 test('both dispatch surfaces name the Workflow tool, and bound it', () => {
   const surfaces = [
     ['skills/fankeel/SKILL.md', read('fankeel')],
-    ['docs/subagents.md', fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8')],
+    ['docs/subagents.md', fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'subagents.md'), 'utf8')],
   ];
   for (const [label, text] of surfaces) {
     const flat = text.replace(/\s+/g, ' ');
@@ -920,7 +929,7 @@ test('every stage that dispatches says how many and on which model', () => {
     'the dispatch contract does not carry the disclosure as a rule of its own');
   // Both halves here too. `/said out loud/` on its own passed a page that could
   // drop "the count and the model" and keep the phrase.
-  const page = fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8');
+  const page = fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'subagents.md'), 'utf8');
   assert.match(page, /count\s+and\s+(the\s+)?model/i, 'the reference page drops the count');
   assert.match(page, /said\s+out\s+loud/i, 'the reference page states the contract without the disclosure');
 });
@@ -1138,7 +1147,7 @@ test('fankeel: the gate table names the judgement record option one relies on', 
 // wrap, so this reads the whitespace-normalised text the way a model does.
 test('every subagent_type a skill names carries the plugin prefix', () => {
   const files = names.map((n) => [path.join('skills', n, 'SKILL.md'), read(n)]);
-  files.push(['docs/subagents.md', fs.readFileSync(path.join(ROOT, 'docs', 'subagents.md'), 'utf8')]);
+  files.push(['docs/subagents.md', fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'subagents.md'), 'utf8')]);
   const bare = [];
   let prefixed = 0;
   for (const [rel, body] of files) {

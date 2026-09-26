@@ -202,7 +202,7 @@ of the `## Cuts` section of its agent file, one lens apiece: what nothing
 needs (`delete:`, `yagni:`), what something else already does (`stdlib:`,
 `native:`), and what fewer lines would do (`shrink:`). By lens, never by
 directory — a reviewer holding a third of the tree cannot see the caller in
-another third, which is [docs/subagents.md](../../docs/subagents.md)'s case
+another third, which is [docs/subagents.md](../../docs/90-agent/reference/subagents.md)'s case
 against slicing. Rank what comes back by its `net:` line and offer it at the
 gate beside the documentation findings; never apply a cut unasked.
 
@@ -220,7 +220,7 @@ where the user said not to dispatch, or declined the host's run dialog.
 **Once that workflow returns, run `git status --porcelain` once** before
 reading its findings — the same check `fankeel-survey` now makes, for the
 same reason: a read-only reader's tool list is not the same thing as a
-guarantee it wrote nothing. `docs/collisions.md` has the incident.
+guarantee it wrote nothing. `docs/90-agent/reference/collisions.md` has the incident.
 
 ## The adversary
 

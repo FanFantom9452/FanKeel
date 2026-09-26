@@ -648,7 +648,7 @@ test('the prose names as many sections as defects() actually sums', () => {
   const word = WORDS[count];
 
   const skillText = fs.readFileSync(path.join(__dirname, '..', 'skills', 'fankeel', 'SKILL.md'), 'utf8');
-  const pipelineText = fs.readFileSync(path.join(__dirname, '..', 'docs', 'pipeline.md'), 'utf8');
+  const pipelineText = fs.readFileSync(path.join(__dirname, '..', 'docs', '02-architecture', 'pipeline.md'), 'utf8');
 
   // The skill counts the rows of the table directly above its sentence, and
   // those four rows are the four defects, so counting is right there.

@@ -11,9 +11,9 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 
 test('every top-level report has exactly one row in docs/sources.md, and every row links a report that is there', () => {
-    const reports = fs.readdirSync(path.join(ROOT, 'docs', 'reports')).filter((f) => f.endsWith('.md')).sort();
-    const text = fs.readFileSync(path.join(ROOT, 'docs', 'sources.md'), 'utf8');
-    const linked = [...text.matchAll(/^\|[^\n]*?\]\(reports\/([^)/]+\.md)\)/gm)].map((m) => m[1]).sort();
+    const reports = fs.readdirSync(path.join(ROOT, 'docs', '90-agent', 'reports')).filter((f) => f.endsWith('.md')).sort();
+    const text = fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'sources.md'), 'utf8');
+    const linked = [...text.matchAll(/^\|[^\n]*?\]\(\.\.\/reports\/([^)/]+\.md)\)/gm)].map((m) => m[1]).sort();
     assert.deepEqual(linked, reports);
 });
 
@@ -31,7 +31,7 @@ function reportRows(text) {
     const m = REPORT_ROW.exec(line);
     if (!m) continue;
     const cells = line.split(/(?<!\\)\|/).slice(1, -1).map((c) => c.trim());
-    const linkMatch = /\]\(reports\/([^)]+\.md)\)/.exec(cells[2] || '');
+    const linkMatch = /\]\(\.\.\/reports\/([^)]+\.md)\)/.exec(cells[2] || '');
     const citedByCell = cells[cells.length - 1];
     rows.push({
       id: m[1],
@@ -51,15 +51,15 @@ function citablePages(dir, base) {
   for (const name of fs.readdirSync(dir)) {
     const full = path.join(dir, name);
     const rel = path.relative(base, full).split(path.sep).join('/');
-    if (/^docs\/(archive|plans)(\/|$)/.test(rel)) continue;
+    if (/^docs\/(99-archive|90-agent\/plans)(\/|$)/.test(rel)) continue;
     if (fs.statSync(full).isDirectory()) { out.push(...citablePages(full, base)); continue; }
-    if (rel.endsWith('.md') && rel !== 'docs/sources.md') out.push(rel);
+    if (rel.endsWith('.md') && rel !== 'docs/90-agent/reference/sources.md') out.push(rel);
   }
   return out;
 }
 
 test('every docs/ page that cites a sources.md report is in that row\'s Cited by, and every Cited by path exists', () => {
-  const rows = reportRows(fs.readFileSync(path.join(ROOT, 'docs', 'sources.md'), 'utf8'));
+  const rows = reportRows(fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'sources.md'), 'utf8'));
   const pages = citablePages(path.join(ROOT, 'docs'), ROOT);
   const texts = new Map(pages.map((p) => [p, fs.readFileSync(path.join(ROOT, p), 'utf8')]));
 

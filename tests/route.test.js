@@ -256,7 +256,7 @@ test('every class says what it means, because the word alone does not', () => {
 // `scripts/version.js` gives for `MANIFESTS`: a fourth copy is a decision
 // somebody makes, not a directory entry.
 const CLASS_TABLES = [
-  'docs/pipeline.md',
+  'docs/02-architecture/pipeline.md',
   'skills/fankeel/SKILL.md',
   'skills/fankeel-survey/SKILL.md',
 ];

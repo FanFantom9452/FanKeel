@@ -247,7 +247,7 @@ answers — so the round buys nothing and costs a turn of their attention.
 - **Once that workflow returns, run `git status --porcelain` once** before
   trusting what it found. A `fankeel-reader` briefed to write nothing can
   still write through a shell redirect no hook watches for every case —
-  `docs/collisions.md` names the incident and the narrower guard this stage
+  `docs/90-agent/reference/collisions.md` names the incident and the narrower guard this stage
   cannot rely on alone.
 
 Reading wide for a narrow answer is what a subagent is for. This stage used to

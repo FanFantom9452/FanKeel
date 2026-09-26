@@ -65,7 +65,7 @@ End with `net: -<N> lines possible.`, or the single word `lean` when nothing
 can go. A smoke test or an `assert` self-check is never a cut. A module with
 one caller is a `yagni:` only when folding it would neither move a dependency
 the caller does not otherwise have nor put a unit test behind a process spawn —
-[docs/decisions/fankeel-shell.md](../docs/decisions/fankeel-shell.md), under
+[docs/decisions/fankeel-shell.md](../docs/03-decisions/fankeel-shell.md), under
 *One caller is not evidence on its own*. Correctness, security and performance
 are never cuts; they belong to the parts of the brief that ask for them.
 

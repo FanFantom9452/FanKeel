@@ -1,0 +1,108 @@
+diff --git a/docs/README.md b/docs/README.md
+index e6beb7a2..2ec5e0bc 100644
+--- a/docs/README.md
++++ b/docs/README.md
+@@ -232,6 +232,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
+ | Where to look for every place a rule is taught, before changing the rule | [decisions/fankeel-shell.md](decisions/fankeel-shell.md) — *a rule is taught in more places than a search finds* |
+ | How to run the behaviour eval, and what to do when `claude plugin eval` says early access | [evals.md](evals.md) |
+ | How the plugin is built and checked, and the four scripts that stop a written claim drifting | [development.md](development.md) |
++| Why a task naming `scripts/todo-check.js`'s `path:line` validation as missing was rechecked rather than rebuilt: `02d32348` already landed the `past end` check on 2026-09-25, and the manual repro plus 62/62 tests confirm it still holds | [plans/2026-09-26-todo-line-recheck-design.md](plans/2026-09-26-todo-line-recheck-design.md) — *design-intent* |
++| The zero-task plan that follows from that recheck | [plans/2026-09-26-todo-line-recheck.md](plans/2026-09-26-todo-line-recheck.md) — *design-intent* |
+ 
+ ## Judgements
+ 
+diff --git a/docs/plans/2026-09-26-todo-line-recheck-design.md b/docs/plans/2026-09-26-todo-line-recheck-design.md
+new file mode 100644
+index 00000000..bfc3c409
+--- /dev/null
++++ b/docs/plans/2026-09-26-todo-line-recheck-design.md
+@@ -0,0 +1,44 @@
++---
++status: design-intent
++---
++
++# todo-check 行號驗證重查 Design
++
++This is not a design for new work. It is the record `plan`'s own tooling
++needs — `ledger.js lint` requires a `**Spec:**` file to open — for a task
++whose premise turned out to be false.
++
++## What the task asked
++
++`todo-check 不驗 path:line 的行號：改成不存在的行仍然 exit 0
++（scripts/todo-check.js）`, sourced from `.fankeel/build/survey.md`, which
++itself read: "linksIn strips everything after # and only ever calls
++fs.existsSync(full); no line-count check exists anywhere in the file."
++
++## What is actually in the tree
++
++- `git log --oneline -- scripts/todo-check.js` — the newest commit is
++  `02d32348 feat: todo-check rejects a path:line whose line is past the
++  file's end`, landed 2026-09-25.
++- A manual repro from the repo root — a `TODO.md` fixture citing
++  `scripts/todo-check.js` at a line number far past its end, once as a
++  backtick span and once as a markdown link — reports `past end` and exits 1
++  in both forms, not 0.
++- `node --test tests/todo-check.test.js` — 62 pass, 0 fail, including
++  `tests/todo-check.test.js:65-76`, two fixtures built for exactly this
++  citation-past-the-end case.
++- `TODO.md` carries no open entry for this; it only describes the check in
++  prose (`TODO.md:55`). `docs/README.md:144-145,149` and
++  `docs/decisions/2026-09-25-todo-line-and-multiplier.md` already record the
++  delivery.
++
++## Conclusion
++
++The bug named by the task does not exist in the current tree — it was fixed
++the day before this session, tested, and archived
++(`docs/archive/2026-09-25-todo-line-and-multiplier.md`). `survey.md`'s claim
++is stale. Nothing in `scripts/todo-check.js` needs to change, so the plan
++this design feeds has zero tasks.
++
++against the map: `.fankeel/map.md:77` — no conflict; `todo-check.js`'s listed
++responsibility ("whether TODO.md is still an index") is unchanged.
+diff --git a/docs/plans/2026-09-26-todo-line-recheck.md b/docs/plans/2026-09-26-todo-line-recheck.md
+new file mode 100644
+index 00000000..fc9809f4
+--- /dev/null
++++ b/docs/plans/2026-09-26-todo-line-recheck.md
+@@ -0,0 +1,39 @@
++---
++status: design-intent
++---
++
++# todo-check 行號驗證重查 Implementation Plan
++
++**Goal:** Confirm or refute the task's claim that `scripts/todo-check.js` does
++not validate a `path:line` citation's line number, and change nothing beyond
++what the answer requires.
++**Architecture:** No new subsystem. The whole of this plan is a recheck
++against the tree already at `HEAD` — `git log`, a manual repro run, and the
++existing test suite — rather than a decomposition of new code.
++**Tech Stack:** Node (`node --test`, no external dependencies), Git.
++**Spec:** [2026-09-26-todo-line-recheck-design.md](2026-09-26-todo-line-recheck-design.md)
++
++## Global Constraints
++
++Generated from `node scripts/map.js` (291 markdown files, 5 planned-not-built,
++146 retired, 8 undeclared), `.fankeel/map.md`, `package.json` and
++`CONTRIBUTING.md` — this repository has no `CLAUDE.md`.
++
++- `package.json:7-10` has `"scripts": { "test": "node --test", "clean": "node scripts/tmp-clean.js" }` and no `"dependencies"`. Add none.
++- `CONTRIBUTING.md`: `lib/` never reaches into `scripts/` or `hooks/`, only the other direction; a new or renamed doc page gets its index row in `docs/README.md` in the same change; every exported name needs an importer and a new test file has to be `git add`-ed before `tests/source.test.js` sees it.
++- `scripts/ledger.js:538` refuses `lint` on a plan with no `**Spec:**` line naming a design file that exists on disk — the reason this plan carries a design file at all, despite deciding nothing.
++- `.fankeel/map.md:77` lists `scripts/todo-check.js`'s responsibility as "whether TODO.md is still an index" — unchanged by this plan.
++
++## Zero tasks
++
++The design this plan argues from concludes the task's premise is false: the
++`past end` line-number check already exists (`02d32348`, 2026-09-25), is
++covered by `tests/todo-check.test.js:65-76`, passes 62/62 in the current
++suite, and is already recorded in `docs/README.md:144-145,149` and
++`docs/decisions/2026-09-25-todo-line-and-multiplier.md`. There is no file to
++modify and no failing test to make pass, so this plan decomposes nothing —
++the recheck itself is the deliverable, and it is already done in the design
++above.
++
++Build and verify have nothing to run beyond confirming the same evidence
++still holds at their own point in time.

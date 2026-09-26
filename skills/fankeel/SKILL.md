@@ -99,7 +99,7 @@ the two writers hit that cap differently: a path arriving on its own drops the
 oldest, where a git pass holding more than sixty is refused whole rather than
 trimmed.
 
-[docs/registry.md](../../docs/registry.md) is where that cap lives — both
+[docs/registry.md](../../docs/90-agent/reference/registry.md) is where that cap lives — both
 halves, the constant they come from, and the run that set it. This section is
 the short form, not the only copy.
 
@@ -111,7 +111,7 @@ ask for a file list — there is nothing to declare and nothing to get wrong.
 Fourteen more are written without anyone typing them. Five of those —
 `ended`, `model`, `usage`, `spend` and `gates` — arrive once, from
 `hooks/leave.js` when the session ends, and
-[docs/registry.md](../../docs/registry.md) has their shape; the nine below
+[docs/registry.md](../../docs/90-agent/reference/registry.md) has their shape; the nine below
 are the ones every session carries. `route` and `class` come from
 the class picked at `start`, `configDir` records which config directory this
 session runs under, so another session can look for its liveness in the right
@@ -135,7 +135,7 @@ how much of that the user spent at a gate. It is written only in a process that
 started after the manifest carried `hooks/gate.js`: Claude Code reads its hook
 list once per process and `/clear` does not re-read it, which is why two days of
 records held no `waited` a hook had put there and every session of a newer
-process has one, from 2026-09-02 on. [docs/registry.md](../../docs/registry.md)
+process has one, from 2026-09-02 on. [docs/registry.md](../../docs/90-agent/reference/registry.md)
 has that run, and what the older process looked like from inside.
 
 `moves` is the order those stages came in: one `[stage, at, used]` for each
@@ -154,7 +154,7 @@ token figure arrives, and an answered question is not a prompt, so a stage that
 ends in a gate records none. A clock has no such threshold, so it is written
 beside `updated` and every touch is a sighting. What measures the wait, why it
 is not `Stop`, and what it does instead of measuring anything, is in
-[docs/registry.md](../../docs/registry.md) — this is the short form, not the
+[docs/registry.md](../../docs/90-agent/reference/registry.md) — this is the short form, not the
 only copy.
 
 A fifteenth and sixteenth, `gateAt` and `inflight`, are deliberately not
@@ -472,7 +472,7 @@ is obvious" is the reasoning that turns a gate back into a step.
 When they advance, run `task.js stage <name>`; the statusline reads it, so
 `[FANKEEL:DESIGN]` becoming `[FANKEEL:BUILD]` is how they see the move — and on
 a TokenBar from v1.4.1, the `▌FANKEEL BUILD` lead line above it as well
-([docs/statusline.md](../../docs/statusline.md)).
+([docs/statusline.md](../../docs/90-agent/reference/statusline.md)).
 
 ## The `audit` stage, and other people's plugins
 
@@ -579,7 +579,7 @@ stage's `Read the fankeel-<stage> skill on entry:` line — where skipping it is
 silent and a later stage pays; the skill for the rest; and the registry —
 `skills/registry.json`, generated — for what a tool checks as data: each
 stage's entry and stop condition and its byte budget. Nothing load-bearing
-lives only in a skill, this one included. `docs/pipeline.md` has the table.
+lives only in a skill, this one included. `docs/02-architecture/pipeline.md` has the table.
 
 ## Where documents live
 
@@ -622,7 +622,7 @@ decided the lifetime of, which is the one most likely to rot unnoticed.
 
 The reasoning behind all of that — why the offer is "this one?" rather than a
 menu, why the scan is re-run rather than stored, and one dated run of the scanner
-— is in [docs/documents.md](../../docs/documents.md). This section is the short
+— is in [docs/documents.md](../../docs/90-agent/reference/documents.md). This section is the short
 form, not the only copy.
 
 ## Task memory
@@ -630,7 +630,7 @@ form, not the only copy.
 Two fields, both capped in code: at most five notes of 100 characters, and one
 `next` line of 120.
 
-[docs/registry.md](../../docs/registry.md) has where the two fields are
+[docs/registry.md](../../docs/90-agent/reference/registry.md) has where the two fields are
 written, what happens to them when a task is renamed, and the run the caps
 came from. This section is the short form, not the only copy.
 
@@ -692,7 +692,7 @@ only when this prompt started it. The block's `station:` line counts the
 file and `serve --open` means nothing was started (`FANKEEL_SERVE=off`, or the
 start failed). `.fankeel/index.html` in the registry is the static copy beside
 you, written at this prompt. There is nothing to invoke;
-[docs/station.md](../../docs/station.md) is the reference.
+[docs/station.md](../../docs/90-agent/reference/station.md) is the reference.
 
 The page is also where a file that does not parse is counted. The hooks drop
 those silently and correctly — a miss is what a session not using the plugin
@@ -876,7 +876,7 @@ a report, a status sync, or a line of thought that needs sorting out.
 If the user asks for shorter answers or a fixed format, point at one of those
 two rather than promising to remember. Why the three styles that used to ship
 here went is in
-[docs/decisions/2026-09-13-no-output-styles.md](../../docs/decisions/2026-09-13-no-output-styles.md).
+[docs/decisions/2026-09-13-no-output-styles.md](../../docs/03-decisions/2026-09-13-no-output-styles.md).
 
 ## Calibration
 
@@ -1008,19 +1008,19 @@ That figure had no control. Measured on 2026-09-03 against a session asked the
 same question with the `Agent` tool taken away: dispatch left 57,652 tokens in
 the parent against 532,322, and paid 1.85 times the money and 1.75 times the
 wall-clock for it. Not cheaper, not faster — residue is what it buys
-([docs/reports/2026-09-03-dispatch-vs-inline.md](../../docs/reports/2026-09-03-dispatch-vs-inline.md)).
+([docs/reports/2026-09-03-dispatch-vs-inline.md](../../docs/90-agent/reports/2026-09-03-dispatch-vs-inline.md)).
 
 A second pair the same day named the seven files it wanted read, so neither arm
 had to search. The residue advantage fell from 9.2× to 1.5× while the money
 stayed at 1.59× and the wall-clock got worse, 2.77× — so what the first pair
 measured was the inline arm *searching*, not the inline arm reading
-([docs/reports/2026-09-03-dispatch-vs-inline-named.md](../../docs/reports/2026-09-03-dispatch-vs-inline-named.md)).
+([docs/reports/2026-09-03-dispatch-vs-inline-named.md](../../docs/90-agent/reports/2026-09-03-dispatch-vs-inline-named.md)).
 A third pair filled the middle: the first pair's question with its eight files
 spelled out, so the join stayed and the searching went — 2.55×. Naming with the
 join held drops the advantage 3.62×; the join with naming held raises it 1.68×.
 Both are real and naming is the larger, so what decides whether a dispatch pays
 is mostly whether the question has to find things — as a gradient, not a step
-([docs/reports/2026-09-03-dispatch-vs-inline-join.md](../../docs/reports/2026-09-03-dispatch-vs-inline-join.md)).
+([docs/reports/2026-09-03-dispatch-vs-inline-join.md](../../docs/90-agent/reports/2026-09-03-dispatch-vs-inline-join.md)).
 
 | | |
 |---|---|
@@ -1122,7 +1122,7 @@ still a job inside a stage rather than the stage itself — a workflow's
 `phases` are its own, declared in its script, and none of them is this route's
 gate. **Unmeasured against a control here**: chains have run as workflows on
 this repository — this task's own build and verify, written up in
-[docs/reports/2026-09-04-chains-as-workflows.md](../../docs/reports/2026-09-04-chains-as-workflows.md)
+[docs/reports/2026-09-04-chains-as-workflows.md](../../docs/90-agent/reports/2026-09-04-chains-as-workflows.md)
 — with no four-dispatch arm beside either, so the paragraph above still argues
 from where the intermediate output lands, which is structural, and quotes no
 figure here; the figures live in the report, dated.
@@ -1141,7 +1141,7 @@ controller's block in place of the stage's: the brief carries the stage's
 rules and shape, the report and its gate come back as a file under
 `.fankeel/build/` (on `build`, `design` and `plan`, a commit request comes back first — on `build` each time
 none of its implementers is still running, never per task — and this session relays it), and the gate is still asked here: this session copies that file's
-gate word for word, and `hooks/gate.js` only checks the copy. [docs/subagents.md](../../docs/subagents.md) has how.
+gate word for word, and `hooks/gate.js` only checks the copy. [docs/subagents.md](../../docs/90-agent/reference/subagents.md) has how.
 
 A plan task whose `**Dispatch:**` line reads `user` is this session's, never the
 stage agent's. `task.js stage build` lists them: ask the user right then —
@@ -1196,5 +1196,5 @@ now believe they have one.
 
 The subagent rule, what a refused edit looks like from inside, and the run
 that decided `ask` over `deny` are in
-[docs/collisions.md](../../docs/collisions.md). This section is the short
+[docs/collisions.md](../../docs/90-agent/reference/collisions.md). This section is the short
 form, not the only copy.

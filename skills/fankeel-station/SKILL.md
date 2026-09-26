@@ -19,5 +19,5 @@ Run:
 `<plugin>` is two directories up from this file. A station already running is
 joined rather than started twice, and the command prints its URL either way.
 Say the URL the command prints, and stop there — the station's routes, states
-and fields are documented at [docs/station.md](../../docs/station.md), not
+and fields are documented at [docs/station.md](../../docs/90-agent/reference/station.md), not
 repeated here.

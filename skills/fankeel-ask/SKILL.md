@@ -94,7 +94,7 @@ the stage produces; it does not approve it.
 ## When it is worth the money
 
 Not here. That judgement is the user's, and the criteria are written for them
-in [docs/subagents.md](../../docs/subagents.md) rather than in any file a model
+in [docs/subagents.md](../../docs/90-agent/reference/subagents.md) rather than in any file a model
 reads on every prompt — which is the same reason no rule announces this
 command. If you are reading this, the decision has already been made.
 

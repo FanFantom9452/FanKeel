@@ -523,7 +523,7 @@ test('the Roles table names every bucket docs.json declares', () => {
   assert.deepEqual(missing, [], 'buckets the Roles table never names');
 });
 
-// The lifetime table in docs/documents.md is the only description these
+// The lifetime table in docs/90-agent/reference/documents.md is the only description these
 // directories have, and nothing recounted it when `mockup.html` became a fourth
 // kind of file under `build/`. The list it is checked against is the committed
 // `.fankeel/.gitignore` — the file `registry.ensureIgnored` appends to — and not
@@ -537,10 +537,10 @@ test('the Roles table names every bucket docs.json declares', () => {
 // this must go red.
 test('the lifetime table names every ignored path under .fankeel/', () => {
   const root = path.join(__dirname, '..');
-  const page = fs.readFileSync(path.join(root, 'docs', 'documents.md'), 'utf8');
+  const page = fs.readFileSync(path.join(root, 'docs', '90-agent', 'reference', 'documents.md'), 'utf8');
 
   const start = page.indexOf('## `.fankeel/` 各區的壽命');
-  assert.ok(start >= 0, 'docs/documents.md has no lifetime section');
+  assert.ok(start >= 0, 'docs/90-agent/reference/documents.md has no lifetime section');
   const rest = page.slice(start + 1);
   const end = rest.indexOf('\n## ');
   const section = end === -1 ? rest : rest.slice(0, end);
@@ -560,7 +560,7 @@ test('the lifetime table names every ignored path under .fankeel/', () => {
     // than the line the ignore file holds, so the leaf is what is matched.
     const leaf = p.replace(/\/$/, '');
     assert.ok(cells.some((c) => c.includes(leaf)),
-      'the lifetime table in docs/documents.md does not name .fankeel/' + p);
+      'the lifetime table in docs/90-agent/reference/documents.md does not name .fankeel/' + p);
   }
 });
 
@@ -573,10 +573,10 @@ test('the lifetime table names every ignored path under .fankeel/', () => {
 // day it is written.
 test('the build/ row says its list is examples, not the whole list', () => {
   const root = path.join(__dirname, '..');
-  const page = fs.readFileSync(path.join(root, 'docs', 'documents.md'), 'utf8');
+  const page = fs.readFileSync(path.join(root, 'docs', '90-agent', 'reference', 'documents.md'), 'utf8');
 
   const start = page.indexOf('## `.fankeel/` 各區的壽命');
-  assert.ok(start >= 0, 'docs/documents.md has no lifetime section');
+  assert.ok(start >= 0, 'docs/90-agent/reference/documents.md has no lifetime section');
   const rest = page.slice(start + 1);
   const end = rest.indexOf('\n## ');
   const section = end === -1 ? rest : rest.slice(0, end);
@@ -650,9 +650,9 @@ function callSites(root) {
 
 // Sliced the way the two tests above slice it.
 function lifetimeSection(root) {
-  const page = fs.readFileSync(path.join(root, 'docs', 'documents.md'), 'utf8');
+  const page = fs.readFileSync(path.join(root, 'docs', '90-agent', 'reference', 'documents.md'), 'utf8');
   const start = page.indexOf('## `.fankeel/` 各區的壽命');
-  assert.ok(start >= 0, 'docs/documents.md has no lifetime section');
+  assert.ok(start >= 0, 'docs/90-agent/reference/documents.md has no lifetime section');
   const rest = page.slice(start + 1);
   const end = rest.indexOf('\n## ');
   return end === -1 ? rest : rest.slice(0, end);

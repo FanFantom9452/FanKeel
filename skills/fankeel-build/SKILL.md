@@ -173,7 +173,7 @@ and one per new test naming the mutation that reddens it, with no report file. A
 no-plan route keeps nothing on disk on purpose, with one exception: where build
 runs as a controlled stage agent, design's approved shape is already on disk at
 the handoff path build reads first
-([docs/subagents.md](../../docs/subagents.md)'s `DESIGN_TO_BUILD`) — otherwise
+([docs/subagents.md](../../docs/90-agent/reference/subagents.md)'s `DESIGN_TO_BUILD`) — otherwise
 `design` puts `plan` on the route the moment two rows are independent, so what
 runs without one is a short dependent chain, and the registry's `next` line is
 its ledger. The implementer
@@ -392,8 +392,8 @@ then asks this stage's gate.
    `bounded` task puts its rulings — not once per task; the plan's
    `**Dispatch:**` lines already read `in-session — the user said so this
    session` for the same reason. Two builds here ran in-session,
-   `docs/archive/2026-09-01-ready-backlog.md` and then
-   `docs/reports/2026-09-02-process-state-review.md`, on a session that had
+   `docs/99-archive/2026-09-01-ready-backlog.md` and then
+   `docs/90-agent/reports/2026-09-02-process-state-review.md`, on a session that had
    read the Workflow tool's `ultracode` gate as the Agent tool's; the Agent tool
    has no gate, and both would have dispatched.
 6. Fix rounds are bounded at **five**. A finding you overrule is a ruling, not a
@@ -471,7 +471,7 @@ settles what neither answers.
 Where a task's whole justification is that a change is cheaper, faster or
 lighter, its steps name the script that measures the claim and record what it
 printed before the change — the same discipline
-`docs/reports/2026-09-03-dispatch-vs-inline.md` already keeps by hand. Run
+`docs/90-agent/reports/2026-09-03-dispatch-vs-inline.md` already keeps by hand. Run
 that same script again once the change lands, before treating the task as
 done.
 

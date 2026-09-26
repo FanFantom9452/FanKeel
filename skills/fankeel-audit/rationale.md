@@ -68,13 +68,13 @@ evidence the work happened. This exemption was re-opened and re-confirmed on
 2026-09-12, when two candidate signals for telling apart a `design-intent`
 plan whose work had landed from one that was merely waiting were measured and
 both scored identically against a landed control, so the exemption stands —
-[docs/reports/2026-09-12-intent-plan-signal.md](../../docs/reports/2026-09-12-intent-plan-signal.md).
+[docs/reports/2026-09-12-intent-plan-signal.md](../../docs/90-agent/reports/2026-09-12-intent-plan-signal.md).
 The same test gates `lib/map.js`'s planned-not-built list too, and nothing in
 that measurement was specific to the sweep — the same finding holds there.
 One that declares `last_verified` is dated by
 when somebody read it rather than by when somebody touched it; a pair where
 one page declares the other as its `source_of_truth` stops being a pair. The
-shape of that contract is in [docs/documents.md](../../docs/documents.md).
+shape of that contract is in [docs/documents.md](../../docs/90-agent/reference/documents.md).
 
 ## The part only reading finds
 
@@ -138,7 +138,7 @@ in any non-ASCII script.
 This repository carries a `knip.json` since 2026-09-13, so a bare `knip` no
 longer calls every entry point unused — which is what the first flag was
 protecting this stage from. It stays because the question here is the packages
-one; [docs/development.md](../../docs/development.md) describes the rest.
+one; [docs/development.md](../../docs/01-guide/development.md) describes the rest.
 
 The line this draws is the same one `residue.js` draws: a fact this can check —
 is the file beside it, does the path exist — it checks itself. A judgement

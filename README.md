@@ -100,7 +100,7 @@ architectural  route: survey → design → plan → [build] → verify → audi
 Only the current stage's rules are sent, and they are sent again every turn — a
 pointer is only as strong as the salience of what it points at. What each stage
 produces, what happens inside one, and how a class picks a route are in
-[docs/pipeline.md](docs/pipeline.md).
+[docs/pipeline.md](docs/02-architecture/pipeline.md).
 
 ## Every stage ends at a gate
 
@@ -146,12 +146,12 @@ The word is the stage, not an intensity. `clash` takes the slot when another liv
 session is in your files, and `init` is the gap between `/fankeel` being submitted
 and a task existing. The seven stage colours ship with TokenBar from v1.4.0 on;
 the palette, both config formats and what each colour is doing are in
-[docs/statusline.md](docs/statusline.md).
+[docs/statusline.md](docs/90-agent/reference/statusline.md).
 
 Every session this machine has run, live or abandoned or stood down, is one page:
 the station — less any project whose profile sets `station.hide`, which appears
 on no row, in no total and in no detail file. `node scripts/station.js --open` opens the newest, and `serve` in
-place of that is the live form — [docs/station.md](docs/station.md).
+place of that is the live form — [docs/station.md](docs/90-agent/reference/station.md).
 
 ## The five scanners
 
@@ -165,24 +165,24 @@ place of that is the live form — [docs/station.md](docs/station.md).
 
 None of them decides that two documents contradict each other, because nothing
 mechanical can. What the cap is, and why comparing two runs beats comparing two
-headline counts, is in [docs/documents.md](docs/documents.md).
+headline counts, is in [docs/documents.md](docs/90-agent/reference/documents.md).
 
 ## Where to find things
 
 | I want to know | Page |
 |---|---|
-| What `/fankeel` asks me, the seven stages, and how a route is chosen | [docs/pipeline.md](docs/pipeline.md) |
-| What `.fankeel/map.md` holds, and why a page marked design-intent is not drift | [docs/pipeline.md](docs/pipeline.md) |
-| What gets written to disk, what is committed, and what `notes` and `next` are for | [docs/registry.md](docs/registry.md) |
-| What `[FANKEEL:CLASH]` means, and how to stop a collision raising a prompt | [docs/collisions.md](docs/collisions.md) |
-| What `docs.json` declares, and why an archive naming deleted code is not a bug | [docs/documents.md](docs/documents.md) |
-| What a subagent is told when it starts, and when `/fankeel-ask` is worth the money | [docs/subagents.md](docs/subagents.md) |
-| The badge word, and how to colour each stage | [docs/statusline.md](docs/statusline.md) |
-| Every session on this machine on one page, and how to put an abandoned one down | [docs/station.md](docs/station.md) |
-| Why fankeel ships no output style, and where its voice lives instead | [docs/decisions/2026-09-13-no-output-styles.md](docs/decisions/2026-09-13-no-output-styles.md) |
-| How the plugin is built and checked, and the four scripts that stop a claim drifting | [docs/development.md](docs/development.md) |
-| How to run the behaviour eval, and what to do when `claude plugin eval` says early access | [docs/evals.md](docs/evals.md) |
-| Why any of it was built this way | [docs/decisions/fankeel-shell.md](docs/decisions/fankeel-shell.md) |
+| What `/fankeel` asks me, the seven stages, and how a route is chosen | [docs/pipeline.md](docs/02-architecture/pipeline.md) |
+| What `.fankeel/map.md` holds, and why a page marked design-intent is not drift | [docs/pipeline.md](docs/02-architecture/pipeline.md) |
+| What gets written to disk, what is committed, and what `notes` and `next` are for | [docs/registry.md](docs/90-agent/reference/registry.md) |
+| What `[FANKEEL:CLASH]` means, and how to stop a collision raising a prompt | [docs/collisions.md](docs/90-agent/reference/collisions.md) |
+| What `docs.json` declares, and why an archive naming deleted code is not a bug | [docs/documents.md](docs/90-agent/reference/documents.md) |
+| What a subagent is told when it starts, and when `/fankeel-ask` is worth the money | [docs/subagents.md](docs/90-agent/reference/subagents.md) |
+| The badge word, and how to colour each stage | [docs/statusline.md](docs/90-agent/reference/statusline.md) |
+| Every session on this machine on one page, and how to put an abandoned one down | [docs/station.md](docs/90-agent/reference/station.md) |
+| Why fankeel ships no output style, and where its voice lives instead | [docs/decisions/2026-09-13-no-output-styles.md](docs/03-decisions/2026-09-13-no-output-styles.md) |
+| How the plugin is built and checked, and the four scripts that stop a claim drifting | [docs/development.md](docs/01-guide/development.md) |
+| How to run the behaviour eval, and what to do when `claude plugin eval` says early access | [docs/evals.md](docs/90-agent/reference/evals.md) |
+| Why any of it was built this way | [docs/decisions/fankeel-shell.md](docs/03-decisions/fankeel-shell.md) |
 
 The full index, question by question, is [docs/README.md](docs/README.md).
 
@@ -201,7 +201,7 @@ fankeel/
 ├── .fankeel/          this repository's own settings: docs.json files each page, profile.json answers gates, .gitignore
 ├── agents/            the eight subagents the stages dispatch — reader, reviewer, verifier, judge, fixer, brain, render-reviewer, mockup — with their tools and model
 ├── assets/            the station page: index.html, station.css and station.js, copied beside every page a write produces
-├── docs/              reference pages, with decisions/, plans/, reports/, judgements/ and archive/ each filed by what it records
+├── docs/              reference pages by audience: 01-guide/, 02-architecture/, 03-decisions/, and 90-agent/ (reference/, plans/, reports/, judgements/) with 99-archive/ for what it retires
 ├── evals/             behaviour eval cases, one directory each, graded by scripts/eval.js with claude -p
 ├── hooks/             every hook Claude Code runs; each reads stdin, exits 0 on every path and leaves the work to lib/
 │   ├── inject.js      UserPromptSubmit: the block on every prompt, the init block on /fankeel, the badge
@@ -259,5 +259,5 @@ exit live, and every hook exits 0 on every path, because a hook that throws bloc
 the thing it was called for and a plugin that can wedge your terminal is worse than
 no plugin. `todo-check.js`, `version.js`, `skills-check.js` and
 `stage-registry.js` each hold one written claim to the code it describes, and
-[docs/development.md](docs/development.md) says what each of them checks. The
-behaviour eval and its runner are in [docs/evals.md](docs/evals.md).
+[docs/development.md](docs/01-guide/development.md) says what each of them checks. The
+behaviour eval and its runner are in [docs/evals.md](docs/90-agent/reference/evals.md).

@@ -269,7 +269,7 @@ test('the docs quote the injected rules verbatim, in both blocks', () => {
   // hooks/inject.js and once for hooks/resume.js, which restates it — so two
   // copies is the correct count and one is a page half updated.
   const page = require('node:fs').readFileSync(
-    require('node:path').join(__dirname, '..', 'docs', 'pipeline.md'), 'utf8');
+    require('node:path').join(__dirname, '..', 'docs', '02-architecture', 'pipeline.md'), 'utf8');
   // Those blocks are a task at `build`, so compare against what `build` gets.
   const shown = rulesFor('build', { next: 'verify' }).slice(0, ALWAYS.length);
   for (const rule of shown) {
@@ -288,7 +288,7 @@ test('the docs quote the injected rules verbatim, in both blocks', () => {
 // asserts on the prose rather than on the mermaid labels.
 test('the build section marks the loop grouping as plan-only, not just the setup', () => {
   const page = require('node:fs').readFileSync(
-    require('node:path').join(__dirname, '..', 'docs', 'pipeline.md'), 'utf8');
+    require('node:path').join(__dirname, '..', 'docs', '02-architecture', 'pipeline.md'), 'utf8');
   const section = /\n### build\n[\s\S]*?\n```mermaid/.exec(page);
   assert.ok(section, 'the build section is not where this test looks for it');
   // Every pattern tolerates the wrap: the page is hard-wrapped at 80 columns, so
@@ -324,7 +324,7 @@ test('the build section marks the loop grouping as plan-only, not just the setup
 // first paragraph stops at the first mermaid block, so nothing could reach here.
 test('the blocking half of build marks its ledger ruling as plan-only', () => {
   const page = require('node:fs').readFileSync(
-    require('node:path').join(__dirname, '..', 'docs', 'pipeline.md'), 'utf8');
+    require('node:path').join(__dirname, '..', 'docs', '02-architecture', 'pipeline.md'), 'utf8');
   const half = /A running plan does not wait on a person[\s\S]*?\n### verify/.exec(page);
   assert.ok(half, 'the blocking half of build is not where this test looks for it');
   assert.match(half[0], /is\s+the\s+plan\s+path\s+like\s+every\s+other\s+ledger/,

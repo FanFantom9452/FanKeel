@@ -332,11 +332,11 @@ test('the pages that count the hooks count as many as are registered', () => {
   // The prose moved to docs/development.md when README.md was cut back to a
   // front page. The assertion follows the sentence, not the file it used to
   // sit in — a count is checked wherever it is written down.
-  const development = read('docs/development.md');
+  const development = read('docs/01-guide/development.md');
   assert.match(development, new RegExp('all ' + total + '\\s+hooks'),
-    'docs/development.md does not say "all ' + total + ' hooks"');
+    'docs/01-guide/development.md does not say "all ' + total + ' hooks"');
   assert.match(development, new RegExp('The other ' + others + ' are not load-bearing'),
-    'docs/development.md does not say "The other ' + others + ' are not load-bearing"');
+    'docs/01-guide/development.md does not say "The other ' + others + ' are not load-bearing"');
 
   assert.match(read('tests/hook.test.js'), new RegExp('all ' + total + '\\s+hooks'),
     'tests/hook.test.js does not say "all ' + total + ' hooks"');
@@ -345,23 +345,33 @@ test('the pages that count the hooks count as many as are registered', () => {
 // The same shape as the hook count above, and for the same reason: a number
 // written into prose has no checker unless something recounts it. The live
 // source here is the directory, because "pages" in that sentence means the
-// top-level pages of docs/ and nothing else.
+// top-level pages of docs/ and nothing else. The audience preset moved those
+// pages off docs/ itself and into the reference buckets that took them in —
+// docs/01-guide, docs/02-architecture and docs/90-agent/reference — so the
+// count is the sum of the plain reference buckets under docs/, not a
+// directory listing of docs/ itself.
 //
 // Counted as files, not as table rows. The index table below that sentence runs
-// unbroken from line 13 and indexes docs/archive/, docs/plans/ and the rest, so
-// it has many more rows than the sentence claims pages — counting rows is the
-// first thing that looks right and is not.
+// unbroken from line 13 and indexes docs/99-archive/, docs/90-agent/plans/ and
+// the rest, so it has many more rows than the sentence claims pages — counting
+// rows is the first thing that looks right and is not.
 test('the index says as many pages as docs/ has', () => {
   const root = path.join(__dirname, '..');
   const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven',
     'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen',
     'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
 
-  const pages = fs.readdirSync(path.join(root, 'docs'), { withFileTypes: true })
-    .filter((e) => e.isFile() && e.name.endsWith('.md') && e.name !== 'README.md')
-    .map((e) => e.name);
+  const { tree } = docs.read(root);
+  const buckets = tree.buckets.filter((b) => b.role === 'reference' && !b.depth
+    && (b.path === 'docs' || b.path.startsWith('docs/')));
+  const pages = [];
+  for (const b of buckets) {
+    pages.push(...fs.readdirSync(path.join(root, ...b.path.split('/')), { withFileTypes: true })
+      .filter((e) => e.isFile() && e.name.endsWith('.md') && e.name !== 'README.md')
+      .map((e) => e.name));
+  }
   const word = WORDS[pages.length];
-  assert.ok(word, 'docs/ has more pages than WORDS can name: ' + pages.length);
+  assert.ok(word, 'the reference buckets under docs/ have more pages than WORDS can name: ' + pages.length);
 
   const index = fs.readFileSync(path.join(root, 'docs', 'README.md'), 'utf8');
   const said = word[0].toUpperCase() + word.slice(1);

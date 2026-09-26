@@ -1,35 +1,56 @@
 {
-  "preset": "flat",
+  "preset": "audience",
   "index": "docs/README.md",
   "buckets": [
     {
-      "path": "docs",
+      "path": "docs/90-agent/reference",
       "role": "reference",
-      "depth": 1
+      "audience": "agent"
     },
     {
-      "path": "docs/decisions",
-      "role": "decision"
+      "path": "docs/90-agent/reports",
+      "role": "report",
+      "audience": "agent"
     },
     {
-      "path": "docs/plans",
-      "role": "plan"
+      "path": "docs/02-architecture",
+      "role": "reference",
+      "audience": "human"
     },
     {
-      "path": "docs/reports",
-      "role": "report"
+      "path": "docs/90-agent/plans",
+      "role": "plan",
+      "audience": "agent"
     },
     {
-      "path": "docs/reports/evidence",
-      "role": "fixture"
+      "path": "docs/03-decisions",
+      "role": "decision",
+      "audience": "human"
     },
     {
-      "path": "docs/archive",
+      "path": "docs/99-archive",
       "role": "archive"
     },
     {
-      "path": "docs/judgements",
+      "path": "docs/01-guide",
+      "role": "reference",
+      "audience": "human"
+    },
+    {
+      "path": "docs/90-agent/reports/evidence",
+      "role": "fixture"
+    },
+    {
+      "path": "docs/90-agent/judgements",
       "role": "report"
+    },
+    {
+      "path": ".claude/agents",
+      "role": "reference"
+    },
+    {
+      "path": "agents",
+      "role": "reference"
     },
     {
       "path": "skills",
@@ -40,12 +61,9 @@
       "role": "fixture"
     },
     {
-      "path": ".claude/agents",
-      "role": "reference"
-    },
-    {
-      "path": "agents",
-      "role": "reference"
+      "path": "docs",
+      "role": "reference",
+      "depth": 1
     }
   ]
 }

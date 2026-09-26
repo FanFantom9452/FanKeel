@@ -14,7 +14,7 @@ const path = require('node:path');
 const { byName } = require('../lib/stages.js');
 const { OVERLAPS } = require('../scripts/orient.js');
 
-const PIPELINE = path.join(__dirname, '..', 'docs', 'pipeline.md');
+const PIPELINE = path.join(__dirname, '..', 'docs', '02-architecture', 'pipeline.md');
 
 const ANCHOR = {
   survey: 'every path:line checked before it returns',
