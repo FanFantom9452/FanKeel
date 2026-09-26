@@ -54,3 +54,5 @@ source_of_truth: docs/90-agent/reports/evidence/2026-09-26-context-md/ab.sh
 ## 5. 花沒花錢是真的
 
 兩個 arm 是真跑的 headless run（`claude -p --output-format json`，`--permission-mode bypassPermissions`，`stage.agents` 由 `pin.sh` 釘在 `survey,build,verify`），provenance 記在 `docs/90-agent/reports/evidence/2026-09-26-context-md/provenance.txt`（HEAD、porcelain、`claude --version` 2.1.283、`ab.sh`/`pin.sh` md5）。總花費 $2.5394805999999996 + $10.281673999999999 ≈ $12.82，在 arm 各自 `--max-budget-usd 62.50` 的上限之內。
+
+這 $12.82 不是全部花費。在它之前另有兩次作廢的執行，共約 $5.50（數字取自 build 報告 `.fankeel/build/task-20260926T012847/build.md`），是先後兩次各自獨立的碰撞：第一次是一個把本 session 誤判為已失聯的重新派工，和本 session 自己的那一次同時跑了同一套 harness；後來又有第二個 implementer 並行跑了一次。當時 `ab.sh` 的輸出檔只按 arm 命名、不帶 session id，兩次都互相覆寫，資料無法使用。`ab.sh` 之後改成以 session id 命名每個輸出檔，才跑出上面這一次乾淨的結果。本 task 實際花費約 $18.3，都在核准的 $125 之內。

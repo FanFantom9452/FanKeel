@@ -4,7 +4,7 @@ description: Task registry and development discipline for long-running projects.
 version: 0.79.0
 status: current
 last_verified: 2026-09-21
-source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js, lib/guard.js, docs/collisions.md, docs/registry.md, docs/station.md, docs/statusline.md
+source_of_truth: lib/stages.js, lib/registry.js, lib/live.js, scripts/task.js, lib/guard.js, docs/90-agent/reference/collisions.md, docs/90-agent/reference/registry.md, docs/90-agent/reference/station.md, docs/90-agent/reference/statusline.md
 ---
 
 # fankeel

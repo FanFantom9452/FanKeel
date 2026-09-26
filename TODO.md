@@ -76,7 +76,8 @@ what gets scheduled.
 
 ## Ready
 
-- 〔audit〕`/fankeel-audit` 擴充成定期清理機制：docs tree 合規、搬遷對照表、大 repo 分批、排程提醒；先搬 fankeel 自己的 docs，再跑 Trovara — [docs/documents.md](docs/90-agent/reference/documents.md).
+- 〔audit〕Trovara 的 docs 搬到 preset：在 Trovara 跑 `docs-move.js` 出搬移表、核可後 apply，再跑一次分批 `/fankeel-audit`（機制與 fankeel 自己的搬移已於 09-26 落地）— [scripts/docs-move.js](scripts/docs-move.js).
+- 〔audit〕fankeel 第一次深度巡檢：47 組頁面對讀、分批讀 293 頁、3 個 code reviewer 找能刪的東西，跑完用 `--record` 寫入 `.fankeel/audit.json`；沒有這個檔，`orient` 不會提醒 — [scripts/orient.js](scripts/orient.js).
 - 〔wizard〕auto 選項缺 mockup 有畫的外開圖示（`fopen`）：`seg()` 樣板沒吐出來 — [assets/station/station.js](assets/station/station.js).
 
 ## Needs a decision

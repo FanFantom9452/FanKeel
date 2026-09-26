@@ -61,7 +61,7 @@ bullet-level, because the three promises dropped on 2026-09-06 all sat inside
 areas the plan had ticked. `lint` is the part a script can hold: it cannot
 judge whether a task implements a promise, but it can refuse a plan that never
 quotes one, and eight normalised words is enough to tell two bullets apart on
-every design in `docs/plans`. The reviewer is the judgement the other two
+every design in `docs/90-agent/plans`. The reviewer is the judgement the other two
 cannot make, and it is the one superpowers already runs at this point — a
 plan-document reviewer for completeness and spec alignment. It costs a sonnet
 dispatch of a few minutes; the return trips it replaces cost hours.

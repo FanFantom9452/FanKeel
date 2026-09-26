@@ -4,7 +4,7 @@ description: Reopen the station by hand — every fankeel session on this machin
 version: 0.79.0
 status: current
 last_verified: 2026-09-19
-source_of_truth: scripts/station.js, lib/serve.js, docs/station.md
+source_of_truth: scripts/station.js, lib/serve.js, docs/90-agent/reference/station.md
 ---
 
 # fankeel-station

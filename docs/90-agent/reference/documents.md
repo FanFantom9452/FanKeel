@@ -20,8 +20,8 @@ and the role says how long a document is meant to stay true:
 | `archive` | retired; checked only that nothing current points at it | yes |
 | `fixture` | a test's own input — describes nothing about the system, checked for links and line numbers only | n/a |
 
-A root `.ignore` holding `docs/archive/` keeps ripgrep — the `Grep` tool here —
-from searching it by default; naming `docs/archive` explicitly still searches
+A root `.ignore` holding `docs/99-archive/` keeps ripgrep — the `Grep` tool here —
+from searching it by default; naming `docs/99-archive` explicitly still searches
 it. The `Glob` tool does not read `.ignore` and still lists archive files, and
 `docs-check`, `docs-audit` and `survey.js` read `git ls-files` directly, so none
 of them is affected either way. `survey.js` leaves pages out by role instead:
