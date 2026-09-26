@@ -567,10 +567,10 @@ test('the init block carries the station line when it is given one, and stays un
   assert.match(out, /<the station line, if any>/, 'the shape has a slot for it');
 });
 
-test('init offers ## Waiting as one option whenever orient lists a timing', () => {
+test('init offers ## Blocked and ## Watch one shared option, only when orient marks due or stale', () => {
   const out = renderInit({ sessionId: MINE });
-  assert.match(out, /`## Waiting` is one option whenever it holds a timing/);
-  assert.doesNotMatch(out, /`## Waiting` is one option when `orient` marks any `due`/);
+  assert.match(out, /`## Blocked`\/`## Watch` share one option when `orient` marks any `due` or `stale`;/);
+  assert.doesNotMatch(out, /## Waiting/);
 });
 
 // A rule describes a shape; a template is the shape. The stage rules survived a
