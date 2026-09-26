@@ -147,6 +147,9 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO Ready 五條定了什麼、量到什麼、在哪裡回頭：audience preset、audit 只報天數、context.md 經腳本、自帶設計指南、context.md A/B 什麼都沒量到，以及 verify 與 audit 補上的三處 | [decisions/2026-09-26-ready-five.md](03-decisions/2026-09-26-ready-five.md) — *繁體中文* |
 | TODO Ready 五條怎麼做：audit 分批與兩週提醒、docs-move 先出搬移表再搬、context.md 交換區、design.mockup auto 與多選 design.skill、浮動圖示與局部重繪、網頁答題 60 秒交回終端、每次 spawn 一個 `--user-data-dir` | `docs/99-archive/2026-09-26-ready-five-design.md` — *built, 繁體中文* |
 | 落地它的十四個 task，Task 14（Trovara 的搬移）留給使用者在那個 repository 做 | `docs/99-archive/2026-09-26-ready-five.md` — *built, 繁體中文* |
+| TODO 全清（09-27）定了什麼、量到什麼、在哪裡回頭：`{{PLAN_DIR}}` 讀 plan 桶、wizard 的外開圖示、第一次深度巡檢，以及 build 裡一個沒有 brief 的 agent 自己 commit | [decisions/2026-09-27-todo-clear.md](03-decisions/2026-09-27-todo-clear.md) — *繁體中文* |
+| TODO 全清（09-27）怎麼做：plan 桶 token、auto 選項的外開圖示、深度巡檢放 audit 站、Waiting 戳記 | `docs/99-archive/2026-09-27-todo-clear-design.md` — *built* |
+| 那份設計的兩個 task：`planDir()` 與 `{{PLAN_DIR}}`、`seg()` 補 `fopen` | `docs/99-archive/2026-09-27-todo-clear.md` — *built* |
 | Needs-a-decision 六條怎麼定：拆出 fankeel-mockup、各角色 effort、docs tree 加「給誰看」軸、ADR 為 ≤7 條 binding 子集、station 看／答問題、tune 改完通知與自動刷新、設定精靈改卡片 | `docs/99-archive/2026-09-26-station-redesign-design.md` — *built, 繁體中文* |
 | 做它的 13 個 task——從 fankeel-mockup agent、effort、docs 軸與 binding 上限，到 station 答題、toast、模型版本、effort chip、設定精靈卡片，最後在真頁面上逐塊調整 | `docs/99-archive/2026-09-26-station-redesign.md` — *built, 繁體中文* |
 | 把上面那份設計拆成三個 task 的計畫 | `docs/99-archive/2026-09-25-todo-line-and-multiplier.md` — *built, 繁體中文* |

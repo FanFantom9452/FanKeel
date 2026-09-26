@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO clear — the plan bucket, the wizard's open icon, the first deep audit
