@@ -150,20 +150,21 @@ report where a real parser would cost a dependency this plugin does not have.
 這幾區**不能**是 `.fankeel/docs.json` 的一個 bucket，而這值得寫下來，因為路徑
 本身是合法的：`lib/docs.js:209` 的 `if (!p.startsWith(b.path + '/')) continue;`
 是純字串前綴比對，`skills`、`evals`、`agents` 都是 `docs/` 以外的 bucket。擋住
-的是列檔的那一層，而那一層是同一個函式：下面第一條是它跑的旗標，其後七條是它
-的七個呼叫端，`scripts/` 六處與 `lib/` 一處。每一行的引文都必須
+的是列檔的那一層，而那一層是同一個函式：下面第一條是它跑的旗標，其後八條是它
+的八個呼叫端，`scripts/` 七處與 `lib/` 一處。每一行的引文都必須
 跟它的行號同行。`scripts/docs-check.js:229` 是 `function quoteBeside(text, from) {`，
 它只掃到換行為止，而同一行上的第二個路徑會被它自己的 `PATHISH` 擋掉——所以擠
 在一行的兩個引用等於兩個都沒有引文，而被硬換行拆開的引文等於沒寫。
 
 - `lib/tracked.js:31` 是 `const args = ['ls-files', '-z', '--cached', '--others', '--exclude-standard'];`
-- `scripts/docs-audit.js:400` 是 `const listed = trackedFiles(root);`
+- `scripts/docs-audit.js:406` 是 `const listed = trackedFiles(root);`
+- `scripts/docs-audit.js:448` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-check.js:414` 是 `const result = trackedFiles(root);`
 - `scripts/layout.js:51` 是 `const found = trackedFiles(root);`
 - `scripts/memory-check.js:142` 是 `const tracked = trackedFiles(root);`
 - `scripts/orient.js:286` 是 `result = trackedFiles(dir, { stats });`
 - `scripts/survey.js:198` 是 `const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt`
-- `lib/map.js:235` 是 `const found = trackedFiles(root);`，七個之中只有這個檔案直接讀 `.buckets`
+- `lib/map.js:235` 是 `const found = trackedFiles(root);`，八個之中只有這個檔案直接讀 `.buckets`
 
 `--exclude-standard` 套用 `.gitignore`，所以宣告出來的 bucket 會
 永遠列出零個檔。這張表是這幾區唯一的說明，`node scripts/residue.js` 是它們當下

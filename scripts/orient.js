@@ -489,6 +489,23 @@ const TODO_ENTRY_WIDTH = 100;
 // read. The `readFileSync` below is the only check that needs to exist for
 // that — a second, earlier one reading the same path could only ever agree
 // with it or be wrong.
+// `/fankeel-audit` stamps `.fankeel/audit.json` (`docs-audit.js --record`).
+// Past AUDIT_DAYS the todo: block says so, riding a prompt the user already
+// opens; up to it, and with no stamp at all, it says nothing.
+const AUDIT_DAYS = 14;
+function auditLine(dir, now) {
+    let last;
+    try {
+        last = JSON.parse(fs.readFileSync(path.join(dir, '.fankeel', 'audit.json'), 'utf8')).last;
+    } catch (e) {
+        return null;
+    }
+    const at = Date.parse(last);
+    if (!Number.isFinite(at)) return null;
+    const days = Math.floor((now - at) / 86400000);
+    return days > AUDIT_DAYS ? '  audit: ' + days + ' 天未跑' : null;
+}
+
 function todoBlock(dir, now) {
     const file = path.join(dir, 'TODO.md');
     let text;
@@ -535,6 +552,8 @@ function todoBlock(dir, now) {
         const col = t.due ? 'due' : t.date !== null ? todoCheck.mmdd(t.date) : '';
         lines.push('    ' + col.padEnd(7) + t.title + ' (' + t.items.length + ')');
     }
+    const audit = auditLine(dir, now);
+    if (audit) lines.push(audit);
     return lines;
 }
 

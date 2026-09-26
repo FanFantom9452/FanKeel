@@ -55,7 +55,7 @@ Why each rule is what it is, under the same headings: [rationale.md](rationale.m
 ```
 node <plugin>/scripts/docs-check.js [--root <dir>]
 node <plugin>/scripts/residue.js [--root <dir>]
-node <plugin>/scripts/docs-audit.js [--root <dir>] [--since <days>]
+node <plugin>/scripts/docs-audit.js [--root <dir>] [--since <days>] --record
 node <plugin>/scripts/memory-check.js [--root <dir>] [--config-dir <dir>]
 node <plugin>/scripts/input-check.js [--root <dir>] [--config-dir <dir>]
 ```
@@ -63,6 +63,10 @@ node <plugin>/scripts/input-check.js [--root <dir>] [--config-dir <dir>]
 `--root` picks one project out of a workspace holding several. `--since`
 defaults to 14 days, which is the cadence this is built for: not on a typo fix,
 not skipped for a quarter.
+
+`--record` writes `.fankeel/audit.json` — `{ "last": "<date>" }`, committed —
+and `orient`'s `todo:` block says `audit: N 天未跑` once that is more than 14
+days old. That line is the whole reminder: no cron, no routine.
 
 Quote what came back. A description of what a scanner said is not what it said.
 
@@ -178,6 +182,14 @@ against itself before acting, because readers dispatched from one prompt make
 correlated mistakes. Say how many are going and on which model as they go out:
 a pair count nobody announced is spend the user is paying for and could not see
 coming.
+
+**A large tree is read in batches, never truncated.**
+`node <plugin>/scripts/docs-audit.js --batches` lists them — one per bucket,
+at most 40 pages each, archive and fixture pages left out. Send one
+`fankeel:fankeel-reader` per batch, four in one response at most, each told
+its batch number and to run `node <plugin>/scripts/docs-audit.js --batch <n>`
+for its pages, and asked which page describes something that no longer
+exists. 319 pages are eight readers, not one reader holding the first forty.
 
 What you do **not** dispatch is this stage. A subagent receives the brief and
 nothing else, so an `audit` run inside one has no gate, no output shape and none

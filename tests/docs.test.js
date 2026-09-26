@@ -678,10 +678,10 @@ test('the lifetime section lists every trackedFiles call site in scripts/ and li
     + ', bullets pointing at no call site: ' + JSON.stringify(declared.filter((x) => !a.has(x))));
 });
 
-test('there are seven trackedFiles call sites, six under scripts/ and one under lib/', () => {
+test('there are eight trackedFiles call sites, seven under scripts/ and one under lib/', () => {
   const actual = callSites(path.join(__dirname, '..'));
-  assert.equal(actual.length, 7, 'call sites: ' + JSON.stringify(actual));
-  assert.equal(actual.filter((s) => s.startsWith('scripts/')).length, 6,
+  assert.equal(actual.length, 8, 'call sites: ' + JSON.stringify(actual));
+  assert.equal(actual.filter((s) => s.startsWith('scripts/')).length, 7,
     'under scripts/: ' + JSON.stringify(actual));
   assert.equal(actual.filter((s) => s.startsWith('lib/')).length, 1,
     'under lib/: ' + JSON.stringify(actual));
@@ -692,14 +692,14 @@ test('there are seven trackedFiles call sites, six under scripts/ and one under 
 // The section is whitespace-stripped first: that sentence is hard-wrapped, and
 // pinning one wrap position makes this go red for the wrong reason the next
 // time the paragraph reflows.
-test('the sentence above the list says seven, and six under scripts/', () => {
+test('the sentence above the list says eight, and seven under scripts/', () => {
   const flat = lifetimeSection(path.join(__dirname, '..')).replace(/\s+/g, '');
-  assert.ok(flat.includes('其後七條是它的七個呼叫端'),
-    'the sentence above the list does not say 其後七條 / 七個呼叫端');
-  assert.ok(flat.includes('`scripts/`六處與`lib/`一處'),
-    'the sentence does not say scripts/ 六處與 lib/ 一處');
-  assert.ok(flat.includes('七個之中只有這個檔案直接讀'),
-    'the lib/map.js bullet does not say 七個之中');
+  assert.ok(flat.includes('其後八條是它的八個呼叫端'),
+    'the sentence above the list does not say 其後八條 / 八個呼叫端');
+  assert.ok(flat.includes('`scripts/`七處與`lib/`一處'),
+    'the sentence does not say scripts/ 七處與 lib/ 一處');
+  assert.ok(flat.includes('八個之中只有這個檔案直接讀'),
+    'the lib/map.js bullet does not say 八個之中');
 });
 
 // docs/plans/2026-09-26-station-redesign.md Task 6. A decision marked
@@ -721,4 +721,13 @@ test('an eighth binding decision fails docs-check; a superseded one does not cou
   assert.doesNotMatch(under.out, /binding decisions/);
   assert.equal(docs.isBinding('---\nbinding: true\n---\n'), true);
   assert.equal(docs.isBinding('---\nbinding: false\n---\n'), false);
+});
+
+test('bucketOf names the bucket a file is filed under, depth and nesting included', () => {
+  const t = docs.normalise(docs.PRESETS.flat);
+  assert.equal(docs.bucketOf(t, 'docs/plans/x.md').path, 'docs/plans');
+  assert.equal(docs.bucketOf(t, 'docs/a.md').path, 'docs');
+  assert.equal(docs.bucketOf(t, 'docs/notes/deep/x.md'), null, 'depth 1 keeps a deeper page out of docs');
+  assert.equal(docs.bucketOf(t, 'README.md'), null, 'a signpost is in no bucket');
+  assert.equal(docs.bucketOf(null, 'docs/a.md'), null);
 });

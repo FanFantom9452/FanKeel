@@ -949,3 +949,14 @@ test('claude.md: and overlap: read the config directory, and print neither when 
   assert.doesNotMatch(withoutEither, /^claude\.md:$/m);
   assert.doesNotMatch(withoutEither, /^overlap:$/m);
 });
+
+// .fankeel/audit.json is what /fankeel-audit leaves behind (docs-audit.js
+// --record). Past 14 days the todo: block says how long; up to it, nothing.
+test('the todo: block says how many days since the last audit once it is past 14, and nothing before', () => {
+  const root = workspace({ '.fankeel/audit.json': JSON.stringify({ last: '2026-09-01' }) + '\n' });
+  const opts = initGit(root);
+  commitTodo(root, opts, '## Ready\n\n## Needs a decision\n\n## Waiting\n', '2026-09-01T00:00:00Z');
+  assert.match(reportAt(root, 2026, 9, 16), /^ {2}audit: 15 天未跑$/m);
+  assert.doesNotMatch(reportAt(root, 2026, 9, 14), /audit:/);
+  assert.doesNotMatch(reportAt(root, 2026, 9, 15), /audit:/, '14 days is not more than 14');
+});

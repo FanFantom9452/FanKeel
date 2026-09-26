@@ -394,6 +394,54 @@ function diagramsIn(text) {
     return out;
 }
 
+// --- reading in batches ------------------------------------------------------
+
+// The reading half of `/fankeel-audit`, split so a large repository is read
+// whole rather than cut off: one batch per bucket, at most BATCH_PAGES pages
+// each. Archive and fixture pages are not read — an archive may be out of
+// date by design and a fixture describes nothing — and the root signposts are
+// one batch of their own, `.`.
+const BATCH_PAGES = 40;
+function batches(root) {
+    const listed = trackedFiles(root);
+    if (!listed) return [];
+    const declared = docs.read(root);
+    const implied = declared.tree ? null : docs.detect(root);
+    const tree = declared.tree || (implied ? docs.normalise(docs.PRESETS[implied]) : null);
+    const groups = new Map();
+    for (const rel of listed.files.filter(isMarkdown)) {
+        const b = docs.isSignpost(rel) ? { path: '.', role: 'reference' }
+            : tree ? docs.bucketOf(tree, rel)
+                : { path: rel.includes('/') ? rel.split('/')[0] : '.', role: 'reference' };
+        if (!b || b.role === 'archive' || b.role === 'fixture') continue;
+        if (!groups.has(b.path)) groups.set(b.path, []);
+        groups.get(b.path).push(rel);
+    }
+    const out = [];
+    for (const bucket of [...groups.keys()].sort()) {
+        const pages = groups.get(bucket).sort();
+        const of = Math.ceil(pages.length / BATCH_PAGES);
+        for (let i = 0; i < of; i++) out.push({ bucket, part: i + 1, of, pages: pages.slice(i * BATCH_PAGES, (i + 1) * BATCH_PAGES) });
+    }
+    return out;
+}
+
+function batchesReport(list) {
+    const pages = list.reduce((n, b) => n + b.pages.length, 0);
+    return ['fankeel docs-audit — ' + list.length + ' reading batches, ' + pages + ' pages, at most ' + BATCH_PAGES + ' each', '']
+        .concat(list.map((b, i) => (i + 1) + '. ' + b.bucket + ' ' + b.part + '/' + b.of + ' — ' + b.pages.length + (b.pages.length === 1 ? ' page' : ' pages')))
+        .join('\n');
+}
+
+// What `orient`'s todo: block reads to say how long since the last audit.
+// Committed, like docs.json: it is the project's, not this machine's.
+function recordRun(root, at) {
+    const file = path.join(root, '.fankeel', 'audit.json');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify({ last: new Date(at).toISOString().slice(0, 10) }, null, 2) + '\n');
+    return file;
+}
+
 // --- the sweep --------------------------------------------------------------
 
 function sweep(root, since, now, settled = LANDED_QUIET) {
@@ -917,7 +965,7 @@ function parseArgs(argv) {
     // takes a value it is that value, however odd a window it makes, and
     // dropping it there would hand `--root --since` the working directory in
     // place of the directory that was asked for.
-    const TAKES_VALUE = new Set(['--root', '--since']);
+    const TAKES_VALUE = new Set(['--root', '--since', '--batch']);
     const args = [];
     for (let i = 0; i < argv.length; i++) {
         const next = parseInt(argv[i + 1], 10);
@@ -930,7 +978,10 @@ function parseArgs(argv) {
         args,
         strict: false,
         allowPositionals: true,
-        options: { root: { type: 'string' }, since: { type: 'string' }, quiet: { type: 'boolean' } },
+        options: {
+            root: { type: 'string' }, since: { type: 'string' }, quiet: { type: 'boolean' },
+            batches: { type: 'boolean' }, batch: { type: 'string' }, record: { type: 'boolean' },
+        },
     });
     const n = parseInt(values.since, 10);
     // An explicit `--since` sets both, so `--since 0` still forces every check
@@ -943,12 +994,24 @@ function parseArgs(argv) {
         since: given ? n : DEFAULT_SINCE,
         settled: given ? n : LANDED_QUIET,
         quiet: Boolean(values.quiet),
+        batches: Boolean(values.batches),
+        batch: /^\d+$/.test(String(values.batch)) && Number(values.batch) > 0 ? Number(values.batch) : null,
+        record: Boolean(values.record),
     };
 }
 
 function main(argv, now) {
-    const { root, since, settled, quiet } = parseArgs(argv);
-    const r = sweep(root, since, typeof now === 'number' ? now : Date.now(), settled);
+    const { root, since, settled, quiet, batches: listing, batch, record } = parseArgs(argv);
+    const at = typeof now === 'number' ? now : Date.now();
+    if (listing || batch !== null) {
+        const list = batches(root);
+        if (listing) return { text: batchesReport(list), code: 0 };
+        const one = list[batch - 1];
+        if (!one) return { text: 'docs-audit: no batch ' + batch + ' — there are ' + list.length, code: 2 };
+        return { text: one.pages.join('\n'), code: 0 };
+    }
+    const r = sweep(root, since, at, settled);
+    if (record && r) recordRun(root, at);
     const bad = defects(r) > 0;
     const text = report(r);
     return { text: quiet && !bad ? '' : text, code: bad ? 1 : 0 };
@@ -960,4 +1023,4 @@ if (require.main === module) {
     process.exit(code);
 }
 
-module.exports = { sweep, report, main, parseArgs, defects, pointsAt, DEFAULT_SINCE };
+module.exports = { sweep, report, main, parseArgs, defects, pointsAt, DEFAULT_SINCE, batches, recordRun, BATCH_PAGES };

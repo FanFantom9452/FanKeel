@@ -48,6 +48,39 @@ const withTree = (root, preset) => {
 
 const sweep = (root, since) => audit.sweep(root, since === undefined ? 14 : since, NOW);
 
+// The reading half of /fankeel-audit: one batch per bucket, at most 40 pages,
+// so a 319-page repository is split rather than cut off at whatever one
+// reader could hold.
+test('the reading half is batched: one batch per bucket, at most 40 pages, archive left out', () => {
+  const files = { 'README.md': '# r\n' };
+  for (let i = 0; i < 90; i++) files['docs/p' + String(i).padStart(2, '0') + '.md'] = '# p\n';
+  for (let i = 1; i <= 3; i++) files['docs/plans/2026-01-0' + i + '-x.md'] = '# plan\n';
+  files['docs/archive/old.md'] = '# old\n';
+  const root = withTree(tree(files), 'flat');
+  const b = audit.batches(root);
+  assert.deepEqual(b.map((x) => [x.bucket, x.part, x.of, x.pages.length]), [
+    ['.', 1, 1, 1], ['docs', 1, 3, 40], ['docs', 2, 3, 40], ['docs', 3, 3, 10], ['docs/plans', 1, 1, 3],
+  ]);
+  assert.ok(!b.some((x) => x.pages.includes('docs/archive/old.md')), 'an archive page was sent to a reader');
+  assert.equal(b.reduce((n, x) => n + x.pages.length, 0), 94);
+});
+
+test('--batches lists the batches, --batch <n> prints one batch\'s pages, --record stamps .fankeel/audit.json', () => {
+  const files = {};
+  for (let i = 0; i < 45; i++) files['docs/p' + String(i).padStart(2, '0') + '.md'] = '# p\n';
+  const root = withTree(tree(files), 'flat');
+  const listed = audit.main(['--root', root, '--batches'], NOW);
+  assert.equal(listed.code, 0);
+  assert.match(listed.text, /^1\. docs 1\/2 — 40 pages$/m);
+  assert.match(listed.text, /^2\. docs 2\/2 — 5 pages$/m);
+  const one = audit.main(['--root', root, '--batch', '2'], NOW);
+  assert.deepEqual(one.text.split('\n'), ['docs/p40.md', 'docs/p41.md', 'docs/p42.md', 'docs/p43.md', 'docs/p44.md']);
+  assert.equal(audit.main(['--root', root, '--batch', '9'], NOW).code, 2);
+  assert.equal(fs.existsSync(path.join(root, '.fankeel', 'audit.json')), false, 'listing batches is not a run');
+  audit.main(['--root', root, '--record'], NOW);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'audit.json'), 'utf8')), { last: '2026-08-21' });
+});
+
 // --- drift ------------------------------------------------------------------
 
 test('a reference document older than the code it names is drift', () => {
