@@ -78,6 +78,8 @@ what gets scheduled.
 
 - 〔audit〕`/fankeel-audit` 擴充成定期清理機制：docs tree 合規、搬遷對照表、大 repo 分批、排程提醒；先搬 fankeel 自己的 docs，再跑 Trovara — [docs/documents.md](docs/documents.md).
 - 〔context〕任務交換區 `.fankeel/build/task-*/context.md`：已驗證事實附 file:line 與 sha，brief 只給路徑、按需讀，上限 40 條，量省多少 — [docs/subagents.md](docs/subagents.md).
+- 〔design〕下一個前端 design 任務：design.mockup 加 auto、skill 自動開頁；浮動圖示做通知/待回覆單一管道＋編輯中區塊動畫；station 局部重繪；design.skill 多選＋萃取四家設計技能精華，lib/profile.js schema 跟進 — [docs/station.md](docs/station.md).
+- 〔test〕`tests/station-wizard-motion.test.js` 在整套測試裡偶發失敗（09-26 三次，每次卡在不同斷言），單獨跑都過；`tests/station-cli.test.js` 也偶發過一次。要查 shoot() 的 console／timing 競態 — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
 
 ## Needs a decision
 

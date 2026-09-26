@@ -610,8 +610,9 @@ Three shapes ship: `flat` (one `docs/` with a numbered series) and `phased`
 `02-architecture`, `03-decisions`), everything written for an agent under
 `90-agent/`, and `99-archive` last. A bucket may carry `audience: human` or
 `audience: agent`: a person's page is short, in the user's language, and read
-by the user at land; an agent's is dense, cites `path:line`, and docs-check
-reads it. Only a project with no `docs.json` is asked, once, at survey — step 2
+by the user at land; an agent's is dense, cites `path:line`. Audience decides
+who a page is written for; docs-check grades every page by its role. Only a
+project with no `docs.json` is asked, once, at survey — step 2
 of the fankeel-survey skill — with `audience` first and the shape `detect()`
 names second. A project that already has one is not asked again; the roles are
 what fankeel needs, not the paths.

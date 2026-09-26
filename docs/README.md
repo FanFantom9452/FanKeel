@@ -143,6 +143,9 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | A prompt for a later session: each stage starts from a clean context — a Sonnet controller that only dispatches, hands off through a file's path rather than its content, and leaves every gate in the main session — read from platform facts checked 2026-09-19, not yet run | [plans/2026-09-19-stage-agents-design.md](plans/2026-09-19-stage-agents-design.md) — *design-intent, 繁體中文* |
 | todo-check 驗行號與主控倍數第一次實測落在哪：`past end` 借 `lineCount`、k 2.29–2.74 夾住 2.5052、verify 站因 harness 的 `git stash` 清掉 override 而不可比，修法另開 task | [decisions/2026-09-25-todo-line-and-multiplier.md](decisions/2026-09-25-todo-line-and-multiplier.md) — *繁體中文* |
 | todo-check 為什麼借 docs-check 的 `lineCount` 驗行號，以及主控倍數那一對實測怎麼跑、預算多少 | `docs/archive/2026-09-25-todo-line-and-multiplier-design.md` — *built, 繁體中文* |
+| Needs-a-decision 清完之後留下什麼：只拆出 fankeel-mockup、effort 分角色、docs tree 兩軸、binding 上限七條、station 答題、模型依版本分，以及 Task 13 真頁面調整時走回頭的地方 | [decisions/2026-09-26-station-redesign.md](decisions/2026-09-26-station-redesign.md) — *繁體中文* |
+| Needs-a-decision 六條怎麼定：拆出 fankeel-mockup、各角色 effort、docs tree 加「給誰看」軸、ADR 為 ≤7 條 binding 子集、station 看／答問題、tune 改完通知與自動刷新、設定精靈改卡片 | `docs/archive/2026-09-26-station-redesign-design.md` — *built, 繁體中文* |
+| 做它的 13 個 task——從 fankeel-mockup agent、effort、docs 軸與 binding 上限，到 station 答題、toast、模型版本、effort chip、設定精靈卡片，最後在真頁面上逐塊調整 | `docs/archive/2026-09-26-station-redesign.md` — *built, 繁體中文* |
 | 把上面那份設計拆成三個 task 的計畫 | `docs/archive/2026-09-25-todo-line-and-multiplier.md` — *built, 繁體中文* |
 | design 核准後怎麼交給 build 站 agent、security lens 的本地模型先篩、ab.sh 的 profile 釘選：各自選了什麼、為什麼 | [decisions/2026-09-26-three-ready.md](decisions/2026-09-26-three-ready.md) — *繁體中文* |
 | 三項各自的做法：寫到 handoff 路徑、ollama 先篩後由 reviewer 確認、在 worktree 裡 commit profile | `docs/archive/2026-09-26-three-ready-design.md` — *built, 繁體中文* |
