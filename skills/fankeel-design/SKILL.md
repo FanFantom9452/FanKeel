@@ -104,18 +104,25 @@ serve it through `tune.js serve --proxy` from the project's own server.
 Dispatch it as `subagent_type: fankeel:fankeel-mockup` and pass no model: the
 agent file pins `opus`, and that is the floor. Pass `model` only when
 `design.mockup` names something other than `opus`. Visual design does not take
-`dispatch.floor`, which is why the key carries a model at all. Name one
-installed design skill in the prompt — `taste-skill:taste-skill`,
-`taste-skill:soft-skill`, `taste-skill:minimalist-skill`,
-`frontend-design:frontend-design`, `ui-ux-pro-max:ui-ux-pro-max` or
-`impeccable:impeccable` — one, not the list; the agent loads it with the Skill
-tool before it draws. **No profile value reaches a subagent**, so the skill and
-the output path have to be written into the prompt by the session dispatching
-it.
+`dispatch.floor`, which is why the key carries a model at all. Every mockup
+reads [design-guide.md](design-guide.md) — fankeel's own page of design rules — before it draws; the agent file says so, and the prompt
+need not. On top of it, name the installed design skills the agent should
+load: every entry of `design.skill` when the profile sets it — the injected
+mockup rule names them all; copy each one — and otherwise the ones you judge
+fit, from `taste-skill:taste-skill`, `taste-skill:soft-skill`,
+`taste-skill:minimalist-skill`, `frontend-design:frontend-design`,
+`ui-ux-pro-max:ui-ux-pro-max` and `impeccable:impeccable`, or none: the guide
+alone is a complete brief. **No profile value reaches a subagent**, so the
+skills and the output path have to be written into the prompt by the session
+dispatching it.
 
-`design.skill` can pin one or more choices in the profile instead of leaving
-it free per task. When it is set, the injected mockup rule already names
-them — copy the names into the prompt rather than picking one.
+`design.skill` is a list, and a single name reads as a list of one.
+**`design.mockup: auto`** takes the question out: when you judge the task to
+be frontend work, dispatch the mockup without asking first, then run
+`node <plugin>/scripts/tune.js serve <the mockup's directory>` and open the
+url it prints in the browser (`start` on Windows, `open` on macOS,
+`xdg-open` elsewhere). Work that puts nothing on a screen draws nothing,
+whatever the value.
 
 Then the path goes on the `spec:` line, and option one's description points at
 the page. The gate approves the page, not the paragraph.
