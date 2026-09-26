@@ -131,7 +131,7 @@ test('design.skill is one of the six design skills; unset carries no source', ()
     assert.equal(off.sources['design.skill'], undefined);
     fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'design.skill': 'frontend-design:frontend-design' }));
     const on = profile.read(d, cfg);
-    assert.equal(on.values['design.skill'], 'frontend-design:frontend-design');
+    assert.deepEqual(on.values['design.skill'], ['frontend-design:frontend-design']);
     assert.equal(on.sources['design.skill'], 'project');
     // Anything outside the six is refused, not silently taken.
     fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'design.skill': 'made-up:skill' }));
@@ -440,4 +440,31 @@ test('security.local takes an ollama model name or false, and profile set accept
     assert.match(out, /security\.local = qwen3:14b/);
     assert.equal(profile.read(d, null).values['security.local'], 'qwen3:14b');
     assert.equal(profile.read(dir(), null).values['security.local'], undefined, 'unset by default');
+});
+
+// docs/plans/2026-09-26-ready-five-design.md §3: both refused before this.
+test('design.mockup takes auto, and design.skill takes a list — a string still reads as a list of one', () => {
+    assert.deepEqual(profile.parseValue('design.mockup', 'auto'), { value: 'auto' });
+    assert.deepEqual(profile.parseValue('design.skill', ['impeccable:impeccable', 'frontend-design:frontend-design']),
+        { value: ['frontend-design:frontend-design', 'impeccable:impeccable'] });
+    assert.deepEqual(profile.parseValue('design.skill', 'impeccable:impeccable'), { value: ['impeccable:impeccable'] });
+    assert.deepEqual(profile.parseValue('design.skill', 'impeccable:impeccable,taste-skill:soft-skill'),
+        { value: ['taste-skill:soft-skill', 'impeccable:impeccable'] });
+    assert.match(profile.parseValue('design.skill', ['impeccable:impeccable', 'nope:nope']).error, /^design\.skill is one or more of: /);
+    assert.match(profile.parseValue('design.skill', []).error, /^design\.skill is one or more of: /);
+    const d = dir();
+    const cfg = path.join(d, 'cfg');
+    fs.mkdirSync(path.join(d, '.fankeel'), { recursive: true });
+    fs.writeFileSync(profile.projectFile(d), JSON.stringify({ 'design.mockup': 'auto', 'design.skill': ['impeccable:impeccable', 'frontend-design:frontend-design'] }));
+    const got = profile.read(d, cfg);
+    assert.equal(got.values['design.mockup'], 'auto');
+    assert.deepEqual(got.values['design.skill'], ['frontend-design:frontend-design', 'impeccable:impeccable']);
+});
+
+test('the mockup clause names every listed skill, and auto says it draws unasked and opens the page', () => {
+    assert.equal(profile.mockupClause({ 'design.skill': ['frontend-design:frontend-design', 'impeccable:impeccable'] }),
+        'naming `frontend-design:frontend-design`, `impeccable:impeccable`, under `.fankeel/build/`, path on `spec:`.');
+    assert.equal(profile.mockupClause({ 'design.mockup': 'auto' }),
+        'front-end work only, unasked, then `tune.js serve` opened in the browser; under `.fankeel/build/`, path on `spec:`.');
+    assert.equal(profile.mockupClause({}), 'under `.fankeel/build/`, path on `spec:` — the gate approves the page, not the paragraph.');
 });
