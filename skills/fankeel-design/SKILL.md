@@ -105,7 +105,8 @@ Dispatch it as `subagent_type: fankeel:fankeel-mockup` and pass no model: the
 agent file pins `opus`, and that is the floor. Pass `model` only when
 `design.mockup` names something other than `opus`. Visual design does not take
 `dispatch.floor`, which is why the key carries a model at all. Every mockup
-reads [design-guide.md](design-guide.md) — fankeel's own page of design rules — before it draws; the agent file says so, and the prompt
+reads [design-guide.md](design-guide.md) — fankeel's own page of
+design rules — before it draws; the agent file says so, and the prompt
 need not. On top of it, name the installed design skills the agent should
 load: every entry of `design.skill` when the profile sets it — the injected
 mockup rule names them all; copy each one — and otherwise the ones you judge
