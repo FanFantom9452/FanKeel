@@ -38,6 +38,13 @@ habits still sees its own shape on the list. A project with a `docs.json` is
 not asked again — moving an existing tree is the `/fankeel-audit` follow-up's
 work.
 
+A tree that outgrows its shape moves with `scripts/docs-move.js`: `plan --to
+<preset> --out <moves.tsv>` writes one row per page — old path, new path —
+and moves nothing, so the table can be read at a gate; `apply --table` runs
+`git mv`, re-points every relative link and every code-span file path that
+named a moved page, and rewrites `.fankeel/docs.json`. `--place <from>=<to>`
+puts one page somewhere its role alone would not.
+
 ## `layout`, which points at a tree rather than holding one
 
 The buckets say where documents live. One optional key says where the project
@@ -150,8 +157,8 @@ report where a real parser would cost a dependency this plugin does not have.
 這幾區**不能**是 `.fankeel/docs.json` 的一個 bucket，而這值得寫下來，因為路徑
 本身是合法的：`lib/docs.js:209` 的 `if (!p.startsWith(b.path + '/')) continue;`
 是純字串前綴比對，`skills`、`evals`、`agents` 都是 `docs/` 以外的 bucket。擋住
-的是列檔的那一層，而那一層是同一個函式：下面第一條是它跑的旗標，其後八條是它
-的八個呼叫端，`scripts/` 七處與 `lib/` 一處。每一行的引文都必須
+的是列檔的那一層，而那一層是同一個函式：下面第一條是它跑的旗標，其後十條是它
+的十個呼叫端，`scripts/` 九處與 `lib/` 一處。每一行的引文都必須
 跟它的行號同行。`scripts/docs-check.js:229` 是 `function quoteBeside(text, from) {`，
 它只掃到換行為止，而同一行上的第二個路徑會被它自己的 `PATHISH` 擋掉——所以擠
 在一行的兩個引用等於兩個都沒有引文，而被硬換行拆開的引文等於沒寫。
@@ -160,11 +167,13 @@ report where a real parser would cost a dependency this plugin does not have.
 - `scripts/docs-audit.js:416` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-audit.js:456` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-check.js:414` 是 `const result = trackedFiles(root);`
+- `scripts/docs-move.js:74` 是 `const listed = trackedFiles(root);`
+- `scripts/docs-move.js:210` 是 `for (const rel of trackedFiles(root).files.filter(isMarkdown)) {`
 - `scripts/layout.js:51` 是 `const found = trackedFiles(root);`
 - `scripts/memory-check.js:142` 是 `const tracked = trackedFiles(root);`
 - `scripts/orient.js:286` 是 `result = trackedFiles(dir, { stats });`
 - `scripts/survey.js:198` 是 `const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt`
-- `lib/map.js:235` 是 `const found = trackedFiles(root);`，八個之中只有這個檔案直接讀 `.buckets`
+- `lib/map.js:235` 是 `const found = trackedFiles(root);`，十個之中只有這個檔案直接讀 `.buckets`
 
 `--exclude-standard` 套用 `.gitignore`，所以宣告出來的 bucket 會
 永遠列出零個檔。這張表是這幾區唯一的說明，`node scripts/residue.js` 是它們當下
@@ -331,9 +340,9 @@ counts every status, so a page named nowhere below reads as current.
 ### `orphan`, deliberately empty where an index exists
 
 An orphan is a document under the docs root that no other document links to.
-`scripts/docs-audit.js:653` (`index.exists ? [] :`) reports them only where the project declares no
+`scripts/docs-audit.js:708` (`index.exists ? [] :`) reports them only where the project declares no
 index. Where one exists, the same gap is already reported, and worded better,
-as `missing from the index` (`scripts/docs-audit.js:634` is `if (!linked.has(rel)) index.missing.push(rel);`):
+as `missing from the index` (`scripts/docs-audit.js:689` is `if (!linked.has(rel)) index.missing.push(rel);`):
 an index is a markdown file like any other, so anything it fails to list is
 unreachable regardless of what else in the tree links there. Two names for one
 problem is how a report starts looking longer than it is.
@@ -345,8 +354,8 @@ commits with `docs-check` green the whole way, and a quote is what makes that
 shift a reported defect instead of a silent one. The first never moved, which
 is the point — nothing here could tell you that either way.
 
-- `tests/docs-audit.test.js:495` is `test('with no index, a document nothing links to is named', () => {`
-- `tests/docs-audit.test.js:548` is `test('with an index, unreachable is reported once, not twice', () => {`
+- `tests/docs-audit.test.js:531` is `test('with no index, a document nothing links to is named', () => {`
+- `tests/docs-audit.test.js:584` is `test('with an index, unreachable is reported once, not twice', () => {`
 
 The second asserts `orphans` comes back empty. This project declares an index,
 so the branch that would populate
@@ -354,7 +363,7 @@ so the branch that would populate
 built, not a gap in the check.
 
 Orphans never fail a run. `defects()` opens at
-`scripts/docs-audit.js:898` (`function defects(r) {`) and sums drift, landed
+`scripts/docs-audit.js:953` (`function defects(r) {`) and sums drift, landed
 plans, a broken index and diagrams; `orphans` is not a term in that sum.
 
 ### `binding: true`, seven at most
