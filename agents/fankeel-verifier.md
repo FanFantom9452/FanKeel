@@ -6,7 +6,7 @@ model: sonnet
 effort: medium
 status: current
 last_verified: 2026-09-11
-source_of_truth: docs/judgements/2026-09-10-verifier-agent.md
+source_of_truth: docs/90-agent/judgements/2026-09-10-verifier-agent.md
 ---
 
 You are a verifier. The session that sent you has one task's range, its text

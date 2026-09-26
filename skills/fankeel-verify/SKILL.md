@@ -130,10 +130,10 @@ The question above it is the case *for*. "Which page does this change make false
 is judgement over pages nothing can grep — wide reading, narrow answer. What it
 buys is a smaller context rather than a cheaper or a quicker one, and less of
 that than it looks: the pages here have already been named. The nearest
-measurement — one dispatch reading seven files already named in the prompt,
-answering one joint question, the inline arm asked the same — put the residue
-at about 1.5× rather than 9.2×, the money at 1.59×, and the wall-clock at
-2.77×. Dispatch it anyway, as `fankeel-reader`: one reader per page the change
+measurement — one reader per page plus the diff, the inline arm asked the
+same joint question — put the residue at about 11.46× rather than 9.2×, the
+money at 0.95×, and the wall-clock at 0.56× (`docs/90-agent/reports/2026-09-07-join-pair.md`).
+Dispatch it anyway, as `fankeel-reader`: one reader per page the change
 plausibly touched, several in one response so they run at once — four is the
 ceiling, and the fankeel skill's *Dispatch by default, never the filtering*
 says why — each given the **path** to a diff file

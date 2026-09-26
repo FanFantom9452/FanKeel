@@ -77,7 +77,6 @@ what gets scheduled.
 ## Ready
 
 - 〔audit〕Trovara 的 docs 搬到 preset：在 Trovara 跑 `docs-move.js` 出搬移表、核可後 apply，再跑一次分批 `/fankeel-audit`（機制與 fankeel 自己的搬移已於 09-26 落地）— [scripts/docs-move.js](scripts/docs-move.js).
-- 〔audit〕fankeel 第一次深度巡檢：47 組頁面對讀、分批讀 293 頁、3 個 code reviewer 找能刪的東西，跑完用 `--record` 寫入 `.fankeel/audit.json`；沒有這個檔，`orient` 不會提醒 — [scripts/orient.js](scripts/orient.js).
 
 ## Waiting
 

@@ -17,7 +17,8 @@ Three things, in the user's words on 2026-09-04: see every session, clean
 sessions up, and have a page to look at after each session ends. Server or no
 server was left to this design, and it settled on **no resident server**: a
 static page regenerated on `SessionEnd`, and a local server that runs only while
-the user is clearing, then exits.
+the user is clearing, then exits. (Overturned 2026-09-19: [station-live](2026-09-19-station-live.md)
+runs a detached, persistent serve.)
 
 Two things were added by the questions that followed. `model` and cost are
 recorded by fankeel itself, from the transcript, so a machine without TokenBar
@@ -262,7 +263,8 @@ session end has nobody to tell.
   outlives the hook is undocumented; N sessions would contend for one port and
   none of them owns it; every `/fankeel` would have to check for it; and the
   live view it would add is what TokenBar already shows for the session in
-  front of the user.
+  front of the user. (Overturned 2026-09-19: [station-live](2026-09-19-station-live.md)
+  runs a detached, persistent serve.)
 - **A snapshot written by TokenBar** (`modes/<id>/tokenbar` with model and
   cost). It would be the only data the station could not get without TokenBar
   installed. The transcript has the model and the tokens; only the price is

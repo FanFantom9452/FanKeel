@@ -44,7 +44,7 @@ for reference-page corrections and small fixes that need no test run. The
 verifier adds `Write`, because verify's per-task verifier writes its evidence rows
 to a file and returns the path — what that keeps the rows out of is a
 Workflow's join, not this session's context, which a return value never
-reaches anyway. `fankeel-brain` carries `Write` for its handoff — and on `build` its commit file, and on `design` and `plan` the one `docs/plans/` file its brief names and that file's commit file:
+reaches anyway. `fankeel-brain` carries `Write` for its handoff — and on `build` its commit file, and on `design` and `plan` the one plan bucket file — `docs.json`'s `role: plan` bucket, `docs/plans/` where none is declared — its brief names and that file's commit file:
 the report and gate block a controller hands on by path rather than retyping
 (the `stage.agents` section below). `Write` is matched by `guard.js`'s `PreToolUse` hook,
 whose matcher is `Edit|Write|NotebookEdit`. `Bash` is matched now too:
@@ -578,7 +578,7 @@ stage whose report is on disk) and the lines that report left under its `reads:`
 block, at most 12 lines and 1,000 characters, with what was left out counted. The
 report's own author wrote that block — it is the agent that had read the content —
 and `hooks/brief.js` copies it, so the controller opens neither file. A stage with no
-earlier report gets pointed at the newest `docs/plans/*.md` file written since the
+earlier report gets pointed at the newest plan-bucket file (`docs.json`'s `role: plan` bucket, `docs/plans/` where none is declared) written since the
 task started, if one exists (`newestPlan` in `lib/render.js`); only when neither an
 earlier report nor a qualifying plan file exists does it get `read first: none`.
 
@@ -592,14 +592,14 @@ design.md there would be found before the plan `newestPlan` picks.
 
 Every brain is told to end its report with that block.
 
-A `design` or `plan` brain may also write one file under `docs/plans/`, named in an
+A `design` or `plan` brain may also write one file under the plan bucket, named in an
 `artifact:` rule, and commits it through a commit file as `build` does; an `audit`
 or `land` brain has no Edit and no git write, so `STAGE_AGENTS` gives them
 `fankeel-fixer` (audit only) and an implementer. Whether `land` works this way has
 not been run.
 
 A brain's `Write` is only ever its handoff, `build`'s/`design`'s/`plan`'s commit
-file, and `design`'s/`plan`'s one `docs/plans/` file (`docs/90-agent/reference/subagents.md:46`
+file, and `design`'s/`plan`'s one plan bucket file (`docs/90-agent/reference/subagents.md:46`
 above) — never the `mockup.html` a frontend `design` task's `design.mockup` rule
 asks for, and `agentsFor('design')` gives a controlled design station only a
 reader and a reviewer, no agent that can write a page. So a controlled design
