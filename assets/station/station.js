@@ -1820,7 +1820,8 @@
         { o: 'fable', h: 3, d: '很燒額度', cost: 4, warn: true },
     ];
     var WIZ_FE_WARN = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6 11 10.4H1z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 5v2.4M6 8.9h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
-    var WIZ_FE_AUTO = { o: 'auto', h: 4, d: '直接畫，畫完開頁面' };
+    var WIZ_FE_OPEN = '<svg class="fopen" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2.5h4v4M13.5 2.5 8 8M11.5 9.5v3.5h-9v-9H6"/></svg>';
+    var WIZ_FE_AUTO = { o: 'auto', h: 4, d: '直接畫，畫完開頁面', open: true };
     var WIZ_FE_NONE = { o: 'false', h: 0, d: '沒有前端，不畫' };
     function wizFrontHtml(keys, W) {
         var v = W.val['design.mockup'], on = v !== null && v !== 'false';
@@ -1830,7 +1831,7 @@
             return '<button type="button" class="fsg' + (m.warn ? ' warn' : '') + '" role="radio" aria-checked="' + chk + '" tabindex="'
                 + (chk || (v === null && m.o === 'opus') ? 0 : -1) + '" data-h="' + m.h + '"><b>' + m.o
                 + (m.o === 'opus' ? '<span class="frc">建議</span>' : '') + '</b><span class="fsd">' + (m.warn ? WIZ_FE_WARN : '') + m.d + '</span>'
-                + (m.cost ? '<span class="fcost" aria-hidden="true">' + bars + '</span>' : '') + '</button>';
+                + (m.cost ? '<span class="fcost" aria-hidden="true">' + bars + '</span>' : '') + (m.open ? WIZ_FE_OPEN : '') + '</button>';
         };
         return '<h2 class="q">這個專案的前端，mockup 要怎麼畫？</h2><p class="wqs">有前端的話，design 站會先畫一頁 mockup 給你看，再談實作。</p>'
             + '<div class="fem"><div class="fmh"><span class="fml">誰來畫</span><code>design.mockup</code></div>'

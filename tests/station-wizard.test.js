@@ -216,3 +216,12 @@ test('the 答 gate step is two cards, 60 s suggested and off still the default',
     assert.match(html, /class="ch" data-k="gate\.station" data-o="off" aria-pressed="true">/);
     assert.equal(W.val['gate.station'], 'off');
 });
+
+test('only the auto option carries the open icon', () => {
+    let W = load();
+    W = V.wizApply(W, KEYS, PROFILES, { go: '2' });
+    const buttons = V.wizHtml(KEYS, W, PROFILES, CTX).match(/<button type="button" class="fsg[\s\S]*?<\/button>/g);
+    const withIcon = buttons.filter((b) => b.includes('class="fopen"'));
+    assert.equal(withIcon.length, 1);
+    assert.match(withIcon[0], /<b>auto/);
+});
