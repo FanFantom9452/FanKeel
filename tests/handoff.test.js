@@ -351,6 +351,16 @@ test('gateMatches: a missing multiSelect does not match a present multiSelect: f
   assert.equal(gateMatches(asked, filed), false);
 });
 
+test('readGate: a filed question with no multiSelect reads as multiSelect: false', () => {
+  const g = gateOf('q');
+  delete g.questions[0].multiSelect;
+  const file = path.join(tmp('fk-gate-'), 'survey.md');
+  fs.writeFileSync(file, '# r\n\n```json gate\n' + JSON.stringify(g) + '\n```\n');
+  const read = readGate(file);
+  assert.equal(read.questions[0].multiSelect, false);
+  assert.equal(gateMatches(gateOf('q').questions, read.questions), true);
+});
+
 test('gateMatches: non-array input never matches', () => {
   const filed = gateOf('q').questions;
   assert.equal(gateMatches(null, filed), false);

@@ -16,6 +16,7 @@ const tmp = require('./tmp.js');
 const ROOT = path.join(__dirname, '..');
 const GATE = path.join(ROOT, 'hooks', 'gate.js');
 const RESUME = path.join(ROOT, 'hooks', 'resume.js');
+const BRIEF = path.join(ROOT, 'hooks', 'brief.js');
 
 const MINE = 'aaaaaaaa-0000-4000-8000-000000000001';
 
@@ -177,7 +178,8 @@ test('stage.agents at survey: the answer is written beside the handoff', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', gateAt: Date.now(), configDir: tmp('fankeel-cfg-') });
   agentsOn(root);
-  run(RESUME, root, { tool_response: { answers: { 'q?': '暫停' } } });
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  run(RESUME, root, { tool_input: askOf(QUESTIONS), tool_response: { answers: { 'q?': '暫停' } } });
   const file = path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'survey-answer.md');
   assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { answers: { 'q?': '暫停' } });
 });
@@ -213,8 +215,66 @@ test('stage.agents: the pair in order, a matching gate clears the mark and its a
   agentsOn(root);
   handoff(root, { questions: QUESTIONS, next: 'n' });
   run(GATE, root, { tool_input: askOf(QUESTIONS) });
-  run(RESUME, root, { tool_response: { answers: { 'q?': '進 design' } } });
+  run(RESUME, root, { tool_input: askOf(QUESTIONS), tool_response: { answers: { 'q?': '進 design' } } });
   assert.ok(fs.existsSync(path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'survey-answer.md')));
+});
+
+const ANSWER = (root) => path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'survey-answer.md');
+// What SubagentStart runs for a stage agent — at its dispatch and again on
+// every SendMessage delivered to it.
+const brainStarts = (root) => run(BRIEF, root, { hook_event_name: 'SubagentStart', agent_type: 'fankeel:fankeel-brain', agent_id: 'a3f9c2' });
+
+// 2026-09-27, session 98e63df0-1414-4076-ba9f-2c68afa7a406: the survey agent,
+// resumed by SendMessage, handed back survey-2.md with a gate whose question
+// carried no `multiSelect`, and the controller asked it with
+// `multiSelect: false` under a header that was not the stage's. gateMatches
+// told the two apart, so gate.js neither denied it nor cleared the mark
+// SubagentStart had re-set on the last SendMessage, and resume.js wrote no
+// survey-2-answer.md.
+test('stage.agents: a gate asked with a multiSelect: false its file left out still writes the answer, and gate.js now clears the mark itself', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  const filed = [{ question: 'survey 的結論可以進 design 嗎？', header: '設計走向', options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }] }];
+  const asked = [Object.assign({}, filed[0], { multiSelect: false })];
+  handoff(root, { questions: filed, next: 'n' });
+  brainStarts(root);
+  const out = run(GATE, root, { tool_input: askOf(asked) }).trim();
+  assert.equal(out, '', 'a filed question with no multiSelect now reads as false on both sides, so this is a match');
+  assert.equal(readEntry(root, MINE).inflight, undefined, 'hooks/gate.js unchanged: the shared readGate fix is enough for it to clear the mark itself');
+  run(RESUME, root, { tool_input: askOf(asked), tool_response: { answers: { [filed[0].question]: '進 design' } } });
+  assert.ok(fs.existsSync(ANSWER(root)), 'the answer the stage agent was told to read');
+});
+
+// The design's check: the mark still set, the questions the gate's own.
+// SubagentStart fires again on a SendMessage delivery, so a mark can be
+// re-set after gate.js cleared it and before the answer lands.
+test('stage.agents: the answer to a matching gate is written though a SendMessage re-marked the stage agent in flight', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  brainStarts(root);
+  run(GATE, root, { tool_input: askOf(QUESTIONS) });
+  assert.equal(readEntry(root, MINE).inflight, undefined, 'gate.js matched and cleared it');
+  brainStarts(root);
+  assert.equal(readEntry(root, MINE).inflight.stage, 'survey');
+  run(RESUME, root, { tool_input: askOf(QUESTIONS), tool_response: { answers: { 'q?': '進 design' } } });
+  assert.ok(fs.existsSync(ANSWER(root)));
+});
+
+// The control: a question the controller wrote itself is not the gate, and
+// its answer is not the stage agent's — with the mark standing or not.
+test('stage.agents: a question the controller asked on its own writes nothing, in flight or not', () => {
+  const own = [{ header: '開新任務', question: '要不要先開一個新任務？', options: [{ label: '要', description: 'a' }, { label: '不要', description: 'b' }] }];
+  for (const inflight of [null, { stage: 'survey', at: 1758000000000, agentId: 'a3f9c2' }]) {
+    const root = tmp('fankeel-gate-');
+    seed(root, MINE, Object.assign({ stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') }, inflight ? { inflight } : {}));
+    agentsOn(root);
+    handoff(root, { questions: QUESTIONS, next: 'n' });
+    run(RESUME, root, { tool_input: askOf(own), tool_response: { answers: { [own[0].question]: '要' } } });
+    assert.equal(fs.existsSync(ANSWER(root)), false, inflight ? 'in flight' : 'not in flight');
+  }
 });
 
 test('stage.agents at survey with no handoff yet: the gate hook says why it confirmed nothing', () => {

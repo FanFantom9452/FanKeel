@@ -20,8 +20,8 @@
 const registry = require('../lib/registry.js');
 const { renderResume } = require('../lib/render.js');
 const profileLib = require('../lib/profile.js');
-const { controlling } = require('../lib/stages.js');
-const { answerPath, writeAnswer } = require('../lib/handoff.js');
+const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
+const { handoffPath, answerPath, writeAnswer, readGate, gateMatches } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 
 function main(raw) {
@@ -67,15 +67,21 @@ function main(raw) {
     } catch (e) { /* housekeeping */ }
 
     // `stage.agents`: the answer left where the stage agent is told to look, so
-    // the controller relays a path and never retypes what the user said. Only a
-    // gate hooks/gate.js substituted: it clears `inflight` when it does, so a
-    // mark still standing here means the controller asked this one itself, and
-    // its answer is not the stage agent's to read.
+    // the controller relays a path and never retypes what the user said — written
+    // when the questions answered are the handoff's own gate, read the way
+    // hooks/gate.js reads it, and never for a question the controller asked
+    // itself. Not on `inflight`: SubagentStart fires on every SendMessage
+    // delivery and hooks/brief.js re-marks the agent each time, so the mark says
+    // nothing about which question this answer is to.
     try {
-        if (controlling(mine.stage, profile && profile.values) && !mine.inflight) {
+        if (controlling(mine.stage, profile && profile.values)) {
+            const gate = readGate(handoffPath(root, mine, mine.stage), nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE);
+            const asked = payload.tool_input && payload.tool_input.questions;
             const file = answerPath(root, mine, mine.stage);
             const response = payload.tool_response;
-            if (file && response != null) writeAnswer(file, typeof response === 'string' ? response : JSON.stringify(response, null, 2));
+            if (gate && file && response != null && gateMatches(asked, gate.questions)) {
+                writeAnswer(file, typeof response === 'string' ? response : JSON.stringify(response, null, 2));
+            }
         }
     } catch (e) { /* housekeeping */ }
 }
