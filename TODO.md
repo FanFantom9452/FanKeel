@@ -64,8 +64,9 @@ the end of the file is a citation the code moved out from under, a link that
 still resolves but points at a plan, a decision record, a report or an archive is
 the same entry one step earlier — those four roles record a moment rather than
 the present — an entry over the length cap is detail written here instead of
-where it belongs, an entry under any other heading — `## Waiting` included — is
-one nobody said the state of, an entry under `## Blocked` or `## Watch` under no
+where it belongs, an entry under any other heading — `## Waiting` included, which
+`node scripts/todo-check.js --migrate` empties of every timing whose condition is
+typed — is one nobody said the state of, an entry under `## Blocked` or `## Watch` under no
 timing is one nobody said what it waits for, a timing with no stamp is one nobody
 can tell a fresh deferral from a forgotten one, a timing with no condition is one
 nobody is waiting for, a condition under the wrong heading is a misfiled one, an
@@ -82,7 +83,6 @@ the reading is what gets scheduled.
 
 - 〔audit〕Trovara 的 docs 搬到 preset：在 Trovara 跑 `docs-move.js` 出搬移表、核可後 apply，再跑一次分批 `/fankeel-audit`（機制與 fankeel 自己的搬移已於 09-26 落地）— [scripts/docs-move.js](scripts/docs-move.js).
 - 〔station〕「進行中」（`#/live`）的 card 改版第二步已核准但還沒做 — [docs/station.md](docs/90-agent/reference/station.md).
-- 〔stage-agents〕09-27 受控 survey 第二輪（站 agent 經 SendMessage 續用）答了選項二，`survey-2-answer.md` 沒被寫出；`resume.js` 只在沒有 `inflight` 時寫，controller 的 Write 又被 guard 擋，只能把答案打進訊息 — [hooks/resume.js](hooks/resume.js).
 - 〔tests〕`station-wizard-motion` 的 reduced-motion 測試在整套裡瞬斷：09-27 同一天四次整套紅兩次（2072/2073），單跑 3/3 綠；疑並行時 Chromium 太慢 — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
 
 ## Needs a decision
