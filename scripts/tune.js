@@ -121,8 +121,13 @@ function serve(dir, port, live, upstream) {
             return undefined;
         }
         if (pathname === '/__live/queue') {
-            const pending = requests().filter((r) => r.status === 'queued' || r.status === 'taken').length;
-            return send(res, 200, TYPES['.json'], JSON.stringify({ pending }));
+            const rows = requests();
+            const pending = rows.filter((r) => r.status === 'queued' || r.status === 'taken').length;
+            // What `wait` has handed out and `done` has not settled, with how
+            // many times that block has been asked for so far — the round.
+            const editing = rows.filter((r) => r.status === 'taken')
+                .map((r) => ({ id: r.id, block: r.block, round: rows.filter((x) => x.block === r.block && x.id <= r.id).length }));
+            return send(res, 200, TYPES['.json'], JSON.stringify({ pending, editing }));
         }
         const diff = /^\/__live\/diff\/(r-\d+)$/.exec(pathname);
         if (diff) {

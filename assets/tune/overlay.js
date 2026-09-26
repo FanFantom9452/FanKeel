@@ -75,7 +75,10 @@
         '.fk-live-panel button:disabled{opacity:.5;cursor:default}',
         '.fk-live-queue{position:fixed;right:12px;bottom:12px;padding:3px 8px}',
         '@keyframes fk-live-pulse{from{opacity:.35}to{opacity:1}}',
-        '@media (prefers-reduced-motion:reduce){.fk-live-pill i{animation:none}.fk-live-flash{transition:none}}',
+        '.fk-live-edp{position:absolute;pointer-events:none;z-index:2147482998;border-radius:6px;box-shadow:0 0 0 1.5px #22b8cf,0 0 0 5px rgba(34,184,207,.18);animation:fk-live-edp 2.8s ease-in-out infinite}',
+        '.fk-live-edp span{position:absolute;top:-9px;right:14px;padding:0 7px;font:600 11px/18px ui-monospace,Menlo,Consolas,monospace;color:#1d2026;background:#22b8cf;border-radius:4px}',
+        '@keyframes fk-live-edp{0%,100%{opacity:.4}50%{opacity:1}}',
+        '@media (prefers-reduced-motion:reduce){.fk-live-pill i{animation:none}.fk-live-flash{transition:none}.fk-live-edp{animation:none;opacity:.85}}',
     ].join('\n');
 
     var doc = document;
@@ -364,11 +367,25 @@
     window.addEventListener('scroll', reflow, { passive: true, capture: true });
     window.addEventListener('resize', reflow);
 
+    // The queue count, and a ring on every block `tune.js wait` has handed out
+    // and `done` has not settled — read every two seconds, because `wait`
+    // runs in another process and says nothing to this page when it picks a
+    // request up.
+    var rings = [];
     function refreshQueue() {
         fetch('/__live/queue').then(function (res) { return res.json(); }).then(function (q) {
             queue.textContent = '佇列 ' + q.pending;
+            rings.forEach(function (r) { r.remove(); });
+            rings = (q.editing || []).map(function (job) {
+                var target = find(job.block);
+                if (!target) return null;
+                var ring = el('div', 'fk-live-edp', '<span>編輯中 第 ' + job.round + ' 輪</span>');
+                place(ring, target, 5);
+                return ring;
+            }).filter(Boolean);
         });
     }
+    setInterval(refreshQueue, 2000);
 
     // After a reload the page does not know why it reloaded; the event that
     // caused it waits in sessionStorage for the fresh page to show.

@@ -351,6 +351,24 @@ test('--proxy: a request with classes and no block gets the class lines as sourc
     assert.equal((await request(base + '__live/request', 'POST', { page: '/', note: 'x' })).status, 400, 'neither a block nor a selector');
 });
 
+// docs/plans/2026-09-26-ready-five-design.md §3, editing-pulse: the overlay
+// rings the block tune is working on, so the queue has to say which it is.
+test('the queue names the block being edited and which round of it this is', async (t) => {
+    const cwd = tmp('fankeel-tune-');
+    fs.mkdirSync(path.join(cwd, 'site'));
+    fs.writeFileSync(path.join(cwd, 'site', 'page.html'), PAGE);
+    const base = await startServer(t, cwd);
+    const queue = async () => JSON.parse((await request(base + '__live/queue', 'GET')).text);
+    await request(base + '__live/request', 'POST', { page: '/page.html', block: 'now', note: 'one' });
+    assert.deepEqual((await queue()).editing, [], 'queued is not being edited yet');
+    spawnSync(process.execPath, [CLI, 'wait', '--timeout', '5'], { cwd, encoding: 'utf8' });
+    assert.deepEqual((await queue()).editing, [{ id: 'r-0001', block: 'now', round: 1 }]);
+    spawnSync(process.execPath, [CLI, 'done', 'r-0001'], { cwd, encoding: 'utf8' });
+    await request(base + '__live/request', 'POST', { page: '/page.html', block: 'now', note: 'two' });
+    spawnSync(process.execPath, [CLI, 'wait', '--timeout', '5'], { cwd, encoding: 'utf8' });
+    assert.deepEqual((await queue()).editing, [{ id: 'r-0002', block: 'now', round: 2 }]);
+});
+
 test('--proxy and <dir> are one or the other, and --proxy needs --src', () => {
     const cwd = liveRepo();
     const both = spawnSync(process.execPath, [CLI, 'serve', 'site', '--port', '0', '--proxy', 'http://127.0.0.1:1', '--src', 'src/view.js'], { cwd, encoding: 'utf8', timeout: 5000 });

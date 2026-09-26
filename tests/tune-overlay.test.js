@@ -53,6 +53,15 @@ test('the request carries selector, classes, text and the nearest block', () => 
     assert.match(text, /\.slice\(0, 80\)/);
 });
 
+test('a block tune is editing carries a quiet pulse and its round, and none under reduced motion', () => {
+    const text = fs.readFileSync(SRC, 'utf8');
+    assert.match(text, /\.fk-live-edp\{[^}]*animation:fk-live-edp /);
+    assert.match(text, /@media \(prefers-reduced-motion:reduce\)\{[^']*\.fk-live-edp\{animation:none/);
+    assert.ok(text.includes('編輯中 第 '), 'the ring does not say which round');
+    assert.match(text, /q\.editing/);
+    assert.match(text, /setInterval\(refreshQueue, 2000\)/);
+});
+
 test('selectorOf, labelOf and pathOf describe any element, stopping at an id or the body', () => {
     const b2 = node('b', { className: 'rs big' });
     const b1 = node('b');
