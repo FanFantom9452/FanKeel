@@ -955,6 +955,54 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .wz .pc:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .wz .pc[aria-pressed="true"]{background:var(--ink);color:var(--panel);box-shadow:none;font-weight:600}
 
+/* 任務大小: class.default as a route map (r-0020). The chosen class lights
+   its stops; hovering or focusing a card previews that route instead. */
+.wz .cops .co{padding:11px 10px 12px}
+.wz .co .cl{flex-wrap:wrap}
+.wz .cdef{font:600 10.5px var(--f-ui);letter-spacing:.04em;color:var(--good);box-shadow:inset 0 0 0 1px var(--good);border-radius:3px;padding:0 5px;line-height:16px}
+.wz .co.auto[aria-pressed="true"] .cdef{background:var(--good);color:var(--panel)}
+.wz .cmap{position:relative;margin-top:14px;padding:4px 0 12px;background:var(--inset);border-radius:9px}
+.wz .crt{position:absolute;left:0;top:4px;width:100%;height:30px;overflow:visible}
+.wz .crt path{fill:none;stroke-linecap:round}
+.wz .crt .rbase{stroke:var(--rule2);stroke-width:1.5;stroke-dasharray:2 4}
+.wz .crt .rpth{stroke:var(--ink);stroke-width:2.2;stroke-dasharray:1;stroke-dashoffset:1;opacity:0;transition:stroke-dashoffset .7s var(--ez),opacity .2s}
+.wz .cflow{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));position:relative}
+.wz .cst{--on:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding-top:20px;text-align:center;min-width:0;
+  opacity:calc(.42 + .58 * var(--on));transition:opacity .25s var(--ez) calc(var(--i) * 70ms)}
+.wz .cdot{width:12px;height:12px;border-radius:50%;margin-bottom:5px;background:var(--panel);box-shadow:inset 0 0 0 1.5px var(--rule2);
+  transition:background .25s var(--ez) calc(var(--i) * 70ms),box-shadow .25s var(--ez) calc(var(--i) * 70ms),transform .3s var(--ez) calc(var(--i) * 70ms)}
+.wz .cnm{font:600 11.5px var(--f-mono);color:var(--ink)}
+.wz .cjob{font-size:11.5px;color:var(--muted);line-height:1.35;padding:0 2px}
+.wz .cnote{margin:12px 14px 0;font-size:12px;color:var(--ink2);min-height:1.4em}
+.wz .cnote span{display:none}
+/* chosen */
+.wz .cls[data-r="auto"] .cst{--on:.35}
+.wz .cls[data-r="auto"] .cst.in-auto,.wz .cls[data-r="spike"] .cst.in-spike,.wz .cls[data-r="bounded"] .cst.in-bounded,
+.wz .cls[data-r="architectural"] .cst.in-architectural{--on:1}
+.wz .cls[data-r="spike"] .p-spike,.wz .cls[data-r="bounded"] .p-bounded,.wz .cls[data-r="architectural"] .p-architectural{stroke-dashoffset:0;opacity:1}
+.wz .cls[data-r="auto"] .cnote [data-for="auto"],.wz .cls[data-r="spike"] .cnote [data-for="spike"],
+.wz .cls[data-r="bounded"] .cnote [data-for="bounded"],.wz .cls[data-r="architectural"] .cnote [data-for="architectural"]{display:inline}
+/* previewed: a hovered or focused card wins over the chosen one */
+.wz .cls:has(.co:is(:hover,:focus-visible)) .cst{--on:0}
+.wz .cls:has(.co:is(:hover,:focus-visible)) .rpth{stroke-dashoffset:1;opacity:0}
+.wz .cls:has(.co:is(:hover,:focus-visible)) .cnote span{display:none}
+.wz .cls:has(.co[data-o=""]:is(:hover,:focus-visible)) .cst{--on:.35}
+.wz .cls:has(.co[data-o=""]:is(:hover,:focus-visible)) .cst.in-auto,
+.wz .cls:has(.co[data-o="spike"]:is(:hover,:focus-visible)) .cst.in-spike,
+.wz .cls:has(.co[data-o="bounded"]:is(:hover,:focus-visible)) .cst.in-bounded,
+.wz .cls:has(.co[data-o="architectural"]:is(:hover,:focus-visible)) .cst.in-architectural{--on:1}
+.wz .cls:has(.co[data-o="spike"]:is(:hover,:focus-visible)) .p-spike,
+.wz .cls:has(.co[data-o="bounded"]:is(:hover,:focus-visible)) .p-bounded,
+.wz .cls:has(.co[data-o="architectural"]:is(:hover,:focus-visible)) .p-architectural{stroke-dashoffset:0;opacity:1}
+.wz .cls:has(.co[data-o=""]:is(:hover,:focus-visible)) .cnote [data-for="auto"],
+.wz .cls:has(.co[data-o="spike"]:is(:hover,:focus-visible)) .cnote [data-for="spike"],
+.wz .cls:has(.co[data-o="bounded"]:is(:hover,:focus-visible)) .cnote [data-for="bounded"],
+.wz .cls:has(.co[data-o="architectural"]:is(:hover,:focus-visible)) .cnote [data-for="architectural"]{display:inline}
+/* a lit stop: filled in its stage colour; auto's undecided stops keep a dashed ring */
+.wz .cls[data-r] .cst .cdot{background:color-mix(in srgb,var(--c) calc(var(--on) * 100%),var(--panel));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--c) calc(var(--on) * 100%),var(--rule2))}
+.wz .cls[data-r="auto"]:not(:has(.co:is(:hover,:focus-visible))) .cst:not(.in-auto) .cdot,
+.wz .cls:has(.co[data-o=""]:is(:hover,:focus-visible)) .cst:not(.in-auto) .cdot{background:var(--panel);box-shadow:none;outline:1.5px dashed var(--ink2);outline-offset:-1.5px}
+
 /* motion vignettes */
 .vg .ln{fill:none;stroke:var(--ink2);stroke-width:2;stroke-linecap:round}
 .vg .br{fill:none;stroke:var(--st-land);stroke-width:2;stroke-linecap:round}
@@ -1040,6 +1088,65 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 /* In the product only the chosen card and the hovered one play; the rest rest. */
 .wz .ch:not([aria-pressed="true"]):not(:hover):not(:focus-visible) .vg *{animation:none!important}
 
+/* step 3, 前端: two big blocks fill the step; the model sits small under them */
+.wz .fe2{margin-top:16px;gap:14px}
+.wz .fe2 .ch{padding:10px 10px 18px;gap:10px}
+.wz .fe2 .wstg{margin-bottom:0}
+.wz .fe2 .wstg svg{height:180px}
+.wz .fe2 .cl{justify-content:center;font-size:18px}
+.wz .fe2 .ch[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--ink)}
+.wz .fe2 .ch[aria-pressed="false"] .wstg svg{opacity:.6;transition:opacity .18s var(--ez)}
+.wz .fe2 .ch:hover .wstg svg{opacity:1}
+.wz .fem{margin-top:18px}
+.wz .fmh{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.wz .fml{font-size:13px;font-weight:600;color:var(--ink)}
+.wz .fmh code{font:11px var(--f-mono);color:var(--muted)}
+/* the model bar: one joined bar, three equal segments, cost rising left to right */
+.wz .fseg{position:relative;padding-top:20px}
+.wz .frec{position:absolute;top:0;left:0;width:calc(200% / 3);height:14px;border:1.5px solid var(--good);border-bottom:0;border-radius:6px 6px 0 0;box-sizing:border-box}
+.wz .frec span{position:absolute;top:-8px;left:50%;transform:translateX(-50%);padding:0 6px;background:var(--panel);font:600 10.5px var(--f-ui);letter-spacing:.04em;color:var(--good);line-height:14px}
+.wz .fbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-radius:10px;box-shadow:inset 0 0 0 1px var(--rule2);overflow:hidden}
+.wz .fsg{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;align-items:center;gap:3px 10px;padding:11px 16px;min-width:0;transition:background .18s var(--ez)}
+.wz .fsg+.fsg{box-shadow:inset 1px 0 0 var(--rule2)}
+.wz .fsg:hover{background:var(--wash)}
+.wz .fsg:focus-visible{outline:2px solid var(--ink);outline-offset:-3px;border-radius:10px}
+.wz .fsg b{font:600 14px var(--f-mono);color:var(--ink)}
+.wz .fsd{grid-row:2;display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--muted)}
+.wz .fsg.warn .fsd{color:var(--stale-ink)}
+.wz .fsd svg{width:11px;height:11px}
+.wz .fcost{grid-column:2;grid-row:1 / span 2;display:inline-flex;align-items:flex-end;gap:2px;height:18px}
+.wz .fcost i{width:4px;border-radius:1px;background:var(--rule2)}
+.wz .fcost i:nth-child(1){height:6px}.wz .fcost i:nth-child(2){height:10px}.wz .fcost i:nth-child(3){height:14px}.wz .fcost i:nth-child(4){height:18px}
+.wz .fcost i.on{background:var(--good)}
+.wz .fsg:nth-child(2) .fcost i.on{background:color-mix(in srgb,var(--stale) 55%,var(--good))}
+.wz .fsg.warn .fcost i.on{background:var(--bad)}
+.wz .fsg[aria-checked="true"]{background:var(--ink)}
+.wz .fsg[aria-checked="true"] b{color:var(--panel)}
+.wz .fsg[aria-checked="true"] .fsd{color:color-mix(in srgb,var(--panel) 75%,var(--ink))}
+.wz .fsg[aria-checked="true"] .fcost i:not(.on){background:color-mix(in srgb,var(--panel) 30%,var(--ink))}
+.wz .fsg[aria-checked="true"]:focus-visible{outline-color:var(--good)}
+@media (prefers-reduced-motion:reduce){.wz .fsg{transition:none}}
+.wz .fadv{margin-top:12px;font-size:12px}
+.wz .fadv summary{cursor:pointer;color:var(--muted);width:max-content}
+.wz .fadv summary:hover{color:var(--ink)}
+.wz .fadv summary:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:3px}
+.wz .fskw{margin-top:10px;padding:12px 14px;border-radius:10px;background:var(--inset)}
+.wz .fskw .fmh{margin-bottom:2px}
+.wz .fskn{margin:0 0 10px;font-size:11.5px;color:var(--muted)}
+.wz .fskg{display:flex;flex-wrap:wrap;gap:10px}
+.wz .fskc{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:8px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule2)}
+.wz .fskc.self{justify-content:flex-end}
+.wz .fskh{font:600 10.5px var(--f-mono);letter-spacing:.02em;color:var(--muted)}
+.wz .fskl{display:flex;flex-wrap:wrap;gap:5px}
+.wz .fsk{all:unset;box-sizing:border-box;cursor:pointer;font:500 12px var(--f-mono);padding:4px 10px;border-radius:var(--r-pill);box-shadow:inset 0 0 0 1px var(--rule2);color:var(--ink2);white-space:nowrap}
+.wz .fskc.self .fsk{font-family:var(--f-ui)}
+.wz .fsk span{color:var(--muted);font-size:11px}
+.wz .fsk:hover{color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink2)}
+.wz .fsk:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.wz .fsk[aria-pressed="true"]{background:var(--ink);color:var(--panel);box-shadow:none;font-weight:700}
+.wz .fsk[aria-pressed="true"] span{color:inherit;opacity:.75}
+@media (max-width:1100px){.wz .fe2 .wstg svg{height:120px}.wz .fsg{padding:10px 12px}}
+
 /* the summary card: rules the mockup has no counterpart for */
 .wz .prog{height:4px;border-radius:2px;background:var(--inset);margin:0 0 18px;overflow:hidden}
 .wz .prog i{display:block;height:100%;background:var(--ink)}
@@ -1113,7 +1220,7 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
   .wz .wmini{grid-template-columns:1fr}
 }
 /* Every scene rests on its last frame; reduced motion runs none of them. */
-@media (prefers-reduced-motion:reduce){.wz .vg *{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.wz .vg *{animation:none!important}.wz .cls *{transition:none!important}}
 
 /* ---- 近 30 天: the hover card and series focus (2026-09-23) ---- */
 .chart .hseg{transition:opacity .15s ease-out}
@@ -1277,6 +1384,42 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .cschip:hover{color:var(--ink);background:var(--wash)}
 .cschip b{font:600 11.5px var(--f-mono);color:var(--ink)}
 @media (prefers-reduced-motion:reduce){.csseg,.tl .seg{transition:none}}
+/* 派工 as bars: the stage bars above, one bar per dispatch below, split by
+   agent in the --m-* model colours with the 2px gap .csbar uses. */
+.dstg{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 10px;align-items:center;margin-bottom:18px;font-size:12px}
+.dxh{grid-column:1/-1;font-size:13.5px;font-weight:600;color:var(--ink2);margin-bottom:4px}
+.dxh small{font-weight:400;color:var(--muted);margin-left:6px}
+.dsrow{display:contents;text-decoration:none;color:var(--ink2);cursor:pointer}
+.dsrow .dsl{text-align:right}
+.dsrow .dst{height:14px;display:flex;align-items:center;gap:8px}
+.dsrow .dst i{display:block;height:100%;min-width:3px;border-radius:0 4px 4px 0;transition:opacity .15s}
+.dsrow b{flex:none;font:600 11.5px var(--f-mono);color:var(--ink)}
+.dsrow:hover .dsl{color:var(--ink)}
+.dstg:has(.on) .dsrow:not(.on) .dst i{opacity:.35}
+.dsrow:focus-visible .dsl{outline:2px solid var(--ink);outline-offset:1px}
+.dxc{margin-top:14px}
+.dxch{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-bottom:10px}
+.dxsum{font-size:12px;color:var(--muted)}
+.dxsum b{font:600 12.5px var(--f-mono);color:var(--ink)}
+.dxch .lane-legend{margin:0}
+.dxg{display:grid;grid-template-columns:minmax(120px,32%) minmax(0,1fr);gap:5px 12px;font-size:12px}
+.dxr{display:contents}
+.dxl{display:flex;align-items:center;gap:6px;min-width:0}
+.dxn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2)}
+.dxr:hover .dxn{color:var(--ink)}
+.dxt{display:flex;align-items:center;gap:8px;min-width:0}
+.dxb{display:flex;gap:2px;height:16px;min-width:3px;border-radius:0 4px 4px 0;overflow:hidden}
+.dxb i{display:block;min-width:2px;transition:opacity .15s}
+.dxb i.off{opacity:.2}
+.dxb i.running{box-shadow:inset 0 -3px 0 var(--live)}
+.dxb i.lost{box-shadow:inset 0 -3px 0 var(--stale)}
+.dxb i:hover{opacity:.75}
+.dxt b{flex:none;font:600 11.5px var(--f-mono);color:var(--ink)}
+.dxnote{margin-top:12px}
+.dxnote>summary{cursor:pointer;font-size:12px;color:var(--muted)}
+.dxnote>summary .eq,.dxnote>summary .ne{margin-left:4px;font-weight:600}
+.dxnote>summary .eq{color:var(--up)}.dxnote>summary .ne{color:var(--dn)}
+@media (prefers-reduced-motion:reduce){.dsrow .dst i,.dxb i{transition:none}}
 .tchip{display:inline-flex;align-items:center;gap:8px;margin-left:auto;padding:4px 6px 4px 10px;border-radius:var(--r-pill);background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule2);font-size:12px;color:var(--ink2);text-decoration:none}
 .tchip:hover{box-shadow:inset 0 0 0 1px var(--ink2);color:var(--ink)}
 .tchip .dot.live{animation:fpulse 1.8s ease-out infinite}
@@ -1298,3 +1441,5 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 @keyframes tin{from{opacity:0;transform:translateY(14px) scale(.98);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
 @keyframes tdrain{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 @media (prefers-reduced-motion:reduce){.toasts .toast,.tchip .dot.live{animation:none!important}}
+/* chart view: the running agents keep their rows above the bars */
+.det table.dx.dxlive{margin-bottom:14px}

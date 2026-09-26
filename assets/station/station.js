@@ -1157,13 +1157,21 @@
     }
     // 派工's tie to that bar: each stage's agent dollars, a link back to 概覽
     // with that stage marked.
-    function dispatchStagesHtml(L, id) {
+    // One bar per stage, its length the stage's agent dollars against the
+    // largest; a bar is the same toggle as 概覽's, `hi` the stage it marks.
+    function dispatchStagesHtml(L, id, hi) {
         var paid = L.rows.filter(function (g) { return g.agent > 0; });
         if (!paid.length) return '';
-        return '<div class="csagent" data-block="dispatch-stages"><span class="muted">派工花費，依 stage</span>' + paid.map(function (g) {
-            return '<a class="cschip" href="' + sessionHash(id) + '" data-hist="' + esc(g.stage) + '"><i class="sw" style="background:'
-                + colorOf('stage', g.stage) + '"></i>' + esc(g.stage === 'none' ? '第一步之前' : g.stage) + '<b>' + usd(g.agent) + '</b></a>';
-        }).join('') + '</div>';
+        var max = Math.max.apply(null, paid.map(function (g) { return g.agent; }));
+        var sum = paid.reduce(function (a, g) { return a + g.agent; }, 0);
+        return '<div class="dstg" data-block="dispatch-stages"><div class="dxh">派工花費，依 stage <small>合計 ' + usd(sum) + '</small></div>'
+            + paid.map(function (g) {
+                var nm = g.stage === 'none' ? '第一步之前' : g.stage, on = hi === g.stage;
+                return '<a class="dsrow' + (on ? ' on' : '') + '" href="' + sessionHash(id) + '" data-hist="' + esc(g.stage) + '" aria-pressed="' + on + '"'
+                    + ' title="' + esc(nm + ' 派工 ' + usd(g.agent) + ' · 占派工 ' + Math.round(g.agent / sum * 1000) / 10 + '%') + '">'
+                    + '<span class="dsl">' + esc(nm) + '</span><span class="dst"><i style="width:' + (g.agent / max * 88).toFixed(1)
+                    + '%;background:' + colorOf('stage', g.stage) + '"></i><b>' + usd(g.agent) + '</b></span></a>';
+            }).join('') + '</div>';
     }
     function costHtml(m, x) {
         var KINDS = [['input', 'input', '--t-in'], ['output', 'output', '--t-out'], ['cacheRead', 'cache read', '--t-cr'],
@@ -1517,6 +1525,18 @@
     // `stage.agents` is offered as the four the mockup draws; the seven-stage
     // toggles under them (`wizOpts`) still set any other list.
     var WIZ_CARD_VALUES = { 'stage.agents': ['false', 'survey', 'survey,build,verify', 'all'] };
+    // class.default as a route map: the seven stages as dots, each class
+    // lighting the stops it takes (lib/stages.js CLASSES). Unset is the
+    // default — the model picks the class in survey — and still posts ''.
+    var WIZ_ROUTES = { spike: ['survey', 'build'], bounded: ['survey', 'design', 'build', 'verify', 'land'], architectural: WIZ_STAGES };
+    var WIZ_STAGE_JOB = { survey: '看現況', design: '定方案', plan: '拆任務', build: '動手做', verify: '拿證據', audit: '查過期文件', land: '收尾整合' };
+    var WIZ_CLASS_TEXT = {
+        '': { l: '依任務自動判斷', d: '模型在 survey 依任務決定走哪幾站。', n: 'survey 看完任務，再決定後面走哪幾站' },
+        spike: { l: '試水溫', d: '看一眼就動手，做完可能丟掉。', n: '2 站：survey → build' },
+        bounded: { l: '範圍清楚', d: '先定方案，做完拿證據再收。', n: '5 站：跳過 plan 和 audit' },
+        architectural: { l: '動到架構', d: '七站全走，文件也一起查。', n: '7 站全走' },
+    };
+    var WIZ_GH = { 'class.default': '沒指定類別時，任務走哪幾站' };
     // How much of the main session's context each stage.agents card leaves
     // in use — the mockup's meter under the card, a picture not a measurement.
     var WIZ_ASK_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4A2.5 2.5 0 0 1 4 13.5z"/><path d="M10 7.8a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6 1v.4"/><path d="M12 13.2h.01"/></svg>';
@@ -1533,7 +1553,7 @@
                 { l: '試水溫', b: '先做個小實驗看行不行，做完可能丟掉。', s: { 'class.default': 'spike' } },
                 { l: '範圍清楚的功能', b: '知道要改哪裡、改完怎麼驗。', s: { 'class.default': 'bounded' } },
                 { l: '常動到架構', b: '牽動好幾個模組，需要先設計再動手。', s: { 'class.default': 'architectural' } },
-                { l: '每次不一樣', b: '起任務時問我。', s: { 'class.default': null } },
+                { l: '依任務自動判斷', b: '模型在 survey 依任務決定走哪幾站。', s: { 'class.default': null } },
             ] },
         { id: 'front', t: '前端', q: '這個專案有前端畫面嗎？', sub: '有的話，design 站會先做一頁 mockup 給你看，再談實作。', keys: ['design.mockup', 'design.skill'],
             habits: [
@@ -1675,7 +1695,7 @@
         return '<span class="opts" role="group" aria-label="' + esc(k) + '">' + opts.map(function (o) {
             return '<button type="button" class="opt' + (o === null ? ' ask' : '') + (hasRec && wizSame(r, o) ? ' rec' : '')
                 + (inh !== null && wizSame(inh, o) ? ' inh' : '') + '" data-k="' + esc(k) + '" data-o="' + (o === null ? '' : esc(o))
-                + '" aria-pressed="' + wizSame(v, o) + '">' + (o === null ? '每次問我' : esc(o)) + '</button>';
+                + '" aria-pressed="' + wizSame(v, o) + '">' + (o === null ? (k === 'class.default' ? '自動判斷' : '每次問我') : esc(o)) + '</button>';
         }).join('') + '</span>';
     }
     // One card per value: a label, one line, and on the five keys in
@@ -1699,6 +1719,46 @@
                 + (o === null ? '' : '<span class="cv">' + esc(o) + '</span>') + '</button>';
         }).join('') + '</div>';
     }
+    // The class.default step: four cards (auto first, the default), then the
+    // route map. `data-r` is what is chosen; hovering or focusing a card
+    // previews its route (station.css, `:has`), the lit path drawing along.
+    function wizRoute(W, k) {
+        var v = W.val[k], r = W.rec[k], hasRec = Object.prototype.hasOwnProperty.call(W.rec, k);
+        var opts = [null, 'spike', 'bounded', 'architectural'];
+        var x = function (s) { return 50 + WIZ_STAGES.indexOf(s) * 100; };
+        var paths = ['spike', 'bounded', 'architectural'].map(function (c) {
+            var rt = WIZ_ROUTES[c], d = 'M' + x(rt[0]) + ' 26';
+            for (var i = 1; i < rt.length; i++) {
+                var a = x(rt[i - 1]), b = x(rt[i]);
+                d += b - a > 100 ? 'C' + a + ' 4 ' + b + ' 4 ' + b + ' 26' : 'H' + b;
+            }
+            return '<path class="rpth p-' + c + '" pathLength="1" d="' + d + '"/>';
+        }).join('');
+        var cards = opts.map(function (o) {
+            var id = o === null ? '' : o, t = WIZ_CLASS_TEXT[id];
+            return '<button type="button" class="ch co' + (o === null ? ' auto' : '') + '" data-k="' + esc(k) + '" data-o="' + id
+                + '" aria-pressed="' + wizSame(v, o) + '">' + (hasRec && wizSame(r, o) ? '<span class="rec">建議</span>' : '')
+                + '<span class="cl">' + t.l + (o === null ? '<span class="cdef">預設</span>' : '') + '</span><span class="cd">' + t.d + '</span>'
+                + (o === null ? '' : '<span class="cv">' + id + '</span>') + '</button>';
+        }).join('');
+        var stops = WIZ_STAGES.map(function (s, i) {
+            var cls = ['cst'];
+            Object.keys(WIZ_ROUTES).forEach(function (c) { if (WIZ_ROUTES[c].indexOf(s) >= 0) cls.push('in-' + c); });
+            if (s === 'survey') cls.push('in-auto');
+            return '<li class="' + cls.join(' ') + '" style="--c:var(--st-' + s + ');--i:' + i + '"><i class="cdot"></i>'
+                + '<span class="cnm">' + s + '</span><span class="cjob">' + WIZ_STAGE_JOB[s] + '</span></li>';
+        }).join('');
+        var notes = opts.map(function (o) {
+            var id = o === null ? '' : o;
+            return '<span data-for="' + (o === null ? 'auto' : id) + '">' + WIZ_CLASS_TEXT[id].n + '</span>';
+        }).join('');
+        return '<div class="cls" data-r="' + (v === null ? 'auto' : esc(v)) + '">'
+            + '<div class="chs c4 cops" role="group" aria-label="' + esc(k) + '">' + cards + '</div>'
+            + '<div class="cmap"><svg class="crt" viewBox="0 0 700 30" preserveAspectRatio="none" aria-hidden="true">'
+            + '<path class="rbase" d="M50 26H650"/>' + paths + '</svg>'
+            + '<ol class="cflow" aria-label="七站">' + stops + '</ol>'
+            + '<p class="cnote">' + notes + '</p></div></div>';
+    }
     var WIZ_TICK = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.3 5 8.6l4.5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     var WIZ_LIST = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3.5h6M3 6h6M3 8.5h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
     function wizStepsHtml(W) {
@@ -1715,13 +1775,88 @@
             + '<li class="sum' + (W.step === n ? ' cur' : '') + '"><button class="ri" type="button" data-go="' + n + '"><span class="rn">' + WIZ_LIST
             + '</span><span class="rt">摘要與寫入</span><span class="rv">' + Object.keys(W.val).length + ' 鍵</span></button></li></ol></nav>';
     }
+    // Step 3, 前端: two big blocks, yes or no; the model only once the answer
+    // is yes, small under them. Every button is a habit (`data-h`), so a click
+    // records the pick and the values stay the four design.mockup already
+    // takes. design.skill waits under 進階.
+    var WIZ_FE_NO = '<svg class="vg" viewBox="0 0 220 80" aria-hidden="true">'
+        + '<rect class="box" x="72" y="10" width="76" height="50" rx="4"/><path class="ln" d="M100 70H120M110 60V70"/>'
+        + '<text class="lbl" x="82" y="30">$ _</text><path class="ln" d="M64 70 156 6"/></svg>';
+    var WIZ_FE_YES = '<svg class="vg" viewBox="0 0 220 80" aria-hidden="true">'
+        + '<rect class="box" x="72" y="10" width="76" height="50" rx="4"/><path class="ln" d="M100 70H120M110 60V70"/>'
+        + '<g class="scene"><path class="br dr d1" pathLength="1" d="M79 18H141"/>'
+        + '<rect class="box hot dr d2" pathLength="1" x="79" y="25" width="26" height="28" rx="2"/>'
+        + '<path class="docl dr d3" pathLength="1" d="M111 28H141M111 36H137M111 44H131"/></g></svg>';
+    var WIZ_FE_MODELS = [
+        { o: 'sonnet', h: 1, d: '省額度', cost: 1 },
+        { o: 'opus', h: 2, d: '平衡', cost: 2 },
+        { o: 'fable', h: 3, d: '很燒額度', cost: 4, warn: true },
+    ];
+    var WIZ_FE_WARN = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6 11 10.4H1z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 5v2.4M6 8.9h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
+    function wizFrontHtml(keys, W, profiles) {
+        var v = W.val['design.mockup'], on = v !== null && v !== 'false';
+        var cur = WIZ_FE_MODELS.filter(function (m) { return m.o === v; })[0];
+        var block = function (h, pressed, svg, l) {
+            return '<button type="button" class="ch fe" data-h="' + h + '" aria-pressed="' + pressed + '"><span class="wstg">' + svg + '</span>'
+                + '<span class="cl">' + l + '</span></button>';
+        };
+        var out = '<h2 class="q">有前端畫面嗎？</h2>'
+            + '<div class="chs c2 na fe2" role="group" aria-label="design.mockup">'
+            + block(0, v === 'false', WIZ_FE_NO, '沒有前端') + block(cur ? cur.h : 2, on, WIZ_FE_YES, '有前端') + '</div>';
+        if (!on) return out;
+        var skill = W.val['design.skill'], at = cur ? WIZ_FE_MODELS.indexOf(cur) : -1;
+        return out + '<div class="fem"><div class="fmh"><span class="fml">誰來畫 mockup</span><code>design.mockup</code></div>'
+            + '<div class="fseg"><span class="frec" aria-hidden="true"><span>建議</span></span>'
+            + '<div class="fbar" role="radiogroup" aria-label="design.mockup 模型">'
+            + WIZ_FE_MODELS.map(function (m) {
+                var chk = v === m.o, tab = chk || (at < 0 && m.o === 'opus'), bars = '';
+                for (var j = 0; j < 4; j++) bars += '<i' + (j < m.cost ? ' class="on"' : '') + '></i>';
+                return '<button type="button" class="fsg' + (m.warn ? ' warn' : '') + '" role="radio" aria-checked="' + chk + '" tabindex="' + (tab ? 0 : -1)
+                    + '" data-h="' + m.h + '"><b>' + m.o + '</b><span class="fsd">' + (m.warn ? WIZ_FE_WARN : '') + m.d + '</span>'
+                    + '<span class="fcost" aria-hidden="true">' + bars + '</span></button>';
+            }).join('') + '</div></div>'
+            + '<details class="fadv" id="wiz-fadv"' + (skill !== null ? ' open' : '') + '><summary>進階</summary>'
+            + wizSkillHtml(keys, W) + '</details></div>';
+    }
+    // design.skill under 進階: unset first (fankeel decides), then the values
+    // grouped by the plugin before the colon. Still one value, still `data-k`.
+    function wizSkillHtml(keys, W) {
+        var v = W.val['design.skill'], groups = [], by = {};
+        (keys['design.skill'] ? keys['design.skill'].values : []).forEach(function (o) {
+            var i = o.indexOf(':'), pl = i > 0 ? o.slice(0, i) : o;
+            if (!by[pl]) { by[pl] = []; groups.push(pl); }
+            by[pl].push(o);
+        });
+        var chip = function (o, l) {
+            return '<button type="button" class="fsk" data-k="design.skill" data-o="' + esc(o) + '" aria-pressed="' + wizSame(v === null ? '' : v, o) + '">' + l + '</button>';
+        };
+        return '<div class="fskw"><div class="fmh"><span class="fml">設計 skill</span><code>design.skill</code></div>'
+            + '<p class="fskn">可引用外部設計 skill；多選與 fankeel 內建版本之後會加入</p>'
+            + '<div class="fskg" role="group" aria-label="design.skill">'
+            + '<div class="fskc self">' + chip('', '由 fankeel 自己判斷<span>（沒指定時）</span>') + '</div>'
+            + groups.map(function (pl) {
+                return '<div class="fskc"><span class="fskh">' + esc(pl) + '</span><span class="fskl">' + by[pl].map(function (o) {
+                    var i = o.indexOf(':');
+                    return chip(o, esc(i > 0 ? o.slice(i + 1) : o));
+                }).join('') + '</span></div>';
+            }).join('') + '</div></div>';
+    }
     function wizStepHtml(keys, W, profiles) {
         var n = WIZ_STEPS.length, st = WIZ_STEPS[W.step];
+        if (st.id === 'front') {
+            return '<div class="wcard" data-block="wizard-step" data-step="' + st.id + '">'
+                + '<div class="top"><span class="of">' + (W.step + 1) + ' / ' + n + '</span><span class="spacer"></span>'
+                + '<button class="lk" type="button" data-go="' + n + '">跳到摘要</button></div>'
+                + wizFrontHtml(keys, W, profiles)
+                + '<div class="nav"><button class="ctl" type="button" data-go="' + (W.step - 1) + '">← 上一題</button><span class="spacer"></span>'
+                + '<button class="ctl pri" type="button" data-go="' + (W.step + 1) + '">下一題 →</button></div></div>';
+        }
         var shown = st.keys.filter(function (k) {
             return k !== 'design.skill' || (W.val['design.mockup'] !== null && W.val['design.mockup'] !== 'false');
         });
         var ovr = function (k) { return wizOverridden(W, k) ? '<span class="ovr">改過建議</span>' : ''; };
-        var full = shown.filter(function (k) { return WIZ_SCENES[k]; }), mini = shown.filter(function (k) { return !WIZ_SCENES[k]; });
+        var big = function (k) { return WIZ_SCENES[k] || k === 'class.default'; };
+        var full = shown.filter(big), mini = shown.filter(function (k) { return !big(k); });
         return '<div class="wcard" data-block="wizard-step" data-step="' + st.id + '">'
             + '<div class="top"><span class="of">' + (W.step + 1) + ' / ' + n + '</span><span class="spacer"></span>'
             + '<button class="lk" type="button" data-go="' + n + '">跳到摘要</button></div>'
@@ -1731,8 +1866,8 @@
                     + Object.keys(hb.s).map(function (k) { return esc(k) + ' → ' + esc(wizShow(hb.s[k])); }).join('&#10;') + '">' + hb.l + '</button>';
             }).join('') + '</span></div>'
             + full.map(function (k) {
-                return '<div class="grp" role="group" aria-label="' + esc(k) + '"><div class="gh"><b>' + esc(keys[k].desc || k) + '</b><code>' + esc(k) + '</code>' + ovr(k) + '</div>'
-                    + wizCards(keys, W, k) + (k === 'stage.agents' ? '<div class="stfine">' + wizOpts(keys, W, profiles, k) + '</div>' : '') + '</div>';
+                return '<div class="grp" role="group" aria-label="' + esc(k) + '"><div class="gh"><b>' + esc(WIZ_GH[k] || keys[k].desc || k) + '</b><code>' + esc(k) + '</code>' + ovr(k) + '</div>'
+                    + (k === 'class.default' ? wizRoute(W, k) : wizCards(keys, W, k)) +(k === 'stage.agents' ? '<div class="stfine">' + wizOpts(keys, W, profiles, k) + '</div>' : '') + '</div>';
             }).join('')
             + (mini.length ? '<div class="wmini">' + mini.map(function (k) {
                 return '<div class="mrow"><b>' + esc(keys[k].desc || k) + '<code>' + esc(k) + '</code></b><span class="ctlc">' + wizOpts(keys, W, profiles, k) + ovr(k) + '</span></div>';
@@ -2372,8 +2507,10 @@
     view.kinds = {};
     view.pg = {};
     view.dfilter = 'all';
+    view.dxv = 'chart';
+    view.dxm = 'c';
     function dispatchUi(s) {
-        return { open: view.open, prm: view.prm, ph: view.ph, filter: view.dfilter,
+        return { open: view.open, prm: view.prm, ph: view.ph, filter: view.dfilter, view: view.dxv, metric: view.dxm,
             now: S.serve ? Date.now() : NOW, live: Boolean(S.serve) && Boolean(s) && s.state === 'live' };
     }
     // A stage column's dollars, from the data file's per-stage `usd`. A stage
@@ -2413,7 +2550,7 @@
             + '<details class="csmore"><summary>stage × model 明細 <small>token 與各自的 USD，主迴圈</small></summary>'
             + costHtml(costModel(s.days), x) + '</details>'
             + (x ? '<div class="det">' + ctxSection(s, x, true) + tasksHtml(x.tasks) + '</div>' : '');
-        var body = r.tab === 'dispatch' ? (x ? dispatchStagesHtml(L, s.id) + '<div class="det">' + dispatchHtml(x, s, dispatchUi(s)) + '</div>' : detailNote(s))
+        var body = r.tab === 'dispatch' ? (x ? dispatchStagesHtml(L, s.id, hi) + '<div class="det">' + dispatchHtml(x, s, dispatchUi(s)) + '</div>' : detailNote(s))
             : r.tab === 'events' ? (x ? '<div class="det">' + replayHtml(x, view.kinds, s) + '</div>' : detailNote(s))
                 : overview;
         return '<section class="panel"><div class="eyebrow">session <span class="mono">' + esc(String(s.id).slice(0, 8)) + '</span> · '
@@ -2425,7 +2562,7 @@
             + railHtml(s, Boolean(S.serve) && s.state === 'live', S.serve ? Date.now() : NOW)
             + pendingGateHtml(s, view.pg)
             + sessionHeadHtml(s, x) + '</section>'
-            + tabsHtml(s, r.tab, x) + '<section class="panel">' + body + '</section>';
+            + tabsHtml(s, r.tab, x) + '<section class="panel"' + (r.tab === 'dispatch' ? ' data-block="dispatch"' : '') + '>' + body + '</section>';
     }
     VIEWS.session = sessionPage;
     CRUMBS.session = function (r) {
@@ -3281,8 +3418,9 @@
         if (early && !gapDone && (filter === 'all' || filter === 'lost')) body += gap();
         var off = {};
         ['running', 'done', 'lost'].forEach(function (k) { if (!n[k]) off[k] = '沒有這個狀態的 agent'; });
-        var dhead = '<div class="dhead"><div class="h2">派工 <small>這個 session 派了 <b>' + x.rows.length + '</b> 個 agent，分 '
+        var dhead = '<div class="dhead"><div class="h2">派工 <small><b>' + x.rows.length + '</b> 個 agent · '
             + x.dispatches.length + ' 次派工</small></div><span class="spacer"></span>'
+            + (ui && ui.view ? segHtml('dxv', [['chart', '圖'], ['rows', '逐個 agent']], ui.view) : '')
             + segHtml('dfilter', [['all', '全部 ' + n.all], ['running', 'running ' + n.running], ['done', 'done ' + n.done], ['lost', 'lost ' + n.lost]], filter, off)
             + '</div>';
         var all = sums(x.rows);
@@ -3291,13 +3429,32 @@
         var wfRows = x.rows.filter(function (r) { return r.surface === 'workflow'; }).length;
         var wfRun = x.runs.reduce(function (m, r) { return m + r.agents; }, 0);
         var eq = function (a, b) { return '<span class="' + (a === b ? 'eq">＝' : 'ne">≠') + '</span>'; };
-        return dhead + '<table class="x dx"><colgroup><col><col style="width:50px"><col style="width:54px"><col style="width:54px">'
+        var vw = ui && ui.view ? ui.view : 'all';
+        // The chart goes after the table in the markup: with no `ui.view`
+        // both render, and the table's own order is what a reader of the
+        // string walks first.
+        var chart = vw === 'rows' ? '' : dxChartHtml(x, s, order, groups, fam, pass, all, ret, (ui && ui.metric) || 'c');
+        var rows = vw === 'chart' ? '' : '<table class="x dx"><colgroup><col><col style="width:50px"><col style="width:54px"><col style="width:54px">'
             + '<col style="width:48px"><col style="width:54px"><col style="width:48px"><col style="width:54px">'
             + '<col style="width:58px"></colgroup><thead><tr><th>派工</th><th class="r">耗時</th><th class="r">tokens</th>'
             + '<th class="r">USD</th><th class="r">input</th><th class="r">input USD</th><th class="r">output</th><th class="r">output USD</th>'
             + '<th class="r rc" title="這次派工的結果進入主 context 的字元數">回傳字元</th></tr></thead>'
             + '<tbody>' + body + '</tbody><tfoot><tr><td>' + x.rows.length + ' 個 agent</td>' + numCells(all, '')
-            + '<td class="r rc">' + comma(ret) + '</td></tr></tfoot></table>'
+            + '<td class="r rc">' + comma(ret) + '</td></tr></tfoot></table>';
+        // The chart has no row a running agent could stand in, so above it the
+        // running ones keep their rows: the tool each is on, and the count the
+        // session list gives.
+        var live = x.rows.filter(function (r) { return agentState(x, r, s) === 'running' && pass(r); });
+        if (vw === 'chart' && live.length) {
+            rows = '<table class="x dx dxlive"><colgroup><col><col style="width:50px"><col style="width:54px"><col style="width:54px">'
+                + '<col style="width:48px"><col style="width:54px"><col style="width:48px"><col style="width:54px">'
+                + '<col style="width:58px"></colgroup><thead><tr><th>正在跑 ' + live.length + '</th><th class="r">耗時</th><th class="r">tokens</th>'
+                + '<th class="r">USD</th><th class="r">input</th><th class="r">input USD</th><th class="r">output</th><th class="r">output USD</th>'
+                + '<th class="r rc"></th></tr></thead><tbody>'
+                + live.map(function (r) { return agentRow(r, 'ag', '', x, s, u); }).join('') + '</tbody></table>';
+        }
+        return dhead + rows + chart
+            + '<details class="dxnote" data-key="dx-note"><summary>對帳與說明 ' + eq(all.c, x.agentsTotal.cents) + eq(wfRows, wfRun) + '</summary>'
             + '<p class="tally">各列美元相加 <b>' + cents(all.c) + '</b> ' + eq(all.c, x.agentsTotal.cents) + ' agentsOf() 的 '
             + cents(x.agentsTotal.cents) + '；workflow 派工 ' + wfRows + ' 列 ' + eq(wfRows, wfRun) + ' run 檔的 workflow_agent '
             + wfRun + ' 列</p>'
@@ -3307,7 +3464,60 @@
             + '</p>'
             + (n.running ? '<p class="tally">running 的 ' + n.running + ' 列是到 ' + clockSec(isNum(x.at) ? x.at : u.now)
                 + ' 為止的 tokens 與美元，下一次重拉會再變；耗時照秒走。</p>' : '')
-            + (n.lost ? '<p class="tally">lost 的列沒有回傳字元：它的結果沒有進主 context。耗時算到它 transcript 的最後一行。</p>' : '');
+            + (n.lost ? '<p class="tally">lost 的列沒有回傳字元：它的結果沒有進主 context。耗時算到它 transcript 的最後一行。</p>' : '')
+            + '</details>';
+    }
+    // 派工 as bars: one row per dispatch in turn order, its length the metric
+    // `m` picks (c cents, k thousand tokens, s seconds, r return chars), split
+    // into its agents — a stage agent's own agents included — in the model
+    // family's --m-* colour. Every figure the table has is on a title: the
+    // row's label carries the band, each segment its agent. An agent the
+    // state filter leaves out is dimmed, not dropped.
+    function dxChartHtml(x, s, order, groups, fam, pass, all, ret, m) {
+        var FMT = { c: cents, k: function (v) { return comma(v) + 'k'; }, s: dur, r: function (v) { return comma(v) + ' 字'; } };
+        var f = FMT[m] ? FMT[m] : (m = 'c', FMT.c);
+        var nums = function (t) {
+            return cents(t.c) + ' · ' + comma(t.k) + 'k token · ' + dur(t.s) + ' · input ' + tokens(t.ti || 0) + ' $' + (t.ci || 0).toFixed(2)
+                + ' · output ' + tokens(t.to || 0) + ' $' + (t.co || 0).toFixed(2);
+        };
+        var fams = {};
+        var rows = order.map(function (k) {
+            var d = k === 'none' ? null : x.dispatches[k], list = fam(groups[k]), t = sums(list);
+            var r = d && d.ret !== null && d.ret !== undefined ? d.ret : null;
+            return { k: k, d: d, list: list, t: t, r: r, v: m === 'r' ? r || 0 : t[m] };
+        });
+        var max = Math.max.apply(null, rows.map(function (r) { return r.v; }).concat([0]));
+        var total = m === 'r' ? ret : all[m];
+        var body = rows.map(function (row) {
+            var d = row.d, sf = d ? d.surface : 'agent';
+            var tip = (d ? d.text : '未對上派工') + '\n' + (d && d.turn ? '回合 ' + d.turn + ' · ' : '')
+                + (d && isNum(d.out) ? stamp(d.out).slice(11) + '→' + (isNum(d.back) ? stamp(d.back).slice(11) : '…') + ' · ' : '')
+                + row.list.length + ' 個 agent\n' + nums(row.t) + '\n回傳 ' + (row.r === null ? '—' : comma(row.r) + ' 字元');
+            var segs = m === 'r'
+                ? (row.v ? '<i style="flex:1 1 0;background:var(--s-' + (sf === 'workflow' ? 'workflow' : 'agent') + ')"></i>' : '')
+                : row.list.map(function (a) {
+                    if (!a[m]) return '';
+                    var fk = family(a.model || a.alias);
+                    fams[fk] = true;
+                    return '<i class="' + agentState(x, a, s) + (pass(a) ? '' : ' off') + '" style="flex:' + a[m] + ' 1 0;background:var(--m-' + fk + ')"'
+                        + ' title="' + esc((a.label || a.id) + '\n' + modelOf(a) + ' · ' + agentState(x, a, s) + '\n' + nums(sums([a]))) + '"></i>';
+                }).join('');
+            return '<div class="dxr" role="listitem" title="' + esc(tip) + '"><span class="dxl"><span class="sf ' + esc(sf) + '">' + esc(d ? sf : '—') + '</span>'
+                + '<span class="dxn">' + esc(d ? d.text : '未對上派工') + '</span></span>'
+                + '<span class="dxt"><span class="dxb" style="width:' + (max ? row.v / max * 88 : 0).toFixed(1) + '%">' + segs + '</span>'
+                + '<b>' + (m === 'r' && row.r === null ? '—' : f(row.v)) + '</b></span></div>';
+        }).join('');
+        var legend = m === 'r'
+            ? '<span><i class="sw" style="background:var(--s-agent)"></i>agent</span><span><i class="sw" style="background:var(--s-workflow)"></i>workflow</span>'
+            : MODEL_KEYS.filter(function (k) { return fams[k]; }).map(function (k) {
+                return '<span><i class="sw" style="background:var(--m-' + k + ')"></i>' + k + '</span>';
+            }).join('');
+        return '<div class="dxc"><div class="dxch">'
+            + segHtml('dxm', [['c', '花費'], ['k', 'token'], ['s', '耗時'], ['r', '回傳字元']], m)
+            + '<span class="dxsum" title="' + esc(x.rows.length + ' 個 agent 合計\n' + nums(all) + '\n回傳 ' + comma(ret) + ' 字元') + '">合計 <b>' + f(total) + '</b></span>'
+            + '<span class="spacer"></span><span class="lane-legend">' + legend + '</span></div>'
+            + '<div class="dxg" role="list" aria-label="每次派工的' + { c: '花費', k: 'token', s: '耗時', r: '回傳字元' }[m] + '">' + body + '</div>'
+            + '<div class="note">一列一次派工，照回合先後；一段一個 agent。游標停在列或段上看全部數字。</div></div>';
     }
     function stepsFor(x, d) {
         if (!d) return '';
@@ -3620,6 +3830,14 @@
         return wizHtml(keys, wiz, profiles, { serve: Boolean(S.serve), nonce: S.nonce, plugin: S.plugin, configDir: S.configDir });
     }
     VIEWS.settings = settingsPage;
+    var drawnHash = null;
+    function drawChip() {
+        var tc = doc.getElementById('tunechip');
+        if (!tc) return;
+        var chip = tuneChipHtml(S.sessions, w.Notification ? w.Notification.permission : 'denied');
+        tc.innerHTML = chip;
+        tc.hidden = !chip;
+    }
     function draw() {
         route = parseHash(w.location.hash);
         var p = doc.getElementById('page');
@@ -3637,7 +3855,20 @@
         var rAct = pickOpen && doc.activeElement && doc.activeElement.closest ? doc.activeElement.closest('.rpop [data-v], .rpop [data-pickq]') : null;
         var rAt = rAct ? (rAct.hasAttribute('data-pickq') ? { q: rAct.selectionStart } : { v: rAct.getAttribute('data-v') }) : null;
         var rPop = pickOpen && doc.querySelector ? doc.querySelector('.rpop .seg') : null, rTop = rPop ? rPop.scrollTop : 0;
+        // A <details> the reader opened or shut stays that way through a
+        // redraw of the same page, found again by its id, data-key or data-block.
+        var DETS = 'details[id],details[data-key],details[data-block]';
+        var detKey = function (d) { return d.id || d.getAttribute('data-key') || d.getAttribute('data-block'); };
+        var dets = {}, samePage = w.location.hash === drawnHash;
+        if (samePage && doc.querySelectorAll) [].forEach.call(doc.querySelectorAll(DETS), function (d) { dets[detKey(d)] = d.open; });
+        drawnHash = w.location.hash;
         p.innerHTML = (VIEWS[route.view] || dashPage)(route);
+        if (samePage && doc.querySelectorAll) {
+            [].forEach.call(doc.querySelectorAll(DETS), function (d) {
+                var k = detKey(d);
+                if (Object.prototype.hasOwnProperty.call(dets, k)) d.open = dets[k];
+            });
+        }
         if (rTop && (rPop = doc.querySelector('.rpop .seg'))) rPop.scrollTop = rTop;
         if (rAt && rAt.v !== undefined) pickFocus(rAt.v);
         if (rAt && rAt.q !== undefined) {
@@ -3655,12 +3886,7 @@
         else if (chartHover) chartHide();
         else if (route.view === 'days') chartFocus(chartPin);
         if (route.view === 'days') legendArm();
-        var tc = doc.getElementById('tunechip');
-        if (tc) {
-            var chip = tuneChipHtml(S.sessions, w.Notification ? w.Notification.permission : 'denied');
-            tc.innerHTML = chip;
-            tc.hidden = !chip;
-        }
+        drawChip();
         drawNav();
         drawSide();
         doc.getElementById('gen').textContent = genText();
@@ -3738,6 +3964,26 @@
         sel = null;
         draw();
         w.scrollTo(0, 0);
+    });
+    // The 前端 step's model bar: arrow keys, Home and End walk the three
+    // segments and choose as they go, the way a radio group does.
+    function fePick(h) {
+        wiz = wizApply(wiz, S.profileKeys || {}, S.profiles || { machine: null, projects: {} }, { h: String(h) });
+        draw();
+        var on = doc.querySelector('.fbar [aria-checked="true"]');
+        if (on) on.focus();
+    }
+    doc.addEventListener('keydown', function (e) {
+        var b = route.view === 'settings' && e.target.closest ? e.target.closest('.wz .fbar .fsg') : null;
+        if (!b) return;
+        var stops = [].slice.call(b.parentNode.querySelectorAll('.fsg')), i = stops.indexOf(b), j = i;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') j = Math.min(stops.length - 1, i + 1);
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') j = Math.max(0, i - 1);
+        else if (e.key === 'Home') j = 0;
+        else if (e.key === 'End') j = stops.length - 1;
+        else return;
+        e.preventDefault();
+        fePick(stops[j].getAttribute('data-h'));
     });
     doc.addEventListener('click', function (e) {
         var wzt = route.view === 'settings' && e.target.closest
@@ -4282,6 +4528,9 @@
             polledAt = Date.now();
             tuneNotify(before, S.sessions);
             if (doc.hidden) { busy = false; return; }
+            // The settings wizard reads nothing live; a redraw there would only
+            // throw away what the reader has open. The masthead still moves.
+            if (route.view === 'settings') { busy = false; drawChip(); doc.getElementById('gen').textContent = genText(); return; }
             var s = watched();
             var done = function () { busy = false; repaint(); };
             if (s && s.state === 'live' && s.hasDetail) reload('station/detail/' + encodeURIComponent(s.id) + '.js', done);
@@ -4298,18 +4547,10 @@
             || (ae.tagName === 'INPUT' && ae.id !== 'q' && !/^(checkbox|radio|button|submit)$/.test(ae.type || '')));
         if (typing) return;
         var key = ae && ae.getAttribute ? ae.getAttribute('data-key') : null;
-        var open = {};
-        [].forEach.call(doc.querySelectorAll('details[id],details[data-key]'), function (d) {
-            open[d.id || d.getAttribute('data-key')] = d.open;
-        });
         var box = doc.querySelectorAll('.listcard .scroll')[0];
         var boxTop = box ? box.scrollTop : 0;
         var y = w.scrollY || 0;
         draw();
-        [].forEach.call(doc.querySelectorAll('details[id],details[data-key]'), function (d) {
-            var k = d.id || d.getAttribute('data-key');
-            if (Object.prototype.hasOwnProperty.call(open, k)) d.open = open[k];
-        });
         var again = doc.querySelectorAll('.listcard .scroll')[0];
         if (again) again.scrollTop = boxTop;
         if (typeof w.scrollTo === 'function') w.scrollTo(0, y);
