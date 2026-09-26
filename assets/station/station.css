@@ -1420,26 +1420,78 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .dxnote>summary .eq,.dxnote>summary .ne{margin-left:4px;font-weight:600}
 .dxnote>summary .eq{color:var(--up)}.dxnote>summary .ne{color:var(--dn)}
 @media (prefers-reduced-motion:reduce){.dsrow .dst i,.dxb i{transition:none}}
-.tchip{display:inline-flex;align-items:center;gap:8px;margin-left:auto;padding:4px 6px 4px 10px;border-radius:var(--r-pill);background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule2);font-size:12px;color:var(--ink2);text-decoration:none}
-.tchip:hover{box-shadow:inset 0 0 0 1px var(--ink2);color:var(--ink)}
-.tchip .dot.live{animation:fpulse 1.8s ease-out infinite}
-.tchip b{font:600 11.5px var(--f-mono);color:var(--ink)}
-.tchip .sep{width:1px;height:12px;background:var(--rule2)}
-.tchip code{font:11px var(--f-mono);color:var(--muted);background:var(--inset);padding:1px 7px;border-radius:var(--r-pill)}
-.toasts{position:fixed;z-index:40;right:18px;bottom:18px;display:flex;flex-direction:column;gap:10px;width:348px}
-.toast{position:relative;display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:2px 11px;padding:13px 14px 14px;border-radius:9px;background:var(--panel);
-  box-shadow:0 1px 2px rgba(0,0,0,.08),0 10px 30px -6px rgba(0,0,0,.22),inset 0 0 0 1px var(--rule2);overflow:hidden}
-.toast .ti{width:22px;height:22px;border-radius:50%;display:grid;place-items:center}
-.toast.done .ti{background:var(--up-bg);color:var(--good)}
-.toast.rej .ti{background:var(--dn-bg);color:var(--bad)}
-.toast .tt{font-size:13px;font-weight:600;align-self:center;line-height:1.35}
-.toast .tt code{font:600 12px var(--f-mono);background:var(--inset);padding:0 5px;border-radius:4px}
-.toast .tx{all:unset;cursor:pointer;color:var(--muted);width:20px;height:20px;display:grid;place-items:center;border-radius:5px}
-.toast .tx:hover{background:var(--wash);color:var(--ink)}
-.toast .tx:focus-visible{outline:2px solid var(--ink)}
-.toast .tb{grid-column:2 / -1;font-size:12px;color:var(--muted);line-height:1.45}
-@keyframes tin{from{opacity:0;transform:translateY(14px) scale(.98);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
-@keyframes tdrain{from{transform:scaleX(1)}to{transform:scaleX(0)}}
-@media (prefers-reduced-motion:reduce){.toasts .toast,.tchip .dot.live{animation:none!important}}
+/* float-icon: the one place notifications and held gates appear (2026-09-26 mockup) */
+.fk{position:fixed;z-index:45;right:20px;bottom:20px;font-family:var(--f-ui)}
+.fkb{all:unset;box-sizing:border-box;position:relative;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;cursor:pointer;
+  background:var(--panel);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule2),0 8px 22px rgba(0,0,0,.28);transition:background .18s,color .18s}
+.fkb:hover{background:var(--inset)}
+.fkb:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.fkb[aria-expanded="true"]{background:var(--ink);color:var(--panel)}
+.fkb>svg{width:20px;height:20px}
+.fkn{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:var(--r-pill);display:grid;place-items:center;
+  font:700 11px/1 var(--f-mono);background:var(--ink2);color:var(--ground);box-shadow:0 0 0 2px var(--ground)}
+.fk.hasgate .fkn{background:var(--stale)}
+.fkn:empty{display:none}
+.fkp{position:absolute;right:0;bottom:66px;width:min(376px,calc(100vw - 24px));max-height:calc(100vh - 116px);overflow:auto;
+  background:var(--panel);border-radius:12px;box-shadow:inset 0 0 0 1px var(--rule2),0 18px 48px rgba(0,0,0,.34)}
+.fkp[hidden]{display:none}
+.fkh{display:flex;align-items:baseline;gap:8px;padding:13px 14px 11px;border-bottom:1px solid var(--rule)}
+.fkh b{font-size:13.5px;font-weight:600;color:var(--ink)}
+.fkh .n{font:11px var(--f-mono);color:var(--muted)}
+.fkh .spacer{flex:1}
+.fkh .lk{all:unset;cursor:pointer;font-size:12px;color:var(--ink2);text-decoration:underline;text-underline-offset:3px}
+.fkh .lk:hover{color:var(--ink)}
+.fkh .lk:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.fks{display:flex;gap:6px;padding:11px 14px 6px;font-size:11.5px;color:var(--muted);letter-spacing:.03em}
+.fks b{font:600 11px var(--f-mono);color:var(--ink2)}
+/* gate-countdown */
+.gc{margin:0 10px 4px;padding:12px 12px 12px;border-radius:10px;background:var(--inset);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--stale) 45%,transparent)}
+.gc .gsrc{display:flex;align-items:center;gap:7px;min-width:0;font-size:11.5px;color:var(--muted)}
+.gc .gsrc .mono{font-family:var(--f-mono);color:var(--ink2)}
+.gc .gsrc i{width:7px;height:7px;border-radius:50%;background:var(--st-design);flex:none}
+.gc .gsrc .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.gc .gq{margin:8px 0 10px;font-size:14.5px;font-weight:600;line-height:1.4;color:var(--ink)}
+.gc .gq small{display:inline-block;margin-right:6px;font:600 10.5px var(--f-mono);color:var(--ink2);background:var(--panel);padding:0 6px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--rule2);vertical-align:2px}
+.gc .gops{display:grid;gap:6px}
+.gc .gop{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 10px;padding:8px 10px;border-radius:8px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule2)}
+.gc .gop:hover{box-shadow:inset 0 0 0 1px var(--ink2)}
+.gc .gop:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.gc .gop b{font-size:13px;font-weight:600;color:var(--ink)}
+.gc .gop small{grid-column:1;font-size:11.5px;color:var(--muted);line-height:1.4}
+.gc .gop kbd{grid-column:2;grid-row:1 / span 2;align-self:center;font:600 10.5px var(--f-mono);color:var(--muted);width:18px;height:18px;display:grid;place-items:center;border-radius:4px;box-shadow:inset 0 0 0 1px var(--rule2)}
+.gc .gtm{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 10px;margin:12px 0 10px}
+.gc .gbar{height:4px;border-radius:2px;background:var(--rule2);overflow:hidden}
+.gc .gbar i{display:block;height:100%;background:var(--stale);border-radius:2px;transition:width 1s linear,background .3s}
+.gc .gsec{font:600 13px var(--f-mono);color:var(--stale-ink)}
+.gc .gtm small{grid-column:1 / -1;font-size:11px;color:var(--muted)}
+.gc .gho{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:8px 12px;border-radius:8px;
+  font-size:13px;font-weight:600;color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink2)}
+.gc .gho:hover{background:var(--wash)}
+.gc .gho:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.gc .ghs{margin:6px 2px 0;font-size:11px;color:var(--muted);line-height:1.45}
+.gc .gend{display:none;margin:10px 0 0;font-size:12.5px;color:var(--ink2);line-height:1.5}
+.gc .gend.ok,.gc .gend.bad{display:block}
+.gc .gend.bad{color:var(--bad)}
+/* notes inside the panel (were the toasts and the tune chip) */
+.nt{position:relative;display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:2px 11px;padding:11px 14px 12px}
+.nt+.nt{border-top:1px solid var(--rule)}
+.nt .ti{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px}
+.nt.done .ti{background:var(--up-bg);color:var(--good)}
+.nt.rej .ti{background:var(--dn-bg);color:var(--bad)}
+.nt.edit .ti{background:var(--teal-soft)}
+.nt.edit .ti i{width:7px;height:7px;border-radius:50%;background:var(--teal-ink)}
+.nt .tt{font-size:13px;font-weight:600;align-self:center;line-height:1.35;color:var(--ink)}
+.nt .tt code{font:600 12px var(--f-mono);background:var(--inset);padding:0 5px;border-radius:4px}
+.nt .tb{grid-column:2 / 3;font-size:12px;color:var(--muted);line-height:1.45}
+.nt .tx{all:unset;grid-column:3;grid-row:2;justify-self:end;cursor:pointer;color:var(--muted);width:20px;height:20px;display:grid;place-items:center;border-radius:5px}
+.nt .tx:hover{background:var(--wash);color:var(--ink)}
+.nt .tx:focus-visible{outline:2px solid var(--ink)}
+.fkf{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--rule);font-size:12px;color:var(--ink2);background:var(--inset);border-radius:0 0 12px 12px}
+.fkf b{font:600 11.5px var(--f-mono);color:var(--ink)}
+.fkf a{font:11px var(--f-mono);color:var(--muted)}
+.fkf .spacer{flex:1}
+.fkempty{padding:4px 14px 12px;font-size:12px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.gc .gbar i,.fkb{transition:none}}
+@media (max-width:720px){.fk{right:12px;bottom:12px}}
 /* chart view: the running agents keep their rows above the bars */
 .det table.dx.dxlive{margin-bottom:14px}

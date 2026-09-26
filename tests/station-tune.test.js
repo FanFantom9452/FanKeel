@@ -65,15 +65,8 @@ test('one request moving from in progress to done or rejected is one event; noth
     assert.equal(V.tuneOpen(at('done')), false);
 });
 
-test('the toast names the block; the chip counts and links the tune page', () => {
-    assert.match(V.toastHtml({ id: 'r-0001', block: 'wizard-step', status: 'done' }), /class="toast done"[\s\S]*已修改完成：<code>wizard-step<\/code>/);
-    assert.match(V.toastHtml({ id: 'r-0001', block: 'model-cost', status: 'rejected' }), /class="toast rej"[\s\S]*沒有修改：<code>model-cost<\/code>/);
+test('a settled request is a note that names the block', () => {
+    assert.match(V.noteHtml({ id: 'r-0001', block: 'wizard-step', status: 'done' }), /class="nt done"[\s\S]*已修改完成：<code>wizard-step<\/code>/);
+    assert.match(V.noteHtml({ id: 'r-0001', block: 'model-cost', status: 'rejected' }), /class="nt rej"[\s\S]*沒有修改：<code>model-cost<\/code>/);
     assert.equal(V.toastText({ block: 'wizard-step', status: 'done' }), '已修改完成：wizard-step');
-    const chip = V.tuneChipHtml(at('taken'), 'granted');
-    assert.match(chip, /tune 進行中 <b>1<\/b>/);
-    assert.match(chip, /完成 <b>0<\/b>/);
-    assert.match(chip, /href="http:\/\/127\.0\.0\.1:7819\/"/);
-    assert.doesNotMatch(chip, /data-tune-notify/, 'permission already given');
-    assert.match(V.tuneChipHtml(at('taken'), 'default'), /data-tune-notify/);
-    assert.equal(V.tuneChipHtml([{ id: SID, tune: null }], 'default'), '', 'no queue, no chip');
 });

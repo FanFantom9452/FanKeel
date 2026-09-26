@@ -196,7 +196,7 @@ test('a hidden tab re-reads nothing on its tick', async () => {
 
 // docs/plans/2026-09-26-station-redesign.md Task 8. The one exception to the
 // test above: while a tune request is in progress the hidden tab keeps
-// reading, so it can say the block was changed — a toast, and a browser
+// reading, so it can say the block was changed — a note in the floating icon, and a browser
 // notification when permission was given. With nothing in progress it still
 // reads nothing, which is the test above.
 test('a hidden tab with a tune request in progress re-reads, and says when the block is done', async () => {
@@ -219,7 +219,7 @@ test('a hidden tab with a tune request in progress re-reads, and says when the b
     await settle(); await settle();
     assert.equal(p.loaded.length, before + 1, 'the hidden tab read once');
     assert.deepEqual(said, ['已修改完成：wizard-step']);
-    assert.match(p.doc.getElementById('toasts').innerHTML, /已修改完成：<code>wizard-step<\/code>/);
+    assert.match(p.doc.getElementById('fk').innerHTML, /已修改完成：<code>wizard-step<\/code>/);
 });
 
 test('a re-read that errors leaves the page\'s data as it was, and clears busy for the next tick', async () => {

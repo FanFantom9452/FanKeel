@@ -1963,33 +1963,76 @@
     function toastText(ev) {
         return (ev.status === 'done' ? '已修改完成：' : '沒有修改：') + ev.block;
     }
-    function toastHtml(ev) {
-        var done = ev.status === 'done';
-        return '<div class="toast ' + (done ? 'done' : 'rej') + '" data-toast="' + esc(ev.id) + '">'
-            + '<span class="ti">' + (done ? '✓' : '✕') + '</span>'
-            + '<span class="tt">' + (done ? '已修改完成：' : '沒有修改：') + '<code>' + esc(ev.block) + '</code></span>'
-            + '<button class="tx" type="button" data-toast-x aria-label="關閉">×</button>'
-            + '<span class="tb">' + (done ? '改過的頁面由 tune 自己重新載入。' : '要求超出這個 block，已退回。') + '</span></div>';
+    // The one place notifications and held gates appear (2026-09-26 design
+    // §3): a button in the corner with the count, a panel with the gates
+    // first. `notes` are the page's own — settled tune requests, newest first
+    // — and what tune is editing right now is read off each session's queue.
+    function floatNotes(sessions, notes) {
+        var editing = [];
+        (sessions || []).forEach(function (s) {
+            ((s.tune && s.tune.items) || []).forEach(function (it) {
+                if (it.status === 'taken') editing.push({ id: it.id, block: it.block, status: 'edit' });
+            });
+        });
+        return editing.concat(notes || []);
     }
-    // The masthead chip: in progress and done across every project on the
-    // page, and the tune server's url when one project has one. `permission` is
-    // `Notification.permission`; `default` adds the button that asks for it.
-    function tuneChipHtml(sessions, permission) {
-        var open = 0, done = 0, url = null, seen = {};
+    function noteHtml(n) {
+        var t = n.status === 'edit' ? ['edit', '<i></i>', '編輯中：', 'tune 正在改這個 block，頁面上有外框標出它。']
+            : n.status === 'done' ? ['done', '✓', '已修改完成：', '改過的頁面由 tune 自己重新載入。']
+                : ['rej', '✕', '沒有修改：', '要求超出這個 block，已退回。'];
+        return '<div class="nt ' + t[0] + '" data-note="' + esc(n.id) + '"><span class="ti" aria-hidden="true">' + t[1] + '</span>'
+            + '<span class="tt">' + t[2] + '<code>' + esc(n.block) + '</code></span>'
+            + (n.status === 'edit' ? '' : '<button class="tx" type="button" data-note-x aria-label="關閉">×</button>')
+            + '<span class="tb">' + t[3] + '</span></div>';
+    }
+    // Exported as `clock`; the page's own `clock(ms)` is the hh:mm one.
+    function gateClock(sec) { return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + (sec % 60); }
+    // A held gate of one single-choice question is answered by its options as
+    // buttons; any other shape keeps the full form, `pendingGateHtml`. The
+    // countdown runs from the hook's own `at` to `until`.
+    function gateCountdownHtml(s, now, picked) {
+        var p = s.pending, q = p.questions[0];
+        var total = Math.max(1, Math.round((p.until - (typeof p.at === 'number' && isFinite(p.at) ? p.at : p.until - 60000)) / 1000));
+        var left = Math.max(0, Math.min(total, Math.round((p.until - now) / 1000)));
+        var body = p.questions.length === 1 && !q.multiSelect && S.serve
+            ? '<p class="gq"><small>' + esc(q.header || '') + '</small>' + esc(q.question) + '</p><div class="gops" role="group" aria-label="回答">'
+                + (q.options || []).map(function (o, i) {
+                    return '<button type="button" class="gop" data-gop="' + i + '"><b>' + esc(o.label) + '</b><small>' + esc(o.description || '')
+                        + '</small><kbd>' + (i + 1) + '</kbd></button>';
+                }).join('') + '</div>'
+            : pendingGateHtml(s, picked);
+        return '<div class="gc" data-block="gate-countdown" data-pg-root="' + esc(s.root) + '" data-pg-id="' + esc(s.id) + '" data-until="' + p.until
+            + '" data-total="' + total + '"><div class="gsrc"><span class="mono">' + esc(s.project || '') + '</span><i aria-hidden="true"></i><span class="mono">'
+            + esc(s.stage || '') + '</span><span class="t">' + esc(s.task || '') + '</span></div>' + body
+            + '<div class="gtm"><div class="gbar" aria-hidden="true"><i style="width:' + (left / total * 100).toFixed(1) + '%"></i></div>'
+            + '<span class="gsec">' + gateClock(left) + '</span><small>時間到，問題回到 terminal 問</small></div>'
+            + (S.serve ? '<button type="button" class="gho" data-gho>交給終端／手機</button>'
+                + '<p class="ghs">網頁不再等，問題馬上在 terminal 問；Remote Control 在手機上也看得到。</p>' : '')
+            + '<p class="gend" role="status" aria-live="polite"></p></div>';
+    }
+    var FK_BELL = '<svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
+        + '<path d="M5 8a5 5 0 0 1 10 0v4l1.5 2.5h-13L5 12z"/><path d="M8.2 16.5a2 2 0 0 0 3.6 0"/></svg>';
+    function floatHtml(sessions, notes, open, now, picked, permission) {
+        var held = (sessions || []).filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
+        var all = floatNotes(sessions, notes), n = held.length + all.length, tune = null, done = 0;
         (sessions || []).forEach(function (s) {
             if (!s.tune) return;
-            var key = s.tune.url || s.root;
-            if (seen[key]) return;
-            seen[key] = true;
-            open += s.tune.open;
             done += s.tune.done;
-            url = url || s.tune.url;
+            if (!tune && s.tune.url) tune = s.tune;
         });
-        if (!Object.keys(seen).length) return '';
-        return '<a class="tchip"' + (url ? ' href="' + esc(url) + '" target="_blank" rel="noopener"' : '') + ' title="打開 tune 頁">'
-            + '<i class="dot' + (open ? ' live' : '') + '"></i>tune 進行中 <b>' + open + '</b><i class="sep"></i>完成 <b>' + done + '</b>'
-            + (url ? '<code>' + esc(url.replace(/^https?:\/\//, '').replace(/\/$/, '')) + '</code>' : '') + '</a>'
-            + (permission === 'default' ? '<button type="button" class="btn" data-tune-notify>背景時通知我</button>' : '');
+        return '<section class="fkp" id="fkp" aria-label="通知與 gate"' + (open || held.length ? '' : ' hidden') + '>'
+            + '<div class="fkh"><b>通知與 gate</b><span class="n">' + n + ' 件</span><span class="spacer"></span>'
+            + (all.some(function (x) { return x.status !== 'edit'; }) ? '<button class="lk" type="button" data-note-clear>清掉通知</button>' : '') + '</div>'
+            + (held.length ? '<div class="fks">等你回答 <b>' + held.length + '</b></div>'
+                + held.map(function (s) { return gateCountdownHtml(s, now, picked); }).join('') : '')
+            + '<div class="fks">通知 <b>' + all.length + '</b></div>' + all.map(noteHtml).join('')
+            + (all.length ? '' : '<p class="fkempty">沒有新通知。</p>')
+            + '<div class="fkf"><span>tune 完成 <b>' + done + '</b></span>'
+            + (tune ? '<a href="' + esc(tune.url) + '" target="_blank" rel="noopener">' + esc(tune.url.replace(/^https?:\/\//, '').replace(/\/$/, '')) + '</a>' : '')
+            + '<span class="spacer"></span>'
+            + (permission === 'default' ? '<button type="button" class="btn" data-tune-notify>背景時通知我</button>' : '') + '</div></section>'
+            + '<button type="button" class="fkb" data-fkb aria-expanded="' + Boolean(open || held.length) + '" aria-controls="fkp" aria-label="通知與 gate：' + n + ' 件'
+            + (held.length ? '，' + held.length + ' 個 gate 在等' : '') + '">' + FK_BELL + '<span class="fkn">' + (n ? n : '') + '</span></button>';
     }
 
     // What 送出答案 sends, and how many questions have no answer yet. Typed
@@ -2084,14 +2127,14 @@
             stageShare: stageShare, costShareHtml: costShareHtml, subtabsHtml: subtabsHtml,
             dashLive: dashLive, dashGate: dashGate, dashSpend: dashSpend, dashRecent: dashRecent, dashPage: dashPage,
             NAV_TREE: NAV_TREE,
-            tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastHtml: toastHtml, toastText: toastText, tuneChipHtml: tuneChipHtml,
+            tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
         };
     }
     if (!doc) return;
     var f = { q: '', state: '', project: '', stage: '' };
     var route = parseHash(w.location && w.location.hash), sel = null, sortKey = 'updated', sortDir = -1;
     // The home page's two segmented controls; Tasks 7 and 8 add their own keys.
-    var view = { metric: 'usd', dim: 'model' };
+    var view = { metric: 'usd', dim: 'model', notes: [], fkOpen: false };
     // `hh:mm` while the server is gone, `null` while it answers. The poll at
     // the bottom of this file owns it; the hero's eyebrow reads it, which is
     // why it is declared out here rather than beside the poll.
@@ -2560,7 +2603,6 @@
             + (s.model ? '<span class="chip"><i class="sw" style="background:var(--m-' + family(s.model) + ')"></i>主 session <span class="mono">'
                 + esc(s.model) + '</span></span>' : '') + effortChip(s.effort) + '</div>'
             + railHtml(s, Boolean(S.serve) && s.state === 'live', S.serve ? Date.now() : NOW)
-            + pendingGateHtml(s, view.pg)
             + sessionHeadHtml(s, x) + '</section>'
             + tabsHtml(s, r.tab, x) + '<section class="panel"' + (r.tab === 'dispatch' ? ' data-block="dispatch"' : '') + '>' + body + '</section>';
     }
@@ -3831,12 +3873,12 @@
     }
     VIEWS.settings = settingsPage;
     var drawnHash = null;
-    function drawChip() {
-        var tc = doc.getElementById('tunechip');
-        if (!tc) return;
-        var chip = tuneChipHtml(S.sessions, w.Notification ? w.Notification.permission : 'denied');
-        tc.innerHTML = chip;
-        tc.hidden = !chip;
+    function drawFloat() {
+        var fk = doc.getElementById('fk');
+        if (!fk) return;
+        var held = S.sessions.some(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
+        fk.innerHTML = floatHtml(S.sessions, view.notes, view.fkOpen, S.serve ? Date.now() : NOW, view.pg, w.Notification ? w.Notification.permission : 'denied');
+        fk.className = 'fk' + (held ? ' hasgate' : '');
     }
     function draw() {
         route = parseHash(w.location.hash);
@@ -3886,7 +3928,7 @@
         else if (chartHover) chartHide();
         else if (route.view === 'days') chartFocus(chartPin);
         if (route.view === 'days') legendArm();
-        drawChip();
+        drawFloat();
         drawNav();
         drawSide();
         doc.getElementById('gen').textContent = genText();
@@ -4005,8 +4047,28 @@
         }
         var lg = route.view === 'days' && e.target.closest ? e.target.closest('.legend [data-key], .legend [data-rest]') : null;
         if (lg) { legendToggle(lg); return; }
-        var tx = e.target.closest('[data-toast-x]');
-        if (tx) { var t = tx.closest('.toast'); if (t && t.parentNode) t.parentNode.removeChild(t); return; }
+        if (e.target.closest('[data-fkb]')) { view.fkOpen = !view.fkOpen; drawFloat(); return; }
+        var nx = e.target.closest('[data-note-x]');
+        if (nx) {
+            var nid = nx.closest('.nt').getAttribute('data-note');
+            view.notes = view.notes.filter(function (x) { return x.id !== nid; });
+            drawFloat();
+            return;
+        }
+        if (e.target.closest('[data-note-clear]')) { view.notes = []; drawFloat(); return; }
+        var gop = e.target.closest('[data-gop]');
+        if (gop) {
+            gatePost(gop.closest('.gc'), function (form, who) {
+                var q = who.pending.questions[0], o = q.options[Number(gop.getAttribute('data-gop'))], a = {};
+                a[q.question] = o.label;
+                form.set('answers', JSON.stringify(a));
+            }, '已送出：');
+            return;
+        }
+        if (e.target.closest('[data-gho]')) {
+            gatePost(e.target.closest('.gc'), function (form) { form.set('handoff', 'terminal'); }, '已交給終端：');
+            return;
+        }
         if (e.target.closest('[data-tune-notify]') && w.Notification) {
             w.Notification.requestPermission().then(function () { draw(); });
             return;
@@ -4488,6 +4550,44 @@
         if (btn) btn.disabled = got.missing > 0;
         if (cnt) cnt.textContent = (qs.length - got.missing) + ' / ' + qs.length;
     }
+    // One POST /answer from the floating icon: an option, or the hand-off.
+    function gatePost(gc, fill, said) {
+        var who = S.sessions.filter(function (x) { return x.id === gc.getAttribute('data-pg-id'); })[0];
+        var end = gc.querySelector('.gend');
+        if (!who || !who.pending) return;
+        var form = new URLSearchParams();
+        form.set('nonce', S.nonce || '');
+        form.set('root', gc.getAttribute('data-pg-root'));
+        form.set('id', gc.getAttribute('data-pg-id'));
+        fill(form, who);
+        fetch('answer', { method: 'POST', body: form }).then(function (r) {
+            return r.text().then(function (t) {
+                end.className = 'gend ' + (r.ok ? 'ok' : 'bad');
+                end.textContent = (r.ok ? said : r.status + ' — ') + t.trim();
+            });
+        }, function () {
+            end.className = 'gend bad';
+            end.textContent = '送不出去：serve 還在跑嗎？';
+        });
+    }
+    // The countdown moves every second between re-reads, on `tickNow`'s tick.
+    function tickGates(now) {
+        [].forEach.call(doc.querySelectorAll('#fk .gc[data-until]'), function (g) {
+            var total = Number(g.getAttribute('data-total')) || 60;
+            var left = Math.max(0, Math.min(total, Math.round((Number(g.getAttribute('data-until')) - now) / 1000)));
+            var sec = g.querySelector('.gsec'), bar = g.querySelector('.gbar i');
+            if (sec) sec.textContent = gateClock(left);
+            if (bar) bar.style.width = (left / total * 100).toFixed(1) + '%';
+        });
+    }
+    // 1–4 pick an option of the first held gate, the <kbd> on each button.
+    doc.addEventListener('keydown', function (e) {
+        if (!/^[1-4]$/.test(e.key) || e.altKey || e.ctrlKey || e.metaKey) return;
+        var t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return;
+        var b = doc.querySelector && doc.querySelector('#fk .gc [data-gop="' + (Number(e.key) - 1) + '"]');
+        if (b) { e.preventDefault(); b.click(); }
+    });
     // Typing in 其他 ticks its box, the way the mockup does, and re-counts.
     doc.addEventListener('input', function (e) {
         var t = e.target && e.target.closest ? e.target.closest('.pg [data-pg-other]') : null;
@@ -4502,17 +4602,20 @@
         var id = route.view === 'session' ? route.id : route.view === 'list' ? sel : null;
         return id ? S.sessions.filter(function (x) { return x.id === id; })[0] || null : null;
     }
-    // A settled tune request, said as a toast here and — with the tab in the
-    // background and permission given — as a browser notification. The
-    // changed page reloads itself through tune's own overlay.
+    // A settled tune request, kept as a note in the floating icon's panel
+    // and — with the tab in the background and permission given — said as a
+    // browser notification. The changed page reloads itself through tune's
+    // own overlay.
     function tuneNotify(prev, next) {
-        var box = doc.getElementById('toasts');
-        tuneEvents(prev, next).forEach(function (ev) {
-            if (box) box.innerHTML += toastHtml(ev);
+        var evs = tuneEvents(prev, next);
+        if (!evs.length) return;
+        view.notes = evs.concat(view.notes).slice(0, 20);
+        evs.forEach(function (ev) {
             if (doc.hidden && w.Notification && w.Notification.permission === 'granted') {
                 try { new w.Notification(toastText(ev)); } catch (err) { /* the browser refused it */ }
             }
         });
+        drawFloat();
     }
     function refresh() {
         if (busy || (doc.hidden && !tuneOpen(S.sessions))) return;
@@ -4530,7 +4633,7 @@
             if (doc.hidden) { busy = false; return; }
             // The settings wizard reads nothing live; a redraw there would only
             // throw away what the reader has open. The masthead still moves.
-            if (route.view === 'settings') { busy = false; drawChip(); doc.getElementById('gen').textContent = genText(); return; }
+            if (route.view === 'settings') { busy = false; drawFloat(); doc.getElementById('gen').textContent = genText(); return; }
             var s = watched();
             var done = function () { busy = false; repaint(); };
             if (s && s.state === 'live' && s.hasDetail) reload('station/detail/' + encodeURIComponent(s.id) + '.js', done);
@@ -4571,6 +4674,7 @@
         [].forEach.call(doc.querySelectorAll('[data-ago]'), function (el) {
             el.textContent = agoText(Math.round((now - polledAt) / 1000));
         });
+        tickGates(now);
     }
     if (S.serve && w.location && w.location.protocol !== 'file:' && typeof w.setInterval === 'function') {
         w.setInterval(refresh, POLL_MS);

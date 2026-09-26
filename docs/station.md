@@ -923,17 +923,27 @@ question it lets through for that long before the terminal shows it: it
 writes the questions to `<stage>-pending.json` beside the task's
 `<stage>-answer.md` (`pendingPath` in `lib/handoff.js`), reads the answer
 file every 200 ms, and removes the pending file however the wait ends. The
-session's page shows the held gate as **懸著的 gate**; served, each question
-is a set of options. Every question also has a 其他 box: typed text is the
-answer on a single-choice question and one more pick on a multi-select one
-(`pgAnswers`), and 送出答案 stays disabled until every question has an
-answer. 送出答案 posts them to `POST /answer`, which checks
+held gate is shown in the floating icon's panel, on every page, above the
+notes (`floatHtml`, `gateCountdownHtml` in `assets/station/station.js`),
+with a countdown from the hook's own `at` to `until` that moves every
+second between re-reads. One single-choice question is its options as
+buttons, which the keys 1–4 also press; anything else — two questions or
+more, or a multi-select one — is the full form, where every question also
+has a 其他 box: typed text is the answer on a single-choice question and one
+more pick on a multi-select one (`pgAnswers`), and 送出答案 stays disabled
+until every question has an answer. A button or 送出答案 posts to
+`POST /answer`, which checks
 the nonce, that the session has a gate held (`readPending`, 409 otherwise)
 and that every answer names a question asked, and that every question asked
 has one (400 otherwise — a partial answer is refused rather than sent on),
 then writes
 `{ "answers": { … } }` — the shape `hooks/resume.js` writes after a gate —
-to the answer file. The hook sends the question out already answered
+to the answer file. Under each gate, 「交給終端／手機」 posts
+`handoff=terminal` instead: `POST /answer` writes `{ "handoff": "terminal" }`
+to the answer file (400 for any other value, 409 with no gate held), and the
+hook stops waiting at once (`handedOffSince` in `lib/handoff.js`), so the
+question reaches the terminal — and Remote Control on a phone — without
+waiting out the countdown. Given answers, the hook sends the question out already answered
 (`permissionDecision: allow` with `updatedInput.answers`, the shape the
 2026-09-24 probe confirmed in an interactive terminal: the card never showed
 and the model took the hook's answer as the user's; `claude -p` offers no
@@ -946,12 +956,15 @@ read. A file on disk cannot post, so it says to answer in the terminal.
 Each live session's row carries its project's tune queue (`tuneOf` in
 `lib/station.js`, read with `lib/tune.js`'s `queueState` from
 `.fankeel/build/tune/queue.jsonl`): how many requests are in progress, how many
-are done, and the url `tune.js serve` recorded. While any is in progress the
-masthead shows a chip with both counts and that url, and the three-second
-re-read compares each request's status with the last read: one that moved from
-in progress to done or rejected is a toast — 已修改完成 or 沒有修改, with its
-`data-block` — and, with the tab in the background and notifications allowed
-from the chip's button, a browser notification. A hidden tab keeps re-reading
+are done, and the url `tune.js serve` recorded. The three-second re-read
+compares each request's status with the last read: one that moved from in
+progress to done or rejected is a note in the floating icon's panel —
+已修改完成 or 沒有修改, with its `data-block` (`noteHtml`, `floatNotes`) —
+and, with the tab in the background and notifications allowed from the
+panel's 背景時通知我 button, a browser notification. A block `tune.js wait`
+handed out and not yet settled is a 編輯中 note in the same panel, and the
+panel's foot counts the done requests and links the tune page. The masthead
+chip and the toasts are gone. A hidden tab keeps re-reading
 only while a request is in progress. The changed page itself reloads through
 tune's own overlay; the station opens no connection of its own for this.
 
