@@ -725,6 +725,48 @@ test('the todo: block lists every Watch timing, stale ones first, and never mark
   assert.match(out, /patrol: 0 due \+ 1 stale, offer one option/);
 });
 
+// `## Waiting` was split on 2026-09-27. An entry still under it is counted by
+// none of the lines above and offered by nothing, so the block says so once,
+// right after the Watch timings, with the command that moves it.
+test('the todo: block warns once about entries left under ## Waiting, after the Watch timings', () => {
+  const root = workspace({});
+  const opts = initGit(root);
+  const body = [
+    '## Ready',
+    '',
+    '## Needs a decision',
+    '',
+    '## Watch',
+    '',
+    '### a demand appears',
+    'if: someone asks for it. 09-01.',
+    '',
+    '- a',
+    '',
+    '## Waiting',
+    '',
+    '### an old timing',
+    'lifts when: x. 09-01.',
+    '',
+    '- b',
+  ].join('\n') + '\n';
+  commitTodo(root, opts, body, '2026-09-01T00:00:00Z');
+
+  const lines = reportAt(root, 2026, 9, 3).split(/\r?\n/);
+  const warn = lines.findIndex((l) => l === '  Waiting 1 entry — retired heading, not offered; run todo-check --migrate');
+  assert.notEqual(warn, -1, lines.join('\n'));
+  assert.match(lines[warn - 1], /^\s+a demand appears \(1\)$/, 'right after the Watch timings');
+  assert.match(lines[warn + 1], /^  patrol: /);
+});
+
+// The control: with nothing under `## Waiting` the block is what it was.
+test('the todo: block says nothing about ## Waiting when nothing is under it', () => {
+  const root = workspace({});
+  const opts = initGit(root);
+  commitTodo(root, opts, '## Ready\n\n## Needs a decision\n\n## Watch\n', '2026-09-01T00:00:00Z');
+  assert.doesNotMatch(reportAt(root, 2026, 9, 3), /^  Waiting /m);
+});
+
 // The control: the patrol takes one of AskUserQuestion's four slots only while
 // a Blocked timing is due or a Watch timing is stale, and one slot covers both.
 test('the patrol takes one option from Needs a decision only while something is due or stale', () => {

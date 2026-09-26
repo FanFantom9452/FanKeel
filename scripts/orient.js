@@ -562,6 +562,13 @@ function todoBlock(dir, now) {
     for (const t of watch.filter((x) => x.stale).concat(watch.filter((x) => !x.stale))) {
         lines.push('    ' + (t.stale ? 'stale' : '').padEnd(7) + t.title + ' (' + t.items.length + ')');
     }
+    // An entry under the retired heading is counted by nothing above and offered
+    // by nothing: say so once, with the command that moves it.
+    const waitingCount = all.filter((e) => e.section === 'Waiting').length;
+    if (waitingCount > 0) {
+        lines.push('  Waiting ' + waitingCount + (waitingCount === 1 ? ' entry' : ' entries')
+            + ' — retired heading, not offered; run todo-check --migrate');
+    }
     lines.push('  patrol: ' + (patrol ? dueCount + ' due + ' + staleCount + ' stale, offer one option'
         : 'none due or stale, not offered'));
     const audit = auditLine(dir, now);
