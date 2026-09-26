@@ -76,12 +76,11 @@ the user in the middle of somebody else's turn is its own kind of broken.
 `node scripts/todo-check.js` says whether [TODO.md](../../TODO.md) is still an index —
 every link resolving, none of them landing on a document whose declared role
 records a moment rather than the present, no entry carrying detail that belongs
-in the file it points at, and every entry filed under `## Ready`, `## Needs a decision` or
-`## Waiting`, which is what says whether it can be started today. A link that
+in the file it points at, and every entry filed under `## Ready`, `## Needs a decision`, `## Blocked` or `## Watch`, which is what says whether it can be started today. A link that
 names a line — `path:12` or `path:12-18` — has to land inside the file too: a
 line past its end fails as `past end`, counted by `docs-check.js`'s own
 `lineCount`. Where *no*
-entry uses those three and every one of them sits under a heading of its own,
+entry uses those four and every one of them sits under a heading of its own,
 that is a repository with its own vocabulary rather than one leaving entries
 unfiled, so it is said once and does not fail the run. An entry under no heading
 at all is the unfiled case, and still does. A clean run
@@ -89,26 +88,31 @@ prints the split, so the ready count is on screen without opening the file. The
 `land` stage rules call for it, because a plan archived at `land` is a link that
 just moved.
 
-Under `## Waiting`, entries are grouped by what they wait for: a `### <timing>`
-heading at most 28 columns wide — a CJK character counts two — whose next line
-is `lifts when: <the event>` and then a `MM-DD` stamp, followed by the entries
-that lift together when it comes. todo-check fails a Waiting entry under no
-timing, a timing with no entries, one missing its event or its stamp, and a
-title over the width. The stamp is the day somebody last read that timing and
-agreed it is still waiting — not the day it was filed — so re-reading one and
-leaving it where it is means moving its stamp forward. An event that opens with
-an `MM-DD` is a date, and its timing is due from that day; any other timing is
-due once its stamp is seven days old. Due timings print below the verdict as
-**due for a re-read**, without failing the run: sitting under `## Waiting` for a
-fortnight is not a defect, and a script cannot know whether the thing a timing
-waits for has happened. What it can know is a date, and how long since a person
-last said it had not. On 2026-09-18 two entries left because their events had
-happened, and both were found by somebody reading the section rather than by the
-event announcing itself — so the reading is what gets scheduled: `orient` lists
-every timing each time, and `/fankeel` offers one option whenever it holds any.
+Under `## Blocked` and `## Watch`, entries are grouped by what they wait for: a
+`### <timing>` heading at most 28 columns wide — a CJK character counts two —
+whose next line is a typed condition and then a `MM-DD` stamp. `## Blocked`
+takes the conditions a session can check: `on: MM-DD` for a date,
+`after: <another piece of work>`, `upstream: <a release or project outside this one>`.
+`## Watch` takes the one only whoever meets it can: `if: <the event>` — an
+incident happening again, a demand turning up. todo-check fails an entry under
+either heading with no timing, a timing with no entries, one missing its
+condition or its stamp, a condition under the wrong heading (`if:` under
+Blocked; `on:`, `after:` or `upstream:` under Watch), an `on:` not followed by an
+`MM-DD`, and a title over the width; an entry under `## Waiting`, the heading
+both replaced on 2026-09-27, is unclassified. The stamp is the day somebody last
+read that timing and agreed it still holds — not the day it was filed. A Blocked
+`on:` is due from its date; an `after:` or `upstream:` is due once its stamp is
+seven days old, and the patrol's survey goes and checks it. A Watch timing is
+never due: once its stamp is sixty days old it is **stale**, and what it asks is
+not whether its event happened but whether it is still worth keeping — kept, the
+stamp moves forward; dropped, it is deleted. Due and stale timings print below
+the verdict without failing the run. `orient` lists every timing each time, and
+`/fankeel` offers one patrol option whenever any is due or stale. A Watch entry
+whose event arrives is moved to `## Ready` or `## Needs a decision` by the
+session that met it.
 
 `## Needs a decision` gets a due list of its own, read off git blame rather
-than a stamp — nobody writes `lifts when:` or a date on those bullets. An
+than a stamp — nobody writes a condition or a date on those bullets. An
 entry whose last edited line git blame puts seven days old or more prints
 under its own heading below the verdict, the same non-failing way. `lib/blame.js`
 holds the shared reading, because `scripts/orient.js`'s own `## Needs a decision`

@@ -147,9 +147,12 @@ needing a maintained table it names an outside tool for.
 ## Output
 
 `routed:` is the line that keeps a finding alive past this turn. Anything you
-are not fixing here goes to `TODO.md` under `## Ready`, `## Needs a decision` or
-`## Waiting`, and that line names which — a finding that exists only in this
-report is one the next sweep finds again from scratch. One routed to
-`## Waiting` goes beneath the `### <timing>` it waits for — a new one if none
-fits — whose next line names the event with `lifts when:` and then carries a
-`MM-DD` stamp, or `todo-check.js` refuses it.
+are not fixing here goes to `TODO.md` under `## Ready`, `## Needs a decision`,
+`## Blocked` or `## Watch`, and that line names which — a finding that exists
+only in this report is one the next sweep finds again from scratch. One routed to
+`## Blocked` waits on something a session can check — a date, another piece of
+work, an upstream release — and goes beneath the `### <timing>` it waits for,
+whose next line is `on: MM-DD`, `after: <what>` or `upstream: <what>`; one routed
+to `## Watch` waits for an incident or a demand only whoever meets it will know
+of, under a line `if: <the event>`. Either line ends in a `MM-DD` stamp, or
+`todo-check.js` refuses it.

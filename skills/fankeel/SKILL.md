@@ -646,7 +646,7 @@ instead:
 | A project convention that will outlive this task | `CLAUDE.md` |
 | A durable fact about the user or the repository | the memory directory |
 | Why a change was made | the commit message |
-| Work deliberately deferred | `TODO.md`, one line, linking to the detail, under the heading for what it is short of — and under `## Waiting`, beneath a `### <timing>` whose next line is `lifts when: <the event>` and then a `MM-DD` stamp |
+| Work deliberately deferred | `TODO.md`, one line, linking to the detail, under the heading for what it is short of — under `## Blocked`, beneath a `### <timing>` whose next line is `on: MM-DD`, `after: <what>` or `upstream: <what>`; under `## Watch`, one whose next line is `if: <the event>`; either line ending in a `MM-DD` stamp |
 | A plan whose work has landed | the `archive` bucket, after asking |
 | What was tried and failed, mid-task | a **note** |
 | What to pick up next | **next** |
@@ -663,10 +663,10 @@ during `land`.
 `TODO.md` is an index whose bullets `init` also offers as the task options when a
 session starts, so what it offers is read twice: the bullet is short and the
 detail lives in a file it links to. The heading it sits under is the third half
-of that convention — `## Ready`, `## Needs a decision`, `## Waiting` — and it
+of that convention — `## Ready`, `## Needs a decision`, `## Blocked`, `## Watch` — and it
 answers what the entry is still short of rather than what it is about, because
 what `init` has to know is which entries can become a task this morning.
-`node <plugin>/scripts/todo-check.js` says when any of the three has stopped being
+`node <plugin>/scripts/todo-check.js` says when any of the four has stopped being
 true, and the `land` rules call for it — a plan deleted at `land` is a link that
 just died. It also refuses a link that still resolves but lands on a plan, a
 decision record, a report or an archive: those four roles record a moment rather
@@ -722,8 +722,8 @@ against it rather than searching for the path.
 It reports where the registry is or would be, then the project or projects it
 found — each with its git branch, how dirty it is, and how many files — and, for
 a single project, the directories inside it with their file counts, and a `todo:`
-block — the Ready count, Needs a decision's newest few by last edit, and every
-Waiting timing, due ones first. It writes nothing.
+block — the Ready count, Needs a decision's newest few by last edit, every
+Blocked timing, due ones first, and every Watch timing, stale ones first. It writes nothing.
 
 Run it before the options below, and show what came back. Two rules about how it
 feeds the next step:
@@ -755,14 +755,15 @@ loop's place with it. `## Needs a decision` offers the ones `orient`'s `todo:`
 block lists — the newest by last edit, because `AskUserQuestion` holds four and
 `## Ready` takes one when it has entries — one option each, because each is a
 different question for a person, with the rest reachable by name through
-**Other**. `## Waiting` is one option whenever `orient`'s `todo:` block lists
-any timing. Its timings are never options one by one — six unpickable rows are how a
-menu stops being read — but every one is listed in that block each time, so what
-is waiting is on screen whether or not it is offered. Picking it starts a task
-with `--route "survey,build,land"`. `survey`'s own skill and `build`'s own
-skill each carry their half of what that route does with a Waiting task —
-`skills/fankeel-survey/SKILL.md`'s `## Waiting tasks` and
-`skills/fankeel-build/SKILL.md`'s `## Waiting tasks`. `land` runs `todo-check`. Any other heading, or
+**Other**. `## Blocked` and `## Watch` share one option — the patrol — and only while
+`orient`'s `todo:` block marks a Blocked timing `due` or a Watch timing `stale`;
+Watch on its own takes no slot. Their timings are never options one by one — six
+unpickable rows are how a menu stops being read — but every one is listed in that
+block each time, so what is waiting is on screen whether or not it is offered.
+Picking the patrol starts a task with `--route "survey,build,land"`. `survey`'s
+own skill and `build`'s own skill each carry their half of what that route does —
+`skills/fankeel-survey/SKILL.md`'s `## Blocked and Watch tasks` and
+`skills/fankeel-build/SKILL.md`'s `## Blocked and Watch tasks`. `land` runs `todo-check`. Any other heading, or
 none, means clustering by hand — two bullets touching the same file or settling
 the same question are one task and one option, not two. A repository with no
 `TODO.md` is where guessing from the recent commits belongs, one option each,

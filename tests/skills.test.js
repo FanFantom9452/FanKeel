@@ -134,46 +134,30 @@ test('the entry skill points at the audit skill rather than repeating it', () =>
   assert.match(read('fankeel'), /\/fankeel-audit/);
 });
 
-// Four places tell someone how to file under `## Waiting`, and `todo-check`
-// fails an entry that skips either half of it. A bare /lifts when:/ anywhere
-// in a long page would stay green even if the taught row or sentence itself
-// regressed to the older shape and the phrase kept appearing by coincidence
-// elsewhere on the page, so each place is anchored to its own row or sentence
-// and checked for both halves in order. Not hypothetical: c55c373 rolled the
-// stamp out in `fankeel`, `fankeel-land` and `fankeel-audit` in one commit and
-// left the same rot behind in `fankeel-audit/rationale.md` and `README.md`.
-test('every place that teaches the Waiting convention names the event before the stamp', () => {
-  // fankeel and fankeel-land: a markdown table row is one physical line, so
-  // the row naming `## Waiting` is found whole and checked on its own.
+// Four places tell someone how to file under `## Blocked` and `## Watch`, and
+// `todo-check` fails a timing whose condition is missing, misfiled or undated.
+// Each place is anchored to its own row or sentence, so a stray `if:` elsewhere
+// on a long page cannot keep this green. Not hypothetical: c55c373 rolled the
+// stamp out in three places in one commit and left the older shape in two more.
+test('every place that teaches the Blocked/Watch convention names all four conditions and the stamp', () => {
+  const need = ['## Blocked', '## Watch', 'on: MM-DD', 'after:', 'upstream:', 'if:', '`MM-DD` stamp'];
   for (const n of ['fankeel', 'fankeel-land']) {
-    const row = read(n).split(/\r?\n/).find((l) => l.includes('## Waiting'));
-    assert.ok(row, n + ' has no row naming ## Waiting');
-    const liftsAt = row.indexOf('lifts when:');
-    const stampAt = row.indexOf('MM-DD');
-    assert.ok(liftsAt !== -1, n + ' row does not name the event');
-    assert.ok(stampAt !== -1, n + ' row does not carry the MM-DD stamp');
-    assert.ok(liftsAt < stampAt, n + ' row does not put the event before the stamp');
+    const row = read(n).split(/\r?\n/).find((l) => l.includes('## Blocked'));
+    assert.ok(row, n + ' has no row naming ## Blocked');
+    for (const s of need) assert.ok(row.includes(s), n + ' row does not name ' + s);
+    assert.ok(!row.includes('lifts when:'), n + ' row still teaches lifts when:');
   }
-
-  // docs/development.md and fankeel-audit/rationale.md teach it in prose, wrapped across
-  // lines, so whitespace is flattened and each check runs in a bounded window
-  // starting at the sentence's own anchor rather than across the whole file.
   const prose = [
-    ['docs/development.md', path.join(ROOT, 'docs', '01-guide', 'development.md'),
-      '### <timing>` heading'],
-    ['skills/fankeel-audit/rationale.md', path.join(DIR, 'fankeel-audit', 'rationale.md'),
-      'One routed to `## Waiting`'],
+    ['docs/development.md', path.join(ROOT, 'docs', '01-guide', 'development.md'), '### <timing>` heading'],
+    ['skills/fankeel-audit/rationale.md', path.join(DIR, 'fankeel-audit', 'rationale.md'), 'One routed to `## Blocked`'],
   ];
   for (const [label, file, anchor] of prose) {
     const flat = fs.readFileSync(file, 'utf8').replace(/\s+/g, ' ');
     const at = flat.indexOf(anchor);
     assert.ok(at !== -1, label + ' no longer has the sentence this test anchors on');
-    const window = flat.slice(at, at + 200);
-    const liftsAt = window.indexOf('lifts when:');
-    const stampAt = window.indexOf('MM-DD');
-    assert.ok(liftsAt !== -1, label + ' does not name the event');
-    assert.ok(stampAt !== -1, label + ' does not carry the MM-DD stamp');
-    assert.ok(liftsAt < stampAt, label + ' does not put the event before the stamp');
+    const window = flat.slice(at, at + 700);
+    for (const s of need.slice(2)) assert.ok(window.includes(s), label + ' does not name ' + s);
+    assert.ok(!flat.includes('lifts when:'), label + ' still teaches lifts when:');
   }
 });
 
@@ -1297,24 +1281,27 @@ test('build sends what ledger.js ready lists and asks about the hands first; pla
   assert.match(plan, /put it last/);
 });
 
-// The Waiting rule used to live only as prose in skills/fankeel/SKILL.md, which
-// neither the survey nor the build stage-agent reads — a real 2026-09-25 survey
-// run skipped the multiSelect step because nothing in its own skill said to do
-// it. Each stage skill now carries its own half, and fankeel/SKILL.md's
-// shortened paragraph points at both by path instead of repeating the detail.
-test('survey and build each carry their own half of the Waiting rule; fankeel points at both', () => {
+// The patrol rule lives in the two stage skills that run it, because a stage
+// agent reads its own skill and not skills/fankeel/SKILL.md — a real 2026-09-25
+// survey run skipped the multiSelect step for exactly that reason.
+test('survey and build each carry their own half of the Blocked/Watch patrol; fankeel points at both', () => {
   const survey = read('fankeel-survey');
-  assert.match(survey, /## Waiting tasks/);
-  const surveySection = /\n## Waiting tasks\n[\s\S]*?\n## /.exec(survey)[0];
-  assert.match(surveySection, /multiSelect: true/);
+  const surveySection = /\n## Blocked and Watch tasks\n[\s\S]*?\n## /.exec(survey);
+  assert.ok(surveySection, 'fankeel-survey has no ## Blocked and Watch tasks section');
+  assert.match(surveySection[0], /multiSelect: true/);
+  assert.match(surveySection[0], /questions 2 to 4/);
+  assert.match(surveySection[0], /at most twelve/);
+  assert.doesNotMatch(survey, /## Waiting tasks/);
 
   const build = read('fankeel-build');
-  assert.match(build, /## Waiting tasks/);
-  const buildSection = /\n## Waiting tasks\n[\s\S]*?\n## /.exec(build)[0];
-  assert.match(buildSection, /## Ready/);
-  assert.match(buildSection, /lifts when:/);
+  const buildSection = /\n## Blocked and Watch tasks\n[\s\S]*?\n## /.exec(build);
+  assert.ok(buildSection, 'fankeel-build has no ## Blocked and Watch tasks section');
+  assert.match(buildSection[0], /## Ready/);
+  assert.match(buildSection[0], /`if:`/);
+  assert.doesNotMatch(buildSection[0], /lifts when:/);
 
   const fankeel = read('fankeel');
-  assert.match(fankeel, /skills\/fankeel-survey\/SKILL\.md.*## Waiting tasks/s);
-  assert.match(fankeel, /skills\/fankeel-build\/SKILL\.md.*## Waiting tasks/s);
+  assert.match(fankeel, /skills\/fankeel-survey\/SKILL\.md.*## Blocked and Watch tasks/s);
+  assert.match(fankeel, /skills\/fankeel-build\/SKILL\.md.*## Blocked and Watch tasks/s);
+  assert.doesNotMatch(fankeel, /## Waiting/);
 });

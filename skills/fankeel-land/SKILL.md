@@ -128,7 +128,7 @@ was never a note:
 | a project convention | `CLAUDE.md` |
 | a durable fact about the user or repository | the memory directory |
 | why a change was made | the commit message |
-| work deliberately deferred | `TODO.md`, one line, under the heading for what it is short of — under `## Waiting`, beneath a `### <timing>` whose next line is `lifts when: <the event>` then a `MM-DD` stamp; step 2's `todo-check` ran before this note existed, so run it again once the notes land |
+| work deliberately deferred | `TODO.md`, one line, under the heading for what it is short of — under `## Blocked`, beneath a `### <timing>` whose next line is `on: MM-DD`, `after: <what>` or `upstream: <what>`; under `## Watch`, one whose next line is `if: <the event>`; either line ending in a `MM-DD` stamp; step 2's `todo-check` ran before this note existed, so run it again once the notes land |
 
 If this task wrote to the memory directory, run
 `node <plugin>/scripts/memory-check.js` once before standing the task down. A

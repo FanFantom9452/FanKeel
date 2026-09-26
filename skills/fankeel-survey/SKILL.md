@@ -308,30 +308,37 @@ edits land.
 One-way. Hidden complexity found mid-task upgrades the route — stop, say so, and
 re-route with `task.js route`. Nothing downgrades mid-task.
 
-## Waiting tasks
+## Blocked and Watch tasks
 
-A task started by picking `## Waiting` at `/fankeel` arrives on
-`--route "survey,build,land"`, and this stage's job on it is narrower than the
-six steps above: judge every timing, not only the due ones. An event whose
-evidence sits in the repository, its registry (`.fankeel/sessions/*.json` and
-the like) or upstream is checked there directly, the same way the rest of this
-stage checks anything — this part is unchanged whether or not the timing is
-due. The timings that are witness-only — something only a person could have
-seen happen, with no trace anywhere checkable — are never folded into this
-stage's own strategic gate question, and never asked one by one either: they
-are grouped in `TODO.md`'s own order (the order its entries already appear
-in), four to a question, each `multiSelect: true`, each option naming its
-event through its `description`, the question itself asking which of these
-has happened; one `AskUserQuestion` call holds up to four such questions (so
-up to sixteen timings per call), and more than sixteen witness-only timings
-needs a second `AskUserQuestion` call after the first returns. A checked
-timing is treated as its event having happened — folded into `## Ready` or
-`## Needs a decision` per this stage's ordinary judgement, the same as a due
-timing that checked out — and an unchecked one is restamped with today's
-date, the same as a due timing that did not check out. This question (or
-questions) is asked before this stage's own gate — the ordinary three-option
-one from the Output section below — never merged into it: the gate stays a
-separate, later question.
+A task started by picking the patrol at `/fankeel` — offered while `orient`'s
+`todo:` block marks a `## Blocked` timing `due` or a `## Watch` timing `stale` —
+arrives on `--route "survey,build,land"`, and this stage's job on it is narrower
+than the six steps above.
+
+**Blocked, the due ones.** Every due Blocked timing is checked here directly,
+never put to the user as "has it happened": each is under Blocked because a
+session can check it. An `on:` is due because its day came — check that what it
+was waiting for is now possible. An `after:` names another piece of work — check
+the repository, its registry (`.fankeel/sessions/*.json` and the like) and
+`git log`. An `upstream:` names a release or a project outside this one — check
+it there. One whose condition checked out is lifted, folded into `## Ready` or
+`## Needs a decision` per this stage's ordinary judgement; one that did not is
+restamped with today's date.
+
+**Watch, the stale ones.** A stale Watch timing — its stamp sixty days old or
+more — is never asked whether its event happened: only whoever meets that event
+knows, and they move the entry themselves when they do. What it is asked is
+whether to keep it. The stale ones ride this stage's own gate call as
+questions 2 to 4 — `questions[0]` stays the gate, the only question whose
+option one must name the next stage — each holding at most four timings in
+`TODO.md`'s own order, `multiSelect: true`, each option's `label` the timing's
+title and its `description` the `if:` event, the question asking which to
+keep. That is at most twelve per patrol; the rest wait for the next one. Every
+question in the call is validated, not only the first: a header at most 12 columns, a CJK character
+counting two, and 2 to 4 options — so a question left holding a single timing
+asks it as two options, keep and drop, with `multiSelect: false`. A timing kept
+is restamped with today's date; one not kept is dropped, heading, `if:` line and
+entries.
 
 ## Output
 

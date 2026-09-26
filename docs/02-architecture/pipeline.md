@@ -49,7 +49,7 @@ what the task is, in one call with the options already on screen. Where the root
 has a `TODO.md`, that is where the task options come from, and its headings do
 the clustering: `## Ready` is offered as one task for the whole section,
 `## Needs a decision` as the newest few by last edit, one task each, the rest
-through Other, and `## Waiting` as one option whenever it holds a timing. A root
+through Other, and `## Blocked` and `## Watch` as one shared option only while a Blocked timing is due or a Watch timing stale. A root
 without one is where guessing from the recent commits belongs.
 Making someone retype a row of a listing they can see is the same waste as asking
 with nothing on screen at all.
@@ -73,7 +73,7 @@ inside it:
 
 For a single project it also says which of `CLAUDE.md`, `AGENTS.md`, `README.md`,
 `TODO.md` and `CONTRIBUTING.md` are there — and says so plainly when none are —
-and prints a `todo:` block (Ready, Needs a decision, Waiting) and the last five
+and prints a `todo:` block (Ready, Needs a decision, Blocked, Watch) and the last five
 commits, because work in progress is not visible in a listing of directories.
 
 It writes nothing. Orientation that changes what it is describing is not
