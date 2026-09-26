@@ -91,7 +91,7 @@ test('step 3 offers design.skill only while design.mockup is on', () => {
     let W = load();
     W = V.wizApply(W, KEYS, PROFILES, { go: '2' });
     assert.equal(W.step, 2);
-    assert.match(V.wizHtml(KEYS, W, PROFILES, CTX), /data-k="design\.skill" data-o="impeccable:impeccable"/);
+    assert.match(V.wizHtml(KEYS, W, PROFILES, CTX), /data-k="design\.skill" data-m="impeccable:impeccable"/);
     W = V.wizApply(W, KEYS, PROFILES, { k: 'design.mockup', o: 'false' });
     assert.ok(!V.wizHtml(KEYS, W, PROFILES, CTX).includes('data-k="design.skill"'));
 });
@@ -132,7 +132,8 @@ test('every step renders, with no dropdown', () => {
     for (let i = 0; i < V.WIZ_STEPS.length; i++) {
         W.step = i;
         const out = V.wizHtml(KEYS, W, PROFILES, CTX);
-        assert.match(out, /data-block="wizard-step"/);
+        const block = V.WIZ_STEPS[i].id === 'front' ? 'wizard-design' : V.WIZ_STEPS[i].id === 'answer' ? 'wizard-gate-station' : 'wizard-step';
+        assert.match(out, new RegExp('data-block="' + block + '"'));
         assert.match(out, /data-block="wizard-steps"/);
         assert.ok(!out.includes('<select'), 'step ' + i);
     }
@@ -152,7 +153,7 @@ test('the 答 gate step sets gate.station, off by default', () => {
 
 // docs/plans/2026-09-26-station-redesign.md Task 11: one card per option, and
 // a moving picture for the five habits the mockup animates.
-test('each option is a card carrying data-k and data-o, with a scene on the five animated keys', () => {
+test('each option is a card carrying data-k and data-o, with a scene on the six animated keys', () => {
     const W = load();
     W.step = 0;
     const land = V.wizHtml(KEYS, W, PROFILES, CTX);
@@ -164,8 +165,54 @@ test('each option is a card carrying data-k and data-o, with a scene on the five
     assert.match(V.wizHtml(KEYS, W, PROFILES, CTX), /data-k="guard" data-o="deny"[^>]*>[\s\S]*?<svg class="vg/);
     W.step = V.WIZ_STEPS.findIndex((s) => s.id === 'agents');
     assert.match(V.wizHtml(KEYS, W, PROFILES, CTX), /data-k="stage\.agents" data-o="survey,build,verify"[^>]*>[\s\S]*?<svg class="vg/);
+    W.step = V.WIZ_STEPS.findIndex((s) => s.id === 'answer');
+    assert.match(V.wizHtml(KEYS, W, PROFILES, CTX), /data-k="gate\.station" data-o="60"[^>]*>[\s\S]*?<svg class="vg/);
     W.step = V.WIZ_STEPS.findIndex((s) => s.id === 'model');
     assert.doesNotMatch(V.wizHtml(KEYS, W, PROFILES, CTX), /<svg class="vg/, 'a key with no habit to show gets no scene');
     const again = V.wizApply(load(), KEYS, PROFILES, { k: 'land.integration', o: 'pr' });
     assert.equal(again.val['land.integration'], 'pr', 'a card click is the click wizApply already reads');
+});
+
+// docs/plans/2026-09-26-ready-five-design.md §3-§4, mockup blocks
+// wizard-design and wizard-gate-station.
+test('step 3 lays out false, three models and auto, and design.skill is several chips with the guide always in', () => {
+    let W = load();
+    W = V.wizApply(W, KEYS, PROFILES, { go: '2' });
+    const html = V.wizHtml(KEYS, W, PROFILES, CTX);
+    assert.match(html, /data-block="wizard-design"/);
+    for (const o of ['false', 'sonnet', 'opus', 'fable', 'auto']) {
+        assert.match(html, new RegExp('class="fsg[^"]*" role="radio" aria-checked="(true|false)" tabindex="-?\\d" data-h="\\d"><b>' + o));
+    }
+    assert.match(html, /class="fsk lock" aria-pressed="true" aria-disabled="true"/);
+    W = V.wizApply(W, KEYS, PROFILES, { h: '4' });
+    assert.equal(W.val['design.mockup'], 'auto');
+    W = V.wizApply(W, KEYS, PROFILES, { k: 'design.skill', m: 'impeccable:impeccable' });
+    W = V.wizApply(W, KEYS, PROFILES, { k: 'design.skill', m: 'frontend-design:frontend-design' });
+    assert.equal(W.val['design.skill'], 'frontend-design:frontend-design,impeccable:impeccable');
+    assert.deepEqual(V.wizChanges(KEYS, W, PROFILES).filter((c) => c.key === 'design.skill'),
+        [{ key: 'design.skill', value: 'frontend-design:frontend-design,impeccable:impeccable' }]);
+    W = V.wizApply(W, KEYS, PROFILES, { k: 'design.skill', m: 'impeccable:impeccable' });
+    assert.equal(W.val['design.skill'], 'frontend-design:frontend-design');
+    W = V.wizApply(W, KEYS, PROFILES, { k: 'design.skill', m: 'frontend-design:frontend-design' });
+    assert.equal(W.val['design.skill'], null);
+});
+
+test('a design.skill list the profile already holds loads as the chips it names', () => {
+    const P = JSON.parse(JSON.stringify(PROFILES));
+    P.projects[APP].values['design.skill'] = ['frontend-design:frontend-design', 'impeccable:impeccable'];
+    P.projects[APP].sources['design.skill'] = 'project';
+    const W = V.wizLoad(P, KEYS, APP);
+    assert.equal(W.val['design.skill'], 'frontend-design:frontend-design,impeccable:impeccable');
+    W.step = 2;
+    assert.match(V.wizHtml(KEYS, W, P, CTX), /data-m="impeccable:impeccable" aria-pressed="true"/);
+});
+
+test('the 答 gate step is two cards, 60 s suggested and off still the default', () => {
+    const W = load();
+    W.step = V.WIZ_STEPS.findIndex((s) => s.id === 'answer');
+    const html = V.wizHtml(KEYS, W, PROFILES, CTX);
+    assert.match(html, /data-block="wizard-gate-station"/);
+    assert.match(html, /class="ch" data-k="gate\.station" data-o="60" aria-pressed="false"><span class="rec">建議<\/span>/);
+    assert.match(html, /class="ch" data-k="gate\.station" data-o="off" aria-pressed="true">/);
+    assert.equal(W.val['gate.station'], 'off');
 });

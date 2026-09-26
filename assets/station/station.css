@@ -1039,6 +1039,13 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .vg [class*=" a"],.vg .a{transform-box:fill-box;transform-origin:center}
 .vg .og-b{transform-origin:50% 100%}
 
+/* gate.station scenes (wizard-gate-station) */
+.vg .fring{fill:none;stroke:var(--stale);stroke-width:2;stroke-linecap:round;transform-box:fill-box;transform-origin:center;transform:rotate(-90deg)}
+.play .vg .cdn{animation:cdn var(--loop) linear infinite}
+@keyframes cdn{0%,8%{stroke-dashoffset:0}84%,100%{stroke-dashoffset:.92}}
+.vg .fdot{fill:var(--panel);stroke:var(--ink2);stroke-width:1.2}
+.vg .qm{font:700 10px var(--f-mono);fill:var(--stale)}
+
 /* Every scene's resting state is its end frame; the keyframes start from
    the beginning. Reduced motion, or a card that is not playing, just rests. */
 .play .vg .scene{animation:scene var(--loop) linear infinite}
@@ -1088,23 +1095,19 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 /* In the product only the chosen card and the hovered one play; the rest rest. */
 .wz .ch:not([aria-pressed="true"]):not(:hover):not(:focus-visible) .vg *{animation:none!important}
 
-/* step 3, 前端: two big blocks fill the step; the model sits small under them */
-.wz .fe2{margin-top:16px;gap:14px}
-.wz .fe2 .ch{padding:10px 10px 18px;gap:10px}
-.wz .fe2 .wstg{margin-bottom:0}
-.wz .fe2 .wstg svg{height:180px}
-.wz .fe2 .cl{justify-content:center;font-size:18px}
-.wz .fe2 .ch[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--ink)}
-.wz .fe2 .ch[aria-pressed="false"] .wstg svg{opacity:.6;transition:opacity .18s var(--ez)}
-.wz .fe2 .ch:hover .wstg svg{opacity:1}
+/* step 3, 前端: three horizontal rows (no front, models, auto), the mockup's fq grid */
+.wz .fq{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,3fr) minmax(0,1.1fr);gap:4px 10px}
+.wz .fqc.none::before{display:none}
+.wz .fqc{position:relative;height:18px;font-size:11.5px;color:var(--muted)}
+.wz .fqc span{position:absolute;top:0;left:50%;transform:translateX(-50%);padding:0 6px;background:var(--panel);line-height:12px;white-space:nowrap}
+.wz .fqc::before{content:"";position:absolute;left:0;right:0;top:6px;height:8px;border:1px solid var(--rule2);border-bottom:0;border-radius:5px 5px 0 0}
+.wz .fq .fbar.solo{grid-template-columns:1fr}
 .wz .fem{margin-top:18px}
 .wz .fmh{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
 .wz .fml{font-size:13px;font-weight:600;color:var(--ink)}
 .wz .fmh code{font:11px var(--f-mono);color:var(--muted)}
-/* the model bar: one joined bar, three equal segments, cost rising left to right */
-.wz .fseg{position:relative;padding-top:20px}
-.wz .frec{position:absolute;top:0;left:0;width:calc(200% / 3);height:14px;border:1.5px solid var(--good);border-bottom:0;border-radius:6px 6px 0 0;box-sizing:border-box}
-.wz .frec span{position:absolute;top:-8px;left:50%;transform:translateX(-50%);padding:0 6px;background:var(--panel);font:600 10.5px var(--f-ui);letter-spacing:.04em;color:var(--good);line-height:14px}
+.wz .fsg .frc{font:600 10px var(--f-ui);letter-spacing:.04em;color:var(--good);box-shadow:inset 0 0 0 1px var(--good);border-radius:3px;padding:0 4px;line-height:14px;margin-left:6px;vertical-align:1px}
+.wz .fsg[aria-checked="true"] .frc{color:var(--panel);background:var(--good);box-shadow:none}
 .wz .fbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-radius:10px;box-shadow:inset 0 0 0 1px var(--rule2);overflow:hidden}
 .wz .fsg{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;align-items:center;gap:3px 10px;padding:11px 16px;min-width:0;transition:background .18s var(--ez)}
 .wz .fsg+.fsg{box-shadow:inset 1px 0 0 var(--rule2)}
@@ -1126,10 +1129,6 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .wz .fsg[aria-checked="true"] .fcost i:not(.on){background:color-mix(in srgb,var(--panel) 30%,var(--ink))}
 .wz .fsg[aria-checked="true"]:focus-visible{outline-color:var(--good)}
 @media (prefers-reduced-motion:reduce){.wz .fsg{transition:none}}
-.wz .fadv{margin-top:12px;font-size:12px}
-.wz .fadv summary{cursor:pointer;color:var(--muted);width:max-content}
-.wz .fadv summary:hover{color:var(--ink)}
-.wz .fadv summary:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:3px}
 .wz .fskw{margin-top:10px;padding:12px 14px;border-radius:10px;background:var(--inset)}
 .wz .fskw .fmh{margin-bottom:2px}
 .wz .fskn{margin:0 0 10px;font-size:11.5px;color:var(--muted)}
@@ -1145,7 +1144,13 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .wz .fsk:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .wz .fsk[aria-pressed="true"]{background:var(--ink);color:var(--panel);box-shadow:none;font-weight:700}
 .wz .fsk[aria-pressed="true"] span{color:inherit;opacity:.75}
-@media (max-width:1100px){.wz .fe2 .wstg svg{height:120px}.wz .fsg{padding:10px 12px}}
+.wz .fmul{font:600 10.5px var(--f-ui);color:var(--ink2);box-shadow:inset 0 0 0 1px var(--rule2);border-radius:3px;padding:0 5px;line-height:16px}
+.wz .fsk.mul{display:inline-flex;align-items:center;gap:6px}
+.wz .fsk.mul::before{content:"";width:9px;height:9px;border-radius:2px;box-shadow:inset 0 0 0 1.3px currentColor;flex:none}
+.wz .fsk.mul[aria-pressed="true"]::before{background:currentColor;box-shadow:inset 0 0 0 1.3px currentColor,inset 0 0 0 3px var(--ink)}
+.wz .fsk.lock{cursor:default;display:inline-flex;align-items:center;gap:5px}
+.wz .fskt{margin-left:auto;font:11px var(--f-mono);color:var(--muted)}
+@media (max-width:1100px){.wz .fsg{padding:10px 12px}}
 
 /* the summary card: rules the mockup has no counterpart for */
 .wz .prog{height:4px;border-radius:2px;background:var(--inset);margin:0 0 18px;overflow:hidden}

@@ -1514,6 +1514,12 @@
                 + '<path class="lane dr d1" pathLength="1" d="M48 10C60 10 58 53 70 53H150C162 53 160 10 172 10"/></g></svg>',
         },
     };
+    // gate.station's two svg scenes, copied verbatim from the .wstg spans of
+    // the wizard-gate-station block in the approved mockup.
+    WIZ_SCENES['gate.station'] = {
+        '60': '<svg class="vg" viewBox="0 0 220 80" aria-hidden="true"><rect class="box" x="22" y="10" width="112" height="60" rx="4"/><path class="docl" d="M22 19H134"/><path class="docl" d="M32 30H88M32 38H78M32 46H84"/><circle class="fdot" cx="118" cy="56" r="6"/><circle class="fring cdn" pathLength="1" stroke-dasharray="1" cx="118" cy="56" r="9.5"/><path class="link" d="M138 40H150"/><rect class="box" x="154" y="24" width="48" height="34" rx="3"/><text class="lbl" x="160" y="38">$ gate</text><text class="lbl" x="160" y="50">…60s</text></svg>',
+        off: '<svg class="vg" viewBox="0 0 220 80" aria-hidden="true"><rect class="box ghost" x="26" y="22" width="44" height="32" rx="3"/><path class="ln" d="M22 60 74 16" style="stroke:var(--faint)"/><rect class="box" x="92" y="12" width="96" height="56" rx="4"/><text class="qm" x="100" y="29">?</text><text class="lbl" x="110" y="29">選哪個</text><path class="docl" d="M110 40H160M110 48H150M110 56H156"/></svg>',
+    };
     var WIZ_CARD_TEXT = {
         'land.integration': { merge: { l: '本機合併', d: '分支併回 main，留在本機。' }, pr: { l: '開 PR', d: '推上去，review 過再合。' }, keep: { l: '留在分支', d: '分支停著，之後自己整合。' } },
         'land.push': { 'true': { l: '推上去', d: '收尾就 push。' }, 'false': { l: '留在本機', d: 'commit 在手上，自己推。' } },
@@ -1525,6 +1531,13 @@
     // `stage.agents` is offered as the four the mockup draws; the seven-stage
     // toggles under them (`wizOpts`) still set any other list.
     var WIZ_CARD_VALUES = { 'stage.agents': ['false', 'survey', 'survey,build,verify', 'all'] };
+    // gate.station as the mockup draws it: two cards, 60 s suggested whatever
+    // the habit pills pre-picked, and off the builtin.
+    WIZ_CARD_VALUES['gate.station'] = ['60', 'off'];
+    WIZ_CARD_TEXT['gate.station'] = { '60': { l: '等 60 秒', d: '人在頁面旁邊時，點一下就答完。' }, off: { l: '不用，在 terminal 答', d: 'gate 直接在 terminal 問，網頁不接。' } };
+    var WIZ_SUGGEST = { 'gate.station': '60' };
+    // The card a step is drawn in, named the way the approved mockup names it.
+    var WIZ_BLOCK = { front: 'wizard-design', answer: 'wizard-gate-station' };
     // class.default as a route map: the seven stages as dots, each class
     // lighting the stops it takes (lib/stages.js CLASSES). Unset is the
     // default — the model picks the class in survey — and still posts ''.
@@ -1555,12 +1568,13 @@
                 { l: '常動到架構', b: '牽動好幾個模組，需要先設計再動手。', s: { 'class.default': 'architectural' } },
                 { l: '依任務自動判斷', b: '模型在 survey 依任務決定走哪幾站。', s: { 'class.default': null } },
             ] },
-        { id: 'front', t: '前端', q: '這個專案有前端畫面嗎？', sub: '有的話，design 站會先做一頁 mockup 給你看，再談實作。', keys: ['design.mockup', 'design.skill'],
+        { id: 'front', t: '前端', q: '這個專案的前端，mockup 要怎麼畫？', sub: '有前端的話，design 站會先畫一頁 mockup 給你看，再談實作。', keys: ['design.mockup', 'design.skill'],
             habits: [
                 { l: '沒有前端', b: 'CLI、函式庫或純文件，不用畫頁面。', s: { 'design.mockup': 'false' } },
                 { l: '有，快速草圖', b: '先看個大概，sonnet 畫就夠。', s: { 'design.mockup': 'sonnet' } },
                 { l: '有，要仔細畫', b: '畫面是重點，用 opus 做完整的頁面。', s: { 'design.mockup': 'opus' } },
                 { l: '有，用最強的', b: '交給 fable 畫。', s: { 'design.mockup': 'fable' } },
+                { l: '有，自動畫', b: '前端工作不問就畫，畫完直接開頁面。', s: { 'design.mockup': 'auto' } },
             ] },
         { id: 'agents', t: 'context', q: '你在不在意主 session 的 context 被吃掉？', sub: '交給站 agent 的站，會在自己乾淨的 context 裡跑，主控只拿回一個路徑。', keys: ['stage.agents'],
             habits: [
@@ -1586,7 +1600,7 @@
                 { l: '要，照常顯示', b: '', s: { 'station.hide': 'false' } },
                 { l: '不要，藏起來', b: '私人或暫時的專案。', s: { 'station.hide': 'true' } },
             ] },
-        { id: 'answer', t: '答 gate', q: '要不要在監控站上直接回答 gate？', sub: 'gate 發出後，terminal 先等監控站的答案這麼多秒，逾時才在 terminal 問你；等的時候 terminal 不顯示問題。', keys: ['gate.station'],
+        { id: 'answer', t: '答 gate', q: '要不要在網頁上直接回答 gate？', sub: 'gate 發出後，先在這頁右下角的圖示裡等你 60 秒；逾時，或你按「交給終端／手機」，問題就回到 terminal，Remote Control 也看得到。等的時候 terminal 不顯示問題。', keys: ['gate.station'],
             habits: [
                 { l: '不用，在 terminal 答', b: '', s: { 'gate.station': 'off' } },
                 { l: '等一分鐘', b: '人就在頁面旁邊時。', s: { 'gate.station': '60' } },
@@ -1599,10 +1613,13 @@
         return !arr.length ? 'false' : arr.length === WIZ_STAGES.length ? 'all' : arr.join(',');
     }
     // A value off `lib/profile.js` `read()` — a boolean, a stage array or a
-    // string — in the text form the buttons and the POST use.
-    function wizText(v) {
+    // string — in the text form the buttons and the POST use. `k` picks the
+    // join: stage.agents collapses to its named shorthand, design.skill (and
+    // anything else that is only ever a plain list) stays a comma list.
+    function wizText(v, k) {
         if (v === undefined || v === null) return null;
-        return Array.isArray(v) ? wizNorm(v) : String(v);
+        if (!Array.isArray(v)) return String(v);
+        return k === 'stage.agents' ? wizNorm(v) : v.join(',');
     }
     function wizShow(v) { return v === null ? '(ask)' : String(v); }
     function wizSame(a, b) { return String(a) === String(b); }
@@ -1611,12 +1628,12 @@
     function wizOwn(profiles, scope, k) {
         var p = scope === 'machine' ? profiles.machine : (profiles.projects || {})[scope];
         var want = scope === 'machine' ? 'machine' : 'project';
-        return p && p.sources && p.sources[k] === want ? { has: true, v: wizText(p.values[k]) } : { has: false, v: null };
+        return p && p.sources && p.sources[k] === want ? { has: true, v: wizText(p.values[k], k) } : { has: false, v: null };
     }
     // What the layers under this scope supply: machine, then builtin.
     function wizBelow(profiles, keys, scope, k) {
         var m = profiles.machine;
-        if (scope !== 'machine' && m && m.sources && m.sources[k] === 'machine') return { v: wizText(m.values[k]), src: 'machine' };
+        if (scope !== 'machine' && m && m.sources && m.sources[k] === 'machine') return { v: wizText(m.values[k], k), src: 'machine' };
         var b = keys[k] ? keys[k].builtin : null;
         return b !== null && b !== undefined ? { v: String(b), src: 'builtin' } : { v: null, src: '' };
     }
@@ -1666,6 +1683,16 @@
             Object.keys(hb.s).forEach(function (k) { W.rec[k] = hb.s[k]; W.val[k] = hb.s[k]; });
             return W;
         }
+        // A design.skill chip toggles one skill in or out; the list keeps the
+        // key's own order, and none at all is unset (fankeel's guide alone).
+        if (d.m !== undefined) {
+            var have = W.val[d.k] ? String(W.val[d.k]).split(',') : [], at = have.indexOf(d.m);
+            if (at >= 0) have.splice(at, 1); else have.push(d.m);
+            var order = keys[d.k] ? keys[d.k].values : have;
+            have = order.filter(function (o) { return have.indexOf(o) >= 0; });
+            W.val[d.k] = have.length ? have.join(',') : null;
+            return W;
+        }
         if (d.st !== undefined) {
             var on = wizList(W.val['stage.agents']), i = on.indexOf(d.st);
             if (i >= 0) on.splice(i, 1); else on.push(d.st);
@@ -1713,7 +1740,7 @@
             var id = o === null ? '' : o, t = text[id] || { l: o === null ? '問我' : o, d: o === null ? '到時再決定。' : '' };
             var scene = o === null ? WIZ_ASK_ICON : (scenes[id] || '');
             return '<button type="button" class="ch' + (o === null ? ' ask' : '') + '" data-k="' + esc(k) + '" data-o="' + esc(id)
-                + '" aria-pressed="' + wizSame(v, o) + '">' + (hasRec && wizSame(r, o) ? '<span class="rec">建議</span>' : '')
+                + '" aria-pressed="' + wizSame(v, o) + '">' + (wizSame(WIZ_SUGGEST[k] !== undefined ? WIZ_SUGGEST[k] : (hasRec ? r : undefined), o) ? '<span class="rec">建議</span>' : '')
                 + (scene ? '<span class="wstg">' + scene + '</span>' : '')
                 + '<span class="cl">' + esc(t.l) + '</span>' + (t.d ? '<span class="cd">' + esc(t.d) + '</span>' : '')
                 + (o === null ? '' : '<span class="cv">' + esc(o) + '</span>') + '</button>';
@@ -1793,61 +1820,58 @@
         { o: 'fable', h: 3, d: '很燒額度', cost: 4, warn: true },
     ];
     var WIZ_FE_WARN = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6 11 10.4H1z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 5v2.4M6 8.9h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
-    function wizFrontHtml(keys, W, profiles) {
+    var WIZ_FE_AUTO = { o: 'auto', h: 4, d: '直接畫，畫完開頁面' };
+    var WIZ_FE_NONE = { o: 'false', h: 0, d: '沒有前端，不畫' };
+    function wizFrontHtml(keys, W) {
         var v = W.val['design.mockup'], on = v !== null && v !== 'false';
-        var cur = WIZ_FE_MODELS.filter(function (m) { return m.o === v; })[0];
-        var block = function (h, pressed, svg, l) {
-            return '<button type="button" class="ch fe" data-h="' + h + '" aria-pressed="' + pressed + '"><span class="wstg">' + svg + '</span>'
-                + '<span class="cl">' + l + '</span></button>';
+        var seg = function (m) {
+            var chk = v === m.o, bars = '';
+            if (m.cost) for (var j = 0; j < 4; j++) bars += '<i' + (j < m.cost ? ' class="on"' : '') + '></i>';
+            return '<button type="button" class="fsg' + (m.warn ? ' warn' : '') + '" role="radio" aria-checked="' + chk + '" tabindex="'
+                + (chk || (v === null && m.o === 'opus') ? 0 : -1) + '" data-h="' + m.h + '"><b>' + m.o
+                + (m.o === 'opus' ? '<span class="frc">建議</span>' : '') + '</b><span class="fsd">' + (m.warn ? WIZ_FE_WARN : '') + m.d + '</span>'
+                + (m.cost ? '<span class="fcost" aria-hidden="true">' + bars + '</span>' : '') + '</button>';
         };
-        var out = '<h2 class="q">有前端畫面嗎？</h2>'
-            + '<div class="chs c2 na fe2" role="group" aria-label="design.mockup">'
-            + block(0, v === 'false', WIZ_FE_NO, '沒有前端') + block(cur ? cur.h : 2, on, WIZ_FE_YES, '有前端') + '</div>';
-        if (!on) return out;
-        var skill = W.val['design.skill'], at = cur ? WIZ_FE_MODELS.indexOf(cur) : -1;
-        return out + '<div class="fem"><div class="fmh"><span class="fml">誰來畫 mockup</span><code>design.mockup</code></div>'
-            + '<div class="fseg"><span class="frec" aria-hidden="true"><span>建議</span></span>'
-            + '<div class="fbar" role="radiogroup" aria-label="design.mockup 模型">'
-            + WIZ_FE_MODELS.map(function (m) {
-                var chk = v === m.o, tab = chk || (at < 0 && m.o === 'opus'), bars = '';
-                for (var j = 0; j < 4; j++) bars += '<i' + (j < m.cost ? ' class="on"' : '') + '></i>';
-                return '<button type="button" class="fsg' + (m.warn ? ' warn' : '') + '" role="radio" aria-checked="' + chk + '" tabindex="' + (tab ? 0 : -1)
-                    + '" data-h="' + m.h + '"><b>' + m.o + '</b><span class="fsd">' + (m.warn ? WIZ_FE_WARN : '') + m.d + '</span>'
-                    + '<span class="fcost" aria-hidden="true">' + bars + '</span></button>';
-            }).join('') + '</div></div>'
-            + '<details class="fadv" id="wiz-fadv"' + (skill !== null ? ' open' : '') + '><summary>進階</summary>'
-            + wizSkillHtml(keys, W) + '</details></div>';
+        return '<h2 class="q">這個專案的前端，mockup 要怎麼畫？</h2><p class="wqs">有前端的話，design 站會先畫一頁 mockup 給你看，再談實作。</p>'
+            + '<div class="fem"><div class="fmh"><span class="fml">誰來畫</span><code>design.mockup</code></div>'
+            + '<div class="fq" role="radiogroup" aria-label="design.mockup">'
+            + '<div class="fqc none" aria-hidden="true"></div><div class="fqc" aria-hidden="true"><span>畫之前先問你</span></div>'
+            + '<div class="fqc" aria-hidden="true"><span>不問</span></div>'
+            + '<div class="fbar solo">' + seg(WIZ_FE_NONE) + '</div>'
+            + '<div class="fbar">' + WIZ_FE_MODELS.map(seg).join('') + '</div>'
+            + '<div class="fbar solo">' + seg(WIZ_FE_AUTO) + '</div></div>'
+            + (on ? wizSkillHtml(keys, W) : '') + '</div>';
     }
-    // design.skill under 進階: unset first (fankeel decides), then the values
-    // grouped by the plugin before the colon. Still one value, still `data-k`.
+    // design.skill: fankeel's guide always in, then any of the six on top,
+    // grouped by the plugin before the colon. Each chip toggles one (`data-m`).
     function wizSkillHtml(keys, W) {
-        var v = W.val['design.skill'], groups = [], by = {};
+        var v = W.val['design.skill'], on = v ? String(v).split(',') : [], groups = [], by = {};
         (keys['design.skill'] ? keys['design.skill'].values : []).forEach(function (o) {
             var i = o.indexOf(':'), pl = i > 0 ? o.slice(0, i) : o;
             if (!by[pl]) { by[pl] = []; groups.push(pl); }
             by[pl].push(o);
         });
-        var chip = function (o, l) {
-            return '<button type="button" class="fsk" data-k="design.skill" data-o="' + esc(o) + '" aria-pressed="' + wizSame(v === null ? '' : v, o) + '">' + l + '</button>';
-        };
-        return '<div class="fskw"><div class="fmh"><span class="fml">設計 skill</span><code>design.skill</code></div>'
-            + '<p class="fskn">可引用外部設計 skill；多選與 fankeel 內建版本之後會加入</p>'
+        return '<div class="fskw"><div class="fmh"><span class="fml">設計 skill</span><code>design.skill</code><span class="fmul">可多選</span>'
+            + '<span class="fskt">指南' + (on.length ? ' + ' + on.length + ' 個' : '') + '</span></div>'
+            + '<p class="fskn">fankeel 指南一律載入；另外勾的 skill，會一起交給畫 mockup 的 agent。</p>'
             + '<div class="fskg" role="group" aria-label="design.skill">'
-            + '<div class="fskc self">' + chip('', '由 fankeel 自己判斷<span>（沒指定時）</span>') + '</div>'
+            + '<div class="fskc self"><span class="fskh">內建</span><span class="fskl"><button type="button" class="fsk lock" aria-pressed="true" aria-disabled="true"'
+            + ' title="一律包含，不能取消">fankeel 指南<span>（一律包含）</span></button></span></div>'
             + groups.map(function (pl) {
                 return '<div class="fskc"><span class="fskh">' + esc(pl) + '</span><span class="fskl">' + by[pl].map(function (o) {
                     var i = o.indexOf(':');
-                    return chip(o, esc(i > 0 ? o.slice(i + 1) : o));
+                    return '<button type="button" class="fsk mul" data-k="design.skill" data-m="' + esc(o) + '" aria-pressed="' + (on.indexOf(o) >= 0) + '">'
+                        + esc(i > 0 ? o.slice(i + 1) : o) + '</button>';
                 }).join('') + '</span></div>';
             }).join('') + '</div></div>';
     }
     function wizStepHtml(keys, W, profiles) {
         var n = WIZ_STEPS.length, st = WIZ_STEPS[W.step];
         if (st.id === 'front') {
-            return '<div class="wcard" data-block="wizard-step" data-step="' + st.id + '">'
+            return '<div class="wcard" data-block="' + (WIZ_BLOCK[st.id] || 'wizard-step') + '" data-step="' + st.id + '">'
                 + '<div class="top"><span class="of">' + (W.step + 1) + ' / ' + n + '</span><span class="spacer"></span>'
                 + '<button class="lk" type="button" data-go="' + n + '">跳到摘要</button></div>'
-                + wizFrontHtml(keys, W, profiles)
+                + wizFrontHtml(keys, W)
                 + '<div class="nav"><button class="ctl" type="button" data-go="' + (W.step - 1) + '">← 上一題</button><span class="spacer"></span>'
                 + '<button class="ctl pri" type="button" data-go="' + (W.step + 1) + '">下一題 →</button></div></div>';
         }
@@ -1857,7 +1881,7 @@
         var ovr = function (k) { return wizOverridden(W, k) ? '<span class="ovr">改過建議</span>' : ''; };
         var big = function (k) { return WIZ_SCENES[k] || k === 'class.default'; };
         var full = shown.filter(big), mini = shown.filter(function (k) { return !big(k); });
-        return '<div class="wcard" data-block="wizard-step" data-step="' + st.id + '">'
+        return '<div class="wcard" data-block="' + (WIZ_BLOCK[st.id] || 'wizard-step') + '" data-step="' + st.id + '">'
             + '<div class="top"><span class="of">' + (W.step + 1) + ' / ' + n + '</span><span class="spacer"></span>'
             + '<button class="lk" type="button" data-go="' + n + '">跳到摘要</button></div>'
             + '<h2 class="q">' + st.q + '</h2><p class="wqs">' + st.sub + '</p>'
@@ -4053,7 +4077,7 @@
     doc.addEventListener('keydown', function (e) {
         var b = route.view === 'settings' && e.target.closest ? e.target.closest('.wz .fbar .fsg') : null;
         if (!b) return;
-        var stops = [].slice.call(b.parentNode.querySelectorAll('.fsg')), i = stops.indexOf(b), j = i;
+        var stops = [].slice.call(b.closest('.fq').querySelectorAll('.fsg')), i = stops.indexOf(b), j = i;
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown') j = Math.min(stops.length - 1, i + 1);
         else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') j = Math.max(0, i - 1);
         else if (e.key === 'Home') j = 0;
