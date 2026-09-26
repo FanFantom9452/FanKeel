@@ -594,6 +594,101 @@ function report(result) {
     return lines.join('\n');
 }
 
+// `--migrate`: the one move off the retired `## Waiting`. A `###` timing whose
+// condition line is typed moves whole — heading, condition line and entries —
+// to the end of the section that takes that condition; anything a script
+// cannot place stays where it is, for a person. Sections split at `#` and `##`
+// only: under `## Waiting` a `###` is a timing, the same reading `entries()`
+// gives it. The file keeps the line ending its first line break uses.
+function migrate(text) {
+    const eol = /\r\n/.test(text) ? '\r\n' : '\n';
+    const lines = text.split(/\r?\n/);
+    const trailing = lines.length > 1 && lines[lines.length - 1] === '';
+    if (trailing) lines.pop();
+    const sections = [{ head: null, body: [] }];
+    for (const line of lines) {
+        if (/^#{1,2}\s/.test(line)) sections.push({ head: line, body: [] });
+        else sections[sections.length - 1].body.push(line);
+    }
+    const nameOf = (s) => (s.head === null ? null : s.head.replace(/^#+\s*/, '').trim());
+    const find = (name) => sections.findIndex((s) => nameOf(s) === name);
+    const waiting = sections[find(RETIRED)];
+    if (!waiting) return { text, blocked: 0, watch: 0 };
+
+    // What precedes the first `###` stays; each `###` runs to the next.
+    const keep = [];
+    const chunks = [];
+    for (const line of waiting.body) {
+        if (/^#{3,6}\s/.test(line)) chunks.push([line]);
+        else if (chunks.length) chunks[chunks.length - 1].push(line);
+        else keep.push(line);
+    }
+    const moves = { Blocked: [], Watch: [] };
+    for (const chunk of chunks) {
+        const next = chunk.slice(1).find((l) => l.trim());
+        const cond = next && !/^[-*]\s/.test(next) ? conditionAt(next) : null;
+        if (!cond) keep.push(...chunk);
+        else moves[cond.kind === 'if' ? 'Watch' : 'Blocked'].push(chunk);
+    }
+
+    const trim = (body) => {
+        while (body.length && !body[body.length - 1].trim()) body.pop();
+        return body;
+    };
+    const touched = new Set();
+    for (const [name, after] of [['Blocked', ['Needs a decision', 'Ready']], ['Watch', ['Blocked', 'Needs a decision', 'Ready']]]) {
+        if (!moves[name].length) continue;
+        let at = find(name);
+        if (at === -1) {
+            const anchor = after.map(find).find((i) => i !== -1);
+            at = anchor === undefined ? sections.length : anchor + 1;
+            sections.splice(at, 0, { head: '## ' + name, body: [] });
+        }
+        const s = sections[at];
+        trim(s.body);
+        for (const chunk of moves[name]) s.body.push('', ...trim(chunk.slice()));
+        touched.add(s);
+    }
+    waiting.body = keep;
+    if (keep.every((l) => !l.trim())) sections.splice(sections.indexOf(waiting), 1);
+    else touched.add(waiting);
+    // A section this wrote to ends in one blank line before the next heading,
+    // and in none at the end of the file.
+    for (const s of touched) {
+        trim(s.body);
+        if (sections.indexOf(s) !== sections.length - 1) s.body.push('');
+    }
+    const out = [];
+    for (const s of sections) {
+        if (s.head !== null) out.push(s.head);
+        out.push(...s.body);
+    }
+    return { text: out.join(eol) + (trailing ? eol : ''), blocked: moves.Blocked.length, watch: moves.Watch.length };
+}
+
+// What is still under `## Waiting` once a migration has run, for a person to
+// file: every `###` timing there, and every entry under none. `{ line, title }`,
+// in file order.
+function leftovers(text) {
+    const lines = text.split(/\r?\n/);
+    const out = [];
+    let section = '';
+    for (let i = 0; i < lines.length; i++) {
+        const h = /^(#{1,6})\s+(.*)$/.exec(lines[i]);
+        if (!h) continue;
+        if (h[1].length >= 3 && section === RETIRED) {
+            out.push({ line: i + 1, title: h[2].trim() });
+            continue;
+        }
+        if (h[1].length >= 3 && TIMED.includes(section)) continue;
+        section = h[2].trim();
+    }
+    for (const e of entries(text)) {
+        if (e.section === RETIRED && e.timing === null) out.push({ line: e.line, title: e.text.replace(/\s+/g, ' ').trim() });
+    }
+    return out.sort((a, b) => a.line - b.line);
+}
+
 // `--root <dir>` the way every other script here takes it. Before this, the
 // first argument not beginning with `--` was taken as the file — so `--root .`
 // handed `.` to `check`, reading a directory threw EISDIR, `check` reported it
@@ -601,7 +696,7 @@ function report(result) {
 // gate gets written with, passed while examining nothing.
 function main(argv, now) {
     const { values, positionals } = parseArgs({
-        args: argv, strict: false, allowPositionals: true, options: { root: { type: 'string' } },
+        args: argv, strict: false, allowPositionals: true, options: { root: { type: 'string' }, migrate: { type: 'boolean' } },
     });
     // `--root` with nothing after it comes back `true`, not a string — the old
     // loop read that case as `''` (`argv[++i] || ''`) rather than failing, and
@@ -610,8 +705,28 @@ function main(argv, now) {
     const root = typeof values.root === 'string' ? values.root : '';
     // A positional argument is still a path to a file. A flag's value is not one.
     const at = positionals[0] || path.join(resolveRoot(root || undefined), 'TODO.md');
-    const result = check(path.resolve(at), now);
-    return { text: report(result), ok: result.missing || !result.problems.length };
+    const file = path.resolve(at);
+    // `--migrate` writes first and then checks what it wrote, so what it could
+    // not place still fails the run.
+    const head = [];
+    if (values.migrate === true) {
+        let before = null;
+        try {
+            before = fs.readFileSync(file, 'utf8');
+        } catch (e) { /* no file: the check below says so */ }
+        if (before !== null) {
+            const moved = migrate(before);
+            if (moved.text !== before) fs.writeFileSync(file, moved.text);
+            const left = leftovers(moved.text);
+            head.push('fankeel todo-check --migrate: ' + moved.blocked + (moved.blocked === 1 ? ' timing' : ' timings')
+                + ' to ## Blocked, ' + moved.watch + ' to ## Watch, ' + left.length + ' left under ## Waiting'
+                + (left.length ? ' — no typed condition, for a person to file:' : '.'));
+            for (const l of left) head.push('  ' + file + ':' + l.line + '  ' + l.title);
+            head.push('');
+        }
+    }
+    const result = check(file, now);
+    return { text: head.concat(report(result)).join('\n'), ok: result.missing || !result.problems.length };
 }
 
 if (require.main === module) {

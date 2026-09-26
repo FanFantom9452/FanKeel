@@ -746,3 +746,98 @@ test('a Blocked on: whose date has passed is due', () => {
   assert.equal(result.overdue.length, 1);
   assert.equal(todo.mmdd(result.overdue[0].date), '08-25');
 });
+
+// `--migrate`: the move off `## Waiting` for a file still on it. One timing of
+// each kind the design names — typed for Blocked, typed for Watch, untyped.
+const MIGRATE = [
+  '# TODO',
+  '',
+  '## Ready',
+  '',
+  '- r',
+  '',
+  '## Needs a decision',
+  '',
+  '- n',
+  '',
+  '## Waiting',
+  '',
+  '### a release lands',
+  'after: the 1.0 release. ' + stampFor(2) + '.',
+  '',
+  '- a',
+  '',
+  '### it breaks again',
+  'if: the pool overflows. ' + stampFor(2) + '.',
+  '',
+  '- b',
+  '',
+  '### nobody said',
+  'lifts when: x. ' + stampFor(2) + '.',
+  '',
+  '- c',
+].join('\n') + '\n';
+// The same file with the untyped timing gone: everything in it can be placed.
+const TYPED = MIGRATE.slice(0, MIGRATE.indexOf('### nobody said')).replace(/\n+$/, '\n');
+
+test('--migrate moves a typed timing to Blocked or Watch and leaves an untyped one under Waiting, named', () => {
+  const file = fixture(MIGRATE);
+  const { text, ok } = todo.main(['--migrate', file], NOW);
+  const after = fs.readFileSync(file, 'utf8');
+  const ts = todo.timings(after, NOW);
+  assert.deepEqual(ts.map((t) => [t.section, t.title]), [['Blocked', 'a release lands'], ['Watch', 'it breaks again']]);
+  assert.deepEqual(ts.map((t) => t.items.map((e) => e.text)), [['a'], ['b']]);
+  const waiting = todo.entries(after).filter((e) => e.section === 'Waiting');
+  assert.deepEqual(waiting.map((e) => e.text), ['c']);
+  const problems = todo.check(file, NOW).problems;
+  assert.deepEqual(problems.map((p) => [p.kind, p.line]), [['unclassified', waiting[0].line]], 'todo-check names only the Waiting one');
+  assert.equal(ok, false, 'the leftover still fails the run');
+  assert.match(text, /1 timing to ## Blocked, 1 to ## Watch, 1 left under ## Waiting/);
+  assert.match(text, /TODO\.md:\d+  nobody said/);
+});
+
+test('--migrate keeps CRLF, removes an emptied ## Waiting, and leaves what is above it byte-for-byte', () => {
+  const file = fixture(TYPED.replace(/\n/g, '\r\n'));
+  const { ok } = todo.main(['--migrate', file], NOW);
+  const after = fs.readFileSync(file, 'utf8');
+  assert.equal(ok, true);
+  assert.doesNotMatch(after, /## Waiting/);
+  assert.equal(after.split('\n').length, after.split('\r\n').length, 'every line still ends CRLF');
+  const top = TYPED.slice(0, TYPED.indexOf('## Waiting')).replace(/\n/g, '\r\n');
+  assert.ok(after.startsWith(top), 'Ready and Needs a decision are what they were');
+});
+
+test('--migrate appends to an existing ## Blocked and leaves an entry under no timing where it is', () => {
+  const file = fixture([
+    '# TODO', '', '## Blocked', '', '### already here', 'on: 09-20. ' + stampFor(2) + '.', '', '- x', '',
+    '## Watch', '', '## Waiting', '', '- loose', '', '### node lands', 'upstream: node 24. ' + stampFor(2) + '.', '', '- a',
+  ].join('\n') + '\n');
+  const { text } = todo.main(['--migrate', file], NOW);
+  const after = fs.readFileSync(file, 'utf8');
+  assert.deepEqual(todo.timings(after, NOW).map((t) => [t.section, t.title]), [['Blocked', 'already here'], ['Blocked', 'node lands']]);
+  assert.ok(after.indexOf('### node lands') < after.indexOf('## Watch'), 'at the end of Blocked, before the next heading');
+  assert.deepEqual(todo.entries(after).filter((e) => e.section === 'Waiting').map((e) => e.text), ['loose']);
+  assert.match(text, /TODO\.md:\d+  loose/);
+});
+
+test('--migrate on a file with no ## Waiting writes nothing', () => {
+  const body = '# TODO\r\n\r\n## Ready\r\n\r\n- r\r\n';
+  const file = fixture(body);
+  todo.main(['--migrate', file], NOW);
+  assert.equal(fs.readFileSync(file, 'utf8'), body);
+});
+
+// The exit code is the check's on the migrated file: 1 while a leftover stands,
+// 0 once everything was placed.
+test('--migrate exits with the check it runs afterwards', () => {
+  const code = (body) => {
+    try {
+      execFileSync(process.execPath, [SCRIPT, '--migrate', fixture(body)], { encoding: 'utf8' });
+      return 0;
+    } catch (e) {
+      return e.status;
+    }
+  };
+  assert.equal(code(MIGRATE), 1);
+  assert.equal(code(TYPED), 0);
+});
