@@ -35,14 +35,24 @@ function page() {
 // Its own profile per spawn. Two Chromium processes on the default profile
 // hand the second one's URL to the first, and the second exits with nothing
 // on stdout — the `the page never reported` failure the suite saw on 09-26.
+// Under six concurrent Chromium processes on one machine, a different failure
+// shows up: stderr carries fallback_task_provider.cc's "every renderer should
+// have at least one task provided by a primary task provider" and stdout is
+// again empty — CPU contention starves the renderer before dump-dom fires,
+// not a profile collision. One bounded retry with a fresh profile absorbs a
+// scheduling stall without masking a real regression: a second contention
+// stall in the same run is vanishingly unlikely, so a retry that still fails
+// is a real bug and still throws.
 function shoot(file, reduce) {
-    const profileDir = tmp('fankeel-wizmotion-profile-');
-    const args = ['--headless=new', '--disable-gpu', '--no-first-run', '--user-data-dir=' + profileDir, '--virtual-time-budget=2000'];
-    if (reduce) args.push('--force-prefers-reduced-motion');
-    const r = spawnSync(findBrowser(), args.concat(['--dump-dom', pathToFileURL(file).href]), { encoding: 'utf8', timeout: 60000 });
-    const m = /RUN=(\d+) RM=(true|false)/.exec(r.stdout || '');
-    assert.ok(m, 'the page never reported: ' + String(r.stderr || '').slice(0, 300));
-    return { running: Number(m[1]), reduced: m[2] === 'true' };
+    for (let attempt = 0; attempt < 2; attempt++) {
+        const profileDir = tmp('fankeel-wizmotion-profile-');
+        const args = ['--headless=new', '--disable-gpu', '--no-first-run', '--user-data-dir=' + profileDir, '--virtual-time-budget=2000'];
+        if (reduce) args.push('--force-prefers-reduced-motion');
+        const r = spawnSync(findBrowser(), args.concat(['--dump-dom', pathToFileURL(file).href]), { encoding: 'utf8', timeout: 60000 });
+        const m = /RUN=(\d+) RM=(true|false)/.exec(r.stdout || '');
+        if (m) return { running: Number(m[1]), reduced: m[2] === 'true' };
+        if (attempt === 1) assert.ok(m, 'the page never reported: ' + String(r.stderr || '').slice(0, 300));
+    }
 }
 
 test('the chosen card animates, and under reduced motion nothing is running', (t) => {
