@@ -395,3 +395,22 @@ test('gate.station off: the hook neither waits nor writes a pending file', () =>
   assert.ok(Date.now() - started < 3000);
   assert.equal(fs.existsSync(path.join(taskDir(root), 'design-pending.json')), false);
 });
+
+// 「交給終端／手機」 on the page: the hook stops waiting at once and the
+// question goes to the terminal, where Remote Control already carries it.
+test('gate.station: a hand-off the page writes ends the wait at once, and the question goes to the terminal', async () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'design', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  stationOn(root, 30);
+  const pending = path.join(taskDir(root), 'design-pending.json');
+  const answer = path.join(taskDir(root), 'design-answer.md');
+  const started = Date.now();
+  const done = runAsync(GATE, root, { tool_input: askOf(QUESTIONS) });
+  for (let i = 0; i < 50 && !fs.existsSync(pending); i++) await new Promise((r) => setTimeout(r, 100));
+  assert.ok(fs.existsSync(pending), 'the hook never wrote the pending file');
+  fs.writeFileSync(answer, JSON.stringify({ handoff: 'terminal' }) + '\n');
+  const out = await done;
+  assert.equal(out.trim(), '', 'a hand-off is not an answer');
+  assert.ok(Date.now() - started < 15000, 'the hook waited out its 30 s instead of stopping');
+  assert.equal(fs.existsSync(pending), false, 'the pending file outlived the wait');
+});

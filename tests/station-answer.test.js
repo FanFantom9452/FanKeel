@@ -152,3 +152,25 @@ test('pgAnswers takes typed text as the answer, and counts what is missing', () 
     assert.deepEqual(V.pgAnswers(Q2, { 0: ['暫停'], 1: ['__other'] }, { 1: '   ' }),
         { answers: { [Q2[0].question]: '暫停' }, missing: 1 }, 'a 其他 with nothing typed is no answer');
 });
+
+test('POST /answer with handoff=terminal writes the hand-off the hook stops on, and only while a gate is held', async () => {
+    const f = fixture(Date.now() + 60e3);
+    assert.equal(typeof served(f).pending.at, 'number', 'the page needs when the wait began to draw the countdown');
+    const { serve } = require('../scripts/station.js');
+    const s = await serve({ configDir: f.cfg, roots: [f.r1], port: 0, idleMs: 60e3, open: false });
+    try {
+        const data = await request(s.url + 'station/station-data.js');
+        const nonce = /"nonce":"([^"]+)"/.exec(data.text)[1];
+        const post = (o) => request(s.url + 'answer', new URLSearchParams(Object.assign({ nonce, root: f.r1, id: SID }, o)).toString());
+        const file = answerPath(f.r1, f.data, 'build');
+        assert.equal((await post({ handoff: 'phone' })).status, 400, 'terminal is the one hand-off there is');
+        assert.equal(fs.existsSync(file), false);
+        const ok = await post({ handoff: 'terminal' });
+        assert.equal(ok.status, 201);
+        assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), { handoff: 'terminal' });
+        fs.unlinkSync(pendingPath(f.r1, f.data, 'build'));
+        assert.equal((await post({ handoff: 'terminal' })).status, 409, 'no gate is held any more');
+    } finally {
+        s.close();
+    }
+});

@@ -48,7 +48,7 @@ const fs = require('node:fs');
 const registry = require('../lib/registry.js');
 const profileLib = require('../lib/profile.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
-const { handoffPath, answerPath, pendingPath, answersSince, writeAnswer, readGate, skipReason, gateMatches } = require('../lib/handoff.js');
+const { handoffPath, answerPath, pendingPath, answersSince, handedOffSince, writeAnswer, readGate, skipReason, gateMatches } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 
 // `stage.agents` as the profile holds it, for a sentence.
@@ -100,6 +100,7 @@ function stationAnswers(root, mine, values, questions) {
         for (;;) {
             const got = answersSince(answer, since);
             if (got) return got;
+            if (handedOffSince(answer, since)) return null;
             if (Date.now() - since >= wait * 1000) return null;
             Atomics.wait(nap, 0, 0, POLL_MS);
         }

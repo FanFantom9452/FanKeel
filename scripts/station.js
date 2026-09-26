@@ -518,6 +518,19 @@ async function serve(opts) {
                 fail(409, 'no gate is waiting on the station for this session');
                 return;
             }
+            // 「交給終端／手機」: not an answer. The hook stops waiting and the
+            // question goes to the terminal, where Remote Control carries it.
+            const hand = form.get('handoff');
+            if (hand !== null) {
+                if (hand !== 'terminal') {
+                    fail(400, 'handoff is terminal');
+                    return;
+                }
+                handoff.writeAnswer(handoff.answerPath(reg.root, mine, mine.stage), JSON.stringify({ handoff: 'terminal' }) + '\n');
+                res.writeHead(201, { 'content-type': 'text/plain; charset=utf-8' });
+                res.end('handed to the terminal\n');
+                return;
+            }
             let answers = null;
             try { answers = JSON.parse(form.get('answers') || ''); } catch (e) { answers = null; }
             const asked = new Set(pending.questions.map((q) => q && q.question));
