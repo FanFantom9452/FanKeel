@@ -114,3 +114,60 @@ test('plan writes the table and moves nothing', () => {
   assert.ok(fs.existsSync(path.join(root, 'docs', 'pipeline.md')), 'plan moved a file');
   assert.equal(move.main(['plan', '--root', root, '--to', 'nope', '--out', out]).code, 2);
 });
+
+test('bucketTargets: maps each flat bucket that moves to audience\'s same-role bucket, and folds evidence in under reports', () => {
+  const root = repo(FLAT);
+  const from = docs.read(root).tree;
+  const to = docs.normalise(docs.PRESETS.audience);
+  const targets = move.bucketTargets(from, to);
+  assert.deepEqual(Object.fromEntries(targets), {
+    'docs/plans': 'docs/90-agent/plans',
+    'docs/decisions': 'docs/03-decisions',
+    'docs/reports': 'docs/90-agent/reports',
+    'docs/archive': 'docs/99-archive',
+    'docs/reports/evidence': 'docs/90-agent/reports/evidence',
+    'docs/judgements': 'docs/90-agent/judgements',
+  });
+});
+
+test('dirMoves: a whole moved directory maps to its new path, but docs/ itself never qualifies while its index stays', () => {
+  const root = repo(FLAT);
+  const rows = move.planMoves(root, 'audience', {});
+  const dirs = move.dirMoves(rows);
+  assert.deepEqual(Object.fromEntries(dirs), {
+    'docs/archive': 'docs/99-archive',
+    'docs/decisions': 'docs/03-decisions',
+    'docs/judgements': 'docs/90-agent/judgements',
+    'docs/plans': 'docs/90-agent/plans',
+    'docs/reports': 'docs/90-agent/reports',
+    'docs/reports/evidence': 'docs/90-agent/reports/evidence',
+    'docs/reports/evidence/2026-01-02-run': 'docs/90-agent/reports/evidence/2026-01-02-run',
+  });
+  assert.ok(!dirs.has('docs'), 'docs stays because its index does not move');
+});
+
+test('rewriteText: rewrites a relative link and a moved code span, and leaves an unmoved file alone', () => {
+  const root = repo(FLAT);
+  const rows = move.planMoves(root, 'audience', {});
+  const files = new Map(rows.filter((r) => r.from !== r.to).map((r) => [r.from, r.to]));
+  const dirs = move.dirMoves(rows);
+  const text = FLAT['docs/pipeline.md'];
+  const next = move.rewriteText(text, 'docs/pipeline.md', 'docs/90-agent/reference/pipeline.md', files, dirs);
+  assert.equal(next, '# pipeline\n\nSee [the plan](../plans/2026-01-01-x.md#steps) and `docs/03-decisions/why.md:3`, built by `lib/a.js`.\n');
+});
+
+test('nextTree: keeps a bucket outside docs/ declared, folds a moved bucket under its new path, and drops docs\' old path while the index stays', () => {
+  const root = repo(FLAT);
+  const from = docs.read(root).tree;
+  const to = docs.normalise(docs.PRESETS.audience);
+  const targets = move.bucketTargets(from, to);
+  const tree = move.nextTree(from, to, targets);
+  assert.equal(tree.preset, 'audience');
+  assert.equal(tree.index, 'docs/README.md');
+  const byPath = Object.fromEntries(tree.buckets.map((b) => [b.path, b.role]));
+  assert.equal(byPath['docs/90-agent/judgements'], 'report');
+  assert.equal(byPath['docs/90-agent/reports/evidence'], 'fixture');
+  assert.equal(byPath['skills'], 'reference', 'a bucket outside docs/ rides through unchanged');
+  assert.equal(byPath['docs'], 'reference', 'docs stays declared for its own depth-1 page');
+  assert.equal(byPath['docs/decisions'], undefined, 'a bucket that moved is not left at its old path too');
+});
