@@ -650,6 +650,18 @@ own context, which is a cost the A/B has to count rather than assume away. `veri
 applying a mutation and restoring the file. A default should wait for that
 measurement.
 
+### The task's context.md
+
+`.fankeel/build/task-<started>/context.md` (`contextPath` in `lib/handoff.js`)
+holds what a subagent verified, one fact a line: the fact, `path:line`, and the
+short sha it was read at. `scripts/context.js add "<fact>" --at <path:line>
+--session <id>` is the only writer — any subagent may call it — and keeps the
+newest 40, dropping an exact duplicate and replacing a fact read again at a
+new sha. `context.js show` marks a line whose sha is not HEAD `(舊)`. The
+ordinary brief names the file's path and never its contents, where the
+`reads:` block above is copied inline; whether that saves anything is
+measured, not assumed — `docs/reports/2026-09-26-context-md.md`.
+
 ### Which model a stage agent runs on, what lets it write, and what comes before the switch
 
 `agents/fankeel-brain.md` pins `model: sonnet`. The controller's dispatch rule
@@ -700,7 +712,7 @@ so a task with both set carries two extra rule lines, not one
 (`lib/render.js:118`, `function promptRules(values, stage) {`). `parsePrompt`
 in `lib/profile.js` holds it to one line and 200 characters — trimmed but not
 lowercased, and refused if it is empty, carries a newline, or runs long
-(`lib/profile.js:145`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
+(`lib/profile.js:156`, `key + ' is one line of 1 to ' + PROMPT_MAX + ' characters' };`).
 `promptRules` is called once, inside `rulesLines`
 (`lib/render.js:170`, `.concat(promptRules(values, data && data.stage));`),
 and by `controlBlock` for a controlled stage's own block

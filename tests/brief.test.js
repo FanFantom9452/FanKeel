@@ -641,3 +641,17 @@ test('the file a design block names for a controlled build is what the build bra
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
   assert.match(text, /read first: \S+\/\.fankeel\/build\/task-20260919T093012\/design\.md — the last stage's report/);
 });
+
+// docs/plans/2026-09-26-ready-five-design.md §2: the brief names the task's
+// context.md by path, so a subagent reads it on demand — never its contents.
+test('the brief names the task\'s context.md by path and never inlines it', () => {
+  const root = tmp();
+  seed(root, { started: '2026-09-19T09:30:12.345Z' });
+  const file = path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'context.md');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, '- a secret fact — lib/a.js:1 @ abc1234\n');
+  const text = contextOf(run(root, start(root)));
+  assert.match(text, /context: \S*\/\.fankeel\/build\/task-20260919T093012\/context\.md — /);
+  assert.match(text, /scripts\/context\.js add/);
+  assert.ok(!text.includes('a secret fact'), 'the brief inlined the file');
+});
