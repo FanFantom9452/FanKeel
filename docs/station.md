@@ -990,10 +990,12 @@ every key it lists and records it as that step's recommendation, and a
 habit is pre-picked on load when every key it sets already matches the
 effective value (`wizLoad`). Under the pills each key is a group of cards,
 one card per value (`wizCards`), with an ask card where the key has no
-builtin — a card carries the same `data-k`/`data-o` the buttons did, so it
-sets that key alone, off its recommendation if need be. The cards of
-`land.integration`, `land.push`, `land.archivePlan`, `stage.agents` and
-`guard` each hold a small scene (`WIZ_SCENES`), and only the chosen card
+builtin — most cards carry the same `data-k`/`data-o` the buttons did, so
+one sets that key alone, off its recommendation if need be;
+`design.skill`'s cards are chips instead, each carrying `data-k`/`data-m`
+for its multi-select. The cards of `land.integration`, `land.push`,
+`land.archivePlan`, `stage.agents`, `guard` and `gate.station` each hold
+a small scene (`WIZ_SCENES`), and only the chosen card
 and the one under the pointer play theirs; under
 `prefers-reduced-motion: reduce` every scene rests on its last frame.
 `stage.agents` keeps its seven per-stage toggles under its four cards.
