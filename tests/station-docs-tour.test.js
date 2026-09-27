@@ -54,3 +54,10 @@ test('no hit names the query and the scope; more hits than shown says how many t
     assert.match(more, /列出前 1 頁，共 25 頁/);
     assert.match(V.docsSearchHtml({ q: '', res: null }, true), /<span class="dsx-n mono" id="dsxN"><\/span><\/div>[\s\S]*<div id="dsxOut"><\/div><\/div>$/);
 });
+
+test('a failed search shows a message instead of leaving stale or empty results', () => {
+    const html = V.docsSearchHtml({ q: 'inflight', res: { q: 'inflight', err: true } }, true);
+    assert.match(html, /<span class="dsx-n mono" id="dsxN"><\/span>/);
+    assert.match(html, /<p class="dsx-none">搜尋失敗/);
+    assert.doesNotMatch(html, /<ol class="dsx-list">/);
+});

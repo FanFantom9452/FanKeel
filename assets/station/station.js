@@ -769,10 +769,14 @@
     // 文件's full-text box. The page bodies live on disk, so only a served
     // page can search them (`GET station/search`, lib/docsearch.js); the file
     // `/fankeel` writes says where to open one. `st` is `view.dsx`.
-    function dsxCount(st) { return st && st.res && st.res.q ? st.res.n + ' 頁' : ''; }
+    function dsxCount(st) { return st && st.res && st.res.q && !st.res.err ? st.res.n + ' 頁' : ''; }
     function dsxResultsHtml(st) {
         var res = st && st.res;
         if (!res || !res.q) return '';
+        if (res.err) {
+            return '<p class="dsx-none">搜尋失敗，沒有連上伺服器或回應不是預期的內容。'
+                + '<span>再打一個字或刪一個字重試；還是不行就檢查 serve 是否還在跑。</span></p>';
+        }
         if (!res.hits.length) {
             return '<p class="dsx-none">沒有頁面的內文含「' + esc(res.q) + '」。<span>換個較短的詞再試；archive、plan、report 頁不在搜尋範圍內，'
                 + '要找它們請用下方的專案清單。</span></p>';
@@ -4121,7 +4125,11 @@
                 if (view.dsx.q !== q) return;
                 view.dsx.res = res;
                 dsxPaint();
-            }).catch(function () { /* the next key asks again */ });
+            }).catch(function () {
+                if (view.dsx.q !== q) return;
+                view.dsx.res = { q: q, err: true };
+                dsxPaint();
+            });
         }, 250);
     });
     VIEWS.list = listPage;

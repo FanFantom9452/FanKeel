@@ -624,6 +624,15 @@ naming its `parentAgentId` at `spawnDepth` 2 — so `agentFiles()` in
 `lib/usage.js` counts them, flat, beside the agent that sent them (a run on
 2026-09-20: one stage agent and five readers in one directory).
 
+The station reads the same directory to say which of them are running now
+(`runningAgents` in `lib/usage.js`, the `live-subagents` row on `#/live`).
+`agent-<id>.meta.json` is written once, at spawn, and carries no end, so the
+end is read off the transcript: an agent is finished when the last assistant
+or user line of `agent-<id>.jsonl` is an assistant line with text and no
+tool_use — measured 2026-09-27 on 290 finished agents in one project, 288
+ending `end_turn` and 2 ending `stop_reason: null` with text alone — and
+running otherwise, unless the file has not moved in 20 minutes.
+
 `survey` is still the only stage this has ever run for, and that is exactly
 why the builtin stayed `false` rather than moving to `true` or `all`, for
 three checkable reasons.
