@@ -92,7 +92,7 @@ backend because somebody decided it was, and no listing says so.
 `buildMap()` follows the tree with an **orientation** section: the five
 files most required elsewhere in the tree, and which top-level directories
 require which — both counted from `lib/requires.js`'s `requireGraph()` over
-every tracked `.js` file's relative `require()`/`import` edges, and both
+every tracked `.js` file's relative `require`/`import` edges, and both
 truncated the way every other section below them is, by `lib/report.js`'s
 `section()`. It answers a different question than the tree does: not where a
 file lives, but who already reaches into it. Left out entirely when no `.js`
@@ -167,13 +167,17 @@ report where a real parser would cost a dependency this plugin does not have.
 這幾區**不能**是 `.fankeel/docs.json` 的一個 bucket，而這值得寫下來，因為路徑
 本身是合法的：`lib/docs.js:209` 的 `if (!p.startsWith(b.path + '/')) continue;`
 是純字串前綴比對，`skills`、`evals`、`agents` 都是 `docs/` 以外的 bucket。擋住
-的是列檔的那一層，而那一層是同一個函式：下面第一條是它跑的旗標，其後十一條是它
-的十一個呼叫端，`scripts/` 十處與 `lib/` 一處。每一行的引文都必須
-跟它的行號同行。`scripts/docs-check.js:229` 是 `function quoteBeside(text, from) {`，
+的是列檔的那一層，而那一層是同一個函式：下面第一條是它跑的旗標，其後十四條是它
+的十四個呼叫端，`scripts/` 十處與 `lib/` 四處。每一行的引文都必須
+跟它的行號同行。`scripts/docs-check.js:285` 是 `function quoteBeside(text, from) {`，
 它只掃到換行為止，而同一行上的第二個路徑會被它自己的 `PATHISH` 擋掉——所以擠
 在一行的兩個引用等於兩個都沒有引文，而被硬換行拆開的引文等於沒寫。
 
 - `lib/tracked.js:31` 是 `const args = ['ls-files', '-z', '--cached', '--others', '--exclude-standard'];`
+- `lib/map.js:237` 是 `const found = trackedFiles(root);`
+- `lib/map.js:317` 是 `const found = trackedFiles(root);`
+- `lib/plantasks.js:268` 是 `const found = trackedFiles(root);`
+- `lib/requires.js:44` 是 `trackedFiles(root)`
 - `scripts/docs-audit.js:416` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-audit.js:456` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-check.js:152` 是 `const result = trackedFiles(root);`
@@ -183,8 +187,7 @@ report where a real parser would cost a dependency this plugin does not have.
 - `scripts/layout.js:51` 是 `const found = trackedFiles(root);`
 - `scripts/memory-check.js:142` 是 `const tracked = trackedFiles(root);`
 - `scripts/orient.js:286` 是 `result = trackedFiles(dir, { stats });`
-- `scripts/survey.js:198` 是 `const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt`
-- `lib/map.js:235` 是 `const found = trackedFiles(root);`，十一個之中只有這個檔案直接讀 `.buckets`
+- `scripts/survey.js:198` 是 `const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt`，十四個之中只有 `lib/map.js` 直接讀 `.buckets`
 
 `--exclude-standard` 套用 `.gitignore`，所以宣告出來的 bucket 會
 永遠列出零個檔。這張表是這幾區唯一的說明，`node scripts/residue.js` 是它們當下

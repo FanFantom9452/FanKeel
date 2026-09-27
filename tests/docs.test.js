@@ -678,12 +678,12 @@ test('the lifetime section lists every trackedFiles call site in scripts/ and li
     + ', bullets pointing at no call site: ' + JSON.stringify(declared.filter((x) => !a.has(x))));
 });
 
-test('there are eleven trackedFiles call sites, ten under scripts/ and one under lib/', () => {
+test('there are fourteen trackedFiles call sites, ten under scripts/ and four under lib/', () => {
   const actual = callSites(path.join(__dirname, '..'));
-  assert.equal(actual.length, 11, 'call sites: ' + JSON.stringify(actual));
+  assert.equal(actual.length, 14, 'call sites: ' + JSON.stringify(actual));
   assert.equal(actual.filter((s) => s.startsWith('scripts/')).length, 10,
     'under scripts/: ' + JSON.stringify(actual));
-  assert.equal(actual.filter((s) => s.startsWith('lib/')).length, 1,
+  assert.equal(actual.filter((s) => s.startsWith('lib/')).length, 4,
     'under lib/: ' + JSON.stringify(actual));
 });
 
@@ -692,14 +692,14 @@ test('there are eleven trackedFiles call sites, ten under scripts/ and one under
 // The section is whitespace-stripped first: that sentence is hard-wrapped, and
 // pinning one wrap position makes this go red for the wrong reason the next
 // time the paragraph reflows.
-test('the sentence above the list says eleven, and ten under scripts/', () => {
+test('the sentence above the list says fourteen, and ten under scripts/', () => {
   const flat = lifetimeSection(path.join(__dirname, '..')).replace(/\s+/g, '');
-  assert.ok(flat.includes('其後十一條是它的十一個呼叫端'),
-    'the sentence above the list does not say 其後十一條 / 十一個呼叫端');
-  assert.ok(flat.includes('`scripts/`十處與`lib/`一處'),
-    'the sentence does not say scripts/ 十處與 lib/ 一處');
-  assert.ok(flat.includes('十一個之中只有這個檔案直接讀'),
-    'the lib/map.js bullet does not say 十一個之中');
+  assert.ok(flat.includes('其後十四條是它的十四個呼叫端'),
+    'the sentence above the list does not say 其後十四條 / 十四個呼叫端');
+  assert.ok(flat.includes('`scripts/`十處與`lib/`四處'),
+    'the sentence does not say scripts/ 十處與 lib/ 四處');
+  assert.ok(flat.includes('十四個之中只有`lib/map.js`直接讀'),
+    'the lib/map.js bullet does not say 十四個之中');
 });
 
 // docs/plans/2026-09-26-station-redesign.md Task 6. A decision marked
