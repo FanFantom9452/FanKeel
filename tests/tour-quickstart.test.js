@@ -48,6 +48,15 @@ test('claude is typed one character every six frames from frame 520', () => {
     assert.ok(shot(550).texts().includes('claude'));
 });
 
+// Fix rounds 2-3: the task command finishes typing (at EV.taskPerChar frames
+// per character, not the old slower rate) and keeps its trailing cursor
+// glyph once fully typed. Red when: EV.taskPerChar reverts to a slower rate
+// (the string is not yet fully typed by frame 800) or the cursor is dropped.
+test('at frame 800 the task command is fully typed with its trailing cursor', () => {
+    const t = shot(800).texts();
+    assert.ok(t.some((s) => s.includes('/fankeel 報表加上 CSV 匯出█')), t.join(' | '));
+});
+
 // The three criteria the design's row set out: the survey beat draws the
 // real lead line (not the old `[FANKEEL:SURVEY]` chip), the clash beat's
 // lead carries the collision flag, and the land beat's lead shows all five
