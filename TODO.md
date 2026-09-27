@@ -236,3 +236,8 @@ if: 某個專案的程式碼大到 grep 加 read 找不到跨檔關係. 09-27.
 if: `the chosen card animates, and under reduced motion nothing is running` 在整套裡再紅一次. 09-27.
 
 - 〔tests〕09-27 四次整套紅兩次（2072/2073）、單跑 3/3 綠；之後整套 10 次全綠，沒抓到失敗訊息，紀錄在 `.fankeel/build/2026-09-27-five-items/flake.txt` — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
+
+### station-cli 逾時再紅一次
+if: `the first run scans once and records that it did` 在整套裡再紅一次. 09-27.
+
+- 〔tests〕09-27 整套跑兩次，這條一次紅一次綠（11923ms 對 9000ms 預算），跟 2026-09-27-five-items 這個 plan 的任何一個改動都無關，最後改動於 `b8f0629d`，早於這個 plan — [tests/station-cli.test.js](tests/station-cli.test.js).
