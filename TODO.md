@@ -81,7 +81,6 @@ the reading is what gets scheduled.
 
 ## Ready
 
-- 〔registry〕每個 session 各開一個 git worktree，共用樹的誤記消失、真衝突留到 merge；`scripts/commit.js`、registry 與 station 都要認得 worktree。使用者 09-27 定為下個任務 — [scripts/commit.js](scripts/commit.js).
 - 〔registry〕意圖比對：plan 的 `**Files:**` 與 design 檔案表寫進 registry 的 `intends`，plan gate 與 build 開始前比對鄰居，依對方 stage 分級預警；使用者 09-27 定為下個任務；不需 MCP — [lib/plantasks.js](lib/plantasks.js).
 
 ## Needs a decision
