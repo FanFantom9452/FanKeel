@@ -24,7 +24,7 @@ const path = require('node:path');
 const { parseArgs: parseArgv } = require('node:util');
 
 const docs = require('../lib/docs.js');
-const { section } = require('../lib/report.js');
+const { section, plural } = require('../lib/report.js');
 const { trackedFiles } = require('../lib/tracked.js');
 const { resolveRoot } = require('../lib/registry.js');
 
@@ -120,10 +120,12 @@ function readFile(root, rel) {
     }
 }
 
-// Every symbol the repository declares, gathered once. A per-document search
-// would re-read the tree for each page, and the answer is the same every time.
+// Every symbol the repository declares, gathered once, name to every file
+// that declares it. `docs-for` needs the files; the orphan check inside
+// `checkDoc` only ever calls `.has(name)`, which a Map answers exactly as the
+// Set it replaces did.
 function declaredSymbols(root, files) {
-    const names = new Set();
+    const names = new Map();
     for (const rel of files) {
         if (!CODE_EXT.has(path.extname(rel).toLowerCase())) continue;
         const text = readFile(root, rel);
@@ -131,10 +133,64 @@ function declaredSymbols(root, files) {
         for (const re of DECL) {
             re.lastIndex = 0;
             let m;
-            while ((m = re.exec(text)) !== null) names.add(m[1]);
+            while ((m = re.exec(text)) !== null) {
+                const list = names.get(m[1]) || [];
+                if (!list.includes(rel)) list.push(rel);
+                names.set(m[1], list);
+            }
         }
     }
     return names;
+}
+
+// What owns `target` (its `source_of_truth`) and what mentions it (a
+// backtick-quoted `name()` whose declaration lives in `target`). Neither is a
+// finding — `docs-check` reports nothing new here — it is a lookup for a
+// stage agent about to edit a file, wanting to know which pages read it as
+// reference before writing anything.
+function docsFor(root, target) {
+    const result = trackedFiles(root);
+    if (!result) return null;
+    const files = result.files;
+    const rel = String(target || '').replace(/\\/g, '/').replace(/^\.\//, '');
+    const markdown = files.filter(isMarkdown);
+    const owner = (docs.sourcesOf(root, markdown)[rel] || []).slice();
+    const symbols = declaredSymbols(root, files);
+    const names = new Set();
+    for (const [name, declaredIn] of symbols) if (declaredIn.includes(rel)) names.add(name);
+    const mentions = [];
+    for (const page of markdown) {
+        const text = readFile(root, page);
+        if (text === null) continue;
+        CODE.lastIndex = 0;
+        let m;
+        let hit = false;
+        while (!hit && (m = CODE.exec(text)) !== null) {
+            const call = /^([A-Za-z_$][\w$]{2,})\(\)$/.exec(m[1].trim());
+            if (call && names.has(call[1])) hit = true;
+        }
+        if (hit) mentions.push(page);
+    }
+    return { rel, owner, mentions: mentions.sort() };
+}
+
+function reportDocsFor(result) {
+    if (!result) return 'fankeel docs-check: nothing readable under this directory.';
+    const lines = ['fankeel docs-check docs-for ' + result.rel];
+    lines.push(...section(plural(result.owner.length, 'page names it', 'pages name it') + ' in source_of_truth:', result.owner));
+    lines.push(...section(plural(result.mentions.length, 'page mentions', 'pages mention') + ' a symbol it declares:', result.mentions));
+    if (!result.owner.length && !result.mentions.length) lines.push('', 'No page names it and no page mentions a symbol it declares.');
+    return lines.join('\n');
+}
+
+// A declared flag given no value comes back `true` rather than a string, same
+// as `parseArgs` above; `positionals[0]` is the path, read positionally
+// rather than as a flag.
+function parseDocsForArgs(argv) {
+    const { values, positionals } = parseArgv({
+        args: argv, strict: false, allowPositionals: true, options: { root: { type: 'string' } },
+    });
+    return { root: resolveRoot(values.root), target: positionals[0] };
 }
 
 const LINES = new Map();
@@ -555,6 +611,11 @@ function parseArgs(argv) {
 }
 
 function main(argv) {
+    if (argv[0] === 'docs-for') {
+        const { root, target } = parseDocsForArgs(argv.slice(1));
+        if (!target) return { text: 'fankeel docs-check: usage: docs-check.js docs-for <path> [--root <dir>]', code: 2 };
+        return { text: reportDocsFor(docsFor(root, target)), code: 0 };
+    }
     const { root, roles, quiet } = parseArgs(argv);
     const result = scan(root, roles);
     const text = report(result);
@@ -570,4 +631,7 @@ if (require.main === module) {
     process.exit(code);
 }
 
-module.exports = { scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown, lineCount };
+module.exports = {
+    scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown, lineCount,
+    docsFor, reportDocsFor, parseDocsForArgs, declaredSymbols,
+};

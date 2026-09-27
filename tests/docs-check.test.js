@@ -18,7 +18,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
-const { report, scan, parseArgs } = require('../scripts/docs-check.js');
+const { report, scan, parseArgs, docsFor, parseDocsForArgs } = require('../scripts/docs-check.js');
 const tmp = require('./tmp.js');
 
 const result = (over) => ({
@@ -315,6 +315,22 @@ test('a heading repeated in one document resolves its second copy at -1', () => 
 // GitHub keeps an underscore inside a code span or a word and drops only the
 // ones that mark emphasis — docs/improvement-brief.md's `check_versions.py`
 // headings are the real case.
+test('docs-for lists the pages naming a file as source_of_truth and the pages mentioning what it declares', () => {
+  const root = repoWith('fankeel-docscheck-docsfor-', {
+    'docs/README.md': '# index\n',
+    'lib/a.js': "'use strict';\nfunction helperFn() {}\nmodule.exports = { helperFn };\n",
+    'docs/owner.md': '---\nstatus: current\nsource_of_truth: lib/a.js\n---\n# owner\n',
+    'docs/mentions.md': 'See `helperFn()` for the details.\n',
+  });
+  const out = docsFor(root, 'lib/a.js');
+  assert.deepEqual(out.owner, ['docs/owner.md']);
+  assert.deepEqual(out.mentions, ['docs/mentions.md']);
+});
+
+test('parseDocsForArgs reads the path positionally', () => {
+  assert.equal(parseDocsForArgs(['lib/a.js']).target, 'lib/a.js');
+});
+
 test('an underscore in a code span or a word stays in the slug; one marking emphasis does not', () => {
   const root = repoWith('fankeel-docscheck-frag-underscore-', {
     'docs/README.md': '# index\n',
