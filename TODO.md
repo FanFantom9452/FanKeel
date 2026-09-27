@@ -89,6 +89,11 @@ the reading is what gets scheduled.
 
 ## Blocked
 
+### #/tour 掛進 station
+after: task「Ready 兩條、給人讀的文件層、ab.sh 重跑」落地；它正改著 `assets/station/station.js` 與 `scripts/station.js`. 09-27.
+
+- 〔tour〕`#/tour` 待掛：路由未進 `PAGES`（`assets/station/station.js`），靜態檔未進白名單（`scripts/station.js`）.
+
 ### fankeel 功能全部完成
 after: fankeel 其餘功能都落地、使用者換到新機器測試. 09-27.
 

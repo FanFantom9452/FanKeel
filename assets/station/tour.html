@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-theme="dark"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>fankeel · 導覽</title>
+<!-- Standalone: opens from file:// with no server. The station's own
+     stylesheet first, then only what the tour adds. The frames are always
+     dark (an MP4 cannot follow a theme), so the page pins data-theme=dark. -->
+<link rel="stylesheet" href="../station/station.css">
+<link rel="stylesheet" href="tour.css">
+</head><body>
+<main class="tr-main">
+  <h1 class="tr-h">導覽</h1>
+  <p class="tr-lede">三段無聲短片，第一次用 fankeel 的人從這裡看起。畫面由 canvas 逐格畫出，可以拖、可以停；同一份逐格程式也輸出成 MP4。</p>
+  <section class="tr-player" aria-label="播放器">
+    <div class="tr-top">
+      <div class="seg" role="group" aria-label="影片" id="trChips"></div>
+      <span class="tr-fno" id="trFno"></span>
+    </div>
+    <div class="tr-stage"><canvas id="trCanvas" width="1280" height="720" role="img" aria-label="目前的畫面"></canvas></div>
+    <div class="tr-bar">
+      <button type="button" class="tr-play" id="trPlay" aria-label="播放" aria-pressed="false"></button>
+      <span class="tr-time" id="trTime"></span>
+      <div class="tr-scrub" id="trScrub" role="slider" tabindex="0" aria-label="時間軸" aria-valuemin="0">
+        <div class="tr-fill"></div>
+        <div class="tr-thumb"></div>
+      </div>
+    </div>
+    <p class="tr-keys"><kbd>Space</kbd> 播放／暫停 · <kbd>←</kbd> <kbd>→</kbd> 前後一格 · <kbd>Shift</kbd>+<kbd>←</kbd> <kbd>→</kbd> 跳到上一拍／下一拍 · 刻度是每一拍的起點，顏色是那一站的顏色。開啟時停在第一格，不自動播放。</p>
+  </section>
+</main>
+<script src="tour.js"></script>
+<script src="tour-quickstart.js"></script>
+<script src="tour-stages.js"></script>
+<script src="tour-wizard.js"></script>
+<script src="tour-player.js"></script>
+</body></html>
