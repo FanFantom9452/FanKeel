@@ -142,6 +142,26 @@ test('the worktree you are standing in is not spent by standing in it', () => {
   assert.match(report(result), /no spent worktrees/);
 });
 
+test('a merged worktree with uncommitted changes is dirty context, not a spent worktree', () => {
+  const { root, git } = repo();
+  // The real repository ignores `.claude/worktrees/` (see the comment above
+  // `undecided` in scripts/residue.js). Without it here, `.claude/` itself —
+  // holding the linked worktree's own `.git` file — comes back untracked and
+  // undecided, which is a fixture gap, not a defect in scan() or report().
+  fs.writeFileSync(path.join(root, '.gitignore'), '.claude/worktrees/\n');
+  git(['add', '.gitignore']);
+  git(['commit', '-qm', 'ignore worktrees']);
+  git(['branch', 'done']);
+  const where = path.join(root, '.claude', 'worktrees', 'done');
+  execFileSync('git', ['worktree', 'add', '-q', where, 'done'], { cwd: root, stdio: 'ignore' });
+  fs.writeFileSync(path.join(where, 'scratch.txt'), 'uncommitted');
+  const result = scan(root);
+  assert.deepEqual(result.worktrees, []);
+  assert.ok(result.dirty.some((w) => w.branch === 'done'), 'reported: ' + JSON.stringify(result.dirty));
+  assert.equal(defects(result), 0, 'a dirty worktree needs a human decision, not automatic cleanup');
+  assert.match(report(result), /not clean/);
+});
+
 test('outside a repository the git sections are absent and the rest still runs', () => {
   const root = tmp('fankeel-norepo-');
   const result = scan(root);

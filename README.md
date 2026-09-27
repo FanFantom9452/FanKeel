@@ -158,7 +158,7 @@ place of that is the live form — [docs/station.md](docs/90-agent/reference/sta
 | | |
 |---|---|
 | `node scripts/docs-check.js` | Every reference still resolves. A second to run, and the `verify` and `audit` rules call for it. |
-| `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged, an environment nothing can rebuild or run, the weight of what is ignored, directories holding no files. It never deletes. |
+| `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged and has nothing uncommitted, an environment nothing can rebuild or run, the weight of what is ignored, directories holding no files. It never deletes. |
 | `node scripts/docs-audit.js` | The fortnightly deep pass: which pages have stopped being true, and which two of them disagree. `/fankeel-audit` is the whole sweep — it runs all five, reads the shortlist they produce, then offers the cleanup. |
 | `node scripts/memory-check.js` | Claude Code's own memory for this project: the index and the directory agreeing, cited paths that still exist, `path:line` inside its file. |
 | `node scripts/input-check.js` | Every file loaded into every session's input — global and project `CLAUDE.md`, each project's `MEMORY.md` — largest first with bytes and estimated tokens, then what could be trimmed. Lists, never fails, never edits. |

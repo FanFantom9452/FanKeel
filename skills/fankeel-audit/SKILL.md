@@ -88,7 +88,7 @@ somebody could check by hand.
 | | | fails the run |
 |---|---|---|
 | untracked and not ignored | somebody has to commit it, ignore it or delete it, and nobody has | yes |
-| a worktree whose branch is merged | one that has been spent | yes |
+| a worktree whose branch is merged and is clean | one that has been spent; a dirty one is listed apart, as context | yes |
 | an environment nothing can rebuild or run | see below | yes |
 | ignored paths, with their size | a 73 GB build directory is not a bug; not knowing about it is | no |
 | directories with no files at any depth | git cannot record one, so "commit it" is not on the menu | no |

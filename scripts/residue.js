@@ -239,7 +239,7 @@ function scan(root) {
     const empty = emptyDirs(root);
 
     if (!isRepo(root)) {
-        return { repo: false, branch: null, undecided: [], worktrees: [], inUse: [], weight: [], empty, orphans };
+        return { repo: false, branch: null, undecided: [], worktrees: [], inUse: [], dirty: [], weight: [], empty, orphans };
     }
 
     const branch = ((git(root, ['rev-parse', '--abbrev-ref', 'HEAD']) || [])[0] || 'HEAD').trim();
@@ -272,9 +272,17 @@ function scan(root) {
         .map((s) => s.trim()).filter(Boolean));
 
     const listed = worktreesOf(root);
-    const worktrees = listed
-        .filter((w) => w.branch && merged.has(w.branch) && !w.inUse)
-        .map((w) => ({ path: w.path, branch: w.branch }));
+    const candidates = listed.filter((w) => w.branch && merged.has(w.branch) && !w.inUse);
+    // Merged and unused still needs a human call when the tree itself carries
+    // uncommitted work: deleting it would lose that work, which is exactly the
+    // choice `residue.js` never makes on its own. `git status --porcelain`
+    // answers untracked and modified alike, so either keeps a candidate here.
+    const dirty = candidates.filter((w) => {
+        const status = git(w.path, ['status', '--porcelain']);
+        return Boolean(status && status.length);
+    }).map((w) => ({ path: w.path, branch: w.branch }));
+    const dirtySet = new Set(dirty.map((w) => w.path));
+    const worktrees = candidates.filter((w) => !dirtySet.has(w.path)).map((w) => ({ path: w.path, branch: w.branch }));
     const inUse = listed.filter((w) => w.inUse).map((w) => ({ path: w.path, branch: w.branch }));
 
     // Only the topmost ignored path earns a line, for the reason `emptyDirs` gives
@@ -303,7 +311,7 @@ function scan(root) {
         .filter(Boolean)
         .sort((a, b) => b.bytes - a.bytes);
 
-    return { repo: true, branch, undecided, worktrees, inUse, weight, empty, orphans };
+    return { repo: true, branch, undecided, worktrees, inUse, dirty, weight, empty, orphans };
 }
 
 
@@ -324,6 +332,9 @@ function report(result) {
         lines.push(...section(plural(result.worktrees.length, 'worktree is', 'worktrees are')
             + ' already merged into ' + result.branch + ':',
             result.worktrees.map((w) => w.path + '  (' + w.branch + ')')));
+        lines.push(...section(plural(result.dirty.length, 'worktree is', 'worktrees are')
+            + ' merged into ' + result.branch + ' but not clean — a human call, not a default cleanup:',
+            result.dirty.map((w) => w.path + '  (' + w.branch + ')')));
         lines.push(...section(plural(result.inUse.length, 'worktree is', 'worktrees are')
             + ' in use by a live task, merged or not:',
             result.inUse.map((w) => w.path + '  (' + w.branch + ')')));

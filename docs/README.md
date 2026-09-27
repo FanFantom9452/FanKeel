@@ -276,7 +276,7 @@ is corrected by the next one, not by rewriting this.
 | | |
 |---|---|
 | `node scripts/docs-check.js` | every reference still resolves. A second to run, and the `verify` and `audit` rules call for it. |
-| `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged, an environment nothing can rebuild or run, the weight of what is ignored, directories holding no files. Three of the five need git and two do not, so it answers outside a repository too. It never deletes. |
+| `node scripts/residue.js` | What is in this tree that nobody decided about: untracked and unignored, a worktree whose branch is merged and has nothing uncommitted, an environment nothing can rebuild or run, the weight of what is ignored, directories holding no files. Three of the five need git and two do not, so it answers outside a repository too. It never deletes. |
 | `node scripts/docs-audit.js` | the fortnightly deep pass: what has stopped being true, and which two pages disagree. `/fankeel-audit` is the whole sweep — it runs all five of these, reads the shortlist, offers the cleanup. |
 | `node scripts/memory-check.js` | reads Claude Code's own memory for this project — `<configDir>/projects/<slug>/memory/` — and fails on an index and directory that disagree, a cited path that is gone, or a `path:line` past its file's end. A `stale` entry is listed, never failed. |
 | `node scripts/input-check.js` | every file loaded into every session's input — global and project `CLAUDE.md`, each project's `MEMORY.md` — largest first with bytes and estimated tokens, then what could be trimmed. Lists, never fails, never edits. |
