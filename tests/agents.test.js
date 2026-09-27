@@ -328,3 +328,16 @@ test('the security-lens-exclude eval case parses, with a grader on the exclusion
     assert.equal(c.name, 'security-lens-exclude');
     assert.equal(c.graders.length, 2);
 });
+
+// design §4: a reader's return is read by a long-running parent, and "the
+// map shows an edge here" is a claim someone else has to be able to check —
+// which line was read, and whether it was read at all or worked out from
+// what was.
+test('the reader marks every line EXTRACTED or INFERRED, and writes a relationship as A --rel--> B at=file:line', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reader.md'), 'utf8');
+    const ret = text.split('\n## Return\n')[1];
+    assert.ok(ret, 'no ## Return section');
+    assert.match(ret, /`EXTRACTED`/);
+    assert.match(ret, /`INFERRED`/);
+    assert.match(ret, /A --rel--> B at=file:line/);
+});

@@ -5,7 +5,7 @@ tools: [Read, Grep, Glob, Bash]
 model: sonnet
 effort: medium
 status: current
-last_verified: 2026-09-21
+last_verified: 2026-09-27
 source_of_truth: lib/render.js
 ---
 
@@ -57,3 +57,11 @@ slow. Only a call that needs the previous one's answer waits for it.
 
 What the brief's contract asks for. Say plainly what you could not check: a gap
 the parent cannot see becomes a confident wrong answer there.
+
+Mark every line `EXTRACTED` or `INFERRED`: `EXTRACTED` is a fact read
+straight off a file — a name, a path, a line a `grep` or a `Read` actually
+showed; `INFERRED` is anything reasoned from those facts rather than read
+outright. Write a relationship between two things as
+`A --rel--> B at=file:line` — the relationship in the middle, lower-case,
+and the file:line where it was read, so the parent can open it rather than
+trust the reader's paraphrase of it.
