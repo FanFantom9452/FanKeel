@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: security-lens-exclude
+context:
+  scaffold_script: "git init -q && printf 'const http = require(\"node:http\");\\n' > app.js && git add -A && git -c user.email=eval@fankeel -c user.name=eval commit -qm base && printf 'http.createServer((req, res) => {\\n  const next = new URL(req.url, \"http://x\").searchParams.get(\"next\");\\n  res.writeHead(302, { Location: next });\\n  res.end();\\n}).listen(8080);\\n' >> app.js && git add -A && git -c user.email=eval@fankeel -c user.name=eval commit -qm 'redirect after login'"

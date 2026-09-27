@@ -299,3 +299,32 @@ test('the reviewer carries a Verify mode, and build and verify send a first roun
     assert.match(verifySkill, /`## Verify` mode/);
     assert.match(verifySkill, /not one per row/);
 });
+
+// docs/90-agent/plans/2026-09-27-todo-batch-design.md §3: hard exclusions
+// and precedents adapted from claude-code-security-review, with a
+// confidence score and a floor below which a finding is dropped rather
+// than printed. The design's own count (17 hard exclusions, 10
+// precedents) does not match the source repository's (16 and 17); this
+// carries the source's real counts.
+test('the security lens carries a confidence score, hard exclusions and precedents adapted from claude-code-security-review, dropped below 0.7', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reviewer.md'), 'utf8');
+    const security = text.split('\n## Security\n')[1].split('\n## ')[0];
+    assert.match(security, /conf: 0\.x/);
+    assert.match(security, /drop anything below `conf: 0\.7`/);
+    assert.match(security, /anthropics\/claude-code-security-review/);
+    assert.match(security, /claude_api_client\.py/);
+    assert.match(security, /prompts\.py/);
+    assert.match(security, /\(MIT\)/);
+    assert.match(security, /^Hard exclusions:/m);
+    assert.match(security, /^Precedents:/m);
+    for (const phrase of ['UUID', 'environment variable or a CLI flag', 'open redirect', 'Jupyter notebook']) {
+        assert.ok(security.includes(phrase), 'the precedents do not mention ' + phrase);
+    }
+});
+
+test('the security-lens-exclude eval case parses, with a grader on the exclusion and one on the dispatch', () => {
+    const ev = require('../lib/eval.js');
+    const c = ev.parseCase(path.join(ROOT, 'evals', 'security-lens-exclude'));
+    assert.equal(c.name, 'security-lens-exclude');
+    assert.equal(c.graders.length, 2);
+});

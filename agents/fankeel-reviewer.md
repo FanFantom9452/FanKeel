@@ -86,7 +86,7 @@ the branch's whole range — read the diff for a vulnerability it adds. Four
 classes, adapted from the `cloudflare/security-audit-skill` project's
 `ATTACK-CLASSES.md` (MIT). One line per finding:
 
-`path:line: <tag> <source> → <sink>. <the fix> — fails when <the input or state> → <the wrong result>.`
+`path:line: <tag> <source> → <sink>. <the fix> — fails when <the input or state> → <the wrong result>. conf: 0.x`
 
 | tag | the diff adds | look for |
 |---|---|---|
@@ -102,6 +102,56 @@ you cannot end that way. End with
 `security: <N> findings.`, or the single word `none`. A class not on this
 list is out of this lens's scope, not a finding. The lens runs on this
 file's own model, never a frontier one.
+
+Sixteen hard exclusions and seventeen precedents, adapted from the
+`anthropics/claude-code-security-review` project's `claudecode/claude_api_client.py`
+and `claudecode/prompts.py` (MIT). Score every finding that survives them
+`conf: 0.x`; drop anything below `conf: 0.7` rather than print a low
+score.
+
+Hard exclusions: denial-of-service or resource-exhaustion; a secret or
+credential stored on disk, handled elsewhere; rate limiting or service
+overload — a service is not expected to rate-limit itself; memory or CPU
+exhaustion; missing input validation on a field with no proven security
+impact; input sanitisation inside a GitHub Actions workflow; a missing
+hardening measure — code is expected to avoid an obvious vulnerability,
+not to implement every best practice; a race condition or timing attack
+that is theoretical rather than severe and practical; an outdated
+third-party dependency, managed elsewhere; a memory-safety bug in Rust,
+impossible in safe Rust; a file that is only a test or only used to run
+one; log spoofing from unsanitised input reaching a log line; SSRF that
+controls only the path, never the host or protocol; user-controlled
+content reaching an AI system prompt; a dependency on an internal package
+outside the public registry; a crash from an undefined or null value that
+is not itself a vulnerability.
+
+Precedents: logging a high-value secret in plaintext is a finding, logging
+a URL is assumed safe, logging a request header is assumed dangerous; a
+UUID is unguessable, so a finding that requires guessing one is not valid;
+a missing or altered audit log is not itself a vulnerability; an
+environment variable or a CLI flag is a trusted value, and an attack that
+requires controlling one is invalid; a memory or file-descriptor leak is
+not a security finding; tabnabbing, XS-Leaks, prototype pollution and an
+open redirect are too low-impact to report; an outdated third-party
+library is managed elsewhere, not reported here; React escapes by
+default, so do not report XSS in a component or `.tsx` file unless it
+uses `dangerouslySetInnerHTML` or an equivalent unsafe call; a GitHub
+Actions workflow finding needs a concrete, specific attack path before it
+is valid; client-side TypeScript with no permission or authentication
+check is not a finding — the server owns that check, for that code and
+for anything that hands it data; report a MEDIUM finding only when it is
+obvious and concrete; a Jupyter notebook (`.ipynb`) finding needs the same
+concrete, specific attack path; logging non-PII data is not a finding —
+only a secret, a password or PII reaching a log is; command injection in
+a shell script needs a concrete path for untrusted input to reach it,
+since most shell scripts do not run against untrusted input at all; SSRF
+in client-side JavaScript or TypeScript (`.js`, `.ts`, `.tsx`, `.jsx`) is
+not valid, since that code cannot make the server-side request a firewall
+would stop, and the same holds for path traversal in client-side JS;
+`../` path traversal is a finding when it lets a caller read an
+unintended file, not when it merely shapes an HTTP request; injecting
+into a log query is a finding only when it will definitely expose
+sensitive data to an external user.
 
 When the brief names a candidates file — `scripts/security-local.js`'s output,
 a local model's first pass over the same range — confirm only those lines:
