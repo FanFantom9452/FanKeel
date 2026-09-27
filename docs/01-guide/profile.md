@@ -20,23 +20,25 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。�
 
 「建議」一欄取自站頁精靈的「平衡」組合；那組沒設的 key，建議就是內建值或不設。
 
+<!-- PROFILE_TABLE:START -->
 | key | 意思 | 可選值 | 建議 |
 |---|---|---|---|
-| `land.integration` | 收尾時怎麼整合 | `merge`、`pr`、`keep` | `merge` |
+| `land.integration` | 收尾時怎麼整合：merge、pr 或 keep | `merge`、`pr`、`keep` | `merge` |
 | `land.push` | 收尾時要不要 push | `true`、`false` | `false` |
 | `land.archivePlan` | 計畫落地後直接封存，還是先問 | `true`、`false` | `true` |
-| `class.default` | 起任務沒指定類別時的預設 | `spike`、`bounded`、`architectural` | 不設，每次判斷 |
-| `guard` | 別的 session 佔了檔案時：`ask` 問、`deny` 擋、`off` 只警告 | `ask`、`deny`、`off`；內建 `ask` | `ask` |
-| `dispatch.floor` | 派給實作者與 reader 的最低模型 | `sonnet`、`opus`、`fable`、`haiku`；內建 `sonnet` | `sonnet` |
-| `judge.model` | 判官（`/fankeel-ask`）用哪個模型 | `sonnet`、`opus`、`fable`、`haiku`；內建 `fable` | `fable` |
-| `design.mockup` | 有前端的專案，design 站先畫頁面用哪個模型；`auto` 是前端工作不問就畫；`false` 不畫 | `false`、`auto`、`sonnet`、`opus`、`fable`；內建 `false` | 沒有前端就維持 `false` |
-| `design.skill` | mockup 另外載入哪些 design skill，可多選，逗號分隔 | 精靈列出的六個 | 不設，交給 design 站判斷 |
-| `station.hide` | 這個專案要不要從監控站隱藏 | `true`、`false`；內建 `false` | `false` |
-| `gate.station` | gate 發出後，等監控站作答幾秒；`off` 不等 | `off`，或 1 到 600 的秒數（精靈列 `60`、`120`、`300`）；內建 `off` | `off` |
-| `stage.agents` | 哪幾站交給站 agent 在乾淨 context 裡跑，主控只轉路徑 | `false`、`true`、`all`，或逗號分隔的站名；內建 `false` | `survey` |
-| `worktree` | 起任務時開自己的 git worktree（`.fankeel/worktrees/<id 前 8 碼>/`，分支 `fk/<id 前 8 碼>`），共用樹的誤記消失、真衝突留到 land 合併 | `true`、`false`；內建 `false` | `false` |
-| `security.local` | verify 的 security lens 先交給哪個本地 ollama 模型篩 | 一個 ollama 模型名稱 | 沒有本地模型就不設 |
+| `class.default` | 起任務沒指定類別時的預設（spike／bounded／architectural） | `spike`、`bounded`、`architectural` | 不設 |
+| `guard` | 別的 session 佔了檔案時：ask 問、deny 擋、off 只警告 | `ask`、`deny`、`off`；內建 `ask` | `ask` |
+| `dispatch.floor` | 派給實作者與 reader 的最低模型 | `sonnet`、`opus`、`fable`、`haiku`；內建 `sonnet` | 不設，維持內建 |
+| `judge.model` | 判官（/fankeel-ask）用哪個模型 | `sonnet`、`opus`、`fable`、`haiku`；內建 `fable` | 不設，維持內建 |
+| `design.mockup` | 有前端的專案，design 站先做頁面時用哪個模型；auto 前端工作不問就畫、畫完開頁面；false 不做 | `false`、`auto`、`sonnet`、`opus`、`fable`；內建 `false` | 不設，維持內建 |
+| `design.skill` | mockup 另外載入哪些 design skill，可多選（逗號分隔）；fankeel 指南一律載入 | `taste-skill:taste-skill`、`taste-skill:soft-skill`、`taste-skill:minimalist-skill`、`frontend-design:frontend-design`、`ui-ux-pro-max:ui-ux-pro-max`、`impeccable:impeccable` | 不設 |
+| `station.hide` | 這個專案要不要從監控站隱藏 | `true`、`false`；內建 `false` | 不設，維持內建 |
+| `gate.station` | gate 發出後，等監控站作答幾秒；off 不等，逾時照常在 terminal 問 | `off`、`60`、`120`、`300`；內建 `off` | 不設，維持內建 |
+| `stage.agents` | 哪幾站交給站 agent 在乾淨 context 裡跑，主控只轉路徑 | `false`、`true`、`all`；內建 `false` | `survey` |
+| `security.local` | verify 的 security lens 先交給哪個本地 ollama 模型篩候選；沒設照原流程 | 一個 ollama 模型名稱 | 不設 |
 | `prompt.all`、`prompt.<站>` | 附在每一站（或某一站）規則最後的一句自訂 prompt | 一行文字 | 需要時才設 |
+| `worktree` | 起任務時開自己的 git worktree（.fankeel/worktrees/<id 前 8 碼>，分支 fk/<id 前 8 碼>） | `true`、`false`；內建 `false` | 不設，維持內建 |
+<!-- PROFILE_TABLE:END -->
 
 最後兩列是自由文字，精靈沒有欄位給它們，要用下面的指令設。
 
