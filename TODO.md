@@ -94,6 +94,7 @@ the reading is what gets scheduled.
 - 〔review〕reviewer 每條發現附具體失敗情境（什麼輸入得什麼錯），另派一個 reviewer 逐條驗證、沒過就丟（官方 /code-review 與 ultra 的做法） — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 - 〔review〕排除清單與信心門檻：既存問題、linter 會抓、挑剔、被註解消音的不報；security lens 加 17 條硬排除與 10 條判例、低於 0.7 不報 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 - 〔audit〕residue 把分支已合併、worktree 仍有未 commit 變更的算成用完（只看 `branch --merged`）；09-27 把鄰居正在改的 agent worktree 報成可清 — [scripts/residue.js](scripts/residue.js).
+- 〔station〕quickstart 影片方向要重定：仿 tour-stages.js 的敘事節奏，剪成一支約 60 秒的宣傳片，取代現有三支影片 — [assets/station/tour-stages.js](assets/station/tour-stages.js).
 
 ## Blocked
 
