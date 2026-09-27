@@ -22,6 +22,16 @@
     }
     themeSet(stored('station.theme'));
     var S = w.STATION || { sessions: [], projects: [] };
+    // The language the page draws in (assets/station/i18n.js). `loc(key, zh,
+    // vars)` is every string's one door: the Chinese is written at the call,
+    // and English replaces it only when i18n.js is loaded and set to English.
+    // Without i18n.js — node's tests, an old copy — the page is Chinese.
+    var I18N = w.FK_I18N || null;
+    function fillVars(s, vars) {
+        if (!vars) return s;
+        return String(s).replace(/\{(\w+)\}/g, function (m, k) { return Object.prototype.hasOwnProperty.call(vars, k) ? String(vars[k]) : m; });
+    }
+    function loc(key, zh, vars) { return I18N ? I18N.t(key, zh, vars) : fillVars(zh, vars); }
     var ROUTE = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
     var STAGE_C = {
         survey: '#94a3b8', design: '#8b5cf6', plan: '#f472b6', build: '#4c3fd7',
@@ -72,8 +82,7 @@
     // liveness, so a state that cannot be measured must not read as certain.
     function statePill(s) {
         return '<span class="pill ' + s.state + '"'
-            + (s.unknown ? ' title="這個 session 的 config directory 讀不到，'
-                + '活著與否無法確認"' : '') + '><i class="dot ' + s.state
+            + (s.unknown ? ' title="' + loc('fmt.unknownLiveness', '這個 session 的 config directory 讀不到，活著與否無法確認') + '"' : '') + '><i class="dot ' + s.state
             + (s.state === 'live' ? ' pulse' : '') + '"></i>' + s.state
             + (s.unknown ? '?' : '') + '</span>';
     }
@@ -129,12 +138,12 @@
     function delta(cur, prev, unit) {
         if (unit === 'pt') {
             var pp = (cur - prev) * 100;
-            if (!prev && !cur) return '<span class="delta flat">無可比</span>';
+            if (!prev && !cur) return '<span class="delta flat">' + loc('fmt.noCompare', '無可比') + '</span>';
             var c2 = Math.abs(pp) < 0.5 ? 'flat' : pp > 0 ? 'dn' : 'up';
             return '<span class="delta ' + c2 + '">' + (pp > 0 ? '+' : '') + pp.toFixed(1)
                 + ' pt ' + (c2 === 'up' ? '↘' : c2 === 'dn' ? '↗' : '') + '</span>';
         }
-        if (!prev) return '<span class="delta flat">前期無資料</span>';
+        if (!prev) return '<span class="delta flat">' + loc('fmt.noPriorData', '前期無資料') + '</span>';
         var d = (cur - prev) / prev * 100;
         var cls = Math.abs(d) < 0.5 ? 'flat' : d > 0 ? 'up' : 'dn';
         var n = Math.abs(d) >= 100 ? Math.round(d) : Number(d.toFixed(1));
@@ -179,10 +188,10 @@
     var KIND_KEYS = ['input', 'output', 'cacheRead', 'cacheWrite'];
     var KIND_LABEL = { input: 'input', output: 'output', cacheRead: 'cache read', cacheWrite: 'cache write' };
     var KIND_COLOR = { input: '--t-in', output: '--t-out', cacheRead: '--t-cr', cacheWrite: '--t-cw' };
-    var WHO_LABEL = { main: '主 session', agent: '背景 agent', workflow: 'workflow' };
-    var DIM_LABEL = { model: '依 model', project: '依專案', stage: '依 stage', who: '主 session 對 agent',
-        version: '依版本', kind: '依成分' };
-    var METRIC_LABEL = { usd: '花費', tokens: 'token', time: '時間' };
+    var WHO_LABEL = { main: loc('shared.main', '主 session'), agent: loc('shared.agent', '背景 agent'), workflow: 'workflow' };
+    var DIM_LABEL = { model: loc('shared.byModel', '依 model'), project: loc('shared.byProject', '依專案'), stage: loc('shared.byStage', '依 stage'),
+        who: loc('shared.mainVsAgent', '主 session 對 agent'), version: loc('shared.byVersion', '依版本'), kind: loc('shared.byKind', '依成分') };
+    var METRIC_LABEL = { usd: loc('shared.cost', '花費'), tokens: 'token', time: loc('shared.time', '時間') };
     function localDay(ms) {
         var d = new Date(ms);
         return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -309,10 +318,10 @@
     }
     function keyLabel(dim, key, names) {
         if (dim === 'who') return WHO_LABEL[key] || key;
-        if (dim === 'stage') return key === 'none' ? '第一步之前' : key;
+        if (dim === 'stage') return key === 'none' ? loc('shared.beforeStepOne', '第一步之前') : key;
         if (dim === 'project') return (names && names[key]) || key;
         if (dim === 'kind') return KIND_LABEL[key] || key;
-        if (dim === 'version') return key === 'none' ? '未記版本' : key;
+        if (dim === 'version') return key === 'none' ? loc('shared.noVersionRecorded', '未記版本') : key;
         if (dim === 'model') return modelLabel(key);
         return key;
     }
@@ -324,7 +333,7 @@
     // bucket is "older than the field", not "not one of ours". Every other
     // key's label is the whole story, so this returns '' for them.
     function keyHint(dim, key) {
-        return dim === 'version' && key === 'none' ? '跑的時候 registry 還沒有 version 這個欄位，不是別處來的 session' : '';
+        return dim === 'version' && key === 'none' ? loc('shared.noVersionField', '跑的時候 registry 還沒有 version 這個欄位，不是別處來的 session') : '';
     }
     function projectNames(sessions) {
         var lab = labels(sessions.map(function (s) { return s.root; }));
@@ -379,14 +388,14 @@
     // so it is their sum and nothing else.
     function dayBars(sessions, metric, dim, days) {
         if (metric === 'time' && dim === 'model') {
-            return { days: [], keys: [], max: 0, disabled: '時間沒有 model 可分：spans 只記 stage 與誰在跑，不記 model' };
+            return { days: [], keys: [], max: 0, disabled: loc('shared.noTimeByModel', '時間沒有 model 可分：spans 只記 stage 與誰在跑，不記 model') };
         }
         // Same reason as `model`, just above: with `時間` the bars come from
         // `s.spans`, and a span records only stage and who, so it carries no
         // tokens and no cost to split into kinds. `version` needs no such
         // guard — it is a property of the session, so it applies to spans too.
         if (metric === 'time' && dim === 'kind') {
-            return { days: [], keys: [], max: 0, disabled: '時間沒有成分可分：spans 只記 stage 與誰在跑，不記 token 或花費' };
+            return { days: [], keys: [], max: 0, disabled: loc('shared.noTimeByKind', '時間沒有成分可分：spans 只記 stage 與誰在跑，不記 token 或花費') };
         }
         var at = {}, seen = {};
         days.forEach(function (d) { at[d] = { day: d, total: 0, parts: {} }; });
@@ -458,14 +467,14 @@
     function kpiHtml(cur, prev) {
         var share = function (t) { return t.main + t.wait ? t.wait / (t.main + t.wait) : 0; };
         var out = '<div class="readouts">'
-            + roHtml('30 天花費', usd(cur.usd), delta(cur.usd, prev.usd))
+            + roHtml(loc('shared.cost30d', '30 天花費'), usd(cur.usd), delta(cur.usd, prev.usd))
             + roHtml('token', tokens(cur.tokens), delta(cur.tokens, prev.tokens))
-            + roHtml('active 時間', hours(cur.active), delta(cur.active, prev.active))
-            + roHtml('<i class="hatchsw"></i>等待佔比', Math.round(share(cur) * 1000) / 10 + '<span class="u">%</span>',
-                (prev.main + prev.wait ? delta(share(cur), share(prev), 'pt') : '<span class="delta flat">前期無資料</span>')
-                + ' · ' + hours(cur.wait) + ' 等');
+            + roHtml(loc('shared.activeTime', 'active 時間'), hours(cur.active), delta(cur.active, prev.active))
+            + roHtml('<i class="hatchsw"></i>' + loc('shared.waitShare', '等待佔比'), Math.round(share(cur) * 1000) / 10 + '<span class="u">%</span>',
+                (prev.main + prev.wait ? delta(share(cur), share(prev), 'pt') : '<span class="delta flat">' + loc('shared.noPriorData', '前期無資料') + '</span>')
+                + ' · ' + loc('shared.waitedFor', '{t} 等', { t: hours(cur.wait) }));
         var top = S.gates && S.gates.swapped && S.gates.swapped.length ? S.gates.swapped[0] : null;
-        out += roHtml('最常被換掉', top ? esc(top.label) : '—', top ? top.lost + ' / ' + top.total : '');
+        out += roHtml(loc('shared.mostSwapped', '最常被換掉'), top ? esc(top.label) : '—', top ? top.lost + ' / ' + top.total : '');
         return out + '</div>';
     }
     function spark(values, colour) {
@@ -481,7 +490,7 @@
         var route = s.route || [], at = route.indexOf(s.stage);
         return '<span class="route" aria-label="route ' + esc(route.join(' → ')) + '">' + route.map(function (k, i) {
             if (i === at && ring) {
-                return '<i title="' + esc(k) + '（現在）" class="now" style="--c:var(--st-' + esc(k) + ');background:var(--c)"></i>';
+                return '<i title="' + esc(loc('shared.stageNow', '{k}（現在）', { k: k })) + '" class="now" style="--c:var(--st-' + esc(k) + ');background:var(--c)"></i>';
             }
             return '<i title="' + esc(k) + '"' + (i <= at ? ' style="background:var(--st-' + esc(k) + ')"' : ' class="todo"') + '></i>';
         }).join('') + '</span>';
@@ -499,8 +508,8 @@
     function runningTag(s) {
         if (s.state !== 'live' || typeof s.running !== 'number') return '';
         return s.running
-            ? '<span class="runn" title="此刻有 ' + s.running + ' 個 agent 是 running"><i class="dot live"></i>running ' + s.running + '</span>'
-            : '<span class="runn zero" title="此刻沒有 agent 是 running">running 0</span>';
+            ? '<span class="runn" title="' + esc(loc('shared.nRunningNow', '此刻有 {n} 個 agent 是 running', { n: s.running })) + '"><i class="dot live"></i>running ' + s.running + '</span>'
+            : '<span class="runn zero" title="' + esc(loc('shared.noneRunningNow', '此刻沒有 agent 是 running')) + '">running 0</span>';
     }
     // `off` maps an option to the reason it cannot be chosen right now.
     function segHtml(key, opts, current, off) {
@@ -521,8 +530,8 @@
         var W = 1200, H = 318, L = 52, R = 4, T = 26, AX = 48, plotH = H - T - AX, base = T + plotH;
         var n = bars.days.length || 1, slot = (W - L - R) / n, bw = Math.min(24, slot * 0.6);
         var top = niceTop(bars.max), y = function (v) { return v / top * plotH; }, pal = paletteOf(bars, o);
-        var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="近 ' + n + ' 天每日'
-            + METRIC_LABEL[o.metric] + '，' + DIM_LABEL[o.dim] + '">';
+        var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="'
+            + loc('shared.dailyOverDays', '近 {n} 天每日{metric}，{dim}', { n: n, metric: METRIC_LABEL[o.metric], dim: DIM_LABEL[o.dim] }) + '">';
         [0, 0.25, 0.5, 0.75, 1].forEach(function (f) {
             var yy = (base - f * plotH).toFixed(1);
             out += '<line class="' + (f ? 'gridl' : 'base') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '"/>'
@@ -533,8 +542,9 @@
             var cx = (L + i * slot + slot / 2).toFixed(1), x0 = (L + i * slot + slot / 2 - bw / 2).toFixed(1);
             var c = 0, open = b.day === o.sel, mark = open || b.day === o.today;
             var href = open ? '#/' : '#/d/' + b.day;
-            var label = b.day + ' 合計 ' + metricText(o.metric, b.total) + bars.keys.filter(function (k) { return b.parts[k]; })
-                .map(function (k) { return '；' + keyLabel(o.dim, k, o.names) + ' ' + metricText(o.metric, b.parts[k]); }).join('');
+            var label = loc('shared.dayTotal', '{day} 合計 {total}', { day: b.day, total: metricText(o.metric, b.total) })
+                + bars.keys.filter(function (k) { return b.parts[k]; })
+                    .map(function (k) { return loc('shared.dayTotalSeg', '；{key} {v}', { key: keyLabel(o.dim, k, o.names), v: metricText(o.metric, b.parts[k]) }); }).join('');
             // The column's hit area goes first, so every segment drawn after it
             // sits on top and takes the hover itself.
             out += '<rect class="hit" data-href="' + href + '" data-day="' + b.day + '" data-cx="' + cx + '" x="' + (L + i * slot).toFixed(1)
@@ -555,7 +565,7 @@
                 + (mark ? ' style="fill:var(--ink);font-weight:600"' : '') + '>' + Number(b.day.slice(8)) + '</text>'
                 + (b.day === o.today || b.day.slice(8) === '01' || i === 0
                     ? '<text x="' + cx + '" y="' + (base + 33) + '" text-anchor="middle">'
-                    + (b.day === o.today ? '今天' : Number(b.day.slice(5, 7)) + '月') + '</text>' : '');
+                    + (b.day === o.today ? loc('shared.today', '今天') : loc('shared.monthN', '{n}月', { n: Number(b.day.slice(5, 7)) })) + '</text>' : '');
         });
         return out + '<line class="hguide" x1="0" x2="0" y1="' + T + '" y2="' + base + '"/></svg>';
     }
@@ -593,7 +603,8 @@
     }
     // The order hint's tooltip is the SVG's own <title>, so the legend's only
     // span with a title stays an entry that needs one.
-    var ICON_ORDER = '<svg viewBox="0 0 12 12" width="12" height="12" role="img" aria-label="由下而上"><title>由下而上：列在前面的疊在最底下</title>'
+    var ICON_ORDER = '<svg viewBox="0 0 12 12" width="12" height="12" role="img" aria-label="' + loc('shared.bottomUp', '由下而上')
+        + '"><title>' + loc('shared.bottomUpHint', '由下而上：列在前面的疊在最底下') + '</title>'
         + '<path d="M6 10.5V2M3 4.8 6 1.8l3 3"'
         + ' fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     var ICON_FUNNEL = '<svg viewBox="0 0 14 14" width="13" height="13" aria-hidden="true"><path d="M1.8 2.5h10.4L8.3 7.2v3.9l-2.6 1.3V7.2z"'
@@ -624,8 +635,8 @@
                 + colorOf(o.dim, k, off[k] ? pal0 : pal) + '"></i>'
                 + (cut ? '<span class="lt">' + esc(s) + '</span>' : esc(s)) + '</span>';
         }).join('') + (rest.length
-            ? '<span data-rest><i class="sw" style="background:var(--p-5)"></i>其他 ' + rest.length + ' 個</span>'
-            : gone0.length ? '<span data-rest data-off><i class="sw" style="background:var(--p-5)"></i>其他 ' + gone0.length + ' 個</span>' : '');
+            ? '<span data-rest><i class="sw" style="background:var(--p-5)"></i>' + loc('shared.othersN', '其他 {n} 個', { n: rest.length }) + '</span>'
+            : gone0.length ? '<span data-rest data-off><i class="sw" style="background:var(--p-5)"></i>' + loc('shared.othersN', '其他 {n} 個', { n: gone0.length }) + '</span>' : '');
     }
     // The 篩選 panel: every series one checkbox, grouped the unfiltered way so
     // the list holds still while boxes are ticked; a swatch is the colour the
@@ -640,12 +651,13 @@
                 + esc(keyLabel(o.dim, k, o.names)) + '</span></label>';
         };
         return '<div class="fwrap"><button type="button" class="fbtn" data-fbtn aria-haspopup="true" aria-expanded="' + !!o.panel + '"'
-            + ' aria-label="篩選' + (n ? '：顯示 ' + (bars.keys.length - n) + ' / ' + bars.keys.length : '') + '" title="篩選圖表的系列">' + ICON_FUNNEL
+            + ' aria-label="' + loc('shared.filter', '篩選') + (n ? loc('shared.filterShownOf', '：顯示 {shown} / {total}', { shown: bars.keys.length - n, total: bars.keys.length }) : '')
+            + '" title="' + loc('shared.filterSeriesHint', '篩選圖表的系列') + '">' + ICON_FUNNEL
             + (n ? '<b>' + (bars.keys.length - n) + '/' + bars.keys.length + '</b>' : '') + '</button>'
-            + (o.panel ? '<div class="fpanel" role="group" aria-label="圖表顯示哪些">'
-                + '<div class="fall"><button type="button" data-fall="on">全選</button><button type="button" data-fall="off">全不選</button></div>'
+            + (o.panel ? '<div class="fpanel" role="group" aria-label="' + loc('shared.whichShown', '圖表顯示哪些') + '">'
+                + '<div class="fall"><button type="button" data-fall="on">' + loc('shared.selectAll', '全選') + '</button><button type="button" data-fall="off">' + loc('shared.selectNone', '全不選') + '</button></div>'
                 + own.map(row).join('')
-                + (rest.length ? '<div class="fsub">其他 ' + rest.length + ' 個</div>' + rest.map(row).join('') : '')
+                + (rest.length ? '<div class="fsub">' + loc('shared.othersN', '其他 {n} 個', { n: rest.length }) + '</div>' + rest.map(row).join('') : '')
                 + '</div>' : '') + '</div>';
     }
     // The bars with the clicked-out series taken away: each day's total and
@@ -675,38 +687,38 @@
         var sw = function (k) { return '<i class="sw" style="background:' + colorOf(o.dim, k, pk) + '"></i>'; };
         var pct = function (v) { return b.total ? Math.round(v / b.total * 100) + '%' : '—'; };
         var keys = bars.keys.filter(function (k) { return b.parts[k]; });
-        return '<div class="tt-day">' + esc(day) + (day === o.today ? ' · 今天' : '') + '</div>'
+        return '<div class="tt-day">' + esc(day) + (day === o.today ? ' · ' + loc('shared.today', '今天') : '') + '</div>'
             + (key && b.parts[key]
                 ? '<div class="tt-main">' + sw(key) + '<b>' + esc(keyLabel(o.dim, key, o.names)) + '</b></div>'
-                    + '<div class="tt-val"><b>' + metricText(o.metric, b.parts[key]) + '</b><span>當天的 ' + pct(b.parts[key]) + '</span></div>'
+                    + '<div class="tt-val"><b>' + metricText(o.metric, b.parts[key]) + '</b><span>' + loc('shared.dayShare', '當天的 {p}', { p: pct(b.parts[key]) }) + '</span></div>'
                 : '')
             + '<ul class="tt-list">' + keys.reverse().map(function (k) {
                 return '<li' + (k === key ? ' data-hot' : '') + '>' + sw(k) + '<span>' + esc(keyLabel(o.dim, k, o.names))
                     + '</span><span class="tt-n">' + metricText(o.metric, b.parts[k]) + '</span></li>';
             }).join('') + '</ul>'
-            + '<div class="tt-sum">當天合計 <b>' + metricText(o.metric, b.total) + '</b></div>';
+            + '<div class="tt-sum">' + loc('shared.dayTotalLabel', '當天合計') + ' <b>' + metricText(o.metric, b.total) + '</b></div>';
     }
     function projectsHtml(rows, o) {
-        return '<div class="h2">' + icon('projects') + '專案 <small>近 30 天</small></div>'
-            + '<div class="projrow head"><span>專案</span><span>每日花費</span><span class="r">花費</span><span class="r">session</span>'
-            + '<span class="r">最後活動</span></div>'
+        return '<div class="h2">' + icon('projects') + loc('shared.projectsHeading', '專案 <small>近 30 天</small>') + '</div>'
+            + '<div class="projrow head"><span>' + loc('shared.thProject', '專案') + '</span><span>' + loc('shared.thDailyCost', '每日花費') + '</span><span class="r">' + loc('shared.cost', '花費') + '</span><span class="r">session</span>'
+            + '<span class="r">' + loc('shared.thLastActivity', '最後活動') + '</span></div>'
             + (rows.length ? rows.map(function (r) {
                 var c = colorOf('project', r.pkey, o.pkeys);
                 return '<a class="projrow" href="' + projectHash(r.pkey) + '"><span style="min-width:0"><span class="nm"><i class="sw" style="background:'
                     + c + '"></i>' + esc(o.names[r.pkey] || r.pkey) + '</span><span class="pth mono">' + esc(r.pkey) + '</span></span>'
                     + '<span>' + spark(r.daily, c) + '</span><span class="r">' + usd(r.usd) + '</span><span class="r">' + r.n + '</span>'
                     + '<span class="r muted">' + ago(r.last) + '</span></a>';
-            }).join('') : '<p class="note">這台機器上沒有 session</p>');
+            }).join('') : '<p class="note">' + loc('shared.machineNoSessions', '這台機器上沒有 session') + '</p>');
     }
     function recentHtml(list, o) {
-        return '<div class="h2">' + icon('sessions') + '最近 sessions <small>依最後動作，最新在上</small><span class="spacer"></span>'
-            + '<a class="btn" href="#/list">看全部 →</a></div>'
-            + '<div class="tbl-wrap"><table class="t"><thead><tr><th>任務</th><th>專案</th><th>stage</th><th class="r">花費</th>'
-            + '<th class="r">token</th><th>狀態</th></tr></thead><tbody>'
+        return '<div class="h2">' + icon('sessions') + loc('shared.recentSessionsHeading', '最近 sessions <small>依最後動作，最新在上</small>') + '<span class="spacer"></span>'
+            + '<a class="btn" href="#/list">' + loc('shared.seeAll', '看全部 →') + '</a></div>'
+            + '<div class="tbl-wrap"><table class="t"><thead><tr><th>' + loc('shared.thTask', '任務') + '</th><th>' + loc('shared.thProject', '專案') + '</th><th>stage</th><th class="r">' + loc('shared.cost', '花費') + '</th>'
+            + '<th class="r">token</th><th>' + loc('shared.thState', '狀態') + '</th></tr></thead><tbody>'
             + list.map(function (s) {
                 var t = sessionTotals(s);
                 return '<tr class="link" data-href="' + sessionHash(s.id) + '"><td class="task"><a href="' + sessionHash(s.id) + '">'
-                    + esc(s.task || '（未命名）') + '</a></td><td><span class="pchip"><i class="sw" style="background:'
+                    + esc(s.task || loc('shared.unnamed', '（未命名）')) + '</a></td><td><span class="pchip"><i class="sw" style="background:'
                     + colorOf('project', s.pkey, o.pkeys) + '"></i>' + esc(o.names[s.pkey] || s.pkey) + '</span></td>'
                     + '<td class="c-stage">' + stageNow(s) + '</td><td class="r">' + usd(t.usd) + '</td><td class="r muted">' + tokens(t.tokens) + '</td>'
                     + '<td class="c-state">' + statePill(s) + runningTag(s) + '</td></tr>';
@@ -730,7 +742,7 @@
         var bar = d.buckets.map(function (b) {
             return '<i title="' + esc(b.label) + ' ' + b.count + '" style="flex:' + b.count + ' 1 0;' + swatch(b.label) + '"></i>';
         }).join('');
-        return '<div class="split"><div class="split-h"><span>狀態</span><span class="num mono">' + d.total + ' markdown files</span></div>'
+        return '<div class="split"><div class="split-h"><span>' + loc('shared.status', '狀態') + '</span><span class="num mono">' + d.total + ' markdown files</span></div>'
             + '<div class="split-bar" role="img">' + bar + '</div><div class="split-leg">' + legend + '</div></div>';
     }
     function docPathList(paths) {
@@ -749,37 +761,36 @@
         return '<details class="dproj"' + (open ? ' open' : '') + '><summary><span class="nm"><i class="sw" style="background:'
             + colorOf('project', d.pkey, o.pkeys) + '"></i>' + esc(o.names[d.pkey] || d.pkey) + '</span>'
             + '<span class="mono muted">.fankeel/map.md</span><span class="spacer"></span>'
-            + '<span class="when">生成於 <span class="mono">' + stamp(Date.parse(d.generatedAt)) + '</span></span></summary>'
+            + '<span class="when">' + loc('shared.generatedAt', '生成於') + ' <span class="mono">' + stamp(Date.parse(d.generatedAt)) + '</span></span></summary>'
             + docSplitHtml(d)
             + '<div class="dgrid"><div>'
-            + (d.plannedNotBuilt.length ? '<div class="dsub">還沒建 <span class="n">planned, not built — ' + d.plannedNotBuilt.length + '</span></div>'
+            + (d.plannedNotBuilt.length ? '<div class="dsub">' + loc('shared.notBuiltYet', '還沒建') + ' <span class="n">planned, not built — ' + d.plannedNotBuilt.length + '</span></div>'
                 + docPathList(d.plannedNotBuilt) : '')
-            + (d.undeclared.count ? '<div class="dsub">沒宣告狀態 <span class="n">undeclared — ' + d.undeclared.count + '</span></div>'
+            + (d.undeclared.count ? '<div class="dsub">' + loc('shared.noStatusDeclared', '沒宣告狀態') + ' <span class="n">undeclared — ' + d.undeclared.count + '</span></div>'
                 + (d.undeclared.note ? '<div class="dnote">' + esc(d.undeclared.note) + '</div>' : '') + docPathList(d.undeclared.paths) : '')
             + '</div><div>'
-            + (d.filing ? '<div class="dsub">歸檔位置 <span class="n">filing · index: ' + esc(d.filing.index) + '</span></div>' + docFilingHtml(d.filing) : '')
+            + (d.filing ? '<div class="dsub">' + loc('shared.filingLocation', '歸檔位置') + ' <span class="n">filing · index: ' + esc(d.filing.index) + '</span></div>' + docFilingHtml(d.filing) : '')
             + '</div></div></details>';
     }
     function docsCardHtml(list, o) {
         if (!list.length) return '';
-        return '<section class="panel docs"><div class="h2">文件 <small>各專案已生成的 <span class="mono">.fankeel/map.md</span>，找不到的不列</small></div>'
+        return '<section class="panel docs"><div class="h2">' + loc('shared.docsHeading', '文件 <small>各專案已生成的 <span class="mono">.fankeel/map.md</span>，找不到的不列</small>') + '</div>'
             + (o && o.search ? o.search : '')
             + list.map(function (d, i) { return docProjectHtml(d, o, i === 0); }).join('') + '</section>';
     }
     // 文件's full-text box. The page bodies live on disk, so only a served
     // page can search them (`GET station/search`, lib/docsearch.js); the file
     // `/fankeel` writes says where to open one. `st` is `view.dsx`.
-    function dsxCount(st) { return st && st.res && st.res.q && !st.res.err ? st.res.n + ' 頁' : ''; }
+    function dsxCount(st) { return st && st.res && st.res.q && !st.res.err ? loc('shared.nPages', '{n} 頁', { n: st.res.n }) : ''; }
     function dsxResultsHtml(st) {
         var res = st && st.res;
         if (!res || !res.q) return '';
         if (res.err) {
-            return '<p class="dsx-none">搜尋失敗，沒有連上伺服器或回應不是預期的內容。'
-                + '<span>再打一個字或刪一個字重試；還是不行就檢查 serve 是否還在跑。</span></p>';
+            return '<p class="dsx-none">' + loc('shared.searchFailed', '搜尋失敗，沒有連上伺服器或回應不是預期的內容。')
+                + '<span>' + loc('shared.searchFailedHint', '再打一個字或刪一個字重試；還是不行就檢查 serve 是否還在跑。') + '</span></p>';
         }
         if (!res.hits.length) {
-            return '<p class="dsx-none">沒有頁面的內文含「' + esc(res.q) + '」。<span>換個較短的詞再試；archive、plan、report 頁不在搜尋範圍內，'
-                + '要找它們請用下方的專案清單。</span></p>';
+            return '<p class="dsx-none">' + loc('shared.noHitsFor', '沒有頁面的內文含「{q}」。', { q: esc(res.q) }) + '<span>' + loc('shared.noHitsHint', '換個較短的詞再試；archive、plan、report 頁不在搜尋範圍內，要找它們請用下方的專案清單。') + '</span></p>';
         }
         return '<ol class="dsx-list">' + res.hits.map(function (h) {
             return '<li><a class="dsx-row" href="#/docs" title="' + esc(h.pkey + '/' + h.path) + '"><span class="dsx-t">' + esc(h.title) + '</span>'
@@ -787,25 +798,24 @@
                 + '<p class="dsx-snip">' + esc(h.before) + '<mark>' + esc(h.hit) + '</mark>' + esc(h.after) + '</p>'
                 + '<span class="dsx-path mono">' + esc(h.project) + ' · ' + esc(h.path) + '</span></a></li>';
         }).join('') + '</ol>'
-            + (res.n > res.hits.length ? '<p class="dsx-scope">列出前 ' + res.hits.length + ' 頁，共 ' + res.n + ' 頁；換個更精確的詞可以縮小。</p>' : '');
+            + (res.n > res.hits.length ? '<p class="dsx-scope">' + loc('shared.listedTopOf', '列出前 {shown} 頁，共 {total} 頁；換個更精確的詞可以縮小。', { shown: res.hits.length, total: res.n }) + '</p>' : '');
     }
     function docsSearchHtml(st, serve) {
         if (!serve) {
-            return '<div class="dsx" data-block="docs-search"><span class="dsx-l">全文搜尋</span>'
-                + '<p class="dsx-scope">全文搜尋要由 serve 回答：輸入 <code class="mono">/fankeel-station</code>，從它印出的網址開這一頁。</p></div>';
+            return '<div class="dsx" data-block="docs-search"><span class="dsx-l">' + loc('shared.fullTextSearch', '全文搜尋') + '</span>'
+                + '<p class="dsx-scope">' + loc('shared.fullTextNeedsServe', '全文搜尋要由 serve 回答：輸入 <code class="mono">/fankeel-station</code>，從它印出的網址開這一頁。') + '</p></div>';
         }
-        return '<div class="dsx" data-block="docs-search"><label class="dsx-l" for="dq">全文搜尋</label>'
-            + '<div class="dsx-box"><input id="dq" type="search" value="' + esc((st && st.q) || '') + '" placeholder="輸入字詞，搜全部專案的文件內文"'
+        return '<div class="dsx" data-block="docs-search"><label class="dsx-l" for="dq">' + loc('shared.fullTextSearch', '全文搜尋') + '</label>'
+            + '<div class="dsx-box"><input id="dq" type="search" value="' + esc((st && st.q) || '') + '" placeholder="' + loc('shared.fullTextPlaceholder', '輸入字詞，搜全部專案的文件內文') + '"'
             + ' autocomplete="off"><span class="dsx-n mono" id="dsxN">' + dsxCount(st) + '</span></div>'
-            + '<p class="dsx-scope">搜 reference、guide、decision 三種頁面的內文；archive、plan、report 不搜。</p>'
+            + '<p class="dsx-scope">' + loc('shared.fullTextScope', '搜 reference、guide、decision 三種頁面的內文；archive、plan、report 不搜。') + '</p>'
             + '<div id="dsxOut">' + dsxResultsHtml(st) + '</div></div>';
     }
     // 導覽: the tour's own page in a frame. It is served from the plugin's
     // assets (scripts/station.js STATIC); the written file has no server.
     function tourPage(serve) {
-        if (serve) return '<div class="tour" data-block="tour"><iframe class="tour-frame" src="station/tour.html" title="fankeel 導覽"></iframe></div>';
-        return '<section class="panel" data-block="tour"><p class="note">導覽要從 serve 開的頁面看：輸入 <code class="mono">/fankeel-station</code>，'
-            + '從它印出的網址開 <span class="mono">#/tour</span>。</p></section>';
+        if (serve) return '<div class="tour" data-block="tour"><iframe class="tour-frame" src="station/tour.html" title="' + loc('shared.tourTitle', 'fankeel 導覽') + '"></iframe></div>';
+        return '<section class="panel" data-block="tour"><p class="note">' + loc('shared.tourNeedsServe', '導覽要從 serve 開的頁面看：輸入 <code class="mono">/fankeel-station</code>，從它印出的網址開 <span class="mono">#/tour</span>。') + '</p></section>';
     }
 
     // ---- the project page -------------------------------------------------
@@ -832,7 +842,7 @@
         series.forEach(function (s) { s.points.forEach(function (p) { all.push(p.v); }); });
         var top = niceTop(Math.max.apply(null, all));
         var Y = function (v) { return (base - v / top * plotH).toFixed(1); };
-        var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="每個 session 的' + METRIC_LABEL[o.metric] + '，依開始時間">';
+        var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + loc('proj.perSessionByStart', '每個 session 的{metric}，依開始時間', { metric: METRIC_LABEL[o.metric] }) + '">';
         [0, 0.25, 0.5, 0.75, 1].forEach(function (f) {
             out += '<line class="' + (f ? 'gridl' : 'base') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(top * f) + '" y2="' + Y(top * f) + '"/>'
                 + '<text class="tick" x="' + (L - 10) + '" y="' + (Number(Y(top * f)) + 4) + '" text-anchor="end">' + metricText(o.metric, top * f) + '</text>';
@@ -841,7 +851,7 @@
             var x = X(dayStart(d) + 432e5);
             if (i % 2 === 0 || d === o.today) out += '<text class="tick" x="' + x + '" y="' + (base + 17) + '" text-anchor="middle">' + Number(d.slice(8)) + '</text>';
             if (d === o.today || d.slice(8) === '01' || i === 0) {
-                out += '<text x="' + x + '" y="' + (base + 33) + '" text-anchor="middle">' + (d === o.today ? '今天' : Number(d.slice(5, 7)) + '月') + '</text>';
+                out += '<text x="' + x + '" y="' + (base + 33) + '" text-anchor="middle">' + (d === o.today ? loc('proj.today', '今天') : loc('proj.monthN', '{n}月', { n: Number(d.slice(5, 7)) })) + '</text>';
             }
         });
         series.forEach(function (s) {
@@ -860,21 +870,21 @@
         var keys = MODEL_KEYS.filter(function (k) { return models[k] > 0; });
         var tot = keys.reduce(function (n, k) { return n + models[k]; }, 0);
         if (!tot) return '<span class="muted">—</span>';
-        return '<span class="mini-mix" title="' + keys.map(function (k) { return k + ' ' + usd(models[k]); }).join('、') + '">'
+        return '<span class="mini-mix" title="' + keys.map(function (k) { return k + ' ' + usd(models[k]); }).join(loc('proj.listSep', '、')) + '">'
             + keys.map(function (k) {
                 return '<i style="width:' + (models[k] / tot * 100).toFixed(2) + '%;background:var(--m-' + k + ')"></i>';
             }).join('') + '</span>';
     }
     function projectSessionsHtml(list, picked) {
-        if (!list.length) return '<p class="note">這個專案近 30 天沒有 session</p>';
-        return '<div class="tbl-wrap"><table class="t"><thead><tr><th aria-label="選來比較"></th><th>任務</th><th>開始</th>'
-            + '<th class="r">時長</th><th>stage 進度</th><th class="r">花費</th><th class="r">token</th><th>model 組成</th></tr></thead><tbody>'
+        if (!list.length) return '<p class="note">' + loc('proj.noSessions30d', '這個專案近 30 天沒有 session') + '</p>';
+        return '<div class="tbl-wrap"><table class="t"><thead><tr><th aria-label="' + loc('proj.pickToCompare', '選來比較') + '"></th><th>' + loc('proj.thTask', '任務') + '</th><th>' + loc('proj.thStart', '開始') + '</th>'
+            + '<th class="r">' + loc('proj.thDuration', '時長') + '</th><th>' + loc('proj.thStageProgress', 'stage 進度') + '</th><th class="r">' + loc('proj.thCost', '花費') + '</th><th class="r">token</th><th>' + loc('proj.thModelMix', 'model 組成') + '</th></tr></thead><tbody>'
             + list.map(function (s) {
                 var t = sessionTotals(s), started = Date.parse(s.started);
                 return '<tr class="link" data-href="' + sessionHash(s.id) + '"><td><input type="checkbox" data-cmp="' + esc(s.id)
-                    + '" aria-label="選來比較"' + (picked.indexOf(s.id) >= 0 ? ' checked' : '')
-                    + (s.hasDetail ? '' : ' disabled title="沒有 transcript，沒有細節可比"') + '></td>'
-                    + '<td class="task"><a href="' + sessionHash(s.id) + '">' + esc(s.task || '（未命名）') + '</a></td>'
+                    + '" aria-label="' + loc('proj.pickToCompare', '選來比較') + '"' + (picked.indexOf(s.id) >= 0 ? ' checked' : '')
+                    + (s.hasDetail ? '' : ' disabled title="' + loc('proj.noTranscriptToCompare', '沒有 transcript，沒有細節可比') + '"') + '></td>'
+                    + '<td class="task"><a href="' + sessionHash(s.id) + '">' + esc(s.task || loc('proj.unnamed', '（未命名）')) + '</a></td>'
                     + '<td class="muted">' + stamp(started) + '</td><td class="r">' + mins((s.updated || started) - started) + '</td>'
                     + '<td>' + routeDots(s) + ' <span class="muted">' + esc(s.stage || '—') + '</span></td>'
                     + '<td class="r">' + usd(t.usd) + '</td><td class="r muted">' + tokens(t.tokens) + '</td><td>' + miniMix(t.models) + '</td></tr>';
@@ -941,7 +951,7 @@
         };
     }
     function timelineSvg(m, closed, hi) {
-        if (!(m.t1 > m.t0)) return '<p class="note">這個 session 沒有帶時間的 request，畫不出時間線</p>';
+        if (!(m.t1 > m.t0)) return '<p class="note">' + loc('ses.noTimedRequests', '這個 session 沒有帶時間的 request，畫不出時間線') + '</p>';
         var shown = m.bars.filter(function (b) { return b.kind !== 'kid' || !closed[b.key]; });
         // One picture on one time axis, top to bottom: the stage names over
         // their columns, the context curve drawn across those columns on its
@@ -965,17 +975,17 @@
             return '<text x="' + f1(left ? x0 - 8 : x1 + 8) + '" y="' + y + '"' + (left ? ' text-anchor="end"' : '')
                 + ' style="font-size:11.5px;fill:var(--ink2)">' + esc(text) + '</text>';
         };
-        var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="session 時間線"' + (hi ? ' data-hi' : '') + '><defs>'
+        var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + loc('ses.timelineLabel', 'session 時間線') + '"' + (hi ? ' data-hi' : '') + '><defs>'
             + '<pattern id="hw" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">'
             + '<rect width="5" height="5" style="fill:var(--hatch-bg)"/><rect width="1.4" height="5" style="fill:var(--hatch)"/></pattern></defs>'
             + '<text x="' + G + '" y="16" style="fill:var(--ink);font-weight:600">' + clock(m.t0) + '</text>'
             + '<text x="' + (W - R) + '" y="16" text-anchor="end" style="fill:var(--ink);font-weight:600">' + clock(m.t1) + '</text>'
-            + '<text class="tick" x="' + (W - R) + '" y="' + (H - 8) + '" text-anchor="end">共 ' + mins(m.t1 - m.t0) + '</text>';
+            + '<text class="tick" x="' + (W - R) + '" y="' + (H - 8) + '" text-anchor="end">' + loc('ses.totalMins', '共 {t}', { t: mins(m.t1 - m.t0) }) + '</text>';
         // The gutter's lane names stay clear of the token ticks, which end
         // 8px left of G and are at most five characters wide.
         out += '<text class="lane-l" x="0" y="' + (sl + 13) + '">stage</text>'
-            + '<text class="lane-l" x="0" y="' + (ctx0 + 10) + '">主 session context</text>'
-            + '<text class="lane-s" x="0" y="' + (ctx0 + 26) + '">token；◆ 是 agent 回傳</text>';
+            + '<text class="lane-l" x="0" y="' + (ctx0 + 10) + '">' + loc('ses.mainSessionContext', '主 session context') + '</text>'
+            + '<text class="lane-s" x="0" y="' + (ctx0 + 26) + '">' + loc('ses.tokenAgentReturn', 'token；◆ 是 agent 回傳') + '</text>';
         // The stage columns first, so everything else draws over them.
         var stRoom = labelRoom();
         m.segs.forEach(function (g) {
@@ -1013,7 +1023,7 @@
         var waitRoom = labelRoom();
         m.waits.forEach(function (w) {
             var x0 = X(w.from), wd = Math.max(X(w.to) - x0, 1);
-            var lab = '等 ' + mins(w.ms), lw = textW(lab, 11);
+            var lab = loc('ses.waitedMins', '等 {t}', { t: mins(w.ms) }), lw = textW(lab, 11);
             // Centred on the band, except where that would hang off an edge: the
             // last wait of a session sits against the right margin.
             var cx = Math.min(x0 + wd / 2, W - R - lw / 2);
@@ -1024,8 +1034,8 @@
                         + lab + '</text>'
                     : '');
         });
-        out += '<text class="lane-l" x="0" y="' + (rq0 + 11) + '">主 session 請求</text><text class="lane-s" x="0" y="' + (rq0 + 25) + '">'
-            + m.ticks.length + ' 次，顏色 = model</text>';
+        out += '<text class="lane-l" x="0" y="' + (rq0 + 11) + '">' + loc('ses.mainSessionRequests', '主 session 請求') + '</text><text class="lane-s" x="0" y="' + (rq0 + 25) + '">'
+            + loc('ses.nTimesColorModel', '{n} 次，顏色 = model', { n: m.ticks.length }) + '</text>';
         m.ticks.forEach(function (q) {
             out += '<rect class="rq" x="' + f1(X(q.t) - 0.75) + '" y="' + rq0 + '" width="1.5" height="' + rqH + '" style="fill:var(--m-' + q.family + ')"/>';
         });
@@ -1039,13 +1049,13 @@
                 + (g ? ' data-hist="' + esc(g.stage) + '"' : '') + '><title>'
                 + esc((g ? g.stage : '—') + ' · ' + stamp(p.t) + ' · context ' + comma(p.y) + ' tokens'
                     + (p.model ? ' · ' + String(p.model).replace(/^claude-/, '') : '')
-                    + (g && isFinite(g.usd) && g.usd ? ' · 這段 stage ' + usd(g.usd) : '')) + '</title></rect>';
+                    + (g && isFinite(g.usd) && g.usd ? ' · ' + loc('ses.thisStageCost', '這段 stage {v}', { v: usd(g.usd) }) : '')) + '</title></rect>';
         });
         // The returns go over the reading columns, so each keeps its own title.
         var retRoom = labelRoom();
         m.rets.forEach(function (q) {
             var x = X(q.t), y = Yc(yAt(q.t));
-            var lab = '+' + (q.chars >= 1000 ? (q.chars / 1000).toFixed(1) + 'k' : q.chars) + ' 字元', lw = textW(lab, 10.5);
+            var lab = loc('ses.plusChars', '+{c} 字元', { c: q.chars >= 1000 ? (q.chars / 1000).toFixed(1) + 'k' : q.chars }), lw = textW(lab, 10.5);
             // It ends 9px left of its mark, unless that would run into the
             // token ticks left of G: then it starts 9px right of it instead.
             var right = x - 9 - lw < G + 2, lx = right ? x + 9 : x - 9;
@@ -1057,7 +1067,7 @@
                     : '');
         });
         out += '<line class="base" x1="0" x2="' + (W - R) + '" y1="' + (d0 - 10) + '" y2="' + (d0 - 10) + '"/>';
-        if (!shown.length) out += '<text class="lane-s" x="' + G + '" y="' + (d0 + 16) + '">這個 session 沒有派出 agent 或 workflow</text>';
+        if (!shown.length) out += '<text class="lane-s" x="' + G + '" y="' + (d0 + 16) + '">' + loc('ses.noAgentsDispatched', '這個 session 沒有派出 agent 或 workflow') + '</text>';
         shown.forEach(function (b, i) {
             var y = d0 + i * RH, ok = isFinite(b.from) && isFinite(b.to);
             var x0 = ok ? X(b.from) : G, x1 = ok ? Math.max(X(b.to), x0 + 2) : G + 2;
@@ -1070,12 +1080,12 @@
                     : '<rect x="' + f1(x0) + '" y="' + (y + 7) + '" width="' + f1(x1 - x0) + '" height="12" rx="3" style="fill:var(--s-'
                     + (b.kind === 'kid' ? 'workflow' : 'agent') + ')"/>')
                 + barLabel(x0, x1, y + 17,
-                    (b.kind === 'wf' ? 'workflow · ' + b.n + ' 個 agent · ' : String(b.model || '—').replace(/^claude-/, '') + ' · ')
+                    (b.kind === 'wf' ? 'workflow · ' + loc('ses.nAgents', '{n} 個 agent', { n: b.n }) + ' · ' : String(b.model || '—').replace(/^claude-/, '') + ' · ')
                     + tokens(b.tokens) + ' tok · ' + cents(b.cents)
-                    + (b.ret !== null && b.ret !== undefined ? ' · 回傳 ' + comma(b.ret) + ' 字元' : ''))
+                    + (b.ret !== null && b.ret !== undefined ? ' · ' + loc('ses.returnedChars', '回傳 {n} 字元', { n: comma(b.ret) }) : ''))
                 + '<line class="gridl" x1="0" x2="' + (W - R) + '" y1="' + (y + RH) + '" y2="' + (y + RH) + '"/>'
                 + (b.kind === 'wf' ? '<rect class="wf-toggle" data-wf="' + esc(b.key) + '" x="0" y="' + y + '" width="' + (W - R)
-                    + '" height="' + RH + '"><title>點一下收合或展開</title></rect>' : '');
+                    + '" height="' + RH + '"><title>' + loc('ses.clickToggle', '點一下收合或展開') + '</title></rect>' : '');
         });
         return out + '</svg>';
     }
@@ -1122,13 +1132,13 @@
         lp = lp || { turns: 0, over: 0, overUsd: 0 };
         var pct = stageUsd ? lp.overUsd / stageUsd * 100 : 0;
         var z = lp.over === 0;
-        return '<tr class="loop">' + (foot ? '<td><span class="lp">主迴圈</span></td><td></td>' : '<td></td><td><span class="lp">主迴圈</span></td>')
+        return '<tr class="loop">' + (foot ? '<td><span class="lp">' + loc('ses.mainLoop', '主迴圈') + '</span></td><td></td>' : '<td></td><td><span class="lp">' + loc('ses.mainLoop', '主迴圈') + '</span></td>')
             + '<td colspan="8"><div class="lf">'
-            + '<span><b>' + lp.turns + '</b>回合</span>'
-            + '<span' + (z ? ' class="zero"' : '') + '><b>' + lp.over + '</b>回合 ≥ 400k</span>'
-            + '<span' + (z ? ' class="zero"' : '') + '><b>' + usd(lp.overUsd) + '</b>那些回合</span>'
+            + '<span><b>' + lp.turns + '</b>' + loc('ses.turns', '回合') + '</span>'
+            + '<span' + (z ? ' class="zero"' : '') + '><b>' + lp.over + '</b>' + loc('ses.turnsOver400k', '回合 ≥ 400k') + '</span>'
+            + '<span' + (z ? ' class="zero"' : '') + '><b>' + usd(lp.overUsd) + '</b>' + loc('ses.thoseTurns', '那些回合') + '</span>'
             + '<span' + (z ? ' class="zero"' : '') + '><i class="mini" style="display:inline-flex;width:72px;vertical-align:middle;margin-right:8px">'
-            + '<span style="width:' + Math.round(pct) + '%"></span></i><b>' + Math.round(pct) + '%</b>' + (foot ? '佔 session' : '佔這一站') + '</span>'
+            + '<span style="width:' + Math.round(pct) + '%"></span></i><b>' + Math.round(pct) + '%</b>' + (foot ? loc('ses.ofSession', '佔 session') : loc('ses.ofThisStage', '佔這一站')) + '</span>'
             + '</div></td><td class="r"></td></tr>';
     }
     function sumLoops(loops) {
@@ -1173,19 +1183,19 @@
     // it. A segment or a row is a toggle: `hi` is the stage the timeline marks.
     function costShareHtml(L, hi) {
         var pct = function (v) { return L.total ? Math.round(v / L.total * 1000) / 10 : 0; };
-        var name = function (k) { return k === 'none' ? '第一步之前' : k; };
+        var name = function (k) { return k === 'none' ? loc('ses.beforeStepOne', '第一步之前') : k; };
         var paid = L.rows.filter(function (g) { return g.usd > 0; });
-        return '<div class="cshare" data-block="cost-share"><div class="h2">' + icon('spend') + '各 stage 花費占比'
-            + '<small>合計 ' + usd(L.total) + '；點一段或一列，時間線標出那個 stage</small></div>'
-            + (paid.length ? '<div class="csbar" role="group" aria-label="各 stage 花費占比">' + paid.map(function (g) {
+        return '<div class="cshare" data-block="cost-share"><div class="h2">' + icon('spend') + loc('ses.costShareByStage', '各 stage 花費占比')
+            + '<small>' + loc('ses.costShareHint', '合計 {t}；點一段或一列，時間線標出那個 stage', { t: usd(L.total) }) + '</small></div>'
+            + (paid.length ? '<div class="csbar" role="group" aria-label="' + loc('ses.costShareByStage', '各 stage 花費占比') + '">' + paid.map(function (g) {
                 var p = pct(g.usd), on = hi === g.stage;
                 return '<button type="button" class="csseg' + (on ? ' on' : '') + '" data-hist="' + esc(g.stage) + '" aria-pressed="' + on + '"'
                     + ' title="' + esc(name(g.stage) + ' ' + usd(g.usd) + ' · ' + p + '%') + '" style="flex:' + g.usd + ' 1 0;background:'
                     + colorOf('stage', g.stage) + '">' + (p >= 9 ? '<span>' + esc(name(g.stage)) + '</span><b>' + usd(g.usd) + ' · ' + p + '%</b>' : '')
                     + '</button>';
-            }).join('') + '</div>' : '<p class="tally">這個 session 沒有按日的花費</p>')
-            + '<div class="tbl-wrap"><table class="t cstbl"><thead><tr><th>stage</th><th class="r">時間</th><th class="r">花費</th><th class="r">占比</th>'
-            + '<th>主 session / agent</th><th class="r">請求</th></tr></thead><tbody>' + L.rows.map(function (g) {
+            }).join('') + '</div>' : '<p class="tally">' + loc('ses.noDailyCost', '這個 session 沒有按日的花費') + '</p>')
+            + '<div class="tbl-wrap"><table class="t cstbl"><thead><tr><th>stage</th><th class="r">' + loc('ses.thTime', '時間') + '</th><th class="r">' + loc('ses.thCost', '花費') + '</th><th class="r">' + loc('ses.thShare', '占比') + '</th>'
+            + '<th>' + loc('ses.thMainVsAgent', '主 session / agent') + '</th><th class="r">' + loc('ses.thRequests', '請求') + '</th></tr></thead><tbody>' + L.rows.map(function (g) {
                 var on = hi === g.stage;
                 return '<tr class="csrow' + (on ? ' on' : '') + '" data-hist="' + esc(g.stage) + '" tabindex="0" aria-pressed="' + on + '">'
                     + '<td><span class="pchip"><i class="sw" style="background:' + colorOf('stage', g.stage) + '"></i>' + esc(name(g.stage)) + '</span></td>'
@@ -1206,11 +1216,11 @@
         if (!paid.length) return '';
         var max = Math.max.apply(null, paid.map(function (g) { return g.agent; }));
         var sum = paid.reduce(function (a, g) { return a + g.agent; }, 0);
-        return '<div class="dstg" data-block="dispatch-stages"><div class="dxh">派工花費，依 stage <small>合計 ' + usd(sum) + '</small></div>'
+        return '<div class="dstg" data-block="dispatch-stages"><div class="dxh">' + loc('ses.dispatchCostByStage', '派工花費，依 stage') + ' <small>' + loc('ses.totalV', '合計 {v}', { v: usd(sum) }) + '</small></div>'
             + paid.map(function (g) {
-                var nm = g.stage === 'none' ? '第一步之前' : g.stage, on = hi === g.stage;
+                var nm = g.stage === 'none' ? loc('ses.beforeStepOne', '第一步之前') : g.stage, on = hi === g.stage;
                 return '<a class="dsrow' + (on ? ' on' : '') + '" href="' + sessionHash(id) + '" data-hist="' + esc(g.stage) + '" aria-pressed="' + on + '"'
-                    + ' title="' + esc(nm + ' 派工 ' + usd(g.agent) + ' · 占派工 ' + Math.round(g.agent / sum * 1000) / 10 + '%') + '">'
+                    + ' title="' + esc(loc('ses.dispatchOfShare', '{nm} 派工 {v} · 占派工 {p}%', { nm: nm, v: usd(g.agent), p: Math.round(g.agent / sum * 1000) / 10 })) + '">'
                     + '<span class="dsl">' + esc(nm) + '</span><span class="dst"><i style="width:' + (g.agent / max * 88).toFixed(1)
                     + '%;background:' + colorOf('stage', g.stage) + '"></i><b>' + usd(g.agent) + '</b></span></a>';
             }).join('') + '</div>';
@@ -1228,25 +1238,25 @@
         var loops = x && Array.isArray(x.loops) ? x.loops : null;
         var loopBy = {};
         (loops || []).forEach(function (r) { loopBy[r.stage === null ? 'none' : r.stage] = r; });
-        return '<div class="sumline"><div>合計花費<b>' + usd(m.total.usd) + '</b></div><div>主 session<b>' + usd(m.main.usd) + '</b></div>'
-            + '<div>派工（agent + workflow）<b>' + usd(m.agent.usd) + '</b></div><div>output 佔花費<b>' + share(m.total.cost.output) + '</b></div>'
-            + '<div>cache read 佔 token<b>' + (allTok ? Math.round(m.total.tokens.cacheRead / allTok * 1000) / 10 + '%' : '—') + '</b></div></div>'
-            + '<div class="h2">stage × model <small>token 與各自的 USD；stage 列是小計</small></div>'
-            + '<div class="tbl-wrap"><table class="t"><thead><tr><th rowspan="2">stage</th><th rowspan="2">model · 佔 session</th>'
+        return '<div class="sumline"><div>' + loc('ses.totalCost', '合計花費') + '<b>' + usd(m.total.usd) + '</b></div><div>' + loc('ses.mainSession', '主 session') + '<b>' + usd(m.main.usd) + '</b></div>'
+            + '<div>' + loc('ses.dispatchAgentWorkflow', '派工（agent + workflow）') + '<b>' + usd(m.agent.usd) + '</b></div><div>' + loc('ses.outputShareOfCost', 'output 佔花費') + '<b>' + share(m.total.cost.output) + '</b></div>'
+            + '<div>' + loc('ses.cacheReadShareOfTokens', 'cache read 佔 token') + '<b>' + (allTok ? Math.round(m.total.tokens.cacheRead / allTok * 1000) / 10 + '%' : '—') + '</b></div></div>'
+            + '<div class="h2">stage × model <small>' + loc('ses.stageModelHint', 'token 與各自的 USD；stage 列是小計') + '</small></div>'
+            + '<div class="tbl-wrap"><table class="t"><thead><tr><th rowspan="2">stage</th><th rowspan="2">' + loc('ses.modelOfSession', 'model · 佔 session') + '</th>'
             + KINDS.map(function (k) { return '<th colspan="2"><i class="sw" style="background:var(' + k[2] + ')"></i> ' + k[1] + '</th>'; }).join('')
             + '<th rowspan="2" class="r">USD</th></tr><tr>'
             + KINDS.map(function () { return '<th class="r">token</th><th class="r">USD</th>'; }).join('') + '</tr></thead><tbody>'
             + m.stages.map(function (g) {
                 return '<tr class="sub"><td><span class="pchip"><i class="sw" style="background:' + colorOf('stage', g.stage) + '"></i>'
-                    + esc(g.stage === 'none' ? '第一步之前' : g.stage) + '</span></td><td class="muted">' + share(g.sub.usd) + '</td>'
+                    + esc(g.stage === 'none' ? loc('ses.beforeStepOne', '第一步之前') : g.stage) + '</span></td><td class="muted">' + share(g.sub.usd) + '</td>'
                     + cells(g.sub, '') + '</tr>' + g.models.map(function (mm) {
                         return '<tr class="child"><td></td><td><span class="pchip"><i class="sw" style="background:var(--m-' + family(mm.model)
                             + ')"></i>' + esc(String(mm.model).replace(/^claude-/, '')) + '</span></td>' + cells(mm.cell, '') + '</tr>';
                     }).join('') + (loops ? loopRow(loopBy[g.stage], g.sub.usd) : '');
             }).join('') + '</tbody><tfoot>'
-            + '<tr><td>主 session</td><td></td>' + cells(m.main, 'total') + '</tr>'
+            + '<tr><td>' + loc('ses.mainSession', '主 session') + '</td><td></td>' + cells(m.main, 'total') + '</tr>'
             + '<tr><td>agent</td><td></td>' + cells(m.agent, 'total') + '</tr>'
-            + '<tr><td>合計</td><td></td>' + cells(m.total, 'total') + '</tr>'
+            + '<tr><td>' + loc('ses.total', '合計') + '</td><td></td>' + cells(m.total, 'total') + '</tr>'
             + (loops ? loopRow(sumLoops(loops), m.total.usd, true) : '') + '</tfoot></table></div>';
     }
     function sessionHeadHtml(s, x) {
@@ -1254,13 +1264,13 @@
         var waited = m ? m.waits.reduce(function (n, w) { return n + w.ms; }, 0) : t.wait;
         var wakes = x && typeof x.wakes === 'number' ? x.wakes : null;
         return '<div class="readouts">'
-            + roHtml('歷時', m && m.t1 > m.t0 ? mins(m.t1 - m.t0) : '—', 'active ' + hours(t.active))
-            + roHtml('<i class="hatchsw"></i>等你回答', mins(waited), m ? m.waits.length + ' 次 gate' : '讀取細節…')
-            + roHtml('花費', usd(t.usd), t.usd ? '派工佔 ' + Math.round(agentUsd / t.usd * 100) + '%' : '沒有按日的花費')
-            + roHtml('token', tokens(t.tokens), x ? x.requests + ' 次主 session 請求' : '')
-            + roHtml('派工', x ? x.rows.length + '<span class="u">agent</span>' : '—', x ? agentCounts(x, s) + x.runs.length + ' 個 workflow' : '')
-            + roHtml('叫醒', wakes === null ? '—' : wakes + '<span class="u">次</span>', wakes === null ? '' : '派工回報叫醒主 session')
-            + roHtml('context 峰值', x ? tokens(x.peak) : '—', '')
+            + roHtml(loc('ses.elapsed', '歷時'), m && m.t1 > m.t0 ? mins(m.t1 - m.t0) : '—', 'active ' + hours(t.active))
+            + roHtml('<i class="hatchsw"></i>' + loc('ses.waitingForYou', '等你回答'), mins(waited), m ? loc('ses.nGates', '{n} 次 gate', { n: m.waits.length }) : loc('ses.loadingDetail', '讀取細節…'))
+            + roHtml(loc('ses.cost', '花費'), usd(t.usd), t.usd ? loc('ses.dispatchShare', '派工佔 {p}%', { p: Math.round(agentUsd / t.usd * 100) }) : loc('ses.noDailyCost', '這個 session 沒有按日的花費'))
+            + roHtml('token', tokens(t.tokens), x ? loc('ses.nMainSessionRequests', '{n} 次主 session 請求', { n: x.requests }) : '')
+            + roHtml(loc('ses.dispatch', '派工'), x ? x.rows.length + '<span class="u">agent</span>' : '—', x ? agentCounts(x, s) + loc('ses.nWorkflows', '{n} 個 workflow', { n: x.runs.length }) : '')
+            + roHtml(loc('ses.wakes', '叫醒'), wakes === null ? '—' : wakes + '<span class="u">' + loc('ses.times', '次') + '</span>', wakes === null ? '' : loc('ses.dispatchWokeMain', '派工回報叫醒主 session'))
+            + roHtml(loc('ses.contextPeak', 'context 峰值'), x ? tokens(x.peak) : '—', '')
             + '</div>';
     }
     // Three tabs by what a reader comes for: 概覽 is the session's story —
@@ -1269,14 +1279,14 @@
     // opens 概覽, which now holds everything that tab showed.
     var TAB_SHOWN = ['timeline', 'dispatch', 'events'];
     function tabsHtml(s, tab, x) {
-        var label = { timeline: '概覽', dispatch: '派工', events: '事件' };
+        var label = { timeline: loc('ses.tabOverview', '概覽'), dispatch: loc('ses.tabDispatch', '派工'), events: loc('ses.tabEvents', '事件') };
         var n = { dispatch: x ? x.rows.length : null, events: x ? x.events.length : null };
         var run = x ? x.rows.filter(function (r) { return agentState(x, r, s) === 'running'; }).length : 0;
         if (tab === 'cost') tab = 'timeline';
-        return '<nav class="tabs" aria-label="session 檢視">' + TAB_SHOWN.map(function (k) {
+        return '<nav class="tabs" aria-label="' + loc('ses.sessionView', 'session 檢視') + '">' + TAB_SHOWN.map(function (k) {
             return '<a href="' + sessionHash(s.id, k) + '"' + (k === tab ? ' class="on" aria-current="page"' : '') + '>' + label[k]
                 + (n[k] !== null && n[k] !== undefined ? '<small>' + n[k] + '</small>' : '')
-                + (k === 'dispatch' && run ? '<i class="dot live" title="' + run + ' 個 agent running"></i>' : '') + '</a>';
+                + (k === 'dispatch' && run ? '<i class="dot live" title="' + loc('ses.nAgentsRunning', '{n} 個 agent running', { n: run }) + '"></i>' : '') + '</a>';
         }).join('') + '</nav>';
     }
 
@@ -1286,7 +1296,7 @@
         var d = new Date(ms);
         return [d.getHours(), d.getMinutes(), d.getSeconds()].map(function (n) { return String(n).padStart(2, '0'); }).join(':');
     }
-    function agoText(sec) { return sec <= 0 ? '剛更新' : sec + ' 秒前更新'; }
+    function agoText(sec) { return sec <= 0 ? loc('live.justUpdated', '剛更新') : loc('live.updatedSecAgo', '{s} 秒前更新', { s: sec }); }
     // A figure that keeps moving between re-reads, in seconds, `b + m × now`:
     // an elapsed time is `-start, 1`. Printed once from `nowSec`, and — only
     // while `live` — marked for the once-a-second tick below the guard to move.
@@ -1300,9 +1310,9 @@
     // it is not.
     function liveTag(live, polledMs, nowMs) {
         return live
-            ? '<span class="livetag" title="最後一次更新 ' + clockSec(polledMs) + '；session 還活著，這頁每 3 秒重拉一次，結束就停"><b>即時</b>・<span data-ago>'
+            ? '<span class="livetag" title="' + esc(loc('live.lastUpdatedHint', '最後一次更新 {t}；session 還活著，這頁每 3 秒重拉一次，結束就停', { t: clockSec(polledMs) })) + '"><b>' + loc('live.live', '即時') + '</b>・<span data-ago>'
                 + agoText(Math.round((nowMs - polledMs) / 1000)) + '</span></span>'
-            : '<span class="livetag off" title="session 結束後不再重拉"><b>已停止更新</b>・最後一次 ' + clockSec(polledMs) + '</span>';
+            : '<span class="livetag off" title="' + esc(loc('live.stoppedHint', 'session 結束後不再重拉')) + '"><b>' + loc('live.stoppedUpdating', '已停止更新') + '</b>・' + loc('live.lastAt', '最後一次 {t}', { t: clockSec(polledMs) }) + '</span>';
     }
     // The route as a rail: a stop per stage, each one behind the current stage
     // timed by the registry's clock for it (`stages[].from` and `to`), the
@@ -1312,13 +1322,13 @@
         var route = s.route || [], at = route.indexOf(s.stage), win = {};
         (s.stages || []).forEach(function (w) { win[w.stage] = w; });
         return '<ol class="rail" style="--n:' + route.length + '" aria-label="route ' + esc(route.join(' → '))
-            + (at >= 0 ? '；現在在 ' + esc(s.stage) + '，第 ' + (at + 1) + ' 站，共 ' + route.length + ' 站' : '') + '">'
+            + (at >= 0 ? esc(loc('live.nowAtStopOf', '；現在在 {stage}，第 {n} 站，共 {total} 站', { stage: s.stage, n: at + 1, total: route.length })) : '') + '">'
             + route.map(function (k, i) {
                 var w = win[k], cls = at < 0 || i > at ? 'todo' : i < at ? 'done' : 'now' + (live ? ' live' : ''), tm = '';
                 if (i < at && w) tm = '<span class="tm">' + mins(w.to - w.from) + '</span>';
                 else if (i === at && w) {
                     tm = '<span class="tm">' + (live ? tk(-w.from / 1000, 1, true, nowMs / 1000) : mins(w.to - w.from)) + '</span>'
-                        + '<span class="since">' + clock(w.from) + (live ? ' 進站' : ' 進站，停在這站') + '</span>';
+                        + '<span class="since">' + clock(w.from) + (live ? loc('live.enteredStop', ' 進站') : loc('live.enteredStopStopped', ' 進站，停在這站')) + '</span>';
                 }
                 return '<li class="' + cls + '" style="--c:var(--st-' + esc(k) + ')"' + (i === at ? ' aria-current="step"' : '') + '>'
                     + '<span class="pt"></span><span class="nm">' + esc(k) + '</span>' + tm + '</li>';
@@ -1334,7 +1344,7 @@
     function serveLost(lastOkMs, nowMs, genAbs, genRel) {
         if (lastOkMs === null || lastOkMs === undefined) return null;
         if (nowMs - lastOkMs < 15000) return null;
-        return '底下所有數字與狀態都凍結在 ' + genAbs + '（' + genRel + '），不會再更新。每 5 秒重試一次。';
+        return loc('live.frozenBelow', '底下所有數字與狀態都凍結在 {abs}（{rel}），不會再更新。每 5 秒重試一次。', { abs: genAbs, rel: genRel });
     }
 
     // ---- the left bar -------------------------------------------------------
@@ -1394,13 +1404,13 @@
     // and those same kids are the tab strip on each of their pages
     // (`subtabsHtml`), so the bar and the strip cannot list different pages.
     var NAV_TREE = [
-        { ico: 'dash', label: '儀表板', v: 'now', href: '#/' },
-        { ico: 'sessions', label: 'Sessions', fold: 'sessions', kids: [['live', '#/live', '進行中'], ['sessions', '#/sessions', '最近'],
-            ['list', '#/list', '全部清單'], ['cmp', '#/cmp', '比較']] },
-        { ico: 'spend', label: '花費', fold: 'spend', kids: [['days', '#/days', '近 30 天'], ['projects', '#/projects', '依專案']] },
-        { ico: 'docs', label: '文件', v: 'docs', href: '#/docs' },
-        { ico: 'settings', label: '設定', kids: [['settings', '#/settings', '精靈']] },
-        { ico: 'tour', label: '導覽', v: 'tour', href: '#/tour', block: 'tour-nav', title: 'fankeel 怎麼跑一個任務，一段動畫看完' },
+        { ico: 'dash', label: loc('nav.dashboard', '儀表板'), v: 'now', href: '#/' },
+        { ico: 'sessions', label: 'Sessions', fold: 'sessions', kids: [['live', '#/live', loc('nav.inProgress', '進行中')], ['sessions', '#/sessions', loc('nav.recent', '最近')],
+            ['list', '#/list', loc('nav.fullList', '全部清單')], ['cmp', '#/cmp', loc('nav.compare', '比較')]] },
+        { ico: 'spend', label: loc('nav.spend', '花費'), fold: 'spend', kids: [['days', '#/days', loc('nav.last30d', '近 30 天')], ['projects', '#/projects', loc('nav.byProject', '依專案')]] },
+        { ico: 'docs', label: loc('nav.docs', '文件'), v: 'docs', href: '#/docs' },
+        { ico: 'settings', label: loc('nav.settings', '設定'), kids: [['settings', '#/settings', loc('nav.wizard', '精靈')]] },
+        { ico: 'tour', label: loc('nav.tour', '導覽'), v: 'tour', href: '#/tour', block: 'tour-nav', title: loc('nav.tourTitle', 'fankeel 怎麼跑一個任務，一段動畫看完') },
     ];
     // A detail page lights the page it was opened from.
     function navOn(active) { return active === 'project' ? 'projects' : active === 'session' ? 'sessions' : active; }
@@ -1409,7 +1419,7 @@
     }
     // The three theme states the button at the foot of the bar cycles
     // through: [state, icon, what it says, the state a click moves to].
-    var THEMES = { system: ['auto', '跟隨系統', 'light'], light: ['sun', '淺色', 'dark'], dark: ['moon', '深色', 'system'] };
+    var THEMES = { system: ['auto', loc('nav.themeSystem', '跟隨系統'), 'light'], light: ['sun', loc('nav.themeLight', '淺色'), 'dark'], dark: ['moon', loc('nav.themeDark', '深色'), 'system'] };
     // `ui.shut` holds the `fold` keys the reader collapsed; `ui.theme` is one
     // of THEMES. A category with `fold` is one button, the whole row, that only
     // opens and shuts; its kids do the navigating. The chevron shows which.
@@ -1424,7 +1434,7 @@
                 + (b ? '<span class="nb' + (b[1] ? ' ' + b[1] : '') + '">' + b[0] + '</span>' : '') + '</a>';
         };
         var t = THEMES[th];
-        return '<nav class="sidenav" data-block="nav" aria-label="功能"><ul>' + NAV_TREE.map(function (g) {
+        return '<nav class="sidenav" data-block="nav" aria-label="' + loc('nav.functions', '功能') + '"><ul>' + NAV_TREE.map(function (g) {
             if (!g.kids) {
                 return '<li class="navcat"' + (g.block ? ' data-block="' + g.block + '"' : '') + '>'
                     + link(g.v, g.href, icon(g.ico) + '<span>' + g.label + '</span>', g.title) + '</li>';
@@ -1439,7 +1449,7 @@
                     + '<span class="navchev">' + icon('chev') + '</span></button>'
                     : '<a class="navhd" href="' + g.kids[0][1] + '">' + icon(g.ico) + '<span>' + g.label + '</span></a>') + (g.fold ? '<div class="navwrap">' + kids + '</div>' : kids) + '</li>';
         }).join('') + '</ul><div class="navfoot"><button type="button" class="themebtn" data-themecycle="' + t[2] + '"'
-            + ' title="主題：' + t[1] + '（按一下換' + THEMES[t[2]][1] + '）" aria-label="主題：' + t[1] + '，按一下換' + THEMES[t[2]][1] + '">'
+            + ' title="' + loc('nav.themeTitle', '主題：{cur}（按一下換{next}）', { cur: t[1], next: THEMES[t[2]][1] }) + '" aria-label="' + loc('nav.themeAriaLabel', '主題：{cur}，按一下換{next}', { cur: t[1], next: THEMES[t[2]][1] }) + '">'
             + icon(t[0]) + '</button></div></nav>';
     }
     // The tab strip under a Sessions or 花費 page's header: its category's
@@ -1473,8 +1483,9 @@
             var w = win[k], m = w && isFinite(w.from) ? mins((open ? now : w.to) - w.from) : '—';
             return m === '—' ? '' : m;
         };
-        return '<ol class="lrail" aria-label="route ' + esc(route.join(' → ')) + '；' + (live ? '現在在 ' : '停在 ') + esc(route[at])
-            + '，第 ' + (at + 1) + ' 站，共 ' + route.length + ' 站">' + route.map(function (k, i) {
+        return '<ol class="lrail" aria-label="route ' + esc(route.join(' → ')) + esc(loc('nav.liveRailAt', '；{now}{stage}，第 {n} 站，共 {total} 站',
+            { now: live ? loc('nav.liveRailNowAt', '現在在 ') : loc('nav.liveRailStoppedAt', '停在 '), stage: route[at], n: at + 1, total: route.length }))
+            + '">' + route.map(function (k, i) {
                 var c = ' style="--c:var(--st-' + esc(k) + ')"', t;
                 if (i < at) {
                     t = took(k, false);
@@ -1504,14 +1515,14 @@
         var mark = s.inflight && s.inflight.stage === s.stage ? s.inflight : null;
         var subs = (s.subagents || []).filter(function (a) { return !mark || a.id !== mark.agentId; });
         var open = '<div class="lane-subs" data-block="live-subagents">';
-        if (!mark && !subs.length) return open + '<p class="sa-none">沒有 stage agent 或 subagent 在跑，主 session 自己在做。</p></div>';
+        if (!mark && !subs.length) return open + '<p class="sa-none">' + loc('nav.noStageOrSubagent', '沒有 stage agent 或 subagent 在跑，主 session 自己在做。') + '</p></div>';
         var head = [];
-        if (mark) head.push('stage agent 1 個');
-        if (subs.length) head.push('subagent ' + subs.length + ' 個');
-        return open + '<div class="sa-h"><b>現在在跑</b><span>' + head.join(' · ') + '</span></div>'
+        if (mark) head.push(loc('nav.oneStageAgent', 'stage agent 1 個'));
+        if (subs.length) head.push(loc('nav.nSubagents', 'subagent {n} 個', { n: subs.length }));
+        return open + '<div class="sa-h"><b>' + loc('nav.runningNow', '現在在跑') + '</b><span>' + head.join(' · ') + '</span></div>'
             + (mark ? '<div class="sa inflight"><span class="sa-type">stage agent</span><span class="chip"><i class="sw" style="background:var(--st-'
                 + esc(mark.stage) + ')"></i>' + esc(mark.stage) + '</span><span class="sa-desc">'
-                + (isFinite(mark.at) ? clock(mark.at) + ' 送出，還沒交回' : '還沒交回') + '</span><span class="sa-for">' + mins(now - mark.at) + '</span></div>' : '')
+                + (isFinite(mark.at) ? loc('nav.sentNotReturned', '{t} 送出，還沒交回', { t: clock(mark.at) }) : loc('nav.notReturnedYet', '還沒交回')) + '</span><span class="sa-for">' + mins(now - mark.at) + '</span></div>' : '')
             + subs.map(function (a) {
                 var fam = saFamily(a, s), type = a.agentType || 'agent';
                 return '<div class="sa"><span class="sa-type" title="' + esc(type) + '">' + esc(type) + '</span>'
@@ -1527,10 +1538,10 @@
         var sure = s.state === 'live' && !s.unknown;
         return '<a class="lane ' + (sure ? 'live wsubs' : 'unsure') + '" data-state="' + esc(s.state) + '" href="' + sessionHash(s.id) + '">'
             + '<div class="lane-who"><b>' + esc(name(s)) + '</b><span class="mono" title="' + esc(s.root) + '">' + esc(s.root) + '</span></div>'
-            + '<div class="lane-task" title="' + esc(s.task || '') + '">' + esc(s.task || '（未命名）') + '</div>'
+            + '<div class="lane-task" title="' + esc(s.task || '') + '">' + esc(s.task || loc('nav.unnamed', '（未命名）')) + '</div>'
             + liveRail(s, sure, now)
             + '<div class="lane-when"><b class="mono">' + ago(s.updated) + '</b>'
-            + (sure ? '<small>最後一次寫入</small><small>開了 ' + mins(now - msOf(s.started)) + '</small>' : statePill(s)) + '</div>'
+            + (sure ? '<small>' + loc('nav.lastWritten', '最後一次寫入') + '</small><small>' + loc('nav.openFor', '開了 {t}', { t: mins(now - msOf(s.started)) }) + '</small>' : statePill(s)) + '</div>'
             + (sure ? liveSubsHtml(s, now) : '') + '</a>';
     }
     // Waiting is what `pendingGateHtml` answers: a pending file with questions.
@@ -1540,24 +1551,24 @@
     function liveGate(rows, name, now) {
         var at = rows.filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
         if (!at.length) {
-            return '<section class="lv-gate is-empty" data-block="live-gate" aria-label="等你回答的 gate">' + icon('check')
-                + '<span>沒有在等你的 gate</span></section>';
+            return '<section class="lv-gate is-empty" data-block="live-gate" aria-label="' + loc('nav.gatesWaitingOnYou', '等你回答的 gate') + '">' + icon('check')
+                + '<span>' + loc('nav.noGatesWaiting', '沒有在等你的 gate') + '</span></section>';
         }
-        return '<section class="lv-gate" data-block="live-gate" aria-labelledby="h-gate"><div class="lv-h"><h2 id="h-gate">等你回答</h2>'
+        return '<section class="lv-gate" data-block="live-gate" aria-labelledby="h-gate"><div class="lv-h"><h2 id="h-gate">' + loc('nav.waitingOnYou', '等你回答') + '</h2>'
             + '<span class="lv-n mono">' + at.length + '</span></div>' + at.map(function (s) {
                 var since = msOf(s.gateAt || s.pending.at || s.updated), q = s.pending.questions[0];
-                var left = isFinite(s.pending.until) ? ' · 還剩 ' + mins(Math.max(0, s.pending.until - now)) : '';
+                var left = isFinite(s.pending.until) ? ' · ' + loc('nav.timeLeft', '還剩 {t}', { t: mins(Math.max(0, s.pending.until - now)) }) : '';
                 return '<a class="gate-row" href="' + sessionHash(s.id) + '"><span class="pill gate">' + icon('gate') + 'gate</span>'
                     + '<b class="gate-p">' + esc(name(s)) + '</b><span class="gate-q">' + esc(q.header || q.question || s.task || '') + '</span>'
-                    + '<span class="gate-t mono">等了 ' + (isFinite(since) ? mins(now - since) : '—') + left + '</span>'
-                    + '<span class="btn">去回答</span></a>';
+                    + '<span class="gate-t mono">' + loc('nav.waitedFor', '等了 {t}', { t: isFinite(since) ? mins(now - since) : '—' }) + left + '</span>'
+                    + '<span class="btn">' + loc('nav.goAnswer', '去回答') + '</span></a>';
             }).join('') + '</section>';
     }
     function liveRun(run, name, now) {
-        return '<section class="lv-grp" data-block="live-run" aria-labelledby="h-run"><div class="lv-h"><h2 id="h-run">正在跑</h2>'
-            + '<span class="lv-n mono">' + run.length + '</span><span class="lv-note">registry 標著進行中，process 也找得到</span></div>'
+        return '<section class="lv-grp" data-block="live-run" aria-labelledby="h-run"><div class="lv-h"><h2 id="h-run">' + loc('nav.running', '正在跑') + '</h2>'
+            + '<span class="lv-n mono">' + run.length + '</span><span class="lv-note">' + loc('nav.registryFoundProcess', 'registry 標著進行中，process 也找得到') + '</span></div>'
             + (run.length ? run.map(function (s) { return liveLane(s, name, now); }).join('')
-                : '<p class="lv-empty">現在沒有 session 在跑。在任一個專案裡輸入 <code class="mono">/fankeel</code> 開始一個，它會出現在這裡。</p>')
+                : '<p class="lv-empty">' + loc('nav.noSessionRunning', '現在沒有 session 在跑。在任一個專案裡輸入 <code class="mono">/fankeel</code> 開始一個，它會出現在這裡。') + '</p>')
             + '</section>';
     }
     // `stale` and `live?` together: the registry says in progress and nothing
@@ -1569,15 +1580,15 @@
             var c = clearStaleControl(p, maybe.filter(function (s) { return s.root === p.root; }));
             return c ? '<span class="lv-clear" title="' + esc(p.root) + '">' + c + '</span>' : '';
         }).join('');
-        return '<section class="lv-grp" data-block="live-maybe" aria-labelledby="h-maybe"><div class="lv-h"><h2 id="h-maybe">可能已經停了</h2>'
-            + '<span class="lv-n mono">' + maybe.length + '</span><span class="lv-note">registry 還標著進行中，但確認不了 process 還在</span>'
+        return '<section class="lv-grp" data-block="live-maybe" aria-labelledby="h-maybe"><div class="lv-h"><h2 id="h-maybe">' + loc('nav.mayHaveStopped', '可能已經停了') + '</h2>'
+            + '<span class="lv-n mono">' + maybe.length + '</span><span class="lv-note">' + loc('nav.registryUnconfirmedProcess', 'registry 還標著進行中，但確認不了 process 還在') + '</span>'
             + (clears ? '<span class="spacer"></span>' + clears : '') + '</div>'
             + maybe.map(function (s) { return liveLane(s, name, now); }).join('') + '</section>';
     }
     function liveIdle(idle, lab) {
         if (!idle.length) return '';
-        return '<section class="lv-idle" data-block="live-idle" aria-labelledby="h-idle"><h2 id="h-idle">沒有 session 的 registry '
-            + '<span class="lv-n mono">' + idle.length + '</span></h2><ul>' + idle.map(function (p) {
+        return '<section class="lv-idle" data-block="live-idle" aria-labelledby="h-idle"><h2 id="h-idle">' + loc('nav.registriesNoSessions', '沒有 session 的 registry')
+            + ' <span class="lv-n mono">' + idle.length + '</span></h2><ul>' + idle.map(function (p) {
                 return '<li><a href="' + projectHash(p.root) + '" title="' + esc(p.root) + '">' + esc(lab[p.root] || p.root) + '</a></li>';
             }).join('') + '</ul></section>';
     }
@@ -1594,9 +1605,9 @@
         var idle = open.filter(function (p) { return !rows.some(function (s) { return s.root === p.root; }); });
         var now = S.serve || !isFinite(NOW) ? Date.now() : NOW;
         var name = function (s) { return s.project || lab[s.root] || s.root; };
-        return '<div class="phead"><h1>' + icon('now') + '現在</h1></div>' + (tabs || '') + '<div class="lv" data-block="now">'
+        return '<div class="phead"><h1>' + icon('now') + loc('nav.now', '現在') + '</h1></div>' + (tabs || '') + '<div class="lv" data-block="now">'
             + (open.length ? liveGate(rows, name, now) + liveRun(run, name, now) + liveMaybe(maybe, open, name, now) + liveIdle(idle, lab)
-                : '<p class="mute">沒有 registry</p>') + '</div>';
+                : '<p class="mute">' + loc('nav.noRegistry', '沒有 registry') + '</p>') + '</div>';
     }
     // ---- 設定: the seven-step wizard ----------------------------------------
     // Every question is a habit; a habit card recommends values and the
@@ -1630,15 +1641,15 @@
         },
         'land.push': {
             'true': '<svg class="vg" viewBox="0 0 220 76" aria-hidden="true">'
-                + '<rect class="box" x="10" y="16" width="70" height="42" rx="6"/><text class="lblc" x="45" y="71" text-anchor="middle">本機</text>'
-                + '<rect class="box" x="140" y="16" width="70" height="42" rx="6"/><text class="lblc" x="175" y="71" text-anchor="middle">遠端</text>'
+                + '<rect class="box" x="10" y="16" width="70" height="42" rx="6"/><text class="lblc" x="45" y="71" text-anchor="middle">' + loc('wiz.local', '本機') + '</text>'
+                + '<rect class="box" x="140" y="16" width="70" height="42" rx="6"/><text class="lblc" x="175" y="71" text-anchor="middle">' + loc('wiz.remote', '遠端') + '</text>'
                 + '<path class="link" d="M80 37H140"/>'
                 + '<g class="scene"><circle class="cb mvR" cx="175" cy="37" r="5.5"/>'
                 + '<rect class="box hot p3" x="140" y="16" width="70" height="42" rx="6"/>'
                 + '<path class="ok dr d5" pathLength="1" d="M194 25l3 3 6-6"/></g></svg>',
             'false': '<svg class="vg" viewBox="0 0 220 76" aria-hidden="true">'
-                + '<rect class="box" x="10" y="16" width="70" height="42" rx="6"/><text class="lblc" x="45" y="71" text-anchor="middle">本機</text>'
-                + '<rect class="box ghost" x="140" y="16" width="70" height="42" rx="6"/><text class="lblc" x="175" y="71" text-anchor="middle">遠端</text>'
+                + '<rect class="box" x="10" y="16" width="70" height="42" rx="6"/><text class="lblc" x="45" y="71" text-anchor="middle">' + loc('wiz.local', '本機') + '</text>'
+                + '<rect class="box ghost" x="140" y="16" width="70" height="42" rx="6"/><text class="lblc" x="175" y="71" text-anchor="middle">' + loc('wiz.remote', '遠端') + '</text>'
                 + '<path class="link" d="M80 37H140" style="opacity:.5"/>'
                 + '<g class="scene"><circle class="cb p1" cx="29" cy="37" r="5"/><circle class="cb p2" cx="45" cy="37" r="5"/><circle class="cb p3" cx="61" cy="37" r="5"/></g></svg>',
         },
@@ -1660,7 +1671,7 @@
                 + '<g class="scene"><rect class="own p2" x="91" y="13" width="38" height="50" rx="5"/>'
                 + '<g class="mvA"><circle class="sa" cx="84" cy="38" r="8.5"/><text class="sl" x="84" y="41.5" text-anchor="middle">A</text></g>'
                 + '<g class="mvBask"><g class="wait"><circle class="sb" cx="148" cy="38" r="8.5"/><text class="sl" x="148" y="41.5" text-anchor="middle">B</text></g></g>'
-                + '<g class="p3 og-b"><rect class="bub" x="134" y="4" width="58" height="18" rx="9"/><path class="bub" d="M146 21.4l2 5 4-5" style="stroke-linejoin:round"/><text class="bubt" x="163" y="16.5" text-anchor="middle">要繼續？</text></g>'
+                + '<g class="p3 og-b"><rect class="bub" x="134" y="4" width="58" height="18" rx="9"/><path class="bub" d="M146 21.4l2 5 4-5" style="stroke-linejoin:round"/><text class="bubt" x="163" y="16.5" text-anchor="middle">' + loc('wiz.continue', '要繼續？') + '</text></g>'
                 + '</g></svg>',
             deny: '<svg class="vg" viewBox="0 0 220 76" aria-hidden="true">'
                 + '<path class="file" d="M96 18h20l8 8v32H96z"/><path class="file" d="M116 18v8h8" style="fill:none"/>'
@@ -1678,17 +1689,17 @@
         },
         'stage.agents': {
             'false': '<svg class="vg short" viewBox="0 0 220 60" aria-hidden="true">'
-                + '<path class="ln" d="M12 30H208" style="stroke-width:5;opacity:.85"/><text class="lbl" x="12" y="52">主線</text></svg>',
+                + '<path class="ln" d="M12 30H208" style="stroke-width:5;opacity:.85"/><text class="lbl" x="12" y="52">' + loc('wiz.mainline', '主線') + '</text></svg>',
             survey: '<svg class="vg short" viewBox="0 0 220 60" aria-hidden="true">'
-                + '<path class="ln" d="M12 16H208"/><text class="lbl" x="12" y="54">主線</text>'
+                + '<path class="ln" d="M12 16H208"/><text class="lbl" x="12" y="54">' + loc('wiz.mainline', '主線') + '</text>'
                 + '<g class="scene"><path class="lane dr d1" pathLength="1" d="M48 16C60 16 58 36 70 36H150C162 36 160 16 172 16"/></g></svg>',
             'survey,build,verify': '<svg class="vg short" viewBox="0 0 220 60" aria-hidden="true">'
-                + '<path class="ln" d="M12 12H208"/><text class="lbl" x="12" y="56">主線</text>'
+                + '<path class="ln" d="M12 12H208"/><text class="lbl" x="12" y="56">' + loc('wiz.mainline', '主線') + '</text>'
                 + '<g class="scene"><path class="lane dr d1" pathLength="1" d="M48 12C60 12 58 26 70 26H150C162 26 160 12 172 12"/>'
                 + '<path class="lane dr d1" pathLength="1" d="M48 12C60 12 58 36 70 36H150C162 36 160 12 172 12"/>'
                 + '<path class="lane dr d1" pathLength="1" d="M48 12C60 12 58 46 70 46H150C162 46 160 12 172 12"/></g></svg>',
             all: '<svg class="vg short" viewBox="0 0 220 60" aria-hidden="true">'
-                + '<path class="ln" d="M12 10H208"/><text class="lbl" x="12" y="57">主線</text>'
+                + '<path class="ln" d="M12 10H208"/><text class="lbl" x="12" y="57">' + loc('wiz.mainline', '主線') + '</text>'
                 + '<g class="scene"><path class="lane dr d1" pathLength="1" d="M48 10C60 10 58 20 70 20H150C162 20 160 10 172 10"/>'
                 + '<path class="lane dr d1" pathLength="1" d="M48 10C60 10 58 25.5 70 25.5H150C162 25.5 160 10 172 10"/>'
                 + '<path class="lane dr d1" pathLength="1" d="M48 10C60 10 58 31 70 31H150C162 31 160 10 172 10"/>'
@@ -1702,15 +1713,23 @@
     // the wizard-gate-station block in the approved mockup.
     WIZ_SCENES['gate.station'] = {
         '60': '<svg class="vg" viewBox="0 0 220 80" aria-hidden="true"><rect class="box" x="22" y="10" width="112" height="60" rx="4"/><path class="docl" d="M22 19H134"/><path class="docl" d="M32 30H88M32 38H78M32 46H84"/><circle class="fdot" cx="118" cy="56" r="6"/><circle class="fring cdn" pathLength="1" stroke-dasharray="1" cx="118" cy="56" r="9.5"/><path class="link" d="M138 40H150"/><rect class="box" x="154" y="24" width="48" height="34" rx="3"/><text class="lbl" x="160" y="38">$ gate</text><text class="lbl" x="160" y="50">…60s</text></svg>',
-        off: '<svg class="vg" viewBox="0 0 220 80" aria-hidden="true"><rect class="box ghost" x="26" y="22" width="44" height="32" rx="3"/><path class="ln" d="M22 60 74 16" style="stroke:var(--faint)"/><rect class="box" x="92" y="12" width="96" height="56" rx="4"/><text class="qm" x="100" y="29">?</text><text class="lbl" x="110" y="29">選哪個</text><path class="docl" d="M110 40H160M110 48H150M110 56H156"/></svg>',
+        off: '<svg class="vg" viewBox="0 0 220 80" aria-hidden="true"><rect class="box ghost" x="26" y="22" width="44" height="32" rx="3"/><path class="ln" d="M22 60 74 16" style="stroke:var(--faint)"/><rect class="box" x="92" y="12" width="96" height="56" rx="4"/><text class="qm" x="100" y="29">?</text><text class="lbl" x="110" y="29">' + loc('wiz.whichOne', '選哪個') + '</text><path class="docl" d="M110 40H160M110 48H150M110 56H156"/></svg>',
     };
     var WIZ_CARD_TEXT = {
-        'land.integration': { merge: { l: '本機合併', d: '分支併回 main，留在本機。' }, pr: { l: '開 PR', d: '推上去，review 過再合。' }, keep: { l: '留在分支', d: '分支停著，之後自己整合。' } },
-        'land.push': { 'true': { l: '推上去', d: '收尾就 push。' }, 'false': { l: '留在本機', d: 'commit 在手上，自己推。' } },
-        'land.archivePlan': { 'true': { l: '封存', d: '做完就收進 archive。' }, 'false': { l: '先留著', d: '計畫繼續開著。' } },
-        guard: { ask: { l: '先問我', d: 'B 停下來等你點頭。' }, deny: { l: '擋掉', d: '等 A 放手才能改。' }, off: { l: '只提醒', d: '兩邊都改，閃個警告。' } },
-        'stage.agents': { 'false': { l: '全自己跑', d: '看得最清楚。' }, survey: { l: '只交 survey', d: '讀 repo 最吃 context。' },
-            'survey,build,verify': { l: '交三站', d: 'survey、build、verify。' }, all: { l: '全交出去', d: '主線只轉路徑。' } },
+        'land.integration': { merge: { l: loc('wiz.mergeL', '本機合併'), d: loc('wiz.mergeD', '分支併回 main，留在本機。') },
+            pr: { l: loc('wiz.prL', '開 PR'), d: loc('wiz.prD', '推上去，review 過再合。') },
+            keep: { l: loc('wiz.keepL', '留在分支'), d: loc('wiz.keepD', '分支停著，之後自己整合。') } },
+        'land.push': { 'true': { l: loc('wiz.pushTrueL', '推上去'), d: loc('wiz.pushTrueD', '收尾就 push。') },
+            'false': { l: loc('wiz.pushFalseL', '留在本機'), d: loc('wiz.pushFalseD', 'commit 在手上，自己推。') } },
+        'land.archivePlan': { 'true': { l: loc('wiz.archiveTrueL', '封存'), d: loc('wiz.archiveTrueD', '做完就收進 archive。') },
+            'false': { l: loc('wiz.archiveFalseL', '先留著'), d: loc('wiz.archiveFalseD', '計畫繼續開著。') } },
+        guard: { ask: { l: loc('wiz.guardAskL', '先問我'), d: loc('wiz.guardAskD', 'B 停下來等你點頭。') },
+            deny: { l: loc('wiz.guardDenyL', '擋掉'), d: loc('wiz.guardDenyD', '等 A 放手才能改。') },
+            off: { l: loc('wiz.guardOffL', '只提醒'), d: loc('wiz.guardOffD', '兩邊都改，閃個警告。') } },
+        'stage.agents': { 'false': { l: loc('wiz.agentsFalseL', '全自己跑'), d: loc('wiz.agentsFalseD', '看得最清楚。') },
+            survey: { l: loc('wiz.agentsSurveyL', '只交 survey'), d: loc('wiz.agentsSurveyD', '讀 repo 最吃 context。') },
+            'survey,build,verify': { l: loc('wiz.agentsThreeL', '交三站'), d: loc('wiz.agentsThreeD', 'survey、build、verify。') },
+            all: { l: loc('wiz.agentsAllL', '全交出去'), d: loc('wiz.agentsAllD', '主線只轉路徑。') } },
     };
     // `stage.agents` is offered as the four the mockup draws; the seven-stage
     // toggles under them (`wizOpts`) still set any other list.
@@ -1718,7 +1737,8 @@
     // gate.station as the mockup draws it: two cards, 60 s suggested whatever
     // the habit pills pre-picked, and off the builtin.
     WIZ_CARD_VALUES['gate.station'] = ['60', 'off'];
-    WIZ_CARD_TEXT['gate.station'] = { '60': { l: '等 60 秒', d: '人在頁面旁邊時，點一下就答完。' }, off: { l: '不用，在 terminal 答', d: 'gate 直接在 terminal 問，網頁不接。' } };
+    WIZ_CARD_TEXT['gate.station'] = { '60': { l: loc('wiz.gate60L', '等 60 秒'), d: loc('wiz.gate60D', '人在頁面旁邊時，點一下就答完。') },
+        off: { l: loc('wiz.gateOffL', '不用，在 terminal 答'), d: loc('wiz.gateOffD', 'gate 直接在 terminal 問，網頁不接。') } };
     var WIZ_SUGGEST = { 'gate.station': '60' };
     // The card a step is drawn in, named the way the approved mockup names it.
     var WIZ_BLOCK = { front: 'wizard-design', answer: 'wizard-gate-station' };
@@ -1726,69 +1746,70 @@
     // lighting the stops it takes (lib/stages.js CLASSES). Unset is the
     // default — the model picks the class in survey — and still posts ''.
     var WIZ_ROUTES = { spike: ['survey', 'build'], bounded: ['survey', 'design', 'build', 'verify', 'land'], architectural: WIZ_STAGES };
-    var WIZ_STAGE_JOB = { survey: '看現況', design: '定方案', plan: '拆任務', build: '動手做', verify: '拿證據', audit: '查過期文件', land: '收尾整合' };
+    var WIZ_STAGE_JOB = { survey: loc('wiz.jobSurvey', '看現況'), design: loc('wiz.jobDesign', '定方案'), plan: loc('wiz.jobPlan', '拆任務'),
+        build: loc('wiz.jobBuild', '動手做'), verify: loc('wiz.jobVerify', '拿證據'), audit: loc('wiz.jobAudit', '查過期文件'), land: loc('wiz.jobLand', '收尾整合') };
     var WIZ_CLASS_TEXT = {
-        '': { l: '依任務自動判斷', d: '模型在 survey 依任務決定走哪幾站。', n: 'survey 看完任務，再決定後面走哪幾站' },
-        spike: { l: '試水溫', d: '看一眼就動手，做完可能丟掉。', n: '2 站：survey → build' },
-        bounded: { l: '範圍清楚', d: '先定方案，做完拿證據再收。', n: '5 站：跳過 plan 和 audit' },
-        architectural: { l: '動到架構', d: '七站全走，文件也一起查。', n: '7 站全走' },
+        '': { l: loc('wiz.classAutoL', '依任務自動判斷'), d: loc('wiz.classAutoD', '模型在 survey 依任務決定走哪幾站。'), n: loc('wiz.classAutoN', 'survey 看完任務，再決定後面走哪幾站') },
+        spike: { l: loc('wiz.classSpikeL', '試水溫'), d: loc('wiz.classSpikeD', '看一眼就動手，做完可能丟掉。'), n: loc('wiz.classSpikeN', '2 站：survey → build') },
+        bounded: { l: loc('wiz.classBoundedL', '範圍清楚'), d: loc('wiz.classBoundedD', '先定方案，做完拿證據再收。'), n: loc('wiz.classBoundedN', '5 站：跳過 plan 和 audit') },
+        architectural: { l: loc('wiz.classArchL', '動到架構'), d: loc('wiz.classArchD', '七站全走，文件也一起查。'), n: loc('wiz.classArchN', '7 站全走') },
     };
-    var WIZ_GH = { 'class.default': '沒指定類別時，任務走哪幾站' };
+    var WIZ_GH = { 'class.default': loc('wiz.classDefaultGh', '沒指定類別時，任務走哪幾站') };
     // How much of the main session's context each stage.agents card leaves
     // in use — the mockup's meter under the card, a picture not a measurement.
     var WIZ_ASK_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4A2.5 2.5 0 0 1 4 13.5z"/><path d="M10 7.8a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6 1v.4"/><path d="M12 13.2h.01"/></svg>';
     var WIZ_STEPS = [
-        { id: 'land', t: '收尾', q: '一件工作做完，你通常怎麼收？', sub: '這決定 land 站停不停下來問你。選一個最像你的習慣，下面可以逐鍵改。', keys: ['land.integration', 'land.push', 'land.archivePlan'],
+        { id: 'land', t: loc('wiz.landT', '收尾'), q: loc('wiz.landQ', '一件工作做完，你通常怎麼收？'), sub: loc('wiz.landSub', '這決定 land 站停不停下來問你。選一個最像你的習慣，下面可以逐鍵改。'), keys: ['land.integration', 'land.push', 'land.archivePlan'],
             habits: [
-                { l: '本機 merge 就好', b: '直接合回 main，commit 留在本機，我自己決定什麼時候推。', s: { 'land.integration': 'merge', 'land.push': 'false', 'land.archivePlan': 'true' } },
-                { l: '開 PR 給人看', b: '推上去開 PR，review 過再合。', s: { 'land.integration': 'pr', 'land.push': 'true', 'land.archivePlan': 'true' } },
-                { l: '留在分支', b: '分支先留著，整合我自己來。計畫也先別封存。', s: { 'land.integration': 'keep', 'land.push': 'false', 'land.archivePlan': null } },
-                { l: '每次都問我', b: '每個 repo 不一樣，到了收尾再決定。', s: { 'land.integration': null, 'land.push': null, 'land.archivePlan': null } },
+                { l: loc('wiz.landH0L', '本機 merge 就好'), b: loc('wiz.landH0B', '直接合回 main，commit 留在本機，我自己決定什麼時候推。'), s: { 'land.integration': 'merge', 'land.push': 'false', 'land.archivePlan': 'true' } },
+                { l: loc('wiz.landH1L', '開 PR 給人看'), b: loc('wiz.landH1B', '推上去開 PR，review 過再合。'), s: { 'land.integration': 'pr', 'land.push': 'true', 'land.archivePlan': 'true' } },
+                { l: loc('wiz.landH2L', '留在分支'), b: loc('wiz.landH2B', '分支先留著，整合我自己來。計畫也先別封存。'), s: { 'land.integration': 'keep', 'land.push': 'false', 'land.archivePlan': null } },
+                { l: loc('wiz.landH3L', '每次都問我'), b: loc('wiz.landH3B', '每個 repo 不一樣，到了收尾再決定。'), s: { 'land.integration': null, 'land.push': null, 'land.archivePlan': null } },
             ] },
-        { id: 'class', t: '任務大小', q: '你起的任務，多半是多大？', sub: '起任務沒指定類別時用這個預設；它決定走哪幾站。', keys: ['class.default'],
+        { id: 'class', t: loc('wiz.classT', '任務大小'), q: loc('wiz.classQ', '你起的任務，多半是多大？'), sub: loc('wiz.classSub', '起任務沒指定類別時用這個預設；它決定走哪幾站。'), keys: ['class.default'],
             habits: [
-                { l: '試水溫', b: '先做個小實驗看行不行，做完可能丟掉。', s: { 'class.default': 'spike' } },
-                { l: '範圍清楚的功能', b: '知道要改哪裡、改完怎麼驗。', s: { 'class.default': 'bounded' } },
-                { l: '常動到架構', b: '牽動好幾個模組，需要先設計再動手。', s: { 'class.default': 'architectural' } },
-                { l: '依任務自動判斷', b: '模型在 survey 依任務決定走哪幾站。', s: { 'class.default': null } },
+                { l: loc('wiz.classH0L', '試水溫'), b: loc('wiz.classH0B', '先做個小實驗看行不行，做完可能丟掉。'), s: { 'class.default': 'spike' } },
+                { l: loc('wiz.classH1L', '範圍清楚的功能'), b: loc('wiz.classH1B', '知道要改哪裡、改完怎麼驗。'), s: { 'class.default': 'bounded' } },
+                { l: loc('wiz.classH2L', '常動到架構'), b: loc('wiz.classH2B', '牽動好幾個模組，需要先設計再動手。'), s: { 'class.default': 'architectural' } },
+                { l: loc('wiz.classH3L', '依任務自動判斷'), b: loc('wiz.classH3B', '模型在 survey 依任務決定走哪幾站。'), s: { 'class.default': null } },
             ] },
-        { id: 'front', t: '前端', q: '這個專案的前端，mockup 要怎麼畫？', sub: '有前端的話，design 站會先畫一頁 mockup 給你看，再談實作。', keys: ['design.mockup', 'design.skill'],
+        { id: 'front', t: loc('wiz.frontT', '前端'), q: loc('wiz.frontQ', '這個專案的前端，mockup 要怎麼畫？'), sub: loc('wiz.frontSub', '有前端的話，design 站會先畫一頁 mockup 給你看，再談實作。'), keys: ['design.mockup', 'design.skill'],
             habits: [
-                { l: '沒有前端', b: 'CLI、函式庫或純文件，不用畫頁面。', s: { 'design.mockup': 'false' } },
-                { l: '有，快速草圖', b: '先看個大概，sonnet 畫就夠。', s: { 'design.mockup': 'sonnet' } },
-                { l: '有，要仔細畫', b: '畫面是重點，用 opus 做完整的頁面。', s: { 'design.mockup': 'opus' } },
-                { l: '有，用最強的', b: '交給 fable 畫。', s: { 'design.mockup': 'fable' } },
-                { l: '有，自動畫', b: '前端工作不問就畫，畫完直接開頁面。', s: { 'design.mockup': 'auto' } },
+                { l: loc('wiz.frontH0L', '沒有前端'), b: loc('wiz.frontH0B', 'CLI、函式庫或純文件，不用畫頁面。'), s: { 'design.mockup': 'false' } },
+                { l: loc('wiz.frontH1L', '有，快速草圖'), b: loc('wiz.frontH1B', '先看個大概，sonnet 畫就夠。'), s: { 'design.mockup': 'sonnet' } },
+                { l: loc('wiz.frontH2L', '有，要仔細畫'), b: loc('wiz.frontH2B', '畫面是重點，用 opus 做完整的頁面。'), s: { 'design.mockup': 'opus' } },
+                { l: loc('wiz.frontH3L', '有，用最強的'), b: loc('wiz.frontH3B', '交給 fable 畫。'), s: { 'design.mockup': 'fable' } },
+                { l: loc('wiz.frontH4L', '有，自動畫'), b: loc('wiz.frontH4B', '前端工作不問就畫，畫完直接開頁面。'), s: { 'design.mockup': 'auto' } },
             ] },
-        { id: 'agents', t: 'context', q: '你在不在意主 session 的 context 被吃掉？', sub: '交給站 agent 的站，會在自己乾淨的 context 裡跑，主控只拿回一個路徑。', keys: ['stage.agents'],
+        { id: 'agents', t: 'context', q: loc('wiz.agentsQ', '你在不在意主 session 的 context 被吃掉？'), sub: loc('wiz.agentsSub', '交給站 agent 的站，會在自己乾淨的 context 裡跑，主控只拿回一個路徑。'), keys: ['stage.agents'],
             habits: [
-                { l: '不在意，全部自己跑', b: '每一站都在主 session 裡，看得最清楚。', s: { 'stage.agents': 'false' } },
-                { l: '只交出 survey', b: '讀 repo 最吃 context，只把這站交出去。', s: { 'stage.agents': 'survey' } },
-                { l: '省 context', b: 'survey、build、verify 三站交出去。', s: { 'stage.agents': 'survey,build,verify' } },
-                { l: '全部交出去', b: '主控只轉路徑，七站都給站 agent。', s: { 'stage.agents': 'all' } },
+                { l: loc('wiz.agentsH0L', '不在意，全部自己跑'), b: loc('wiz.agentsH0B', '每一站都在主 session 裡，看得最清楚。'), s: { 'stage.agents': 'false' } },
+                { l: loc('wiz.agentsH1L', '只交出 survey'), b: loc('wiz.agentsH1B', '讀 repo 最吃 context，只把這站交出去。'), s: { 'stage.agents': 'survey' } },
+                { l: loc('wiz.agentsH2L', '省 context'), b: loc('wiz.agentsH2B', 'survey、build、verify 三站交出去。'), s: { 'stage.agents': 'survey,build,verify' } },
+                { l: loc('wiz.agentsH3L', '全部交出去'), b: loc('wiz.agentsH3B', '主控只轉路徑，七站都給站 agent。'), s: { 'stage.agents': 'all' } },
             ] },
-        { id: 'guard', t: '撞檔', q: '別的 session 正在改同一個檔案時，你要怎樣？', sub: '兩個 session 同時動一個檔案，其中一邊的改動可能被蓋掉。', keys: ['guard'],
+        { id: 'guard', t: loc('wiz.guardT', '撞檔'), q: loc('wiz.guardQ', '別的 session 正在改同一個檔案時，你要怎樣？'), sub: loc('wiz.guardSub', '兩個 session 同時動一個檔案，其中一邊的改動可能被蓋掉。'), keys: ['guard'],
             habits: [
-                { l: '先問我', b: '停下來讓我決定要不要繼續。', s: { guard: 'ask' } },
-                { l: '直接擋掉', b: '被佔的檔案不准改，等對方放手。', s: { guard: 'deny' } },
-                { l: '提醒一下就好', b: '我知道自己在做什麼，警告但不停。', s: { guard: 'off' } },
+                { l: loc('wiz.guardH0L', '先問我'), b: loc('wiz.guardH0B', '停下來讓我決定要不要繼續。'), s: { guard: 'ask' } },
+                { l: loc('wiz.guardH1L', '直接擋掉'), b: loc('wiz.guardH1B', '被佔的檔案不准改，等對方放手。'), s: { guard: 'deny' } },
+                { l: loc('wiz.guardH2L', '提醒一下就好'), b: loc('wiz.guardH2B', '我知道自己在做什麼，警告但不停。'), s: { guard: 'off' } },
             ] },
-        { id: 'model', t: '模型', q: '派出去的 agent，你比較在意錢還是品質？', sub: '最低模型是實作者和 reader 的下限；判官是卡住時問的那一個。', keys: ['dispatch.floor', 'judge.model'],
+        { id: 'model', t: loc('wiz.modelT', '模型'), q: loc('wiz.modelQ', '派出去的 agent，你比較在意錢還是品質？'), sub: loc('wiz.modelSub', '最低模型是實作者和 reader 的下限；判官是卡住時問的那一個。'), keys: ['dispatch.floor', 'judge.model'],
             habits: [
-                { l: '省錢', b: '讀檔用 haiku 就夠，判官用 opus。', s: { 'dispatch.floor': 'haiku', 'judge.model': 'opus' } },
-                { l: '平衡', b: '實作至少 sonnet，判官用 fable。', s: { 'dispatch.floor': 'sonnet', 'judge.model': 'fable' } },
-                { l: '品質優先', b: '實作至少 opus，判官用 fable。', s: { 'dispatch.floor': 'opus', 'judge.model': 'fable' } },
+                { l: loc('wiz.modelH0L', '省錢'), b: loc('wiz.modelH0B', '讀檔用 haiku 就夠，判官用 opus。'), s: { 'dispatch.floor': 'haiku', 'judge.model': 'opus' } },
+                { l: loc('wiz.modelH1L', '平衡'), b: loc('wiz.modelH1B', '實作至少 sonnet，判官用 fable。'), s: { 'dispatch.floor': 'sonnet', 'judge.model': 'fable' } },
+                { l: loc('wiz.modelH2L', '品質優先'), b: loc('wiz.modelH2B', '實作至少 opus，判官用 fable。'), s: { 'dispatch.floor': 'opus', 'judge.model': 'fable' } },
             ] },
-        { id: 'station', t: '監控站', q: '這個專案要出現在監控站上嗎？', sub: '隱藏後它的 session 和 profile 卡都不會在這頁出現；要再打開得用指令。', keys: ['station.hide'],
+        { id: 'station', t: loc('wiz.stationT', '監控站'), q: loc('wiz.stationQ', '這個專案要出現在監控站上嗎？'), sub: loc('wiz.stationSub', '隱藏後它的 session 和 profile 卡都不會在這頁出現；要再打開得用指令。'), keys: ['station.hide'],
             habits: [
-                { l: '要，照常顯示', b: '', s: { 'station.hide': 'false' } },
-                { l: '不要，藏起來', b: '私人或暫時的專案。', s: { 'station.hide': 'true' } },
+                { l: loc('wiz.stationH0L', '要，照常顯示'), b: '', s: { 'station.hide': 'false' } },
+                { l: loc('wiz.stationH1L', '不要，藏起來'), b: loc('wiz.stationH1B', '私人或暫時的專案。'), s: { 'station.hide': 'true' } },
             ] },
-        { id: 'answer', t: '答 gate', q: '要不要在網頁上直接回答 gate？', sub: 'gate 發出後，先在這頁右下角的圖示裡等你 60 秒；逾時，或你按「交給終端／手機」，問題就回到 terminal，Remote Control 也看得到。等的時候 terminal 不顯示問題。', keys: ['gate.station'],
+        { id: 'answer', t: loc('wiz.answerT', '答 gate'), q: loc('wiz.answerQ', '要不要在網頁上直接回答 gate？'), sub: loc('wiz.answerSub', 'gate 發出後，先在這頁右下角的圖示裡等你 60 秒；逾時，或你按「交給終端／手機」，問題就回到 terminal，Remote Control 也看得到。等的時候 terminal 不顯示問題。'), keys: ['gate.station'],
             habits: [
-                { l: '不用，在 terminal 答', b: '', s: { 'gate.station': 'off' } },
-                { l: '等一分鐘', b: '人就在頁面旁邊時。', s: { 'gate.station': '60' } },
-                { l: '等五分鐘', b: '常離開座位、用手機看頁面時。', s: { 'gate.station': '300' } },
+                { l: loc('wiz.answerH0L', '不用，在 terminal 答'), b: '', s: { 'gate.station': 'off' } },
+                { l: loc('wiz.answerH1L', '等一分鐘'), b: loc('wiz.answerH1B', '人就在頁面旁邊時。'), s: { 'gate.station': '60' } },
+                { l: loc('wiz.answerH2L', '等五分鐘'), b: loc('wiz.answerH2B', '常離開座位、用手機看頁面時。'), s: { 'gate.station': '300' } },
             ] },
     ];
     function wizList(v) { return v === null || v === 'false' ? [] : v === 'true' ? ['survey'] : v === 'all' ? WIZ_STAGES.slice() : v.split(','); }
@@ -1841,7 +1862,7 @@
         return W;
     }
     function wizScopes(profiles, configDir) {
-        var out = [{ id: 'machine', label: '機器預設', file: (configDir ? String(configDir).replace(/[\\/]+$/, '') + '/' : '') + 'fankeel/profile.json' }];
+        var out = [{ id: 'machine', label: loc('wiz.machineDefault', '機器預設'), file: (configDir ? String(configDir).replace(/[\\/]+$/, '') + '/' : '') + 'fankeel/profile.json' }];
         Object.keys((profiles && profiles.projects) || {}).forEach(function (dir) {
             out.push({ id: dir, label: dir.split(/[\\/]/).filter(Boolean).pop() || dir, file: dir.replace(/[\\/]+$/, '') + '/.fankeel/profile.json' });
         });
@@ -1892,13 +1913,13 @@
         var v = W.val[k], r = W.rec[k], hasRec = Object.prototype.hasOwnProperty.call(W.rec, k);
         if (k === 'stage.agents') {
             var on = wizList(v), ron = hasRec ? wizList(r) : [];
-            return '<div class="stations" role="group" aria-label="stage.agents 七站">' + WIZ_STAGES.map(function (s) {
+            return '<div class="stations" role="group" aria-label="' + loc('wiz.stageAgentsSevenStations', 'stage.agents 七站') + '">' + WIZ_STAGES.map(function (s) {
                 var p = on.indexOf(s) >= 0;
                 return '<button type="button" class="wstn' + (ron.indexOf(s) >= 0 ? ' rec' : '') + '" data-k="' + k + '" data-st="' + s
                     + '" aria-pressed="' + p + '" style="--c:var(--st-' + s + ')"><i class="wpt"></i><span class="wnm">' + s
-                    + '</span><span class="wst">' + (p ? '站 agent' : '主控') + '</span></button>';
-            }).join('') + '</div><div class="stkey"><span>' + on.length + ' / 7 站交出去</span>'
-                + (hasRec ? '<span><i></i>建議開的站</span>' : '') + '<span>寫進檔的值 <span class="wout">' + esc(wizNorm(on)) + '</span></span></div>';
+                    + '</span><span class="wst">' + (p ? loc('wiz.stageAgent', '站 agent') : loc('wiz.mainControl', '主控')) + '</span></button>';
+            }).join('') + '</div><div class="stkey"><span>' + loc('wiz.nOfSevenHandedOff', '{n} / 7 站交出去', { n: on.length }) + '</span>'
+                + (hasRec ? '<span><i></i>' + loc('wiz.recommendedStations', '建議開的站') + '</span>' : '') + '<span>' + loc('wiz.valueWritten', '寫進檔的值') + ' <span class="wout">' + esc(wizNorm(on)) + '</span></span></div>';
         }
         var spec = keys[k], opts = spec.values.slice();
         if (spec.builtin === null) opts.push(null);
@@ -1906,7 +1927,7 @@
         return '<span class="opts" role="group" aria-label="' + esc(k) + '">' + opts.map(function (o) {
             return '<button type="button" class="opt' + (o === null ? ' ask' : '') + (hasRec && wizSame(r, o) ? ' rec' : '')
                 + (inh !== null && wizSame(inh, o) ? ' inh' : '') + '" data-k="' + esc(k) + '" data-o="' + (o === null ? '' : esc(o))
-                + '" aria-pressed="' + wizSame(v, o) + '">' + (o === null ? (k === 'class.default' ? '自動判斷' : '每次問我') : esc(o)) + '</button>';
+                + '" aria-pressed="' + wizSame(v, o) + '">' + (o === null ? (k === 'class.default' ? loc('wiz.autoDecide', '自動判斷') : loc('wiz.askEveryTime', '每次問我')) : esc(o)) + '</button>';
         }).join('') + '</span>';
     }
     // One card per value: a label, one line, and on the five keys in
@@ -1921,10 +1942,10 @@
         // c<n> counts the valued cards; the ask card, when there is one, takes
         // the narrow last column the mockup gives it.
         return '<div class="chs c' + n + (n === opts.length ? ' na' : '') + '" role="group" aria-label="' + esc(k) + '">' + opts.map(function (o) {
-            var id = o === null ? '' : o, t = text[id] || { l: o === null ? '問我' : o, d: o === null ? '到時再決定。' : '' };
+            var id = o === null ? '' : o, t = text[id] || { l: o === null ? loc('wiz.askMe', '問我') : o, d: o === null ? loc('wiz.decideLater', '到時再決定。') : '' };
             var scene = o === null ? WIZ_ASK_ICON : (scenes[id] || '');
             return '<button type="button" class="ch' + (o === null ? ' ask' : '') + '" data-k="' + esc(k) + '" data-o="' + esc(id)
-                + '" aria-pressed="' + wizSame(v, o) + '">' + (wizSame(WIZ_SUGGEST[k] !== undefined ? WIZ_SUGGEST[k] : (hasRec ? r : undefined), o) ? '<span class="rec">建議</span>' : '')
+                + '" aria-pressed="' + wizSame(v, o) + '">' + (wizSame(WIZ_SUGGEST[k] !== undefined ? WIZ_SUGGEST[k] : (hasRec ? r : undefined), o) ? '<span class="rec">' + loc('wiz.recommended', '建議') + '</span>' : '')
                 + (scene ? '<span class="wstg">' + scene + '</span>' : '')
                 + '<span class="cl">' + esc(t.l) + '</span>' + (t.d ? '<span class="cd">' + esc(t.d) + '</span>' : '')
                 + (o === null ? '' : '<span class="cv">' + esc(o) + '</span>') + '</button>';
@@ -1948,8 +1969,8 @@
         var cards = opts.map(function (o) {
             var id = o === null ? '' : o, t = WIZ_CLASS_TEXT[id];
             return '<button type="button" class="ch co' + (o === null ? ' auto' : '') + '" data-k="' + esc(k) + '" data-o="' + id
-                + '" aria-pressed="' + wizSame(v, o) + '">' + (hasRec && wizSame(r, o) ? '<span class="rec">建議</span>' : '')
-                + '<span class="cl">' + t.l + (o === null ? '<span class="cdef">預設</span>' : '') + '</span><span class="cd">' + t.d + '</span>'
+                + '" aria-pressed="' + wizSame(v, o) + '">' + (hasRec && wizSame(r, o) ? '<span class="rec">' + loc('wiz.recommended', '建議') + '</span>' : '')
+                + '<span class="cl">' + t.l + (o === null ? '<span class="cdef">' + loc('wiz.default', '預設') + '</span>' : '') + '</span><span class="cd">' + t.d + '</span>'
                 + (o === null ? '' : '<span class="cv">' + id + '</span>') + '</button>';
         }).join('');
         var stops = WIZ_STAGES.map(function (s, i) {
@@ -1967,7 +1988,7 @@
             + '<div class="chs c4 cops" role="group" aria-label="' + esc(k) + '">' + cards + '</div>'
             + '<div class="cmap"><svg class="crt" viewBox="0 0 700 30" preserveAspectRatio="none" aria-hidden="true">'
             + '<path class="rbase" d="M50 26H650"/>' + paths + '</svg>'
-            + '<ol class="cflow" aria-label="七站">' + stops + '</ol>'
+            + '<ol class="cflow" aria-label="' + loc('wiz.sevenStations', '七站') + '">' + stops + '</ol>'
             + '<p class="cnote">' + notes + '</p></div></div>';
     }
     var WIZ_TICK = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.3 5 8.6l4.5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -1981,10 +2002,10 @@
             return '<li' + (c ? ' class="' + c + '"' : '') + '><button class="ri" type="button" data-go="' + i + '"><span class="rn">' + (c === 'done' ? WIZ_TICK : i + 1)
                 + '</span><span class="rt">' + st.t + '</span><span class="rv">' + esc(s) + '</span></button></li>';
         }).join('');
-        return '<nav class="wrail" data-block="wizard-steps" aria-label="精靈進度"><div class="rhead"><span>已答</span><b>' + done + ' / ' + n + '</b></div>'
+        return '<nav class="wrail" data-block="wizard-steps" aria-label="' + loc('wiz.wizardProgress', '精靈進度') + '"><div class="rhead"><span>' + loc('wiz.answered', '已答') + '</span><b>' + done + ' / ' + n + '</b></div>'
             + '<div class="rbarx" aria-hidden="true"><i style="width:' + (done / n * 100) + '%"></i></div><ol>' + items
             + '<li class="sum' + (W.step === n ? ' cur' : '') + '"><button class="ri" type="button" data-go="' + n + '"><span class="rn">' + WIZ_LIST
-            + '</span><span class="rt">摘要與寫入</span><span class="rv">' + Object.keys(W.val).length + ' 鍵</span></button></li></ol></nav>';
+            + '</span><span class="rt">' + loc('wiz.summaryAndWrite', '摘要與寫入') + '</span><span class="rv">' + loc('wiz.nKeys', '{n} 鍵', { n: Object.keys(W.val).length }) + '</span></button></li></ol></nav>';
     }
     // Step 3, 前端: two big blocks, yes or no; the model only once the answer
     // is yes, small under them. Every button is a habit (`data-h`), so a click
@@ -1999,14 +2020,14 @@
         + '<rect class="box hot dr d2" pathLength="1" x="79" y="25" width="26" height="28" rx="2"/>'
         + '<path class="docl dr d3" pathLength="1" d="M111 28H141M111 36H137M111 44H131"/></g></svg>';
     var WIZ_FE_MODELS = [
-        { o: 'sonnet', h: 1, d: '省額度', cost: 1 },
-        { o: 'opus', h: 2, d: '平衡', cost: 2 },
-        { o: 'fable', h: 3, d: '很燒額度', cost: 4, warn: true },
+        { o: 'sonnet', h: 1, d: loc('wiz.feSonnet', '省額度'), cost: 1 },
+        { o: 'opus', h: 2, d: loc('wiz.feOpus', '平衡'), cost: 2 },
+        { o: 'fable', h: 3, d: loc('wiz.feFable', '很燒額度'), cost: 4, warn: true },
     ];
     var WIZ_FE_WARN = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6 11 10.4H1z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 5v2.4M6 8.9h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
     var WIZ_FE_OPEN = '<svg class="fopen" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2.5h4v4M13.5 2.5 8 8M11.5 9.5v3.5h-9v-9H6"/></svg>';
-    var WIZ_FE_AUTO = { o: 'auto', h: 4, d: '直接畫，畫完開頁面', open: true };
-    var WIZ_FE_NONE = { o: 'false', h: 0, d: '沒有前端，不畫' };
+    var WIZ_FE_AUTO = { o: 'auto', h: 4, d: loc('wiz.feAuto', '直接畫，畫完開頁面'), open: true };
+    var WIZ_FE_NONE = { o: 'false', h: 0, d: loc('wiz.feNone', '沒有前端，不畫') };
     function wizFrontHtml(keys, W) {
         var v = W.val['design.mockup'], on = v !== null && v !== 'false';
         var seg = function (m) {
@@ -2014,14 +2035,14 @@
             if (m.cost) for (var j = 0; j < 4; j++) bars += '<i' + (j < m.cost ? ' class="on"' : '') + '></i>';
             return '<button type="button" class="fsg' + (m.warn ? ' warn' : '') + '" role="radio" aria-checked="' + chk + '" tabindex="'
                 + (chk || (v === null && m.o === 'opus') ? 0 : -1) + '" data-h="' + m.h + '"><b>' + m.o
-                + (m.o === 'opus' ? '<span class="frc">建議</span>' : '') + '</b><span class="fsd">' + (m.warn ? WIZ_FE_WARN : '') + m.d + '</span>'
+                + (m.o === 'opus' ? '<span class="frc">' + loc('wiz.recommended', '建議') + '</span>' : '') + '</b><span class="fsd">' + (m.warn ? WIZ_FE_WARN : '') + m.d + '</span>'
                 + (m.cost ? '<span class="fcost" aria-hidden="true">' + bars + '</span>' : '') + (m.open ? WIZ_FE_OPEN : '') + '</button>';
         };
-        return '<h2 class="q">這個專案的前端，mockup 要怎麼畫？</h2><p class="wqs">有前端的話，design 站會先畫一頁 mockup 給你看，再談實作。</p>'
-            + '<div class="fem"><div class="fmh"><span class="fml">誰來畫</span><code>design.mockup</code></div>'
+        return '<h2 class="q">' + loc('wiz.frontQ', '這個專案的前端，mockup 要怎麼畫？') + '</h2><p class="wqs">' + loc('wiz.frontSub', '有前端的話，design 站會先畫一頁 mockup 給你看，再談實作。') + '</p>'
+            + '<div class="fem"><div class="fmh"><span class="fml">' + loc('wiz.whoDraws', '誰來畫') + '</span><code>design.mockup</code></div>'
             + '<div class="fq" role="radiogroup" aria-label="design.mockup">'
-            + '<div class="fqc none" aria-hidden="true"></div><div class="fqc" aria-hidden="true"><span>畫之前先問你</span></div>'
-            + '<div class="fqc" aria-hidden="true"><span>不問</span></div>'
+            + '<div class="fqc none" aria-hidden="true"></div><div class="fqc" aria-hidden="true"><span>' + loc('wiz.asksBeforeDrawing', '畫之前先問你') + '</span></div>'
+            + '<div class="fqc" aria-hidden="true"><span>' + loc('wiz.doesNotAsk', '不問') + '</span></div>'
             + '<div class="fbar solo">' + seg(WIZ_FE_NONE) + '</div>'
             + '<div class="fbar">' + WIZ_FE_MODELS.map(seg).join('') + '</div>'
             + '<div class="fbar solo">' + seg(WIZ_FE_AUTO) + '</div></div>'
@@ -2036,12 +2057,12 @@
             if (!by[pl]) { by[pl] = []; groups.push(pl); }
             by[pl].push(o);
         });
-        return '<div class="fskw"><div class="fmh"><span class="fml">設計 skill</span><code>design.skill</code><span class="fmul">可多選</span>'
-            + '<span class="fskt">指南' + (on.length ? ' + ' + on.length + ' 個' : '') + '</span></div>'
-            + '<p class="fskn">fankeel 指南一律載入；另外勾的 skill，會一起交給畫 mockup 的 agent。</p>'
+        return '<div class="fskw"><div class="fmh"><span class="fml">' + loc('wiz.designSkill', '設計 skill') + '</span><code>design.skill</code><span class="fmul">' + loc('wiz.multiSelect', '可多選') + '</span>'
+            + '<span class="fskt">' + loc('wiz.theGuide', '指南') + (on.length ? ' + ' + loc('wiz.nMore', '{n} 個', { n: on.length }) : '') + '</span></div>'
+            + '<p class="fskn">' + loc('wiz.guideAlwaysLoaded', 'fankeel 指南一律載入；另外勾的 skill，會一起交給畫 mockup 的 agent。') + '</p>'
             + '<div class="fskg" role="group" aria-label="design.skill">'
-            + '<div class="fskc self"><span class="fskh">內建</span><span class="fskl"><button type="button" class="fsk lock" aria-pressed="true" aria-disabled="true"'
-            + ' title="一律包含，不能取消">fankeel 指南<span>（一律包含）</span></button></span></div>'
+            + '<div class="fskc self"><span class="fskh">' + loc('wiz.builtin', '內建') + '</span><span class="fskl"><button type="button" class="fsk lock" aria-pressed="true" aria-disabled="true"'
+            + ' title="' + loc('wiz.alwaysIncludedHint', '一律包含，不能取消') + '">fankeel ' + loc('wiz.theGuide', '指南') + '<span>' + loc('wiz.alwaysIncludedParen', '（一律包含）') + '</span></button></span></div>'
             + groups.map(function (pl) {
                 return '<div class="fskc"><span class="fskh">' + esc(pl) + '</span><span class="fskl">' + by[pl].map(function (o) {
                     var i = o.indexOf(':');
@@ -2055,22 +2076,22 @@
         if (st.id === 'front') {
             return '<div class="wcard" data-block="' + (WIZ_BLOCK[st.id] || 'wizard-step') + '" data-step="' + st.id + '">'
                 + '<div class="top"><span class="of">' + (W.step + 1) + ' / ' + n + '</span><span class="spacer"></span>'
-                + '<button class="lk" type="button" data-go="' + n + '">跳到摘要</button></div>'
+                + '<button class="lk" type="button" data-go="' + n + '">' + loc('wiz.jumpToSummary', '跳到摘要') + '</button></div>'
                 + wizFrontHtml(keys, W)
-                + '<div class="nav"><button class="ctl" type="button" data-go="' + (W.step - 1) + '">← 上一題</button><span class="spacer"></span>'
-                + '<button class="ctl pri" type="button" data-go="' + (W.step + 1) + '">下一題 →</button></div></div>';
+                + '<div class="nav"><button class="ctl" type="button" data-go="' + (W.step - 1) + '">' + loc('wiz.prevQuestion', '← 上一題') + '</button><span class="spacer"></span>'
+                + '<button class="ctl pri" type="button" data-go="' + (W.step + 1) + '">' + loc('wiz.nextQuestion', '下一題 →') + '</button></div></div>';
         }
         var shown = st.keys.filter(function (k) {
             return k !== 'design.skill' || (W.val['design.mockup'] !== null && W.val['design.mockup'] !== 'false');
         });
-        var ovr = function (k) { return wizOverridden(W, k) ? '<span class="ovr">改過建議</span>' : ''; };
+        var ovr = function (k) { return wizOverridden(W, k) ? '<span class="ovr">' + loc('wiz.changedFromRec', '改過建議') + '</span>' : ''; };
         var big = function (k) { return WIZ_SCENES[k] || k === 'class.default'; };
         var full = shown.filter(big), mini = shown.filter(function (k) { return !big(k); });
         return '<div class="wcard" data-block="' + (WIZ_BLOCK[st.id] || 'wizard-step') + '" data-step="' + st.id + '">'
             + '<div class="top"><span class="of">' + (W.step + 1) + ' / ' + n + '</span><span class="spacer"></span>'
-            + '<button class="lk" type="button" data-go="' + n + '">跳到摘要</button></div>'
+            + '<button class="lk" type="button" data-go="' + n + '">' + loc('wiz.jumpToSummary', '跳到摘要') + '</button></div>'
             + '<h2 class="q">' + st.q + '</h2><p class="wqs">' + st.sub + '</p>'
-            + '<div class="presets"><span class="plab">常見組合</span><span class="pills" role="group" aria-label="' + st.t + ' 常見組合">' + st.habits.map(function (hb, j) {
+            + '<div class="presets"><span class="plab">' + loc('wiz.commonCombos', '常見組合') + '</span><span class="pills" role="group" aria-label="' + loc('wiz.tCommonCombos', '{t} 常見組合', { t: st.t }) + '">' + st.habits.map(function (hb, j) {
                 return '<button type="button" class="pc" data-h="' + j + '" aria-pressed="' + (W.pick[W.step] === j) + '" title="'
                     + Object.keys(hb.s).map(function (k) { return esc(k) + ' → ' + esc(wizShow(hb.s[k])); }).join('&#10;') + '">' + hb.l + '</button>';
             }).join('') + '</span></div>'
@@ -2081,17 +2102,17 @@
             + (mini.length ? '<div class="wmini">' + mini.map(function (k) {
                 return '<div class="mrow"><b>' + esc(keys[k].desc || k) + '<code>' + esc(k) + '</code></b><span class="ctlc">' + wizOpts(keys, W, profiles, k) + ovr(k) + '</span></div>';
             }).join('') + '</div>' : '')
-            + (st.id === 'station' && W.scope === 'machine' ? '<p class="wnote">現在寫的是機器預設：station.hide 設在這裡，會讓每個沒寫這個鍵的專案都跟著隱藏。</p>' : '')
-            + '<div class="nav"><button class="ctl" type="button" data-go="' + (W.step - 1) + '"' + (W.step ? '' : ' disabled') + '>← 上一題</button><span class="spacer"></span>'
-            + '<span class="whint">' + (W.pick[W.step] === undefined ? '不選也能往下，這題的鍵維持現在的值' : '') + '</span>'
-            + '<button class="ctl pri" type="button" data-go="' + (W.step + 1) + '">' + (W.step === n - 1 ? '看摘要 →' : '下一題 →') + '</button></div></div>';
+            + (st.id === 'station' && W.scope === 'machine' ? '<p class="wnote">' + loc('wiz.machineDefaultNote', '現在寫的是機器預設：station.hide 設在這裡，會讓每個沒寫這個鍵的專案都跟著隱藏。') + '</p>' : '')
+            + '<div class="nav"><button class="ctl" type="button" data-go="' + (W.step - 1) + '"' + (W.step ? '' : ' disabled') + '>' + loc('wiz.prevQuestion', '← 上一題') + '</button><span class="spacer"></span>'
+            + '<span class="whint">' + (W.pick[W.step] === undefined ? loc('wiz.noPickStillMoves', '不選也能往下，這題的鍵維持現在的值') : '') + '</span>'
+            + '<button class="ctl pri" type="button" data-go="' + (W.step + 1) + '">' + (W.step === n - 1 ? loc('wiz.seeSummary', '看摘要 →') : loc('wiz.nextQuestion', '下一題 →')) + '</button></div></div>';
     }
     function wizWriteHtml(ch, W, ctx, file) {
-        var label = '寫入 ' + ch.length + ' 鍵';
+        var label = loc('wiz.writeNKeys', '寫入 {n} 鍵', { n: ch.length });
         if (!ch.length) return '<button class="ctl" type="button" disabled>' + label + '</button>';
         if (!ctx.serve) {
             return '<div class="wcmd mono">' + ch.map(function (c) {
-                return c.value === '' ? '從 ' + esc(file) + ' 刪掉 ' + esc(c.key)
+                return c.value === '' ? loc('wiz.removeKeyFromFile', '從 {file} 刪掉 {key}', { file: esc(file), key: esc(c.key) })
                     : 'node ' + esc(ctx.plugin || '<plugin>') + '/scripts/task.js profile set ' + esc(c.key) + ' ' + esc(c.value)
                         + (W.scope === 'machine' ? ' --default' : ' --project "' + esc(W.scope) + '"');
             }).join('<br>') + '</div>';
@@ -2116,31 +2137,31 @@
             if (m && v === null) {
                 var inh = wizBelow(profiles, keys, W.scope, k);
                 src = inh.src;
-                from = inh.src ? '往下讀到 <span class="mono">' + inh.src + ': ' + esc(inh.v) + '</span>' : '沒有下層值，到時候會問';
-            } else if (m) { src = W.scope === 'machine' ? 'machine' : 'project'; from = '寫入後'; }
-            else { src = now.src; from = src ? '' : '沒有值'; }
+                from = inh.src ? loc('wiz.readsDownTo', '往下讀到 <span class="mono">{src}: {v}</span>', { src: inh.src, v: esc(inh.v) }) : loc('wiz.noLowerValueWillAsk', '沒有下層值，到時候會問');
+            } else if (m) { src = W.scope === 'machine' ? 'machine' : 'project'; from = loc('wiz.afterWrite', '寫入後'); }
+            else { src = now.src; from = src ? '' : loc('wiz.noValue', '沒有值'); }
             return '<div class="sr' + (o ? ' ov' : '') + (m ? ' moved' : '') + '" data-key="' + esc(k) + '"><span class="wk">' + esc(k) + '</span><span class="wd">' + esc(keys[k].desc || '') + '</span>'
-                + '<span class="ctlc">' + wizOpts(keys, W, profiles, k) + (o ? '<span class="ovr">改過建議 · 建議是 <span class="mono">' + esc(wizShow(W.rec[k])) + '</span></span>' : '') + '</span>'
+                + '<span class="ctlc">' + wizOpts(keys, W, profiles, k) + (o ? '<span class="ovr">' + loc('wiz.changedRecIs', '改過建議 · 建議是 <span class="mono">{v}</span>', { v: esc(wizShow(W.rec[k])) }) + '</span>' : '') + '</span>'
                 + '<span class="wmeta"><span class="from">' + from + (src ? ' <span class="src ' + src + (m && v !== null ? ' wpend' : '') + '">' + src + '</span>' : '') + '</span>'
-                + '<button type="button" class="askb" data-ask="' + esc(k) + '"' + (v === null || (!own.has && !m) ? ' disabled' : '') + '>清成 <span class="wm">(ask)</span></button></span></div>';
+                + '<button type="button" class="askb" data-ask="' + esc(k) + '"' + (v === null || (!own.has && !m) ? ' disabled' : '') + '>' + loc('wiz.clearToAsk', '清成 <span class="wm">(ask)</span>') + '</button></span></div>';
         }).join('');
         var scopes = wizScopes(profiles, ctx.configDir), file = '';
         scopes.forEach(function (s) { if (s.id === W.scope) file = s.file; });
         return '<div class="wcard" data-block="wizard-summary"><div class="prog" aria-hidden="true"><i style="width:100%"></i></div>'
-            + '<div class="wtop"><span class="eyebrow">摘要</span><span class="wof">' + Object.keys(keys).length + ' 鍵</span><span class="spacer"></span>'
-            + '<button class="wlk" type="button" data-go="0">← 從第 1 題重來</button></div>'
-            + '<h2 class="wq">答案換成的設定</h2><p class="wqsub">每一列都能直接按鈕改；和精靈建議不一樣的列會標出來。「清成 (ask)」是把這一鍵從這一層的檔案拿掉，改讀下一層。</p>'
-            + '<div class="scopebar"><label>寫到</label><span class="seg" role="group" aria-label="寫到哪一層">' + scopes.map(function (s) {
+            + '<div class="wtop"><span class="eyebrow">' + loc('wiz.summary', '摘要') + '</span><span class="wof">' + loc('wiz.nKeys', '{n} 鍵', { n: Object.keys(keys).length }) + '</span><span class="spacer"></span>'
+            + '<button class="wlk" type="button" data-go="0">' + loc('wiz.restartFromQ1', '← 從第 1 題重來') + '</button></div>'
+            + '<h2 class="wq">' + loc('wiz.answersBecomeSettings', '答案換成的設定') + '</h2><p class="wqsub">' + loc('wiz.summaryHint', '每一列都能直接按鈕改；和精靈建議不一樣的列會標出來。「清成 (ask)」是把這一鍵從這一層的檔案拿掉，改讀下一層。') + '</p>'
+            + '<div class="scopebar"><label>' + loc('wiz.writeTo', '寫到') + '</label><span class="seg" role="group" aria-label="' + loc('wiz.writeToWhichLayer', '寫到哪一層') + '">' + scopes.map(function (s) {
                 return '<button type="button" data-scope="' + esc(s.id) + '" aria-pressed="' + (W.scope === s.id) + '">' + esc(s.label) + '</button>';
             }).join('') + '</span></div>'
-            + '<div class="pf-file">' + esc(file) + (W.scope === 'machine' ? ' · 每個專案沒寫的鍵都讀這裡' : ' · 沒寫的鍵往下讀機器預設，再往下是 builtin') + '</div>'
+            + '<div class="pf-file">' + esc(file) + (W.scope === 'machine' ? loc('wiz.everyProjectReadsHere', ' · 每個專案沒寫的鍵都讀這裡') : loc('wiz.unwrittenReadsDown', ' · 沒寫的鍵往下讀機器預設，再往下是 builtin')) + '</div>'
             + '<div class="srows">' + rows + '</div>'
-            + '<div class="writebar"><span class="wsum">會改 <b>' + ch.length + '</b> 鍵' + (ov ? '，其中 <b>' + ov + '</b> 鍵和建議不同' : '') + '</span><span class="spacer"></span>'
-            + '<button class="ctl" type="button" data-go="' + (n - 1) + '">← 回上一題</button>' + wizWriteHtml(ch, W, ctx, file) + '</div></div>';
+            + '<div class="writebar"><span class="wsum">' + loc('wiz.willChangeNKeys', '會改 <b>{n}</b> 鍵', { n: ch.length }) + (ov ? loc('wiz.ofWhichNDiffer', '，其中 <b>{n}</b> 鍵和建議不同', { n: ov }) : '') + '</span><span class="spacer"></span>'
+            + '<button class="ctl" type="button" data-go="' + (n - 1) + '">' + loc('wiz.backToPrev', '← 回上一題') + '</button>' + wizWriteHtml(ch, W, ctx, file) + '</div></div>';
     }
     function wizHtml(keys, W, profiles, ctx) {
         var body = W.step >= WIZ_STEPS.length ? wizSummaryHtml(keys, W, profiles, ctx) : wizStepHtml(keys, W, profiles);
-        return '<div class="phead"><h1>' + icon('settings') + '設定</h1></div><div class="wz play" data-block="wizard">'
+        return '<div class="phead"><h1>' + icon('settings') + loc('wiz.settingsHeading', '設定') + '</h1></div><div class="wz play" data-block="wizard">'
             + wizStepsHtml(W) + '<div class="body">' + body + '</div></div>';
     }
 
@@ -2170,7 +2191,7 @@
         return out;
     }
     function toastText(ev) {
-        return (ev.status === 'done' ? '已修改完成：' : '沒有修改：') + ev.block;
+        return (ev.status === 'done' ? loc('tune.doneColon', '已修改完成：') : loc('tune.notChangedColon', '沒有修改：')) + ev.block;
     }
     // The one place notifications and held gates appear (2026-09-26 design
     // §3): a button in the corner with the count, a panel with the gates
@@ -2186,12 +2207,12 @@
         return editing.concat(notes || []);
     }
     function noteHtml(n) {
-        var t = n.status === 'edit' ? ['edit', '<i></i>', '編輯中：', 'tune 正在改這個 block，頁面上有外框標出它。']
-            : n.status === 'done' ? ['done', '✓', '已修改完成：', '改過的頁面由 tune 自己重新載入。']
-                : ['rej', '✕', '沒有修改：', '要求超出這個 block，已退回。'];
+        var t = n.status === 'edit' ? ['edit', '<i></i>', loc('tune.editingColon', '編輯中：'), loc('tune.editingHint', 'tune 正在改這個 block，頁面上有外框標出它。')]
+            : n.status === 'done' ? ['done', '✓', loc('tune.doneColon', '已修改完成：'), loc('tune.doneHint', '改過的頁面由 tune 自己重新載入。')]
+                : ['rej', '✕', loc('tune.notChangedColon', '沒有修改：'), loc('tune.rejectedHint', '要求超出這個 block，已退回。')];
         return '<div class="nt ' + t[0] + '" data-note="' + esc(n.id) + '"><span class="ti" aria-hidden="true">' + t[1] + '</span>'
             + '<span class="tt">' + t[2] + '<code>' + esc(n.block) + '</code></span>'
-            + (n.status === 'edit' ? '' : '<button class="tx" type="button" data-note-x aria-label="關閉">×</button>')
+            + (n.status === 'edit' ? '' : '<button class="tx" type="button" data-note-x aria-label="' + loc('tune.close', '關閉') + '">×</button>')
             + '<span class="tb">' + t[3] + '</span></div>';
     }
     // Exported as `clock`; the page's own `clock(ms)` is the hh:mm one.
@@ -2204,7 +2225,7 @@
         var total = Math.max(1, Math.round((p.until - (typeof p.at === 'number' && isFinite(p.at) ? p.at : p.until - 60000)) / 1000));
         var left = Math.max(0, Math.min(total, Math.round((p.until - now) / 1000)));
         var body = p.questions.length === 1 && !q.multiSelect && S.serve
-            ? '<p class="gq"><small>' + esc(q.header || '') + '</small>' + esc(q.question) + '</p><div class="gops" role="group" aria-label="回答">'
+            ? '<p class="gq"><small>' + esc(q.header || '') + '</small>' + esc(q.question) + '</p><div class="gops" role="group" aria-label="' + loc('tune.answer', '回答') + '">'
                 + (q.options || []).map(function (o, i) {
                     return '<button type="button" class="gop" data-gop="' + i + '"><b>' + esc(o.label) + '</b><small>' + esc(o.description || '')
                         + '</small><kbd>' + (i + 1) + '</kbd></button>';
@@ -2214,9 +2235,9 @@
             + '" data-total="' + total + '"><div class="gsrc"><span class="mono">' + esc(s.project || '') + '</span><i aria-hidden="true"></i><span class="mono">'
             + esc(s.stage || '') + '</span><span class="t">' + esc(s.task || '') + '</span></div>' + body
             + '<div class="gtm"><div class="gbar" aria-hidden="true"><i style="width:' + (left / total * 100).toFixed(1) + '%"></i></div>'
-            + '<span class="gsec">' + gateClock(left) + '</span><small>時間到，問題回到 terminal 問</small></div>'
-            + (S.serve ? '<button type="button" class="gho" data-gho>交給終端／手機</button>'
-                + '<p class="ghs">網頁不再等，問題馬上在 terminal 問；Remote Control 在手機上也看得到。</p>' : '')
+            + '<span class="gsec">' + gateClock(left) + '</span><small>' + loc('tune.timeUpAsksTerminal', '時間到，問題回到 terminal 問') + '</small></div>'
+            + (S.serve ? '<button type="button" class="gho" data-gho>' + loc('tune.handToTerminalPhone', '交給終端／手機') + '</button>'
+                + '<p class="ghs">' + loc('tune.handOffHint', '網頁不再等，問題馬上在 terminal 問；Remote Control 在手機上也看得到。') + '</p>' : '')
             + '<p class="gend" role="status" aria-live="polite"></p></div>';
     }
     var FK_BELL = '<svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
@@ -2229,19 +2250,19 @@
             done += s.tune.done;
             if (!tune && s.tune.url) tune = s.tune;
         });
-        return '<section class="fkp" id="fkp" aria-label="通知與 gate"' + (open || held.length ? '' : ' hidden') + '>'
-            + '<div class="fkh"><b>通知與 gate</b><span class="n">' + n + ' 件</span><span class="spacer"></span>'
-            + (all.some(function (x) { return x.status !== 'edit'; }) ? '<button class="lk" type="button" data-note-clear>清掉通知</button>' : '') + '</div>'
-            + (held.length ? '<div class="fks">等你回答 <b>' + held.length + '</b></div>'
+        return '<section class="fkp" id="fkp" aria-label="' + loc('tune.notificationsAndGate', '通知與 gate') + '"' + (open || held.length ? '' : ' hidden') + '>'
+            + '<div class="fkh"><b>' + loc('tune.notificationsAndGate', '通知與 gate') + '</b><span class="n">' + loc('tune.nItems', '{n} 件', { n: n }) + '</span><span class="spacer"></span>'
+            + (all.some(function (x) { return x.status !== 'edit'; }) ? '<button class="lk" type="button" data-note-clear>' + loc('tune.clearNotifications', '清掉通知') + '</button>' : '') + '</div>'
+            + (held.length ? '<div class="fks">' + loc('tune.waitingOnYou', '等你回答') + ' <b>' + held.length + '</b></div>'
                 + held.map(function (s) { return gateCountdownHtml(s, now, picked); }).join('') : '')
-            + '<div class="fks">通知 <b>' + all.length + '</b></div>' + all.map(noteHtml).join('')
-            + (all.length ? '' : '<p class="fkempty">沒有新通知。</p>')
-            + '<div class="fkf"><span>tune 完成 <b>' + done + '</b></span>'
+            + '<div class="fks">' + loc('tune.notifications', '通知') + ' <b>' + all.length + '</b></div>' + all.map(noteHtml).join('')
+            + (all.length ? '' : '<p class="fkempty">' + loc('tune.noNewNotifications', '沒有新通知。') + '</p>')
+            + '<div class="fkf"><span>' + loc('tune.tuneDone', 'tune 完成') + ' <b>' + done + '</b></span>'
             + (tune ? '<a href="' + esc(tune.url) + '" target="_blank" rel="noopener">' + esc(tune.url.replace(/^https?:\/\//, '').replace(/\/$/, '')) + '</a>' : '')
             + '<span class="spacer"></span>'
-            + (permission === 'default' ? '<button type="button" class="btn" data-tune-notify>背景時通知我</button>' : '') + '</div></section>'
-            + '<button type="button" class="fkb" data-fkb aria-expanded="' + Boolean(open || held.length) + '" aria-controls="fkp" aria-label="通知與 gate：' + n + ' 件'
-            + (held.length ? '，' + held.length + ' 個 gate 在等' : '') + '">' + FK_BELL + '<span class="fkn">' + (n ? n : '') + '</span></button>';
+            + (permission === 'default' ? '<button type="button" class="btn" data-tune-notify>' + loc('tune.notifyInBackground', '背景時通知我') + '</button>' : '') + '</div></section>'
+            + '<button type="button" class="fkb" data-fkb aria-expanded="' + Boolean(open || held.length) + '" aria-controls="fkp" aria-label="' + loc('tune.notificationsAndGateNItems', '通知與 gate：{n} 件', { n: n })
+            + (held.length ? loc('tune.nGatesWaiting', '，{n} 個 gate 在等', { n: held.length }) : '') + '">' + FK_BELL + '<span class="fkn">' + (n ? n : '') + '</span></button>';
     }
 
     // What 送出答案 sends, and how many questions have no answer yet. Typed
@@ -2275,24 +2296,24 @@
         var qs = p.questions.map(function (q, i) {
             var type = q.multiSelect ? 'checkbox' : 'radio', had = picks[i];
             return '<fieldset class="pgq"><legend>' + esc(q.header || '') + ' · ' + esc(q.question)
-                + (q.multiSelect ? '<span class="multi">可多選</span>' : '') + '</legend><div class="opts2">'
+                + (q.multiSelect ? '<span class="multi">' + loc('tune.multiSelect', '可多選') + '</span>' : '') + '</legend><div class="opts2">'
                 + (q.options || []).map(function (o) {
                     return '<label class="pgo o"><input type="' + type + '" name="pg-' + i + '" value="' + esc(o.label) + '"'
                         + (had.indexOf(o.label) >= 0 ? ' checked' : '') + dis + '> <b>' + esc(o.label) + '</b> <small>'
                         + esc(o.description || '') + '</small></label>';
                 }).join('')
                 + '<label class="pgo o other"><input type="' + type + '" name="pg-' + i + '" value="__other"'
-                + (had.indexOf('__other') >= 0 ? ' checked' : '') + dis + '> <b>其他</b><input type="text" class="pgt" data-pg-other="' + i
-                + '" value="' + esc(others[i]) + '" placeholder="自己寫…" aria-label="' + esc(q.header || q.question) + '：其他"' + dis + '></label>'
+                + (had.indexOf('__other') >= 0 ? ' checked' : '') + dis + '> <b>' + loc('tune.other', '其他') + '</b><input type="text" class="pgt" data-pg-other="' + i
+                + '" value="' + esc(others[i]) + '" placeholder="' + loc('tune.writeYourOwn', '自己寫…') + '" aria-label="' + esc(q.header || q.question) + loc('tune.colonOther', '：其他') + '"' + dis + '></label>'
                 + '</div></fieldset>';
         }).join('');
         return '<div class="pg gp" data-block="pending-gate" data-pg-root="' + esc(s.root) + '" data-pg-id="' + esc(s.id) + '">'
-            + '<div class="h2">懸著的 gate <small>terminal 還等 ' + dur(left) + '，逾時就回 terminal 問</small></div>' + qs
-            + (S.serve ? '<div class="act gpf"><span class="cnt">已答 <b class="pgn">' + (n - got.missing) + ' / ' + n + '</b></span>'
-                + '<span class="why">每題都要有答案</span><span class="spacer"></span>'
-                + '<button type="button" class="go" data-answer' + (got.missing ? ' disabled' : '') + '>送出答案</button></div>'
+            + '<div class="h2">' + loc('tune.pendingGate', '懸著的 gate') + ' <small>' + loc('tune.terminalWaiting', 'terminal 還等 {t}，逾時就回 terminal 問', { t: dur(left) }) + '</small></div>' + qs
+            + (S.serve ? '<div class="act gpf"><span class="cnt">' + loc('tune.answeredNOfM', '已答 <b class="pgn">{a} / {n}</b>', { a: n - got.missing, n: n }) + '</span>'
+                + '<span class="why">' + loc('tune.everyQuestionNeedsAnswer', '每題都要有答案') + '</span><span class="spacer"></span>'
+                + '<button type="button" class="go" data-answer' + (got.missing ? ' disabled' : '') + '>' + loc('tune.submitAnswer', '送出答案') + '</button></div>'
                 + '<div class="pgr" role="status" aria-live="polite"></div>'
-                : '<p class="tally">靜態頁不能作答：開 serve 的頁面，或回 terminal 答。</p>') + '</div>';
+                : '<p class="tally">' + loc('tune.staticCannotAnswer', '靜態頁不能作答：開 serve 的頁面，或回 terminal 答。') + '</p>') + '</div>';
     }
 
     // Which of the page's top-level blocks a redraw has to replace: the
@@ -2308,7 +2329,7 @@
 
     // The main session's effort, when its transcript said; nothing otherwise.
     function effortChip(effort) {
-        return effort ? '<span class="chip" title="主 session 最後一次請求的 effort">effort <span class="mono">' + esc(effort) + '</span></span>' : '';
+        return effort ? '<span class="chip" title="' + loc('tune.effortHint', '主 session 最後一次請求的 effort') + '">effort <span class="mono">' + esc(effort) + '</span></span>' : '';
     }
 
     // The hero's eyebrow carries the frozen moment too, so a reader who has
@@ -2316,7 +2337,7 @@
     // hh:mm is the caller's, off the same `stamp()` the bar's absolute time
     // comes from: two places on the page, one clock read.
     function heroEyebrow(frozenAt) {
-        return frozenAt ? '近 30 天 · 凍結於 ' + frozenAt : '近 30 天';
+        return frozenAt ? loc('tune.last30dFrozenAt', '近 30 天 · 凍結於 {t}', { t: frozenAt }) : loc('tune.last30d', '近 30 天');
     }
 
     if (typeof module !== 'undefined' && module.exports) {
@@ -2386,7 +2407,7 @@
     function routeName(route, classes) {
         var key = (route || []).join('>');
         for (var k in classes || {}) if ((classes[k] || []).join('>') === key) return k;
-        return (route || []).join(' → ') || '（沒有 route）';
+        return (route || []).join(' → ') || loc('tune.noRoute', '（沒有 route）');
     }
     function routeGroups(R, classes) {
         var by = {}, order = [];
@@ -2428,7 +2449,7 @@
     // total, so nothing here has rows to add up to.
     function routeLedger(R) {
         var groups = routeGroups(R, S.classes);
-        if (!groups.length) return '<div class="empty">這個篩選下沒有 session</div>';
+        if (!groups.length) return '<div class="empty">' + loc('tune.noSessionsInFilter', '這個篩選下沒有 session') + '</div>';
         return groups.map(function (g) {
             var names = (g.route.length ? g.route : ROUTE).filter(function (k) { return g.stages[k]; });
             var per = names.map(function (k) { return (g.stages[k].ms + g.stages[k].wait) / g.stages[k].n; });
@@ -2439,29 +2460,28 @@
                 return '<tr><td>' + label + '</td><td><div class="mini"><span style="width:' + (ms / max * 100)
                     + '%;background:' + colour + '"></span><span style="width:' + (wait / max * 100) + '%;background:'
                     + colour + '38"></span></div><div class="mute" style="font-size:10.5px;margin-top:4px">'
-                    + hours(ms) + ' 做事 · ' + hours(wait) + ' 等你 · ' + n + ' 個</div></td>'
+                    + loc('tune.workedWaitedN', '{a} 做事 · {b} 等你 · {n} 個', { a: hours(ms), b: hours(wait), n: n }) + '</div></td>'
                     + '<td class="r num mute">' + tokens(Math.round(x.burn / n)) + '</td>'
                     + '<td class="r num">' + usd(x.usd / n) + '</td>'
                     + '<td class="r num" style="color:' + (wait > ms ? 'var(--dn)' : 'var(--mute)') + '">'
                     + Math.round(wait / (ms + wait || 1) * 100) + '%</td></tr>';
             };
-            return '<div class="rgh"><b>' + esc(g.name) + '</b><span class="mute">' + g.n + ' 個 session · 有倒退 '
-                + g.backN + ' 個、倒退 ' + g.backtracks + ' 次</span></div>'
+            return '<div class="rgh"><b>' + esc(g.name) + '</b><span class="mute">' + loc('tune.nSessionsBacktrack', '{n} 個 session · 有倒退 {backN} 個、倒退 {backT} 次', { n: g.n, backN: g.backN, backT: g.backtracks }) + '</span></div>'
                 + '<table><colgroup><col style="width:96px"><col><col style="width:64px"><col style="width:64px">'
-                + '<col style="width:52px"></colgroup><thead><tr><th>階段</th><th>平均：做事 / 等你</th>'
-                + '<th class="r">context</th><th class="r">花費</th><th class="r">等待</th></tr></thead><tbody>'
+                + '<col style="width:52px"></colgroup><thead><tr><th>' + loc('tune.thStage', '階段') + '</th><th>' + loc('tune.thAvgWorkWait', '平均：做事 / 等你') + '</th>'
+                + '<th class="r">context</th><th class="r">' + loc('tune.thCost', '花費') + '</th><th class="r">' + loc('tune.thWait', '等待') + '</th></tr></thead><tbody>'
                 + names.map(function (k) {
                     return line('<span class="chip" style="background:' + STAGE_C[k] + '1f;border-color:transparent;color:'
                         + STAGE_C[k] + ';font-weight:600">' + k + '</span>', g.stages[k], g.stages[k].n, STAGE_C[k]);
                 }).join('')
-                + (g.backN ? line('<span class="chip" style="color:var(--dn);border-color:var(--dn)">有倒退</span>',
+                + (g.backN ? line('<span class="chip" style="color:var(--dn);border-color:var(--dn)">' + loc('tune.hasBacktrack', '有倒退') + '</span>',
                     g.back, g.backN, 'var(--dn)') : '')
                 + '</tbody></table>';
         }).join('');
     }
     function taskCell(s) {
         return '<div class="ell" title="' + esc(s.task) + '" style="font-weight:500">'
-            + esc(s.task || '（未命名）') + '</div>'
+            + esc(s.task || loc('tune.unnamed', '（未命名）')) + '</div>'
             + '<div class="mute ell" style="font-size:11px;margin-top:2px">'
             + esc(LAB[s.root]) + ' · ' + ago(s.updated) + '</div>';
     }
@@ -2502,15 +2522,15 @@
         var own = S.sessions.filter(function (s) { return s.root === p.root; });
         return '<div class="card" style="margin-bottom:14px"><div class="cbody">'
             + '<div style="display:flex;align-items:center;gap:10px">'
-            + '<p class="mute" style="margin:0;flex:1">' + p.unreadable
-            + ' 個 session 檔案讀不到</p>' + clearStaleControl(p, own) + '</div>'
+            + '<p class="mute" style="margin:0;flex:1">' + loc('tune.nSessionFilesUnreadable', '{n} 個 session 檔案讀不到', { n: p.unreadable })
+            + '</p>' + clearStaleControl(p, own) + '</div>'
             + '<p class="mute" style="margin:4px 0 0">map.md '
-            + (p.mapAt ? '更新於 ' + day(p.mapAt) : '不存在') + '</p>'
+            + (p.mapAt ? loc('tune.updatedAt', '更新於 {t}', { t: day(p.mapAt) }) : loc('tune.doesNotExist', '不存在')) + '</p>'
             + (p.build.length
-                ? '<p class="mute" style="margin:4px 0 0">build：' + p.build.map(function (b) {
+                ? '<p class="mute" style="margin:4px 0 0">' + loc('tune.buildColon', 'build：') + p.build.map(function (b) {
                     return esc(b.name) + ' (' + b.files + ')';
-                }).join('、') + '</p>'
-                : '<p class="mute" style="margin:4px 0 0">沒有 build 資料夾</p>')
+                }).join(loc('tune.listSep', '、')) + '</p>'
+                : '<p class="mute" style="margin:4px 0 0">' + loc('tune.noBuildFolder', '沒有 build 資料夾') + '</p>')
             + '</div></div>';
     }
 
@@ -2535,25 +2555,25 @@
     // tests/station-dispatch-view.test.js can find it in this file.
     function dashHead(ico, title, href) {
         return '<div class="dcard-h">' + icon(ico) + '<b>' + title + '</b><span class="spacer"></span>'
-            + '<a class="dmore" href="' + href + '">查看全部 →</a></div>';
+            + '<a class="dmore" href="' + href + '">' + loc('dash.seeAll', '查看全部 →') + '</a></div>';
     }
     function dashRowName(s) { return esc(shortLabel(NAMES[s.pkey] || s.pkey)); }
     function dashLive(R) {
         var live = R.filter(function (s) { return s.state === 'live'; });
-        return '<section class="dcard" data-block="dash-live">' + dashHead('now', '進行中', '#/live')
-            + '<div class="dbig">' + live.length + '<small>個 live session</small></div>'
+        return '<section class="dcard" data-block="dash-live">' + dashHead('now', loc('dash.inProgress', '進行中'), '#/live')
+            + '<div class="dbig">' + live.length + '<small>' + loc('dash.nLiveSessions', '個 live session') + '</small></div>'
             + (live.length ? '<div class="dlist">' + live.map(function (s) {
                 return '<a class="drow" href="' + sessionHash(s.id) + '"><span class="dp">' + dashRowName(s) + '</span>'
-                    + '<span class="dt">' + esc(s.task || '（未命名）') + '</span>' + routeDots(s, true)
+                    + '<span class="dt">' + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</span>' + routeDots(s, true)
                     + '<span class="dr mono">' + mins(Date.now() - msOf(s.started)) + '</span></a>';
-            }).join('') + '</div>' : '<p class="dnone">沒有進行中的 session</p>') + '</section>';
+            }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noneInProgress', '沒有進行中的 session') + '</p>') + '</section>';
     }
     // A wait in the card's own words: `12 分`, `1 時 5 分`, `2 時`.
     function waitFor(ms) {
         if (!isFinite(ms)) return '—';
         var m = Math.max(0, Math.floor(ms / 60000));
-        if (m < 60) return m + ' 分';
-        return Math.floor(m / 60) + ' 時' + (m % 60 ? ' ' + (m % 60) + ' 分' : '');
+        if (m < 60) return loc('dash.mMins', '{m} 分', { m: m });
+        return loc('dash.hHours', '{h} 時', { h: Math.floor(m / 60) }) + (m % 60 ? ' ' + loc('dash.mMins', '{m} 分', { m: m % 60 }) : '');
     }
     // Waiting is what `pendingGateHtml` answers: a pending file with questions.
     // The wait runs from `gateAt`, stamped when the question went out
@@ -2562,23 +2582,23 @@
     function dashGate(R, at) {
         var now = isFinite(at) ? at : S.serve ? Date.now() : NOW;
         var rows = R.filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
-        return '<section class="dcard" data-block="waiting-card">' + dashHead('gate', '等你回答', '#/live')
-            + '<div class="dbig' + (rows.length ? ' warn' : '') + '">' + rows.length + '<small>個 gate 在等'
-            + (rows.length ? '<span class="dfrom">從問題送出那一刻算起</span>' : '') + '</small></div>'
+        return '<section class="dcard" data-block="waiting-card">' + dashHead('gate', loc('dash.waitingOnYou', '等你回答'), '#/live')
+            + '<div class="dbig' + (rows.length ? ' warn' : '') + '">' + rows.length + '<small>' + loc('dash.gatesWaiting', '個 gate 在等')
+            + (rows.length ? '<span class="dfrom">' + loc('dash.sinceQuestionSent', '從問題送出那一刻算起') + '</span>' : '') + '</small></div>'
             + (rows.length ? '<div class="dlist">' + rows.map(function (s) {
                 var since = msOf(s.gateAt || s.pending.at || s.updated), q = s.pending.questions[0];
-                var left = isFinite(s.pending.until) ? '，還剩 ' + waitFor(Math.max(0, s.pending.until - now)) : '';
+                var left = isFinite(s.pending.until) ? loc('dash.leftT', '，還剩 {t}', { t: waitFor(Math.max(0, s.pending.until - now)) }) : '';
                 return '<a class="drow" href="' + sessionHash(s.id) + '"><span class="dp">' + dashRowName(s) + '</span>'
                     + (s.stage ? '<span class="chip dstage"><i class="sw" style="background:var(--st-' + esc(s.stage) + ')"></i>' + esc(s.stage) + '</span>' : '')
                     + '<span class="dt">' + esc(q.header || q.question || s.task || '') + '</span>'
-                    + '<span class="dw" title="' + (isFinite(since) ? '問題 ' + clock(since) + ' 送出' + left : '') + '">等了 ' + waitFor(now - since) + '</span></a>';
-            }).join('') + '</div>' : '<p class="dnone">沒有在等你的 gate</p>') + '</section>';
+                    + '<span class="dw" title="' + (isFinite(since) ? esc(loc('dash.questionSentAt', '問題 {t} 送出{left}', { t: clock(since), left: left })) : '') + '">' + loc('dash.waitedT', '等了 {t}', { t: waitFor(now - since) }) + '</span></a>';
+            }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noGatesWaiting', '沒有在等你的 gate') + '</p>') + '</section>';
     }
     // The 近 30 天 chart's own bars, summed per day, drawn without axes.
     function dashSpend(R) {
         var list = dayBars(R, 'usd', 'project', DAYS).days, mx = Math.max.apply(null, list.map(function (b) { return b.total; }).concat([0])) || 1;
         var W = 300, H = 56, bw = W / list.length, tot = windowTotals(R, DAYS).usd;
-        var svg = '<svg class="dspark" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="近 30 天每日花費">'
+        var svg = '<svg class="dspark" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="' + loc('dash.dailyCostLast30d', '近 30 天每日花費') + '">'
             + list.map(function (b, i) {
                 var h = b.total ? Math.max(2, b.total / mx * (H - 2)) : 0;
                 return '<rect x="' + (i * bw + 1).toFixed(1) + '" y="' + (H - h).toFixed(1) + '" width="' + Math.max(1, bw - 2).toFixed(1)
@@ -2586,22 +2606,22 @@
                     + '><title>' + b.day + ' ' + usd(b.total) + '</title></rect>';
             }).join('') + '<line x1="0" x2="' + W + '" y1="' + (H - .5) + '" y2="' + (H - .5) + '"/></svg>';
         var at = function (i) { var b = list[list.length - i]; return b ? usd(b.total) : '—'; };
-        return '<section class="dcard" data-block="dash-spend">' + dashHead('spend', '近 30 天花費', '#/days')
+        return '<section class="dcard" data-block="dash-spend">' + dashHead('spend', loc('dash.last30dCost', '近 30 天花費'), '#/days')
             + '<div class="dbig">' + (tot ? usd(tot) : '$0') + '</div>' + svg
-            + '<div class="dkv"><span>今天 <b>' + at(1) + '</b></span><span>昨天 <b>' + at(2) + '</b></span></div></section>';
+            + '<div class="dkv"><span>' + loc('dash.today', '今天') + ' <b>' + at(1) + '</b></span><span>' + loc('dash.yesterday', '昨天') + ' <b>' + at(2) + '</b></span></div></section>';
     }
     function dashRecent(R) {
         var list = recentRows(R, DAYS).slice(0, 5);
-        return '<section class="dcard" data-block="dash-recent">' + dashHead('sessions', '最近 sessions', '#/sessions')
+        return '<section class="dcard" data-block="dash-recent">' + dashHead('sessions', loc('dash.recentSessions', '最近 sessions'), '#/sessions')
             + (list.length ? '<div class="dlist">' + list.map(function (s) {
                 return '<a class="drow" href="' + sessionHash(s.id) + '"><span class="dp">' + dashRowName(s) + '</span>'
-                    + '<span class="dt">' + esc(s.task || '（未命名）') + '</span><span class="ds mono">' + esc(s.stage || '—') + '</span>'
+                    + '<span class="dt">' + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</span><span class="ds mono">' + esc(s.stage || '—') + '</span>'
                     + '<span class="dc mono">' + usd(sessionTotals(s).usd) + '</span><span class="dr">' + ago(s.updated) + '</span></a>';
-            }).join('') + '</div>' : '<p class="dnone">近 30 天沒有 session</p>') + '</section>';
+            }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noneLast30d', '近 30 天沒有 session') + '</p>') + '</section>';
     }
     function dashPage() {
         var R = homeRows();
-        return '<div class="phead"><h1>' + icon('dash') + '儀表板</h1></div><div class="dash" data-block="dashboard">'
+        return '<div class="phead"><h1>' + icon('dash') + loc('dash.dashboard', '儀表板') + '</h1></div><div class="dash" data-block="dashboard">'
             + dashLive(R) + dashGate(R) + dashSpend(R) + dashRecent(R) + '</div>';
     }
     // What daysPage last drew, so the hover card reads the same bars the chart
@@ -2705,12 +2725,12 @@
             + heroEyebrow(frozenAt) + '</div>'
             + '<h1><b>' + DAYS[0].slice(5) + '</b> — <b>' + TODAY.slice(5) + '</b></h1></div>'
             + kpiHtml(windowTotals(R, DAYS), windowTotals(R, PREV)) + '</div>'
-            + '<div class="controls"><div class="ctlgrp"><label>長條高度</label>'
-            + segHtml('metric', [['tokens', 'token'], ['usd', '花費'], ['time', '時間']], view.metric) + '</div>'
-            + '<div class="ctlgrp"><label>分段</label>'
-            + segHtml('dim', [['model', '依 model'], ['project', '依專案'], ['stage', '依 stage'], ['who', '主 session 對 agent'],
-                ['version', '依版本'], ['kind', '依成分']],
-                view.dim, view.metric === 'time' ? { model: '時間沒有 model 可分', kind: '時間沒有成分可分' } : null) + '</div></div>'
+            + '<div class="controls"><div class="ctlgrp"><label>' + loc('dash.barHeight', '長條高度') + '</label>'
+            + segHtml('metric', [['tokens', 'token'], ['usd', loc('dash.cost', '花費')], ['time', loc('dash.time', '時間')]], view.metric) + '</div>'
+            + '<div class="ctlgrp"><label>' + loc('dash.splitBy', '分段') + '</label>'
+            + segHtml('dim', [['model', loc('dash.byModel', '依 model')], ['project', loc('dash.byProject', '依專案')], ['stage', loc('dash.byStage', '依 stage')], ['who', loc('dash.mainVsAgent', '主 session 對 agent')],
+                ['version', loc('dash.byVersion', '依版本')], ['kind', loc('dash.byKind', '依成分')]],
+                view.dim, view.metric === 'time' ? { model: loc('dash.noTimeByModel', '時間沒有 model 可分'), kind: loc('dash.noTimeByKind', '時間沒有成分可分') } : null) + '</div></div>'
             // The legend has a strip of its own, one line high: however many
             // series a dim has, the switches above and the chart below stay
             // where they are. What does not fit scrolls; 篩選 lists everything.
@@ -2728,8 +2748,8 @@
         var list = [].concat.apply([], S.projects.map(function (p) { return p.docs || []; }));
         var dsx = docsSearchHtml(view.dsx, Boolean(S.serve));
         return '<div data-block="docs">' + (list.length ? docsCardHtml(list, Object.assign(homeOpts(null), { search: dsx }))
-            : '<section class="panel docs"><div class="h2">文件</div>' + dsx
-                + '<p class="mute">還沒有專案生成 <span class="mono">.fankeel/map.md</span></p></section>') + '</div>';
+            : '<section class="panel docs"><div class="h2">' + loc('dash.docs', '文件') + '</div>' + dsx
+                + '<p class="mute">' + loc('dash.noProjectDocsYet', '還沒有專案生成 <span class="mono">.fankeel/map.md</span>') + '</p></section>') + '</div>';
     }
     view.pMetric = 'usd';
     view.compare = '';
@@ -2740,7 +2760,7 @@
     }
     function projectPage(r) {
         var all = S.sessions.filter(function (s) { return s.pkey === r.pkey; });
-        if (!all.length) return '<section class="panel"><p class="note">這頁上沒有專案 ' + esc(r.pkey) + '</p></section>';
+        if (!all.length) return '<section class="panel"><p class="note">' + loc('dash.noProjectOnPage', '這頁上沒有專案 {p}', { p: esc(r.pkey) }) + '</p></section>';
         var R = homeRows(), mine = R.filter(function (s) { return s.pkey === r.pkey; });
         var head = projectHead(R, r.pkey, DAYS), t0 = dayStart(DAYS[0]), t1 = dayStart(TODAY) + 864e5;
         if (view.compare === r.pkey) view.compare = '';
@@ -2751,26 +2771,26 @@
         var others = PKEYS.filter(function (k) { return k !== r.pkey; });
         var list = mine.filter(inWindow).sort(function (a, b) { return Date.parse(b.started) - Date.parse(a.started); });
         var ro = function (l, v) { return '<div class="ro"><div class="l">' + l + '</div><div class="v">' + v + '</div></div>'; };
-        return '<section class="panel"><div class="hero-top"><div><div class="eyebrow">專案</div>'
+        return '<section class="panel"><div class="hero-top"><div><div class="eyebrow">' + loc('dash.project', '專案') + '</div>'
             + '<h1 class="s-title"><i class="sw" style="background:' + colorOf('project', r.pkey, PKEYS) + '"></i> '
             + esc(NAMES[r.pkey] || r.pkey) + '</h1><div class="mono muted">' + esc(r.pkey) + '</div></div>'
-            + '<div class="readouts">' + ro('近 30 天花費', usd(head.usd)) + ro('token', tokens(head.tokens))
-            + ro('active 時間', hours(head.active)) + ro('session', head.n) + '</div></div>'
-            + '<div class="controls"><div class="ctlgrp"><label>縱軸</label>'
-            + segHtml('pMetric', [['tokens', 'token'], ['usd', '花費']], view.pMetric) + '</div>'
-            + (others.length ? '<div class="ctlgrp"><label>對照專案</label>' + segHtml('compare', [['', '無']].concat(others.map(function (k) {
+            + '<div class="readouts">' + ro(loc('dash.last30dCost', '近 30 天花費'), usd(head.usd)) + ro('token', tokens(head.tokens))
+            + ro(loc('dash.activeTime', 'active 時間'), hours(head.active)) + ro('session', head.n) + '</div></div>'
+            + '<div class="controls"><div class="ctlgrp"><label>' + loc('dash.yAxis', '縱軸') + '</label>'
+            + segHtml('pMetric', [['tokens', 'token'], ['usd', loc('dash.cost', '花費')]], view.pMetric) + '</div>'
+            + (others.length ? '<div class="ctlgrp"><label>' + loc('dash.compareProject', '對照專案') + '</label>' + segHtml('compare', [['', loc('dash.none', '無')]].concat(others.map(function (k) {
                 return [k, NAMES[k] || k];
             })), view.compare) + '</div>' : '')
             + '<div class="legend">' + series.map(function (s) {
                 return '<span><i class="sw ln" style="background:' + s.colour + '"></i>' + esc(s.name) + ' <span class="muted">'
-                    + s.points.length + ' 個</span></span>';
+                    + loc('dash.nItems', '{n} 個', { n: s.points.length }) + '</span></span>';
             }).join('') + '</div></div>'
             + '<div class="chart">' + projectChart(series, { metric: view.pMetric, t0: t0, t1: t1, days: DAYS, today: TODAY }) + '</div>'
-            + '<div class="note">每個點是一個 session，放在它開始的時刻；線依時間先後連接，點一下開啟那個 session。</div></section>'
+            + '<div class="note">' + loc('dash.pointPerSessionHint', '每個點是一個 session，放在它開始的時刻；線依時間先後連接，點一下開啟那個 session。') + '</div></section>'
             + registryNote(all[0].root)
-            + '<section class="panel"><div class="h2">Sessions <small>近 30 天 ' + list.length + ' 個，最新在上；勾兩列進比較</small>'
+            + '<section class="panel"><div class="h2">Sessions <small>' + loc('dash.last30dNSorted', '近 30 天 {n} 個，最新在上；勾兩列進比較', { n: list.length }) + '</small>'
             + '</div>' + projectSessionsHtml(list, picked) + selbarHtml() + '</section>'
-            + '<section class="panel"><div class="h2">各 route 的階段 <small>只算這個專案</small></div>' + routeLedger(mine) + '</section>';
+            + '<section class="panel"><div class="h2">' + loc('dash.stagesByRoute', '各 route 的階段') + ' <small>' + loc('dash.thisProjectOnly', '只算這個專案') + '</small></div>' + routeLedger(mine) + '</section>';
     }
     VIEWS.project = projectPage;
     CRUMBS.project = function (r) { return [[NAMES[r.pkey] || r.pkey, null]]; };
@@ -2802,7 +2822,7 @@
     }
     function sessionPage(r) {
         var s = S.sessions.filter(function (x) { return x.id === r.id; })[0];
-        if (!s) return '<section class="panel"><p class="note">這頁上沒有 session ' + esc(r.id) + '</p></section>';
+        if (!s) return '<section class="panel"><p class="note">' + loc('dash.noSessionOnPage', '這頁上沒有 session {id}', { id: esc(r.id) }) + '</p></section>';
         needDetail(s);
         var x = DETAIL[s.id] || null;
         // 概覽 draws its money from `days` on the data file, so that half answers
@@ -2810,21 +2830,20 @@
         // need the detail. The old 花費 tab's stage × model table is the
         // 明細 under the bar.
         var L = stageShare(s, x), hi = view.hiId === s.id ? view.hi : null;
-        var legend = '<div class="lane-legend"><span><i class="sw" style="background:var(--st-build);opacity:.35"></i>stage 底色</span>'
-            + '<span><i class="hatchsw"></i>等你回答（gate）</span>'
-            + '<span><i class="sw ln" style="background:var(--ctx)"></i>主 session context</span>'
+        var legend = '<div class="lane-legend"><span><i class="sw" style="background:var(--st-build);opacity:.35"></i>' + loc('dash.stageTint', 'stage 底色') + '</span>'
+            + '<span><i class="hatchsw"></i>' + loc('dash.waitingOnYouGate', '等你回答（gate）') + '</span>'
+            + '<span><i class="sw ln" style="background:var(--ctx)"></i>' + loc('dash.mainSessionContext', '主 session context') + '</span>'
             + MODEL_KEYS.map(function (k) {
                 return '<span><i class="sw" style="background:var(--m-' + k + ')"></i>' + k + '</span>';
             }).join('')
-            + '<span><i class="sw" style="background:var(--s-agent)"></i>背景 agent</span>'
+            + '<span><i class="sw" style="background:var(--s-agent)"></i>' + loc('dash.backgroundAgent', '背景 agent') + '</span>'
             + '<span><i class="sw" style="background:var(--s-workflow)"></i>workflow</span></div>';
         // The bar leads: it is short, and the timeline under it can run to
         // dozens of agent rows.
         var overview = costShareHtml(L, hi) + (x ? legend + '<div class="chart tl">' + timelineSvg(stageCost(timelineModel(x), s), view.closed, hi) + '</div>'
-                + '<div class="note">橫軸是真實時間：stage 的底色寬度等於實際經過的時間，context 曲線畫在上面；'
-                + '游標停在圖上看那一刻的 stage、時間與 context；點一下標出那個 stage；點 workflow 那列收合或展開。</div>'
+                + '<div class="note">' + loc('dash.timelineAxisHint', '橫軸是真實時間：stage 的底色寬度等於實際經過的時間，context 曲線畫在上面；游標停在圖上看那一刻的 stage、時間與 context；點一下標出那個 stage；點 workflow 那列收合或展開。') + '</div>'
             : detailNote(s))
-            + '<details class="csmore"><summary>stage × model 明細 <small>token 與各自的 USD，主迴圈</small></summary>'
+            + '<details class="csmore"><summary>' + loc('dash.stageModelDetail', 'stage × model 明細') + ' <small>' + loc('dash.tokenUsdMainLoop', 'token 與各自的 USD，主迴圈') + '</small></summary>'
             + costHtml(costModel(s.days), x) + '</details>'
             + (x ? '<div class="det">' + ctxSection(s, x, true) + tasksHtml(x.tasks) + '</div>' : '');
         var body = r.tab === 'dispatch' ? (x ? dispatchStagesHtml(L, s.id, hi) + '<div class="det">' + dispatchHtml(x, s, dispatchUi(s)) + '</div>' : detailNote(s))
@@ -2832,9 +2851,9 @@
                 : overview;
         return '<section class="panel"><div class="eyebrow">session <span class="mono">' + esc(String(s.id).slice(0, 8)) + '</span> · '
             + '<a href="' + projectHash(s.pkey) + '">' + esc(NAMES[s.pkey] || s.pkey) + '</a> · ' + stamp(Date.parse(s.started)) + '</div>'
-            + '<h1 class="s-title">' + esc(s.task || '（未命名）') + '</h1>'
+            + '<h1 class="s-title">' + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</h1>'
             + '<div class="s-meta">' + statePill(s) + (S.serve ? liveTag(s.state === 'live', polledAt, Date.now()) : '')
-            + (s.model ? '<span class="chip"><i class="sw" style="background:var(--m-' + family(s.model) + ')"></i>主 session <span class="mono">'
+            + (s.model ? '<span class="chip"><i class="sw" style="background:var(--m-' + family(s.model) + ')"></i>' + loc('dash.mainSession', '主 session') + ' <span class="mono">'
                 + esc(s.model) + '</span></span>' : '') + effortChip(s.effort) + '</div>'
             + railHtml(s, Boolean(S.serve) && s.state === 'live', S.serve ? Date.now() : NOW)
             + sessionHeadHtml(s, x) + '</section>'
@@ -2847,8 +2866,8 @@
     };
     // `started` has a column of its own because the page this replaces sorted
     // by it, and a sort key with no header is a sort nobody can reach.
-    var COLS = [['task', '任務'], ['stage', '階段'], ['burn', 'context'],
-        ['cost', '花費'], ['state', '狀態'], ['started', '開始'], ['updated', '最後動作']];
+    var COLS = [['task', loc('dash.colTask', '任務')], ['stage', loc('dash.colStage', '階段')], ['burn', 'context'],
+        ['cost', loc('dash.colCost', '花費')], ['state', loc('dash.colState', '狀態')], ['started', loc('dash.colStarted', '開始')], ['updated', loc('dash.colLastAction', '最後動作')]];
     function val(s, k) {
         if (k === 'cost') return cost(s);
         if (k === 'state') return { live: 0, stale: 1, down: 2 }[s.state];
@@ -2893,11 +2912,11 @@
         };
         return '<div class="ctlgrp fg-' + key + '"><div class="rwrap"' + (cur.v ? ' data-set' : '') + '>'
             + '<button type="button" class="rbtn" data-pick="' + key + '" aria-haspopup="listbox" aria-expanded="' + open + '"'
-            + ' aria-label="' + name + '：' + esc(cur.sub || cur.main) + '" title="' + name + (cur.sub ? '：' + esc(cur.sub) : '') + '">'
+            + ' aria-label="' + loc('dash.nameColonSub', '{name}：{sub}', { name: name, sub: esc(cur.sub || cur.main) }) + '" title="' + name + (cur.sub ? loc('dash.colonSub', '：{sub}', { sub: esc(cur.sub) }) : '') + '">'
             + ico + (cur.lead || '') + '<span class="fl">' + esc(cur.main) + '</span><b class="fc">' + cur.n + '</b>' + CARET + '</button>'
-            + (cur.v ? '<button type="button" class="rclr" data-pickclr="' + key + '" aria-label="' + name + '回到全部" title="回到全部">×</button>' : '')
+            + (cur.v ? '<button type="button" class="rclr" data-pickclr="' + key + '" aria-label="' + loc('dash.nameBackToAll', '{name}回到全部', { name: name }) + '" title="' + loc('dash.backToAll', '回到全部') + '">×</button>' : '')
             + (open ? '<div class="rpop">'
-                + (search ? '<input type="search" data-pickq placeholder="找 ' + name + '" aria-label="找 ' + name + '" value="' + esc(pickQ) + '">' : '')
+                + (search ? '<input type="search" data-pickq placeholder="' + loc('dash.findName', '找 {name}', { name: name }) + '" aria-label="' + loc('dash.findName', '找 {name}', { name: name }) + '" value="' + esc(pickQ) + '">' : '')
                 + '<div class="seg" role="listbox" aria-label="' + name + '" data-facet="' + key + '">' + items.map(opt).join('') + '</div></div>' : '')
             + '</div></div>';
     }
@@ -2913,16 +2932,16 @@
         var stages = ROUTE.filter(function (k) { return byStage[k]; });
         var top = Math.max.apply(null, stages.map(function (k) { return byStage[k]; }).concat([1]));
         return '<div class="controls lctl">'
-            + pickHtml('state', FICON.state, '狀態', [{ v: '', main: '全部', n: all }].concat(['live', 'stale', 'down'].map(function (k) {
+            + pickHtml('state', FICON.state, loc('dash.state', '狀態'), [{ v: '', main: loc('dash.all', '全部'), n: all }].concat(['live', 'stale', 'down'].map(function (k) {
                 return { v: k, main: k, n: n[k], lead: '<i class="dot ' + k + '"></i>' };
             })))
-            + pickHtml('project', icon('projects'), 'Registry', [{ v: '', main: '全部', n: all }].concat(S.projects.map(function (p, i) {
+            + pickHtml('project', icon('projects'), 'Registry', [{ v: '', main: loc('dash.all', '全部'), n: all }].concat(S.projects.map(function (p, i) {
                 // The path's last segment, unless another registry ends the same way.
                 var t = tail.filter(function (x) { return x === tail[i]; }).length > 1 ? LAB[p.root] || p.root : tail[i];
                 return { v: p.root, main: t + (p.gone ? ' — gone' : ''), sub: p.root, n: byRoot[p.root] || 0 };
             })), S.projects.length > 6)
             // A stage's bar is its count against the busiest stage's.
-            + pickHtml('stage', FICON.stage, '停在哪一階段', [{ v: '', main: '全部', n: all }].concat(stages.map(function (k) {
+            + pickHtml('stage', FICON.stage, loc('dash.whichStageStuck', '停在哪一階段'), [{ v: '', main: loc('dash.all', '全部'), n: all }].concat(stages.map(function (k) {
                 return { v: k, main: k, n: byStage[k], lead: '<i class="dot" style="background:var(--st-' + esc(k) + ')"></i>', bar: byStage[k] / top };
             })))
             + '</div>';
@@ -2933,21 +2952,21 @@
     // 清除. `#ncmp` is the count, rewritten in place on every tick.
     function selbarInner() {
         var n = picked.length;
-        return icon('cmp') + '<span>已選 <b id="ncmp">' + n + '</b> 個</span>'
-            + (n >= 2 ? '<a class="sbtn pri" href="#/cmp">比較</a>'
-                : '<span title="至少選 2 個"><button type="button" class="sbtn pri" disabled>比較</button></span>')
-            + '<button type="button" class="sbtn" data-cmpclear' + (n ? '' : ' tabindex="-1"') + '>清除</button>';
+        return icon('cmp') + '<span>' + loc('dash.pickedN', '已選 <b id="ncmp">{n}</b> 個', { n: n }) + '</span>'
+            + (n >= 2 ? '<a class="sbtn pri" href="#/cmp">' + loc('dash.compare', '比較') + '</a>'
+                : '<span title="' + loc('dash.pickAtLeastTwo', '至少選 2 個') + '"><button type="button" class="sbtn pri" disabled>' + loc('dash.compare', '比較') + '</button></span>')
+            + '<button type="button" class="sbtn" data-cmpclear' + (n ? '' : ' tabindex="-1"') + '>' + loc('dash.clear', '清除') + '</button>';
     }
     function selbarHtml() {
-        return '<div class="selbar" id="selbar" role="region" aria-label="比較勾選的 session"' + (picked.length ? ' data-on' : ' aria-hidden="true"') + '>'
+        return '<div class="selbar" id="selbar" role="region" aria-label="' + loc('dash.checkedSessionsToCompare', '比較勾選的 session') + '"' + (picked.length ? ' data-on' : ' aria-hidden="true"') + '>'
             + selbarInner() + '</div>';
     }
     function listPage() {
         // A gone registry has no rows to lay out, so the note replaces the table
         // rather than sitting above it and pushing the list off the bottom.
-        var head = '<div class="phead"><h1>' + icon('list') + '清單</h1><span class="chip" id="cnt"></span><span class="spacer"></span>';
+        var head = '<div class="phead"><h1>' + icon('list') + loc('dash.listHeading', '清單') + '</h1><span class="chip" id="cnt"></span><span class="spacer"></span>';
         var gone = goneNote(f.project);
-        var now = '<a class="ctl" href="#/live">' + icon('now') + '現在</a></div>' + subtabsHtml('list');
+        var now = '<a class="ctl" href="#/live">' + icon('now') + loc('dash.now', '現在') + '</a></div>' + subtabsHtml('list');
         if (gone) return head + now + facetsHtml() + gone;
         return head + now + selbarHtml() + facetsHtml() + registryNote(f.project)
             + '<div class="listwrap">'
@@ -2969,7 +2988,7 @@
             return sortDir * ((x || 0) - (y || 0));
         });
         doc.getElementById('cnt').textContent = R.length + ' / ' + S.sessions.length;
-        doc.getElementById('lh').innerHTML = '<tr><th class="cmpth" aria-label="選來比較" title="勾兩個 session 來比較">' + icon('cmp') + '</th>' + COLS.map(function (c) {
+        doc.getElementById('lh').innerHTML = '<tr><th class="cmpth" aria-label="' + loc('dash.pickToCompare', '選來比較') + '" title="' + loc('dash.checkTwoToCompare', '勾兩個 session 來比較') + '">' + icon('cmp') + '</th>' + COLS.map(function (c) {
             return '<th data-k="' + c[0] + '"'
                 + (['burn', 'cost'].indexOf(c[0]) >= 0 ? ' class="r"' : '')
                 + (sortKey === c[0] ? ' data-dir="' + (sortDir > 0 ? 'asc' : 'desc') + '"' : '')
@@ -2977,16 +2996,16 @@
         }).join('') + '</tr>';
         doc.getElementById('lb').innerHTML = R.map(function (s) {
             return '<tr data-id="' + esc(s.id) + '" aria-selected="' + (sel === s.id) + '">'
-                + '<td><input type="checkbox" data-cmp="' + esc(s.id) + '" aria-label="選來比較"'
+                + '<td><input type="checkbox" data-cmp="' + esc(s.id) + '" aria-label="' + loc('dash.pickToCompare', '選來比較') + '"'
                 + (picked.indexOf(s.id) >= 0 ? ' checked' : '')
-                + (s.hasDetail ? '' : ' disabled title="沒有 transcript，沒有細節可比"') + '></td>'
+                + (s.hasDetail ? '' : ' disabled title="' + loc('dash.noTranscriptToCompare', '沒有 transcript，沒有細節可比') + '"') + '></td>'
                 + '<td>' + taskCell(s) + '</td><td>' + stageCell(s) + '</td>'
                 + '<td class="r num mute">' + tokens(s.burn) + '</td>'
                 + '<td class="r num">' + usd(cost(s)) + '</td>'
                 + '<td class="c-state">' + statePill(s) + runningTag(s) + '</td>'
                 + '<td class="num mute" style="font-size:11.5px">' + day(s.started) + '</td>'
                 + '<td class="num mute" style="font-size:11.5px">' + ago(s.updated) + '</td></tr>';
-        }).join('') || '<tr><td colspan="8"><div class="empty">沒有符合的 session</div></td></tr>';
+        }).join('') || '<tr><td colspan="8"><div class="empty">' + loc('dash.noMatchingSessions', '沒有符合的 session') + '</div></td></tr>';
         if (R.length && !R.some(function (s) { return s.id === sel; })) sel = R[0].id;
         drawDetail();
     }
@@ -3031,7 +3050,7 @@
         var d = doc.getElementById('det');
         if (!d) return;
         var hit = S.sessions.filter(function (x) { return x.id === sel; });
-        if (!hit.length) { d.innerHTML = '<div class="empty">選一列</div>'; return; }
+        if (!hit.length) { d.innerHTML = '<div class="empty">' + loc('dash.pickARow', '選一列') + '</div>'; return; }
         var s = hit[0];
         needDetail(s);
         var open = openSections(s);
@@ -3047,8 +3066,8 @@
             + (s.model ? '<span class="chip mono">'
                 + esc(s.model.replace(/^claude-/, '')) + '</span>' : '') + '</div>'
             + '<h2 style="font-size:15px;line-height:1.45;margin-bottom:12px">'
-            + esc(s.task || '（未命名）') + '</h2>'
-            + secOpen('s-sum', '摘要', esc(s.stage || '—') + ' · ' + mins(tot)
+            + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</h2>'
+            + secOpen('s-sum', loc('dash.summary', '摘要'), esc(s.stage || '—') + ' · ' + mins(tot)
                 + (x ? ' · ' + x.requests + ' requests' : ''), open)
             + (s.stages.length
                 ? '<div class="strip">' + s.stages.map(function (w) {
@@ -3060,8 +3079,8 @@
                 }).join('') + '</div>'
                 + '<table style="margin-top:10px"><colgroup><col><col style="width:56px">'
                 + '<col style="width:58px"><col style="width:56px"></colgroup>'
-                + '<thead><tr><th>階段</th><th class="r">時間</th><th class="r">ctx</th>'
-                + '<th class="r">等你</th></tr></thead><tbody>'
+                + '<thead><tr><th>' + loc('dash.thStage', '階段') + '</th><th class="r">' + loc('dash.thTime', '時間') + '</th><th class="r">ctx</th>'
+                + '<th class="r">' + loc('dash.thWaitedOnYou', '等你') + '</th></tr></thead><tbody>'
                 + s.stages.map(function (w) {
                     return '<tr><td><i class="dot" style="background:'
                         + (STAGE_C[w.stage] || '#888') + '"></i> ' + esc(w.stage) + '</td>'
@@ -3069,8 +3088,8 @@
                         + '<td class="r num mute">' + tokens(w.burn) + '</td>'
                         + '<td class="r num mute">' + mins(w.waited) + '</td></tr>';
                 }).join('') + '</tbody></table>'
-                : '<p class="mute" style="font-size:12px">沒有分階段紀錄</p>')
-            + (s.next ? '<div class="note"><b>下一步</b><br>' + esc(s.next) + '</div>' : '')
+                : '<p class="mute" style="font-size:12px">' + loc('dash.noStageRecord', '沒有分階段紀錄') + '</p>')
+            + (s.next ? '<div class="note"><b>' + loc('dash.nextStep', '下一步') + '</b><br>' + esc(s.next) + '</div>' : '')
             + (s.notes.length
                 ? '<div class="note" style="background:var(--soft)">'
                 + s.notes.map(esc).join('<br>') + '</div>' : '')
@@ -3078,21 +3097,21 @@
             + esc(s.id) + '</dd>'
             + '<dt>route</dt><dd class="mono" style="font-size:11px">'
             + esc(s.route.join(' → ')) + '</dd>'
-            + '<dt>開始</dt><dd class="num">' + stamp(Date.parse(s.started)) + '</dd>'
-            + '<dt>最後</dt><dd class="num">' + stamp(s.updated) + '</dd>'
-            + (s.ended ? '<dt>結束</dt><dd>' + esc(s.ended.reason) + '</dd>' : '')
-            + '<dt>總計</dt><dd class="num">' + tokens(s.burn) + ' · ' + usd(cost(s))
+            + '<dt>' + loc('dash.started', '開始') + '</dt><dd class="num">' + stamp(Date.parse(s.started)) + '</dd>'
+            + '<dt>' + loc('dash.last', '最後') + '</dt><dd class="num">' + stamp(s.updated) + '</dd>'
+            + (s.ended ? '<dt>' + loc('dash.ended', '結束') + '</dt><dd>' + esc(s.ended.reason) + '</dd>' : '')
+            + '<dt>' + loc('dash.total', '總計') + '</dt><dd class="num">' + tokens(s.burn) + ' · ' + usd(cost(s))
             + (s.unpriced && s.unpriced.length ? ' (' + s.unpriced.length + ' unpriced)' : '')
             + (s.agents ? ' · ' + s.agents + ' agents' : '') + '</dd>'
             + (x ? '<dt>requests</dt><dd class="num">' + x.requests + '</dd>' : '')
-            + '<dt>guard</dt><dd>' + esc(s.guard || 'ask (預設)') + '</dd></dl>'
+            + '<dt>guard</dt><dd>' + esc(s.guard || loc('dash.askDefault', 'ask (預設)')) + '</dd></dl>'
             + '</details>'
-            + secOpen('s-claims', 'claims', s.claims.length + ' 個檔', open)
+            + secOpen('s-claims', 'claims', loc('dash.nFiles', '{n} 個檔', { n: s.claims.length }), open)
             + (s.claims.length
                 ? '<div class="claims">' + s.claims.map(function (p) {
                     return '<div title="' + esc(p) + '">' + esc(p) + '</div>';
                 }).join('') + '</div>'
-                : '<p class="mute" style="font-size:12px">沒有</p>')
+                : '<p class="mute" style="font-size:12px">' + loc('dash.none2', '沒有') + '</p>')
             + seenHtml(s.seen) + clearControl(s) + '</details>'
             + (x ? detailSections(s, x, open) : detailNote(s))
             + '</div>';
@@ -3110,14 +3129,14 @@
         var totalUnreadable = S.projects.reduce(function (n, p) {
             return n + (p.unreadable || 0);
         }, 0);
-        return '掃描於 ' + stamp(NOW)
-            + ' · 價目表 ' + S.pricesVerified
+        return loc('dash.scannedAt', '掃描於 {t}', { t: stamp(NOW) })
+            + loc('dash.pricesVerified', ' · 價目表 {t}', { t: S.pricesVerified })
             + (S.scanStats && S.scanStats.depthCuts
-                ? ' · depth 中止掃描 ' + S.scanStats.depthCuts + ' 處' : '')
-            + (S.scanStats && S.scanStats.timedOut ? ' · 掃描逾時未跑完' : '')
+                ? loc('dash.depthCutScanAt', ' · depth 中止掃描 {n} 處', { n: S.scanStats.depthCuts }) : '')
+            + (S.scanStats && S.scanStats.timedOut ? loc('dash.scanTimedOut', ' · 掃描逾時未跑完') : '')
             + (!(route.view === 'list' && f.project) && totalUnreadable
-                ? ' · ' + totalUnreadable + ' 個 session 檔案讀不到' : '')
-            + (S.serve ? ' · 每 3 秒重讀一次，最後一次 ' + clockSec(polledAt) : '');
+                ? loc('dash.nSessionFilesUnreadable', ' · {n} 個 session 檔案讀不到', { n: totalUnreadable }) : '')
+            + (S.serve ? loc('dash.rereadEvery3s', ' · 每 3 秒重讀一次，最後一次 {t}', { t: clockSec(polledAt) }) : '');
     }
     // ---- the detail panel ----------------------------------------------
     // One session's detail is a script of its own, `station/detail/<id>.js`,
@@ -3140,17 +3159,17 @@
     }
     function detailNote(s) {
         return '<p class="tally">' + (!s.hasDetail
-            ? '這台機器的 config dir 裡沒有這個 session 的 transcript，所以沒有 context、階段順序、派工與過程還原'
-            : asked[s.id] === 'failed' ? '細節檔讀不到：station/detail/' + esc(s.id) + '.js'
-                : '讀取細節…') + '</p>';
+            ? loc('det.noTranscriptOnMachine', '這台機器的 config dir 裡沒有這個 session 的 transcript，所以沒有 context、階段順序、派工與過程還原')
+            : asked[s.id] === 'failed' ? loc('det.detailFileUnreadable', '細節檔讀不到：station/detail/{id}.js', { id: esc(s.id) })
+                : loc('det.loadingDetail', '讀取細節…')) + '</p>';
     }
     function detailSections(s, x, open) {
-        return sec('s-ctx', 'context', tokens(x.peak) + ' 峰值 · ' + x.requests + ' requests', ctxSection(s, x), open)
-            + sec('s-order', '階段順序', x.seq.length + ' 步 · 倒退 ' + x.backtracks, orderSection(s, x), open)
-            + sec('s-split', '分工', splitCount(x), splitHtml(x), open)
-            + sec('s-tasks', '任務', taskCount(x.tasks), tasksHtml(x.tasks), open)
-            + sec('s-disp', '派工', x.rows.length + ' 個 agent · ' + cents(x.agentCents), dispatchHtml(x, s, dispatchUi(s)), open)
-            + sec('s-rp', '過程還原', x.events.length + ' 列', replayHtml(x, view.kinds, s), open);
+        return sec('s-ctx', 'context', loc('det.peakNRequests', '{peak} 峰值 · {n} requests', { peak: tokens(x.peak), n: x.requests }), ctxSection(s, x), open)
+            + sec('s-order', loc('det.stageOrder', '階段順序'), loc('det.stepsBacktracks', '{n} 步 · 倒退 {b}', { n: x.seq.length, b: x.backtracks }), orderSection(s, x), open)
+            + sec('s-split', loc('det.split', '分工'), splitCount(x), splitHtml(x), open)
+            + sec('s-tasks', loc('det.tasks', '任務'), taskCount(x.tasks), tasksHtml(x.tasks), open)
+            + sec('s-disp', loc('det.dispatch', '派工'), loc('det.nAgentsCents', '{n} 個 agent · {c}', { n: x.rows.length, c: cents(x.agentCents) }), dispatchHtml(x, s, dispatchUi(s)), open)
+            + sec('s-rp', loc('det.replay', '過程還原'), loc('det.nRows', '{n} 列', { n: x.events.length }), replayHtml(x, view.kinds, s), open);
     }
 
     // Which sections start open. A live session is watched for who is in which
@@ -3167,7 +3186,7 @@
     // names no writer, so none of it lights a clash. Nothing for none.
     function seenHtml(seen) {
         if (!seen || !seen.length) return '';
-        return '<p class="mute" style="font-size:12px">seen（弱：git 看到，沒有經過 hook）</p>'
+        return '<p class="mute" style="font-size:12px">' + loc('det.seenWeak', 'seen（弱：git 看到，沒有經過 hook）') + '</p>'
             + '<div class="claims">' + seen.map(function (p) {
                 return '<div title="' + esc(p) + '">' + esc(p) + '</div>';
             }).join('') + '</div>';
@@ -3238,7 +3257,7 @@
                 + (Number(Y(r.y1)) + 3) + '" text-anchor="middle">' + (i + 1) + '</text></g>';
         });
         pts.forEach(function (p) {
-            out += '<circle class="hit" r="4" cx="' + X(p.t) + '" cy="' + Y(p.y) + '"><title>回合 ' + p.n + ' · '
+            out += '<circle class="hit" r="4" cx="' + X(p.t) + '" cy="' + Y(p.y) + '"><title>' + loc('det.turnN', '回合 {n}', { n: p.n }) + ' · '
                 + stamp(p.t) + ' · ' + comma(p.y) + ' tokens</title></circle>';
         });
         out += '<text class="axis" x="' + L + '" y="' + (H - 4) + '">' + (o.elapsed ? '0m' : stamp(t0).slice(11)) + '</text>'
@@ -3247,17 +3266,17 @@
         return out + '</svg>';
     }
     function riseText(r) {
-        if (r.cause === 'self') return r.self.label + '，輸出 ' + comma(r.self.tok) + ' tokens';
-        var top = r.top.map(function (x) { return x.label + ' ' + comma(x.chars) + ' 字元'; });
-        return (top.join('；') || '沒有記到進來的輸出')
-            + (r.restN ? '；另 ' + r.restN + ' 項 ' + comma(r.restChars) + ' 字元' : '');
+        if (r.cause === 'self') return loc('det.selfOutputTokens', '{l}，輸出 {t} tokens', { l: r.self.label, t: comma(r.self.tok) });
+        var top = r.top.map(function (x) { return loc('det.labelNChars', '{l} {n} 字元', { l: x.label, n: comma(x.chars) }); });
+        return (top.join(loc('det.semicolon', '；')) || loc('det.noIncomingOutput', '沒有記到進來的輸出'))
+            + (r.restN ? loc('det.andNMoreChars', '；另 {n} 項 {c} 字元', { n: r.restN, c: comma(r.restChars) }) : '');
     }
     function risesList(s, x) {
-        if (!x.rises.length) return '<p class="tally">沒有上升</p>';
-        return '<ol class="rz" aria-label="最大的五次上升">' + x.rises.map(function (r, i) {
+        if (!x.rises.length) return '<p class="tally">' + loc('det.noRises', '沒有上升') + '</p>';
+        return '<ol class="rz" aria-label="' + loc('det.top5Rises', '最大的五次上升') + '">' + x.rises.map(function (r, i) {
             return '<li><span class="rzn">' + (i + 1) + '</span><div><div class="rzh"><span class="d">+' + tokens(r.dy)
-                + '</span><span class="w">回合 ' + r.from + '→' + r.n + (isFinite(r.t) ? ' · ' + stamp(r.t).slice(11) : '')
-                + '</span><span class="w">' + (r.cause === 'self' ? '模型自己的輸出' : '進來 ' + comma(r.inChars) + ' 字元')
+                + '</span><span class="w">' + loc('det.turnFromTo', '回合 {from}→{to}', { from: r.from, to: r.n }) + (isFinite(r.t) ? ' · ' + stamp(r.t).slice(11) : '')
+                + '</span><span class="w">' + (r.cause === 'self' ? loc('det.modelsOwnOutput', '模型自己的輸出') : loc('det.incomingNChars', '進來 {n} 字元', { n: comma(r.inChars) }))
                 + '</span></div><div class="rzm">' + esc(riseText(r)) + '</div>'
                 + todoSpot(riseTodo(s.id, r), r.cause === 'self' ? 'skills/fankeel/SKILL.md' : 'docs/90-agent/reference/station.md', s)
                 + '</div></li>';
@@ -3270,22 +3289,22 @@
         var step = niceStep(x.peak || 1);
         var dots = [];
         x.dispatches.forEach(function (d) {
-            dots.push({ t: d.out, kind: 'out', text: '派出 · ' + d.text });
-            if (isFinite(d.back)) dots.push({ t: d.back, kind: 'back', text: '回來 · ' + d.text });
+            dots.push({ t: d.out, kind: 'out', text: loc('det.dispatchedColon', '派出 · {t}', { t: d.text }) });
+            if (isFinite(d.back)) dots.push({ t: d.back, kind: 'back', text: loc('det.returnedColon', '回來 · {t}', { t: d.text }) });
         });
         var same = P.length + x.noTime === x.requests;
-        return '<div class="srcline">summarise() 的 byRequest：每個 request 的 input ＋ cache read ＋ cache write</div>'
+        return '<div class="srcline">' + loc('det.summariseByRequest', 'summarise() 的 byRequest：每個 request 的 input ＋ cache read ＋ cache write') + '</div>'
             + (P.length && !bare ? '<div class="cx">' + lineChart(P, {
                 W: 340, H: 170, t0: P[0].t, t1: P[P.length - 1].t, ymax: Math.ceil((x.peak || 1) / step) * step,
                 marks: x.marks, dots: dots, rises: x.rises,
-                label: String(s.id).slice(0, 8) + ' 的 context，' + P.length + ' 點，峰值 ' + tokens(x.peak),
+                label: loc('det.idContextNPointsPeak', '{id} 的 context，{n} 點，峰值 {peak}', { id: String(s.id).slice(0, 8), n: P.length, peak: tokens(x.peak) }),
             }) + '</div>' : '')
             + (bare ? '' : '<div class="key" aria-hidden="true"><span><i class="kl"></i>context / request</span>'
-                + '<span><i class="ko"></i>派出</span><span><i class="kb"></i>回來</span><span><i class="ks"></i>階段</span></div>')
-            + '<p class="tally">折線 <b>' + P.length + ' 點</b>' + (x.noTime ? ' ＋ ' + x.noTime + ' requests with no time' : '')
-            + ' ＝ 摘要的 ' + x.requests + ' requests <span class="' + (same ? 'eq' : 'ne') + '">' + (same ? '一致' : '不一致')
-            + '</span>' + (P.length > 240 ? ' · 超過 240 點，降取樣並保留峰值' : '')
-            + ' · 峰值 ' + tokens(x.peak) + (x.peakN ? '（回合 ' + x.peakN + '）' : '') + '</p>'
+                + '<span><i class="ko"></i>' + loc('det.dispatched', '派出') + '</span><span><i class="kb"></i>' + loc('det.returned', '回來') + '</span><span><i class="ks"></i>' + loc('det.stage', '階段') + '</span></div>')
+            + '<p class="tally">' + loc('det.lineBPoints', '折線 <b>{n} 點</b>', { n: P.length }) + (x.noTime ? loc('det.plusNRequestsNoTime', ' ＋ {n} requests with no time', { n: x.noTime }) : '')
+            + loc('det.equalsSummaryRequests', ' ＝ 摘要的 {n} requests', { n: x.requests }) + ' <span class="' + (same ? 'eq' : 'ne') + '">' + (same ? loc('det.consistent', '一致') : loc('det.inconsistent', '不一致'))
+            + '</span>' + (P.length > 240 ? loc('det.downsampledOver240', ' · 超過 240 點，降取樣並保留峰值') : '')
+            + loc('det.peakColon', ' · 峰值 {v}', { v: tokens(x.peak) }) + (x.peakN ? loc('det.turnParen', '（回合 {n}）', { n: x.peakN }) : '') + '</p>'
             + risesList(s, x);
     }
     function seqHtml(seq, backs, route, stage, active) {
@@ -3295,7 +3314,7 @@
             var b = bk[i];
             return (i ? '<span class="ar' + (b ? ' bk' : '') + '" aria-hidden="true">' + (b ? '↩' : '→') + '</span>' : '')
                 + '<span class="s' + (b ? ' bk' : '') + (m.source !== 'cmd' ? ' fb' : '') + '" role="listitem" title="'
-                + esc(m.stage + ' · ' + stamp(m.at) + ' · ' + (m.source === 'cmd' ? 'task.js 指令' : m.source)) + '">'
+                + esc(m.stage + ' · ' + stamp(m.at) + ' · ' + (m.source === 'cmd' ? loc('det.taskJsCommand', 'task.js 指令') : m.source)) + '">'
                 + '<span class="i">' + (i + 1) + '</span><i class="dot" style="background:' + (STAGE_C[m.stage] || '#888')
                 + '"></i>' + esc(m.stage) + '</span>';
         }).join('');
@@ -3304,21 +3323,21 @@
                 out += '<span class="ar" aria-hidden="true">→</span><span class="s todo" role="listitem">' + esc(n) + '</span>';
             });
         }
-        return '<div class="seq" role="list" aria-label="階段移動次序">' + out + '</div>';
+        return '<div class="seq" role="list" aria-label="' + loc('det.stageOrderLabel', '階段移動次序') + '">' + out + '</div>';
     }
     function backBlock(s, b) {
         return '<div class="bkl"><div class="hd2"><span class="ar">↩</span> ' + esc(b.from) + ' → ' + esc(b.to) + ' <span class="mono">'
-            + stamp(b.at) + ' · ' + esc(b.from) + ' 待了 ' + mins(b.at - b.since) + '</span></div>'
-            + '<a class="lk" tabindex="0" data-goto="' + b.since + '" data-until="' + b.at + '">過程還原裡它前面那幾列 ↓</a>'
+            + stamp(b.at) + ' · ' + loc('det.stayedFor', '{stage} 待了 {t}', { stage: esc(b.from), t: mins(b.at - b.since) }) + '</span></div>'
+            + '<a class="lk" tabindex="0" data-goto="' + b.since + '" data-until="' + b.at + '">' + loc('det.rowsAboveInReplay', '過程還原裡它前面那幾列 ↓') + '</a>'
             + todoSpot(backTodo(s.id, b), 'skills/fankeel-build/SKILL.md', s)
             + '</div>';
     }
     function orderSection(s, x) {
         return seqHtml(x.seq, x.backs, s.route, s.stage, s.state === 'live')
             + x.backs.map(function (b) { return backBlock(s, b); }).join('')
-            + '<p class="tally">次序取 ' + (x.seqSource === 'task.js' ? 'transcript 裡真正執行的 task.js 指令'
-                : x.seqSource === 'moves' ? 'moves（transcript 裡沒有 task.js 指令）'
-                    : 'clock（沒有指令也沒有 moves，看不出回頭）') + '；倒退 ' + x.backtracks + ' 次</p>';
+            + '<p class="tally">' + loc('det.orderTakenFrom', '次序取 {src}；倒退 {n} 次', { src: x.seqSource === 'task.js' ? loc('det.realTaskJsCommands', 'transcript 裡真正執行的 task.js 指令')
+                : x.seqSource === 'moves' ? loc('det.movesNoCommands', 'moves（transcript 裡沒有 task.js 指令）')
+                    : loc('det.clockNoMoves', 'clock（沒有指令也沒有 moves，看不出回頭）'), n: x.backtracks }) + '</p>';
     }
     // 分工: a short prose account of how the main loop divided dispatch, one
     // line per stage in the order `seq` first entered it. A dispatch's stage
@@ -3332,12 +3351,12 @@
     }
     function splitCount(x) {
         var turns = sumLoops(x.loops).turns;
-        return (x.loops && x.loops.length ? '主迴圈 ' + turns + ' 回合 · ' : '') + '派工 ' + (x.dispatches || []).length + ' 次';
+        return (x.loops && x.loops.length ? loc('det.mainLoopNTurns', '主迴圈 {n} 回合 · ', { n: turns }) : '') + loc('det.dispatchNTimes', '派工 {n} 次', { n: (x.dispatches || []).length });
     }
     function splitHtml(x) {
         var order = [], by = {};
         var row = function (st) {
-            var k = st || 'task 開始前';
+            var k = st || loc('det.beforeTaskStart', 'task 開始前');
             if (!by[k]) { by[k] = { stage: k, turns: 0, single: 0, early: 0, multi: {}, wf: 0, wfN: 0, models: {} }; order.push(k); }
             return by[k];
         };
@@ -3362,36 +3381,36 @@
             .filter(function (r) { return r.turns || r.single || Object.keys(r.multi).length || r.wf; })
             .map(function (r) {
                 var parts = [];
-                if (r.wf) parts.push('Workflow ' + r.wf + ' 次（' + r.wfN + ' 個 agent）');
+                if (r.wf) parts.push(loc('det.workflowNTimesNAgents', 'Workflow {n} 次（{k} 個 agent）', { n: r.wf, k: r.wfN }));
                 var multiKeys = Object.keys(r.multi);
                 if (multiKeys.length) {
                     var multiTotal = multiKeys.reduce(function (a, t) { return a + r.multi[t]; }, 0);
-                    parts.push('同一回應並發 ' + multiKeys.length + ' 回（共 ' + multiTotal + ' 個）');
+                    parts.push(loc('det.concurrentInOneResponse', '同一回應並發 {n} 回（共 {t} 個）', { n: multiKeys.length, t: multiTotal }));
                 }
                 if (r.single) {
-                    parts.push('單發 ' + r.single + ' 次' + (r.single > 1 ? '，各佔一個回合' : '')
-                        + (r.early ? '，其中 ' + r.early + ' 次在前一次回來前就派出，本可一次發出' : ''));
+                    parts.push(loc('det.singleNTimes', '單發 {n} 次', { n: r.single }) + (r.single > 1 ? loc('det.eachOneTurn', '，各佔一個回合') : '')
+                        + (r.early ? loc('det.nCouldHaveBeenOneCall', '，其中 {n} 次在前一次回來前就派出，本可一次發出', { n: r.early }) : ''));
                 }
-                var models = Object.keys(r.models).map(function (m) { return m + ' ×' + r.models[m]; }).join('、');
-                return esc(r.stage) + ' — ' + (hasLoops ? '主迴圈 ' + r.turns + ' 回合；' : '')
-                    + (parts.length ? '派工：' + parts.join('、') + (models ? '；' + models : '') : '沒有派工');
+                var models = Object.keys(r.models).map(function (m) { return m + ' ×' + r.models[m]; }).join(loc('det.listSep', '、'));
+                return esc(r.stage) + ' — ' + (hasLoops ? loc('det.mainLoopNTurnsSemi', '主迴圈 {n} 回合；', { n: r.turns }) : '')
+                    + (parts.length ? loc('det.dispatchColon', '派工：{p}', { p: parts.join(loc('det.listSep', '、')) }) + (models ? loc('det.semicolon', '；') + models : '') : loc('det.noDispatch', '沒有派工'));
             });
-        if (!hasLoops) lines.push('這份快取沒有逐站回合數（寫於 loops 欄位出現之前）');
+        if (!hasLoops) lines.push(loc('det.cacheHasNoPerStageTurns', '這份快取沒有逐站回合數（寫於 loops 欄位出現之前）'));
         (x.tasks || []).forEach(function (p) {
             var hinted = p.groups.filter(function (g) { return g.hint; });
             var none = p.groups.filter(function (g) { return !g.turns.length; });
             var one = p.groups.length - hinted.length - none.length;
             var bits = [];
-            if (one) bits.push(one + ' 組各在一個回合內派出');
-            if (none.length) bits.push(none.length + ' 組沒有派工紀錄');
+            if (one) bits.push(loc('det.nGroupsOneTurn', '{n} 組各在一個回合內派出', { n: one }));
+            if (none.length) bits.push(loc('det.nGroupsNoDispatch', '{n} 組沒有派工紀錄', { n: none.length }));
             if (hinted.length) {
-                bits.push(hinted.length + ' 組本可一次發出：' + hinted.map(function (g) {
-                    return 'G' + g.g + '（task ' + g.tasks.join('、') + '，分 ' + g.turns.length + ' 個回合）';
-                }).join('、'));
+                bits.push(loc('det.nGroupsCouldBeOne', '{n} 組本可一次發出：', { n: hinted.length }) + hinted.map(function (g) {
+                    return loc('det.gTaskTurns', 'G{g}（task {tasks}，分 {n} 個回合）', { g: g.g, tasks: g.tasks.join(loc('det.listSep', '、')), n: g.turns.length });
+                }).join(loc('det.listSep', '、')));
             }
-            lines.push('plan ' + esc(String(p.plan).split('/').pop()) + '：' + p.tasks.length + ' 個 task 分 ' + p.groups.length + ' 組；' + bits.join('、'));
+            lines.push(loc('det.planTasksGroups', 'plan {p}：{n} 個 task 分 {g} 組；{bits}', { p: esc(String(p.plan).split('/').pop()), n: p.tasks.length, g: p.groups.length, bits: bits.join(loc('det.listSep', '、')) }));
         });
-        if (!(x.tasks || []).length && (x.dispatches || []).length > 1) lines.push('這頁沒有任務表：其餘派工是否互不相依，無從判斷');
+        if (!(x.tasks || []).length && (x.dispatches || []).length > 1) lines.push(loc('det.noTaskTableCannotTell', '這頁沒有任務表：其餘派工是否互不相依，無從判斷'));
         return lines.map(function (l) { return '<p class="tally">' + l + '</p>'; }).join('');
     }
     function cents(c) { return '$' + ((c || 0) / 100).toFixed(2); }
@@ -3403,41 +3422,40 @@
         return Math.floor(m / 60) + 'h' + (m % 60 < 10 ? '0' : '') + (m % 60) + 'm';
     }
     function taskCount(list) {
-        if (!list || !list.length) return '沒有 plan';
+        if (!list || !list.length) return loc('det.noPlan', '沒有 plan');
         var n = 0, g = 0;
         list.forEach(function (p) { n += p.tasks.length; g += p.groups.length; });
-        return n + ' 個 · ' + g + ' 組';
+        return loc('det.nTasksGGroups', '{n} 個 · {g} 組', { n: n, g: g });
     }
     // One band per group `plantasks` would dispatch together, its tasks under
     // it, and the hint where one group went out over more than one turn.
     function tasksHtml(list) {
-        if (!list || !list.length) return '<p class="tally">這個 session 的 claims 裡沒有 plan 檔，沒有任務表</p>';
+        if (!list || !list.length) return '<p class="tally">' + loc('det.noPlanFileNoTaskTable', '這個 session 的 claims 裡沒有 plan 檔，沒有任務表') + '</p>';
         return list.map(function (p) {
             var byN = {};
             p.tasks.forEach(function (t) { byN[t.n] = t; });
             var done = p.tasks.filter(function (t) { return t.status === 'complete'; }).length;
             return '<div class="srcline" title="' + esc(p.plan) + '">' + esc(p.plan) + '</div>'
                 + '<table class="x"><colgroup><col style="width:30px"><col><col style="width:96px"></colgroup>'
-                + '<thead><tr><th>#</th><th>任務</th><th>狀態</th></tr></thead><tbody>'
+                + '<thead><tr><th>#</th><th>' + loc('det.task', '任務') + '</th><th>' + loc('det.state', '狀態') + '</th></tr></thead><tbody>'
                 + p.groups.map(function (g) {
                     return '<tr class="band"><td colspan="3"><div class="bandrow"><span class="gb">G' + g.g + '</span>'
-                        + '<span>Task ' + g.tasks.join('、') + ' · 建議 <span class="mono">' + esc(g.surface) + '</span></span>'
-                        + '<span class="rt">' + (g.turns.length ? '回合 ' + g.turns.join(' · ') : '沒有派工') + '</span></div>'
-                        + (g.hint ? '<div class="hint">could have gone in one response<span class="why">同組，分 '
-                            + g.turns.length + ' 個回合派出</span></div>' : '') + '</td></tr>'
+                        + '<span>Task ' + g.tasks.join(loc('det.listSep', '、')) + ' · ' + loc('det.suggested', '建議') + ' <span class="mono">' + esc(g.surface) + '</span></span>'
+                        + '<span class="rt">' + (g.turns.length ? loc('det.turnColon', '回合 {t}', { t: g.turns.join(' · ') }) : loc('det.noDispatch', '沒有派工')) + '</span></div>'
+                        + (g.hint ? '<div class="hint">could have gone in one response<span class="why">' + loc('det.sameGroupSplitTurns', '同組，分 {n} 個回合派出', { n: g.turns.length }) + '</span></div>' : '') + '</td></tr>'
                         + g.tasks.map(function (n) {
                             var t = byN[n];
                             return '<tr><td class="num mute">' + n + '</td><td><div>' + esc(t ? t.title : '') + '</div>'
-                                + '<div class="l2">' + (t && t.range ? esc(t.range) : '出自 plan 的 task 清單')
-                                + (t && t.turns.length ? ' · 回合 ' + t.turns.join(' · ') : '') + '</div></td>'
+                                + '<div class="l2">' + (t && t.range ? esc(t.range) : loc('det.fromPlanTaskList', '出自 plan 的 task 清單'))
+                                + (t && t.turns.length ? loc('det.dotTurnColon', ' · 回合 {t}', { t: t.turns.join(' · ') }) : '') + '</div></td>'
                                 + '<td><span class="pill sm ' + (t && t.status === 'complete' ? 'ok' : 'pend') + '">'
                                 + esc(t ? t.status : 'no ledger line') + '</span></td></tr>';
                         }).join('');
                 }).join('') + '</tbody></table>'
-                + '<p class="tally">標為完成的 <b>' + done + ' 列</b> <span class="' + (done === p.ledgerLines ? 'eq">＝' : 'ne">≠')
-                + '</span> ledger 的 Task 行 ' + p.ledgerLines
-                + (p.unmatched.length ? '；label 裡沒有 task N 的派工 ' + p.unmatched.length + ' 個，不猜：'
-                    + p.unmatched.map(esc).join('、') : '') + '</p>';
+                + '<p class="tally">' + loc('det.markedDoneRows', '標為完成的 <b>{n} 列</b>', { n: done }) + ' <span class="' + (done === p.ledgerLines ? 'eq">' + loc('det.equalsSign', '＝') : 'ne">' + loc('det.notEqualsSign', '≠'))
+                + '</span> ' + loc('det.ledgerTaskLines', 'ledger 的 Task 行 {n}', { n: p.ledgerLines })
+                + (p.unmatched.length ? loc('det.unmatchedDispatches', '；label 裡沒有 task N 的派工 {n} 個，不猜：', { n: p.unmatched.length })
+                    + p.unmatched.map(esc).join(loc('det.listSep', '、')) : '') + '</p>';
         }).join('');
     }
     // Every column below is the sum of the rows under it: each row's cents,
@@ -3455,7 +3473,7 @@
     }
     function numCells(t, unpriced, time) {
         return '<td class="r">' + (time || dur(t.s)) + '</td><td class="r">' + comma(t.k) + 'k</td><td class="r"'
-            + (unpriced ? ' title="價目表不認得：' + esc(unpriced) + '"' : '') + '>'
+            + (unpriced ? ' title="' + loc('det.priceListDoesNotKnow', '價目表不認得：{u}', { u: esc(unpriced) }) + '"' : '') + '>'
             + (unpriced && !t.c ? 'unpriced' : cents(t.c)) + '</td>'
             + '<td class="r">' + tokens(t.ti || 0) + '</td><td class="r">$' + (t.ci || 0).toFixed(2) + '</td>'
             + '<td class="r">' + tokens(t.to || 0) + '</td><td class="r">$' + (t.co || 0).toFixed(2) + '</td>';
@@ -3481,8 +3499,8 @@
         return c.c || c.n || '';
     }
     function stepLabel(k, w) {
-        if (k === 'edit' && w) return '寫';
-        return { read: '讀', edit: '改', cmd: '指令', find: '搜', other: '其他' }[k] || k;
+        if (k === 'edit' && w) return loc('disp.write', '寫');
+        return { read: loc('disp.read', '讀'), edit: loc('disp.editShort', '改'), cmd: loc('disp.command', '指令'), find: loc('disp.find', '搜'), other: loc('disp.other', '其他') }[k] || k;
     }
     // One step; `mode` is `cur` for the step in progress and `stop` for the one a
     // lost agent never finished, and `tail` goes after it.
@@ -3492,8 +3510,8 @@
             + (!mode && y.r ? '<div class="rl">' + esc(y.r) + '</div>' : '') + '</div>' + (tail || '') + '</li>';
     }
     function agentPill(st) {
-        var title = st === 'running' ? 'running：還沒回來，它的 transcript 還在長'
-            : st === 'done' ? 'done：已經結束' : 'lost：它還沒結束，跑它的 session 就停了';
+        var title = st === 'running' ? loc('disp.runningHint', 'running：還沒回來，它的 transcript 還在長')
+            : st === 'done' ? loc('disp.doneHint', 'done：已經結束') : loc('disp.lostHint', 'lost：它還沒結束，跑它的 session 就停了');
         return '<span class="pill sm ' + st + '" title="' + title + '"><i class="dot '
             + (st === 'running' ? 'live' : st === 'done' ? 'down' : 'lost') + '"></i>' + st + '</span>';
     }
@@ -3516,11 +3534,11 @@
         if (!cur || (st !== 'running' && st !== 'lost')) return '';
         var what = esc(toolText(cur));
         if (st === 'running') {
-            return '<div class="nowl"><span class="k">正在</span><span class="c" title="' + what + '">' + what + '</span>'
+            return '<div class="nowl"><span class="k">' + loc('disp.doingNow', '正在') + '</span><span class="c" title="' + what + '">' + what + '</span>'
                 + (isNum(cur.t) ? '<span class="e">' + tk(-cur.t / 1000, 1, u.live, u.now / 1000) + '</span>' : '') + '</div>';
         }
-        return '<div class="nowl lost"><span class="k">停在</span><span class="c" title="' + what + '">' + what + '</span>'
-            + (isNum(cur.t) && isNum(steps.lastAt) ? '<span class="e">跑了 ' + dur(Math.round((steps.lastAt - cur.t) / 1000)) + '</span>' : '') + '</div>';
+        return '<div class="nowl lost"><span class="k">' + loc('disp.stoppedAt', '停在') + '</span><span class="c" title="' + what + '">' + what + '</span>'
+            + (isNum(cur.t) && isNum(steps.lastAt) ? '<span class="e">' + loc('disp.ranFor', '跑了 {t}', { t: dur(Math.round((steps.lastAt - cur.t) / 1000)) }) + '</span>' : '') + '</div>';
     }
     // The running and lost counts, for the session header's 派工 readout.
     function agentCounts(x, s) {
@@ -3530,14 +3548,14 @@
             if (st === 'running') run += 1;
             else if (st === 'lost') lost += 1;
         });
-        return (run ? '<span class="runn"><i class="dot live"></i>' + run + ' running</span> · ' : '') + (lost ? lost + ' lost · ' : '');
+        return (run ? '<span class="runn"><i class="dot live"></i>' + run + ' running</span> · ' : '') + (lost ? loc('disp.nLost', '{n} lost · ', { n: lost }) : '');
     }
     function agentRow(r, cls, attr, x, s, u) {
         var st = agentState(x, r, s), steps = x && x.steps ? x.steps[r.id] : null, open = !!u.open[r.id];
         var time = st === 'running' && isNum(r.from) ? tk(-r.from / 1000, 1, u.live, u.now / 1000) : null;
         return '<tr class="' + cls + ' is-' + st + '"' + (attr || '') + '><td><div class="stc">' + agentPill(st) + '<div class="bd">'
             + '<button type="button" class="axt" data-ag="' + esc(r.id) + '" data-key="ag-' + esc(r.id) + '" aria-expanded="' + open + '"'
-            + ' title="' + (open ? '收起' : '展開') + ' prompt 與步驟"><span class="lab">' + esc(r.label || r.id) + '</span></button>'
+            + ' title="' + loc('disp.openPromptSteps', '{v} prompt 與步驟', { v: open ? loc('disp.collapse', '收起') : loc('disp.expand', '展開') }) + '"><span class="lab">' + esc(r.label || r.id) + '</span></button>'
             + '<div class="l2">' + esc(modelOf(r)) + '</div>' + nowLine(st, steps, u) + '</div></div></td>'
             + numCells(sums([r]), (r.unpriced || []).join(', '), time) + '<td class="r rc"></td></tr>'
             + (open ? agentBody(r, cls, x, st, steps, u) : '');
@@ -3558,43 +3576,43 @@
         var lastP = -1;
         list.forEach(function (y, i) { if (y.p) lastP = i; });
         var n = list.length + (steps ? steps.droppedN || 0 : 0);
-        var note = steps && steps.droppedN ? '<p class="stn">上限 40 步，另有 ' + steps.droppedN + ' 步沒列出（'
-            + Object.keys(steps.dropped || {}).map(function (k) { return stepLabel(k) + ' ' + steps.dropped[k]; }).join('、') + '）'
-            + (cur && st === 'running' ? '；進行中的步驟不算在上限裡，永遠留在最後' : '') + '</p>' : '';
+        var note = steps && steps.droppedN ? '<p class="stn">' + loc('disp.capNStepsNotListed', '上限 40 步，另有 {n} 步沒列出（', { n: steps.droppedN })
+            + Object.keys(steps.dropped || {}).map(function (k) { return stepLabel(k) + ' ' + steps.dropped[k]; }).join(loc('disp.listSep', '、')) + loc('disp.closeParen', '）')
+            + (cur && st === 'running' ? loc('disp.inProgressNotCounted', '；進行中的步驟不算在上限裡，永遠留在最後') : '') + '</p>' : '';
         var end = st === 'lost' && steps && isNum(steps.lastAt) ? steps.lastAt : r.to;
-        var ran = st === 'running' ? '已跑 <b>' + tk(-r.from / 1000, 1, u.live, u.now / 1000) + '</b>'
-            : '跑了 <b>' + (isNum(end) ? dur(Math.round((end - r.from) / 1000)) : '—') + '</b>';
+        var ran = st === 'running' ? loc('disp.ranSoFarB', '已跑 <b>{t}</b>', { t: tk(-r.from / 1000, 1, u.live, u.now / 1000) })
+            : loc('disp.ranForB', '跑了 <b>{t}</b>', { t: isNum(end) ? dur(Math.round((end - r.from) / 1000)) : '—' });
         var prompt = steps && typeof steps.prompt === 'string'
-            ? '<div class="prm' + (popen ? ' open' : '') + '"><div class="axl">prompt <span class="n">' + comma(steps.promptLen || steps.prompt.length) + ' 字元'
-                + (steps.promptLen > steps.prompt.length ? '，存了前 ' + comma(steps.prompt.length) : '') + '</span>'
+            ? '<div class="prm' + (popen ? ' open' : '') + '"><div class="axl">prompt <span class="n">' + loc('disp.nChars', '{n} 字元', { n: comma(steps.promptLen || steps.prompt.length) })
+                + (steps.promptLen > steps.prompt.length ? loc('disp.savedFirstN', '，存了前 {n}', { n: comma(steps.prompt.length) }) : '') + '</span>'
                 + '<button type="button" class="lkb" data-prm="' + esc(r.id) + '" data-key="prm-' + esc(r.id) + '" aria-expanded="' + popen + '">'
-                + (popen ? '收起' : '展開全部') + '</button></div><pre>' + esc(steps.prompt) + '</pre></div>'
-            : '<div class="prm"><div class="axl">prompt <span class="n">transcript 裡沒有</span></div></div>';
+                + (popen ? loc('disp.collapse', '收起') : loc('disp.expandAll', '展開全部')) + '</button></div><pre>' + esc(steps.prompt) + '</pre></div>'
+            : '<div class="prm"><div class="axl">prompt <span class="n">' + loc('disp.notInTranscript', 'transcript 裡沒有') + '</span></div></div>';
         var foot;
-        if (st === 'running') foot = '<div class="retl">還沒回來。回來後，這裡寫它回傳了多少字元。</div>';
-        else if (st === 'lost') foot = '<div class="retl lost">沒有回傳：它還沒結束，跑它的 session 就停了，結果沒有進主 context。</div>';
-        else if (!d) foot = '<div class="retl">沒有對上派工，不知道它回傳了多少。</div>';
+        if (st === 'running') foot = '<div class="retl">' + loc('disp.notBackYet', '還沒回來。回來後，這裡寫它回傳了多少字元。') + '</div>';
+        else if (st === 'lost') foot = '<div class="retl lost">' + loc('disp.noReturnLost', '沒有回傳：它還沒結束，跑它的 session 就停了，結果沒有進主 context。') + '</div>';
+        else if (!d) foot = '<div class="retl">' + loc('disp.noMatchingDispatch', '沒有對上派工，不知道它回傳了多少。') + '</div>';
         else if (d.surface === 'workflow') {
-            foot = '<div class="retl">' + (steps && isNum(steps.lastAt) ? clockSec(steps.lastAt) + ' ' : '') + '結束。它的結果併在 workflow 的回報裡'
-                + (isNum(d.back) && d.ret !== null && d.ret !== undefined ? '；workflow 回傳 <b>' + comma(d.ret) + '</b> 字元進主 context'
-                    : '；workflow 還沒回來，還沒有回傳字元') + '。</div>';
+            foot = '<div class="retl">' + (steps && isNum(steps.lastAt) ? clockSec(steps.lastAt) + ' ' : '') + loc('disp.endedMergedIntoWorkflow', '結束。它的結果併在 workflow 的回報裡')
+                + (isNum(d.back) && d.ret !== null && d.ret !== undefined ? loc('disp.workflowReturnedChars', '；workflow 回傳 <b>{n}</b> 字元進主 context。', { n: comma(d.ret) })
+                    : loc('disp.workflowNotBackYet', '；workflow 還沒回來，還沒有回傳字元。')) + '</div>';
         } else if (isNum(d.back) && d.ret !== null && d.ret !== undefined) {
-            foot = '<div class="retl">' + clockSec(d.back) + ' 回來，回傳 <b>' + comma(d.ret) + '</b> 字元進主 context</div>';
-        } else foot = '<div class="retl">已經結束，回報還沒進主 context。</div>';
+            foot = '<div class="retl">' + loc('disp.backAtReturnedChars', '{t} 回來，回傳 <b>{n}</b> 字元進主 context', { t: clockSec(d.back), n: comma(d.ret) }) + '</div>';
+        } else foot = '<div class="retl">' + loc('disp.endedReportNotIn', '已經結束，回報還沒進主 context。') + '</div>';
         return '<tr class="ax ' + cls + ' is-' + st + '"><td colspan="9"><div class="axw">'
-            + '<div class="axh">' + (isNum(r.from) ? '<span>派出 <b>' + clockSec(r.from) + '</b></span><span>' + ran + '</span>' : '')
-            + '<span><b>' + n + '</b> 步</span><span>' + esc(modelOf(r)) + '</span></div>'
+            + '<div class="axh">' + (isNum(r.from) ? '<span>' + loc('disp.dispatchedAt', '派出 <b>{t}</b>', { t: clockSec(r.from) }) + '</span><span>' + ran + '</span>' : '')
+            + '<span><b>' + n + '</b> ' + loc('disp.steps', '步') + '</span><span>' + esc(modelOf(r)) + '</span></div>'
             + prompt
-            + '<div><div class="axl">步驟 <span class="n">照順序，最新在下</span></div><ul class="stp">'
+            + '<div><div class="axl">' + loc('disp.stepsLabel', '步驟') + ' <span class="n">' + loc('disp.inOrderNewestBelow', '照順序，最新在下') + '</span></div><ul class="stp">'
             + list.map(function (y, i) {
                 if (!y.p) return stepLi(y);
                 var mode = st === 'lost' ? 'stop' : 'cur';
                 var tail = st === 'running'
-                    ? '<span class="pg"><i class="dot live"></i>進行中' + (i === lastP && isNum(cur && cur.t)
+                    ? '<span class="pg"><i class="dot live"></i>' + loc('disp.inProgress', '進行中') + (i === lastP && isNum(cur && cur.t)
                         ? ' ' + tk(-cur.t / 1000, 1, u.live, u.now / 1000) : '') + '</span>'
                     : st === 'lost'
-                        ? '<span class="pg lost">沒跑完' + (i === lastP && isNum(cur && cur.t) && isNum(steps.lastAt)
-                            ? '・跑了 ' + dur(Math.round((steps.lastAt - cur.t) / 1000)) : '') + '</span>'
+                        ? '<span class="pg lost">' + loc('disp.didNotFinish', '沒跑完') + (i === lastP && isNum(cur && cur.t) && isNum(steps.lastAt)
+                            ? loc('disp.dotRanFor', '・跑了 {t}', { t: dur(Math.round((steps.lastAt - cur.t) / 1000)) }) : '') + '</span>'
                         : '';
                 return stepLi(y, mode, tail);
             }).join('') + '</ul>' + note + '</div>'
@@ -3613,9 +3631,9 @@
             filter: (ui && ui.filter) || 'all', now: ui && isNum(ui.now) ? ui.now : Date.now(), live: !!(ui && ui.live),
         };
         if (!x.rows.length) {
-            return '<div class="h2">派工 <small>這個 session 還沒派出 agent</small></div><div class="emptyd"><p class="et">還沒派出 agent</p><p class="es">'
-                + (u.live && s && s.state === 'live' ? '一派出，它會在下一次更新（3 秒內）出現在這裡，連同它正在跑的工具。這頁不必重新整理。'
-                    : '這個 session 沒有派出任何 agent。') + '</p></div>';
+            return '<div class="h2">' + loc('disp.dispatch', '派工') + ' <small>' + loc('disp.noAgentsYet', '這個 session 還沒派出 agent') + '</small></div><div class="emptyd"><p class="et">' + loc('disp.noAgentsYet2', '還沒派出 agent') + '</p><p class="es">'
+                + (u.live && s && s.state === 'live' ? loc('disp.willAppearOnNextUpdate', '一派出，它會在下一次更新（3 秒內）出現在這裡，連同它正在跑的工具。這頁不必重新整理。')
+                    : loc('disp.noAgentsDispatchedAtAll', '這個 session 沒有派出任何 agent。')) + '</p></div>';
         }
         var n = { all: x.rows.length, running: 0, done: 0, lost: 0 };
         x.rows.forEach(function (r) { n[agentState(x, r, s)] += 1; });
@@ -3663,8 +3681,8 @@
         var gap = function () {
             var end = null;
             (x.points || []).forEach(function (p) { if (isNum(p.t) && p.t < since && (end === null || p.t > end)) end = p.t; });
-            return '<tr class="gaprow"><td colspan="9">session ' + (end !== null ? '<b>' + clock(end) + '</b> 結束，' : '')
-                + '<b>' + clock(since) + '</b> 以同一個 session id 接回來；結束前派出、還沒回來的 agent 標成 lost</td></tr>';
+            return '<tr class="gaprow"><td colspan="9">session ' + (end !== null ? loc('disp.endedAtB', '<b>{t}</b> 結束，', { t: clock(end) }) : '')
+                + loc('disp.resumedSameIdLost', '<b>{t}</b> 以同一個 session id 接回來；結束前派出、還沒回來的 agent 標成 lost', { t: clock(since) }) + '</td></tr>';
         };
         var body = order.map(function (k) {
             var list = groups[k], d = k === 'none' ? null : x.dispatches[k], lead = '';
@@ -3678,11 +3696,11 @@
             var gone = !!d && !isNum(d.back) && list.every(function (r) { return agentState(x, r, s) !== 'running'; })
                 && list.some(function (r) { return agentState(x, r, s) === 'lost'; });
             var head = '<tr class="band"><td><div class="bandrow"><span class="sf ' + (d ? d.surface : 'agent') + '">'
-                + (d ? d.surface : '—') + '</span><span class="ell">' + esc(d ? d.text : '沒有對上派工的 agent') + '</span>'
+                + (d ? d.surface : '—') + '</span><span class="ell">' + esc(d ? d.text : loc('disp.noMatchingDispatchAgent', '沒有對上派工的 agent')) + '</span>'
                 + (wf ? agdots(x, list, s) + '<span class="phs">' + list.filter(function (r) { return agentState(x, r, s) === 'done'; }).length
                     + ' / ' + list.length + ' done</span>' : '')
-                + '<span class="rt">' + (d && d.turn ? '回合 ' + d.turn : '')
-                + (d && isNum(d.out) ? ' · ' + stamp(d.out).slice(11) + '→' + (isNum(d.back) ? stamp(d.back).slice(11) : gone ? '沒回來' : '…') : '')
+                + '<span class="rt">' + (d && d.turn ? loc('disp.turnN2', '回合 {n}', { n: d.turn }) : '')
+                + (d && isNum(d.out) ? ' · ' + stamp(d.out).slice(11) + '→' + (isNum(d.back) ? stamp(d.back).slice(11) : gone ? loc('disp.notBack', '沒回來') : '…') : '')
                 + '</span></div></td>' + numCells(sums(fam(list)), '') + '<td class="r rc">'
                 + (d && d.ret !== null && d.ret !== undefined ? comma(d.ret) : d && !gone && !isNum(d.back) ? '…' : '—') + '</td></tr>';
             if (!wf) return lead + head + vis.map(function (r) { return withKids(r, 'ag', ''); }).join('');
@@ -3702,18 +3720,17 @@
         }).join('');
         if (early && !gapDone && (filter === 'all' || filter === 'lost')) body += gap();
         var off = {};
-        ['running', 'done', 'lost'].forEach(function (k) { if (!n[k]) off[k] = '沒有這個狀態的 agent'; });
-        var dhead = '<div class="dhead"><div class="h2">派工 <small><b>' + x.rows.length + '</b> 個 agent · '
-            + x.dispatches.length + ' 次派工</small></div><span class="spacer"></span>'
-            + (ui && ui.view ? segHtml('dxv', [['chart', '圖'], ['rows', '逐個 agent']], ui.view) : '')
-            + segHtml('dfilter', [['all', '全部 ' + n.all], ['running', 'running ' + n.running], ['done', 'done ' + n.done], ['lost', 'lost ' + n.lost]], filter, off)
+        ['running', 'done', 'lost'].forEach(function (k) { if (!n[k]) off[k] = loc('disp.noAgentsWithState', '沒有這個狀態的 agent'); });
+        var dhead = '<div class="dhead"><div class="h2">' + loc('disp.dispatch', '派工') + ' <small>' + loc('disp.nAgentsNDispatches', '<b>{n}</b> 個 agent · {d} 次派工', { n: x.rows.length, d: x.dispatches.length }) + '</small></div><span class="spacer"></span>'
+            + (ui && ui.view ? segHtml('dxv', [['chart', loc('disp.chart', '圖')], ['rows', loc('disp.perAgent', '逐個 agent')]], ui.view) : '')
+            + segHtml('dfilter', [['all', loc('disp.allN', '全部 {n}', { n: n.all })], ['running', 'running ' + n.running], ['done', 'done ' + n.done], ['lost', 'lost ' + n.lost]], filter, off)
             + '</div>';
         var all = sums(x.rows);
         var ret = x.dispatches.reduce(function (m, d) { return m + (d.ret || 0); }, 0);
         var launch = x.dispatches.reduce(function (m, d) { return m + (d.launch || 0); }, 0);
         var wfRows = x.rows.filter(function (r) { return r.surface === 'workflow'; }).length;
         var wfRun = x.runs.reduce(function (m, r) { return m + r.agents; }, 0);
-        var eq = function (a, b) { return '<span class="' + (a === b ? 'eq">＝' : 'ne">≠') + '</span>'; };
+        var eq = function (a, b) { return '<span class="' + (a === b ? 'eq">' + loc('disp.equalsSign', '＝') : 'ne">' + loc('disp.notEqualsSign', '≠')) + '</span>'; };
         var vw = ui && ui.view ? ui.view : 'all';
         // The chart goes after the table in the markup: with no `ui.view`
         // both render, and the table's own order is what a reader of the
@@ -3721,10 +3738,10 @@
         var chart = vw === 'rows' ? '' : dxChartHtml(x, s, order, groups, fam, pass, all, ret, (ui && ui.metric) || 'c');
         var rows = vw === 'chart' ? '' : '<table class="x dx"><colgroup><col><col style="width:50px"><col style="width:54px"><col style="width:54px">'
             + '<col style="width:48px"><col style="width:54px"><col style="width:48px"><col style="width:54px">'
-            + '<col style="width:58px"></colgroup><thead><tr><th>派工</th><th class="r">耗時</th><th class="r">tokens</th>'
+            + '<col style="width:58px"></colgroup><thead><tr><th>' + loc('disp.dispatch', '派工') + '</th><th class="r">' + loc('disp.timeSpent', '耗時') + '</th><th class="r">tokens</th>'
             + '<th class="r">USD</th><th class="r">input</th><th class="r">input USD</th><th class="r">output</th><th class="r">output USD</th>'
-            + '<th class="r rc" title="這次派工的結果進入主 context 的字元數">回傳字元</th></tr></thead>'
-            + '<tbody>' + body + '</tbody><tfoot><tr><td>' + x.rows.length + ' 個 agent</td>' + numCells(all, '')
+            + '<th class="r rc" title="' + loc('disp.charsReturnedHint', '這次派工的結果進入主 context 的字元數') + '">' + loc('disp.charsReturned', '回傳字元') + '</th></tr></thead>'
+            + '<tbody>' + body + '</tbody><tfoot><tr><td>' + loc('disp.nAgents2', '{n} 個 agent', { n: x.rows.length }) + '</td>' + numCells(all, '')
             + '<td class="r rc">' + comma(ret) + '</td></tr></tfoot></table>';
         // The chart has no row a running agent could stand in, so above it the
         // running ones keep their rows: the tool each is on, and the count the
@@ -3733,23 +3750,20 @@
         if (vw === 'chart' && live.length) {
             rows = '<table class="x dx dxlive"><colgroup><col><col style="width:50px"><col style="width:54px"><col style="width:54px">'
                 + '<col style="width:48px"><col style="width:54px"><col style="width:48px"><col style="width:54px">'
-                + '<col style="width:58px"></colgroup><thead><tr><th>正在跑 ' + live.length + '</th><th class="r">耗時</th><th class="r">tokens</th>'
+                + '<col style="width:58px"></colgroup><thead><tr><th>' + loc('disp.runningNow', '正在跑 {n}', { n: live.length }) + '</th><th class="r">' + loc('disp.timeSpent', '耗時') + '</th><th class="r">tokens</th>'
                 + '<th class="r">USD</th><th class="r">input</th><th class="r">input USD</th><th class="r">output</th><th class="r">output USD</th>'
                 + '<th class="r rc"></th></tr></thead><tbody>'
                 + live.map(function (r) { return agentRow(r, 'ag', '', x, s, u); }).join('') + '</tbody></table>';
         }
         return dhead + rows + chart
-            + '<details class="dxnote" data-key="dx-note"><summary>對帳與說明 ' + eq(all.c, x.agentsTotal.cents) + eq(wfRows, wfRun) + '</summary>'
-            + '<p class="tally">各列美元相加 <b>' + cents(all.c) + '</b> ' + eq(all.c, x.agentsTotal.cents) + ' agentsOf() 的 '
-            + cents(x.agentsTotal.cents) + '；workflow 派工 ' + wfRows + ' 列 ' + eq(wfRows, wfRun) + ' run 檔的 workflow_agent '
-            + wfRun + ' 列</p>'
-            + '<p class="tally">回傳字元是派工的結果進入主 context 的長度：背景 agent 與 workflow 取 task-notification，前景的取 Agent 的'
-            + ' tool_result。背景啟動時回來的確認不算在內，這個 session 合計 ' + comma(launch) + ' 字元。美元照價目表 '
-            + esc(S.pricesVerified || '—') + (x.unpriced.length ? '；價目表不認得、寫 unpriced 的：' + x.unpriced.map(esc).join('、') : '')
+            + '<details class="dxnote" data-key="dx-note"><summary>' + loc('disp.reconciliationAndNotes', '對帳與說明') + ' ' + eq(all.c, x.agentsTotal.cents) + eq(wfRows, wfRun) + '</summary>'
+            + '<p class="tally">' + loc('disp.rowsUsdSum', '各列美元相加 <b>{a}</b>', { a: cents(all.c) }) + ' ' + eq(all.c, x.agentsTotal.cents) + ' ' + loc('disp.agentsOfSum', 'agentsOf() 的 {a}', { a: cents(x.agentsTotal.cents) })
+            + loc('disp.workflowRowsVs', '；workflow 派工 {a} 列', { a: wfRows }) + ' ' + eq(wfRows, wfRun) + ' ' + loc('disp.runFileWorkflowAgentRows', 'run 檔的 workflow_agent {a} 列', { a: wfRun })
             + '</p>'
-            + (n.running ? '<p class="tally">running 的 ' + n.running + ' 列是到 ' + clockSec(isNum(x.at) ? x.at : u.now)
-                + ' 為止的 tokens 與美元，下一次重拉會再變；耗時照秒走。</p>' : '')
-            + (n.lost ? '<p class="tally">lost 的列沒有回傳字元：它的結果沒有進主 context。耗時算到它 transcript 的最後一行。</p>' : '')
+            + '<p class="tally">' + loc('disp.returnedCharsExplain', '回傳字元是派工的結果進入主 context 的長度：背景 agent 與 workflow 取 task-notification，前景的取 Agent 的 tool_result。背景啟動時回來的確認不算在內，這個 session 合計 {n} 字元。', { n: comma(launch) }) + loc('disp.usdByPriceList', '美元照價目表 {v}', { v: esc(S.pricesVerified || '—') }) + (x.unpriced.length ? loc('disp.unpricedList', '；價目表不認得、寫 unpriced 的：{list}', { list: x.unpriced.map(esc).join(loc('disp.listSep', '、')) }) : '')
+            + '</p>'
+            + (n.running ? '<p class="tally">' + loc('disp.runningRowsAsOf', 'running 的 {n} 列是到 {t} 為止的 tokens 與美元，下一次重拉會再變；耗時照秒走。', { n: n.running, t: clockSec(isNum(x.at) ? x.at : u.now) }) + '</p>' : '')
+            + (n.lost ? '<p class="tally">' + loc('disp.lostRowsNoChars', 'lost 的列沒有回傳字元：它的結果沒有進主 context。耗時算到它 transcript 的最後一行。') + '</p>' : '')
             + '</details>';
     }
     // 派工 as bars: one row per dispatch in turn order, its length the metric
@@ -3759,7 +3773,7 @@
     // row's label carries the band, each segment its agent. An agent the
     // state filter leaves out is dimmed, not dropped.
     function dxChartHtml(x, s, order, groups, fam, pass, all, ret, m) {
-        var FMT = { c: cents, k: function (v) { return comma(v) + 'k'; }, s: dur, r: function (v) { return comma(v) + ' 字'; } };
+        var FMT = { c: cents, k: function (v) { return comma(v) + 'k'; }, s: dur, r: function (v) { return loc('disp.nChars2', '{v} 字', { v: comma(v) }); } };
         var f = FMT[m] ? FMT[m] : (m = 'c', FMT.c);
         var nums = function (t) {
             return cents(t.c) + ' · ' + comma(t.k) + 'k token · ' + dur(t.s) + ' · input ' + tokens(t.ti || 0) + ' $' + (t.ci || 0).toFixed(2)
@@ -3775,9 +3789,9 @@
         var total = m === 'r' ? ret : all[m];
         var body = rows.map(function (row) {
             var d = row.d, sf = d ? d.surface : 'agent';
-            var tip = (d ? d.text : '未對上派工') + '\n' + (d && d.turn ? '回合 ' + d.turn + ' · ' : '')
+            var tip = (d ? d.text : loc('disp.noMatchingDispatch2', '未對上派工')) + '\n' + (d && d.turn ? loc('disp.turnNDot', '回合 {n} · ', { n: d.turn }) : '')
                 + (d && isNum(d.out) ? stamp(d.out).slice(11) + '→' + (isNum(d.back) ? stamp(d.back).slice(11) : '…') + ' · ' : '')
-                + row.list.length + ' 個 agent\n' + nums(row.t) + '\n回傳 ' + (row.r === null ? '—' : comma(row.r) + ' 字元');
+                + loc('disp.nAgentsNewline', '{n} 個 agent\n', { n: row.list.length }) + nums(row.t) + loc('disp.newlineReturned', '\n回傳 {v}', { v: row.r === null ? '—' : loc('disp.nCharsSuffix', '{n} 字元', { n: comma(row.r) }) });
             var segs = m === 'r'
                 ? (row.v ? '<i style="flex:1 1 0;background:var(--s-' + (sf === 'workflow' ? 'workflow' : 'agent') + ')"></i>' : '')
                 : row.list.map(function (a) {
@@ -3788,7 +3802,7 @@
                         + ' title="' + esc((a.label || a.id) + '\n' + modelOf(a) + ' · ' + agentState(x, a, s) + '\n' + nums(sums([a]))) + '"></i>';
                 }).join('');
             return '<div class="dxr" role="listitem" title="' + esc(tip) + '"><span class="dxl"><span class="sf ' + esc(sf) + '">' + esc(d ? sf : '—') + '</span>'
-                + '<span class="dxn">' + esc(d ? d.text : '未對上派工') + '</span></span>'
+                + '<span class="dxn">' + esc(d ? d.text : loc('disp.noMatchingDispatch2', '未對上派工')) + '</span></span>'
                 + '<span class="dxt"><span class="dxb" style="width:' + (max ? row.v / max * 88 : 0).toFixed(1) + '%">' + segs + '</span>'
                 + '<b>' + (m === 'r' && row.r === null ? '—' : f(row.v)) + '</b></span></div>';
         }).join('');
@@ -3797,12 +3811,13 @@
             : MODEL_KEYS.filter(function (k) { return fams[k]; }).map(function (k) {
                 return '<span><i class="sw" style="background:var(--m-' + k + ')"></i>' + k + '</span>';
             }).join('');
+        var DXM = { c: loc('disp.cost2', '花費'), k: 'token', s: loc('disp.timeSpent2', '耗時'), r: loc('disp.charsReturned2', '回傳字元') };
         return '<div class="dxc"><div class="dxch">'
-            + segHtml('dxm', [['c', '花費'], ['k', 'token'], ['s', '耗時'], ['r', '回傳字元']], m)
-            + '<span class="dxsum" title="' + esc(x.rows.length + ' 個 agent 合計\n' + nums(all) + '\n回傳 ' + comma(ret) + ' 字元') + '">合計 <b>' + f(total) + '</b></span>'
+            + segHtml('dxm', [['c', DXM.c], ['k', DXM.k], ['s', DXM.s], ['r', DXM.r]], m)
+            + '<span class="dxsum" title="' + esc(loc('disp.nAgentsTotal', '{n} 個 agent 合計\n', { n: x.rows.length }) + nums(all) + loc('disp.newlineReturned', '\n回傳 {v}', { v: loc('disp.nCharsSuffix', '{n} 字元', { n: comma(ret) }) })) + '">' + loc('disp.totalB', '合計 <b>{v}</b>', { v: f(total) }) + '</span>'
             + '<span class="spacer"></span><span class="lane-legend">' + legend + '</span></div>'
-            + '<div class="dxg" role="list" aria-label="每次派工的' + { c: '花費', k: 'token', s: '耗時', r: '回傳字元' }[m] + '">' + body + '</div>'
-            + '<div class="note">一列一次派工，照回合先後；一段一個 agent。游標停在列或段上看全部數字。</div></div>';
+            + '<div class="dxg" role="list" aria-label="' + loc('disp.perDispatchMetric', '每次派工的{m}', { m: DXM[m] }) + '">' + body + '</div>'
+            + '<div class="note">' + loc('disp.oneRowOneDispatch', '一列一次派工，照回合先後；一段一個 agent。游標停在列或段上看全部數字。') + '</div></div>';
     }
     function stepsFor(x, d) {
         if (!d) return '';
@@ -3810,7 +3825,7 @@
         if (!ids.length) return '';
         var shown = 0, total = 0;
         ids.forEach(function (id) { shown += x.steps[id].steps.length; total += x.steps[id].steps.length + x.steps[id].droppedN; });
-        return '<details class="stw" data-block="tool-collapsed" data-key="stw-' + esc(d.key) + '"><summary class="rpx">展開它自己的步驟 <span class="n">' + shown + ' / ' + total + ' 步'
+        return '<details class="stw" data-block="tool-collapsed" data-key="stw-' + esc(d.key) + '"><summary class="rpx">' + loc('disp.expandOwnSteps', '展開它自己的步驟') + ' <span class="n">' + loc('disp.shownOfTotalSteps', '{shown} / {total} 步', { shown: shown, total: total })
             + (ids.length > 1 ? ' · ' + ids.length + ' agents' : '') + '</span></summary>' + '<div class="to" data-block="tool-output">' + ids.map(function (id) {
                 var st = x.steps[id];
                 var r = x.rows.filter(function (y) { return y.id === id; })[0];
@@ -3819,10 +3834,10 @@
                         return '<li' + (y.p ? ' class="cur"' : '') + '><span class="sk ' + y.k + '">' + stepLabel(y.k, y.w) + '</span><div>'
                             + (y.f ? '<span class="fl">' + esc(y.f) + '</span>' : '<span class="cm">' + esc(y.c) + '</span>')
                             + (y.r ? '<div class="rl">' + esc(y.r) + '</div>' : '')
-                            + (y.p ? '<span class="pg"><i class="dot live"></i>進行中</span>' : '') + '</div></li>';
+                            + (y.p ? '<span class="pg"><i class="dot live"></i>' + loc('disp.inProgress', '進行中') + '</span>' : '') + '</div></li>';
                     }).join('') + '</ul>'
-                    + (st.droppedN ? '<p class="stn">上限 40 步，另有 ' + st.droppedN + ' 步沒列出（'
-                        + Object.keys(st.dropped).map(function (k) { return stepLabel(k) + ' ' + st.dropped[k]; }).join('、') + '）</p>' : '');
+                    + (st.droppedN ? '<p class="stn">' + loc('disp.capNStepsNotListed', '上限 40 步，另有 {n} 步沒列出（', { n: st.droppedN })
+                        + Object.keys(st.dropped).map(function (k) { return stepLabel(k) + ' ' + st.dropped[k]; }).join(loc('disp.listSep', '、')) + loc('disp.closeParen', '）') + '</p>' : '');
             }).join('') + '</div></details>';
     }
     // The replay in segments, the direction the 2026-09-24 mockup approved:
@@ -3834,8 +3849,8 @@
     // A function, not a var: the module export above returns before a var
     // this far down is assigned, and a declaration is hoisted.
     function rpKinds() {
-        return [['prompt', 'prompt'], ['stage', '階段'], ['gate', 'gate'], ['out', '派出'], ['back', '回來'],
-            ['edit', '改檔'], ['commit', 'commit'], ['test', '測試']];
+        return [['prompt', 'prompt'], ['stage', loc('disp.stage2', '階段')], ['gate', 'gate'], ['out', loc('disp.dispatchedOut', '派出')], ['back', loc('disp.returnedBack', '回來')],
+            ['edit', loc('disp.editedFiles', '改檔')], ['commit', 'commit'], ['test', loc('disp.tests', '測試')]];
     }
     // Each event goes to the last stage entered at or before it, the way
     // `windowsFrom` in lib/registry.js buckets; one before every stage, or
@@ -3869,16 +3884,15 @@
             // The question, the options offered with the one taken marked,
             // and the answer: a gate reads as the pair it was.
             tx = '<div class="gp" data-block="gate-pair">' + rpTag('gate')
-                + (isFinite(e.askedAt) ? '等了 ' + dur(Math.round((e.t - e.askedAt) / 1000)) + '<span class="w">' + stamp(e.askedAt).slice(11) + ' 問 → '
-                    + (isFinite(e.t) ? stamp(e.t).slice(11) : '—') + ' 答</span>' : '')
+                + (isFinite(e.askedAt) ? loc('disp.waitedT', '等了 {t}', { t: dur(Math.round((e.t - e.askedAt) / 1000)) }) + '<span class="w">' + loc('disp.askedArrowAnswered', '{a} 問 → {b} 答', { a: stamp(e.askedAt).slice(11), b: isFinite(e.t) ? stamp(e.t).slice(11) : '—' }) + '</span>' : '')
                 + e.qs.map(function (q) {
                     var labels = Array.isArray(q.labels) ? q.labels : [];
-                    return '<div class="qa"><span class="k">問</span><div class="q">' + esc(q.q)
+                    return '<div class="qa"><span class="k">' + loc('disp.question', '問') + '</span><div class="q">' + esc(q.q)
                         + (labels.length ? '<div class="opts">' + labels.map(function (l) {
                             return '<span' + (l === q.a ? ' class="on"' : '') + '>' + esc(l) + '</span>';
                         }).join('') + '</div>' : '')
-                        + '</div><span class="k">答</span><div class="a">'
-                        + esc(q.a === null ? '（沒有答案）' : q.a) + (q.own ? '<span class="own">自己寫的</span>' : '') + '</div></div>';
+                        + '</div><span class="k">' + loc('disp.answer2', '答') + '</span><div class="a">'
+                        + esc(q.a === null ? loc('disp.noAnswer', '（沒有答案）') : q.a) + (q.own ? '<span class="own">' + loc('disp.wroteOwn', '自己寫的') + '</span>' : '') + '</div></div>';
                 }).join('') + '</div>';
         } else if (e.kind === 'out') {
             // A dispatch is one card from out to back: who went, how long it
@@ -3888,14 +3902,14 @@
             tx = '<div class="ad" data-block="agent-dispatch">' + rpTag('out') + esc(e.text) + '<div class="sub">'
                 + esc(e.surface + (e.agentType ? ' · ' + e.agentType : '') + (e.alias ? ' · ' + e.alias : '')) + '</div>'
                 + (d && isNum(d.out) ? '<div class="span"><span class="tt">' + stamp(d.out).slice(11) + '</span><span class="ln' + (back === null ? ' open' : '') + '"></span>'
-                    + '<span class="tt">' + (back === null ? '還沒回來' : stamp(back).slice(11) + ' · ' + took(back - d.out)
-                        + (isNum(d.ret) ? ' · 回傳 ' + comma(d.ret) + ' 字元' : '')) + '</span></div>' : '')
+                    + '<span class="tt">' + (back === null ? loc('disp.notBackYet2', '還沒回來') : stamp(back).slice(11) + ' · ' + took(back - d.out)
+                        + (isNum(d.ret) ? loc('disp.dotReturnedNChars', ' · 回傳 {n} 字元', { n: comma(d.ret) }) : '')) + '</span></div>' : '')
                 + stepsFor(x, d) + '</div>';
         } else if (e.kind === 'edit') {
-            tx = '<details class="tc" data-block="tool-collapsed" data-key="tc-' + i + '"><summary>' + rpTag('edit') + '改了 ' + e.files.length + ' 個檔</summary>'
+            tx = '<details class="tc" data-block="tool-collapsed" data-key="tc-' + i + '"><summary>' + rpTag('edit') + loc('disp.editedNFiles', '改了 {n} 個檔', { n: e.files.length }) + '</summary>'
                 + '<div class="to" data-block="tool-output">' + e.files.map(function (f) {
                     return '<span class="fl">' + esc(f.f) + (f.n > 1 ? ' ×' + f.n : '') + '</span>';
-                }).join('、') + '</div></details>';
+                }).join(loc('disp.listSep', '、')) + '</div></details>';
         } else {
             var body;
             if (e.kind === 'prompt') body = '<span class="q">' + esc(e.text) + '</span>' + (e.cmd ? '<div class="sub">' + esc(e.cmd) + '</div>' : '');
@@ -3903,7 +3917,7 @@
                 body = esc(e.verb === 'stage' ? e.stage : e.verb + (e.stage ? ' · ' + e.stage : ''))
                     + (e.text ? '<div class="sub">' + esc(e.text) + '</div>' : '');
             } else if (e.kind === 'back') {
-                body = esc(e.text) + '<div class="sub">回傳 ' + (e.ret === null || e.ret === undefined ? '—' : comma(e.ret) + ' 字元') + '</div>';
+                body = esc(e.text) + '<div class="sub">' + loc('disp.returnedColon2', '回傳 {v}', { v: e.ret === null || e.ret === undefined ? '—' : loc('disp.nCharsSuffix', '{n} 字元', { n: comma(e.ret) }) }) + '</div>';
             } else if (e.kind === 'commit') body = '<span class="sha">' + esc(e.sha) + '</span>' + esc(e.text);
             else body = esc(e.text);
             tx = rpTag(e.kind, e.kind === 'test' && /ℹ fail 0(?!\d)/.test(e.text || '') ? 'ok' : '') + body;
@@ -3920,7 +3934,7 @@
         var total = segs.reduce(function (n, g) { return n + (span(g) || 0); }, 0);
         var usdAll = segs.reduce(function (n, g) { return n + (g.usd || 0); }, 0);
         var waitAll = segs.reduce(function (n, g) { return n + (g.waited || 0); }, 0);
-        var name = function (g) { return g.stage || '未分段'; };
+        var name = function (g) { return g.stage || loc('disp.unsegmented', '未分段'); };
         var color = function (g) { return STAGE_C[g.stage] || '#888'; };
         var burnSum = segs.reduce(function (n, g) { return n + (g.burn || 0); }, 0);
         var pct = function (v) { return Math.min(Math.max(v, 0), 100).toFixed(1) + '%'; };
@@ -3942,40 +3956,39 @@
                 if (!w) return '';
                 return '<button type="button" class="rs" data-rs="rs-' + k + '" style="flex:0 0 ' + w.toFixed(1) + '%;background:' + color(g) + '" title="'
                     + esc(name(g)) + ' · ' + took(span(g)) + ' · context ' + tokens(g.burn) + (g.usd === null ? '' : ' · ' + usd(g.usd)) + '">'
-                    + (w > 9 ? text(g) : '') + (label === '時間' ? waits(g) : '') + '</button>';
+                    + (w > 9 ? text(g) : '') + (label === loc('disp.time2', '時間') ? waits(g) : '') + '</button>';
             }).join('') + '</div><span class="val">' + value + '</span>';
         };
         var strip = '<div class="rpcs" data-block="cost-strip">' + (total ? '<div class="cs">'
-            + track('時間', took(total), function (g) { return span(g) === null ? 0 : span(g) / total * 100; }, function (g) {
+            + track(loc('disp.time2', '時間'), took(total), function (g) { return span(g) === null ? 0 : span(g) / total * 100; }, function (g) {
                 return esc(name(g)) + '<span class="v">' + took(span(g)) + '</span>';
             })
-            + (usdAll ? track('花費', usd(usdAll), function (g) { return (g.usd || 0) / usdAll * 100; }, function (g) { return usd(g.usd); }) : '')
-            + '<div class="key">' + (waitAll ? '<span><i class="sw hatch"></i>等你回答 gate（' + took(waitAll) + '，佔 '
-                + Math.round(waitAll / total * 100) + '%）</span>' : '') + '<span>點一段就跳到那個階段</span></div></div>' : '')
-            + (s ? '<p class="tally">各段 context 相加 <b>' + comma(burnSum) + '</b> <span class="' + (burnSum === (s.burn || 0) ? 'eq">＝' : 'ne">≠')
-                + '</span> 這個 session 的 burn ' + comma(s.burn || 0) + '</p>' : '') + '</div>';
+            + (usdAll ? track(loc('disp.cost3', '花費'), usd(usdAll), function (g) { return (g.usd || 0) / usdAll * 100; }, function (g) { return usd(g.usd); }) : '')
+            + '<div class="key">' + (waitAll ? '<span><i class="sw hatch"></i>' + loc('disp.waitingOnYouGatePct', '等你回答 gate（{t}，佔 {p}%）', { t: took(waitAll), p: Math.round(waitAll / total * 100) }) + '</span>' : '') + '<span>' + loc('disp.clickJumpToStage', '點一段就跳到那個階段') + '</span></div></div>' : '')
+            + (s ? '<p class="tally">' + loc('disp.segmentsSumB', '各段 context 相加 <b>{n}</b>', { n: comma(burnSum) }) + ' <span class="' + (burnSum === (s.burn || 0) ? 'eq">' + loc('disp.equalsSign', '＝') : 'ne">' + loc('disp.notEqualsSign', '≠'))
+                + '</span> ' + loc('disp.sessionsBurnN', '這個 session 的 burn {n}', { n: comma(s.burn || 0) }) + '</p>' : '') + '</div>';
         var KEY = { gate: 1, out: 1, commit: 1 };
         var keyText = function (e) {
-            var t = e.kind === 'gate' ? (e.qs[0] ? (e.qs[0].a === null ? '（沒有答案）' : e.qs[0].a) : '')
+            var t = e.kind === 'gate' ? (e.qs[0] ? (e.qs[0].a === null ? loc('disp.noAnswer', '（沒有答案）') : e.qs[0].a) : '')
                 : e.kind === 'commit' ? e.sha + ' ' + e.text : e.text;
             return String(t || '').slice(0, 40);
         };
         var last = null;
         x.events.forEach(function (e) { if (isNum(e.t) && (last === null || e.t > last)) last = e.t; });
-        var toc = '<nav class="rptoc" data-block="toc" aria-label="段落目錄"><div class="h">目錄</div><ol>' + segs.map(function (g, k) {
+        var toc = '<nav class="rptoc" data-block="toc" aria-label="' + loc('disp.tableOfContents', '段落目錄') + '"><div class="h">' + loc('disp.contents', '目錄') + '</div><ol>' + segs.map(function (g, k) {
             var keys = g.rows.filter(function (r) { return KEY[r.e.kind]; });
             return '<li><button type="button" class="rs sg" data-rs="rs-' + k + '"><i class="bar" style="background:' + color(g) + '"></i><b>' + esc(name(g)) + '</b>'
                 + '<span class="d">' + took(span(g)) + '</span><span class="m">' + (isNum(g.from) ? stamp(g.from).slice(11, 16) + ' · ' : '')
-                + 'context ' + tokens(g.burn) + (g.usd === null ? '' : ' · ' + usd(g.usd)) + ' · ' + g.rows.length + ' 列</span></button>'
+                + 'context ' + tokens(g.burn) + (g.usd === null ? '' : ' · ' + usd(g.usd)) + ' · ' + loc('disp.nRows2', '{n} 列', { n: g.rows.length }) + '</span></button>'
                 + (keys.length ? '<ol>' + keys.map(function (r) {
                     return '<li><button type="button" class="rs" data-rs="rv-' + r.i + '"><span class="tm">' + (isFinite(r.e.t) ? stamp(r.e.t).slice(11, 16) : '—')
                         + '</span>' + rpTag(r.e.kind) + '<span class="kt">' + esc(keyText(r.e)) + '</span></button></li>';
                 }).join('') + '</ol>' : '') + '</li>';
-        }).join('') + '</ol><div class="tf">' + x.events.length + ' 列' + (last === null ? '' : '<br>最後一列 ' + stamp(last).slice(11)) + '</div></nav>';
-        var bar = '<div class="rpf" data-block="filter-bar" role="group" aria-label="事件種類">' + rpKinds().map(function (k) {
+        }).join('') + '</ol><div class="tf">' + loc('disp.nRows2', '{n} 列', { n: x.events.length }) + (last === null ? '' : loc('disp.lastRowAt', '<br>最後一列 {t}', { t: stamp(last).slice(11) })) + '</div></nav>';
+        var bar = '<div class="rpf" data-block="filter-bar" role="group" aria-label="' + loc('disp.eventKinds', '事件種類') + '">' + rpKinds().map(function (k) {
             return '<button type="button" data-rk="' + k[0] + '" data-key="rk-' + k[0] + '" aria-pressed="' + !off[k[0]] + '">' + k[1] + '<span class="n">'
                 + (count[k[0]] || 0) + '</span></button>';
-        }).join('') + '<span class="spacer"></span><button type="button" class="rpx-all" data-xall>全部展開</button></div>';
+        }).join('') + '<span class="spacer"></span><button type="button" class="rpx-all" data-xall>' + loc('disp.expandAll2', '全部展開') + '</button></div>';
         var body = segs.map(function (g, k) {
             var n = function (kind) { return g.rows.filter(function (r) { return r.e.kind === kind; }).length; };
             var prev = k > 0 && segs[k - 1].stage ? segs[k - 1].stage + ' → ' + name(g) : 'start';
@@ -3983,15 +3996,15 @@
                 + '<i class="band" style="background:' + color(g) + '"></i><div><div class="t"><b>' + esc(name(g)) + '</b>'
                 + (isNum(g.from) ? '<span class="from">' + esc(prev) + ' · ' + stamp(g.from).slice(11) + '</span>' : '')
                 + '<span class="caret" aria-hidden="true">▶</span></div>'
-                + '<div class="ct"><span><b>' + n('gate') + '</b> gate</span><span><b>' + n('out') + '</b> 派出</span><span><b>' + n('commit') + '</b> commit</span>'
-                + '<span>' + g.rows.length + ' 列</span></div></div>'
-                + '<dl class="m"><dt>耗時</dt><dd class="big">' + took(span(g)) + '</dd><dt>context</dt><dd>' + tokens(g.burn) + '</dd>'
-                + (g.usd === null ? '' : '<dt>花費</dt><dd>' + usd(g.usd) + '</dd>')
-                + (g.waited ? '<dt>等 gate</dt><dd>' + took(g.waited) + '</dd>' : '') + '</dl></summary>'
+                + '<div class="ct"><span><b>' + n('gate') + '</b> gate</span><span><b>' + n('out') + '</b> ' + loc('disp.dispatchedOut', '派出') + '</span><span><b>' + n('commit') + '</b> commit</span>'
+                + '<span>' + loc('disp.nRows2', '{n} 列', { n: g.rows.length }) + '</span></div></div>'
+                + '<dl class="m"><dt>' + loc('disp.timeSpent2', '耗時') + '</dt><dd class="big">' + took(span(g)) + '</dd><dt>context</dt><dd>' + tokens(g.burn) + '</dd>'
+                + (g.usd === null ? '' : '<dt>' + loc('disp.cost3', '花費') + '</dt><dd>' + usd(g.usd) + '</dd>')
+                + (g.waited ? '<dt>' + loc('disp.waitedGate', '等 gate') + '</dt><dd>' + took(g.waited) + '</dd>' : '') + '</dl></summary>'
                 + '<ol class="rp">' + g.rows.map(function (r) { return replayRow(x, r.e, r.i, off); }).join('') + '</ol></details>';
         }).join('');
-        return '<div class="rpw">' + strip + '<div class="rpb">' + toc + '<div class="rpm">' + bar + body + '<p class="tally">' + x.events.length + ' 列'
-            + (x.dropped ? '；超過 300 列，只留 gate、階段、commit 與派工，丟掉了 ' + x.dropped + ' 列' : '') + '</p></div></div></div>';
+        return '<div class="rpw">' + strip + '<div class="rpb">' + toc + '<div class="rpm">' + bar + body + '<p class="tally">' + loc('disp.nRows2', '{n} 列', { n: x.events.length })
+            + (x.dropped ? loc('disp.over300RowsDropped', '；超過 300 列，只留 gate、階段、commit 與派工，丟掉了 {n} 列', { n: x.dropped }) : '') + '</p></div></div></div>';
     }
 
     // ---- 記成 TODO -------------------------------------------------------
@@ -4004,13 +4017,12 @@
         return String(text || '').replace(/\s+/g, ' ').trim() + (l ? ' — [' + label + '](' + l + ')' : '');
     }
     function riseTodo(id, r) {
-        return '〔station〕' + String(id).slice(0, 8) + ' 回合 ' + r.from + '→' + r.n + ' context +' + tokens(r.dy) + '：'
+        return loc('todo.stationTag', '〔station〕') + String(id).slice(0, 8) + loc('todo.turnFromTo', ' 回合 {from}→{to}', { from: r.from, to: r.n }) + ' context +' + tokens(r.dy) + loc('todo.colon', '：')
             + (r.cause === 'self' ? r.self.label
-                : r.top[0] ? r.top[0].label + ' ' + comma(r.top[0].chars) + ' 字元' : '進來的輸出');
+                : r.top[0] ? loc('todo.labelNChars', '{l} {n} 字元', { l: r.top[0].label, n: comma(r.top[0].chars) }) : loc('todo.incomingOutput', '進來的輸出'));
     }
     function backTodo(id, b) {
-        return '〔station〕' + String(id).slice(0, 8) + ' ' + b.from + '→' + b.to + ' 倒退（' + stamp(b.at) + '，'
-            + b.from + ' 待了 ' + mins(b.at - b.since) + '）：' + b.from + ' 抓到的，' + b.to + ' 為什麼沒抓到';
+        return loc('todo.stationTag', '〔station〕') + String(id).slice(0, 8) + ' ' + b.from + '→' + b.to + loc('todo.backtrackAtStayed', ' 倒退（{at}，{from} 待了 {t}）：', { at: stamp(b.at), from: b.from, t: mins(b.at - b.since) }) + loc('todo.caughtWhyNot', '{from} 抓到的，{to} 為什麼沒抓到', { from: b.from, to: b.to });
     }
     // Served, a form that posts the line to `/todo`, which checks it with
     // todo-check's own rules before writing and answers 400 with the rule that
@@ -4018,14 +4030,14 @@
     function todoSpot(text, link, s) {
         if (!S.serve) {
             return '<div class="td"><div class="tdc"><code>- ' + esc(todoEntry(text, link)) + '</code></div>'
-                + '<div class="tds">靜態頁不寫檔：複製這一行，貼進 TODO.md 的 ## Needs a decision。</div></div>';
+                + '<div class="tds">' + loc('todo.staticPageCopyLine', '靜態頁不寫檔：複製這一行，貼進 TODO.md 的 ## Needs a decision。') + '</div></div>';
         }
-        return '<details class="td"><summary class="tdb">記成 TODO <span class="m">POST /todo</span></summary>'
+        return '<details class="td"><summary class="tdb">' + loc('todo.recordAsTodo', '記成 TODO') + ' <span class="m">POST /todo</span></summary>'
             + '<div class="tdf" data-todo-root="' + esc(s.root) + '" data-todo-id="' + esc(s.id) + '">'
-            + '<label>條目（寫進 TODO.md 的 ## Needs a decision）</label><textarea rows="2" spellcheck="false">'
-            + esc(text) + '</textarea><label>連結</label><input type="text" spellcheck="false" value="' + esc(link) + '">'
-            + '<div class="help">送出前跑 todo-check 的同一套規則：≤ 200 字元、連結要存在、不指向 plan、decision、report、archive。</div>'
-            + '<div class="act"><button type="button" class="go" data-todo>送出</button></div>'
+            + '<label>' + loc('todo.entryLabel', '條目（寫進 TODO.md 的 ## Needs a decision）') + '</label><textarea rows="2" spellcheck="false">'
+            + esc(text) + '</textarea><label>' + loc('todo.link', '連結') + '</label><input type="text" spellcheck="false" value="' + esc(link) + '">'
+            + '<div class="help">' + loc('todo.checkedBeforeSubmit', '送出前跑 todo-check 的同一套規則：≤ 200 字元、連結要存在、不指向 plan、decision、report、archive。') + '</div>'
+            + '<div class="act"><button type="button" class="go" data-todo>' + loc('todo.submit', '送出') + '</button></div>'
             + '<div class="tdr" role="status" aria-live="polite"></div></div></details>';
     }
 
@@ -4049,29 +4061,27 @@
         var ymax = Math.ceil(top / niceStep(top)) * niceStep(top);
         var chart = function (s, x, f) {
             return '<div class="cmph"><span class="sid">' + esc(String(s.id).slice(0, 8)) + '</span><span class="tk" title="'
-                + esc(s.task) + '">' + esc(s.task) + '</span><span class="meta">' + stamp(f.t0) + ' 起 · ' + mins(f.t1 - f.t0)
-                + ' · ' + s.route.length + ' 段</span></div><div class="cx">' + lineChart(x.points, {
+                + esc(s.task) + '">' + esc(s.task) + '</span><span class="meta">' + loc('cmp.startedAtDot', '{t} 起 · ', { t: stamp(f.t0) }) + mins(f.t1 - f.t0)
+                + loc('cmp.dotNSegments', ' · {n} 段', { n: s.route.length }) + '</span></div><div class="cx">' + lineChart(x.points, {
                     W: 720, H: 180, t0: f.t0, t1: f.t0 + span, ymax: ymax, marks: x.marks, elapsed: true,
-                    label: String(s.id).slice(0, 8) + ' 的 context，' + f.pts + ' 點，峰值 ' + tokens(f.peak),
+                    label: loc('cmp.idContextNPointsPeak', '{id} 的 context，{n} 點，峰值 {peak}', { id: String(s.id).slice(0, 8), n: f.pts, peak: tokens(f.peak) }),
                 }) + '</div>';
         };
         var row = function (s, f) {
             return '<tr><td class="sid">' + esc(String(s.id).slice(0, 8)) + '<span class="s2">' + esc(s.state + ' · ' + s.stage) + '</span></td>'
-                + '<td class="v r">' + tokens(f.peak) + '<span class="s2">' + (f.peakN ? '回合 ' + f.peakN + ' · ' : '') + comma(f.peak) + '</span></td>'
-                + '<td class="v r">' + f.requests + '<span class="s2">' + f.pts + ' 點 ＋ ' + f.noTime + ' no time</span></td>'
-                + '<td class="v r">' + cents(f.cents) + '<span class="s2">' + (f.cents === f.agentCents ? '＝' : '≠')
+                + '<td class="v r">' + tokens(f.peak) + '<span class="s2">' + (f.peakN ? loc('cmp.turnNDot', '回合 {n} · ', { n: f.peakN }) : '') + comma(f.peak) + '</span></td>'
+                + '<td class="v r">' + f.requests + '<span class="s2">' + loc('cmp.nPointsPlusNoTime', '{n} 點 ＋ {t} no time', { n: f.pts, t: f.noTime }) + '</span></td>'
+                + '<td class="v r">' + cents(f.cents) + '<span class="s2">' + (f.cents === f.agentCents ? loc('cmp.equalsSign', '＝') : loc('cmp.notEqualsSign', '≠'))
                 + ' agentsOf() ' + cents(f.agentCents) + '</span></td>'
                 + '<td class="v r">' + f.back + '</td></tr>';
         };
         return chart(a, xa, fa) + '<div style="height:14px"></div>' + chart(b, xb, fb)
-            + '<p class="cmpnote">兩張圖共用 y 軸（0 到 ' + tokens(ymax) + '）與 x 軸的長度（' + mins(span)
-            + '）；x 是從各自第一個 request 起算的經過時間，所以同一個橫座標是「開工後同樣久」。每張圖仍然只有一條線。</p>'
-            + '<div class="figs"><table><thead><tr><th>session</th><th class="r">峰值 context</th><th class="r">requests</th>'
-            + '<th class="r">派工 USD</th><th class="r">倒退</th></tr></thead><tbody>' + row(a, fa) + row(b, fb) + '</tbody></table></div>'
-            + '<p class="cmpnote">每一格都和各自 session 的細節面板出自同一個欄位：峰值與 requests 是 context 折線的，'
-            + '派工 USD 是派工表各列的和，倒退是階段順序的。</p>'
+            + '<p class="cmpnote">' + loc('cmp.sharedAxesNote', '兩張圖共用 y 軸（0 到 {y}）與 x 軸的長度（{x}）；x 是從各自第一個 request 起算的經過時間，所以同一個橫座標是「開工後同樣久」。每張圖仍然只有一條線。', { y: tokens(ymax), x: mins(span) }) + '</p>'
+            + '<div class="figs"><table><thead><tr><th>session</th><th class="r">' + loc('cmp.peakContext', '峰值 context') + '</th><th class="r">requests</th>'
+            + '<th class="r">' + loc('cmp.dispatchUsd', '派工 USD') + '</th><th class="r">' + loc('cmp.backtrack', '倒退') + '</th></tr></thead><tbody>' + row(a, fa) + row(b, fb) + '</tbody></table></div>'
+            + '<p class="cmpnote">' + loc('cmp.figuresSameSource', '每一格都和各自 session 的細節面板出自同一個欄位：峰值與 requests 是 context 折線的，派工 USD 是派工表各列的和，倒退是階段順序的。') + '</p>'
             + '<div class="cmpseq">' + [[a, xa], [b, xb]].map(function (p) {
-                return '<h3>' + esc(String(p[0].id).slice(0, 8)) + ' · ' + p[1].seq.length + ' 步 · 倒退 ' + p[1].backtracks + '</h3>'
+                return '<h3>' + esc(String(p[0].id).slice(0, 8)) + loc('cmp.dotStepsBacktrack', ' · {n} 步 · 倒退 {b}', { n: p[1].seq.length, b: p[1].backtracks }) + '</h3>'
                     + seqHtml(p[1].seq, p[1].backs, p[0].route, p[0].stage, false);
             }).join('') + '</div>';
     }
@@ -4079,24 +4089,25 @@
         var two = picked.map(function (id) {
             return S.sessions.filter(function (s) { return s.id === id; })[0];
         }).filter(Boolean);
-        var head = '<div class="phead"><h1>' + icon('cmp') + '比較</h1><span class="spacer"></span>'
-            + '<a class="ctl" href="#/list">☰ 回清單</a></div>' + subtabsHtml('cmp');
+        var head = '<div class="phead"><h1>' + icon('cmp') + loc('cmp.compareHeading', '比較') + '</h1><span class="spacer"></span>'
+            + '<a class="ctl" href="#/list">' + loc('cmp.backToList', '☰ 回清單') + '</a></div>' + subtabsHtml('cmp');
         if (two.length < 2) {
-            return head + '<div class="card"><div class="cbody"><p class="mute">在專案頁或清單上勾兩個有細節的 session，'
-                + '這裡就上下並排比較它們。</p></div></div>';
+            return head + '<div class="card"><div class="cbody"><p class="mute">' + loc('cmp.pickTwoToCompareHint', '在專案頁或清單上勾兩個有細節的 session，這裡就上下並排比較它們。') + '</p></div></div>';
         }
         two.forEach(needDetail);
         var xa = DETAIL[two[0].id], xb = DETAIL[two[1].id];
         return head + '<div class="card cmpcard"><div class="cbody">'
-            + (xa && xb ? compareHtml(two[0], xa, two[1], xb) : '<p class="mute">讀取細節…</p>') + '</div></div>';
+            + (xa && xb ? compareHtml(two[0], xa, two[1], xb) : '<p class="mute">' + loc('cmp.loadingDetail2', '讀取細節…') + '</p>') + '</div></div>';
     }
 
-    var NAV_LABEL = { live: '現在', days: '近 30 天', sessions: '最近 sessions', projects: '專案', docs: '文件', settings: '設定', list: '清單', cmp: '比較', tour: '導覽' };
+    var NAV_LABEL = { live: loc('cmp.crumbLive', '現在'), days: loc('cmp.crumbDays', '近 30 天'), sessions: loc('cmp.crumbSessions', '最近 sessions'),
+        projects: loc('cmp.crumbProjects', '專案'), docs: loc('cmp.crumbDocs', '文件'), settings: loc('cmp.crumbSettings', '設定'),
+        list: loc('cmp.crumbList', '清單'), cmp: loc('cmp.crumbCmp', '比較'), tour: loc('cmp.crumbTour', '導覽') };
     function drawSide() {
         var tail = CRUMBS[route.view] ? CRUMBS[route.view](route)
-            : route.view === 'days' && route.day ? [['近 30 天', '#/days'], [route.day, null]]
+            : route.view === 'days' && route.day ? [[loc('cmp.crumbDays', '近 30 天'), '#/days'], [route.day, null]]
                 : NAV_LABEL[route.view] ? [[NAV_LABEL[route.view], null]] : [];
-        doc.getElementById('side').innerHTML = crumbHtml([['儀表板', '#/']].concat(tail));
+        doc.getElementById('side').innerHTML = crumbHtml([[loc('cmp.crumbDashboard', '儀表板'), '#/']].concat(tail));
     }
     VIEWS.now = dashPage;
     VIEWS.live = livePage;
@@ -4321,6 +4332,14 @@
         e.preventDefault();
         fePick(stops[j].getAttribute('data-h'));
     });
+    // The 繁中 / EN switch: registered ahead of the click handler below so a
+    // harness that keeps only one listener per event type (this file's own
+    // node tests among them) still runs the handler those tests exercise.
+    doc.addEventListener('click', function (e) {
+        var b = e.target && e.target.closest ? e.target.closest('[data-lang]') : null;
+        if (!b || !I18N) return;
+        if (I18N.set(b.getAttribute('data-lang'))) w.location.reload();
+    });
     doc.addEventListener('click', function (e) {
         var wzt = route.view === 'settings' && e.target.closest
             ? e.target.closest('.wz [data-go], .wz [data-h], .wz [data-st], .wz [data-k], .wz [data-ask], .wz [data-scope]') : null;
@@ -4356,11 +4375,11 @@
                 var q = who.pending.questions[0], o = q.options[Number(gop.getAttribute('data-gop'))], a = {};
                 a[q.question] = o.label;
                 form.set('answers', JSON.stringify(a));
-            }, '已送出：');
+            }, loc('cmp.sentColon', '已送出：'));
             return;
         }
         if (e.target.closest('[data-gho]')) {
-            gatePost(e.target.closest('.gc'), function (form) { form.set('handoff', 'terminal'); }, '已交給終端：');
+            gatePost(e.target.closest('.gc'), function (form) { form.set('handoff', 'terminal'); }, loc('cmp.handedToTerminalColon', '已交給終端：'));
             return;
         }
         if (e.target.closest('[data-tune-notify]') && w.Notification) {
@@ -4380,7 +4399,7 @@
             var pg = ans.closest('.pg'), pgr = pg.querySelector('.pgr');
             var who = S.sessions.filter(function (x) { return x.id === pg.getAttribute('data-pg-id'); })[0];
             var read = pgRead(pg, (who && who.pending && who.pending.questions) || []);
-            if (read.missing) { pgr.className = 'pgr bad'; pgr.textContent = '還有 ' + read.missing + ' 題沒答'; return; }
+            if (read.missing) { pgr.className = 'pgr bad'; pgr.textContent = loc('cmp.stillNQuestionsUnanswered', '還有 {n} 題沒答', { n: read.missing }); return; }
             var answers = read.answers;
             var form = new URLSearchParams();
             form.set('nonce', S.nonce || '');
@@ -4390,11 +4409,11 @@
             fetch('answer', { method: 'POST', body: form }).then(function (r) {
                 return r.text().then(function (t) {
                     pgr.className = 'pgr ' + (r.ok ? 'ok' : 'bad');
-                    pgr.textContent = (r.ok ? '已送出：' : r.status + ' — ') + t.trim();
+                    pgr.textContent = (r.ok ? loc('cmp.sentColon', '已送出：') : r.status + ' — ') + t.trim();
                 });
             }, function () {
                 pgr.className = 'pgr bad';
-                pgr.textContent = '送不出去：serve 還在跑嗎？';
+                pgr.textContent = loc('cmp.couldNotSendServeRunning', '送不出去：serve 還在跑嗎？');
             });
             return;
         }
@@ -4413,11 +4432,11 @@
             fetch('todo', { method: 'POST', body: body }).then(function (r) {
                 return r.text().then(function (t) {
                     said.className = 'tdr ' + (r.ok ? 'ok' : 'bad');
-                    said.textContent = (r.ok ? '寫進 TODO.md：' : r.status + ' — 沒有寫進去：') + t.trim();
+                    said.textContent = (r.ok ? loc('cmp.writtenToTodoColon', '寫進 TODO.md：') : r.status + loc('cmp.dashNotWrittenColon', ' — 沒有寫進去：')) + t.trim();
                 });
             }, function () {
                 said.className = 'tdr bad';
-                said.textContent = '送不出去：serve 還在跑嗎？';
+                said.textContent = loc('cmp.couldNotSendServeRunning', '送不出去：serve 還在跑嗎？');
             });
             return;
         }
@@ -4601,23 +4620,23 @@
         S.projects.forEach(function (p) {
             (p.docs || []).forEach(function (d) {
                 var add = function (path, kind) { if (qHas(path, q)) docs.push({ pkey: d.pkey, path: path, kind: kind }); };
-                (d.plannedNotBuilt || []).forEach(function (x) { add(x, '還沒建'); });
-                ((d.undeclared && d.undeclared.paths) || []).forEach(function (x) { add(x, '沒宣告狀態'); });
+                (d.plannedNotBuilt || []).forEach(function (x) { add(x, loc('q.notBuiltYet', '還沒建')); });
+                ((d.undeclared && d.undeclared.paths) || []).forEach(function (x) { add(x, loc('q.noStatusDeclared', '沒宣告狀態')); });
                 ((d.filing && d.filing.rows) || []).forEach(function (r) { add(r.bucket, r.role); });
             });
         });
         var pname = function (pkey) { return shortLabel(NAMES[pkey] || pkey); };
         return [
             { t: 'Sessions', ico: 'sessions', n: sess.length, all: '#/list', rows: sess.slice(0, 5).map(function (s) {
-                return { href: sessionHash(s.id), html: '<span class="qt">' + qMark(s.task || '（未命名）', q) + '</span>'
+                return { href: sessionHash(s.id), html: '<span class="qt">' + qMark(s.task || loc('q.unnamed', '（未命名）'), q) + '</span>'
                     + (qHas(s.id, q) && !qHas(s.task, q) ? '<span class="qid mono">' + qMark(s.id, q) + '</span>' : '')
                     + '<span class="qp">' + qMark(pname(s.pkey), q) + '</span><span class="qs mono">' + esc(s.stage || '—') + '</span>'
                     + '<span class="qa">' + ago(s.updated) + '</span>' };
             }) },
-            { t: '專案', ico: 'projects', n: proj.length, all: '#/projects', rows: proj.slice(0, 5).map(function (k) {
+            { t: loc('q.projects', '專案'), ico: 'projects', n: proj.length, all: '#/projects', rows: proj.slice(0, 5).map(function (k) {
                 return { href: projectHash(k), html: '<span class="qt">' + qMark(pname(k), q) + '</span><span class="qp mono">' + qMark(k, q) + '</span>' };
             }) },
-            { t: '文件', ico: 'docs', n: docs.length, all: '#/docs', rows: docs.slice(0, 5).map(function (d) {
+            { t: loc('q.docs', '文件'), ico: 'docs', n: docs.length, all: '#/docs', rows: docs.slice(0, 5).map(function (d) {
                 return { href: '#/docs', html: '<span class="qt mono">' + qMark(d.path, q) + '</span><span class="qp">' + esc(pname(d.pkey))
                     + '</span><span class="qs">' + esc(d.kind) + '</span>' };
             }) },
@@ -4646,11 +4665,11 @@
             var n = i++;
             return '<a class="' + cls + '" id="qr-' + n + '" data-qi="' + n + '" role="option" aria-selected="false" href="' + href + '">' + html + '</a>';
         };
-        qPop.innerHTML = '<div class="qin" data-block="search" role="listbox" aria-label="搜尋結果">' + (gs.length ? gs.map(function (g) {
+        qPop.innerHTML = '<div class="qin" data-block="search" role="listbox" aria-label="' + loc('q.searchResults', '搜尋結果') + '">' + (gs.length ? gs.map(function (g) {
             return '<div class="qg"><div class="qh">' + icon(g.ico) + '<b>' + g.t + '</b><span class="qn">' + g.n + '</span></div>'
                 + g.rows.map(function (r) { return row(r.href, r.html, 'qrow'); }).join('')
-                + (g.n > g.rows.length ? row(g.all, '看全部 ' + g.n + ' 筆 →', 'qall') : '') + '</div>';
-        }).join('') : '<p class="qnone">沒有符合 “' + esc(q) + '” 的結果</p>') + '</div>';
+                + (g.n > g.rows.length ? row(g.all, loc('q.seeAllNRows', '看全部 {n} 筆 →', { n: g.n }), 'qall') : '') + '</div>';
+        }).join('') : '<p class="qnone">' + loc('q.noResultsFor', '沒有符合 “{q}” 的結果', { q: esc(q) }) + '</p>') + '</div>';
         qPop.hidden = false;
         qAt = -1;
         qBox.setAttribute('aria-expanded', 'true');
@@ -4705,7 +4724,7 @@
             el.setAttribute('role', 'button');
             el.setAttribute('tabindex', '0');
             el.setAttribute('aria-pressed', off ? 'false' : 'true');
-            if (!el.title) el.title = off ? '按一下放回圖表' : '按一下先從圖表拿掉';
+            if (!el.title) el.title = off ? loc('q.clickToPutBack', '按一下放回圖表') : loc('q.clickToRemoveFirst', '按一下先從圖表拿掉');
         });
     }
     // Set some keys off (`on` false) or back on, redraw, and put focus back on
@@ -4761,11 +4780,35 @@
         if (e.key === '/') { e.preventDefault(); doc.getElementById('q').focus(); }
     });
 
-    doc.getElementById('nreg').textContent = S.projects.length + ' 個 registry · '
+    doc.getElementById('nreg').textContent = loc('q.nRegistryDot', '{n} 個 registry · ', { n: S.projects.length })
         + S.sessions.length + ' sessions';
     doc.getElementById('cfg').textContent = String(S.configDir || '').replace(/^.*[\\/]/, '')
         || S.configDir;
     doc.getElementById('cfg').title = S.configDir || '';
+
+    // ---- language: the masthead and the switch -----------------------------
+    // The shell's own words are Chinese on disk (assets/station/index.html);
+    // they are set once here, before the first draw. The switch stores the
+    // choice and reloads, so the left bar's labels and every other table built
+    // at load are built again in the new language.
+    function applyChrome() {
+        if (!I18N) return;
+        var en = I18N.lang === 'en';
+        var set = function (id, fn) { var el = doc.getElementById(id); if (el) fn(el); };
+        if (doc.documentElement && doc.documentElement.setAttribute) doc.documentElement.setAttribute('lang', en ? 'en' : 'zh-Hant');
+        doc.title = loc('mast.title', 'fankeel 測站');
+        set('brand', function (el) { el.setAttribute('aria-label', loc('mast.home', 'fankeel 測站 首頁')); });
+        set('brandw', function (el) { el.textContent = loc('mast.station', '測站'); });
+        set('side', function (el) { el.setAttribute('aria-label', loc('mast.crumbs', '位置')); });
+        set('q', function (el) {
+            el.placeholder = loc('mast.searchHint', '搜尋任務、session、碰過的檔案…');
+            el.setAttribute('aria-label', loc('mast.search', '搜尋'));
+        });
+        set('servedown', function (el) { el.innerHTML = '<i class="dot down"></i>' + esc(loc('mast.serveDown', 'serve 已停')); });
+        set('langzh', function (el) { el.setAttribute('aria-pressed', String(!en)); el.setAttribute('title', en ? '介面改用繁體中文' : '介面用繁體中文'); });
+        set('langen', function (el) { el.setAttribute('aria-pressed', String(en)); el.setAttribute('title', en ? 'Interface is in English' : 'Switch the interface to English'); });
+    }
+    applyChrome();
 
     // ---- live refresh --------------------------------------------------------
     // Served, the page keeps itself current: every three seconds it re-reads the
@@ -4861,7 +4904,7 @@
             });
         }, function () {
             end.className = 'gend bad';
-            end.textContent = '送不出去：serve 還在跑嗎？';
+            end.textContent = loc('poll.couldNotSendServeRunning', '送不出去：serve 還在跑嗎？');
         });
     }
     // The countdown moves every second between re-reads, on `tickNow`'s tick.
@@ -5001,7 +5044,7 @@
                 deadBar.setAttribute('aria-live', 'polite');
                 deadBar.className = 'dead';
                 var head = doc.createElement('b');
-                head.innerHTML = '<i class="dot down"></i>serve 沒有回應';
+                head.innerHTML = '<i class="dot down"></i>' + esc(loc('health.serveNotResponding', 'serve 沒有回應'));
                 deadBar.appendChild(head);
                 deadMsg = doc.createElement('span');
                 deadBar.appendChild(deadMsg);
@@ -5013,7 +5056,7 @@
                 var retry = doc.createElement('button');
                 retry.type = 'button';
                 retry.className = 'btn';
-                retry.textContent = '重試';
+                retry.textContent = loc('health.retry', '重試');
                 retry.style.cssText = 'border-color:var(--stale);color:var(--stale-ink)';
                 retry.addEventListener('click', function () { poll(); });
                 deadBar.appendChild(retry);
