@@ -39,6 +39,7 @@
         return t;
     }
 
+    // `writes` is write-vs-skip: station.js wizChanges (not wizApply) persists a key only when the pick differs from its builtin, so guard ask, sonnet · fable and station.hide false write nothing (the mockup's wz-4 and "11 keys" were placeholders).
     var STEPS = [
         { name: 'Finishing', q: ['How do you usually finish', 'a piece of work?'],
             opts: ['Merge locally', 'Open a PR', 'Keep the branch', 'Ask me each time'], pick: 0,

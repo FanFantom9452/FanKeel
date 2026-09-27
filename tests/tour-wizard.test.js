@@ -65,6 +65,20 @@ test('each step writes what the station\'s wizard writes for that pick on a fres
     STEPS.forEach((s, i) => assert.deepEqual(Object.fromEntries(s.writes), want[i], 'step ' + (i + 1)));
 });
 
+// Cross-check against lib/profile.js KEYS rather than station.js: on a fresh
+// machine a pick is written exactly when it differs from the key's builtin, and
+// the video has both kinds.
+test('a pick is written only when it differs from the builtin default', () => {
+    const kinds = new Set();
+    STEPS.forEach((s, i) => {
+        const hb = V.WIZ_STEPS[i].habits[s.pick].s;
+        const want = Object.keys(hb).filter((k) => hb[k] !== null && String(hb[k]) !== String(profile.KEYS[k].builtin));
+        assert.deepEqual(s.writes.map((w) => w[0]), want, 'step ' + (i + 1));
+        kinds.add(want.length > 0);
+    });
+    assert.deepEqual([...kinds].sort(), [false, true]);
+});
+
 test('the profile the video ends on parses to exactly those keys', () => {
     const all = Object.assign({}, ...written());
     assert.deepEqual(JSON.parse(profileLines(8).map((l) => l.text).join('\n')), all);
