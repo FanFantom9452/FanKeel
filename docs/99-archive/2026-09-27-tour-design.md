@@ -2,10 +2,11 @@
 role: plan
 status: current
 date: 2026-09-27
-mockup: .fankeel/build/2026-09-27-tour/mockup.html (方向 — approved as the direction; details are the render reviewer's at build)
 ---
 
 # The tour — three explainer animations for the station
+
+Storyboard: `.fankeel/build/2026-09-27-tour/mockup.html` (uncommitted, per-machine) — approved at design as the direction (方向); details were the render reviewer's at build.
 
 Three silent, frame-driven canvas animations that explain fankeel to a new
 user — Quick start (~30 s), The stages (~2.5 min), Setup wizard (~60 s) —
