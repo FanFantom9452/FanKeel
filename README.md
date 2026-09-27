@@ -200,7 +200,7 @@ fankeel/
 ├── .claude-plugin/    plugin.json — the skills, the eight agents, every hook and its timeout — and marketplace.json
 ├── .fankeel/          this repository's own settings: docs.json files each page, profile.json answers gates, .gitignore
 ├── agents/            the eight subagents the stages dispatch — reader, reviewer, verifier, judge, fixer, brain, render-reviewer, mockup — with their tools and model
-├── assets/            the station page: index.html, station.css and station.js, copied beside every page a write produces
+├── assets/            the station page: index.html, station.css and station.js, copied beside every page a write produces; tour.html, tour.css and tour*.js, the three explainer videos
 ├── docs/              reference pages by audience: 01-guide/, 02-architecture/, 03-decisions/, and 90-agent/ (reference/, plans/, reports/, judgements/) with 99-archive/ for what it retires
 ├── evals/             behaviour eval cases, one directory each, graded by scripts/eval.js with claude -p
 ├── hooks/             every hook Claude Code runs; each reads stdin, exits 0 on every path and leaves the work to lib/

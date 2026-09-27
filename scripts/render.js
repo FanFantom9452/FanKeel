@@ -105,9 +105,18 @@ function parseArgs(argv) {
     };
 }
 
+// A `#`/`?` suffix on a non-http(s) target is a URL fragment or query, not
+// part of the filesystem path — `path.resolve` does not know that and folds
+// it into the literal path it resolves, so `tour.html#quickstart@330` used
+// to become a file that does not exist. Split the suffix off before
+// resolving, then re-append it to the resulting file:// URL untouched. A
+// target with neither character behaves exactly as before.
 function toUrl(target) {
     if (/^https?:\/\//.test(target)) return target;
-    return pathToFileURL(path.resolve(target)).href;
+    const cut = target.search(/[#?]/);
+    const filePart = cut === -1 ? target : target.slice(0, cut);
+    const suffix = cut === -1 ? '' : target.slice(cut);
+    return pathToFileURL(path.resolve(filePart)).href + suffix;
 }
 
 function needBrowser() {
@@ -243,4 +252,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { findBrowser };
+module.exports = { findBrowser, toUrl };
