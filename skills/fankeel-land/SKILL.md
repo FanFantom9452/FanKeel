@@ -224,6 +224,15 @@ suite on the merged result**. A failure there stops everything — nothing has b
 pushed, so it is recoverable; leave the branch and worktree in place and
 investigate. Green, then clean the worktree, then `git branch -d`.
 
+**A task with its own worktree.** `node <plugin>/scripts/task.js show --session <id>`
+prints a `worktree:` line when `task.js start` opened one under
+`.fankeel/worktrees/<id8>/` on branch `fk/<id8>`. Merge from the main checkout,
+not from inside it: checkout the base there, `git merge fk/<id8>`, re-run the
+suite on the merged result, and only when it is green run
+`git worktree remove .fankeel/worktrees/<id8>` and then `git branch -d fk/<id8>`.
+A red suite leaves both in place, as above. `scripts/residue.js` lists that
+worktree as in use, not spent, for as long as the task's record is active.
+
 **PR:** push, open it against the base, report the URL. **Keep the worktree** —
 PR feedback gets fixed there.
 
@@ -234,7 +243,7 @@ initiative. Those files exist nowhere else. Show the user
 `git status --porcelain -uall` and ask whether to commit them, move them, or
 delete them.
 
-Clean up only worktrees the project created under `.worktrees/` or `worktrees/`.
+Clean up only worktrees the project created under `.worktrees/`, `worktrees/` or `.fankeel/worktrees/`.
 Anything else belongs to the host environment.
 
 ## Output

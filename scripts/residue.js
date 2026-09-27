@@ -30,7 +30,7 @@ const { parseArgs: parseArgv } = require('node:util');
 
 const { isRepo } = require('../lib/tracked.js');
 const { human, plural, section } = require('../lib/report.js');
-const { resolveRoot } = require('../lib/registry.js');
+const { resolveRoot, findStateRoot, readActive } = require('../lib/registry.js');
 
 // Best effort, like every other shell-out in this plugin. A git that is missing,
 // too old for a flag, or refusing for a reason of its own gives back null, and
@@ -192,6 +192,20 @@ function orphanArtifacts(root) {
     return found.sort((a, b) => a.path.localeCompare(b.path));
 }
 
+// The worktrees an active record points at, absolute. `task.js start` cuts a
+// task's `fk/<id8>` from the branch it is on, so until the task's first
+// commit that branch is merged into HEAD — spent, by the test in `scan`,
+// while somebody is working in it.
+function worktreesInUse(root) {
+    const reg = findStateRoot(root) || root;
+    const out = [];
+    for (const e of readActive(reg)) {
+        const wt = e.data && e.data.worktree;
+        if (wt && typeof wt.path === 'string' && wt.path.trim()) out.push(path.resolve(reg, wt.path.trim()));
+    }
+    return out;
+}
+
 function worktreesOf(root) {
     const lines = git(root, ['worktree', 'list', '--porcelain']);
     if (!lines) return [];
@@ -211,7 +225,10 @@ function worktreesOf(root) {
     // worktree, its own branch is merged into HEAD because HEAD *is* that
     // branch, so without this it reports itself as spent every time.
     const here = (git(root, ['rev-parse', '--show-toplevel']) || [])[0];
-    return all.slice(1).filter((w) => !here || path.relative(w.path, here) !== '');
+    const used = worktreesInUse(root);
+    return all.slice(1)
+        .filter((w) => !here || path.relative(w.path, here) !== '')
+        .map((w) => Object.assign(w, { inUse: used.some((p) => path.relative(p, w.path) === '') }));
 }
 
 function scan(root) {
@@ -222,7 +239,7 @@ function scan(root) {
     const empty = emptyDirs(root);
 
     if (!isRepo(root)) {
-        return { repo: false, branch: null, undecided: [], worktrees: [], weight: [], empty, orphans };
+        return { repo: false, branch: null, undecided: [], worktrees: [], inUse: [], weight: [], empty, orphans };
     }
 
     const branch = ((git(root, ['rev-parse', '--abbrev-ref', 'HEAD']) || [])[0] || 'HEAD').trim();
@@ -254,9 +271,11 @@ function scan(root) {
     const merged = new Set((git(root, ['branch', '--merged', 'HEAD', '--format=%(refname:short)']) || [])
         .map((s) => s.trim()).filter(Boolean));
 
-    const worktrees = worktreesOf(root)
-        .filter((w) => w.branch && merged.has(w.branch))
+    const listed = worktreesOf(root);
+    const worktrees = listed
+        .filter((w) => w.branch && merged.has(w.branch) && !w.inUse)
         .map((w) => ({ path: w.path, branch: w.branch }));
+    const inUse = listed.filter((w) => w.inUse).map((w) => ({ path: w.path, branch: w.branch }));
 
     // Only the topmost ignored path earns a line, for the reason `emptyDirs` gives
     // and one more. That same collapsed parent is listed beside the pattern that
@@ -284,7 +303,7 @@ function scan(root) {
         .filter(Boolean)
         .sort((a, b) => b.bytes - a.bytes);
 
-    return { repo: true, branch, undecided, worktrees, weight, empty, orphans };
+    return { repo: true, branch, undecided, worktrees, inUse, weight, empty, orphans };
 }
 
 
@@ -305,6 +324,9 @@ function report(result) {
         lines.push(...section(plural(result.worktrees.length, 'worktree is', 'worktrees are')
             + ' already merged into ' + result.branch + ':',
             result.worktrees.map((w) => w.path + '  (' + w.branch + ')')));
+        lines.push(...section(plural(result.inUse.length, 'worktree is', 'worktrees are')
+            + ' in use by a live task, merged or not:',
+            result.inUse.map((w) => w.path + '  (' + w.branch + ')')));
     } else {
         lines.push('fankeel residue — not a git repository.',
             'What is committed and what is ignored are what three of the five sections',
