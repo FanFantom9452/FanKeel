@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 'use strict';
-// scripts/tour-record.js: one tour timeline to an MP4, frame by frame.
+// scripts/tour-record.js: the one tour timeline (the promo, `stages`) to an
+// MP4, frame by frame.
 //
-//   node scripts/tour-record.js <quickstart|stages|wizard> [--out f.mp4]
+//   node scripts/tour-record.js stages [--out f.mp4]
 //
 // Opens assets/station/tour.html?record#<name>@0 in the Chromium-family
 // browser scripts/render.js finds, headless, with a DevTools port, and drives
@@ -19,7 +20,7 @@ const { pathToFileURL } = require('node:url');
 const { parseArgsOrExit } = require('../lib/cli.js');
 const { findBrowser } = require('./render.js');
 
-const NAMES = ['quickstart', 'stages', 'wizard'];
+const NAMES = ['stages'];
 const SIZE = { width: 1280, height: 720 };
 const PAGE = path.join(__dirname, '..', 'assets', 'station', 'tour.html');
 

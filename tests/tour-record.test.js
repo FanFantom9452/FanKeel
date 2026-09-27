@@ -16,16 +16,16 @@ const SCRIPT = path.join(__dirname, '..', 'scripts', 'tour-record.js');
 
 test('parseArgs takes one timeline name and an optional --out', () => {
     assert.deepEqual(parseArgs(['stages', '--out', 'x.mp4']), { name: 'stages', out: path.resolve('x.mp4') });
-    assert.deepEqual(parseArgs(['wizard']), { name: 'wizard', out: path.resolve('.fankeel', 'build', 'tour', 'wizard.mp4') });
+    assert.deepEqual(parseArgs(['stages']), { name: 'stages', out: path.resolve('.fankeel', 'build', 'tour', 'stages.mp4') });
 });
 
 test('a wrong name, no name or a stray flag exits 2', () => {
     const bad = spawnSync(process.execPath, [SCRIPT, 'intro'], { encoding: 'utf8' });
     assert.equal(bad.status, 2);
-    assert.match(bad.stderr, /usage: tour-record\.js <quickstart\|stages\|wizard> \[--out f\.mp4\]/);
+    assert.match(bad.stderr, /usage: tour-record\.js <stages> \[--out f\.mp4\]/);
     const none = spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8' });
     assert.equal(none.status, 2);
-    const flag = spawnSync(process.execPath, [SCRIPT, 'quickstart', '--fps', '30'], { encoding: 'utf8' });
+    const flag = spawnSync(process.execPath, [SCRIPT, 'stages', '--fps', '30'], { encoding: 'utf8' });
     assert.equal(flag.status, 2);
     assert.match(flag.stderr, /tour-record: unknown argument --fps/);
 });
@@ -45,7 +45,7 @@ test('ffmpegPath: FANKEEL_FFMPEG first, then PATH, else null', () => {
 
 test('with no ffmpeg the script stops before any browser and names both places', () => {
     const env = { PATH: tmp('fankeel-tour-nopath-'), SystemRoot: process.env.SystemRoot || '' };
-    const r = spawnSync(process.execPath, [SCRIPT, 'quickstart'], { encoding: 'utf8', env });
+    const r = spawnSync(process.execPath, [SCRIPT, 'stages'], { encoding: 'utf8', env });
     assert.equal(r.status, 2);
     assert.match(r.stderr, /PATH/);
     assert.match(r.stderr, /FANKEEL_FFMPEG/);

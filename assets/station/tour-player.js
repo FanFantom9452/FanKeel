@@ -1,13 +1,13 @@
-// assets/station/tour-player.js — the tour page's controller: chapter chips,
-// the scrub bar with a marker per beat, keys, playback, and window.tour for
+// assets/station/tour-player.js — the tour page's controller: the scrub bar
+// with a marker per beat, keys, playback, and window.tour for
 // scripts/tour-record.js. Every picture comes from tourEngine.render; this
 // file only decides which frame. Playback maps wall-clock time to a frame
 // number; the frame drawn is still a pure function of that number. Nothing
-// plays by itself: the page opens paused, reduced motion or not.
+// plays by itself: the page opens paused, reduced motion or not. One
+// timeline only (`stages`, the promo) — no chapter chips.
 (function () {
     'use strict';
     var E = window.tourEngine;
-    var CH = [['quickstart', 'Quick start'], ['stages', 'The stages'], ['wizard', 'Setup wizard']];
     var PLAY_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor"></path></svg>';
     var PAUSE_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3h3v10H4zM9 3h3v10H9z" fill="currentColor"></path></svg>';
     function q(id) { return document.getElementById(id); }
@@ -16,7 +16,7 @@
     if (rec) document.body.classList.add('rec');
     var css = getComputedStyle(document.documentElement);
     var P = E.palette(function (k) { return css.getPropertyValue('--' + k).trim(); });
-    var name = 'quickstart', frame = 0, playing = false, t0 = 0, f0 = 0;
+    var name = 'stages', frame = 0, playing = false, t0 = 0, f0 = 0;
 
     function paint() {
         var tl = E.get(name), n = tl.length, b = E.beatAt(tl, frame);
@@ -31,12 +31,6 @@
     function seek(f) {
         frame = Math.max(0, Math.min(E.length(name) - 1, Math.round(f)));
         paint();
-    }
-    function chips() {
-        q('trChips').innerHTML = CH.map(function (c) {
-            return '<button type="button" data-ch="' + c[0] + '" aria-pressed="' + (c[0] === name) + '">' + c[1]
-                + '<small>' + E.clock(E.length(c[0])).replace(/\.00$/, '') + '</small></button>';
-        }).join('');
     }
     function marks() {
         var old = scrub.querySelectorAll('.tr-mk');
@@ -77,18 +71,7 @@
         requestAnimationFrame(step);
     }
     function toggle() { if (playing) stop(); else start(); }
-    function choose(n, f) {
-        stop();
-        name = n;
-        chips();
-        marks();
-        seek(f);
-    }
 
-    q('trChips').addEventListener('click', function (e) {
-        var b = e.target.closest('[data-ch]');
-        if (b) choose(b.dataset.ch, 0);
-    });
     play.addEventListener('click', toggle);
     scrub.addEventListener('click', function (e) {
         stop();
@@ -109,8 +92,9 @@
     });
     document.addEventListener('keyup', function (e) { if (e.key === ' ') e.preventDefault(); });
 
-    var m = /^#(quickstart|stages|wizard)(?:@(\d+))?$/.exec(location.hash);
-    choose(m ? m[1] : 'quickstart', m && m[2] ? Number(m[2]) : 0);
+    marks();
+    var m = /^#stages@(\d+)$/.exec(location.hash);
+    seek(m ? Number(m[1]) : 0);
 
     window.tour = { seek: seek, length: function (n) { return E.length(n); }, ready: false };
     (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () {
