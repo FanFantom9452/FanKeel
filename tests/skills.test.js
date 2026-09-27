@@ -118,6 +118,29 @@ test('the audit skill runs both scanners and ends at the gate', () => {
   assert.match(text, /Never move a document unasked/);
 });
 
+// docs/90-agent/plans/2026-09-27-registry-lenses-design.md §6: the prompt
+// lens reads the rules a session runs under rather than a scanner's output,
+// so what proves the reading happened is a planted control rather than a
+// script's exit code.
+test('the audit skill reads the injected rules for a prompt lens, runs the deletion test on a candidate, and never self-deletes', () => {
+  const text = read('fankeel-audit');
+  const before = text.indexOf('### What every session loads');
+  const heading = text.indexOf('### The rules nobody in this session wrote');
+  const after = text.indexOf('## What the sweep reports');
+  assert.ok(before !== -1 && heading !== -1 && after !== -1, 'one of the three anchors is missing');
+  assert.ok(before < heading && heading < after, 'the new section is not between input-check.js and the sweep table');
+  const body = text.slice(heading).split('## What the sweep reports')[0];
+  assert.match(body, /ALWAYS/);
+  assert.match(body, /controlRules/);
+  assert.match(body, /lib\/stages\.js/);
+  assert.match(body, /improvement-brief\.md/);
+  assert.match(body, /deletion test/);
+  assert.match(body, /移出注入/);
+  assert.match(body, /never deleted here/);
+  assert.match(body, /Plant one control/);
+  assert.match(text, /prompt lens: /);
+});
+
 // The ladder in design's step 2. Order is the rule: the first rung that holds
 // is where the design stops, so a rung moved below another is a changed rule.
 test('the design skill carries the ladder, first rung first', () => {

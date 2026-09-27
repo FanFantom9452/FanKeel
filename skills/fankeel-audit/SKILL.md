@@ -132,6 +132,43 @@ said twice, a link to a file that is gone, a section over 4,000 bytes. It never
 fails the run and never edits: offer the trim at the gate, and change a file in
 another repository only in a task on that repository.
 
+### The rules nobody in this session wrote
+
+Every session here is already running under rules it did not write:
+`lib/stages.js`'s `ALWAYS`, each stage's own `rules`, and, on a controlled
+stage, `controlRules` — plus whatever a `SKILL.md` or an `agents/*.md` states
+as a standing directive in its own prose, the way `## Not a defect`'s tables
+and lines like *Never move a document unasked* do. Read all four kinds. Each
+one earns its place with a reason, and this repository keeps that reason
+wherever the rule itself lives: a comment on the line above it in the code,
+an incident or a decision the surrounding sentence names, a dated citation in
+the same paragraph. A candidate is a rule whose stated reason points at
+something gone — a test that no longer exists, a file the citation names that
+has moved or been deleted, an incident whose fix has since been reverted.
+Name each one `path:line — <the rule, quoted> — <what its reason cites, and
+why that no longer holds>`.
+
+A candidate, and only a candidate, gets the deletion test —
+[improvement-brief.md:417-425](../../docs/90-agent/reference/improvement-brief.md)'s
+*strike it; if the sentence still parses and still says the same thing, it
+was filler*, run on a rule instead of a sentence: remove that one line from
+its source, run whatever test pins it — `tests/agents.test.js` where the rule
+lives in an `agents/*.md` file, `tests/stages.test.js` or `tests/render.test.js`
+where it lives in `lib/stages.js`, `tests/skills.test.js` where it lives in a
+`SKILL.md` — and restore the file whatever the test says, the same red-green
+discipline `fankeel-verify`'s regression row already keeps. A run that
+reddens means something still depends on the exact wording: drop the
+candidate. One that stays green, with no other reason found for it, is
+listed at the gate as **移出注入** — never deleted here, because the rule may
+still be right and only under-cited, and that is the user's call.
+
+A run that finds no candidate is not evidence the rules are all still cited —
+it may be evidence nobody actually re-read them. Plant one control before
+trusting a `none`: a rule whose reason cites a path that resolves to nothing,
+added for this check alone, and confirm it is the one thing this reading
+lists. A `none` that misses its own control is not a clean pass; it is the
+reading having skipped the file.
+
 ## What the sweep reports
 
 Four sections are defects and the run fails on them. The rest are places a
@@ -265,6 +302,7 @@ node <plugin>/scripts/docs-audit.js
 
 adversary: <what it defeated, or none>
 pairs disagree: <where, or omit this line>
+prompt lens: <n>, or none
 routed: <heading — the entry, or omit this line>
 clean: <what you read and found nothing wrong in>
 then AskUserQuestion
