@@ -1,6 +1,6 @@
 ---
 role: plan
-status: design-intent
+status: current
 date: 2026-09-27
 mockup: .fankeel/build/2026-09-27-tour/mockup.html (方向 — approved as the direction; details are the render reviewer's at build)
 ---
