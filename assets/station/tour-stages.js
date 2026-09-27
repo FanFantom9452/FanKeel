@@ -16,7 +16,6 @@
 
     var ROUTE = E.ROUTE; // ['survey','design','plan','build','verify','audit','land']
     var PROJECT = 'inventory-admin';
-    var TITLE = '多倉庫庫存與調撥';
 
     var INTRO = 240, PER = 408;
     var OUTRO = INTRO + PER * ROUTE.length; // 3096
@@ -401,9 +400,9 @@
     function pctStr(pct) { return pct == null ? '--%' : Math.round(pct) + '%'; }
     // The route dots as `●`/`○` characters — this file's own route is all
     // seven stages (never the quick start's five), so `step` runs 0..7.
-    function dotsStr(step) {
+    function dotsStr(step, n) {
         var s = '';
-        for (var i = 0; i < ROUTE.length; i++) s += i < step ? '●' : '○';
+        for (var i = 0; i < (n || ROUTE.length); i++) s += i < step ? '●' : '○';
         return s;
     }
     // TokenBar's own three-line statusline (docs/90-agent/reference/statusline.md):
@@ -411,67 +410,124 @@
     // collision flag and the claimed path, then the model/project/branch line
     // and the two usage bars — drawn as plain monospace text, never as
     // separate shapes, so the route dots read back as `●`/`○` characters.
-    function lead(ctx, P, x, y, st, title) {
-        if (!st.stage) return;
-        var color = st.others ? P.bad : P.st[st.stage.toLowerCase()];
-        var l1 = '▌FANKEEL ' + st.stage.toUpperCase() + '   ' + dotsStr(st.step) + '  ⚿ ask'
+    function lead(ctx, P, st) {
+        var color = st.others ? P.bad : P.st[st.stage];
+        var o = { size: st.size, fill: color };
+        var l1 = '▌FANKEEL ' + st.stage.toUpperCase() + '   ' + dotsStr(st.step, st.n) + '  ⚿ ask'
             + (st.others ? '  ⚑' + st.others : '')
-            + (st.where ? '  ' + st.where : '') + '  ' + (title || TITLE);
+            + (st.where ? '  ' + st.where : '') + '  ' + st.title;
         var l2 = '▌ Opus 5 | ' + PROJECT + ' | main ↑2';
         var l3 = '▌ ctx ' + barStr(st.ctx) + '  ' + pctStr(st.ctx) + '  │  5h ' + barStr(st.h5) + '  ' + pctStr(st.h5);
-        E.text(ctx, P, 'm', l1, x, y, { fill: color });
-        E.text(ctx, P, 'm', l2, x, y + 14);
-        E.text(ctx, P, 'm', l3, x, y + 28);
+        E.text(ctx, P, 'j', l1, st.x, st.y, o);
+        E.text(ctx, P, 'j', l2, st.x, st.y + 13, { size: st.size });
+        E.text(ctx, P, 'j', l3, st.x, st.y + 26, { size: st.size });
     }
-    // A VS Code-ish frame, drawn locally with tour.js's own primitives — no
-    // new chrome belongs in tour.js itself.
-    function vsCode(ctx, P) {
-        E.box(ctx, 20, 16, 620, 332, 6, P.panel);
-        E.line(ctx, [[20, 32], [640, 32]], P.rule2, 1);
-        E.text(ctx, P, 's', PROJECT + ' — Visual Studio Code', 330, 27, { align: 'center' });
-        E.line(ctx, [[20, 336], [640, 336]], P.rule2, 1);
-        E.text(ctx, P, 's', 'main ↑2', 30, 350, { size: 9 });
+    // VS Code with the terminal panel maximised: title bar, activity bar,
+    // panel tabs, status bar — the storyboard's `.k-vs`, drawn with tour.js's
+    // own primitives; no new chrome belongs in tour.js itself.
+    function vsCode(ctx, P, split) {
+        E.box(ctx, 0, 0, 640, 16, 0, P.panel);
+        E.text(ctx, P, 's', PROJECT + ' — Visual Studio Code', 320, 11, { align: 'center', size: 8 });
+        E.text(ctx, P, 's', '—    □    ×', 632, 11, { align: 'right', size: 8 });
+        E.box(ctx, 0, 16, 20, 332, 0, P.panel);
+        [24, 44, 64, 84].forEach(function (y) { E.box(ctx, 5, y, 10, 10, 2, P.inset); });
+        E.line(ctx, [[20.5, 16], [20.5, 348]], P.rule2, 1);
+        E.line(ctx, [[20, 36.5], [640, 36.5]], P.rule2, 1);
+        [['PROBLEMS', 30], ['OUTPUT', 74], ['DEBUG CONSOLE', 110]].forEach(function (t) {
+            E.text(ctx, P, 's', t[0], t[1], 29, { size: 8 });
+        });
+        E.text(ctx, P, 's', 'TERMINAL', 176, 29, { size: 8, fill: P.ink });
+        E.line(ctx, [[176, 33.5], [212, 33.5]], P.ink, 1);
+        E.text(ctx, P, 's', split ? 'pwsh  │  pwsh' : 'pwsh', 632, 29, { align: 'right', size: 8 });
+        if (split) E.line(ctx, [[SPLIT + 0.5, 37], [SPLIT + 0.5, 348]], P.rule2, 1);
+        E.box(ctx, 0, 348, 640, 12, 0, P.panel);
+        E.line(ctx, [[0, 348.5], [640, 348.5]], P.rule2, 1);
+        E.text(ctx, P, 's', 'main ↑2', 26, 357, { size: 8 });
     }
 
-    // Each stage's own ctx%/5h%/where, climbing stage over stage — from the
-    // storyboard's own k-sl data attributes, never invented per file.
-    var CTXPCT = { survey: 9, design: 12, plan: 15, build: 22, verify: 34, audit: 36, land: 38 };
-    var H5PCT = { survey: 41, design: 43, plan: 44, build: 48, verify: 58, audit: 61, land: 66 };
-    var WHERE = { build: 'src/stock/StockTable.tsx', verify: 'api/transfers.ts', audit: 'docs/stock.md', land: 'api/transfers.ts' };
-    var SUB = {
-        survey: '已經有三個了，不寫第四個', design: '你點頭之前，不寫一行程式', plan: '三個任務，沒有共用的檔案',
-        build: '⚑ 另一個終端機也在改 StockTable.tsx', verify: '每一條都附證據', audit: '這次改動讓哪一行說錯了', land: '七站走完，一個不少'
+    // Each terminal shot, generated from the storyboard's own svg (its
+    // `pm-<stage>-t` shots): the Claude Code transcript as lines of coloured
+    // runs [text, colour, bold], the input box, the rings, the caption pill
+    // and the statuslines with their k-sl data.
+    var TERM = {
+        survey: {"lines":[[30,50,9.5,[["> /fankeel 多倉庫庫存與調撥","c2",0]]],[30,76,9.5,[["⏺","cg",0],[" Bash",null,1],["(node scripts/orient.js)","c2",0]]],[30,89,9.5,[["  ⎿  ","cm",0],["inventory-admin · git · 214 files · map.md 3 天前寫的","c2",0]]],[30,102,9.5,[["     這棵樹裡沒有其他 live session","c2",0]]],[30,128,9.5,[["⏺","cg",0],[" Bash",null,1],["(node scripts/survey.js product picker select)","c2",0]]],[30,141,9.5,[["  ⎿  ","cm",0],["files whose name matches:","c2",0]]],[30,154,9.5,[["       ","c2",0],["src/orders/ProductPicker.tsx","ink",0],["  3.4 KB","c2",0]]],[30,167,9.5,[["       ","c2",0],["src/purchase/SkuSelect.tsx","ink",0],["    2.8 KB","c2",0]]],[30,180,9.5,[["       ","c2",0],["src/stock/ItemLookup.tsx","ink",0],["      2.1 KB","c2",0]]],[30,193,9.5,[["     … +9 lines (ctrl+o to expand)","cm",0]]],[30,219,9.5,[["⏺ 選商品的元件已經有三個。調撥單的品項直接用 src/orders/ProductPicker.tsx，",null,0]]],[30,232,9.5,[["  不寫第四個。",null,0]]],[38,259,9.5,[["> ","cm",0],["█","c2",0]]]],"boxes":[[30.5,244.5,598,22]],"rings":[[64,144,215,40]],"sl":[{"x":32,"y":284,"size":9.5,"stage":"survey","step":1,"n":7,"title":"多倉庫庫存與調撥","ctx":9,"h5":41}],"pill":[292,154,160,20],"note":[372,168,"已經有三個了，不寫第四個"]},
+        design: {"lines":[[30,50,9.5,[["⏺ 做法：庫存改成每倉一筆（stock 加 warehouse_id），調撥記成一出一入兩筆異動。",null,0]]],[30,63,9.5,[["  會失敗的條件：任一商品各倉加總 ≠ 原本的總數。mockup 在 .fankeel/build/。","c2",0]]],[36,94,9.5,[["☐ 做法","ground",0]]],[32,117,9.5,[["這個做法可以嗎？",null,1]]],[32,139,9.5,[["❯ 1. 同意，進 plan (Recommended)","cs",0]]],[32,152,9.5,[["     照 mockup.html 這一版拆任務","cm",0]]],[32,170,9.5,[["  2. 先開 mockup 看看",null,0]]],[32,183,9.5,[["     在瀏覽器打開 mockup.html","cm",0]]],[32,201,9.5,[["  3. 換一個做法",null,0]]],[32,214,9.5,[["     說哪裡不對，重寫做法","cm",0]]],[32,232,9.5,[["  4. Type something.","c2",0]]],[32,254,9.5,[["Enter to select · ↑/↓ to navigate · Esc to cancel","cm",0]]]],"boxes":[],"rings":[],"sl":[{"x":32,"y":279,"size":9.5,"stage":"design","step":2,"n":7,"title":"多倉庫庫存與調撥","ctx":12,"h5":43}],"pill":[392,128,176,20],"note":[480,142,"你點頭之前，不寫一行程式"]},
+        plan: {"lines":[[30,50,9.5,[["⏺","cg",0],[" Write",null,1],["(docs/plans/multi-warehouse.md)","c2",0]]],[30,63,9.5,[["  ⎿  ","cm",0],["Wrote 142 lines to docs/plans/multi-warehouse.md","c2",0]]],[30,89,9.5,[["⏺","cg",0],[" Bash",null,1],["(node scripts/ledger.js groups --plan docs/plans/multi-warehouse.md)","c2",0]]],[30,102,9.5,[["  ⎿  ","cm",0],["fankeel ledger — 2 groups over 4 tasks","c2",0]]],[30,115,9.5,[["       1: 1, 2, 3  — workflow","c2",0]]],[30,128,9.5,[["       2: 4  — agent","c2",0]]],[30,154,9.5,[["⏺ 1、2、3 不碰同一個檔案，同時交給三個實作者：",null,0]]],[30,167,9.5,[["     1  ","c2",0],["src/warehouse/stockAt.ts  tests/stock.test.ts","ink",0]]],[30,180,9.5,[["     2  ","c2",0],["api/transfers.ts  src/warehouse/Transfer.tsx","ink",0]]],[30,193,9.5,[["     3  ","c2",0],["src/stock/StockTable.tsx  src/stock/stock.css","ink",0]]],[30,206,9.5,[["  4 也要改 src/warehouse/stockAt.ts，排進第二組，等 1 做完再上。",null,0]]],[38,237,9.5,[["> ","cm",0],["█","c2",0]]]],"boxes":[[30.5,222.5,598,22]],"rings":[[58,158,280,39]],"sl":[{"x":32,"y":262,"size":9.5,"stage":"plan","step":3,"n":7,"title":"多倉庫庫存與調撥","ctx":15,"h5":44}],"pill":[350,168,162,20],"note":[431,182,"三個任務，沒有共用的檔案"]},
+        build: {"lines":[[26,47,9,[["⏺","cg",0],[" Read",null,1],["(src/stock/StockTable.tsx)","c2",0]]],[26,60,9,[["  ⎿  ","cm",0],["Read 212 lines","c2",0]]],[26,76,9,[["⏺ task 3：庫存表加一欄倉庫。",null,0]]],[26,96,9,[["⏺","cg",0],[" Update",null,1],["(src/stock/StockTable.tsx)","c2",0]]],[26,118,9,[["Edit file",null,1]]],[32,136,9,[["41   { key: 'sku', label: '品號' },","cm",0]]],[32,149,9,[["42 ","cm",0],["+ { key: 'warehouse', label: '倉庫' },","cg",0]]],[26,170,9,[["fankeel: src/stock/StockTable.tsx is claimed by another live","cb",0]]],[26,183,9,[["session.","cb",0]]],[26,196,9,[["  - 庫存報表加 CSV 匯出 @ build","cb",0]]],[26,214,9,[["Do you want to make this edit to StockTable.tsx?",null,0]]],[26,230,9,[["❯ 1. Yes","cs",0]]],[26,243,9,[["  2. Yes, allow all edits during this session (shift+tab)",null,0]]],[26,256,9,[["  3. No, and tell Claude what to do differently (esc)",null,0]]],[388,50,9,[["> /fankeel 庫存報表加 CSV 匯出","c2",0]]],[388,76,9,[["⏺","cg",0],[" Update",null,1],["(src/stock/StockTable.tsx)","c2",0]]],[388,89,9,[["  ⎿  ","cm",0],["Updated src/stock/StockTable.tsx","c2",0]]],[388,102,9,[["     with 18 additions and 2 removals","c2",0]]],[388,128,9,[["✻ Building… ","co",0],["(esc to interrupt)","cm",0]]],[394,153,9,[["> ","cm",0],["█","c2",0]]]],"boxes":[[26.5,124.5,348,30],[386.5,138.5,246,22]],"rings":[],"sl":[{"x":26,"y":296,"size":9,"stage":"build","step":4,"n":7,"others":1,"where":"src/stock/StockTable.tsx","title":"多倉庫庫存與調撥","ctx":22,"h5":48},{"x":388,"y":180,"size":9,"stage":"build","step":3,"n":5,"others":1,"where":"src/stock/StockTable.tsx","title":"庫存報表加 CSV 匯出","ctx":22,"h5":48}],"pill":[392,236,236,20],"note":[510,250,"⚑ 另一個終端機也在改 StockTable.tsx"],"split":1},
+        verify: {"lines":[[30,50,9.5,[["⏺","cg",0],[" Bash",null,1],["(node --test)","c2",0]]],[30,63,9.5,[["  ⎿  ","cm",0],["ℹ tests 118  ℹ pass 118  ℹ fail 0","c2",0]]],[30,89,9.5,[["⏺ 需求逐條對證據：",null,0]]],[30,102,9.5,[["  ",null,0],["✔","cg",0],[" 庫存按倉庫各記一筆",null,0]]],[250,102,9.5,[["tests/stock.test.ts:22","c2",0]]],[30,115,9.5,[["  ",null,0],["✔","cg",0],[" 調撥出倉扣、入倉加，總量不變",null,0]]],[250,115,9.5,[["tests/transfers.test.ts:38","c2",0]]],[30,128,9.5,[["  ",null,0],["✔","cg",0],[" 庫存不足拒絕調撥：改動前失敗、現在通過",null,0]]],[250,128,9.5,[["tests/transfers.test.ts:61","c2",0]]],[30,141,9.5,[["  ",null,0],["✔","cg",0],[" 單倉的訂單照樣扣庫",null,0]]],[250,141,9.5,[["tests/orders.test.ts:17","c2",0]]],[30,167,9.5,[["✻","co",0],[" Verifying… ","co",0],["(esc to interrupt)","cm",0]]],[38,237,9.5,[["> ","cm",0],["█","c2",0]]]],"boxes":[[30.5,222.5,598,22]],"rings":[],"sl":[{"x":32,"y":262,"size":9.5,"stage":"verify","step":5,"n":7,"where":"api/transfers.ts","title":"多倉庫庫存與調撥","ctx":34,"h5":58}],"pill":[420,84,130,20],"note":[485,98,"每一條都附證據"]},
+        audit: {"lines":[[30,50,9.5,[["⏺","cg",0],[" Bash",null,1],["(node scripts/docs-check.js)","c2",0]]],[30,63,9.5,[["  ⎿  ","cm",0],["fankeel docs-check — 12 markdown files","c2",0]]],[30,89,9.5,[["     1 reference that no longer resolves:","c2",0]]],[30,102,9.5,[["       ","c2",0],["docs/stock.md:14","ink",0],["  ","c2",0],["src/stock/getStock.ts","cb",0]]],[30,128,9.5,[["⏺","cg",0],[" Update",null,1],["(docs/stock.md)","c2",0]]],[30,141,9.5,[["  ⎿  ","cm",0],["Updated docs/stock.md with 2 additions and 2 removals","c2",0]]],[30,167,9.5,[["⏺ docs/stock.md 還指著單倉的 src/stock/getStock.ts，這次已換成 src/warehouse/stockAt.ts。",null,0]]],[30,180,9.5,[["  改成新的路徑，docs-check 回到 0；不留給半年後的人再撲空一次。",null,0]]],[38,237,9.5,[["> ","cm",0],["█","c2",0]]]],"boxes":[[30.5,222.5,598,22]],"rings":[[64,93,236,13]],"sl":[{"x":32,"y":262,"size":9.5,"stage":"audit","step":6,"n":7,"where":"docs/stock.md","title":"多倉庫庫存與調撥","ctx":36,"h5":61}],"pill":[312,89,176,20],"note":[400,103,"這次改動讓哪一行說錯了"]},
+        land: {"lines":[[30,50,9.5,[["⏺","cg",0],[" Bash",null,1],["(node --test)","c2",0]]],[30,63,9.5,[["  ⎿  ","cm",0],["ℹ tests 118  ℹ pass 118  ℹ fail 0","c2",0]]],[30,89,9.5,[["⏺","cg",0],[" Bash",null,1],["(git merge --no-ff fankeel/multi-warehouse)","c2",0]]],[30,102,9.5,[["  ⎿  ","cm",0],["Merge made by the 'ort' strategy.","c2",0]]],[30,115,9.5,[["      23 files changed, 1204 insertions(+), 318 deletions(-)","c2",0]]],[30,141,9.5,[["⏺","cg",0],[" Write",null,1],["(.fankeel/map.md)","c2",0]]],[30,154,9.5,[["  ⎿  ","cm",0],["Wrote 212 lines to .fankeel/map.md","c2",0]]],[30,180,9.5,[["⏺ land 完成：在本機合併，沒有 push。",null,0]]],[30,193,9.5,[["  起點到 land 2h 07m · 花費 $53.87 · 42 個 agent","c2",0]]],[38,237,9.5,[["> ","cm",0],["█","c2",0]]]],"boxes":[[30.5,222.5,598,22]],"rings":[],"sl":[{"x":32,"y":262,"size":9.5,"stage":"land","step":7,"n":7,"where":"api/transfers.ts","title":"多倉庫庫存與調撥","ctx":38,"h5":66}],"pill":[400,176,150,20],"note":[475,190,"七站走完，一個不少"]}
     };
+    var RUN = { c2: 'ink2', cm: 'muted', cg: 'good', cb: 'bad', ink: 'ink', ground: 'ground' };
+    var CC = { co: '#d77757', cs: '#b1b9f9' };
+    function runs(ctx, P, x, y, size, segs) {
+        segs.forEach(function (r) {
+            ctx.font = (r[2] ? '700 ' : '400 ') + size + 'px ' + P.fMono;
+            // AskUserQuestion's header chip: ground-coloured text on an ink2 tab.
+            if (r[1] === 'ground') E.box(ctx, x - 4, y - 11, ctx.measureText(r[0]).width + 8, 15, 2, P.ink2);
+            E.text(ctx, P, 'j', r[0], x, y, { size: size, weight: r[2] ? '700' : '400', fill: CC[r[1]] || P[RUN[r[1]] || 'ink'] });
+            x += ctx.measureText(r[0]).width;
+        });
+    }
+    // A split terminal keeps each pane's text inside its own half.
+    var SPLIT = 380;
+    function pane(ctx, T, x, fn) {
+        if (!T.split) return fn();
+        ctx.save();
+        ctx.beginPath();
+        if (x < SPLIT) ctx.rect(21, 37, SPLIT - 25, 311); else ctx.rect(SPLIT + 1, 37, 639 - SPLIT - 4, 311);
+        ctx.clip();
+        fn();
+        ctx.restore();
+    }
+    function transcript(ctx, P, T) {
+        T.lines.forEach(function (l) { pane(ctx, T, l[0], function () { runs(ctx, P, l[0], l[1], l[2], l[3]); }); });
+        T.boxes.forEach(function (b) { E.box(ctx, b[0], b[1], b[2], b[3], 3, null, P.faint, 1); });
+    }
     var CROSS = 6; // frames into a terminal cut where the lead crosses from the previous stage to this one
 
-    // A single stage's terminal cut: for six frames the lead line still
-    // reads the previous stage (survey has none to cross from, so it never
-    // holds), then it crosses to this block's own stage and that stage's own
-    // route dot lights — one route, drawn in two places, from one `i`.
+    // A single stage's terminal cut: the finished transcript on a hard cut;
+    // for six frames the lead line still reads the previous stage (survey has
+    // none to cross from, so it never holds), then it crosses to this block's
+    // own stage and that stage's own route dot lights — one route, drawn in
+    // two places, from one `i`. The ring and the caption pill come in after.
     function termCut(ctx, P, i, tl) {
-        vsCode(ctx, P);
-        var s = ROUTE[i], prev = i > 0 ? ROUTE[i - 1] : s;
+        var s = ROUTE[i], T = TERM[s], prev = i > 0 ? ROUTE[i - 1] : s;
+        vsCode(ctx, P, T.split);
+        transcript(ctx, P, T);
         var crossed = i === 0 || tl >= CROSS;
-        var word = crossed ? s : prev;
-        var step = crossed ? i + 1 : i;
-        var st = { stage: word, step: step, ctx: CTXPCT[s], h5: H5PCT[s], where: WHERE[s], others: s === 'build' && tl >= 12 ? 1 : undefined };
-        var g = E.expoOut(E.prog(tl, 0, 12));
-        E.fade(ctx, g, function () { lead(ctx, P, 40, 290, st, TITLE); });
-        var k = E.expoOut(E.prog(tl, 20, 14));
-        E.fade(ctx, k, function () { E.text(ctx, P, 's', SUB[s], 320, 250, { align: 'center' }); });
+        T.sl.forEach(function (sl, n) {
+            var st = Object.assign({}, sl);
+            if (n === 0 && !crossed) { st.stage = prev; st.step = sl.step - 1; }
+            if (n === 0 && s === 'build' && tl < 12) st.others = undefined;
+            var g = E.expoOut(E.prog(tl, 0, 12));
+            pane(ctx, T, sl.x, function () { E.fade(ctx, g, function () { lead(ctx, P, st); }); });
+        });
+        var r = E.expoOut(E.prog(tl, 12, 12));
+        E.fade(ctx, r, function () { T.rings.forEach(function (b) { E.box(ctx, b[0], b[1], b[2], b[3], 3, null, P.ink2, 1.2); }); });
+        var k = E.backOut(E.prog(tl, 20, 14));
+        if (k > 0) E.fade(ctx, Math.min(1, k), function () {
+            var p = T.pill;
+            E.box(ctx, p[0], p[1], p[2], p[3], p[3] / 2, P.panel, P.rule2, 1);
+            E.text(ctx, P, 'b', T.note[2], T.note[0], T.note[1], { align: 'center', size: 11, weight: '600' });
+        });
     }
 
     // land's terminal cut is two shots: the same crossing cut (72 frames),
-    // then a close-up (36 frames) with all seven route dots lit at once — the
-    // video's one moment the whole rail moves together.
+    // then a close-up (36 frames) on its statusline with all seven route dots
+    // lit at once — the video's one moment the whole rail moves together.
     function landCloseup(ctx, P, tl) {
+        var T = TERM.land, sl = T.sl[0];
         vsCode(ctx, P);
-        var st = { stage: 'land', step: ROUTE.length, ctx: CTXPCT.land, h5: H5PCT.land, where: WHERE.land };
         ctx.save();
-        ctx.translate(40, 290);
+        ctx.beginPath();
+        ctx.rect(21, 37, 619, 311);
+        ctx.clip();
+        ctx.translate(sl.x, sl.y);
         ctx.scale(1.4, 1.4);
-        ctx.translate(-40, -290);
-        lead(ctx, P, 40, 290, st, TITLE);
+        ctx.translate(-sl.x, -sl.y);
+        transcript(ctx, P, T);
+        lead(ctx, P, sl);
         ctx.restore();
     }
 

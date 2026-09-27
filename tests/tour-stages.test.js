@@ -69,6 +69,22 @@ test('each stage\'s terminal cut draws its own stage in the lead line, after the
     });
 });
 
+// Criterion: each terminal cut draws the Claude Code transcript above the
+// statusline, taken from the storyboard's own shot. Red when: the cut draws
+// only the lead line and a caption, leaving the terminal empty (as shipped in
+// 4109106b).
+test('each stage\'s terminal cut draws its Claude Code transcript above the statusline', () => {
+    const LINE = {
+        survey: 'src/orders/ProductPicker.tsx', design: '這個做法可以嗎？', plan: '(docs/plans/multi-warehouse.md)',
+        build: 'Do you want to make this edit to StockTable.tsx?', verify: '(node --test)',
+        audit: '(node scripts/docs-check.js)', land: '(git merge --no-ff fankeel/multi-warehouse)',
+    };
+    T.ROUTE.forEach((s, i) => {
+        const t = shot(INTRO + PER * i + 350).texts();
+        assert.ok(t.includes(LINE[s]), s + ': ' + t.join(' | '));
+    });
+});
+
 // Criterion: the land stage's terminal cut draws seven filled route dots.
 // Red when: the close-up's `step` is anything less than the full route
 // length (e.g. left at 6, one behind).
