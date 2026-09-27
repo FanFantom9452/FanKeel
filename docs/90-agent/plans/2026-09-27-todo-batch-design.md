@@ -6,7 +6,7 @@ last_verified: 2026-09-27
 # TODO 大批次：工具修補、docs 工具、review、圖、station
 
 session f44b1c61-9b5a-441c-b2b1-b11576edf535 的 design，五節逐節經使用者同意。它描述的是要做成的樣子。
-survey：`.fankeel/build/task-20260927T073715/survey.md`。mockup：`.fankeel/build/2026-09-27-station-batch/mockup.html`。
+survey：`.fankeel/build/task-20260927T073715/survey.md`。mockup：`.fankeel/build/2026-09-27-station-batch/mockup.html` — 方向（原樣定稿，細節交 build 的 render reviewer）。
 另含 ab.sh 重跑（使用者已核准約 $30），不需要 design，在 build 跑。
 
 ## 1. 工具修補
