@@ -28,8 +28,7 @@ const badge = require('../lib/badge.js');
 const station = require('../lib/station.js');
 const { clearEntry } = require('../lib/clear.js');
 const { tokens } = require('../lib/context.js');
-const { overlapPaths } = require('../lib/overlap.js');
-const { guardMode } = require('../lib/guard.js');
+const { guardMode, sharedWith } = require('../lib/guard.js');
 const { splitAroundVerb } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 const profile = require('../lib/profile.js');
@@ -354,13 +353,13 @@ function describe(root, sessionId, data) {
 // whose process has already exited — which the next prompt then silently takes
 // back. Two writers disagreeing about one neighbour is the contradiction this
 // design exists to end, not to relocate.
-function collisions(root, sessionId, claims) {
+function collisions(root, sessionId, data) {
     const out = [];
     const liveState = live.readLive(live.liveConfigDir(), sessionId);
-    for (const other of registry.readActive(root)) {
-        if (other.sessionId === sessionId) continue;
-        if (!live.isLive(liveState, other.sessionId, other.data && other.data.configDir)) continue;
-        const shared = overlapPaths(claims, registry.claimsOf(other.data));
+    const alive = registry.readActive(root).filter((o) => o.sessionId !== sessionId
+        && live.isLive(liveState, o.sessionId, o.data && o.data.configDir));
+    for (const other of alive) {
+        const shared = sharedWith(data, other, alive).clash;
         if (shared.length) out.push({ task: other.data.task || 'untitled', shared });
     }
     return out;
@@ -750,7 +749,7 @@ function cmdStage(root, opts) {
     if (refuse) fail(refuse);
     if (!data) fail('No active entry for this session under ' + root);
     if (!wrote) fail('Could not write the entry.');
-    const clash = collisions(root, id, registry.claimsOf(data));
+    const clash = collisions(root, id, data);
     showBadge(opts, id, badge.badgeWord(name, clash.length > 0), Object.assign({ others: clash.length }, data), root);
 
     // What the stage just left cost, said at the one moment it is a finished
@@ -996,7 +995,7 @@ function cmdGuard(root, opts) {
     // nothing, but this runs mid-task over files already claimed. Skipping it
     // would take a live `clash` off the statusline as a side effect of setting
     // the mode that exists to make collisions louder.
-    const clash = collisions(root, id, registry.claimsOf(data));
+    const clash = collisions(root, id, data);
     showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data), root);
 
     return 'fankeel — guard: ' + (data.guard === 'off' ? 'off (warning only)' : data.guard);
@@ -1143,7 +1142,7 @@ function cmdAdopt(root, opts) {
         fail('Adopted, but could not stand the source down. Two sessions now claim these files — stand ' + from + ' down by hand.');
     }
 
-    const adoptClash = collisions(root, id, claims);
+    const adoptClash = collisions(root, id, data);
     showBadge(opts, id, badge.badgeWord(data.stage, adoptClash.length > 0), Object.assign({ others: adoptClash.length }, data), root, false);
     const stationDir = claudeDir(opts);
     if (stationDir) refreshStation(stationDir, root);
@@ -1241,7 +1240,7 @@ function cmdRoute(root, opts) {
         data = d;
     });
     if (!wrote) fail('Could not write the entry.');
-    const clash = collisions(root, id, registry.claimsOf(data));
+    const clash = collisions(root, id, data);
     showBadge(opts, id, badge.badgeWord(data.stage, clash.length > 0), Object.assign({ others: clash.length }, data), root);
 
     const at = positionIn(given, data.stage);

@@ -106,6 +106,7 @@ mtime is later than the task's `started` into a field of its own, `seen` — the
 writes that reached the disk without any tool a hook matches, a `sed` or a
 `node -e` or a build script. Git names no writer, and a shared tree shows every
 session every dirty file, so `seen` is shown as weak and never enters `claims`.
+It counts toward a collision only where no live session in the same tree holds the path in its own `claims` or `seen` (`effectiveClaims`, `lib/guard.js`).
 The same cap holds it, sixty, and `task` clears it with `claims`. No subcommand sets it. `adopt` carries it across, because where the work went belongs
 to the task rather than to the session, and `task` clears it, because a task that
 has just been renamed has touched nothing yet.

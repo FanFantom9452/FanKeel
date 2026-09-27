@@ -19,8 +19,7 @@ const badge = require('../lib/badge.js');
 const station = require('../lib/station.js');
 const context = require('../lib/context.js');
 const { render, renderInit, PLUGIN_ROOT } = require('../lib/render.js');
-const { overlapPaths } = require('../lib/overlap.js');
-const { guardMode } = require('../lib/guard.js');
+const { guardMode, sharedWith } = require('../lib/guard.js');
 const { positionIn } = require('../lib/stages.js');
 const { claimWrites } = require('../lib/dirty.js');
 const profileLib = require('../lib/profile.js');
@@ -196,7 +195,7 @@ function main(raw) {
     const liveState = live.readLive(live.liveConfigDir(), sessionId);
     const mineClaims = registry.claimsOf(mine);
     const alive = others.filter((o) => live.isLive(liveState, o.sessionId, o.data && o.data.configDir));
-    const overlapping = alive.filter((o) => overlapPaths(mineClaims, registry.claimsOf(o.data)).length > 0).length;
+    const overlapping = alive.filter((o) => sharedWith(mine, o, alive).clash.length > 0).length;
 
     // The project's standing answers. A read failure costs one line, never
     // the injection: `read` returns unreadable paths rather than throwing, but

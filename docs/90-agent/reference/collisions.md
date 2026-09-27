@@ -70,6 +70,7 @@ mattering.
 | where | the repository named by `project`, or the registry root; the claim is written back registry-relative like every other |
 | never | a pass holding more paths than `seen` can keep. `-uall` lists an unignored `dist/` of 300 build outputs as 300 fresh writes, and keeping the newest sixty of those would evict every earlier path git saw. The block says so — `unclaimed: 300 files written outside the hooks` — because a `seen:` line that reads as complete while half its source was discarded is the failure this page is about |
 | cost | one `git status`: **+41ms a prompt**, measured end to end through the hook on Windows 2026-08-28, 185ms before and 226ms after. Near enough a constant — `git status` alone runs 124ms against a 14-file repository and 131ms against a 106-file one, so what is paid for is starting git rather than walking the tree, and `-uall` adds nothing to it |
+| weight | weak. Git names no writer and a shared tree shows every session every dirty file, so a `seen` path counts toward a collision only where no live session in the same tree holds it in its own `claims` or `seen` — `effectiveClaims` in `lib/guard.js`. Two sessions that both only saw a file do not collide over it |
 
 Two limits, and they are why this is a second path rather than a replacement.
 A claim found this way lands **on the next prompt**, where `touch.js` records it
@@ -140,7 +141,7 @@ Two rules keep it from becoming a lockout, both inside `blockers()`
 (`lib/guard.js:123`, `function blockers(`) — one asked of every holder, one
 only when this session holds the file too:
 
-- **A dead session's claim never blocks** — `isLive`, `lib/guard.js:130` (`if (!isLive(`).
+- **A dead session's claim never blocks** — `isLive`, `lib/guard.js:126` (`isLive(liveState, o.sessionId`).
   Liveness is the session's own file under `sessions/` in the config directory
   **that session recorded**, plus a live process behind its pid; a terminal
   that is gone holds nothing shut. `CLAUDE_CONFIG_DIR` moves that directory, so
@@ -154,7 +155,7 @@ only when this session holds the file too:
   still be found dead. An entry that names no directory, or names the one
   already scanned, is checked against that scan only when the scan is known
   good, and can be judged dead there (`isLive`, `lib/live.js`).
-- **The older task holds** — `claimedFirst`, `lib/guard.js:131` (`!claimedFirst(data, mine)`). When
+- **The older task holds** — `claimedFirst`, `lib/guard.js:134` (`!claimedFirst(data, mine)`). When
   both sessions claim the file, the newer one yields — so two sessions
   that both reached it cannot block each other into a stalemate.
 
