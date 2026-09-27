@@ -164,6 +164,9 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 大批次（09-27）定了什麼、量到什麼、在哪裡回頭：一份 spec 分五節、中英介面、require 圖單一來源、reviewer 的 `## Verify`，以及 guard 把鄰居看到的檔當成認領 | [decisions/2026-09-28-todo-batch.md](03-decisions/2026-09-28-todo-batch.md) — *繁體中文* |
 | TODO 大批次怎麼做：工具修補、docs 工具、review 強化、require 圖、station 更新五節 | `docs/99-archive/2026-09-27-todo-batch-design.md` — *built, 繁體中文* |
 | 落地它的 20 個 task | `docs/99-archive/2026-09-27-todo-batch.md` — *built* |
+| guard 的 `seen` 與 ab.sh 重跑（09-28）定了什麼、量到什麼、在哪裡回頭：`seen` 只警告不攔、verify 站第一次量到 `k` | [decisions/2026-09-28-guard-seen-ab-rerun.md](03-decisions/2026-09-28-guard-seen-ab-rerun.md) — *繁體中文* |
+| guard 不因 `seen` 攔編輯、ab.sh 重跑的 design | `docs/99-archive/2026-09-28-guard-seen-ab-rerun-design.md` — *built, 繁體中文* |
+| 落地它的 3 個 task | `docs/99-archive/2026-09-28-guard-seen-ab-rerun.md` — *built* |
 | Needs-a-decision 六條怎麼定：拆出 fankeel-mockup、各角色 effort、docs tree 加「給誰看」軸、ADR 為 ≤7 條 binding 子集、station 看／答問題、tune 改完通知與自動刷新、設定精靈改卡片 | `docs/99-archive/2026-09-26-station-redesign-design.md` — *built, 繁體中文* |
 | 做它的 13 個 task——從 fankeel-mockup agent、effort、docs 軸與 binding 上限，到 station 答題、toast、模型版本、effort chip、設定精靈卡片，最後在真頁面上逐塊調整 | `docs/99-archive/2026-09-26-station-redesign.md` — *built, 繁體中文* |
 | 把上面那份設計拆成三個 task 的計畫 | `docs/99-archive/2026-09-25-todo-line-and-multiplier.md` — *built, 繁體中文* |
