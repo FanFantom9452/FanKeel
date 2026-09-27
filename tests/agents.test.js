@@ -249,3 +249,34 @@ test('the reviewer carries the silent-failure and comment lenses, and build and 
     assert.match(verify, /`## Silent failure` lens/);
     assert.match(verify, /`## Comment` lens/);
 });
+
+// docs/90-agent/plans/2026-09-27-todo-batch-design.md §3: the main return,
+// the security lens and the silent-failure lens each end a finding line
+// `— fails when <input> → <wrong result>`; cuts and the comment lens do
+// not change.
+test('the main return, the security lens and the silent-failure lens all end their finding line with fails when', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reviewer.md'), 'utf8');
+    const ret = text.split('\n## Return\n')[1];
+    assert.match(ret, /fails when <the input or state> → <the wrong result>/);
+    const security = text.split('\n## Security\n')[1].split('\n## ')[0];
+    assert.match(security, /<the fix> — fails when <the input or state> → <the wrong result>\./);
+    const silent = text.split('\n## Silent failure\n')[1].split('\n## ')[0];
+    assert.match(silent, /<the fix> — fails when <the input or state> → <the wrong result>\./);
+    const cuts = text.split('\n## Cuts\n')[1].split('\n## ')[0];
+    assert.doesNotMatch(cuts, /fails when/);
+    const comment = text.split('\n## Comment\n')[1].split('\n## ')[0];
+    assert.doesNotMatch(comment, /fails when/);
+});
+
+// docs/90-agent/plans/2026-09-27-todo-batch-design.md §3: four exclusions
+// apply to every lens, not only security's.
+test('a general exclusion list covers every lens: pre-existing issues, linter catches, style nits, silenced lines', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reviewer.md'), 'utf8');
+    assert.match(text, /^## Never a finding$/m);
+    const never = text.split('\n## Never a finding\n')[1].split('\n## ')[0];
+    assert.match(never, /predates this diff/);
+    assert.match(never, /linter/);
+    assert.match(never, /style/);
+    assert.match(never, /eslint-disable/);
+    assert.match(never, /noqa/);
+});

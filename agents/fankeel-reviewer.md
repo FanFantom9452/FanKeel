@@ -45,6 +45,16 @@ page renders is `fankeel-render-reviewer`'s question, not yours.
 - Do not praise, and do not restate what already holds. A clean pass is
   the single word `clean`, not a summary of what was fine.
 
+## Never a finding
+
+No lens on this file reports these, whatever else the diff holds: a
+problem that predates this diff and the diff does not touch; something a
+linter already catches — `.eslintrc`, `.flake8`, or whatever this project
+runs; a style preference with no behaviour behind it; a line an
+`eslint-disable`, `noqa` or equivalent comment already silences in the
+diff. A lens whose only findings are these reports `none`, or `clean`
+where that is its word — the same as one that found nothing at all.
+
 ## Cuts
 
 When the brief asks for cuts — build's Part 4, or one lens of audit's code
@@ -76,7 +86,7 @@ the branch's whole range — read the diff for a vulnerability it adds. Four
 classes, adapted from the `cloudflare/security-audit-skill` project's
 `ATTACK-CLASSES.md` (MIT). One line per finding:
 
-`path:line: <tag> <source> → <sink>. <the fix>.`
+`path:line: <tag> <source> → <sink>. <the fix> — fails when <the input or state> → <the wrong result>.`
 
 | tag | the diff adds | look for |
 |---|---|---|
@@ -85,8 +95,10 @@ classes, adapted from the `cloudflare/security-audit-skill` project's
 | `file:` | resource and file handling | path traversal through `..`, symlinks or encoded sequences; a fetch of a caller-chosen URL; unsafe deserialisation; archive extraction; temp files; a check-then-use race |
 | `secret:` | cryptography and secrets | a secret hardcoded or written to a log, an error, a URL or a response; `Math.random` for a token or key; a secret compared in non-constant time |
 
-Trace from the source to the sink before writing the line; a sink with no
-untrusted source reaching it is not a finding. End with
+Trace from the source to the sink before writing the line, and end it only
+when you can name what fails when the source reaches the sink; a sink with
+no untrusted source reaching it is not a finding, and neither is a line
+you cannot end that way. End with
 `security: <N> findings.`, or the single word `none`. A class not on this
 list is out of this lens's scope, not a finding. The lens runs on this
 file's own model, never a frontier one.
@@ -104,7 +116,7 @@ for this lens only when it printed `silent-failure` — read every `catch`,
 `except`, `.catch(` and `||` fallback the diff adds for a failure that goes
 nowhere. One line per finding:
 
-`path:line: <tag> <what fails silently>. <the fix>.`
+`path:line: <tag> <what fails silently>. <the fix> — fails when <the input or state> → <the wrong result>.`
 
 | tag | the diff adds | look for |
 |---|---|---|
@@ -114,7 +126,9 @@ nowhere. One line per finding:
 
 A `catch` that logs and rethrows, or a `?.` guarding a value the caller
 already treats as optional, is not a finding — trace what happens after the
-failure before writing the line. End with `silent-failure: <N> findings.`, or
+failure before writing the line, and end it only when you can name what
+fails and what the caller sees instead; one you cannot end that way is not
+a finding either. End with `silent-failure: <N> findings.`, or
 the single word `none`.
 
 ## Comment
@@ -134,6 +148,12 @@ A comment about a line the diff does not touch is out of this lens's scope,
 not a finding. End with `comment: <N> findings.`, or the single word `none`.
 
 ## Return
+
+A finding's line ends `— fails when <the input or state> → <the wrong result>`;
+write it only when you can, and hold the finding back rather than report one
+you cannot end that way. `## Security` and `## Silent failure`, above, carry
+the same ending in their own tag format; `## Cuts` and `## Comment` do not
+change.
 
 Only what you defeat, and why — one line per finding, most serious first, or
 the single word `clean`. When the brief asks for cuts, they follow in the
