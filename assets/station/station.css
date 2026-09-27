@@ -855,18 +855,74 @@ ol.rz>li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:0 8px;padding
 .sidenav a .nb.ext{font:11px var(--f-ui);color:var(--faint)}
 .sidenav a[aria-current="page"]{background:var(--ink);color:var(--panel);font-weight:600}
 .sidenav a[aria-current="page"] .nb{color:var(--panel);opacity:.75}
-.regs{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px;align-items:start}
-.reg{background:var(--panel);border-radius:var(--r);padding:16px 16px 8px}
-.reg-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.reg-root{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.srow{display:block;padding:10px 6px 10px 9px;border-top:1px solid var(--rule);text-decoration:none;border-radius:5px;color:inherit}
-.srow:hover{background:var(--wash)}
-.srow .srow-a{display:flex;align-items:center;gap:7px;font-weight:500;line-height:1.35}
-.srow .srow-a span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.srow .srow-b{display:flex;align-items:center;gap:9px;margin-top:5px;font-size:11.5px;color:var(--muted)}
-.srow .srow-b .ago{margin-left:auto}
-.srow.stale{box-shadow:inset 2px 0 0 var(--stale)}
-.reg .none{font-size:12px;color:var(--muted);padding:10px 6px;border-top:1px solid var(--rule);margin:0}
+/* 現在 (`#/live`): four blocks, sessions first, registries last (2026-09-27 mockup) */
+.lv{display:flex;flex-direction:column;gap:18px;max-width:1180px}
+.lv h2{margin:0;font-size:13.5px;font-weight:600}
+.lv-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.lv-note{font-size:12px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lv-h{display:flex;align-items:baseline;gap:9px;padding:0 4px 8px}
+.lv-h .btn{align-self:center}
+.lv-gate{background:var(--panel);border-radius:var(--r);padding:12px 16px}
+.lv-gate.is-empty{display:flex;align-items:center;gap:8px;padding:10px 16px;color:var(--muted);font-size:12.5px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule)}
+.lv-gate.is-empty .ico{color:var(--good)}
+.lv-gate:not(.is-empty){box-shadow:inset 3px 0 0 var(--stale)}
+.lv-gate:not(.is-empty) .lv-h{padding:0 0 6px}
+.gate-row{display:grid;grid-template-columns:auto minmax(0,160px) minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:9px 6px;border-top:1px solid var(--rule);border-radius:var(--r-sm);text-decoration:none;color:inherit}
+.gate-row:hover{background:var(--wash)}
+.gate-row:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.gate-p{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gate-q{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gate-t{font-size:12px;color:var(--stale-ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill.gate{background:var(--stale-bg);color:var(--stale-ink)}
+.pill.gate .ico{width:12px;height:12px}
+.lv-grp{background:var(--panel);border-radius:var(--r);padding:14px 12px 6px}
+.lane{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr) 116px;grid-template-areas:"who task when" "who rail when";column-gap:20px;row-gap:9px;align-items:center;padding:13px 10px 14px;border-top:1px solid var(--rule);border-radius:var(--r-sm);text-decoration:none;color:inherit}
+.lane:hover{background:var(--wash)}
+.lane:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.lane-who{grid-area:who;display:flex;flex-direction:column;gap:2px;min-width:0;align-self:start}
+.lane-who b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lane-who .mono{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lane-task{grid-area:task;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lane-when{grid-area:when;display:flex;flex-direction:column;align-items:flex-end;gap:3px;align-self:start;text-align:right}
+.lane-when b{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.lane-when small{font-size:11.5px;color:var(--muted)}
+.lane.unsure .lane-task,.lane.unsure .lane-when b{color:var(--ink2)}
+.lane.unsure .lane-who b{font-weight:500}
+.lane.unsure .pill.live{background:var(--down-bg);color:var(--down)}
+.lane.unsure .pill.live .dot{background:var(--down);animation:none}
+.lrail{grid-area:rail;list-style:none;margin:0;padding:0;display:flex;align-items:center;min-width:0}
+.lrail li{display:flex;align-items:center;gap:6px;font:11.5px/1 var(--f-mono);color:var(--ink2);white-space:nowrap}
+.lrail li+li::before{content:"";width:22px;height:1.5px;margin:0 8px;background:var(--ink2);border-radius:1px;opacity:.55}
+.lrail li.todo::before{background:repeating-linear-gradient(90deg,var(--rule2) 0 4px,transparent 4px 7px);opacity:1}
+.lrail i{position:relative;width:9px;height:9px;border-radius:50%;background:var(--c);flex:none}
+.lrail .todo{color:var(--muted)}
+.lrail .todo i{background:transparent;box-shadow:inset 0 0 0 1.5px var(--rule2)}
+.lrail .now span{font-weight:700;color:var(--ink);font-size:12.5px}
+.lrail .now i{width:11px;height:11px;box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px var(--c)}
+.lrail .now.live i::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--c);opacity:.5;animation:lvring 2.4s ease-out infinite}
+.lrail em{font-style:normal;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.lrail .now.live em{color:var(--ink)}
+@keyframes lvring{0%{transform:scale(.6);opacity:.6}100%{transform:scale(1.5);opacity:0}}
+@media(prefers-reduced-motion:reduce){.lrail .now.live i::after{animation:none;opacity:.35}}
+.lv-idle{padding:2px 4px}
+.lv-idle h2{font-size:12.5px;font-weight:500;color:var(--muted);margin-bottom:8px}
+.lv-idle ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.lv-idle a{display:inline-block;padding:3px 10px;border-radius:var(--r-pill);font:11.5px/1.5 var(--f-mono);color:var(--ink2);text-decoration:none;box-shadow:inset 0 0 0 1px var(--rule)}
+.lv-idle a:hover{color:var(--ink);background:var(--wash)}
+.lv-idle a:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.lv-empty{margin:0;padding:12px 10px 14px;border-top:1px solid var(--rule);color:var(--muted);font-size:12.5px}
+.lv-clear{display:inline-flex;align-items:center;gap:6px;align-self:center}
+.lv-clear form{margin:0}
+.lv-clear button{display:inline-flex;align-items:center;border:1px solid var(--rule2);background:transparent;border-radius:7px;padding:4px 10px;font-size:12.5px;cursor:pointer;color:var(--ink2)}
+.lv-clear button:hover{color:var(--ink);background:var(--wash)}
+.lv-clear code{font-size:11px;color:var(--muted)}
+@media(max-width:1280px){
+  .lane{grid-template-columns:minmax(0,1fr) 100px;grid-template-areas:"who when" "task when" "rail rail";row-gap:6px}
+  .lane-who{flex-direction:row;align-items:baseline;gap:10px}
+  .lrail{margin-top:4px}
+  .gate-row{grid-template-columns:auto minmax(0,120px) minmax(0,1fr) auto}
+  .gate-row .btn{display:none}
+}
 
 /* ---- 設定: the wizard (2026-09-26 station redesign mockup) — every rule under .wz ---- */
 .wz{--ez:cubic-bezier(.16,1,.3,1);--loop:5.6s}

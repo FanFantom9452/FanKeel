@@ -1431,6 +1431,89 @@ test('the live badge counts exactly the rows 現在 marks live', () => {
     assert.equal(c.docs, 1);
 });
 
+// docs/90-agent/plans/2026-09-27-five-items-design.md §1: `#/live` is four
+// blocks — the gates waiting, the sessions confirmed running, the ones that
+// may have stopped, and one line of chips for every registry with neither.
+const LV_T = Date.now();
+const LV_PROJECTS = [
+    { root: 'F:\\ws\\alpha', gone: false }, { root: 'F:\\ws\\beta', gone: false },
+    { root: 'F:\\ws\\quiet', gone: false }, { root: 'F:\\ws\\gone', gone: true },
+];
+const LV_SESSIONS = [
+    { id: 'lv-run', root: 'F:\\ws\\alpha', project: null, state: 'live', unknown: false, task: 'running one', stage: 'plan',
+      route: ['survey', 'design', 'plan', 'build'], started: new Date(LV_T - 20 * 60000).toISOString(), updated: LV_T - 2 * 60000,
+      stages: [{ stage: 'survey', from: LV_T - 20 * 60000, to: LV_T - 8 * 60000 },
+          { stage: 'design', from: LV_T - 8 * 60000, to: LV_T - 3 * 60000 },
+          { stage: 'plan', from: LV_T - 3 * 60000, to: LV_T - 2 * 60000 }], pending: null },
+    { id: 'lv-gate', root: 'F:\\ws\\alpha', project: 'Beta', state: 'live', unknown: false, task: 'gated one', stage: 'design',
+      route: ['survey', 'design'], started: new Date(LV_T - 10 * 60000).toISOString(), updated: LV_T - 4 * 60000, stages: [],
+      pending: { questions: [{ header: '選一個方向', question: '哪一個？' }], at: LV_T - 4 * 60000, until: LV_T + 26 * 60000 } },
+    { id: 'lv-unsure', root: 'F:\\ws\\beta', project: null, state: 'live', unknown: true, task: 'unsure one', stage: 'verify',
+      route: ['survey', 'build', 'verify'], started: new Date(LV_T - 86400000).toISOString(), updated: LV_T - 3 * 86400000,
+      stages: [], pending: null },
+    { id: 'lv-stale', root: 'F:\\ws\\beta', project: null, state: 'stale', unknown: false, task: 'stale one', stage: 'build',
+      route: ['survey', 'build'], started: new Date(LV_T - 86400000).toISOString(), updated: LV_T - 3 * 3600000,
+      stages: [], pending: null },
+    { id: 'lv-down', root: 'F:\\ws\\quiet', project: null, state: 'down', unknown: false, task: 'down one', stage: 'land',
+      route: ['survey', 'land'], started: new Date(LV_T - 86400000).toISOString(), updated: LV_T - 86400000,
+      stages: [], pending: null },
+];
+// One block's markup: from its `data-block` to the first `</section>` after it.
+const lvBlock = (html, name) => {
+    const at = html.indexOf('data-block="' + name + '"');
+    return at < 0 ? '' : html.slice(at, html.indexOf('</section>', at));
+};
+
+test('#/live draws four blocks in order, and an idle registry is a chip rather than a card', () => {
+    global.window.STATION.serve = false;
+    const html = V.nowHtml(LV_PROJECTS, LV_SESSIONS);
+    const order = ['live-gate', 'live-run', 'live-maybe', 'live-idle'].map((n) => html.indexOf('data-block="' + n + '"'));
+    assert.ok(order.every((i) => i > 0), order.join(','));
+    assert.deepEqual([...order].sort((a, b) => a - b), order, 'gate, run, maybe, idle, top to bottom');
+    assert.ok(html.indexOf('data-block="now"') < order[0], 'all four inside the page block');
+    assert.doesNotMatch(html, /沒有進行中的 session/);
+    assert.doesNotMatch(html, /class="reg"/, 'no registry card');
+
+    const gate = lvBlock(html, 'live-gate');
+    assert.match(gate, /href="#\/s\/lv-gate"/);
+    assert.match(gate, /選一個方向/);
+    assert.match(gate, /等了 4m · 還剩 26m/);
+
+    const run = lvBlock(html, 'live-run');
+    assert.match(run, /href="#\/s\/lv-run"/);
+    assert.match(run, /href="#\/s\/lv-gate"/);
+    assert.doesNotMatch(run, /lv-unsure|lv-stale|lv-down/);
+    assert.match(run, /<li class="done" style="--c:var\(--st-survey\)" title="survey 12m">/);
+    assert.match(run, /<li class="now live" style="--c:var\(--st-plan\)" aria-current="step"><i><\/i><span>plan<\/span><em>3m<\/em><\/li>/);
+    assert.match(run, /<li class="todo"><i><\/i><span>build<\/span><\/li>/);
+
+    const maybe = lvBlock(html, 'live-maybe');
+    assert.match(maybe, /href="#\/s\/lv-unsure"/);
+    assert.match(maybe, /href="#\/s\/lv-stale"/);
+    assert.match(maybe, />live\?</);
+    assert.doesNotMatch(maybe, /lv-run|lv-down/);
+    assert.match(maybe, /task\.js clear/, 'offline, the registry with a stale row prints the clear command');
+
+    const idle = lvBlock(html, 'live-idle');
+    assert.match(idle, /<a href="#\/p\/F%3A%5Cws%5Cquiet" title="F:\\ws\\quiet">quiet<\/a>/);
+    assert.doesNotMatch(idle, /alpha|beta|gone/);
+});
+
+test('#/live with nothing waiting says so in one line, and every block is written literally in the source', () => {
+    global.window.STATION.serve = true;
+    global.window.STATION.nonce = 'tok-lv';
+    const html = V.nowHtml(LV_PROJECTS, LV_SESSIONS.filter((s) => s.id !== 'lv-gate'));
+    assert.match(html, /<section class="lv-gate is-empty" data-block="live-gate"/);
+    assert.match(lvBlock(html, 'live-gate'), /沒有在等你的 gate/);
+    assert.match(lvBlock(html, 'live-maybe'),
+        /<form method="post" action="\/clear-stale">[\s\S]*name="root" value="F:\\ws\\beta"[\s\S]*clear 1 stale/);
+    const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    for (const n of ['live-gate', 'live-run', 'live-maybe', 'live-idle']) {
+        assert.ok(src.includes('data-block="' + n + '"'), n + ' is not written literally in assets/station/station.js');
+    }
+    global.window.STATION.serve = false;
+});
+
 test('every non-zero segment is its own hover target, behind nothing', () => {
     const bars = V.dayBars(HOME, 'usd', 'model', DAYS);
     const svg = V.histSvg(bars, O);

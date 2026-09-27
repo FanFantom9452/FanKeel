@@ -1335,6 +1335,7 @@
         moon: '<path d="M13.2 9.6A5.6 5.6 0 0 1 6.4 2.8a5.6 5.6 0 1 0 6.8 6.8z"/>',
         auto: '<circle cx="8" cy="8" r="6"/><path d="M8 2v12a6 6 0 0 0 0-12z" fill="currentColor"/>',
         gate: '<path d="M8 1.8 13.5 4v4c0 3-2.4 5.3-5.5 6.2C4.9 13.3 2.5 11 2.5 8V4z"/><path d="M8 5.2v3.3M8 10.8v.01"/>',
+        check: '<path d="M3.5 8.5 6.5 11.5 12.5 5"/>',
     };
     function icon(name) {
         return ICONS[name] ? '<svg class="ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor"'
@@ -1397,22 +1398,118 @@
             return '<a href="' + k[1] + '"' + (k[0] === active ? ' aria-current="page"' : '') + '>' + k[2] + '</a>';
         }).join('') + '</nav>';
     }
-    // 現在 (進行中, `#/live`): one card per registry that is still there, its
-    // live and stale sessions under it. A session that is down has finished
-    // and is on 最近 sessions instead. `tabs` is the Sessions tab strip.
+    // 現在 (進行中, `#/live`), four blocks top to bottom: the gates waiting on
+    // the user, the sessions confirmed running, the ones the registry still
+    // marks in progress but whose process could not be confirmed (`live?`) or
+    // is gone (`stale`), and one line of chips for every registry with neither.
+    // A session that is down has finished and is on 最近 sessions instead.
+    // `tabs` is the Sessions tab strip. Each block writes its `data-block`
+    // literally, so the tune proxy can find it in this file.
+    //
+    // The route as a line of stops for one lane: every stop before the current
+    // one filled and titled with its time on the registry's clock, the current
+    // one ringed — pulsing only while `live` is measured — with its time so
+    // far, the rest hollow. A stage the route does not name is drawn as the
+    // only stop, so a lane always shows where it is.
+    function liveRail(s, live, now) {
+        var route = (s.route || []).slice(), at = route.indexOf(s.stage);
+        if (at < 0) { route = [s.stage || '—']; at = 0; }
+        var win = {};
+        (s.stages || []).forEach(function (w) { win[w.stage] = w; });
+        var took = function (k, open) {
+            var w = win[k], m = w && isFinite(w.from) ? mins((open ? now : w.to) - w.from) : '—';
+            return m === '—' ? '' : m;
+        };
+        return '<ol class="lrail" aria-label="route ' + esc(route.join(' → ')) + '；' + (live ? '現在在 ' : '停在 ') + esc(route[at])
+            + '，第 ' + (at + 1) + ' 站，共 ' + route.length + ' 站">' + route.map(function (k, i) {
+                var c = ' style="--c:var(--st-' + esc(k) + ')"', t;
+                if (i < at) {
+                    t = took(k, false);
+                    return '<li class="done"' + c + (t ? ' title="' + esc(k) + ' ' + t + '"' : '') + '><i></i><span>' + esc(k) + '</span></li>';
+                }
+                if (i === at) {
+                    t = took(k, live);
+                    return '<li class="now' + (live ? ' live' : '') + '"' + c + ' aria-current="step"><i></i><span>' + esc(k) + '</span>'
+                        + (t ? '<em>' + t + '</em>' : '') + '</li>';
+                }
+                return '<li class="todo"><i></i><span>' + esc(k) + '</span></li>';
+            }).join('') + '</ol>';
+    }
+    // One session: who (project, else the registry's short label, and the
+    // root), the task, the rail, and when. A lane that is not confirmed live
+    // carries its state pill instead of how long it has been open.
+    function liveLane(s, name, now) {
+        var sure = s.state === 'live' && !s.unknown;
+        return '<a class="lane ' + (sure ? 'live' : 'unsure') + '" data-state="' + esc(s.state) + '" href="' + sessionHash(s.id) + '">'
+            + '<div class="lane-who"><b>' + esc(name(s)) + '</b><span class="mono" title="' + esc(s.root) + '">' + esc(s.root) + '</span></div>'
+            + '<div class="lane-task" title="' + esc(s.task || '') + '">' + esc(s.task || '（未命名）') + '</div>'
+            + liveRail(s, sure, now)
+            + '<div class="lane-when"><b class="mono">' + ago(s.updated) + '</b>'
+            + (sure ? '<small>最後一次寫入</small><small>開了 ' + mins(now - msOf(s.started)) + '</small>' : statePill(s)) + '</div></a>';
+    }
+    // Waiting is what `pendingGateHtml` answers: a pending file with questions.
+    // The wait runs from the gate's own `at` where it has one, else from the
+    // session's last registry write, as on the dashboard's gate card.
+    function liveGate(rows, name, now) {
+        var at = rows.filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
+        if (!at.length) {
+            return '<section class="lv-gate is-empty" data-block="live-gate" aria-label="等你回答的 gate">' + icon('check')
+                + '<span>沒有在等你的 gate</span></section>';
+        }
+        return '<section class="lv-gate" data-block="live-gate" aria-labelledby="h-gate"><div class="lv-h"><h2 id="h-gate">等你回答</h2>'
+            + '<span class="lv-n mono">' + at.length + '</span></div>' + at.map(function (s) {
+                var since = msOf(s.pending.at || s.updated), q = s.pending.questions[0];
+                var left = isFinite(s.pending.until) ? ' · 還剩 ' + mins(Math.max(0, s.pending.until - now)) : '';
+                return '<a class="gate-row" href="' + sessionHash(s.id) + '"><span class="pill gate">' + icon('gate') + 'gate</span>'
+                    + '<b class="gate-p">' + esc(name(s)) + '</b><span class="gate-q">' + esc(q.header || q.question || s.task || '') + '</span>'
+                    + '<span class="gate-t mono">等了 ' + (isFinite(since) ? mins(now - since) : '—') + left + '</span>'
+                    + '<span class="btn">去回答</span></a>';
+            }).join('') + '</section>';
+    }
+    function liveRun(run, name, now) {
+        return '<section class="lv-grp" data-block="live-run" aria-labelledby="h-run"><div class="lv-h"><h2 id="h-run">正在跑</h2>'
+            + '<span class="lv-n mono">' + run.length + '</span><span class="lv-note">registry 標著進行中，process 也找得到</span></div>'
+            + (run.length ? run.map(function (s) { return liveLane(s, name, now); }).join('')
+                : '<p class="lv-empty">現在沒有 session 在跑。在任一個專案裡輸入 <code class="mono">/fankeel</code> 開始一個，它會出現在這裡。</p>')
+            + '</section>';
+    }
+    // `stale` and `live?` together: the registry says in progress and nothing
+    // confirms it. Each registry with a stale row gets its clear control in the
+    // heading, titled with its root so two of them read apart.
+    function liveMaybe(maybe, open, name, now) {
+        if (!maybe.length) return '';
+        var clears = open.map(function (p) {
+            var c = clearStaleControl(p, maybe.filter(function (s) { return s.root === p.root; }));
+            return c ? '<span class="lv-clear" title="' + esc(p.root) + '">' + c + '</span>' : '';
+        }).join('');
+        return '<section class="lv-grp" data-block="live-maybe" aria-labelledby="h-maybe"><div class="lv-h"><h2 id="h-maybe">可能已經停了</h2>'
+            + '<span class="lv-n mono">' + maybe.length + '</span><span class="lv-note">registry 還標著進行中，但確認不了 process 還在</span>'
+            + (clears ? '<span class="spacer"></span>' + clears : '') + '</div>'
+            + maybe.map(function (s) { return liveLane(s, name, now); }).join('') + '</section>';
+    }
+    function liveIdle(idle, lab) {
+        if (!idle.length) return '';
+        return '<section class="lv-idle" data-block="live-idle" aria-labelledby="h-idle"><h2 id="h-idle">沒有 session 的 registry '
+            + '<span class="lv-n mono">' + idle.length + '</span></h2><ul>' + idle.map(function (p) {
+                return '<li><a href="' + projectHash(p.root) + '" title="' + esc(p.root) + '">' + esc(lab[p.root] || p.root) + '</a></li>';
+            }).join('') + '</ul></section>';
+    }
     function nowHtml(projects, sessions, tabs) {
-        var cards = projects.filter(function (p) { return !p.gone; }).map(function (p) {
-            var own = sessions.filter(function (s) { return s.root === p.root && (s.state === 'live' || s.state === 'stale'); });
-            return '<section class="reg"><div class="reg-h"><b class="mono reg-root">' + esc(p.root) + '</b><span class="spacer"></span>'
-                + clearStaleControl(p, own) + '</div>'
-                + (own.length ? own.map(function (s) {
-                    return '<a class="srow ' + s.state + '" data-state="' + s.state + '" href="' + sessionHash(s.id) + '">'
-                        + '<div class="srow-a">' + statePill(s) + '<span>' + esc(s.task || '（未命名）') + '</span></div>'
-                        + '<div class="srow-b"><span class="mono">' + esc(s.stage || '—') + '</span><span class="ago">' + ago(s.updated) + '</span></div></a>';
-                }).join('') : '<p class="none">沒有進行中的 session</p>') + '</section>';
-        });
-        return '<div class="phead"><h1>' + icon('now') + '現在</h1></div>' + (tabs || '') + '<div class="regs" data-block="now">'
-            + (cards.length ? cards.join('') : '<p class="mute">沒有 registry</p>') + '</div>';
+        var open = projects.filter(function (p) { return !p.gone; });
+        var lab = labels(open.map(function (p) { return p.root; }));
+        var inOpen = {};
+        open.forEach(function (p) { inOpen[p.root] = true; });
+        var rows = sessions.filter(function (s) {
+            return inOpen[s.root] && (s.state === 'live' || s.state === 'stale');
+        }).sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); });
+        var run = rows.filter(function (s) { return s.state === 'live' && !s.unknown; });
+        var maybe = rows.filter(function (s) { return !(s.state === 'live' && !s.unknown); });
+        var idle = open.filter(function (p) { return !rows.some(function (s) { return s.root === p.root; }); });
+        var now = S.serve || !isFinite(NOW) ? Date.now() : NOW;
+        var name = function (s) { return s.project || lab[s.root] || s.root; };
+        return '<div class="phead"><h1>' + icon('now') + '現在</h1></div>' + (tabs || '') + '<div class="lv" data-block="now">'
+            + (open.length ? liveGate(rows, name, now) + liveRun(run, name, now) + liveMaybe(maybe, open, name, now) + liveIdle(idle, lab)
+                : '<p class="mute">沒有 registry</p>') + '</div>';
     }
     // ---- 設定: the seven-step wizard ----------------------------------------
     // Every question is a habit; a habit card recommends values and the

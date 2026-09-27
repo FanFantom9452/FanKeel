@@ -81,7 +81,6 @@ the reading is what gets scheduled.
 
 ## Ready
 
-- 〔station〕「進行中」（`#/live`）的 card 改版第二步已核准但還沒做 — [docs/station.md](docs/90-agent/reference/station.md).
 - 〔tests〕`station-wizard-motion` 的 reduced-motion 測試在整套裡瞬斷：09-27 同一天四次整套紅兩次（2072/2073），單跑 3/3 綠；疑並行時 Chromium 太慢 — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
 
 ## Needs a decision
