@@ -118,7 +118,7 @@ test('the audit skill runs both scanners and ends at the gate', () => {
   assert.match(text, /Never move a document unasked/);
 });
 
-// docs/90-agent/plans/2026-09-27-registry-lenses-design.md §6: the prompt
+// docs/99-archive/2026-09-27-registry-lenses-design.md §6: the prompt
 // lens reads the rules a session runs under rather than a scanner's output,
 // so what proves the reading happened is a planted control rather than a
 // script's exit code.

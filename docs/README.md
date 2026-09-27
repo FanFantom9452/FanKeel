@@ -209,6 +209,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的十一個 task（Task 8 跳過，記成 TODO） | `docs/99-archive/2026-09-24-todo-four.md` — *built, 繁體中文* |
 | Why fankeel explains itself with three silent, frame-driven canvas videos — quick start, the stages, the setup wizard — on a standalone page first and the station's `#/tour` later, recorded to MP4 from the same page | `docs/99-archive/2026-09-27-tour-design.md` — *built* |
 | The six tasks: the engine, three timelines, the player page and `scripts/tour-record.js` over DevTools and ffmpeg | `docs/99-archive/2026-09-27-tour.md` — *built* |
+| Ready 四條＋兩個 lens：hook 的 git 掃描加 2.5s 上限、掃到的路徑記成弱證據 `seen`、profile `worktree` 開 per-session worktree、`task.js intends` 比對鄰居、reviewer 依 diff 加派 silent-failure／comment lens、audit 的 prompt lens | `docs/99-archive/2026-09-27-registry-lenses-design.md` — *built, 繁體中文* |
+| 那份設計的十三個 task，加上 verify 退回的 citation 修正 | `docs/99-archive/2026-09-27-registry-lenses.md` — *built, 繁體中文* |
 | 對照外部 repo 從 fankeel 自己的問題出發、對方只作參考；skill-repos 與 ponytail 的十二條候選逐條對照、全部不問，以及共用詞彙那條為什麼關掉 | [decisions/2026-09-24-optimise-own-first.md](03-decisions/2026-09-24-optimise-own-first.md) — *繁體中文* |
 | Why the scratch area could not be declared however legal the path looks, how one root cause survived nine rounds of review and then reappeared inside its own fix, and the six findings filed rather than built | [decisions/2026-09-11-todo-three.md](03-decisions/2026-09-11-todo-three.md) — *繁體中文* |
 | Why the five 09-11 directions were filed as TODO entries rather than built, the four places the approved draft departed from judgement 8, and the empty answer the first record filed | [decisions/2026-09-11-todo-split.md](03-decisions/2026-09-11-todo-split.md) — *繁體中文* |

@@ -228,7 +228,7 @@ test('every agent names its effort, and none of them is max', () => {
 
 // The silent-failure and comment lenses: defined here once, and asked for by
 // build's per-task dispatch and verify's adversary through scripts/lenses.js.
-// docs/90-agent/plans/2026-09-27-registry-lenses-design.md §5.
+// docs/99-archive/2026-09-27-registry-lenses-design.md §5.
 test('the reviewer carries the silent-failure and comment lenses, and build and verify run scripts/lenses.js before dispatching', () => {
     const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reviewer.md'), 'utf8');
     assert.match(text, /^## Silent failure$/m);
