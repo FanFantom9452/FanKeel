@@ -81,7 +81,6 @@ the reading is what gets scheduled.
 
 ## Ready
 
-- 〔audit〕Trovara 的 docs 搬到 preset：在 Trovara 跑 `docs-move.js` 出搬移表、核可後 apply，再跑一次分批 `/fankeel-audit`（機制與 fankeel 自己的搬移已於 09-26 落地）— [scripts/docs-move.js](scripts/docs-move.js).
 - 〔station〕「進行中」（`#/live`）的 card 改版第二步已核准但還沒做 — [docs/station.md](docs/90-agent/reference/station.md).
 - 〔tests〕`station-wizard-motion` 的 reduced-motion 測試在整套裡瞬斷：09-27 同一天四次整套紅兩次（2072/2073），單跑 3/3 綠；疑並行時 Chromium 太慢 — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
 
@@ -90,6 +89,11 @@ the reading is what gets scheduled.
 - 〔stage-agents〕ab.sh 改成在 worktree 裡 commit profile（`pin.sh`）；修好的 script 還沒重跑，重跑要核准約 $30 — [ab.sh](docs/90-agent/reports/evidence/2026-09-26-ab-profile-pin/ab.sh).
 
 ## Blocked
+
+### fankeel 功能全部完成
+after: fankeel 其餘功能都落地、使用者換到新機器測試. 09-27.
+
+- 〔audit〕Trovara 的 docs 搬到 preset：在新機器的 Trovara 跑 `docs-move.js` 出搬移表、核可後 apply，再跑一次分批 `/fankeel-audit` — [scripts/docs-move.js](scripts/docs-move.js).
 
 ### gates 滿一週
 on: 10-02 起，registry 的 `gates` 累積滿一週. 09-26.
