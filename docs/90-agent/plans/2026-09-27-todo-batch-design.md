@@ -31,7 +31,7 @@ survey：`.fankeel/build/task-20260927T073715/survey.md`。mockup：`.fankeel/bu
 - `fankeel-reviewer.md` 加 `## Verify` 模式：逐條讀 finding，標 `CONFIRMED`、`PLAUSIBLE` 或丟掉。
 - build 與 verify 的 skill：第一輪有 finding 時多派一個驗證 reviewer，一次審查一個，不是每條一個。
 - 所有 lens 不報：diff 外既存的問題、linter 會抓的、純風格挑剔、被 `eslint-disable`/`noqa` 類註解消音的。
-- security lens 另加 17 條硬排除、10 條判例與 `conf: 0.x`，低於 0.7 不報；原文先從 Anthropic 的 `claude-code-security-review` 取得並確認授權。
+- security lens 另加上游的 16 條硬排除、17 條判例與 `conf: 0.x`，低於 0.7 不報；原文先從 Anthropic 的 `claude-code-security-review` 取得並確認授權。
 - 測試：reviewer 合約測試斷言三種格式帶 `fails when` 且有 `## Verify`；`evals/security-lens/` 加一個應排除案例，從報出變成 `none`。
 
 ## 4. 圖
@@ -47,9 +47,9 @@ survey：`.fankeel/build/task-20260927T073715/survey.md`。mockup：`.fankeel/bu
 - `lib/station.js` `gather()` 的 row 帶 `gateAt`；`dashGate`、`liveGate` 用 `gateAt || pending.at || updated` 計時。`handoff.js` 不改。
 - row 帶 `inflight` 與 `subagents`（讀該 session 的 `subagents/*.meta.json`，只列還在跑的）；#/live 的 session 卡加第三列，照 mockup 的 `live-subagents`。
 - `scripts/station.js` 的 `/station/station-data.js` 加 2 秒 memo，同時的請求共用一次 `gather()`。
-- `GET /station/search?q=`：只掃 docs.json 裡 role 為 reference、guide、decision 的頁，最多 20 筆附 snippet；文件頁頂端加搜尋框，照 mockup 的 `docs-search`；靜態 `index.html` 顯示需開 serve。
+- `GET /station/search?q=`：只掃 docs.json 裡 role 為 reference、decision 的頁（audience 為 human 的 reference 標為 guide），最多 20 筆附 snippet；文件頁頂端加搜尋框，照 mockup 的 `docs-search`；靜態 `index.html` 顯示需開 serve。
 - `PAGES` 加 `tour`，導覽列加入口，照 mockup 的 `tour-nav`；靜態檔改清單放行，涵蓋 `tour*.js/css/html` 與 `i18n.js`。
-- 新 `assets/station/i18n.js`：`STRINGS.zh`、`STRINGS.en` 與 `t(key)`，預設依 `navigator.language`，存 localStorage；標題列加切換，照 mockup 的 `lang-switch`。i18n 最後做。
+- 新 `assets/station/i18n.js`：英文表與 `loc(key, zh, vars)`，中文留在呼叫處當 fallback，預設依 `navigator.language`，存 localStorage；標題列加切換，照 mockup 的 `lang-switch`。i18n 最後做。
 - `docs/90-agent/reference/station.md`:546 的「沒有全文搜尋」改寫，補 search、i18n、tour。
 - 測試：row 有 `gateAt` 時渲染的「等了 N 分」等於 now − gateAt；search 搜得到 reference 頁、搜不到 archive 頁；`GET /station/tour.js` 回 200；EN 模式下導覽列與標題沒有 CJK 字。
 
@@ -57,7 +57,6 @@ survey：`.fankeel/build/task-20260927T073715/survey.md`。mockup：`.fankeel/bu
 
 - 只看 meta.json 判斷不出 subagent 還在跑，可能要看 jsonl 的 mtime；plan 時確認。
 - 產生器能否原樣重現 profile 表把 8 個 `prompt.*` 合成一列的寫法。
-- security lens 17 條與 10 條的原文與授權。
 
 ## 對照 map
 
