@@ -49,13 +49,13 @@
         userLine: 840, leadGrow: 850, leadDur: 24, orientAt: 870, orientBlink: 20, orientDone: 920,
         surveyAt: 1000, surveyDone: 1080, circleAt: 1140, circleDur: 18, replyFrom: 1200,
         cardUp: 1440, cardUpDur: 24, hlAt: 1500, enterFlash: 1740, flashDur: 12,
-        collapseAt: 1770, crossAt: 1800, crossDur: 16, dotAt: 1800, dotDur: 20,
-        ffLabel: 2040, buildAt: 2100, buildDur: 360, verifyAt: 2460,
-        splitAt: 2640, splitDur: 30, rightBuild: 2700, redAt: 2760, redDur: 12,
+        collapseAt: 1770, crossAt: 1800,
+        ffLabel: 2040, buildAt: 2100, verifyAt: 2460,
+        splitAt: 2640, splitDur: 30, rightBuild: 2700, redAt: 2760,
         askAt: 2820, askDur: 24, midAt: 2880,
-        noAt: 2990, collapseR: 3040, reapply: 3080,
+        noAt: 2990, collapseR: 3040,
         rejectAt: 3120, otherDoneAt: 3132, reappliedAt: 3146, testDoneAt: 3160, mergeAt: 3176,
-        landDotAt: 3180, landDotDur: 20, summaryFrom: 3210,
+        landDotAt: 3180, summaryFrom: 3210,
         closeAt: 3300, closeDur: 30, taglineAt: 3330, moreAt: 3370, installAt: 3410
     };
 
