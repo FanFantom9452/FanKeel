@@ -46,7 +46,34 @@ When the prompt names a `data-block` and a request, change the element
 carrying that name and nothing outside it. An edit that reaches a neighbour
 is put back by `tune.js done`, and the request comes back to you.
 
+## Check it served
+
+The page is checked where the user will open it: through a server, never a
+`file://` url. On 2026-09-27 a mockup passed a `file://` screenshot while the
+url the user was given — `tune.js serve` on the mockup's own directory —
+answered 404 for every `../../../assets/...` stylesheet, and the page showed
+unstyled.
+
+1. Serve the lowest directory that holds both the page and every stylesheet
+   it links. For a page under `.fankeel/build/` that links the project's own
+   assets, that is the project root. Run
+   `node <plugin>/scripts/tune.js serve <dir>` from the project root, in the
+   background, and read the url it prints; the page's url is that url plus
+   the page's path under `<dir>`.
+2. Request every `<link rel="stylesheet">` href on the page, resolved against
+   the page's url, with `curl -s -o /dev/null -w "%{http_code}" <its url>`.
+   A stylesheet that answers anything not `200` is a failure.
+3. Shoot it: `node <plugin>/scripts/render.js <the served url>`, and read the
+   `render.png` it writes. A page with no styles applied is a failure.
+
+Fix a failure and check again before you return. A page that still fails is
+not returned as done: say which stylesheet answered what, or what the shot
+showed. Leave the server running — the url you return is the one the user
+opens.
+
 ## Return
 
-The page's path, then one line per `data-block` on it. Nothing else: the
-dispatching session opens the page itself.
+The served url you checked, the directory `tune.js serve` is serving, and the
+page's path; then one line per `data-block` on it. Nothing else: the
+dispatching session gives the user that url rather than serving the page
+again.

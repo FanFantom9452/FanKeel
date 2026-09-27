@@ -115,22 +115,24 @@ fit, from `taste-skill:taste-skill`, `taste-skill:soft-skill`,
 `ui-ux-pro-max:ui-ux-pro-max` and `impeccable:impeccable`, or none: the guide
 alone is a complete brief. **No profile value reaches a subagent**, so the
 skills and the output path have to be written into the prompt by the session
-dispatching it.
+dispatching it. The agent returns a served url it has already checked — every
+stylesheet answering `200` and its shot styled — and that is the url the user
+gets: the url the agent returned, never a serve of your own on the mockup's
+directory, which cannot reach a stylesheet linked from above it.
 
 `design.skill` is a list, and a single name reads as a list of one.
 **`design.mockup: auto`** takes the question out: when you judge the task to
-be frontend work, dispatch the mockup without asking first, then run
-`node <plugin>/scripts/tune.js serve <the mockup's directory>` and open the
-url it prints in the browser (`start` on Windows, `open` on macOS,
+be frontend work, dispatch the mockup without asking first, then open the url
+the agent returned in the browser (`start` on Windows, `open` on macOS,
 `xdg-open` elsewhere). Work that puts nothing on a screen draws nothing,
 whatever the value.
 
 Then the path goes on the `spec:` line, and option one's description points at
 the page. The gate approves the page, not the paragraph.
 
-**Before the gate, the page can be tuned one block at a time.** Run
-`node <plugin>/scripts/tune.js serve <the mockup's directory>` and give the
-user the url it prints: a plain click still reaches the page, holding Alt
+**Before the gate, the page can be tuned one block at a time.** The url the
+agent returned is already a `tune.js serve`, overlay and all; give the user
+that url: a plain click still reaches the page, holding Alt
 outlines the element under the pointer, Alt+wheel walks out to its parents,
 and Alt+click opens a panel for what to change. List what you see, block by
 block, before asking which one

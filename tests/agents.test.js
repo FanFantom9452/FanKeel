@@ -188,6 +188,27 @@ test('the mockup agent is pinned to opus and the design skill dispatches it by t
     assert.doesNotMatch(step3, /Dispatch it as `implementer, <the value of design\.mockup>`/);
 });
 
+// docs/90-agent/plans/2026-09-27-five-items-design.md §5: a mockup once
+// passed a file:// screenshot while the url the user was given 404'd every
+// stylesheet above the served directory. The agent checks the page where the
+// user will open it, and the design skill hands the user that checked url.
+test('the mockup agent checks its page at the served url before returning it, and the design skill hands the user that url', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-mockup.md'), 'utf8');
+    const check = text.split('\n## Check it served\n')[1];
+    assert.ok(check, 'agents/fankeel-mockup.md has a ## Check it served section');
+    const body = check.split('\n## ')[0].replace(/\s+/g, ' ');
+    assert.match(body, /`node <plugin>\/scripts\/tune\.js serve <dir>`/);
+    assert.match(body, /`node <plugin>\/scripts\/render\.js <the served url>`/);
+    assert.match(body, /anything not `200`/);
+    assert.match(body, /never a `file:\/\/` url/);
+    const ret = text.split('\n## Return\n')[1].replace(/\s+/g, ' ');
+    assert.match(ret, /The served url you checked/);
+    const design = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-design', 'SKILL.md'), 'utf8');
+    const step3 = design.split('### 3. The mockup')[1].split('### 4.')[0].replace(/\s+/g, ' ');
+    assert.match(step3, /the url the agent returned/);
+    assert.doesNotMatch(step3, /tune\.js serve <the mockup's directory>/);
+});
+
 // docs/plans/2026-09-26-station-redesign.md Task 3. The effort each role runs
 // at, pinned per agent; none at `max`, which the user observed over-reasons
 // (2026-09-26). `fankeel-brain` already carried `medium`.
