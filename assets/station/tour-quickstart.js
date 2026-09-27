@@ -45,7 +45,7 @@
         painIn: 30, cardAt: [90, 180, 270, 360], cardDur: 24,
         panelGrow: 480, panelDur: 36,
         typeFrom: 520, perChar: 6, enter: 580, welcomeDur: 20, inputAt: 640,
-        slashAt: 680, pickAt: 730, taskFrom: 740,
+        slashAt: 680, pickAt: 730, taskFrom: 740, taskPerChar: 2,
         userLine: 840, leadGrow: 850, leadDur: 24, orientAt: 870, orientBlink: 20, orientDone: 920,
         surveyAt: 1000, surveyDone: 1080, circleAt: 1140, circleDur: 18, replyFrom: 1200,
         cardUp: 1440, cardUpDur: 24, hlAt: 1500, enterFlash: 1740, flashDur: 12,
@@ -226,8 +226,9 @@
                     E.text(ctx, P, 'mi', '/fankeel', 56, 120, { fill: P.ink });
                 });
             }
-            var typedTask = f >= EV.taskFrom ? CMD2.slice(0, Math.max(0, Math.min(CMD2.length, Math.floor((f - EV.taskFrom) / 8) + 1))) : '';
-            E.text(ctx, P, 'j', '> ' + typedTask, 47, 149, { fill: P.ink });
+            var typedTask = f >= EV.taskFrom ? CMD2.slice(0, Math.max(0, Math.min(CMD2.length, Math.floor((f - EV.taskFrom) / EV.taskPerChar) + 1))) : '';
+            var taskCursor = f >= EV.taskFrom ? '█' : '';
+            E.text(ctx, P, 'j', '> ' + typedTask + taskCursor, 47, 149, { fill: P.ink });
             E.text(ctx, P, 's', 'ctx --%   │   5h --%', 47, 174, { size: 10 });
         }
     }
