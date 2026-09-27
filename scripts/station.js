@@ -48,6 +48,12 @@ const view = require('../assets/station/station.js');
 const PLUGIN = path.resolve(__dirname, '..');
 const ASSETS = path.join(PLUGIN, 'assets', 'station');
 
+// The files `serve` answers from ASSETS, by name: the page's own two, the
+// language table, and the tour (`tour.html` and what it loads). A list, so
+// nothing else under the plugin directory is reachable by url.
+const STATIC = /^\/station\/((?:station|i18n)\.js|station\.css|tour(?:-[a-z]+)?\.(?:js|css|html))$/;
+const TYPES = { '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.html': 'text/html; charset=utf-8' };
+
 // `--root`/`--scan` are `multiple: true`: `values.root`/`values.scan` come
 // back as an array of every occurrence, in order, rather than a hand-rolled
 // `.push()` per token. `strict: true` is what refuses an unrecognised flag;
@@ -314,6 +320,20 @@ async function serve(opts) {
     // than all in one request the page gives up on.
     const modelNow = (extra) => station.gather(Object.assign({}, gatherOpts,
         { deadline: scanDeadline(gatherOpts.scan), memo, detailBudgetMs: station.DETAIL_BUDGET_MS }, extra));
+    // What `/station/station-data.js` (and `/station/search`) answer from: one
+    // gather() for every request inside `memoMs`. Two open tabs polling every
+    // three seconds each walked every registry on their own. gather() is
+    // synchronous, so requests arriving together are served one after another
+    // and all but the first read this. A POST drops it: the page a write
+    // redirects to is gathered after the write.
+    const memoMs = Number.isFinite(opts.memoMs) ? opts.memoMs : 2000;
+    let shared = null;
+    const sharedModel = () => {
+        if (shared && Date.now() - shared.at < memoMs) return shared.model;
+        const model = modelNow();
+        shared = { at: Date.now(), model };
+        return model;
+    };
     let timer = null;
     let server;
     const touch = () => {
@@ -337,6 +357,7 @@ async function serve(opts) {
     const handler = async (req, res) => {
         touch();
         const url = new URL(req.url, 'http://127.0.0.1');
+        if (req.method === 'POST') shared = null;
         const fail = (code, msg) => {
             res.writeHead(code, { 'content-type': 'text/plain' });
             res.end(msg + '\n');
@@ -381,7 +402,7 @@ async function serve(opts) {
                 'content-type': 'text/javascript; charset=utf-8',
                 'cache-control': 'no-store',
             });
-            res.end(station.serialize(modelNow(), { serve: true, nonce, plugin: PLUGIN, cleared }));
+            res.end(station.serialize(sharedModel(), { serve: true, nonce, plugin: PLUGIN, cleared }));
             return;
         }
         const wanted = /^\/station\/detail\/([0-9A-Za-z-]+)\.js$/.exec(url.pathname);
@@ -409,20 +430,16 @@ async function serve(opts) {
             res.end(JSON.stringify({ station: true, pid: process.pid, started, fingerprint }));
             return;
         }
-        if (req.method === 'GET' && (url.pathname === '/station/station.css' || url.pathname === '/station/station.js')) {
-            const name = url.pathname.split('/').pop();
+        const file = req.method === 'GET' ? STATIC.exec(url.pathname) : null;
+        if (file) {
             let body;
             try {
-                body = fs.readFileSync(path.join(ASSETS, name), 'utf8');
+                body = fs.readFileSync(path.join(ASSETS, file[1]), 'utf8');
             } catch (e) {
                 fail(404, 'no such asset');
                 return;
             }
-            res.writeHead(200, {
-                'content-type': name.endsWith('.css')
-                    ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8',
-                'cache-control': 'no-store',
-            });
+            res.writeHead(200, { 'content-type': TYPES[path.extname(file[1])], 'cache-control': 'no-store' });
             res.end(body);
             return;
         }
