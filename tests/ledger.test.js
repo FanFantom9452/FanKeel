@@ -920,3 +920,27 @@ test('ready with no ledger yet says so, the way show does', () => {
   const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'ready'], { encoding: 'utf8' });
   assert.match(out, /none yet at .*Run `init` before the first task\./s);
 });
+
+// design §4: a require edge inside a group with no declared Consumes is
+// reported, and keeps that group off `workflow` even though its files and
+// its Interfaces blocks alone would have grouped it as one.
+test('groups names a require edge inside its own group and keeps it off workflow', () => {
+  const dir = root();
+  fs.mkdirSync(path.join(dir, 'lib'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'lib', 'a.js'), "'use strict';\nconst b = require('./b.js');\nmodule.exports = { b };\n");
+  fs.writeFileSync(path.join(dir, 'lib', 'b.js'), "'use strict';\nmodule.exports = {};\n");
+  fs.writeFileSync(path.join(dir, 'lib', 'c.js'), "'use strict';\nmodule.exports = {};\n");
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, [
+    '## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', '',
+    '**Interfaces:**', '- Consumes: nothing.', '- Produces: nothing.', '',
+    '## Task 2: two', '', '**Files:**', '- Modify: `lib/b.js`', '',
+    '**Interfaces:**', '- Consumes: nothing.', '- Produces: nothing.', '',
+    '## Task 3: three', '', '**Files:**', '- Modify: `lib/c.js`', '',
+    '**Interfaces:**', '- Consumes: nothing.', '- Produces: nothing.', '',
+  ].join('\n'));
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(out, /1 groups over 3 tasks/);
+  assert.match(out, /1: 1, 2, 3  — agents/);
+  assert.match(out, /Task 1 `lib\/a\.js` requires Task 2 `lib\/b\.js` at line 2/);
+});

@@ -192,7 +192,17 @@ function groupsReport(root, planOpt) {
     }
     const tasks = plantasks.parseTasks(text);
     const rows = plantasks.groups(tasks);
-    const surfaced = plantasks.surfaces(tasks);
+    // A group carrying a require-edge diagnostic never reads as `workflow`,
+    // the same way a group carrying no Interfaces block never does.
+    // Computed before the empty-plan check below because that check returns
+    // before either `rows` or the original `surfaced` was ever used either.
+    const requireHits = plantasks.requireConflicts(tasks, root);
+    const flagged = new Set(requireHits.flatMap((r) => [r.a, r.b]));
+    const surfaced = plantasks.surfaces(tasks).map((g) => (
+        g.surface === 'workflow' && g.tasks.some((n) => flagged.has(n))
+            ? { tasks: g.tasks, surface: 'agents' }
+            : g
+    ));
     if (!tasks.length) {
         // "no tasks in <file>" alone reads as "this plan is empty," and the
         // far more likely cause is a heading `parseTasks` could not match —
@@ -222,6 +232,14 @@ function groupsReport(root, planOpt) {
     const prose = plantasks.proseConflicts(tasks, rows).map((p) =>
         'Task ' + p.n + ' names Task ' + p.other + ' in its Consumes text, and both land in group '
         + p.group + ': "' + p.text + '"');
+    // A task's own `Files` requiring another task's `Files` in the same
+    // group, with no `Consumes` naming what it took — the code already
+    // depends on something the plan's own interfaces never said. Only ever a
+    // `Modify:` file already on disk: a file a task is about to create does
+    // not exist yet at plan time, so a dependency on it is invisible here.
+    const requireLines = requireHits.map((r) =>
+        'Task ' + r.a + ' `' + r.from + '` requires Task ' + r.b + ' `' + r.to + '` at line ' + r.line
+        + ' with no Consumes naming it, both in group ' + r.group);
     return 'fankeel ledger — ' + rows.length + ' groups over ' + tasks.length + ' tasks\n\n'
         + surfaced.map((g, i) => '  ' + (i + 1) + ': ' + g.tasks.join(', ') + '  — ' + g.surface).join('\n')
         + (undeclared.length
@@ -237,6 +255,10 @@ function groupsReport(root, planOpt) {
             ? '\n\nConsumes text names a task already in its own group, worth a look:\n  '
                 + prose.join('\n  ')
             : '')
+        + (requireLines.length
+            ? '\n\nA task requires another task\'s file with nothing declared to say so:\n  '
+                + requireLines.join('\n  ')
+            : '')
         + (serial
             ? '\n\nEvery group is one task, so nothing runs beside anything and this'
                 + '\nplan builds serially.' + (cause ? ' ' + cause : '')
@@ -249,7 +271,7 @@ function groupsReport(root, planOpt) {
         // identifiers, not prose), and the reader leaves concluding the
         // warning was noise. Withheld, not reworded — the sentence itself
         // did not become false.
-        + (serial || prose.length ? '' : ' Their files are disjoint and neither'
+        + (serial || prose.length || requireLines.length ? '' : ' Their files are disjoint and neither'
             + '\nconsumes what the other produces.')
         + ' Commit them one at a time as they'
         + '\nreturn, in the order listed.';

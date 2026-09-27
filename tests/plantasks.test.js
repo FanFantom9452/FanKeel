@@ -9,6 +9,9 @@ const assert = require('node:assert/strict');
 
 const { parseTasks, conflict, groups } = require('../lib/plantasks.js');
 const plantasks = require('../lib/plantasks.js');
+const fs = require('node:fs');
+const path = require('node:path');
+const tmp = require('./tmp.js');
 
 const task = (n, modify, tests, consumes, produces) => [
   '## Task ' + n + ': name',
@@ -456,4 +459,25 @@ test('the first word of a Dispatch line is the task\'s dispatch, and the text af
   assert.equal(parseTasks(body('No dispatch line here.'))[0].dispatch, null);
   const fenced = parseTasks(body('```markdown\n**Dispatch:** user — an example\n```\n\n**Dispatch:** implementer, sonnet'));
   assert.equal(fenced[0].dispatch, 'implementer', 'a fenced example is not the task\'s own line');
+});
+
+test('requireConflicts reports a same-group require edge with no matching Consumes', () => {
+  const dir = tmp('fankeel-plantasks-');
+  fs.mkdirSync(path.join(dir, 'lib'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'lib', 'a.js'), "'use strict';\nconst b = require('./b.js');\n");
+  fs.writeFileSync(path.join(dir, 'lib', 'b.js'), "'use strict';\nmodule.exports = {};\n");
+  const planText = task(1, ['lib/a.js'], [], [], []) + '\n' + task(2, ['lib/b.js'], [], [], []);
+  const tasks = plantasks.parseTasks(planText);
+  const found = plantasks.requireConflicts(tasks, dir);
+  assert.deepEqual(found, [{ a: 1, b: 2, group: 1, from: 'lib/a.js', to: 'lib/b.js', line: 2 }]);
+});
+
+test('requireConflicts finds nothing when no require edge crosses the group', () => {
+  const dir = tmp('fankeel-plantasks-');
+  fs.mkdirSync(path.join(dir, 'lib'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'lib', 'a.js'), "'use strict';\nmodule.exports = {};\n");
+  fs.writeFileSync(path.join(dir, 'lib', 'b.js'), "'use strict';\nmodule.exports = {};\n");
+  const planText = task(1, ['lib/a.js'], [], [], []) + '\n' + task(2, ['lib/b.js'], [], [], []);
+  const tasks = plantasks.parseTasks(planText);
+  assert.deepEqual(plantasks.requireConflicts(tasks, dir), []);
 });

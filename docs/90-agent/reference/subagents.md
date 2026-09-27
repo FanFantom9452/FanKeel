@@ -1,7 +1,7 @@
 ---
 status: current
-last_verified: 2026-09-23
-source_of_truth: hooks/brief.js, lib/render.js, lib/stages.js, hooks/carry.js, lib/plantasks.js, lib/usage.js, lib/prices.js, scripts/judge.js, scripts/await.js, scripts/commit.js
+last_verified: 2026-09-27
+source_of_truth: hooks/brief.js, lib/render.js, lib/stages.js, hooks/carry.js, lib/plantasks.js, lib/requires.js, lib/usage.js, lib/prices.js, scripts/judge.js, scripts/await.js, scripts/commit.js
 ---
 
 # Subagents
@@ -392,6 +392,17 @@ cannot see such a dependency at all, and the literal `Task <n>` is the only part
 of the line a command can read. A report carrying that flag withholds its
 closing line about disjoint files — for the whole report rather than the flagged
 group.
+
+A sixth: a task's own `Files` requiring another task's `Files` in the
+same group with no `Consumes` naming what it took — `requireConflicts()`
+reads the edges `lib/requires.js` finds among tracked `.js` files rather
+than the plan's prose, so it catches what the fourth predicate cannot see
+from either direction: code that already depends on a file the plan
+never said it consumed. `scripts/ledger.js groups` downgrades a group
+carrying this diagnostic off `workflow` the same way it does for a group
+with no Interfaces block, and it only ever reads a `Modify:` file already
+on disk — a file a task is about to create does not exist yet at plan
+time, so a dependency on it is invisible here too.
 
 A task whose `**Dispatch:**` line reads `user — <what the user does>` is not
 dispatched at all: `ledger.js ready` leaves it out and `ledger.js hands` lists
