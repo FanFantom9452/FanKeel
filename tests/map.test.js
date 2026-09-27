@@ -397,3 +397,26 @@ test('the map lists binding decisions, and not one that was superseded', () => {
   assert.doesNotMatch(out, /docs\/decisions\/b\.md/);
   assert.doesNotMatch(out, /docs\/decisions\/c\.md/);
 });
+
+// design §4: buildMap() follows the tree with who already depends on whom.
+test('the orientation section names the most required files and directory edges', () => {
+  const dir = withFiles({
+    'lib/a.js': "'use strict';\nconst b = require('./b.js');\nmodule.exports = { b };\n",
+    'lib/b.js': "'use strict';\nmodule.exports = {};\n",
+    'scripts/run.js': "'use strict';\nconst a = require('../lib/a.js');\nconst b = require('../lib/b.js');\n",
+  });
+  const text = map.buildMap(dir);
+  assert.match(text, /\norientation:\n/);
+  assert.match(text, /most required:\n {2}lib\/b\.js — required by 2\n {2}lib\/a\.js — required by 1/);
+  assert.match(text, /directories:\n {2}scripts -> lib {2}2/);
+});
+
+// The one place this section is checked against real content rather than a
+// fixture: this repository's own lib/ and scripts/ already require each
+// other by relative path, so an empty section here would be this task's own
+// code failing to find what it was written to find.
+test('this repository\'s own orientation section is not empty', () => {
+  const text = map.buildMap(path.join(__dirname, '..'));
+  assert.match(text, /\norientation:\n/);
+  assert.match(text, /most required:/);
+});

@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-27
-source_of_truth: lib/docs.js, lib/map.js, lib/profile.js, scripts/layout.js, scripts/docs-check.js, scripts/docs-audit.js, skills/fankeel/SKILL.md, skills/fankeel-survey/SKILL.md
+source_of_truth: lib/docs.js, lib/map.js, lib/profile.js, lib/requires.js, scripts/layout.js, scripts/docs-check.js, scripts/docs-audit.js, skills/fankeel/SKILL.md, skills/fankeel-survey/SKILL.md
 ---
 
 # Where documents live
@@ -88,6 +88,15 @@ That command prints a skeleton — one row per top-level directory, its size, wh
 is underneath, and an empty column. It writes nothing. The paths are derivable and
 the answers are not, which is the whole shape of the problem: `backend/` is the
 backend because somebody decided it was, and no listing says so.
+
+`buildMap()` follows the tree with an **orientation** section: the five
+files most required elsewhere in the tree, and which top-level directories
+require which — both counted from `lib/requires.js`'s `requireGraph()` over
+every tracked `.js` file's relative `require()`/`import` edges, and both
+truncated the way every other section below them is, by `lib/report.js`'s
+`section()`. It answers a different question than the tree does: not where a
+file lives, but who already reaches into it. Left out entirely when no `.js`
+file requires another by a relative path.
 
 ## survey carries a scanner, not an instruction
 
