@@ -1,16 +1,27 @@
-// assets/station/tour-stages.js — video 2, The stages (2:15, 8100 frames):
-// a 300-frame prelude, the seven stages 960 frames each, a 1080-frame outro.
-// Each stage: its name in its colour, a tagline, a scene, and — from local
-// frame 720 — the line lib/stages.js STAGES[].produces gives it, word for word.
-// The storyboard is the `video-stages` block of
-// .fankeel/build/2026-09-27-tour/mockup.html; coordinates are its 640x360
-// viewBox. The outro's numbers are tourEngine.SESSION, the quick start's.
+// assets/station/tour-stages.js — the promo (1:00, 3600 frames): a 240-frame
+// pain hook, the seven stages 408 frames each (the illustrated scene sped up
+// 3x, then a 108-frame hard cut to Claude Code's own three-line terminal
+// statusline), and a 504-frame outro (install lines, then the tagline). One
+// real task — 多倉庫庫存與調撥 (multi-warehouse inventory & transfers), in a
+// project called `inventory-admin` — runs through all seven stages. The
+// storyboard is `.fankeel/build/2026-09-27-tour-promo/mockup.html` (blocks
+// promo-hook … promo-land, promo-outro); its own absolute frame numbers are
+// this file's, since the block layout matches it exactly (240 + 408*7 + 504
+// = 3600). The terminal cut's chrome and TokenBar's `lead()` statusline
+// helper are moved here from tour-quickstart.js, whose only other consumer
+// is deleted once this file is the sole one drawing them.
 (function (root, module) {
     'use strict';
     var E = root.tourEngine || require('./tour.js');
-    var S = E.SESSION;
 
-    var INTRO = 300, PER = 960, OUTRO = 7020;
+    var ROUTE = E.ROUTE; // ['survey','design','plan','build','verify','audit','land']
+    var PROJECT = 'inventory-admin';
+    var TITLE = '多倉庫庫存與調撥';
+
+    var INTRO = 240, PER = 408;
+    var OUTRO = INTRO + PER * ROUTE.length; // 3096
+    var LENGTH = OUTRO + 504; // 3600
+
     // lib/stages.js STAGES[].produces, in route order — tests/tour-stages.test.js
     // holds this against the source.
     var PRODUCES = [
@@ -41,15 +52,18 @@
         ctx.stroke();
     }
 
-    // survey — a scan band sweeps the tree (linear 360); a row lights once the
-    // band has passed it; three readers split off (expo-out 30, 6 apart, from
-    // local 220 = f 520); their lines meet in survey.md (expo-out 30), written
-    // a line every 8 frames.
-    // Re-timed from the stills: the scan starts at local 213 so the f 700 still
-    // has the band on tests/. The note puts the merge at f 900 (local 600), but
-    // the f 700 still already shows survey.md with all six lines written, so
-    // the merge starts at local 300 (f 600) and the last line is out by local
-    // 378, before the still.
+    // ===========================================================================
+    // The seven illustrated scenes, unchanged from the 8100-frame file. Each is
+    // still a pure function of a local frame in roughly 0..900; `stageHeader`
+    // below feeds them a frame already run 3x fast, so the same internal
+    // thresholds (the produces line at local >=720, the header reveal at 0)
+    // land in the first 300 frames of a 408-frame block instead of the first
+    // 900 of a 960-frame one.
+    // ===========================================================================
+
+    // survey — a scan band sweeps the tree; a row lights once the band has
+    // passed it; three readers split off; their lines meet in survey.md,
+    // written a line every 8 frames.
     var TREE = ['lib/', 'scripts/', 'docs/', 'tests/', 'hooks/', 'skills/', 'assets/'];
     var READER_Y = [140, 200, 260], READER_FROM = [[130, 150], [140, 194], [120, 238]], DOC_Y = [172, 200, 228];
     var DOC = [[156, 564], [174, 564], [192, 540], [210, 564], [228, 552], [246, 528]];
@@ -62,8 +76,6 @@
         var band = 136 + 164 * E.prog(l, 213, 360);
         TREE.forEach(function (d, i) {
             var y = 154 + 22 * i;
-            // Lit once the 16-unit band has passed below the row: the f 700
-            // still has the band over tests/ and tests/ not yet lit.
             E.text(ctx, P, 'm', d, 54, y, y + 16 < band ? { fill: P.ink } : null);
         });
         if (l >= 213 && l < 573) {
@@ -95,9 +107,8 @@
         });
     }
 
-    // design — three cards fall left to right (expo-out 30, 12 apart); at
-    // local 300 (f 1560) the gate box pops (back-out 24) and its check lands
-    // (bounce-out 30).
+    // design — three cards fall left to right; the gate box pops and its
+    // check lands.
     function scDesign(ctx, P, l) {
         function card(i, fn) {
             var k = E.expoOut(E.prog(l, 40 + 12 * i, 30));
@@ -150,11 +161,7 @@
     }
 
     // plan — the columns and the ledger fade in; the ledger writes three todo
-    // rows (linear, 10 each, from local 120); file capsules drop into three
-    // columns, never one file in two (expo-out 24, 6 apart).
-    // Re-timed from the still: the capsules start at local 347, so at the
-    // f 2600 still (local 380) the last one started 3 frames ago and is still
-    // falling, about half faded in, as the storyboard draws it (opacity .45).
+    // rows; file capsules drop into three columns, never one file in two.
     var CAPS = [[52, 142, 'lib/csv.js'], [52, 174, 'csv.test.js'], [194, 142, 'report.html'], [194, 174, 'report.css'], [336, 142, 'README.md'], [336, 174, 'docs/csv.md']];
     function scPlan(ctx, P, l) {
         E.fade(ctx, E.expoOut(E.prog(l, 0, 24)), function () {
@@ -179,7 +186,6 @@
             var k = E.expoOut(E.prog(l, 347 + 6 * i, 24));
             if (k <= 0) return;
             var y = E.lerp(c[1] - 60, c[1], k);
-            // mockup.html:337 draws the falling capsule's landing guide as a dashed line (M389 210V236)
             if (i === CAPS.length - 1 && k < 1) E.line(ctx, [[c[0] + 53, y + 36], [c[0] + 53, c[1] + 62]], P.faint, 1, [3, 4]);
             E.fade(ctx, k, function () {
                 E.box(ctx, c[0], y, 106, 24, 5, P.inset);
@@ -188,11 +194,9 @@
         });
     }
 
-    // build — three implementers move along their lanes (linear), leaving a
-    // commit dot every 40 units; each that reaches the end gets the reviewer's
-    // diamond turned 90° (expo-out 20), a check (bounce-out 30), and its ledger
-    // row turns done. Speeds put lane 1 at the end and lanes 2 and 3 at 282
-    // and 202 at the f 3560 still.
+    // build — three implementers move along their lanes, leaving a commit dot
+    // every 40 units; each that reaches the end gets the reviewer's diamond
+    // turned 90°, a check, and its ledger row turns done.
     var LANE_V = [310 / 300, 222 / 340, 142 / 340];
     function scBuild(ctx, P, l) {
         var c = P.st.build;
@@ -231,9 +235,8 @@
         });
     }
 
-    // verify — each row: the claim (expo-out 24), an arrow (expo-out 16), the
-    // evidence typed 2 frames a character, then a check (bounce-out 30); rows
-    // 150 frames apart, so the third check is landing at the f 4520 still.
+    // verify — each row: the claim, an arrow, the evidence typed 2 frames a
+    // character, then a check.
     var ROWS = [['Tests pass', 'node --test · 0 failed'], ['Criterion met', 'failed before, passes now'], ['Docs still true', 'docs-check · exit 0']];
     function scVerify(ctx, P, l) {
         E.box(ctx, 40, 100, 560, 190, 8, P.panel);
@@ -253,9 +256,8 @@
         });
     }
 
-    // audit — two tool pills light, each page's untrue line is marked
-    // (expo-out 18) and struck (linear 20), a line pulls it right (expo-out
-    // 30), and the list item pops (back-out 20). Page 2 runs 90 frames later.
+    // audit — two tool pills light, each page's untrue line is marked and
+    // struck, a line pulls it right, and the list item pops.
     var PAGES = [
         { x: 40, pill: 'docs-check', rows: [[152, 166], [170, 150], [188, 166], [206, 160], [224, 140], [242, 166], [260, 156]], hit: 3, at: 120, item: ['README.md', 'names a removed flag', 162], c1: 90, c2: 300 },
         { x: 200, pill: 'docs-audit', rows: [[152, 326], [170, 320], [188, 310], [206, 326], [224, 300], [242, 326], [260, 316]], hit: 1, at: 210, item: ['pipeline.md', 'old stage name', 210], c1: 20, c2: 350 },
@@ -296,14 +298,8 @@
         });
     }
 
-    // land — the suite bar fills and turns green (expo-out 40); the branch
-    // arcs back into main (expo-out 36) and the merge rings (back-out 20); a
-    // light band rewrites map.md top to bottom (linear 90), the "rewritten"
-    // pill fading in as the band starts.
-    // Re-timed from the still: the f 6440 still (local 380) shows the band
-    // mid-page, its lower edge at y 190, beside a green suite and a ringed
-    // merge, so the band starts at local 346 (lower edge 190 at local ~380)
-    // rather than right after the merge.
+    // land — the suite bar fills and turns green; the branch arcs back into
+    // main and the merge rings; a light band rewrites map.md top to bottom.
     var MAP_ROWS = [[160, 584], [178, 560], [196, 584], [214, 548], [232, 584], [250, 570], [268, 530]];
     var REWRITE = 346;
     function scLand(ctx, P, l) {
@@ -362,9 +358,15 @@
 
     var SCENES = [scSurvey, scDesign, scPlan, scBuild, scVerify, scAudit, scLand];
 
-    function stage(ctx, P, i, l) {
-        var s = E.ROUTE[i], c = P.st[s];
-        E.fade(ctx, 1 - E.expoIn(E.prog(l, PER - 12, 12)), function () {
+    // The header, scene and produces-line each stage drew in the 8100-frame
+    // file, unchanged, driven by a frame already run 3x fast (see
+    // `stageBlock`): the produces line still fades in once that frame passes
+    // 720, and the fade-out guard at PER_OLD-12 never fires because the
+    // scaled frame tops out at 897, well under 948.
+    var PER_OLD = 960;
+    function stageHeader(ctx, P, i, l) {
+        var s = ROUTE[i], c = P.st[s];
+        E.fade(ctx, 1 - E.expoIn(E.prog(l, PER_OLD - 12, 12)), function () {
             var h = E.expoOut(E.prog(l, 0, 24));
             E.fade(ctx, h, function () {
                 E.text(ctx, P, 'h', s, 40 + 16 * (1 - h), 56, { fill: c });
@@ -379,56 +381,205 @@
         E.rail(ctx, P, i, E.backOut(E.prog(l, 0, 20)));
     }
 
-    function prelude(ctx, P, f) {
-        var t = E.expoOut(E.prog(f, 20, 36)) * (1 - E.expoIn(E.prog(f, 276, 12)));
-        E.fade(ctx, t, function () {
-            E.text(ctx, P, 'hc', 'The stages', 320, 150 + 10 * (1 - t), { align: 'center' });
-            E.text(ctx, P, 'sub', 'Seven stops on one route, from a question to a landed change.', 320, 180, { align: 'center' });
-        });
-        var r = E.expoOut(E.prog(f, 90, 60));
-        if (r > 0) E.line(ctx, [[110, 330], [E.lerp(110, 530, r), 330]], P.rule2, 5);
-        E.ROUTE.forEach(function (s, i) {
-            E.circle(ctx, 110 + 70 * i, 330, 6 * E.backOut(E.prog(f, 120 + 12 * i, 20)), P.ground, P.rule2, 1.5);
-        });
+    // ===========================================================================
+    // Terminal cuts: Claude Code in VS Code's terminal, running TokenBar's own
+    // three-line statusline. Moved from tour-quickstart.js — its only other
+    // consumer — since that file is deleted once this one is the sole reader.
+    // ===========================================================================
+
+    var PARTIAL = [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉'];
+    function barStr(pct, width) {
+        width = width || 10;
+        if (pct == null) return '░'.repeat(width);
+        var eighths = Math.round(E.clamp01(pct / 100) * width * 8);
+        var full = Math.min(width, Math.floor(eighths / 8)), rem = eighths - full * 8;
+        var s = '';
+        for (var i = 0; i < full; i++) s += '█';
+        if (full < width) { s += PARTIAL[rem]; s += '░'.repeat(Math.max(0, width - full - 1)); }
+        return s;
+    }
+    function pctStr(pct) { return pct == null ? '--%' : Math.round(pct) + '%'; }
+    // The route dots as `●`/`○` characters — this file's own route is all
+    // seven stages (never the quick start's five), so `step` runs 0..7.
+    function dotsStr(step) {
+        var s = '';
+        for (var i = 0; i < ROUTE.length; i++) s += i < step ? '●' : '○';
+        return s;
+    }
+    // TokenBar's own three-line statusline (docs/90-agent/reference/statusline.md):
+    // one badge word, a lead line with the route dots, the guard word, a
+    // collision flag and the claimed path, then the model/project/branch line
+    // and the two usage bars — drawn as plain monospace text, never as
+    // separate shapes, so the route dots read back as `●`/`○` characters.
+    function lead(ctx, P, x, y, st, title) {
+        if (!st.stage) return;
+        var color = st.others ? P.bad : P.st[st.stage.toLowerCase()];
+        var l1 = '▌FANKEEL ' + st.stage.toUpperCase() + '   ' + dotsStr(st.step) + '  ⚿ ask'
+            + (st.others ? '  ⚑' + st.others : '')
+            + (st.where ? '  ' + st.where : '') + '  ' + (title || TITLE);
+        var l2 = '▌ Opus 5 | ' + PROJECT + ' | main ↑2';
+        var l3 = '▌ ctx ' + barStr(st.ctx) + '  ' + pctStr(st.ctx) + '  │  5h ' + barStr(st.h5) + '  ' + pctStr(st.h5);
+        E.text(ctx, P, 'm', l1, x, y, { fill: color });
+        E.text(ctx, P, 'm', l2, x, y + 14);
+        E.text(ctx, P, 'm', l3, x, y + 28);
+    }
+    // A VS Code-ish frame, drawn locally with tour.js's own primitives — no
+    // new chrome belongs in tour.js itself.
+    function vsCode(ctx, P) {
+        E.box(ctx, 20, 16, 620, 332, 6, P.panel);
+        E.line(ctx, [[20, 32], [640, 32]], P.rule2, 1);
+        E.text(ctx, P, 's', PROJECT + ' — Visual Studio Code', 330, 27, { align: 'center' });
+        E.line(ctx, [[20, 336], [640, 336]], P.rule2, 1);
+        E.text(ctx, P, 's', 'main ↑2', 30, 350, { size: 9 });
     }
 
-    // outro — all seven rail dots lit; copies of them rise and become the
-    // bars, widths the stages' real durations (expo-out 48 from local 60); the
-    // three numbers count up (expo-out 45 from local 120); the last 300 frames
-    // are still.
-    // Held to the still: the f 7560 still keeps the route rail at the bottom,
-    // every dot lit (its rail is data-at 7), under the bars, so the rail stays
-    // rather than fading out as the dots rise.
-    function outro(ctx, P, o) {
-        var t = E.expoOut(E.prog(o, 0, 24));
-        E.fade(ctx, t, function () { E.text(ctx, P, 'hc', 'One real task, start to land', 320, 80, { align: 'center' }); });
-        E.rail(ctx, P, 7, 1);
-        var k = E.expoOut(E.prog(o, 60, 48));
-        if (k < 1) {
-            var R = E.barRects(60, 520);
-            E.ROUTE.forEach(function (s, i) {
-                E.box(ctx, E.lerp(110 + 70 * i - 6, R[i][0], k), E.lerp(324, 116, k), E.lerp(12, R[i][1], k), E.lerp(12, 24, k),
-                    E.lerp(6, R[i][1] < 10 ? 1 : 2, k), P.st[s]);
+    // Each stage's own ctx%/5h%/where, climbing stage over stage — from the
+    // storyboard's own k-sl data attributes, never invented per file.
+    var CTXPCT = { survey: 9, design: 12, plan: 15, build: 22, verify: 34, audit: 36, land: 38 };
+    var H5PCT = { survey: 41, design: 43, plan: 44, build: 48, verify: 58, audit: 61, land: 66 };
+    var WHERE = { build: 'src/stock/StockTable.tsx', verify: 'api/transfers.ts', audit: 'docs/stock.md', land: 'api/transfers.ts' };
+    var SUB = {
+        survey: '已經有三個了，不寫第四個', design: '你點頭之前，不寫一行程式', plan: '三個任務，沒有共用的檔案',
+        build: '⚑ 另一個終端機也在改 StockTable.tsx', verify: '每一條都附證據', audit: '這次改動讓哪一行說錯了', land: '七站走完，一個不少'
+    };
+    var CROSS = 6; // frames into a terminal cut where the lead crosses from the previous stage to this one
+
+    // A single stage's terminal cut: for six frames the lead line still
+    // reads the previous stage (survey has none to cross from, so it never
+    // holds), then it crosses to this block's own stage and that stage's own
+    // route dot lights — one route, drawn in two places, from one `i`.
+    function termCut(ctx, P, i, tl) {
+        vsCode(ctx, P);
+        var s = ROUTE[i], prev = i > 0 ? ROUTE[i - 1] : s;
+        var crossed = i === 0 || tl >= CROSS;
+        var word = crossed ? s : prev;
+        var step = crossed ? i + 1 : i;
+        var st = { stage: word, step: step, ctx: CTXPCT[s], h5: H5PCT[s], where: WHERE[s], others: s === 'build' && tl >= 12 ? 1 : undefined };
+        var g = E.expoOut(E.prog(tl, 0, 12));
+        E.fade(ctx, g, function () { lead(ctx, P, 40, 290, st, TITLE); });
+        var k = E.expoOut(E.prog(tl, 20, 14));
+        E.fade(ctx, k, function () { E.text(ctx, P, 's', SUB[s], 320, 250, { align: 'center' }); });
+    }
+
+    // land's terminal cut is two shots: the same crossing cut (72 frames),
+    // then a close-up (36 frames) with all seven route dots lit at once — the
+    // video's one moment the whole rail moves together.
+    function landCloseup(ctx, P, tl) {
+        vsCode(ctx, P);
+        var st = { stage: 'land', step: ROUTE.length, ctx: CTXPCT.land, h5: H5PCT.land, where: WHERE.land };
+        ctx.save();
+        ctx.translate(40, 290);
+        ctx.scale(1.4, 1.4);
+        ctx.translate(-40, -290);
+        lead(ctx, P, 40, 290, st, TITLE);
+        ctx.restore();
+    }
+
+    function stageBlock(ctx, P, i, l) {
+        if (l < 300) return stageHeader(ctx, P, i, Math.min(l * 3, 899));
+        var tl = l - 300;
+        if (i === ROUTE.length - 1) {
+            if (tl < 72) return termCut(ctx, P, i, tl);
+            return landCloseup(ctx, P, tl - 72);
+        }
+        return termCut(ctx, P, i, tl);
+    }
+
+    // ===========================================================================
+    // hook (f 0–239): pain visuals only, no persona — a leaning tower of
+    // feature blocks, a dependency graph greying out with duplicate pickers
+    // marked ×3, then the seven-stage route with three tasks sliding into
+    // place.
+    // ===========================================================================
+    function hookPile(ctx, P, f) {
+        E.text(ctx, P, 'h', '功能一層疊一層，文件一份接一份。', 320, 52, { align: 'center' });
+        for (var i = 0; i < 8; i++) {
+            var k = E.backOut(E.prog(f, 4 + 7 * i, 16));
+            if (k <= 0) continue;
+            var x = 56 + 13 * i, y = 296 - 24 * i - 40 * (1 - k);
+            E.fade(ctx, Math.min(1, k), function () { E.box(ctx, x, y, 156, 24, 4, P.panel, P.rule2, 1); });
+        }
+        E.text(ctx, P, 's', PROJECT, 32, 344, { fill: P.muted });
+    }
+    function hookDead(ctx, P, f) {
+        E.text(ctx, P, 'h', '沒人引用的程式越來越多。', 320, 52, { align: 'center' });
+        var nodes = [[136, 120], [136, 190], [136, 260], [276, 96], [276, 190], [276, 260]];
+        nodes.forEach(function (n, i) {
+            var grey = E.prog(f, 6 * i, 12) >= 1;
+            E.box(ctx, n[0], n[1], 108, 20, 4, P.panel, grey ? P.faint : P.rule2, 1);
+        });
+        if (f >= 40) E.text(ctx, P, 'm', '×3', 431, 157, { align: 'center', fill: P.bad });
+        E.text(ctx, P, 's', PROJECT, 32, 344, { fill: P.muted });
+    }
+    function hookRoute(ctx, P, f) {
+        E.text(ctx, P, 'h', 'fankeel 替每個任務排一條工作流。', 320, 72, { align: 'center' });
+        E.text(ctx, P, 'm', PROJECT, 40, 122, { fill: P.muted });
+        ROUTE.forEach(function (s, i) {
+            var k = E.expoOut(E.prog(f, 8 + 2 * i, 14));
+            E.fade(ctx, k, function () { E.text(ctx, P, 'm', s, 240 + 52 * i, 122, { align: 'center', fill: P.st[s] }); });
+        });
+        var rows = [[159, 2], [209, 5], [259, 7]];
+        rows.forEach(function (r, i) {
+            var k = E.backOut(E.prog(f, 18 + 12 * i, 20));
+            ROUTE.forEach(function (s, j) {
+                if (j >= r[1]) return;
+                E.circle(ctx, 240 + 52 * j, r[0] - 20, 7 * k, P.st[s]);
             });
-        } else E.bars(ctx, P, 60, 116, 520, 24, 162, 1);
-        if (o < 120) return;
-        var c = E.expoOut(E.prog(o, 120, 45));
-        E.stats(ctx, P, [[200, E.fmtSpan(S.total * c), 'start to land'], [320, E.fmtUsd(S.usd * c), 'spent'], [440, String(Math.round(S.agents * c)), 'agents']], 226, 248);
+        });
+        E.fade(ctx, E.expoOut(E.prog(f, 60, 16)), function () {
+            E.text(ctx, P, 'sub', 'survey 先找已經有的，audit 抓已經過時的引用。', 320, 318, { align: 'center' });
+        });
+    }
+    function hook(ctx, P, f) {
+        if (f < 80) return hookPile(ctx, P, f);
+        if (f < 140) return hookDead(ctx, P, f - 80);
+        return hookRoute(ctx, P, f - 140);
+    }
+
+    // ===========================================================================
+    // outro (f 3096–3599): a route flash, the install lines, then the tagline.
+    // ===========================================================================
+    function outroRoute(ctx, P, o) {
+        E.fade(ctx, E.expoOut(E.prog(o, 0, 24)), function () { E.text(ctx, P, 'hc', '一個任務，一條路線。', 320, 150, { align: 'center' }); });
+        E.rail(ctx, P, ROUTE.length, 1);
+    }
+    function installLines(ctx, P, y0) {
+        E.text(ctx, P, 'm', '$ ', 118, y0, { fill: P.muted });
+        E.text(ctx, P, 'm', 'claude plugin marketplace add FanFantom9452/FanKeel', 134, y0, { fill: P.ink2 });
+        E.text(ctx, P, 'm', '$ ', 118, y0 + 22, { fill: P.muted });
+        E.text(ctx, P, 'm', 'claude plugin install fankeel@fankeel', 134, y0 + 22);
+    }
+    function outroInstall(ctx, P, o) {
+        E.fade(ctx, E.expoOut(E.prog(o, 0, 24)), function () { E.text(ctx, P, 'h', 'fankeel', 320, 120, { align: 'center' }); });
+        E.fade(ctx, E.expoOut(E.prog(o, 20, 20)), function () { installLines(ctx, P, 172); });
+        E.fade(ctx, E.expoOut(E.prog(o, 48, 20)), function () { E.text(ctx, P, 'sub', '兩行指令，裝進 Claude Code。', 320, 210, { align: 'center' }); });
+    }
+    function outroTag(ctx, P, o) {
+        E.fade(ctx, E.expoOut(E.prog(o, 20, 24)), function () { E.text(ctx, P, 'hc', '跟 AI 開發得再久，也不堆過時的引用和死程式。', 320, 160, { align: 'center' }); });
+        E.fade(ctx, E.expoOut(E.prog(o, 40, 20)), function () { installLines(ctx, P, 239); });
+        E.rail(ctx, P, ROUTE.length, 1);
+    }
+    function outro(ctx, P, o) {
+        if (o < 84) return outroRoute(ctx, P, o);
+        if (o < 204) return outroInstall(ctx, P, o - 84);
+        return outroTag(ctx, P, o - 204);
     }
 
     function draw(ctx, f, P) {
-        if (f < INTRO) return prelude(ctx, P, f);
+        if (f < INTRO) return hook(ctx, P, f);
         if (f < OUTRO) {
             var i = Math.floor((f - INTRO) / PER);
-            return stage(ctx, P, i, f - INTRO - PER * i);
+            return stageBlock(ctx, P, i, f - INTRO - PER * i);
         }
         return outro(ctx, P, f - OUTRO);
     }
 
+    var STILLS = [120, 390, 590, 798, 998, 1206, 1406, 1614, 1814, 2022, 2222, 2430, 2630, 2838, 3038, 3300];
+
     var TOUR_STAGES = {
-        length: 8100,
-        beats: E.ROUTE.map(function (s, i) { return { at: INTRO + PER * i, label: s, stage: s }; }).concat([{ at: OUTRO, label: 'end' }]),
-        stills: [700, 1650, 2600, 3560, 4520, 5480, 6440, 7560],
+        length: LENGTH,
+        beats: ROUTE.map(function (s, i) { return { at: INTRO + PER * i, label: s, stage: s }; }).concat([{ at: OUTRO, label: 'end' }]),
+        stills: STILLS,
         draw: draw,
     };
     E.register('stages', TOUR_STAGES);
