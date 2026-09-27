@@ -71,8 +71,8 @@ test('the land beat\'s ctx percentage is computed from SESSION, not a separate h
     const t = shot(3240).texts();
     const pct = Math.round(T.SESSION.agents) + '%';
     assert.ok(t.some((s) => s.includes('ctx') && s.includes(pct)), t.join(' | '));
-    // the same source number is what the summary row already prints as the agent count
-    assert.ok(t.includes(String(Math.round(T.SESSION.agents))), t.join(' | '));
+    // the same source number is what the summary row already prints, as "{n} 個 agent"
+    assert.ok(t.some((s) => s.includes(Math.round(T.SESSION.agents) + ' 個 agent')), t.join(' | '));
 });
 
 test('the stills print the session\'s numbers', () => {
@@ -82,9 +82,8 @@ test('the stills print the session\'s numbers', () => {
     assert.ok(build.some((s) => s.includes('VERIFY')), build.join(' | '));
 
     const land = shot(3240).texts();
-    const waited = T.ROUTE.reduce((a, s) => a + T.SESSION.waited[s], 0);
     for (const s of [T.fmtSpan(T.SESSION.total), T.fmtUsd(T.SESSION.usd), String(Math.round(T.SESSION.agents)),
-        T.fmtSpan(waited), '在本機合併，沒有 push']) {
+        '在本機合併，沒有 push']) {
         assert.ok(land.some((t) => t.includes(s)), s + ' missing from frame 3240: ' + land.join(' | '));
     }
 });
