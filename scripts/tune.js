@@ -354,6 +354,21 @@ function doneLive(r, live) {
     const snap = JSON.parse(fs.readFileSync(snapFile, 'utf8'));
     const changed = compare(snap, live.src);
     const stray = changed.filter((p) => !live.src.includes(p));
+    // A stray path with no snapshot entry and no HEAD content is something the
+    // edit's own tooling created outside --src — a screenshot the page drops
+    // beside itself, say — rather than a file the edit touched. Every one of
+    // them has to be new, or one tracked file among them is still evidence the
+    // edit reached outside --src, and the old all-or-nothing restore applies.
+    const isNew = (p) => !Object.prototype.hasOwnProperty.call(snap.hashes, p) && headBytes(p) === null;
+    if (stray.length && stray.every(isNew)) {
+        for (const p of stray) {
+            const aside = path.join(STATE, r.id + '.stray', p.replace(/[\\/]/g, '__'));
+            fs.mkdirSync(path.dirname(aside), { recursive: true });
+            fs.renameSync(p, aside);
+        }
+        return settle(r, true, [], stray.length + ' new file' + (stray.length === 1 ? '' : 's')
+            + ' outside --src moved to ' + path.join(STATE, r.id + '.stray') + '; the --src edit stands');
+    }
     if (stray.length) {
         restore(r.id, snap, changed);
         fs.writeFileSync(path.join(STATE, r.id + '.diff.txt'), stray.map((p) => '! ' + p + '\n').join(''));

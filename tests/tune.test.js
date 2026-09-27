@@ -242,6 +242,22 @@ test('live mode: wait names the source line; an edit outside --src is put back; 
     assert.match(seen, /"type":"done","id":"r-0003"/);
 });
 
+test('live mode: a new untracked file outside --src is moved aside, not restored, and the --src edit stands', async (t) => {
+    const cwd = liveRepo();
+    const view = path.join(cwd, 'src', 'view.js');
+    const stray = path.join(cwd, '.playwright-mcp', 'x.png');
+    const base = await startServer(t, cwd, ['--src', 'src/view.js', '--rebuild', 'node build.js']);
+    await request(base + '__live/request', 'POST', { page: '/page.html', block: 'now', note: '改成 3 / 5' });
+    spawnSync(process.execPath, [CLI, 'wait', '--timeout', '5'], { cwd, encoding: 'utf8' });
+    fs.writeFileSync(view, VIEW.replace(' 個 session', ' / 5 session'));
+    fs.mkdirSync(path.dirname(stray), { recursive: true });
+    fs.writeFileSync(stray, 'binary-ish');
+    const ok = spawnSync(process.execPath, [CLI, 'done', 'r-0001'], { cwd, encoding: 'utf8' });
+    assert.equal(ok.status, 0, ok.stderr);
+    assert.equal(fs.existsSync(stray), false, 'the stray file was moved aside, not left in place');
+    assert.match(fs.readFileSync(view, 'utf8'), /\/ 5 session/, 'the --src edit stands');
+});
+
 test('--src without --rebuild is refused before anything is served', () => {
     const cwd = liveRepo();
     const r = spawnSync(process.execPath, [CLI, 'serve', 'site', '--port', '0', '--src', 'src/view.js'], { cwd, encoding: 'utf8', timeout: 5000 });
