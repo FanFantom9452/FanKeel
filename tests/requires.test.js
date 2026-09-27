@@ -42,6 +42,17 @@ test('requireGraph ignores a specifier that is not relative', () => {
   assert.deepEqual(edges, []);
 });
 
+test('requireGraph anchors a specifier to the file that named it, not to the root', () => {
+  const dir = root();
+  // A decoy at the root that a specifier resolved from the wrong base would
+  // land on. The real target, 'sub/util.js', is never written — so the only
+  // way this comes back non-empty is if the anchor is dropped.
+  write(dir, 'util.js', "module.exports = {};\n");
+  write(dir, 'sub/from.js', "'use strict';\nconst u = require('./util.js');\n");
+  const edges = requireGraph(dir, ['util.js', 'sub/from.js']);
+  assert.deepEqual(edges, []);
+});
+
 test('requireGraph leaves out an edge to a file that is not in the given list, and skips a self-require', () => {
   const dir = root();
   write(dir, 'lib/a.js', "'use strict';\nconst c = require('./c.js');\nconst self = require('./a.js');\n");
