@@ -207,7 +207,7 @@ stage's minutes went on a gate rather than on work. Neither carries a dollar
 figure any more; a stage's own cost surfaces in the per-route stage
 ledger on each project page, and per stage and model inside the session
 page's 概覽, under a `<details class="csmore">` element
-(`assets/station/station.js:2771`) — not on this table's rows.
+(`assets/station/station.js:2846`) — not on this table's rows.
 
 A stage's dollar figure needs `spend`, which `hooks/leave.js` writes once, at
 session end — a live session does not have it yet, and no session that ended
@@ -640,12 +640,12 @@ a link — with four kids: 進行中 `#/live`, 最近 `#/sessions`, 全部清單
 `#/list` and 比較 `#/cmp`. 花費 is a folding category with two kids: 近 30 天
 `#/days` and 依專案 `#/projects`. 文件 is a single link, `#/docs`. 導覽 is a single link too, `#/tour`, last in the bar, carrying `data-block="tour-nav"`. 設定 has one
 kid, 精靈 `#/settings`, but no `fold` key on it: its `NAV_TREE` entry
-(`assets/station/station.js:1402`,
+(`assets/station/station.js:1412`,
 `kids: [['settings', '#/settings', '精靈']]`) carries none, so `navHtml`
-(`assets/station/station.js:1416`) renders it as a plain link straight to
+(`assets/station/station.js:1426`) renders it as a plain link straight to
 `#/settings` rather than a toggle. Only Sessions and 花費 fold — a category
 with `fold` is one button, the whole row, that only opens and shuts; its
-kids do the navigating (`assets/station/station.js:1433`), and it never
+kids do the navigating (`assets/station/station.js:1444`), and it never
 navigates on its own. A folding category's kids
 also appear as a subtabs strip under the page itself
 (`assets/station/station.js:1457`, `function subtabsHtml(active) {`) — the

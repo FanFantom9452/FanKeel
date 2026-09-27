@@ -41,6 +41,7 @@ const KNOWN_LEDGER_PARAGRAPHS = [
   "   Part 1 — against the brief and the coverage rows, in this",
   "   Give it the brief path and the range — never a paste of t",
   "   **A task that changes a page gets a second reviewer** in ",
+  "   **When the first round returns a finding, one more review",
   "The same asymmetry runs the other way. What you send is read",
 ];
 
