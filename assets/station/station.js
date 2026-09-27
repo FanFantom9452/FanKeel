@@ -198,10 +198,10 @@
     }
     // `#/` is 儀表板 (the `now` view); `#/live` (what `#/` used to be, 現在),
     // `#/days`, `#/d/<day>`, `#/sessions`, `#/projects`, `#/docs`, `#/settings`,
-    // `#/list` and `#/cmp` are the other pages the left bar opens; `#/p/<pkey>`
-    // and `#/s/<id>[/<tab>]` are opened from rows. A hash is what a page opened
-    // from file:// can go back through.
-    var PAGES = ['live', 'sessions', 'projects', 'docs', 'settings'];
+    // `#/tour`, `#/list` and `#/cmp` are the other pages the left bar opens;
+    // `#/p/<pkey>` and `#/s/<id>[/<tab>]` are opened from rows. A hash is what
+    // a page opened from file:// can go back through.
+    var PAGES = ['live', 'sessions', 'projects', 'docs', 'settings', 'tour'];
     function parseHash(hash) {
         var p = String(hash || '').replace(/^#\/?/, '').split('/');
         var dec = function (v) { try { return decodeURIComponent(v); } catch (e) { return null; } };
@@ -763,7 +763,45 @@
     function docsCardHtml(list, o) {
         if (!list.length) return '';
         return '<section class="panel docs"><div class="h2">文件 <small>各專案已生成的 <span class="mono">.fankeel/map.md</span>，找不到的不列</small></div>'
+            + (o && o.search ? o.search : '')
             + list.map(function (d, i) { return docProjectHtml(d, o, i === 0); }).join('') + '</section>';
+    }
+    // 文件's full-text box. The page bodies live on disk, so only a served
+    // page can search them (`GET station/search`, lib/docsearch.js); the file
+    // `/fankeel` writes says where to open one. `st` is `view.dsx`.
+    function dsxCount(st) { return st && st.res && st.res.q ? st.res.n + ' 頁' : ''; }
+    function dsxResultsHtml(st) {
+        var res = st && st.res;
+        if (!res || !res.q) return '';
+        if (!res.hits.length) {
+            return '<p class="dsx-none">沒有頁面的內文含「' + esc(res.q) + '」。<span>換個較短的詞再試；archive、plan、report 頁不在搜尋範圍內，'
+                + '要找它們請用下方的專案清單。</span></p>';
+        }
+        return '<ol class="dsx-list">' + res.hits.map(function (h) {
+            return '<li><a class="dsx-row" href="#/docs" title="' + esc(h.pkey + '/' + h.path) + '"><span class="dsx-t">' + esc(h.title) + '</span>'
+                + '<span class="chip">' + esc(h.role) + '</span>'
+                + '<p class="dsx-snip">' + esc(h.before) + '<mark>' + esc(h.hit) + '</mark>' + esc(h.after) + '</p>'
+                + '<span class="dsx-path mono">' + esc(h.project) + ' · ' + esc(h.path) + '</span></a></li>';
+        }).join('') + '</ol>'
+            + (res.n > res.hits.length ? '<p class="dsx-scope">列出前 ' + res.hits.length + ' 頁，共 ' + res.n + ' 頁；換個更精確的詞可以縮小。</p>' : '');
+    }
+    function docsSearchHtml(st, serve) {
+        if (!serve) {
+            return '<div class="dsx" data-block="docs-search"><span class="dsx-l">全文搜尋</span>'
+                + '<p class="dsx-scope">全文搜尋要由 serve 回答：輸入 <code class="mono">/fankeel-station</code>，從它印出的網址開這一頁。</p></div>';
+        }
+        return '<div class="dsx" data-block="docs-search"><label class="dsx-l" for="dq">全文搜尋</label>'
+            + '<div class="dsx-box"><input id="dq" type="search" value="' + esc((st && st.q) || '') + '" placeholder="輸入字詞，搜全部專案的文件內文"'
+            + ' autocomplete="off"><span class="dsx-n mono" id="dsxN">' + dsxCount(st) + '</span></div>'
+            + '<p class="dsx-scope">搜 reference、guide、decision 三種頁面的內文；archive、plan、report 不搜。</p>'
+            + '<div id="dsxOut">' + dsxResultsHtml(st) + '</div></div>';
+    }
+    // 導覽: the tour's own page in a frame. It is served from the plugin's
+    // assets (scripts/station.js STATIC); the written file has no server.
+    function tourPage(serve) {
+        if (serve) return '<div class="tour" data-block="tour"><iframe class="tour-frame" src="station/tour.html" title="fankeel 導覽"></iframe></div>';
+        return '<section class="panel" data-block="tour"><p class="note">導覽要從 serve 開的頁面看：輸入 <code class="mono">/fankeel-station</code>，'
+            + '從它印出的網址開 <span class="mono">#/tour</span>。</p></section>';
     }
 
     // ---- the project page -------------------------------------------------
@@ -1337,11 +1375,18 @@
         gate: '<path d="M8 1.8 13.5 4v4c0 3-2.4 5.3-5.5 6.2C4.9 13.3 2.5 11 2.5 8V4z"/><path d="M8 5.2v3.3M8 10.8v.01"/>',
         check: '<path d="M3.5 8.5 6.5 11.5 12.5 5"/>',
     };
+    // Glyphs drawn on Lucide's 24 grid; `.sidenav .ico.g24` in station.css
+    // keeps their stroke at the bar's 1.5-on-16 weight.
+    var ICONS24 = { tour: '<circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4Z"/>' };
     function icon(name) {
+        if (ICONS24[name]) {
+            return '<svg class="ico g24" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor"'
+                + ' stroke-linecap="round" stroke-linejoin="round">' + ICONS24[name] + '</svg>';
+        }
         return ICONS[name] ? '<svg class="ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor"'
             + ' stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + ICONS[name] + '</svg>' : '';
     }
-    // Five categories. A category with `kids` is a heading over its sub-pages,
+    // Six categories. A category with `kids` is a heading over its sub-pages,
     // and those same kids are the tab strip on each of their pages
     // (`subtabsHtml`), so the bar and the strip cannot list different pages.
     var NAV_TREE = [
@@ -1351,6 +1396,7 @@
         { ico: 'spend', label: '花費', fold: 'spend', kids: [['days', '#/days', '近 30 天'], ['projects', '#/projects', '依專案']] },
         { ico: 'docs', label: '文件', v: 'docs', href: '#/docs' },
         { ico: 'settings', label: '設定', kids: [['settings', '#/settings', '精靈']] },
+        { ico: 'tour', label: '導覽', v: 'tour', href: '#/tour', block: 'tour-nav', title: 'fankeel 怎麼跑一個任務，一段動畫看完' },
     ];
     // A detail page lights the page it was opened from.
     function navOn(active) { return active === 'project' ? 'projects' : active === 'session' ? 'sessions' : active; }
@@ -1368,14 +1414,17 @@
         // Each badge sits on the page whose rows it counts.
         var badges = { now: null, live: [c.live + ' live', c.live ? 'live' : ''], days: [usd(c.usd)], sessions: [c.sessions],
             projects: [c.projects], docs: [c.docs] };
-        var link = function (v, href, inner) {
+        var link = function (v, href, inner, title) {
             var b = badges[v];
-            return '<a href="' + href + '"' + (on === v ? ' aria-current="page"' : '') + '>' + inner
+            return '<a href="' + href + '"' + (on === v ? ' aria-current="page"' : '') + (title ? ' title="' + esc(title) + '"' : '') + '>' + inner
                 + (b ? '<span class="nb' + (b[1] ? ' ' + b[1] : '') + '">' + b[0] + '</span>' : '') + '</a>';
         };
         var t = THEMES[th];
         return '<nav class="sidenav" data-block="nav" aria-label="功能"><ul>' + NAV_TREE.map(function (g) {
-            if (!g.kids) return '<li class="navcat">' + link(g.v, g.href, icon(g.ico) + '<span>' + g.label + '</span>') + '</li>';
+            if (!g.kids) {
+                return '<li class="navcat"' + (g.block ? ' data-block="' + g.block + '"' : '') + '>'
+                    + link(g.v, g.href, icon(g.ico) + '<span>' + g.label + '</span>', g.title) + '</li>';
+            }
             var inside = g.kids.some(function (k) { return k[0] === on; }), closed = Boolean(g.fold && shut[g.fold]);
             var kids = '<ul class="navkids"' + (g.fold ? ' id="navkids-' + g.fold + '"' : '') + '>' + g.kids.map(function (k) {
                 return '<li>' + link(k[0], k[1], '<span>' + k[2] + '</span>') + '</li>';
@@ -2285,7 +2334,7 @@
             projectSessionsHtml: projectSessionsHtml,
             timelineModel: timelineModel, timelineSvg: timelineSvg, costModel: costModel, costHtml: costHtml,
             sessionHeadHtml: sessionHeadHtml, tabsHtml: tabsHtml, serveLost: serveLost,
-            heroEyebrow: heroEyebrow, effortChip: effortChip, docsCardHtml: docsCardHtml,
+            heroEyebrow: heroEyebrow, effortChip: effortChip, docsCardHtml: docsCardHtml, docsSearchHtml: docsSearchHtml, tourPage: tourPage,
             railHtml: railHtml, liveTag: liveTag,
             navHtml: navHtml, navCounts: navCounts, recentRows: recentRows, nowHtml: nowHtml,
             WIZ_STEPS: WIZ_STEPS, wizLoad: wizLoad, wizApply: wizApply, wizChanges: wizChanges, wizHtml: wizHtml,
@@ -2670,10 +2719,13 @@
     function projectsPage() {
         return subtabsHtml('projects') + '<section class="panel" data-block="projects">' + projectsHtml(projectRows(homeRows(), DAYS), homeOpts(null)) + '</section>';
     }
+    view.dsx = { q: '', res: null };
     function docsPage() {
         var list = [].concat.apply([], S.projects.map(function (p) { return p.docs || []; }));
-        return '<div data-block="docs">' + (list.length ? docsCardHtml(list, homeOpts(null))
-            : '<p class="mute">還沒有專案生成 <span class="mono">.fankeel/map.md</span></p>') + '</div>';
+        var dsx = docsSearchHtml(view.dsx, Boolean(S.serve));
+        return '<div data-block="docs">' + (list.length ? docsCardHtml(list, Object.assign(homeOpts(null), { search: dsx }))
+            : '<section class="panel docs"><div class="h2">文件</div>' + dsx
+                + '<p class="mute">還沒有專案生成 <span class="mono">.fankeel/map.md</span></p></section>') + '</div>';
     }
     view.pMetric = 'usd';
     view.compare = '';
@@ -4035,7 +4087,7 @@
             + (xa && xb ? compareHtml(two[0], xa, two[1], xb) : '<p class="mute">讀取細節…</p>') + '</div></div>';
     }
 
-    var NAV_LABEL = { live: '現在', days: '近 30 天', sessions: '最近 sessions', projects: '專案', docs: '文件', settings: '設定', list: '清單', cmp: '比較' };
+    var NAV_LABEL = { live: '現在', days: '近 30 天', sessions: '最近 sessions', projects: '專案', docs: '文件', settings: '設定', list: '清單', cmp: '比較', tour: '導覽' };
     function drawSide() {
         var tail = CRUMBS[route.view] ? CRUMBS[route.view](route)
             : route.view === 'days' && route.day ? [['近 30 天', '#/days'], [route.day, null]]
@@ -4048,6 +4100,30 @@
     VIEWS.sessions = sessionsPage;
     VIEWS.projects = projectsPage;
     VIEWS.docs = docsPage;
+    VIEWS.tour = function () { return tourPage(Boolean(S.serve)); };
+    // Typing in 文件's box asks the server 250 ms after the last key, and
+    // paints the answer into its own two places so the box keeps its caret;
+    // a redraw later draws the same answer from `view.dsx`.
+    var dsxTimer = null;
+    function dsxPaint() {
+        var out = doc.getElementById('dsxOut'), n = doc.getElementById('dsxN');
+        if (out) out.innerHTML = dsxResultsHtml(view.dsx);
+        if (n) n.textContent = dsxCount(view.dsx);
+    }
+    doc.addEventListener('input', function (e) {
+        if (!e.target || e.target.id !== 'dq') return;
+        var q = e.target.value;
+        view.dsx.q = q;
+        if (dsxTimer) w.clearTimeout(dsxTimer);
+        dsxTimer = w.setTimeout(function () {
+            if (!q.trim()) { view.dsx.res = null; dsxPaint(); return; }
+            fetch('station/search?q=' + encodeURIComponent(q)).then(function (r) { return r.json(); }).then(function (res) {
+                if (view.dsx.q !== q) return;
+                view.dsx.res = res;
+                dsxPaint();
+            }).catch(function () { /* the next key asks again */ });
+        }, 250);
+    });
     VIEWS.list = listPage;
     VIEWS.cmp = cmpPage;
     // The wizard's state lives as long as the page: a re-read of the data
@@ -4843,7 +4919,7 @@
             if (doc.hidden) { busy = false; return; }
             // The settings wizard reads nothing live; a redraw there would only
             // throw away what the reader has open. The masthead still moves.
-            if (route.view === 'settings') { busy = false; drawFloat(); doc.getElementById('gen').textContent = genText(); return; }
+            if (route.view === 'settings' || route.view === 'tour') { busy = false; drawFloat(); doc.getElementById('gen').textContent = genText(); return; }
             var s = watched();
             var done = function () { busy = false; repaint(); };
             if (s && s.state === 'live' && s.hasDetail) reload('station/detail/' + encodeURIComponent(s.id) + '.js', done);
