@@ -102,6 +102,11 @@ after: task「Ready 兩條、給人讀的文件層、ab.sh 重跑」落地；它
 
 - 〔tour〕`#/tour` 待掛：路由未進 `PAGES`（`assets/station/station.js`），靜態檔未進白名單（`scripts/station.js`）.
 
+### TODO 大批次放開 README 與 station 導讀
+after: task「TODO 大批次：station 更新、工具修補…」落地，放開 `README.md` 與 `docs/01-guide/station.md` 的認領. 09-27.
+
+- 〔tour〕導覽已只剩一支 60 秒宣傳片，兩處仍寫三支：`README.md:203`「the three explainer videos」、`docs/01-guide/station.md:32`「三段短片」 — [assets/station/tour-stages.js](assets/station/tour-stages.js).
+
 ### fankeel 功能全部完成
 after: fankeel 其餘功能都落地、使用者換到新機器測試. 09-27.
 
