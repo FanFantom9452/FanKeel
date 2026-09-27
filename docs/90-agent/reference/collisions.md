@@ -161,7 +161,7 @@ only when this session holds the file too:
   skipped before either other rule is reached; across trees an overlap is a
   merge to reconcile at land, not a clash (`sharedWith` returns `{clash,
   merge}`).
-- **The older task holds** — `claimedFirst`, `lib/guard.js:134` (`!claimedFirst(data, mine)`). When
+- **The older task holds** — `claimedFirst`, `lib/guard.js:138` (`!claimedFirst(data, mine)`). When
   both sessions claim the file, the newer one yields — so two sessions
   that both reached it cannot block each other into a stalemate.
 
