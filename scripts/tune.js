@@ -347,7 +347,9 @@ function done(id) {
 }
 
 // Live mode: nothing outside --src may have moved since `wait`, and the page
-// has to rebuild from what did. Either failure puts every changed file back.
+// has to rebuild from what did. A tracked file changed outside --src puts
+// every changed file back; a stray new file outside --src is moved aside
+// instead, and the --src edit stands.
 function doneLive(r, live) {
     const snapFile = path.join(STATE, r.id + '.snap.json');
     if (!fs.existsSync(snapFile)) die(r.id + ' has no snapshot: a static `wait` took it; run `tune.js wait` again');
