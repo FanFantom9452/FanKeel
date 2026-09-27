@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { apply } = require('../scripts/profile-table.js');
-const { profileTableMarkdown, KEYS } = require('../lib/profile.js');
+const { profileTableMarkdown, profileTable, KEYS } = require('../lib/profile.js');
 
 const PAGE = path.join(__dirname, '..', 'docs', '01-guide', 'profile.md');
 
@@ -31,4 +31,18 @@ test('a changed desc actually fails the check it exists for', () => {
     } finally {
         KEYS.guard.desc = saved;
     }
+});
+
+// `profileTableMarkdown` renders rows this function returns; tested directly
+// so a broken row shape (wrong length, or `guard` dropped) fails here rather
+// than only ever being observed through the markdown it feeds.
+test('profileTable returns one 4-column row per key, including guard', () => {
+    const rows = profileTable();
+    assert.ok(Array.isArray(rows) && rows.length > 0, 'profileTable returns a non-empty array');
+    for (const row of rows) {
+        assert.equal(row.length, 4, 'each row has exactly 4 columns');
+    }
+    const guardRow = rows.find((r) => r[0] === '`guard`');
+    assert.ok(guardRow, 'guard appears as its own row');
+    assert.equal(guardRow[1], KEYS.guard.desc);
 });

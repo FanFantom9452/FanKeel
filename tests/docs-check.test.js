@@ -18,7 +18,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
-const { report, scan, parseArgs, docsFor, parseDocsForArgs } = require('../scripts/docs-check.js');
+const { report, scan, parseArgs, docsFor, parseDocsForArgs, reportDocsFor, declaredSymbols } = require('../scripts/docs-check.js');
 const tmp = require('./tmp.js');
 
 const result = (over) => ({
@@ -329,6 +329,46 @@ test('docs-for lists the pages naming a file as source_of_truth and the pages me
 
 test('parseDocsForArgs reads the path positionally', () => {
   assert.equal(parseDocsForArgs(['lib/a.js']).target, 'lib/a.js');
+});
+
+// `declaredSymbols` is `docsFor`'s and `checkDoc`'s own lookup; tested
+// directly rather than only through what calls it, so a broken contract
+// (wrong key, wrong file list, wrong container type) fails here.
+test('declaredSymbols maps a name to every file that declares it', () => {
+  const root = repoWith('fankeel-docscheck-declared-', {
+    'docs/README.md': '# index\n',
+    'lib/a.js': "'use strict';\nfunction helperFn() {}\nmodule.exports = { helperFn };\n",
+  });
+  const names = declaredSymbols(root, ['lib/a.js', 'docs/README.md']);
+  assert.ok(names instanceof Map, 'declaredSymbols returns a Map');
+  assert.deepEqual(names.get('helperFn'), ['lib/a.js']);
+  assert.equal(names.has('README'), false, 'a markdown file contributes no declarations');
+});
+
+test('reportDocsFor renders the owner and mentions sections for a real docsFor result', () => {
+  const root = repoWith('fankeel-docscheck-reportdocsfor-', {
+    'docs/README.md': '# index\n',
+    'lib/a.js': "'use strict';\nfunction helperFn() {}\nmodule.exports = { helperFn };\n",
+    'docs/owner.md': '---\nstatus: current\nsource_of_truth: lib/a.js\n---\n# owner\n',
+    'docs/mentions.md': 'See `helperFn()` for the details.\n',
+  });
+  const result = docsFor(root, 'lib/a.js');
+  const text = reportDocsFor(result);
+  assert.match(text, /fankeel docs-check docs-for lib\/a\.js/);
+  assert.match(text, /page names it in source_of_truth:/);
+  assert.match(text, /docs\/owner\.md/);
+  assert.match(text, /page mentions a symbol it declares:/);
+  assert.match(text, /docs\/mentions\.md/);
+});
+
+test('reportDocsFor says nothing found when neither owner nor mentions exist', () => {
+  const root = repoWith('fankeel-docscheck-reportdocsfor-empty-', {
+    'docs/README.md': '# index\n',
+    'lib/lonely.js': "'use strict';\nfunction lonelyFn() {}\nmodule.exports = { lonelyFn };\n",
+  });
+  const result = docsFor(root, 'lib/lonely.js');
+  const text = reportDocsFor(result);
+  assert.match(text, /No page names it and no page mentions a symbol it declares\./);
 });
 
 test('an underscore in a code span or a word stays in the slug; one marking emphasis does not', () => {
