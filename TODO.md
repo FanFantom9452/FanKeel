@@ -81,11 +81,20 @@ the reading is what gets scheduled.
 
 ## Ready
 
-- 〔tests〕`station-wizard-motion` 的 reduced-motion 測試在整套裡瞬斷：09-27 同一天四次整套紅兩次（2072/2073），單跑 3/3 綠；疑並行時 Chromium 太慢 — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
+- 〔hooks〕UserPromptSubmit 09-27 又逾時 5s（整套連跑、106 個 msedge/node）；平時 340ms。`dirtyPaths` 的 `git status -uall` 沒設 timeout，給 2.5s 上限、逾時跳過這輪 claim — [lib/dirty.js](lib/dirty.js).
+- 〔registry〕git 掃描的 claims 降成弱證據：只顯示、不觸發 CLASH／guard，除非沒有 live session 以 `touch.js` 直接碰過該檔；09-27 #/tour 與本 task 互記 6 檔全是誤報 — [lib/dirty.js](lib/dirty.js).
+- 〔registry〕每個 session 各開一個 git worktree，共用樹的誤記消失、真衝突留到 merge；`scripts/commit.js`、registry 與 station 都要認得 worktree。使用者 09-27 定為下個任務 — [scripts/commit.js](scripts/commit.js).
+- 〔registry〕意圖比對：plan 的 `**Files:**` 與 design 檔案表寫進 registry 的 `intends`，plan gate 與 build 開始前比對鄰居，依對方 stage 分級預警；使用者 09-27 定為下個任務；不需 MCP — [lib/plantasks.js](lib/plantasks.js).
 
 ## Needs a decision
 
 - 〔stage-agents〕ab.sh 改成在 worktree 裡 commit profile（`pin.sh`）；修好的 script 還沒重跑，重跑要核准約 $30 — [ab.sh](docs/90-agent/reports/evidence/2026-09-26-ab-profile-pin/ab.sh).
+- 〔agents〕reader 回傳每條標 `EXTRACTED`／`INFERRED`，關係寫成 `A --rel--> B at=file:line` 一行（graphify `serve.py` 的 NODE/EDGE 格式） — [agents/fankeel-reader.md](agents/fankeel-reader.md).
+- 〔survey〕map.md 旁加定方向段：由 require() 算被引用最多的檔、跨目錄的意外連結（graphify 的 God Nodes／Surprising Connections） — [scripts/map.js](scripts/map.js).
+- 〔plan〕`ledger.js groups` 用真實 require 圖交叉比對 Files／Consumes，抓 prose 寫的沒宣告依賴（graphify 的 `affected`） — [lib/plantasks.js](lib/plantasks.js).
+- 〔docs〕人讀頁可推導的表從程式碼產生再 diff，先做 01-guide/profile.md 的 key 表（orbit 的 `query-language-docs-check`） — [lib/profile.js](lib/profile.js).
+- 〔docs〕`docs-for <path>`：把各頁 `source_of_truth` 反查，回答哪一頁負責描述這個檔；不做 MCP，第二個 host 出現再議 — [scripts/docs-check.js](scripts/docs-check.js).
+- 〔docs〕docs-check 記下文件裡反引號的 code 指向哪個檔，不只查符號存在（graphify `markdown_resolution.py`） — [scripts/docs-check.js](scripts/docs-check.js).
 
 ## Blocked
 
@@ -214,7 +223,12 @@ if: 出現一次 git mv 需要連刪除一起提交. 09-26.
 
 - 〔build〕scripts/commit.js 加不了 git mv 的刪除那一半 — [scripts/commit.js](scripts/commit.js).
 
-### 兩個 hook 逾時
-if: UserPromptSubmit 或 PreToolUse Bash guard 再逾時一次. 09-26.
+### 程式碼大到要查結構
+if: 某個專案的程式碼大到 grep 加 read 找不到跨檔關係. 09-27.
 
-- 〔hooks〕/doctor 09-25 報 UserPromptSubmit 逾時 4/4 次（中位數 7.9s）、PreToolUse:Bash scope guard 逾時 2/2 次（50 個 session 裡） — [hooks/brief.js](hooks/brief.js).
+- 〔survey〕graphify 可接為查詢工具；獨立實測未穩定省錢，接之前先解決它的 PreToolUse hook 擋 Read 與 guard 衝突、Windows 上 hook 靜默失效（其 issue #140） — [scripts/survey.js](scripts/survey.js).
+
+### wizard-motion 再紅一次
+if: `the chosen card animates, and under reduced motion nothing is running` 在整套裡再紅一次. 09-27.
+
+- 〔tests〕09-27 四次整套紅兩次（2072/2073）、單跑 3/3 綠；之後整套 10 次全綠，沒抓到失敗訊息，紀錄在 `.fankeel/build/2026-09-27-five-items/flake.txt` — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
