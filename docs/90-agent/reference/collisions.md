@@ -1,6 +1,6 @@
 ---
 status: current
-last_verified: 2026-09-23
+last_verified: 2026-09-28
 source_of_truth: lib/overlap.js, lib/guard.js, lib/live.js, lib/registry.js, lib/dirty.js, scripts/task.js, scripts/orient.js, hooks/touch.js, hooks/inject.js
 ---
 
@@ -70,7 +70,7 @@ mattering.
 | where | the repository named by `project`, or the registry root; the claim is written back registry-relative like every other |
 | never | a pass holding more paths than `seen` can keep. `-uall` lists an unignored `dist/` of 300 build outputs as 300 fresh writes, and keeping the newest sixty of those would evict every earlier path git saw. The block says so — `unclaimed: 300 files written outside the hooks` — because a `seen:` line that reads as complete while half its source was discarded is the failure this page is about |
 | cost | one `git status`: **+41ms a prompt**, measured end to end through the hook on Windows 2026-08-28, 185ms before and 226ms after. Near enough a constant — `git status` alone runs 124ms against a 14-file repository and 131ms against a 106-file one, so what is paid for is starting git rather than walking the tree, and `-uall` adds nothing to it |
-| weight | weak. Git names no writer and a shared tree shows every session every dirty file, so a `seen` path counts toward a collision only where no live session in the same tree holds it in its own `claims` or `seen` — `effectiveClaims` in `lib/guard.js`. Two sessions that both only saw a file do not collide over it |
+| weight | weak. Git names no writer and a shared tree shows every session every dirty file, so a `seen` path counts toward a collision only where no live session in the same tree holds it in its own `claims` or `seen` — `effectiveClaims` in `lib/guard.js`. Two sessions that both only saw a file do not collide over it. It never blocks: `blockers` in `lib/guard.js` reads a neighbour's `claims` only, so under `ask` or `deny` a `seen` path warns and the edit goes through. |
 
 Two limits, and they are why this is a second path rather than a replacement.
 A claim found this way lands **on the next prompt**, where `touch.js` records it

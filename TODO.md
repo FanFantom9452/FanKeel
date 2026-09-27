@@ -81,8 +81,6 @@ the reading is what gets scheduled.
 
 ## Ready
 
-- 〔guard〕鄰居 session 的 git pass 把我們 untracked 的檔列進它的 `seen`，guard 當成它的認領擋下我們的編輯；09-27 擋了 plan 的修正，只能 `guard off` — [lib/guard.js](lib/guard.js).
-
 ## Needs a decision
 
 - 〔stage-agents〕ab.sh 改成在 worktree 裡 commit profile（`pin.sh`）；修好的 script 還沒重跑，重跑要核准約 $30 — [ab.sh](docs/90-agent/reports/evidence/2026-09-26-ab-profile-pin/ab.sh).

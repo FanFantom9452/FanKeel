@@ -31,11 +31,12 @@ test('a path one side touched through a hook collides only with the other side\'
   assert.equal(guard.blockers(mine, [editedIt], 'f.js', UNKNOWN).length, 1);
 });
 
-test('a path git saw and no live session holds still counts', () => {
+test('a path only git saw warns but never blocks', () => {
   const mine = { started: newer };
   const theirs = { sessionId: B, data: { seen: ['f.js'], started: older } };
-  assert.equal(guard.blockers(mine, [theirs], 'f.js', UNKNOWN).length, 1);
+  assert.deepEqual(guard.blockers(mine, [theirs], 'f.js', UNKNOWN), []);
   assert.deepEqual(guard.effectiveClaims(theirs.data, [{ data: mine }, theirs]), ['f.js']);
+  assert.deepEqual(guard.sharedWith(mine, theirs, [theirs]).clash, []);
 });
 
 test('two trees on one path neither block nor clash; the path is a merge', () => {
