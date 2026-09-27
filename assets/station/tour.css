@@ -36,5 +36,3 @@ body.rec .tr-main{max-width:none;margin:0;padding:0}
 body.rec .tr-h,body.rec .tr-lede,body.rec .tr-top,body.rec .tr-bar,body.rec .tr-keys{display:none}
 body.rec .tr-player{padding:0;margin:0;border-radius:0;background:none}
 body.rec .tr-stage{position:fixed;left:0;top:0;width:1280px;height:720px;aspect-ratio:auto;border-radius:0;box-shadow:none}
-
-@media (prefers-reduced-motion:reduce){.tr-fill,.tr-thumb{transition:none}}
