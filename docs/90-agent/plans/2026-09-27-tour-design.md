@@ -2,7 +2,7 @@
 role: plan
 status: design-intent
 date: 2026-09-27
-mockup: .fankeel/build/2026-09-27-tour/mockup.html
+mockup: .fankeel/build/2026-09-27-tour/mockup.html (方向 — approved as the direction; details are the render reviewer's at build)
 ---
 
 # The tour — three explainer animations for the station
