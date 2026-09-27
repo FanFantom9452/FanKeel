@@ -623,10 +623,10 @@ a link — with four kids: 進行中 `#/live`, 最近 `#/sessions`, 全部清單
 kid, 精靈 `#/settings`, but no `fold` key on it: its `NAV_TREE` entry
 (`assets/station/station.js:1353`,
 `kids: [['settings', '#/settings', '精靈']]`) carries none, so `navHtml`
-(`assets/station/station.js:1366`) renders it as a plain link straight to
+(`assets/station/station.js:1387`) renders it as a plain link straight to
 `#/settings` rather than a toggle. Only Sessions and 花費 fold — a category
 with `fold` is one button, the whole row, that only opens and shuts; its
-kids do the navigating (`assets/station/station.js:1365`), and it never
+kids do the navigating (`assets/station/station.js:1381`), and it never
 navigates on its own. A folding category's kids
 also appear as a subtabs strip under the page itself
 (`assets/station/station.js:1394`, `function subtabsHtml(active) {`) — the
