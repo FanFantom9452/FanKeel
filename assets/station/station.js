@@ -1435,20 +1435,54 @@
                 return '<li class="todo"><i></i><span>' + esc(k) + '</span></li>';
             }).join('') + '</ol>';
     }
+    // What is running for one live session now: the stage agent in flight
+    // (`inflight`, while it names the current stage) and every subagent
+    // `runningAgents` in lib/usage.js reads as mid-turn. The stage agent has a
+    // meta.json too, so its id is left out of the subagent rows.
+    function saFamily(a, s) {
+        var m = /^(fable|opus|sonnet|haiku)$/.exec(String(a.model || ''));
+        if (m) return m[1];
+        var d = /^(fable|opus|sonnet|haiku)\b/i.exec(String(a.description || ''));
+        return d ? d[1].toLowerCase() : family(s.model);
+    }
+    // "opus 5.5 · inherit: station batch mockup" reads as its last part.
+    function saShort(desc) { return String(desc || '').replace(/^[^·:]*·[^:]*:\s*/, ''); }
+    function liveSubsHtml(s, now) {
+        var mark = s.inflight && s.inflight.stage === s.stage ? s.inflight : null;
+        var subs = (s.subagents || []).filter(function (a) { return !mark || a.id !== mark.agentId; });
+        var open = '<div class="lane-subs" data-block="live-subagents">';
+        if (!mark && !subs.length) return open + '<p class="sa-none">沒有 stage agent 或 subagent 在跑，主 session 自己在做。</p></div>';
+        var head = [];
+        if (mark) head.push('stage agent 1 個');
+        if (subs.length) head.push('subagent ' + subs.length + ' 個');
+        return open + '<div class="sa-h"><b>現在在跑</b><span>' + head.join(' · ') + '</span></div>'
+            + (mark ? '<div class="sa inflight"><span class="sa-type">stage agent</span><span class="chip"><i class="sw" style="background:var(--st-'
+                + esc(mark.stage) + ')"></i>' + esc(mark.stage) + '</span><span class="sa-desc">'
+                + (isFinite(mark.at) ? clock(mark.at) + ' 送出，還沒交回' : '還沒交回') + '</span><span class="sa-for">' + mins(now - mark.at) + '</span></div>' : '')
+            + subs.map(function (a) {
+                var fam = saFamily(a, s), type = a.agentType || 'agent';
+                return '<div class="sa"><span class="sa-type" title="' + esc(type) + '">' + esc(type) + '</span>'
+                    + '<span class="chip"><i class="sw" style="background:var(--m-' + fam + ')"></i>' + fam + '</span>'
+                    + '<span class="sa-desc" title="' + esc(a.description || '') + '">' + esc(saShort(a.description)) + '</span>'
+                    + '<span class="sa-for">' + mins(now - a.startedAt) + '</span></div>';
+            }).join('') + '</div>';
+    }
     // One session: who (project, else the registry's short label, and the
     // root), the task, the rail, and when. A lane that is not confirmed live
     // carries its state pill instead of how long it has been open.
     function liveLane(s, name, now) {
         var sure = s.state === 'live' && !s.unknown;
-        return '<a class="lane ' + (sure ? 'live' : 'unsure') + '" data-state="' + esc(s.state) + '" href="' + sessionHash(s.id) + '">'
+        return '<a class="lane ' + (sure ? 'live wsubs' : 'unsure') + '" data-state="' + esc(s.state) + '" href="' + sessionHash(s.id) + '">'
             + '<div class="lane-who"><b>' + esc(name(s)) + '</b><span class="mono" title="' + esc(s.root) + '">' + esc(s.root) + '</span></div>'
             + '<div class="lane-task" title="' + esc(s.task || '') + '">' + esc(s.task || '（未命名）') + '</div>'
             + liveRail(s, sure, now)
             + '<div class="lane-when"><b class="mono">' + ago(s.updated) + '</b>'
-            + (sure ? '<small>最後一次寫入</small><small>開了 ' + mins(now - msOf(s.started)) + '</small>' : statePill(s)) + '</div></a>';
+            + (sure ? '<small>最後一次寫入</small><small>開了 ' + mins(now - msOf(s.started)) + '</small>' : statePill(s)) + '</div>'
+            + (sure ? liveSubsHtml(s, now) : '') + '</a>';
     }
     // Waiting is what `pendingGateHtml` answers: a pending file with questions.
-    // The wait runs from the gate's own `at` where it has one, else from the
+    // The wait runs from `gateAt`, stamped when the question went out
+    // (`gateOpen` in lib/registry.js), else the pending file's `at`, else the
     // session's last registry write, as on the dashboard's gate card.
     function liveGate(rows, name, now) {
         var at = rows.filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
@@ -1458,7 +1492,7 @@
         }
         return '<section class="lv-gate" data-block="live-gate" aria-labelledby="h-gate"><div class="lv-h"><h2 id="h-gate">等你回答</h2>'
             + '<span class="lv-n mono">' + at.length + '</span></div>' + at.map(function (s) {
-                var since = msOf(s.pending.at || s.updated), q = s.pending.questions[0];
+                var since = msOf(s.gateAt || s.pending.at || s.updated), q = s.pending.questions[0];
                 var left = isFinite(s.pending.until) ? ' · 還剩 ' + mins(Math.max(0, s.pending.until - now)) : '';
                 return '<a class="gate-row" href="' + sessionHash(s.id) + '"><span class="pill gate">' + icon('gate') + 'gate</span>'
                     + '<b class="gate-p">' + esc(name(s)) + '</b><span class="gate-q">' + esc(q.header || q.question || s.task || '') + '</span>'
@@ -2258,7 +2292,7 @@
             segTip: segTip,
             tk: tk,
             stageShare: stageShare, costShareHtml: costShareHtml, subtabsHtml: subtabsHtml,
-            dashLive: dashLive, dashGate: dashGate, dashSpend: dashSpend, dashRecent: dashRecent, dashPage: dashPage,
+            dashLive: dashLive, dashGate: dashGate, liveSubsHtml: liveSubsHtml, dashSpend: dashSpend, dashRecent: dashRecent, dashPage: dashPage,
             NAV_TREE: NAV_TREE,
             tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
             changedParts: changedParts, seenHtml: seenHtml,
@@ -2461,20 +2495,30 @@
                     + '<span class="dr mono">' + mins(Date.now() - msOf(s.started)) + '</span></a>';
             }).join('') + '</div>' : '<p class="dnone">沒有進行中的 session</p>') + '</section>';
     }
+    // A wait in the card's own words: `12 分`, `1 時 5 分`, `2 時`.
+    function waitFor(ms) {
+        if (!isFinite(ms)) return '—';
+        var m = Math.max(0, Math.floor(ms / 60000));
+        if (m < 60) return m + ' 分';
+        return Math.floor(m / 60) + ' 時' + (m % 60 ? ' ' + (m % 60) + ' 分' : '');
+    }
     // Waiting is what `pendingGateHtml` answers: a pending file with questions.
-    // The file's own start is not in the data, so the wait runs from the
-    // session's last registry write, which is the gate's stage opening or later.
-    function dashGate(R) {
-        var now = S.serve ? Date.now() : NOW;
-        var at = R.filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
-        return '<section class="dcard" data-block="dash-gate">' + dashHead('gate', '等你回答', '#/live')
-            + '<div class="dbig' + (at.length ? ' warn' : '') + '">' + at.length + '<small>個 gate 在等</small></div>'
-            + (at.length ? '<div class="dlist">' + at.map(function (s) {
-                var since = msOf(s.pending.at || s.updated), q = s.pending.questions[0];
+    // The wait runs from `gateAt`, stamped when the question went out
+    // (`gateOpen` in lib/registry.js), else the pending file's `at`, else the
+    // session's last registry write. `at` is the clock a test hands in.
+    function dashGate(R, at) {
+        var now = isFinite(at) ? at : S.serve ? Date.now() : NOW;
+        var rows = R.filter(function (s) { return s.pending && s.pending.questions && s.pending.questions.length; });
+        return '<section class="dcard" data-block="waiting-card">' + dashHead('gate', '等你回答', '#/live')
+            + '<div class="dbig' + (rows.length ? ' warn' : '') + '">' + rows.length + '<small>個 gate 在等'
+            + (rows.length ? '<span class="dfrom">從問題送出那一刻算起</span>' : '') + '</small></div>'
+            + (rows.length ? '<div class="dlist">' + rows.map(function (s) {
+                var since = msOf(s.gateAt || s.pending.at || s.updated), q = s.pending.questions[0];
+                var left = isFinite(s.pending.until) ? '，還剩 ' + waitFor(Math.max(0, s.pending.until - now)) : '';
                 return '<a class="drow" href="' + sessionHash(s.id) + '"><span class="dp">' + dashRowName(s) + '</span>'
+                    + (s.stage ? '<span class="chip dstage"><i class="sw" style="background:var(--st-' + esc(s.stage) + ')"></i>' + esc(s.stage) + '</span>' : '')
                     + '<span class="dt">' + esc(q.header || q.question || s.task || '') + '</span>'
-                    + '<span class="dr mono" title="還剩 ' + dur(Math.max(0, Math.round((s.pending.until - now) / 1000))) + '">等了 '
-                    + (isFinite(since) ? mins(now - since) : '—') + '</span></a>';
+                    + '<span class="dw" title="' + (isFinite(since) ? '問題 ' + clock(since) + ' 送出' + left : '') + '">等了 ' + waitFor(now - since) + '</span></a>';
             }).join('') + '</div>' : '<p class="dnone">沒有在等你的 gate</p>') + '</section>';
     }
     // The 近 30 天 chart's own bars, summed per day, drawn without axes.

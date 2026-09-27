@@ -1353,8 +1353,8 @@ const DASH_GATE = [
 
 test('dashGate counts and lists only rows with a non-empty pending.questions', () => {
     const html = DASH.dashGate(DASH_GATE);
-    assert.match(html, /data-block="dash-gate"/);
-    assert.match(html, /<div class="dbig warn">1<small>個 gate 在等<\/small><\/div>/);
+    assert.match(html, /data-block="waiting-card"/);
+    assert.match(html, /<div class="dbig warn">1<small>個 gate 在等<span class="dfrom">從問題送出那一刻算起<\/span><\/small><\/div>/);
     assert.equal(count(html, /class="drow"/g), 1);
     assert.match(html, /<a class="drow" href="#\/s\/dg-open"/);
     assert.doesNotMatch(html, /#\/s\/dg-none|#\/s\/dg-empty/);
@@ -1402,11 +1402,11 @@ test('dashRecent lists exactly 5 rows out of more than 5 eligible ones, newest f
 test('dashPage assembles all four cards in dashLive, dashGate, dashSpend, dashRecent order', () => {
     const html = DASH.dashPage();
     assert.match(html, /<h1>.*儀表板<\/h1>/);
-    for (const key of ['dash-live', 'dash-gate', 'dash-spend', 'dash-recent']) {
+    for (const key of ['dash-live', 'waiting-card', 'dash-spend', 'dash-recent']) {
         assert.match(html, new RegExp('data-block="' + key + '"'));
     }
-    assert.ok(html.indexOf('dash-live') < html.indexOf('dash-gate'));
-    assert.ok(html.indexOf('dash-gate') < html.indexOf('dash-spend'));
+    assert.ok(html.indexOf('dash-live') < html.indexOf('waiting-card'));
+    assert.ok(html.indexOf('waiting-card') < html.indexOf('dash-spend'));
     assert.ok(html.indexOf('dash-spend') < html.indexOf('dash-recent'));
 });
 
