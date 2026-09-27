@@ -11,10 +11,45 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { findBrowser } = require('../scripts/render.js');
+const { findBrowser, toUrl } = require('../scripts/render.js');
 const tmp = require('./tmp.js');
 
 const CLI = path.join(__dirname, '..', 'scripts', 'render.js');
+
+// A `#`/`?` suffix on a non-http(s) target is a fragment or query, not part
+// of the filesystem path. `path.resolve` does not know that, so a target
+// like `assets/station/tour.html#quickstart@330` used to resolve to a file
+// literally named `tour.html%3Fquickstart...` (see toUrl()'s own comment).
+// This proves the fragment survives intact and the path still resolves to
+// the right file, by parsing the result as a URL rather than string-matching
+// the whole thing — a `new URL()` parse also proves the value is a
+// well-formed URL, which a naive string match would not.
+test('toUrl keeps a #fragment off a Windows-style path intact', () => {
+    const target = 'C:\\repo\\assets\\station\\tour.html#quickstart@330';
+    const url = new URL(toUrl(target));
+    assert.equal(url.protocol, 'file:');
+    assert.equal(url.hash, '#quickstart@330');
+    assert.equal(decodeURIComponent(url.pathname).replace(/^\//, ''), 'C:/repo/assets/station/tour.html');
+});
+
+test('toUrl keeps a ?query off a plain relative path intact', () => {
+    const url = new URL(toUrl('fixture.html?frame=5'));
+    assert.equal(url.protocol, 'file:');
+    assert.equal(url.search, '?frame=5');
+    assert.ok(decodeURIComponent(url.pathname).endsWith('/fixture.html'));
+});
+
+test('toUrl leaves a plain file path with no #/? exactly as before', () => {
+    const url = new URL(toUrl('fixture.html'));
+    assert.equal(url.protocol, 'file:');
+    assert.equal(url.hash, '');
+    assert.equal(url.search, '');
+    assert.ok(decodeURIComponent(url.pathname).endsWith('/fixture.html'));
+});
+
+test('toUrl leaves an http(s) target untouched, fragment and all', () => {
+    assert.equal(toUrl('https://example.com/page#frag?q=1'), 'https://example.com/page#frag?q=1');
+});
 
 // A `<div>` the markup itself says `before`, and an inline script that
 // overwrites it after load — the only way the dumped DOM can say `AFTER_JS`
