@@ -698,7 +698,7 @@ test('the sentence above the list says fourteen, and ten under scripts/', () => 
     'the sentence above the list does not say 其後十四條 / 十四個呼叫端');
   assert.ok(flat.includes('`scripts/`十處與`lib/`四處'),
     'the sentence does not say scripts/ 十處與 lib/ 四處');
-  assert.ok(flat.includes('十四個之中只有`lib/map.js`直接讀'),
+  assert.ok(flat.includes('十四個之中只有這一處自己（`scan`函式本身）直接讀'),
     'the lib/map.js bullet does not say 十四個之中');
 });
 
