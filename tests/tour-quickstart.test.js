@@ -92,3 +92,39 @@ test('the gate beat crosses the lead from SURVEY to DESIGN at frame 1800', () =>
     assert.ok(shot(1799).texts().some((s) => s.includes('▌FANKEEL SURVEY')));
     assert.ok(shot(1800).texts().some((s) => s.includes('▌FANKEEL DESIGN')));
 });
+
+// Fix round 2, item 2: each of the gate's three options gets its own
+// description line underneath. Red when: the description texts are dropped
+// (e.g. reverting GATE back to a flat array of strings).
+test('the gate beat prints a description line under each numbered option', () => {
+    const t = shot(1680).texts();
+    assert.ok(t.some((s) => s.includes('先寫做法') && s.includes('同意了再動手')), t.join(' | '));
+    assert.ok(t.some((s) => s.includes('做法已經清楚')), t.join(' | '));
+    assert.ok(t.some((s) => s.includes('改動很小')), t.join(' | '));
+});
+
+// Fix round 2, item 1: land opens on a short scrollback (rejected edit,
+// the other session finishing, the re-applied edit, a green suite) before
+// the merge line — never all at once, and never after the merge. Red when:
+// the scrollback lines are removed, or shown at/after EV.mergeAt.
+test('the land beat shows its scrollback before the merge line, not with or after it', () => {
+    const before = shot(3170).texts();
+    assert.ok(before.some((s) => s.includes('User rejected update to app/report.js')), before.join(' | '));
+    assert.ok(before.some((s) => s.includes('另一個 session 收工了')), before.join(' | '));
+    assert.ok(before.some((s) => s.includes('Updated app/report.js with 1 addition')), before.join(' | '));
+    assert.ok(before.some((s) => s.includes('tests 52') && s.includes('pass 52')), before.join(' | '));
+    assert.ok(!before.some((s) => s.includes('git merge')), before.join(' | '));
+
+    const after = shot(3176).texts();
+    assert.ok(after.some((s) => s.includes('git merge')), after.join(' | '));
+});
+
+// Fix round 2, item 3: each split pane in the clash beat clips its own
+// content so a long lead line (with the ⚑ badge) cannot bleed across the
+// split boundary into the other pane. Red when: the clip() calls are
+// removed from the split-pane drawing.
+test('the clash beat clips both split panes before drawing their lead lines', () => {
+    const calls = shot(2940).calls;
+    const clips = calls.filter((c) => c[0] === 'clip').length;
+    assert.equal(clips, 2, JSON.stringify(calls.filter((c) => c[0] === 'clip' || c[0] === 'save')));
+});

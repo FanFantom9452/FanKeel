@@ -53,7 +53,8 @@
         ffLabel: 2040, buildAt: 2100, buildDur: 360, verifyAt: 2460,
         splitAt: 2640, splitDur: 30, rightBuild: 2700, redAt: 2760, redDur: 12,
         askAt: 2820, askDur: 24, midAt: 2880,
-        noAt: 2990, collapseR: 3040, reapply: 3080, mergeAt: 3150,
+        noAt: 2990, collapseR: 3040, reapply: 3080,
+        rejectAt: 3120, otherDoneAt: 3132, reappliedAt: 3146, testDoneAt: 3160, mergeAt: 3176,
         landDotAt: 3180, landDotDur: 20, summaryFrom: 3210,
         closeAt: 3300, closeDur: 30, taglineAt: 3330, moreAt: 3370, installAt: 3410
     };
@@ -77,6 +78,16 @@
         return s;
     }
     function pctStr(pct) { return pct == null ? '--%' : Math.round(pct) + '%'; }
+
+    // The pain card's red hit band and the clash beat's green diff-add tint
+    // are the same five lines with a different colour and alpha — one helper.
+    function tint(ctx, c, a, x, y, w, h) {
+        ctx.save();
+        ctx.globalAlpha *= a;
+        ctx.fillStyle = c;
+        ctx.fillRect(x, y, w, h);
+        ctx.restore();
+    }
 
     // TokenBar's own three-line statusline (docs/90-agent/reference/statusline.md):
     // one badge word, a lead line with the route dots, the guard word, a
@@ -181,11 +192,7 @@
             E.fade(ctx, a, function () {
                 var y = 84 + 36 * i - 8 * (1 - a);
                 var hit = HIT[i];
-                ctx.save();
-                ctx.globalAlpha *= 0.35;
-                ctx.fillStyle = P.bad;
-                ctx.fillRect(hit.x, hit.y, hit.w, hit.h);
-                ctx.restore();
+                tint(ctx, P.bad, 0.35, hit.x, hit.y, hit.w, hit.h);
                 E.line(ctx, [[246, y + 14], hit.to], P.faint, 1, [3, 4]);
                 E.box(ctx, 246, y, 360, 32, 5, null, P.rule2, 1);
                 E.text(ctx, P, 'b', txt, 256, y + 15, { size: 11.5 });
@@ -266,13 +273,20 @@
     }
 
     // -- beat 4: gate (f 1440–2039) -----------------------------------------
-    var GATE = ['design (Recommended)', 'plan', 'build'];
+    // Each option's own smaller/dimmer line underneath, exactly as Claude
+    // Code's own gate draws it (the mockup's qs-gate figure).
+    var GATE = [
+        ['design (Recommended)', '先寫做法、mockup 和一個會失敗的條件，同意了再動手'],
+        ['plan', '做法已經清楚，直接拆成任務'],
+        ['build', '改動很小，直接動手']
+    ];
+    var GATE_STEP = 31, GATE_DESC = 13;
     function gate(ctx, P, f) {
         E.fade(ctx, 1, function () { E.box(ctx, 20, 16, 620, 316, 6, P.panel); });
         E.text(ctx, P, 'j', '⏺ app/toCsv.js 可以直接用，報表頁只差一個匯出按鈕。', 40, 50, { fill: P.ink });
         var k = E.expoOut(E.prog(f, EV.cardUp, EV.cardUpDur));
         E.fade(ctx, k, function () {
-            E.box(ctx, 39.5, 63.5, 460, 172, 5, P.inset);
+            E.box(ctx, 39.5, 63.5, 460, 190, 5, P.inset);
             E.box(ctx, 52, 70, 62, 15, 3, P.ink2);
             E.text(ctx, P, 'j', '☐ 下一站', 58, 81, { fill: P.ground, size: 10 });
             E.text(ctx, P, 'b', 'survey 做完了。下一站走哪裡？', 52, 100);
@@ -281,10 +295,12 @@
                 GATE.forEach(function (o, i) {
                     var on = i === 0 && f >= EV.hlAt;
                     var flash = i === 0 && E.prog(f, EV.enterFlash, EV.flashDur) > 0 && f < EV.collapseAt;
-                    E.text(ctx, P, on || flash ? 'mi' : 'm', (on ? '❯ ' : '  ') + (i + 1) + '. ' + o, 60, 124 + 22 * i, on ? { fill: P.st.design } : null);
+                    var y = 124 + GATE_STEP * i;
+                    E.text(ctx, P, on || flash ? 'mi' : 'm', (on ? '❯ ' : '  ') + (i + 1) + '. ' + o[0], 60, y, on ? { fill: P.st.design } : null);
+                    E.text(ctx, P, 's', o[1], 64, y + GATE_DESC, { size: 9.5, fill: P.muted });
                 });
-                E.text(ctx, P, 's', '4. Type something.', 64, 124 + 22 * GATE.length, { size: 10.5, fill: P.muted });
-                E.text(ctx, P, 's', 'Enter to select · ↑/↓ to navigate · Esc to cancel', 52, 124 + 22 * (GATE.length + 1), { size: 9.5 });
+                E.text(ctx, P, 's', '4. Type something.', 64, 124 + GATE_STEP * GATE.length, { size: 10.5, fill: P.muted });
+                E.text(ctx, P, 's', 'Enter to select · ↑/↓ to navigate · Esc to cancel', 52, 124 + GATE_STEP * GATE.length + 22, { size: 9.5 });
             } else {
                 E.text(ctx, P, 'm', '⎿ 下一站：design', 60, 124, { fill: P.st.design });
             }
@@ -344,7 +360,14 @@
         var others = statusAt(f).others;
         var rail = others ? P.bad : P.st.verify;
 
-        // left pane: verify's own edit, colliding with the other session's claim.
+        // left pane: verify's own edit, colliding with the other session's
+        // claim. Clipped to the pane's own rect so a wide lead line (the
+        // ⚑ collision badge, `where` and the task title) never bleeds across
+        // the split boundary into the right pane, the way the mockup's own
+        // clipPath (cl-l) keeps it.
+        ctx.save();
+        E.rr(ctx, 20, 16, midX - 20, 332, 0);
+        ctx.clip();
         E.text(ctx, P, 'j', '⏺ Bash(node --test)', 40, 50, { fill: P.muted });
         E.text(ctx, P, 'j', '  ⎿  ℹ tests 51  ℹ pass 51  ℹ fail 0', 40, 63, { fill: P.muted, size: 10 });
         E.text(ctx, P, 'j', '⏺ verify 發現匯出的 CSV 少了表頭，補一行。', 40, 89, { fill: P.ink });
@@ -352,11 +375,7 @@
         E.text(ctx, P, 'j', 'Edit file', 40, 137, { fill: P.ink });
         E.box(ctx, 39.5, 143.5, 340, 30, 3, null, P.rule2, 1);
         E.text(ctx, P, 'j', '17   const rows = report.rows();', 46, 155, { fill: P.muted });
-        ctx.save();
-        ctx.globalAlpha *= 0.16;
-        ctx.fillStyle = P.good;
-        ctx.fillRect(40, 160, 336, 11);
-        ctx.restore();
+        tint(ctx, P.good, 0.16, 40, 160, 336, 11);
         E.text(ctx, P, 'j', '18 + rows.unshift(columns.map((c) => c.label));', 46, 168, { fill: P.good });
         E.box(ctx, 32, 44, 4, 280, 0, rail);
         if (f >= EV.askAt) {
@@ -370,12 +389,17 @@
             });
         }
         lead(ctx, P, 40, 296, { stage: STAGE5.verify, step: 4, others: others, where: WHERE, ctx: statusAt(f).ctx, h5: statusAt(f).h5 });
+        ctx.restore();
 
         // right pane: the second session's own build — its own line, its own
-        // status, its own input box and its own statusline.
+        // status, its own input box and its own statusline. Clipped the same
+        // way (cl-r), so its own long lead line stays inside the pane too.
         if (split > 0.02) {
             E.fade(ctx, split, function () {
                 E.line(ctx, [[midX, 32], [midX, 348]], P.rule2, 1);
+                ctx.save();
+                E.rr(ctx, midX, 16, 640 - midX, 332, 0);
+                ctx.clip();
                 E.text(ctx, P, 'j', '> /fankeel ' + OTHER_TITLE, midX + 10, 50, { fill: P.ink2 });
                 if (f >= EV.rightBuild) {
                     E.text(ctx, P, 'j', '⏺ Update(app/report.js)', midX + 10, 76, { fill: P.ink });
@@ -387,6 +411,7 @@
                     lead(ctx, P, midX + 10, 180, { stage: STAGE5.build, step: 3, others: others, where: WHERE, ctx: 22, h5: statusAt(f).h5 }, OTHER_TITLE);
                 }
                 E.box(ctx, midX + 4, 44, 4, 280, 0, rail);
+                ctx.restore();
             });
         }
         if (f >= EV.midAt) {
@@ -399,16 +424,36 @@
     // -- beat 7: land, then close (f 3120–3479) -------------------------------
     function land(ctx, P, f) {
         E.fade(ctx, 1, function () { E.box(ctx, 20, 16, 620, 316, 6, P.panel); });
-        if (f < EV.mergeAt) {
-            E.text(ctx, P, 'j', '⏺ 另一個 session 收工了，重新套用剛才的修改。', 40, 60, { fill: P.ink });
-        } else {
-            E.text(ctx, P, 'j', '⏺ Bash(git merge --no-ff fankeel/report-csv)', 40, 60, { fill: P.ink });
-            E.text(ctx, P, 'j', '  ⎿  Merge made by the \'ort\' strategy.', 40, 73, { fill: P.muted });
+
+        // A short scrollback before the merge: the earlier session's own edit
+        // didn't land (dimmed, struck from the record), the other session
+        // finished so this one re-applies, the re-applied edit lands, and the
+        // suite is green again — all inside the land beat's own frame range,
+        // well before EV.mergeAt and EV.closeAt.
+        var r = E.expoOut(E.prog(f, EV.rejectAt, 10));
+        E.fade(ctx, r, function () {
+            E.text(ctx, P, 'j', '⏺ Update(app/report.js)', 40, 47, { fill: P.ink2 });
+            E.text(ctx, P, 'j', '  ⎿  User rejected update to app/report.js', 40, 60, { fill: P.ink2 });
+        });
+        if (f >= EV.otherDoneAt) {
+            E.text(ctx, P, 'j', '⏺ 另一個 session 收工了，app/report.js 沒人在改，重新套用。', 40, 86, { fill: P.ink });
+        }
+        if (f >= EV.reappliedAt) {
+            E.text(ctx, P, 'j', '⏺ Update(app/report.js)', 40, 112, { fill: P.ink });
+            E.text(ctx, P, 'j', '  ⎿  Updated app/report.js with 1 addition', 40, 125, { fill: P.muted });
+        }
+        if (f >= EV.testDoneAt) {
+            E.text(ctx, P, 'j', '⏺ Bash(node --test)', 40, 151, { fill: P.ink });
+            E.text(ctx, P, 'j', '  ⎿  ℹ tests 52  ℹ pass 52  ℹ fail 0', 40, 164, { fill: P.muted });
+        }
+        if (f >= EV.mergeAt) {
+            E.text(ctx, P, 'j', '⏺ Bash(git merge --no-ff fankeel/report-csv)', 40, 190, { fill: P.ink });
+            E.text(ctx, P, 'j', '  ⎿  Merge made by the \'ort\' strategy.', 40, 203, { fill: P.muted });
             var t = E.expoOut(E.prog(f, EV.summaryFrom, 30));
             E.fade(ctx, t, function () {
-                E.text(ctx, P, 'j', '⏺ land 完成：' + LANDED + '。', 40, 96, { fill: P.ink });
+                E.text(ctx, P, 'j', '⏺ land 完成：' + LANDED + '。', 40, 229, { fill: P.ink });
                 E.text(ctx, P, 'j', '  起點到 land ' + E.fmtSpan(S.total) + ' · 花費 ' + E.fmtUsd(S.usd) + ' · '
-                    + Math.round(S.agents) + ' 個 agent', 40, 109, { fill: P.muted });
+                    + Math.round(S.agents) + ' 個 agent', 40, 242, { fill: P.muted });
             });
         }
         E.box(ctx, 39.5, 254.5, 598, 22, 3, null, P.rule2, 1);
