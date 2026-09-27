@@ -228,6 +228,20 @@ test('bars: seven widths fill the span; labels only on bars wide enough and grow
     assert.deepEqual(none.calls, []);
 });
 
+test('stats prints each item\'s big number and small label, centered', () => {
+    const ctx = fakeCtx();
+    const items = [[100, '42', 'agents'], [300, '$53.87', 'cost']];
+    T.stats(ctx, T.DARK, items, 60, 80);
+    assert.deepEqual(ctx.texts(), ['42', 'agents', '$53.87', 'cost']);
+    const big = ctx.calls.filter((c) => c[0] === 'fillText' && (c[1] === '42' || c[1] === '$53.87'));
+    assert.deepEqual(big.map((c) => [c[2], c[3]]), [[100, 60], [300, 60]]);
+    const small = ctx.calls.filter((c) => c[0] === 'fillText' && (c[1] === 'agents' || c[1] === 'cost'));
+    assert.deepEqual(small.map((c) => [c[2], c[3]]), [[100, 80], [300, 80]]);
+    assert.ok(ctx.calls.some((c) => c[0] === '=font' && c[1] === '600 22px ' + T.DARK.fMono));
+    assert.ok(ctx.calls.some((c) => c[0] === '=font' && c[1] === '400 12px ' + T.DARK.fUi));
+    assert.ok(ctx.calls.every((c) => c[0] !== '=textAlign' || c[1] === 'center'));
+});
+
 test('fade draws nothing at zero and multiplies alpha inside', () => {
     let ran = false;
     const ctx = fakeCtx();

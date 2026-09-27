@@ -279,6 +279,15 @@
         fn();
         ctx.restore();
     }
+    // A row of stat callouts, a big number over a small label, each an
+    // [x, bigText, smallLabel] triple sharing one y for the number and one
+    // labelY for the label — the land beat's four and the outro's three.
+    function stats(ctx, P, items, y, labelY) {
+        items.forEach(function (n) {
+            text(ctx, P, 'big', n[1], n[0], y, { align: 'center' });
+            text(ctx, P, 's', n[2], n[0], labelY, { align: 'center' });
+        });
+    }
 
     module.exports = {
         W: W, H: H, FPS: FPS, SUBFRAMES: SUBFRAMES, ROUTE: ROUTE, DARK: DARK, SESSION: SESSION,
@@ -289,7 +298,7 @@
         palette: palette, render: render,
         fmtClock: fmtClock, fmtSpan: fmtSpan, fmtMin: fmtMin, fmtUsd: fmtUsd,
         text: text, rr: rr, box: box, line: line, circle: circle, tick: tick,
-        dots: dots, rail: rail, barRects: barRects, bars: bars, fade: fade,
+        dots: dots, rail: rail, barRects: barRects, bars: bars, fade: fade, stats: stats,
     };
     if (typeof window !== 'undefined') root.tourEngine = module.exports;
 })(typeof window !== 'undefined' ? window : globalThis, typeof module !== 'undefined' ? module : {});

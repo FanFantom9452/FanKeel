@@ -413,10 +413,7 @@
         } else E.bars(ctx, P, 60, 116, 520, 24, 162, 1);
         if (o < 120) return;
         var c = E.expoOut(E.prog(o, 120, 45));
-        [[200, E.fmtSpan(S.total * c), 'start to land'], [320, E.fmtUsd(S.usd * c), 'spent'], [440, String(Math.round(S.agents * c)), 'agents']].forEach(function (n) {
-            E.text(ctx, P, 'big', n[1], n[0], 226, { align: 'center' });
-            E.text(ctx, P, 's', n[2], n[0], 248, { align: 'center' });
-        });
+        E.stats(ctx, P, [[200, E.fmtSpan(S.total * c), 'start to land'], [320, E.fmtUsd(S.usd * c), 'spent'], [440, String(Math.round(S.agents * c)), 'agents']], 226, 248);
     }
 
     function draw(ctx, f, P) {

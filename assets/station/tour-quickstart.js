@@ -144,11 +144,8 @@
         E.bars(ctx, P, 80, 112, 480, 20, 152, E.expoOut(E.prog(f, EV.barsAt, EV.barsDur)));
         if (f >= EV.countAt) {
             var c = E.expoOut(E.prog(f, EV.countAt, EV.countDur));
-            [[140, E.fmtSpan(S.total * c), 'start to land'], [260, E.fmtUsd(S.usd * c), 'spent'],
-                [380, String(Math.round(S.agents * c)), 'agents'], [500, E.fmtSpan(WAITED * c), 'waited on you']].forEach(function (n) {
-                E.text(ctx, P, 'big', n[1], n[0], 210, { align: 'center' });
-                E.text(ctx, P, 's', n[2], n[0], 232, { align: 'center' });
-            });
+            E.stats(ctx, P, [[140, E.fmtSpan(S.total * c), 'start to land'], [260, E.fmtUsd(S.usd * c), 'spent'],
+                [380, String(Math.round(S.agents * c)), 'agents'], [500, E.fmtSpan(WAITED * c), 'waited on you']], 210, 232);
         }
         E.fade(ctx, E.expoOut(E.prog(f, EV.noteAt, 24)), function () { E.text(ctx, P, 'm', LANDED, 320, 272, { align: 'center' }); });
         E.line(ctx, [[36, 300], [604, 300]], P.rule2, 1.5);
