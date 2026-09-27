@@ -96,6 +96,43 @@ a local model's first pass over the same range — confirm only those lines:
 open each `path:line`, trace it from source to sink, and keep or drop it. The
 line format and the closing line do not change.
 
+## Silent failure
+
+When the brief asks for the silent-failure lens — build's per-task dispatch
+and verify's adversary run `scripts/lenses.js` over the range first and ask
+for this lens only when it printed `silent-failure` — read every `catch`,
+`except`, `.catch(` and `||` fallback the diff adds for a failure that goes
+nowhere. One line per finding:
+
+`path:line: <tag> <what fails silently>. <the fix>.`
+
+| tag | the diff adds | look for |
+|---|---|---|
+| `swallow:` | a caught error with no rethrow, no returned error, and no fallback that changes what the caller does next | a `catch`/`except` block that leaves the caller looking exactly like the call succeeded |
+| `unlogged:` | a caught error, or a `?.` short-circuit, that leaves no trace anywhere | nothing written to a log, a report, a `claims`/`seen` field, or a status the caller can read |
+| `broad:` | a catch wider than the one failure it was written for | a bare `except:`, a `catch (e)` with no check on `e`, a `?.` chained past the single call that can actually be missing |
+
+A `catch` that logs and rethrows, or a `?.` guarding a value the caller
+already treats as optional, is not a finding — trace what happens after the
+failure before writing the line. End with `silent-failure: <N> findings.`, or
+the single word `none`.
+
+## Comment
+
+When the brief asks for the comment lens — the same run of `scripts/lenses.js`
+printed `comment` — read every comment line the diff adds or changes against
+the code beside it, sentence by sentence. One line per finding:
+
+`path:line: <tag> "<the comment>" — <what the code actually does>.`
+
+| tag | the diff adds | look for |
+|---|---|---|
+| `stale:` | a comment describing behaviour the code beside it no longer has | a parameter renamed, a branch removed, a default changed after the comment was written |
+| `unwritten:` | a comment promising something the code does not do | "validates", "logs", "retries" — check the line actually does it |
+
+A comment about a line the diff does not touch is out of this lens's scope,
+not a finding. End with `comment: <N> findings.`, or the single word `none`.
+
 ## Return
 
 Only what you defeat, and why — one line per finding, most serious first, or

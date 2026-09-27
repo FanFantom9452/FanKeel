@@ -225,7 +225,13 @@ Dispatch it as `subagent_type: fankeel:fankeel-reviewer` too — the same agent 
 build's per-task reviewer — and let its file pin the model rather than
 typing one here. Its brief also asks for the `## Security` lens of its agent
 file, once, over the branch's whole range: a finding there is a defeated row
-like any other. When the claim under evidence is about what a page shows,
+like any other.
+
+Before dispatching, run `node <plugin>/scripts/lenses.js <the base>..HEAD` over
+that same whole range and put what it printed in the brief too: `none`, or the
+`## Silent failure` lens and the `## Comment` lens by name, whichever it named.
+
+When the claim under evidence is about what a page shows,
 dispatch `subagent_type: fankeel:fankeel-render-reviewer` beside it — its
 file pins `sonnet` — with the ask, the approved mockup's path and
 `.fankeel/render.json`; it shoots every role and page itself, and its first

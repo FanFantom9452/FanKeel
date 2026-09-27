@@ -225,3 +225,27 @@ test('every agent names its effort, and none of them is max', () => {
         assert.equal(f.effort, EFFORT[name], name);
     }
 });
+
+// The silent-failure and comment lenses: defined here once, and asked for by
+// build's per-task dispatch and verify's adversary through scripts/lenses.js.
+// docs/90-agent/plans/2026-09-27-registry-lenses-design.md §5.
+test('the reviewer carries the silent-failure and comment lenses, and build and verify run scripts/lenses.js before dispatching', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reviewer.md'), 'utf8');
+    assert.match(text, /^## Silent failure$/m);
+    assert.match(text, /^## Comment$/m);
+    const silent = text.split('\n## Silent failure\n')[1].split('\n## ')[0];
+    for (const tag of ['swallow:', 'unlogged:', 'broad:']) assert.ok(silent.includes('`' + tag + '`'), 'the lens does not define ' + tag);
+    assert.match(silent, /silent-failure: <N> findings\./);
+    const comment = text.split('\n## Comment\n')[1].split('\n## ')[0];
+    for (const tag of ['stale:', 'unwritten:']) assert.ok(comment.includes('`' + tag + '`'), 'the lens does not define ' + tag);
+    assert.match(comment, /comment: <N> findings\./);
+
+    const build = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-build', 'SKILL.md'), 'utf8').replace(/\s+/g, ' ');
+    assert.match(build, /scripts\/lenses\.js/);
+    assert.match(build, /`## Silent failure` lens/);
+    assert.match(build, /`## Comment` lens/);
+    const verify = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-verify', 'SKILL.md'), 'utf8').replace(/\s+/g, ' ');
+    assert.match(verify, /scripts\/lenses\.js/);
+    assert.match(verify, /`## Silent failure` lens/);
+    assert.match(verify, /`## Comment` lens/);
+});

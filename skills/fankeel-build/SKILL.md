@@ -366,6 +366,12 @@ then asks this stage's gate.
    history. Dispatch it as `subagent_type: fankeel:fankeel-reviewer`; the model
    comes from that agent file, not typed by hand here.
 
+   Before dispatching, run `node <plugin>/scripts/lenses.js <BASE>..<sha>` and
+   put what it printed in the brief: `none`, or the `## Silent failure` lens
+   and the `## Comment` lens by name, whichever it named — the reviewer reads
+   that lens over the same range. With no plan, the same command runs over
+   the row's range; nothing else changes.
+
    **A task that changes a page gets a second reviewer** in the same response:
    `subagent_type: fankeel:fankeel-render-reviewer`, whose file pins `sonnet`.
    Give it the brief path, the mockup path from the design's `spec:` line, and
