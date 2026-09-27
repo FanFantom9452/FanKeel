@@ -83,8 +83,6 @@ the reading is what gets scheduled.
 
 ## Needs a decision
 
-- 〔stage-agents〕ab.sh 改成在 worktree 裡 commit profile（`pin.sh`）；修好的 script 還沒重跑，重跑要核准約 $30 — [ab.sh](docs/90-agent/reports/evidence/2026-09-26-ab-profile-pin/ab.sh).
-
 ## Blocked
 
 ### fankeel 功能全部完成
