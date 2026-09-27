@@ -315,6 +315,14 @@ These are **plan failures**, not shorthand:
    stays in this context for the rest of the session. Fix what it finds
    inline, and put the count on the `reviewer:` slot.
 
+**Neighbours, before the gate.** `node <plugin>/scripts/task.js intends <plan bucket>/<file>.md --session <id>`
+records every `Modify:` and `Test:` path as this task's `intends` and compares
+them with each live neighbour's claims and intends: `warn` for a neighbour at
+build, verify, audit or land, which is already writing there; `note` for one at
+an earlier stage; `none` when nothing meets. It blocks nothing. Say each `warn`
+line in the report above the question, naming the neighbour's task; a `note`
+needs no word.
+
 Fix inline. If a requirement has no task, add the task.
 
 ## Output

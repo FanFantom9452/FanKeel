@@ -52,6 +52,13 @@ Use a worktree where the project has one. Starting implementation on `main` or
 `master` needs the user's explicit consent — ask once, then proceed with whichever
 they chose, and do not ask again.
 
+**Then the neighbours.** `node <plugin>/scripts/task.js intends <plan bucket>/<file>.md --session <id>`
+— with no plan, the design file, whose file table it reads instead — records
+this task's `intends` and prints `warn`, `note` or `none` against every live
+neighbour. It blocks nothing. A `warn` names a session already at build or later
+in these files: say it in the first dispatch announcement, before any
+implementer goes out.
+
 ### 2. Open the ledger
 
 ```
