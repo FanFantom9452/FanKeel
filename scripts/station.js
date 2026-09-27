@@ -42,6 +42,7 @@ const { readBody } = require('../lib/body.js');
 const { clearEntry } = require('../lib/clear.js');
 const profile = require('../lib/profile.js');
 const handoff = require('../lib/handoff.js');
+const docsearch = require('../lib/docsearch.js');
 const todoCheck = require('./todo-check.js');
 const view = require('../assets/station/station.js');
 
@@ -403,6 +404,14 @@ async function serve(opts) {
                 'cache-control': 'no-store',
             });
             res.end(station.serialize(sharedModel(), { serve: true, nonce, plugin: PLUGIN, cleared }));
+            return;
+        }
+        if (req.method === 'GET' && url.pathname === '/station/search') {
+            // The 文件 page's full-text box. The page bodies stay on disk; the
+            // answer is at most 20 hits with a snippet each (lib/docsearch.js).
+            const out = docsearch.search(docsearch.searchDirs(sharedModel()), url.searchParams.get('q') || '');
+            res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+            res.end(JSON.stringify(out));
             return;
         }
         const wanted = /^\/station\/detail\/([0-9A-Za-z-]+)\.js$/.exec(url.pathname);
