@@ -214,3 +214,22 @@ test('a file whose every block committed is renamed to .done.md over the last on
     assert.equal(fs.existsSync(failed), true);
     assert.equal(fs.existsSync(failed.replace(/\.md$/, '.done.md')), false);
 });
+
+test('foldRenames folds a rename\'s old path onto its new one, once, and leaves an unrelated line alone', () => {
+    assert.deepEqual(commit.foldRenames(['a2.txt'], ['R100\ta.txt\ta2.txt', 'M\tb.txt']), ['a2.txt', 'a.txt']);
+    assert.deepEqual(commit.foldRenames(['a2.txt', 'a.txt'], ['R100\ta.txt\ta2.txt']), ['a2.txt', 'a.txt']);
+    assert.deepEqual(commit.foldRenames(['x.txt'], ['R100\ta.txt\ta2.txt']), ['x.txt']);
+});
+
+test('a staged rename is committed whole: the old path rides along with the new one', () => {
+    const dir = repo();
+    execFileSync('git', ['mv', 'a.txt', 'a2.txt'], { cwd: dir });
+    const before = git(dir, 'rev-parse', 'HEAD');
+    const res = commit.main([requestFile('a2.txt\n\nfeat: rename a\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(res.text, before + '..' + git(dir, 'rev-parse', 'HEAD'));
+    const stat = git(dir, 'show', '--stat', '--format=', 'HEAD');
+    assert.match(stat, /a\.txt/);
+    assert.match(stat, /a2\.txt/);
+    assert.equal(git(dir, 'diff', '--name-only'), 'b.txt', 'the other dirty file is untouched');
+});

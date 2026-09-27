@@ -40,6 +40,20 @@ function parse(text) {
     return { blocks };
 }
 
+// `git diff --cached -M --name-status` lines, folded onto `paths`: a rename's
+// old side rides along with its new side, once, so `git commit -o` sees the
+// whole rename rather than half of it — `git add` on the new path alone
+// leaves the old path's deletion staged on its own, and `commit -o <new
+// path>` only ever touches the paths it is given.
+function foldRenames(paths, statusLines) {
+    const out = paths.slice();
+    for (const line of statusLines) {
+        const m = /^R\d*\t([^\t]+)\t([^\t]+)$/.exec(line);
+        if (m && paths.includes(m[2]) && !out.includes(m[1])) out.push(m[1]);
+    }
+    return out;
+}
+
 function main(argv, cwd) {
     if (argv.length !== 1) return { text: 'commit.js: usage: commit.js <commit file>', code: 2 };
     let raw;
@@ -68,11 +82,15 @@ function main(argv, cwd) {
         const { paths, message } = parsed.blocks[i];
         const fail = (why) => ({ text: out.concat('commit.js: ' + (many ? 'block ' + (i + 1) + ': ' : '') + why).join('\n'), code: 1 });
         const base = git(['rev-parse', 'HEAD']).stdout.trim();
+        // Read before `add`: `add` restages `paths` at their current working-tree content, which
+        // can outweigh a `git mv`'s untouched blob and cost the rename its similarity match.
+        const renamed = git(['diff', '--cached', '-M', '--name-status']);
         const add = git(['add', '--'].concat(paths));
         if (add.status !== 0) return fail('git add failed: ' + oneLine(add.stderr));
+        const withOld = foldRenames(paths, renamed.status === 0 ? renamed.stdout.split(/\r?\n/) : []);
         // Said here rather than left to `git commit`, whose text for this case depends on the rest of the tree.
         if (git(['diff', '--cached', '--quiet', '--'].concat(paths)).status === 0) return fail('nothing to commit in ' + paths.join(', '));
-        const made = git(['commit', '-o', '-F', '-', '--'].concat(paths), message + '\n');
+        const made = git(['commit', '-o', '-F', '-', '--'].concat(withOld), message + '\n');
         if (made.status !== 0) return fail('git commit failed: ' + oneLine(made.stderr || made.stdout));
         out.push((many ? paths.join(', ') + ': ' : '') + base + '..' + git(['rev-parse', 'HEAD']).stdout.trim());
     }
@@ -93,4 +111,4 @@ if (require.main === module) {
     if (code) process.exitCode = code;
 }
 
-module.exports = { main };
+module.exports = { main, foldRenames };
