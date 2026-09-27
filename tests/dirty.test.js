@@ -53,6 +53,7 @@ function seed(root, over) {
 }
 
 const claims = (root) => registry.claimsOf(registry.readSession(root, MINE));
+const seen = (root) => registry.seenOf(registry.readSession(root, MINE));
 
 // A write through no tool at all. Every case this module exists for looks like
 // this from the outside: nothing called Edit, so nothing called `hooks/touch.js`.
@@ -120,12 +121,13 @@ test('writtenSince has no answer outside a repository either', () => {
   assert.equal(dirty.writtenSince(tmp(), Date.now()), null);
 });
 
-test('a write no hook saw is claimed', () => {
+test('a write no hook saw is seen, not claimed', () => {
   const dir = repo();
   seed(dir);
   writeBehindTheHooks(dir, 'api/routes.js', 'sed did this\n');
   assert.equal(dirty.claimWrites(dir, MINE, registry.readSession(dir, MINE)).added, 1);
-  assert.deepEqual(claims(dir), ['api/routes.js']);
+  assert.deepEqual(seen(dir), ['api/routes.js']);
+  assert.deepEqual(claims(dir), []);
 });
 
 test('a path already claimed is not claimed twice', () => {
@@ -166,7 +168,7 @@ test('a project under the registry root is claimed with its prefix', () => {
   git(project, ['config', 'user.name', 'test']);
   writeBehindTheHooks(project, 'statusline.ps1', 'sed did this\n');
   assert.equal(dirty.claimWrites(root, MINE, registry.readSession(root, MINE)).added, 1);
-  assert.deepEqual(claims(root), ['Waypoint/statusline.ps1']);
+  assert.deepEqual(seen(root), ['Waypoint/statusline.ps1']);
 });
 
 test('a project that escapes the registry root claims nothing', () => {
@@ -200,5 +202,5 @@ test('a pass the record can hold is taken whole', () => {
   writeMany(dir, registry.MAX_CLAIMS);
   const found = dirty.claimWrites(dir, MINE, registry.readSession(dir, MINE));
   assert.deepEqual(found, { added: registry.MAX_CLAIMS, declined: 0 });
-  assert.equal(claims(dir).length, registry.MAX_CLAIMS);
+  assert.equal(seen(dir).length, registry.MAX_CLAIMS);
 });

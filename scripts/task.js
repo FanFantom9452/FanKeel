@@ -815,6 +815,7 @@ function cmdTask(root, opts) {
 
         d.task = text;
         delete d.claims;
+        delete d.seen;
         // `claims` falls back to `scope` on a record written before the split, so
         // a clear that dropped only the new key would leave the old list holding.
         delete d.scope;

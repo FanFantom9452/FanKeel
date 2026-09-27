@@ -458,13 +458,13 @@ function gitRepo() {
   return dir;
 }
 
-test('a write no hook saw is claimed on the next prompt', () => {
+test('a write no hook saw is seen on the next prompt', () => {
   const root = gitRepo();
   seed(root, MINE, { claims: [] });
   fs.mkdirSync(path.join(root, 'api'), { recursive: true });
   fs.writeFileSync(path.join(root, 'api', 'routes.js'), 'sed did this\n');
   run({ session_id: MINE, cwd: root, prompt: 'carry on' });
-  assert.deepEqual(readEntry(root, MINE).claims, ['api/routes.js']);
+  assert.deepEqual(readEntry(root, MINE).seen, ['api/routes.js']);
 });
 
 test('a file dirty before the task started is not claimed', () => {
@@ -474,7 +474,7 @@ test('a file dirty before the task started is not claimed', () => {
   const then = Date.now() - 48 * 3600e3;
   fs.utimesSync(path.join(root, 'kept.js'), then / 1000, then / 1000);
   run({ session_id: MINE, cwd: root, prompt: 'carry on' });
-  assert.deepEqual(readEntry(root, MINE).claims, []);
+  assert.equal(readEntry(root, MINE).seen, undefined);
 });
 
 test('a session not in the mode never asks git anything', () => {
@@ -507,7 +507,7 @@ test('a write outside the hooks is in the block on the same prompt it is claimed
   fs.mkdirSync(path.join(root, 'api'), { recursive: true });
   fs.writeFileSync(path.join(root, 'api', 'routes.js'), 'sed did this\n');
   const text = context(run({ session_id: MINE, cwd: root, prompt: 'carry on' }));
-  assert.match(text, /touched: api\/routes\.js/);
+  assert.match(text, /^seen: api\/routes\.js  \(weak: from git, no writer\)$/m);
 });
 
 test('a project profile reaches the injected rules, never a line of its own', () => {

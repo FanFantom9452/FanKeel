@@ -28,7 +28,7 @@ workspace/                     <- Claude Code opened here
 
 | Path | In version control | Written by |
 |---|---|---|
-| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `start` and `adopt` for `version`, the plugin's own `package.json` version at the moment either ran — `task` (the rename) leaves it, and an entry written before this field existed reads as unknown rather than being backfilled; `start` for `guard`, read from the effective profile whenever it is not the builtin default `ask` — a `guard` set later by hand overwrites it the same way any other write does; `start` for `floor`, the class said on its own command line and only then — `adopt` copies it, `task` (the rename) leaves it, and `task.js route` refuses a route that drops a stage of that class's route; `start` for `profile`, a snapshot of every other `lib/profile.js` `KEYS` value whose source is not `builtin`, taken the same way and keyed by profile key — absent entirely when every other key is still at its builtin default; `task.js stage`, `task.js start` and `task.js task` for `clock` and `moves`, stamped at the command that made the change; `inject.js` / `resume.js` for `updated`, and for `clock` and `moves` where no command preceded them — an answered gate alone, now that a rename stamps its own opening entry rather than leaving one for the next sighting; `inject.js` for `burn`; `touch.js` and `inject.js` for `claims`; `gate.js` and `resume.js` for `gateAt` and `waited`; `brief.js` for `inflight`, which `gate.js` deletes; `leave.js` for `ended`, `model`, `usage`, `spend` and `gates`, once, at `SessionEnd`; `task.js land` for `land`, once per invocation — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
+| `.fankeel/sessions/{session_id}.json` | No — `.fankeel/.gitignore` excludes it | `task.js`; `start` and `adopt` for `version`, the plugin's own `package.json` version at the moment either ran — `task` (the rename) leaves it, and an entry written before this field existed reads as unknown rather than being backfilled; `start` for `guard`, read from the effective profile whenever it is not the builtin default `ask` — a `guard` set later by hand overwrites it the same way any other write does; `start` for `floor`, the class said on its own command line and only then — `adopt` copies it, `task` (the rename) leaves it, and `task.js route` refuses a route that drops a stage of that class's route; `start` for `profile`, a snapshot of every other `lib/profile.js` `KEYS` value whose source is not `builtin`, taken the same way and keyed by profile key — absent entirely when every other key is still at its builtin default; `task.js stage`, `task.js start` and `task.js task` for `clock` and `moves`, stamped at the command that made the change; `inject.js` / `resume.js` for `updated`, and for `clock` and `moves` where no command preceded them — an answered gate alone, now that a rename stamps its own opening entry rather than leaving one for the next sighting; `inject.js` for `burn`; `touch.js` for `claims`; `inject.js` for `seen`, what git saw written since `started`; `gate.js` and `resume.js` for `gateAt` and `waited`; `brief.js` for `inflight`, which `gate.js` deletes; `leave.js` for `ended`, `model`, `usage`, `spend` and `gates`, once, at `SessionEnd`; `task.js land` for `land`, once per invocation — first seen from the hooks 2026-09-01 (a `gateAt`, in a neighbouring project's registry) and 2026-09-02 (a `waited`, here), both in processes started after the manifest carried `gate.js` |
 | `.fankeel/sessions/{session_id}.lock` | No — same line covers it | any writer, for the length of one change |
 | `.fankeel/.gitignore` | Yes | `lib/registry.js:221` creates it holding `sessions/` alone; `registry.ensureIgnored` appends what is missing — `scripts/map.js:39` asks for `sessions/`, `build/` and `map.md` on every map run, `lib/station.js` for `index.html` and `station/` on every write of the copy — two names that cover the four files it emits, rather than the `EMITTED` list itself, because a directory is one line where four paths under it would be four |
 | `<project>/.fankeel/docs.json` | Yes | `docs.write`, per repository |
@@ -93,19 +93,20 @@ was never a note, and `land` is where it moves to one of the four.
 
 A third field is written by nobody the user talks to. `claims` holds every file
 this task has edited — at most sixty, each recorded whole and never truncated,
-because nothing here is a path a human retypes. The two writers reach that cap
+because nothing here is a path a human retypes. `claims` and `seen` reach that cap
 from opposite directions. A path arriving on its own drops the oldest to make
 room (`lib/registry.js:728`, `slice(-MAX_CLAIMS)`); a git pass holding more than sixty is refused
 whole rather than trimmed (`lib/dirty.js:176`, `declined: written.length`), because trimming it would evict
-every claim an edit earned and put build output in its place.
-[collisions.md](collisions.md) is the page for that. Two hooks append to it,
-which is why the table above lists hooks rather than a command as its writer.
+every earlier path in `seen` and put build output in its place.
+[collisions.md](collisions.md) is the page for that. `hooks/touch.js` appends to it,
+which is why the table above lists a hook rather than a command as its writer.
 `hooks/touch.js` adds a path the first time an edit lands on it.
-`hooks/inject.js` adds, once a prompt, every path git reports dirty whose
-mtime is later than the task's `started` — the writes that reached the disk
-without any tool a hook matches, a `sed` or a `node -e` or a build script. Which
-of the two recorded a path is not distinguishable afterwards and does not need to
-be: the field says where the work went. No subcommand sets it. `adopt` carries it across, because where the work went belongs
+`hooks/inject.js` writes, once a prompt, every path git reports dirty whose
+mtime is later than the task's `started` into a field of its own, `seen` — the
+writes that reached the disk without any tool a hook matches, a `sed` or a
+`node -e` or a build script. Git names no writer, and a shared tree shows every
+session every dirty file, so `seen` is shown as weak and never enters `claims`.
+The same cap holds it, sixty, and `task` clears it with `claims`. No subcommand sets it. `adopt` carries it across, because where the work went belongs
 to the task rather than to the session, and `task` clears it, because a task that
 has just been renamed has touched nothing yet.
 
@@ -499,7 +500,7 @@ Writing the file is atomic — a sibling, then a rename — but reading it, chan
 one field and writing it back is not, and that is what every writer here does.
 Five of them are registered in hooks. `inject.js` writes
 on every prompt — once for `updated`, and once more for every new path the git
-pass claims, since `lib/dirty.js:183` calls `addClaim` per path and each one
+pass records in `seen`, since `lib/dirty.js:183` calls `addSeen` per path and each one
 takes the lock — in every session on the machine. That second number is usually
 zero after a task's first prompt, because `covers` skips a path already held.
 `resume.js` writes twice per answered question (`registry.gateClose`, then
