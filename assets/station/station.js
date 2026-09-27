@@ -2261,7 +2261,7 @@
             dashLive: dashLive, dashGate: dashGate, dashSpend: dashSpend, dashRecent: dashRecent, dashPage: dashPage,
             NAV_TREE: NAV_TREE,
             tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
-            changedParts: changedParts,
+            changedParts: changedParts, seenHtml: seenHtml,
         };
     }
     if (!doc) return;
@@ -2993,7 +2993,7 @@
                     return '<div title="' + esc(p) + '">' + esc(p) + '</div>';
                 }).join('') + '</div>'
                 : '<p class="mute" style="font-size:12px">沒有</p>')
-            + clearControl(s) + '</details>'
+            + seenHtml(s.seen) + clearControl(s) + '</details>'
             + (x ? detailSections(s, x, open) : detailNote(s))
             + '</div>';
     }
@@ -3062,6 +3062,15 @@
     function secOpen(id, title, count, open) {
         return '<details class="sec" id="' + id + '"' + (open.indexOf(id) >= 0 ? ' open' : '') + '><summary>'
             + '<span class="t">' + title + '</span> <span class="cnt">' + count + '</span></summary>';
+    }
+    // What git saw this session write, under its claims and marked weak: git
+    // names no writer, so none of it lights a clash. Nothing for none.
+    function seenHtml(seen) {
+        if (!seen || !seen.length) return '';
+        return '<p class="mute" style="font-size:12px">seen（弱：git 看到，沒有經過 hook）</p>'
+            + '<div class="claims">' + seen.map(function (p) {
+                return '<div title="' + esc(p) + '">' + esc(p) + '</div>';
+            }).join('') + '</div>';
     }
     function sec(id, title, count, body, open) {
         return secOpen(id, title, count, open) + body + '</details>';
