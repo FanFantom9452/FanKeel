@@ -179,6 +179,8 @@
             var k = E.expoOut(E.prog(l, 347 + 6 * i, 24));
             if (k <= 0) return;
             var y = E.lerp(c[1] - 60, c[1], k);
+            // mockup.html:337 draws the falling capsule's landing guide as a dashed line (M389 210V236)
+            if (i === CAPS.length - 1 && k < 1) E.line(ctx, [[c[0] + 53, y + 36], [c[0] + 53, c[1] + 62]], P.faint, 1, [3, 4]);
             E.fade(ctx, k, function () {
                 E.box(ctx, c[0], y, 106, 24, 5, P.inset);
                 E.text(ctx, P, 'm', c[2], c[0] + 8, y + 17);
