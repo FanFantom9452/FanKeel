@@ -81,7 +81,6 @@ the reading is what gets scheduled.
 
 ## Ready
 
-- 〔hooks〕UserPromptSubmit 09-27 又逾時 5s（整套連跑、106 個 msedge/node）；平時 340ms。`dirtyPaths` 的 `git status -uall` 沒設 timeout，給 2.5s 上限、逾時跳過這輪 claim — [lib/dirty.js](lib/dirty.js).
 - 〔registry〕git 掃描的 claims 降成弱證據：只顯示、不觸發 CLASH／guard，除非沒有 live session 以 `touch.js` 直接碰過該檔；09-27 #/tour 與本 task 互記 6 檔全是誤報 — [lib/dirty.js](lib/dirty.js).
 - 〔registry〕每個 session 各開一個 git worktree，共用樹的誤記消失、真衝突留到 merge；`scripts/commit.js`、registry 與 station 都要認得 worktree。使用者 09-27 定為下個任務 — [scripts/commit.js](scripts/commit.js).
 - 〔registry〕意圖比對：plan 的 `**Files:**` 與 design 檔案表寫進 registry 的 `intends`，plan gate 與 build 開始前比對鄰居，依對方 stage 分級預警；使用者 09-27 定為下個任務；不需 MCP — [lib/plantasks.js](lib/plantasks.js).
