@@ -29,7 +29,8 @@ const badge = require('../lib/badge.js');
 const station = require('../lib/station.js');
 const { clearEntry } = require('../lib/clear.js');
 const { tokens } = require('../lib/context.js');
-const { guardMode, sharedWith, worktreeOf } = require('../lib/guard.js');
+const { guardMode, sharedWith, worktreeOf, effectiveClaims } = require('../lib/guard.js');
+const { overlapPaths } = require('../lib/overlap.js');
 const { splitAroundVerb } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 const profile = require('../lib/profile.js');
@@ -828,6 +829,7 @@ function cmdTask(root, opts) {
         d.task = text;
         delete d.claims;
         delete d.seen;
+        delete d.intends;
         // `claims` falls back to `scope` on a record written before the split, so
         // a clear that dropped only the new key would leave the old list holding.
         delete d.scope;
@@ -1310,6 +1312,50 @@ function cmdLand(root, opts) {
     return 'fankeel — land: ' + verb + (opts.push === true ? ', push' : opts.push === false ? ', no push' : '');
 }
 
+// The files this task means to edit, set as `intends` and compared with every
+// live neighbour's effective claims and intends. A plan is read through its
+// Files blocks (Modify and Test); a `-design.md` through its file table. A
+// neighbour at build or later is a `warn` — it is already writing; any
+// earlier stage is a `note`. It prints and blocks nothing.
+const WRITING_STAGES = ['build', 'verify', 'audit', 'land'];
+
+function cmdIntends(root, opts) {
+    const id = requireSession(opts);
+    const given = opts.positional[0];
+    if (!given) fail('Give the plan or design file: intends <file> --session <id>');
+    let text = null;
+    try {
+        text = fs.readFileSync(path.resolve(given), 'utf8');
+    } catch (e) { /* named below */ }
+    if (text === null) fail('Cannot read ' + given);
+    const mine = registry.readSession(root, id);
+    if (!mine || mine.active !== true) fail('No active entry for this session under ' + root);
+
+    const listed = /-design\.md$/.test(given)
+        ? plantasks.filedPaths(text)
+        : plantasks.parsePlan(text).tasks.flatMap((t) => t.modify.concat(t.test));
+    const sub = registry.projectOf(mine).replace(/\\/g, '/').replace(/\/+$/, '');
+    if (!registry.setIntends(root, id, listed.map((p) => (sub ? sub + '/' + p : p)))) fail('Could not write the entry.');
+    const data = registry.readSession(root, id) || mine;
+
+    const liveState = live.readLive(live.liveConfigDir(), id);
+    const alive = registry.readActive(root).filter((o) => o.sessionId !== id
+        && live.isLive(liveState, o.sessionId, o.data && o.data.configDir));
+    const pool = [{ data }].concat(alive);
+    const held = registry.intendsOf(data);
+    const lines = ['fankeel — intends: ' + held.length + ' path' + (held.length === 1 ? '' : 's') + ' from ' + given];
+    for (const other of alive) {
+        const theirs = effectiveClaims(other.data, pool).concat(registry.intendsOf(other.data));
+        const shared = overlapPaths(held, theirs);
+        if (!shared.length) continue;
+        const stage = String(other.data.stage || '?');
+        const level = WRITING_STAGES.includes(stage) ? 'warn' : 'note';
+        lines.push(level + ': ' + (other.data.task || 'untitled') + ' @ ' + stage + ' — ' + shared.join(', '));
+    }
+    if (lines.length === 1) lines.push('none');
+    return lines.join(NL);
+}
+
 const COMMANDS = {
     show: cmdShow,
     route: cmdRoute,
@@ -1324,6 +1370,7 @@ const COMMANDS = {
     adopt: cmdAdopt,
     clear: cmdClear,
     land: cmdLand,
+    intends: cmdIntends,
 };
 
 const USAGE = [
@@ -1345,6 +1392,8 @@ const USAGE = [
     '                                    machine file, --project <dir> picks a project under the root',
     '  land <merge|pr|keep> [--push|--no-push]',
     '                                    record the integration this task actually took',
+    '  intends <plan-or-design>          the files it names become this task\'s intends;',
+    '                                    warn/note per live neighbour already in them',
     '  down                              stand the task down; never deletes',
     '  adopt <session-id>                take another entry over, standing it down',
     '  clear <session-id> [--force]      put down a claim nobody is behind; never deletes',

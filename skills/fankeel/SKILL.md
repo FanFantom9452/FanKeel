@@ -211,6 +211,7 @@ node <plugin>/scripts/task.js note    "..." --session <id>
 node <plugin>/scripts/task.js next    "..." --session <id>
 node <plugin>/scripts/task.js guard   ask|deny|off --session <id>
 node <plugin>/scripts/task.js route   "build,verify" --session <id>
+node <plugin>/scripts/task.js intends <plan-or-design> --session <id>
 node <plugin>/scripts/task.js profile show | set <key> <value> [--project|--default] | suggest
 node <plugin>/scripts/task.js down    --session <id>
 node <plugin>/scripts/task.js adopt   <other-session-id> --session <id>
