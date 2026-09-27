@@ -378,6 +378,16 @@ filename order, and a record carrying `superseded_by` has stopped counting.
 `scripts/map.js` lists them under **binding decisions**, which is where design
 reads them; no injected block carries them. Land is where one is marked.
 
+## `docs-for <path>`
+
+`node <plugin>/scripts/docs-check.js docs-for lib/hook.js` answers a
+narrower question than a scan: which pages, right now, name this file as
+their `source_of_truth` (`owner`), and which mention a symbol it declares
+inside a backtick-quoted `name()` (`mentions`). It adds no finding of its
+own and does not change `docs-check`'s exit code — a stage agent about to
+edit a file runs it first to see who reads that file as reference before
+writing anything.
+
 ## The list is the output, not the count
 
 `docs-check` prints the findings themselves, not a summary of them — the role

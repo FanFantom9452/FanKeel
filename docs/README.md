@@ -36,6 +36,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | What `.fankeel/docs.json` declares | [documents.md](90-agent/reference/documents.md) |
 | Why an archive naming deleted code is not a bug | [documents.md](90-agent/reference/documents.md) — *roles* |
 | Why `docs-check` prints the list rather than a count, and where the cap bites | [documents.md](90-agent/reference/documents.md) — *the list is the output, not the count* |
+| What `lib/hook.js` and `lib/report.js` do, and why neither has a single caller-specific page | [shared-libs.md](90-agent/reference/shared-libs.md) |
 | What a subagent is told when it starts | [subagents.md](90-agent/reference/subagents.md) |
 | Why delegating a wide search saves and delegating a long report does not | [subagents.md](90-agent/reference/subagents.md) |
 | When to dispatch one, what the dispatcher has to say out loud, and when a pipe already removes what you are avoiding | [subagents.md](90-agent/reference/subagents.md) — *when to dispatch one* |
