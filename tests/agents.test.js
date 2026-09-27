@@ -280,3 +280,22 @@ test('a general exclusion list covers every lens: pre-existing issues, linter ca
     assert.match(never, /eslint-disable/);
     assert.match(never, /noqa/);
 });
+
+// docs/90-agent/plans/2026-09-27-todo-batch-design.md §3: after a first
+// round returns any finding, one more reviewer confirms the whole list in
+// one pass before build or verify acts on it.
+test('the reviewer carries a Verify mode, and build and verify send a first round\'s findings there before fixing', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reviewer.md'), 'utf8');
+    assert.match(text, /^## Verify$/m);
+    const verify = text.split('\n## Verify\n')[1].split('\n## ')[0];
+    assert.match(verify, /CONFIRMED/);
+    assert.match(verify, /PLAUSIBLE/);
+
+    const build = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-build', 'SKILL.md'), 'utf8').replace(/\s+/g, ' ');
+    assert.match(build, /`## Verify` mode/);
+    assert.match(build, /never one reviewer per finding/);
+
+    const verifySkill = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-verify', 'SKILL.md'), 'utf8').replace(/\s+/g, ' ');
+    assert.match(verifySkill, /`## Verify` mode/);
+    assert.match(verifySkill, /not one per row/);
+});

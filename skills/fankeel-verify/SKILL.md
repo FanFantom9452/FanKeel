@@ -263,6 +263,13 @@ A defeated row goes to `build`, and the slot says so. It is a **ruling here and
 a route decision at the gate** — the same standing the per-task reviewer's
 findings have — never an automatic lap back through this stage.
 
+**When the adversary returns any row, one more reviewer confirms them
+before build sees them.** Dispatch one more `subagent_type:
+fankeel:fankeel-reviewer` with its agent file's `## Verify` mode, the same
+range, and the whole list the adversary defeated — one dispatch, not one
+per row. Only a row it marks `CONFIRMED` or `PLAUSIBLE` is a defeated row
+at the gate; one it drops did not hold after all.
+
 ## Half-built sends it back
 
 Verify is not where the bar gets lowered. Anything unfinished returns to

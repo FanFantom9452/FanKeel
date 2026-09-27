@@ -147,6 +147,23 @@ the code beside it, sentence by sentence. One line per finding:
 A comment about a line the diff does not touch is out of this lens's scope,
 not a finding. End with `comment: <N> findings.`, or the single word `none`.
 
+## Verify
+
+When the brief asks for the Verify mode — build's and verify's second
+reviewer, dispatched once after a first round returned findings, over the
+whole list in one pass rather than one dispatch per line — read the range
+or table the first round read, then read its findings one at a time. For
+each line, open what it names and follow it the way its own lens would —
+`git show`, `git diff`, the file itself — and mark it:
+
+`<the finding's own line> — CONFIRMED` when it still holds exactly as
+written, `<the finding's own line> — PLAUSIBLE` when it could go either
+way and nothing in front of you settles it, or drop it — a dropped line is
+not returned at all, not marked and not counted.
+
+End with `verify: <N> confirmed, <M> plausible, <K> dropped.` A finding
+whose path or line no longer exists is dropped, never `PLAUSIBLE`.
+
 ## Return
 
 A finding's line ends `— fails when <the input or state> → <the wrong result>`;

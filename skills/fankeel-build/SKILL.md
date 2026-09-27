@@ -409,6 +409,16 @@ then asks this stage's gate.
    `docs/90-agent/reports/2026-09-02-process-state-review.md`, on a session that had
    read the Workflow tool's `ultracode` gate as the Agent tool's; the Agent tool
    has no gate, and both would have dispatched.
+
+   **When the first round returns a finding, one more reviewer confirms it
+   before any fix round starts.** Step 5's reviewer returning anything but
+   `clean` — or, on a page task, the render reviewer returning anything but
+   `ship` — is a first round. Dispatch one more `subagent_type:
+   fankeel:fankeel-reviewer` with its agent file's `## Verify` mode, the
+   brief path, the pinned range and the whole findings list in one dispatch,
+   never one reviewer per finding. Only what it marks `CONFIRMED` or
+   `PLAUSIBLE` goes into the fix round below; what it drops is treated as
+   `clean` and never reaches the implementer.
 6. Fix rounds are bounded at **five**. A finding you overrule is a ruling, not a
    silence.
 
