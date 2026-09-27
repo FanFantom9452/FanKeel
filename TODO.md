@@ -95,6 +95,10 @@ the reading is what gets scheduled.
 - 〔docs〕人讀頁可推導的表從程式碼產生再 diff，先做 01-guide/profile.md 的 key 表（orbit 的 `query-language-docs-check`） — [lib/profile.js](lib/profile.js).
 - 〔docs〕`docs-for <path>`：把各頁 `source_of_truth` 反查，回答哪一頁負責描述這個檔；不做 MCP，第二個 host 出現再議 — [scripts/docs-check.js](scripts/docs-check.js).
 - 〔docs〕docs-check 記下文件裡反引號的 code 指向哪個檔，不只查符號存在（graphify `markdown_resolution.py`） — [scripts/docs-check.js](scripts/docs-check.js).
+- 〔review〕reviewer 每條發現附具體失敗情境（什麼輸入得什麼錯），另派一個 reviewer 逐條驗證、沒過就丟（官方 /code-review 與 ultra 的做法） — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
+- 〔review〕排除清單與信心門檻：既存問題、linter 會抓、挑剔、被註解消音的不報；security lens 加 17 條硬排除與 10 條判例、低於 0.7 不報 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
+- 〔review〕依 diff 加派專科 lens：動到錯誤處理派 silent-failure（吞錯、靜默失敗），動到註解派 comment 核對逐句對程式碼（pr-review-toolkit） — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
+- 〔audit〕prompt lens：用 prompt-audit 的刪除測試與保留清單審 skills/、agents/、lib/stages.js 注入的規則，原因已不能重現的規則移出注入 — [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md).
 
 ## Blocked
 
