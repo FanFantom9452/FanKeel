@@ -629,11 +629,12 @@ test('frontmatter() flattens one level of nested keys under a parent with no inl
 // the first test stays green on six against six while only the count reddens.
 const CALL_RE = /\btrackedFiles\(/;
 const DECL_RE = /function\s+trackedFiles\(/;
+const COMMENT_RE = /^\s*\/\//;
 
-// Nothing else in scripts/ or lib/ puts an open paren straight after the
-// name: the imports are `const { trackedFiles } = require(...)` and the
-// re-exports are `module.exports = { trackedFiles, ... }`, so only the
-// declaration needs excluding.
+// The imports are `const { trackedFiles } = require(...)` and the re-exports
+// are `module.exports = { trackedFiles, ... }`, so neither matches. A comment
+// can: lib/requires.js:44 names `trackedFiles(root)` in prose, and counting
+// it put a fourteenth "call site" on the page that calls nothing.
 function callSites(root) {
   const out = [];
   for (const dir of ['scripts', 'lib']) {
@@ -641,7 +642,7 @@ function callSites(root) {
     for (const name of names) {
       const lines = fs.readFileSync(path.join(root, dir, name), 'utf8').split(/\r?\n/);
       lines.forEach((line, i) => {
-        if (CALL_RE.test(line) && !DECL_RE.test(line)) out.push(dir + '/' + name + ':' + (i + 1));
+        if (CALL_RE.test(line) && !DECL_RE.test(line) && !COMMENT_RE.test(line)) out.push(dir + '/' + name + ':' + (i + 1));
       });
     }
   }
@@ -678,12 +679,12 @@ test('the lifetime section lists every trackedFiles call site in scripts/ and li
     + ', bullets pointing at no call site: ' + JSON.stringify(declared.filter((x) => !a.has(x))));
 });
 
-test('there are fourteen trackedFiles call sites, ten under scripts/ and four under lib/', () => {
+test('there are thirteen trackedFiles call sites, ten under scripts/ and three under lib/', () => {
   const actual = callSites(path.join(__dirname, '..'));
-  assert.equal(actual.length, 14, 'call sites: ' + JSON.stringify(actual));
+  assert.equal(actual.length, 13, 'call sites: ' + JSON.stringify(actual));
   assert.equal(actual.filter((s) => s.startsWith('scripts/')).length, 10,
     'under scripts/: ' + JSON.stringify(actual));
-  assert.equal(actual.filter((s) => s.startsWith('lib/')).length, 4,
+  assert.equal(actual.filter((s) => s.startsWith('lib/')).length, 3,
     'under lib/: ' + JSON.stringify(actual));
 });
 
@@ -692,14 +693,14 @@ test('there are fourteen trackedFiles call sites, ten under scripts/ and four un
 // The section is whitespace-stripped first: that sentence is hard-wrapped, and
 // pinning one wrap position makes this go red for the wrong reason the next
 // time the paragraph reflows.
-test('the sentence above the list says fourteen, and ten under scripts/', () => {
+test('the sentence above the list says thirteen, and ten under scripts/', () => {
   const flat = lifetimeSection(path.join(__dirname, '..')).replace(/\s+/g, '');
-  assert.ok(flat.includes('其後十四條是它的十四個呼叫端'),
-    'the sentence above the list does not say 其後十四條 / 十四個呼叫端');
-  assert.ok(flat.includes('`scripts/`十處與`lib/`四處'),
-    'the sentence does not say scripts/ 十處與 lib/ 四處');
-  assert.ok(flat.includes('十四個之中只有這一處自己（`scan`函式本身）直接讀'),
-    'the lib/map.js bullet does not say 十四個之中');
+  assert.ok(flat.includes('其後十三條是它的十三個呼叫端'),
+    'the sentence above the list does not say 其後十三條 / 十三個呼叫端');
+  assert.ok(flat.includes('`scripts/`十處與`lib/`三處'),
+    'the sentence does not say scripts/ 十處與 lib/ 三處');
+  assert.ok(flat.includes('十三個之中只有這一處自己（`scan`函式本身）直接讀'),
+    'the survey.js bullet does not say 十三個之中');
 });
 
 // docs/plans/2026-09-26-station-redesign.md Task 6. A decision marked
