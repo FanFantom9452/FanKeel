@@ -1,0 +1,588 @@
+diff --git a/TODO.md b/TODO.md
+index ef81896d..efea6fdc 100644
+--- a/TODO.md
++++ b/TODO.md
+@@ -52,8 +52,10 @@ section nothing made you open, which is why it has to say what it is waiting for
+ and when you last agreed it was — and why `orient` now lists every timing each
+ time, and `/fankeel` offers one option to handle them whenever any exists.
+ 
+-`node scripts/todo-check.js` enforces all nine: a link that no longer resolves is
+-an entry someone forgot to close, a link that still resolves but points at a
++`node scripts/todo-check.js` enforces all ten: a link that no longer resolves is
++an entry someone forgot to close, a citation — backtick-quoted or linked — whose
++`:line` is past the end of the file it names is the same wrong pointer one
++character short of working, a link that still resolves but points at a
+ plan, a decision record, a report or an archive is the same entry one step
+ earlier — those four roles record a moment rather than the present, so the detail
+ behind the bullet is pointing at history however fresh that history is — an entry
+@@ -75,7 +77,6 @@ what gets scheduled.
+ 
+ ## Ready
+ 
+-- 〔docs〕todo-check 不驗 `path:line` 的行號：改成不存在的行仍然 exit 0 — [scripts/todo-check.js](scripts/todo-check.js). docs-check 補得到一部分，但卡 role、引文與讀得到目標三個前提。
+ - 〔quota〕7d 水位兩點差 4.7 倍，是延遲還是計別的：TokenBar 每次 render 已把 5h／7d 讀數 append 到 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`（TokenBar 的 `statusline.ps1`／`.sh`），拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
+ - 〔stage-agents〕量 Sonnet 主控在沒有站 agent 那幾站的 token 倍數：投影說省 55–56%、破平衡點 `k = 2.5052`，那一格仍然沒人量過；session 記錄已存 `stage.agents`（6fb1b3a），缺的是一次真實的量測 — [lib/render.js](lib/render.js).
+ - 〔security〕reviewer 的 `## Security` lens 已落地（四類、reviewer 自己的模型）；改走本地模型、清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
+diff --git a/docs/development.md b/docs/development.md
+index 7df20f0c..fc086ed3 100644
+--- a/docs/development.md
++++ b/docs/development.md
+@@ -76,7 +76,8 @@ the user in the middle of somebody else's turn is its own kind of broken.
+ `node scripts/todo-check.js` says whether [TODO.md](../TODO.md) is still an index —
+ every link resolving, none of them landing on a document whose declared role
+ records a moment rather than the present, no entry carrying detail that belongs
+-in the file it points at, and every entry filed under `## Ready`, `## Needs a decision` or
++in the file it points at, no backtick-quoted or linked `path:N`/`path:N-M` citation
++naming a line past the end of the file it points at, and every entry filed under `## Ready`, `## Needs a decision` or
+ `## Waiting`, which is what says whether it can be started today. Where *no*
+ entry uses those three and every one of them sits under a heading of its own,
+ that is a repository with its own vocabulary rather than one leaving entries
+diff --git a/docs/plans/2026-09-28-todo-check-line-numbers.md b/docs/plans/2026-09-28-todo-check-line-numbers.md
+new file mode 100644
+index 00000000..fa042d0c
+--- /dev/null
++++ b/docs/plans/2026-09-28-todo-check-line-numbers.md
+@@ -0,0 +1,350 @@
++---
++status: design-intent
++---
++
++# todo-check Validates a Citation's Line Number — Implementation Plan
++
++**Goal:** `scripts/todo-check.js` reports `past end` and exits 1 when a TODO.md
++entry cites a `path:N` or `path:N-M` line range past the end of the file it
++names, instead of silently exiting 0 as it does today.
++
++**Architecture:** Reuse `docs-check.js`'s own line counter rather than writing
++a second one. `todo-check.js` reads a citation's line number from the two
++places it can appear — a backtick-quoted `PATHISH` span, and the target of a
++markdown link — and checks each against `lineCount`. Fixing the existing
++`linksIn` so a `:N` suffix is stripped before the file-existence check is part
++of the same change: today that suffix makes a real file read as a dead one.
++
++**Tech Stack:** Node's built-in `node:test`, no new dependency — `package.json`
++declares none beyond the runtime itself (`"test": "node --test"`, version
++0.79.0).
++
++**Spec:** [docs/plans/2026-09-25-todo-line-and-multiplier-design.md](2026-09-25-todo-line-and-multiplier-design.md)
++§1. That design covers three unrelated items in one document (§1 todo-check,
++§2 a Sonnet-multiplier measurement, §3 TODO.md housekeeping); this plan
++delivers only §1 and the todo-check half of §3's first bullet. The rest is
++struck in the Coverage table below with the task that actually owns it.
++
++## Global Constraints
++
++From `node scripts/map.js`:
++- `lib/` is the logic, as functions tested directly; `scripts/` are thin
++  wrappers over `lib/` — but `todo-check.js` and `docs-check.js` are already
++  filed only under `scripts/`, with no `lib/` counterpart, so keeping the new
++  code there matches the existing shape rather than introducing one.
++- `tests/` is `node --test`, one file per module or behaviour — the three new
++  fixtures go into the existing `tests/todo-check.test.js`, not a new file.
++- `docs/plans` is filed with role `plan` — this document belongs there, and
++  the design it argues from is filed the same way.
++- No `.fankeel/map.md` conflict: nothing here contradicts a page the map
++  lists as current, and nothing here is `design-intent` being treated as
++  built.
++
++From `package.json`: `"test": "node --test"`; no dependency list to respect
++beyond Node's own built-ins.
++
++No `CLAUDE.md` exists in this repository (checked at the repository root) —
++no additional conventions to copy from it.
++
++## Task 1: todo-check validates a citation's line number
++
++**Files:**
++- Modify: `scripts/docs-check.js` — export `lineCount`
++- Modify: `scripts/todo-check.js` — read a citation's line number from a
++  backtick span or a link target, check it against `lineCount`, report
++  `past end`; fix `linksIn` to strip `:N`/`:N-M` before the existence check
++- Modify: `TODO.md` — bump the "enforces all nine" count to ten with the new
++  clause, and remove the delivered `〔docs〕todo-check 不驗行號` bullet
++- Test: `tests/todo-check.test.js` — three new fixtures
++
++**Interfaces:**
++- Consumes: none — this plan has only one task
++- Produces: none — nothing later depends on this
++
++**Dispatch:** implementer, sonnet
++
++### 1. `scripts/docs-check.js` — export `lineCount`
++
++`lineCount` is already implemented at `scripts/docs-check.js:155`; only its
++export is missing. In `scripts/docs-check.js`, replace the `module.exports`
++line (currently the file's last line) with:
++
++```js
++module.exports = { scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown, lineCount };
++```
++
++### 2. `scripts/todo-check.js` — import `PATHISH` and `lineCount`
++
++In `scripts/todo-check.js`, after the existing `const docs = require('../lib/docs.js');`
++line, add:
++
++```js
++const { PATHISH, lineCount } = require('./docs-check.js');
++```
++
++### 3. `scripts/todo-check.js` — a `BACKTICK` regex beside `LINK`/`EXTERNAL`
++
++In `scripts/todo-check.js`, immediately after the existing `const EXTERNAL = /^(?:[a-z][a-z0-9+.-]*:|#|\/\/)/i;`
++line, add:
++
++```js
++// A backtick span is not necessarily a citation — most are code fragments
++// with no line number at all. Only one shaped like `PATHISH` with a `:N`
++// counts, which is what the past-end check below tests for.
++const BACKTICK = /`([^`]+)`/g;
++```
++
++### 4. `scripts/todo-check.js` — replace `linksIn` with `linkTargets` and `pastEnd`
++
++The whole point is a link's line number, so `linksIn` has to carry it. In
++`scripts/todo-check.js`, replace this whole function:
++
++```js
++function linksIn(text) {
++    const out = [];
++    LINK.lastIndex = 0;
++    let m;
++    while ((m = LINK.exec(text)) !== null) {
++        const target = m[1].trim().split(/\s+/)[0].replace(/^<|>$/g, '');
++        if (!target || EXTERNAL.test(target)) continue;
++        out.push(target.split('#')[0]);
++    }
++    return out;
++}
++```
++
++with these three, still in `scripts/todo-check.js`:
++
++```js
++// Every link target, split into the path and the `:N`/`:N-M` it names — the
++// two forms `docs-check.js`'s own `PATHISH` already reads. A target with no
++// `:N` gets `from`/`to` of `null`, which is how the past-end check below
++// knows there is no line to check. Stripping the `:N` here, before the
++// existence check that reads `.path`, is the fix: today a link written
++// `path:99999` is read whole and reported `dead link` for the wrong reason —
++// the file exists, only the line does not.
++function linkTargets(text) {
++    const out = [];
++    LINK.lastIndex = 0;
++    let m;
++    while ((m = LINK.exec(text)) !== null) {
++        const target = m[1].trim().split(/\s+/)[0].replace(/^<|>$/g, '');
++        if (!target || EXTERNAL.test(target)) continue;
++        const stripped = target.split('#')[0];
++        const span = PATHISH.exec(stripped);
++        out.push(span
++            ? { path: span[1], from: span[2] ? Number(span[2]) : null, to: span[3] ? Number(span[3]) : (span[2] ? Number(span[2]) : null) }
++            : { path: stripped, from: null, to: null });
++    }
++    return out;
++}
++
++// The path alone, for the two callers that never needed the line number: the
++// dead-link/stale-citation loop below, and the "linksIn keeps only
++// in-repository targets" contract the existing test already asserts.
++function linksIn(text) {
++    return linkTargets(text).map((l) => l.path);
++}
++
++// A citation is wrong when the file it names exists but the line does not.
++// `total` is `null` for a file that does not exist, and that is `dead link`'s
++// question, not this one's — a citation with no line to check (`from` was
++// never reached, or `total` is `null`) is silently fine here. Role is not
++// asked: `past end` does not care whether the file is reference or report.
++function pastEnd(base, p, from, to) {
++    const total = lineCount(base, p);
++    if (total === null || (from <= total && to <= total)) return null;
++    return p + ':' + (from === to ? from : from + '-' + to) + ' is past end — ' + p + ' has ' + total + ' lines.';
++}
++```
++
++### 5. `scripts/todo-check.js` — wire the check into `check()`
++
++In `scripts/todo-check.js`, in `check()`, replace this loop:
++
++```js
++        for (const target of linksIn(entry.text)) {
++            const full = path.resolve(base, target);
++            if (!fs.existsSync(full)) {
++                problems.push({
++                    line: entry.line,
++                    kind: 'dead link',
++                    detail: target + ' does not exist. Either the entry is finished and should be removed, or the detail moved.',
++                });
++                continue;
++            }
++            const role = docs.roleOf(tree, path.relative(base, full));
++            if (STALE_ROLES.includes(role)) {
++                problems.push({
++                    line: entry.line,
++                    kind: 'stale citation',
++                    detail: target + ' is filed as ' + role + ', a role that records a moment rather than the present. Point at the code this is about, or at a reference page.',
++                });
++            }
++        }
++    }
++```
++
++with this, still in `scripts/todo-check.js`:
++
++```js
++        for (const link of linkTargets(entry.text)) {
++            const full = path.resolve(base, link.path);
++            if (!fs.existsSync(full)) {
++                problems.push({
++                    line: entry.line,
++                    kind: 'dead link',
++                    detail: link.path + ' does not exist. Either the entry is finished and should be removed, or the detail moved.',
++                });
++                continue;
++            }
++            if (link.from !== null) {
++                const detail = pastEnd(base, link.path, link.from, link.to);
++                if (detail) problems.push({ line: entry.line, kind: 'past end', detail });
++            }
++            const role = docs.roleOf(tree, path.relative(base, full));
++            if (STALE_ROLES.includes(role)) {
++                problems.push({
++                    line: entry.line,
++                    kind: 'stale citation',
++                    detail: link.path + ' is filed as ' + role + ', a role that records a moment rather than the present. Point at the code this is about, or at a reference page.',
++                });
++            }
++        }
++        // A backtick span carries no existence claim — only a link does — but
++        // one shaped `path:N` still claims a line, and that claim is checked
++        // regardless of whether it is also linked anywhere in the entry.
++        BACKTICK.lastIndex = 0;
++        let bt;
++        while ((bt = BACKTICK.exec(entry.text)) !== null) {
++            const span = PATHISH.exec(bt[1].trim());
++            if (!span || !span[2]) continue;
++            const from = Number(span[2]);
++            const to = span[3] ? Number(span[3]) : from;
++            const detail = pastEnd(base, span[1], from, to);
++            if (detail) problems.push({ line: entry.line, kind: 'past end', detail });
++        }
++    }
++```
++
++`past end` lands between `dead link` and `stale citation` for the same link
++target, and `problems.sort((a, b) => a.line - b.line)` a few lines below is a
++stable sort, so that insertion order is what a reader sees for one entry.
++
++### 6. `TODO.md` — count bump and the delivered bullet
++
++In `TODO.md`, replace the paragraph that currently reads (lines 55-65):
++
++```md
++`node scripts/todo-check.js` enforces all nine: a link that no longer resolves is
++an entry someone forgot to close, a link that still resolves but points at a
++plan, a decision record, a report or an archive is the same entry one step
++earlier — those four roles record a moment rather than the present, so the detail
++behind the bullet is pointing at history however fresh that history is — an entry
++over the length cap is detail written here instead of where it belongs, an entry
++under any other heading is one nobody said the state of, a `## Waiting` entry
++under no timing is one nobody said what it waits for, a timing with no stamp is
++one nobody can tell a fresh deferral from a forgotten one, a timing with no
++`lifts when:` is one nobody is waiting for, a timing with no entries is waiting
++for nothing, and a title over 28 columns is a sentence where a name belongs.
++```
++
++with this, still in `TODO.md`:
++
++```md
++`node scripts/todo-check.js` enforces all ten: a link that no longer resolves is
++an entry someone forgot to close, a citation — backtick-quoted or linked — whose
++`:line` is past the end of the file it names is the same wrong pointer one
++character short of working, a link that still resolves but points at a
++plan, a decision record, a report or an archive is the same entry one step
++earlier — those four roles record a moment rather than the present, so the detail
++behind the bullet is pointing at history however fresh that history is — an entry
++over the length cap is detail written here instead of where it belongs, an entry
++under any other heading is one nobody said the state of, a `## Waiting` entry
++under no timing is one nobody said what it waits for, a timing with no stamp is
++one nobody can tell a fresh deferral from a forgotten one, a timing with no
++`lifts when:` is one nobody is waiting for, a timing with no entries is waiting
++for nothing, and a title over 28 columns is a sentence where a name belongs.
++```
++
++Then, in `TODO.md` under `## Ready`, remove this line:
++
++```md
++- 〔docs〕todo-check 不驗 `path:line` 的行號：改成不存在的行仍然 exit 0 — [scripts/todo-check.js](scripts/todo-check.js). docs-check 補得到一部分，但卡 role、引文與讀得到目標三個前提。
++```
++
++leaving the other three `## Ready` bullets (`〔quota〕`, `〔stage-agents〕`,
++`〔security〕`) untouched — they belong to other tasks.
++
++### 7. `tests/todo-check.test.js` — three fixtures, red then green
++
++In `tests/todo-check.test.js`, after the existing test `'an indented
++continuation counts toward the entry it belongs to'` (the file's last test),
++add:
++
++```js
++test('a backtick citation whose line number is past the end of the file is past end', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- fine, see `scripts/todo-check.js:99999`.\n', { 'scripts/todo-check.js': 'a\nb\nc\n' });
++  const { out, code } = run(file);
++  assert.equal(code, 1);
++  assert.match(out, /past end/);
++  assert.match(out, /scripts\/todo-check\.js:99999 is past end — scripts\/todo-check\.js has 3 lines/);
++});
++
++test('a linked citation whose line number is past the end of the file is past end, not a dead link', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- fine, see [x](scripts/todo-check.js:99999).\n', { 'scripts/todo-check.js': 'a\nb\nc\n' });
++  const { out, code } = run(file);
++  assert.equal(code, 1);
++  assert.match(out, /past end/);
++  assert.equal(/dead link/.test(out), false);
++});
++
++test('a citation whose line number is within range passes', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- fine, see `scripts/todo-check.js:2`, and [also here](scripts/todo-check.js:1-3).\n', { 'scripts/todo-check.js': 'a\nb\nc\n' });
++  assert.deepEqual(kinds(file), []);
++});
++```
++
++Run only this task's own test command — `node --test tests/todo-check.test.js`
++— and watch the first two fail before the code changes above land, then pass
++after. `docs-check.test.js` is read-only affected (a new export, no changed
++behaviour) and does not need a new assertion of its own.
++
++## Coverage
++
++| promise | task |
++|---|---|
++| `scripts/docs-check.js` 匯出 `lineCount`（`PATHISH` 已經匯出），todo-check 直接用，不另寫一份行數計算。 | Task 1 |
++| `scripts/todo-check.js` 讀每條 bullet 裡的兩種位置：反引號包住、符合 `PATHISH` 的 span，以及 markdown 連結的 target。行號（`:N` 或 `:N-M`）超過 `lineCount` 時報 `past end`，exit 1。 | Task 1 |
++| 連結 target 帶 `:N` 時，先把 `:N` 拆掉再檢查檔案存不存在。今天整串被當成檔名，報的是 `dead link`，理由錯了。 | Task 1 |
++| 不支援 `#L12`。docs-check 也不認這個寫法，TODO.md 現在也沒有人用；要支援是另一件事。 | Task 1 — not implemented, by design (unsupported syntax, matching docs-check) |
++| `past end` 不看 role，所以放在 `dead link` 之後、`stale citation` 之前。 | Task 1 |
++| TODO.md 開頭「enforces all nine」的敘述跟著改成十條，並補上這一條在檢查什麼。 | Task 1 |
++| 要填的格子：`docs/reports/2026-09-21-long-task-projection.md` 的 `k`，也就是 Sonnet 主控在沒有站 agent 的那幾站，token 用量是 Opus 的幾倍（破平衡點 `k = 2.5052`）。 | struck — §2's Sonnet-multiplier measurement is a separate, independently budgeted task ($125); this plan's task text is scoped to the todo-check item only |
++| harness 寫在 `docs/reports/evidence/2026-09-25-controller-multiplier/ab.sh`，以 `docs/reports/evidence/2026-09-20-survey-brain-ab/ab7.sh` 的 `arm()` 為底，去掉只有 survey-brain 那次實驗才要的複製插件與 patch。 | struck — same reason |
++| 兩個 arm 唯一的差別是主控的 `--model`：opus 對 sonnet。固定不動的有：同一個 task（就是 §1 本身）、同一個起點 sha、各自一個 worktree、同一份 survey 報告當輸入、route 走 design,plan,build,verify。 | struck — same reason |
++| headless 沒有辦法回答 gate，所以每一站用一次 `claude -p --resume` 推進，prompt 寫明「gate 選 option one」。 | struck — same reason |
++| 成本讀 `--output-format json` 的 `modelUsage` 與 `total_cost_usd`。 | struck — same reason |
++| 兩個 arm 合計超過 $125 就停，報告照實寫「超支中止」。 | struck — same reason |
++| 結果寫成新的 report 頁 `docs/reports/2026-09-25-controller-multiplier.md`，寫進 `k`、兩邊的 `modelUsage`、起點 sha 與 harness 的 md5。 | struck — same reason |
++| 只量了一個 task，`k` 只代表這一個 task。報告要把這一點寫在第一段。 | struck — same reason |
++| `〔docs〕todo-check 不驗行號` 與 `〔stage-agents〕量 Sonnet 主控倍數` 由交付它們的 task 刪掉。 | Task 1 delivers the `〔docs〕` half only; the `〔stage-agents〕` half belongs to that item's own task |
++| `〔quota〕7d 水位` 退回 `## Waiting`，新的 timing 是「TokenBar 寫出真實序列」。 | struck — a separate TODO.md housekeeping item, not this task's `〔docs〕` bullet |
++| `〔security〕` 不動，留在 `## Ready`。 | struck — not this task's bullet; no change needed here either way |
++| `tests/todo-check.test.js` 新增：bullet 帶 `` `scripts/todo-check.js:99999` `` 時 exit 1、輸出含 `past end`；連結 `[x](scripts/todo-check.js:99999)` 也一樣；在範圍內的行號 exit 0。三條都要先紅後綠。 | Task 1 |
++| artefact 這一格：報告頁裡的 `k`，要等於同頁兩個 arm 的 token 數相除。 | struck — belongs to §2's measurement task; this task produces no such artefact |
++
++## Self-review
++
++1. **Placeholders** — none; every fence holds real code or real prose, no `TBD`.
++2. **Internal consistency** — the `past end` detail string is written once, in
++   `pastEnd`, and both call sites (link and backtick) use it, so the message a
++   test asserts on is the same message either path produces.
++3. **Scope** — one task, one file group, one test cycle. Not a decomposition
++   candidate.
++4. **Ambiguity** — "past the end" is exact: `from > total || to > total`
++   against `lineCount`'s count of real lines (trailing newline not counted,
++   per `docs-check.js`'s own `linesOf`).
++5. **Against the project** — checked against `.fankeel/map.md` above; no
++   conflict, and the design this argues from is correctly filed as `plan`
++   (design-intent, not yet built).
+diff --git a/docs/station.md b/docs/station.md
+index 20d89703..83f08aec 100644
+--- a/docs/station.md
++++ b/docs/station.md
+@@ -905,7 +905,7 @@ page's own `todoEntry`, and checks it with `scripts/todo-check.js`'s own
+ it — so the link resolves from the same directory against the same
+ `docs.json` — and a problem the copy has that the file did not is answered
+ `400` with that problem's kind and detail, the file untouched. So the cap, a
+-link that must resolve, and a link that must not point at a plan, decision,
++link that must resolve, a link's `:N` line number that must not be past the file's end, and a link that must not point at a plan, decision,
+ report or archive are todo-check's rules and nobody else's. A clean line
+ answers `201` with the line written; a wrong nonce is `403`, a session not on
+ the page `404`, and a `TODO.md` with no `## Needs a decision` heading `409`.
+diff --git a/scripts/docs-check.js b/scripts/docs-check.js
+index 02cdbf83..68eb391d 100644
+--- a/scripts/docs-check.js
++++ b/scripts/docs-check.js
+@@ -559,4 +559,4 @@ if (require.main === module) {
+     process.exit(code);
+ }
+ 
+-module.exports = { scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown };
++module.exports = { scan, report, parseArgs, resolveRef, LINK, CODE, PATHISH, external, readFile, isMarkdown, lineCount };
+diff --git a/scripts/todo-check.js b/scripts/todo-check.js
+index fd55a1ed..787b76aa 100644
+--- a/scripts/todo-check.js
++++ b/scripts/todo-check.js
+@@ -40,6 +40,7 @@ const path = require('node:path');
+ const { parseArgs } = require('node:util');
+ 
+ const docs = require('../lib/docs.js');
++const { PATHISH, lineCount } = require('./docs-check.js');
+ const { resolveRoot } = require('../lib/registry.js');
+ const { blameTimes } = require('../lib/blame.js');
+ 
+@@ -195,6 +196,11 @@ const LINK = /\[[^\]]*\]\(([^)]+)\)/g;
+ // neither is something this can check.
+ const EXTERNAL = /^(?:[a-z][a-z0-9+.-]*:|#|\/\/)/i;
+ 
++// A backtick span is not necessarily a citation — most are code fragments
++// with no line number at all. Only one shaped like `PATHISH` with a `:N`
++// counts, which is what the past-end check below tests for.
++const BACKTICK = /`([^`]+)`/g;
++
+ // Top-level bullets only. An indented bullet is a continuation of the entry
+ // above it and is measured as part of it, not as an entry of its own.
+ //
+@@ -246,18 +252,41 @@ function entries(text) {
+     return out;
+ }
+ 
+-function linksIn(text) {
++// Every link target, split into the path and the `:N`/`:N-M` it names — the
++// two forms `docs-check.js`'s own `PATHISH` already reads. A target with no
++// `:N` gets `from`/`to` of `null`, which is how the past-end check below
++// knows there is no line to check. Stripping the `:N` here, before the
++// existence check that reads `.path`, is the fix: today a link written
++// `path:99999` is read whole and reported `dead link` for the wrong reason —
++// the file exists, only the line does not.
++function linkTargets(text) {
+     const out = [];
+     LINK.lastIndex = 0;
+     let m;
+     while ((m = LINK.exec(text)) !== null) {
+         const target = m[1].trim().split(/\s+/)[0].replace(/^<|>$/g, '');
+         if (!target || EXTERNAL.test(target)) continue;
+-        out.push(target.split('#')[0]);
++        const stripped = target.split('#')[0];
++        const span = PATHISH.exec(stripped);
++        const from = span && span[2] ? Number(span[2]) : null;
++        out.push(span
++            ? { path: span[1], from, to: span[3] ? Number(span[3]) : from }
++            : { path: stripped, from: null, to: null });
+     }
+     return out;
+ }
+ 
++// A citation is wrong when the file it names exists but the line does not.
++// `total` is `null` for a file that does not exist, and that is `dead link`'s
++// question, not this one's — a citation with no line to check (`from` was
++// never reached, or `total` is `null`) is silently fine here. Role is not
++// asked: `past end` does not care whether the file is reference or report.
++function pastEnd(base, p, from, to) {
++    const total = lineCount(base, p);
++    if (total === null || (from <= total && to <= total)) return null;
++    return p + ':' + (from === to ? from : from + '-' + to) + ' is past end — ' + p + ' has ' + total + ' lines.';
++}
++
+ // Every `###` under `## Waiting`, with the line after it read as its lifts line:
+ // the event it waits for and the day somebody last agreed it still does. The
+ // first non-blank line is taken whatever it says, so a line with a stamp and no
+@@ -337,25 +366,42 @@ function check(file, now) {
+                 detail: len + ' characters, cap is ' + MAX_ENTRY_CHARS + '. Move the detail into the file this points at.',
+             });
+         }
+-        for (const target of linksIn(entry.text)) {
+-            const full = path.resolve(base, target);
++        for (const link of linkTargets(entry.text)) {
++            const full = path.resolve(base, link.path);
+             if (!fs.existsSync(full)) {
+                 problems.push({
+                     line: entry.line,
+                     kind: 'dead link',
+-                    detail: target + ' does not exist. Either the entry is finished and should be removed, or the detail moved.',
++                    detail: link.path + ' does not exist. Either the entry is finished and should be removed, or the detail moved.',
+                 });
+                 continue;
+             }
++            if (link.from !== null) {
++                const detail = pastEnd(base, link.path, link.from, link.to);
++                if (detail) problems.push({ line: entry.line, kind: 'past end', detail });
++            }
+             const role = docs.roleOf(tree, path.relative(base, full));
+             if (STALE_ROLES.includes(role)) {
+                 problems.push({
+                     line: entry.line,
+                     kind: 'stale citation',
+-                    detail: target + ' is filed as ' + role + ', a role that records a moment rather than the present. Point at the code this is about, or at a reference page.',
++                    detail: link.path + ' is filed as ' + role + ', a role that records a moment rather than the present. Point at the code this is about, or at a reference page.',
+                 });
+             }
+         }
++        // A backtick span carries no existence claim — only a link does — but
++        // one shaped `path:N` still claims a line, and that claim is checked
++        // regardless of whether it is also linked anywhere in the entry.
++        BACKTICK.lastIndex = 0;
++        let bt;
++        while ((bt = BACKTICK.exec(entry.text)) !== null) {
++            const span = PATHISH.exec(bt[1].trim());
++            if (!span || !span[2]) continue;
++            const from = Number(span[2]);
++            const to = span[3] ? Number(span[3]) : from;
++            const detail = pastEnd(base, span[1], from, to);
++            if (detail) problems.push({ line: entry.line, kind: 'past end', detail });
++        }
+     }
+ 
+     // The stamp and the event live on the timing now, one line for every entry
+@@ -523,4 +569,4 @@ if (require.main === module) {
+     process.exit(ok ? 0 : 1);
+ }
+ 
+-module.exports = { MAX_ENTRY_CHARS, REREAD_DAYS, SECTIONS, linksIn, entries, timings, width, mmdd, check, report, main };
++module.exports = { MAX_ENTRY_CHARS, REREAD_DAYS, SECTIONS, linkTargets, entries, timings, width, mmdd, check, report, main };
+diff --git a/tests/todo-check.test.js b/tests/todo-check.test.js
+index 8f28b71f..1b218550 100644
+--- a/tests/todo-check.test.js
++++ b/tests/todo-check.test.js
+@@ -125,8 +125,8 @@ test('every problem in a file is reported, not just the first', () => {
+   assert.deepEqual(kinds(file), ['dead link', 'dead link', 'too long']);
+ });
+ 
+-test('linksIn keeps only in-repository targets', () => {
+-  assert.deepEqual(todo.linksIn('[a](docs/a.md) [b](https://x/y) [c](#z) [d](../up.md)'), ['docs/a.md', '../up.md']);
++test('linkTargets keeps only in-repository targets', () => {
++  assert.deepEqual(todo.linkTargets('[a](docs/a.md) [b](https://x/y) [c](#z) [d](../up.md)').map((l) => l.path), ['docs/a.md', '../up.md']);
+ });
+ 
+ // The classification is by decision state, and the heading carries it. An entry
+@@ -259,7 +259,7 @@ test('a decision record marked current is still a stale citation', () => {
+ // `report` or `archive` from that list left the whole suite green. The `#anchor`
+ // is the third case here because it is the form the entries that motivated this
+ // check actually used — `fankeel-shell.md`, "What is still a guess" — and
+-// `linksIn` throws away everything after the `#`, so the role lookup has to
++// `linkTargets` throws away everything after the `#`, so the role lookup has to
+ // survive that. The fourth bullet is the control: a reference page in the same
+ // run, which has to stay clean or the other three prove nothing.
+ test('archive and report are stale citations too, and an #anchor does not hide the role', () => {
+@@ -649,3 +649,24 @@ test('the re-read list prints a due date timing by its date, with its title', ()
+   const text = todo.report(todo.check(file, new Date(2026, 8, 5, 12, 0, 0).getTime()));
+   assert.match(text, /09-05\s+gates \(1\) — 09-05 onward/);
+ });
++
++test('a backtick citation whose line number is past the end of the file is past end', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- fine, see `scripts/todo-check.js:99999`.\n', { 'scripts/todo-check.js': 'a\nb\nc\n' });
++  const { out, code } = run(file);
++  assert.equal(code, 1);
++  assert.match(out, /past end/);
++  assert.match(out, /scripts\/todo-check\.js:99999 is past end — scripts\/todo-check\.js has 3 lines/);
++});
++
++test('a linked citation whose line number is past the end of the file is past end, not a dead link', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- fine, see [x](scripts/todo-check.js:99999).\n', { 'scripts/todo-check.js': 'a\nb\nc\n' });
++  const { out, code } = run(file);
++  assert.equal(code, 1);
++  assert.match(out, /past end/);
++  assert.equal(/dead link/.test(out), false);
++});
++
++test('a citation whose line number is within range passes', () => {
++  const file = fixture('# TODO\n\n## Ready\n\n- fine, see `scripts/todo-check.js:2`, and [also here](scripts/todo-check.js:1-3).\n', { 'scripts/todo-check.js': 'a\nb\nc\n' });
++  assert.deepEqual(kinds(file), []);
++});

@@ -1,0 +1,8 @@
+ TODO.md                                          |   7 +-
+ docs/development.md                              |   3 +-
+ docs/plans/2026-09-28-todo-check-line-numbers.md | 350 +++++++++++++++++++++++
+ docs/station.md                                  |   2 +-
+ scripts/docs-check.js                            |   2 +-
+ scripts/todo-check.js                            |  60 +++-
+ tests/todo-check.test.js                         |  27 +-
+ 7 files changed, 435 insertions(+), 16 deletions(-)

@@ -1,0 +1,6 @@
+ TODO.md                                  |   6 +-
+ docs/plans/2026-09-28-todo-check-line.md | 202 +++++++++++++++++++++++++++++++
+ scripts/docs-check.js                    |   2 +-
+ scripts/todo-check.js                    |  34 +++++-
+ tests/todo-check.test.js                 |  22 ++++
+ 5 files changed, 261 insertions(+), 5 deletions(-)
