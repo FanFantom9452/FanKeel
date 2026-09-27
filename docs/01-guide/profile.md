@@ -34,6 +34,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。�
 | `station.hide` | 這個專案要不要從監控站隱藏 | `true`、`false`；內建 `false` | `false` |
 | `gate.station` | gate 發出後，等監控站作答幾秒；`off` 不等 | `off`，或 1 到 600 的秒數（精靈列 `60`、`120`、`300`）；內建 `off` | `off` |
 | `stage.agents` | 哪幾站交給站 agent 在乾淨 context 裡跑，主控只轉路徑 | `false`、`true`、`all`，或逗號分隔的站名；內建 `false` | `survey` |
+| `worktree` | 起任務時開自己的 git worktree（`.fankeel/worktrees/<id 前 8 碼>/`，分支 `fk/<id 前 8 碼>`），共用樹的誤記消失、真衝突留到 land 合併 | `true`、`false`；內建 `false` | `false` |
 | `security.local` | verify 的 security lens 先交給哪個本地 ollama 模型篩 | 一個 ollama 模型名稱 | 沒有本地模型就不設 |
 | `prompt.all`、`prompt.<站>` | 附在每一站（或某一站）規則最後的一句自訂 prompt | 一行文字 | 需要時才設 |
 

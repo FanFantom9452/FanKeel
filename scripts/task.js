@@ -21,6 +21,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { parseArgs: parseArgv } = require('node:util');
+const { execFileSync } = require('node:child_process');
 
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
@@ -28,7 +29,7 @@ const badge = require('../lib/badge.js');
 const station = require('../lib/station.js');
 const { clearEntry } = require('../lib/clear.js');
 const { tokens } = require('../lib/context.js');
-const { guardMode, sharedWith } = require('../lib/guard.js');
+const { guardMode, sharedWith, worktreeOf } = require('../lib/guard.js');
 const { splitAroundVerb } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 const profile = require('../lib/profile.js');
@@ -315,6 +316,8 @@ function describe(root, sessionId, data) {
     if (project) lines.push('project: ' + project);
     const claims = registry.claimsOf(data);
     if (claims.length) lines.push('touched: ' + claims.join(', '));
+    const wt = worktreeOf(data);
+    if (wt) lines.push('worktree: ' + wt.path + ' (' + wt.branch + ')');
     // Only the stages this route holds, in the order it runs them, and only the
     // ones sampled more than once. A stage with one sighting has no distance to
     // report and is left out rather than shown as zero.
@@ -611,6 +614,15 @@ function cmdStart(root, opts) {
     }
     if (Object.keys(profileSnapshot).length) data.profile = profileSnapshot;
 
+    // Its own checkout, where the profile asks for one. A git that refuses
+    // leaves the task on the main tree and says why, rather than refusing it.
+    let worktreeNote = null;
+    if (prof.values.worktree === true) {
+        const made = openWorktree(root, projectRootFor(root, opts), id);
+        if (made.worktree) data.worktree = made.worktree;
+        else worktreeNote = 'worktree: not opened — ' + made.error;
+    }
+
     // `replace` rather than `update`: this record was built from scratch a few
     // lines up, so there is nothing of anyone else's in the file to preserve.
     // What the lock buys is that a hook firing on the prompt that ran this
@@ -644,6 +656,7 @@ function cmdStart(root, opts) {
     lines.push(effortHint(data.class || classForRoute(route), data.stage));
     lines.push('');
     for (const line of describe(root, id, data)) lines.push('  ' + line);
+    if (worktreeNote) lines.push('  ' + worktreeNote);
     if (prof.sources.guard && prof.sources.guard !== 'builtin') lines[lines.findIndex((l) => l.startsWith('  guard:'))] += ' (profile)';
 
     // Only when the project has never answered anything — a project with a
@@ -910,6 +923,25 @@ function projectRootFor(root, opts) {
     return roots[0] || root;
 }
 
+// `git worktree add -b fk/<id8> .fankeel/worktrees/<id8>` in the project's
+// repository, with `worktrees/` in its `.fankeel/.gitignore` first so the main
+// tree's `git status` and a Grep never see the checkout. `path` is kept
+// relative to the registry root, forward slashes, the way every claim is.
+// A refusal comes back as git's first line, never as a throw.
+function openWorktree(root, repo, id) {
+    const id8 = id.slice(0, 8);
+    const rel = '.fankeel/worktrees/' + id8;
+    const branch = 'fk/' + id8;
+    try {
+        registry.ensureIgnored(repo, ['worktrees/']);
+        execFileSync('git', ['worktree', 'add', '-b', branch, rel], { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch (e) {
+        const said = String((e && e.stderr) || (e && e.message) || '').trim().split(/\r?\n/)[0];
+        return { error: said || 'git worktree add failed' };
+    }
+    return { worktree: { path: path.relative(root, path.join(repo, rel)).split(path.sep).join('/'), branch } };
+}
+
 // Nothing here touches a session entry: a profile is the project's, not the
 // task's, so `--session` is not required and no badge is written.
 function cmdProfile(root, opts) {
@@ -1076,6 +1108,7 @@ function cmdAdopt(root, opts) {
     if (source.next) data.next = source.next;
     if (source.guard) data.guard = source.guard;
     if (source.floor) data.floor = source.floor;
+    if (source.worktree) data.worktree = source.worktree;
     // The rename's lap base goes with the task. `moves` crosses over below, and without
     // this a renamed task adopted here would number its laps from the old task's again.
     if (Number.isInteger(source.lapped) && source.lapped > 0) data.lapped = source.lapped;

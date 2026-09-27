@@ -49,7 +49,7 @@ test('the summary lists every profile key, design.skill included, with no dropdo
     const out = summary(load());
     const rows = out.match(/<div class="sr[^"]*" data-key="/g) || [];
     assert.equal(rows.length, Object.keys(KEYS).length);
-    assert.equal(rows.length, 12);
+    assert.equal(rows.length, 13);
     assert.match(out, /data-key="design\.skill"/);
     assert.match(out, /data-block="wizard-summary"/);
     assert.ok(!out.includes('<select'));

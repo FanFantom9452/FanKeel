@@ -146,10 +146,11 @@ report where a real parser would cost a dependency this plugin does not have.
 | `map.md` | 否 | 每次 `map.js` 重生 |
 | `build/<plan>/`、`build/ask/` | 否 | 一個 task 在跑時各階段寫下的一切——例如 ledger、brief、report、測試輸出、design 的 `mockup.html`、verify 的證據；列出不清理 |
 | `index.html`、`station/` | 否 | 這台機器的 station 副本，每次 prompt 重寫 |
+| `worktrees/<id8>/` | 否 | profile `worktree: true` 時 `task.js start` 為一個 session 開的 git worktree，分支 `fk/<id8>`；land 合併、測試全綠後 `git worktree remove` |
 | `docs/judgements/`（不在 `.fankeel/`） | 是 | `fankeel-judge` 的判斷，寫完不改（`report`） |
 
 `docs.json` 與 `profile.json` 同層、都進版本控制，是這張表裡唯二「提交」的
-`.fankeel/` 檔——其餘四區都在 `.fankeel/.gitignore` 之內。`docs/judgements/`
+`.fankeel/` 檔——其餘五區都在 `.fankeel/.gitignore` 之內。`docs/judgements/`
 不在 `.fankeel/` 底下，卻也是「寫完不改」的一區：它跟 `docs.json`、
 `profile.json` 一樣提交，但壽命規則更接近一份決定記錄，而不是一份可以重新
 生成的快照。
