@@ -30,11 +30,11 @@ const count = (html, re) => (html.match(re) || []).length;
 
 test('a hash opens a chapter at a frame, and nothing plays it on', (t) => {
     if (!findBrowser()) { t.skip(NO_BROWSER); return; }
-    const html = dom(PAGE + '#quickstart@1140');
-    assert.match(html, /id="trFno"[^>]*>f 1140 \/ 1800 · 60 fps</);
-    assert.match(html, /<b>0:19\.00<\/b> \/ 0:30\.00/);
-    assert.match(html, /aria-valuenow="1140"/);
-    assert.match(html, /aria-valuetext="0:19\.00，gate"/);
+    const html = dom(PAGE + '#quickstart@1380');
+    assert.match(html, /id="trFno"[^>]*>f 1380 \/ 3480 · 60 fps</);
+    assert.match(html, /<b>0:23\.00<\/b> \/ 0:58\.00/);
+    assert.match(html, /aria-valuenow="1380"/);
+    assert.match(html, /aria-valuetext="0:23\.00，survey"/);
     assert.match(html, /data-ch="quickstart" aria-pressed="true"/);
     assert.match(html, /id="trPlay"[^>]*aria-pressed="false"|aria-pressed="false"[^>]*id="trPlay"/);
 });
@@ -56,7 +56,7 @@ test('the scrub bar carries one marker per beat, coloured by its stage', (t) => 
 test('three chapter chips, with their lengths', (t) => {
     if (!findBrowser()) { t.skip(NO_BROWSER); return; }
     const html = dom(PAGE);
-    assert.match(html, /Quick start<small>0:30<\/small>/);
+    assert.match(html, /Quick start<small>0:58<\/small>/);
     assert.match(html, /The stages<small>2:15<\/small>/);
     assert.match(html, /Setup wizard<small>1:00<\/small>/);
 });

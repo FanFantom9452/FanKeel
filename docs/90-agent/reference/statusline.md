@@ -24,7 +24,7 @@ promote to **a line of its own above everything**, with the route position, the
 files claimed, the guard and the collision count each in a field:
 
 ```
-▌FANKEEL BUILD   ●●●○○  ⚿ on  ⚑2  lib/registry.js  rework the colour ramp
+▌FANKEEL BUILD   ●●●○○  ⚿ ask  ⚑2  lib/registry.js  rework the colour ramp
 ▌ Opus 5 | my-project | main ↑2
 ▌ ctx ███▊░░░░░░  38%  │  5h ██████▌░░░  66%
 ```
