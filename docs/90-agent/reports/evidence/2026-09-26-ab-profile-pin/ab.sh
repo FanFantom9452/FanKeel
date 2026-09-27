@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# `docs/reports/evidence/2026-09-26-ab-profile-pin/ab.sh`
-# docs/reports/evidence/2026-09-25-controller-multiplier/ab.sh with one change:
+# `docs/90-agent/reports/evidence/2026-09-26-ab-profile-pin/ab.sh`
+# docs/90-agent/reports/evidence/2026-09-25-controller-multiplier/ab.sh with one change:
 # each arm's stage.agents is committed in its worktree by pin.sh, not only
 # written. On 09-25 the value was written and never committed, and the sonnet
 # arm's self-dispatched brain ran `git stash push -u` / `git stash drop`, which
@@ -20,8 +20,8 @@ set -u
 
 REPO="F:/ymlab/fankeel"
 BASE="9e54e1b70a1dd0ad943b2534d8113bacbee0b7f4"
-EVID="$REPO/docs/reports/evidence/2026-09-26-ab-profile-pin"
-OLD="$REPO/docs/reports/evidence/2026-09-25-controller-multiplier"
+EVID="$REPO/docs/90-agent/reports/evidence/2026-09-26-ab-profile-pin"
+OLD="$REPO/docs/90-agent/reports/evidence/2026-09-25-controller-multiplier"
 WORK="$REPO/.fankeel/build/2026-09-26-ab-profile-pin"
 SURVEY="$REPO/.fankeel/build/task-20260925T000100/survey.md"
 CAP="${CAP:-62.50}"
