@@ -93,8 +93,7 @@ the reading is what gets scheduled.
 - 〔docs〕docs-check 記下文件裡反引號的 code 指向哪個檔，不只查符號存在（graphify `markdown_resolution.py`） — [scripts/docs-check.js](scripts/docs-check.js).
 - 〔review〕reviewer 每條發現附具體失敗情境（什麼輸入得什麼錯），另派一個 reviewer 逐條驗證、沒過就丟（官方 /code-review 與 ultra 的做法） — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 - 〔review〕排除清單與信心門檻：既存問題、linter 會抓、挑剔、被註解消音的不報；security lens 加 17 條硬排除與 10 條判例、低於 0.7 不報 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
-- 〔review〕依 diff 加派專科 lens：動到錯誤處理派 silent-failure（吞錯、靜默失敗），動到註解派 comment 核對逐句對程式碼（pr-review-toolkit） — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
-- 〔audit〕prompt lens：用 prompt-audit 的刪除測試與保留清單審 skills/、agents/、lib/stages.js 注入的規則，原因已不能重現的規則移出注入 — [skills/fankeel-audit/SKILL.md](skills/fankeel-audit/SKILL.md).
+- 〔audit〕residue 把分支已合併、worktree 仍有未 commit 變更的算成用完（只看 `branch --merged`）；09-27 把鄰居正在改的 agent worktree 報成可清 — [scripts/residue.js](scripts/residue.js).
 
 ## Blocked
 

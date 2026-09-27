@@ -136,7 +136,8 @@ the loud side, as it does everywhere in this plugin.
 ## What each row holds
 
 From the entry: `task`, `project`, `stage` on its `route`, `started`,
-`updated`, `claims`, `notes`, `next`, `guard`, the `version` of the plugin that
+`updated`, `claims`, `seen` — the git-scanned paths, weak evidence — `notes`,
+`next`, `guard`, the `version` of the plugin that
 started it — `null` on a record written before that field existed, which is most
 of them — and the stage sums of `burn`,
 `clock` and `waited`. From `hooks/leave.js`: `ended`, `model`, `usage`,

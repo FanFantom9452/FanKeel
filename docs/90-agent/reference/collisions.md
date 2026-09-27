@@ -137,8 +137,8 @@ nobody gets without asking for it.
 deleting the field: absence means `ask` now, so deleting it would turn opting out
 into opting in.
 
-Two rules keep it from becoming a lockout, both inside `blockers()`
-(`lib/guard.js:123`, `function blockers(`) — one asked of every holder, one
+Three rules keep it from becoming a lockout, all inside `blockers()`
+(`lib/guard.js:123`, `function blockers(`) — two asked of every holder, one
 only when this session holds the file too:
 
 - **A dead session's claim never blocks** — `isLive`, `lib/guard.js:126` (`isLive(liveState, o.sessionId`).
@@ -155,6 +155,12 @@ only when this session holds the file too:
   still be found dead. An entry that names no directory, or names the one
   already scanned, is checked against that scan only when the scan is known
   good, and can be judged dead there (`isLive`, `lib/live.js`).
+- **A different worktree never blocks** — `lib/guard.js:132`
+  (`if (treeOf(data) !== treeOf(mine)) continue;`). A neighbour working in its
+  own per-session worktree (`.fankeel/worktrees/<id8>/`, see `worktreeOf`) is
+  skipped before either other rule is reached; across trees an overlap is a
+  merge to reconcile at land, not a clash (`sharedWith` returns `{clash,
+  merge}`).
 - **The older task holds** — `claimedFirst`, `lib/guard.js:134` (`!claimedFirst(data, mine)`). When
   both sessions claim the file, the newer one yields — so two sessions
   that both reached it cannot block each other into a stalemate.
