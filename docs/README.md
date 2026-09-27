@@ -6,7 +6,7 @@ source_of_truth: this file is the index; each page below is its own source
 
 # FanKeel documentation
 
-Eleven pages, one question each. The front page has install, update and
+Fifteen pages, one question each. The front page has install, update and
 uninstall, the two diagrams and a short introduction to each of these;
 everything that needs more than a paragraph is here. For a person who is not
 running a session, the station's 文件 page (`#/docs`) turns each project's own
@@ -14,6 +14,10 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 
 | I want to know | Page |
 |---|---|
+| 第一次用：安裝、第一次 `/fankeel`、選 task、走完一條 route、看監控站 | [getting-started.md](01-guide/getting-started.md) |
+| 七站各產出什麼、三種類別、gate 怎麼答、registry 是什麼（給人讀的短版） | [concepts.md](01-guide/concepts.md) |
+| 每個 profile key 的意思與建議值，以及在站頁精靈怎麼套 | [profile.md](01-guide/profile.md) |
+| 監控站每個 view 看什麼、數字怎麼讀 | [station.md](01-guide/station.md) |
 | What `/fankeel` asks me, and what each answer does | [pipeline.md](02-architecture/pipeline.md) |
 | What the seven stages are and what each produces | [pipeline.md](02-architecture/pipeline.md) |
 | What the steps inside one stage are, and where it branches | [pipeline.md](02-architecture/pipeline.md) — *inside each stage* |
