@@ -96,7 +96,7 @@ this task has edited — at most sixty, each recorded whole and never truncated,
 because nothing here is a path a human retypes. `claims` and `seen` reach that cap
 from opposite directions. A path arriving on its own drops the oldest to make
 room (`lib/registry.js:728`, `slice(-MAX_CLAIMS)`); a git pass holding more than sixty is refused
-whole rather than trimmed (`lib/dirty.js:176`, `declined: written.length`), because trimming it would evict
+whole rather than trimmed (`lib/dirty.js:183`, `declined: written.length`), because trimming it would evict
 every earlier path in `seen` and put build output in its place.
 [collisions.md](collisions.md) is the page for that. `hooks/touch.js` appends to it,
 which is why the table above lists a hook rather than a command as its writer.
@@ -501,7 +501,7 @@ Writing the file is atomic — a sibling, then a rename — but reading it, chan
 one field and writing it back is not, and that is what every writer here does.
 Five of them are registered in hooks. `inject.js` writes
 on every prompt — once for `updated`, and once more for every new path the git
-pass records in `seen`, since `lib/dirty.js:183` calls `addSeen` per path and each one
+pass records in `seen`, since `lib/dirty.js:192` calls `addSeen` per path and each one
 takes the lock — in every session on the machine. That second number is usually
 zero after a task's first prompt, because `covers` skips a path already held.
 `resume.js` writes twice per answered question (`registry.gateClose`, then
