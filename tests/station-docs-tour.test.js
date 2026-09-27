@@ -3,9 +3,13 @@
 // and tour-nav). Both need a server: the written page says so instead.
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
 
 global.window = { STATION: {} };
 const V = require('../assets/station/station.js');
+const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
 
 const HIT = { project: 'fankeel', pkey: 'F:/ymlab/fankeel', path: 'docs/90-agent/reference/registry.md',
     title: 'The registry, and what it remembers', role: 'reference', before: '… `', hit: 'inflight', after: '` — `{ stage, at }` <b> …' };
@@ -60,4 +64,63 @@ test('a failed search shows a message instead of leaving stale or empty results'
     assert.match(html, /<span class="dsx-n mono" id="dsxN"><\/span>/);
     assert.match(html, /<p class="dsx-none">搜尋失敗/);
     assert.doesNotMatch(html, /<ol class="dsx-list">/);
+});
+
+// The debounced `input` listener itself (station.js, the `doc.addEventListener('input', ...)`
+// right after `dsxPaint`): a rejected `fetch` has to land in `view.dsx.res.err` and get
+// repainted, not swallowed. Booted the same way station-live.test.js boots the page — the
+// whole source run in a fresh vm context so the listener it registers on `document` at load
+// is the real one, with `setTimeout`/`fetch` under the test's control.
+const settle = () => new Promise((r) => { setImmediate(r); });
+
+function bootSearch(fetchImpl) {
+    const els = {};
+    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', hidden: false, style: {},
+        setAttribute() {}, getAttribute() { return null; }, appendChild() {}, addEventListener() {} });
+    // station.js registers more than one top-level `input` listener on `document`
+    // (the search box here, the picker's filter, the "其他" box); all fire on any
+    // dispatched event, same as a real DOM, and each guards its own target.
+    const inputHandlers = [];
+    const doc = {
+        hidden: false,
+        getElementById: (id) => els[id] || (els[id] = el()),
+        addEventListener: (type, fn) => { if (type === 'input') inputHandlers.push(fn); },
+        createElement: el, querySelectorAll: () => [],
+        querySelector: () => ({ parentNode: { insertBefore() {} }, nextSibling: null }),
+        head: { appendChild() {} },
+    };
+    const timeouts = [];
+    let timeoutSeq = 0;
+    const win = {
+        location: { hash: '#/', protocol: 'http:' }, addEventListener() {}, scrollTo() {},
+        setInterval: () => 1,
+        setTimeout: (fn) => { const id = ++timeoutSeq; timeouts.push({ id, fn }); return id; },
+        clearTimeout: (id) => { const i = timeouts.findIndex((t) => t.id === id); if (i >= 0) timeouts.splice(i, 1); },
+        STATION: {
+            generatedAt: new Date(2026, 8, 19, 11, 0).toISOString(), configDir: 'C:\\cfg', pricesVerified: '2026-09-04', serve: true,
+            projects: [], profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {}, sessions: [],
+        },
+    };
+    vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams, fetch: fetchImpl });
+    return {
+        type: (q) => {
+            const target = { id: 'dq', value: q, hasAttribute: () => false, closest: () => null };
+            inputHandlers.forEach((fn) => fn({ target }));
+        },
+        fireDebounce: () => { const t = timeouts.pop(); if (t) t.fn(); },
+        out: () => els.dsxOut && els.dsxOut.innerHTML,
+        n: () => els.dsxN && els.dsxN.textContent,
+    };
+}
+
+test('a rejected search fetch sets the error state and repaints, through the real input listener', async () => {
+    const p = bootSearch((url) => {
+        if (String(url).indexOf('station/search') === 0) return Promise.reject(new Error('network down'));
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+    p.type('inflight');
+    p.fireDebounce();
+    await settle(); await settle(); await settle();
+    assert.match(p.out(), /搜尋失敗/, 'the .catch handler repainted the failure message');
+    assert.equal(p.n(), '', 'a failed search counts no pages');
 });
