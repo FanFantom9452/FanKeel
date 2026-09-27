@@ -81,31 +81,13 @@ the reading is what gets scheduled.
 
 ## Ready
 
+- 〔guard〕鄰居 session 的 git pass 把我們 untracked 的檔列進它的 `seen`，guard 當成它的認領擋下我們的編輯；09-27 擋了 plan 的修正，只能 `guard off` — [lib/guard.js](lib/guard.js).
 
 ## Needs a decision
 
 - 〔stage-agents〕ab.sh 改成在 worktree 裡 commit profile（`pin.sh`）；修好的 script 還沒重跑，重跑要核准約 $30 — [ab.sh](docs/90-agent/reports/evidence/2026-09-26-ab-profile-pin/ab.sh).
-- 〔agents〕reader 回傳每條標 `EXTRACTED`／`INFERRED`，關係寫成 `A --rel--> B at=file:line` 一行（graphify `serve.py` 的 NODE/EDGE 格式） — [agents/fankeel-reader.md](agents/fankeel-reader.md).
-- 〔survey〕map.md 旁加定方向段：由 require() 算被引用最多的檔、跨目錄的意外連結（graphify 的 God Nodes／Surprising Connections） — [scripts/map.js](scripts/map.js).
-- 〔plan〕`ledger.js groups` 用真實 require 圖交叉比對 Files／Consumes，抓 prose 寫的沒宣告依賴（graphify 的 `affected`） — [lib/plantasks.js](lib/plantasks.js).
-- 〔docs〕人讀頁可推導的表從程式碼產生再 diff，先做 01-guide/profile.md 的 key 表（orbit 的 `query-language-docs-check`） — [lib/profile.js](lib/profile.js).
-- 〔docs〕`docs-for <path>`：把各頁 `source_of_truth` 反查，回答哪一頁負責描述這個檔；不做 MCP，第二個 host 出現再議 — [scripts/docs-check.js](scripts/docs-check.js).
-- 〔docs〕docs-check 記下文件裡反引號的 code 指向哪個檔，不只查符號存在（graphify `markdown_resolution.py`） — [scripts/docs-check.js](scripts/docs-check.js).
-- 〔review〕reviewer 每條發現附具體失敗情境（什麼輸入得什麼錯），另派一個 reviewer 逐條驗證、沒過就丟（官方 /code-review 與 ultra 的做法） — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
-- 〔review〕排除清單與信心門檻：既存問題、linter 會抓、挑剔、被註解消音的不報；security lens 加 17 條硬排除與 10 條判例、低於 0.7 不報 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
-- 〔audit〕residue 把分支已合併、worktree 仍有未 commit 變更的算成用完（只看 `branch --merged`）；09-27 把鄰居正在改的 agent worktree 報成可清 — [scripts/residue.js](scripts/residue.js).
 
 ## Blocked
-
-### #/tour 掛進 station
-after: task「Ready 兩條、給人讀的文件層、ab.sh 重跑」落地；它正改著 `assets/station/station.js` 與 `scripts/station.js`. 09-27.
-
-- 〔tour〕`#/tour` 待掛：路由未進 `PAGES`（`assets/station/station.js`），靜態檔未進白名單（`scripts/station.js`）.
-
-### TODO 大批次放手
-after: task「TODO 大批次：station 更新、工具修補…」落地，放開 `README.md` 與 `docs/01-guide/station.md` 的認領. 09-27.
-
-- 〔tour〕導覽已只剩一支 60 秒宣傳片，兩處仍寫三支：`README.md:203`「the three explainer videos」、`docs/01-guide/station.md:32`「三段短片」 — [assets/station/tour-stages.js](assets/station/tour-stages.js).
 
 ### fankeel 功能全部完成
 after: fankeel 其餘功能都落地、使用者換到新機器測試. 09-27.
@@ -121,11 +103,6 @@ on: 10-02 起，registry 的 `gates` 累積滿一週. 09-26.
 after: 交接選項（簡報 §6.2）實施後 context 仍常過 400k. 09-26.
 
 - 〔session〕極端版：driver 逐站開 headless session、狀態走檔案、關卡問題走 station，每站從零開始；缺總輪數、花費、時間上限與回報 `status` 欄位 — [scripts/station.js](scripts/station.js).
-
-### docs-audit 報未點名模組
-after: docs-audit 學會報未被點名的模組. 09-26.
-
-- 〔docs〕兩個 `lib/*.js` 沒有 reference-role 頁面點名：`hook.js`、`report.js`；09-09 記的五個裡另外三個後來被點到了 — [docs/documents.md](docs/90-agent/reference/documents.md).
 
 ### brain 的 context 撐不住
 after: `scripts/ctx.js` 量到 build 或 verify 的站 agent 自己的 context 過 400k（`lib/context.js` 的線）. 09-26.
@@ -197,41 +174,6 @@ if: 共用樹上出現一次 implementer 蓋掉另一個 implementer 的改動. 
 
 - 〔build〕ready-queue 的 worktree 那一半：每個 implementer 各開 worktree、由 brain merge；`scripts/commit.js` 認不得 worktree、brain 不能 `git commit`，兩者都得先改 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 
-### 站頁介面只有中文
-if: 有使用者需要非中文的 station 介面出現. 09-26.
-
-- 〔station〕assets/station/station.js 與 station.css 的介面文字（約 519 行 UI 字串）目前只有中文，沒有 i18n 機制 — [docs/station.md](docs/90-agent/reference/station.md).
-
-### 文件全文搜尋有人要
-if: 有人要 文件 頁的全文搜尋. 09-26.
-
-- 〔station〕文件頁只讀 map.js 算好的統計卡，沒有全文搜尋；要做的話得加一個 server-side 的搜尋 payload — [docs/station.md](docs/90-agent/reference/station.md).
-
-### 首次繪圖變慢一次
-if: station-data.js 每次請求重算拖慢首次繪圖一次. 09-26.
-
-- 〔station〕station-data.js 每個請求都重算，沒有 server cache；量到首次繪圖變慢時，加一個伺服端快取 — [lib/station.js](lib/station.js).
-
-### gate 等待時間量不準
-if: dashboard 的等你回答量到不準的等待時間一次. 09-26.
-
-- 〔station〕dashboard 的『等你回答』卡片算等待時間，但 lib/handoff.js 沒留下 gate 的 `at`，量出來不是真的等待起點 — [lib/handoff.js](lib/handoff.js).
-
-### tune 還原誤刪一次
-if: tune.js done 在 live 模式又因為 untracked 檔誤還原一次改動. 09-26.
-
-- 〔build〕tune.js 的 live 模式 `done` 在 --src 出現 untracked 檔（例如 .playwright-mcp）時會連它一起還原；09-24 這樣悄悄清掉過一次 r-0017 — [scripts/tune.js](scripts/tune.js).
-
-### 即時 session 缺 subagent
-if: 有人需要在即時 session 上看到進行中的 subagent. 09-26.
-
-- 〔station〕station 讀不到 live session 的 subagent：只讀 leave.js 寫的 usage，不讀 subagents/*.meta.json 與 inflight 標記 — [lib/station.js](lib/station.js).
-
-### git mv 漏一半提交
-if: 出現一次 git mv 需要連刪除一起提交. 09-26.
-
-- 〔build〕scripts/commit.js 加不了 git mv 的刪除那一半 — [scripts/commit.js](scripts/commit.js).
-
 ### 程式碼大到要查結構
 if: 某個專案的程式碼大到 grep 加 read 找不到跨檔關係. 09-27.
 
@@ -241,8 +183,3 @@ if: 某個專案的程式碼大到 grep 加 read 找不到跨檔關係. 09-27.
 if: `the chosen card animates, and under reduced motion nothing is running` 在整套裡再紅一次. 09-27.
 
 - 〔tests〕09-27 四次整套紅兩次（2072/2073）、單跑 3/3 綠；之後整套 10 次全綠，沒抓到失敗訊息，紀錄在 `.fankeel/build/2026-09-27-five-items/flake.txt` — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
-
-### station-cli 逾時再紅一次
-if: `the first run scans once and records that it did` 在整套裡再紅一次. 09-27.
-
-- 〔tests〕09-27 整套跑兩次，這條一次紅一次綠（11923ms 對 9000ms 預算），跟 2026-09-27-five-items 這個 plan 的任何一個改動都無關，最後改動於 `b8f0629d`，早於這個 plan — [tests/station-cli.test.js](tests/station-cli.test.js).

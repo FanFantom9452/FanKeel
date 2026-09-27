@@ -132,7 +132,10 @@ test('a bare idleMs never ends the calling process, but main()\'s own --idle fla
         + " const t0 = Date.now();"
         + " while (await listening()) { if (Date.now() - t0 > 4000) { console.log('NEVER IDLED'); s.close(); return; } await new Promise((r) => setTimeout(r, 25)); }"
         + " console.log('SURVIVED'); })();";
-    const inProcess = spawnSync(process.execPath, ['-e', probe], { encoding: 'utf8', timeout: 5000 });
+    // cwd is the fixture: from the repository, serve() also reads this
+    // machine's own registry — 2.5s of startup against 1s, which under the
+    // full suite's load ran past the 5s timeout (2026-09-27, three times).
+    const inProcess = spawnSync(process.execPath, ['-e', probe], { cwd: cfg, encoding: 'utf8', timeout: 5000 });
     assert.equal(inProcess.status, 0, 'the probe child did not exit cleanly: ' + inProcess.stderr);
     assert.match(inProcess.stdout, /SURVIVED/,
         'a bare idleMs ended its own process before it could finish: ' + inProcess.stdout + inProcess.stderr);
@@ -146,7 +149,7 @@ test('a bare idleMs never ends the calling process, but main()\'s own --idle fla
     const cfg2 = tmp('fankeel-idle-');
     const began = Date.now();
     const cli = spawnSync(process.execPath, [CLI, 'serve', '--port', '0', '--idle', '0.005'],
-        { encoding: 'utf8', env: { ...process.env, CLAUDE_CONFIG_DIR: cfg2 }, timeout: 10000 });
+        { cwd: cfg2, encoding: 'utf8', env: { ...process.env, CLAUDE_CONFIG_DIR: cfg2 }, timeout: 10000 });
     const took = Date.now() - began;
     assert.ok(cli.status !== null,
         'the CLI --idle path did not exit on its own within 10s and was killed: ' + JSON.stringify({ signal: cli.signal, took }));

@@ -168,7 +168,11 @@ const STATION_CLI = path.join(__dirname, '..', 'scripts', 'station.js');
 
 test('the --json CLI carries neither the hidden session nor its profile entry', () => {
     const f = fixture();
+    // cwd is the fixture: from the repository, the CLI also finds this
+    // machine's own registry, whose sessions outgrew spawnSync's 1 MB buffer
+    // (ENOBUFS, 2026-09-27) and whose contents this test never meant to read.
     const out = execFileSync(process.execPath, [STATION_CLI, '--json', '--root', f.root], {
+        cwd: f.base,
         encoding: 'utf8',
         env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: f.cfg }),
     });
