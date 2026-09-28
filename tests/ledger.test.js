@@ -921,6 +921,19 @@ test('ready with no ledger yet says so, the way show does', () => {
   assert.match(out, /none yet at .*Run `init` before the first task\./s);
 });
 
+test('ready --worktree sends two tasks that share a Modify file together; ready alone does not', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, [
+    '## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', '',
+    '## Task 2: two', '', '**Files:**', '- Modify: `lib/a.js`', '',
+  ].join('\n'));
+  const cli = (...args) => execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, ...args], { encoding: 'utf8' });
+  cli('init');
+  assert.equal(cli('ready'), '1\n');
+  assert.equal(cli('ready', '--worktree'), '1\n2\n');
+});
+
 // design §4: a require edge inside a group with no declared Consumes is
 // reported, and keeps that group off `workflow` even though its files and
 // its Interfaces blocks alone would have grouped it as one.

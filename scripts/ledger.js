@@ -52,7 +52,7 @@ const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'ready', 
 // where a range is recorded. A flag outside its verb's list is refused rather
 // than ignored: `ranges --range x` used to exit 0 having read nothing of it.
 const BASE_FLAGS = ['root', 'plan'];
-const VERB_FLAGS = { init: BASE_FLAGS.concat(['range']), complete: BASE_FLAGS.concat(['range']), fix: BASE_FLAGS.concat(['range']), brief: BASE_FLAGS.concat(['group', 'prefix']) };
+const VERB_FLAGS = { init: BASE_FLAGS.concat(['range']), complete: BASE_FLAGS.concat(['range']), fix: BASE_FLAGS.concat(['range']), brief: BASE_FLAGS.concat(['group', 'prefix']), ready: BASE_FLAGS.concat(['worktree']) };
 
 // `strict: false` lets an unknown flag through to the verb check below, which
 // refuses it by name. A declared flag given no value comes back `true` rather
@@ -65,6 +65,7 @@ function parseArgs(argv, verb) {
     const options = {};
     for (const flag of Object.keys(STRING_FLAGS)) options[flag] = { type: 'string' };
     options.prefix = { type: 'boolean' };
+    options.worktree = { type: 'boolean' };
 
     const { values } = parseArgv({ args: argv, strict: false, allowPositionals: true, options });
     const opts = {};
@@ -74,6 +75,7 @@ function parseArgs(argv, verb) {
         opts[key] = values[flag];
     }
     if (values.prefix !== undefined) opts.prefix = values.prefix === true;
+    if (values.worktree !== undefined) opts.worktree = values.worktree === true;
     // After the value check, so a flag left without its value is still named
     // as that — the refusal tests/ledger.test.js pins for `--root` and `--plan`.
     const allowed = VERB_FLAGS[verb] || BASE_FLAGS;
@@ -572,11 +574,17 @@ function main(argv) {
         // The completion set is this plan's own ledger, refused the way `show`
         // refuses one: none yet, or one belonging to another plan. A `user`
         // task is never sent, so it is never listed — `hands` lists it.
+        // `--worktree`: the build brain's form, where a shared file does not hold a task back.
+        // `ready` takes no other text, so a `--worktree` immediately after the
+        // verb — with no `--group`/`--range` beside it to anchor the trailing
+        // peel in `splitAroundVerb` — lands in `text` rather than `head`; this
+        // is the one place that is read back rather than a flag dropped silently.
         const { contents, refusal } = readOwnLedger(root, opts);
         if (refusal) return refusal;
         const { text: planText } = readPlan(root, opts.plan);
         const tasks = plantasks.parseTasks(planText);
-        const open = plantasks.ready(tasks, ledger.completed(contents))
+        const worktree = opts.worktree === true || text.includes('--worktree');
+        const open = plantasks.ready(tasks, ledger.completed(contents), { worktree })
             .filter((n) => tasks.find((t) => t.n === n).dispatch !== 'user');
         return open.length ? open.join('\n') : 'none';
     }

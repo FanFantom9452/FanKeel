@@ -445,6 +445,26 @@ test('ready fails closed on a task with no Files block', () => {
   assert.deepEqual(plantasks.ready([a, bare], [1]), [2]);
 });
 
+// docs/90-agent/plans/2026-09-28-spawndepth-worktree-design.md §2: each
+// implementer builds in its own worktree, so a shared Modify/Test file no
+// longer holds a task back; a Read of a neighbour's file and an interface
+// edge still do — even when the pair also shares a file.
+test('ready with { worktree: true } drops only the files predicate', () => {
+  const shared = task(1, ['lib/a.js'], [], [], []) + task(2, ['lib/a.js'], ['tests/a.test.js'], [], []);
+  assert.deepEqual(plantasks.ready(shared, []), [1]);
+  assert.deepEqual(plantasks.ready(shared, [], { worktree: true }), [1, 2]);
+  const edge = task(1, ['lib/a.js'], [], [], ['makeA']) + task(2, ['lib/a.js'], [], ['makeA'], []);
+  assert.deepEqual(plantasks.ready(edge, [], { worktree: true }), [1]);
+  const reads = task(1, ['lib/a.js'], [], [], []) + readTask(2, ['lib/b.js'], ['lib/a.js']);
+  assert.deepEqual(plantasks.ready(reads, [], { worktree: true }), [1]);
+  const [a] = parseTasks(task(1, ['lib/a.js'], [], [], []));
+  const bare = { n: 2, name: 'x', modify: [], test: [], read: [], consumes: [], produces: [] };
+  assert.deepEqual(plantasks.ready([a, bare], [], { worktree: true }), [1]);
+  const [x, y] = parseTasks(shared);
+  assert.equal(conflict(x, y), 'files');
+  assert.deepEqual(groups(shared), [[1], [2]]);
+});
+
 test('the first word of a Dispatch line is the task\'s dispatch, and the text after the dash its note', () => {
   const body = (line) => [
     '## Task 1: name', '', '**Files:**', '- Modify: `lib/a.js`', '',
