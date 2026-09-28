@@ -83,6 +83,8 @@ the reading is what gets scheduled.
 
 ## Needs a decision
 
+- 〔stage-agents〕SubagentStart 觸發時 `agent-<id>.meta.json` 還不在或不帶 `spawnDepth`，`nestedBrain()` 退回原本行為；要不要改讀法，實測見 `docs/90-agent/reports/2026-09-28-spawndepth-timing.md` — [hooks/brief.js](hooks/brief.js).
+
 ## Blocked
 
 ### fankeel 功能全部完成
@@ -124,11 +126,6 @@ upstream: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃�
 - 〔security〕reviewer 的 `## Security` lens 可先交本地模型篩（`security.local`）；四類清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 
 ## Watch
-
-### spawnDepth 讀檔時序未證實
-if: 受控 stage agent 實跑量出 `SubagentStart` 與 `agent-<id>.meta.json` 寫入的先後. 09-28.
-
-- 〔stage-agents〕`nestedBrain()` 讀 `agent-<id>.meta.json` 取 `spawnDepth`；讀檔跟 `SubagentStart` 先後未量 — [hooks/brief.js](hooks/brief.js).
 
 ### 需要第十一種語言
 if: a repository needs an eleventh language. 09-26.
