@@ -40,6 +40,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { parseArgs } = require('node:util');
+const { execFileSync } = require('node:child_process');
 
 const docs = require('../lib/docs.js');
 const { resolveRoot } = require('../lib/registry.js');
@@ -211,6 +212,69 @@ function stampAt(text, now) {
         if (at.getTime() <= now) return at.getTime();
     }
     return null;
+}
+
+// A deleted entry leaves no record of what happened to it, and a nobody-said
+// deletion is the same failure `entries()` already catches for a stray
+// heading — one step earlier. `docs/90-agent/reference/todo-completions.md`
+// is where the record goes; this page's own role (`reference`) is never
+// checked here, only its content.
+const COMPLETIONS_PAGE = 'docs/90-agent/reference/todo-completions.md';
+const COMPLETION_ORIGINAL = /^- original:\s*(.*)$/gm;
+
+// The text of every `- original: <...>` record on the completions page,
+// whitespace-normalized the same way `entries()`'s own text is compared. No
+// page, or no record on it yet, is an empty set — not an error, since a
+// repository that never closed anything has nothing to record.
+function completionTexts(base) {
+    let text;
+    try {
+        text = fs.readFileSync(path.join(base, COMPLETIONS_PAGE), 'utf8');
+    } catch (e) {
+        return new Set();
+    }
+    const out = new Set();
+    COMPLETION_ORIGINAL.lastIndex = 0;
+    let m;
+    while ((m = COMPLETION_ORIGINAL.exec(text)) !== null) {
+        out.add(m[1].replace(/\s+/g, ' ').trim());
+    }
+    return out;
+}
+
+// The immediately preceding git-tracked version of a file, or null when there
+// is none to compare against: no repository, no history yet, or a file git
+// has never seen. Mirrors `blame.js`'s own `git()` — stderr quoted back here
+// would read as a finding about a repository that simply has no history.
+function previousVersion(base, name) {
+    try {
+        return execFileSync('git', ['show', 'HEAD:' + name], {
+            cwd: base, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'],
+        });
+    } catch (e) {
+        return null;
+    }
+}
+
+// The words of an entry's text, for telling "gone" from "reworded". Not a
+// fuzzy-match algorithm — a word-overlap ratio, which is enough to spare a
+// bullet that kept its subject and changed its wording without also sparing
+// one whose subject actually left.
+function wordsOf(text) {
+    return new Set((text.toLowerCase().match(/[\p{L}\p{N}]+/gu) || []));
+}
+const REWORD_THRESHOLD = 0.6;
+function reworded(oldText, newTexts) {
+    const before = wordsOf(oldText);
+    if (!before.size) return false;
+    for (const t of newTexts) {
+        const after = wordsOf(t);
+        if (!after.size) continue;
+        let common = 0;
+        for (const w of before) if (after.has(w)) common++;
+        if (common / Math.max(before.size, after.size) >= REWORD_THRESHOLD) return true;
+    }
+    return false;
 }
 
 const LINK = /\[[^\]]*\]\(([^)]+)\)/g;
@@ -425,6 +489,32 @@ function check(file, now) {
                 line: entry.line,
                 kind: 'past end',
                 detail: cited + ' is past the end — ' + c.target + ' has ' + n + ' lines. The code moved; cite where it is now.',
+            });
+        }
+    }
+
+    // A bullet in the previous commit's TODO.md that is not, in any form close
+    // to its own wording, in the working file is one somebody removed. Unless
+    // a completion record names it, that removal left no result — done,
+    // measured-and-no-change or abandoned is a fact only the person who
+    // closed it knows, and the file is the only place it survives being
+    // asked.
+    const prevText = previousVersion(base, path.basename(file));
+    if (prevText !== null) {
+        const curNorm = found.map((e) => e.text.replace(/\s+/g, ' ').trim());
+        const completions = completionTexts(base);
+        for (const old of entries(prevText)) {
+            const norm = old.text.replace(/\s+/g, ' ').trim();
+            if (curNorm.includes(norm)) continue;
+            if (completions.has(norm)) continue;
+            if (reworded(norm, curNorm)) continue;
+            problems.push({
+                line: 1,
+                kind: 'undocumented deletion',
+                detail: '"' + norm + '" was in TODO.md at the previous commit and is gone from the working'
+                    + ' file, with no matching record in ' + COMPLETIONS_PAGE + '. Add a record there'
+                    + ' (the original text, a disposition — done, measured-no-change or abandoned — and'
+                    + ' the commit sha that closed it) before removing the entry.',
             });
         }
     }

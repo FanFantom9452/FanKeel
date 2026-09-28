@@ -73,6 +73,12 @@ A page under a bucket marked `audience: human` that this change touched is
 named to the user at the gate: the person it is written for reads it, not a
 reviewer.
 
+When this session's diff added a bullet to `TODO.md` that was not there in
+`HEAD` before this task started, this stage's gate asks the user to confirm
+which heading it belongs under — before the stage's own gate. Most entries are
+filed correctly by whoever wrote them; this is the one check point that
+catches a bullet parked under the wrong heading.
+
 Mark the record `binding: true` in its frontmatter only when it changes how
 code is written from here on — never for one that explains why something was
 done. `docs-check` refuses an eighth; when a record replaces another, give the

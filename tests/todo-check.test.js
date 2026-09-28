@@ -585,6 +585,52 @@ test('a Needs a decision entry untouched for 7 days or more is listed by git bla
   assert.match(out, /## Needs a decision entries not edited in 7 days or more/);
 });
 
+// A deleted entry leaves no record of its outcome unless the completions page
+// says so. Compares the previous commit's TODO.md against the working file.
+function completionsRoot() {
+  const root = tmp('fankeel-todo-completion-');
+  const opts = initTodoGit(root);
+  commitTodoBody(root, opts, '# TODO\n\n## Ready\n\n- Ship the export button to the toolbar.\n',
+    isoSeconds(Date.now() - 24 * 60 * 60 * 1000));
+  return root;
+}
+
+test('an entry deleted from TODO.md with no completion record is an undocumented deletion', () => {
+  const root = completionsRoot();
+  const file = path.join(root, 'TODO.md');
+  fs.writeFileSync(file, '# TODO\n\n## Ready\n\n- Something else entirely, unrelated words here.\n');
+  const result = todo.check(file);
+  assert.deepEqual(result.problems.map((p) => p.kind), ['undocumented deletion']);
+  assert.match(result.problems[0].detail, /Ship the export button to the toolbar/);
+  assert.match(result.problems[0].detail, /todo-completions\.md/);
+  assert.equal(todo.main([file]).ok, false);
+});
+
+// red when: the completion record is ignored (drop the `completions.has(norm)`
+// guard) — the deletion above would still be flagged with a record present.
+test('an entry deleted WITH a matching completion record is not flagged', () => {
+  const root = completionsRoot();
+  const file = path.join(root, 'TODO.md');
+  fs.writeFileSync(file, '# TODO\n\n## Ready\n\n- Something else entirely, unrelated words here.\n');
+  const dir = path.join(root, 'docs', '90-agent', 'reference');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'todo-completions.md'),
+    '# TODO completions\n\n- original: Ship the export button to the toolbar.\n  disposition: done\n  sha: abc1234\n');
+  const result = todo.check(file);
+  assert.deepEqual(result.problems.map((p) => p.kind), []);
+  assert.equal(todo.main([file]).ok, true);
+});
+
+// red when: matching is exact-text-only (drop `reworded()`) — a bullet kept in
+// place but reworded would read as a deletion with nothing recording it.
+test('an entry merely reworded, not deleted, is not an undocumented deletion', () => {
+  const root = completionsRoot();
+  const file = path.join(root, 'TODO.md');
+  fs.writeFileSync(file, '# TODO\n\n## Ready\n\n- Ship the export button, now in the toolbar.\n');
+  const result = todo.check(file);
+  assert.deepEqual(result.problems.map((p) => p.kind), []);
+});
+
 // Timings. Under `## Waiting` a `###` names what its entries wait for, and they
 // lift together; the stamp and the event moved from each entry to the timing.
 const timingFixture = (body) => fixture('# TODO\n\n## Blocked\n\n' + body);
