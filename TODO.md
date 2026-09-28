@@ -81,8 +81,6 @@ the reading is what gets scheduled.
 
 ## Ready
 
-- 〔tests〕`appendUnique` 的去重在 trim 之後比對，沒有測試單獨釘住這個順序：`addNote("x ")` 後再 `addNote("x")` 應只留一條 — [lib/registry.js](lib/registry.js).
-
 ## Needs a decision
 
 ## Blocked

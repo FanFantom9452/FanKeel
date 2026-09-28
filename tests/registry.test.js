@@ -402,6 +402,14 @@ test('a repeated note does not push a useful one out', () => {
   assert.deepEqual(notes, ['first', 'same lesson']);
 });
 
+test('a note is trimmed before it is compared, so a padded repeat is dropped', () => {
+  const root = tmpRoot();
+  registry.writeSession(root, SID, task());
+  assert.equal(registry.addNote(root, SID, 'x '), true);
+  assert.equal(registry.addNote(root, SID, 'x'), true); // update() reports an already-held value as success, as addClaim does
+  assert.deepEqual(registry.notesOf(registry.readSession(root, SID)), ['x']);
+});
+
 test('an empty note is refused', () => {
   const root = tmpRoot();
   registry.writeSession(root, SID, task());
