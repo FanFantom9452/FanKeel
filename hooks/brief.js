@@ -43,10 +43,13 @@ function main(raw) {
     // reads (`controlFor` in lib/stages.js), so an interjection mid-stage is
     // told to SendMessage it rather than start a second one. The parent's
     // record, not an entry for the subagent: `agent_id` is a value here.
-    // `lap` is the one `renderBrief` below builds the brief's paths with.
+    // `lap` is the one `renderBrief` below builds the brief's paths with, and
+    // `group` is the one it names in a build's brief: `markInflight` assigns
+    // it, so this is the one place both the mark and the brief agree on it.
+    let group = null;
     if (mine.stage && String(payload.agent_type || '').replace(/^fankeel:/, '') === 'fankeel-brain') {
         try {
-            registry.markInflight(root, payload.session_id, mine.stage, payload.agent_id, lapOf(mine, mine.stage));
+            group = registry.markInflight(root, payload.session_id, mine.stage, payload.agent_id, lapOf(mine, mine.stage));
         } catch (e) { /* housekeeping */ }
     }
 
@@ -59,7 +62,7 @@ function main(raw) {
         profile = profileLib.profileFor(root, mine);
     } catch (e) { /* housekeeping */ }
 
-    const text = renderBrief({ mine: { sessionId: payload.session_id, data: mine }, agentType: payload.agent_type, root, profile, transcriptPath: payload.transcript_path });
+    const text = renderBrief({ mine: { sessionId: payload.session_id, data: mine }, agentType: payload.agent_type, root, profile, transcriptPath: payload.transcript_path, group });
     if (!text) return;
 
     process.stdout.write(JSON.stringify({

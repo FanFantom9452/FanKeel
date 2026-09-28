@@ -118,6 +118,30 @@ test('the agent type is carried through', () => {
   assert.match(contextOf(run(root, start(root, { agent_type: 'Explore' }))), /agent type: Explore/);
 });
 
+test('a build brain\'s brief names its group and the file a group writes instead of the gated one', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a1' })));
+  assert.match(text, /Your prompt names your case: task numbers for a group, or `build close`/);
+  assert.match(text, /build-g1\.md instead of \S*build\.md/);
+  assert.match(text, /the only gate this whole stage asks/);
+  assert.ok(text.length < 10000, 'brain brief is ' + text.length + ' chars');
+});
+
+test('two brains dispatched together for build get distinct groups, and both marks stay in flight until each reports', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const first = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a1' })));
+  const second = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a2' })));
+  assert.match(first, /build-g1\.md/);
+  assert.match(second, /build-g2\.md/);
+  const mark = JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), 'utf8')).inflight;
+  assert.equal(Array.isArray(mark), true);
+  assert.deepEqual(mark.map((m) => m.group).sort(), [1, 2]);
+});
+
 test('a judge is told it answers once', () => {
   const root = tmp();
   seed(root);
@@ -642,16 +666,16 @@ test('the file a design block names for a controlled build is what the build bra
   assert.match(text, /read first: \S+\/\.fankeel\/build\/task-20260919T093012\/design\.md — the last stage's report/);
 });
 
-// docs/plans/2026-09-26-ready-five-design.md §2: the brief names the task's
-// context.md by path, so a subagent reads it on demand — never its contents.
-test('the brief names the task\'s context.md by path and never inlines it', () => {
+// docs/90-agent/plans/2026-09-28-agent-lifetime.md Task 6 / lib/render.js's
+// pushContext: the brief inlines context.md's content directly, so a
+// subagent never has to Read the file itself.
+test('the brief inlines the task\'s context.md content, not just its path', () => {
   const root = tmp();
   seed(root, { started: '2026-09-19T09:30:12.345Z' });
   const file = path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'context.md');
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, '- a secret fact — lib/a.js:1 @ abc1234\n');
   const text = contextOf(run(root, start(root)));
-  assert.match(text, /context: \S*\/\.fankeel\/build\/task-20260919T093012\/context\.md — /);
   assert.match(text, /scripts\/context\.js add/);
-  assert.ok(!text.includes('a secret fact'), 'the brief inlined the file');
+  assert.ok(text.includes('a secret fact'), 'the brief did not inline the file');
 });
