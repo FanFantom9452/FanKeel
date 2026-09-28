@@ -6,7 +6,7 @@ source_of_truth: `docs/90-agent/reports/evidence/2026-09-26-ab-profile-pin/` 下
 
 # `ab.sh` profile-pin 重跑 — 2026-09-28
 
-> **更正 2026-09-28：** §4 的「四站合計（不含 start）」與「全部含 start（即 `summary.json` 頂層 k）」兩格，是把各站累計的 `total_cost_usd` 逐站相加算出來的，重複計入了更早的站。真正的總花費是 verify 站自己的累計值：opus $6.19、sonnet $8.60，k = 1.64。修法見 `docs/90-agent/reports/evidence/2026-09-25-controller-multiplier/summarise.js`（同一支腳本，這次的證據也用它重算）。
+> **更正 2026-09-28：** §4 的「四站合計（不含 start）」與「全部含 start（即 `summary.json` 頂層 k）」兩格，是把各站累計的 `total_cost_usd` 逐站相加算出來的，重複計入了更早的站。真正的總花費是 verify 站自己的累計值：opus $6.24、sonnet $8.63，k = 1.69。修法見 `docs/90-agent/reports/evidence/2026-09-25-controller-multiplier/summarise.js`（同一支腳本，這次的證據也用它重算）。
 
 **這是 [2026-09-25 報告](2026-09-25-controller-multiplier.md) 的重跑，同一個 task、同一個起點 sha、同一條路線，opus controller 對 sonnet controller 各跑一次（n=1 per arm，不是任何母體的平均），`--max-budget-usd` 每個 arm 各 62.50。跟 09-25 唯一不同的地方是 `pin.sh` 這次把 `stage.agents` 的 override **commit** 進 worktree，而不是只寫進工作目錄——09-25 §7 診斷出那次 override 是未 commit 的檔案改動，中途被一次 `git stash ... drop` 連帶清掉，verify 站因此被誤判成受控站。這次的重點是確認那個修法有沒有守住整趟跑。**
 
