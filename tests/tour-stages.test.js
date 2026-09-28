@@ -1,40 +1,65 @@
 'use strict';
-// Video: assets/station/tour-stages.js — the 3600-frame promo. A 240-frame
-// hook, the seven stages 408 frames each (illustrated scene sped up, then a
-// terminal cut), and a 504-frame outro. Every frame a pure function of its
-// number.
+// Video: assets/station/tour-stages.js — the 3600-frame promo, 30 bars at
+// 120 BPM. Eleven cuts of document blocks end to end, every one starting on
+// a bar line; no terminal cut is left in the source. Every frame a pure
+// function of its number, in either language, every string inside its box.
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const T = require('../assets/station/tour.js');
-const { TOUR_STAGES, PRODUCES } = require('../assets/station/tour-stages.js');
-const { STAGES } = require('../lib/stages.js');
-const { fakeCtx } = require('./tour-ctx.js');
+const D = require('../assets/station/tour-doc.js');
+const { TOUR_STAGES } = require('../assets/station/tour-stages.js');
+const { fakeCtx, sweep } = require('./tour-ctx.js');
 
-const INTRO = 240, PER = 408, OUTRO = INTRO + PER * T.ROUTE.length; // 3096
+const STARTS = [0, 240, 480, 840, 1200, 1560, 1920, 2280, 2640, 3000, 3240];
+const NAMES = ['hook', 'route', 'survey', 'design', 'plan', 'build', 'verify', 'audit', 'land', 'clash', 'outro'];
 
-function shot(f) {
+function shot(f, P) {
     const ctx = fakeCtx();
-    T.render(ctx, 'stages', f);
+    T.render(ctx, 'stages', f, P ? { palette: P } : undefined);
     return ctx;
 }
 
-test('stages is registered: 3600 frames, a beat per stage of lib/stages.js and one for the end', () => {
+// Criterion: eleven cuts, each starting on a multiple of 120, and no
+// termCut in the source. Red when: the old 240 + 408i blocks or any of the
+// terminal code are still there.
+test('stages is registered: 3600 frames, eleven cuts each starting on a bar line', () => {
     assert.equal(T.get('stages'), TOUR_STAGES);
     assert.equal(T.length('stages'), 3600);
     assert.deepEqual(T.check(TOUR_STAGES), []);
-    assert.deepEqual(TOUR_STAGES.beats.map((b) => b.label), STAGES.map((s) => s.name).concat(['end']));
-    assert.deepEqual(TOUR_STAGES.beats.map((b) => b.at), [240, 648, 1056, 1464, 1872, 2280, 2688, 3096]);
-    TOUR_STAGES.beats.slice(0, 7).forEach((b) => assert.equal(b.stage, b.label));
+    assert.deepEqual(TOUR_STAGES.beats.map((b) => b.at), STARTS);
+    assert.deepEqual(TOUR_STAGES.beats.map((b) => b.label), NAMES);
+    TOUR_STAGES.beats.forEach((b) => assert.equal(b.at % 120, 0, b.label));
+    TOUR_STAGES.beats.filter((b) => T.ROUTE.includes(b.label)).forEach((b) => assert.equal(b.stage, b.label));
+    assert.equal(TOUR_STAGES.beats.filter((b) => b.stage).length, 7);
 });
 
-test('each stage\'s line is its STAGES[].produces, word for word, drawn in its illustrated scene', () => {
-    assert.deepEqual(PRODUCES, STAGES.map((s) => s.produces));
-    STAGES.forEach((s, i) => {
-        // local 280 of the 300-frame illustrated portion: scaled 3x, that is
-        // old-local 840 — past the 720 the produces line fades in at.
-        const t = shot(INTRO + PER * i + 280).texts();
-        assert.ok(t.includes(s.name), s.name);
-        assert.ok(t.includes('→ ' + s.produces), s.name + ': ' + t.join(' | '));
+test('the source keeps no terminal cut', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'tour-stages.js'), 'utf8');
+    assert.doesNotMatch(src, /termCut/);
+    assert.doesNotMatch(src, /landCloseup|vsCode|TERM\b|lead\(/);
+});
+
+// The score's cues: a hit on every cut, a pluck on every block, each block
+// on a beat.
+test('the cues are the cut starts and every block\'s beat, in order', () => {
+    assert.deepEqual(TOUR_STAGES.cues.cuts, STARTS);
+    const b = TOUR_STAGES.cues.blocks;
+    assert.ok(b.length >= 50, b.length + ' blocks');
+    b.forEach((f, i) => {
+        assert.equal(f % 30, 0, 'block at ' + f);
+        assert.ok(f >= 0 && f < 3600 && (i === 0 || f > b[i - 1]), 'block at ' + f);
+    });
+    STARTS.forEach((s) => assert.ok(b.includes(s), 'no block at the cut ' + s));
+});
+
+test('each cut draws its own page: the stage header in each stage\'s cut', () => {
+    const P = T.palette(() => '', 'zh');
+    T.ROUTE.forEach((s, i) => {
+        const t = shot(STARTS[i + 2] + 100, P).texts();
+        assert.ok(t.includes(s), s + ': ' + t.join(' | '));
+        assert.ok(t.includes(D.S['pr.' + s].zh), s);
     });
 });
 
@@ -57,68 +82,28 @@ test('no frame or half frame draws with a number that is not finite', () => {
     }
 });
 
-// Criterion: each stage's terminal-cut frame draws `▌FANKEEL <STAGE>` with
-// that stage's own name in the lead line. Red when: `lead()`'s stage word is
-// hardcoded (e.g. always 'SURVEY') instead of taking the block's own `i`.
-test('each stage\'s terminal cut draws its own stage in the lead line, after the crossing', () => {
-    T.ROUTE.forEach((s, i) => {
-        // local 350 of the 408-frame block = terminal-cut local 50, well past
-        // the 6-frame crossing.
-        const t = shot(INTRO + PER * i + 350).texts();
-        assert.ok(t.some((x) => x.includes('▌FANKEEL ' + s.toUpperCase())), s + ': ' + t.join(' | '));
-    });
+// Criterion (design, What proves it done): every string of the table, in
+// zh and in en, is measured with measureText and no wider than its box.
+// Red when: a string is never drawn through fit, or one overflows.
+test('every string, in both languages, is drawn through fit and keeps to its box', () => {
+    for (const lang of ['zh', 'en']) {
+        const P = T.palette(() => '', lang);
+        const frames = [];
+        for (let f = 0; f < 3600; f += 5) frames.push(f);
+        const r = sweep(T, frames, (ctx, f) => T.render(ctx, 'stages', f, { palette: P }));
+        const over = [...new Set(r.log.filter((e) => e.over).map((e) => e.s))];
+        assert.deepEqual(over, [], lang + ' overflows');
+        assert.deepEqual(r.monoWide, [], lang + ' mono face');
+        const drawn = r.log.map((e) => e.s).join('\n');
+        const missing = Object.keys(D.S).filter((k) => !drawn.includes(D.S[k][lang].trim()));
+        assert.deepEqual(missing, [], lang + ' never drawn through fit');
+    }
 });
 
-// Criterion: each terminal cut draws the Claude Code transcript above the
-// statusline, taken from the storyboard's own shot. Red when: the cut draws
-// only the lead line and a caption, leaving the terminal empty (as shipped in
-// 4109106b).
-test('each stage\'s terminal cut draws its Claude Code transcript above the statusline', () => {
-    const LINE = {
-        survey: 'src/orders/ProductPicker.tsx', design: '這個做法可以嗎？', plan: '(docs/plans/multi-warehouse.md)',
-        build: 'Do you want to make this edit to StockTable.tsx?', verify: '(node --test)',
-        audit: '(node scripts/docs-check.js)', land: '(git merge --no-ff fankeel/multi-warehouse)',
-    };
-    T.ROUTE.forEach((s, i) => {
-        const t = shot(INTRO + PER * i + 350).texts();
-        assert.ok(t.includes(LINE[s]), s + ': ' + t.join(' | '));
-    });
-});
-
-// Criterion: the land stage's terminal cut draws seven filled route dots.
-// Red when: the close-up's `step` is anything less than the full route
-// length (e.g. left at 6, one behind).
-test('the land stage\'s terminal-cut close-up shows all seven route dots filled', () => {
-    // land's block starts at INTRO + PER*6; its close-up runs from local 372.
-    const t = shot(INTRO + PER * 6 + 380).texts();
-    assert.ok(t.some((x) => x.includes('●●●●●●●')), t.join(' | '));
-});
-
-// Criterion: the outro draws the install line and the tagline. Red when:
-// either string is dropped or split across draws so no single fillText
-// carries it whole.
-test('the outro draws the install command and the tagline', () => {
-    const install = shot(OUTRO + 130).texts();
-    assert.ok(install.includes('claude plugin install fankeel@fankeel'), install.join(' | '));
-
-    const tag = shot(OUTRO + 250).texts();
-    assert.ok(tag.includes('claude plugin install fankeel@fankeel'), tag.join(' | '));
-    assert.ok(tag.includes('跟 AI 開發得再久，也不堆過時的引用和死程式。'), tag.join(' | '));
-});
-
-// Artefact/consistency check: in each stage block, the stage name drawn in
-// the terminal cut's lead line equals the stage whose illustrated scene
-// immediately precedes it in that same block — one route, drawn in two
-// places, never disagreeing. Red when: the terminal cut is wired to a
-// different index than the illustrated scene beside it (e.g. `ROUTE[i]` in
-// one place and `ROUTE[i - 1]` or a fixed index in the other).
-test('the terminal cut\'s stage matches the illustrated scene\'s stage in the same block', () => {
-    T.ROUTE.forEach((s, i) => {
-        const start = INTRO + PER * i;
-        const illustrated = shot(start + 280).texts();
-        assert.ok(illustrated.includes(s), 'scene missing its own stage name: ' + s);
-        const terminal = shot(start + 350).texts();
-        assert.ok(terminal.some((x) => x.includes('▌FANKEEL ' + s.toUpperCase())),
-            'terminal cut disagrees with its own block\'s scene (' + s + '): ' + terminal.join(' | '));
-    });
+test('the outro ends on the install lines and the tagline, in either language', () => {
+    const zh = shot(3590).texts();
+    assert.ok(zh.includes('claude plugin install fankeel@fankeel'), zh.join(' | '));
+    assert.ok(zh.includes('跟 AI 開發得再久，也不堆過時的引用和死程式。'), zh.join(' | '));
+    const en = shot(3590, T.palette(() => '', 'en')).texts();
+    assert.ok(en.join(' ').includes('without piling up stale references and dead code.'), en.join(' | '));
 });

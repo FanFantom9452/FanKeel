@@ -34,15 +34,15 @@ test('a hash opens the promo at a frame, and nothing plays it on', (t) => {
     assert.match(html, /id="trFno"[^>]*>f 1500 \/ 3600 · 60 fps</);
     assert.match(html, /<b>0:25\.00<\/b> \/ 1:00\.00/);
     assert.match(html, /aria-valuenow="1500"/);
-    assert.match(html, /aria-valuetext="0:25\.00，build"/);
+    assert.match(html, /aria-valuetext="0:25\.00，plan"/);
     assert.match(html, /id="trPlay"[^>]*aria-pressed="false"|aria-pressed="false"[^>]*id="trPlay"/);
 });
 
 test('the scrub bar carries one marker per beat, coloured by its stage — no chapter chips', (t) => {
     if (!findBrowser()) { t.skip(NO_BROWSER); return; }
     const html = dom(PAGE);
-    assert.equal(count(html, /class="tr-mk"/g), 8);
-    for (const label of ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land', 'end']) {
+    assert.equal(count(html, /class="tr-mk"/g), 11);
+    for (const label of ['hook', 'route', 'survey', 'design', 'plan', 'build', 'verify', 'audit', 'land', 'clash', 'outro']) {
         assert.match(html, new RegExp('<span>' + label + '</span>'));
     }
     assert.match(html, /--c: var\(--st-survey\)/);
