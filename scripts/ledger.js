@@ -28,8 +28,10 @@ const { execFileSync } = require('node:child_process');
 const { parseArgs: parseArgv } = require('node:util');
 
 const ledger = require('../lib/ledger.js');
-const { splitAtVerb } = require('../lib/argv.js');
+const registry = require('../lib/registry.js');
+const { splitAroundVerb } = require('../lib/argv.js');
 const plantasks = require('../lib/plantasks.js');
+const { contextPath } = require('../lib/handoff.js');
 
 function fail(message) {
     process.stdout.write(message + '\n');
@@ -38,7 +40,7 @@ function fail(message) {
 
 // Every string flag, and the key it lands on. A table rather than a list because
 // `splitAtVerb` reads it too, and two lists of the same flags drift.
-const STRING_FLAGS = { root: 'root', plan: 'plan', range: 'range' };
+const STRING_FLAGS = { root: 'root', plan: 'plan', range: 'range', group: 'group' };
 
 // The verbs, in the order the refusal at the bottom lists them. A set rather
 // than four literals for the same reason the flags are a table: `splitAtVerb`
@@ -50,7 +52,7 @@ const VERBS = new Set(['init', 'complete', 'ruling', 'show', 'groups', 'ready', 
 // where a range is recorded. A flag outside its verb's list is refused rather
 // than ignored: `ranges --range x` used to exit 0 having read nothing of it.
 const BASE_FLAGS = ['root', 'plan'];
-const VERB_FLAGS = { init: BASE_FLAGS.concat(['range']), complete: BASE_FLAGS.concat(['range']), fix: BASE_FLAGS.concat(['range']) };
+const VERB_FLAGS = { init: BASE_FLAGS.concat(['range']), complete: BASE_FLAGS.concat(['range']), fix: BASE_FLAGS.concat(['range']), brief: BASE_FLAGS.concat(['group', 'prefix']) };
 
 // `strict: false` lets an unknown flag through to the verb check below, which
 // refuses it by name. A declared flag given no value comes back `true` rather
@@ -62,6 +64,7 @@ const VERB_FLAGS = { init: BASE_FLAGS.concat(['range']), complete: BASE_FLAGS.co
 function parseArgs(argv, verb) {
     const options = {};
     for (const flag of Object.keys(STRING_FLAGS)) options[flag] = { type: 'string' };
+    options.prefix = { type: 'boolean' };
 
     const { values } = parseArgv({ args: argv, strict: false, allowPositionals: true, options });
     const opts = {};
@@ -70,6 +73,7 @@ function parseArgs(argv, verb) {
         if (typeof values[flag] !== 'string') fail('--' + flag + ' needs a value.');
         opts[key] = values[flag];
     }
+    if (values.prefix !== undefined) opts.prefix = values.prefix === true;
     // After the value check, so a flag left without its value is still named
     // as that — the refusal tests/ledger.test.js pins for `--root` and `--plan`.
     const allowed = VERB_FLAGS[verb] || BASE_FLAGS;
@@ -425,8 +429,54 @@ function readOwnLedger(root, opts) {
     return { file, contents };
 }
 
+// The byte-identical prefix every implementer in one group opens with:
+// this task's own verified facts, the group's Files and Interfaces (so a
+// dispatched implementer learns its neighbours' names the way `brief <n>`
+// already gives one task's own Consumes its producer), and the fixed
+// footer every `brief <n>` already ends on. Only file content decides the
+// bytes — no timestamp, no session or agent id — so two implementers
+// dispatched a minute apart still share a prompt prefix a 5-minute cache
+// can serve from one read.
+function prefix(root, planOpt, group) {
+    const { text } = readPlan(root, planOpt);
+    const { tasks } = plantasks.parsePlan(text);
+    const rows = plantasks.groups(tasks);
+    const n = Number(group);
+    if (!Number.isInteger(n) || n < 1 || n > rows.length) {
+        fail('brief --prefix wants --group 1..' + rows.length + ' for this plan, got ' + group);
+    }
+    const nums = rows[n - 1];
+    const groupTasks = tasks.filter((t) => nums.includes(t.n));
+
+    const active = registry.readActive(root)
+        .sort((a, b) => String(b.data.updated || '').localeCompare(String(a.data.updated || '')));
+    const ctxFile = active.length ? contextPath(root, active[0].data) : null;
+    let ctxText = 'No active task under ' + root + ' — nothing recorded yet.';
+    if (ctxFile) {
+        try {
+            ctxText = fs.readFileSync(ctxFile, 'utf8').trim() || 'context: none yet — ' + ctxFile;
+        } catch (e) {
+            ctxText = 'context: none yet — ' + ctxFile;
+        }
+    }
+
+    const sections = groupTasks.map((t) => [
+        '### Task ' + t.n + ': ' + t.name,
+        paragraph(t.body, 'Files'),
+        paragraph(t.body, 'Interfaces'),
+    ].filter(Boolean).join('\n\n'));
+
+    return [
+        '## Task context', '',
+        ctxText, '',
+        '## Group ' + n + ' — Files and Interfaces', '',
+        sections.join('\n\n'), '',
+        FOOTER, '',
+    ].join('\n');
+}
+
 function main(argv) {
-    const { head, verb: named, text } = splitAtVerb(argv, STRING_FLAGS, VERBS);
+    const { head, verb: named, text } = splitAroundVerb(argv, STRING_FLAGS, VERBS);
     const verb = String(named || 'show').toLowerCase();
     const opts = parseArgs(head, verb);
     const root = path.resolve(opts.root || process.cwd());
@@ -572,6 +622,10 @@ function main(argv) {
     }
 
     if (verb === 'brief') {
+        if (opts.prefix) {
+            if (opts.group === undefined) fail('brief --prefix wants --group <N>.');
+            return prefix(root, opts.plan, opts.group);
+        }
         const n = Number(text[0]);
         if (!Number.isInteger(n) || n < 1) fail('brief <task number>');
         const { file, text: planText } = readPlan(root, opts.plan);
@@ -674,4 +728,4 @@ if (require.main === module) {
     process.stdout.write(main(process.argv.slice(2)) + '\n');
 }
 
-module.exports = { withScan, SCAN_HEADING };
+module.exports = { withScan, SCAN_HEADING, prefix };
