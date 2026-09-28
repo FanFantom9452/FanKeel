@@ -189,6 +189,29 @@ test('await.js watches the lap the in-flight mark carries, not one recomputed fr
     assert.ok(other.text.startsWith('commit ' + lap3 + ' — run'), 'a mark for another stage is not this stage\'s lap: ' + other.text);
 });
 
+// docs/90-agent/plans/2026-09-28-agent-lifetime-design.md §1: build alone can
+// run more than one brain at once, each with its own inflight mark and its
+// own `-g<N>` handoff; `--agent` says which this call watches.
+test('await.js watches one group-parallel brain at a time, chosen by --agent, and tags its line with its group', async () => {
+    const marks = [{ stage: 'build', at: 1, agentId: 'a1', group: 1 }, { stage: 'build', at: 1, agentId: 'a2', group: 2 }];
+    const f = fixture({ inflight: marks });
+    const g2 = path.join(f.task, 'build-g2.md').split(path.sep).join('/');
+    at(g2, Date.now());
+    const out = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'a2', '--timeout', '0.5'], f.env);
+    assert.equal(out.text, 'group 2, agent a2: handoff ' + g2 + ' — print this path and ask its gate as your rules say, unless you already asked it and the file has not changed since.');
+});
+
+test('await.js refuses to guess which brain to watch when more than one is running, and refuses an --agent naming none of them', async () => {
+    const marks = [{ stage: 'build', at: 1, agentId: 'a1', group: 1 }, { stage: 'build', at: 1, agentId: 'a2', group: 2 }];
+    const f = fixture({ inflight: marks });
+    const none = await awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '0.5'], f.env);
+    assert.equal(none.code, 1);
+    assert.match(none.text, /^await\.js: 2 stage agents in flight for build: pass --agent <id>/);
+    const bad = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'zz', '--timeout', '0.5'], f.env);
+    assert.equal(bad.code, 1);
+    assert.match(bad.text, /^await\.js: no in-flight mark for agent zz at stage build/);
+});
+
 test('a stage agent starting stamps the lap its brief named on the in-flight mark', () => {
     const f = fixture({ moves: [['build', 1], ['build', 2]] });
     const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'hooks', 'brief.js')], {

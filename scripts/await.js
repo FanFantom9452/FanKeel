@@ -25,7 +25,7 @@ const { transcriptOf } = require('../lib/detail.js');
 const { sessionDirOf, agentFiles } = require('../lib/usage.js');
 const { configDirOf } = require('../lib/profile.js');
 
-const USAGE = 'await.js: usage: await.js --session <id> [--root <dir>] [--since <file>] [--idle <seconds>] [--timeout <seconds>]';
+const USAGE = 'await.js: usage: await.js --session <id> [--root <dir>] [--since <file>] [--idle <seconds>] [--timeout <seconds>] [--agent <id>]';
 const COMMIT_SCRIPT = path.join(__dirname, 'commit.js').replace(/\\/g, '/');
 
 // Flag and value pairs only. Null for anything else, which prints the usage line.
@@ -47,6 +47,7 @@ function parseArgs(argv) {
         if (key === '--session') opts.session = value;
         else if (key === '--root') opts.root = value;
         else if (key === '--since') opts.since = value;
+        else if (key === '--agent') opts.agent = value;
         else if (key === '--idle' || key === '--timeout') {
             const n = Number(value);
             if (!(n > 0)) return null;
@@ -62,8 +63,8 @@ function parseArgs(argv) {
 // where a stage agent writes out of habit when it does not follow the exact
 // path. Both are watched; whichever lands first is the commit found.
 // docs/reports/2026-09-23-brain-wakeup.md.
-function commitCandidates(root, data, lap) {
-    const candidates = [commitPath(root, data, data.stage, lap)];
+function commitCandidates(root, data, lap, group) {
+    const candidates = [commitPath(root, data, data.stage, lap, group)];
     if (data.stage === 'build') {
         const plan = newestPlan(root, data.started);
         const ledger = ledgerCommitPath(root, plan, data.stage);
@@ -72,19 +73,25 @@ function commitCandidates(root, data, lap) {
     return candidates.filter(Boolean);
 }
 
-// What `awaitHandoff` is given, from the record. The agent counts as lost only
-// when its own transcript exists: an agent nobody can find is never judged.
+// What `awaitHandoff` is given, from the record. The agent counts as lost
+// only when its own transcript exists: an agent nobody can find is never
+// judged. `inflights(data)` may hold more than one mark once a build runs
+// several brains at once (docs/90-agent/plans/2026-09-28-agent-lifetime-design.md
+// §1); `--agent` says which one this call watches, and is required once
+// there is more than one candidate for `data.stage` — this call watches
+// one brain, not a race across several, so an omitted `--agent` with two
+// or more running is an error rather than a silent guess.
 function waitFor(opts, env) {
     const root = opts.root ? registry.resolveRoot(opts.root) : registry.rootFor({ cwd: process.cwd() });
     const data = registry.readSession(root, opts.session);
     if (!data) return { error: 'no session ' + opts.session + ' under ' + root };
-    // The lap the running stage agent was briefed with, off its in-flight mark
-    // (hooks/brief.js). A `moves` entry added after the dispatch — three false
-    // `lost` reports on 2026-09-24 — would otherwise move the watch to a lap the
-    // agent never writes. No mark for this stage: the lap from `moves`, as before.
-    const mark = data.inflight && data.inflight.stage === data.stage ? data.inflight : null;
+    const running = registry.inflights(data).filter((m) => m.stage === data.stage);
+    if (opts.agent && !running.some((m) => m.agentId === opts.agent)) return { error: 'no in-flight mark for agent ' + opts.agent + ' at stage ' + data.stage };
+    if (!opts.agent && running.length > 1) return { error: running.length + ' stage agents in flight for ' + data.stage + ': pass --agent <id>' };
+    const mark = opts.agent ? running.find((m) => m.agentId === opts.agent) : (running[0] || null);
     const lap = mark && Number.isInteger(mark.lap) && mark.lap > 0 ? mark.lap : undefined;
-    const handoff = handoffPath(root, data, data.stage, lap);
+    const group = mark && Number.isInteger(mark.group) ? mark.group : undefined;
+    const handoff = handoffPath(root, data, data.stage, lap, group);
     if (!handoff) return { error: 'session ' + opts.session + ' has no stage or no started time, so no handoff path' };
     let since = 0;
     try {
@@ -97,18 +104,22 @@ function waitFor(opts, env) {
         const own = path.join(dir, 'subagents', 'agent-' + agentId + '.jsonl');
         activity = () => (fs.existsSync(own) ? agentFiles(dir) : []);
     }
-    return { handoff, commit: commitCandidates(root, data, lap), since, agentId, activity, idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000 };
+    return { handoff, commit: commitCandidates(root, data, lap, group), since, agentId, group, activity, idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000 };
 }
 
 // The word first, so the controller's rule can name it; then what to do, so
 // the rule does not have to carry every case under the injection's cap.
 // `commitFile` is the candidate that actually matched — `o.commit` may be
-// several paths, and only one of them was written.
+// several paths, and only one of them was written. `o.group` tags the line
+// with which brain it is about once a build runs more than one at a time;
+// a call with nothing to tag (every other stage, and build with just one
+// running) prints exactly the line it always did.
 function lineFor(state, o, commitFile) {
-    if (state === 'handoff') return 'handoff ' + o.handoff + ' — print this path and ask its gate as your rules say, unless you already asked it and the file has not changed since.';
-    if (state === 'commit') return 'commit ' + commitFile + ' — run `node ' + COMMIT_SCRIPT + ' "' + commitFile + '"` and SendMessage the agent what it printed, exactly. After a `commit.js:` line, run await again with `--since "' + commitFile + '"` added.';
-    if (state === 'lost') return 'lost ' + o.agentId + ' — the stage agent stopped with neither file written: dispatch a fresh one with the same line.';
-    return 'timeout — nothing moved in ' + Math.round(o.timeoutMs / 60000) + ' minutes: run await again.';
+    const tag = Number.isInteger(o.group) ? 'group ' + o.group + ', agent ' + (o.agentId || '?') + ': ' : '';
+    if (state === 'handoff') return tag + 'handoff ' + o.handoff + ' — print this path and ask its gate as your rules say, unless you already asked it and the file has not changed since.';
+    if (state === 'commit') return tag + 'commit ' + commitFile + ' — run `node ' + COMMIT_SCRIPT + ' "' + commitFile + '"` and SendMessage the agent what it printed, exactly. After a `commit.js:` line, run await again with `--since "' + commitFile + '"` added.';
+    if (state === 'lost') return tag + 'lost ' + o.agentId + ' — the stage agent stopped with neither file written: dispatch a fresh one with the same line.';
+    return tag + 'timeout — nothing moved in ' + Math.round(o.timeoutMs / 60000) + ' minutes: run await again.';
 }
 
 function main(argv, env) {
