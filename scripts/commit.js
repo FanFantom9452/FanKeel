@@ -7,6 +7,8 @@
 // `<base>..<sha>`, the range that task's reviewer is pinned to.
 // Several tasks' blocks, separated by a `---` line, print one `<paths>: <base>..<sha>` each, in order.
 // Once every block has committed, the file is renamed to `<name>.done.md`.
+// A block whose first line is `worktree <path>` is committed in that worktree
+// and cherry-picked here; a conflict prints `conflict <paths>` and exits 1.
 // `git commit -o`
 // takes only the listed paths, so whatever else is staged or dirty stays as it
 // was. It runs `git` from the top of the repository the current directory is
@@ -14,15 +16,22 @@
 // that is not a path, for git to refuse.
 
 const fs = require('node:fs');
+const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 function parseBlock(text) {
     const at = text.search(/\r?\n[ \t]*\r?\n/);
     if (at < 0) return { error: 'no blank line between the paths and the message' };
-    const paths = text.slice(0, at).split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    let paths = text.slice(0, at).split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
     const message = text.slice(at).trim();
     if (!message) return { error: 'no message' };
-    return { paths, message };
+    // A first line `worktree <path>`: the implementer built in a worktree of
+    // this repository, and that is where these paths are committed.
+    const head = /^worktree\s+(\S.*)$/.exec(paths[0] || '');
+    if (!head) return { paths, message };
+    paths = paths.slice(1);
+    if (!paths.length) return { error: 'no paths after the worktree line' };
+    return { paths, message, worktree: head[1].trim() };
 }
 
 // Blocks are separated by a line that is `---` and nothing else, so a brain
@@ -54,6 +63,58 @@ function foldRenames(paths, statusLines) {
     return out;
 }
 
+// The directory every worktree of one repository shares, or null.
+function commonDir(run, dir) {
+    const r = run(dir, ['rev-parse', '--git-common-dir']);
+    if (r.status !== 0) return null;
+    try {
+        return fs.realpathSync.native(path.resolve(dir, r.stdout.trim()));
+    } catch (e) {
+        return null;
+    }
+}
+
+// A `worktree <path>` block: commit its paths in that worktree with `commit -o`,
+// then cherry-pick the commit onto this repository's HEAD. A conflict is
+// aborted, so HEAD and the working tree are as they were, and the worktree is
+// kept for the task's re-dispatch. On success the worktree and its branch go;
+// a worktree git will not remove (files outside the block) is kept and said.
+function landWorktree(top, block, run, oneLine) {
+    const wt = path.resolve(top, block.worktree);
+    let real = null;
+    try { real = fs.realpathSync.native(wt); } catch (e) { /* not there */ }
+    const mine = commonDir(run, top);
+    if (!real || real === fs.realpathSync.native(top) || !mine || commonDir(run, wt) !== mine) {
+        return { error: 'not a worktree of this repository: ' + block.worktree };
+    }
+    const here = (args, input) => run(wt, args, input);
+    const branch = here(['symbolic-ref', '--quiet', '--short', 'HEAD']);
+    const renamed = here(['diff', '--cached', '-M', '--name-status']);
+    const add = here(['add', '--'].concat(block.paths));
+    if (add.status !== 0) return { error: 'git add failed: ' + oneLine(add.stderr) };
+    if (here(['diff', '--cached', '--quiet', '--'].concat(block.paths)).status === 0) return { error: 'nothing to commit in ' + block.paths.join(', ') };
+    const withOld = foldRenames(block.paths, renamed.status === 0 ? renamed.stdout.split(/\r?\n/) : []);
+    const made = here(['commit', '-o', '-F', '-', '--'].concat(withOld), block.message + '\n');
+    if (made.status !== 0) return { error: 'git commit failed: ' + oneLine(made.stderr || made.stdout) };
+    const sha = here(['rev-parse', 'HEAD']).stdout.trim();
+    // core.autocrlf off for this one call: cherry-pick writes the paths into
+    // the working tree fresh, and a global autocrlf=true would checkout what
+    // the worktree committed with the line endings converted, which a
+    // repository with no .gitattributes of its own does not ask for.
+    const pick = run(top, ['-c', 'core.autocrlf=false', 'cherry-pick', sha]);
+    if (pick.status !== 0) {
+        const unmerged = run(top, ['diff', '--name-only', '--diff-filter=U']);
+        const clashed = unmerged.status === 0 ? unmerged.stdout.split(/\r?\n/).filter(Boolean) : [];
+        run(top, ['cherry-pick', '--abort']);
+        if (clashed.length) return { conflict: clashed };
+        return { error: 'git cherry-pick failed: ' + oneLine(pick.stderr || pick.stdout) };
+    }
+    const removed = run(top, ['worktree', 'remove', wt]);
+    if (removed.status !== 0) return { kept: block.worktree + ' — ' + oneLine(removed.stderr) };
+    if (branch.status === 0 && branch.stdout.trim()) run(top, ['branch', '-D', branch.stdout.trim()]);
+    return {};
+}
+
 function main(argv, cwd) {
     if (argv.length !== 1) return { text: 'commit.js: usage: commit.js <commit file>', code: 2 };
     let raw;
@@ -82,6 +143,15 @@ function main(argv, cwd) {
         const { paths, message } = parsed.blocks[i];
         const fail = (why) => ({ text: out.concat('commit.js: ' + (many ? 'block ' + (i + 1) + ': ' : '') + why).join('\n'), code: 1 });
         const base = git(['rev-parse', 'HEAD']).stdout.trim();
+        if (parsed.blocks[i].worktree) {
+            const label = many ? paths.join(', ') + ': ' : '';
+            const r = landWorktree(top.stdout.trim(), parsed.blocks[i], run, oneLine);
+            if (r.error) return fail(r.error);
+            if (r.conflict) return { text: out.concat(label + 'conflict ' + r.conflict.join(' ')).join('\n'), code: 1 };
+            out.push(label + base + '..' + git(['rev-parse', 'HEAD']).stdout.trim());
+            if (r.kept) out.push('kept ' + r.kept);
+            continue;
+        }
         // Read before `add`: `add` restages `paths` at their current working-tree content, which
         // can outweigh a `git mv`'s untouched blob and cost the rename its similarity match.
         const renamed = git(['diff', '--cached', '-M', '--name-status']);

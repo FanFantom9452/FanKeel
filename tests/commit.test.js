@@ -233,3 +233,88 @@ test('a staged rename is committed whole: the old path rides along with the new 
     assert.match(stat, /a2\.txt/);
     assert.equal(git(dir, 'diff', '--name-only'), 'b.txt', 'the other dirty file is untouched');
 });
+
+// docs/90-agent/plans/2026-09-28-spawndepth-worktree-design.md §2: a block
+// whose first line is `worktree <path>` was built in a worktree of this
+// repository. A clean repository whose a.txt has ten lines, b.txt one, and a
+// worktree of it on branch `wt1` outside it, the way Agent isolation leaves one.
+const TEN = Array.from({ length: 10 }, (_, i) => 'line ' + (i + 1)).join('\n') + '\n';
+function worktreeRepo() {
+    const dir = tmp('fankeel-commit-wt-');
+    git(dir, 'init', '-q');
+    git(dir, 'config', 'user.email', 'test@example.invalid');
+    git(dir, 'config', 'user.name', 'test');
+    git(dir, 'config', 'commit.gpgsign', 'false');
+    fs.writeFileSync(path.join(dir, 'a.txt'), TEN);
+    fs.writeFileSync(path.join(dir, 'b.txt'), 'b1\n');
+    git(dir, 'add', '.');
+    git(dir, 'commit', '-qm', 'base');
+    const wt = path.join(tmp('fankeel-commit-wtdir-'), 'wt');
+    git(dir, 'worktree', 'add', '-q', '-b', 'wt1', wt);
+    return { dir, wt };
+}
+const setLine = (file, n, text) => {
+    const lines = fs.readFileSync(file, 'utf8').split('\n');
+    lines[n - 1] = text;
+    fs.writeFileSync(file, lines.join('\n'));
+};
+
+test('a worktree block commits there, cherry-picks onto HEAD, and removes the worktree and its branch', () => {
+    const { dir, wt } = worktreeRepo();
+    setLine(path.join(dir, 'a.txt'), 1, 'main 1');
+    git(dir, 'commit', '-qam', 'main edits line 1');
+    setLine(path.join(wt, 'a.txt'), 9, 'worktree 9');
+    const res = commit.main([requestFile('worktree ' + wt + '\na.txt\n\nfeat: line 9\n')], dir);
+    assert.ok(!res.code, res.text);
+    const [after, before] = git(dir, 'log', '--format=%H', '-n', '2').split('\n');
+    assert.equal(res.text, before + '..' + after);
+    assert.equal(git(dir, 'log', '-1', '--format=%s'), 'feat: line 9');
+    const a = fs.readFileSync(path.join(dir, 'a.txt'), 'utf8').split('\n');
+    assert.deepEqual([a[0], a[8]], ['main 1', 'worktree 9']);
+    assert.equal(fs.existsSync(wt), false, 'the worktree is removed');
+    assert.equal(git(dir, 'branch', '--list', 'wt1'), '', 'its branch is deleted');
+    assert.equal(git(dir, 'status', '--porcelain'), '');
+});
+
+test('a worktree block that conflicts is aborted: HEAD, the tree and the worktree stay as they were', () => {
+    const { dir, wt } = worktreeRepo();
+    setLine(path.join(dir, 'a.txt'), 5, 'main 5');
+    git(dir, 'commit', '-qam', 'main edits line 5');
+    setLine(path.join(wt, 'a.txt'), 5, 'worktree 5');
+    const before = git(dir, 'rev-parse', 'HEAD');
+    const file = requestFile('worktree ' + wt + '\na.txt\n\nfeat: line 5\n');
+    const res = commit.main([file], dir);
+    assert.equal(res.code, 1);
+    assert.equal(res.text, 'conflict a.txt');
+    assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
+    assert.equal(git(dir, 'status', '--porcelain'), '');
+    assert.equal(fs.existsSync(path.join(dir, '.git', 'CHERRY_PICK_HEAD')), false);
+    assert.equal(fs.existsSync(wt), true, 'the worktree is kept');
+    assert.equal(fs.existsSync(file), true, 'the commit file is kept');
+});
+
+test('a conflict in a later block keeps the blocks that landed and names its own paths', () => {
+    const { dir, wt } = worktreeRepo();
+    setLine(path.join(dir, 'a.txt'), 5, 'main 5');
+    git(dir, 'commit', '-qam', 'main edits line 5');
+    setLine(path.join(wt, 'a.txt'), 5, 'worktree 5');
+    fs.writeFileSync(path.join(dir, 'b.txt'), 'b2\n');
+    const base = git(dir, 'rev-parse', 'HEAD');
+    const res = commit.main([requestFile('b.txt\n\nfeat: change b\n---\nworktree ' + wt + '\na.txt\n\nfeat: line 5\n')], dir);
+    assert.equal(res.code, 1);
+    assert.deepEqual(res.text.split('\n'), ['b.txt: ' + base + '..' + git(dir, 'rev-parse', 'HEAD'), 'a.txt: conflict a.txt']);
+    assert.equal(git(dir, 'show', '--name-only', '--format=', 'HEAD'), 'b.txt');
+});
+
+test('a worktree line naming something that is not a worktree of this repository commits nothing', () => {
+    const { dir } = worktreeRepo();
+    const other = repo();
+    const before = git(dir, 'rev-parse', 'HEAD');
+    for (const where of [tmp('fankeel-commit-none-'), other, dir]) {
+        const res = commit.main([requestFile('worktree ' + where + '\na.txt\n\nfeat: x\n')], dir);
+        assert.equal(res.code, 1, where);
+        assert.equal(res.text, 'commit.js: not a worktree of this repository: ' + where);
+    }
+    assert.equal(commit.main([requestFile('worktree ' + dir + '\n\nfeat: x\n')], dir).text, 'commit.js: no paths after the worktree line');
+    assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
+});
