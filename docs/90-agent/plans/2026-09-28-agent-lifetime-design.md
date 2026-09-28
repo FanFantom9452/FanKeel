@@ -32,8 +32,8 @@ task: 減少 subagent context 堆疊：group 並排 brain、小 task、共用資
 
 - 新增 `hooks/budget.js`，登記在 `.claude-plugin/plugin.json` 的 PreToolUse 和 PostToolUse。payload 沒有 `agent_id` 就立刻返回，主 session 完全不受影響。
 - 它讀取這個 subagent 自己的逐字紀錄，並用 `lib/context.js` 的 `inspect()` 只讀檔案最後 512KB（`lib/context.js:36,55-73`）。
-- context 達到 `SOFT = 150000` 時，PostToolUse 每一次都注入：「做完這一步，把進度寫進 `.fankeel/build/<task>/relay-<agentId>.md`，然後回報那個路徑。」
-- context 達到 `HARD = 250000` 時，PreToolUse 拒絕所有工具呼叫，只有寫入 `.fankeel/build/` 底下檔案的 Write 和 Edit 例外；拒絕理由寫明交接檔的路徑。
+- context 達到 `SOFT = 300000` 時，PostToolUse 每一次都注入：「做完這一步，把進度寫進 `.fankeel/build/<task>/relay-<agentId>.md`，然後回報那個路徑。」
+- context 達到 `HARD = 450000` 時，PreToolUse 拒絕所有工具呼叫，只有寫入 `.fankeel/build/` 底下檔案的 Write 和 Edit 例外；拒絕理由寫明交接檔的路徑。
 - brain 收到一個 relay 路徑，就派一個新的 agent，prompt 只寫共用前綴（第 4 段）加上那個 relay 檔。`SOFT` 和 `HARD` 由 `lib/context.js` 匯出，放在 `BUSY` 旁邊。
 
 ## 4. 逐字相同的共用前綴
@@ -71,14 +71,14 @@ task: 減少 subagent context 堆疊：group 並排 brain、小 task、共用資
 
 會先失敗、做完後通過的測試：
 - lint 遇到一個 `Modify:` 整份 `assets/station/station.js`（5095 行）的 fixture task，會回報 finding；
-- budget hook 拿到一份 160k 的 subagent 逐字紀錄時，會注入 `additionalContext`；拿到 260k 時，會拒絕 `Read`、允許寫入 `.fankeel/build/` 的 `Write`；沒有 `agent_id` 時什麼都不做；
+- budget hook 拿到一份 310k 的 subagent 逐字紀錄時，會注入 `additionalContext`；拿到 460k 時，會拒絕 `Read`、允許寫入 `.fankeel/build/` 的 `Write`；沒有 `agent_id` 時什麼都不做；
 - `inflight` 裡有兩個 brain 時，`await.js` 會分別回報兩個；
 - `serialize()` 的輸出帶有 `peak` 和 `requests`；
 - `ledger.js brief --prefix` 對同一個 group 執行兩次，輸出的 bytes 完全相同。
 
 產出物本身的檢查：畫出來的 station 派工表中，表尾的請求數要等於各列請求數的總和；每一列的 `peak` 都不能大於那一列的 tokens。
 
-上線後的成效用第 7 段的欄位衡量，對照 f44b1c61：沒有任何 subagent 的 context 峰值超過 250k（基準是 544k）；最貴的單一 subagent 佔全部 subagent 花費的比例低於 15%（基準是 31%）。這兩項會記成 Watch 條目，不當作 verify 的測試。
+上線後的成效用第 7 段的欄位衡量，對照 f44b1c61：沒有任何 subagent 的 context 峰值超過 450k（基準是 544k）；最貴的單一 subagent 佔全部 subagent 花費的比例低於 15%（基準是 31%）。這兩項會記成 Watch 條目，不當作 verify 的測試。
 
 ## 尚未證實
 

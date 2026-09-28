@@ -173,4 +173,4 @@ if: `the chosen card animates, and under reduced motion nothing is running` 在�
 ### build 五個 task 以上
 if: 下一次有 5 個以上 task 的 build 開跑. 09-28.
 
-- 〔station〕看第 7 段加的 station 欄位：沒有任何 subagent 的 context 峰值超過 250k（基準 f44b1c61 的 544k）、最貴的單一 subagent 佔 subagent 總花費低於 15%（基準 31%） — [station.md](docs/90-agent/reference/station.md).
+- 〔station〕看第 7 段加的 station 欄位：沒有任何 subagent 的 context 峰值超過 450k（基準 f44b1c61 的 544k）、最貴的單一 subagent 佔 subagent 總花費低於 15%（基準 31%） — [station.md](docs/90-agent/reference/station.md).

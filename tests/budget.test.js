@@ -43,18 +43,18 @@ function run(payload) {
 test('no agent_id: nothing, regardless of context size', () => {
     const root = tmp('fankeel-budget-');
     seed(root, MINE);
-    const t = transcript(root, 260000);
+    const t = transcript(root, 460000);
     const out = run({ session_id: MINE, cwd: root, hook_event_name: 'PreToolUse', tool_name: 'Read', transcript_path: t });
     assert.equal(out, '');
 });
 
-test('160k on PostToolUse: nudged to write the relay and report it', () => {
+test('310k on PostToolUse: nudged to write the relay and report it', () => {
     const root = tmp('fankeel-budget-');
     seed(root, MINE);
-    const t = transcript(root, 160000);
+    const t = transcript(root, 310000);
     const out = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PostToolUse', tool_name: 'Read', transcript_path: t });
     const ctx = JSON.parse(out).hookSpecificOutput.additionalContext;
-    assert.match(ctx, /150000/);
+    assert.match(ctx, /300000/);
     assert.match(ctx, new RegExp('relay-' + AGENT + '\\.md'));
 });
 
@@ -66,21 +66,21 @@ test('under SOFT on PostToolUse: nothing', () => {
     assert.equal(out, '');
 });
 
-test('260k on PreToolUse: a Read is denied, the reason names the relay path', () => {
+test('460k on PreToolUse: a Read is denied, the reason names the relay path', () => {
     const root = tmp('fankeel-budget-');
     seed(root, MINE);
-    const t = transcript(root, 260000);
+    const t = transcript(root, 460000);
     const out = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: 'lib/x.js' }, transcript_path: t });
     const o = JSON.parse(out).hookSpecificOutput;
     assert.equal(o.permissionDecision, 'deny');
-    assert.match(o.permissionDecisionReason, /250000/);
+    assert.match(o.permissionDecisionReason, /450000/);
     assert.match(o.permissionDecisionReason, new RegExp('relay-' + AGENT + '\\.md'));
 });
 
-test('260k on PreToolUse: a Write under .fankeel/build/ is let through', () => {
+test('460k on PreToolUse: a Write under .fankeel/build/ is let through', () => {
     const root = tmp('fankeel-budget-');
     const data = seed(root, MINE);
-    const t = transcript(root, 260000);
+    const t = transcript(root, 460000);
     const relay = relayPath(root, data, AGENT);
     const out = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PreToolUse', tool_name: 'Write', tool_input: { file_path: relay }, transcript_path: t });
     assert.equal(out, '');
