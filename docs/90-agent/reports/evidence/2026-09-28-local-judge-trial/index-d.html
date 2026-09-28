@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>fankeel 測站</title>
+<link rel="stylesheet" href="station/station.css">
+<style>*{color:transparent!important}</style>
+</head><body>
+<header class="mast">
+  <a class="brand" href="#/" id="brand" aria-label="fankeel 測站 首頁"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 18 17H2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="10" cy="12" r="1.9" fill="currentColor"/></svg><b>fankeel</b><span id="brandw">測站</span></a>
+  <span class="pill down" id="servedown" hidden><i class="dot down"></i>serve 已停</span>
+  <nav class="crumbs" id="side" aria-label="位置"></nav>
+  <label class="search"><input id="q" placeholder="搜尋任務、session、碰過的檔案…" aria-label="搜尋"><span class="k">/</span></label>
+  <div class="seg lang" role="group" aria-label="介面語言 Language"><button type="button" id="langzh" data-lang="zh" lang="zh-Hant" aria-pressed="true" title="介面用繁體中文">繁中</button><button type="button" id="langen" data-lang="en" lang="en" aria-pressed="false" title="Switch the interface to English">EN</button></div>
+</header>
+<div class="shell"><aside id="nav"></aside><main class="page" id="page"></main></div>
+<div class="fk" id="fk" data-block="float-icon"></div>
+<footer class="foot"><span id="gen"></span> · <span id="nreg"></span> · config dir <span class="mono" id="cfg">&mdash;</span></footer>
+<script>(function(){var v=new URLSearchParams(location.search).get('cleared');var q=v!==null&&/^\d+$/.test(v)?'?cleared='+v:'';document.write('<script src="station/station-data.js'+q+'"><\/script>')})()</script>
+<script src="station/i18n.js"></script>
+<script src="station/station.js"></script>
+</body></html>

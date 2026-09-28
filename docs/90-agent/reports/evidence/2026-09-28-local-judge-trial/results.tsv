@@ -1,0 +1,13 @@
+# git rev-parse HEAD: 45e53abe3b4ea9dbcc161c7f01e5100dbc11df9a
+# ollama --version: ollama version is 0.34.2
+file	expect	answer	seconds
+shots/normal-1600x1000.png	NORMAL	NORMAL	0.4
+shots/normal-1280x800.png	NORMAL	NORMAL	0.2
+shots/normal-1024x768.png	NORMAL	NORMAL	0.2
+shots/normal-800x1000.png	NORMAL	NORMAL	0.2
+shots/normal-390x844.png	NORMAL	!!!NORMAL!!!	0.3
+shots/broken-a.png	BROKEN	NORMAL	0.2
+shots/broken-b.png	BROKEN	!!!NORMAL!!!	0.2
+shots/broken-c.png	BROKEN	NORMAL	0.2
+shots/broken-d.png	BROKEN	!!!BROKEN!!!	0.2
+shots/broken-e.png	BROKEN	NORMAL	0.3
