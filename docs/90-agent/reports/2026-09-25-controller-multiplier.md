@@ -6,6 +6,8 @@ source_of_truth: `docs/reports/evidence/2026-09-25-controller-multiplier/` 下�
 
 # Sonnet 主控倍數 k 的第一次實測 — 2026-09-25
 
+> **更正 2026-09-28：** §2 表格的「全部」與「design+plan+build（含 start）」兩列，以及「逐站花費」那一行，都是把 `--resume` 回傳的累計 `total_cost_usd` 逐站相加算出來的；`--resume` 給的本來就是累計到那一站為止的總花費，相加等於重複計入更早的站。真正的總花費是 verify 站自己的累計值（因為 verify 是最後一站，其累計值就是全程總花費）：opus $6.36、sonnet $8.95，k = 1.71。修法見 `docs/90-agent/reports/evidence/2026-09-25-controller-multiplier/summarise.js`。
+
 **這一輪只量了一個很小的 task——TODO 的 todo-check 行號那條，1 個 task、約 3 個檔——sonnet arm 只跑了一次（n=1），opus arm 因為第一次起跑失敗又重跑了一次（n=2）。所以下面每一個 `k` 都只代表這一個 task，不是任何母體的平均。它填的是 [投影頁 §4](2026-09-21-long-task-projection.md) 留空的那一格：破平衡點 `k = 2.5052`。**
 
 ## 1. 怎麼跑的
