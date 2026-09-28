@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO 全表盤點 — the patrol becomes a standing option, and the backlog it found
