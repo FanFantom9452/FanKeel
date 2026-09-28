@@ -1,17 +1,23 @@
 #!/usr/bin/env node
 'use strict';
 // scripts/tour-record.js: the one tour timeline (the promo, `stages`) to an
-// MP4, frame by frame.
+// MP4 with its score, frame by frame, in one language.
 //
-//   node scripts/tour-record.js stages [--out f.mp4]
+//   node scripts/tour-record.js stages [--lang zh|en] [--out f.mp4]
 //
-// Opens assets/station/tour.html?record#<name>@0 in the Chromium-family
+// --lang is zh unless given, and the file is .fankeel/build/tour/
+// stages-<lang>.mp4 unless --out says. Opens
+// assets/station/tour.html?record&lang=<lang>#<name>@0 in the Chromium-family
 // browser scripts/render.js finds, headless, with a DevTools port, and drives
 // it over Node's global WebSocket: for every frame, `tour.seek(n)` (record mode
 // draws ten averaged sub-frames), then Page.captureScreenshot, and the PNG goes
 // down a pipe to `ffmpeg -f image2pipe`. ffmpeg comes from FANKEEL_FFMPEG or
-// PATH; ffprobe from beside it. After writing, the MP4's frames are counted
-// and the run exits 1 unless the count is `tour.length(name)`. No dependency.
+// PATH; ffprobe from beside it. The sound is assets/station/tour-music.js run
+// here in Node over the timeline's own cues, written as a WAV beside the MP4
+// and muxed in as AAC, the shorter of the two ending the file. After writing,
+// the MP4's frames are counted and its audio streams read, and the run exits
+// 1 unless the count is `tour.length(name)` and there is exactly one audio
+// stream within 0.1 s of that many frames at 60 fps. No dependency.
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -21,17 +27,19 @@ const { parseArgsOrExit } = require('../lib/cli.js');
 const { findBrowser } = require('./render.js');
 
 const NAMES = ['stages'];
+const LANGS = ['zh', 'en'];
 const SIZE = { width: 1280, height: 720 };
 const PAGE = path.join(__dirname, '..', 'assets', 'station', 'tour.html');
 
 function parseArgs(argv) {
-    const { values, positionals } = parseArgsOrExit('tour-record', argv, { out: { type: 'string' } });
+    const { values, positionals } = parseArgsOrExit('tour-record', argv, { out: { type: 'string' }, lang: { type: 'string' } });
     const name = positionals[0];
-    if (positionals.length !== 1 || !NAMES.includes(name)) {
-        process.stderr.write('usage: tour-record.js <' + NAMES.join('|') + '> [--out f.mp4]\n');
+    const lang = values.lang === undefined ? 'zh' : values.lang;
+    if (positionals.length !== 1 || !NAMES.includes(name) || !LANGS.includes(lang)) {
+        process.stderr.write('usage: tour-record.js <' + NAMES.join('|') + '> [--lang ' + LANGS.join('|') + '] [--out f.mp4]\n');
         process.exit(2);
     }
-    return { name, out: path.resolve(values.out || path.join('.fankeel', 'build', 'tour', name + '.mp4')) };
+    return { name, lang, out: path.resolve(values.out || path.join('.fankeel', 'build', 'tour', name + '-' + lang + '.mp4')) };
 }
 
 // FANKEEL_FFMPEG when set (and then only it), else the first PATH entry that
@@ -53,9 +61,20 @@ function ffprobeOf(ffmpeg) {
     return path.join(path.dirname(ffmpeg), path.basename(ffmpeg).replace(/^ffmpeg/i, 'ffprobe'));
 }
 
-function ffmpegArgs(out) {
+// PNG frames from stdin, the score from `wav`; the shorter ends the MP4.
+function ffmpegArgs(out, wav) {
     return ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', '60', '-c:v', 'png', '-i', '-',
-        '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-r', '60', out];
+        '-i', wav, '-map', '0:v', '-map', '1:a',
+        '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-r', '60', '-c:a', 'aac', '-shortest', out];
+}
+
+// The score of timeline `name` as WAV bytes: tour-music.js over the cues the
+// timeline registered — the same samples the page plays.
+function scoreWav(name) {
+    const E = require('../assets/station/tour.js');
+    require('../assets/station/tour-stages.js');
+    const M = require('../assets/station/tour-music.js');
+    return Buffer.from(M.wav(M.render(E.get(name).cues)));
 }
 
 // "DevTools listening on ws://127.0.0.1:<port>/devtools/browser/<id>"
@@ -70,6 +89,15 @@ function countFrames(ffprobe, file) {
     if (r.status !== 0) return null;
     const n = Number(String(r.stdout).trim());
     return Number.isInteger(n) ? n : null;
+}
+
+// Each audio stream's duration in seconds, in stream order; null when
+// ffprobe cannot run or exits nonzero.
+function audioStreams(ffprobe, file) {
+    const r = spawnSync(ffprobe, ['-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=duration',
+        '-of', 'csv=p=0', file], { encoding: 'utf8' });
+    if (r.status !== 0) return null;
+    return String(r.stdout).split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map(Number);
 }
 
 function launch(browser, url, profileDir) {
@@ -120,7 +148,7 @@ function cdp(url) {
 
 async function record(args, ffmpeg, browser) {
     const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-tour-'));
-    const url = pathToFileURL(PAGE).href + '?record#' + args.name + '@0';
+    const url = pathToFileURL(PAGE).href + '?record&lang=' + args.lang + '#' + args.name + '@0';
     const { child, port } = await launch(browser, url, profileDir);
     try {
         const list = await (await fetch('http://127.0.0.1:' + port + '/json/list')).json();
@@ -141,13 +169,15 @@ async function record(args, ffmpeg, browser) {
         if (!ready) throw new Error('tour-record: the page never set tour.ready');
         const total = await evaluate('tour.length(' + JSON.stringify(args.name) + ')');
         fs.mkdirSync(path.dirname(args.out), { recursive: true });
-        const ff = spawn(ffmpeg, ffmpegArgs(args.out), { stdio: ['pipe', 'ignore', 'inherit'] });
+        const wav = args.out.replace(/\.mp4$/i, '') + '.wav';
+        fs.writeFileSync(wav, scoreWav(args.name));
+        const ff = spawn(ffmpeg, ffmpegArgs(args.out, wav), { stdio: ['pipe', 'ignore', 'inherit'] });
         const done = new Promise((res) => ff.on('exit', (code) => res(code)));
         for (let f = 0; f < total; f++) {
             await evaluate('tour.seek(' + f + '); new Promise(function (r) { requestAnimationFrame(function () { r(true); }); })');
             const shot = await c.send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: SIZE.width, height: SIZE.height, scale: 1 } });
             if (!ff.stdin.write(Buffer.from(shot.data, 'base64'))) await new Promise((r) => ff.stdin.once('drain', r));
-            if (f % 600 === 0) process.stderr.write('tour-record: ' + args.name + ' frame ' + f + ' / ' + total + '\n');
+            if (f % 600 === 0) process.stderr.write('tour-record: ' + args.name + '-' + args.lang + ' frame ' + f + ' / ' + total + '\n');
         }
         ff.stdin.end();
         const code = await done;
@@ -178,8 +208,12 @@ async function main() {
     }
     const total = await record(args, ffmpeg, browser);
     const got = countFrames(ffprobeOf(ffmpeg), args.out);
-    process.stdout.write(args.out + '\n' + 'frames ' + got + ' / ' + total + '\n');
-    if (got !== total) process.exit(1);
+    const audio = audioStreams(ffprobeOf(ffmpeg), args.out);
+    const seconds = total / 60;
+    const heard = !!audio && audio.length === 1 && Math.abs(audio[0] - seconds) <= 0.1;
+    process.stdout.write(args.out + '\n' + 'frames ' + got + ' / ' + total + '\n'
+        + 'audio ' + (audio ? audio.map((d) => d.toFixed(2) + ' s').join(', ') || 'none' : 'unreadable') + ' / one stream of ' + seconds.toFixed(2) + ' s\n');
+    if (got !== total || !heard) process.exit(1);
 }
 
 if (require.main === module) {
@@ -188,4 +222,4 @@ if (require.main === module) {
         process.exit(1);
     });
 }
-module.exports = { parseArgs, ffmpegPath, ffprobeOf, ffmpegArgs, devtoolsPort, countFrames };
+module.exports = { parseArgs, ffmpegPath, ffprobeOf, ffmpegArgs, scoreWav, devtoolsPort, countFrames, audioStreams };

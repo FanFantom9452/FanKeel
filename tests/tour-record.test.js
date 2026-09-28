@@ -9,20 +9,27 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { parseArgs, ffmpegPath, ffprobeOf, ffmpegArgs, devtoolsPort, countFrames } = require('../scripts/tour-record.js');
+const { parseArgs, ffmpegPath, ffprobeOf, ffmpegArgs, scoreWav, devtoolsPort, countFrames, audioStreams } = require('../scripts/tour-record.js');
 const tmp = require('./tmp.js');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'tour-record.js');
 
-test('parseArgs takes one timeline name and an optional --out', () => {
-    assert.deepEqual(parseArgs(['stages', '--out', 'x.mp4']), { name: 'stages', out: path.resolve('x.mp4') });
-    assert.deepEqual(parseArgs(['stages']), { name: 'stages', out: path.resolve('.fankeel', 'build', 'tour', 'stages.mp4') });
+// Criterion: --lang zh|en picks the language, zh by default, one file per
+// language. Red when: --lang is refused as unknown, or both languages write
+// the same file.
+test('parseArgs takes one timeline name, --lang zh|en (zh unless given) and an optional --out', () => {
+    assert.deepEqual(parseArgs(['stages', '--out', 'x.mp4']), { name: 'stages', lang: 'zh', out: path.resolve('x.mp4') });
+    assert.deepEqual(parseArgs(['stages']), { name: 'stages', lang: 'zh', out: path.resolve('.fankeel', 'build', 'tour', 'stages-zh.mp4') });
+    assert.deepEqual(parseArgs(['stages', '--lang', 'en']), { name: 'stages', lang: 'en', out: path.resolve('.fankeel', 'build', 'tour', 'stages-en.mp4') });
 });
 
-test('a wrong name, no name or a stray flag exits 2', () => {
+test('a wrong name, a wrong language, no name or a stray flag exits 2', () => {
     const bad = spawnSync(process.execPath, [SCRIPT, 'intro'], { encoding: 'utf8' });
     assert.equal(bad.status, 2);
-    assert.match(bad.stderr, /usage: tour-record\.js <stages> \[--out f\.mp4\]/);
+    assert.match(bad.stderr, /usage: tour-record\.js <stages> \[--lang zh\|en\] \[--out f\.mp4\]/);
+    const lang = spawnSync(process.execPath, [SCRIPT, 'stages', '--lang', 'fr'], { encoding: 'utf8' });
+    assert.equal(lang.status, 2);
+    assert.match(lang.stderr, /usage: tour-record\.js/);
     const none = spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8' });
     assert.equal(none.status, 2);
     const flag = spawnSync(process.execPath, [SCRIPT, 'stages', '--fps', '30'], { encoding: 'utf8' });
@@ -54,11 +61,32 @@ test('with no ffmpeg the script stops before any browser and names both places',
 test('ffprobe sits beside ffmpeg; the encoder reads PNGs from stdin at 60 fps', () => {
     assert.equal(ffprobeOf(path.join('C:', 'ff', 'ffmpeg.exe')), path.join('C:', 'ff', 'ffprobe.exe'));
     assert.equal(ffprobeOf('/usr/bin/ffmpeg'), path.join('/usr/bin', 'ffprobe'));
-    const a = ffmpegArgs('out.mp4');
+    const a = ffmpegArgs('out.mp4', 'out.wav');
     assert.deepEqual(a.slice(a.indexOf('-f'), a.indexOf('-f') + 2), ['-f', 'image2pipe']);
     assert.equal(a[a.indexOf('-framerate') + 1], '60');
     assert.equal(a[a.indexOf('-i') + 1], '-');
     assert.equal(a.at(-1), 'out.mp4');
+});
+
+// Criterion: the MP4 carries the score as AAC, cut to the picture. Red when:
+// the WAV is never handed to ffmpeg, or no audio codec is named.
+test('the score goes in as a second input, encoded AAC, and the shorter stream ends the file', () => {
+    const a = ffmpegArgs('out.mp4', 'out.wav');
+    assert.deepEqual(a.map((x, i) => (x === '-i' ? a[i + 1] : null)).filter(Boolean), ['-', 'out.wav']);
+    assert.equal(a[a.indexOf('-c:a') + 1], 'aac');
+    assert.ok(a.includes('-shortest'));
+    assert.deepEqual(a.filter((x, i) => a[i - 1] === '-map'), ['0:v', '1:a']);
+});
+
+test('scoreWav is the promo\'s score as a 60-second mono WAV', () => {
+    const b = scoreWav('stages');
+    assert.equal(b.toString('latin1', 0, 4), 'RIFF');
+    assert.equal(b.readUInt32LE(24), 44100);
+    assert.equal(b.readUInt32LE(40), 60 * 44100 * 2);
+});
+
+test('audioStreams is null when ffprobe cannot run', () => {
+    assert.equal(audioStreams(path.join(tmp('fankeel-tour-probe-a-'), 'ffprobe-missing'), 'x.mp4'), null);
 });
 
 test('the DevTools port comes off the browser\'s stderr line', () => {

@@ -974,6 +974,18 @@ is a note saying to open the page from `serve`.
 says so instead. The three-second re-read skips `#/tour`, as it skips
 `#/settings`: a redraw would restart the film.
 
+The film is `assets/station/tour-stages.js`: sixty seconds at 60 fps, eleven
+cuts of document blocks — `assets/station/tour-opening.js` and
+`assets/station/tour-closing.js`, drawn with `assets/station/tour-doc.js` —
+each starting on a bar line of a 120 BPM score. The score is
+`assets/station/tour-music.js`, synthesised in the page on the first press of
+play and never stored as a file; the button at the end of the player's bar
+mutes it. The film speaks the station's language, `FK_I18N.lang`, unless the
+page's url says `?lang=zh` or `?lang=en`. `node scripts/tour-record.js stages
+--lang zh|en` records one language to stages-zh.mp4 or stages-en.mp4 under
+.fankeel/build/tour with the score muxed in as AAC, and exits 1 unless
+ffprobe reads 3600 frames and exactly one audio stream of 60 seconds.
+
 `serve` answers a fixed list of files from `assets/station/` — `STATIC` in
 `scripts/station.js`: `station.js`, `station.css`, `i18n.js`, `tour.html`,
 `tour.css`, `tour.js` and every `tour-<name>.js`. Any other name under
