@@ -13,11 +13,13 @@
 // almost every one, since `agent_id` absent (the main session, or a session
 // started with `--agent`) returns before anything else runs.
 
+const path = require('node:path');
 const registry = require('../lib/registry.js');
 const { inspect, SOFT, HARD } = require('../lib/context.js');
 const { relayPath } = require('../lib/handoff.js');
 const { targetOf } = require('../lib/guard.js');
 const { run, parse } = require('../lib/hook.js');
+const { sessionDirOf } = require('../lib/usage.js');
 
 // What HARD still allows: writing the relay file this hook is about to tell
 // the agent to write. Denying that too would leave it with no way to hand
@@ -33,7 +35,10 @@ function main(raw) {
     const mine = registry.readSession(root, payload.session_id);
     if (!mine || mine.active !== true) return;
 
-    const info = inspect(payload.transcript_path);
+    const dir = sessionDirOf(payload.transcript_path);
+    if (!dir) return;
+    const agentFile = path.join(dir, 'subagents', 'agent-' + payload.agent_id + '.jsonl');
+    const info = inspect(agentFile);
     if (!info || !info.used) return;
 
     const relay = relayPath(root, mine, payload.agent_id)

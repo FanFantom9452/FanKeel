@@ -32,6 +32,24 @@ function transcript(root, tokens) {
     return file;
 }
 
+// Seeds both the parent transcript (`root/transcript.jsonl`) and, when
+// `subagentTokens` is given, the subagent's own file under
+// `root/transcript/subagents/agent-<AGENT>.jsonl` — the layout `sessionDirOf`
+// expects (it strips `.jsonl` off the transcript path to get the session dir).
+// Parent and subagent token counts are independent so a test can put the
+// overage on either file.
+function withSubagent(root, parentTokens, subagentTokens) {
+    const t = transcript(root, parentTokens);
+    if (subagentTokens !== undefined) {
+        const dir = path.join(root, 'transcript', 'subagents');
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(path.join(dir, 'agent-' + AGENT + '.jsonl'), JSON.stringify({ message: { usage: {
+            input_tokens: subagentTokens, cache_creation_input_tokens: 0, cache_read_input_tokens: 0,
+        } } }) + '\n');
+    }
+    return t;
+}
+
 function run(payload) {
     return execFileSync(process.execPath, [HOOK], {
         input: JSON.stringify(payload),
@@ -51,7 +69,7 @@ test('no agent_id: nothing, regardless of context size', () => {
 test('310k on PostToolUse: nudged to write the relay and report it', () => {
     const root = tmp('fankeel-budget-');
     seed(root, MINE);
-    const t = transcript(root, 310000);
+    const t = withSubagent(root, 1000, 310000);
     const out = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PostToolUse', tool_name: 'Read', transcript_path: t });
     const ctx = JSON.parse(out).hookSpecificOutput.additionalContext;
     assert.match(ctx, /300000/);
@@ -61,7 +79,7 @@ test('310k on PostToolUse: nudged to write the relay and report it', () => {
 test('under SOFT on PostToolUse: nothing', () => {
     const root = tmp('fankeel-budget-');
     seed(root, MINE);
-    const t = transcript(root, 50000);
+    const t = withSubagent(root, 1000, 50000);
     const out = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PostToolUse', tool_name: 'Read', transcript_path: t });
     assert.equal(out, '');
 });
@@ -69,7 +87,7 @@ test('under SOFT on PostToolUse: nothing', () => {
 test('460k on PreToolUse: a Read is denied, the reason names the relay path', () => {
     const root = tmp('fankeel-budget-');
     seed(root, MINE);
-    const t = transcript(root, 460000);
+    const t = withSubagent(root, 1000, 460000);
     const out = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: 'lib/x.js' }, transcript_path: t });
     const o = JSON.parse(out).hookSpecificOutput;
     assert.equal(o.permissionDecision, 'deny');
@@ -80,8 +98,26 @@ test('460k on PreToolUse: a Read is denied, the reason names the relay path', ()
 test('460k on PreToolUse: a Write under .fankeel/build/ is let through', () => {
     const root = tmp('fankeel-budget-');
     const data = seed(root, MINE);
-    const t = transcript(root, 460000);
+    const t = withSubagent(root, 1000, 460000);
     const relay = relayPath(root, data, AGENT);
     const out = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PreToolUse', tool_name: 'Write', tool_input: { file_path: relay }, transcript_path: t });
+    assert.equal(out, '');
+});
+
+test('parent at 460k, subagent at 50k: PreToolUse and PostToolUse both print nothing', () => {
+    const root = tmp('fankeel-budget-');
+    seed(root, MINE);
+    const t = withSubagent(root, 460000, 50000);
+    const pre = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: 'lib/x.js' }, transcript_path: t });
+    assert.equal(pre, '');
+    const post = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PostToolUse', tool_name: 'Read', transcript_path: t });
+    assert.equal(post, '');
+});
+
+test('parent at 460k, no subagent file written: nothing', () => {
+    const root = tmp('fankeel-budget-');
+    seed(root, MINE);
+    const t = transcript(root, 460000);
+    const out = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: 'lib/x.js' }, transcript_path: t });
     assert.equal(out, '');
 });

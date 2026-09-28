@@ -90,7 +90,7 @@ the reading is what gets scheduled.
 - 〔plan〕要不要給 plan 加 Risks 欄：先比對 playbook 的 plan.md 範本與現有 plan，再決定 — [skills/fankeel-plan/SKILL.md](skills/fankeel-plan/SKILL.md).
 - 〔review〕要不要支援專案自訂 `review.md`：先比對 playbook 的審查 SOP 與現有 reviewer lens，再決定 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 - 〔skills〕09-24 對照 addyosmani/agent-skills、mattpocock/skills 是 WebFetch 摘要、沒 clone，六個候選沒挑：clone 下來逐字重看，再和使用者逐條挑 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
-- 〔budget〕`hooks/budget.js` 量主 session 的 transcript 而非 `agent-<id>.jsonl`，brain ~55k 就誤判過 300k：改量 subagent 自己的，附主 session 超限、subagent 小不觸發的測試 — [hooks/budget.js](hooks/budget.js).
+- 〔workflow〕要不要拿掉 Workflow、統一成 brain＋背景 agent：brain 沒有 Workflow，但 ledger groups 三個以上仍印 workflow；budget.js 也不量 subagents/workflows/ 底下的 agent — [lib/plantasks.js](lib/plantasks.js).
 - 〔await〕`markInflight` 每個 brain 都配 `group`，await 無條件加 `-g<n>`，render 只在 build 加：非 build 階段找錯 handoff；subagents.md 的路徑規則一併補 — [scripts/await.js](scripts/await.js).
 - 〔guard〕`lib/guard.js` 的 `logicalFile`（`.claude/worktrees/agent-<hex>/` 對回主樹）沒有參考頁寫到；`collisions.md` 只寫 `.fankeel/worktrees/<id8>/`：決定寫在 collisions.md 還是 subagents.md — [lib/guard.js](lib/guard.js).
 
