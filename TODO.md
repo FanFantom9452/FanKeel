@@ -92,6 +92,9 @@ the reading is what gets scheduled.
 - 〔skills〕09-24 對照 addyosmani/agent-skills、mattpocock/skills 是 WebFetch 摘要、沒 clone，六個候選沒挑：clone 下來逐字重看，再和使用者逐條挑 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
 - 〔workflow〕要不要拿掉 Workflow、統一成 brain＋背景 agent：brain 沒有 Workflow，但 ledger groups 三個以上仍印 workflow；budget.js 也不量 subagents/workflows/ 底下的 agent — [lib/plantasks.js](lib/plantasks.js).
 - 〔await〕`markInflight` 每個 brain 都配 `group`，await 無條件加 `-g<n>`，render 只在 build 加：非 build 階段找錯 handoff；subagents.md 的路徑規則一併補 — [scripts/await.js](scripts/await.js).
+- 〔await〕09-28 build 的 group 號按派工順序編（1、2、3）不是 ledger group，await 三次指到舊 `build-g<n>.md`；做完的 brain 的 `inflight` 沒清，await 報 2 個在跑 — [scripts/await.js](scripts/await.js).
+- 〔stage-agents〕brain 停掉時它的背景 implementer 還在跑，完成報告落到主控、沒人接：重派的 brain 又做一次 Task 8。要不要讓 brain 等完子 agent 才能交回 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
+- 〔gate〕brain 寫的 `json gate` 直到主控問時才被 `hooks/gate.js` 擋（header 超寬、`next` 放進 question）：寫檔時就驗，或 `readGate` 報格式錯 — [lib/handoff.js](lib/handoff.js).
 - 〔guard〕`lib/guard.js` 的 `logicalFile`（`.claude/worktrees/agent-<hex>/` 對回主樹）沒有參考頁寫到；`collisions.md` 只寫 `.fankeel/worktrees/<id8>/`：決定寫在 collisions.md 還是 subagents.md — [lib/guard.js](lib/guard.js).
 
 ## Blocked
