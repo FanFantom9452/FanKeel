@@ -225,6 +225,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的九個 task，加上 build close 的四項追加 | `docs/99-archive/2026-09-28-spawndepth-worktree.md` — *built, 繁體中文* |
 | 導覽影片改成十一格文件區塊動畫：拿掉終端機分鏡、純 JS 合成 60 秒配樂（瀏覽器與 Node 共用）、依 station 語言出中英兩版 | `docs/99-archive/2026-09-28-tour-blocks-design.md` — *built, 繁體中文* |
 | 那份設計的八個 task：字體與量字、配樂、字串表、開場與收尾各五格、時間軸、播放器、`tour-record.js --lang` | `docs/99-archive/2026-09-28-tour-blocks.md` — *built, 繁體中文* |
+| TODO 全表盤點：patrol 常駐 `/fankeel` 最後一格、逐條分成現在做／要你決定／在等別的，並做掉 survey 找到的 〔await〕〔guard〕〔tune〕 | [plans/2026-09-28-todo-patrol-design.md](90-agent/plans/2026-09-28-todo-patrol-design.md) — *design-intent, 繁體中文* |
+| 那份設計的七個 task：`todoBlock` 的 slot、三份 skill、TODO 與 guide 措辭、`await.js` 的 group、參考頁、tune 的伺服器與 overlay | [plans/2026-09-28-todo-patrol.md](90-agent/plans/2026-09-28-todo-patrol.md) — *design-intent, 繁體中文* |
 | 對照外部 repo 從 fankeel 自己的問題出發、對方只作參考；skill-repos 與 ponytail 的十二條候選逐條對照、全部不問，以及共用詞彙那條為什麼關掉 | [decisions/2026-09-24-optimise-own-first.md](03-decisions/2026-09-24-optimise-own-first.md) — *繁體中文* |
 | Why the scratch area could not be declared however legal the path looks, how one root cause survived nine rounds of review and then reappeared inside its own fix, and the six findings filed rather than built | [decisions/2026-09-11-todo-three.md](03-decisions/2026-09-11-todo-three.md) — *繁體中文* |
 | Why the five 09-11 directions were filed as TODO entries rather than built, the four places the approved draft departed from judgement 8, and the empty answer the first record filed | [decisions/2026-09-11-todo-split.md](03-decisions/2026-09-11-todo-split.md) — *繁體中文* |

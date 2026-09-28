@@ -238,7 +238,7 @@ the patrol, `TODO 全表盤點`, as its last option."
 ```
 
 2. In the same page, where the `inflight` mark's `group` is described (about lines 789-796), add the sentence: "`await.js` appends the `-g<n>` suffix only on `build`, the one stage whose brief names a group handoff; every other stage's brain writes the plain file, group or not."
-3. In `docs/90-agent/reference/collisions.md`, in the "A different worktree never blocks" bullet (about lines 158-163), after the `lib/guard.js:134` citation add: "An agent worktree under `.claude/worktrees/agent-<hex>/` is folded back to the main tree's path before a claim is recorded — `logicalFile`, in [subagents.md](subagents.md)."
+3. In `docs/90-agent/reference/collisions.md`, in the "A different worktree never blocks" bullet (about lines 158-163), after the `lib/guard.js:134` citation add: "An agent worktree under `.claude/worktrees/agent-<hex>/` is folded back to the main tree's path before a claim is recorded — `logicalFile`, in `subagents.md`."
 4. Run `node scripts/docs-check.js --role reference`; clean.
 5. In `TODO.md`, delete the `〔guard〕` bullet under `## Needs a decision`.
 6. Commit.
