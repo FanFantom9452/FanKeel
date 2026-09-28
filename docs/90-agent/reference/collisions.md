@@ -138,10 +138,10 @@ deleting the field: absence means `ask` now, so deleting it would turn opting ou
 into opting in.
 
 Three rules keep it from becoming a lockout, all inside `blockers()`
-(`lib/guard.js:131`, `function blockers(`) — two asked of every holder, one
+(`lib/guard.js:123`, `function blockers(`) — two asked of every holder, one
 only when this session holds the file too:
 
-- **A dead session's claim never blocks** — `isLive`, `lib/guard.js:134` (`isLive(liveState, o.sessionId`).
+- **A dead session's claim never blocks** — `isLive`, `lib/guard.js:126` (`isLive(liveState, o.sessionId`).
   Liveness is the session's own file under `sessions/` in the config directory
   **that session recorded**, plus a live process behind its pid; a terminal
   that is gone holds nothing shut. `CLAUDE_CONFIG_DIR` moves that directory, so
@@ -161,7 +161,7 @@ only when this session holds the file too:
   skipped before either other rule is reached; across trees an overlap is a
   merge to reconcile at land, not a clash (`sharedWith` returns `{clash,
   merge}`).
-- **The older task holds** — `claimedFirst`, `lib/guard.js:146` (`!claimedFirst(data, mine)`). When
+- **The older task holds** — `claimedFirst`, `lib/guard.js:138` (`!claimedFirst(data, mine)`). When
   both sessions claim the file, the newer one yields — so two sessions
   that both reached it cannot block each other into a stalemate.
 
