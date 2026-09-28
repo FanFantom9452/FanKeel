@@ -80,6 +80,21 @@ function charOverlap(a, b) {
 // does not. Picked against tests/gate.test.js's own cases.
 const ATTEMPT_THRESHOLD = 0.5;
 
+// The single mark `skipReason` reads: whatever `mine.inflight` holds — none,
+// one mark, or (a build's groups, docs/90-agent/plans/2026-09-28-agent-lifetime-design.md
+// §1) several — narrowed to the one matching `stage`, since that is the
+// only field `skipReason`'s message ever names. Every mark for one stage
+// carries the same `stage`, so which one is picked among several does not
+// change what it says. A local equivalent of `lib/registry.js`'s
+// `inflights`, not a call to it: this file reaches into `lib/handoff.js`
+// and `lib/stages.js` already, and the array-vs-bare-object shape is
+// `lib/registry.js`'s to read, not a second copy's.
+function runningMark(mine, stage) {
+    const raw = mine && mine.inflight;
+    const marks = Array.isArray(raw) ? raw : raw && typeof raw === 'object' ? [raw] : [];
+    return marks.find((m) => m && m.stage === stage) || null;
+}
+
 // How often the wait reads the answer file.
 const POLL_MS = 200;
 
@@ -155,7 +170,7 @@ function main(raw) {
         agents = agentsText(values);
         file = handoffPath(root, mine, mine.stage);
         if (controlled) gate = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE);
-        if (!gate) skip = skipReason({ stage: mine.stage, controlled, agents, inflight: mine.inflight, handoff: file });
+        if (!gate) skip = skipReason({ stage: mine.stage, controlled, agents, inflight: runningMark(mine, mine.stage), handoff: file });
     } catch (e) { /* housekeeping */ }
 
     // No file gate to check against at all — missing file, unreadable, or the
@@ -214,7 +229,7 @@ function main(raw) {
             }));
             return;
         }
-        skip = skipReason({ stage: mine.stage, controlled, matches: false, agents, inflight: mine.inflight, handoff: file });
+        skip = skipReason({ stage: mine.stage, controlled, matches: false, agents, inflight: runningMark(mine, mine.stage), handoff: file });
         return emit(skip ? { systemMessage: 'fankeel: gate not confirmed — ' + skip + '.' } : {}, payload, root, mine, values);
     }
 
@@ -222,7 +237,11 @@ function main(raw) {
     // word for word, so there is nothing to substitute. The stage agent has
     // handed its gate back, so it is no longer in flight. There is no
     // SubagentStop hook in .claude-plugin/plugin.json; this is the one place
-    // the mark is cleared.
+    // the mark is cleared. No `agentId`: every mark on this record clears,
+    // not only the one that reported. Correct specifically because a real,
+    // matched gate only ever comes from this stage's closing brain (design
+    // §1, bullet 6) — by the time it is asked, every group this stage ran
+    // has already returned, so nothing is left standing to spare.
     try {
         registry.clearInflight(root, payload.session_id);
     } catch (e) { /* housekeeping */ }

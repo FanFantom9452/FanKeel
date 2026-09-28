@@ -474,3 +474,22 @@ test('gate.station: a hand-off the page writes ends the wait at once, and the qu
   assert.ok(Date.now() - started < 15000, 'the hook waited out its 30 s instead of stopping');
   assert.equal(fs.existsSync(pending), false, 'the pending file outlived the wait');
 });
+
+test('a brain dispatched for a stage stage.agents does not name: the gate hook still says so with several marks on the record', () => {
+  const root = tmp('fankeel-gate-');
+  const marks = [{ stage: 'design', at: 1758000000000, agentId: 'b1', group: 1 }, { stage: 'design', at: 1758000000000, agentId: 'b2', group: 2 }];
+  seed(root, MINE, { stage: 'design', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-'), inflight: marks });
+  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'survey,build,verify' }));
+  const out = JSON.parse(run(GATE, root, { tool_input: askOf(QUESTIONS) }));
+  assert.match(out.systemMessage, /dispatched for `design`, but stage\.agents \(survey,build,verify\) does not name `design`/);
+});
+
+test('stage.agents: a matching gate clears every mark on the record for this stage, not only one', () => {
+  const root = tmp('fankeel-gate-');
+  const marks = [{ stage: 'survey', at: 1758000000000, agentId: 'a3f9c2', group: 1 }, { stage: 'survey', at: 1758000000000, agentId: 'b7e1d4', group: 2 }];
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-'), inflight: marks });
+  agentsOn(root);
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  run(GATE, root, { tool_input: askOf(QUESTIONS) });
+  assert.equal(readEntry(root, MINE).inflight, undefined, 'both marks are gone once the one real gate for this stage is confirmed');
+});
