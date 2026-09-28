@@ -8,7 +8,7 @@
 // the price the CLI charged for it.
 const fs = require('node:fs');
 const path = require('node:path');
-const { costOf } = require('../../../../lib/prices.js');
+const { costOf } = require('../../../../../lib/prices.js');
 
 const dir = process.argv[2];
 const SONNET = 'claude-sonnet-5';
@@ -23,13 +23,22 @@ function mix(u) {
     };
 }
 
+// `--resume` reports `total_cost_usd` and `modelUsage` cumulative since the
+// session's own start, not per stage — so the run's real total is whichever
+// stage file comes last in the pipeline, read once, never summed across files.
+const ORDER = ['start', 'design', 'plan', 'build', 'verify'];
 function arm(name) {
     const out = { usd: 0, tokens: 0, stages: {}, models: {} };
+    let last = null;
     for (const f of fs.readdirSync(dir).filter((f) => f.startsWith(name + '-') && f.endsWith('.json')).sort()) {
         const j = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
-        out.usd += j.total_cost_usd || 0;
-        out.stages[f.slice(name.length + 1, -5)] = j.total_cost_usd || 0;
-        for (const [id, u] of Object.entries(j.modelUsage || {})) {
+        const stage = f.slice(name.length + 1, -5);
+        out.stages[stage] = j.total_cost_usd || 0;
+        if (!last || ORDER.indexOf(stage) > ORDER.indexOf(last.stage)) last = { stage, j };
+    }
+    if (last) {
+        out.usd = last.j.total_cost_usd || 0;
+        for (const [id, u] of Object.entries(last.j.modelUsage || {})) {
             const m = out.models[id] || (out.models[id] = { usd: 0, input: 0, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 });
             const t = mix(u);
             for (const k of Object.keys(t)) m[k] += t[k];
