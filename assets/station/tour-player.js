@@ -13,7 +13,7 @@
 // not fit onto the canvas as data-overflow.
 (function () {
     'use strict';
-    var E = window.tourEngine, M = window.tourMusic, D = window.tourDoc;
+    var E = window.tourEngine, M = window.tourMusic;
     var PLAY_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor"></path></svg>';
     var PAUSE_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3h3v10H4zM9 3h3v10H9z" fill="currentColor"></path></svg>';
     var SOUND_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6h3l4-3v10l-4-3H2z" fill="currentColor"></path><path d="M11 5.5a3.5 3.5 0 0 1 0 5M12.5 3.5a6 6 0 0 1 0 9" stroke="currentColor" stroke-width="1.4" fill="none"></path></svg>';
@@ -29,7 +29,7 @@
     var css = getComputedStyle(document.documentElement);
     var P = E.palette(function (k) { return css.getPropertyValue('--' + k).trim(); }, lang);
     cv.dataset.lang = P.lang;
-    var name = 'stages', frame = 0, playing = false, t0 = 0, f0 = 0;
+    var name = 'reel', frame = 0, playing = false, t0 = 0, f0 = 0;
 
     // The score, made once on the first play: the PCM from tour-music.js in
     // an AudioBuffer, through one gain node the mute button sets.
@@ -161,18 +161,18 @@
     // did not fit, and the table's strings never drawn through fit, go on
     // the canvas for tests/tour-page.test.js to read.
     function check() {
-        var log = [];
+        var log = [], strings = E.get(name).strings;
         E.fitLog(log);
         for (var f = 0; f < E.length(name); f += 5) E.render(ctx, name, f, { palette: P });
         E.fitLog(null);
         var over = {}, drawn = log.map(function (e) { if (e.over) over[e.s] = 1; return e.s; }).join('\n');
         cv.dataset.overflow = JSON.stringify(Object.keys(over));
-        cv.dataset.missing = JSON.stringify(Object.keys(D.S).filter(function (k) { return drawn.indexOf(D.S[k][P.lang].trim()) < 0; }));
+        cv.dataset.missing = JSON.stringify(Object.keys(strings).filter(function (k) { return drawn.indexOf(strings[k][P.lang].trim()) < 0; }));
     }
 
     marks();
     setMute(false);
-    var m = /^#stages@(\d+)$/.exec(location.hash);
+    var m = /^#reel@(\d+)$/.exec(location.hash);
     seek(m ? Number(m[1]) : 0);
 
     window.tour = { seek: seek, length: function (n) { return E.length(n); }, ready: false };

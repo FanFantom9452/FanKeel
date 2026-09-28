@@ -149,16 +149,12 @@ test('palette reads each token and falls back to the dark theme for an empty one
 
 test('the session numbers print as the storyboard shows them', () => {
     const S = T.SESSION;
-    assert.equal(T.fmtClock(S.clock.survey), '6m22s');
-    assert.equal(T.fmtClock(S.waited.design), '3m21s');
-    assert.equal(T.fmtClock(0), '0s');
     assert.equal(T.fmtSpan(S.total), '2h 07m');
     assert.equal(T.fmtSpan(T.ROUTE.reduce((a, s) => a + S.waited[s], 0)), '8m 44s');
     assert.equal(T.fmtSpan(0), '0m 00s');
     assert.equal(T.fmtUsd(S.usd), '$53.87');
     assert.equal(S.agents, 42);
     assert.deepEqual(S.land, { integration: 'merge', push: false });
-    assert.deepEqual(T.ROUTE.map((s) => T.fmtMin(S.clock[s])), ['6m', '6m', '1m', '43m', '13m', '11m', '7m']);
 });
 
 test('text sets the class font and colour, then fills at the point', () => {
@@ -202,44 +198,6 @@ test('tick draws the check to a fraction of its length', () => {
     T.tick(ctx, 0, 0, 1, 0.2, '#00ff00');
     const end = ctx.calls.filter((c) => c[0] === 'lineTo').at(-1);
     assert.ok(Math.abs(end[1] - 3) < 1e-9 && Math.abs(end[2] - 3) < 1e-9, String(end));
-});
-
-test('dots fill, ring and hollow the seven stops; rail puts them on the line', () => {
-    const ctx = fakeCtx();
-    T.dots(ctx, T.DARK, 110, 70, 330, 6, 2, 1);
-    const arcs = ctx.calls.filter((c) => c[0] === 'arc');
-    assert.equal(arcs.length, 8);
-    assert.deepEqual(arcs[2].slice(1, 4), [250, 330, 7.5]);
-    assert.deepEqual(arcs[3].slice(1, 4), [250, 330, 11]);
-    const r = fakeCtx();
-    T.rail(r, T.DARK, 0, 1);
-    assert.deepEqual(r.calls.find((c) => c[0] === 'moveTo'), ['moveTo', 110, 330]);
-});
-
-test('bars: seven widths fill the span; labels only on bars wide enough and grown past', () => {
-    const R = T.barRects(80, 480);
-    assert.equal(R.length, 7);
-    assert.ok(Math.abs(R[6][0] + R[6][1] - 560) < 1e-9);
-    const full = fakeCtx();
-    T.bars(full, T.DARK, 80, 112, 480, 20, 152, 1);
-    assert.deepEqual(full.texts(), ['6m', '6m', '43m', '13m', '11m', '7m']);
-    const none = fakeCtx();
-    T.bars(none, T.DARK, 80, 112, 480, 20, 152, 0);
-    assert.deepEqual(none.calls, []);
-});
-
-test('stats prints each item\'s big number and small label, centered', () => {
-    const ctx = fakeCtx();
-    const items = [[100, '42', 'agents'], [300, '$53.87', 'cost']];
-    T.stats(ctx, T.DARK, items, 60, 80);
-    assert.deepEqual(ctx.texts(), ['42', 'agents', '$53.87', 'cost']);
-    const big = ctx.calls.filter((c) => c[0] === 'fillText' && (c[1] === '42' || c[1] === '$53.87'));
-    assert.deepEqual(big.map((c) => [c[2], c[3]]), [[100, 60], [300, 60]]);
-    const small = ctx.calls.filter((c) => c[0] === 'fillText' && (c[1] === 'agents' || c[1] === 'cost'));
-    assert.deepEqual(small.map((c) => [c[2], c[3]]), [[100, 80], [300, 80]]);
-    assert.ok(ctx.calls.some((c) => c[0] === '=font' && c[1] === '600 22px ' + T.DARK.fMono));
-    assert.ok(ctx.calls.some((c) => c[0] === '=font' && c[1] === '400 12px ' + T.DARK.fUi));
-    assert.ok(ctx.calls.every((c) => c[0] !== '=textAlign' || c[1] === 'center'));
 });
 
 test('fade draws nothing at zero and multiplies alpha inside', () => {
@@ -331,22 +289,6 @@ test('midY centres the measured ink box on the point, and fitText with middle us
     const fill = ctx.calls.filter((c) => c[0] === 'fillText').at(-1);
     assert.ok(Math.abs(fill[3] - (50 + (0.72 - 0.2) * 14.5 / 2)) < 1e-9, String(fill[3]));
     assert.deepEqual(log, [{ s: 'abc', maxW: 300, size: 14.5, lines: ['abc'], over: false }]);
-});
-
-test('fitRuns shrinks mixed runs together, and stacks them when the smallest step does not fit', () => {
-    const P = T.DARK;
-    let ctx = fakeCtx();
-    assert.equal(T.fitRuns(ctx, P, [['code', 'a.ts'], ['li', ' 通過']], 0, 20, 400), 1);
-    assert.deepEqual(ctx.texts(), ['a.ts', ' 通過']);
-    ctx = fakeCtx();
-    const log = [];
-    T.fitLog(log);
-    assert.equal(T.fitRuns(ctx, P, [['code', 'warehouse.test.ts'], ['li', ' old case fails: no default warehouse']], 0, 20, 240), 2);
-    T.fitLog(null);
-    assert.deepEqual(ctx.texts(), ['warehouse.test.ts', 'old case fails: no default warehouse']);
-    assert.ok(log.every((e) => !e.over), JSON.stringify(log));
-    const mono = ctx.calls.filter((c) => c[0] === '=font').map((c) => c[1]);
-    assert.ok(mono.some((f) => f.includes('Cascadia Mono')) && mono.some((f) => f.includes('JhengHei')));
 });
 
 test('font builds the class\'s CSS font from the palette\'s faces', () => {

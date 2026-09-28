@@ -29,7 +29,7 @@ source_of_truth: docs/90-agent/reference/station.md, assets/station/station.js, 
 | 近 30 天 | `#/days` | 一天一根柱子，高度可切 token、錢、時間；分段可切 model、專案、站、主 session 對 agent、版本、成本組成 |
 | 依專案 | `#/projects` | 專案列表；點進 `#/p/<key>` 看它的 session 散點、可疊第二個專案、各 route 每站的平均 |
 | 文件 | `#/docs` | 每個專案 `.fankeel/map.md` 的統計卡：文件數、狀態分布、planned 未做、未宣告；上方有全文搜尋，搜各專案 reference、guide、decision 頁的內文（要從 serve 開的頁面用） |
-| 導覽 | `#/tour` | 一支 60 秒的文件區塊動畫，配純音樂，中英兩版跟著監控站的語言，講 fankeel 怎麼跑一個任務；要從 serve 開的頁面才看得到 |
+| 導覽 | `#/tour` | 一支 60 秒的動態宣傳片，配純音樂，中英兩版跟著監控站的語言，七站各用一個動畫講它在做什麼；要從 serve 開的頁面才看得到 |
 | 設定 | `#/settings` | profile 精靈，見 [profile.md](profile.md) |
 
 點任一個 session 會進它自己的頁面 `#/s/<id>`，三個分頁：概覽（context 曲線、任務、每站花費）、派工（每個 agent 的 token 與錢）、事件（重播，每個 gate 等了多久）。

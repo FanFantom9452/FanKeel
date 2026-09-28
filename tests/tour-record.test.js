@@ -18,21 +18,21 @@ const SCRIPT = path.join(__dirname, '..', 'scripts', 'tour-record.js');
 // language. Red when: --lang is refused as unknown, or both languages write
 // the same file.
 test('parseArgs takes one timeline name, --lang zh|en (zh unless given) and an optional --out', () => {
-    assert.deepEqual(parseArgs(['stages', '--out', 'x.mp4']), { name: 'stages', lang: 'zh', out: path.resolve('x.mp4') });
-    assert.deepEqual(parseArgs(['stages']), { name: 'stages', lang: 'zh', out: path.resolve('.fankeel', 'build', 'tour', 'stages-zh.mp4') });
-    assert.deepEqual(parseArgs(['stages', '--lang', 'en']), { name: 'stages', lang: 'en', out: path.resolve('.fankeel', 'build', 'tour', 'stages-en.mp4') });
+    assert.deepEqual(parseArgs(['reel', '--out', 'x.mp4']), { name: 'reel', lang: 'zh', out: path.resolve('x.mp4') });
+    assert.deepEqual(parseArgs(['reel']), { name: 'reel', lang: 'zh', out: path.resolve('.fankeel', 'build', 'tour', 'reel-zh.mp4') });
+    assert.deepEqual(parseArgs(['reel', '--lang', 'en']), { name: 'reel', lang: 'en', out: path.resolve('.fankeel', 'build', 'tour', 'reel-en.mp4') });
 });
 
 test('a wrong name, a wrong language, no name or a stray flag exits 2', () => {
     const bad = spawnSync(process.execPath, [SCRIPT, 'intro'], { encoding: 'utf8' });
     assert.equal(bad.status, 2);
-    assert.match(bad.stderr, /usage: tour-record\.js <stages> \[--lang zh\|en\] \[--out f\.mp4\]/);
-    const lang = spawnSync(process.execPath, [SCRIPT, 'stages', '--lang', 'fr'], { encoding: 'utf8' });
+    assert.match(bad.stderr, /usage: tour-record\.js <reel> \[--lang zh\|en\] \[--out f\.mp4\]/);
+    const lang = spawnSync(process.execPath, [SCRIPT, 'reel', '--lang', 'fr'], { encoding: 'utf8' });
     assert.equal(lang.status, 2);
     assert.match(lang.stderr, /usage: tour-record\.js/);
     const none = spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8' });
     assert.equal(none.status, 2);
-    const flag = spawnSync(process.execPath, [SCRIPT, 'stages', '--fps', '30'], { encoding: 'utf8' });
+    const flag = spawnSync(process.execPath, [SCRIPT, 'reel', '--fps', '30'], { encoding: 'utf8' });
     assert.equal(flag.status, 2);
     assert.match(flag.stderr, /tour-record: unknown argument --fps/);
 });
@@ -52,7 +52,7 @@ test('ffmpegPath: FANKEEL_FFMPEG first, then PATH, else null', () => {
 
 test('with no ffmpeg the script stops before any browser and names both places', () => {
     const env = { PATH: tmp('fankeel-tour-nopath-'), SystemRoot: process.env.SystemRoot || '' };
-    const r = spawnSync(process.execPath, [SCRIPT, 'stages'], { encoding: 'utf8', env });
+    const r = spawnSync(process.execPath, [SCRIPT, 'reel'], { encoding: 'utf8', env });
     assert.equal(r.status, 2);
     assert.match(r.stderr, /PATH/);
     assert.match(r.stderr, /FANKEEL_FFMPEG/);
@@ -79,7 +79,7 @@ test('the score goes in as a second input, encoded AAC, and the shorter stream e
 });
 
 test('scoreWav is the promo\'s score as a 60-second mono WAV', () => {
-    const b = scoreWav('stages');
+    const b = scoreWav('reel');
     assert.equal(b.toString('latin1', 0, 4), 'RIFF');
     assert.equal(b.readUInt32LE(24), 44100);
     assert.equal(b.readUInt32LE(40), 60 * 44100 * 2);

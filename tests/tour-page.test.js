@@ -30,19 +30,19 @@ const count = (html, re) => (html.match(re) || []).length;
 
 test('a hash opens the promo at a frame, and nothing plays it on', (t) => {
     if (!findBrowser()) { t.skip(NO_BROWSER); return; }
-    const html = dom(PAGE + '#stages@1500');
+    const html = dom(PAGE + '#reel@1500');
     assert.match(html, /id="trFno"[^>]*>f 1500 \/ 3600 · 60 fps</);
     assert.match(html, /<b>0:25\.00<\/b> \/ 1:00\.00/);
     assert.match(html, /aria-valuenow="1500"/);
-    assert.match(html, /aria-valuetext="0:25\.00，plan"/);
+    assert.match(html, /aria-valuetext="0:25\.00，build"/);
     assert.match(html, /id="trPlay"[^>]*aria-pressed="false"|aria-pressed="false"[^>]*id="trPlay"/);
 });
 
 test('the scrub bar carries one marker per beat, coloured by its stage — no chapter chips', (t) => {
     if (!findBrowser()) { t.skip(NO_BROWSER); return; }
     const html = dom(PAGE);
-    assert.equal(count(html, /class="tr-mk"/g), 11);
-    for (const label of ['hook', 'route', 'survey', 'design', 'plan', 'build', 'verify', 'audit', 'land', 'clash', 'outro']) {
+    assert.equal(count(html, /class="tr-mk"/g), 13);
+    for (const label of ['hook', 'logo', 'route', 'survey', 'design', 'plan', 'build', 'verify', 'audit', 'land', 'clash', 'numbers', 'outro']) {
         assert.match(html, new RegExp('<span>' + label + '</span>'));
     }
     assert.match(html, /--c: var\(--st-survey\)/);
@@ -59,7 +59,7 @@ test('the page shows the promo\'s length, with no chapter chips to duplicate it'
 
 test('?record strips the page to the canvas', (t) => {
     if (!findBrowser()) { t.skip(NO_BROWSER); return; }
-    const html = dom(PAGE + '?record#stages@0');
+    const html = dom(PAGE + '?record#reel@0');
     assert.match(html, /<body class="rec"/);
 });
 
@@ -68,8 +68,8 @@ test('?record strips the page to the canvas', (t) => {
 // button is missing.
 test('?lang picks the video\'s language, and the bar carries a mute button', (t) => {
     if (!findBrowser()) { t.skip(NO_BROWSER); return; }
-    assert.match(dom(PAGE + '?lang=en#stages@300'), /data-lang="en"/);
-    assert.match(dom(PAGE + '?lang=zh#stages@300'), /data-lang="zh"/);
+    assert.match(dom(PAGE + '?lang=en#reel@300'), /data-lang="en"/);
+    assert.match(dom(PAGE + '?lang=zh#reel@300'), /data-lang="zh"/);
     const html = dom(PAGE);
     assert.match(html, /id="trMute"[^>]*aria-pressed="false"|aria-pressed="false"[^>]*id="trMute"/);
     assert.match(html, /<script src="i18n\.js"><\/script>/);

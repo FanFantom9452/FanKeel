@@ -175,30 +175,24 @@
     }
 
     function pad2(n) { return (n < 10 ? '0' : '') + n; }
-    function fmtClock(sec) {
-        var s = Math.round(sec), m = Math.floor(s / 60);
-        return m ? m + 'm' + pad2(s % 60) + 's' : s + 's';
-    }
     function fmtSpan(sec) {
         var s = Math.round(sec);
         if (s >= 3600) { var m = Math.round(s / 60); return Math.floor(m / 60) + 'h ' + pad2(m % 60) + 'm'; }
         return Math.floor(s / 60) + 'm ' + pad2(s % 60) + 's';
     }
-    function fmtMin(sec) { return Math.round(sec / 60) + 'm'; }
     function fmtUsd(usd) { return '$' + usd.toFixed(2); }
 
     // Text classes: weight, size, family, colour. The first three rows are the
     // old svg set (.v-h … .v-big); the rest are the document blocks of
     // .fankeel/build/2026-09-28-tour-blocks/mockup.html (.bk-h1 … .cap).
     var FONTS = {
-        h: ['600', 28, 'fUi', 'ink'], hc: ['600', 24, 'fUi', 'ink'], t: ['600', 15, 'fUi', 'ink'],
+        h: ['600', 28, 'fUi', 'ink'],
         b: ['400', 13, 'fUi', 'ink'], sub: ['400', 14, 'fUi', 'ink2'], s: ['400', 12, 'fUi', 'muted'],
-        m: ['400', 12.5, 'fMono', 'ink2'], mi: ['600', 13, 'fMono', 'ink'], j: ['400', 11, 'fMono', 'ink2'],
-        jn: ['400', 11, 'fMono', 'ink'], big: ['600', 22, 'fMono', 'ink'],
-        h1: ['600', 25, 'fUi', 'ink'], h2: ['600', 18, 'fUi', 'ink'], h3: ['600', 16, 'fUi', 'ink'],
-        ph: ['600', 23, 'fUi', 'ink'], pd: ['400', 15, 'fUi', 'ink2'], p: ['400', 17, 'fUi', 'ink'],
-        li: ['400', 14.5, 'fUi', 'ink2'], ui: ['600', 15.5, 'fUi', 'ink'], note: ['400', 13, 'fUi', 'muted'],
-        code: ['400', 14.5, 'fMono', 'ink'], cm: ['400', 13, 'fMono', 'muted'], tab: ['400', 13, 'fMono', 'ink'],
+        m: ['400', 12.5, 'fMono', 'ink2'], mi: ['600', 13, 'fMono', 'ink'],
+        big: ['600', 22, 'fMono', 'ink'],
+        h1: ['600', 25, 'fUi', 'ink'],
+        li: ['400', 14.5, 'fUi', 'ink2'], ui: ['600', 15.5, 'fUi', 'ink'],
+        code: ['400', 14.5, 'fMono', 'ink'],
         pill: ['600', 12.5, 'fUi', 'ink'], cap: ['600', 21, 'fUi', 'ink'], tag: ['600', 22, 'fUi', 'ink'],
         nm: ['500', 12, 'fMono', 'ink2'],
     };
@@ -263,9 +257,9 @@
         var over = lines.length > max || lines.some(function (l) { return ctx.measureText(l).width > maxW; });
         return { size: size, lines: lines, over: over };
     }
-    // While a log is set, every fitText and fitRuns records what it drew, the
-    // width it had to keep to, and whether it did. The page's ?check and the
-    // tests read it; no picture depends on it.
+    // While a log is set, every fitText records what it drew, the width it
+    // had to keep to, and whether it did. The page's ?check and the tests
+    // read it; no picture depends on it.
     var LOG = null;
     function fitLog(arr) {
         var was = LOG;
@@ -291,37 +285,6 @@
         });
         if (LOG) LOG.push({ s: String(s), maxW: maxW, size: r.size, lines: r.lines, over: r.over });
         return r;
-    }
-    // Runs of different classes on one line, [cls, text, fill] each — a file
-    // name in mono, then its note in the UI face — shrunk together by fit's
-    // steps and centred on `y`. When the smallest step still does not fit,
-    // the first run keeps a line of its own and the rest go under it as one
-    // fitted string in the last run's class. Returns the lines used.
-    function fitRuns(ctx, P, runs, x, y, maxW, o) {
-        o = o || {};
-        var joined = runs.map(function (r) { return r[1]; }).join('');
-        for (var k = 0; k < STEPS.length; k++) {
-            var ws = runs.map(function (r) {
-                ctx.font = font(P, r[0], { size: FONTS[r[0]][1] * STEPS[k] });
-                return ctx.measureText(r[1]).width;
-            });
-            var total = ws.reduce(function (a, b) { return a + b; }, 0);
-            if (total > maxW) continue;
-            var cx = o.align === 'center' ? x - total / 2 : x;
-            ctx.font = font(P, runs[0][0], { size: FONTS[runs[0][0]][1] * STEPS[k] });
-            var by = midY(ctx, joined, y);
-            runs.forEach(function (r, i) {
-                text(ctx, P, r[0], r[1], cx, by, { size: FONTS[r[0]][1] * STEPS[k], fill: r[2] });
-                cx += ws[i];
-            });
-            if (LOG) LOG.push({ s: joined, maxW: maxW, size: FONTS[runs[0][0]][1] * STEPS[k], lines: [joined], over: false });
-            return 1;
-        }
-        var last = runs[runs.length - 1], lh = FONTS[last[0]][1] * 1.1;
-        var rest = runs.slice(1).map(function (r) { return r[1]; }).join('').replace(/^\s+/, '');
-        fitText(ctx, P, runs[0][0], runs[0][1], x, y - lh / 2, maxW, { middle: true, lines: 1, fill: runs[0][2], align: o.align });
-        fitText(ctx, P, last[0], rest, x, y + lh / 2, maxW, { middle: true, lines: 1, fill: last[2], align: o.align });
-        return 2;
     }
     function rr(ctx, x, y, w, h, r) {
         r = Math.max(0, Math.min(r || 0, w / 2, h / 2));
@@ -368,62 +331,12 @@
         else pts.push(b, [lerp(b[0], c[0], (d - l1) / l2), lerp(b[1], c[1], (d - l1) / l2)]);
         line(ctx, pts, color, lw || 2.4);
     }
-    // The route dots as the storyboard draws them: before `at` filled, `at`
-    // filled and ringed (both scaled by `pop`, the back-out of its lighting),
-    // after it hollow.
-    function dots(ctx, P, x0, step, y, r, at, pop) {
-        var k = pop === undefined ? 1 : pop;
-        ROUTE.forEach(function (s, i) {
-            var cx = x0 + i * step, c = P.st[s];
-            if (i < at) circle(ctx, cx, y, r, c);
-            else if (i === at) {
-                circle(ctx, cx, y, (r + 1.5) * k, c);
-                circle(ctx, cx, y, (r + 5) * k, null, c, 1.5);
-            } else circle(ctx, cx, y, r, P.ground, P.rule2, 1.5);
-        });
-    }
-    // The stages video's rail: M110 330H530, dots 70 apart.
-    function rail(ctx, P, at, pop) {
-        line(ctx, [[110, 330], [530, 330]], P.rule2, 5);
-        dots(ctx, P, 110, 70, 330, 6, at, pop);
-    }
-    // Each stage's real duration as a share of the span, one unit between bars.
-    function barRects(x, w) {
-        var sum = 0;
-        ROUTE.forEach(function (s) { sum += SESSION.clock[s]; });
-        var room = w - (ROUTE.length - 1), cx = x;
-        return ROUTE.map(function (s) {
-            var bw = room * SESSION.clock[s] / sum, r = [cx, bw];
-            cx += bw + 1;
-            return r;
-        });
-    }
-    // Bars grown left to right to `grow` of the span; a bar under 20 units
-    // carries no label (plan's 1m does not fit), and a label shows once the
-    // growth passes its bar's middle.
-    function bars(ctx, P, x, y, w, h, labelY, grow) {
-        var edge = x + w * clamp01(grow);
-        barRects(x, w).forEach(function (r, i) {
-            var s = ROUTE[i], vis = Math.min(r[1], edge - r[0]);
-            if (vis > 0) box(ctx, r[0], y, vis, h, r[1] < 10 ? 1 : 2, P.st[s]);
-            if (r[1] >= 20 && edge >= r[0] + r[1] / 2) text(ctx, P, 's', fmtMin(SESSION.clock[s]), r[0] + r[1] / 2, labelY, { align: 'center' });
-        });
-    }
     function fade(ctx, a, fn) {
         if (!(a > 0)) return;
         ctx.save();
         ctx.globalAlpha = ctx.globalAlpha * Math.min(1, a);
         fn();
         ctx.restore();
-    }
-    // A row of stat callouts, a big number over a small label, each an
-    // [x, bigText, smallLabel] triple sharing one y for the number and one
-    // labelY for the label — the land beat's four and the outro's three.
-    function stats(ctx, P, items, y, labelY) {
-        items.forEach(function (n) {
-            text(ctx, P, 'big', n[1], n[0], y, { align: 'center' });
-            text(ctx, P, 's', n[2], n[0], labelY, { align: 'center' });
-        });
     }
 
     module.exports = {
@@ -433,10 +346,9 @@
         beatAt: beatAt, stepBeat: stepBeat, clock: clock, check: check,
         register: register, get: get, names: names, length: length,
         palette: palette, render: render,
-        fmtClock: fmtClock, fmtSpan: fmtSpan, fmtMin: fmtMin, fmtUsd: fmtUsd,
-        UI_FONTS: UI_FONTS, font: font, fit: fit, fitText: fitText, fitRuns: fitRuns, fitLog: fitLog, midY: midY,
-        text: text, rr: rr, box: box, line: line, circle: circle, tick: tick,
-        dots: dots, rail: rail, barRects: barRects, bars: bars, fade: fade, stats: stats,
+        fmtSpan: fmtSpan, fmtUsd: fmtUsd,
+        UI_FONTS: UI_FONTS, font: font, fit: fit, fitText: fitText, fitLog: fitLog, midY: midY,
+        text: text, rr: rr, box: box, line: line, circle: circle, tick: tick, fade: fade,
     };
     if (typeof window !== 'undefined') root.tourEngine = module.exports;
 })(typeof window !== 'undefined' ? window : globalThis, typeof module !== 'undefined' ? module : {});

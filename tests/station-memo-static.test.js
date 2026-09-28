@@ -108,6 +108,22 @@ test('the tour files and i18n.js are on the list, byte for byte, with their cont
     }
 });
 
+test('every script tour.html loads, including the multi-hyphen reel files, is served', async () => {
+    const html = fs.readFileSync(path.join(ASSETS, 'tour.html'), 'utf8');
+    const names = [...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map((m) => m[1]);
+    assert.ok(names.includes('tour-reel-kit.js'), names.join(', '));
+    const f = fixture();
+    const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
+    try {
+        for (const name of names) {
+            const res = await get(s.url + 'station/' + name);
+            assert.equal(res.status, 200, name);
+        }
+    } finally {
+        s.close();
+    }
+});
+
 test('a name off the list is a 404, whatever sits in the assets directory', async () => {
     const f = fixture();
     const s = await serve({ configDir: f.cfg, port: 0, idleMs: 60e3, open: false });
