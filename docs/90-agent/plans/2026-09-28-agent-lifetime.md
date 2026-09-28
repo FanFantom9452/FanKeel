@@ -6,7 +6,7 @@ date: 2026-09-28
 # Agent Lifetime Implementation Plan
 
 **Goal:** shorten every subagent's life so its cost stops growing with requests × context.
-**Architecture:** build runs one brain per disjoint `ledger.js groups` group, in parallel, each ending with its group; plan lint caps a task's read size; a subagent-only budget hook nudges at 150k and blocks at 250k; implementer prompts open with a byte-identical shared prefix that carries `context.md`'s content.
+**Architecture:** build runs one brain per disjoint `ledger.js groups` group, in parallel, each ending with its group; plan lint caps a task's read size; a subagent-only budget hook nudges at 300k and blocks at 450k; implementer prompts open with a byte-identical shared prefix that carries `context.md`'s content.
 **Tech Stack:** Node.js built-ins only (CommonJS), `node --test`; Claude Code hook events PreToolUse, PostToolUse, SubagentStart.
 **Spec:** [2026-09-28-agent-lifetime-design.md](2026-09-28-agent-lifetime-design.md)
 
@@ -317,7 +317,7 @@ This task answers the design's "尚未證實" section — the two facts §3 and 
 
 **Interfaces:**
 - Consumes: none
-- Produces: `SOFT` (`150000`), `HARD` (`250000`) — both exported from `lib/context.js`, beside `BUSY`
+- Produces: `SOFT` (`300000`), `HARD` (`450000`) — both exported from `lib/context.js`, beside `BUSY`
 
 **Dispatch:** implementer, sonnet — two constants and an export line; the plan carries both.
 
@@ -349,14 +349,14 @@ module.exports = { inspect, contextLine, tokens: k, TAIL, BUSY, readTail };
    const { SOFT, HARD, BUSY } = require('../lib/context.js');
 
    test('SOFT and HARD are the two subagent budget thresholds design section 3 sets', () => {
-       assert.equal(SOFT, 150000);
-       assert.equal(HARD, 250000);
+       assert.equal(SOFT, 300000);
+       assert.equal(HARD, 450000);
        assert.ok(SOFT < HARD, 'the nudge fires before the deny');
        assert.ok(HARD < BUSY, 'a subagent is refused well before a session is called busy');
    });
    ```
 
-2. Run it and see it fail: `node --test tests/context-budget.test.js` — `SOFT` and `HARD` are `undefined`, `assert.equal(undefined, 150000)` fails.
+2. Run it and see it fail: `node --test tests/context-budget.test.js` — `SOFT` and `HARD` are `undefined`, `assert.equal(undefined, 300000)` fails.
 
 3. Write the implementation.
 
@@ -368,8 +368,8 @@ module.exports = { inspect, contextLine, tokens: k, TAIL, BUSY, readTail };
    // transcript (`agent-<id>.jsonl`), never the main session's `BUSY` above.
    // Both are far under BUSY: session f44b1c61's worst subagent reached 544k
    // before it ever returned, and this design exists to end one long before that.
-   const SOFT = 150000;
-   const HARD = 250000;
+   const SOFT = 300000;
+   const HARD = 450000;
    ```
 
    In `lib/context.js`, then change the export line to:
@@ -598,7 +598,7 @@ function targetOf(payload) {
        const t = transcript(root, 160000);
        const out = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PostToolUse', tool_name: 'Read', transcript_path: t });
        const ctx = JSON.parse(out).hookSpecificOutput.additionalContext;
-       assert.match(ctx, /150000/);
+       assert.match(ctx, /300000/);
        assert.match(ctx, new RegExp('relay-' + AGENT + '\\.md'));
    });
 
@@ -617,7 +617,7 @@ function targetOf(payload) {
        const out = run({ session_id: MINE, cwd: root, agent_id: AGENT, hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: 'lib/x.js' }, transcript_path: t });
        const o = JSON.parse(out).hookSpecificOutput;
        assert.equal(o.permissionDecision, 'deny');
-       assert.match(o.permissionDecisionReason, /250000/);
+       assert.match(o.permissionDecisionReason, /450000/);
        assert.match(o.permissionDecisionReason, new RegExp('relay-' + AGENT + '\\.md'));
    });
 
@@ -3840,7 +3840,7 @@ if: `the chosen card animates, and under reduced motion nothing is running` 在�
 ### build 五個 task 以上
 if: 下一次有 5 個以上 task 的 build 開跑. 09-28.
 
-- 〔station〕看第 7 段加的 station 欄位：沒有任何 subagent 的 context 峰值超過 250k（基準 f44b1c61 的 544k）、最貴的單一 subagent 佔 subagent 總花費低於 15%（基準 31%） — [docs/90-agent/reference/station.md](docs/90-agent/reference/station.md).
+- 〔station〕看第 7 段加的 station 欄位：沒有任何 subagent 的 context 峰值超過 450k（基準 f44b1c61 的 544k）、最貴的單一 subagent 佔 subagent 總花費低於 15%（基準 31%） — [docs/90-agent/reference/station.md](docs/90-agent/reference/station.md).
 ```
 
 5. Confirm the two Blocked entries are gone and the new Watch entry is there, then run both checkers:
@@ -3868,8 +3868,8 @@ git commit -m "docs: close the context-budget Blocked entries; describe group br
 | SubagentStart 注入的 brief 和 Agent 的 `prompt` 誰在前面，目前也不知道。 | Task 1 |
 | 新增 `hooks/budget.js`，登記在 `.claude-plugin/plugin.json` 的 PreToolUse 和 PostToolUse。payload 沒有 `agent_id` 就立刻返回，主 session 完全不受影響。 | Task 4 |
 | 它讀取這個 subagent 自己的逐字紀錄，並用 `lib/context.js` 的 `inspect()` 只讀檔案最後 512KB。 | Task 4 |
-| context 達到 `SOFT = 150000` 時，PostToolUse 每一次都注入：「做完這一步，把進度寫進 `.fankeel/build/<task>/relay-<agentId>.md`，然後回報那個路徑。」 | Task 4 |
-| context 達到 `HARD = 250000` 時，PreToolUse 拒絕所有工具呼叫，只有寫入 `.fankeel/build/` 底下檔案的 Write 和 Edit 例外；拒絕理由寫明交接檔的路徑。 | Task 4 |
+| context 達到 `SOFT = 300000` 時，PostToolUse 每一次都注入：「做完這一步，把進度寫進 `.fankeel/build/<task>/relay-<agentId>.md`，然後回報那個路徑。」 | Task 4 |
+| context 達到 `HARD = 450000` 時，PreToolUse 拒絕所有工具呼叫，只有寫入 `.fankeel/build/` 底下檔案的 Write 和 Edit 例外；拒絕理由寫明交接檔的路徑。 | Task 4 |
 | brain 收到一個 relay 路徑，就派一個新的 agent，prompt 只寫共用前綴（第 4 段）加上那個 relay 檔。`SOFT` 和 `HARD` 由 `lib/context.js` 匯出，放在 `BUSY` 旁邊。 | `SOFT`/`HARD` export: Task 2; `relayPath`: Task 3 (consumed by Task 4); the brain's own dispatch-on-relay behaviour: Task 19. |
 | `scripts/ledger.js brief` 新增 `--group <N> --prefix` 輸出，依序包含：`context.md` 的全文、這個 group 各 task 的 `Files`／`Consumes`／`Produces`，以及固定的 implementer 規則。輸出的字元只取決於檔案內容，不含時間或 agent id。 | Task 5 |
 | brain 把這段輸出原封不動放在每一個 implementer prompt 的開頭，個別 task 的內容放在最後。同一個 group 裡可以同時開工的 implementer 在同一次回應裡一起派出，讓 5 分鐘的快取還沒過期時就能共用。 | Task 19 |
