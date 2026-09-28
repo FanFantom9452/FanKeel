@@ -81,6 +81,8 @@ the reading is what gets scheduled.
 
 ## Ready
 
+- 〔stage-agents〕`hooks/brief.js` 不管 `spawnDepth`、不管父層是否已是站 agent，見到 `fankeel-brain` 的 `SubagentStart` 就標 `inflight`：巢狀 brain 因此拿到多餘的 `group` 標記；先記下，不動 — [hooks/brief.js](hooks/brief.js).
+
 ## Needs a decision
 
 ## Blocked
