@@ -35,7 +35,7 @@ const { splitAroundVerb } = require('../lib/argv.js');
 const { byName: stageByName, NAMES: STAGE_NAMES, FULL_ROUTE, CLASSES, normaliseRoute, positionIn, routeForClass, classForRoute } = require('../lib/stages.js');
 const profile = require('../lib/profile.js');
 const docs = require('../lib/docs.js');
-const { handoffPath, readGate, lapsUsed } = require('../lib/handoff.js');
+const { handoffPath, readGate, lapsUsed, contextPath } = require('../lib/handoff.js');
 const { controlRulesFor, PLUGIN_MARK, PLUGIN_ROOT, newestPlan, blockSizes, BLOCK_CAP } = require('../lib/render.js');
 const { estimateTokens } = require('./input-check.js');
 const plantasks = require('../lib/plantasks.js');
@@ -787,6 +787,20 @@ function cmdStage(root, opts) {
     if (name === 'build' && from === 'verify' && registry.returnsTo(data, 'verify', 'build') > 1) {
         line += NL + 'second return to build from verify — name what verify caught that build\'s'
             + NL + 'review did not, and add that check to the review';
+    }
+    // §5: leaving survey or plan with nothing recorded means the next stage
+    // re-derives every fact this one already had open — warned, never
+    // blocked, the same shape as the return-to-build line above.
+    if (from === 'survey' || from === 'plan') {
+        const ctxFile = contextPath(root, data);
+        let text = '';
+        if (ctxFile) {
+            try { text = fs.readFileSync(ctxFile, 'utf8'); } catch (e) { /* none written yet */ }
+        }
+        if (!text.trim()) {
+            line += NL + 'context.md has no facts recorded from ' + from + ' — a later stage would '
+                + 're-derive them. `node ' + PLUGIN_ROOT + '/scripts/context.js add` records one.';
+        }
     }
     line += NL + effortHint(data.class || classForRoute(route), name);
     // The answer that sent the session here fired `resume.js` while the old stage
