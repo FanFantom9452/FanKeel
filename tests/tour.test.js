@@ -252,3 +252,104 @@ test('fade draws nothing at zero and multiplies alpha inside', () => {
     assert.equal(ran, true);
     assert.equal(ctx.globalAlpha, 1);
 });
+
+// Criterion: the UI face leads with the language's own. Red when: palette
+// ignores `lang`, or reads the page's --f-ui (Bahnschrift first) for zh.
+test('palette picks the UI face by language: JhengHei first for zh, Bahnschrift first for en', () => {
+    const read = (k) => (k === 'f-ui' ? '"Bahnschrift",sans-serif' : '');
+    const zh = T.palette(read, 'zh');
+    const en = T.palette(read, 'en');
+    assert.equal(zh.lang, 'zh');
+    assert.equal(en.lang, 'en');
+    assert.equal(T.palette(read).lang, 'zh');
+    assert.equal(zh.fUi, T.UI_FONTS.zh);
+    assert.equal(en.fUi, T.UI_FONTS.en);
+    assert.ok(zh.fUi.indexOf('"Microsoft JhengHei UI"') < zh.fUi.indexOf('"Bahnschrift"'));
+    assert.ok(en.fUi.indexOf('"Bahnschrift"') < en.fUi.indexOf('"Microsoft JhengHei UI"'));
+    for (const face of ['"Microsoft JhengHei UI"', '"Microsoft JhengHei"', '"PingFang TC"', '"Noto Sans TC"']) {
+        assert.ok(zh.fUi.indexOf(face) < zh.fUi.indexOf('"Bahnschrift"'), face);
+    }
+    assert.equal(T.DARK.fUi, T.UI_FONTS.zh);
+    assert.equal(T.palette((k) => (k === 'stale-bg' ? '#010203' : ''), 'zh').staleBg, '#010203');
+    assert.equal(zh.live, T.DARK.live);
+});
+
+// Criterion: past its width a string shrinks one step at a time, three at
+// most, before it wraps. Red when: fit wraps at the first size, or shrinks
+// without limit.
+test('fit keeps the class size when it fits, then shrinks by three steps at most, then wraps', () => {
+    const ctx = fakeCtx();
+    const P = T.DARK;
+    // 'cap' is 21px: ten CJK characters are 210 wide in the fake context.
+    assert.deepEqual(T.fit(ctx, P, 'cap', '一二三四五六七八九十', 210), { size: 21, lines: ['一二三四五六七八九十'], over: false });
+    const one = T.fit(ctx, P, 'cap', '一二三四五六七八九十', 200);
+    assert.equal(one.size, 21 * 0.92);
+    assert.deepEqual(one.lines, ['一二三四五六七八九十']);
+    const three = T.fit(ctx, P, 'cap', '一二三四五六七八九十', 21 * 0.78 * 10);
+    assert.equal(three.size, 21 * 0.78);
+    assert.equal(three.lines.length, 1);
+    const wrapped = T.fit(ctx, P, 'cap', '一二三四五六七八九十', 120);
+    assert.equal(wrapped.lines.length, 2);
+    assert.equal(wrapped.lines.join(''), '一二三四五六七八九十');
+    assert.equal(wrapped.over, false);
+    assert.equal(T.fit(ctx, P, 'cap', '一二三四五六七八九十', 30).over, true);
+});
+
+// Criterion: a wrap never starts a line with 。，、. Red when: the break
+// falls wherever the width runs out.
+test('a wrapped line never begins with 。，、 — the character before it goes down too', () => {
+    const ctx = fakeCtx();
+    const P = T.DARK;
+    for (const mark of ['。', '，', '、']) {
+        // 21px CJK: six characters fill 126, so the seventh — the mark — would open line two.
+        const s = '一二三四五六' + mark + '七八九';
+        const r = T.fit(ctx, P, 'cap', s, 126 * 0.78, { lines: 3 });
+        assert.ok(r.lines.length > 1, mark + ': ' + r.lines.join(' | '));
+        for (const l of r.lines) assert.ok(!'。，、'.includes(l[0]), mark + ': ' + r.lines.join(' | '));
+        assert.equal(r.lines.join(''), s);
+    }
+});
+
+test('English wraps at spaces, never inside a word', () => {
+    const ctx = fakeCtx();
+    const r = T.fit(ctx, T.DARK, 'tag', 'Build with AI as long as you like — without piling up stale references and dead code.', 500);
+    assert.equal(r.lines.length, 2);
+    for (const l of r.lines) assert.ok(!/^\s|\s$/.test(l), JSON.stringify(l));
+    assert.equal(r.lines.join(' '), 'Build with AI as long as you like — without piling up stale references and dead code.');
+});
+
+// Criterion: vertical centring comes from the measured ink box. Red when:
+// midY returns a hand-set offset.
+test('midY centres the measured ink box on the point, and fitText with middle uses it', () => {
+    const ctx = fakeCtx();
+    ctx.font = '400 20px sans-serif';
+    assert.equal(T.midY(ctx, 'x', 100), 100 + (0.72 * 20 - 0.2 * 20) / 2);
+    const log = [];
+    T.fitLog(log);
+    T.fitText(ctx, T.DARK, 'li', 'abc', 10, 50, 300, { middle: true });
+    assert.equal(T.fitLog(null), log);
+    const fill = ctx.calls.filter((c) => c[0] === 'fillText').at(-1);
+    assert.ok(Math.abs(fill[3] - (50 + (0.72 - 0.2) * 14.5 / 2)) < 1e-9, String(fill[3]));
+    assert.deepEqual(log, [{ s: 'abc', maxW: 300, size: 14.5, lines: ['abc'], over: false }]);
+});
+
+test('fitRuns shrinks mixed runs together, and stacks them when the smallest step does not fit', () => {
+    const P = T.DARK;
+    let ctx = fakeCtx();
+    assert.equal(T.fitRuns(ctx, P, [['code', 'a.ts'], ['li', ' 通過']], 0, 20, 400), 1);
+    assert.deepEqual(ctx.texts(), ['a.ts', ' 通過']);
+    ctx = fakeCtx();
+    const log = [];
+    T.fitLog(log);
+    assert.equal(T.fitRuns(ctx, P, [['code', 'warehouse.test.ts'], ['li', ' old case fails: no default warehouse']], 0, 20, 240), 2);
+    T.fitLog(null);
+    assert.deepEqual(ctx.texts(), ['warehouse.test.ts', 'old case fails: no default warehouse']);
+    assert.ok(log.every((e) => !e.over), JSON.stringify(log));
+    const mono = ctx.calls.filter((c) => c[0] === '=font').map((c) => c[1]);
+    assert.ok(mono.some((f) => f.includes('Cascadia Mono')) && mono.some((f) => f.includes('JhengHei')));
+});
+
+test('font builds the class\'s CSS font from the palette\'s faces', () => {
+    assert.equal(T.font(T.DARK, 'h1'), '600 25px ' + T.DARK.fUi);
+    assert.equal(T.font(T.DARK, 'code', { size: 10 }), '400 10px ' + T.DARK.fMono);
+});

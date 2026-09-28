@@ -10,6 +10,13 @@
     var W = 640, H = 360, FPS = 60, SUBFRAMES = 10;
     var ROUTE = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
 
+    // The UI face leads with the language's own: JhengHei for zh, Bahnschrift
+    // for en (the storyboard's html[data-lang] rules). The mono face only ever
+    // holds ASCII.
+    var UI_FONTS = {
+        zh: '"Microsoft JhengHei UI","Microsoft JhengHei","PingFang TC","Noto Sans TC","Bahnschrift","DIN Alternate",system-ui,sans-serif',
+        en: '"Bahnschrift","Microsoft JhengHei UI","Microsoft JhengHei","PingFang TC","Noto Sans TC","DIN Alternate",system-ui,sans-serif',
+    };
     // assets/station/station.css :root[data-theme=dark], value for value.
     // palette() reads the live tokens in a page; this is what Node and a
     // missing token fall back to. The frames are always dark.
@@ -17,8 +24,11 @@
         ground: '#0e1311', panel: '#161c1a', inset: '#1e2522',
         ink: '#e8ece6', ink2: '#a9b3ae', muted: '#8a9590', faint: '#65706b',
         rule: '#29312e', rule2: '#36403c', good: '#5cc27a', bad: '#ef8a6a',
+        live: '#5cc27a', stale: '#e0a53a', staleInk: '#e0a53a',
+        liveBg: 'rgba(92,194,122,.14)', upBg: 'rgba(92,194,122,.14)', dnBg: 'rgba(239,138,106,.14)', staleBg: 'rgba(224,165,58,.16)',
         st: { survey: '#488acb', design: '#bf860c', plan: '#c35c9b', build: '#5e9f50', verify: '#8071c8', audit: '#d15d51', land: '#209993' },
-        fUi: '"Bahnschrift","Microsoft JhengHei UI","Microsoft JhengHei","PingFang TC","Noto Sans TC","DIN Alternate",system-ui,sans-serif',
+        lang: 'zh',
+        fUi: UI_FONTS.zh,
         fMono: '"Cascadia Mono","Cascadia Code",Consolas,"SF Mono",ui-monospace,monospace',
     };
 
@@ -118,13 +128,20 @@
     function names() { return Object.keys(REG); }
     function length(name) { return get(name).length; }
 
-    function palette(read) {
+    // Station tokens by the name the frames use. `lang` picks the UI face and
+    // rides on the palette, so every draw function sees it as P.lang. The
+    // page's own --f-ui is not read: the language decides which face leads.
+    var TOKENS = {
+        ground: 'ground', panel: 'panel', inset: 'inset', ink: 'ink', ink2: 'ink2', muted: 'muted', faint: 'faint',
+        rule: 'rule', rule2: 'rule2', good: 'good', bad: 'bad', live: 'live', stale: 'stale', staleInk: 'stale-ink',
+        liveBg: 'live-bg', upBg: 'up-bg', dnBg: 'dn-bg', staleBg: 'stale-bg',
+    };
+    function palette(read, lang) {
         var P = { st: {} };
-        ['ground', 'panel', 'inset', 'ink', 'ink2', 'muted', 'faint', 'rule', 'rule2', 'good', 'bad'].forEach(function (k) {
-            P[k] = read(k) || DARK[k];
-        });
+        Object.keys(TOKENS).forEach(function (k) { P[k] = read(TOKENS[k]) || DARK[k]; });
         ROUTE.forEach(function (s) { P.st[s] = read('st-' + s) || DARK.st[s]; });
-        P.fUi = read('f-ui') || DARK.fUi;
+        P.lang = lang === 'en' ? 'en' : 'zh';
+        P.fUi = UI_FONTS[P.lang];
         P.fMono = read('f-mono') || DARK.fMono;
         return P;
     }
@@ -170,21 +187,141 @@
     function fmtMin(sec) { return Math.round(sec / 60) + 'm'; }
     function fmtUsd(usd) { return '$' + usd.toFixed(2); }
 
-    // The storyboard's svg text classes (.v-h … .v-big): weight, size, family, colour.
+    // Text classes: weight, size, family, colour. The first three rows are the
+    // old svg set (.v-h … .v-big); the rest are the document blocks of
+    // .fankeel/build/2026-09-28-tour-blocks/mockup.html (.bk-h1 … .cap).
     var FONTS = {
         h: ['600', 28, 'fUi', 'ink'], hc: ['600', 24, 'fUi', 'ink'], t: ['600', 15, 'fUi', 'ink'],
         b: ['400', 13, 'fUi', 'ink'], sub: ['400', 14, 'fUi', 'ink2'], s: ['400', 12, 'fUi', 'muted'],
         m: ['400', 12.5, 'fMono', 'ink2'], mi: ['600', 13, 'fMono', 'ink'], j: ['400', 11, 'fMono', 'ink2'],
         jn: ['400', 11, 'fMono', 'ink'], big: ['600', 22, 'fMono', 'ink'],
+        h1: ['600', 25, 'fUi', 'ink'], h2: ['600', 18, 'fUi', 'ink'], h3: ['600', 16, 'fUi', 'ink'],
+        ph: ['600', 23, 'fUi', 'ink'], pd: ['400', 15, 'fUi', 'ink2'], p: ['400', 17, 'fUi', 'ink'],
+        li: ['400', 14.5, 'fUi', 'ink2'], ui: ['600', 15.5, 'fUi', 'ink'], note: ['400', 13, 'fUi', 'muted'],
+        code: ['400', 14.5, 'fMono', 'ink'], cm: ['400', 13, 'fMono', 'muted'], tab: ['400', 13, 'fMono', 'ink'],
+        pill: ['600', 12.5, 'fUi', 'ink'], cap: ['600', 21, 'fUi', 'ink'], tag: ['600', 22, 'fUi', 'ink'],
+        nm: ['500', 12, 'fMono', 'ink2'],
     };
-    function text(ctx, P, cls, s, x, y, o) {
+    function font(P, cls, o) {
         var f = FONTS[cls];
         o = o || {};
-        ctx.font = (o.weight || f[0]) + ' ' + (o.size || f[1]) + 'px ' + P[f[2]];
-        ctx.fillStyle = o.fill || P[f[3]];
+        return (o.weight || f[0]) + ' ' + (o.size || f[1]) + 'px ' + P[f[2]];
+    }
+    function text(ctx, P, cls, s, x, y, o) {
+        o = o || {};
+        ctx.font = font(P, cls, o);
+        ctx.fillStyle = o.fill || P[FONTS[cls][3]];
         ctx.textAlign = o.align || 'left';
         ctx.textBaseline = 'alphabetic';
         ctx.fillText(s, x, y);
+    }
+
+    // fit: a string to a width. The class size first; past the width, one
+    // step smaller at a time — 92%, 85%, 78% of it, three steps at most — and
+    // only when the smallest still does not fit, broken into lines: at spaces
+    // for English, between any two characters for Chinese, at the largest of
+    // the four sizes that needs no more than `lines` of them (2 unless given).
+    // No line begins with a mark in NO_START (。，、 and the other closing
+    // marks): the character before it goes down with it. Pure; the answer is
+    // the size, the lines, and `over` when even the wrap does not fit.
+    var STEPS = [1, 0.92, 0.85, 0.78];
+    var NO_START = '。，、．！？；：」』）';
+    var CJK = /[⺀-鿿豈-﫿＀-￯　-〿]/;
+    var TOKEN = /[⺀-鿿豈-﫿＀-￯　-〿]|[^\s⺀-鿿豈-﫿＀-￯　-〿]+|\s+/g;
+    function wrap(ctx, s, maxW) {
+        var lines = [], cur = '';
+        (String(s).match(TOKEN) || []).forEach(function (t) {
+            var blank = /^\s+$/.test(t);
+            if (!cur && blank) return;
+            if (!cur || ctx.measureText((cur + t).replace(/\s+$/, '')).width <= maxW) { cur += t; return; }
+            var carry = '';
+            if (NO_START.indexOf(t) >= 0 && cur.length > 1 && CJK.test(cur.slice(-1))) {
+                carry = cur.slice(-1);
+                cur = cur.slice(0, -1);
+            }
+            lines.push(cur.replace(/\s+$/, ''));
+            cur = blank ? carry : carry + t;
+        });
+        cur = cur.replace(/\s+$/, '');
+        if (cur) lines.push(cur);
+        return lines;
+    }
+    function fit(ctx, P, cls, s, maxW, o) {
+        o = o || {};
+        var base = o.size || FONTS[cls][1], max = o.lines || 2, k, size, lines;
+        for (k = 0; k < STEPS.length; k++) {
+            size = base * STEPS[k];
+            ctx.font = font(P, cls, { size: size, weight: o.weight });
+            if (ctx.measureText(s).width <= maxW) return { size: size, lines: [String(s)], over: false };
+        }
+        for (k = 0; k < STEPS.length; k++) {
+            size = base * STEPS[k];
+            ctx.font = font(P, cls, { size: size, weight: o.weight });
+            lines = wrap(ctx, s, maxW);
+            if (lines.length <= max) break;
+        }
+        var over = lines.length > max || lines.some(function (l) { return ctx.measureText(l).width > maxW; });
+        return { size: size, lines: lines, over: over };
+    }
+    // While a log is set, every fitText and fitRuns records what it drew, the
+    // width it had to keep to, and whether it did. The page's ?check and the
+    // tests read it; no picture depends on it.
+    var LOG = null;
+    function fitLog(arr) {
+        var was = LOG;
+        LOG = arr || null;
+        return was;
+    }
+    // The baseline that centres a string's measured ink on `cy`, from the
+    // font already set: actualBoundingBoxAscent, never a hand-set offset.
+    function midY(ctx, s, cy) {
+        var m = ctx.measureText(s);
+        return cy + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
+    }
+    // fit, then draw the lines one under another at `leading` × size (1.25
+    // unless given), from baseline `y` — or, with o.middle, as one block
+    // centred on `y`. Returns fit's answer.
+    function fitText(ctx, P, cls, s, x, y, maxW, o) {
+        o = o || {};
+        var r = fit(ctx, P, cls, s, maxW, o), lh = r.size * (o.leading || 1.25);
+        ctx.font = font(P, cls, { size: r.size, weight: o.weight });
+        var y0 = o.middle ? midY(ctx, r.lines[0], y) - (r.lines.length - 1) * lh / 2 : y;
+        r.lines.forEach(function (l, i) {
+            text(ctx, P, cls, l, x, y0 + i * lh, { size: r.size, weight: o.weight, fill: o.fill, align: o.align });
+        });
+        if (LOG) LOG.push({ s: String(s), maxW: maxW, size: r.size, lines: r.lines, over: r.over });
+        return r;
+    }
+    // Runs of different classes on one line, [cls, text, fill] each — a file
+    // name in mono, then its note in the UI face — shrunk together by fit's
+    // steps and centred on `y`. When the smallest step still does not fit,
+    // the first run keeps a line of its own and the rest go under it as one
+    // fitted string in the last run's class. Returns the lines used.
+    function fitRuns(ctx, P, runs, x, y, maxW, o) {
+        o = o || {};
+        var joined = runs.map(function (r) { return r[1]; }).join('');
+        for (var k = 0; k < STEPS.length; k++) {
+            var ws = runs.map(function (r) {
+                ctx.font = font(P, r[0], { size: FONTS[r[0]][1] * STEPS[k] });
+                return ctx.measureText(r[1]).width;
+            });
+            var total = ws.reduce(function (a, b) { return a + b; }, 0);
+            if (total > maxW) continue;
+            var cx = o.align === 'center' ? x - total / 2 : x;
+            ctx.font = font(P, runs[0][0], { size: FONTS[runs[0][0]][1] * STEPS[k] });
+            var by = midY(ctx, joined, y);
+            runs.forEach(function (r, i) {
+                text(ctx, P, r[0], r[1], cx, by, { size: FONTS[r[0]][1] * STEPS[k], fill: r[2] });
+                cx += ws[i];
+            });
+            if (LOG) LOG.push({ s: joined, maxW: maxW, size: FONTS[runs[0][0]][1] * STEPS[k], lines: [joined], over: false });
+            return 1;
+        }
+        var last = runs[runs.length - 1], lh = FONTS[last[0]][1] * 1.1;
+        var rest = runs.slice(1).map(function (r) { return r[1]; }).join('').replace(/^\s+/, '');
+        fitText(ctx, P, runs[0][0], runs[0][1], x, y - lh / 2, maxW, { middle: true, lines: 1, fill: runs[0][2], align: o.align });
+        fitText(ctx, P, last[0], rest, x, y + lh / 2, maxW, { middle: true, lines: 1, fill: last[2], align: o.align });
+        return 2;
     }
     function rr(ctx, x, y, w, h, r) {
         r = Math.max(0, Math.min(r || 0, w / 2, h / 2));
@@ -297,6 +434,7 @@
         register: register, get: get, names: names, length: length,
         palette: palette, render: render,
         fmtClock: fmtClock, fmtSpan: fmtSpan, fmtMin: fmtMin, fmtUsd: fmtUsd,
+        UI_FONTS: UI_FONTS, font: font, fit: fit, fitText: fitText, fitRuns: fitRuns, fitLog: fitLog, midY: midY,
         text: text, rr: rr, box: box, line: line, circle: circle, tick: tick,
         dots: dots, rail: rail, barRects: barRects, bars: bars, fade: fade, stats: stats,
     };
