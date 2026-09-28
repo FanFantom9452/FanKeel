@@ -193,7 +193,7 @@ The same hook has a second entry, `.claude-plugin/plugin.json:107` `"matcher": "
 So a `Bash` or `PowerShell` call never reaches `blockers()` — and on this machine
 that is two tools, not one: Windows hands a subagent a `PowerShell` the collision
 matcher does not name either.
-`tests/guard.test.js:239` names that silence on purpose: `Bash and PowerShell carry no path`, and the rest of the name says the guard has
+`tests/guard.test.js:255` names that silence on purpose: `Bash and PowerShell carry no path`, and the rest of the name says the guard has
 nothing to say about either — a passing test, not a gap nobody noticed. The
 reasoning for leaving it that way, including what was measured and rejected,
 is in `docs/90-agent/judgements/2026-09-10-shell-whitelist.md`.

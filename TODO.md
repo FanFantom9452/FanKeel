@@ -137,11 +137,6 @@ if: 下一個前端任務出現. 09-26.
 
 - 〔design〕design class：mockup 已落地，其餘是另一個 architectural 任務；計畫的三份必讀來源已不存在，內容多半已併進簡報 — [簡報 §4.1](docs/90-agent/reference/improvement-brief.md#41-design-階段的-mockup-步驟前端任務).
 
-### guard 測試再紅一次
-if: `a claim whose process is gone does not block` 在整套裡再紅一次. 09-26.
-
-- 〔tests〕09-19 在 39efee9 整套紅過一次（1563/1564，已死的 pid 被當 live 而 deny），同樹重跑 1564/0、單跑 5/5 綠；疑 `deadPid()` 的 pid 在並行時被重用，未證實 — [tests/guard.test.js](tests/guard.test.js).
-
 ### 放行規則有沒有效
 if: 放行規則存在下 no verdict 再發生一次. 09-26.
 

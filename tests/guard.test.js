@@ -48,8 +48,24 @@ function seedLive(pairs) {
 }
 
 // A pid that has certainly exited: `spawnSync` returned, so the process it
-// names is already gone.
-const deadPid = () => spawnSync(process.execPath, ['-e', '0']).pid;
+// named is gone — unless the OS has already handed that number to another
+// process, which a full parallel suite made happen once (2026-09-19, 39efee9,
+// 1563/1564). So each candidate is checked the way `running()` in
+// lib/live.js checks it, and redrawn until one is free.
+function deadPid(next = () => spawnSync(process.execPath, ['-e', '0']).pid) {
+  for (let i = 0; i < 20; i++) {
+    const pid = next();
+    try { process.kill(pid, 0); } catch (e) { return pid; }
+  }
+  throw new Error('deadPid: 20 candidates in a row were still running');
+}
+
+test('deadPid skips a candidate that is still running', () => {
+  const gone = spawnSync(process.execPath, ['-e', '0']).pid;
+  const queue = [process.pid, gone];
+  assert.equal(deadPid(() => queue.shift()), gone,
+    'process.pid is running, so the helper must pass over it to the next candidate');
+});
 
 // A pid that is certainly running. This process is `MINE` by definition, and
 // the other sessions need pids of their own — a pid is the only handle
