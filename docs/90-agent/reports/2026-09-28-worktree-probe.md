@@ -36,7 +36,7 @@ readable: no
 
 但這不代表要退回 design：worktree 的路徑本來就不必從 Agent 工具的回傳文字讀出來。走法是反過來——帶 `isolation: "worktree"` 派下去的 implementer，在自己的工作目錄裡跑一次 `git rev-parse --show-toplevel`，把量到的路徑寫進自己回給 brain 的報告；brain 再把這個路徑原封不動抄進 commit file 的 `worktree <path>` 那一行。这一步不靠 Agent 工具回傳的文字，Task 7、8 照這個走法繼續，不停下回 design。
 
-這條走法還缺一半驗證：inner agent 的工作目錄是不是真的就是那個 worktree，這次探測本來沒有直接量到——但事後翻 inner agent 自己的 transcript（`agent-a0dc138eb011ca90a.jsonl`）發現每一列都帶一個 `cwd` 欄位，值是 `C:\Users\Owner\AppData\Local\Temp\tmp.lvcM6R1frl\.claude\worktrees\agent-a0dc138eb011ca90a`——與 `worktree-list.txt` 記的 `worktrees[0].path`（只差斜線方向）完全一致。這是 transcript 自己的 `cwd` 欄位量到的，不是 Agent 工具回傳給呼叫者的文字，但足以確認 inner agent 的工作目錄就是那個 worktree：implementer 在自己的 cwd 裡跑 `git rev-parse --show-toplevel` 量得到的會是同一個路徑。
+這條走法還缺一半驗證：inner agent 的工作目錄是不是真的就是那個 worktree，這次探測本來沒有直接量到——但事後翻 inner agent 自己的 transcript（`agent-a0dc138eb011ca90a.jsonl`）發現每一列都帶一個 `cwd` 欄位，值是 `C:\Users\Owner\AppData\Local\Temp\tmp.lvcM6R1frl\.claude\worktrees\agent-a0dc138eb011ca90a`——與 `summary.json`（`extract.js` 從 `worktree-list.txt` 篩掉主 repo 那一列後）記的 `worktrees[0].path`（只差斜線方向）完全一致。這是 transcript 自己的 `cwd` 欄位量到的，不是 Agent 工具回傳給呼叫者的文字，但足以確認 inner agent 的工作目錄就是那個 worktree：implementer 在自己的 cwd 裡跑 `git rev-parse --show-toplevel` 量得到的會是同一個路徑。
 
 另外要記下 worktree 開在哪個目錄底下：留下的路徑是 `<probe repo>/.claude/worktrees/agent-a0dc138eb011ca90a`，其中 `<probe repo>` 就是這次跑量的暫存 repo 根目錄（`provenance.txt` 記的 `probe repo: /tmp/tmp.lvcM6R1frl`）。也就是說 worktree 開在 repo 根目錄**之內**，而不是外面的獨立目錄。這一點有後果：在 repo 根目錄之內開 worktree 時，一個在 worktree 底下跑的 implementer 若被 `hooks/guard.js` 的檔案存取記錄（`touch` 記下的 claims）攔下，記到的會是 worktree 底下的路徑（例如 `.claude/worktrees/agent-.../lib/foo.js`），而 `lib/guard.js` 的 `relPath` 不會把它對回主樹裡的 `lib/foo.js`——兩者在 guard 眼裡是兩個不相干的路徑，鄰居互相看不見對方的宣告。
 
