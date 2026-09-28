@@ -240,7 +240,7 @@ test('the manifest runs it on AskUserQuestion and on nothing else', () => {
 test('the drift hook runs on writes and on nothing else', () => {
   const plugin = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
   const post = plugin.hooks.PostToolUse;
-  assert.equal(post.length, 3, 'an unreviewed third PostToolUse entry has appeared');
+  assert.equal(post.length, 4, 'an unreviewed fifth PostToolUse entry has appeared');
   const touch = post.filter((e) => e.hooks.some((h) => /hooks\/touch\.js/.test(h.command)));
   assert.equal(touch.length, 1);
   assert.equal(touch[0].matcher, 'Edit|Write|NotebookEdit');
@@ -251,6 +251,12 @@ test('the drift hook runs on writes and on nothing else', () => {
   assert.equal(budget.length, 1);
   assert.equal(budget[0].hooks.length, 1);
   assert.equal(budget[0].hooks[0].timeout, 5);
+
+  const gateWrite = post.filter((e) => e.hooks.some((h) => /hooks\/gate-write\.js/.test(h.command)));
+  assert.equal(gateWrite.length, 1);
+  assert.equal(gateWrite[0].matcher, 'Write');
+  assert.equal(gateWrite[0].hooks.length, 1);
+  assert.equal(gateWrite[0].hooks[0].timeout, 5);
 });
 
 test('every hook the manifest names is a file that exists', () => {
