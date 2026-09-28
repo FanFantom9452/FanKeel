@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # Watch 三條提前做 — design
