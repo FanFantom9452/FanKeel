@@ -1,0 +1,8 @@
+worktree C:/Users/Owner/AppData/Local/Temp/tmp.lvcM6R1frl
+HEAD 458bf8471fb15c83fa0fd0507006ff82f4719e8d
+branch refs/heads/master
+
+worktree C:/Users/Owner/AppData/Local/Temp/tmp.lvcM6R1frl/.claude/worktrees/agent-a0dc138eb011ca90a
+HEAD 458bf8471fb15c83fa0fd0507006ff82f4719e8d
+branch refs/heads/worktree-agent-a0dc138eb011ca90a
+

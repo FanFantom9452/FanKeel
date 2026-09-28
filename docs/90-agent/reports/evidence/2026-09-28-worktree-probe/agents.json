@@ -1,0 +1,14 @@
+{
+  "outer": {
+    "description": "Dispatches one inner agent in a worktree and relays the tool result verbatim.",
+    "prompt": "Use the Agent tool exactly once: subagent_type \"inner\", isolation \"worktree\", prompt \"go\". Then reply with the full text of that tool result, verbatim, and nothing else.",
+    "tools": ["Agent"],
+    "model": "haiku"
+  },
+  "inner": {
+    "description": "Writes one file in its working directory and replies done.",
+    "prompt": "Run exactly this one Bash command and nothing else: echo probe > probe.txt. Then reply with the single word done.",
+    "tools": ["Bash"],
+    "model": "haiku"
+  }
+}

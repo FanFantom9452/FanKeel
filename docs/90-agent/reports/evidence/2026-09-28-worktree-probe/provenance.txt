@@ -1,0 +1,39 @@
+date: 2026-09-28T10:38:27Z
+HEAD: 3d6726bf4de43bef5eebd2835b806338a67452a0
+porcelain:
+?? docs/90-agent/reports/evidence/2026-09-28-worktree-probe/
+claude: 2.1.283 (Claude Code)
+run.sh md5: 00fa9c26f1e1019446a8f3870a2d1863
+extract.js md5: f616f35133b7e6cc30560e4872990b62
+session: 5e1f0c2a-9d3b-4c6e-8a71-2b4f6d8e0a13
+probe repo: /tmp/tmp.lvcM6R1frl
+claude exit 0
+{
+  "sid": "5e1f0c2a-9d3b-4c6e-8a71-2b4f6d8e0a13",
+  "transcripts": [
+    "agent-a0dc138eb011ca90a.jsonl",
+    "agent-ae4916f46d834a616.jsonl"
+  ],
+  "calls": [
+    {
+      "file": "agent-ae4916f46d834a616.jsonl",
+      "input": {
+        "description": "Execute task",
+        "subagent_type": "inner",
+        "isolation": "worktree",
+        "prompt": "go"
+      },
+      "resultText": "Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)\nagentId: a0dc138eb011ca90a (internal ID - do not mention to user. Use SendMessage with to: 'a0dc138eb011ca90a', summary: '<5-10 word recap>' to continue this agent.)\nThe agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict them; continue other work or respond to the user in the meantime.\nIn your own words, briefly tell the user what you launched — do not echo this tool result. Agent results will arrive in a subsequent message. If the user asks for progress, say the agent is still running.",
+      "structured": null
+    }
+  ],
+  "worktrees": [
+    {
+      "path": "C:/Users/Owner/AppData/Local/Temp/tmp.lvcM6R1frl/.claude/worktrees/agent-a0dc138eb011ca90a",
+      "branch": "worktree-agent-a0dc138eb011ca90a"
+    }
+  ],
+  "pathInResult": false,
+  "branchInResult": false,
+  "readable": "no"
+}
