@@ -614,7 +614,7 @@ function main(argv) {
         } catch (e) {
             return fail('No design at ' + design + ', named by the plan\'s **Spec:** line.');
         }
-        const lines = plantasks.lint(planText, designText);
+        const lines = plantasks.lint(planText, designText, root);
         if (!lines.length) return 'fankeel ledger — lint: clean';
         // Exit 1, so a gate that chains it stops here. The lines are the
         // report; nothing is summarised on their behalf.
