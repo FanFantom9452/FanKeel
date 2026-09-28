@@ -7,6 +7,8 @@ last_verified: 2026-09-26
 
 一句話：`todo-check.js` 現在會檢查行號。`path:N`／`path:N-M` 形式的引用，行號超過檔尾就回報 `past end`；行數用 `docs-check.js` 匯出的 `lineCount` 算，不另寫一份。主控倍數 k 第一次實測結果：可比的三站 k 落在 2.29–2.74，破平衡點 2.5052 正好在這個範圍裡，一對數據定不了輸贏。
 
+**更正 2026-09-28：** 上面「一對數據定不了輸贏」引用的量測報告本身有計算錯誤：`docs/90-agent/reports/2026-09-25-controller-multiplier.md` 的「全部」k=2.125 是把各站累計的 `total_cost_usd` 逐站相加算出來的；真正的總花費是 verify 站自己的累計值，opus $6.36、sonnet $8.95，k = 1.71，見該報告開頭的更正區塊。
+
 design 見 [../archive/2026-09-25-todo-line-and-multiplier-design.md](../99-archive/2026-09-25-todo-line-and-multiplier-design.md)，計畫見 [../archive/2026-09-25-todo-line-and-multiplier.md](../99-archive/2026-09-25-todo-line-and-multiplier.md)，量測結果見 [../reports/2026-09-25-controller-multiplier.md](../90-agent/reports/2026-09-25-controller-multiplier.md)。
 
 ## 範圍

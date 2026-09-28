@@ -20,6 +20,8 @@ design 見 [../99-archive/2026-09-28-guard-seen-ab-rerun-design.md](../99-archiv
 - 全套 `npm test`：2235 過、0 失敗（land 時在 `d176156a` 上重跑）。
 - ab.sh：opus arm $11.69、sonnet arm $18.02。design、plan、build 三站的 `k` 分別是 2.49、2.38、2.52，都在 09-25 的 2.29–2.74 之內；verify 的 `k = 1.6937`，低於破平衡點 2.5052；全部合計 2.0230。每個 arm 只跑一次（n=1）。
 
+**更正 2026-09-28：** 上一行的「opus arm $11.69、sonnet arm $18.02」與「全部合計 2.0230」都是把各站累計的 `total_cost_usd` 逐站相加算出來的計算錯誤；真正的總花費是 verify 站自己的累計值，opus $6.19、sonnet $8.60，k = 1.64，一樣低於破平衡點 2.5052，見 [報告](../90-agent/reports/2026-09-28-ab-profile-pin.md) 開頭的更正區塊。
+
 ## 在哪裡回頭
 
 - ab.sh 最後呼叫 09-25 的 `summarise.js` 時 `MODULE_NOT_FOUND`：那支檔的 `require('../../../../lib/prices.js')` 是在搬到 `docs/90-agent/` 之前寫的，少了一層。證據目錄不改；複製到 `.fankeel/build/` 修掉路徑之後重產 `summary.json`，commit 訊息裡有寫。
