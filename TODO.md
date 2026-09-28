@@ -83,6 +83,8 @@ the reading is what gets scheduled.
 
 - 〔trim〕約 14 個檔各自 `path.join(...).replace(/\\/g, '/')`，沒用 `lib/guard.js` 的 `relPath`；`relPath` 在專案根之外回傳 null，逐檔換不是 behaviour-preserving，檔案清單見 `relPath` 旁的註解 — [lib/guard.js](lib/guard.js).
 
+- 〔tests〕`appendUnique` 的去重在 trim 之後比對，沒有測試單獨釘住這個順序：`addNote("x ")` 後再 `addNote("x")` 應只留一條 — [lib/registry.js](lib/registry.js).
+
 ## Needs a decision
 
 ## Blocked
@@ -130,7 +132,7 @@ upstream: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃�
 ### spawnDepth 讀檔時序未證實
 if: 受控 stage agent 實跑量出 `SubagentStart` 與 `agent-<id>.meta.json` 寫入的先後. 09-28.
 
-- 〔stage-agents〕`nestedBrain()` 讀 `agent-<id>.meta.json` 取 `spawnDepth`；讀檔跟 `SubagentStart` 先後未量 — [hooks/brief.js](hooks/brief.js), [design.md](.fankeel/build/task-20260928T062456/design.md).
+- 〔stage-agents〕`nestedBrain()` 讀 `agent-<id>.meta.json` 取 `spawnDepth`；讀檔跟 `SubagentStart` 先後未量 — [hooks/brief.js](hooks/brief.js).
 
 ### 需要第十一種語言
 if: a repository needs an eleventh language. 09-26.
