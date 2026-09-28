@@ -62,3 +62,28 @@ test('?record strips the page to the canvas', (t) => {
     const html = dom(PAGE + '?record#stages@0');
     assert.match(html, /<body class="rec"/);
 });
+
+// Criterion: the video speaks the language asked for, and the page has a
+// mute button that starts unpressed. Red when: ?lang is ignored or the
+// button is missing.
+test('?lang picks the video\'s language, and the bar carries a mute button', (t) => {
+    if (!findBrowser()) { t.skip(NO_BROWSER); return; }
+    assert.match(dom(PAGE + '?lang=en#stages@300'), /data-lang="en"/);
+    assert.match(dom(PAGE + '?lang=zh#stages@300'), /data-lang="zh"/);
+    const html = dom(PAGE);
+    assert.match(html, /id="trMute"[^>]*aria-pressed="false"|aria-pressed="false"[^>]*id="trMute"/);
+    assert.match(html, /<script src="i18n\.js"><\/script>/);
+    assert.match(html, /<script src="tour-music\.js"><\/script>/);
+});
+
+// Criterion (design, What proves it done): every string, zh and en, measured
+// with the real fonts' measureText, fits its box. Red when: a box is
+// narrower than its string in either language.
+test('?check: with the real fonts, no string of either language overflows its box', (t) => {
+    if (!findBrowser()) { t.skip(NO_BROWSER); return; }
+    for (const lang of ['zh', 'en']) {
+        const html = dom(PAGE + '?check&lang=' + lang);
+        assert.match(html, /data-overflow="\[\]"/, lang + ': ' + (/data-overflow="([^"]*)"/.exec(html) || [])[1]);
+        assert.match(html, /data-missing="\[\]"/, lang + ': ' + (/data-missing="([^"]*)"/.exec(html) || [])[1]);
+    }
+});
