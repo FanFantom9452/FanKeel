@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const tmp = require('./tmp.js');
+const { prefix } = require('../scripts/ledger.js');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'ledger.js');
 
@@ -49,4 +50,9 @@ test('brief --group --prefix is byte-identical across two runs', () => {
 test('brief --group --prefix says so when nothing is active, rather than guessing', () => {
     const { root, plan } = setup();
     assert.match(run(root, plan), /No active task/);
+});
+
+test('prefix(root, plan, 1), called directly, matches the CLI\'s --prefix output', () => {
+    const { root, plan } = setup();
+    assert.equal(prefix(root, plan, 1), run(root, plan).replace(/\n$/, ''));
 });

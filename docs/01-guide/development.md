@@ -62,7 +62,7 @@ ends in a four-statement block reading stdin and writing stdout, because
 `lib/tracked.js` spawns it as a child process to read several repositories at
 once; it sits in `lib/` rather than `scripts/` because nothing in `lib/` may reach
 the other way, which is the rule that put `lib/tracked.js` there to begin with.
-`hooks/` is where stdin, stdout and process exit otherwise live, and all eight
+`hooks/` is where stdin, stdout and process exit otherwise live, and all nine
 hooks are tested as subprocesses with real payloads.
 
 Every hook exits 0 on every path, including every error path. A `UserPromptSubmit`
