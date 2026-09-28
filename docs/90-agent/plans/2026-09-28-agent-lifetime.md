@@ -3883,7 +3883,7 @@ git commit -m "docs: close the context-budget Blocked entries; describe group br
 | `dispatch.floor` 本身不改。允許 haiku 的判斷在 `lib/profile.js` 和 `lib/stages.js` 的 floor 檢查處，只有 lint 通過的 task 才能用。brain、reviewer 和 verifier 的 agent 檔維持 sonnet。 | Task 11 — verified: neither file enforces a tier programmatically (both only interpolate `dispatch.floor`'s value into prompt text), so `lint()`'s two conditions are the only gate; no change needed there. |
 | controller 從 `ledger.js groups` 取得目前可以開工的 group,互不共用檔案的 group 在同一次回應裡一起派出,每個 group 一個 `fankeel:fankeel-brain`,brief 寫明它負責的 task 編號 | 18 |
 | 一個 brain 負責的 task 在 `progress.md` 裡都標成 `complete` 以後,這個 brain 就回報並結束。下一個 group 一律開新的 brain,從 ledger 接著做 | 15, 19 |
-| 同一個 session 可以同時有好幾個 `inflight` 標記:`lib/registry.js:784-802` 的 `markInflight`／`clearInflight` 改成以 `agentId` 為鍵的清單,每筆帶 `group` 欄位;`hooks/gate.js:227` 只清掉交回報告的那一筆 | 13, 16 |
+| 同一個 session 可以同時有好幾個 `inflight` 標記:`lib/registry.js:784-802` 的 `markInflight` 改成以 `agentId` 為鍵的清單,每筆帶 `group` 欄位;`clearInflight` 的作用範圍不變,`hooks/gate.js:227` 對它的呼叫仍是兩個參數,一次清掉整個 session 的所有標記 | 13, 16 |
 | 交接檔和 commit 檔的名稱加上 group:`lib/handoff.js:51-64` 產生 `build-g<N>.md` 和對應的 commit 檔,兩個 brain 不會寫到同一個檔 | 14 |
 | `scripts/await.js:85-100` 每有一個 brain 完成就回一行,並寫明是哪個 group、哪個 agent。controller 把每個 brain 的 commit 請求分開處理,用 SendMessage 回給那一個 brain | 17 |
 | stage 的 gate 只問一次:所有 group 都完成以後,controller 再派一個收尾 brain（prompt 寫 `build close`）,由它跑完整測試,寫出 `build.md` 和 gate | 15, 18, 19 |
