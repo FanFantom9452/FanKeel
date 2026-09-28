@@ -90,7 +90,9 @@ function waitFor(opts, env) {
     if (!opts.agent && running.length > 1) return { error: running.length + ' stage agents in flight for ' + data.stage + ': pass --agent <id>' };
     const mark = opts.agent ? running.find((m) => m.agentId === opts.agent) : (running[0] || null);
     const lap = mark && Number.isInteger(mark.lap) && mark.lap > 0 ? mark.lap : undefined;
-    const group = mark && Number.isInteger(mark.group) ? mark.group : undefined;
+    // Only build's brief names a `-g<n>` handoff (lib/render.js, renderBrainBrief);
+    // every other stage's brain writes the plain one, group or not.
+    const group = data.stage === 'build' && mark && Number.isInteger(mark.group) ? mark.group : undefined;
     const handoff = handoffPath(root, data, data.stage, lap, group);
     if (!handoff) return { error: 'session ' + opts.session + ' has no stage or no started time, so no handoff path' };
     let since = 0;

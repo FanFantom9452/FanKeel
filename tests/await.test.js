@@ -202,6 +202,20 @@ test('await.js watches one group-parallel brain at a time, chosen by --agent, an
     assert.equal(out.text, 'group 2, agent a2: handoff ' + g2 + ' — print this path and ask its gate as your rules say, unless you already asked it and the file has not changed since.');
 });
 
+// lib/render.js's renderBrainBrief only names a `-g<n>` handoff on the
+// `build` stage's brief; every other stage's brain writes the plain handoff,
+// group or not, so a mark carrying `group` outside `build` must not steer
+// await.js onto the `-g<n>` path.
+test('a non-build brain carrying a group waits on the plain handoff, the path its brief names', async () => {
+    const mark = { stage: 'survey', at: 1, agentId: 'a1', group: 1 };
+    const f = fixture({ stage: 'survey', inflight: mark });
+    const plain = path.join(f.task, 'survey.md').split(path.sep).join('/');
+    at(plain, Date.now());
+    const out = await awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '0.5'], f.env);
+    assert.ok(out.text.endsWith(plain + ' — print this path and ask its gate as your rules say, unless you already asked it and the file has not changed since.'), out.text);
+    assert.doesNotMatch(out.text, /-g1/);
+});
+
 test('await.js refuses to guess which brain to watch when more than one is running, and refuses an --agent naming none of them', async () => {
     const marks = [{ stage: 'build', at: 1, agentId: 'a1', group: 1 }, { stage: 'build', at: 1, agentId: 'a2', group: 2 }];
     const f = fixture({ inflight: marks });
