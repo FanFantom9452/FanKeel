@@ -717,9 +717,9 @@ implementer's Write and Edit into `.fankeel/build/`, six times or more in one se
 so a handoff file could not be written. The remedy tried is a permission and not code:
 `.claude/settings.local.json`, per machine and ignored by git, holds
 `{"permissions": {"allow": ["Edit(/.fankeel/build/**)"]}}`, and the session wrote it there after the user agreed.
-It is not proven to help: a Sonnet subagent's Write under `.fankeel/build/` succeeded
-both before the rule and after it, so nothing could be compared, and the failure did
-not recur to be tested; the two outcomes are in the decision record's third section.
+An allow-rule probe found the rule's effect still unproven: no verdict could not be
+reproduced on this machine either with or without the rule, so the two outcomes could
+not be compared ([2026-09-28-allow-rule-probe.md](../reports/2026-09-28-allow-rule-probe.md)).
 No stage agent and no implementer is to write any settings file: that is a rule from
 the spec, and no hook enforces it. The fallback an earlier TODO entry asked about, a
 report returned in the message when the write fails, is not built.

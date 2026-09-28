@@ -84,6 +84,7 @@ the reading is what gets scheduled.
 ## Needs a decision
 
 - 〔stage-agents〕SubagentStart 觸發時 `agent-<id>.meta.json` 還不在或不帶 `spawnDepth`，`nestedBrain()` 退回原本行為；要不要改讀法，實測見 `docs/90-agent/reports/2026-09-28-spawndepth-timing.md` — [hooks/brief.js](hooks/brief.js).
+- 〔build〕ready-queue 的 worktree 那一半：每個 implementer 各開 worktree、由 brain merge；`scripts/commit.js` 認不得 worktree、brain 不能 `git commit`，兩者都得先改 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 
 ## Blocked
 
@@ -132,30 +133,15 @@ if: a repository needs an eleventh language. 09-26.
 
 - 〔survey〕Language patterns beyond the ten [scripts/survey.js](scripts/survey.js) knows. Anything else is listed under `skipped.noPattern` for a human.
 
-### 下一個前端任務
-if: 下一個前端任務出現. 09-26.
-
-- 〔design〕design class：mockup 已落地，其餘是另一個 architectural 任務；計畫的三份必讀來源已不存在，內容多半已併進簡報 — [簡報 §4.1](docs/90-agent/reference/improvement-brief.md#41-design-階段的-mockup-步驟前端任務).
-
 ### 放行規則有沒有效
-if: 放行規則存在下 no verdict 再發生一次. 09-26.
+if: 放行規則存在下 no verdict 再發生一次. 09-28.
 
-- 〔stage-agents〕auto mode 曾對站 agent／implementer 的 Write／Edit 回 no verdict（09-22 六次以上）；已加規則 `Edit(/.fankeel/build/**)`，但放行前後探測都成功，證不出效果；再發生時查有沒有被讀到 — [subagents.md](docs/90-agent/reference/subagents.md).
+- 〔stage-agents〕已加規則 `Edit(/.fankeel/build/**)`，對照量測仍重現不出 no verdict，效果無法證明，見 `docs/90-agent/reports/2026-09-28-allow-rule-probe.md` — [subagents.md](docs/90-agent/reference/subagents.md).
 
 ### 第二個平台的使用者
 if: 出現第二個 host（Gemini CLI、Codex CLI 等）的使用者或 issue. 09-26.
 
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；hook 對等只查過 Gemini CLI `BeforeAgent` 與 Codex CLI `UserPromptSubmit` 兩個 — [簡報 §2.7](docs/90-agent/reference/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
-
-### sonnet 花費成瓶頸或要離線
-if: 渲染審查的 sonnet 花費成了瓶頸，或需要離線跑. 09-26.
-
-- 〔render〕本地判斷模型當渲染審查前的篩子：moondream2（`ollama run moondream`）判畫面是否正常、UI-TARS 驅動頁面；兩者都沒在本機試過，Jev 是雲端不吃圖 — [agents/fankeel-render-reviewer.md](agents/fankeel-render-reviewer.md).
-
-### implementer 互相蓋檔
-if: 共用樹上出現一次 implementer 蓋掉另一個 implementer 的改動. 09-26.
-
-- 〔build〕ready-queue 的 worktree 那一半：每個 implementer 各開 worktree、由 brain merge；`scripts/commit.js` 認不得 worktree、brain 不能 `git commit`，兩者都得先改 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 
 ### 程式碼大到要查結構
 if: 某個專案的程式碼大到 grep 加 read 找不到跨檔關係. 09-27.
