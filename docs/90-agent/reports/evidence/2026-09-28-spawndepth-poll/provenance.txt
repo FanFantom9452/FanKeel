@@ -1,0 +1,36 @@
+date: 2026-09-28T10:48:58Z
+HEAD: 106883355dd5fb6eacdd885ff87fb7a67aa7c918
+porcelain:
+?? docs/90-agent/reports/evidence/2026-09-28-spawndepth-poll/
+claude: 2.1.283 (Claude Code)
+record.js md5: d4173de7fdf6bcad71cbd36a6d15b901
+run.sh md5: f83565ab17177ce0f355e946f2a13261
+claude exit 0
+[
+  {
+    "agent_id": "aa76c60ade60b0d27",
+    "agent_type": "nester",
+    "firstSeenMs": null,
+    "depthAtFirstSeen": null,
+    "polls": 18,
+    "waitedMs": 520,
+    "existsAfter": true,
+    "depthAfter": 1,
+    "parentAfter": null,
+    "mtimeMinusHookMs": 549,
+    "mtimeMinusReturnMs": 29
+  },
+  {
+    "agent_id": "a9b6ba8783bd8caea",
+    "agent_type": "leaf",
+    "firstSeenMs": null,
+    "depthAtFirstSeen": null,
+    "polls": 18,
+    "waitedMs": 524,
+    "existsAfter": true,
+    "depthAfter": 2,
+    "parentAfter": "aa76c60ade60b0d27",
+    "mtimeMinusHookMs": 614,
+    "mtimeMinusReturnMs": 90
+  }
+]

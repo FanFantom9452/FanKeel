@@ -1,0 +1,28 @@
+[
+  {
+    "agent_id": "aa76c60ade60b0d27",
+    "agent_type": "nester",
+    "firstSeenMs": null,
+    "depthAtFirstSeen": null,
+    "polls": 18,
+    "waitedMs": 520,
+    "existsAfter": true,
+    "depthAfter": 1,
+    "parentAfter": null,
+    "mtimeMinusHookMs": 549,
+    "mtimeMinusReturnMs": 29
+  },
+  {
+    "agent_id": "a9b6ba8783bd8caea",
+    "agent_type": "leaf",
+    "firstSeenMs": null,
+    "depthAtFirstSeen": null,
+    "polls": 18,
+    "waitedMs": 524,
+    "existsAfter": true,
+    "depthAfter": 2,
+    "parentAfter": "aa76c60ade60b0d27",
+    "mtimeMinusHookMs": 614,
+    "mtimeMinusReturnMs": 90
+  }
+]

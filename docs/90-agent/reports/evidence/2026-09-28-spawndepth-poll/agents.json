@@ -1,0 +1,14 @@
+{
+  "nester": {
+    "description": "Dispatches exactly one leaf agent and relays its answer.",
+    "prompt": "Use the Agent tool exactly once, subagent_type \"leaf\", prompt \"reply with the single word leaf\". Then reply with exactly what it returned.",
+    "tools": ["Agent"],
+    "model": "haiku"
+  },
+  "leaf": {
+    "description": "Replies with one word.",
+    "prompt": "Reply with the single word leaf. Use no tools.",
+    "tools": ["Read"],
+    "model": "haiku"
+  }
+}

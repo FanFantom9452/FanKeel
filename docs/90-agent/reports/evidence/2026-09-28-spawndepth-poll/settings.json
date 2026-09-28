@@ -1,0 +1,5 @@
+{
+  "hooks": {
+    "SubagentStart": [ { "hooks": [ { "type": "command", "command": "node \"F:/ymlab/fankeel/docs/90-agent/reports/evidence/2026-09-28-spawndepth-poll/record.js\"", "timeout": 5 } ] } ]
+  }
+}
