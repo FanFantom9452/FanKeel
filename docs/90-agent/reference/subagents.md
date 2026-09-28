@@ -793,8 +793,10 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   (`marksOf`) and puts one "already running" line before the dispatch line per
   mark — naming its group when the mark carries one — telling the controller to
   SendMessage that agent and dispatch another for that group only if SendMessage
-  says it is gone. `hooks/gate.js` clears a mark by `agentId` once its handoff's
-  gate arrives, leaving any other group's mark standing; `.claude-plugin/plugin.json`
+  says it is gone. `hooks/gate.js` clears every mark on the record — no `agentId`
+  scoping — once a real gate arrives, because by then every group's brain for
+  that stage has already reported and nothing else is left standing to spare;
+  `.claude-plugin/plugin.json`
   has no `SubagentStop` hook, so nothing else does. `SubagentStart` fires again on
   every `SendMessage` delivered to a running or resumed agent — ten times for one
   survey agent on 2026-09-27 — and each re-marks it, so a mark says an agent was
