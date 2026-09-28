@@ -17,7 +17,7 @@
 // edit in every session on the machine.
 
 const registry = require('../lib/registry.js');
-const { relPath, covers, targetOf, logicalPath } = require('../lib/guard.js');
+const { covers, targetOf, logicalFile } = require('../lib/guard.js');
 const { run, parse } = require('../lib/hook.js');
 
 function main(raw) {
@@ -33,7 +33,7 @@ function main(raw) {
 
     // Outside the registry root is not this registry's business, and nothing
     // reading this registry could resolve a claim on it.
-    const rel = logicalPath(relPath(root, file));
+    const rel = logicalFile(root, file);
     if (!rel) return;
 
     // The common case, and it ends here without a write. A task editing one file

@@ -75,3 +75,39 @@ test('the guard judges an edit inside a worktree by its logical path', () => {
     file: '/r/.fankeel/worktrees/aaaaaaaa/lib/x.js', liveState: { known: false, ids: new Set() } });
   assert.equal(verdict && verdict.decision, 'ask');
 });
+
+test('logicalFile treats an Agent-isolation worktree the same as the main tree', () => {
+  const root = path.sep === '\\' ? 'C:\\r' : '/r';
+  assert.equal(guard.logicalFile(root, path.join(root, '.claude', 'worktrees', 'agent-a8c040d85deb5776e', 'lib', 'x.js')), 'lib/x.js');
+  assert.equal(guard.logicalFile(root, path.join(root, 'lib', 'x.js')), 'lib/x.js');
+});
+
+test('logicalFile maps a linked worktree opened outside the root back to the main tree', () => {
+  const root = tmp('fankeel-wt-linked-main-');
+  git(root, ['init', '-q']);
+  git(root, ['config', 'user.email', 'test@example.invalid']);
+  git(root, ['config', 'user.name', 'test']);
+  git(root, ['config', 'commit.gpgsign', 'false']);
+  fs.mkdirSync(path.join(root, 'lib'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'lib', 'z.js'), 'one\n');
+  git(root, ['add', '-A']);
+  git(root, ['commit', '-qm', 'base']);
+  const outside = tmp('fankeel-wt-linked-out-');
+  git(root, ['worktree', 'add', '-q', '-b', 'fk/linked', outside]);
+  const file = path.join(outside, 'lib', 'z.js');
+  assert.equal(guard.logicalFile(root, file), 'lib/z.js');
+});
+
+test('logicalFile returns null for a file in a worktree belonging to a different repository', () => {
+  const root = tmp('fankeel-wt-linked-root-');
+  git(root, ['init', '-q']);
+  const other = tmp('fankeel-wt-other-');
+  git(other, ['init', '-q']);
+  git(other, ['config', 'user.email', 'test@example.invalid']);
+  git(other, ['config', 'user.name', 'test']);
+  git(other, ['config', 'commit.gpgsign', 'false']);
+  fs.writeFileSync(path.join(other, 'a.js'), 'x\n');
+  git(other, ['add', '-A']);
+  git(other, ['commit', '-qm', 'base']);
+  assert.equal(guard.logicalFile(root, path.join(other, 'a.js')), null);
+});
