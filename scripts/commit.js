@@ -105,8 +105,15 @@ function landWorktree(top, block, run, oneLine) {
     if (pick.status !== 0) {
         const unmerged = run(top, ['diff', '--name-only', '--diff-filter=U']);
         const clashed = unmerged.status === 0 ? unmerged.stdout.split(/\r?\n/).filter(Boolean) : [];
+        // No unmerged paths but the pick still failed: the worktree's change is
+        // already on HEAD (a resend), and git refuses the now-empty patch
+        // rather than reporting a real conflict. That is a conflict for the
+        // build skill's resend protocol too, just one with no unmerged file to
+        // read paths from, so it is reported on the block's own paths.
+        const empty = !clashed.length && /empty/i.test(pick.stderr || pick.stdout || '');
         run(top, ['cherry-pick', '--abort']);
         if (clashed.length) return { conflict: clashed };
+        if (empty) return { conflict: block.paths };
         return { error: 'git cherry-pick failed: ' + oneLine(pick.stderr || pick.stdout) };
     }
     const removed = run(top, ['worktree', 'remove', wt]);

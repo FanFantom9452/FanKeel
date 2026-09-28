@@ -306,6 +306,26 @@ test('a conflict in a later block keeps the blocks that landed and names its own
     assert.equal(git(dir, 'show', '--name-only', '--format=', 'HEAD'), 'b.txt');
 });
 
+test('a worktree block resending a change already on HEAD reports conflict, not a generic error', () => {
+    const { dir, wt } = worktreeRepo();
+    const wt2 = path.join(tmp('fankeel-commit-wtdir2-'), 'wt2');
+    git(dir, 'worktree', 'add', '-q', '-b', 'wt2', wt2);
+    setLine(path.join(wt, 'a.txt'), 9, 'worktree 9');
+    setLine(path.join(wt2, 'a.txt'), 9, 'worktree 9');
+    const landed = commit.main([requestFile('worktree ' + wt + '\na.txt\n\nfeat: line 9\n')], dir);
+    assert.ok(!landed.code, landed.text);
+    const before = git(dir, 'rev-parse', 'HEAD');
+    const file = requestFile('worktree ' + wt2 + '\na.txt\n\nfeat: line 9 again\n');
+    const res = commit.main([file], dir);
+    assert.equal(res.code, 1);
+    assert.equal(res.text, 'conflict a.txt');
+    assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
+    assert.equal(git(dir, 'status', '--porcelain'), '');
+    assert.equal(fs.existsSync(path.join(dir, '.git', 'CHERRY_PICK_HEAD')), false);
+    assert.equal(fs.existsSync(wt2), true, 'the worktree is kept');
+    assert.equal(fs.existsSync(file), true, 'the commit file is kept');
+});
+
 test('a worktree line naming something that is not a worktree of this repository commits nothing', () => {
     const { dir } = worktreeRepo();
     const other = repo();
