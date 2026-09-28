@@ -686,11 +686,13 @@ test('a build brain sends implementers into worktrees, names the worktree in the
   assert.match(build, /`ledger\.js --plan <f> ready --worktree`/);
   assert.match(build, /`kept <path> — <why>`/);
   assert.match(build, /an implementer \(`general-purpose`, on the model named in the task Dispatch line, with `isolation: "worktree"`\)/);
+  assert.match(build, /run `git rev-parse HEAD` yourself and tell every worktree-isolated implementer, before its first edit, to run `git reset --hard <that sha>` in its own worktree.*origin\/main/);
   assert.doesNotMatch(briefFor('verify'), /isolation: "worktree"/);
   const file = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
   assert.match(file, /`ledger\.js --plan <f> ready --worktree`/);
   assert.match(file, /`isolation: "worktree"`/);
   assert.match(file, /Do not run `git worktree`/);
+  assert.match(file, /run\s+`git rev-parse HEAD` yourself and tell every worktree-isolated implementer,\s+before its first edit, to run `git reset --hard <that sha>` in its own\s+worktree.*origin\/main/s);
 });
 
 test('a build brain is told a user task is not its to send', () => {

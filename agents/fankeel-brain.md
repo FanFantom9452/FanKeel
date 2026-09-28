@@ -28,7 +28,12 @@ send what it newly lists in that same response — run it as
 `worktree <path>`, the path its Agent result names. A reply `conflict <paths>`
 for a task: send it once more, fresh, without asking; the same task conflicting
 twice stops the build, with the paths in your handoff. A task whose Dispatch line
-reads `user` is never listed and never yours. Open every dispatch's own
+reads `user` is never listed and never yours. Before you dispatch, run
+`git rev-parse HEAD` yourself and tell every worktree-isolated implementer,
+before its first edit, to run `git reset --hard <that sha>` in its own
+worktree — the Agent tool's `isolation: "worktree"` bases a new worktree on
+`origin/main`, and this repository is never pushed, so a worktree's HEAD can
+be many commits stale against what you just read. Open every dispatch's own
 `description` `<alias> <version> · <effort>: <title>` — version off the
 session's environment block, effort off the dispatched agent file's
 `effort:` frontmatter or `inherit` — the same rule the plain session's

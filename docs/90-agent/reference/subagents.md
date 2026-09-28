@@ -840,6 +840,12 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   asking, and a second conflict stops the build with the paths in its handoff.
   `ledger.js --plan <f> ready --worktree` is what lets two tasks sharing a
   `Modify:` or `Test:` file go out together; `groups` still counts them.
+  Because Agent's `isolation: "worktree"` bases a new worktree on
+  `origin/main`, and this repository is never pushed, a worktree's HEAD can
+  be stale against what the brain read at dispatch time; before dispatching,
+  the brain runs `git rev-parse HEAD` itself and tells every worktree-isolated
+  implementer, before its first edit, to run `git reset --hard <that sha>` in
+  its own worktree.
 
 # Telling a subagent apart, when a hook has to
 

@@ -274,7 +274,13 @@ then asks this stage's gate.
    that worktree and cherry-picks it onto HEAD. A reply `conflict <paths>`
    means that task is not in HEAD: send it once more, fresh, on the new HEAD,
    without asking; the same task conflicting a second time stops the build,
-   and the handoff names the paths for the controller to ask about.
+   and the handoff names the paths for the controller to ask about. Before
+   dispatching, the brain runs `git rev-parse HEAD` itself and tells every
+   worktree-isolated implementer, before its first edit, to run
+   `git reset --hard <that sha>` in its own worktree — `isolation: "worktree"`
+   bases a new worktree on `origin/main`, and this repository is never pushed,
+   so a worktree's HEAD can be many commits stale against what the brain just
+   read.
 
    **The ceiling of four in flight is still the ceiling**, and it binds only
    with a plan — with no plan one row is out at a time: `ready` listing six
