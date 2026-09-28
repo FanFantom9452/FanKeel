@@ -678,9 +678,10 @@ short sha it was read at. `scripts/context.js add "<fact>" --at <path:line>
 --session <id>` is the only writer — any subagent may call it — and keeps the
 newest 40, dropping an exact duplicate and replacing a fact read again at a
 new sha. `context.js show` marks a line whose sha is not HEAD `(舊)`. The
-ordinary brief names the file's path and never its contents, where the
-`reads:` block above is copied inline; whether that saves anything is
-measured, not assumed — `docs/90-agent/reports/2026-09-26-context-md.md`.
+ordinary brief inlines the file's content — the way the `reads:` block above
+is already copied inline — rather than only naming its path; whether that
+saves anything is measured, not assumed —
+`docs/90-agent/reports/2026-09-26-context-md.md`.
 
 ### Which model a stage agent runs on, what lets it write, and what comes before the switch
 

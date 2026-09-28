@@ -57,9 +57,17 @@ test('a plain subagent brief inlines context.md\'s content, not just its path', 
     assert.doesNotMatch(text, /context: .*facts already verified/);
 });
 
-test('a plain subagent brief says nothing about context when the file is empty', () => {
+test('a plain subagent brief says nothing about context when the file is missing', () => {
     const root = mkTmp('fankeel-render-ctx-');
     seed(root);
+    const text = contextOf(run(root, start(root)));
+    assert.doesNotMatch(text, /context, verified in this task/);
+});
+
+test('a plain subagent brief says nothing about context when the file is whitespace-only', () => {
+    const root = mkTmp('fankeel-render-ctx-');
+    seed(root);
+    writeContext(root, '   \n\t \n');
     const text = contextOf(run(root, start(root)));
     assert.doesNotMatch(text, /context, verified in this task/);
 });
