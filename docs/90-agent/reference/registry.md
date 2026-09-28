@@ -222,7 +222,7 @@ turns and missed the wait this pipeline actually accumulates.
 session dies at a gate — is overwritten by the next one rather than repaired:
 the interval it measured has no end, so there is nothing to recover.
 
-`inflight` — `{ stage, at, agentId?, lap? }` — is the other transient field, and not a
+`inflight` — `{ stage, at, agentId?, lap?, group? }` — is the other transient field, and not a
 cost. `hooks/brief.js` writes it through `registry.markInflight` when a
 `fankeel-brain` starts; `hooks/gate.js` deletes it through `registry.clearInflight`
 once that stage's handoff carries a gate; `controlFor` in `lib/stages.js` reads it
