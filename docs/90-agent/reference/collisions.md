@@ -160,7 +160,9 @@ only when this session holds the file too:
   own per-session worktree (`.fankeel/worktrees/<id8>/`, see `worktreeOf`) is
   skipped before either other rule is reached; across trees an overlap is a
   merge to reconcile at land, not a clash (`sharedWith` returns `{clash,
-  merge}`).
+  merge}`). An agent worktree under `.claude/worktrees/agent-<hex>/` is folded
+  back to the main tree's path before a claim is recorded — `logicalFile`, in
+  [subagents.md](subagents.md).
 - **The older task holds** — `claimedFirst`, `lib/guard.js:140` (`!claimedFirst(data, mine)`). When
   both sessions claim the file, the newer one yields — so two sessions
   that both reached it cannot block each other into a stalemate.

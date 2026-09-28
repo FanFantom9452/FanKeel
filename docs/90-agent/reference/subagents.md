@@ -790,7 +790,10 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   agentId?, lap?, group? }` ([registry.md](registry.md) has the field), or, once a
   build's groups run more than one brain at once, an array of them, one per
   concurrently-running group — on the session's record when a `fankeel-brain`
-  starts, skipping one it knows is nested (depth 2+). `controlFor` in `lib/stages.js` reads every mark for the current stage
+  starts, skipping one it knows is nested (depth 2+). `await.js` appends the
+  `-g<n>` suffix only on `build`, the one stage whose brief names a group
+  handoff; every other stage's brain writes the plain file, group or not.
+  `controlFor` in `lib/stages.js` reads every mark for the current stage
   (`marksOf`) and puts one "already running" line before the dispatch line per
   mark — naming its group when the mark carries one — telling the controller to
   SendMessage that agent and dispatch another for that group only if SendMessage
@@ -846,6 +849,12 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   the brain runs `git rev-parse HEAD` itself and tells every worktree-isolated
   implementer, before its first edit, to run `git reset --hard <that sha>` in
   its own worktree.
+  A claim made from inside a worktree is keyed on the main tree's path, not the
+  worktree's: `logicalFile` in `lib/guard.js` strips a `.fankeel/worktrees/<id8>/`
+  or `.claude/worktrees/agent-<hex>/` segment, and asks git only for a linked
+  worktree outside the root that shares its git-common-dir — so an implementer's
+  edit in `isolation: "worktree"` collides with a neighbour exactly as the same
+  edit in the main tree would.
 
 # Telling a subagent apart, when a hook has to
 
