@@ -308,14 +308,21 @@ edits land.
 One-way. Hidden complexity found mid-task upgrades the route — stop, say so, and
 re-route with `task.js route`. Nothing downgrades mid-task.
 
-## Blocked and Watch tasks
+## The patrol
 
-A task started by picking the patrol at `/fankeel` — offered while `orient`'s
-`todo:` block marks a `## Blocked` timing `due` or a `## Watch` timing `stale` —
-arrives on `--route "survey,build,land"`, and this stage's job on it is narrower
-than the six steps above.
+A task started by picking the patrol at `/fankeel` — the last option,
+labelled `TODO 全表盤點`, offered whenever `TODO.md` has an entry — arrives on
+`--route "survey,build,land"`, and this stage walks every entry in `TODO.md`,
+not only the timings.
 
-**Blocked, the due ones.** Every due Blocked timing is checked here directly,
+**Ready and Needs a decision.** Each entry is re-checked in the code it links
+to: still true, already done, a bug rather than a decision, or a duplicate of
+another entry. The report ends with one line per entry in three groups —
+`do now`, `needs the user`, `waiting on <what>` — so the gate can offer the
+do-now ones as the next stage. Where any are to be built, widen the route with
+`task.js route` before the gate; adding `design` or `plan` is free.
+
+**Blocked, every timing.** Every Blocked timing, due or not, is checked here directly,
 never put to the user as "has it happened": each is under Blocked because a
 session can check it. An `on:` is due because its day came — check that what it
 was waiting for is now possible. An `after:` names another piece of work — check

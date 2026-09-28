@@ -1308,25 +1308,27 @@ test('build sends what ledger.js ready lists and asks about the hands first; pla
 // The patrol rule lives in the two stage skills that run it, because a stage
 // agent reads its own skill and not skills/fankeel/SKILL.md — a real 2026-09-25
 // survey run skipped the multiSelect step for exactly that reason.
-test('survey and build each carry their own half of the Blocked/Watch patrol; fankeel points at both', () => {
+test('survey and build each carry their own half of the patrol; fankeel points at both', () => {
   const survey = read('fankeel-survey');
-  const surveySection = /\n## Blocked and Watch tasks\n[\s\S]*?\n## /.exec(survey);
-  assert.ok(surveySection, 'fankeel-survey has no ## Blocked and Watch tasks section');
+  const surveySection = /\n## The patrol\n[\s\S]*?\n## /.exec(survey);
+  assert.ok(surveySection, 'fankeel-survey has no ## The patrol section');
   assert.match(surveySection[0], /multiSelect: true/);
   assert.match(surveySection[0], /questions 2 to 4/);
   assert.match(surveySection[0], /at most twelve/);
   assert.doesNotMatch(survey, /## Waiting tasks/);
+  assert.match(survey, /TODO 全表盤點/);
+  assert.match(survey, /`do now`, `needs the user`, `waiting on <what>`/);
 
   const build = read('fankeel-build');
-  const buildSection = /\n## Blocked and Watch tasks\n[\s\S]*?\n## /.exec(build);
-  assert.ok(buildSection, 'fankeel-build has no ## Blocked and Watch tasks section');
+  const buildSection = /\n## The patrol\n[\s\S]*?\n## /.exec(build);
+  assert.ok(buildSection, 'fankeel-build has no ## The patrol section');
   assert.match(buildSection[0], /## Ready/);
   assert.match(buildSection[0], /`if:`/);
   assert.doesNotMatch(buildSection[0], /lifts when:/);
 
   const fankeel = read('fankeel');
-  assert.match(fankeel, /skills\/fankeel-survey\/SKILL\.md.*## Blocked and Watch tasks/s);
-  assert.match(fankeel, /skills\/fankeel-build\/SKILL\.md.*## Blocked and Watch tasks/s);
+  assert.match(fankeel, /skills\/fankeel-survey\/SKILL\.md.*## The patrol/s);
+  assert.match(fankeel, /skills\/fankeel-build\/SKILL\.md.*## The patrol/s);
   assert.doesNotMatch(fankeel, /## Waiting/);
 });
 

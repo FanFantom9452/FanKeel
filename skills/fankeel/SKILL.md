@@ -753,18 +753,20 @@ specification, and a build loop runs them as a list. **More than one bullet ther
 needs `plan` on the route**: the plan file is the only place N tasks are written
 down durably, and with no plan file there is no ledger, so a compaction takes the
 loop's place with it. `## Needs a decision` offers the ones `orient`'s `todo:`
-block lists — the newest by last edit, because `AskUserQuestion` holds four and
-`## Ready` takes one when it has entries — one option each, because each is a
+block lists — the newest by last edit, because `AskUserQuestion` holds four,
+`## Ready` takes one when it has entries and the patrol takes the last — one
+option each, because each is a
 different question for a person, with the rest reachable by name through
-**Other**. `## Blocked` and `## Watch` share one option — the patrol — and only while
-`orient`'s `todo:` block marks a Blocked timing `due` or a Watch timing `stale`;
-Watch on its own takes no slot. Their timings are never options one by one — six
-unpickable rows are how a menu stops being read — but every one is listed in that
-block each time, so what is waiting is on screen whether or not it is offered.
-Picking the patrol starts a task with `--route "survey,build,land"`. `survey`'s
-own skill and `build`'s own skill each carry their half of what that route does —
-`skills/fankeel-survey/SKILL.md`'s `## Blocked and Watch tasks` and
-`skills/fankeel-build/SKILL.md`'s `## Blocked and Watch tasks`. `land` runs `todo-check`. Any other heading, or
+**Other**. The last option is always the patrol, labelled `TODO 全表盤點`, whenever
+`TODO.md` has an entry: it walks every heading, Ready and Needs a decision
+included. Blocked and Watch timings are never options one by one — six
+unpickable rows are how a menu stops being read — but every one is listed in
+that block each time, so what is waiting is on screen whether or not it is
+offered. Picking the patrol starts a task with `--route "survey,build,land"`,
+which survey widens when an entry turns into work. `survey`'s own skill and
+`build`'s own skill each carry their half of what that route does —
+`skills/fankeel-survey/SKILL.md`'s `## The patrol` and
+`skills/fankeel-build/SKILL.md`'s `## The patrol`. `land` runs `todo-check`. Any other heading, or
 none, means clustering by hand — two bullets touching the same file or settling
 the same question are one task and one option, not two. A repository with no
 `TODO.md` is where guessing from the recent commits belongs, one option each,

@@ -595,11 +595,15 @@ task-boundary half has nothing to say there — a row is a line in a table, not 
 task carrying its own test cycle — so a row that turns out to need two is split
 where you are, rather than being a defect in a document.
 
-## Blocked and Watch tasks
+## The patrol
 
-A task started by picking the patrol at `/fankeel` arrives on
-`--route "survey,build,land"`. By the time it reaches this stage `survey` has
-checked every due `## Blocked` timing and put the stale `## Watch` timings it
+A task started by picking the patrol — `TODO 全表盤點` — at `/fankeel` arrives on
+`--route "survey,build,land"`, widened by survey where an entry turned into
+work; the entries survey marked `do now` are built here as ordinary tasks, each
+removing its own `TODO.md` entry.
+
+By the time it reaches this stage `survey` has
+checked every `## Blocked` timing and put the stale `## Watch` timings it
 had room for to the user as keep-or-drop, so there is no gate left to ask here,
 only the moves those answers decide. A Blocked timing whose condition checked
 out has its whole entry moved, together, to `## Ready` or `## Needs a decision`,
