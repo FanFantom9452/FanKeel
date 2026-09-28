@@ -83,7 +83,6 @@ the reading is what gets scheduled.
 
 ## Needs a decision
 
-- 〔stage-agents〕SubagentStart 觸發時 `agent-<id>.meta.json` 還不在或不帶 `spawnDepth`，`nestedBrain()` 退回原本行為；要不要改讀法，實測見 `docs/90-agent/reports/2026-09-28-spawndepth-timing.md` — [hooks/brief.js](hooks/brief.js).
 - 〔build〕ready-queue 的 worktree 那一半：每個 implementer 各開 worktree、由 brain merge；`scripts/commit.js` 認不得 worktree、brain 不能 `git commit`，兩者都得先改 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 
 ## Blocked

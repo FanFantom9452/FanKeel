@@ -642,6 +642,20 @@ test('a nested brain (spawnDepth 2) does not mark inflight', () => {
   assert.equal(data.inflight, undefined, 'a nested brain must not add an inflight mark');
 });
 
+// docs/90-agent/reports/2026-09-28-spawndepth-timing.md, measured twice: the
+// meta file is not there while SubagentStart runs, even to a hook that waits
+// 500 ms. So a brain with a transcript path but no meta file yet is read as
+// depth 1 and marks inflight — the fallback nestedBrain()'s comment names.
+test('a brain whose meta file is not there when the hook runs is read as depth 1 and marks inflight', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  fs.mkdirSync(path.join(root, 'sess', 'subagents'), { recursive: true });
+  run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'a7', transcript_path: path.join(root, 'sess.jsonl') }));
+  const data = JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), 'utf8'));
+  assert.equal(data.inflight.agentId, 'a7');
+});
+
 // 2026-09-24: a controlled build of 14 tasks sent its controller 19 commits,
 // one round trip each; then one per `ledger.js groups` group, which waited on
 // the slowest task of each group. Now: whenever nothing it sent is running.

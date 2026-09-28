@@ -39,6 +39,7 @@ const { sessionDirOf } = require('../lib/usage.js');
 // no transcript path, no file yet, bad JSON, no field — reads as depth 1:
 // a missed nested mark only costs a spurious `group` (today's behaviour), a
 // missed real mark breaks the controller, so unknown must not skip the mark.
+// Measured: the file is not there while this hook runs, even waiting 500 ms — docs/90-agent/reports/2026-09-28-spawndepth-timing.md.
 function nestedBrain(payload) {
     const dir = sessionDirOf(payload.transcript_path);
     if (!dir) return false;
