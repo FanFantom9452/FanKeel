@@ -221,6 +221,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | The six tasks: the engine, three timelines, the player page and `scripts/tour-record.js` over DevTools and ffmpeg | `docs/99-archive/2026-09-27-tour.md` — *built* |
 | Ready 四條＋兩個 lens：hook 的 git 掃描加 2.5s 上限、掃到的路徑記成弱證據 `seen`、profile `worktree` 開 per-session worktree、`task.js intends` 比對鄰居、reviewer 依 diff 加派 silent-failure／comment lens、audit 的 prompt lens | `docs/99-archive/2026-09-27-registry-lenses-design.md` — *built, 繁體中文* |
 | 那份設計的十三個 task，加上 verify 退回的 citation 修正 | `docs/99-archive/2026-09-27-registry-lenses.md` — *built, 繁體中文* |
+| nestedBrain 等檔再讀（spawnDepth 讀法）與 implementer 進 worktree：`ready --worktree`、`commit.js` cherry-pick、衝突重派一次、reset-first 到派工時的 HEAD | `docs/99-archive/2026-09-28-spawndepth-worktree-design.md` — *built, 繁體中文* |
+| 那份設計的九個 task，加上 build close 的四項追加 | `docs/99-archive/2026-09-28-spawndepth-worktree.md` — *built, 繁體中文* |
 | 對照外部 repo 從 fankeel 自己的問題出發、對方只作參考；skill-repos 與 ponytail 的十二條候選逐條對照、全部不問，以及共用詞彙那條為什麼關掉 | [decisions/2026-09-24-optimise-own-first.md](03-decisions/2026-09-24-optimise-own-first.md) — *繁體中文* |
 | Why the scratch area could not be declared however legal the path looks, how one root cause survived nine rounds of review and then reappeared inside its own fix, and the six findings filed rather than built | [decisions/2026-09-11-todo-three.md](03-decisions/2026-09-11-todo-three.md) — *繁體中文* |
 | Why the five 09-11 directions were filed as TODO entries rather than built, the four places the approved draft departed from judgement 8, and the empty answer the first record filed | [decisions/2026-09-11-todo-split.md](03-decisions/2026-09-11-todo-split.md) — *繁體中文* |

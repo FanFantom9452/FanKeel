@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # spawnDepth 讀法與 implementer worktree Implementation Plan
