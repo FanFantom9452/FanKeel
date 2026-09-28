@@ -23,6 +23,7 @@ const { execFileSync, spawnSync } = require('node:child_process');
 const { parseArgs } = require('node:util');
 const { inject, outside, diffLines, queueState, sourcesOf, changedPaths, rankSources } = require('../lib/tune.js');
 const { readBody } = require('../lib/body.js');
+const { relPath } = require('../lib/guard.js');
 
 const STATE = path.resolve('.fankeel', 'build', 'tune');
 const QUEUE = path.join(STATE, 'queue.jsonl');
@@ -159,7 +160,7 @@ function serve(dir, port, live, upstream) {
                     return send(res, 400, TYPES['.txt'], 'a static page takes a data-block element on an html file under the served directory');
                 }
                 const id = 'r-' + String(requests().length + 1).padStart(4, '0');
-                append({ id, status: 'queued', page: upstream ? page : path.relative(root, file).replace(/\\/g, '/'), file, block, selector, classes, text, note });
+                append({ id, status: 'queued', page: upstream ? page : relPath(root, file), file, block, selector, classes, text, note });
                 send(res, 200, TYPES['.json'], JSON.stringify({ id }));
                 return broadcast({ type: 'queued', id, block, selector });
             });

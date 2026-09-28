@@ -117,6 +117,7 @@ test('serve injects without touching the file; request, wait and done round-trip
     assert.equal(waited.status, 0, waited.stderr);
     const job = JSON.parse(waited.stdout);
     assert.deepEqual([job.id, job.block, job.note, path.resolve(job.file)], ['r-0001', 'now', '改成 3 / 5', file]);
+    assert.equal(job.page, 'page.html');
 
     fs.writeFileSync(file, PAGE.replace('<p>design</p>', '<p>build</p>'));
     const rejected = spawnSync(process.execPath, [CLI, 'done', 'r-0001'], { cwd, encoding: 'utf8' });
