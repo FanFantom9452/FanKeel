@@ -81,11 +81,7 @@ the reading is what gets scheduled.
 
 ## Ready
 
-- 〔stage-agents〕`hooks/brief.js` 不管 `spawnDepth`、不管父層是否已是站 agent，見到 `fankeel-brain` 的 `SubagentStart` 就標 `inflight`：巢狀 brain 因此拿到多餘的 `group` 標記；先記下，不動 — [hooks/brief.js](hooks/brief.js).
-
-- 〔stage-agents〕brain 失聯時它的 `inflight` 標記不會被清掉：`await.js` 從此要帶 `--agent`，下一個 brain 也被編成 group 2 — [lib/registry.js](lib/registry.js).
-
-- 〔trim〕09-28 稽核：約 40 行重複碼可併——`addNote`/`addClaim`/`addSeen` 與四個 `*Of`、各檔自推正斜線路徑（可用 `relPath`）、`PLUGIN_ROOT` 定義兩次 — [lib/registry.js](lib/registry.js).
+- 〔trim〕約 14 個檔各自 `path.join(...).replace(/\\/g, '/')`，沒用 `lib/guard.js` 的 `relPath`；`relPath` 在專案根之外回傳 null，逐檔換不是 behaviour-preserving，檔案清單見 `relPath` 旁的註解 — [lib/guard.js](lib/guard.js).
 
 ## Needs a decision
 
@@ -130,6 +126,11 @@ upstream: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃�
 - 〔security〕reviewer 的 `## Security` lens 可先交本地模型篩（`security.local`）；四類清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 
 ## Watch
+
+### spawnDepth 讀檔時序未證實
+if: 受控 stage agent 實跑量出 `SubagentStart` 與 `agent-<id>.meta.json` 寫入的先後. 09-28.
+
+- 〔stage-agents〕`nestedBrain()` 讀 `agent-<id>.meta.json` 取 `spawnDepth`；讀檔跟 `SubagentStart` 先後未量 — [hooks/brief.js](hooks/brief.js), [design.md](.fankeel/build/task-20260928T062456/design.md).
 
 ### 需要第十一種語言
 if: a repository needs an eleventh language. 09-26.

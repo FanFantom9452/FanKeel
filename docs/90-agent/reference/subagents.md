@@ -789,13 +789,15 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   agentId?, lap?, group? }` ([registry.md](registry.md) has the field), or, once a
   build's groups run more than one brain at once, an array of them, one per
   concurrently-running group — on the session's record when a `fankeel-brain`
-  starts. `controlFor` in `lib/stages.js` reads every mark for the current stage
+  starts, skipping one it knows is nested (depth 2+). `controlFor` in `lib/stages.js` reads every mark for the current stage
   (`marksOf`) and puts one "already running" line before the dispatch line per
   mark — naming its group when the mark carries one — telling the controller to
   SendMessage that agent and dispatch another for that group only if SendMessage
   says it is gone. `hooks/gate.js` clears every mark on the record — no `agentId`
   scoping — once a real gate arrives, because by then every group's brain for
   that stage has already reported and nothing else is left standing to spare;
+  `scripts/await.js`'s `main()` also clears one agent's mark — not the whole
+  record, so a sibling's survives — when it judges that brain `lost`.
   `.claude-plugin/plugin.json`
   has no `SubagentStop` hook, so nothing else does. `SubagentStart` fires again on
   every `SendMessage` delivered to a running or resumed agent — ten times for one

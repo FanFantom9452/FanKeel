@@ -95,7 +95,7 @@ A third field is written by nobody the user talks to. `claims` holds every file
 this task has edited — at most sixty, each recorded whole and never truncated,
 because nothing here is a path a human retypes. `claims` and `seen` reach that cap
 from opposite directions. A path arriving on its own drops the oldest to make
-room (`lib/registry.js:728`, `slice(-MAX_CLAIMS)`); a git pass holding more than sixty is refused
+room (`lib/registry.js:690`, `data[field] = list.slice(-max);` in the shared `appendUnique` helper); a git pass holding more than sixty is refused
 whole rather than trimmed (`lib/dirty.js:183`, `declined: written.length`), because trimming it would evict
 every earlier path in `seen` and put build output in its place.
 [collisions.md](collisions.md) is the page for that. `hooks/touch.js` appends to it,
@@ -224,8 +224,11 @@ the interval it measured has no end, so there is nothing to recover.
 
 `inflight` — `{ stage, at, agentId?, lap?, group? }` — is the other transient field, and not a
 cost. `hooks/brief.js` writes it through `registry.markInflight` when a
-`fankeel-brain` starts; `hooks/gate.js` deletes it through `registry.clearInflight`
-once that stage's handoff carries a gate; `controlFor` in `lib/stages.js` reads it
+`fankeel-brain` starts, skipping one it knows is nested (depth 2+); two callers clear it through `registry.clearInflight`,
+each for a different end: `hooks/gate.js` deletes the whole record once that
+stage's handoff carries a real gate, and `scripts/await.js`'s `main()` clears
+just the one agent's mark when it judges that brain `lost`, so a sibling
+brain's own mark survives; `controlFor` in `lib/stages.js` reads it
 and, while it names the current stage, tells the controller to SendMessage that
 agent rather than dispatch another. `adopt` builds a fresh record and does not
 carry it. [subagents.md](subagents.md) has the two cases it does not cover.
