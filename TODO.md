@@ -83,6 +83,7 @@ the reading is what gets scheduled.
 
 ## Needs a decision
 
+- 〔commit〕並行 build 的兩個洞：group 共用一份 `build-commit.md`，09-28 重送已提交的 tune 改動報 conflict；09-29 00:13 主樹被 `git reset` 回 4f180f58、吃掉 5846a00f，疑為 implementer 的 `reset --hard` 沒進 worktree — [lib/render.js](lib/render.js).
 - 〔todo〕刪掉的條目沒留下結果：加一頁完成紀錄（原文、做了／量過不改／放棄、sha），`todo-check` 擋沒記的刪除；land 時讓使用者確認新條目的 heading — [scripts/todo-check.js](scripts/todo-check.js).
 - 〔verify〕要不要把 lint／build 列成 verify 必過一關：先比對 AI-Native SDLC playbook 的 Triple-Check 與現有 verify，再決定 — [skills/fankeel-verify/SKILL.md](skills/fankeel-verify/SKILL.md).
 - 〔plan〕要不要給 plan 加 Risks 欄：先比對 playbook 的 plan.md 範本與現有 plan，再決定 — [skills/fankeel-plan/SKILL.md](skills/fankeel-plan/SKILL.md).
