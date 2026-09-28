@@ -1,0 +1,65 @@
+date: 2026-09-28T02:48:42Z
+HEAD: f26150d3f7e7b973a89f8ced588092596cb9280a
+porcelain:
+ M lib/context.js
+ M lib/handoff.js
+ M scripts/ledger.js
+?? docs/90-agent/reports/evidence/2026-09-28-subagent-hook-probe/
+?? tests/context-budget.test.js
+?? tests/handoff-relay.test.js
+?? tests/ledger-brief-prefix.test.js
+?? tests/subagent-hook-probe.test.js
+claude: 2.1.283 (Claude Code)
+claude exit 0
+{
+  "rows": [
+    {
+      "event": "PreToolUse",
+      "tool": "Agent",
+      "agent_id": null,
+      "transcript_path": "C:\\Users\\Owner\\.claude\\projects\\F--ymlab-fankeel\\923ffd4b-455e-45bb-bb59-2339acca1a10.jsonl",
+      "emitted": null
+    },
+    {
+      "event": "SubagentStart",
+      "tool": null,
+      "agent_id": "ae849dc3877fe9057",
+      "transcript_path": "C:\\Users\\Owner\\.claude\\projects\\F--ymlab-fankeel\\923ffd4b-455e-45bb-bb59-2339acca1a10.jsonl",
+      "emitted": "PROBE-SUBAGENTSTART-lifetime-2026-09-28"
+    },
+    {
+      "event": "PreToolUse",
+      "tool": "Glob",
+      "agent_id": "ae849dc3877fe9057",
+      "transcript_path": "C:\\Users\\Owner\\.claude\\projects\\F--ymlab-fankeel\\923ffd4b-455e-45bb-bb59-2339acca1a10.jsonl",
+      "emitted": "PROBE-PRETOOLUSE-DENY-lifetime-2026-09-28"
+    },
+    {
+      "event": "PreToolUse",
+      "tool": "Read",
+      "agent_id": "ae849dc3877fe9057",
+      "transcript_path": "C:\\Users\\Owner\\.claude\\projects\\F--ymlab-fankeel\\923ffd4b-455e-45bb-bb59-2339acca1a10.jsonl",
+      "emitted": null
+    },
+    {
+      "event": "PostToolUse",
+      "tool": "Read",
+      "agent_id": "ae849dc3877fe9057",
+      "transcript_path": "C:\\Users\\Owner\\.claude\\projects\\F--ymlab-fankeel\\923ffd4b-455e-45bb-bb59-2339acca1a10.jsonl",
+      "emitted": "PROBE-POSTTOOLUSE-lifetime-2026-09-28"
+    },
+    {
+      "event": "PostToolUse",
+      "tool": "Agent",
+      "agent_id": null,
+      "transcript_path": "C:\\Users\\Owner\\.claude\\projects\\F--ymlab-fankeel\\923ffd4b-455e-45bb-bb59-2339acca1a10.jsonl",
+      "emitted": null
+    }
+  ],
+  "subagentStartEmitted": true,
+  "postToolUseEmitted": true,
+  "preToolUseDenyEmitted": true,
+  "subagentTranscriptPaths": [
+    "C:\\Users\\Owner\\.claude\\projects\\F--ymlab-fankeel\\923ffd4b-455e-45bb-bb59-2339acca1a10.jsonl"
+  ]
+}

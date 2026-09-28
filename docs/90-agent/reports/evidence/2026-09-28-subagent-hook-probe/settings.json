@@ -1,0 +1,7 @@
+{
+  "hooks": {
+    "SubagentStart": [ { "hooks": [ { "type": "command", "command": "node \"F:/ymlab/fankeel/docs/90-agent/reports/evidence/2026-09-28-subagent-hook-probe/hook.js\"", "timeout": 5 } ] } ],
+    "PostToolUse": [ { "hooks": [ { "type": "command", "command": "node \"F:/ymlab/fankeel/docs/90-agent/reports/evidence/2026-09-28-subagent-hook-probe/hook.js\"", "timeout": 5 } ] } ],
+    "PreToolUse": [ { "hooks": [ { "type": "command", "command": "node \"F:/ymlab/fankeel/docs/90-agent/reports/evidence/2026-09-28-subagent-hook-probe/hook.js\"", "timeout": 5 } ] } ]
+  }
+}

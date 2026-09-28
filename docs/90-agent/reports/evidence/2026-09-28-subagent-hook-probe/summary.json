@@ -1,0 +1,52 @@
+{
+  "rows": [
+    {
+      "event": "PreToolUse",
+      "tool": "Agent",
+      "agent_id": null,
+      "transcript_path": "C:\\Users\\Owner\\.claude\\projects\\F--ymlab-fankeel\\923ffd4b-455e-45bb-bb59-2339acca1a10.jsonl",
+      "emitted": null
+    },
+    {
+      "event": "SubagentStart",
+      "tool": null,
+      "agent_id": "ae849dc3877fe9057",
+      "transcript_path": "C:\\Users\\Owner\\.claude\\projects\\F--ymlab-fankeel\\923ffd4b-455e-45bb-bb59-2339acca1a10.jsonl",
+      "emitted": "PROBE-SUBAGENTSTART-lifetime-2026-09-28"
+    },
+    {
+      "event": "PreToolUse",
+      "tool": "Glob",
+      "agent_id": "ae849dc3877fe9057",
+      "transcript_path": "C:\\Users\\Owner\\.claude\\projects\\F--ymlab-fankeel\\923ffd4b-455e-45bb-bb59-2339acca1a10.jsonl",
+      "emitted": "PROBE-PRETOOLUSE-DENY-lifetime-2026-09-28"
+    },
+    {
+      "event": "PreToolUse",
+      "tool": "Read",
+      "agent_id": "ae849dc3877fe9057",
+      "transcript_path": "C:\\Users\\Owner\\.claude\\projects\\F--ymlab-fankeel\\923ffd4b-455e-45bb-bb59-2339acca1a10.jsonl",
+      "emitted": null
+    },
+    {
+      "event": "PostToolUse",
+      "tool": "Read",
+      "agent_id": "ae849dc3877fe9057",
+      "transcript_path": "C:\\Users\\Owner\\.claude\\projects\\F--ymlab-fankeel\\923ffd4b-455e-45bb-bb59-2339acca1a10.jsonl",
+      "emitted": "PROBE-POSTTOOLUSE-lifetime-2026-09-28"
+    },
+    {
+      "event": "PostToolUse",
+      "tool": "Agent",
+      "agent_id": null,
+      "transcript_path": "C:\\Users\\Owner\\.claude\\projects\\F--ymlab-fankeel\\923ffd4b-455e-45bb-bb59-2339acca1a10.jsonl",
+      "emitted": null
+    }
+  ],
+  "subagentStartEmitted": true,
+  "postToolUseEmitted": true,
+  "preToolUseDenyEmitted": true,
+  "subagentTranscriptPaths": [
+    "C:\\Users\\Owner\\.claude\\projects\\F--ymlab-fankeel\\923ffd4b-455e-45bb-bb59-2339acca1a10.jsonl"
+  ]
+}
