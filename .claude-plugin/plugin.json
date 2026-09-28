@@ -56,6 +56,16 @@
             "statusMessage": "Noting where the work went..."
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/budget.js\"",
+            "timeout": 5,
+            "statusMessage": "Checking a subagent's context budget..."
+          }
+        ]
       }
     ],
     "SubagentStart": [
@@ -112,6 +122,16 @@
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guard.js\"",
             "timeout": 5,
             "statusMessage": "Checking whether this stage has a stage agent..."
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/budget.js\"",
+            "timeout": 5,
+            "statusMessage": "Checking a subagent's context budget..."
           }
         ]
       }
