@@ -42,7 +42,7 @@ Why each rule is what it is, under the same headings: [rationale.md](rationale.m
 
 **This stage does not stop at a question until it is done.** Its gate is the end
 of the stage, not the end of a task: the loop runs everything the denominator
-lists open, and then asks once. A `fankeel-brain` dispatched for one group (its prompt names task numbers, not `build close`) returns with no gate once its own tasks are done; only `build close` is the one that asks.
+lists open, and then asks once. A `fankeel-brain` dispatched for one group (its prompt names a group, not `build close`) returns with no gate once its own tasks are done; only `build close` is the one that asks.
 
 ## Setup
 

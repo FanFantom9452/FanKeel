@@ -1332,5 +1332,5 @@ test('survey and build each carry their own half of the Blocked/Watch patrol; fa
 
 test('the build skill\'s own "asks once" sentence carries the group-parallel exception', () => {
     const text = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-build', 'SKILL.md'), 'utf8');
-    assert.match(text, /and then asks once\. A `fankeel-brain` dispatched for one group \(its prompt names task numbers, not `build close`\) returns with no gate once its own tasks are done; only `build close` is the one that asks\./);
+    assert.match(text, /and then asks once\. A `fankeel-brain` dispatched for one group \(its prompt names a group, not `build close`\) returns with no gate once its own tasks are done; only `build close` is the one that asks\./);
 });
