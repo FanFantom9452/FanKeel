@@ -83,14 +83,14 @@ the reading is what gets scheduled.
 
 ## Needs a decision
 
-- 〔commit〕重送已提交的改動到 `ready --worktree` 報 conflict——唯一還沒查的洞：group 共用 `build-commit.md` 已修（88c9cb8d，`commitPath` 補上 `group`）；09-29 主樹被 `reset` 回 4f180f58 吃掉 5846a00f 一事，查過 reset 指令本身已明講 worktree，不是文字漏洞 — [lib/render.js](lib/render.js).
+- 〔commit〕重送已提交的改動到 `ready --worktree` 報 conflict——唯一還沒查的洞；group 共用 `build-commit.md` 已在 88c9cb8d 修掉，09-29 主樹誤 reset 一事查過非文字漏洞 — [lib/render.js](lib/render.js).
 - 〔todo〕刪掉的條目沒留下結果：加一頁完成紀錄（原文、做了／量過不改／放棄、sha），`todo-check` 擋沒記的刪除；land 時讓使用者確認新條目的 heading — [scripts/todo-check.js](scripts/todo-check.js).
 - 〔verify〕要不要把 lint／build 列成 verify 必過一關：先比對 AI-Native SDLC playbook 的 Triple-Check 與現有 verify，再決定 — [skills/fankeel-verify/SKILL.md](skills/fankeel-verify/SKILL.md).
 - 〔plan〕要不要給 plan 加 Risks 欄：先比對 playbook 的 plan.md 範本與現有 plan，再決定 — [skills/fankeel-plan/SKILL.md](skills/fankeel-plan/SKILL.md).
 - 〔review〕要不要支援專案自訂 `review.md`：先比對 playbook 的審查 SOP 與現有 reviewer lens，再決定 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 - 〔skills〕09-24 對照 addyosmani/agent-skills、mattpocock/skills 是 WebFetch 摘要、沒 clone，六個候選沒挑：clone 下來逐字重看，再和使用者逐條挑 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
 - 〔workflow〕要不要拿掉 Workflow、統一成 brain＋背景 agent：brain 沒有 Workflow，但 ledger groups 三個以上仍印 workflow；budget.js 也不量 subagents/workflows/ 底下的 agent — [lib/plantasks.js](lib/plantasks.js).
-- 〔await〕group 號按派工順序編（1、2、3），不是 ledger group，await 仍可能指到舊 `build-g<n>.md`；「做完的 brain 的 inflight 沒清」這次試過在 await.js 收到 group 的 handoff 就自動清，但 reviewer 查出 `markInflight` 對每個 build brain（含真正收尾的 build close）都配發同一種正整數 group，await 沒辦法只憑 `o.group` 分辨收尾跟一般 group，已撤回；要修得先讓 registry 在 dispatch 時就記下「這個 brain 會不會回報 gate」，這訊號現在完全不存在 — [scripts/await.js](scripts/await.js).
+- 〔await〕group 號依派工序編、非 ledger group，await 仍可能指到舊 `build-g<n>.md`；試過在 handoff 時自動清 inflight 但已撤回——markInflight 分不清 group brain 與 build close，需 registry 記下這訊號 — [scripts/await.js](scripts/await.js).
 - 〔stage-agents〕brain 停掉時它的背景 implementer 還在跑，完成報告落到主控、沒人接：重派的 brain 又做一次 Task 8。要不要讓 brain 等完子 agent 才能交回 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 
 ## Blocked
