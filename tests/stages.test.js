@@ -1056,3 +1056,25 @@ test('verify runs the local security pass only where security.local names a mode
   assert.equal(/SECURITY_LOCAL/.test(rulesFor('verify', null, {}).join('\n')), false, 'unset is off');
   assert.equal(/SECURITY_LOCAL/.test(rulesFor('verify', null, { 'security.local': false }).join('\n')), false, 'false is off');
 });
+
+test('build\'s controller block adds the group-parallel dispatch rule; no other controlled stage does', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const values = { 'stage.agents': ['survey', 'build'] };
+  const subs = { ledger: '<plugin>/scripts/ledger.js', await: '<plugin>/scripts/await.js', session: 'sid' };
+  const build = controlFor('build', values, subs).rules;
+  assert.ok(build.some((r) => r.includes('Build only: one Agent per ready `<plugin>/scripts/ledger.js groups` group')), build.join('\n'));
+  assert.ok(build.some((r) => r.includes('prompt `build close`, runs the suite and writes the gate')));
+  const survey = controlFor('survey', values, subs).rules;
+  assert.equal(survey.some((r) => r.includes('Build only:')), false);
+});
+
+test('two marks for build each get their own SendMessage line, naming their group', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const values = { 'stage.agents': ['build'] };
+  const marks = [{ stage: 'build', at: 1, agentId: 'g1', group: 1 }, { stage: 'build', at: 1, agentId: 'g2', group: 2 }];
+  const rules = controlFor('build', values, {}, marks).rules;
+  const lines = rules.filter((r) => r.includes('already running'));
+  assert.equal(lines.length, 2);
+  assert.equal(lines[0], 'A build stage agent is already running for group 1 (`g1`): SendMessage it the user\'s new line and wait for it. Do not dispatch another for that group unless SendMessage says it is gone.');
+  assert.match(lines[1], /for group 2 \(`g2`\)/);
+});
