@@ -36,6 +36,14 @@ test('an edit to a sibling block names that block', () => {
     assert.deepEqual(got, { ok: false, touched: ['sessions'] });
 });
 
+test('an edit inside any block of a selection is ok; one outside all of them is not', () => {
+    const before = '<main><section data-block="a"><p>1</p></section><section data-block="b"><p>2</p></section><section data-block="c"><p>3</p></section></main>';
+    const inB = before.replace('<p>2</p>', '<p>two</p>');
+    assert.deepEqual(outside(before, inB, ['a', 'b']), { ok: true, touched: [] });
+    const inC = before.replace('<p>3</p>', '<p>three</p>');
+    assert.deepEqual(outside(before, inC, ['a', 'b']), { ok: false, touched: ['c'] });
+});
+
 test('an edit in markup no inner block owns names the block around it', () => {
     const after = PAGE.replace('v1', 'v2');
     assert.deepEqual(outside(PAGE, after, 'now'), { ok: false, touched: ['page'] });
@@ -137,6 +145,26 @@ test('serve injects without touching the file; request, wait and done round-trip
     const seen = events.join('');
     assert.match(seen, /"type":"rejected","id":"r-0001","block":"now","touched":\["sessions"\]/);
     assert.match(seen, /"type":"done","id":"r-0002"/);
+});
+
+test('a request with blocks: wait prints them and done keeps an edit in the second', async (t) => {
+    const cwd = tmp('fankeel-tune-');
+    fs.mkdirSync(path.join(cwd, 'site'));
+    const file = path.join(cwd, 'site', 'page.html');
+    const page = '<!DOCTYPE html><html><body><section data-block="a"><p>1</p></section><section data-block="b"><p>2</p></section></body></html>\n';
+    fs.writeFileSync(file, page);
+    const base = await startServer(t, cwd);
+
+    await request(base + '__live/request', 'POST', { page: '/page.html', note: 'x', block: 'a', blocks: ['a', 'b'] });
+    const waited = spawnSync(process.execPath, [CLI, 'wait', '--timeout', '5'], { cwd, encoding: 'utf8' });
+    assert.equal(waited.status, 0, waited.stderr);
+    const job = JSON.parse(waited.stdout);
+    assert.deepEqual(job.blocks, ['a', 'b']);
+
+    fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('<p>2</p>', '<p>two</p>'));
+    const ok = spawnSync(process.execPath, [CLI, 'done', 'r-0001'], { cwd, encoding: 'utf8' });
+    assert.equal(ok.status, 0, ok.stderr);
+    assert.match(fs.readFileSync(file, 'utf8'), /<p>two<\/p>/);
 });
 
 test('wait with nothing queued gives up with exit 3', () => {

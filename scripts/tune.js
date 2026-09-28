@@ -155,12 +155,13 @@ function serve(dir, port, live, upstream) {
                 const selector = str(data.selector, 500);
                 const text = str(data.text, 80);
                 const classes = Array.isArray(data.classes) ? data.classes.filter((c) => typeof c === 'string').slice(0, 20) : [];
+                const blocks = Array.isArray(data.blocks) ? data.blocks.map((b) => str(b, 200)).filter(Boolean).slice(0, 20) : [];
                 if (!note || (!block && !selector)) return send(res, 400, TYPES['.txt'], 'a note, and a block or a selector, are required');
                 if (!upstream && (!file || !/\.html?$/i.test(file) || !fs.existsSync(file) || !block)) {
                     return send(res, 400, TYPES['.txt'], 'a static page takes a data-block element on an html file under the served directory');
                 }
                 const id = 'r-' + String(requests().length + 1).padStart(4, '0');
-                append({ id, status: 'queued', page: upstream ? page : relPath(root, file), file, block, selector, classes, text, note });
+                append(Object.assign({ id, status: 'queued', page: upstream ? page : relPath(root, file), file, block, selector, classes, text, note }, blocks.length > 1 ? { blocks } : {}));
                 send(res, 200, TYPES['.json'], JSON.stringify({ id }));
                 return broadcast({ type: 'queued', id, block, selector });
             });
@@ -193,6 +194,7 @@ function wait(timeoutSec) {
             else fs.copyFileSync(next.file, path.join(STATE, next.id + '.before.html'));
             append({ id: next.id, status: 'taken' });
             const job = { id: next.id, page: next.page, file: next.file, block: next.block, selector: next.selector || '', classes: next.classes || [], text: next.text || '', note: next.note };
+            if (next.blocks) job.blocks = next.blocks;
             if (live) job.sources = rankSources(live.src.map((f) => ({ file: f, text: fs.readFileSync(f, 'utf8') })), { block: next.block, classes: next.classes || [] });
             process.stdout.write(JSON.stringify(job) + '\n');
             return;
@@ -338,13 +340,13 @@ function done(id) {
     if (live) return doneLive(r, live);
     const before = fs.readFileSync(path.join(STATE, id + '.before.html'), 'utf8');
     const after = fs.readFileSync(r.file, 'utf8');
-    const verdict = outside(before, after, r.block);
+    const verdict = outside(before, after, r.blocks || r.block);
     if (!verdict.ok) {
         fs.writeFileSync(path.join(STATE, id + '.diff.txt'), diffLines(before, after));
         fs.writeFileSync(r.file, before);
         return settle(r, false, verdict.touched, 'the edit changed ' + verdict.touched.join(', ') + '; ' + r.file + ' is back as it was');
     }
-    return settle(r, true, [], 'only ' + r.block + ' changed');
+    return settle(r, true, [], 'only ' + (r.blocks || [r.block]).join(', ') + ' changed');
 }
 
 // Live mode: nothing outside --src may have moved since `wait`, and the page
