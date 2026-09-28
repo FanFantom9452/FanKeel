@@ -264,6 +264,18 @@ then asks this stage's gate.
    writing over the first. A task whose `**Dispatch:**` line reads `user` is
    never listed — the hands paragraph above step 1 has it.
 
+   **A stage agent's implementers each build in a worktree.** A
+   `fankeel-brain` asks `ledger.js --plan <f> ready --worktree` instead: there
+   two tasks sharing a `Modify:` or `Test:` file go out together, and a
+   `Read:` of a neighbour's file or a `Consumes`/`Produces` edge still holds
+   one back. It sends every implementer with `isolation: "worktree"`, and each
+   task's block in its commit file opens with `worktree <path>`, the path that
+   implementer's Agent result names. `scripts/commit.js` commits the block in
+   that worktree and cherry-picks it onto HEAD. A reply `conflict <paths>`
+   means that task is not in HEAD: send it once more, fresh, on the new HEAD,
+   without asking; the same task conflicting a second time stops the build,
+   and the handoff names the paths for the controller to ask about.
+
    **The ceiling of four in flight is still the ceiling**, and it binds only
    with a plan — with no plan one row is out at a time: `ready` listing six
    sends four, then one more as each returns. Three or more listed at once

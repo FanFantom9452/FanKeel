@@ -83,7 +83,7 @@ the reading is what gets scheduled.
 
 ## Needs a decision
 
-- 〔build〕ready-queue 的 worktree 那一半：每個 implementer 各開 worktree、由 brain merge；`scripts/commit.js` 認不得 worktree、brain 不能 `git commit`，兩者都得先改 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
+- 〔todo〕刪掉的條目沒留下結果：加一頁完成紀錄（原文、做了／量過不改／放棄、sha），`todo-check` 擋沒記的刪除；land 時讓使用者確認新條目的 heading — [scripts/todo-check.js](scripts/todo-check.js).
 
 ## Blocked
 

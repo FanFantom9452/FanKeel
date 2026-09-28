@@ -533,7 +533,7 @@ stage on that list and it is run by a stage agent instead of by the session:
 | the gate | `hooks/gate.js` | validates rather than substitutes: the controller itself reads the handoff file's last `json gate` block and copies its `questions` array into its own `AskUserQuestion` call, word for word — no placeholder, no swap. `hooks/gate.js` checks the file's own gate is sound with `readGate`: at most 4 questions, every question with `header` (12 columns at most), `question` and 2–4 `options` each carrying a `label` and a `description` — and, where an option carries a `preview`, a non-empty string on a question that is not `multiSelect` (no label-width cap — that only ever bounded a hook `updatedInput` substitution this file no longer performs), and option one naming the next stage, another stage on the task's own route to send the work back to, or standing down at the route's end. A file gate that fails this is denied with the field named, and the controller sends it back to its agent. Once the file's gate is sound, `gateMatches` compares it against what the controller actually asked: a match clears the in-flight mark and writes nothing — unless `gate.station` is set and the station's answer arrived in time, in which case it allows the call with `updatedInput.answers` (docs/station.md, "Answering a gate from the page"); a mismatch whose first question is headed with the stage's name (any case) is not enough by itself to convict it: `looksLikeAttempt` also runs `charOverlap` — a normalized (lowercased, whitespace-stripped) character-overlap ratio between the asked question's text plus option labels and the file's own gate's first question — and only denies it as a botched copy attempt (a paraphrase, a typo, a stale draft), naming the file and telling the controller to copy `questions` exactly, once that ratio passes `ATTEMPT_THRESHOLD` (0.5); a header-matching question whose content overlap stays below that threshold — a genuinely different question the controller is legitimately asking during a controlled stage — goes out untouched, the same as one headed with something else entirely. When nothing is confirmed and nothing is denied either, it writes a `systemMessage` naming which condition failed — a stage agent for a stage `stage.agents` does not name, a question that does not copy the handoff's gate word for word, no handoff file, or no readable gate in it — from `skipReason` in `lib/handoff.js`. A `fankeel-brain` dispatched for a stage `stage.agents` does not name never gets this far: `hooks/guard.js` denies the dispatch itself (matcher `Agent\|Task`) |
 | the answer | `hooks/resume.js` | writes it to the answer file when the questions answered match the handoff's `json gate` — `readGate` and `gateMatches`, the helpers `hooks/gate.js` uses, with a question filed with no `multiSelect` read as `multiSelect: false` on the gate's own filed side — the asked side is never filled — whether or not `inflight` still stands, since `SubagentStart` re-marks it on every `SendMessage` delivery; a question the controller asked on its own writes nothing; the controller's `SendMessage` names the path |
 | a pause | `task.js next --from-gate` | reads the block's `next` line |
-| a commit (`build`, `design`, `plan`) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/<stage>-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back its one line, `<base>..<sha>` or `commit.js: <why>`; on build, one file each time none of its implementers is still running, never one per task — blocks separated by a `---` line, one `<paths>: <base>..<sha>` line back per block, or `<base>..<sha>` for a one-block file; once every block has landed, `commit.js` renames the file to `<stage>-commit.done.md`, so a `-commit.md` on disk is always a commit still to make |
+| a commit (`build`, `design`, `plan`) | `scripts/commit.js`, `commitPath` in `lib/handoff.js` | the agent writes `.fankeel/build/task-<started>/<stage>-commit.md` — the paths, a blank line, the message — and returns `commit <path>`; the controller runs the script on it and messages back its one line, `<base>..<sha>` or `commit.js: <why>`; on build, one file each time none of its implementers is still running, never one per task — blocks separated by a `---` line, one `<paths>: <base>..<sha>` line back per block, or `<base>..<sha>` for a one-block file; once every block has landed, `commit.js` renames the file to `<stage>-commit.done.md`, so a `-commit.md` on disk is always a commit still to make; a block whose first line is `worktree <path>` is committed in that worktree and cherry-picked onto the controller's HEAD, and the worktree and its branch removed — a conflict is aborted and comes back as `conflict <paths>`, exit 1, the worktree kept |
 
 ### How the controller waits
 
@@ -663,8 +663,9 @@ fixer and implementers, all through the `Agent` tool. The guard above locks the
 (`agents/fankeel-brain.md:4`, `tools: [Read, Grep, Glob, Bash, Write, Agent]`,
 where `Write` is for its handoff file). It is refused `git commit` too, so it
 asks for each one through a commit file and the controller runs
-`scripts/commit.js`, in the repository the controller is standing in (a
-worktree the implementers build in is not handled) — a Bash call and a message
+`scripts/commit.js`, in the repository the controller is standing in
+(each implementer builds in its own `isolation: "worktree"` worktree, and the
+block naming it is cherry-picked in — see **Where it commits** below) — a Bash call and a message
 back each time none of its implementers is still running, never per task, in the controller's
 own context, which is a cost the A/B has to count rather than assume away. `verify` gets an implementer for the one thing its agent cannot do,
 applying a mutation and restoring the file. A default should wait for that
@@ -827,8 +828,18 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   id, so the mutated file lands on its claims and a second live session sees a
   collision; the ordinary `verify` has the same effect from the parent's own mutation.
 - **Where it commits.** `scripts/commit.js` commits in the repository at the
-  controller's working directory. It does not consult the task's `project`, and it
-  knows nothing of a worktree.
+  controller's working directory, and does not consult the task's `project`. A
+  build brain sends every implementer with `isolation: "worktree"` and puts
+  `worktree <path>` — the path the Agent result names — first in that task's
+  block; `commit.js` commits the listed paths there with `commit -o`,
+  cherry-picks the commit onto HEAD, prints `<base>..<sha>`, and removes the
+  worktree and its branch, or prints `kept <path> — <why>` when git will not.
+  A cherry-pick conflict is aborted — HEAD and the working tree unchanged,
+  earlier blocks kept, the worktree kept — and printed as `conflict <paths>`
+  with exit 1; the brain re-dispatches that task once on the new HEAD without
+  asking, and a second conflict stops the build with the paths in its handoff.
+  `ledger.js --plan <f> ready --worktree` is what lets two tasks sharing a
+  `Modify:` or `Test:` file go out together; `groups` still counts them.
 
 # Telling a subagent apart, when a hook has to
 
