@@ -2,8 +2,7 @@
 
 一次性報告，2026-09-28。原始證據見
 [`evidence/2026-09-28-local-judge-trial/`](evidence/2026-09-28-local-judge-trial/)：
-`judge.sh`、`shots/`（十張截圖）、五份破壞過的 `index-*.html` 複本、
-`station/`（讓破壞複本能載入原本的 CSS/JS）、`results.tsv`。
+`judge.sh`、`shots/`（十張截圖）、五份破壞過的 `index-*.html` 複本、`results.tsv`。
 
 ## 模型版本
 
