@@ -161,7 +161,7 @@ A fifteenth and sixteenth, `gateAt` and `inflight`, are deliberately not
 below. `gateAt` exists only between a question going out and its answer
 arriving — and a record that lacks it when the answer arrives is what the
 `gate:` line under **While the mode is on** reports. `inflight` —
-`{ stage, at, agentId? }` — is the other transient field: `hooks/brief.js`
+`{ stage, at, agentId?, lap?, group? }` — is the other transient field: `hooks/brief.js`
 marks it when a stage agent starts and `hooks/gate.js` clears it when that
 stage's handoff arrives.
 

@@ -83,6 +83,10 @@ the reading is what gets scheduled.
 
 - 〔stage-agents〕`hooks/brief.js` 不管 `spawnDepth`、不管父層是否已是站 agent，見到 `fankeel-brain` 的 `SubagentStart` 就標 `inflight`：巢狀 brain 因此拿到多餘的 `group` 標記；先記下，不動 — [hooks/brief.js](hooks/brief.js).
 
+- 〔stage-agents〕brain 失聯時它的 `inflight` 標記不會被清掉：`await.js` 從此要帶 `--agent`，下一個 brain 也被編成 group 2 — [lib/registry.js](lib/registry.js).
+
+- 〔trim〕09-28 稽核：約 40 行重複碼可併——`addNote`/`addClaim`/`addSeen` 與四個 `*Of`、各檔自推正斜線路徑（可用 `relPath`）、`PLUGIN_ROOT` 定義兩次 — [lib/registry.js](lib/registry.js).
+
 ## Needs a decision
 
 ## Blocked

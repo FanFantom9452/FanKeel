@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 date: 2026-09-28
 task: 減少 subagent context 堆疊：group 並排 brain、小 task、共用資訊放 prompt 開頭
 ---

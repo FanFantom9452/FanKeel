@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 date: 2026-09-28
 ---
 
