@@ -1,0 +1,16 @@
+HEAD 40bc85167d984309ed6c99bc6c76efd913bc0fd8
+porcelain:
+ M TODO.md
+ M tests/guard.test.js
+?? docs/90-agent/reports/evidence/2026-09-28-allow-rule-probe/
+---
+A1 exists=1
+B1 exists=1
+A2 exists=1
+B2 exists=1
+A3 exists=1
+B3 exists=1
+A4 exists=1
+B4 exists=1
+A5 exists=1
+B5 exists=1
