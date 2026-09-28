@@ -619,6 +619,29 @@ test('a stage agent starting marks its stage in flight on the parent\'s record; 
   assert.ok(mark.at >= before && mark.at <= Date.now(), String(mark.at));
 });
 
+// .fankeel/build/task-20260928T011854/verify.md item 2: a brain dispatching a
+// nested brain of its own (build's fixer-round resume) fired this same
+// SubagentStart for the inner one, and the old code marked inflight on every
+// `fankeel-brain` regardless of depth — a spurious extra `group` mark. The
+// inner one's own `agent-<id>.meta.json` says `spawnDepth: 2`, the shape
+// lib/usage.js already reads for this.
+test('a nested brain (spawnDepth 2) does not mark inflight', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const sub = path.join(root, 'sess', 'subagents');
+  fs.mkdirSync(sub, { recursive: true });
+  fs.writeFileSync(path.join(sub, 'agent-a9.meta.json'), JSON.stringify({
+    agentType: 'fankeel:fankeel-brain', parentAgentId: 'a1', spawnDepth: 2,
+  }));
+  run(root, start(root, {
+    agent_type: 'fankeel:fankeel-brain', agent_id: 'a9',
+    transcript_path: path.join(root, 'sess.jsonl'),
+  }));
+  const data = JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), 'utf8'));
+  assert.equal(data.inflight, undefined, 'a nested brain must not add an inflight mark');
+});
+
 // 2026-09-24: a controlled build of 14 tasks sent its controller 19 commits,
 // one round trip each; then one per `ledger.js groups` group, which waited on
 // the slowest task of each group. Now: whenever nothing it sent is running.

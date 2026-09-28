@@ -20,11 +20,39 @@
 // The agent type is passed through, and one type — fankeel-judge — gets a
 // line of its own in lib/render.js.
 
+const fs = require('node:fs');
+const path = require('node:path');
 const registry = require('../lib/registry.js');
 const { renderBrief } = require('../lib/render.js');
 const profileLib = require('../lib/profile.js');
 const { lapOf } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
+const { sessionDirOf } = require('../lib/usage.js');
+
+// A `fankeel-brain` dispatching a nested `fankeel-brain` of its own — build's
+// fixer-round resume does this — fires this same SubagentStart for the inner
+// one, and Claude Code's SubagentStart payload carries no depth of its own to
+// tell the two apart. The depth is on `agent-<id>.meta.json` instead, the same
+// file and fields lib/usage.js already reads for this (`spawnDepth`,
+// `parentAgentId` — lib/usage.js:603, docs/90-agent/reference/subagents.md's
+// `spawnDepth` 2 convention). Anything that keeps that file from answering —
+// no transcript path, no file yet, bad JSON, no field — reads as depth 1:
+// a missed nested mark only costs a spurious `group` (today's behaviour), a
+// missed real mark breaks the controller, so unknown must not skip the mark.
+function nestedBrain(payload) {
+    const dir = sessionDirOf(payload.transcript_path);
+    if (!dir) return false;
+    const metaFile = path.join(dir, 'subagents', 'agent-' + payload.agent_id + '.meta.json');
+    let meta;
+    try {
+        meta = JSON.parse(fs.readFileSync(metaFile, 'utf8'));
+    } catch (e) {
+        return false;
+    }
+    if (typeof meta.spawnDepth === 'number') return meta.spawnDepth >= 2;
+    if (typeof meta.parentAgentId === 'string' && meta.parentAgentId) return true;
+    return false;
+}
 
 function main(raw) {
     const payload = parse(raw);
@@ -47,7 +75,7 @@ function main(raw) {
     // `group` is the one it names in a build's brief: `markInflight` assigns
     // it, so this is the one place both the mark and the brief agree on it.
     let group = null;
-    if (mine.stage && String(payload.agent_type || '').replace(/^fankeel:/, '') === 'fankeel-brain') {
+    if (mine.stage && String(payload.agent_type || '').replace(/^fankeel:/, '') === 'fankeel-brain' && !nestedBrain(payload)) {
         try {
             group = registry.markInflight(root, payload.session_id, mine.stage, payload.agent_id, lapOf(mine, mine.stage));
         } catch (e) { /* housekeeping */ }
