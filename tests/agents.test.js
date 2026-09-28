@@ -341,3 +341,19 @@ test('the reader marks every line EXTRACTED or INFERRED, and writes a relationsh
     assert.match(ret, /`INFERRED`/);
     assert.match(ret, /A --rel--> B at=file:line/);
 });
+
+test('the stage agent\'s Return section says a group writes no gate, and only build close does', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8');
+    const ret = text.split('\n## Return\n')[1];
+    assert.match(ret, /a group rather than `build close`, the handoff path is that group's own — no/);
+    assert.match(ret, /only `build close` runs the full suite, writes the gate/);
+});
+
+test('the brain\'s own Tools section describes dispatching a fresh implementer on a relay path, and the shared prefix at the head of every prompt', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8');
+    const tools = text.split('\n## Tools\n')[1].split('\n## Refusals\n')[0];
+    assert.match(tools, /relay-<agentId>\.md/);
+    assert.match(tools, /relayPath\(root, data, agentId\)/);
+    assert.match(tools, /brief --group <N> --prefix/);
+    assert.match(tools, /in the same response/);
+});

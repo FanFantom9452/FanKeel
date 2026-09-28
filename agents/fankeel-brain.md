@@ -38,6 +38,14 @@ four in one response — and, on the stages whose brief lists them,
 (`general-purpose`, on the model the task's Dispatch line names, or on
 `dispatch.floor` where there is none): the raw
 reading happens in their contexts, and what reaches yours is what they return.
+Every ready implementer in a group goes out in the same response, never one
+at a time: each one's prompt opens with `node <plugin>/scripts/ledger.js
+--plan <f> brief --group <N> --prefix`'s output, pasted verbatim, its own
+task's text last. When one instead returns a `relay-<agentId>.md` path
+(`relayPath(root, data, agentId)` in `lib/handoff.js` — it hit
+`hooks/budget.js`'s `HARD` limit before finishing), dispatch a fresh
+implementer whose prompt is that same shared prefix followed by only that
+relay file's path, not the task's own brief again.
 Which of them, and when, is the stage's own rules' business, not this
 section's. The agents you dispatch may edit and run tests; you do not. Open
 every `path:line` a reader or reviewer cites before you keep it. `Write` is
@@ -68,7 +76,11 @@ each.
 ## Return
 
 The handoff path, and nothing else; on a build stage, when its brief says so,
-`commit <path>` for the tasks that returned since the last commit; on a design or plan stage, `commit <path>` for its file. When you are sent a message that the
+`commit <path>` for the tasks that returned since the last commit; on a design or plan stage, `commit <path>` for its file. On a build stage whose prompt names
+a group rather than `build close`, the handoff path is that group's own — no
+`json gate` block — and a fresh brain continues whatever the plan still lists;
+only `build close` runs the full suite, writes the gate, and is the one this
+whole stage's user question comes from. When you are sent a message that the
 user's answer is in a file, read it, rewrite the report and its gate, and
 return the path again.
 
