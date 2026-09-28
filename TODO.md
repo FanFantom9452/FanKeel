@@ -86,8 +86,6 @@ the reading is what gets scheduled.
 
 ## Needs a decision
 
-- 〔commit〕重送已提交的改動到 `ready --worktree` 報 conflict——唯一還沒查的洞；group 共用 `build-commit.md` 已在 88c9cb8d 修掉，09-29 主樹誤 reset 一事查過非文字漏洞 — [lib/render.js](lib/render.js).
-- 〔todo〕刪掉的條目沒留下結果：加一頁完成紀錄（原文、做了／量過不改／放棄、sha），`todo-check` 擋沒記的刪除；land 時讓使用者確認新條目的 heading — [scripts/todo-check.js](scripts/todo-check.js).
 - 〔verify〕要不要把 lint／build 列成 verify 必過一關：先比對 AI-Native SDLC playbook 的 Triple-Check 與現有 verify，再決定 — [skills/fankeel-verify/SKILL.md](skills/fankeel-verify/SKILL.md).
 - 〔plan〕要不要給 plan 加 Risks 欄：先比對 playbook 的 plan.md 範本與現有 plan，再決定 — [skills/fankeel-plan/SKILL.md](skills/fankeel-plan/SKILL.md).
 - 〔review〕要不要支援專案自訂 `review.md`：先比對 playbook 的審查 SOP 與現有 reviewer lens，再決定 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
