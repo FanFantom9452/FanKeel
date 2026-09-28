@@ -130,14 +130,7 @@ function main(argv, env) {
     const o = waitFor(opts, env || process.env);
     if (o.error) return Promise.resolve({ text: 'await.js: ' + o.error, code: 1 });
     return awaitHandoff(o).then((state) => {
-        // A group brain's handoff (`build-g<n>.md`) has no gate of its own —
-        // fankeel-build's rule has it return with no gate once its own tasks
-        // are done — so nothing else ever clears its mark; the stage's own
-        // plain, gate-bearing handoff (`o.group` unset) must keep clearing
-        // only in hooks/gate.js, once the gate is actually confirmed, so a
-        // controller's SendMessage retry to that still-pending agent still
-        // finds its mark.
-        if (state === 'lost' || (state === 'handoff' && Number.isInteger(o.group) && o.group > 0)) registry.clearInflight(o.root, opts.session, o.agentId);
+        if (state === 'lost') registry.clearInflight(o.root, opts.session, o.agentId);
         return { text: lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null) };
     });
 }
