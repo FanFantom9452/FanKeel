@@ -32,6 +32,7 @@ status: design-intent
 - 沒有 `worktree` 行的 block，行為和今天一模一樣。
 - `plantasks.ready()` 多一個 `{ worktree: true }` 選項：只有兩個 task 共用 `Modify`/`Test` 檔時，不再擋住它們；`read` 和 `interface` 兩條照擋。build 的 brain 呼叫時帶這個選項，`groups()` 和其他報告不變。
 - `agents/fankeel-brain.md`、`lib/stages.js` 的 build 規則、`skills/fankeel-build/SKILL.md`、`docs/90-agent/reference/subagents.md` 的「在哪提交」一節都改寫成這個流程。`TODO.md` 那一條由交付的 task 刪掉。
+- implementer 在 worktree 裡的編輯要以主樹的邏輯路徑記進 claims，guard 才看得到鄰居撞檔。今天 `lib/guard.js` 的 `logicalPath()`（:244-248）只去掉 `.fankeel/worktrees/<hex8>/`，`hooks/touch.js:36` 把 Agent isolation 開的 worktree 裡的編輯記成原始路徑；worktree 在 registry 根目錄之外時 `relPath` 回 `null`，根本不記。worktree 在根目錄內（探測找到的位置）就去掉那一段；在根目錄外，就用那個 worktree 的 `git rev-parse --git-common-dir` 找回主 repo，再換算成主樹路徑。
 
 ## 驗收
 
@@ -43,7 +44,7 @@ status: design-intent
 ## 對照地圖
 
 - `docs/03-decisions/2026-09-21-controlled-stations.md:38` 寫的「worktree 不處理」，這次推翻了。這是 decision，本來就不維護，不改它；改的是 reference 頁 `subagents.md`。
-- `lib/guard.js:198` 的 `worktreeOf` 已經會把 worktree 路徑對回主樹，claims 和 guard 不必改，實跑時再確認。
+- 原先這裡寫「`lib/guard.js:198` 的 `worktreeOf` 已經會把 worktree 路徑對回主樹，claims 和 guard 不必改」，這句不對：`worktreeOf` 只讀 task 紀錄的 `worktree` 欄位，不換算路徑。改成 §2 最後一條。
 
 ## 還沒驗的
 
