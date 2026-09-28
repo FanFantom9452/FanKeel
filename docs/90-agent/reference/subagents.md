@@ -169,7 +169,7 @@ it every single time, and it is worth it even when nothing else about the
 delegation changes.
 
 The brief is capped, and the cap is a test rather than a habit:
-`tests/brief.test.js:152`, `assert.ok(text.length < 1400`. Measured 2026-09-11
+`tests/brief.test.js:176`, `assert.ok(text.length < 1400`. Measured 2026-09-11
 against that test's own seed, the rendered brief is 1,098 characters — 823 before
 the working-tree rule was added to `RETURN_RULES`. A `TODO.md` entry carried 777
 as the figure until it closed on 2026-09-11; it matched nothing, in the code or
@@ -520,7 +520,7 @@ empty list is refused with, in the shape every other bad profile value takes
 (`lib/profile.js:153`, `'stage.agents is one of: false, true, all, or a comma-separated list of: '`).
 `controlling()` and `controlFor()` in `lib/stages.js` read that array
 straight off the profile's `values` rather than off a fixed list only that
-file could change (`lib/stages.js:668`, `const raw = values && values['stage.agents'];`),
+file could change (`lib/stages.js:689`, `const raw = values && values['stage.agents'];`),
 so which stages are controlled is a profile answer, not a constant. Put a
 stage on that list and it is run by a stage agent instead of by the session:
 
@@ -766,10 +766,10 @@ Setting the key prints what it costs: the estimated tokens the injected line
 adds per prompt, and each stage's remaining room under the reference-root
 2400-character cap with the profile as it now reads — a warning, never a
 refusal, since the cap belongs to the tests and the sentence belongs to the
-user (`scripts/task.js:981`, `set anyway; this is a warning, not a refusal`)
+user (`scripts/task.js:995`, `set anyway; this is a warning, not a refusal`)
 — computed in `cmdProfile`'s `set` branch off `input-check.js`'s
 `estimateTokens` and `lib/render.js`'s `blockSizes`
-(`scripts/task.js:974`, `const n = estimateTokens('\n  - ' + out.value);`).
+(`scripts/task.js:988`, `const n = estimateTokens('\n  - ' + out.value);`).
 
 ## What a controlled `build` and `verify` have not been run through
 
