@@ -36,3 +36,9 @@ test('readSize is silent about an unranged entry with no root to read it against
 test('readSize sums more than one Modify: entry', () => {
   assert.equal(plantasks.readSize(undefined, { modify: ['lib/a.js:1-10', 'lib/b.js:1-5'] }), 15);
 });
+
+test('readSize throws on a Modify: entry naming a directory rather than silently counting zero', () => {
+  const dir = tmp('fankeel-plantasks-readsize-');
+  fs.mkdirSync(path.join(dir, 'lib'), { recursive: true });
+  assert.throws(() => plantasks.readSize(dir, { modify: ['lib'] }));
+});
