@@ -104,7 +104,7 @@ function waitFor(opts, env) {
         const own = path.join(dir, 'subagents', 'agent-' + agentId + '.jsonl');
         activity = () => (fs.existsSync(own) ? agentFiles(dir) : []);
     }
-    return { handoff, commit: commitCandidates(root, data, lap, group), since, agentId, group, activity, idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000 };
+    return { root, handoff, commit: commitCandidates(root, data, lap, group), since, agentId, group, activity, idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000 };
 }
 
 // The word first, so the controller's rule can name it; then what to do, so
@@ -127,7 +127,10 @@ function main(argv, env) {
     if (!opts) return Promise.resolve({ text: USAGE, code: 2 });
     const o = waitFor(opts, env || process.env);
     if (o.error) return Promise.resolve({ text: 'await.js: ' + o.error, code: 1 });
-    return awaitHandoff(o).then((state) => ({ text: lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null) }));
+    return awaitHandoff(o).then((state) => {
+        if (state === 'lost') registry.clearInflight(o.root, opts.session, o.agentId);
+        return { text: lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null) };
+    });
 }
 
 if (require.main === module) {

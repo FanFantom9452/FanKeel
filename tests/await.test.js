@@ -7,6 +7,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { awaitState, awaitHandoff } = require('../lib/handoff.js');
 const awaitCli = require('../scripts/await.js');
+const registry = require('../lib/registry.js');
 const tmp = require('./tmp.js');
 
 // A fixed clock: every mtime below is set against it rather than read off the
@@ -210,6 +211,21 @@ test('await.js refuses to guess which brain to watch when more than one is runni
     const bad = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'zz', '--timeout', '0.5'], f.env);
     assert.equal(bad.code, 1);
     assert.match(bad.text, /^await\.js: no in-flight mark for agent zz at stage build/);
+});
+
+// A brain judged lost leaves no in-flight mark for itself, but a sibling
+// brain's mark — a different agentId in the same group-parallel build — is
+// untouched: `registry.clearInflight` is called with that one agentId, not
+// with none, so it does not wipe every mark on the record.
+test('await.js clears only the lost agent\'s own in-flight mark, leaving a sibling\'s standing', async () => {
+    const marks = [{ stage: 'build', at: 1, agentId: 'a1', group: 1 }, { stage: 'build', at: 1, agentId: 'a2', group: 2 }];
+    const f = fixture({ inflight: marks });
+    at(path.join(f.config, 'projects', 'F--x', SID + '.jsonl'), Date.now());
+    at(path.join(f.config, 'projects', 'F--x', SID, 'subagents', 'agent-a1.jsonl'), Date.now() - 600000);
+    const out = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'a1', '--idle', '0.2'], f.env);
+    assert.equal(out.text, 'group 1, agent a1: lost a1 — the stage agent stopped with neither file written: dispatch a fresh one with the same line.');
+    const after = registry.inflights(registry.readSession(f.root, SID));
+    assert.deepEqual(after.map((m) => m.agentId), ['a2'], 'a1\'s mark is gone, a2\'s sibling mark survives');
 });
 
 test('a stage agent starting stamps the lap its brief named on the in-flight mark', () => {
