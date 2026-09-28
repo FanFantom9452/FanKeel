@@ -18,8 +18,8 @@ often one that is ready and one that is still an argument.
 |---|---|---|
 | `## Ready` | nothing but someone's hands. The bullet is the specification | the whole section is offered as **one** task |
 | `## Needs a decision` | a person, to settle what the change should be | the newest few `orient` lists, one task each, starting at `design` |
-| `## Blocked` | something a session can check: a date, another piece of work, an upstream release | grouped under `### <timing>`; every timing listed; a due one earns the patrol option |
-| `## Watch` | an event only whoever meets it will know of: an incident happening again, a demand turning up | grouped under `### <timing>`; every timing listed; a stale one earns the patrol option; whoever meets the event moves the entry out |
+| `## Blocked` | something a session can check: a date, another piece of work, an upstream release | grouped under `### <timing>`; every timing listed; the patrol, always the last option, walks them |
+| `## Watch` | an event only whoever meets it will know of: an incident happening again, a demand turning up | grouped under `### <timing>`; every timing listed; the patrol walks them and asks keep-or-drop of a stale one; whoever meets the event moves the entry out |
 
 Whoever defers a thing picks its heading, because they know at that moment which
 of the four they are short of. A later reader has to guess.
@@ -55,8 +55,8 @@ session meets the event an `if:` names, that session moves the entry to
 `## Ready` or `## Needs a decision` itself and drops the `###` and the `if:` line.
 `## Ready` and `## Needs a decision`'s newest few are read aloud every time
 `/fankeel` offers a menu, so those get looked at whether anyone meant to or not;
-`orient` lists every Blocked and Watch timing each time, and `/fankeel` offers
-one patrol option whenever any is due or stale.
+`orient` lists every Blocked and Watch timing each time, and `/fankeel` always offers
+the patrol, `TODO 全表盤點`, as its last option.
 
 `node scripts/todo-check.js` enforces every one of these: a link that no longer
 resolves is an entry someone forgot to close, a `path:line` whose line is past
@@ -100,7 +100,7 @@ the reading is what gets scheduled.
 ## Blocked
 
 ### fankeel 功能全部完成
-after: fankeel 其餘功能都落地、使用者換到新機器測試. 09-27.
+after: fankeel 其餘功能都落地、使用者換到新機器測試. 09-28.
 
 - 〔audit〕Trovara 的 docs 搬到 preset：在新機器的 Trovara 跑 `docs-move.js` 出搬移表、核可後 apply，再跑一次分批 `/fankeel-audit` — [scripts/docs-move.js](scripts/docs-move.js).
 
@@ -110,7 +110,7 @@ on: 10-02 起，registry 的 `gates` 累積滿一週. 09-26.
 - 〔profile〕`suggest` 只推 `land.*`：`class.default`、`design.mockup` 可以從 gate 答案推 — [lib/profile.js](lib/profile.js).
 
 ### 受控 build/verify 實跑
-after: main 已 push（08c4ecf 起），新 terminal 更新插件到 0.76.0 以後，並跑過一次 stage.agents=all 的真實 task. 09-26.
+after: 跑過一次 stage.agents=all 的真實 task（main 含 08c4ecf、安裝版 0.80.0 兩半 09-28 已達成）. 09-28.
 
 - 〔stage-agents〕安裝版還沒這次改動、本 session 的 hook 也釘死在 0.74.0，都量不了：新 terminal 更新插件、`stage.agents` 設 all、跑真實 task，用 `ctx.js --by-stage` 與 `modelUsage` 讀 — [subagents.md](docs/90-agent/reference/subagents.md).
 - 〔stage-agents〕design 站跨輪對話已寫（`lib/stages.js` 的 `controlFor`）但沒實跑；build 每個 task 的提交要經 controller 兩回合，省不省 context 由同一次實跑的 `ctx.js --by-stage` 讀 — [lib/stages.js](lib/stages.js).
@@ -123,14 +123,14 @@ after: main 已 push（08c4ecf 起），新 terminal 更新插件到 0.76.0 以�
 - 〔stage-agents〕verify 的 mutation 要不要專屬 agent（工具或模型跟 fankeel-brain 不同才拆）；等受控 verify 實跑、k 重跑後再定 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 
 ### TokenBar 寫出真實序列
-after: `tokenbar-usage.jsonl` 有跨過一次 7d reset 的真實讀數；09-25 查到的 347 行全落在 09-22 的 15 分鐘內，是測試資料，09-23 起沒再寫. 09-26.
+after: `tokenbar-usage.jsonl` 有跨過一次 7d reset 的真實讀數；09-25 查到的 347 行全落在 09-22 的 15 分鐘內，是測試資料，09-23 起沒再寫. 09-28.
 
 - 〔quota〕7d 水位兩點差 4.7 倍，是延遲還是計別的：TokenBar 每次 render 已把 5h／7d 讀數 append 到 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`（TokenBar 的 `statusline.ps1`／`.sh`），拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
 
 ### knip 認得 CJS namespace
-upstream: knip 認得 CJS namespace property access. 09-26.
+upstream: knip 認得 CJS namespace property access. 09-28.
 
-- 〔build〕knip 的 unused exports 一格關著：6.37.0 仍認不得 CJS namespace 取用，開著回 156 個假陽性（09-18 重跑） — [docs/development.md](docs/01-guide/development.md).
+- 〔build〕knip 的 unused exports 一格關著：6.38.0 仍認不得 CJS namespace 取用，開著回 178 個假陽性（09-28 重跑） — [docs/development.md](docs/01-guide/development.md).
 
 ### AI CODING SECURITY 定案
 upstream: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃描模型. 09-26.
