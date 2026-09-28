@@ -8,6 +8,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const T = require('../assets/station/tour.js');
 const { TOUR_REEL, S } = require('../assets/station/tour-reel.js');
+const K = require('../assets/station/tour-reel-kit.js');
+const ST = require('../assets/station/tour-reel-stages.js');
 const { fakeCtx, sweep } = require('./tour-ctx.js');
 
 const STARTS = [0, 240, 480, 720, 960, 1200, 1440, 1680, 1920, 2160, 2400, 2760, 3120];
@@ -28,6 +30,27 @@ test('reel is registered: 3600 frames, thirteen shots each starting on a bar lin
     TOUR_REEL.beats.forEach((b) => assert.equal(b.at % 120, 0, b.label));
     assert.equal(TOUR_REEL.beats.filter((b) => b.stage).length, 7);
     assert.equal(TOUR_REEL.strings, S);
+});
+
+test('tour-reel-kit and tour-reel-stages export the pieces the shots share', () => {
+    assert.equal(K.S, S);
+    assert.equal(typeof K.t, 'function');
+    assert.equal(typeof K.rnd, 'function');
+    assert.equal(typeof K.inOut, 'function');
+    assert.equal(typeof K.decay, 'function');
+    assert.equal(typeof K.hex, 'function');
+    assert.equal(typeof K.field, 'function');
+    assert.equal(typeof K.shake, 'function');
+    assert.equal(typeof K.word, 'function');
+    assert.equal(typeof K.wipeText, 'function');
+    assert.equal(typeof K.popText, 'function');
+    assert.equal(typeof K.ring, 'function');
+    assert.equal(typeof K.burst, 'function');
+    assert.equal(typeof K.flood, 'function');
+    assert.equal(typeof K.stageFrame, 'function');
+    assert.equal(typeof K.PX, 'number');
+    assert.equal(typeof K.PY, 'number');
+    assert.equal(ST.SHOTS.length, 7);
 });
 
 test('the cues: a hit on every shot, a pluck on beats only, in order', () => {
