@@ -1057,3 +1057,55 @@ test('burnOf and clockOf are null for no record at all, and read their own field
   assert.equal(registry.burnOf({ burn: { survey: [1, 5] } }, 'survey'), 4);
   assert.equal(registry.clockOf({ clock: { survey: [1, 5] } }, 'survey'), 4);
 });
+
+test('markInflight assigns the next free group per stage, stores one mark as a bare object and two as an array, and clearInflight removes one at a time', () => {
+  const root = tmpRoot();
+  seed(root, SID, { active: true, stage: 'build' });
+  const g1 = registry.markInflight(root, SID, 'build', 'agent-1', 1);
+  assert.equal(g1, 1);
+  let data = registry.readSession(root, SID);
+  assert.deepEqual(data.inflight, { stage: 'build', at: data.inflight.at, group: 1, agentId: 'agent-1', lap: 1 });
+  assert.equal(Array.isArray(data.inflight), false, 'one mark stays a bare object');
+
+  const g2 = registry.markInflight(root, SID, 'build', 'agent-2', 1);
+  assert.equal(g2, 2, 'the next free group, not agent-1\'s');
+  data = registry.readSession(root, SID);
+  assert.equal(Array.isArray(data.inflight), true, 'a second concurrent mark promotes the field to a list');
+  assert.equal(registry.inflights(data).length, 2);
+  assert.deepEqual(registry.inflights(data).map((m) => m.agentId).sort(), ['agent-1', 'agent-2']);
+
+  assert.equal(registry.clearInflight(root, SID, 'agent-1'), true);
+  data = registry.readSession(root, SID);
+  assert.equal(Array.isArray(data.inflight), false, 'one left collapses back to a bare object');
+  assert.equal(data.inflight.agentId, 'agent-2');
+
+  assert.equal(registry.clearInflight(root, SID, 'agent-2'), true);
+  assert.equal(readEntryInflight(root, SID), undefined, 'the field is gone once none are left');
+});
+
+test('an explicit group is used as-is, and clearInflight with no agentId clears every mark (the shape every caller before this used)', () => {
+  const root = tmpRoot();
+  seed(root, SID, { active: true, stage: 'build' });
+  assert.equal(registry.markInflight(root, SID, 'build', 'a', 1, 5), 5);
+  assert.equal(registry.markInflight(root, SID, 'build', 'b', 1, 9), 9);
+  assert.equal(registry.inflights(registry.readSession(root, SID)).length, 2);
+  assert.equal(registry.clearInflight(root, SID), true);
+  assert.equal(readEntryInflight(root, SID), undefined);
+});
+
+test('a group resets per lap: group 1 is free again once lap 1\'s only mark clears, even with a mark already running at lap 2', () => {
+  const root = tmpRoot();
+  seed(root, SID, { active: true, stage: 'build' });
+  registry.markInflight(root, SID, 'build', 'a', 2);
+  assert.equal(registry.markInflight(root, SID, 'build', 'b', 1), 1, 'lap 1 has no marks yet, regardless of lap 2');
+});
+
+test('inflights reads a legacy single-object mark the same as a fresh one, and an absent field as empty', () => {
+  assert.deepEqual(registry.inflights({ inflight: { stage: 'survey', at: 1, agentId: 'x' } }), [{ stage: 'survey', at: 1, agentId: 'x' }]);
+  assert.deepEqual(registry.inflights({}), []);
+  assert.deepEqual(registry.inflights(null), []);
+});
+
+function readEntryInflight(root, sessionId) {
+  return registry.readSession(root, sessionId).inflight;
+}
