@@ -675,6 +675,24 @@ test('a build brain asks for a commit only when none of its implementers is runn
   assert.doesNotMatch(file, /first for each task or file/);
 });
 
+// docs/90-agent/plans/2026-09-28-spawndepth-worktree-design.md §2: a build
+// brain sends every implementer into its own worktree, names that worktree at
+// the head of the task's block, and re-dispatches a conflict once on its own.
+test('a build brain sends implementers into worktrees, names the worktree in the commit file, and re-dispatches a conflict once', () => {
+  const build = briefFor('build');
+  assert.match(build, /Send every implementer with `isolation: "worktree"`/);
+  assert.match(build, /the first line of its task's block is `worktree <path>`/);
+  assert.match(build, /`conflict <paths>`[^\n]*dispatch it once more, fresh, on the new HEAD, without asking\. The same task conflicting a second time: stop the build/);
+  assert.match(build, /`ledger\.js --plan <f> ready --worktree`/);
+  assert.match(build, /`kept <path> — <why>`/);
+  assert.match(build, /an implementer \(`general-purpose`, on the model named in the task Dispatch line, with `isolation: "worktree"`\)/);
+  assert.doesNotMatch(briefFor('verify'), /isolation: "worktree"/);
+  const file = fs.readFileSync(path.join(__dirname, '..', 'agents', 'fankeel-brain.md'), 'utf8');
+  assert.match(file, /`ledger\.js --plan <f> ready --worktree`/);
+  assert.match(file, /`isolation: "worktree"`/);
+  assert.match(file, /Do not run `git worktree`/);
+});
+
 test('a build brain is told a user task is not its to send', () => {
   const root = tmp();
   seedProfile(root, { 'stage.agents': ['build'] });

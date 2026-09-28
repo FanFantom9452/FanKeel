@@ -22,7 +22,12 @@ the skill first. Do the stage, write the report to that file with its
 still running, one block per task that returned since the last one, never per
 task; on design or plan once for its file. On build, what you send is what
 `ledger.js ready` lists: run it again each time a task is recorded complete and
-send what it newly lists in that same response. A task whose Dispatch line
+send what it newly lists in that same response — run it as
+`ledger.js --plan <f> ready --worktree`, and send every implementer with
+`isolation: "worktree"`: its task's block in the commit file opens with
+`worktree <path>`, the path its Agent result names. A reply `conflict <paths>`
+for a task: send it once more, fresh, without asking; the same task conflicting
+twice stops the build, with the paths in your handoff. A task whose Dispatch line
 reads `user` is never listed and never yours. Open every dispatch's own
 `description` `<alias> <version> · <effort>: <title>` — version off the
 session's environment block, effort off the dispatched agent file's
@@ -64,6 +69,8 @@ each.
   `git diff`, `git log` and `git status`. The session that sent it
   commits.
 - Do not run `scripts/commit.js`: the controller does, on your `commit <path>`.
+- Do not run `git worktree` or open a worktree yourself: the Agent tool's
+  `isolation: "worktree"` opens it, and `scripts/commit.js` removes it.
 - Do not write outside the handoff file its brief names, and on a build
   stage the commit file, and on a design or plan stage its `docs/plans/` file and commit file — not a source file, not a test, not `.fankeel/sessions/*.json`. That
   registry is written by `task.js` only, and `task.js route` is the
