@@ -139,6 +139,16 @@ that needed `tokens` and was not told it lived in `lib/context.js` ran
 read — and two tasks reading one file do not conflict. Only the first
 backticked token on the line is the path, as for the other two kinds.
 
+A `Modify:` entry may end in a line range, `path:a-b` — a file over
+`READ_CAP` lines (1500, `lib/plantasks.js`) must be written this way,
+counting only that span rather than the file whole. A task that cannot name
+a range narrow enough to fit under the cap has to be split rather than one
+that gets to skip it. `ledger.js lint` counts the range, not the file, and
+treats `path:a-b` as `path` everywhere a shared file is asked about — a
+`conflict()` between two tasks, a design's file table, a fence naming its
+file. More than three `Modify:` entries (`FILE_CAP`, 3) is the same finding
+by a different measure.
+
 **And it decides how they go out.** `lib/plantasks.js` groups tasks by disjoint
 `**Files:**` and by whether one consumes what another produces, then gives each
 group a dispatch surface: one task is `agent`, two are `agents` in one response,
@@ -185,6 +195,19 @@ not transcribed.
 **Dispatch:** user — run `/doctor` in this session and say when it is done; no
 subagent can run a slash command.
 ```
+
+A fifth form goes below the floor rather than above it, so it carries no
+`— why`:
+
+```markdown
+**Dispatch:** implementer, haiku — a mechanical rename.
+```
+
+`implementer, haiku` passes `ledger.js lint` only when both hold: its
+`Modify:` files read at most `READ_CAP / 2` lines, and every numbered step
+whose text begins `Write` sits above a real code fence, one for one. Either
+miss and lint lists the task by number; a task that cannot clear both stays
+on the floor.
 
 Four rules about that line:
 
