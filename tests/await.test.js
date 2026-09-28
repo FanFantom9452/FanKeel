@@ -242,6 +242,33 @@ test('await.js clears only the lost agent\'s own in-flight mark, leaving a sibli
     assert.deepEqual(after.map((m) => m.agentId), ['a2'], 'a1\'s mark is gone, a2\'s sibling mark survives');
 });
 
+// docs/90-agent/plans/2026-09-28-agent-lifetime-design.md §1: fankeel-build's
+// own rule has a group brain "return with no gate once its own tasks are
+// done" — no gate ever asked means hooks/gate.js's clearInflight never fires
+// for it, so its mark must clear right here, the moment its own `-g<n>`
+// handoff is found.
+test('await.js clears a build group brain\'s own in-flight mark once its handoff lands', async () => {
+    const f = fixture({ inflight: { stage: 'build', at: 1, agentId: 'a1', group: 1 } });
+    const g1 = path.join(f.task, 'build-g1.md').split(path.sep).join('/');
+    at(g1, Date.now());
+    const out = await awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '0.5'], f.env);
+    assert.ok(out.text.includes('handoff ' + g1), out.text);
+    assert.deepEqual(registry.inflights(registry.readSession(f.root, SID)), [], 'a1\'s mark is gone once its own group handoff hands back');
+});
+
+// The stage's own plain, gate-bearing handoff (no group) is the opposite
+// case: hooks/gate.js clears that mark, and only once the controller's gate
+// is actually confirmed, so a SendMessage retry to a still-pending agent
+// still finds its mark. await.js must leave it standing.
+test('await.js leaves the plain, non-group handoff\'s in-flight mark standing for hooks/gate.js', async () => {
+    const f = fixture({ inflight: { stage: 'build', at: 1, agentId: 'a1' } });
+    at(path.join(f.task, 'build.md'), Date.now());
+    const out = await awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '0.5'], f.env);
+    assert.match(out.text, /^handoff /, out.text);
+    const after = registry.inflights(registry.readSession(f.root, SID));
+    assert.deepEqual(after.map((m) => m.agentId), ['a1'], 'the plain handoff\'s mark is untouched: only hooks/gate.js clears it');
+});
+
 test('a stage agent starting stamps the lap its brief named on the in-flight mark', () => {
     const f = fixture({ moves: [['build', 1], ['build', 2]] });
     const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'hooks', 'brief.js')], {
