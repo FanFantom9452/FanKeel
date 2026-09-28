@@ -3468,15 +3468,18 @@
             a.to += r.split ? r.split.output || 0 : 0;
             a.ci += r.cost ? r.cost.input || 0 : 0;
             a.co += r.cost ? r.cost.output || 0 : 0;
+            a.requests += r.requests || 0;
+            if ((r.peak || 0) > a.peak) a.peak = r.peak || 0;
             return a;
-        }, { c: 0, k: 0, s: 0, ti: 0, to: 0, ci: 0, co: 0 });
+        }, { c: 0, k: 0, s: 0, ti: 0, to: 0, ci: 0, co: 0, requests: 0, peak: 0 });
     }
     function numCells(t, unpriced, time) {
         return '<td class="r">' + (time || dur(t.s)) + '</td><td class="r">' + comma(t.k) + 'k</td><td class="r"'
             + (unpriced ? ' title="' + loc('det.priceListDoesNotKnow', '價目表不認得：{u}', { u: esc(unpriced) }) + '"' : '') + '>'
             + (unpriced && !t.c ? 'unpriced' : cents(t.c)) + '</td>'
             + '<td class="r">' + tokens(t.ti || 0) + '</td><td class="r">$' + (t.ci || 0).toFixed(2) + '</td>'
-            + '<td class="r">' + tokens(t.to || 0) + '</td><td class="r">$' + (t.co || 0).toFixed(2) + '</td>';
+            + '<td class="r">' + tokens(t.to || 0) + '</td><td class="r">$' + (t.co || 0).toFixed(2) + '</td>'
+            + '<td class="r">' + tokens(t.peak || 0) + '</td><td class="r">' + comma(t.requests || 0) + '</td>';
     }
     // `isFinite(null)` is true, and a dispatch that has not come back carries a
     // null `back`; every time below is asked this instead.
@@ -3681,7 +3684,7 @@
         var gap = function () {
             var end = null;
             (x.points || []).forEach(function (p) { if (isNum(p.t) && p.t < since && (end === null || p.t > end)) end = p.t; });
-            return '<tr class="gaprow"><td colspan="9">session ' + (end !== null ? loc('disp.endedAtB', '<b>{t}</b> 結束，', { t: clock(end) }) : '')
+            return '<tr class="gaprow"><td colspan="11">session ' + (end !== null ? loc('disp.endedAtB', '<b>{t}</b> 結束，', { t: clock(end) }) : '')
                 + loc('disp.resumedSameIdLost', '<b>{t}</b> 以同一個 session id 接回來；結束前派出、還沒回來的 agent 標成 lost', { t: clock(since) }) + '</td></tr>';
         };
         var body = order.map(function (k) {
@@ -3738,8 +3741,9 @@
         var chart = vw === 'rows' ? '' : dxChartHtml(x, s, order, groups, fam, pass, all, ret, (ui && ui.metric) || 'c');
         var rows = vw === 'chart' ? '' : '<table class="x dx"><colgroup><col><col style="width:50px"><col style="width:54px"><col style="width:54px">'
             + '<col style="width:48px"><col style="width:54px"><col style="width:48px"><col style="width:54px">'
-            + '<col style="width:58px"></colgroup><thead><tr><th>' + loc('disp.dispatch', '派工') + '</th><th class="r">' + loc('disp.timeSpent', '耗時') + '</th><th class="r">tokens</th>'
+            + '<col style="width:54px"><col style="width:48px"><col style="width:58px"></colgroup><thead><tr><th>' + loc('disp.dispatch', '派工') + '</th><th class="r">' + loc('disp.timeSpent', '耗時') + '</th><th class="r">tokens</th>'
             + '<th class="r">USD</th><th class="r">input</th><th class="r">input USD</th><th class="r">output</th><th class="r">output USD</th>'
+            + '<th class="r">' + loc('disp.contextPeak', 'context 峰值') + '</th><th class="r">' + loc('disp.requests', '請求數') + '</th>'
             + '<th class="r rc" title="' + loc('disp.charsReturnedHint', '這次派工的結果進入主 context 的字元數') + '">' + loc('disp.charsReturned', '回傳字元') + '</th></tr></thead>'
             + '<tbody>' + body + '</tbody><tfoot><tr><td>' + loc('disp.nAgents2', '{n} 個 agent', { n: x.rows.length }) + '</td>' + numCells(all, '')
             + '<td class="r rc">' + comma(ret) + '</td></tr></tfoot></table>';
@@ -3750,8 +3754,9 @@
         if (vw === 'chart' && live.length) {
             rows = '<table class="x dx dxlive"><colgroup><col><col style="width:50px"><col style="width:54px"><col style="width:54px">'
                 + '<col style="width:48px"><col style="width:54px"><col style="width:48px"><col style="width:54px">'
-                + '<col style="width:58px"></colgroup><thead><tr><th>' + loc('disp.runningNow', '正在跑 {n}', { n: live.length }) + '</th><th class="r">' + loc('disp.timeSpent', '耗時') + '</th><th class="r">tokens</th>'
+                + '<col style="width:54px"><col style="width:48px"><col style="width:58px"></colgroup><thead><tr><th>' + loc('disp.runningNow', '正在跑 {n}', { n: live.length }) + '</th><th class="r">' + loc('disp.timeSpent', '耗時') + '</th><th class="r">tokens</th>'
                 + '<th class="r">USD</th><th class="r">input</th><th class="r">input USD</th><th class="r">output</th><th class="r">output USD</th>'
+                + '<th class="r">' + loc('disp.contextPeak', 'context 峰值') + '</th><th class="r">' + loc('disp.requests', '請求數') + '</th>'
                 + '<th class="r rc"></th></tr></thead><tbody>'
                 + live.map(function (r) { return agentRow(r, 'ag', '', x, s, u); }).join('') + '</tbody></table>';
         }
@@ -3773,7 +3778,8 @@
     // row's label carries the band, each segment its agent. An agent the
     // state filter leaves out is dimmed, not dropped.
     function dxChartHtml(x, s, order, groups, fam, pass, all, ret, m) {
-        var FMT = { c: cents, k: function (v) { return comma(v) + 'k'; }, s: dur, r: function (v) { return loc('disp.nChars2', '{v} 字', { v: comma(v) }); } };
+        var FMT = { c: cents, k: function (v) { return comma(v) + 'k'; }, s: dur, r: function (v) { return loc('disp.nChars2', '{v} 字', { v: comma(v) }); },
+            peak: tokens, requests: comma };
         var f = FMT[m] ? FMT[m] : (m = 'c', FMT.c);
         var nums = function (t) {
             return cents(t.c) + ' · ' + comma(t.k) + 'k token · ' + dur(t.s) + ' · input ' + tokens(t.ti || 0) + ' $' + (t.ci || 0).toFixed(2)
@@ -3811,9 +3817,10 @@
             : MODEL_KEYS.filter(function (k) { return fams[k]; }).map(function (k) {
                 return '<span><i class="sw" style="background:var(--m-' + k + ')"></i>' + k + '</span>';
             }).join('');
-        var DXM = { c: loc('disp.cost2', '花費'), k: 'token', s: loc('disp.timeSpent2', '耗時'), r: loc('disp.charsReturned2', '回傳字元') };
+        var DXM = { c: loc('disp.cost2', '花費'), k: 'token', s: loc('disp.timeSpent2', '耗時'), r: loc('disp.charsReturned2', '回傳字元'),
+            peak: loc('disp.contextPeak', 'context 峰值'), requests: loc('disp.requests', '請求數') };
         return '<div class="dxc"><div class="dxch">'
-            + segHtml('dxm', [['c', DXM.c], ['k', DXM.k], ['s', DXM.s], ['r', DXM.r]], m)
+            + segHtml('dxm', [['c', DXM.c], ['k', DXM.k], ['s', DXM.s], ['r', DXM.r], ['peak', DXM.peak], ['requests', DXM.requests]], m)
             + '<span class="dxsum" title="' + esc(loc('disp.nAgentsTotal', '{n} 個 agent 合計\n', { n: x.rows.length }) + nums(all) + loc('disp.newlineReturned', '\n回傳 {v}', { v: loc('disp.nCharsSuffix', '{n} 字元', { n: comma(ret) }) })) + '">' + loc('disp.totalB', '合計 <b>{v}</b>', { v: f(total) }) + '</span>'
             + '<span class="spacer"></span><span class="lane-legend">' + legend + '</span></div>'
             + '<div class="dxg" role="list" aria-label="' + loc('disp.perDispatchMetric', '每次派工的{m}', { m: DXM[m] }) + '">' + body + '</div>'

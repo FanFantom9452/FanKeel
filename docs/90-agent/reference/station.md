@@ -362,7 +362,11 @@ dispatch calls in one response) or `workflow` on it, and one row per agent: its
 state, its wall-clock from its own transcript, its tokens, and its dollars
 priced from its own per-kind counts — `workflow_agent.tokens` is one undivided
 number and cannot be priced — with the price table's `verified` date beside
-them and `unpriced` where the table does not know the model. Every workflow run
+them and `unpriced` where the table does not know the model. Two more columns
+follow the dollars: the largest context a single one of its requests carried,
+and how many requests it made — every band and the footer sum the request
+column the way they sum every other, while the peak column takes the largest
+of the group rather than a sum. Every workflow run
 the session made is read, not only the newest. A workflow folds into one row
 per phase until the phase is opened, each phase row carrying a dot per agent
 in its state's colour and how many are in each state. The last column is the

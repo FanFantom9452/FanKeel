@@ -716,6 +716,8 @@
             'disp.timeSpent': 'Time spent',
             'disp.charsReturnedHint': "the character count of this dispatch's result reaching the main context",
             'disp.charsReturned': 'Chars returned',
+            'disp.contextPeak': 'Context peak',
+            'disp.requests': 'Requests',
             'disp.nAgents2': '{n} agents',
             'disp.runningNow': 'Running now {n}',
             'disp.reconciliationAndNotes': 'Reconciliation and notes',
