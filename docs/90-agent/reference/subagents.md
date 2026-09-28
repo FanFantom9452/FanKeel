@@ -678,10 +678,27 @@ short sha it was read at. `scripts/context.js add "<fact>" --at <path:line>
 --session <id>` is the only writer — any subagent may call it — and keeps the
 newest 40, dropping an exact duplicate and replacing a fact read again at a
 new sha. `context.js show` marks a line whose sha is not HEAD `(舊)`. The
-ordinary brief inlines the file's content — the way the `reads:` block above
-is already copied inline — rather than only naming its path; whether that
-saves anything is measured, not assumed —
-`docs/90-agent/reports/2026-09-26-context-md.md`.
+ordinary brief inlines the file's content — `renderBrief` and `renderBrainBrief`
+in `lib/render.js` paste it in whole rather than naming its path — so a
+subagent no longer has to `Read` the file itself before using what it holds.
+
+Build now dispatches one `fankeel:fankeel-brain` per disjoint `ledger.js
+groups` group, in parallel, each ending with its own group rather than one
+brain working every task in turn; `markInflight`/`clearInflight` in
+`lib/registry.js` key each entry by `agentId` so more than one can be in
+flight under the same session at once, and the handoff and commit files each
+group writes carry that group's number so two brains never write the same
+one.
+
+A subagent-only budget hook nudges an implementer at `SOFT` tokens of its own
+context (read from its own transcript) to write a relay file under
+`.fankeel/build/` and hand off, and refuses every tool but that write once it
+reaches `HARD` — the brain that receives a relay path dispatches a fresh
+agent with the shared prefix (`ledger.js brief --group <N> --prefix`) plus
+that relay file, rather than letting one agent's own context run past either
+line. A plan's task size is capped the same way, at read: `lint()` refuses a
+task whose declared `Modify:` files add up past `READ_CAP` lines or that name
+more than `FILE_CAP` of them.
 
 ### Which model a stage agent runs on, what lets it write, and what comes before the switch
 
@@ -768,16 +785,19 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   (they go to an implementer) and questions (they go in the gate at the end); consent
   at the start, a worktree, a `TODO.md` line and a resumed implementer are not covered.
 - **A second agent.** Every user prompt re-injects the controller's "dispatch one
-  agent" line. `hooks/brief.js` now writes `inflight` — `{ stage, at, agentId?, lap? }`
-  ([registry.md](registry.md) has the field) — on the session's record when a
-  `fankeel-brain` starts, and while it names the
-  current stage the controller's block carries one line before the dispatch line:
-  that agent is already running, SendMessage it, and dispatch another only if
-  SendMessage says it is gone (`controlFor` in `lib/stages.js`). `hooks/gate.js`
-  clears it once the handoff's gate arrives; `.claude-plugin/plugin.json` has no
-  `SubagentStop` hook, so nothing else does. `SubagentStart` fires again on every
-  `SendMessage` delivered to a running or resumed agent — ten times for one survey
-  agent on 2026-09-27 — and each re-marks it, so the mark says an agent was
+  agent" line. `hooks/brief.js` now writes `inflight` — one mark `{ stage, at,
+  agentId?, lap?, group? }` ([registry.md](registry.md) has the field), or, once a
+  build's groups run more than one brain at once, an array of them, one per
+  concurrently-running group — on the session's record when a `fankeel-brain`
+  starts. `controlFor` in `lib/stages.js` reads every mark for the current stage
+  (`marksOf`) and puts one "already running" line before the dispatch line per
+  mark — naming its group when the mark carries one — telling the controller to
+  SendMessage that agent and dispatch another for that group only if SendMessage
+  says it is gone. `hooks/gate.js` clears a mark by `agentId` once its handoff's
+  gate arrives, leaving any other group's mark standing; `.claude-plugin/plugin.json`
+  has no `SubagentStop` hook, so nothing else does. `SubagentStart` fires again on
+  every `SendMessage` delivered to a running or resumed agent — ten times for one
+  survey agent on 2026-09-27 — and each re-marks it, so a mark says an agent was
   reached since the last matching gate, not that one is working, and
   `hooks/resume.js` does not read it. An agent that died leaves its mark until the
   next gate or the SendMessage fallback.

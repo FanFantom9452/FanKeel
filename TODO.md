@@ -95,16 +95,6 @@ on: 10-02 起，registry 的 `gates` 累積滿一週. 09-26.
 
 - 〔profile〕`suggest` 只推 `land.*`：`class.default`、`design.mockup` 可以從 gate 答案推 — [lib/profile.js](lib/profile.js).
 
-### 交接後 context 仍過 400k
-after: 交接選項（簡報 §6.2）實施後 context 仍常過 400k. 09-26.
-
-- 〔session〕極端版：driver 逐站開 headless session、狀態走檔案、關卡問題走 station，每站從零開始；缺總輪數、花費、時間上限與回報 `status` 欄位 — [scripts/station.js](scripts/station.js).
-
-### brain 的 context 撐不住
-after: `scripts/ctx.js` 量到 build 或 verify 的站 agent 自己的 context 過 400k（`lib/context.js` 的線）. 09-26.
-
-- 〔stage-agents〕站 agent 拿不到 `Workflow` 工具，所以 build 那一站的 workflow 要由 script 從 plan 的分組產生、主控用 `scriptPath` 開；分組與 surface 由 `ledger.js groups` 算好了 — [lib/plantasks.js](lib/plantasks.js).
-
 ### 受控 build/verify 實跑
 after: main 已 push（08c4ecf 起），新 terminal 更新插件到 0.76.0 以後，並跑過一次 stage.agents=all 的真實 task. 09-26.
 
@@ -179,3 +169,8 @@ if: 某個專案的程式碼大到 grep 加 read 找不到跨檔關係. 09-27.
 if: `the chosen card animates, and under reduced motion nothing is running` 在整套裡再紅一次. 09-27.
 
 - 〔tests〕09-27 四次整套紅兩次（2072/2073）、單跑 3/3 綠；之後整套 10 次全綠，沒抓到失敗訊息，紀錄在 `.fankeel/build/2026-09-27-five-items/flake.txt` — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
+
+### build 五個 task 以上
+if: 下一次有 5 個以上 task 的 build 開跑. 09-28.
+
+- 〔station〕看第 7 段加的 station 欄位：沒有任何 subagent 的 context 峰值超過 250k（基準 f44b1c61 的 544k）、最貴的單一 subagent 佔 subagent 總花費低於 15%（基準 31%） — [station.md](docs/90-agent/reference/station.md).
