@@ -569,7 +569,7 @@ test('the init block carries the station line when it is given one, and stays un
 
 test('init offers ## Blocked and ## Watch one shared option, only when orient marks due or stale', () => {
   const out = renderInit({ sessionId: MINE });
-  assert.match(out, /`## Blocked`\/`## Watch` share one option when `orient` marks any `due` or `stale`;/);
+  assert.match(out, /the last option is always the patrol, labelled `TODO 全表盤點`, whenever `orient` prints it;/);
   assert.doesNotMatch(out, /## Waiting/);
 });
 

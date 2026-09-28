@@ -483,8 +483,8 @@ const TODO_ENTRY_WIDTH = 100;
 // so this is not a listing of the section — it is the subset init can turn
 // into options, ordered by which entry was touched most recently, plus the
 // count of what got left out rather than a silent drop of it.
-// Blocked and Watch are listed in full, one line per timing, and share one
-// patrol option only while a Blocked timing is due or a Watch timing is stale.
+// Blocked and Watch are listed in full, one line per timing, and the patrol,
+// `TODO 全表盤點`, is always the last option while TODO.md has an entry.
 //
 // null when there is nothing to say: no TODO.md at `dir`, or it could not be
 // read. The `readFileSync` below is the only check that needs to exist for
@@ -527,12 +527,12 @@ function todoBlock(dir, now) {
     const watchCount = all.filter((e) => e.section === 'Watch').length;
     const dueCount = blocked.filter((t) => t.due).length;
     const staleCount = watch.filter((t) => t.stale).length;
-    const patrol = dueCount + staleCount > 0;
+    // The patrol is the standing last option, `TODO 全表盤點`: it walks every
+    // entry, so it is offered whenever there is one, due or stale or neither.
+    const patrol = all.length > 0;
     const needsCount = needs.length;
     // AskUserQuestion takes four. Ready's section is one option when it has
-    // entries, and the patrol is one more only while a Blocked timing is due
-    // or a Watch timing is stale — one slot for both, and Watch alone, never
-    // due, takes none.
+    // entries, and the patrol is always the last one while TODO.md has any.
     const limit = 4 - (readyCount > 0 ? 1 : 0) - (patrol ? 1 : 0);
     const shown = ordered.slice(0, limit);
 
@@ -569,8 +569,8 @@ function todoBlock(dir, now) {
         lines.push('  Waiting ' + waitingCount + (waitingCount === 1 ? ' entry' : ' entries')
             + ' — retired heading, not offered; run todo-check --migrate');
     }
-    lines.push('  patrol: ' + (patrol ? dueCount + ' due + ' + staleCount + ' stale, offer one option'
-        : 'none due or stale, not offered'));
+    lines.push('  patrol: ' + (patrol ? 'always offered last as "TODO 全表盤點" — ' + dueCount + ' due + ' + staleCount + ' stale'
+        : 'TODO.md has no entries, not offered'));
     const audit = auditLine(dir, now);
     if (audit) lines.push(audit);
     return lines;
