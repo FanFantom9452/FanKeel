@@ -1,0 +1,22 @@
+[
+  {
+    "agent_id": "a994590b20dcad134",
+    "agent_type": "nester",
+    "atHook": false,
+    "depthAtHook": null,
+    "existsAfter": true,
+    "depthAfter": 1,
+    "parentAfter": null,
+    "mtimeMinusHookMs": 87
+  },
+  {
+    "agent_id": "a6f74f5f8185413fb",
+    "agent_type": "leaf",
+    "atHook": false,
+    "depthAtHook": null,
+    "existsAfter": true,
+    "depthAfter": 2,
+    "parentAfter": "a994590b20dcad134",
+    "mtimeMinusHookMs": 36
+  }
+]

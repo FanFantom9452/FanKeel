@@ -1,0 +1,33 @@
+date: 2026-09-28T07:59:01Z
+HEAD: 55a06982bcb57a6d00fd598ad3b4a1ac5dff173a
+porcelain:
+ M tests/registry.test.js
+?? docs/90-agent/plans/2026-09-28-three-leftovers-design.md
+?? docs/90-agent/plans/2026-09-28-three-leftovers.md
+?? docs/90-agent/reports/evidence/2026-09-28-spawndepth-timing/
+claude: 2.1.283 (Claude Code)
+record.js md5: 36624c097c3173549676376649f5dbfc
+run.sh md5: c60fbe70ceb2907cb489f261381b5ce4
+claude exit 0
+[
+  {
+    "agent_id": "a994590b20dcad134",
+    "agent_type": "nester",
+    "atHook": false,
+    "depthAtHook": null,
+    "existsAfter": true,
+    "depthAfter": 1,
+    "parentAfter": null,
+    "mtimeMinusHookMs": 87
+  },
+  {
+    "agent_id": "a6f74f5f8185413fb",
+    "agent_type": "leaf",
+    "atHook": false,
+    "depthAtHook": null,
+    "existsAfter": true,
+    "depthAfter": 2,
+    "parentAfter": "a994590b20dcad134",
+    "mtimeMinusHookMs": 36
+  }
+]
