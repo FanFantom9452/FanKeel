@@ -2,7 +2,8 @@
 
 An index. One bullet per deferred thing, short enough to scan, with any detail
 behind it living in a file in this repository that the bullet links to. Whoever
-finishes the work removes the entry in the same change.
+finishes the work removes the entry and records its completion on
+docs/90-agent/reference/todo-completions.md in the same change.
 
 It is read twice. Once by whoever scans the list, and once by `/fankeel`, which
 offers these entries clustered as the task options when a session starts. A
@@ -71,7 +72,9 @@ timing is one nobody said what it waits for, a timing with no stamp is one nobod
 can tell a fresh deferral from a forgotten one, a timing with no condition is one
 nobody is waiting for, a condition under the wrong heading is a misfiled one, an
 `on:` with no `MM-DD` after it is a date nobody can compare, a timing with no
-entries is waiting for nothing, and a title over 28 columns is a sentence where a
+entries is waiting for nothing, a deletion with no matching record on
+docs/90-agent/reference/todo-completions.md is one nobody recorded the outcome
+of, and a title over 28 columns is a sentence where a
 name belongs.
 
 It also prints, without failing the run, every Blocked timing that is due and
