@@ -1,8 +1,9 @@
 // assets/tune/overlay.js: injected by `scripts/tune.js serve` into every page
 // it sends. A plain click always belongs to the page. Holding Alt outlines the
 // element under the pointer, Alt+wheel walks the outline out to its parents
-// (and back), and Alt+click selects that element, any element, and docks a
-// panel under it that lists its ancestors; a request goes to POST
+// (and back), and Alt+click toggles that element in or out of a selection,
+// and letting Alt go docks one panel under the first of them that lists its
+// ancestors; a request goes to POST
 // /__live/request; the server's events reload the page, and the state that
 // caused the reload is shown on the element afterwards. Its own elements all
 // carry `fk-live-` classes and never take `data-block`.
@@ -35,8 +36,12 @@
         while (node && node.nodeType === 1 && node !== stop && out.length < 8) { out.push(node); node = node.parentNode; }
         return out;
     }
+    // The Alt selection: a second Alt+click on an element takes it back out.
+    function toggleIn(list, item) {
+        return list.indexOf(item) < 0 ? list.concat([item]) : list.filter(function (x) { return x !== item; });
+    }
     if (typeof document === 'undefined') {
-        if (typeof module !== 'undefined') module.exports = { selectorOf: selectorOf, labelOf: labelOf, pathOf: pathOf };
+        if (typeof module !== 'undefined') module.exports = { selectorOf: selectorOf, labelOf: labelOf, pathOf: pathOf, toggleIn: toggleIn };
         return;
     }
 
@@ -150,6 +155,11 @@
     var under = null;
     var hover = null;
     var trail = [];
+    // picks: what Alt+click selected while this Alt is held, each with the
+    // dashed box that marks it; the panel opens when Alt is let go.
+    var picks = [];
+    var pickBoxes = [];
+    var firstInner = [];
 
     function show(target) {
         box.style.display = tag.style.display = '';
@@ -211,6 +221,13 @@
         // when this Alt was the overlay's, keep it.
         if (altUsed) ev.preventDefault();
         drop();
+        if (picks.length) {
+            var chosenNow = picks;
+            pickBoxes.forEach(function (b) { b.remove(); });
+            picks = [];
+            pickBoxes = [];
+            open(chosenNow[0], chosenNow.length === 1 ? firstInner : [], chosenNow.length > 1 ? chosenNow : null);
+        }
     }, true);
     window.addEventListener('blur', drop);
 
@@ -260,10 +277,14 @@
             picked = hover;
             inner = trail.slice();
         }
-        if (pickable(picked)) open(picked, inner);
+        if (!pickable(picked)) return;
+        if (!picks.length) firstInner = inner;
+        picks = toggleIn(picks, picked);
+        pickBoxes.forEach(function (b) { b.remove(); });
+        pickBoxes = picks.map(function (p) { var b = el('div', 'fk-live-box fk-live-wait'); place(b, p, 0); return b; });
     }, true);
 
-    function open(picked, inner) {
+    function open(picked, inner, many) {
         if (panel) panel.remove();
         panel = null;
         chosen = picked;
@@ -272,7 +293,7 @@
         show(chosen);
         // Outermost first: the ancestors of the chosen element, then the
         // elements Alt+wheel walked out of, down to the one first pointed at.
-        var steps = pathOf(chosen, doc.body).reverse().concat(inner.slice().reverse());
+        var steps = many || pathOf(chosen, doc.body).reverse().concat(inner.slice().reverse());
         panel = el('div', 'fk-live-panel',
             '<header><span>改寫 <b></b></span><kbd>Esc 關閉</kbd></header>'
             + '<nav class="fk-live-path"></nav>'
@@ -298,6 +319,7 @@
             show(n);
         }
         pick(chosen);
+        if (many) title.textContent = many.length + ' 塊：' + many.map(labelOf).join('、');
         var r = chosen.getBoundingClientRect();
         panel.style.left = Math.max(0, Math.min(r.left + window.scrollX, window.scrollX + doc.documentElement.clientWidth - panel.offsetWidth)) + 'px';
         var below = r.bottom + 8 + panel.offsetHeight <= window.innerHeight;
@@ -310,17 +332,19 @@
         go.addEventListener('click', function () {
             var text = area.value.trim();
             if (!text) return area.focus();
-            send(text, chosen, go, note);
+            send(text, chosen, go, note, many);
             return undefined;
         });
     }
 
-    function send(note, target, go, where) {
+    function send(note, target, go, where, many) {
         go.disabled = true;
+        var payload = { page: location.pathname, note: note, block: blockName(target), selector: selectorOf(target, doc.body), classes: [].slice.call(target.classList).filter(function (c) { return c.indexOf('fk-live-') !== 0; }), text: String(target.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80) };
+        if (many) payload.blocks = many.map(blockName).filter(Boolean);
         fetch('/__live/request', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ page: location.pathname, note: note, block: blockName(target), selector: selectorOf(target, doc.body), classes: [].slice.call(target.classList).filter(function (c) { return c.indexOf('fk-live-') !== 0; }), text: String(target.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80) })
+            body: JSON.stringify(payload)
         })
             .then(function (res) {
                 if (!res.ok) return res.text().then(function (why) { throw new Error(why || 'HTTP ' + res.status); });

@@ -47,7 +47,7 @@ test('a plain click reaches the page: the click handler returns before anything 
 
 test('the request carries selector, classes, text and the nearest block', () => {
     const text = fs.readFileSync(SRC, 'utf8');
-    const call = /fetch\('\/__live\/request'[\s\S]*?\}\)\s*\}\)/.exec(text);
+    const call = /var payload = \{[\s\S]*?\};/.exec(text);
     assert.ok(call, 'no request is sent');
     for (const k of ['page:', 'note:', 'block:', 'selector:', 'classes:', 'text:']) assert.ok(call[0].includes(k), 'the request has no ' + k);
     assert.match(text, /\.slice\(0, 80\)/);
@@ -72,4 +72,12 @@ test('selectorOf, labelOf and pathOf describe any element, stopping at an id or 
     assert.equal(labelOf(b2), 'b.rs.big');
     assert.equal(labelOf(main), 'main#app');
     assert.deepEqual(pathOf(b2, body).map(labelOf), ['b.rs.big', 'div.card', 'main#app']);
+});
+
+test('toggleIn adds an element once and a second toggle removes it', () => {
+    const { toggleIn } = require('../assets/tune/overlay.js');
+    const a = {}, b = {};
+    assert.deepEqual(toggleIn([], a), [a]);
+    assert.deepEqual(toggleIn([a], b), [a, b]);
+    assert.deepEqual(toggleIn([a, b], a), [b]);
 });

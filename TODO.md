@@ -81,8 +81,6 @@ the reading is what gets scheduled.
 
 ## Ready
 
-- 〔tune〕逐塊調支援多選：按住 Alt 時 Alt+click 加入／移出選取，放開 Alt 才開一個對話窗列出全部；request 帶 `blocks[]`（單選照舊），`tune.js done` 接受落在任一選取 block 內的改動 — [assets/tune/overlay.js](assets/tune/overlay.js).
-
 ## Needs a decision
 
 - 〔todo〕刪掉的條目沒留下結果：加一頁完成紀錄（原文、做了／量過不改／放棄、sha），`todo-check` 擋沒記的刪除；land 時讓使用者確認新條目的 heading — [scripts/todo-check.js](scripts/todo-check.js).
