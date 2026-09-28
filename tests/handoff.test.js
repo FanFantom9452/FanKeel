@@ -186,6 +186,14 @@ test('a record with no moves is on the first visit of every stage', () => {
   assert.equal(handoffPath('/r', DATA, 'build'), '/r/.fankeel/build/task-20260919T093012/build.md');
 });
 
+test('a group appends -g<N> before the extension, combined with a lap or alone, and is silent when left out', () => {
+  assert.equal(handoffPath('/r', DATA, 'build', undefined, 2), '/r/.fankeel/build/task-20260919T093012/build-g2.md');
+  assert.equal(commitPath('/r', DATA, 'build', undefined, 2), '/r/.fankeel/build/task-20260919T093012/build-g2-commit.md');
+  assert.equal(handoffPath('/r', DATA, 'build', 2, 3), '/r/.fankeel/build/task-20260919T093012/build-2-g3.md');
+  assert.equal(handoffPath('/r', DATA, 'build'), '/r/.fankeel/build/task-20260919T093012/build.md', 'no group: unchanged');
+  assert.equal(handoffPath('/r', DATA, 'build', undefined, 0), '/r/.fankeel/build/task-20260919T093012/build.md', 'group 0 is not a group');
+});
+
 test('the gate of an earlier lap is not the gate of this one', () => {
   const root = tmp('fankeel-handoff-');
   const first = moved('build');
