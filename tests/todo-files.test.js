@@ -126,3 +126,15 @@ test('fromLine and add make an entry out of one TODO.md-style line', () => {
   assert.equal(shut.file, 'docs/todo/station-1.md');
   assert.throws(() => lib.add(dir, Object.assign({}, f, { id: 'station-1' })), /never reused/);
 });
+
+test('ids collate numerically: x-2 before x-10 in readFolder, x-10 before x-2 in done', () => {
+  const dir = project(true);
+  fs.mkdirSync(path.join(dir, 'docs', 'todo'));
+  for (const id of ['x-10', 'x-2']) {
+    const e = { label: 'x', title: id, description: id, state: 'done', link: '', group: '', timing: '', stamp: '',
+      done: { at: '2026-09-29', sha: 'abcdef1', disposition: 'done', session: '' }, body: '' };
+    fs.writeFileSync(path.join(dir, 'docs', 'todo', id + '.md'), lib.serialize(e));
+  }
+  assert.deepEqual(lib.readFolder(dir, 'docs/todo').map((e) => e.id), ['x-2', 'x-10']);
+  assert.deepEqual(lib.load(dir, NOW).done.map((d) => d.id), ['x-10', 'x-2']);
+});
