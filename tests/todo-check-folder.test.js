@@ -103,3 +103,21 @@ test('orient\'s todo: block in folder mode names the folder and every id it offe
   assert.match(out, /^ {4}\[q-1\] 〔q〕a question$/m);
   assert.match(out, /--todo <id>/);
 });
+
+test('trackedIn: no repository and no commit yet are nothing tracked, a broken repository throws', () => {
+  const plain = tmp('fankeel-tracked-');
+  assert.deepEqual(check.trackedIn(plain, 'docs/todo'), []);
+  const fresh = tmp('fankeel-tracked-');
+  git(fresh, ['init', '-q']);
+  assert.deepEqual(check.trackedIn(fresh, 'docs/todo'), []);
+  const dir = root();
+  lib.add(dir, { label: 'a', title: 'one', description: 'first', state: 'ready' });
+  git(dir, ['init', '-q']);
+  git(dir, ['add', '-A']);
+  git(dir, ['commit', '-qm', 'x']);
+  for (const d of fs.readdirSync(path.join(dir, '.git', 'objects'))) {
+    if (/^[0-9a-f]{2}$/.test(d)) fs.rmSync(path.join(dir, '.git', 'objects', d), { recursive: true, force: true });
+  }
+  assert.throws(() => check.trackedIn(dir, 'docs/todo'), /git ls-tree failed/);
+  assert.ok(check.check(path.join(dir, 'TODO.md')).problems.some((p) => p.kind === 'unchecked'));
+});

@@ -147,3 +147,20 @@ test('this repository keeps entry files, and its TODO.md is what todo.js index w
   assert.equal(fs.readFileSync(path.join(root, 'TODO.md'), 'utf8').replace(/\r\n/g, '\n'), loaded.text);
   assert.match(loaded.text, /\[todo\.md\]\(docs\/90-agent\/reference\/todo\.md\)/);
 });
+
+test('readFolder: a missing folder is empty, but a path that is not a folder throws', () => {
+  const dir = tmp('fankeel-readfolder-');
+  assert.deepEqual(lib.readFolder(dir, 'docs/todo'), []);
+  fs.mkdirSync(path.join(dir, 'docs'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'docs', 'todo'), 'a file where the folder should be\n');
+  assert.throws(() => lib.readFolder(dir, 'docs/todo'), (e) => e.code !== 'ENOENT');
+});
+
+test('writeIndex does not rewrite TODO.md from a folder it could not read', () => {
+  const dir = tmp('fankeel-writeindex-');
+  fs.mkdirSync(path.join(dir, 'docs'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'docs', 'todo'), 'not a folder\n');
+  fs.writeFileSync(path.join(dir, 'TODO.md'), 'kept\n');
+  assert.throws(() => lib.writeIndex(dir, 'docs/todo'));
+  assert.equal(fs.readFileSync(path.join(dir, 'TODO.md'), 'utf8'), 'kept\n');
+});

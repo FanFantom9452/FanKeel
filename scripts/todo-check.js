@@ -180,13 +180,20 @@ function citationsIn(text) {
 const TIMED_STATES = ['blocked', 'watch'];
 const SHA = /^[0-9a-f]{7,40}$/;
 
+// Not a repository, no commit yet, or no git at all: nothing is tracked, so [].
+// Any other failure throws, since [] would skip the "deleted entry" rule.
+const NOTHING_TRACKED = /not a git repository|not a valid object name|unknown revision|bad revision|ambiguous argument 'HEAD'/i;
+
 function trackedIn(base, folder) {
     try {
         return execFileSync('git', ['ls-tree', '-r', '--name-only', 'HEAD', '--', folder], {
-            cwd: base, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+            cwd: base, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
         }).split('\n').filter((l) => l.endsWith('.md'));
     } catch (e) {
-        return [];
+        if (e && e.code === 'ENOENT') return [];
+        const said = String((e && e.stderr) || '');
+        if (NOTHING_TRACKED.test(said)) return [];
+        throw new Error('git ls-tree failed: ' + (said.trim() || (e && e.message) || 'unknown'));
     }
 }
 
@@ -212,7 +219,13 @@ function folderProblems(base, folder, loaded, disk) {
             on(e.file, 'bad done', 'a done entry carries done: with at, sha — the commit that closed it — and disposition.');
         }
     }
-    for (const rel of trackedIn(base, folder)) {
+    let tracked = [];
+    try {
+        tracked = trackedIn(base, folder);
+    } catch (e) {
+        on(folder, 'unchecked', 'could not ask git which entry files were committed, so "deleted entry" was not checked: ' + e.message);
+    }
+    for (const rel of tracked) {
         if (!fs.existsSync(path.join(base, rel))) {
             on(rel, 'deleted entry', 'was committed and is gone. An entry file is never deleted: close it with `todo.js done <id> --sha <sha>`.');
         }
@@ -234,7 +247,14 @@ function check(file, now) {
     } catch (e) {
         if (!folder) return { file, missing: true, problems: [], overdue: [], stale: [] };
     }
-    const loaded = folder ? load(base, at) : null;
+    let loaded = null;
+    if (folder) {
+        try {
+            loaded = load(base, at);
+        } catch (e) {
+            return { file, problems: [{ line: 1, file: folder, kind: 'unreadable folder', detail: e.message }], overdue: [], stale: [] };
+        }
+    }
     const text = loaded ? loaded.text : disk;
     // No `docs.json` is not a failure. `read` hands back a null tree, `roleOf`
     // answers null for everything under it, and the role check reports nothing —
@@ -668,4 +688,4 @@ if (require.main === module) {
     process.exit(ok ? 0 : 1);
 }
 
-module.exports = { MAX_ENTRY_CHARS, REREAD_DAYS, STALE_DAYS, SECTIONS, linksIn, entries, timings, width, mmdd, check, report, main };
+module.exports = { trackedIn, MAX_ENTRY_CHARS, REREAD_DAYS, STALE_DAYS, SECTIONS, linksIn, entries, timings, width, mmdd, check, report, main };
