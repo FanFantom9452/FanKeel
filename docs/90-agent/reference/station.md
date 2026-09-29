@@ -621,7 +621,7 @@ running for it now — the stage agent in flight (`inflight` on the record,
 while it names the current stage: when it was sent and how long it has been
 out) and each subagent `runningAgents` (`lib/usage.js`,
 `function runningAgents(sessionDir, now, opts) {`) reads as mid-turn, with
-its type, model family, description and age — or one line saying the main
+its type, the model and effort it last ran (the family when none is recorded), description and age — or one line saying the main
 session is working alone. A subagent is finished when the last assistant or
 user line of its `agent-<id>.jsonl` is an assistant line with text and no
 tool_use; a file that has not moved in 20 minutes is a stopped agent and is
