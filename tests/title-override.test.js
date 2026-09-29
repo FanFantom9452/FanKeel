@@ -83,3 +83,9 @@ test('overrideFor answers the bare name only for fankeel:<name> with a marked fi
     assert.equal(overrideFor('other:fankeel-reader', f.dir, null), null);
     assert.equal(overrideFor('fankeel:fankeel-reviewer', f.dir, null), null);
 });
+
+test('overrideFor answers null, not a throw, for a name that still carries a colon', () => {
+    const f = fixture(MARKED);
+    assert.equal(overrideFor('fankeel:fankeel:x', f.dir, null), null);
+    assert.equal(overrideFor('fankeel:other:x', f.dir, null), null);
+});
