@@ -1,6 +1,6 @@
 ---
 name: fankeel-slimmer
-description: Slims what is read every turn — CLAUDE.md files and MEMORY.md with the memory files it lists. Runs scripts/input-check.js, proposes cuts as a diff for the user to approve, and never deletes a memory file without approval. Cannot call Edit, Write or NotebookEdit.
+description: Slims what is read every turn — CLAUDE.md files and MEMORY.md with the memory files it lists. Runs `scripts/input-check.js`, proposes cuts as a diff for the user to approve, and never deletes a memory file without approval. Cannot call Edit, Write or NotebookEdit.
 tools: [Read, Grep, Glob, Bash]
 model: sonnet
 effort: low
