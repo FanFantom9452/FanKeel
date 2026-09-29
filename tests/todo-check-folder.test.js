@@ -121,3 +121,52 @@ test('trackedIn: no repository and no commit yet are nothing tracked, a broken r
   assert.throws(() => check.trackedIn(dir, 'docs/todo'), /git ls-tree failed/);
   assert.ok(check.check(path.join(dir, 'TODO.md')).problems.some((p) => p.kind === 'unchecked'));
 });
+
+test('an entry folder that cannot be read is an unreadable folder problem, not a crash', () => {
+  const dir = root();
+  fs.mkdirSync(path.join(dir, 'docs', 'todo', 'broken.md'));
+  const r = check.check(path.join(dir, 'TODO.md'));
+  assert.ok(r.problems.some((p) => p.kind === 'unreadable folder'), JSON.stringify(r.problems));
+});
+
+test('trackedIn asks git in the C locale, so its nothing-tracked match cannot be translated away', () => {
+  const bin = tmp('fankeel-fakegit-');
+  fs.copyFileSync(process.execPath, path.join(bin, process.platform === 'win32' ? 'git.exe' : 'git'));
+  const stub = path.join(bin, 'stub.js');
+  fs.writeFileSync(stub, [
+    "process.stderr.write(process.env.LC_ALL === 'C' ? 'fatal: not a git repository\\n' : 'fatal: pas un depot git\\n');",
+    'process.exit(128);',
+  ].join('\n'));
+  const keep = { PATH: process.env.PATH, NODE_OPTIONS: process.env.NODE_OPTIONS, LC_ALL: process.env.LC_ALL };
+  try {
+    process.env.PATH = bin + path.delimiter + keep.PATH;
+    process.env.NODE_OPTIONS = '--require "' + stub.replace(/\\/g, '/') + '"';
+    process.env.LC_ALL = 'fr_FR.UTF-8';
+    assert.deepEqual(check.trackedIn(tmp('fankeel-tracked-'), 'docs/todo'), []);
+  } finally {
+    for (const k of Object.keys(keep)) {
+      if (keep[k] === undefined) delete process.env[k]; else process.env[k] = keep[k];
+    }
+  }
+});
+
+test('trackedIn lists only .md files under the folder', () => {
+  const dir = root();
+  lib.add(dir, { label: 'a', title: 'one', description: 'first', state: 'ready' });
+  fs.writeFileSync(path.join(dir, 'docs', 'todo', 'notes.txt'), 'x\n');
+  git(dir, ['init', '-q']);
+  git(dir, ['add', '-A']);
+  git(dir, ['commit', '-qm', 'x']);
+  assert.deepEqual(check.trackedIn(dir, 'docs/todo'), ['docs/todo/a-1.md']);
+});
+
+test('trackedIn: a folder with no committed entry is an empty list, and a deleted tracked entry is a problem', () => {
+  const dir = root();
+  lib.add(dir, { label: 'a', title: 'one', description: 'first', state: 'ready' });
+  git(dir, ['init', '-q']);
+  git(dir, ['add', '-A']);
+  git(dir, ['commit', '-qm', 'x']);
+  fs.rmSync(path.join(dir, 'docs', 'todo', 'a-1.md'));
+  assert.deepEqual(check.trackedIn(dir, 'docs/todo'), ['docs/todo/a-1.md']);
+  assert.ok(check.check(path.join(dir, 'TODO.md')).problems.some((p) => p.kind === 'deleted entry'));
+});

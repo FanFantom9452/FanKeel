@@ -56,6 +56,7 @@ function main(argv, now) {
             const lines = ['fankeel todo migrate: ' + r.open + ' open, ' + r.done + ' done, ' + r.left.length
                 + ' not migrated' + (r.left.length ? ' — under no known heading; re-add each with todo.js new:' : '')];
             for (const l of r.left) lines.push('  TODO.md:' + l.line + '  ' + l.text);
+            for (const w of r.warned) lines.push('  could not date ' + w.sha + ': ' + w.why + ' — used today');
             return { text: lines.join('\n'), ok: true };
         }
     } catch (e) {
