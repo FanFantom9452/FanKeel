@@ -658,6 +658,19 @@ function cmdStart(root, opts) {
     registry.stampEntry(data, route[0], Date.parse(stamp));
 
     if (!registry.replace(root, id, data)) fail('Could not write the entry under ' + root);
+    // Override files `profile set agent.<name>.*` wrote carry the plugin
+    // version they were copied from; one from another version has a stale
+    // body, so it is rewritten here, once, from the plugin's current file.
+    const agentfile = require('../lib/agentfile.js');
+    const cfgDir = claudeDir(opts);
+    const refreshed = agentfile.refresh({
+        pluginRoot: PLUGIN,
+        version: pluginVersion(),
+        targets: [
+            { profileFile: profile.projectFile(projectRootFor(root, opts)), agentsDir: path.join(projectRootFor(root, opts), '.claude', 'agents') },
+            cfgDir ? { profileFile: profile.machineFile(cfgDir), agentsDir: path.join(cfgDir, 'agents') } : null,
+        ],
+    });
 
     // No collision check here, because there is nothing yet to collide. A task
     // holding no file overlaps no file, and the first edit is where the question
@@ -675,6 +688,7 @@ function cmdStart(root, opts) {
     lines.push('');
     for (const line of describe(root, id, data)) lines.push('  ' + line);
     if (worktreeNote) lines.push('  ' + worktreeNote);
+    for (const f of refreshed) lines.push('  agent file: rewritten for ' + pluginVersion() + ' → ' + f);
     if (prof.sources.guard && prof.sources.guard !== 'builtin') lines[lines.findIndex((l) => l.startsWith('  guard:'))] += ' (profile)';
 
     // Only when the project has never answered anything — a project with a
@@ -1460,7 +1474,7 @@ const USAGE = [
     '  note "..."                        a dead end or a decision, capped at five',
     '  next "..."                        one line; empty clears it',
     '  guard <ask|deny|off>              only when the user asked for it',
-    '  profile show|set <key> <value>|suggest',
+    '  profile show|set <key> <value>|unset <key>|suggest',
     '                                    the project\'s standing answers; --default writes the',
     '                                    machine file, --project <dir> picks a project under the root',
     '  land <merge|pr|keep> [--push|--no-push]',
