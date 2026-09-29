@@ -27,6 +27,18 @@ test('a completions page that cannot be read stops migrate and says which page',
   assert.throws(() => lib.migrate(dir, Date.parse('2026-09-29T00:00:00Z')), (e) => e.message.includes(lib.COMPLETIONS_PAGE));
 });
 
+test('an unreadable completions page leaves nothing half-migrated, and a rerun throws the same error', () => {
+  const dir = project();
+  fs.writeFileSync(path.join(dir, 'TODO.md'), ['# TODO', '', '## Ready', '', '- [a thing to do](one.md) - first', ''].join('\n'));
+  fs.mkdirSync(path.join(dir, lib.COMPLETIONS_PAGE), { recursive: true });
+  const again = () => lib.migrate(dir, Date.parse('2026-09-29T00:00:00Z'));
+  const said = (e) => e.message.includes(lib.COMPLETIONS_PAGE);
+  assert.throws(again, said);
+  const folder = path.join(dir, 'docs', 'todo');
+  assert.ok(!fs.existsSync(folder) || !fs.readdirSync(folder).some((n) => n.endsWith('.md')));
+  assert.throws(again, said);
+});
+
 test('a completions record whose commit cannot be dated is reported, and dated today', () => {
   const dir = project();
   const page = path.join(dir, lib.COMPLETIONS_PAGE);

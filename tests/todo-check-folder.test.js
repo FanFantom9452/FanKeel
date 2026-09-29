@@ -133,7 +133,9 @@ test('trackedIn asks git in the C locale, so its nothing-tracked match cannot be
   const bin = tmp('fankeel-fakegit-');
   fs.copyFileSync(process.execPath, path.join(bin, process.platform === 'win32' ? 'git.exe' : 'git'));
   const stub = path.join(bin, 'stub.js');
+  const marker = path.join(bin, 'ran.txt');
   fs.writeFileSync(stub, [
+    "require('node:fs').appendFileSync(" + JSON.stringify(marker) + ", 'ran\\n');",
     "process.stderr.write(process.env.LC_ALL === 'C' ? 'fatal: not a git repository\\n' : 'fatal: pas un depot git\\n');",
     'process.exit(128);',
   ].join('\n'));
@@ -143,6 +145,7 @@ test('trackedIn asks git in the C locale, so its nothing-tracked match cannot be
     process.env.NODE_OPTIONS = '--require "' + stub.replace(/\\/g, '/') + '"';
     process.env.LC_ALL = 'fr_FR.UTF-8';
     assert.deepEqual(check.trackedIn(tmp('fankeel-tracked-'), 'docs/todo'), []);
+    assert.ok(fs.existsSync(marker), 'the stub never ran, so the locale was never seen');
   } finally {
     for (const k of Object.keys(keep)) {
       if (keep[k] === undefined) delete process.env[k]; else process.env[k] = keep[k];
