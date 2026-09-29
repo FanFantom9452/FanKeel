@@ -18,8 +18,8 @@ Today every agent file in `agents/` pins its own `model:` in frontmatter. Six pi
 
 - **a. Profile keys that override an agent's pinned model.** Which agents get a key,
   and what a key does when it names a model the agent's file does not pin.
-- **b. Allow `haiku` for mechanical work.** Which agents count as mechanical is part
-  of the decision; `haiku` is already a legal value of `judge.model`.
+- **b. Settled: `haiku` not allowed for now.** 09-29, decided by the user: not strong
+  enough; use sonnet 5.5. `haiku` stays a legal value of `judge.model`.
 - **c. A default effort per model.** Settled by whoever picks the models.
 
 ## Constraint on c

@@ -88,7 +88,7 @@ the reading is what gets scheduled.
 
 ## Needs a decision
 
-- 〔model〕每個角色用哪個模型、每個模型預設多少 effort 要定：profile key 蓋掉 agent 釘的模型、`haiku` 給機械活（哪些算機械）、effort 只能改 agent 檔 frontmatter — [model-choice.md](docs/90-agent/reference/model-choice.md).
+- 〔model〕09-29 已決定暫不用 `haiku`（不夠強，改用 sonnet 5.5），剩兩件未決：(a) profile key 蓋掉 agent 釘的模型、(c) 每個模型預設 effort — [model-choice.md](docs/90-agent/reference/model-choice.md).
 
 ## Blocked
 
@@ -135,7 +135,6 @@ after: 安裝版更新到含 b9e7bfc5 的版本，再跑一次真實受控 build
 
 - 〔await〕`kind` 只在測試裡驗過：重裝後看一次真實 `build close` brain 的 mark 是否帶 `kind: 'close'`、await 是否盯 `build.md` — [hooks/brief.js](hooks/brief.js).
 - 〔skills〕`disable-model-invocation: true` 對插件 skill 是否生效沒驗：重裝後讓模型自行呼叫 fankeel-station 看是否被擋 — [skills/fankeel-station/SKILL.md](skills/fankeel-station/SKILL.md).
-- 〔stage-agents〕09-29 回答檔四次沒寫出、原因未明：重裝後若再漏，讀 `<stage>-answer.miss.json` 的 reason — [hooks/resume.js](hooks/resume.js).
 
 ## Watch
 

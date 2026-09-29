@@ -15,6 +15,14 @@ it cannot find a matching record for here.
 Newest first. One record per closed entry:
 
 ```
+- original: 〔model〕每個角色用哪個模型、每個模型預設多少 effort 要定：profile key 蓋掉 agent 釘的模型、`haiku` 給機械活（哪些算機械）、effort 只能改 agent 檔 frontmatter — [model-choice.md](docs/90-agent/reference/model-choice.md).
+  disposition: done
+  sha: pending
+
+- original: 〔stage-agents〕09-29 回答檔四次沒寫出、原因未明：重裝後若再漏，讀 `<stage>-answer.miss.json` 的 reason — [hooks/resume.js](hooks/resume.js).
+  disposition: done
+  sha: pending
+
 - original: 〔verify〕要不要把 lint／build 列成 verify 必過一關：先比對 AI-Native SDLC playbook 的 Triple-Check 與現有 verify，再決定 — [skills/fankeel-verify/SKILL.md](skills/fankeel-verify/SKILL.md).
   disposition: done
   sha: 8ad448cc8613c35ce004fd24283e2c88aaadd382
