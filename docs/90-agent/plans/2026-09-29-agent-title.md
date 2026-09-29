@@ -686,7 +686,7 @@ Not tasks, and not skipped: verify runs `npm test` whole and `node scripts/docs-
 | 前綴格式 `<alias>[ <version>] · <effort>`，接在標題前面，以 `: ` 分隔。 | Task 1 |
 | 新的 PreToolUse hook，matcher `Agent|Task`，與 `hooks/guard.js` 並列。 | Task 2 |
 | 用 `updatedInput` 把 description 換成「前綴: 標題」。description 開頭已經是前綴形狀的 | Task 2 |
-| 內建 general-purpose/Explore/空 type 與找不到檔的裸名稱照常印 inherit 標題；只有非 fankeel: 的外掛 type、以及解析到但讀不了/解析不了的 agent 檔不輸出（hook 不改 description）；hook 絕不擋派工。 | Task 2 |
+| 內建 general-purpose/Explore/空 type 與找不到檔的裸名稱照常印 inherit 標題；只有非 fankeel: 的外掛 type、以及解析到但讀不了的 agent 檔不輸出（hook 不改 description）；hook 絕不擋派工。 | Task 2 |
 | `lib/render.js:516` 改成更短的一句：description 只寫標題，模型、版本、effort 由 hook 補。 | Task 3 |
 | 同步 `agents/fankeel-brain.md:37`、`skills/fankeel/SKILL.md:1069`、 | Task 3, Task 4 |
 | Workflow `agent()` 的 `label` 沒有 hook 能補：規則改成只寫別名和 effort，不寫版本。 | Task 4 |

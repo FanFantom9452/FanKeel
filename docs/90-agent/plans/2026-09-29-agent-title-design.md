@@ -41,7 +41,7 @@ session cfff73c6-897b-4dd2-bfff-5114b4b943ad 的 design。它描述要做成的�
   沒有進行中的任務也照樣補前綴。
 - 用 `updatedInput` 把 description 換成「前綴: 標題」。description 開頭已經是前綴形狀的
   （`<字母>[ <數字>] · <字母>: `）先剝掉再補，所以 LLM 寫錯的前綴不會留下來。
-- 內建 general-purpose/Explore/空 type 與找不到檔的裸名稱照常印 inherit 標題；只有非 fankeel: 的外掛 type、以及解析到但讀不了/解析不了的 agent 檔不輸出（hook 不改 description）；hook 絕不擋派工。
+- 內建 general-purpose/Explore/空 type 與找不到檔的裸名稱照常印 inherit 標題；只有非 fankeel: 的外掛 type、以及解析到但讀不了的 agent 檔不輸出（hook 不改 description）；hook 絕不擋派工。
 
 ## 3. 規則只叫 LLM 寫標題
 
