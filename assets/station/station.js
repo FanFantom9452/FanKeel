@@ -2340,8 +2340,67 @@
         return frozenAt ? loc('tune.last30dFrozenAt', '近 30 天 · 凍結於 {t}', { t: frozenAt }) : loc('tune.last30d', '近 30 天');
     }
 
+    // ---- the project page, again: its TODO panel (`todoPanelHtml`) ---------
+    // The approved mockup's three blocks — todo-head, todo-open, todo-done
+    // (.fankeel/build/2026-09-29-todo-files/mockup.html). `t` is one `todos` row
+    // off the data file; `sessions` is `S.sessions`, which says whether this
+    // machine has a done entry's session to link.
+    var TODO_STATES = [['ready', 'Ready'], ['decision', 'Needs a decision'], ['blocked', 'Blocked'], ['watch', 'Watch']];
+    function todoGloss(state) {
+        if (state === 'ready') return loc('proj.todoReadyGloss', '只等人動手');
+        if (state === 'decision') return loc('proj.todoDecisionGloss', '等人決定要怎麼改');
+        if (state === 'blocked') return loc('proj.todoBlockedGloss', '等一個 session 查得到的條件');
+        return loc('proj.todoWatchGloss', '等一件只有碰上的人才知道的事');
+    }
+    function todoChip(label) {
+        return label ? '<span class="chip td-lb">' + esc(label) + '</span>'
+            : '<span class="td-lb td-nolb" aria-label="' + loc('proj.todoNoLabel', '沒有 label') + '"></span>';
+    }
+    function todoPanelHtml(t, sessions) {
+        if (!t || (!t.open.length && !t.done.length)) return '';
+        var known = {};
+        (sessions || []).forEach(function (s) { known[s.id] = true; });
+        var md = function (s) { return esc(s).replace(/`([^`]+)`/g, '<code>$1</code>'); };
+        var open = TODO_STATES.map(function (st) {
+            var list = t.open.filter(function (e) { return e.state === st[0]; });
+            if (!list.length) return '';
+            var timed = st[0] === 'blocked' || st[0] === 'watch', prev = null;
+            return '<div class="rgh td-grp"><b class="mono">' + st[1] + '</b><span class="mute">'
+                + loc('proj.todoNRows', '{n} 筆 · {g}', { n: list.length, g: todoGloss(st[0]) }) + '</span></div>'
+                + '<ul class="td-rows' + (timed ? ' timed' : '') + '">' + list.map(function (e) {
+                    var rep = timed && e.condition === prev;
+                    prev = timed ? e.condition : null;
+                    return '<li class="td-row">' + todoChip(e.label) + '<span class="td-t">' + esc(e.title) + '</span>'
+                        + '<span class="td-d" title="' + esc(e.description) + '">' + md(e.description) + '</span>'
+                        + (timed ? '<span class="td-tm' + (rep ? ' rep' : '') + '" title="' + esc(e.condition || '') + '">' + esc(e.condition || '') + '</span>'
+                            + '<span class="td-st" title="stamp ' + esc(e.stamp || '') + '">' + esc(String(e.stamp || '').slice(5)) + '</span>' : '')
+                        + '</li>';
+                }).join('') + '</ul>';
+        }).join('');
+        var done = !t.done.length ? '' : '<div class="rgh td-grp"><b>' + loc('proj.todoDone', '已完成') + '</b><span class="mute">'
+            + loc('proj.todoDoneNewest', '{n} 筆，最新在上', { n: t.done.length }) + '</span></div>'
+            + '<ul class="td-rows donel">' + t.done.map(function (e) {
+                return '<li class="td-row">' + todoChip(e.label) + '<span class="td-t">' + esc(e.title) + '</span>'
+                    + '<span class="td-at mono">' + esc(e.at) + '</span><span class="td-dp mono">' + esc(e.disposition) + '</span>'
+                    + (e.session && known[e.session]
+                        ? '<a class="td-rf mono" href="' + sessionHash(e.session) + '" title="' + loc('proj.todoOpenSession', '開啟 session {id}', { id: esc(e.session) }) + '">session ' + esc(e.session.slice(0, 8)) + '</a>'
+                        : '<span class="td-rf mono muted" title="' + loc('proj.todoNoSessionHere', '這台機器沒有這個 session；commit {sha}', { sha: esc(e.sha) }) + '">sha ' + esc(String(e.sha).slice(0, 7)) + '</span>')
+                    + '</li>';
+            }).join('') + '</ul>'
+            + '<p class="note">' + loc('proj.todoSessionNote', 'session 只在跑過它的那台機器上找得到；找不到時列出關掉它的 commit。') + '</p>';
+        return '<section class="panel td" id="todo">'
+            + '<div class="h2" data-block="todo-head">TODO <small><span class="num">' + loc('proj.todoOpenN', '未完成 {n}', { n: t.open.length }) + '</span>'
+            + (t.mode === 'folder' ? ' · <span class="num">' + loc('proj.todoDoneN', '已完成 {n}', { n: t.done.length }) + '</span>' : '') + '</small>'
+            + '<span class="td-src mono muted">' + esc(t.mode === 'folder' ? t.folder + '/' : 'TODO.md') + '</span></div>'
+            + '<div data-block="todo-open">' + open + '</div>'
+            + (done ? '<div class="td-done" data-block="todo-done">' + done + '</div>' : '')
+            + '</section>';
+    }
+    // ---- tune: a block changed, continued: what the tests import -----------
+
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = {
+            todoPanelHtml: todoPanelHtml,
             tokens: tokens, mins: mins, hours: hours, usd: usd, ago: ago, day: day,
             stamp: stamp, esc: esc, cost: cost, labels: labels, delta: delta, match: match,
             statePill: statePill, clearStaleControl: clearStaleControl,
@@ -2790,7 +2849,10 @@
             + registryNote(all[0].root)
             + '<section class="panel"><div class="h2">Sessions <small>' + loc('dash.last30dNSorted', '近 30 天 {n} 個，最新在上；勾兩列進比較', { n: list.length }) + '</small>'
             + '</div>' + projectSessionsHtml(list, picked) + selbarHtml() + '</section>'
-            + '<section class="panel"><div class="h2">' + loc('dash.stagesByRoute', '各 route 的階段') + ' <small>' + loc('dash.thisProjectOnly', '只算這個專案') + '</small></div>' + routeLedger(mine) + '</section>';
+            + '<section class="panel"><div class="h2">' + loc('dash.stagesByRoute', '各 route 的階段') + ' <small>' + loc('dash.thisProjectOnly', '只算這個專案') + '</small></div>' + routeLedger(mine) + '</section>'
+            + todoPanelHtml((S.projects || []).reduce(function (hit, p) {
+                return hit || (p.todos || []).filter(function (x) { return x.pkey === r.pkey; })[0] || null;
+            }, null), S.sessions);
     }
     VIEWS.project = projectPage;
     CRUMBS.project = function (r) { return [[NAMES[r.pkey] || r.pkey, null]]; };
