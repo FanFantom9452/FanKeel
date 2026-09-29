@@ -1,6 +1,6 @@
 ---
 label: stage-agents
-title: brain 停掉時它的背景 implem…
+title: brain 停掉後子 agent 無人接
 description: brain 停掉時它的背景 implementer 還在跑，完成報告落到主控、沒人接：重派的 brain 又做一次 Task 8。要不要讓 brain 等完子 agent 才能交回 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 state: done
 link: docs/90-agent/reference/subagents.md

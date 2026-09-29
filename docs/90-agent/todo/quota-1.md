@@ -1,6 +1,6 @@
 ---
 label: quota
-title: 7d 水位兩點差 4.7 倍，是延…
+title: 7d 水位差 4.7 倍的成因
 description: 7d 水位兩點差 4.7 倍，是延遲還是計別的：TokenBar 每次 render 已把 5h／7d 讀數 append 到 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`（TokenBar 的 `statusline.ps1`／`.sh`），拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
 state: blocked
 link: scripts/spend.js

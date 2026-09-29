@@ -1,6 +1,6 @@
 ---
 label: security
-title: reviewer 的 ## Security len…
+title: Security lens 交本地模型篩
 description: reviewer 的 `## Security` lens 可先交本地模型篩（`security.local`）；四類清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 state: blocked
 link: agents/fankeel-reviewer.md

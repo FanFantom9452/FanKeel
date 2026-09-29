@@ -1,6 +1,6 @@
 ---
 label: survey
-title: graphify 可接為查詢工具；獨…
+title: graphify 接為查詢工具
 description: graphify 可接為查詢工具；獨立實測未穩定省錢，接之前先解決它的 PreToolUse hook 擋 Read 與 guard 衝突、Windows 上 hook 靜默失效（其 issue #140） — [scripts/survey.js](scripts/survey.js).
 state: watch
 link: scripts/survey.js

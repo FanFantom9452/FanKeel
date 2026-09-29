@@ -1,6 +1,6 @@
 ---
 label: review
-title: 要不要支援專案自訂 review.m…
+title: 支援專案自訂 review.md？
 description: 要不要支援專案自訂 `review.md`：先比對 playbook 的審查 SOP 與現有 reviewer lens，再決定 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 state: done
 link: agents/fankeel-reviewer.md

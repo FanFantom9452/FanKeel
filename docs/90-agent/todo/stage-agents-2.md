@@ -1,6 +1,6 @@
 ---
 label: stage-agents
-title: design 站跨輪對話已寫（lib/…
+title: design 跨輪對話未實跑
 description: design 站跨輪對話已寫（`lib/stages.js` 的 `controlFor`）但沒實跑；build 每個 task 的提交要經 controller 兩回合，省不省 context 由同一次實跑的 `ctx.js --by-stage` 讀 — [lib/stages.js](lib/stages.js).
 state: blocked
 link: lib/stages.js

@@ -1,6 +1,6 @@
 ---
 label: stage-agents
-title: 已加規則 Edit(/.fankeel/bui…
+title: allow 規則效果無法證明
 description: 已加規則 `Edit(/.fankeel/build/**)`，對照量測仍重現不出 no verdict，效果無法證明，見 `docs/90-agent/reports/2026-09-28-allow-rule-probe.md` — [subagents.md](docs/90-agent/reference/subagents.md).
 state: watch
 link: docs/90-agent/reference/subagents.md

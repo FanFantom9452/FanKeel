@@ -1,6 +1,6 @@
 ---
 label: stage-agents
-title: 安裝版還沒這次改動、本 sess…
+title: stage.agents 設 all 實跑量測
 description: 安裝版還沒這次改動、本 session 的 hook 也釘死在 0.74.0，都量不了：新 terminal 更新插件、`stage.agents` 設 all、跑真實 task，用 `ctx.js --by-stage` 與 `modelUsage` 讀 — [subagents.md](docs/90-agent/reference/subagents.md).
 state: blocked
 link: docs/90-agent/reference/subagents.md

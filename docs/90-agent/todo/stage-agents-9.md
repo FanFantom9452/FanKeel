@@ -1,6 +1,6 @@
 ---
 label: stage-agents
-title: verify 的 mutation 要不要專…
+title: verify mutation 專屬 agent？
 description: verify 的 mutation 要不要專屬 agent（工具或模型跟 fankeel-brain 不同才拆）；等受控 verify 實跑、k 重跑後再定 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 state: blocked
 link: docs/90-agent/reference/subagents.md

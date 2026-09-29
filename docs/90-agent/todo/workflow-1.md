@@ -1,6 +1,6 @@
 ---
 label: workflow
-title: 要不要拿掉 Workflow、統一成…
+title: 要不要拿掉 Workflow？
 description: 要不要拿掉 Workflow、統一成 brain＋背景 agent：brain 沒有 Workflow，但 ledger groups 三個以上仍印 workflow；budget.js 也不量 subagents/workflows/ 底下的 agent — [lib/plantasks.js](lib/plantasks.js).
 state: done
 link: lib/plantasks.js

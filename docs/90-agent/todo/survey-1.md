@@ -1,6 +1,6 @@
 ---
 label: survey
-title: Language patterns beyond th…
+title: Unlisted language patterns
 description: Language patterns beyond the ten [scripts/survey.js](scripts/survey.js) knows. Anything else is listed under `skipped.noPattern` for a human.
 state: watch
 link: scripts/survey.js
