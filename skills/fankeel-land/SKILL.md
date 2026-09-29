@@ -61,8 +61,8 @@ the scan itself finding no script reference anywhere — the last of those is
 node <plugin>/scripts/todo-check.js [--root <dir>]
 ```
 
-Close the `TODO.md` entries this work finished — whoever finishes the work removes
-the entry in the same change. A plan that just moved is a link that just changed
+Close the `TODO.md` entries this work finished — whoever finishes the work closes
+the entry in the same change (folder mode: `todo.js done <id> --sha <sha>`, the file stays; legacy `TODO.md`: remove the line). A plan that just moved is a link that just changed
 address, so run this after anything moves.
 
 Update `last_verified` on every page you re-read and found true. That date is the
@@ -73,7 +73,7 @@ A page under a bucket marked `audience: human` that this change touched is
 named to the user at the gate: the person it is written for reads it, not a
 reviewer.
 
-When this session's diff added a bullet to `TODO.md` that was not there in
+When this session's diff added a bullet to `TODO.md` (folder mode: a new entry file from `todo.js new`) that was not there in
 `HEAD` before this task started, this stage's gate asks the user to confirm
 which heading it belongs under — before the stage's own gate. Most entries are
 filed correctly by whoever wrote them; this is the one check point that
@@ -134,7 +134,7 @@ was never a note:
 | a project convention | `CLAUDE.md` |
 | a durable fact about the user or repository | the memory directory |
 | why a change was made | the commit message |
-| work deliberately deferred | `TODO.md`, one line, under the heading for what it is short of — under `## Blocked`, beneath a `### <timing>` whose next line is `on: MM-DD`, `after: <what>` or `upstream: <what>`; under `## Watch`, one whose next line is `if: <the event>`; either line ending in a `MM-DD` stamp; step 2's `todo-check` ran before this note existed, so run it again once the notes land |
+| work deliberately deferred | folder mode: a new entry via `todo.js new`; legacy `TODO.md`: one line, under the heading for what it is short of — under `## Blocked`, beneath a `### <timing>` whose next line is `on: MM-DD`, `after: <what>` or `upstream: <what>`; under `## Watch`, one whose next line is `if: <the event>`; either line ending in a `MM-DD` stamp; step 2's `todo-check` ran before this note existed, so run it again once the notes land |
 
 If this task wrote to the memory directory, run
 `node <plugin>/scripts/memory-check.js` once before standing the task down. A

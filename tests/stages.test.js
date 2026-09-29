@@ -229,7 +229,7 @@ test('the discipline covers the captured requirements', () => {
   assert.match(text, /never end a stage silently or in prose/);
   assert.match(text, /background belongs in the option descriptions/);
   assert.match(text, /do not stop where the happy path works/);
-  assert.match(text, /todo\.md line at the detail/);
+  assert.match(text, /todo\.md entry at the detail/);
   assert.match(text, /leaves a decision record behind/);
   assert.match(text, /then is archived, after asking/);
   // The code half is a fixed sentence: nothing about it depends on the machine.

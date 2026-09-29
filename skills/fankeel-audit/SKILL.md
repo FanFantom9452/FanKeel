@@ -206,7 +206,7 @@ wrong. The row lists what actually happened to the code afterward — read the
 commit subjects it carries. One that already says it means to change this
 behaviour is the page's fix: bring the page in line with it. No commit says
 so, and the code itself is the suspect: leave the page alone and open a
-`TODO.md` entry under `## Needs a decision` naming what looks wrong, rather
+TODO entry (folder mode: `todo.js new --state decision`; legacy `TODO.md`: under `## Needs a decision`) naming what looks wrong, rather
 than rewriting the page to match a change nobody meant to make.
 
 So dispatch it: one reader per pair, **several in one response** so they run at

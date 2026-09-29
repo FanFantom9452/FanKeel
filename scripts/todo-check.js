@@ -310,7 +310,7 @@ function check(file, now) {
                 problems.push({
                     line: entry.line,
                     kind: 'dead link',
-                    detail: target + ' does not exist. Either the entry is finished and should be removed, or the detail moved.',
+                    detail: target + ' does not exist. Either the entry is finished and should be closed (todo.js done) or removed, or the detail moved.',
                 });
                 continue;
             }

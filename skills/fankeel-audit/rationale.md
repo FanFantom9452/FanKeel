@@ -147,8 +147,8 @@ needing a maintained table it names an outside tool for.
 ## Output
 
 `routed:` is the line that keeps a finding alive past this turn. Anything you
-are not fixing here goes to `TODO.md` under `## Ready`, `## Needs a decision`,
-`## Blocked` or `## Watch`, and that line names which — a finding that exists
+are not fixing here goes to a TODO entry (folder mode: `todo.js new --state ready`, `decision`, `blocked` or `watch`; legacy `TODO.md`: under `## Ready`, `## Needs a decision`,
+`## Blocked` or `## Watch`), and that line names which — a finding that exists
 only in this report is one the next sweep finds again from scratch. One routed to
 `## Blocked` waits on something a session can check — a date, another piece of
 work, an upstream release — and goes beneath the `### <timing>` it waits for,

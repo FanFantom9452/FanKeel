@@ -67,7 +67,9 @@ drops its `group`, `timing` and `stamp`.
   `state: done` with a `done:` record, `TODO.md` is regenerated without it,
   and the file stays.
 - `node scripts/todo.js migrate` converts a hand-written `TODO.md` and its
-  completions page into entry files, once.
+  completions page into entry files, once; the completions page
+  (`todo-completions.md`) is the record in TODO.md mode only, and this
+  repo's was archived to `docs/99-archive/2026-09-29-todo-completions.md`.
 
 `sha` is the durable link: `.fankeel/sessions/` is per machine and
 gitignored, so a `session` id resolves only where it ran. The station's

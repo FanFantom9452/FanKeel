@@ -127,7 +127,7 @@ of one — the shape `build` ships:
 - path (new) — what it is
 
 done: <n> of <m> — ledger or file table
-deferred: <heading> — <TODO.md line, or omit this line>
+deferred: <heading> — <TODO.md entry, or omit this line>
 then AskUserQuestion
 ```
 

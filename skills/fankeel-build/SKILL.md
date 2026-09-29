@@ -35,7 +35,7 @@ ledger where there is a plan**, the same way the decomposition is `plan`'s — a
 | Looks like a finding | Why it is not |
 |---|---|
 | Dead code left in the diff, not deleted | Only dead code this change created gets removed — `lib/stages.js:306` (`Remove what your own change orphaned`), so an orphan predating this task is correctly still there, just named: the injected rule lost its "dead code you did not create gets mentioned, not deleted" clause to the cap on 2026-09-09, and this row is where that half now lives. |
-| A new ask from mid-build routed to `TODO.md` instead of built | That is the routing rule working, not the ask dropped — `lib/stages.js:303` (`is one TODO.md line at the detail`), not silence. |
+| A new ask from mid-build routed to `TODO.md` instead of built | That is the routing rule working, not the ask dropped — `lib/stages.js:303` (`is one TODO.md entry at the detail`), not silence. |
 | A ruling recorded instead of a fifth stopper firing | `lib/stages.js:305` names deciding as the normal outcome (`Decide`) — only irreversible, security-sensitive, out-of-workspace or every-path-a-guess actually stop the loop. |
 
 Why each rule is what it is, under the same headings: [rationale.md](rationale.md).
@@ -197,7 +197,7 @@ plan) has no such row. `node <plugin>/scripts/ledger.js --plan
 build` already printed the same list to the session holding
 `AskUserQuestion`, which asks the user then and there — after the other tasks
 and before this stage's gate, in this session with them; they do it first and
-say when; or skip, each becoming a `TODO.md` entry — and notes the answer with
+say when; or skip, each becoming a TODO entry — and notes the answer with
 `task.js note`, so it rides every prompt. A stage agent asks nothing and sends
 none of them: `ready` never lists them, and its report names them on a line
 `hands: <n>, <n>`. When the dispatched tasks are done, the session holding
@@ -530,7 +530,7 @@ is the ruling it lands on.
 A request the user raises mid-build is routed **in the turn it arrives**, one of
 three ways:
 
-1. **It neither blocks this task nor belongs to it** — one `TODO.md` line under
+1. **It neither blocks this task nor belongs to it** — one TODO entry (`todo.js new` in folder mode; a `TODO.md` line in legacy mode) under
    the heading that says what it is still short of, pointing at the detail. Do
    not start it.
 2. **It blocks this task, or belongs here** — do it now, as part of this task.
@@ -602,7 +602,7 @@ where you are, rather than being a defect in a document.
 A task started by picking the patrol — `TODO 全表盤點` — at `/fankeel` arrives on
 `--route "survey,build,land"`, widened by survey where an entry turned into
 work; the entries survey marked `do now` are built here as ordinary tasks, each
-removing its own `TODO.md` entry.
+closing its own TODO entry (`todo.js done` in folder mode, removing the `TODO.md` line in legacy mode).
 
 By the time it reaches this stage `survey` has
 checked every `## Blocked` timing and put the stale `## Watch` timings it
@@ -637,7 +637,7 @@ that meets the event an `if:` names moves the entry to `## Ready` or
 - path (new) — what it is
 
 done: <n> of <m> — ledger or file table
-deferred: <heading> — <TODO.md line, or omit this line>
+deferred: <heading> — <TODO.md entry, or omit this line>
 then AskUserQuestion
 ```
 

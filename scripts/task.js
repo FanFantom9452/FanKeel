@@ -735,7 +735,7 @@ function handsLines(root, data) {
     if (!mine.length) return null;
     return ['hands — ' + path.relative(projectRoot, plan).split(path.sep).join('/') + ':']
         .concat(mine.map((t) => '  Task ' + t.n + ' — ' + (t.dispatchNote || t.name)))
-        .concat(['Ask the user now, before the first dispatch: after the other tasks and before build\'s gate, in this session with them (Recommended); they do it first and say when; or skip, each becoming a TODO.md entry. Then `task.js note "hands: <the answer>"`.']);
+        .concat(['Ask the user now, before the first dispatch: after the other tasks and before build\'s gate, in this session with them (Recommended); they do it first and say when; or skip, each becoming a TODO entry. Then `task.js note "hands: <the answer>"`.']);
 }
 
 // The entries `start --todo` named, as the lines `land` closes them with. Only
@@ -1103,7 +1103,7 @@ function cmdDown(root, opts) {
     const notes = registry.notesOf(data);
     if (notes.length) {
         lines.push('');
-        lines.push('These die with the task. Anything still true belongs in CLAUDE.md, a commit message or TODO.md:');
+        lines.push('These die with the task. Anything still true belongs in CLAUDE.md, a commit message or a TODO entry:');
         for (const n of notes) lines.push('  - ' + n);
     }
     return lines.join('\n');

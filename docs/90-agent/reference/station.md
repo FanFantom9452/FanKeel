@@ -943,7 +943,7 @@ it — so the link resolves from the same directory against the same
 link that must resolve, and a link that must not point at a plan, decision,
 report or archive are todo-check's rules and nobody else's. A clean line
 answers `201` with the line written; a wrong nonce is `403`, a session not on
-the page `404`, and a `TODO.md` with no `## Needs a decision` heading `409`.
+the page `404`, and, in TODO.md mode only (`addTodo`), a `TODO.md` with no `## Needs a decision` heading `409`; folder mode (below) answers `400` or `201`.
 
 Where the project keeps entry files — its `.fankeel/docs.json` declares a
 bucket with role `todo` and the folder exists — the same form writes one
