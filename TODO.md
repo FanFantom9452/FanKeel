@@ -92,6 +92,10 @@ the reading is what gets scheduled.
 
 - 〔advisor〕要不要替主 session、`fankeel-brain` 或 implementer 設 `advisorModel`、用哪個模型；它取代不了 `/fankeel-ask`（不能指定問題、答案無法存檔） — [model-choice.md](docs/90-agent/reference/model-choice.md).
 
+- 〔station〕`/fankeel` 還在 init、沒 task 時沒有 entry，station 看不到當前 session；要不要 init 就寫一筆無 task 的 entry、怎麼顯示 — [station.md](docs/90-agent/reference/station.md).
+
+- 〔collisions〕B 開工時不知道 A 在做什麼：先查是兩個 registry、A 還在 init，還是跨機器；跨機器選同步資料夾、git 或 station API — [collisions.md](docs/90-agent/reference/collisions.md).
+
 ## Blocked
 
 ### fankeel 功能全部完成
