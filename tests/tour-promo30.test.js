@@ -36,7 +36,7 @@ test('every fifth frame draws in both languages without throwing', () => {
     }
 });
 
-test('the step pills are 01 survey to 07 land, and a stage shot shows as many as its dots', () => {
+test('the step pills are 01 survey to 07 land', () => {
     assert.deepEqual(PILLS, T.ROUTE.map((s, i) => '0' + (i + 1) + ' ' + s));
 });
 
