@@ -1054,3 +1054,12 @@ test('the todo: block says how many days since the last audit once it is past 14
   assert.doesNotMatch(reportAt(root, 2026, 9, 14), /audit:/);
   assert.doesNotMatch(reportAt(root, 2026, 9, 15), /audit:/, '14 days is not more than 14');
 });
+
+test('the todo: block says when TODO.md cannot be read instead of vanishing', () => {
+  const root = workspace({ 'a.js': 'x' });
+  fs.mkdirSync(path.join(root, '.git'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'TODO.md'));
+  const out = run(['--root', root]);
+  assert.match(out, /^todo: TODO\.md$/m);
+  assert.match(out, /^  unreadable — .*EISDIR/m);
+});

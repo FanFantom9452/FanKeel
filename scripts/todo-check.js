@@ -188,6 +188,7 @@ function trackedIn(base, folder) {
     try {
         return execFileSync('git', ['ls-tree', '-r', '--name-only', 'HEAD', '--', folder], {
             cwd: base, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+            env: Object.assign({}, process.env, { LC_ALL: 'C' }),
         }).split('\n').filter((l) => l.endsWith('.md'));
     } catch (e) {
         if (e && e.code === 'ENOENT') return [];

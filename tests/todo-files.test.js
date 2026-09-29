@@ -157,10 +157,26 @@ test('readFolder: a missing folder is empty, but a path that is not a folder thr
 });
 
 test('writeIndex does not rewrite TODO.md from a folder it could not read', () => {
-  const dir = tmp('fankeel-writeindex-');
-  fs.mkdirSync(path.join(dir, 'docs'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'docs', 'todo'), 'not a folder\n');
+  const dir = project(true);
+  fs.mkdirSync(path.join(dir, 'docs', 'todo'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'TODO.md'), 'kept\n');
-  assert.throws(() => lib.writeIndex(dir, 'docs/todo'));
+  const real = fs.readdirSync;
+  const denied = Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' });
+  fs.readdirSync = (p, ...rest) => {
+    if (path.resolve(String(p)) === path.join(dir, 'docs', 'todo')) throw denied;
+    return real.call(fs, p, ...rest);
+  };
+  try {
+    assert.throws(() => lib.writeIndex(dir), (e) => e === denied);
+  } finally {
+    fs.readdirSync = real;
+  }
   assert.equal(fs.readFileSync(path.join(dir, 'TODO.md'), 'utf8'), 'kept\n');
+});
+
+test('load: a TODO.md that cannot be read throws, and only a missing one is "no TODO"', () => {
+  const dir = tmp('fankeel-loadfile-');
+  assert.equal(lib.load(dir), null);
+  fs.mkdirSync(path.join(dir, 'TODO.md'));
+  assert.throws(() => lib.load(dir), (e) => e.code === 'EISDIR');
 });

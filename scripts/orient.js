@@ -513,7 +513,7 @@ function todoBlock(dir, now) {
     try {
         loaded = todoFiles.load(dir, now);
     } catch (e) {
-        return null;
+        return ['todo: TODO.md', '  unreadable — ' + String((e && e.message) || e)];
     }
     if (!loaded) return null;
     // Folder mode prints each offered entry's id, which is what
