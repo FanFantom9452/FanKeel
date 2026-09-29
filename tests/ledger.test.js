@@ -17,6 +17,9 @@ const { withScan, SCAN_HEADING } = require('../scripts/ledger.js');
 const tmp = require('./tmp.js');
 
 const root = () => tmp('fankeel-ledger-');
+// `groups` now reads the profile, and the machine profile lives under the
+// config directory: pinned to an empty one so no test reads the real machine's.
+process.env.CLAUDE_CONFIG_DIR = tmp('fankeel-ledger-cfg-');
 
 // `scripts/ledger.js` carries the same refusal as `scripts/task.js` -- a flag
 // declared to take a value, given none, is named rather than defaulted. Only
@@ -241,6 +244,30 @@ test('groups names the tasks that declared no interfaces', () => {
   ].join('\n'));
   const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
   assert.match(out, /No Interfaces block, so never a workflow: 2/);
+});
+
+const THREE_DISJOINT = [
+  '## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', '',
+  '**Interfaces:**', '- Consumes: nothing.', '- Produces: nothing.', '',
+  '## Task 2: two', '', '**Files:**', '- Modify: `lib/b.js`', '',
+  '**Interfaces:**', '- Consumes: nothing.', '- Produces: nothing.', '',
+  '## Task 3: three', '', '**Files:**', '- Modify: `lib/c.js`', '',
+  '**Interfaces:**', '- Consumes: nothing.', '- Produces: nothing.', '',
+].join('\n');
+
+test('groups prints workflow for three disjoint tasks when build is not on stage.agents, and agents when it is', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, THREE_DISJOINT);
+  const before = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(before, /1: 1, 2, 3 {2}— workflow/);
+  assert.match(before, /or one Workflow\./);
+  fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': ['build'] }));
+  const after = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(after, /1: 1, 2, 3 {2}— agents/);
+  assert.doesNotMatch(after, /workflow/i);
+  assert.match(after, /1 groups over 3 tasks/);
 });
 
 // The rows said three singletons, the paragraph under them said the files were

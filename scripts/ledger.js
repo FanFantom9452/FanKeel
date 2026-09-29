@@ -31,6 +31,8 @@ const ledger = require('../lib/ledger.js');
 const registry = require('../lib/registry.js');
 const { splitAroundVerb } = require('../lib/argv.js');
 const plantasks = require('../lib/plantasks.js');
+const profileLib = require('../lib/profile.js');
+const { controlling } = require('../lib/stages.js');
 const { contextPath } = require('../lib/handoff.js');
 
 function fail(message) {
@@ -204,8 +206,15 @@ function groupsReport(root, planOpt) {
     // before either `rows` or the original `surfaced` was ever used either.
     const requireHits = plantasks.requireConflicts(tasks, root);
     const flagged = new Set(requireHits.flatMap((r) => [r.a, r.b]));
+    // A stage agent has no Workflow tool, so when build runs under one
+    // (`stage.agents` names build) a group the tasks would call `workflow` is
+    // sent as `agents`. A profile that cannot be read leaves today's answer.
+    let brainBuild = false;
+    try {
+        brainBuild = controlling('build', profileLib.profileFor(root, {}).values);
+    } catch (e) { /* no profile: what it always printed */ }
     const surfaced = plantasks.surfaces(tasks).map((g) => (
-        g.surface === 'workflow' && g.tasks.some((n) => flagged.has(n))
+        g.surface === 'workflow' && (brainBuild || g.tasks.some((n) => flagged.has(n)))
             ? { tasks: g.tasks, surface: 'agents' }
             : g
     ));
@@ -269,7 +278,7 @@ function groupsReport(root, planOpt) {
             ? '\n\nEvery group is one task, so nothing runs beside anything and this'
                 + '\nplan builds serially.' + (cause ? ' ' + cause : '')
             : '')
-        + '\n\nOne group is one surface: one dispatch, two Agents in one response, or one Workflow.'
+        + '\n\nOne group is one surface: one dispatch, two Agents in one response' + (brainBuild ? '.' : ', or one Workflow.')
         // Still true of what the tasks declared even when `prose.length`,
         // but true is not the bar: printed three lines under a finding
         // that says "worth a look," it reads as the answer to that
