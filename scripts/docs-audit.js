@@ -421,7 +421,7 @@ function batches(root) {
         const b = docs.isSignpost(rel) ? { path: '.', role: 'reference' }
             : tree ? docs.bucketOf(tree, rel)
                 : { path: rel.includes('/') ? rel.split('/')[0] : '.', role: 'reference' };
-        if (!b || b.role === 'archive' || b.role === 'fixture') continue;
+        if (!b || ['archive', 'fixture', 'todo'].includes(b.role)) continue;
         if (!groups.has(b.path)) groups.set(b.path, []);
         groups.get(b.path).push(rel);
     }
@@ -662,6 +662,7 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     // raw evidence a report cites rather than a page about the system, and an
     // index carrying every handoff dump beside the documents has stopped
     // telling documents and data apart.
+    // A todo entry is left out for the same reason: it is one deferred thing, not a page about the system.
     // Only when the documentation directory exists. A project with no `docs/` at
     // all has not forgotten to write an index; it has not started keeping
     // documents there, and saying otherwise is a finding about nothing.
@@ -685,7 +686,7 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
                 if (rel === indexRel) continue;
                 if (rel.split('/')[0] !== docRoot) continue;
                 const role = docs.roleOf(tree, rel);
-                if (role === 'archive' || role === 'fixture') continue;
+                if (['archive', 'fixture', 'todo'].includes(role)) continue;
                 if (!linked.has(rel)) index.missing.push(rel);
             }
         }
@@ -708,7 +709,7 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     const orphans = index.exists ? [] : markdown.filter((rel) => rel.split('/')[0] === docRoot
         && rel !== indexRel
         && !pointedTo.has(rel)
-        && !['archive', 'fixture'].includes(docs.roleOf(tree, rel)));
+        && !['archive', 'fixture', 'todo'].includes(docs.roleOf(tree, rel)));
 
     // 6. Code nothing describes. Top level only: a directory with no reference
     // document naming anything inside it is a part of the system documentation
