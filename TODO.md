@@ -14,7 +14,7 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔station〕看第 7 段加的 station 欄位：沒有任何 subagent 的 context 峰值超過 450k（基準 f44b1c61 的 544k）、最貴的單一 subagent 佔 subagent 總花費低於 15%（基準 31%） — [station.md](docs/90-agent/reference/station.md).
 
-- 〔station〕取代 station-1 的 (b)：(1) 沒有任何單一 subagent 的 context 峰值超過 300k；(2) 佔比低於 15% 的目標只適用於 subagent ≥10 的 session。在本 commit 之後的 session 重新量測。 — [station.md](docs/90-agent/reference/station.md).
+- 〔station〕取代 station-1 的 (b)：(1) 沒有任何單一 subagent 的 context 峰值超過 300k；(2) 佔比低於 15% 的目標只適用於 subagent ≥10 的 session。在 8806240d 之後的 session 重新量測。 — [station.md](docs/90-agent/reference/station.md).
 
 - 〔title〕`hooks/title.js` 用 updatedInput 加的前綴只出現在完成通知，畫面上的 Agent(<description>) 照原輸入畫、沒有模型名；要不要讓主控在 description 自己寫別名、hook 再覆寫成完整前綴 — [lib/title.js](lib/title.js).
 
