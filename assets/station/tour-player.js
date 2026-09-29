@@ -29,7 +29,11 @@
     var css = getComputedStyle(document.documentElement);
     var P = E.palette(function (k) { return css.getPropertyValue('--' + k).trim(); }, lang);
     cv.dataset.lang = P.lang;
-    var name = 'reel', frame = 0, playing = false, t0 = 0, f0 = 0;
+    // The timeline the hash names — #promo30@900 — or reel. Read here, before
+    // marks() draws the beats, so the marks are the named timeline's.
+    var hashed = /^#(\w+)@(\d+)$/.exec(location.hash);
+    var name = hashed && E.names().indexOf(hashed[1]) >= 0 ? hashed[1] : 'reel';
+    var frame = 0, playing = false, t0 = 0, f0 = 0;
 
     // The score, made once on the first play: the PCM from tour-music.js in
     // an AudioBuffer, through one gain node the mute button sets.
@@ -38,7 +42,7 @@
         var AC = window.AudioContext || window.webkitAudioContext;
         if (rec || !M || !AC) return null;
         if (!audio) {
-            var ac = new AC(), pcm = M.render(E.get(name).cues);
+            var ac = new AC(), pcm = M.render(E.get(name).cues, E.length(name));
             var buf = ac.createBuffer(1, pcm.length, M.RATE);
             buf.getChannelData(0).set(pcm);
             var gain = ac.createGain();
@@ -172,8 +176,7 @@
 
     marks();
     setMute(false);
-    var m = /^#reel@(\d+)$/.exec(location.hash);
-    seek(m ? Number(m[1]) : 0);
+    seek(hashed && hashed[1] === name ? Number(hashed[2]) : 0);
 
     window.tour = { seek: seek, length: function (n) { return E.length(n); }, ready: false };
     (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () {

@@ -26,7 +26,7 @@ const { pathToFileURL } = require('node:url');
 const { parseArgsOrExit } = require('../lib/cli.js');
 const { findBrowser } = require('./render.js');
 
-const NAMES = ['reel'];
+const NAMES = ['reel', 'promo30'];
 const LANGS = ['zh', 'en'];
 const SIZE = { width: 1280, height: 720 };
 const PAGE = path.join(__dirname, '..', 'assets', 'station', 'tour.html');
@@ -73,8 +73,9 @@ function ffmpegArgs(out, wav) {
 function scoreWav(name) {
     const E = require('../assets/station/tour.js');
     require('../assets/station/tour-reel.js');
+    require('../assets/station/tour-keel.js');
     const M = require('../assets/station/tour-music.js');
-    return Buffer.from(M.wav(M.render(E.get(name).cues)));
+    return Buffer.from(M.wav(M.render(E.get(name).cues, E.length(name))));
 }
 
 // "DevTools listening on ws://127.0.0.1:<port>/devtools/browser/<id>"

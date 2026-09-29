@@ -1,4 +1,4 @@
-// assets/station/tour-promo30.js: the 30-second keel film. A keel-less
+// assets/station/tour-keel.js: the 30-second keel film. A keel-less
 // dinghy capsizes, a keel drops, each of the seven stages raises one rib
 // beside the component a developer knows it by, and the hull closes and
 // sails. Styleframes: .fankeel/build/2026-09-29-promo30/mockup.html.

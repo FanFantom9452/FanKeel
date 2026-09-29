@@ -6,7 +6,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const T = require('../assets/station/tour.js');
-const { TOUR_PROMO30, S, dots, PILLS } = require('../assets/station/tour-promo30.js');
+const { TOUR_PROMO30, S, dots, PILLS } = require('../assets/station/tour-keel.js');
 const { fakeCtx } = require('./tour-ctx.js');
 
 const STARTS = [0, 180, 300, 450, 630, 750, 930, 1080, 1260, 1410];
