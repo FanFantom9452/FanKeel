@@ -18,7 +18,7 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔station〕`/fankeel` 還在 init、沒 task 時沒有 entry，station 看不到當前 session：init 就寫一筆無 task 的 entry，station 顯示為「初始化中」；與 collisions 那筆的同台可見度共用（09-29 使用者答） — [station.md](docs/90-agent/reference/station.md).
 
-- 〔station〕station 可替每個角色設 effort（聽說 sonnet 5.5 在 high／xhigh 效果好），預設採官方建議值，引用前先查官方文件；effort 只能寫在 agent 檔 frontmatter，Agent 工具設不了（09-29 使用者提） — [model-choice.md](docs/90-agent/reference/model-choice.md).
+- 〔station〕Agent 工具設不了 effort、改插件快取會被更新蓋掉：要從 profile 產生 `.claude/agents/` 覆寫檔，先實測同名檔能否蓋過 `fankeel:` 的 agent，guard／brief 要認得新名稱 — [model-choice.md](docs/90-agent/reference/model-choice.md).
 
 - 〔station〕promo30 影片後段 U 形肋骨弧線重疊，看起來像一團線；v2 未重畫（09-29 build gate 使用者定為 TODO），v3 左側重設計時一併考慮 — [tour-keel.js](assets/station/tour-keel.js).
 
@@ -32,7 +32,7 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔advisor〕要不要替主 session、`fankeel-brain` 或 implementer 設 `advisorModel`、用哪個模型；它取代不了 `/fankeel-ask`（不能指定問題、答案無法存檔） — [model-choice.md](docs/90-agent/reference/model-choice.md).
 
-- 〔model〕09-29 已決定暫不用 `haiku`（不夠強，改用 sonnet 5.5），剩兩件未決：(a) profile key 蓋掉 agent 釘的模型、(c) 每個模型預設 effort — [model-choice.md](docs/90-agent/reference/model-choice.md).
+- 〔model〕09-29 已決定暫不用 `haiku`，(c) 預設 effort 已定案（官方 medium），剩 (a) profile key 蓋掉 agent 釘的模型 — [model-choice.md](docs/90-agent/reference/model-choice.md).
 
 ## Blocked
 
