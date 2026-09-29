@@ -1353,3 +1353,14 @@ test('a skill marked disable-model-invocation is named by no other such skill, f
   const calibration = read('fankeel').split('\n## Calibration\n')[1].split('\n## ')[0];
   assert.match(calibration, /A skill the user invoked may use model-invoked skills, never another user-invoked one/);
 });
+
+test('fankeel-build carries a Common rationalizations table of 4 to 6 rows, each citing a date or a path', () => {
+  const text = read('fankeel-build');
+  assert.match(text, /^## Common rationalizations$/m);
+  const body = text.split('\n## Common rationalizations\n')[1].split('\n## ')[0];
+  const rows = body.split('\n').filter((l) => l.startsWith('|') && !/^\|\s*-{2,}/.test(l) && !/^\|\s*excuse\s*\|/i.test(l));
+  assert.ok(rows.length >= 4 && rows.length <= 6, rows.length + ' rows');
+  for (const row of rows) {
+    assert.match(row, /\d{4}-\d{2}-\d{2}|[\w./-]+\.(md|js|json)\b/, 'a row cites no date or path: ' + row);
+  }
+});

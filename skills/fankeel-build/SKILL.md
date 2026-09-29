@@ -620,6 +620,15 @@ A Watch entry also leaves by another door, not through this stage: a session
 that meets the event an `if:` names moves the entry to `## Ready` or
 `## Needs a decision` itself, dropping the `###` and the `if:` line.
 
+## Common rationalizations
+
+| excuse | what happened |
+|---|---|
+| "I will poll until it returns" | 2026-09-23: a build agent spent 261 of 295 Bash calls on `sleep`/`echo` loops, each re-sending its whole context (`agents/fankeel-brain.md`, `## Return`). |
+| "A stash will set the neighbours aside" | 2026-09-25: a `git stash push -u` then drop cleared an uncommitted `stage.agents` override, and the verify station dispatched a brain it should not have (`docs/03-decisions/2026-09-25-todo-line-and-multiplier.md`). |
+| "I will find the definition on disk" | 2026-09-06: a reviewer not told where `tokens` lived ran `find /` and sat 38 minutes (`skills/fankeel-plan/SKILL.md`, `Read:`). |
+| "It is cheaper, I remember the number" | A cost claim carried from memory is not a measurement: run the script before and after, and record what it printed (`docs/90-agent/reports/2026-09-03-dispatch-vs-inline.md`). |
+
 ## Output
 
 ```
