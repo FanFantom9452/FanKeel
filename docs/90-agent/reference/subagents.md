@@ -792,8 +792,8 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   concurrently-running group — on the session's record when a `fankeel-brain`
   starts, skipping one it knows is nested (depth 2+). `await.js` appends the
   `-g<n>` suffix only on `build`, the one stage whose brief names a group
-  handoff, and only for a `group` mark; a `close` mark watches the plain file
-  whatever its `group`. Every other stage's brain writes the plain file, group or not.
+  handoff, and only for a mark carrying a group number unless its `kind` is
+  `close`; a `close` mark watches the plain file whatever its `group`. Every other stage's brain writes the plain file, group or not.
   `controlFor` in `lib/stages.js` reads every mark for the current stage
   (`marksOf`) and puts one "already running" line before the dispatch line per
   mark — naming its group when the mark carries one — telling the controller to
