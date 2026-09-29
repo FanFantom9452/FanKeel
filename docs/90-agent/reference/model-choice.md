@@ -20,7 +20,10 @@ Today every agent file in `agents/` pins its own `model:` in frontmatter. Six pi
   and what a key does when it names a model the agent's file does not pin.
 - **b. Settled: `haiku` not allowed for now.** 09-29, decided by the user: not strong
   enough; use sonnet 5.5. `haiku` stays a legal value of `judge.model`.
-- **c. A default effort per model.** Settled by whoever picks the models.
+- **c. Settled 09-29: a default effort per model.** Claude Code's model-config
+  documents medium as the default effort of Sonnet 5.5 and Opus 5.5, and the agent
+  files keep the `effort:` they pin. Raising one role's effort for a single task needs
+  an override file outside the plugin cache, tracked in TODO `station-3`.
 - **d. Whether any role runs with an advisor.** Claude Code's `advisorModel` lets the
   executor consult a stronger model on its own initiative, with the whole transcript
   and no question of its own — so it cannot replace `/fankeel-ask`, which needs a
@@ -33,4 +36,5 @@ Today every agent file in `agents/` pins its own `model:` in frontmatter. Six pi
 The Agent tool cannot set effort. Only an agent file's frontmatter `effort:` can. So
 a default effort per model can only be done by editing the frontmatter of each agent
 file, or by generating it from the profile; a profile key alone would change the
-model and leave the effort as pinned.
+model and leave the effort as pinned. Item c settles it: the pinned `effort:` stays,
+and a per-task raise goes through the override file tracked in TODO `station-3`.
