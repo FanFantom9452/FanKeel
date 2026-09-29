@@ -3,6 +3,11 @@
   "index": "docs/README.md",
   "buckets": [
     {
+      "path": "docs/90-agent/todo",
+      "role": "todo",
+      "audience": "agent"
+    },
+    {
       "path": "docs/90-agent/reference",
       "role": "reference",
       "audience": "agent"

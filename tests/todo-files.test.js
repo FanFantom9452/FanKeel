@@ -138,3 +138,12 @@ test('ids collate numerically: x-2 before x-10 in readFolder, x-10 before x-2 in
   assert.deepEqual(lib.readFolder(dir, 'docs/todo').map((e) => e.id), ['x-2', 'x-10']);
   assert.deepEqual(lib.load(dir, NOW).done.map((d) => d.id), ['x-10', 'x-2']);
 });
+
+test('this repository keeps entry files, and its TODO.md is what todo.js index writes', () => {
+  const root = path.join(__dirname, '..');
+  const loaded = lib.load(root);
+  assert.equal(loaded.mode, 'folder');
+  assert.equal(loaded.folder, 'docs/90-agent/todo');
+  assert.equal(fs.readFileSync(path.join(root, 'TODO.md'), 'utf8').replace(/\r\n/g, '\n'), loaded.text);
+  assert.match(loaded.text, /\[todo\.md\]\(docs\/90-agent\/reference\/todo\.md\)/);
+});
