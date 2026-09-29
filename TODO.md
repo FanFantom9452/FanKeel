@@ -10,6 +10,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔await〕group 1 收尾後 inflight 仍在、group 3 被標成 group 2，await.js 要 --agent 才等得到；build close 報告又把舊 ledger 算進去寫成 17 tasks — [hooks/brief.js](hooks/brief.js).
 
+- 〔brief〕group 3 的 brain 把 build-g3 檔寫進另一個活 session 的 task 目錄，不是自己的；查 handoff 的目錄是照 session 還是照最新 task 目錄選的 — [lib/handoff.js](lib/handoff.js).
+
 - 〔build〕同日同名的 plan 已封存，.fankeel/build/<stem>/progress.md 仍在、11 個 task 標完成，新 plan 的 ready 印 none；plan 的 lint 或 ledger init 要偵測 ledger 的 plan 行不是這份 — [scripts/ledger.js](scripts/ledger.js).
 
 - 〔gate〕09-29 盤點同一題問 3～4 次（plan 檔何時提交、要不要記 flake）：gate 答案存進 <stage>-answer.md 但下一站 brief 不帶；要把已答題持久化進 brief、gate.js 拒絕重問並檢查暫停選項、打字答案明確時不強制重問 — [hooks/gate.js](hooks/gate.js).
