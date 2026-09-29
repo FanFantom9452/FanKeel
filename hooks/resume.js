@@ -21,7 +21,7 @@ const registry = require('../lib/registry.js');
 const { renderResume } = require('../lib/render.js');
 const profileLib = require('../lib/profile.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
-const { handoffPath, answerPath, writeAnswer, readGate, gateMatches } = require('../lib/handoff.js');
+const { handoffPath, answerPath, writeAnswer, readGate, answersGate } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 
 function main(raw) {
@@ -91,7 +91,8 @@ function main(raw) {
                         writeAnswer(miss, JSON.stringify({ at: Date.now(), reason, asked: asked === undefined ? null : asked, filed }, null, 2));
                     } catch (e) { process.stderr.write('fankeel resume: cannot write ' + miss + ': ' + e.message + '\n'); }
                 };
-                if (!gateMatches(asked, gate.questions)) {
+                // The answer is matched by count and order (answersGate), not by wording.
+                if (!answersGate(asked, gate.questions)) {
                     note(gate.invalid
                         ? 'the handoff\'s gate is invalid at ' + gate.invalid + ': ' + gate.detail
                         : 'the questions asked do not match the handoff\'s gate');

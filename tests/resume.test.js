@@ -334,19 +334,19 @@ test('renderResume stays a readable size across every route and profile', (t) =>
 const SURVEY_DIR = (root) => path.join(root, '.fankeel', 'build', 'task-20260919T093012');
 const GATE_QUESTIONS = [{ question: 'survey 的結論可以進 design 嗎？', header: 'survey', multiSelect: false, options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }] }];
 
-function surveyWithGate(root) {
+function surveyWithGate(root, filed = GATE_QUESTIONS) {
   seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
   fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'true' }));
   const ticks = '`'.repeat(3);
   fs.mkdirSync(SURVEY_DIR(root), { recursive: true });
-  fs.writeFileSync(path.join(SURVEY_DIR(root), 'survey.md'), '# report\n\n' + ticks + 'json gate\n' + JSON.stringify({ questions: GATE_QUESTIONS, next: 'n' }) + '\n' + ticks + '\n');
+  fs.writeFileSync(path.join(SURVEY_DIR(root), 'survey.md'), '# report\n\n' + ticks + 'json gate\n' + JSON.stringify({ questions: filed, next: 'n' }) + '\n' + ticks + '\n');
 }
 const answered = (root, asked) => run({ cwd: root, session_id: MINE, tool_input: { questions: asked }, tool_response: { answers: { 'q?': '暫停' } } });
 
 test('a gate on disk that the asked questions do not match leaves a miss file with the reason and both question lists', () => {
   const root = tmp('fankeel-resume-');
   surveyWithGate(root);
-  const asked = [{ question: 'something else?', header: 'other', multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }] }];
+  const asked = [{ question: 'something else?', header: 'other', multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }, { label: 'c', description: 'c' }] }];
   answered(root, asked);
   const miss = JSON.parse(fs.readFileSync(path.join(SURVEY_DIR(root), 'survey-answer.miss.json'), 'utf8'));
   assert.match(miss.reason, /do not match/);
@@ -377,11 +377,38 @@ test('a miss file that cannot be written says so on stderr', () => {
   const root = tmp('fankeel-resume-');
   surveyWithGate(root);
   fs.mkdirSync(path.join(SURVEY_DIR(root), 'survey-answer.miss.json'));
-  const asked = [{ question: 'something else?', header: 'other', multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }] }];
+  const asked = [{ question: 'something else?', header: 'other', multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }, { label: 'c', description: 'c' }] }];
   const r = spawnSync(process.execPath, [HOOK], {
     input: JSON.stringify({ tool_name: 'AskUserQuestion', cwd: root, session_id: MINE, tool_input: { questions: asked }, tool_response: { answers: { 'q?': 'x' } } }),
     encoding: 'utf8',
     env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: tmp('fankeel-cfg-') }),
   });
   assert.match(r.stderr, /fankeel resume: cannot write .*survey-answer\.miss\.json: /);
+});
+
+test('reworded questions and labels with the same counts still write the answer file', () => {
+  const root = tmp('fankeel-resume-');
+  surveyWithGate(root);
+  const asked = [{ question: 'reworded?', header: 'other', multiSelect: false, options: [{ label: 'go', description: 'z' }, { label: 'stop', description: 'y' }] }];
+  answered(root, asked);
+  assert.ok(fs.existsSync(path.join(SURVEY_DIR(root), 'survey-answer.md')));
+  assert.equal(fs.existsSync(path.join(SURVEY_DIR(root), 'survey-answer.miss.json')), false);
+});
+
+test('a different number of questions writes no answer and leaves a miss file', () => {
+  const root = tmp('fankeel-resume-');
+  surveyWithGate(root, [GATE_QUESTIONS[0], Object.assign({}, GATE_QUESTIONS[0], { question: 'second?' })]);
+  const asked = [GATE_QUESTIONS[0]];
+  answered(root, asked);
+  assert.equal(fs.existsSync(path.join(SURVEY_DIR(root), 'survey-answer.md')), false);
+  assert.ok(fs.existsSync(path.join(SURVEY_DIR(root), 'survey-answer.miss.json')));
+});
+
+test('the same question count with a different option count writes no answer', () => {
+  const root = tmp('fankeel-resume-');
+  surveyWithGate(root);
+  const asked = [{ ...GATE_QUESTIONS[0], options: [{ label: 'only', description: 'a' }] }];
+  answered(root, asked);
+  assert.equal(fs.existsSync(path.join(SURVEY_DIR(root), 'survey-answer.md')), false);
+  assert.ok(fs.existsSync(path.join(SURVEY_DIR(root), 'survey-answer.miss.json')));
 });

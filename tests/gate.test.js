@@ -266,7 +266,7 @@ test('stage.agents: the answer to a matching gate is written though a SendMessag
 // The control: a question the controller wrote itself is not the gate, and
 // its answer is not the stage agent's — with the mark standing or not.
 test('stage.agents: a question the controller asked on its own writes nothing, in flight or not', () => {
-  const own = [{ header: '開新任務', question: '要不要先開一個新任務？', options: [{ label: '要', description: 'a' }, { label: '不要', description: 'b' }] }];
+  const own = [{ header: '開新任務', question: '要不要先開一個新任務？', options: [{ label: '要', description: 'a' }, { label: '不要', description: 'b' }, { label: '再想想', description: 'c' }] }];
   for (const inflight of [null, { stage: 'survey', at: 1758000000000, agentId: 'a3f9c2' }]) {
     const root = tmp('fankeel-gate-');
     seed(root, MINE, Object.assign({ stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') }, inflight ? { inflight } : {}));

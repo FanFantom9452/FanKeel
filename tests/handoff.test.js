@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const tmp = require('./tmp.js');
-const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff, ledgerCommitPath, newestCommit, skipReason, gateMatches } = require('../lib/handoff.js');
+const { handoffPath, commitPath, answerPath, readGate, writeAnswer, lapsUsed, readsOf, previousHandoff, ledgerCommitPath, newestCommit, skipReason, gateMatches, answersGate } = require('../lib/handoff.js');
 
 const DATA = { started: '2026-09-19T09:30:12.345Z' };
 const TICKS = '`'.repeat(3);
@@ -430,4 +430,28 @@ test('gateMatches: a copy that drops or rewords a preview does not match', () =>
   reworded[0].options[0].preview = '<b>layout B</b>';
   assert.equal(gateMatches(reworded, filed), false);
   assert.equal(gateMatches(JSON.parse(JSON.stringify(filed)), filed), true);
+});
+
+test('answersGate: reworded questions and labels with the same option counts match', () => {
+  const filed = [{ question: 'a?', header: 'h', options: [{ label: 'x' }, { label: 'y' }] }];
+  const asked = [{ question: 'b?', header: 'other', options: [{ label: 'p' }, { label: 'q' }] }];
+  assert.equal(answersGate(asked, filed), true);
+});
+
+test('answersGate: a different number of questions does not match', () => {
+  const q = { question: 'a?', options: [{ label: 'x' }, { label: 'y' }] };
+  assert.equal(answersGate([q], [q, q]), false);
+  assert.equal(answersGate([q, q], [q]), false);
+});
+
+test('answersGate: one question with a different option count does not match', () => {
+  const two = { question: 'a?', options: [{ label: 'x' }, { label: 'y' }] };
+  const three = { question: 'a?', options: [{ label: 'x' }, { label: 'y' }, { label: 'z' }] };
+  assert.equal(answersGate([two, two], [two, three]), false);
+});
+
+test('answersGate: non-arrays and empty lists do not match', () => {
+  assert.equal(answersGate(undefined, []), false);
+  assert.equal(answersGate([], []), false);
+  assert.equal(answersGate('x', 'x'), false);
 });
