@@ -33,3 +33,19 @@ Claude 的 advisor 能不能拿來做 `/fankeel-ask` 現在做的事：一題具
 advisor **取代不了** `/fankeel-ask`：判官要的是一題具體的問題、一份 brief、固定格式的答案原文存進 `docs/90-agent/judgements/`；advisor 不能指定問題、回的是泛用建議、新模型的內容 client 還讀不到，所以無法存檔。
 
 兩者是並存關係：advisor 是 session 背景裡的第二意見，模型自己決定何時叫；`/fankeel-ask` 是需要明確裁決時由人觸發。要不要替 fankeel 的角色（主 session、`fankeel-brain`、implementer）設 `advisorModel`，是 [model-choice.md](../reference/model-choice.md) 的 d 項，還沒決定。
+
+## 附記：09-29 實跑一次
+
+使用者要求實跑後才信這份報告，所以在原頁補這一節；上面各節沒改。
+
+跑法：Claude Code 2.1.284，repo 在 `4cc249ad`，`claude -p --model sonnet --advisor fable --setting-sources "" --output-format stream-json --verbose`，prompt 叫模型先諮詢 advisor 一次再用一句話回答一題小問題。輸出留在本機 `.fankeel/build/task-20260929T051938/advisor-probe/run.jsonl`（gitignored，沒進 repo）。
+
+| 項目 | 實跑看到的 | 對上面的表 |
+|---|---|---|
+| executor／advisor | `claude-sonnet-5-5` 叫 `claude-fable-5-1`，一次 | 符合「Sonnet 5.5 可配 Fable」 |
+| 叫的時候傳什麼 | `server_tool_use` 名稱 `advisor`，input `{}` | 符合「input 是空的、不能指定問題」 |
+| 拿回什麼 | `advisor_redacted_result`，只有 `encrypted_content` | 符合「新模型的建議 client 讀不到」 |
+| advisor 讀了多少 | `advisor_message` 那筆 input 31,810 token、output 1,011；executor 自己第一輪才 26 output | 符合「整段 transcript 交給 advisor」：一題小問題也是整段送 |
+| 花費 | 共 $0.438，advisor（Fable）$0.369，占 84% | 計費照 advisor 模型費率，記在 `usage.iterations[]` |
+
+沒測到的：互動 session 的 `/advisor` 指令、subagent 是否沿用、沒被叫時 executor 會不會自己去叫。結論不變——答案存不了檔，取代不了 `/fankeel-ask`；而且一次諮詢的錢大半花在 advisor 重讀整段 transcript，d 項決定要不要設 `advisorModel` 時該算進去。
