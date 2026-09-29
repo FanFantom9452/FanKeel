@@ -40,7 +40,8 @@ the render reviewer's at build. The shot-by-shot table is
   scores instead of the constant `SECONDS = 60`; `reel`'s score is unchanged
   sample for sample.
 - The `promo30` score is a fast rise: sparse under shot 1, building through
-  the seven ribs, resolving on the last bar of shot 10.
+  the seven ribs, resolving over its last two bars (bar 13 on, 26 s) —
+  the same two-bar resolve `reel` has — inside shot 10.
 
 ## 3. Recording and the page
 
