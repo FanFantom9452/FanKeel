@@ -302,7 +302,7 @@ test('the pages that count the hooks count as many as are registered', () => {
   const root = path.join(__dirname, '..');
   const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
   const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven',
-    'eight', 'nine', 'ten'];
+    'eight', 'nine', 'ten', 'eleven'];
 
   const eventOf = new Map();
   for (const [event, groups] of Object.entries(JSON.parse(read('.claude-plugin/plugin.json')).hooks)) {

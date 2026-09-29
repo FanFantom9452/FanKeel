@@ -22,10 +22,10 @@ const task = (n, modify) => [
 
 const design = () => '# A design\n\n## File table\n\n| file | change | dispatch |\n|---|---|---|\n\n';
 
-test('lint flags a task whose Modify: is the whole 5170-line station.js', () => {
+test('lint flags a task whose Modify: is the whole 5174-line station.js', () => {
   const plan = task(1, ['assets/station/station.js']);
   const out = plantasks.lint(plan, design(), ROOT);
-  assert.ok(out.includes('Task 1: reads 5170 lines across its `Modify:` files, over READ_CAP (1500)'), out.join('\n'));
+  assert.ok(out.includes('Task 1: reads 5174 lines across its `Modify:` files, over READ_CAP (1500)'), out.join('\n'));
 });
 
 test('a ranged Modify: entry on the same file stays under the cap', () => {

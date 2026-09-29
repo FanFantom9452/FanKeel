@@ -35,4 +35,3 @@ function main(raw) {
 }
 
 if (require.main === module) run(main);
-module.exports = { main };
