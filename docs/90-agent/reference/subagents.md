@@ -25,17 +25,17 @@ reproduce whatever had been put in front of them, with no needle in the prompt t
 find — a third never launched, and a cell that did not run is not a result
 ([reports/2026-09-04-subagent-brief-probe.md](../reports/2026-09-04-subagent-brief-probe.md)).
 
-## The eight agents this plugin defines
+## The nine agents this plugin defines
 
-Eight subagent types are not just described in prose — they are declared as
+Nine subagent types are not just described in prose — they are declared as
 `agents` in `.claude-plugin/plugin.json` and shipped as files under `agents/`:
-`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier`, `fankeel-fixer`, `fankeel-brain`, `fankeel-render-reviewer` and `fankeel-mockup`.
-Four of them — `fankeel-reader`, `fankeel-judge`, `fankeel-reviewer` and
-`fankeel-render-reviewer` — carry `tools: [Read, Grep, Glob, Bash]` — Edit, Write and
+`fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`, `fankeel-verifier`, `fankeel-fixer`, `fankeel-brain`, `fankeel-render-reviewer`, `fankeel-mockup` and `fankeel-slimmer`.
+Five of them — `fankeel-reader`, `fankeel-judge`, `fankeel-reviewer`,
+`fankeel-render-reviewer` and `fankeel-slimmer` — carry `tools: [Read, Grep, Glob, Bash]` — Edit, Write and
 NotebookEdit are simply absent from the list, so calling any of them to change
 a file is refused by the harness rather than left to a rule somebody has to
 remember. Bash stays on the list for `git` — and, for the reader, this plugin's
-own scripts — a named residual rather than a claim that any of the four cannot
+own scripts — a named residual rather than a claim that any of the five cannot
 write anything.
 
 `fankeel-verifier` is no longer the only agent carrying `Write` —
@@ -61,8 +61,8 @@ The return applies only to a session with no active entry at all, one that never
 sent `/fankeel`; a session that has sent it has an active `init` entry
 (`hooks/inject.js` writes it), so its read-only subagents are denied.
 [collisions.md](collisions.md)
-carries what that denylist actually matches, not restated here. Seven of
-the eight agents hold `Bash`; `fankeel-fixer` is the one that does not,
+carries what that denylist actually matches, not restated here. Eight of
+the nine agents hold `Bash`; `fankeel-fixer` is the one that does not,
 because it edits the file itself rather than returning something for the
 parent to run a test against. `tests/agents.test.js` names all four writers as
 exemptions, each with its argument beside it, rather than dropping the assertion.

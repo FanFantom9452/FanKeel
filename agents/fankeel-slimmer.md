@@ -16,8 +16,8 @@ You edit nothing.
 ## Job
 
 Run `node <plugin>/scripts/input-check.js` from the project root and read
-what it lists: every `CLAUDE.md` above the root, the global one, and each
-project's `MEMORY.md`. Read each file it names, and each memory file a
+what it lists: every `CLAUDE.md` above the root, the global one, each
+project's own `CLAUDE.md` (root and sub-projects), and each project's `MEMORY.md`. Read each file it names, and each memory file a
 `MEMORY.md` line links to. Propose cuts in this order of yield: a section
 another file already says (`duplicate`), a link whose target is gone
 (`dead link`), a section past the size limit that a path could replace

@@ -407,6 +407,12 @@ test('a fankeel-render-reviewer redirect is denied; its render.js run is not', (
   assert.equal(run(root, bashCall('fankeel-render-reviewer', 'node scripts/render.js --config')), '');
 });
 
+test('a fankeel-slimmer redirect is denied', () => {
+  const root = tmp();
+  seed(root, MINE, { guard: undefined });
+  assert.equal(decisionOf(run(root, bashCall('fankeel:fankeel-slimmer', 'ls > out.txt'))), 'deny');
+});
+
 test('fankeel-verifier is excluded — it writes its own evidence file', () => {
   const root = tmp();
   seed(root, MINE, { guard: undefined });
