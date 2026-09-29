@@ -9,7 +9,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 
 const { renderBrief, RETURN_RULES } = require('../lib/render.js');
 const { byName: stageByName } = require('../lib/stages.js');
@@ -195,6 +195,33 @@ test('a build brain whose transcript cannot be read keeps today\'s numbering and
   const mark = JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), 'utf8')).inflight;
   assert.equal(mark.group, 1);
   assert.equal('kind' in mark, false);
+});
+
+function stderrOf(root, payload) {
+  return spawnSync(process.execPath, [HOOK], {
+    input: JSON.stringify(payload),
+    encoding: 'utf8',
+    env: Object.assign({}, process.env, { CLAUDE_PROJECT_DIR: root, CLAUDE_CONFIG_DIR: mkTmp('fankeel-cfg-') }),
+  }).stderr;
+}
+
+test('a build brain whose transcript file cannot be opened records the reason on stderr', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const err = stderrOf(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'u1', transcript_path: path.join(root, 'sess.jsonl') }));
+  assert.match(err, /fankeel brief: transcript of u1 unreadable: .*ENOENT/);
+});
+
+test('a build brain whose transcript line 1 is not JSON records the reason on stderr', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const sub = path.join(root, 'sess', 'subagents');
+  fs.mkdirSync(sub, { recursive: true });
+  fs.writeFileSync(path.join(sub, 'agent-b1.jsonl'), 'not json\n');
+  const err = stderrOf(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'b1', transcript_path: path.join(root, 'sess.jsonl') }));
+  assert.match(err, /fankeel brief: line 1 of transcript of b1 is not readable JSON: /);
 });
 
 test('a judge is told it answers once', () => {

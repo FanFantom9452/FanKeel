@@ -157,7 +157,9 @@ by a different measure.
 **And it decides how they go out.** `lib/plantasks.js` groups tasks by disjoint
 `**Files:**` and by whether one consumes what another produces, then gives each
 group a dispatch surface: one task is `agent`, two are `agents` in one response,
-three or more are one `workflow`. `node <plugin>/scripts/ledger.js --plan <f>
+three or more are one `workflow`, except that when build runs under a stage
+agent (`stage.agents` names build) `groups` prints `agents` for it, because that
+agent has no Workflow tool. `node <plugin>/scripts/ledger.js --plan <f>
 groups` prints it, and `build` sends from `ledger.js ready`, which asks the same
 predicates per task: a task goes out once every earlier task it conflicts with
 is complete, and `TODO.md` and `docs/README.md` do not count as a shared file

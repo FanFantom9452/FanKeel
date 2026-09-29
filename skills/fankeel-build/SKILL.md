@@ -154,7 +154,9 @@ shape the scan records; what goes out next is step 2's `ledger.js ready`:
     2: 4        — agent
 
 `agent` is one dispatch, `agents` two in one response, and `workflow` one
-Workflow whose fan-out is that group. It is the batch shape only — a task
+Workflow whose fan-out is that group, except that when build runs under a stage
+agent (`stage.agents` names build) `groups` prints `agents` for a group of three
+or more, because that agent has no Workflow tool. It is the batch shape only — a task
 whose `**Dispatch:**` line reads `in-session` or `user` is not dispatched at all,
 whatever its group carries. Do not re-derive the surface from the group size:
 a group of three carrying a prose `Consumes:` or a task with no `**Files:**`
@@ -627,7 +629,6 @@ that meets the event an `if:` names moves the entry to `## Ready` or
 | "I will poll until it returns" | 2026-09-23: a build agent spent 261 of 295 Bash calls on `sleep`/`echo` loops, each re-sending its whole context (`agents/fankeel-brain.md`, `## Return`). |
 | "A stash will set the neighbours aside" | 2026-09-25: a `git stash push -u` then drop cleared an uncommitted `stage.agents` override, and the verify station dispatched a brain it should not have (`docs/03-decisions/2026-09-25-todo-line-and-multiplier.md`). |
 | "I will find the definition on disk" | 2026-09-06: a reviewer not told where `tokens` lived ran `find /` and sat 38 minutes (`skills/fankeel-plan/SKILL.md`, `Read:`). |
-| "It is cheaper, I remember the number" | A cost claim carried from memory is not a measurement: run the script before and after, and record what it printed (`docs/90-agent/reports/2026-09-03-dispatch-vs-inline.md`). |
 
 ## Output
 

@@ -1096,7 +1096,9 @@ count.
 `lib/plantasks.js` groups a plan's tasks by disjoint `**Files:**` and by whether
 one consumes what another produces, and `surfaces()` gives each group its
 dispatch surface — one task is `agent`, two are `agents` in one response, three
-or more are `workflow`. `node <plugin>/scripts/ledger.js --plan <f> groups`
+or more are `workflow`, except that when build runs under a stage agent
+(`stage.agents` names build) `groups` prints `agents` for it, because that
+agent has no Workflow tool. `node <plugin>/scripts/ledger.js --plan <f> groups`
 prints it beside each group, and `build` reads it there rather than deriving one
 from the group's size, which cannot see what the next paragraph can.
 

@@ -73,6 +73,7 @@ function caseOf(payload) {
             fs.closeSync(fd);
         }
     } catch (e) {
+        process.stderr.write('fankeel brief: transcript of ' + payload.agent_id + ' unreadable: ' + e.message + '\n');
         return null;
     }
     let text = '';
@@ -80,6 +81,7 @@ function caseOf(payload) {
         const content = JSON.parse(line).message.content;
         text = typeof content === 'string' ? content : (Array.isArray(content) ? content.map((p) => (p && p.text) || '').join('\n') : '');
     } catch (e) {
+        process.stderr.write('fankeel brief: line 1 of transcript of ' + payload.agent_id + ' is not readable JSON: ' + e.message + '\n');
         return null;
     }
     const m = /\bbuild (?:close|group (\d+))\b/.exec(text);

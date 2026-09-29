@@ -89,7 +89,7 @@ function main(raw) {
                 const note = (reason) => {
                     try {
                         writeAnswer(miss, JSON.stringify({ at: Date.now(), reason, asked: asked === undefined ? null : asked, filed }, null, 2));
-                    } catch (e) { /* housekeeping */ }
+                    } catch (e) { process.stderr.write('fankeel resume: cannot write ' + miss + ': ' + e.message + '\n'); }
                 };
                 if (!gateMatches(asked, gate.questions)) {
                     note(gate.invalid

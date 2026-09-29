@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 
 const tmp = require('./tmp.js');
 const { renderResume } = require('../lib/render.js');
@@ -371,4 +371,17 @@ test('an answer write that throws leaves the miss file with the error message as
   answered(root, JSON.parse(JSON.stringify(GATE_QUESTIONS)));
   const miss = JSON.parse(fs.readFileSync(path.join(SURVEY_DIR(root), 'survey-answer.miss.json'), 'utf8'));
   assert.match(miss.reason, /EISDIR|illegal operation on a directory/);
+});
+
+test('a miss file that cannot be written says so on stderr', () => {
+  const root = tmp('fankeel-resume-');
+  surveyWithGate(root);
+  fs.mkdirSync(path.join(SURVEY_DIR(root), 'survey-answer.miss.json'));
+  const asked = [{ question: 'something else?', header: 'other', multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }] }];
+  const r = spawnSync(process.execPath, [HOOK], {
+    input: JSON.stringify({ tool_name: 'AskUserQuestion', cwd: root, session_id: MINE, tool_input: { questions: asked }, tool_response: { answers: { 'q?': 'x' } } }),
+    encoding: 'utf8',
+    env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: tmp('fankeel-cfg-') }),
+  });
+  assert.match(r.stderr, /fankeel resume: cannot write .*survey-answer\.miss\.json: /);
 });

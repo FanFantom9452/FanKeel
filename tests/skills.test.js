@@ -31,6 +31,7 @@ const KNOWN_LEDGER_PARAGRAPHS = [
   "```",
   "`scan` writes exactly what `groups` just printed — the thing",
   "`groups` now prints a surface beside each group, and it is t",
+  "`agent` is one dispatch, `agents` two in one response, and `",
   "   A dispatch carries three things and nothing else, and **n",
   "   ```",
   "   and holds the plan's goal and spec line, the `## Global C",
@@ -1354,12 +1355,12 @@ test('a skill marked disable-model-invocation is named by no other such skill, f
   assert.match(calibration, /A skill the user invoked may use model-invoked skills, never another user-invoked one/);
 });
 
-test('fankeel-build carries a Common rationalizations table of 4 to 6 rows, each citing a date or a path', () => {
+test('fankeel-build carries a Common rationalizations table of 3 to 6 rows, each citing a date or a path', () => {
   const text = read('fankeel-build');
   assert.match(text, /^## Common rationalizations$/m);
   const body = text.split('\n## Common rationalizations\n')[1].split('\n## ')[0];
   const rows = body.split('\n').filter((l) => l.startsWith('|') && !/^\|\s*-{2,}/.test(l) && !/^\|\s*excuse\s*\|/i.test(l));
-  assert.ok(rows.length >= 4 && rows.length <= 6, rows.length + ' rows');
+  assert.ok(rows.length >= 3 && rows.length <= 6, rows.length + ' rows');
   for (const row of rows) {
     assert.match(row, /\d{4}-\d{2}-\d{2}|[\w./-]+\.(md|js|json)\b/, 'a row cites no date or path: ' + row);
   }

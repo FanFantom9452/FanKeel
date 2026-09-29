@@ -878,7 +878,7 @@ Steps:
    - Candidates 2, 3, 5 and 6 are not taken, each with one line of reason, and each reason names what fankeel already has or does not need, taken from the 09-24 page's own row plus what the clone shows: 2 (a per-skill Verification checklist) against the `stop_condition` in `skills/registry.json`; 3 (Changesets changelog) against `scripts/version.js --changes`; 5 (a project `CONTEXT.md`) against `.fankeel/docs.json` and `.fankeel/map.md`; 6 (read-only or editable install) against the single local-directory install.
    - A closing section, `## 沒能核對的部分`, says what could not be checked; the 09-24 page is not edited, and its `## 挑選` section is answered here.
 
-3. In `docs/README.md`, add one row directly after the row that names `2026-09-24-skill-repos.md`, in the same two-column shape: what the page answers, then `[decisions/2026-09-29-skill-candidates.md](03-decisions/2026-09-29-skill-candidates.md)`.
+3. In `docs/README.md`, add one row directly after the row that names `2026-09-24-skill-repos.md`, in the same two-column shape: what the page answers, then a link whose text is `decisions/2026-09-29-skill-candidates.md` and whose target is `03-decisions/2026-09-29-skill-candidates.md`, relative to `docs/`.
 
 4. Run `node scripts/docs-check.js` and `node scripts/docs-audit.js`; the new page resolves, its row is indexed, and nothing else changed status.
 
