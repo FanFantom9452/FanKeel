@@ -61,3 +61,13 @@ test('the land rule names the todo.js done lines and still runs todo-check', () 
   assert.match(rule, /`todo\.js done`/);
   assert.match(rule, /`node \{\{TODO_CHECK\}\}`/);
 });
+
+test('adopt carries the todo ids to the successor session', () => {
+  const dir = root(true);
+  const B = 'bbbbbbbb-5555-4555-8555-555555555555';
+  task(dir, ['start', '--task', 'close two', '--route', 'build,land', '--todo', 'a', '--todo', 'b']);
+  const cfg = path.join(dir, 'cfg');
+  execFileSync(process.execPath, [SCRIPT, 'adopt', A, '--session', B, '--root', dir, '--claude-dir', cfg],
+    { encoding: 'utf8', cwd: dir, env: Object.assign({}, process.env, { CLAUDE_CONFIG_DIR: cfg }) });
+  assert.deepEqual(registry.todosOf(registry.readSession(dir, B)), ['a', 'b']);
+});
