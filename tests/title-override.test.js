@@ -79,6 +79,7 @@ test('overrideFor answers the bare name only for fankeel:<name> with a marked fi
     const f = fixture(MARKED);
     assert.equal(overrideFor('fankeel:fankeel-reader', f.dir, null), 'fankeel-reader');
     assert.equal(overrideFor('fankeel-reader', f.dir, null), null);
+    assert.equal(overrideFor('abcdefghfankeel-reader', f.dir, null), null);
     assert.equal(overrideFor('other:fankeel-reader', f.dir, null), null);
     assert.equal(overrideFor('fankeel:fankeel-reviewer', f.dir, null), null);
 });

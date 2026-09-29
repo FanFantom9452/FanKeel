@@ -6,7 +6,9 @@
 // Claude Code 2.1.284: `updatedInput` with no `permissionDecision` is applied
 // — the task list, the tool result and `agent-*.meta.json` carry the rewrite,
 // the model's own tool_use keeps its original — so this never allows or
-// denies; hooks/guard.js on the same matcher still can.
+// denies; hooks/guard.js on the same matcher still can. Where a generated
+// agent override file exists, it also swaps `subagent_type` from
+// `fankeel:<name>` to `<name>` (station-6).
 
 const os = require('node:os');
 const path = require('node:path');
