@@ -264,11 +264,13 @@ reference's omit-and-inherit is the host's default, not this plugin's — and
 regardless, which is why fankeel never dispatches one; the
 **count and the model must be said out loud**, in the response that sends
 them, because a fan-out nobody announced is spend the user is paying for and
-could not see coming; the **description must open with the model, its version
-and its effort** — `sonnet 5 · medium: survey stage agent`, the version read
-off the session's environment block and the effort off the agent file's
-`effort:` or `inherit` — because it is the title a background agent runs
-under and the one place the user sees what is spending while it runs; the returns must be
+could not see coming; the **description is the title alone**, and `hooks/title.js` opens it with
+the model, the version read off the newest real `message.model` in the
+project's subagent transcripts and the effort off the agent file's `effort:`
+or `inherit`, because it is the title a background agent runs under and the
+one place the user sees what is spending while it runs — computed, since a
+version the model inferred read `sonnet 5` for claude-sonnet-5-5 on
+2026-09-29; the returns must be
 **compared against each other**, because agents dispatched from one prompt style
 make correlated mistakes that per-agent reading will not catch; and the **return
 contract must state why it costs**, because naming the shape without the reason

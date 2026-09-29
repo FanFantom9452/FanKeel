@@ -1065,20 +1065,17 @@ Six rules that make it work, each of which fails silently when missed:
   coming, and for a long time `survey` was the only stage that said it — which
   read as though survey were the only one that cost anything. `plan`, `build`,
   `verify` and `audit` all dispatch too, and all four say it now.
-- **Open the `description` with the model, its version and its effort** —
-  `<alias> <version> · <effort>: <title>`, as in `sonnet 5 · medium: survey
-  stage agent` or `opus 5.5 · inherit: write plan`. The description is the
-  title a background agent runs under, and the one place the user sees while
-  it runs. The version comes off the model families the session's environment
-  block lists — Fable 5.1, Opus 5.5, Sonnet 5 and Haiku 4.5 on 2026-09-24 —
-  and is never written into an agent file or a script, so it moves when the
-  host's models do. The effort is the agent file's `effort:` frontmatter where
-  it has one (`fankeel-brain` carries `medium`) and `inherit` where it does
-  not: the Agent tool cannot set an effort, so a number there would be a
-  guess. For a `subagent_type` that pins its own model, write the model its
-  file pins. A Workflow `agent()` call's `label` opens the same way. The user
-  asked for the model on 2026-09-23 and for the version and effort on
-  2026-09-24.
+- **Write the `description` as the title alone** — `survey stage agent`,
+  `write plan`. `hooks/title.js` opens it with `<alias> <version> · <effort>`
+  before the dispatch runs: the model from the call's `model`, else the agent
+  file's `model:`, else the session's; the version off the newest real
+  `message.model` in this project's subagent transcripts, left out when there
+  is none; the effort off the agent file's `effort:`, else `inherit`. The
+  description is the title a background agent runs under, and the one place
+  the user sees what is spending while it runs — so it is computed, never
+  written: on 2026-09-29 three titles read `sonnet 5` for agents that ran
+  claude-sonnet-5-5. A Workflow `agent()` call's `label` has no hook: open it
+  with the alias and the effort, never a version.
 - **Spot-check the results against each other.** Independently dispatched agents
   share a prompt style and a model, so they make correlated mistakes that reading
   each summary on its own will not catch.
