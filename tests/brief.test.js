@@ -11,7 +11,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync, spawnSync } = require('node:child_process');
 
-const { renderBrief, RETURN_RULES } = require('../lib/render.js');
+const { renderBrief, RETURN_RULES, ANSWERED_MAX } = require('../lib/render.js');
 const { byName: stageByName } = require('../lib/stages.js');
 const mkTmp = require('./tmp.js');
 
@@ -817,4 +817,65 @@ test('the brief inlines the task\'s context.md content, not just its path', () =
   const text = contextOf(run(root, start(root)));
   assert.match(text, /scripts\/context\.js add/);
   assert.ok(text.includes('a secret fact'), 'the brief did not inline the file');
+});
+
+// docs gate answers: an earlier stage's gate answer reaches the later briefs
+// as one "already answered" line per question.
+const TASK_DIR = (root) => path.join(root, '.fankeel', 'build', 'task-20260919T093012');
+function answerFile(root, stage, answers) {
+  const file = path.join(TASK_DIR(root), stage + '-answer.md');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify({ questions: [], answers }, null, 2));
+  return file;
+}
+const ROUTE = ['survey', 'design', 'build'];
+const ALREADY = /^  - already answered \(/;
+const answeredLines = (text) => text.split('\n').filter((l) => ALREADY.test(l));
+
+test('an ordinary brief carries one already-answered line per earlier gate question', () => {
+  const root = tmp();
+  seed(root, { started: '2026-09-19T09:30:12.345Z', route: ROUTE, stage: 'build' });
+  answerFile(root, 'survey', { 'Which palette base should the ramp use?': 'OKLCH' });
+  const text = contextOf(run(root, start(root)));
+  assert.ok(text.includes('already answered (survey): Which palette base should the ramp use? -> OKLCH. Do not re-ask.'), text);
+});
+
+test('a brain brief carries the same already-answered line', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { started: '2026-09-19T09:30:12.345Z', route: ROUTE, stage: 'build' });
+  answerFile(root, 'design', { 'Ship the mockup as drawn?': 'Yes' });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
+  assert.ok(text.includes('already answered (design): Ship the mockup as drawn? -> Yes. Do not re-ask.'), text);
+});
+
+test('the already-answered lines are capped at ANSWERED_MAX, keeping the latest', () => {
+  const root = tmp();
+  seed(root, { started: '2026-09-19T09:30:12.345Z', route: ROUTE, stage: 'build' });
+  const answers = {};
+  for (let i = 1; i <= 9; i++) answers['question number ' + i + '?'] = 'answer ' + i;
+  answerFile(root, 'survey', answers);
+  const lines = answeredLines(contextOf(run(root, start(root))));
+  assert.equal(lines.length, ANSWERED_MAX);
+  assert.ok(lines[lines.length - 1].includes('question number 9?'));
+  assert.ok(!lines.some((l) => l.includes('question number 1?')));
+});
+
+test('an answer older than its stage report is not carried: the gate was rewritten', () => {
+  const root = tmp();
+  seed(root, { started: '2026-09-19T09:30:12.345Z', route: ROUTE, stage: 'build' });
+  const file = answerFile(root, 'survey', { 'Which palette base should the ramp use?': 'OKLCH' });
+  const report = path.join(TASK_DIR(root), 'survey.md');
+  fs.writeFileSync(report, '# report, rewritten\n');
+  const later = new Date(Date.now() + 10000);
+  fs.utimesSync(report, later, later);
+  assert.equal(fs.statSync(report).mtimeMs > fs.statSync(file).mtimeMs, true);
+  assert.equal(answeredLines(contextOf(run(root, start(root)))).length, 0);
+});
+
+test('the stage being briefed contributes no already-answered line of its own lap', () => {
+  const root = tmp();
+  seed(root, { started: '2026-09-19T09:30:12.345Z', route: ROUTE, stage: 'build' });
+  answerFile(root, 'build', { 'Merge the branch now?': 'Yes' });
+  assert.equal(answeredLines(contextOf(run(root, start(root)))).length, 0);
 });
