@@ -22,10 +22,17 @@ const task = (n, modify) => [
 
 const design = () => '# A design\n\n## File table\n\n| file | change | dispatch |\n|---|---|---|\n\n';
 
-test('lint flags a task whose Modify: is the whole 5174-line station.js', () => {
+// The count `readSize` makes, taken from disk: the next edit to station.js must
+// not turn this red, and a station.js split below READ_CAP must, because the
+// test would then be measuring nothing.
+const STATION = path.join(ROOT, 'assets', 'station', 'station.js');
+const STATION_LINES = fs.readFileSync(STATION, 'utf8').replace(/\r?\n$/, '').split(/\r?\n/).length;
+
+test('lint flags a task whose Modify: is the whole station.js', () => {
+  assert.ok(STATION_LINES > plantasks.READ_CAP, 'station.js is under READ_CAP: this test needs a file that is over it');
   const plan = task(1, ['assets/station/station.js']);
   const out = plantasks.lint(plan, design(), ROOT);
-  assert.ok(out.includes('Task 1: reads 5174 lines across its `Modify:` files, over READ_CAP (1500)'), out.join('\n'));
+  assert.ok(out.includes('Task 1: reads ' + STATION_LINES + ' lines across its `Modify:` files, over READ_CAP (1500)'), out.join('\n'));
 });
 
 test('a ranged Modify: entry on the same file stays under the cap', () => {
