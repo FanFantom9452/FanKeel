@@ -1003,6 +1003,14 @@ plays `reel`, and `node scripts/tour-record.js promo30 [--lang zh|en]` records
 it to `.fankeel/build/tour/promo30-<lang>.mp4`. The score is the same
 `tour-music.js`, its length taken from the timeline.
 
+A third film, `promo30v3` (`assets/station/tour-ring.js`, a new module), is
+also 30 seconds — 1800 frames. Its left side is a honeycomb ring, and it
+reuses the captions of the first film. `tour.html#promo30v3@<frame>` plays it
+(`tour.html` loads `tour-ring.js`, which registers the timeline), and
+`node scripts/tour-record.js promo30v3 [--lang zh|en]` records it to
+`.fankeel/build/tour/promo30v3-<lang>.mp4`, exiting 1 unless the MP4 has 1800
+frames and one audio stream of 30 seconds. `promo30` (v2) is untouched.
+
 `serve` answers a fixed list of files from `assets/station/` — `STATIC` in
 `scripts/station.js`: `station.js`, `station.css`, `i18n.js`, `tour.html`,
 `tour.css`, `tour.js` and every `tour-<name>.js` (any number of hyphenated
