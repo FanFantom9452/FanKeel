@@ -211,7 +211,9 @@
     // The ring. st[j] = { slot, fill, arch, plate, stamps, stampK }, each
     // 0..1 (slot: the dashed ghost's alpha). o: seal (the ink's reach, 0..1),
     // ghostSeal, landLab, labels, plates, task (alpha of the task's words),
-    // taskDy (the centre cell's fall), logo (0..1 toward the plain mark).
+    // taskDy (the centre cell's fall), taskA (alpha of the whole task cell),
+    // backing (paper fill under the seal), sealFrom (index the seal's ink
+    // starts from), sealW (the seal's line width).
     function drawRing(ctx, P, g, st, o) {
         o = o || {};
         var c = g.c, R = g.R, CL = g.CL, RD = R * RDK, sw = R * SWK;
@@ -629,8 +631,9 @@
         });
     }
     // The mark: seven cells and one seal round them, no two arcs crossing.
-    // 120 x 120 units like the styleframes' symbol; `pop` pops the cells in
-    // from `at` (the task first), and the seal draws round after them.
+    // 120 x 120 units like the styleframes' symbol; with `l` given, the
+    // cells pop in from frame `at` (the task first) and the seal draws round
+    // after them; `l == null` draws the whole mark.
     function markRing(ctx, x, y, size, col, l, at) {
         col = col || { a: C.keel, b: C.ink };
         group(ctx, x, y, size / 120, 0, function () {
