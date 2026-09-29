@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 date: 2026-09-29
 task: 30 秒 fankeel motion graphics 解說短片（第二版影片）
 ---

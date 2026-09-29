@@ -20,6 +20,10 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔station〕station 可替每個角色設 effort（聽說 sonnet 5.5 在 high／xhigh 效果好），預設採官方建議值，引用前先查官方文件；effort 只能寫在 agent 檔 frontmatter，Agent 工具設不了（09-29 使用者提） — [model-choice.md](docs/90-agent/reference/model-choice.md).
 
+- 〔station〕promo30 影片後段 U 形肋骨弧線重疊，看起來像一團線；v2 未重畫（09-29 build gate 使用者定為 TODO），v3 左側重設計時一併考慮 — [tour-keel.js](assets/station/tour-keel.js).
+
+- 〔station〕promo30 片尾 wordmark 旁的小 logo 仍讀成梳子；v2 未重畫（09-29 build gate 使用者定為 TODO） — [tour-keel.js](assets/station/tour-keel.js).
+
 - 〔tests〕`tests/plantasks-lint-cap.test.js:25,28` 把 `assets/station/station.js` 寫死成 5170 行，下次改 station.js 就紅；改成讀檔案實際長度 — [tests/plantasks-lint-cap.test.js](tests/plantasks-lint-cap.test.js).
 
 - 〔todo〕`unreadable folder` 分支與 `LC_ALL=C` 沒有會紅的測試，`trackedIn` 沒跑過變異；`--migrate` 的 `completions()`、`commitDay` 仍吞錯；plan 第 3 組的變異從未補跑 — [lib/todo.js](lib/todo.js).

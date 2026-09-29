@@ -175,6 +175,9 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | TODO 一筆一檔（09-29）定了什麼、量到什麼、在哪裡回頭：條目檔 + 產生的索引、兩種模式並存、sha 為持久連結、verify 退回兩次抓到的吞錯 | [decisions/2026-09-29-todo-files.md](03-decisions/2026-09-29-todo-files.md) — *繁體中文* |
 | TODO 一筆一檔的 design：條目檔、索引與寫入者、兩種模式的讀者、session 連結、station 面板、遷移 | `docs/99-archive/2026-09-29-todo-files-design.md` — *built* |
 | 落地它的 10 個 task | `docs/99-archive/2026-09-29-todo-files.md` — *built* |
+| promo30 解說片（09-29）定了什麼、量到什麼、在哪裡回頭：龍骨造船概念、`tour-keel.js` 改名、v1/v2 存檔、v3 重做左側 | [decisions/2026-09-29-promo30.md](03-decisions/2026-09-29-promo30.md) — *繁體中文* |
+| promo30 的 design：10 個鏡頭、每個 stage 用真元件、配樂長度跟著 timeline、hash 指名播放 | `docs/99-archive/2026-09-29-promo30-design.md` — *built* |
+| 落地它的 4 個 task | `docs/99-archive/2026-09-29-promo30.md` — *built* |
 | Needs-a-decision 六條怎麼定：拆出 fankeel-mockup、各角色 effort、docs tree 加「給誰看」軸、ADR 為 ≤7 條 binding 子集、station 看／答問題、tune 改完通知與自動刷新、設定精靈改卡片 | `docs/99-archive/2026-09-26-station-redesign-design.md` — *built, 繁體中文* |
 | 做它的 13 個 task——從 fankeel-mockup agent、effort、docs 軸與 binding 上限，到 station 答題、toast、模型版本、effort chip、設定精靈卡片，最後在真頁面上逐塊調整 | `docs/99-archive/2026-09-26-station-redesign.md` — *built, 繁體中文* |
 | 把上面那份設計拆成三個 task 的計畫 | `docs/99-archive/2026-09-25-todo-line-and-multiplier.md` — *built, 繁體中文* |
