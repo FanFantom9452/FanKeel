@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 'use strict';
-// scripts/tour-record.js: the one tour timeline (the kinetic promo, `reel`)
-// to an MP4 with its score, frame by frame, in one language.
+// scripts/tour-record.js: a tour timeline (`reel`, the kinetic promo, or
+// `promo30`, the 30-second film) to an MP4 with its score, frame by frame, in
+// one language.
 //
-//   node scripts/tour-record.js reel [--lang zh|en] [--out f.mp4]
+//   node scripts/tour-record.js <reel|promo30> [--lang zh|en] [--out f.mp4]
 //
 // --lang is zh unless given, and the file is .fankeel/build/tour/
-// reel-<lang>.mp4 unless --out says. Opens
+// <name>-<lang>.mp4 unless --out says. Opens
 // assets/station/tour.html?record&lang=<lang>#<name>@0 in the Chromium-family
 // browser scripts/render.js finds, headless, with a DevTools port, and drives
 // it over Node's global WebSocket: for every frame, `tour.seek(n)` (record mode
