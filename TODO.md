@@ -8,33 +8,19 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 ## Ready
 
-- 〔collisions〕同台 B 開工時不知道 A 在做什麼：先查成因——是兩個 registry、A 還在 init、還是 liveness 誤判——再決定要不要改；跨機器不做（09-29 使用者答） — [collisions.md](docs/90-agent/reference/collisions.md).
-
 - 〔design〕design 一律出 mockup 並直接帶逐塊調整編輯器，拿掉「方向／逐塊」那題，使用者滿意就按 OK；build 後真頁面的逐塊調整也保留（09-29 使用者答） — [skills/fankeel-design/SKILL.md](skills/fankeel-design/SKILL.md).
 
 - 〔inject〕CLAUDE.md、memory 每輪注入越長越多：`/fankeel` 量長度、超過門檻用 gate 問要不要優化，與專門精簡 CLAUDE.md 和 memory 的 custom agent 合成一個任務（09-29 使用者答） — [hooks/inject.js](hooks/inject.js).
 
 - 〔station〕看第 7 段加的 station 欄位：沒有任何 subagent 的 context 峰值超過 450k（基準 f44b1c61 的 544k）、最貴的單一 subagent 佔 subagent 總花費低於 15%（基準 31%） — [station.md](docs/90-agent/reference/station.md).
 
-- 〔station〕`/fankeel` 還在 init、沒 task 時沒有 entry，station 看不到當前 session：init 就寫一筆無 task 的 entry，station 顯示為「初始化中」；與 collisions 那筆的同台可見度共用（09-29 使用者答） — [station.md](docs/90-agent/reference/station.md).
-
-- 〔station〕Agent 工具設不了 effort、改插件快取會被更新蓋掉：要從 profile 產生 `.claude/agents/` 覆寫檔，先實測同名檔能否蓋過 `fankeel:` 的 agent，guard／brief 要認得新名稱 — [model-choice.md](docs/90-agent/reference/model-choice.md).
-
 - 〔station〕promo30 影片後段 U 形肋骨弧線重疊，看起來像一團線；v2 未重畫（09-29 build gate 使用者定為 TODO），v3 左側重設計時一併考慮 — [tour-keel.js](assets/station/tour-keel.js).
 
 - 〔station〕promo30 片尾 wordmark 旁的小 logo 仍讀成梳子；v2 未重畫（09-29 build gate 使用者定為 TODO） — [tour-keel.js](assets/station/tour-keel.js).
 
-- 〔tests〕`tests/plantasks-lint-cap.test.js:25,28` 把 `assets/station/station.js` 寫死成 5170 行，下次改 station.js 就紅；改成讀檔案實際長度 — [tests/plantasks-lint-cap.test.js](tests/plantasks-lint-cap.test.js).
-
-- 〔title〕`CLAUDE_CODE_SUBAGENT_MODEL` 排在 agent 檔 `model:` 後只實測過一次，測試都沒設這個變數，順序改錯不會紅；補一條測試和只設變數的對照 probe — [lib/title.js](lib/title.js).
-
-- 〔todo〕`unreadable folder` 分支與 `LC_ALL=C` 沒有會紅的測試，`trackedIn` 沒跑過變異；`--migrate` 的 `completions()`、`commitDay` 仍吞錯；plan 第 3 組的變異從未補跑 — [lib/todo.js](lib/todo.js).
+- 〔station〕effort 已在 8 個 agent 檔釘死；使用者要蓋掉模型或臨時拉高 effort，只能從 profile 產生 .claude/agents/ 覆寫檔。先實測同名檔能否蓋過 fankeel: 的 agent，guard／brief 要認得新名稱 — [model-choice.md](docs/90-agent/reference/model-choice.md).
 
 ## Needs a decision
-
-- 〔advisor〕要不要替主 session、`fankeel-brain` 或 implementer 設 `advisorModel`、用哪個模型；它取代不了 `/fankeel-ask`（不能指定問題、答案無法存檔） — [model-choice.md](docs/90-agent/reference/model-choice.md).
-
-- 〔model〕09-29 已決定暫不用 `haiku`，(c) 預設 effort 已定案（官方 medium），剩 (a) profile key 蓋掉 agent 釘的模型 — [model-choice.md](docs/90-agent/reference/model-choice.md).
 
 ## Blocked
 
