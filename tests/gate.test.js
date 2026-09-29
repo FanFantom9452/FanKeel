@@ -493,3 +493,48 @@ test('stage.agents: a matching gate clears every mark on the record for this sta
   run(GATE, root, { tool_input: askOf(QUESTIONS) });
   assert.equal(readEntry(root, MINE).inflight, undefined, 'both marks are gone once the one real gate for this stage is confirmed');
 });
+
+// gate answers: a question the user already answered at an earlier stage's
+// gate is denied when the controller asks it again.
+const DESIGN_GATE = [{ question: 'design 的結論可以進 plan 嗎？', header: 'design', multiSelect: false, options: [{ label: '進 plan', description: 'a' }, { label: '暫停', description: 'b' }] }];
+const PALETTE = 'Which palette base should the ramp use?';
+const REASK = [{ question: PALETTE, header: 'Palette', multiSelect: false, options: [{ label: 'OKLCH', description: 'a' }, { label: 'sRGB', description: 'b' }] }];
+function reaskRoot() {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'design', started: '2026-09-19T09:30:12.345Z', route: ['survey', 'design', 'plan'], configDir: tmp('fankeel-cfg-') });
+  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'survey,design' }));
+  const dir = path.join(root, '.fankeel', 'build', 'task-20260919T093012');
+  fs.mkdirSync(dir, { recursive: true });
+  const TICKS = '`'.repeat(3);
+  fs.writeFileSync(path.join(dir, 'design.md'), '# report\n\n' + TICKS + 'json gate\n' + JSON.stringify({ questions: DESIGN_GATE, next: 'n' }) + '\n' + TICKS + '\n');
+  fs.writeFileSync(path.join(dir, 'survey-answer.md'), JSON.stringify({ questions: [], answers: { [PALETTE]: 'OKLCH' } }));
+  return { root, dir };
+}
+
+test('stage.agents: a question the user already answered at an earlier gate is denied, naming the answer', () => {
+  const { root } = reaskRoot();
+  const out = JSON.parse(run(GATE, root, { tool_input: askOf(REASK) }));
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /already answered/);
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /OKLCH/);
+});
+
+test('stage.agents: a different question is not denied as already answered', () => {
+  const { root } = reaskRoot();
+  const other = [Object.assign({}, REASK[0], { question: 'Ship it?' })];
+  assert.doesNotMatch(run(GATE, root, { tool_input: askOf(other) }), /already answered/);
+});
+
+test('stage.agents: the stage\'s own gate, copied word for word, is not denied as already answered', () => {
+  const { root } = reaskRoot();
+  assert.equal(run(GATE, root, { tool_input: askOf(DESIGN_GATE) }).trim(), '');
+});
+
+test('stage.agents: an answer older than its stage report does not block the question', () => {
+  const { root, dir } = reaskRoot();
+  const report = path.join(dir, 'survey.md');
+  fs.writeFileSync(report, '# report, rewritten\n');
+  const later = new Date(Date.now() + 10000);
+  fs.utimesSync(report, later, later);
+  assert.doesNotMatch(run(GATE, root, { tool_input: askOf(REASK) }), /already answered/);
+});

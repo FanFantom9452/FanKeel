@@ -48,7 +48,7 @@ const fs = require('node:fs');
 const registry = require('../lib/registry.js');
 const profileLib = require('../lib/profile.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
-const { handoffPath, answerPath, pendingPath, answersSince, handedOffSince, writeAnswer, readGate, skipReason, gateMatches } = require('../lib/handoff.js');
+const { handoffPath, answerPath, pendingPath, answersSince, answeredOf, handedOffSince, writeAnswer, readGate, skipReason, gateMatches } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 
 // `stage.agents` as the profile holds it, for a sentence.
@@ -79,6 +79,19 @@ function charOverlap(a, b) {
 // overlaps heavily; a genuinely different question sharing only the header
 // does not. Picked against tests/gate.test.js's own cases.
 const ATTEMPT_THRESHOLD = 0.5;
+
+// The answered question (lib/handoff.js answeredOf) that a question in `asked`
+// repeats, judged by the same charOverlap and threshold the attempt check
+// uses, or null. Question text only: option labels are what a re-ask changes.
+function repeatOf(asked, answered) {
+    for (const q of Array.isArray(asked) ? asked : []) {
+        const text = q && q.question;
+        if (typeof text !== 'string') continue;
+        const hit = answered.find((a) => charOverlap(text, a.question) > ATTEMPT_THRESHOLD);
+        if (hit) return hit;
+    }
+    return null;
+}
 
 // The single mark `skipReason` reads: whatever `mine.inflight` holds — none,
 // one mark, or (a build's groups, docs/90-agent/plans/2026-09-28-agent-lifetime-design.md
@@ -225,6 +238,23 @@ function main(raw) {
                     permissionDecisionReason: 'fankeel: this question does not match ' + file
                         + '\'s `json gate` block word for word. Re-read the file and copy its `questions` array exactly'
                         + ' — do not retype or summarize it — then ask again.',
+                },
+            }));
+            return;
+        }
+        // A question the user already answered at an earlier stage's gate is
+        // the user's to settle once. Answers whose stage report was rewritten
+        // after them (`stale`) are exempt: the gate may be a new question.
+        let answered = [];
+        try { answered = answeredOf(root, mine).filter((a) => !a.stale); } catch (e) { /* housekeeping */ }
+        const again = repeatOf(asked, answered);
+        if (again) {
+            process.stdout.write(JSON.stringify({
+                hookSpecificOutput: {
+                    hookEventName: 'PreToolUse',
+                    permissionDecision: 'deny',
+                    permissionDecisionReason: 'fankeel: already answered (' + again.stage + '): ' + again.question + ' -> ' + again.answer
+                        + '. The user settled this at the ' + again.stage + ' gate; act on that answer instead of asking again.',
                 },
             }));
             return;

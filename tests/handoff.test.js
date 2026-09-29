@@ -455,3 +455,17 @@ test('answersGate: non-arrays and empty lists do not match', () => {
   assert.equal(answersGate([], []), false);
   assert.equal(answersGate('x', 'x'), false);
 });
+
+test('readGate: a gate with an empty or missing next has no pause option and is invalid at next', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'survey.md');
+  for (const next of [undefined, '', '   ']) {
+    const g = gateOf('ok');
+    if (next === undefined) delete g.next; else g.next = next;
+    fs.writeFileSync(file, block(g));
+    const got = readGate(file);
+    assert.equal(got.invalid, 'next', JSON.stringify(next));
+    assert.equal(got.detail, 'no pause option');
+  }
+  fs.writeFileSync(file, block(gateOf('ok')));
+  assert.equal(readGate(file).invalid, undefined);
+});
