@@ -32,6 +32,7 @@ const { human } = require('../lib/report.js');
 // `require.main === module` guards its CLI body, so requiring it here does not
 // run `todo-check`'s own report — only `entries` gets used.
 const todoCheck = require('./todo-check.js');
+const todoFiles = require('../lib/todo.js');
 
 // Which of this session's stages already have a competing "how to do this
 // step" skill installed from another plugin, so this can name the collision
@@ -508,21 +509,25 @@ function auditLine(dir, now) {
 }
 
 function todoBlock(dir, now) {
-    const file = path.join(dir, 'TODO.md');
-    let text;
+    let loaded;
     try {
-        text = fs.readFileSync(file, 'utf8');
+        loaded = todoFiles.load(dir, now);
     } catch (e) {
         return null;
     }
-    const all = todoCheck.entries(text);
+    if (!loaded) return null;
+    // Folder mode prints each offered entry's id, which is what
+    // `task.js start --todo <id>` takes.
+    const folder = loaded.mode === 'folder';
+    const all = loaded.entries;
     const needs = all.filter((e) => e.section === 'Needs a decision');
     const ordered = orderByEdit(dir, 'TODO.md', needs);
-    const timings = todoCheck.timings(text, now);
+    const timings = loaded.timings;
 
     const blocked = timings.filter((t) => t.section === 'Blocked');
     const watch = timings.filter((t) => t.section === 'Watch');
-    const readyCount = all.filter((e) => e.section === 'Ready').length;
+    const ready = all.filter((e) => e.section === 'Ready');
+    const readyCount = ready.length;
     const blockedCount = all.filter((e) => e.section === 'Blocked').length;
     const watchCount = all.filter((e) => e.section === 'Watch').length;
     const dueCount = blocked.filter((t) => t.due).length;
@@ -536,14 +541,15 @@ function todoBlock(dir, now) {
     const limit = 4 - (readyCount > 0 ? 1 : 0) - (patrol ? 1 : 0);
     const shown = ordered.slice(0, limit);
 
-    const lines = ['todo: TODO.md', '  Ready ' + readyCount];
+    const lines = ['todo: TODO.md' + (folder ? ', from ' + loaded.folder + '/' : ''),
+        '  Ready ' + readyCount + (folder && readyCount ? ' — ids: ' + ready.map((e) => e.id).join(' ') : '')];
     if (needsCount === 0) {
         lines.push('  Needs a decision 0');
     } else {
         lines.push('  Needs a decision ' + needsCount + ' — newest ' + shown.length
             + ' by last edit, offer these:');
         for (const e of shown) {
-            const t = e.text.replace(/\s+/g, ' ').trim();
+            const t = (folder ? '[' + e.id + '] ' : '') + e.text.replace(/\s+/g, ' ').trim();
             lines.push('    ' + (t.length > TODO_ENTRY_WIDTH ? t.slice(0, TODO_ENTRY_WIDTH - 1) + '…' : t));
         }
         const more = needsCount - shown.length;
@@ -571,6 +577,10 @@ function todoBlock(dir, now) {
     }
     lines.push('  patrol: ' + (patrol ? 'always offered last as "TODO 全表盤點" — ' + dueCount + ' due + ' + staleCount + ' stale'
         : 'TODO.md has no entries, not offered'));
+    if (folder) {
+        lines.push('  start: `task.js start --todo <id>` for each entry the picked option covers — the one entry,'
+            + ' or every Ready id when ## Ready is taken whole');
+    }
     const audit = auditLine(dir, now);
     if (audit) lines.push(audit);
     return lines;

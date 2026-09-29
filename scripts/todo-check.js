@@ -44,7 +44,7 @@ const { execFileSync } = require('node:child_process');
 
 const docs = require('../lib/docs.js');
 const { resolveRoot } = require('../lib/registry.js');
-const { blameTimes } = require('../lib/blame.js');
+const { blameTimes, fileTime } = require('../lib/blame.js');
 // A line cited past the end of its file is a citation that moved. The pattern
 // and the count are docs-check's, so the two scripts agree on what `path:12-30`
 // means and on how a trailing newline counts.
@@ -54,7 +54,7 @@ const { PATHISH, lineCount } = require('./docs-check.js');
 // the station reaches them too; this file keeps the rules.
 const {
     MAX_ENTRY_CHARS, SECTIONS, TIMED, RETIRED, STALE_DAYS, REREAD_DAYS, MAX_TITLE_WIDTH, COMPLETIONS_PAGE,
-    DATE, conditionAt, mmdd, linksIn, entries, timings,
+    DATE, conditionAt, mmdd, linksIn, entries, timings, STATES, ID, ISO, folderOf, load,
 } = require('../lib/todo.js');
 
 const CONDITIONS = { Blocked: ['on', 'after', 'upstream'], Watch: ['if'] };
@@ -173,15 +173,69 @@ function citationsIn(text) {
     return out;
 }
 
+// Folder mode's own rules, one `{ line: 1, file }` problem per entry file
+// except the index's, which is TODO.md's. The index is generated, so any
+// difference from what `render` writes is a hand edit; an entry file is never
+// deleted, so one that was committed and is gone lost its record.
+const TIMED_STATES = ['blocked', 'watch'];
+const SHA = /^[0-9a-f]{7,40}$/;
+
+function trackedIn(base, folder) {
+    try {
+        return execFileSync('git', ['ls-tree', '-r', '--name-only', 'HEAD', '--', folder], {
+            cwd: base, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+        }).split('\n').filter((l) => l.endsWith('.md'));
+    } catch (e) {
+        return [];
+    }
+}
+
+function folderProblems(base, folder, loaded, disk) {
+    const out = [];
+    const on = (file, kind, detail) => out.push({ line: 1, file, kind, detail });
+    if (disk === null || disk.replace(/\r\n/g, '\n') !== loaded.text) {
+        out.push({ line: 1, kind: 'stale index', detail: 'TODO.md is not what `todo.js index` writes from ' + folder
+            + '/. It is generated: run `todo.js index`, and change entries through `todo.js new` and `todo.js done`.' });
+    }
+    for (const e of loaded.all) {
+        if (!ID.test(e.id)) on(e.file, 'bad id', '"' + e.id + '" is not a lowercase kebab slug.');
+        if (!STATES.includes(e.state)) on(e.file, 'bad state', '"' + e.state + '" — state is one of ' + STATES.join(', ') + '.');
+        if (!e.title) on(e.file, 'no title', 'every entry carries a title, at most ' + MAX_TITLE_WIDTH + ' columns.');
+        else if (width(e.title) > MAX_TITLE_WIDTH) {
+            on(e.file, 'long title', width(e.title) + ' columns, cap is ' + MAX_TITLE_WIDTH + ' — a CJK character counts two.');
+        }
+        if (!e.description) on(e.file, 'no description', 'the description is the line TODO.md prints.');
+        if (TIMED_STATES.includes(e.state) && !ISO.test(e.stamp)) {
+            on(e.file, 'undated', 'a ' + e.state + ' entry carries stamp: YYYY-MM-DD, the day somebody last agreed its timing holds.');
+        }
+        if (e.state === 'done' && !(e.done && SHA.test(e.done.sha))) {
+            on(e.file, 'bad done', 'a done entry carries done: with at, sha — the commit that closed it — and disposition.');
+        }
+    }
+    for (const rel of trackedIn(base, folder)) {
+        if (!fs.existsSync(path.join(base, rel))) {
+            on(rel, 'deleted entry', 'was committed and is gone. An entry file is never deleted: close it with `todo.js done <id> --sha <sha>`.');
+        }
+    }
+    return out;
+}
+
 function check(file, now) {
     const at = now === undefined ? Date.now() : now;
-    let text;
-    try {
-        text = fs.readFileSync(file, 'utf8');
-    } catch (e) {
-        return { file, missing: true, problems: [], overdue: [], stale: [] };
-    }
     const base = path.dirname(file);
+    // Folder mode: the entries are the files under the project's `todo`
+    // bucket and TODO.md is what `todo.js index` writes from them, so the
+    // rules below read the index as it should be, and the file on disk is
+    // compared with it rather than read.
+    const folder = folderOf(base);
+    let disk = null;
+    try {
+        disk = fs.readFileSync(file, 'utf8');
+    } catch (e) {
+        if (!folder) return { file, missing: true, problems: [], overdue: [], stale: [] };
+    }
+    const loaded = folder ? load(base, at) : null;
+    const text = loaded ? loaded.text : disk;
     // No `docs.json` is not a failure. `read` hands back a null tree, `roleOf`
     // answers null for everything under it, and the role check reports nothing —
     // this degrades to the three checks it had before rather than refusing to
@@ -190,7 +244,7 @@ function check(file, now) {
     let problems = [];
     const overdue = [];
     const stale = [];
-    const found = entries(text);
+    const found = loaded ? loaded.entries : entries(text);
     for (const entry of found) {
         // The stamp is asked for under `Blocked` and `Watch` and nowhere else.
         // `Ready` and `Needs a decision`'s newest few are read every time
@@ -268,7 +322,8 @@ function check(file, now) {
     // measured-and-no-change or abandoned is a fact only the person who
     // closed it knows, and the file is the only place it survives being
     // asked.
-    const prevText = previousVersion(base, path.basename(file));
+    if (loaded) problems.push(...folderProblems(base, folder, loaded, disk));
+    const prevText = loaded ? null : previousVersion(base, path.basename(file));
     if (prevText !== null) {
         const curNorm = found.map((e) => e.text.replace(/\s+/g, ' ').trim());
         const completions = completionTexts(base);
@@ -345,6 +400,15 @@ function check(file, now) {
         if (t.stale) stale.push({ line: t.line, days: t.days, title: t.title, event: t.event, count: t.items.length });
     }
     problems.sort((a, b) => a.line - b.line);
+    // In folder mode a problem on an entry's bullet is that entry file's.
+    if (loaded) {
+        const fileAt = new Map(loaded.entries.map((e) => [e.line, e.file]));
+        for (const p of problems) {
+            if (p.file || !fileAt.has(p.line)) continue;
+            p.file = fileAt.get(p.line);
+            p.line = 1;
+        }
+    }
 
     // N26: the same "how long since anyone touched this" question
     // `## Waiting`'s stamp already answers, asked of `## Needs a decision`
@@ -352,7 +416,17 @@ function check(file, now) {
     // bullets. Shares `REREAD_DAYS`: one number for "too long to go
     // unread", asked two ways.
     const needsDecisionDue = [];
-    const blame = blameTimes(base, path.basename(file));
+    if (loaded) {
+        for (const entry of found) {
+            if (entry.section !== 'Needs a decision') continue;
+            const t = fileTime(base, entry.file);
+            if (t === null || t === Infinity) continue;
+            const days = Math.floor((at - t) / 86400000);
+            if (days >= REREAD_DAYS) needsDecisionDue.push({ line: entry.line, days, text: entry.text });
+        }
+        needsDecisionDue.sort((a, b) => b.days - a.days);
+    }
+    const blame = loaded ? null : blameTimes(base, path.basename(file));
     if (blame) {
         for (const entry of found) {
             if (entry.section !== 'Needs a decision') continue;
@@ -415,7 +489,7 @@ function report(result) {
         lines.push('fankeel todo-check: ' + result.problems.length + ' problem'
             + (result.problems.length === 1 ? '' : 's') + ' in ' + result.file, '');
         for (const p of result.problems) {
-            lines.push('  ' + result.file + ':' + p.line + '  ' + p.kind + ' — ' + p.detail);
+            lines.push('  ' + (p.file || result.file) + ':' + p.line + '  ' + p.kind + ' — ' + p.detail);
         }
     }
     // Below the verdict and outside it. These are not defects — a timing can
