@@ -70,11 +70,6 @@ after: 跑過一次 stage.agents=all 的真實 task（main 含 08c4ecf、安裝�
 - 〔stage-agents〕接縫「在哪提交」：task 的 `project` 不是 cwd、或在 worktree 裡時跑受控 build，看 `scripts/commit.js` 提交到哪個 repo — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 - 〔stage-agents〕verify 的 mutation 要不要專屬 agent（工具或模型跟 fankeel-brain 不同才拆）；等受控 verify 實跑、k 重跑後再定 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 
-### promo30 v3 收工
-after: promo30 v3 session 收工、tour-keel.js 不再有人在改. 09-29.
-
-- 〔station〕source.test.js 的「every exported name is imported」因 tour-keel.js 匯出失敗（18fa2368／a45bb6fa）；該檔屬另一個進行中的 session，勿在此改 — [tour-keel.js](assets/station/tour-keel.js).
-
 ## Watch
 
 ### 第二個平台的使用者
