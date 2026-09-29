@@ -1165,18 +1165,15 @@
     var HULL_LEFT = { open: hullOpen, drop: hullDrop, stage: hullStage, close: hullClose };
     var TOUR_PROMO30 = timeline(HULL_LEFT);
     E.register('promo30', TOUR_PROMO30);
-    // tour-ring.js builds its timeline from these: timeline(LEFT) with its own
-    // left side, over the same shots (SHOTS, STARTS), the shared right-side
-    // helpers, the palette C, the caption table S (add keys there) and the
-    // hull left side HULL_LEFT.
+    // tour-ring.js builds its timeline from timeline(LEFT), the palette C, the
+    // caption table S (add keys there) and the shared right-side helpers.
+    var helpers = {
+        t: t, eo: eo, bo: bo, txt: txt, measure: measure, group: group, panel: panel,
+        sub: sub, pills: pills, status: status,
+    };
     module.exports = {
         TOUR_PROMO30: TOUR_PROMO30, S: S, dots: dots, PILLS: PILLS,
-        timeline: timeline, HULL_LEFT: HULL_LEFT, SHOTS: SHOTS, STARTS: STARTS, LENGTH: LENGTH, C: C,
-        helpers: {
-            t: t, eo: eo, bo: bo, txt: txt, measure: measure, group: group, panel: panel, enter: enter,
-            sub: sub, pills: pills, status: status, wipe: wipe, ground: ground, term: term, badge: badge,
-            fillPoly: fillPoly, STRIPES: STRIPES,
-        },
+        timeline: timeline, C: C, helpers: helpers,
     };
     if (typeof window !== 'undefined') root.tourPromo30 = module.exports;
 })(typeof window !== 'undefined' ? window : globalThis, typeof module !== 'undefined' ? module : {});

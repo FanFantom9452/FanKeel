@@ -10,7 +10,11 @@
     'use strict';
     var E = root.tourEngine || require('./tour.js');
     var K = root.tourReelKit || require('./tour-reel-kit.js');
-    var V2 = root.tourPromo30 || require('./tour-keel.js');
+    var V2 = root.tourPromo30;
+    if (!V2) {
+        var keel = require('./tour-keel.js');
+        V2 = { timeline: keel.timeline, C: keel.C, S: keel.S, helpers: keel.helpers };
+    }
 
     var C = V2.C, S = V2.S, h = V2.helpers;
     var W = E.W, H = E.H;
@@ -756,8 +760,7 @@
     var TOUR_PROMO30V3 = V2.timeline(RING_LEFT);
     E.register('promo30v3', TOUR_PROMO30V3);
     module.exports = {
-        TOUR_PROMO30V3: TOUR_PROMO30V3, RING_LEFT: RING_LEFT, filled: filled, states: states,
-        FLY: FLY, SEAL: SEAL, logo: logo, markRing: markRing, markBand: markBand,
+        TOUR_PROMO30V3: TOUR_PROMO30V3,
     };
     if (typeof window !== 'undefined') root.tourRing = module.exports;
 })(typeof window !== 'undefined' ? window : globalThis, typeof module !== 'undefined' ? module : {});
