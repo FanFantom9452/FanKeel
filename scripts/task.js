@@ -24,6 +24,7 @@ const { parseArgs: parseArgv } = require('node:util');
 const { execFileSync } = require('node:child_process');
 
 const registry = require('../lib/registry.js');
+const todoFiles = require('../lib/todo.js');
 const live = require('../lib/live.js');
 const badge = require('../lib/badge.js');
 const station = require('../lib/station.js');
@@ -207,6 +208,7 @@ const STRING_FLAGS = {
     class: 'class',
     route: 'route',
     'claude-dir': 'claudeDir',
+    todo: 'todo',
 };
 
 // `strict: false` keeps an unknown flag silent. A declared flag given no value
@@ -223,11 +225,18 @@ const STRING_FLAGS = {
 function parseArgs(head, whole) {
     const options = {};
     for (const flag of Object.keys(STRING_FLAGS)) options[flag] = { type: 'string' };
+    // The one repeatable flag: `start --todo a-1 --todo a-2` links both entries.
+    options.todo = { type: 'string', multiple: true };
 
     const { values } = parseArgv({ args: head, strict: false, allowPositionals: true, options });
     const opts = {};
     for (const [flag, key] of Object.entries(STRING_FLAGS)) {
         if (values[flag] === undefined) continue;
+        if (flag === 'todo') {
+            if (values.todo.some((v) => typeof v !== 'string' || !v.trim())) fail('--todo needs an entry id.');
+            opts.todo = [...new Set(values.todo.map((v) => v.trim()))];
+            continue;
+        }
         if (typeof values[flag] !== 'string') fail('--' + flag + ' needs a value.');
         opts[key] = values[flag];
     }
@@ -315,6 +324,8 @@ function describe(root, sessionId, data) {
     lines.push('route: ' + route.map((r) => (r === data.stage ? '[' + r + ']' : r)).join(' → '));
     const project = registry.projectOf(data);
     if (project) lines.push('project: ' + project);
+    const todo = registry.todosOf(data);
+    if (todo.length) lines.push('todo: ' + todo.join(', '));
     const claims = registry.claimsOf(data);
     if (claims.length) lines.push('touched: ' + claims.join(', '));
     const wt = worktreeOf(data);
@@ -575,6 +586,9 @@ function cmdStart(root, opts) {
         // `claims` key at all: nothing has been edited yet, and an empty list
         // written here would be the declaration this replaced under a new name.
         project,
+        // The TODO entries this task means to close, by id; `stage land`
+        // prints the `todo.js done` line for each.
+        todo: opts.todo && opts.todo.length ? opts.todo : undefined,
         route,
         class: cls ? String(cls).trim().toLowerCase() : undefined,
         // The class said on this command line, and only that one: the floor a
@@ -724,6 +738,19 @@ function handsLines(root, data) {
         .concat(['Ask the user now, before the first dispatch: after the other tasks and before build\'s gate, in this session with them (Recommended); they do it first and say when; or skip, each becoming a TODO.md entry. Then `task.js note "hands: <the answer>"`.']);
 }
 
+// The entries `start --todo` named, as the lines `land` closes them with. Only
+// where the project keeps entry files: in TODO.md mode there is no file to
+// close, and the land rule's hand edit is the whole step.
+function todoLines(root, id, data) {
+    const ids = registry.todosOf(data);
+    if (!ids.length) return null;
+    const dir = projectRootFor(root, { project: data.project });
+    if (!todoFiles.folderOf(dir)) return null;
+    const script = path.join(__dirname, 'todo.js');
+    return ['close at land, each with the sha that landed it:']
+        .concat(ids.map((t) => '  node ' + script + ' done ' + t + ' --sha <sha> --session ' + id + ' --root ' + dir));
+}
+
 function cmdStage(root, opts) {
     const id = requireSession(opts);
     const name = String(opts.positional[0] || '').toLowerCase();
@@ -813,6 +840,10 @@ function cmdStage(root, opts) {
         const hands = handsLines(root, data);
         if (hands) line += NL + hands.join(NL);
     }
+    if (name === 'land') {
+        const closing = todoLines(root, id, data);
+        if (closing) line += NL + closing.join(NL);
+    }
     return line;
 }
 
@@ -844,6 +875,7 @@ function cmdTask(root, opts) {
         delete d.claims;
         delete d.seen;
         delete d.intends;
+        delete d.todo;
         // `claims` falls back to `scope` on a record written before the split, so
         // a clear that dropped only the new key would leave the old list holding.
         delete d.scope;
@@ -1125,6 +1157,7 @@ function cmdAdopt(root, opts) {
     if (source.guard) data.guard = source.guard;
     if (source.floor) data.floor = source.floor;
     if (source.worktree) data.worktree = source.worktree;
+    if (registry.todosOf(source).length) data.todo = registry.todosOf(source);
     // The rename's lap base goes with the task. `moves` crosses over below, and without
     // this a renamed task adopted here would number its laps from the old task's again.
     if (Number.isInteger(source.lapped) && source.lapped > 0) data.lapped = source.lapped;
