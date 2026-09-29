@@ -515,9 +515,9 @@ function main(argv) {
         // `--range` is optional and, when given, is the plan stage's own
         // commit range — refused on the way in, the same as `complete` and
         // `fix` refuse one, so a typo never reaches the file and reads back
-        // as no range at all. Written once: a ledger that already carries a
-        // `Plan:` line keeps it, the same way `ledger.init` itself leaves an
-        // existing ledger alone rather than opening a second one.
+        // as no range at all. A ledger that already carries a `Plan:` line
+        // with the same range is left in place; a different range replaces
+        // the ledger, since it belongs to an earlier plan.
         let rangeNote = '';
         if (opts.range !== undefined) {
             if (!ledger.isRange(opts.range)) {

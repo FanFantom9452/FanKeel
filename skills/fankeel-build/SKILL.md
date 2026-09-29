@@ -69,8 +69,8 @@ node <plugin>/scripts/ledger.js --plan <plan bucket>/<file>.md --range <the sha 
 **Pass the plan stage's own range on `init`.** `--range` is optional and records
 the commits that wrote the plan itself — `ranges` then lists that row beside
 the tasks, and verify no longer reads the plan's own commit as a change
-nobody reviewed. Written once: a second `init --range` on the same ledger
-leaves the first recording in place.
+nobody reviewed. A second `init --range` with the same range leaves the
+ledger in place; a different range replaces it (it belongs to an earlier plan).
 
 **`--plan` goes before the verb, always.** Everything after the verb is text, so
 a completion note or a ruling keeps every word — including one spelled exactly
