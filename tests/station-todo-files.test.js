@@ -90,3 +90,20 @@ test('POST /todo in folder mode writes an entry file and regenerates TODO.md; a 
         s.close();
     }
 });
+
+test('an unreadable entry file gives an error row and a visible panel line, not a project with no TODO', () => {
+    const f = fixture();
+    fs.mkdirSync(path.join(f.r1, 'docs', 'todo', 'bad-1.md')); // a directory named like an entry: readFileSync throws EISDIR
+    const model = station.gather({ configDir: f.cfg, roots: [f.r1], scan: [], cwd: f.r1 });
+    const text = station.serialize(model);
+    const data = JSON.parse(text.slice('window.STATION = '.length, text.lastIndexOf(';')));
+    const row = data.projects.find((p) => path.resolve(p.root) === path.resolve(f.r1));
+    assert.ok(row.todos.length === 1, 'the project still has a TODO row');
+    const t = row.todos[0];
+    assert.equal(t.mode, 'error');
+    assert.match(t.error, /EISDIR/);
+    const V = require('../assets/station/station.js');
+    const html = V.todoPanelHtml(t, []);
+    assert.match(html, /data-block="todo-head"/);
+    assert.match(html, /無法讀取 TODO：.*EISDIR/);
+});

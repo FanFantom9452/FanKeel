@@ -2357,6 +2357,12 @@
             : '<span class="td-lb td-nolb" aria-label="' + loc('proj.todoNoLabel', '沒有 label') + '"></span>';
     }
     function todoPanelHtml(t, sessions) {
+        if (t && t.mode === 'error') {
+            return '<section class="panel td" id="todo">'
+                + '<div class="h2" data-block="todo-head">TODO</div>'
+                + '<p class="note">' + loc('proj.todoReadError', '無法讀取 TODO：{msg}', { msg: esc(t.error) }) + '</p>'
+                + '</section>';
+        }
         if (!t || (!t.open.length && !t.done.length)) return '';
         var known = {};
         (sessions || []).forEach(function (s) { known[s.id] = true; });

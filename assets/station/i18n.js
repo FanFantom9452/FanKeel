@@ -110,6 +110,7 @@
             'proj.todoSessionNote': 'A session can only be found on the machine that ran it; where it cannot, the commit that closed the entry is shown.',
             'proj.todoOpenN': '{n} open',
             'proj.todoDoneN': '{n} done',
+            'proj.todoReadError': 'Cannot read TODO: {msg}',
             // ses — the session page
             'ses.noTimedRequests': 'This session has no timed requests, so no timeline can be drawn',
             'ses.timelineLabel': 'session timeline',
