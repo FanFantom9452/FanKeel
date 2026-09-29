@@ -208,10 +208,15 @@ function groupsReport(root, planOpt) {
     const flagged = new Set(requireHits.flatMap((r) => [r.a, r.b]));
     // A stage agent has no Workflow tool, so when build runs under one
     // (`stage.agents` names build) a group the tasks would call `workflow` is
-    // sent as `agents`. A profile that cannot be read leaves today's answer.
+    // sent as `agents`. A profile read that throws leaves today's answer; a
+    // profile.json that does not parse never throws (profileFor drops its
+    // values and lists the path), so the report names it below instead.
     let brainBuild = false;
+    let unreadable = [];
     try {
-        brainBuild = controlling('build', profileLib.profileFor(root, {}).values);
+        const prof = profileLib.profileFor(root, {});
+        brainBuild = controlling('build', prof.values);
+        unreadable = prof.unreadable || [];
     } catch (e) { /* no profile: what it always printed */ }
     const surfaced = plantasks.surfaces(tasks).map((g) => (
         g.surface === 'workflow' && (brainBuild || g.tasks.some((n) => flagged.has(n)))
@@ -261,7 +266,10 @@ function groupsReport(root, planOpt) {
             ? '\n\nNo Files block, so serialised against everything: ' + undeclared.join(', ')
             : '')
         + (noInterfaces.length
-            ? '\n\nNo Interfaces block, so never a workflow: ' + noInterfaces.join(', ')
+            ? '\n\nNo Interfaces block, so never ' + (brainBuild ? 'grouped as independent' : 'a workflow') + ': ' + noInterfaces.join(', ')
+            : '')
+        + (unreadable.length
+            ? '\n\nProfile unreadable, so Workflow may be offered wrongly: ' + unreadable.join(', ')
             : '')
         // Whether this should be withheld per group rather than per report is
         // open: a clean group in a plan that carries one prose `Consumes:`

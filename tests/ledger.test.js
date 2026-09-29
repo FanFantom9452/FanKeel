@@ -270,6 +270,34 @@ test('groups prints workflow for three disjoint tasks when build is not on stage
   assert.match(after, /1 groups over 3 tasks/);
 });
 
+test('groups under a brain build says nothing of workflow for a task with no Interfaces block', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, ['## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', ''].join('\n'));
+  fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': ['build'] }));
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(out, /No Interfaces block, so never grouped as independent: 1/);
+  assert.doesNotMatch(out, /workflow/i);
+  const plain = root();
+  const out2 = execFileSync(process.execPath, [SCRIPT, '--root', plain, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(out2, /No Interfaces block, so never a workflow: 1/);
+});
+
+test('groups names an unparseable profile.json in the report instead of dropping it silently', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, THREE_DISJOINT);
+  fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+  const bad = path.join(dir, '.fankeel', 'profile.json');
+  fs.writeFileSync(bad, '{ "stage.agents": [');
+  const out = execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.match(out, /Profile unreadable, so Workflow may be offered wrongly: .*profile\.json/);
+  const good = root();
+  const out2 = execFileSync(process.execPath, [SCRIPT, '--root', good, '--plan', plan, 'groups'], { encoding: 'utf8' });
+  assert.doesNotMatch(out2, /Profile unreadable/);
+});
+
 // The rows said three singletons, the paragraph under them said the files were
 // disjoint and nothing consumed anything, and the paragraph won: a plan whose
 // tasks all appended to one index file built serially with nothing saying so.
