@@ -104,6 +104,21 @@ test('460k on PreToolUse: a Write under .fankeel/build/ is let through', () => {
     assert.equal(out, '');
 });
 
+test('460k in a workflow agent\'s transcript, present only under subagents/workflows/: a Read is denied', () => {
+    const root = tmp('fankeel-budget-');
+    seed(root, MINE);
+    const t = transcript(root, 1000);
+    const dir = path.join(root, 'transcript', 'subagents', 'workflows', 'wf_x');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'agent-a0b1c2.jsonl'), JSON.stringify({ message: { usage: {
+        input_tokens: 460000, cache_creation_input_tokens: 0, cache_read_input_tokens: 0,
+    } } }) + '\n');
+    const out = run({ session_id: MINE, cwd: root, agent_id: 'a0b1c2', hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: 'lib/x.js' }, transcript_path: t });
+    const o = JSON.parse(out).hookSpecificOutput;
+    assert.equal(o.permissionDecision, 'deny');
+    assert.match(o.permissionDecisionReason, /relay-a0b1c2\.md/);
+});
+
 test('parent at 460k, subagent at 50k: PreToolUse and PostToolUse both print nothing', () => {
     const root = tmp('fankeel-budget-');
     seed(root, MINE);
