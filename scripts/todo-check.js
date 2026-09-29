@@ -50,35 +50,14 @@ const { blameTimes } = require('../lib/blame.js');
 // means and on how a trailing newline counts.
 const { PATHISH, lineCount } = require('./docs-check.js');
 
-// Long enough for a sentence and a link, short enough that a paragraph does not
-// fit. Detail that will not compress to this belongs in the file being pointed
-// at, which is the whole rule.
-const MAX_ENTRY_CHARS = 200;
+// The text readers and the constants they share live in `lib/todo.js`, where
+// the station reaches them too; this file keeps the rules.
+const {
+    MAX_ENTRY_CHARS, SECTIONS, TIMED, RETIRED, STALE_DAYS, REREAD_DAYS, MAX_TITLE_WIDTH, COMPLETIONS_PAGE,
+    DATE, conditionAt, mmdd, linksIn, entries, timings,
+} = require('../lib/todo.js');
 
-// The three buckets, in the order a reader wants them: what can be started now,
-// what needs a person before anyone can start, what nobody can move yet. The
-// heading carries the classification, so it costs one line of structure per group
-// rather than a field on every bullet — and `entries()` was already recording it
-// while nothing read it back.
-//
-// By decision state and not by topic, on purpose. Topic groups read well and
-// answer the wrong question: what `init` needs to know is which entries can
-// become a task today, and two bullets about one file are as often one that is
-// ready and one that is still an argument.
-const SECTIONS = ['Ready', 'Needs a decision', 'Blocked', 'Watch'];
-
-// Under these two a `###` is a timing, not a heading, and each takes its own
-// conditions. `Waiting` is the heading both replaced on 2026-09-27: a `###`
-// under it still groups (so its entries report as unclassified under
-// "Waiting", not under the timing's title), and it is never spared as another
-// vocabulary.
-const TIMED = ['Blocked', 'Watch'];
 const CONDITIONS = { Blocked: ['on', 'after', 'upstream'], Watch: ['if'] };
-const RETIRED = 'Waiting';
-
-// A Watch timing is never due: nobody can check its event. What can go stale
-// is the decision to keep watching, and sixty days is when it is asked again.
-const STALE_DAYS = 60;
 
 // The roles `docs.json` declares for documents that record a moment rather than
 // the present: a decision record says why something was decided then, a plan
@@ -105,75 +84,7 @@ const STALE_DAYS = 60;
 // not a place an open question is tracked.
 const STALE_ROLES = ['decision', 'plan', 'report', 'archive'];
 
-// Seven days, and it is a re-read interval rather than an age.
-//
-// `## Waiting` has shrunk five times in this repository's history — c50a5d5,
-// a62863e, 811219c, 3fadc08 and 0004ad5. Four were somebody re-reading the
-// section and finding an entry misfiled, and one a question Claude Code's docs
-// answered first; none of the five was the thing it named actually happening.
-// On 2026-09-18 two did leave that way (cdb240e), and both were found by
-// somebody reading the section. It is drained by being read, so the interval
-// to measure is the one between readings.
-//
-// Seven and not the fortnight the documentation sweep runs on, because the
-// fortnight caught nothing: on 2026-09-01 the four oldest entries had sat
-// eleven days untouched and a fourteen-day window would have reported none of
-// them. A window that misses the backlog it was written for is the wrong
-// window. Seven reports those four and the one behind them, which is the set
-// that prompted this.
-const REREAD_DAYS = 7;
-
-// `MM-DD` at the end of the entry, which is what twelve of the sixteen entries
-// already carried before anything read them back. No year: it is written by
-// hand, and a year is noise 364 days out of 365.
-const STAMP = /(?:^|\s)(\d{2})-(\d{2})\.?$/;
-
-// The condition line: a key naming the kind of wait, then what it waits for,
-// then the stamp. Anchored at the start of the line — a key buried mid-sentence
-// is prose, not a condition. The stamp is stripped off the tail the same way
-// `STAMP` finds it. What this cannot do: grade whether the text names anything
-// real. `after: it seems worth revisiting.` passes.
-const CONDITION = /^(on|after|upstream|if):\s*(.*)$/i;
-
-function conditionAt(text) {
-    const m = CONDITION.exec(text.replace(/\s+/g, ' ').trim());
-    if (!m) return null;
-    const event = m[2].replace(STAMP, '').trim().replace(/\.$/, '').trim();
-    return { kind: m[1].toLowerCase(), event: event || null };
-}
-
-// A timing's title, in terminal columns rather than characters. A CJK or
-// full-width character takes two, so a cap in characters would let a Chinese
-// title run twice as wide as an English one. 28 is fourteen Chinese characters
-// or twenty-eight letters — the arithmetic AskUserQuestion's header already
-// uses, twelve characters or six in CJK.
-const MAX_TITLE_WIDTH = 28;
 const { width } = require('../lib/handoff.js');
-
-function mmdd(t) {
-    const d = new Date(t);
-    return String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-}
-
-// An event that opens with `MM-DD` is a date, and its timing is due from that
-// day rather than a week after its stamp — the one kind of event a script can
-// judge. The day is the first one on or after the stamp: a `01-05` stamped
-// `12-20` is next January.
-const DATE = /^(\d{2})-(\d{2})(?!\d)/;
-
-function dateAt(event, stamped) {
-    const m = event === null ? null : DATE.exec(event);
-    if (!m || stamped === null) return null;
-    const month = Number(m[1]);
-    const day = Number(m[2]);
-    const year = new Date(stamped).getFullYear();
-    for (const y of [year, year + 1]) {
-        const at = new Date(y, month - 1, day);
-        if (at.getMonth() !== month - 1 || at.getDate() !== day) continue;
-        if (at.getTime() >= stamped) return at.getTime();
-    }
-    return null;
-}
 
 // Whether an `on:` names a day the calendar has. 2000 is a leap year, so
 // `02-29` is accepted here and left to `dateAt` to place in a year that has it.
@@ -186,40 +97,6 @@ function validOn(event) {
     return at.getMonth() === month - 1 && at.getDate() === day;
 }
 
-// Whether the day arithmetic slips a day across a DST transition is untested.
-// It matches `docs-audit.js`'s `daysBetween`, and every machine this has run on
-// keeps one offset all year, so there has been nothing to observe rather than
-// something observed and dismissed.
-//
-// The most recent `MM-DD` that is not in the future. Read on 5 January, a
-// `12-15` is three weeks back and not eleven months forward, and that rollover
-// is the only case where a missing year can be got wrong.
-function stampAt(text, now) {
-    const m = STAMP.exec(text.replace(/\s+/g, ' ').trim());
-    if (!m) return null;
-    const month = Number(m[1]);
-    const day = Number(m[2]);
-    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-    const year = new Date(now).getFullYear();
-    for (const y of [year, year - 1]) {
-        const at = new Date(y, month - 1, day);
-        // A month that rolled over is not a date in *this* year, which is not
-        // the same as not being a date. `02-29` is both: invalid in 2025 and
-        // the right answer in 2024, so the next candidate still has to be
-        // tried. Returning here read a valid leap-day stamp as no stamp at all
-        // and failed the run on it.
-        if (at.getMonth() !== month - 1 || at.getDate() !== day) continue;
-        if (at.getTime() <= now) return at.getTime();
-    }
-    return null;
-}
-
-// A deleted entry leaves no record of what happened to it, and a nobody-said
-// deletion is the same failure `entries()` already catches for a stray
-// heading — one step earlier. `docs/90-agent/reference/todo-completions.md`
-// is where the record goes; this page's own role (`reference`) is never
-// checked here, only its content.
-const COMPLETIONS_PAGE = 'docs/90-agent/reference/todo-completions.md';
 const COMPLETION_ORIGINAL = /^- original:\s*(.*)$/gm;
 
 // The text of every `- original: <...>` record on the completions page,
@@ -277,64 +154,6 @@ function reworded(oldText, newTexts) {
     return false;
 }
 
-const LINK = /\[[^\]]*\]\(([^)]+)\)/g;
-// A scheme, or a bare in-page anchor. Neither is a file in this repository, so
-// neither is something this can check.
-const EXTERNAL = /^(?:[a-z][a-z0-9+.-]*:|#|\/\/)/i;
-
-// Top-level bullets only. An indented bullet is a continuation of the entry
-// above it and is measured as part of it, not as an entry of its own.
-//
-// `end` is the last line actually folded into the entry — its own bullet line
-// until a continuation line extends it — not the line before whatever comes
-// next in the file. A caller wanting "this entry's lines, however many it
-// wraps over" needs that distinction: the gap between one entry and the next
-// can hold a blank line, or the heading that opens the following section, and
-// neither belongs to the entry that happens to sit above it.
-function entries(text) {
-    const lines = text.split(/\r?\n/);
-    const out = [];
-    let section = '';
-    let current = null;
-    const close = () => {
-        if (current) out.push(current);
-        current = null;
-    };
-    let timing = null;
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (/^#{1,6}\s/.test(line)) {
-            close();
-            // Under `## Blocked` or `## Watch` a `###` is a timing, not a
-            // section: the entries below it wait for the same thing and lift
-            // together. Under the retired `## Waiting` it groups too, so its
-            // entries are reported under "Waiting". Anywhere else it is a
-            // heading like any other, and still unclassified.
-            if (/^#{3,6}\s/.test(line) && (TIMED.includes(section) || section === RETIRED)) {
-                timing = i + 1;
-                continue;
-            }
-            section = line.replace(/^#+\s*/, '').trim();
-            timing = null;
-            continue;
-        }
-        if (/^[-*]\s+\S/.test(line)) {
-            close();
-            current = { line: i + 1, end: i + 1, section, timing, text: line.replace(/^[-*]\s+/, '') };
-            continue;
-        }
-        if (current && /^\s+\S/.test(line)) {
-            current.text += ' ' + line.trim();
-            current.end = i + 1;
-            continue;
-        }
-        if (!line.trim()) continue;
-        close();
-    }
-    close();
-    return out;
-}
-
 // `path:N` or `path:N-M` at the end of a link target. Split off before the
 // existence check, which would otherwise look for a file named `a.js:12`.
 const LINE_SUFFIX = /:(\d+)(?:[-–](\d+))?$/;
@@ -350,56 +169,6 @@ function citationsIn(text) {
     for (const raw of linksIn(text)) {
         const at = LINE_SUFFIX.exec(raw);
         if (at) out.push({ target: raw.slice(0, at.index), from: +at[1], to: at[2] ? +at[2] : +at[1] });
-    }
-    return out;
-}
-
-function linksIn(text) {
-    const out = [];
-    LINK.lastIndex = 0;
-    let m;
-    while ((m = LINK.exec(text)) !== null) {
-        const target = m[1].trim().split(/\s+/)[0].replace(/^<|>$/g, '');
-        if (!target || EXTERNAL.test(target)) continue;
-        out.push(target.split('#')[0]);
-    }
-    return out;
-}
-
-// Every `###` under `## Blocked` or `## Watch`, with the line after it read as
-// its condition: the kind of wait, what it waits for, and the day somebody last
-// agreed it still does. The first non-blank line is taken whatever it says, so
-// a line with a stamp and no key is `unconditioned` rather than `undated` too.
-// Blocked is due — `on:` from its date, the others seven days after the stamp;
-// Watch is never due and goes stale sixty days after the stamp.
-function timings(text, now) {
-    const at = now === undefined ? Date.now() : now;
-    const lines = text.split(/\r?\n/);
-    const found = entries(text);
-    const out = [];
-    let section = '';
-    for (let i = 0; i < lines.length; i++) {
-        const h = /^(#{1,6})\s+(.*)$/.exec(lines[i]);
-        if (!h) continue;
-        if (h[1].length >= 3 && (TIMED.includes(section) || section === RETIRED)) {
-            if (section === RETIRED) continue;
-            let j = i + 1;
-            while (j < lines.length && !lines[j].trim()) j++;
-            const next = j < lines.length && !/^#{1,6}\s|^[-*]\s/.test(lines[j]) ? lines[j] : '';
-            const cond = next ? conditionAt(next) : null;
-            const kind = cond ? cond.kind : null;
-            const event = cond ? cond.event : null;
-            const stamp = next ? stampAt(next, at) : null;
-            const date = kind === 'on' ? dateAt(event, stamp) : null;
-            const days = stamp === null ? null : Math.floor((at - stamp) / 86400000);
-            const watch = section === 'Watch';
-            const due = watch ? false : date !== null ? at >= date : days !== null && days >= REREAD_DAYS;
-            const stale = watch && days !== null && days >= STALE_DAYS;
-            out.push({ line: i + 1, section, title: h[2].trim(), kind, event, stamp, date, days, due, stale,
-                items: found.filter((e) => e.timing === i + 1) });
-            continue;
-        }
-        section = h[2].trim();
     }
     return out;
 }
