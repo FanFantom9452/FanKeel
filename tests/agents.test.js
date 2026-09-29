@@ -13,10 +13,10 @@ const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-v
 // file for the Workflow join, and `Write` is what that takes. It is not less
 // constrained than the other three for holding it — `guard.js`'s PreToolUse
 // hook matches `Edit|Write|NotebookEdit` (`.claude-plugin/plugin.json`), so
-// `Write` is guarded; `Bash`, which seven of the eight hold, is matched by a
-// second `guard.js` entry (matcher `Bash|PowerShell`) for four of them —
-// `fankeel-reader`, `fankeel-reviewer`, `fankeel-judge` and
-// `fankeel-render-reviewer` — not `fankeel-verifier` or `fankeel-brain`, per
+// `Write` is guarded; `Bash`, which eight of the nine hold, is matched by a
+// second `guard.js` entry (matcher `Bash|PowerShell`) for five of them —
+// `fankeel-reader`, `fankeel-reviewer`, `fankeel-judge`,
+// `fankeel-render-reviewer` and `fankeel-slimmer` — not `fankeel-verifier` or `fankeel-brain`, per
 // `lib/guard.js`'s `readOnlyAgentType` list.
 // `fankeel-fixer` is the second named exception: it makes the small edit
 // itself rather than returning it for the parent to apply, so it needs both
