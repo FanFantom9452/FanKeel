@@ -18,6 +18,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 ## Needs a decision
 
+- 〔title〕hooks/title.js 用 updatedInput 加的前綴只出現在完成通知，畫面上的 Agent(<description>) 照原輸入畫、沒有模型名；要不要讓主控在 description 自己寫別名、hook 再覆寫成完整前綴 — [lib/title.js](lib/title.js).
+
 ## Blocked
 
 ### fankeel 功能全部完成
