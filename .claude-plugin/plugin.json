@@ -137,6 +137,17 @@
         ]
       },
       {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/title.js\"",
+            "timeout": 5,
+            "statusMessage": "Writing the model, version and effort into the dispatch title..."
+          }
+        ]
+      },
+      {
         "hooks": [
           {
             "type": "command",
