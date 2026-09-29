@@ -19,7 +19,7 @@ and the role says how long a document is meant to stay true:
 | `report` | a dated snapshot: audit, benchmark, meeting, a judge's ruling (`docs/judgements/`) | yes |
 | `archive` | retired; checked only that nothing current points at it | yes |
 | `fixture` | a test's own input — describes nothing about the system, checked for links and line numbers only | n/a |
-| `todo` | one TODO entry, a file under the project's entry folder. Current, but checked like a fixture: links and line numbers, never symbols or `last_verified` — its date is its own `stamp`. Left out of the index and the audit's reading batches. |
+| `todo` | one TODO entry, a file under the project's entry folder. Current, but checked like a fixture: links and line numbers, never symbols or `last_verified` — its date is its own `stamp`. Left out of the index and the audit's reading batches. | no — dated by its own stamp |
 
 A root `.ignore` holding `docs/99-archive/` keeps ripgrep — the `Grep` tool here —
 from searching it by default; naming `docs/99-archive` explicitly still searches

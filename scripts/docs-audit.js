@@ -398,9 +398,9 @@ function diagramsIn(text) {
 
 // The reading half of `/fankeel-audit`, split so a large repository is read
 // whole rather than cut off: one batch per bucket, at most BATCH_PAGES pages
-// each. Archive and fixture pages are not read — an archive may be out of
-// date by design and a fixture describes nothing — and the root signposts are
-// one batch of their own, `.`.
+// each. Archive, fixture and todo pages are not read — an archive may be out
+// of date by design, a fixture describes nothing and a todo entry is dated by
+// its own stamp — and the root signposts are one batch of their own, `.`.
 const BATCH_PAGES = 40;
 
 // The tree to read by: the project's own docs.json if it declared one, else
@@ -699,7 +699,7 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     // anything it fails to list is unreachable by definition. Two names for one
     // problem is how a report starts looking longer than it is.
     //
-    // Archives and fixtures are left out for the reasons the index check above
+    // Archives, fixtures and todo entries are left out for the reasons the index check above
     // gives. This branch runs only where no index has been written, so on this
     // repository it is the empty list either way — but the check is not scoped
     // to this repository, and a project with fixtures and no index yet would
