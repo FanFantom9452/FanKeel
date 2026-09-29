@@ -2009,7 +2009,7 @@ It prints, without failing, the due and stale timings and the `decision`
 entries whose file nobody has committed in seven days.
 ```
 
-2. In `docs/README.md`, replace the row `| What happened to a closed TODO.md bullet, and what sha closed it | [todo-completions.md](90-agent/reference/todo-completions.md) |` with:
+2. In `docs/README.md`, replace the row `| What happened to a closed TODO.md bullet, and what sha closed it | [todo-completions.md](../../99-archive/2026-09-29-todo-completions.md) |` with:
 
 ```md
 | What a TODO entry file holds, what each heading is waiting for, and how an entry is opened and closed | [todo.md](90-agent/reference/todo.md) |

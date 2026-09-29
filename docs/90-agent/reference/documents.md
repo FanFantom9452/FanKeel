@@ -166,7 +166,7 @@ report where a real parser would cost a dependency this plugin does not have.
 生成的快照。
 
 這幾區**不能**是 `.fankeel/docs.json` 的一個 bucket，而這值得寫下來，因為路徑
-本身是合法的：`lib/docs.js:209` 的 `if (!p.startsWith(b.path + '/')) continue;`
+本身是合法的：`lib/docs.js:214` 的 `if (!p.startsWith(b.path + '/')) continue;`
 是純字串前綴比對，`skills`、`evals`、`agents` 都是 `docs/` 以外的 bucket。擋住
 的是列檔的那一層，而那一層是同一個函式：下面第一條是它跑的旗標，其後十三條是它
 的十三個呼叫端，`scripts/` 十處與 `lib/` 三處。每一行的引文都必須
@@ -354,9 +354,9 @@ counts every status, so a page named nowhere below reads as current.
 ### `orphan`, deliberately empty where an index exists
 
 An orphan is a document under the docs root that no other document links to.
-`scripts/docs-audit.js:708` (`index.exists ? [] :`) reports them only where the project declares no
+`scripts/docs-audit.js:709` (`index.exists ? [] :`) reports them only where the project declares no
 index. Where one exists, the same gap is already reported, and worded better,
-as `missing from the index` (`scripts/docs-audit.js:689` is `if (!linked.has(rel)) index.missing.push(rel);`):
+as `missing from the index` (`scripts/docs-audit.js:690` is `if (!linked.has(rel)) index.missing.push(rel);`):
 an index is a markdown file like any other, so anything it fails to list is
 unreachable regardless of what else in the tree links there. Two names for one
 problem is how a report starts looking longer than it is.
@@ -377,7 +377,7 @@ so the branch that would populate
 built, not a gap in the check.
 
 Orphans never fail a run. `defects()` opens at
-`scripts/docs-audit.js:953` (`function defects(r) {`) and sums drift, landed
+`scripts/docs-audit.js:954` (`function defects(r) {`) and sums drift, landed
 plans, a broken index and diagrams; `orphans` is not a term in that sum.
 
 ### `binding: true`, seven at most
