@@ -1,0 +1,30 @@
+---
+status: current
+last_verified: 2026-09-29
+source_of_truth: agents/*.md, lib/profile.js
+---
+
+# Model choice
+
+Open decision: which model each role runs on, and what effort each model runs at.
+
+Today every agent file in `agents/` pins its own `model:` in frontmatter. Six pin
+`sonnet` (brain, fixer, reader, render-reviewer, reviewer, verifier);
+`fankeel-judge` pins `fable` and `fankeel-mockup` pins `opus`. Each file also pins an
+`effort:`. The profile can already name a model for two roles, `judge.model` and
+`design.mockup`, and for no other agent.
+
+## To settle
+
+- **a. Profile keys that override an agent's pinned model.** Which agents get a key,
+  and what a key does when it names a model the agent's file does not pin.
+- **b. Allow `haiku` for mechanical work.** Which agents count as mechanical is part
+  of the decision; `haiku` is already a legal value of `judge.model`.
+- **c. A default effort per model.** Settled by whoever picks the models.
+
+## Constraint on c
+
+The Agent tool cannot set effort. Only an agent file's frontmatter `effort:` can. So
+a default effort per model can only be done by editing the frontmatter of each agent
+file, or by generating it from the profile; a profile key alone would change the
+model and leave the effort as pinned.

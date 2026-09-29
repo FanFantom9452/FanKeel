@@ -6,7 +6,7 @@ source_of_truth: this file is the index; each page below is its own source
 
 # FanKeel documentation
 
-Seventeen pages, one question each. The front page has install, update and
+Eighteen pages, one question each. The front page has install, update and
 uninstall, the two diagrams and a short introduction to each of these;
 everything that needs more than a paragraph is here. For a person who is not
 running a session, the station's 文件 page (`#/docs`) turns each project's own
@@ -46,6 +46,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | What a plan is checked for before its gate, and what an implementer's brief file holds | [pipeline.md](02-architecture/pipeline.md) — *plan* and *build* |
 | What the badge word means, and how to colour each stage | [statusline.md](90-agent/reference/statusline.md) |
 | Every session on this machine, where the page finds the registries, and what `stale` means | [station.md](90-agent/reference/station.md) |
+| Which model each role runs on, and the effort that goes with it — an open decision | [model-choice.md](90-agent/reference/model-choice.md) |
 | Why fankeel ships no output style, and where its voice lives instead | [decisions/2026-09-13-no-output-styles.md](03-decisions/2026-09-13-no-output-styles.md) |
 | What caveman and SEPIA do that this plugin does not — gates, evals, an evidence ledger, thin wrappers — plus the user's own directions, three from 09-08 and five from 09-11 — the ones still open are `TODO.md` entries | [improvement-brief.md](90-agent/reference/improvement-brief.md) — *a backlog, 繁體中文* |
 | Every dated report's headline figure with a stable ID, what its scope does not cover, and which pages cite it | [sources.md](90-agent/reference/sources.md) — *the evidence ledger* |
