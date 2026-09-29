@@ -74,6 +74,15 @@ test('an ordinary prompt from an init session says nothing and writes nothing; a
   assert.ok(JSON.parse(fankeel(p, A)).hookSpecificOutput.additionalContext.includes(A));
 });
 
+test('a second /fankeel from an init-only session leaves the init badge in place', () => {
+  const p = project();
+  fankeel(p, A);
+  const badge = require('../lib/badge.js');
+  assert.equal(badge.readBadge(p.cfg, A), 'init');
+  fankeel(p, A);
+  assert.equal(badge.readBadge(p.cfg, A), 'init');
+});
+
 test('start takes over this session\'s own init entry, and a second start is still refused', () => {
   const p = project();
   fankeel(p, A);

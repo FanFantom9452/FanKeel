@@ -146,7 +146,7 @@ function main(raw) {
                     },
                 }));
             }
-            initBadge(dir, sessionId, mine, starting, root);
+            initBadge(dir, sessionId, initOnly ? null : mine, starting, root);
         };
 
         // Whether a station is serving, asked only on the prompt whose block
