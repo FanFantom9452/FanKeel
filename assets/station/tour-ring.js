@@ -411,7 +411,9 @@
     }
 
     // ---- LEFT.stage ------------------------------------------------------
-    function ringStage(ctx, P, i, l) {
+    // stageShot calls it with n as the fifth argument; o (v4 only) moves
+    // land's `git status: clean` pill to o.pillY.
+    function ringStage(ctx, P, i, l, n, o) {
         var land = i === 6;
         var sealK = land ? E.prog(l, SEAL.at, SEAL.len) : 0;
         drawRing(ctx, P, G, states(i, l), {
@@ -482,7 +484,7 @@
             K.ring(ctx, f.gp[0], f.gp[1], 34, C.pass, l, close, 26, 2.5);
             // git status: clean, under the ring, as the terminal says it
             var gk = bo(l, 122, 12);
-            if (gk > 0) group(ctx, G.c[0], 272, gk, 0, function () {
+            if (gk > 0) group(ctx, G.c[0], o && o.pillY != null ? o.pillY : 272, gk, 0, function () {
                 var s = 'git status: clean', w = measure(ctx, P, s, 7.5, '700', true) + 14;
                 E.box(ctx, -w / 2, -8, w, 16, 8, C.ink);
                 txt(ctx, P, s, 0, 2.6, { size: 7.5, weight: '700', mono: true, fill: C.termGood, align: 'center' });
@@ -759,8 +761,156 @@
     };
     var TOUR_PROMO30V3 = V2.timeline(RING_LEFT);
     E.register('promo30v3', TOUR_PROMO30V3);
+
+    // ---- promo30v4: v3 at one minute, the stage readable ---------------------
+    // Spec: .fankeel/build/2026-09-29-promo30-v4/concept-v4.md; styleframes:
+    // mockup-v4.html beside it. v3's shots play at their own speed, re-timed:
+    // a stage shot is 360 frames, its first 60 a v1-style entry (the stage
+    // colour opening from the task, a big `0N / 07` and the stage word over a
+    // wash) while v3 waits at its local 0; from 60 v3's beats run at original
+    // speed and the rest holds on v3's last frame. Hook, route and outro hold
+    // after their beats land; the hook and the route keep their hand-off
+    // (the stripes, the ring sliding home) for the end of the longer shot.
+    // The cue (rail, counter, word) settles into one row under the ring
+    // (60–90) and stays for the shot. v3's own frames are drawn by a second
+    // timeline(LEFT) whose only difference is land's pill, lifted clear of
+    // the cue row.
+    var V4_ENTRY = 60, V4_STAGE = 360, V4_PILL_Y = 266;
+    var V3_CUTS = TOUR_PROMO30V3.cues.cuts, V3_LEN = V3_CUTS.map(function (a, k) {
+        return (k + 1 < V3_CUTS.length ? V3_CUTS[k + 1] : TOUR_PROMO30V3.length) - a;
+    });
+    // len: v4 frames; hold: the v3 local frame the shot waits on (the extra
+    // frames are spent there); stage: the route index of a stage shot.
+    var V4_SHOTS = [{ len: 300, hold: 156 }, { len: 240, hold: 94 }];
+    E.ROUTE.forEach(function (s, k) { V4_SHOTS.push({ len: V4_STAGE, stage: k }); });
+    V4_SHOTS.push({ len: 540, hold: V3_LEN[9] - 1 });
+    var V4_LENGTH = 3600, V4_STARTS = [];
+    if (V4_SHOTS.reduce(function (at, s) { V4_STARTS.push(at); return at + s.len; }, 0) !== V4_LENGTH) throw new Error('tour: promo30v4 does not run to ' + V4_LENGTH + ' frames');
+    // v4 shot k's local frame l as v3's local frame.
+    function v3Local(k, l) {
+        var s = V4_SHOTS[k], len3 = V3_LEN[k];
+        if (s.stage != null) return l < V4_ENTRY ? 0 : Math.min(l - V4_ENTRY, len3 - 1);
+        var extra = s.len - len3;
+        return l <= s.hold ? l : l < s.hold + extra ? s.hold : l - extra;
+    }
+    // and back: v3's local frame b as the v4 local frame it plays on.
+    function v4Local(k, b) {
+        var s = V4_SHOTS[k];
+        if (s.stage != null) return b + V4_ENTRY;
+        return b <= s.hold ? b : b + s.len - V3_LEN[k];
+    }
+
+    var CUE_ROW = 294, CUE_RAIL = { x: 24, step: 13 };
+    var CUE_COUNT_X = CUE_RAIL.x + 6 * CUE_RAIL.step + 16;
+    // a mixed k of the way from colour a to b (both #rrggbb)
+    function mix(a, b, k) {
+        if (!/^#[0-9a-f]{6}$/i.test(a) || !/^#[0-9a-f]{6}$/i.test(b)) return a;
+        var p = parseInt(a.slice(1), 16), q = parseInt(b.slice(1), 16);
+        var ch = function (s) { return Math.round(E.lerp(p >> s & 255, q >> s & 255, k)); };
+        return 'rgb(' + ch(16) + ',' + ch(8) + ',' + ch(0) + ')';
+    }
+    // The seven-dot rail: done dots in their stage colours, this stage's
+    // pulsing, the rest hollow. Done dots = the ring's cells filled before
+    // this shot.
+    function cueRail(ctx, P, i, l) {
+        var y = CUE_ROW - 5;
+        E.line(ctx, [[CUE_RAIL.x, y], [CUE_RAIL.x + 6 * CUE_RAIL.step, y]], C.faint, 1.5);
+        E.ROUTE.forEach(function (r, j) {
+            var x = CUE_RAIL.x + j * CUE_RAIL.step, c = P.st[r];
+            if (j < i) E.circle(ctx, x, y, 3.2, c, C.card, 1);
+            else if (j === i) {
+                var k = E.backOut(E.prog(l, 20, 14));
+                E.circle(ctx, x, y, 4.4 * k, c, C.card, 1);
+                E.circle(ctx, x, y, (7 + 1.3 * Math.sin(l * 0.2)) * k, null, c, 1.3);
+            } else E.circle(ctx, x, y, 3, C.paper, C.faint, 1.3);
+        });
+    }
+    // `0N / 07` and the stage word (v1's stageFrame), big over the wash,
+    // then 60–90 shrinking into the row after the rail.
+    function cueCounter(ctx, P, i, l) {
+        var s = E.ROUTE[i], c = P.st[s], ci = mix(c, C.ink, 0.28);
+        var m = K.inOut(E.prog(l, V4_ENTRY, 30));
+        var cs = E.lerp(38, 11, m), cx = E.lerp(44, CUE_COUNT_X, m), cy = E.lerp(128, CUE_ROW, m);
+        var wk = E.expoOut(E.prog(l, 8, 16));
+        if (wk > 0) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(cx - 4, cy - cs * 1.2, (measure(ctx, P, '04 / 07', cs, '700', true) + 8) * wk, cs * 1.5);
+            ctx.clip();
+            var num = '0' + (i + 1), nw = measure(ctx, P, num, cs, '700', true), ox = (1 - wk) * -24;
+            txt(ctx, P, num, cx + ox, cy, { size: cs, weight: '700', mono: true, fill: ci });
+            txt(ctx, P, ' / 07', cx + ox + nw, cy, { size: cs, weight: '700', mono: true, fill: C.mute });
+            ctx.restore();
+        }
+        var ws = E.lerp(58, 16, m);
+        var wx = E.lerp(44, CUE_COUNT_X + measure(ctx, P, '04 / 07', 11, '700', true) + 9, m), wy = E.lerp(200, CUE_ROW, m);
+        var w = K.word(ctx, P, s, wx, wy, ws, l, 12, { gap: 3, fill: C.ink });
+        E.box(ctx, wx, wy + ws * 0.17, w * E.expoOut(E.prog(l, 28, 24)), Math.max(2.2, ws * 0.085), 2, c);
+    }
+    // The stage cue over v3's frame at v4 local l of stage shot i.
+    function stageCue(ctx, P, i, l) {
+        var c = P.st[E.ROUTE[i]], next = E.ROUTE[i + 1];
+        // the wash the big cue reads on, lifting 60–84
+        var wash = 1 - E.prog(l, V4_ENTRY, 24);
+        if (wash > 0) {
+            ctx.fillStyle = K.hex(C.paper, 0.86 * wash);
+            ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = K.hex(c, 0.1 * wash);
+            ctx.fillRect(0, 0, W, H);
+        }
+        // the flood this shot came in on, opening from the task (v1: 4–30)
+        var open = E.expoOut(E.prog(l, 4, 26));
+        if (open < 1) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(0, 0, W, H);
+            ctx.arc(HOME[0], HOME[1], 560 * open, 0, Math.PI * 2);
+            ctx.fillStyle = c;
+            ctx.fill('evenodd');
+            ctx.restore();
+            K.ring(ctx, HOME[0], HOME[1], 560, c, l, 4, 26, 30);
+        }
+        cueRail(ctx, P, i, l);
+        cueCounter(ctx, P, i, l);
+        // the next stage's colour from its rail dot over the last 18 frames
+        if (next) K.flood(ctx, l, V4_STAGE, CUE_RAIL.x + (i + 1) * CUE_RAIL.step, CUE_ROW - 5, P.st[next]);
+    }
+
+    var V4_V3 = V2.timeline(Object.assign({}, RING_LEFT, {
+        stage: function (ctx, P, i, l, n) { ringStage(ctx, P, i, l, n, { pillY: V4_PILL_Y }); },
+    }));
+    function shotAt(f) {
+        var k = V4_SHOTS.length - 1;
+        while (k > 0 && V4_STARTS[k] > f) k--;
+        return k;
+    }
+    var TOUR_PROMO30V4 = {
+        length: V4_LENGTH,
+        beats: TOUR_PROMO30V3.beats.map(function (b, k) {
+            var o = { at: V4_STARTS[k], label: b.label };
+            if (b.stage) o.stage = b.stage;
+            return o;
+        }),
+        stills: V4_STARTS.map(function (a, k) { return a + Math.floor(V4_SHOTS[k].len / 2); }),
+        cues: {
+            cuts: V4_STARTS.slice(),
+            blocks: TOUR_PROMO30V3.cues.blocks.map(function (b) {
+                var k = V3_CUTS.length - 1;
+                while (k > 0 && V3_CUTS[k] > b) k--;
+                return V4_STARTS[k] + v4Local(k, b - V3_CUTS[k]);
+            }).sort(function (a, b) { return a - b; }),
+        },
+        strings: V4_V3.strings,
+        draw: function (ctx, f, P) {
+            var k = shotAt(f), l = f - V4_STARTS[k], s = V4_SHOTS[k];
+            V4_V3.draw(ctx, V3_CUTS[k] + v3Local(k, l), P);
+            if (s.stage != null) stageCue(ctx, P, s.stage, l);
+        },
+    };
+    E.register('promo30v4', TOUR_PROMO30V4);
     module.exports = {
         TOUR_PROMO30V3: TOUR_PROMO30V3,
+        TOUR_PROMO30V4: TOUR_PROMO30V4,
     };
     if (typeof window !== 'undefined') root.tourRing = module.exports;
 })(typeof window !== 'undefined' ? window : globalThis, typeof module !== 'undefined' ? module : {});
