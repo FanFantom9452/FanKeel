@@ -418,7 +418,8 @@
             E.line(ctx, [[-80, -4], [80, -4]], C.ink, 2.5);
         });
     }
-    function hook(ctx, P, l) {
+    // The left side of shot 1: the dinghy capsizing, and its "no keel" label.
+    function hullOpen(ctx, P, l) {
         group(ctx, 15, 35, 0.5, 0, function () {
             var spin = E.prog(l, 64, 36);
             if (spin > 0) E.fade(ctx, Math.min(1, spin * 2), function () {
@@ -453,6 +454,11 @@
                 E.circle(ctx, b[0], b[1] - E.prog(l, 30 + i * 22, 90) * 30, b[2] * k, C.keelMid);
             });
         });
+    }
+    // Shot 1: the left side (LEFT.open; LEFT.openKey names the line), then the three error cards, the one
+    // line, and the stripes coming down over the last frames.
+    function hook(LEFT) { return function (ctx, P, l) {
+        LEFT.open(ctx, P, l);
         // terminal: tests: skipped
         enter(ctx, l, 18, 325, 33, 195, 62, -3, function () {
             term(ctx, P, 195, 62);
@@ -497,20 +503,20 @@
             if (hit) txt(ctx, P, t(P, 'hook.same'), 97.5, 41, { size: 6.5, weight: '700', fill: C.fail, align: 'center', maxW: 90 });
             K.ring(ctx, 97.5, 21, 60, C.fail, l, 118, 26, 2);
         });
-        sub(ctx, P, 'hook', l, 6, { maxW: 290 });
+        sub(ctx, P, LEFT.openKey || 'hook', l, 6, { maxW: 290 });
         // the stripes come down over the last frames and hand to the keel
         for (var j = 0; j < 5; j++) {
             var k = E.expoIn(E.prog(l, 156 + j * 3, 12));
             if (k > 0) { ctx.fillStyle = STRIPES[j]; ctx.fillRect(j * 128, 0, 128.5, H * k); }
         }
-    }
+    }; }
 
     // ---- 2 keel (180–299) -----------------------------------------------
     // The stripes pull back to a band on the left; a keel falls from above
     // onto its seven building blocks, trembles and holds; then the plan
     // slides left to where the stage shots draw it.
     var HULL2 = { x: 210, y: 35, s: 0.5806 };
-    function keel(ctx, P, l) {
+    function hullDrop(ctx, P, l) {
         var mv = K.inOut(E.prog(l, 94, 26));
         var tf = { x: E.lerp(HULL2.x, HULL.x, mv), y: E.lerp(HULL2.y, HULL.y, mv), s: E.lerp(HULL2.s, HULL.s, mv) };
         var sh = K.shake(l, 28, 4);
@@ -546,30 +552,44 @@
             });
             K.ring(ctx, 300, 300, 300, C.keel, l, 28, 30, 4);
         });
+    }
+    // The stripe band that pulls back to the left in shot 2.
+    function wipe(ctx, l) {
         var band = E.lerp(W, 150, eo(l, 0, 26)) * (1 - eo(l, 94, 22));
         for (var j = 0; j < 5; j++) {
             ctx.fillStyle = STRIPES[j];
             ctx.fillRect(j * band / 5, 0, band / 5 + 0.5, H);
         }
-        sub(ctx, P, 'keel', l, 40, { x: 174, alpha: 1 - E.prog(l, 94, 14) });
     }
+    // Shot 2: the left side (LEFT.drop), the stripe band, then the one line
+    // (LEFT.dropKey, 'keel' by default).
+    function keel(LEFT) { return function (ctx, P, l) {
+        LEFT.drop(ctx, P, l);
+        wipe(ctx, l);
+        sub(ctx, P, LEFT.dropKey || 'keel', l, 40, { x: 174, alpha: 1 - E.prog(l, 94, 14) });
+    }; }
 
     // ---- 3–9 the stage shots ---------------------------------------------
     // Every stage shot: the plan with this stage's rib rising (its ✓ first),
     // the component on the right, the step pills, the statusline and the
     // one line. `body` draws the component.
-    function stageShot(i, body) {
+    // The left side is LEFT.stage(ctx, P, i, l, n); LEFT.stageSub, when
+    // there is one, replaces the one line.
+    function hullStage(ctx, P, i, l, n) {
+        atHull(ctx, HULL, function () {
+            hullFrame(ctx, P, { n: n - 1, k: eo(l, 12, 32), gate: bo(l, 4, 12), gi: n - 1 });
+            var g = hp(HX(n - 1), HD[n - 1], -HB[n - 1]);
+            K.ring(ctx, g[0], g[1], 44, C.keel, l, 30, 26, 4);
+        });
+    }
+    function stageShot(LEFT, i, body) {
         return function (ctx, P, l) {
             var n = dots(STARTS[i + 2] + l);
-            atHull(ctx, HULL, function () {
-                hullFrame(ctx, P, { n: n - 1, k: eo(l, 12, 32), gate: bo(l, 4, 12), gi: n - 1 });
-                var g = hp(HX(n - 1), HD[n - 1], -HB[n - 1]);
-                K.ring(ctx, g[0], g[1], 44, C.keel, l, 30, 26, 4);
-            });
+            LEFT.stage(ctx, P, i, l, n);
             body(ctx, P, l);
             pills(ctx, P, n, l, 2);
             status(ctx, P, n, l, 14);
-            sub(ctx, P, E.ROUTE[i], l, 10);
+            if (LEFT.stageSub) LEFT.stageSub(ctx, P, i, l); else sub(ctx, P, E.ROUTE[i], l, 10);
         };
     }
 
@@ -1005,7 +1025,8 @@
     // (local 150, frame 1560) the mark locks up beside the wordmark, and
     // the install line types in under them.
     var CMD = '/plugin install fankeel';
-    function sail(ctx, P, l) {
+    // Shot 10 as the hull left side draws it: the whole shot, right side included.
+    function hullClose(ctx, P, l) {
         var ui = 1 - eo(l, 0, 18);
         var skin = K.inOut(E.prog(l, 8, 52));
         var mv = K.inOut(E.prog(l, 24, 60));
@@ -1078,17 +1099,20 @@
         sub(ctx, P, 'install', l, 250, { fill: C.card });
     }
 
+    // The shot table: name, length, the frames a block pops on, and `make`,
+    // which takes a left side and returns the shot's draw(ctx, P, l). The
+    // boundaries and pops are shared by every timeline built on it.
     var SHOTS = [
-        { name: 'hook', len: 180, draw: hook, pops: [18, 30, 56, 96, 118] },
-        { name: 'keel', len: 120, draw: keel, pops: [28] },
-        { name: 'survey', len: 150, draw: stageShot(0, survey), pops: [4, 8, 26, 42, 58] },
-        { name: 'design', len: 180, draw: stageShot(1, design), pops: [4, 8, 72, 104] },
-        { name: 'plan', len: 120, draw: stageShot(2, plan), pops: [4, 8, 34, 40, 46, 52] },
-        { name: 'build', len: 180, draw: stageShot(3, build), pops: [4, 8, 20, 94, 108, 132, 154] },
-        { name: 'verify', len: 150, draw: stageShot(4, verify), pops: [4, 8, 62, 84, 108] },
-        { name: 'audit', len: 180, draw: stageShot(5, audit), pops: [4, 8, 30, 58, 80, 118] },
-        { name: 'land', len: 150, draw: stageShot(6, land), pops: [4, 8, 36, 56, 70, 84, 122] },
-        { name: 'sail', len: 390, draw: sail, pops: [60, 150, 150 + 4, 153 + 4, 156 + 4, 159 + 4, 162 + 4, 165 + 4, 168 + 4, 190, 232] },
+        { name: 'hook', len: 180, make: hook, pops: [18, 30, 56, 96, 118] },
+        { name: 'keel', len: 120, make: keel, pops: [28] },
+        { name: 'survey', len: 150, make: function (L) { return stageShot(L, 0, survey); }, pops: [4, 8, 26, 42, 58] },
+        { name: 'design', len: 180, make: function (L) { return stageShot(L, 1, design); }, pops: [4, 8, 72, 104] },
+        { name: 'plan', len: 120, make: function (L) { return stageShot(L, 2, plan); }, pops: [4, 8, 34, 40, 46, 52] },
+        { name: 'build', len: 180, make: function (L) { return stageShot(L, 3, build); }, pops: [4, 8, 20, 94, 108, 132, 154] },
+        { name: 'verify', len: 150, make: function (L) { return stageShot(L, 4, verify); }, pops: [4, 8, 62, 84, 108] },
+        { name: 'audit', len: 180, make: function (L) { return stageShot(L, 5, audit); }, pops: [4, 8, 30, 58, 80, 118] },
+        { name: 'land', len: 150, make: function (L) { return stageShot(L, 6, land); }, pops: [4, 8, 36, 56, 70, 84, 122] },
+        { name: 'sail', len: 390, make: function (L) { return L.close; }, pops: [60, 150, 150 + 4, 153 + 4, 156 + 4, 159 + 4, 162 + 4, 165 + 4, 168 + 4, 190, 232] },
     ];
     var LENGTH = 1800;
     var STARTS = [];
@@ -1107,31 +1131,51 @@
     // shows the first dots(f) of these, its own outlined.
     var PILLS = E.ROUTE.map(function (s, i) { return '0' + (i + 1) + ' ' + s; });
 
-    function draw(ctx, f, P) {
-        var i = SHOTS.length - 1;
-        while (i > 0 && STARTS[i] > f) i--;
-        ground(ctx, f);
-        SHOTS[i].draw(ctx, P, f - STARTS[i]);
+    // A timeline over the shared shots and one left side: LEFT is
+    // { open(ctx, P, l), drop(ctx, P, l), stage(ctx, P, i, l, n), close(ctx, P, l),
+    //   openKey?, dropKey?, stageSub?(ctx, P, i, l) } as used above.
+    function timeline(LEFT) {
+        var drawers = SHOTS.map(function (c) { return c.make(LEFT); });
+        function draw(ctx, f, P) {
+            var i = SHOTS.length - 1;
+            while (i > 0 && STARTS[i] > f) i--;
+            ground(ctx, f);
+            drawers[i](ctx, P, f - STARTS[i]);
+        }
+        return {
+            length: LENGTH,
+            beats: SHOTS.map(function (c, i) {
+                var b = { at: STARTS[i], label: c.name };
+                if (E.ROUTE.indexOf(c.name) >= 0) b.stage = c.name;
+                return b;
+            }),
+            stills: STARTS.map(function (s, i) { return s + Math.floor(SHOTS[i].len / 2); }),
+            cues: {
+                cuts: STARTS.slice(),
+                blocks: SHOTS.reduce(function (out, c, i) {
+                    return out.concat(c.pops.map(function (b) { return STARTS[i] + b; }));
+                }, []).sort(function (a, b) { return a - b; }).filter(function (b, i, a) { return !i || b > a[i - 1]; }),
+            },
+            strings: S,
+            draw: draw,
+        };
     }
 
-    var TOUR_PROMO30 = {
-        length: LENGTH,
-        beats: SHOTS.map(function (c, i) {
-            var b = { at: STARTS[i], label: c.name };
-            if (E.ROUTE.indexOf(c.name) >= 0) b.stage = c.name;
-            return b;
-        }),
-        stills: STARTS.map(function (s, i) { return s + Math.floor(SHOTS[i].len / 2); }),
-        cues: {
-            cuts: STARTS.slice(),
-            blocks: SHOTS.reduce(function (out, c, i) {
-                return out.concat(c.pops.map(function (b) { return STARTS[i] + b; }));
-            }, []).sort(function (a, b) { return a - b; }).filter(function (b, i, a) { return !i || b > a[i - 1]; }),
-        },
-        strings: S,
-        draw: draw,
-    };
+    var HULL_LEFT = { open: hullOpen, drop: hullDrop, stage: hullStage, close: hullClose };
+    var TOUR_PROMO30 = timeline(HULL_LEFT);
     E.register('promo30', TOUR_PROMO30);
-    module.exports = { TOUR_PROMO30: TOUR_PROMO30, S: S, dots: dots, PILLS: PILLS };
+    // tour-ring.js builds its timeline from these: timeline(LEFT) with its own
+    // left side, over the same shots (SHOTS, STARTS), the shared right-side
+    // helpers, the palette C, the caption table S (add keys there) and the
+    // hull left side HULL_LEFT.
+    module.exports = {
+        TOUR_PROMO30: TOUR_PROMO30, S: S, dots: dots, PILLS: PILLS,
+        timeline: timeline, HULL_LEFT: HULL_LEFT, SHOTS: SHOTS, STARTS: STARTS, LENGTH: LENGTH, C: C,
+        helpers: {
+            t: t, eo: eo, bo: bo, txt: txt, measure: measure, group: group, panel: panel, enter: enter,
+            sub: sub, pills: pills, status: status, wipe: wipe, ground: ground, term: term, badge: badge,
+            fillPoly: fillPoly, STRIPES: STRIPES,
+        },
+    };
     if (typeof window !== 'undefined') root.tourPromo30 = module.exports;
 })(typeof window !== 'undefined' ? window : globalThis, typeof module !== 'undefined' ? module : {});
