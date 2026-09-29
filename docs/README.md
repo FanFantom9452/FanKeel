@@ -212,6 +212,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 那份設計的十四個 task | `docs/99-archive/2026-09-24-needs-a-decision-batch.md` — *built, 繁體中文* |
 | 這一批定了什麼：CLAUDE.md 那條擴成所有每次都載入的輸入、候選改從 fankeel 自己的問題出發，以及跑的時候抓到的六個主控與站 agent 接縫 | [decisions/2026-09-24-needs-a-decision-batch.md](03-decisions/2026-09-24-needs-a-decision-batch.md) — *繁體中文* |
 | 對照 addyosmani/agent-skills 與 mattpocock/skills 三軸（skill 怎麼切與寫、版本怎麼管、agent 怎麼派），列出六個 fankeel 沒有的做法，使用者挑選尚未進行 | [decisions/2026-09-24-skill-repos.md](03-decisions/2026-09-24-skill-repos.md) — *繁體中文* |
+| 六個 skill 候選收了哪兩個、為何另外四個不收：Rationalizations 只給 `fankeel-build`、user-invoked 不呼叫另一個 user-invoked；Verification 清單、Changesets、`CONTEXT.md`、兩種安裝路徑都已有對應機制 | [decisions/2026-09-29-skill-candidates.md](03-decisions/2026-09-29-skill-candidates.md) — *繁體中文* |
 | TODO 全清：Ready 五條 shrink 各收成一個共用函式，Needs a decision 六條照 design 關卡的答案落地——gate 題數上限、只換佔位題、brain 派工擋下、commit 一組交一次，共用詞彙與 method 兩條以決策紀錄關掉 | `docs/99-archive/2026-09-24-todo-sweep-design.md` — *built, 繁體中文* |
 | 那份設計的九個 task | `docs/99-archive/2026-09-24-todo-sweep.md` — *built, 繁體中文* |
 | TODO 全清（第二輪）：build 改 ready-queue、plan 多 `Dispatch: user`、await 改讀 inflight 的 lap、profile 的 `prompt.<stage|all>`、兩個慢測試檔拆開；ADR 只記 TODO | `docs/99-archive/2026-09-24-todo-clear-design.md` — *built, 繁體中文* |
