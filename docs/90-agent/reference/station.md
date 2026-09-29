@@ -1011,6 +1011,19 @@ reuses the captions of the first film. `tour.html#promo30v3@<frame>` plays it
 `.fankeel/build/tour/promo30v3-<lang>.mp4`, exiting 1 unless the MP4 has 1800
 frames and one audio stream of 30 seconds. `promo30` (v2) is untouched.
 
+A fourth film, `promo30v4` (also in `assets/station/tour-ring.js`), runs 60
+seconds — 3600 frames: hook 300, route 240, seven stage shots of 360 each,
+outro 540. It keeps v3's beats, re-timed and held, not sped up. Each stage
+shot opens with a 60-frame stage entry in v1's style (a colour flood, a large
+`0N / 07`, the stage word); after that a counter, the stage word and a
+seven-dot rail sit under the ring — done dots in stage colours, the current one
+pulsing, todo dots hollow, the done count equal to the ring's filled cells.
+`tour.html#promo30v4@<frame>` plays it, and
+`node scripts/tour-record.js promo30v4 [--lang zh|en]` records it to
+`.fankeel/build/tour/promo30v4-<lang>.mp4`, exiting 1 unless the MP4 has 3600
+frames and 60 seconds of audio. Its videos go to `F:/ymlab/fankeel-videos/v4/`.
+`promo30` (v2) and `promo30v3` render byte-identically.
+
 `serve` answers a fixed list of files from `assets/station/` — `STATIC` in
 `scripts/station.js`: `station.js`, `station.css`, `i18n.js`, `tour.html`,
 `tour.css`, `tour.js` and every `tour-<name>.js` (any number of hyphenated
