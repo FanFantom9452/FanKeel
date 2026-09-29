@@ -12,12 +12,6 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔brief〕group 3 的 brain 把 build-g3 檔寫進另一個活 session 的 task 目錄，不是自己的；查 handoff 的目錄是照 session 還是照最新 task 目錄選的 — [lib/handoff.js](lib/handoff.js).
 
-- 〔build〕同日同名的 plan 已封存，.fankeel/build/<stem>/progress.md 仍在、11 個 task 標完成，新 plan 的 ready 印 none；plan 的 lint 或 ledger init 要偵測 ledger 的 plan 行不是這份 — [scripts/ledger.js](scripts/ledger.js).
-
-- 〔gate〕09-29 盤點同一題問 3～4 次（plan 檔何時提交、要不要記 flake）：gate 答案存進 <stage>-answer.md 但下一站 brief 不帶；要把已答題持久化進 brief、gate.js 拒絕重問並檢查暫停選項、打字答案明確時不強制重問 — [hooks/gate.js](hooks/gate.js).
-
-- 〔inject〕CLAUDE.md、memory 每輪注入越長越多：`/fankeel` 量長度、超過門檻用 gate 問要不要優化，與專門精簡 CLAUDE.md 和 memory 的 custom agent 合成一個任務（09-29 使用者答） — [hooks/inject.js](hooks/inject.js).
-
 - 〔station〕看第 7 段加的 station 欄位：沒有任何 subagent 的 context 峰值超過 450k（基準 f44b1c61 的 544k）、最貴的單一 subagent 佔 subagent 總花費低於 15%（基準 31%） — [station.md](docs/90-agent/reference/station.md).
 
 - 〔station〕effort 已在 8 個 agent 檔釘死；使用者要蓋掉模型或臨時拉高 effort，只能從 profile 產生 .claude/agents/ 覆寫檔。先實測同名檔能否蓋過 fankeel: 的 agent，guard／brief 要認得新名稱 — [model-choice.md](docs/90-agent/reference/model-choice.md).
