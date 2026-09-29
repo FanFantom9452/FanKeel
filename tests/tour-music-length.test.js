@@ -1,6 +1,6 @@
 'use strict';
 // The score's length follows the timeline it scores. Red when: render()
-// ignores its second argument, or reel's score changes by one sample.
+// ignores its second argument, or resolveBar / the default length changes.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const M = require('../assets/station/tour-music.js');

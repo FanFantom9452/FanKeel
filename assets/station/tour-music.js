@@ -19,8 +19,9 @@
     var BEAT = RATE * 60 / BPM; // 22050
     var BAR = BEAT * 4; // 88200
 
-    // The score. Bars count from 0; bar 2 (frame 240) is the drop, bar 28
-    // (frame 3360) the resolve.
+    // The score. Bars count from 0; bar 2 (frame 240) is the drop; the
+    // resolve bar is resolveBar(frames), 28 (frame 3360) at the default 3600
+    // frames, 13 at 1800.
     var CHORDS = {
         C: { root: 36, tones: [60, 64, 67] },
         G: { root: 43, tones: [59, 62, 67] },
