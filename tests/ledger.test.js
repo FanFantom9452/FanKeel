@@ -470,13 +470,34 @@ test('init --range records the plan stage\'s own range, and ranges lists it befo
   assert.equal(/nothing complete yet/.test(out), false);
 });
 
-test('a second init --range does not duplicate the plan row', () => {
+test('init --range with the same range is a resume: the plan row is not duplicated and completions stay', () => {
   const dir = root();
-  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', 'aaaaaaa..bbbbbbb', 'init'], { cwd: dir, encoding: 'utf8' });
-  execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', '--range', 'ccccccc..ddddddd', 'init'], { cwd: dir, encoding: 'utf8' });
+  const run = (...args) => execFileSync(process.execPath, [SCRIPT, '--plan', 'p.md', ...args], { cwd: dir, encoding: 'utf8' });
+  run('--range', 'aaaaaaa..bbbbbbb', 'init');
+  run('complete', '1', 'landed');
+  const again = run('--range', 'aaaaaaa..bbbbbbb', 'init');
   const contents = fs.readFileSync(ledger.ledgerPath(dir, 'p.md'), 'utf8');
   assert.equal((contents.match(/^Plan: /gm) || []).length, 1);
-  assert.equal(ledger.planRange(contents), 'aaaaaaa..bbbbbbb');
+  assert.match(contents, /^Task 1: complete/m, 'a resume keeps what was done');
+  assert.match(again, /Plan range already recorded: aaaaaaa\.\.bbbbbbb/);
+  assert.equal(/earlier plan replaced/.test(again), false);
+  run('init');
+  assert.match(fs.readFileSync(ledger.ledgerPath(dir, 'p.md'), 'utf8'), /^Task 1: complete/m, 'init with no range is a resume too');
+});
+
+test('init --range with a different range than the recorded Plan line replaces the ledger', () => {
+  const dir = root();
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, ['## Task 1: one', '', '**Files:**', '- Modify: `lib/a.js`', ''].join('\n'));
+  const cli = (...args) => execFileSync(process.execPath, [SCRIPT, '--root', dir, '--plan', plan, ...args], { encoding: 'utf8' });
+  cli('--range', 'aaaaaaa..bbbbbbb', 'init');
+  cli('complete', '1', 'landed under the old plan');
+  assert.equal(cli('ready'), 'none\n', 'the earlier plan left task 1 complete');
+  const out = cli('--range', 'ccccccc..ddddddd', 'init');
+  assert.match(out, /ledger of an earlier plan replaced/);
+  const contents = fs.readFileSync(ledger.ledgerPath(dir, plan), 'utf8');
+  assert.equal(contents, ledger.header(plan) + '\nPlan: [ccccccc..ddddddd]\n');
+  assert.equal(cli('ready'), '1\n', 'the new plan starts with nothing complete');
 });
 
 test('init --range is refused the same way complete and fix refuse an unreadable range', () => {

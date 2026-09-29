@@ -528,6 +528,12 @@ function main(argv) {
             if (already === null) {
                 ledger.append(root, opts.plan, ledger.planLine(opts.range));
                 rangeNote = '\n\nPlan range recorded: ' + opts.range;
+            } else if (already !== opts.range) {
+                // A different plan-stage range on the same plan file is a new
+                // plan under an old name: its completions describe work the new
+                // plan never ran, and `ready` would skip those tasks.
+                fs.writeFileSync(ledgerFile, ledger.header(opts.plan) + '\n' + ledger.planLine(opts.range) + '\n');
+                rangeNote = '\n\nledger of an earlier plan replaced\nPlan range recorded: ' + opts.range;
             } else {
                 rangeNote = '\n\nPlan range already recorded: ' + already;
             }
