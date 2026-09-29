@@ -137,12 +137,21 @@ function main(raw) {
                 stage: 'init', active: true, configDir: live.liveConfigDir() || undefined, started: stamp, updated: stamp,
             });
         }
+        // What CLAUDE.md and MEMORY.md cost every turn, for the init block's
+        // one warning line. input-check owns the estimate; a failure means no line.
+        let input = null;
+        if (speaks) try {
+            const { sources } = require('../scripts/input-check.js');
+            input = { tokens: sources(root, live.liveConfigDir()).reduce((n, s) => n + s.tokens, 0) };
+        } catch (e) {
+            input = null;
+        }
         const finish = (serve) => {
             if (speaks) {
                 process.stdout.write(JSON.stringify({
                     hookSpecificOutput: {
                         hookEventName: 'UserPromptSubmit',
-                        additionalContext: renderInit({ sessionId, station: page, serve }),
+                        additionalContext: renderInit({ sessionId, station: page, serve, input }),
                     },
                 }));
             }

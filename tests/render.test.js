@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { render, renderInit, SCRIPTS, PLUGIN_ROOT, PLUGIN_MARK, SURVEY_SCRIPT, TODO_CHECK_SCRIPT, planDir } = require('../lib/render.js');
+const { INPUT_WARN_TOKENS, render, renderInit, SCRIPTS, PLUGIN_ROOT, PLUGIN_MARK, SURVEY_SCRIPT, TODO_CHECK_SCRIPT, planDir } = require('../lib/render.js');
 const tmp = require('./tmp.js');
 const { ALWAYS, NAMES, byName, rulesFor, SURVEY_TOKEN, TOKENS, SCRIPT_TOKENS, nextStage, templateFor } = require('../lib/stages.js');
 
@@ -565,6 +565,16 @@ test('the init block carries the station line when it is given one, and stays un
   assert.ok(size < 1400, 'init block with a station line is ' + size + ' chars');
   assert.doesNotMatch(renderInit({ sessionId: MINE }), /^station:/m, 'no page, no line');
   assert.match(out, /<the station line, if any>/, 'the shape has a slot for it');
+});
+
+test('the init block warns once CLAUDE.md and MEMORY.md pass INPUT_WARN_TOKENS, and only then', () => {
+  assert.equal(INPUT_WARN_TOKENS, 4000);
+  const over = renderInit({ sessionId: MINE, input: { tokens: 4107 } });
+  assert.match(over, /^input: 4107 tok\/turn from CLAUDE\.md\+MEMORY\.md — offer to slim it at a gate \(fankeel-slimmer\)$/m);
+  assert.ok(sizeAtReference(over) < 2400, 'init with the input line is ' + sizeAtReference(over) + ' chars');
+  assert.doesNotMatch(renderInit({ sessionId: MINE, input: { tokens: 100 } }), /^input:/m);
+  assert.doesNotMatch(renderInit({ sessionId: MINE, input: { tokens: 4000 } }), /^input:/m, 'the threshold is exclusive');
+  assert.doesNotMatch(renderInit({ sessionId: MINE }), /^input:/m);
 });
 
 test('init offers ## Blocked and ## Watch one shared option, only when orient marks due or stale', () => {
