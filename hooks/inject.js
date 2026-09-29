@@ -143,9 +143,7 @@ function main(raw) {
         if (speaks) try {
             const { sources } = require('../scripts/input-check.js');
             input = { tokens: sources(root, live.liveConfigDir()).reduce((n, s) => n + s.tokens, 0) };
-        } catch (e) {
-            input = null;
-        }
+        } catch (e) { /* a failure means no line */ }
         const finish = (serve) => {
             if (speaks) {
                 process.stdout.write(JSON.stringify({
