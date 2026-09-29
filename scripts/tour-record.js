@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 'use strict';
 // scripts/tour-record.js: a tour timeline (`reel`, the kinetic promo, or
-// `promo30`, the 30-second film) to an MP4 with its score, frame by frame, in
+// `promo30`, the 30-second film, or `promo30v3`, its honeycomb-ring cut) to an MP4 with its score, frame by frame, in
 // one language.
 //
-//   node scripts/tour-record.js <reel|promo30> [--lang zh|en] [--out f.mp4]
+//   node scripts/tour-record.js <reel|promo30|promo30v3> [--lang zh|en] [--out f.mp4]
 //
 // --lang is zh unless given, and the file is .fankeel/build/tour/
 // <name>-<lang>.mp4 unless --out says. Opens
@@ -27,7 +27,7 @@ const { pathToFileURL } = require('node:url');
 const { parseArgsOrExit } = require('../lib/cli.js');
 const { findBrowser } = require('./render.js');
 
-const NAMES = ['reel', 'promo30'];
+const NAMES = ['reel', 'promo30', 'promo30v3'];
 const LANGS = ['zh', 'en'];
 const SIZE = { width: 1280, height: 720 };
 const PAGE = path.join(__dirname, '..', 'assets', 'station', 'tour.html');
@@ -75,6 +75,7 @@ function scoreWav(name) {
     const E = require('../assets/station/tour.js');
     require('../assets/station/tour-reel.js');
     require('../assets/station/tour-keel.js');
+    require('../assets/station/tour-ring.js');
     const M = require('../assets/station/tour-music.js');
     return Buffer.from(M.wav(M.render(E.get(name).cues, E.length(name))));
 }
