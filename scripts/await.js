@@ -98,7 +98,12 @@ function waitFor(opts, env) {
     let since = 0;
     try {
         since = fs.statSync(opts.since || answerPath(root, data, data.stage, lap)).mtimeMs;
-    } catch (e) { /* nothing answered yet: any report counts */ }
+    } catch (e) {
+        // Nothing answered yet — or the answer file was never written, which
+        // hooks/resume.js now says with `<stage>-answer.miss.json`. Either way a
+        // report older than the dispatch is not the reply to it.
+        if (mark && Number.isFinite(mark.at)) since = mark.at;
+    }
     const agentId = mark && typeof mark.agentId === 'string' && mark.agentId ? mark.agentId : null;
     let activity = () => [];
     const dir = agentId ? sessionDirOf(transcriptOf(data.configDir || configDirOf(env), opts.session)) : null;

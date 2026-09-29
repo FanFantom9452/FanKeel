@@ -79,8 +79,29 @@ function main(raw) {
             const asked = payload.tool_input && payload.tool_input.questions;
             const file = answerPath(root, mine, mine.stage);
             const response = payload.tool_response;
-            if (gate && file && response != null && gateMatches(asked, gate.questions)) {
-                writeAnswer(file, typeof response === 'string' ? response : JSON.stringify(response, null, 2));
+            if (gate && file && response != null) {
+                // The answer that never arrives used to be silent. Beside the answer
+                // file, `<stage>-answer.miss.json` says why not and holds both question
+                // lists. Diagnostic only: nothing reads it, and a controller's own
+                // question asked while an older gate is still on disk lands here too.
+                const miss = file.replace(/-answer\.md$/, '-answer.miss.json');
+                const filed = Array.isArray(gate.questions) ? gate.questions : null;
+                const note = (reason) => {
+                    try {
+                        writeAnswer(miss, JSON.stringify({ at: Date.now(), reason, asked: asked === undefined ? null : asked, filed }, null, 2));
+                    } catch (e) { /* housekeeping */ }
+                };
+                if (!gateMatches(asked, gate.questions)) {
+                    note(gate.invalid
+                        ? 'the handoff\'s gate is invalid at ' + gate.invalid + ': ' + gate.detail
+                        : 'the questions asked do not match the handoff\'s gate');
+                } else {
+                    try {
+                        writeAnswer(file, typeof response === 'string' ? response : JSON.stringify(response, null, 2));
+                    } catch (e) {
+                        note(String((e && e.message) || e));
+                    }
+                }
             }
         }
     } catch (e) { /* housekeeping */ }

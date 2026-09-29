@@ -330,3 +330,45 @@ test('renderResume stays a readable size across every route and profile', (t) =>
   }
   assert.ok(worst < 2600, 'worst resume is ' + name + ' at ' + worst + ' chars under a ' + REFERENCE_ROOT + '-character root');
 });
+
+const SURVEY_DIR = (root) => path.join(root, '.fankeel', 'build', 'task-20260919T093012');
+const GATE_QUESTIONS = [{ question: 'survey 的結論可以進 design 嗎？', header: 'survey', multiSelect: false, options: [{ label: '進 design', description: 'a' }, { label: '暫停', description: 'b' }] }];
+
+function surveyWithGate(root) {
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  fs.writeFileSync(path.join(root, '.fankeel', 'profile.json'), JSON.stringify({ 'stage.agents': 'true' }));
+  const ticks = '`'.repeat(3);
+  fs.mkdirSync(SURVEY_DIR(root), { recursive: true });
+  fs.writeFileSync(path.join(SURVEY_DIR(root), 'survey.md'), '# report\n\n' + ticks + 'json gate\n' + JSON.stringify({ questions: GATE_QUESTIONS, next: 'n' }) + '\n' + ticks + '\n');
+}
+const answered = (root, asked) => run({ cwd: root, session_id: MINE, tool_input: { questions: asked }, tool_response: { answers: { 'q?': '暫停' } } });
+
+test('a gate on disk that the asked questions do not match leaves a miss file with the reason and both question lists', () => {
+  const root = tmp('fankeel-resume-');
+  surveyWithGate(root);
+  const asked = [{ question: 'something else?', header: 'other', multiSelect: false, options: [{ label: 'a', description: 'a' }, { label: 'b', description: 'b' }] }];
+  answered(root, asked);
+  const miss = JSON.parse(fs.readFileSync(path.join(SURVEY_DIR(root), 'survey-answer.miss.json'), 'utf8'));
+  assert.match(miss.reason, /do not match/);
+  assert.deepEqual(miss.asked, asked);
+  assert.deepEqual(miss.filed, GATE_QUESTIONS);
+  assert.ok(Number.isFinite(miss.at));
+  assert.equal(fs.existsSync(path.join(SURVEY_DIR(root), 'survey-answer.md')), false);
+});
+
+test('a matching gate writes the answer and no miss file', () => {
+  const root = tmp('fankeel-resume-');
+  surveyWithGate(root);
+  answered(root, JSON.parse(JSON.stringify(GATE_QUESTIONS)));
+  assert.ok(fs.existsSync(path.join(SURVEY_DIR(root), 'survey-answer.md')));
+  assert.equal(fs.existsSync(path.join(SURVEY_DIR(root), 'survey-answer.miss.json')), false);
+});
+
+test('an answer write that throws leaves the miss file with the error message as the reason', () => {
+  const root = tmp('fankeel-resume-');
+  surveyWithGate(root);
+  fs.mkdirSync(path.join(SURVEY_DIR(root), 'survey-answer.md'));
+  answered(root, JSON.parse(JSON.stringify(GATE_QUESTIONS)));
+  const miss = JSON.parse(fs.readFileSync(path.join(SURVEY_DIR(root), 'survey-answer.miss.json'), 'utf8'));
+  assert.match(miss.reason, /EISDIR|illegal operation on a directory/);
+});

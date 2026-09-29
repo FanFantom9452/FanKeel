@@ -108,6 +108,17 @@ test('await.js prints the line for each state, reading paths and the agent off t
     assert.equal(lost.text, 'lost a3f9c2 — the stage agent stopped with neither file written: dispatch a fresh one with the same line.');
 });
 
+test('await.js with no answer file counts only a handoff newer than the in-flight mark as new', async () => {
+    const f = fixture({ inflight: { stage: 'build', at: T, agentId: 'a1' } });
+    const handoff = path.join(f.task, 'build.md').split(path.sep).join('/');
+    at(handoff, T - 5000);
+    const old = await awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '0.5'], f.env);
+    assert.match(old.text, /^timeout — /, 'a report that predates the dispatch is not the answer to it: ' + old.text);
+    at(handoff, T + 5000);
+    const fresh = await awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '0.5'], f.env);
+    assert.match(fresh.text, /^handoff /, fresh.text);
+});
+
 // 2026-09-23: the stage agent ran a foreground (not run_in_background) Bash
 // tool call — `node --test tests/await.test.js tests/handoff.test.js` — that
 // did not finish before the harness's own default foreground-Bash timeout
