@@ -26,3 +26,11 @@ Scratch project `.fankeel/build/2026-09-29-ready-four/spike-rewrite/project/` wi
 Two PreToolUse hooks that both return `updatedInput` do not merge: arm 1 kept only the plugin's output. So the swap must live inside `hooks/title.js` itself, in the same `updatedInput` that sets the description; a second hook's output is dropped when title.js also answers.
 
 Verdict: honoured
+
+## 實跑 2026-09-29 — 真的 title hook
+
+`live.js`（scratch，gitignored）用 `profile.write` 把 `agent.fankeel-reader.model` 設成 `haiku`，再由 `syncAgent` 產生 `.claude/agents/fankeel-reader.md`（輸出 `"state":"written"`，檔內 `model: haiku`、`generated_by: fankeel 0.84.0`）。Arm 3 用真的 plugin 與 `hooks/title.js`：`claude -p`、`--setting-sources project --plugin-dir F:/ymlab/fankeel`，沒有 `--settings`，派工時寫 `subagent_type: fankeel:fankeel-reader`。
+
+- Arm 3: `session ea1675bb-4efa-4196-b04a-b59ee4f48e46`。`message.model` `claude-haiku-4-5-20251001`，`agentType` `fankeel-reader`；stream 裡 task_started 的 description 是 `haiku · medium: live`。Transcript: `C:/Users/Owner/.claude/projects/F--ymlab-fankeel--claude-worktrees-agent-aa7d7d978ea3ade7c--fankeel-build-2026-09-29-ready-four-spike-rewrite-project/ea1675bb-4efa-4196-b04a-b59ee4f48e46/subagents/agent-ac9c688343fc94a8a.jsonl`
+
+Live: haiku
