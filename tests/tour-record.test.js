@@ -26,7 +26,7 @@ test('parseArgs takes one timeline name, --lang zh|en (zh unless given) and an o
 test('a wrong name, a wrong language, no name or a stray flag exits 2', () => {
     const bad = spawnSync(process.execPath, [SCRIPT, 'intro'], { encoding: 'utf8' });
     assert.equal(bad.status, 2);
-    assert.match(bad.stderr, /usage: tour-record\.js <reel\|promo30\|promo30v3> \[--lang zh\|en\] \[--out f\.mp4\]/);
+    assert.match(bad.stderr, /usage: tour-record\.js <reel\|promo30\|promo30v3\|promo30v4> \[--lang zh\|en\] \[--out f\.mp4\]/);
     const lang = spawnSync(process.execPath, [SCRIPT, 'reel', '--lang', 'fr'], { encoding: 'utf8' });
     assert.equal(lang.status, 2);
     assert.match(lang.stderr, /usage: tour-record\.js/);
@@ -144,4 +144,15 @@ test('promo30v3 score is a 30-second WAV, the same length as promo30', () => {
     const b = scoreWav('promo30v3');
     assert.equal(b.readUInt32LE(40), 30 * 44100 * 2);
     assert.equal(b.length, scoreWav('promo30').length);
+});
+
+// red when: 'promo30v4' is dropped from NAMES in scripts/tour-record.js (parseArgs exits with usage)
+test('promo30v4 is a timeline name', () => {
+    assert.deepEqual(parseArgs(['promo30v4']), { name: 'promo30v4', lang: 'zh', out: path.resolve('.fankeel', 'build', 'tour', 'promo30v4-zh.mp4') });
+});
+
+// red when: scoreWav scores promo30v4 at another length than 60 seconds (the v4 timeline length changes, or the score ignores it)
+test('promo30v4 score is a 60-second WAV', () => {
+    const b = scoreWav('promo30v4');
+    assert.equal(b.readUInt32LE(40), 60 * 44100 * 2);
 });
