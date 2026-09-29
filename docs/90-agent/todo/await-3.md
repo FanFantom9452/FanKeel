@@ -5,3 +5,5 @@ description: group 1 收尾後 inflight 仍在、group 3 被標成 group 2，awa
 state: ready
 link: hooks/brief.js
 ---
+
+The mark, numbering and `--agent` halves landed with this entry's fix. The "17 tasks" half is still open: no site that counts a previous plan's ledger tasks into a build close report has been found, so it needs to be found before it can be fixed.

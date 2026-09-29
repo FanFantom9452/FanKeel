@@ -227,12 +227,14 @@ test('a non-build brain carrying a group waits on the plain handoff, the path it
     assert.doesNotMatch(out.text, /-g1/);
 });
 
-test('await.js refuses to guess which brain to watch when more than one is running, and refuses an --agent naming none of them', async () => {
-    const marks = [{ stage: 'build', at: 1, agentId: 'a1', group: 1 }, { stage: 'build', at: 1, agentId: 'a2', group: 2 }];
+test('await.js without --agent watches the newest brain by its mark, and refuses an --agent naming none of them', async () => {
+    const marks = [{ stage: 'build', at: 1, agentId: 'a1', group: 1 }, { stage: 'build', at: 2, agentId: 'a2', group: 2 }];
     const f = fixture({ inflight: marks });
-    const none = await awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '0.5'], f.env);
-    assert.equal(none.code, 1);
-    assert.match(none.text, /^await\.js: 2 stage agents in flight for build: pass --agent <id>/);
+    const g2 = path.join(f.task, 'build-g2.md').split(path.sep).join('/');
+    at(g2, Date.now());
+    const newest = await awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '0.5'], f.env);
+    assert.equal(newest.code, undefined, newest.text);
+    assert.ok(newest.text.startsWith('group 2, agent a2: handoff ' + g2), newest.text);
     const bad = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'zz', '--timeout', '0.5'], f.env);
     assert.equal(bad.code, 1);
     assert.match(bad.text, /^await\.js: no in-flight mark for agent zz at stage build/);
@@ -282,10 +284,11 @@ test('await.js watches build.md for a close mark and build-g3.md for a group mar
     assert.deepEqual(registry.inflights(registry.readSession(f.root, SID)).map((m) => m.agentId), ['c1'], 'the group mark clears once its own handoff arrives');
 });
 
-// The clear keys on the mark's `kind`, not on its `group`: a close mark that
-// carries an explicit group number stays standing on handoff, and so does a
-// group-numbered mark that has no kind (an old mark), which watches build-g2.md.
-test('await.js clears a mark on handoff only when its kind is group, whatever group number it carries', async () => {
+// A close mark stays standing for hooks/gate.js whatever group number it
+// carries. Any other group-numbered mark clears on its own handoff, kind or
+// not: hooks/brief.js's caseOf returns null when the brain's transcript is
+// unreadable at SubagentStart, and that mark has a group and no kind.
+test('await.js clears a group brain whose caseOf failed on handoff, and still leaves a close mark', async () => {
     const marks = [
         { stage: 'build', at: 1, agentId: 'c1', group: 1, kind: 'close' },
         { stage: 'build', at: 1, agentId: 'k2', group: 2 },
@@ -297,7 +300,20 @@ test('await.js clears a mark on handoff only when its kind is group, whatever gr
         const out = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', id, '--timeout', '0.5'], f.env);
         assert.match(out.text, /handoff /, out.text);
     }
-    assert.deepEqual(registry.inflights(registry.readSession(f.root, SID)).map((m) => m.agentId).sort(), ['c1', 'k2'], 'only the kind-group mark clears');
+    assert.deepEqual(registry.inflights(registry.readSession(f.root, SID)).map((m) => m.agentId), ['c1'], 'the close mark stays; both group marks clear');
+});
+
+test('markInflight never hands out a group number a finished brain used', () => {
+    const f = fixture({});
+    assert.equal(registry.markInflight(f.root, SID, 'build', 'a1', undefined, undefined, 'group'), 1);
+    assert.equal(registry.markInflight(f.root, SID, 'build', 'a2', undefined, undefined, 'group'), 2);
+    assert.equal(registry.markInflight(f.root, SID, 'build', 'a3', undefined, undefined, 'group'), 3);
+    registry.clearInflight(f.root, SID, 'a1');
+    registry.clearInflight(f.root, SID, 'a2');
+    assert.equal(registry.markInflight(f.root, SID, 'build', 'a4', undefined, undefined, 'group'), 4, 'group 3 is still running, so the next is 4, not the freed 1');
+    registry.clearInflight(f.root, SID, 'a3');
+    registry.clearInflight(f.root, SID, 'a4');
+    assert.equal(registry.markInflight(f.root, SID, 'build', 'a5', undefined, undefined, 'group'), 1, 'with nothing in use the count starts again at 1');
 });
 
 test('a stage agent starting stamps the lap its brief named on the in-flight mark', () => {

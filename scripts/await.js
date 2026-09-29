@@ -77,18 +77,17 @@ function commitCandidates(root, data, lap, group) {
 // only when its own transcript exists: an agent nobody can find is never
 // judged. `inflights(data)` may hold more than one mark once a build runs
 // several brains at once (docs/90-agent/plans/2026-09-28-agent-lifetime-design.md
-// §1); `--agent` says which one this call watches, and is required once
-// there is more than one candidate for `data.stage` — this call watches
-// one brain, not a race across several, so an omitted `--agent` with two
-// or more running is an error rather than a silent guess.
+// §1); `--agent` says which one this call watches, and without it the newest
+// mark by `at` is the one watched (the later entry on a tie): the controller
+// that just dispatched a brain is waiting on that one.
 function waitFor(opts, env) {
     const root = opts.root ? registry.resolveRoot(opts.root) : registry.rootFor({ cwd: process.cwd() });
     const data = registry.readSession(root, opts.session);
     if (!data) return { error: 'no session ' + opts.session + ' under ' + root };
     const running = registry.inflights(data).filter((m) => m.stage === data.stage);
     if (opts.agent && !running.some((m) => m.agentId === opts.agent)) return { error: 'no in-flight mark for agent ' + opts.agent + ' at stage ' + data.stage };
-    if (!opts.agent && running.length > 1) return { error: running.length + ' stage agents in flight for ' + data.stage + ': pass --agent <id>' };
-    const mark = opts.agent ? running.find((m) => m.agentId === opts.agent) : (running[0] || null);
+    const newest = running.reduce((best, m) => (!best || (Number.isFinite(m.at) ? m.at : 0) >= (Number.isFinite(best.at) ? best.at : 0) ? m : best), null);
+    const mark = opts.agent ? running.find((m) => m.agentId === opts.agent) : newest;
     const lap = mark && Number.isInteger(mark.lap) && mark.lap > 0 ? mark.lap : undefined;
     // Only build's brief names a `-g<n>` handoff (lib/render.js, renderBrainBrief),
     // and only for a group brain: a `close` mark watches the plain one whatever
@@ -140,7 +139,7 @@ function main(argv, env) {
         // A group brain returns with no gate, so hooks/gate.js never clears its
         // mark; its own handoff arriving is the only signal there is. A close mark
         // is left standing for hooks/gate.js, once the gate is confirmed.
-        if (state === 'lost' || (state === 'handoff' && o.kind === 'group')) registry.clearInflight(o.root, opts.session, o.agentId);
+        if (state === 'lost' || (state === 'handoff' && o.kind !== 'close' && Number.isInteger(o.group)))registry.clearInflight(o.root, opts.session, o.agentId);
         return { text: lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null) };
     });
 }
