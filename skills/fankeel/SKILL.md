@@ -602,6 +602,7 @@ a document is meant to stay true, and therefore what is worth checking.
 | `report` | a dated snapshot: an audit, a benchmark, a meeting. Never edited after. |
 | `archive` | retired. Checked for one thing only — that nothing current still points at it. |
 | `fixture` | a test's own input. Describes nothing about the system, so it cannot drift from it; checked for links and line numbers only, never for symbols or paths its scaffold creates. |
+| `todo` | one TODO entry file. Current, but checked like a fixture: links and line numbers, never symbols or `last_verified` — its date is its own `stamp`. |
 
 A decision may carry `binding: true`: an ADR is a decision, not another role. At most seven stand at once — docs-check counts them, and `superseded_by` retires one.
 
@@ -647,7 +648,7 @@ instead:
 | A project convention that will outlive this task | `CLAUDE.md` |
 | A durable fact about the user or the repository | the memory directory |
 | Why a change was made | the commit message |
-| Work deliberately deferred | `TODO.md`, one line, linking to the detail, under the heading for what it is short of — under `## Blocked`, beneath a `### <timing>` whose next line is `on: MM-DD`, `after: <what>` or `upstream: <what>`; under `## Watch`, one whose next line is `if: <the event>`; either line ending in a `MM-DD` stamp |
+| Work deliberately deferred | one entry: `node <plugin>/scripts/todo.js new` where the project keeps a `todo` bucket — `TODO.md` is then generated, never edited — otherwise one `TODO.md` line, linking to the detail, under the heading for what it is short of — under `## Blocked`, beneath a `### <timing>` whose next line is `on: MM-DD`, `after: <what>` or `upstream: <what>`; under `## Watch`, one whose next line is `if: <the event>`; either line ending in a `MM-DD` stamp |
 | A plan whose work has landed | the `archive` bucket, after asking |
 | What was tried and failed, mid-task | a **note** |
 | What to pick up next | **next** |
@@ -772,6 +773,10 @@ the same question are one task and one option, not two. A repository with no
 `TODO.md` is where guessing from the recent commits belongs, one option each,
 phrased as a task and not as a commit subject. **Other** is always there for the
 real answer.
+Where `orient`'s `todo:` line names a folder, it prints the id of each entry
+it offers: start the task with `task.js start --todo <id>` for the one entry
+an option covers, or once per id for `## Ready` taken whole, and `stage land`
+then prints the `todo.js done` line that closes each.
 
 A guessed *task* offered as an option is not a guess written behind anyone's
 back — the user confirms it before it is written. Nothing else is asked for:

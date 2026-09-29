@@ -88,6 +88,16 @@ prints the split, so the ready count is on screen without opening the file. The
 `land` stage rules call for it, because a plan archived at `land` is a link that
 just moved.
 
+Where `.fankeel/docs.json` declares a bucket with role `todo` and its folder
+exists, `TODO.md` is generated: each entry is a file there — in this
+repository `docs/90-agent/todo/` — and `node scripts/todo.js index` writes
+`TODO.md` from them. todo-check then reads the folder and adds the rules the
+files carry: a `TODO.md` that differs from what `index` writes, a committed
+entry file that is gone, a title over 28 columns, a state outside the five,
+a `blocked` or `watch` entry with no `stamp`, and a `done` entry with no
+`sha`. The contract is on
+[docs/90-agent/reference/todo.md](../90-agent/reference/todo.md).
+
 Under `## Blocked` and `## Watch`, entries are grouped by what they wait for: a
 `### <timing>` heading at most 28 columns wide — a CJK character counts two —
 whose next line is a typed condition and then a `MM-DD` stamp. `## Blocked`

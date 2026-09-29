@@ -1,10 +1,14 @@
 ---
-status: current
+status: archived
 last_verified: 2026-09-29
 source_of_truth: TODO.md, scripts/todo-check.js
 ---
 
 # TODO completions
+
+Retired 2026-09-29. A closed entry is now an entry file with `state: done`
+under `docs/90-agent/todo/`, carrying its sha and, where known, its session;
+`todo.js migrate` turned the eleven records below into those files.
 
 What happened to a `TODO.md` entry once it was closed. Whoever removes a bullet
 from `TODO.md` adds one record here in the same change: the entry's original
