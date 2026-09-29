@@ -399,7 +399,7 @@ then asks this stage's gate.
    Its first line is `disposition: recapture`, `fix` or `ship`; anything but
    `ship` goes back to the implementer like the first reviewer's findings.
 
-   **Where the design gate chose 逐塊**, a task that changes a page is
+   **Where the task changed a page**, it is
    followed, once it lands, by a tuning loop on the real page, served by the
    project's own server through
    `node <plugin>/scripts/tune.js serve --proxy <the server's url> --src <the

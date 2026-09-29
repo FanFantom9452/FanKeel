@@ -146,17 +146,15 @@ kept edit flashes its block, a stray one is put back and the page marks the
 blocks it touched. In this form the page is static HTML: a block has to be
 written literally in the served file.
 
-**Two ways through the gate, and the user picks one there.** Option one's
-description names both, and the answer says which: **方向** — the mockup is
-approved as it stands, and the details are the render reviewer's at build;
-**逐塊** — the mockup fixes the direction only, and once build has written the
-real page it is tuned block by block on that page, in `tune.js`'s live mode,
-before the work goes on to verify. Write the choice beside the mockup path on
-the design's `spec:` line, so build reads it rather than asks again. Either
-way a block meant to be tuned should still carry a literal
-`data-block="<name>"` in the source that draws it, because live mode ranks
-that exact string first; an element without one is still found through its
-class names, less precisely, and a concatenated name is found only that way.
+**One way through the gate.** A frontend design always draws the mockup, and
+the mockup always carries the tune overlay; the user's OK at the gate approves
+it as it stands, and nothing is asked about how far it binds. Once build has
+written the real page it is tuned block by block on that page, in `tune.js`'s
+live mode, before the work goes on to verify. A block meant to be tuned should
+carry a literal `data-block="<name>"` in the source that draws it, because live
+mode ranks that exact string first; an element without one is still found
+through its class names, less precisely, and a concatenated name is found only
+that way.
 
 ### 4. The success criterion
 
