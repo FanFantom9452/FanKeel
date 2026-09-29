@@ -8,7 +8,13 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 ## Ready
 
+- 〔await〕group 1 收尾後 inflight 仍在、group 3 被標成 group 2，await.js 要 --agent 才等得到；build close 報告又把舊 ledger 算進去寫成 17 tasks — [hooks/brief.js](hooks/brief.js).
+
+- 〔build〕同日同名的 plan 已封存，.fankeel/build/<stem>/progress.md 仍在、11 個 task 標完成，新 plan 的 ready 印 none；plan 的 lint 或 ledger init 要偵測 ledger 的 plan 行不是這份 — [scripts/ledger.js](scripts/ledger.js).
+
 - 〔design〕design 一律出 mockup 並直接帶逐塊調整編輯器，拿掉「方向／逐塊」那題，使用者滿意就按 OK；build 後真頁面的逐塊調整也保留（09-29 使用者答） — [skills/fankeel-design/SKILL.md](skills/fankeel-design/SKILL.md).
+
+- 〔gate〕09-29 盤點同一題問 3～4 次（plan 檔何時提交、要不要記 flake）：gate 答案存進 <stage>-answer.md 但下一站 brief 不帶；要把已答題持久化進 brief、gate.js 拒絕重問並檢查暫停選項、打字答案明確時不強制重問 — [hooks/gate.js](hooks/gate.js).
 
 - 〔inject〕CLAUDE.md、memory 每輪注入越長越多：`/fankeel` 量長度、超過門檻用 gate 問要不要優化，與專門精簡 CLAUDE.md 和 memory 的 custom agent 合成一個任務（09-29 使用者答） — [hooks/inject.js](hooks/inject.js).
 
