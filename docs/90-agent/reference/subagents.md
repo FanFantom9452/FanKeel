@@ -787,12 +787,13 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   at the start, a worktree, a `TODO.md` line and a resumed implementer are not covered.
 - **A second agent.** Every user prompt re-injects the controller's "dispatch one
   agent" line. `hooks/brief.js` now writes `inflight` — one mark `{ stage, at,
-  agentId?, lap?, group? }` ([registry.md](registry.md) has the field), or, once a
+  agentId?, lap?, group?, kind? }` ([registry.md](registry.md) has the field), or, once a
   build's groups run more than one brain at once, an array of them, one per
   concurrently-running group — on the session's record when a `fankeel-brain`
   starts, skipping one it knows is nested (depth 2+). `await.js` appends the
   `-g<n>` suffix only on `build`, the one stage whose brief names a group
-  handoff; every other stage's brain writes the plain file, group or not.
+  handoff, and only for a `group` mark; a `close` mark watches the plain file
+  whatever its `group`. Every other stage's brain writes the plain file, group or not.
   `controlFor` in `lib/stages.js` reads every mark for the current stage
   (`marksOf`) and puts one "already running" line before the dispatch line per
   mark — naming its group when the mark carries one — telling the controller to
@@ -801,7 +802,8 @@ what to watch, and so the profile's `lean` preset is not read as proven.
   scoping — once a real gate arrives, because by then every group's brain for
   that stage has already reported and nothing else is left standing to spare;
   `scripts/await.js`'s `main()` also clears one agent's mark — not the whole
-  record, so a sibling's survives — when it judges that brain `lost`.
+  record, so a sibling's survives — when it judges that brain `lost`, or, for a
+  `group` mark, once that group's handoff arrived (a `close` mark is left for `hooks/gate.js`).
   `.claude-plugin/plugin.json`
   has no `SubagentStop` hook, so nothing else does. `SubagentStart` fires again on
   every `SendMessage` delivered to a running or resumed agent — ten times for one

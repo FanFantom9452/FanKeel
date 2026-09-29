@@ -222,13 +222,14 @@ turns and missed the wait this pipeline actually accumulates.
 session dies at a gate — is overwritten by the next one rather than repaired:
 the interval it measured has no end, so there is nothing to recover.
 
-`inflight` — `{ stage, at, agentId?, lap?, group? }` — is the other transient field, and not a
+`inflight` — `{ stage, at, agentId?, lap?, group?, kind? }` — is the other transient field, and not a
 cost. `hooks/brief.js` writes it through `registry.markInflight` when a
 `fankeel-brain` starts, skipping one it knows is nested (depth 2+); two callers clear it through `registry.clearInflight`,
 each for a different end: `hooks/gate.js` deletes the whole record once that
 stage's handoff carries a real gate, and `scripts/await.js`'s `main()` clears
-just the one agent's mark when it judges that brain `lost`, so a sibling
-brain's own mark survives; `controlFor` in `lib/stages.js` reads it
+just the one agent's mark when it judges that brain `lost`, or, for a `group`
+mark (`kind`), once that group's handoff arrived, so a sibling
+brain's own mark survives (a `close` mark is left for `hooks/gate.js`); `controlFor` in `lib/stages.js` reads it
 and, while it names the current stage, tells the controller to SendMessage that
 agent rather than dispatch another. `adopt` builds a fresh record and does not
 carry it. [subagents.md](subagents.md) has the two cases it does not cover.
