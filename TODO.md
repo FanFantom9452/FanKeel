@@ -90,7 +90,7 @@ the reading is what gets scheduled.
 
 - 〔collisions〕同台 B 開工時不知道 A 在做什麼：先查成因——是兩個 registry、A 還在 init、還是 liveness 誤判——再決定要不要改；跨機器不做（09-29 使用者答） — [collisions.md](docs/90-agent/reference/collisions.md).
 
-- 〔inject〕專案的 CLAUDE.md、memory 每輪注入越長越多：先讓 `/fankeel` 量注入長度、超過門檻用 gate 問使用者要不要優化；再設計一個專門優化使用者 CLAUDE.md 與 memory 的 custom agent（09-29 使用者答：「gate 先問，然後設計 custom agent」） — [hooks/inject.js](hooks/inject.js).
+- 〔inject〕CLAUDE.md、memory 每輪注入越長越多：`/fankeel` 量長度、超過門檻用 gate 問要不要優化，與專門精簡 CLAUDE.md 和 memory 的 custom agent 合成一個任務（09-29 使用者答） — [hooks/inject.js](hooks/inject.js).
 
 ## Needs a decision
 
