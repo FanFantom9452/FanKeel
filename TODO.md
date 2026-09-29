@@ -90,6 +90,8 @@ the reading is what gets scheduled.
 
 - 〔model〕09-29 已決定暫不用 `haiku`（不夠強，改用 sonnet 5.5），剩兩件未決：(a) profile key 蓋掉 agent 釘的模型、(c) 每個模型預設 effort — [model-choice.md](docs/90-agent/reference/model-choice.md).
 
+- 〔advisor〕要不要替主 session、`fankeel-brain` 或 implementer 設 `advisorModel`、用哪個模型；它取代不了 `/fankeel-ask`（不能指定問題、答案無法存檔） — [model-choice.md](docs/90-agent/reference/model-choice.md).
+
 ## Blocked
 
 ### fankeel 功能全部完成

@@ -21,6 +21,12 @@ Today every agent file in `agents/` pins its own `model:` in frontmatter. Six pi
 - **b. Settled: `haiku` not allowed for now.** 09-29, decided by the user: not strong
   enough; use sonnet 5.5. `haiku` stays a legal value of `judge.model`.
 - **c. A default effort per model.** Settled by whoever picks the models.
+- **d. Whether any role runs with an advisor.** Claude Code's `advisorModel` lets the
+  executor consult a stronger model on its own initiative, with the whole transcript
+  and no question of its own — so it cannot replace `/fankeel-ask`, which needs a
+  stated question and a filed verbatim answer. Open: whether the main session,
+  `fankeel-brain` or implementers get one, and on which model. Mechanism as read
+  on 09-29: [the advisor report](../reports/2026-09-29-advisor-tool.md).
 
 ## Constraint on c
 
