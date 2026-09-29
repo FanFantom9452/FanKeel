@@ -55,6 +55,38 @@ function nestedBrain(payload) {
     return false;
 }
 
+// What a build brain was sent for: line 1 of its own transcript is the
+// dispatch prompt, which names `build group <n>` or `build close`. Unreadable
+// — no path, no file yet, bad JSON, neither phrase — is null, and the mark is
+// then made the way it always was.
+function caseOf(payload) {
+    const dir = sessionDirOf(payload.transcript_path);
+    if (!dir || !payload.agent_id) return null;
+    let line;
+    try {
+        const fd = fs.openSync(path.join(dir, 'subagents', 'agent-' + payload.agent_id + '.jsonl'), 'r');
+        try {
+            const buf = Buffer.alloc(65536);
+            const n = fs.readSync(fd, buf, 0, buf.length, 0);
+            line = buf.toString('utf8', 0, n).split(/\r?\n/, 1)[0];
+        } finally {
+            fs.closeSync(fd);
+        }
+    } catch (e) {
+        return null;
+    }
+    let text = '';
+    try {
+        const content = JSON.parse(line).message.content;
+        text = typeof content === 'string' ? content : (Array.isArray(content) ? content.map((p) => (p && p.text) || '').join('\n') : '');
+    } catch (e) {
+        return null;
+    }
+    const m = /\bbuild (?:close|group (\d+))\b/.exec(text);
+    if (!m) return null;
+    return m[1] ? { kind: 'group', group: Number(m[1]) } : { kind: 'close' };
+}
+
 function main(raw) {
     const payload = parse(raw);
     if (!payload) return;
@@ -78,7 +110,8 @@ function main(raw) {
     let group = null;
     if (mine.stage && String(payload.agent_type || '').replace(/^fankeel:/, '') === 'fankeel-brain' && !nestedBrain(payload)) {
         try {
-            group = registry.markInflight(root, payload.session_id, mine.stage, payload.agent_id, lapOf(mine, mine.stage));
+            const sent = mine.stage === 'build' ? caseOf(payload) : null;
+            group = registry.markInflight(root, payload.session_id, mine.stage, payload.agent_id, lapOf(mine, mine.stage), sent && sent.group, sent && sent.kind);
         } catch (e) { /* housekeeping */ }
     }
 

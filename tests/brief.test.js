@@ -151,6 +151,38 @@ test('two brains dispatched together for build get distinct groups, and both mar
   assert.deepEqual(mark.map((m) => m.group).sort(), [1, 2]);
 });
 
+function agentLine(root, id, prompt) {
+  const sub = path.join(root, 'sess', 'subagents');
+  fs.mkdirSync(sub, { recursive: true });
+  fs.writeFileSync(path.join(sub, 'agent-' + id + '.jsonl'), JSON.stringify({ type: 'user', message: { role: 'user', content: prompt } }) + '\n');
+}
+
+test('a build brain sent as `build group 3` gets mark group 3 whatever order it started in; `build close` gets kind close', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const transcript = path.join(root, 'sess.jsonl');
+  agentLine(root, 'c1', 'Run build close for this plan.');
+  agentLine(root, 'g3', 'Run build group 3: tasks 4, 5.');
+  run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'c1', transcript_path: transcript }));
+  run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'g3', transcript_path: transcript }));
+  const marks = JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), 'utf8')).inflight;
+  const close = marks.find((m) => m.agentId === 'c1');
+  const group = marks.find((m) => m.agentId === 'g3');
+  assert.equal(close.kind, 'close');
+  assert.deepEqual([group.kind, group.group], ['group', 3]);
+});
+
+test('a build brain whose transcript cannot be read keeps today\'s numbering and carries no kind', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'u1', transcript_path: path.join(root, 'sess.jsonl') }));
+  const mark = JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), 'utf8')).inflight;
+  assert.equal(mark.group, 1);
+  assert.equal('kind' in mark, false);
+});
+
 test('a judge is told it answers once', () => {
   const root = tmp();
   seed(root);

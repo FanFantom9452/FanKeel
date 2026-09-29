@@ -90,9 +90,11 @@ function waitFor(opts, env) {
     if (!opts.agent && running.length > 1) return { error: running.length + ' stage agents in flight for ' + data.stage + ': pass --agent <id>' };
     const mark = opts.agent ? running.find((m) => m.agentId === opts.agent) : (running[0] || null);
     const lap = mark && Number.isInteger(mark.lap) && mark.lap > 0 ? mark.lap : undefined;
-    // Only build's brief names a `-g<n>` handoff (lib/render.js, renderBrainBrief);
-    // every other stage's brain writes the plain one, group or not.
-    const group = data.stage === 'build' && mark && Number.isInteger(mark.group) ? mark.group : undefined;
+    // Only build's brief names a `-g<n>` handoff (lib/render.js, renderBrainBrief),
+    // and only for a group brain: a `close` mark watches the plain one whatever
+    // number `markInflight` gave it, so the mark's `kind` decides, not its `group`.
+    const kind = mark && (mark.kind === 'group' || mark.kind === 'close') ? mark.kind : undefined;
+    const group = data.stage === 'build' && mark && kind !== 'close' && Number.isInteger(mark.group) ? mark.group : undefined;
     const handoff = handoffPath(root, data, data.stage, lap, group);
     if (!handoff) return { error: 'session ' + opts.session + ' has no stage or no started time, so no handoff path' };
     let since = 0;
@@ -111,7 +113,7 @@ function waitFor(opts, env) {
         const own = path.join(dir, 'subagents', 'agent-' + agentId + '.jsonl');
         activity = () => (fs.existsSync(own) ? agentFiles(dir) : []);
     }
-    return { root, handoff, commit: commitCandidates(root, data, lap, group), since, agentId, group, activity, idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000 };
+    return { root, handoff, commit: commitCandidates(root, data, lap, group), since, agentId, group, kind, activity, idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000 };
 }
 
 // The word first, so the controller's rule can name it; then what to do, so
@@ -135,7 +137,10 @@ function main(argv, env) {
     const o = waitFor(opts, env || process.env);
     if (o.error) return Promise.resolve({ text: 'await.js: ' + o.error, code: 1 });
     return awaitHandoff(o).then((state) => {
-        if (state === 'lost') registry.clearInflight(o.root, opts.session, o.agentId);
+        // A group brain returns with no gate, so hooks/gate.js never clears its
+        // mark; its own handoff arriving is the only signal there is. A close mark
+        // is left standing for hooks/gate.js, once the gate is confirmed.
+        if (state === 'lost' || (state === 'handoff' && o.kind === 'group')) registry.clearInflight(o.root, opts.session, o.agentId);
         return { text: lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null) };
     });
 }

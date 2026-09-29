@@ -253,6 +253,35 @@ test('await.js clears only the lost agent\'s own in-flight mark, leaving a sibli
     assert.deepEqual(after.map((m) => m.agentId), ['a2'], 'a1\'s mark is gone, a2\'s sibling mark survives');
 });
 
+// docs/90-agent/plans/2026-09-28-agent-lifetime-design.md §1 and TODO 〔await〕:
+// the mark carries which case the brain was sent for, so a close brain that
+// started first no longer watches build-g1.md, and a group brain's mark
+// clears when its own handoff arrives. The 39522eef version of the clear
+// was reverted (5e2e621d) because a close mark also carried a group number.
+test('await.js watches build.md for a close mark and build-g3.md for a group mark, and clears only the group mark on handoff', async () => {
+    const f = fixture({});
+    const transcript = path.join(f.root, 'sess.jsonl');
+    for (const [id, prompt] of [['c1', 'Run build close.'], ['g3', 'Run build group 3.']]) {
+        at(path.join(f.root, 'sess', 'subagents', 'agent-' + id + '.jsonl'), Date.now(), JSON.stringify({ message: { role: 'user', content: prompt } }) + '\n');
+        const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'hooks', 'brief.js')], {
+            input: JSON.stringify({ session_id: SID, cwd: f.root, hook_event_name: 'SubagentStart', agent_id: id, agent_type: 'fankeel:fankeel-brain', transcript_path: transcript }),
+            encoding: 'utf8',
+            env: Object.assign({}, process.env, { CLAUDE_PROJECT_DIR: f.root, CLAUDE_CONFIG_DIR: f.config }),
+        });
+        assert.equal(r.status, 0, r.stderr);
+    }
+    const plain = path.join(f.task, 'build.md').split(path.sep).join('/');
+    const g3 = path.join(f.task, 'build-g3.md').split(path.sep).join('/');
+    at(plain, Date.now());
+    at(g3, Date.now());
+    const close = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'c1', '--timeout', '0.5'], f.env);
+    assert.ok(close.text.startsWith('handoff ' + plain), close.text);
+    assert.deepEqual(registry.inflights(registry.readSession(f.root, SID)).map((m) => m.agentId).sort(), ['c1', 'g3'], 'a close mark is left for hooks/gate.js');
+    const group = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'g3', '--timeout', '0.5'], f.env);
+    assert.equal(group.text.startsWith('group 3, agent g3: handoff ' + g3), true, group.text);
+    assert.deepEqual(registry.inflights(registry.readSession(f.root, SID)).map((m) => m.agentId), ['c1'], 'the group mark clears once its own handoff arrives');
+});
+
 test('a stage agent starting stamps the lap its brief named on the in-flight mark', () => {
     const f = fixture({ moves: [['build', 1], ['build', 2]] });
     const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'hooks', 'brief.js')], {
