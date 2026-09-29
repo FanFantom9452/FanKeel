@@ -74,9 +74,10 @@ function main(raw) {
         return;
     }
 
-    // On `Edit|Write|NotebookEdit`, independent of `guard` mode like the two
-    // rules around it: a fankeel-brain's Write lands only in its own session's
-    // `.fankeel/build/task-*/`. Anything outside that tree is untouched.
+    // Independent of `guard` mode like the two rules around it: a
+    // fankeel-brain's Write lands only in its own session's
+    // `.fankeel/build/task-*/`. Only `Write` is checked; `Edit` and
+    // `NotebookEdit` are not. Anything outside that tree is untouched.
     if (payload.tool_name === 'Write') {
         const reason = brainWriteReason({ agentType: payload.agent_type, root, file: targetOf(payload), mine });
         if (reason) {
