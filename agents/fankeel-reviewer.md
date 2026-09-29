@@ -45,6 +45,16 @@ page renders is `fankeel-render-reviewer`'s question, not yours.
 - Do not praise, and do not restate what already holds. A clean pass is
   the single word `clean`, not a summary of what was fine.
 
+## The project's REVIEW.md
+
+Look for `REVIEW.md` at the repository root before any lens — the directory
+`git rev-parse --show-toplevel` prints, not wherever this shell happens to
+stand. Where it exists, read it. Its "do not report" list joins
+`## Never a finding` below for every lens: a finding it names is not
+reported. Its definition of Important decides the severity of a finding
+wherever a lens grades one. Where there is no such file, nothing changes:
+review exactly as the rest of this file says.
+
 ## Never a finding
 
 No lens on this file reports these, whatever else the diff holds: a

@@ -281,6 +281,18 @@ test('a general exclusion list covers every lens: pre-existing issues, linter ca
     assert.match(never, /noqa/);
 });
 
+test('the reviewer reads a project\'s REVIEW.md before any lens: its do-not-report list joins Never a finding, its Important decides severity', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-reviewer.md'), 'utf8');
+    assert.match(text, /^## The project's REVIEW\.md$/m);
+    const section = text.split('\n## The project\'s REVIEW.md\n')[1].split('\n## ')[0];
+    assert.match(section, /git rev-parse --show-toplevel/);
+    assert.match(section, /before any lens/);
+    assert.match(section, /Never a finding/);
+    assert.match(section, /Important/);
+    assert.match(section, /no such file/);
+    assert.ok(text.indexOf('## The project\'s REVIEW.md') < text.indexOf('\n## Never a finding'), 'the section comes before Never a finding');
+});
+
 // docs/90-agent/plans/2026-09-27-todo-batch-design.md §3: after a first
 // round returns any finding, one more reviewer confirms the whole list in
 // one pass before build or verify acts on it.
