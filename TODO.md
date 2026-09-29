@@ -94,7 +94,9 @@ the reading is what gets scheduled.
 
 - 〔station〕`/fankeel` 還在 init、沒 task 時沒有 entry，station 看不到當前 session；要不要 init 就寫一筆無 task 的 entry、怎麼顯示 — [station.md](docs/90-agent/reference/station.md).
 
-- 〔collisions〕B 開工時不知道 A 在做什麼：先查是兩個 registry、A 還在 init，還是跨機器；跨機器選同步資料夾、git 或 station API — [collisions.md](docs/90-agent/reference/collisions.md).
+- 〔collisions〕同台 B 開工時不知道 A 在做什麼：先查是兩個 registry、A 還在 init、還是 liveness 誤判；跨機器不做（09-29 使用者說） — [collisions.md](docs/90-agent/reference/collisions.md).
+
+- 〔inject〕專案的 CLAUDE.md、memory 每輪注入越長越多：`/fankeel` 要量它、超過門檻就用 gate 先問要不要優化，或派 brain／專用 agent 精簡 — [hooks/inject.js](hooks/inject.js).
 
 ## Blocked
 
