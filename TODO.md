@@ -84,15 +84,10 @@ the reading is what gets scheduled.
 
 ## Ready
 
+- 〔station〕看第 7 段加的 station 欄位：沒有任何 subagent 的 context 峰值超過 450k（基準 f44b1c61 的 544k）、最貴的單一 subagent 佔 subagent 總花費低於 15%（基準 31%） — [station.md](docs/90-agent/reference/station.md).
+
 ## Needs a decision
 
-- 〔verify〕要不要把 lint／build 列成 verify 必過一關：先比對 AI-Native SDLC playbook 的 Triple-Check 與現有 verify，再決定 — [skills/fankeel-verify/SKILL.md](skills/fankeel-verify/SKILL.md).
-- 〔plan〕要不要給 plan 加 Risks 欄：先比對 playbook 的 plan.md 範本與現有 plan，再決定 — [skills/fankeel-plan/SKILL.md](skills/fankeel-plan/SKILL.md).
-- 〔review〕要不要支援專案自訂 `review.md`：先比對 playbook 的審查 SOP 與現有 reviewer lens，再決定 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
-- 〔skills〕09-24 對照 addyosmani/agent-skills、mattpocock/skills 是 WebFetch 摘要、沒 clone，六個候選沒挑：clone 下來逐字重看，再和使用者逐條挑 — [skills/fankeel/SKILL.md](skills/fankeel/SKILL.md).
-- 〔workflow〕要不要拿掉 Workflow、統一成 brain＋背景 agent：brain 沒有 Workflow，但 ledger groups 三個以上仍印 workflow；budget.js 也不量 subagents/workflows/ 底下的 agent — [lib/plantasks.js](lib/plantasks.js).
-- 〔await〕group 號依派工序編、非 ledger group，await 仍可能指到舊 `build-g<n>.md`；試過在 handoff 時自動清 inflight 但已撤回——markInflight 分不清 group brain 與 build close，需 registry 記下這訊號 — [scripts/await.js](scripts/await.js).
-- 〔stage-agents〕brain 停掉時它的背景 implementer 還在跑，完成報告落到主控、沒人接：重派的 brain 又做一次 Task 8。要不要讓 brain 等完子 agent 才能交回 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 
 ## Blocked
 
@@ -102,7 +97,7 @@ after: fankeel 其餘功能都落地、使用者換到新機器測試. 09-29.
 - 〔audit〕Trovara 的 docs 搬到 preset：在新機器的 Trovara 跑 `docs-move.js` 出搬移表、核可後 apply，再跑一次分批 `/fankeel-audit` — [scripts/docs-move.js](scripts/docs-move.js).
 
 ### gates 滿一週
-on: 10-02 起，registry 的 `gates` 累積滿一週. 09-26.
+on: 10-02 起，registry 的 `gates` 累積滿一週. 09-29.
 
 - 〔profile〕`suggest` 只推 `land.*`：`class.default`、`design.mockup` 可以從 gate 答案推 — [lib/profile.js](lib/profile.js).
 
@@ -134,34 +129,36 @@ upstream: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃�
 
 - 〔security〕reviewer 的 `## Security` lens 可先交本地模型篩（`security.local`）；四類清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 
+### 插件重裝後實跑
+after: 安裝版更新到含 b9e7bfc5 的版本，再跑一次真實受控 build. 09-29.
+
+- 〔await〕`kind` 只在測試裡驗過：重裝後看一次真實 `build close` brain 的 mark 是否帶 `kind: 'close'`、await 是否盯 `build.md` — [hooks/brief.js](hooks/brief.js).
+- 〔skills〕`disable-model-invocation: true` 對插件 skill 是否生效沒驗：重裝後讓模型自行呼叫 fankeel-station 看是否被擋 — [skills/fankeel-station/SKILL.md](skills/fankeel-station/SKILL.md).
+- 〔stage-agents〕09-29 回答檔四次沒寫出、原因未明：重裝後若再漏，讀 `<stage>-answer.miss.json` 的 reason — [hooks/resume.js](hooks/resume.js).
+
 ## Watch
 
 ### 需要第十一種語言
-if: a repository needs an eleventh language. 09-26.
+if: a repository needs an eleventh language. 09-29.
 
 - 〔survey〕Language patterns beyond the ten [scripts/survey.js](scripts/survey.js) knows. Anything else is listed under `skipped.noPattern` for a human.
 
 ### 放行規則有沒有效
-if: 放行規則存在下 no verdict 再發生一次. 09-28.
+if: 放行規則存在下 no verdict 再發生一次. 09-29.
 
 - 〔stage-agents〕已加規則 `Edit(/.fankeel/build/**)`，對照量測仍重現不出 no verdict，效果無法證明，見 `docs/90-agent/reports/2026-09-28-allow-rule-probe.md` — [subagents.md](docs/90-agent/reference/subagents.md).
 
 ### 第二個平台的使用者
-if: 出現第二個 host（Gemini CLI、Codex CLI 等）的使用者或 issue. 09-26.
+if: 出現第二個 host（Gemini CLI、Codex CLI 等）的使用者或 issue. 09-29.
 
 - 多目標交付要不要 compiler：SEPIA 用 symlink 支援四平台；hook 對等只查過 Gemini CLI `BeforeAgent` 與 Codex CLI `UserPromptSubmit` 兩個 — [簡報 §2.7](docs/90-agent/reference/improvement-brief.md#27-多平台交付sepia-的做法便宜得多).
 
 ### 程式碼大到要查結構
-if: 某個專案的程式碼大到 grep 加 read 找不到跨檔關係. 09-27.
+if: 某個專案的程式碼大到 grep 加 read 找不到跨檔關係. 09-29.
 
 - 〔survey〕graphify 可接為查詢工具；獨立實測未穩定省錢，接之前先解決它的 PreToolUse hook 擋 Read 與 guard 衝突、Windows 上 hook 靜默失效（其 issue #140） — [scripts/survey.js](scripts/survey.js).
 
 ### wizard-motion 再紅一次
-if: `the chosen card animates, and under reduced motion nothing is running` 在整套裡再紅一次. 09-27.
+if: `the chosen card animates, and under reduced motion nothing is running` 在整套裡再紅一次. 09-29.
 
 - 〔tests〕09-27 四次整套紅兩次（2072/2073）、單跑 3/3 綠；之後整套 10 次全綠，沒抓到失敗訊息，紀錄在 `.fankeel/build/2026-09-27-five-items/flake.txt` — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
-
-### build 五個 task 以上
-if: 下一次有 5 個以上 task 的 build 開跑. 09-28.
-
-- 〔station〕看第 7 段加的 station 欄位：沒有任何 subagent 的 context 峰值超過 450k（基準 f44b1c61 的 544k）、最貴的單一 subagent 佔 subagent 總花費低於 15%（基準 31%） — [station.md](docs/90-agent/reference/station.md).
