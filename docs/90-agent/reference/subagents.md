@@ -56,8 +56,10 @@ says this is a subagent at all: the main thread of a session started with
 `--agent` carries the type without it and must be able to write, so the id is
 checked first (`hooks/guard.js:60`, `if (!payload.agent_id) return;`).
 Before any of that, `hooks/guard.js` returns unless the dispatching session has an
-active registry entry (`hooks/guard.js:33`, `if (!mine || mine.active !== true) return;`),
-so a read-only subagent under a session with no active task is not denied.
+active registry entry (`hooks/guard.js:33`, `if (!mine || mine.active !== true) return;`).
+The return applies only to a session with no active entry at all, one that never
+sent `/fankeel`; a session that has sent it has an active `init` entry
+(`hooks/inject.js` writes it), so its read-only subagents are denied.
 [collisions.md](collisions.md)
 carries what that denylist actually matches, not restated here. Seven of
 the eight agents hold `Bash`; `fankeel-fixer` is the one that does not,
