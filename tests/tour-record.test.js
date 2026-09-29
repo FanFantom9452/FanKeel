@@ -26,7 +26,7 @@ test('parseArgs takes one timeline name, --lang zh|en (zh unless given) and an o
 test('a wrong name, a wrong language, no name or a stray flag exits 2', () => {
     const bad = spawnSync(process.execPath, [SCRIPT, 'intro'], { encoding: 'utf8' });
     assert.equal(bad.status, 2);
-    assert.match(bad.stderr, /usage: tour-record\.js <reel|promo30|promo30v3>\|promo30> \[--lang zh\|en\] \[--out f\.mp4\]/);
+    assert.match(bad.stderr, /usage: tour-record\.js <reel\|promo30\|promo30v3> \[--lang zh\|en\] \[--out f\.mp4\]/);
     const lang = spawnSync(process.execPath, [SCRIPT, 'reel', '--lang', 'fr'], { encoding: 'utf8' });
     assert.equal(lang.status, 2);
     assert.match(lang.stderr, /usage: tour-record\.js/);
