@@ -176,17 +176,17 @@ report where a real parser would cost a dependency this plugin does not have.
 
 - `lib/tracked.js:31` 是 `const args = ['ls-files', '-z', '--cached', '--others', '--exclude-standard'];`
 - `lib/map.js:237` 是 `const found = trackedFiles(root);`
-- `lib/map.js:317` 是 `const found = trackedFiles(root);`
+- `lib/map.js:318` 是 `const found = trackedFiles(root);`
 - `lib/plantasks.js:295` 是 `const found = trackedFiles(root);`
 - `scripts/docs-audit.js:416` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-audit.js:456` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-check.js:152` 是 `const result = trackedFiles(root);`
-- `scripts/docs-check.js:470` 是 `const result = trackedFiles(root);`
+- `scripts/docs-check.js:473` 是 `const result = trackedFiles(root);`
 - `scripts/docs-move.js:74` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-move.js:210` 是 `for (const rel of trackedFiles(root).files.filter(isMarkdown)) {`
 - `scripts/layout.js:51` 是 `const found = trackedFiles(root);`
 - `scripts/memory-check.js:142` 是 `const tracked = trackedFiles(root);`
-- `scripts/orient.js:286` 是 `result = trackedFiles(dir, { stats });`
+- `scripts/orient.js:287` 是 `result = trackedFiles(dir, { stats });`
 - `scripts/survey.js:198` 是 `const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt`，十三個之中只有這一處自己（`scan` 函式本身）直接讀 `.buckets`
 
 `--exclude-standard` 套用 `.gitignore`，所以宣告出來的 bucket 會

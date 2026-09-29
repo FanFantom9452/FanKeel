@@ -171,7 +171,7 @@ test('an export list is found wherever in the file it sits', () => {
 // repository is deliberately tolerant about frontmatter vocabulary. What is
 // caught is the narrower shape — something that looks followable, resolves
 // today, and is checked by nothing.
-const READ_KEYS = new Set(['status', 'last_verified', 'source_of_truth']);
+const READ_KEYS = new Set(['status', 'last_verified', 'source_of_truth', 'link']);
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?(?:\n|$)/;
 
 test('no frontmatter key nothing reads carries a repository path', () => {
