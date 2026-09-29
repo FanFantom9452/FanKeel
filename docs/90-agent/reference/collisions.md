@@ -8,6 +8,8 @@ source_of_truth: lib/overlap.js, lib/guard.js, lib/live.js, lib/registry.js, lib
 
 What happens when another live session is already editing a file this task edits, how a claim gets onto the record without anyone declaring one, and what happens to a claim whose terminal is gone.
 
+A session is visible from its `/fankeel` prompt, not from its first `task.js start`: the prompt writes an entry with stage `init` and no task, another session's `also in progress:` line and `task.js show` list it as `untitled @ init`, and `start` replaces it. It holds no claims yet, so it collides with nothing.
+
 # Collisions are about files, not names
 
 Two sessions collide when their **claims** overlap. One person writes "colour

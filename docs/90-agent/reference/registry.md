@@ -559,7 +559,7 @@ Two things close it, both upstream of the hooks:
 | | |
 |---|---|
 | `scripts/task.js` | `--session` is checked against Claude Code's own `<config>/sessions/<pid>.json`. An id refused is one the scan did not find **while finding others**, and the message lists those with the directory each was opened in. Two results allow: a directory that cannot be read, and a scan that found nobody at all. Neither is evidence, because a refusal must never come from a failed measurement — and a scan that cannot see the session doing the asking has failed, whatever it returned. `lib/live.js:122` (`!ids.has(mySessionId)`) keeps the same rule for the same directory. |
-| `hooks/inject.js` | a `/fankeel` prompt is answered with the `init` block: this session's id — the one that hook is itself holding — and the rules for the step before there is a task. |
+| `hooks/inject.js` | a `/fankeel` prompt is answered with the `init` block: this session's id — the one that hook is itself holding — and the rules for the step before there is a task. It also writes this session's entry as `{ active: true, stage: 'init' }` with no `task`, so a neighbour's `also in progress:` and `task.js show` list a session that has only run `/fankeel`, and the station shows its row as 初始化中; `task.js start` takes that entry over. |
 
 `clear <id>` and `adopt <id>` take the other session's id positionally rather
 than through `--session`, so a dead neighbour is still reachable. That is what
