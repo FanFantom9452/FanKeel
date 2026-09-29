@@ -86,17 +86,17 @@ the reading is what gets scheduled.
 
 - 〔station〕看第 7 段加的 station 欄位：沒有任何 subagent 的 context 峰值超過 450k（基準 f44b1c61 的 544k）、最貴的單一 subagent 佔 subagent 總花費低於 15%（基準 31%） — [station.md](docs/90-agent/reference/station.md).
 
+- 〔station〕`/fankeel` 還在 init、沒 task 時沒有 entry，station 看不到當前 session：init 就寫一筆無 task 的 entry，station 顯示為「初始化中」；與 collisions 那筆的同台可見度共用（09-29 使用者答） — [station.md](docs/90-agent/reference/station.md).
+
+- 〔collisions〕同台 B 開工時不知道 A 在做什麼：先查成因——是兩個 registry、A 還在 init、還是 liveness 誤判——再決定要不要改；跨機器不做（09-29 使用者答） — [collisions.md](docs/90-agent/reference/collisions.md).
+
+- 〔inject〕專案的 CLAUDE.md、memory 每輪注入越長越多：先讓 `/fankeel` 量注入長度、超過門檻用 gate 問使用者要不要優化；再設計一個專門優化使用者 CLAUDE.md 與 memory 的 custom agent（09-29 使用者答：「gate 先問，然後設計 custom agent」） — [hooks/inject.js](hooks/inject.js).
+
 ## Needs a decision
 
 - 〔model〕09-29 已決定暫不用 `haiku`（不夠強，改用 sonnet 5.5），剩兩件未決：(a) profile key 蓋掉 agent 釘的模型、(c) 每個模型預設 effort — [model-choice.md](docs/90-agent/reference/model-choice.md).
 
 - 〔advisor〕要不要替主 session、`fankeel-brain` 或 implementer 設 `advisorModel`、用哪個模型；它取代不了 `/fankeel-ask`（不能指定問題、答案無法存檔） — [model-choice.md](docs/90-agent/reference/model-choice.md).
-
-- 〔station〕`/fankeel` 還在 init、沒 task 時沒有 entry，station 看不到當前 session；要不要 init 就寫一筆無 task 的 entry、怎麼顯示 — [station.md](docs/90-agent/reference/station.md).
-
-- 〔collisions〕同台 B 開工時不知道 A 在做什麼：先查是兩個 registry、A 還在 init、還是 liveness 誤判；跨機器不做（09-29 使用者說） — [collisions.md](docs/90-agent/reference/collisions.md).
-
-- 〔inject〕專案的 CLAUDE.md、memory 每輪注入越長越多：`/fankeel` 要量它、超過門檻就用 gate 先問要不要優化，或派 brain／專用 agent 精簡 — [hooks/inject.js](hooks/inject.js).
 
 ## Blocked
 
