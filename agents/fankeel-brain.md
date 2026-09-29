@@ -36,7 +36,8 @@ worktree — the Agent tool's `isolation: "worktree"` bases a new worktree on
 be many commits stale against what you just read. Write every dispatch's `description` as its title alone —
 `hooks/title.js` opens it with the model, its version and its effort, read
 off the agent file and real transcripts, the same for the plain session's
-dispatches.
+dispatches — and leaves it bare for another plugin's agent or an agent file
+it cannot read.
 
 ## Tools
 

@@ -26,6 +26,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔tests〕`tests/plantasks-lint-cap.test.js:25,28` 把 `assets/station/station.js` 寫死成 5170 行，下次改 station.js 就紅；改成讀檔案實際長度 — [tests/plantasks-lint-cap.test.js](tests/plantasks-lint-cap.test.js).
 
+- 〔title〕`CLAUDE_CODE_SUBAGENT_MODEL` 排在 agent 檔 `model:` 後只實測過一次，測試都沒設這個變數，順序改錯不會紅；補一條測試和只設變數的對照 probe — [lib/title.js](lib/title.js).
+
 - 〔todo〕`unreadable folder` 分支與 `LC_ALL=C` 沒有會紅的測試，`trackedIn` 沒跑過變異；`--migrate` 的 `completions()`、`commitDay` 仍吞錯；plan 第 3 組的變異從未補跑 — [lib/todo.js](lib/todo.js).
 
 ## Needs a decision

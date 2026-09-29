@@ -265,9 +265,12 @@ regardless, which is why fankeel never dispatches one; the
 **count and the model must be said out loud**, in the response that sends
 them, because a fan-out nobody announced is spend the user is paying for and
 could not see coming; the **description is the title alone**, and `hooks/title.js` opens it with
-the model, the version read off the newest real `message.model` in the
-project's subagent transcripts and the effort off the agent file's `effort:`
-or `inherit`, because it is the title a background agent runs under and the
+the model (call `model`, agent file `model:`, `CLAUDE_CODE_SUBAGENT_MODEL`,
+then the session's), the version — parsed from a full id, else read off the
+newest real `message.model` of that family in the project's subagent
+transcripts — and the effort off the agent file's `effort:` or `inherit`, and
+writes nothing for another plugin's agent or an unreadable agent file,
+because it is the title a background agent runs under and the
 one place the user sees what is spending while it runs — computed, since a
 version the model inferred read `sonnet 5` for claude-sonnet-5-5 on
 2026-09-29; the returns must be

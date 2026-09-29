@@ -1068,9 +1068,13 @@ Six rules that make it work, each of which fails silently when missed:
 - **Write the `description` as the title alone** — `survey stage agent`,
   `write plan`. `hooks/title.js` opens it with `<alias> <version> · <effort>`
   before the dispatch runs: the model from the call's `model`, else the agent
-  file's `model:`, else the session's; the version off the newest real
-  `message.model` in this project's subagent transcripts, left out when there
-  is none; the effort off the agent file's `effort:`, else `inherit`. The
+  file's `model:`, else `CLAUDE_CODE_SUBAGENT_MODEL`, else the session's
+  (the word `inherit` when its transcript names none); a
+  full id is parsed as it stands, an alias takes its version off the newest
+  real `message.model` of that family in this project's subagent transcripts,
+  left out when there is none; the effort off the agent file's `effort:`,
+  else `inherit`. Another plugin's agent, or an agent file it cannot read,
+  gets no prefix — the model there is not one it can know. The
   description is the title a background agent runs under, and the one place
   the user sees what is spending while it runs — so it is computed, never
   written: on 2026-09-29 three titles read `sonnet 5` for agents that ran
