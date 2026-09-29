@@ -349,6 +349,12 @@ test('the stage agent\'s Return section says a group writes no gate, and only bu
     assert.match(ret, /only `build close` runs the full suite, writes the gate/);
 });
 
+test('the stage agent\'s Return section forbids any return while a dispatched agent has not returned', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8');
+    const ret = text.split('\n## Return\n')[1];
+    assert.match(ret, /never while an agent you dispatched has not returned — end the turn with `waiting` until it has/);
+});
+
 test('the brain\'s own Tools section describes dispatching a fresh implementer on a relay path, and the shared prefix at the head of every prompt', () => {
     const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-brain.md'), 'utf8');
     const tools = text.split('\n## Tools\n')[1].split('\n## Refusals\n')[0];

@@ -854,3 +854,13 @@ test('planDir reads the plan bucket off a project\'s docs.json, and falls back w
   const bare = tmp('plandir-fn-bare-');
   assert.equal(planDir(bare), 'docs/plans');
 });
+
+test('a build brain\'s brief says beside both the group return and the close return to return only once every implementer has returned', () => {
+  const { renderBrief } = require('../lib/render.js');
+  const on = { values: { 'stage.agents': ['build'], 'dispatch.floor': 'sonnet' }, sources: {}, unreadable: [] };
+  const mine = entry(MINE, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const brief = renderBrief({ mine, agentType: 'fankeel:fankeel-brain', root: '/r', profile: on });
+  const line = brief.split('\n').find((l) => l.includes('Your prompt names your case'));
+  assert.ok(line, 'the group-and-close line is missing');
+  assert.equal(line.split('once every implementer you sent has returned').length - 1, 2, 'one for the group return, one for the close return');
+});

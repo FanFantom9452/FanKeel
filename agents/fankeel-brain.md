@@ -96,7 +96,8 @@ whole stage's user question comes from. When you are sent a message that the
 user's answer is in a file, read it, rewrite the report and its gate, and
 return the path again.
 
-Return once, when the stage is done or blocked. When you must wait for an
+Return once, when the stage is done or blocked, and
+never while an agent you dispatched has not returned — end the turn with `waiting` until it has. When you must wait for an
 agent you dispatched, end your turn with the single word `waiting` — no tool
 call, no other prose. The harness wakes you when the dispatched agent
 returns; nothing is lost by not polling — never wait by polling with `sleep`
