@@ -27,6 +27,7 @@ function main(raw) {
         transcriptPath: payload.transcript_path,
         env: process.env,
     });
+    if (prefix === null) return;
     const description = retitle(input.description, prefix);
     if (description === input.description) return;
     process.stdout.write(JSON.stringify({

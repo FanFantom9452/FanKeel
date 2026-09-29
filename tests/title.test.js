@@ -82,3 +82,33 @@ test('retitle replaces a prefix the model wrote itself', () => {
     assert.equal(retitle('survey stage agent', 'sonnet · medium'), 'sonnet · medium: survey stage agent');
     assert.equal(retitle('inherit · inherit: x', 'opus 5.5 · inherit'), 'opus 5.5 · inherit: x');
 });
+
+test('a foreign plugin agent type is not titled: null', () => {
+    const w = world();
+    assert.equal(ask(w, { subagent_type: 'other-plugin:reviewer', description: 'x' }), null);
+});
+
+test('fankeel:<name> with no agent file is unreadable: null', () => {
+    const w = world();
+    assert.equal(ask(w, { subagent_type: 'fankeel:nonexistent', description: 'x' }), null);
+});
+
+test('a fankeel agent file that cannot be read is null', () => {
+    const w = world();
+    fs.mkdirSync(path.join(w.plugin, 'agents', 'broken.md'));
+    assert.equal(ask(w, { subagent_type: 'fankeel:broken', description: 'x' }), null);
+});
+
+test('a readable agent file with no frontmatter block still inherits', () => {
+    const w = world();
+    fs.writeFileSync(path.join(w.plugin, 'agents', 'plain.md'), 'just a body\n');
+    assert.equal(ask(w, { subagent_type: 'fankeel:plain', description: 'x' }), 'opus 5.5 · inherit');
+});
+
+test('built-ins, an unfound bare name and an empty type keep the inherit title', () => {
+    const w = world();
+    for (const t of ['general-purpose', 'Explore', 'Plan', 'no-such-agent', '', undefined]) {
+        assert.equal(ask(w, { subagent_type: t, description: 'x' }), 'opus 5.5 · inherit', String(t));
+    }
+    assert.equal(ask(w, { description: 'x' }), 'opus 5.5 · inherit');
+});

@@ -52,3 +52,10 @@ test('the manifest runs hooks/title.js on Agent|Task', () => {
     const entries = manifest.hooks.PreToolUse.filter((e) => e.matcher === 'Agent|Task');
     assert.ok(entries.some((e) => e.hooks.some((h) => /hooks\/title\.js/.test(h.command))));
 });
+
+test('a foreign plugin agent type writes nothing and leaves the description', () => {
+    const f = fixture();
+    const out = fire({ tool_name: 'Agent', cwd: f.dir, transcript_path: f.transcript,
+        tool_input: { subagent_type: 'other-plugin:reviewer', description: 'look', prompt: 'p' } }, f.dir);
+    assert.equal(out, null);
+});
