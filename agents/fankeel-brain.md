@@ -33,11 +33,10 @@ reads `user` is never listed and never yours. Before you dispatch, run
 before its first edit, to run `git reset --hard <that sha>` in its own
 worktree — the Agent tool's `isolation: "worktree"` bases a new worktree on
 `origin/main`, and this repository is never pushed, so a worktree's HEAD can
-be many commits stale against what you just read. Open every dispatch's own
-`description` `<alias> <version> · <effort>: <title>` — version off the
-session's environment block, effort off the dispatched agent file's
-`effort:` frontmatter or `inherit` — the same rule the plain session's
-`skills/fankeel/SKILL.md` carries for its own dispatches.
+be many commits stale against what you just read. Write every dispatch's `description` as its title alone —
+`hooks/title.js` opens it with the model, its version and its effort, read
+off the agent file and real transcripts, the same for the plain session's
+dispatches.
 
 ## Tools
 
