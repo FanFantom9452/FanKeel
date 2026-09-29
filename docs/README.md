@@ -181,6 +181,9 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 派工標題前綴由 hook 算（09-29）定了什麼、沒做什麼：寫進去不擋下、模型順序、版本從真 id 解析、別的插件的 agent 不補、effort 覆寫另開 | [decisions/2026-09-29-agent-title.md](03-decisions/2026-09-29-agent-title.md) — *繁體中文* |
 | 派工標題的前綴由 hook 算：模型依序取呼叫的 `model`、agent 檔、環境變數、主 session，完整 id 直接解析版本，別名從 transcript 最新一筆同家族的 `message.model` 解析、找不到就只寫別名，effort 取 agent 檔；station 顯示每個 agent 實際跑的模型與 effort | `docs/99-archive/2026-09-29-agent-title-design.md` — *built* |
 | 上面那份 design 拆成的八個 task：`lib/title.js`、`hooks/title.js`、規則縮成只寫標題、station chip、probe report、TODO，以及使用者手動的實際派工核對 | `docs/99-archive/2026-09-29-agent-title.md` — *built* |
+| TODO 全表盤點第二輪（09-29）定了什麼、沒做什麼：`/fankeel` 就寫 init entry、同台可見、advisor 不設、effort 自訂併入 station-6 | [decisions/2026-09-29-todo-patrol-2.md](03-decisions/2026-09-29-todo-patrol-2.md) — *繁體中文* |
+| 盤點第二輪的 design：三個測試缺口、init entry、TODO 條目了結 | `docs/99-archive/2026-09-29-todo-patrol-2-design.md` — *built* |
+| 落地它的 6 個 task | `docs/99-archive/2026-09-29-todo-patrol-2.md` — *built* |
 | Needs-a-decision 六條怎麼定：拆出 fankeel-mockup、各角色 effort、docs tree 加「給誰看」軸、ADR 為 ≤7 條 binding 子集、station 看／答問題、tune 改完通知與自動刷新、設定精靈改卡片 | `docs/99-archive/2026-09-26-station-redesign-design.md` — *built, 繁體中文* |
 | 做它的 13 個 task——從 fankeel-mockup agent、effort、docs 軸與 binding 上限，到 station 答題、toast、模型版本、effort chip、設定精靈卡片，最後在真頁面上逐塊調整 | `docs/99-archive/2026-09-26-station-redesign.md` — *built, 繁體中文* |
 | 把上面那份設計拆成三個 task 的計畫 | `docs/99-archive/2026-09-25-todo-line-and-multiplier.md` — *built, 繁體中文* |

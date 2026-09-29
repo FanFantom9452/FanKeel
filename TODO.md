@@ -68,6 +68,11 @@ after: 跑過一次 stage.agents=all 的真實 task（main 含 08c4ecf、安裝�
 - 〔stage-agents〕接縫「在哪提交」：task 的 `project` 不是 cwd、或在 worktree 裡時跑受控 build，看 `scripts/commit.js` 提交到哪個 repo — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 - 〔stage-agents〕verify 的 mutation 要不要專屬 agent（工具或模型跟 fankeel-brain 不同才拆）；等受控 verify 實跑、k 重跑後再定 — [docs/subagents.md](docs/90-agent/reference/subagents.md).
 
+### promo30 v3 收工
+after: promo30 v3 session 收工、tour-keel.js 不再有人在改. 09-29.
+
+- 〔station〕source.test.js 的「every exported name is imported」因 tour-keel.js 匯出失敗（18fa2368／a45bb6fa）；該檔屬另一個進行中的 session，勿在此改 — [tour-keel.js](assets/station/tour-keel.js).
+
 ## Watch
 
 ### 第二個平台的使用者
@@ -89,6 +94,11 @@ if: a repository needs an eleventh language. 09-29.
 if: 某個專案的程式碼大到 grep 加 read 找不到跨檔關係. 09-29.
 
 - 〔survey〕graphify 可接為查詢工具；獨立實測未穩定省錢，接之前先解決它的 PreToolUse hook 擋 Read 與 guard 衝突、Windows 上 hook 靜默失效（其 issue #140） — [scripts/survey.js](scripts/survey.js).
+
+### 整套再紅一次
+if: 整套測試再出現一次重跑不見的失敗. 09-29.
+
+- 〔test〕某次整套測試跑出一個失敗、重跑不再出現；候選原因是 trackedIn 測試複製 80 MB 的 node 執行檔（未證實），下次再紅時先看這個測試 — [tests/todo-check-folder.test.js](tests/todo-check-folder.test.js).
 
 ### wizard-motion 再紅一次
 if: `the chosen card animates, and under reduced motion nothing is running` 在整套裡再紅一次. 09-29.
