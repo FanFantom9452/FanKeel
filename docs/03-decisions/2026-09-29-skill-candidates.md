@@ -11,7 +11,7 @@ last_verified: 2026-09-29
 
 ## 1. Rationalizations——收，只給 `fankeel-build`
 
-來源：`agent-skills/README.md:335` 的固定段落圖列「Rationalizations → Excuses + rebuttals」；實際檔案 `agent-skills/skills/test-driven-development/SKILL.md:363` 的標題是 `## Common Rationalizations`，表頭是 `| Rationalization | Reality |`，第一列 `"I'll write tests after the code works"`。README:345 說「Every skill includes a table」。
+來源：`agent-skills/README.md:335` 的固定段落圖列「Rationalizations → Excuses + rebuttals」；實際檔案 `agent-skills/skills/test-driven-development/SKILL.md:363` 的標題是 `## Common Rationalizations`，表頭是 `| Rationalization | Reality |`，第一列 `"I'll write tests after the code works"`。README:344 說「Every skill includes a table」。
 
 與 09-24 頁的差異：頁面稱段落名為「Rationalizations／Red Flags」，clone 裡的標題是 `Common Rationalizations` 與 `Red Flags`（`SKILL.md:375`）兩個獨立段落。
 
