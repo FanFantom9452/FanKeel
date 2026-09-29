@@ -34,7 +34,7 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | Why an edit to a file another session holds asks first, and how to turn that off | [collisions.md](90-agent/reference/collisions.md) — *the scope guard* |
 | Why an abandoned terminal does not hold a file shut | [collisions.md](90-agent/reference/collisions.md) — *stale entries* |
 | What `.fankeel/docs.json` declares | [documents.md](90-agent/reference/documents.md) |
-| What happened to a closed TODO.md bullet, and what sha closed it | [todo-completions.md](90-agent/reference/todo-completions.md) |
+| What a TODO entry file holds, what each heading is waiting for, and how an entry is opened and closed | [todo.md](90-agent/reference/todo.md) |
 | Why an archive naming deleted code is not a bug | [documents.md](90-agent/reference/documents.md) — *roles* |
 | Why `docs-check` prints the list rather than a count, and where the cap bites | [documents.md](90-agent/reference/documents.md) — *the list is the output, not the count* |
 | What `lib/hook.js` and `lib/report.js` do, and why neither has a single caller-specific page | [shared-libs.md](90-agent/reference/shared-libs.md) |
