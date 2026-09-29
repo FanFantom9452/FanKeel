@@ -42,3 +42,19 @@ Claude Code 2.1.284，兩次 headless `claude -p`，各掛一支一次性 PreToo
 | `general-purpose` | `count hooks` | `opus 5.5 · inherit: count hooks` | `claude-opus-5-5`（主 session 同） | `medium` | 無，寫 `inherit` | 是 |
 
 `inherit` 那一列實際跑的 effort 是 `medium`，和主 session 各行的 `effort` 相同。互動畫面那一列仍沒量：這次是 headless，沒有畫面。
+
+## `CLAUDE_CODE_SUBAGENT_MODEL` 和 agent 檔 `model:` 誰優先 — 2026-09-29 的量測
+
+文件記載的順序是：呼叫時的 `model` > agent 檔的 `model:` > `CLAUDE_CODE_SUBAGENT_MODEL` > 主模型。這一節量的是中間兩者。
+
+方法：Claude Code 2.1.284，一次 headless probe，環境變數設 `haiku`，派一個 `fankeel:fankeel-reader`（agent 檔釘 `model: sonnet`），派工時不帶 `model`：
+
+```
+CLAUDE_CODE_SUBAGENT_MODEL=haiku claude -p --output-format stream-json --verbose --max-budget-usd 1 --settings F:/ymlab/fankeel/.fankeel/build/task-20260929T090942/probe/settings.json --plugin-dir F:/ymlab/fankeel "Dispatch exactly one Agent with subagent_type fankeel:fankeel-reader and description 'say ok', ..."
+```
+
+結果：`stream.jsonl` 的 `modelUsage` 只有兩個模型，`claude-opus-5-5`（主 session）和 `claude-sonnet-5-5`（subagent），沒有 haiku。環境變數是 `haiku`、agent 檔是 `sonnet`，實際跑的是 `sonnet`，所以 agent 檔的 `model:` 勝過 `CLAUDE_CODE_SUBAGENT_MODEL`，和文件記載的順序一致，沒有矛盾。
+
+證據：`F:/ymlab/fankeel/.fankeel/build/task-20260929T090942/probe2/stream.jsonl`（session `260c2b0a-f965-44ed-84c9-1ecff0b68758`）。
+
+沒量到的：n=1；沒有量「呼叫時的 `model` 勝過 agent 檔」那一格；沒有單獨驗證 haiku 環境變數在沒有 agent 檔 `model:` 時會生效（那一格是文件記載，未量測）；只量了 2.1.284。
