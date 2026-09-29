@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 'use strict';
 // scripts/tour-record.js: a tour timeline (`reel`, the kinetic promo, or
-// `promo30`, the 30-second film, or `promo30v3`, its honeycomb-ring cut) to an MP4 with its score, frame by frame, in
+// `promo30`, the 30-second film, `promo30v3`, its honeycomb-ring cut, or `promo30v4`, that cut at one minute) to an MP4 with its score, frame by frame, in
 // one language.
 //
-//   node scripts/tour-record.js <reel|promo30|promo30v3> [--lang zh|en] [--out f.mp4]
+//   node scripts/tour-record.js <reel|promo30|promo30v3|promo30v4> [--lang zh|en] [--out f.mp4]
 //
 // --lang is zh unless given, and the file is .fankeel/build/tour/
 // <name>-<lang>.mp4 unless --out says. Opens
@@ -27,7 +27,7 @@ const { pathToFileURL } = require('node:url');
 const { parseArgsOrExit } = require('../lib/cli.js');
 const { findBrowser } = require('./render.js');
 
-const NAMES = ['reel', 'promo30', 'promo30v3'];
+const NAMES = ['reel', 'promo30', 'promo30v3', 'promo30v4'];
 const LANGS = ['zh', 'en'];
 const SIZE = { width: 1280, height: 720 };
 const PAGE = path.join(__dirname, '..', 'assets', 'station', 'tour.html');
