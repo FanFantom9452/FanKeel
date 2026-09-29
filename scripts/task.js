@@ -533,7 +533,10 @@ function cmdShow(root, opts) {
 function cmdStart(root, opts) {
     const id = requireSession(opts);
     const existing = registry.readSession(root, id);
-    if (existing && existing.active === true) {
+    // This session's own init entry — written by the `/fankeel` prompt, no task
+    // on it — is not a task to stand down: `start` is what it was waiting for.
+    const initOnly = Boolean(existing) && existing.stage === 'init' && !existing.task;
+    if (existing && existing.active === true && !initOnly) {
         fail('This session already owns an active task: ' + (existing.task || 'untitled')
             + '\nCarry on, or stand it down first. Starting again would overwrite it.');
     }
@@ -1120,8 +1123,11 @@ function cmdAdopt(root, opts) {
     const source = registry.readSession(root, from);
     if (!source) fail('No entry for ' + from + ' under ' + root);
 
+    if (source.stage === 'init' && !source.task) fail(from + ' is still at init: it has no task to adopt.');
+
     const mine = registry.readSession(root, id);
-    if (mine && mine.active === true) fail('This session already owns an active task. Stand it down first.');
+    const mineInit = Boolean(mine) && mine.stage === 'init' && !mine.task;
+    if (mine && mine.active === true && !mineInit) fail('This session already owns an active task. Stand it down first.');
 
     const stamp = now();
     const claims = registry.claimsOf(source);

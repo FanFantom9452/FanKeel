@@ -90,7 +90,11 @@ function main(raw) {
     // entry. There is no second flag to disagree with, and no way to be in the
     // mode without having said what you are working on.
     let mine = registry.readSession(root, sessionId);
-    if (!mine || mine.active !== true) {
+    // A session that has only run `/fankeel` holds an entry with no task. It is
+    // visible to its neighbours and it is not yet in the mode: its prompts stay
+    // on the cheap path below, and a second `/fankeel` still gets the init block.
+    const initOnly = Boolean(mine) && mine.active === true && mine.stage === 'init' && !mine.task;
+    if (!mine || mine.active !== true || initOnly) {
         const starting = startsFankeel(payload.prompt);
         const dir = profileLib.configDirOf();
 
@@ -124,6 +128,15 @@ function main(raw) {
         // conversation — the id is Claude Code's to send, not this hook's to
         // vouch for.
         const speaks = Boolean(starting && registry.sessionPath(root, sessionId));
+        // The one moment a session with no entry can be made visible. `speaks`
+        // has already checked the id has the shape of a session id; the entry
+        // carries no task, no route and no claims, and `task.js start` replaces it.
+        if (speaks && !mine) {
+            const stamp = new Date().toISOString();
+            registry.writeSession(root, sessionId, {
+                stage: 'init', active: true, configDir: live.liveConfigDir() || undefined, started: stamp, updated: stamp,
+            });
+        }
         const finish = (serve) => {
             if (speaks) {
                 process.stdout.write(JSON.stringify({
