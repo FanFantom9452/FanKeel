@@ -261,7 +261,7 @@ test('await.js clears only the lost agent\'s own in-flight mark, leaving a sibli
 test('await.js watches build.md for a close mark and build-g3.md for a group mark, and clears only the group mark on handoff', async () => {
     const f = fixture({});
     const transcript = path.join(f.root, 'sess.jsonl');
-    for (const [id, prompt] of [['c1', 'Run build close.'], ['g3', 'Run build group 3.']]) {
+    for (const [id, prompt] of [['c1', 'build close.'], ['g3', 'build group 3.']]) {
         at(path.join(f.root, 'sess', 'subagents', 'agent-' + id + '.jsonl'), Date.now(), JSON.stringify({ message: { role: 'user', content: prompt } }) + '\n');
         const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'hooks', 'brief.js')], {
             input: JSON.stringify({ session_id: SID, cwd: f.root, hook_event_name: 'SubagentStart', agent_id: id, agent_type: 'fankeel:fankeel-brain', transcript_path: transcript }),
@@ -280,6 +280,24 @@ test('await.js watches build.md for a close mark and build-g3.md for a group mar
     const group = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'g3', '--timeout', '0.5'], f.env);
     assert.equal(group.text.startsWith('group 3, agent g3: handoff ' + g3), true, group.text);
     assert.deepEqual(registry.inflights(registry.readSession(f.root, SID)).map((m) => m.agentId), ['c1'], 'the group mark clears once its own handoff arrives');
+});
+
+// The clear keys on the mark's `kind`, not on its `group`: a close mark that
+// carries an explicit group number stays standing on handoff, and so does a
+// group-numbered mark that has no kind (an old mark), which watches build-g2.md.
+test('await.js clears a mark on handoff only when its kind is group, whatever group number it carries', async () => {
+    const marks = [
+        { stage: 'build', at: 1, agentId: 'c1', group: 1, kind: 'close' },
+        { stage: 'build', at: 1, agentId: 'k2', group: 2 },
+        { stage: 'build', at: 1, agentId: 'g3', group: 3, kind: 'group' },
+    ];
+    const f = fixture({ inflight: marks });
+    for (const n of ['build.md', 'build-g2.md', 'build-g3.md']) at(path.join(f.task, n), Date.now());
+    for (const id of ['c1', 'k2', 'g3']) {
+        const out = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', id, '--timeout', '0.5'], f.env);
+        assert.match(out.text, /handoff /, out.text);
+    }
+    assert.deepEqual(registry.inflights(registry.readSession(f.root, SID)).map((m) => m.agentId).sort(), ['c1', 'k2'], 'only the kind-group mark clears');
 });
 
 test('a stage agent starting stamps the lap its brief named on the in-flight mark', () => {

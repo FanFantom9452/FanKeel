@@ -162,8 +162,8 @@ test('a build brain sent as `build group 3` gets mark group 3 whatever order it 
   seedProfile(root, { 'stage.agents': ['build'] });
   seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
   const transcript = path.join(root, 'sess.jsonl');
-  agentLine(root, 'c1', 'Run build close for this plan.');
-  agentLine(root, 'g3', 'Run build group 3: tasks 4, 5.');
+  agentLine(root, 'c1', 'build close for this plan.');
+  agentLine(root, 'g3', 'build group 3: tasks 4, 5.');
   run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'c1', transcript_path: transcript }));
   run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'g3', transcript_path: transcript }));
   const marks = JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), 'utf8')).inflight;
@@ -171,6 +171,20 @@ test('a build brain sent as `build group 3` gets mark group 3 whatever order it 
   const group = marks.find((m) => m.agentId === 'g3');
   assert.equal(close.kind, 'close');
   assert.deepEqual([group.kind, group.group], ['group', 3]);
+});
+
+test('a prompt keeps its own case when it mentions the other phrase later', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const transcript = path.join(root, 'sess.jsonl');
+  agentLine(root, 'g2', 'build group 2: tasks 3, 4. Do not do build close; that is another brain.');
+  agentLine(root, 'c1', 'build close. Build group 2 has its own brain.');
+  run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'g2', transcript_path: transcript }));
+  run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'c1', transcript_path: transcript }));
+  const marks = JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), 'utf8')).inflight;
+  assert.deepEqual([marks.find((m) => m.agentId === 'g2').kind, marks.find((m) => m.agentId === 'g2').group], ['group', 2]);
+  assert.equal(marks.find((m) => m.agentId === 'c1').kind, 'close');
 });
 
 test('a build brain whose transcript cannot be read keeps today\'s numbering and carries no kind', () => {
