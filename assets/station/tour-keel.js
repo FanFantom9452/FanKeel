@@ -570,11 +570,7 @@
     }; }
 
     // ---- 3–9 the stage shots ---------------------------------------------
-    // Every stage shot: the plan with this stage's rib rising (its ✓ first),
-    // the component on the right, the step pills, the statusline and the
-    // one line. `body` draws the component.
-    // The left side is LEFT.stage(ctx, P, i, l, n); LEFT.stageSub, when
-    // there is one, replaces the one line.
+    // promo30's left side for a stage shot: the plan with this stage's rib rising.
     function hullStage(ctx, P, i, l, n) {
         atHull(ctx, HULL, function () {
             hullFrame(ctx, P, { n: n - 1, k: eo(l, 12, 32), gate: bo(l, 4, 12), gi: n - 1 });
@@ -582,6 +578,11 @@
             K.ring(ctx, g[0], g[1], 44, C.keel, l, 30, 26, 4);
         });
     }
+    // Every stage shot: the plan with this stage's rib rising (its ✓ first),
+    // the component on the right, the step pills, the statusline and the
+    // one line. `body` draws the component.
+    // The left side is LEFT.stage(ctx, P, i, l, n); LEFT.stageSub, when
+    // there is one, replaces the one line.
     function stageShot(LEFT, i, body) {
         return function (ctx, P, l) {
             var n = dots(STARTS[i + 2] + l);
