@@ -385,10 +385,13 @@ function checkDoc(root, rel, role, symbols, roots) {
             // `evals/one-call-not-agent/prompt.md` naming `lib/thing.js`, which
             // this tree never has, is exactly that.
             //
+            // Nor for a todo entry: a done one names the files of the day it
+            // closed, which is the record being honest about its date.
+            //
             // Links are still checked in all three. A document nobody can
             // navigate is broken whatever its role; what it says about code is
             // history, or somebody else's tree.
-            if (role !== 'plan' && role !== 'decision' && role !== 'fixture' && roots.has(ref.split('/')[0])) {
+            if (role !== 'plan' && role !== 'decision' && role !== 'fixture' && role !== 'todo' && roots.has(ref.split('/')[0])) {
                 out.push({ file: rel, line: lineOf(m.index), tag: 'gone', what: 'names ' + ref });
             }
             continue;
