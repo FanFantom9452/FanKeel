@@ -11,7 +11,7 @@
 const os = require('node:os');
 const path = require('node:path');
 const { run, parse } = require('../lib/hook.js');
-const { prefixFor, retitle } = require('../lib/title.js');
+const { prefixFor, retitle, overrideFor } = require('../lib/title.js');
 
 function main(raw) {
     const payload = parse(raw);
@@ -19,19 +19,24 @@ function main(raw) {
     if (payload.tool_name !== 'Agent' && payload.tool_name !== 'Task') return;
     const input = payload.tool_input;
     if (!input || typeof input.description !== 'string') return;
+    const configDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
+    // station-6: a generated override answers only the bare name, so the
+    // dispatch is sent under it and titled from it. Measured before this was
+    // written: docs/90-agent/todo/station-6.md, `Verdict: honoured`.
+    const bare = overrideFor(input.subagent_type, payload.cwd, configDir);
+    const next = bare ? { ...input, subagent_type: bare } : input;
     const prefix = prefixFor({
-        toolInput: input,
+        toolInput: next,
         pluginRoot: path.join(__dirname, '..'),
         projectDir: payload.cwd,
-        configDir: process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude'),
+        configDir,
         transcriptPath: payload.transcript_path,
         env: process.env,
     });
-    if (prefix === null) return;
-    const description = retitle(input.description, prefix);
-    if (description === input.description) return;
+    const description = prefix === null ? input.description : retitle(input.description, prefix);
+    if (!bare && description === input.description) return;
     process.stdout.write(JSON.stringify({
-        hookSpecificOutput: { hookEventName: 'PreToolUse', updatedInput: { ...input, description } },
+        hookSpecificOutput: { hookEventName: 'PreToolUse', updatedInput: { ...next, description } },
     }));
 }
 
