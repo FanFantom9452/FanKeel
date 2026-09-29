@@ -20,10 +20,6 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔station〕看第 7 段加的 station 欄位：沒有任何 subagent 的 context 峰值超過 450k（基準 f44b1c61 的 544k）、最貴的單一 subagent 佔 subagent 總花費低於 15%（基準 31%） — [station.md](docs/90-agent/reference/station.md).
 
-- 〔station〕promo30 影片後段 U 形肋骨弧線重疊，看起來像一團線；v2 未重畫（09-29 build gate 使用者定為 TODO），v3 左側重設計時一併考慮 — [tour-keel.js](assets/station/tour-keel.js).
-
-- 〔station〕promo30 片尾 wordmark 旁的小 logo 仍讀成梳子；v2 未重畫（09-29 build gate 使用者定為 TODO） — [tour-keel.js](assets/station/tour-keel.js).
-
 - 〔station〕effort 已在 8 個 agent 檔釘死；使用者要蓋掉模型或臨時拉高 effort，只能從 profile 產生 .claude/agents/ 覆寫檔。先實測同名檔能否蓋過 fankeel: 的 agent，guard／brief 要認得新名稱 — [model-choice.md](docs/90-agent/reference/model-choice.md).
 
 ## Needs a decision
