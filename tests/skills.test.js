@@ -1336,3 +1336,20 @@ test('the build skill\'s own "asks once" sentence carries the group-parallel exc
     const text = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-build', 'SKILL.md'), 'utf8');
     assert.match(text, /and then asks once\. A `fankeel-brain` dispatched for one group \(its prompt names a group, not `build close`\) returns with no gate once its own tasks are done; only `build close` is the one that asks\./);
 });
+
+// docs/03-decisions/2026-09-24-skill-repos.md candidate 4 (mattpocock/skills
+// README.md:186): a user-invoked skill may use model-invoked skills, never
+// another user-invoked one. The host is what keeps the model off a skill
+// marked disable-model-invocation; this pins that the key and the rule are written.
+test('a skill marked disable-model-invocation is named by no other such skill, fankeel-station is one, and the rule is written in the fankeel skill', () => {
+  const userInvoked = names.filter((n) => (frontmatter(read(n)) || {})['disable-model-invocation'] === 'true');
+  assert.ok(userInvoked.includes('fankeel-station'), 'fankeel-station is for a person to type');
+  for (const a of userInvoked) {
+    for (const b of userInvoked) {
+      if (a === b) continue;
+      assert.equal(read(a).includes(b), false, a + ' names another user-invoked skill, ' + b);
+    }
+  }
+  const calibration = read('fankeel').split('\n## Calibration\n')[1].split('\n## ')[0];
+  assert.match(calibration, /A skill the user invoked may use model-invoked skills, never another user-invoked one/);
+});

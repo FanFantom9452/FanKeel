@@ -884,7 +884,7 @@ here went is in
 
 ## Calibration
 
-Four rules sit above the ones a stage carries, because they govern how the
+Five rules sit above the ones a stage carries, because they govern how the
 rules themselves are read rather than what any one stage produces.
 
 **A gate on every stage is a treadmill.** The gate belongs at a stage's end —
@@ -907,6 +907,12 @@ Another installed plugin's process skill for the same step is set aside —
 named the first time it is, not silently. `<plugin>/scripts/orient.js`'s `overlap:`
 line, read off the config directory's own `plugins/installed_plugins.json`,
 is where the ones actually installed are listed.
+
+**A skill the user invoked may use model-invoked skills, never another user-invoked one.**
+A skill marked `disable-model-invocation: true` — today
+`fankeel-station` — is reachable only when a person types it, so no other
+skill routes to it and no model reaches for it. Two questions to the user, one
+from each of two stacked skills, is the failure this prevents.
 
 The four always-on rules exist because something specific broke without
 them, not for balance:
