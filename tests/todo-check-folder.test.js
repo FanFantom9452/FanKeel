@@ -160,7 +160,7 @@ test('trackedIn lists only .md files under the folder', () => {
   assert.deepEqual(check.trackedIn(dir, 'docs/todo'), ['docs/todo/a-1.md']);
 });
 
-test('trackedIn: a folder with no committed entry is an empty list, and a deleted tracked entry is a problem', () => {
+test('trackedIn: a deleted tracked entry is still listed and reported as a deleted entry problem', () => {
   const dir = root();
   lib.add(dir, { label: 'a', title: 'one', description: 'first', state: 'ready' });
   git(dir, ['init', '-q']);
