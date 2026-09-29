@@ -640,6 +640,10 @@ function main(argv) {
             return fail('No design at ' + design + ', named by the plan\'s **Spec:** line.');
         }
         const lines = plantasks.lint(planText, designText, root);
+        // A plan names what could make a task wrong, even to say nothing did.
+        if (!/^##\s+Risks\s*$/m.test(header)) {
+            lines.push('the plan header has no `## Risks` section — one bullet per thing that could make a task wrong, or `none found`');
+        }
         if (!lines.length) return 'fankeel ledger — lint: clean';
         // Exit 1, so a gate that chains it stops here. The lines are the
         // report; nothing is summarised on their behalf.

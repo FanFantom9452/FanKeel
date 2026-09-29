@@ -63,7 +63,12 @@ Every plan starts with it:
 **Spec:** path to the design this argues from.
 
 ## Global Constraints
+
+## Risks
+- <what could make a task wrong> — <which task it would hit> — <what that task checks first>, or `none found`
 ```
+
+**Risks** sit between Global Constraints and the first task; `ledger.js lint` reports a plan whose header has no `## Risks` heading. `none found` is an answer — the heading is what says the question was asked.
 
 `**Spec:**` is read by a script: `ledger.js lint` opens the design it names —
 a bare path or a markdown link, relative to the plan's own directory — and a

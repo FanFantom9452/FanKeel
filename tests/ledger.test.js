@@ -730,6 +730,7 @@ const PLAN_HEAD = [
   '**Goal:** one line, and a', 'second line of it.', '',
   '**Spec:** [design.md](design.md)', '',
   '## Global Constraints', '', '- **No dependency may be added.**', '- four-space indent', '',
+  '## Risks', '', '- none found', '',
   '## File structure', '', '| file | responsibility |', '|---|---|', '| `lib/a.js` | a |', '',
 ].join('\n');
 
@@ -797,6 +798,26 @@ test('lint refuses a plan whose header names no Spec', () => {
   const { out, code } = run(dir, plan, 'lint');
   assert.equal(code, 1);
   assert.match(out, /Spec:/);
+});
+
+test('lint names a plan whose header has no Risks section, and is clean once it says none found', () => {
+  const dir = root();
+  fs.writeFileSync(path.join(dir, 'design.md'), DESIGN);
+  const coverage = [
+    '## Coverage', '', '| promise | task |', '|---|---|',
+    '| the page gains a `waited` column beside the burn column | Task 1 |',
+    '| `tests/a.test.js` — makeA returns the thing | Task 1 |', '',
+  ].join('\n');
+  const plan = path.join(dir, 'plan.md');
+  fs.writeFileSync(plan, PLAN_HEAD.replace('## Risks\n\n- none found\n\n', '') + PLAN_TASKS + coverage);
+  const missing = run(dir, plan, 'lint');
+  assert.equal(missing.code, 1);
+  assert.match(missing.out, /lint: 1 findings/);
+  assert.match(missing.out, /no `## Risks` section/);
+  fs.writeFileSync(plan, PLAN_HEAD + PLAN_TASKS + coverage);
+  const present = run(dir, plan, 'lint');
+  assert.equal(present.code, 0, present.out);
+  assert.match(present.out, /lint: clean/);
 });
 
 test('brief writes the task section, the constraints, the producer entry and the footer, and prints the path', () => {
