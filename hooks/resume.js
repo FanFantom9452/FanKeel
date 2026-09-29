@@ -83,7 +83,8 @@ function main(raw) {
                 // The answer that never arrives used to be silent. Beside the answer
                 // file, `<stage>-answer.miss.json` says why not and holds both question
                 // lists. Diagnostic only: nothing reads it, and a controller's own
-                // question asked while an older gate is still on disk lands here too.
+                // question asked while an older gate is still on disk lands here only when its
+                // question or option counts differ from the gate.
                 const miss = file.replace(/-answer\.md$/, '-answer.miss.json');
                 const filed = Array.isArray(gate.questions) ? gate.questions : null;
                 const note = (reason) => {
@@ -95,7 +96,7 @@ function main(raw) {
                 if (!answersGate(asked, gate.questions)) {
                     note(gate.invalid
                         ? 'the handoff\'s gate is invalid at ' + gate.invalid + ': ' + gate.detail
-                        : 'the questions asked do not match the handoff\'s gate');
+                        : 'the questions asked do not match the handoff\'s gate in question or option count');
                 } else {
                     try {
                         writeAnswer(file, typeof response === 'string' ? response : JSON.stringify(response, null, 2));
