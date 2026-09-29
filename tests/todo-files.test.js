@@ -1,6 +1,6 @@
 'use strict';
 
-// TODO entries as files (docs/90-agent/plans/2026-09-29-todo-files-design.md):
+// TODO entries as files (docs/99-archive/2026-09-29-todo-files-design.md):
 // the entry-file format, todo.js as the one writer, and load() giving the
 // folder the same shapes a hand-written TODO.md gives.
 const test = require('node:test');

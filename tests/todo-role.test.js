@@ -1,6 +1,6 @@
 'use strict';
 
-// Role `todo` (docs/90-agent/plans/2026-09-29-todo-files-design.md §1): an
+// Role `todo` (docs/99-archive/2026-09-29-todo-files-design.md §1): an
 // entry file's links and cited lines are checked, the paths it names are not
 // (a done entry names the files of the day it closed), and the map counts it
 // as current rather than as a page nobody declared.

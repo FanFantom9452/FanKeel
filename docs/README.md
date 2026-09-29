@@ -172,6 +172,9 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | Agent 壽命（09-28）定了什麼、量到什麼、在哪裡回頭：SOFT/HARD 改 300k/450k、不另限每個 brain 的 task 數、09-28 A/B 更正為 k = 1.69 | [decisions/2026-09-28-agent-lifetime.md](03-decisions/2026-09-28-agent-lifetime.md) — *繁體中文* |
 | Agent 壽命怎麼做：group 並排 brain、task 讀取量上限、subagent context 上限 hook、逐字相同的共用前綴、station 峰值與請求數兩欄、累計花費加總更正 | `docs/99-archive/2026-09-28-agent-lifetime-design.md` — *built, 繁體中文* |
 | 落地它的 26 個 task | `docs/99-archive/2026-09-28-agent-lifetime.md` — *built* |
+| TODO 一筆一檔（09-29）定了什麼、量到什麼、在哪裡回頭：條目檔 + 產生的索引、兩種模式並存、sha 為持久連結、verify 退回兩次抓到的吞錯 | [decisions/2026-09-29-todo-files.md](03-decisions/2026-09-29-todo-files.md) — *繁體中文* |
+| TODO 一筆一檔的 design：條目檔、索引與寫入者、兩種模式的讀者、session 連結、station 面板、遷移 | `docs/99-archive/2026-09-29-todo-files-design.md` — *built* |
+| 落地它的 10 個 task | `docs/99-archive/2026-09-29-todo-files.md` — *built* |
 | Needs-a-decision 六條怎麼定：拆出 fankeel-mockup、各角色 effort、docs tree 加「給誰看」軸、ADR 為 ≤7 條 binding 子集、station 看／答問題、tune 改完通知與自動刷新、設定精靈改卡片 | `docs/99-archive/2026-09-26-station-redesign-design.md` — *built, 繁體中文* |
 | 做它的 13 個 task——從 fankeel-mockup agent、effort、docs 軸與 binding 上限，到 station 答題、toast、模型版本、effort chip、設定精靈卡片，最後在真頁面上逐塊調整 | `docs/99-archive/2026-09-26-station-redesign.md` — *built, 繁體中文* |
 | 把上面那份設計拆成三個 task 的計畫 | `docs/99-archive/2026-09-25-todo-line-and-multiplier.md` — *built, 繁體中文* |

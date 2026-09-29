@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 date: 2026-09-29
 task: TODO 改成一筆一檔的任務系統：TODO.md 由單筆檔產生，station 看得到完成條目與其 session
 ---

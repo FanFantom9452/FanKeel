@@ -1,7 +1,7 @@
 'use strict';
 
 // todo-check, blame and orient in folder mode
-// (docs/90-agent/plans/2026-09-29-todo-files-design.md §3).
+// (docs/99-archive/2026-09-29-todo-files-design.md §3).
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
