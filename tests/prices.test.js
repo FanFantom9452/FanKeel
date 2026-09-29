@@ -36,6 +36,13 @@ test('claude-opus-5-5 carries the rates published 2026-09-24', () => {
         { input: 4, output: 20, cacheRead: 0.2, cacheWrite5m: 5, cacheWrite1h: 8 });
 });
 
+// Added 2026-09-29 from the published table the user pasted: Sonnet 5.5 is $2 in,
+// $10 out, $2.50 and $4 for the two cache writes, and $0.20 for a cache hit.
+test('claude-sonnet-5-5 carries the rates published 2026-09-29', () => {
+    assert.deepEqual(prices.rateFor('claude-sonnet-5-5'),
+        { input: 2, output: 10, cacheRead: 0.2, cacheWrite5m: 2.5, cacheWrite1h: 4 });
+});
+
 // The published multipliers, asserted over every row rather than row by row: a
 // cache read is 0.1x that row's own input, a five-minute write 1.25x and an hour
 // write 2x. Fable 5.1 is the single exception and the reason this is a ratio test
