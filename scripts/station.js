@@ -44,6 +44,7 @@ const profile = require('../lib/profile.js');
 const handoff = require('../lib/handoff.js');
 const docsearch = require('../lib/docsearch.js');
 const todoCheck = require('./todo-check.js');
+const todoFiles = require('../lib/todo.js');
 const view = require('../assets/station/station.js');
 
 const PLUGIN = path.resolve(__dirname, '..');
@@ -257,6 +258,34 @@ function addTodo(file, entry) {
     }
     registry.writeAtomic(file, next);
     return { status: 201, text: '- ' + entry };
+}
+
+// 記成 TODO where the project keeps entry files: the entry is written through
+// `lib/todo.js`'s `add`, the one writer, and the same before-and-after
+// `check()` decides — a problem the tree has now that it did not have before
+// is the refusal, and the file comes out again with the index rewritten.
+function addTodoFile(dir, text, link) {
+    if (!String(text || '').trim()) return { status: 400, text: 'empty entry — nothing to write' };
+    const file = path.join(dir, 'TODO.md');
+    const key = (p) => p.kind + '\n' + p.detail;
+    const had = new Map();
+    for (const p of todoCheck.check(file).problems) had.set(key(p), (had.get(key(p)) || 0) + 1);
+    let made;
+    try {
+        made = todoFiles.add(dir, todoFiles.fromLine(text, link, 'decision'));
+    } catch (e) {
+        return { status: 400, text: e.message };
+    }
+    const seen = new Map();
+    for (const p of todoCheck.check(file).problems) {
+        seen.set(key(p), (seen.get(key(p)) || 0) + 1);
+        if (seen.get(key(p)) > (had.get(key(p)) || 0)) {
+            fs.unlinkSync(made.path);
+            todoFiles.writeIndex(dir);
+            return { status: 400, text: p.kind + ' — ' + p.detail };
+        }
+    }
+    return { status: 201, text: made.id };
 }
 
 async function serve(opts) {
@@ -522,7 +551,10 @@ async function serve(opts) {
             // the registry's root otherwise.
             const own = path.join(reg.root, row.project || '', 'TODO.md');
             const file = fs.existsSync(own) ? own : path.join(reg.root, 'TODO.md');
-            const out = addTodo(file, view.todoEntry(form.get('text') || '', form.get('link') || ''));
+            const dir = path.dirname(file);
+            const out = todoFiles.folderOf(dir)
+                ? addTodoFile(dir, form.get('text') || '', form.get('link') || '')
+                : addTodo(file, view.todoEntry(form.get('text') || '', form.get('link') || ''));
             res.writeHead(out.status, { 'content-type': 'text/plain; charset=utf-8' });
             res.end(out.text + '\n');
             return;

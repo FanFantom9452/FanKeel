@@ -945,6 +945,16 @@ report or archive are todo-check's rules and nobody else's. A clean line
 answers `201` with the line written; a wrong nonce is `403`, a session not on
 the page `404`, and a `TODO.md` with no `## Needs a decision` heading `409`.
 
+Where the project keeps entry files — its `.fankeel/docs.json` declares a
+bucket with role `todo` and the folder exists — the same form writes one
+instead: `lib/todo.js` makes a `decision` entry from the text (a leading
+`〔word〕` becomes its label) and the link, and regenerates `TODO.md`. The
+same before-and-after `check()` decides, and a refused entry's file is
+removed and the index rewritten. A clean one answers `201` with the new
+entry's id. The project page's TODO panel reads each project's `todos` row
+off the data file: open entries in the index's order, and done ones newest
+first where the project keeps entry files.
+
 Both routes call the same `clearEntry`, which writes `active: false` and
 nothing else, so a session cleared by mistake can be adopted back with its
 notes and its `next` intact.
