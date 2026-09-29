@@ -996,6 +996,13 @@ records one language to reel-zh.mp4 or reel-en.mp4 under .fankeel/build/tour
 with the score muxed in as AAC, and exits 1 unless ffprobe reads 3600 frames
 and exactly one audio stream of 60 seconds.
 
+A second film, `promo30` (`assets/station/tour-keel.js`), runs 30 seconds
+— 1800 frames — as the keel metaphor: a rib per stage beside the component
+that stage works on. `tour.html#promo30@<frame>` plays it, `#/tour` still
+plays `reel`, and `node scripts/tour-record.js promo30 [--lang zh|en]` records
+it to `.fankeel/build/tour/promo30-<lang>.mp4`. The score is the same
+`tour-music.js`, its length taken from the timeline.
+
 `serve` answers a fixed list of files from `assets/station/` — `STATIC` in
 `scripts/station.js`: `station.js`, `station.css`, `i18n.js`, `tour.html`,
 `tour.css`, `tour.js` and every `tour-<name>.js` (any number of hyphenated
