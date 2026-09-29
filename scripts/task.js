@@ -1014,6 +1014,12 @@ function cmdProfile(root, opts) {
         const out = profile.write(file, key, value);
         if (!out.ok) fail(out.reason);
         const head = 'fankeel — profile: ' + key + ' = ' + out.value + '  → ' + file;
+        const agentfile = require('../lib/agentfile.js');
+        const agent = agentfile.agentKey(key);
+        if (agent) {
+            const agentsDir = opts.default ? path.join(cfg, 'agents') : path.join(projectRoot, '.claude', 'agents');
+            return head + '\n' + agentfile.syncLine(agentfile.syncAgent({ pluginRoot: PLUGIN, profileFile: file, agentsDir, name: agent.name, version: pluginVersion() }));
+        }
         if (key.startsWith('prompt.')) {
             // What a `prompt.*` sentence costs, said when it is set: the tokens its
             // injected line adds to every prompt, by input-check.js's own estimate, and
@@ -1032,6 +1038,20 @@ function cmdProfile(root, opts) {
         }
         return head;
     }
+    if (verb === 'unset') {
+        const key = opts.positional[1];
+        if (!key) fail('profile unset <key>');
+        const file = opts.default ? profile.machineFile(cfg) : profile.projectFile(projectRoot);
+        if (!file) fail('No config directory to clear the machine default from.');
+        const out = profile.unset(file, key);
+        if (!out.ok) fail(out.reason);
+        const head = 'fankeel — profile: ' + key + ' cleared  → ' + file;
+        const agentfile = require('../lib/agentfile.js');
+        const agent = agentfile.agentKey(key);
+        if (!agent) return head;
+        const agentsDir = opts.default ? path.join(cfg, 'agents') : path.join(projectRoot, '.claude', 'agents');
+        return head + '\n' + agentfile.syncLine(agentfile.syncAgent({ pluginRoot: PLUGIN, profileFile: file, agentsDir, name: agent.name, version: pluginVersion() }));
+    }
     if (verb === 'suggest') {
         const { values, evidence } = profile.suggest(projectRoot, root);
         const lines = ['fankeel — profile suggested from ' + projectRoot + ' (nothing written)'];
@@ -1042,7 +1062,7 @@ function cmdProfile(root, opts) {
         for (const k of keys) lines.push('node ' + path.relative(process.cwd(), __filename).split(path.sep).join('/') + ' profile set ' + k + ' ' + values[k] + (opts.project ? ' --project ' + opts.project : ''));
         return lines.join('\n');
     }
-    fail('profile is one of: show, set <key> <value> [--default], suggest');
+    fail('profile is one of: show, set <key> <value> [--default], unset <key> [--default], suggest');
 }
 
 // Invariant 7: never on this script's own initiative, so the value is always
