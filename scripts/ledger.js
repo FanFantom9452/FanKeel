@@ -751,8 +751,19 @@ function main(argv) {
         const { file, contents, refusal } = readOwnLedger(root, opts);
         if (refusal) return refusal;
         const done = ledger.completed(contents);
+        // The denominator is the plan's own task count, never the ledger's rows:
+        // await-3, a close report that counted progress.md by hand.
+        const planFile = path.resolve(root, opts.plan);
+        let tally;
+        try {
+            const nums = new Set(plantasks.parseTasks(fs.readFileSync(planFile, 'utf8')).map((t) => t.n));
+            tally = 'done ' + new Set(done.filter((n) => nums.has(n))).size + ' of ' + nums.size;
+        } catch (e) {
+            tally = 'done ' + new Set(done).size + ' of ? — no plan at ' + planFile;
+        }
         return 'fankeel ledger — ' + file
             + '\n\n  complete: ' + (done.length ? done.join(', ') : 'nothing yet')
+            + '\n  ' + tally
             + '\n\nResume at the first task not listed. Trust this and git log over what you remember.';
     }
 

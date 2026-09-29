@@ -642,3 +642,5 @@ then AskUserQuestion
 ```
 
 Under 80 words. The diff is the output; prose is for what a diff cannot show.
+
+`done:` is copied from the `done <n> of <m>` line that `node <plugin>/scripts/ledger.js --plan <plan> show` prints, `<m>` being the plan's own task count — never a count of `progress.md` made by hand. With no plan there is no ledger, and the rows of the file table are the count.
