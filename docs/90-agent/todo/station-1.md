@@ -14,3 +14,10 @@ link: docs/90-agent/reference/station.md
 - (b) 最貴的單一 subagent 佔 subagent 總花費低於 15%：最高 51.4%，在 session 3f0d6e25-6c3e-40a5-8c97-1200aca364c7；10 個有價格的 session 只有 3 個低於 15%。未通過。
 
 條目維持 `ready`。下一步：查 session 3f0d6e25-6c3e-40a5-8c97-1200aca364c7 裡那一個 agent 為什麼佔了這個 session subagent 花費的一半。
+
+## 決定 2026-09-29
+
+- (a) 通過：最高 365,664，低於 450k。
+- (b) 51.4% 是一個 Opus build implementer（session 3f0d6e25，137 個 request，context 從 24k 長到 295k）。在只有兩三次派工的 session 裡，佔比目標沒有意義，所以 (b) 由新的 station 條目取代。
+
+條目維持 `ready`，由 land 關閉。

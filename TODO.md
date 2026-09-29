@@ -8,11 +8,17 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 ## Ready
 
+- 〔await〕`kind` 只在測試裡驗過：重裝後看一次真實 `build close` brain 的 mark 是否帶 `kind: 'close'`、await 是否盯 `build.md` — [hooks/brief.js](hooks/brief.js).
+
+- 〔skills〕`disable-model-invocation: true` 對插件 skill 是否生效沒驗：重裝後讓模型自行呼叫 fankeel-station 看是否被擋 — [skills/fankeel-station/SKILL.md](skills/fankeel-station/SKILL.md).
+
 - 〔station〕看第 7 段加的 station 欄位：沒有任何 subagent 的 context 峰值超過 450k（基準 f44b1c61 的 544k）、最貴的單一 subagent 佔 subagent 總花費低於 15%（基準 31%） — [station.md](docs/90-agent/reference/station.md).
 
-## Needs a decision
+- 〔station〕取代 station-1 的 (b)：(1) 沒有任何單一 subagent 的 context 峰值超過 300k；(2) 佔比低於 15% 的目標只適用於 subagent ≥10 的 session。在本 commit 之後的 session 重新量測。 — [station.md](docs/90-agent/reference/station.md).
 
 - 〔title〕`hooks/title.js` 用 updatedInput 加的前綴只出現在完成通知，畫面上的 Agent(<description>) 照原輸入畫、沒有模型名；要不要讓主控在 description 自己寫別名、hook 再覆寫成完整前綴 — [lib/title.js](lib/title.js).
+
+## Needs a decision
 
 ## Blocked
 
@@ -20,12 +26,6 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 after: fankeel 其餘功能都落地、使用者換到新機器測試. 09-29.
 
 - 〔audit〕Trovara 的 docs 搬到 preset：在新機器的 Trovara 跑 `docs-move.js` 出搬移表、核可後 apply，再跑一次分批 `/fankeel-audit` — [scripts/docs-move.js](scripts/docs-move.js).
-
-### 插件重裝後實跑
-after: 安裝版更新到含 b9e7bfc5 的版本，再跑一次真實受控 build. 09-29.
-
-- 〔await〕`kind` 只在測試裡驗過：重裝後看一次真實 `build close` brain 的 mark 是否帶 `kind: 'close'`、await 是否盯 `build.md` — [hooks/brief.js](hooks/brief.js).
-- 〔skills〕`disable-model-invocation: true` 對插件 skill 是否生效沒驗：重裝後讓模型自行呼叫 fankeel-station 看是否被擋 — [skills/fankeel-station/SKILL.md](skills/fankeel-station/SKILL.md).
 
 ### knip 認得 CJS namespace
 upstream: knip 認得 CJS namespace property access. 09-29.
