@@ -13,7 +13,7 @@
 
 const registry = require('../lib/registry.js');
 const live = require('../lib/live.js');
-const { decide, guardMode, targetOf, readOnlyAgentType, writesFiles } = require('../lib/guard.js');
+const { decide, guardMode, targetOf, readOnlyAgentType, writesFiles, brainWriteReason } = require('../lib/guard.js');
 const profileLib = require('../lib/profile.js');
 const { controlling } = require('../lib/stages.js');
 const { run, parse } = require('../lib/hook.js');
@@ -72,6 +72,19 @@ function main(raw) {
             },
         }));
         return;
+    }
+
+    // On `Edit|Write|NotebookEdit`, independent of `guard` mode like the two
+    // rules around it: a fankeel-brain's Write lands only in its own session's
+    // `.fankeel/build/task-*/`. Anything outside that tree is untouched.
+    if (payload.tool_name === 'Write') {
+        const reason = brainWriteReason({ agentType: payload.agent_type, root, file: targetOf(payload), mine });
+        if (reason) {
+            process.stdout.write(JSON.stringify({
+                hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: reason },
+            }));
+            return;
+        }
     }
 
     // A third matcher, `Edit|Write|NotebookEdit`, checked before the collision
