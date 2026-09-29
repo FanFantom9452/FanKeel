@@ -1314,7 +1314,7 @@ test('survey and build each carry their own half of the patrol; fankeel points a
   const surveySection = /\n## The patrol\n[\s\S]*?\n## /.exec(survey);
   assert.ok(surveySection, 'fankeel-survey has no ## The patrol section');
   assert.match(surveySection[0], /multiSelect: true/);
-  assert.match(surveySection[0], /questions 2 to 4/);
+  assert.match(surveySection[0], /the slots the needs-the-user questions left/);
   assert.match(surveySection[0], /at most twelve/);
   assert.doesNotMatch(survey, /## Waiting tasks/);
   assert.match(survey, /TODO 全表盤點/);
