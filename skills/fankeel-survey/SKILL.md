@@ -322,6 +322,16 @@ another entry. The report ends with one line per entry in three groups —
 do-now ones as the next stage. Where any are to be built, widen the route with
 `task.js route` before the gate; adding `design` or `plan` is free.
 
+By default every `needs the user` entry is decided at the gate, not only
+listed. Each rides the gate call as its own question after `questions[0]`,
+which stays the gate, the only question whose option one names the next stage.
+The question names the entry; its 2 to 4 options are the entry's real
+alternatives, the recommended one first and marked `(Recommended)`, under a
+header of at most 12 columns, a CJK character counting two. The whole call
+holds at most four questions, so the needs-the-user questions come before the
+stale Watch ones below and the Watch ones take whatever slots remain. Entries
+beyond the room wait for the next patrol and stay listed in the report.
+
 **Blocked, every timing.** Every Blocked timing, due or not, is checked here directly,
 never put to the user as "has it happened": each is under Blocked because a
 session can check it. An `on:` is due because its day came — check that what it
@@ -335,12 +345,12 @@ restamped with today's date.
 **Watch, the stale ones.** A stale Watch timing — its stamp sixty days old or
 more — is never asked whether its event happened: only whoever meets that event
 knows, and they move the entry themselves when they do. What it is asked is
-whether to keep it. The stale ones ride this stage's own gate call as
-questions 2 to 4 — `questions[0]` stays the gate, the only question whose
-option one must name the next stage — each holding at most four timings in
+whether to keep it. The stale ones ride this stage's own gate call in
+the slots the needs-the-user questions left — `questions[0]` stays the gate,
+the only question whose option one must name the next stage — each holding at most four timings in
 `TODO.md`'s own order, `multiSelect: true`, each option's `label` the timing's
 title and its `description` the `if:` event, the question asking which to
-keep. That is at most twelve per patrol; the rest wait for the next one. Every
+keep. That is at most twelve per patrol, fewer when the slots ran out; the rest wait for the next one. Every
 question in the call is validated, not only the first: a header at most 12 columns, a CJK character
 counting two, and 2 to 4 options — so a question left holding a single timing
 asks it as two options, keep and drop, with `multiSelect: false`. A timing kept
