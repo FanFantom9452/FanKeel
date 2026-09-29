@@ -1364,3 +1364,13 @@ test('fankeel-build carries a Common rationalizations table of 4 to 6 rows, each
     assert.match(row, /\d{4}-\d{2}-\d{2}|[\w./-]+\.(md|js|json)\b/, 'a row cites no date or path: ' + row);
   }
 });
+
+test('fankeel-verify always runs the project\'s declared build, test and lint, and says none declared when there are none', () => {
+  const text = read('fankeel-verify');
+  assert.match(text, /^## Always run: build, test and lint$/m);
+  const body = text.split('\n## Always run: build, test and lint\n')[1].split('\n## ')[0];
+  assert.match(body, /whether or not anyone claimed/i);
+  assert.match(body, /package\.json/);
+  assert.match(body, /Makefile/);
+  assert.match(body, /none declared/);
+});

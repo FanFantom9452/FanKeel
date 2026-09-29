@@ -76,6 +76,16 @@ running, and a number retyped from memory instead of re-run. The row above is
 what stops all three — the evidence cell is the command's own output, not a
 description of what it should have said.
 
+## Always run: build, test and lint
+
+Whether or not anyone claimed them, verify runs every one of build, test and
+lint that the project declares — a `package.json` script or a Makefile target
+of that name — and pastes each output as its own row of the evidence, under
+the same rule as the table above. Find them with
+`node -e "console.log(Object.keys(require('./package.json').scripts || {}))"` and
+`grep -E '^(build|test|lint):' Makefile`. A project that declares none of the
+three says so in one line: `none declared`.
+
 ## Red flags — stop
 
 "should", "probably", "seems to". Any expression of satisfaction before the
