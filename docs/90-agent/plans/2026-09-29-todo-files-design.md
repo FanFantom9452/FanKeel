@@ -17,6 +17,10 @@ Decided at survey's gate (2026-09-29): one file per entry; done entries in the
 same folder; the station shows them per project. Decided at design: a project
 with no entry folder keeps its hand-written `TODO.md` under today's rules.
 
+Mockup: `.fankeel/build/2026-09-29-todo-files/mockup.html`, blocks
+`todo-head`, `todo-open`, `todo-done` — approved as 方向 (2026-09-29): the
+render reviewer holds build to it; no block-by-block tuning on the live page.
+
 ## Why
 
 - A closed entry disappears today. Its only trace is one record on
