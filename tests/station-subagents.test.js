@@ -16,7 +16,7 @@ const tmp = require('./tmp.js');
 const SID = 'cccccccc-3333-4333-8333-333333333333';
 const line = (o) => JSON.stringify(o) + '\n';
 const at = () => new Date().toISOString();
-const said = (content, stop) => line({ type: 'assistant', isSidechain: true, timestamp: at(),
+const said = (content, stop) => line({ type: 'assistant', isSidechain: true, timestamp: at(), effort: 'medium',
     message: { model: 'claude-sonnet-5', stop_reason: stop, content } });
 const asked = (content) => line({ type: 'user', isSidechain: true, timestamp: at(), message: { content } });
 const note = line({ type: 'attachment', isSidechain: true, attachment: { type: 'total_tokens_reminder' } });
@@ -115,4 +115,25 @@ test('a row that is not active reads no subagents and no inflight mark', () => {
     assert.deepEqual(row.subagents, []);
     assert.equal(row.inflight, null);
     assert.equal(row.gateAt, m.now - 720000);
+});
+
+test('a running agent row carries the model and effort its transcript last ran', () => {
+    const dir = tmp('sa-ran-');
+    seed(dir);
+    const rows = usage.runningAgents(dir, Date.now());
+    const reader = rows.find((r) => r.id === 'a0000000000000001');
+    assert.equal(reader.ranModel, 'claude-sonnet-5');
+    assert.equal(reader.effort, 'medium');
+});
+
+test('the row reads the last assistant line, not the first', () => {
+    const dir = tmp('sa-ran2-');
+    const sub = path.join(dir, 'subagents');
+    fs.mkdirSync(sub, { recursive: true });
+    const later = line({ type: 'assistant', isSidechain: true, timestamp: at(), effort: 'high',
+        message: { model: 'claude-sonnet-5-5', stop_reason: 'tool_use', content: [{ type: 'tool_use', id: 'u2', name: 'Bash', input: { command: 'y' } }] } });
+    agent(sub, 'a0000000000000009', { agentType: 'general-purpose', description: 'two turns' }, onTool + back + later);
+    const row = usage.runningAgents(dir, Date.now()).find((r) => r.id === 'a0000000000000009');
+    assert.equal(row.ranModel, 'claude-sonnet-5-5');
+    assert.equal(row.effort, 'high');
 });

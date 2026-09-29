@@ -1504,6 +1504,8 @@
     // `runningAgents` in lib/usage.js reads as mid-turn. The stage agent has a
     // meta.json too, so its id is left out of the subagent rows.
     function saFamily(a, s) {
+        var r = family(a.ranModel);
+        if (r !== 'other') return r;
         var m = /^(fable|opus|sonnet|haiku)$/.exec(String(a.model || ''));
         if (m) return m[1];
         var d = /^(fable|opus|sonnet|haiku)\b/i.exec(String(a.description || ''));
@@ -1526,7 +1528,9 @@
             + subs.map(function (a) {
                 var fam = saFamily(a, s), type = a.agentType || 'agent';
                 return '<div class="sa"><span class="sa-type" title="' + esc(type) + '">' + esc(type) + '</span>'
-                    + '<span class="chip"><i class="sw" style="background:var(--m-' + fam + ')"></i>' + fam + '</span>'
+                    + '<span class="chip"><i class="sw" style="background:var(--m-' + fam + ')"></i>'
+                    + (a.ranModel && modelKey(a.ranModel) !== 'other' ? esc(modelLabel(modelKey(a.ranModel))) : fam)
+                    + (a.effort ? ' · ' + esc(a.effort) : '') + '</span>'
                     + '<span class="sa-desc" title="' + esc(a.description || '') + '">' + esc(saShort(a.description)) + '</span>'
                     + '<span class="sa-for">' + mins(now - a.startedAt) + '</span></div>';
             }).join('') + '</div>';

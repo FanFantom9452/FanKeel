@@ -68,7 +68,7 @@ const RUN = {
     subagents: [
         { id: 'a1', agentType: 'fankeel:fankeel-brain', description: 'the stage agent itself', model: null, startedAt: NOW - 8 * MIN },
         { id: 'a2', agentType: 'fankeel:fankeel-mockup', description: 'opus 5.5 · inherit: station batch mockup', model: null, startedAt: NOW - 6 * MIN },
-        { id: 'a3', agentType: 'fankeel:fankeel-reader', description: 'sonnet 5 · inherit: station data-side facts', model: 'sonnet', startedAt: NOW - 3 * MIN },
+        { id: 'a3', agentType: 'fankeel:fankeel-reader', description: 'sonnet 5 · inherit: station data-side facts', model: 'sonnet', ranModel: 'claude-sonnet-5-5', effort: 'medium', startedAt: NOW - 3 * MIN },
     ],
 };
 
@@ -81,7 +81,7 @@ test('a lane lists the stage agent in flight and each subagent, once each, as th
     assert.ok(html.includes('<div class="sa"><span class="sa-type" title="fankeel:fankeel-mockup">fankeel:fankeel-mockup</span>'
         + '<span class="chip"><i class="sw" style="background:var(--m-opus)"></i>opus</span>'
         + '<span class="sa-desc" title="opus 5.5 · inherit: station batch mockup">station batch mockup</span><span class="sa-for">6m</span></div>'), html);
-    assert.ok(html.includes('<i class="sw" style="background:var(--m-sonnet)"></i>sonnet</span>'
+    assert.ok(html.includes('<i class="sw" style="background:var(--m-sonnet)"></i>Sonnet 5.5 · medium</span>'
         + '<span class="sa-desc" title="sonnet 5 · inherit: station data-side facts">station data-side facts</span><span class="sa-for">3m</span>'), html);
     assert.doesNotMatch(html, /fankeel-brain/, 'the stage agent is not listed a second time as a subagent');
 });
