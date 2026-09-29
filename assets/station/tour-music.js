@@ -14,11 +14,10 @@
 (function (root, module) {
     'use strict';
 
-    var RATE = 44100, FPS = 60, BPM = 120, SECONDS = 60;
+    var RATE = 44100, FPS = 60, BPM = 120;
     var PER_FRAME = RATE / FPS; // 735
     var BEAT = RATE * 60 / BPM; // 22050
     var BAR = BEAT * 4; // 88200
-    var LENGTH = RATE * SECONDS; // 2646000
 
     // The score. Bars count from 0; bar 2 (frame 240) is the drop, bar 28
     // (frame 3360) the resolve.
@@ -29,10 +28,13 @@
         F: { root: 41, tones: [57, 60, 65] },
     };
     var CYCLE = ['C', 'G', 'Am', 'F'];
-    var DROP = 2, RESOLVE = 28;
-    function chordAt(bar) {
+    var DROP = 2;
+    // The resolve is two bars from the end: bar 28 of reel's 30, bar 13 of
+    // promo30's 15. A bar is 120 frames.
+    function resolveBar(frames) { return frames / 120 - 2; }
+    function chordAt(bar, resolve) {
         if (bar < DROP) return CHORDS[['C', 'Am'][bar]];
-        if (bar < RESOLVE) return CHORDS[CYCLE[(bar - DROP) % 4]];
+        if (bar < resolve) return CHORDS[CYCLE[(bar - DROP) % 4]];
         return CHORDS.C;
     }
     // The lead: eight eighth-notes a bar, as indexes into the chord's tones
@@ -110,14 +112,17 @@
         });
     }
 
-    // cues = { cuts: [frame], blocks: [frame] }. Returns LENGTH samples,
-    // peak at most 0.9.
-    function render(cues) {
+    // cues = { cuts: [frame], blocks: [frame] }; frames is the timeline's
+    // length, reel's 3600 unless given. Returns frames * 735 samples, peak at
+    // most 0.9.
+    function render(cues, frames) {
+        frames = frames || 3600;
+        var LENGTH = Math.round(frames * PER_FRAME), RESOLVE = resolveBar(frames);
         var out = new Float32Array(LENGTH), rnd = noise(9452);
         var frame = function (f) { return Math.round(f * PER_FRAME); };
         var bars = LENGTH / BAR;
         for (var b = 0; b < bars; b++) {
-            var at = b * BAR, ch = chordAt(b);
+            var at = b * BAR, ch = chordAt(b, RESOLVE);
             if (b >= DROP) pad(out, at, ch.tones, 0.05, b >= RESOLVE ? LENGTH - at : BAR);
             if (b >= DROP && b < RESOLVE) {
                 for (var k = 0; k < 4; k++) kick(out, at + k * BEAT, 0.45);
@@ -145,7 +150,7 @@
             var cut = 0;
             cuts.forEach(function (c) { if (c <= f) cut = c; });
             var n = blocks.filter(function (g) { return g >= cut && g < f; }).length;
-            var tones = chordAt(Math.floor(f / 120)).tones;
+            var tones = chordAt(Math.floor(f / 120), RESOLVE).tones;
             pluck(out, frame(f), hz(tones[n % 3] + 12 * (1 + Math.floor(n / 3) % 2)), 0.2);
         });
         var peak = 0;
@@ -184,6 +189,6 @@
         return bytes;
     }
 
-    module.exports = { RATE: RATE, render: render, wav: wav };
+    module.exports = { RATE: RATE, render: render, resolveBar: resolveBar, wav: wav };
     if (typeof window !== 'undefined') root.tourMusic = module.exports;
 })(typeof window !== 'undefined' ? window : globalThis, typeof module !== 'undefined' ? module : {});
