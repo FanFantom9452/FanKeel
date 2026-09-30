@@ -52,6 +52,7 @@ test('a subject matching commit.format commits', () => {
     const dir = repo(FORMAT);
     const res = commit.main([request('a.txt\n\nfeat: change a\n')], dir);
     assert.ok(!res.code, res.text);
+    assert.doesNotMatch(res.text, /^profile: /m);
     assert.equal(git(dir, 'log', '-1', '--format=%s'), 'feat: change a');
 });
 
@@ -81,4 +82,17 @@ test('with commit.format unset, any subject commits as before', () => {
     const res = commit.main([request('a.txt\n\nchange a\n')], dir);
     assert.ok(!res.code, res.text);
     assert.equal(git(dir, 'log', '-1', '--format=%s'), 'change a');
+});
+
+test('a profile.json that does not parse still commits, and says so on a line after the range', () => {
+    const dir = repo();
+    fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.fankeel', 'profile.json'), '{ "commit.format": ');
+    const res = commit.main([request('a.txt\n\nchange a\n')], dir);
+    assert.ok(!res.code, res.text);
+    assert.equal(git(dir, 'log', '-1', '--format=%s'), 'change a');
+    const lines = res.text.split('\n');
+    assert.equal(lines.length, 2, res.text);
+    assert.match(lines[0], /^[0-9a-f]{40}\.\.[0-9a-f]{40}$/);
+    assert.match(lines[1], /^profile: .*profile\.json does not parse — its values were skipped$/);
 });

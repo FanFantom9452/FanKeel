@@ -144,7 +144,17 @@ function main(argv, cwd) {
     // shell hook runs, over the paths this file names, before they are staged.
     const topDir = top.stdout.trim();
     let values = {};
-    try { values = profile.read(topDir, profile.configDirOf()).values; } catch (e) { /* the builtins */ }
+    // commit-3: a profile layer that does not parse is skipped, as every other
+    // reader of the profile skips it, but said on its own line after the
+    // ranges, so a malformed profile.json cannot switch commit.format and
+    // sensitive.mode off without a trace. A warning, not a refusal: the paths
+    // are the agent's work, and the profile is the user's to fix.
+    let notice = [];
+    try {
+        const read = profile.read(topDir, profile.configDirOf());
+        values = read.values;
+        notice = read.unreadable.map((file) => 'profile: ' + file + ' does not parse — its values were skipped');
+    } catch (e) { /* the builtins */ }
     const mode = values['sensitive.mode'] || 'warn';
     // commit-2: a project that sets `commit.format` has every block's subject
     // checked before any block is staged, so one bad block in a batch commits
@@ -156,8 +166,8 @@ function main(argv, cwd) {
             const subject = parsed.blocks[i].message.split(/\r?\n/)[0];
             if (!format.test(subject)) {
                 return {
-                    text: 'commit.js: ' + (parsed.blocks.length > 1 ? 'block ' + (i + 1) + ': ' : '')
-                        + 'the subject "' + subject + '" does not match commit.format ' + values['commit.format'],
+                    text: ['commit.js: ' + (parsed.blocks.length > 1 ? 'block ' + (i + 1) + ': ' : '')
+                        + 'the subject "' + subject + '" does not match commit.format ' + values['commit.format']].concat(notice).join('\n'),
                     code: 1,
                 };
             }
@@ -173,7 +183,7 @@ function main(argv, cwd) {
     const many = parsed.blocks.length > 1;
     for (let i = 0; i < parsed.blocks.length; i++) {
         const { paths, message } = parsed.blocks[i];
-        const fail = (why) => ({ text: out.concat('commit.js: ' + (many ? 'block ' + (i + 1) + ': ' : '') + why).join('\n'), code: 1 });
+        const fail = (why) => ({ text: out.concat('commit.js: ' + (many ? 'block ' + (i + 1) + ': ' : '') + why, notice).join('\n'), code: 1 });
         const base = git(['rev-parse', 'HEAD']).stdout.trim();
         if (parsed.blocks[i].worktree) {
             const label = many ? paths.join(', ') + ': ' : '';
@@ -184,7 +194,7 @@ function main(argv, cwd) {
             }
             const r = landWorktree(top.stdout.trim(), parsed.blocks[i], run, oneLine);
             if (r.error) return fail(r.error);
-            if (r.conflict) return { text: out.concat(label + 'conflict ' + r.conflict.join(' ')).join('\n'), code: 1 };
+            if (r.conflict) return { text: out.concat(label + 'conflict ' + r.conflict.join(' '), notice).join('\n'), code: 1 };
             out.push(label + base + '..' + git(['rev-parse', 'HEAD']).stdout.trim());
             if (seen.length) out.push('sensitive: ' + sensitive.listed(seen));
             if (r.kept) out.push('kept ' + r.kept);
@@ -215,7 +225,7 @@ function main(argv, cwd) {
     try {
         fs.renameSync(argv[0], argv[0].replace(/(\.md)?$/, '.done.md'));
     } catch (e) { /* the commits are made; the next await reports the file again */ }
-    return { text: out.join('\n') };
+    return { text: out.concat(notice).join('\n') };
 }
 
 if (require.main === module) {
