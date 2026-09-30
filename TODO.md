@@ -10,11 +10,7 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔await〕`kind` 只在測試裡驗過：重裝後看一次真實 `build close` brain 的 mark 是否帶 `kind: 'close'`、await 是否盯 `build.md` — [hooks/brief.js](hooks/brief.js).
 
-- 〔data〕資料放 NAS、有保留期限（09-30）；已決定只宣告位置、負責人、期限，survey 讀、audit 查路徑；NAS 存取已答：`data` bucket 保留 `access` 鍵、先不處理 — [documents.md](docs/90-agent/reference/documents.md).
-
 ## Needs a decision
-
-- 〔commit-3〕commit.js:147 reads profile values and drops .unreadable, so a malformed profile.json skips commit.format and sensitive.mode with no trace; decide refuse or warn
 
 ## Blocked
 
