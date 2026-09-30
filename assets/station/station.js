@@ -2452,6 +2452,7 @@
             tk: tk,
             stageShare: stageShare, costShareHtml: costShareHtml, subtabsHtml: subtabsHtml,
             dashLive: dashLive, dashGate: dashGate, liveSubsHtml: liveSubsHtml, dashSpend: dashSpend, dashRecent: dashRecent, dashPage: dashPage,
+            dashTodo: dashTodo, dashOrder: dashOrder, dashChooserHtml: dashChooserHtml,
             NAV_TREE: NAV_TREE,
             tuneOpen: tuneOpen, tuneEvents: tuneEvents, toastText: toastText, floatHtml: floatHtml, gateCountdownHtml: gateCountdownHtml, noteHtml: noteHtml, floatNotes: floatNotes, clock: gateClock,
             changedParts: changedParts, seenHtml: seenHtml,
@@ -2704,11 +2705,128 @@
                     + '<span class="dc mono">' + usd(sessionTotals(s).usd) + '</span><span class="dr">' + ago(s.updated) + '</span></a>';
             }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noneLast30d', '近 30 天沒有 session') + '</p>') + '</section>';
     }
-    function dashPage() {
-        var R = homeRows();
-        return '<div class="phead"><h1>' + icon('dash') + loc('dash.dashboard', '儀表板') + '</h1></div><div class="dash" data-block="dashboard">'
-            + dashLive(R) + dashGate(R) + dashSpend(R) + dashRecent(R) + '</div>';
+    // dash-todo (station-10): every project's `todos` rows off the data file,
+    // the same rows the project page's TODO panel reads, so its Ready count is
+    // that panel's. One row per project with a Ready entry, most first, its
+    // first three titles; a project with none is named in the foot line, and a
+    // list whose entries carry no state (a TODO.md) is counted there, not listed.
+    function dashTodo(projects) {
+        var SHOWN = 3, lists = [];
+        (projects || []).forEach(function (p) {
+            (p.todos || []).forEach(function (t) { if (t && t.open) lists.push(t); });
+        });
+        var rows = lists.filter(function (t) { return t.open.some(function (x) { return x.state; }); }).map(function (t) {
+            var n = function (st) { return t.open.filter(function (x) { return x.state === st; }).length; };
+            return { t: t, ready: t.open.filter(function (x) { return x.state === 'ready'; }), decision: n('decision'), blocked: n('blocked'), watch: n('watch') };
+        });
+        var unstated = lists.length - rows.length;
+        var ready = rows.filter(function (r) { return r.ready.length; }).sort(function (a, b) { return b.ready.length - a.ready.length; });
+        var quiet = rows.filter(function (r) { return !r.ready.length; });
+        var total = ready.reduce(function (a, r) { return a + r.ready.length; }, 0);
+        var side = function (r) { return [['decision', r.decision], ['blocked', r.blocked], ['watch', r.watch]].filter(function (x) { return x[1]; }); };
+        var sep = loc('dash.clauseSep', '；');
+        var foot = quiet.map(function (r) {
+            return loc('dash.noReadyIn', '{p} 沒有 Ready（{rest}）', { p: esc(shortLabel(r.t.pkey)), rest: side(r).map(function (x) { return x[0] + ' ' + x[1]; }).join(loc('dash.listSep', '、')) });
+        }).join(sep) + (unstated ? (quiet.length ? sep : '') + loc('dash.nUnstated', '另有 {n} 份 TODO 沒標狀態，不列', { n: unstated }) : '');
+        return '<section class="dcard" data-block="dash-todo"><div class="dcard-h">' + icon('check') + '<b>' + loc('dash.readyToStart', '可以開工') + '</b></div>'
+            + '<div class="dbig">' + total + '<small>' + loc('dash.nReadyInP', '筆 Ready，分在 {p} 個專案', { p: ready.length }) + '</small></div>'
+            + (ready.length ? '<div class="dlist">' + ready.map(function (r) {
+                var more = r.ready.length - SHOWN;
+                return '<a class="drow trow" href="' + projectHash(r.t.pkey) + '" title="' + esc(loc('dash.openTodoOf', '開啟 {p} 的 TODO', { p: shortLabel(r.t.pkey) })) + '">'
+                    + '<span class="trh"><span class="dp">' + esc(shortLabel(r.t.pkey)) + '</span><span class="tpill"><span class="tn">' + r.ready.length + '</span><span class="tnl">Ready</span></span>'
+                    + '<span class="spacer"></span>' + side(r).map(function (x) { return '<span class="tq" data-st="' + x[0] + '">' + x[0] + ' <b>' + x[1] + '</b></span>'; }).join('') + '</span>'
+                    + '<ul class="trl">' + r.ready.slice(0, SHOWN).map(function (x) {
+                        return '<li>' + (x.label ? '<span class="tlb">' + esc(x.label) + '</span>' : '') + esc(x.title) + '</li>';
+                    }).join('') + (more > 0 ? '<li class="tmore">' + loc('dash.nMoreTodo', '還有 {n} 筆', { n: more }) + '</li>' : '') + '</ul></a>';
+            }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noReady', '沒有 Ready 的條目') + '</p>')
+            + (foot ? '<p class="dnone tfoot">' + foot + '</p>' : '') + '</section>';
     }
+    // dash-chooser (station-11): which cards show, in what order. `station.dash`
+    // in localStorage holds `{"order": [...], "off": [...]}`; an id this page
+    // does not know is dropped, one the stored order lacks is appended shown,
+    // and anything unreadable is the default: today's four cards and dash-todo.
+    function dashCards() { return ['dash-live', 'waiting-card', 'dash-todo', 'dash-spend', 'dash-recent']; }
+    function dashOrder(raw) {
+        var saved = null;
+        try { saved = JSON.parse(raw); } catch (e) { saved = null; }
+        var order = saved && Array.isArray(saved.order) ? saved.order : [];
+        var off = saved && Array.isArray(saved.off) ? saved.off : [];
+        var known = dashCards();
+        var ids = order.filter(function (id, i) { return known.indexOf(id) >= 0 && order.indexOf(id) === i; });
+        known.forEach(function (id) { if (ids.indexOf(id) < 0) ids.push(id); });
+        return ids.map(function (id) { return { id: id, on: off.indexOf(id) < 0 }; });
+    }
+    function dashIsDefault(list) {
+        return list.map(function (c) { return c.id + (c.on ? '' : '-'); }).join() === dashCards().join();
+    }
+    function dashChooserHtml(list) {
+        var names = {
+            'dash-live': [loc('dash.inProgress', '進行中'), loc('dash.cardLiveHint', '正在跑的 session 和它們走到哪一站')],
+            'waiting-card': [loc('dash.waitingOnYou', '等你回答'), loc('dash.cardGateHint', '停在 gate、等你按下去的問題')],
+            'dash-todo': [loc('dash.readyToStart', '可以開工'), loc('dash.cardTodoHint', '各專案 TODO 裡 Ready 的條目')],
+            'dash-spend': [loc('dash.last30dCost', '近 30 天花費'), loc('dash.cardSpendHint', '每日花費長條、今天和昨天')],
+            'dash-recent': [loc('dash.recentSessions', '最近 sessions'), loc('dash.cardRecentHint', '最近五個 session 的階段與花費')],
+        };
+        var same = dashIsDefault(list);
+        return '<section class="panel dchooser" id="dchooser" data-block="dash-chooser" aria-labelledby="dchooser-h">'
+            + '<div class="dch-h"><b id="dchooser-h">' + loc('dash.chooserTitle', '儀表板上的卡片') + '</b><span class="muted">'
+            + loc('dash.chooserHint', '勾選要顯示的卡片，用 ↑ ↓ 排順序。只存在這個瀏覽器（<code>station.dash</code>）。') + '</span></div>'
+            + '<ol class="dch-list">' + list.map(function (c, i) {
+                var n = names[c.id];
+                return '<li class="dch-row" data-card="' + c.id + '"><span class="dch-n">' + (i + 1) + '</span>'
+                    + '<label class="dch-lb"><input type="checkbox"' + (c.on ? ' checked' : '') + ' data-dchshow="' + c.id + '"><span><b>' + n[0] + '</b><small>' + n[1] + '</small></span></label>'
+                    + '<span class="dch-mv"><button type="button" class="dch-b" data-dchmv="-1" data-card="' + c.id + '" data-key="dch-up-' + c.id + '" aria-label="' + esc(loc('dash.moveUp', '{c} 上移', { c: n[0] })) + '"' + (i === 0 ? ' disabled' : '') + '>' + icon('chev') + '</button>'
+                    + '<button type="button" class="dch-b" data-dchmv="1" data-card="' + c.id + '" data-key="dch-down-' + c.id + '" aria-label="' + esc(loc('dash.moveDown', '{c} 下移', { c: n[0] })) + '"' + (i === list.length - 1 ? ' disabled' : '') + '>' + icon('chev') + '</button></span></li>';
+            }).join('') + '</ol>'
+            + '<div class="dch-f"><span class="muted">' + (same ? loc('dash.chooserIsDefault', '目前是預設') : loc('dash.chooserNotDefault', '跟預設不同')) + '</span><span class="spacer"></span>'
+            + '<button type="button" class="btn" data-dchreset="1"' + (same ? ' disabled' : '') + '>' + loc('dash.chooserReset', '還原預設') + '</button>'
+            + '<button type="button" class="btn go" data-dchdone="1">' + loc('dash.chooserDone', '完成') + '</button></div></section>';
+    }
+    function dashPage() {
+        var R = homeRows(), list = dashOrder(stored('station.dash'));
+        var card = {
+            'dash-live': dashLive, 'waiting-card': function (rows) { return dashGate(rows); }, 'dash-todo': function () { return dashTodo(S.projects); },
+            'dash-spend': dashSpend, 'dash-recent': dashRecent,
+        };
+        return '<div class="phead"><h1>' + icon('dash') + loc('dash.dashboard', '儀表板') + '</h1><span class="spacer"></span>'
+            + '<button type="button" class="btn' + (view.dchOpen ? ' on' : '') + '" id="dchtog" data-dchtog="1" data-key="dchtog" aria-expanded="' + String(!!view.dchOpen) + '" aria-controls="dchooser">'
+            + icon('settings') + loc('dash.chooserOpen', '調整卡片') + '</button></div>'
+            + (view.dchOpen ? dashChooserHtml(list) : '')
+            + '<div class="dash" data-block="dashboard">' + list.filter(function (c) { return c.on; }).map(function (c) { return card[c.id](R); }).join('') + '</div>';
+    }
+    // The chooser's presses: 調整卡片 and 完成 open and shut it, ↑ ↓ move a
+    // card, 還原預設 clears `station.dash`, a checkbox shows or hides a card.
+    // The default order is stored as no key at all.
+    view.dchOpen = false;
+    function dashSave(list) {
+        store('station.dash', dashIsDefault(list) ? null : JSON.stringify({
+            order: list.map(function (c) { return c.id; }),
+            off: list.filter(function (c) { return !c.on; }).map(function (c) { return c.id; }),
+        }));
+    }
+    doc.addEventListener('click', function (e) {
+        var b = e.target && e.target.closest ? e.target.closest('[data-dchtog], [data-dchmv], [data-dchreset], [data-dchdone]') : null;
+        if (!b) return;
+        if (b.hasAttribute('data-dchtog')) view.dchOpen = !view.dchOpen;
+        else if (b.hasAttribute('data-dchdone')) view.dchOpen = false;
+        else if (b.hasAttribute('data-dchreset')) store('station.dash', null);
+        else {
+            var list = dashOrder(stored('station.dash'));
+            var i = list.map(function (c) { return c.id; }).indexOf(b.getAttribute('data-card')), j = i + Number(b.getAttribute('data-dchmv'));
+            if (i < 0 || j < 0 || j >= list.length) return;
+            list.splice(j, 0, list.splice(i, 1)[0]);
+            dashSave(list);
+        }
+        repaint();
+    });
+    doc.addEventListener('change', function (e) {
+        var id = e.target && e.target.getAttribute ? e.target.getAttribute('data-dchshow') : null;
+        if (!id) return;
+        var list = dashOrder(stored('station.dash'));
+        list.forEach(function (c) { if (c.id === id) c.on = !!e.target.checked; });
+        dashSave(list);
+        repaint();
+    });
     // What daysPage last drew, so the hover card reads the same bars the chart
     // did. `chartOff` holds, per dim, the legend entries clicked out of the
     // chart — in memory only, so the 3 s redraw keeps them and a reload clears
