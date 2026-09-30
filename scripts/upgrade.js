@@ -35,7 +35,11 @@ function readTodo(root) {
     try {
         return fs.readFileSync(path.join(root, 'TODO.md'), 'utf8');
     } catch (e) {
-        return null;
+        // Only a missing file is "no TODO.md". One that is there and cannot be
+        // read is an error the caller has to see, not a project with nothing
+        // pending (upgrade-2).
+        if (e && e.code === 'ENOENT') return null;
+        throw e;
     }
 }
 
