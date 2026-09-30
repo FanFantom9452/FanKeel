@@ -215,6 +215,13 @@ test('完成 alone shuts an open chooser with one repaint, and stays shut when p
     assert.doesNotMatch(c.page(), /data-block="dash-chooser"/, 'pressed while closed it stays closed');
 });
 
+test('完成 pressed on a fresh, closed chooser leaves it closed', () => {
+    const c = chooser({});
+    assert.doesNotMatch(c.page(), /data-block="dash-chooser"/, 'fresh: closed');
+    c.press({ 'data-dchdone': '1' });
+    assert.doesNotMatch(c.page(), /data-block="dash-chooser"/, 'still closed after 完成');
+});
+
 test('a move that falls off either edge, or names no card, repaints nothing and stores nothing', () => {
     const kept = {};
     const c = chooser(kept);
