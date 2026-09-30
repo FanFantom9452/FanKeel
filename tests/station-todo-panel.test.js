@@ -38,3 +38,40 @@ test('a TODO.md-mode project shows its open entries only, and nothing makes no p
     assert.equal(V.todoPanelHtml({ pkey: 'p', mode: 'file', folder: null, open: [], done: [] }, []), '');
     assert.equal(V.todoPanelHtml(null, []), '');
 });
+
+const MANY = Array.from({ length: 12 }, (_, i) => ({
+    id: 'd-' + i, label: 'd', title: 'Done ' + i, at: '2026-09-' + String(28 - i).padStart(2, '0'),
+    sha: 'abcdef' + String(i).padStart(4, '0'), disposition: i === 1 ? 'abandoned' : 'done', session: '',
+}));
+const LONG = { pkey: 'F:\\ws', mode: 'folder', folder: 'docs/todo', open: [ROW.open[0]], done: MANY };
+const doneOf = (html) => html.slice(html.indexOf('data-block="todo-done"'));
+
+test('the done list shows its newest ten and a button for the rest', () => {
+    const done = doneOf(V.todoPanelHtml(LONG, []));
+    assert.equal((done.match(/<li class="td-row">/g) || []).length, 10);
+    assert.match(done, /Done 9</);
+    assert.doesNotMatch(done, /Done 10</);
+    assert.match(done, /data-tdmore="1" aria-expanded="false" aria-controls="donel">/);
+    assert.match(done, /展開全部（12）/);
+    assert.match(done, /還有 2 筆，2026-09-18 到 2026-09-17/);
+    assert.match(done, /12 筆，最新在上 · 顯示最新 10 筆/);
+    assert.match(done, /<li class="td-row td-hd k-only" aria-hidden="true">/);
+    assert.match(done, /data-dp="abandoned"/);
+});
+
+test('expanded, the list shows every entry with a cut before the eleventh, and a button back', () => {
+    const done = doneOf(V.todoPanelHtml(LONG, [], true));
+    assert.equal((done.match(/<li class="td-row">/g) || []).length, 11);
+    assert.equal((done.match(/<li class="td-row td-fold">/g) || []).length, 1);
+    assert.match(done, /<li class="td-cut k-only" aria-hidden="true"><span>第 11 筆起，展開後才出現<\/span><\/li><li class="td-row td-fold">/);
+    assert.match(done, /Done 11</);
+    assert.match(done, /data-tdmore="0" aria-expanded="true"/);
+    assert.match(done, /收起，只留最新 10 筆/);
+});
+
+test('ten or fewer done entries carry no button, and each state group names its state', () => {
+    const html = V.todoPanelHtml(ROW, []);
+    assert.doesNotMatch(html, /data-tdmore/);
+    assert.match(html, /<div class="rgh td-grp" data-st="ready"><b class="mono">Ready<\/b>/);
+    assert.match(html, /<div class="rgh td-grp" data-st="blocked"><b class="mono">Blocked<\/b>/);
+});
