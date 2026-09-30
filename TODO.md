@@ -24,6 +24,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔data〕教授要資料檔放 NAS、不用 Git LFS，並有保留期限（09-30 會議）；09-30 已決定：fankeel 只宣告位置、負責人、保留期限，survey 讀、audit 查路徑是否存在，同步與清理留給 NAS；待答：NAS 在 Windows 怎麼存取 — [documents.md](docs/90-agent/reference/documents.md).
 
+- 〔init〕09-30 使用者提議：從沒用過 fankeel 的專案用的 init skill（不是 /fankeel 入口），選 docs preset 寫 docs.json、profile、todo.js migrate、map；建議共用 upgrade.js 的現況偵測，待定範圍 — [upgrade.js](scripts/upgrade.js).
+
 ## Blocked
 
 ### fankeel 功能全部完成
@@ -68,6 +70,8 @@ after: 跑過一次 stage.agents=all 的真實 task（main 含 08c4ecf、安裝�
 after: 影片定案. 09-30.
 
 - 〔station〕STATION 整頁改版：todo-done 區塊捲動太長，影片定案後整頁重設計；現有功能一項不減、舊版保留可還原 — [scripts/station.js](scripts/station.js).
+- 〔station〕09-30 使用者提議：station 首頁儀表板列出每個 project 的 TODO，Ready 有幾條、各是什麼；隨 STATION 重新設計一起做 — [station.js](assets/station/station.js).
+- 〔station〕09-30 使用者提議：station 首頁讓使用者自己決定放哪些區塊；現有功能全部保留可還原，隨 STATION 重新設計一起做 — [station.js](assets/station/station.js).
 
 ## Watch
 
