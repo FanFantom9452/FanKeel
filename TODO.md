@@ -14,11 +14,11 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔station〕取代 station-1 的 (b)：(1) 沒有任何單一 subagent 的 context 峰值超過 300k；(2) 佔比低於 15% 的目標只適用於 subagent ≥10 的 session。在 8806240d 之後的 session 重新量測。 — [station.md](docs/90-agent/reference/station.md).
 
+- 〔test〕09-30 patrol 改動的 verify 留下：tests/skills.test.js 的 build 段落缺 doesNotMatch(/survey,build,land/)，新斷言沒做 red-green；station 專案頁的 todo-done 區塊沒實際 render 看過 — [skills.test.js](tests/skills.test.js).
+
 ## Needs a decision
 
 - 〔data〕教授要資料檔（ML 資料、影像、現場照片）放 NAS、不用 Git LFS，並有保留期限（09-30 會議）；提議 fankeel 只宣告位置、負責人、保留期限，survey 讀、audit 查路徑是否存在，同步與清理留給 NAS；待答：NAS 在 Windows 怎麼存取 — [documents.md](docs/90-agent/reference/documents.md).
-
-- 〔todo〕TODO.md 只列未完成，完成的條目看起來像被刪了（09-30 教授會議）；要顯示在 TODO.md 的 ## Done、station 一欄，還是 init 開場列最近幾條 — [lib/todo.js](lib/todo.js).
 
 ## Blocked
 
