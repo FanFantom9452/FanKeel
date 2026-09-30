@@ -43,7 +43,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。�
 | `sensitive.review` | reviewer 審查時要不要多跑 ## Sensitive lens，確認敏感資料沒寫進去 | `true`、`false`；內建 `false` | 不設，維持內建 |
 <!-- PROFILE_TABLE:END -->
 
-最後兩列是自由文字，精靈沒有欄位給它們，要用下面的指令設。
+`security.local` 與 `prompt.all`、`prompt.<站>` 兩列是自由文字，精靈沒有欄位給它們，要用下面的指令設。
 
 ## 在站頁精靈怎麼套
 

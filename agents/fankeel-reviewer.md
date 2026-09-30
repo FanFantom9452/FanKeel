@@ -185,7 +185,7 @@ One line per finding:
 | `unlisted:` | content the list does not name but that reads as sensitive: a credential, token or key; personal data; a client's name; an internal host name or IP address; an excerpt of raw data |
 
 Two layers, split on purpose: the commit-time `scan` in `lib/sensitive.js`
-matches the list mechanically and never misses a listed word; this lens is the
+matches the list mechanically in every readable text file a commit stages; this lens is the
 judgement, for what the list does not name, and it reaches the review before
 the commit does. Name the kind and the place, never the value — the line is
 read in a context that may be shared. End with `sensitive: <N> findings.`, or
