@@ -18,6 +18,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔init〕首次接上 fankeel 的引導：專屬唯讀 agent 排查現況，再一次一題帶過 docs.json、TODO、開發習慣（profile）、CLAUDE.md、memory、map；每步看現況判斷已完成，共用 upgrade.js 偵測。architectural，走七站 — [upgrade.js](scripts/upgrade.js).
 
+- 〔serve〕tests/serve.test.js 的 detached serve 測試在全套偶發紅、單跑綠（基底 commit 已重現）；查同進程組其他測試搶埠或殘留 serve 的成因 — [serve.test.js](tests/serve.test.js).
+
 - 〔skills〕`disable-model-invocation: true` 對插件 skill 是否生效沒驗：重裝後讓模型自行呼叫 fankeel-station 看是否被擋 — [skills/fankeel-station/SKILL.md](skills/fankeel-station/SKILL.md).
 
 - 〔station〕取代 station-1 的 (b)：(1) 沒有任何單一 subagent 的 context 峰值超過 300k；(2) 佔比低於 15% 的目標只適用於 subagent ≥10 的 session。在 8806240d 之後的 session 重新量測。 — [station.md](docs/90-agent/reference/station.md).
