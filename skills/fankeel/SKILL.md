@@ -913,8 +913,8 @@ line, read off the config directory's own `plugins/installed_plugins.json`,
 is where the ones actually installed are listed.
 
 **A skill the user invoked may use model-invoked skills, never another user-invoked one.**
-A skill marked `disable-model-invocation: true` — today
-`fankeel-station` — is reachable only when a person types it, so no other
+A skill marked `disable-model-invocation: true` — today `fankeel-station`
+and `fankeel-upgrade` — is reachable only when a person types it, so no other
 skill routes to it and no model reaches for it. Two questions to the user, one
 from each of two stacked skills, is the failure this prevents.
 

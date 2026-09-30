@@ -96,10 +96,10 @@ test('a file with no version line reads as none, not as absent', () => {
 });
 
 // The count this repository actually has, checked against the real tree so the
-// script and `tests/contract.test.js` cannot disagree about what thirteen means.
-test('the real repository has the thirteen places the contract test counts', () => {
+// script and `tests/contract.test.js` cannot disagree about what fourteen means.
+test('the real repository has the fourteen places the contract test counts', () => {
   const rows = version.readAll(REAL);
-  assert.equal(rows.length, 13, rows.map((r) => r.file).join(', '));
+  assert.equal(rows.length, 14, rows.map((r) => r.file).join(', '));
   assert.equal(new Set(rows.map((r) => r.version)).size, 1);
 });
 

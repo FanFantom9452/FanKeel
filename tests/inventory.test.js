@@ -21,6 +21,7 @@ const SKILLS = [
     'fankeel-plan',
     'fankeel-station',
     'fankeel-survey',
+    'fankeel-upgrade',
     'fankeel-verify',
 ];
 
