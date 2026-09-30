@@ -117,7 +117,8 @@ never due: once its stamp is sixty days old it is **stale**, and what it asks is
 not whether its event happened but whether it is still worth keeping — kept, the
 stamp moves forward; dropped, it is deleted. Due and stale timings print below
 the verdict without failing the run. `orient` lists every timing each time, and
-`/fankeel` always offers the patrol, `TODO 全表盤點`, as its last option. A Watch entry
+`/fankeel` always offers the patrol, `TODO 全表盤點`, as its last option, and the
+patrol builds `## Ready` on `survey,plan,build,verify,land`. A Watch entry
 whose event arrives is moved to `## Ready` or `## Needs a decision` by the
 session that met it.
 
