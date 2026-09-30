@@ -367,7 +367,10 @@ then asks this stage's gate.
      its test green, is a finding. A check the diff adds that is not a
      test (a script, a guard, a verify line) needs the same: name an input
      it must reject and confirm it rejects it. One that has never failed
-     has not shown it can.
+     has not shown it can. Then compare, for every pair of mutations the
+     diff's tests name, the set of tests each one reddens: two mutations
+     that redden exactly the same tests are a gap — one test that tells
+     them apart is missing.
    Part 3 — every changed line traces to the task's text; the patterns
      already in the repository are followed. Then name the page this
      change makes false (a renamed export, a changed default, a removed
