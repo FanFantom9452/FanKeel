@@ -129,12 +129,12 @@ under its own heading below the verdict, the same non-failing way. `lib/blame.js
 holds the shared reading, because `scripts/orient.js`'s own `## Needs a decision`
 ordering in its `todo:` block needs the same history.
 
-## `version.js` — the release number in thirteen files
+## `version.js` — the release number in fourteen files
 
-`node scripts/version.js` is the release number in the thirteen files that carry it —
-two manifests and one frontmatter line in each of the eleven skills. With a number
+`node scripts/version.js` is the release number in the fourteen files that carry it —
+two manifests and one frontmatter line in each of the twelve skills. With a number
 it sets them all; with `--changes` it lists the commits since the last
-`chore: <x.y.z>`, which is what a release contains. `npm test` fails when the thirteen
+`chore: <x.y.z>`, which is what a release contains. With `--changes --since <x.y.z>` it lists the commits since that release instead. `npm test` fails when the fourteen
 disagree, so the script is what makes them agree rather than what notices. A
 release used to be eleven edits, and missing one left a skill announcing a version
 the plugin is not, unnoticed until [`tests/contract.test.js`](../../tests/contract.test.js)
@@ -153,13 +153,13 @@ before. These are the eight 0.70.0 went through, in order.
 2. **`node scripts/version.js --changes`** lists the commits since the last
    `chore: <x.y.z>`. That list *is* the release, and it is what to put in front
    of whoever is choosing the number — there is no changelog to read instead.
-3. **`node scripts/version.js <x.y.z>`** writes the thirteen places and says how
+3. **`node scripts/version.js <x.y.z>`** writes the fourteen places and says how
    many it changed. Only on the user's say-so: the number is a claim about what
    shipped, and that claim is theirs.
 4. **Commit it as `chore: <x.y.z> — <one line>`.** That subject is the marker
    `--changes` counts back to, so a release committed under any other subject
    leaves the next one listing this one's commits again.
-5. **`npm test` again.** `tests/contract.test.js:262` reads all thirteen and
+5. **`npm test` again.** `tests/contract.test.js:262` reads all fourteen and
    compares them, so the bump is only proven by a run that happened after it.
 6. **Integrate.** `land.push` is `false` in this project's profile, so a local
    merge to `main` is where a release stops unless the user says otherwise.
