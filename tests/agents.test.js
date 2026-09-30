@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
 const FRONT = /^---\r?\n([\s\S]*?)\r?\n---/;
-const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer'];
+const NAMES = ['fankeel-reader', 'fankeel-judge', 'fankeel-reviewer', 'fankeel-verifier', 'fankeel-fixer', 'fankeel-brain', 'fankeel-render-reviewer', 'fankeel-mockup', 'fankeel-slimmer', 'fankeel-init-scout'];
 
 // `fankeel-verifier` is the one named exception: it writes evidence rows to a
 // file for the Workflow join, and `Write` is what that takes. It is not less
@@ -215,7 +215,7 @@ test('the mockup agent checks its page at the served url before returning it, an
 const EFFORT = {
     'fankeel-reader': 'medium', 'fankeel-reviewer': 'medium', 'fankeel-verifier': 'medium',
     'fankeel-render-reviewer': 'medium', 'fankeel-fixer': 'low', 'fankeel-judge': 'xhigh',
-    'fankeel-brain': 'medium', 'fankeel-mockup': 'high', 'fankeel-slimmer': 'low',
+    'fankeel-brain': 'medium', 'fankeel-mockup': 'high', 'fankeel-slimmer': 'low', 'fankeel-init-scout': 'medium',
 };
 test('every agent names its effort, and none of them is max', () => {
     for (const name of NAMES) {
@@ -374,4 +374,18 @@ test('the brain\'s own Tools section describes dispatching a fresh implementer o
     assert.match(tools, /relayPath\(root, data, agentId\)/);
     assert.match(tools, /brief --group <N> --prefix/);
     assert.match(tools, /in the same response/);
+});
+
+// docs/90-agent/plans/2026-09-30-init-design.md §5: the scout reads, runs
+// onboard.js and drafts; it is read-only like the reader.
+test('the init scout is read-only, runs onboard.js, and returns status and drafts', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'agents', 'fankeel-init-scout.md'), 'utf8');
+    const f = front(path.join(ROOT, 'agents', 'fankeel-init-scout.md'));
+    assert.equal(f.tools, '[Read, Grep, Glob, Bash]');
+    assert.equal(f.model, 'sonnet');
+    assert.match(text, /scripts\/onboard\.js --full --root <root>/);
+    assert.match(text, /^## Return$/m);
+    for (const word of ['`status:`', '`drafts:`', '`scope:`', '`contradiction:`', '`duplicate:`']) assert.ok(text.includes(word), word);
+    const { READ_ONLY_AGENTS } = require('../lib/guard.js');
+    assert.ok(READ_ONLY_AGENTS.has('fankeel-init-scout'));
 });

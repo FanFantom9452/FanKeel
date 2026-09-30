@@ -413,6 +413,12 @@ test('a fankeel-slimmer redirect is denied', () => {
   assert.equal(decisionOf(run(root, bashCall('fankeel:fankeel-slimmer', 'ls > out.txt'))), 'deny');
 });
 
+test('a fankeel-init-scout redirect is denied', () => {
+  const root = tmp();
+  seed(root, MINE, { guard: undefined });
+  assert.equal(decisionOf(run(root, bashCall('fankeel:fankeel-init-scout', 'ls > out.txt'))), 'deny');
+});
+
 test('fankeel-verifier is excluded — it writes its own evidence file', () => {
   const root = tmp();
   seed(root, MINE, { guard: undefined });

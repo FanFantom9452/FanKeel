@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: init-scout-claudemd
+context:
+  scaffold_script: "mkdir -p repo-a repo-b && printf '# Workspace\\n\\n- Always answer in English.\\n- In repo-a, run the tests with npm run test:a.\\n' > CLAUDE.md && printf '# repo-a\\n\\n- Build with make.\\n' > repo-a/CLAUDE.md && printf '# repo-b\\n\\n- Always answer in Traditional Chinese.\\n' > repo-b/CLAUDE.md"
