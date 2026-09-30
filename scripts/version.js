@@ -6,6 +6,7 @@
 //   node version.js              what they say, and whether they agree
 //   node version.js 0.35.0       set all thirteen
 //   node version.js --changes    what has landed since the last release commit
+//   node version.js --changes --since 0.33.0    what has landed since that release commit
 //
 // Two manifests and one frontmatter line in each of the eleven skills. Nothing
 // used to set them together, so a release was eleven edits and a miss left a skill
@@ -99,7 +100,11 @@ function writeOne(root, rel, next) {
 // can read to the end says less than a shorter one somebody does.
 const RELEASE = /^chore: \d+\.\d+\.\d+\b/;
 
-function changes(root) {
+// `since` is a release number: the commits after the one whose subject is
+// `chore: <since>`, however many releases came in between. A number no commit
+// in reach names is `unknown`, not an empty list — "nothing since" and "cannot
+// tell" must not read the same.
+function changes(root, since) {
     let out;
     try {
         out = execFileSync('git', ['log', '--format=%H%x09%s', '-n', '400'], {
@@ -112,6 +117,12 @@ function changes(root) {
         const at = l.indexOf('\t');
         return { sha: l.slice(0, at), subject: l.slice(at + 1) };
     });
+    if (since) {
+        const want = new RegExp('^chore: ' + since.replace(/\./g, '\\.') + '\\b');
+        const hit = rows.findIndex((r) => want.test(r.subject));
+        if (hit === -1) return { since: null, commits: [], unknown: since };
+        return { since: rows[hit], commits: rows.slice(0, hit) };
+    }
     const at = rows.findIndex((r) => RELEASE.test(r.subject));
     // No release commit in reach is not an error — it is a repository that has
     // not made one, and every commit is what the first one would contain.
@@ -120,6 +131,9 @@ function changes(root) {
 
 function changeReport(found, current) {
     if (!found) return { text: 'fankeel version — no git history here to read a release out of.', code: 1 };
+    if (found.unknown) {
+        return { text: 'fankeel version — no release commit for ' + found.unknown + ' in the last 400 commits.', code: 1 };
+    }
     const { since, commits } = found;
     const head = since
         ? 'fankeel version — ' + commits.length + ' commit(s) since ' + since.subject
@@ -155,7 +169,12 @@ function main(argv, root) {
     if (args.includes('--changes')) {
         const rows = readAll(at);
         const versions = [...new Set(rows.map((r) => r.version))];
-        return changeReport(changes(at), versions.length === 1 ? versions[0] : 'the version');
+        const from = args.indexOf('--since');
+        const since = from === -1 ? null : args[from + 1];
+        if (from !== -1 && !SEMVER.test(since || '')) {
+            return { text: '--since takes a release number: x.y.z.', code: 1 };
+        }
+        return changeReport(changes(at, since), versions.length === 1 ? versions[0] : 'the version');
     }
     const next = args.find((a) => !a.startsWith('-'));
     if (!next) return report(readAll(at));

@@ -13,6 +13,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 
 const version = require('../scripts/version.js');
 const tmp = require('./tmp.js');
@@ -164,4 +165,59 @@ test('a chore that is not a release does not start one', () => {
   assert.equal(version.RELEASE.test('chore: 0.34.0 — the end of a task says what shipped'), true);
   assert.equal(version.RELEASE.test('chore: close the TODO entry this work finished'), false);
   assert.equal(version.RELEASE.test('chore: 0.34 — two numbers is not a release'), false);
+});
+
+// `--since <x.y.z>`: what upgrade.js needs to say what landed since a project's
+// last upgrade, which may be several releases back. A real repository, oldest
+// commit first, because the report reads `git log`.
+function repo(subjects) {
+  const root = tree();
+  const git = (...a) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...a],
+    { cwd: root, stdio: 'ignore' });
+  git('init', '-q');
+  for (const s of subjects) git('commit', '-q', '--allow-empty', '-m', s);
+  return root;
+}
+const TWO = ['chore: 0.33.0 — first', 'feat: middle work', 'chore: 0.34.0 — second', 'fix: after both'];
+
+test('--since lists every commit after that release, releases between included', () => {
+  const root = repo(TWO);
+  const found = version.changes(root, '0.33.0');
+  assert.equal(found.since.subject, 'chore: 0.33.0 — first');
+  assert.deepEqual(found.commits.map((c) => c.subject), ['fix: after both', 'chore: 0.34.0 — second', 'feat: middle work']);
+  const r = version.main(['--changes', '--since', '0.33.0'], root);
+  assert.equal(r.code, 0, r.text);
+  assert.match(r.text, /3 commit\(s\) since chore: 0\.33\.0/);
+});
+
+test('without --since the cut is still the newest release commit', () => {
+  const r = version.main(['--changes'], repo(TWO));
+  assert.equal(r.code, 0, r.text);
+  assert.match(r.text, /1 commit\(s\) since chore: 0\.34\.0/);
+  assert.match(r.text, /fix: after both/);
+});
+
+// A number that is only a prefix of a real one is not that release: 0.3.0 must not match 0.33.0.
+test('a release no commit names exits 1 with a message, and a prefix is not a match', () => {
+  const root = repo(TWO);
+  for (const unknown of ['9.9.9', '0.3.0']) {
+    const r = version.main(['--changes', '--since', unknown], root);
+    assert.equal(r.code, 1, unknown);
+    assert.match(r.text, new RegExp('no release commit for ' + unknown.replace(/\./g, '\\.')));
+  }
+});
+
+test('--since with no release number, or with a bad one, is refused', () => {
+  const root = repo(TWO);
+  for (const args of [['--changes', '--since'], ['--changes', '--since', 'v1'], ['--changes', '--since', '1.2']]) {
+    const r = version.main(args, root);
+    assert.equal(r.code, 1, args.join(' '));
+    assert.match(r.text, /--since takes a release number/);
+  }
+});
+
+test('--since in a directory with no git history is the same exit 1 as --changes', () => {
+  const r = version.main(['--changes', '--since', '0.33.0'], tree());
+  assert.equal(r.code, 1);
+  assert.match(r.text, /no git history here/);
 });
