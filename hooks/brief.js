@@ -25,7 +25,7 @@ const path = require('node:path');
 const registry = require('../lib/registry.js');
 const { renderBrief } = require('../lib/render.js');
 const profileLib = require('../lib/profile.js');
-const { lapOf } = require('../lib/handoff.js');
+const { lapOf, caseOfPrompt } =require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 const { sessionDirOf } = require('../lib/usage.js');
 
@@ -84,9 +84,7 @@ function caseOf(payload) {
         process.stderr.write('fankeel brief: line 1 of transcript of ' + payload.agent_id + ' is not readable JSON: ' + e.message + '\n');
         return null;
     }
-    const m = /\bbuild (?:close|group (\d+))\b/.exec(text);
-    if (!m) return null;
-    return m[1] ? { kind: 'group', group: Number(m[1]) } : { kind: 'close' };
+    return caseOfPrompt(text);
 }
 
 function main(raw) {

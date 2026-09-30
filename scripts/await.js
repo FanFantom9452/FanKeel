@@ -19,7 +19,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const registry = require('../lib/registry.js');
-const { handoffPath, commitPath, ledgerCommitPath, answerPath, awaitHandoff, newestCommit } = require('../lib/handoff.js');
+const { handoffPath, commitPath, ledgerCommitPath, answerPath, awaitHandoff, newestCommit, caseOfPrompt, promptOf } = require('../lib/handoff.js');
 const { newestPlan } = require('../lib/render.js');
 const { transcriptOf } = require('../lib/detail.js');
 const { sessionDirOf, agentFiles } = require('../lib/usage.js');
@@ -89,10 +89,22 @@ function waitFor(opts, env) {
     const newest = running.reduce((best, m) => (!best || (Number.isFinite(m.at) ? m.at : 0) >= (Number.isFinite(best.at) ? best.at : 0) ? m : best), null);
     const mark = opts.agent ? running.find((m) => m.agentId === opts.agent) : newest;
     const lap = mark && Number.isInteger(mark.lap) && mark.lap > 0 ? mark.lap : undefined;
+    const agentId = mark && typeof mark.agentId === 'string' && mark.agentId ? mark.agentId : null;
+    const dir = agentId ? sessionDirOf(transcriptOf(data.configDir || configDirOf(env), opts.session)) : null;
+    const own = dir ? path.join(dir, 'subagents', 'agent-' + agentId + '.jsonl') : null;
     // Only build's brief names a `-g<n>` handoff (lib/render.js, renderBrainBrief),
     // and only for a group brain: a `close` mark watches the plain one whatever
     // number `markInflight` gave it, so the mark's `kind` decides, not its `group`.
-    const kind = mark && (mark.kind === 'group' || mark.kind === 'close') ? mark.kind : undefined;
+    let kind = mark && (mark.kind === 'group' || mark.kind === 'close') ? mark.kind : undefined;
+    // A build mark with no `kind` is one hooks/brief.js could not read the case
+    // for: on 09-30 a live `build close` brain's mark carried `group: 6` and no
+    // `kind` (TODO 〔await〕). By the time anyone awaits it, its transcript is
+    // there, so the case is read off line 1 here. A group brain keeps the mark's
+    // number: that is the one its brief named, whatever its prompt says.
+    if (data.stage === 'build' && mark && !kind && own) {
+        const sent = caseOfPrompt(promptOf(own));
+        if (sent) kind = sent.kind;
+    }
     const group = data.stage === 'build' && mark && kind !== 'close' && Number.isInteger(mark.group) ? mark.group : undefined;
     const handoff = handoffPath(root, data, data.stage, lap, group);
     if (!handoff) return { error: 'session ' + opts.session + ' has no stage or no started time, so no handoff path' };
@@ -105,13 +117,7 @@ function waitFor(opts, env) {
         // report older than the dispatch is not the reply to it.
         if (mark && Number.isFinite(mark.at)) since = mark.at;
     }
-    const agentId = mark && typeof mark.agentId === 'string' && mark.agentId ? mark.agentId : null;
-    let activity = () => [];
-    const dir = agentId ? sessionDirOf(transcriptOf(data.configDir || configDirOf(env), opts.session)) : null;
-    if (dir) {
-        const own = path.join(dir, 'subagents', 'agent-' + agentId + '.jsonl');
-        activity = () => (fs.existsSync(own) ? agentFiles(dir) : []);
-    }
+    const activity = own ? () => (fs.existsSync(own) ? agentFiles(dir) : []) : () => [];
     return { root, handoff, commit: commitCandidates(root, data, lap, group), since, agentId, group, kind, activity, idleMs: opts.idle * 1000, timeoutMs: opts.timeout * 1000 };
 }
 

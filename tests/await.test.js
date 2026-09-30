@@ -303,6 +303,30 @@ test('await.js clears a group brain whose caseOf failed on handoff, and still le
     assert.deepEqual(registry.inflights(registry.readSession(f.root, SID)).map((m) => m.agentId), ['c1'], 'the close mark stays; both group marks clear');
 });
 
+// TODO 〔await〕: on 09-30 a live `build close` brain's mark carried `group: 6`
+// and no `kind`, so await watched build-g6.md. By the time await runs the
+// brain's own transcript exists, so await reads the case off its line 1; a
+// group brain keeps the mark's number, the one its brief named.
+test('await.js reads the case off a build brain\'s own transcript when its mark has none', async () => {
+    const f = fixture({ inflight: [
+        { stage: 'build', at: 1, agentId: 'c6', group: 6 },
+        { stage: 'build', at: 1, agentId: 'g7', group: 7 },
+    ] });
+    const dir = path.join(f.config, 'projects', 'F--x', SID);
+    at(path.join(f.config, 'projects', 'F--x', SID + '.jsonl'), Date.now());
+    at(path.join(dir, 'subagents', 'agent-c6.jsonl'), Date.now(), JSON.stringify({ message: { role: 'user', content: 'build close for this plan.' } }) + '\n');
+    at(path.join(dir, 'subagents', 'agent-g7.jsonl'), Date.now(), JSON.stringify({ message: { role: 'user', content: 'build group 2: tasks 3, 4.' } }) + '\n');
+    const plain = path.join(f.task, 'build.md').split(path.sep).join('/');
+    const g7 = path.join(f.task, 'build-g7.md').split(path.sep).join('/');
+    at(plain, Date.now());
+    at(g7, Date.now());
+    const close = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'c6', '--timeout', '0.1'], f.env);
+    assert.ok(close.text.startsWith('handoff ' + plain), close.text);
+    const group = await awaitCli.main(['--session', SID, '--root', f.root, '--agent', 'g7', '--timeout', '0.1'], f.env);
+    assert.ok(group.text.startsWith('group 7, agent g7: handoff ' + g7), group.text);
+    assert.deepEqual(registry.inflights(registry.readSession(f.root, SID)).map((m) => m.agentId), ['c6'], 'the close mark stays for hooks/gate.js; the group mark clears');
+});
+
 test('markInflight never hands out a group number a finished brain used', () => {
     const f = fixture({});
     assert.equal(registry.markInflight(f.root, SID, 'build', 'a1', undefined, undefined, 'group'), 1);
