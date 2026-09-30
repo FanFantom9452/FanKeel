@@ -22,6 +22,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔tests〕整套下偶發紅：09-27 四次紅兩次，09-30 land 又紅（與 test-3 同輪），單跑都綠 — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
 
+- 〔tests〕tests/contract.test.js:256 的註解還寫「thirteen places」，在 init-1 之前就已過時（09-30 build close 發現）；改成現況或刪掉數字 — [tests/contract.test.js](tests/contract.test.js).
+
 - 〔upgrade〕09-30 verify 確認：scripts/upgrade.js:34-39 readTodo 對讀不了的 TODO.md 也回 null，把錯藏起來；應只在 ENOENT 回 null、其餘重拋，先寫會紅的測試 — [upgrade.js](scripts/upgrade.js).
 
 ## Needs a decision
