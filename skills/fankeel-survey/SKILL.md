@@ -315,6 +315,20 @@ labelled `TODO 全表盤點`, offered whenever `TODO.md` has an entry — arrive
 `--route "survey,plan,build,verify,land"`, and this stage walks every entry in `TODO.md`,
 not only the timings.
 
+**Every entry, one line each.** The report lists every bullet in `TODO.md` —
+`## Ready`, `## Needs a decision`, `## Blocked` and `## Watch`, none skipped —
+one line per entry under its heading: its label, what was checked (the
+`path:line` opened, the registry or `git log` read, the upstream looked at),
+and its disposition — `do now`, `needs the user`, `waiting on <what>`, or
+`keep` for a Watch entry whose event has not come. Above the list goes a count
+line, `entries: <n> listed, <m> in TODO.md`, where `<m>` is what
+`grep -c '^- ' TODO.md` prints; the two are equal, or the missing entries are
+named under it. A controlled survey's controller prints the report above its
+gate block as written (`controlRules` in `lib/stages.js`), so this list is
+what the user reads before the gate. 2026-10-01: a patrol that re-checked only
+`## Ready` and part of `## Blocked`, and was relayed as a path alone, was sent
+back by the user.
+
 **Ready and Needs a decision.** Each entry is re-checked in the code it links
 to: still true, already done, a bug rather than a decision, or a duplicate of
 another entry. The report ends with one line per entry in three groups —
@@ -376,5 +390,5 @@ route: <unchanged, or the task.js route line>
 then AskUserQuestion
 ```
 
-Under 120 words of your own. Option one on the question is the approval: say what
+Under 120 words of your own; a patrol's entry list is findings and does not count toward them. Option one on the question is the approval: say what
 accepting the classification accepts, not just which stage comes next.

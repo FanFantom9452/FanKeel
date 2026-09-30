@@ -354,9 +354,11 @@ test('a stage agent gets its stage\'s rules and shape, its skill, and where to w
   assert.ok(text.includes('/.fankeel/build/task-20260919T093012/survey.md'));
   assert.ok(text.includes(SESSION));
   assert.ok(!text.includes(RETURN_RULES[2]), 'the no-dispatch rule is left out');
-  // The controller prints the path and never the report, so a gate that says
-  // "the answer is above" points at a line holding nothing but a path.
-  assert.ok(text.includes('The user sees only the path to your report'), 'the gate must stand on its own');
+  // The controller prints a survey's report above the gate, but the question
+  // goes out on its own card, so a gate that says "the answer is above" still
+  // points at nothing the card holds.
+  assert.ok(text.includes('The controller prints your report above its gate block, but the question is asked on its own card'), 'the gate must stand on its own');
+  assert.ok(!text.includes('The user sees only the path to your report'), 'a survey report is printed, so this would be false');
   // Run one command per call, the stage agent took 34 and 48 tool calls over a
   // survey a main session did in 5 and 6, each call re-sending its context.
   assert.ok(text.includes('Run independent commands in one Bash call'), 'the brief must ask for batched commands');

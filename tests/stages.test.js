@@ -922,6 +922,21 @@ test('option one is told to run the stage its own label names, not a pre-baked a
   assert.match(text, /for down\/收工/, 'a label that says down/收工 runs the down command, not `stage down`');
 });
 
+// 2026-10-01: a patrol survey that relayed only its path showed the user
+// nothing of the 25 entries it had checked. The controller prints a survey's
+// report before the gate; every other stage still prints the path alone.
+test('a controlled survey prints its report above the gate before asking; other stages print the path alone', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const all = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
+  for (const stage of all) {
+    const rules = controlFor(stage, { 'stage.agents': all }, { handoff: '/r/h.md' }).rules;
+    const rule = rules.find((r) => r.startsWith('When it returns a path'));
+    assert.ok(rule, stage + ': no return rule');
+    if (stage === 'survey') assert.ok(rule.startsWith('When it returns a path, print it and the report\'s text above its gate block, as written, then read /r/h.md'), rule);
+    else assert.ok(rule.startsWith('When it returns a path, print it, then read /r/h.md'), stage + ': ' + rule);
+  }
+});
+
 test('the controller waits out a return that is not a path, and sends a finished agent with no path to the await', () => {
   const { controlFor } = require('../lib/stages.js');
   const c = controlFor('survey', { 'stage.agents': ['survey'] }, { task: 't', await: 'w', handoff: '/r/h.md', answer: '/r/a.md', session: 'sid' });

@@ -1340,6 +1340,18 @@ test('survey and build each carry their own half of the patrol; fankeel points a
   assert.doesNotMatch(fankeel, /`## Ready` is one option for the whole section/);
 });
 
+// 2026-10-01: a patrol that re-checked only Ready and part of Blocked, and
+// relayed only its path, was sent back by the user — every entry, with a count.
+test('the patrol lists every TODO.md entry with a count, and says the controller prints it', () => {
+  const survey = read('fankeel-survey');
+  const section = /\n## The patrol\n[\s\S]*?\n## /.exec(survey)[0];
+  assert.match(section, /`## Ready`, `## Needs a decision`, `## Blocked` and `## Watch`, none skipped/);
+  assert.match(section, /`entries: <n> listed, <m> in TODO\.md`/);
+  assert.match(section, /`keep`/);
+  assert.match(section, /prints the report above its\s+gate block/);
+  assert.match(survey, /a patrol's entry list is findings and does not count toward them/);
+});
+
 test('the build skill\'s own "asks once" sentence carries the group-parallel exception', () => {
     const text = fs.readFileSync(path.join(ROOT, 'skills', 'fankeel-build', 'SKILL.md'), 'utf8');
     assert.match(text, /and then asks once\. A `fankeel-brain` dispatched for one group \(its prompt names a group, not `build close`\) returns with no gate once its own tasks are done; only `build close` is the one that asks\./);
