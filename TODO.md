@@ -16,6 +16,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔test〕09-30 patrol 改動的 verify 留下：tests/skills.test.js 的 build 段落缺 doesNotMatch(/survey,build,land/)，新斷言沒做 red-green；station 專案頁的 todo-done 區塊沒實際 render 看過 — [skills.test.js](tests/skills.test.js).
 
+- 〔todo〕09-30 代號帶標題的 verify 留下：titledIds 讀不了 todo 資料夾會拋錯，應退回只印 id；docs-check 報 pipeline.md、subagents.md、survey SKILL 的 path:line 位移 — [task.js](scripts/task.js).
+
 ## Needs a decision
 
 - 〔data〕教授要資料檔（ML 資料、影像、現場照片）放 NAS、不用 Git LFS，並有保留期限（09-30 會議）；提議 fankeel 只宣告位置、負責人、保留期限，survey 讀、audit 查路徑是否存在，同步與清理留給 NAS；待答：NAS 在 Windows 怎麼存取 — [documents.md](docs/90-agent/reference/documents.md).
