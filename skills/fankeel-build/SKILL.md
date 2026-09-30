@@ -604,7 +604,7 @@ A task started by picking the patrol — `TODO 全表盤點` — at `/fankeel` a
 are the plan's tasks and are built here as ordinary tasks, each
 closing its own TODO entry (`todo.js done` in folder mode, removing the `TODO.md` line in legacy mode).
 
-By the time it reaches this stage `survey` has
+By the time it reaches this stage (survey, then plan, have run) `survey` has
 checked every `## Blocked` timing and put the stale `## Watch` timings it
 had room for to the user as keep-or-drop, so there is no gate left to ask here,
 only the moves those answers decide. A Blocked timing whose condition checked
