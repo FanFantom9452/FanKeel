@@ -1064,3 +1064,17 @@ test('the todo: block says when TODO.md cannot be read instead of vanishing', ()
   assert.match(out, /^todo: TODO\.md$/m);
   assert.match(out, /^  unreadable — .*EISDIR/m);
 });
+
+test('folder mode prints each Ready entry as [id] title under the Ready count', () => {
+  const dir = workspace({
+    '.fankeel/docs.json': JSON.stringify({ buckets: [
+      { path: 'docs', role: 'reference', depth: 1 }, { path: 'docs/todo', role: 'todo' }] }),
+    'docs/a.md': '# a\n',
+  });
+  fs.mkdirSync(path.join(dir, 'docs', 'todo'), { recursive: true });
+  require('../lib/todo.js').add(dir, { label: 'demo', title: '示範標題', description: 'demo one', state: 'ready' });
+  execFileSync('git', ['init', '-q'], { cwd: dir });
+  const out = run(['--root', dir], dir);
+  assert.match(out, /^ {2}Ready 1$/m);
+  assert.match(out, /^ {4}\[demo-1\] 示範標題$/m);
+});

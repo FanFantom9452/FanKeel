@@ -544,7 +544,8 @@ function todoBlock(dir, now) {
     const shown = ordered.slice(0, limit);
 
     const lines = ['todo: TODO.md' + (folder ? ', from ' + loaded.folder + '/' : ''),
-        '  Ready ' + readyCount + (folder && readyCount ? ' — ids: ' + ready.map((e) => e.id).join(' ') : '')];
+        '  Ready ' + readyCount];
+    if (folder) for (const e of ready) lines.push('    [' + e.id + ']' + (e.title ? ' ' + e.title : ''));
     if (needsCount === 0) {
         lines.push('  Needs a decision 0');
     } else {
