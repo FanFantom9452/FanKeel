@@ -69,7 +69,7 @@ function main(raw) {
     // the node process this hook already is, which is why the gate moved rather
     // than grew.
     // A second matcher, `Bash|PowerShell`, checked before the collision guard
-    // below: four named agent types are denied a command that writes,
+    // below: six named read-only agent types (READ_ONLY_AGENTS) are denied a command that writes,
     // regardless of `guard` mode — this is about a read-only contract, not
     // about two sessions overlapping a file.
     if (shell) {
