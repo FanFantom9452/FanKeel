@@ -21,8 +21,8 @@ const { isCommit, commitVerdict } = require('../lib/sensitive.js');
 
 // The tool names the controlled-stage matcher below cares about. A module
 // constant rather than a literal in the condition, for the same reason
-// `lib/guard.js`'s `READ_ONLY_AGENTS` is a set: four names compared once
-// each read better than four `===`s repeated at every call site.
+// `lib/guard.js`'s `READ_ONLY_AGENTS` is a set: six names compared once
+// each read better than six `===`s repeated at every call site.
 const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);
 
 // docs/90-agent/plans/2026-09-30-init-design.md §2c: every `git commit` that
