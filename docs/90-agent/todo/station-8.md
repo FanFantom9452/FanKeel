@@ -2,8 +2,12 @@
 label: station
 title: 最貴單一 subagent 換成上限
 description: 取代 station-1 的 (b)：(1) 沒有任何單一 subagent 的 context 峰值超過 300k；(2) 佔比低於 15% 的目標只適用於 subagent ≥10 的 session。在 8806240d 之後的 session 重新量測。
-state: ready
+state: done
 link: docs/90-agent/reference/station.md
+done:
+  at: 2026-10-01
+  sha: 3013140c81f68440ca1519883ccb980fa40c801a
+  disposition: done
 ---
 
 ## 量測 2026-09-30
@@ -11,3 +15,15 @@ link: docs/90-agent/reference/station.md
 sessions 5; (1) peak over 300k: 2; (2) sessions with 10 or more agents: 5, of them share 15% or more: 3; unpriced models: none
 
 (1) 沒過：2 個 session 的 subagent 峰值超過 300k（365198 與 325505）。(2) 沒過：5 個有 10 個以上 subagent 的 session 中，3 個最貴 agent 佔比在 15% 以上（28.9%、34.5%、34.0%）。詳見 [報告](../reports/2026-09-30-ready-eleven-measurements.md)。
+
+## 量測 2026-10-01
+
+範圍：commit 4c5470489bd440b7eff963548ee2d9dd0ffd239f（2026-09-30 20:19:47 +0800，上一次量測）之後開始、transcript 找得到、至少一個 subagent 的 session；在主 checkout 的 commit 3013140c81f68440ca1519883ccb980fa40c801a 跑。
+
+sessions 1; (1) peak over 300k: 0; (2) sessions with 10 or more agents: 0, of them share 15% or more: 0; unpriced models: none
+
+| session | subagent 數 | 最高峰值（agent） | 最貴 agent 佔比（agent） | subagent 總花費 |
+|---|---|---|---|---|
+| session bfad9d68-2efa-45d3-80e0-ca1e1896fd98 | 8 | 154184（ad820290615cbe7e3） | 71.8%（ad820290615cbe7e3） | $3.50 |
+
+判定：pass。
