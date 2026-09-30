@@ -6,7 +6,7 @@ source_of_truth: 本頁是 2026-09-30 的量測記錄，不隨程式碼更新；
 
 # TODO Ready 十一條的四次量測 — 2026-09-30
 
-test-3、tests-1、inject-2、station-8 四個條目要的是量測。每一節寫指令、量測時的 commit 和數字；原始輸出在 `.fankeel/build/2026-09-30-ready-eleven/`（gitignored，不進版控）。
+test-3、tests-1、inject-2、station-8 四個條目要的是量測。每一節寫指令、量測時的 commit 和數字；原始輸出在 `.fankeel/build/2026-09-30-ready-eleven/`（gitignored，不進版控）；inject-2 一節是例外，它的量測腳本和輸出在已移除的量測 worktree 裡，已經遺失，見該節。
 
 ## test-3：serve detached 測試，fed438fc 乾淨 worktree 全套三次
 
@@ -43,7 +43,7 @@ tests-1 verdict: not reproduced
 
 ## inject-2：`hooks/inject.js` 閒置與全套負載下的耗時
 
-指令：`node .fankeel/build/2026-09-30-ready-eleven/inject-time.js idle 20 <hook worktree>`，再 `… load 20 <hook worktree> <load worktree>`；兩個 worktree 都是 commit 260c76d1e630ba10de5b24b6c41ef1b8b3dcbb3e 的乾淨 worktree，hook 讀的那個帶著本 repo `.fankeel/`（`build/`、`worktrees/` 除外）的副本，共 246 個 session 檔。每次 hook 旁邊量一次 `node -e 0`。
+指令（量測腳本 `inject-time.js` 和 inject 的輸出 log 都放在已移除的量測 worktree，已遺失，現在的 `.fankeel/build/2026-09-30-ready-eleven/` 裡沒有，下面的數字無法從磁碟重新核對；此處只描述當時跑過的指令）：`inject-time.js idle 20 <hook worktree>`，再 `inject-time.js load 20 <hook worktree> <load worktree>`；兩個 worktree 都是 commit 260c76d1e630ba10de5b24b6c41ef1b8b3dcbb3e 的乾淨 worktree，hook 讀的那個帶著本 repo `.fankeel/`（`build/`、`worktrees/` 除外）的副本，共 246 個 session 檔。每次 hook 旁邊量一次 `node -e 0`。
 
 | | runs | `node -e 0` p50 / p90 / max ms | inject.js p50 / p90 / max ms | 超過 5000 ms 的次數 |
 |---|---|---|---|---|
@@ -53,6 +53,8 @@ tests-1 verdict: not reproduced
 第一次 hook 的輸出：閒置 status 0、5125 chars，負載 status 0、5125 chars。全套 suite exit 1 after 78 s（負載用的全套，量測結束時仍在跑）。
 
 負載下最大值 1586 ms；規則是 ≤ 5000 維持 5 秒，否則取 10、15、20、30 中第一個不小於 1.5 × 1586 / 1000 的值。
+
+負載的限度：負載那一列是在一次全套 suite（exit 1，78 s）跑著的時候跑 20 次 hook，同時約有 22 個 node process；inject-2 條目描述的是 34 個 node process，這次量測沒有重現那個負載。維持 5 秒的結論只在這個負載以內成立，更重的負載下沒有量過。
 
 inject timeout: 5
 

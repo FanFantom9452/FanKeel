@@ -12,8 +12,6 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔data〕資料放 NAS、有保留期限（09-30）；已決定只宣告位置、負責人、期限，survey 讀、audit 查路徑；NAS 存取已答：`data` bucket 保留 `access` 鍵、先不處理 — [documents.md](docs/90-agent/reference/documents.md).
 
-- 〔inject〕inject.js 閒置約 0.6s，但全套測試跑時（34 個 node）常超過 5s 被丟棄，該輪沒有 fankeel 區塊；先量負載下哪段最慢，再決定縮短工作或調高 timeout — [hooks/inject.js](hooks/inject.js).
-
 - 〔station〕取代 station-1 的 (b)：(1) 沒有任何單一 subagent 的 context 峰值超過 300k；(2) 佔比低於 15% 的目標只適用於 subagent ≥10 的 session。在 8806240d 之後的 session 重新量測。 — [station.md](docs/90-agent/reference/station.md).
 
 ## Needs a decision
