@@ -5,11 +5,11 @@ status: design-intent
 # await-1、stage-1、station-8 Implementation Plan
 
 **Goal:** 做完 10-01 盤點的三件 do-now：await 在 mark 沒有 `kind` 時自己讀出 brain 的 case（await-1）、站 agent 用使用者的語言寫報告與 gate（stage-1）、station-8 的 (2) 門檻改成 40% 後重量（station-8）。
-**Architecture:** Task 1–3 的檔案互不重疊，同一組平行派出。Task 1 把 `caseOf` 的判讀搬進 `lib/handoff.js`，`scripts/await.js` 在 mark 沒有 `kind` 時讀 brain 自己的 transcript 第一行（那時檔案已經在）。Task 2 在站 agent 的 brief 加一行：用任務標題的語言寫報告與 gate。Task 3 是量測，量完依結果改自己的條目。Task 4 消費 Task 1、2 落地後的 sha，關 stage-1、把修正記到 await-1。
+**Architecture:** Task 1–3 的檔案互不重疊，同一組平行派出。Task 1 把 `caseOf` 的判讀搬進 `lib/handoff.js`，`scripts/await.js` 在 mark 沒有 `kind` 時讀 brain 自己的 transcript 第一行（那時檔案已經在）。Task 2 在 profile 加一個自由文字鍵 `language`，設了就在站 agent 的 brief 加一行：報告與 gate 用這個語言寫。Task 3 是量測，量完依結果改自己的條目。Task 4 消費 Task 1、2 落地後的 sha：把本專案的 `language` 設成 `繁體中文`、關 stage-1、把修正記到 await-1。
 **Tech Stack:** Node v24.9.0（CommonJS、`'use strict'`、只用內建模組——`package.json` 沒有 dependencies），`node --test`，git 2.44.0.windows.1，fankeel 0.86.0。
 **Spec:** [survey.md](../../../.fankeel/build/task-20260930T192351/survey.md)
 
-Spec 是本 task survey 站的報告（gitignored，只在主 checkout）；這條路線沒有 design 站。使用者在 survey 的 gate 選了「三條都做」，並把 station-8 的 (2) 改成「最貴單一 agent 佔比低於 40%」。
+Spec 是本 task survey 站的報告（gitignored，只在主 checkout）；這條路線沒有 design 站。使用者在 survey 的 gate 選了「三條都做」，並把 station-8 的 (2) 改成「最貴單一 agent 佔比低於 40%」；在 plan 的 gate 選了「語言改用 profile 新鍵」，不從任務標題判斷。
 
 ## Global Constraints
 
@@ -19,9 +19,10 @@ Spec 是本 task survey 站的報告（gitignored，只在主 checkout）；這�
 - 測試：`node --test`；每個 export 都要有 importer；本計畫不新增測試檔，全部加在既有檔。
 - 實作者只跑自己 task 列出的測試檔，不跑全套；全套由 build 收尾跑。
 - `TODO.md` 不手改：由 `docs/90-agent/todo/` 的條目檔以 `node scripts/todo.js index` 產生；關條目用 `node scripts/todo.js done <id> --sha <sha> [--disposition done|measured-no-change|abandoned]`（`lib/todo.js:271` 的 `DISPOSITIONS`）；改完跑 `node scripts/todo-check.js`，exit 0。`TODO.md` 不列在 `**Files:**`，但跑過 `todo.js` 的 task，提交路徑要帶上 `TODO.md`。
+- `docs/01-guide/profile.md` 的鍵表由 `node scripts/profile-table.js` 從 `lib/profile.js` 的 `KEYS` 產生，`tests/profile-table.test.js` 擋過期的表；改 `KEYS` 就要重跑。
 - `READ_CAP` 1500、`FILE_CAP` 3（`lib/plantasks.js:346-347`）。
 - 受控 stage 的注入區塊每個都要低於 2400 字元（`tests/render.test.js:533`、`:709`、`:729`），這個上限不調高；站 agent 的 brief 要低於 10000 字元（`tests/brief.test.js:129`、`:369`）。
-- 縮排跟著檔案走：`lib/`、`scripts/`、`hooks/`、`tests/await.test.js` 四格；`tests/render.test.js`、`tests/brief.test.js` 兩格。
+- 縮排跟著檔案走：`lib/`、`scripts/`、`hooks/`、`tests/await.test.js`、`tests/profile.test.js` 四格；`tests/render.test.js`、`tests/brief.test.js` 兩格。
 - 行尾 LF（`.gitattributes`：`* text=auto eol=lf`）。檔案用 Edit／Write 改，不用 heredoc（heredoc 吃反斜線）。
 - 這次 build 由 stage agent 跑（`stage.agents` 是 all）：實作者在自己的 worktree 裡工作，開工前先 `git reset --hard <build agent 給的 sha>`；實作者不 commit、不 `git add`、不 `git stash`，改完就回報，由 build agent 寫 commit 檔、主控跑 `scripts/commit.js`。
 - 文件裡的 session id 寫成 `session <id>`，不寫裸的 8 位 hex；commit 寫成 `commit <sha>`。
@@ -33,8 +34,9 @@ Spec 是本 task survey 站的報告（gitignored，只在主 checkout）；這�
 - 09-30 那次「前一組的 mark 沒清」沒有查到原因（`scripts/await.js:142` 只在 await 以那個 agent 的 mark 看到 handoff 或 lost 時清）— Task 1 — 不在本計畫修；close brain 有了 `kind` 之後，殘留的 group mark 只讓它的號碼變大，不再讓 await 盯錯檔。Task 4 把這條記進 await-1。
 - 一個 group brain 的 mark 沒有 `kind` 時，它的 brief 用的是 mark 的號碼，不是 prompt 裡的號碼 — Task 1 — await 只從 transcript 取 `kind`，group 號碼仍取 mark 的，測試同時驗兩種。
 - `ledger.js groups` 提醒 Task 1 的 `hooks/brief.js`、`scripts/await.js` require Task 2 的 `lib/render.js`，Task 2 的 `lib/render.js` require Task 1 的 `lib/handoff.js` — Task 1、2 — 兩邊都不用對方新增的名字（Task 2 只在 `renderBrainBrief()` 裡加一行，Task 1 新增的兩個函式 `lib/render.js` 不呼叫），所以不宣告 Consumes、平行派出。
-- 站 agent 的 brief 多約 260 字元 — Task 2 — 跑 `tests/brief.test.js`，10000 上限那兩個測試要過；超過就縮新加的那句，不動上限。
-- 任務標題可能是主控用英文起的，即使使用者說中文 — Task 2 — 這是本計畫選的訊號，gate 的第二個選項把「改用 profile 新鍵」列為待決。
+- 站 agent 的 brief 在設了 `language` 時多約 230 字元 — Task 2 — 跑 `tests/brief.test.js`，10000 上限那兩個測試要過（那兩個測試的 profile 沒有 `language`，量的是沒設的情形）；超過就縮新加的那句，不動上限。
+- 新鍵進了 `KEYS`，`showLines`、`task.js start` 的 profile 快照、監控站的 `KEYS` 檢查都會自動看到它 — Task 2 — `values` 是空陣列，所以不進 `WIZARD_KEYS`（`lib/profile.js:71`），精靈不多一格；跑 `tests/profile.test.js`、`tests/profile-table.test.js`。
+- `.fankeel/profile.json` 是追蹤中的檔 — Task 4 — 只用 `task.js profile set` 加一個鍵，不動其他鍵；提交前 `git diff .fankeel/profile.json` 只該多一行。
 - 這個 session（session e31b02e1-09c7-4f68-a7d4-d4688cc21a51）在量測時還在跑，把它算進去就是 10-01 的中途快照錯誤 — Task 3 — 腳本跳過 `active === true` 的 session，並在報告寫出跳過了哪些。
 - `.fankeel/sessions/` 與舊的 `station8.js` 都只在主 checkout — Task 3 — 一律用 `F:/ymlab/fankeel/...` 的絕對路徑，先 `ls` 確認舊腳本在。
 
@@ -193,16 +195,20 @@ fix: await reads a build brain's case off its transcript when the mark has none
 - pinned: a close brain numbered 6 watches build.md, a group brain keeps its mark's number — tests/await.test.js
 ```
 
-## Task 2: stage-1 — 站 agent 用任務標題的語言寫報告與 gate
+## Task 2: stage-1 — profile 鍵 `language`，站 agent 照它寫報告與 gate
 
 **Files:**
-- Modify: `lib/render.js` — `renderBrainBrief()` 在「You cannot call AskUserQuestion」那行之後加一行
+- Modify: `lib/profile.js` — `KEYS` 加一列 `language`（自由文字），`parseValue()` 交給 `parsePrompt`
+- Modify: `lib/render.js` — `renderBrainBrief()` 在「You cannot call AskUserQuestion」那行之後，設了 `language` 就加一行
+- Modify: `docs/01-guide/profile.md` — 鍵表重新產生，自由文字那句補上 `language`
 - Test: `tests/render.test.js`
+- Test: `tests/profile.test.js`
 - Read: `tests/brief.test.js` — 129、369 行的 10000 字元上限要照舊過
+- Read: `tests/profile-table.test.js` — 擋過期的鍵表
 
 **Interfaces:**
 - Consumes: none
-- Produces: 站 agent 的 brief 在任務有標題時多一行，含 `in the language the task's title on the first line is written in`；reader、reviewer 的 brief 沒有。
+- Produces: profile 鍵 `language`（一行 1–200 字的文字，`task.js profile set language <值>` 設）；設了之後站 agent 的 brief 多一行，含 `in <值> (profile \`language\`)`；reader、reviewer 的 brief 沒有。
 
 **Dispatch:** implementer, sonnet — 程式碼都在計畫裡；轉寫加測試。
 
@@ -211,52 +217,94 @@ fix: await reads a build brain's case off its transcript when the mark has none
 ```js
 // TODO 〔stage〕: the brief is English and a stage agent followed it, writing
 // report and gate in English to a user who writes Traditional Chinese. The
-// task's title is the user's words, so its language is the one to write in.
-test('a stage agent\'s brief says to write in the language of the task\'s title; a reader\'s does not, nor an untitled task\'s', () => {
+// profile's `language` names the language; unset, the brief says nothing.
+test('a stage agent\'s brief names the profile\'s language for its report and gate; a reader\'s does not, nor a profile without it', () => {
   const { renderBrief } = require('../lib/render.js');
-  const on = { values: { 'stage.agents': NAMES.slice(), 'dispatch.floor': 'sonnet' }, sources: {}, unreadable: [] };
-  const mine = entry(MINE, { task: '站 agent 用使用者語言', stage: 'plan', started: '2026-09-19T09:30:12.345Z' });
-  const phrase = 'in the language the task\'s title on the first line is written in';
+  const base = { 'stage.agents': NAMES.slice(), 'dispatch.floor': 'sonnet' };
+  const on = { values: Object.assign({ language: '繁體中文' }, base), sources: {}, unreadable: [] };
+  const mine = entry(MINE, { stage: 'plan', started: '2026-09-19T09:30:12.345Z' });
+  const phrase = 'in 繁體中文 (profile `language`)';
   const brain = renderBrief({ mine, agentType: 'fankeel:fankeel-brain', root: '/r', profile: on });
-  assert.ok(brain.includes('站 agent 用使用者語言 @ plan'), 'the title is on the first line');
-  assert.ok(brain.includes(phrase), 'the stage agent\'s brief');
+  assert.ok(brain.includes('\n  - Write your report\'s prose and every gate string'), 'the stage agent\'s brief');
+  assert.ok(brain.includes(phrase), 'the stage agent\'s brief names the language');
   const reader = renderBrief({ mine, agentType: 'fankeel:fankeel-reader', root: '/r', profile: on });
-  assert.ok(!reader.includes(phrase), 'a reader\'s brief');
-  const untitled = renderBrief({ mine: entry(MINE, { task: '', stage: 'plan', started: '2026-09-19T09:30:12.345Z' }), agentType: 'fankeel:fankeel-brain', root: '/r', profile: on });
-  assert.ok(!untitled.includes(phrase), 'no title, nothing to read the language off');
+  assert.ok(!reader.includes('(profile `language`)'), 'a reader\'s brief');
+  const unset = renderBrief({ mine, agentType: 'fankeel:fankeel-brain', root: '/r', profile: { values: base, sources: {}, unreadable: [] } });
+  assert.ok(!unset.includes('(profile `language`)'), 'no language, no line');
 });
 ```
 
-2. 跑它，看它失敗：
+2. 在 `tests/profile.test.js` 的 `test('every key carries a one-line description', ...)` 之後加入：
 
-```sh
-node --test tests/render.test.js
+```js
+test('language is one line of free text, kept as written, and not a wizard key', () => {
+    assert.equal(profile.parseValue('language', ' 繁體中文 ').value, '繁體中文');
+    assert.ok(profile.parseValue('language', '').error);
+    assert.ok(profile.parseValue('language', 'a\nb').error);
+    assert.equal(profile.KEYS.language.values.length, 0);
+    assert.equal(Object.prototype.hasOwnProperty.call(profile.WIZARD_KEYS, 'language'), false);
+});
 ```
 
-3. 在 `lib/render.js` 的 `renderBrainBrief()`，`lines.push('  - You cannot call AskUserQuestion. ...` 那行之後加入：
+3. 跑它們，看它們失敗：
+
+```sh
+node --test tests/render.test.js tests/profile.test.js
+```
+
+4. 在 `lib/profile.js` 的 `KEYS`，`'prompt.land'` 那列之後加入：
+
+```js
+    // TODO 〔stage〕: the language a stage agent writes its report and gate in.
+    // Free text like `prompt.*`, one line, checked by `parsePrompt`; unset, the
+    // brief says nothing and the agent writes the brief's English.
+    language: { values: [], builtin: null, free: '一種語言的名稱，例如 繁體中文', desc: '站 agent 寫報告與 gate 用的語言；不設就照 brief 的英文' },
+```
+
+5. 在 `lib/profile.js` 的 `parseValue()`，`if (key.startsWith('prompt.')) return parsePrompt(key, raw);` 那行之後加入：
+
+```js
+    if (key === 'language') return parsePrompt(key, raw);
+```
+
+6. 在 `lib/render.js` 的 `renderBrainBrief()`，`lines.push('  - You cannot call AskUserQuestion. ...` 那行之後加入：
 
 ```js
     // The brief is English and the stage agent follows it, so without this its
     // report and gate came back English to a user writing Traditional Chinese
-    // (TODO 〔stage〕). The title is the user's words, and it is on line 1.
-    if (typeof data.task === 'string' && data.task.trim()) lines.push('  - Write your report\'s prose and every gate string — `question`, each label and description, `next` — in the language the task\'s title on the first line is written in, not this brief\'s; code, paths, commands, stage names, `暫停` and `(Recommended)` stay as written.');
+    // (TODO 〔stage〕). The profile's `language` says which; unset, nothing.
+    const language = profile && profile.values && typeof profile.values.language === 'string' ? profile.values.language : '';
+    if (language) lines.push('  - Write your report\'s prose and every gate string — `question`, each label and description, `next` — in ' + language + ' (profile `language`), not this brief\'s English; code, paths, commands, stage names, `暫停` and `(Recommended)` stay as written.');
 ```
 
-4. 跑兩個檔，看它們過：
+7. 重新產生鍵表，並在 `docs/01-guide/profile.md` 把「`security.local`、`commit.format` 與 `prompt.all`、`prompt.<站>` 幾列是自由文字」那句換成：
+
+```md
+`security.local`、`commit.format`、`language` 與 `prompt.all`、`prompt.<站>` 幾列是自由文字，精靈沒有欄位給它們，要用下面的指令設。
+```
 
 ```sh
-node --test tests/render.test.js tests/brief.test.js
+node scripts/profile-table.js
+git diff --stat docs/01-guide/profile.md
 ```
 
-   `tests/brief.test.js` 的 10000 字元上限若失敗，縮第 3 步那句（先拿掉 `, not this brief's`），不動上限。
+8. 跑四個檔，看它們過：
 
-5. 不 commit。回報要提交的路徑：`lib/render.js`、`tests/render.test.js`；訊息：
+```sh
+node --test tests/render.test.js tests/profile.test.js tests/profile-table.test.js tests/brief.test.js
+```
+
+   `tests/brief.test.js` 的 10000 字元上限若失敗，縮第 6 步那句（先拿掉 `, not this brief's English`），不動上限。
+
+9. 不 commit。回報要提交的路徑：`lib/profile.js`、`lib/render.js`、`docs/01-guide/profile.md`、`tests/render.test.js`、`tests/profile.test.js`；訊息：
 
 ```text
-fix: a stage agent writes its report and gate in the language of the task's title
+feat: a profile language key a stage agent writes its report and gate in
 
-- the brain brief carries the line when the task has a title — lib/render.js
-- pinned: a brain brief has it, a reader's and an untitled task's do not — tests/render.test.js
+- language is one line of free text, checked like prompt.* — lib/profile.js
+- the brain brief names it when set — lib/render.js
+- the key table and the free-text sentence carry it — docs/01-guide/profile.md
+- pinned: brain brief has the line only when set, reader never; the key parses — tests/render.test.js, tests/profile.test.js
 ```
 
 ## Task 3: station-8 — (2) 改成 40%，量 09-30 量測之後結束的 session
@@ -335,38 +383,46 @@ docs: station-8 target (2) at 40%, measured over sessions ended since 09-30
 - the index follows the entry — TODO.md
 ```
 
-## Task 4: 關 stage-1，把修正記到 await-1
+## Task 4: 本專案設 `language`，關 stage-1，把修正記到 await-1
 
 **Files:**
+- Modify: `.fankeel/profile.json` — `task.js profile set language 繁體中文`，只多這一個鍵
 - Modify: `docs/90-agent/todo/stage-1.md` — `todo.js done` 關掉
 - Modify: `docs/90-agent/todo/await-1.md` — 記下診斷與 Task 1 的 commit，留待實跑確認
 
 **Interfaces:**
-- Consumes: Task 1 的 `caseOfPrompt`（它落地的 commit）；Task 2 的 brief 行 `in the language the task's title on the first line is written in`（它落地的 commit）
+- Consumes: Task 1 的 `caseOfPrompt`（它落地的 commit）；Task 2 的 profile 鍵 `language`（它落地的 commit）
 - Produces: none
 
-**Dispatch:** implementer, sonnet — 兩個條目檔的文件改動；指令都在計畫裡。
+**Dispatch:** implementer, sonnet — 一個 profile 設定加兩個條目檔的文件改動；指令都在計畫裡。
 
-1. 找兩個 commit，並確認訊息對得上（Task 1 的以 `fix: await reads a build brain's case` 開頭，Task 2 的以 `fix: a stage agent writes its report and gate` 開頭；對不上就停手回報）：
+1. 找兩個 commit，並確認訊息對得上（Task 1 的以 `fix: await reads a build brain's case` 開頭，Task 2 的以 `feat: a profile language key` 開頭；對不上就停手回報）：
 
 ```sh
 git log -1 --format='%H %s' -- scripts/await.js
-git log -1 --format='%H %s' -- lib/render.js
+git log -1 --format='%H %s' -- lib/profile.js
 ```
 
-2. 關 stage-1（`<render sha>` 是上一步第二行的 sha）：
+2. 設本專案的語言，確認 `.fankeel/profile.json` 只多了這一個鍵：
 
 ```sh
-node scripts/todo.js done stage-1 --sha <render sha> --disposition done
+node scripts/task.js profile set language 繁體中文
+git diff .fankeel/profile.json
 ```
 
-3. 在 `docs/90-agent/todo/await-1.md`，`description:` 那行換成（`<await sha>` 是第 1 步第一行的 sha），`link:` 那行改成 `link: scripts/await.js`：
+3. 關 stage-1（`<profile sha>` 是第 1 步第二行的 sha）：
+
+```sh
+node scripts/todo.js done stage-1 --sha <profile sha> --disposition done
+```
+
+4. 在 `docs/90-agent/todo/await-1.md`，`description:` 那行換成（`<await sha>` 是第 1 步第一行的 sha），`link:` 那行改成 `link: scripts/await.js`：
 
 ```md
 description: `kind` 讀不到時，await 改從 brain 自己的 transcript 第一行讀（commit <await sha>）：重裝後看一次真實 `build close` 的 await 是否盯 `build.md` — [scripts/await.js](scripts/await.js).
 ```
 
-4. 在 `docs/90-agent/todo/await-1.md` 檔尾加一節：
+5. 在 `docs/90-agent/todo/await-1.md` 檔尾加一節：
 
 ```md
 
@@ -375,18 +431,19 @@ description: `kind` 讀不到時，await 改從 brain 自己的 transcript 第�
 09-30 那個 mark 有 `group: 6`、沒有 `kind`：`hooks/brief.js` 的 `caseOf` 在 SubagentStart 讀不到 brain 的 transcript 就回 null（推論：檔案還沒寫；`docs/90-agent/reports/2026-09-28-spawndepth-timing.md` 只量過 `.meta.json`），`markInflight` 於是照舊編號。commit <await sha> 讓 `scripts/await.js` 在 mark 沒有 `kind` 時讀 transcript 第一行，那時檔案已經在。前一組 mark 沒清的原因沒查到：`scripts/await.js` 只在 await 以那個 agent 的 mark 看到 handoff 或 lost 時清。
 ```
 
-5. 重建索引並檢查：
+6. 重建索引並檢查：
 
 ```sh
 node scripts/todo.js index; node scripts/todo-check.js; echo todo-check=$?
 ```
 
-6. 不 commit。回報要提交的路徑：`docs/90-agent/todo/stage-1.md`、`docs/90-agent/todo/await-1.md`、`TODO.md`；訊息：
+7. 不 commit。回報要提交的路徑：`.fankeel/profile.json`、`docs/90-agent/todo/stage-1.md`、`docs/90-agent/todo/await-1.md`、`TODO.md`；訊息：
 
 ```text
-docs: close stage-1 and record the await fix on await-1
+docs: set language here, close stage-1 and record the await fix on await-1
 
-- stage-1 closed on the brief line's commit — docs/90-agent/todo/stage-1.md
+- this project's stage agents write in 繁體中文 — .fankeel/profile.json
+- stage-1 closed on the language key's commit — docs/90-agent/todo/stage-1.md
 - await-1 records the diagnosis and waits on a live build close — docs/90-agent/todo/await-1.md
 - the index follows the entries — TODO.md
 ```
