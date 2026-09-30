@@ -577,9 +577,11 @@ test('the init block warns once CLAUDE.md and MEMORY.md pass INPUT_WARN_TOKENS, 
   assert.doesNotMatch(renderInit({ sessionId: MINE }), /^input:/m);
 });
 
-test('init offers ## Blocked and ## Watch one shared option, only when orient marks due or stale', () => {
+test('init offers the patrol last, and the patrol takes ## Ready in', () => {
   const out = renderInit({ sessionId: MINE });
-  assert.match(out, /the last option is always the patrol, labelled `TODO 全表盤點`, whenever `orient` prints it;/);
+  assert.match(out, /`## Ready` is no option — the patrol builds it;/);
+  assert.match(out, /the last option is always the patrol, labelled `TODO 全表盤點`, on `survey,plan,build,verify,land`, whenever `orient` prints it;/);
+  assert.doesNotMatch(out, /`## Ready` is one task for the whole section/);
   assert.doesNotMatch(out, /## Waiting/);
 });
 
