@@ -222,6 +222,27 @@ test('完成 pressed on a fresh, closed chooser leaves it closed', () => {
     assert.doesNotMatch(c.page(), /data-block="dash-chooser"/, 'still closed after 完成');
 });
 
+test('重設 alone repaints once and clears a stored order', () => {
+    const kept = {};
+    const c = chooser(kept);
+    c.press({ 'data-dchmv': '1', 'data-card': 'dash-live' });
+    assert.equal('station.dash' in kept, true, 'a non-default order is stored');
+    const d = c.draws();
+    c.press({ 'data-dchreset': '1' });
+    assert.equal('station.dash' in kept, false, 'the key is gone');
+    assert.equal(c.draws(), d + 1, 'one repaint');
+});
+
+test('a move naming an unknown card, pressed twice, stores nothing and repaints nothing', () => {
+    const kept = {};
+    const c = chooser(kept);
+    const d = c.draws();
+    c.press({ 'data-dchmv': '1', 'data-card': 'nope' });
+    c.press({ 'data-dchmv': '1', 'data-card': 'nope' });
+    assert.equal('station.dash' in kept, false, 'no key');
+    assert.equal(c.draws(), d, 'no repaint');
+});
+
 test('a move that falls off either edge, or names no card, repaints nothing and stores nothing', () => {
     const kept = {};
     const c = chooser(kept);
