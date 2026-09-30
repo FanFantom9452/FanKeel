@@ -1003,8 +1003,10 @@
         // Material Icon Theme 5.38.1 (PKief, MIT): the SVGs and the licence are
         // in assets/station/icons/, and ICON_SVG below is those files, byte for
         // byte, so the page needs no route to them. In a browser each is
-        // decoded into an Image at load and `ready` settles when all are; a
-        // frame drawn before then leaves the icons out. In Node there is no
+        // decoded into an Image at load and `ready` resolves when all are; an
+        // icon that fails to decode is logged by name with console.warn and
+        // makes `ready` reject with that name. A frame drawn before `ready`
+        // leaves the icons out. In Node there is no
         // Image: each is a plain record, so a draw stays a pure function of
         // its frame. An icon sits centred in the old badge's 17 x 10 slot and
         // the width returned is still 17, so no file name moves.
@@ -1027,13 +1029,19 @@
         var ICONS = { dir: 'folder', dirOpen: 'folder-open', md: 'markdown', js: 'javascript', jsTest: 'test-js',
             py: 'python', html: 'html', db: 'database', searchLight: 'search-light', verifiedLight: 'verified-light',
             diffLight: 'diff-light', robotLight: 'robot-light', log: 'log', folderTemp: 'folder-temp' };
-        var IMG = {}, READY;
+        var IMG = {}, BAD = {}, READY;
         if (typeof Image === 'function' && typeof document !== 'undefined') {
             READY = Promise.all(Object.keys(ICONS).map(function (k) {
                 var im = new Image();
                 im.src = 'data:image/svg+xml,' + encodeURIComponent(ICON_SVG[ICONS[k]]);
                 IMG[k] = im;
-                return im.decode ? im.decode() : new Promise(function (ok, no) { im.onload = ok; im.onerror = no; });
+                var done = im.decode ? im.decode() : new Promise(function (ok, no) { im.onload = ok; im.onerror = no; });
+                return done.catch(function () {
+                    var why = 'tour: promo30v5 icon ' + k + ' (' + ICONS[k] + '.svg) failed to decode';
+                    BAD[k] = why;
+                    if (typeof console !== 'undefined') console.warn(why);
+                    throw new Error(why);
+                });
             }));
         } else {
             Object.keys(ICONS).forEach(function (k) { IMG[k] = { icon: ICONS[k] }; });
@@ -1042,7 +1050,12 @@
         function icon(ctx, k, x, y, w, h) {
             var im = IMG[k];
             if (!im) throw new Error('tour: promo30v5 has no icon ' + k);
-            if (typeof im.complete === 'boolean' && !(im.complete && im.naturalWidth > 0)) return;
+            // not decoded yet: left out; failed to decode: left out, and
+            // every frame that skips it says which icon
+            if (typeof im.complete === 'boolean' && !(im.complete && im.naturalWidth > 0)) {
+                if (BAD[k] && typeof console !== 'undefined') console.warn(BAD[k] + '; left out of this frame');
+                return;
+            }
             ctx.drawImage(im, x, y, w, h);
         }
         function badge(ctx, P0, kind, s, x, y) {
@@ -1572,9 +1585,13 @@
             K.ring(ctx, IC[0], IC[1], 118, C.keel, CUR.l, CUR.sl - 14, 34, 3);
         }
         function flyTo(from, fpx, to, tpx, e) { return { c: [E.lerp(from[0], to[0], e), E.lerp(from[1], to[1], e)], px: E.lerp(fpx, tpx, e) }; }
-        var DOCK = 36;
+        // The styleframe (13.7 s, local frame CUR.sl) has the flight 0.55 of
+        // the way through its easing. A power warp puts p there at CUR.sl and
+        // still runs 0 -> 1 over 13.4-14 s, so the flight ends on the header
+        // glyph; the trail keeps its lags, as the styleframe's does.
+        var DOCK = 36, DOCK_ST = 0.55;
         function introDock(ctx) {
-            var p = E.prog(CUR.l, 0, DOCK);
+            var p = Math.pow(E.prog(CUR.l, 0, DOCK), Math.log(DOCK_ST) / Math.log(CUR.sl / DOCK));
             // a short trail behind it while it moves
             [[0.35, 0.12], [0.19, 0.22]].forEach(function (q) {
                 if (p < 1 && p - q[0] > 0) {
@@ -2795,7 +2812,8 @@
         var CAPK = { 'design-define': 'what.design.scope', 'plan-cards': 'what.plan.short', 'build-action': 'what.build.deal', 'build-run': 'what.build',
             'build-review': 'build.review', 'build-pass': 'build.pass', 'verify-mutation': 'verify.break',
             'audit-scan': 'audit.scan', 'audit-read': 'audit.read', 'audit-fix': 'audit.fix', 'land-action': 'land.merge', 'land-tidy': 'what.land' };
-        // [label, start s, styleframe s, caption key, kind, draw(ctx, l)]
+        // each entry: { label, s: start s, st: styleframe s, cap: caption key,
+        // kind, xf, draw(ctx) }; draw reads the beat's local frame from CUR
         var HOOKCAP = ['cap.bigger', 'cap.grow', 'cap.docs', 'cap.orphan', 'cap.grep', 'cap.readall'];
         var SPEC = [];
         [[0, 0.8], [1.5, 2.3], [3, 4], [5, 6], [7, 8], [9, 10]].forEach(function (t0, k) {
