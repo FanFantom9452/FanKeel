@@ -38,6 +38,9 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。�
 | `security.local` | verify 的 security lens 先交給哪個本地 ollama 模型篩候選；沒設照原流程 | 一個 ollama 模型名稱 | 不設 |
 | `prompt.all`、`prompt.<站>` | 附在每一站（或某一站）規則最後的一句自訂 prompt | 一行文字 | 需要時才設 |
 | `worktree` | 起任務時開自己的 git worktree（.fankeel/worktrees/<id 前 8 碼>，分支 fk/<id 前 8 碼>） | `true`、`false`；內建 `false` | 不設，維持內建 |
+| `init.skip` | 跳過首次使用的 init 整理；true 時 task.js start 不再印 onboard: 行 | `true`、`false`；內建 `false` | 不設，維持內建 |
+| `sensitive.mode` | commit 帶到 .fankeel/sensitive.txt 的詞時：warn 只提醒、block 擋下 | `warn`、`block`；內建 `warn` | 不設，維持內建 |
+| `sensitive.review` | reviewer 審查時要不要多跑 ## Sensitive lens，確認敏感資料沒寫進去 | `true`、`false`；內建 `false` | 不設，維持內建 |
 <!-- PROFILE_TABLE:END -->
 
 最後兩列是自由文字，精靈沒有欄位給它們，要用下面的指令設。

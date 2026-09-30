@@ -468,3 +468,18 @@ test('the mockup clause names every listed skill, and auto says it draws unasked
         'front-end work only, unasked, then `tune.js serve` opened in the browser; under `.fankeel/build/`, path on `spec:`.');
     assert.equal(profile.mockupClause({}), 'under `.fankeel/build/`, path on `spec:` — the gate approves the page, not the paragraph.');
 });
+
+// docs/90-agent/plans/2026-09-30-init-design.md §2c and §3.
+test('init.skip, sensitive.mode and sensitive.review are keys, builtin false, warn and false', () => {
+    assert.deepEqual(profile.KEYS['init.skip'].values, ['true', 'false']);
+    assert.deepEqual(profile.KEYS['sensitive.mode'].values, ['warn', 'block']);
+    assert.deepEqual(profile.KEYS['sensitive.review'].values, ['true', 'false']);
+    const { values, sources } = profile.read(dir(), tmp('fankeel-profile-cfg-'));
+    assert.equal(values['init.skip'], false);
+    assert.equal(values['sensitive.mode'], 'warn');
+    assert.equal(values['sensitive.review'], false);
+    assert.equal(sources['sensitive.mode'], 'builtin');
+    assert.equal(profile.parseValue('sensitive.mode', 'block').value, 'block');
+    assert.match(profile.parseValue('sensitive.mode', 'loud').error, /warn, block/);
+    assert.equal(profile.parseValue('init.skip', 'true').value, true);
+});
