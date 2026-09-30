@@ -14,7 +14,7 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔commit〕使用者問能否強制規定 commit 的輸出格式：commit.js 目前照 brain 寫的訊息原樣提交，沒有格式檢查；先查要擋在哪一層（commit.js 解析時拒絕、git commit-msg hook、或 profile 設定格式），再決定規則放 profile 還是固定 — [scripts/commit.js](scripts/commit.js).
 
-- 〔gate〕09-30 init-1 survey：brain 回答「先讀 map.js 計數」後改寫 survey.md，json gate 卻原封不動，同一題問了三次；那道 gate 也沒有暫停選項，還提供違反 class 下限的「改走 bounded」，hooks/gate.js 只比對抄本沒擋 — [hooks/gate.js](hooks/gate.js).
+- 〔gate〕09-30 init-1 survey：brain 回答「先讀 map.js 計數」後改寫 survey.md，json gate 卻原封不動，同一題問了三次；那道 gate 也沒有暫停選項，還提供違反 class 下限的「改走 bounded」，`hooks/gate.js` 只比對抄本沒擋 — [hooks/gate.js](hooks/gate.js).
 
 - 〔init〕首次接上 fankeel 的引導：專屬唯讀 agent 排查現況，再一次一題帶過 docs.json、TODO、開發習慣（profile）、CLAUDE.md、memory、map；每步看現況判斷已完成，共用 upgrade.js 偵測。architectural，走七站 — [upgrade.js](scripts/upgrade.js).
 
@@ -26,13 +26,13 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔station〕取代 station-1 的 (b)：(1) 沒有任何單一 subagent 的 context 峰值超過 300k；(2) 佔比低於 15% 的目標只適用於 subagent ≥10 的 session。在 8806240d 之後的 session 重新量測。 — [station.md](docs/90-agent/reference/station.md).
 
-- 〔test〕09-30 land 前兩次全套各紅一次：tests/serve.test.js「a serve started detached outlives the process」，單獨跑 8/8 綠；負載下原因未證，先在乾淨 worktree 的 fed438fc 跑全套看是否早就存在 — [serve.test.js](tests/serve.test.js).
+- 〔test〕09-30 land 前兩次全套各紅一次：`tests/serve.test.js`「a serve started detached outlives the process」，單獨跑 8/8 綠；負載下原因未證，先在乾淨 worktree 的 fed438fc 跑全套看是否早就存在 — [serve.test.js](tests/serve.test.js).
 
 - 〔tests〕整套下偶發紅：09-27 四次紅兩次，09-30 land 又紅（與 test-3 同輪），單跑都綠 — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
 
-- 〔tests〕tests/contract.test.js:256 的註解還寫「thirteen places」，在 init-1 之前就已過時（09-30 build close 發現）；改成現況或刪掉數字 — [tests/contract.test.js](tests/contract.test.js).
+- 〔tests〕`tests/contract.test.js:256` 的註解還寫「thirteen places」，在 init-1 之前就已過時（09-30 build close 發現）；改成現況或刪掉數字 — [tests/contract.test.js](tests/contract.test.js).
 
-- 〔upgrade〕09-30 verify 確認：scripts/upgrade.js:34-39 readTodo 對讀不了的 TODO.md 也回 null，把錯藏起來；應只在 ENOENT 回 null、其餘重拋，先寫會紅的測試 — [upgrade.js](scripts/upgrade.js).
+- 〔upgrade〕09-30 verify 確認：`scripts/upgrade.js:34-39` readTodo 對讀不了的 TODO.md 也回 null，把錯藏起來；應只在 ENOENT 回 null、其餘重拋，先寫會紅的測試 — [upgrade.js](scripts/upgrade.js).
 
 ## Needs a decision
 

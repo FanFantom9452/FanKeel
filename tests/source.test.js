@@ -187,7 +187,13 @@ test('no frontmatter key nothing reads carries a repository path', () => {
 
             // A value is a list of words, and any one of them can be the path —
             // the key that rotted wrote a sentence after its own.
-            for (const word of kv[2].split(/[\s,]+/)) {
+            // Words also break at CJK punctuation and CJK text, so a path glued
+            // to 「」：，。 or to a sentence is still a word of its own, and a
+            // trailing `:line` or `:line-line` is dropped before the shape
+            // check. A code span is removed whole first, so 留下：`a/b.js` 的
+            // is skipped as the span it is and nothing next to it is misread.
+            const value = kv[2].replace(/`[^`]*`/g, ' ');
+            for (const word of value.split(/[\s,　-〿＀-￯一-鿿]+/)) {
                 // A backticked value is a code span and a bracketed one is a
                 // link, and `docs-check` scans both inside the frontmatter
                 // block exactly as it does in the body. Stripping the backticks
@@ -195,7 +201,7 @@ test('no frontmatter key nothing reads carries a repository path', () => {
                 // formatted correctly, which is the one finding that would get
                 // this test deleted. Only the bare ones go unwatched.
                 if (word.includes('`')) continue;
-                const ref = word.replace(/^["']+|["'.]+$/g, '');
+                const ref = word.replace(/^["']+|["'.]+$/g, '').replace(/:\d+(?:-\d+)?$/, '');
                 if (!ref || !PATHISH.test(ref)) continue;
                 if (resolveRef(ROOT, rel, ref) === null) continue;
                 guilty.push(rel + ' — ' + kv[1] + ': ' + ref);
