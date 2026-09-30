@@ -45,6 +45,7 @@
 // one that does not leaves the question to the terminal.
 
 const fs = require('node:fs');
+const crypto = require('node:crypto');
 const registry = require('../lib/registry.js');
 const profileLib = require('../lib/profile.js');
 const { controlling, nextStage, normaliseRoute, FULL_ROUTE } = require('../lib/stages.js');
@@ -155,6 +156,17 @@ function emit(out, payload, root, mine, values) {
     if (Object.keys(out).length) process.stdout.write(JSON.stringify(out));
 }
 
+// The questions as a user sees them, as a short hash: stored on the record
+// when the gate opens and compared with the next ask. docs/90-agent/plans/
+// 2026-09-30-init-design.md §6.
+function hashOf(questions) {
+    const seen = (Array.isArray(questions) ? questions : []).map((q) => [
+        q && q.header, q && q.question, Boolean(q && q.multiSelect === true),
+        (q && Array.isArray(q.options) ? q.options : []).map((o) => [o && o.label, o && o.description]),
+    ]);
+    return crypto.createHash('sha1').update(JSON.stringify(seen)).digest('hex').slice(0, 16);
+}
+
 function main(raw) {
     const payload = parse(raw);
     if (!payload) return;
@@ -163,8 +175,10 @@ function main(raw) {
     const mine = registry.readSession(root, payload.session_id);
     if (!mine || mine.active !== true) return;
 
+    const hash = hashOf(payload.tool_input && payload.tool_input.questions);
+    const before = mine.gateAsked && typeof mine.gateAsked === 'object' ? mine.gateAsked : null;
     try {
-        registry.gateOpen(root, payload.session_id);
+        registry.gateOpen(root, payload.session_id, { stage: mine.stage, hash });
     } catch (e) { /* housekeeping */ }
 
     // `stage.agents`: validate rather than substitute. The controller is the
@@ -182,7 +196,7 @@ function main(raw) {
         controlled = controlling(mine.stage, values);
         agents = agentsText(values);
         file = handoffPath(root, mine, mine.stage);
-        if (controlled) gate = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE);
+        if (controlled) gate = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor });
         if (!gate) skip = skipReason({ stage: mine.stage, controlled, agents, inflight: runningMark(mine, mine.stage), handoff: file });
     } catch (e) { /* housekeeping */ }
 
@@ -261,6 +275,26 @@ function main(raw) {
         }
         skip = skipReason({ stage: mine.stage, controlled, matches: false, agents, inflight: runningMark(mine, mine.stage), handoff: file });
         return emit(skip ? { systemMessage: 'fankeel: gate not confirmed — ' + skip + '.' } : {}, payload, root, mine, values);
+    }
+
+    // gate-2: the same stage, the same questions, and an answer written since
+    // they were first asked — the stage agent rewrote its report and not its
+    // gate. Refused, so it takes out what the answer settled rather than the
+    // user answering it twice.
+    const answer = answerPath(root, mine, mine.stage);
+    let answeredAt = null;
+    try { answeredAt = fs.statSync(answer).mtimeMs; } catch (e) { /* no answer yet */ }
+    if (before && before.stage === mine.stage && before.hash === hash && Number.isFinite(before.at)
+        && answeredAt !== null && answeredAt > before.at) {
+        process.stdout.write(JSON.stringify({
+            hookSpecificOutput: {
+                hookEventName: 'PreToolUse',
+                permissionDecision: 'deny',
+                permissionDecisionReason: 'fankeel: this gate is unchanged since the user answered it (' + answer + '). SendMessage the stage agent to'
+                    + ' rewrite the gate in ' + file + ', taking out the options that answer settled, then ask again when it returns the path.',
+            },
+        }));
+        return;
     }
 
     // The controller's own AskUserQuestion call already copies the file's gate

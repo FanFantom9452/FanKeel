@@ -538,3 +538,53 @@ test('stage.agents: an answer older than its stage report does not block the que
   fs.utimesSync(report, later, later);
   assert.doesNotMatch(run(GATE, root, { tool_input: askOf(REASK) }), /already answered/);
 });
+
+// docs/90-agent/plans/2026-09-30-init-design.md §6 (gate-2): the stage agent
+// rewrote its report after the answer and handed back the gate it had asked.
+test('stage.agents: the same gate asked again after its answer is denied; a rewritten one goes out', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  assert.equal(run(GATE, root, { tool_input: askOf(QUESTIONS) }).trim(), '', 'the first ask goes out');
+  assert.match(readEntry(root, MINE).gateAsked.hash, /^[0-9a-f]{16}$/);
+  const answer = path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'survey-answer.md');
+  fs.writeFileSync(answer, JSON.stringify({ answers: { [QUESTIONS[0].question]: '進 design' } }));
+  const later = new Date(Date.now() + 5000);
+  fs.utimesSync(answer, later, later);
+  const again = JSON.parse(run(GATE, root, { tool_input: askOf(QUESTIONS) }));
+  assert.equal(again.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(again.hookSpecificOutput.permissionDecisionReason, /unchanged since the user answered it/);
+  const third = JSON.parse(run(GATE, root, { tool_input: askOf(QUESTIONS) }));
+  assert.equal(third.hookSpecificOutput.permissionDecision, 'deny', 'a refused repeat does not move the moment it is measured from');
+
+  const changed = JSON.parse(JSON.stringify(QUESTIONS));
+  changed[0].options[0].description = 'rewritten after the answer';
+  handoff(root, { questions: changed, next: 'n' });
+  assert.equal(run(GATE, root, { tool_input: askOf(changed) }).trim(), '');
+});
+
+test('stage.agents: the same gate asked twice with no answer between is not refused', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  assert.equal(run(GATE, root, { tool_input: askOf(QUESTIONS) }).trim(), '');
+  assert.equal(run(GATE, root, { tool_input: askOf(QUESTIONS) }).trim(), '');
+});
+
+test('stage.agents: a survey gate with no pause, or naming bounded on an architectural task, is denied', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', floor: 'architectural', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  const noPause = [{ question: 'survey 的結論？', header: 'survey', multiSelect: false, options: [{ label: '進 design', description: 'a' }, { label: '再讀一輪', description: 'b' }] }];
+  handoff(root, { questions: noPause, next: 'n' });
+  const a = JSON.parse(run(GATE, root, { tool_input: askOf(noPause) }));
+  assert.equal(a.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(a.hookSpecificOutput.permissionDecisionReason, /`questions`: no option says pause/);
+  const lighter = [{ question: 'survey 的結論？', header: 'survey', multiSelect: false, options: [{ label: '進 design', description: 'a' }, { label: '改走 bounded', description: 'b' }, { label: '暫停', description: 'c' }] }];
+  handoff(root, { questions: lighter, next: 'n' });
+  const b = JSON.parse(run(GATE, root, { tool_input: askOf(lighter) }));
+  assert.equal(b.hookSpecificOutput.permissionDecision, 'deny');
+  assert.match(b.hookSpecificOutput.permissionDecisionReason, /questions\[0\]\.options\[1\]\.label/);
+});
