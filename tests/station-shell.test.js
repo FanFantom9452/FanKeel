@@ -81,7 +81,7 @@ test('the shell\'s three references all begin station/', () => {
 // one Tasks 6-8 render; a class with no rule is a component the port dropped.
 test('the shell is the mockup\'s masthead: a home link, the crumbs on #side, the page main', () => {
     const html = shell();
-    assert.match(html, /<header class="mast">/);
+    assert.match(html, /<header class="mast" data-block="mast">/);
     assert.match(html, /<a class="brand" href="#\/"/);
     assert.match(html, /<nav class="crumbs" id="side"/);
     assert.match(html, /<main class="page" id="page"><\/main>/);

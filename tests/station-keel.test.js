@@ -11,6 +11,10 @@ const ROOT = path.join(__dirname, '..', 'assets', 'station');
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const css = fs.readFileSync(path.join(ROOT, 'station.css'), 'utf8');
 
+test('the masthead carries its data-block', () => {
+    assert.ok(html.includes('<header class="mast" data-block="mast">'));
+});
+
 test('the shell opens in the keel look and reads a classic choice before the body is drawn', () => {
     assert.match(html, /<html lang="zh-Hant" data-style="keel">/);
     const head = html.slice(0, html.indexOf('<body>'));

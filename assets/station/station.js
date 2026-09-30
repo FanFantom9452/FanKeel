@@ -2736,7 +2736,8 @@
                     + '<span class="trh"><span class="dp">' + esc(shortLabel(r.t.pkey)) + '</span><span class="tpill"><span class="tn">' + r.ready.length + '</span><span class="tnl">Ready</span></span>'
                     + '<span class="spacer"></span>' + side(r).map(function (x) { return '<span class="tq" data-st="' + x[0] + '">' + x[0] + ' <b>' + x[1] + '</b></span>'; }).join('') + '</span>'
                     + '<ul class="trl">' + r.ready.slice(0, SHOWN).map(function (x) {
-                        return '<li>' + (x.label ? '<span class="tlb">' + esc(x.label) + '</span>' : '') + esc(x.title) + '</li>';
+                        var plain = function (s) { return String(s == null ? '' : s).split('**').join(''); };
+                        return '<li>' + (x.label ? '<span class="tlb">' + esc(plain(x.label)) + '</span>' : '') + esc(plain(x.title)) + '</li>';
                     }).join('') + (more > 0 ? '<li class="tmore">' + loc('dash.nMoreTodo', '還有 {n} 筆', { n: more }) + '</li>' : '') + '</ul></a>';
             }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noReady', '沒有 Ready 的條目') + '</p>')
             + (foot ? '<p class="dnone tfoot">' + foot + '</p>' : '') + '</section>';

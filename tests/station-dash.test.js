@@ -66,6 +66,13 @@ test('the card and the project page agree on how many entries are Ready', () => 
     assert.equal(onDash, onPanel);
 });
 
+test('dash-todo rows show entry titles and labels without markdown bold asterisks', () => {
+    const list = { pkey: 'F:\\ws\\bold', mode: 'folder', folder: 'docs/todo', done: [], open: [e('x-1', '**Bold** title', 'ready', '**lab**')] };
+    const html = V.dashTodo([{ todos: [list] }]);
+    assert.match(html, /Bold title/);
+    assert.doesNotMatch(html, /\*/);
+});
+
 test('no Ready anywhere says so', () => {
     assert.match(V.dashTodo([{ todos: [GAMMA] }]), /<div class="dbig">0<small>/);
     assert.match(V.dashTodo([]), /沒有 Ready 的條目/);
