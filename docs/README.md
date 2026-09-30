@@ -186,6 +186,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 落地它的 6 個 task | `docs/99-archive/2026-09-29-todo-patrol-2.md` — *built* |
 | TODO 全表盤點第三輪（09-29）定了什麼、沒做什麼：await 的 group 標記、同名 plan 的舊 ledger、gate 答案帶進 brief、`/fankeel` 注入量 4000 tok 提醒與 fankeel-slimmer、design 不再問方向／逐塊、同名 agent 覆寫實測 | [decisions/2026-09-29-todo-patrol-3.md](03-decisions/2026-09-29-todo-patrol-3.md) — *繁體中文* |
 | 落地它的 9 個 task | `docs/99-archive/2026-09-29-todo-patrol-3.md` — *built* |
+| TODO 全表盤點（09-30）定了什麼、沒做什麼：Ready 十一條關九條，`commit.format`、`access` 保留鍵、await 的 `pendingTool`，await-1 與 station-8 留下 | [decisions/2026-09-30-ready-eleven.md](03-decisions/2026-09-30-ready-eleven.md) — *繁體中文* |
+| 它的 design 與 14 個 task | `docs/99-archive/2026-09-30-ready-eleven-design.md`、`docs/99-archive/2026-09-30-ready-eleven.md` — *built* |
 | 盤點併入 Ready（09-30）：開場不再單列 `## Ready`，「TODO 全表盤點」固定走 `survey,plan,build,verify,land`、盤完直接做；todo-3 以 station 已有的已完成區塊結案 | [decisions/2026-09-30-patrol-takes-ready.md](03-decisions/2026-09-30-patrol-takes-ready.md) — *繁體中文* |
 | 那份設計 | `docs/99-archive/2026-09-30-patrol-takes-ready-design.md` — *built* |
 | 落地它的 5 個 task | `docs/99-archive/2026-09-30-patrol-takes-ready.md` — *built* |

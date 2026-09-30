@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # TODO Ready 十一條與 data-1 Implementation Plan
