@@ -38,7 +38,7 @@ function boot(opts) {
     if (o.lang) { kept['station.lang'] = o.lang; win.FK_I18N = I.make(win); }
     const box = { window: win, document: doc, URLSearchParams, fetch: () => Promise.resolve({ ok: true }), module: { exports: {} } };
     vm.runInNewContext(SRC, box);
-    return { V: box.module.exports, els, root, kept, listeners };
+    return { V: box.module.exports, els, root, kept, listeners, doc };
 }
 const live = (route, stage) => ({ id: 'k1', pkey: 'F:\\ws\\alpha', task: 'keel one', state: 'live', updated: NOW - 1000, started: NOW - 120000, route, stage });
 const count = (s, re) => (s.match(re) || []).length;
@@ -82,6 +82,100 @@ test('the switch reads pressed in classic; a press swaps the attribute and store
     press();
     assert.equal(p.root.getAttribute('data-style'), 'keel');
     assert.equal('station.style' in p.kept, false);
+    assert.equal(p.els.styletog.attrs['aria-pressed'], 'false');
+});
+
+// The 經典樣式 press, one effect per test: each is red under a different
+// single-branch mutation of the #styletog click listener.
+function pressSwitch(p, target) {
+    const t = target || { closest: (sel) => (sel === '#styletog' ? p.els.styletog : null), getAttribute: () => null, hasAttribute: () => false };
+    for (const fn of p.listeners.click || []) fn({ target: t, preventDefault() {}, stopPropagation() {} });
+}
+
+// The page's other click listeners do not guard a missing target, so the
+// malformed-event tests fire the switch's own listener alone: the one that
+// whose source names '#styletog'.
+function switchListener(p) {
+    const fns = (p.listeners.click || []).filter((fn) => fn.toString().includes("'#styletog'"));
+    assert.equal(fns.length, 1, 'the switch has one click listener');
+    return fns[0];
+}
+
+test('a click that is not on the switch leaves the style, the store and the pressed state alone', () => {
+    const p = boot({ style: 'keel', lang: 'zh' });
+    pressSwitch(p, { closest: () => null, getAttribute: () => null, hasAttribute: () => false });
+    assert.equal(p.root.getAttribute('data-style'), 'keel');
+    assert.equal('station.style' in p.kept, false);
+    assert.equal(p.els.styletog.attrs['aria-pressed'], 'false');
+});
+
+test('a click with no target at all does not throw', () => {
+    const p = boot({ style: 'keel', lang: 'zh' });
+    const fn = switchListener(p);
+    assert.doesNotThrow(() => fn({}));
+    assert.equal(p.root.getAttribute('data-style'), 'keel');
+});
+
+test('a click whose target has no closest does not throw or flip the style', () => {
+    const p = boot({ style: 'keel', lang: 'zh' });
+    const fn = switchListener(p);
+    assert.doesNotThrow(() => fn({ target: {} }));
+    assert.equal(p.root.getAttribute('data-style'), 'keel');
+});
+
+test('a press of the switch on a document with no root element does nothing and does not throw', () => {
+    const p = boot({ style: 'keel', lang: 'zh' });
+    p.doc.documentElement = null;
+    assert.doesNotThrow(() => pressSwitch(p));
+    assert.equal('station.style' in p.kept, false);
+});
+
+test('pressing the switch from classic with nothing stored stores nothing', () => {
+    const p = boot({ lang: 'zh' });
+    pressSwitch(p);
+    assert.equal('station.style' in p.kept, false);
+});
+
+test('pressing the switch from keel takes the style attribute off', () => {
+    const p = boot({ style: 'keel', lang: 'zh' });
+    pressSwitch(p);
+    assert.equal(p.root.hasAttribute('data-style'), false);
+});
+
+test('pressing the switch from classic puts an attribute on', () => {
+    const p = boot({ lang: 'zh', kept: { 'station.style': 'classic' } });
+    pressSwitch(p);
+    assert.equal(p.root.hasAttribute('data-style'), true);
+});
+
+test('pressing the switch from classic puts keel on, and only keel', () => {
+    const p = boot({ lang: 'zh', kept: { 'station.style': 'classic' } });
+    pressSwitch(p);
+    assert.equal(p.root.getAttribute('data-style'), 'keel');
+});
+
+test('pressing the switch from keel stores classic', () => {
+    const p = boot({ style: 'keel', lang: 'zh' });
+    pressSwitch(p);
+    assert.equal(p.kept['station.style'], 'classic');
+});
+
+test('pressing the switch from classic clears the stored style', () => {
+    const p = boot({ lang: 'zh', kept: { 'station.style': 'classic' } });
+    pressSwitch(p);
+    assert.equal('station.style' in p.kept, false);
+});
+
+test('pressing the switch from keel reads it pressed', () => {
+    const p = boot({ style: 'keel', lang: 'zh' });
+    pressSwitch(p);
+    assert.equal(p.els.styletog.attrs['aria-pressed'], 'true');
+});
+
+test('pressing the switch from classic reads it not pressed', () => {
+    const p = boot({ lang: 'zh', kept: { 'station.style': 'classic' } });
+    p.els.styletog.attrs['aria-pressed'] = 'true';
+    pressSwitch(p);
     assert.equal(p.els.styletog.attrs['aria-pressed'], 'false');
 });
 

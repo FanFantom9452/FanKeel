@@ -147,7 +147,7 @@ function chooser(kept) {
     const press = (attrs) => fire('click', { getAttribute: (k) => (k in attrs ? attrs[k] : null), hasAttribute: (k) => k in attrs,
         closest(sel) { return Object.keys(attrs).some((k) => sel.includes('[' + k + ']')) ? this : null; } });
     const tick = (id, checked) => fire('change', { checked, getAttribute: (k) => (k === 'data-dchshow' ? id : null) });
-    return { press, tick, page: () => els.page.innerHTML, draws: () => writes };
+    return { press, tick, fire, page: () => els.page.innerHTML, draws: () => writes };
 }
 
 test('pressing 調整卡片 opens the chooser and pressing it again, or 完成, shuts it', () => {
@@ -283,4 +283,85 @@ test('a real move, 調整卡片 and 還原預設 each repaint exactly once', () 
     c.press({ 'data-dchreset': '1' });
     assert.equal(c.draws(), d + 1, 'the reset repaints once');
     assert.equal('station.dash' in kept, false, 'the reset clears the key');
+});
+
+// The change handler, one behaviour per test: each of these is red under
+// a different single-branch mutation of the doc 'change' listener.
+const DEF = ['dash-live', 'waiting-card', 'dash-todo', 'dash-spend', 'dash-recent'];
+const dashKey = (order, off) => JSON.stringify({ order, off });
+
+test('a change on a box that is not a card tick draws nothing and stores nothing', () => {
+    const kept = { 'station.dash': dashKey(DEF, ['dash-spend']) };
+    const c = chooser(kept);
+    const d = c.draws();
+    c.tick(null, true);
+    c.tick('', false);
+    assert.equal(c.draws(), d, 'no repaint');
+    assert.equal(kept['station.dash'], dashKey(DEF, ['dash-spend']), 'no store');
+});
+
+test('a change with no target at all is ignored', () => {
+    const c = chooser({});
+    const d = c.draws();
+    assert.doesNotThrow(() => c.fire('change', undefined));
+    assert.equal(c.draws(), d);
+});
+
+test('a change whose target cannot be asked for an attribute is ignored', () => {
+    const c = chooser({});
+    const d = c.draws();
+    assert.doesNotThrow(() => c.fire('change', {}));
+    assert.equal(c.draws(), d);
+});
+
+test('ticking two cards off stores exactly those two in off', () => {
+    const kept = {};
+    const c = chooser(kept);
+    c.tick('dash-spend', false);
+    c.tick('dash-todo', false);
+    assert.equal(kept['station.dash'], dashKey(DEF, ['dash-todo', 'dash-spend']));
+});
+
+test('ticking a card on from an off list removes it from off and keeps the rest', () => {
+    const kept = { 'station.dash': dashKey(DEF, ['dash-spend', 'dash-todo']) };
+    chooser(kept).tick('dash-spend', true);
+    assert.equal(kept['station.dash'], dashKey(DEF, ['dash-todo']));
+});
+
+test('ticking the one card that is off back on clears the key', () => {
+    const kept = { 'station.dash': dashKey(DEF, ['dash-spend']) };
+    chooser(kept).tick('dash-spend', true);
+    assert.equal('station.dash' in kept, false);
+});
+
+test('a tick repaints exactly once', () => {
+    const c = chooser({});
+    const d = c.draws();
+    c.tick('dash-spend', false);
+    assert.equal(c.draws(), d + 1);
+});
+
+test('ticking one card off leaves every other card drawn', () => {
+    const c = chooser({});
+    c.tick('dash-spend', false);
+    for (const id of ['dash-live', 'waiting-card', 'dash-todo', 'dash-recent']) assert.match(c.page(), new RegExp('data-block="' + id + '"'), id);
+});
+
+test('ticking off a card that is already off keeps it off', () => {
+    const kept = { 'station.dash': dashKey(DEF, ['dash-spend']) };
+    chooser(kept).tick('dash-spend', false);
+    assert.equal(kept['station.dash'], dashKey(DEF, ['dash-spend']));
+});
+
+test('a tick rewrites the stored list whole, filling in the cards a stale key lacks', () => {
+    const kept = { 'station.dash': dashKey(['dash-recent', 'dash-spend'], []) };
+    chooser(kept).tick('dash-spend', true);
+    assert.equal(kept['station.dash'], dashKey(['dash-recent', 'dash-spend', 'dash-live', 'waiting-card', 'dash-todo'], []));
+});
+
+test('a tick reads the stored list, so a card already off stays off when another is ticked', () => {
+    const order = ['dash-recent', 'dash-spend', 'dash-live', 'waiting-card', 'dash-todo'];
+    const kept = { 'station.dash': dashKey(order, ['dash-todo']) };
+    chooser(kept).tick('dash-spend', false);
+    assert.equal(kept['station.dash'], dashKey(order, ['dash-spend', 'dash-todo']));
 });
