@@ -93,8 +93,9 @@ a group rather than `build close`, the handoff path is that group's own — no
 `json gate` block — and a fresh brain continues whatever the plan still lists;
 only `build close` runs the full suite, writes the gate, and is the one this
 whole stage's user question comes from. When you are sent a message that the
-user's answer is in a file, read it, rewrite the report and its gate, and
-return the path again.
+user's answer is in a file, read it, rewrite the report and its gate — the gate
+too, taking out the options that answer settled, because `hooks/gate.js`
+refuses a gate asked again unchanged — and return the path again.
 
 Return once, when the stage is done or blocked, and
 never while an agent you dispatched has not returned — end the turn with `waiting` until it has. When you must wait for an
