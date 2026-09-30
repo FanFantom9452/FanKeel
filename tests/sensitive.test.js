@@ -102,3 +102,52 @@ test('commit.js refuses the block under block, and commits with a sensitive: lin
   assert.ok(!ok.code, ok.text);
   assert.match(ok.text, /\nsensitive: docs\/plan\.md:3/);
 });
+
+test('a worktree block is scanned in the worktree, with the list from the main checkout', () => {
+  const req = (body) => {
+    const file = path.join(tmp('fankeel-sensitive-req-'), 'build-commit.md');
+    fs.writeFileSync(file, body);
+    return file;
+  };
+  for (const mode of ['block', 'warn']) {
+    const dir = repo(['ACME'], mode);
+    git(dir, 'reset', '-q'); // cherry-pick wants a clean index
+    const wt = path.join(tmp('fankeel-sensitive-wt-'), 'wt1');
+    git(dir, 'worktree', 'add', '-q', '-b', 'wt1', wt);
+    fs.writeFileSync(path.join(wt, 'note.md'), 'one\ntwo\nfor acme only\n');
+    const before = git(dir, 'rev-parse', 'HEAD');
+    const res = commit.main([req('worktree ' + wt + '\nnote.md\n\ndocs: note\n')], dir);
+    if (mode === 'block') {
+      assert.equal(res.code, 1);
+      assert.match(res.text, /sensitive: note\.md:3/);
+      assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
+    } else {
+      assert.ok(!res.code, res.text);
+      assert.match(res.text, /\nsensitive: note\.md:3/);
+    }
+  }
+});
+
+test('a commit whose index cannot be read is said to be unscanned, not let through', () => {
+  for (const mode of ['warn', 'block']) {
+    const dir = repo(['ACME'], mode);
+    fs.writeFileSync(path.join(dir, '.git', 'index'), 'not an index');
+    const out = JSON.parse(hook(dir, 'Bash', 'git commit -m "plan"')).hookSpecificOutput;
+    if (mode === 'block') assert.equal(out.permissionDecision, 'deny');
+    else assert.equal(out.permissionDecision, undefined);
+    assert.match(out.permissionDecisionReason || out.additionalContext, /not scanned/);
+  }
+});
+
+test('scan reads UTF-16 text by its BOM, and still skips a binary', () => {
+  const dir = repo(['ACME']);
+  const le = Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from('one\r\nfor acme\r\n', 'utf16le')]);
+  const be = Buffer.from(le.subarray(2)).swap16();
+  fs.writeFileSync(path.join(dir, 'le.txt'), le);
+  fs.writeFileSync(path.join(dir, 'be.txt'), Buffer.concat([Buffer.from([0xfe, 0xff]), be]));
+  fs.writeFileSync(path.join(dir, 'bin.dat'), Buffer.from([0, 1, 2, 0x61, 0x63, 0x6d, 0x65, 0]));
+  assert.deepEqual(sensitive.scan(dir, ['le.txt', 'be.txt', 'bin.dat']), [
+    { path: 'le.txt', line: 2, word: 'ACME' },
+    { path: 'be.txt', line: 2, word: 'ACME' },
+  ]);
+});

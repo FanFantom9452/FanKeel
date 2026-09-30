@@ -159,10 +159,16 @@ function main(argv, cwd) {
         const base = git(['rev-parse', 'HEAD']).stdout.trim();
         if (parsed.blocks[i].worktree) {
             const label = many ? paths.join(', ') + ': ' : '';
+            // The paths sit in the worktree; the word list stays in the main checkout.
+            const seen = sensitive.scan(path.resolve(topDir, parsed.blocks[i].worktree), paths, topDir);
+            if (seen.length && mode === 'block') {
+                return fail('sensitive: ' + sensitive.listed(seen) + ' — words from .fankeel/sensitive.txt, and sensitive.mode is block');
+            }
             const r = landWorktree(top.stdout.trim(), parsed.blocks[i], run, oneLine);
             if (r.error) return fail(r.error);
             if (r.conflict) return { text: out.concat(label + 'conflict ' + r.conflict.join(' ')).join('\n'), code: 1 };
             out.push(label + base + '..' + git(['rev-parse', 'HEAD']).stdout.trim());
+            if (seen.length) out.push('sensitive: ' + sensitive.listed(seen));
             if (r.kept) out.push('kept ' + r.kept);
             continue;
         }
