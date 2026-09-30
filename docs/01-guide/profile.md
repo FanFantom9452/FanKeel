@@ -41,6 +41,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。�
 | `init.skip` | 跳過首次使用的 init 整理；true 時 task.js start 不再印 onboard: 行 | `true`、`false`；內建 `false` | 不設，維持內建 |
 | `sensitive.mode` | commit 帶到 .fankeel/sensitive.txt 的詞時：warn 只提醒、block 擋下 | `warn`、`block`；內建 `warn` | 不設，維持內建 |
 | `sensitive.review` | reviewer 審查時要不要多跑 ## Sensitive lens，確認敏感資料沒寫進去 | `true`、`false`；內建 `false` | 不設，維持內建 |
+| `commit.format` | commit.js 提交前，每則訊息第一行要符合的正規式；不設就不檢查 | 一個 JavaScript 正規式，比對訊息第一行 | 不設 |
 <!-- PROFILE_TABLE:END -->
 
 `security.local` 與 `prompt.all`、`prompt.<站>` 兩列是自由文字，精靈沒有欄位給它們，要用下面的指令設。
