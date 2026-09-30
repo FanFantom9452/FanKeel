@@ -41,7 +41,7 @@ answers that.
 
 | state | heading | waiting for | what `/fankeel` does with it |
 |---|---|---|---|
-| `ready` | `## Ready` | someone's hands; the entry is the specification | the whole section is offered as one task |
+| `ready` | `## Ready` | someone's hands; the entry is the specification | never an option of its own; the patrol builds it |
 | `decision` | `## Needs a decision` | a person, to settle what the change should be | the newest few `orient` lists, one option each |
 | `blocked` | `## Blocked` | something a session can check: a date, other work, an upstream release | every timing listed; the patrol, always the last option, walks them |
 | `watch` | `## Watch` | an event only whoever meets it will know of | every timing listed; the patrol asks keep-or-drop of a stale one |

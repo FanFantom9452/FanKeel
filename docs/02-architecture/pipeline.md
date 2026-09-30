@@ -47,7 +47,7 @@ this morning is almost always the one being asked about.
 The skill asks with `AskUserQuestion` rather than in prose — which project and
 what the task is, in one call with the options already on screen. Where the root
 has a `TODO.md`, that is where the task options come from, and its headings do
-the clustering: `## Ready` is offered as one task for the whole section,
+the clustering: `## Ready` is built by the patrol, on `survey,plan,build,verify,land`,
 `## Needs a decision` as the newest few by last edit, one task each, the rest
 through Other, and `## Blocked` and `## Watch` as one shared option only while a Blocked timing is due or a Watch timing stale. A root
 without one is where guessing from the recent commits belongs.
