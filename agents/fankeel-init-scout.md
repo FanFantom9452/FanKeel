@@ -1,6 +1,6 @@
 ---
 name: fankeel-init-scout
-description: Read-only scout for fankeel-init — runs scripts/onboard.js and returns a status row for every onboarding step and drafts for the open ones — what each tree row is for, which bucket an unfiled page belongs in, which directories hold raw data, which pages read out of date, and where workspace and repository CLAUDE.md files disagree. Cannot call Edit, Write or NotebookEdit.
+description: Read-only scout for fankeel-init — runs the onboarding checks and returns a status row for every onboarding step and drafts for the open ones — what each tree row is for, which bucket an unfiled page belongs in, which directories hold raw data, which pages read out of date, and where workspace and repository CLAUDE.md files disagree. Cannot call Edit, Write or NotebookEdit.
 tools: [Read, Grep, Glob, Bash]
 model: sonnet
 effort: medium

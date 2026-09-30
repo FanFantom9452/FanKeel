@@ -222,8 +222,7 @@ fankeel/
 │   ├── badge.js       the statusline word and lead line TokenBar draws
 │   ├── map.js         .fankeel/map.md: the signpost, the filing, this tree, the planned and retired pages
 │   ├── docs.js        docs.json: buckets, roles, and which pages may be out of date
-│   ├── onboard.js     the three cheap onboarding checks task.js start runs on a task's project
-│   ├── sensitive.js   the words in .fankeel/sensitive.txt, found in what a commit carries
+│   ├── onboard.js     the three cheap onboarding checks task.js start runs on a task's project; sensitive.js is the words in .fankeel/sensitive.txt, found in what a commit carries
 │   ├── station.js     the station's model: finding every registry, the rows, the data and detail scripts
 │   ├── detail.js      one session taken apart for the station, cached by its files' size and mtime
 │   ├── usage.js       what a transcript spent: requests, models, agents and every dispatch
@@ -233,9 +232,8 @@ fankeel/
 │   └── profile.js     the project and machine profile: the standing answers to a gate
 ├── scripts/           the command line, thin wrappers over lib/
 │   ├── task.js        start a task, move its stage, note, pause, stand it down
-│   ├── orient.js      what is under this directory, before /fankeel asks anything
+│   ├── orient.js      what is under this directory, before /fankeel asks anything; onboard.js prints the onboarding checks, pass or fail, and --full adds docs-check and drift
 │   ├── map.js         writes .fankeel/map.md
-│   ├── onboard.js     prints the onboarding checks, pass or fail; --full adds docs-check and drift
 │   ├── layout.js      prints the half of this tree a listing can derive
 │   ├── survey.js      what already exists here, for the survey stage
 │   ├── ledger.js      the build ledger: init, complete, groups, lint, brief
