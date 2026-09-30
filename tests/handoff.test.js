@@ -469,3 +469,25 @@ test('readGate: a gate with an empty or missing next has no pause option and is 
   fs.writeFileSync(file, block(gateOf('ok')));
   assert.equal(readGate(file).invalid, undefined);
 });
+
+// docs/90-agent/plans/2026-09-30-init-design.md §6 (gate-2): the survey gate
+// that offered no pause, and "改走 bounded" on a task started architectural.
+test('with rules, a gate with no pause is refused, and one naming a class below the floor is refused', () => {
+  const file = path.join(tmp('fankeel-handoff-'), 'survey.md');
+  const g = gateOf('s');
+  g.questions[0].options[0].label = '進 design';
+  g.questions[0].options[1].label = '改走 bounded';
+  fs.writeFileSync(file, block(g));
+  assert.deepEqual(readGate(file, 'design'), g, 'without rules nothing new is asked');
+  const paused = readGate(file, 'design', null, { pause: true });
+  assert.equal(paused.invalid, 'questions');
+  assert.match(paused.detail, /pause/);
+
+  g.questions[0].options.push({ label: '暫停', description: 'c' });
+  fs.writeFileSync(file, block(g));
+  assert.deepEqual(readGate(file, 'design', null, { pause: true }), g);
+  const low = readGate(file, 'design', null, { pause: true, floor: 'architectural' });
+  assert.equal(low.invalid, 'questions[0].options[1].label');
+  assert.match(low.detail, /bounded.*architectural/);
+  assert.deepEqual(readGate(file, 'design', null, { pause: true, floor: 'bounded' }), g, 'the floor itself is not below it');
+});

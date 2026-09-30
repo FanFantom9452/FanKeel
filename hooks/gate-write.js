@@ -64,7 +64,7 @@ function main(raw) {
 
     let result = null;
     try {
-        result = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE);
+        result = readGate(file, nextStage(mine.stage, mine.route), normaliseRoute(mine.route) || FULL_ROUTE, { pause: true, floor: mine.floor });
     } catch (e) { /* housekeeping */ }
     if (!result || !result.invalid) return;
 

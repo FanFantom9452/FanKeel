@@ -140,3 +140,17 @@ test('malformed stdin is not an error', () => {
   });
   assert.equal(out.trim(), '');
 });
+
+// docs/90-agent/plans/2026-09-30-init-design.md §6: the task's floor is
+// checked the moment the stage agent writes its gate, not only when it is asked.
+test('a gate naming a class below the task\'s floor is flagged when it is written', () => {
+  const root = tmp('fankeel-gate-write-');
+  const data = seed(root, MINE, { inflight: MARK, floor: 'architectural' });
+  const file = handoffPath(root, data, 'survey');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const questions = JSON.parse(JSON.stringify(QUESTIONS));
+  questions[0].options.splice(1, 0, { label: '改走 bounded', description: 'c' });
+  fs.writeFileSync(file, '# report\n\n' + TICKS + 'json gate\n' + JSON.stringify({ questions, next: 'design' }) + '\n' + TICKS + '\n');
+  const out = JSON.parse(run(root, { agent_id: AGENT, tool_input: { file_path: file } }));
+  assert.match(out.hookSpecificOutput.systemMessage, /questions\[0\]\.options\[1\]\.label/);
+});
