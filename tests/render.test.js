@@ -800,6 +800,24 @@ test('prompt.all rides every stage\'s block and the stage agent\'s brief; prompt
   assert.equal(render({ mine: verify, others: [], now: NOW, root: '/r', profile: { values: { 'prompt.design': 'x' }, sources: {}, unreadable: [] } }), none, 'another stage\'s prompt adds nothing');
 });
 
+// TODO 〔stage〕: the brief is English and a stage agent followed it, writing
+// report and gate in English to a user who writes Traditional Chinese. The
+// profile's `language` names the language; unset, the brief says nothing.
+test('a stage agent\'s brief names the profile\'s language for its report and gate; a reader\'s does not, nor a profile without it', () => {
+  const { renderBrief } = require('../lib/render.js');
+  const base = { 'stage.agents': NAMES.slice(), 'dispatch.floor': 'sonnet' };
+  const on = { values: Object.assign({ language: '繁體中文' }, base), sources: {}, unreadable: [] };
+  const mine = entry(MINE, { stage: 'plan', started: '2026-09-19T09:30:12.345Z' });
+  const phrase = 'in 繁體中文 (profile `language`)';
+  const brain = renderBrief({ mine, agentType: 'fankeel:fankeel-brain', root: '/r', profile: on });
+  assert.ok(brain.includes('\n  - Write your report\'s prose and every gate string'), 'the stage agent\'s brief');
+  assert.ok(brain.includes(phrase), 'the stage agent\'s brief names the language');
+  const reader = renderBrief({ mine, agentType: 'fankeel:fankeel-reader', root: '/r', profile: on });
+  assert.ok(!reader.includes('(profile `language`)'), 'a reader\'s brief');
+  const unset = renderBrief({ mine, agentType: 'fankeel:fankeel-brain', root: '/r', profile: { values: base, sources: {}, unreadable: [] } });
+  assert.ok(!unset.includes('(profile `language`)'), 'no language, no line');
+});
+
 // docs/plans/2026-09-26-three-ready.md Task 1. Relative to the registry root,
 // because an absolute path put the bounded design block over the cap at a
 // 30-character root; the mockup key is off here; the bounded + mockup case

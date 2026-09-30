@@ -270,6 +270,14 @@ test('every key carries a one-line description', () => {
     }
 });
 
+test('language is one line of free text, kept as written, and not a wizard key', () => {
+    assert.equal(profile.parseValue('language', ' 繁體中文 ').value, '繁體中文');
+    assert.ok(profile.parseValue('language', '').error);
+    assert.ok(profile.parseValue('language', 'a\nb').error);
+    assert.equal(profile.KEYS.language.values.length, 0);
+    assert.equal(Object.prototype.hasOwnProperty.call(profile.WIZARD_KEYS, 'language'), false);
+});
+
 test('a preset only sets keys that exist, to values the table accepts', () => {
     assert.deepEqual(Object.keys(profile.PRESETS), ['manual', 'balanced', 'lean']);
     for (const [id, preset] of Object.entries(profile.PRESETS)) {
