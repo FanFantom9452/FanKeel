@@ -693,14 +693,14 @@ test('there are fourteen trackedFiles call sites, ten under scripts/ and four un
 // The section is whitespace-stripped first: that sentence is hard-wrapped, and
 // pinning one wrap position makes this go red for the wrong reason the next
 // time the paragraph reflows.
-test('the sentence above the list says thirteen, and ten under scripts/', () => {
+test('the sentence above the list says fourteen, and ten under scripts/', () => {
   const flat = lifetimeSection(path.join(__dirname, '..')).replace(/\s+/g, '');
-  assert.ok(flat.includes('其後十三條是它的十三個呼叫端'),
-    'the sentence above the list does not say 其後十三條 / 十三個呼叫端');
-  assert.ok(flat.includes('`scripts/`十處與`lib/`三處'),
-    'the sentence does not say scripts/ 十處與 lib/ 三處');
-  assert.ok(flat.includes('十三個之中只有這一處自己（`scan`函式本身）直接讀'),
-    'the survey.js bullet does not say 十三個之中');
+  assert.ok(flat.includes('其後十四條是它的十四個呼叫端'),
+    'the sentence above the list does not say 其後十四條 / 十四個呼叫端');
+  assert.ok(flat.includes('`scripts/`十處與`lib/`四處'),
+    'the sentence does not say scripts/ 十處與 lib/ 四處');
+  assert.ok(flat.includes('十四個之中只有這一處自己（`scan`函式本身）直接讀'),
+    'the survey.js bullet does not say 十四個之中');
 });
 
 // docs/plans/2026-09-26-station-redesign.md Task 6. A decision marked
@@ -765,6 +765,60 @@ test('a data bucket is never checked and never unfiled; without it the page is b
   docs.write(root, { buckets: [{ path: 'docs', role: 'reference', depth: 1 }] });
   assert.deepEqual(docs.unfiledOf(docs.read(root).tree, ['docs/guide.md', 'docs/raw/notes.md']), ['docs/raw/notes.md']);
   assert.equal(docs.unfiledCount(root), 1);
+});
+
+// The three `data` entries in scripts/docs-audit.js (batches, the index check,
+// the orphan check) each need a page that only that entry can save. The data
+// bucket sits under `docs`, so as reference the page would be batched, listed
+// missing from the index, and (with no index) named an orphan.
+const audit = require('../scripts/docs-audit.js');
+const dataTree = (files) => {
+  const root = tree(files);
+  docs.write(root, {
+    index: 'docs/README.md',
+    buckets: [{ path: 'docs', role: 'reference', depth: 1 }, { path: 'docs/raw', role: 'data' }],
+  });
+  return root;
+};
+
+test('a data page is not batched for the reading half', () => {
+  const root = dataTree({ 'docs/guide.md': '# guide\n', 'docs/raw/notes.md': '# raw\n' });
+  const b = audit.batches(root);
+  assert.ok(b.some((x) => x.pages.includes('docs/guide.md')), 'control: the reference page is batched');
+  assert.ok(!b.some((x) => x.pages.includes('docs/raw/notes.md')), 'a data page was sent to a reader');
+});
+
+test('a data page is not listed missing from the index', () => {
+  const root = dataTree({
+    'docs/README.md': '- [Guide](guide.md)\n',
+    'docs/guide.md': '# guide\n',
+    'docs/raw/notes.md': '# raw\n',
+  });
+  const r = audit.sweep(root, 14, Date.now());
+  assert.equal(r.index.exists, true, 'the index branch is the one under test');
+  assert.deepEqual(r.index.missing, []);
+});
+
+test('with no index written, a data page nothing links to is not an orphan', () => {
+  const root = dataTree({
+    'docs/guide.md': '# guide\n',
+    'docs/other.md': '[g](guide.md)\n',
+    'docs/raw/notes.md': '# raw\n',
+  });
+  const r = audit.sweep(root, 14, Date.now());
+  assert.equal(r.index.exists, false, 'the orphan branch only runs with no index written');
+  assert.deepEqual(r.orphans, ['docs/other.md']);
+});
+
+// unfiledCount's no-declared-tree branch: no docs.json, so detect() names a
+// preset and PRESETS supplies the tree. `docs/deep/x/y.md` is beyond the flat
+// preset's depth 1, so it is the one unfiled page; with no docs/ at all there
+// is no tree and nothing can be unfiled.
+test('unfiledCount with no docs.json reads the detected preset; with nothing detected it is 0', () => {
+  const root = tree({ 'docs/a.md': '# a\n', 'docs/deep/x/y.md': '# y\n' });
+  assert.equal(docs.read(root).tree, null, 'the branch under test only runs with no declared tree');
+  assert.equal(docs.unfiledCount(root), 1);
+  assert.equal(docs.unfiledCount(tree({ 'notes/a.md': '# a\n' })), 0);
 });
 
 test('unfiledOf is empty with no tree, the reading docs-audit always had', () => {

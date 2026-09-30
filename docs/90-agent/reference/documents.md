@@ -19,6 +19,7 @@ and the role says how long a document is meant to stay true:
 | `report` | a dated snapshot: audit, benchmark, meeting, a judge's ruling (`docs/judgements/`) | yes |
 | `archive` | retired; checked only that nothing current points at it | yes |
 | `fixture` | a test's own input — describes nothing about the system, checked for links and line numbers only | n/a |
+| `data` | raw data — exports, recordings, source files — not a document. `docs-check` and `docs-audit` never check it, the index and the reading batches leave it out, and it is not counted as unfiled | n/a |
 | `todo` | one TODO entry, a file under the project's entry folder. Current, but checked like a fixture: links and line numbers, never symbols or `last_verified` — its date is its own `stamp`. Left out of the index and the audit's reading batches. | no — dated by its own stamp |
 
 A root `.ignore` holding `docs/99-archive/` keeps ripgrep — the `Grep` tool here —
@@ -157,10 +158,11 @@ report where a real parser would cost a dependency this plugin does not have.
 | `build/<plan>/`、`build/ask/` | 否 | 一個 task 在跑時各階段寫下的一切——例如 ledger、brief、report、測試輸出、design 的 `mockup.html`、verify 的證據；列出不清理 |
 | `index.html`、`station/` | 否 | 這台機器的 station 副本，每次 prompt 重寫 |
 | `worktrees/<id8>/` | 否 | profile `worktree: true` 時 `task.js start` 為一個 session 開的 git worktree，分支 `fk/<id8>`；land 合併、測試全綠後 `git worktree remove` |
+| `sensitive.txt` | 否 | 敏感詞表，一行一詞；詞表本身就是敏感資料，所以不進版控，每台機器各一份（init 的可見度那一步建立） |
 | `docs/judgements/`（不在 `.fankeel/`） | 是 | `fankeel-judge` 的判斷，寫完不改（`report`） |
 
 `docs.json` 與 `profile.json` 同層、都進版本控制，是這張表裡唯二「提交」的
-`.fankeel/` 檔——其餘五區都在 `.fankeel/.gitignore` 之內。`docs/judgements/`
+`.fankeel/` 檔——其餘六區都在 `.fankeel/.gitignore` 之內。`docs/judgements/`
 不在 `.fankeel/` 底下，卻也是「寫完不改」的一區：它跟 `docs.json`、
 `profile.json` 一樣提交，但壽命規則更接近一份決定記錄，而不是一份可以重新
 生成的快照。
@@ -168,8 +170,8 @@ report where a real parser would cost a dependency this plugin does not have.
 這幾區**不能**是 `.fankeel/docs.json` 的一個 bucket，而這值得寫下來，因為路徑
 本身是合法的：`lib/docs.js:214` 的 `if (!p.startsWith(b.path + '/')) continue;`
 是純字串前綴比對，`skills`、`evals`、`agents` 都是 `docs/` 以外的 bucket。擋住
-的是列檔的那一層，而那一層是同一個函式：下面第一條是它跑的旗標，其後十三條是它
-的十三個呼叫端，`scripts/` 十處與 `lib/` 三處。每一行的引文都必須
+的是列檔的那一層，而那一層是同一個函式：下面第一條是它跑的旗標，其後十四條是它
+的十四個呼叫端，`scripts/` 十處與 `lib/` 四處。每一行的引文都必須
 跟它的行號同行。`scripts/docs-check.js:285` 是 `function quoteBeside(text, from) {`，
 它只掃到換行為止，而同一行上的第二個路徑會被它自己的 `PATHISH` 擋掉——所以擠
 在一行的兩個引用等於兩個都沒有引文，而被硬換行拆開的引文等於沒寫。
@@ -188,7 +190,7 @@ report where a real parser would cost a dependency this plugin does not have.
 - `scripts/layout.js:51` 是 `const found = trackedFiles(root);`
 - `scripts/memory-check.js:142` 是 `const tracked = trackedFiles(root);`
 - `scripts/orient.js:287` 是 `result = trackedFiles(dir, { stats });`
-- `scripts/survey.js:198` 是 `const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt`，十三個之中只有這一處自己（`scan` 函式本身）直接讀 `.buckets`
+- `scripts/survey.js:198` 是 `const tracked = trackedFiles(root, { stats }) || (stats.unlistable || stats.skippedExt`，十四個之中只有這一處自己（`scan` 函式本身）直接讀 `.buckets`
 
 `--exclude-standard` 套用 `.gitignore`，所以宣告出來的 bucket 會
 永遠列出零個檔。這張表是這幾區唯一的說明，`node scripts/residue.js` 是它們當下
