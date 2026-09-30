@@ -679,12 +679,12 @@ test('the lifetime section lists every trackedFiles call site in scripts/ and li
     + ', bullets pointing at no call site: ' + JSON.stringify(declared.filter((x) => !a.has(x))));
 });
 
-test('there are thirteen trackedFiles call sites, ten under scripts/ and three under lib/', () => {
+test('there are fourteen trackedFiles call sites, ten under scripts/ and four under lib/', () => {
   const actual = callSites(path.join(__dirname, '..'));
-  assert.equal(actual.length, 13, 'call sites: ' + JSON.stringify(actual));
+  assert.equal(actual.length, 14, 'call sites: ' + JSON.stringify(actual));
   assert.equal(actual.filter((s) => s.startsWith('scripts/')).length, 10,
     'under scripts/: ' + JSON.stringify(actual));
-  assert.equal(actual.filter((s) => s.startsWith('lib/')).length, 3,
+  assert.equal(actual.filter((s) => s.startsWith('lib/')).length, 4,
     'under lib/: ' + JSON.stringify(actual));
 });
 
@@ -741,4 +741,32 @@ test('bucketOf names the bucket a file is filed under, depth and nesting include
   assert.equal(docs.bucketOf(t, 'docs/notes/deep/x.md'), null, 'depth 1 keeps a deeper page out of docs');
   assert.equal(docs.bucketOf(t, 'README.md'), null, 'a signpost is in no bucket');
   assert.equal(docs.bucketOf(null, 'docs/a.md'), null);
+});
+
+// docs/90-agent/plans/2026-09-30-init-design.md §2a: raw data is not a
+// document. The data bucket sits under `docs` so both controls can fail:
+// without it the page is reference (docs-check reports it) or unfiled.
+test('a data bucket is never checked and never unfiled; without it the page is both', () => {
+  const root = tree({
+    'docs/guide.md': '# guide\n',
+    'docs/raw/notes.md': '# notes\n\n[gone](missing.md) and `lib/nothing.js`\n',
+    'lib/a.js': 'module.exports = {};\n',
+  });
+  docs.write(root, { buckets: [{ path: 'docs', role: 'reference', depth: 1 }, { path: 'docs/raw', role: 'data' }] });
+  const t = docs.read(root).tree;
+  assert.equal(docs.roleOf(t, 'docs/raw/notes.md'), 'data');
+  assert.deepEqual(docs.unfiledOf(t, ['docs/guide.md', 'docs/raw/notes.md']), []);
+  assert.equal(docs.unfiledCount(root), 0);
+  assert.deepEqual(check.scan(root).findings.filter((f) => f.file === 'docs/raw/notes.md'), []);
+
+  docs.write(root, { buckets: [{ path: 'docs', role: 'reference' }] });
+  assert.ok(check.scan(root).findings.some((f) => f.file === 'docs/raw/notes.md'), 'as reference the dead link is reported');
+
+  docs.write(root, { buckets: [{ path: 'docs', role: 'reference', depth: 1 }] });
+  assert.deepEqual(docs.unfiledOf(docs.read(root).tree, ['docs/guide.md', 'docs/raw/notes.md']), ['docs/raw/notes.md']);
+  assert.equal(docs.unfiledCount(root), 1);
+});
+
+test('unfiledOf is empty with no tree, the reading docs-audit always had', () => {
+  assert.deepEqual(docs.unfiledOf(null, ['a/b.md']), []);
 });

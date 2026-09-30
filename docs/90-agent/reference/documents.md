@@ -175,13 +175,14 @@ report where a real parser would cost a dependency this plugin does not have.
 在一行的兩個引用等於兩個都沒有引文，而被硬換行拆開的引文等於沒寫。
 
 - `lib/tracked.js:31` 是 `const args = ['ls-files', '-z', '--cached', '--others', '--exclude-standard'];`
+- `lib/docs.js:254` 是 `const listed = require('./tracked.js').trackedFiles(root);`
 - `lib/map.js:237` 是 `const found = trackedFiles(root);`
 - `lib/map.js:318` 是 `const found = trackedFiles(root);`
 - `lib/plantasks.js:295` 是 `const found = trackedFiles(root);`
 - `scripts/docs-audit.js:416` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-audit.js:456` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-check.js:152` 是 `const result = trackedFiles(root);`
-- `scripts/docs-check.js:473` 是 `const result = trackedFiles(root);`
+- `scripts/docs-check.js:474` 是 `const result = trackedFiles(root);`
 - `scripts/docs-move.js:74` 是 `const listed = trackedFiles(root);`
 - `scripts/docs-move.js:210` 是 `for (const rel of trackedFiles(root).files.filter(isMarkdown)) {`
 - `scripts/layout.js:51` 是 `const found = trackedFiles(root);`

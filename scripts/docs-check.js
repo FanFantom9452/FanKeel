@@ -305,8 +305,9 @@ function checkDoc(root, rel, role, symbols, roots) {
     const lines = text.split('\n');
 
     // Archive is checked for one thing only, and not here: that nothing current
-    // points *at* it. What it points at itself is history.
-    if (role === 'archive' || role === 'report') return out;
+    // points *at* it. What it points at itself is history. Data is not a
+    // document at all.
+    if (role === 'archive' || role === 'report' || role === 'data') return out;
 
     const lineOf = (index) => text.slice(0, index).split('\n').length;
 

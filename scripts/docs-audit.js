@@ -421,7 +421,7 @@ function batches(root) {
         const b = docs.isSignpost(rel) ? { path: '.', role: 'reference' }
             : tree ? docs.bucketOf(tree, rel)
                 : { path: rel.includes('/') ? rel.split('/')[0] : '.', role: 'reference' };
-        if (!b || ['archive', 'fixture', 'todo'].includes(b.role)) continue;
+        if (!b || ['archive', 'fixture', 'todo', 'data'].includes(b.role)) continue;
         if (!groups.has(b.path)) groups.set(b.path, []);
         groups.get(b.path).push(rel);
     }
@@ -686,7 +686,7 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
                 if (rel === indexRel) continue;
                 if (rel.split('/')[0] !== docRoot) continue;
                 const role = docs.roleOf(tree, rel);
-                if (['archive', 'fixture', 'todo'].includes(role)) continue;
+                if (['archive', 'fixture', 'todo', 'data'].includes(role)) continue;
                 if (!linked.has(rel)) index.missing.push(rel);
             }
         }
@@ -709,7 +709,7 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
     const orphans = index.exists ? [] : markdown.filter((rel) => rel.split('/')[0] === docRoot
         && rel !== indexRel
         && !pointedTo.has(rel)
-        && !['archive', 'fixture', 'todo'].includes(docs.roleOf(tree, rel)));
+        && !['archive', 'fixture', 'todo', 'data'].includes(docs.roleOf(tree, rel)));
 
     // 6. Code nothing describes. Top level only: a directory with no reference
     // document naming anything inside it is a part of the system documentation
@@ -723,7 +723,7 @@ function sweep(root, since, now, settled = LANDED_QUIET) {
 
     // 9. Markdown nobody filed. One line: the fix is a bucket in docs.json, not
     // twenty edits, and naming twenty files at somebody obscures that.
-    const unfiled = markdown.filter((rel) => roleOf(rel) === null);
+    const unfiled = docs.unfiledOf(tree, markdown);
     const codeDirs = new Set(files.filter((f) => isCode(f) && f.includes('/')).map((f) => f.split('/')[0]));
     const uncovered = [...codeDirs].filter((d) => !described.has(d)).sort();
 
