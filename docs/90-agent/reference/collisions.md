@@ -1,7 +1,7 @@
 ---
 status: current
 last_verified: 2026-09-28
-source_of_truth: lib/overlap.js, lib/guard.js, lib/live.js, lib/registry.js, lib/dirty.js, scripts/task.js, scripts/orient.js, hooks/touch.js, hooks/inject.js
+source_of_truth: lib/overlap.js, lib/guard.js, lib/live.js, lib/registry.js, lib/dirty.js, scripts/task.js, scripts/orient.js, hooks/touch.js, hooks/inject.js, scripts/commit.js
 ---
 
 # Two sessions, one repository
@@ -334,5 +334,13 @@ The entry itself stays, which is the point — `adopt` still reads it and brings
 task back with its notes. `task.js clear <session-id>` puts the claim down without
 taking the task over. It refuses an entry seen in the last twelve hours unless
 `--force`.
+
+## Two commits at the same moment
+
+Nothing in the guard is involved here: claims and overlap are about who is editing a file, and a commit is git's. `tests/collisions-commit.test.js` pins each case below.
+
+- **One tree, `.git/index.lock` held.** git takes that file for every write to the index, and whoever holds it goes first. `scripts/commit.js` does not wait or retry: the other run exits 1 with one `commit.js: git add failed:` line that names `index.lock`, and its commit file stays where it was, so the controller relays that line and the agent resends. A lock left behind by a git that crashed blocks every commit the same way until someone deletes it; `commit.js` never deletes it.
+- **Two `commit.js` at once, different paths.** Each run either prints its range and exits 0, or prints one `commit.js: git add failed:` or `commit.js: git commit failed:` line and exits 1. Neither fails silently, and a failed run's message is not in the log. Each run reads its base before it stages anything, so a run whose base was read before the other one committed prints a range that holds both commits.
+- **Two worktrees changing one line.** The land skill merges each `fk/<id8>` branch from the main checkout. The second merge stops with the file unmerged (`git diff --name-only --diff-filter=U` lists it), and `git merge --abort` puts the main checkout back at the first merge. fankeel has no code on this path: resolving the conflict is the user's, at the land gate.
 
 [Back to the index](../../README.md) · [Back to the front page](../../../README.md)
