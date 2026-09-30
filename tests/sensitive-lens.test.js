@@ -29,3 +29,11 @@ test('the sensitive-lens eval cases parse: two findings planted, and a clean dif
     assert.equal(clean.name, 'sensitive-lens-clean');
     assert.equal(clean.graders.length, 2);
 });
+
+test('plan, build and verify ask for the Sensitive lens when sensitive.review is true', () => {
+    for (const skill of ['fankeel-plan', 'fankeel-build', 'fankeel-verify']) {
+        const text = fs.readFileSync(path.join(ROOT, 'skills', skill, 'SKILL.md'), 'utf8').replace(/\s+/g, ' ');
+        assert.match(text, /`sensitive\.review` is `true`/, skill);
+        assert.match(text, /`## Sensitive` lens/, skill);
+    }
+});

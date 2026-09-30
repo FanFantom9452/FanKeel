@@ -344,6 +344,9 @@ These are **plan failures**, not shorthand:
    It returns only those lines, or `clean` — say why: every line it returns
    stays in this context for the rest of the session. Fix what it finds
    inline, and put the count on the `reviewer:` slot.
+   Where the project's profile says `sensitive.review` is `true`
+   (`task.js profile show`), its brief also asks for the `## Sensitive` lens of
+   its agent file over the plan and the design.
 
 **Neighbours, before the gate.** `node <plugin>/scripts/task.js intends <plan bucket>/<file>.md --session <id>`
 records every `Modify:` and `Test:` path as this task's `intends` and compares

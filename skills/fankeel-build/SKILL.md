@@ -391,6 +391,9 @@ then asks this stage's gate.
    and the `## Comment` lens by name, whichever it named — the reviewer reads
    that lens over the same range. With no plan, the same command runs over
    the row's range; nothing else changes.
+   Where the project's profile says `sensitive.review` is `true`
+   (`task.js profile show`), the brief also asks for the `## Sensitive` lens
+   over the same range.
 
    **A task that changes a page gets a second reviewer** in the same response:
    `subagent_type: fankeel:fankeel-render-reviewer`, whose file pins `sonnet`.

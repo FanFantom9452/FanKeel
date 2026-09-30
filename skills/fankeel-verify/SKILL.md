@@ -241,6 +241,10 @@ Before dispatching, run `node <plugin>/scripts/lenses.js <the base>..HEAD` over
 that same whole range and put what it printed in the brief too: `none`, or the
 `## Silent failure` lens and the `## Comment` lens by name, whichever it named.
 
+Where the project's profile says `sensitive.review` is `true`
+(`task.js profile show`), the adversary's brief also asks for the
+`## Sensitive` lens over that whole range; a finding there is a defeated row.
+
 When the claim under evidence is about what a page shows,
 dispatch `subagent_type: fankeel:fankeel-render-reviewer` beside it — its
 file pins `sonnet` — with the ask, the approved mockup's path and
