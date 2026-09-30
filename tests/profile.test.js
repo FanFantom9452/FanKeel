@@ -491,3 +491,29 @@ test('init.skip, sensitive.mode and sensitive.review are keys, builtin false, wa
     assert.match(profile.parseValue('sensitive.mode', 'loud').error, /warn, block/);
     assert.equal(profile.parseValue('init.skip', 'true').value, true);
 });
+
+test('suggest offers class.default once three class records agree by a majority, and says what it counted', () => {
+    const d = dir();
+    const g = (...a) => execFileSync('git', a, { cwd: d, stdio: 'ignore' });
+    g('init', '-q', '-b', 'main');
+    g('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'init');
+    const sessions = path.join(d, '.fankeel', 'sessions');
+    fs.mkdirSync(sessions, { recursive: true });
+    const write = (n, cls) => fs.writeFileSync(path.join(sessions, '22222222-0000-4000-8000-00000000000' + n + '.json'), JSON.stringify({
+        task: 't' + n, class: cls, active: false, started: new Date().toISOString(), updated: new Date().toISOString(),
+    }));
+    write(1, 'bounded');
+    write(2, 'bounded');
+    const two = profile.suggest(d, d);
+    assert.equal(two.values['class.default'], undefined, 'two records are not enough');
+    assert.ok(two.evidence.includes('class records: 2 bounded'), two.evidence.join(' | '));
+    write(3, 'bounded');
+    write(4, 'architectural');
+    const four = profile.suggest(d, d);
+    assert.equal(four.values['class.default'], 'bounded');
+    assert.ok(four.evidence.includes('class records: 3 bounded, 1 architectural'), four.evidence.join(' | '));
+    write(5, 'architectural');
+    write(6, 'architectural');
+    assert.equal(profile.suggest(d, d).values['class.default'], undefined, 'three against three is no majority');
+    assert.equal(profile.suggest(d).values['class.default'], undefined, 'no registry, no class records');
+});
