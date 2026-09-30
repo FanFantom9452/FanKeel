@@ -1,11 +1,11 @@
 'use strict';
 
-// The release number lives in fourteen files and nothing used to set them together,
-// so a release was fourteen edits and a miss left a skill announcing a version the
+// The release number lives in fifteen files and nothing used to set them together,
+// so a release was fifteen edits and a miss left a skill announcing a version the
 // plugin is not. `tests/contract.test.js` fails when they disagree; this is the
 // half that makes them agree.
 //
-// Every test here works on a copy. A script whose job is to rewrite fourteen files in
+// Every test here works on a copy. A script whose job is to rewrite fifteen files in
 // this repository must never be pointed at this repository by its own tests.
 
 const test = require('node:test');
@@ -45,7 +45,7 @@ test('agreement is reported with the number and nothing else', () => {
 });
 
 // The failure names every file and its answer, because "they disagree" sends
-// somebody to open fourteen files to find the one.
+// somebody to open fifteen files to find the one.
 test('a disagreement names which file says what', () => {
   const root = tree({ 'package.json': '0.33.1', 'skills/fankeel-build/SKILL.md': '0.30.0' });
   const r = version.main([], root);
@@ -96,10 +96,10 @@ test('a file with no version line reads as none, not as absent', () => {
 });
 
 // The count this repository actually has, checked against the real tree so the
-// script and `tests/contract.test.js` cannot disagree about what fourteen means.
-test('the real repository has the fourteen places the contract test counts', () => {
+// script and `tests/contract.test.js` cannot disagree about what fifteen means.
+test('the real repository has the fifteen places the contract test counts', () => {
   const rows = version.readAll(REAL);
-  assert.equal(rows.length, 14, rows.map((r) => r.file).join(', '));
+  assert.equal(rows.length, 15, rows.map((r) => r.file).join(', '));
   assert.equal(new Set(rows.map((r) => r.version)).size, 1);
 });
 

@@ -17,6 +17,7 @@ const SKILLS = [
     'fankeel-build',
     'fankeel-design',
     'fankeel-explain',
+    'fankeel-init',
     'fankeel-land',
     'fankeel-plan',
     'fankeel-station',
