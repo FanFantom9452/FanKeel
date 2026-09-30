@@ -420,3 +420,15 @@ test('this repository\'s own orientation section is not empty', () => {
   assert.match(text, /\norientation:\n/);
   assert.match(text, /most required:/);
 });
+
+// docs/90-agent/plans/2026-09-30-init-design.md §2a: the map marks a data
+// bucket, and a bare page under it is not listed as undeclared.
+test('a data bucket is marked in the filing and its pages are never undeclared', () => {
+  const dir = root();
+  write(dir, 'README.md', '# x\n');
+  write(dir, 'docs/guide.md', '---\nstatus: current\n---\n# guide\n');
+  write(dir, 'raw/minutes.md', '# minutes, no frontmatter\n');
+  docs.write(dir, { buckets: [{ path: 'docs', role: 'reference' }, { path: 'raw', role: 'data' }] });
+  assert.ok(!map.pagesByStatus(dir).undeclared.includes('raw/minutes.md'));
+  assert.match(map.buildMap(dir), /^ {2}raw — data \(raw data, not documents\)$/m);
+});
