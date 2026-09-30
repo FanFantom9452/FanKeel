@@ -44,7 +44,7 @@ profile 是 gate 的常備答案：先寫好，fankeel 就不再問那一題。�
 | `commit.format` | commit.js 提交前，每則訊息第一行要符合的正規式；不設就不檢查 | 一個 JavaScript 正規式，比對訊息第一行 | 不設 |
 <!-- PROFILE_TABLE:END -->
 
-`security.local` 與 `prompt.all`、`prompt.<站>` 兩列是自由文字，精靈沒有欄位給它們，要用下面的指令設。
+`security.local`、`commit.format` 與 `prompt.all`、`prompt.<站>` 幾列是自由文字，精靈沒有欄位給它們，要用下面的指令設。
 
 ## 在站頁精靈怎麼套
 
