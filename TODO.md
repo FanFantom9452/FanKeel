@@ -10,6 +10,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔await〕`kind` 讀不到時，await 改從 brain 自己的 transcript 第一行讀（commit a0187d9d769dd3eb0821a22e62ef3543739eef6d）：重裝後看一次真實 `build close` 的 await 是否盯 `build.md` — [scripts/await.js](scripts/await.js).
 
+- 〔stage-agents〕verify 退回 build 後，brain 交 build-fix.md 無 gate、build-2.md 不存在，主控另派 build close 才補上；退回的 build 該自己寫 gate — [stages.js](lib/stages.js).
+
 ## Needs a decision
 
 - 〔controller〕主控回報用 entry 標題不用 await-1 這類代號；評估主 session 只負責轉述過程、其餘全派 brain agent 的平衡點 — [stages.js](lib/stages.js).
