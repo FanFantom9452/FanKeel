@@ -302,6 +302,24 @@ test('a cd before the add moves the paths the add and the commit name', () => {
   assert.equal(hook(dir, 'Bash', 'git add secret.md && git commit -m x'), '', 'without the cd it names nothing');
 });
 
+test('a commit message holding ; or && before -- does not hide the path after it', () => {
+  for (const msg of ['"a; b"', '"a && b"', "'a || b'"]) {
+    const dir = loose(['ACME'], 'block');
+    const out = verdict(dir, 'git commit -m ' + msg + ' -- docs/plan.md');
+    assert.equal(denied(out), true, msg);
+    assert.match(out.permissionDecisionReason, /docs\/plan\.md:3/, msg);
+  }
+});
+
+test('a cd to a directory the shell would expand, or one that is not there, does not empty the scan', () => {
+  for (const arg of ['$REPO', '"$(pwd)"', '~', '%CD%', '-', 'nowhere']) {
+    const dir = loose(['ACME'], 'block');
+    const out = verdict(dir, 'cd ' + arg + ' && git add docs/plan.md && git commit -m x');
+    assert.equal(denied(out), true, arg);
+    assert.match(out.permissionDecisionReason, /docs\/plan\.md:3/, arg);
+  }
+});
+
 test('git -C dir add resolves against dir, not the hook cwd', () => {
   const dir = withSub('secret.md', 'clean.md');
   assert.equal(denied(verdict(dir, 'git -C sub add secret.md && git commit -m x')), true);
