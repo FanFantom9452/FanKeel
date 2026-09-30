@@ -143,8 +143,26 @@ function main(argv, cwd) {
     // docs/90-agent/plans/2026-09-30-init-design.md §2c: the same scan the
     // shell hook runs, over the paths this file names, before they are staged.
     const topDir = top.stdout.trim();
-    let mode = 'warn';
-    try { mode = profile.read(topDir, profile.configDirOf()).values['sensitive.mode'] || 'warn'; } catch (e) { /* the builtin */ }
+    let values = {};
+    try { values = profile.read(topDir, profile.configDirOf()).values; } catch (e) { /* the builtins */ }
+    const mode = values['sensitive.mode'] || 'warn';
+    // commit-2: a project that sets `commit.format` has every block's subject
+    // checked before any block is staged, so one bad block in a batch commits
+    // nothing; unset, nothing is checked. lib/profile.js stores only a
+    // pattern that compiles.
+    if (values['commit.format']) {
+        const format = new RegExp(values['commit.format']);
+        for (let i = 0; i < parsed.blocks.length; i++) {
+            const subject = parsed.blocks[i].message.split(/\r?\n/)[0];
+            if (!format.test(subject)) {
+                return {
+                    text: 'commit.js: ' + (parsed.blocks.length > 1 ? 'block ' + (i + 1) + ': ' : '')
+                        + 'the subject "' + subject + '" does not match commit.format ' + values['commit.format'],
+                    code: 1,
+                };
+            }
+        }
+    }
     // What the controller relays is one bounded line, whatever git printed.
     const oneLine = (text) => text.trim().replace(/\s+/g, ' ').slice(0, 300);
 
