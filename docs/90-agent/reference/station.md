@@ -1024,6 +1024,22 @@ pulsing, todo dots hollow, the done count equal to the ring's filled cells.
 frames and 60 seconds of audio. Its videos go to `F:/ymlab/fankeel-videos/v4/`.
 `promo30` (v2) and `promo30v3` render byte-identically.
 
+A fifth film, `promo30v5` (also in `assets/station/tour-ring.js`), runs 74
+seconds — 4440 frames — as a guided tour drawn from approved styleframes: a
+hook of 0-11 s (a generic project's file tree grows and `grep` misses files),
+an intro, seven stages, and an outro to 74 s. The stages start at 14, 20, 26,
+32, 42, 50 and 60 s and last 6 s (survey, design, plan, land), 10 s (build,
+audit) and 8 s (verify); the outro runs 66-74 s. A header at the top left — the
+glyph, the wordmark, `0N / 07` and the stage word — replaces the rail, the
+pills, the statusline and the big left glyph, and one centred caption line
+carries the words. File-type icons are Material Icon Theme 5.38.1 (MIT), kept
+in `assets/station/icons/` with its `LICENSE.txt` and inlined as data URIs; the
+player waits on `TOUR_PROMO30V5.ready` before the first frame.
+`tour.html#promo30v5@<frame>` plays it, and
+`node scripts/tour-record.js promo30v5 [--lang zh|en]` records it to
+`F:/ymlab/fankeel-videos/v5/`, keeping the MP4 only (the wav is deleted).
+`promo30`, `promo30v3` and `promo30v4` render byte-identically.
+
 `serve` answers a fixed list of files from `assets/station/` — `STATIC` in
 `scripts/station.js`: `station.js`, `station.css`, `i18n.js`, `tour.html`,
 `tour.css`, `tour.js` and every `tour-<name>.js` (any number of hyphenated
