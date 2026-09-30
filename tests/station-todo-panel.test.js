@@ -75,3 +75,47 @@ test('ten or fewer done entries carry no button, and each state group names its 
     assert.match(html, /<div class="rgh td-grp" data-st="ready"><b class="mono">Ready<\/b>/);
     assert.match(html, /<div class="rgh td-grp" data-st="blocked"><b class="mono">Blocked<\/b>/);
 });
+
+// station.js booted on the project page with its document's listeners kept,
+// so a test can press 展開全部 / 收起 and read what the page drew.
+function projectBoot() {
+    const vm = require('node:vm');
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const SRC = fs.readFileSync(path.join(__dirname, '..', 'assets', 'station', 'station.js'), 'utf8');
+    const NOW = Date.parse('2026-10-01T12:00:00.000Z');
+    const listeners = {};
+    const els = {};
+    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', attrs: {}, style: {}, children: [],
+        setAttribute(k, v) { this.attrs[k] = String(v); }, getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
+        hasAttribute(k) { return k in this.attrs; }, removeAttribute(k) { delete this.attrs[k]; }, appendChild() {}, addEventListener() {} });
+    const doc = { hidden: false, documentElement: el(), title: '', getElementById: (id) => els[id] || (els[id] = el()),
+        addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); }, createElement: el, querySelectorAll: () => [],
+        querySelector: () => null, head: { appendChild() {} } };
+    const win = { location: { hash: '#/p/' + encodeURIComponent(LONG.pkey), protocol: 'file:' }, addEventListener() {}, scrollTo() {},
+        setInterval: () => 1, setTimeout: () => 1, clearTimeout() {}, navigator: { language: 'zh-TW' },
+        localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+        STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'cfg', pricesVerified: '2026-09-24', serve: false,
+            projects: [{ root: LONG.pkey, gone: false, unreadable: 0, build: [], mapAt: null, docs: [], todos: [LONG] }],
+            profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {},
+            sessions: [{ id: 'k1', pkey: LONG.pkey, root: LONG.pkey, task: 'one', state: 'live', route: ['survey', 'build'], stage: 'build', stages: [], backtracks: 0, updated: NOW - 1000, started: new Date(NOW - 120000).toISOString(), days: [] }] } };
+    vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams, fetch: () => Promise.resolve({ ok: true }), module: { exports: {} } });
+    const press = (v) => {
+        const target = { closest: (sel) => (sel === '[data-tdmore]' ? { getAttribute: () => v } : null), getAttribute: () => null, hasAttribute: () => false };
+        for (const fn of listeners.click || []) fn({ target, preventDefault() {}, stopPropagation() {} });
+    };
+    return { press, page: () => els.page.innerHTML };
+}
+
+test('pressing 展開全部 opens the whole done list and 收起 folds it back to ten rows', () => {
+    const p = projectBoot();
+    const rows = () => (doneOf(p.page()).match(/<li class="td-row[^"]*">/g) || []).filter((r) => !/td-hd/.test(r)).length;
+    assert.match(p.page(), /data-block="todo-done"/, 'the project page drew the panel');
+    assert.equal(rows(), 10);
+    p.press('1');
+    assert.equal(rows(), 12);
+    assert.match(doneOf(p.page()), /data-tdmore="0"/);
+    p.press('0');
+    assert.equal(rows(), 10);
+    assert.match(doneOf(p.page()), /data-tdmore="1"/);
+});

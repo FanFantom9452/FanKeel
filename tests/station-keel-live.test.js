@@ -85,6 +85,29 @@ test('the switch reads pressed in classic; a press swaps the attribute and store
     assert.equal(p.els.styletog.attrs['aria-pressed'], 'false');
 });
 
+test('a pointerdown on an action button opens the click ring, restarting it each time, and one on anything else does not', () => {
+    const p = boot();
+    const fire = (target) => { for (const fn of p.listeners.pointerdown || []) fn({ target }); };
+    const cls = new Set();
+    const ring = { classList: { add: (c) => cls.add(c), remove: (c) => cls.delete(c) }, offsetWidth: 1 };
+    const target = (hit) => ({ closest: (sel) => (hit && sel.split(',').some((s) => s.trim() === hit) ? ring : null) });
+    for (const hit of ['.btn.go', '#dchtog', '.td-mb']) {
+        cls.clear();
+        fire(target(hit));
+        assert.equal(cls.has('rip'), true, hit + ' gets the ring');
+    }
+    cls.clear();
+    fire(target('.btn'));
+    fire(target(null));
+    fire({});
+    assert.equal(cls.has('rip'), false, 'a plain button or a bare target gets none');
+    cls.add('rip');
+    const log = [];
+    ring.classList = { add: (c) => log.push('add ' + c), remove: (c) => log.push('remove ' + c) };
+    fire(target('.btn.go'));
+    assert.deepEqual(log, ['remove rip', 'add rip'], 'an old ring is taken off before the new one is put on');
+});
+
 test('the switch speaks the page\'s language', () => {
     assert.equal(boot({ style: 'keel', lang: 'en' }).els.styletog.innerHTML, '<span class="sw2" aria-hidden="true"></span>Classic style');
     assert.equal(boot({ style: 'keel', lang: 'zh' }).els.styletog.innerHTML, '<span class="sw2" aria-hidden="true"></span>經典樣式');

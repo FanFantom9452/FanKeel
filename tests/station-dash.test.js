@@ -113,3 +113,69 @@ test('dashPage draws the cards in the stored order, leaves a switched-off card o
     assert.ok(at('dash-todo') < at('dash-recent') && at('dash-recent') < at('dash-live') && at('dash-live') < at('waiting-card'), html);
     assert.match(html, /<div class="dbig">5<small>/, 'the TODO card reads S.projects');
 });
+
+// station.js booted as page() does, but with the document's listeners kept,
+// so a test can press the chooser and read what the page then draws and what
+// it stored.
+function chooser(kept) {
+    const listeners = {};
+    const els = {};
+    const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', attrs: {}, style: {}, children: [],
+        setAttribute(k, v) { this.attrs[k] = String(v); }, getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
+        hasAttribute(k) { return k in this.attrs; }, removeAttribute(k) { delete this.attrs[k]; }, appendChild() {}, addEventListener() {} });
+    const doc = { hidden: false, documentElement: el(), title: '', getElementById: (id) => els[id] || (els[id] = el()),
+        addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); }, createElement: el, querySelectorAll: () => [],
+        querySelector: () => null, head: { appendChild() {} } };
+    const win = { location: { hash: '#/', protocol: 'file:' }, addEventListener() {}, scrollTo() {},
+        setInterval: () => 1, setTimeout: () => 1, clearTimeout() {}, navigator: { language: 'zh-TW' },
+        localStorage: { getItem: (k) => (k in kept ? kept[k] : null), setItem: (k, v) => { kept[k] = String(v); }, removeItem: (k) => { delete kept[k]; } },
+        STATION: { generatedAt: new Date(NOW).toISOString(), configDir: 'cfg', pricesVerified: '2026-09-04', serve: false,
+            projects: PROJECTS.map((p) => Object.assign({ gone: false, unreadable: 0, build: [], mapAt: null }, p)),
+            profiles: { machine: { values: {}, sources: {}, unreadable: [] }, projects: {} }, profileKeys: {}, classes: {}, sessions: [] } };
+    vm.runInNewContext(SRC, { window: win, document: doc, URLSearchParams, fetch: () => Promise.resolve({ ok: true }), module: { exports: {} } });
+    const fire = (type, target) => { for (const fn of listeners[type] || []) fn({ target, preventDefault() {}, stopPropagation() {} }); };
+    // A pressed button: `closest` answers only for a selector that names one of its attributes.
+    const press = (attrs) => fire('click', { getAttribute: (k) => (k in attrs ? attrs[k] : null), hasAttribute: (k) => k in attrs,
+        closest(sel) { return Object.keys(attrs).some((k) => sel.includes('[' + k + ']')) ? this : null; } });
+    const tick = (id, checked) => fire('change', { checked, getAttribute: (k) => (k === 'data-dchshow' ? id : null) });
+    return { press, tick, page: () => els.page.innerHTML };
+}
+
+test('pressing 調整卡片 opens the chooser and pressing it again, or 完成, shuts it', () => {
+    const c = chooser({});
+    assert.doesNotMatch(c.page(), /data-block="dash-chooser"/);
+    c.press({ 'data-dchtog': '1' });
+    assert.match(c.page(), /data-block="dash-chooser"/);
+    c.press({ 'data-dchtog': '1' });
+    assert.doesNotMatch(c.page(), /data-block="dash-chooser"/);
+    c.press({ 'data-dchtog': '1' });
+    c.press({ 'data-dchdone': '1' });
+    assert.doesNotMatch(c.page(), /data-block="dash-chooser"/);
+});
+
+test('moving a card stores its order as station.dash, moving it back stores no key, and 還原預設 clears it', () => {
+    const kept = {};
+    const c = chooser(kept);
+    c.press({ 'data-dchmv': '1', 'data-card': 'dash-live' });
+    assert.equal(kept['station.dash'], '{"order":["waiting-card","dash-live","dash-todo","dash-spend","dash-recent"],"off":[]}');
+    c.press({ 'data-dchmv': '-1', 'data-card': 'dash-live' });
+    assert.equal('station.dash' in kept, false, 'the default order is stored as no key');
+    c.press({ 'data-dchmv': '-1', 'data-card': 'dash-live' });
+    assert.equal('station.dash' in kept, false, 'a move off the top edge changes nothing');
+    c.press({ 'data-dchmv': '1', 'data-card': 'dash-recent' });
+    assert.equal('station.dash' in kept, false, 'a move off the bottom edge changes nothing');
+    c.press({ 'data-dchmv': '1', 'data-card': 'dash-live' });
+    assert.ok('station.dash' in kept);
+    c.press({ 'data-dchreset': '1' });
+    assert.equal('station.dash' in kept, false);
+});
+
+test('ticking a card off stores it in off and the page leaves it out, ticking it on stores no key again', () => {
+    const kept = {};
+    const c = chooser(kept);
+    c.tick('dash-spend', false);
+    assert.equal(kept['station.dash'], '{"order":["dash-live","waiting-card","dash-todo","dash-spend","dash-recent"],"off":["dash-spend"]}');
+    assert.doesNotMatch(c.page(), /<div class="dash" data-block="dashboard">[\s\S]*data-block="dash-spend"/);
+    c.tick('dash-spend', true);
+    assert.equal('station.dash' in kept, false);
+});
