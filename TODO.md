@@ -10,6 +10,10 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔await〕`kind` 只在測試裡驗過：重裝後看一次真實 `build close` brain 的 mark 是否帶 `kind: 'close'`、await 是否盯 `build.md` — [hooks/brief.js](hooks/brief.js).
 
+- 〔collisions〕使用者問：兩個 fankeel session 同時跑時兩邊都在 commit，若兩邊各開一個 worktree 會不會打架。已知 commit.js 用 `git commit -o <paths>` 只提交自己的路徑，worktree 各有自己的 index 與分支；未查的是同一樹同時 commit 撞 `index.lock` 時誰失敗、失敗是否被回報，以及兩個 worktree 在 land merge 回 main 時同檔衝突如何處理 — [collisions.md](docs/90-agent/reference/collisions.md).
+
+- 〔commit〕使用者問能否強制規定 commit 的輸出格式：commit.js 目前照 brain 寫的訊息原樣提交，沒有格式檢查；先查要擋在哪一層（commit.js 解析時拒絕、git commit-msg hook、或 profile 設定格式），再決定規則放 profile 還是固定 — [scripts/commit.js](scripts/commit.js).
+
 - 〔gate〕09-30 init-1 survey：brain 回答「先讀 map.js 計數」後改寫 survey.md，json gate 卻原封不動，同一題問了三次；那道 gate 也沒有暫停選項，還提供違反 class 下限的「改走 bounded」，hooks/gate.js 只比對抄本沒擋 — [hooks/gate.js](hooks/gate.js).
 
 - 〔init〕首次接上 fankeel 的引導：專屬唯讀 agent 排查現況，再一次一題帶過 docs.json、TODO、開發習慣（profile）、CLAUDE.md、memory、map；每步看現況判斷已完成，共用 upgrade.js 偵測。architectural，走七站 — [upgrade.js](scripts/upgrade.js).
