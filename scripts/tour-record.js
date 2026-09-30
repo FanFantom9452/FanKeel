@@ -160,6 +160,7 @@ async function record(args, ffmpeg, browser) {
     const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fankeel-tour-'));
     const url = pathToFileURL(PAGE).href + '?record&lang=' + args.lang + '#' + args.name + '@0';
     const { child, port } = await launch(browser, url, profileDir);
+    let wav = null;
     try {
         const list = await (await fetch('http://127.0.0.1:' + port + '/json/list')).json();
         const page = list.find((t) => t.type === 'page');
@@ -171,15 +172,23 @@ async function record(args, ffmpeg, browser) {
             if (r.exceptionDetails) throw new Error('tour-record: the page threw: ' + r.exceptionDetails.text);
             return r.result.value;
         };
+        const pageError = () => evaluate("(document.querySelector('canvas') || { dataset: {} }).dataset.error || ''");
         let ready = false;
         for (let i = 0; i < 300 && !ready; i++) {
             ready = await evaluate('!!(window.tour && window.tour.ready)');
-            if (!ready) await new Promise((r) => setTimeout(r, 100));
+            if (!ready) {
+                const err = await pageError();
+                if (err) throw new Error('tour-record: the page failed: ' + err);
+                await new Promise((r) => setTimeout(r, 100));
+            }
         }
-        if (!ready) throw new Error('tour-record: the page never set tour.ready');
+        if (!ready) {
+            const err = await pageError();
+            throw new Error('tour-record: the page never set tour.ready' + (err ? ' (' + err + ')' : ''));
+        }
         const total = await evaluate('tour.length(' + JSON.stringify(args.name) + ')');
         fs.mkdirSync(path.dirname(args.out), { recursive: true });
-        const wav = args.out.replace(/\.mp4$/i, '') + '.wav';
+        wav = args.out.replace(/\.mp4$/i, '') + '.wav';
         fs.writeFileSync(wav, scoreWav(args.name));
         const ff = spawn(ffmpeg, ffmpegArgs(args.out, wav), { stdio: ['pipe', 'ignore', 'inherit'] });
         const done = new Promise((res) => ff.on('exit', (code) => res(code)));
@@ -193,9 +202,9 @@ async function record(args, ffmpeg, browser) {
         const code = await done;
         c.close();
         if (code !== 0) throw new Error('tour-record: ffmpeg exited ' + code);
-        if (args.name === 'promo30v5') fs.rmSync(wav, { force: true });
         return total;
     } finally {
+        if (wav && args.name === 'promo30v5') fs.rmSync(wav, { force: true });
         child.kill();
         try {
             fs.rmSync(profileDir, { recursive: true, force: true });
