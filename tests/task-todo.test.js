@@ -61,6 +61,18 @@ test('a titled entry prints id：title, above its done line at land and under to
   assert.equal(lines[at - 1], '  demo-1：示範標題');
 });
 
+test('an entry folder that cannot be read prints bare ids at start and at land instead of throwing', () => {
+  const dir = root(true);
+  // A directory where an entry file belongs: readdir lists it and reading it throws EISDIR.
+  fs.mkdirSync(path.join(dir, 'docs', 'todo', 'broken-1.md'));
+  const started = task(dir, ['start', '--task', 'close demo', '--route', 'build,land', '--todo', 'demo-1']);
+  assert.match(started, /^ {2}todo:\n {4}demo-1$/m);
+  const lines = task(dir, ['stage', 'land']).split('\n');
+  const at = lines.findIndex((l) => l.includes('todo.js done demo-1'));
+  assert.ok(at > 0, 'the done line is printed');
+  assert.equal(lines[at - 1], '  demo-1');
+});
+
 test('with no entry folder stage land prints no todo.js line', () => {
   const dir = root(false);
   task(dir, ['start', '--task', 'plain', '--route', 'build,land', '--todo', 'x-1']);

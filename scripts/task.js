@@ -315,10 +315,17 @@ const now = () => new Date().toISOString();
 const plainMap = (v) => (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
 
 // `id：title` for each entry id, where the project keeps entry files; null in
-// TODO.md mode, which has no ids to title. An id whose file is gone prints bare.
+// TODO.md mode, which has no ids to title. An id whose file is gone prints bare,
+// and so does every id when the folder cannot be read: a title is a courtesy, and
+// `start` and `stage land` have work to do whether or not it can be printed.
 function titledIds(dir, ids) {
     if (!todoFiles.folderOf(dir)) return null;
-    const loaded = todoFiles.load(dir);
+    let loaded;
+    try {
+        loaded = todoFiles.load(dir);
+    } catch (e) {
+        return ids.slice();
+    }
     const titles = new Map(loaded.entries.concat(loaded.done).map((e) => [e.id, e.title]));
     return ids.map((t) => (titles.get(t) ? t + '：' + titles.get(t) : t));
 }
