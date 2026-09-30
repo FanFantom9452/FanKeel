@@ -217,6 +217,11 @@ test('the land rule names a runnable todo-check path, not a placeholder', () => 
   assert.ok(require('node:fs').existsSync(TODO_CHECK_SCRIPT), TODO_CHECK_SCRIPT + ' does not exist');
 });
 
+test('the land rule has each closed TODO entry named by its title', () => {
+  const out = render({ mine: entry(MINE, { stage: 'land' }), others: [], now: NOW });
+  assert.ok(out.includes('naming each by its title'), 'land block lost the title-naming clause');
+});
+
 test('every script token has a script, and no token survives a render', () => {
   // A token added to stages.js without a script added to render.js would
   // otherwise ship as literal `{{...}}` in the injected text. A render-time

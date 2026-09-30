@@ -774,7 +774,8 @@ real answer.
 Where `orient`'s `todo:` line names a folder, it prints the id of each entry
 it offers: start the task with `task.js start --todo <id>` for the one entry
 an option covers, or once per Ready id when the patrol is picked, and `stage land`
-then prints the `todo.js done` line that closes each.
+then prints the `todo.js done` line that closes each. When naming an entry to
+the user, write its title with the id in parentheses, never a bare id.
 
 A guessed *task* offered as an option is not a guess written behind anyone's
 back — the user confirms it before it is written. Nothing else is asked for:
