@@ -272,3 +272,76 @@ test('scan reads UTF-16 text by its BOM, and still skips a binary', () => {
     { path: 'be.txt', line: 2, word: 'ACME' },
   ]);
 });
+
+// loose() plus a sub/ directory holding a listed-word file.
+function withSub(name, file) {
+  const dir = loose(['ACME'], 'block');
+  fs.mkdirSync(path.join(dir, 'sub'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'sub', name), 'acme\n');
+  if (file) fs.writeFileSync(path.join(dir, 'sub', file), 'nothing\n');
+  return dir;
+}
+
+test('add -f, --force and a combined -fA scan a git-ignored file; a plain add does not', () => {
+  for (const command of ['git add -f docs/ignored.md && git commit -m x', 'git add --force docs/ignored.md && git commit -m x', 'git add -fA && git commit -m x']) {
+    const dir = loose(['ACME'], 'block');
+    fs.writeFileSync(path.join(dir, '.gitignore'), 'docs/ignored.md\n');
+    fs.writeFileSync(path.join(dir, 'docs', 'ignored.md'), 'acme\n');
+    const out = verdict(dir, command);
+    assert.equal(denied(out), true, command);
+    assert.match(out.permissionDecisionReason, /docs\/ignored\.md:1/, command);
+    assert.equal(hook(dir, 'Bash', 'git add docs/ignored.md && git commit -m x').includes('ignored.md:1'), false, 'plain add');
+  }
+});
+
+test('a cd before the add moves the paths the add and the commit name', () => {
+  const dir = withSub('secret.md');
+  assert.equal(denied(verdict(dir, 'cd sub && git add secret.md && git commit -m x')), true);
+  assert.equal(denied(verdict(dir, 'cd "sub" ; git add secret.md ; git commit -m x')), true);
+  assert.equal(denied(verdict(dir, 'cd sub && git commit -m x -- secret.md')), true);
+  assert.equal(hook(dir, 'Bash', 'git add secret.md && git commit -m x'), '', 'without the cd it names nothing');
+});
+
+test('git -C dir add resolves against dir, not the hook cwd', () => {
+  const dir = withSub('secret.md', 'clean.md');
+  assert.equal(denied(verdict(dir, 'git -C sub add secret.md && git commit -m x')), true);
+  assert.equal(hook(dir, 'Bash', 'git -C sub add clean.md && git commit -m x'), '');
+  assert.equal(hook(dir, 'Bash', 'git add secret.md && git commit -m x'), '', 'secret.md is not at the top');
+});
+
+test('add takes -C and -c in any order and any number', () => {
+  const dir = withSub('secret.md');
+  for (const pre of ['-c a=b -C sub', '-C sub -c a=b', '-c a=b -c c=d -C sub', '-C sub -c a=b -c c=d', '-C . -C sub', '-c a=b -C sub -c c=d']) {
+    assert.equal(denied(verdict(dir, 'git ' + pre + ' add secret.md && git commit -m x')), true, pre);
+  }
+});
+
+test('a quoted path with a space is one path', () => {
+  const dir = loose(['ACME'], 'block');
+  fs.writeFileSync(path.join(dir, 'my file.md'), 'acme\n');
+  for (const command of ['git add "my file.md" && git commit -m x', "git add 'my file.md' && git commit -m x"]) {
+    const out = verdict(dir, command);
+    assert.equal(denied(out), true, command);
+    assert.match(out.permissionDecisionReason, /my file\.md:1/, command);
+  }
+});
+
+test('a .fankeel that is a regular file is no list: silent, not refused', () => {
+  const dir = repo(['ACME'], 'block', false);
+  git(dir, 'rm', '-rq', '--cached', '.fankeel');
+  fs.rmSync(path.join(dir, '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.fankeel'), 'not a directory\n');
+  assert.equal(hook(dir, 'Bash', 'git commit -m x'), '');
+  assert.deepEqual(sensitive.scan(dir, ['base.txt']), []);
+  // Windows reports ENOENT for a path through a file; POSIX says ENOTDIR. Say it
+  // outright so the ENOTDIR arm is exercised on both.
+  const real = fs.readFileSync;
+  fs.readFileSync = (p, ...rest) => {
+    if (String(p).endsWith('sensitive.txt')) throw Object.assign(new Error('not a directory'), { code: 'ENOTDIR' });
+    return real(p, ...rest);
+  };
+  try {
+    assert.deepEqual(sensitive.scan(dir, ['base.txt']), []);
+    assert.equal(sensitive.commitVerdict({ cwd: dir, command: 'git commit -m x', mode: 'block' }), null);
+  } finally { fs.readFileSync = real; }
+});
