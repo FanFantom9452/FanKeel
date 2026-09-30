@@ -40,3 +40,18 @@ worktree 的 HEAD 是 commit 7359f74dd33fb11bfc85faed88045e432f32615f，`git sta
 三次 station-wizard-motion 的測試（`the chosen card animates, and under reduced motion nothing is running`，`ok 2040`）都過。三次唯一的紅是 `tests/sources-doc.test.js`，與 station-wizard-motion 無關：它的 diff 顯示 `2026-09-30-ready-eleven-measurements.md` 在 HEAD 的 `docs/sources.md` 還沒有列。
 
 tests-1 verdict: not reproduced
+
+## inject-2：`hooks/inject.js` 閒置與全套負載下的耗時
+
+指令：`node .fankeel/build/2026-09-30-ready-eleven/inject-time.js idle 20 <hook worktree>`，再 `… load 20 <hook worktree> <load worktree>`；兩個 worktree 都是 commit 260c76d1e630ba10de5b24b6c41ef1b8b3dcbb3e 的乾淨 worktree，hook 讀的那個帶著本 repo `.fankeel/`（`build/`、`worktrees/` 除外）的副本，共 246 個 session 檔。每次 hook 旁邊量一次 `node -e 0`。
+
+| | runs | `node -e 0` p50 / p90 / max ms | inject.js p50 / p90 / max ms | 超過 5000 ms 的次數 |
+|---|---|---|---|---|
+| 閒置 | 20 | 39 / 41 / 43 | 231 / 308 / 345 | 0 |
+| 全套跑著 | 20 | 201 / 547 / 617 | 752 / 1273 / 1586 | 0 |
+
+第一次 hook 的輸出：閒置 status 0、5125 chars，負載 status 0、5125 chars。全套 suite exit 1 after 78 s（負載用的全套，量測結束時仍在跑）。
+
+負載下最大值 1586 ms；規則是 ≤ 5000 維持 5 秒，否則取 10、15、20、30 中第一個不小於 1.5 × 1586 / 1000 的值。
+
+inject timeout: 5
