@@ -10,6 +10,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔await〕`kind` 只在測試裡驗過：重裝後看一次真實 `build close` brain 的 mark 是否帶 `kind: 'close'`、await 是否盯 `build.md` — [hooks/brief.js](hooks/brief.js).
 
+- 〔gate〕09-30 init-1 survey：brain 回答「先讀 map.js 計數」後改寫 survey.md，json gate 卻原封不動，同一題問了三次；那道 gate 也沒有暫停選項，還提供違反 class 下限的「改走 bounded」，hooks/gate.js 只比對抄本沒擋 — [hooks/gate.js](hooks/gate.js).
+
 - 〔init〕首次接上 fankeel 的引導：專屬唯讀 agent 排查現況，再一次一題帶過 docs.json、TODO、開發習慣（profile）、CLAUDE.md、memory、map；每步看現況判斷已完成，共用 upgrade.js 偵測。architectural，走七站 — [upgrade.js](scripts/upgrade.js).
 
 - 〔skills〕`disable-model-invocation: true` 對插件 skill 是否生效沒驗：重裝後讓模型自行呼叫 fankeel-station 看是否被擋 — [skills/fankeel-station/SKILL.md](skills/fankeel-station/SKILL.md).
