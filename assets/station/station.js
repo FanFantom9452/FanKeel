@@ -2644,13 +2644,52 @@
             + '<a class="dmore" href="' + href + '">' + loc('dash.seeAll', '查看全部 →') + '</a></div>';
     }
     function dashRowName(s) { return esc(shortLabel(NAMES[s.pkey] || s.pkey)); }
+    // The promo film's v5 glyph (assets/station/tour-ring.js promo30v5 `glyph`,
+    // its small branch; ported from .fankeel/build/2026-10-01-station-redesign/
+    // gen.js) as an SVG string: six segments survey..audit, the edge land, the
+    // core the task. `o.seg(i)` and `o.edge` give each part's state — 'done',
+    // 'now', 'todo' — or null to leave it out (`o.edge` undefined is 'done');
+    // `o.c` is the colour of the stage now, `o.cls` more classes.
+    function keelGlyph(o) {
+        o = o || {};
+        var segState = o.seg || function () { return 'done'; }, edgeState = o.edge === undefined ? 'done' : o.edge;
+        var RAD = Math.PI / 180, POINTY = [-90, -30, 30, 90, 150, 210], ANG = [120, 180, 240, 300, 0, 60];
+        var Ro = 50, Ri = 31, cut = 7, ew = 8, tr = 21, d = (cut / 2) / Math.sin(Math.PI / 3);
+        var at = function (r, a) { return [60 + r * Math.cos(a * RAD), 60 + r * Math.sin(a * RAD)]; };
+        var mv = function (p, q) { var L = Math.hypot(q[0] - p[0], q[1] - p[1]); return [p[0] + (q[0] - p[0]) / L * d, p[1] + (q[1] - p[1]) / L * d]; };
+        var P = function (pts) { return 'M' + pts.map(function (p) { return p.map(function (v) { return v.toFixed(2); }).join(' '); }).join('L') + 'Z'; };
+        var segs = ANG.map(function (a, i) {
+            var st = segState(i);
+            if (!st) return '';
+            var o0 = at(Ro, a - 30), o1 = at(Ro, a + 30), i0 = at(Ri, a - 30), i1 = at(Ri, a + 30);
+            return '<path class="gseg ' + st + '" style="--i:' + i + ';--dx:' + (14 * Math.cos(a * RAD)).toFixed(1) + 'px;--dy:' + (14 * Math.sin(a * RAD)).toFixed(1)
+                + 'px" d="' + P([mv(o0, o1), mv(o1, o0), mv(i1, i0), mv(i0, i1)]) + '"/>';
+        }).join('');
+        return '<svg class="glyph k-only' + (o.cls ? ' ' + o.cls : '') + '" viewBox="0 0 120 120" aria-hidden="true"' + (o.c ? ' style="--c:' + o.c + '"' : '') + '>' + segs
+            + (edgeState ? '<path class="gedge ' + edgeState + '" d="' + P(POINTY.map(function (a) { return at(Ro, a); })) + '" stroke-width="' + ew + '"/>' : '')
+            + '<path class="gcore" d="' + P(POINTY.map(function (a) { return at(tr, a); })) + '"/></svg>';
+    }
+    // A session's progress on the glyph: a stage the route has passed is done,
+    // the stage it is at is now, one still to come is todo, one the route skips
+    // is left out; land is the edge. Then the film's header count, `04 / 07 build`.
+    function keelProgress(s) {
+        var route = s.route || [], at = route.indexOf(s.stage);
+        var state = function (k) { var i = route.indexOf(k); return i < 0 ? null : i < at ? 'done' : i === at ? 'now' : 'todo'; };
+        return keelGlyph({ cls: 'prog', seg: function (i) { return state(ROUTE[i]); }, edge: state('land'), c: at >= 0 ? 'var(--st-' + esc(s.stage) + ')' : '' });
+    }
+    function keelStage(s) {
+        var route = s.route || [], at = route.indexOf(s.stage);
+        if (at < 0) return '';
+        var two = function (n) { return ('0' + n).slice(-2); };
+        return '<span class="kst k-only" style="--c:var(--st-' + esc(s.stage) + ')"><b>' + two(at + 1) + '</b><i>&nbsp;/&nbsp;' + two(route.length) + '</i><u>' + esc(s.stage) + '</u></span>';
+    }
     function dashLive(R) {
         var live = R.filter(function (s) { return s.state === 'live'; });
         return '<section class="dcard" data-block="dash-live">' + dashHead('now', loc('dash.inProgress', '進行中'), '#/live')
             + '<div class="dbig">' + live.length + '<small>' + loc('dash.nLiveSessions', '個 live session') + '</small></div>'
             + (live.length ? '<div class="dlist">' + live.map(function (s) {
                 return '<a class="drow" href="' + sessionHash(s.id) + '"><span class="dp">' + dashRowName(s) + '</span>'
-                    + '<span class="dt">' + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</span>' + routeDots(s, true)
+                    + '<span class="dt">' + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</span>' + routeDots(s, true).replace('class="route"', 'class="route c-only"') + keelProgress(s) + keelStage(s)
                     + '<span class="dr mono">' + mins(Date.now() - msOf(s.started)) + '</span></a>';
             }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noneInProgress', '沒有進行中的 session') + '</p>') + '</section>';
     }
@@ -2678,7 +2717,7 @@
                     + (s.stage ? '<span class="chip dstage"><i class="sw" style="background:var(--st-' + esc(s.stage) + ')"></i>' + esc(s.stage) + '</span>' : '')
                     + '<span class="dt">' + esc(q.header || q.question || s.task || '') + '</span>'
                     + '<span class="dw" title="' + (isFinite(since) ? esc(loc('dash.questionSentAt', '問題 {t} 送出{left}', { t: clock(since), left: left })) : '') + '">' + loc('dash.waitedT', '等了 {t}', { t: waitFor(now - since) }) + '</span></a>';
-            }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noGatesWaiting', '沒有在等你的 gate') + '</p>') + '</section>';
+            }).join('') + '</div>' : '<p class="dnone"><span class="okdot k-only" aria-hidden="true">' + icon('check') + '</span>' + loc('dash.noGatesWaiting', '沒有在等你的 gate') + '</p>') + '</section>';
     }
     // The 近 30 天 chart's own bars, summed per day, drawn without axes.
     function dashSpend(R) {
@@ -2701,7 +2740,7 @@
         return '<section class="dcard" data-block="dash-recent">' + dashHead('sessions', loc('dash.recentSessions', '最近 sessions'), '#/sessions')
             + (list.length ? '<div class="dlist">' + list.map(function (s) {
                 return '<a class="drow" href="' + sessionHash(s.id) + '"><span class="dp">' + dashRowName(s) + '</span>'
-                    + '<span class="dt">' + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</span><span class="ds mono">' + esc(s.stage || '—') + '</span>'
+                    + '<span class="dt">' + esc(s.task || loc('dash.unnamed', '（未命名）')) + '</span><span class="ds mono"' + (s.stage ? ' data-st="' + esc(s.stage) + '" style="--c:var(--st-' + esc(s.stage) + ')"' : '') + '>' + esc(s.stage || '—') + '</span>'
                     + '<span class="dc mono">' + usd(sessionTotals(s).usd) + '</span><span class="dr">' + ago(s.updated) + '</span></a>';
             }).join('') + '</div>' : '<p class="dnone">' + loc('dash.noneLast30d', '近 30 天沒有 session') + '</p>') + '</section>';
     }
@@ -2805,6 +2844,18 @@
             off: list.filter(function (c) { return !c.on; }).map(function (c) { return c.id; }),
         }));
     }
+    // The 經典樣式 switch's press (see styleSync): registered here, ahead of the
+    // page handlers, so a test that keeps only the last click listener still
+    // gets the page's own.
+    doc.addEventListener('click', function (e) {
+        var b = e.target && e.target.closest ? e.target.closest('#styletog') : null;
+        if (!b || !doc.documentElement) return;
+        var classic = doc.documentElement.getAttribute('data-style') === 'keel';
+        if (classic) doc.documentElement.removeAttribute('data-style');
+        else doc.documentElement.setAttribute('data-style', 'keel');
+        store('station.style', classic ? 'classic' : null);
+        styleSync();
+    });
     doc.addEventListener('click', function (e) {
         var b = e.target && e.target.closest ? e.target.closest('[data-dchtog], [data-dchmv], [data-dchreset], [data-dchdone]') : null;
         if (!b) return;
@@ -5030,8 +5081,33 @@
         set('servedown', function (el) { el.innerHTML = '<i class="dot down"></i>' + esc(loc('mast.serveDown', 'serve 已停')); });
         set('langzh', function (el) { el.setAttribute('aria-pressed', String(!en)); el.setAttribute('title', en ? '介面改用繁體中文' : '介面用繁體中文'); });
         set('langen', function (el) { el.setAttribute('aria-pressed', String(en)); el.setAttribute('title', en ? 'Interface is in English' : 'Switch the interface to English'); });
+        set('styletog', function (el) {
+            el.setAttribute('title', loc('mast.styleTitle', '換回 2026-09 的樣式；存在這個瀏覽器（station.style）'));
+            el.innerHTML = '<span class="sw2" aria-hidden="true"></span>' + esc(loc('mast.styleClassic', '經典樣式'));
+        });
     }
     applyChrome();
+    // 經典樣式 (station-9): the keel look is `data-style="keel"` on <html>,
+    // set in assets/station/index.html and taken off there before first paint
+    // when `station.style` says `classic`. The switch is pressed while the look
+    // is classic; a press swaps the attribute and stores the choice.
+    function styleSync() {
+        var root = doc.documentElement, b = doc.getElementById('styletog');
+        if (!root || !root.getAttribute || !b || !b.setAttribute) return;
+        b.setAttribute('aria-pressed', String(root.getAttribute('data-style') !== 'keel'));
+    }
+    styleSync();
+    // The film's click ring: a keel ring opens out from a pressed action button.
+    doc.addEventListener('pointerdown', function (e) {
+        var b = e.target && e.target.closest ? e.target.closest('.btn.go, #dchtog, .td-mb') : null;
+        if (!b || !b.classList) return;
+        b.classList.remove('rip');
+        void b.offsetWidth;
+        b.classList.add('rip');
+    });
+    doc.addEventListener('animationend', function (e) {
+        if (e.animationName === 'kring' && e.target && e.target.classList) e.target.classList.remove('rip');
+    });
 
     // ---- live refresh --------------------------------------------------------
     // Served, the page keeps itself current: every three seconds it re-reads the

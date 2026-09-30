@@ -890,6 +890,8 @@
             'mast.searchHint': 'Search tasks, sessions, files touched…',
             'mast.search': 'Search',
             'mast.serveDown': 'serve stopped',
+            'mast.styleClassic': 'Classic style',
+            'mast.styleTitle': 'Switch back to the 2026-09 look; kept in this browser (station.style)',
         },
     };
     // A choice the reader made wins; else the browser's language: Chinese for
