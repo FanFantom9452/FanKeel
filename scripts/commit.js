@@ -18,6 +18,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const sensitive = require('../lib/sensitive.js');
+const profile = require('../lib/profile.js');
 
 function parseBlock(text) {
     const at = text.search(/\r?\n[ \t]*\r?\n/);
@@ -138,6 +140,11 @@ function main(argv, cwd) {
     if (top.status !== 0) return { text: 'commit.js: not inside a git repository', code: 1 };
     const git = (args, input) => run(top.stdout.trim(), args, input);
     if (git(['rev-parse', 'HEAD']).status !== 0) return { text: 'commit.js: the repository has no commit yet', code: 1 };
+    // docs/90-agent/plans/2026-09-30-init-design.md §2c: the same scan the
+    // shell hook runs, over the paths this file names, before they are staged.
+    const topDir = top.stdout.trim();
+    let mode = 'warn';
+    try { mode = profile.read(topDir, profile.configDirOf()).values['sensitive.mode'] || 'warn'; } catch (e) { /* the builtin */ }
     // What the controller relays is one bounded line, whatever git printed.
     const oneLine = (text) => text.trim().replace(/\s+/g, ' ').slice(0, 300);
 
@@ -161,6 +168,10 @@ function main(argv, cwd) {
         }
         // Read before `add`: `add` restages `paths` at their current working-tree content, which
         // can outweigh a `git mv`'s untouched blob and cost the rename its similarity match.
+        const hits = sensitive.scan(topDir, paths);
+        if (hits.length && mode === 'block') {
+            return fail('sensitive: ' + sensitive.listed(hits) + ' — words from .fankeel/sensitive.txt, and sensitive.mode is block');
+        }
         const renamed = git(['diff', '--cached', '-M', '--name-status']);
         const add = git(['add', '--'].concat(paths));
         if (add.status !== 0) return fail('git add failed: ' + oneLine(add.stderr));
@@ -170,6 +181,7 @@ function main(argv, cwd) {
         const made = git(['commit', '-o', '-F', '-', '--'].concat(withOld), message + '\n');
         if (made.status !== 0) return fail('git commit failed: ' + oneLine(made.stderr || made.stdout));
         out.push((many ? paths.join(', ') + ': ' : '') + base + '..' + git(['rev-parse', 'HEAD']).stdout.trim());
+        if (hits.length) out.push('sensitive: ' + sensitive.listed(hits));
     }
     // Every block landed, so the file is renamed out of the way: a
     // `-commit.md` still on disk always means a commit nobody has made, which

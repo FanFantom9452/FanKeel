@@ -17,6 +17,7 @@ const { decide, guardMode, targetOf, readOnlyAgentType, writesFiles, brainWriteR
 const profileLib = require('../lib/profile.js');
 const { controlling } = require('../lib/stages.js');
 const { run, parse } = require('../lib/hook.js');
+const { isCommit, commitVerdict } = require('../lib/sensitive.js');
 
 // The tool names the controlled-stage matcher below cares about. A module
 // constant rather than a literal in the condition, for the same reason
@@ -24,13 +25,35 @@ const { run, parse } = require('../lib/hook.js');
 // each read better than four `===`s repeated at every call site.
 const WRITE_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit']);
 
+// docs/90-agent/plans/2026-09-30-init-design.md §2c: every `git commit` that
+// passes through Claude Code, in a task or not. A regex on the command is all
+// any other shell call pays; git runs only for a commit.
+function emitCommit(root, mine, payload) {
+    const command = (payload.tool_input && payload.tool_input.command) || '';
+    if (!isCommit(command)) return;
+    let mode = 'warn';
+    try {
+        const values = mine ? profileLib.profileFor(root, mine).values : profileLib.read(root, profileLib.configDirOf()).values;
+        if (values['sensitive.mode']) mode = values['sensitive.mode'];
+    } catch (e) { /* the builtin, warn */ }
+    let verdict = null;
+    try {
+        verdict = commitVerdict({ cwd: payload.cwd || root, command, mode });
+    } catch (e) { /* housekeeping: the commit goes ahead unscanned */ }
+    if (verdict) process.stdout.write(JSON.stringify({ hookSpecificOutput: verdict }));
+}
+
 function main(raw) {
     const payload = parse(raw);
     if (!payload) return;
 
     const root = registry.rootFor(payload);
     const mine = registry.readSession(root, payload.session_id);
-    if (!mine || mine.active !== true) return;
+    const shell = payload.tool_name === 'Bash' || payload.tool_name === 'PowerShell';
+    if (!mine || mine.active !== true) {
+        if (shell) emitCommit(root, mine, payload);
+        return;
+    }
 
     // Asked here rather than left to `decide`, because everything below this line
     // reads a directory. It used to be the gate that mattered: the guard was off
@@ -49,7 +72,7 @@ function main(raw) {
     // below: four named agent types are denied a command that writes,
     // regardless of `guard` mode — this is about a read-only contract, not
     // about two sessions overlapping a file.
-    if (payload.tool_name === 'Bash' || payload.tool_name === 'PowerShell') {
+    if (shell) {
         // `agent_type` is set inside a subagent AND on the main thread of a
         // session started with `--agent` — and that second one is a real
         // session that owns tasks and must be able to write. `agent_id` is
@@ -57,20 +80,21 @@ function main(raw) {
         // whether this is a subagent at all, the type says whether it is a
         // read-only one. docs/subagents.md quotes Claude Code's own wording
         // on the field to use — search it for "offered one".
-        if (!payload.agent_id) return;
-        if (!readOnlyAgentType(payload.agent_type)) return;
         const command = (payload.tool_input && payload.tool_input.command) || '';
-        if (!writesFiles(command)) return;
-        process.stdout.write(JSON.stringify({
-            hookSpecificOutput: {
-                hookEventName: 'PreToolUse',
-                permissionDecision: 'deny',
-                permissionDecisionReason: 'fankeel: this is a subagent call (agent_id is set) with the '
-                    + 'read-only agent_type ' + payload.agent_type + ', and this command writes to disk. '
-                    + 'Redirect to /dev/null (or $null), or ask for a fankeel-verifier if the result needs '
-                    + 'to be written.',
-            },
-        }));
+        if (payload.agent_id && readOnlyAgentType(payload.agent_type) && writesFiles(command)) {
+            process.stdout.write(JSON.stringify({
+                hookSpecificOutput: {
+                    hookEventName: 'PreToolUse',
+                    permissionDecision: 'deny',
+                    permissionDecisionReason: 'fankeel: this is a subagent call (agent_id is set) with the '
+                        + 'read-only agent_type ' + payload.agent_type + ', and this command writes to disk. '
+                        + 'Redirect to /dev/null (or $null), or ask for a fankeel-verifier if the result needs '
+                        + 'to be written.',
+                },
+            }));
+            return;
+        }
+        emitCommit(root, mine, payload);
         return;
     }
 
