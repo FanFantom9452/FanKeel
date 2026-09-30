@@ -5,8 +5,12 @@
   "design.mockup": "opus",
   "stage.agents": [
     "survey",
+    "design",
+    "plan",
     "build",
-    "verify"
+    "verify",
+    "audit",
+    "land"
   ],
   "guard": "deny",
   "gate.station": "off"
