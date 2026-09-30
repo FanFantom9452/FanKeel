@@ -749,22 +749,20 @@ is only one.
 
 Then `What is the task?`, in the same call. **Read `TODO.md` first where the root
 has one**: its headings are the clustering, so there is nothing to derive.
-`## Ready` is one option for the whole section — every entry under it is its own
-specification, and a build loop runs them as a list. **More than one bullet there
-needs `plan` on the route**: the plan file is the only place N tasks are written
-down durably, and with no plan file there is no ledger, so a compaction takes the
-loop's place with it. `## Needs a decision` offers the ones `orient`'s `todo:`
+`## Ready` is never an option of its own: the patrol builds it, and one entry
+is still reachable by name through **Other**. The patrol's route carries `plan`,
+because the plan file is the only place N tasks are written down durably — with
+no plan file there is no ledger, and a compaction takes the loop's place with it. `## Needs a decision` offers the ones `orient`'s `todo:`
 block lists — the newest by last edit, because `AskUserQuestion` holds four,
-`## Ready` takes one when it has entries and the patrol takes the last — one
+the patrol takes the last — one
 option each, because each is a
 different question for a person, with the rest reachable by name through
 **Other**. The last option is always the patrol, labelled `TODO 全表盤點`, whenever
 `TODO.md` has an entry: it walks every heading, Ready and Needs a decision
-included. Blocked and Watch timings are never options one by one — six
+included, and builds Ready and whatever else it finds buildable. Blocked and Watch timings are never options one by one — six
 unpickable rows are how a menu stops being read — but every one is listed in
 that block each time, so what is waiting is on screen whether or not it is
-offered. Picking the patrol starts a task with `--route "survey,build,land"`,
-which survey widens when an entry turns into work. `survey`'s own skill and
+offered. Picking the patrol starts a task with `--route "survey,plan,build,verify,land"` — fixed, so the patrol goes from its survey straight on to building. `survey`'s own skill and
 `build`'s own skill each carry their half of what that route does —
 `skills/fankeel-survey/SKILL.md`'s `## The patrol` and
 `skills/fankeel-build/SKILL.md`'s `## The patrol`. `land` runs `todo-check`. Any other heading, or
@@ -775,7 +773,7 @@ phrased as a task and not as a commit subject. **Other** is always there for the
 real answer.
 Where `orient`'s `todo:` line names a folder, it prints the id of each entry
 it offers: start the task with `task.js start --todo <id>` for the one entry
-an option covers, or once per id for `## Ready` taken whole, and `stage land`
+an option covers, or once per Ready id when the patrol is picked, and `stage land`
 then prints the `todo.js done` line that closes each.
 
 A guessed *task* offered as an option is not a guess written behind anyone's

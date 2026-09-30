@@ -312,15 +312,16 @@ re-route with `task.js route`. Nothing downgrades mid-task.
 
 A task started by picking the patrol at `/fankeel` — the last option,
 labelled `TODO 全表盤點`, offered whenever `TODO.md` has an entry — arrives on
-`--route "survey,build,land"`, and this stage walks every entry in `TODO.md`,
+`--route "survey,plan,build,verify,land"`, and this stage walks every entry in `TODO.md`,
 not only the timings.
 
 **Ready and Needs a decision.** Each entry is re-checked in the code it links
 to: still true, already done, a bug rather than a decision, or a duplicate of
 another entry. The report ends with one line per entry in three groups —
 `do now`, `needs the user`, `waiting on <what>` — so the gate can offer the
-do-now ones as the next stage. Where any are to be built, widen the route with
-`task.js route` before the gate; adding `design` or `plan` is free.
+do-now ones as the next stage. Every Ready entry still true and buildable in this session is `do now`. The
+route already carries `plan` and `verify`, so it is not widened for them;
+adding `design` is free where an entry needs one.
 
 By default every `needs the user` entry is decided at the gate, not only
 listed. Each rides the gate call as its own question after `questions[0]`,

@@ -1319,6 +1319,8 @@ test('survey and build each carry their own half of the patrol; fankeel points a
   assert.doesNotMatch(survey, /## Waiting tasks/);
   assert.match(survey, /TODO 全表盤點/);
   assert.match(survey, /`do now`, `needs the user`, `waiting on <what>`/);
+  assert.match(surveySection[0], /survey,plan,build,verify,land/);
+  assert.doesNotMatch(survey, /survey,build,land/);
 
   const build = read('fankeel-build');
   const buildSection = /\n## The patrol\n[\s\S]*?\n## /.exec(build);
@@ -1326,11 +1328,15 @@ test('survey and build each carry their own half of the patrol; fankeel points a
   assert.match(buildSection[0], /## Ready/);
   assert.match(buildSection[0], /`if:`/);
   assert.doesNotMatch(buildSection[0], /lifts when:/);
+  assert.match(buildSection[0], /survey,plan,build,verify,land/);
 
   const fankeel = read('fankeel');
   assert.match(fankeel, /skills\/fankeel-survey\/SKILL\.md.*## The patrol/s);
   assert.match(fankeel, /skills\/fankeel-build\/SKILL\.md.*## The patrol/s);
   assert.doesNotMatch(fankeel, /## Waiting/);
+  assert.match(fankeel, /survey,plan,build,verify,land/);
+  assert.doesNotMatch(fankeel, /survey,build,land/);
+  assert.doesNotMatch(fankeel, /`## Ready` is one option for the whole section/);
 });
 
 test('the build skill\'s own "asks once" sentence carries the group-parallel exception', () => {

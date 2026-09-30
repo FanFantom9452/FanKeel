@@ -600,8 +600,8 @@ where you are, rather than being a defect in a document.
 ## The patrol
 
 A task started by picking the patrol — `TODO 全表盤點` — at `/fankeel` arrives on
-`--route "survey,build,land"`, widened by survey where an entry turned into
-work; the entries survey marked `do now` are built here as ordinary tasks, each
+`--route "survey,plan,build,verify,land"`; the entries survey marked `do now`
+are the plan's tasks and are built here as ordinary tasks, each
 closing its own TODO entry (`todo.js done` in folder mode, removing the `TODO.md` line in legacy mode).
 
 By the time it reaches this stage `survey` has
