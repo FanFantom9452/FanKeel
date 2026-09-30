@@ -30,7 +30,7 @@ sessions 1; (1) peak over 300k: 0; (2) sessions with 10 or more agents: 0, of th
 
 ## 量測 2026-10-01（40%）
 
-範圍：commit 4c5470489bd440b7eff963548ee2d9dd0ffd239f（2026-09-30 20:19:47 +0800）之後開始、已結束（`active` 不是 true）、transcript 找得到、至少一個 subagent 的 session；在主 checkout 的 commit 1664e87154317d02dde81979f2c2f3986f1a1664 跑。跳過還在跑的：session e31b02e1-09c7-4f68-a7d4-d4688cc21a51。
+範圍：commit 4c5470489bd440b7eff963548ee2d9dd0ffd239f（2026-09-30 20:19:47 +0800）之後開始、已結束（`active` 不是 true）、transcript 找得到、至少一個 subagent 的 session；讀主 checkout 的 sessions 與 transcript，由從 commit 1664e87154317d02dde81979f2c2f3986f1a1664 開出的 worktree 跑（量的是 session 資料，不隨程式 commit 變；主 checkout 的 porcelain 數當時取不到）。跳過還在跑的：session e31b02e1-09c7-4f68-a7d4-d4688cc21a51。
 
 sessions 1; (1) peak over 300k: 0; (2) sessions with 10 or more agents: 1, of them share 40% or more: 0; unpriced models: none
 

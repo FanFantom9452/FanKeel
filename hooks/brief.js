@@ -25,7 +25,7 @@ const path = require('node:path');
 const registry = require('../lib/registry.js');
 const { renderBrief } = require('../lib/render.js');
 const profileLib = require('../lib/profile.js');
-const { lapOf, caseOfPrompt } =require('../lib/handoff.js');
+const { lapOf, caseOfPrompt } = require('../lib/handoff.js');
 const { run, parse } = require('../lib/hook.js');
 const { sessionDirOf } = require('../lib/usage.js');
 
