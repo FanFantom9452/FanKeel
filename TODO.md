@@ -20,6 +20,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔data〕教授要資料檔（ML 資料、影像、現場照片）放 NAS、不用 Git LFS，並有保留期限（09-30 會議）；提議 fankeel 只宣告位置、負責人、保留期限，survey 讀、audit 查路徑是否存在，同步與清理留給 NAS；待答：NAS 在 Windows 怎麼存取 — [documents.md](docs/90-agent/reference/documents.md).
 
+- 〔upgrade〕fankeel-upgrade：讀紀錄的 version，用 version.js --changes 列出之後的變動，逐項跑現有遷移（todo-check --migrate、docs-move.js、scope→claims），報告還要人決定的 — [version.js](scripts/version.js).
+
 ## Blocked
 
 ### fankeel 功能全部完成
