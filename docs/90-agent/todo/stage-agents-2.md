@@ -6,5 +6,5 @@ state: blocked
 link: lib/stages.js
 group: 受控 build/verify 實跑
 timing: after: 跑過一次 stage.agents=all 的真實 task（main 含 08c4ecf、安裝版 0.80.0 兩半 09-28 已達成）
-stamp: 2026-09-29
+stamp: 2026-09-30
 ---

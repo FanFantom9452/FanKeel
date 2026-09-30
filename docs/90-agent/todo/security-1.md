@@ -6,5 +6,5 @@ state: blocked
 link: agents/fankeel-reviewer.md
 group: AI CODING SECURITY 定案
 timing: upstream: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃描模型
-stamp: 2026-09-29
+stamp: 2026-09-30
 ---

@@ -6,5 +6,5 @@ state: blocked
 link: lib/profile.js
 group: gates 滿一週
 timing: on: 10-02 起，registry 的 `gates` 累積滿一週
-stamp: 2026-09-29
+stamp: 2026-09-30
 ---

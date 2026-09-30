@@ -6,5 +6,5 @@ state: blocked
 link: docs/01-guide/development.md
 group: knip 認得 CJS namespace
 timing: upstream: knip 認得 CJS namespace property access
-stamp: 2026-09-29
+stamp: 2026-09-30
 ---

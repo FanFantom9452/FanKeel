@@ -14,45 +14,45 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔station〕取代 station-1 的 (b)：(1) 沒有任何單一 subagent 的 context 峰值超過 300k；(2) 佔比低於 15% 的目標只適用於 subagent ≥10 的 session。在 8806240d 之後的 session 重新量測。 — [station.md](docs/90-agent/reference/station.md).
 
-- 〔test〕09-30 patrol 改動的 verify 留下：tests/skills.test.js 的 build 段落缺 doesNotMatch(/survey,build,land/)，新斷言沒做 red-green；station 專案頁的 todo-done 區塊沒實際 render 看過 — [skills.test.js](tests/skills.test.js).
+- 〔test〕09-30 land 前兩次全套各紅一次：tests/serve.test.js「a serve started detached outlives the process」，單獨跑 8/8 綠；負載下原因未證，先在乾淨 worktree 的 fed438fc 跑全套看是否早就存在 — [serve.test.js](tests/serve.test.js).
 
-- 〔todo〕09-30 代號帶標題的 verify 留下：titledIds 讀不了 todo 資料夾會拋錯，應退回只印 id；docs-check 報 pipeline.md、subagents.md、survey SKILL 的 path:line 位移 — [task.js](scripts/task.js).
+- 〔tests〕整套下偶發紅：09-27 四次紅兩次，09-30 land 又紅（與 test-3 同輪），單跑都綠 — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).
+
+- 〔upgrade〕09-30 verify 確認：scripts/upgrade.js:34-39 readTodo 對讀不了的 TODO.md 也回 null，把錯藏起來；應只在 ENOENT 回 null、其餘重拋，先寫會紅的測試 — [upgrade.js](scripts/upgrade.js).
 
 ## Needs a decision
 
-- 〔data〕教授要資料檔（ML 資料、影像、現場照片）放 NAS、不用 Git LFS，並有保留期限（09-30 會議）；提議 fankeel 只宣告位置、負責人、保留期限，survey 讀、audit 查路徑是否存在，同步與清理留給 NAS；待答：NAS 在 Windows 怎麼存取 — [documents.md](docs/90-agent/reference/documents.md).
-
-- 〔upgrade〕fankeel-upgrade：讀紀錄的 version，用 version.js --changes 列出之後的變動，逐項跑現有遷移（todo-check --migrate、docs-move.js、scope→claims），報告還要人決定的 — [version.js](scripts/version.js).
+- 〔data〕教授要資料檔放 NAS、不用 Git LFS，並有保留期限（09-30 會議）；09-30 已決定：fankeel 只宣告位置、負責人、保留期限，survey 讀、audit 查路徑是否存在，同步與清理留給 NAS；待答：NAS 在 Windows 怎麼存取 — [documents.md](docs/90-agent/reference/documents.md).
 
 ## Blocked
 
 ### fankeel 功能全部完成
-after: fankeel 其餘功能都落地、使用者換到新機器測試. 09-29.
+after: fankeel 其餘功能都落地、使用者換到新機器測試. 09-30.
 
 - 〔audit〕Trovara 的 docs 搬到 preset：在新機器的 Trovara 跑 `docs-move.js` 出搬移表、核可後 apply，再跑一次分批 `/fankeel-audit` — [scripts/docs-move.js](scripts/docs-move.js).
 
 ### knip 認得 CJS namespace
-upstream: knip 認得 CJS namespace property access. 09-29.
+upstream: knip 認得 CJS namespace property access. 09-30.
 
 - 〔build〕knip 的 unused exports 一格關著：6.38.0 仍認不得 CJS namespace 取用，開著回 178 個假陽性（09-28 重跑） — [docs/development.md](docs/01-guide/development.md).
 
 ### gates 滿一週
-on: 10-02 起，registry 的 `gates` 累積滿一週. 09-29.
+on: 10-02 起，registry 的 `gates` 累積滿一週. 09-30.
 
 - 〔profile〕`suggest` 只推 `land.*`：`class.default`、`design.mockup` 可以從 gate 答案推 — [lib/profile.js](lib/profile.js).
 
 ### TokenBar 寫出真實序列
-after: `tokenbar-usage.jsonl` 有跨過一次 7d reset 的真實讀數；09-25 查到的 347 行全落在 09-22 的 15 分鐘內，是測試資料，09-23 起沒再寫. 09-29.
+after: `tokenbar-usage.jsonl` 有跨過一次 7d reset 的真實讀數；09-25 查到的 347 行全落在 09-22 的 15 分鐘內，是測試資料，09-23 起沒再寫. 09-30.
 
 - 〔quota〕7d 水位兩點差 4.7 倍，是延遲還是計別的：TokenBar 每次 render 已把 5h／7d 讀數 append 到 `<CLAUDE_CONFIG_DIR>/tokenbar-usage.jsonl`（TokenBar 的 `statusline.ps1`／`.sh`），拿第三點以後的序列來分 — [scripts/spend.js](scripts/spend.js).
 
 ### AI CODING SECURITY 定案
-upstream: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃描模型. 09-29.
+upstream: 另一個專案 AI CODING SECURITY 定出共用的漏洞清單與掃描模型. 09-30.
 
 - 〔security〕reviewer 的 `## Security` lens 可先交本地模型篩（`security.local`）；四類清單與 AI CODING SECURITY 對齊還沒做 — [agents/fankeel-reviewer.md](agents/fankeel-reviewer.md).
 
 ### 受控 build/verify 實跑
-after: 跑過一次 stage.agents=all 的真實 task（main 含 08c4ecf、安裝版 0.80.0 兩半 09-28 已達成）. 09-29.
+after: 跑過一次 stage.agents=all 的真實 task（main 含 08c4ecf、安裝版 0.80.0 兩半 09-28 已達成）. 09-30.
 
 - 〔stage-agents〕安裝版還沒這次改動、本 session 的 hook 也釘死在 0.74.0，都量不了：新 terminal 更新插件、`stage.agents` 設 all、跑真實 task，用 `ctx.js --by-stage` 與 `modelUsage` 讀 — [subagents.md](docs/90-agent/reference/subagents.md).
 - 〔stage-agents〕design 站跨輪對話已寫（`lib/stages.js` 的 `controlFor`）但沒實跑；build 每個 task 的提交要經 controller 兩回合，省不省 context 由同一次實跑的 `ctx.js --by-stage` 讀 — [lib/stages.js](lib/stages.js).
@@ -95,8 +95,3 @@ if: 某個專案的程式碼大到 grep 加 read 找不到跨檔關係. 09-29.
 if: 整套測試再出現一次重跑不見的失敗. 09-29.
 
 - 〔test〕某次整套測試跑出一個失敗、重跑不再出現；候選原因是 trackedIn 測試複製 80 MB 的 node 執行檔（未證實），下次再紅時先看這個測試 — [tests/todo-check-folder.test.js](tests/todo-check-folder.test.js).
-
-### wizard-motion 再紅一次
-if: `the chosen card animates, and under reduced motion nothing is running` 在整套裡再紅一次. 09-29.
-
-- 〔tests〕09-27 四次整套紅兩次（2072/2073）、單跑 3/3 綠；之後整套 10 次全綠，沒抓到失敗訊息，紀錄在 `.fankeel/build/2026-09-27-five-items/flake.txt` — [tests/station-wizard-motion.test.js](tests/station-wizard-motion.test.js).

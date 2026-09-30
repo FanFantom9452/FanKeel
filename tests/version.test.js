@@ -1,11 +1,11 @@
 'use strict';
 
-// The release number lives in thirteen files and nothing used to set them together,
-// so a release was thirteen edits and a miss left a skill announcing a version the
+// The release number lives in fourteen files and nothing used to set them together,
+// so a release was fourteen edits and a miss left a skill announcing a version the
 // plugin is not. `tests/contract.test.js` fails when they disagree; this is the
 // half that makes them agree.
 //
-// Every test here works on a copy. A script whose job is to rewrite thirteen files in
+// Every test here works on a copy. A script whose job is to rewrite fourteen files in
 // this repository must never be pointed at this repository by its own tests.
 
 const test = require('node:test');
@@ -45,7 +45,7 @@ test('agreement is reported with the number and nothing else', () => {
 });
 
 // The failure names every file and its answer, because "they disagree" sends
-// somebody to open thirteen files to find the one.
+// somebody to open fourteen files to find the one.
 test('a disagreement names which file says what', () => {
   const root = tree({ 'package.json': '0.33.1', 'skills/fankeel-build/SKILL.md': '0.30.0' });
   const r = version.main([], root);

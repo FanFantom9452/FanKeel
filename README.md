@@ -242,8 +242,9 @@ fankeel/
 │   ├── residue.js     what is in the tree that nobody decided about
 │   ├── todo-check.js  whether TODO.md is still an index
 │   ├── judge.js       files what a fankeel-judge answered, verbatim
+│   ├── upgrade.js     which migrations an older project still needs, and --apply for the safe one
 │   └── version.js     the release number, in every place that carries it
-├── skills/            one directory per skill — fankeel, one per stage, ask, explain, station — and registry.json
+├── skills/            one directory per skill — fankeel, one per stage, ask, explain, station, upgrade — and registry.json
 └── tests/             node --test, one file per module or behaviour; tmp.js is where every scratch directory comes from
 ```
 

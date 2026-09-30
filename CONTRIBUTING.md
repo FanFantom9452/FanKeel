@@ -21,7 +21,7 @@ changing it.
 | Generated station output | `lib/station.js`, the `EMITTED` list | Never hand-edit a file `station.js serve` writes. If a name stops being emitted, remove it from the committed `.fankeel/.gitignore` by hand — appending is automatic there, removing is not. |
 | `TODO.md` | the entry files under `docs/90-agent/todo/`, written by `scripts/todo.js` | Never edit `TODO.md` by hand: it is generated, and `todo-check` refuses a hand edit. One file per deferred thing, its `state` saying what it is still short of; the contract is [docs/90-agent/reference/todo.md](docs/90-agent/reference/todo.md). |
 | Borrowing from another repository | [docs/decisions/2026-09-24-optimise-own-first.md](docs/03-decisions/2026-09-24-optimise-own-first.md) | Start from a fankeel problem — a `TODO.md` entry or a recorded incident — and read the other repository for how it handled that. A practice that answers none of ours is not put to the user as a pick. |
-| Version numbers | `scripts/version.js` | Run it to move the number. It is what keeps thirteen files in agreement; hand-editing any one of them is how they stop agreeing. |
+| Version numbers | `scripts/version.js` | Run it to move the number. It is what keeps fourteen files in agreement; hand-editing any one of them is how they stop agreeing. |
 
 ## Issue first
 
