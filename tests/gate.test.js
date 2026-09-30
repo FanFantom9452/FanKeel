@@ -573,6 +573,19 @@ test('stage.agents: the same gate asked twice with no answer between is not refu
   assert.equal(run(GATE, root, { tool_input: askOf(QUESTIONS) }).trim(), '');
 });
 
+test('stage.agents: an answer older than the first ask does not refuse the same gate', () => {
+  const root = tmp('fankeel-gate-');
+  seed(root, MINE, { stage: 'survey', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
+  agentsOn(root);
+  handoff(root, { questions: QUESTIONS, next: 'n' });
+  assert.equal(run(GATE, root, { tool_input: askOf(QUESTIONS) }).trim(), '', 'the first ask goes out');
+  const answer = path.join(root, '.fankeel', 'build', 'task-20260919T093012', 'survey-answer.md');
+  fs.writeFileSync(answer, JSON.stringify({ answers: { [QUESTIONS[0].question]: '進 design' } }));
+  const past = new Date(Date.now() - 60000);
+  fs.utimesSync(answer, past, past);
+  assert.equal(run(GATE, root, { tool_input: askOf(QUESTIONS) }).trim(), '', 'an answer that predates the ask settled nothing about it');
+});
+
 test('stage.agents: a survey gate with no pause, or naming bounded on an architectural task, is denied', () => {
   const root = tmp('fankeel-gate-');
   seed(root, MINE, { stage: 'survey', floor: 'architectural', started: '2026-09-19T09:30:12.345Z', configDir: tmp('fankeel-cfg-') });
