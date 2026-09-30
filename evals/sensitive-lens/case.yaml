@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: sensitive-lens
+context:
+  scaffold_script: "git init -q && mkdir -p .fankeel && printf 'sessions/\\nsensitive.txt\\n' > .fankeel/.gitignore && printf 'ACME\\n' > .fankeel/sensitive.txt && printf 'module.exports = {};\\n' > config.js && git add -A && git -c user.email=eval@fankeel -c user.name=eval commit -qm base && printf 'const client = \"ACME Holdings\";\\nconst auth = \"Authorization: Bearer 9f8e7d6c5b4a39281706f5e4d3c2b1a0\";\\nmodule.exports = { client, auth };\\n' > config.js && git add -A && git -c user.email=eval@fankeel -c user.name=eval commit -qm 'name the client'"

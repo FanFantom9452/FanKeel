@@ -168,6 +168,29 @@ a local model's first pass over the same range — confirm only those lines:
 open each `path:line`, trace it from source to sink, and keep or drop it. The
 line format and the closing line do not change.
 
+## Sensitive
+
+When the brief asks for the sensitive lens — the project's profile sets
+`sensitive.review` to `true`, and then plan's review, build's per-task review
+and verify's adversary each ask for it — read the diff for data that should
+not ride into the repository with it. Read `.fankeel/sensitive.txt` first, one
+word per line; a missing or empty file leaves the first row nothing to find.
+One line per finding:
+
+`path:line: <tag> <what kind of thing it is>. <the fix>`
+
+| tag | the diff adds |
+|---|---|
+| `listed:` | a word from `.fankeel/sensitive.txt`, matched without regard to case |
+| `unlisted:` | content the list does not name but that reads as sensitive: a credential, token or key; personal data; a client's name; an internal host name or IP address; an excerpt of raw data |
+
+Two layers, split on purpose: the commit-time `scan` in `lib/sensitive.js`
+matches the list mechanically and never misses a listed word; this lens is the
+judgement, for what the list does not name, and it reaches the review before
+the commit does. Name the kind and the place, never the value — the line is
+read in a context that may be shared. End with `sensitive: <N> findings.`, or
+the single word `none`.
+
 ## Silent failure
 
 When the brief asks for the silent-failure lens — build's per-task dispatch
