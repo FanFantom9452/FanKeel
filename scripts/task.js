@@ -550,6 +550,22 @@ function cmdShow(root, opts) {
     return lines.join('\n');
 }
 
+// docs/90-agent/plans/2026-09-30-init-design.md §2: the task's own project,
+// checked once here rather than on every prompt, and never the workspace root
+// above it unless that root is the project. Null when it passes, when the
+// profile says `init.skip`, or when the check itself fails to run.
+function onboardLine(projectRoot, configDir) {
+    let r;
+    try {
+        r = require('../lib/onboard.js').cheap(projectRoot, configDir);
+    } catch (e) {
+        return null;
+    }
+    if (!r || r.skipped || !r.failing.length) return null;
+    const where = projectRoot.split(path.sep).join('/');
+    return 'onboard: ' + where + ' — ' + r.failing.join('; ') + '; Skill fankeel-init --root ' + where + ' before survey';
+}
+
 function cmdStart(root, opts) {
     const id = requireSession(opts);
     const existing = registry.readSession(root, id);
@@ -731,6 +747,8 @@ function cmdStart(root, opts) {
     }
 
     lines.push('');
+    const onboard = onboardLine(projectRootFor(root, opts), claudeDir(opts));
+    if (onboard) lines.push(onboard);
     const controller = controllerLines(root, id, data, prof.values);
     if (controller) {
         for (const line of controller) lines.push(line);
