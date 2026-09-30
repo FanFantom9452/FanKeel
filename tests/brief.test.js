@@ -620,6 +620,11 @@ test('a brain is told the gate shape and that option one names the next stage', 
   const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain' })));
   assert.match(text, /carries `header` \(12 columns at most/);
   assert.match(text, /option one's label names `design`/);
+  // readGate refuses a gate with no pause option and a non-empty `next` is
+  // required (lib/handoff.js ruleProblem); on 09-30 two verify gates were
+  // refused for the pause because the brief never said so.
+  assert.match(text, /one option's label says `暫停`/);
+  assert.match(text, /`next` is never empty/);
 });
 
 // The test above only proves the cap lies somewhere between a line that fits
