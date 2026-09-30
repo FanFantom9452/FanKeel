@@ -207,7 +207,7 @@ stage's minutes went on a gate rather than on work. Neither carries a dollar
 figure any more; a stage's own cost surfaces in the per-route stage
 ledger on each project page, and per stage and model inside the session
 page's 概覽, under a `<details class="csmore">` element
-(`assets/station/station.js:2846`) — not on this table's rows.
+(`assets/station/station.js:3113`) — not on this table's rows.
 
 A stage's dollar figure needs `spend`, which `hooks/leave.js` writes once, at
 session end — a live session does not have it yet, and no session that ended
