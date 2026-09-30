@@ -10,6 +10,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔await〕`kind` 只在測試裡驗過：重裝後看一次真實 `build close` brain 的 mark 是否帶 `kind: 'close'`、await 是否盯 `build.md` — [hooks/brief.js](hooks/brief.js).
 
+- 〔init〕首次接上 fankeel 的引導：專屬唯讀 agent 排查現況，再一次一題帶過 docs.json、TODO、開發習慣（profile）、CLAUDE.md、memory、map；每步看現況判斷已完成，共用 upgrade.js 偵測。architectural，走七站 — [upgrade.js](scripts/upgrade.js).
+
 - 〔skills〕`disable-model-invocation: true` 對插件 skill 是否生效沒驗：重裝後讓模型自行呼叫 fankeel-station 看是否被擋 — [skills/fankeel-station/SKILL.md](skills/fankeel-station/SKILL.md).
 
 - 〔station〕取代 station-1 的 (b)：(1) 沒有任何單一 subagent 的 context 峰值超過 300k；(2) 佔比低於 15% 的目標只適用於 subagent ≥10 的 session。在 8806240d 之後的 session 重新量測。 — [station.md](docs/90-agent/reference/station.md).
@@ -23,8 +25,6 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 ## Needs a decision
 
 - 〔data〕教授要資料檔放 NAS、不用 Git LFS，並有保留期限（09-30 會議）；09-30 已決定：fankeel 只宣告位置、負責人、保留期限，survey 讀、audit 查路徑是否存在，同步與清理留給 NAS；待答：NAS 在 Windows 怎麼存取 — [documents.md](docs/90-agent/reference/documents.md).
-
-- 〔init〕09-30 使用者提議：從沒用過 fankeel 的專案用的 init skill（不是 /fankeel 入口），選 docs preset 寫 docs.json、profile、todo.js migrate、map；建議共用 upgrade.js 的現況偵測，待定範圍 — [upgrade.js](scripts/upgrade.js).
 
 ## Blocked
 

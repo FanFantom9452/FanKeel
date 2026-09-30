@@ -1,7 +1,7 @@
 ---
 label: init
 title: 首次使用的 init skill
-description: 09-30 使用者提議：從沒用過 fankeel 的專案用的 init skill（不是 /fankeel 入口），選 docs preset 寫 docs.json、profile、todo.js migrate、map；建議共用 upgrade.js 的現況偵測，待定範圍
-state: decision
+description: 首次接上 fankeel 的引導：專屬唯讀 agent 排查現況，再一次一題帶過 docs.json、TODO、開發習慣（profile）、CLAUDE.md、memory、map；每步看現況判斷已完成，共用 upgrade.js 偵測。architectural，走七站
+state: ready
 link: scripts/upgrade.js
 ---
