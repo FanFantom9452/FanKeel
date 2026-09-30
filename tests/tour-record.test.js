@@ -156,3 +156,47 @@ test('promo30v4 score is a 60-second WAV', () => {
     const b = scoreWav('promo30v4');
     assert.equal(b.readUInt32LE(40), 60 * 44100 * 2);
 });
+
+// red when: 'promo30v5' is dropped from NAMES in scripts/tour-record.js (parseArgs exits with usage), or its timeline stops being 4440 frames / 74 s (the score is cut to it)
+test('promo30v5 is a timeline name of 4440 frames, and its score is a 74-second WAV', () => {
+    assert.equal(parseArgs(['promo30v5']).name, 'promo30v5');
+    assert.equal(require('../assets/station/tour.js').length('promo30v5'), 4440);
+    assert.equal(scoreWav('promo30v5').readUInt32LE(40), 74 * 44100 * 2);
+});
+
+// red when: promo30v5's default output leaves F:/ymlab/fankeel-videos/v5/ (V5_DIR changes), FANKEEL_VIDEOS_V5 stops overriding it, or another name starts writing there
+test('promo30v5 writes to F:/ymlab/fankeel-videos/v5/ by default; the others keep .fankeel/build/tour', () => {
+    const was = process.env.FANKEEL_VIDEOS_V5;
+    delete process.env.FANKEEL_VIDEOS_V5;
+    try {
+        assert.equal(parseArgs(['promo30v5']).out, path.resolve('F:/ymlab/fankeel-videos/v5', 'promo30v5-zh.mp4'));
+        assert.equal(parseArgs(['promo30v5', '--lang', 'en']).out, path.resolve('F:/ymlab/fankeel-videos/v5', 'promo30v5-en.mp4'));
+        assert.equal(parseArgs(['promo30v4']).out, path.resolve('.fankeel', 'build', 'tour', 'promo30v4-zh.mp4'));
+        process.env.FANKEEL_VIDEOS_V5 = path.resolve('elsewhere');
+        assert.equal(parseArgs(['promo30v5']).out, path.resolve('elsewhere', 'promo30v5-zh.mp4'));
+    } finally {
+        if (was === undefined) delete process.env.FANKEEL_VIDEOS_V5; else process.env.FANKEEL_VIDEOS_V5 = was;
+    }
+});
+
+// The usage regex in the first test stays on the four-name line; v5 keeps its
+// own line, so folding it in would change what that test pins.
+// red when: the usage text loses promo30v5's own line (its name, or the directory it records to)
+test('the usage text has a promo30v5 line that says where its MP4 goes', () => {
+    const bad = spawnSync(process.execPath, [SCRIPT, 'intro'], { encoding: 'utf8' });
+    assert.equal(bad.status, 2);
+    assert.match(bad.stderr, /tour-record\.js promo30v5 \[--lang zh\|en\] \[--out f\.mp4\]\s+\(MP4 in F:\/ymlab\/fankeel-videos\/v5\)/);
+});
+
+// record() needs a browser and ffmpeg (the artefact step), so the delete is
+// read from the source: the rmSync of the score's .wav follows the ffmpeg exit
+// check and is guarded by the name, so only promo30v5 loses its .wav.
+// red when: the rmSync is removed, loses its args.name === 'promo30v5' guard, is added for another path, or moves before the ffmpeg exit check
+test('only promo30v5 deletes its .wav, after ffmpeg exits 0', () => {
+    const src = fs.readFileSync(SCRIPT, 'utf8');
+    const rm = /if \(args\.name === 'promo30v5'\) fs\.rmSync\(wav, \{ force: true \}\);/.exec(src);
+    assert.ok(rm, 'no guarded rmSync of the wav');
+    assert.equal(src.match(/rmSync\(wav/g).length, 1);
+    const exit = src.indexOf("throw new Error('tour-record: ffmpeg exited ' + code);");
+    assert.ok(exit > 0 && exit < rm.index, 'the delete must follow the ffmpeg exit check');
+});
