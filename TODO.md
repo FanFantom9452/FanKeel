@@ -16,6 +16,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔commit〕使用者問能否強制規定 commit 的輸出格式：commit.js 目前照 brain 寫的訊息原樣提交，沒有格式檢查；先查要擋在哪一層（commit.js 解析時拒絕、git commit-msg hook、或 profile 設定格式），再決定規則放 profile 還是固定 — [scripts/commit.js](scripts/commit.js).
 
+- 〔data〕資料放 NAS、有保留期限（09-30）；已決定只宣告位置、負責人、期限，survey 讀、audit 查路徑；NAS 存取已答：`data` bucket 保留 `access` 鍵、先不處理 — [documents.md](docs/90-agent/reference/documents.md).
+
 - 〔inject〕inject.js 閒置約 0.6s，但全套測試跑時（34 個 node）常超過 5s 被丟棄，該輪沒有 fankeel 區塊；先量負載下哪段最慢，再決定縮短工作或調高 timeout — [hooks/inject.js](hooks/inject.js).
 
 - 〔skills〕`disable-model-invocation: true` 對插件 skill 是否生效沒驗：重裝後讓模型自行呼叫 fankeel-station 看是否被擋 — [skills/fankeel-station/SKILL.md](skills/fankeel-station/SKILL.md).
@@ -31,8 +33,6 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 - 〔upgrade〕09-30 verify 確認：`scripts/upgrade.js:34-39` readTodo 對讀不了的 TODO.md 也回 null，把錯藏起來；應只在 ENOENT 回 null、其餘重拋，先寫會紅的測試 — [upgrade.js](scripts/upgrade.js).
 
 ## Needs a decision
-
-- 〔data〕教授要資料檔放 NAS、不用 Git LFS，並有保留期限（09-30 會議）；09-30 已決定：fankeel 只宣告位置、負責人、保留期限，survey 讀、audit 查路徑是否存在，同步與清理留給 NAS；待答：NAS 在 Windows 怎麼存取 — [documents.md](docs/90-agent/reference/documents.md).
 
 ## Blocked
 
