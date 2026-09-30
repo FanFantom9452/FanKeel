@@ -120,10 +120,19 @@ test('dashPage draws the cards in the stored order, leaves a switched-off card o
 function chooser(kept) {
     const listeners = {};
     const els = {};
+    let writes = 0;
     const el = () => ({ innerHTML: '', textContent: '', className: '', title: '', attrs: {}, style: {}, children: [],
         setAttribute(k, v) { this.attrs[k] = String(v); }, getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
         hasAttribute(k) { return k in this.attrs; }, removeAttribute(k) { delete this.attrs[k]; }, appendChild() {}, addEventListener() {} });
-    const doc = { hidden: false, documentElement: el(), title: '', getElementById: (id) => els[id] || (els[id] = el()),
+    // The page element counts its innerHTML writes: one write is one repaint.
+    const mk = (id) => {
+        const o = el();
+        if (id !== 'page') return o;
+        let html = '';
+        Object.defineProperty(o, 'innerHTML', { get: () => html, set: (v) => { writes++; html = v; } });
+        return o;
+    };
+    const doc = { hidden: false, documentElement: el(), title: '', getElementById: (id) => els[id] || (els[id] = mk(id)),
         addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); }, createElement: el, querySelectorAll: () => [],
         querySelector: () => null, head: { appendChild() {} } };
     const win = { location: { hash: '#/', protocol: 'file:' }, addEventListener() {}, scrollTo() {},
@@ -138,7 +147,7 @@ function chooser(kept) {
     const press = (attrs) => fire('click', { getAttribute: (k) => (k in attrs ? attrs[k] : null), hasAttribute: (k) => k in attrs,
         closest(sel) { return Object.keys(attrs).some((k) => sel.includes('[' + k + ']')) ? this : null; } });
     const tick = (id, checked) => fire('change', { checked, getAttribute: (k) => (k === 'data-dchshow' ? id : null) });
-    return { press, tick, page: () => els.page.innerHTML };
+    return { press, tick, page: () => els.page.innerHTML, draws: () => writes };
 }
 
 test('pressing 調整卡片 opens the chooser and pressing it again, or 完成, shuts it', () => {
@@ -192,4 +201,58 @@ test('ticking a card off stores it in off and the page leaves it out, ticking it
     assert.doesNotMatch(c.page(), drawn);
     c.tick('dash-spend', true);
     assert.equal('station.dash' in kept, false);
+});
+
+test('完成 alone shuts an open chooser with one repaint, and stays shut when pressed while closed', () => {
+    const c = chooser({});
+    c.press({ 'data-dchtog': '1' });
+    assert.match(c.page(), /data-block="dash-chooser"/);
+    const d = c.draws();
+    c.press({ 'data-dchdone': '1' });
+    assert.doesNotMatch(c.page(), /data-block="dash-chooser"/, 'the chooser is gone');
+    assert.equal(c.draws(), d + 1, 'one repaint');
+    c.press({ 'data-dchdone': '1' });
+    assert.doesNotMatch(c.page(), /data-block="dash-chooser"/, 'pressed while closed it stays closed');
+});
+
+test('a move that falls off either edge, or names no card, repaints nothing and stores nothing', () => {
+    const kept = {};
+    const c = chooser(kept);
+    const still = (what) => { const d = c.draws(); return () => { assert.equal(c.draws(), d, what + ': no repaint'); assert.equal('station.dash' in kept, false, what + ': no key'); }; };
+    let ok = still('last card down');
+    c.press({ 'data-dchmv': '1', 'data-card': 'dash-recent' });
+    ok();
+    ok = still('first card up');
+    c.press({ 'data-dchmv': '-1', 'data-card': 'dash-live' });
+    ok();
+    ok = still('unknown card');
+    c.press({ 'data-dchmv': '1', 'data-card': 'nope' });
+    ok();
+    // a stored, non-default order: the edges are its own
+    c.press({ 'data-dchmv': '1', 'data-card': 'dash-live' });
+    const mid = kept['station.dash'];
+    assert.ok(mid);
+    const d = c.draws();
+    c.press({ 'data-dchmv': '1', 'data-card': 'dash-recent' });
+    c.press({ 'data-dchmv': '-1', 'data-card': 'waiting-card' });
+    c.press({ 'data-dchmv': '1', 'data-card': 'nope' });
+    assert.equal(c.draws(), d, 'edges of a stored order: no repaint');
+    assert.equal(kept['station.dash'], mid);
+});
+
+test('a real move, 調整卡片 and 還原預設 each repaint exactly once', () => {
+    const kept = {};
+    const c = chooser(kept);
+    let d = c.draws();
+    c.press({ 'data-dchmv': '1', 'data-card': 'dash-live' });
+    assert.equal(c.draws(), d + 1, 'a move repaints once');
+    assert.ok('station.dash' in kept);
+    d = c.draws();
+    c.press({ 'data-dchtog': '1' });
+    assert.equal(c.draws(), d + 1, 'the toggle repaints once');
+    assert.match(c.page(), /data-block="dash-chooser"/, 'the toggle opened it');
+    d = c.draws();
+    c.press({ 'data-dchreset': '1' });
+    assert.equal(c.draws(), d + 1, 'the reset repaints once');
+    assert.equal('station.dash' in kept, false, 'the reset clears the key');
 });
