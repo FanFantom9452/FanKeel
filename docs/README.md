@@ -186,6 +186,9 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 落地它的 6 個 task | `docs/99-archive/2026-09-29-todo-patrol-2.md` — *built* |
 | TODO 全表盤點第三輪（09-29）定了什麼、沒做什麼：await 的 group 標記、同名 plan 的舊 ledger、gate 答案帶進 brief、`/fankeel` 注入量 4000 tok 提醒與 fankeel-slimmer、design 不再問方向／逐塊、同名 agent 覆寫實測 | [decisions/2026-09-29-todo-patrol-3.md](03-decisions/2026-09-29-todo-patrol-3.md) — *繁體中文* |
 | 落地它的 9 個 task | `docs/99-archive/2026-09-29-todo-patrol-3.md` — *built* |
+| 盤點併入 Ready（09-30）：開場不再單列 `## Ready`，「TODO 全表盤點」固定走 `survey,plan,build,verify,land`、盤完直接做；todo-3 以 station 已有的已完成區塊結案 | [decisions/2026-09-30-patrol-takes-ready.md](03-decisions/2026-09-30-patrol-takes-ready.md) — *繁體中文* |
+| 那份設計 | `docs/99-archive/2026-09-30-patrol-takes-ready-design.md` — *built* |
+| 落地它的 5 個 task | `docs/99-archive/2026-09-30-patrol-takes-ready.md` — *built* |
 | Needs-a-decision 六條怎麼定：拆出 fankeel-mockup、各角色 effort、docs tree 加「給誰看」軸、ADR 為 ≤7 條 binding 子集、station 看／答問題、tune 改完通知與自動刷新、設定精靈改卡片 | `docs/99-archive/2026-09-26-station-redesign-design.md` — *built, 繁體中文* |
 | 做它的 13 個 task——從 fankeel-mockup agent、effort、docs 軸與 binding 上限，到 station 答題、toast、模型版本、effort chip、設定精靈卡片，最後在真頁面上逐塊調整 | `docs/99-archive/2026-09-26-station-redesign.md` — *built, 繁體中文* |
 | 把上面那份設計拆成三個 task 的計畫 | `docs/99-archive/2026-09-25-todo-line-and-multiplier.md` — *built, 繁體中文* |

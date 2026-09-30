@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # The Patrol Takes Ready Implementation Plan

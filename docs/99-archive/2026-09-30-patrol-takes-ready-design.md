@@ -1,5 +1,5 @@
 ---
-status: design-intent
+status: current
 ---
 
 # The patrol takes `## Ready` in
