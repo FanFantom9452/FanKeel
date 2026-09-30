@@ -10,7 +10,7 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔await〕`kind` 只在測試裡驗過：重裝後看一次真實 `build close` brain 的 mark 是否帶 `kind: 'close'`、await 是否盯 `build.md` — [hooks/brief.js](hooks/brief.js).
 
-- 〔collisions〕使用者問：兩個 fankeel session 同時跑時兩邊都在 commit，若兩邊各開一個 worktree 會不會打架。已知 commit.js 用 `git commit -o <paths>` 只提交自己的路徑，worktree 各有自己的 index 與分支；未查的是同一樹同時 commit 撞 `index.lock` 時誰失敗、失敗是否被回報，以及兩個 worktree 在 land merge 回 main 時同檔衝突如何處理 — [collisions.md](docs/90-agent/reference/collisions.md).
+- 〔collisions〕兩個 fankeel session 同時 commit 時：同一樹撞 `index.lock` 誰失敗、有無回報，及兩個 worktree land 回 main 同檔衝突怎麼處理，尚未查 — [collisions.md](docs/90-agent/reference/collisions.md).
 
 - 〔commit〕使用者問能否強制規定 commit 的輸出格式：commit.js 目前照 brain 寫的訊息原樣提交，沒有格式檢查；先查要擋在哪一層（commit.js 解析時拒絕、git commit-msg hook、或 profile 設定格式），再決定規則放 profile 還是固定 — [scripts/commit.js](scripts/commit.js).
 
