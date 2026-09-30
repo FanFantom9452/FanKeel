@@ -18,7 +18,7 @@ sessions 5; (1) peak over 300k: 2; (2) sessions with 10 or more agents: 5, of th
 
 ## 量測 2026-10-01
 
-範圍：commit 4c5470489bd440b7eff963548ee2d9dd0ffd239f（2026-09-30 20:19:47 +0800，上一次量測）之後開始、transcript 找得到、至少一個 subagent 的 session；在主 checkout 的 commit 3013140c81f68440ca1519883ccb980fa40c801a 跑。
+範圍：commit 4c5470489bd440b7eff963548ee2d9dd0ffd239f（2026-09-30 20:19:47 +0800，上一次量測）之後開始、transcript 找得到、至少一個 subagent 的 session；在 worktree 跑，HEAD 是派工 sha 3013140c81f68440ca1519883ccb980fa40c801a（主 checkout 的狀態讀不到）。
 
 sessions 1; (1) peak over 300k: 0; (2) sessions with 10 or more agents: 0, of them share 15% or more: 0; unpriced models: none
 
