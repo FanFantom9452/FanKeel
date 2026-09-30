@@ -34,3 +34,15 @@ test('every route scripts/station.js answers by name appears on docs/station.md'
     const page = fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'station.md'), 'utf8');
     for (const r of routes) assert.ok(page.includes(r.slice(1)), r + ' is on no page');
 });
+
+// Every localStorage key the page keeps is on the page's reference. On
+// 2026-10-01 the dashboard chooser and the style switch added two, and the
+// page still said "Two keys".
+test('every localStorage key station.js stores appears on docs/station.md', () => {
+    const src = fs.readFileSync(path.join(ROOT, 'assets', 'station', 'station.js'), 'utf8');
+    const keys = [...new Set([...src.matchAll(/\bstored?\('(station\.[a-zA-Z.]+)'/g)].map((m) => m[1]))];
+    assert.ok(keys.includes('station.theme'), 'the pattern moved: ' + keys.join(', '));
+    const page = fs.readFileSync(path.join(ROOT, 'docs', '90-agent', 'reference', 'station.md'), 'utf8');
+    for (const k of keys) assert.ok(page.includes('`' + k + '`'), k + ' is on no page');
+    assert.doesNotMatch(page, /Two keys in `localStorage`/);
+});

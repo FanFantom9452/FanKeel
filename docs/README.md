@@ -190,6 +190,8 @@ running a session, the station's 文件 page (`#/docs`) turns each project's own
 | 它的 design 與 14 個 task | `docs/99-archive/2026-09-30-ready-eleven-design.md`、`docs/99-archive/2026-09-30-ready-eleven.md` — *built* |
 | await-1、stage-1、station-8（10-01）定了什麼、沒做什麼：`language` profile 鍵、station-8 門檻改 40% 判 pass、await-1 留在 Ready | [decisions/2026-10-01-await-stage-station.md](03-decisions/2026-10-01-await-stage-station.md) — *繁體中文* |
 | 它的 4 個 task | `docs/99-archive/2026-10-01-await-stage-station.md` — *built* |
+| TODO 全表盤點（10-01）的 design：退回 build 的 brain 自己寫 gate、主控用標題轉述且 await 不疊、`suggest` 推 `class.default`、STATION 改成宣傳片風格並保留經典樣式 | [plans/2026-10-01-todo-sweep-design.md](90-agent/plans/2026-10-01-todo-sweep-design.md) — *design-intent, 繁體中文* |
+| 那份設計的十個 task | [plans/2026-10-01-todo-sweep.md](90-agent/plans/2026-10-01-todo-sweep.md) — *design-intent, 繁體中文* |
 | 盤點併入 Ready（09-30）：開場不再單列 `## Ready`，「TODO 全表盤點」固定走 `survey,plan,build,verify,land`、盤完直接做；todo-3 以 station 已有的已完成區塊結案 | [decisions/2026-09-30-patrol-takes-ready.md](03-decisions/2026-09-30-patrol-takes-ready.md) — *繁體中文* |
 | 那份設計 | `docs/99-archive/2026-09-30-patrol-takes-ready-design.md` — *built* |
 | 落地它的 5 個 task | `docs/99-archive/2026-09-30-patrol-takes-ready.md` — *built* |
