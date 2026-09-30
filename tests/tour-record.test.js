@@ -189,14 +189,17 @@ test('the usage text has a promo30v5 line that says where its MP4 goes', () => {
 });
 
 // record() needs a browser and ffmpeg (the artefact step), so the delete is
-// read from the source: the rmSync of the score's .wav follows the ffmpeg exit
-// check and is guarded by the name, so only promo30v5 loses its .wav.
-// red when: the rmSync is removed, loses its args.name === 'promo30v5' guard, is added for another path, or moves before the ffmpeg exit check
-test('only promo30v5 deletes its .wav, after ffmpeg exits 0', () => {
+// read from the source: the guarded rmSync of the score's .wav sits in the
+// `finally` (every exit, error or not), after child.kill() and inside its own
+// try/catch, so a wav ffmpeg still holds cannot mask the original error.
+// red when: the rmSync is removed, loses its wav && args.name === 'promo30v5' guard, is added for another path, moves out of finally, moves before child.kill(), or loses its try/catch
+test('only promo30v5 deletes its .wav, on every exit', () => {
     const src = fs.readFileSync(SCRIPT, 'utf8');
-    const rm = /if \(args\.name === 'promo30v5'\) fs\.rmSync\(wav, \{ force: true \}\);/.exec(src);
-    assert.ok(rm, 'no guarded rmSync of the wav');
     assert.equal(src.match(/rmSync\(wav/g).length, 1);
-    const exit = src.indexOf("throw new Error('tour-record: ffmpeg exited ' + code);");
-    assert.ok(exit > 0 && exit < rm.index, 'the delete must follow the ffmpeg exit check');
+    const fin = src.indexOf('} finally {');
+    assert.ok(fin > 0, 'no finally block');
+    const tail = src.slice(fin, src.indexOf('async function main'));
+    const m = /try \{\s*if \(wav && args\.name === 'promo30v5'\) fs\.rmSync\(wav, \{ force: true \}\);\s*\} catch \(e\) \{/.exec(tail);
+    assert.ok(m, 'no guarded, try-wrapped rmSync of the wav inside finally');
+    assert.ok(tail.indexOf('child.kill()') >= 0 && tail.indexOf('child.kill()') < m.index, 'the delete must follow child.kill()');
 });

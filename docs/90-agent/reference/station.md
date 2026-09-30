@@ -1036,8 +1036,8 @@ carries the words. File-type icons are Material Icon Theme 5.38.1 (MIT), kept
 in `assets/station/icons/` with its `LICENSE.txt` and inlined as data URIs; the
 player waits on `TOUR_PROMO30V5.ready` before the first frame.
 `tour.html#promo30v5@<frame>` plays it, and
-`node scripts/tour-record.js promo30v5 [--lang zh|en]` records it to
-`F:/ymlab/fankeel-videos/v5/`, keeping the MP4 only (the wav is deleted).
+`node scripts/tour-record.js promo30v5 [--lang zh|en]` records it by default to
+`F:/ymlab/fankeel-videos/v5/` (`FANKEEL_VIDEOS_V5` and `--out` override), keeping the MP4 only (the wav is deleted).
 `promo30`, `promo30v3` and `promo30v4` render byte-identically.
 
 `serve` answers a fixed list of files from `assets/station/` — `STATIC` in

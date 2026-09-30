@@ -88,10 +88,15 @@ test('each beat carries its caption key, and the frame prints that line, zh and 
 
 // The rail is the stage strip v4 drew down the left of a stage, pills are its
 // step chips (a 600-weight 8px name) and the statusline is `[FANKEEL:STAGE]`.
+// The rail is read as v4 draws it: one horizontal stroke from a moveTo to a
+// lineTo six steps along (78 px in the cue row, 156 px in the reel-kit strip).
 function furniture(ctx) {
     const hits = [];
     let font = '';
-    for (const c of ctx.calls) {
+    for (let i = 0; i < ctx.calls.length; i++) {
+        const c = ctx.calls[i], n = ctx.calls[i + 1];
+        if (c[0] === 'moveTo' && n && n[0] === 'lineTo' && c[2] === n[2] && (n[1] - c[1] === 78 || n[1] - c[1] === 156)) hits.push('rail ' + c[1] + ',' + c[2]);
+
         if (c[0] === '=font') font = String(c[1]);
         if (c[0] !== 'fillText') continue;
         if (/^\[FANKEEL:/.test(c[1])) hits.push('status ' + c[1]);
@@ -100,8 +105,8 @@ function furniture(ctx) {
     return hits;
 }
 
-// red when: tour-keel's pills() or status() is called from a v5 frame, in any beat, in zh or en
-test('no frame draws the step pills or the [FANKEEL:...] statusline', () => {
+// red when: a v5 frame draws the rail stroke, or tour-keel's pills() or status() is called from it, in any beat, in zh or en
+test('no frame draws the rail, the step pills or the [FANKEEL:...] statusline', () => {
     // control: the same reader finds them in v4, where they are drawn
     let seen = 0;
     const P0 = T.palette(() => '', 'zh');

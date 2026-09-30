@@ -204,8 +204,12 @@ async function record(args, ffmpeg, browser) {
         if (code !== 0) throw new Error('tour-record: ffmpeg exited ' + code);
         return total;
     } finally {
-        if (wav && args.name === 'promo30v5') fs.rmSync(wav, { force: true });
         child.kill();
+        try {
+            if (wav && args.name === 'promo30v5') fs.rmSync(wav, { force: true });
+        } catch (e) {
+            // ffmpeg may still hold it; the profile cleanup below must still run.
+        }
         try {
             fs.rmSync(profileDir, { recursive: true, force: true });
         } catch (e) {
