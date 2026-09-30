@@ -596,7 +596,7 @@ test('the todo: block offers the newest edits under Needs a decision, oldest edi
   assert.match(out, /and 2 more, not listed — Other takes one by name/);
   assert.match(out, /Blocked 0 timings, 0 entries — 0 due/);
   assert.match(out, /Watch 0 timings, 0 entries — 0 stale/);
-  assert.match(out, /patrol: always offered last as "TODO 全表盤點" — 0 due \+ 0 stale/);
+  assert.match(out, /patrol: always offered last as "TODO 全表盤點", builds Ready — 0 due \+ 0 stale/);
 });
 
 test('a Blocked timing that is not due takes no slot from Needs a decision', () => {
@@ -624,10 +624,10 @@ test('a Blocked timing that is not due takes no slot from Needs a decision', () 
   const out = reportAt(root, 2026, 9, 20);
   assert.match(out, /Needs a decision 5 — newest 3 by last edit, offer these:/);
   assert.match(out, /Blocked 1 timing, 1 entry — 0 due/);
-  assert.match(out, /patrol: always offered last as "TODO 全表盤點" — 0 due \+ 0 stale/);
+  assert.match(out, /patrol: always offered last as "TODO 全表盤點", builds Ready — 0 due \+ 0 stale/);
 });
 
-test('a Ready entry drops the offer from 4 to 3', () => {
+test('a Ready entry takes no slot from Needs a decision: the patrol builds it', () => {
   const root = workspace({});
   const opts = initGit(root);
   const body = [
@@ -645,8 +645,9 @@ test('a Ready entry drops the offer from 4 to 3', () => {
   commitTodo(root, opts, body, '2026-01-01T00:00:00Z');
 
   const out = run(['--root', root]);
-  assert.match(out, /Needs a decision 4 — newest 2 by last edit, offer these:/);
-  assert.match(out, /and 2 more, not listed — Other takes one by name/);
+  assert.match(out, /Needs a decision 4 — newest 3 by last edit, offer these:/);
+  assert.match(out, /and 1 more, not listed — Other takes one by name/);
+  assert.match(out, /patrol: always offered last as "TODO 全表盤點", builds Ready — 0 due \+ 0 stale/);
 });
 
 // What `now` a reading of the todo: block is taken at. `scan` stamps
@@ -686,7 +687,7 @@ test('the todo: block lists every Blocked timing and marks the due ones', () => 
   const head = lines.findIndex((l) => /Blocked 2 timings/.test(l));
   assert.match(lines[head + 1], /^\s+due\s+an overflow seen \(2\)$/, 'the due timing comes first');
   assert.match(lines[head + 2], /^\s+09-25\s+gates a week old \(1\)$/, 'a date not yet reached shows the date');
-  assert.match(early, /patrol: always offered last as "TODO 全表盤點" — 1 due \+ 0 stale/);
+  assert.match(early, /patrol: always offered last as "TODO 全表盤點", builds Ready — 1 due \+ 0 stale/);
 
   const late = reportAt(root, 2026, 9, 26);
   assert.match(late, /Blocked 2 timings, 3 entries — 2 due/);
@@ -722,7 +723,7 @@ test('the todo: block lists every Watch timing, stale ones first, and never mark
   const head = lines.findIndex((l) => /Watch 2 timings/.test(l));
   assert.match(lines[head + 1], /^\s+stale\s+an incident again \(2\)$/, 'the stale timing comes first');
   assert.match(lines[head + 2], /^\s+a demand appears \(1\)$/);
-  assert.match(out, /patrol: always offered last as "TODO 全表盤點" — 0 due \+ 1 stale/);
+  assert.match(out, /patrol: always offered last as "TODO 全表盤點", builds Ready — 0 due \+ 1 stale/);
 });
 
 // `## Waiting` was split on 2026-09-27. An entry still under it is counted by
