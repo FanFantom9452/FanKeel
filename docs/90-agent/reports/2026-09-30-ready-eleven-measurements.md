@@ -55,3 +55,21 @@ tests-1 verdict: not reproduced
 負載下最大值 1586 ms；規則是 ≤ 5000 維持 5 秒，否則取 10、15、20、30 中第一個不小於 1.5 × 1586 / 1000 的值。
 
 inject timeout: 5
+
+## station-8：8806240d 之後每個 subagent 的 context 峰值與最貴 agent 佔比
+
+指令：`node .fankeel/build/2026-09-30-ready-eleven/station8.js`，在主 checkout 跑（commit 4c5470489bd440b7eff963548ee2d9dd0ffd239f）。範圍：本 repo `.fankeel/sessions/` 裡 `started` 晚於 commit 8806240d（2026-09-30 05:10:45 +0800）、transcript 找得到、至少有一個 subagent 的 session。
+
+腳本跑時要修一處：`sessionsDir` 是 `lib/registry.js` 的私有函式，沒有 export，所以腳本改用 `path.join(registry.stateDir(REPO), 'sessions')`。腳本在 `.fankeel/build/2026-09-30-ready-eleven/station8.js`（gitignored）。
+
+| session | subagent 數 | 最高峰值（agent） | 最貴 agent 佔比（agent） | subagent 總花費 |
+|---|---|---|---|---|
+| session 9090e2fc-47a6-4cfe-956c-8c9dd7aff870 | 76 | 365198（adabb402521198b1b） | 8.3%（adabb402521198b1b） | $86.20 |
+| session 5ba3e967-ce24-4b43-836e-aaf70c79740a | 93 | 325505（af9d4eb1fb2982257） | 28.9%（af9d4eb1fb2982257） | $26.47 |
+| session 66d83a22-59ee-453e-997c-359ab202ce3e | 41 | 259772（a9a149bfcc61c5dac） | 34.5%（a9a149bfcc61c5dac） | $10.52 |
+| session 0ad44211-ef40-4a3a-bad2-a5b9c5f7a579 | 29 | 211090（a87a68252b923ecd6） | 34.0%（a87a68252b923ecd6） | $6.16 |
+| session 0fc4b8f3-9116-4bd6-9de2-f2435ae4a100 | 33 | 69288（a6eddb63ce1a46a76） | 10.8%（ab1402e4053211901） | $4.81 |
+
+(1) 峰值超過 300k 的 session：2。(2) subagent 滿 10 個的 session：5，其中佔比 15% 以上：3。沒有價格的模型：none。
+
+station-8 verdict: fail
