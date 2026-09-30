@@ -1329,6 +1329,7 @@ test('survey and build each carry their own half of the patrol; fankeel points a
   assert.match(buildSection[0], /`if:`/);
   assert.doesNotMatch(buildSection[0], /lifts when:/);
   assert.match(buildSection[0], /survey,plan,build,verify,land/);
+  assert.doesNotMatch(buildSection[0], /survey,build,land/);
 
   const fankeel = read('fankeel');
   assert.match(fankeel, /skills\/fankeel-survey\/SKILL\.md.*## The patrol/s);
