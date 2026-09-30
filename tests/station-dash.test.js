@@ -164,8 +164,20 @@ test('moving a card stores its order as station.dash, moving it back stores no k
     assert.equal('station.dash' in kept, false, 'a move off the top edge changes nothing');
     c.press({ 'data-dchmv': '1', 'data-card': 'dash-recent' });
     assert.equal('station.dash' in kept, false, 'a move off the bottom edge changes nothing');
+    c.press({ 'data-dchmv': '1', 'data-card': 'nope' });
+    assert.equal('station.dash' in kept, false, 'an unknown card id stores nothing');
     c.press({ 'data-dchmv': '1', 'data-card': 'dash-live' });
     assert.ok('station.dash' in kept);
+    const before = kept['station.dash'];
+    c.press({ 'data-dchmv': '1', 'data-card': 'dash-spend' });
+    const mid = kept['station.dash'];
+    assert.notEqual(mid, before, 'a move from a middle slot of a stored order changes it');
+    c.press({ 'data-dchmv': '1', 'data-card': 'dash-spend' });
+    assert.equal(kept['station.dash'], mid, 'a move off the bottom edge of a stored order leaves it byte for byte');
+    c.press({ 'data-dchmv': '-1', 'data-card': 'waiting-card' });
+    assert.equal(kept['station.dash'], mid, 'waiting-card is first in the stored order, so a move up leaves it byte for byte');
+    c.press({ 'data-dchmv': '1', 'data-card': 'nope' });
+    assert.equal(kept['station.dash'], mid, 'an unknown card id changes nothing in a stored order');
     c.press({ 'data-dchreset': '1' });
     assert.equal('station.dash' in kept, false);
 });
@@ -173,9 +185,11 @@ test('moving a card stores its order as station.dash, moving it back stores no k
 test('ticking a card off stores it in off and the page leaves it out, ticking it on stores no key again', () => {
     const kept = {};
     const c = chooser(kept);
+    const drawn = /<div class="dash" data-block="dashboard">[\s\S]*data-block="dash-spend"/;
+    assert.match(c.page(), drawn, 'dash-spend is drawn while it is on');
     c.tick('dash-spend', false);
     assert.equal(kept['station.dash'], '{"order":["dash-live","waiting-card","dash-todo","dash-spend","dash-recent"],"off":["dash-spend"]}');
-    assert.doesNotMatch(c.page(), /<div class="dash" data-block="dashboard">[\s\S]*data-block="dash-spend"/);
+    assert.doesNotMatch(c.page(), drawn);
     c.tick('dash-spend', true);
     assert.equal('station.dash' in kept, false);
 });

@@ -104,8 +104,9 @@ test('a pointerdown on an action button opens the click ring, restarting it each
     cls.add('rip');
     const log = [];
     ring.classList = { add: (c) => log.push('add ' + c), remove: (c) => log.push('remove ' + c) };
+    Object.defineProperty(ring, 'offsetWidth', { get() { log.push('read'); return 1; } });
     fire(target('.btn.go'));
-    assert.deepEqual(log, ['remove rip', 'add rip'], 'an old ring is taken off before the new one is put on');
+    assert.deepEqual(log, ['remove rip', 'read', 'add rip'], 'an old ring is taken off, the layout is read to restart it, then the new one is put on');
 });
 
 test('the switch speaks the page\'s language', () => {
