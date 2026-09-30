@@ -87,3 +87,33 @@ test('init.skip: skipped, nothing checked; force checks anyway', () => {
   assert.equal(forced.skip, true);
   assert.equal(forced.docsJson.pass, false);
 });
+
+test('no docs.json and no error: the evidence says the file is missing', () => {
+  const root = filed();
+  assert.equal(docs.read(root).error, null);
+  const r = onboard.cheap(root, cfg());
+  assert.equal(r.docsJson.evidence, '.fankeel/docs.json missing');
+  assert.ok(r.failing.includes('docs.json — .fankeel/docs.json missing'));
+});
+
+test('a root with nothing to list fails unfiled, saying nothing could be listed', () => {
+  const root = tmp('fankeel-onboard-empty-');
+  assert.equal(docs.unfiledCount(root), null);
+  const r = onboard.cheap(root, cfg());
+  assert.equal(r.unfiled.pass, false);
+  assert.equal(r.unfiled.evidence, 'nothing under ' + root + ' could be listed');
+});
+
+test('a project with no directory tree fails the tree check, saying so', () => {
+  const root = project({ 'README.md': '# bare\n\nno tree here\n', 'docs/guide.md': '# guide\n' });
+  docs.write(root, { buckets: [{ path: 'docs', role: 'reference' }] });
+  const r = onboard.cheap(root, cfg());
+  assert.equal(r.tree.pass, false);
+  assert.equal(r.tree.evidence, 'no directory tree of 3 rows or more in CLAUDE.md, AGENTS.md or README.md');
+});
+
+test('a passing docs.json check names its bucket count', () => {
+  const root = filed();
+  docs.write(root, { buckets: [{ path: 'docs', role: 'reference' }] });
+  assert.equal(onboard.cheap(root, cfg()).docsJson.evidence, '.fankeel/docs.json, 1 buckets');
+});

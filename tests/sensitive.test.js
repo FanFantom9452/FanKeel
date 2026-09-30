@@ -139,6 +139,127 @@ test('a commit whose index cannot be read is said to be unscanned, not let throu
   }
 });
 
+// repo(), with docs/plan.md unstaged: an untracked file holding ACME, and
+// base.txt tracked and clean.
+function loose(words, mode) {
+  const dir = repo(words, mode);
+  git(dir, 'reset', '-q');
+  return dir;
+}
+const verdict = (dir, command, tool) => {
+  const raw = hook(dir, tool || 'Bash', command);
+  return raw ? JSON.parse(raw).hookSpecificOutput : null;
+};
+const denied = (out) => out && out.permissionDecision === 'deny';
+
+test('nothing staged, nothing added: a plain commit is not stopped, and a control add of a clean file is not either', () => {
+  const dir = loose(['ACME'], 'block');
+  assert.equal(hook(dir, 'Bash', 'git commit -m x'), '');
+  assert.equal(hook(dir, 'Bash', 'git add base.txt && git commit -m x'), '');
+});
+
+test('a chained add of a file with a listed word is scanned before the add runs', () => {
+  for (const mode of ['block', 'warn']) {
+    const dir = loose(['ACME'], mode);
+    const out = verdict(dir, 'git add docs/plan.md && git commit -m x');
+    assert.match(out.permissionDecisionReason || out.additionalContext, /docs\/plan\.md:3/, mode);
+    assert.equal(denied(out), mode === 'block', mode);
+  }
+});
+
+test('a chained add of a directory, or of -A, or of . after a semicolon, is scanned', () => {
+  for (const command of ['git add docs && git commit -m x', 'git add -A && git commit -m x', 'git add . ; git commit -m x', 'git add --all || git commit -m x', 'git add -u\ngit commit -m x']) {
+    const dir = loose(['ACME'], 'block');
+    if (/-u/.test(command)) fs.writeFileSync(path.join(dir, 'base.txt'), 'base for acme\n');
+    const out = verdict(dir, command);
+    assert.equal(denied(out), true, command);
+    assert.match(out.permissionDecisionReason, /docs\/plan\.md:3|base\.txt:1/, command);
+  }
+});
+
+test('an add of one clean file does not scan its untracked neighbour', () => {
+  const dir = loose(['ACME'], 'block');
+  fs.writeFileSync(path.join(dir, 'other.txt'), 'nothing\n');
+  assert.equal(hook(dir, 'Bash', 'git add other.txt && git commit -m x'), '');
+  assert.equal(hook(dir, 'Bash', 'git -C . add other.txt && git commit -m x'), '');
+});
+
+test('-a and --all scan the tracked working-tree change, not the untracked file', () => {
+  for (const flag of ['-a', '--all', '-am']) {
+    const dir = loose(['ACME'], 'block');
+    fs.writeFileSync(path.join(dir, 'base.txt'), 'base\nfor acme\n');
+    const out = verdict(dir, 'git commit ' + flag + ' "m"');
+    assert.equal(denied(out), true, flag);
+    assert.match(out.permissionDecisionReason, /base\.txt:2/, flag);
+    assert.doesNotMatch(out.permissionDecisionReason, /plan\.md/, flag);
+  }
+  const dir = loose(['ACME'], 'block');
+  fs.writeFileSync(path.join(dir, 'base.txt'), 'base\nfor acme\n');
+  assert.equal(hook(dir, 'Bash', 'git commit -m x'), '');
+});
+
+test('a path after -- is scanned, untracked or not, and one outside the repository is not', () => {
+  const dir = loose(['ACME'], 'block');
+  const out = verdict(dir, 'git commit -m x -- docs/plan.md');
+  assert.equal(denied(out), true);
+  assert.match(out.permissionDecisionReason, /docs\/plan\.md:3/);
+  assert.equal(hook(dir, 'Bash', 'git commit -m x -- base.txt'), '');
+  fs.writeFileSync(path.join(dir, '..', 'outside-acme.md'), 'acme\n');
+  assert.equal(hook(dir, 'Bash', 'git commit -m x -- ../outside-acme.md'), '');
+  fs.rmSync(path.join(dir, '..', 'outside-acme.md'));
+});
+
+test('the commit pattern takes -C and -c before commit, and not a lookalike', () => {
+  for (const c of ['git commit -m x', 'git -C sub commit -m x', 'git -c user.name=x commit -m x', 'git -c a=b -C d commit', 'cd x && git commit']) {
+    assert.equal(sensitive.isCommit(c), true, c);
+  }
+  for (const c of ['git status', 'git commit-tree abc', 'echo git', 'mygit commit']) assert.equal(sensitive.isCommit(c), false, c);
+  const dir = repo(['ACME'], 'block');
+  assert.equal(denied(verdict(dir, 'git -c user.name=x commit -m x')), true);
+  assert.equal(denied(verdict(dir, 'git -C ' + dir + ' commit -m x')), true);
+});
+
+test('listed names twenty hits and counts the rest', () => {
+  const hit = (i) => ({ path: 'f' + i + '.md', line: i, word: 'ACME' });
+  const few = sensitive.listed([hit(1), hit(2)]);
+  assert.equal(few, 'f1.md:1 (ACME), f2.md:2 (ACME)');
+  const many = sensitive.listed(Array.from({ length: 23 }, (_, i) => hit(i + 1)));
+  assert.ok(many.endsWith(', and 3 more'), many);
+  assert.equal(many.split(' (ACME)').length - 1, 20);
+  assert.ok(!many.includes('f21.md'));
+  assert.ok(!sensitive.listed(Array.from({ length: 20 }, (_, i) => hit(i + 1))).includes('more'));
+});
+
+test('a word list that exists and cannot be read is refused in block, noticed in warn, and a missing one is silent', () => {
+  for (const mode of ['block', 'warn']) {
+    const dir = repo(['ACME'], mode);
+    const list = path.join(dir, '.fankeel', 'sensitive.txt');
+    fs.rmSync(list);
+    fs.mkdirSync(list); // EISDIR
+    const out = verdict(dir, 'git commit -m x');
+    assert.equal(denied(out), mode === 'block', mode);
+    assert.match(out.permissionDecisionReason || out.additionalContext, /could not be read \(EISDIR\)/, mode);
+  }
+  const gone = repo(['ACME'], 'block');
+  fs.rmSync(path.join(gone, '.fankeel', 'sensitive.txt'));
+  assert.equal(hook(gone, 'Bash', 'git commit -m x'), '');
+});
+
+test('scan and commit.js do not read an unreadable list as an empty one', () => {
+  const dir = repo(['ACME'], 'block');
+  const list = path.join(dir, '.fankeel', 'sensitive.txt');
+  fs.rmSync(list);
+  fs.mkdirSync(list);
+  assert.deepEqual(sensitive.scan(dir, ['base.txt']), [{ path: '.fankeel/sensitive.txt', line: 0, word: 'unreadable: EISDIR' }]);
+  const file = path.join(tmp('fankeel-sensitive-req-'), 'build-commit.md');
+  fs.writeFileSync(file, 'docs/plan.md\n\ndocs: plan\n');
+  const before = git(dir, 'rev-parse', 'HEAD');
+  const res = commit.main([file], dir);
+  assert.equal(res.code, 1);
+  assert.match(res.text, /unreadable: EISDIR/);
+  assert.equal(git(dir, 'rev-parse', 'HEAD'), before);
+});
+
 test('scan reads UTF-16 text by its BOM, and still skips a binary', () => {
   const dir = repo(['ACME']);
   const le = Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from('one\r\nfor acme\r\n', 'utf16le')]);
