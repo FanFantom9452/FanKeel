@@ -1642,3 +1642,291 @@ a.td-rf:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-rad
   .donel .td-row{grid-template-columns:auto auto minmax(0,1fr);grid-template-areas:"lb tt tt" "at dp rf"}
   .td-d,.td-tm{margin-top:2px}
 }
+
+/* ==== keel: the promo film's look, as station tokens ==========================
+   Palette: tour-keel.js `C` (the styleframes' palette block), which promo30v5
+   in tour-ring.js draws with. Dark: the film's own terminal card (C.ink ground,
+   C.term text, termRule, termDot, termGood, termBad, dotLit). */
+:root[data-style=keel]{
+  --ground:#f2f4f3; --panel:#fbfcfc; --inset:#eaeef1;
+  --ink:#18202c; --ink2:#3a4454; --muted:#5e6775; --faint:#a9b3c1;
+  --rule:#d8dee4; --rule2:#cbd2da; --grid:#dfe4e9; --wash:rgba(24,32,44,.045);
+  --good:#16845a; --bad:#c8323f; --live:#16845a; --live-bg:#e0f2ea;
+  --stale:#f4b72e; --stale-bg:#fdefc7; --stale-ink:#7a5a00;
+  --keel:#2d5bd8; --keel-deep:#2349b8; --keel-mid:#9db4ee; --keel-tint:#e3eafb; --on-keel:#fbfcfc;
+  --pass-tint:#e0f2ea; --pass-ink:#0f5c3f; --fail-tint:#fbe7e9; --fail-ink:#8e1f29;
+  --signal-tint:#fdefc7; --signal-ink:#7a5a00;
+  --term:#18202c; --term-ink:#c9d1dc; --term-good:#6fd3a6; --term-bad:#ff8a94;
+  --dot:rgba(24,32,44,.13);
+  --lift:0 1px 2px rgba(24,32,44,.05),0 12px 28px -8px rgba(24,32,44,.16);
+  --r:10px; --r-sm:6px;
+}
+@media(prefers-color-scheme:dark){:root[data-style=keel]:not([data-theme=light]){
+  --ground:#10151d; --panel:#18202c; --inset:#202a38;
+  --ink:#e6eaf0; --ink2:#c9d1dc; --muted:#8d98aa; --faint:#5b6678;
+  --rule:#2a3444; --rule2:#3a4556; --grid:#222c3a; --wash:rgba(201,209,220,.06);
+  --good:#6fd3a6; --bad:#ff8a94; --live:#6fd3a6; --live-bg:rgba(111,211,166,.14);
+  --stale:#f4b72e; --stale-bg:rgba(244,183,46,.16); --stale-ink:#f4b72e;
+  --keel:#8fa9f2; --keel-deep:#b9caf5; --keel-mid:#3d5596; --keel-tint:rgba(143,169,242,.15); --on-keel:#10151d;
+  --pass-tint:rgba(111,211,166,.14); --pass-ink:#6fd3a6; --fail-tint:rgba(255,138,148,.14); --fail-ink:#ff8a94;
+  --signal-tint:rgba(244,183,46,.15); --signal-ink:#f4b72e;
+  --term:#0b0f15; --term-ink:#c9d1dc;
+  --dot:rgba(201,209,220,.08);
+  --lift:0 1px 0 rgba(201,209,220,.04) inset,0 14px 30px -10px rgba(0,0,0,.6);
+}}
+:root[data-style=keel][data-theme=dark]{
+  --ground:#10151d; --panel:#18202c; --inset:#202a38;
+  --ink:#e6eaf0; --ink2:#c9d1dc; --muted:#8d98aa; --faint:#5b6678;
+  --rule:#2a3444; --rule2:#3a4556; --grid:#222c3a; --wash:rgba(201,209,220,.06);
+  --good:#6fd3a6; --bad:#ff8a94; --live:#6fd3a6; --live-bg:rgba(111,211,166,.14);
+  --stale:#f4b72e; --stale-bg:rgba(244,183,46,.16); --stale-ink:#f4b72e;
+  --keel:#8fa9f2; --keel-deep:#b9caf5; --keel-mid:#3d5596; --keel-tint:rgba(143,169,242,.15); --on-keel:#10151d;
+  --pass-tint:rgba(111,211,166,.14); --pass-ink:#6fd3a6; --fail-tint:rgba(255,138,148,.14); --fail-ink:#ff8a94;
+  --signal-tint:rgba(244,183,46,.15); --signal-ink:#f4b72e;
+  --term:#0b0f15; --term-ink:#c9d1dc;
+  --dot:rgba(201,209,220,.08);
+  --lift:0 1px 0 rgba(201,209,220,.04) inset,0 14px 30px -10px rgba(0,0,0,.6);
+}
+/* keel-only parts vanish in classic; classic-only parts vanish in keel */
+:root:not([data-style=keel]) .k-only{display:none}
+:root[data-style=keel] .c-only{display:none}
+
+/* ---- the film's ground: dot paper, 22px pitch (tour-ring.js ground(), 11 film units) ---- */
+:root[data-style=keel] body{background:var(--ground) radial-gradient(circle,var(--dot) 1.2px,transparent 1.7px) 11px 11px/22px 22px}
+:root[data-style=keel] .shell{grid-template-columns:236px minmax(0,1fr)}
+:root[data-style=keel] :focus-visible{outline-color:var(--keel)}
+
+/* ---- mast: the film's header lockup — glyph, wordmark, a rule, then where you are ---- */
+:root[data-style=keel] .mast{height:76px;gap:18px}
+:root[data-style=keel] .brand{gap:10px;align-items:center}
+:root[data-style=keel] .brand .glyph{width:34px;height:34px;display:block;flex:none}
+:root[data-style=keel] .brand b{font-weight:700;font-size:27px;letter-spacing:-.03em;line-height:1}
+:root[data-style=keel] .brand #brandw{display:flex;align-items:center;height:28px;margin-left:6px;padding-left:14px;border-left:1.2px solid var(--rule2);
+  font:700 13px var(--f-mono);color:var(--muted);letter-spacing:0}
+:root[data-style=keel] .crumbs .cur{font-size:18px;font-weight:700;color:var(--ink);text-decoration:underline 2.4px var(--keel);text-underline-offset:7px}
+:root[data-style=keel] .mast .search{background:var(--panel);box-shadow:var(--lift),inset 0 0 0 1px var(--rule);height:36px;border-radius:8px}
+:root[data-style=keel] .seg{background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule)}
+:root[data-style=keel] .seg button[aria-pressed="true"]{background:var(--keel);color:var(--on-keel);font-weight:700}
+.glyph .gseg{fill:var(--keel)}
+.glyph .gedge{fill:none;stroke:var(--ink);stroke-linejoin:round}
+.glyph .gcore{fill:var(--ink);stroke:var(--ink);stroke-width:2;stroke-linejoin:round}
+/* b1, once on load: the core pops, the six segments slide in and snap, the edge seals */
+.glyph.b1 .gseg,.glyph.b1 .gcore,.glyph.b1 .gedge{transform-box:fill-box;transform-origin:center}
+.glyph.b1 .gcore{animation:kpop .28s cubic-bezier(.34,1.56,.64,1) both}
+.glyph.b1 .gseg{animation:kseg .34s cubic-bezier(.34,1.56,.64,1) calc(90ms + var(--i) * 55ms) both}
+.glyph.b1 .gedge{animation:kseal .3s cubic-bezier(.16,1,.3,1) .62s both}
+@keyframes kpop{from{transform:scale(0)}}
+@keyframes kseg{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.5)}}
+@keyframes kseal{from{opacity:0;transform:scale(1.18)}}
+
+/* ---- nav: the film's file-tree card (hook frames: chevron, folder, name, count right) ---- */
+:root[data-style=keel] .sidenav{padding:4px 0 8px 32px}
+:root[data-style=keel] .sidenav>ul{background:var(--panel);border-radius:var(--r);box-shadow:var(--lift);padding:8px}
+:root[data-style=keel] .sidenav .navcat+.navcat{margin-top:2px}
+:root[data-style=keel] .sidenav a,:root[data-style=keel] .sidenav .navrow{border-radius:6px;font-size:13px;color:var(--ink);gap:7px}
+:root[data-style=keel] .sidenav .navcat>a,:root[data-style=keel] .sidenav .navrow{font-weight:700;padding:7px 8px 7px 29px}
+:root[data-style=keel] .sidenav .navrow{padding-left:8px}
+:root[data-style=keel] .sidenav .navrow .navchev{order:-1;margin:0 0 0 -2px;width:14px}
+:root[data-style=keel] .navcat.shut .navchev .ico{transform:rotate(-90deg)}
+:root[data-style=keel] .sidenav .navkids{position:relative}
+:root[data-style=keel] .sidenav .navkids::before{content:"";position:absolute;left:36px;top:3px;bottom:3px;width:1px;background:var(--rule)}
+:root[data-style=keel] .sidenav .navkids a{padding:5px 8px 5px 52px;font-size:12.5px;font-weight:400;color:var(--ink2)}
+:root[data-style=keel] .sidenav a .nb{font:500 11.5px var(--f-mono);color:var(--muted)}
+:root[data-style=keel] .sidenav a .nb.live{color:var(--good);font-weight:700}
+/* where you are: the survey frame's selected row — keel tint, keel bar under it */
+:root[data-style=keel] .sidenav a[aria-current="page"]{background:var(--keel-tint);color:var(--keel-deep);border-radius:6px 6px 0 0;box-shadow:inset 0 -2.5px 0 var(--keel)}
+:root[data-style=keel] .sidenav a[aria-current="page"] .ico{color:var(--keel)}
+:root[data-style=keel] .navfoot{padding:0 8px}
+
+/* ---- page head and the film's action button (keel fill, the click ring) ---- */
+:root[data-style=keel] .phead h1{font-weight:700;font-size:24px;letter-spacing:-.01em}
+:root[data-style=keel] .phead h1 .ico{color:var(--keel)}
+:root[data-style=keel] .btn{border-radius:7px;border-color:var(--rule2);background:var(--panel);color:var(--ink);min-height:32px;padding:0 12px}
+:root[data-style=keel] .btn.go,:root[data-style=keel] #dchtog,:root[data-style=keel] .td-mb{position:relative;background:var(--keel);border-color:var(--keel-deep);color:var(--on-keel);font-weight:700;box-shadow:0 4px 10px -4px rgba(45,91,216,.5)}
+:root[data-style=keel] .btn.go:hover,:root[data-style=keel] #dchtog:hover,:root[data-style=keel] .td-mb:hover{background:var(--keel-deep);color:var(--on-keel)}
+:root[data-style=keel] #dchtog.on{background:var(--keel-deep)}
+:root[data-style=keel] .btn.go::after,:root[data-style=keel] #dchtog::after,:root[data-style=keel] .td-mb::after{content:"";position:absolute;inset:-6px;border-radius:12px;border:2px solid var(--keel);opacity:0;pointer-events:none}
+:root[data-style=keel] .rip::after{animation:kring .34s cubic-bezier(.16,1,.3,1)}
+@keyframes kring{from{opacity:.9;transform:scale(.86)}to{opacity:0;transform:scale(1.1)}}
+
+/* ---- cards: the film's floating file cards — white on the paper, soft lift, a rule under the head ---- */
+:root[data-style=keel] .dcard,:root[data-style=keel] .panel{background:var(--panel);box-shadow:var(--lift)}
+:root[data-style=keel] .dash{gap:18px}
+:root[data-style=keel] .dcard{padding:0 18px 14px}
+:root[data-style=keel] .dcard-h{height:46px;margin:0 -18px;padding:0 18px;border-bottom:1px solid var(--rule)}
+:root[data-style=keel] .dcard-h b{font-weight:700;font-size:14px}
+:root[data-style=keel] .dcard-h .ico{color:var(--keel)}
+:root[data-style=keel] .dmore{font:500 11.5px var(--f-mono);color:var(--ink2);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--rule2)}
+:root[data-style=keel] .dmore:hover{color:var(--keel-deep);text-decoration-color:var(--keel)}
+:root[data-style=keel] .dbig{font-weight:700;font-size:34px;margin:14px 0 10px}
+:root[data-style=keel] .drow{border-top-color:var(--rule)}
+:root[data-style=keel] .drow .dp{font-family:var(--f-mono);font-size:11px}
+
+/* dash-live: each session drawn as the v5 header — its glyph filling stage by stage, then `0N / 0M stage` */
+:root[data-style=keel] [data-block=dash-live] .drow{display:grid;grid-template-columns:30px minmax(0,1fr) auto;grid-template-areas:"g p r" "g t st";gap:1px 10px;padding:8px 6px;align-items:center}
+:root[data-style=keel] [data-block=dash-live] .dp{grid-area:p;max-width:none}
+:root[data-style=keel] [data-block=dash-live] .dt{grid-area:t;font-weight:600}
+:root[data-style=keel] [data-block=dash-live] .dr{grid-area:r;font-size:11px}
+:root[data-style=keel] .glyph.prog{grid-area:g;width:30px;height:30px}
+.glyph .gseg.todo{fill:var(--rule2)}
+.glyph .gseg.now{fill:var(--c);animation:klive 1.6s ease-in-out infinite alternate}
+.glyph .gedge.todo{stroke:var(--faint);stroke-width:3}
+.glyph .gedge.now{stroke:var(--c);animation:klive 1.6s ease-in-out infinite alternate}
+@keyframes klive{to{opacity:.45}}
+:root[data-style=keel] .kst{grid-area:st;display:flex;align-items:baseline;gap:0;white-space:nowrap;font:700 11px var(--f-mono);color:color-mix(in srgb,var(--c) 72%,var(--ink))}
+.kst i{font-style:normal;color:var(--muted);margin-right:7px}
+.kst u{font:700 12.5px var(--f-ui);text-decoration:underline 2px var(--c);text-underline-offset:4px}
+
+/* waiting-card: all clear reads as the verify frame's green check */
+.okdot{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--good);color:var(--panel);margin-right:8px;vertical-align:-4px}
+.okdot .ico{width:12px;height:12px;stroke-width:2.2}
+:root[data-style=keel] .dnone{color:var(--ink2)}
+
+/* dash-spend: the hook's counter card — pale keel bars, today in full keel; figures as terminal output */
+:root[data-style=keel] .dspark rect{fill:var(--keel-mid)}
+:root[data-style=keel] .dspark rect.today{fill:var(--keel)}
+:root[data-style=keel] .dkv{align-items:center}
+:root[data-style=keel] .dkv b{background:var(--term);color:var(--term-ink);padding:3px 8px;border-radius:5px;margin-left:6px;font-weight:600}
+
+/* dash-recent: the stage word in its colour, underlined, as the film's header draws it */
+:root[data-style=keel] .drow .ds[data-st]{font:700 11.5px var(--f-ui);color:color-mix(in srgb,var(--c) 72%,var(--ink));text-decoration:underline 2px var(--c);text-underline-offset:4px}
+:root[data-style=keel] .drow .dc{font-weight:600}
+
+/* ---- dash-chooser ---- */
+.phead .btn.on{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.dchooser{padding:16px 18px 14px;max-width:720px}
+.dch-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.dch-h b{font-size:13.5px;font-weight:700}
+.dch-h .muted{font-size:12px}
+.dch-h code{font-family:var(--f-mono);font-size:11.5px}
+.dch-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
+.dch-row{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--rule)}
+.dch-n{font:600 12px var(--f-mono);color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
+.dch-lb{display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0}
+.dch-lb input{width:16px;height:16px;margin:0;accent-color:var(--keel,var(--ink));flex:none}
+.dch-lb span{display:flex;align-items:baseline;gap:10px;min-width:0}
+.dch-lb b{font-weight:600;white-space:nowrap}
+.dch-lb small{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dch-row:has(input:not(:checked)) b{color:var(--muted);font-weight:400;text-decoration:line-through}
+.dch-mv{display:flex;gap:4px}
+.dch-b{all:unset;box-sizing:border-box;width:32px;height:32px;border-radius:7px;display:grid;place-items:center;color:var(--ink2);cursor:pointer;box-shadow:inset 0 0 0 1px var(--rule2)}
+.dch-b:hover{background:var(--wash);color:var(--ink)}
+.dch-b:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.dch-b[disabled]{opacity:.35;cursor:default}
+.ico.up{transform:rotate(180deg)}
+.dch-f{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px}
+.btn.go{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.btn.go:hover{background:var(--ink2);color:var(--panel)}
+.dash .dcard.off{display:none}
+.dash{grid-auto-flow:row dense}
+.dash>[data-block=dash-todo]{grid-row:span 2}
+/* keel: the plan frame's numbered keel discs — the order is a real sequence */
+:root[data-style=keel] .dchooser{padding:0 18px 14px}
+:root[data-style=keel] .dch-h{height:46px;align-items:center;margin:0 -18px;padding:0 18px;border-bottom:1px solid var(--rule)}
+:root[data-style=keel] .dch-list{border-top:0}
+:root[data-style=keel] .dch-n{width:22px;height:22px;border-radius:50%;background:var(--keel);color:var(--on-keel);display:grid;place-items:center;font-weight:700;font-size:11.5px}
+:root[data-style=keel] .dch-lb b{font-weight:700}
+:root[data-style=keel] .dch-b{background:var(--panel)}
+
+/* ---- dash-todo ---- */
+.dhint{cursor:default}
+.trow{flex-direction:column;align-items:stretch;gap:3px;padding:8px 6px}
+.trh{display:flex;align-items:baseline;gap:6px;min-width:0}
+.trh .dp{max-width:none;font-size:12px;color:var(--ink2);font-weight:600}
+.tpill{display:inline-flex;align-items:baseline;gap:6px}
+.tn{font:700 15px var(--f-mono);color:var(--keel,var(--ink));font-variant-numeric:tabular-nums;margin-left:4px}
+.tnl{font-size:11px;color:var(--muted)}
+.tq{font:11px var(--f-mono);color:var(--muted);margin-left:8px;white-space:nowrap}
+.tq b{font-weight:600;color:var(--ink2)}
+.trl{list-style:none;margin:0;padding:0 0 0 2px;display:flex;flex-direction:column;gap:1px}
+.trl li{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:12px;position:relative}
+.trl li::before{content:"";position:absolute;left:1px;top:.62em;width:5px;height:5px;border-radius:1px;background:var(--rule2)}
+.trl .tlb{font:11px var(--f-mono);color:var(--muted);margin-right:7px}
+.trl .tmore{color:var(--muted);font-size:12px}
+.trl .tmore::before{content:none}
+.tfoot{font-size:11.5px;line-height:1.5}
+/* keel: a project is the film's folder row; states are the film's tinted pills */
+.fi{width:14px;height:14px;flex:none;align-self:center}
+:root[data-style=keel] .trow{padding:10px 6px 9px;gap:5px}
+:root[data-style=keel] .trh{align-items:center;gap:5px 7px;flex-wrap:wrap}
+:root[data-style=keel] .trh .spacer{flex:1 0 8px}
+:root[data-style=keel] .trh .dp{font:700 12px var(--f-mono);color:var(--ink)}
+:root[data-style=keel] .tpill{align-items:center;gap:4px;padding:1px 8px 1px 6px;border-radius:5px;background:var(--pass-tint);color:var(--pass-ink);margin-left:4px}
+:root[data-style=keel] .tn{color:inherit;font-size:12.5px;margin:0}
+:root[data-style=keel] .tnl{color:inherit;font-weight:600}
+:root[data-style=keel] .tq{padding:1px 6px;border-radius:5px;margin-left:4px}
+:root[data-style=keel] .tq b{color:inherit}
+:root[data-style=keel] .tq[data-st=decision]{background:var(--signal-tint);color:var(--signal-ink)}
+:root[data-style=keel] .tq[data-st=blocked]{background:var(--fail-tint);color:var(--fail-ink)}
+:root[data-style=keel] .tq[data-st=watch]{background:var(--keel-tint);color:var(--keel-deep)}
+:root[data-style=keel] .trl{margin-left:6px;padding-left:12px;border-left:2px solid var(--keel-mid)}
+:root[data-style=keel] .trl li{padding-left:0}
+:root[data-style=keel] .trl li::before{content:none}
+:root[data-style=keel] .trl .tlb{padding:0 5px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--rule2);color:var(--ink2)}
+
+/* ---- the TODO panel ---- */
+.td-more{display:flex;align-items:center;gap:12px;padding:10px 0 2px;font-size:12px}
+.td-mb{font-weight:600;color:var(--ink)}
+.td-mb .ico{width:14px;height:14px}
+.td-mb-top{margin-left:auto}
+.donel .td-row{grid-template-columns:112px minmax(0,1fr) 88px 148px 136px}
+.td-fold{box-shadow:inset 0 2px 0 var(--keel,var(--ink2))}
+/* keel: the panel is a film file card; its head is the folder, its counts are pills */
+:root[data-style=keel] .panel.td{padding:0 24px 18px}
+:root[data-style=keel] .td .h2{height:52px;align-items:center;margin:0 -24px 4px;padding:0 24px;border-bottom:1px solid var(--rule);font-weight:700;font-size:16px}
+:root[data-style=keel] .td .h2 small{display:flex;gap:6px;font-size:0}
+:root[data-style=keel] .td .h2 .num{font:700 11.5px var(--f-mono);padding:2px 8px;border-radius:5px;background:var(--keel-tint);color:var(--keel-deep)}
+:root[data-style=keel] .td .h2 .num+.num{background:var(--pass-tint);color:var(--pass-ink)}
+:root[data-style=keel] .td-src{display:flex;align-items:center;gap:7px;font:700 12px var(--f-mono);color:var(--ink)}
+:root[data-style=keel] .td-grp{margin-top:20px;align-items:center}
+:root[data-style=keel] .td-grp b{font:700 12px var(--f-mono);padding:2px 9px;border-radius:5px;background:var(--inset);color:var(--ink)}
+:root[data-style=keel] .td-grp[data-st=ready] b{background:var(--pass-tint);color:var(--pass-ink)}
+:root[data-style=keel] .td-grp[data-st=decision] b{background:var(--signal-tint);color:var(--signal-ink)}
+:root[data-style=keel] .td-grp[data-st=blocked] b{background:var(--fail-tint);color:var(--fail-ink)}
+:root[data-style=keel] .td-grp[data-st=watch] b{background:var(--keel-tint);color:var(--keel-deep)}
+:root[data-style=keel] .td-rows{border-top:1px solid var(--rule)}
+:root[data-style=keel] .td-row{padding:8px 8px;align-items:center}
+:root[data-style=keel] .td-row:hover{background:var(--wash)}
+:root[data-style=keel] .td-lb.chip{background:none;box-shadow:inset 0 0 0 1px var(--rule2);border-radius:5px;padding:1px 7px 1px 5px;color:var(--ink2);font-size:11.5px}
+:root[data-style=keel] .td-tm{color:var(--ink2)}
+/* done: the verify frame's evidence table — column heads, results as terminal chips */
+:root[data-style=keel] .td-hd{padding:6px 8px;font-size:11.5px;color:var(--muted);border-bottom:1px solid var(--rule)}
+:root[data-style=keel] .td-hd:hover{background:none}
+:root[data-style=keel] .td-hd span{font:400 11.5px var(--f-ui);color:var(--muted)}
+:root[data-style=keel] .td-hd .td-t{font-weight:400}
+:root[data-style=keel] .td-dp{justify-self:start;background:var(--term);color:var(--term-ink);padding:1px 8px;border-radius:5px;font-size:11.5px}
+:root[data-style=keel] .td-dp[data-dp=done]{color:var(--term-good)}
+:root[data-style=keel] .td-dp[data-dp=abandoned]{color:var(--term-bad)}
+:root[data-style=keel] .td-hd .td-dp{background:none;padding:0}
+:root[data-style=keel] a.td-rf{color:var(--keel-deep);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--keel-mid)}
+:root[data-style=keel] span.td-rf{text-decoration:underline dotted var(--rule2);text-underline-offset:3px}
+/* the fold: the plan frame's dashed keel cut line, with its tab */
+:root[data-style=keel] .td-fold{box-shadow:none}
+.td-cut{list-style:none;position:relative;height:22px;margin:4px 0 0}
+.td-cut::before{content:"";position:absolute;left:0;right:0;top:11px;border-top:1.5px dashed var(--keel)}
+.td-cut span{position:relative;display:inline-block;margin-left:8px;padding:1px 9px;border-radius:5px;background:var(--keel);color:var(--on-keel);font-size:11px;font-weight:700;line-height:20px}
+:root[data-style=keel] .td-more{padding-top:14px}
+:root[data-style=keel] .td-more .muted{font-family:var(--f-mono);font-size:11.5px}
+
+/* ---- the bell, floating like the film's cards ---- */
+:root[data-style=keel] .fkb{background:var(--panel);box-shadow:inset 0 0 0 1px var(--rule),var(--lift)}
+:root[data-style=keel] .fkb[aria-expanded="true"]{background:var(--keel);color:var(--on-keel)}
+:root[data-style=keel] .fkn{background:var(--keel);color:var(--on-keel)}
+:root[data-style=keel] .foot{font-family:var(--f-mono);font-size:11.5px}
+
+/* ---- style-classic: one switch in the mast ---- */
+.styletog{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 10px 0 6px;border-radius:8px;cursor:pointer;font-size:12.5px;color:var(--ink2);white-space:nowrap}
+.styletog:hover{background:var(--wash);color:var(--ink)}
+.styletog:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.styletog .sw2{position:relative;width:30px;height:18px;border-radius:9px;background:var(--inset);box-shadow:inset 0 0 0 1px var(--rule2);flex:none}
+.styletog .sw2::after{content:"";position:absolute;left:3px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--muted);transition:transform .18s ease-out}
+.styletog[aria-pressed="true"] .sw2{background:var(--ink)}
+.styletog[aria-pressed="true"] .sw2::after{transform:translateX(12px);background:var(--panel)}
+:root[data-style=keel] .styletog .sw2{background:var(--panel)}
+
+@media (prefers-reduced-motion:reduce){
+  .styletog .sw2::after{transition:none}
+  .glyph .gseg,.glyph .gcore,.glyph .gedge,:root[data-style=keel] .rip::after{animation:none}
+}
+/* the one chevron icon, turned up for 收起 and for a chooser's move-up */
+.td-mb[aria-expanded="true"] .ico,.dch-b[data-dchmv="-1"] .ico{transform:rotate(180deg)}

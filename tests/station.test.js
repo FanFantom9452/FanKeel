@@ -660,9 +660,9 @@ const INDEX = path.join(__dirname, '..', 'assets', 'station', 'index.html');
 
 function writtenSrc(search) {
     const html = fs.readFileSync(INDEX, 'utf8');
-    const open = html.indexOf('<script>');
+    const open = html.lastIndexOf('<script>', html.indexOf('station-data.js'));
     const inline = html.slice(open + 8, html.indexOf('</script>', open));
-    assert.ok(inline.includes('station-data.js'), 'the first inline script no longer writes the data tag');
+    assert.ok(inline.includes('station-data.js'), 'no inline script writes the data tag');
     let out = null;
     vm.runInNewContext(inline, {
         location: { search },

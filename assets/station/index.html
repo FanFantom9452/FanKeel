@@ -1,15 +1,17 @@
 <!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8">
+<html lang="zh-Hant" data-style="keel"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>fankeel 測站</title>
 <link rel="stylesheet" href="station/station.css">
+<script>try{if(localStorage.getItem('station.style')==='classic')document.documentElement.removeAttribute('data-style')}catch(e){}</script>
 </head><body>
 <header class="mast">
-  <a class="brand" href="#/" id="brand" aria-label="fankeel 測站 首頁"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 18 17H2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="10" cy="12" r="1.9" fill="currentColor"/></svg><b>fankeel</b><span id="brandw">測站</span></a>
+  <a class="brand" href="#/" id="brand" aria-label="fankeel 測站 首頁"><svg class="glyph k-only mark b1" viewBox="0 0 120 120" aria-hidden="true"><path class="gseg done" style="--i:0;--dx:-7.0px;--dy:12.1px" d="M56.50 107.98L20.20 87.02L36.65 77.52L56.50 88.98Z"/><path class="gseg done" style="--i:1;--dx:-14.0px;--dy:0.0px" d="M16.70 80.96L16.70 39.04L33.15 48.54L33.15 71.46Z"/><path class="gseg done" style="--i:2;--dx:-7.0px;--dy:-12.1px" d="M20.20 32.98L56.50 12.02L56.50 31.02L36.65 42.48Z"/><path class="gseg done" style="--i:3;--dx:7.0px;--dy:-12.1px" d="M63.50 12.02L99.80 32.98L83.35 42.48L63.50 31.02Z"/><path class="gseg done" style="--i:4;--dx:14.0px;--dy:0.0px" d="M103.30 39.04L103.30 80.96L86.85 71.46L86.85 48.54Z"/><path class="gseg done" style="--i:5;--dx:7.0px;--dy:12.1px" d="M99.80 87.02L63.50 107.98L63.50 88.98L83.35 77.52Z"/><path class="gedge done" d="M60.00 10.00L103.30 35.00L103.30 85.00L60.00 110.00L16.70 85.00L16.70 35.00Z" stroke-width="8"/><path class="gcore" d="M60.00 39.00L78.19 49.50L78.19 70.50L60.00 81.00L41.81 70.50L41.81 49.50Z"/></svg><svg class="classic-mark c-only" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 18 17H2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="10" cy="12" r="1.9" fill="currentColor"/></svg><b>fankeel</b><span id="brandw">測站</span></a>
   <span class="pill down" id="servedown" hidden><i class="dot down"></i>serve 已停</span>
   <nav class="crumbs" id="side" aria-label="位置"></nav>
   <label class="search"><input id="q" placeholder="搜尋任務、session、碰過的檔案…" aria-label="搜尋"><span class="k">/</span></label>
   <div class="seg lang" role="group" aria-label="介面語言 Language"><button type="button" id="langzh" data-lang="zh" lang="zh-Hant" aria-pressed="true" title="介面用繁體中文">繁中</button><button type="button" id="langen" data-lang="en" lang="en" aria-pressed="false" title="Switch the interface to English">EN</button></div>
+  <button type="button" class="styletog" id="styletog" data-block="style-classic" aria-pressed="false" title="換回 2026-09 的樣式；存在這個瀏覽器（station.style）"><span class="sw2" aria-hidden="true"></span>經典樣式</button>
 </header>
 <div class="shell"><aside id="nav"></aside><main class="page" id="page"></main></div>
 <div class="fk" id="fk" data-block="float-icon"></div>
