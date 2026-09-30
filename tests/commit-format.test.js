@@ -96,3 +96,60 @@ test('a profile.json that does not parse still commits, and says so on a line af
     assert.match(lines[0], /^[0-9a-f]{40}\.\.[0-9a-f]{40}$/);
     assert.match(lines[1], /^profile: .*profile\.json does not parse — its values were skipped$/);
 });
+
+const NOTICE = /^profile: .*profile\.json does not parse — its values were skipped$/;
+function malformProject(dir) {
+    fs.mkdirSync(path.join(dir, '.fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.fankeel', 'profile.json'), '{ "commit.format": ');
+}
+
+test('a block failure carries the profile notice as its last line', () => {
+    const dir = repo();
+    malformProject(dir);
+    const res = commit.main([request('c.txt\n\nchange c\n')], dir);
+    assert.equal(res.code, 1);
+    const lines = res.text.split('\n');
+    assert.match(lines[0], /^commit\.js: /);
+    assert.match(lines[lines.length - 1], NOTICE);
+    assert.equal(lines.length, 2, res.text);
+});
+
+test('a commit.format mismatch carries the profile notice when another layer does not parse', () => {
+    const dir = repo();
+    const cfg = tmp('fankeel-commit-format-machine-');
+    fs.mkdirSync(path.join(cfg, 'fankeel'), { recursive: true });
+    fs.writeFileSync(path.join(cfg, 'fankeel', 'profile.json'), JSON.stringify({ 'commit.format': FORMAT }));
+    malformProject(dir);
+    const saved = process.env.CLAUDE_CONFIG_DIR;
+    process.env.CLAUDE_CONFIG_DIR = cfg;
+    let res;
+    try { res = commit.main([request('a.txt\n\nchange a\n')], dir); } finally { process.env.CLAUDE_CONFIG_DIR = saved; }
+    assert.equal(res.code, 1);
+    const lines = res.text.split('\n');
+    assert.equal(lines[0], 'commit.js: the subject "change a" does not match commit.format ' + FORMAT);
+    assert.match(lines[lines.length - 1], NOTICE);
+    assert.equal(lines.length, 2, res.text);
+});
+
+test('a worktree conflict carries the profile notice as its last line', () => {
+    const dir = tmp('fankeel-commit-format-wt-');
+    git(dir, 'init', '-q');
+    git(dir, 'config', 'user.email', 'test@example.invalid');
+    git(dir, 'config', 'user.name', 'test');
+    git(dir, 'config', 'commit.gpgsign', 'false');
+    fs.writeFileSync(path.join(dir, 'a.txt'), 'one\n');
+    git(dir, 'add', '.');
+    git(dir, 'commit', '-qm', 'base');
+    const wt = path.join(tmp('fankeel-commit-format-wtdir-'), 'wt');
+    git(dir, 'worktree', 'add', '-q', '-b', 'wt1', wt);
+    fs.writeFileSync(path.join(dir, 'a.txt'), 'main\n');
+    git(dir, 'commit', '-qam', 'main edits');
+    fs.writeFileSync(path.join(wt, 'a.txt'), 'worktree\n');
+    malformProject(dir);
+    const res = commit.main([request('worktree ' + wt + '\na.txt\n\nfeat: line\n')], dir);
+    assert.equal(res.code, 1);
+    const lines = res.text.split('\n');
+    assert.equal(lines[0], 'conflict a.txt');
+    assert.match(lines[lines.length - 1], NOTICE);
+    assert.equal(lines.length, 2, res.text);
+});

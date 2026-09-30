@@ -2,12 +2,8 @@
 label: station
 title: 最貴單一 subagent 換成上限
 description: 取代 station-1 的 (b)：(1) 沒有任何單一 subagent 的 context 峰值超過 300k；(2) 佔比低於 15% 的目標只適用於 subagent ≥10 的 session。在 8806240d 之後的 session 重新量測。
-state: done
+state: ready
 link: docs/90-agent/reference/station.md
-done:
-  at: 2026-10-01
-  sha: 3013140c81f68440ca1519883ccb980fa40c801a
-  disposition: done
 ---
 
 ## 量測 2026-09-30
@@ -26,4 +22,4 @@ sessions 1; (1) peak over 300k: 0; (2) sessions with 10 or more agents: 0, of th
 |---|---|---|---|---|
 | session bfad9d68-2efa-45d3-80e0-ca1e1896fd98 | 8 | 154184（ad820290615cbe7e3） | 71.8%（ad820290615cbe7e3） | $3.50 |
 
-判定：pass。
+判定：不成立。這次只量到 session bfad9d68 進行到一半的 8 個 subagent；session 結束後重跑是 29 個 subagent、最貴佔比 38.3%，「10 個以上 subagent 的 session：1，其中佔比 15% 以上：1」，依 docs/90-agent/plans/2026-10-01-patrol-four.md 步驟 3 是 fail。單一 session 的中途快照不能關這條；等該 session 結束後再量一次。
