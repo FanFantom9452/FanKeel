@@ -363,3 +363,51 @@ test('a .fankeel that is a regular file is no list: silent, not refused', () => 
     assert.equal(sensitive.commitVerdict({ cwd: dir, command: 'git commit -m x', mode: 'block' }), null);
   } finally { fs.readFileSync = real; }
 });
+
+test('a directory after -- is scanned by the files it carries, whole segment or cut by a ; in the message; a clean one is not stopped', () => {
+  for (const command of ['git commit -m x -- docs', 'git commit -m "a; b" -- docs', 'git commit -m x -- docs/']) {
+    const dir = loose(['ACME'], 'block');
+    const out = verdict(dir, command);
+    assert.equal(denied(out), true, command);
+    assert.match(out.permissionDecisionReason, /docs\/plan\.md:3/, command);
+  }
+  const dir = loose(['ACME'], 'block');
+  fs.mkdirSync(path.join(dir, 'tidy'));
+  fs.writeFileSync(path.join(dir, 'tidy', 'a.md'), 'nothing\n');
+  assert.equal(hook(dir, 'Bash', 'git commit -m x -- tidy'), '');
+  assert.equal(hook(dir, 'Bash', 'git commit -m "a; b" -- tidy'), '');
+});
+
+test('cd, chdir, set-location, sl and cd /d each move the directory the later add and commit path name', () => {
+  const dir = withSub('secret.md');
+  for (const cd of ['cd sub', 'chdir sub', 'set-location sub', 'Set-Location sub', 'sl sub', 'cd /d sub', 'cd /D sub']) {
+    assert.equal(denied(verdict(dir, cd + ' && git add secret.md && git commit -m x')), true, cd + ' add');
+    assert.equal(denied(verdict(dir, cd + ' && git commit -m x -- secret.md')), true, cd + ' commit');
+  }
+});
+
+test('a cd to a directory that is there but that the shell would expand does not move the scan', () => {
+  const dir = withSub('secret.md');
+  for (const arg of ['$X', '~sub', '%CD%', '(sub']) {
+    fs.mkdirSync(path.join(dir, arg), { recursive: true });
+    fs.writeFileSync(path.join(dir, arg, 'secret.md'), 'acme\n');
+    assert.equal(hook(dir, 'Bash', 'cd ' + arg + ' && git add secret.md && git commit -m x'), '', arg);
+  }
+});
+
+test('a commit under git -C resolves its -- paths against that directory, and a path outside the repository, file or directory, is not added', () => {
+  const dir = withSub('secret.md', 'clean.md');
+  assert.equal(denied(verdict(dir, 'git -C sub commit -m x -- secret.md')), true);
+  fs.mkdirSync(path.join(dir, 'sub', 'inner'));
+  fs.writeFileSync(path.join(dir, 'sub', 'inner', 'deep.md'), 'acme\n');
+  assert.match(verdict(dir, 'git -C sub commit -m x -- inner').permissionDecisionReason, /sub\/inner\/deep\.md:1/, 'a directory under -C');
+  assert.equal(hook(dir, 'Bash', 'git -C sub commit -m x -- clean.md'), '');
+  assert.equal(hook(dir, 'Bash', 'git commit -m x -- secret.md'), '', 'secret.md is not at the top');
+  const out = path.join(dir, '..', 'outside-acme-dir');
+  fs.mkdirSync(out, { recursive: true });
+  fs.writeFileSync(path.join(out, 'x.md'), 'acme\n');
+  try {
+    assert.equal(hook(dir, 'Bash', 'git commit -m x -- ../outside-acme-dir'), '');
+    assert.equal(hook(dir, 'Bash', 'git commit -m "a; b" -- ../outside-acme-dir'), '');
+  } finally { fs.rmSync(out, { recursive: true }); }
+});
