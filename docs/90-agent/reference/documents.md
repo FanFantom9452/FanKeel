@@ -21,7 +21,6 @@ and the role says how long a document is meant to stay true:
 | `fixture` | a test's own input — describes nothing about the system, checked for links and line numbers only | n/a |
 | `data` | raw data — exports, recordings, source files — not a document. `docs-check` and `docs-audit` never check it, the index and the reading batches leave it out, and it is not counted as unfiled | n/a |
 | `todo` | one TODO entry, a file under the project's entry folder. Current, but checked like a fixture: links and line numbers, never symbols or `last_verified` — its date is its own `stamp`. Left out of the index and the audit's reading batches. | no — dated by its own stamp |
-| `data` | raw data, not a document: exports, recordings, source files. docs-check and docs-audit skip it, it is never counted unfiled, and the map marks it as data | n/a |
 
 A root `.ignore` holding `docs/99-archive/` keeps ripgrep — the `Grep` tool here —
 from searching it by default; naming `docs/99-archive` explicitly still searches

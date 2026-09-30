@@ -14,7 +14,7 @@ const flat = (name) => fs.readFileSync(path.join(REF, name), 'utf8').replace(/\s
 test('documents.md: the docs.json question is asked at init and at survey, and data has a row', () => {
     const text = flat('documents.md');
     assert.match(text, /asked in two places — `fankeel-init`/);
-    assert.match(text, /\| `data` \| raw data/);
+    assert.equal((text.match(/\| `data` \| raw data/g) || []).length, 1);
     assert.doesNotMatch(text, /it is asked once, at survey/);
 });
 
