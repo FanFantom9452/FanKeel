@@ -16,6 +16,10 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 ## Needs a decision
 
+- 〔data〕教授要資料檔（ML 資料、影像、現場照片）放 NAS、不用 Git LFS，並有保留期限（09-30 會議）；提議 fankeel 只宣告位置、負責人、保留期限，survey 讀、audit 查路徑是否存在，同步與清理留給 NAS；待答：NAS 在 Windows 怎麼存取 — [documents.md](docs/90-agent/reference/documents.md).
+
+- 〔todo〕TODO.md 只列未完成，完成的條目看起來像被刪了（09-30 教授會議）；要顯示在 TODO.md 的 ## Done、station 一欄，還是 init 開場列最近幾條 — [lib/todo.js](lib/todo.js).
+
 ## Blocked
 
 ### fankeel 功能全部完成
