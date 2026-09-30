@@ -314,6 +314,15 @@ const now = () => new Date().toISOString();
 // loop rather than a loop inside a guard.
 const plainMap = (v) => (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
 
+// `id：title` for each entry id, where the project keeps entry files; null in
+// TODO.md mode, which has no ids to title. An id whose file is gone prints bare.
+function titledIds(dir, ids) {
+    if (!todoFiles.folderOf(dir)) return null;
+    const loaded = todoFiles.load(dir);
+    const titles = new Map(loaded.entries.concat(loaded.done).map((e) => [e.id, e.title]));
+    return ids.map((t) => (titles.get(t) ? t + '：' + titles.get(t) : t));
+}
+
 function describe(root, sessionId, data) {
     const lines = [];
     lines.push('task:  ' + (data.task || 'untitled'));
@@ -325,7 +334,11 @@ function describe(root, sessionId, data) {
     const project = registry.projectOf(data);
     if (project) lines.push('project: ' + project);
     const todo = registry.todosOf(data);
-    if (todo.length) lines.push('todo: ' + todo.join(', '));
+    if (todo.length) {
+        const named = titledIds(projectRootFor(root, { project: data.project }), todo);
+        if (named) lines.push('todo:', ...named.map((t) => '  ' + t));
+        else lines.push('todo: ' + todo.join(', '));
+    }
     const claims = registry.claimsOf(data);
     if (claims.length) lines.push('touched: ' + claims.join(', '));
     const wt = worktreeOf(data);
@@ -764,8 +777,10 @@ function todoLines(root, id, data) {
     const dir = projectRootFor(root, { project: data.project });
     if (!todoFiles.folderOf(dir)) return null;
     const script = path.join(__dirname, 'todo.js');
+    const named = titledIds(dir, ids);
     return ['close at land, each with the sha that landed it:']
-        .concat(ids.map((t) => '  node ' + script + ' done ' + t + ' --sha <sha> --session ' + id + ' --root ' + dir));
+        .concat(...ids.map((t, i) => ['  ' + named[i],
+            '  node ' + script + ' done ' + t + ' --sha <sha> --session ' + id + ' --root ' + dir]));
 }
 
 function cmdStage(root, opts) {

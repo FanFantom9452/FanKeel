@@ -37,7 +37,7 @@ test('start --todo, repeated, records every id and the start output says them', 
   const dir = root(true);
   const out = task(dir, ['start', '--task', 'close two', '--route', 'build,land', '--todo', 'a-1', '--todo', 'a-2']);
   assert.deepEqual(registry.todosOf(registry.readSession(dir, A)), ['a-1', 'a-2']);
-  assert.match(out, /^ {2}todo: a-1, a-2$/m);
+  assert.match(out, /^ {2}todo:\n {4}a-1\n {4}a-2$/m);
   task(dir, ['task', 'something else']);
   assert.deepEqual(registry.todosOf(registry.readSession(dir, A)), [], 'a new task names no entry');
 });
@@ -48,6 +48,17 @@ test('stage land prints the todo.js done line for each id where the project keep
   task(dir, ['start', '--task', 'close one', '--route', 'build,land', '--todo', 'a-1']);
   const out = task(dir, ['stage', 'land']);
   assert.match(out, new RegExp('todo\\.js done a-1 --sha <sha> --session ' + A));
+});
+
+test('a titled entry prints id：title, above its done line at land and under todo: in the description', () => {
+  const dir = root(true);
+  lib.add(dir, { label: 'demo', title: '示範標題', description: 'first', state: 'ready' });
+  const started = task(dir, ['start', '--task', 'close demo', '--route', 'build,land', '--todo', 'demo-1']);
+  assert.match(started, /^ {2}todo:\n {4}demo-1：示範標題$/m);
+  const lines = task(dir, ['stage', 'land']).split('\n');
+  const at = lines.findIndex((l) => l.includes('todo.js done demo-1'));
+  assert.ok(at > 0, 'the done line is printed');
+  assert.equal(lines[at - 1], '  demo-1：示範標題');
 });
 
 test('with no entry folder stage land prints no todo.js line', () => {
