@@ -69,3 +69,27 @@ test('awaitHandoff keeps waiting through a tool call, and says lost once busyMs 
     assert.equal(gone, 'lost');
     assert.ok(Date.now() - t0 >= 250, 'lost came before busyMs');
 });
+
+test('awaitHandoff says lost when busyMs falls due, not at the next idleMs multiple', async () => {
+    const dir = tmp('fankeel-await-pending-');
+    const waiting = transcript(WAITING);
+    const t0 = Date.now();
+    const gone = await awaitHandoff({ handoff: path.join(dir, 'build.md'), commit: path.join(dir, 'build-commit.md'), since: 0, activity: () => [waiting], idleMs: 200, busyMs: 250, timeoutMs: 5000 });
+    const took = Date.now() - t0;
+    assert.equal(gone, 'lost');
+    assert.ok(took >= 200, 'lost came before busyMs: ' + took);
+    assert.ok(took < 350, 'lost came a whole idleMs late: ' + took);
+});
+
+test('pendingTool: an unreadable file (EACCES) is assumed pending, only a missing one is not', () => {
+    const dir = tmp('fankeel-await-pending-');
+    const file = transcript(DONE);
+    const real = fs.openSync;
+    fs.openSync = () => { throw Object.assign(new Error('locked'), { code: 'EACCES' }); };
+    try {
+        assert.equal(pendingTool(file), true, 'a transcript that is briefly unreadable is not idle');
+    } finally {
+        fs.openSync = real;
+    }
+    assert.equal(pendingTool(path.join(dir, 'none.jsonl')), false);
+});

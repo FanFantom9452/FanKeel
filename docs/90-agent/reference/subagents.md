@@ -565,7 +565,8 @@ handoff and commit paths and the agent's id (`inflight`, written by
 `commit <file>`, a `<stage>-commit.md` newer than `--since`; `handoff <file>`,
 the report rewritten after `--since`, which defaults to the stage's answer
 file; `lost <id>`, neither, and no `agent-*.jsonl` in the session's
-`subagents/` directory has moved for three minutes; or `timeout` after thirty.
+`subagents/` directory has moved for three minutes, unless a transcript ends
+in an unanswered `tool_use`, which is not lost until 11 minutes (`BUSY_MS`); or `timeout` after thirty.
 The whole directory rather than the agent's own file, because a brain waiting
 on a child makes no tool call — 52 seconds in
 [the 2026-09-23 run](../reports/2026-09-23-brain-wakeup.md). A second, different
@@ -580,8 +581,9 @@ tool call and was never idle. The mark is three minutes now, clear of that
 ceiling with margin. Each line says what
 to do next, so the controller's rule only says to run it: with that rule a
 controlled build block is within 40 characters of its 2400. Nothing loops: `awaitHandoff` in
-`lib/handoff.js` wakes on `fs.watch` of the handoff directory and on one timer
-set for the moment the agent would count as lost. Whether a background Bash
+`lib/handoff.js` wakes on `fs.watch` of the handoff directory and on a timer
+set for the moment the agent would count as lost, which re-arms every `idleMs`
+(or until `busyMs` falls due) while a tool call is out. Whether a background Bash
 exit wakes the controller the way a hand-back does has not been observed.
 
 The unit tests above were all this had until the first live run: on `build`
