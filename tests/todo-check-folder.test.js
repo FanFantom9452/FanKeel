@@ -99,7 +99,8 @@ test('orient\'s todo: block in folder mode names the folder and every id it offe
   git(dir, ['init', '-q']);
   const out = execFileSync(process.execPath, [ORIENT, '--root', dir], { encoding: 'utf8', cwd: dir });
   assert.match(out, /^todo: TODO\.md, from docs\/todo\/$/m);
-  assert.match(out, /^ {2}Ready 1 — ids: r-1$/m);
+  assert.match(out, /^ {2}Ready 1$/m);
+  assert.match(out, /^ {4}\[r-1\] ready$/m);
   assert.match(out, /^ {4}\[q-1\] 〔q〕a question$/m);
   assert.match(out, /--todo <id>/);
 });
