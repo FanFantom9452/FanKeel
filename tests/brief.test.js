@@ -889,3 +889,26 @@ test('the stage being briefed contributes no already-answered line of its own la
   answerFile(root, 'build', { 'Merge the branch now?': 'Yes' });
   assert.equal(answeredLines(contextOf(run(root, start(root)))).length, 0);
 });
+
+test('a bare `build`, a verify rework included, is told to close as `build close` does, with its gate in build-2.md', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z', moves: [['build', 1], ['verify', 2], ['build', 3]] });
+  const text = contextOf(run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: 'r0' })));
+  assert.match(text, /Neither — a bare `build`, a verify rework's included: do what is still open, then close as `build close` does: the full suite, then the report and gate to \S*\/build-2\.md\./);
+});
+
+test('a build brain sent a bare `build` is marked close, so the await watches the plain handoff', () => {
+  const root = tmp();
+  seedProfile(root, { 'stage.agents': ['build'] });
+  seed(root, { stage: 'build', started: '2026-09-19T09:30:12.345Z' });
+  const transcript = path.join(root, 'sess.jsonl');
+  agentLine(root, 'r1', 'build');
+  agentLine(root, 'r2', 'build\nThe user says: keep the fix to the one file.');
+  agentLine(root, 'r3', 'build everything the plan still lists');
+  for (const id of ['r1', 'r2', 'r3']) run(root, start(root, { agent_type: 'fankeel:fankeel-brain', agent_id: id, transcript_path: transcript }));
+  const marks = JSON.parse(fs.readFileSync(path.join(root, '.fankeel', 'sessions', SESSION + '.json'), 'utf8')).inflight;
+  assert.equal(marks.find((m) => m.agentId === 'r1').kind, 'close');
+  assert.equal(marks.find((m) => m.agentId === 'r2').kind, 'close');
+  assert.equal('kind' in marks.find((m) => m.agentId === 'r3'), false, 'a line that says more than `build` is not the bare case');
+});

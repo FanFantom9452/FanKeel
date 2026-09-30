@@ -92,7 +92,8 @@ The handoff path, and nothing else; on a build stage, when its brief says so,
 a group rather than `build close`, the handoff path is that group's own — no
 `json gate` block — and a fresh brain continues whatever the plan still lists;
 only `build close` runs the full suite, writes the gate, and is the one this
-whole stage's user question comes from. When you are sent a message that the
+whole stage's user question comes from. A bare `build`, which is what a verify
+rework sends, is worked as `build close`. When you are sent a message that the
 user's answer is in a file, read it, rewrite the report and its gate — the gate
 too, taking out the options that answer settled, because `hooks/gate.js`
 refuses a gate asked again unchanged — and return the path again.
