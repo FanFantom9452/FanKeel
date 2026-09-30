@@ -10,11 +10,7 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔await〕`kind` 讀不到時，await 改從 brain 自己的 transcript 第一行讀（commit a0187d9d769dd3eb0821a22e62ef3543739eef6d）：重裝後看一次真實 `build close` 的 await 是否盯 `build.md` — [scripts/await.js](scripts/await.js).
 
-- 〔stage-agents〕verify 退回 build 後，brain 交 build-fix.md 無 gate、build-2.md 不存在，主控另派 build close 才補上；退回的 build 該自己寫 gate — [stages.js](lib/stages.js).
-
 ## Needs a decision
-
-- 〔controller〕主控回報用 entry 標題不用 await-1 這類代號；評估主 session 只負責轉述過程、其餘全派 brain agent 的平衡點；同一件事別疊開 await，前一個沒收就開新的，收工後還陸續冒出舊通知 — [stages.js](lib/stages.js).
 
 ## Blocked
 
@@ -27,11 +23,6 @@ after: fankeel 其餘功能都落地、使用者換到新機器測試. 09-30.
 upstream: knip 認得 CJS namespace property access. 10-01.
 
 - 〔build〕knip 的 unused exports 一格關著：6.39.0 仍認不得 CJS namespace 取用（`clearBadge` 追不到），開著回 196 個假陽性（10-01 重跑） — [docs/development.md](docs/01-guide/development.md).
-
-### gates 滿一週
-on: 10-02 起，registry 的 `gates` 累積滿一週. 09-30.
-
-- 〔profile〕`suggest` 只推 `land.*`：`class.default`、`design.mockup` 可以從 gate 答案推 — [lib/profile.js](lib/profile.js).
 
 ### TokenBar 寫出真實序列
 after: `tokenbar-usage.jsonl` 有跨過一次 7d reset 的真實讀數；09-25 查到的 347 行全落在 09-22 的 15 分鐘內，是測試資料，09-23 起沒再寫. 09-30.
