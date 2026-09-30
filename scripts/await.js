@@ -136,17 +136,57 @@ function lineFor(state, o, commitFile) {
     return tag + 'timeout — nothing moved in ' + Math.round(o.timeoutMs / 60000) + ' minutes: run await again.';
 }
 
+// controller-1: one waiter per in-flight mark. A controller that ran await
+// again before the last one returned stacked two, and the old ones kept
+// printing after the stage was over. The first waiter writes
+// `<handoff>.await` with its pid; a second one that finds a live pid there
+// prints one line and exits 0. A marker whose pid is gone counts as none.
+function alive(pid) {
+    if (!Number.isInteger(pid) || pid <= 0) return false;
+    try {
+        process.kill(pid, 0);
+        return true;
+    } catch (e) {
+        return e.code === 'EPERM';
+    }
+}
+
+function holder(file) {
+    try {
+        const m = JSON.parse(fs.readFileSync(file, 'utf8'));
+        return m && alive(m.pid) ? m : null;
+    } catch (e) {
+        return null;
+    }
+}
+
 function main(argv, env) {
     const opts = parseArgs(argv);
     if (!opts) return Promise.resolve({ text: USAGE, code: 2 });
     const o = waitFor(opts, env || process.env);
     if (o.error) return Promise.resolve({ text: 'await.js: ' + o.error, code: 1 });
+    const marker = o.handoff + '.await';
+    const live = holder(marker);
+    if (live) return Promise.resolve({ text: 'already awaiting ' + (live.agentId || o.agentId || '?') + ' — another await is waiting on this agent already: end your turn; its line will come.' });
+    try {
+        fs.mkdirSync(path.dirname(marker), { recursive: true });
+        fs.writeFileSync(marker, JSON.stringify({ pid: process.pid, agentId: o.agentId }));
+    } catch (e) { /* unmarked: this wait still runs, only unguarded */ }
+    const release = () => {
+        try {
+            if (JSON.parse(fs.readFileSync(marker, 'utf8')).pid === process.pid) fs.unlinkSync(marker);
+        } catch (e) { /* gone already */ }
+    };
     return awaitHandoff(o).then((state) => {
+        release();
         // A group brain returns with no gate, so hooks/gate.js never clears its
         // mark; its own handoff arriving is the only signal there is. A close mark
         // is left standing for hooks/gate.js, once the gate is confirmed.
         if (state === 'lost' || (state === 'handoff' && o.kind !== 'close' && Number.isInteger(o.group)))registry.clearInflight(o.root, opts.session, o.agentId);
         return { text: lineFor(state, o, state === 'commit' ? newestCommit(o.commit, o.since) : null) };
+    }, (e) => {
+        release();
+        throw e;
     });
 }
 

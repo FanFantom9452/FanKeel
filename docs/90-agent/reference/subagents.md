@@ -566,7 +566,7 @@ handoff and commit paths and the agent's id (`inflight`, written by
 the report rewritten after `--since`, which defaults to the stage's answer
 file; `lost <id>`, neither, and no `agent-*.jsonl` in the session's
 `subagents/` directory has moved for three minutes, unless a transcript ends
-in an unanswered `tool_use`, which is not lost until 11 minutes (`BUSY_MS`); or `timeout` after thirty.
+in an unanswered `tool_use`, which is not lost until 11 minutes (`BUSY_MS`); or `timeout` after thirty. A second await on the same handoff while the first still waits prints `already awaiting <id>` and exits 0 at once: the first writes `<handoff>.await` with its pid and removes it when it exits, and a marker whose pid is dead counts as none (controller-1).
 The whole directory rather than the agent's own file, because a brain waiting
 on a child makes no tool call — 52 seconds in
 [the 2026-09-23 run](../reports/2026-09-23-brain-wakeup.md). A second, different

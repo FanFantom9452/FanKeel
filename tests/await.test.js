@@ -340,6 +340,31 @@ test('markInflight never hands out a group number a finished brain used', () => 
     assert.equal(registry.markInflight(f.root, SID, 'build', 'a5', undefined, undefined, 'group'), 1, 'with nothing in use the count starts again at 1');
 });
 
+test('a second await on the same mark says already awaiting and returns at once; the first removes its marker when it ends', async () => {
+    const f = fixture({ inflight: { stage: 'build', at: 1, agentId: 'a1' } });
+    const marker = path.join(f.task, 'build.md.await');
+    const first = awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '3'], f.env);
+    assert.ok(fs.existsSync(marker), 'the first waiter marks the handoff before it waits');
+    const t0 = Date.now();
+    const second = await awaitCli.main(['--session', SID, '--root', f.root, '--timeout', '3'], f.env);
+    assert.ok(Date.now() - t0 < 1000, 'the second returns at once, took ' + (Date.now() - t0) + ' ms');
+    assert.equal(second.text, 'already awaiting a1 — another await is waiting on this agent already: end your turn; its line will come.');
+    assert.equal(second.code, undefined);
+    at(path.join(f.task, 'build.md'), Date.now());
+    assert.match((await first).text, /^handoff /);
+    assert.equal(fs.existsSync(marker), false, 'the first waiter removes its own marker');
+});
+
+test('a marker whose pid is gone is no waiter', async () => {
+    const f = fixture({ inflight: { stage: 'build', at: 1, agentId: 'a1' } });
+    const dead = spawnSync(process.execPath, ['-e', '']).pid;
+    at(path.join(f.task, 'build.md.await'), Date.now(), JSON.stringify({ pid: dead, agentId: 'a1' }));
+    at(path.join(f.task, 'build.md'), Date.now());
+    const out = await awaitCli.main(['--session', SID, '--root', f.root], f.env);
+    assert.match(out.text, /^handoff /);
+    assert.equal(fs.existsSync(path.join(f.task, 'build.md.await')), false);
+});
+
 test('a stage agent starting stamps the lap its brief named on the in-flight mark', () => {
     const f = fixture({ moves: [['build', 1], ['build', 2]] });
     const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'hooks', 'brief.js')], {

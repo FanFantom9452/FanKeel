@@ -1093,3 +1093,12 @@ test('two marks for build each get their own SendMessage line, naming their grou
   assert.equal(lines[0], 'A build stage agent is already running for group 1 (`g1`): SendMessage it the user\'s new line and wait for it. Do not dispatch another for that group unless SendMessage says it is gone.');
   assert.match(lines[1], /for group 2 \(`g2`\)/);
 });
+
+test('every controller names a TODO entry by its title, never by its id', () => {
+  const { controlFor } = require('../lib/stages.js');
+  const all = ['survey', 'design', 'plan', 'build', 'verify', 'audit', 'land'];
+  for (const stage of all) {
+    const first = controlFor(stage, { 'stage.agents': all }, { handoff: '/r/h.md' }).rules[0];
+    assert.ok(first.endsWith('dispatch, relay a path, ask. Name TODO entries by title, never by id.'), stage + ': ' + first);
+  }
+});
