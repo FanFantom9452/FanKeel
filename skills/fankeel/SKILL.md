@@ -603,6 +603,7 @@ a document is meant to stay true, and therefore what is worth checking.
 | `archive` | retired. Checked for one thing only — that nothing current still points at it. |
 | `fixture` | a test's own input. Describes nothing about the system, so it cannot drift from it; checked for links and line numbers only, never for symbols or paths its scaffold creates. |
 | `todo` | one TODO entry file. Current, but checked like a fixture: links and line numbers, never symbols or `last_verified` — its date is its own `stamp`. |
+| `data` | raw data, not a document — exports, recordings, source files. docs-check and docs-audit skip it, it is never counted unfiled, and the map marks it as data. |
 
 A decision may carry `binding: true`: an ADR is a decision, not another role. At most seven stand at once — docs-check counts them, and `superseded_by` retires one.
 
@@ -813,6 +814,10 @@ is what `survey` is for — so do it in the same turn rather than
 asking permission to begin. Read the signposts orient named, say what the recent
 commits show the project is in the middle of, and run the scanner on the terms the
 task implies. Then ask, with something on screen to ask about.
+
+When `task.js start` prints an `onboard:` line, run the fankeel-init skill on
+the project it names first, then survey: a survey over unfiled pages and an
+undescribed tree reads them as the present.
 
 Stopping after "entry written, shall I start?" spends a turn on a question whose
 answer is always yes, and the badge changes to `[FANKEEL:SURVEY]` at exactly the

@@ -207,7 +207,7 @@ fankeel/
 │   ├── inject.js      UserPromptSubmit: the block on every prompt, the init block on /fankeel, the badge
 │   ├── resume.js      PostToolUse on AskUserQuestion: the stage's rules again once a gate is answered
 │   ├── gate.js        PreToolUse on AskUserQuestion: stamps when a gate opened, so the wait can be timed; on a controlled stage it also validates that the controller's own question copies the handoff's gate word for word, denying a botched attempt or a malformed file gate; with `gate.station` set, it first waits that many seconds for the station's answer
-│   ├── guard.js       PreToolUse on writes, shells and subagent dispatches: the scope guard, read-only agents kept read-only, and no fankeel-brain for a stage stage.agents does not name
+│   ├── guard.js       PreToolUse on writes, shells and subagent dispatches: the scope guard, read-only agents kept read-only, and no fankeel-brain for a stage stage.agents does not name; and every git commit scanned for the words in .fankeel/sensitive.txt
 │   ├── touch.js       PostToolUse on Edit, Write, NotebookEdit: the files this task touched
 │   ├── brief.js       SubagentStart: what a subagent is told about the task it was sent from
 │   ├── carry.js       SessionStart on clear or fork: offers the task a /clear left behind
@@ -222,6 +222,8 @@ fankeel/
 │   ├── badge.js       the statusline word and lead line TokenBar draws
 │   ├── map.js         .fankeel/map.md: the signpost, the filing, this tree, the planned and retired pages
 │   ├── docs.js        docs.json: buckets, roles, and which pages may be out of date
+│   ├── onboard.js     the three cheap onboarding checks task.js start runs on a task's project
+│   ├── sensitive.js   the words in .fankeel/sensitive.txt, found in what a commit carries
 │   ├── station.js     the station's model: finding every registry, the rows, the data and detail scripts
 │   ├── detail.js      one session taken apart for the station, cached by its files' size and mtime
 │   ├── usage.js       what a transcript spent: requests, models, agents and every dispatch
@@ -233,6 +235,7 @@ fankeel/
 │   ├── task.js        start a task, move its stage, note, pause, stand it down
 │   ├── orient.js      what is under this directory, before /fankeel asks anything
 │   ├── map.js         writes .fankeel/map.md
+│   ├── onboard.js     prints the onboarding checks, pass or fail; --full adds docs-check and drift
 │   ├── layout.js      prints the half of this tree a listing can derive
 │   ├── survey.js      what already exists here, for the survey stage
 │   ├── ledger.js      the build ledger: init, complete, groups, lint, brief
@@ -244,7 +247,7 @@ fankeel/
 │   ├── judge.js       files what a fankeel-judge answered, verbatim
 │   ├── upgrade.js     which migrations an older project still needs, and --apply for the safe one
 │   └── version.js     the release number, in every place that carries it
-├── skills/            one directory per skill — fankeel, one per stage, ask, explain, station, upgrade — and registry.json
+├── skills/            one directory per skill — fankeel, one per stage, ask, explain, init, station, upgrade — and registry.json
 └── tests/             node --test, one file per module or behaviour; tmp.js is where every scratch directory comes from
 ```
 
