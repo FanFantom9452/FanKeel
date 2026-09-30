@@ -36,6 +36,19 @@ test('a project with no docs.json fails the docs.json check', () => {
   assert.match(r.failing.join('\n'), /^docs\.json — /m);
 });
 
+test('an unparsable docs.json fails with the reader\'s own error as evidence', () => {
+  const root = filed();
+  fs.mkdirSync(path.join(root, '.fankeel'), { recursive: true });
+  fs.writeFileSync(path.join(root, '.fankeel', 'docs.json'), '{ not json');
+  const err = docs.read(root).error;
+  assert.equal(typeof err, 'string');
+  assert.notEqual(err, '');
+  const r = onboard.cheap(root, cfg());
+  assert.equal(r.docsJson.pass, false);
+  assert.equal(r.docsJson.evidence, err);
+  assert.notEqual(r.docsJson.evidence, '.fankeel/docs.json missing');
+});
+
 test('docs.json, a filled tree and no unfiled page pass all three', () => {
   const root = filed();
   docs.write(root, { buckets: [{ path: 'docs', role: 'reference' }] });
