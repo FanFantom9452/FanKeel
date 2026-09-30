@@ -47,7 +47,7 @@
       "name": "land",
       "entry_condition": "worktree, base, release.",
       "stop_condition": "Done when the suite is green, the documents are closed, the map is rewritten and `todo-check` passes.",
-      "prompt_bytes": 2441,
+      "prompt_bytes": 2443,
       "prompt_byte_budget": 2500
     }
   ]
