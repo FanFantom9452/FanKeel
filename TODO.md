@@ -10,6 +10,8 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 - 〔await〕`kind` 讀不到時，await 改從 brain 自己的 transcript 第一行讀（commit a0187d9d769dd3eb0821a22e62ef3543739eef6d）：重裝後看一次真實 `build close` 的 await 是否盯 `build.md` — [scripts/await.js](scripts/await.js).
 
+- 〔review〕10-01 使用者要求：session 5481b548 的 TODO 全表盤點 build↔verify 來回多輪（build-2～4、verify-1～3），多半為 STATION 頁面測試補洞與 mutation 紅集合比對；render reviewer 少被派（302 份 transcript 僅 10 次，派不派由 brain 判斷、repo 無 render.json），dash-chooser、todo-done 展開、經典樣式、zh-Hant 沒渲染過。讀 .fankeel/build/task-20260930T204318/ 各報告與 transcript，找出哪些檢查該前移到第一輪 build、render reviewer 該用腳本強制或補 render.json — [fankeel-render-reviewer.md](agents/fankeel-render-reviewer.md).
+
 ## Needs a decision
 
 ## Blocked
