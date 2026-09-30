@@ -13,5 +13,6 @@
     "land"
   ],
   "guard": "deny",
-  "gate.station": "off"
+  "gate.station": "off",
+  "language": "繁體中文"
 }

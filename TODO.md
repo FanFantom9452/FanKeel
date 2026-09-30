@@ -8,9 +8,7 @@ What each heading means and what `/fankeel` does with it: [todo.md](docs/90-agen
 
 ## Ready
 
-- 〔await〕`kind` 只在測試裡驗過：重裝後看一次真實 `build close` brain 的 mark 是否帶 `kind: 'close'`、await 是否盯 `build.md` — [hooks/brief.js](hooks/brief.js).
-
-- 〔stage〕fankeel-brain 站 agent 即使使用者用繁體中文，寫出的報告與 gate 仍是英文；使用者的語言應該進到 brief 裡，讓站 agent 照著寫。 — [render.js](lib/render.js).
+- 〔await〕`kind` 讀不到時，await 改從 brain 自己的 transcript 第一行讀（commit a0187d9d769dd3eb0821a22e62ef3543739eef6d）：重裝後看一次真實 `build close` 的 await 是否盯 `build.md` — [scripts/await.js](scripts/await.js).
 
 ## Needs a decision
 
