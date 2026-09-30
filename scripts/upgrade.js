@@ -177,7 +177,7 @@ function main(argv, opts) {
     return run(root, Object.assign({ apply: values.apply === true }, opts));
 }
 
-module.exports = { steps, lastStamp, run, main };
+module.exports = { steps, lastStamp, run };
 
 if (require.main === module) {
     const r = main(process.argv.slice(2));
